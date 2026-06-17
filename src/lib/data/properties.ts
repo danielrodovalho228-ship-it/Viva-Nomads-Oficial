@@ -25,6 +25,9 @@ interface PropertyRow {
   utilities_mode: string | null;
   utilities_estimate: number | null;
   utilities_overage_margin: number | null;
+  prep_fee: number | null;
+  checkout_cleaning_enabled: boolean | null;
+  checkout_cleaning_fee: number | null;
   issues_invoice: boolean | null;
   accepts_insurance: boolean | null;
   rating: number | null;
@@ -53,6 +56,9 @@ function rowToProperty(row: PropertyRow): Property {
     utilitiesMode: (row.utilities_mode as Property["utilitiesMode"]) ?? "fixed",
     utilitiesEstimate: Number(row.utilities_estimate ?? 0),
     utilitiesOverageMargin: Number(row.utilities_overage_margin ?? 20),
+    prepFee: Number(row.prep_fee ?? 0),
+    checkoutCleaningEnabled: row.checkout_cleaning_enabled ?? false,
+    checkoutCleaningFee: Number(row.checkout_cleaning_fee ?? 0),
     issuesInvoice: row.issues_invoice ?? false,
     acceptsInsurance: row.accepts_insurance ?? false,
     rating: Number(row.rating ?? 0),

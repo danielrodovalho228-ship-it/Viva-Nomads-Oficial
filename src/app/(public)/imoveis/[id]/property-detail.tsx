@@ -348,8 +348,17 @@ export function PropertyDetail({
                   </span>
                 </p>
               )}
+              {property.prepFee > 0 && (
+                <p className="mt-1.5 text-ink">
+                  + preparação <strong>{formatBRL(property.prepFee)}</strong>
+                  <span className="block text-xs text-muted">
+                    Limpeza profunda antes da entrada — cobrada uma única vez (não toda semana,
+                    como no Airbnb).
+                  </span>
+                </p>
+              )}
               {property.issuesInvoice && (
-                <p className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-forest">
+                <p className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-blue-700">
                   <FileText className="h-3.5 w-3.5" /> Emite Nota Fiscal do aluguel
                 </p>
               )}

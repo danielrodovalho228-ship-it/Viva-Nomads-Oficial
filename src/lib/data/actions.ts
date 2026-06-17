@@ -74,6 +74,7 @@ export async function createProperty(input: {
   utilitiesEstimate?: number;
   issuesInvoice?: boolean;
   acceptsInsurance?: boolean;
+  prepFee?: number;
   lat?: number;
   lng?: number;
   photoUrls?: string[];
@@ -107,6 +108,7 @@ export async function createProperty(input: {
       utilities_estimate: input.utilitiesEstimate ?? 0,
       issues_invoice: input.issuesInvoice ?? false,
       accepts_insurance: input.acceptsInsurance ?? false,
+      prep_fee: input.prepFee ?? 0,
     })
     .select("id")
     .single();

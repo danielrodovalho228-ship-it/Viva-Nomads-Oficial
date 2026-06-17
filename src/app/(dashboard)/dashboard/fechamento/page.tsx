@@ -42,6 +42,9 @@ const OWNER_PLAN = "essential";
 const COMMISSION_RATE = COMMISSION_BY_PLAN[OWNER_PLAN];
 const PLATFORM_COMMISSION = Math.round(PROPERTY.monthlyRent * COMMISSION_RATE);
 const OWNER_NET = PROPERTY.monthlyRent - PLATFORM_COMMISSION;
+// Taxa de limpeza/preparação (Bloco B)
+const PREP_FEE = 450;
+const CHECKOUT_FEE = 250;
 
 export default function ClosingPage() {
   const [step, setStep] = useState(0);
@@ -447,6 +450,34 @@ export default function ClosingPage() {
                 cláusula de ajuste se o consumo exceder 20%. A cobrança complementar (com
                 comprovante) é registrada pela plataforma — não intermediada.
               </p>
+            </div>
+
+            {/* Taxa de preparação/limpeza (Bloco B) */}
+            <div className="rounded-xl border border-sage-200 p-4 text-sm">
+              <p className="font-medium text-ink">Limpeza & preparação</p>
+              <div className="mt-2 space-y-1">
+                <Row label="Preparação (limpeza profunda, única)" value={formatBRL(PREP_FEE)} />
+                <Row label="Limpeza de saída (opcional)" value={formatBRL(CHECKOUT_FEE)} />
+              </div>
+              <p className="mt-2 text-xs text-muted">
+                Ao contrário do Airbnb (limpeza a cada hóspede), aqui a preparação é cobrada{" "}
+                <strong>uma única vez</strong>. A taxa vai ao proprietário (despesa de
+                preparação) — não é receita da plataforma.
+              </p>
+            </div>
+
+            {/* Total que o inquilino vê no 1º pagamento */}
+            <div className="rounded-xl bg-blue-50 p-4 text-sm">
+              <p className="font-medium text-blue-900">O inquilino vê no 1º pagamento</p>
+              <div className="mt-2 space-y-1">
+                <Row label="Aluguel" value={`${formatBRL(PROPERTY.monthlyRent)}/mês`} />
+                <Row label="Consumo estimado" value={`${formatBRL(280)}/mês`} />
+                <Row label="Preparação (única)" value={formatBRL(PREP_FEE)} />
+                <div className="flex items-center justify-between border-t border-blue-200 pt-1 font-bold text-blue-900">
+                  <span>Total do 1º pagamento</span>
+                  <span>{formatBRL(PROPERTY.monthlyRent + 280 + PREP_FEE)}</span>
+                </div>
+              </div>
             </div>
 
             {/* Comissão de fechamento (split sobre o 1º mês) */}

@@ -23,6 +23,7 @@ export default function NewPropertyPage() {
   const [utilitiesEstimate, setUtilitiesEstimate] = useState(200);
   const [issuesInvoice, setIssuesInvoice] = useState(false);
   const [acceptsInsurance, setAcceptsInsurance] = useState(false);
+  const [prepFee, setPrepFee] = useState(450);
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
   const router = useRouter();
@@ -53,6 +54,7 @@ export default function NewPropertyPage() {
       utilitiesEstimate,
       issuesInvoice,
       acceptsInsurance,
+      prepFee,
       photoUrls: photos.map((p) => p.url),
     });
 
@@ -263,6 +265,30 @@ export default function NewPropertyPage() {
               <p className="mt-2 text-xs text-muted">
                 No valor fixo, se o consumo exceder a margem você pode emitir cobrança
                 complementar com comprovante.
+              </p>
+            </div>
+
+            {/* Taxa de limpeza/preparação (Bloco B) */}
+            <div className="rounded-xl border border-sage-200 p-4">
+              <p className="text-sm font-medium text-ink">Limpeza & preparação</p>
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                <Labeled label="Taxa de preparação (R$, única)">
+                  <input
+                    type="number"
+                    min={0}
+                    value={prepFee || ""}
+                    onChange={(e) => setPrepFee(Number(e.target.value))}
+                    className="input"
+                    placeholder="450"
+                  />
+                </Labeled>
+                <Labeled label="Limpeza de saída (R$, opcional)">
+                  <input type="number" min={0} defaultValue={250} className="input" />
+                </Labeled>
+              </div>
+              <p className="mt-2 text-xs text-muted">
+                Cobrada uma única vez no fechamento (não a cada hóspede). A taxa vai para você
+                (despesa de preparação) — a plataforma só documenta.
               </p>
             </div>
 

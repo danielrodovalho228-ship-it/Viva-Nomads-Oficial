@@ -35,6 +35,10 @@ export interface Property {
   utilitiesMode: UtilitiesMode;
   utilitiesEstimate: number; // R$/mês (regime fixo)
   utilitiesOverageMargin: number; // % de tolerância antes de cobrança complementar
+  // Taxa de limpeza/preparação (Bloco B — rodada 5)
+  prepFee: number; // limpeza profunda antes da entrada (única, obrigatória)
+  checkoutCleaningEnabled: boolean; // limpeza de saída opcional
+  checkoutCleaningFee: number; // valor da limpeza de saída, se ativa
   // Diferenciais para o público profissional (Atualizações 7 e 10)
   issuesInvoice: boolean; // emite Nota Fiscal
   acceptsInsurance: boolean; // aceita seguro-fiança
