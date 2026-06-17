@@ -22,7 +22,7 @@ import type { Property, WorkspaceType } from "@/lib/types";
 import { formatBRL, cn } from "@/lib/utils";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
 import { Button, ButtonLink } from "@/components/ui/button";
-import { WorkReadyBadge, InvoiceBadge, InsuranceBadge } from "@/components/ui/badge";
+import { WorkReadyBadge, InvoiceBadge, InsuranceBadge, ResponsiveOwnerBadge } from "@/components/ui/badge";
 import { PropertyCard } from "@/components/property-card";
 import { BrandImage } from "@/components/brand-image";
 import { PropertyMap, type MapMarker } from "@/components/property-map";
@@ -273,9 +273,10 @@ export function PropertyDetail({
                   </div>
                   <div>
                     <p className="font-title font-bold text-ink">{property.ownerName}</p>
-                    <p className="text-sm text-muted">
-                      Proprietário verificado · responde rápido
-                    </p>
+                    <p className="text-sm text-muted">Proprietário verificado</p>
+                    <div className="mt-1.5">
+                      <ResponsiveOwnerBadge />
+                    </div>
                     {property.reviewCount > 0 && (
                       <p className="mt-1 inline-flex items-center gap-1 text-sm text-forest">
                         <Star className="h-4 w-4 fill-champagne text-champagne" />

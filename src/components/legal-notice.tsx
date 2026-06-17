@@ -1,5 +1,24 @@
-import { Scale } from "lucide-react";
+import { Scale, Wrench } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+/** Moldura jurídica das ordens de serviço (Bloco C — rodada 5). */
+export function ServiceOrderNotice({ className }: { className?: string }) {
+  return (
+    <p
+      className={cn(
+        "flex items-start gap-2 rounded-xl border border-line bg-surface-2 px-4 py-3 text-sm text-muted",
+        className
+      )}
+    >
+      <Wrench className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
+      <span>
+        O Viva Nomads <strong className="text-ink">registra e notifica</strong> solicitações.
+        A execução e o prazo da manutenção são responsabilidade do proprietário e do inquilino,
+        conforme o contrato.
+      </span>
+    </p>
+  );
+}
 
 /**
  * Aviso da posição jurídica da plataforma (seção 8.6).
