@@ -21,6 +21,18 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  async function handleGoogle() {
+    const supabase = createClient();
+    if (!supabase) {
+      setError("Login com Google requer Supabase configurado.");
+      return;
+    }
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
+    });
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -164,7 +176,13 @@ export default function AuthPage() {
           <div className="my-6 flex items-center gap-3 text-xs text-muted">
             <span className="h-px flex-1 bg-sage-200" /> ou <span className="h-px flex-1 bg-sage-200" />
           </div>
-          <Button variant="outline" className="w-full" type="button" disabled={loading}>
+          <Button
+            variant="outline"
+            className="w-full"
+            type="button"
+            disabled={loading}
+            onClick={handleGoogle}
+          >
             <Globe className="h-4 w-4" /> Continuar com Google
           </Button>
 

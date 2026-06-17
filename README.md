@@ -11,10 +11,14 @@ não é QuintoAndar.
 
 - **Next.js 16** (App Router) + **React 19** + **TypeScript**
 - **Tailwind CSS v4** (design tokens da paleta NomadeDrive)
-- **Supabase** (Postgres + Auth + Storage) — `src/lib/supabase`
-- **Zustand** (estado de sessão)
-- **lucide-react** (ícones)
-- Stripe (assinatura), Mapbox/Google Maps (mapas), ZapSign (contrato), CAF (verificação) — integrações previstas
+- **Supabase** (Postgres + Auth + Storage) — `src/lib/supabase`, camada de dados em `src/lib/data`
+- **Asaas** — pagamento nativo BR: assinatura recorrente + PIX/boleto/cartão + split (`src/lib/payments`)
+- **Mapbox GL** — mapas de imóveis e espaços de trabalho (`src/components/property-map.tsx`)
+- **CAF** (verificação de inquilino) e **ZapSign** (contrato) — `src/lib/integrations`
+- **Zustand** (estado de sessão) · **lucide-react** (ícones)
+
+Todas as integrações têm **fallback de modo demonstração**: sem as chaves de ambiente, a app
+roda com dados/respostas simulados e as chamadas reais só disparam quando as env existem.
 
 ## Rodando localmente
 
@@ -69,10 +73,20 @@ contratos, garantias, cotações de seguro, verificações CAF e transações de
 | 7. Detalhe do imóvel (abas + Open Graph) | ✅ |
 | 8. Dashboards (proprietário/inquilino) | ✅ |
 | 9. Mensagens e leads | ✅ |
-| 10. Assinatura Stripe e serviços | ✅ UI (integração pendente de chaves) |
+| 10. Assinatura (Asaas — PIX/boleto/cartão) e serviços | ✅ |
 | 11. Páginas de cidade (SEO) | ✅ |
 | 12. Admin | ✅ |
-| Seção 8 — verificação CAF, garantia, contrato ZapSign | ⏳ próximos passos |
+| Seção 8 — verificação CAF, garantia, contrato ZapSign | ✅ |
+
+## Rotas de API
+
+| Rota | Função |
+|---|---|
+| `POST /api/assinatura` | Cria assinatura recorrente (Asaas) — PIX/boleto/cartão |
+| `POST /api/webhooks/asaas` | Webhook de confirmação de pagamento |
+| `POST /api/caf/verify` | Verificação de inquilino (CAF) → laudo de semáforo |
+| `POST /api/contrato` | Geração de contrato de temporada (ZapSign) |
+| `GET /auth/callback` | Troca de código OAuth/magic-link por sessão (Supabase) |
 
 A plataforma é **conectadora** — não é locadora, fiadora nem garantidora, e não intermedeia
 o pagamento do aluguel (vai direto ao proprietário).

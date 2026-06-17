@@ -124,8 +124,10 @@ create table leads (
 create table subscriptions (
   id uuid primary key default gen_random_uuid(),
   owner_id uuid not null references profiles (id) on delete cascade,
-  stripe_customer_id text,
-  stripe_subscription_id text,
+  gateway text not null default 'asaas', -- pagamento nativo BR (Asaas)
+  gateway_customer_id text,
+  gateway_subscription_id text,
+  billing_type text, -- PIX | BOLETO | CREDIT_CARD
   plan plan_type not null default 'free',
   status text,
   current_period_end timestamptz

@@ -16,7 +16,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { PERSONAS } from "@/lib/constants";
-import { SAMPLE_PROPERTIES } from "@/lib/properties";
+import { listProperties } from "@/lib/data/properties";
 import { ButtonLink } from "@/components/ui/button";
 import { WorkReadyBadge } from "@/components/ui/badge";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
@@ -30,8 +30,8 @@ const PERSONA_ICONS: Record<string, React.ComponentType<{ className?: string }>>
   Laptop,
 };
 
-export default function HomePage() {
-  const featured = SAMPLE_PROPERTIES.slice(0, 3);
+export default async function HomePage() {
+  const featured = (await listProperties()).slice(0, 3);
 
   return (
     <>

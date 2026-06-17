@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getPropertiesByCity } from "@/lib/properties";
+import { listPropertiesByCity } from "@/lib/data/properties";
 import { cityFromSlug } from "@/lib/utils";
 import { CITIES } from "@/lib/constants";
 import { PropertyCard } from "@/components/property-card";
@@ -30,7 +30,7 @@ export function generateStaticParams() {
 export default async function CityLandingPage({ params }: Params) {
   const { cidade } = await params;
   const name = cityFromSlug(cidade);
-  const properties = getPropertiesByCity(name);
+  const properties = await listPropertiesByCity(name);
 
   return (
     <>

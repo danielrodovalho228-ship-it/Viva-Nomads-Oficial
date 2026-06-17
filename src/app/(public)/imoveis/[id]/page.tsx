@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getPropertyById, SAMPLE_PROPERTIES } from "@/lib/properties";
+import { SAMPLE_PROPERTIES } from "@/lib/properties";
+import { getProperty, listProperties } from "@/lib/data/properties";
 import { formatBRL } from "@/lib/utils";
 import { PropertyDetail } from "./property-detail";
 
@@ -10,7 +11,7 @@ interface Params {
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { id } = await params;
-  const property = getPropertyById(id);
+  const property = await getProperty(id);
   if (!property) return { title: "Imóvel não encontrado" };
 
   const title = `${property.title} — ${formatBRL(property.monthlyPrice)}/mês`;
@@ -37,9 +38,9 @@ export function generateStaticParams() {
 
 export default async function PropertyDetailPage({ params }: Params) {
   const { id } = await params;
-  const property = getPropertyById(id);
+  const property = await getProperty(id);
   if (!property) notFound();
 
-  const similar = SAMPLE_PROPERTIES.filter((p) => p.id !== property.id).slice(0, 3);
+  const similar = (await listProperties()).filter((p) => p.id !== property.id).slice(0, 3);
   return <PropertyDetail property={property} similar={similar} />;
 }

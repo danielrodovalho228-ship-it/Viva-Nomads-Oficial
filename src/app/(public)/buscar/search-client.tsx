@@ -1,10 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { MapPin, SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { PropertyCard } from "@/components/property-card";
-import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
+import { PropertyMap } from "@/components/property-map";
 import { formatBRL } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
@@ -112,24 +112,20 @@ export function SearchClient({ properties }: { properties: Property[] }) {
           )}
         </div>
 
-        {/* Mapa — placeholder até integrar Mapbox/Google Maps (Fase 6) */}
+        {/* Mapa Mapbox com marcadores de preço (Fase 6) */}
         <div className="hidden lg:col-span-2 lg:block">
-          <div className="sticky top-20 overflow-hidden rounded-2xl border border-sage-200">
-            <PhotoPlaceholder
-              label="[MAPA — marcadores de preço dos imóveis (Mapbox/Google Maps)]"
-              className="h-[600px] w-full"
+          <div className="sticky top-20">
+            <PropertyMap
+              className="h-[600px] w-full border border-sage-200"
+              markers={results.map((p) => ({
+                id: p.id,
+                lat: p.lat,
+                lng: p.lng,
+                label: formatBRL(p.monthlyPrice),
+                kind: "property",
+              }))}
+              placeholderLabel="[MAPA — marcadores de preço (configure NEXT_PUBLIC_MAPBOX_TOKEN)]"
             />
-            <div className="absolute inset-x-0 bottom-0 flex flex-wrap gap-2 bg-gradient-to-t from-black/30 to-transparent p-3">
-              {results.slice(0, 4).map((p) => (
-                <span
-                  key={p.id}
-                  className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-forest shadow"
-                >
-                  <MapPin className="h-3 w-3" />
-                  {formatBRL(p.monthlyPrice)}
-                </span>
-              ))}
-            </div>
           </div>
         </div>
       </div>

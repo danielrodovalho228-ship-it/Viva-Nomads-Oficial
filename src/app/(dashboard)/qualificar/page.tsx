@@ -22,6 +22,7 @@ import {
 } from "@/lib/qualification";
 import { Button } from "@/components/ui/button";
 import { WorkReadyBadge } from "@/components/ui/badge";
+import { saveQualification } from "@/lib/data/actions";
 import { cn } from "@/lib/utils";
 
 const initialEligibility: EligibilityState = {
@@ -70,15 +71,20 @@ export default function QualificationChecklistPage() {
     setQuality((s) => ({ ...s, [key]: !s[key] }));
   }
 
-  function save() {
-    // Em produção: grava em qualification_checklists (Supabase) com
-    // eligible, work_score e status. Aqui registra a aprovação no fluxo demo.
+  const [saving, setSaving] = useState(false);
+
+  async function save() {
+    setSaving(true);
+    // Gating local do fluxo (libera /dashboard/imoveis/novo no modo demo).
     if (typeof window !== "undefined") {
       sessionStorage.setItem(
         "vivanomads-qualification",
         JSON.stringify({ eligible, score, workReady })
       );
     }
+    // Persiste no Supabase quando configurado (no-op em modo demonstração).
+    await saveQualification(elig, quality);
+    setSaving(false);
     setSaved(true);
   }
 
@@ -326,8 +332,8 @@ export default function QualificationChecklistPage() {
             <ArrowRight className="h-4 w-4" />
           </Button>
         ) : (
-          <Button disabled={!eligible} onClick={save}>
-            Salvar qualificação
+          <Button disabled={!eligible || saving} onClick={save}>
+            {saving ? "Salvando..." : "Salvar qualificação"}
           </Button>
         )}
       </div>

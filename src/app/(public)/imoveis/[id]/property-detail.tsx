@@ -21,6 +21,7 @@ import { WorkReadyBadge } from "@/components/ui/badge";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { PropertyCard } from "@/components/property-card";
+import { PropertyMap, type MapMarker } from "@/components/property-map";
 
 const TABS = [
   "Visão Geral",
@@ -52,6 +53,26 @@ export function PropertyDetail({
 }) {
   const [tab, setTab] = useState<(typeof TABS)[number]>("Visão Geral");
   const [activePhoto, setActivePhoto] = useState(0);
+
+  // Marcador do imóvel + marcadores dos espaços de trabalho próximos.
+  // Coords dos workspaces derivadas da distância (offset determinístico).
+  const propertyMarker: MapMarker = {
+    id: property.id,
+    lat: property.lat,
+    lng: property.lng,
+    label: "Imóvel",
+    kind: "property",
+  };
+  const workspaceMarkers: MapMarker[] = property.nearbyWorkspaces.map((w, i) => {
+    const offset = (w.distanceM / 111000) * (i % 2 === 0 ? 1 : -1);
+    return {
+      id: w.name,
+      lat: property.lat + offset,
+      lng: property.lng + offset * 0.8,
+      label: w.name,
+      kind: "workspace",
+    };
+  });
 
   return (
     <div className="container-page py-8">
@@ -176,9 +197,11 @@ export function PropertyDetail({
                       );
                     })}
                   </ul>
-                  <PhotoPlaceholder
-                    label="[MAPA — imóvel + coworkings e salas próximas]"
-                    className="mt-4 aspect-[16/9] w-full rounded-2xl"
+                  <PropertyMap
+                    className="mt-4 aspect-[16/9] w-full"
+                    center={{ lat: property.lat, lng: property.lng }}
+                    markers={[propertyMarker, ...workspaceMarkers]}
+                    placeholderLabel="[MAPA — imóvel + coworkings e salas próximas]"
                   />
                 </div>
               </div>
@@ -198,9 +221,11 @@ export function PropertyDetail({
             )}
 
             {tab === "Localização" && (
-              <PhotoPlaceholder
-                label={`[MAPA — ${property.neighborhood}, ${property.city}]`}
-                className="aspect-[16/9] w-full rounded-2xl"
+              <PropertyMap
+                className="aspect-[16/9] w-full"
+                center={{ lat: property.lat, lng: property.lng }}
+                markers={[propertyMarker]}
+                placeholderLabel={`[MAPA — ${property.neighborhood}, ${property.city}]`}
               />
             )}
 

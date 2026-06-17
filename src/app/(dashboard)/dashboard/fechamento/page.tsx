@@ -36,19 +36,12 @@ const STEPS = ["Candidatura & CAF", "Garantia", "Cotação", "Patrimonial", "Con
 const TENANT = { name: "Ana Carvalho", profile: "Médica · residência", foreigner: false };
 const PROPERTY = { title: "Apto mobiliado · Santa Mônica", monthlyRent: 3200, term: 12 };
 
-const CAF_RESULT: CafResult = {
-  light: "green",
-  identity: true,
-  liveness: true,
-  document: true,
-  coversForeigners: true,
-  notes: ["Identidade confirmada", "Prova de vida aprovada", "Sem execuções fiscais relevantes"],
-};
-
 export default function ClosingPage() {
   const [step, setStep] = useState(0);
   const [verified, setVerified] = useState(false);
   const [verifying, setVerifying] = useState(false);
+  const [cafResult, setCafResult] = useState<CafResult | null>(null);
+  const [signUrl, setSignUrl] = useState<string | null>(null);
   const [guarantee, setGuarantee] = useState<GuaranteeType | null>(null);
   const [insurer, setInsurer] = useState<Insurer | null>(null);
   const [patrimonial, setPatrimonial] = useState<boolean | null>(null);
@@ -76,12 +69,43 @@ export default function ClosingPage() {
     });
   }
 
-  function runVerification() {
+  async function runVerification() {
     setVerifying(true);
-    setTimeout(() => {
-      setVerifying(false);
+    try {
+      const res = await fetch("/api/caf/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: TENANT.name }),
+      });
+      const data = (await res.json()) as CafResult;
+      setCafResult(data);
       setVerified(true);
-    }, 1100);
+    } finally {
+      setVerifying(false);
+    }
+  }
+
+  async function generateContract() {
+    try {
+      const res = await fetch("/api/contrato", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tenantName: TENANT.name,
+          ownerName: "Proprietário",
+          propertyTitle: PROPERTY.title,
+          monthlyRent: PROPERTY.monthlyRent,
+          termMonths: PROPERTY.term,
+          guarantee: GUARANTEE_OPTIONS.find((g) => g.id === guarantee)?.name ?? "",
+          costSplit: split,
+        }),
+      });
+      const data = await res.json();
+      setSignUrl(data.signUrl ?? null);
+      setGenerated(true);
+    } catch {
+      setGenerated(true);
+    }
   }
 
   const canAdvance =
@@ -141,7 +165,7 @@ export default function ClosingPage() {
                 </Button>
               </div>
             ) : (
-              <CafLaudo result={CAF_RESULT} />
+              cafResult && <CafLaudo result={cafResult} />
             )}
 
             <OwnerDecisionNotice />
@@ -344,11 +368,23 @@ export default function ClosingPage() {
             </div>
 
             {generated ? (
-              <div className="flex items-center gap-2 rounded-xl bg-sage-100 px-4 py-3 text-sm text-forest">
-                <FileCheck2 className="h-5 w-5" /> Contrato enviado para assinatura via ZapSign.
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 rounded-xl bg-sage-100 px-4 py-3 text-sm text-forest">
+                  <FileCheck2 className="h-5 w-5" /> Contrato enviado para assinatura via ZapSign.
+                </div>
+                {signUrl && (
+                  <a
+                    href={signUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-sm font-medium text-forest underline"
+                  >
+                    Abrir documento para assinatura
+                  </a>
+                )}
               </div>
             ) : (
-              <Button variant="gold" onClick={() => setGenerated(true)}>
+              <Button variant="gold" onClick={generateContract}>
                 <FileSignature className="h-4 w-4" /> Gerar contrato no ZapSign
               </Button>
             )}
@@ -369,7 +405,14 @@ export default function ClosingPage() {
               </p>
             </div>
             <div className="rounded-xl bg-surface-2 p-4 text-left text-sm">
-              <Row label="Inquilino verificado" value={`${TRAFFIC_LIGHT_META[CAF_RESULT.light].emoji} ${TRAFFIC_LIGHT_META[CAF_RESULT.light].label}`} />
+              <Row
+                label="Inquilino verificado"
+                value={
+                  cafResult
+                    ? `${TRAFFIC_LIGHT_META[cafResult.light].emoji} ${TRAFFIC_LIGHT_META[cafResult.light].label}`
+                    : "—"
+                }
+              />
               <Row label="Garantia" value={GUARANTEE_OPTIONS.find((g) => g.id === guarantee)?.name ?? "—"} />
               {insurer && <Row label="Seguradora" value={INSURERS.find((i) => i.id === insurer)?.name ?? "—"} />}
               <Row label="Seguro patrimonial" value={patrimonial ? "Contratado" : "Não contratado"} />
