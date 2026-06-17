@@ -22,7 +22,8 @@ import {
   LogOut,
 } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
-import { useAuthStore } from "@/lib/store";
+import { Avatar } from "@/components/ui/avatar";
+import { useAuthStore, DEMO_USER } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -64,7 +65,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { user, signOut } = useAuthStore();
 
-  const role = user?.role ?? "owner";
+  // Em modo demo (sem login), exibe uma identidade coerente (A5/A6).
+  const display = user ?? DEMO_USER;
+  const role = display.role;
   let nav = role === "tenant" ? TENANT_NAV : OWNER_NAV;
   if (role === "admin") nav = [...OWNER_NAV, ...ADMIN_NAV];
 
@@ -75,8 +78,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
   const sidebar = (
     <div className="flex h-full flex-col">
-      <div className="flex h-16 items-center border-b border-white/10 px-5">
-        <Logo light />
+      <div className="flex h-16 shrink-0 items-center overflow-hidden border-b border-white/10 px-4">
+        <Logo light className="max-w-full" />
       </div>
       <nav className="flex-1 space-y-1 p-3">
         {nav.map((item) => {
@@ -101,15 +104,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         })}
       </nav>
       <div className="border-t border-white/10 p-3">
-        <div className="px-3 py-2 text-xs text-white/60">
-          {user ? (
-            <>
-              <p className="font-medium text-white">{user.name}</p>
-              <p className="capitalize">{labelForRole(user.role)}</p>
-            </>
-          ) : (
-            <p>Modo demonstração</p>
-          )}
+        <div className="flex items-center gap-3 px-3 py-2">
+          <Avatar name={display.name} size={36} />
+          <div className="min-w-0 text-xs">
+            <p className="truncate font-medium text-white">{display.name}</p>
+            <p className="text-white/60">Conta: {labelForRole(role)}</p>
+          </div>
         </div>
         <button
           onClick={handleSignOut}

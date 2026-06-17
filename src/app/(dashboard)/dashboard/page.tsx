@@ -11,7 +11,7 @@ import {
   ClipboardCheck,
   ArrowRight,
 } from "lucide-react";
-import { useAuthStore } from "@/lib/store";
+import { useAuthStore, DEMO_USER } from "@/lib/store";
 import { StatCard, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { DashboardBanner } from "@/components/dashboard/banner";
 import { ButtonLink } from "@/components/ui/button";
@@ -21,9 +21,9 @@ import { formatBRL } from "@/lib/utils";
 import { WorkReadyBadge } from "@/components/ui/badge";
 
 export default function DashboardPage() {
-  const user = useAuthStore((s) => s.user);
-  const role = user?.role ?? "owner";
-  const firstName = user?.name?.split(" ")[0] ?? "visitante";
+  const user = useAuthStore((s) => s.user) ?? DEMO_USER;
+  const role = user.role;
+  const firstName = user.name.split(" ")[0];
 
   if (role === "tenant") return <TenantDashboard name={firstName} />;
   return <OwnerDashboard name={firstName} />;

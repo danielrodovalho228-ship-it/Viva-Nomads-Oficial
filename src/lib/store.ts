@@ -9,6 +9,14 @@ export interface SessionUser {
   role: UserRole;
 }
 
+/** Identidade de demonstração quando não há login (modo demo). */
+export const DEMO_USER: SessionUser = {
+  id: "demo-owner",
+  name: "Marcos Andrade",
+  email: "marcos@exemplo.com",
+  role: "owner",
+};
+
 interface AuthState {
   user: SessionUser | null;
   /** Define o usuário logado (modo demo ou pós-login Supabase). */

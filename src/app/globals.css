@@ -66,7 +66,8 @@ body {
 h1, h2, h3, h4, h5 {
   font-family: var(--font-title);
   letter-spacing: -0.02em;
-  line-height: 1.05;
+  line-height: 1.15; /* respiro p/ descidas (g, p, ç, j) — evita corte */
+  padding-bottom: 0.04em;
 }
 
 /* Form/controles não herdam font-family por padrão — força a fonte da marca */

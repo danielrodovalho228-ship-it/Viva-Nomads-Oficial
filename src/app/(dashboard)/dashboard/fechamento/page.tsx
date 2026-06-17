@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
   ShieldCheck,
@@ -77,17 +78,49 @@ export default function ClosingPage() {
 
   async function runVerification() {
     setVerifying(true);
+    // Laudo de demonstração — usado se a API falhar, garantindo que o semáforo
+    // sempre apareça e o fluxo possa avançar (A4).
+    const demo: CafResult = {
+      light: "green",
+      identity: true,
+      liveness: true,
+      document: true,
+      coversForeigners: true,
+      notes: [
+        "Identidade confirmada",
+        "Prova de vida aprovada",
+        "Sem execuções fiscais relevantes",
+      ],
+    };
     try {
       const res = await fetch("/api/caf/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: TENANT.name }),
       });
-      const data = (await res.json()) as CafResult;
-      setCafResult(data);
-      setVerified(true);
+      const data = res.ok ? ((await res.json()) as CafResult) : demo;
+      setCafResult(data?.light ? data : demo);
+    } catch {
+      setCafResult(demo);
     } finally {
+      setVerified(true);
       setVerifying(false);
+    }
+  }
+
+  // Etapas do stepper já alcançadas são clicáveis (A4).
+  const maxReached = useMemo(() => {
+    if (!verified) return 0;
+    if (!guarantee) return 1;
+    if (guarantee === "seguro_fianca" && !insurer) return 2;
+    if (patrimonial === null) return 3;
+    return 5;
+  }, [verified, guarantee, insurer, patrimonial]);
+
+  function goToStep(target: number) {
+    if (target <= maxReached) {
+      if (target === 2 && guarantee !== "seguro_fianca") return; // cotação só p/ seguro
+      setStep(target);
     }
   }
 
@@ -135,27 +168,47 @@ export default function ClosingPage() {
     <div className="mx-auto max-w-2xl">
       <PageTitle
         title="Fechamento"
-        subtitle={`${TENANT.name} → ${PROPERTY.title}`}
+        subtitle="Conta: Proprietário · você está fechando uma candidatura"
       />
 
-      {/* Stepper */}
+      {/* Identificação clara dos papéis (A6) */}
+      <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-line bg-white px-4 py-3 text-sm">
+        <span className="rounded-full bg-blue-50 px-2.5 py-1 font-medium text-blue-700">
+          Inquilino: {TENANT.name}
+        </span>
+        <span className="text-muted">{TENANT.profile}</span>
+        <ArrowRight className="h-4 w-4 text-muted" />
+        <span className="rounded-full bg-surface-2 px-2.5 py-1 font-medium text-ink">
+          {PROPERTY.title}
+        </span>
+      </div>
+
+      {/* Stepper (passos alcançados são clicáveis — A4) */}
       <div className="mb-6 flex items-center gap-2 overflow-x-auto pb-2">
-        {STEPS.map((s, i) => (
-          <div
-            key={s}
-            className={cn(
-              "flex items-center gap-2 rounded-full px-3 py-1.5 text-sm whitespace-nowrap",
-              i === step
-                ? "bg-forest text-white"
-                : i < step
-                  ? "bg-sage-100 text-forest"
-                  : "bg-surface-2 text-muted"
-            )}
-          >
-            {i < step ? <Check className="h-4 w-4" /> : <span>{i + 1}</span>}
-            {s}
-          </div>
-        ))}
+        {STEPS.map((s, i) => {
+          const reachable = i <= maxReached && !(i === 2 && guarantee !== "seguro_fianca");
+          return (
+            <button
+              key={s}
+              type="button"
+              onClick={() => goToStep(i)}
+              disabled={!reachable}
+              className={cn(
+                "flex items-center gap-2 rounded-full px-3 py-1.5 text-sm whitespace-nowrap transition-colors",
+                i === step
+                  ? "bg-forest text-white"
+                  : i < step
+                    ? "bg-sage-100 text-forest hover:bg-blue-100"
+                    : reachable
+                      ? "bg-surface-2 text-ink hover:bg-blue-50"
+                      : "bg-surface-2 text-muted opacity-60"
+              )}
+            >
+              {i < step ? <Check className="h-4 w-4" /> : <span>{i + 1}</span>}
+              {s}
+            </button>
+          );
+        })}
       </div>
 
       <Panel>
@@ -283,7 +336,10 @@ export default function ClosingPage() {
             {quote && (
               <div className="rounded-xl bg-surface-2 p-4 text-sm text-ink">
                 Custo anual aproximado: <strong>{formatBRL(quote.annualCost)}</strong> (parcelável).
-                Beneficiário: o proprietário.
+                <p className="mt-1 text-muted">
+                  💰 Pago pelo <strong className="text-ink">inquilino</strong>. Beneficiário:
+                  o <strong className="text-ink">proprietário</strong>.
+                </p>
               </div>
             )}
           </div>
@@ -410,6 +466,15 @@ export default function ClosingPage() {
                   <span>{formatBRL(OWNER_NET)}</span>
                 </div>
               </div>
+              {/* Incentivo de upgrade (A7) */}
+              <p className="mt-3 border-t border-champagne/40 pt-3 text-xs text-muted">
+                Sua comissão é {Math.round(COMMISSION_RATE * 100)}% (plano Essencial). No plano{" "}
+                <strong className="text-ink">Profissional</strong> seria{" "}
+                {Math.round(COMMISSION_BY_PLAN.pro * 100)}%.{" "}
+                <Link href="/dashboard/assinatura" className="font-medium text-blue-500 hover:text-blue-700">
+                  Fazer upgrade →
+                </Link>
+              </p>
             </div>
 
             {generated ? (

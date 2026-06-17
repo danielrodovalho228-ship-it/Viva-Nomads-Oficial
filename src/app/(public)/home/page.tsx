@@ -53,7 +53,7 @@ export default async function HomePage() {
               <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
               Locação por temporada · 30 a 180 dias
             </span>
-            <h1 className="mt-6 font-title font-extrabold leading-[0.98] display-xl">
+            <h1 className="mt-6 font-title font-extrabold leading-[1.05] display-xl">
               Moradia mobiliada para a sua{" "}
               <span className="text-gradient-brand">nova fase</span> em Uberlândia
             </h1>
