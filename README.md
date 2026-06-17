@@ -92,8 +92,26 @@ para o futuro app. Health-check em `GET /api/health`.
 | `POST /api/webhooks/asaas` | Webhook de confirmação de pagamento |
 | `POST /api/caf/verify` | Verificação de inquilino (CAF) → laudo de semáforo |
 | `POST /api/contrato` | Geração de contrato de temporada (ZapSign) |
+| `POST /api/comissao` | Split da comissão de fechamento (Asaas) sobre o 1º mês |
+| `POST /api/subconta` | Cria subconta Asaas do proprietário (walletId p/ split) |
+| `POST /api/nfse` | Emite NFS-e de receita da plataforma (Focus NFe/PlugNotas) |
 | `GET /auth/callback` | Troca de código OAuth/magic-link por sessão (Supabase) |
 | `GET /api/health` | Health-check + status das integrações |
+
+## Integrações (todas com fallback de modo demonstração)
+
+| Função | API | Onde |
+|---|---|---|
+| Banco/Auth/Storage | Supabase | `src/lib/supabase`, `src/lib/data` |
+| Pagamento (assinatura + split + subcontas) | Asaas | `src/lib/payments/asaas.ts` |
+| Verificação de inquilino | CAF | `src/lib/integrations/caf.ts` |
+| Contrato digital | ZapSign | `src/lib/integrations/zapsign.ts` |
+| Mapa | Mapbox | `src/components/property-map.tsx` |
+| Espaços de trabalho próximos | Google Places | `src/lib/integrations/places.ts` |
+| E-mail transacional | Resend | `src/lib/notifications/email.ts` |
+| WhatsApp | Z-API | `src/lib/notifications/whatsapp.ts` |
+| NFS-e (plataforma) | Focus NFe / PlugNotas | `src/lib/integrations/nfse.ts` |
+| Seguro-fiança | Porto / Junto | `src/lib/closing.ts` |
 
 A plataforma é **conectadora** — não é locadora, fiadora nem garantidora, e não intermedeia
 o pagamento do aluguel (vai direto ao proprietário).

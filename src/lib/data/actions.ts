@@ -3,6 +3,9 @@
 import { createClient } from "@/lib/supabase/server";
 import type { EligibilityState, QualityState } from "@/lib/qualification";
 import { isEligible, computeScore } from "@/lib/qualification";
+import { findNearbyWorkspaces } from "@/lib/integrations/places";
+import { createSubaccount } from "@/lib/payments/asaas";
+import { notify } from "@/lib/notifications";
 
 type ActionResult = { ok: boolean; demo?: boolean; id?: string; error?: string };
 
@@ -71,6 +74,8 @@ export async function createProperty(input: {
   utilitiesEstimate?: number;
   issuesInvoice?: boolean;
   acceptsInsurance?: boolean;
+  lat?: number;
+  lng?: number;
   photoUrls?: string[];
 }): Promise<ActionResult> {
   const supabase = await createClient();
@@ -119,6 +124,21 @@ export async function createProperty(input: {
     );
   }
 
+  // Mapeia espaços de trabalho próximos (Google Places) — sustenta o selo de trabalho.
+  if (typeof input.lat === "number" && typeof input.lng === "number") {
+    const spaces = await findNearbyWorkspaces({ lat: input.lat, lng: input.lng });
+    if (spaces.length > 0) {
+      await supabase.from("property_workspaces").insert(
+        spaces.map((w) => ({
+          property_id: data.id,
+          name: w.name,
+          type: w.type,
+          distance_m: w.distanceM,
+        }))
+      );
+    }
+  }
+
   return { ok: true, id: data.id };
 }
 
@@ -165,5 +185,51 @@ export async function createLead(propertyId: string, ownerId: string): Promise<A
     .from("leads")
     .insert({ property_id: propertyId, owner_id: ownerId, tenant_id: user.id, status: "new" });
   if (error) return { ok: false, error: error.message };
+
+  // Notifica o proprietário (e-mail/WhatsApp) — sem isso o funil vaza.
+  const { data: owner } = await supabase
+    .from("profiles")
+    .select("full_name, email, phone")
+    .eq("id", ownerId)
+    .single();
+  if (owner) {
+    await notify({
+      event: "new_lead",
+      email: owner.email ?? undefined,
+      phone: owner.phone ?? undefined,
+      name: owner.full_name ?? undefined,
+    });
+  }
   return { ok: true };
+}
+
+/**
+ * Cria a subconta Asaas do proprietário aprovado (walletId p/ split) e guarda
+ * em payment_accounts. ⚠️ a apiKey deve ser persistida criptografada.
+ */
+export async function createOwnerSubaccount(input: {
+  ownerId: string;
+  name: string;
+  email: string;
+  cpfCnpj: string;
+  phone?: string;
+}): Promise<ActionResult> {
+  const supabase = await createClient();
+  const sub = await createSubaccount({
+    name: input.name,
+    email: input.email,
+    cpfCnpj: input.cpfCnpj,
+    mobilePhone: input.phone,
+  });
+  if (!supabase) return { ok: true, demo: true, id: sub.walletId };
+
+  const { error } = await supabase.from("payment_accounts").upsert({
+    owner_id: input.ownerId,
+    gateway: "asaas",
+    asaas_wallet_id: sub.walletId,
+    asaas_subaccount_apikey: sub.apiKey, // em produção: criptografar antes de gravar
+    status: sub.status,
+  });
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, id: sub.walletId };
 }
