@@ -67,6 +67,10 @@ export async function createProperty(input: {
   minPeriodDays: number;
   monthlyPrice: number;
   workScore: number;
+  utilitiesMode?: "fixed" | "real";
+  utilitiesEstimate?: number;
+  issuesInvoice?: boolean;
+  acceptsInsurance?: boolean;
   photoUrls?: string[];
 }): Promise<ActionResult> {
   const supabase = await createClient();
@@ -94,6 +98,10 @@ export async function createProperty(input: {
       status: "draft",
       work_score: input.workScore,
       work_ready_badge: input.workScore >= 70,
+      utilities_mode: input.utilitiesMode ?? "fixed",
+      utilities_estimate: input.utilitiesEstimate ?? 0,
+      issues_invoice: input.issuesInvoice ?? false,
+      accepts_insurance: input.acceptsInsurance ?? false,
     })
     .select("id")
     .single();

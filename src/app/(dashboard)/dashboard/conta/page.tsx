@@ -31,6 +31,36 @@ export default function AccountPage() {
         </div>
       )}
 
+      {user?.role === "tenant" && (
+        <Panel title="Perfil profissional" className="mt-6">
+          <p className="text-sm text-muted">
+            Estes dados ajudam o proprietário a conhecer você. Complementam o laudo CAF — não
+            o substituem.
+          </p>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <label className="block">
+              <span className="mb-1.5 block text-sm font-medium text-ink">Categoria profissional</span>
+              <select className="w-full rounded-xl border border-sage-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-sage">
+                <option>Médico / saúde</option>
+                <option>Executivo / corporativo</option>
+                <option>Nômade digital / remoto</option>
+                <option>Estudante / intercâmbio</option>
+                <option>Outro</option>
+              </select>
+            </label>
+            <label className="block">
+              <span className="mb-1.5 block text-sm font-medium text-ink">LinkedIn (opcional)</span>
+              <input
+                type="url"
+                placeholder="https://linkedin.com/in/seu-perfil"
+                className="w-full rounded-xl border border-sage-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-sage"
+              />
+            </label>
+          </div>
+          <Button className="mt-4">Salvar perfil</Button>
+        </Panel>
+      )}
+
       <Panel title="Verificação" className="mt-6">
         <p className="text-sm text-muted">
           Complete a verificação de identidade para gerar mais confiança. Progresso atual:{" "}

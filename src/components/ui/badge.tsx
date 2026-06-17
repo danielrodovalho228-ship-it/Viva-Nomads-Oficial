@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Award } from "lucide-react";
+import { Award, FileText, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /** Selo dourado "Pronto para Trabalho" — diferencial visual do Viva Nomads. */
@@ -13,6 +13,36 @@ export function WorkReadyBadge({ className }: { className?: string }) {
     >
       <Award className="h-3.5 w-3.5" aria-hidden />
       Pronto para Trabalho
+    </span>
+  );
+}
+
+/** Selo "Emite Nota Fiscal" (Atualização 7) — decisivo para o público corporativo. */
+export function InvoiceBadge({ className }: { className?: string }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full bg-forest px-2.5 py-1 text-xs font-semibold text-white shadow-sm",
+        className
+      )}
+    >
+      <FileText className="h-3.5 w-3.5" aria-hidden />
+      Emite Nota Fiscal
+    </span>
+  );
+}
+
+/** Selo "Aceita Seguro-Fiança" (Atualização 10) — sinaliza segurança. */
+export function InsuranceBadge({ className }: { className?: string }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full bg-sage px-2.5 py-1 text-xs font-semibold text-white shadow-sm",
+        className
+      )}
+    >
+      <ShieldCheck className="h-3.5 w-3.5" aria-hidden />
+      Aceita Seguro-Fiança
     </span>
   );
 }

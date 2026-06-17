@@ -14,12 +14,15 @@ import {
   CalendarCheck,
   MessageSquare,
   FileSignature,
+  Star,
+  FileText,
+  MapPinned,
 } from "lucide-react";
 import type { Property, WorkspaceType } from "@/lib/types";
 import { formatBRL, cn } from "@/lib/utils";
-import { WorkReadyBadge } from "@/components/ui/badge";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
 import { Button, ButtonLink } from "@/components/ui/button";
+import { WorkReadyBadge, InvoiceBadge, InsuranceBadge } from "@/components/ui/badge";
 import { PropertyCard } from "@/components/property-card";
 import { PropertyMap, type MapMarker } from "@/components/property-map";
 
@@ -43,6 +46,12 @@ const WORKSPACE_LABEL: Record<WorkspaceType, string> = {
   meeting_room: "Sala de reunião",
   cafe: "Café de trabalho",
 };
+
+/** Avaliações de exemplo (Atualização 10) — virão de `reviews` no Supabase. */
+const SAMPLE_REVIEWS = [
+  { author: "Carlos M.", rating: 5, comment: "Imóvel impecável e proprietário atencioso. Contrato e nota fiscal sem dor de cabeça." },
+  { author: "Fernanda R.", rating: 4.5, comment: "Ótimo para trabalhar de casa. Internet excelente e tudo mobiliado como anunciado." },
+];
 
 export function PropertyDetail({
   property,
@@ -113,6 +122,17 @@ export function PropertyDetail({
             {property.state}
           </div>
           <h1 className="mt-2 font-title text-3xl font-extrabold text-ink">{property.title}</h1>
+
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {property.reviewCount > 0 && (
+              <span className="inline-flex items-center gap-1 text-sm font-medium text-forest">
+                <Star className="h-4 w-4 fill-champagne text-champagne" />
+                {property.rating.toFixed(1)} · {property.reviewCount} avaliações
+              </span>
+            )}
+            {property.issuesInvoice && <InvoiceBadge />}
+            {property.acceptsInsurance && <InsuranceBadge />}
+          </div>
 
           <div className="mt-4 flex flex-wrap gap-5 text-sm text-muted">
             <span className="inline-flex items-center gap-1.5">
@@ -230,14 +250,55 @@ export function PropertyDetail({
             )}
 
             {tab === "Proprietário" && (
-              <div className="flex items-center gap-4 rounded-xl border border-sage-200 p-5">
-                <div className="grid h-14 w-14 place-items-center rounded-full bg-sage-100 font-title text-lg font-bold text-forest">
-                  {property.ownerName.charAt(0)}
+              <div className="space-y-4">
+                <div className="flex items-center gap-4 rounded-xl border border-sage-200 p-5">
+                  <div className="grid h-14 w-14 place-items-center rounded-full bg-sage-100 font-title text-lg font-bold text-forest">
+                    {property.ownerName.charAt(0)}
+                  </div>
+                  <div>
+                    <p className="font-title font-bold text-ink">{property.ownerName}</p>
+                    <p className="text-sm text-muted">
+                      Proprietário verificado · responde rápido
+                    </p>
+                    {property.reviewCount > 0 && (
+                      <p className="mt-1 inline-flex items-center gap-1 text-sm text-forest">
+                        <Star className="h-4 w-4 fill-champagne text-champagne" />
+                        {property.rating.toFixed(1)} ({property.reviewCount} avaliações)
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <p className="font-title font-bold text-ink">{property.ownerName}</p>
-                  <p className="text-sm text-muted">Proprietário verificado · responde rápido</p>
-                </div>
+                {/* O que o inquilino vê do proprietário (Atualização 9) */}
+                <ul className="grid gap-2 sm:grid-cols-2 text-sm">
+                  <li className="flex items-center gap-2">
+                    <Check className={cn("h-4 w-4", property.issuesInvoice ? "text-sage" : "text-muted")} />
+                    {property.issuesInvoice ? "Emite Nota Fiscal" : "Não emite Nota Fiscal"}
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className={cn("h-4 w-4", property.acceptsInsurance ? "text-sage" : "text-muted")} />
+                    {property.acceptsInsurance ? "Aceita seguro-fiança" : "Não aceita seguro-fiança"}
+                  </li>
+                </ul>
+
+                {/* Avaliações de inquilinos anteriores (Atualização 10) */}
+                {property.reviewCount > 0 && (
+                  <div>
+                    <h4 className="font-title font-bold text-ink">Avaliações de inquilinos</h4>
+                    <div className="mt-3 space-y-3">
+                      {SAMPLE_REVIEWS.map((r) => (
+                        <div key={r.author} className="rounded-xl border border-sage-200 p-4">
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium text-ink">{r.author}</span>
+                            <span className="inline-flex items-center gap-1 text-sm text-forest">
+                              <Star className="h-4 w-4 fill-champagne text-champagne" /> {r.rating.toFixed(1)}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-sm text-muted">{r.comment}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -252,7 +313,32 @@ export function PropertyDetail({
               </span>
               <span className="text-muted">/mês</span>
             </div>
-            <p className="mt-1 inline-flex items-center gap-1.5 text-sm text-sage">
+            {/* Despesas de consumo (Atualização 6) — transparência */}
+            <div className="mt-2 rounded-lg bg-surface-2 px-3 py-2 text-sm">
+              {property.utilitiesMode === "fixed" && property.utilitiesEstimate > 0 ? (
+                <p className="text-ink">
+                  + consumo estimado{" "}
+                  <strong>{formatBRL(property.utilitiesEstimate)}</strong>/mês
+                  <span className="block text-xs text-muted">
+                    Água, luz e gás em valor fixo no contrato (ajuste se exceder{" "}
+                    {property.utilitiesOverageMargin}%).
+                  </span>
+                </p>
+              ) : (
+                <p className="text-ink">
+                  + consumo conforme medição
+                  <span className="block text-xs text-muted">
+                    Contas repassadas ao inquilino mediante comprovante.
+                  </span>
+                </p>
+              )}
+              {property.issuesInvoice && (
+                <p className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-forest">
+                  <FileText className="h-3.5 w-3.5" /> Emite Nota Fiscal do aluguel
+                </p>
+              )}
+            </div>
+            <p className="mt-2 inline-flex items-center gap-1.5 text-sm text-sage">
               <span className="h-2 w-2 rounded-full bg-sage" /> Disponível agora
             </p>
 
@@ -268,7 +354,12 @@ export function PropertyDetail({
               </Button>
             </div>
 
-            <p className="mt-4 text-center text-xs text-muted">
+            <p className="mt-4 flex items-start gap-1.5 text-xs text-muted">
+              <MapPinned className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              Endereço exato liberado após o aceite da candidatura. Antes, mostramos a região
+              aproximada ({property.neighborhood}).
+            </p>
+            <p className="mt-3 text-center text-xs text-muted">
               O pagamento do aluguel é feito direto ao proprietário. A plataforma conecta e
               documenta — não intermedeia a transação.
             </p>

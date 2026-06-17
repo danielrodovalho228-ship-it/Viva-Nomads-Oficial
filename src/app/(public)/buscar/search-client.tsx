@@ -13,6 +13,8 @@ export function SearchClient({ properties }: { properties: Property[] }) {
   const [minBedrooms, setMinBedrooms] = useState(0);
   const [maxPeriod, setMaxPeriod] = useState(0); // período mínimo aceito <= X
   const [workReadyOnly, setWorkReadyOnly] = useState(false);
+  const [invoiceOnly, setInvoiceOnly] = useState(false);
+  const [insuranceOnly, setInsuranceOnly] = useState(false);
   const [sort, setSort] = useState<"relevance" | "price-asc" | "price-desc">("relevance");
 
   const results = useMemo(() => {
@@ -21,12 +23,14 @@ export function SearchClient({ properties }: { properties: Property[] }) {
       if (minBedrooms && p.bedrooms < minBedrooms) return false;
       if (maxPeriod && p.minPeriodDays > maxPeriod) return false;
       if (workReadyOnly && !p.workReadyBadge) return false;
+      if (invoiceOnly && !p.issuesInvoice) return false;
+      if (insuranceOnly && !p.acceptsInsurance) return false;
       return true;
     });
     if (sort === "price-asc") list = [...list].sort((a, b) => a.monthlyPrice - b.monthlyPrice);
     if (sort === "price-desc") list = [...list].sort((a, b) => b.monthlyPrice - a.monthlyPrice);
     return list;
-  }, [properties, maxPrice, minBedrooms, maxPeriod, workReadyOnly, sort]);
+  }, [properties, maxPrice, minBedrooms, maxPeriod, workReadyOnly, invoiceOnly, insuranceOnly, sort]);
 
   return (
     <div className="container-page py-8">
@@ -77,6 +81,30 @@ export function SearchClient({ properties }: { properties: Property[] }) {
           )}
         >
           🏆 Apenas Pronto para Trabalho
+        </button>
+
+        <button
+          onClick={() => setInvoiceOnly((v) => !v)}
+          className={cn(
+            "rounded-full border px-4 py-2 text-sm font-medium transition-colors",
+            invoiceOnly
+              ? "border-forest bg-forest text-white"
+              : "border-sage-200 bg-white text-ink hover:border-sage"
+          )}
+        >
+          📄 Apenas com Nota Fiscal
+        </button>
+
+        <button
+          onClick={() => setInsuranceOnly((v) => !v)}
+          className={cn(
+            "rounded-full border px-4 py-2 text-sm font-medium transition-colors",
+            insuranceOnly
+              ? "border-sage bg-sage text-white"
+              : "border-sage-200 bg-white text-ink hover:border-sage"
+          )}
+        >
+          🛡️ Aceita Seguro-Fiança
         </button>
 
         <div className="ml-auto">

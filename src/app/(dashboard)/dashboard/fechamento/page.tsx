@@ -383,6 +383,16 @@ export default function ClosingPage() {
               />
             </div>
 
+            {/* Regime de consumo no contrato (Atualização 6) */}
+            <div className="rounded-xl border border-sage-200 p-4 text-sm">
+              <p className="font-medium text-ink">Despesas de consumo</p>
+              <p className="mt-1 text-muted">
+                Regime: <strong>valor fixo estimado</strong> de {formatBRL(280)}/mês, com
+                cláusula de ajuste se o consumo exceder 20%. A cobrança complementar (com
+                comprovante) é registrada pela plataforma — não intermediada.
+              </p>
+            </div>
+
             {/* Comissão de fechamento (split sobre o 1º mês) */}
             <div className="rounded-xl border border-champagne/40 bg-champagne/10 p-4 text-sm">
               <p className="font-title font-bold text-forest">
@@ -457,6 +467,10 @@ export default function ClosingPage() {
                 value={`${formatBRL(PLATFORM_COMMISSION)} · líquido ao dono ${formatBRL(OWNER_NET)}`}
               />
             </div>
+            <p className="rounded-lg bg-sage-100 px-3 py-2 text-left text-sm text-forest">
+              ⭐ Ao fim da locação, você e o inquilino poderão se avaliar — construindo
+              reputação na plataforma (Proprietário e Inquilino Verificados).
+            </p>
             <PlatformLegalNotice className="text-left" />
           </div>
         )}

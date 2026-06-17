@@ -19,6 +19,10 @@ export default function NewPropertyPage() {
   const [aiLoading, setAiLoading] = useState(false);
   const [title, setTitle] = useState("");
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
+  const [utilitiesMode, setUtilitiesMode] = useState<"fixed" | "real">("fixed");
+  const [utilitiesEstimate, setUtilitiesEstimate] = useState(200);
+  const [issuesInvoice, setIssuesInvoice] = useState(false);
+  const [acceptsInsurance, setAcceptsInsurance] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
   const router = useRouter();
@@ -45,6 +49,10 @@ export default function NewPropertyPage() {
       minPeriodDays: 30,
       monthlyPrice: 0,
       workScore,
+      utilitiesMode,
+      utilitiesEstimate,
+      issuesInvoice,
+      acceptsInsurance,
       photoUrls: photos.map((p) => p.url),
     });
 
@@ -214,6 +222,65 @@ export default function NewPropertyPage() {
                 <option value="180">180 dias</option>
               </select>
             </Labeled>
+
+            {/* Despesas de consumo (Atualização 6) */}
+            <div className="rounded-xl border border-sage-200 p-4">
+              <p className="text-sm font-medium text-ink">Despesas de consumo (água, luz, gás)</p>
+              <div className="mt-2 flex gap-2">
+                {(["fixed", "real"] as const).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setUtilitiesMode(m)}
+                    className={cn(
+                      "flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors",
+                      utilitiesMode === m
+                        ? "border-forest bg-forest text-white"
+                        : "border-sage-200 text-ink hover:border-sage"
+                    )}
+                  >
+                    {m === "fixed" ? "Valor fixo estimado" : "Consumo real"}
+                  </button>
+                ))}
+              </div>
+              {utilitiesMode === "fixed" && (
+                <div className="mt-3 grid grid-cols-2 gap-3">
+                  <Labeled label="Estimativa (R$/mês)">
+                    <input
+                      type="number"
+                      min={0}
+                      value={utilitiesEstimate || ""}
+                      onChange={(e) => setUtilitiesEstimate(Number(e.target.value))}
+                      className="input"
+                      placeholder="200"
+                    />
+                  </Labeled>
+                  <Labeled label="Margem de ajuste (%)">
+                    <input type="number" min={0} defaultValue={20} className="input" />
+                  </Labeled>
+                </div>
+              )}
+              <p className="mt-2 text-xs text-muted">
+                No valor fixo, se o consumo exceder a margem você pode emitir cobrança
+                complementar com comprovante.
+              </p>
+            </div>
+
+            {/* Nota Fiscal e seguro (Atualizações 7 e 10) */}
+            <div className="space-y-2">
+              <Toggle
+                checked={issuesInvoice}
+                onChange={() => setIssuesInvoice((v) => !v)}
+                label="Este imóvel emite Nota Fiscal do aluguel"
+                hint="Decisivo para o público corporativo (reembolso pela empresa)."
+              />
+              <Toggle
+                checked={acceptsInsurance}
+                onChange={() => setAcceptsInsurance((v) => !v)}
+                label="Aceito seguro-fiança como garantia"
+                hint="Exibe o selo 'Aceita Seguro-Fiança' no anúncio."
+              />
+            </div>
           </div>
         )}
 
@@ -291,5 +358,41 @@ function Labeled({ label, children }: { label: string; children: React.ReactNode
       <span className="mb-1.5 block text-sm font-medium text-ink">{label}</span>
       {children}
     </label>
+  );
+}
+
+function Toggle({
+  checked,
+  onChange,
+  label,
+  hint,
+}: {
+  checked: boolean;
+  onChange: () => void;
+  label: string;
+  hint?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onChange}
+      className={cn(
+        "flex w-full items-start gap-3 rounded-xl border px-4 py-3 text-left transition-colors",
+        checked ? "border-forest bg-sage-100" : "border-sage-200 hover:border-sage"
+      )}
+    >
+      <span
+        className={cn(
+          "mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md border",
+          checked ? "border-forest bg-forest text-white" : "border-sage-200 bg-white"
+        )}
+      >
+        {checked && <Check className="h-4 w-4" />}
+      </span>
+      <span>
+        <span className="block text-sm font-medium text-ink">{label}</span>
+        {hint && <span className="block text-xs text-muted">{hint}</span>}
+      </span>
+    </button>
   );
 }

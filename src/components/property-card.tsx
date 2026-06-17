@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { Bath, BedDouble, MapPin, Ruler } from "lucide-react";
+import { Bath, BedDouble, MapPin, Ruler, Star } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { formatBRL } from "@/lib/utils";
-import { WorkReadyBadge } from "@/components/ui/badge";
+import { WorkReadyBadge, InvoiceBadge, InsuranceBadge } from "@/components/ui/badge";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
 import { FavoriteButton } from "@/components/favorite-button";
 
@@ -36,13 +36,28 @@ export function PropertyCard({ property }: { property: Property }) {
       </div>
 
       <div className="flex flex-1 flex-col gap-2 p-4">
-        <div className="flex items-center gap-1 text-xs text-muted">
-          <MapPin className="h-3.5 w-3.5" aria-hidden />
-          {property.neighborhood}, {property.city}
+        <div className="flex items-center justify-between gap-2 text-xs text-muted">
+          <span className="inline-flex items-center gap-1">
+            <MapPin className="h-3.5 w-3.5" aria-hidden />
+            {property.neighborhood}, {property.city}
+          </span>
+          {property.reviewCount > 0 && (
+            <span className="inline-flex items-center gap-1 text-forest">
+              <Star className="h-3.5 w-3.5 fill-champagne text-champagne" />
+              {property.rating.toFixed(1)} ({property.reviewCount})
+            </span>
+          )}
         </div>
         <h3 className="line-clamp-2 font-title text-base font-bold text-ink group-hover:text-forest">
           {property.title}
         </h3>
+
+        {(property.issuesInvoice || property.acceptsInsurance) && (
+          <div className="flex flex-wrap gap-1.5">
+            {property.issuesInvoice && <InvoiceBadge />}
+            {property.acceptsInsurance && <InsuranceBadge />}
+          </div>
+        )}
 
         <div className="mt-1 flex items-center gap-4 text-sm text-muted">
           <span className="inline-flex items-center gap-1">
@@ -62,7 +77,12 @@ export function PropertyCard({ property }: { property: Property }) {
           </span>
           <span className="text-sm text-muted">/mês</span>
         </div>
-        <p className="text-xs text-muted">Período mínimo: {property.minPeriodDays} dias</p>
+        <p className="text-xs text-muted">
+          {property.utilitiesMode === "fixed" && property.utilitiesEstimate > 0
+            ? `+ consumo estimado ${formatBRL(property.utilitiesEstimate)}`
+            : "+ consumo conforme medição"}
+          {" · "}mín. {property.minPeriodDays} dias
+        </p>
       </div>
     </Link>
   );

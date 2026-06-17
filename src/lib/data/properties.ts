@@ -22,6 +22,13 @@ interface PropertyRow {
   area_m2: number | null;
   min_period_days: number;
   monthly_price: number;
+  utilities_mode: string | null;
+  utilities_estimate: number | null;
+  utilities_overage_margin: number | null;
+  issues_invoice: boolean | null;
+  accepts_insurance: boolean | null;
+  rating: number | null;
+  review_count: number | null;
   status: string;
   work_ready_badge: boolean;
   work_score: number;
@@ -43,6 +50,13 @@ function rowToProperty(row: PropertyRow): Property {
     areaM2: row.area_m2 ?? 0,
     minPeriodDays: row.min_period_days,
     monthlyPrice: Number(row.monthly_price),
+    utilitiesMode: (row.utilities_mode as Property["utilitiesMode"]) ?? "fixed",
+    utilitiesEstimate: Number(row.utilities_estimate ?? 0),
+    utilitiesOverageMargin: Number(row.utilities_overage_margin ?? 20),
+    issuesInvoice: row.issues_invoice ?? false,
+    acceptsInsurance: row.accepts_insurance ?? false,
+    rating: Number(row.rating ?? 0),
+    reviewCount: Number(row.review_count ?? 0),
     status: row.status as Property["status"],
     workReadyBadge: row.work_ready_badge,
     workScore: row.work_score,
