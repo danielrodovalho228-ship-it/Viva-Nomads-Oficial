@@ -1,39 +1,58 @@
 @import "tailwindcss";
 
 /*
-  Viva Nomads — Design tokens (paleta NomadeDrive)
-  Verde floresta domina (confiança, estabilidade); dourado champagne pontua CTAs e o selo "Pronto para Trabalho".
+  Viva Nomads — Design tokens (marca azul + verde-limão + preto, a partir do logo).
+  Azul = primária/estrutura · Verde-limão = acento/energia (CTA, selo) · Preto = drama (hero, faixas, footer).
+  Os nomes semânticos são mantidos e remapeados para a nova paleta.
 */
 @theme {
-  /* Marca */
-  --color-forest: #0f3d2e; /* Verde Floresta Escuro — primária, headers, footer */
-  --color-forest-700: #14503c;
-  --color-forest-600: #1a6249;
-  --color-sage: #5a8a6b; /* Verde Sálvia — secundária, badges, ícones, ativos */
-  --color-sage-100: #e4ede7;
-  --color-sage-200: #c7dccf;
-  --color-champagne: #d4a853; /* Dourado Champagne — CTA principal, selo de trabalho */
-  --color-champagne-600: #c2933b;
+  /* ── Azul de marca (primária) ── */
+  --color-blue-50: #eef4ff;
+  --color-blue-100: #d9e6ff;
+  --color-blue-200: #b3ccff;
+  --color-blue-300: #2e8be6;
+  --color-blue-500: #1e63d0;
+  --color-blue-700: #143c8c;
+  --color-blue-900: #0b2a66;
 
-  /* Texto */
-  --color-ink: #1a2b22; /* Texto principal sobre fundo claro */
-  --color-muted: #5c6b63; /* Texto secundário, legendas */
+  /* ── Verde-limão de marca (acento) ── */
+  --color-green-50: #f2fbe9;
+  --color-green-100: #e1f5cc;
+  --color-green-300: #8fd63a;
+  --color-green-500: #6cbe2a;
+  --color-green-700: #4fa01e;
+  --color-green-900: #2f6310;
 
-  /* Fundos */
+  /* ── Neutros frios ── */
+  --color-night: #0a0a0a; /* preto de marca */
+  --color-ink: #0f1722; /* texto principal */
+  --color-muted: #5b6573; /* texto secundário */
+  --color-line: #e2e7ee; /* bordas/divisores */
   --color-surface: #ffffff;
-  --color-surface-2: #f7f9f7;
+  --color-surface-2: #f5f7fa;
+
+  /* ── Aliases semânticos (compat. com componentes existentes) ── */
+  --color-forest: #143c8c; /* primária (era verde-floresta) */
+  --color-forest-700: #0b2a66;
+  --color-forest-600: #1751c0;
+  --color-sage: #1e63d0; /* secundária */
+  --color-sage-100: #eef4ff;
+  --color-sage-200: #e2e7ee;
+  --color-champagne: #6cbe2a; /* CTA/selo */
+  --color-champagne-600: #4fa01e;
 
   /* Fontes */
   --font-title: var(--font-syne), ui-sans-serif, system-ui, sans-serif;
-  --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 
-  /* Raios */
-  --radius-card: 16px;
+  --radius-card: 18px;
 }
 
 :root {
   --background: #ffffff;
-  --foreground: #1a2b22;
+  --foreground: #0f1722;
+  /* Gradiente assinatura azul→verde (só em elementos de marca) */
+  --gradient-brand: linear-gradient(135deg, #143c8c 0%, #1e63d0 45%, #6cbe2a 100%);
 }
 
 body {
@@ -41,25 +60,64 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 h1, h2, h3, h4, h5 {
   font-family: var(--font-title);
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
 }
 
-/* Utilitário de container padrão das páginas */
+/* Utilitários de marca */
 @layer components {
   .container-page {
     width: 100%;
     margin-inline: auto;
-    max-width: 80rem; /* 1280px */
-    padding-inline: 1rem;
+    max-width: 80rem;
+    padding-inline: 1.25rem;
   }
   @media (min-width: 640px) {
-    .container-page { padding-inline: 1.5rem; }
+    .container-page { padding-inline: 2rem; }
   }
   @media (min-width: 1024px) {
-    .container-page { padding-inline: 2rem; }
+    .container-page { padding-inline: 2.5rem; }
+  }
+
+  /* Texto com preenchimento do gradiente de marca */
+  .text-gradient-brand {
+    background: var(--gradient-brand);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .bg-gradient-brand { background: var(--gradient-brand); }
+
+  /* Título fluido editorial */
+  .display-xl { font-size: clamp(2.5rem, 6vw, 5rem); }
+  .display-lg { font-size: clamp(2rem, 4.5vw, 3.5rem); }
+
+  /* Foto tratada (duotone azul) para unificar a fotografia */
+  .photo-treat { position: relative; overflow: hidden; }
+  .photo-treat::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 40%, rgba(11, 42, 102, 0.25));
+    pointer-events: none;
+  }
+}
+
+/* Reveal on scroll (comedido; respeita reduced-motion) */
+@media (prefers-reduced-motion: no-preference) {
+  .reveal {
+    opacity: 0;
+    transform: translateY(16px);
+    animation: reveal-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    animation-timeline: view();
+    animation-range: entry 0% cover 22%;
+  }
+  @keyframes reveal-in {
+    to { opacity: 1; transform: none; }
   }
 }

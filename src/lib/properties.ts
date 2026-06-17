@@ -1,4 +1,5 @@
 import type { Property } from "./types";
+import { PHOTOS } from "./media";
 
 /*
   Dados de exemplo para popular as telas públicas enquanto o Supabase
@@ -32,7 +33,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     status: "active",
     workReadyBadge: true,
     workScore: 86,
-    photos: ["[FOTO — fachada]", "[FOTO — sala]", "[FOTO — home office]", "[FOTO — quarto]"],
+    photos: [PHOTOS.properties[0], PHOTOS.homeOffice, PHOTOS.heroProfessional],
     amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada"],
     workFeatures: ["Escritório dedicado", "Mesa de trabalho", "Cadeira ergonômica", "Internet fibra 300 Mbps"],
     nearbyWorkspaces: [
@@ -67,7 +68,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     status: "active",
     workReadyBadge: true,
     workScore: 74,
-    photos: ["[FOTO — fachada]", "[FOTO — ambiente]", "[FOTO — cozinha]"],
+    photos: [PHOTOS.properties[1], PHOTOS.homeOffice],
     amenities: ["Mobiliado completo", "Ar-condicionado", "Cozinha equipada", "Aceita pets"],
     workFeatures: ["Mesa de trabalho", "Internet fibra 200 Mbps"],
     nearbyWorkspaces: [
@@ -102,7 +103,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     status: "active",
     workReadyBadge: false,
     workScore: 52,
-    photos: ["[FOTO — fachada]", "[FOTO — sala]", "[FOTO — quintal]"],
+    photos: [PHOTOS.properties[2]],
     amenities: ["Mobiliado completo", "Máquina de lavar", "Cozinha equipada", "Aceita pets"],
     workFeatures: ["Internet fibra 100 Mbps"],
     nearbyWorkspaces: [{ name: "Coworking Tibery", type: "coworking", distanceM: 1800 }],

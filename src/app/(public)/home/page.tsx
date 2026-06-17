@@ -4,22 +4,23 @@ import {
   Stethoscope,
   Users,
   Laptop,
+  Wifi,
+  Coffee,
   Building2,
-  RefreshCcw,
-  Receipt,
   Search,
   MessageSquare,
   FileSignature,
-  Wifi,
-  Armchair,
-  Coffee,
   ArrowRight,
+  Check,
+  X,
+  Minus,
 } from "lucide-react";
 import { PERSONAS } from "@/lib/constants";
+import { PHOTOS } from "@/lib/media";
 import { listProperties } from "@/lib/data/properties";
 import { ButtonLink } from "@/components/ui/button";
-import { WorkReadyBadge } from "@/components/ui/badge";
-import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
+import { WorkReadyBadge, Eyebrow } from "@/components/ui/badge";
+import { BrandImage } from "@/components/brand-image";
 import { PropertyCard } from "@/components/property-card";
 import { HeroSearch } from "@/components/hero-search";
 
@@ -29,67 +30,113 @@ const PERSONA_ICONS: Record<string, React.ComponentType<{ className?: string }>>
   Users,
   Laptop,
 };
+const PERSONA_PHOTOS: Record<string, string> = {
+  executivos: PHOTOS.personas.executivos,
+  saude: PHOTOS.personas.saude,
+  familias: PHOTOS.personas.familias,
+  nomades: PHOTOS.personas.nomades,
+};
 
 export default async function HomePage() {
   const featured = (await listProperties()).slice(0, 3);
 
   return (
     <>
-      {/* 1. HERO */}
-      <section className="relative overflow-hidden bg-forest text-white">
-        <div className="container-page grid items-center gap-10 py-16 md:grid-cols-2 md:py-24">
-          <div>
-            <span className="inline-flex items-center rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-champagne">
+      {/* ───────── HERO (preto, gradiente azul→verde) ───────── */}
+      <section className="relative overflow-hidden bg-night text-white">
+        <div className="pointer-events-none absolute -right-40 -top-40 h-[34rem] w-[34rem] rounded-full bg-gradient-brand opacity-25 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-40 -left-40 h-[28rem] w-[28rem] rounded-full bg-blue-700 opacity-25 blur-3xl" />
+
+        <div className="container-page relative grid items-center gap-12 py-16 lg:grid-cols-12 lg:py-24">
+          <div className="lg:col-span-7">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-white/80">
+              <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
               Locação por temporada · 30 a 180 dias
             </span>
-            <h1 className="mt-5 font-title text-4xl font-extrabold leading-tight md:text-5xl">
-              Moradia mobiliada para a sua nova fase em Uberlândia
+            <h1 className="mt-6 font-title font-extrabold leading-[0.98] display-xl">
+              Moradia mobiliada para a sua{" "}
+              <span className="text-gradient-brand">nova fase</span> em Uberlândia
             </h1>
-            <p className="mt-5 max-w-lg text-lg text-white/80">
+            <p className="mt-6 max-w-xl text-lg text-white/70">
               Locação mensal de 30 a 180 dias para profissionais em transição. Pronto para
               morar — e para trabalhar — já no primeiro dia.
             </p>
-            <div className="mt-8">
+            <div className="mt-9 max-w-2xl">
               <HeroSearch />
+            </div>
+            <div className="mt-6 flex flex-wrap items-center gap-x-8 gap-y-3 text-sm text-white/55">
+              <span>Contrato formal (art. 48)</span>
+              <span className="hidden h-1 w-1 rounded-full bg-white/30 sm:block" />
+              <span>Aceito em condomínios</span>
+              <span className="hidden h-1 w-1 rounded-full bg-white/30 sm:block" />
+              <span>Inquilino verificado</span>
             </div>
           </div>
 
-          <div className="relative">
-            <PhotoPlaceholder
-              label="[FOTO — profissional chegando / se instalando no imóvel]"
-              className="aspect-[4/3] w-full rounded-3xl border border-white/15 bg-white/5 text-white/70"
-            />
+          <div className="lg:col-span-5">
+            <div className="relative">
+              <BrandImage
+                src={PHOTOS.heroProfessional}
+                alt="Profissional instalado e trabalhando no imóvel"
+                priority
+                sizes="(max-width: 1024px) 100vw, 40vw"
+                className="aspect-[4/5] w-full rounded-3xl ring-1 ring-white/10"
+              />
+              <div className="absolute -bottom-5 -left-5 hidden rounded-2xl bg-white p-4 shadow-xl sm:block">
+                <WorkReadyBadge />
+                <p className="mt-2 max-w-[12rem] text-xs text-muted">
+                  Home office, internet fibra e coworkings mapeados por perto.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* 2. PARA QUEM É */}
-      <section className="bg-surface py-16 md:py-24">
+      {/* ───────── PARA QUEM É (linhas editoriais alternadas) ───────── */}
+      <section className="bg-surface py-20 md:py-28">
         <div className="container-page">
-          <SectionHead
-            eyebrow="Para quem é"
-            title="Feito para quem se muda pelo trabalho — não para turistas"
-            subtitle="Quatro perfis de profissionais e pessoas em transição que precisam morar bem por uma temporada."
-          />
-          <div className="mt-12 grid gap-6 sm:grid-cols-2">
-            {PERSONAS.map((p) => {
+          <div className="max-w-2xl">
+            <Eyebrow>Para quem é</Eyebrow>
+            <h2 className="mt-4 font-title font-extrabold text-ink display-lg">
+              Feito para quem se muda pelo trabalho — não para turistas
+            </h2>
+          </div>
+
+          <div className="mt-14 flex flex-col gap-px overflow-hidden rounded-3xl border border-line bg-line">
+            {PERSONAS.map((p, i) => {
               const Icon = PERSONA_ICONS[p.icon] ?? Briefcase;
               return (
                 <div
                   key={p.id}
-                  className="flex gap-5 rounded-2xl border border-sage-200 bg-white p-6"
+                  className={`grid items-center gap-6 bg-white p-6 sm:grid-cols-12 sm:p-8 ${
+                    i % 2 === 1 ? "sm:[direction:rtl]" : ""
+                  }`}
                 >
-                  <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-sage-100 text-forest">
-                    <Icon className="h-6 w-6" />
+                  <div className="sm:col-span-3 sm:[direction:ltr]">
+                    <BrandImage
+                      src={PERSONA_PHOTOS[p.id]}
+                      alt={p.title}
+                      sizes="(max-width: 640px) 100vw, 25vw"
+                      className="aspect-[3/2] w-full"
+                    />
                   </div>
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="font-title text-lg font-bold text-ink">{p.title}</h3>
-                      <span className="rounded-full bg-champagne/20 px-2 py-0.5 text-xs font-medium text-champagne-600">
+                  <div className="sm:col-span-1 sm:[direction:ltr]">
+                    <span className="font-title text-4xl font-extrabold text-line">
+                      0{i + 1}
+                    </span>
+                  </div>
+                  <div className="sm:col-span-8 sm:[direction:ltr]">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className="grid h-9 w-9 place-items-center rounded-lg bg-blue-50 text-blue-500">
+                        <Icon className="h-5 w-5" />
+                      </span>
+                      <h3 className="font-title text-xl font-bold text-ink">{p.title}</h3>
+                      <span className="rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-semibold text-green-900">
                         {p.period}
                       </span>
                     </div>
-                    <p className="mt-2 text-sm leading-relaxed text-muted">{p.text}</p>
+                    <p className="mt-3 max-w-2xl text-muted">{p.text}</p>
                   </div>
                 </div>
               );
@@ -98,87 +145,126 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* 3. O DIFERENCIAL TRABALHO */}
-      <section className="bg-surface-2 py-16 md:py-24">
-        <div className="container-page grid items-center gap-12 md:grid-cols-2">
-          <div className="order-2 md:order-1">
-            <PhotoPlaceholder
-              label="[FOTO — home office montado no imóvel]"
-              className="aspect-square w-full rounded-3xl"
+      {/* ───────── PRONTO PARA TRABALHO (spotlight) ───────── */}
+      <section className="bg-surface-2 py-20 md:py-28">
+        <div className="container-page grid items-center gap-14 lg:grid-cols-2">
+          <div className="relative order-2 lg:order-1">
+            <BrandImage
+              src={PHOTOS.homeOffice}
+              alt="Home office montado no imóvel"
+              sizes="(max-width: 1024px) 100vw, 50vw"
+              className="aspect-[5/4] w-full rounded-3xl"
             />
+            <div className="absolute -right-4 -top-4 rounded-2xl bg-gradient-brand p-[1px] shadow-xl">
+              <div className="rounded-2xl bg-white px-4 py-3">
+                <p className="font-title text-2xl font-extrabold text-ink">300 Mbps</p>
+                <p className="text-xs text-muted">fibra dedicada</p>
+              </div>
+            </div>
           </div>
-          <div className="order-1 md:order-2">
-            <SectionHead
-              align="left"
-              eyebrow="O diferencial"
-              title="Pronto para Trabalho: você trabalha no dia seguinte à chegada"
-              subtitle="Quem se muda pelo trabalho precisa de mais que uma cama. Imóveis com infraestrutura de trabalho recebem o selo dourado e aparecem em destaque."
-            />
+
+          <div className="order-1 lg:order-2">
+            <Eyebrow>O diferencial</Eyebrow>
+            <h2 className="mt-4 font-title font-extrabold text-ink display-lg">
+              Você trabalha no dia seguinte à chegada
+            </h2>
+            <p className="mt-5 text-lg text-muted">
+              Quem se muda pelo trabalho precisa de mais que uma cama. Imóveis com
+              infraestrutura de trabalho recebem o selo e aparecem em destaque.
+            </p>
             <div className="mt-6">
               <WorkReadyBadge />
             </div>
-            <ul className="mt-6 space-y-4">
+            <ul className="mt-8 space-y-5">
               <WorkFeature icon={Wifi} title="Home office no imóvel" text="Cômodo dedicado, mesa, cadeira e internet fibra de qualidade." />
-              <WorkFeature icon={Armchair} title="Coworkings próximos" text="Mapeamos coworkings e salas de reunião perto do imóvel." />
-              <WorkFeature icon={Coffee} title="Cafés de trabalho" text="Espaços para trabalhar a menos de 1 km, exibidos na página do imóvel." />
+              <WorkFeature icon={Building2} title="Coworkings próximos" text="Mapeamos coworkings e salas de reunião perto do imóvel." />
+              <WorkFeature icon={Coffee} title="Cafés de trabalho" text="Espaços para trabalhar a menos de 1 km, exibidos na página." />
             </ul>
           </div>
         </div>
       </section>
 
-      {/* 4. POR QUE NÃO É AIRBNB */}
-      <section className="bg-forest py-16 text-white md:py-24">
+      {/* ───────── NÃO É AIRBNB / QUINTOANDAR (tabela comparativa) ───────── */}
+      <section className="bg-night py-20 text-white md:py-28">
         <div className="container-page">
-          <SectionHead
-            dark
-            eyebrow="Outra categoria"
-            title="Não é Airbnb. Não é QuintoAndar."
-            subtitle="Locação mensal mobiliada, com contrato formal e inquilino qualificado — aceita em condomínios onde o Airbnb não é."
-          />
-          <div className="mt-12 grid gap-6 md:grid-cols-3">
-            <CompareCard icon={Building2} title="Aceito em condomínios" text="Locação de 30 a 180 dias é juridicamente diferente da hospedagem hoteleira de curtíssimo prazo — e os condomínios aceitam." />
-            <CompareCard icon={RefreshCcw} title="Sem rotatividade" text="Sem entra-e-sai constante. Um inquilino qualificado por uma temporada inteira, com contrato." />
-            <CompareCard icon={Receipt} title="Custos transferem" text="Água, luz, condomínio e IPTU vão para o inquilino durante a estadia — diferente do Airbnb." />
+          <div className="mx-auto max-w-2xl text-center">
+            <Eyebrow light>Outra categoria</Eyebrow>
+            <h2 className="mt-4 font-title font-extrabold text-white display-lg">
+              Não é Airbnb. Não é QuintoAndar.
+            </h2>
+            <p className="mt-5 text-lg text-white/65">
+              Locação mensal mobiliada, com contrato formal e inquilino qualificado — aceita
+              em condomínios onde o Airbnb não é.
+            </p>
+          </div>
+
+          <div className="mx-auto mt-14 max-w-4xl overflow-hidden rounded-2xl border border-white/10">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-white/10 bg-white/[0.03]">
+                  <th className="p-5 font-medium text-white/50">Comparativo</th>
+                  <th className="p-5">
+                    <span className="font-title text-base font-bold text-gradient-brand">
+                      Viva Nomads
+                    </span>
+                  </th>
+                  <th className="p-5 font-title text-base font-bold text-white/70">Airbnb</th>
+                  <th className="p-5 font-title text-base font-bold text-white/70">QuintoAndar</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/[0.06]">
+                <CompareRow label="Estadia de 30 a 180 dias" a="yes" b="no" c="partial" />
+                <CompareRow label="Mobiliado e pronto para morar" a="yes" b="yes" c="no" />
+                <CompareRow label="Aceito em condomínios" a="yes" b="no" c="yes" />
+                <CompareRow label="Custos (água/luz/condomínio) com o inquilino" a="yes" b="no" c="yes" />
+                <CompareRow label="Contrato formal por temporada" a="yes" b="no" c="partial" />
+                <CompareRow label="Selo Pronto para Trabalho" a="yes" b="no" c="no" />
+              </tbody>
+            </table>
           </div>
         </div>
       </section>
 
-      {/* 5. COMO FUNCIONA */}
-      <section className="bg-surface py-16 md:py-24">
+      {/* ───────── COMO FUNCIONA (passos com linha conectora) ───────── */}
+      <section className="bg-surface py-20 md:py-28">
         <div className="container-page">
-          <SectionHead
-            eyebrow="Como funciona"
-            title="Do anúncio ao contrato em 3 passos"
-            subtitle="Simples para o inquilino, seguro para o proprietário."
-          />
-          <div className="mt-12 grid gap-6 md:grid-cols-3">
-            <StepCard n={1} icon={Search} title="Buscar" text="Encontre imóveis mobiliados pela cidade, período e orçamento mensal. Filtre por Pronto para Trabalho." />
-            <StepCard n={2} icon={MessageSquare} title="Conversar" text="Fale direto com o proprietário, tire dúvidas e agende a visita pela própria plataforma." />
-            <StepCard n={3} icon={FileSignature} title="Assinar contrato" text="Garantia escolhida e contrato de locação por temporada assinado digitalmente, com validade jurídica." />
+          <div className="max-w-2xl">
+            <Eyebrow>Como funciona</Eyebrow>
+            <h2 className="mt-4 font-title font-extrabold text-ink display-lg">
+              Do anúncio ao contrato em 3 passos
+            </h2>
+          </div>
+
+          <div className="relative mt-16 grid gap-10 md:grid-cols-3">
+            <div className="absolute left-0 right-0 top-7 hidden h-px bg-line md:block" />
+            <Step n="1" icon={Search} title="Buscar" text="Encontre imóveis mobiliados pela cidade, período e orçamento. Filtre por Pronto para Trabalho." />
+            <Step n="2" icon={MessageSquare} title="Conversar" text="Fale direto com o proprietário, tire dúvidas e agende a visita pela plataforma." />
+            <Step n="3" icon={FileSignature} title="Assinar contrato" text="Garantia escolhida e contrato de temporada assinado digitalmente, com validade jurídica." />
           </div>
         </div>
       </section>
 
-      {/* 6. PARA PROPRIETÁRIOS (CTA) */}
-      <section className="bg-surface-2 py-16 md:py-20">
+      {/* ───────── FAIXA PROPRIETÁRIOS (preto de impacto) ───────── */}
+      <section className="bg-surface pb-20 md:pb-28">
         <div className="container-page">
-          <div className="overflow-hidden rounded-3xl bg-forest px-8 py-12 text-white md:px-14">
-            <div className="grid items-center gap-8 md:grid-cols-2">
+          <div className="relative overflow-hidden rounded-3xl bg-night px-8 py-14 text-white md:px-16 md:py-20">
+            <div className="pointer-events-none absolute -right-20 -top-20 h-80 w-80 rounded-full bg-gradient-brand opacity-30 blur-3xl" />
+            <div className="relative grid items-center gap-10 md:grid-cols-2">
               <div>
-                <h2 className="font-title text-3xl font-extrabold md:text-4xl">
-                  Ganhe aproximadamente <span className="text-champagne">2x mais</span> que no Airbnb
+                <Eyebrow light>Para proprietários</Eyebrow>
+                <h2 className="mt-4 font-title font-extrabold display-lg">
+                  Ganhe <span className="text-gradient-brand">~2x mais</span> que no Airbnb
                 </h2>
-                <p className="mt-4 max-w-md text-white/80">
+                <p className="mt-5 max-w-md text-white/65">
                   Sem rotatividade, sem vacância nos meses fracos e com os custos transferidos
-                  para o inquilino. Anuncie seu imóvel e fale com inquilinos qualificados.
+                  para o inquilino. Anuncie e fale com inquilinos qualificados.
                 </p>
               </div>
               <div className="flex flex-col gap-3 md:items-end">
-                <ButtonLink href="/para-proprietarios" variant="gold" size="lg">
-                  Quero anunciar meu imóvel
-                  <ArrowRight className="h-4 w-4" />
+                <ButtonLink href="/para-proprietarios" variant="accent" size="lg">
+                  Quero anunciar meu imóvel <ArrowRight className="h-4 w-4" />
                 </ButtonLink>
-                <Link href="/precos" className="text-sm text-white/70 hover:text-champagne">
+                <Link href="/precos" className="text-sm text-white/55 transition-colors hover:text-green-300">
                   Ver planos de assinatura
                 </Link>
               </div>
@@ -187,19 +273,24 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* 7. IMÓVEIS EM DESTAQUE */}
-      <section className="bg-surface py-16 md:py-24">
+      {/* ───────── IMÓVEIS EM DESTAQUE ───────── */}
+      <section className="bg-surface-2 py-20 md:py-28">
         <div className="container-page">
-          <div className="flex items-end justify-between">
-            <SectionHead align="left" eyebrow="Imóveis em destaque" title="Disponíveis agora" />
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div className="max-w-xl">
+              <Eyebrow>Imóveis em destaque</Eyebrow>
+              <h2 className="mt-4 font-title font-extrabold text-ink display-lg">
+                Disponíveis agora
+              </h2>
+            </div>
             <Link
               href="/buscar"
-              className="hidden items-center gap-1 text-sm font-medium text-forest hover:text-champagne-600 sm:inline-flex"
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-500 hover:text-blue-700"
             >
-              Ver todos <ArrowRight className="h-4 w-4" />
+              Ver todos os imóveis <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
-          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {featured.map((p) => (
               <PropertyCard key={p.id} property={p} />
             ))}
@@ -207,40 +298,6 @@ export default async function HomePage() {
         </div>
       </section>
     </>
-  );
-}
-
-function SectionHead({
-  eyebrow,
-  title,
-  subtitle,
-  align = "center",
-  dark = false,
-}: {
-  eyebrow?: string;
-  title: string;
-  subtitle?: string;
-  align?: "center" | "left";
-  dark?: boolean;
-}) {
-  return (
-    <div className={align === "center" ? "mx-auto max-w-2xl text-center" : "max-w-2xl"}>
-      {eyebrow && (
-        <p className="font-title text-sm font-bold uppercase tracking-wide text-champagne-600">
-          {eyebrow}
-        </p>
-      )}
-      <h2
-        className={`mt-2 font-title text-3xl font-extrabold md:text-4xl ${
-          dark ? "text-white" : "text-ink"
-        }`}
-      >
-        {title}
-      </h2>
-      {subtitle && (
-        <p className={`mt-4 text-lg ${dark ? "text-white/80" : "text-muted"}`}>{subtitle}</p>
-      )}
-    </div>
   );
 }
 
@@ -255,56 +312,83 @@ function WorkFeature({
 }) {
   return (
     <li className="flex gap-4">
-      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-champagne/20 text-champagne-600">
+      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-brand text-white">
         <Icon className="h-5 w-5" />
-      </div>
+      </span>
       <div>
-        <h4 className="font-title font-bold text-ink">{title}</h4>
+        <h4 className="font-title text-base font-bold text-ink">{title}</h4>
         <p className="text-sm text-muted">{text}</p>
       </div>
     </li>
   );
 }
 
-function CompareCard({
-  icon: Icon,
-  title,
-  text,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  title: string;
-  text: string;
-}) {
-  return (
-    <div className="rounded-2xl border border-white/15 bg-white/5 p-6">
-      <Icon className="h-7 w-7 text-champagne" />
-      <h3 className="mt-4 font-title text-lg font-bold text-white">{title}</h3>
-      <p className="mt-2 text-sm text-white/75">{text}</p>
-    </div>
-  );
-}
-
-function StepCard({
+function Step({
   n,
   icon: Icon,
   title,
   text,
 }: {
-  n: number;
+  n: string;
   icon: React.ComponentType<{ className?: string }>;
   title: string;
   text: string;
 }) {
   return (
-    <div className="relative rounded-2xl border border-sage-200 bg-surface-2 p-7">
-      <span className="absolute right-6 top-6 font-title text-4xl font-extrabold text-sage-200">
-        {n}
-      </span>
-      <div className="grid h-12 w-12 place-items-center rounded-xl bg-forest text-white">
-        <Icon className="h-6 w-6" />
+    <div className="relative">
+      <div className="flex items-center gap-4">
+        <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-night font-title text-xl font-extrabold text-white ring-8 ring-surface">
+          {n}
+        </span>
+        <Icon className="h-6 w-6 text-blue-500" />
       </div>
-      <h3 className="mt-5 font-title text-xl font-bold text-ink">{title}</h3>
-      <p className="mt-2 text-sm text-muted">{text}</p>
+      <h3 className="mt-6 font-title text-xl font-bold text-ink">{title}</h3>
+      <p className="mt-2 text-muted">{text}</p>
     </div>
+  );
+}
+
+function CompareRow({
+  label,
+  a,
+  b,
+  c,
+}: {
+  label: string;
+  a: "yes" | "no" | "partial";
+  b: "yes" | "no" | "partial";
+  c: "yes" | "no" | "partial";
+}) {
+  return (
+    <tr className="text-white/80">
+      <td className="p-5 font-medium">{label}</td>
+      <td className="p-5"><Mark v={a} brand /></td>
+      <td className="p-5"><Mark v={b} /></td>
+      <td className="p-5"><Mark v={c} /></td>
+    </tr>
+  );
+}
+
+function Mark({ v, brand = false }: { v: "yes" | "no" | "partial"; brand?: boolean }) {
+  if (v === "yes")
+    return (
+      <span
+        className={`grid h-6 w-6 place-items-center rounded-full ${
+          brand ? "bg-green-500 text-night" : "bg-white/10 text-green-300"
+        }`}
+      >
+        <Check className="h-4 w-4" />
+      </span>
+    );
+  if (v === "partial")
+    return (
+      <span className="grid h-6 w-6 place-items-center rounded-full bg-white/10 text-white/50">
+        <Minus className="h-4 w-4" />
+      </span>
+    );
+  return (
+    <span className="grid h-6 w-6 place-items-center rounded-full bg-white/5 text-white/30">
+      <X className="h-4 w-4" />
+    </span>
   );
 }

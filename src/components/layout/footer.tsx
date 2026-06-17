@@ -4,13 +4,15 @@ import { CITIES } from "@/lib/constants";
 
 export function Footer() {
   return (
-    <footer className="mt-auto bg-forest text-white/80">
-      <div className="container-page grid gap-10 py-14 md:grid-cols-4">
+    <footer className="mt-auto bg-night text-white/70">
+      {/* fio gradiente de marca no topo */}
+      <div className="h-1 w-full bg-gradient-brand" />
+      <div className="container-page grid gap-12 py-16 md:grid-cols-4">
         <div className="md:col-span-1">
           <Logo href="/home" light />
-          <p className="mt-4 max-w-xs text-sm leading-relaxed">
-            Locação mobiliada mensal (30 a 180 dias) para profissionais em transição.
-            Não é Airbnb, não é QuintoAndar.
+          <p className="mt-5 max-w-xs text-sm leading-relaxed text-white/60">
+            Locação mobiliada mensal (30 a 180 dias) para profissionais em transição. Não é
+            Airbnb, não é QuintoAndar.
           </p>
         </div>
 
@@ -38,11 +40,9 @@ export function Footer() {
       </div>
 
       <div className="border-t border-white/10">
-        <div className="container-page flex flex-col items-center justify-between gap-2 py-6 text-xs text-white/60 md:flex-row">
+        <div className="container-page flex flex-col items-center justify-between gap-2 py-6 text-xs text-white/50 md:flex-row">
           <p>© {new Date().getFullYear()} Viva Nomads · Locação por temporada (art. 48, Lei 8.245/91)</p>
-          <p>
-            A plataforma conecta proprietários e inquilinos — não é parte do contrato de locação.
-          </p>
+          <p>A plataforma conecta proprietários e inquilinos — não é parte do contrato.</p>
         </div>
       </div>
     </footer>
@@ -52,10 +52,10 @@ export function Footer() {
 function FooterCol({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h4 className="mb-4 font-title text-sm font-bold uppercase tracking-wide text-white">
+      <h4 className="mb-4 font-title text-sm font-bold uppercase tracking-wider text-white">
         {title}
       </h4>
-      <ul className="space-y-2.5 text-sm">{children}</ul>
+      <ul className="space-y-3 text-sm">{children}</ul>
     </div>
   );
 }
@@ -63,7 +63,7 @@ function FooterCol({ title, children }: { title: string; children: React.ReactNo
 function FooterLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
     <li>
-      <Link href={href} className="transition-colors hover:text-champagne">
+      <Link href={href} className="text-white/60 transition-colors hover:text-green-300">
         {children}
       </Link>
     </li>

@@ -2,25 +2,28 @@ import * as React from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
-type Variant = "primary" | "secondary" | "outline" | "ghost" | "gold";
+type Variant = "primary" | "accent" | "outline" | "ghost" | "night" | "gold";
 type Size = "sm" | "md" | "lg";
 
 const variants: Record<Variant, string> = {
-  primary: "bg-forest text-white hover:bg-forest-700",
-  secondary: "bg-sage text-white hover:bg-sage/90",
-  outline: "border border-forest text-forest hover:bg-forest hover:text-white",
-  ghost: "text-forest hover:bg-sage-100",
-  gold: "bg-champagne text-forest hover:bg-champagne-600 font-semibold",
+  // Azul de marca
+  primary: "bg-blue-500 text-white hover:bg-blue-700",
+  // Verde-limão (acento/CTA) com texto escuro — contraste AA
+  accent: "bg-green-500 text-night hover:bg-green-300",
+  gold: "bg-green-500 text-night hover:bg-green-300", // alias compat.
+  outline: "border border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white",
+  ghost: "text-blue-500 hover:bg-blue-50",
+  night: "bg-night text-white hover:bg-night/90",
 };
 
 const sizes: Record<Size, string> = {
-  sm: "h-9 px-3 text-sm",
+  sm: "h-9 px-4 text-sm",
   md: "h-11 px-5 text-sm",
   lg: "h-13 px-7 text-base",
 };
 
 const base =
-  "inline-flex items-center justify-center gap-2 rounded-full font-medium transition-colors disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-champagne focus-visible:ring-offset-2";
+  "inline-flex items-center justify-center gap-2 rounded-full font-semibold tracking-tight transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 active:scale-[0.98]";
 
 interface CommonProps {
   variant?: Variant;
@@ -34,9 +37,7 @@ export function Button({
   className,
   ...props
 }: CommonProps & React.ButtonHTMLAttributes<HTMLButtonElement>) {
-  return (
-    <button className={cn(base, variants[variant], sizes[size], className)} {...props} />
-  );
+  return <button className={cn(base, variants[variant], sizes[size], className)} {...props} />;
 }
 
 export function ButtonLink({
@@ -47,10 +48,6 @@ export function ButtonLink({
   ...props
 }: CommonProps & { href: string } & React.AnchorHTMLAttributes<HTMLAnchorElement>) {
   return (
-    <Link
-      href={href}
-      className={cn(base, variants[variant], sizes[size], className)}
-      {...props}
-    />
+    <Link href={href} className={cn(base, variants[variant], sizes[size], className)} {...props} />
   );
 }

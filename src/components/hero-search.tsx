@@ -23,21 +23,21 @@ export function HeroSearch() {
   return (
     <form
       onSubmit={submit}
-      className="grid gap-3 rounded-2xl bg-white p-3 text-ink shadow-xl sm:grid-cols-[1.3fr_1fr_1fr_auto]"
+      className="grid gap-2 rounded-2xl bg-white p-2 shadow-2xl shadow-blue-900/20 sm:grid-cols-[1.3fr_1fr_1fr_auto]"
     >
       <Field icon={MapPin}>
         <input
           value={location}
           onChange={(e) => setLocation(e.target.value)}
           placeholder="Cidade ou bairro"
-          className="w-full bg-transparent text-sm outline-none placeholder:text-muted"
+          className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-muted"
         />
       </Field>
       <Field icon={CalendarRange}>
         <select
           value={period}
           onChange={(e) => setPeriod(e.target.value)}
-          className="w-full bg-transparent text-sm outline-none"
+          className="w-full bg-transparent text-sm text-ink outline-none"
         >
           <option value="">Período</option>
           <option value="30">A partir de 30 dias</option>
@@ -50,7 +50,7 @@ export function HeroSearch() {
         <select
           value={budget}
           onChange={(e) => setBudget(e.target.value)}
-          className="w-full bg-transparent text-sm outline-none"
+          className="w-full bg-transparent text-sm text-ink outline-none"
         >
           <option value="">Orçamento/mês</option>
           <option value="2500">Até R$ 2.500</option>
@@ -61,7 +61,7 @@ export function HeroSearch() {
       </Field>
       <button
         type="submit"
-        className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-champagne px-5 text-sm font-semibold text-forest transition-colors hover:bg-champagne-600"
+        className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-green-500 px-6 text-sm font-bold text-night transition-colors hover:bg-green-300"
       >
         <Search className="h-4 w-4" />
         Buscar
@@ -78,8 +78,8 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center gap-2 rounded-xl bg-surface-2 px-3 py-2.5">
-      <Icon className="h-4 w-4 shrink-0 text-sage" />
+    <div className="flex items-center gap-2 rounded-xl bg-surface-2 px-3.5 py-3">
+      <Icon className="h-4 w-4 shrink-0 text-blue-500" />
       {children}
     </div>
   );
