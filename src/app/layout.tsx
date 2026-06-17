@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Syne, DM_Sans } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/auth-provider";
+import { SITE_URL, SITE_NAME } from "@/lib/site";
 
 const syne = Syne({
   variable: "--font-syne",
@@ -16,7 +17,7 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://vivanomads.com.br"),
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "Viva Nomads — Locação mobiliada mensal para profissionais em transição",
     template: "%s · Viva Nomads",
@@ -33,8 +34,10 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "pt_BR",
-    siteName: "Viva Nomads",
+    siteName: SITE_NAME,
+    url: SITE_URL,
   },
+  alternates: { canonical: "/" },
 };
 
 export default function RootLayout({

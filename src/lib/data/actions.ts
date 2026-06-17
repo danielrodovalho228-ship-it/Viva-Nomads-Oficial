@@ -67,6 +67,7 @@ export async function createProperty(input: {
   minPeriodDays: number;
   monthlyPrice: number;
   workScore: number;
+  photoUrls?: string[];
 }): Promise<ActionResult> {
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
@@ -98,6 +99,18 @@ export async function createProperty(input: {
     .single();
 
   if (error) return { ok: false, error: error.message };
+
+  // Persiste as fotos enviadas ao Storage (a primeira é a capa).
+  if (input.photoUrls && input.photoUrls.length > 0) {
+    await supabase.from("property_photos").insert(
+      input.photoUrls.map((url, i) => ({
+        property_id: data.id,
+        url,
+        sort_order: i,
+      }))
+    );
+  }
+
   return { ok: true, id: data.id };
 }
 

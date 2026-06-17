@@ -2,10 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Lock, ClipboardCheck, Check, Upload, Sparkles, ArrowRight, ArrowLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Lock, ClipboardCheck, Check, Sparkles, ArrowRight, ArrowLeft } from "lucide-react";
+import { createProperty } from "@/lib/data/actions";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
+import { PhotoUploader, type PhotoItem } from "@/components/photo-uploader";
 import { cn } from "@/lib/utils";
 
 const STEPS = ["Fotos", "Sobre o imóvel", "Endereço", "Preço & período", "Trabalho", "Revisão"];
@@ -15,6 +18,43 @@ export default function NewPropertyPage() {
   const [step, setStep] = useState(0);
   const [aiLoading, setAiLoading] = useState(false);
   const [title, setTitle] = useState("");
+  const [photos, setPhotos] = useState<PhotoItem[]>([]);
+  const [publishing, setPublishing] = useState(false);
+  const [publishError, setPublishError] = useState<string | null>(null);
+  const router = useRouter();
+
+  async function publish() {
+    setPublishing(true);
+    setPublishError(null);
+    // Pontuação de trabalho vinda da qualificação aprovada.
+    let workScore = 0;
+    try {
+      const raw = sessionStorage.getItem("vivanomads-qualification");
+      if (raw) workScore = JSON.parse(raw).score ?? 0;
+    } catch {}
+
+    const res = await createProperty({
+      title: title || "Imóvel mobiliado",
+      description: "",
+      propertyType: "Apartamento",
+      city: "Uberlândia",
+      neighborhood: "",
+      bedrooms: 0,
+      bathrooms: 0,
+      areaM2: 0,
+      minPeriodDays: 30,
+      monthlyPrice: 0,
+      workScore,
+      photoUrls: photos.map((p) => p.url),
+    });
+
+    setPublishing(false);
+    if (!res.ok) {
+      setPublishError(res.error ?? "Não foi possível publicar.");
+      return;
+    }
+    router.push("/dashboard/imoveis");
+  }
 
   useEffect(() => {
     // A publicação só é liberada com um checklist aprovado (Fase 4).
@@ -89,19 +129,10 @@ export default function NewPropertyPage() {
           <div>
             <h2 className="font-title text-lg font-bold text-ink">Fotos do imóvel</h2>
             <p className="mt-1 text-sm text-muted">
-              As fotos serão enviadas para o Supabase Storage. Insira as imagens reais do imóvel.
+              As fotos são enviadas para o Supabase Storage. Insira as imagens reais do imóvel.
             </p>
-            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <label
-                  key={i}
-                  className="flex aspect-square cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-sage-200 text-sage hover:border-sage"
-                >
-                  <Upload className="h-5 w-5" />
-                  <span className="text-xs">Foto {i + 1}</span>
-                  <input type="file" accept="image/*" className="hidden" />
-                </label>
-              ))}
+            <div className="mt-4">
+              <PhotoUploader photos={photos} onChange={setPhotos} />
             </div>
           </div>
         )}
@@ -209,14 +240,19 @@ export default function NewPropertyPage() {
             </div>
             <h2 className="mt-4 font-title text-xl font-bold text-ink">Tudo pronto!</h2>
             <p className="mx-auto mt-2 max-w-md text-muted">
-              Revise as informações e publique. O imóvel entra como <strong>Rascunho</strong> e
-              você pode ativá-lo quando quiser.
+              {photos.length > 0
+                ? `${photos.length} foto(s) anexada(s). `
+                : "Nenhuma foto anexada — recomendamos adicionar pelo menos uma. "}
+              O imóvel entra como <strong>Rascunho</strong> e você pode ativá-lo quando quiser.
             </p>
+            {publishError && <p className="mt-3 text-sm text-red-600">{publishError}</p>}
             <div className="mt-6 flex justify-center gap-3">
-              <Button variant="outline">Salvar como rascunho</Button>
-              <ButtonLink href="/dashboard/imoveis" variant="gold">
-                Publicar anúncio
-              </ButtonLink>
+              <Button variant="outline" onClick={() => publish()} disabled={publishing}>
+                Salvar como rascunho
+              </Button>
+              <Button variant="gold" onClick={() => publish()} disabled={publishing}>
+                {publishing ? "Publicando..." : "Publicar anúncio"}
+              </Button>
             </div>
           </div>
         )}
