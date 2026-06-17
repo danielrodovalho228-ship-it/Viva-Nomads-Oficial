@@ -77,6 +77,18 @@ button {
   font-family: inherit;
 }
 
+/* Foco visível por teclado em todos os elementos interativos (WCAG 2.4.7) */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--color-blue-500);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
 /* Utilitários de marca */
 @layer components {
   .container-page {

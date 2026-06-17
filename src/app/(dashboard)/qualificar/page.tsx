@@ -448,7 +448,7 @@ function ScoreRow({
       <span
         className={cn(
           "shrink-0 text-sm font-semibold",
-          on ? "text-champagne-600" : "text-muted"
+          on ? "text-green-900" : "text-muted"
         )}
       >
         +{pts}

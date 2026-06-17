@@ -12,9 +12,11 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/store";
-import { PageTitle, StatCard, Panel, EmptyState } from "@/components/dashboard/primitives";
+import { StatCard, Panel, EmptyState } from "@/components/dashboard/primitives";
+import { DashboardBanner } from "@/components/dashboard/banner";
 import { ButtonLink } from "@/components/ui/button";
 import { SAMPLE_PROPERTIES } from "@/lib/properties";
+import { PHOTOS } from "@/lib/media";
 import { formatBRL } from "@/lib/utils";
 import { WorkReadyBadge } from "@/components/ui/badge";
 
@@ -32,11 +34,14 @@ function OwnerDashboard({ name }: { name: string }) {
 
   return (
     <>
-      <PageTitle
+      <DashboardBanner
+        className="mb-6"
+        image={PHOTOS.dashOwner}
+        alt="Sala de apartamento mobiliado preparada para anúncio"
         title={`Olá, ${name} 👋`}
-        subtitle="Aqui está o resumo dos seus anúncios."
+        subtitle="Prepare seu imóvel, publique e fale com inquilinos qualificados."
         action={
-          <ButtonLink href="/qualificar" variant="gold">
+          <ButtonLink href="/qualificar" variant="accent">
             <ClipboardCheck className="h-4 w-4" /> Novo anúncio
           </ButtonLink>
         }
@@ -91,7 +96,7 @@ function OwnerDashboard({ name }: { name: string }) {
           </ul>
           <Link
             href="/dashboard/imoveis"
-            className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-forest hover:text-champagne-600"
+            className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-forest hover:text-blue-700"
           >
             Ver todos <ArrowRight className="h-4 w-4" />
           </Link>
@@ -112,11 +117,14 @@ function OwnerDashboard({ name }: { name: string }) {
 function TenantDashboard({ name }: { name: string }) {
   return (
     <>
-      <PageTitle
+      <DashboardBanner
+        className="mb-6"
+        image={PHOTOS.dashTenant}
+        alt="Canto aconchegante de apartamento mobiliado com luz da manhã"
         title={`Olá, ${name} 👋`}
         subtitle="Encontre o imóvel certo para a sua próxima fase."
         action={
-          <ButtonLink href="/buscar" variant="gold">
+          <ButtonLink href="/buscar" variant="accent">
             <Search className="h-4 w-4" /> Buscar imóveis
           </ButtonLink>
         }

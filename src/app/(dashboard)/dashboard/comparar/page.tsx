@@ -43,7 +43,7 @@ export default function ComparePage() {
       label: "Pronto para Trabalho",
       render: (p) =>
         p.workReadyBadge ? (
-          <span className="inline-flex items-center gap-1 text-champagne-600">
+          <span className="inline-flex items-center gap-1 text-green-900">
             <Award className="h-4 w-4" /> Sim
           </span>
         ) : (
@@ -117,7 +117,7 @@ export default function ComparePage() {
 function CompatBar({ score }: { score: number }) {
   return (
     <div>
-      <span className={cn("text-sm font-semibold", score >= 70 ? "text-champagne-600" : "text-muted")}>
+      <span className={cn("text-sm font-semibold", score >= 70 ? "text-green-900" : "text-muted")}>
         {score}% compatível
       </span>
       <div className="mt-1 h-1.5 w-24 overflow-hidden rounded-full bg-sage-100">

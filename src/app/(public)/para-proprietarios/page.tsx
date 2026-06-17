@@ -16,7 +16,7 @@ export default function ForLandlordsPage() {
         <div className="container-page grid items-center gap-10 md:grid-cols-2">
           <div>
             <h1 className="font-title text-4xl font-extrabold leading-tight md:text-5xl">
-              Ganhe aproximadamente <span className="text-champagne">2x mais</span> que no
+              Ganhe aproximadamente <span className="text-green-300">2x mais</span> que no
               Airbnb
             </h1>
             <p className="mt-5 max-w-lg text-lg text-white/80">

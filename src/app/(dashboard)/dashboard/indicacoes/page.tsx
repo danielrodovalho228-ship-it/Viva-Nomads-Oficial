@@ -52,7 +52,7 @@ export default function ReferralsPage() {
           <h2 className="font-title text-lg font-bold">Seu link de indicação</h2>
         </div>
         <p className="mt-1 text-sm text-white/70">
-          Seu código: <strong className="text-champagne">{code}</strong>
+          Seu código: <strong className="text-green-300">{code}</strong>
         </p>
 
         <div className="mt-4 flex flex-col gap-2 sm:flex-row">

@@ -179,7 +179,7 @@ export default function AuthPage() {
               <button
                 type="button"
                 onClick={() => setShowSimulator((v) => !v)}
-                className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-forest hover:text-champagne-600"
+                className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-forest hover:text-blue-700"
               >
                 <Calculator className="h-4 w-4" />
                 {showSimulator ? "Fechar simulador" : "Não sei qual escolher? Simule aqui"}
