@@ -33,6 +33,7 @@ export function Footer() {
           <FooterLink href="/auth">Entrar ou cadastrar</FooterLink>
           <FooterLink href="/qualificar">Anunciar imóvel</FooterLink>
           <FooterLink href="/dashboard">Meu painel</FooterLink>
+          <FooterLink href="/termos">Termos de Uso</FooterLink>
         </FooterCol>
       </div>
 

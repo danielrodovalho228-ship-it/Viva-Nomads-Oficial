@@ -1,4 +1,6 @@
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
+import { ButtonLink } from "@/components/ui/button";
+import { OwnerDecisionNotice } from "@/components/legal-notice";
 import { cn } from "@/lib/utils";
 
 type Light = "green" | "yellow" | "red";
@@ -45,6 +47,7 @@ export default function LeadsPage() {
                 <th className="px-5 py-3 font-medium">Perfil</th>
                 <th className="px-5 py-3 font-medium">Análise (CAF)</th>
                 <th className="px-5 py-3 font-medium">Status</th>
+                <th className="px-5 py-3 font-medium text-right">Ação</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-sage-200">
@@ -64,6 +67,11 @@ export default function LeadsPage() {
                     </span>
                   </td>
                   <td className="px-5 py-4 text-muted">{l.status}</td>
+                  <td className="px-5 py-4 text-right">
+                    <ButtonLink href="/dashboard/fechamento" variant="outline" size="sm">
+                      Iniciar fechamento
+                    </ButtonLink>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -71,10 +79,7 @@ export default function LeadsPage() {
         </div>
       </Panel>
 
-      <p className="mt-4 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-700">
-        ⚠️ A análise é informativa. A decisão de alugar é exclusivamente do proprietário — a
-        plataforma nunca aprova ou reprova o inquilino.
-      </p>
+      <OwnerDecisionNotice className="mt-4" />
     </>
   );
 }

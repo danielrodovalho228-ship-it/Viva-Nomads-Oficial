@@ -14,6 +14,7 @@ import {
   Search,
   ClipboardCheck,
   ShieldCheck,
+  FileSignature,
   Menu,
   LogOut,
 } from "lucide-react";
@@ -32,6 +33,7 @@ const OWNER_NAV: NavItem[] = [
   { href: "/qualificar", label: "Qualificar imóvel", icon: ClipboardCheck },
   { href: "/dashboard/imoveis", label: "Meus imóveis", icon: Home },
   { href: "/dashboard/leads", label: "Leads", icon: Users },
+  { href: "/dashboard/fechamento", label: "Fechamento", icon: FileSignature },
   { href: "/dashboard/mensagens", label: "Mensagens", icon: MessageSquare },
   { href: "/dashboard/assinatura", label: "Assinatura", icon: CreditCard },
   { href: "/dashboard/conta", label: "Conta", icon: Settings },

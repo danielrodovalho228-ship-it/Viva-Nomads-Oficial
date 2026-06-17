@@ -13,12 +13,13 @@ import {
   Users,
   CalendarCheck,
   MessageSquare,
+  FileSignature,
 } from "lucide-react";
 import type { Property, WorkspaceType } from "@/lib/types";
 import { formatBRL, cn } from "@/lib/utils";
 import { WorkReadyBadge } from "@/components/ui/badge";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { PropertyCard } from "@/components/property-card";
 
 const TABS = [
@@ -231,10 +232,13 @@ export function PropertyDetail({
             </p>
 
             <div className="mt-5 flex flex-col gap-3">
-              <Button variant="gold" className="w-full">
+              <ButtonLink href="/dashboard/fechamento" variant="gold" className="w-full">
+                <FileSignature className="h-4 w-4" /> Candidatar-se
+              </ButtonLink>
+              <Button variant="outline" className="w-full">
                 <MessageSquare className="h-4 w-4" /> Enviar consulta
               </Button>
-              <Button variant="outline" className="w-full">
+              <Button variant="ghost" className="w-full">
                 <CalendarCheck className="h-4 w-4" /> Agendar visita
               </Button>
             </div>
