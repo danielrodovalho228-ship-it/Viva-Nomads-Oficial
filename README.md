@@ -78,6 +78,12 @@ contratos, garantias, cotações de seguro, verificações CAF e transações de
 | 12. Admin | ✅ |
 | Seção 8 — verificação CAF, garantia, contrato ZapSign | ✅ |
 
+## Deploy
+
+Guia completo (Vercel + Supabase + DNS de `vivanomads.com.br`) em **[DEPLOY.md](./DEPLOY.md)**.
+`vercel.json` já fixa a região **gru1 (São Paulo)** e libera CORS nas rotas `/api/*`
+para o futuro app. Health-check em `GET /api/health`.
+
 ## Rotas de API
 
 | Rota | Função |
@@ -87,6 +93,7 @@ contratos, garantias, cotações de seguro, verificações CAF e transações de
 | `POST /api/caf/verify` | Verificação de inquilino (CAF) → laudo de semáforo |
 | `POST /api/contrato` | Geração de contrato de temporada (ZapSign) |
 | `GET /auth/callback` | Troca de código OAuth/magic-link por sessão (Supabase) |
+| `GET /api/health` | Health-check + status das integrações |
 
 A plataforma é **conectadora** — não é locadora, fiadora nem garantidora, e não intermedeia
 o pagamento do aluguel (vai direto ao proprietário).
