@@ -40,13 +40,12 @@ export const PUBLIC_NAV = [
   { href: "/precos", label: "Planos" },
 ];
 
-/** Cidades com landing de SEO (Fase 11 — começar por Uberlândia). */
-export const CITIES = [
-  { slug: "uberlandia", name: "Uberlândia", state: "MG" },
-  { slug: "sao-paulo", name: "São Paulo", state: "SP" },
-  { slug: "belo-horizonte", name: "Belo Horizonte", state: "MG" },
-  { slug: "goiania", name: "Goiânia", state: "GO" },
-];
+/**
+ * Cidades atendidas (com inventário) — usadas no footer e no sitemap.
+ * Apenas Uberlândia por enquanto: evita "doorway pages" finas de SEO.
+ * Outras cidades têm página, mas ficam noindex até haver imóveis.
+ */
+export const CITIES = [{ slug: "uberlandia", name: "Uberlândia", state: "MG" }];
 
 /** Planos de assinatura do proprietário (modelo híbrido — Fase 10). */
 export const PLANS = [

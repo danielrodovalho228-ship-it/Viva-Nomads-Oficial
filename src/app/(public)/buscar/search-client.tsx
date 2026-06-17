@@ -158,7 +158,6 @@ export function SearchClient({ properties }: { properties: Property[] }) {
                 label: formatBRL(p.monthlyPrice),
                 kind: "property",
               }))}
-              placeholderLabel="[MAPA — marcadores de preço (configure NEXT_PUBLIC_MAPBOX_TOKEN)]"
             />
           </div>
         </div>

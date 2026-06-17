@@ -10,11 +10,11 @@ const B = "/images/busca";
 const D = "/images/dashboard";
 const I = "/images/imoveis";
 
-/** Placeholder blur de marca (azul) — evita CLS e dá load suave. */
+/** Placeholder blur neutro (skeleton suave) — evita CLS e flash forte. */
 export const BRAND_BLUR =
   "data:image/svg+xml;base64," +
   Buffer.from(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"><rect width="8" height="8" fill="#0b2a66"/></svg>`
+    `<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"><rect width="8" height="8" fill="#eef1f5"/></svg>`
   ).toString("base64");
 
 export const PHOTOS = {

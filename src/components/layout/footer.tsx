@@ -36,6 +36,7 @@ export function Footer() {
           <FooterLink href="/qualificar">Anunciar imóvel</FooterLink>
           <FooterLink href="/dashboard">Meu painel</FooterLink>
           <FooterLink href="/termos">Termos de Uso</FooterLink>
+          <FooterLink href="/privacidade">Privacidade</FooterLink>
         </FooterCol>
       </div>
 

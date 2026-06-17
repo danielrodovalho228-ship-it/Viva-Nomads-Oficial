@@ -69,6 +69,14 @@ h1, h2, h3, h4, h5 {
   line-height: 1.05;
 }
 
+/* Form/controles não herdam font-family por padrão — força a fonte da marca */
+input,
+select,
+textarea,
+button {
+  font-family: inherit;
+}
+
 /* Utilitários de marca */
 @layer components {
   .container-page {

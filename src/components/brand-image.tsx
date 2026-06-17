@@ -24,7 +24,7 @@ export function BrandImage({
   rounded?: string;
 }) {
   return (
-    <div className={cn("relative overflow-hidden bg-blue-900", rounded, className)}>
+    <div className={cn("relative overflow-hidden bg-surface-2", rounded, className)}>
       <Image
         src={src}
         alt={alt}

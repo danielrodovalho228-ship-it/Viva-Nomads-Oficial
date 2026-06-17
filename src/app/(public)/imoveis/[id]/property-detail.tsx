@@ -239,7 +239,6 @@ export function PropertyDetail({
                     className="mt-4 aspect-[16/9] w-full"
                     center={{ lat: property.lat, lng: property.lng }}
                     markers={[propertyMarker, ...workspaceMarkers]}
-                    placeholderLabel="[MAPA — imóvel + coworkings e salas próximas]"
                   />
                 </div>
               </div>
@@ -263,7 +262,6 @@ export function PropertyDetail({
                 className="aspect-[16/9] w-full"
                 center={{ lat: property.lat, lng: property.lng }}
                 markers={[propertyMarker]}
-                placeholderLabel={`[MAPA — ${property.neighborhood}, ${property.city}]`}
               />
             )}
 

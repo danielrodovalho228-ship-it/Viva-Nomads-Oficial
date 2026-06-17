@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
+import { MapPin } from "lucide-react";
 import { formatBRL, cn } from "@/lib/utils";
 
 const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
@@ -25,13 +25,11 @@ export function PropertyMap({
   center,
   zoom = 13,
   className,
-  placeholderLabel = "[MAPA — configure NEXT_PUBLIC_MAPBOX_TOKEN]",
 }: {
   markers: MapMarker[];
   center?: { lat: number; lng: number };
   zoom?: number;
   className?: string;
-  placeholderLabel?: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -65,16 +63,37 @@ export function PropertyMap({
   }, [markers, first, zoom]);
 
   if (!TOKEN || !first) {
+    // Fallback elegante (sem texto técnico) enquanto o Mapbox não está configurado:
+    // grade sutil de marca + chips de preço dos imóveis.
     return (
-      <div className={cn("relative overflow-hidden rounded-2xl", className)}>
-        <PhotoPlaceholder label={placeholderLabel} className="h-full w-full" />
+      <div
+        className={cn(
+          "relative overflow-hidden rounded-2xl border border-line bg-surface-2",
+          className
+        )}
+      >
+        <div
+          className="absolute inset-0 opacity-60"
+          style={{
+            backgroundImage:
+              "linear-gradient(#e2e7ee 1px, transparent 1px), linear-gradient(90deg, #e2e7ee 1px, transparent 1px)",
+            backgroundSize: "40px 40px",
+          }}
+        />
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-blue-200">
+          <MapPin className="h-10 w-10" />
+        </div>
         {markers.length > 0 && (
           <div className="absolute inset-x-0 bottom-0 flex flex-wrap gap-2 p-3">
-            {markers.slice(0, 5).map((m) => (
+            {markers.slice(0, 6).map((m) => (
               <span
                 key={m.id}
-                className="inline-flex items-center rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-forest shadow"
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold shadow",
+                  m.kind === "workspace" ? "bg-white text-blue-700" : "bg-blue-500 text-white"
+                )}
               >
+                <MapPin className="h-3 w-3" />
                 {m.label}
               </span>
             ))}

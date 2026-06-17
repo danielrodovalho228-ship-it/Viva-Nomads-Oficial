@@ -13,11 +13,14 @@ interface Params {
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { cidade } = await params;
   const name = cityFromSlug(cidade);
+  const properties = await listPropertiesByCity(name);
   const title = `Imóveis mobiliados mensais em ${name}`;
   const description = `Alugue imóveis mobiliados por temporada de 30 a 180 dias em ${name}. Para profissionais em transição: executivos, médicos, famílias e nômades digitais.`;
   return {
     title,
     description,
+    // Sem inventário: noindex para evitar página fina (doorway) no Google.
+    robots: properties.length === 0 ? { index: false, follow: true } : undefined,
     alternates: { canonical: `/cidades/${cidade}` },
     openGraph: { title, description, locale: "pt_BR", url: `/cidades/${cidade}` },
   };
