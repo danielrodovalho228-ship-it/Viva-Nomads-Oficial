@@ -9,7 +9,8 @@ import { FavoriteButton } from "@/components/favorite-button";
 
 export function PropertyCard({ property }: { property: Property }) {
   const cover = property.photos[0];
-  const hasRealPhoto = typeof cover === "string" && /^https?:\/\//.test(cover);
+  const hasRealPhoto =
+    typeof cover === "string" && (/^https?:\/\//.test(cover) || cover.startsWith("/"));
 
   return (
     <Link

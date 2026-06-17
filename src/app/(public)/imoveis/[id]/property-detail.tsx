@@ -27,7 +27,7 @@ import { PropertyCard } from "@/components/property-card";
 import { BrandImage } from "@/components/brand-image";
 import { PropertyMap, type MapMarker } from "@/components/property-map";
 
-const isPhoto = (s?: string) => typeof s === "string" && /^https?:\/\//.test(s);
+const isPhoto = (s?: string) => typeof s === "string" && (/^https?:\/\//.test(s) || s.startsWith("/"));
 
 const TABS = [
   "Visão Geral",

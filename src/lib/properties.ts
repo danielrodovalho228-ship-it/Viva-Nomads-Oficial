@@ -33,7 +33,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     status: "active",
     workReadyBadge: true,
     workScore: 86,
-    photos: [...PHOTOS.galleryA],
+    photos: [...PHOTOS.galleryRooms],
     amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada"],
     workFeatures: ["Escritório dedicado", "Mesa de trabalho", "Cadeira ergonômica", "Internet fibra 300 Mbps"],
     nearbyWorkspaces: [
@@ -68,7 +68,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     status: "active",
     workReadyBadge: true,
     workScore: 74,
-    photos: [...PHOTOS.galleryB],
+    photos: [PHOTOS.galleryRooms[1], PHOTOS.galleryRooms[2], PHOTOS.galleryRooms[3], PHOTOS.galleryRooms[0]],
     amenities: ["Mobiliado completo", "Ar-condicionado", "Cozinha equipada", "Aceita pets"],
     workFeatures: ["Mesa de trabalho", "Internet fibra 200 Mbps"],
     nearbyWorkspaces: [
@@ -103,7 +103,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     status: "active",
     workReadyBadge: false,
     workScore: 52,
-    photos: [...PHOTOS.galleryC],
+    photos: [PHOTOS.galleryRooms[0], PHOTOS.galleryRooms[3], PHOTOS.galleryRooms[1]],
     amenities: ["Mobiliado completo", "Máquina de lavar", "Cozinha equipada", "Aceita pets"],
     workFeatures: ["Internet fibra 100 Mbps"],
     nearbyWorkspaces: [{ name: "Coworking Tibery", type: "coworking", distanceM: 1800 }],
