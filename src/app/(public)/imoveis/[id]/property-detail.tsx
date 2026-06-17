@@ -24,7 +24,10 @@ import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { WorkReadyBadge, InvoiceBadge, InsuranceBadge } from "@/components/ui/badge";
 import { PropertyCard } from "@/components/property-card";
+import { BrandImage } from "@/components/brand-image";
 import { PropertyMap, type MapMarker } from "@/components/property-map";
+
+const isPhoto = (s?: string) => typeof s === "string" && /^https?:\/\//.test(s);
 
 const TABS = [
   "Visão Geral",
@@ -88,10 +91,20 @@ export function PropertyDetail({
       {/* Galeria */}
       <div className="grid gap-3 md:grid-cols-4">
         <div className="relative md:col-span-3">
-          <PhotoPlaceholder
-            label={property.photos[activePhoto]}
-            className="aspect-[16/10] w-full rounded-2xl"
-          />
+          {isPhoto(property.photos[activePhoto]) ? (
+            <BrandImage
+              src={property.photos[activePhoto]}
+              alt={`${property.title} — foto ${activePhoto + 1}`}
+              priority
+              sizes="(max-width: 768px) 100vw, 66vw"
+              className="aspect-[16/10] w-full"
+            />
+          ) : (
+            <PhotoPlaceholder
+              label={property.photos[activePhoto]}
+              className="aspect-[16/10] w-full rounded-2xl"
+            />
+          )}
           {property.workReadyBadge && (
             <div className="absolute left-4 top-4">
               <WorkReadyBadge />
@@ -103,12 +116,17 @@ export function PropertyDetail({
             <button
               key={i}
               onClick={() => setActivePhoto(i)}
+              aria-label={`Ver foto ${i + 1}`}
               className={cn(
-                "overflow-hidden rounded-xl border-2",
-                i === activePhoto ? "border-champagne" : "border-transparent"
+                "overflow-hidden rounded-xl border-2 transition-colors",
+                i === activePhoto ? "border-blue-500" : "border-transparent hover:border-blue-200"
               )}
             >
-              <PhotoPlaceholder label={`#${i + 1}`} className="aspect-square w-full" />
+              {isPhoto(p) ? (
+                <BrandImage src={p} alt={`Miniatura ${i + 1}`} treat={false} sizes="120px" className="aspect-square w-full" />
+              ) : (
+                <PhotoPlaceholder label={`#${i + 1}`} className="aspect-square w-full" />
+              )}
             </button>
           ))}
         </div>

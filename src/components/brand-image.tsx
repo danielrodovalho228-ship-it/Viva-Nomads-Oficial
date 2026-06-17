@@ -1,10 +1,10 @@
 import Image from "next/image";
+import { BRAND_BLUR } from "@/lib/media";
 import { cn } from "@/lib/utils";
 
 /**
- * Imagem com tratamento de marca: enquadramento padronizado + leve duotone
- * azul para unificar a fotografia. Usa next/image (otimização, lazy, LCP).
- * Fundo gradiente garante composição intencional mesmo durante o load.
+ * Imagem com tratamento de marca: enquadramento padronizado, blur placeholder
+ * (sem CLS) e leve duotone azul para unificar a fotografia. Usa next/image.
  */
 export function BrandImage({
   src,
@@ -31,6 +31,8 @@ export function BrandImage({
         fill
         sizes={sizes}
         priority={priority}
+        placeholder="blur"
+        blurDataURL={BRAND_BLUR}
         className="object-cover"
       />
       {treat && (

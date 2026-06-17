@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { Building2, User, Mail, Lock, Globe, Calculator } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { Button } from "@/components/ui/button";
+import { BrandImage } from "@/components/brand-image";
+import { PHOTOS } from "@/lib/media";
 import { TaxSimulator } from "@/components/tax-simulator";
 import { useAuthStore } from "@/lib/store";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
@@ -74,21 +76,35 @@ export default function AuthPage() {
 
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
-      {/* Lado da marca */}
-      <div className="hidden flex-col justify-between bg-forest p-12 text-white lg:flex">
-        <Logo href="/home" light />
-        <div>
-          <h1 className="font-title text-4xl font-extrabold leading-tight">
-            Sua nova fase começa aqui.
-          </h1>
-          <p className="mt-4 max-w-md text-white/80">
-            Locação mobiliada mensal para profissionais em transição. Não é Airbnb, não é
-            QuintoAndar.
-          </p>
+      {/* Lado da marca — foto distinta para login e cadastro (plano C1/C2) */}
+      <div className="relative hidden overflow-hidden lg:block">
+        <BrandImage
+          src={mode === "login" ? PHOTOS.authLogin : PHOTOS.authSignup}
+          alt={
+            mode === "login"
+              ? "Profissional trabalhando concentrado em apartamento mobiliado ao anoitecer"
+              : "Pessoa abrindo a porta de um novo apartamento mobiliado, mala ao lado"
+          }
+          rounded="rounded-none"
+          sizes="50vw"
+          priority
+          treat={false}
+          className="absolute inset-0 h-full w-full"
+        />
+        <div className="absolute inset-0 bg-night/65" />
+        <div className="absolute inset-0 flex flex-col justify-between p-12 text-white">
+          <Logo href="/home" light />
+          <div>
+            <h1 className="font-title text-4xl font-extrabold leading-tight">
+              {mode === "login" ? "Bem-vindo de volta." : "Sua nova fase começa aqui."}
+            </h1>
+            <p className="mt-4 max-w-md text-white/75">
+              Locação mobiliada mensal para profissionais em transição. Não é Airbnb, não é
+              QuintoAndar.
+            </p>
+          </div>
+          <p className="text-sm text-white/50">Locação por temporada · art. 48, Lei 8.245/91</p>
         </div>
-        <p className="text-sm text-white/50">
-          Locação por temporada · art. 48, Lei 8.245/91
-        </p>
       </div>
 
       {/* Formulário */}
