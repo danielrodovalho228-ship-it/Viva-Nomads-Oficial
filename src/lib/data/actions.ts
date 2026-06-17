@@ -114,6 +114,35 @@ export async function createProperty(input: {
   return { ok: true, id: data.id };
 }
 
+/** Adiciona ou remove um imóvel dos favoritos do inquilino. */
+export async function toggleFavorite(
+  propertyId: string,
+  favorite: boolean
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  if (!supabase) return { ok: true, demo: true };
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Não autenticado." };
+
+  if (favorite) {
+    const { error } = await supabase
+      .from("favorites")
+      .insert({ tenant_id: user.id, property_id: propertyId });
+    if (error && error.code !== "23505") return { ok: false, error: error.message };
+  } else {
+    const { error } = await supabase
+      .from("favorites")
+      .delete()
+      .eq("tenant_id", user.id)
+      .eq("property_id", propertyId);
+    if (error) return { ok: false, error: error.message };
+  }
+  return { ok: true };
+}
+
 /** Registra uma consulta de inquilino como lead para o proprietário. */
 export async function createLead(propertyId: string, ownerId: string): Promise<ActionResult> {
   const supabase = await createClient();

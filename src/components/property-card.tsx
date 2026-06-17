@@ -4,21 +4,33 @@ import type { Property } from "@/lib/types";
 import { formatBRL } from "@/lib/utils";
 import { WorkReadyBadge } from "@/components/ui/badge";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
+import { FavoriteButton } from "@/components/favorite-button";
 
 export function PropertyCard({ property }: { property: Property }) {
+  const cover = property.photos[0];
+  const hasRealPhoto = typeof cover === "string" && /^https?:\/\//.test(cover);
+
   return (
     <Link
       href={`/imoveis/${property.id}`}
       className="group flex flex-col overflow-hidden rounded-2xl border border-sage-200 bg-white transition-shadow hover:shadow-lg"
     >
       <div className="relative aspect-[4/3]">
-        <PhotoPlaceholder label={property.photos[0]} className="h-full w-full" />
+        {hasRealPhoto ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={cover} alt={property.title} className="h-full w-full object-cover" />
+        ) : (
+          <PhotoPlaceholder label={cover} className="h-full w-full" />
+        )}
         {property.workReadyBadge && (
           <div className="absolute left-3 top-3">
             <WorkReadyBadge />
           </div>
         )}
-        <span className="absolute right-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-xs font-medium text-forest">
+        <div className="absolute right-3 top-3">
+          <FavoriteButton propertyId={property.id} />
+        </div>
+        <span className="absolute bottom-3 left-3 rounded-full bg-white/90 px-2.5 py-1 text-xs font-medium text-forest">
           {property.propertyType}
         </span>
       </div>

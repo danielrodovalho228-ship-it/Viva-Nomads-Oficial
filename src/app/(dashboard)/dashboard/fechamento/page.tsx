@@ -28,6 +28,7 @@ import {
   type CafResult,
   type CostParty,
 } from "@/lib/closing";
+import { COMMISSION_BY_PLAN } from "@/lib/constants";
 import { formatBRL, cn } from "@/lib/utils";
 
 const STEPS = ["Candidatura & CAF", "Garantia", "Cotação", "Patrimonial", "Contrato", "Resumo"];
@@ -35,6 +36,11 @@ const STEPS = ["Candidatura & CAF", "Garantia", "Cotação", "Patrimonial", "Con
 // Inquilino e imóvel da candidatura (mock — viria do lead selecionado).
 const TENANT = { name: "Ana Carvalho", profile: "Médica · residência", foreigner: false };
 const PROPERTY = { title: "Apto mobiliado · Santa Mônica", monthlyRent: 3200, term: 12 };
+// Plano do proprietário define a comissão de fechamento (12% / 10% / 8%).
+const OWNER_PLAN = "essential";
+const COMMISSION_RATE = COMMISSION_BY_PLAN[OWNER_PLAN];
+const PLATFORM_COMMISSION = Math.round(PROPERTY.monthlyRent * COMMISSION_RATE);
+const OWNER_NET = PROPERTY.monthlyRent - PLATFORM_COMMISSION;
 
 export default function ClosingPage() {
   const [step, setStep] = useState(0);
@@ -102,6 +108,16 @@ export default function ClosingPage() {
       });
       const data = await res.json();
       setSignUrl(data.signUrl ?? null);
+      // Registra a comissão de fechamento (split sobre o 1º mês).
+      await fetch("/api/comissao", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          firstMonthRent: PROPERTY.monthlyRent,
+          plan: OWNER_PLAN,
+          name: TENANT.name,
+        }),
+      }).catch(() => {});
       setGenerated(true);
     } catch {
       setGenerated(true);
@@ -367,6 +383,25 @@ export default function ClosingPage() {
               />
             </div>
 
+            {/* Comissão de fechamento (split sobre o 1º mês) */}
+            <div className="rounded-xl border border-champagne/40 bg-champagne/10 p-4 text-sm">
+              <p className="font-title font-bold text-forest">
+                Comissão de fechamento · {Math.round(COMMISSION_RATE * 100)}% (plano Essencial)
+              </p>
+              <p className="mt-1 text-xs text-muted">
+                Cobrada uma única vez sobre o 1º mês, via split. Os aluguéis seguintes vão
+                direto ao proprietário.
+              </p>
+              <div className="mt-3 space-y-1">
+                <Row label="1º aluguel" value={formatBRL(PROPERTY.monthlyRent)} />
+                <Row label="Comissão da plataforma" value={`− ${formatBRL(PLATFORM_COMMISSION)}`} />
+                <div className="flex items-center justify-between border-t border-champagne/40 pt-1 font-medium text-forest">
+                  <span>Líquido ao proprietário</span>
+                  <span>{formatBRL(OWNER_NET)}</span>
+                </div>
+              </div>
+            </div>
+
             {generated ? (
               <div className="space-y-2">
                 <div className="flex items-center gap-2 rounded-xl bg-sage-100 px-4 py-3 text-sm text-forest">
@@ -417,6 +452,10 @@ export default function ClosingPage() {
               {insurer && <Row label="Seguradora" value={INSURERS.find((i) => i.id === insurer)?.name ?? "—"} />}
               <Row label="Seguro patrimonial" value={patrimonial ? "Contratado" : "Não contratado"} />
               <Row label="Contrato" value={generated ? "Enviado (ZapSign)" : "Pendente"} />
+              <Row
+                label={`Comissão (${Math.round(COMMISSION_RATE * 100)}%)`}
+                value={`${formatBRL(PLATFORM_COMMISSION)} · líquido ao dono ${formatBRL(OWNER_NET)}`}
+              />
             </div>
             <PlatformLegalNotice className="text-left" />
           </div>

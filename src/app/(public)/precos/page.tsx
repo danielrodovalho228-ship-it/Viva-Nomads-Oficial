@@ -31,7 +31,7 @@ export default function PricingPage() {
       </section>
 
       <section className="container-page -mt-10 pb-16">
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {PLANS.map((plan) => (
             <div
               key={plan.id}
@@ -51,9 +51,13 @@ export default function PricingPage() {
               <p className="mt-1 text-sm text-muted">{plan.tagline}</p>
               <div className="mt-5 flex items-baseline gap-1">
                 <span className="font-title text-4xl font-extrabold text-forest">
-                  {plan.price === 0 ? "Grátis" : formatBRL(plan.price)}
+                  {plan.price === null
+                    ? "Sob consulta"
+                    : plan.price === 0
+                      ? "Grátis"
+                      : formatBRL(plan.price)}
                 </span>
-                {plan.price > 0 && <span className="text-muted">/mês</span>}
+                {!!plan.price && <span className="text-muted">/mês</span>}
               </div>
 
               <ul className="mt-6 flex-1 space-y-3">

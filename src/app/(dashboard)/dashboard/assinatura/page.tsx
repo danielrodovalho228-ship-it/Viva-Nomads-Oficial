@@ -79,10 +79,11 @@ export default function SubscriptionPage() {
         </span>
       </Panel>
 
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {PLANS.map((plan) => {
           const current = plan.id === currentPlanId;
           const isSelected = selected === plan.id;
+          const isCustom = plan.price === null;
           return (
             <div
               key={plan.id}
@@ -98,9 +99,9 @@ export default function SubscriptionPage() {
               <h3 className="font-title text-lg font-bold text-ink">{plan.name}</h3>
               <div className="mt-2 flex items-baseline gap-1">
                 <span className="font-title text-3xl font-extrabold text-forest">
-                  {plan.price === 0 ? "Grátis" : formatBRL(plan.price)}
+                  {isCustom ? "Sob consulta" : plan.price === 0 ? "Grátis" : formatBRL(plan.price)}
                 </span>
-                {plan.price > 0 && <span className="text-sm text-muted">/mês</span>}
+                {!!plan.price && <span className="text-sm text-muted">/mês</span>}
               </div>
               <ul className="mt-4 flex-1 space-y-2 text-sm">
                 {plan.features.slice(0, 4).map((f) => (
@@ -112,10 +113,16 @@ export default function SubscriptionPage() {
               <Button
                 variant={current ? "outline" : plan.featured ? "gold" : "primary"}
                 className="mt-5 w-full"
-                disabled={current || plan.price === 0}
+                disabled={current || plan.price === 0 || isCustom}
                 onClick={() => subscribe(plan.id)}
               >
-                {current ? "Plano atual" : plan.price === 0 ? "Plano gratuito" : plan.cta}
+                {current
+                  ? "Plano atual"
+                  : isCustom
+                    ? plan.cta
+                    : plan.price === 0
+                      ? "Plano gratuito"
+                      : plan.cta}
               </Button>
             </div>
           );

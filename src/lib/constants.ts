@@ -54,6 +54,7 @@ export const PLANS = [
     id: "free",
     name: "Gratuito",
     price: 0,
+    commission: 0.12, // 12% no fechamento (porta de entrada)
     tagline: "Para testar a plataforma",
     featured: false,
     listingLimit: 1,
@@ -62,6 +63,7 @@ export const PLANS = [
       "Aparece na busca",
       "Recebe consultas de inquilinos",
       "Checklist de qualificação",
+      "Comissão de 12% no fechamento",
     ],
     cta: "Começar grátis",
   },
@@ -69,6 +71,7 @@ export const PLANS = [
     id: "essential",
     name: "Essencial",
     price: 49,
+    commission: 0.1, // 10% no fechamento
     tagline: "Para quem tem alguns imóveis",
     featured: true,
     listingLimit: 5,
@@ -77,7 +80,7 @@ export const PLANS = [
       "Selo Pronto para Trabalho",
       "Destaque na busca",
       "Painel de leads e mensagens",
-      "Mapa de espaços de trabalho próximos",
+      "Comissão de 10% no fechamento",
     ],
     cta: "Assinar Essencial",
   },
@@ -85,6 +88,7 @@ export const PLANS = [
     id: "pro",
     name: "Profissional",
     price: 129,
+    commission: 0.08, // 8% no fechamento (por volume)
     tagline: "Para quem vive de locação",
     featured: false,
     listingLimit: 20,
@@ -93,9 +97,33 @@ export const PLANS = [
       "Tudo do Essencial",
       "Prioridade máxima na busca",
       "Geração de contrato via ZapSign",
-      "Análise de inquilino por IA (CAF)",
-      "Selo de verificação",
+      "Comissão de 8% no fechamento",
     ],
     cta: "Assinar Profissional",
   },
+  {
+    id: "gestor",
+    name: "Gestor",
+    price: null, // sob consulta
+    commission: null, // escalonada por volume
+    tagline: "Administradoras e coordenadores",
+    featured: false,
+    listingLimit: 999,
+    features: [
+      "Imóveis ilimitados",
+      "Tudo do Profissional",
+      "Comissão escalonada por volume",
+      "Gestão de carteira e múltiplos proprietários",
+      "Atendimento dedicado",
+    ],
+    cta: "Falar com vendas",
+  },
 ];
+
+/** Comissão de fechamento por plano (Atualização 1 — rodada 2). */
+export const COMMISSION_BY_PLAN: Record<string, number> = {
+  free: 0.12,
+  essential: 0.1,
+  pro: 0.08,
+  gestor: 0.08,
+};

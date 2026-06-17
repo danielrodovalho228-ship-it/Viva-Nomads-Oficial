@@ -54,6 +54,18 @@ export default function TermsPage() {
           requisitos de locação por temporada regular. As informações prestadas são de
           responsabilidade do proprietário.
         </Section>
+
+        <Section title="7. Simulador tributário">
+          O simulador tributário (PF × PJ) é uma ferramenta <strong>educativa</strong>, baseada
+          na Reforma Tributária / LC 214/2025, e <strong>não constitui aconselhamento fiscal</strong>.
+          Consulte um contador antes de decidir a forma de tributação dos seus aluguéis.
+        </Section>
+
+        <Section title="8. Comissão e indicações">
+          A comissão de fechamento é cobrada uma única vez sobre o primeiro mês de aluguel,
+          conforme o plano do proprietário. As recompensas do programa de indicação são
+          liberadas apenas após o evento qualificador real (primeira reserva ou locação).
+        </Section>
       </div>
     </div>
   );

@@ -15,6 +15,9 @@ import {
   ClipboardCheck,
   ShieldCheck,
   FileSignature,
+  BadgeCheck,
+  GitCompare,
+  Gift,
   Menu,
   LogOut,
 } from "lucide-react";
@@ -35,15 +38,19 @@ const OWNER_NAV: NavItem[] = [
   { href: "/dashboard/leads", label: "Leads", icon: Users },
   { href: "/dashboard/fechamento", label: "Fechamento", icon: FileSignature },
   { href: "/dashboard/mensagens", label: "Mensagens", icon: MessageSquare },
+  { href: "/dashboard/indicacoes", label: "Indicações", icon: Gift },
   { href: "/dashboard/assinatura", label: "Assinatura", icon: CreditCard },
   { href: "/dashboard/conta", label: "Conta", icon: Settings },
 ];
 
 const TENANT_NAV: NavItem[] = [
   { href: "/dashboard", label: "Visão geral", icon: LayoutDashboard },
+  { href: "/dashboard/verificacao", label: "Inquilino Verificado", icon: BadgeCheck },
   { href: "/dashboard/favoritos", label: "Favoritos", icon: Heart },
+  { href: "/dashboard/comparar", label: "Comparar", icon: GitCompare },
   { href: "/dashboard/buscas", label: "Buscas salvas", icon: Search },
   { href: "/dashboard/mensagens", label: "Mensagens", icon: MessageSquare },
+  { href: "/dashboard/indicacoes", label: "Indicações", icon: Gift },
   { href: "/dashboard/conta", label: "Conta", icon: Settings },
 ];
 

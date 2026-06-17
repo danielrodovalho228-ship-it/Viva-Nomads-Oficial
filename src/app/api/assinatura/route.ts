@@ -14,7 +14,7 @@ export async function POST(request: Request) {
   };
 
   const plan = PLANS.find((p) => p.id === planId);
-  if (!plan || plan.price === 0) {
+  if (!plan || !plan.price) {
     return NextResponse.json({ error: "Plano inválido para cobrança." }, { status: 400 });
   }
 

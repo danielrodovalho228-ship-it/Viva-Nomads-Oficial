@@ -3,6 +3,7 @@
 import { useAuthStore } from "@/lib/store";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
+import { TaxSimulator } from "@/components/tax-simulator";
 
 export default function AccountPage() {
   const user = useAuthStore((s) => s.user);
@@ -22,6 +23,13 @@ export default function AccountPage() {
           <Button>Salvar alterações</Button>
         </div>
       </Panel>
+
+      {user?.role !== "tenant" && (
+        <div className="mt-6">
+          <h2 className="mb-3 font-title text-lg font-bold text-ink">Tributação dos aluguéis</h2>
+          <TaxSimulator />
+        </div>
+      )}
 
       <Panel title="Verificação" className="mt-6">
         <p className="text-sm text-muted">

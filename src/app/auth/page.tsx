@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Building2, User, Mail, Lock, Globe } from "lucide-react";
+import { Building2, User, Mail, Lock, Globe, Calculator } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { Button } from "@/components/ui/button";
+import { TaxSimulator } from "@/components/tax-simulator";
 import { useAuthStore } from "@/lib/store";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import type { UserRole } from "@/lib/types";
+import type { PersonType } from "@/lib/tax";
 import { cn } from "@/lib/utils";
 
 export default function AuthPage() {
@@ -15,6 +17,8 @@ export default function AuthPage() {
   const setUser = useAuthStore((s) => s.setUser);
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [role, setRole] = useState<UserRole>("owner");
+  const [personType, setPersonType] = useState<PersonType>("pf");
+  const [showSimulator, setShowSimulator] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -45,7 +49,7 @@ export default function AuthPage() {
           const { error } = await supabase.auth.signUp({
             email,
             password,
-            options: { data: { full_name: name, role } },
+            options: { data: { full_name: name, role, person_type: personType } },
           });
           if (error) throw error;
         } else {
@@ -131,6 +135,44 @@ export default function AuthPage() {
                 title="Sou Inquilino"
                 text="Quero alugar um imóvel"
               />
+            </div>
+          )}
+
+          {/* PF/PJ — só para proprietário (Atualização 2) */}
+          {mode === "signup" && role === "owner" && (
+            <div className="mt-5">
+              <p className="mb-2 text-sm font-medium text-ink">
+                Como você vai receber os aluguéis?
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <RoleCard
+                  active={personType === "pf"}
+                  onClick={() => setPersonType("pf")}
+                  icon={User}
+                  title="Pessoa Física"
+                  text="CPF"
+                />
+                <RoleCard
+                  active={personType === "pj"}
+                  onClick={() => setPersonType("pj")}
+                  icon={Building2}
+                  title="Pessoa Jurídica"
+                  text="CNPJ"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSimulator((v) => !v)}
+                className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-forest hover:text-champagne-600"
+              >
+                <Calculator className="h-4 w-4" />
+                {showSimulator ? "Fechar simulador" : "Não sei qual escolher? Simule aqui"}
+              </button>
+              {showSimulator && (
+                <div className="mt-3">
+                  <TaxSimulator onRecommend={(p) => setPersonType(p)} />
+                </div>
+              )}
             </div>
           )}
 
