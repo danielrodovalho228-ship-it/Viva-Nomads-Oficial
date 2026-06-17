@@ -5,6 +5,7 @@ import { SlidersHorizontal } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { PropertyCard } from "@/components/property-card";
 import { PropertyMap } from "@/components/property-map";
+import { EmptySearchIllustration } from "@/components/illustrations";
 import { formatBRL } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
@@ -128,8 +129,13 @@ export function SearchClient({ properties }: { properties: Property[] }) {
       <div className="mt-4 grid gap-6 lg:grid-cols-5">
         <div className="lg:col-span-3">
           {results.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-sage-200 p-12 text-center text-muted">
-              Nenhum imóvel corresponde aos filtros. Tente ampliar a busca.
+            <div className="flex flex-col items-center rounded-2xl border border-dashed border-line p-12 text-center">
+              <EmptySearchIllustration />
+              <p className="mt-4 font-title text-lg font-bold text-ink">Nenhum imóvel encontrado</p>
+              <p className="mt-1 max-w-sm text-sm text-muted">
+                Nenhum imóvel corresponde aos filtros. Tente ampliar o período, o preço ou
+                remover o filtro Pronto para Trabalho.
+              </p>
             </div>
           ) : (
             <div className="grid gap-6 sm:grid-cols-2">

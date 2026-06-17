@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { Home, Plus, Eye, Bath, BedDouble } from "lucide-react";
+import { Plus, Eye, Bath, BedDouble } from "lucide-react";
 import { PageTitle, EmptyState } from "@/components/dashboard/primitives";
+import { EmptyBuildingIllustration } from "@/components/illustrations";
 import { ButtonLink } from "@/components/ui/button";
 import { WorkReadyBadge } from "@/components/ui/badge";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
@@ -24,7 +25,7 @@ export default function MyPropertiesPage() {
 
       {properties.length === 0 ? (
         <EmptyState
-          icon={Home}
+          illustration={<EmptyBuildingIllustration />}
           title="Você ainda não tem imóveis"
           text="Comece pela qualificação para liberar a publicação do seu primeiro anúncio."
           action={

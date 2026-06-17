@@ -59,18 +59,24 @@ export function Panel({
 
 export function EmptyState({
   icon: Icon,
+  illustration,
   title,
   text,
   action,
 }: {
-  icon: React.ComponentType<{ className?: string }>;
+  icon?: React.ComponentType<{ className?: string }>;
+  illustration?: React.ReactNode;
   title: string;
   text: string;
   action?: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-dashed border-sage-200 bg-white p-12 text-center">
-      <Icon className="mx-auto h-10 w-10 text-sage" />
+    <div className="rounded-2xl border border-dashed border-line bg-white p-12 text-center">
+      {illustration ? (
+        <div className="flex justify-center">{illustration}</div>
+      ) : (
+        Icon && <Icon className="mx-auto h-10 w-10 text-blue-500" />
+      )}
       <h3 className="mt-4 font-title text-lg font-bold text-ink">{title}</h3>
       <p className="mx-auto mt-2 max-w-md text-sm text-muted">{text}</p>
       {action && <div className="mt-6">{action}</div>}

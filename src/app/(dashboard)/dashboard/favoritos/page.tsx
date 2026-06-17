@@ -1,9 +1,10 @@
 "use client";
 
-import { Heart, GitCompare } from "lucide-react";
+import { GitCompare } from "lucide-react";
 import { PageTitle, EmptyState } from "@/components/dashboard/primitives";
 import { PropertyCard } from "@/components/property-card";
 import { ButtonLink } from "@/components/ui/button";
+import { EmptyTripIllustration } from "@/components/illustrations";
 import { SAMPLE_PROPERTIES } from "@/lib/properties";
 import { useFavoritesStore } from "@/lib/favorites-store";
 
@@ -27,7 +28,7 @@ export default function FavoritesPage() {
 
       {favorites.length === 0 ? (
         <EmptyState
-          icon={Heart}
+          illustration={<EmptyTripIllustration />}
           title="Nenhum favorito ainda"
           text="Toque no coração dos imóveis que gostar para salvá-los aqui e comparar depois."
           action={
