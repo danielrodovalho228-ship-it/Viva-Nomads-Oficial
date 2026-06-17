@@ -1,0 +1,116 @@
+import type { Metadata } from "next";
+import { TrendingUp, Building2, Receipt, ShieldCheck, Check, ArrowRight } from "lucide-react";
+import { ButtonLink } from "@/components/ui/button";
+import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
+
+export const metadata: Metadata = {
+  title: "Para proprietários — ganhe ~2x mais que no Airbnb",
+  description:
+    "Anuncie seu imóvel mobiliado para locação por temporada. Sem rotatividade, sem vacância nos meses fracos e com custos transferidos ao inquilino.",
+};
+
+export default function ForLandlordsPage() {
+  return (
+    <>
+      <section className="bg-forest py-16 text-white md:py-24">
+        <div className="container-page grid items-center gap-10 md:grid-cols-2">
+          <div>
+            <h1 className="font-title text-4xl font-extrabold leading-tight md:text-5xl">
+              Ganhe aproximadamente <span className="text-champagne">2x mais</span> que no
+              Airbnb
+            </h1>
+            <p className="mt-5 max-w-lg text-lg text-white/80">
+              Locação por temporada de 30 a 180 dias, com contrato formal e inquilino
+              qualificado. Sem entra-e-sai, sem vacância nos meses fracos e com água, luz,
+              condomínio e IPTU transferidos para o inquilino.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <ButtonLink href="/qualificar" variant="gold" size="lg">
+                Anunciar meu imóvel <ArrowRight className="h-4 w-4" />
+              </ButtonLink>
+              <ButtonLink href="/precos" variant="outline" size="lg" className="border-white/40 text-white hover:bg-white hover:text-forest">
+                Ver planos
+              </ButtonLink>
+            </div>
+          </div>
+          <PhotoPlaceholder
+            label="[FOTO — proprietário/imóvel mobiliado de qualidade]"
+            className="aspect-[4/3] w-full rounded-3xl border border-white/15 bg-white/5 text-white/70"
+          />
+        </div>
+      </section>
+
+      {/* Por que rende mais */}
+      <section className="container-page py-16 md:py-24">
+        <div className="mx-auto max-w-2xl text-center">
+          <h2 className="font-title text-3xl font-extrabold text-ink md:text-4xl">
+            Por que rende mais que no Airbnb
+          </h2>
+          <p className="mt-4 text-lg text-muted">
+            O modelo de temporada de média duração elimina os maiores custos do aluguel por
+            curtíssimo prazo.
+          </p>
+        </div>
+        <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <Benefit icon={Receipt} title="Custos transferidos" text="Água, luz, condomínio e IPTU passam a ser do inquilino durante a estadia." />
+          <Benefit icon={TrendingUp} title="Sem vacância" text="Um inquilino por uma temporada inteira, inclusive nos meses fracos do turismo." />
+          <Benefit icon={Building2} title="Aceito em condomínios" text="Locação de 30+ dias é outra categoria jurídica — aceita onde o Airbnb não é." />
+          <Benefit icon={ShieldCheck} title="Inquilino verificado" text="Análise de perfil (CAF) e garantia locatícia: você decide com segurança." />
+        </div>
+      </section>
+
+      {/* O que oferecemos */}
+      <section className="bg-surface-2 py-16 md:py-24">
+        <div className="container-page grid items-center gap-12 md:grid-cols-2">
+          <PhotoPlaceholder
+            label="[FOTO — painel do proprietário / imóvel sendo fotografado]"
+            className="aspect-square w-full rounded-3xl"
+          />
+          <div>
+            <h2 className="font-title text-3xl font-extrabold text-ink md:text-4xl">
+              A plataforma cuida do trabalho chato
+            </h2>
+            <ul className="mt-6 space-y-4">
+              {[
+                "Checklist de qualificação que comprova a regularidade da locação.",
+                "Selo Pronto para Trabalho para anunciar mais caro.",
+                "Análise de inquilino por IA (CAF) com laudo de semáforo.",
+                "Cotação de seguro-fiança dentro da plataforma.",
+                "Contrato de temporada gerado e assinado via ZapSign.",
+                "Pagamento do aluguel direto na sua conta.",
+              ].map((item) => (
+                <li key={item} className="flex items-start gap-3">
+                  <Check className="mt-0.5 h-5 w-5 shrink-0 text-sage" />
+                  <span className="text-ink">{item}</span>
+                </li>
+              ))}
+            </ul>
+            <ButtonLink href="/qualificar" variant="primary" className="mt-8">
+              Começar pela qualificação
+            </ButtonLink>
+          </div>
+        </div>
+      </section>
+    </>
+  );
+}
+
+function Benefit({
+  icon: Icon,
+  title,
+  text,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  text: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-sage-200 bg-white p-6">
+      <div className="grid h-12 w-12 place-items-center rounded-xl bg-sage-100 text-forest">
+        <Icon className="h-6 w-6" />
+      </div>
+      <h3 className="mt-4 font-title text-lg font-bold text-ink">{title}</h3>
+      <p className="mt-2 text-sm text-muted">{text}</p>
+    </div>
+  );
+}

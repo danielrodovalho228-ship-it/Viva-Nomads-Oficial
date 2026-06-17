@@ -1,0 +1,70 @@
+import Link from "next/link";
+import { Logo } from "@/components/ui/logo";
+import { CITIES } from "@/lib/constants";
+
+export function Footer() {
+  return (
+    <footer className="mt-auto bg-forest text-white/80">
+      <div className="container-page grid gap-10 py-14 md:grid-cols-4">
+        <div className="md:col-span-1">
+          <Logo href="/home" light />
+          <p className="mt-4 max-w-xs text-sm leading-relaxed">
+            Locação mobiliada mensal (30 a 180 dias) para profissionais em transição.
+            Não é Airbnb, não é QuintoAndar.
+          </p>
+        </div>
+
+        <FooterCol title="Plataforma">
+          <FooterLink href="/buscar">Buscar imóveis</FooterLink>
+          <FooterLink href="/como-funciona">Como funciona</FooterLink>
+          <FooterLink href="/para-proprietarios">Para proprietários</FooterLink>
+          <FooterLink href="/precos">Planos e preços</FooterLink>
+        </FooterCol>
+
+        <FooterCol title="Cidades">
+          {CITIES.map((c) => (
+            <FooterLink key={c.slug} href={`/cidades/${c.slug}`}>
+              Imóveis em {c.name}
+            </FooterLink>
+          ))}
+        </FooterCol>
+
+        <FooterCol title="Conta">
+          <FooterLink href="/auth">Entrar ou cadastrar</FooterLink>
+          <FooterLink href="/qualificar">Anunciar imóvel</FooterLink>
+          <FooterLink href="/dashboard">Meu painel</FooterLink>
+        </FooterCol>
+      </div>
+
+      <div className="border-t border-white/10">
+        <div className="container-page flex flex-col items-center justify-between gap-2 py-6 text-xs text-white/60 md:flex-row">
+          <p>© {new Date().getFullYear()} Viva Nomads · Locação por temporada (art. 48, Lei 8.245/91)</p>
+          <p>
+            A plataforma conecta proprietários e inquilinos — não é parte do contrato de locação.
+          </p>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+function FooterCol({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <h4 className="mb-4 font-title text-sm font-bold uppercase tracking-wide text-white">
+        {title}
+      </h4>
+      <ul className="space-y-2.5 text-sm">{children}</ul>
+    </div>
+  );
+}
+
+function FooterLink({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <li>
+      <Link href={href} className="transition-colors hover:text-champagne">
+        {children}
+      </Link>
+    </li>
+  );
+}

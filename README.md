@@ -1,36 +1,78 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Viva Nomads
 
-## Getting Started
+Plataforma de **locação de imóveis mobiliados por temporada de média duração (30 a 180 dias)**
+para profissionais em transição. Locação mensal sob o art. 48 da Lei 8.245/91 — não é Airbnb,
+não é QuintoAndar.
 
-First, run the development server:
+> Posicionamento: "locação mensal mobiliada para profissionais em transição, aceita em
+> condomínios onde o Airbnb não é."
+
+## Stack
+
+- **Next.js 16** (App Router) + **React 19** + **TypeScript**
+- **Tailwind CSS v4** (design tokens da paleta NomadeDrive)
+- **Supabase** (Postgres + Auth + Storage) — `src/lib/supabase`
+- **Zustand** (estado de sessão)
+- **lucide-react** (ícones)
+- Stripe (assinatura), Mapbox/Google Maps (mapas), ZapSign (contrato), CAF (verificação) — integrações previstas
+
+## Rodando localmente
 
 ```bash
+npm install
+cp .env.example .env.local   # opcional — sem isso, roda em modo demonstração
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Sem as variáveis do Supabase, a aplicação roda em **modo demonstração**: a autenticação
+simula a sessão localmente e as telas usam dados de exemplo (`src/lib/properties.ts`).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## O coração do produto: o Checklist de Qualificação
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Rota `/qualificar`. Um imóvel só pode ser publicado depois de aprovado. Tem duas camadas:
 
-## Learn More
+- **Camada 1 — Elegibilidade** (bloqueia/libera): mobiliado, aceita 30 dias, IPTU em dia,
+  habitabilidade, proprietário/procurador, documentação, e a convenção do condomínio.
+- **Camada 2 — Pontuação 0–100**: gera o selo dourado **Pronto para Trabalho** (≥ 70 pts),
+  somando recursos de trabalho no imóvel, espaços próximos e conforto de estadia.
 
-To learn more about Next.js, take a look at the following resources:
+Lógica isolada e testável em `src/lib/qualification.ts`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Estrutura de rotas
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+(public)   → /home /buscar /imoveis/[id] /cidades/[cidade]
+             /como-funciona /para-proprietarios /precos      (SSR + SEO)
+/auth      → entrar / cadastrar (com seletor de perfil)
+(dashboard)→ /qualificar /dashboard /dashboard/imoveis[/novo]
+             /dashboard/leads /mensagens /assinatura /conta
+             /dashboard/favoritos /buscas  (inquilino)
+             /admin                          (admin)
+```
 
-## Deploy on Vercel
+## Banco de dados
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Esquema completo com RLS em `supabase/migrations/0001_initial_schema.sql`
+(seções 6 e 9 do documento mestre: imóveis, checklist, mensagens, leads, assinaturas,
+contratos, garantias, cotações de seguro, verificações CAF e transações de split).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Roadmap (fases do documento mestre)
+
+| Fase | Estado |
+|---|---|
+| 1. Base, design system, layouts e rotas | ✅ |
+| 2. Autenticação e perfis (demo + Supabase) | ✅ |
+| 3. Homepage pública | ✅ |
+| 4. ⭐ Checklist de qualificação | ✅ |
+| 5. Cadastro de imóvel (multi-etapas, pós-checklist) | ✅ |
+| 6. Busca + mapa | ✅ (mapa: placeholder até token Mapbox) |
+| 7. Detalhe do imóvel (abas + Open Graph) | ✅ |
+| 8. Dashboards (proprietário/inquilino) | ✅ |
+| 9. Mensagens e leads | ✅ |
+| 10. Assinatura Stripe e serviços | ✅ UI (integração pendente de chaves) |
+| 11. Páginas de cidade (SEO) | ✅ |
+| 12. Admin | ✅ |
+| Seção 8 — verificação CAF, garantia, contrato ZapSign | ⏳ próximos passos |
+
+A plataforma é **conectadora** — não é locadora, fiadora nem garantidora, e não intermedeia
+o pagamento do aluguel (vai direto ao proprietário).

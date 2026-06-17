@@ -1,26 +1,65 @@
 @import "tailwindcss";
 
+/*
+  Viva Nomads — Design tokens (paleta NomadeDrive)
+  Verde floresta domina (confiança, estabilidade); dourado champagne pontua CTAs e o selo "Pronto para Trabalho".
+*/
+@theme {
+  /* Marca */
+  --color-forest: #0f3d2e; /* Verde Floresta Escuro — primária, headers, footer */
+  --color-forest-700: #14503c;
+  --color-forest-600: #1a6249;
+  --color-sage: #5a8a6b; /* Verde Sálvia — secundária, badges, ícones, ativos */
+  --color-sage-100: #e4ede7;
+  --color-sage-200: #c7dccf;
+  --color-champagne: #d4a853; /* Dourado Champagne — CTA principal, selo de trabalho */
+  --color-champagne-600: #c2933b;
+
+  /* Texto */
+  --color-ink: #1a2b22; /* Texto principal sobre fundo claro */
+  --color-muted: #5c6b63; /* Texto secundário, legendas */
+
+  /* Fundos */
+  --color-surface: #ffffff;
+  --color-surface-2: #f7f9f7;
+
+  /* Fontes */
+  --font-title: var(--font-syne), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
+
+  /* Raios */
+  --radius-card: 16px;
+}
+
 :root {
   --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --foreground: #1a2b22;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5 {
+  font-family: var(--font-title);
+  letter-spacing: -0.01em;
+}
+
+/* Utilitário de container padrão das páginas */
+@layer components {
+  .container-page {
+    width: 100%;
+    margin-inline: auto;
+    max-width: 80rem; /* 1280px */
+    padding-inline: 1rem;
+  }
+  @media (min-width: 640px) {
+    .container-page { padding-inline: 1.5rem; }
+  }
+  @media (min-width: 1024px) {
+    .container-page { padding-inline: 2rem; }
+  }
 }
