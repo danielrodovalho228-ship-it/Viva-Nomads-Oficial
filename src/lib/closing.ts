@@ -66,9 +66,57 @@ export const GUARANTEE_OPTIONS: {
 
 /** Seguradoras parceiras para cotação de seguro-fiança (8.3). */
 export const INSURERS: { id: Insurer; name: string; note: string }[] = [
-  { id: "porto", name: "Porto Seguro", note: "Fiança Locatícia Essencial · análise de crédito refinada" },
-  { id: "junto", name: "Junto Seguros", note: "Fiança locatícia · forte no segmento corporativo" },
+  { id: "porto", name: "Porto Seguro", note: "Fiança Locatícia Premium · cobertura ampla" },
+  { id: "junto", name: "Junto Seguros", note: "Fiança locatícia · enxuta e rápida" },
 ];
+
+/** Cobertura detalhada por seguradora (Atualização 15.1) — comparação real. */
+export interface InsurerCoverage {
+  aluguelAtraso: boolean;
+  condominio: boolean;
+  iptu: boolean;
+  danos: boolean;
+  multas: boolean;
+  pintura: boolean;
+  assistencia: boolean;
+  analise: string; // prazo/velocidade de aprovação
+}
+
+/** Linhas da tabela de comparação, na ordem de exibição. */
+export const COVERAGE_ROWS: { key: keyof Omit<InsurerCoverage, "analise">; label: string }[] = [
+  { key: "aluguelAtraso", label: "Aluguel em atraso" },
+  { key: "condominio", label: "Condomínio" },
+  { key: "iptu", label: "IPTU" },
+  { key: "danos", label: "Danos ao imóvel" },
+  { key: "multas", label: "Multas contratuais" },
+  { key: "pintura", label: "Pintura" },
+  { key: "assistencia", label: "Assistência (chaveiro, encanador, elétrica)" },
+];
+
+export const INSURER_COVERAGE: Record<Insurer, InsurerCoverage> = {
+  // Porto: cobre mais (e custa um pouco mais) — custo-benefício para quem quer proteção total.
+  porto: {
+    aluguelAtraso: true,
+    condominio: true,
+    iptu: true,
+    danos: true,
+    multas: true,
+    pintura: true,
+    assistencia: true,
+    analise: "até 48h",
+  },
+  // Junto: mais barata e rápida, porém com cobertura enxuta.
+  junto: {
+    aluguelAtraso: true,
+    condominio: true,
+    iptu: false,
+    danos: true,
+    multas: false,
+    pintura: false,
+    assistencia: false,
+    analise: "até 24h",
+  },
+};
 
 /** Itens do rateio de custos do contrato (8.5). Padrão legal sugerido. */
 export const COST_SPLIT_ITEMS: { key: string; label: string; default: CostParty }[] = [
@@ -81,7 +129,8 @@ export const COST_SPLIT_ITEMS: { key: string; label: string; default: CostParty 
 
 /** Gera uma cotação simulada de seguro-fiança a partir do aluguel. */
 export function simulateQuote(insurer: Insurer, monthlyRent: number) {
-  const factor = insurer === "porto" ? 1.45 : 1.6; // múltiplo do aluguel anual
+  // Porto cobre mais e custa um pouco mais; Junto é mais barata e enxuta.
+  const factor = insurer === "porto" ? 1.6 : 1.35; // múltiplo do aluguel anual
   const annual = monthlyRent * 12;
   const total = Math.round(annual * (factor / 12)); // custo anual aproximado da apólice
   return {
