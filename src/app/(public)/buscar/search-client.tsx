@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { SlidersHorizontal, ChevronDown } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { SlidersHorizontal, ChevronDown, MapPin } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { PropertyCard } from "@/components/property-card";
 import { SearchMap } from "@/components/search-map";
@@ -9,8 +9,10 @@ import { EmptySearchIllustration } from "@/components/illustrations";
 import { Map as MapIcon, List as ListIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { tierFromPhotoCount, searchPriority } from "@/lib/listing";
+import { LocationDatalist } from "@/lib/locations";
 
 export function SearchClient({ properties }: { properties: Property[] }) {
+  const [locationQuery, setLocationQuery] = useState("");
   const [maxPrice, setMaxPrice] = useState(0);
   const [minBedrooms, setMinBedrooms] = useState(0);
   const [maxPeriod, setMaxPeriod] = useState(0); // período mínimo aceito <= X
@@ -25,8 +27,17 @@ export function SearchClient({ properties }: { properties: Property[] }) {
   const [mobileTab, setMobileTab] = useState<"list" | "map">("list");
   const [sort, setSort] = useState<"relevance" | "price-asc" | "price-desc">("relevance");
 
+  // Pré-preenche a localização vinda da busca da home (?local=...).
+  useEffect(() => {
+    const local = new URLSearchParams(window.location.search).get("local");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (local) setLocationQuery(local);
+  }, []);
+
   const results = useMemo(() => {
+    const loc = locationQuery.trim().toLowerCase();
     let list = properties.filter((p) => {
+      if (loc && !`${p.neighborhood} ${p.city}`.toLowerCase().includes(loc)) return false;
       if (maxPrice && p.monthlyPrice > maxPrice) return false;
       if (minBedrooms && p.bedrooms < minBedrooms) return false;
       if (maxPeriod && p.minPeriodDays > maxPeriod) return false;
@@ -48,7 +59,7 @@ export function SearchClient({ properties }: { properties: Property[] }) {
           searchPriority(tierFromPhotoCount(a.photos.length))
       );
     return list;
-  }, [properties, maxPrice, minBedrooms, maxPeriod, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly, sort]);
+  }, [properties, locationQuery, maxPrice, minBedrooms, maxPeriod, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly, sort]);
 
   const activeCount =
     (maxPrice ? 1 : 0) +
@@ -99,6 +110,19 @@ export function SearchClient({ properties }: { properties: Property[] }) {
             filtersOpen ? "flex" : "hidden"
           )}
         >
+          {/* Localização com autocomplete (item 7) */}
+          <div className="flex items-center gap-2 rounded-full border border-sage-200 bg-white px-3.5 py-2">
+            <MapPin className="h-4 w-4 shrink-0 text-blue-500" />
+            <input
+              value={locationQuery}
+              onChange={(e) => setLocationQuery(e.target.value)}
+              placeholder="Cidade ou bairro"
+              list="buscar-location-list"
+              autoComplete="off"
+              className="w-36 bg-transparent text-sm text-ink outline-none placeholder:text-muted"
+            />
+            <LocationDatalist id="buscar-location-list" />
+          </div>
           <Select
             value={String(maxPrice)}
             onChange={(v) => setMaxPrice(Number(v))}
