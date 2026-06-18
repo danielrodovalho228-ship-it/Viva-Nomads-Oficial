@@ -34,13 +34,13 @@ export default function PrivacyPage() {
 
         <Section title="4. Compartilhamento">
           Compartilhamos apenas o necessário com os parceiros que viabilizam o serviço
-          (Supabase, Asaas, CAF, ZapSign, provedores de mapa e mensageria) e entre as partes de
+          (Supabase, Asaas, empresa de verificação de identidade, ZapSign, provedores de mapa e mensageria) e entre as partes de
           uma negociação — de forma assimétrica e controlada. O proprietário vê do inquilino um
           laudo em <strong>semáforo</strong> (sem dados brutos sensíveis); o contato direto só é
           liberado após o aceite.
         </Section>
 
-        <Section title="5. Verificação de inquilino (CAF)">
+        <Section title="5. Verificação de identidade do inquilino">
           A verificação trata identidade, documento e prova de vida. O resultado é apresentado
           ao proprietário como análise informativa (semáforo). Os dados brutos sensíveis ficam
           restritos e não são expostos a terceiros sem necessidade.

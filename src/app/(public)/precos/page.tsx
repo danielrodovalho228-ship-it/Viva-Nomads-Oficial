@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 const ADDONS = [
   { icon: Camera, title: "Fotografia profissional", text: "Sessão de fotos do imóvel para anúncios que convertem mais." },
   { icon: FileSignature, title: "Contrato via ZapSign", text: "Contrato de temporada gerado e assinado digitalmente, com validade jurídica." },
-  { icon: BrainCircuit, title: "Análise de inquilino (IA/CAF)", text: "Laudo com semáforo de risco: identidade, prova de vida e histórico." },
+  { icon: BrainCircuit, title: "Verificação de identidade do inquilino", text: "Laudo com semáforo de risco: identidade, prova de vida e histórico." },
   { icon: BadgeCheck, title: "Selo de verificação", text: "Destaque de proprietário verificado para gerar mais confiança." },
 ];
 

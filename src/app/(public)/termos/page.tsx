@@ -26,7 +26,7 @@ export default function TermsPage() {
         <Section title="2. Posição da plataforma (conectador)">
           O Viva Nomads <strong>não é locador, fiador, garantidor nem parte do contrato</strong>{" "}
           de locação. Atua exclusivamente conectando as partes, oferecendo verificação de
-          perfil (CAF), cotação de garantia locatícia (seguradoras parceiras) e geração de
+          de identidade, cotação de garantia locatícia (seguradoras parceiras) e geração de
           contrato (ZapSign). A relação locatícia é firmada diretamente entre proprietário e
           inquilino.
         </Section>
@@ -39,7 +39,7 @@ export default function TermsPage() {
         </Section>
 
         <Section title="4. Verificação de inquilinos">
-          A análise de perfil (CAF) é <strong>informativa</strong>. A plataforma não aprova
+          A análise de de identidade é <strong>informativa</strong>. A plataforma não aprova
           nem reprova inquilinos: a decisão de alugar é exclusivamente do proprietário.
         </Section>
 

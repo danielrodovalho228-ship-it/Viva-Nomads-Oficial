@@ -59,7 +59,7 @@ export default function ForLandlordsPage() {
           <Benefit icon={Receipt} title="Custos que podem ser transferidos" text="Água, luz, condomínio e IPTU podem ser do inquilino durante a estadia, conforme o contrato." />
           <Benefit icon={TrendingUp} title="Menos vacância" text="Um inquilino por uma temporada inteira, inclusive nos meses fracos do turismo." />
           <Benefit icon={FileSignature} title="Contrato com validade jurídica" text="Contrato de locação por temporada gerado e assinado digitalmente, com validade jurídica." />
-          <Benefit icon={ShieldCheck} title="Inquilino verificado" text="Análise de perfil (CAF) e garantia locatícia: você decide com segurança." />
+          <Benefit icon={ShieldCheck} title="Inquilino verificado" text="Verificação de identidade e garantia locatícia: você decide com segurança." />
         </div>
       </section>
 
@@ -80,7 +80,7 @@ export default function ForLandlordsPage() {
               {[
                 "Checklist de qualificação que comprova a regularidade da locação.",
                 "Selo Pronto para Morar para anunciar mais caro.",
-                "Análise de inquilino por IA (CAF) com laudo de semáforo.",
+                "Verificação de identidade do inquilino com laudo de semáforo.",
                 "Cotação de seguro-fiança dentro da plataforma.",
                 "Contrato de temporada gerado e assinado via ZapSign.",
                 "Pagamento do aluguel direto na sua conta.",
