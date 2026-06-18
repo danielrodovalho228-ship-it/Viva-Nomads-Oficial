@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { MapPin, CalendarRange, Wallet, Search } from "lucide-react";
+import { LocationDatalist } from "@/lib/locations";
 
 /** Busca do hero: Localização / Período / Orçamento → /buscar. */
 export function HeroSearch() {
@@ -30,8 +31,11 @@ export function HeroSearch() {
           value={location}
           onChange={(e) => setLocation(e.target.value)}
           placeholder="Cidade ou bairro"
+          list="hero-location-list"
+          autoComplete="off"
           className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-muted"
         />
+        <LocationDatalist id="hero-location-list" />
       </Field>
       <Field icon={CalendarRange}>
         <select

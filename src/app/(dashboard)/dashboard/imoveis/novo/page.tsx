@@ -40,6 +40,7 @@ export default function NewPropertyPage() {
   const [ownershipType, setOwnershipType] = useState<"own" | "subleased">("own");
   const [subleaseAuthorized, setSubleaseAuthorized] = useState(false);
   const [subleaseDoc, setSubleaseDoc] = useState<PhotoItem[]>([]);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
   const router = useRouter();
@@ -137,7 +138,7 @@ export default function NewPropertyPage() {
     } catch {}
   }, []);
 
-  // Salva o rascunho a cada mudança de campo (item 5B).
+  // Salva o rascunho a cada mudança de campo (item 5B) + indicador "Salvo ✓" (Bloco F).
   useEffect(() => {
     if (approved !== true) return;
     const draft = {
@@ -147,6 +148,15 @@ export default function NewPropertyPage() {
     try {
       localStorage.setItem("vivanomads-novo-draft", JSON.stringify(draft));
     } catch {}
+    let on = true;
+    // setState assíncrono (via timeout) — evita re-render em cascata no efeito.
+    const t1 = setTimeout(() => on && setSaveStatus("saving"), 0);
+    const t2 = setTimeout(() => on && setSaveStatus("saved"), 500);
+    return () => {
+      on = false;
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
   }, [approved, title, propertyType, description, bedrooms, bathrooms, areaM2, street, neighborhood, city, cep, ownershipType]);
 
   // Autocomplete de endereço por CEP via ViaCEP (item 7) — sem chave, gratuito.
@@ -215,7 +225,28 @@ export default function NewPropertyPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <PageTitle title="Novo anúncio" subtitle="Qualificação aprovada ✓" />
+      <PageTitle
+        title="Novo anúncio"
+        subtitle="Qualificação aprovada ✓"
+        action={
+          saveStatus !== "idle" ? (
+            <span
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium",
+                saveStatus === "saved" ? "bg-sage-100 text-forest" : "bg-surface-2 text-muted"
+              )}
+            >
+              {saveStatus === "saved" ? (
+                <>
+                  <Check className="h-3.5 w-3.5" /> Rascunho salvo
+                </>
+              ) : (
+                "Salvando…"
+              )}
+            </span>
+          ) : undefined
+        }
+      />
 
       {/* Stepper */}
       <div className="mb-6 flex items-center gap-2 overflow-x-auto pb-2">
