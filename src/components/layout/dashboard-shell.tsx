@@ -19,6 +19,8 @@ import {
   GitCompare,
   Gift,
   Wrench,
+  Briefcase,
+  Calculator,
   Menu,
   LogOut,
 } from "lucide-react";
@@ -31,12 +33,16 @@ interface NavItem {
   href: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
+  /** Plano mínimo para exibir o item (operador / Gestor). */
+  minPlan?: "gestor";
 }
 
 const OWNER_NAV: NavItem[] = [
   { href: "/dashboard", label: "Visão geral", icon: LayoutDashboard },
   { href: "/qualificar", label: "Qualificar imóvel", icon: ClipboardCheck },
   { href: "/dashboard/imoveis", label: "Meus imóveis", icon: Home },
+  { href: "/dashboard/carteira", label: "Carteira", icon: Briefcase, minPlan: "gestor" },
+  { href: "/dashboard/viabilidade", label: "Viabilidade", icon: Calculator, minPlan: "gestor" },
   { href: "/dashboard/leads", label: "Leads", icon: Users },
   { href: "/dashboard/fechamento", label: "Fechamento", icon: FileSignature },
   { href: "/dashboard/solicitacoes", label: "Solicitações", icon: Wrench },
@@ -71,8 +77,11 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   // Em modo demo (sem login), exibe uma identidade coerente (A5/A6).
   const display = user ?? DEMO_USER;
   const role = display.role;
+  const plan = display.plan ?? "free";
   let nav = role === "tenant" ? TENANT_NAV : OWNER_NAV;
   if (role === "admin") nav = [...OWNER_NAV, ...ADMIN_NAV];
+  // Itens de operador só aparecem no plano Gestor.
+  nav = nav.filter((item) => !item.minPlan || plan === item.minPlan);
 
   function handleSignOut() {
     signOut();

@@ -75,6 +75,8 @@ export async function createProperty(input: {
   tagWorkLocated?: boolean;
   tagCondoApproved?: boolean;
   ownershipType?: "own" | "subleased";
+  subleaseAuthorized?: boolean;
+  subleaseDocUrl?: string;
   utilitiesMode?: "fixed" | "real";
   utilitiesEstimate?: number;
   issuesInvoice?: boolean;
@@ -113,6 +115,9 @@ export async function createProperty(input: {
       tag_work_located: input.tagWorkLocated ?? false,
       tag_condo_approved: input.tagCondoApproved ?? false,
       ownership_type: input.ownershipType ?? "own",
+      sublease_authorized:
+        (input.ownershipType ?? "own") === "own" ? true : input.subleaseAuthorized ?? false,
+      sublease_doc_url: input.subleaseDocUrl ?? null,
       utilities_mode: input.utilitiesMode ?? "fixed",
       utilities_estimate: input.utilitiesEstimate ?? 0,
       issues_invoice: input.issuesInvoice ?? false,
