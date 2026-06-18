@@ -236,6 +236,27 @@ export async function createOwnerSubaccount(input: {
   return { ok: true, id: sub.walletId };
 }
 
+/** Aprova ou recusa um checklist de qualificação (admin). */
+export async function reviewChecklist(
+  id: string,
+  approved: boolean
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  if (!supabase) return { ok: true, demo: true };
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Não autenticado." };
+
+  const { error } = await supabase
+    .from("qualification_checklists")
+    .update({ status: approved ? "approved" : "not_eligible" })
+    .eq("id", id);
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
 /** Envia uma mensagem no chat (cria/usa a conversa). Best-effort em demo. */
 export async function sendMessage(input: {
   conversationId?: string;
