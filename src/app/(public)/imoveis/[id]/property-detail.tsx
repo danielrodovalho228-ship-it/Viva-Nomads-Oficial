@@ -343,8 +343,8 @@ export function PropertyDetail({
                 <p className="mt-1.5 text-ink">
                   + preparação <strong>{formatBRL(property.prepFee)}</strong>
                   <span className="block text-xs text-muted">
-                    Limpeza profunda antes da entrada — cobrada uma única vez (não toda semana,
-                    como no Airbnb).
+                    Limpeza profunda antes da entrada — cobrada uma única vez, não a cada
+                    hóspede.
                   </span>
                 </p>
               )}

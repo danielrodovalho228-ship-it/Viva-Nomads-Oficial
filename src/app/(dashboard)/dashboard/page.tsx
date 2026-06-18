@@ -50,14 +50,22 @@ function OwnerDashboard({ name }: { name: string }) {
       {/* Progresso de verificação */}
       <Panel className="mb-6 bg-forest text-white">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
+          <div className="min-w-0">
             <h2 className="font-title text-lg font-bold">Verificação do perfil: 60%</h2>
             <p className="text-sm text-white/70">
               Complete a verificação para gerar mais confiança nos inquilinos.
             </p>
           </div>
-          <div className="h-3 w-full max-w-xs overflow-hidden rounded-full bg-white/20">
-            <div className="h-full w-[60%] rounded-full bg-champagne" />
+          <div className="flex w-full flex-col gap-3 sm:w-auto sm:items-end">
+            <div className="h-3 w-full max-w-xs overflow-hidden rounded-full bg-white/20 sm:w-64">
+              <div className="h-full w-[60%] rounded-full bg-champagne" />
+            </div>
+            <Link
+              href="/dashboard/verificacao"
+              className="inline-flex items-center justify-center gap-1.5 rounded-full bg-champagne px-4 py-2 text-sm font-semibold text-night transition-colors hover:bg-champagne-600"
+            >
+              Continuar verificação <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
         </div>
       </Panel>
