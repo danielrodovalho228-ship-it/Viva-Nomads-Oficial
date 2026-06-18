@@ -10,7 +10,7 @@ export default function NotFound() {
       <div className="mt-12">
         <NotFoundIllustration />
       </div>
-      <p className="mt-6 font-title text-6xl font-extrabold text-ink">404</p>
+      <p className="mt-6 font-title text-6xl font-bold text-ink">404</p>
       <h1 className="mt-2 font-title text-2xl font-bold text-ink">Página não encontrada</h1>
       <p className="mt-2 max-w-md text-muted">
         O endereço que você procurou não existe ou foi movido. Vamos te levar de volta.

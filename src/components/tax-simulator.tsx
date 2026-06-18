@@ -135,7 +135,7 @@ function Card({
         <Icon className={cn("h-5 w-5", active ? "text-forest" : "text-sage")} />
         <span className="font-title font-bold text-ink">{title}</span>
       </div>
-      <p className="mt-3 font-title text-2xl font-extrabold text-forest">{formatBRL(tax)}</p>
+      <p className="mt-3 font-title text-2xl font-bold text-forest">{formatBRL(tax)}</p>
       <p className="text-xs text-muted">por ano · ~{(rate * 100).toFixed(2)}%</p>
       <p className="mt-2 text-xs text-muted">{note}</p>
     </div>

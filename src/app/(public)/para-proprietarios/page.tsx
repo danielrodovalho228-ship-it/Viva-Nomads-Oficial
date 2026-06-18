@@ -16,7 +16,7 @@ export default function ForLandlordsPage() {
       <section className="bg-forest py-16 text-white md:py-24">
         <div className="container-page grid items-center gap-10 md:grid-cols-2">
           <div>
-            <h1 className="font-title text-4xl font-extrabold leading-tight md:text-5xl">
+            <h1 className="font-title text-4xl font-bold leading-tight md:text-5xl">
               Ganhe aproximadamente <span className="text-green-300">2x mais</span> que no
               Airbnb
             </h1>
@@ -47,7 +47,7 @@ export default function ForLandlordsPage() {
       {/* Por que rende mais */}
       <section className="container-page py-16 md:py-24">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="font-title text-3xl font-extrabold text-ink md:text-4xl">
+          <h2 className="font-title text-3xl font-bold text-ink md:text-4xl">
             Por que rende mais que no Airbnb
           </h2>
           <p className="mt-4 text-lg text-muted">
@@ -73,7 +73,7 @@ export default function ForLandlordsPage() {
             className="aspect-square w-full rounded-3xl"
           />
           <div>
-            <h2 className="font-title text-3xl font-extrabold text-ink md:text-4xl">
+            <h2 className="font-title text-3xl font-bold text-ink md:text-4xl">
               A plataforma cuida do trabalho chato
             </h2>
             <ul className="mt-6 space-y-4">

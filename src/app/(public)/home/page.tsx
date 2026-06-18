@@ -53,7 +53,7 @@ export default async function HomePage() {
               <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
               Locação por temporada · 30 a 180 dias
             </span>
-            <h1 className="mt-6 font-title font-extrabold leading-[1.05] display-xl">
+            <h1 className="mt-6 font-title font-bold display-xl">
               Moradia mobiliada para a sua{" "}
               <span className="text-gradient-brand">nova fase</span> em Uberlândia
             </h1>
@@ -98,7 +98,7 @@ export default async function HomePage() {
         <div className="container-page">
           <div className="max-w-2xl">
             <Eyebrow>Para quem é</Eyebrow>
-            <h2 className="mt-4 font-title font-extrabold text-ink display-lg">
+            <h2 className="mt-4 font-title font-bold text-ink display-lg">
               Feito para quem se muda pelo trabalho — não para turistas
             </h2>
           </div>
@@ -122,7 +122,7 @@ export default async function HomePage() {
                     />
                   </div>
                   <div className="sm:col-span-1 sm:[direction:ltr]">
-                    <span className="font-title text-4xl font-extrabold text-line">
+                    <span className="font-title text-4xl font-bold text-line">
                       0{i + 1}
                     </span>
                   </div>
@@ -157,7 +157,7 @@ export default async function HomePage() {
             />
             <div className="absolute -right-4 -top-4 rounded-2xl bg-gradient-brand p-[1px] shadow-xl">
               <div className="rounded-2xl bg-white px-4 py-3">
-                <p className="font-title text-2xl font-extrabold text-ink">300 Mbps</p>
+                <p className="font-title text-2xl font-bold text-ink">300 Mbps</p>
                 <p className="text-xs text-muted">fibra dedicada</p>
               </div>
             </div>
@@ -165,7 +165,7 @@ export default async function HomePage() {
 
           <div className="order-1 lg:order-2">
             <Eyebrow>O diferencial</Eyebrow>
-            <h2 className="mt-4 font-title font-extrabold text-ink display-lg">
+            <h2 className="mt-4 font-title font-bold text-ink display-lg">
               Você trabalha no dia seguinte à chegada
             </h2>
             <p className="mt-5 text-lg text-muted">
@@ -191,7 +191,7 @@ export default async function HomePage() {
         <div className="container-page">
           <div className="mx-auto max-w-2xl text-center">
             <Eyebrow light>Outra categoria</Eyebrow>
-            <h2 className="mt-4 font-title font-extrabold text-white display-lg">
+            <h2 className="mt-4 font-title font-bold text-white display-lg">
               Não é Airbnb. Não é QuintoAndar.
             </h2>
             <p className="mt-5 text-lg text-white/65">
@@ -232,7 +232,7 @@ export default async function HomePage() {
         <div className="container-page">
           <div className="max-w-2xl">
             <Eyebrow>Como funciona</Eyebrow>
-            <h2 className="mt-4 font-title font-extrabold text-ink display-lg">
+            <h2 className="mt-4 font-title font-bold text-ink display-lg">
               Do anúncio ao contrato em 3 passos
             </h2>
           </div>
@@ -254,7 +254,7 @@ export default async function HomePage() {
             <div className="relative grid items-center gap-10 md:grid-cols-2">
               <div>
                 <Eyebrow light>Para proprietários</Eyebrow>
-                <h2 className="mt-4 font-title font-extrabold display-lg">
+                <h2 className="mt-4 font-title font-bold display-lg">
                   Ganhe <span className="text-gradient-brand">~2x mais</span> que no Airbnb
                 </h2>
                 <p className="mt-5 max-w-md text-white/65">
@@ -281,7 +281,7 @@ export default async function HomePage() {
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div className="max-w-xl">
               <Eyebrow>Imóveis em destaque</Eyebrow>
-              <h2 className="mt-4 font-title font-extrabold text-ink display-lg">
+              <h2 className="mt-4 font-title font-bold text-ink display-lg">
                 Disponíveis agora
               </h2>
             </div>
@@ -339,7 +339,7 @@ function Step({
   return (
     <div className="relative">
       <div className="flex items-center gap-4">
-        <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-night font-title text-xl font-extrabold text-white ring-8 ring-surface">
+        <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-night font-title text-xl font-bold text-white ring-8 ring-surface">
           {n}
         </span>
         <Icon className="h-6 w-6 text-blue-500" />

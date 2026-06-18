@@ -23,7 +23,7 @@ export function DashboardBanner({
       <div className="absolute inset-0 bg-gradient-to-r from-night/85 via-night/60 to-night/20" />
       <div className="relative flex flex-col gap-3 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
         <div className="max-w-lg">
-          <h2 className="font-title text-2xl font-extrabold text-white">{title}</h2>
+          <h2 className="font-title text-2xl font-bold text-white">{title}</h2>
           {subtitle && <p className="mt-1 text-sm text-white/80">{subtitle}</p>}
         </div>
         {action && <div className="shrink-0">{action}</div>}

@@ -2,7 +2,18 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Building2, User, Mail, Lock, Globe, Calculator } from "lucide-react";
+import {
+  Building2,
+  User,
+  Mail,
+  Lock,
+  Globe,
+  Calculator,
+  Loader2,
+  CheckCircle2,
+  Gift,
+  ArrowLeft,
+} from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { Button } from "@/components/ui/button";
 import { BrandImage } from "@/components/brand-image";
@@ -10,22 +21,37 @@ import { PHOTOS } from "@/lib/media";
 import { TaxSimulator } from "@/components/tax-simulator";
 import { useAuthStore } from "@/lib/store";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { friendlyAuthError, isValidEmail, MIN_PASSWORD } from "@/lib/auth-errors";
 import type { UserRole } from "@/lib/types";
 import type { PersonType } from "@/lib/tax";
 import { cn } from "@/lib/utils";
 
+type Mode = "login" | "signup" | "forgot";
+
 export default function AuthPage() {
   const router = useRouter();
   const setUser = useAuthStore((s) => s.setUser);
-  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [mode, setMode] = useState<Mode>("login");
   const [role, setRole] = useState<UserRole>("owner");
   const [personType, setPersonType] = useState<PersonType>("pf");
   const [showSimulator, setShowSimulator] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [referral, setReferral] = useState("");
+  const [showReferral, setShowReferral] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null); // pós-cadastro / reset enviado
+  const [awaitingConfirm, setAwaitingConfirm] = useState(false);
+
+  function switchMode(m: Mode) {
+    setMode(m);
+    setError(null);
+    setNotice(null);
+    setAwaitingConfirm(false);
+  }
 
   async function handleGoogle() {
     const supabase = createClient();
@@ -39,21 +65,103 @@ export default function AuthPage() {
     });
   }
 
+  /** Reenvia o e-mail de confirmação (Atualização 20.4). */
+  async function resendConfirmation() {
+    const supabase = createClient();
+    setError(null);
+    if (!supabase) {
+      setNotice("Modo demonstração: e-mail de confirmação não é enviado.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resend({ type: "signup", email });
+      if (error) throw error;
+      setNotice("Reenviamos o e-mail de confirmação. Verifique sua caixa de entrada.");
+    } catch (err) {
+      setError(friendlyAuthError(err instanceof Error ? err.message : ""));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  /** Recuperação de senha (Atualização 20.3). */
+  async function handleForgot(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    if (!isValidEmail(email)) {
+      setError("Digite um e-mail válido para receber o link.");
+      return;
+    }
+    const supabase = createClient();
+    setLoading(true);
+    try {
+      if (supabase) {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/auth/reset`,
+        });
+        if (error) throw error;
+      }
+      setNotice(
+        "Enviamos um link de recuperação para seu e-mail. Abra-o para definir uma nova senha."
+      );
+    } catch (err) {
+      setError(friendlyAuthError(err instanceof Error ? err.message : ""));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  /** Validação local antes de enviar (Atualizações 20.1 e 20.2). */
+  function validate(): string | null {
+    if (!isValidEmail(email)) return "E-mail inválido. Confira o endereço digitado.";
+    if (mode === "signup") {
+      if (name.trim().length < 2) return "Informe seu nome completo.";
+      if (password.length < MIN_PASSWORD)
+        return `A senha deve ter pelo menos ${MIN_PASSWORD} caracteres.`;
+      if (password !== confirmPassword) return "A senha e a confirmação não coincidem.";
+    } else if (!password) {
+      return "Digite sua senha.";
+    }
+    return null;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    setLoading(true);
+    setNotice(null);
 
+    const validationError = validate();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    setLoading(true);
     const supabase = createClient();
     try {
       if (supabase) {
         if (mode === "signup") {
-          const { error } = await supabase.auth.signUp({
+          const { data, error } = await supabase.auth.signUp({
             email,
             password,
-            options: { data: { full_name: name, role, person_type: personType } },
+            options: {
+              data: {
+                full_name: name,
+                role,
+                person_type: personType,
+                referred_by: referral || null,
+              },
+              emailRedirectTo: `${window.location.origin}/auth/callback`,
+            },
           });
           if (error) throw error;
+          // Sem sessão imediata = precisa confirmar o e-mail (Atualização 20.4).
+          if (!data.session) {
+            setAwaitingConfirm(true);
+            setLoading(false);
+            return;
+          }
         } else {
           const { error } = await supabase.auth.signInWithPassword({ email, password });
           if (error) throw error;
@@ -68,7 +176,7 @@ export default function AuthPage() {
       });
       router.push("/dashboard");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não foi possível autenticar.");
+      setError(friendlyAuthError(err instanceof Error ? err.message : ""));
     } finally {
       setLoading(false);
     }
@@ -95,7 +203,7 @@ export default function AuthPage() {
         <div className="absolute inset-0 flex flex-col justify-between p-12 text-white">
           <Logo href="/home" light />
           <div>
-            <h1 className="font-title text-4xl font-extrabold leading-tight">
+            <h1 className="font-title text-4xl font-bold leading-tight">
               {mode === "login" ? "Bem-vindo de volta." : "Sua nova fase começa aqui."}
             </h1>
             <p className="mt-4 max-w-md text-white/75">
@@ -114,135 +222,245 @@ export default function AuthPage() {
             <Logo href="/home" />
           </div>
 
-          {/* Abas */}
-          <div className="flex rounded-full bg-surface-2 p-1">
-            {(["login", "signup"] as const).map((m) => (
-              <button
-                key={m}
-                onClick={() => setMode(m)}
-                className={cn(
-                  "flex-1 rounded-full py-2.5 text-sm font-medium transition-colors",
-                  mode === m ? "bg-forest text-white" : "text-muted hover:text-forest"
-                )}
-              >
-                {m === "login" ? "Entrar" : "Cadastrar"}
-              </button>
-            ))}
-          </div>
-
-          <h2 className="mt-8 font-title text-2xl font-extrabold text-ink">
-            {mode === "login" ? "Bem-vindo de volta" : "Crie sua conta"}
-          </h2>
-
-          {/* Seletor de perfil (cadastro) */}
-          {mode === "signup" && (
-            <div className="mt-6 grid grid-cols-2 gap-3">
-              <RoleCard
-                active={role === "owner"}
-                onClick={() => setRole("owner")}
-                icon={Building2}
-                title="Sou Proprietário"
-                text="Quero anunciar imóveis"
-              />
-              <RoleCard
-                active={role === "tenant"}
-                onClick={() => setRole("tenant")}
-                icon={User}
-                title="Sou Inquilino"
-                text="Quero alugar um imóvel"
-              />
-            </div>
-          )}
-
-          {/* PF/PJ — só para proprietário (Atualização 2) */}
-          {mode === "signup" && role === "owner" && (
-            <div className="mt-5">
-              <p className="mb-2 text-sm font-medium text-ink">
-                Como você vai receber os aluguéis?
-              </p>
-              <div className="grid grid-cols-2 gap-3">
-                <RoleCard
-                  active={personType === "pf"}
-                  onClick={() => setPersonType("pf")}
-                  icon={User}
-                  title="Pessoa Física"
-                  text="CPF"
-                />
-                <RoleCard
-                  active={personType === "pj"}
-                  onClick={() => setPersonType("pj")}
-                  icon={Building2}
-                  title="Pessoa Jurídica"
-                  text="CNPJ"
-                />
+          {/* ── Pós-cadastro: confirmar e-mail (Atualização 20.4) ── */}
+          {awaitingConfirm ? (
+            <div className="text-center">
+              <div className="mx-auto mt-4 grid h-14 w-14 place-items-center rounded-full bg-sage-100">
+                <Mail className="h-7 w-7 text-forest" />
               </div>
+              <h2 className="mt-4 font-title text-2xl font-bold text-ink">Confirme seu e-mail</h2>
+              <p className="mx-auto mt-2 max-w-sm text-sm text-muted">
+                Enviamos um link de confirmação para <strong className="text-ink">{email}</strong>.
+                Abra-o para ativar sua conta e poder entrar.
+              </p>
+              {notice && (
+                <p className="mt-4 rounded-lg bg-sage-100 px-3 py-2 text-sm text-forest">{notice}</p>
+              )}
+              {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
+              <Button
+                variant="outline"
+                className="mt-6 w-full"
+                onClick={resendConfirmation}
+                disabled={loading}
+              >
+                {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                Reenviar e-mail de confirmação
+              </Button>
               <button
                 type="button"
-                onClick={() => setShowSimulator((v) => !v)}
-                className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-forest hover:text-blue-700"
+                onClick={() => switchMode("login")}
+                className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-forest hover:text-blue-700"
               >
-                <Calculator className="h-4 w-4" />
-                {showSimulator ? "Fechar simulador" : "Não sei qual escolher? Simule aqui"}
+                <ArrowLeft className="h-4 w-4" /> Voltar para entrar
               </button>
-              {showSimulator && (
-                <div className="mt-3">
-                  <TaxSimulator onRecommend={(p) => setPersonType(p)} />
+            </div>
+          ) : mode === "forgot" ? (
+            /* ── Recuperação de senha (Atualização 20.3) ── */
+            <div>
+              <button
+                type="button"
+                onClick={() => switchMode("login")}
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-forest hover:text-blue-700"
+              >
+                <ArrowLeft className="h-4 w-4" /> Voltar para entrar
+              </button>
+              <h2 className="mt-6 font-title text-2xl font-bold text-ink">Recuperar senha</h2>
+              <p className="mt-2 text-sm text-muted">
+                Informe seu e-mail e enviaremos um link seguro para criar uma nova senha.
+              </p>
+              <form onSubmit={handleForgot} className="mt-6 space-y-4">
+                <Input
+                  icon={Mail}
+                  type="email"
+                  placeholder="E-mail"
+                  value={email}
+                  onChange={setEmail}
+                  required
+                />
+                {error && <p className="text-sm text-red-600">{error}</p>}
+                {notice && (
+                  <p className="flex items-start gap-2 rounded-lg bg-sage-100 px-3 py-2 text-sm text-forest">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" /> {notice}
+                  </p>
+                )}
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                  Enviar link de recuperação
+                </Button>
+              </form>
+            </div>
+          ) : (
+            <>
+              {/* Abas */}
+              <div className="flex rounded-full bg-surface-2 p-1">
+                {(["login", "signup"] as const).map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => switchMode(m)}
+                    className={cn(
+                      "flex-1 rounded-full py-2.5 text-sm font-medium transition-colors",
+                      mode === m ? "bg-forest text-white" : "text-muted hover:text-forest"
+                    )}
+                  >
+                    {m === "login" ? "Entrar" : "Cadastrar"}
+                  </button>
+                ))}
+              </div>
+
+              <h2 className="mt-8 font-title text-2xl font-bold text-ink">
+                {mode === "login" ? "Bem-vindo de volta" : "Crie sua conta"}
+              </h2>
+
+              {/* Seletor de perfil (cadastro) */}
+              {mode === "signup" && (
+                <div className="mt-6 grid grid-cols-2 gap-3">
+                  <RoleCard
+                    active={role === "owner"}
+                    onClick={() => setRole("owner")}
+                    icon={Building2}
+                    title="Sou Proprietário"
+                    text="Quero anunciar imóveis"
+                  />
+                  <RoleCard
+                    active={role === "tenant"}
+                    onClick={() => setRole("tenant")}
+                    icon={User}
+                    title="Sou Inquilino"
+                    text="Quero alugar um imóvel"
+                  />
                 </div>
               )}
-            </div>
+
+              {/* PF/PJ — só para proprietário (Atualização 2) */}
+              {mode === "signup" && role === "owner" && (
+                <div className="mt-5">
+                  <p className="mb-2 text-sm font-medium text-ink">
+                    Como você vai receber os aluguéis?
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <RoleCard
+                      active={personType === "pf"}
+                      onClick={() => setPersonType("pf")}
+                      icon={User}
+                      title="Pessoa Física"
+                      text="CPF"
+                    />
+                    <RoleCard
+                      active={personType === "pj"}
+                      onClick={() => setPersonType("pj")}
+                      icon={Building2}
+                      title="Pessoa Jurídica"
+                      text="CNPJ"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowSimulator((v) => !v)}
+                    className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-forest hover:text-blue-700"
+                  >
+                    <Calculator className="h-4 w-4" />
+                    {showSimulator ? "Fechar simulador" : "Não sei qual escolher? Simule aqui"}
+                  </button>
+                  {showSimulator && (
+                    <div className="mt-3">
+                      <TaxSimulator onRecommend={(p) => setPersonType(p)} />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+                {mode === "signup" && (
+                  <Input
+                    icon={User}
+                    type="text"
+                    placeholder="Nome completo"
+                    value={name}
+                    onChange={setName}
+                    required
+                  />
+                )}
+                <Input
+                  icon={Mail}
+                  type="email"
+                  placeholder="E-mail"
+                  value={email}
+                  onChange={setEmail}
+                  required
+                />
+                <Input
+                  icon={Lock}
+                  type="password"
+                  placeholder={mode === "signup" ? `Senha (mín. ${MIN_PASSWORD} caracteres)` : "Senha"}
+                  value={password}
+                  onChange={setPassword}
+                  required
+                />
+                {mode === "signup" && (
+                  <>
+                    <Input
+                      icon={Lock}
+                      type="password"
+                      placeholder="Confirmar senha"
+                      value={confirmPassword}
+                      onChange={setConfirmPassword}
+                      required
+                    />
+                    {showReferral ? (
+                      <Input
+                        icon={Gift}
+                        type="text"
+                        placeholder="Código de indicação"
+                        value={referral}
+                        onChange={setReferral}
+                      />
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setShowReferral(true)}
+                        className="inline-flex items-center gap-1.5 text-sm font-medium text-forest hover:text-blue-700"
+                      >
+                        <Gift className="h-4 w-4" /> Tenho um código de indicação
+                      </button>
+                    )}
+                  </>
+                )}
+
+                {mode === "login" && (
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => switchMode("forgot")}
+                      className="text-sm font-medium text-forest hover:text-blue-700"
+                    >
+                      Esqueci minha senha
+                    </button>
+                  </div>
+                )}
+
+                {error && <p className="text-sm text-red-600">{error}</p>}
+
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {loading ? "Aguarde..." : mode === "login" ? "Entrar" : "Criar conta"}
+                </Button>
+              </form>
+
+              <div className="my-6 flex items-center gap-3 text-xs text-muted">
+                <span className="h-px flex-1 bg-sage-200" /> ou{" "}
+                <span className="h-px flex-1 bg-sage-200" />
+              </div>
+              <Button
+                variant="outline"
+                className="w-full"
+                type="button"
+                disabled={loading}
+                onClick={handleGoogle}
+              >
+                <Globe className="h-4 w-4" /> Continuar com Google
+              </Button>
+            </>
           )}
-
-          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-            {mode === "signup" && (
-              <Input
-                icon={User}
-                type="text"
-                placeholder="Nome completo"
-                value={name}
-                onChange={setName}
-                required
-              />
-            )}
-            <Input
-              icon={Mail}
-              type="email"
-              placeholder="E-mail"
-              value={email}
-              onChange={setEmail}
-              required
-            />
-            <Input
-              icon={Lock}
-              type="password"
-              placeholder="Senha"
-              value={password}
-              onChange={setPassword}
-              required
-            />
-
-            {error && <p className="text-sm text-red-600">{error}</p>}
-
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading
-                ? "Aguarde..."
-                : mode === "login"
-                  ? "Entrar"
-                  : "Criar conta"}
-            </Button>
-          </form>
-
-          <div className="my-6 flex items-center gap-3 text-xs text-muted">
-            <span className="h-px flex-1 bg-sage-200" /> ou <span className="h-px flex-1 bg-sage-200" />
-          </div>
-          <Button
-            variant="outline"
-            className="w-full"
-            type="button"
-            disabled={loading}
-            onClick={handleGoogle}
-          >
-            <Globe className="h-4 w-4" /> Continuar com Google
-          </Button>
 
           {!isSupabaseConfigured && (
             <p className="mt-6 rounded-lg bg-amber-50 px-3 py-2 text-center text-xs text-amber-700">
