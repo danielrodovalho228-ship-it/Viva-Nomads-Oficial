@@ -4,7 +4,7 @@ import { PageTitle, EmptyState } from "@/components/dashboard/primitives";
 import { EmptyBuildingIllustration } from "@/components/illustrations";
 import { ButtonLink } from "@/components/ui/button";
 import { WorkReadyBadge } from "@/components/ui/badge";
-import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
+import { BrandImage } from "@/components/brand-image";
 import { SAMPLE_PROPERTIES } from "@/lib/properties";
 import { formatBRL } from "@/lib/utils";
 
@@ -41,9 +41,11 @@ export default function MyPropertiesPage() {
               key={p.id}
               className="flex flex-col gap-4 rounded-2xl border border-sage-200 bg-white p-4 sm:flex-row"
             >
-              <PhotoPlaceholder
-                label={p.photos[0]}
-                className="aspect-[4/3] w-full shrink-0 rounded-xl sm:w-48"
+              <BrandImage
+                src={p.photos[0]}
+                alt={p.title}
+                sizes="200px"
+                className="aspect-[4/3] w-full shrink-0 sm:w-48"
               />
               <div className="flex flex-1 flex-col">
                 <div className="flex flex-wrap items-center gap-2">

@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { TrendingUp, Building2, Receipt, ShieldCheck, Check, ArrowRight } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
-import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
+import { BrandImage } from "@/components/brand-image";
+import { PHOTOS } from "@/lib/media";
 
 export const metadata: Metadata = {
   title: "Para proprietários — ganhe ~2x mais que no Airbnb",
@@ -33,9 +34,12 @@ export default function ForLandlordsPage() {
               </ButtonLink>
             </div>
           </div>
-          <PhotoPlaceholder
-            label="[FOTO — proprietário/imóvel mobiliado de qualidade]"
-            className="aspect-[4/3] w-full rounded-3xl border border-white/15 bg-white/5 text-white/70"
+          <BrandImage
+            src={PHOTOS.ownerKeys}
+            alt="Proprietária sorrindo com chaves em apartamento mobiliado pronto para alugar"
+            sizes="(max-width: 768px) 100vw, 50vw"
+            priority
+            className="aspect-[4/3] w-full rounded-3xl"
           />
         </div>
       </section>
@@ -62,8 +66,10 @@ export default function ForLandlordsPage() {
       {/* O que oferecemos */}
       <section className="bg-surface-2 py-16 md:py-24">
         <div className="container-page grid items-center gap-12 md:grid-cols-2">
-          <PhotoPlaceholder
-            label="[FOTO — painel do proprietário / imóvel sendo fotografado]"
+          <BrandImage
+            src={PHOTOS.dashOwner}
+            alt="Sala de apartamento mobiliado preparada para anúncio"
+            sizes="(max-width: 768px) 100vw, 50vw"
             className="aspect-square w-full rounded-3xl"
           />
           <div>

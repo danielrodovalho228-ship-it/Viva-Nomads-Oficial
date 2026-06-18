@@ -204,7 +204,7 @@ export default function NewPropertyPage() {
               </Labeled>
             </div>
             <PhotoPlaceholder
-              label="[MAPA — selecione a localização do imóvel]"
+              label="Selecione a localização do imóvel no mapa"
               className="aspect-[16/9] w-full rounded-xl"
             />
           </div>
