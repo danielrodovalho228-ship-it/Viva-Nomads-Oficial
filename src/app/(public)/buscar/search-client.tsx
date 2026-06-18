@@ -19,6 +19,7 @@ export function SearchClient({ properties }: { properties: Property[] }) {
   const [condoOnly, setCondoOnly] = useState(false);
   const [invoiceOnly, setInvoiceOnly] = useState(false);
   const [insuranceOnly, setInsuranceOnly] = useState(false);
+  const [operatedOnly, setOperatedOnly] = useState(false);
   const [sort, setSort] = useState<"relevance" | "price-asc" | "price-desc">("relevance");
 
   const results = useMemo(() => {
@@ -32,12 +33,13 @@ export function SearchClient({ properties }: { properties: Property[] }) {
       if (condoOnly && !p.tagCondoApproved) return false;
       if (invoiceOnly && !p.issuesInvoice) return false;
       if (insuranceOnly && !p.acceptsInsurance) return false;
+      if (operatedOnly && !(p.ownershipType === "subleased" && p.subleaseAuthorized)) return false;
       return true;
     });
     if (sort === "price-asc") list = [...list].sort((a, b) => a.monthlyPrice - b.monthlyPrice);
     if (sort === "price-desc") list = [...list].sort((a, b) => b.monthlyPrice - a.monthlyPrice);
     return list;
-  }, [properties, maxPrice, minBedrooms, maxPeriod, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, condoOnly, invoiceOnly, insuranceOnly, sort]);
+  }, [properties, maxPrice, minBedrooms, maxPeriod, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, condoOnly, invoiceOnly, insuranceOnly, operatedOnly, sort]);
 
   return (
     <div className="container-page py-8">
@@ -95,6 +97,9 @@ export function SearchClient({ properties }: { properties: Property[] }) {
         </Chip>
         <Chip on={insuranceOnly} onClick={() => setInsuranceOnly((v) => !v)}>
           🛡️ Seguro-Fiança
+        </Chip>
+        <Chip on={operatedOnly} onClick={() => setOperatedOnly((v) => !v)}>
+          🤝 Gestor profissional
         </Chip>
 
         <div className="ml-auto">

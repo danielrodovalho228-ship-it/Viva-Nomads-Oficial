@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Check, QrCode, Barcode, CreditCard, Copy, Loader2 } from "lucide-react";
 import { PLANS } from "@/lib/constants";
-import { useAuthStore } from "@/lib/store";
+import { useAuthStore, DEMO_USER, type SubscriptionPlan } from "@/lib/store";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { formatBRL, cn } from "@/lib/utils";
@@ -26,7 +26,13 @@ const BILLING: { id: Billing; label: string; icon: React.ComponentType<{ classNa
 
 export default function SubscriptionPage() {
   const user = useAuthStore((s) => s.user);
+  const setUser = useAuthStore((s) => s.setUser);
+  const activePlan = (user ?? DEMO_USER).plan ?? "free";
   const currentPlanId = "free";
+
+  function switchDemoPlan(plan: SubscriptionPlan) {
+    setUser({ ...(user ?? DEMO_USER), plan });
+  }
   const [selected, setSelected] = useState<string | null>(null);
   const [billing, setBilling] = useState<Billing>("PIX");
   const [loading, setLoading] = useState(false);
@@ -67,6 +73,30 @@ export default function SubscriptionPage() {
   return (
     <>
       <PageTitle title="Assinatura" subtitle="Gerencie seu plano e a forma de pagamento." />
+
+      {/* Alternador de plano (demonstração) — libera/oculta recursos do Gestor. */}
+      <Panel className="mb-6">
+        <p className="text-sm font-medium text-ink">Visualizar como plano (demonstração)</p>
+        <p className="mt-0.5 text-xs text-muted">
+          Recursos de operador (Carteira, Viabilidade) aparecem apenas no plano Gestor.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {(["free", "essential", "pro", "gestor"] as const).map((p) => (
+            <button
+              key={p}
+              onClick={() => switchDemoPlan(p)}
+              className={cn(
+                "rounded-full border px-3.5 py-1.5 text-sm font-medium capitalize transition-colors",
+                activePlan === p
+                  ? "border-forest bg-forest text-white"
+                  : "border-sage-200 text-ink hover:border-sage"
+              )}
+            >
+              {p === "free" ? "Gratuito" : p}
+            </button>
+          ))}
+        </div>
+      </Panel>
 
       <Panel className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
