@@ -41,7 +41,7 @@ export default function AccountPage() {
       {user?.role === "tenant" && (
         <Panel title="Perfil profissional" className="mt-6">
           <p className="text-sm text-muted">
-            Estes dados ajudam o proprietário a conhecer você. Complementam o laudo CAF — não
+            Estes dados ajudam o proprietário a conhecer você. Complementam a verificação de identidade — não
             o substituem.
           </p>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">

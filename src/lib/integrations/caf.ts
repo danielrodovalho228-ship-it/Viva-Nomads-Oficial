@@ -29,6 +29,7 @@ export async function verifyTenant(req: CafRequest): Promise<CafResult> {
       liveness: true,
       document: true,
       coversForeigners: true,
+      demo: true,
       notes: [
         "Identidade confirmada (modo demonstração)",
         "Prova de vida aprovada",
@@ -70,6 +71,7 @@ export async function verifyTenant(req: CafRequest): Promise<CafResult> {
     liveness: data.validations?.liveness ?? false,
     document: data.validations?.document ?? false,
     coversForeigners: true,
+    demo: false,
     notes: data.risk?.reasons ?? ["Análise concluída."],
   };
 }

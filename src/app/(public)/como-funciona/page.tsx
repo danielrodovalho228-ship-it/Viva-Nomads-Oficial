@@ -23,7 +23,7 @@ const IMG = "/como-funciona";
 const TENANT_STEPS = [
   { icon: Search, img: `${IMG}/01-busque.jpg`, title: "Busque", text: "Filtre imóveis por cidade, período, orçamento e pelo selo Pronto para Morar." },
   { icon: MessageSquare, img: `${IMG}/02-converse.jpg`, title: "Converse", text: "Fale direto com o proprietário, tire dúvidas e agende uma visita." },
-  { icon: ShieldCheck, img: `${IMG}/03-verifique.jpg`, title: "Verifique-se", text: "Faça a verificação de perfil (CAF) — identidade e prova de vida — para dar segurança ao proprietário." },
+  { icon: ShieldCheck, img: `${IMG}/03-verifique.jpg`, title: "Verifique-se", text: "Faça a verificação de identidade — documento e foto — para dar segurança ao proprietário." },
   { icon: FileSignature, img: `${IMG}/04-assine.jpg`, title: "Assine", text: "Escolha a garantia, assine o contrato digital com validade jurídica e receba as chaves." },
 ];
 

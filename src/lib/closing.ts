@@ -9,7 +9,12 @@ export type GuaranteeType = "seguro_fianca" | "caucao" | "titulo_cap";
 export type Insurer = "porto" | "junto";
 export type CostParty = "owner" | "tenant";
 
-/** Resultado do laudo CAF (mock até integrar a API). */
+/**
+ * Resultado da verificação de identidade (semáforo de risco).
+ * `demo: true` enquanto a integração real não está ativa — não confundir um
+ * laudo simulado com um verdadeiro. ("CAF" é o nome do fornecedor, usado só
+ * internamente; na interface usamos "verificação de identidade".)
+ */
 export interface CafResult {
   light: TrafficLight;
   identity: boolean;
@@ -17,6 +22,7 @@ export interface CafResult {
   document: boolean;
   notes: string[];
   coversForeigners: boolean; // CRNM/RNE
+  demo?: boolean; // laudo de demonstração (sem verificação real rodando)
 }
 
 export const TRAFFIC_LIGHT_META: Record<

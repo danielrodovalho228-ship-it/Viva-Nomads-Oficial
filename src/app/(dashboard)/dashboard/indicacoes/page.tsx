@@ -85,14 +85,14 @@ export default function ReferralsPage() {
         <Panel title="Indicou um proprietário?">
           <p className="text-sm text-muted">
             Você ganha <strong className="text-forest">crédito em comissão</strong> (ou serviço
-            grátis: CAF/contrato) quando o proprietário indicado fecha a primeira reserva.
+            grátis: verificação/contrato) quando o proprietário indicado fecha a primeira reserva.
           </p>
         </Panel>
         <Panel title="Indicou um inquilino?">
           <p className="text-sm text-muted">
             Você ganha <strong className="text-forest">crédito em serviços</strong> quando o
             inquilino indicado fecha a primeira locação. O indicado ganha um benefício de
-            boas-vindas (1ª verificação CAF grátis).
+            boas-vindas (1ª verificação de identidade grátis).
           </p>
         </Panel>
       </div>

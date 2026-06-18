@@ -40,7 +40,7 @@ import {
 import { COMMISSION_BY_PLAN } from "@/lib/constants";
 import { formatBRL, cn } from "@/lib/utils";
 
-const STEPS = ["Candidatura & CAF", "Garantia", "Cotação", "Patrimonial", "Contrato", "Resumo"];
+const STEPS = ["Candidatura & verificação", "Garantia", "Cotação", "Patrimonial", "Contrato", "Resumo"];
 
 // Inquilino e imóvel da candidatura (mock — viria do lead selecionado).
 const TENANT = { name: "Ana Carvalho", profile: "Médica · residência", foreigner: false };
@@ -104,6 +104,7 @@ export default function ClosingPage() {
       liveness: true,
       document: true,
       coversForeigners: true,
+      demo: true,
       notes: [
         "Identidade confirmada",
         "Prova de vida aprovada",
@@ -250,11 +251,11 @@ export default function ClosingPage() {
               <div className="rounded-xl border border-sage-200 p-5 text-center">
                 <ShieldCheck className="mx-auto h-10 w-10 text-sage" />
                 <p className="mt-3 text-sm text-muted">
-                  Verificação CAF: identidade, documento (OCR), prova de vida (biometria) e
+                  Verificação de identidade: documento, foto (selfie) e análise antifraude, com
                   risco contextual. Cobre estrangeiros (CRNM/RNE).
                 </p>
                 <Button variant="gold" className="mt-4" onClick={runVerification} disabled={verifying}>
-                  {verifying ? "Verificando..." : "Disparar verificação CAF"}
+                  {verifying ? "Verificando..." : "Iniciar verificação de identidade"}
                 </Button>
               </div>
             ) : (
@@ -718,7 +719,7 @@ function CafLaudo({ result }: { result: CafResult }) {
     <div className={cn("rounded-xl p-5 ring-1", meta.tone, meta.ring)}>
       <div className="flex items-center gap-2">
         <span className="text-2xl">{meta.emoji}</span>
-        <span className="font-title text-lg font-bold">Laudo CAF — {meta.label}</span>
+        <span className="font-title text-lg font-bold">Verificação de identidade — {meta.label}</span>
       </div>
       <div className="mt-4 grid gap-2 sm:grid-cols-3">
         <LaudoItem icon={Fingerprint} label="Identidade" ok={result.identity} />
