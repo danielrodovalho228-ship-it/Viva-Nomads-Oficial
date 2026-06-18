@@ -17,7 +17,6 @@ export function SearchClient({ properties }: { properties: Property[] }) {
   const [readyToLiveOnly, setReadyToLiveOnly] = useState(false);
   const [homeOfficeOnly, setHomeOfficeOnly] = useState(false);
   const [workLocatedOnly, setWorkLocatedOnly] = useState(false);
-  const [condoOnly, setCondoOnly] = useState(false);
   const [invoiceOnly, setInvoiceOnly] = useState(false);
   const [insuranceOnly, setInsuranceOnly] = useState(false);
   const [operatedOnly, setOperatedOnly] = useState(false);
@@ -34,7 +33,6 @@ export function SearchClient({ properties }: { properties: Property[] }) {
       if (readyToLiveOnly && !p.readyToLiveBadge) return false;
       if (homeOfficeOnly && !p.tagHomeOffice) return false;
       if (workLocatedOnly && !p.tagWorkLocated) return false;
-      if (condoOnly && !p.tagCondoApproved) return false;
       if (invoiceOnly && !p.issuesInvoice) return false;
       if (insuranceOnly && !p.acceptsInsurance) return false;
       if (operatedOnly && !(p.ownershipType === "subleased" && p.subleaseAuthorized)) return false;
@@ -50,13 +48,13 @@ export function SearchClient({ properties }: { properties: Property[] }) {
           searchPriority(tierFromPhotoCount(a.photos.length))
       );
     return list;
-  }, [properties, maxPrice, minBedrooms, maxPeriod, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, condoOnly, invoiceOnly, insuranceOnly, operatedOnly, sort]);
+  }, [properties, maxPrice, minBedrooms, maxPeriod, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly, sort]);
 
   const activeCount =
     (maxPrice ? 1 : 0) +
     (minBedrooms ? 1 : 0) +
     (maxPeriod ? 1 : 0) +
-    [readyToLiveOnly, homeOfficeOnly, workLocatedOnly, condoOnly, invoiceOnly, insuranceOnly, operatedOnly].filter(
+    [readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly].filter(
       Boolean
     ).length;
 
@@ -140,9 +138,6 @@ export function SearchClient({ properties }: { properties: Property[] }) {
           </Chip>
           <Chip on={workLocatedOnly} onClick={() => setWorkLocatedOnly((v) => !v)}>
             📍 Bem localizado
-          </Chip>
-          <Chip on={condoOnly} onClick={() => setCondoOnly((v) => !v)}>
-            🏢 Aceito em condomínio
           </Chip>
           <Chip on={invoiceOnly} onClick={() => setInvoiceOnly((v) => !v)}>
             📄 Com Nota Fiscal

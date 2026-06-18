@@ -67,7 +67,11 @@ export function SpecTag({ kind, className }: { kind: SpecTagKind; className?: st
   );
 }
 
-/** Renderiza as etiquetas ativas de um imóvel. */
+/**
+ * Renderiza as etiquetas ativas de um imóvel.
+ * Obs.: a etiqueta "Aceito em condomínio" está desativada por ora (rodada 12)
+ * — afirmação jurídica pendente de parecer do advogado. O dado segue coletado.
+ */
 export function PropertyTags({
   property,
   className,
@@ -75,13 +79,12 @@ export function PropertyTags({
   property: { tagHomeOffice: boolean; tagWorkLocated: boolean; tagCondoApproved: boolean };
   className?: string;
 }) {
-  const any = property.tagHomeOffice || property.tagWorkLocated || property.tagCondoApproved;
+  const any = property.tagHomeOffice || property.tagWorkLocated;
   if (!any) return null;
   return (
     <div className={cn("flex flex-wrap gap-1", className)}>
       {property.tagHomeOffice && <SpecTag kind="home_office" />}
       {property.tagWorkLocated && <SpecTag kind="work_located" />}
-      {property.tagCondoApproved && <SpecTag kind="condo" />}
     </div>
   );
 }
