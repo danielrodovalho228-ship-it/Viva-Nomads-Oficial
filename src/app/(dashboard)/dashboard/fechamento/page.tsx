@@ -206,8 +206,9 @@ export default function ClosingPage() {
         </span>
       </div>
 
-      {/* Stepper (passos alcançados são clicáveis — A4) */}
-      <div className="mb-6 flex items-center gap-2 overflow-x-auto pb-2">
+      {/* Stepper (passos alcançados são clicáveis — A4).
+          Rola no mobile; quebra em linhas no desktop (sem scroll horizontal). */}
+      <div className="mb-6 flex items-center gap-2 overflow-x-auto pb-2 sm:flex-wrap sm:overflow-visible sm:pb-0">
         {STEPS.map((s, i) => {
           const reachable = i <= maxReached && !(i === 2 && guarantee !== "seguro_fianca");
           return (

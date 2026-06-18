@@ -350,6 +350,9 @@ function CheckRow({
   return (
     <button
       type="button"
+      role="checkbox"
+      aria-checked={checked}
+      aria-label={label}
       onClick={onToggle}
       disabled={disabled}
       className={cn(
@@ -385,6 +388,9 @@ function ScoreRow({
   return (
     <button
       type="button"
+      role="checkbox"
+      aria-checked={on}
+      aria-label={label}
       onClick={onToggle}
       className={cn(
         "flex w-full items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left transition-colors",
@@ -441,6 +447,9 @@ function TagBlock({
           <button
             key={it.label}
             type="button"
+            role="checkbox"
+            aria-checked={it.on}
+            aria-label={it.label}
             onClick={() => onToggle(it.label)}
             className={cn(
               "flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors",
