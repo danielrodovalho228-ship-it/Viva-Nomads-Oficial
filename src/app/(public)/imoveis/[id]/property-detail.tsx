@@ -157,7 +157,7 @@ export function PropertyDetail({
             <MapPin className="h-4 w-4" /> {property.neighborhood}, {property.city} -{" "}
             {property.state}
           </div>
-          <h1 className="mt-2 font-title text-3xl font-extrabold text-ink">{property.title}</h1>
+          <h1 className="mt-2 font-title text-3xl font-bold text-ink">{property.title}</h1>
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
             {property.reviewCount > 0 && (
@@ -356,7 +356,7 @@ export function PropertyDetail({
         <aside className="lg:col-span-1">
           <div className="sticky top-20 rounded-2xl border border-sage-200 bg-white p-6 shadow-sm">
             <div className="flex items-baseline gap-1">
-              <span className="font-title text-3xl font-extrabold text-forest">
+              <span className="font-title text-3xl font-bold text-forest">
                 {formatBRL(property.monthlyPrice)}
               </span>
               <span className="text-muted">/mês</span>
@@ -439,7 +439,7 @@ export function PropertyDetail({
       {/* Similares */}
       {similar.length > 0 && (
         <section className="mt-16">
-          <h2 className="font-title text-2xl font-extrabold text-ink">Imóveis similares</h2>
+          <h2 className="font-title text-2xl font-bold text-ink">Imóveis similares</h2>
           <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {similar.map((p) => (
               <PropertyCard key={p.id} property={p} />

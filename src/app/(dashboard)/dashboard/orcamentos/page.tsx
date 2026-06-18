@@ -427,7 +427,7 @@ function DocView({ doc, onBack }: { doc: DocumentRecord; onBack: () => void }) {
       <div className="rounded-2xl border border-sage-200 bg-white p-6 print:border-0">
         <div className="flex items-start justify-between border-b border-sage-200 pb-4">
           <div>
-            <p className="font-title text-xl font-extrabold text-forest">Viva Nomads</p>
+            <p className="font-title text-xl font-bold text-forest">Viva Nomads</p>
             <p className="text-xs text-muted">Locação por temporada · 30 a 180 dias</p>
           </div>
           <div className="text-right">
@@ -489,7 +489,7 @@ function DocView({ doc, onBack }: { doc: DocumentRecord; onBack: () => void }) {
               <td colSpan={2} className="pt-3 font-bold text-ink">
                 Total do 1º pagamento (inquilino)
               </td>
-              <td className="pt-3 text-right font-title text-lg font-extrabold text-forest">
+              <td className="pt-3 text-right font-title text-lg font-bold text-forest">
                 {formatBRL(doc.totalValue)}
               </td>
             </tr>

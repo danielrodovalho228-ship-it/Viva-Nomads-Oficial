@@ -83,7 +83,7 @@ export function PropertyCard({ property }: { property: Property }) {
 
         <div className="mt-auto flex items-end justify-between border-t border-line pt-3">
           <div>
-            <span className="font-title text-xl font-extrabold text-ink">
+            <span className="font-title text-xl font-bold text-ink">
               {formatBRL(property.monthlyPrice)}
             </span>
             <span className="text-sm text-muted">/mês</span>

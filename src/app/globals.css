@@ -41,8 +41,8 @@
   --color-champagne: #6cbe2a; /* CTA/selo */
   --color-champagne-600: #4fa01e;
 
-  /* Fontes */
-  --font-title: var(--font-syne), ui-sans-serif, system-ui, sans-serif;
+  /* Fontes — Inter para tudo (Atualização 18), variando só o peso */
+  --font-title: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 
   --radius-card: 18px;
@@ -63,11 +63,31 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+/*
+  Conserto definitivo do corte de letras (Atualização 19).
+  Três medidas combinadas: (1) line-height folgado, (2) sem overflow:hidden
+  cortando descidas/acentos, (3) padding-bottom de folga abaixo da última linha.
+  Validado com "Uberlândia", "turistas", "transição", "indicação", "Fechamento".
+*/
 h1, h2, h3, h4, h5 {
   font-family: var(--font-title);
   letter-spacing: -0.02em;
-  line-height: 1.15; /* respiro p/ descidas (g, p, ç, j) — evita corte */
-  padding-bottom: 0.04em;
+  line-height: 1.2; /* títulos médios: respiro p/ descidas (g, p, ç, j) e acentos */
+  padding-bottom: 0.12em;
+  overflow: visible; /* nunca cortar o que transborda a caixa da linha */
+}
+
+/* Títulos grandes (hero) precisam de ainda mais respiro vertical. */
+h1 {
+  line-height: 1.3;
+}
+
+/* Garante que nenhum container de título corte o texto verticalmente. */
+.display-xl,
+.display-lg {
+  line-height: 1.3;
+  padding-bottom: 0.12em;
+  overflow: visible;
 }
 
 /* Form/controles não herdam font-family por padrão — força a fonte da marca */
@@ -114,9 +134,19 @@ textarea:focus-visible,
   }
   .bg-gradient-brand { background: var(--gradient-brand); }
 
-  /* Título fluido editorial */
-  .display-xl { font-size: clamp(2.5rem, 6vw, 5rem); }
-  .display-lg { font-size: clamp(2rem, 4.5vw, 3.5rem); }
+  /* Título fluido editorial — escala bem do mobile (375px) ao desktop.
+     Mínimos menores evitam vazamento/scroll horizontal com palavras longas
+     como "Uberlândia". Quebra de palavra protege casos extremos. */
+  .display-xl {
+    font-size: clamp(2rem, 7vw, 5rem);
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+  .display-lg {
+    font-size: clamp(1.75rem, 5.5vw, 3.5rem);
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
 
   /* Foto tratada (duotone azul) para unificar a fotografia */
   .photo-treat { position: relative; overflow: hidden; }

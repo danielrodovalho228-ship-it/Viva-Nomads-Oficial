@@ -36,7 +36,7 @@ export default function HowItWorksPage() {
     <>
       <section className="bg-forest py-16 text-white md:py-20">
         <div className="container-page max-w-3xl">
-          <h1 className="font-title text-4xl font-extrabold md:text-5xl">Como funciona</h1>
+          <h1 className="font-title text-4xl font-bold md:text-5xl">Como funciona</h1>
           <p className="mt-5 text-lg text-white/80">
             Simples para quem busca, seguro para quem anuncia. Locação mobiliada por temporada
             de 30 a 180 dias, com contrato formal e inquilino verificado.
@@ -50,7 +50,7 @@ export default function HowItWorksPage() {
       </div>
 
       <section className="container-page py-16 text-center">
-        <h2 className="font-title text-3xl font-extrabold text-ink">Pronto para começar?</h2>
+        <h2 className="font-title text-3xl font-bold text-ink">Pronto para começar?</h2>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <ButtonLink href="/buscar" variant="primary" size="lg">
             Buscar imóveis
@@ -73,7 +73,7 @@ function Steps({
 }) {
   return (
     <section className="container-page py-16">
-      <h2 className="font-title text-3xl font-extrabold text-ink">{title}</h2>
+      <h2 className="font-title text-3xl font-bold text-ink">{title}</h2>
       <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {steps.map((s, i) => {
           const Icon = s.icon;
@@ -83,7 +83,7 @@ function Steps({
                 <div className="grid h-11 w-11 place-items-center rounded-xl bg-forest text-white">
                   <Icon className="h-5 w-5" />
                 </div>
-                <span className="font-title text-3xl font-extrabold text-sage-200">
+                <span className="font-title text-3xl font-bold text-sage-200">
                   {i + 1}
                 </span>
               </div>

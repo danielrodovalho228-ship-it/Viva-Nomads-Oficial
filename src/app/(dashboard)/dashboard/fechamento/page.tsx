@@ -345,7 +345,7 @@ export default function ClosingPage() {
                   >
                     <p className="font-title font-bold text-ink">{ins.name}</p>
                     <p className="text-xs text-muted">{ins.note}</p>
-                    <p className="mt-3 font-title text-xl font-extrabold text-forest">
+                    <p className="mt-3 font-title text-xl font-bold text-forest">
                       {formatBRL(q.monthlyInstallment)}
                       <span className="text-sm font-normal text-muted">/mês</span>
                     </p>

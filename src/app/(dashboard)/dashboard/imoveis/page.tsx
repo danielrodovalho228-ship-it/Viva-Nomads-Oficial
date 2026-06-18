@@ -83,7 +83,7 @@ export default function MyPropertiesPage() {
                   </span>
                 </div>
                 <div className="mt-auto flex items-center justify-between pt-3">
-                  <span className="font-title text-xl font-extrabold text-forest">
+                  <span className="font-title text-xl font-bold text-forest">
                     {formatBRL(p.monthlyPrice)}
                     <span className="text-sm font-normal text-muted">/mês</span>
                   </span>

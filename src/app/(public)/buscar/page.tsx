@@ -27,7 +27,7 @@ export default async function SearchPage() {
         />
         <div className="absolute inset-0 bg-night/55" />
         <div className="container-page absolute inset-0 flex flex-col justify-center text-white">
-          <h1 className="font-title text-3xl font-extrabold sm:text-4xl">
+          <h1 className="font-title text-3xl font-bold sm:text-4xl">
             Imóveis mobiliados em Uberlândia
           </h1>
           <p className="mt-1 max-w-xl text-white/75">

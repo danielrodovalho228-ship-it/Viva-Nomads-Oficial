@@ -102,7 +102,7 @@ export default function QualificationChecklistPage() {
         <p className="font-title text-sm font-bold uppercase tracking-wide text-blue-500">
           Porta de entrada do anúncio
         </p>
-        <h1 className="mt-1 font-title text-3xl font-extrabold text-ink">Qualificação do imóvel</h1>
+        <h1 className="mt-1 font-title text-3xl font-bold text-ink">Qualificação do imóvel</h1>
         <p className="mt-2 text-muted">
           A Camada 1 garante que isto é locação por temporada regular; a Camada 2 gera o selo{" "}
           <span className="font-medium text-forest">Pronto para Morar</span> e as etiquetas de
@@ -240,7 +240,7 @@ export default function QualificationChecklistPage() {
           <div className="flex items-end justify-between">
             <div className="flex items-center gap-2">
               <Award className={cn("h-5 w-5", baseBadge ? "text-champagne-600" : "text-sage")} />
-              <span className="font-title text-2xl font-extrabold text-forest">{score}</span>
+              <span className="font-title text-2xl font-bold text-forest">{score}</span>
               <span className="text-sm text-muted">/ 100</span>
             </div>
             {baseBadge && <ReadyToLiveBadge />}

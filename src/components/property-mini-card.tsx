@@ -54,7 +54,7 @@ export function PropertyMiniCard({ property }: { property: Property }) {
               <Ruler className="h-3.5 w-3.5" /> {property.areaM2} m²
             </span>
           </div>
-          <span className="font-title text-base font-extrabold text-ink">
+          <span className="font-title text-base font-bold text-ink">
             {formatBRL(property.monthlyPrice)}
             <span className="text-xs font-normal text-muted">/mês</span>
           </span>

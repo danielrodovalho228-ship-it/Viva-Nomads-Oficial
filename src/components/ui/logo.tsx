@@ -53,7 +53,7 @@ export function BrandMark({ size = 32 }: { size?: number }) {
 
 function Wordmark({ light }: { light?: boolean }) {
   return (
-    <span className="font-title text-[1.2rem] font-extrabold tracking-tight leading-none">
+    <span className="font-title text-[1.2rem] font-bold tracking-tight leading-none">
       <span style={{ color: light ? "#4f9bff" : "#1E63D0" }}>Viva</span>
       <span style={{ color: light ? "#8FD63A" : "#6CBE2A" }}>Nomads</span>
     </span>

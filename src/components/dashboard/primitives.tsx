@@ -12,7 +12,7 @@ export function PageTitle({
   return (
     <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
       <div>
-        <h1 className="font-title text-2xl font-extrabold text-ink sm:text-3xl">{title}</h1>
+        <h1 className="font-title text-2xl font-bold text-ink sm:text-3xl">{title}</h1>
         {subtitle && <p className="mt-1 text-muted">{subtitle}</p>}
       </div>
       {action}
@@ -35,7 +35,7 @@ export function StatCard({
         <span className="text-sm text-muted">{label}</span>
         <Icon className="h-5 w-5 text-sage" />
       </div>
-      <p className="mt-2 font-title text-3xl font-extrabold text-forest">{value}</p>
+      <p className="mt-2 font-title text-3xl font-bold text-forest">{value}</p>
     </div>
   );
 }

@@ -22,7 +22,7 @@ export default function PricingPage() {
     <>
       <section className="bg-forest py-16 text-center text-white md:py-20">
         <div className="container-page">
-          <h1 className="font-title text-4xl font-extrabold md:text-5xl">Planos e preços</h1>
+          <h1 className="font-title text-4xl font-bold md:text-5xl">Planos e preços</h1>
           <p className="mx-auto mt-5 max-w-2xl text-lg text-white/80">
             Modelo híbrido: assinatura para manter o anúncio ativo, mais serviços opcionais
             por cima. O pagamento do aluguel vai direto ao proprietário.
@@ -47,10 +47,10 @@ export default function PricingPage() {
                   Mais popular
                 </span>
               )}
-              <h3 className="font-title text-2xl font-extrabold text-ink">{plan.name}</h3>
+              <h3 className="font-title text-2xl font-bold text-ink">{plan.name}</h3>
               <p className="mt-1 text-sm text-muted">{plan.tagline}</p>
               <div className="mt-5 flex items-baseline gap-1">
-                <span className="font-title text-4xl font-extrabold text-forest">
+                <span className="font-title text-4xl font-bold text-forest">
                   {plan.price === null
                     ? "Sob consulta"
                     : plan.price === 0
@@ -84,7 +84,7 @@ export default function PricingPage() {
       <section className="bg-surface-2 py-16">
         <div className="container-page">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="font-title text-3xl font-extrabold text-ink">Serviços opcionais</h2>
+            <h2 className="font-title text-3xl font-bold text-ink">Serviços opcionais</h2>
             <p className="mt-4 text-muted">
               Pague apenas pelo que usar — disponíveis em qualquer plano.
             </p>
