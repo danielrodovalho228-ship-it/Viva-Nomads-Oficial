@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Loader2, Lock, Bell, Trash2, Check } from "lucide-react";
 import { useAuthStore, DEMO_USER } from "@/lib/store";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { TaxSimulator } from "@/components/tax-simulator";
 import { createClient } from "@/lib/supabase/client";
 import { friendlyAuthError, MIN_PASSWORD } from "@/lib/auth-errors";
@@ -76,9 +76,9 @@ export default function AccountPage() {
         <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-sage-100">
           <div className="h-full w-[60%] rounded-full bg-champagne" />
         </div>
-        <Button variant="outline" className="mt-5">
+        <ButtonLink href="/dashboard/verificacao" variant="outline" className="mt-5">
           Continuar verificação
-        </Button>
+        </ButtonLink>
       </Panel>
 
       {/* Alterar senha (Atualização 20.7) */}

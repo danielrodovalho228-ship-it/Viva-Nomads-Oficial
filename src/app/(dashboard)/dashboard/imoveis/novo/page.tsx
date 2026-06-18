@@ -18,7 +18,19 @@ export default function NewPropertyPage() {
   const [approved, setApproved] = useState<boolean | null>(null);
   const [step, setStep] = useState(0);
   const [aiLoading, setAiLoading] = useState(false);
+  const [aiWarn, setAiWarn] = useState<string | null>(null);
   const [title, setTitle] = useState("");
+  // Campos do formulário controlados — habilitam o auto-save de rascunho (item 5B).
+  const [propertyType, setPropertyType] = useState("Apartamento");
+  const [description, setDescription] = useState("");
+  const [bedrooms, setBedrooms] = useState("");
+  const [bathrooms, setBathrooms] = useState("");
+  const [areaM2, setAreaM2] = useState("");
+  const [street, setStreet] = useState("");
+  const [neighborhood, setNeighborhood] = useState("");
+  const [city, setCity] = useState("Uberlândia");
+  const [cep, setCep] = useState("");
+  const [cepLoading, setCepLoading] = useState(false);
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
   const [utilitiesMode, setUtilitiesMode] = useState<"fixed" | "real">("fixed");
   const [utilitiesEstimate, setUtilitiesEstimate] = useState(200);
@@ -62,13 +74,13 @@ export default function NewPropertyPage() {
 
     const res = await createProperty({
       title: title || "Imóvel mobiliado",
-      description: "",
-      propertyType: "Apartamento",
-      city: "Uberlândia",
-      neighborhood: "",
-      bedrooms: 0,
-      bathrooms: 0,
-      areaM2: 0,
+      description,
+      propertyType,
+      city: city || "Uberlândia",
+      neighborhood,
+      bedrooms: Number(bedrooms) || 0,
+      bathrooms: Number(bathrooms) || 0,
+      areaM2: Number(areaM2) || 0,
       minPeriodDays: 30,
       monthlyPrice: 0,
       readyToLiveScore: q.score,
@@ -91,6 +103,10 @@ export default function NewPropertyPage() {
       setPublishError(res.error ?? "Não foi possível publicar.");
       return;
     }
+    // Limpa o rascunho após publicar com sucesso (item 5B).
+    try {
+      localStorage.removeItem("vivanomads-novo-draft");
+    } catch {}
     router.push("/dashboard/imoveis");
   }
 
@@ -100,7 +116,58 @@ export default function NewPropertyPage() {
     const raw = sessionStorage.getItem("vivanomads-qualification");
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setApproved(raw ? JSON.parse(raw).eligible === true : false);
+
+    // Restaura o rascunho salvo (auto-save — item 5B).
+    try {
+      const draft = localStorage.getItem("vivanomads-novo-draft");
+      if (draft) {
+        const d = JSON.parse(draft);
+        if (d.title) setTitle(d.title);
+        if (d.propertyType) setPropertyType(d.propertyType);
+        if (d.description) setDescription(d.description);
+        if (d.bedrooms) setBedrooms(d.bedrooms);
+        if (d.bathrooms) setBathrooms(d.bathrooms);
+        if (d.areaM2) setAreaM2(d.areaM2);
+        if (d.street) setStreet(d.street);
+        if (d.neighborhood) setNeighborhood(d.neighborhood);
+        if (d.city) setCity(d.city);
+        if (d.cep) setCep(d.cep);
+        if (d.ownershipType) setOwnershipType(d.ownershipType);
+      }
+    } catch {}
   }, []);
+
+  // Salva o rascunho a cada mudança de campo (item 5B).
+  useEffect(() => {
+    if (approved !== true) return;
+    const draft = {
+      title, propertyType, description, bedrooms, bathrooms, areaM2,
+      street, neighborhood, city, cep, ownershipType,
+    };
+    try {
+      localStorage.setItem("vivanomads-novo-draft", JSON.stringify(draft));
+    } catch {}
+  }, [approved, title, propertyType, description, bedrooms, bathrooms, areaM2, street, neighborhood, city, cep, ownershipType]);
+
+  // Autocomplete de endereço por CEP via ViaCEP (item 7) — sem chave, gratuito.
+  async function lookupCep(value: string) {
+    const digits = value.replace(/\D/g, "");
+    if (digits.length !== 8) return;
+    setCepLoading(true);
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+      const data = await res.json();
+      if (!data.erro) {
+        if (data.logradouro) setStreet(data.logradouro);
+        if (data.bairro) setNeighborhood(data.bairro);
+        if (data.localidade) setCity(data.localidade);
+      }
+    } catch {
+      /* offline/sem rede — usuário preenche manualmente */
+    } finally {
+      setCepLoading(false);
+    }
+  }
 
   if (approved === null) return null;
 
@@ -129,10 +196,19 @@ export default function NewPropertyPage() {
   }
 
   function generateAI() {
+    // A IA usa as fotos como contexto — exige pelo menos uma foto (item 5A).
+    if (photos.length === 0) {
+      setAiWarn("Adicione fotos primeiro para gerar uma descrição mais precisa.");
+      return;
+    }
+    setAiWarn(null);
     setAiLoading(true);
-    // Serviço pago (modelo híbrido) — aqui simula a geração de título/descrição.
+    // Serviço pago (modelo híbrido) — aqui simula a geração com base nas fotos.
     setTimeout(() => {
       setTitle("Apartamento mobiliado com home office, pronto para sua estadia");
+      setDescription(
+        "Imóvel mobiliado e equipado, pronto para morar. Ambientes claros, cozinha completa e espaço de trabalho — ideal para estadias de média duração. (Descrição gerada com base nas fotos enviadas.)"
+      );
       setAiLoading(false);
     }, 900);
   }
@@ -227,11 +303,17 @@ export default function NewPropertyPage() {
         {step === 1 && (
           <div className="space-y-4">
             <h2 className="font-title text-lg font-bold text-ink">Sobre o imóvel</h2>
-            <div className="flex items-center justify-between rounded-xl bg-champagne/10 px-4 py-3">
-              <span className="text-sm text-forest">Gerar título e descrição com IA</span>
-              <Button size="sm" variant="gold" onClick={generateAI} disabled={aiLoading}>
-                <Sparkles className="h-4 w-4" /> {aiLoading ? "Gerando..." : "Gerar"}
-              </Button>
+            <div className="rounded-xl bg-champagne/10 px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm text-forest">
+                  Gerar título e descrição com IA{" "}
+                  <span className="text-muted">(usa suas fotos como contexto)</span>
+                </span>
+                <Button size="sm" variant="gold" onClick={generateAI} disabled={aiLoading}>
+                  <Sparkles className="h-4 w-4" /> {aiLoading ? "Gerando..." : "Gerar"}
+                </Button>
+              </div>
+              {aiWarn && <p className="mt-2 text-xs font-medium text-red-600">{aiWarn}</p>}
             </div>
             <Labeled label="Título do anúncio">
               <input
@@ -242,7 +324,11 @@ export default function NewPropertyPage() {
               />
             </Labeled>
             <Labeled label="Tipo de imóvel">
-              <select className="input">
+              <select
+                value={propertyType}
+                onChange={(e) => setPropertyType(e.target.value)}
+                className="input"
+              >
                 <option>Apartamento</option>
                 <option>Casa</option>
                 <option>Studio</option>
@@ -250,17 +336,23 @@ export default function NewPropertyPage() {
               </select>
             </Labeled>
             <Labeled label="Descrição">
-              <textarea rows={4} className="input" placeholder="Descreva o imóvel..." />
+              <textarea
+                rows={4}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="input"
+                placeholder="Descreva o imóvel..."
+              />
             </Labeled>
             <div className="grid grid-cols-3 gap-3">
               <Labeled label="Quartos">
-                <input type="number" min={0} className="input" />
+                <input type="number" min={0} value={bedrooms} onChange={(e) => setBedrooms(e.target.value)} className="input" />
               </Labeled>
               <Labeled label="Banheiros">
-                <input type="number" min={0} className="input" />
+                <input type="number" min={0} value={bathrooms} onChange={(e) => setBathrooms(e.target.value)} className="input" />
               </Labeled>
               <Labeled label="Área (m²)">
-                <input type="number" min={0} className="input" />
+                <input type="number" min={0} value={areaM2} onChange={(e) => setAreaM2(e.target.value)} className="input" />
               </Labeled>
             </div>
 
@@ -304,9 +396,14 @@ export default function NewPropertyPage() {
                   />
                   <div>
                     <span className="mb-1.5 block text-sm font-medium text-ink">
-                      Autorização de sublocação (opcional, recomendado)
+                      Autorização de sublocação{" "}
+                      <span className="font-normal text-muted">(opcional)</span>
                     </span>
                     <PhotoUploader photos={subleaseDoc} onChange={setSubleaseDoc} />
+                    <p className="mt-1.5 text-xs text-muted">
+                      Você pode continuar sem enviar agora. Recomendamos anexar a autorização
+                      para evitar problemas futuros.
+                    </p>
                   </div>
                 </div>
               )}
@@ -317,15 +414,50 @@ export default function NewPropertyPage() {
         {step === 2 && (
           <div className="space-y-4">
             <h2 className="font-title text-lg font-bold text-ink">Endereço</h2>
-            <Labeled label="Endereço completo">
-              <input className="input" placeholder="Rua, número" />
+            {/* Busca por CEP (ViaCEP) — preenche rua, bairro e cidade (item 7) */}
+            <Labeled label="CEP">
+              <div className="relative">
+                <input
+                  value={cep}
+                  onChange={(e) => setCep(e.target.value)}
+                  onBlur={(e) => lookupCep(e.target.value)}
+                  inputMode="numeric"
+                  maxLength={9}
+                  placeholder="00000-000"
+                  className="input"
+                />
+                {cepLoading && (
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted">
+                    buscando…
+                  </span>
+                )}
+              </div>
+              <span className="mt-1 block text-xs text-muted">
+                Digite o CEP para preencher rua, bairro e cidade automaticamente.
+              </span>
+            </Labeled>
+            <Labeled label="Endereço (rua e número)">
+              <input
+                value={street}
+                onChange={(e) => setStreet(e.target.value)}
+                className="input"
+                placeholder="Rua, número"
+              />
             </Labeled>
             <div className="grid grid-cols-2 gap-3">
               <Labeled label="Bairro">
-                <input className="input" />
+                <input
+                  value={neighborhood}
+                  onChange={(e) => setNeighborhood(e.target.value)}
+                  className="input"
+                />
               </Labeled>
               <Labeled label="Cidade">
-                <input className="input" defaultValue="Uberlândia" />
+                <input
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  className="input"
+                />
               </Labeled>
             </div>
             <PhotoPlaceholder

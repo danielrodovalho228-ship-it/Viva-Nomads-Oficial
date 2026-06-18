@@ -572,9 +572,8 @@ export default function ClosingPage() {
                 <Row label="Limpeza de saída (opcional)" value={formatBRL(CHECKOUT_FEE)} />
               </div>
               <p className="mt-2 text-xs text-muted">
-                Ao contrário do Airbnb (limpeza a cada hóspede), aqui a preparação é cobrada{" "}
-                <strong>uma única vez</strong>. A taxa vai ao proprietário (despesa de
-                preparação) — não é receita da plataforma.
+                A preparação é cobrada <strong>uma única vez</strong> (não a cada hóspede). A
+                taxa vai ao proprietário (despesa de preparação) — não é receita da plataforma.
               </p>
             </div>
 

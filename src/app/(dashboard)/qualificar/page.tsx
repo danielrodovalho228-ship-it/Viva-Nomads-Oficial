@@ -122,24 +122,37 @@ export default function QualificationChecklistPage() {
         </p>
 
         <div className="mt-6 space-y-2">
-          {eligibilityChecks(elig).map((c) => (
-            <CheckRow
-              key={c.key}
-              checked={c.ok}
-              label={c.label}
-              onToggle={() => {
-                if (c.key === "hasDocument") return;
-                toggleElig(c.key as keyof EligibilityState);
-              }}
-              disabled={c.key === "hasDocument"}
-            />
-          ))}
+          {/* Não exibe o item "Documentação enviada" como checkbox: ele é marcado
+              automaticamente pelo campo de upload abaixo (evita confusão — item 4A). */}
+          {eligibilityChecks(elig)
+            .filter((c) => c.key !== "hasDocument")
+            .map((c) => (
+              <CheckRow
+                key={c.key}
+                checked={c.ok}
+                label={c.label}
+                onToggle={() => toggleElig(c.key as keyof EligibilityState)}
+              />
+            ))}
 
-          <label className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-dashed border-sage-200 bg-surface-2 px-4 py-3 transition-colors hover:border-sage">
+          <label
+            className={cn(
+              "flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-dashed px-4 py-3 transition-colors",
+              docName
+                ? "border-sage bg-sage-100"
+                : "border-sage-200 bg-surface-2 hover:border-sage"
+            )}
+          >
             <span className="flex items-center gap-3 text-sm">
-              <Upload className="h-5 w-5 text-sage" />
+              {docName ? (
+                <CheckCircle2 className="h-5 w-5 text-forest" />
+              ) : (
+                <Upload className="h-5 w-5 text-sage" />
+              )}
               <span>
-                <span className="font-medium text-ink">Documentação do imóvel</span>
+                <span className="font-medium text-ink">
+                  Documentação do imóvel{docName ? " — enviada ✓" : ""}
+                </span>
                 <span className="block text-xs text-muted">
                   {docName ?? "Matrícula ou contrato de gestão (PDF, JPG ou PNG)"}
                 </span>
@@ -298,6 +311,14 @@ export default function QualificationChecklistPage() {
           onToggle={(label) => toggleQuality(workKey(label))}
         />
       </section>
+
+      {/* Confirmação de salvamento (item 4B) */}
+      {saved && (
+        <div className="mt-6 flex items-center gap-2 rounded-xl border border-sage bg-sage-100 px-4 py-3 text-sm font-medium text-forest">
+          <CheckCircle2 className="h-5 w-5" />
+          Qualificação salva ✓ — selo e etiquetas registrados e prontos para o anúncio.
+        </div>
+      )}
 
       {/* AÇÃO */}
       <div className="mt-6 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
