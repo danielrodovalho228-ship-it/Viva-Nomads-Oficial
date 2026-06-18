@@ -25,6 +25,8 @@ Guia passo a passo para colocar a plataforma no ar.
    - `0006_round5_cleaning_service_orders.sql`
    - `0007_round7_badges_operator.sql` — selos em camadas (Pronto para Morar +
      etiquetas) e perfil operador (próprio vs. sublocação autorizada).
+   - `0008_round8_documents.sql` — fluxo Orçamento → Fechamento → Contrato
+     (documentos numerados ORC/CTR-AAAA-NNNN, versionados e com itens editáveis).
    - (opcional) `supabase/seed.sql` — depois de criar um usuário proprietário.
 3. Em **Authentication → Providers**, ative **Email** e **Google** (OAuth).
    - Em Google, configure o redirect: `https://vivanomads.com.br/auth/callback`.

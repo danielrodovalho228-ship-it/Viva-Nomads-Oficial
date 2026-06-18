@@ -21,6 +21,7 @@ import {
   Wrench,
   Briefcase,
   Calculator,
+  FileText,
   Menu,
   LogOut,
 } from "lucide-react";
@@ -44,6 +45,7 @@ const OWNER_NAV: NavItem[] = [
   { href: "/dashboard/carteira", label: "Carteira", icon: Briefcase, minPlan: "gestor" },
   { href: "/dashboard/viabilidade", label: "Viabilidade", icon: Calculator, minPlan: "gestor" },
   { href: "/dashboard/leads", label: "Leads", icon: Users },
+  { href: "/dashboard/orcamentos", label: "Orçamentos", icon: FileText },
   { href: "/dashboard/fechamento", label: "Fechamento", icon: FileSignature },
   { href: "/dashboard/solicitacoes", label: "Solicitações", icon: Wrench },
   { href: "/dashboard/mensagens", label: "Mensagens", icon: MessageSquare },
@@ -137,7 +139,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen w-full bg-surface-2">
       {/* Sidebar desktop */}
-      <aside className="hidden w-64 shrink-0 bg-forest lg:block">{sidebar}</aside>
+      <aside className="hidden w-64 shrink-0 bg-forest lg:block print:hidden">{sidebar}</aside>
 
       {/* Drawer mobile */}
       {open && (
@@ -149,7 +151,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Topbar mobile */}
-        <div className="flex h-16 items-center justify-between border-b border-sage-200 bg-white px-4 lg:hidden">
+        <div className="flex h-16 items-center justify-between border-b border-sage-200 bg-white px-4 lg:hidden print:hidden">
           <Logo />
           <button
             className="grid h-10 w-10 place-items-center rounded-lg text-forest"

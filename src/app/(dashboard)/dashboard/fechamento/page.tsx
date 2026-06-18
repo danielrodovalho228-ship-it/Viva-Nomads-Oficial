@@ -14,13 +14,21 @@ import {
   FileSignature,
   Sparkles,
   Globe2,
+  X,
+  Clock,
 } from "lucide-react";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
+import { PropertyMiniCard } from "@/components/property-mini-card";
+import { DocumentShare } from "@/components/document-share";
+import { SAMPLE_PROPERTIES } from "@/lib/properties";
+import { formatDocNumber } from "@/lib/documents";
 import { PlatformLegalNotice, OwnerDecisionNotice } from "@/components/legal-notice";
 import {
   GUARANTEE_OPTIONS,
   INSURERS,
+  INSURER_COVERAGE,
+  COVERAGE_ROWS,
   COST_SPLIT_ITEMS,
   TRAFFIC_LIGHT_META,
   simulateQuote,
@@ -36,7 +44,14 @@ const STEPS = ["Candidatura & CAF", "Garantia", "Cotação", "Patrimonial", "Con
 
 // Inquilino e imóvel da candidatura (mock — viria do lead selecionado).
 const TENANT = { name: "Ana Carvalho", profile: "Médica · residência", foreigner: false };
-const PROPERTY = { title: "Apto mobiliado · Santa Mônica", monthlyRent: 3200, term: 12 };
+// Imóvel completo para o card do topo (Atualização 16) + número do contrato.
+const PROPERTY_FULL = SAMPLE_PROPERTIES.find((p) => p.id === "ube-001") ?? SAMPLE_PROPERTIES[0];
+const CONTRACT_NUMBER = formatDocNumber("contrato", 2026, 42);
+const PROPERTY = {
+  title: PROPERTY_FULL.title,
+  monthlyRent: PROPERTY_FULL.monthlyPrice,
+  term: 12,
+};
 // Plano do proprietário define a comissão de fechamento (12% / 10% / 8%).
 const OWNER_PLAN = "essential";
 const COMMISSION_RATE = COMMISSION_BY_PLAN[OWNER_PLAN];
@@ -171,8 +186,13 @@ export default function ClosingPage() {
     <div className="mx-auto max-w-2xl">
       <PageTitle
         title="Fechamento"
-        subtitle="Conta: Proprietário · você está fechando uma candidatura"
+        subtitle={`Contrato ${CONTRACT_NUMBER} · você está fechando uma candidatura`}
       />
+
+      {/* Card do imóvel negociado (Atualização 16) */}
+      <div className="mb-4">
+        <PropertyMiniCard property={PROPERTY_FULL} />
+      </div>
 
       {/* Identificação clara dos papéis (A6) */}
       <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-line bg-white px-4 py-3 text-sm">
@@ -336,6 +356,61 @@ export default function ClosingPage() {
                 );
               })}
             </div>
+            {/* Comparação real de coberturas — não só preço (Atualização 15.1) */}
+            <div className="overflow-x-auto rounded-xl border border-sage-200">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-sage-200 bg-surface-2">
+                    <th className="px-3 py-2 text-left font-medium text-muted">Cobertura</th>
+                    {INSURERS.map((ins) => (
+                      <th key={ins.id} className="px-3 py-2 text-center font-title font-bold text-ink">
+                        {ins.name}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b border-sage-200/60">
+                    <td className="px-3 py-2 text-muted">Custo mensal</td>
+                    {INSURERS.map((ins) => (
+                      <td key={ins.id} className="px-3 py-2 text-center font-medium text-forest">
+                        {formatBRL(simulateQuote(ins.id, PROPERTY.monthlyRent).monthlyInstallment)}
+                      </td>
+                    ))}
+                  </tr>
+                  {COVERAGE_ROWS.map((row) => (
+                    <tr key={row.key} className="border-b border-sage-200/60">
+                      <td className="px-3 py-2 text-ink">{row.label}</td>
+                      {INSURERS.map((ins) => (
+                        <td key={ins.id} className="px-3 py-2 text-center">
+                          {INSURER_COVERAGE[ins.id][row.key] ? (
+                            <Check className="mx-auto h-4 w-4 text-emerald-600" />
+                          ) : (
+                            <X className="mx-auto h-4 w-4 text-red-400" />
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                  <tr>
+                    <td className="px-3 py-2 text-muted">Prazo de análise</td>
+                    {INSURERS.map((ins) => (
+                      <td key={ins.id} className="px-3 py-2 text-center text-ink">
+                        <span className="inline-flex items-center gap-1">
+                          <Clock className="h-3.5 w-3.5 text-muted" />
+                          {INSURER_COVERAGE[ins.id].analise}
+                        </span>
+                      </td>
+                    ))}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p className="text-xs text-muted">
+              Escolha por custo-benefício, não só preço: a mais barata pode cobrir menos. Você
+              decide informado.
+            </p>
+
             {quote && (
               <div className="rounded-xl bg-surface-2 p-4 text-sm text-ink">
                 Custo anual aproximado: <strong>{formatBRL(quote.annualCost)}</strong> (parcelável).
@@ -523,6 +598,18 @@ export default function ClosingPage() {
                     Abrir documento para assinatura
                   </a>
                 )}
+                {/* Compartilhamento profissional (Atualização 17) */}
+                <div className="pt-2">
+                  <DocumentShare
+                    docNumber={CONTRACT_NUMBER}
+                    shareUrl={
+                      typeof window !== "undefined"
+                        ? `${window.location.origin}/dashboard/fechamento?doc=${CONTRACT_NUMBER}`
+                        : `https://vivanomads.com.br/doc/${CONTRACT_NUMBER}`
+                    }
+                    summary={`Contrato de locação por temporada — ${TENANT.name} · ${PROPERTY.title} · ${formatBRL(PROPERTY.monthlyRent)}/mês`}
+                  />
+                </div>
               </div>
             ) : (
               <Button variant="gold" onClick={generateContract}>
