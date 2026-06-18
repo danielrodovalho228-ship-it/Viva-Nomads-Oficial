@@ -94,7 +94,7 @@ export default async function HomePage() {
       </section>
 
       {/* ───────── PARA QUEM É (linhas editoriais alternadas) ───────── */}
-      <section className="bg-surface py-20 md:py-28">
+      <section className="bg-surface py-14 md:py-20">
         <div className="container-page">
           <div className="max-w-2xl">
             <Eyebrow>Para quem é</Eyebrow>
@@ -146,7 +146,7 @@ export default async function HomePage() {
       </section>
 
       {/* ───────── PRONTO PARA TRABALHO (spotlight) ───────── */}
-      <section className="bg-surface-2 py-20 md:py-28">
+      <section className="bg-surface-2 py-14 md:py-20">
         <div className="container-page grid items-center gap-14 lg:grid-cols-2">
           <div className="relative order-2 lg:order-1">
             <BrandImage
@@ -228,7 +228,7 @@ export default async function HomePage() {
       </section>
 
       {/* ───────── COMO FUNCIONA (passos com linha conectora) ───────── */}
-      <section className="bg-surface py-20 md:py-28">
+      <section className="bg-surface py-14 md:py-20">
         <div className="container-page">
           <div className="max-w-2xl">
             <Eyebrow>Como funciona</Eyebrow>
@@ -276,7 +276,7 @@ export default async function HomePage() {
       </section>
 
       {/* ───────── IMÓVEIS EM DESTAQUE ───────── */}
-      <section className="bg-surface-2 py-20 md:py-28">
+      <section className="bg-surface-2 py-14 md:py-20">
         <div className="container-page">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div className="max-w-xl">
