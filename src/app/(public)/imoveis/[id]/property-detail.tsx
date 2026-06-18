@@ -17,12 +17,13 @@ import {
   Star,
   FileText,
   MapPinned,
+  Handshake,
 } from "lucide-react";
 import type { Property, WorkspaceType } from "@/lib/types";
 import { formatBRL, cn } from "@/lib/utils";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
 import { Button, ButtonLink } from "@/components/ui/button";
-import { ReadyToLiveBadge, InvoiceBadge, InsuranceBadge, ResponsiveOwnerBadge } from "@/components/ui/badge";
+import { ReadyToLiveBadge, PropertyTags, InvoiceBadge, InsuranceBadge, ResponsiveOwnerBadge } from "@/components/ui/badge";
 import { PropertyCard } from "@/components/property-card";
 import { BrandImage } from "@/components/brand-image";
 import { PropertyMap, type MapMarker } from "@/components/property-map";
@@ -168,6 +169,19 @@ export function PropertyDetail({
             {property.issuesInvoice && <InvoiceBadge />}
             {property.acceptsInsurance && <InsuranceBadge />}
           </div>
+
+          {/* Etiquetas de aptidão (Atualização 11) */}
+          <div className="mt-3">
+            <PropertyTags property={property} />
+          </div>
+
+          {/* Transparência do operador (Atualização 12) */}
+          {property.ownershipType === "subleased" && property.subleaseAuthorized && (
+            <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-sage-100 px-3 py-1.5 text-xs font-medium text-forest">
+              <Handshake className="h-3.5 w-3.5" />
+              Operado por gestor profissional, com sublocação autorizada pelo proprietário
+            </p>
+          )}
 
           <div className="mt-4 flex flex-wrap gap-5 text-sm text-muted">
             <span className="inline-flex items-center gap-1.5">
