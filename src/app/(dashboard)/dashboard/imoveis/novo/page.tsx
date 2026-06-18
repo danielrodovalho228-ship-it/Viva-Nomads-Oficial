@@ -24,18 +24,30 @@ export default function NewPropertyPage() {
   const [issuesInvoice, setIssuesInvoice] = useState(false);
   const [acceptsInsurance, setAcceptsInsurance] = useState(false);
   const [prepFee, setPrepFee] = useState(450);
+  const [ownershipType, setOwnershipType] = useState<"own" | "subleased">("own");
+  const [subleaseAuthorized, setSubleaseAuthorized] = useState(false);
+  const [subleaseDoc, setSubleaseDoc] = useState<PhotoItem[]>([]);
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
   const router = useRouter();
 
+  // Imóvel operado (sublocação) só publica com autorização do proprietário.
+  const subleaseBlocked = ownershipType === "subleased" && !subleaseAuthorized;
+
   async function publish() {
+    if (subleaseBlocked) {
+      setPublishError(
+        "Imóvel operado por sublocação exige a confirmação de autorização do proprietário antes de publicar."
+      );
+      return;
+    }
     setPublishing(true);
     setPublishError(null);
-    // Pontuação de trabalho vinda da qualificação aprovada.
-    let workScore = 0;
+    // Selo/etiquetas vindos da qualificação aprovada.
+    let q = { score: 0, tHome: false, tWork: false, tCondo: false };
     try {
       const raw = sessionStorage.getItem("vivanomads-qualification");
-      if (raw) workScore = JSON.parse(raw).score ?? 0;
+      if (raw) q = { ...q, ...JSON.parse(raw) };
     } catch {}
 
     const res = await createProperty({
@@ -49,7 +61,13 @@ export default function NewPropertyPage() {
       areaM2: 0,
       minPeriodDays: 30,
       monthlyPrice: 0,
-      workScore,
+      readyToLiveScore: q.score,
+      tagHomeOffice: q.tHome,
+      tagWorkLocated: q.tWork,
+      tagCondoApproved: q.tCondo,
+      ownershipType,
+      subleaseAuthorized,
+      subleaseDocUrl: subleaseDoc[0]?.url,
       utilitiesMode,
       utilitiesEstimate,
       issuesInvoice,
@@ -185,6 +203,54 @@ export default function NewPropertyPage() {
               <Labeled label="Área (m²)">
                 <input type="number" min={0} className="input" />
               </Labeled>
+            </div>
+
+            {/* Origem do imóvel — próprio vs operado (Atualização 12) */}
+            <div className="rounded-xl border border-sage-200 p-4">
+              <p className="text-sm font-medium text-ink">Quem opera este imóvel?</p>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                {(
+                  [
+                    ["own", "É meu (próprio)"],
+                    ["subleased", "Opero por sublocação"],
+                  ] as const
+                ).map(([v, label]) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setOwnershipType(v)}
+                    className={cn(
+                      "rounded-lg border px-3 py-2 text-sm font-medium transition-colors",
+                      ownershipType === v
+                        ? "border-forest bg-forest text-white"
+                        : "border-sage-200 text-ink hover:border-sage"
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {ownershipType === "subleased" && (
+                <div className="mt-4 space-y-3">
+                  <div className="rounded-lg bg-champagne/10 px-3 py-2 text-xs text-ink">
+                    Para sublocar legalmente é preciso autorização escrita do proprietário (art.
+                    13 da Lei 8.245/91). Sem ela o anúncio não pode ser publicado.
+                  </div>
+                  <Toggle
+                    checked={subleaseAuthorized}
+                    onChange={() => setSubleaseAuthorized((v) => !v)}
+                    label="Tenho autorização do proprietário para sublocar este imóvel"
+                    hint="Declaração obrigatória — verificável a qualquer momento."
+                  />
+                  <div>
+                    <span className="mb-1.5 block text-sm font-medium text-ink">
+                      Autorização de sublocação (opcional, recomendado)
+                    </span>
+                    <PhotoUploader photos={subleaseDoc} onChange={setSubleaseDoc} />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -338,12 +404,34 @@ export default function NewPropertyPage() {
                 : "Nenhuma foto anexada — recomendamos adicionar pelo menos uma. "}
               O imóvel entra como <strong>Rascunho</strong> e você pode ativá-lo quando quiser.
             </p>
+            {subleaseBlocked && (
+              <div className="mx-auto mt-4 max-w-md rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-left text-sm text-red-700">
+                <strong>Publicação bloqueada.</strong> Você marcou este imóvel como operado por
+                sublocação, mas ainda não confirmou a autorização do proprietário. Volte ao passo{" "}
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  className="font-medium underline"
+                >
+                  Sobre o imóvel
+                </button>{" "}
+                para confirmar.
+              </div>
+            )}
             {publishError && <p className="mt-3 text-sm text-red-600">{publishError}</p>}
             <div className="mt-6 flex justify-center gap-3">
-              <Button variant="outline" onClick={() => publish()} disabled={publishing}>
+              <Button
+                variant="outline"
+                onClick={() => publish()}
+                disabled={publishing || subleaseBlocked}
+              >
                 Salvar como rascunho
               </Button>
-              <Button variant="gold" onClick={() => publish()} disabled={publishing}>
+              <Button
+                variant="gold"
+                onClick={() => publish()}
+                disabled={publishing || subleaseBlocked}
+              >
                 {publishing ? "Publicando..." : "Publicar anúncio"}
               </Button>
             </div>

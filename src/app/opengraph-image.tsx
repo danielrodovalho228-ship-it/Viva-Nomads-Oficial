@@ -59,7 +59,7 @@ export default function OG() {
         </div>
 
         <div style={{ display: "flex", gap: 14 }}>
-          {["Pronto para Trabalho", "Contrato formal", "Inquilino verificado"].map((t) => (
+          {["Pronto para Morar", "Contrato formal", "Inquilino verificado"].map((t) => (
             <div
               key={t}
               style={{

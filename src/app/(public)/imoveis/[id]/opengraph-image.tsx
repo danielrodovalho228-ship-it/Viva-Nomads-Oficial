@@ -29,7 +29,7 @@ export default async function OG({ params }: { params: Promise<{ id: string }> }
             <span style={{ color: "#2E8BE6" }}>Viva</span>
             <span style={{ color: "#6CBE2A" }}>Nomads</span>
           </div>
-          {p?.workReadyBadge && (
+          {p?.readyToLiveBadge && (
             <div
               style={{
                 display: "flex",
@@ -41,7 +41,7 @@ export default async function OG({ params }: { params: Promise<{ id: string }> }
                 background: "linear-gradient(135deg, #1E63D0, #6CBE2A)",
               }}
             >
-              Pronto para Trabalho
+              Pronto para Morar
             </div>
           )}
         </div>

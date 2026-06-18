@@ -3,7 +3,7 @@ import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { ButtonLink } from "@/components/ui/button";
 
 const SAVED = [
-  { query: "Uberlândia · até R$ 3.500 · 2 quartos · Pronto para Trabalho", count: 4 },
+  { query: "Uberlândia · até R$ 3.500 · 2 quartos · Pronto para Morar", count: 4 },
   { query: "Centro · Studio · aceita 30 dias", count: 2 },
 ];
 

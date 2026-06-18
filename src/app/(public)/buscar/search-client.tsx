@@ -13,9 +13,13 @@ export function SearchClient({ properties }: { properties: Property[] }) {
   const [maxPrice, setMaxPrice] = useState(0);
   const [minBedrooms, setMinBedrooms] = useState(0);
   const [maxPeriod, setMaxPeriod] = useState(0); // período mínimo aceito <= X
-  const [workReadyOnly, setWorkReadyOnly] = useState(false);
+  const [readyToLiveOnly, setReadyToLiveOnly] = useState(false);
+  const [homeOfficeOnly, setHomeOfficeOnly] = useState(false);
+  const [workLocatedOnly, setWorkLocatedOnly] = useState(false);
+  const [condoOnly, setCondoOnly] = useState(false);
   const [invoiceOnly, setInvoiceOnly] = useState(false);
   const [insuranceOnly, setInsuranceOnly] = useState(false);
+  const [operatedOnly, setOperatedOnly] = useState(false);
   const [sort, setSort] = useState<"relevance" | "price-asc" | "price-desc">("relevance");
 
   const results = useMemo(() => {
@@ -23,15 +27,19 @@ export function SearchClient({ properties }: { properties: Property[] }) {
       if (maxPrice && p.monthlyPrice > maxPrice) return false;
       if (minBedrooms && p.bedrooms < minBedrooms) return false;
       if (maxPeriod && p.minPeriodDays > maxPeriod) return false;
-      if (workReadyOnly && !p.workReadyBadge) return false;
+      if (readyToLiveOnly && !p.readyToLiveBadge) return false;
+      if (homeOfficeOnly && !p.tagHomeOffice) return false;
+      if (workLocatedOnly && !p.tagWorkLocated) return false;
+      if (condoOnly && !p.tagCondoApproved) return false;
       if (invoiceOnly && !p.issuesInvoice) return false;
       if (insuranceOnly && !p.acceptsInsurance) return false;
+      if (operatedOnly && !(p.ownershipType === "subleased" && p.subleaseAuthorized)) return false;
       return true;
     });
     if (sort === "price-asc") list = [...list].sort((a, b) => a.monthlyPrice - b.monthlyPrice);
     if (sort === "price-desc") list = [...list].sort((a, b) => b.monthlyPrice - a.monthlyPrice);
     return list;
-  }, [properties, maxPrice, minBedrooms, maxPeriod, workReadyOnly, invoiceOnly, insuranceOnly, sort]);
+  }, [properties, maxPrice, minBedrooms, maxPeriod, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, condoOnly, invoiceOnly, insuranceOnly, operatedOnly, sort]);
 
   return (
     <div className="container-page py-8">
@@ -72,41 +80,27 @@ export function SearchClient({ properties }: { properties: Property[] }) {
           ]}
         />
 
-        <button
-          onClick={() => setWorkReadyOnly((v) => !v)}
-          className={cn(
-            "rounded-full border px-4 py-2 text-sm font-medium transition-colors",
-            workReadyOnly
-              ? "border-champagne bg-champagne text-forest"
-              : "border-sage-200 bg-white text-ink hover:border-sage"
-          )}
-        >
-          🏆 Apenas Pronto para Trabalho
-        </button>
-
-        <button
-          onClick={() => setInvoiceOnly((v) => !v)}
-          className={cn(
-            "rounded-full border px-4 py-2 text-sm font-medium transition-colors",
-            invoiceOnly
-              ? "border-forest bg-forest text-white"
-              : "border-sage-200 bg-white text-ink hover:border-sage"
-          )}
-        >
-          📄 Apenas com Nota Fiscal
-        </button>
-
-        <button
-          onClick={() => setInsuranceOnly((v) => !v)}
-          className={cn(
-            "rounded-full border px-4 py-2 text-sm font-medium transition-colors",
-            insuranceOnly
-              ? "border-sage bg-sage text-white"
-              : "border-sage-200 bg-white text-ink hover:border-sage"
-          )}
-        >
-          🛡️ Aceita Seguro-Fiança
-        </button>
+        <Chip on={readyToLiveOnly} onClick={() => setReadyToLiveOnly((v) => !v)} accent="gold">
+          🏅 Pronto para Morar
+        </Chip>
+        <Chip on={homeOfficeOnly} onClick={() => setHomeOfficeOnly((v) => !v)}>
+          💻 Para trabalhar de casa
+        </Chip>
+        <Chip on={workLocatedOnly} onClick={() => setWorkLocatedOnly((v) => !v)}>
+          📍 Bem localizado
+        </Chip>
+        <Chip on={condoOnly} onClick={() => setCondoOnly((v) => !v)}>
+          🏢 Aceito em condomínio
+        </Chip>
+        <Chip on={invoiceOnly} onClick={() => setInvoiceOnly((v) => !v)}>
+          📄 Com Nota Fiscal
+        </Chip>
+        <Chip on={insuranceOnly} onClick={() => setInsuranceOnly((v) => !v)}>
+          🛡️ Seguro-Fiança
+        </Chip>
+        <Chip on={operatedOnly} onClick={() => setOperatedOnly((v) => !v)}>
+          🤝 Gestor profissional
+        </Chip>
 
         <div className="ml-auto">
           <Select
@@ -134,7 +128,7 @@ export function SearchClient({ properties }: { properties: Property[] }) {
               <p className="mt-4 font-title text-lg font-bold text-ink">Nenhum imóvel encontrado</p>
               <p className="mt-1 max-w-sm text-sm text-muted">
                 Nenhum imóvel corresponde aos filtros. Tente ampliar o período, o preço ou
-                remover o filtro Pronto para Trabalho.
+                remover o filtro Pronto para Morar.
               </p>
             </div>
           ) : (
@@ -163,6 +157,34 @@ export function SearchClient({ properties }: { properties: Property[] }) {
         </div>
       </div>
     </div>
+  );
+}
+
+function Chip({
+  on,
+  onClick,
+  accent,
+  children,
+}: {
+  on: boolean;
+  onClick: () => void;
+  accent?: "gold";
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "rounded-full border px-4 py-2 text-sm font-medium transition-colors",
+        on
+          ? accent === "gold"
+            ? "border-champagne bg-champagne text-night"
+            : "border-forest bg-forest text-white"
+          : "border-sage-200 bg-white text-ink hover:border-sage"
+      )}
+    >
+      {children}
+    </button>
   );
 }
 

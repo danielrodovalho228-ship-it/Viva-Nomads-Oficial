@@ -2,11 +2,16 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { UserRole } from "./types";
 
+/** Planos de assinatura do proprietário (constants.PLANS). */
+export type SubscriptionPlan = "free" | "essential" | "pro" | "gestor";
+
 export interface SessionUser {
   id: string;
   name: string;
   email: string;
   role: UserRole;
+  /** Plano vigente — habilita recursos de operador (Gestor). */
+  plan?: SubscriptionPlan;
 }
 
 /** Identidade de demonstração quando não há login (modo demo). */
@@ -15,6 +20,8 @@ export const DEMO_USER: SessionUser = {
   name: "Marcos Andrade",
   email: "marcos@exemplo.com",
   role: "owner",
+  // Demo no plano Gestor para exibir os recursos de operador (Atualização 12).
+  plan: "gestor",
 };
 
 interface AuthState {

@@ -18,7 +18,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { SAMPLE_PROPERTIES } from "@/lib/properties";
 import { PHOTOS } from "@/lib/media";
 import { formatBRL } from "@/lib/utils";
-import { WorkReadyBadge } from "@/components/ui/badge";
+import { ReadyToLiveBadge } from "@/components/ui/badge";
 
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user) ?? DEMO_USER;
@@ -86,7 +86,7 @@ function OwnerDashboard({ name }: { name: string }) {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  {p.workReadyBadge && <WorkReadyBadge />}
+                  {p.readyToLiveBadge && <ReadyToLiveBadge />}
                   <span className="rounded-full bg-sage-100 px-2.5 py-1 text-xs font-medium text-forest">
                     Ativo
                   </span>
@@ -105,7 +105,7 @@ function OwnerDashboard({ name }: { name: string }) {
         <Panel title="Atividade recente">
           <ul className="space-y-4 text-sm">
             <Activity text="Nova consulta no Studio Centro" time="há 2 horas" />
-            <Activity text="Imóvel Santa Mônica recebeu o selo Pronto para Trabalho" time="ontem" />
+            <Activity text="Imóvel Santa Mônica recebeu o selo Pronto para Morar" time="ontem" />
             <Activity text="3 novas visualizações" time="ontem" />
           </ul>
         </Panel>

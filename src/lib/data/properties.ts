@@ -33,8 +33,13 @@ interface PropertyRow {
   rating: number | null;
   review_count: number | null;
   status: string;
-  work_ready_badge: boolean;
-  work_score: number;
+  ready_to_live_badge: boolean | null;
+  ready_to_live_score: number | null;
+  tag_home_office: boolean | null;
+  tag_work_located: boolean | null;
+  tag_condo_approved: boolean | null;
+  ownership_type: string | null;
+  sublease_authorized: boolean | null;
 }
 
 function rowToProperty(row: PropertyRow): Property {
@@ -64,8 +69,13 @@ function rowToProperty(row: PropertyRow): Property {
     rating: Number(row.rating ?? 0),
     reviewCount: Number(row.review_count ?? 0),
     status: row.status as Property["status"],
-    workReadyBadge: row.work_ready_badge,
-    workScore: row.work_score,
+    readyToLiveBadge: row.ready_to_live_badge ?? false,
+    readyToLiveScore: Number(row.ready_to_live_score ?? 0),
+    tagHomeOffice: row.tag_home_office ?? false,
+    tagWorkLocated: row.tag_work_located ?? false,
+    tagCondoApproved: row.tag_condo_approved ?? false,
+    ownershipType: (row.ownership_type as Property["ownershipType"]) ?? "own",
+    subleaseAuthorized: row.sublease_authorized ?? undefined,
     photos: [],
     amenities: [],
     workFeatures: [],

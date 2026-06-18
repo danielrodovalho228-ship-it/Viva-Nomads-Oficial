@@ -76,7 +76,7 @@ export const PLANS = [
     listingLimit: 5,
     features: [
       "Até 5 anúncios ativos",
-      "Selo Pronto para Trabalho",
+      "Selo Pronto para Morar",
       "Destaque na busca",
       "Painel de leads e mensagens",
       "Comissão de 10% no fechamento",

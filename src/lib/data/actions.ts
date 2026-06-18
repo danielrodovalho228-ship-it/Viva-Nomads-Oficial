@@ -2,7 +2,13 @@
 
 import { createClient } from "@/lib/supabase/server";
 import type { EligibilityState, QualityState } from "@/lib/qualification";
-import { isEligible, computeScore } from "@/lib/qualification";
+import {
+  isEligible,
+  readyToLiveScore,
+  tagHomeOffice,
+  tagWorkLocated,
+  tagCondoApproved,
+} from "@/lib/qualification";
 import { findNearbyWorkspaces } from "@/lib/integrations/places";
 import { createSubaccount } from "@/lib/payments/asaas";
 import { notify } from "@/lib/notifications";
@@ -23,7 +29,7 @@ export async function saveQualification(
   if (!user) return { ok: false, error: "Não autenticado." };
 
   const eligible = isEligible(elig);
-  const work_score = computeScore(quality);
+  const ready_to_live_score = readyToLiveScore(quality);
 
   const { data, error } = await supabase
     .from("qualification_checklists")
@@ -36,18 +42,13 @@ export async function saveQualification(
       is_owner_or_agent: elig.isOwnerOrAgent,
       condo_allows: elig.condoAllows,
       eligible,
-      has_home_office: quality.hasHomeOffice,
-      has_desk: quality.hasDesk,
-      has_chair: quality.hasChair,
+      // Selo base + etiquetas (Atualização 11)
+      ready_to_live_score,
+      ready_to_live_badge: ready_to_live_score >= 70,
+      tag_home_office: tagHomeOffice(quality),
+      tag_work_located: tagWorkLocated(quality),
+      tag_condo_approved: tagCondoApproved(elig),
       internet_mbps: quality.internetMbps,
-      coworking_2km: quality.coworking2km,
-      meeting_room: quality.meetingRoom,
-      cafe_1km: quality.cafe1km,
-      washer: quality.washer,
-      full_kitchen: quality.fullKitchen,
-      ac_bedrooms: quality.acBedrooms,
-      pets_ok: quality.petsOk,
-      work_score,
       status: eligible ? "approved" : "not_eligible",
     })
     .select("id")
@@ -69,7 +70,13 @@ export async function createProperty(input: {
   areaM2: number;
   minPeriodDays: number;
   monthlyPrice: number;
-  workScore: number;
+  readyToLiveScore: number;
+  tagHomeOffice?: boolean;
+  tagWorkLocated?: boolean;
+  tagCondoApproved?: boolean;
+  ownershipType?: "own" | "subleased";
+  subleaseAuthorized?: boolean;
+  subleaseDocUrl?: string;
   utilitiesMode?: "fixed" | "real";
   utilitiesEstimate?: number;
   issuesInvoice?: boolean;
@@ -102,8 +109,15 @@ export async function createProperty(input: {
       min_period_days: input.minPeriodDays,
       monthly_price: input.monthlyPrice,
       status: "draft",
-      work_score: input.workScore,
-      work_ready_badge: input.workScore >= 70,
+      ready_to_live_score: input.readyToLiveScore,
+      ready_to_live_badge: input.readyToLiveScore >= 70,
+      tag_home_office: input.tagHomeOffice ?? false,
+      tag_work_located: input.tagWorkLocated ?? false,
+      tag_condo_approved: input.tagCondoApproved ?? false,
+      ownership_type: input.ownershipType ?? "own",
+      sublease_authorized:
+        (input.ownershipType ?? "own") === "own" ? true : input.subleaseAuthorized ?? false,
+      sublease_doc_url: input.subleaseDocUrl ?? null,
       utilities_mode: input.utilitiesMode ?? "fixed",
       utilities_estimate: input.utilitiesEstimate ?? 0,
       issues_invoice: input.issuesInvoice ?? false,

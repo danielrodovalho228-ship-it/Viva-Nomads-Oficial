@@ -99,7 +99,7 @@ export default async function CityLandingPage({ params }: Params) {
           </p>
           <p className="mt-3 leading-relaxed">
             Todos os imóveis do Viva Nomads em {name} são mobiliados e qualificados. Os que
-            têm o selo <strong className="text-forest">Pronto para Trabalho</strong> oferecem
+            têm o selo <strong className="text-forest">Pronto para Morar</strong> oferecem
             home office, internet fibra e coworkings próximos — ideais para quem trabalha
             remoto ou está em projeto temporário na cidade.
           </p>

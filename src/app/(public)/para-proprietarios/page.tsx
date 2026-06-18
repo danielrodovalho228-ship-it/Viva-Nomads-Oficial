@@ -79,7 +79,7 @@ export default function ForLandlordsPage() {
             <ul className="mt-6 space-y-4">
               {[
                 "Checklist de qualificação que comprova a regularidade da locação.",
-                "Selo Pronto para Trabalho para anunciar mais caro.",
+                "Selo Pronto para Morar para anunciar mais caro.",
                 "Análise de inquilino por IA (CAF) com laudo de semáforo.",
                 "Cotação de seguro-fiança dentro da plataforma.",
                 "Contrato de temporada gerado e assinado via ZapSign.",
