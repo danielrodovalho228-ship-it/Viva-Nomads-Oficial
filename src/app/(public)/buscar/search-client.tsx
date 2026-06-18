@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal, ChevronDown } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { PropertyCard } from "@/components/property-card";
 import { PropertyMap } from "@/components/property-map";
@@ -20,6 +20,7 @@ export function SearchClient({ properties }: { properties: Property[] }) {
   const [invoiceOnly, setInvoiceOnly] = useState(false);
   const [insuranceOnly, setInsuranceOnly] = useState(false);
   const [operatedOnly, setOperatedOnly] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false); // acordeão de filtros no mobile
   const [sort, setSort] = useState<"relevance" | "price-asc" | "price-desc">("relevance");
 
   const results = useMemo(() => {
@@ -41,68 +42,38 @@ export function SearchClient({ properties }: { properties: Property[] }) {
     return list;
   }, [properties, maxPrice, minBedrooms, maxPeriod, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, condoOnly, invoiceOnly, insuranceOnly, operatedOnly, sort]);
 
+  const activeCount =
+    (maxPrice ? 1 : 0) +
+    (minBedrooms ? 1 : 0) +
+    (maxPeriod ? 1 : 0) +
+    [readyToLiveOnly, homeOfficeOnly, workLocatedOnly, condoOnly, invoiceOnly, insuranceOnly, operatedOnly].filter(
+      Boolean
+    ).length;
+
   return (
-    <div className="container-page py-8">
-      {/* Filtros */}
-      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-sage-200 bg-white p-4">
-        <span className="flex items-center gap-2 text-sm font-medium text-forest">
-          <SlidersHorizontal className="h-4 w-4" /> Filtros
-        </span>
-
-        <Select
-          value={String(maxPrice)}
-          onChange={(v) => setMaxPrice(Number(v))}
-          options={[
-            ["0", "Qualquer preço"],
-            ["2500", "Até R$ 2.500"],
-            ["3500", "Até R$ 3.500"],
-            ["5000", "Até R$ 5.000"],
-          ]}
-        />
-        <Select
-          value={String(minBedrooms)}
-          onChange={(v) => setMinBedrooms(Number(v))}
-          options={[
-            ["0", "Quartos"],
-            ["1", "1+ quarto"],
-            ["2", "2+ quartos"],
-            ["3", "3+ quartos"],
-          ]}
-        />
-        <Select
-          value={String(maxPeriod)}
-          onChange={(v) => setMaxPeriod(Number(v))}
-          options={[
-            ["0", "Período"],
-            ["30", "Aceita 30 dias"],
-            ["60", "Aceita 60 dias"],
-            ["90", "Aceita 90 dias"],
-          ]}
-        />
-
-        <Chip on={readyToLiveOnly} onClick={() => setReadyToLiveOnly((v) => !v)} accent="gold">
-          🏅 Pronto para Morar
-        </Chip>
-        <Chip on={homeOfficeOnly} onClick={() => setHomeOfficeOnly((v) => !v)}>
-          💻 Para trabalhar de casa
-        </Chip>
-        <Chip on={workLocatedOnly} onClick={() => setWorkLocatedOnly((v) => !v)}>
-          📍 Bem localizado
-        </Chip>
-        <Chip on={condoOnly} onClick={() => setCondoOnly((v) => !v)}>
-          🏢 Aceito em condomínio
-        </Chip>
-        <Chip on={invoiceOnly} onClick={() => setInvoiceOnly((v) => !v)}>
-          📄 Com Nota Fiscal
-        </Chip>
-        <Chip on={insuranceOnly} onClick={() => setInsuranceOnly((v) => !v)}>
-          🛡️ Seguro-Fiança
-        </Chip>
-        <Chip on={operatedOnly} onClick={() => setOperatedOnly((v) => !v)}>
-          🤝 Gestor profissional
-        </Chip>
-
-        <div className="ml-auto">
+    <div className="container-page py-6">
+      {/* Filtros (acordeão no mobile, sempre abertos no sm+) */}
+      <div className="rounded-2xl border border-sage-200 bg-white p-4">
+        <div className="flex items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={() => setFiltersOpen((v) => !v)}
+            aria-expanded={filtersOpen}
+            className="flex items-center gap-2 text-sm font-medium text-forest sm:pointer-events-none"
+          >
+            <SlidersHorizontal className="h-4 w-4" /> Filtros
+            {activeCount > 0 && (
+              <span className="grid h-5 min-w-5 place-items-center rounded-full bg-forest px-1.5 text-xs font-semibold text-white">
+                {activeCount}
+              </span>
+            )}
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 transition-transform sm:hidden",
+                filtersOpen && "rotate-180"
+              )}
+            />
+          </button>
           <Select
             value={sort}
             onChange={(v) => setSort(v as typeof sort)}
@@ -112,6 +83,66 @@ export function SearchClient({ properties }: { properties: Property[] }) {
               ["price-desc", "Maior preço"],
             ]}
           />
+        </div>
+
+        <div
+          className={cn(
+            "mt-3 flex-wrap items-center gap-2.5 sm:flex",
+            filtersOpen ? "flex" : "hidden"
+          )}
+        >
+          <Select
+            value={String(maxPrice)}
+            onChange={(v) => setMaxPrice(Number(v))}
+            options={[
+              ["0", "Qualquer preço"],
+              ["2500", "Até R$ 2.500"],
+              ["3500", "Até R$ 3.500"],
+              ["5000", "Até R$ 5.000"],
+            ]}
+          />
+          <Select
+            value={String(minBedrooms)}
+            onChange={(v) => setMinBedrooms(Number(v))}
+            options={[
+              ["0", "Quartos"],
+              ["1", "1+ quarto"],
+              ["2", "2+ quartos"],
+              ["3", "3+ quartos"],
+            ]}
+          />
+          <Select
+            value={String(maxPeriod)}
+            onChange={(v) => setMaxPeriod(Number(v))}
+            options={[
+              ["0", "Período"],
+              ["30", "Aceita 30 dias"],
+              ["60", "Aceita 60 dias"],
+              ["90", "Aceita 90 dias"],
+            ]}
+          />
+
+          <Chip on={readyToLiveOnly} onClick={() => setReadyToLiveOnly((v) => !v)} accent="gold">
+            🏅 Pronto para Morar
+          </Chip>
+          <Chip on={homeOfficeOnly} onClick={() => setHomeOfficeOnly((v) => !v)}>
+            💻 Para trabalhar de casa
+          </Chip>
+          <Chip on={workLocatedOnly} onClick={() => setWorkLocatedOnly((v) => !v)}>
+            📍 Bem localizado
+          </Chip>
+          <Chip on={condoOnly} onClick={() => setCondoOnly((v) => !v)}>
+            🏢 Aceito em condomínio
+          </Chip>
+          <Chip on={invoiceOnly} onClick={() => setInvoiceOnly((v) => !v)}>
+            📄 Com Nota Fiscal
+          </Chip>
+          <Chip on={insuranceOnly} onClick={() => setInsuranceOnly((v) => !v)}>
+            🛡️ Seguro-Fiança
+          </Chip>
+          <Chip on={operatedOnly} onClick={() => setOperatedOnly((v) => !v)}>
+            🤝 Gestor profissional
+          </Chip>
         </div>
       </div>
 
