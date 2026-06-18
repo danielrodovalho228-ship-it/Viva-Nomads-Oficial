@@ -27,6 +27,8 @@ Guia passo a passo para colocar a plataforma no ar.
      etiquetas) e perfil operador (próprio vs. sublocação autorizada).
    - `0008_round8_documents.sql` — fluxo Orçamento → Fechamento → Contrato
      (documentos numerados ORC/CTR-AAAA-NNNN, versionados e com itens editáveis).
+   - `0009_round11_listing_quality.sql` — qualidade do anúncio (photo_count,
+     tier padrão/completo/premium) e regra de mínimo de 8 fotos para publicar.
    - (opcional) `supabase/seed.sql` — depois de criar um usuário proprietário.
 3. Em **Authentication → Providers**, ative **Email** e **Google** (OAuth).
    - Em Google, configure o redirect: `https://vivanomads.com.br/auth/callback`.

@@ -14,25 +14,26 @@ export default async function SearchPage() {
   const properties = await listProperties();
   return (
     <>
-      {/* Banner do topo da busca (plano B2) */}
+      {/* Banner do topo da busca — fachada de condomínio moderno (padrão premium) */}
       <div className="relative">
         <BrandImage
-          src={PHOTOS.buscaHero}
-          alt="Bairro residencial arborizado de Uberlândia ao entardecer"
+          src={PHOTOS.condominio}
+          alt="Fachada de condomínio residencial moderno em Uberlândia"
           rounded="rounded-none"
           sizes="100vw"
           priority
           treat={false}
-          className="h-44 w-full sm:h-56"
+          className="h-44 w-full object-cover sm:h-56"
         />
-        <div className="absolute inset-0 bg-night/55" />
+        {/* Overlay em gradiente para o texto branco ficar sempre legível */}
+        <div className="absolute inset-0 bg-gradient-to-r from-night/80 via-night/55 to-night/25" />
         <div className="container-page absolute inset-0 flex flex-col justify-center text-white">
           <h1 className="font-title text-3xl font-bold sm:text-4xl">
             Imóveis mobiliados em Uberlândia
           </h1>
-          <p className="mt-1 max-w-xl text-white/75">
+          <p className="mt-1 max-w-xl text-white/85">
             Locação mensal de 30 a 180 dias. Filtre por período, preço e o selo Pronto para
-            Trabalho.
+            Morar.
           </p>
         </div>
       </div>

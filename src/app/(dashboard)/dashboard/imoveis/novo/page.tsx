@@ -9,6 +9,7 @@ import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
 import { PhotoUploader, type PhotoItem } from "@/components/photo-uploader";
+import { MIN_PHOTOS, SUGGESTED_ROOMS, tierFromPhotoCount, TIER_META } from "@/lib/listing";
 import { cn } from "@/lib/utils";
 
 const STEPS = ["Fotos", "Sobre o imóvel", "Endereço", "Preço & período", "Trabalho", "Revisão"];
@@ -33,8 +34,17 @@ export default function NewPropertyPage() {
 
   // Imóvel operado (sublocação) só publica com autorização do proprietário.
   const subleaseBlocked = ownershipType === "subleased" && !subleaseAuthorized;
+  // Mínimo de 8 fotos para publicar (rodada 11).
+  const photosMissing = Math.max(0, MIN_PHOTOS - photos.length);
+  const photoBlocked = photos.length < MIN_PHOTOS;
 
-  async function publish() {
+  async function publish(asDraft = false) {
+    if (!asDraft && photoBlocked) {
+      setPublishError(
+        `Adicione pelo menos ${MIN_PHOTOS} fotos para publicar. Faltam ${photosMissing}.`
+      );
+      return;
+    }
     if (subleaseBlocked) {
       setPublishError(
         "Imóvel operado por sublocação exige a confirmação de autorização do proprietário antes de publicar."
@@ -157,8 +167,57 @@ export default function NewPropertyPage() {
           <div>
             <h2 className="font-title text-lg font-bold text-ink">Fotos do imóvel</h2>
             <p className="mt-1 text-sm text-muted">
-              As fotos são enviadas para o Supabase Storage. Insira as imagens reais do imóvel.
+              Mínimo de <strong>{MIN_PHOTOS} fotos</strong> para publicar. Anúncio bem
+              fotografado passa seriedade e ganha destaque na busca.
             </p>
+
+            {/* Progresso de fotos + tier de qualidade (rodada 11) */}
+            <div className="mt-4 rounded-xl border border-sage-200 p-4">
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-medium text-ink">
+                  {photos.length} / {MIN_PHOTOS} fotos
+                  {photoBlocked && (
+                    <span className="ml-2 text-red-600">Faltam {photosMissing}</span>
+                  )}
+                </span>
+                {photos.length >= MIN_PHOTOS && (
+                  <span
+                    className={cn(
+                      "rounded-full px-2.5 py-0.5 text-xs font-semibold",
+                      TIER_META[tierFromPhotoCount(photos.length)].tone
+                    )}
+                  >
+                    {TIER_META[tierFromPhotoCount(photos.length)].label}
+                  </span>
+                )}
+              </div>
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface-2">
+                <div
+                  className={cn(
+                    "h-full rounded-full transition-all",
+                    photoBlocked ? "bg-champagne" : "bg-forest"
+                  )}
+                  style={{ width: `${Math.min(100, (photos.length / 20) * 100)}%` }}
+                />
+              </div>
+              <p className="mt-2 text-xs text-muted">
+                8–11 padrão · 12–19 <strong>Anúncio completo</strong> · 20+{" "}
+                <strong>Anúncio premium</strong> (mais prioridade na busca).
+              </p>
+            </div>
+
+            {/* Ambientes sugeridos (guia) */}
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {SUGGESTED_ROOMS.map((r) => (
+                <span
+                  key={r}
+                  className="rounded-full bg-surface-2 px-2.5 py-1 text-xs text-muted"
+                >
+                  {r}
+                </span>
+              ))}
+            </div>
+
             <div className="mt-4">
               <PhotoUploader photos={photos} onChange={setPhotos} />
             </div>
@@ -399,11 +458,19 @@ export default function NewPropertyPage() {
             </div>
             <h2 className="mt-4 font-title text-xl font-bold text-ink">Tudo pronto!</h2>
             <p className="mx-auto mt-2 max-w-md text-muted">
-              {photos.length > 0
-                ? `${photos.length} foto(s) anexada(s). `
-                : "Nenhuma foto anexada — recomendamos adicionar pelo menos uma. "}
-              O imóvel entra como <strong>Rascunho</strong> e você pode ativá-lo quando quiser.
+              {photos.length} foto(s) anexada(s). O imóvel entra como{" "}
+              <strong>Rascunho</strong> e você pode ativá-lo quando quiser.
             </p>
+            {photoBlocked && (
+              <div className="mx-auto mt-4 max-w-md rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-left text-sm text-red-700">
+                <strong>Faltam {photosMissing} foto(s) para publicar.</strong> O mínimo é{" "}
+                {MIN_PHOTOS}. Você pode salvar como rascunho e completar depois. Volte ao passo{" "}
+                <button type="button" onClick={() => setStep(0)} className="font-medium underline">
+                  Fotos
+                </button>
+                .
+              </div>
+            )}
             {subleaseBlocked && (
               <div className="mx-auto mt-4 max-w-md rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-left text-sm text-red-700">
                 <strong>Publicação bloqueada.</strong> Você marcou este imóvel como operado por
@@ -422,15 +489,15 @@ export default function NewPropertyPage() {
             <div className="mt-6 flex justify-center gap-3">
               <Button
                 variant="outline"
-                onClick={() => publish()}
+                onClick={() => publish(true)}
                 disabled={publishing || subleaseBlocked}
               >
                 Salvar como rascunho
               </Button>
               <Button
                 variant="gold"
-                onClick={() => publish()}
-                disabled={publishing || subleaseBlocked}
+                onClick={() => publish(false)}
+                disabled={publishing || subleaseBlocked || photoBlocked}
               >
                 {publishing ? "Publicando..." : "Publicar anúncio"}
               </Button>

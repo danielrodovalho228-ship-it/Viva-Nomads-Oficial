@@ -4,10 +4,11 @@ import { useMemo, useState } from "react";
 import { SlidersHorizontal, ChevronDown } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { PropertyCard } from "@/components/property-card";
-import { PropertyMap } from "@/components/property-map";
+import { SearchMap } from "@/components/search-map";
 import { EmptySearchIllustration } from "@/components/illustrations";
-import { formatBRL } from "@/lib/utils";
+import { Map as MapIcon, List as ListIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { tierFromPhotoCount, searchPriority } from "@/lib/listing";
 
 export function SearchClient({ properties }: { properties: Property[] }) {
   const [maxPrice, setMaxPrice] = useState(0);
@@ -21,6 +22,8 @@ export function SearchClient({ properties }: { properties: Property[] }) {
   const [insuranceOnly, setInsuranceOnly] = useState(false);
   const [operatedOnly, setOperatedOnly] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false); // acordeão de filtros no mobile
+  const [activeId, setActiveId] = useState<string | null>(null); // sincronia lista↔mapa
+  const [mobileTab, setMobileTab] = useState<"list" | "map">("list");
   const [sort, setSort] = useState<"relevance" | "price-asc" | "price-desc">("relevance");
 
   const results = useMemo(() => {
@@ -38,7 +41,14 @@ export function SearchClient({ properties }: { properties: Property[] }) {
       return true;
     });
     if (sort === "price-asc") list = [...list].sort((a, b) => a.monthlyPrice - b.monthlyPrice);
-    if (sort === "price-desc") list = [...list].sort((a, b) => b.monthlyPrice - a.monthlyPrice);
+    else if (sort === "price-desc") list = [...list].sort((a, b) => b.monthlyPrice - a.monthlyPrice);
+    // Relevância: anúncios mais completos (mais fotos) primeiro.
+    else
+      list = [...list].sort(
+        (a, b) =>
+          searchPriority(tierFromPhotoCount(b.photos.length)) -
+          searchPriority(tierFromPhotoCount(a.photos.length))
+      );
     return list;
   }, [properties, maxPrice, minBedrooms, maxPeriod, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, condoOnly, invoiceOnly, insuranceOnly, operatedOnly, sort]);
 
@@ -146,13 +156,36 @@ export function SearchClient({ properties }: { properties: Property[] }) {
         </div>
       </div>
 
-      <p className="mt-4 text-sm text-muted">
-        {results.length} {results.length === 1 ? "imóvel encontrado" : "imóveis encontrados"}
-      </p>
+      <div className="mt-4 flex items-center justify-between gap-3">
+        <p className="text-sm text-muted">
+          {results.length} {results.length === 1 ? "imóvel encontrado" : "imóveis encontrados"}
+        </p>
+        {/* Abas Lista/Mapa no mobile (não cabem lado a lado em 375px) */}
+        <div className="flex rounded-full bg-surface-2 p-0.5 lg:hidden">
+          <button
+            onClick={() => setMobileTab("list")}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium",
+              mobileTab === "list" ? "bg-forest text-white" : "text-muted"
+            )}
+          >
+            <ListIcon className="h-4 w-4" /> Lista
+          </button>
+          <button
+            onClick={() => setMobileTab("map")}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium",
+              mobileTab === "map" ? "bg-forest text-white" : "text-muted"
+            )}
+          >
+            <MapIcon className="h-4 w-4" /> Mapa
+          </button>
+        </div>
+      </div>
 
-      {/* Lista (60%) + Mapa (40%) */}
+      {/* Lista (60%) + Mapa (40%) lado a lado no desktop; abas no mobile */}
       <div className="mt-4 grid gap-6 lg:grid-cols-5">
-        <div className="lg:col-span-3">
+        <div className={cn("lg:col-span-3", mobileTab === "map" && "hidden lg:block")}>
           {results.length === 0 ? (
             <div className="flex flex-col items-center rounded-2xl border border-dashed border-line p-12 text-center">
               <EmptySearchIllustration />
@@ -165,24 +198,30 @@ export function SearchClient({ properties }: { properties: Property[] }) {
           ) : (
             <div className="grid gap-6 sm:grid-cols-2">
               {results.map((p) => (
-                <PropertyCard key={p.id} property={p} />
+                <div
+                  key={p.id}
+                  onMouseEnter={() => setActiveId(p.id)}
+                  onMouseLeave={() => setActiveId(null)}
+                  className={cn(
+                    "rounded-2xl transition-all",
+                    activeId === p.id && "ring-2 ring-champagne ring-offset-2"
+                  )}
+                >
+                  <PropertyCard property={p} />
+                </div>
               ))}
             </div>
           )}
         </div>
 
-        {/* Mapa Mapbox com marcadores de preço (Fase 6) */}
-        <div className="hidden lg:col-span-2 lg:block">
-          <div className="sticky top-20">
-            <PropertyMap
-              className="h-[600px] w-full border border-sage-200"
-              markers={results.map((p) => ({
-                id: p.id,
-                lat: p.lat,
-                lng: p.lng,
-                label: formatBRL(p.monthlyPrice),
-                kind: "property",
-              }))}
+        {/* Mapa interativo com pins + sincronia lista↔mapa (rodada 11) */}
+        <div className={cn("lg:col-span-2 lg:block", mobileTab === "list" && "hidden lg:block")}>
+          <div className="lg:sticky lg:top-20">
+            <SearchMap
+              properties={results}
+              activeId={activeId}
+              onHover={setActiveId}
+              className="h-[420px] w-full lg:h-[600px]"
             />
           </div>
         </div>

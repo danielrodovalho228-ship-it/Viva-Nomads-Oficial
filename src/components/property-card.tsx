@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { Bath, BedDouble, Ruler, Star } from "lucide-react";
 import type { Property } from "@/lib/types";
-import { formatBRL } from "@/lib/utils";
+import { formatBRL, cn } from "@/lib/utils";
+import { tierFromPhotoCount, TIER_META } from "@/lib/listing";
 import { ReadyToLiveBadge, PropertyTags, InvoiceBadge, InsuranceBadge } from "@/components/ui/badge";
 import { BrandImage } from "@/components/brand-image";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
@@ -11,6 +12,7 @@ export function PropertyCard({ property }: { property: Property }) {
   const cover = property.photos[0];
   const hasRealPhoto =
     typeof cover === "string" && (/^https?:\/\//.test(cover) || cover.startsWith("/"));
+  const tier = tierFromPhotoCount(property.photos.length);
 
   return (
     <Link
@@ -40,6 +42,17 @@ export function PropertyCard({ property }: { property: Property }) {
         <span className="absolute bottom-3 left-3 rounded-full bg-white/95 px-2.5 py-1 text-xs font-semibold text-ink shadow-sm">
           {property.propertyType}
         </span>
+        {/* Destaque por qualidade do anúncio (rodada 11) */}
+        {tier !== "padrao" && (
+          <span
+            className={cn(
+              "absolute bottom-3 right-3 rounded-full px-2.5 py-1 text-xs font-semibold shadow-sm",
+              TIER_META[tier].tone
+            )}
+          >
+            {TIER_META[tier].label}
+          </span>
+        )}
       </div>
 
       <div className="flex flex-1 flex-col gap-2.5 p-4">
