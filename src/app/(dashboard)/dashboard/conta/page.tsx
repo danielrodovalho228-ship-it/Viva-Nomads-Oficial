@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Lock, Bell, Trash2, Check } from "lucide-react";
-import { useAuthStore } from "@/lib/store";
+import { useAuthStore, DEMO_USER } from "@/lib/store";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { TaxSimulator } from "@/components/tax-simulator";
@@ -12,7 +12,8 @@ import { friendlyAuthError, MIN_PASSWORD } from "@/lib/auth-errors";
 import { cn } from "@/lib/utils";
 
 export default function AccountPage() {
-  const user = useAuthStore((s) => s.user);
+  // Identidade exibida — usa a sessão (ou a demo) para pré-preencher os campos.
+  const user = useAuthStore((s) => s.user) ?? DEMO_USER;
 
   return (
     <div className="mx-auto max-w-2xl">
