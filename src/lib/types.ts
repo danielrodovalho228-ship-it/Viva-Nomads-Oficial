@@ -45,8 +45,15 @@ export interface Property {
   rating: number; // média de avaliações (0–5)
   reviewCount: number;
   status: PropertyStatus;
-  workReadyBadge: boolean;
-  workScore: number;
+  // Selos em camadas (Atualização 11)
+  readyToLiveBadge: boolean; // selo base "Pronto para Morar"
+  readyToLiveScore: number; // 0–100
+  tagHomeOffice: boolean; // etiqueta "Para trabalhar de casa"
+  tagWorkLocated: boolean; // etiqueta "Bem localizado para trabalho"
+  tagCondoApproved: boolean; // etiqueta "Aceito em condomínio"
+  // Perfil operador (Atualização 12)
+  ownershipType: "own" | "subleased";
+  subleaseAuthorized?: boolean;
   photos: string[]; // placeholders por enquanto
   amenities: string[];
   workFeatures: string[];

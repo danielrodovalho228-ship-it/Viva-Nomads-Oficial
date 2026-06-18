@@ -19,7 +19,7 @@ import { PERSONAS } from "@/lib/constants";
 import { PHOTOS } from "@/lib/media";
 import { listProperties } from "@/lib/data/properties";
 import { ButtonLink } from "@/components/ui/button";
-import { WorkReadyBadge, Eyebrow } from "@/components/ui/badge";
+import { ReadyToLiveBadge, SpecTag, Eyebrow } from "@/components/ui/badge";
 import { BrandImage } from "@/components/brand-image";
 import { PropertyCard } from "@/components/property-card";
 import { HeroSearch } from "@/components/hero-search";
@@ -83,7 +83,7 @@ export default async function HomePage() {
                 className="aspect-[4/5] w-full rounded-3xl ring-1 ring-white/10"
               />
               <div className="absolute -bottom-5 -left-5 hidden rounded-2xl bg-white p-4 shadow-xl sm:block">
-                <WorkReadyBadge />
+                <ReadyToLiveBadge />
                 <p className="mt-2 max-w-[12rem] text-xs text-muted">
                   Home office, internet fibra e coworkings mapeados por perto.
                 </p>
@@ -169,11 +169,13 @@ export default async function HomePage() {
               Você trabalha no dia seguinte à chegada
             </h2>
             <p className="mt-5 text-lg text-muted">
-              Quem se muda pelo trabalho precisa de mais que uma cama. Imóveis com
-              infraestrutura de trabalho recebem o selo e aparecem em destaque.
+              Quem se muda pelo trabalho precisa de mais que uma cama. Além do selo{" "}
+              <strong className="text-ink">Pronto para Morar</strong>, etiquetas mostram a
+              aptidão de cada imóvel para o trabalho.
             </p>
-            <div className="mt-6">
-              <WorkReadyBadge />
+            <div className="mt-6 flex flex-wrap gap-2">
+              <SpecTag kind="home_office" />
+              <SpecTag kind="work_located" />
             </div>
             <ul className="mt-8 space-y-5">
               <WorkFeature icon={Wifi} title="Home office no imóvel" text="Cômodo dedicado, mesa, cadeira e internet fibra de qualidade." />
@@ -218,7 +220,7 @@ export default async function HomePage() {
                 <CompareRow label="Aceito em condomínios" a="yes" b="no" c="yes" />
                 <CompareRow label="Custos (água/luz/condomínio) com o inquilino" a="yes" b="no" c="yes" />
                 <CompareRow label="Contrato formal por temporada" a="yes" b="no" c="partial" />
-                <CompareRow label="Selo Pronto para Trabalho" a="yes" b="no" c="no" />
+                <CompareRow label="Selo Pronto para Morar" a="yes" b="no" c="no" />
               </tbody>
             </table>
           </div>
@@ -237,7 +239,7 @@ export default async function HomePage() {
 
           <div className="relative mt-16 grid gap-10 md:grid-cols-3">
             <div className="absolute left-0 right-0 top-7 hidden h-px bg-line md:block" />
-            <Step n="1" icon={Search} title="Buscar" text="Encontre imóveis mobiliados pela cidade, período e orçamento. Filtre por Pronto para Trabalho." />
+            <Step n="1" icon={Search} title="Buscar" text="Encontre imóveis mobiliados pela cidade, período e orçamento. Filtre por Pronto para Morar." />
             <Step n="2" icon={MessageSquare} title="Conversar" text="Fale direto com o proprietário, tire dúvidas e agende a visita pela plataforma." />
             <Step n="3" icon={FileSignature} title="Assinar contrato" text="Garantia escolhida e contrato de temporada assinado digitalmente, com validade jurídica." />
           </div>

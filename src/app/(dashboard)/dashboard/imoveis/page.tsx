@@ -3,7 +3,7 @@ import { Plus, Eye, Bath, BedDouble } from "lucide-react";
 import { PageTitle, EmptyState } from "@/components/dashboard/primitives";
 import { EmptyBuildingIllustration } from "@/components/illustrations";
 import { ButtonLink } from "@/components/ui/button";
-import { WorkReadyBadge } from "@/components/ui/badge";
+import { ReadyToLiveBadge } from "@/components/ui/badge";
 import { BrandImage } from "@/components/brand-image";
 import { SAMPLE_PROPERTIES } from "@/lib/properties";
 import { formatBRL } from "@/lib/utils";
@@ -52,7 +52,7 @@ export default function MyPropertiesPage() {
                   <span className="rounded-full bg-sage-100 px-2.5 py-1 text-xs font-medium text-forest">
                     Ativo
                   </span>
-                  {p.workReadyBadge && <WorkReadyBadge />}
+                  {p.readyToLiveBadge && <ReadyToLiveBadge />}
                 </div>
                 <Link
                   href={`/imoveis/${p.id}`}

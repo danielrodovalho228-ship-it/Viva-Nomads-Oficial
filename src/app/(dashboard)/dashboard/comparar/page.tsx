@@ -40,9 +40,9 @@ export default function ComparePage() {
     { label: "Área", render: (p) => `${p.areaM2} m²` },
     { label: "Período mínimo", render: (p) => `${p.minPeriodDays} dias` },
     {
-      label: "Pronto para Trabalho",
+      label: "Pronto para Morar",
       render: (p) =>
-        p.workReadyBadge ? (
+        p.readyToLiveBadge ? (
           <span className="inline-flex items-center gap-1 text-green-900">
             <Award className="h-4 w-4" /> Sim
           </span>
@@ -52,7 +52,7 @@ export default function ComparePage() {
     },
     {
       label: "Compatibilidade trabalho",
-      render: (p) => <CompatBar score={p.workScore} />,
+      render: (p) => <CompatBar score={p.readyToLiveScore} />,
     },
     {
       label: "Coworking próximo",
@@ -113,7 +113,7 @@ export default function ComparePage() {
   );
 }
 
-/** Score de compatibilidade "Pronto para Trabalho" (4.5). */
+/** Score de compatibilidade "Pronto para Morar" (4.5). */
 function CompatBar({ score }: { score: number }) {
   return (
     <div>

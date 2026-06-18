@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 };
 
 const TENANT_STEPS = [
-  { icon: Search, title: "Busque", text: "Filtre imóveis por cidade, período, orçamento e pelo selo Pronto para Trabalho." },
+  { icon: Search, title: "Busque", text: "Filtre imóveis por cidade, período, orçamento e pelo selo Pronto para Morar." },
   { icon: MessageSquare, title: "Converse", text: "Fale direto com o proprietário, tire dúvidas e agende uma visita." },
   { icon: ShieldCheck, title: "Verifique-se", text: "Faça a verificação de perfil (CAF) — identidade e prova de vida — para dar segurança ao proprietário." },
   { icon: FileSignature, title: "Assine", text: "Escolha a garantia, assine o contrato digital com validade jurídica e receba as chaves." },
@@ -26,7 +26,7 @@ const TENANT_STEPS = [
 
 const OWNER_STEPS = [
   { icon: ClipboardCheck, title: "Qualifique o imóvel", text: "Passe pelo checklist de elegibilidade — a prova de que é locação por temporada regular." },
-  { icon: Award, title: "Ganhe o selo", text: "Some 70+ pontos na pontuação de qualidade e conquiste o selo Pronto para Trabalho." },
+  { icon: Award, title: "Ganhe o selo", text: "Some 70+ pontos na pontuação de qualidade e conquiste o selo Pronto para Morar." },
   { icon: Home, title: "Anuncie", text: "Publique fotos, descrição e preço. Receba consultas de inquilinos qualificados." },
   { icon: KeyRound, title: "Feche o contrato", text: "Aprove o inquilino (a decisão é sua), gere o contrato e receba o aluguel direto." },
 ];

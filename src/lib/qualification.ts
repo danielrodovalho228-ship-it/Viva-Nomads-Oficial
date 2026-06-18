@@ -1,42 +1,42 @@
 /*
-  Lógica do Checklist de Qualificação (Fase 4) — o coração do Viva Nomads.
+  Checklist de Qualificação (Fase 4 + Atualização 11 — selos em camadas).
 
-  Camada 1 (ELEGIBILIDADE): bloqueia ou libera a publicação do anúncio.
-  Camada 2 (PONTUAÇÃO 0–100): gera o selo dourado "Pronto para Trabalho" (>= 70).
-
-  Mantido como módulo puro para que UI (cliente) e validação (servidor) usem
-  exatamente as mesmas regras.
+  Camada 1 (ELEGIBILIDADE): bloqueia/libera a publicação.
+  Camada 2: calcula o selo BASE "Pronto para Morar" (0–100) + 3 ETIQUETAS de
+  especialização (trabalhar de casa, bem localizado p/ trabalho, aceito em condomínio).
 */
 
 export interface EligibilityState {
-  furnished: boolean; // Imóvel mobiliado completo
-  accepts30days: boolean; // Aceita período mínimo de 30 dias
-  iptuOk: boolean; // IPTU em dia
-  habitable: boolean; // Água, luz, gás
-  isOwnerOrAgent: boolean; // Proprietário ou procurador legal
-  hasDocument: boolean; // Matrícula ou contrato de gestão enviado
+  furnished: boolean;
+  accepts30days: boolean;
+  iptuOk: boolean;
+  habitable: boolean;
+  isOwnerOrAgent: boolean;
+  hasDocument: boolean;
   condoAllows: "yes" | "no" | "unknown";
 }
 
 export interface QualityState {
-  // Bloco A — espaço de trabalho no imóvel (até 50 pts)
-  hasHomeOffice: boolean; // 20
-  hasDesk: boolean; // 10
-  hasChair: boolean; // 8
-  internetFiber: boolean; // 12 (com Mbps)
+  // ── Base "Pronto para Morar" (até 100) ──
+  furnishedFull: boolean; // 20 mobília completa
+  kitchenEquipped: boolean; // 15 cozinha equipada
+  beddingTowels: boolean; // 10 roupa de cama e banho
+  appliancesOk: boolean; // 20 eletrodomésticos funcionando
+  internetQuality: boolean; // 15 internet de qualidade
   internetMbps: number;
-  // Bloco B — espaços de trabalho próximos (até 30 pts)
-  coworking2km: boolean; // 12
-  meetingRoom: boolean; // 10
-  cafe1km: boolean; // 8
-  // Bloco C — conforto para estadia longa (até 20 pts)
-  washer: boolean; // 6
-  fullKitchen: boolean; // 6
-  acBedrooms: boolean; // 4
-  petsOk: boolean; // 4
+  climateControl: boolean; // 10 ar-condicionado/aquecimento
+  cleanConserved: boolean; // 10 limpeza e conservação
+  // ── Etiqueta "Para trabalhar de casa" (home office no imóvel) ──
+  hasHomeOffice: boolean;
+  hasDesk: boolean;
+  hasChair: boolean;
+  // ── Etiqueta "Bem localizado para trabalho" (externos) ──
+  coworking2km: boolean;
+  meetingRoom: boolean;
+  cafe1km: boolean;
 }
 
-export const WORK_READY_THRESHOLD = 70;
+export const READY_TO_LIVE_THRESHOLD = 70;
 
 /** Itens obrigatórios da Camada 1 (exceto o radio do condomínio). */
 export function eligibilityChecks(s: EligibilityState) {
@@ -50,41 +50,61 @@ export function eligibilityChecks(s: EligibilityState) {
   ];
 }
 
-/** Calcula a elegibilidade final da Camada 1. */
 export function isEligible(s: EligibilityState): boolean {
   const allRequired = eligibilityChecks(s).every((c) => c.ok);
-  // Se a convenção do condomínio PROÍBE, bloqueia. "Não sei" não bloqueia (orienta verificar).
   return allRequired && s.condoAllows !== "no";
 }
 
-/** Itens de pontuação da Camada 2 com seus pesos, agrupados por bloco. */
-export function scoreBreakdown(q: QualityState) {
-  const blockA = [
-    { label: "Cômodo/escritório dedicado (home office)", pts: 20, on: q.hasHomeOffice },
-    { label: "Mesa de trabalho adequada", pts: 10, on: q.hasDesk },
-    { label: "Cadeira ergonômica ou de trabalho", pts: 8, on: q.hasChair },
-    { label: "Internet fibra", pts: 12, on: q.internetFiber },
-  ];
-  const blockB = [
-    { label: "Coworking a menos de 2 km", pts: 12, on: q.coworking2km },
-    { label: "Sala de reunião no condomínio ou próxima", pts: 10, on: q.meetingRoom },
-    { label: "Café/espaço de trabalho a menos de 1 km", pts: 8, on: q.cafe1km },
-  ];
-  const blockC = [
-    { label: "Máquina de lavar no imóvel", pts: 6, on: q.washer },
-    { label: "Cozinha completa equipada", pts: 6, on: q.fullKitchen },
-    { label: "Ar-condicionado nos quartos", pts: 4, on: q.acBedrooms },
-    { label: "Aceita pets", pts: 4, on: q.petsOk },
-  ];
-  return { blockA, blockB, blockC };
+/** Itens do selo BASE "Pronto para Morar" com pesos. */
+export function readyToLiveItems(q: QualityState) {
+  return [
+    { key: "furnishedFull", label: "Mobília completa", pts: 20, on: q.furnishedFull },
+    { key: "kitchenEquipped", label: "Cozinha equipada", pts: 15, on: q.kitchenEquipped },
+    { key: "beddingTowels", label: "Roupa de cama e banho inclusas", pts: 10, on: q.beddingTowels },
+    { key: "appliancesOk", label: "Eletrodomésticos funcionando (geladeira, fogão, micro-ondas, lavar)", pts: 20, on: q.appliancesOk },
+    { key: "internetQuality", label: "Internet de qualidade", pts: 15, on: q.internetQuality },
+    { key: "climateControl", label: "Ar-condicionado / aquecimento", pts: 10, on: q.climateControl },
+    { key: "cleanConserved", label: "Limpeza e conservação", pts: 10, on: q.cleanConserved },
+  ] as const;
 }
 
-/** Soma a pontuação total (0–100). */
-export function computeScore(q: QualityState): number {
-  const { blockA, blockB, blockC } = scoreBreakdown(q);
-  return [...blockA, ...blockB, ...blockC].reduce((sum, i) => sum + (i.on ? i.pts : 0), 0);
+export function readyToLiveScore(q: QualityState): number {
+  return readyToLiveItems(q).reduce((sum, i) => sum + (i.on ? i.pts : 0), 0);
 }
 
-export function hasWorkReadyBadge(q: QualityState): boolean {
-  return computeScore(q) >= WORK_READY_THRESHOLD;
+export function hasReadyToLiveBadge(q: QualityState): boolean {
+  return readyToLiveScore(q) >= READY_TO_LIVE_THRESHOLD;
+}
+
+/** Etiqueta "Para trabalhar de casa": home office completo no imóvel. */
+export function tagHomeOffice(q: QualityState): boolean {
+  return q.hasHomeOffice && q.hasDesk && q.hasChair && q.internetQuality;
+}
+
+/** Etiqueta "Bem localizado para trabalho": espaços externos próximos. */
+export function tagWorkLocated(q: QualityState): boolean {
+  return q.coworking2km || q.meetingRoom || q.cafe1km;
+}
+
+/** Etiqueta "Aceito em condomínio": convenção permite temporada. */
+export function tagCondoApproved(elig: EligibilityState): boolean {
+  return elig.condoAllows === "yes";
+}
+
+/** Itens das etiquetas (para exibir o que falta). */
+export function homeOfficeItems(q: QualityState) {
+  return [
+    { label: "Cômodo/escritório dedicado", on: q.hasHomeOffice },
+    { label: "Mesa de trabalho adequada", on: q.hasDesk },
+    { label: "Cadeira de trabalho", on: q.hasChair },
+    { label: "Internet rápida", on: q.internetQuality },
+  ];
+}
+
+export function workLocatedItems(q: QualityState) {
+  return [
+    { label: "Coworking a menos de 2 km", on: q.coworking2km },
+    { label: "Sala de reunião próxima", on: q.meetingRoom },
+    { label: "Café de trabalho a menos de 1 km", on: q.cafe1km },
+  ];
 }

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Bath, BedDouble, Ruler, Star } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { formatBRL } from "@/lib/utils";
-import { WorkReadyBadge, InvoiceBadge, InsuranceBadge } from "@/components/ui/badge";
+import { ReadyToLiveBadge, PropertyTags, InvoiceBadge, InsuranceBadge } from "@/components/ui/badge";
 import { BrandImage } from "@/components/brand-image";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
 import { FavoriteButton } from "@/components/favorite-button";
@@ -29,9 +29,9 @@ export function PropertyCard({ property }: { property: Property }) {
         ) : (
           <PhotoPlaceholder label={cover} className="h-full w-full" />
         )}
-        {property.workReadyBadge && (
+        {property.readyToLiveBadge && (
           <div className="absolute left-3 top-3">
-            <WorkReadyBadge size="sm" />
+            <ReadyToLiveBadge size="sm" />
           </div>
         )}
         <div className="absolute right-3 top-3">
@@ -59,6 +59,8 @@ export function PropertyCard({ property }: { property: Property }) {
         <h3 className="line-clamp-2 font-title text-[1.05rem] font-bold leading-snug text-ink transition-colors group-hover:text-blue-500">
           {property.title}
         </h3>
+
+        <PropertyTags property={property} />
 
         <div className="flex items-center gap-4 text-sm text-muted">
           <span className="inline-flex items-center gap-1">

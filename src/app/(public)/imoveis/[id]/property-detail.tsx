@@ -22,7 +22,7 @@ import type { Property, WorkspaceType } from "@/lib/types";
 import { formatBRL, cn } from "@/lib/utils";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
 import { Button, ButtonLink } from "@/components/ui/button";
-import { WorkReadyBadge, InvoiceBadge, InsuranceBadge, ResponsiveOwnerBadge } from "@/components/ui/badge";
+import { ReadyToLiveBadge, InvoiceBadge, InsuranceBadge, ResponsiveOwnerBadge } from "@/components/ui/badge";
 import { PropertyCard } from "@/components/property-card";
 import { BrandImage } from "@/components/brand-image";
 import { PropertyMap, type MapMarker } from "@/components/property-map";
@@ -122,9 +122,9 @@ export function PropertyDetail({
               className="aspect-[16/10] w-full rounded-2xl"
             />
           )}
-          {property.workReadyBadge && (
+          {property.readyToLiveBadge && (
             <div className="absolute left-4 top-4">
-              <WorkReadyBadge />
+              <ReadyToLiveBadge />
             </div>
           )}
         </div>

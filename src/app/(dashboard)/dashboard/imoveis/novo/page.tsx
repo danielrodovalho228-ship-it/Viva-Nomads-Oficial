@@ -31,11 +31,11 @@ export default function NewPropertyPage() {
   async function publish() {
     setPublishing(true);
     setPublishError(null);
-    // Pontuação de trabalho vinda da qualificação aprovada.
-    let workScore = 0;
+    // Selo/etiquetas vindos da qualificação aprovada.
+    let q = { score: 0, tHome: false, tWork: false, tCondo: false };
     try {
       const raw = sessionStorage.getItem("vivanomads-qualification");
-      if (raw) workScore = JSON.parse(raw).score ?? 0;
+      if (raw) q = { ...q, ...JSON.parse(raw) };
     } catch {}
 
     const res = await createProperty({
@@ -49,7 +49,10 @@ export default function NewPropertyPage() {
       areaM2: 0,
       minPeriodDays: 30,
       monthlyPrice: 0,
-      workScore,
+      readyToLiveScore: q.score,
+      tagHomeOffice: q.tHome,
+      tagWorkLocated: q.tWork,
+      tagCondoApproved: q.tCondo,
       utilitiesMode,
       utilitiesEstimate,
       issuesInvoice,

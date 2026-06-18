@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Award, FileText, ShieldCheck, Zap } from "lucide-react";
+import { Award, FileText, ShieldCheck, Zap, Laptop, MapPin, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /** Selo "Proprietário Responsivo" (Bloco C) — responde/resolve rápido. */
@@ -18,10 +18,10 @@ export function ResponsiveOwnerBadge({ className }: { className?: string }) {
 }
 
 /**
- * Selo "Pronto para Trabalho" — diferencial central da marca.
- * Peso visual real: gradiente azul→verde, ícone e contorno.
+ * Selo BASE "Pronto para Morar" (dourado, destaque) — Atualização 11.
+ * Qualidade geral para estadia de meses. Imóveis sem ele entram como básicos.
  */
-export function WorkReadyBadge({
+export function ReadyToLiveBadge({
   className,
   size = "md",
 }: {
@@ -31,14 +31,58 @@ export function WorkReadyBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full font-semibold text-white shadow-sm bg-gradient-brand",
+        "inline-flex items-center gap-1.5 rounded-full bg-champagne font-semibold text-night shadow-sm",
         size === "sm" ? "px-2.5 py-1 text-xs" : "px-3 py-1.5 text-[13px]",
         className
       )}
     >
       <Award className={size === "sm" ? "h-3.5 w-3.5" : "h-4 w-4"} aria-hidden />
-      Pronto para Trabalho
+      Pronto para Morar
     </span>
+  );
+}
+
+export type SpecTagKind = "home_office" | "work_located" | "condo";
+
+const SPEC_TAG_META: Record<SpecTagKind, { label: string; icon: typeof Laptop }> = {
+  home_office: { label: "Para trabalhar de casa", icon: Laptop },
+  work_located: { label: "Bem localizado p/ trabalho", icon: MapPin },
+  condo: { label: "Aceito em condomínio", icon: Building2 },
+};
+
+/** Etiqueta de especialização (verde sálvia, menor) — soma ao selo base. */
+export function SpecTag({ kind, className }: { kind: SpecTagKind; className?: string }) {
+  const meta = SPEC_TAG_META[kind];
+  const Icon = meta.icon;
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full bg-sage-100 px-2 py-0.5 text-[11px] font-medium text-sage",
+        className
+      )}
+    >
+      <Icon className="h-3 w-3" aria-hidden />
+      {meta.label}
+    </span>
+  );
+}
+
+/** Renderiza as etiquetas ativas de um imóvel. */
+export function PropertyTags({
+  property,
+  className,
+}: {
+  property: { tagHomeOffice: boolean; tagWorkLocated: boolean; tagCondoApproved: boolean };
+  className?: string;
+}) {
+  const any = property.tagHomeOffice || property.tagWorkLocated || property.tagCondoApproved;
+  if (!any) return null;
+  return (
+    <div className={cn("flex flex-wrap gap-1", className)}>
+      {property.tagHomeOffice && <SpecTag kind="home_office" />}
+      {property.tagWorkLocated && <SpecTag kind="work_located" />}
+      {property.tagCondoApproved && <SpecTag kind="condo" />}
+    </div>
   );
 }
 
