@@ -54,6 +54,8 @@ export interface Property {
   // Perfil operador (Atualização 12)
   ownershipType: "own" | "subleased";
   subleaseAuthorized?: boolean;
+  // Qualidade do anúncio (rodada 11) — derivado da quantidade de fotos
+  qualityTier?: "padrao" | "completo" | "premium";
   photos: string[]; // placeholders por enquanto
   amenities: string[];
   workFeatures: string[];

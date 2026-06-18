@@ -51,3 +51,13 @@ export const PHOTOS = {
     `${I}/placeholder-imovel-banheiro.webp`,
   ],
 } as const;
+
+/**
+ * Monta uma galeria com `n` fotos ciclando os ambientes disponíveis.
+ * Demonstra a galeria adaptável e os tiers de qualidade enquanto as fotos
+ * reais não são enviadas (mínimo de 8 por anúncio — rodada 11).
+ */
+export function gallery(n: number): string[] {
+  const base = PHOTOS.galleryRooms;
+  return Array.from({ length: n }, (_, i) => base[i % base.length]);
+}

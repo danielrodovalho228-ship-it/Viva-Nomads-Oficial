@@ -21,15 +21,12 @@ import {
 } from "lucide-react";
 import type { Property, WorkspaceType } from "@/lib/types";
 import { formatBRL, cn } from "@/lib/utils";
-import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
 import { Button, ButtonLink } from "@/components/ui/button";
-import { ReadyToLiveBadge, PropertyTags, InvoiceBadge, InsuranceBadge, ResponsiveOwnerBadge } from "@/components/ui/badge";
+import { PropertyTags, InvoiceBadge, InsuranceBadge, ResponsiveOwnerBadge } from "@/components/ui/badge";
 import { PropertyCard } from "@/components/property-card";
-import { BrandImage } from "@/components/brand-image";
+import { PropertyGallery } from "@/components/property-gallery";
 import { PropertyMap, type MapMarker } from "@/components/property-map";
 import { createLead, sendMessage } from "@/lib/data/actions";
-
-const isPhoto = (s?: string) => typeof s === "string" && (/^https?:\/\//.test(s) || s.startsWith("/"));
 
 const TABS = [
   "Visão Geral",
@@ -66,7 +63,6 @@ export function PropertyDetail({
   similar: Property[];
 }) {
   const [tab, setTab] = useState<(typeof TABS)[number]>("Visão Geral");
-  const [activePhoto, setActivePhoto] = useState(0);
   const [sending, setSending] = useState(false);
   const [sentInquiry, setSentInquiry] = useState(false);
 
@@ -106,51 +102,14 @@ export function PropertyDetail({
 
   return (
     <div className="container-page py-8">
-      {/* Galeria */}
-      <div className="grid gap-3 md:grid-cols-4">
-        <div className="relative md:col-span-3">
-          {isPhoto(property.photos[activePhoto]) ? (
-            <BrandImage
-              src={property.photos[activePhoto]}
-              alt={`${property.title} — foto ${activePhoto + 1}`}
-              priority
-              sizes="(max-width: 768px) 100vw, 66vw"
-              className="aspect-[16/10] w-full"
-            />
-          ) : (
-            <PhotoPlaceholder
-              label={property.photos[activePhoto]}
-              className="aspect-[16/10] w-full rounded-2xl"
-            />
-          )}
-          {property.readyToLiveBadge && (
-            <div className="absolute left-4 top-4">
-              <ReadyToLiveBadge />
-            </div>
-          )}
-        </div>
-        <div className="grid grid-cols-4 gap-3 md:grid-cols-1">
-          {property.photos.map((p, i) => (
-            <button
-              key={i}
-              onClick={() => setActivePhoto(i)}
-              aria-label={`Ver foto ${i + 1}`}
-              className={cn(
-                "overflow-hidden rounded-xl border-2 transition-colors",
-                i === activePhoto ? "border-blue-500" : "border-transparent hover:border-blue-200"
-              )}
-            >
-              {isPhoto(p) ? (
-                <BrandImage src={p} alt={`Miniatura ${i + 1}`} treat={false} sizes="120px" className="aspect-square w-full" />
-              ) : (
-                <PhotoPlaceholder label={`#${i + 1}`} className="aspect-square w-full" />
-              )}
-            </button>
-          ))}
-        </div>
-      </div>
+      {/* Galeria adaptável (rodada 11) — sem vão vazio, mosaico/carrossel */}
+      <PropertyGallery
+        photos={property.photos}
+        title={property.title}
+        readyToLive={property.readyToLiveBadge}
+      />
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-3">
+      <div className="mt-6 grid gap-8 lg:grid-cols-3">
         {/* Conteúdo + abas */}
         <div className="lg:col-span-2">
           <div className="flex items-center gap-2 text-sm text-muted">

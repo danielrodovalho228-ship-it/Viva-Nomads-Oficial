@@ -1,5 +1,5 @@
 import type { Property } from "./types";
-import { PHOTOS } from "./media";
+import { gallery } from "./media";
 
 /*
   Dados de exemplo para popular as telas públicas enquanto o Supabase
@@ -40,7 +40,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     tagWorkLocated: true,
     tagCondoApproved: true,
     ownershipType: "own",
-    photos: [...PHOTOS.galleryRooms],
+    photos: gallery(20),
     amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada"],
     workFeatures: ["Escritório dedicado", "Mesa de trabalho", "Cadeira ergonômica", "Internet fibra 300 Mbps"],
     nearbyWorkspaces: [
@@ -82,7 +82,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     tagWorkLocated: true,
     tagCondoApproved: true,
     ownershipType: "own",
-    photos: [PHOTOS.galleryRooms[1], PHOTOS.galleryRooms[2], PHOTOS.galleryRooms[3], PHOTOS.galleryRooms[0]],
+    photos: gallery(12),
     amenities: ["Mobiliado completo", "Ar-condicionado", "Cozinha equipada", "Aceita pets"],
     workFeatures: ["Mesa de trabalho", "Internet fibra 200 Mbps"],
     nearbyWorkspaces: [
@@ -125,7 +125,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     tagCondoApproved: true,
     ownershipType: "subleased",
     subleaseAuthorized: true,
-    photos: [PHOTOS.galleryRooms[0], PHOTOS.galleryRooms[3], PHOTOS.galleryRooms[1]],
+    photos: gallery(8),
     amenities: ["Mobiliado completo", "Máquina de lavar", "Cozinha equipada", "Aceita pets"],
     workFeatures: ["Internet fibra 100 Mbps"],
     nearbyWorkspaces: [{ name: "Coworking Tibery", type: "coworking", distanceM: 1800 }],
