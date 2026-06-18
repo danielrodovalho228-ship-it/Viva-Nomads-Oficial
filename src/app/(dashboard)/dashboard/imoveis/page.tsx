@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus, Eye, Bath, BedDouble } from "lucide-react";
+import { Plus, Eye, Bath, BedDouble, Home, Handshake } from "lucide-react";
 import { PageTitle, EmptyState } from "@/components/dashboard/primitives";
 import { EmptyBuildingIllustration } from "@/components/illustrations";
 import { ButtonLink } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { SAMPLE_PROPERTIES } from "@/lib/properties";
 import { formatBRL } from "@/lib/utils";
 
 export default function MyPropertiesPage() {
-  const properties = SAMPLE_PROPERTIES.slice(0, 2);
+  const properties = SAMPLE_PROPERTIES.slice(0, 3);
 
   return (
     <>
@@ -51,6 +51,17 @@ export default function MyPropertiesPage() {
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="rounded-full bg-sage-100 px-2.5 py-1 text-xs font-medium text-forest">
                     Ativo
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-full border border-sage-200 px-2.5 py-1 text-xs font-medium text-ink">
+                    {p.ownershipType === "subleased" ? (
+                      <>
+                        <Handshake className="h-3.5 w-3.5 text-sage" /> Operado
+                      </>
+                    ) : (
+                      <>
+                        <Home className="h-3.5 w-3.5 text-forest" /> Próprio
+                      </>
+                    )}
                   </span>
                   {p.readyToLiveBadge && <ReadyToLiveBadge />}
                 </div>
