@@ -16,9 +16,15 @@ Guia passo a passo para colocar a plataforma no ar.
 ## 2. Banco de dados (Supabase)
 
 1. Crie um projeto no Supabase (região **South America / São Paulo**).
-2. No SQL Editor, rode em ordem:
-   - `supabase/migrations/0001_initial_schema.sql`
-   - `supabase/migrations/0002_storage_property_photos.sql`
+2. No SQL Editor, rode **em ordem** todas as migrations de `supabase/migrations/`:
+   - `0001_initial_schema.sql`
+   - `0002_storage_property_photos.sql`
+   - `0003_round2_updates.sql`
+   - `0004_round3_updates.sql`
+   - `0005_round4_apis.sql`
+   - `0006_round5_cleaning_service_orders.sql`
+   - `0007_round7_badges_operator.sql` — selos em camadas (Pronto para Morar +
+     etiquetas) e perfil operador (próprio vs. sublocação autorizada).
    - (opcional) `supabase/seed.sql` — depois de criar um usuário proprietário.
 3. Em **Authentication → Providers**, ative **Email** e **Google** (OAuth).
    - Em Google, configure o redirect: `https://vivanomads.com.br/auth/callback`.
