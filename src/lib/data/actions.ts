@@ -40,15 +40,23 @@ export async function saveQualification(
       iptu_ok: elig.iptuOk,
       habitable: elig.habitable,
       is_owner_or_agent: elig.isOwnerOrAgent,
+      has_document: elig.hasDocument,
       condo_allows: elig.condoAllows,
       eligible,
+      // Itens granulares da Camada 2 (rastreio do que foi marcado).
+      has_home_office: quality.hasHomeOffice,
+      has_desk: quality.hasDesk,
+      has_chair: quality.hasChair,
+      coworking_2km: quality.coworking2km,
+      meeting_room: quality.meetingRoom,
+      cafe_1km: quality.cafe1km,
+      internet_mbps: quality.internetMbps,
       // Selo base + etiquetas (Atualização 11)
       ready_to_live_score,
       ready_to_live_badge: ready_to_live_score >= 70,
       tag_home_office: tagHomeOffice(quality),
       tag_work_located: tagWorkLocated(quality),
       tag_condo_approved: tagCondoApproved(elig),
-      internet_mbps: quality.internetMbps,
       status: eligible ? "approved" : "not_eligible",
     })
     .select("id")

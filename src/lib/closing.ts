@@ -81,13 +81,13 @@ export const COST_SPLIT_ITEMS: { key: string; label: string; default: CostParty 
 
 /** Gera uma cotação simulada de seguro-fiança a partir do aluguel. */
 export function simulateQuote(insurer: Insurer, monthlyRent: number) {
-  const factor = insurer === "porto" ? 1.45 : 1.6; // múltiplo do aluguel anual
-  const annual = monthlyRent * 12;
-  const total = Math.round(annual * (factor / 12)); // custo anual aproximado da apólice
+  // Custo anual da apólice ≈ `factor` x aluguel MENSAL (≈ 1,2–2,5x, conforme o mercado).
+  const factor = insurer === "porto" ? 1.45 : 1.6;
+  const annualCost = Math.round(monthlyRent * factor);
   return {
     insurer,
-    annualCost: total,
-    monthlyInstallment: Math.round(total / 12),
+    annualCost,
+    monthlyInstallment: Math.round(annualCost / 12),
     coverage: monthlyRent * 30,
   };
 }

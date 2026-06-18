@@ -14,8 +14,15 @@ export async function POST(request: Request) {
   };
 
   const plan = PLANS.find((p) => p.id === planId);
-  if (!plan || !plan.price) {
+  if (!plan) {
     return NextResponse.json({ error: "Plano inválido para cobrança." }, { status: 400 });
+  }
+  if (!plan.price) {
+    // Planos "sob consulta" (ex.: Gestor) não têm cobrança automática.
+    return NextResponse.json(
+      { error: `O plano ${plan.name} é sob consulta — fale com o time de vendas.` },
+      { status: 400 }
+    );
   }
 
   try {
