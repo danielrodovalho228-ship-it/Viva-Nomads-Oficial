@@ -26,6 +26,7 @@ import { WorkReadyBadge, InvoiceBadge, InsuranceBadge, ResponsiveOwnerBadge } fr
 import { PropertyCard } from "@/components/property-card";
 import { BrandImage } from "@/components/brand-image";
 import { PropertyMap, type MapMarker } from "@/components/property-map";
+import { createLead, sendMessage } from "@/lib/data/actions";
 
 const isPhoto = (s?: string) => typeof s === "string" && (/^https?:\/\//.test(s) || s.startsWith("/"));
 
@@ -65,6 +66,22 @@ export function PropertyDetail({
 }) {
   const [tab, setTab] = useState<(typeof TABS)[number]>("Visão Geral");
   const [activePhoto, setActivePhoto] = useState(0);
+  const [sending, setSending] = useState(false);
+  const [sentInquiry, setSentInquiry] = useState(false);
+
+  // "Enviar consulta": cria um lead e uma mensagem ao proprietário (funil).
+  async function handleInquiry() {
+    setSending(true);
+    const ownerId = `owner-${property.id}`;
+    await createLead(property.id, ownerId).catch(() => {});
+    await sendMessage({
+      receiverId: ownerId,
+      propertyId: property.id,
+      body: `Olá! Tenho interesse no imóvel "${property.title}". Está disponível?`,
+    }).catch(() => {});
+    setSending(false);
+    setSentInquiry(true);
+  }
 
   // Marcador do imóvel + marcadores dos espaços de trabalho próximos.
   // Coords dos workspaces derivadas da distância (offset determinístico).
@@ -372,9 +389,21 @@ export function PropertyDetail({
               <ButtonLink href="/dashboard/fechamento" variant="gold" className="w-full">
                 <FileSignature className="h-4 w-4" /> Candidatar-se
               </ButtonLink>
-              <Button variant="outline" className="w-full">
-                <MessageSquare className="h-4 w-4" /> Enviar consulta
-              </Button>
+              {sentInquiry ? (
+                <div className="flex items-center justify-center gap-2 rounded-full bg-sage-100 px-4 py-2.5 text-sm font-medium text-forest">
+                  <Check className="h-4 w-4" /> Consulta enviada ao proprietário
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleInquiry}
+                  disabled={sending}
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  {sending ? "Enviando..." : "Enviar consulta"}
+                </Button>
+              )}
               <Button variant="ghost" className="w-full">
                 <CalendarCheck className="h-4 w-4" /> Agendar visita
               </Button>
