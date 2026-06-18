@@ -11,7 +11,6 @@ import {
   AlertTriangle,
   Laptop,
   MapPin,
-  Building2,
 } from "lucide-react";
 import {
   type EligibilityState,
@@ -28,7 +27,7 @@ import {
   READY_TO_LIVE_THRESHOLD,
 } from "@/lib/qualification";
 import { Button } from "@/components/ui/button";
-import { ReadyToLiveBadge, SpecTag } from "@/components/ui/badge";
+import { ReadyToLiveBadge } from "@/components/ui/badge";
 import { saveQualification } from "@/lib/data/actions";
 import { cn } from "@/lib/utils";
 
@@ -195,11 +194,6 @@ export default function QualificationChecklistPage() {
               Se a convenção proíbe a locação por temporada, o imóvel não pode ser anunciado.
             </p>
           )}
-          {elig.condoAllows === "yes" && (
-            <p className="mt-3 inline-flex items-center gap-1.5 text-sm text-sage">
-              <CheckCircle2 className="h-4 w-4" /> Vai ganhar a etiqueta Aceito em condomínio.
-            </p>
-          )}
         </fieldset>
 
         <div
@@ -303,19 +297,6 @@ export default function QualificationChecklistPage() {
           items={workLocatedItems(quality)}
           onToggle={(label) => toggleQuality(workKey(label))}
         />
-
-        {/* Etiqueta condomínio (vem da Camada 1) */}
-        <div className="mt-4 flex items-center justify-between rounded-xl border border-sage-200 p-4">
-          <div className="flex items-center gap-2">
-            <Building2 className="h-5 w-5 text-sage" />
-            <span className="text-sm font-medium text-ink">Aceito em condomínio</span>
-          </div>
-          {tCondo ? (
-            <SpecTag kind="condo" />
-          ) : (
-            <span className="text-xs text-muted">Defina o condomínio como permitido na Camada 1</span>
-          )}
-        </div>
       </section>
 
       {/* AÇÃO */}

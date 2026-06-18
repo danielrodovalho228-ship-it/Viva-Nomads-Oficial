@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
-import { TrendingUp, Building2, Receipt, ShieldCheck, Check, ArrowRight } from "lucide-react";
+import { TrendingUp, FileSignature, Receipt, ShieldCheck, Check, ArrowRight } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { BrandImage } from "@/components/brand-image";
 import { PHOTOS } from "@/lib/media";
 
 export const metadata: Metadata = {
-  title: "Para proprietários — ganhe ~2x mais que no Airbnb",
+  title: "Para proprietários — locação por temporada com mais margem",
   description:
-    "Anuncie seu imóvel mobiliado para locação por temporada. Sem rotatividade, sem vacância nos meses fracos e com custos transferidos ao inquilino.",
+    "Anuncie seu imóvel mobiliado para locação por temporada de 30 a 180 dias. Menos rotatividade, menos vacância nos meses fracos e custos que podem ser transferidos ao inquilino conforme o contrato.",
 };
 
 export default function ForLandlordsPage() {
@@ -17,13 +17,13 @@ export default function ForLandlordsPage() {
         <div className="container-page grid items-center gap-10 md:grid-cols-2">
           <div>
             <h1 className="font-title text-4xl font-bold leading-tight md:text-5xl">
-              Ganhe aproximadamente <span className="text-green-300">2x mais</span> que no
-              Airbnb
+              Mais <span className="text-green-300">margem</span> que a locação por
+              curtíssimo prazo
             </h1>
             <p className="mt-5 max-w-lg text-lg text-white/80">
               Locação por temporada de 30 a 180 dias, com contrato formal e inquilino
-              qualificado. Sem entra-e-sai, sem vacância nos meses fracos e com água, luz,
-              condomínio e IPTU transferidos para o inquilino.
+              verificado. Menos entra-e-sai, menos vacância nos meses fracos e com água, luz,
+              condomínio e IPTU que podem ser transferidos ao inquilino conforme o contrato.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <ButtonLink href="/qualificar" variant="gold" size="lg">
@@ -48,17 +48,17 @@ export default function ForLandlordsPage() {
       <section className="container-page py-12 md:py-16">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="font-title text-3xl font-bold text-ink md:text-4xl">
-            Por que rende mais que no Airbnb
+            Mais margem que a locação por curtíssimo prazo
           </h2>
           <p className="mt-4 text-lg text-muted">
-            O modelo de temporada de média duração elimina os maiores custos do aluguel por
+            O modelo de temporada de média duração reduz os maiores custos do aluguel por
             curtíssimo prazo.
           </p>
         </div>
         <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          <Benefit icon={Receipt} title="Custos transferidos" text="Água, luz, condomínio e IPTU passam a ser do inquilino durante a estadia." />
-          <Benefit icon={TrendingUp} title="Sem vacância" text="Um inquilino por uma temporada inteira, inclusive nos meses fracos do turismo." />
-          <Benefit icon={Building2} title="Aceito em condomínios" text="Locação de 30+ dias é outra categoria jurídica — aceita onde o Airbnb não é." />
+          <Benefit icon={Receipt} title="Custos que podem ser transferidos" text="Água, luz, condomínio e IPTU podem ser do inquilino durante a estadia, conforme o contrato." />
+          <Benefit icon={TrendingUp} title="Menos vacância" text="Um inquilino por uma temporada inteira, inclusive nos meses fracos do turismo." />
+          <Benefit icon={FileSignature} title="Contrato com validade jurídica" text="Contrato de locação por temporada gerado e assinado digitalmente, com validade jurídica." />
           <Benefit icon={ShieldCheck} title="Inquilino verificado" text="Análise de perfil (CAF) e garantia locatícia: você decide com segurança." />
         </div>
       </section>

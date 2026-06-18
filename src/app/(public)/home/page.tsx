@@ -67,7 +67,7 @@ export default async function HomePage() {
             <div className="mt-6 flex flex-wrap items-center gap-x-8 gap-y-3 text-sm text-white/55">
               <span>Contrato formal (art. 48)</span>
               <span className="hidden h-1 w-1 rounded-full bg-white/30 sm:block" />
-              <span>Aceito em condomínios</span>
+              <span>Mobiliado e pronto para morar</span>
               <span className="hidden h-1 w-1 rounded-full bg-white/30 sm:block" />
               <span>Inquilino verificado</span>
             </div>
@@ -217,8 +217,8 @@ export default async function HomePage() {
               <tbody className="divide-y divide-white/[0.06]">
                 <CompareRow label="Estadia de 30 a 180 dias" a="yes" b="no" c="partial" />
                 <CompareRow label="Mobiliado e pronto para morar" a="yes" b="yes" c="no" />
-                <CompareRow label="Aceito em condomínios" a="yes" b="no" c="yes" />
-                <CompareRow label="Custos (água/luz/condomínio) com o inquilino" a="yes" b="no" c="yes" />
+                <CompareRow label="Contrato com validade jurídica" a="yes" b="no" c="yes" />
+                <CompareRow label="Custos de consumo transferíveis ao inquilino" a="yes" b="no" c="yes" />
                 <CompareRow label="Contrato formal por temporada" a="yes" b="no" c="partial" />
                 <CompareRow label="Selo Pronto para Morar" a="yes" b="no" c="no" />
               </tbody>
