@@ -235,3 +235,34 @@ export async function createOwnerSubaccount(input: {
   if (error) return { ok: false, error: error.message };
   return { ok: true, id: sub.walletId };
 }
+
+/** Envia uma mensagem no chat (cria/usa a conversa). Best-effort em demo. */
+export async function sendMessage(input: {
+  conversationId?: string;
+  receiverId?: string;
+  propertyId?: string;
+  body: string;
+}): Promise<ActionResult> {
+  const supabase = await createClient();
+  if (!supabase) return { ok: true, demo: true, id: input.conversationId };
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user || !input.receiverId) return { ok: false, error: "Dados incompletos." };
+
+  const conversationId =
+    input.conversationId ??
+    [user.id, input.receiverId].sort().join("_") +
+      (input.propertyId ? `_${input.propertyId}` : "");
+
+  const { error } = await supabase.from("messages").insert({
+    conversation_id: conversationId,
+    sender_id: user.id,
+    receiver_id: input.receiverId,
+    property_id: input.propertyId ?? null,
+    body: input.body,
+  });
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, id: conversationId };
+}
