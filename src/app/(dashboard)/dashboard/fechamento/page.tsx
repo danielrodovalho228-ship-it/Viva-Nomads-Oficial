@@ -357,7 +357,43 @@ export default function ClosingPage() {
               })}
             </div>
             {/* Comparação real de coberturas — não só preço (Atualização 15.1) */}
-            <div className="overflow-x-auto rounded-xl border border-sage-200">
+            {/* Mobile: cards empilhados por seguradora (não tabela espremida). */}
+            <div className="grid gap-3 sm:hidden">
+              {INSURERS.map((ins) => {
+                const cov = INSURER_COVERAGE[ins.id];
+                return (
+                  <div key={ins.id} className="rounded-xl border border-sage-200 p-4">
+                    <div className="flex items-center justify-between">
+                      <p className="font-title font-bold text-ink">{ins.name}</p>
+                      <p className="font-medium text-forest">
+                        {formatBRL(simulateQuote(ins.id, PROPERTY.monthlyRent).monthlyInstallment)}
+                        <span className="text-xs font-normal text-muted">/mês</span>
+                      </p>
+                    </div>
+                    <ul className="mt-3 grid gap-1.5 text-sm">
+                      {COVERAGE_ROWS.map((row) => (
+                        <li key={row.key} className="flex items-center gap-2">
+                          {cov[row.key] ? (
+                            <Check className="h-4 w-4 shrink-0 text-emerald-600" />
+                          ) : (
+                            <X className="h-4 w-4 shrink-0 text-red-400" />
+                          )}
+                          <span className={cov[row.key] ? "text-ink" : "text-muted"}>
+                            {row.label}
+                          </span>
+                        </li>
+                      ))}
+                      <li className="mt-1 flex items-center gap-2 border-t border-sage-200 pt-2 text-muted">
+                        <Clock className="h-3.5 w-3.5" /> Análise {cov.analise}
+                      </li>
+                    </ul>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Desktop/tablet: tabela comparativa lado a lado */}
+            <div className="hidden overflow-x-auto rounded-xl border border-sage-200 sm:block">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-sage-200 bg-surface-2">
