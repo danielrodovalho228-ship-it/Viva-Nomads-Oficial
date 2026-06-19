@@ -7,7 +7,7 @@ import { useState } from "react";
  * Imagem do topo dos cards de "Como funciona".
  * Usa next/image (otimização + lazy loading). Enquanto o arquivo não existe,
  * cai para um placeholder de marca (sem imagem quebrada). Assim que a imagem
- * é enviada para /public/como-funciona/, aparece automaticamente.
+ * é enviada para /public/images/como-funciona/, aparece automaticamente.
  */
 export function StepImage({ src, alt }: { src: string; alt: string }) {
   const [failed, setFailed] = useState(false);
