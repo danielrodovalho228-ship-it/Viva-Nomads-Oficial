@@ -9,6 +9,7 @@ const A = "/images/auth";
 const B = "/images/busca";
 const D = "/images/dashboard";
 const I = "/images/imoveis";
+const C = "/cadastro";
 
 /** Placeholder blur neutro (skeleton suave) — evita CLS e flash forte. */
 export const BRAND_BLUR =
@@ -37,6 +38,12 @@ export const PHOTOS = {
   // D/E — Dashboards
   dashTenant: `${D}/dash-inquilino-welcome.webp`,
   dashOwner: `${D}/dash-prop-onboarding.webp`,
+  // Cadastro de imóvel (wizard — rodada 15)
+  cadastro: {
+    welcome: `${C}/boas-vindas.webp`,
+    uploadEmpty: `${C}/upload-vazio.webp`,
+    workspace: `${C}/home-office.webp`,
+  },
   // Estados / OG (imagens reais geradas)
   emptyTenant: "/images/empty-inquilino-reservas.webp",
   emptyOwner: "/images/empty-prop-imoveis.webp",
