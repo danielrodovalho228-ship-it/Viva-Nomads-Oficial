@@ -21,17 +21,17 @@ export const metadata: Metadata = {
 const IMG = "/como-funciona";
 
 const TENANT_STEPS = [
-  { icon: Search, img: `${IMG}/01-busque.jpg`, title: "Busque", text: "Filtre imóveis por cidade, período, orçamento e pelo selo Pronto para Morar." },
-  { icon: MessageSquare, img: `${IMG}/02-converse.jpg`, title: "Converse", text: "Fale direto com o proprietário, tire dúvidas e agende uma visita." },
-  { icon: ShieldCheck, img: `${IMG}/03-verifique.jpg`, title: "Verifique-se", text: "Faça a verificação de identidade — documento e foto — para dar segurança ao proprietário." },
-  { icon: FileSignature, img: `${IMG}/04-assine.jpg`, title: "Assine", text: "Escolha a garantia, assine o contrato digital com validade jurídica e receba as chaves." },
+  { icon: Search, img: `${IMG}/01-busque.webp`, title: "Busque", text: "Filtre imóveis por cidade, período, orçamento e pelo selo Pronto para Morar." },
+  { icon: MessageSquare, img: `${IMG}/02-converse.webp`, title: "Converse", text: "Fale direto com o proprietário, tire dúvidas e agende uma visita." },
+  { icon: ShieldCheck, img: `${IMG}/03-verifique.webp`, title: "Verifique-se", text: "Faça a verificação de identidade — documento e foto — para dar segurança ao proprietário." },
+  { icon: FileSignature, img: `${IMG}/04-assine.webp`, title: "Assine", text: "Escolha a garantia, assine o contrato digital com validade jurídica e receba as chaves." },
 ];
 
 const OWNER_STEPS = [
-  { icon: ClipboardCheck, img: `${IMG}/05-qualifique.jpg`, title: "Qualifique o imóvel", text: "Passe pelo checklist de elegibilidade — a prova de que é locação por temporada regular." },
-  { icon: Award, img: `${IMG}/06-selo.jpg`, title: "Ganhe o selo", text: "Some 70+ pontos na pontuação de qualidade e conquiste o selo Pronto para Morar." },
-  { icon: Home, img: `${IMG}/07-anuncie.jpg`, title: "Anuncie", text: "Publique fotos, descrição e preço. Receba consultas de inquilinos qualificados." },
-  { icon: KeyRound, img: `${IMG}/08-feche.jpg`, title: "Feche o contrato", text: "Aprove o inquilino (a decisão é sua), gere o contrato e receba o aluguel direto." },
+  { icon: ClipboardCheck, img: `${IMG}/05-qualifique.webp`, title: "Qualifique o imóvel", text: "Passe pelo checklist de elegibilidade — a prova de que é locação por temporada regular." },
+  { icon: Award, img: `${IMG}/06-selo.webp`, title: "Ganhe o selo", text: "Some 70+ pontos na pontuação de qualidade e conquiste o selo Pronto para Morar." },
+  { icon: Home, img: `${IMG}/07-anuncie.webp`, title: "Anuncie", text: "Publique fotos, descrição e preço. Receba consultas de inquilinos qualificados." },
+  { icon: KeyRound, img: `${IMG}/08-feche.webp`, title: "Feche o contrato", text: "Aprove o inquilino (a decisão é sua), gere o contrato e receba o aluguel direto." },
 ];
 
 export default function HowItWorksPage() {
