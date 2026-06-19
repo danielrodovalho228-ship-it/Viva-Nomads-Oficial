@@ -1,58 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
+import { SAMPLE_LEADS, type Lead, type Light } from "./lead-types";
 
-export type Light = "green" | "yellow" | "red";
-
-export interface Lead {
-  id: string;
-  name: string;
-  property: string;
-  category: string;
-  riskCategories: string[];
-  light: Light;
-  verified: boolean;
-  linkedin?: string;
-  phone: string;
-  email: string;
-}
-
-/** Leads de exemplo (fallback do modo demonstração). */
-export const SAMPLE_LEADS: Lead[] = [
-  {
-    id: "1",
-    name: "Ana C.",
-    property: "Apto Santa Mônica",
-    category: "Médica · residência",
-    riskCategories: ["Identidade OK", "Sem ações relevantes"],
-    light: "green",
-    verified: true,
-    linkedin: "https://linkedin.com/in/ana-exemplo",
-    phone: "(34) 99999-0001",
-    email: "ana@exemplo.com",
-  },
-  {
-    id: "2",
-    name: "Rafael L.",
-    property: "Studio Centro",
-    category: "Executivo em transferência",
-    riskCategories: ["Identidade OK"],
-    light: "green",
-    verified: true,
-    linkedin: "https://linkedin.com/in/rafael-exemplo",
-    phone: "(34) 99999-0002",
-    email: "rafael@exemplo.com",
-  },
-  {
-    id: "3",
-    name: "Júlia M.",
-    property: "Apto Santa Mônica",
-    category: "Nômade digital",
-    riskCategories: ["Verificação pendente"],
-    light: "yellow",
-    verified: false,
-    phone: "(34) 99999-0003",
-    email: "julia@exemplo.com",
-  },
-];
+// Re-exporta os utilitários puros para compatibilidade com importações server-side.
+export { SAMPLE_LEADS, LIGHT_SHORT, leadScore, leadSummary } from "./lead-types";
+export type { Lead, Light } from "./lead-types";
 
 interface LeadRow {
   id: string;

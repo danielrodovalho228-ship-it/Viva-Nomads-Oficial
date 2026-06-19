@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Link2, Lock, Unlock, Phone, Mail, Users, X, Check, Send } from "lucide-react";
+import { Link2, Lock, Unlock, Phone, Mail, Users, X, Check, Send, ArrowDownWideNarrow } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { ButtonLink } from "@/components/ui/button";
 import { OwnerDecisionNotice } from "@/components/legal-notice";
-import type { Lead, Light } from "@/lib/data/leads";
+import { leadScore, leadSummary, type Lead, type Light } from "@/lib/data/lead-types";
 import { cn } from "@/lib/utils";
 
 /** Motivos de recusa pré-definidos (quick win #3). */
@@ -32,6 +32,9 @@ export function LeadsClient({ leads }: { leads: Lead[] }) {
     setStatus((prev) => ({ ...prev, [id]: s }));
   }
 
+  // Ordena por qualidade: verificados e de perfil verde no topo (quick win).
+  const ordered = [...leads].sort((a, b) => leadScore(a) - leadScore(b));
+
   return (
     <>
       <PageTitle
@@ -46,15 +49,24 @@ export function LeadsClient({ leads }: { leads: Lead[] }) {
           text="Quando um inquilino enviar uma consulta sobre seus imóveis, ele aparece aqui."
         />
       ) : (
-        <div className="grid gap-4">
-          {leads.map((l) => {
+        <>
+          <p className="mb-3 flex items-center gap-1.5 text-xs text-muted">
+            <ArrowDownWideNarrow className="h-3.5 w-3.5" />
+            Ordenados por qualidade — verificados e compatíveis no topo.
+          </p>
+          <div className="grid gap-4">
+            {ordered.map((l) => {
             const st = status[l.id] ?? "open";
             const open = st === "approved";
             return (
               <Panel key={l.id}>
                 <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div>
-                    <div className="flex items-center gap-2">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {/* Semáforo em destaque, primeiro (o que decide) */}
+                      <span className={cn("rounded-full px-2.5 py-1 text-xs font-semibold", LIGHT[l.light].tone)}>
+                        {LIGHT[l.light].label}
+                      </span>
                       <h3 className="font-title text-lg font-bold text-ink">{l.name}</h3>
                       {l.verified && (
                         <span className="rounded-full bg-champagne px-2 py-0.5 text-xs font-semibold text-night">
@@ -62,13 +74,10 @@ export function LeadsClient({ leads }: { leads: Lead[] }) {
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-muted">
-                      {l.category} · interesse em {l.property}
-                    </p>
+                    {/* Resumo do candidato em uma linha */}
+                    <p className="mt-1 text-sm font-medium text-ink">{leadSummary(l)}</p>
+                    <p className="text-xs text-muted">interesse em {l.property}</p>
                     <div className="mt-2 flex flex-wrap items-center gap-2">
-                      <span className={cn("rounded-full px-2.5 py-1 text-xs font-medium", LIGHT[l.light].tone)}>
-                        {LIGHT[l.light].label}
-                      </span>
                       {l.riskCategories.map((c) => (
                         <span key={c} className="rounded-full bg-blue-50 px-2.5 py-1 text-xs text-blue-700">
                           {c}
@@ -193,7 +202,8 @@ export function LeadsClient({ leads }: { leads: Lead[] }) {
               </Panel>
             );
           })}
-        </div>
+          </div>
+        </>
       )}
 
       <OwnerDecisionNotice className="mt-4" />
