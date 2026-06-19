@@ -60,11 +60,57 @@ export const PHOTOS = {
 } as const;
 
 /**
+ * Fotos REAIS por imóvel (demo), na ordem de exibição — a primeira é a capa.
+ * Arquivos em /public/images/imoveis/ube/. Geradas sob medida para cada anúncio.
+ */
+export const PROPERTY_PHOTOS: Record<string, string[]> = {
+  "ube-001": [
+    `${I}/ube/ube-001-sala.webp`,
+    `${I}/ube/ube-001-home-office.webp`,
+    `${I}/ube/ube-001-quarto-1.webp`,
+    `${I}/ube/ube-001-quarto-2.webp`,
+    `${I}/ube/ube-001-cozinha.webp`,
+    `${I}/ube/ube-001-banheiro.webp`,
+    `${I}/ube/ube-001-varanda.webp`,
+    `${I}/ube/ube-001-fachada.webp`,
+  ],
+  "ube-002": [
+    `${I}/ube/ube-002-ambiente.webp`,
+    `${I}/ube/ube-002-trabalho.webp`,
+    `${I}/ube/ube-002-cozinha.webp`,
+    `${I}/ube/ube-002-banheiro.webp`,
+    `${I}/ube/ube-002-vista.webp`,
+    `${I}/ube/ube-002-fachada.webp`,
+  ],
+  "ube-003": [
+    `${I}/ube/ube-003-sala.webp`,
+    `${I}/ube/ube-003-quarto-1.webp`,
+    `${I}/ube/ube-003-quarto-2.webp`,
+    `${I}/ube/ube-003-quarto-3.webp`,
+    `${I}/ube/ube-003-cozinha.webp`,
+    `${I}/ube/ube-003-banheiro.webp`,
+    `${I}/ube/ube-003-quintal.webp`,
+    `${I}/ube/ube-003-fachada.webp`,
+  ],
+};
+
+/**
  * Monta uma galeria com `n` fotos ciclando os ambientes disponíveis.
  * Demonstra a galeria adaptável e os tiers de qualidade enquanto as fotos
  * reais não são enviadas (mínimo de 8 por anúncio — rodada 11).
  */
 export function gallery(n: number): string[] {
   const base = PHOTOS.galleryRooms;
+  return Array.from({ length: n }, (_, i) => base[i % base.length]);
+}
+
+/**
+ * Galeria de um imóvel específico com `n` fotos, ciclando as fotos reais do
+ * próprio anúncio (a capa sempre em primeiro). Mantém os tiers de qualidade
+ * (derivados da contagem) enquanto exibe imagens reais; cai para os ambientes
+ * genéricos se o imóvel ainda não tiver fotos próprias.
+ */
+export function galleryFor(propertyId: string, n: number): string[] {
+  const base = PROPERTY_PHOTOS[propertyId] ?? PHOTOS.galleryRooms;
   return Array.from({ length: n }, (_, i) => base[i % base.length]);
 }
