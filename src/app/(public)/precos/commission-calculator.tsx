@@ -44,14 +44,26 @@ export function CommissionCalculator() {
           />
         </label>
         <label className="block">
-          <span className="mb-1.5 block text-sm font-medium text-ink">Fechamentos por mês</span>
+          <span className="mb-1.5 flex items-center justify-between text-sm font-medium text-ink">
+            <span>Fechamentos por mês</span>
+            <span className="rounded-full bg-sage-100 px-2.5 py-0.5 font-title text-sm font-bold text-forest">
+              {closings}
+            </span>
+          </span>
           <input
-            type="number"
+            type="range"
             min={1}
-            value={closings || ""}
-            onChange={(e) => setClosings(Math.max(1, Number(e.target.value)))}
-            className="w-full rounded-xl border border-sage-200 px-3.5 py-2.5 text-sm outline-none focus:border-sage"
+            max={10}
+            step={1}
+            value={closings}
+            onChange={(e) => setClosings(Number(e.target.value))}
+            aria-label="Fechamentos por mês"
+            className="mt-2.5 w-full accent-forest"
           />
+          <span className="mt-1 flex justify-between text-[11px] text-muted">
+            <span>1</span>
+            <span>10+</span>
+          </span>
         </label>
       </div>
 

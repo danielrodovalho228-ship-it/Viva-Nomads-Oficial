@@ -41,6 +41,7 @@ interface PropertyRow {
   ownership_type: string | null;
   sublease_authorized: boolean | null;
   video_url: string | null;
+  created_at: string | null;
 }
 
 function rowToProperty(row: PropertyRow): Property {
@@ -78,6 +79,7 @@ function rowToProperty(row: PropertyRow): Property {
     ownershipType: (row.ownership_type as Property["ownershipType"]) ?? "own",
     subleaseAuthorized: row.sublease_authorized ?? undefined,
     videoUrl: row.video_url ?? undefined,
+    createdAt: row.created_at ?? undefined,
     photos: [],
     amenities: [],
     workFeatures: [],

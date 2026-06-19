@@ -25,7 +25,7 @@ export function SearchClient({ properties }: { properties: Property[] }) {
   const [filtersOpen, setFiltersOpen] = useState(false); // acordeão de filtros no mobile
   const [activeId, setActiveId] = useState<string | null>(null); // sincronia lista↔mapa
   const [mobileTab, setMobileTab] = useState<"list" | "map">("list");
-  const [sort, setSort] = useState<"relevance" | "price-asc" | "price-desc">("relevance");
+  const [sort, setSort] = useState<"relevance" | "recent" | "price-asc" | "price-desc">("relevance");
 
   // Pré-preenche a localização vinda da busca da home (?local=...).
   useEffect(() => {
@@ -51,6 +51,11 @@ export function SearchClient({ properties }: { properties: Property[] }) {
     });
     if (sort === "price-asc") list = [...list].sort((a, b) => a.monthlyPrice - b.monthlyPrice);
     else if (sort === "price-desc") list = [...list].sort((a, b) => b.monthlyPrice - a.monthlyPrice);
+    // Adicionados recentemente: mais novos (data de cadastro) primeiro.
+    else if (sort === "recent")
+      list = [...list].sort(
+        (a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? "")
+      );
     // Relevância: anúncios mais completos (mais fotos) primeiro.
     else
       list = [...list].sort(
@@ -98,6 +103,7 @@ export function SearchClient({ properties }: { properties: Property[] }) {
             onChange={(v) => setSort(v as typeof sort)}
             options={[
               ["relevance", "Relevância"],
+              ["recent", "Adicionados recentemente"],
               ["price-asc", "Menor preço"],
               ["price-desc", "Maior preço"],
             ]}
