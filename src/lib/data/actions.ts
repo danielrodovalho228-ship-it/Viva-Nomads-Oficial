@@ -85,6 +85,7 @@ export async function createProperty(input: {
   lat?: number;
   lng?: number;
   photoUrls?: string[];
+  videoUrl?: string;
 }): Promise<ActionResult> {
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
@@ -123,6 +124,7 @@ export async function createProperty(input: {
       issues_invoice: input.issuesInvoice ?? false,
       accepts_insurance: input.acceptsInsurance ?? false,
       prep_fee: input.prepFee ?? 0,
+      video_url: input.videoUrl ?? null,
     })
     .select("id")
     .single();

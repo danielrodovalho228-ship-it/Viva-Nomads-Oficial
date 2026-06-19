@@ -40,6 +40,7 @@ interface PropertyRow {
   tag_condo_approved: boolean | null;
   ownership_type: string | null;
   sublease_authorized: boolean | null;
+  video_url: string | null;
 }
 
 function rowToProperty(row: PropertyRow): Property {
@@ -76,6 +77,7 @@ function rowToProperty(row: PropertyRow): Property {
     tagCondoApproved: row.tag_condo_approved ?? false,
     ownershipType: (row.ownership_type as Property["ownershipType"]) ?? "own",
     subleaseAuthorized: row.sublease_authorized ?? undefined,
+    videoUrl: row.video_url ?? undefined,
     photos: [],
     amenities: [],
     workFeatures: [],

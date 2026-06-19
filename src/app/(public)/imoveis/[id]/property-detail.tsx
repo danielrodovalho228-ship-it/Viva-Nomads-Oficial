@@ -27,8 +27,10 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import { PropertyTags, InvoiceBadge, InsuranceBadge, ResponsiveOwnerBadge } from "@/components/ui/badge";
 import { PropertyCard } from "@/components/property-card";
 import { PropertyGallery } from "@/components/property-gallery";
+import { VideoWalkthrough } from "@/components/video-walkthrough";
 import { PropertyMap, type MapMarker } from "@/components/property-map";
 import { createLead, sendMessage } from "@/lib/data/actions";
+import { MatchGuaranteeNotice } from "@/components/legal-notice";
 
 const TABS = [
   "Visão Geral",
@@ -155,6 +157,16 @@ export function PropertyDetail({
               <Ruler className="h-4 w-4" /> {property.areaM2} m²
             </span>
           </div>
+
+          {/* Walk-through em vídeo — reduz o atrito de alugar sem visita */}
+          {property.videoUrl && (
+            <div className="mt-5">
+              <VideoWalkthrough url={property.videoUrl} title={property.title} />
+              <p className="mt-1.5 text-xs text-muted">
+                Tour em vídeo gravado pelo proprietário — veja o imóvel antes de agendar a visita.
+              </p>
+            </div>
+          )}
 
           {/* Abas */}
           <div className="mt-8 flex flex-wrap gap-1 border-b border-sage-200">
@@ -399,6 +411,9 @@ export function PropertyDetail({
                 </div>
               )}
             </div>
+
+            {/* Garantia de correspondência (mediação) — reduz o medo de alugar sem visita */}
+            <MatchGuaranteeNotice className="mt-4" />
 
             <p className="mt-4 flex items-start gap-1.5 text-xs text-muted">
               <MapPinned className="mt-0.5 h-3.5 w-3.5 shrink-0" />
