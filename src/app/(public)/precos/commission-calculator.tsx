@@ -1,0 +1,107 @@
+"use client";
+
+import { useState } from "react";
+import { Calculator } from "lucide-react";
+import { PLANS, COMMISSION_BY_PLAN } from "@/lib/constants";
+import { formatBRL, cn } from "@/lib/utils";
+
+/**
+ * Calculadora de planos (auditoria — clareza de preço): o proprietário informa
+ * o aluguel e quantos imóveis fecha por mês, e vê o custo mensal de cada plano
+ * (comissão + assinatura), destacando o que compensa. Mostra a "conta pronta".
+ */
+export function CommissionCalculator() {
+  const [rent, setRent] = useState(2500);
+  const [closings, setClosings] = useState(1);
+
+  const rows = PLANS.filter((p) => p.price !== null).map((p) => {
+    const commission = COMMISSION_BY_PLAN[p.id] ?? 0;
+    const subscription = p.price ?? 0;
+    const commissionCost = Math.round(rent * commission) * closings;
+    const total = commissionCost + subscription;
+    return { id: p.id, name: p.name, commission, subscription, commissionCost, total };
+  });
+  const best = rows.reduce((a, b) => (b.total < a.total ? b : a), rows[0]);
+
+  return (
+    <div className="mx-auto max-w-3xl rounded-3xl border border-sage-200 bg-white p-6 sm:p-8">
+      <h3 className="flex items-center gap-2 font-title text-xl font-bold text-ink">
+        <Calculator className="h-5 w-5 text-forest" /> Qual plano compensa para você?
+      </h3>
+      <p className="mt-1 text-sm text-muted">
+        A comissão é cobrada uma vez por fechamento, sobre o 1º mês. Veja a conta pronta:
+      </p>
+
+      <div className="mt-5 grid gap-4 sm:grid-cols-2">
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-medium text-ink">Aluguel médio (R$/mês)</span>
+          <input
+            type="number"
+            min={0}
+            value={rent || ""}
+            onChange={(e) => setRent(Number(e.target.value))}
+            className="w-full rounded-xl border border-sage-200 px-3.5 py-2.5 text-sm outline-none focus:border-sage"
+          />
+        </label>
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-medium text-ink">Fechamentos por mês</span>
+          <input
+            type="number"
+            min={1}
+            value={closings || ""}
+            onChange={(e) => setClosings(Math.max(1, Number(e.target.value)))}
+            className="w-full rounded-xl border border-sage-200 px-3.5 py-2.5 text-sm outline-none focus:border-sage"
+          />
+        </label>
+      </div>
+
+      <div className="mt-5 overflow-x-auto">
+        <table className="w-full min-w-[28rem] text-sm">
+          <thead>
+            <tr className="border-b border-sage-200 text-left text-muted">
+              <th className="pb-2 font-medium">Plano</th>
+              <th className="pb-2 font-medium">Comissão</th>
+              <th className="pb-2 font-medium">Assinatura</th>
+              <th className="pb-2 text-right font-medium">Custo no mês</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr
+                key={r.id}
+                className={cn(
+                  "border-b border-sage-200/60",
+                  r.id === best.id && "bg-sage-100/60"
+                )}
+              >
+                <td className="py-2.5 font-medium text-ink">
+                  {r.name}
+                  {r.id === best.id && (
+                    <span className="ml-2 rounded-full bg-forest px-2 py-0.5 text-[10px] font-semibold text-white">
+                      compensa
+                    </span>
+                  )}
+                </td>
+                <td className="py-2.5 text-ink">
+                  {Math.round(r.commission * 100)}% · {formatBRL(r.commissionCost)}
+                </td>
+                <td className="py-2.5 text-ink">
+                  {r.subscription === 0 ? "—" : `${formatBRL(r.subscription)}/mês`}
+                </td>
+                <td className="py-2.5 text-right font-title font-bold text-forest">
+                  {formatBRL(r.total)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <p className="mt-4 text-xs text-muted">
+        Exemplo: imóvel de {formatBRL(rent)}, {closings} fechamento(s) no mês — o plano{" "}
+        <strong className="text-ink">{best.name}</strong> sai por {formatBRL(best.total)}. Quanto
+        mais você fecha, mais a assinatura (com comissão menor) compensa.
+      </p>
+    </div>
+  );
+}

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bath, BedDouble, Ruler, Star } from "lucide-react";
+import { Bath, BedDouble, Ruler, Star, PlayCircle } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { formatBRL, cn } from "@/lib/utils";
 import { tierFromPhotoCount, TIER_META } from "@/lib/listing";
@@ -31,11 +31,14 @@ export function PropertyCard({ property }: { property: Property }) {
         ) : (
           <PhotoPlaceholder label={cover} className="h-full w-full" />
         )}
-        {property.readyToLiveBadge && (
-          <div className="absolute left-3 top-3">
-            <ReadyToLiveBadge size="sm" />
-          </div>
-        )}
+        <div className="absolute left-3 top-3 flex flex-col items-start gap-1.5">
+          {property.readyToLiveBadge && <ReadyToLiveBadge size="sm" />}
+          {property.videoUrl && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-night/85 px-2 py-0.5 text-xs font-semibold text-white">
+              <PlayCircle className="h-3.5 w-3.5" /> Vídeo
+            </span>
+          )}
+        </div>
         <div className="absolute right-3 top-3">
           <FavoriteButton propertyId={property.id} />
         </div>
@@ -94,18 +97,26 @@ export function PropertyCard({ property }: { property: Property }) {
           </div>
         )}
 
-        <div className="mt-auto flex items-end justify-between border-t border-line pt-3">
-          <div>
-            <span className="font-title text-xl font-bold text-ink">
-              {formatBRL(property.monthlyPrice)}
+        <div className="mt-auto border-t border-line pt-3">
+          <div className="flex items-end justify-between">
+            <div>
+              <span className="font-title text-xl font-bold text-ink">
+                {formatBRL(property.monthlyPrice)}
+              </span>
+              <span className="text-sm text-muted">/mês</span>
+            </div>
+            <span className="text-right text-xs text-muted">
+              {property.utilitiesMode === "fixed" && property.utilitiesEstimate > 0
+                ? `+ ${formatBRL(property.utilitiesEstimate)} consumo`
+                : "+ consumo medido"}
             </span>
-            <span className="text-sm text-muted">/mês</span>
           </div>
-          <span className="text-right text-xs text-muted">
-            {property.utilitiesMode === "fixed" && property.utilitiesEstimate > 0
-              ? `+ ${formatBRL(property.utilitiesEstimate)} consumo`
-              : "+ consumo medido"}
-          </span>
+          {/* Custo total estimado em destaque (quick win) */}
+          {property.utilitiesMode === "fixed" && property.utilitiesEstimate > 0 && (
+            <p className="mt-1.5 text-xs font-semibold text-forest">
+              ≈ {formatBRL(property.monthlyPrice + property.utilitiesEstimate)}/mês tudo incluído
+            </p>
+          )}
         </div>
       </div>
     </Link>

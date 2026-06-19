@@ -56,6 +56,7 @@ export interface Property {
   subleaseAuthorized?: boolean;
   // Qualidade do anúncio (rodada 11) — derivado da quantidade de fotos
   qualityTier?: "padrao" | "completo" | "premium";
+  videoUrl?: string; // walk-through em vídeo — reduz o atrito de alugar sem visita
   photos: string[]; // placeholders por enquanto
   amenities: string[];
   workFeatures: string[];
