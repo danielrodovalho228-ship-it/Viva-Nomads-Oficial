@@ -8,6 +8,14 @@ import { OwnerDecisionNotice } from "@/components/legal-notice";
 import type { Lead, Light } from "@/lib/data/leads";
 import { cn } from "@/lib/utils";
 
+/** Motivos de recusa pré-definidos (quick win #3). */
+const REJECT_REASONS = [
+  "Período não combina",
+  "Imóvel já alugado",
+  "Perfil não atende",
+  "Aguardando outro interessado",
+];
+
 const LIGHT: Record<Light, { tone: string; label: string }> = {
   green: { tone: "bg-emerald-100 text-emerald-700", label: "🟢 Perfil limpo" },
   yellow: { tone: "bg-amber-100 text-amber-700", label: "🟡 Atenção" },
@@ -112,17 +120,35 @@ export function LeadsClient({ leads }: { leads: Lead[] }) {
                   </div>
                 </div>
 
-                {/* Formulário de recusa com motivo (Fluxo 7) */}
+                {/* Formulário de recusa com motivo (Fluxo 7 + motivos rápidos) */}
                 {st === "rejecting" && (
                   <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4">
                     <p className="text-sm font-medium text-red-700">
-                      Recusar {l.name} — escreva um motivo (será enviado ao interessado)
+                      Recusar {l.name} — escolha um motivo (será enviado ao interessado)
                     </p>
+                    {/* Motivos pré-definidos em um clique (quick win #3) */}
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {REJECT_REASONS.map((r) => (
+                        <button
+                          key={r}
+                          type="button"
+                          onClick={() => setReasons((p) => ({ ...p, [l.id]: r }))}
+                          className={cn(
+                            "rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
+                            reasons[l.id] === r
+                              ? "border-red-400 bg-red-100 text-red-700"
+                              : "border-red-200 bg-white text-red-600 hover:bg-red-100"
+                          )}
+                        >
+                          {r}
+                        </button>
+                      ))}
+                    </div>
                     <textarea
                       value={reasons[l.id] ?? ""}
                       onChange={(e) => setReasons((p) => ({ ...p, [l.id]: e.target.value }))}
                       rows={2}
-                      placeholder="Ex.: O período pretendido não está disponível para este imóvel."
+                      placeholder="Ou escreva um motivo personalizado…"
                       className="mt-2 w-full rounded-lg border border-red-200 bg-white px-3 py-2 text-sm outline-none focus:border-red-400"
                     />
                     <div className="mt-2 flex justify-end gap-2">

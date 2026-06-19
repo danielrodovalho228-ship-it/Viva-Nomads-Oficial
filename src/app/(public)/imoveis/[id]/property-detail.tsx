@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import {
   Bath,
@@ -18,6 +19,7 @@ import {
   FileText,
   MapPinned,
   Handshake,
+  ShieldCheck,
 } from "lucide-react";
 import type { Property, WorkspaceType } from "@/lib/types";
 import { formatBRL, cn } from "@/lib/utils";
@@ -320,6 +322,12 @@ export function PropertyDetail({
               </span>
               <span className="text-muted">/mês</span>
             </div>
+            {/* Custo total estimado em destaque (quick win) — evita surpresa */}
+            {property.utilitiesMode === "fixed" && property.utilitiesEstimate > 0 && (
+              <p className="mt-1 inline-flex items-center gap-1.5 rounded-lg bg-sage-100 px-2.5 py-1 text-sm font-semibold text-forest">
+                ≈ {formatBRL(property.monthlyPrice + property.utilitiesEstimate)}/mês com consumo
+              </p>
+            )}
             {/* Despesas de consumo (Atualização 6) — transparência */}
             <div className="mt-2 rounded-lg bg-surface-2 px-3 py-2 text-sm">
               {property.utilitiesMode === "fixed" && property.utilitiesEstimate > 0 ? (
@@ -358,28 +366,38 @@ export function PropertyDetail({
               <span className="h-2 w-2 rounded-full bg-sage" /> Disponível agora
             </p>
 
-            <div className="mt-5 flex flex-col gap-3">
-              <ButtonLink href="/dashboard/fechamento" variant="gold" className="w-full">
+            {/* Promoção do Inquilino Verificado no funil (quick win #4) */}
+            <Link
+              href="/dashboard/verificacao"
+              className="mt-5 flex items-start gap-2 rounded-xl bg-blue-50 px-3 py-2.5 text-xs text-blue-800 transition-colors hover:bg-blue-100"
+            >
+              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />
+              <span>
+                <strong>Verifique-se uma vez</strong> e candidate-se a qualquer imóvel com um
+                clique.
+              </span>
+            </Link>
+
+            {/* CTA primário único + secundários menores (quick win #2) */}
+            <div className="mt-3 flex flex-col gap-2">
+              <ButtonLink href="/dashboard/fechamento" variant="gold" size="lg" className="w-full">
                 <FileSignature className="h-4 w-4" /> Candidatar-se
               </ButtonLink>
               {sentInquiry ? (
-                <div className="flex items-center justify-center gap-2 rounded-full bg-sage-100 px-4 py-2.5 text-sm font-medium text-forest">
+                <div className="flex items-center justify-center gap-2 rounded-full bg-sage-100 px-4 py-2 text-sm font-medium text-forest">
                   <Check className="h-4 w-4" /> Consulta enviada ao proprietário
                 </div>
               ) : (
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={handleInquiry}
-                  disabled={sending}
-                >
-                  <MessageSquare className="h-4 w-4" />
-                  {sending ? "Enviando..." : "Enviar consulta"}
-                </Button>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button variant="outline" size="sm" onClick={handleInquiry} disabled={sending}>
+                    <MessageSquare className="h-4 w-4" />
+                    {sending ? "Enviando..." : "Tirar dúvida"}
+                  </Button>
+                  <Button variant="ghost" size="sm">
+                    <CalendarCheck className="h-4 w-4" /> Agendar visita
+                  </Button>
+                </div>
               )}
-              <Button variant="ghost" className="w-full">
-                <CalendarCheck className="h-4 w-4" /> Agendar visita
-              </Button>
             </div>
 
             <p className="mt-4 flex items-start gap-1.5 text-xs text-muted">

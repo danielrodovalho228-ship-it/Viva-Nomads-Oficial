@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Check, Camera, FileSignature, BrainCircuit, BadgeCheck } from "lucide-react";
 import { PLANS } from "@/lib/constants";
+import { CommissionCalculator } from "./commission-calculator";
 import { ButtonLink } from "@/components/ui/button";
 import { formatBRL, cn } from "@/lib/utils";
 
@@ -22,10 +23,11 @@ export default function PricingPage() {
     <>
       <section className="bg-forest py-16 text-center text-white md:py-20">
         <div className="container-page">
-          <h1 className="font-title text-4xl font-bold md:text-5xl">Planos e preços</h1>
+          <h1 className="font-title text-4xl font-bold md:text-5xl">Anuncie de graça</h1>
           <p className="mx-auto mt-5 max-w-2xl text-lg text-white/80">
-            Modelo híbrido: assinatura para manter o anúncio ativo, mais serviços opcionais
-            por cima. O pagamento do aluguel vai direto ao proprietário.
+            Você só paga uma comissão <strong className="text-white">quando fechar</strong> — e
+            ela cai conforme seu plano. A assinatura é opcional e vira economia para quem fecha
+            mais. O pagamento do aluguel vai direto ao proprietário.
           </p>
         </div>
       </section>
@@ -77,6 +79,11 @@ export default function PricingPage() {
               </ButtonLink>
             </div>
           ))}
+        </div>
+
+        {/* Calculadora — conta pronta (clareza de preço) */}
+        <div className="mt-12">
+          <CommissionCalculator />
         </div>
       </section>
 
