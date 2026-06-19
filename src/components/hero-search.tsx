@@ -14,6 +14,12 @@ export function HeroSearch() {
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
+    // Acima de 180 dias é atendimento direto, não busca normal (1C).
+    if (period === "180plus") {
+      window.location.href =
+        "mailto:contato@vivanomads.com.br?subject=Loca%C3%A7%C3%A3o%20acima%20de%20180%20dias";
+      return;
+    }
     const params = new URLSearchParams();
     if (location) params.set("local", location);
     if (period) params.set("periodo", period);
@@ -48,6 +54,7 @@ export function HeroSearch() {
           <option value="60">A partir de 60 dias</option>
           <option value="90">A partir de 90 dias</option>
           <option value="180">A partir de 180 dias</option>
+          <option value="180plus">Mais de 180 dias (sob consulta)</option>
         </select>
       </Field>
       <Field icon={Wallet}>

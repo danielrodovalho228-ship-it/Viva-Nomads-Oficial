@@ -14,6 +14,8 @@ import {
   Check,
   X,
   Minus,
+  ShieldCheck,
+  Sofa,
 } from "lucide-react";
 import { PERSONAS } from "@/lib/constants";
 import { PHOTOS } from "@/lib/media";
@@ -47,7 +49,7 @@ export default async function HomePage() {
         <div className="pointer-events-none absolute -right-40 -top-40 h-[34rem] w-[34rem] rounded-full bg-gradient-brand opacity-25 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-40 -left-40 h-[28rem] w-[28rem] rounded-full bg-blue-700 opacity-25 blur-3xl" />
 
-        <div className="container-page relative grid items-center gap-12 py-16 lg:grid-cols-12 lg:py-24">
+        <div className="container-page relative grid items-center gap-12 pb-16 pt-8 lg:grid-cols-12 lg:pb-24 lg:pt-12">
           <div className="lg:col-span-7">
             <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-white/80">
               <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
@@ -55,7 +57,7 @@ export default async function HomePage() {
             </span>
             <h1 className="mt-6 font-title font-bold display-xl">
               Moradia mobiliada para a sua{" "}
-              <span className="text-gradient-brand">nova fase</span> em Uberlândia
+              <span className="text-gradient-brand">nova fase</span>
             </h1>
             <p className="mt-6 max-w-xl text-lg text-white/70">
               Locação mensal de 30 a 180 dias para profissionais em transição. Pronto para
@@ -64,12 +66,22 @@ export default async function HomePage() {
             <div className="mt-9 max-w-2xl">
               <HeroSearch />
             </div>
-            <div className="mt-6 flex flex-wrap items-center gap-x-8 gap-y-3 text-sm text-white/55">
-              <span>Contrato formal (art. 48)</span>
-              <span className="hidden h-1 w-1 rounded-full bg-white/30 sm:block" />
-              <span>Mobiliado e pronto para morar</span>
-              <span className="hidden h-1 w-1 rounded-full bg-white/30 sm:block" />
-              <span>Inquilino verificado</span>
+            {/* Locações acima de 180 dias (1C) */}
+            <p className="mt-3 text-sm text-white/55">
+              Precisa de mais de 180 dias?{" "}
+              <a
+                href="mailto:contato@vivanomads.com.br?subject=Loca%C3%A7%C3%A3o%20acima%20de%20180%20dias"
+                className="font-medium text-green-300 underline-offset-2 hover:underline"
+              >
+                Fale conosco
+              </a>
+              .
+            </p>
+            {/* Trust badges com ícones (1E) */}
+            <div className="mt-6 grid grid-cols-3 gap-3 sm:flex sm:flex-wrap sm:items-center sm:gap-x-7">
+              <TrustItem icon={FileSignature} text="Contrato formal (art. 48)" />
+              <TrustItem icon={Sofa} text="Mobiliado e pronto" />
+              <TrustItem icon={ShieldCheck} text="Identidade verificada" />
             </div>
           </div>
 
@@ -195,34 +207,42 @@ export default async function HomePage() {
               Não é Airbnb. Não é QuintoAndar.
             </h2>
             <p className="mt-5 text-lg text-white/65">
-              Locação mensal mobiliada, com contrato formal e inquilino qualificado — aceita
-              em condomínios onde o Airbnb não é.
+              Locação mensal mobiliada, com contrato formal e inquilino verificado — pensada
+              para estadias de média duração.
             </p>
           </div>
 
-          <div className="mx-auto mt-14 max-w-4xl overflow-hidden rounded-2xl border border-white/10">
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="border-b border-white/10 bg-white/[0.03]">
-                  <th className="p-5 font-medium text-white/50">Comparativo</th>
-                  <th className="p-5">
-                    <span className="font-title text-base font-bold text-gradient-brand">
-                      Viva Nomads
-                    </span>
-                  </th>
-                  <th className="p-5 font-title text-base font-bold text-white/70">Airbnb</th>
-                  <th className="p-5 font-title text-base font-bold text-white/70">QuintoAndar</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/[0.06]">
-                <CompareRow label="Estadia de 30 a 180 dias" a="yes" b="no" c="partial" />
-                <CompareRow label="Mobiliado e pronto para morar" a="yes" b="yes" c="no" />
-                <CompareRow label="Contrato com validade jurídica" a="yes" b="no" c="yes" />
-                <CompareRow label="Custos de consumo transferíveis ao inquilino" a="yes" b="no" c="yes" />
-                <CompareRow label="Contrato formal por temporada" a="yes" b="no" c="partial" />
-                <CompareRow label="Selo Pronto para Morar" a="yes" b="no" c="no" />
-              </tbody>
-            </table>
+          {/* Indicador de rolagem (mobile) */}
+          <p className="mx-auto mt-12 max-w-4xl px-1 text-xs text-white/45 sm:hidden">
+            Deslize para comparar →
+          </p>
+          <div className="mx-auto mt-2 max-w-4xl rounded-2xl border border-white/10 sm:mt-14">
+            <div className="overflow-x-auto rounded-2xl [scrollbar-width:thin]">
+              <table className="w-full min-w-[34rem] text-left text-sm">
+                <thead>
+                  <tr className="border-b border-white/10 bg-white/[0.03]">
+                    <th className="sticky left-0 z-10 bg-night p-5 font-medium text-white/50">
+                      Comparativo
+                    </th>
+                    <th className="p-5">
+                      <span className="font-title text-base font-bold text-gradient-brand">
+                        Viva Nomads
+                      </span>
+                    </th>
+                    <th className="p-5 font-title text-base font-bold text-white/70">Airbnb</th>
+                    <th className="p-5 font-title text-base font-bold text-white/70">QuintoAndar</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/[0.06]">
+                  <CompareRow label="Estadia de 30 a 180 dias" a="yes" b="no" c="partial" />
+                  <CompareRow label="Mobiliado e pronto para morar" a="yes" b="yes" c="no" />
+                  <CompareRow label="Contrato com validade jurídica" a="yes" b="no" c="yes" />
+                  <CompareRow label="Custos de consumo transferíveis ao inquilino" a="yes" b="no" c="yes" />
+                  <CompareRow label="Contrato formal por temporada" a="yes" b="no" c="partial" />
+                  <CompareRow label="Selo Pronto para Morar" a="yes" b="no" c="no" />
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </section>
@@ -350,6 +370,21 @@ function Step({
   );
 }
 
+function TrustItem({
+  icon: Icon,
+  text,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  text: string;
+}) {
+  return (
+    <span className="flex flex-col items-center gap-1.5 text-center text-xs text-white/75 sm:flex-row sm:gap-2 sm:text-sm">
+      <Icon className="h-6 w-6 text-green-300 sm:h-4 sm:w-4" />
+      <span className="leading-tight">{text}</span>
+    </span>
+  );
+}
+
 function CompareRow({
   label,
   a,
@@ -363,7 +398,7 @@ function CompareRow({
 }) {
   return (
     <tr className="text-white/80">
-      <td className="p-5 font-medium">{label}</td>
+      <td className="sticky left-0 z-10 bg-night p-5 font-medium">{label}</td>
       <td className="p-5"><Mark v={a} brand /></td>
       <td className="p-5"><Mark v={b} /></td>
       <td className="p-5"><Mark v={c} /></td>
