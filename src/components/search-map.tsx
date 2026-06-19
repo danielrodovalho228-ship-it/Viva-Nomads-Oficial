@@ -43,6 +43,8 @@ export function SearchMap(props: {
   properties: Property[];
   activeId: string | null;
   onHover: (id: string | null) => void;
+  /** Endereço buscado (geocoding) — centro do raio, recebe um marcador próprio. */
+  focus?: { lat: number; lng: number } | null;
   className?: string;
 }) {
   if (!TOKEN) return <SearchMapPlaceholder {...props} />;
@@ -57,11 +59,13 @@ function SearchMapbox({
   properties,
   activeId,
   onHover,
+  focus,
   className,
 }: {
   properties: Property[];
   activeId: string | null;
   onHover: (id: string | null) => void;
+  focus?: { lat: number; lng: number } | null;
   className?: string;
 }) {
   const router = useRouter();
@@ -70,6 +74,7 @@ function SearchMapbox({
   const markersRef = useRef<Map<string, { marker: mapboxgl.Marker; el: HTMLElement }>>(
     new Map()
   );
+  const focusMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const popupRef = useRef<mapboxgl.Popup | null>(null);
 
   // Refs com os valores mais recentes — para os listeners dos pins não
@@ -77,15 +82,19 @@ function SearchMapbox({
   const onHoverRef = useRef(onHover);
   const propsRef = useRef(properties);
   const routerRef = useRef(router);
+  const focusRef = useRef(focus);
   useEffect(() => {
     onHoverRef.current = onHover;
     propsRef.current = properties;
     routerRef.current = router;
+    focusRef.current = focus;
   });
 
   // Assinatura estável do conjunto de resultados (ids), para só reconstruir os
   // marcadores quando a lista muda de fato — e não a cada re-render do pai.
   const sig = properties.map((p) => p.id).join("|");
+  // Assinatura do centro buscado (geocoding), null quando não há endereço.
+  const focusKey = focus ? `${focus.lat},${focus.lng}` : "";
 
   // Inicializa o mapa uma única vez.
   useEffect(() => {
@@ -133,14 +142,49 @@ function SearchMapbox({
       bounds.extend([p.lng, p.lat]);
     });
 
+    // Inclui o endereço buscado no enquadramento, se houver.
+    const f = focusRef.current;
+    if (f) bounds.extend([f.lng, f.lat]);
+
     const fit = () =>
       map.fitBounds(bounds, { padding: 56, maxZoom: 14, duration: 0 });
     if (map.isStyleLoaded()) fit();
     else map.once("load", fit);
-    // activeId é lido de propósito sem entrar nas deps: o realce é tratado no
-    // efeito abaixo para não reconstruir os marcadores a cada hover.
+    // activeId/focus são lidos de propósito sem entrar nas deps: o realce e o
+    // marcador de centro são tratados nos efeitos abaixo, para não reconstruir
+    // os marcadores de resultado a cada hover ou nova busca de endereço.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sig]);
+
+  // Marcador do endereço buscado (centro do raio) + reenquadramento ao mudar.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    focusMarkerRef.current?.remove();
+    focusMarkerRef.current = null;
+    if (!focus) return;
+
+    const el = document.createElement("div");
+    el.className =
+      "grid h-7 w-7 place-items-center rounded-full border-2 border-white bg-night text-white shadow-lg ring-2 ring-champagne";
+    el.setAttribute("aria-label", "Endereço buscado");
+    el.innerHTML =
+      '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"/></svg>';
+    focusMarkerRef.current = new mapboxgl.Marker({ element: el })
+      .setLngLat([focus.lng, focus.lat])
+      .addTo(map);
+
+    // Reenquadra para mostrar centro + resultados (ou só o centro, se vazio).
+    const bounds = new mapboxgl.LngLatBounds();
+    bounds.extend([focus.lng, focus.lat]);
+    propsRef.current.forEach((p) => bounds.extend([p.lng, p.lat]));
+    const fit = () =>
+      map.fitBounds(bounds, { padding: 56, maxZoom: 14, duration: 300 });
+    if (map.isStyleLoaded()) fit();
+    else map.once("load", fit);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusKey]);
 
   // Realce do pin ativo + mini-card (popup) sincronizados com a lista.
   useEffect(() => {
@@ -189,11 +233,13 @@ function SearchMapPlaceholder({
   properties,
   activeId,
   onHover,
+  focus,
   className,
 }: {
   properties: Property[];
   activeId: string | null;
   onHover: (id: string | null) => void;
+  focus?: { lat: number; lng: number } | null;
   className?: string;
 }) {
   if (properties.length === 0) {
@@ -204,8 +250,8 @@ function SearchMapPlaceholder({
     );
   }
 
-  const lats = properties.map((p) => p.lat);
-  const lngs = properties.map((p) => p.lng);
+  const lats = properties.map((p) => p.lat).concat(focus ? [focus.lat] : []);
+  const lngs = properties.map((p) => p.lng).concat(focus ? [focus.lng] : []);
   const minLat = Math.min(...lats), maxLat = Math.max(...lats);
   const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
   const spanLat = maxLat - minLat || 1;
@@ -232,6 +278,17 @@ function SearchMapPlaceholder({
           backgroundSize: "40px 40px",
         }}
       />
+
+      {/* Centro do endereço buscado (geocoding) */}
+      {focus && (
+        <div
+          style={{ left: `${posX(focus.lng)}%`, top: `${posY(focus.lat)}%` }}
+          className="absolute z-30 grid h-7 w-7 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border-2 border-white bg-night text-white shadow-lg ring-2 ring-champagne"
+          aria-label="Endereço buscado"
+        >
+          <MapPin className="h-4 w-4" />
+        </div>
+      )}
 
       {properties.map((p) => {
         const active = p.id === activeId;

@@ -7,12 +7,18 @@ import { PropertyCard } from "@/components/property-card";
 import { SearchMap } from "@/components/search-map";
 import { EmptySearchIllustration } from "@/components/illustrations";
 import { Map as MapIcon, List as ListIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, distanceKm } from "@/lib/utils";
 import { tierFromPhotoCount, searchPriority } from "@/lib/listing";
-import { LocationDatalist } from "@/lib/locations";
+import { LocationSearch } from "@/components/location-search";
+import type { GeoSuggestion } from "@/lib/integrations/geocoding";
+
+/** Raio (km) ao redor de um endereço geocodificado. */
+const RADIUS_KM = 10;
 
 export function SearchClient({ properties }: { properties: Property[] }) {
   const [locationQuery, setLocationQuery] = useState("");
+  // Coordenadas de um endereço escolhido no autocomplete (filtra por raio).
+  const [geoCenter, setGeoCenter] = useState<{ lat: number; lng: number } | null>(null);
   const [maxPrice, setMaxPrice] = useState(0);
   const [minBedrooms, setMinBedrooms] = useState(0);
   const [maxPeriod, setMaxPeriod] = useState(0); // período mínimo aceito <= X
@@ -37,7 +43,12 @@ export function SearchClient({ properties }: { properties: Property[] }) {
   const results = useMemo(() => {
     const loc = locationQuery.trim().toLowerCase();
     let list = properties.filter((p) => {
-      if (loc && !`${p.neighborhood} ${p.city}`.toLowerCase().includes(loc)) return false;
+      // Com endereço geocodificado, filtra por raio; senão, por nome (bairro/cidade).
+      if (geoCenter) {
+        if (distanceKm(geoCenter.lat, geoCenter.lng, p.lat, p.lng) > RADIUS_KM) return false;
+      } else if (loc && !`${p.neighborhood} ${p.city}`.toLowerCase().includes(loc)) {
+        return false;
+      }
       if (maxPrice && p.monthlyPrice > maxPrice) return false;
       if (minBedrooms && p.bedrooms < minBedrooms) return false;
       if (maxPeriod && p.minPeriodDays > maxPeriod) return false;
@@ -56,7 +67,13 @@ export function SearchClient({ properties }: { properties: Property[] }) {
       list = [...list].sort(
         (a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? "")
       );
-    // Relevância: anúncios mais completos (mais fotos) primeiro.
+    // Relevância com endereço: mais perto primeiro; senão, anúncios mais completos.
+    else if (geoCenter)
+      list = [...list].sort(
+        (a, b) =>
+          distanceKm(geoCenter.lat, geoCenter.lng, a.lat, a.lng) -
+          distanceKm(geoCenter.lat, geoCenter.lng, b.lat, b.lng)
+      );
     else
       list = [...list].sort(
         (a, b) =>
@@ -64,7 +81,7 @@ export function SearchClient({ properties }: { properties: Property[] }) {
           searchPriority(tierFromPhotoCount(a.photos.length))
       );
     return list;
-  }, [properties, locationQuery, maxPrice, minBedrooms, maxPeriod, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly, sort]);
+  }, [properties, locationQuery, geoCenter, maxPrice, minBedrooms, maxPeriod, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly, sort]);
 
   const activeCount =
     (maxPrice ? 1 : 0) +
@@ -116,19 +133,33 @@ export function SearchClient({ properties }: { properties: Property[] }) {
             filtersOpen ? "flex" : "hidden"
           )}
         >
-          {/* Localização com autocomplete (item 7) */}
-          <div className="flex items-center gap-2 rounded-full border border-sage-200 bg-white px-3.5 py-2">
-            <MapPin className="h-4 w-4 shrink-0 text-blue-500" />
-            <input
-              value={locationQuery}
-              onChange={(e) => setLocationQuery(e.target.value)}
-              placeholder="Cidade ou bairro"
-              list="buscar-location-list"
-              autoComplete="off"
-              className="w-36 bg-transparent text-sm text-ink outline-none placeholder:text-muted"
-            />
-            <LocationDatalist id="buscar-location-list" />
-          </div>
+          {/* Localização: geocoding de endereço (Mapbox) ou bairros por nome */}
+          <LocationSearch
+            value={locationQuery}
+            onChange={(text) => {
+              setLocationQuery(text);
+              setGeoCenter(null);
+            }}
+            onSelect={(s: GeoSuggestion) => {
+              setLocationQuery(s.label);
+              setGeoCenter({ lat: s.lat, lng: s.lng });
+            }}
+          />
+          {geoCenter && (
+            <button
+              type="button"
+              onClick={() => {
+                setLocationQuery("");
+                setGeoCenter(null);
+              }}
+              className="inline-flex items-center gap-1 rounded-full border border-sage-200 bg-surface-2 px-3 py-2 text-sm text-ink"
+              title="Limpar endereço"
+            >
+              <MapPin className="h-3.5 w-3.5 text-blue-500" /> Raio de {RADIUS_KM} km
+              <span className="ml-0.5 text-muted">·</span>
+              <span className="font-medium text-forest">limpar</span>
+            </button>
+          )}
           <Select
             value={String(maxPrice)}
             onChange={(v) => setMaxPrice(Number(v))}
@@ -246,6 +277,7 @@ export function SearchClient({ properties }: { properties: Property[] }) {
               properties={results}
               activeId={activeId}
               onHover={setActiveId}
+              focus={geoCenter}
               className="h-[420px] w-full lg:h-[600px]"
             />
           </div>
