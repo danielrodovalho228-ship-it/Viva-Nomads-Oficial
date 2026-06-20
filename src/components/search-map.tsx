@@ -39,6 +39,13 @@ const RADIUS_SRC = "viva-radius";
 const RADIUS_FILL = "viva-radius-fill";
 const RADIUS_LINE = "viva-radius-line";
 
+// Conversão km → graus (uma fonte só para o círculo real e a elipse do
+// placeholder). 1 grau de latitude ≈ 111.19 km (raio da Terra · π/180).
+const KM_PER_DEG = (Math.PI / 180) * 6371;
+const kmToDegLat = (km: number) => km / KM_PER_DEG;
+const kmToDegLng = (km: number, lat: number) =>
+  kmToDegLat(km) / Math.max(Math.cos((lat * Math.PI) / 180), 1e-6);
+
 /** Polígono que aproxima um círculo de `radiusKm` ao redor de (lng,lat). */
 function circlePolygon(
   lng: number,
@@ -47,10 +54,8 @@ function circlePolygon(
   steps = 64
 ): GeoJSON.Feature<GeoJSON.Polygon> {
   const ring: [number, number][] = [];
-  const earth = 6371; // km
-  const lat0 = (lat * Math.PI) / 180;
-  const degLat = (radiusKm / earth) * (180 / Math.PI);
-  const degLng = degLat / Math.max(Math.cos(lat0), 1e-6);
+  const degLat = kmToDegLat(radiusKm);
+  const degLng = kmToDegLng(radiusKm, lat);
   for (let i = 0; i <= steps; i++) {
     const t = (i / steps) * 2 * Math.PI;
     ring.push([lng + degLng * Math.cos(t), lat + degLat * Math.sin(t)]);
@@ -359,8 +364,8 @@ function SearchMapPlaceholder({
 
   // Diâmetro do raio em % do quadro (projeção linear → vira elipse, como o mapa
   // real distorce longe do equador). km → graus → fração do span exibido.
-  const degLat = radiusKm / 111.19;
-  const degLng = degLat / Math.max(Math.cos((focus?.lat ?? 0) * Math.PI / 180), 1e-6);
+  const degLat = kmToDegLat(radiusKm);
+  const degLng = kmToDegLng(radiusKm, focus?.lat ?? 0);
   const radiusW = focus ? (2 * degLng / spanLng) * 80 : 0;
   const radiusH = focus ? (2 * degLat / spanLat) * 80 : 0;
 
