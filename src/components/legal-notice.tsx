@@ -1,4 +1,4 @@
-import { Scale, Wrench } from "lucide-react";
+import { Scale, Wrench, Handshake } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /** Moldura jurídica das ordens de serviço (Bloco C — rodada 5). */
@@ -37,6 +37,38 @@ export function PlatformLegalNotice({ className }: { className?: string }) {
         O Viva Nomads <strong className="text-forest">conecta, verifica e documenta</strong> —
         não é locador, fiador nem garantidor, e não responde pelo aluguel. A decisão de alugar
         é exclusivamente do proprietário.
+      </p>
+    </div>
+  );
+}
+
+/**
+ * Garantia de correspondência (mediação — NÃO é garantia financeira).
+ * Se o imóvel não corresponder ao anunciado na chegada, a plataforma medeia
+ * a solução entre as partes. Não cobre prejuízo financeiro nem substitui o
+ * contrato — é um compromisso de mediação para reduzir o medo de alugar sem visita.
+ */
+export function MatchGuaranteeNotice({ className }: { className?: string }) {
+  return (
+    <div
+      className={cn(
+        "rounded-xl border border-blue-100 bg-blue-50/70 px-4 py-3.5 text-sm",
+        className
+      )}
+    >
+      <p className="flex items-center gap-2 font-semibold text-blue-900">
+        <Handshake className="h-4 w-4 shrink-0 text-blue-600" />
+        Garantia de correspondência
+      </p>
+      <p className="mt-1.5 text-blue-900/80">
+        Se na chegada o imóvel não corresponder ao anunciado (fotos, mobília ou
+        condições), a plataforma <strong>medeia a solução</strong> com o proprietário —
+        ajuste, troca de imóvel ou cancelamento sem multa nos primeiros 7 dias.
+      </p>
+      <p className="mt-1.5 text-xs text-blue-900/60">
+        É um compromisso de <strong>mediação</strong>, não uma garantia financeira: o
+        Viva Nomads intermedeia o acordo, sem assumir o pagamento do aluguel nem cobrir
+        prejuízos.
       </p>
     </div>
   );

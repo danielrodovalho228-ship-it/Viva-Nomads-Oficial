@@ -1,5 +1,5 @@
 import type { Property } from "./types";
-import { gallery } from "./media";
+import { galleryFor } from "./media";
 
 /*
   Dados de exemplo para popular as telas públicas enquanto o Supabase
@@ -40,7 +40,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     tagWorkLocated: true,
     tagCondoApproved: true,
     ownershipType: "own",
-    photos: gallery(20),
+    photos: galleryFor("ube-001", 20),
     videoUrl: "https://www.youtube.com/watch?v=demo-walkthrough",
     amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada"],
     workFeatures: ["Escritório dedicado", "Mesa de trabalho", "Cadeira ergonômica", "Internet fibra 300 Mbps"],
@@ -48,6 +48,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
       { name: "Coworking Center Santa Mônica", type: "coworking", distanceM: 850 },
       { name: "Café do Bloco", type: "cafe", distanceM: 400 },
     ],
+    createdAt: "2026-05-10T09:00:00Z",
     ownerName: "Marcos A.",
   },
   {
@@ -83,13 +84,14 @@ export const SAMPLE_PROPERTIES: Property[] = [
     tagWorkLocated: true,
     tagCondoApproved: true,
     ownershipType: "own",
-    photos: gallery(12),
+    photos: galleryFor("ube-002", 12),
     amenities: ["Mobiliado completo", "Ar-condicionado", "Cozinha equipada", "Aceita pets"],
     workFeatures: ["Mesa de trabalho", "Internet fibra 200 Mbps"],
     nearbyWorkspaces: [
       { name: "Hub Central Coworking", type: "coworking", distanceM: 600 },
       { name: "Sala Reunião Empresarial", type: "meeting_room", distanceM: 900 },
     ],
+    createdAt: "2026-06-01T09:00:00Z",
     ownerName: "Patrícia L.",
   },
   {
@@ -126,10 +128,11 @@ export const SAMPLE_PROPERTIES: Property[] = [
     tagCondoApproved: true,
     ownershipType: "subleased",
     subleaseAuthorized: true,
-    photos: gallery(8),
+    photos: galleryFor("ube-003", 8),
     amenities: ["Mobiliado completo", "Máquina de lavar", "Cozinha equipada", "Aceita pets"],
     workFeatures: ["Internet fibra 100 Mbps"],
     nearbyWorkspaces: [{ name: "Coworking Tibery", type: "coworking", distanceM: 1800 }],
+    createdAt: "2026-06-15T09:00:00Z",
     ownerName: "Família Souza (gestão)",
   },
 ];

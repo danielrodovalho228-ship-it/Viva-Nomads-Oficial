@@ -6,7 +6,7 @@ import { PageTitle, Panel, StatCard } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { ResponsiveOwnerBadge } from "@/components/ui/badge";
 import { ServiceOrderNotice } from "@/components/legal-notice";
-import { useAuthStore, DEMO_USER } from "@/lib/store";
+import { useViewMode } from "@/lib/roles";
 import {
   SAMPLE_ORDERS,
   SO_CATEGORIES,
@@ -23,10 +23,12 @@ import {
 import { cn } from "@/lib/utils";
 
 export default function ServiceOrdersPage() {
-  const user = useAuthStore((s) => s.user) ?? DEMO_USER;
+  // A tela aparece nos dois menus; a visão segue o MODO ativo (não o papel de
+  // cadastro), para o conteúdo bater com o contexto em que o usuário está.
+  const { mode } = useViewMode();
   const [orders, setOrders] = useState<ServiceOrder[]>(SAMPLE_ORDERS);
 
-  if (user.role === "tenant") return <TenantView orders={orders} setOrders={setOrders} />;
+  if (mode === "tenant") return <TenantView orders={orders} setOrders={setOrders} />;
   return <OwnerView orders={orders} setOrders={setOrders} />;
 }
 

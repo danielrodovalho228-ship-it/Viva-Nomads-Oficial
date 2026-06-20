@@ -62,6 +62,7 @@ export interface Property {
   workFeatures: string[];
   nearbyWorkspaces: Workspace[];
   ownerName: string;
+  createdAt?: string; // data de cadastro (ISO) — ordenação "Adicionados recentemente"
 }
 
 /** Perfil de público-alvo exibido na home. */

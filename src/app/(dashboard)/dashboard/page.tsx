@@ -12,6 +12,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { useAuthStore, DEMO_USER } from "@/lib/store";
+import { useViewMode } from "@/lib/roles";
 import { StatCard, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { DashboardBanner } from "@/components/dashboard/banner";
 import { ButtonLink } from "@/components/ui/button";
@@ -22,10 +23,10 @@ import { ReadyToLiveBadge } from "@/components/ui/badge";
 
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user) ?? DEMO_USER;
-  const role = user.role;
+  const { mode } = useViewMode();
   const firstName = user.name.split(" ")[0];
 
-  if (role === "tenant") return <TenantDashboard name={firstName} />;
+  if (mode === "tenant") return <TenantDashboard name={firstName} />;
   return <OwnerDashboard name={firstName} />;
 }
 

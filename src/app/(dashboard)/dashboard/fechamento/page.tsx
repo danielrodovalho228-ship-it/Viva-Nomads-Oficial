@@ -240,6 +240,8 @@ export default function ClosingPage() {
         {/* ── 8.1 CANDIDATURA + VERIFICAÇÃO CAF ── */}
         {step === 0 && (
           <div className="space-y-5">
+            {/* Alinha expectativas desde o início: a decisão é do proprietário */}
+            <OwnerDecisionNotice />
             <div>
               <h2 className="font-title text-lg font-bold text-ink">Candidatura e verificação</h2>
               <p className="mt-1 text-sm text-muted">

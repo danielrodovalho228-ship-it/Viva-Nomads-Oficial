@@ -2,14 +2,14 @@
 
 import { useMemo, useState } from "react";
 import { Calculator, TrendingDown, AlertTriangle, Building2, User } from "lucide-react";
-import { simulateTax, type PersonType } from "@/lib/tax";
+import { simulateTax } from "@/lib/tax";
 import { formatBRL, cn } from "@/lib/utils";
 
 /**
  * Simulador tributário PF x PJ (educativo, não é aconselhamento fiscal).
  * Base: Reforma Tributária / LC 214/2025.
  */
-export function TaxSimulator({ onRecommend }: { onRecommend?: (p: PersonType) => void }) {
+export function TaxSimulator() {
   const [monthlyRent, setMonthlyRent] = useState(10000);
   const [propertyCount, setPropertyCount] = useState(4);
 
@@ -74,23 +74,18 @@ export function TaxSimulator({ onRecommend }: { onRecommend?: (p: PersonType) =>
         />
       </div>
 
-      {/* Economia + recomendação */}
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-surface-2 p-4">
-        <div className="flex items-center gap-2 text-sm">
-          <TrendingDown className="h-5 w-5 text-sage" />
-          <span className="text-muted">Diferença anual estimada:</span>
-          <strong className="text-forest">{formatBRL(Math.abs(r.taxSavings))}</strong>
-          <span className="text-muted">
-            a favor da {r.taxSavings > 0 ? "PJ" : "PF"}
-          </span>
-        </div>
-        <button
-          type="button"
-          onClick={() => onRecommend?.(r.recommendation)}
-          className="rounded-full bg-forest px-4 py-2 text-sm font-medium text-white hover:bg-forest-700"
-        >
-          Recomendado: {r.recommendation === "pj" ? "Pessoa Jurídica" : "Pessoa Física"}
-        </button>
+      {/* Resultado da simulação — linguagem ilustrativa, não prescritiva */}
+      <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl bg-surface-2 p-4 text-sm">
+        <TrendingDown className="h-5 w-5 shrink-0 text-sage" />
+        <span className="text-muted">
+          Nesta simulação, o cenário{" "}
+          <strong className="text-ink">
+            {r.taxSavings > 0 ? "Pessoa Jurídica" : "Pessoa Física"}
+          </strong>{" "}
+          resultaria em menor carga estimada — diferença de{" "}
+          <strong className="text-forest">{formatBRL(Math.abs(r.taxSavings))}</strong>/ano.
+          Valores estimados.
+        </span>
       </div>
 
       {r.needsNfse && (
@@ -101,10 +96,15 @@ export function TaxSimulator({ onRecommend }: { onRecommend?: (p: PersonType) =>
         </p>
       )}
 
-      <p className="mt-3 text-xs text-muted">
-        Esta é uma estimativa educativa, não é aconselhamento fiscal. Consulte um contador
-        antes de decidir. Base: Reforma Tributária / LC 214/2025.
-      </p>
+      {/* Ressalva obrigatória — visível, não é aconselhamento fiscal */}
+      <div className="mt-4 flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 p-3.5">
+        <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+        <p className="text-xs leading-relaxed text-amber-800">
+          <strong>Esta é uma simulação educativa com valores estimados.</strong> Não
+          substitui orientação de um contador. Consulte um profissional antes de decidir.
+          Base: Reforma Tributária / LC 214/2025.
+        </p>
+      </div>
     </div>
   );
 }

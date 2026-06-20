@@ -363,7 +363,7 @@ export default function AuthPage() {
                   </button>
                   {showSimulator && (
                     <div className="mt-3">
-                      <TaxSimulator onRecommend={(p) => setPersonType(p)} />
+                      <TaxSimulator />
                     </div>
                   )}
                 </div>

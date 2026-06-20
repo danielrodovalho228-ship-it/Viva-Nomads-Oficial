@@ -18,6 +18,7 @@ import {
   Briefcase,
   Tag,
   CheckCircle2,
+  PlayCircle,
 } from "lucide-react";
 import { createProperty } from "@/lib/data/actions";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
@@ -63,6 +64,7 @@ export default function NewPropertyPage() {
   const [cep, setCep] = useState("");
   const [cepLoading, setCepLoading] = useState(false);
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
+  const [videoUrl, setVideoUrl] = useState("");
   const [utilitiesMode, setUtilitiesMode] = useState<"fixed" | "real">("fixed");
   const [utilitiesEstimate, setUtilitiesEstimate] = useState(200);
   const [issuesInvoice, setIssuesInvoice] = useState(false);
@@ -149,6 +151,7 @@ export default function NewPropertyPage() {
       acceptsInsurance,
       prepFee,
       photoUrls: photos.map((p) => p.url),
+      videoUrl: videoUrl.trim() || undefined,
     });
 
     setPublishing(false);
@@ -189,6 +192,7 @@ export default function NewPropertyPage() {
         if (d.city) setCity(d.city);
         if (d.cep) setCep(d.cep);
         if (d.ownershipType) setOwnershipType(d.ownershipType);
+        if (d.videoUrl) setVideoUrl(d.videoUrl);
       }
     } catch {}
   }, []);
@@ -198,7 +202,7 @@ export default function NewPropertyPage() {
     if (approved !== true) return;
     const draft = {
       title, propertyType, description, bedrooms, bathrooms, areaM2, minPeriod, monthlyPrice,
-      furnished, petsOk, street, neighborhood, city, cep, ownershipType,
+      furnished, petsOk, street, neighborhood, city, cep, ownershipType, videoUrl,
     };
     try {
       localStorage.setItem("vivanomads-novo-draft", JSON.stringify(draft));
@@ -211,7 +215,7 @@ export default function NewPropertyPage() {
       clearTimeout(t1);
       clearTimeout(t2);
     };
-  }, [approved, title, propertyType, description, bedrooms, bathrooms, areaM2, minPeriod, monthlyPrice, furnished, petsOk, street, neighborhood, city, cep, ownershipType]);
+  }, [approved, title, propertyType, description, bedrooms, bathrooms, areaM2, minPeriod, monthlyPrice, furnished, petsOk, street, neighborhood, city, cep, ownershipType, videoUrl]);
 
   async function lookupCep(value: string) {
     const digits = value.replace(/\D/g, "");
@@ -535,6 +539,25 @@ export default function NewPropertyPage() {
 
             <div className="mt-4">
               <PhotoUploader photos={photos} onChange={setPhotos} />
+            </div>
+
+            {/* Vídeo walk-through (opcional) — reduz o atrito de alugar sem visita */}
+            <div className="mt-5 rounded-xl border border-sage-200 p-4">
+              <Labeled label="Link do vídeo do imóvel (opcional)">
+                <input
+                  className="input"
+                  type="url"
+                  inputMode="url"
+                  placeholder="Cole o link do YouTube, Vimeo ou do arquivo de vídeo"
+                  value={videoUrl}
+                  onChange={(e) => setVideoUrl(e.target.value)}
+                />
+              </Labeled>
+              <p className="mt-1.5 flex items-center gap-1.5 text-xs text-muted">
+                <PlayCircle className="h-3.5 w-3.5" />
+                Um tour em vídeo aumenta a confiança e gera um selo “Vídeo” no anúncio. Grave com o
+                celular percorrendo os cômodos.
+              </p>
             </div>
           </div>
         )}

@@ -170,4 +170,13 @@ textarea:focus-visible,
   @keyframes reveal-in {
     to { opacity: 1; transform: none; }
   }
+
+  /* Troca de modo inquilino ⇄ proprietário: fade+slide suave do contexto */
+  .mode-transition {
+    animation: mode-fade 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  @keyframes mode-fade {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: none; }
+  }
 }

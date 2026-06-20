@@ -24,10 +24,13 @@ import {
   FileText,
   Menu,
   LogOut,
+  ArrowLeftRight,
+  ArrowRight,
 } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { Avatar } from "@/components/ui/avatar";
-import { useAuthStore, DEMO_USER } from "@/lib/store";
+import { useAuthStore, DEMO_USER, type ViewMode } from "@/lib/store";
+import { useViewMode, MODE_META } from "@/lib/roles";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -70,18 +73,24 @@ const ADMIN_NAV: NavItem[] = [
   { href: "/admin", label: "Admin", icon: ShieldCheck },
 ];
 
+const NAV_BY_MODE: Record<ViewMode, NavItem[]> = { owner: OWNER_NAV, tenant: TENANT_NAV };
+
+/** Para onde o convite leva ao ativar o segundo papel. */
+const MODE_ENTRY: Record<ViewMode, string> = { owner: "/qualificar", tenant: "/buscar" };
+
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const { user, signOut } = useAuthStore();
+  const { user, signOut, setActiveMode } = useAuthStore();
+  const { mode, hasBoth } = useViewMode();
 
   // Em modo demo (sem login), exibe uma identidade coerente (A5/A6).
   const display = user ?? DEMO_USER;
-  const role = display.role;
   const plan = display.plan ?? "free";
-  let nav = role === "tenant" ? TENANT_NAV : OWNER_NAV;
-  if (role === "admin") nav = [...OWNER_NAV, ...ADMIN_NAV];
+
+  let nav = NAV_BY_MODE[mode];
+  if (display.role === "admin" && mode === "owner") nav = [...OWNER_NAV, ...ADMIN_NAV];
   // Itens de operador só aparecem no plano Gestor.
   nav = nav.filter((item) => !item.minPlan || plan === item.minPlan);
 
@@ -90,12 +99,23 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     router.push("/home");
   }
 
+  function switchTo(next: ViewMode) {
+    setActiveMode(next);
+    setOpen(false);
+    // Se a tela atual não existe no novo modo, volta para a Visão geral
+    // (evita ficar numa rota do outro papel após a troca).
+    const allowed = NAV_BY_MODE[next].some((item) => item.href === pathname);
+    if (!allowed) router.push("/dashboard");
+  }
+
+  const meta = MODE_META[mode];
+
   const sidebar = (
     <div className="flex h-full flex-col">
       <div className="flex h-16 shrink-0 items-center overflow-hidden border-b border-white/10 px-4">
         <Logo light className="max-w-full" />
       </div>
-      <nav className="flex-1 space-y-1 p-3">
+      <nav key={mode} className="mode-transition flex-1 space-y-1 p-3">
         {nav.map((item) => {
           const active = pathname === item.href;
           const Icon = item.icon;
@@ -122,7 +142,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           <Avatar name={display.name} size={36} />
           <div className="min-w-0 text-xs">
             <p className="truncate font-medium text-white">{display.name}</p>
-            <p className="text-white/60">Conta: {labelForRole(role)}</p>
+            <p className="text-white/60">Conta: {labelForRole(display.role)}</p>
           </div>
         </div>
         <button
@@ -150,7 +170,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       )}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        {/* Topbar mobile */}
+        {/* Topbar mobile (logo + menu) */}
         <div className="flex h-16 items-center justify-between border-b border-sage-200 bg-white px-4 lg:hidden print:hidden">
           <Logo />
           <button
@@ -162,9 +182,67 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           </button>
         </div>
 
-        <main className="flex-1 p-5 sm:p-8">{children}</main>
+        {/* Barra de modo: reforço permanente do papel + troca / convite */}
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-sage-200 bg-white px-5 py-2.5 sm:px-8 print:hidden">
+          <p className="flex items-center gap-2 text-sm text-muted">
+            <span className={cn("h-2 w-2 rounded-full", meta.accentDot)} aria-hidden />
+            Você está no modo{" "}
+            <span className={cn("font-semibold", meta.accentText)}>{meta.label}</span>
+          </p>
+          {hasBoth ? (
+            <ModeSwitcher mode={mode} onSwitch={switchTo} />
+          ) : (
+            <RoleInvite mode={mode} />
+          )}
+        </div>
+
+        <main key={mode} className="mode-transition flex-1 p-5 sm:p-8">
+          {children}
+        </main>
       </div>
     </div>
+  );
+}
+
+/** Botão de troca de modo, estilo Airbnb (mostra o modo atual e alterna). */
+function ModeSwitcher({ mode, onSwitch }: { mode: ViewMode; onSwitch: (m: ViewMode) => void }) {
+  const meta = MODE_META[mode];
+  return (
+    <button
+      type="button"
+      onClick={() => onSwitch(meta.other)}
+      title={`Trocar para o modo ${MODE_META[meta.other].label}`}
+      className="inline-flex items-center gap-2 rounded-full border border-sage-200 bg-white px-3.5 py-1.5 text-sm font-medium text-ink transition-colors hover:border-sage hover:bg-surface-2"
+    >
+      <span className={cn("h-2 w-2 rounded-full", meta.accentDot)} aria-hidden />
+      Modo: {meta.label}
+      <ArrowLeftRight className="h-4 w-4 text-muted" />
+    </button>
+  );
+}
+
+/** Convite de conversão para quem tem só um papel (ativa o outro). */
+function RoleInvite({ mode }: { mode: ViewMode }) {
+  const router = useRouter();
+  const activateRole = useAuthStore((s) => s.activateRole);
+  const other = MODE_META[mode].other;
+  const label =
+    other === "owner" ? "Tem um imóvel? Anuncie também" : "Procurando um imóvel? Busque também";
+
+  function accept() {
+    activateRole(other);
+    router.push(MODE_ENTRY[other]);
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={accept}
+      className="inline-flex items-center gap-1.5 rounded-full bg-forest px-3.5 py-1.5 text-sm font-medium text-white transition-colors hover:bg-forest-600"
+    >
+      {label}
+      <ArrowRight className="h-4 w-4" />
+    </button>
   );
 }
 

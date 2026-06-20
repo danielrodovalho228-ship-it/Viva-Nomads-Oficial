@@ -1,18 +1,26 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { SlidersHorizontal, ChevronDown, MapPin } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { PropertyCard } from "@/components/property-card";
 import { SearchMap } from "@/components/search-map";
 import { EmptySearchIllustration } from "@/components/illustrations";
 import { Map as MapIcon, List as ListIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, distanceKm } from "@/lib/utils";
 import { tierFromPhotoCount, searchPriority } from "@/lib/listing";
-import { LocationDatalist } from "@/lib/locations";
+import { LocationSearch } from "@/components/location-search";
+import type { GeoSuggestion } from "@/lib/integrations/geocoding";
+
+/** Raio (km) padrão ao redor de um endereço geocodificado. */
+const DEFAULT_RADIUS_KM = 10;
 
 export function SearchClient({ properties }: { properties: Property[] }) {
   const [locationQuery, setLocationQuery] = useState("");
+  // Coordenadas de um endereço escolhido no autocomplete (filtra por raio).
+  const [geoCenter, setGeoCenter] = useState<{ lat: number; lng: number } | null>(null);
+  // Raio (km) ao redor do endereço buscado — ajustável quando há endereço.
+  const [radiusKm, setRadiusKm] = useState(DEFAULT_RADIUS_KM);
   const [maxPrice, setMaxPrice] = useState(0);
   const [minBedrooms, setMinBedrooms] = useState(0);
   const [maxPeriod, setMaxPeriod] = useState(0); // período mínimo aceito <= X
@@ -25,19 +33,73 @@ export function SearchClient({ properties }: { properties: Property[] }) {
   const [filtersOpen, setFiltersOpen] = useState(false); // acordeão de filtros no mobile
   const [activeId, setActiveId] = useState<string | null>(null); // sincronia lista↔mapa
   const [mobileTab, setMobileTab] = useState<"list" | "map">("list");
-  const [sort, setSort] = useState<"relevance" | "price-asc" | "price-desc">("relevance");
+  const [sort, setSort] = useState<"relevance" | "recent" | "price-asc" | "price-desc">("relevance");
 
-  // Pré-preenche a localização vinda da busca da home (?local=...).
+  // Pula a 1ª execução do efeito de sync (no mount, com estado ainda vazio):
+  // como os setState da restauração são assíncronos, deixar o sync rodar no
+  // mount apagaria os parâmetros da URL antes do estado restaurado committar.
+  const skipNextSync = useRef(true);
+
+  // Restaura a busca da URL: rótulo (?local=), endereço (?lat=&lng=) e raio (?r=).
   useEffect(() => {
-    const local = new URLSearchParams(window.location.search).get("local");
+    const sp = new URLSearchParams(window.location.search);
+    const local = sp.get("local");
+    const lat = Number(sp.get("lat"));
+    const lng = Number(sp.get("lng"));
+    const r = Number(sp.get("r"));
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (local) setLocationQuery(local);
+    if (Number.isFinite(lat) && Number.isFinite(lng) && (lat !== 0 || lng !== 0)) {
+      setGeoCenter({ lat, lng });
+      if ([5, 10, 20].includes(r)) setRadiusKm(r);
+    }
   }, []);
+
+  // Reflete a busca atual na URL (replaceState — sem recarregar nem rolar),
+  // para o endereço e o raio serem compartilháveis / sobreviverem a um reload.
+  useEffect(() => {
+    if (skipNextSync.current) {
+      skipNextSync.current = false;
+      return;
+    }
+    const params = new URLSearchParams(window.location.search);
+    const label = locationQuery.trim();
+    if (label) params.set("local", label);
+    else params.delete("local");
+    if (geoCenter) {
+      params.set("lat", geoCenter.lat.toFixed(6));
+      params.set("lng", geoCenter.lng.toFixed(6));
+      params.set("r", String(radiusKm));
+    } else {
+      params.delete("lat");
+      params.delete("lng");
+      params.delete("r");
+    }
+    const qs = params.toString();
+    window.history.replaceState(
+      null,
+      "",
+      qs ? `${window.location.pathname}?${qs}` : window.location.pathname
+    );
+  }, [locationQuery, geoCenter, radiusKm]);
 
   const results = useMemo(() => {
     const loc = locationQuery.trim().toLowerCase();
+    // Distância calculada UMA vez por imóvel quando há endereço — reusada no
+    // filtro por raio e na ordenação por proximidade (evita recomputar o
+    // haversine N + ~2·N·log N vezes a cada digitação).
+    const dist = geoCenter
+      ? new Map(
+          properties.map((p) => [p.id, distanceKm(geoCenter.lat, geoCenter.lng, p.lat, p.lng)])
+        )
+      : null;
     let list = properties.filter((p) => {
-      if (loc && !`${p.neighborhood} ${p.city}`.toLowerCase().includes(loc)) return false;
+      // Com endereço geocodificado, filtra por raio; senão, por nome (bairro/cidade).
+      if (dist) {
+        if (dist.get(p.id)! > radiusKm) return false;
+      } else if (loc && !`${p.neighborhood} ${p.city}`.toLowerCase().includes(loc)) {
+        return false;
+      }
       if (maxPrice && p.monthlyPrice > maxPrice) return false;
       if (minBedrooms && p.bedrooms < minBedrooms) return false;
       if (maxPeriod && p.minPeriodDays > maxPeriod) return false;
@@ -51,7 +113,14 @@ export function SearchClient({ properties }: { properties: Property[] }) {
     });
     if (sort === "price-asc") list = [...list].sort((a, b) => a.monthlyPrice - b.monthlyPrice);
     else if (sort === "price-desc") list = [...list].sort((a, b) => b.monthlyPrice - a.monthlyPrice);
-    // Relevância: anúncios mais completos (mais fotos) primeiro.
+    // Adicionados recentemente: mais novos (data de cadastro) primeiro.
+    else if (sort === "recent")
+      list = [...list].sort(
+        (a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? "")
+      );
+    // Relevância com endereço: mais perto primeiro; senão, anúncios mais completos.
+    else if (dist)
+      list = [...list].sort((a, b) => dist.get(a.id)! - dist.get(b.id)!);
     else
       list = [...list].sort(
         (a, b) =>
@@ -59,7 +128,7 @@ export function SearchClient({ properties }: { properties: Property[] }) {
           searchPriority(tierFromPhotoCount(a.photos.length))
       );
     return list;
-  }, [properties, locationQuery, maxPrice, minBedrooms, maxPeriod, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly, sort]);
+  }, [properties, locationQuery, geoCenter, radiusKm, maxPrice, minBedrooms, maxPeriod, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly, sort]);
 
   const activeCount =
     (maxPrice ? 1 : 0) +
@@ -98,6 +167,7 @@ export function SearchClient({ properties }: { properties: Property[] }) {
             onChange={(v) => setSort(v as typeof sort)}
             options={[
               ["relevance", "Relevância"],
+              ["recent", "Adicionados recentemente"],
               ["price-asc", "Menor preço"],
               ["price-desc", "Maior preço"],
             ]}
@@ -110,19 +180,48 @@ export function SearchClient({ properties }: { properties: Property[] }) {
             filtersOpen ? "flex" : "hidden"
           )}
         >
-          {/* Localização com autocomplete (item 7) */}
-          <div className="flex items-center gap-2 rounded-full border border-sage-200 bg-white px-3.5 py-2">
-            <MapPin className="h-4 w-4 shrink-0 text-blue-500" />
-            <input
-              value={locationQuery}
-              onChange={(e) => setLocationQuery(e.target.value)}
-              placeholder="Cidade ou bairro"
-              list="buscar-location-list"
-              autoComplete="off"
-              className="w-36 bg-transparent text-sm text-ink outline-none placeholder:text-muted"
-            />
-            <LocationDatalist id="buscar-location-list" />
-          </div>
+          {/* Localização: geocoding de endereço (Mapbox) ou bairros por nome */}
+          <LocationSearch
+            value={locationQuery}
+            onChange={(text) => {
+              setLocationQuery(text);
+              setGeoCenter(null);
+            }}
+            onSelect={(s: GeoSuggestion) => {
+              setLocationQuery(s.label);
+              setGeoCenter({ lat: s.lat, lng: s.lng });
+            }}
+          />
+          {geoCenter && (
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-sage-200 bg-surface-2 py-1 pl-3 pr-1.5 text-sm text-ink">
+              <MapPin className="h-3.5 w-3.5 shrink-0 text-blue-500" />
+              <span className="text-muted">Raio</span>
+              <select
+                value={String(radiusKm)}
+                onChange={(e) => setRadiusKm(Number(e.target.value))}
+                aria-label="Raio de busca"
+                className="rounded-full bg-transparent py-1 pl-1 pr-0.5 font-medium text-ink outline-none focus:text-forest"
+              >
+                {[5, 10, 20].map((km) => (
+                  <option key={km} value={km}>
+                    {km} km
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => {
+                  setLocationQuery("");
+                  setGeoCenter(null);
+                  setRadiusKm(DEFAULT_RADIUS_KM);
+                }}
+                className="rounded-full px-2 py-1 font-medium text-forest hover:bg-white"
+                title="Limpar endereço"
+              >
+                limpar
+              </button>
+            </div>
+          )}
           <Select
             value={String(maxPrice)}
             onChange={(v) => setMaxPrice(Number(v))}
@@ -240,6 +339,8 @@ export function SearchClient({ properties }: { properties: Property[] }) {
               properties={results}
               activeId={activeId}
               onHover={setActiveId}
+              focus={geoCenter}
+              radiusKm={radiusKm}
               className="h-[420px] w-full lg:h-[600px]"
             />
           </div>

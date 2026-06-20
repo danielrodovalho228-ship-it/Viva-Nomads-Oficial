@@ -18,20 +18,20 @@ export const metadata: Metadata = {
     "Entenda como funciona a locação mobiliada por temporada no Viva Nomads — para inquilinos e para proprietários.",
 };
 
-const IMG = "/como-funciona";
+const IMG = "/images/como-funciona";
 
 const TENANT_STEPS = [
-  { icon: Search, img: `${IMG}/01-busque.jpg`, title: "Busque", text: "Filtre imóveis por cidade, período, orçamento e pelo selo Pronto para Morar." },
-  { icon: MessageSquare, img: `${IMG}/02-converse.jpg`, title: "Converse", text: "Fale direto com o proprietário, tire dúvidas e agende uma visita." },
-  { icon: ShieldCheck, img: `${IMG}/03-verifique.jpg`, title: "Verifique-se", text: "Faça a verificação de identidade — documento e foto — para dar segurança ao proprietário." },
-  { icon: FileSignature, img: `${IMG}/04-assine.jpg`, title: "Assine", text: "Escolha a garantia, assine o contrato digital com validade jurídica e receba as chaves." },
+  { icon: Search, img: `${IMG}/01-busque.webp`, alt: "Profissional pesquisando imóveis mobiliados no notebook", title: "Busque", text: "Encontre imóveis mobiliados por cidade, período e orçamento." },
+  { icon: MessageSquare, img: `${IMG}/02-converse.webp`, alt: "Pessoa em videochamada conversando com o proprietário", title: "Converse", text: "Fale direto com o proprietário, tire dúvidas e combine os detalhes." },
+  { icon: ShieldCheck, img: `${IMG}/03-verifique.webp`, alt: "Verificação de identidade com documento", title: "Verifique-se", text: "Confirme sua identidade uma vez e candidate-se com um clique." },
+  { icon: FileSignature, img: `${IMG}/04-assine.webp`, alt: "Entrega de chaves após a assinatura do contrato", title: "Assine", text: "Assine o contrato digital com validade jurídica e receba as chaves." },
 ];
 
 const OWNER_STEPS = [
-  { icon: ClipboardCheck, img: `${IMG}/05-qualifique.jpg`, title: "Qualifique o imóvel", text: "Passe pelo checklist de elegibilidade — a prova de que é locação por temporada regular." },
-  { icon: Award, img: `${IMG}/06-selo.jpg`, title: "Ganhe o selo", text: "Some 70+ pontos na pontuação de qualidade e conquiste o selo Pronto para Morar." },
-  { icon: Home, img: `${IMG}/07-anuncie.jpg`, title: "Anuncie", text: "Publique fotos, descrição e preço. Receba consultas de inquilinos qualificados." },
-  { icon: KeyRound, img: `${IMG}/08-feche.jpg`, title: "Feche o contrato", text: "Aprove o inquilino (a decisão é sua), gere o contrato e receba o aluguel direto." },
+  { icon: ClipboardCheck, img: `${IMG}/05-qualifique.webp`, alt: "Proprietário avaliando o imóvel com checklist", title: "Qualifique o imóvel", text: "Passe pelo checklist e mostre que seu imóvel está pronto." },
+  { icon: Award, img: `${IMG}/06-selo.webp`, alt: "Apartamento mobiliado com espaço de trabalho em casa", title: "Ganhe o selo", text: "Conquiste o selo Pronto para Morar e ganhe destaque na busca." },
+  { icon: Home, img: `${IMG}/07-anuncie.webp`, alt: "Proprietário publicando o anúncio do imóvel", title: "Anuncie", text: "Publique fotos e descrição e receba consultas de inquilinos verificados." },
+  { icon: KeyRound, img: `${IMG}/08-feche.webp`, alt: "Aperto de mão entre proprietário e inquilino", title: "Feche com segurança", text: "Você decide, gera o contrato e recebe — tudo organizado." },
 ];
 
 export default function HowItWorksPage() {
@@ -41,8 +41,8 @@ export default function HowItWorksPage() {
         <div className="container-page max-w-3xl">
           <h1 className="font-title text-4xl font-bold md:text-5xl">Como funciona</h1>
           <p className="mt-5 text-lg text-white/80">
-            Simples para quem busca, seguro para quem anuncia. Locação mobiliada por temporada
-            de 30 a 180 dias, com contrato formal e inquilino verificado.
+            Do anúncio ao contrato, com verificação e segurança em cada passo — para inquilino
+            e proprietário.
           </p>
         </div>
       </section>
@@ -75,6 +75,7 @@ function Steps({
   steps: {
     icon: React.ComponentType<{ className?: string }>;
     img: string;
+    alt: string;
     title: string;
     text: string;
   }[];
@@ -91,7 +92,7 @@ function Steps({
               className="flex flex-col overflow-hidden rounded-2xl border border-sage-200 bg-white"
             >
               {/* Imagem ilustrativa no topo (3:2), cantos arredondados em cima */}
-              <StepImage src={s.img} alt={`${i + 1}. ${s.title}`} />
+              <StepImage src={s.img} alt={s.alt} />
               <div className="flex flex-1 flex-col p-6">
                 <div className="flex items-center justify-between">
                   <div className="grid h-11 w-11 place-items-center rounded-xl bg-forest text-white">

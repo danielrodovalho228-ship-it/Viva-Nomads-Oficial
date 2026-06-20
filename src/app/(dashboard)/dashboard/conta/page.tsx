@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Lock, Bell, Trash2, Check } from "lucide-react";
 import { useAuthStore, DEMO_USER } from "@/lib/store";
+import { useViewMode } from "@/lib/roles";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { TaxSimulator } from "@/components/tax-simulator";
@@ -14,6 +15,9 @@ import { cn } from "@/lib/utils";
 export default function AccountPage() {
   // Identidade exibida — usa a sessão (ou a demo) para pré-preencher os campos.
   const user = useAuthStore((s) => s.user) ?? DEMO_USER;
+  // As seções específicas (tributação / perfil profissional) seguem o MODO
+  // ativo; o campo "Perfil" continua mostrando o papel de cadastro.
+  const { mode } = useViewMode();
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -31,14 +35,14 @@ export default function AccountPage() {
         </div>
       </Panel>
 
-      {user?.role !== "tenant" && (
+      {mode !== "tenant" && (
         <div className="mt-6">
           <h2 className="mb-3 font-title text-lg font-bold text-ink">Tributação dos aluguéis</h2>
           <TaxSimulator />
         </div>
       )}
 
-      {user?.role === "tenant" && (
+      {mode === "tenant" && (
         <Panel title="Perfil profissional" className="mt-6">
           <p className="text-sm text-muted">
             Estes dados ajudam o proprietário a conhecer você. Complementam a verificação de identidade — não
