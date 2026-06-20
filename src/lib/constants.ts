@@ -62,8 +62,8 @@ export const PLANS = [
       "Aparece na busca",
       "Recebe consultas de inquilinos",
       "Checklist de qualificação",
-      "Comissão de 12% no fechamento",
     ],
+    cost: "Comissão de 12% no fechamento",
     cta: "Começar grátis",
   },
   {
@@ -79,8 +79,8 @@ export const PLANS = [
       "Selo Pronto para Morar",
       "Destaque na busca",
       "Painel de leads e mensagens",
-      "Comissão de 10% no fechamento",
     ],
+    cost: "Comissão de 10% no fechamento",
     cta: "Assinar Essencial",
   },
   {
@@ -95,9 +95,9 @@ export const PLANS = [
       "Até 20 anúncios ativos",
       "Tudo do Essencial",
       "Prioridade máxima na busca",
-      "Geração de contrato via ZapSign",
-      "Comissão de 8% no fechamento",
+      "Contrato via ZapSign incluído",
     ],
+    cost: "Comissão de 8% no fechamento",
     cta: "Assinar Profissional",
   },
   {
@@ -111,10 +111,10 @@ export const PLANS = [
     features: [
       "Imóveis ilimitados",
       "Tudo do Profissional",
-      "Comissão escalonada por volume",
       "Gestão de carteira e múltiplos proprietários",
       "Atendimento dedicado",
     ],
+    cost: "Comissão escalonada por volume",
     cta: "Falar com vendas",
   },
 ];

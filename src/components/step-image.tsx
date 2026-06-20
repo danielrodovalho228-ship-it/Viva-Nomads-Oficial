@@ -9,7 +9,16 @@ import { useState } from "react";
  * cai para um placeholder de marca (sem imagem quebrada). Assim que a imagem
  * é enviada para /public/images/como-funciona/, aparece automaticamente.
  */
-export function StepImage({ src, alt }: { src: string; alt: string }) {
+export function StepImage({
+  src,
+  alt,
+  priority = false,
+}: {
+  src: string;
+  alt: string;
+  /** Carrega de imediato (cards acima da dobra) — evita imagem em branco. */
+  priority?: boolean;
+}) {
   const [failed, setFailed] = useState(false);
 
   if (failed) {
@@ -24,7 +33,8 @@ export function StepImage({ src, alt }: { src: string; alt: string }) {
         src={src}
         alt={alt}
         fill
-        loading="lazy"
+        priority={priority}
+        loading={priority ? "eager" : "lazy"}
         sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
         className="object-cover"
         onError={() => setFailed(true)}

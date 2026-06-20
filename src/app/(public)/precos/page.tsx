@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Check, Camera, FileSignature, BrainCircuit, BadgeCheck } from "lucide-react";
+import { Check, Wallet, Camera, FileSignature, BrainCircuit, BadgeCheck } from "lucide-react";
 import { PLANS } from "@/lib/constants";
 import { CommissionCalculator } from "./commission-calculator";
 import { ButtonLink } from "@/components/ui/button";
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 
 const ADDONS = [
   { icon: Camera, title: "Fotografia profissional", text: "Sessão de fotos do imóvel para anúncios que convertem mais." },
-  { icon: FileSignature, title: "Contrato via ZapSign", text: "Contrato de temporada gerado e assinado digitalmente, com validade jurídica." },
+  { icon: FileSignature, title: "Contrato via ZapSign", text: "Contrato de temporada gerado e assinado digitalmente, com validade jurídica.", note: "Incluído no plano Profissional" },
   { icon: BrainCircuit, title: "Verificação de identidade do inquilino", text: "Laudo com semáforo de risco: identidade, prova de vida e histórico." },
   { icon: BadgeCheck, title: "Selo de verificação", text: "Destaque de proprietário verificado para gerar mais confiança." },
 ];
@@ -70,6 +70,19 @@ export default function PricingPage() {
                 ))}
               </ul>
 
+              {/* O que você paga — custo (comissão), separado dos benefícios e
+                  sem check verde, para não disfarçar custo de benefício. */}
+              {plan.cost && (
+                <div className="mt-5 border-t border-sage-200 pt-4">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted">
+                    O que você paga
+                  </p>
+                  <p className="mt-1.5 flex items-start gap-2.5 text-sm text-ink">
+                    <Wallet className="mt-0.5 h-4 w-4 shrink-0 text-muted" /> {plan.cost}
+                  </p>
+                </div>
+              )}
+
               <ButtonLink
                 href="/dashboard/assinatura"
                 variant={plan.featured ? "gold" : "outline"}
@@ -104,6 +117,11 @@ export default function PricingPage() {
                   <Icon className="h-7 w-7 text-champagne-600" />
                   <h3 className="mt-4 font-title text-base font-bold text-ink">{a.title}</h3>
                   <p className="mt-2 text-sm text-muted">{a.text}</p>
+                  {"note" in a && a.note && (
+                    <p className="mt-2 inline-flex rounded-full bg-sage-100 px-2.5 py-1 text-xs font-medium text-forest">
+                      {a.note}
+                    </p>
+                  )}
                 </div>
               );
             })}

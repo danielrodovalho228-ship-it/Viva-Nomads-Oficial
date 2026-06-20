@@ -47,7 +47,7 @@ export default function HowItWorksPage() {
         </div>
       </section>
 
-      <Steps title="Para quem busca um imóvel" steps={TENANT_STEPS} />
+      <Steps title="Para quem busca um imóvel" steps={TENANT_STEPS} eager />
       <div className="bg-surface-2">
         <Steps title="Para proprietários" steps={OWNER_STEPS} />
       </div>
@@ -70,6 +70,7 @@ export default function HowItWorksPage() {
 function Steps({
   title,
   steps,
+  eager = false,
 }: {
   title: string;
   steps: {
@@ -79,6 +80,8 @@ function Steps({
     title: string;
     text: string;
   }[];
+  /** Carrega as imagens deste fluxo de imediato (fluxo acima da dobra). */
+  eager?: boolean;
 }) {
   return (
     <section className="container-page py-12 md:py-16">
@@ -92,7 +95,7 @@ function Steps({
               className="flex flex-col overflow-hidden rounded-2xl border border-sage-200 bg-white"
             >
               {/* Imagem ilustrativa no topo (3:2), cantos arredondados em cima */}
-              <StepImage src={s.img} alt={s.alt} />
+              <StepImage src={s.img} alt={s.alt} priority={eager} />
               <div className="flex flex-1 flex-col p-6">
                 <div className="flex items-center justify-between">
                   <div className="grid h-11 w-11 place-items-center rounded-xl bg-forest text-white">
