@@ -64,7 +64,7 @@ function circlePolygon(
  * token, cai para um placeholder de marca (pins posicionados por lat/lng
  * normalizada) — a app continua funcional em modo demonstração.
  */
-export function SearchMap(props: {
+interface SearchMapProps {
   properties: Property[];
   activeId: string | null;
   onHover: (id: string | null) => void;
@@ -73,7 +73,9 @@ export function SearchMap(props: {
   /** Raio (km) desenhado ao redor do endereço buscado. */
   radiusKm?: number;
   className?: string;
-}) {
+}
+
+export function SearchMap(props: SearchMapProps) {
   if (!TOKEN) return <SearchMapPlaceholder {...props} />;
   return <SearchMapbox {...props} />;
 }
@@ -89,14 +91,7 @@ function SearchMapbox({
   focus,
   radiusKm = 10,
   className,
-}: {
-  properties: Property[];
-  activeId: string | null;
-  onHover: (id: string | null) => void;
-  focus?: { lat: number; lng: number } | null;
-  radiusKm?: number;
-  className?: string;
-}) {
+}: SearchMapProps) {
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -311,14 +306,7 @@ function SearchMapPlaceholder({
   focus,
   radiusKm = 10,
   className,
-}: {
-  properties: Property[];
-  activeId: string | null;
-  onHover: (id: string | null) => void;
-  focus?: { lat: number; lng: number } | null;
-  radiusKm?: number;
-  className?: string;
-}) {
+}: SearchMapProps) {
   if (properties.length === 0) {
     // Sem imóveis no resultado. Se há um endereço buscado (ex.: link
     // compartilhado com raio que não cobre nenhum imóvel), ainda mostramos o

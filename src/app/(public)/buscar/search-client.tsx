@@ -85,10 +85,18 @@ export function SearchClient({ properties }: { properties: Property[] }) {
 
   const results = useMemo(() => {
     const loc = locationQuery.trim().toLowerCase();
+    // Distância calculada UMA vez por imóvel quando há endereço — reusada no
+    // filtro por raio e na ordenação por proximidade (evita recomputar o
+    // haversine N + ~2·N·log N vezes a cada digitação).
+    const dist = geoCenter
+      ? new Map(
+          properties.map((p) => [p.id, distanceKm(geoCenter.lat, geoCenter.lng, p.lat, p.lng)])
+        )
+      : null;
     let list = properties.filter((p) => {
       // Com endereço geocodificado, filtra por raio; senão, por nome (bairro/cidade).
-      if (geoCenter) {
-        if (distanceKm(geoCenter.lat, geoCenter.lng, p.lat, p.lng) > radiusKm) return false;
+      if (dist) {
+        if (dist.get(p.id)! > radiusKm) return false;
       } else if (loc && !`${p.neighborhood} ${p.city}`.toLowerCase().includes(loc)) {
         return false;
       }
@@ -111,12 +119,8 @@ export function SearchClient({ properties }: { properties: Property[] }) {
         (a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? "")
       );
     // Relevância com endereço: mais perto primeiro; senão, anúncios mais completos.
-    else if (geoCenter)
-      list = [...list].sort(
-        (a, b) =>
-          distanceKm(geoCenter.lat, geoCenter.lng, a.lat, a.lng) -
-          distanceKm(geoCenter.lat, geoCenter.lng, b.lat, b.lng)
-      );
+    else if (dist)
+      list = [...list].sort((a, b) => dist.get(a.id)! - dist.get(b.id)!);
     else
       list = [...list].sort(
         (a, b) =>
