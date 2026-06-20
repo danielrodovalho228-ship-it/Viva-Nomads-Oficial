@@ -1,0 +1,72 @@
+"use client";
+
+/**
+ * Papéis e modo ativo (rodada 19) — inquilino ⇄ proprietário.
+ *
+ * A mesma conta pode ter os dois papéis. `ViewMode` é o "mundo" em que o usuário
+ * navega agora; é separado do `role` de cadastro, que segue governando as
+ * permissões reais. Aqui ficam as regras puras de derivação (quais papéis a
+ * conta tem, qual o modo padrão, qual o modo efetivo) e os metadados de UI
+ * (rótulo e acento de cor por modo), além do hook `useViewMode`.
+ */
+
+import { useAuthStore, DEMO_USER, type SessionUser, type ViewMode } from "./store";
+
+export type { ViewMode };
+
+/** Papéis efetivos da conta. Sem flags explícitas, derivam-se do `role`. */
+export function rolesOf(user: SessionUser): { isOwner: boolean; isTenant: boolean } {
+  const isOwner = user.isOwner ?? (user.role === "owner" || user.role === "admin");
+  const isTenant = user.isTenant ?? user.role === "tenant";
+  return { isOwner, isTenant };
+}
+
+/** Modo padrão da conta: segue o papel de cadastro (admin entra como proprietário). */
+export function defaultMode(user: SessionUser): ViewMode {
+  return user.role === "tenant" ? "tenant" : "owner";
+}
+
+/**
+ * Modo efetivo: respeita a escolha do usuário (`activeMode`) desde que a conta
+ * tenha aquele papel; senão cai no modo padrão. Garante que o modo ativo nunca
+ * aponte para um papel que a conta não possui.
+ */
+export function resolveMode(user: SessionUser, activeMode: ViewMode | null): ViewMode {
+  const { isOwner, isTenant } = rolesOf(user);
+  if (activeMode === "owner" && isOwner) return "owner";
+  if (activeMode === "tenant" && isTenant) return "tenant";
+  return defaultMode(user);
+}
+
+/** Rótulo e acento de cor por modo (acento sutil, sem trocar a identidade). */
+export const MODE_META: Record<
+  ViewMode,
+  { label: string; accentText: string; accentDot: string; other: ViewMode }
+> = {
+  // Proprietário = verde (champagne); inquilino = azul (primária).
+  owner: { label: "Proprietário", accentText: "text-champagne-600", accentDot: "bg-champagne", other: "tenant" },
+  tenant: { label: "Inquilino", accentText: "text-blue-500", accentDot: "bg-blue-500", other: "owner" },
+};
+
+export interface ViewModeState {
+  mode: ViewMode;
+  isOwner: boolean;
+  isTenant: boolean;
+  hasBoth: boolean;
+}
+
+/**
+ * Hook central do modo ativo. Lê o usuário (ou a identidade demo) e o
+ * `activeMode` persistido, e devolve o modo efetivo + os papéis da conta.
+ */
+export function useViewMode(): ViewModeState {
+  const user = useAuthStore((s) => s.user) ?? DEMO_USER;
+  const activeMode = useAuthStore((s) => s.activeMode);
+  const { isOwner, isTenant } = rolesOf(user);
+  return {
+    mode: resolveMode(user, activeMode),
+    isOwner,
+    isTenant,
+    hasBoth: isOwner && isTenant,
+  };
+}
