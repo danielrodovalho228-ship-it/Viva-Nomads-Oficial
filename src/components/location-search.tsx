@@ -55,15 +55,16 @@ function LocationGeocoder({ value, onChange, onSelect }: Props) {
   const [loading, setLoading] = useState(false);
   const [highlight, setHighlight] = useState(-1);
   const boxRef = useRef<HTMLDivElement>(null);
-  // Evita refazer a busca quando o próprio onSelect atualiza o texto.
-  const justSelected = useRef(false);
+  // Rótulo escolhido no dropdown: enquanto o texto for igual a ele, não rebusca
+  // (evita reabrir as sugestões logo após a seleção). Editar o texto reativa a
+  // busca — comparar o valor, em vez de uma flag "pular próxima", também cobre o
+  // caso de o rótulo já ser idêntico ao que o usuário havia digitado.
+  const selectedLabel = useRef<string | null>(null);
 
   // Busca com debounce a cada alteração do texto (setState só no callback async).
   useEffect(() => {
-    if (justSelected.current) {
-      justSelected.current = false;
-      return;
-    }
+    if (value === selectedLabel.current) return;
+    selectedLabel.current = null;
     const q = value.trim();
     const ctrl = new AbortController();
     const t = setTimeout(async () => {
@@ -74,12 +75,13 @@ function LocationGeocoder({ value, onChange, onSelect }: Props) {
       }
       setLoading(true);
       const res = await geocodeAddress(q, ctrl.signal);
-      if (!ctrl.signal.aborted) {
-        setSuggestions(res);
-        setLoading(false);
-        setOpen(true);
-        setHighlight(-1);
-      }
+      // Libera o "Buscando…" mesmo se a requisição foi cancelada — um pedido
+      // mais novo (se houver) reativa o loading ao disparar 250ms depois.
+      setLoading(false);
+      if (ctrl.signal.aborted) return;
+      setSuggestions(res);
+      setOpen(true);
+      setHighlight(-1);
     }, 250);
     return () => {
       clearTimeout(t);
@@ -97,7 +99,7 @@ function LocationGeocoder({ value, onChange, onSelect }: Props) {
   }, []);
 
   const choose = (s: GeoSuggestion) => {
-    justSelected.current = true;
+    selectedLabel.current = s.label;
     onSelect(s);
     setOpen(false);
     setSuggestions([]);

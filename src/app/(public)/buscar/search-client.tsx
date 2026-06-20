@@ -35,9 +35,10 @@ export function SearchClient({ properties }: { properties: Property[] }) {
   const [mobileTab, setMobileTab] = useState<"list" | "map">("list");
   const [sort, setSort] = useState<"relevance" | "recent" | "price-asc" | "price-desc">("relevance");
 
-  // Já restaurou o estado da URL? Evita o efeito de sync apagar os parâmetros
-  // antes da hidratação concluir.
-  const hydrated = useRef(false);
+  // Pula a 1ª execução do efeito de sync (no mount, com estado ainda vazio):
+  // como os setState da restauração são assíncronos, deixar o sync rodar no
+  // mount apagaria os parâmetros da URL antes do estado restaurado committar.
+  const skipNextSync = useRef(true);
 
   // Restaura a busca da URL: rótulo (?local=), endereço (?lat=&lng=) e raio (?r=).
   useEffect(() => {
@@ -52,13 +53,15 @@ export function SearchClient({ properties }: { properties: Property[] }) {
       setGeoCenter({ lat, lng });
       if ([5, 10, 20].includes(r)) setRadiusKm(r);
     }
-    hydrated.current = true;
   }, []);
 
   // Reflete a busca atual na URL (replaceState — sem recarregar nem rolar),
   // para o endereço e o raio serem compartilháveis / sobreviverem a um reload.
   useEffect(() => {
-    if (!hydrated.current) return;
+    if (skipNextSync.current) {
+      skipNextSync.current = false;
+      return;
+    }
     const params = new URLSearchParams(window.location.search);
     const label = locationQuery.trim();
     if (label) params.set("local", label);

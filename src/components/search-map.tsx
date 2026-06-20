@@ -309,9 +309,39 @@ function SearchMapPlaceholder({
   className?: string;
 }) {
   if (properties.length === 0) {
+    // Sem imóveis no resultado. Se há um endereço buscado (ex.: link
+    // compartilhado com raio que não cobre nenhum imóvel), ainda mostramos o
+    // centro e o raio centralizados — sem imóveis não há escala de referência,
+    // então o círculo usa um tamanho fixo só como indicação visual.
     return (
-      <div className={cn("grid place-items-center rounded-2xl border border-line bg-surface-2 text-blue-200", className)}>
-        <MapPin className="h-10 w-10" />
+      <div
+        className={cn(
+          "relative grid place-items-center overflow-hidden rounded-2xl border border-line bg-surface-2 text-blue-200",
+          className
+        )}
+      >
+        {focus ? (
+          <>
+            <div
+              style={{
+                width: "55%",
+                aspectRatio: "1 / 1",
+                borderColor: RADIUS_COLOR,
+                backgroundColor: `${RADIUS_COLOR}14`,
+              }}
+              className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed"
+              aria-hidden
+            />
+            <div
+              className="relative z-10 grid h-7 w-7 place-items-center rounded-full border-2 border-white bg-night text-white shadow-lg ring-2 ring-champagne"
+              aria-label="Endereço buscado"
+            >
+              <MapPin className="h-4 w-4" />
+            </div>
+          </>
+        ) : (
+          <MapPin className="h-10 w-10" />
+        )}
       </div>
     );
   }
