@@ -48,7 +48,7 @@ export async function saveQualification(
       tag_home_office: tagHomeOffice(quality),
       tag_work_located: tagWorkLocated(quality),
       tag_condo_approved: tagCondoApproved(elig),
-      internet_mbps: quality.internetMbps,
+      internet_tier: quality.internetTier,
       status: eligible ? "approved" : "not_eligible",
     })
     .select("id")

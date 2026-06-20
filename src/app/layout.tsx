@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     template: "%s · Viva Nomads",
   },
   description:
-    "Locação de imóveis mobiliados por temporada de média duração (30 a 180 dias) para profissionais em transição. Não é Airbnb, não é QuintoAndar: locação mensal aceita em condomínios.",
+    "Locação de imóveis mobiliados por temporada de média duração (30 a 180 dias) para profissionais em transição. Estadia de meses, com contrato de verdade, inquilino verificado e locação mensal aceita em condomínios.",
   keywords: [
     "locação por temporada",
     "imóvel mobiliado mensal",

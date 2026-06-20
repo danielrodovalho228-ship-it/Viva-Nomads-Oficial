@@ -6,6 +6,8 @@
   especialização (trabalhar de casa, bem localizado p/ trabalho, aceito em condomínio).
 */
 
+import { type InternetTier, internetWorksForRemote } from "./internet";
+
 export interface EligibilityState {
   furnished: boolean;
   accepts30days: boolean;
@@ -22,8 +24,7 @@ export interface QualityState {
   kitchenEquipped: boolean; // 15 cozinha equipada
   beddingTowels: boolean; // 10 roupa de cama e banho
   appliancesOk: boolean; // 20 eletrodomésticos funcionando
-  internetQuality: boolean; // 15 internet de qualidade
-  internetMbps: number;
+  internetTier: InternetTier; // 15 internet (>= trabalho_remoto pontua)
   climateControl: boolean; // 10 ar-condicionado/aquecimento
   cleanConserved: boolean; // 10 limpeza e conservação
   // ── Etiqueta "Para trabalhar de casa" (home office no imóvel) ──
@@ -62,7 +63,7 @@ export function readyToLiveItems(q: QualityState) {
     { key: "kitchenEquipped", label: "Cozinha equipada", pts: 15, on: q.kitchenEquipped },
     { key: "beddingTowels", label: "Roupa de cama e banho inclusas", pts: 10, on: q.beddingTowels },
     { key: "appliancesOk", label: "Eletrodomésticos funcionando (geladeira, fogão, micro-ondas, lavar)", pts: 20, on: q.appliancesOk },
-    { key: "internetQuality", label: "Internet de qualidade", pts: 15, on: q.internetQuality },
+    { key: "internet", label: "Internet que aguenta trabalho", pts: 15, on: internetWorksForRemote(q.internetTier) },
     { key: "climateControl", label: "Ar-condicionado / aquecimento", pts: 10, on: q.climateControl },
     { key: "cleanConserved", label: "Limpeza e conservação", pts: 10, on: q.cleanConserved },
   ] as const;
@@ -78,7 +79,7 @@ export function hasReadyToLiveBadge(q: QualityState): boolean {
 
 /** Etiqueta "Para trabalhar de casa": home office completo no imóvel. */
 export function tagHomeOffice(q: QualityState): boolean {
-  return q.hasHomeOffice && q.hasDesk && q.hasChair && q.internetQuality;
+  return q.hasHomeOffice && q.hasDesk && q.hasChair && internetWorksForRemote(q.internetTier);
 }
 
 /** Etiqueta "Bem localizado para trabalho": espaços externos próximos. */
@@ -97,7 +98,8 @@ export function homeOfficeItems(q: QualityState) {
     { label: "Cômodo/escritório dedicado", on: q.hasHomeOffice },
     { label: "Mesa de trabalho adequada", on: q.hasDesk },
     { label: "Cadeira de trabalho", on: q.hasChair },
-    { label: "Internet rápida", on: q.internetQuality },
+    // Internet vem da categoria escolhida no selo base (não é um toggle aqui).
+    { label: "Internet que aguenta trabalho", on: internetWorksForRemote(q.internetTier), readonly: true },
   ];
 }
 

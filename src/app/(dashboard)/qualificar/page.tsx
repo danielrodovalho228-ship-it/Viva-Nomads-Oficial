@@ -26,6 +26,7 @@ import {
   tagCondoApproved,
   READY_TO_LIVE_THRESHOLD,
 } from "@/lib/qualification";
+import { INTERNET_TIERS, INTERNET_META, type InternetTier } from "@/lib/internet";
 import { Button } from "@/components/ui/button";
 import { ReadyToLiveBadge } from "@/components/ui/badge";
 import { saveQualification } from "@/lib/data/actions";
@@ -46,8 +47,7 @@ const initialQuality: QualityState = {
   kitchenEquipped: false,
   beddingTowels: false,
   appliancesOk: false,
-  internetQuality: false,
-  internetMbps: 0,
+  internetTier: "basica",
   climateControl: false,
   cleanConserved: false,
   hasHomeOffice: false,
@@ -267,28 +267,24 @@ export default function QualificationChecklistPage() {
 
         {/* Itens do selo base */}
         <div className="mt-6 space-y-2">
-          {readyToLiveItems(quality).map((item) => (
-            <ScoreRow
-              key={item.key}
-              label={item.label}
-              pts={item.pts}
-              on={item.on}
-              onToggle={() => toggleQuality(item.key as keyof QualityState)}
-            />
-          ))}
-          {quality.internetQuality && (
-            <div className="ml-9 mt-1 flex items-center gap-2 text-sm">
-              <span className="text-muted">Velocidade:</span>
-              <input
-                type="number"
-                min={0}
-                value={quality.internetMbps || ""}
-                onChange={(e) => setQuality((s) => ({ ...s, internetMbps: Number(e.target.value) }))}
-                className="w-24 rounded-lg border border-sage-200 px-2 py-1 outline-none focus:border-sage"
-                placeholder="Mbps"
+          {readyToLiveItems(quality).map((item) =>
+            item.key === "internet" ? (
+              <InternetTierRow
+                key={item.key}
+                value={quality.internetTier}
+                pts={item.pts}
+                on={item.on}
+                onChange={(internetTier) => setQuality((s) => ({ ...s, internetTier }))}
               />
-              <span className="text-muted">Mbps</span>
-            </div>
+            ) : (
+              <ScoreRow
+                key={item.key}
+                label={item.label}
+                pts={item.pts}
+                on={item.on}
+                onToggle={() => toggleQuality(item.key as keyof QualityState)}
+              />
+            )
           )}
         </div>
 
@@ -344,7 +340,6 @@ function homeKey(label: string): keyof QualityState {
     "Cômodo/escritório dedicado": "hasHomeOffice",
     "Mesa de trabalho adequada": "hasDesk",
     "Cadeira de trabalho": "hasChair",
-    "Internet rápida": "internetQuality",
   };
   return m[label];
 }
@@ -436,6 +431,60 @@ function ScoreRow({
   );
 }
 
+/** Internet por categoria de uso (sem Mbps). >= trabalho remoto soma os pontos. */
+function InternetTierRow({
+  value,
+  pts,
+  on,
+  onChange,
+}: {
+  value: InternetTier;
+  pts: number;
+  on: boolean;
+  onChange: (tier: InternetTier) => void;
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-xl border px-4 py-3 transition-colors",
+        on ? "border-champagne bg-champagne/10" : "border-sage-200 bg-white"
+      )}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <span className="flex items-center gap-3">
+          <span
+            className={cn(
+              "grid h-5 w-5 shrink-0 place-items-center rounded-md border",
+              on ? "border-champagne bg-champagne text-night" : "border-sage-200 bg-white"
+            )}
+          >
+            {on && <CheckCircle2 className="h-4 w-4" />}
+          </span>
+          <span className="text-sm text-ink">Internet que aguenta trabalho</span>
+        </span>
+        <span className={cn("shrink-0 text-sm font-semibold", on ? "text-champagne-600" : "text-muted")}>
+          +{pts}
+        </span>
+      </div>
+      <div className="ml-8 mt-2">
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value as InternetTier)}
+          aria-label="Categoria da internet"
+          className="w-full rounded-lg border border-sage-200 bg-white px-3 py-2 text-sm text-ink outline-none focus:border-sage"
+        >
+          {INTERNET_TIERS.map((t) => (
+            <option key={t.value} value={t.value}>
+              {t.label}
+            </option>
+          ))}
+        </select>
+        <p className="mt-1.5 text-xs text-muted">{INTERNET_META[value].description}</p>
+      </div>
+    </div>
+  );
+}
+
 function TagBlock({
   icon: Icon,
   title,
@@ -446,7 +495,7 @@ function TagBlock({
   icon: React.ComponentType<{ className?: string }>;
   title: string;
   earned: boolean;
-  items: { label: string; on: boolean }[];
+  items: { label: string; on: boolean; readonly?: boolean }[];
   onToggle: (label: string) => void;
 }) {
   return (
@@ -464,30 +513,36 @@ function TagBlock({
         )}
       </div>
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
-        {items.map((it) => (
-          <button
-            key={it.label}
-            type="button"
-            role="checkbox"
-            aria-checked={it.on}
-            aria-label={it.label}
-            onClick={() => onToggle(it.label)}
-            className={cn(
-              "flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors",
-              it.on ? "border-sage bg-sage-100 text-forest" : "border-sage-200 text-ink hover:border-sage"
-            )}
-          >
-            <span
+        {items.map((it) => {
+          const readonly = "readonly" in it && it.readonly;
+          return (
+            <button
+              key={it.label}
+              type="button"
+              role="checkbox"
+              aria-checked={it.on}
+              aria-label={it.label}
+              onClick={() => !readonly && onToggle(it.label)}
+              disabled={readonly}
+              title={readonly ? "Definida pela categoria de internet no selo base" : undefined}
               className={cn(
-                "grid h-4 w-4 shrink-0 place-items-center rounded border",
-                it.on ? "border-forest bg-forest text-white" : "border-sage-200"
+                "flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors",
+                it.on ? "border-sage bg-sage-100 text-forest" : "border-sage-200 text-ink hover:border-sage",
+                readonly && "cursor-default hover:border-sage-200"
               )}
             >
-              {it.on && <CheckCircle2 className="h-3 w-3" />}
-            </span>
-            {it.label}
-          </button>
-        ))}
+              <span
+                className={cn(
+                  "grid h-4 w-4 shrink-0 place-items-center rounded border",
+                  it.on ? "border-forest bg-forest text-white" : "border-sage-200"
+                )}
+              >
+                {it.on && <CheckCircle2 className="h-3 w-3" />}
+              </span>
+              {it.label}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

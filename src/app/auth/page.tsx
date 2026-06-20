@@ -207,8 +207,8 @@ export default function AuthPage() {
               {mode === "login" ? "Bem-vindo de volta." : "Sua nova fase começa aqui."}
             </h1>
             <p className="mt-4 max-w-md text-white/75">
-              Locação mobiliada mensal para profissionais em transição. Não é Airbnb, não é
-              QuintoAndar.
+              Locação mobiliada por temporada para profissionais em transição. Estadia de
+              meses, com contrato de verdade e inquilino verificado.
             </p>
           </div>
           <p className="text-sm text-white/50">Locação por temporada · art. 48, Lei 8.245/91</p>

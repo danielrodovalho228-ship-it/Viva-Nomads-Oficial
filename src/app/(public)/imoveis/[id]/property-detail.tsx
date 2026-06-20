@@ -22,6 +22,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import type { Property, WorkspaceType } from "@/lib/types";
+import { INTERNET_META } from "@/lib/internet";
 import { formatBRL, cn } from "@/lib/utils";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { PropertyTags, InvoiceBadge, InsuranceBadge, ResponsiveOwnerBadge } from "@/components/ui/badge";
@@ -207,13 +208,21 @@ export function PropertyDetail({
                   <h3 className="flex items-center gap-2 font-title font-bold text-ink">
                     <Wifi className="h-5 w-5 text-champagne-600" /> No imóvel
                   </h3>
-                  <ul className="mt-3 grid gap-3 sm:grid-cols-2">
-                    {property.workFeatures.map((f) => (
-                      <li key={f} className="flex items-center gap-2 text-sm text-ink">
-                        <Check className="h-4 w-4 text-champagne-600" /> {f}
-                      </li>
-                    ))}
-                  </ul>
+                  {property.internetTier && (
+                    <div className="mt-3 flex items-start gap-2 rounded-xl border border-champagne/40 bg-champagne/5 px-4 py-3 text-sm">
+                      <Wifi className="mt-0.5 h-4 w-4 shrink-0 text-champagne-600" />
+                      <span className="text-ink">{INTERNET_META[property.internetTier].anuncio}</span>
+                    </div>
+                  )}
+                  {property.workFeatures.length > 0 && (
+                    <ul className="mt-3 grid gap-3 sm:grid-cols-2">
+                      {property.workFeatures.map((f) => (
+                        <li key={f} className="flex items-center gap-2 text-sm text-ink">
+                          <Check className="h-4 w-4 text-champagne-600" /> {f}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
                 <div>
                   <h3 className="font-title font-bold text-ink">Espaços de trabalho próximos</h3>
