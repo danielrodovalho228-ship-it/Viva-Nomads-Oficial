@@ -105,7 +105,8 @@ function Calc() {
               {worthIt ? "Ganho líquido extra ao mobiliar (ano)" : "Diferença anual (ano)"}
             </p>
             <p
-              className={`mt-1 font-title text-4xl font-bold ${
+              key={r.annualUplift}
+              className={`flash-value mt-1 font-title text-4xl font-bold ${
                 worthIt ? "text-forest" : "text-red-600"
               }`}
             >
@@ -213,7 +214,9 @@ function Metric({
     <div className="rounded-2xl border border-sage-200 bg-white p-4">
       <Icon className="h-5 w-5 text-sage" />
       <p className="mt-2 text-xs text-muted">{label}</p>
-      <p className="mt-0.5 font-title text-xl font-bold text-forest">{value}</p>
+      <p key={value} className="flash-value mt-0.5 font-title text-xl font-bold text-forest">
+        {value}
+      </p>
     </div>
   );
 }

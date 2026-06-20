@@ -197,7 +197,7 @@ function DesktopMosaic({
                   className="absolute inset-0 grid place-items-center bg-night/55 text-sm font-semibold text-white"
                 >
                   <span className="inline-flex items-center gap-1.5">
-                    <Images className="h-4 w-4" /> +{n - 5} fotos
+                    <Images className="h-4 w-4" /> +{n - 5} mais
                   </span>
                 </button>
               )}
@@ -221,7 +221,7 @@ function DesktopMosaic({
         onClick={onSeeAll}
         className="absolute bottom-4 right-4 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-3.5 py-2 text-sm font-medium text-ink shadow-sm hover:bg-white"
       >
-        <Images className="h-4 w-4" /> Ver todas ({n})
+        <Images className="h-4 w-4" /> Ver todas as {n} fotos
       </button>
     </div>
   );

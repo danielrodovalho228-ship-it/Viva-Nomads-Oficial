@@ -105,8 +105,28 @@ export function PropertyDetail({
     };
   });
 
+  const citySlug = property.city
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/\s+/g, "-");
+
   return (
     <div className="container-page py-8">
+      {/* Breadcrumb (navegação + SEO) */}
+      <nav
+        aria-label="Trilha de navegação"
+        className="mb-4 flex flex-wrap items-center gap-1.5 text-sm text-muted"
+      >
+        <Link href="/home" className="hover:text-forest">Início</Link>
+        <span aria-hidden>›</span>
+        <Link href="/buscar" className="hover:text-forest">Buscar imóveis</Link>
+        <span aria-hidden>›</span>
+        <Link href={`/cidades/${citySlug}`} className="hover:text-forest">{property.city}</Link>
+        <span aria-hidden>›</span>
+        <span className="line-clamp-1 text-ink">{property.title}</span>
+      </nav>
+
       {/* Galeria adaptável (rodada 11) — sem vão vazio, mosaico/carrossel */}
       <PropertyGallery
         photos={property.photos}

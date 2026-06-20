@@ -209,9 +209,17 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         {/* Barra de modo: reforço permanente do papel + troca / convite */}
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-sage-200 bg-white px-5 py-2.5 sm:px-8 print:hidden">
           <p className="flex items-center gap-2 text-sm text-muted">
-            <span className={cn("h-2 w-2 rounded-full", meta.accentDot)} aria-hidden />
-            Você está no modo{" "}
-            <span className={cn("font-semibold", meta.accentText)}>{meta.label}</span>
+            <span className="hidden sm:inline">Você está no modo</span>
+            <span
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold",
+                meta.accentBg,
+                meta.accentText
+              )}
+            >
+              <span className={cn("h-1.5 w-1.5 rounded-full", meta.accentDot)} aria-hidden />
+              {meta.label}
+            </span>
           </p>
           {hasBoth ? (
             <ModeSwitcher mode={mode} onSwitch={switchTo} />
