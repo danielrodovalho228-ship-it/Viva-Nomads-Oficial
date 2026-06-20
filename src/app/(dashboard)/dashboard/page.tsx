@@ -24,7 +24,8 @@ import { ReadyToLiveBadge } from "@/components/ui/badge";
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user) ?? DEMO_USER;
   const { mode } = useViewMode();
-  const firstName = user.name.split(" ")[0];
+  // Saudação com o nome real; sem nome coletado, trata por "visitante" (rodada 5).
+  const firstName = user.fullName?.trim() ? user.fullName.trim().split(" ")[0] : "visitante";
 
   if (mode === "tenant") return <TenantDashboard name={firstName} />;
   return <OwnerDashboard name={firstName} />;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -78,6 +78,20 @@ const NAV_BY_MODE: Record<ViewMode, NavItem[]> = { owner: OWNER_NAV, tenant: TEN
 /** Para onde o convite leva ao ativar o segundo papel. */
 const MODE_ENTRY: Record<ViewMode, string> = { owner: "/qualificar", tenant: "/buscar" };
 
+/** Rotas exclusivas de cada papel (a verificação é compartilhada — adapta por
+ *  modo). Acessá-las por URL no modo errado redireciona para a Visão geral. */
+const OWNER_ONLY = [
+  "/qualificar",
+  "/dashboard/imoveis",
+  "/dashboard/carteira",
+  "/dashboard/viabilidade",
+  "/dashboard/leads",
+  "/dashboard/orcamentos",
+  "/dashboard/fechamento",
+  "/dashboard/assinatura",
+];
+const TENANT_ONLY = ["/dashboard/favoritos", "/dashboard/comparar", "/dashboard/buscas"];
+
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
@@ -93,6 +107,16 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   if (display.role === "admin" && mode === "owner") nav = [...OWNER_NAV, ...ADMIN_NAV];
   // Itens de operador só aparecem no plano Gestor.
   nav = nav.filter((item) => !item.minPlan || plan === item.minPlan);
+
+  // Guarda de rota por papel: acessar por URL uma tela exclusiva do OUTRO modo
+  // redireciona para a Visão geral. Rotas compartilhadas (mensagens, conta,
+  // indicações, solicitações, verificação) seguem acessíveis nos dois modos.
+  useEffect(() => {
+    const exclusive = mode === "owner" ? TENANT_ONLY : OWNER_ONLY;
+    if (exclusive.some((prefix) => pathname === prefix || pathname.startsWith(prefix + "/"))) {
+      router.replace("/dashboard");
+    }
+  }, [pathname, mode, router]);
 
   function handleSignOut() {
     signOut();
