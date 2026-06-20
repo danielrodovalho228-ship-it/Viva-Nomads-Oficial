@@ -11,8 +11,8 @@ export function Footer() {
         <div className="md:col-span-1">
           <Logo href="/home" light />
           <p className="mt-5 max-w-xs text-sm leading-relaxed text-white/60">
-            Locação mobiliada mensal (30 a 180 dias) para profissionais em transição. Não é
-            Airbnb, não é QuintoAndar.
+            Locação mobiliada por temporada (30 a 180 dias) para profissionais em transição.
+            Contrato de verdade, inquilino verificado e custos organizados.
           </p>
         </div>
 

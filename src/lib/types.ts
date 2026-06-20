@@ -1,5 +1,7 @@
 /** Tipos centrais do domínio Viva Nomads. */
 
+import type { InternetTier } from "./internet";
+
 export type UserRole = "owner" | "tenant" | "admin";
 
 export type PropertyStatus = "draft" | "active" | "paused";
@@ -60,6 +62,7 @@ export interface Property {
   photos: string[]; // placeholders por enquanto
   amenities: string[];
   workFeatures: string[];
+  internetTier?: InternetTier; // qualidade da internet por categoria de uso (rodada 20)
   nearbyWorkspaces: Workspace[];
   ownerName: string;
   createdAt?: string; // data de cadastro (ISO) — ordenação "Adicionados recentemente"

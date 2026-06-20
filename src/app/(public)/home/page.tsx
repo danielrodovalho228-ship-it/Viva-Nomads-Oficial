@@ -60,8 +60,8 @@ export default async function HomePage() {
               <span className="text-gradient-brand">nova fase</span>
             </h1>
             <p className="mt-6 max-w-xl text-lg text-white/70">
-              Locação mensal de 30 a 180 dias para profissionais em transição. Pronto para
-              morar — e para trabalhar — já no primeiro dia.
+              Apartamentos prontos para morar e trabalhar, por temporada de 30 a 180 dias.
+              Para quem chega a trabalho e quer se sentir em casa desde o primeiro dia.
             </p>
             <div className="mt-9 max-w-2xl">
               <HeroSearch />
@@ -79,9 +79,9 @@ export default async function HomePage() {
             </p>
             {/* Trust badges com ícones (1E) */}
             <div className="mt-6 grid grid-cols-3 gap-3 sm:flex sm:flex-wrap sm:items-center sm:gap-x-7">
-              <TrustItem icon={FileSignature} text="Contrato formal (art. 48)" />
-              <TrustItem icon={Sofa} text="Mobiliado e pronto" />
-              <TrustItem icon={ShieldCheck} text="Identidade verificada" />
+              <TrustItem icon={FileSignature} text="Contrato por temporada (art. 48)" />
+              <TrustItem icon={Sofa} text="Pronto para morar" />
+              <TrustItem icon={ShieldCheck} text="Inquilino verificado" />
             </div>
           </div>
 
@@ -169,8 +169,8 @@ export default async function HomePage() {
             />
             <div className="absolute -right-4 -top-4 rounded-2xl bg-gradient-brand p-[1px] shadow-xl">
               <div className="rounded-2xl bg-white px-4 py-3">
-                <p className="font-title text-2xl font-bold text-ink">300 Mbps</p>
-                <p className="text-xs text-muted">fibra dedicada</p>
+                <p className="font-title text-lg font-bold text-ink">Internet para home office</p>
+                <p className="text-xs text-muted">aguenta videochamadas pesadas</p>
               </div>
             </div>
           </div>
@@ -204,11 +204,11 @@ export default async function HomePage() {
           <div className="mx-auto max-w-2xl text-center">
             <Eyebrow light>Outra categoria</Eyebrow>
             <h2 className="mt-4 font-title font-bold text-white display-lg">
-              Não é Airbnb. Não é QuintoAndar.
+              Somos diferentes do Airbnb e do QuintoAndar.
             </h2>
             <p className="mt-5 text-lg text-white/65">
-              Locação mensal mobiliada, com contrato formal e inquilino verificado — pensada
-              para estadias de média duração.
+              Estadia de meses, com contrato de verdade, inquilino verificado e custos
+              organizados. Uma proposta para quem precisa de tempo, não de diária.
             </p>
           </div>
 
@@ -259,9 +259,9 @@ export default async function HomePage() {
 
           <div className="relative mt-16 grid gap-10 md:grid-cols-3">
             <div className="absolute left-0 right-0 top-7 hidden h-px bg-line md:block" />
-            <Step n="1" icon={Search} title="Buscar" text="Encontre imóveis mobiliados pela cidade, período e orçamento. Filtre por Pronto para Morar." />
-            <Step n="2" icon={MessageSquare} title="Conversar" text="Fale direto com o proprietário, tire dúvidas e agende a visita pela plataforma." />
-            <Step n="3" icon={FileSignature} title="Assinar contrato" text="Garantia escolhida e contrato de temporada assinado digitalmente, com validade jurídica." />
+            <Step n="1" icon={Search} title="Busque" text="Encontre imóveis mobiliados pela cidade, período e orçamento. Filtre por Pronto para Morar." />
+            <Step n="2" icon={MessageSquare} title="Converse" text="Fale direto com o proprietário, tire dúvidas e agende a visita pela plataforma." />
+            <Step n="3" icon={FileSignature} title="Assine com segurança" text="Garantia escolhida e contrato de temporada assinado digitalmente, com validade jurídica." />
           </div>
         </div>
       </section>
@@ -275,11 +275,13 @@ export default async function HomePage() {
               <div>
                 <Eyebrow light>Para proprietários</Eyebrow>
                 <h2 className="mt-4 font-title font-bold display-lg">
-                  Ganhe <span className="text-gradient-brand">~2x mais</span> que no Airbnb
+                  Menos rotatividade, menos vacância,{" "}
+                  <span className="text-gradient-brand">mais margem líquida</span>.
                 </h2>
                 <p className="mt-5 max-w-md text-white/65">
-                  Sem rotatividade, sem vacância nos meses fracos e com os custos transferidos
-                  para o inquilino. Anuncie e fale com inquilinos qualificados.
+                  Um inquilino por meses, não por dias. Sem troca a cada fim de semana, com
+                  custos de consumo organizados no contrato e inquilino verificado. Você
+                  anuncia de graça e só paga quando fecha.
                 </p>
               </div>
               <div className="flex flex-col gap-3 md:items-end">
