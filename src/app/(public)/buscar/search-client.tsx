@@ -12,13 +12,15 @@ import { tierFromPhotoCount, searchPriority } from "@/lib/listing";
 import { LocationSearch } from "@/components/location-search";
 import type { GeoSuggestion } from "@/lib/integrations/geocoding";
 
-/** Raio (km) ao redor de um endereço geocodificado. */
-const RADIUS_KM = 10;
+/** Raio (km) padrão ao redor de um endereço geocodificado. */
+const DEFAULT_RADIUS_KM = 10;
 
 export function SearchClient({ properties }: { properties: Property[] }) {
   const [locationQuery, setLocationQuery] = useState("");
   // Coordenadas de um endereço escolhido no autocomplete (filtra por raio).
   const [geoCenter, setGeoCenter] = useState<{ lat: number; lng: number } | null>(null);
+  // Raio (km) ao redor do endereço buscado — ajustável quando há endereço.
+  const [radiusKm, setRadiusKm] = useState(DEFAULT_RADIUS_KM);
   const [maxPrice, setMaxPrice] = useState(0);
   const [minBedrooms, setMinBedrooms] = useState(0);
   const [maxPeriod, setMaxPeriod] = useState(0); // período mínimo aceito <= X
@@ -45,7 +47,7 @@ export function SearchClient({ properties }: { properties: Property[] }) {
     let list = properties.filter((p) => {
       // Com endereço geocodificado, filtra por raio; senão, por nome (bairro/cidade).
       if (geoCenter) {
-        if (distanceKm(geoCenter.lat, geoCenter.lng, p.lat, p.lng) > RADIUS_KM) return false;
+        if (distanceKm(geoCenter.lat, geoCenter.lng, p.lat, p.lng) > radiusKm) return false;
       } else if (loc && !`${p.neighborhood} ${p.city}`.toLowerCase().includes(loc)) {
         return false;
       }
@@ -81,7 +83,7 @@ export function SearchClient({ properties }: { properties: Property[] }) {
           searchPriority(tierFromPhotoCount(a.photos.length))
       );
     return list;
-  }, [properties, locationQuery, geoCenter, maxPrice, minBedrooms, maxPeriod, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly, sort]);
+  }, [properties, locationQuery, geoCenter, radiusKm, maxPrice, minBedrooms, maxPeriod, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly, sort]);
 
   const activeCount =
     (maxPrice ? 1 : 0) +
@@ -146,19 +148,34 @@ export function SearchClient({ properties }: { properties: Property[] }) {
             }}
           />
           {geoCenter && (
-            <button
-              type="button"
-              onClick={() => {
-                setLocationQuery("");
-                setGeoCenter(null);
-              }}
-              className="inline-flex items-center gap-1 rounded-full border border-sage-200 bg-surface-2 px-3 py-2 text-sm text-ink"
-              title="Limpar endereço"
-            >
-              <MapPin className="h-3.5 w-3.5 text-blue-500" /> Raio de {RADIUS_KM} km
-              <span className="ml-0.5 text-muted">·</span>
-              <span className="font-medium text-forest">limpar</span>
-            </button>
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-sage-200 bg-surface-2 py-1 pl-3 pr-1.5 text-sm text-ink">
+              <MapPin className="h-3.5 w-3.5 shrink-0 text-blue-500" />
+              <span className="text-muted">Raio</span>
+              <select
+                value={String(radiusKm)}
+                onChange={(e) => setRadiusKm(Number(e.target.value))}
+                aria-label="Raio de busca"
+                className="rounded-full bg-transparent py-1 pl-1 pr-0.5 font-medium text-ink outline-none focus:text-forest"
+              >
+                {[5, 10, 20].map((km) => (
+                  <option key={km} value={km}>
+                    {km} km
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => {
+                  setLocationQuery("");
+                  setGeoCenter(null);
+                  setRadiusKm(DEFAULT_RADIUS_KM);
+                }}
+                className="rounded-full px-2 py-1 font-medium text-forest hover:bg-white"
+                title="Limpar endereço"
+              >
+                limpar
+              </button>
+            </div>
           )}
           <Select
             value={String(maxPrice)}
@@ -278,7 +295,7 @@ export function SearchClient({ properties }: { properties: Property[] }) {
               activeId={activeId}
               onHover={setActiveId}
               focus={geoCenter}
-              radiusKm={RADIUS_KM}
+              radiusKm={radiusKm}
               className="h-[420px] w-full lg:h-[600px]"
             />
           </div>
