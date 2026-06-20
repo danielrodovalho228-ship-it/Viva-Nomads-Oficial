@@ -53,6 +53,9 @@ function LocationGeocoder({ value, onChange, onSelect }: Props) {
   const [open, setOpen] = useState(false);
   const [suggestions, setSuggestions] = useState<GeoSuggestion[]>([]);
   const [loading, setLoading] = useState(false);
+  // Falha de rede/HTTP no geocoding (token inválido, offline, rate-limit) — para
+  // avisar o usuário e lembrar que a busca por nome de bairro ainda funciona.
+  const [errored, setErrored] = useState(false);
   const [highlight, setHighlight] = useState(-1);
   const boxRef = useRef<HTMLDivElement>(null);
   // Rótulo escolhido no dropdown: enquanto o texto for igual a ele, não rebusca
@@ -74,11 +77,19 @@ function LocationGeocoder({ value, onChange, onSelect }: Props) {
         return;
       }
       setLoading(true);
-      const res = await geocodeAddress(q, ctrl.signal);
+      let res: GeoSuggestion[] = [];
+      let failed = false;
+      try {
+        res = await geocodeAddress(q, ctrl.signal);
+      } catch {
+        // Inclui AbortError (cancelamento), filtrado logo abaixo.
+        failed = true;
+      }
       // Libera o "Buscando…" mesmo se a requisição foi cancelada — um pedido
       // mais novo (se houver) reativa o loading ao disparar 250ms depois.
       setLoading(false);
       if (ctrl.signal.aborted) return;
+      setErrored(failed);
       setSuggestions(res);
       setOpen(true);
       setHighlight(-1);
@@ -138,10 +149,15 @@ function LocationGeocoder({ value, onChange, onSelect }: Props) {
         />
       </div>
 
-      {open && (loading || suggestions.length > 0) && (
+      {open && (loading || suggestions.length > 0 || errored) && (
         <ul className="absolute z-30 mt-1 max-h-72 w-72 max-w-[80vw] overflow-auto rounded-2xl border border-line bg-white py-1 shadow-xl">
           {loading && suggestions.length === 0 && (
             <li className="px-3 py-2 text-sm text-muted">Buscando endereços…</li>
+          )}
+          {!loading && errored && suggestions.length === 0 && (
+            <li className="px-3 py-2 text-sm text-muted">
+              Não foi possível buscar endereços agora — tente pelo nome do bairro.
+            </li>
           )}
           {suggestions.map((s, i) => (
             <li key={s.id}>

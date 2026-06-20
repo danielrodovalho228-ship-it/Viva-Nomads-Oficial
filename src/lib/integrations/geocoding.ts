@@ -27,9 +27,12 @@ export interface GeoSuggestion {
 const PROXIMITY = "-48.262,-18.911";
 
 /**
- * Busca sugestões de endereço para `query`. Retorna [] sem token, em erro, ou
- * para consultas muito curtas. Aceita um AbortSignal para cancelar requisições
- * em voo enquanto o usuário digita.
+ * Busca sugestões de endereço para `query`. Retorna [] sem token ou para
+ * consultas muito curtas (não é "falha", é "nada a buscar"). Em erro de rede
+ * ou HTTP, LANÇA — assim quem chama distingue "nenhum resultado" de "falhou" e
+ * pode oferecer um fallback (ex.: buscar por nome do bairro). Aceita um
+ * AbortSignal para cancelar requisições em voo enquanto o usuário digita
+ * (o AbortError se propaga como qualquer outra exceção).
  */
 export async function geocodeAddress(
   query: string,
@@ -47,20 +50,15 @@ export async function geocodeAddress(
     `&limit=5` +
     `&types=address,neighborhood,locality,place,poi`;
 
-  try {
-    const res = await fetch(url, { signal });
-    if (!res.ok) return [];
-    const data = (await res.json()) as {
-      features?: { id: string; place_name: string; center: [number, number] }[];
-    };
-    return (data.features ?? []).map((f) => ({
-      id: f.id,
-      label: f.place_name,
-      lng: f.center[0],
-      lat: f.center[1],
-    }));
-  } catch {
-    // AbortError (cancelamento) ou falha de rede — silencioso, retorna vazio.
-    return [];
-  }
+  const res = await fetch(url, { signal });
+  if (!res.ok) throw new Error(`Geocoding HTTP ${res.status}`);
+  const data = (await res.json()) as {
+    features?: { id: string; place_name: string; center: [number, number] }[];
+  };
+  return (data.features ?? []).map((f) => ({
+    id: f.id,
+    label: f.place_name,
+    lng: f.center[0],
+    lat: f.center[1],
+  }));
 }

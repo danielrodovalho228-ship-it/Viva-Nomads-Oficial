@@ -156,7 +156,6 @@ function SearchMapbox({
     const list = propsRef.current;
     if (list.length === 0) return;
 
-    const bounds = new mapboxgl.LngLatBounds();
     list.forEach((p) => {
       const el = document.createElement("div");
       el.className = pinClass(p.id === activeId);
@@ -168,31 +167,46 @@ function SearchMapbox({
         .setLngLat([p.lng, p.lat])
         .addTo(map);
       markersRef.current.set(p.id, { marker, el });
-      bounds.extend([p.lng, p.lat]);
     });
-
-    // Inclui o endereço buscado no enquadramento, se houver.
-    const f = focusRef.current;
-    if (f) bounds.extend([f.lng, f.lat]);
-
-    const fit = () =>
-      map.fitBounds(bounds, { padding: 56, maxZoom: 14, duration: 0 });
-    if (map.isStyleLoaded()) fit();
-    else map.once("load", fit);
-    // activeId/focus são lidos de propósito sem entrar nas deps: o realce e o
-    // marcador de centro são tratados nos efeitos abaixo, para não reconstruir
-    // os marcadores de resultado a cada hover ou nova busca de endereço.
+    // O enquadramento (fitBounds) fica num efeito próprio keyed em [sig, focusKey]
+    // para um único ajuste de câmera — evita animações concorrentes quando lista
+    // e endereço mudam juntos (ex.: trocar o raio).
+    // activeId é lido de propósito sem entrar nas deps: o realce é tratado no
+    // efeito abaixo, para não reconstruir os marcadores a cada hover.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sig]);
 
-  // Marcador do endereço buscado (centro do raio) + círculo de raio +
-  // reenquadramento ao mudar o endereço.
+  // Enquadra os resultados (+ centro buscado) num único fitBounds sempre que o
+  // conjunto ou o endereço/raio mudam. Lê propsRef/focusRef no momento do ajuste.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const fit = () => {
+      const list = propsRef.current;
+      const f = focusRef.current;
+      if (list.length === 0 && !f) return;
+      const bounds = new mapboxgl.LngLatBounds();
+      list.forEach((p) => bounds.extend([p.lng, p.lat]));
+      if (f) bounds.extend([f.lng, f.lat]);
+      map.fitBounds(bounds, { padding: 56, maxZoom: 14, duration: 300 });
+    };
+    if (map.isStyleLoaded()) fit();
+    else map.once("load", fit);
+  }, [sig, focusKey]);
+
+  // Marcador do endereço buscado (centro do raio) + círculo de raio.
+  // O enquadramento é tratado pelo efeito de fit acima.
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
-    // Desenha/atualiza o círculo de raio (cria a camada na 1ª vez).
+    // Se o estilo ainda não carregou, o desenho é adiado para o evento "load".
+    // `cancelled` (via cleanup) impede um drawRadius de execução anterior — com
+    // `focus` obsoleto — de desenhar um círculo fantasma depois de o efeito
+    // ter rodado de novo com outro endereço (ou nenhum).
+    let cancelled = false;
     const drawRadius = () => {
+      if (cancelled) return;
       const data: GeoJSON.FeatureCollection = {
         type: "FeatureCollection",
         features: focus ? [circlePolygon(focus.lng, focus.lat, radiusKm)] : [],
@@ -227,26 +241,23 @@ function SearchMapbox({
 
     focusMarkerRef.current?.remove();
     focusMarkerRef.current = null;
-    if (!focus) return;
+    if (focus) {
+      const el = document.createElement("div");
+      el.className =
+        "grid h-7 w-7 place-items-center rounded-full border-2 border-white bg-night text-white shadow-lg ring-2 ring-champagne";
+      el.setAttribute("aria-label", "Endereço buscado");
+      el.innerHTML =
+        '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"/></svg>';
+      focusMarkerRef.current = new mapboxgl.Marker({ element: el })
+        .setLngLat([focus.lng, focus.lat])
+        .addTo(map);
+    }
 
-    const el = document.createElement("div");
-    el.className =
-      "grid h-7 w-7 place-items-center rounded-full border-2 border-white bg-night text-white shadow-lg ring-2 ring-champagne";
-    el.setAttribute("aria-label", "Endereço buscado");
-    el.innerHTML =
-      '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"/></svg>';
-    focusMarkerRef.current = new mapboxgl.Marker({ element: el })
-      .setLngLat([focus.lng, focus.lat])
-      .addTo(map);
-
-    // Reenquadra para mostrar centro + resultados (ou só o centro, se vazio).
-    const bounds = new mapboxgl.LngLatBounds();
-    bounds.extend([focus.lng, focus.lat]);
-    propsRef.current.forEach((p) => bounds.extend([p.lng, p.lat]));
-    const fit = () =>
-      map.fitBounds(bounds, { padding: 56, maxZoom: 14, duration: 300 });
-    if (map.isStyleLoaded()) fit();
-    else map.once("load", fit);
+    return () => {
+      cancelled = true;
+    };
+    // focus/radiusKm são lidos via focusKey (que os resume); deps explícitas
+    // reabririam o efeito sem necessidade.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusKey]);
 
