@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { SlidersHorizontal, ChevronDown, MapPin } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { PropertyCard } from "@/components/property-card";
@@ -35,12 +35,50 @@ export function SearchClient({ properties }: { properties: Property[] }) {
   const [mobileTab, setMobileTab] = useState<"list" | "map">("list");
   const [sort, setSort] = useState<"relevance" | "recent" | "price-asc" | "price-desc">("relevance");
 
-  // Pré-preenche a localização vinda da busca da home (?local=...).
+  // Já restaurou o estado da URL? Evita o efeito de sync apagar os parâmetros
+  // antes da hidratação concluir.
+  const hydrated = useRef(false);
+
+  // Restaura a busca da URL: rótulo (?local=), endereço (?lat=&lng=) e raio (?r=).
   useEffect(() => {
-    const local = new URLSearchParams(window.location.search).get("local");
+    const sp = new URLSearchParams(window.location.search);
+    const local = sp.get("local");
+    const lat = Number(sp.get("lat"));
+    const lng = Number(sp.get("lng"));
+    const r = Number(sp.get("r"));
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (local) setLocationQuery(local);
+    if (Number.isFinite(lat) && Number.isFinite(lng) && (lat !== 0 || lng !== 0)) {
+      setGeoCenter({ lat, lng });
+      if ([5, 10, 20].includes(r)) setRadiusKm(r);
+    }
+    hydrated.current = true;
   }, []);
+
+  // Reflete a busca atual na URL (replaceState — sem recarregar nem rolar),
+  // para o endereço e o raio serem compartilháveis / sobreviverem a um reload.
+  useEffect(() => {
+    if (!hydrated.current) return;
+    const params = new URLSearchParams(window.location.search);
+    const label = locationQuery.trim();
+    if (label) params.set("local", label);
+    else params.delete("local");
+    if (geoCenter) {
+      params.set("lat", geoCenter.lat.toFixed(6));
+      params.set("lng", geoCenter.lng.toFixed(6));
+      params.set("r", String(radiusKm));
+    } else {
+      params.delete("lat");
+      params.delete("lng");
+      params.delete("r");
+    }
+    const qs = params.toString();
+    window.history.replaceState(
+      null,
+      "",
+      qs ? `${window.location.pathname}?${qs}` : window.location.pathname
+    );
+  }, [locationQuery, geoCenter, radiusKm]);
 
   const results = useMemo(() => {
     const loc = locationQuery.trim().toLowerCase();
