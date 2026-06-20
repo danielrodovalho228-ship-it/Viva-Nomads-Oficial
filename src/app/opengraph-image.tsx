@@ -54,7 +54,7 @@ export default function OG() {
             Moradia mobiliada para a sua nova fase
           </div>
           <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 30, marginTop: 20 }}>
-            Locação mensal de 30 a 180 dias · não é Airbnb, não é QuintoAndar
+            Locação por temporada de 30 a 180 dias · contrato de verdade · inquilino verificado
           </div>
         </div>
 
