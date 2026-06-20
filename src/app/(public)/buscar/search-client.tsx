@@ -278,6 +278,7 @@ export function SearchClient({ properties }: { properties: Property[] }) {
               activeId={activeId}
               onHover={setActiveId}
               focus={geoCenter}
+              radiusKm={RADIUS_KM}
               className="h-[420px] w-full lg:h-[600px]"
             />
           </div>

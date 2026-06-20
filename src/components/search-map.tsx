@@ -33,6 +33,31 @@ const pinClass = (active: boolean) =>
       : "z-10 bg-forest text-white"
   );
 
+// Cor primária de marca (forest) para o traçado do raio.
+const RADIUS_COLOR = "#143c8c";
+const RADIUS_SRC = "viva-radius";
+const RADIUS_FILL = "viva-radius-fill";
+const RADIUS_LINE = "viva-radius-line";
+
+/** Polígono que aproxima um círculo de `radiusKm` ao redor de (lng,lat). */
+function circlePolygon(
+  lng: number,
+  lat: number,
+  radiusKm: number,
+  steps = 64
+): GeoJSON.Feature<GeoJSON.Polygon> {
+  const ring: [number, number][] = [];
+  const earth = 6371; // km
+  const lat0 = (lat * Math.PI) / 180;
+  const degLat = (radiusKm / earth) * (180 / Math.PI);
+  const degLng = degLat / Math.max(Math.cos(lat0), 1e-6);
+  for (let i = 0; i <= steps; i++) {
+    const t = (i / steps) * 2 * Math.PI;
+    ring.push([lng + degLng * Math.cos(t), lat + degLat * Math.sin(t)]);
+  }
+  return { type: "Feature", properties: {}, geometry: { type: "Polygon", coordinates: [ring] } };
+}
+
 /**
  * Mapa de resultados com pins de preço interativos e sincronia lista↔mapa
  * (rodada 11). Com NEXT_PUBLIC_MAPBOX_TOKEN renderiza o Mapbox GL real; sem o
@@ -45,6 +70,8 @@ export function SearchMap(props: {
   onHover: (id: string | null) => void;
   /** Endereço buscado (geocoding) — centro do raio, recebe um marcador próprio. */
   focus?: { lat: number; lng: number } | null;
+  /** Raio (km) desenhado ao redor do endereço buscado. */
+  radiusKm?: number;
   className?: string;
 }) {
   if (!TOKEN) return <SearchMapPlaceholder {...props} />;
@@ -60,12 +87,14 @@ function SearchMapbox({
   activeId,
   onHover,
   focus,
+  radiusKm = 10,
   className,
 }: {
   properties: Property[];
   activeId: string | null;
   onHover: (id: string | null) => void;
   focus?: { lat: number; lng: number } | null;
+  radiusKm?: number;
   className?: string;
 }) {
   const router = useRouter();
@@ -93,8 +122,8 @@ function SearchMapbox({
   // Assinatura estável do conjunto de resultados (ids), para só reconstruir os
   // marcadores quando a lista muda de fato — e não a cada re-render do pai.
   const sig = properties.map((p) => p.id).join("|");
-  // Assinatura do centro buscado (geocoding), null quando não há endereço.
-  const focusKey = focus ? `${focus.lat},${focus.lng}` : "";
+  // Assinatura do centro buscado (geocoding) + raio, vazia quando não há endereço.
+  const focusKey = focus ? `${focus.lat},${focus.lng},${radiusKm}` : "";
 
   // Inicializa o mapa uma única vez.
   useEffect(() => {
@@ -156,10 +185,45 @@ function SearchMapbox({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sig]);
 
-  // Marcador do endereço buscado (centro do raio) + reenquadramento ao mudar.
+  // Marcador do endereço buscado (centro do raio) + círculo de raio +
+  // reenquadramento ao mudar o endereço.
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
+
+    // Desenha/atualiza o círculo de raio (cria a camada na 1ª vez).
+    const drawRadius = () => {
+      const data: GeoJSON.FeatureCollection = {
+        type: "FeatureCollection",
+        features: focus ? [circlePolygon(focus.lng, focus.lat, radiusKm)] : [],
+      };
+      const src = map.getSource(RADIUS_SRC) as mapboxgl.GeoJSONSource | undefined;
+      if (src) {
+        src.setData(data);
+        return;
+      }
+      if (!focus) return;
+      map.addSource(RADIUS_SRC, { type: "geojson", data });
+      map.addLayer({
+        id: RADIUS_FILL,
+        type: "fill",
+        source: RADIUS_SRC,
+        paint: { "fill-color": RADIUS_COLOR, "fill-opacity": 0.08 },
+      });
+      map.addLayer({
+        id: RADIUS_LINE,
+        type: "line",
+        source: RADIUS_SRC,
+        paint: {
+          "line-color": RADIUS_COLOR,
+          "line-width": 1.5,
+          "line-opacity": 0.5,
+          "line-dasharray": [2, 2],
+        },
+      });
+    };
+    if (map.isStyleLoaded()) drawRadius();
+    else map.once("load", drawRadius);
 
     focusMarkerRef.current?.remove();
     focusMarkerRef.current = null;
@@ -234,12 +298,14 @@ function SearchMapPlaceholder({
   activeId,
   onHover,
   focus,
+  radiusKm = 10,
   className,
 }: {
   properties: Property[];
   activeId: string | null;
   onHover: (id: string | null) => void;
   focus?: { lat: number; lng: number } | null;
+  radiusKm?: number;
   className?: string;
 }) {
   if (properties.length === 0) {
@@ -262,6 +328,13 @@ function SearchMapPlaceholder({
 
   const activeProp = properties.find((p) => p.id === activeId) ?? null;
 
+  // Diâmetro do raio em % do quadro (projeção linear → vira elipse, como o mapa
+  // real distorce longe do equador). km → graus → fração do span exibido.
+  const degLat = radiusKm / 111.19;
+  const degLng = degLat / Math.max(Math.cos((focus?.lat ?? 0) * Math.PI / 180), 1e-6);
+  const radiusW = focus ? (2 * degLng / spanLng) * 80 : 0;
+  const radiusH = focus ? (2 * degLat / spanLat) * 80 : 0;
+
   return (
     <div
       className={cn(
@@ -278,6 +351,22 @@ function SearchMapPlaceholder({
           backgroundSize: "40px 40px",
         }}
       />
+
+      {/* Círculo de raio ao redor do endereço buscado */}
+      {focus && (
+        <div
+          style={{
+            left: `${posX(focus.lng)}%`,
+            top: `${posY(focus.lat)}%`,
+            width: `${radiusW}%`,
+            height: `${radiusH}%`,
+            borderColor: RADIUS_COLOR,
+            backgroundColor: `${RADIUS_COLOR}14`, // ~8% de opacidade
+          }}
+          className="pointer-events-none absolute z-[1] -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed"
+          aria-hidden
+        />
+      )}
 
       {/* Centro do endereço buscado (geocoding) */}
       {focus && (
