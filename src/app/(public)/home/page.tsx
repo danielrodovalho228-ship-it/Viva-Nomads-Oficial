@@ -5,7 +5,6 @@ import {
   Users,
   Laptop,
   Wifi,
-  Coffee,
   Building2,
   Search,
   MessageSquare,
@@ -97,7 +96,7 @@ export default async function HomePage() {
               <div className="absolute -bottom-5 -left-5 hidden rounded-2xl bg-white p-4 shadow-xl sm:block">
                 <ReadyToLiveBadge />
                 <p className="mt-2 max-w-[12rem] text-xs text-muted">
-                  Home office, internet fibra e coworkings mapeados por perto.
+                  Home office, internet boa para o trabalho e coworkings na região.
                 </p>
               </div>
             </div>
@@ -106,7 +105,7 @@ export default async function HomePage() {
       </section>
 
       {/* ───────── PARA QUEM É (linhas editoriais alternadas) ───────── */}
-      <section className="bg-surface py-14 md:py-20">
+      <section className="bg-surface py-12 md:py-20">
         <div className="container-page">
           <div className="max-w-2xl">
             <Eyebrow>Para quem é</Eyebrow>
@@ -115,7 +114,7 @@ export default async function HomePage() {
             </h2>
           </div>
 
-          <div className="mt-14 flex flex-col gap-px overflow-hidden rounded-3xl border border-line bg-line">
+          <div className="mt-8 md:mt-12 flex flex-col gap-px overflow-hidden rounded-3xl border border-line bg-line">
             {PERSONAS.map((p, i) => {
               const Icon = PERSONA_ICONS[p.icon] ?? Briefcase;
               return (
@@ -158,8 +157,8 @@ export default async function HomePage() {
       </section>
 
       {/* ───────── PRONTO PARA TRABALHO (spotlight) ───────── */}
-      <section className="bg-surface-2 py-14 md:py-20">
-        <div className="container-page grid items-center gap-14 lg:grid-cols-2">
+      <section className="bg-surface-2 py-12 md:py-20">
+        <div className="container-page grid items-center gap-10 lg:grid-cols-2">
           <div className="relative order-2 lg:order-1">
             <BrandImage
               src={PHOTOS.homeOffice}
@@ -190,16 +189,15 @@ export default async function HomePage() {
               <SpecTag kind="work_located" />
             </div>
             <ul className="mt-8 space-y-5">
-              <WorkFeature icon={Wifi} title="Home office no imóvel" text="Cômodo dedicado, mesa, cadeira e internet fibra de qualidade." />
-              <WorkFeature icon={Building2} title="Coworkings próximos" text="Mapeamos coworkings e salas de reunião perto do imóvel." />
-              <WorkFeature icon={Coffee} title="Cafés de trabalho" text="Espaços para trabalhar a menos de 1 km, exibidos na página." />
+              <WorkFeature icon={Wifi} title="Home office no imóvel" text="Cômodo dedicado, mesa, cadeira e internet boa para o trabalho — declarados pelo proprietário. É o que sustenta a etiqueta Para trabalhar de casa." />
+              <WorkFeature icon={Building2} title="Coworkings e cafés na região" text="A vizinhança costuma ter espaços de trabalho — você confere a posição no mapa do imóvel." />
             </ul>
           </div>
         </div>
       </section>
 
       {/* ───────── NÃO É AIRBNB / QUINTOANDAR (tabela comparativa) ───────── */}
-      <section className="bg-night py-20 text-white md:py-28">
+      <section className="bg-night py-12 text-white md:py-20">
         <div className="container-page">
           <div className="mx-auto max-w-2xl text-center">
             <Eyebrow light>Outra categoria</Eyebrow>
@@ -248,7 +246,7 @@ export default async function HomePage() {
       </section>
 
       {/* ───────── COMO FUNCIONA (passos com linha conectora) ───────── */}
-      <section className="bg-surface py-14 md:py-20">
+      <section className="bg-surface py-12 md:py-20">
         <div className="container-page">
           <div className="max-w-2xl">
             <Eyebrow>Como funciona</Eyebrow>
@@ -257,7 +255,7 @@ export default async function HomePage() {
             </h2>
           </div>
 
-          <div className="relative mt-16 grid gap-10 md:grid-cols-3">
+          <div className="relative mt-10 md:mt-12 grid gap-10 md:grid-cols-3">
             <div className="absolute left-0 right-0 top-7 hidden h-px bg-line md:block" />
             <Step n="1" icon={Search} title="Busque" text="Encontre imóveis mobiliados pela cidade, período e orçamento. Filtre por Pronto para Morar." />
             <Step n="2" icon={MessageSquare} title="Converse" text="Fale direto com o proprietário, tire dúvidas e agende a visita pela plataforma." />
@@ -267,7 +265,7 @@ export default async function HomePage() {
       </section>
 
       {/* ───────── FAIXA PROPRIETÁRIOS (preto de impacto) ───────── */}
-      <section className="bg-surface pb-20 md:pb-28">
+      <section className="bg-surface py-12 md:py-20">
         <div className="container-page">
           <div className="relative overflow-hidden rounded-3xl bg-night px-8 py-14 text-white md:px-16 md:py-20">
             <div className="pointer-events-none absolute -right-20 -top-20 h-80 w-80 rounded-full bg-gradient-brand opacity-30 blur-3xl" />
@@ -298,7 +296,7 @@ export default async function HomePage() {
       </section>
 
       {/* ───────── IMÓVEIS EM DESTAQUE ───────── */}
-      <section className="bg-surface-2 py-14 md:py-20">
+      <section className="bg-surface-2 py-12 md:py-20">
         <div className="container-page">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div className="max-w-xl">
@@ -314,7 +312,7 @@ export default async function HomePage() {
               Ver todos os imóveis <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
-          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-8 md:mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {featured.map((p) => (
               <PropertyCard key={p.id} property={p} />
             ))}
