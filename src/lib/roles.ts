@@ -41,11 +41,11 @@ export function resolveMode(user: SessionUser, activeMode: ViewMode | null): Vie
 /** Rótulo e acento de cor por modo (acento sutil, sem trocar a identidade). */
 export const MODE_META: Record<
   ViewMode,
-  { label: string; accentText: string; accentDot: string; other: ViewMode }
+  { label: string; accentText: string; accentDot: string; accentBg: string; other: ViewMode }
 > = {
   // Proprietário = verde (champagne); inquilino = azul (primária).
-  owner: { label: "Proprietário", accentText: "text-champagne-600", accentDot: "bg-champagne", other: "tenant" },
-  tenant: { label: "Inquilino", accentText: "text-blue-500", accentDot: "bg-blue-500", other: "owner" },
+  owner: { label: "Proprietário", accentText: "text-champagne-600", accentDot: "bg-champagne", accentBg: "bg-champagne/15", other: "tenant" },
+  tenant: { label: "Inquilino", accentText: "text-blue-500", accentDot: "bg-blue-500", accentBg: "bg-blue-50", other: "owner" },
 };
 
 export interface ViewModeState {

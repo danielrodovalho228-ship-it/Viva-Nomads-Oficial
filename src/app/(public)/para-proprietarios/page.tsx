@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { TrendingUp, FileSignature, Receipt, ShieldCheck, Check, ArrowRight } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { BrandImage } from "@/components/brand-image";
@@ -25,6 +26,13 @@ export default function ForLandlordsPage() {
               verificado. Menos entra-e-sai, menos vacância nos meses fracos e com água, luz,
               condomínio e IPTU que podem ser transferidos ao inquilino conforme o contrato.
             </p>
+            <p className="mt-4 text-white/90">
+              <strong>Anuncie de graça.</strong> Pague uma comissão apenas quando fechar —{" "}
+              <Link href="/precos" className="font-medium text-green-300 underline-offset-2 hover:underline">
+                ver planos e comissões
+              </Link>
+              .
+            </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <ButtonLink href="/qualificar" variant="gold" size="lg">
                 Anunciar meu imóvel <ArrowRight className="h-4 w-4" />
@@ -48,7 +56,7 @@ export default function ForLandlordsPage() {
       <section className="container-page py-12 md:py-16">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="font-title text-3xl font-bold text-ink md:text-4xl">
-            Mais margem que a locação por curtíssimo prazo
+            Como o modelo de média temporada reduz seus custos
           </h2>
           <p className="mt-4 text-lg text-muted">
             O modelo de temporada de média duração reduz os maiores custos do aluguel por

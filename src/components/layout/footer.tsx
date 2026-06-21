@@ -20,7 +20,7 @@ export function Footer() {
           <FooterLink href="/buscar">Buscar imóveis</FooterLink>
           <FooterLink href="/como-funciona">Como funciona</FooterLink>
           <FooterLink href="/para-proprietarios">Para proprietários</FooterLink>
-          <FooterLink href="/precos">Planos e preços</FooterLink>
+          <FooterLink href="/precos">Planos</FooterLink>
         </FooterCol>
 
         <FooterCol title="Cidades">

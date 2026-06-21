@@ -8,7 +8,33 @@ import { OwnerDecisionNotice } from "@/components/legal-notice";
 import { VerificationBadge } from "@/components/verification-badge";
 import { TRAFFIC_LIGHT_META, type CafResult } from "@/lib/closing";
 import { useAuthStore } from "@/lib/store";
+import { useViewMode } from "@/lib/roles";
 import { cn } from "@/lib/utils";
+
+/** Copy da verificação por papel ativo: inquilino se candidata, proprietário
+ *  gera confiança. (Sem jargão "CAF" — rodada 13.) */
+const VERIFY_COPY = {
+  tenant: {
+    title: "Inquilino Verificado",
+    subtitle: "Verifique uma vez e candidate-se com um clique em qualquer imóvel.",
+    heading: "Crie seu passaporte de locação",
+    body: "para dar segurança à negociação. Depois, o selo Inquilino Verificado acompanha você em todas as candidaturas — sem refazer a cada imóvel.",
+    badge: "Inquilino Verificado",
+    button: "Verificar identidade como inquilino",
+    ctaTitle: "Candidatura com um clique ativada",
+    ctaBody: "Agora, ao encontrar um imóvel, basta clicar em Candidatar-se: enviamos seu laudo (semáforo) e uma mensagem ao proprietário automaticamente.",
+  },
+  owner: {
+    title: "Proprietário Verificado",
+    subtitle: "Verifique seu perfil para gerar mais confiança e converter mais leads.",
+    heading: "Construa a confiança do seu anúncio",
+    body: "para dar segurança à negociação. O selo Proprietário Verificado aparece nos seus anúncios e ajuda inquilinos a confiarem mais na sua oferta.",
+    badge: "Proprietário Verificado",
+    button: "Verificar meu perfil de proprietário",
+    ctaTitle: "Selo de confiança ativado",
+    ctaBody: "Seu selo Proprietário Verificado passa a aparecer nos seus anúncios — mais confiança para o inquilino e melhor conversão dos seus leads.",
+  },
+} as const;
 
 /**
  * Perfil de Inquilino Verificado (Atualização 4.1/4.2).
@@ -17,6 +43,8 @@ import { cn } from "@/lib/utils";
  */
 export default function VerificationPage() {
   const user = useAuthStore((s) => s.user);
+  const { mode } = useViewMode();
+  const C = VERIFY_COPY[mode];
   const [result, setResult] = useState<CafResult | null>(null);
   const [validUntil, setValidUntil] = useState("");
   const [loading, setLoading] = useState(false);
@@ -39,23 +67,16 @@ export default function VerificationPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <PageTitle
-        title="Inquilino Verificado"
-        subtitle="Verifique uma vez e candidate-se com um clique em qualquer imóvel."
-      />
+      <PageTitle title={C.title} subtitle={C.subtitle} />
 
       {!result ? (
         <Panel className="text-center">
           <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-sage-100">
             <ShieldCheck className="h-8 w-8 text-forest" />
           </div>
-          <h2 className="mt-4 font-title text-xl font-bold text-ink">
-            Crie seu passaporte de locação
-          </h2>
+          <h2 className="mt-4 font-title text-xl font-bold text-ink">{C.heading}</h2>
           <p className="mx-auto mt-2 max-w-md text-muted">
-            Confirmamos sua <strong>identidade</strong> (documento + foto) para dar segurança à
-            negociação. Depois, o selo <strong>Inquilino Verificado</strong> acompanha você em
-            todas as candidaturas — sem refazer a cada imóvel.
+            Confirmamos sua <strong>identidade</strong> (documento + foto) {C.body}
           </p>
           <div className="mt-4 flex justify-center">
             <VerificationBadge />
@@ -74,7 +95,7 @@ export default function VerificationPage() {
 
           <Button variant="gold" className="mt-6" onClick={verify} disabled={loading}>
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-            {loading ? "Verificando..." : "Iniciar verificação de identidade"}
+            {loading ? "Verificando..." : C.button}
           </Button>
         </Panel>
       ) : (
@@ -87,7 +108,7 @@ export default function VerificationPage() {
                 </span>
                 <div>
                   <h2 className="font-title text-lg font-bold text-ink">
-                    Inquilino Verificado {TRAFFIC_LIGHT_META[result.light].emoji}
+                    {C.badge} {TRAFFIC_LIGHT_META[result.light].emoji}
                   </h2>
                   <p className="text-sm text-muted">
                     {result.demo
@@ -119,11 +140,8 @@ export default function VerificationPage() {
           <Panel className="flex items-start gap-3 bg-forest text-white">
             <Zap className="mt-0.5 h-5 w-5 shrink-0 text-champagne" />
             <div>
-              <h3 className="font-title font-bold">Candidatura com um clique ativada</h3>
-              <p className="text-sm text-white/80">
-                Agora, ao encontrar um imóvel, basta clicar em <strong>Candidatar-se</strong>:
-                enviamos seu laudo (semáforo) e uma mensagem ao proprietário automaticamente.
-              </p>
+              <h3 className="font-title font-bold">{C.ctaTitle}</h3>
+              <p className="text-sm text-white/80">{C.ctaBody}</p>
             </div>
           </Panel>
 

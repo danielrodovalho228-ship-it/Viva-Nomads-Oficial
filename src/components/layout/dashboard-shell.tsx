@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -78,6 +78,20 @@ const NAV_BY_MODE: Record<ViewMode, NavItem[]> = { owner: OWNER_NAV, tenant: TEN
 /** Para onde o convite leva ao ativar o segundo papel. */
 const MODE_ENTRY: Record<ViewMode, string> = { owner: "/qualificar", tenant: "/buscar" };
 
+/** Rotas exclusivas de cada papel (a verificação é compartilhada — adapta por
+ *  modo). Acessá-las por URL no modo errado redireciona para a Visão geral. */
+const OWNER_ONLY = [
+  "/qualificar",
+  "/dashboard/imoveis",
+  "/dashboard/carteira",
+  "/dashboard/viabilidade",
+  "/dashboard/leads",
+  "/dashboard/orcamentos",
+  "/dashboard/fechamento",
+  "/dashboard/assinatura",
+];
+const TENANT_ONLY = ["/dashboard/favoritos", "/dashboard/comparar", "/dashboard/buscas"];
+
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
@@ -93,6 +107,16 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   if (display.role === "admin" && mode === "owner") nav = [...OWNER_NAV, ...ADMIN_NAV];
   // Itens de operador só aparecem no plano Gestor.
   nav = nav.filter((item) => !item.minPlan || plan === item.minPlan);
+
+  // Guarda de rota por papel: acessar por URL uma tela exclusiva do OUTRO modo
+  // redireciona para a Visão geral. Rotas compartilhadas (mensagens, conta,
+  // indicações, solicitações, verificação) seguem acessíveis nos dois modos.
+  useEffect(() => {
+    const exclusive = mode === "owner" ? TENANT_ONLY : OWNER_ONLY;
+    if (exclusive.some((prefix) => pathname === prefix || pathname.startsWith(prefix + "/"))) {
+      router.replace("/dashboard");
+    }
+  }, [pathname, mode, router]);
 
   function handleSignOut() {
     signOut();
@@ -185,9 +209,17 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         {/* Barra de modo: reforço permanente do papel + troca / convite */}
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-sage-200 bg-white px-5 py-2.5 sm:px-8 print:hidden">
           <p className="flex items-center gap-2 text-sm text-muted">
-            <span className={cn("h-2 w-2 rounded-full", meta.accentDot)} aria-hidden />
-            Você está no modo{" "}
-            <span className={cn("font-semibold", meta.accentText)}>{meta.label}</span>
+            <span className="hidden sm:inline">Você está no modo</span>
+            <span
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold",
+                meta.accentBg,
+                meta.accentText
+              )}
+            >
+              <span className={cn("h-1.5 w-1.5 rounded-full", meta.accentDot)} aria-hidden />
+              {meta.label}
+            </span>
           </p>
           {hasBoth ? (
             <ModeSwitcher mode={mode} onSwitch={switchTo} />

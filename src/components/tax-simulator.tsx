@@ -102,7 +102,8 @@ export function TaxSimulator() {
         <p className="text-xs leading-relaxed text-amber-800">
           <strong>Esta é uma simulação educativa com valores estimados.</strong> Não
           substitui orientação de um contador. Consulte um profissional antes de decidir.
-          Base: Reforma Tributária / LC 214/2025.
+          Cálculos baseados na legislação vigente em junho de 2026 (Reforma Tributária /
+          LC 214/2025). Alíquotas sujeitas a alteração.
         </p>
       </div>
     </div>

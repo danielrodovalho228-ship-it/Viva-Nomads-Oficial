@@ -47,9 +47,10 @@ export default function HowItWorksPage() {
         </div>
       </section>
 
-      <Steps title="Para quem busca um imóvel" steps={TENANT_STEPS} />
-      <div className="bg-surface-2">
-        <Steps title="Para proprietários" steps={OWNER_STEPS} />
+      <Steps title="Para quem busca um imóvel" steps={TENANT_STEPS} eager tone="tenant" badge="Para inquilinos" />
+      {/* Faixa de fundo separa visualmente os dois fluxos (reforço no mobile) */}
+      <div className="border-y border-sage-200 bg-surface-2">
+        <Steps title="Para proprietários" steps={OWNER_STEPS} tone="owner" badge="Para proprietários" />
       </div>
 
       <section className="container-page py-16 text-center">
@@ -70,6 +71,9 @@ export default function HowItWorksPage() {
 function Steps({
   title,
   steps,
+  eager = false,
+  tone = "tenant",
+  badge,
 }: {
   title: string;
   steps: {
@@ -79,9 +83,22 @@ function Steps({
     title: string;
     text: string;
   }[];
+  /** Carrega as imagens deste fluxo de imediato (fluxo acima da dobra). */
+  eager?: boolean;
+  /** Acento por perfil: verde = inquilinos, azul = proprietários. */
+  tone?: "tenant" | "owner";
+  badge?: string;
 }) {
+  const badgeClass =
+    tone === "owner" ? "bg-blue-50 text-blue-500" : "bg-champagne/15 text-champagne-600";
   return (
     <section className="container-page py-12 md:py-16">
+      {badge && (
+        <span className={`mb-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${badgeClass}`}>
+          <span className="h-1.5 w-1.5 rounded-full bg-current" />
+          {badge}
+        </span>
+      )}
       <h2 className="font-title text-3xl font-bold text-ink">{title}</h2>
       <div className="mt-8 grid items-stretch gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {steps.map((s, i) => {
@@ -92,7 +109,7 @@ function Steps({
               className="flex flex-col overflow-hidden rounded-2xl border border-sage-200 bg-white"
             >
               {/* Imagem ilustrativa no topo (3:2), cantos arredondados em cima */}
-              <StepImage src={s.img} alt={s.alt} />
+              <StepImage src={s.img} alt={s.alt} priority={eager} />
               <div className="flex flex-1 flex-col p-6">
                 <div className="flex items-center justify-between">
                   <div className="grid h-11 w-11 place-items-center rounded-xl bg-forest text-white">

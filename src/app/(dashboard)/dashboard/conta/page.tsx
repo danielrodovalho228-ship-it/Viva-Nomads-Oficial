@@ -25,7 +25,11 @@ export default function AccountPage() {
 
       <Panel title="Dados pessoais">
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Nome completo" defaultValue={user?.name ?? ""} />
+          <Field
+            label="Nome completo"
+            defaultValue={user?.fullName ?? ""}
+            placeholder="Seu nome completo"
+          />
           <Field label="E-mail" defaultValue={user?.email ?? ""} type="email" />
           <Field label="Telefone" placeholder="(34) 90000-0000" />
           <Field label="Perfil" defaultValue={roleLabel(user?.role)} readOnly />

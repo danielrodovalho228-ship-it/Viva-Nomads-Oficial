@@ -17,6 +17,8 @@ export interface SessionUser {
   name: string;
   email: string;
   role: UserRole;
+  /** Nome real coletado (separado do handle/e-mail). Vazio se não informado. */
+  fullName?: string;
   /** Plano vigente — habilita recursos de operador (Gestor). */
   plan?: SubscriptionPlan;
   /** Papéis ativados na conta. Quando ausentes, derivam-se de `role`. */
@@ -30,6 +32,7 @@ export const DEMO_USER: SessionUser = {
   name: "Marcos Andrade",
   email: "marcos@exemplo.com",
   role: "owner",
+  fullName: "Marcos Andrade",
   // Demo no plano Gestor para exibir os recursos de operador (Atualização 12).
   plan: "gestor",
   // Demo com os dois papéis para exibir a troca de modo (rodada 19).

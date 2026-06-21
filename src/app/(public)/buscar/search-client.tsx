@@ -40,7 +40,8 @@ export function SearchClient({ properties }: { properties: Property[] }) {
   // mount apagaria os parâmetros da URL antes do estado restaurado committar.
   const skipNextSync = useRef(true);
 
-  // Restaura a busca da URL: rótulo (?local=), endereço (?lat=&lng=) e raio (?r=).
+  // Restaura a busca da URL: endereço/raio + todos os filtros, para links
+  // compartilhados e reloads mostrarem exatamente os filtros ativos (M7).
   useEffect(() => {
     const sp = new URLSearchParams(window.location.search);
     const local = sp.get("local");
@@ -53,6 +54,19 @@ export function SearchClient({ properties }: { properties: Property[] }) {
       setGeoCenter({ lat, lng });
       if ([5, 10, 20].includes(r)) setRadiusKm(r);
     }
+    const num = (k: string) => Number(sp.get(k)) || 0;
+    if ([2500, 3500, 5000].includes(num("preco"))) setMaxPrice(num("preco"));
+    if ([1, 2, 3].includes(num("quartos"))) setMinBedrooms(num("quartos"));
+    if ([30, 60, 90].includes(num("periodo"))) setMaxPeriod(num("periodo"));
+    const ordem = sp.get("ordem");
+    if (ordem === "recent" || ordem === "price-asc" || ordem === "price-desc") setSort(ordem);
+    const on = (k: string) => sp.get(k) === "1";
+    if (on("pronto")) setReadyToLiveOnly(true);
+    if (on("homeoffice")) setHomeOfficeOnly(true);
+    if (on("localizado")) setWorkLocatedOnly(true);
+    if (on("nota")) setInvoiceOnly(true);
+    if (on("seguro")) setInsuranceOnly(true);
+    if (on("gestor")) setOperatedOnly(true);
   }, []);
 
   // Reflete a busca atual na URL (replaceState — sem recarregar nem rolar),
@@ -75,13 +89,27 @@ export function SearchClient({ properties }: { properties: Property[] }) {
       params.delete("lng");
       params.delete("r");
     }
+    const put = (k: string, on: boolean, v: string) => (on ? params.set(k, v) : params.delete(k));
+    put("preco", maxPrice > 0, String(maxPrice));
+    put("quartos", minBedrooms > 0, String(minBedrooms));
+    put("periodo", maxPeriod > 0, String(maxPeriod));
+    put("ordem", sort !== "relevance", sort);
+    put("pronto", readyToLiveOnly, "1");
+    put("homeoffice", homeOfficeOnly, "1");
+    put("localizado", workLocatedOnly, "1");
+    put("nota", invoiceOnly, "1");
+    put("seguro", insuranceOnly, "1");
+    put("gestor", operatedOnly, "1");
     const qs = params.toString();
     window.history.replaceState(
       null,
       "",
       qs ? `${window.location.pathname}?${qs}` : window.location.pathname
     );
-  }, [locationQuery, geoCenter, radiusKm]);
+  }, [
+    locationQuery, geoCenter, radiusKm, maxPrice, minBedrooms, maxPeriod, sort,
+    readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly,
+  ]);
 
   const results = useMemo(() => {
     const loc = locationQuery.trim().toLowerCase();
