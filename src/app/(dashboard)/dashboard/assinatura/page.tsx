@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, QrCode, Barcode, CreditCard, Copy, Loader2 } from "lucide-react";
+import { Check, Percent, QrCode, Barcode, CreditCard, Copy, Loader2 } from "lucide-react";
 import { PLANS } from "@/lib/constants";
 import { useAuthStore, DEMO_USER, type SubscriptionPlan } from "@/lib/store";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
@@ -140,6 +140,12 @@ export default function SubscriptionPage() {
                   </li>
                 ))}
               </ul>
+              {/* Custo (comissão) separado dos benefícios — não disfarçar (N5) */}
+              {plan.cost && (
+                <p className="mt-3 flex items-start gap-2 rounded-lg bg-surface-2 px-2.5 py-2 text-xs text-muted">
+                  <Percent className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600" /> {plan.cost}
+                </p>
+              )}
               <Button
                 variant={current ? "outline" : plan.featured ? "gold" : "primary"}
                 className="mt-5 w-full"

@@ -16,6 +16,7 @@ import {
   Globe2,
   X,
   Clock,
+  Info,
 } from "lucide-react";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
@@ -133,8 +134,9 @@ export default function ClosingPage() {
     if (!guarantee) return 1;
     if (guarantee === "seguro_fianca" && !insurer) return 2;
     if (patrimonial === null) return 3;
+    if (!generated) return 4; // Resumo só após gerar o contrato
     return 5;
-  }, [verified, guarantee, insurer, patrimonial]);
+  }, [verified, guarantee, insurer, patrimonial, generated]);
 
   function goToStep(target: number) {
     if (target <= maxReached) {
@@ -181,7 +183,21 @@ export default function ClosingPage() {
     (step === 1 && !!guarantee) ||
     (step === 2 && !!insurer) ||
     (step === 3 && patrimonial !== null) ||
-    step === 4;
+    (step === 4 && generated);
+
+  // Motivo de bloqueio para avançar — feedback claro em vez de só desabilitar (N1).
+  const pendingReason =
+    step === 0 && !verified
+      ? "Conclua a verificação de identidade para continuar."
+      : step === 1 && !guarantee
+        ? "Selecione uma opção de garantia para continuar."
+        : step === 2 && !insurer
+          ? "Escolha uma seguradora para continuar."
+          : step === 3 && patrimonial === null
+            ? "Defina o seguro patrimonial para continuar."
+            : step === 4 && !generated
+              ? "Gere o contrato para continuar."
+              : null;
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -699,13 +715,20 @@ export default function ClosingPage() {
 
         {/* Navegação */}
         {step < 5 && (
-          <div className="mt-6 flex justify-between">
-            <Button variant="ghost" onClick={back} disabled={step === 0}>
-              <ArrowLeft className="h-4 w-4" /> Voltar
-            </Button>
-            <Button onClick={next} disabled={!canAdvance}>
-              Continuar <ArrowRight className="h-4 w-4" />
-            </Button>
+          <div className="mt-6">
+            {pendingReason && (
+              <p className="mb-3 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                <Info className="h-4 w-4 shrink-0" /> {pendingReason}
+              </p>
+            )}
+            <div className="flex justify-between">
+              <Button variant="ghost" onClick={back} disabled={step === 0}>
+                <ArrowLeft className="h-4 w-4" /> Voltar
+              </Button>
+              <Button onClick={next} disabled={!canAdvance}>
+                Continuar <ArrowRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         )}
       </Panel>
