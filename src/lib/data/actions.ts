@@ -40,7 +40,7 @@ export async function saveQualification(
       iptu_ok: elig.iptuOk,
       habitable: elig.habitable,
       is_owner_or_agent: elig.isOwnerOrAgent,
-      condo_allows: elig.condoAllows,
+      condo_allows: elig.condoAllows || "unknown",
       eligible,
       // Selo base + etiquetas (Atualização 11)
       ready_to_live_score,

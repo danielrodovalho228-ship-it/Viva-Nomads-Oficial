@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import { Check, Wallet, Camera, FileSignature, BrainCircuit, BadgeCheck } from "lucide-react";
+import { Check, Percent, Camera, FileSignature, BrainCircuit, BadgeCheck } from "lucide-react";
 import { PLANS } from "@/lib/constants";
 import { CommissionCalculator } from "./commission-calculator";
 import { ButtonLink } from "@/components/ui/button";
 import { formatBRL, cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
-  title: "Planos e preços",
+  title: "Planos",
   description:
     "Planos de assinatura para proprietários: Gratuito, Essencial e Profissional. Mais serviços opcionais como fotografia, contrato e análise de inquilino.",
 };
@@ -77,8 +77,8 @@ export default function PricingPage() {
                   <p className="text-xs font-medium uppercase tracking-wide text-muted">
                     O que você paga
                   </p>
-                  <p className="mt-1.5 flex items-start gap-2.5 text-sm text-ink">
-                    <Wallet className="mt-0.5 h-4 w-4 shrink-0 text-muted" /> {plan.cost}
+                  <p className="mt-1.5 flex items-start gap-2.5 rounded-lg bg-surface-2 px-2.5 py-2 text-sm text-muted">
+                    <Percent className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" /> {plan.cost}
                   </p>
                 </div>
               )}

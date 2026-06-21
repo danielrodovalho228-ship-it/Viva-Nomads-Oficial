@@ -11,6 +11,7 @@ import {
   AlertTriangle,
   Laptop,
   MapPin,
+  Info,
 } from "lucide-react";
 import {
   type EligibilityState,
@@ -39,7 +40,7 @@ const initialEligibility: EligibilityState = {
   habitable: false,
   isOwnerOrAgent: false,
   hasDocument: false,
-  condoAllows: "unknown",
+  condoAllows: "", // neutro: nada pré-selecionado (N3)
 };
 
 const initialQuality: QualityState = {
@@ -65,6 +66,9 @@ export default function QualificationChecklistPage() {
   const [docName, setDocName] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+  // Só mostra o veredito (APROVADO/NÃO ELEGÍVEL) depois da 1ª interação — evita
+  // banner vermelho prematuro num onboarding ainda neutro (N3).
+  const [hasInteracted, setHasInteracted] = useState(false);
 
   const eligible = isEligible(elig);
   const score = useMemo(() => readyToLiveScore(quality), [quality]);
@@ -76,6 +80,7 @@ export default function QualificationChecklistPage() {
   const tCondo = tagCondoApproved(elig);
 
   function toggleElig(key: keyof EligibilityState) {
+    setHasInteracted(true);
     setElig((s) => ({ ...s, [key]: !s[key as keyof EligibilityState] }));
   }
   function toggleQuality(key: keyof QualityState) {
@@ -167,6 +172,7 @@ export default function QualificationChecklistPage() {
               className="hidden"
               onChange={(e) => {
                 const f = e.target.files?.[0];
+                setHasInteracted(true);
                 setDocName(f ? f.name : null);
                 setElig((s) => ({ ...s, hasDocument: !!f }));
               }}
@@ -189,7 +195,10 @@ export default function QualificationChecklistPage() {
               <button
                 key={opt.v}
                 type="button"
-                onClick={() => setElig((s) => ({ ...s, condoAllows: opt.v }))}
+                onClick={() => {
+                  setHasInteracted(true);
+                  setElig((s) => ({ ...s, condoAllows: opt.v }));
+                }}
                 className={cn(
                   "rounded-full border px-4 py-2 text-sm font-medium transition-colors",
                   elig.condoAllows === opt.v
@@ -212,22 +221,35 @@ export default function QualificationChecklistPage() {
         <div
           className={cn(
             "mt-6 flex items-center gap-3 rounded-xl px-4 py-4",
-            eligible ? "bg-sage-100" : "bg-red-50"
+            eligible ? "bg-sage-100" : hasInteracted ? "bg-red-50" : "bg-surface-2"
           )}
         >
           {eligible ? (
             <CheckCircle2 className="h-6 w-6 text-forest" />
-          ) : (
+          ) : hasInteracted ? (
             <XCircle className="h-6 w-6 text-red-600" />
+          ) : (
+            <Info className="h-6 w-6 text-blue-500" />
           )}
           <div>
-            <p className={cn("font-title font-bold", eligible ? "text-forest" : "text-red-700")}>
-              {eligible ? "APROVADO PARA PUBLICAR" : "NÃO ELEGÍVEL"}
+            <p
+              className={cn(
+                "font-title font-bold",
+                eligible ? "text-forest" : hasInteracted ? "text-red-700" : "text-ink"
+              )}
+            >
+              {eligible
+                ? "APROVADO PARA PUBLICAR"
+                : hasInteracted
+                  ? "NÃO ELEGÍVEL"
+                  : "Vamos qualificar seu imóvel"}
             </p>
             <p className="text-sm text-muted">
               {eligible
                 ? "Todos os requisitos foram atendidos."
-                : "Marque todos os itens obrigatórios e garanta que o condomínio não proíbe."}
+                : hasInteracted
+                  ? "Marque todos os itens obrigatórios e garanta que o condomínio não proíbe."
+                  : "Marque os itens obrigatórios abaixo para liberar a publicação."}
             </p>
           </div>
         </div>

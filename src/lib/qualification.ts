@@ -15,7 +15,7 @@ export interface EligibilityState {
   habitable: boolean;
   isOwnerOrAgent: boolean;
   hasDocument: boolean;
-  condoAllows: "yes" | "no" | "unknown";
+  condoAllows: "" | "yes" | "no" | "unknown"; // "" = ainda não respondido (neutro)
 }
 
 export interface QualityState {

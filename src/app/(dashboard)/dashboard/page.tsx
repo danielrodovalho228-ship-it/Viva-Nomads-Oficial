@@ -24,8 +24,9 @@ import { ReadyToLiveBadge } from "@/components/ui/badge";
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user) ?? DEMO_USER;
   const { mode } = useViewMode();
-  // Saudação com o nome real; sem nome coletado, trata por "visitante" (rodada 5).
-  const firstName = user.fullName?.trim() ? user.fullName.trim().split(" ")[0] : "visitante";
+  // Saudação com o nome real; sem nome coletado, cai no 1º segmento do e-mail
+  // (via user.name) — nunca "visitante" (N4).
+  const firstName = (user.fullName?.trim() || user.name || "").split(" ")[0] || "Usuário";
 
   if (mode === "tenant") return <TenantDashboard name={firstName} />;
   return <OwnerDashboard name={firstName} />;

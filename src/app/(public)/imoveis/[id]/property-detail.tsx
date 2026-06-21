@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   Bath,
   BedDouble,
@@ -17,6 +17,7 @@ import {
   FileSignature,
   Star,
   FileText,
+  ChevronDown,
   MapPinned,
   Handshake,
   ShieldCheck,
@@ -68,6 +69,7 @@ export function PropertyDetail({
   similar: Property[];
 }) {
   const [tab, setTab] = useState<(typeof TABS)[number]>("Visão Geral");
+  const tabsRef = useRef<HTMLDivElement>(null);
   const [sending, setSending] = useState(false);
   const [sentInquiry, setSentInquiry] = useState(false);
 
@@ -190,11 +192,20 @@ export function PropertyDetail({
           )}
 
           {/* Abas */}
-          <div className="mt-8 flex flex-wrap gap-1 border-b border-sage-200">
+          <div
+            ref={tabsRef}
+            className="mt-8 flex flex-wrap gap-1 border-b border-sage-200 scroll-mt-20"
+          >
             {TABS.map((t) => (
               <button
                 key={t}
-                onClick={() => setTab(t)}
+                onClick={() => {
+                  setTab(t);
+                  // Rola até as abas para o conteúdo escolhido ficar visível (N7).
+                  requestAnimationFrame(() =>
+                    tabsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+                  );
+                }}
                 className={cn(
                   "border-b-2 px-3 py-2.5 text-sm font-medium transition-colors",
                   tab === t
@@ -363,46 +374,53 @@ export function PropertyDetail({
               </span>
               <span className="text-muted">/mês</span>
             </div>
-            {/* Custo total estimado em destaque (quick win) — evita surpresa */}
+            {/* Total estimado — texto secundário menor, sem "sticker shock" (N6) */}
             {property.utilitiesMode === "fixed" && property.utilitiesEstimate > 0 && (
-              <p className="mt-1 inline-flex items-center gap-1.5 rounded-lg bg-sage-100 px-2.5 py-1 text-sm font-semibold text-forest">
-                ≈ {formatBRL(property.monthlyPrice + property.utilitiesEstimate)}/mês com consumo
+              <p className="mt-1 text-sm text-muted">
+                ≈ {formatBRL(property.monthlyPrice + property.utilitiesEstimate)}/mês com tudo
+                incluído
               </p>
             )}
-            {/* Despesas de consumo (Atualização 6) — transparência */}
-            <div className="mt-2 rounded-lg bg-surface-2 px-3 py-2 text-sm">
-              {property.utilitiesMode === "fixed" && property.utilitiesEstimate > 0 ? (
-                <p className="text-ink">
-                  + consumo estimado{" "}
-                  <strong>{formatBRL(property.utilitiesEstimate)}</strong>/mês
-                  <span className="block text-xs text-muted">
-                    Água, luz e gás em valor fixo no contrato (ajuste se exceder{" "}
-                    {property.utilitiesOverageMargin}%).
-                  </span>
-                </p>
-              ) : (
-                <p className="text-ink">
-                  + consumo conforme medição
-                  <span className="block text-xs text-muted">
-                    Contas repassadas ao inquilino mediante comprovante.
-                  </span>
-                </p>
-              )}
-              {property.prepFee > 0 && (
-                <p className="mt-1.5 text-ink">
-                  + preparação <strong>{formatBRL(property.prepFee)}</strong>
-                  <span className="block text-xs text-muted">
-                    Limpeza profunda antes da entrada — cobrada uma única vez, não a cada
-                    hóspede.
-                  </span>
-                </p>
-              )}
-              {property.issuesInvoice && (
-                <p className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-blue-700">
-                  <FileText className="h-3.5 w-3.5" /> Emite Nota Fiscal do aluguel
-                </p>
-              )}
-            </div>
+            {/* Composição do custo — colapsável, transparência sem sobrecarregar (N6) */}
+            <details className="group mt-3 rounded-lg bg-surface-2 px-3 py-2 text-sm">
+              <summary className="flex cursor-pointer list-none items-center justify-between font-medium text-ink">
+                Detalhes do custo
+                <ChevronDown className="h-4 w-4 text-muted transition-transform group-open:rotate-180" />
+              </summary>
+              <div className="mt-2">
+                {property.utilitiesMode === "fixed" && property.utilitiesEstimate > 0 ? (
+                  <p className="text-ink">
+                    + consumo estimado{" "}
+                    <strong>{formatBRL(property.utilitiesEstimate)}</strong>/mês
+                    <span className="block text-xs text-muted">
+                      Água, luz e gás em valor fixo no contrato (ajuste se exceder{" "}
+                      {property.utilitiesOverageMargin}%).
+                    </span>
+                  </p>
+                ) : (
+                  <p className="text-ink">
+                    + consumo conforme medição
+                    <span className="block text-xs text-muted">
+                      Contas repassadas ao inquilino mediante comprovante.
+                    </span>
+                  </p>
+                )}
+                {property.prepFee > 0 && (
+                  <p className="mt-1.5 text-ink">
+                    + preparação <strong>{formatBRL(property.prepFee)}</strong>
+                    <span className="block text-xs text-muted">
+                      Limpeza profunda antes da entrada — cobrada uma única vez, não a cada
+                      hóspede.
+                    </span>
+                  </p>
+                )}
+                {property.issuesInvoice && (
+                  <p className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-blue-700">
+                    <FileText className="h-3.5 w-3.5" /> Emite Nota Fiscal do aluguel
+                  </p>
+                )}
+              </div>
+            </details>
             <p className="mt-2 inline-flex items-center gap-1.5 text-sm text-sage">
               <span className="h-2 w-2 rounded-full bg-sage" /> Disponível agora
             </p>
