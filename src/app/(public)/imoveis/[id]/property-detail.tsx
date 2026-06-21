@@ -245,25 +245,25 @@ export function PropertyDetail({
                   )}
                 </div>
                 <div>
-                  <h3 className="font-title font-bold text-ink">Espaços de trabalho próximos</h3>
+                  <h3 className="font-title font-bold text-ink">Espaços de trabalho na região</h3>
+                  <p className="mt-1 text-sm text-muted">
+                    Referências de coworkings e cafés pela vizinhança — confira a posição no mapa.
+                  </p>
                   <ul className="mt-3 space-y-2">
                     {property.nearbyWorkspaces.map((w) => {
                       const Icon = WORKSPACE_ICONS[w.type];
                       return (
                         <li
                           key={w.name}
-                          className="flex items-center justify-between rounded-xl border border-sage-200 px-4 py-3"
+                          className="flex items-center gap-3 rounded-xl border border-sage-200 px-4 py-3"
                         >
-                          <span className="flex items-center gap-3 text-sm">
-                            <Icon className="h-5 w-5 text-sage" />
-                            <span>
-                              <span className="font-medium text-ink">{w.name}</span>
-                              <span className="block text-xs text-muted">
-                                {WORKSPACE_LABEL[w.type]}
-                              </span>
+                          <Icon className="h-5 w-5 shrink-0 text-sage" />
+                          <span>
+                            <span className="font-medium text-ink">{w.name}</span>
+                            <span className="block text-xs text-muted">
+                              {WORKSPACE_LABEL[w.type]}
                             </span>
                           </span>
-                          <span className="text-sm text-muted">{w.distanceM} m</span>
                         </li>
                       );
                     })}

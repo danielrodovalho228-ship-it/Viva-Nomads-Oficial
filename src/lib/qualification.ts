@@ -105,8 +105,8 @@ export function homeOfficeItems(q: QualityState) {
 
 export function workLocatedItems(q: QualityState) {
   return [
-    { label: "Coworking a menos de 2 km", on: q.coworking2km },
-    { label: "Sala de reunião próxima", on: q.meetingRoom },
-    { label: "Café de trabalho a menos de 1 km", on: q.cafe1km },
+    { label: "Coworking na região", on: q.coworking2km },
+    { label: "Sala de reunião por perto", on: q.meetingRoom },
+    { label: "Café de trabalho na região", on: q.cafe1km },
   ];
 }
