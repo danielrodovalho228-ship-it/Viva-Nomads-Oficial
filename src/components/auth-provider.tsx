@@ -16,22 +16,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const supabase = createClient();
     if (!supabase) return;
 
-    function hydrate(session: import("@supabase/supabase-js").Session | null) {
+    async function hydrate(session: import("@supabase/supabase-js").Session | null) {
       if (!session?.user) {
         setUser(null);
         return;
       }
       const u = session.user;
-      // `fullName` é o nome real coletado (pode faltar). `name` é só para
-      // exibição (saudação/avatar) e cai no e-mail completo quando não há nome —
-      // nunca usa a parte local do e-mail como se fosse um nome.
-      const fullName = (u.user_metadata?.full_name as string | undefined) || undefined;
+      // O perfil em `profiles` é a fonte CONFIÁVEL de nome e papel — o
+      // user_metadata é editável pelo próprio usuário, então não vale para
+      // autorização. Usamos os valores do perfil quando existem.
+      let fullName = (u.user_metadata?.full_name as string | undefined) || undefined;
+      let role = (u.user_metadata?.role as UserRole) ?? "tenant";
+      const { data: profile } = await supabase!
+        .from("profiles")
+        .select("full_name, role")
+        .eq("id", u.id)
+        .single();
+      if (profile?.full_name) fullName = profile.full_name;
+      if (profile?.role) role = profile.role as UserRole;
+
+      // `name` é só para exibição (saudação/avatar) e cai no e-mail completo
+      // quando não há nome — nunca usa a parte local do e-mail como nome.
       setUser({
         id: u.id,
         name: fullName ?? u.email ?? "Usuário",
         fullName,
         email: u.email ?? "",
-        role: (u.user_metadata?.role as UserRole) ?? "tenant",
+        role,
       });
     }
 
