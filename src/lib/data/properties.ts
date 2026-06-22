@@ -1,10 +1,16 @@
 import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/public";
 import type { Property } from "@/lib/types";
 import { SAMPLE_PROPERTIES } from "@/lib/properties";
 
 /*
   Camada de acesso a imóveis. Usa o Supabase quando configurado; caso
   contrário, cai para os dados de exemplo (modo demonstração).
+
+  Leituras PÚBLICAS (listProperties, getProperty, por cidade) usam o cliente
+  anônimo SEM cookies — não forçam render dinâmico (evita DYNAMIC_SERVER_USAGE)
+  e respeitam a RLS pública. Já listMyProperties usa o cliente de servidor com
+  sessão (precisa de auth.uid()).
 */
 
 interface PropertyRow {
@@ -89,31 +95,47 @@ function rowToProperty(row: PropertyRow): Property {
 }
 
 export async function listProperties(): Promise<Property[]> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   // Modo demonstração (sem Supabase): dados de exemplo.
   if (!supabase) return SAMPLE_PROPERTIES;
 
-  const { data, error } = await supabase
-    .from("properties")
-    .select("*")
-    .eq("status", "active")
-    .order("created_at", { ascending: false });
+  try {
+    const { data, error } = await supabase
+      .from("properties")
+      .select("*")
+      .eq("status", "active")
+      .order("created_at", { ascending: false });
 
-  // Acesso real: NUNCA cai nos dados de exemplo (não mistura demo com real).
-  // Banco vazio ou erro → lista vazia, e não os 3 imóveis fictícios.
-  if (error || !data) return [];
-  return (data as PropertyRow[]).map(rowToProperty);
+    // Acesso real: NUNCA cai nos dados de exemplo (não mistura demo com real).
+    // Banco vazio ou erro → lista vazia, e não os 3 imóveis fictícios.
+    if (error || !data) return [];
+    return (data as PropertyRow[]).map(rowToProperty);
+  } catch {
+    // Falha de rede/consulta → lista vazia, nunca 500 nem dados de exemplo.
+    return [];
+  }
 }
 
 export async function getProperty(id: string): Promise<Property | undefined> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   // Modo demonstração (sem Supabase): dados de exemplo.
   if (!supabase) return SAMPLE_PROPERTIES.find((p) => p.id === id);
 
-  const { data, error } = await supabase.from("properties").select("*").eq("id", id).single();
-  // Acesso real: sem registro → indefinido (não devolve imóvel de exemplo).
-  if (error || !data) return undefined;
-  return rowToProperty(data as PropertyRow);
+  try {
+    // `maybeSingle` devolve null (sem erro) para zero linhas — evita o PGRST116
+    // do `.single()` virar 500. Só imóveis ATIVOS são públicos: rascunho/pausado
+    // por URL direta → 404 (não vaza). id mal formado cai no catch → 404.
+    const { data } = await supabase
+      .from("properties")
+      .select("*")
+      .eq("id", id)
+      .eq("status", "active")
+      .maybeSingle();
+    if (!data) return undefined;
+    return rowToProperty(data as PropertyRow);
+  } catch {
+    return undefined;
+  }
 }
 
 export async function listPropertiesByCity(city: string): Promise<Property[]> {
