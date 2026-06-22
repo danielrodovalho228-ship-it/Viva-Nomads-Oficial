@@ -166,8 +166,17 @@ export default function AuthPage() {
           const { error } = await supabase.auth.signInWithPassword({ email, password });
           if (error) throw error;
         }
+        // Acesso real: a sessão é validada pelo Supabase e o AuthProvider hidrata
+        // o usuário a partir dela. NUNCA fabricamos sessão local aqui — senão uma
+        // senha errada (erro acima) ou o modo demo abririam o painel sem validação.
+        router.push("/dashboard");
+        router.refresh();
+        return;
       }
-      // Define a sessão local (modo demo ou pós-login).
+
+      // Sem Supabase configurado (apenas dev/preview): sessão de demonstração
+      // local. Em produção o Supabase está sempre presente, então este caminho
+      // não existe — não há porta dos fundos de demo no acesso real.
       setUser({
         id: crypto.randomUUID(),
         name: name || email,

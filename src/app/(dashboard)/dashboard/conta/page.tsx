@@ -234,16 +234,47 @@ function NotificationsPanel() {
 
 function DangerZone() {
   const router = useRouter();
+  const user = useAuthStore((s) => s.user) ?? DEMO_USER;
   const signOut = useAuthStore((s) => s.signOut);
-  const [step, setStep] = useState(0); // 0 = botão, 1 = 1ª confirmação, 2 = digitar EXCLUIR
-  const [typed, setTyped] = useState("");
+  const [step, setStep] = useState(0); // 0 = botão, 1 = consequências, 2 = senha
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  function reset() {
+    setStep(0);
+    setPassword("");
+    setError(null);
+  }
 
   async function confirmDelete() {
+    setError(null);
     setLoading(true);
-    // Em produção: chamar rota server-side que apaga os dados (LGPD).
-    signOut();
-    router.push("/home");
+    try {
+      const supabase = createClient();
+      if (supabase) {
+        // Confirma a identidade reautenticando com a senha atual.
+        const { error: authError } = await supabase.auth.signInWithPassword({
+          email: user.email,
+          password,
+        });
+        if (authError) {
+          setError("Senha incorreta. Tente novamente.");
+          return;
+        }
+        // Apaga DE FATO os dados pessoais (LGPD), não só desativa.
+        const { error: delError } = await supabase.rpc("delete_user_account");
+        if (delError) {
+          setError("Não foi possível excluir agora. Tente novamente em instantes.");
+          return;
+        }
+        await supabase.auth.signOut();
+      }
+      signOut();
+      router.push("/home");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -262,11 +293,16 @@ function DangerZone() {
       {step === 1 && (
         <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4">
           <p className="text-sm font-medium text-red-700">
-            Tem certeza? Você perderá anúncios, documentos, contratos e histórico — sem
-            recuperação.
+            Ao excluir, você perde permanentemente:
           </p>
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-red-700">
+            <li>Dados pessoais e perfil de verificação</li>
+            <li>Anúncios e imóveis cadastrados</li>
+            <li>Contratos, documentos e histórico</li>
+            <li>Favoritos, candidaturas e mensagens</li>
+          </ul>
           <div className="mt-3 flex gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setStep(0)}>
+            <Button variant="ghost" size="sm" onClick={reset}>
               Cancelar
             </Button>
             <Button
@@ -284,26 +320,29 @@ function DangerZone() {
       {step === 2 && (
         <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4">
           <p className="text-sm text-red-700">
-            Para confirmar, digite <strong>EXCLUIR</strong> abaixo.
+            Para confirmar sua identidade, digite sua <strong>senha atual</strong>.
           </p>
           <input
-            value={typed}
-            onChange={(e) => setTyped(e.target.value)}
-            placeholder="EXCLUIR"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Senha atual"
+            autoComplete="current-password"
             className="mt-2 w-full rounded-lg border border-red-300 bg-white px-3 py-2 text-sm outline-none focus:border-red-500"
           />
+          {error && <p className="mt-2 text-sm font-medium text-red-700">{error}</p>}
           <div className="mt-3 flex gap-2">
-            <Button variant="ghost" size="sm" onClick={() => { setStep(0); setTyped(""); }}>
+            <Button variant="ghost" size="sm" onClick={reset}>
               Cancelar
             </Button>
             <Button
               size="sm"
               className="bg-red-600 text-white hover:bg-red-700"
-              disabled={typed !== "EXCLUIR" || loading}
+              disabled={password.length === 0 || loading}
               onClick={confirmDelete}
             >
               {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-              Excluir definitivamente
+              Sim, excluir permanentemente
             </Button>
           </div>
         </div>

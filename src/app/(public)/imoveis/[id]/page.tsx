@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { SAMPLE_PROPERTIES } from "@/lib/properties";
 import { getProperty, listProperties } from "@/lib/data/properties";
 import { formatBRL } from "@/lib/utils";
 import { PropertyJsonLd } from "@/components/seo/property-json-ld";
@@ -33,8 +32,11 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   };
 }
 
-export function generateStaticParams() {
-  return SAMPLE_PROPERTIES.map((p) => ({ id: p.id }));
+export async function generateStaticParams() {
+  // Segue listProperties: em demo, pré-renderiza os exemplos; no acesso real,
+  // os imóveis reais (e nunca os de demonstração ube-001/002/003).
+  const props = await listProperties();
+  return props.map((p) => ({ id: p.id }));
 }
 
 export default async function PropertyDetailPage({ params }: Params) {

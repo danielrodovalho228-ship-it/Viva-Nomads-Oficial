@@ -35,10 +35,11 @@ export async function middleware(request: NextRequest) {
   const isProtected =
     pathname.startsWith("/dashboard") || pathname.startsWith("/qualificar") || isAdminRoute;
 
-  // Sem sessão em rota protegida → login.
+  // Sem sessão em rota protegida → login (guardando o destino pretendido).
   if (isProtected && !user) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/auth";
+    redirectUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(redirectUrl);
   }
 
@@ -62,5 +63,8 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/qualificar", "/admin/:path*"],
+  // Inclui os caminhos "nus" (/dashboard, /admin) além dos subcaminhos — em
+  // alguns matchers "/dashboard/:path*" não casa o /dashboard exato, deixando a
+  // rota raiz passar sem o guard (era o sintoma do QA: /dashboard sem login).
+  matcher: ["/dashboard", "/dashboard/:path*", "/qualificar", "/admin", "/admin/:path*"],
 };
