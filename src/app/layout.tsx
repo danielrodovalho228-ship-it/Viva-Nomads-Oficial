@@ -34,6 +34,12 @@ export const metadata: Metadata = {
     siteName: SITE_NAME,
     url: SITE_URL,
   },
+  // Site novo: declara explicitamente que pode ser indexado/seguido (boa prática).
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large" },
+  },
   alternates: { canonical: "/" },
 };
 

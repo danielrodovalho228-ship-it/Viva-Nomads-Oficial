@@ -5,6 +5,7 @@ import { X, Images, ChevronLeft, ChevronRight } from "lucide-react";
 import { BrandImage } from "@/components/brand-image";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
 import { ReadyToLiveBadge } from "@/components/ui/badge";
+import { IconButton } from "@/components/ui/icon-button";
 import { cn } from "@/lib/utils";
 
 const isPhoto = (s?: string) =>
@@ -248,15 +249,11 @@ function Lightbox({
         <span className="text-sm">
           {index + 1} / {photos.length}
         </span>
-        <button onClick={onClose} aria-label="Fechar" className="grid h-10 w-10 place-items-center rounded-full hover:bg-white/10">
-          <X className="h-6 w-6" />
-        </button>
+        <IconButton onClick={onClose} label="Fechar" icon={X} iconClassName="h-6 w-6" className="h-10 w-10 text-white hover:bg-white/10" />
       </div>
       <div className="relative flex flex-1 items-center justify-center px-4 pb-4">
         {photos.length > 1 && (
-          <button onClick={prev} aria-label="Anterior" className="absolute left-4 grid h-11 w-11 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20">
-            <ChevronLeft className="h-6 w-6" />
-          </button>
+          <IconButton onClick={prev} label="Foto anterior" icon={ChevronLeft} iconClassName="h-6 w-6" className="absolute left-4 h-11 w-11 bg-white/10 text-white hover:bg-white/20" />
         )}
         <div className="max-h-full w-full max-w-4xl">
           {isPhoto(photos[index]) ? (
@@ -266,9 +263,7 @@ function Lightbox({
           )}
         </div>
         {photos.length > 1 && (
-          <button onClick={next} aria-label="Próxima" className="absolute right-4 grid h-11 w-11 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20">
-            <ChevronRight className="h-6 w-6" />
-          </button>
+          <IconButton onClick={next} label="Próxima foto" icon={ChevronRight} iconClassName="h-6 w-6" className="absolute right-4 h-11 w-11 bg-white/10 text-white hover:bg-white/20" />
         )}
       </div>
     </div>
