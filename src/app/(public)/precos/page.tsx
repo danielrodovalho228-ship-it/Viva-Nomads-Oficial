@@ -102,7 +102,7 @@ function ServiceCard({ s }: { s: (typeof SERVICES)[number] }) {
 export default function PricingPage() {
   return (
     <>
-      <section className="bg-forest py-16 text-center text-white md:py-20">
+      <section className="bg-forest section-y text-center text-white">
         <div className="container-page">
           <h1 className="font-title text-4xl font-bold md:text-5xl">Anuncie de graça</h1>
           <p className="mx-auto mt-5 max-w-2xl text-lg text-white/80">
@@ -182,7 +182,7 @@ export default function PricingPage() {
       </section>
 
       {/* Serviços opcionais — cards com ícone, benefício, preço e ação (rodada 24) */}
-      <section className="bg-surface-2 py-12 md:py-20">
+      <section className="bg-surface-2 section-y">
         <div className="container-page">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="font-title text-3xl font-bold text-ink">Serviços para o fechamento</h2>

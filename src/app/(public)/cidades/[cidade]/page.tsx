@@ -37,7 +37,7 @@ export default async function CityLandingPage({ params }: Params) {
 
   return (
     <>
-      <section className="bg-forest py-16 text-white md:py-20">
+      <section className="bg-forest section-y text-white">
         <div className="container-page">
           <nav className="text-sm text-white/60">
             <Link href="/home" className="hover:text-champagne">
@@ -56,7 +56,7 @@ export default async function CityLandingPage({ params }: Params) {
         </div>
       </section>
 
-      <section className="container-page py-12">
+      <section className="container-page section-y">
         <div className="flex items-center justify-between">
           <h2 className="font-title text-2xl font-bold text-ink">
             {properties.length > 0

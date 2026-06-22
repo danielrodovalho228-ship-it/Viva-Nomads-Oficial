@@ -48,7 +48,7 @@ export default async function HomePage() {
         <div className="pointer-events-none absolute -right-40 -top-40 h-[34rem] w-[34rem] rounded-full bg-gradient-brand opacity-25 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-40 -left-40 h-[28rem] w-[28rem] rounded-full bg-blue-700 opacity-25 blur-3xl" />
 
-        <div className="container-page relative grid items-center gap-12 pb-16 pt-8 lg:grid-cols-12 lg:pb-24 lg:pt-12">
+        <div className="container-page relative grid items-center gap-8 pb-8 pt-8 lg:grid-cols-12 lg:gap-10 lg:pt-12">
           <div className="lg:col-span-7">
             <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-white/80">
               <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
@@ -105,7 +105,7 @@ export default async function HomePage() {
       </section>
 
       {/* ───────── PARA QUEM É (linhas editoriais alternadas) ───────── */}
-      <section className="bg-surface py-12 md:py-20">
+      <section className="bg-surface section-y">
         <div className="container-page">
           <div className="max-w-2xl">
             <Eyebrow>Para quem é</Eyebrow>
@@ -114,7 +114,7 @@ export default async function HomePage() {
             </h2>
           </div>
 
-          <div className="mt-8 md:mt-12 flex flex-col gap-px overflow-hidden rounded-3xl border border-line bg-line">
+          <div className="mt-6 md:mt-8 flex flex-col gap-px overflow-hidden rounded-3xl border border-line bg-line">
             {PERSONAS.map((p, i) => {
               const Icon = PERSONA_ICONS[p.icon] ?? Briefcase;
               return (
@@ -157,7 +157,7 @@ export default async function HomePage() {
       </section>
 
       {/* ───────── PRONTO PARA TRABALHO (spotlight) ───────── */}
-      <section className="bg-surface-2 py-12 md:py-20">
+      <section className="bg-surface-2 section-y">
         <div className="container-page grid items-center gap-10 lg:grid-cols-2">
           <div className="relative order-2 lg:order-1">
             <BrandImage
@@ -197,7 +197,7 @@ export default async function HomePage() {
       </section>
 
       {/* ───────── OUTRA CATEGORIA (tabela comparativa) ───────── */}
-      <section className="bg-night py-12 text-white md:py-20">
+      <section className="bg-night section-y text-white">
         <div className="container-page">
           <div className="mx-auto max-w-2xl text-center">
             <Eyebrow light>Outra categoria</Eyebrow>
@@ -246,7 +246,7 @@ export default async function HomePage() {
       </section>
 
       {/* ───────── COMO FUNCIONA (passos com linha conectora) ───────── */}
-      <section className="bg-surface py-12 md:py-20">
+      <section className="bg-surface section-y">
         <div className="container-page">
           <div className="max-w-2xl">
             <Eyebrow>Como funciona</Eyebrow>
@@ -265,7 +265,7 @@ export default async function HomePage() {
       </section>
 
       {/* ───────── FAIXA PROPRIETÁRIOS (preto de impacto) ───────── */}
-      <section className="bg-surface py-12 md:py-20">
+      <section className="bg-surface section-y">
         <div className="container-page">
           <div className="relative overflow-hidden rounded-3xl bg-night px-8 py-14 text-white md:px-16 md:py-20">
             <div className="pointer-events-none absolute -right-20 -top-20 h-80 w-80 rounded-full bg-gradient-brand opacity-30 blur-3xl" />
@@ -296,7 +296,7 @@ export default async function HomePage() {
       </section>
 
       {/* ───────── IMÓVEIS EM DESTAQUE ───────── */}
-      <section className="bg-surface-2 py-12 md:py-20">
+      <section className="bg-surface-2 section-y">
         <div className="container-page">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div className="max-w-xl">
@@ -313,13 +313,13 @@ export default async function HomePage() {
             </Link>
           </div>
           {featured.length > 0 ? (
-            <div className="mt-8 md:mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-6 md:mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {featured.map((p) => (
                 <PropertyCard key={p.id} property={p} />
               ))}
             </div>
           ) : (
-            <div className="mt-8 md:mt-12 rounded-3xl border border-dashed border-line bg-surface px-6 py-14 text-center">
+            <div className="mt-6 md:mt-8 rounded-3xl border border-dashed border-line bg-surface px-6 py-14 text-center">
               <p className="font-title text-xl font-bold text-ink">
                 Os primeiros imóveis estão chegando.
               </p>
