@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { SlidersHorizontal, ChevronDown, MapPin } from "lucide-react";
+import { SlidersHorizontal, ChevronDown, MapPin, ArrowRight } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { PropertyCard } from "@/components/property-card";
 import { SearchMap } from "@/components/search-map";
@@ -110,6 +111,23 @@ export function SearchClient({ properties }: { properties: Property[] }) {
     locationQuery, geoCenter, radiusKm, maxPrice, minBedrooms, maxPeriod, sort,
     readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly,
   ]);
+
+  // Zera todos os filtros (usado no estado vazio para o usuário recomeçar).
+  function clearFilters() {
+    setLocationQuery("");
+    setGeoCenter(null);
+    setRadiusKm(DEFAULT_RADIUS_KM);
+    setMaxPrice(0);
+    setMinBedrooms(0);
+    setMaxPeriod(0);
+    setReadyToLiveOnly(false);
+    setHomeOfficeOnly(false);
+    setWorkLocatedOnly(false);
+    setInvoiceOnly(false);
+    setInsuranceOnly(false);
+    setOperatedOnly(false);
+    setSort("relevance");
+  }
 
   const results = useMemo(() => {
     const loc = locationQuery.trim().toLowerCase();
@@ -339,11 +357,25 @@ export function SearchClient({ properties }: { properties: Property[] }) {
           {results.length === 0 ? (
             <div className="flex flex-col items-center rounded-2xl border border-dashed border-line p-12 text-center">
               <EmptySearchIllustration />
-              <p className="mt-4 font-title text-lg font-bold text-ink">Nenhum imóvel encontrado</p>
-              <p className="mt-1 max-w-sm text-sm text-muted">
-                Nenhum imóvel corresponde aos filtros. Tente ampliar o período, o preço ou
-                remover o filtro Pronto para Morar.
+              <p className="mt-4 font-title text-lg font-bold text-ink">
+                Ainda não há imóveis para esta busca
               </p>
+              <p className="mt-1 max-w-sm text-sm text-muted">
+                Ajuste os filtros ou volte em breve — novos imóveis entram toda semana.
+              </p>
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="mt-5 inline-flex items-center gap-1.5 rounded-full border border-sage-200 bg-white px-4 py-2 text-sm font-medium text-ink transition-colors hover:border-sage hover:bg-surface-2"
+              >
+                Limpar filtros
+              </button>
+              <Link
+                href="/qualificar"
+                className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-forest hover:text-blue-700"
+              >
+                É proprietário? Anuncie seu imóvel <ArrowRight className="h-4 w-4" />
+              </Link>
             </div>
           ) : (
             <div className="grid gap-6 sm:grid-cols-2">
