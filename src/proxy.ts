@@ -2,11 +2,12 @@ import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
 /**
- * Protege rotas privadas no servidor (Fase 2).
- * Só atua quando o Supabase está configurado; em modo demonstração, deixa
- * passar para não bloquear a navegação sem backend.
+ * Proxy (Next.js 16) — substitui a antiga convenção `middleware`.
+ * Protege rotas privadas no servidor (Blocker 2): valida a sessão a cada
+ * requisição. Só atua quando o Supabase está configurado; em modo
+ * demonstração (sem backend), deixa passar para não bloquear a navegação.
  */
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return NextResponse.next();
