@@ -24,9 +24,9 @@ import { ReadyToLiveBadge } from "@/components/ui/badge";
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user) ?? DEMO_USER;
   const { mode } = useViewMode();
-  // Saudação com o nome real; sem nome coletado, cai no 1º segmento do e-mail
-  // (via user.name) — nunca "visitante" (N4).
-  const firstName = (user.fullName?.trim() || user.name || "").split(" ")[0] || "Usuário";
+  // Saudação com o nome real; sem nome coletado, cai em "Olá!" — nunca
+  // "visitante" nem a parte local do e-mail (pré-lançamento, ALTA 3).
+  const firstName = user.fullName?.trim() ? user.fullName.trim().split(" ")[0] : "";
 
   if (mode === "tenant") return <TenantDashboard name={firstName} />;
   return <OwnerDashboard name={firstName} />;
@@ -41,7 +41,7 @@ function OwnerDashboard({ name }: { name: string }) {
         className="mb-6"
         image={PHOTOS.dashOwner}
         alt="Sala de apartamento mobiliado preparada para anúncio"
-        title={`Olá, ${name} 👋`}
+        title={`Olá${name ? `, ${name}` : "!"} 👋`}
         subtitle="Prepare seu imóvel, publique e fale com inquilinos qualificados."
         action={
           <ButtonLink href="/qualificar" variant="accent">
@@ -132,7 +132,7 @@ function TenantDashboard({ name }: { name: string }) {
         className="mb-6"
         image={PHOTOS.dashTenant}
         alt="Canto aconchegante de apartamento mobiliado com luz da manhã"
-        title={`Olá, ${name} 👋`}
+        title={`Olá${name ? `, ${name}` : "!"} 👋`}
         subtitle="Encontre o imóvel certo para a sua próxima fase."
         action={
           <ButtonLink href="/buscar" variant="accent">

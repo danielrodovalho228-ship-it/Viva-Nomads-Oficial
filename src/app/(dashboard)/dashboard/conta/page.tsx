@@ -248,9 +248,9 @@ function DangerZone() {
 
   return (
     <Panel title="Excluir conta" className="mt-6 border-red-200">
-      <p className="text-sm text-muted">
-        A exclusão é permanente e remove seus dados conforme a LGPD. Esta ação não pode ser
-        desfeita.
+      <p className="text-sm font-medium text-red-600">
+        Esta ação é permanente. Todos os seus dados, imóveis e contratos serão removidos e
+        não podem ser recuperados (LGPD — direito ao esquecimento).
       </p>
 
       {step === 0 && (
@@ -262,7 +262,8 @@ function DangerZone() {
       {step === 1 && (
         <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4">
           <p className="text-sm font-medium text-red-700">
-            Tem certeza? Você perderá anúncios, documentos e histórico.
+            Tem certeza? Você perderá anúncios, documentos, contratos e histórico — sem
+            recuperação.
           </p>
           <div className="mt-3 flex gap-2">
             <Button variant="ghost" size="sm" onClick={() => setStep(0)}>

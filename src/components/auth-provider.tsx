@@ -23,11 +23,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       const u = session.user;
       // `fullName` é o nome real coletado (pode faltar). `name` é só para
-      // exibição (saudação/avatar) e cai no handle do e-mail quando não há nome.
+      // exibição (saudação/avatar) e cai no e-mail completo quando não há nome —
+      // nunca usa a parte local do e-mail como se fosse um nome.
       const fullName = (u.user_metadata?.full_name as string | undefined) || undefined;
       setUser({
         id: u.id,
-        name: fullName ?? u.email?.split("@")[0] ?? "Usuário",
+        name: fullName ?? u.email ?? "Usuário",
         fullName,
         email: u.email ?? "",
         role: (u.user_metadata?.role as UserRole) ?? "tenant",

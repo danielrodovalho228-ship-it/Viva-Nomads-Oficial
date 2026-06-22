@@ -170,7 +170,8 @@ export default function AuthPage() {
       // Define a sessão local (modo demo ou pós-login).
       setUser({
         id: crypto.randomUUID(),
-        name: name || email.split("@")[0],
+        name: name || email,
+        fullName: name || undefined,
         email,
         role,
       });
