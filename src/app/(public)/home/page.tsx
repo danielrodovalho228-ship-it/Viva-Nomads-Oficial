@@ -59,8 +59,8 @@ export default async function HomePage() {
               <span className="text-gradient-brand">nova fase</span>
             </h1>
             <p className="mt-6 max-w-xl text-lg text-white/70">
-              Apartamentos prontos para morar e trabalhar, por temporada de 30 a 180 dias.
-              Para quem chega a trabalho e quer se sentir em casa desde o primeiro dia.
+              Apartamentos prontos para morar, por temporada de 30 a 180 dias.
+              Para quem chega a uma nova fase e quer se sentir em casa desde o primeiro dia.
             </p>
             <div className="mt-9 max-w-2xl">
               <HeroSearch />
@@ -110,7 +110,7 @@ export default async function HomePage() {
           <div className="max-w-2xl">
             <Eyebrow>Para quem é</Eyebrow>
             <h2 className="mt-4 font-title font-bold text-ink display-lg">
-              Feito para quem se muda pelo trabalho — não para turistas
+              Feito para morar de verdade, pelo tempo que a vida pedir
             </h2>
           </div>
 
@@ -177,12 +177,12 @@ export default async function HomePage() {
           <div className="order-1 lg:order-2">
             <Eyebrow>O diferencial</Eyebrow>
             <h2 className="mt-4 font-title font-bold text-ink display-lg">
-              Você trabalha no dia seguinte à chegada
+              Pronto para morar — e para trabalhar, se for o caso
             </h2>
             <p className="mt-5 text-lg text-muted">
-              Quem se muda pelo trabalho precisa de mais que uma cama. Além do selo{" "}
+              Mais que uma cama: além do selo{" "}
               <strong className="text-ink">Pronto para Morar</strong>, etiquetas mostram a
-              aptidão de cada imóvel para o trabalho.
+              aptidão de cada imóvel para o trabalho remoto.
             </p>
             <div className="mt-6 flex flex-wrap gap-2">
               <SpecTag kind="home_office" />
@@ -196,17 +196,17 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ───────── NÃO É AIRBNB / QUINTOANDAR (tabela comparativa) ───────── */}
+      {/* ───────── OUTRA CATEGORIA (tabela comparativa) ───────── */}
       <section className="bg-night py-12 text-white md:py-20">
         <div className="container-page">
           <div className="mx-auto max-w-2xl text-center">
             <Eyebrow light>Outra categoria</Eyebrow>
             <h2 className="mt-4 font-title font-bold text-white display-lg">
-              Somos diferentes do Airbnb e do QuintoAndar.
+              Uma categoria à parte: estadia de meses, com contrato de verdade.
             </h2>
             <p className="mt-5 text-lg text-white/65">
               Estadia de meses, com contrato de verdade, inquilino verificado e custos
-              organizados. Uma proposta para quem precisa de tempo, não de diária.
+              organizados. Tempo para morar com tranquilidade, no seu ritmo.
             </p>
           </div>
 
