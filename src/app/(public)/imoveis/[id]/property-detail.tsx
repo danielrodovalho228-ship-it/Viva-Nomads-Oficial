@@ -283,6 +283,7 @@ export function PropertyDetail({
                     className="mt-4 aspect-[16/9] w-full"
                     center={{ lat: property.lat, lng: property.lng }}
                     markers={[propertyMarker, ...workspaceMarkers]}
+                    approximate
                   />
                 </div>
               </div>
@@ -302,11 +303,19 @@ export function PropertyDetail({
             )}
 
             {tab === "Localização" && (
-              <PropertyMap
-                className="aspect-[16/9] w-full"
-                center={{ lat: property.lat, lng: property.lng }}
-                markers={[propertyMarker]}
-              />
+              <div>
+                <PropertyMap
+                  className="aspect-[16/9] w-full"
+                  center={{ lat: property.lat, lng: property.lng }}
+                  markers={[propertyMarker]}
+                  approximate
+                />
+                <p className="mt-3 text-sm text-muted">
+                  Mostramos a <strong className="text-ink">região aproximada</strong> (
+                  {property.neighborhood}). O endereço exato é liberado após o aceite da
+                  candidatura.
+                </p>
+              </div>
             )}
 
             {tab === "Proprietário" && (
