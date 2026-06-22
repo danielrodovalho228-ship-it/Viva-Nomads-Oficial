@@ -26,6 +26,50 @@ export interface GeoSuggestion {
 // Centro aproximado de Uberlândia — enviesa as sugestões para a cidade atendida.
 const PROXIMITY = "-48.262,-18.911";
 
+/** Centro de Uberlândia — fallback seguro quando não há coordenada do endereço. */
+export const UBERLANDIA_CENTER = { lat: -18.9113, lng: -48.2622 };
+
+/**
+ * Sanidade de coordenada: descarta (0,0)/oceano e valores fora do Brasil
+ * continental. Evita "jogar o pino no oceano" quando o geocoding falha ou
+ * devolve algo estranho. Limites aproximados do território brasileiro.
+ */
+function isPlausibleBR(lat: number, lng: number): boolean {
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
+  if (lat === 0 && lng === 0) return false;
+  return lat >= -34 && lat <= 6 && lng >= -74 && lng <= -33;
+}
+
+/**
+ * Converte um endereço (rua/bairro/cidade) em coordenadas para gravar no
+ * imóvel ao salvar. NUNCA lança e SEMPRE devolve uma coordenada utilizável:
+ * - sem token ou endereço fraco → centro da cidade (Uberlândia) como aproximação;
+ * - geocoding com resultado implausível (oceano/0,0) → mesmo fallback.
+ * Assim o imóvel novo aparece no mapa e nos filtros por raio sem quebrar.
+ */
+export async function geocodeForSave(parts: {
+  street?: string;
+  neighborhood?: string;
+  city?: string;
+}): Promise<{ lat: number; lng: number; approximate: boolean }> {
+  const fallback = { ...UBERLANDIA_CENTER, approximate: true };
+
+  const query = [parts.street, parts.neighborhood, parts.city, "Brasil"]
+    .map((s) => s?.trim())
+    .filter(Boolean)
+    .join(", ");
+  if (!TOKEN || query.length < 3) return fallback;
+
+  try {
+    const results = await geocodeAddress(query);
+    const hit = results.find((r) => isPlausibleBR(r.lat, r.lng));
+    if (hit) return { lat: hit.lat, lng: hit.lng, approximate: false };
+  } catch {
+    /* rede/HTTP — cai no fallback do centro da cidade */
+  }
+  return fallback;
+}
+
 /**
  * Busca sugestões de endereço para `query`. Retorna [] sem token ou para
  * consultas muito curtas (não é "falha", é "nada a buscar"). Em erro de rede

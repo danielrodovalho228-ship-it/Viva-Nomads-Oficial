@@ -163,7 +163,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       </nav>
       <div className="border-t border-white/10 p-3">
         <div className="flex items-center gap-3 px-3 py-2">
-          <Avatar name={display.name} size={36} />
+          <Avatar name={display.name} size={36} mode={mode} />
           <div className="min-w-0 text-xs">
             <p className="truncate font-medium text-white">{display.name}</p>
             <p className="text-white/60">Conta: {labelForRole(display.role)}</p>
@@ -211,8 +211,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           <p className="flex items-center gap-2 text-sm text-muted">
             <span className="hidden sm:inline">Você está no modo</span>
             <span
+              key={mode}
               className={cn(
-                "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold",
+                "mode-pill inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold",
                 meta.accentBg,
                 meta.accentText
               )}
@@ -239,16 +240,17 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 /** Botão de troca de modo, estilo Airbnb (mostra o modo atual e alterna). */
 function ModeSwitcher({ mode, onSwitch }: { mode: ViewMode; onSwitch: (m: ViewMode) => void }) {
   const meta = MODE_META[mode];
+  const target = MODE_META[meta.other];
   return (
     <button
       type="button"
       onClick={() => onSwitch(meta.other)}
-      title={`Trocar para o modo ${MODE_META[meta.other].label}`}
-      className="inline-flex items-center gap-2 rounded-full border border-sage-200 bg-white px-3.5 py-1.5 text-sm font-medium text-ink transition-colors hover:border-sage hover:bg-surface-2"
+      title={`Trocar para o modo ${target.label}`}
+      className="group inline-flex items-center gap-2 rounded-full border border-sage-200 bg-white px-3.5 py-1.5 text-sm font-medium text-ink transition-[transform,colors] hover:border-sage hover:bg-surface-2 active:scale-95"
     >
-      <span className={cn("h-2 w-2 rounded-full", meta.accentDot)} aria-hidden />
+      <span className={cn("h-2 w-2 rounded-full transition-colors", meta.accentDot)} aria-hidden />
       Modo: {meta.label}
-      <ArrowLeftRight className="h-4 w-4 text-muted" />
+      <ArrowLeftRight className="h-4 w-4 text-muted transition-transform group-hover:rotate-180" />
     </button>
   );
 }

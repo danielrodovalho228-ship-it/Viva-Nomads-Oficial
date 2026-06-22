@@ -104,6 +104,8 @@ export async function createProperty(input: {
       property_type: input.propertyType,
       city: input.city,
       address: input.neighborhood,
+      lat: input.lat ?? null,
+      lng: input.lng ?? null,
       bedrooms: input.bedrooms,
       bathrooms: input.bathrooms,
       area_m2: input.areaM2,

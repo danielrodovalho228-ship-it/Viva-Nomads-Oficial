@@ -21,6 +21,7 @@ import {
   PlayCircle,
 } from "lucide-react";
 import { createProperty } from "@/lib/data/actions";
+import { geocodeForSave } from "@/lib/integrations/geocoding";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { PropertyMiniCard } from "@/components/property-mini-card";
@@ -127,6 +128,11 @@ export default function NewPropertyPage() {
       if (raw) q = { ...q, ...JSON.parse(raw) };
     } catch {}
 
+    // Geocodifica o endereço para gravar lat/lng — assim o imóvel aparece no
+    // mapa e nos filtros por raio. Nunca lança: cai no centro da cidade quando
+    // não há coordenada válida (não some do mapa, não vai parar no oceano).
+    const coords = await geocodeForSave({ street, neighborhood, city });
+
     const res = await createProperty({
       title: title || "Imóvel mobiliado",
       description,
@@ -150,6 +156,8 @@ export default function NewPropertyPage() {
       issuesInvoice,
       acceptsInsurance,
       prepFee,
+      lat: coords.lat,
+      lng: coords.lng,
       photoUrls: photos.map((p) => p.url),
       videoUrl: videoUrl.trim() || undefined,
     });
