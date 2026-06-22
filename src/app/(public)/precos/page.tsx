@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Check, Percent, Camera, FileSignature, ShieldCheck, UserCheck, ClipboardList, Receipt, Calculator } from "lucide-react";
+import { Check, Percent, Camera, FileSignature, ShieldCheck, UserCheck, ClipboardList, Receipt, Calculator, PiggyBank } from "lucide-react";
 import { PLANS } from "@/lib/constants";
 import { CommissionCalculator } from "./commission-calculator";
 import { ButtonLink } from "@/components/ui/button";
@@ -11,43 +11,73 @@ export const metadata: Metadata = {
     "Planos de assinatura para proprietários: Gratuito, Essencial e Profissional. Mais serviços opcionais como fotografia, contrato e análise de inquilino.",
 };
 
-type ServiceStatus = "incluido" | "avulso" | "cotacao" | "gratis";
+type ServiceTone = "incluido" | "avulso" | "cotacao" | "gratis";
 
-/** Serviços opcionais — benefício, preço honesto e estado (incluído vs avulso). */
+/**
+ * Serviços do fechamento — cada um com STATUS honesto (Disponível / Via parceiro)
+ * (rodada 25). A plataforma intermedia e documenta; nunca é a garantidora.
+ * Caução e seguro-fiança são alternativas: por lei, só uma garantia por contrato.
+ */
 const SERVICES = [
-  { icon: FileSignature, title: "Contrato digital (ZapSign)", benefit: "Contrato de locação por temporada assinado digitalmente, com validade jurídica.", price: "Sem custo extra", status: "incluido", cta: "Incluído", href: "/precos" },
-  { icon: ShieldCheck, title: "Seguro-fiança", benefit: "Garantia que substitui o fiador e dá mais segurança ao proprietário.", price: "Cotação sob análise", status: "cotacao", cta: "Solicitar cotação", href: "/dashboard/fechamento" },
-  { icon: UserCheck, title: "Verificação de identidade", benefit: "Confirmação de identidade e perfil para dar segurança à negociação.", price: "Sob consulta", status: "avulso", cta: "Adicionar", href: "/dashboard/verificacao" },
-  { icon: ClipboardList, title: "Vistoria e laudo patrimonial", benefit: "Registro documentado do estado do imóvel na entrada e na saída.", price: "Sob consulta", status: "avulso", cta: "Adicionar", href: "/dashboard/fechamento" },
-  { icon: Receipt, title: "Emissão de nota fiscal (NFS-e)", benefit: "Nota fiscal do aluguel emitida automaticamente, conforme a legislação.", price: "Sob consulta", status: "avulso", cta: "Adicionar", href: "/dashboard/assinatura" },
-  { icon: Calculator, title: "Cotação de garantia", benefit: "Compare opções de garantia e escolha a que cabe no seu caso.", price: "Gratuito", status: "gratis", cta: "Comparar garantias", href: "/dashboard/fechamento" },
-  { icon: Camera, title: "Fotografia profissional", benefit: "Sessão de fotos do imóvel para anúncios que convertem mais.", price: "Sob consulta", status: "avulso", cta: "Adicionar", href: "/dashboard/assinatura" },
+  { icon: PiggyBank, title: "Caução (depósito-garantia)", benefit: "Depósito de até 3 aluguéis em conta conjunta, devolvido ao fim da locação, descontados eventuais danos. Simples e sem mensalidade.", price: "Sem mensalidade", statusLabel: "Disponível", statusTone: "ok", tone: "avulso", cta: "Saber mais", href: "/dashboard/fechamento" },
+  { icon: ShieldCheck, title: "Seguro-fiança (via parceiro)", benefit: "Substitui o fiador e o depósito, contratado com seguradora parceira. Sujeito a análise e à cobertura conforme o prazo da locação.", price: "Cotação sob análise", statusLabel: "Via parceiro", statusTone: "partner", tone: "cotacao", cta: "Solicitar cotação", href: "/dashboard/fechamento" },
+  { icon: ClipboardList, title: "Vistoria documentada (entrada e saída)", benefit: "Inspeção imparcial do imóvel, com laudo em PDF, fotos e inventário da mobília. Ideal para quem não pode visitar o imóvel pessoalmente.", price: "Sob consulta", statusLabel: "Disponível via parceiro", statusTone: "partner", tone: "avulso", cta: "Solicitar vistoria", href: "/dashboard/fechamento", highlight: "Ideal para proprietário à distância" },
+  { icon: FileSignature, title: "Contrato digital (ZapSign)", benefit: "Contrato de locação por temporada assinado digitalmente, com validade jurídica.", price: "Sem custo extra", statusLabel: "Disponível", statusTone: "ok", tone: "incluido", cta: "Incluído", href: "/precos" },
+  { icon: UserCheck, title: "Verificação de identidade", benefit: "Confirmação de identidade e perfil para dar segurança à negociação.", price: "Sob consulta", statusLabel: "Disponível", statusTone: "ok", tone: "avulso", cta: "Adicionar", href: "/dashboard/verificacao" },
+  { icon: Receipt, title: "Emissão de nota fiscal (NFS-e)", benefit: "Nota fiscal do aluguel emitida automaticamente, conforme a legislação.", price: "Sob consulta", statusLabel: "Disponível", statusTone: "ok", tone: "avulso", cta: "Adicionar", href: "/dashboard/assinatura" },
+  { icon: Calculator, title: "Cotação de garantia", benefit: "Compare as opções de garantia e escolha a que cabe no seu caso.", price: "Gratuito", statusLabel: "Disponível", statusTone: "ok", tone: "gratis", cta: "Comparar garantias", href: "/dashboard/fechamento" },
+  { icon: Camera, title: "Fotografia profissional", benefit: "Sessão de fotos do imóvel para anúncios que convertem mais.", price: "Sob consulta", statusLabel: "Via parceiro", statusTone: "partner", tone: "avulso", cta: "Adicionar", href: "/dashboard/assinatura" },
 ] as const;
 
-const ICON_TONE: Record<ServiceStatus, string> = {
+const ICON_TONE: Record<ServiceTone, string> = {
   incluido: "bg-champagne/15 text-champagne-600",
   cotacao: "bg-sage-100 text-forest",
   avulso: "bg-sage-100 text-forest",
   gratis: "bg-blue-50 text-blue-500",
 };
 
+const STATUS_TONE = {
+  ok: "bg-green-50 text-green-900",
+  partner: "bg-amber-50 text-amber-700",
+} as const;
+
 function ServiceCard({ s }: { s: (typeof SERVICES)[number] }) {
   const Icon = s.icon;
-  const included = s.status === "incluido";
+  const included = s.tone === "incluido";
+  const highlight = "highlight" in s ? s.highlight : null;
   return (
     <div
       className={cn(
         "flex h-full flex-col rounded-2xl border bg-white p-6 transition-all hover:-translate-y-0.5 hover:shadow-md",
-        included ? "border-champagne ring-1 ring-champagne/40" : "border-sage-200"
+        included
+          ? "border-champagne ring-1 ring-champagne/40"
+          : highlight
+            ? "border-blue-200 ring-1 ring-blue-100"
+            : "border-sage-200"
       )}
     >
-      <div className={cn("grid h-12 w-12 place-items-center rounded-xl", ICON_TONE[s.status])}>
-        <Icon className="h-6 w-6" aria-hidden />
+      <div className="flex items-start justify-between gap-3">
+        <div className={cn("grid h-12 w-12 place-items-center rounded-xl", ICON_TONE[s.tone])}>
+          <Icon className="h-6 w-6" aria-hidden />
+        </div>
+        <span
+          className={cn(
+            "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold",
+            STATUS_TONE[s.statusTone]
+          )}
+        >
+          {s.statusLabel}
+        </span>
       </div>
       <h3 className="mt-4 font-title text-lg font-bold text-ink">{s.title}</h3>
       {included && (
         <span className="mt-2 inline-flex w-fit items-center rounded-full bg-champagne px-2.5 py-0.5 text-xs font-semibold text-forest">
           Incluído no plano Profissional
+        </span>
+      )}
+      {highlight && (
+        <span className="mt-2 inline-flex w-fit items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
+          {highlight}
         </span>
       )}
       <p className="mt-2 flex-1 text-sm text-muted">{s.benefit}</p>
@@ -60,7 +90,7 @@ function ServiceCard({ s }: { s: (typeof SERVICES)[number] }) {
             <Check className="h-4 w-4" aria-hidden /> Incluído
           </span>
         ) : (
-          <ButtonLink href={s.href} variant={s.status === "gratis" ? "outline" : "primary"} size="sm">
+          <ButtonLink href={s.href} variant={s.tone === "gratis" ? "outline" : "primary"} size="sm">
             {s.cta}
           </ButtonLink>
         )}
@@ -157,8 +187,13 @@ export default function PricingPage() {
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="font-title text-3xl font-bold text-ink">Serviços para o fechamento</h2>
             <p className="mt-4 text-muted">
-              Reforce o anúncio e organize a negociação. Contrate só o que precisar — alguns
-              já vêm no seu plano.
+              Reforce o anúncio e organize a negociação. Cada serviço mostra o status — o que
+              já funciona e o que depende de parceiro. Contrate só o que precisar.
+            </p>
+            <p className="mx-auto mt-3 max-w-xl rounded-lg bg-white px-3 py-2 text-sm text-muted">
+              <strong className="text-ink">Garantia:</strong> caução e seguro-fiança são
+              alternativas — por lei, só uma garantia por contrato. A plataforma intermedia e
+              documenta; não é a garantidora.
             </p>
           </div>
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
