@@ -9,6 +9,13 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "*.supabase.co" },
     ],
   },
+  async redirects() {
+    return [
+      // /planos é natural de digitar e pode ter links antigos; a página canônica
+      // é /precos (o rótulo "Planos" no menu/rodapé já aponta para /precos).
+      { source: "/planos", destination: "/precos", permanent: true },
+    ];
+  },
 };
 
 export default nextConfig;
