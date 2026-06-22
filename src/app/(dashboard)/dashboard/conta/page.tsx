@@ -20,7 +20,7 @@ export default function AccountPage() {
   const { mode } = useViewMode();
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-5xl">
       <PageTitle title="Conta" subtitle="Seus dados pessoais e preferências." />
 
       <Panel title="Dados pessoais">

@@ -282,7 +282,7 @@ export default function NewPropertyPage() {
   const StepIcon = meta.icon;
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-5xl">
       <PageTitle
         title="Anuncie seu imóvel"
         subtitle="Em 7 etapas. Salvamos seu progresso automaticamente."

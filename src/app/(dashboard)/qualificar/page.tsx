@@ -101,7 +101,7 @@ export default function QualificationChecklistPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-5xl">
       <header className="mb-8">
         <p className="font-title text-sm font-bold uppercase tracking-wide text-blue-500">
           Porta de entrada do anúncio
