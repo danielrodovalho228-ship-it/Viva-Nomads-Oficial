@@ -273,11 +273,11 @@ export default async function HomePage() {
               <div>
                 <Eyebrow light>Para proprietários</Eyebrow>
                 <h2 className="mt-4 font-title font-bold display-lg">
-                  Menos rotatividade, menos vacância,{" "}
+                  Mais estabilidade, menos vacância,{" "}
                   <span className="text-gradient-brand">mais margem líquida</span>.
                 </h2>
                 <p className="mt-5 max-w-md text-white/65">
-                  Um inquilino por meses, não por dias. Sem troca a cada fim de semana, com
+                  Um inquilino por uma temporada inteira traz previsibilidade: agenda estável,
                   custos de consumo organizados no contrato e inquilino verificado. Você
                   anuncia de graça e só paga quando fecha.
                 </p>

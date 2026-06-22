@@ -49,9 +49,9 @@ export default async function CityLandingPage({ params }: Params) {
             Imóveis mobiliados mensais em {name}
           </h1>
           <p className="mt-5 max-w-2xl text-lg text-white/80">
-            Locação por temporada de 30 a 180 dias para quem chega a {name} pelo trabalho —
-            executivos em transferência, profissionais de saúde, famílias em transição e
-            nômades digitais. Pronto para morar e trabalhar desde o primeiro dia.
+            Locação por temporada de 30 a 180 dias em {name}, mobiliada e pronta para morar.
+            Para executivos em transferência, profissionais de saúde, famílias em transição,
+            estudantes e nômades digitais — instalados e em casa desde o primeiro dia.
           </p>
         </div>
       </section>
@@ -91,11 +91,11 @@ export default async function CityLandingPage({ params }: Params) {
             Por que alugar mobiliado por temporada em {name}?
           </h3>
           <p className="mt-3 leading-relaxed">
-            A locação mensal mobiliada é a melhor opção para quem precisa morar em {name} por
-            algumas semanas ou meses sem o compromisso de um contrato de 30 meses nem a
-            instabilidade da hospedagem de curtíssimo prazo. Com contrato formal de locação
-            por temporada (art. 48 da Lei 8.245/91), é aceita em condomínios e dá segurança a
-            inquilino e proprietário.
+            A locação mensal mobiliada é feita para quem vai morar em {name} por algumas
+            semanas ou meses: você entra com tudo pronto e a tranquilidade de um contrato
+            formal de temporada (art. 48 da Lei 8.245/91), aceito em condomínios e com
+            segurança para inquilino e proprietário. É o meio-termo entre o aluguel
+            tradicional e a hospedagem por diária.
           </p>
           <p className="mt-3 leading-relaxed">
             Todos os imóveis do Viva Nomads em {name} são mobiliados e qualificados. Os que
