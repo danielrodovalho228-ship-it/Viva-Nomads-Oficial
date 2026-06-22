@@ -1,15 +1,27 @@
 import Link from "next/link";
-import { Plus, Eye, Bath, BedDouble, Home, Handshake } from "lucide-react";
+import { Plus, Bath, BedDouble, Home, Handshake } from "lucide-react";
 import { PageTitle, EmptyState } from "@/components/dashboard/primitives";
 import { EmptyBuildingIllustration } from "@/components/illustrations";
 import { ButtonLink } from "@/components/ui/button";
 import { ReadyToLiveBadge } from "@/components/ui/badge";
 import { BrandImage } from "@/components/brand-image";
-import { SAMPLE_PROPERTIES } from "@/lib/properties";
-import { formatBRL } from "@/lib/utils";
+import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
+import { listMyProperties } from "@/lib/data/properties";
+import type { PropertyStatus } from "@/lib/types";
+import { formatBRL, cn } from "@/lib/utils";
 
-export default function MyPropertiesPage() {
-  const properties = SAMPLE_PROPERTIES.slice(0, 3);
+/** Rótulo + tom do status do anúncio (rascunho/ativo/pausado/arquivado). */
+const STATUS_META: Record<PropertyStatus, { label: string; tone: string }> = {
+  draft: { label: "Rascunho", tone: "bg-amber-50 text-amber-700" },
+  active: { label: "Ativo", tone: "bg-sage-100 text-forest" },
+  paused: { label: "Pausado", tone: "bg-surface-2 text-muted" },
+};
+
+const hasPhoto = (s?: string) =>
+  typeof s === "string" && (/^https?:\/\//.test(s) || s.startsWith("/"));
+
+export default async function MyPropertiesPage() {
+  const properties = await listMyProperties();
 
   return (
     <>
@@ -41,16 +53,28 @@ export default function MyPropertiesPage() {
               key={p.id}
               className="flex flex-col gap-4 rounded-2xl border border-sage-200 bg-white p-4 sm:flex-row"
             >
-              <BrandImage
-                src={p.photos[0]}
-                alt={p.title}
-                sizes="200px"
-                className="aspect-[4/3] w-full shrink-0 sm:w-48"
-              />
+              {hasPhoto(p.photos[0]) ? (
+                <BrandImage
+                  src={p.photos[0]}
+                  alt={p.title}
+                  sizes="200px"
+                  className="aspect-[4/3] w-full shrink-0 sm:w-48"
+                />
+              ) : (
+                <PhotoPlaceholder
+                  label={p.photos[0]}
+                  className="aspect-[4/3] w-full shrink-0 rounded-xl sm:w-48"
+                />
+              )}
               <div className="flex flex-1 flex-col">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-full bg-sage-100 px-2.5 py-1 text-xs font-medium text-forest">
-                    Ativo
+                  <span
+                    className={cn(
+                      "rounded-full px-2.5 py-1 text-xs font-medium",
+                      STATUS_META[p.status].tone
+                    )}
+                  >
+                    {STATUS_META[p.status].label}
                   </span>
                   <span className="inline-flex items-center gap-1 rounded-full border border-sage-200 px-2.5 py-1 text-xs font-medium text-ink">
                     {p.ownershipType === "subleased" ? (
@@ -77,9 +101,6 @@ export default function MyPropertiesPage() {
                   </span>
                   <span className="inline-flex items-center gap-1">
                     <Bath className="h-4 w-4" /> {p.bathrooms}
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <Eye className="h-4 w-4" /> 624 visualizações
                   </span>
                 </div>
                 <div className="mt-auto flex items-center justify-between pt-3">

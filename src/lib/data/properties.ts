@@ -120,3 +120,27 @@ export async function listPropertiesByCity(city: string): Promise<Property[]> {
   const all = await listProperties();
   return all.filter((p) => p.city.toLowerCase() === city.toLowerCase());
 }
+
+/**
+ * Imóveis do proprietário logado (todos os status — inclui rascunhos), para o
+ * painel "Meus imóveis". No modo demonstração, devolve alguns exemplos.
+ */
+export async function listMyProperties(): Promise<Property[]> {
+  const supabase = await createClient();
+  // Modo demonstração (sem Supabase): exemplos para a UI ganhar vida.
+  if (!supabase) return SAMPLE_PROPERTIES.slice(0, 3);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from("properties")
+    .select("*")
+    .eq("owner_id", user.id)
+    .order("created_at", { ascending: false });
+
+  if (error || !data) return [];
+  return (data as PropertyRow[]).map(rowToProperty);
+}
