@@ -66,7 +66,7 @@ export default function VerificationPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-5xl">
       <PageTitle title={C.title} subtitle={C.subtitle} />
 
       {!result ? (

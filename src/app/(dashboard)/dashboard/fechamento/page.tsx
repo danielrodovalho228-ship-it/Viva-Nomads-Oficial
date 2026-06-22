@@ -200,32 +200,36 @@ export default function ClosingPage() {
               : null;
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div>
       <PageTitle
         title="Fechamento"
         subtitle={`Contrato ${CONTRACT_NUMBER} · você está fechando uma candidatura`}
       />
 
-      {/* Card do imóvel negociado (Atualização 16) */}
-      <div className="mb-4">
-        <PropertyMiniCard property={PROPERTY_FULL} />
-      </div>
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Resumo lateral (sticky no desktop) — aproveita a largura da tela */}
+        <aside className="order-1 lg:order-2 lg:col-span-1">
+          <div className="space-y-4 lg:sticky lg:top-20">
+            <PropertyMiniCard property={PROPERTY_FULL} />
+            {/* Identificação clara dos papéis (A6) */}
+            <div className="flex flex-wrap items-center gap-2 rounded-xl border border-line bg-white px-4 py-3 text-sm">
+              <span className="rounded-full bg-blue-50 px-2.5 py-1 font-medium text-blue-700">
+                Inquilino: {TENANT.name}
+              </span>
+              <span className="text-muted">{TENANT.profile}</span>
+              <ArrowRight className="h-4 w-4 text-muted" />
+              <span className="rounded-full bg-surface-2 px-2.5 py-1 font-medium text-ink">
+                {PROPERTY.title}
+              </span>
+            </div>
+          </div>
+        </aside>
 
-      {/* Identificação clara dos papéis (A6) */}
-      <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-line bg-white px-4 py-3 text-sm">
-        <span className="rounded-full bg-blue-50 px-2.5 py-1 font-medium text-blue-700">
-          Inquilino: {TENANT.name}
-        </span>
-        <span className="text-muted">{TENANT.profile}</span>
-        <ArrowRight className="h-4 w-4 text-muted" />
-        <span className="rounded-full bg-surface-2 px-2.5 py-1 font-medium text-ink">
-          {PROPERTY.title}
-        </span>
-      </div>
-
-      {/* Stepper (passos alcançados são clicáveis — A4).
-          Rola no mobile; quebra em linhas no desktop (sem scroll horizontal). */}
-      <div className="mb-6 flex items-center gap-2 overflow-x-auto pb-2 sm:flex-wrap sm:overflow-visible sm:pb-0">
+        {/* Coluna principal: stepper + etapas do wizard */}
+        <div className="order-2 lg:order-1 lg:col-span-2">
+          {/* Stepper (passos alcançados são clicáveis — A4).
+              Rola no mobile; quebra em linhas no desktop (sem scroll horizontal). */}
+          <div className="mb-6 flex items-center gap-2 overflow-x-auto pb-2 sm:flex-wrap sm:overflow-visible sm:pb-0">
         {STEPS.map((s, i) => {
           const reachable = i <= maxReached && !(i === 2 && guarantee !== "seguro_fianca");
           return (
@@ -759,7 +763,9 @@ export default function ClosingPage() {
         )}
       </Panel>
 
-      {step < 5 && <PlatformLegalNotice className="mt-4" />}
+          {step < 5 && <PlatformLegalNotice className="mt-4" />}
+        </div>
+      </div>
     </div>
   );
 }
