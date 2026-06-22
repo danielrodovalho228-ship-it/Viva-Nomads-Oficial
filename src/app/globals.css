@@ -210,3 +210,25 @@ textarea:focus-visible,
     to { background-color: transparent; box-shadow: 0 0 0 4px transparent; }
   }
 }
+
+/* Skip link "Pular para o conteúdo": fora da tela até receber foco (a11y). */
+.skip-link {
+  position: fixed;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 100;
+  transform: translateY(-150%);
+  border-radius: 0.5rem;
+  background: var(--color-forest, #143c8c);
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #fff;
+  box-shadow: 0 10px 30px -10px rgba(11, 42, 102, 0.5);
+  transition: transform 0.18s ease;
+}
+.skip-link:focus {
+  transform: translateY(0);
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
