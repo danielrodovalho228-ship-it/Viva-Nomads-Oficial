@@ -10,7 +10,7 @@ import { useAuthStore } from "@/lib/store";
  * Sem usuário, redireciona para /auth. Começa sempre "não hidratado" (igual no
  * SSR e no cliente, sem mismatch) e marca hidratado após a reidratação do
  * localStorage (zustand persist) — assim não redireciona quem já está logado.
- * No servidor, o middleware faz o mesmo quando o Supabase está ativo.
+ * No servidor, o proxy (Next.js 16) faz o mesmo quando o Supabase está ativo.
  */
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();

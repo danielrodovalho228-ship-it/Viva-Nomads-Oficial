@@ -4,8 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 /**
  * Guarda server-side da área de admin (defesa em profundidade do C1).
  *
- * O middleware já barra /admin para não-admin, mas validamos de novo aqui no
- * SERVIDOR — se o middleware for contornado, este layout ainda exige sessão +
+ * O proxy (Next.js 16) já barra /admin para não-admin, mas validamos de novo
+ * aqui no SERVIDOR — se o proxy for contornado, este layout ainda exige sessão +
  * papel admin (lido de `profiles`, fonte confiável). Em modo demonstração
  * (sem Supabase) não há sessão de servidor para checar, então o acesso segue
  * o comportamento de demo; no acesso real, não-admin é redirecionado.
