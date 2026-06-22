@@ -16,16 +16,16 @@ const inter = Inter({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Viva Nomads — Locação mobiliada mensal para profissionais em transição",
+    default: "Viva Nomads — Locação mobiliada por temporada, de 30 a 180 dias",
     template: "%s · Viva Nomads",
   },
   description:
-    "Locação de imóveis mobiliados por temporada de média duração (30 a 180 dias) para profissionais em transição. Estadia de meses, com contrato de verdade, inquilino verificado e locação mensal aceita em condomínios.",
+    "Apartamentos mobiliados e prontos para morar, por temporada de 30 a 180 dias. Contrato com validade jurídica e inquilino verificado.",
   keywords: [
     "locação por temporada",
     "imóvel mobiliado mensal",
     "aluguel 30 dias",
-    "moradia para profissionais em transição",
+    "apartamento mobiliado pronto para morar",
     "Viva Nomads",
   ],
   openGraph: {
