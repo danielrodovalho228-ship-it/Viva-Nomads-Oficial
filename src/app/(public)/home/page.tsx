@@ -312,11 +312,25 @@ export default async function HomePage() {
               Ver todos os imóveis <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
-          <div className="mt-8 md:mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {featured.map((p) => (
-              <PropertyCard key={p.id} property={p} />
-            ))}
-          </div>
+          {featured.length > 0 ? (
+            <div className="mt-8 md:mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {featured.map((p) => (
+                <PropertyCard key={p.id} property={p} />
+              ))}
+            </div>
+          ) : (
+            <div className="mt-8 md:mt-12 rounded-3xl border border-dashed border-line bg-surface px-6 py-14 text-center">
+              <p className="font-title text-xl font-bold text-ink">
+                Os primeiros imóveis estão chegando.
+              </p>
+              <p className="mx-auto mt-2 max-w-md text-muted">
+                É proprietário? Anuncie o seu e apareça aqui primeiro.
+              </p>
+              <ButtonLink href="/qualificar" variant="gold" className="mt-6">
+                Anunciar meu imóvel
+              </ButtonLink>
+            </div>
+          )}
         </div>
       </section>
     </>
