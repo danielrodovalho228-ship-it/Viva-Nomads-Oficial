@@ -90,6 +90,7 @@ function rowToProperty(row: PropertyRow): Property {
 
 export async function listProperties(): Promise<Property[]> {
   const supabase = await createClient();
+  // Modo demonstração (sem Supabase): dados de exemplo.
   if (!supabase) return SAMPLE_PROPERTIES;
 
   const { data, error } = await supabase
@@ -98,16 +99,20 @@ export async function listProperties(): Promise<Property[]> {
     .eq("status", "active")
     .order("created_at", { ascending: false });
 
-  if (error || !data || data.length === 0) return SAMPLE_PROPERTIES;
+  // Acesso real: NUNCA cai nos dados de exemplo (não mistura demo com real).
+  // Banco vazio ou erro → lista vazia, e não os 3 imóveis fictícios.
+  if (error || !data) return [];
   return (data as PropertyRow[]).map(rowToProperty);
 }
 
 export async function getProperty(id: string): Promise<Property | undefined> {
   const supabase = await createClient();
+  // Modo demonstração (sem Supabase): dados de exemplo.
   if (!supabase) return SAMPLE_PROPERTIES.find((p) => p.id === id);
 
   const { data, error } = await supabase.from("properties").select("*").eq("id", id).single();
-  if (error || !data) return SAMPLE_PROPERTIES.find((p) => p.id === id);
+  // Acesso real: sem registro → indefinido (não devolve imóvel de exemplo).
+  if (error || !data) return undefined;
   return rowToProperty(data as PropertyRow);
 }
 
