@@ -2,15 +2,9 @@
 
 import { Lock } from "lucide-react";
 import { useAuthStore, DEMO_USER, type SubscriptionPlan } from "@/lib/store";
+import { PLAN_RANK, PLAN_LABEL } from "@/lib/plan";
 import { ButtonLink } from "@/components/ui/button";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
-
-const RANK: Record<SubscriptionPlan, number> = {
-  free: 0,
-  essential: 1,
-  pro: 2,
-  gestor: 3,
-};
 
 /**
  * Libera o conteúdo apenas para o plano mínimo exigido (default: Gestor).
@@ -28,9 +22,9 @@ export function PlanGate({
   const { user } = useAuthStore();
   const plan = (user ?? DEMO_USER).plan ?? "free";
 
-  if (RANK[plan] >= RANK[min]) return <>{children}</>;
+  if (PLAN_RANK[plan] >= PLAN_RANK[min]) return <>{children}</>;
 
-  const minLabel = min === "gestor" ? "Gestor" : min[0].toUpperCase() + min.slice(1);
+  const minLabel = PLAN_LABEL[min];
 
   return (
     <div className="mx-auto max-w-xl">

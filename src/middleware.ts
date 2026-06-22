@@ -30,15 +30,32 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  const { pathname } = request.nextUrl;
+  const isAdminRoute = pathname.startsWith("/admin");
   const isProtected =
-    request.nextUrl.pathname.startsWith("/dashboard") ||
-    request.nextUrl.pathname.startsWith("/qualificar") ||
-    request.nextUrl.pathname.startsWith("/admin");
+    pathname.startsWith("/dashboard") || pathname.startsWith("/qualificar") || isAdminRoute;
 
+  // Sem sessão em rota protegida → login.
   if (isProtected && !user) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/auth";
     return NextResponse.redirect(redirectUrl);
+  }
+
+  // Área de admin exige papel admin (validado no servidor, não só no cliente).
+  // O papel vem da tabela `profiles` (fonte confiável), não do user_metadata
+  // editável. Não-admin é mandado para a Visão geral.
+  if (isAdminRoute && user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+    if (profile?.role !== "admin") {
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = "/dashboard";
+      return NextResponse.redirect(redirectUrl);
+    }
   }
 
   return response;
