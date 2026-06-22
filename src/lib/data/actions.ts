@@ -12,6 +12,8 @@ import {
 import { findNearbyWorkspaces } from "@/lib/integrations/places";
 import { createSubaccount } from "@/lib/payments/asaas";
 import { notify } from "@/lib/notifications";
+import { listingLimit, PLAN_LABEL } from "@/lib/plan";
+import type { SubscriptionPlan } from "@/lib/store";
 
 type ActionResult = { ok: boolean; demo?: boolean; id?: string; error?: string };
 
@@ -94,6 +96,26 @@ export async function createProperty(input: {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Não autenticado." };
+
+  // Feature gating por plano (validado no servidor): respeita o limite de
+  // anúncios do plano do proprietário. Sem assinatura, vale o plano gratuito.
+  const { data: sub } = await supabase
+    .from("subscriptions")
+    .select("plan")
+    .eq("owner_id", user.id)
+    .limit(1)
+    .maybeSingle();
+  const plan = (sub?.plan ?? "free") as SubscriptionPlan;
+  const { count } = await supabase
+    .from("properties")
+    .select("id", { count: "exact", head: true })
+    .eq("owner_id", user.id);
+  if ((count ?? 0) >= listingLimit(plan)) {
+    return {
+      ok: false,
+      error: `Seu plano (${PLAN_LABEL[plan]}) permite até ${listingLimit(plan)} anúncio(s). Faça upgrade para publicar mais.`,
+    };
+  }
 
   const { data, error } = await supabase
     .from("properties")

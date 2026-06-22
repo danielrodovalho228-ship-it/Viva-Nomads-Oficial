@@ -191,6 +191,7 @@ export function SearchClient({ properties }: { properties: Property[] }) {
             />
           </button>
           <Select
+            label="Ordenar resultados"
             value={sort}
             onChange={(v) => setSort(v as typeof sort)}
             options={[
@@ -251,6 +252,7 @@ export function SearchClient({ properties }: { properties: Property[] }) {
             </div>
           )}
           <Select
+            label="Preço máximo"
             value={String(maxPrice)}
             onChange={(v) => setMaxPrice(Number(v))}
             options={[
@@ -261,6 +263,7 @@ export function SearchClient({ properties }: { properties: Property[] }) {
             ]}
           />
           <Select
+            label="Quartos (mínimo)"
             value={String(minBedrooms)}
             onChange={(v) => setMinBedrooms(Number(v))}
             options={[
@@ -271,6 +274,7 @@ export function SearchClient({ properties }: { properties: Property[] }) {
             ]}
           />
           <Select
+            label="Período mínimo aceito"
             value={String(maxPeriod)}
             onChange={(v) => setMaxPeriod(Number(v))}
             options={[
@@ -410,15 +414,18 @@ function Select({
   value,
   onChange,
   options,
+  label,
 }: {
   value: string;
   onChange: (v: string) => void;
   options: [string, string][];
+  label: string;
 }) {
   return (
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
+      aria-label={label}
       className="rounded-full border border-sage-200 bg-white px-4 py-2 text-sm text-ink outline-none focus:border-sage"
     >
       {options.map(([v, label]) => (

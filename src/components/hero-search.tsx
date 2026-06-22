@@ -47,6 +47,7 @@ export function HeroSearch() {
         <select
           value={period}
           onChange={(e) => setPeriod(e.target.value)}
+          aria-label="Período de estadia"
           className="w-full bg-transparent text-sm text-ink outline-none"
         >
           <option value="">Período</option>
@@ -61,6 +62,7 @@ export function HeroSearch() {
         <select
           value={budget}
           onChange={(e) => setBudget(e.target.value)}
+          aria-label="Orçamento por mês"
           className="w-full bg-transparent text-sm text-ink outline-none"
         >
           <option value="">Orçamento/mês</option>
