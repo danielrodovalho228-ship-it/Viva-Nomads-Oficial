@@ -39,33 +39,49 @@ export const GUARANTEE_OPTIONS: {
   id: GuaranteeType;
   name: string;
   recommended?: boolean;
+  /** Disponível já vs depende de parceria (honestidade — rodada 25). */
+  status: "disponivel" | "parceiro";
+  /** Imobiliza capital na entrada? "none" = sem depósito; "refundable" = devolvível. */
+  deposit: "none" | "refundable";
   summary: string;
   pros: string[];
   cons: string[];
+  note?: string;
 }[] = [
   {
     id: "seguro_fianca",
-    name: "Seguro-fiança",
+    name: "Garantia digital",
     recommended: true,
+    status: "parceiro",
+    deposit: "none",
     summary:
-      "Apólice paga pelo inquilino, com o proprietário como beneficiário. Cobre aluguel, condomínio, IPTU e danos.",
-    pros: ["Cobertura ampla (até ~30x o aluguel)", "Sem depósito alto de entrada", "Ideal para contratos longos"],
-    cons: ["Custo ~1,2 a 2,5x o aluguel anual, parcelado", "Sujeito a análise de crédito"],
+      "Entre sem imobilizar capital: uma taxa mensal diluída garante o aluguel, sem depósito de entrada. Contratada com parceiro (seguro-fiança ou fintech de garantia), sujeita a análise de perfil.",
+    pros: ["Sem depósito na entrada", "Taxa mensal diluída", "Flexível para 30 a 180 dias"],
+    cons: ["Sujeita a análise de perfil", "Custo conforme o parceiro"],
   },
   {
     id: "caucao",
     name: "Caução",
+    status: "disponivel",
+    deposit: "refundable",
     summary:
-      "Depósito de até 3 meses de aluguel em conta vinculada, devolvido ao fim se não houver pendências.",
-    pros: ["Baixa burocracia", "Sem análise de crédito", "Devolvido ao inquilino no fim"],
-    cons: ["Proteção limitada ao valor depositado (máx. 3 meses, art. 38)"],
+      "Depósito de até 3 aluguéis em conta vinculada (locador + locatário), devolvido ao fim da locação, descontados eventuais danos.",
+    pros: [
+      "Sem análise de crédito",
+      "Devolvido ao inquilino no fim",
+      "Boa opção para estrangeiros sem histórico no Brasil",
+    ],
+    cons: ["Imobiliza capital na entrada", "Proteção limitada ao valor depositado (art. 38)"],
+    note: "O depósito vai para conta vinculada (locador + locatário) — nunca para a conta do Viva Nomads.",
   },
   {
     id: "titulo_cap",
     name: "Título de capitalização",
+    status: "parceiro",
+    deposit: "none",
     summary:
-      "Alternativa à caução: o inquilino adquire um título que serve de lastro para eventuais débitos.",
-    pros: ["Sem depósito imediato em conta vinculada", "Resgatável ao fim do contrato"],
+      "Meio-termo: o inquilino adquire um título que serve de lastro para eventuais débitos e é resgatado ao fim do contrato.",
+    pros: ["Sem depósito em conta vinculada", "Resgatável ao fim do contrato"],
     cons: ["Rentabilidade baixa", "Cobertura limitada ao valor do título"],
   },
 ];

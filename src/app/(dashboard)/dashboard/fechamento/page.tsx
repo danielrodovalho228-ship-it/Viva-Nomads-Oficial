@@ -288,10 +288,13 @@ export default function ClosingPage() {
         {step === 1 && (
           <div className="space-y-4">
             <div>
-              <h2 className="font-title text-lg font-bold text-ink">Garantia locatícia</h2>
+              <h2 className="font-title text-lg font-bold text-ink">
+                Escolha como quer garantir o seu aluguel
+              </h2>
               <p className="mt-1 text-sm text-muted">
-                Escolha <strong>uma</strong> garantia. Garantia dupla é nula por lei (art. 42
-                da Lei 8.245/91).
+                Você decide o que cabe no seu bolso — taxa mensal sem depósito ou caução
+                devolvível. A lei permite <strong>uma</strong> garantia por contrato (art. 42).
+                A plataforma organiza e documenta; não é a garantidora.
               </p>
             </div>
             <div className="space-y-3">
@@ -307,8 +310,8 @@ export default function ClosingPage() {
                       active ? "border-forest bg-sage-100" : "border-sage-200 hover:border-sage"
                     )}
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="flex items-center gap-2 font-title font-bold text-ink">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="flex flex-wrap items-center gap-2 font-title font-bold text-ink">
                         {g.name}
                         {g.recommended && (
                           <span className="rounded-full bg-champagne px-2 py-0.5 text-xs font-semibold text-forest">
@@ -318,14 +321,37 @@ export default function ClosingPage() {
                       </span>
                       <span
                         className={cn(
-                          "grid h-5 w-5 place-items-center rounded-full border",
+                          "grid h-5 w-5 shrink-0 place-items-center rounded-full border",
                           active ? "border-forest bg-forest text-white" : "border-sage-200"
                         )}
                       >
                         {active && <Check className="h-3.5 w-3.5" />}
                       </span>
                     </div>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      <span
+                        className={cn(
+                          "rounded-full px-2 py-0.5 text-xs font-semibold",
+                          g.deposit === "none" ? "bg-green-50 text-green-900" : "bg-blue-50 text-blue-700"
+                        )}
+                      >
+                        {g.deposit === "none" ? "Sem depósito" : "Depósito devolvível"}
+                      </span>
+                      <span
+                        className={cn(
+                          "rounded-full px-2 py-0.5 text-xs font-semibold",
+                          g.status === "disponivel" ? "bg-green-50 text-green-900" : "bg-amber-50 text-amber-700"
+                        )}
+                      >
+                        {g.status === "disponivel" ? "Disponível" : "Via parceiro"}
+                      </span>
+                    </div>
                     <p className="mt-2 text-sm text-muted">{g.summary}</p>
+                    {g.note && (
+                      <p className="mt-2 flex items-start gap-1.5 text-xs text-muted">
+                        <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {g.note}
+                      </p>
+                    )}
                   </button>
                 );
               })}
@@ -343,10 +369,10 @@ export default function ClosingPage() {
         {step === 2 && (
           <div className="space-y-4">
             <div>
-              <h2 className="font-title text-lg font-bold text-ink">Cotação de seguro-fiança</h2>
+              <h2 className="font-title text-lg font-bold text-ink">Cotação da garantia digital</h2>
               <p className="mt-1 text-sm text-muted">
-                Cotação dentro da plataforma, com seguradora parceira. A plataforma recebe
-                comissão por apólice emitida.
+                Cotação dentro da plataforma, com parceiro. A plataforma intermedia e recebe
+                comissão por contrato emitido — não é a garantidora.
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">

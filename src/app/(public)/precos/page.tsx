@@ -19,8 +19,8 @@ type ServiceTone = "incluido" | "avulso" | "cotacao" | "gratis";
  * Caução e seguro-fiança são alternativas: por lei, só uma garantia por contrato.
  */
 const SERVICES = [
-  { icon: PiggyBank, title: "Caução (depósito-garantia)", benefit: "Depósito de até 3 aluguéis em conta conjunta, devolvido ao fim da locação, descontados eventuais danos. Simples e sem mensalidade.", price: "Sem mensalidade", statusLabel: "Disponível", statusTone: "ok", tone: "avulso", cta: "Saber mais", href: "/dashboard/fechamento" },
-  { icon: ShieldCheck, title: "Seguro-fiança (via parceiro)", benefit: "Substitui o fiador e o depósito, contratado com seguradora parceira. Sujeito a análise e à cobertura conforme o prazo da locação.", price: "Cotação sob análise", statusLabel: "Via parceiro", statusTone: "partner", tone: "cotacao", cta: "Solicitar cotação", href: "/dashboard/fechamento" },
+  { icon: ShieldCheck, title: "Garantia digital (sem depósito)", benefit: "Entre sem imobilizar capital: uma taxa mensal diluída garante o aluguel, sem depósito de entrada. Contratada com parceiro, sujeita a análise.", price: "Cotação sob análise", statusLabel: "Via parceiro", statusTone: "partner", tone: "cotacao", cta: "Ver opções de garantia", href: "/dashboard/fechamento", highlight: "Recomendada · sem depósito" },
+  { icon: PiggyBank, title: "Caução (depósito devolvível)", benefit: "Alternativa: depósito de até 3 aluguéis em conta vinculada (locador + locatário), devolvido ao fim. Vai para conta vinculada, nunca para a plataforma.", price: "Sem mensalidade", statusLabel: "Disponível", statusTone: "ok", tone: "avulso", cta: "Ver opções de garantia", href: "/dashboard/fechamento" },
   { icon: ClipboardList, title: "Vistoria documentada (entrada e saída)", benefit: "Inspeção imparcial do imóvel, com laudo em PDF, fotos e inventário da mobília. Ideal para quem não pode visitar o imóvel pessoalmente.", price: "Sob consulta", statusLabel: "Disponível via parceiro", statusTone: "partner", tone: "avulso", cta: "Solicitar vistoria", href: "/dashboard/fechamento", highlight: "Ideal para proprietário à distância" },
   { icon: FileSignature, title: "Contrato digital (ZapSign)", benefit: "Contrato de locação por temporada assinado digitalmente, com validade jurídica.", price: "Sem custo extra", statusLabel: "Disponível", statusTone: "ok", tone: "incluido", cta: "Incluído", href: "/precos" },
   { icon: UserCheck, title: "Verificação de identidade", benefit: "Confirmação de identidade e perfil para dar segurança à negociação.", price: "Sob consulta", statusLabel: "Disponível", statusTone: "ok", tone: "avulso", cta: "Adicionar", href: "/dashboard/verificacao" },
@@ -191,9 +191,9 @@ export default function PricingPage() {
               já funciona e o que depende de parceiro. Contrate só o que precisar.
             </p>
             <p className="mx-auto mt-3 max-w-xl rounded-lg bg-white px-3 py-2 text-sm text-muted">
-              <strong className="text-ink">Garantia:</strong> caução e seguro-fiança são
-              alternativas — por lei, só uma garantia por contrato. A plataforma intermedia e
-              documenta; não é a garantidora.
+              <strong className="text-ink">Garantia, do seu jeito:</strong> escolha entre taxa
+              mensal sem depósito (garantia digital) ou caução devolvível. Por lei, só uma
+              garantia por contrato. A plataforma organiza e documenta; não é a garantidora.
             </p>
           </div>
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
