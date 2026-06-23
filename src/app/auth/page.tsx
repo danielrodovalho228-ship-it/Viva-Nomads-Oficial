@@ -159,6 +159,16 @@ export default function AuthPage() {
             },
           });
           if (error) throw error;
+          // E-mail JÁ cadastrado: com "Confirm email" ligado, o Supabase NÃO
+          // devolve erro no signUp — retorna um usuário "ofuscado" sem
+          // identities (anti-enumeração interna). Sem checar isso, um e-mail
+          // repetido cairia na tela "confirme seu e-mail" em vez de avisar que
+          // a conta já existe (Caso 3 do QA). Aqui o sinal é claro ao usuário.
+          if (data.user && data.user.identities && data.user.identities.length === 0) {
+            setError("Este e-mail já possui uma conta. Faça login ou recupere a senha.");
+            setLoading(false);
+            return;
+          }
           // Sem sessão imediata = precisa confirmar o e-mail (Atualização 20.4).
           if (!data.session) {
             setAwaitingConfirm(true);
