@@ -206,7 +206,7 @@ export default function ClosingPage() {
         subtitle={`Contrato ${CONTRACT_NUMBER} · você está fechando uma candidatura`}
       />
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Resumo lateral (sticky no desktop) — aproveita a largura da tela */}
         <aside className="order-1 lg:order-2 lg:col-span-1">
           <div className="space-y-4 lg:sticky lg:top-20">
@@ -552,7 +552,7 @@ export default function ClosingPage() {
             <div>
               <h2 className="font-title text-lg font-bold text-ink">Contrato de locação por temporada</h2>
               <p className="mt-1 text-sm text-muted">
-                Gerado e assinado via ZapSign (validade jurídica · Lei 14.063/2020), art. 48
+                Gerado e assinado digitalmente (validade jurídica · Lei 14.063/2020), art. 48
                 da Lei 8.245/91.
               </p>
             </div>
@@ -671,7 +671,7 @@ export default function ClosingPage() {
             {generated ? (
               <div className="space-y-2">
                 <div className="flex items-center gap-2 rounded-xl bg-sage-100 px-4 py-3 text-sm text-forest">
-                  <FileCheck2 className="h-5 w-5" /> Contrato enviado para assinatura via ZapSign.
+                  <FileCheck2 className="h-5 w-5" /> Contrato enviado para assinatura digital.
                 </div>
                 {signUrl && (
                   <a
@@ -698,7 +698,7 @@ export default function ClosingPage() {
               </div>
             ) : (
               <Button variant="gold" onClick={generateContract}>
-                <FileSignature className="h-4 w-4" /> Gerar contrato no ZapSign
+                <FileSignature className="h-4 w-4" /> Gerar contrato para assinatura
               </Button>
             )}
           </div>
@@ -729,7 +729,7 @@ export default function ClosingPage() {
               <Row label="Garantia" value={GUARANTEE_OPTIONS.find((g) => g.id === guarantee)?.name ?? "—"} />
               {insurer && <Row label="Seguradora" value={INSURERS.find((i) => i.id === insurer)?.name ?? "—"} />}
               <Row label="Seguro patrimonial" value={patrimonial ? "Contratado" : "Não contratado"} />
-              <Row label="Contrato" value={generated ? "Enviado (ZapSign)" : "Pendente"} />
+              <Row label="Contrato" value={generated ? "Enviado para assinatura" : "Pendente"} />
               <Row
                 label={`Comissão (${Math.round(COMMISSION_RATE * 100)}%)`}
                 value={`${formatBRL(PLATFORM_COMMISSION)} · líquido ao dono ${formatBRL(OWNER_NET)}`}
