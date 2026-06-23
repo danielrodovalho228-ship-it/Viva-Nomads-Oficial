@@ -95,7 +95,7 @@ export const PLANS = [
       "Até 20 anúncios ativos",
       "Tudo do Essencial",
       "Prioridade máxima na busca",
-      "Contrato via ZapSign incluído",
+      "Contrato digital com validade jurídica incluído",
     ],
     cost: "Comissão de 8% no fechamento",
     cta: "Assinar Profissional",
