@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Check, Percent, Camera, FileSignature, ShieldCheck, UserCheck, ClipboardList, Receipt, Calculator, PiggyBank } from "lucide-react";
+import { Check, Percent, Camera, FileSignature, ShieldCheck, UserCheck, ClipboardList, Receipt, Banknote, PiggyBank } from "lucide-react";
 import { PLANS } from "@/lib/constants";
 import { CommissionCalculator } from "./commission-calculator";
 import { ButtonLink } from "@/components/ui/button";
@@ -8,25 +8,50 @@ import { formatBRL, cn } from "@/lib/utils";
 export const metadata: Metadata = {
   title: "Planos",
   description:
-    "Planos de assinatura para proprietários: Gratuito, Essencial e Profissional. Mais serviços opcionais como fotografia, contrato e análise de inquilino.",
+    "Planos de assinatura para proprietários: Gratuito, Essencial e Profissional. Mais serviços opcionais como garantia, vistoria e fotografia.",
 };
 
 type ServiceTone = "incluido" | "avulso" | "cotacao" | "gratis";
 
+interface Service {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  benefit: string;
+  price: string;
+  statusLabel: string;
+  statusTone: "ok" | "partner";
+  tone: ServiceTone;
+  cta: string;
+  href: string;
+  highlight?: string;
+}
+
 /**
- * Serviços do fechamento — cada um com STATUS honesto (Disponível / Via parceiro)
- * (rodada 25). A plataforma intermedia e documenta; nunca é a garantidora.
- * Caução e seguro-fiança são alternativas: por lei, só uma garantia por contrato.
+ * Serviços OPCIONAIS reais — cada um com STATUS honesto (Disponível / Via
+ * parceiro) e separados por QUEM contrata. O botão não cobra aqui: leva ao
+ * momento certo (reserva/contrato para o inquilino; anúncio para o
+ * proprietário). A plataforma intermedia e documenta; nunca é a garantidora.
+ * Caução e garantia digital são alternativas: por lei, só uma por contrato.
  */
-const SERVICES = [
+const TENANT_SERVICES: Service[] = [
   { icon: ShieldCheck, title: "Garantia digital (sem depósito)", benefit: "Entre sem imobilizar capital: uma taxa mensal diluída garante o aluguel, sem depósito de entrada. Contratada com parceiro, sujeita a análise.", price: "Cotação sob análise", statusLabel: "Via parceiro", statusTone: "partner", tone: "cotacao", cta: "Ver opções de garantia", href: "/dashboard/fechamento", highlight: "Recomendada · sem depósito" },
   { icon: PiggyBank, title: "Caução (depósito devolvível)", benefit: "Alternativa: depósito de até 3 aluguéis em conta vinculada (locador + locatário), devolvido ao fim. Vai para conta vinculada, nunca para a plataforma.", price: "Sem mensalidade", statusLabel: "Disponível", statusTone: "ok", tone: "avulso", cta: "Ver opções de garantia", href: "/dashboard/fechamento" },
-  { icon: ClipboardList, title: "Vistoria documentada (entrada e saída)", benefit: "Inspeção imparcial do imóvel, com laudo em PDF, fotos e inventário da mobília. Ideal para quem não pode visitar o imóvel pessoalmente.", price: "Sob consulta", statusLabel: "Disponível via parceiro", statusTone: "partner", tone: "avulso", cta: "Solicitar vistoria", href: "/dashboard/fechamento", highlight: "Ideal para proprietário à distância" },
-  { icon: FileSignature, title: "Contrato digital (ZapSign)", benefit: "Contrato de locação por temporada assinado digitalmente, com validade jurídica.", price: "Sem custo extra", statusLabel: "Disponível", statusTone: "ok", tone: "incluido", cta: "Incluído", href: "/precos" },
-  { icon: UserCheck, title: "Verificação de identidade", benefit: "Confirmação de identidade e perfil para dar segurança à negociação.", price: "Sob consulta", statusLabel: "Disponível", statusTone: "ok", tone: "avulso", cta: "Adicionar", href: "/dashboard/verificacao" },
-  { icon: Receipt, title: "Emissão de nota fiscal (NFS-e)", benefit: "Nota fiscal do aluguel emitida automaticamente, conforme a legislação.", price: "Sob consulta", statusLabel: "Disponível", statusTone: "ok", tone: "avulso", cta: "Adicionar", href: "/dashboard/assinatura" },
-  { icon: Calculator, title: "Cotação de garantia", benefit: "Compare as opções de garantia e escolha a que cabe no seu caso.", price: "Gratuito", statusLabel: "Disponível", statusTone: "ok", tone: "gratis", cta: "Comparar garantias", href: "/dashboard/fechamento" },
-  { icon: Camera, title: "Fotografia profissional", benefit: "Sessão de fotos do imóvel para anúncios que convertem mais.", price: "Sob consulta", statusLabel: "Via parceiro", statusTone: "partner", tone: "avulso", cta: "Adicionar", href: "/dashboard/assinatura" },
+];
+
+const OWNER_SERVICES: Service[] = [
+  { icon: ClipboardList, title: "Vistoria documentada (entrada e saída)", benefit: "Inspeção imparcial do imóvel, com laudo em PDF, fotos e inventário da mobília. Ideal para quem acompanha o imóvel à distância.", price: "Sob consulta", statusLabel: "Disponível via parceiro", statusTone: "partner", tone: "avulso", cta: "Solicitar vistoria", href: "/dashboard/fechamento", highlight: "Ideal para proprietário à distância" },
+  { icon: Camera, title: "Fotografia profissional", benefit: "Sessão de fotos do imóvel para anúncios que convertem mais.", price: "Sob consulta", statusLabel: "Via parceiro", statusTone: "partner", tone: "avulso", cta: "Adicionar ao anúncio", href: "/dashboard/imoveis/novo" },
+];
+
+/**
+ * Tecnologia & segurança — recursos que já vêm por baixo (o cliente nunca
+ * contrata o fornecedor). Aparecem como BENEFÍCIO, sem nome de fornecedor.
+ */
+const TECH_BENEFITS = [
+  { icon: FileSignature, title: "Contrato assinado digitalmente", text: "Contrato de locação por temporada com validade jurídica." },
+  { icon: UserCheck, title: "Inquilino verificado", text: "Identidade e perfil confirmados antes do fechamento." },
+  { icon: Banknote, title: "Aluguel direto na conta do proprietário", text: "O pagamento do aluguel vai direto ao proprietário." },
+  { icon: Receipt, title: "Nota fiscal disponível", text: "Emissão da nota fiscal do aluguel conforme a legislação." },
 ] as const;
 
 const ICON_TONE: Record<ServiceTone, string> = {
@@ -41,10 +66,10 @@ const STATUS_TONE = {
   partner: "bg-amber-50 text-amber-700",
 } as const;
 
-function ServiceCard({ s }: { s: (typeof SERVICES)[number] }) {
+function ServiceCard({ s }: { s: Service }) {
   const Icon = s.icon;
   const included = s.tone === "incluido";
-  const highlight = "highlight" in s ? s.highlight : null;
+  const highlight = s.highlight ?? null;
   return (
     <div
       className={cn(
@@ -181,14 +206,15 @@ export default function PricingPage() {
         </div>
       </section>
 
-      {/* Serviços opcionais — cards com ícone, benefício, preço e ação (rodada 24) */}
+      {/* Serviços opcionais — reais, com preço e separados por quem contrata */}
       <section className="bg-surface-2 section-y">
         <div className="container-page">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="font-title text-3xl font-bold text-ink">Serviços para o fechamento</h2>
+            <h2 className="font-title text-3xl font-bold text-ink">Serviços opcionais</h2>
             <p className="mt-4 text-muted">
-              Reforce o anúncio e organize a negociação. Cada serviço mostra o status — o que
-              já funciona e o que depende de parceiro. Contrate só o que precisar.
+              Reforce o anúncio e organize a negociação. Cada serviço mostra o preço e o status —
+              o que já funciona e o que depende de parceiro. A contratação acontece no momento
+              certo do fluxo; aqui é só transparência.
             </p>
             <p className="mx-auto mt-3 max-w-xl rounded-lg bg-white px-3 py-2 text-sm text-muted">
               <strong className="text-ink">Garantia, do seu jeito:</strong> escolha entre taxa
@@ -196,10 +222,53 @@ export default function PricingPage() {
               garantia por contrato. A plataforma organiza e documenta; não é a garantidora.
             </p>
           </div>
-          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {SERVICES.map((s) => (
-              <ServiceCard key={s.title} s={s} />
-            ))}
+
+          <div className="mt-10">
+            <h3 className="font-title text-sm font-bold uppercase tracking-wide text-muted">
+              Para o inquilino
+            </h3>
+            <div className="mt-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {TENANT_SERVICES.map((s) => (
+                <ServiceCard key={s.title} s={s} />
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-10">
+            <h3 className="font-title text-sm font-bold uppercase tracking-wide text-muted">
+              Para o proprietário
+            </h3>
+            <div className="mt-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {OWNER_SERVICES.map((s) => (
+                <ServiceCard key={s.title} s={s} />
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Tecnologia & segurança — vêm por baixo, sem nome de fornecedor */}
+      <section className="section-y">
+        <div className="container-page">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="font-title text-2xl font-bold text-ink">Tecnologia &amp; segurança</h2>
+            <p className="mt-3 text-muted">
+              Recursos que já acompanham todo fechamento — você não contrata nada à parte.
+            </p>
+          </div>
+          <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {TECH_BENEFITS.map((b) => {
+              const Icon = b.icon;
+              return (
+                <div key={b.title} className="rounded-2xl border border-sage-200 bg-white p-5">
+                  <div className="grid h-11 w-11 place-items-center rounded-xl bg-sage-100 text-forest">
+                    <Icon className="h-5 w-5" aria-hidden />
+                  </div>
+                  <h3 className="mt-3 font-title text-base font-bold text-ink">{b.title}</h3>
+                  <p className="mt-1.5 text-sm text-muted">{b.text}</p>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
