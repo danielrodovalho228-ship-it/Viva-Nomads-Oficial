@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 export default function ForLandlordsPage() {
   return (
     <>
-      <section className="bg-forest py-16 text-white md:py-24">
+      <section className="bg-forest section-y text-white">
         <div className="container-page grid items-center gap-10 md:grid-cols-2">
           <div>
             <h1 className="font-title text-4xl font-bold leading-tight md:text-5xl">
@@ -53,7 +53,7 @@ export default function ForLandlordsPage() {
       </section>
 
       {/* Por que rende mais */}
-      <section className="container-page py-12 md:py-16">
+      <section className="container-page section-y">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="font-title text-3xl font-bold text-ink md:text-4xl">
             Como o modelo de média temporada reduz seus custos
@@ -72,7 +72,7 @@ export default function ForLandlordsPage() {
       </section>
 
       {/* O que oferecemos */}
-      <section className="bg-surface-2 py-12 md:py-16">
+      <section className="bg-surface-2 section-y">
         <div className="container-page grid items-center gap-12 md:grid-cols-2">
           <BrandImage
             src={PHOTOS.dashOwner}

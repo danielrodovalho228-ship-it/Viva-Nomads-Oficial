@@ -37,7 +37,7 @@ const OWNER_STEPS = [
 export default function HowItWorksPage() {
   return (
     <>
-      <section className="bg-forest py-16 text-white md:py-20">
+      <section className="bg-forest section-y text-white">
         <div className="container-page max-w-3xl">
           <h1 className="font-title text-4xl font-bold md:text-5xl">Como funciona</h1>
           <p className="mt-5 text-lg text-white/80">
@@ -53,7 +53,7 @@ export default function HowItWorksPage() {
         <Steps title="Para proprietários" steps={OWNER_STEPS} tone="owner" badge="Para proprietários" />
       </div>
 
-      <section className="container-page py-16 text-center">
+      <section className="container-page section-y text-center">
         <h2 className="font-title text-3xl font-bold text-ink">Pronto para começar?</h2>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <ButtonLink href="/buscar" variant="primary" size="lg">
@@ -92,7 +92,7 @@ function Steps({
   const badgeClass =
     tone === "owner" ? "bg-blue-50 text-blue-500" : "bg-champagne/15 text-champagne-600";
   return (
-    <section className="container-page py-12 md:py-16">
+    <section className="container-page section-y">
       {badge && (
         <span className={`mb-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${badgeClass}`}>
           <span className="h-1.5 w-1.5 rounded-full bg-current" />

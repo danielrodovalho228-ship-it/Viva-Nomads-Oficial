@@ -232,3 +232,18 @@ textarea:focus-visible,
   outline: 2px solid #fff;
   outline-offset: 2px;
 }
+
+/*
+  Ritmo vertical das seções — ponto ÚNICO de verdade do espaçamento entre bandas.
+  Apertar/afrouxar o site inteiro vira uma linha aqui. Equivale a py-8 md:py-12.
+*/
+.section-y {
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+}
+@media (min-width: 768px) {
+  .section-y {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+  }
+}
