@@ -23,6 +23,7 @@ import { PHOTOS } from "@/lib/media";
 import { TaxSimulator } from "@/components/tax-simulator";
 import { useAuthStore } from "@/lib/store";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import { SITE_URL } from "@/lib/site";
 import { friendlyAuthError, isValidEmail, MIN_PASSWORD } from "@/lib/auth-errors";
 import type { UserRole } from "@/lib/types";
 import type { PersonType } from "@/lib/tax";
@@ -63,7 +64,7 @@ export default function AuthPage() {
     }
     await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo: `${SITE_URL}/auth/callback` },
     });
   }
 
@@ -100,7 +101,7 @@ export default function AuthPage() {
     try {
       if (supabase) {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/auth/reset`,
+          redirectTo: `${SITE_URL}/auth/reset`,
         });
         if (error) throw error;
       }
@@ -154,7 +155,7 @@ export default function AuthPage() {
                 person_type: personType,
                 referred_by: referral || null,
               },
-              emailRedirectTo: `${window.location.origin}/auth/callback`,
+              emailRedirectTo: `${SITE_URL}/auth/callback`,
             },
           });
           if (error) throw error;
