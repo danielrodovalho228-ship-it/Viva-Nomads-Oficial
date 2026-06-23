@@ -90,7 +90,7 @@ export default function ForLandlordsPage() {
                 "Selo Pronto para Morar para anunciar mais caro.",
                 "Verificação de identidade do inquilino com laudo de semáforo.",
                 "Cotação de seguro-fiança dentro da plataforma.",
-                "Contrato de temporada gerado e assinado via ZapSign.",
+                "Contrato de temporada gerado e assinado digitalmente, com validade jurídica.",
                 "Pagamento do aluguel direto na sua conta.",
               ].map((item) => (
                 <li key={item} className="flex items-start gap-3">
