@@ -189,6 +189,18 @@ export default function AuthPage() {
       });
       router.push("/dashboard");
     } catch (err) {
+      // Diagnóstico (DevTools do navegador) — erro COMPLETO do Supabase, não
+      // exposto ao usuário. status/code identificam a causa real (trigger de
+      // profiles, e-mail duplicado, SMTP de confirmação, etc.).
+      const e = err as { message?: string; status?: number; code?: string; name?: string };
+      console.error("[auth] falha no cadastro/login:", {
+        mode,
+        name: e?.name,
+        status: e?.status,
+        code: e?.code,
+        message: e?.message,
+        error: err,
+      });
       setError(friendlyAuthError(err instanceof Error ? err.message : ""));
     } finally {
       setLoading(false);
