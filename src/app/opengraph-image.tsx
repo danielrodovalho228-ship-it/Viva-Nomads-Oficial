@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "Viva Nomads — locação mobiliada mensal para profissionais em transição";
+export const alt = "Viva Nomads — locação mobiliada por temporada, de 30 a 180 dias";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
