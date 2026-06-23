@@ -1,19 +1,14 @@
 -- ════════════════════════════════════════════════════════════════════
 -- Acesso real (Fase 7) — políticas de ADMIN por papel.
+-- (Renumerado de 0009 → 0011 para não colidir com 0009_round11.)
 --
--- O RLS de 0001 isola dono/inquilino corretamente, mas não havia caminho
--- para o ADMIN da plataforma. Estas políticas são ADITIVAS: o Postgres
--- combina políticas permissivas com OR, então "dono OU admin" passa a valer
--- sem afrouxar o isolamento existente entre usuários comuns.
---
--- Privacidade: o admin NÃO recebe acesso a mensagens privadas (chat) — apenas
--- aos dados operacionais necessários para gestão (imóveis, checklists, leads,
--- assinaturas, financeiro, verificações).
+-- Políticas ADITIVAS (Postgres combina permissivas com OR): "dono OU admin"
+-- sem afrouxar o isolamento entre usuários comuns. Idempotente (drop if exists)
+-- para poder reaplicar com segurança. Admin NÃO acessa mensagens privadas.
 -- ════════════════════════════════════════════════════════════════════
 
 -- Detecta se o chamador é admin. SECURITY DEFINER lê `profiles` ignorando o
--- RLS — evita recursão (uma policy de profiles consultando profiles) e mantém
--- a checagem confiável (papel vem do banco, não do user_metadata editável).
+-- RLS — evita recursão e mantém a checagem confiável (papel vem do banco).
 create or replace function public.is_admin()
 returns boolean
 language sql
@@ -30,48 +25,46 @@ $$;
 revoke all on function public.is_admin() from public;
 grant execute on function public.is_admin() to authenticated;
 
--- ── Leitura/gestão do admin (aditiva às policies de dono/inquilino) ──
-
--- Perfis: admin lê todos (gestão de usuários).
+drop policy if exists "admin lê perfis" on profiles;
 create policy "admin lê perfis" on profiles
   for select using (public.is_admin());
 
--- Imóveis: admin gerencia todos (moderação/gestão).
+drop policy if exists "admin gerencia imóveis" on properties;
 create policy "admin gerencia imóveis" on properties
   for all using (public.is_admin()) with check (public.is_admin());
 
--- Checklists de qualificação: admin gerencia (aprovar/recusar — reviewChecklist).
+drop policy if exists "admin gerencia checklists" on qualification_checklists;
 create policy "admin gerencia checklists" on qualification_checklists
   for all using (public.is_admin()) with check (public.is_admin());
 
--- Leads: admin lê todos.
+drop policy if exists "admin lê leads" on leads;
 create policy "admin lê leads" on leads
   for select using (public.is_admin());
 
--- Assinaturas: admin lê todas (financeiro/comissões).
+drop policy if exists "admin lê assinaturas" on subscriptions;
 create policy "admin lê assinaturas" on subscriptions
   for select using (public.is_admin());
 
--- Contas de pagamento: admin lê (operação de split/repasse).
+drop policy if exists "admin lê contas de pagamento" on payment_accounts;
 create policy "admin lê contas de pagamento" on payment_accounts
   for select using (public.is_admin());
 
--- Contratos: admin lê todos.
+drop policy if exists "admin lê contratos" on contracts;
 create policy "admin lê contratos" on contracts
   for select using (public.is_admin());
 
--- Garantias: admin lê todas.
+drop policy if exists "admin lê garantias" on guarantees;
 create policy "admin lê garantias" on guarantees
   for select using (public.is_admin());
 
--- Cotações de seguro: admin lê todas.
+drop policy if exists "admin lê cotações de seguro" on insurance_quotes;
 create policy "admin lê cotações de seguro" on insurance_quotes
   for select using (public.is_admin());
 
--- Transações: admin lê todas (financeiro).
+drop policy if exists "admin lê transações" on transactions;
 create policy "admin lê transações" on transactions
   for select using (public.is_admin());
 
--- Verificações de inquilino: admin lê todas (suporte/auditoria).
+drop policy if exists "admin lê verificações" on tenant_verifications;
 create policy "admin lê verificações" on tenant_verifications
   for select using (public.is_admin());
