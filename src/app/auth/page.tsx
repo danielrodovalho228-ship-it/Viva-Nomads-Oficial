@@ -24,7 +24,7 @@ import { TaxSimulator } from "@/components/tax-simulator";
 import { useAuthStore } from "@/lib/store";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { SITE_URL } from "@/lib/site";
-import { friendlyAuthError, isValidEmail, MIN_PASSWORD } from "@/lib/auth-errors";
+import { friendlyAuthError, isEmailSendError, isValidEmail, MIN_PASSWORD } from "@/lib/auth-errors";
 import type { UserRole } from "@/lib/types";
 import type { PersonType } from "@/lib/tax";
 import { cn } from "@/lib/utils";
@@ -201,7 +201,17 @@ export default function AuthPage() {
         message: e?.message,
         error: err,
       });
-      setError(friendlyAuthError(err instanceof Error ? err.message : ""));
+      const msg = err instanceof Error ? err.message : "";
+      // Cadastro com falha de ENVIO do e-mail de confirmação: a conta foi
+      // criada — leva à tela "verifique seu e-mail" (com reenviar), não a erro.
+      if (mode === "signup" && isEmailSendError(msg)) {
+        setNotice(
+          "Conta criada! Não conseguimos enviar o e-mail de confirmação agora — use “Reenviar” abaixo."
+        );
+        setAwaitingConfirm(true);
+      } else {
+        setError(friendlyAuthError(msg));
+      }
     } finally {
       setLoading(false);
     }
