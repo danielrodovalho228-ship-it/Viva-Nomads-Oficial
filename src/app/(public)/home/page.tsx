@@ -48,7 +48,7 @@ export default async function HomePage() {
         <div className="pointer-events-none absolute -right-40 -top-40 h-[34rem] w-[34rem] rounded-full bg-gradient-brand opacity-25 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-40 -left-40 h-[28rem] w-[28rem] rounded-full bg-blue-700 opacity-25 blur-3xl" />
 
-        <div className="container-page relative grid items-center gap-8 pb-8 pt-8 lg:grid-cols-12 lg:gap-10 lg:pt-12">
+        <div className="container-page relative grid items-center gap-8 pb-8 pt-8 lg:grid-cols-12 lg:gap-10 lg:pb-4 lg:pt-12">
           <div className="lg:col-span-7">
             <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-white/80">
               <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
