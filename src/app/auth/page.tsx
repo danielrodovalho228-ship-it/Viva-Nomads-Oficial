@@ -12,6 +12,8 @@ import {
   Loader2,
   CheckCircle2,
   Gift,
+  Eye,
+  EyeOff,
   ArrowLeft,
 } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
@@ -528,17 +530,30 @@ function Input({
   onChange: (v: string) => void;
   required?: boolean;
 }) {
+  const [show, setShow] = useState(false);
+  const isPassword = type === "password";
   return (
     <div className="flex items-center gap-3 rounded-xl border border-sage-200 bg-white px-4 py-3 focus-within:border-sage">
       <Icon className="h-4 w-4 text-sage" />
       <input
-        type={type}
+        type={isPassword && show ? "text" : type}
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         required={required}
         className="w-full bg-transparent text-sm outline-none placeholder:text-muted"
       />
+      {isPassword && (
+        <button
+          type="button"
+          onClick={() => setShow((s) => !s)}
+          aria-label={show ? "Ocultar senha" : "Mostrar senha"}
+          title={show ? "Ocultar senha" : "Mostrar senha"}
+          className="shrink-0 text-muted transition-colors hover:text-ink"
+        >
+          {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+        </button>
+      )}
     </div>
   );
 }
