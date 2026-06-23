@@ -7,6 +7,7 @@ import { useAuthStore, DEMO_USER } from "@/lib/store";
 import { useViewMode } from "@/lib/roles";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button, ButtonLink } from "@/components/ui/button";
+import { PasswordInput } from "@/components/ui/password-input";
 import { TaxSimulator } from "@/components/tax-simulator";
 import { createClient } from "@/lib/supabase/client";
 import { friendlyAuthError, MIN_PASSWORD } from "@/lib/auth-errors";
@@ -175,11 +176,12 @@ function PwdField({
   return (
     <label className="block">
       <span className="mb-1.5 block text-sm font-medium text-ink">{label}</span>
-      <input
-        type="password"
+      <PasswordInput
         value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-xl border border-sage-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-sage"
+        onChange={onChange}
+        autoComplete="new-password"
+        className="rounded-xl border border-sage-200 bg-white px-3.5 py-2.5 focus-within:border-sage"
+        inputClassName="text-sm"
       />
     </label>
   );
@@ -322,13 +324,13 @@ function DangerZone() {
           <p className="text-sm text-red-700">
             Para confirmar sua identidade, digite sua <strong>senha atual</strong>.
           </p>
-          <input
-            type="password"
+          <PasswordInput
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={setPassword}
             placeholder="Senha atual"
             autoComplete="current-password"
-            className="mt-2 w-full rounded-lg border border-red-300 bg-white px-3 py-2 text-sm outline-none focus:border-red-500"
+            className="mt-2 rounded-lg border border-red-300 bg-white px-3 py-2 focus-within:border-red-500"
+            inputClassName="text-sm"
           />
           {error && <p className="mt-2 text-sm font-medium text-red-700">{error}</p>}
           <div className="mt-3 flex gap-2">
