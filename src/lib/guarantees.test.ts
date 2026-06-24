@@ -16,6 +16,7 @@ import {
   GARANTIAS,
   garantiaSelecionavel,
   garantiasElegiveis,
+  garantidorStatus,
   servicoSelecionavel,
   servicosDisponiveis,
   servicosVisiveis,
@@ -45,6 +46,20 @@ test("limites do prazo do garantidor digital: 89 fora, 90 e 180 dentro, 181 fora
   assert.ok(garantiasElegiveis(90).some((g) => g.id === "garantidor_digital"));
   assert.ok(garantiasElegiveis(180).some((g) => g.id === "garantidor_digital"));
   assert.ok(!garantiasElegiveis(181).some((g) => g.id === "garantidor_digital"));
+});
+
+test("feature flag: desligada → 'em_breve'; ligada → 'ativo' (e então selecionável)", () => {
+  assert.equal(garantidorStatus(false), "em_breve");
+  assert.equal(garantidorStatus(true), "ativo");
+
+  // Com a flag ligada, o mesmo garantidor digital vira selecionável — sem mudar
+  // o fluxo, só o status derivado da flag.
+  const base = GARANTIAS.find((g) => g.tipo === "garantidor_digital")!;
+  const ligado: Garantia = { ...base, status: garantidorStatus(true) };
+  assert.equal(garantiaSelecionavel(ligado), true);
+
+  const desligado: Garantia = { ...base, status: garantidorStatus(false) };
+  assert.equal(garantiaSelecionavel(desligado), false);
 });
 
 test("garantidor digital aparece como elegível mas NÃO é selecionável com a flag desligada", () => {
