@@ -101,7 +101,10 @@ export const GARANTIAS: Garantia[] = [
     reembolsavel: false,
     // Selecionável só quando a flag liga E um parceiro estiver cadastrado.
     status: garantidorStatus(GARANTIDOR_DIGITAL_ATIVO),
-    parceiroNome: null,
+    // Em produção, o nome do parceiro vem do catálogo no Supabase (migração
+    // 0014). A env abaixo serve só para testar a exibição "via {parceiro}"
+    // localmente — fica null quando não definida.
+    parceiroNome: process.env.NEXT_PUBLIC_GARANTIDOR_PARCEIRO_NOME ?? null,
     observacao: null,
   },
 ];
