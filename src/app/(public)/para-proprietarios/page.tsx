@@ -8,7 +8,7 @@ import { PHOTOS } from "@/lib/media";
 export const metadata: Metadata = {
   title: "Para proprietários — locação por temporada com mais margem",
   description:
-    "Anuncie seu imóvel mobiliado para locação por temporada de 30 a 180 dias. Menos rotatividade, menos vacância nos meses fracos e custos que podem ser transferidos ao inquilino conforme o contrato.",
+    "Anuncie seu imóvel mobiliado para locação por temporada de 30 a 180 dias. Menos rotatividade, menos meses com o imóvel parado e custos que podem ser transferidos ao inquilino conforme o contrato.",
 };
 
 export default function ForLandlordsPage() {
@@ -23,7 +23,7 @@ export default function ForLandlordsPage() {
             </h1>
             <p className="mt-5 max-w-lg text-lg text-white/80">
               Locação por temporada de 30 a 180 dias, com contrato formal e inquilino
-              verificado. Menos entra-e-sai, menos vacância nos meses fracos e com água, luz,
+              verificado. Menos entra-e-sai, menos meses com o imóvel parado e com água, luz,
               condomínio e IPTU que podem ser transferidos ao inquilino conforme o contrato.
             </p>
             <p className="mt-4 text-white/90">
@@ -65,9 +65,9 @@ export default function ForLandlordsPage() {
         </div>
         <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           <Benefit icon={Receipt} title="Custos que podem ser transferidos" text="Água, luz, condomínio e IPTU podem ser do inquilino durante a estadia, conforme o contrato." />
-          <Benefit icon={TrendingUp} title="Menos vacância" text="Um inquilino por uma temporada inteira, inclusive nos meses fracos do turismo." />
+          <Benefit icon={TrendingUp} title="Menos imóvel parado" text="Um inquilino por uma temporada inteira, inclusive nos meses fracos do turismo." />
           <Benefit icon={FileSignature} title="Contrato com validade jurídica" text="Contrato de locação por temporada gerado e assinado digitalmente, com validade jurídica." />
-          <Benefit icon={ShieldCheck} title="Inquilino verificado" text="Verificação de identidade e garantia locatícia: você decide com segurança." />
+          <Benefit icon={ShieldCheck} title="Inquilino verificado" text="Verificação de identidade e garantia do aluguel: você decide com segurança." />
         </div>
       </section>
 
@@ -89,7 +89,7 @@ export default function ForLandlordsPage() {
                 "Checklist de qualificação que comprova a regularidade da locação.",
                 "Selo Pronto para Morar para anunciar mais caro.",
                 "Verificação de identidade do inquilino com laudo de semáforo.",
-                "Cotação de seguro-fiança dentro da plataforma.",
+                "Orçamento de seguro-fiança dentro da plataforma.",
                 "Contrato de temporada gerado e assinado digitalmente, com validade jurídica.",
                 "Pagamento do aluguel direto na sua conta.",
               ].map((item) => (

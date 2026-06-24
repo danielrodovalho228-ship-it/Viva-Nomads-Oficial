@@ -273,7 +273,7 @@ export default async function HomePage() {
               <div>
                 <Eyebrow light>Para proprietários</Eyebrow>
                 <h2 className="mt-4 font-title font-bold display-lg">
-                  Mais estabilidade, menos vacância,{" "}
+                  Mais estabilidade, menos tempo com o imóvel parado,{" "}
                   <span className="text-gradient-brand">mais margem líquida</span>.
                 </h2>
                 <p className="mt-5 max-w-md text-white/65">

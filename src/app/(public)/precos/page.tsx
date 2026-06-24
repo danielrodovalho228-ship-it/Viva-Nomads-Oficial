@@ -34,8 +34,8 @@ interface Service {
  * Caução e garantia digital são alternativas: por lei, só uma por contrato.
  */
 const TENANT_SERVICES: Service[] = [
-  { icon: ShieldCheck, title: "Garantia digital (sem depósito)", benefit: "Entre sem imobilizar capital: uma taxa mensal diluída garante o aluguel, sem depósito de entrada. Contratada com parceiro, sujeita a análise.", price: "Cotação sob análise", statusLabel: "Via parceiro", statusTone: "partner", tone: "cotacao", cta: "Ver opções de garantia", href: "/dashboard/fechamento", highlight: "Recomendada · sem depósito" },
-  { icon: PiggyBank, title: "Caução (depósito devolvível)", benefit: "Alternativa: depósito de até 3 aluguéis em conta vinculada (locador + locatário), devolvido ao fim. Vai para conta vinculada, nunca para a plataforma.", price: "Sem mensalidade", statusLabel: "Disponível", statusTone: "ok", tone: "avulso", cta: "Ver opções de garantia", href: "/dashboard/fechamento" },
+  { icon: ShieldCheck, title: "Garantia digital (sem depósito)", benefit: "Entre sem deixar dinheiro preso: uma taxa mensal diluída garante o aluguel, sem depósito de entrada. Contratada com parceiro, sujeita a análise.", price: "Orçamento sob análise", statusLabel: "Via parceiro", statusTone: "partner", tone: "cotacao", cta: "Ver opções de garantia", href: "/dashboard/fechamento", highlight: "Recomendada · sem depósito" },
+  { icon: PiggyBank, title: "Caução (depósito devolvível)", benefit: "Alternativa: depósito de até 3 aluguéis em conta vinculada (proprietário + inquilino), devolvido ao fim. Vai para conta vinculada, nunca para a plataforma.", price: "Sem mensalidade", statusLabel: "Disponível", statusTone: "ok", tone: "avulso", cta: "Ver opções de garantia", href: "/dashboard/fechamento" },
 ];
 
 const OWNER_SERVICES: Service[] = [
@@ -49,7 +49,7 @@ const OWNER_SERVICES: Service[] = [
  */
 const TECH_BENEFITS = [
   { icon: FileSignature, title: "Contrato assinado digitalmente", text: "Contrato de locação por temporada com validade jurídica." },
-  { icon: UserCheck, title: "Inquilino verificado", text: "Identidade e perfil confirmados antes do fechamento." },
+  { icon: UserCheck, title: "Inquilino verificado", text: "Identidade e perfil confirmados antes de fechar o aluguel." },
   { icon: Banknote, title: "Aluguel direto na conta do proprietário", text: "O pagamento do aluguel vai direto ao proprietário." },
   { icon: Receipt, title: "Nota fiscal disponível", text: "Emissão da nota fiscal do aluguel conforme a legislação." },
 ] as const;
@@ -253,7 +253,7 @@ export default function PricingPage() {
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="font-title text-2xl font-bold text-ink">Tecnologia &amp; segurança</h2>
             <p className="mt-3 text-muted">
-              Recursos que já acompanham todo fechamento — você não contrata nada à parte.
+              Recursos que já acompanham toda locação — você não contrata nada à parte.
             </p>
           </div>
           <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
