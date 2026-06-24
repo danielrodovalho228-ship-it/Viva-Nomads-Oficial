@@ -75,6 +75,11 @@ update public.servicos_adicionais
 set status = 'ativo'
 where id in ('assistencia_24h', 'plano_manutencao');
 
+-- Modalidades de garantia aceitas por imóvel (migração 0016) — só preferência
+-- de aceite, não muda o caminho do dinheiro. Idempotente.
+alter table public.properties
+  add column if not exists garantias_aceitas text[] not null default '{}';
+
 -- ════════════════════════════════════════════════════════════════════
 -- (B) Promover o super admin (papel lido pelo proxy.ts a partir de profiles)
 -- ════════════════════════════════════════════════════════════════════
