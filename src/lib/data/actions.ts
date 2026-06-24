@@ -83,6 +83,8 @@ export async function createProperty(input: {
   utilitiesEstimate?: number;
   issuesInvoice?: boolean;
   acceptsInsurance?: boolean;
+  /** Modalidades de garantia que o proprietário aceita (só preferência de aceite). */
+  garantiasAceitas?: string[];
   prepFee?: number;
   lat?: number;
   lng?: number;
@@ -147,6 +149,7 @@ export async function createProperty(input: {
       utilities_estimate: input.utilitiesEstimate ?? 0,
       issues_invoice: input.issuesInvoice ?? false,
       accepts_insurance: input.acceptsInsurance ?? false,
+      garantias_aceitas: input.garantiasAceitas ?? [],
       prep_fee: input.prepFee ?? 0,
       video_url: input.videoUrl ?? null,
     })

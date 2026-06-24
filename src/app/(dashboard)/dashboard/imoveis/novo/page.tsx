@@ -27,6 +27,7 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import { PropertyMiniCard } from "@/components/property-mini-card";
 import { PhotoUploader, type PhotoItem } from "@/components/photo-uploader";
 import { MIN_PHOTOS, SUGGESTED_ROOMS, tierFromPhotoCount, TIER_META } from "@/lib/listing";
+import { GARANTIAS } from "@/lib/guarantees";
 import { LocationDatalist } from "@/lib/locations";
 import { PHOTOS } from "@/lib/media";
 import type { Property } from "@/lib/types";
@@ -70,6 +71,13 @@ export default function NewPropertyPage() {
   const [utilitiesEstimate, setUtilitiesEstimate] = useState(200);
   const [issuesInvoice, setIssuesInvoice] = useState(false);
   const [acceptsInsurance, setAcceptsInsurance] = useState(false);
+  // Modalidades de garantia que o proprietário ACEITA (só preferência de
+  // aceite — não muda o caminho do dinheiro). Caução e título por padrão.
+  const [aceitaGarantia, setAceitaGarantia] = useState<Record<string, boolean>>({
+    caucao: true,
+    titulo: true,
+    garantidor_digital: false,
+  });
   const [prepFee, setPrepFee] = useState(450);
   const [ownershipType, setOwnershipType] = useState<"own" | "subleased">("own");
   const [subleaseAuthorized, setSubleaseAuthorized] = useState(false);
@@ -155,6 +163,7 @@ export default function NewPropertyPage() {
       utilitiesEstimate,
       issuesInvoice,
       acceptsInsurance,
+      garantiasAceitas: Object.keys(aceitaGarantia).filter((k) => aceitaGarantia[k]),
       prepFee,
       lat: coords.lat,
       lng: coords.lng,
@@ -649,6 +658,24 @@ export default function NewPropertyPage() {
               <Toggle checked={issuesInvoice} onChange={() => setIssuesInvoice((v) => !v)} label="Este imóvel emite Nota Fiscal do aluguel" hint="Decisivo para o público corporativo (reembolso pela empresa)." />
               <Toggle checked={acceptsInsurance} onChange={() => setAcceptsInsurance((v) => !v)} label="Aceito seguro-fiança como garantia" hint="Exibe o selo 'Aceita Seguro-Fiança' no anúncio." />
             </div>
+
+            <Labeled label="Modalidades de garantia que você aceita">
+              <p className="mb-2 text-xs text-muted">
+                Só preferência de aceite — <strong>não muda o caminho do dinheiro</strong> (a
+                caução sempre vai para conta vinculada, nunca para a plataforma).
+              </p>
+              <div className="space-y-2">
+                {GARANTIAS.map((g) => (
+                  <Toggle
+                    key={g.id}
+                    checked={!!aceitaGarantia[g.id]}
+                    onChange={() => setAceitaGarantia((s) => ({ ...s, [g.id]: !s[g.id] }))}
+                    label={`Aceito ${g.nome}`}
+                    hint={g.status === "ativo" ? undefined : "Disponível em breve — via parceiro."}
+                  />
+                ))}
+              </div>
+            </Labeled>
           </div>
         )}
 
