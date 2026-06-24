@@ -38,6 +38,12 @@ import {
   REGRA_DE_OURO,
   type Garantia,
 } from "@/lib/guarantees";
+import {
+  calcularCaucaoSugerida,
+  valorParcela,
+  MAX_PARCELAS,
+  type FormaPagamentoCaucao,
+} from "@/lib/caucao";
 import { COMMISSION_BY_PLAN } from "@/lib/constants";
 import { formatBRL, cn } from "@/lib/utils";
 
@@ -57,8 +63,13 @@ const PROPERTY = {
   monthlyRent: PROPERTY_FULL.monthlyPrice,
   term: STAY_MESES,
 };
-// Caução sugerida: até 3 aluguéis (art. 38 da Lei 8.245). A plataforma só sugere.
-const CAUCAO_SUGERIDA = PROPERTY.monthlyRent * 3;
+// Estadia (mock) — usada na caução flexível e na trilha por prazo.
+const VALOR_ESTADIA = PROPERTY.monthlyRent * STAY_MESES;
+// Valor estimado dos móveis do imóvel (mock — viria do inventário/cadastro).
+const VALOR_MOVEIS = 18_000;
+// Caução sugerida para mobiliado: ~10% dos móveis, com teto de 30% da estadia.
+// A plataforma só sugere; o valor fica em conta vinculada, nunca com a plataforma.
+const CAUCAO_SUGERIDA = calcularCaucaoSugerida(VALOR_MOVEIS, VALOR_ESTADIA);
 // Garantias elegíveis para a duração desta estadia (filtro por prazo).
 const ELEGIVEIS = garantiasElegiveis(STAY_DAYS);
 // Serviços visíveis (inclui "em breve" como slot). Opcionais e combináveis.
@@ -83,6 +94,10 @@ export default function ClosingPage() {
   // Caução é a opção PADRÃO (obrigatória): nenhum fechamento avança sem garantia,
   // e a caução cobre todas as faixas de prazo (1..180). O usuário pode trocar.
   const [guaranteeId, setGuaranteeId] = useState<string | null>("caucao");
+  // Caução flexível: como o inquilino paga a caução (não trava o aluguel).
+  // À vista → conta vinculada; parcelado → emissor do cartão. Nunca a plataforma.
+  const [caucaoForma, setCaucaoForma] = useState<FormaPagamentoCaucao>("avista");
+  const [caucaoParcelas, setCaucaoParcelas] = useState(MAX_PARCELAS);
   // Serviços adicionais: multi-seleção (combináveis), separados da garantia e
   // sempre OPCIONAIS. Guardamos a lista de ids selecionados.
   const [services, setServices] = useState<string[]>([]);
@@ -401,18 +416,81 @@ export default function ClosingPage() {
 
             {/* Sub-fluxo conforme a garantia escolhida. */}
             {selectedGarantia?.tipo === "caucao" && (
-              <div className="space-y-2 rounded-xl border border-sage-200 p-4 text-sm">
+              <div className="space-y-3 rounded-xl border border-sage-200 p-4 text-sm">
                 <p className="font-medium text-ink">Como funciona a caução</p>
-                <Row
-                  label="Valor sugerido (até 3 aluguéis · art. 38)"
-                  value={formatBRL(CAUCAO_SUGERIDA)}
-                />
+                <Row label="Valor sugerido (mobiliado)" value={formatBRL(CAUCAO_SUGERIDA)} />
+
+                {/* Caução flexível: o inquilino escolhe como pagar. */}
+                <div>
+                  <p className="mb-1.5 font-medium text-ink">Como você quer pagar?</p>
+                  <div className="flex rounded-full bg-surface-2 p-0.5 text-xs">
+                    {(
+                      [
+                        ["avista", "À vista (Pix/boleto)"],
+                        ["parcelado", "Parcelado no cartão"],
+                      ] as const
+                    ).map(([forma, label]) => (
+                      <button
+                        key={forma}
+                        type="button"
+                        aria-pressed={caucaoForma === forma}
+                        onClick={() => setCaucaoForma(forma)}
+                        className={cn(
+                          "flex-1 rounded-full px-3 py-1.5 font-medium transition-colors",
+                          caucaoForma === forma ? "bg-forest text-white" : "text-muted"
+                        )}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {caucaoForma === "parcelado" && (
+                    <div className="mt-3">
+                      <label className="flex items-center justify-between gap-3">
+                        <span className="text-muted">Parcelas</span>
+                        <select
+                          value={caucaoParcelas}
+                          onChange={(e) => setCaucaoParcelas(Number(e.target.value))}
+                          className="rounded-lg border border-sage-200 bg-white px-2 py-1 text-sm outline-none focus:border-sage"
+                        >
+                          {Array.from({ length: MAX_PARCELAS }, (_, i) => i + 1).map((n) => (
+                            <option key={n} value={n}>
+                              {n}x
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <Row
+                        label={`${caucaoParcelas}x de`}
+                        value={`${formatBRL(valorParcela(CAUCAO_SUGERIDA, caucaoParcelas))}/mês`}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Texto de conversão. */}
+                <p className="rounded-lg bg-sage-100 px-3 py-2 text-xs text-forest">
+                  Você escolhe como pagar: à vista ou parcelado. O valor é seu — devolvido ao
+                  final, se estiver tudo certo com o imóvel.
+                </p>
+
+                {/* Destino do dinheiro — nunca a plataforma. */}
                 <p className="flex items-start gap-1.5 text-muted">
                   <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                  O depósito vai para uma <strong>conta vinculada</strong> (locador + locatário),
-                  fora da plataforma, e é devolvido ao fim. A plataforma registra e documenta —{" "}
-                  <strong>nunca recebe nem retém o valor</strong>. O inquilino anexa o comprovante e
-                  o status fica “caução comprovada”.
+                  {caucaoForma === "avista" ? (
+                    <>
+                      O depósito vai para uma <strong>conta vinculada</strong> em nome do locador,
+                      fora da plataforma, e é devolvido ao fim.
+                    </>
+                  ) : (
+                    <>
+                      No parcelado, o valor vai para a <strong>instituição emissora</strong> do
+                      cartão, fora da plataforma.
+                    </>
+                  )}{" "}
+                  A plataforma registra e documenta — <strong>nunca recebe nem retém o valor</strong>.
+                  O inquilino anexa o comprovante e o status fica “caução comprovada”.
                 </p>
               </div>
             )}
