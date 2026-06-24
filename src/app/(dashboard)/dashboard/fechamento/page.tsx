@@ -419,6 +419,19 @@ export default function ClosingPage() {
                 </p>
               </div>
             )}
+            {selectedGarantia?.tipo === "garantidor_digital" && (
+              <div className="space-y-2 rounded-xl border border-sage-200 p-4 text-sm">
+                <p className="font-medium text-ink">Como funciona o garantidor digital</p>
+                <p className="text-muted">
+                  A plataforma conecta você ao parceiro garantidor. O inquilino contrata
+                  diretamente — a plataforma registra e documenta a apólice. Não há depósito
+                  nem retenção de valores pela plataforma.
+                  {selectedGarantia.parceiroNome && (
+                    <> Parceiro atual: <strong>{selectedGarantia.parceiroNome}</strong>.</>
+                  )}
+                </p>
+              </div>
+            )}
 
             {selectedGarantia && (
               <p className="rounded-lg bg-sage-100 px-3 py-2 text-xs text-forest">
