@@ -408,6 +408,34 @@ export default function ClosingPage() {
               })}
             </div>
 
+            {/* Como funciona a sua proteção — diferencial (lidera pelo benefício). */}
+            <div className="rounded-xl border border-sage-200 bg-surface-2 p-4 text-sm">
+              <p className="font-medium text-ink">Como funciona a sua proteção</p>
+              <ul className="mt-2 space-y-1.5 text-muted">
+                <li className="flex items-start gap-2">
+                  <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-forest" />
+                  <span>
+                    <strong className="text-ink">Garantia de verdade:</strong> cobre o aluguel,
+                    não só danos.
+                  </span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Clock className="mt-0.5 h-4 w-4 shrink-0 text-forest" />
+                  <span>
+                    <strong className="text-ink">Feita para 30 a 180 dias</strong> — no prazo da
+                    sua estadia.
+                  </span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Lock className="mt-0.5 h-4 w-4 shrink-0 text-forest" />
+                  <span>
+                    <strong className="text-ink">Seu dinheiro nunca fica com a plataforma</strong> —
+                    fica em conta vinculada e volta para você.
+                  </span>
+                </li>
+              </ul>
+            </div>
+
             {/* Regra de ouro — sempre visível na etapa de garantia. */}
             <p className="flex items-start gap-2 rounded-lg border border-sage-200 bg-surface-2 px-3 py-2 text-xs text-muted">
               <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-sage" />
