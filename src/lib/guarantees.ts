@@ -116,7 +116,7 @@ export const SERVICOS_ADICIONAIS: ServicoAdicional[] = [
     categoria: "assistencia_inquilino",
     quemPaga: "inquilino",
     parceiroNome: null,
-    status: "em_breve",
+    status: "ativo",
     descricao:
       "Chaveiro, encanador, elétrica e mais — acionável a qualquer hora. A plataforma intermedeia e roteia o pagamento ao prestador; não executa o serviço.",
   },
@@ -126,7 +126,7 @@ export const SERVICOS_ADICIONAIS: ServicoAdicional[] = [
     categoria: "manutencao_proprietario",
     quemPaga: "proprietario",
     parceiroNome: null,
-    status: "em_breve",
+    status: "ativo",
     descricao:
       "Manutenção preventiva e corretiva do imóvel. A plataforma intermedeia e roteia o pagamento ao prestador; não executa o serviço.",
   },
