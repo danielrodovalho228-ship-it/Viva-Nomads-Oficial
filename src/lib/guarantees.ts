@@ -52,6 +52,15 @@ export interface ServicoAdicional {
 export const GARANTIDOR_DIGITAL_ATIVO =
   process.env.NEXT_PUBLIC_GARANTIDOR_DIGITAL_ATIVO === "true";
 
+/**
+ * Status do garantidor digital derivado da flag (puro e testável): ligada →
+ * 'ativo' (selecionável); desligada → 'em_breve' (slot). É só virar a flag — o
+ * fluxo da etapa de garantia não muda.
+ */
+export function garantidorStatus(flagAtiva: boolean): CatalogStatus {
+  return flagAtiva ? "ativo" : "em_breve";
+}
+
 /** Texto jurídico canônico — sempre visível na etapa de garantia. */
 export const REGRA_DE_OURO =
   "A plataforma conecta, verifica, documenta e registra — não é locadora, fiadora, garantidora nem executora.";
@@ -91,7 +100,7 @@ export const GARANTIAS: Garantia[] = [
     quemPaga: "inquilino",
     reembolsavel: false,
     // Selecionável só quando a flag liga E um parceiro estiver cadastrado.
-    status: GARANTIDOR_DIGITAL_ATIVO ? "ativo" : "em_breve",
+    status: garantidorStatus(GARANTIDOR_DIGITAL_ATIVO),
     parceiroNome: null,
     observacao: null,
   },

@@ -334,7 +334,14 @@ export default function ClosingPage() {
                     )}
                   >
                     <div className="flex items-center justify-between gap-3">
-                      <span className="font-title font-bold text-ink">{g.nome}</span>
+                      <span className="font-title font-bold text-ink">
+                        {g.nome}
+                        {g.parceiroNome && (
+                          <span className="ml-2 text-xs font-normal text-muted">
+                            via {g.parceiroNome}
+                          </span>
+                        )}
+                      </span>
                       <span
                         className={cn(
                           "grid h-5 w-5 shrink-0 place-items-center rounded-full border",
