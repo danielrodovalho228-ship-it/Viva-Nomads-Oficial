@@ -80,7 +80,9 @@ export default function ClosingPage() {
   const [signUrl, setSignUrl] = useState<string | null>(null);
   // Seleção ÚNICA de garantia: guardamos um único id. Selecionar outra substitui
   // a anterior — é impossível ter duas garantias no contrato (Lei 8.245, art. 37).
-  const [guaranteeId, setGuaranteeId] = useState<string | null>(null);
+  // Caução é a opção PADRÃO (obrigatória): nenhum fechamento avança sem garantia,
+  // e a caução cobre todas as faixas de prazo (1..180). O usuário pode trocar.
+  const [guaranteeId, setGuaranteeId] = useState<string | null>("caucao");
   // Serviços adicionais: multi-seleção (combináveis), separados da garantia e
   // sempre OPCIONAIS. Guardamos a lista de ids selecionados.
   const [services, setServices] = useState<string[]>([]);
@@ -308,6 +310,11 @@ export default function ClosingPage() {
                 A lei permite <strong>uma</strong> garantia por contrato (Lei 8.245, art. 37).
                 Para esta estadia de <strong>{STAY_MESES} meses</strong> (~{STAY_DAYS} dias), estas
                 são as opções:
+              </p>
+              <p className="mt-2 rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted">
+                {STAY_DAYS < 90
+                  ? "Até 89 dias (temporada): garantia por caução ou título — ideal para estadias curtas."
+                  : "90 a 180 dias (residencial): caução, título ou garantidor digital (em breve)."}
               </p>
             </div>
 
