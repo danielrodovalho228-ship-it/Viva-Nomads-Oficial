@@ -16,7 +16,9 @@ import {
   GARANTIAS,
   garantiaSelecionavel,
   garantiasElegiveis,
+  servicoSelecionavel,
   servicosDisponiveis,
+  servicosVisiveis,
   type Garantia,
 } from "./guarantees.ts";
 
@@ -90,4 +92,12 @@ test("garantia 'inativo' nunca é elegível", () => {
 test("serviços adicionais 'em breve' não aparecem como disponíveis", () => {
   // Hoje ambos estão 'em breve' — a lista de disponíveis vem vazia até ligar.
   assert.equal(servicosDisponiveis().length, 0);
+});
+
+test("serviços 'em breve' SÃO visíveis (slot), mas NÃO são selecionáveis", () => {
+  const visiveis = servicosVisiveis();
+  // Os dois serviços do catálogo aparecem como slot, mesmo 'em breve'.
+  assert.equal(visiveis.length, 2);
+  // Nenhum é selecionável enquanto estiver 'em breve'.
+  assert.equal(visiveis.every((s) => !servicoSelecionavel(s)), true);
 });

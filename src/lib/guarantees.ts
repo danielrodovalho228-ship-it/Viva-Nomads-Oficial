@@ -143,3 +143,16 @@ export function garantiaSelecionavel(g: Garantia): boolean {
 export function servicosDisponiveis(): ServicoAdicional[] {
   return SERVICOS_ADICIONAIS.filter((s) => s.status === "ativo");
 }
+
+/**
+ * Serviços VISÍVEIS: mostra também os "em_breve" (como slot desabilitado, para
+ * sinalizar o que vem); esconde só os "inativo". Simétrico a garantiasElegiveis.
+ */
+export function servicosVisiveis(): ServicoAdicional[] {
+  return SERVICOS_ADICIONAIS.filter((s) => s.status !== "inativo");
+}
+
+/** Um serviço pode ser SELECIONADO/contratado? (somente status 'ativo'). */
+export function servicoSelecionavel(s: ServicoAdicional): boolean {
+  return s.status === "ativo";
+}

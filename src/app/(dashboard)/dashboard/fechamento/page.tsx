@@ -33,13 +33,15 @@ import {
 import {
   garantiasElegiveis,
   garantiaSelecionavel,
+  servicosVisiveis,
+  servicoSelecionavel,
   REGRA_DE_OURO,
   type Garantia,
 } from "@/lib/guarantees";
 import { COMMISSION_BY_PLAN } from "@/lib/constants";
 import { formatBRL, cn } from "@/lib/utils";
 
-const STEPS = ["Candidatura & verificação", "Garantia", "Patrimonial", "Contrato", "Resumo"];
+const STEPS = ["Candidatura & verificação", "Garantia", "Serviços", "Patrimonial", "Contrato", "Resumo"];
 
 // Inquilino e imóvel da candidatura (mock — viria do lead selecionado).
 const TENANT = { name: "Ana Carvalho", profile: "Médica · residência", foreigner: false };
@@ -59,6 +61,8 @@ const PROPERTY = {
 const CAUCAO_SUGERIDA = PROPERTY.monthlyRent * 3;
 // Garantias elegíveis para a duração desta estadia (filtro por prazo).
 const ELEGIVEIS = garantiasElegiveis(STAY_DAYS);
+// Serviços visíveis (inclui "em breve" como slot). Opcionais e combináveis.
+const SERVICOS_VISIVEIS = servicosVisiveis();
 // Plano do proprietário define a comissão de fechamento (12% / 10% / 8%).
 const OWNER_PLAN = "essential";
 const COMMISSION_RATE = COMMISSION_BY_PLAN[OWNER_PLAN];
@@ -77,6 +81,9 @@ export default function ClosingPage() {
   // Seleção ÚNICA de garantia: guardamos um único id. Selecionar outra substitui
   // a anterior — é impossível ter duas garantias no contrato (Lei 8.245, art. 37).
   const [guaranteeId, setGuaranteeId] = useState<string | null>(null);
+  // Serviços adicionais: multi-seleção (combináveis), separados da garantia e
+  // sempre OPCIONAIS. Guardamos a lista de ids selecionados.
+  const [services, setServices] = useState<string[]>([]);
   const [patrimonial, setPatrimonial] = useState<boolean | null>(null);
   const [split, setSplit] = useState<Record<string, CostParty>>(
     Object.fromEntries(COST_SPLIT_ITEMS.map((i) => [i.key, i.default]))
@@ -93,6 +100,13 @@ export default function ClosingPage() {
   }
   function back() {
     setStep((s) => Math.max(0, s - 1));
+  }
+
+  // Liga/desliga um serviço (combináveis). Só serviços selecionáveis entram.
+  function toggleService(id: string) {
+    setServices((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
   }
 
   async function runVerification() {
@@ -132,9 +146,10 @@ export default function ClosingPage() {
   const maxReached = useMemo(() => {
     if (!verified) return 0;
     if (!guaranteeId) return 1;
-    if (patrimonial === null) return 2;
-    if (!generated) return 3; // Resumo só após gerar o contrato
-    return 4;
+    // Serviços (2) é opcional: com a garantia escolhida, libera até patrimonial (3).
+    if (patrimonial === null) return 3;
+    if (!generated) return 4; // Resumo só após gerar o contrato
+    return 5;
   }, [verified, guaranteeId, patrimonial, generated]);
 
   function goToStep(target: number) {
@@ -177,8 +192,9 @@ export default function ClosingPage() {
   const canAdvance =
     (step === 0 && verified) ||
     (step === 1 && !!guaranteeId) ||
-    (step === 2 && patrimonial !== null) ||
-    (step === 3 && generated);
+    step === 2 || // serviços: opcional, pode seguir sem escolher
+    (step === 3 && patrimonial !== null) ||
+    (step === 4 && generated);
 
   // Motivo de bloqueio para avançar — feedback claro em vez de só desabilitar (N1).
   const pendingReason =
@@ -186,9 +202,9 @@ export default function ClosingPage() {
       ? "Conclua a verificação de identidade para continuar."
       : step === 1 && !guaranteeId
         ? "Selecione uma garantia para continuar."
-        : step === 2 && patrimonial === null
+        : step === 3 && patrimonial === null
           ? "Defina o seguro patrimonial para continuar."
-          : step === 3 && !generated
+          : step === 4 && !generated
             ? "Gere o contrato para continuar."
             : null;
 
@@ -406,8 +422,86 @@ export default function ClosingPage() {
           </div>
         )}
 
-        {/* ── 8.3 SEGURO PATRIMONIAL (opcional) ── */}
+        {/* ── 8.2-b SERVIÇOS ADICIONAIS (separados, opcionais, combináveis) ── */}
         {step === 2 && (
+          <div className="space-y-4">
+            <div>
+              <h2 className="font-title text-lg font-bold text-ink">Serviços adicionais</h2>
+              <p className="mt-1 text-sm text-muted">
+                Opcionais e <strong>combináveis</strong> — <strong>não são garantia</strong>. A
+                plataforma intermedeia e roteia o pagamento ao prestador;{" "}
+                <strong>não executa o serviço</strong>. Você pode seguir sem nenhum.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              {SERVICOS_VISIVEIS.map((s) => {
+                const selectable = servicoSelecionavel(s);
+                const active = services.includes(s.id);
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    aria-pressed={active}
+                    aria-disabled={!selectable}
+                    disabled={!selectable}
+                    onClick={() => selectable && toggleService(s.id)}
+                    className={cn(
+                      "w-full rounded-xl border-2 p-4 text-left transition-colors",
+                      active
+                        ? "border-forest bg-sage-100"
+                        : selectable
+                          ? "border-sage-200 hover:border-sage"
+                          : "cursor-not-allowed border-sage-200 bg-surface-2 opacity-70"
+                    )}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="font-title font-bold text-ink">{s.nome}</span>
+                      <span
+                        className={cn(
+                          "grid h-5 w-5 shrink-0 place-items-center rounded-md border",
+                          active ? "border-forest bg-forest text-white" : "border-sage-200"
+                        )}
+                      >
+                        {active && <Check className="h-3.5 w-3.5" />}
+                      </span>
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs font-semibold text-muted">
+                        Pago pelo {s.quemPaga === "inquilino" ? "inquilino" : "proprietário"}
+                      </span>
+                      {selectable ? (
+                        <span className="rounded-full bg-green-50 px-2 py-0.5 text-xs font-semibold text-green-900">
+                          Disponível
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                          <Clock className="h-3 w-3" /> Em breve
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-2 text-sm text-muted">{s.descricao}</p>
+                  </button>
+                );
+              })}
+            </div>
+
+            {services.length > 0 && (
+              <p className="rounded-lg bg-sage-100 px-3 py-2 text-xs text-forest">
+                Serviços selecionados:{" "}
+                <strong>
+                  {SERVICOS_VISIVEIS.filter((s) => services.includes(s.id))
+                    .map((s) => s.nome)
+                    .join(", ")}
+                </strong>
+                .
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* ── 8.3 SEGURO PATRIMONIAL (opcional) ── */}
+        {step === 3 && (
           <div className="space-y-4">
             <div>
               <h2 className="font-title text-lg font-bold text-ink">Seguro patrimonial</h2>
@@ -444,7 +538,7 @@ export default function ClosingPage() {
         )}
 
         {/* ── 8.4 CONTRATO + RATEIO ── */}
-        {step === 3 && (
+        {step === 4 && (
           <div className="space-y-5">
             <div>
               <h2 className="font-title text-lg font-bold text-ink">Contrato de locação por temporada</h2>
@@ -599,7 +693,7 @@ export default function ClosingPage() {
         )}
 
         {/* ── RESUMO FINAL ── */}
-        {step === 4 && (
+        {step === 5 && (
           <div className="space-y-5 text-center">
             <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-sage-100">
               <Sparkles className="h-7 w-7 text-forest" />
@@ -621,6 +715,16 @@ export default function ClosingPage() {
                 }
               />
               <Row label="Garantia" value={selectedGarantia?.nome ?? "—"} />
+              <Row
+                label="Serviços adicionais"
+                value={
+                  services.length > 0
+                    ? SERVICOS_VISIVEIS.filter((s) => services.includes(s.id))
+                        .map((s) => s.nome)
+                        .join(", ")
+                    : "Nenhum"
+                }
+              />
               <Row label="Seguro patrimonial" value={patrimonial ? "Contratado" : "Não contratado"} />
               <Row label="Contrato" value={generated ? "Enviado para assinatura" : "Pendente"} />
               <Row
@@ -637,7 +741,7 @@ export default function ClosingPage() {
         )}
 
         {/* Navegação */}
-        {step < 4 && (
+        {step < 5 && (
           <div className="mt-6">
             {pendingReason && (
               <p className="mb-3 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
@@ -656,7 +760,7 @@ export default function ClosingPage() {
         )}
       </Panel>
 
-          {step < 4 && <PlatformLegalNotice className="mt-4" />}
+          {step < 5 && <PlatformLegalNotice className="mt-4" />}
         </div>
       </div>
     </div>
