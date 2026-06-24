@@ -14,7 +14,6 @@ import {
   FileSignature,
   Sparkles,
   Globe2,
-  X,
   Clock,
   Info,
 } from "lucide-react";
@@ -26,33 +25,40 @@ import { SAMPLE_PROPERTIES } from "@/lib/properties";
 import { formatDocNumber } from "@/lib/documents";
 import { PlatformLegalNotice, OwnerDecisionNotice } from "@/components/legal-notice";
 import {
-  GUARANTEE_OPTIONS,
-  INSURERS,
-  INSURER_COVERAGE,
-  COVERAGE_ROWS,
   COST_SPLIT_ITEMS,
   TRAFFIC_LIGHT_META,
-  simulateQuote,
-  type GuaranteeType,
-  type Insurer,
   type CafResult,
   type CostParty,
 } from "@/lib/closing";
+import {
+  garantiasElegiveis,
+  garantiaSelecionavel,
+  REGRA_DE_OURO,
+  type Garantia,
+} from "@/lib/guarantees";
 import { COMMISSION_BY_PLAN } from "@/lib/constants";
 import { formatBRL, cn } from "@/lib/utils";
 
-const STEPS = ["Candidatura & verificação", "Garantia", "Cotação", "Patrimonial", "Contrato", "Resumo"];
+const STEPS = ["Candidatura & verificação", "Garantia", "Patrimonial", "Contrato", "Resumo"];
 
 // Inquilino e imóvel da candidatura (mock — viria do lead selecionado).
 const TENANT = { name: "Ana Carvalho", profile: "Médica · residência", foreigner: false };
 // Imóvel completo para o card do topo (Atualização 16) + número do contrato.
 const PROPERTY_FULL = SAMPLE_PROPERTIES.find((p) => p.id === "ube-001") ?? SAMPLE_PROPERTIES[0];
 const CONTRACT_NUMBER = formatDocNumber("contrato", 2026, 42);
+// Duração da estadia (mock — viria das datas do lead). 120 dias = trilha
+// residencial (90–180): caução + título + garantidor digital (slot "em breve").
+const STAY_DAYS = 120;
+const STAY_MESES = Math.round(STAY_DAYS / 30);
 const PROPERTY = {
   title: PROPERTY_FULL.title,
   monthlyRent: PROPERTY_FULL.monthlyPrice,
-  term: 12,
+  term: STAY_MESES,
 };
+// Caução sugerida: até 3 aluguéis (art. 38 da Lei 8.245). A plataforma só sugere.
+const CAUCAO_SUGERIDA = PROPERTY.monthlyRent * 3;
+// Garantias elegíveis para a duração desta estadia (filtro por prazo).
+const ELEGIVEIS = garantiasElegiveis(STAY_DAYS);
 // Plano do proprietário define a comissão de fechamento (12% / 10% / 8%).
 const OWNER_PLAN = "essential";
 const COMMISSION_RATE = COMMISSION_BY_PLAN[OWNER_PLAN];
@@ -68,31 +74,25 @@ export default function ClosingPage() {
   const [verifying, setVerifying] = useState(false);
   const [cafResult, setCafResult] = useState<CafResult | null>(null);
   const [signUrl, setSignUrl] = useState<string | null>(null);
-  const [guarantee, setGuarantee] = useState<GuaranteeType | null>(null);
-  const [insurer, setInsurer] = useState<Insurer | null>(null);
+  // Seleção ÚNICA de garantia: guardamos um único id. Selecionar outra substitui
+  // a anterior — é impossível ter duas garantias no contrato (Lei 8.245, art. 37).
+  const [guaranteeId, setGuaranteeId] = useState<string | null>(null);
   const [patrimonial, setPatrimonial] = useState<boolean | null>(null);
   const [split, setSplit] = useState<Record<string, CostParty>>(
     Object.fromEntries(COST_SPLIT_ITEMS.map((i) => [i.key, i.default]))
   );
   const [generated, setGenerated] = useState(false);
 
-  const quote = useMemo(
-    () => (insurer ? simulateQuote(insurer, PROPERTY.monthlyRent) : null),
-    [insurer]
+  const selectedGarantia = useMemo<Garantia | null>(
+    () => ELEGIVEIS.find((g) => g.id === guaranteeId) ?? null,
+    [guaranteeId]
   );
 
-  // Pula a etapa de cotação quando a garantia não é seguro-fiança.
   function next() {
-    setStep((s) => {
-      const skipQuote = s === 1 && guarantee !== "seguro_fianca";
-      return Math.min(STEPS.length - 1, s + (skipQuote ? 2 : 1));
-    });
+    setStep((s) => Math.min(STEPS.length - 1, s + 1));
   }
   function back() {
-    setStep((s) => {
-      const skipQuote = s === 3 && guarantee !== "seguro_fianca";
-      return Math.max(0, s - (skipQuote ? 2 : 1));
-    });
+    setStep((s) => Math.max(0, s - 1));
   }
 
   async function runVerification() {
@@ -131,18 +131,14 @@ export default function ClosingPage() {
   // Etapas do stepper já alcançadas são clicáveis (A4).
   const maxReached = useMemo(() => {
     if (!verified) return 0;
-    if (!guarantee) return 1;
-    if (guarantee === "seguro_fianca" && !insurer) return 2;
-    if (patrimonial === null) return 3;
-    if (!generated) return 4; // Resumo só após gerar o contrato
-    return 5;
-  }, [verified, guarantee, insurer, patrimonial, generated]);
+    if (!guaranteeId) return 1;
+    if (patrimonial === null) return 2;
+    if (!generated) return 3; // Resumo só após gerar o contrato
+    return 4;
+  }, [verified, guaranteeId, patrimonial, generated]);
 
   function goToStep(target: number) {
-    if (target <= maxReached) {
-      if (target === 2 && guarantee !== "seguro_fianca") return; // cotação só p/ seguro
-      setStep(target);
-    }
+    if (target <= maxReached) setStep(target);
   }
 
   async function generateContract() {
@@ -156,7 +152,7 @@ export default function ClosingPage() {
           propertyTitle: PROPERTY.title,
           monthlyRent: PROPERTY.monthlyRent,
           termMonths: PROPERTY.term,
-          guarantee: GUARANTEE_OPTIONS.find((g) => g.id === guarantee)?.name ?? "",
+          guarantee: selectedGarantia?.nome ?? "",
           costSplit: split,
         }),
       });
@@ -180,24 +176,21 @@ export default function ClosingPage() {
 
   const canAdvance =
     (step === 0 && verified) ||
-    (step === 1 && !!guarantee) ||
-    (step === 2 && !!insurer) ||
-    (step === 3 && patrimonial !== null) ||
-    (step === 4 && generated);
+    (step === 1 && !!guaranteeId) ||
+    (step === 2 && patrimonial !== null) ||
+    (step === 3 && generated);
 
   // Motivo de bloqueio para avançar — feedback claro em vez de só desabilitar (N1).
   const pendingReason =
     step === 0 && !verified
       ? "Conclua a verificação de identidade para continuar."
-      : step === 1 && !guarantee
-        ? "Selecione uma opção de garantia para continuar."
-        : step === 2 && !insurer
-          ? "Escolha uma seguradora para continuar."
-          : step === 3 && patrimonial === null
-            ? "Defina o seguro patrimonial para continuar."
-            : step === 4 && !generated
-              ? "Gere o contrato para continuar."
-              : null;
+      : step === 1 && !guaranteeId
+        ? "Selecione uma garantia para continuar."
+        : step === 2 && patrimonial === null
+          ? "Defina o seguro patrimonial para continuar."
+          : step === 3 && !generated
+            ? "Gere o contrato para continuar."
+            : null;
 
   return (
     <div>
@@ -231,7 +224,7 @@ export default function ClosingPage() {
               Rola no mobile; quebra em linhas no desktop (sem scroll horizontal). */}
           <div className="mb-6 flex items-center gap-2 overflow-x-auto pb-2 sm:flex-wrap sm:overflow-visible sm:pb-0">
         {STEPS.map((s, i) => {
-          const reachable = i <= maxReached && !(i === 2 && guarantee !== "seguro_fianca");
+          const reachable = i <= maxReached;
           return (
             <button
               key={s}
@@ -288,41 +281,44 @@ export default function ClosingPage() {
           </div>
         )}
 
-        {/* ── 8.2 ESCOLHA DE GARANTIA (única) ── */}
+        {/* ── 8.2 ESCOLHA DE GARANTIA (única, orientada a dados) ── */}
         {step === 1 && (
           <div className="space-y-4">
             <div>
               <h2 className="font-title text-lg font-bold text-ink">
-                Escolha como quer garantir o seu aluguel
+                Escolha como garantir o aluguel
               </h2>
               <p className="mt-1 text-sm text-muted">
-                Você decide o que cabe no seu bolso — taxa mensal sem depósito ou caução
-                devolvível. A lei permite <strong>uma</strong> garantia por contrato (art. 42).
-                A plataforma organiza e documenta; não é a garantidora.
+                A lei permite <strong>uma</strong> garantia por contrato (Lei 8.245, art. 37).
+                Para esta estadia de <strong>{STAY_MESES} meses</strong> (~{STAY_DAYS} dias), estas
+                são as opções:
               </p>
             </div>
-            <div className="space-y-3">
-              {GUARANTEE_OPTIONS.map((g) => {
-                const active = guarantee === g.id;
+
+            <div className="space-y-3" role="radiogroup" aria-label="Garantia locatícia">
+              {ELEGIVEIS.map((g) => {
+                const selectable = garantiaSelecionavel(g);
+                const active = guaranteeId === g.id;
                 return (
                   <button
                     key={g.id}
                     type="button"
-                    onClick={() => setGuarantee(g.id)}
+                    role="radio"
+                    aria-checked={active}
+                    aria-disabled={!selectable}
+                    disabled={!selectable}
+                    onClick={() => selectable && setGuaranteeId(g.id)}
                     className={cn(
                       "w-full rounded-xl border-2 p-4 text-left transition-colors",
-                      active ? "border-forest bg-sage-100" : "border-sage-200 hover:border-sage"
+                      active
+                        ? "border-forest bg-sage-100"
+                        : selectable
+                          ? "border-sage-200 hover:border-sage"
+                          : "cursor-not-allowed border-sage-200 bg-surface-2 opacity-70"
                     )}
                   >
                     <div className="flex items-center justify-between gap-3">
-                      <span className="flex flex-wrap items-center gap-2 font-title font-bold text-ink">
-                        {g.name}
-                        {g.recommended && (
-                          <span className="rounded-full bg-champagne px-2 py-0.5 text-xs font-semibold text-forest">
-                            Recomendado
-                          </span>
-                        )}
-                      </span>
+                      <span className="font-title font-bold text-ink">{g.nome}</span>
                       <span
                         className={cn(
                           "grid h-5 w-5 shrink-0 place-items-center rounded-full border",
@@ -336,181 +332,82 @@ export default function ClosingPage() {
                       <span
                         className={cn(
                           "rounded-full px-2 py-0.5 text-xs font-semibold",
-                          g.deposit === "none" ? "bg-green-50 text-green-900" : "bg-blue-50 text-blue-700"
+                          g.reembolsavel
+                            ? "bg-green-50 text-green-900"
+                            : "bg-blue-50 text-blue-700"
                         )}
                       >
-                        {g.deposit === "none" ? "Sem depósito" : "Depósito devolvível"}
+                        {g.reembolsavel ? "Reembolsável" : "Não reembolsável"}
                       </span>
-                      <span
-                        className={cn(
-                          "rounded-full px-2 py-0.5 text-xs font-semibold",
-                          g.status === "disponivel" ? "bg-green-50 text-green-900" : "bg-amber-50 text-amber-700"
-                        )}
-                      >
-                        {g.status === "disponivel" ? "Disponível" : "Via parceiro"}
+                      <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs font-semibold text-muted">
+                        Pago pelo {g.quemPaga === "inquilino" ? "inquilino" : "proprietário"}
                       </span>
-                    </div>
-                    <p className="mt-2 text-sm text-muted">{g.summary}</p>
-                    {g.note && (
-                      <p className="mt-2 flex items-start gap-1.5 text-xs text-muted">
-                        <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {g.note}
-                      </p>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-            {guarantee && (
-              <p className="rounded-lg bg-sage-100 px-3 py-2 text-xs text-forest">
-                Garantia selecionada: <strong>{GUARANTEE_OPTIONS.find((g) => g.id === guarantee)?.name}</strong>.
-                As demais ficam bloqueadas — só uma é válida no contrato.
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* ── 8.3 COTAÇÃO DE SEGURO-FIANÇA ── */}
-        {step === 2 && (
-          <div className="space-y-4">
-            <div>
-              <h2 className="font-title text-lg font-bold text-ink">Cotação da garantia digital</h2>
-              <p className="mt-1 text-sm text-muted">
-                Cotação dentro da plataforma, com parceiro. A plataforma intermedia e recebe
-                comissão por contrato emitido — não é a garantidora.
-              </p>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {INSURERS.map((ins) => {
-                const active = insurer === ins.id;
-                const q = simulateQuote(ins.id, PROPERTY.monthlyRent);
-                return (
-                  <button
-                    key={ins.id}
-                    type="button"
-                    onClick={() => setInsurer(ins.id)}
-                    className={cn(
-                      "rounded-xl border-2 p-4 text-left transition-colors",
-                      active ? "border-forest bg-sage-100" : "border-sage-200 hover:border-sage"
-                    )}
-                  >
-                    <p className="font-title font-bold text-ink">{ins.name}</p>
-                    <p className="text-xs text-muted">{ins.note}</p>
-                    <p className="mt-3 font-title text-xl font-bold text-forest">
-                      {formatBRL(q.monthlyInstallment)}
-                      <span className="text-sm font-normal text-muted">/mês</span>
-                    </p>
-                    <p className="text-xs text-muted">
-                      Cobertura até {formatBRL(q.coverage)}
-                    </p>
-                  </button>
-                );
-              })}
-            </div>
-            {/* Comparação real de coberturas — não só preço (Atualização 15.1) */}
-            {/* Mobile: cards empilhados por seguradora (não tabela espremida). */}
-            <div className="grid gap-3 sm:hidden">
-              {INSURERS.map((ins) => {
-                const cov = INSURER_COVERAGE[ins.id];
-                return (
-                  <div key={ins.id} className="rounded-xl border border-sage-200 p-4">
-                    <div className="flex items-center justify-between">
-                      <p className="font-title font-bold text-ink">{ins.name}</p>
-                      <p className="font-medium text-forest">
-                        {formatBRL(simulateQuote(ins.id, PROPERTY.monthlyRent).monthlyInstallment)}
-                        <span className="text-xs font-normal text-muted">/mês</span>
-                      </p>
-                    </div>
-                    <ul className="mt-3 grid gap-1.5 text-sm">
-                      {COVERAGE_ROWS.map((row) => (
-                        <li key={row.key} className="flex items-center gap-2">
-                          {cov[row.key] ? (
-                            <Check className="h-4 w-4 shrink-0 text-emerald-600" />
-                          ) : (
-                            <X className="h-4 w-4 shrink-0 text-red-400" />
-                          )}
-                          <span className={cov[row.key] ? "text-ink" : "text-muted"}>
-                            {row.label}
-                          </span>
-                        </li>
-                      ))}
-                      <li className="mt-1 flex items-center gap-2 border-t border-sage-200 pt-2 text-muted">
-                        <Clock className="h-3.5 w-3.5" /> Análise {cov.analise}
-                      </li>
-                    </ul>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Desktop/tablet: tabela comparativa lado a lado */}
-            <div className="hidden overflow-x-auto rounded-xl border border-sage-200 sm:block">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-sage-200 bg-surface-2">
-                    <th className="px-3 py-2 text-left font-medium text-muted">Cobertura</th>
-                    {INSURERS.map((ins) => (
-                      <th key={ins.id} className="px-3 py-2 text-center font-title font-bold text-ink">
-                        {ins.name}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="border-b border-sage-200/60">
-                    <td className="px-3 py-2 text-muted">Custo mensal</td>
-                    {INSURERS.map((ins) => (
-                      <td key={ins.id} className="px-3 py-2 text-center font-medium text-forest">
-                        {formatBRL(simulateQuote(ins.id, PROPERTY.monthlyRent).monthlyInstallment)}
-                      </td>
-                    ))}
-                  </tr>
-                  {COVERAGE_ROWS.map((row) => (
-                    <tr key={row.key} className="border-b border-sage-200/60">
-                      <td className="px-3 py-2 text-ink">{row.label}</td>
-                      {INSURERS.map((ins) => (
-                        <td key={ins.id} className="px-3 py-2 text-center">
-                          {INSURER_COVERAGE[ins.id][row.key] ? (
-                            <Check className="mx-auto h-4 w-4 text-emerald-600" />
-                          ) : (
-                            <X className="mx-auto h-4 w-4 text-red-400" />
-                          )}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                  <tr>
-                    <td className="px-3 py-2 text-muted">Prazo de análise</td>
-                    {INSURERS.map((ins) => (
-                      <td key={ins.id} className="px-3 py-2 text-center text-ink">
-                        <span className="inline-flex items-center gap-1">
-                          <Clock className="h-3.5 w-3.5 text-muted" />
-                          {INSURER_COVERAGE[ins.id].analise}
+                      {selectable ? (
+                        <span className="rounded-full bg-green-50 px-2 py-0.5 text-xs font-semibold text-green-900">
+                          Disponível
                         </span>
-                      </td>
-                    ))}
-                  </tr>
-                </tbody>
-              </table>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                          <Clock className="h-3 w-3" /> Em breve
+                        </span>
+                      )}
+                    </div>
+                    {g.observacao && <p className="mt-2 text-sm text-muted">{g.observacao}</p>}
+                    {!selectable && (
+                      <p className="mt-2 text-xs text-muted">
+                        Disponível em breve — via parceiro. Por ora, escolha caução ou título.
+                      </p>
+                    )}
+                  </button>
+                );
+              })}
             </div>
-            <p className="text-xs text-muted">
-              Escolha por custo-benefício, não só preço: a mais barata pode cobrir menos. Você
-              decide informado.
+
+            {/* Regra de ouro — sempre visível na etapa de garantia. */}
+            <p className="flex items-start gap-2 rounded-lg border border-sage-200 bg-surface-2 px-3 py-2 text-xs text-muted">
+              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-sage" />
+              {REGRA_DE_OURO}
             </p>
 
-            {quote && (
-              <div className="rounded-xl bg-surface-2 p-4 text-sm text-ink">
-                Custo anual aproximado: <strong>{formatBRL(quote.annualCost)}</strong> (parcelável).
-                <p className="mt-1 text-muted">
-                  💰 Pago pelo <strong className="text-ink">inquilino</strong>. Beneficiário:
-                  o <strong className="text-ink">proprietário</strong>.
+            {/* Sub-fluxo conforme a garantia escolhida. */}
+            {selectedGarantia?.tipo === "caucao" && (
+              <div className="space-y-2 rounded-xl border border-sage-200 p-4 text-sm">
+                <p className="font-medium text-ink">Como funciona a caução</p>
+                <Row
+                  label="Valor sugerido (até 3 aluguéis · art. 38)"
+                  value={formatBRL(CAUCAO_SUGERIDA)}
+                />
+                <p className="flex items-start gap-1.5 text-muted">
+                  <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  O depósito vai para uma <strong>conta vinculada</strong> (locador + locatário),
+                  fora da plataforma, e é devolvido ao fim. A plataforma registra e documenta —{" "}
+                  <strong>nunca recebe nem retém o valor</strong>. O inquilino anexa o comprovante e
+                  o status fica “caução comprovada”.
                 </p>
               </div>
             )}
+            {selectedGarantia?.tipo === "titulo" && (
+              <div className="space-y-2 rounded-xl border border-sage-200 p-4 text-sm">
+                <p className="font-medium text-ink">Como funciona o título de capitalização</p>
+                <p className="text-muted">
+                  Encaminhamos ao parceiro emissor; o número do título é registrado e anexado ao
+                  contrato. Resgatável ao fim. A plataforma documenta — não emite nem garante o
+                  título.
+                </p>
+              </div>
+            )}
+
+            {selectedGarantia && (
+              <p className="rounded-lg bg-sage-100 px-3 py-2 text-xs text-forest">
+                Garantia selecionada: <strong>{selectedGarantia.nome}</strong>. Só uma é válida no
+                contrato — as demais ficam bloqueadas.
+              </p>
+            )}
           </div>
         )}
 
-        {/* ── 8.4 SEGURO PATRIMONIAL (opcional) ── */}
-        {step === 3 && (
+        {/* ── 8.3 SEGURO PATRIMONIAL (opcional) ── */}
+        {step === 2 && (
           <div className="space-y-4">
             <div>
               <h2 className="font-title text-lg font-bold text-ink">Seguro patrimonial</h2>
@@ -546,8 +443,8 @@ export default function ClosingPage() {
           </div>
         )}
 
-        {/* ── 8.5 CONTRATO ZAPSIGN + RATEIO ── */}
-        {step === 4 && (
+        {/* ── 8.4 CONTRATO + RATEIO ── */}
+        {step === 3 && (
           <div className="space-y-5">
             <div>
               <h2 className="font-title text-lg font-bold text-ink">Contrato de locação por temporada</h2>
@@ -597,10 +494,7 @@ export default function ClosingPage() {
               <Row label="Imóvel" value={PROPERTY.title} />
               <Row label="Prazo" value={`${PROPERTY.term} meses`} />
               <Row label="Aluguel" value={`${formatBRL(PROPERTY.monthlyRent)}/mês`} />
-              <Row
-                label="Garantia"
-                value={GUARANTEE_OPTIONS.find((g) => g.id === guarantee)?.name ?? "—"}
-              />
+              <Row label="Garantia" value={selectedGarantia?.nome ?? "—"} />
             </div>
 
             {/* Regime de consumo no contrato (Atualização 6) */}
@@ -705,7 +599,7 @@ export default function ClosingPage() {
         )}
 
         {/* ── RESUMO FINAL ── */}
-        {step === 5 && (
+        {step === 4 && (
           <div className="space-y-5 text-center">
             <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-sage-100">
               <Sparkles className="h-7 w-7 text-forest" />
@@ -726,8 +620,7 @@ export default function ClosingPage() {
                     : "—"
                 }
               />
-              <Row label="Garantia" value={GUARANTEE_OPTIONS.find((g) => g.id === guarantee)?.name ?? "—"} />
-              {insurer && <Row label="Seguradora" value={INSURERS.find((i) => i.id === insurer)?.name ?? "—"} />}
+              <Row label="Garantia" value={selectedGarantia?.nome ?? "—"} />
               <Row label="Seguro patrimonial" value={patrimonial ? "Contratado" : "Não contratado"} />
               <Row label="Contrato" value={generated ? "Enviado para assinatura" : "Pendente"} />
               <Row
@@ -744,7 +637,7 @@ export default function ClosingPage() {
         )}
 
         {/* Navegação */}
-        {step < 5 && (
+        {step < 4 && (
           <div className="mt-6">
             {pendingReason && (
               <p className="mb-3 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
@@ -763,7 +656,7 @@ export default function ClosingPage() {
         )}
       </Panel>
 
-          {step < 5 && <PlatformLegalNotice className="mt-4" />}
+          {step < 4 && <PlatformLegalNotice className="mt-4" />}
         </div>
       </div>
     </div>
