@@ -70,6 +70,11 @@ drop policy if exists "catálogo de serviços é público" on public.servicos_ad
 create policy "catálogo de serviços é público" on public.servicos_adicionais
   for select using (true);
 
+-- Aqui Resolve ATIVA no MVP (migração 0015): serviços selecionáveis, opcionais.
+update public.servicos_adicionais
+set status = 'ativo'
+where id in ('assistencia_24h', 'plano_manutencao');
+
 -- ════════════════════════════════════════════════════════════════════
 -- (B) Promover o super admin (papel lido pelo proxy.ts a partir de profiles)
 -- ════════════════════════════════════════════════════════════════════

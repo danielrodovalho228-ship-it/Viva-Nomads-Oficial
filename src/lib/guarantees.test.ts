@@ -104,15 +104,16 @@ test("garantia 'inativo' nunca é elegível", () => {
   assert.ok(!filtra.some((g) => g.id === "x"));
 });
 
-test("serviços adicionais 'em breve' não aparecem como disponíveis", () => {
-  // Hoje ambos estão 'em breve' — a lista de disponíveis vem vazia até ligar.
-  assert.equal(servicosDisponiveis().length, 0);
-});
-
-test("serviços 'em breve' SÃO visíveis (slot), mas NÃO são selecionáveis", () => {
+test("Aqui Resolve ATIVA: os dois serviços aparecem como disponíveis e selecionáveis", () => {
+  // Assistência 24h e Plano de manutenção agora estão 'ativo' (MVP).
+  assert.equal(servicosDisponiveis().length, 2);
   const visiveis = servicosVisiveis();
-  // Os dois serviços do catálogo aparecem como slot, mesmo 'em breve'.
   assert.equal(visiveis.length, 2);
-  // Nenhum é selecionável enquanto estiver 'em breve'.
-  assert.equal(visiveis.every((s) => !servicoSelecionavel(s)), true);
+  // Todos selecionáveis agora que estão 'ativo'.
+  assert.equal(visiveis.every((s) => servicoSelecionavel(s)), true);
+  // Quem paga continua correto por serviço.
+  const assist = visiveis.find((s) => s.id === "assistencia_24h")!;
+  const manut = visiveis.find((s) => s.id === "plano_manutencao")!;
+  assert.equal(assist.quemPaga, "inquilino");
+  assert.equal(manut.quemPaga, "proprietario");
 });
