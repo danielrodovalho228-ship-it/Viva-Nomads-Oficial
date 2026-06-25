@@ -8,7 +8,8 @@ import {
   geocodeAddress,
   type GeoSuggestion,
 } from "@/lib/integrations/geocoding";
-import { LocationDatalist, LOCATION_SUGGESTIONS } from "@/lib/locations";
+import { LOCATION_SUGGESTIONS } from "@/lib/locations";
+import { CityAutocomplete } from "@/components/city-autocomplete";
 
 interface Props {
   value: string;
@@ -28,22 +29,16 @@ export function LocationSearch({
   value,
   onChange,
   onSelect,
-  datalistId = "buscar-location-list",
 }: Props) {
   if (!geocodingEnabled) {
+    // Sem Mapbox: autocomplete próprio das cidades/bairros atendidos (funciona
+    // no mobile, ao contrário do <datalist>).
     return (
-      <div className="flex items-center gap-2 rounded-full border border-sage-200 bg-white px-3.5 py-2">
-        <MapPin className="h-4 w-4 shrink-0 text-blue-500" />
-        <input
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="Cidade ou bairro"
-          list={datalistId}
-          autoComplete="off"
-          className="w-36 bg-transparent text-sm text-ink outline-none placeholder:text-muted"
-        />
-        <LocationDatalist id={datalistId} />
-      </div>
+      <CityAutocomplete
+        value={value}
+        onChange={onChange}
+        pillClassName="flex items-center gap-2 rounded-full border border-sage-200 bg-white px-3.5 py-2"
+      />
     );
   }
   return <LocationGeocoder value={value} onChange={onChange} onSelect={onSelect} />;
