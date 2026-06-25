@@ -16,7 +16,7 @@ import { useViewMode } from "@/lib/roles";
 import { StatCard, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { DashboardBanner } from "@/components/dashboard/banner";
 import { ButtonLink } from "@/components/ui/button";
-import { SAMPLE_PROPERTIES } from "@/lib/properties";
+import { useProperties } from "@/lib/use-properties";
 import { PHOTOS } from "@/lib/media";
 import { formatBRL } from "@/lib/utils";
 import { ReadyToLiveBadge } from "@/components/ui/badge";
@@ -33,7 +33,7 @@ export default function DashboardPage() {
 }
 
 function OwnerDashboard({ name }: { name: string }) {
-  const myProperties = SAMPLE_PROPERTIES.slice(0, 2);
+  const myProperties = useProperties("/api/properties/mine").properties.slice(0, 2);
 
   return (
     <>
@@ -126,6 +126,7 @@ function OwnerDashboard({ name }: { name: string }) {
 }
 
 function TenantDashboard({ name }: { name: string }) {
+  const recommended = useProperties("/api/properties").properties.slice(0, 3);
   return (
     <>
       <DashboardBanner
@@ -150,7 +151,7 @@ function TenantDashboard({ name }: { name: string }) {
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <Panel title="Imóveis recomendados">
           <ul className="divide-y divide-sage-200">
-            {SAMPLE_PROPERTIES.slice(0, 3).map((p) => (
+            {recommended.map((p) => (
               <li key={p.id} className="flex items-center justify-between py-3">
                 <Link href={`/imoveis/${p.id}`} className="text-sm font-medium text-ink hover:text-forest">
                   {p.title}

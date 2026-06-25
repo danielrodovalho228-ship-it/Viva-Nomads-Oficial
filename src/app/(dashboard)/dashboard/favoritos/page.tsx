@@ -5,12 +5,13 @@ import { PageTitle, EmptyState } from "@/components/dashboard/primitives";
 import { PropertyCard } from "@/components/property-card";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyTripIllustration } from "@/components/illustrations";
-import { SAMPLE_PROPERTIES } from "@/lib/properties";
 import { useFavoritesStore } from "@/lib/favorites-store";
+import { useProperties } from "@/lib/use-properties";
 
 export default function FavoritesPage() {
   const ids = useFavoritesStore((s) => s.ids);
-  const favorites = SAMPLE_PROPERTIES.filter((p) => ids.includes(p.id));
+  const { properties } = useProperties("/api/properties");
+  const favorites = properties.filter((p) => ids.includes(p.id));
 
   return (
     <>
