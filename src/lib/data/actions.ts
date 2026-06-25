@@ -90,6 +90,13 @@ export async function createProperty(input: {
   lng?: number;
   photoUrls?: string[];
   videoUrl?: string;
+  /**
+   * Salvar como rascunho (não publicar). Padrão: false = publica direto.
+   * Publicar grava status "active" — é o que torna o imóvel visível na busca
+   * pública (que filtra status='active'). Rascunho fica "draft" e só aparece
+   * no painel do dono.
+   */
+  asDraft?: boolean;
 }): Promise<ActionResult> {
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
@@ -135,7 +142,8 @@ export async function createProperty(input: {
       area_m2: input.areaM2,
       min_period_days: input.minPeriodDays,
       monthly_price: input.monthlyPrice,
-      status: "draft",
+      // Publicar => "active" (visível na busca pública); rascunho => "draft".
+      status: input.asDraft ? "draft" : "active",
       ready_to_live_score: input.readyToLiveScore,
       ready_to_live_badge: input.readyToLiveScore >= 70,
       tag_home_office: input.tagHomeOffice ?? false,

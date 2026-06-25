@@ -169,6 +169,8 @@ export default function NewPropertyPage() {
       lng: coords.lng,
       photoUrls: photos.map((p) => p.url),
       videoUrl: videoUrl.trim() || undefined,
+      // "Salvar rascunho" => draft; "Publicar anúncio" => active (entra na busca).
+      asDraft,
     });
 
     setPublishing(false);
