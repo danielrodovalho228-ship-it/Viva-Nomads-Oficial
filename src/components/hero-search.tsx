@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { MapPin, CalendarRange, Wallet, Search } from "lucide-react";
-import { LocationDatalist } from "@/lib/locations";
+import { CalendarRange, Wallet, Search } from "lucide-react";
+import { CityAutocomplete } from "@/components/city-autocomplete";
 
 /** Busca do hero: Localização / Período / Orçamento → /buscar. */
 export function HeroSearch() {
@@ -32,17 +32,7 @@ export function HeroSearch() {
       onSubmit={submit}
       className="grid gap-2 rounded-2xl bg-white p-2 shadow-2xl shadow-blue-900/20 sm:grid-cols-[1.3fr_1fr_1fr_auto]"
     >
-      <Field icon={MapPin}>
-        <input
-          value={location}
-          onChange={(e) => setLocation(e.target.value)}
-          placeholder="Cidade ou bairro"
-          list="hero-location-list"
-          autoComplete="off"
-          className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-muted"
-        />
-        <LocationDatalist id="hero-location-list" />
-      </Field>
+      <CityAutocomplete value={location} onChange={setLocation} />
       <Field icon={CalendarRange}>
         <select
           value={period}
