@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Plus,
@@ -18,6 +18,7 @@ import { PropertyMiniCard } from "@/components/property-mini-card";
 import { DocumentShare } from "@/components/document-share";
 import { PlatformLegalNotice } from "@/components/legal-notice";
 import { SAMPLE_PROPERTIES } from "@/lib/properties";
+import { useProperties } from "@/lib/use-properties";
 import {
   SAMPLE_DOCUMENTS,
   DOC_STATUS_META,
@@ -177,19 +178,31 @@ function NewBudget({
   onCancel: () => void;
   onCreated: (d: DocumentRecord) => void;
 }) {
+  // Imóveis REAIS do proprietário (com fallback aos exemplos no modo demo/vazio).
+  const { properties: ownerProps } = useProperties("/api/properties/mine");
+  const properties = ownerProps.length > 0 ? ownerProps : SAMPLE_PROPERTIES;
   const [step, setStep] = useState(0);
   const [propertyId, setPropertyId] = useState(SAMPLE_PROPERTIES[0].id);
   const [tenantName, setTenantName] = useState("");
   const [tenantContact, setTenantContact] = useState("");
   const [validDays, setValidDays] = useState(7);
-  const property = SAMPLE_PROPERTIES.find((p) => p.id === propertyId)!;
+  const property = properties.find((p) => p.id === propertyId) ?? properties[0];
   const [items, setItems] = useState<LineItem[]>(() => buildDefaultLineItems(property));
+
+  // Quando os imóveis reais carregam, seleciona o primeiro e refaz os itens.
+  useEffect(() => {
+    if (ownerProps.length > 0 && !ownerProps.some((p) => p.id === propertyId)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setPropertyId(ownerProps[0].id);
+      setItems(buildDefaultLineItems(ownerProps[0]));
+    }
+  }, [ownerProps, propertyId]);
 
   // Reconstrói os itens sugeridos ao trocar de imóvel.
   function selectProperty(id: string) {
     setPropertyId(id);
-    const p = SAMPLE_PROPERTIES.find((x) => x.id === id)!;
-    setItems(buildDefaultLineItems(p));
+    const p = properties.find((x) => x.id === id);
+    if (p) setItems(buildDefaultLineItems(p));
   }
 
   function setAmount(key: string, amount: number) {
@@ -250,7 +263,7 @@ function NewBudget({
           <div className="space-y-3">
             <h2 className="font-title text-lg font-bold text-ink">Qual imóvel?</h2>
             <div className="space-y-2">
-              {SAMPLE_PROPERTIES.map((p) => (
+              {properties.map((p) => (
                 <button
                   key={p.id}
                   type="button"

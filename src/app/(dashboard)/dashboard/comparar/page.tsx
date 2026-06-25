@@ -4,14 +4,15 @@ import Link from "next/link";
 import { GitCompare, Check, Minus, Award } from "lucide-react";
 import { PageTitle, EmptyState } from "@/components/dashboard/primitives";
 import { ButtonLink } from "@/components/ui/button";
-import { SAMPLE_PROPERTIES } from "@/lib/properties";
 import { useFavoritesStore } from "@/lib/favorites-store";
+import { useProperties } from "@/lib/use-properties";
 import { formatBRL, cn } from "@/lib/utils";
 import type { Property } from "@/lib/types";
 
 export default function ComparePage() {
   const ids = useFavoritesStore((s) => s.ids);
-  const items = SAMPLE_PROPERTIES.filter((p) => ids.includes(p.id)).slice(0, 4);
+  const { properties } = useProperties("/api/properties");
+  const items = properties.filter((p) => ids.includes(p.id)).slice(0, 4);
 
   if (items.length < 2) {
     return (
