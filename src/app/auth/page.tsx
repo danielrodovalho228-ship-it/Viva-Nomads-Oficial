@@ -78,9 +78,17 @@ export default function AuthPage() {
     }
     setLoading(true);
     try {
-      const { error } = await supabase.auth.resend({ type: "signup", email });
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email,
+        // O link reenviado volta para o callback do site (igual ao cadastro).
+        options: { emailRedirectTo: `${SITE_URL}/auth/callback` },
+      });
       if (error) throw error;
-      setNotice("Reenviamos o e-mail de confirmação. Verifique sua caixa de entrada.");
+      setNotice(
+        "Reenviamos o e-mail de confirmação. Verifique a caixa de entrada e o spam. " +
+          "Se não chegar e a conta já estiver confirmada, é só entrar."
+      );
     } catch (err) {
       setError(friendlyAuthError(err instanceof Error ? err.message : ""));
     } finally {
