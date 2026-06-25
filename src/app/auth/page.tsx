@@ -579,9 +579,23 @@ function Input({
       {isPassword && (
         <button
           type="button"
-          onClick={() => setShow((s) => !s)}
-          aria-label={show ? "Ocultar senha" : "Mostrar senha"}
-          title={show ? "Ocultar senha" : "Mostrar senha"}
+          // Segurança: revela a senha só ENQUANTO pressionado (segure para ver).
+          onMouseDown={() => setShow(true)}
+          onMouseUp={() => setShow(false)}
+          onMouseLeave={() => setShow(false)}
+          onTouchStart={() => setShow(true)}
+          onTouchEnd={() => setShow(false)}
+          onTouchCancel={() => setShow(false)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              setShow(true);
+            }
+          }}
+          onKeyUp={() => setShow(false)}
+          onBlur={() => setShow(false)}
+          aria-label="Segure para ver a senha"
+          title="Segure para ver a senha"
           className="shrink-0 text-muted transition-colors hover:text-ink"
         >
           {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
