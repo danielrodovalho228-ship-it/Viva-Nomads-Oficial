@@ -35,7 +35,9 @@ export default function AuthPage() {
   const router = useRouter();
   const setUser = useAuthStore((s) => s.setUser);
   const [mode, setMode] = useState<Mode>("login");
-  const [role, setRole] = useState<UserRole>("owner");
+  // Sem papel pré-selecionado: o usuário escolhe conscientemente proprietário
+  // OU inquilino no cadastro (evita criar proprietário sem querer).
+  const [role, setRole] = useState<UserRole | null>(null);
   const [personType, setPersonType] = useState<PersonType>("pf");
   const [showSimulator, setShowSimulator] = useState(false);
   const [name, setName] = useState("");
@@ -127,6 +129,7 @@ export default function AuthPage() {
   function validate(): string | null {
     if (!isValidEmail(email)) return "E-mail inválido. Confira o endereço digitado.";
     if (mode === "signup") {
+      if (!role) return "Escolha se você é proprietário ou inquilino.";
       if (name.trim().length < 2) return "Informe seu nome completo.";
       if (password.length < MIN_PASSWORD)
         return `A senha deve ter pelo menos ${MIN_PASSWORD} caracteres.`;
@@ -203,7 +206,7 @@ export default function AuthPage() {
         name: name || email,
         fullName: name || undefined,
         email,
-        role,
+        role: role ?? "tenant",
       });
       router.push("/dashboard");
     } catch (err) {
