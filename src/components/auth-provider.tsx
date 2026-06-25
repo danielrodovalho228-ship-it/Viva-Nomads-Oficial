@@ -22,28 +22,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       const u = session.user;
-      // O perfil em `profiles` é a fonte CONFIÁVEL de nome e papel — o
-      // user_metadata é editável pelo próprio usuário, então não vale para
-      // autorização. Usamos os valores do perfil quando existem.
-      let fullName = (u.user_metadata?.full_name as string | undefined) || undefined;
-      let role = (u.user_metadata?.role as UserRole) ?? "tenant";
-      const { data: profile } = await supabase!
-        .from("profiles")
-        .select("full_name, role")
-        .eq("id", u.id)
-        .single();
-      if (profile?.full_name) fullName = profile.full_name;
-      if (profile?.role) role = profile.role as UserRole;
+      const metaName = (u.user_metadata?.full_name as string | undefined) || undefined;
+      const metaRole = (u.user_metadata?.role as UserRole) ?? "tenant";
 
-      // `name` é só para exibição (saudação/avatar) e cai no e-mail completo
-      // quando não há nome — nunca usa a parte local do e-mail como nome.
+      // Loga IMEDIATAMENTE a partir da sessão — o login NUNCA fica preso na
+      // consulta a `profiles` (que pode estar vazia/lenta/indisponível). O
+      // `name` é só para exibição e cai no e-mail completo quando não há nome.
       setUser({
         id: u.id,
-        name: fullName ?? u.email ?? "Usuário",
-        fullName,
+        name: metaName ?? u.email ?? "Usuário",
+        fullName: metaName,
         email: u.email ?? "",
-        role,
+        role: metaRole,
       });
+
+      // Enriquece com o perfil (fonte CONFIÁVEL de nome/papel para a UI) sem
+      // travar o login; a autorização de admin é validada no servidor (proxy).
+      try {
+        const { data: profile } = await supabase!
+          .from("profiles")
+          .select("full_name, role")
+          .eq("id", u.id)
+          .maybeSingle();
+        if (profile && (profile.full_name || profile.role)) {
+          setUser({
+            id: u.id,
+            name: profile.full_name ?? metaName ?? u.email ?? "Usuário",
+            fullName: profile.full_name ?? metaName,
+            email: u.email ?? "",
+            role: (profile.role as UserRole) ?? metaRole,
+          });
+        }
+      } catch {
+        /* mantém o usuário já setado a partir da sessão */
+      }
     }
 
     supabase.auth.getSession().then(({ data }) => hydrate(data.session));
