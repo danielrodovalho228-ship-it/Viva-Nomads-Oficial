@@ -8,7 +8,7 @@ import {
   geocodeAddress,
   type GeoSuggestion,
 } from "@/lib/integrations/geocoding";
-import { LocationDatalist } from "@/lib/locations";
+import { LocationDatalist, LOCATION_SUGGESTIONS } from "@/lib/locations";
 
 interface Props {
   value: string;
@@ -155,9 +155,32 @@ function LocationGeocoder({ value, onChange, onSelect }: Props) {
             <li className="px-3 py-2 text-sm text-muted">Buscando endereços…</li>
           )}
           {!loading && errored && suggestions.length === 0 && (
-            <li className="px-3 py-2 text-sm text-muted">
-              Não foi possível buscar endereços agora — tente pelo nome do bairro.
-            </li>
+            <>
+              <li className="px-3 pt-2 pb-1 text-xs text-muted">
+                Não foi possível buscar endereços agora — use as cidades e bairros atendidos:
+              </li>
+              {LOCATION_SUGGESTIONS.filter((s) =>
+                s.toLowerCase().includes(value.trim().toLowerCase())
+              )
+                .slice(0, 6)
+                .map((s) => (
+                  <li key={s}>
+                    <button
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => {
+                        onChange(s);
+                        setOpen(false);
+                        setErrored(false);
+                      }}
+                      className="flex w-full items-start gap-2 px-3 py-2 text-left text-sm hover:bg-surface-2"
+                    >
+                      <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
+                      <span className="text-ink">{s}</span>
+                    </button>
+                  </li>
+                ))}
+            </>
           )}
           {suggestions.map((s, i) => (
             <li key={s.id}>
