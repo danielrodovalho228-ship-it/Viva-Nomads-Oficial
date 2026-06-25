@@ -18,6 +18,7 @@ arquivo no template correspondente. O Supabase substitui a variável
 | `03-link-de-acesso.html` | **Magic Link** |
 | `04-convite.html` | **Invite user** |
 | `05-trocar-email.html` | **Change Email Address** |
+| `07-reautenticacao.html` | **Reauthentication** (mostra o código `{{ .Token }}`) |
 
 Dica: ajuste o **Subject (assunto)** de cada um, por exemplo:
 - Confirm signup → "Confirme seu e-mail · Viva Nomads"
