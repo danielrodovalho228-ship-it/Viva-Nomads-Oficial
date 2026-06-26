@@ -14,6 +14,7 @@ import { createSubaccount } from "@/lib/payments/asaas";
 import { notify } from "@/lib/notifications";
 import { listingLimit, PLAN_LABEL } from "@/lib/plan";
 import type { SubscriptionPlan } from "@/lib/store";
+import { buildLeadNotification, LEAD_KIND_MSG, type LeadKind } from "@/lib/leads";
 
 type ActionResult = { ok: boolean; demo?: boolean; id?: string; error?: string };
 
@@ -224,20 +225,7 @@ export async function toggleFavorite(
   return { ok: true };
 }
 
-export type LeadKind = "duvida" | "visita" | "candidatura";
-
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-const LEAD_KIND_LABEL: Record<LeadKind, string> = {
-  duvida: "Nova dúvida",
-  visita: "Pedido de visita",
-  candidatura: "Nova candidatura",
-};
-const LEAD_KIND_MSG: Record<LeadKind, (title: string) => string> = {
-  duvida: (t) => `Olá! Tenho interesse no imóvel "${t}". Pode me ajudar com uma dúvida?`,
-  visita: (t) => `Olá! Gostaria de agendar uma visita ao imóvel "${t}". Quais horários você tem?`,
-  candidatura: (t) => `Olá! Quero me candidatar ao imóvel "${t}". Podemos seguir com a documentação?`,
-};
 
 /**
  * Registra o interesse de um inquilino (dúvida, visita ou candidatura) e AVISA
@@ -321,15 +309,11 @@ export async function requestLead(
 
   // Notifica o dono — SEMPRE (real e demo). É isto que faz os botões funcionarem
   // de verdade: o lead chega ao e-mail/WhatsApp do proprietário.
-  const detailsHtml =
-    `<p style="margin:16px 0 6px"><strong>${LEAD_KIND_LABEL[kind]}</strong> — ${propertyTitle}</p>` +
-    `<p style="margin:0 0 4px">Interessado: <strong>${tenantName}</strong></p>` +
-    (tenantEmail ? `<p style="margin:0 0 4px">E-mail: <a href="mailto:${tenantEmail}">${tenantEmail}</a></p>` : "") +
-    (tenantPhone ? `<p style="margin:0">WhatsApp/telefone: ${tenantPhone}</p>` : "");
-  const detailsText =
-    `${LEAD_KIND_LABEL[kind]} — ${propertyTitle}\nInteressado: ${tenantName}` +
-    (tenantEmail ? `\nE-mail: ${tenantEmail}` : "") +
-    (tenantPhone ? `\nWhatsApp: ${tenantPhone}` : "");
+  const { detailsHtml, detailsText } = buildLeadNotification(kind, propertyTitle, {
+    name: tenantName,
+    email: tenantEmail,
+    phone: tenantPhone,
+  });
   await notify({
     event: "new_lead",
     email: ownerEmail ?? undefined,
