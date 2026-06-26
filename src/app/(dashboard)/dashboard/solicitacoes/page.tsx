@@ -2,11 +2,12 @@
 
 import { useMemo, useState } from "react";
 import { Plus, Upload, Clock, CheckCircle2, Wrench } from "lucide-react";
-import { PageTitle, Panel, StatCard } from "@/components/dashboard/primitives";
+import { PageTitle, Panel, StatCard, EmptyState } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { ResponsiveOwnerBadge } from "@/components/ui/badge";
 import { ServiceOrderNotice } from "@/components/legal-notice";
 import { useViewMode } from "@/lib/roles";
+import { isSupabaseConfigured } from "@/lib/env";
 import {
   SAMPLE_ORDERS,
   SO_CATEGORIES,
@@ -26,7 +27,10 @@ export default function ServiceOrdersPage() {
   // A tela aparece nos dois menus; a visão segue o MODO ativo (não o papel de
   // cadastro), para o conteúdo bater com o contexto em que o usuário está.
   const { mode } = useViewMode();
-  const [orders, setOrders] = useState<ServiceOrder[]>(SAMPLE_ORDERS);
+  // Modo real: começa sem chamados fictícios; demo: mostra exemplos.
+  const [orders, setOrders] = useState<ServiceOrder[]>(
+    isSupabaseConfigured() ? [] : SAMPLE_ORDERS
+  );
 
   if (mode === "tenant") return <TenantView orders={orders} setOrders={setOrders} />;
   return <OwnerView orders={orders} setOrders={setOrders} />;
@@ -83,6 +87,13 @@ function OwnerView({
         />
       </div>
 
+      {sorted.length === 0 ? (
+        <EmptyState
+          icon={Wrench}
+          title="Nenhuma solicitação ainda"
+          text="Quando um inquilino abrir um chamado de manutenção em um dos seus imóveis, ele aparece aqui — ordenado por prioridade."
+        />
+      ) : (
       <div className="grid gap-3">
         {sorted.map((o) => {
           const ns = nextStatus(o.status);
@@ -127,6 +138,7 @@ function OwnerView({
           );
         })}
       </div>
+      )}
 
       <ServiceOrderNotice className="mt-4" />
     </>

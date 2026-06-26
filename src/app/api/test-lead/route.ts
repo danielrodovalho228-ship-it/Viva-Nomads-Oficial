@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { notify, isEmailConfigured } from "@/lib/notifications";
 import { buildLeadNotification, type LeadKind } from "@/lib/leads";
+import { testRouteForbidden } from "@/lib/test-guard";
 
 /**
  * Simula o aviso de lead que o PROPRIETÁRIO recebe quando alguém clica nos
@@ -17,6 +18,9 @@ import { buildLeadNotification, type LeadKind } from "@/lib/leads";
 const KINDS: LeadKind[] = ["duvida", "visita", "candidatura"];
 
 export async function GET(request: Request) {
+  const blocked = testRouteForbidden(request);
+  if (blocked) return blocked;
+
   const { searchParams } = new URL(request.url);
   const to = searchParams.get("to") ?? "dtrodovalho40@gmail.com";
   const all = searchParams.get("all") === "1";

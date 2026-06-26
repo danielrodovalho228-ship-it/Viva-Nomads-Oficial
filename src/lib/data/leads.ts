@@ -13,7 +13,11 @@ interface LeadRow {
   verification: { traffic_light: Light | null; risk_categories: string[] | null }[] | null;
 }
 
-/** Lista os leads do proprietário logado (Supabase) ou exemplos (demo). */
+/**
+ * Lista os leads do proprietário logado. No modo demonstração (sem Supabase)
+ * mostra exemplos; no modo REAL nunca inventa leads — sem sessão, erro ou banco
+ * vazio devolve lista vazia (a página mostra o estado "ainda sem leads").
+ */
 export async function listLeads(): Promise<Lead[]> {
   const supabase = await createClient();
   if (!supabase) return SAMPLE_LEADS;
@@ -21,7 +25,7 @@ export async function listLeads(): Promise<Lead[]> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return SAMPLE_LEADS;
+  if (!user) return [];
 
   const { data, error } = await supabase
     .from("leads")
@@ -34,7 +38,7 @@ export async function listLeads(): Promise<Lead[]> {
     .eq("owner_id", user.id)
     .order("created_at", { ascending: false });
 
-  if (error || !data || data.length === 0) return SAMPLE_LEADS;
+  if (error || !data) return [];
 
   return (data as unknown as LeadRow[]).map((r) => {
     const v = r.verification?.[0];

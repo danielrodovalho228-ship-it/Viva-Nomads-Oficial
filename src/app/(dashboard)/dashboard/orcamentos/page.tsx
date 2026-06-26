@@ -19,6 +19,7 @@ import { DocumentShare } from "@/components/document-share";
 import { PlatformLegalNotice } from "@/components/legal-notice";
 import { SAMPLE_PROPERTIES } from "@/lib/properties";
 import { useProperties } from "@/lib/use-properties";
+import { isSupabaseConfigured } from "@/lib/env";
 import {
   SAMPLE_DOCUMENTS,
   DOC_STATUS_META,
@@ -48,7 +49,8 @@ export default function OrcamentosPage() {
     return <DocView doc={active} onBack={() => setView("list")} />;
   }
 
-  const orcamentos = SAMPLE_DOCUMENTS;
+  // Modo real: começa vazio (sem orçamentos fictícios); demo: mostra exemplos.
+  const orcamentos = isSupabaseConfigured() ? [] : SAMPLE_DOCUMENTS;
 
   return (
     <>

@@ -17,6 +17,7 @@ import { StatCard, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { DashboardBanner } from "@/components/dashboard/banner";
 import { ButtonLink } from "@/components/ui/button";
 import { useProperties } from "@/lib/use-properties";
+import { isSupabaseConfigured } from "@/lib/env";
 import { PHOTOS } from "@/lib/media";
 import { formatBRL } from "@/lib/utils";
 import { ReadyToLiveBadge } from "@/components/ui/badge";
@@ -33,7 +34,9 @@ export default function DashboardPage() {
 }
 
 function OwnerDashboard({ name }: { name: string }) {
-  const myProperties = useProperties("/api/properties/mine").properties.slice(0, 2);
+  const demo = !isSupabaseConfigured();
+  const allProperties = useProperties("/api/properties/mine").properties;
+  const myProperties = allProperties.slice(0, 2);
 
   return (
     <>
@@ -50,75 +53,98 @@ function OwnerDashboard({ name }: { name: string }) {
         }
       />
 
-      {/* Progresso de verificação */}
+      {/* Convite à verificação (sem progresso fabricado no modo real) */}
       <Panel className="mb-6 bg-forest text-white">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="min-w-0">
-            <h2 className="font-title text-lg font-bold">Verificação do perfil: 60%</h2>
+            <h2 className="font-title text-lg font-bold">
+              {demo ? "Verificação do perfil: 60%" : "Verifique seu perfil"}
+            </h2>
             <p className="text-sm text-white/70">
               Complete a verificação para gerar mais confiança nos inquilinos.
             </p>
           </div>
           <div className="flex w-full flex-col gap-3 sm:w-auto sm:items-end">
-            <div className="h-3 w-full max-w-xs overflow-hidden rounded-full bg-white/20 sm:w-64">
-              <div className="h-full w-[60%] rounded-full bg-champagne" />
-            </div>
+            {demo && (
+              <div className="h-3 w-full max-w-xs overflow-hidden rounded-full bg-white/20 sm:w-64">
+                <div className="h-full w-[60%] rounded-full bg-champagne" />
+              </div>
+            )}
             <Link
               href="/dashboard/verificacao"
               className="inline-flex items-center justify-center gap-1.5 rounded-full bg-champagne px-4 py-2 text-sm font-semibold text-night transition-colors hover:bg-champagne-600"
             >
-              Continuar verificação <ArrowRight className="h-4 w-4" />
+              {demo ? "Continuar verificação" : "Iniciar verificação"} <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
         </div>
       </Panel>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Visualizações" value="1.248" icon={Eye} />
-        <StatCard label="Leads" value="12" icon={Users} />
-        <StatCard label="Mensagens" value="5" icon={MessageSquare} />
-        <StatCard label="Imóveis ativos" value="2" icon={Home} />
+        <StatCard label="Visualizações" value={demo ? "1.248" : "0"} icon={Eye} />
+        <StatCard label="Leads" value={demo ? "12" : "0"} icon={Users} />
+        <StatCard label="Mensagens" value={demo ? "5" : "0"} icon={MessageSquare} />
+        <StatCard
+          label="Imóveis ativos"
+          value={demo ? "2" : String(allProperties.length)}
+          icon={Home}
+        />
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
         <Panel title="Meus imóveis" className="lg:col-span-2">
-          <ul className="divide-y divide-sage-200">
-            {myProperties.map((p) => (
-              <li key={p.id} className="flex items-center justify-between gap-3 py-3">
-                <div>
-                  <Link
-                    href={`/imoveis/${p.id}`}
-                    className="font-medium text-ink hover:text-forest"
-                  >
-                    {p.title}
-                  </Link>
-                  <p className="text-sm text-muted">
-                    {formatBRL(p.monthlyPrice)}/mês · {p.neighborhood}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {p.readyToLiveBadge && <ReadyToLiveBadge />}
-                  <span className="rounded-full bg-sage-100 px-2.5 py-1 text-xs font-medium text-forest">
-                    Ativo
-                  </span>
-                </div>
-              </li>
-            ))}
-          </ul>
-          <Link
-            href="/dashboard/imoveis"
-            className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-forest hover:text-blue-700"
-          >
-            Ver todos <ArrowRight className="h-4 w-4" />
-          </Link>
+          {myProperties.length === 0 ? (
+            <p className="py-3 text-sm text-muted">
+              Você ainda não publicou imóveis.{" "}
+              <Link href="/qualificar" className="font-medium text-forest hover:underline">
+                Publicar o primeiro →
+              </Link>
+            </p>
+          ) : (
+            <>
+              <ul className="divide-y divide-sage-200">
+                {myProperties.map((p) => (
+                  <li key={p.id} className="flex items-center justify-between gap-3 py-3">
+                    <div>
+                      <Link
+                        href={`/imoveis/${p.id}`}
+                        className="font-medium text-ink hover:text-forest"
+                      >
+                        {p.title}
+                      </Link>
+                      <p className="text-sm text-muted">
+                        {formatBRL(p.monthlyPrice)}/mês · {p.neighborhood}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {p.readyToLiveBadge && <ReadyToLiveBadge />}
+                      <span className="rounded-full bg-sage-100 px-2.5 py-1 text-xs font-medium text-forest">
+                        Ativo
+                      </span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href="/dashboard/imoveis"
+                className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-forest hover:text-blue-700"
+              >
+                Ver todos <ArrowRight className="h-4 w-4" />
+              </Link>
+            </>
+          )}
         </Panel>
 
         <Panel title="Atividade recente">
-          <ul className="space-y-4 text-sm">
-            <Activity text="Nova consulta no Studio Centro" time="há 2 horas" />
-            <Activity text="Imóvel Santa Mônica recebeu o selo Pronto para Morar" time="ontem" />
-            <Activity text="3 novas visualizações" time="ontem" />
-          </ul>
+          {demo ? (
+            <ul className="space-y-4 text-sm">
+              <Activity text="Nova consulta no Studio Centro" time="há 2 horas" />
+              <Activity text="Imóvel Santa Mônica recebeu o selo Pronto para Morar" time="ontem" />
+              <Activity text="3 novas visualizações" time="ontem" />
+            </ul>
+          ) : (
+            <p className="py-3 text-sm text-muted">Sem atividade recente ainda.</p>
+          )}
         </Panel>
       </div>
     </>
@@ -126,6 +152,7 @@ function OwnerDashboard({ name }: { name: string }) {
 }
 
 function TenantDashboard({ name }: { name: string }) {
+  const demo = !isSupabaseConfigured();
   const recommended = useProperties("/api/properties").properties.slice(0, 3);
   return (
     <>
@@ -143,9 +170,9 @@ function TenantDashboard({ name }: { name: string }) {
       />
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard label="Favoritos" value="3" icon={Heart} />
-        <StatCard label="Buscas salvas" value="2" icon={Search} />
-        <StatCard label="Mensagens" value="1" icon={MessageSquare} />
+        <StatCard label="Favoritos" value={demo ? "3" : "0"} icon={Heart} />
+        <StatCard label="Buscas salvas" value={demo ? "2" : "0"} icon={Search} />
+        <StatCard label="Mensagens" value={demo ? "1" : "0"} icon={MessageSquare} />
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
