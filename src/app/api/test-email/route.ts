@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { sendEmail, isEmailConfigured } from "@/lib/notifications/email";
 import { sampleEmails } from "@/lib/notifications/templates";
+import { testRouteForbidden } from "@/lib/test-guard";
 
 /**
  * Envia e-mail(s) de teste para validar a integração Resend.
@@ -13,6 +14,9 @@ import { sampleEmails } from "@/lib/notifications/templates";
  * ação no site — aqui mandamos as mesmas artes só para revisar o visual.
  */
 export async function GET(request: Request) {
+  const blocked = testRouteForbidden(request);
+  if (blocked) return blocked;
+
   const { searchParams } = new URL(request.url);
   const to = searchParams.get("to") ?? "dtrodovalho40@gmail.com";
   const all = searchParams.get("all") === "1";
