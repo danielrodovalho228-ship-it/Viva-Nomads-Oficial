@@ -50,6 +50,23 @@ interface PropertyRow {
   created_at: string | null;
 }
 
+/*
+  Anúncios demonstração (os 3 imóveis de Uberlândia, com fotos próprias) ficam
+  visíveis junto dos imóveis reais enquanto o catálogo real ainda está pequeno —
+  assim a busca/home nunca aparecem vazias. Para esconder os demos quando houver
+  catálogo real suficiente, defina NEXT_PUBLIC_SHOW_DEMO_PROPERTIES=false na Vercel.
+*/
+function showDemoProperties(): boolean {
+  return process.env.NEXT_PUBLIC_SHOW_DEMO_PROPERTIES !== "false";
+}
+
+/** Acrescenta os anúncios demo aos reais (sem duplicar por id), quando habilitado. */
+function withDemos(real: Property[]): Property[] {
+  if (!showDemoProperties()) return real;
+  const realIds = new Set(real.map((p) => p.id));
+  return [...real, ...SAMPLE_PROPERTIES.filter((p) => !realIds.has(p.id))];
+}
+
 function rowToProperty(row: PropertyRow): Property {
   return {
     id: row.id,
@@ -106,13 +123,12 @@ export async function listProperties(): Promise<Property[]> {
       .eq("status", "active")
       .order("created_at", { ascending: false });
 
-    // Acesso real: NUNCA cai nos dados de exemplo (não mistura demo com real).
-    // Banco vazio ou erro → lista vazia, e não os 3 imóveis fictícios.
-    if (error || !data) return [];
-    return (data as PropertyRow[]).map(rowToProperty);
+    // Imóveis reais + anúncios demo (enquanto o flag estiver ligado), sem 500.
+    if (error || !data) return withDemos([]);
+    return withDemos((data as PropertyRow[]).map(rowToProperty));
   } catch {
-    // Falha de rede/consulta → lista vazia, nunca 500 nem dados de exemplo.
-    return [];
+    // Falha de rede/consulta → só os demos (ou vazio, se desligados), nunca 500.
+    return withDemos([]);
   }
 }
 
@@ -131,10 +147,11 @@ export async function getProperty(id: string): Promise<Property | undefined> {
       .eq("id", id)
       .eq("status", "active")
       .maybeSingle();
-    if (!data) return undefined;
+    // Sem linha no banco: cai para o anúncio demo de mesmo id (se habilitado).
+    if (!data) return showDemoProperties() ? SAMPLE_PROPERTIES.find((p) => p.id === id) : undefined;
     return rowToProperty(data as PropertyRow);
   } catch {
-    return undefined;
+    return showDemoProperties() ? SAMPLE_PROPERTIES.find((p) => p.id === id) : undefined;
   }
 }
 
