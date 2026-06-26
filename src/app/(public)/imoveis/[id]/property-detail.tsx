@@ -32,7 +32,8 @@ import { PropertyCard } from "@/components/property-card";
 import { PropertyGallery } from "@/components/property-gallery";
 import { VideoWalkthrough } from "@/components/video-walkthrough";
 import { PropertyMap, type MapMarker } from "@/components/property-map";
-import { requestLead, type LeadKind } from "@/lib/data/actions";
+import { requestLead } from "@/lib/data/actions";
+import type { LeadKind } from "@/lib/leads";
 import { MatchGuaranteeNotice } from "@/components/legal-notice";
 
 const TABS = [
