@@ -224,6 +224,124 @@ export async function toggleFavorite(
   return { ok: true };
 }
 
+export type LeadKind = "duvida" | "visita" | "candidatura";
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const LEAD_KIND_LABEL: Record<LeadKind, string> = {
+  duvida: "Nova dúvida",
+  visita: "Pedido de visita",
+  candidatura: "Nova candidatura",
+};
+const LEAD_KIND_MSG: Record<LeadKind, (title: string) => string> = {
+  duvida: (t) => `Olá! Tenho interesse no imóvel "${t}". Pode me ajudar com uma dúvida?`,
+  visita: (t) => `Olá! Gostaria de agendar uma visita ao imóvel "${t}". Quais horários você tem?`,
+  candidatura: (t) => `Olá! Quero me candidatar ao imóvel "${t}". Podemos seguir com a documentação?`,
+};
+
+/**
+ * Registra o interesse de um inquilino (dúvida, visita ou candidatura) e AVISA
+ * o proprietário por e-mail/WhatsApp — o canal real do funil.
+ *
+ * Resolve o dono automaticamente: imóvel real (id uuid no banco) usa o owner_id
+ * da linha; imóvel demo (id textual, fora do banco) vai para o dono configurado
+ * (DEMO_OWNER_EMAIL — o super admin). Para imóveis reais também tenta gravar o
+ * lead + abrir a conversa (best-effort; persiste quando a RLS de insert estiver
+ * aplicada — ver migração 0017). Retorna `needsAuth` se o visitante não estiver
+ * logado e `selfOwned` se for o próprio dono abrindo o anúncio.
+ */
+export async function requestLead(
+  propertyId: string,
+  propertyTitle: string,
+  kind: LeadKind
+): Promise<ActionResult & { needsAuth?: boolean; selfOwned?: boolean }> {
+  const supabase = await createClient();
+  if (!supabase) return { ok: true, demo: true };
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, needsAuth: true, error: "Entre para falar com o proprietário." };
+
+  const real = UUID_RE.test(propertyId);
+
+  // Dono do imóvel: real → owner_id da linha; demo (ou perfil oculto pela RLS) →
+  // e-mail configurado do super admin.
+  let ownerId: string | null = null;
+  let ownerEmail: string | null = null;
+  let ownerPhone: string | null = null;
+  let ownerName: string | null = null;
+  if (real) {
+    const { data: prop } = await supabase
+      .from("properties")
+      .select("owner_id")
+      .eq("id", propertyId)
+      .maybeSingle();
+    ownerId = (prop?.owner_id as string | undefined) ?? null;
+    if (ownerId) {
+      const { data: o } = await supabase
+        .from("profiles")
+        .select("full_name, email, phone")
+        .eq("id", ownerId)
+        .maybeSingle();
+      ownerEmail = o?.email ?? null;
+      ownerPhone = o?.phone ?? null;
+      ownerName = o?.full_name ?? null;
+    }
+  }
+  if (!ownerEmail) ownerEmail = process.env.DEMO_OWNER_EMAIL ?? "dtrodovalho40@gmail.com";
+
+  // O próprio dono abrindo seu anúncio: não gera lead para si mesmo.
+  if (ownerId && ownerId === user.id) return { ok: true, selfOwned: true };
+
+  // Identidade do interessado (perfil próprio — permitido pela RLS).
+  const { data: me } = await supabase
+    .from("profiles")
+    .select("full_name, email, phone")
+    .eq("id", user.id)
+    .maybeSingle();
+  const tenantName = me?.full_name ?? user.email ?? "Interessado";
+  const tenantEmail = me?.email ?? user.email ?? "";
+  const tenantPhone = me?.phone ?? "";
+
+  // Imóvel real: grava lead + abre conversa (best-effort; ignora falha de RLS/duplicado).
+  if (real && ownerId) {
+    await supabase
+      .from("leads")
+      .insert({ property_id: propertyId, owner_id: ownerId, tenant_id: user.id, status: "new" });
+    const conversationId = [user.id, ownerId].sort().join("_") + `_${propertyId}`;
+    await supabase.from("messages").insert({
+      conversation_id: conversationId,
+      sender_id: user.id,
+      receiver_id: ownerId,
+      property_id: propertyId,
+      body: LEAD_KIND_MSG[kind](propertyTitle),
+    });
+  }
+
+  // Notifica o dono — SEMPRE (real e demo). É isto que faz os botões funcionarem
+  // de verdade: o lead chega ao e-mail/WhatsApp do proprietário.
+  const detailsHtml =
+    `<p style="margin:16px 0 6px"><strong>${LEAD_KIND_LABEL[kind]}</strong> — ${propertyTitle}</p>` +
+    `<p style="margin:0 0 4px">Interessado: <strong>${tenantName}</strong></p>` +
+    (tenantEmail ? `<p style="margin:0 0 4px">E-mail: <a href="mailto:${tenantEmail}">${tenantEmail}</a></p>` : "") +
+    (tenantPhone ? `<p style="margin:0">WhatsApp/telefone: ${tenantPhone}</p>` : "");
+  const detailsText =
+    `${LEAD_KIND_LABEL[kind]} — ${propertyTitle}\nInteressado: ${tenantName}` +
+    (tenantEmail ? `\nE-mail: ${tenantEmail}` : "") +
+    (tenantPhone ? `\nWhatsApp: ${tenantPhone}` : "");
+  await notify({
+    event: "new_lead",
+    email: ownerEmail ?? undefined,
+    phone: ownerPhone ?? undefined,
+    name: ownerName ?? undefined,
+    detailsHtml,
+    detailsText,
+  });
+
+  return { ok: true };
+}
+
 /** Registra uma consulta de inquilino como lead para o proprietário. */
 export async function createLead(propertyId: string, ownerId: string): Promise<ActionResult> {
   const supabase = await createClient();

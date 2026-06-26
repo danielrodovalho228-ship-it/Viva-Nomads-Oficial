@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import {
   Bath,
@@ -25,13 +26,13 @@ import {
 import type { Property, WorkspaceType } from "@/lib/types";
 import { INTERNET_META } from "@/lib/internet";
 import { formatBRL, cn } from "@/lib/utils";
-import { Button, ButtonLink } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { PropertyTags, InvoiceBadge, InsuranceBadge, ResponsiveOwnerBadge } from "@/components/ui/badge";
 import { PropertyCard } from "@/components/property-card";
 import { PropertyGallery } from "@/components/property-gallery";
 import { VideoWalkthrough } from "@/components/video-walkthrough";
 import { PropertyMap, type MapMarker } from "@/components/property-map";
-import { createLead, sendMessage } from "@/lib/data/actions";
+import { requestLead, type LeadKind } from "@/lib/data/actions";
 import { MatchGuaranteeNotice } from "@/components/legal-notice";
 
 const TABS = [
@@ -70,21 +71,30 @@ export function PropertyDetail({
 }) {
   const [tab, setTab] = useState<(typeof TABS)[number]>("Visão Geral");
   const tabsRef = useRef<HTMLDivElement>(null);
-  const [sending, setSending] = useState(false);
-  const [sentInquiry, setSentInquiry] = useState(false);
+  const router = useRouter();
+  const [pending, setPending] = useState<LeadKind | null>(null);
+  const [sent, setSent] = useState<{ duvida?: boolean; visita?: boolean }>({});
+  const [selfNote, setSelfNote] = useState(false);
 
-  // "Enviar consulta": cria um lead e uma mensagem ao proprietário (funil).
-  async function handleInquiry() {
-    setSending(true);
-    const ownerId = `owner-${property.id}`;
-    await createLead(property.id, ownerId).catch(() => {});
-    await sendMessage({
-      receiverId: ownerId,
-      propertyId: property.id,
-      body: `Olá! Tenho interesse no imóvel "${property.title}". Está disponível?`,
-    }).catch(() => {});
-    setSending(false);
-    setSentInquiry(true);
+  // Dúvida / visita / candidatura: registra o interesse e avisa o proprietário
+  // (e-mail/WhatsApp). Candidatura segue para o fluxo de fechamento.
+  async function handleLead(kind: LeadKind) {
+    setPending(kind);
+    const r = await requestLead(property.id, property.title, kind).catch(() => null);
+    setPending(null);
+    if (r?.needsAuth) {
+      router.push("/auth");
+      return;
+    }
+    if (r?.selfOwned) {
+      setSelfNote(true);
+      return;
+    }
+    if (kind === "candidatura") {
+      router.push("/dashboard/fechamento");
+      return;
+    }
+    setSent((s) => ({ ...s, [kind]: true }));
   }
 
   // Marcador do imóvel + marcadores dos espaços de trabalho próximos.
@@ -448,23 +458,65 @@ export function PropertyDetail({
 
             {/* CTA primário único + secundários menores (quick win #2) */}
             <div className="mt-3 flex flex-col gap-2">
-              <ButtonLink href="/dashboard/fechamento" variant="gold" size="lg" className="w-full">
-                <FileSignature className="h-4 w-4" /> Candidatar-se
-              </ButtonLink>
-              {sentInquiry ? (
-                <div className="flex items-center justify-center gap-2 rounded-full bg-sage-100 px-4 py-2 text-sm font-medium text-forest">
-                  <Check className="h-4 w-4" /> Consulta enviada ao proprietário
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-2">
-                  <Button variant="outline" size="sm" onClick={handleInquiry} disabled={sending}>
-                    <MessageSquare className="h-4 w-4" />
-                    {sending ? "Enviando..." : "Tirar dúvida"}
-                  </Button>
-                  <Button variant="ghost" size="sm">
-                    <CalendarCheck className="h-4 w-4" /> Agendar visita
-                  </Button>
-                </div>
+              <Button
+                variant="gold"
+                size="lg"
+                className="w-full"
+                onClick={() => handleLead("candidatura")}
+                disabled={pending !== null}
+              >
+                <FileSignature className="h-4 w-4" />
+                {pending === "candidatura" ? "Enviando..." : "Candidatar-se"}
+              </Button>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleLead("duvida")}
+                  disabled={pending !== null || sent.duvida}
+                >
+                  {sent.duvida ? (
+                    <>
+                      <Check className="h-4 w-4" /> Dúvida enviada
+                    </>
+                  ) : (
+                    <>
+                      <MessageSquare className="h-4 w-4" />
+                      {pending === "duvida" ? "Enviando..." : "Tirar dúvida"}
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleLead("visita")}
+                  disabled={pending !== null || sent.visita}
+                >
+                  {sent.visita ? (
+                    <>
+                      <Check className="h-4 w-4" /> Visita solicitada
+                    </>
+                  ) : (
+                    <>
+                      <CalendarCheck className="h-4 w-4" />
+                      {pending === "visita" ? "Enviando..." : "Agendar visita"}
+                    </>
+                  )}
+                </Button>
+              </div>
+              {(sent.duvida || sent.visita) && (
+                <p className="text-center text-xs text-sage">
+                  Enviamos seu contato ao proprietário — ele responde por e-mail/WhatsApp.
+                </p>
+              )}
+              {selfNote && (
+                <p className="text-center text-xs text-muted">
+                  Este é o seu anúncio. Os interessados aparecem em{" "}
+                  <Link href="/dashboard/leads" className="underline">
+                    Leads
+                  </Link>
+                  .
+                </p>
               )}
             </div>
 

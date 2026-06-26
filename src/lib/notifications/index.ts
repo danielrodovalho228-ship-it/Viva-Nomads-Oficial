@@ -35,6 +35,10 @@ export async function notify(params: {
   email?: string;
   phone?: string;
   name?: string;
+  /** HTML extra (detalhes do lead: imóvel, interessado, contato) anexado ao e-mail. */
+  detailsHtml?: string;
+  /** Texto extra anexado à mensagem de WhatsApp. */
+  detailsText?: string;
 }): Promise<NotifyResult> {
   const tpl = TEMPLATES[params.event];
   const result: NotifyResult = { email: false, whatsapp: false };
@@ -44,7 +48,7 @@ export async function notify(params: {
       const r = await sendEmail({
         to: params.email,
         subject: tpl.subject,
-        html: `<p>${tpl.body(params.name)}</p>`,
+        html: `<p>${tpl.body(params.name)}</p>${params.detailsHtml ?? ""}`,
       });
       result.email = r.demo ? "demo" : !r.error;
     } catch {
@@ -54,7 +58,8 @@ export async function notify(params: {
 
   if (params.phone) {
     try {
-      const r = await sendWhatsapp({ phone: params.phone, message: tpl.body(params.name) });
+      const message = tpl.body(params.name) + (params.detailsText ? `\n\n${params.detailsText}` : "");
+      const r = await sendWhatsapp({ phone: params.phone, message });
       result.whatsapp = r.demo ? "demo" : r.ok;
     } catch {
       result.whatsapp = false;
