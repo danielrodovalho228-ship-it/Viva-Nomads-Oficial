@@ -8,9 +8,10 @@ import {
   Home,
   Handshake,
 } from "lucide-react";
-import { PageTitle, Panel, StatCard } from "@/components/dashboard/primitives";
+import { PageTitle, Panel, StatCard, EmptyState } from "@/components/dashboard/primitives";
 import { PlanGate } from "@/components/dashboard/plan-gate";
 import { SAMPLE_PORTFOLIO, portfolioMetrics, type PortfolioUnit } from "@/lib/portfolio";
+import { isSupabaseConfigured } from "@/lib/env";
 import { formatBRL } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -26,7 +27,25 @@ export default function PortfolioPage() {
 }
 
 function Portfolio() {
-  const units = SAMPLE_PORTFOLIO;
+  // Modo real: carteira começa vazia (sem imóveis fictícios); demo: exemplos.
+  const units = isSupabaseConfigured() ? [] : SAMPLE_PORTFOLIO;
+
+  if (units.length === 0) {
+    return (
+      <>
+        <PageTitle
+          title="Carteira consolidada"
+          subtitle="Ocupação, receita e contratos a vencer de todos os imóveis sob sua gestão."
+        />
+        <EmptyState
+          icon={Building2}
+          title="Sua carteira está vazia"
+          text="Quando você tiver imóveis com contratos ativos, a visão consolidada — ocupação, receita mensal e vencimentos — aparece aqui."
+        />
+      </>
+    );
+  }
+
   const m = portfolioMetrics(units);
 
   return (

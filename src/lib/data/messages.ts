@@ -50,7 +50,11 @@ interface MsgRow {
   property: { title: string | null } | null;
 }
 
-/** Lista as conversas do usuário logado (Supabase) ou exemplos (demo). */
+/**
+ * Lista as conversas do usuário logado. Modo demonstração (sem Supabase) mostra
+ * exemplos; modo REAL nunca inventa conversas — sem sessão, erro ou banco vazio
+ * devolve lista vazia (a página mostra o estado "sem mensagens").
+ */
 export async function listConversations(): Promise<Conversation[]> {
   const supabase = await createClient();
   if (!supabase) return SAMPLE_CONVERSATIONS;
@@ -58,7 +62,7 @@ export async function listConversations(): Promise<Conversation[]> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return SAMPLE_CONVERSATIONS;
+  if (!user) return [];
 
   const { data, error } = await supabase
     .from("messages")
@@ -70,7 +74,7 @@ export async function listConversations(): Promise<Conversation[]> {
     .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
     .order("created_at", { ascending: true });
 
-  if (error || !data || data.length === 0) return SAMPLE_CONVERSATIONS;
+  if (error || !data) return [];
 
   const byConv = new Map<string, Conversation>();
   for (const m of data as unknown as MsgRow[]) {
