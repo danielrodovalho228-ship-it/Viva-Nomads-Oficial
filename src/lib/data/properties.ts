@@ -217,13 +217,18 @@ export async function listProperties(): Promise<Property[]> {
       .eq("status", "active")
       .order("created_at", { ascending: false });
 
+    // Diagnóstico (FASE 0): a chave anon NÃO lança quando a RLS bloqueia — ela
+    // devolve data=[] e error=null. Logamos o error para distinguir "0 imóveis"
+    // (banco vazio, normal) de "erro ao buscar" (RLS/coluna/permissão).
+    if (error) console.error("[listProperties] Supabase error:", error.code, error.message);
     // Imóveis reais + anúncios demo (enquanto o flag estiver ligado), sem 500.
     if (error || !data) return withDemos([]);
     const mapped = (data as PropertyRow[]).map(rowToProperty);
     await attachCoverPhotos(supabase, mapped); // capa real para os cards (best-effort)
     return withDemos(mapped);
-  } catch {
+  } catch (e) {
     // Falha de rede/consulta → só os demos (ou vazio, se desligados), nunca 500.
+    console.error("[listProperties] consulta falhou:", e instanceof Error ? e.message : e);
     return withDemos([]);
   }
 }
@@ -237,12 +242,13 @@ export async function getProperty(id: string): Promise<Property | undefined> {
     // `maybeSingle` devolve null (sem erro) para zero linhas — evita o PGRST116
     // do `.single()` virar 500. Só imóveis ATIVOS são públicos: rascunho/pausado
     // por URL direta → 404 (não vaza). id mal formado cai no catch → 404.
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("properties")
       .select("*")
       .eq("id", id)
       .eq("status", "active")
       .maybeSingle();
+    if (error) console.error("[getProperty] Supabase error:", error.code, error.message);
     // Sem linha no banco: cai para o anúncio demo de mesmo id (se habilitado).
     if (!data) return showDemoProperties() ? SAMPLE_PROPERTIES.find((p) => p.id === id) : undefined;
     const base = rowToProperty(data as PropertyRow);
