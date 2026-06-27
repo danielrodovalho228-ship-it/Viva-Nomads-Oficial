@@ -17,6 +17,39 @@ export interface Workspace {
   distanceM: number;
 }
 
+/** Categorias de comodidades exibidas na página (rodada de enriquecimento). */
+export type AmenityCategory = "trabalho" | "cozinha" | "conforto" | "edificio" | "seguranca";
+
+export interface AmenityGroup {
+  category: AmenityCategory;
+  items: string[];
+}
+
+/** Categorias de proximidades úteis para o público profissional. */
+export type ProximityCategory = "saude" | "educacao" | "trabalho" | "mercado" | "transporte";
+
+export interface Proximity {
+  category: ProximityCategory;
+  name: string;
+  note?: string; // ex.: "10 min a pé"
+}
+
+export interface Review {
+  author: string; // primeiro nome
+  rating: number; // 0–5
+  comment: string;
+  date?: string; // ISO
+}
+
+/** Perfil público do proprietário (bloco de confiança). */
+export interface OwnerProfile {
+  name: string;
+  avatarUrl?: string;
+  memberSince?: string; // ISO — "no Viva Nomads desde…"
+  responseRate?: number; // 0–100
+  verified?: boolean;
+}
+
 export interface Property {
   id: string;
   title: string;
@@ -66,6 +99,20 @@ export interface Property {
   nearbyWorkspaces: Workspace[];
   ownerName: string;
   createdAt?: string; // data de cadastro (ISO) — ordenação "Adicionados recentemente"
+  // ── Enriquecimento da página (todos opcionais; a seção some quando ausente) ──
+  parkingSpots?: number; // vagas
+  condoFee?: number; // condomínio (R$/mês), separado das contas de consumo
+  availableFrom?: string; // ISO — "disponível a partir de"
+  furnished?: boolean; // mobiliado
+  petsAllowed?: boolean;
+  smokingAllowed?: boolean;
+  maxGuests?: number;
+  checkinAfter?: string; // ex.: "14:00"
+  checkoutBefore?: string; // ex.: "11:00"
+  amenityGroups?: AmenityGroup[]; // comodidades por categoria
+  proximities?: Proximity[]; // pontos úteis na região
+  reviews?: Review[]; // avaliações reais
+  owner?: OwnerProfile; // perfil de confiança do proprietário
 }
 
 /** Perfil de público-alvo exibido na home. */

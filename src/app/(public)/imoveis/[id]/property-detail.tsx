@@ -2,76 +2,37 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import {
   Bath,
   BedDouble,
   Ruler,
   MapPin,
-  Check,
-  Wifi,
-  Building2,
-  Coffee,
-  Users,
-  CalendarCheck,
-  MessageSquare,
-  FileSignature,
+  Sofa,
+  Car,
   Star,
-  FileText,
-  ChevronDown,
-  MapPinned,
-  Handshake,
-  ShieldCheck,
+  Check,
+  FileSignature,
+  MessageSquare,
+  CalendarCheck,
 } from "lucide-react";
-import type { Property, WorkspaceType } from "@/lib/types";
-import { INTERNET_META } from "@/lib/internet";
-import { formatBRL, cn } from "@/lib/utils";
+import type { Property } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { PropertyTags, InvoiceBadge, InsuranceBadge, ResponsiveOwnerBadge } from "@/components/ui/badge";
+import { PropertyTags, InvoiceBadge, InsuranceBadge } from "@/components/ui/badge";
 import { PropertyCard } from "@/components/property-card";
 import { PropertyGallery } from "@/components/property-gallery";
 import { VideoWalkthrough } from "@/components/video-walkthrough";
-import { PropertyMap, type MapMarker } from "@/components/property-map";
 import { requestLead } from "@/lib/data/actions";
 import type { LeadKind } from "@/lib/leads";
-import { MatchGuaranteeNotice } from "@/components/legal-notice";
+import { PriceCard } from "@/components/property/price-card";
+import { AmenitiesGrid } from "@/components/property/amenities-grid";
+import { WorkspaceSection } from "@/components/property/workspace-section";
+import { LocationNearby } from "@/components/property/location-nearby";
+import { StayRules } from "@/components/property/stay-rules";
+import { OwnerCard } from "@/components/property/owner-card";
+import { Reviews } from "@/components/property/reviews";
 
-const TABS = [
-  "Visão Geral",
-  "Comodidades",
-  "Espaço de Trabalho",
-  "Disponibilidade",
-  "Localização",
-  "Proprietário",
-] as const;
-
-const WORKSPACE_ICONS: Record<WorkspaceType, React.ComponentType<{ className?: string }>> = {
-  coworking: Building2,
-  meeting_room: Users,
-  cafe: Coffee,
-};
-
-const WORKSPACE_LABEL: Record<WorkspaceType, string> = {
-  coworking: "Coworking",
-  meeting_room: "Sala de reunião",
-  cafe: "Café de trabalho",
-};
-
-/** Avaliações de exemplo (Atualização 10) — virão de `reviews` no Supabase. */
-const SAMPLE_REVIEWS = [
-  { author: "Carlos M.", rating: 5, comment: "Imóvel impecável e proprietário atencioso. Contrato e nota fiscal sem dor de cabeça." },
-  { author: "Fernanda R.", rating: 4.5, comment: "Ótimo para trabalhar de casa. Internet excelente e tudo mobiliado como anunciado." },
-];
-
-export function PropertyDetail({
-  property,
-  similar,
-}: {
-  property: Property;
-  similar: Property[];
-}) {
-  const [tab, setTab] = useState<(typeof TABS)[number]>("Visão Geral");
-  const tabsRef = useRef<HTMLDivElement>(null);
+export function PropertyDetail({ property, similar }: { property: Property; similar: Property[] }) {
   const router = useRouter();
   const [pending, setPending] = useState<LeadKind | null>(null);
   const [sent, setSent] = useState<{ duvida?: boolean; visita?: boolean }>({});
@@ -98,31 +59,77 @@ export function PropertyDetail({
     setSent((s) => ({ ...s, [kind]: true }));
   }
 
-  // Marcador do imóvel + marcadores dos espaços de trabalho próximos.
-  // Coords dos workspaces derivadas da distância (offset determinístico).
-  const propertyMarker: MapMarker = {
-    id: property.id,
-    lat: property.lat,
-    lng: property.lng,
-    label: "Imóvel",
-    kind: "property",
-  };
-  const workspaceMarkers: MapMarker[] = property.nearbyWorkspaces.map((w, i) => {
-    const offset = (w.distanceM / 111000) * (i % 2 === 0 ? 1 : -1);
-    return {
-      id: w.name,
-      lat: property.lat + offset,
-      lng: property.lng + offset * 0.8,
-      label: w.name,
-      kind: "workspace",
-    };
-  });
-
   const citySlug = property.city
     .toLowerCase()
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "")
     .replace(/\s+/g, "-");
+
+  // Bloco de ações reutilizado dentro do card de preço.
+  const actions = (
+    <div className="flex flex-col gap-2">
+      <Button
+        variant="gold"
+        size="lg"
+        className="w-full"
+        onClick={() => handleLead("candidatura")}
+        disabled={pending !== null}
+      >
+        <FileSignature className="h-4 w-4" />
+        {pending === "candidatura" ? "Enviando..." : "Candidatar-se"}
+      </Button>
+      <div className="grid grid-cols-2 gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handleLead("duvida")}
+          disabled={pending !== null || sent.duvida}
+        >
+          {sent.duvida ? (
+            <>
+              <Check className="h-4 w-4" /> Dúvida enviada
+            </>
+          ) : (
+            <>
+              <MessageSquare className="h-4 w-4" />
+              {pending === "duvida" ? "Enviando..." : "Tirar dúvida"}
+            </>
+          )}
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => handleLead("visita")}
+          disabled={pending !== null || sent.visita}
+        >
+          {sent.visita ? (
+            <>
+              <Check className="h-4 w-4" /> Visita solicitada
+            </>
+          ) : (
+            <>
+              <CalendarCheck className="h-4 w-4" />
+              {pending === "visita" ? "Enviando..." : "Agendar visita"}
+            </>
+          )}
+        </Button>
+      </div>
+      {(sent.duvida || sent.visita) && (
+        <p className="text-center text-xs text-sage">
+          Enviamos seu contato ao proprietário — ele responde por e-mail/WhatsApp.
+        </p>
+      )}
+      {selfNote && (
+        <p className="text-center text-xs text-muted">
+          Este é o seu anúncio. Os interessados aparecem em{" "}
+          <Link href="/dashboard/leads" className="underline">
+            Leads
+          </Link>
+          .
+        </p>
+      )}
+    </div>
+  );
 
   return (
     <div className="container-page py-8">
@@ -140,7 +147,7 @@ export function PropertyDetail({
         <span className="line-clamp-1 text-ink">{property.title}</span>
       </nav>
 
-      {/* Galeria adaptável (rodada 11) — sem vão vazio, mosaico/carrossel */}
+      {/* Galeria adaptável (foto principal + miniaturas + "ver todas") */}
       <PropertyGallery
         photos={property.photos}
         title={property.title}
@@ -148,392 +155,86 @@ export function PropertyDetail({
       />
 
       <div className="mt-6 grid gap-8 lg:grid-cols-3">
-        {/* Conteúdo + abas */}
-        <div className="lg:col-span-2">
-          <div className="flex items-center gap-2 text-sm text-muted">
-            <MapPin className="h-4 w-4" /> {property.neighborhood}, {property.city} -{" "}
-            {property.state}
-          </div>
-          <h1 className="mt-2 font-title text-3xl font-bold text-ink">{property.title}</h1>
+        {/* Conteúdo (seções roláveis) */}
+        <div className="space-y-10 lg:col-span-2">
+          {/* Cabeçalho */}
+          <header>
+            <div className="flex items-center gap-2 text-sm text-muted">
+              <MapPin className="h-4 w-4" /> {property.neighborhood}, {property.city} - {property.state}
+            </div>
+            <h1 className="mt-2 font-title text-3xl font-bold text-ink">{property.title}</h1>
 
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            {property.reviewCount > 0 && (
-              <span className="inline-flex items-center gap-1 text-sm font-medium text-forest">
-                <Star className="h-4 w-4 fill-champagne text-champagne" />
-                {property.rating.toFixed(1)} · {property.reviewCount} avaliações
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              {property.reviewCount > 0 && (
+                <span className="inline-flex items-center gap-1 text-sm font-medium text-forest">
+                  <Star className="h-4 w-4 fill-champagne text-champagne" />
+                  {property.rating.toFixed(1)} · {property.reviewCount} avaliações
+                </span>
+              )}
+              {property.issuesInvoice && <InvoiceBadge />}
+              {property.acceptsInsurance && <InsuranceBadge />}
+            </div>
+
+            <div className="mt-3">
+              <PropertyTags property={property} />
+            </div>
+
+            {/* Specs com ícones */}
+            <div className="mt-4 flex flex-wrap gap-5 text-sm text-muted">
+              <span className="inline-flex items-center gap-1.5">
+                <BedDouble className="h-4 w-4" /> {property.bedrooms} quartos
               </span>
-            )}
-            {property.issuesInvoice && <InvoiceBadge />}
-            {property.acceptsInsurance && <InsuranceBadge />}
-          </div>
+              <span className="inline-flex items-center gap-1.5">
+                <Bath className="h-4 w-4" /> {property.bathrooms} banheiros
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <Ruler className="h-4 w-4" /> {property.areaM2} m²
+              </span>
+              {property.furnished && (
+                <span className="inline-flex items-center gap-1.5">
+                  <Sofa className="h-4 w-4" /> Mobiliado
+                </span>
+              )}
+              {(property.parkingSpots ?? 0) > 0 && (
+                <span className="inline-flex items-center gap-1.5">
+                  <Car className="h-4 w-4" /> {property.parkingSpots}{" "}
+                  {property.parkingSpots === 1 ? "vaga" : "vagas"}
+                </span>
+              )}
+            </div>
+          </header>
 
-          {/* Etiquetas de aptidão (Atualização 11) */}
-          <div className="mt-3">
-            <PropertyTags property={property} />
-          </div>
-
-          {/* Transparência do operador (Atualização 12) */}
-          {property.ownershipType === "subleased" && property.subleaseAuthorized && (
-            <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-sage-100 px-3 py-1.5 text-xs font-medium text-forest">
-              <Handshake className="h-3.5 w-3.5" />
-              Operado por gestor profissional, com sublocação autorizada pelo proprietário
-            </p>
-          )}
-
-          <div className="mt-4 flex flex-wrap gap-5 text-sm text-muted">
-            <span className="inline-flex items-center gap-1.5">
-              <BedDouble className="h-4 w-4" /> {property.bedrooms} quartos
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <Bath className="h-4 w-4" /> {property.bathrooms} banheiros
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <Ruler className="h-4 w-4" /> {property.areaM2} m²
-            </span>
-          </div>
-
-          {/* Walk-through em vídeo — reduz o atrito de alugar sem visita */}
+          {/* Walk-through em vídeo */}
           {property.videoUrl && (
-            <div className="mt-5">
+            <section>
               <VideoWalkthrough url={property.videoUrl} title={property.title} />
               <p className="mt-1.5 text-xs text-muted">
                 Tour em vídeo gravado pelo proprietário — veja o imóvel antes de agendar a visita.
               </p>
-            </div>
+            </section>
           )}
 
-          {/* Abas */}
-          <div
-            ref={tabsRef}
-            className="mt-8 flex flex-wrap gap-1 border-b border-sage-200 scroll-mt-20"
-          >
-            {TABS.map((t) => (
-              <button
-                key={t}
-                onClick={() => {
-                  setTab(t);
-                  // Rola até as abas para o conteúdo escolhido ficar visível (N7).
-                  requestAnimationFrame(() =>
-                    tabsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
-                  );
-                }}
-                className={cn(
-                  "border-b-2 px-3 py-2.5 text-sm font-medium transition-colors",
-                  tab === t
-                    ? "border-forest text-forest"
-                    : "border-transparent text-muted hover:text-forest"
-                )}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
+          {/* Sobre o imóvel */}
+          {property.description && (
+            <section aria-labelledby="sobre-title">
+              <h2 id="sobre-title" className="font-title text-2xl font-bold text-ink">
+                Sobre o imóvel
+              </h2>
+              <p className="mt-3 leading-relaxed text-ink/90">{property.description}</p>
+            </section>
+          )}
 
-          <div className="mt-6">
-            {tab === "Visão Geral" && (
-              <p className="leading-relaxed text-ink/90">{property.description}</p>
-            )}
-
-            {tab === "Comodidades" && (
-              <ul className="grid gap-3 sm:grid-cols-2">
-                {property.amenities.map((a) => (
-                  <li key={a} className="flex items-center gap-2 text-sm text-ink">
-                    <Check className="h-4 w-4 text-sage" /> {a}
-                  </li>
-                ))}
-              </ul>
-            )}
-
-            {tab === "Espaço de Trabalho" && (
-              <div className="space-y-6">
-                <div>
-                  <h3 className="flex items-center gap-2 font-title font-bold text-ink">
-                    <Wifi className="h-5 w-5 text-champagne-600" /> No imóvel
-                  </h3>
-                  {property.internetTier && (
-                    <div className="mt-3 flex items-start gap-2 rounded-xl border border-champagne/40 bg-champagne/5 px-4 py-3 text-sm">
-                      <Wifi className="mt-0.5 h-4 w-4 shrink-0 text-champagne-600" />
-                      <span className="text-ink">{INTERNET_META[property.internetTier].anuncio}</span>
-                    </div>
-                  )}
-                  {property.workFeatures.length > 0 && (
-                    <ul className="mt-3 grid gap-3 sm:grid-cols-2">
-                      {property.workFeatures.map((f) => (
-                        <li key={f} className="flex items-center gap-2 text-sm text-ink">
-                          <Check className="h-4 w-4 text-champagne-600" /> {f}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-                <div>
-                  <h3 className="font-title font-bold text-ink">Espaços de trabalho na região</h3>
-                  <p className="mt-1 text-sm text-muted">
-                    Referências de coworkings e cafés pela vizinhança — confira a posição no mapa.
-                  </p>
-                  <ul className="mt-3 space-y-2">
-                    {property.nearbyWorkspaces.map((w) => {
-                      const Icon = WORKSPACE_ICONS[w.type];
-                      return (
-                        <li
-                          key={w.name}
-                          className="flex items-center gap-3 rounded-xl border border-sage-200 px-4 py-3"
-                        >
-                          <Icon className="h-5 w-5 shrink-0 text-sage" />
-                          <span>
-                            <span className="font-medium text-ink">{w.name}</span>
-                            <span className="block text-xs text-muted">
-                              {WORKSPACE_LABEL[w.type]}
-                            </span>
-                          </span>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                  <PropertyMap
-                    className="mt-4 aspect-[16/9] w-full"
-                    center={{ lat: property.lat, lng: property.lng }}
-                    markers={[propertyMarker, ...workspaceMarkers]}
-                    approximate
-                  />
-                </div>
-              </div>
-            )}
-
-            {tab === "Disponibilidade" && (
-              <div className="rounded-xl border border-sage-200 p-5">
-                <p className="text-sm text-muted">Período mínimo de locação</p>
-                <p className="font-title text-2xl font-bold text-forest">
-                  {property.minPeriodDays} dias
-                </p>
-                <p className="mt-2 text-sm text-muted">
-                  Disponível para locação por temporada de 30 a 180 dias. Converse com o
-                  proprietário para confirmar as datas.
-                </p>
-              </div>
-            )}
-
-            {tab === "Localização" && (
-              <div>
-                <PropertyMap
-                  className="aspect-[16/9] w-full"
-                  center={{ lat: property.lat, lng: property.lng }}
-                  markers={[propertyMarker]}
-                  approximate
-                />
-                <p className="mt-3 text-sm text-muted">
-                  Mostramos a <strong className="text-ink">região aproximada</strong> (
-                  {property.neighborhood}). O endereço exato é liberado após o aceite da
-                  candidatura.
-                </p>
-              </div>
-            )}
-
-            {tab === "Proprietário" && (
-              <div className="space-y-4">
-                <div className="flex items-center gap-4 rounded-xl border border-sage-200 p-5">
-                  <div className="grid h-14 w-14 place-items-center rounded-full bg-sage-100 font-title text-lg font-bold text-forest">
-                    {property.ownerName.charAt(0)}
-                  </div>
-                  <div>
-                    <p className="font-title font-bold text-ink">{property.ownerName}</p>
-                    <p className="text-sm text-muted">Proprietário verificado</p>
-                    <div className="mt-1.5">
-                      <ResponsiveOwnerBadge />
-                    </div>
-                    {property.reviewCount > 0 && (
-                      <p className="mt-1 inline-flex items-center gap-1 text-sm text-forest">
-                        <Star className="h-4 w-4 fill-champagne text-champagne" />
-                        {property.rating.toFixed(1)} ({property.reviewCount} avaliações)
-                      </p>
-                    )}
-                  </div>
-                </div>
-                {/* O que o inquilino vê do proprietário (Atualização 9) */}
-                <ul className="grid gap-2 sm:grid-cols-2 text-sm">
-                  <li className="flex items-center gap-2">
-                    <Check className={cn("h-4 w-4", property.issuesInvoice ? "text-sage" : "text-muted")} />
-                    {property.issuesInvoice ? "Emite Nota Fiscal" : "Não emite Nota Fiscal"}
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className={cn("h-4 w-4", property.acceptsInsurance ? "text-sage" : "text-muted")} />
-                    {property.acceptsInsurance ? "Aceita seguro-fiança" : "Não aceita seguro-fiança"}
-                  </li>
-                </ul>
-
-                {/* Avaliações de inquilinos anteriores (Atualização 10) */}
-                {property.reviewCount > 0 && (
-                  <div>
-                    <h4 className="font-title font-bold text-ink">Avaliações de inquilinos</h4>
-                    <div className="mt-3 space-y-3">
-                      {SAMPLE_REVIEWS.map((r) => (
-                        <div key={r.author} className="rounded-xl border border-sage-200 p-4">
-                          <div className="flex items-center justify-between">
-                            <span className="font-medium text-ink">{r.author}</span>
-                            <span className="inline-flex items-center gap-1 text-sm text-forest">
-                              <Star className="h-4 w-4 fill-champagne text-champagne" /> {r.rating.toFixed(1)}
-                            </span>
-                          </div>
-                          <p className="mt-1 text-sm text-muted">{r.comment}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+          <AmenitiesGrid property={property} />
+          <WorkspaceSection property={property} />
+          <LocationNearby property={property} />
+          <StayRules property={property} />
+          <OwnerCard property={property} />
+          <Reviews property={property} />
         </div>
 
-        {/* Coluna lateral sticky */}
+        {/* Card de preço (sticky no desktop, empilhado no mobile) */}
         <aside className="lg:col-span-1">
-          <div className="sticky top-20 rounded-2xl border border-sage-200 bg-white p-6 shadow-sm">
-            <div className="flex items-baseline gap-1">
-              <span className="font-title text-3xl font-bold text-forest">
-                {formatBRL(property.monthlyPrice)}
-              </span>
-              <span className="text-muted">/mês</span>
-            </div>
-            {/* Total estimado — texto secundário menor, sem "sticker shock" (N6) */}
-            {property.utilitiesMode === "fixed" && property.utilitiesEstimate > 0 && (
-              <p className="mt-1 text-sm text-muted">
-                ≈ {formatBRL(property.monthlyPrice + property.utilitiesEstimate)}/mês com tudo
-                incluído
-              </p>
-            )}
-            {/* Composição do custo — colapsável, transparência sem sobrecarregar (N6) */}
-            <details className="group mt-3 rounded-lg bg-surface-2 px-3 py-2 text-sm">
-              <summary className="flex cursor-pointer list-none items-center justify-between font-medium text-ink">
-                Detalhes do custo
-                <ChevronDown className="h-4 w-4 text-muted transition-transform group-open:rotate-180" />
-              </summary>
-              <div className="mt-2">
-                {property.utilitiesMode === "fixed" && property.utilitiesEstimate > 0 ? (
-                  <p className="text-ink">
-                    + consumo estimado{" "}
-                    <strong>{formatBRL(property.utilitiesEstimate)}</strong>/mês
-                    <span className="block text-xs text-muted">
-                      Água, luz e gás em valor fixo no contrato (ajuste se exceder{" "}
-                      {property.utilitiesOverageMargin}%).
-                    </span>
-                  </p>
-                ) : (
-                  <p className="text-ink">
-                    + consumo conforme medição
-                    <span className="block text-xs text-muted">
-                      Contas repassadas ao inquilino mediante comprovante.
-                    </span>
-                  </p>
-                )}
-                {property.prepFee > 0 && (
-                  <p className="mt-1.5 text-ink">
-                    + preparação <strong>{formatBRL(property.prepFee)}</strong>
-                    <span className="block text-xs text-muted">
-                      Limpeza profunda antes da entrada — cobrada uma única vez, não a cada
-                      hóspede.
-                    </span>
-                  </p>
-                )}
-                {property.issuesInvoice && (
-                  <p className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-blue-700">
-                    <FileText className="h-3.5 w-3.5" /> Emite Nota Fiscal do aluguel
-                  </p>
-                )}
-              </div>
-            </details>
-            <p className="mt-2 inline-flex items-center gap-1.5 text-sm text-sage">
-              <span className="h-2 w-2 rounded-full bg-sage" /> Disponível agora
-            </p>
-
-            {/* Promoção do Inquilino Verificado no funil (quick win #4) */}
-            <Link
-              href="/dashboard/verificacao"
-              className="mt-5 flex items-start gap-2 rounded-xl bg-blue-50 px-3 py-2.5 text-xs text-blue-800 transition-colors hover:bg-blue-100"
-            >
-              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />
-              <span>
-                <strong>Verifique-se uma vez</strong> e candidate-se a qualquer imóvel com um
-                clique.
-              </span>
-            </Link>
-
-            {/* CTA primário único + secundários menores (quick win #2) */}
-            <div className="mt-3 flex flex-col gap-2">
-              <Button
-                variant="gold"
-                size="lg"
-                className="w-full"
-                onClick={() => handleLead("candidatura")}
-                disabled={pending !== null}
-              >
-                <FileSignature className="h-4 w-4" />
-                {pending === "candidatura" ? "Enviando..." : "Candidatar-se"}
-              </Button>
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleLead("duvida")}
-                  disabled={pending !== null || sent.duvida}
-                >
-                  {sent.duvida ? (
-                    <>
-                      <Check className="h-4 w-4" /> Dúvida enviada
-                    </>
-                  ) : (
-                    <>
-                      <MessageSquare className="h-4 w-4" />
-                      {pending === "duvida" ? "Enviando..." : "Tirar dúvida"}
-                    </>
-                  )}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleLead("visita")}
-                  disabled={pending !== null || sent.visita}
-                >
-                  {sent.visita ? (
-                    <>
-                      <Check className="h-4 w-4" /> Visita solicitada
-                    </>
-                  ) : (
-                    <>
-                      <CalendarCheck className="h-4 w-4" />
-                      {pending === "visita" ? "Enviando..." : "Agendar visita"}
-                    </>
-                  )}
-                </Button>
-              </div>
-              {(sent.duvida || sent.visita) && (
-                <p className="text-center text-xs text-sage">
-                  Enviamos seu contato ao proprietário — ele responde por e-mail/WhatsApp.
-                </p>
-              )}
-              {selfNote && (
-                <p className="text-center text-xs text-muted">
-                  Este é o seu anúncio. Os interessados aparecem em{" "}
-                  <Link href="/dashboard/leads" className="underline">
-                    Leads
-                  </Link>
-                  .
-                </p>
-              )}
-            </div>
-
-            {/* Garantia de correspondência (mediação) — reduz o medo de alugar sem visita */}
-            <MatchGuaranteeNotice className="mt-4" />
-
-            <p className="mt-4 flex items-start gap-1.5 text-xs text-muted">
-              <MapPinned className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              Endereço exato liberado após o aceite da candidatura. Antes, mostramos a região
-              aproximada ({property.neighborhood}).
-            </p>
-            <p className="mt-3 text-center text-xs text-muted">
-              O pagamento do aluguel é feito direto ao proprietário. A plataforma conecta e
-              documenta — não intermedeia a transação.
-            </p>
-          </div>
+          <PriceCard property={property} actions={actions} />
         </aside>
       </div>
 
