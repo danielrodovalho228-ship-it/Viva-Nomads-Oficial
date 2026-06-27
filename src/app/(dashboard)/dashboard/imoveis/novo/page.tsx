@@ -30,9 +30,10 @@ import { MIN_PHOTOS, SUGGESTED_ROOMS, tierFromPhotoCount, TIER_META } from "@/li
 import { GARANTIAS } from "@/lib/guarantees";
 import { PROPERTY_TYPES, AMENITY_GROUPS, propertyTypeLabel } from "@/lib/amenities";
 import { PlacesPicker, type CuratedPlace } from "@/components/property/places-picker";
+import { ManualProximities } from "@/components/property/manual-proximities";
 import { LocationDatalist } from "@/lib/locations";
 import { PHOTOS } from "@/lib/media";
-import type { Property } from "@/lib/types";
+import type { Property, Proximity } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 /** Metadados das 7 etapas do wizard (rodada 15). */
@@ -71,6 +72,8 @@ export default function NewPropertyPage() {
   const [amenityKeys, setAmenityKeys] = useState<Record<string, boolean>>({});
   // Proximidades reais (Google) — só place_id + categoria + rótulo.
   const [googlePlaces, setGooglePlaces] = useState<CuratedPlace[]>([]);
+  // Proximidades manuais (nome + distância digitados) — sem depender do Google.
+  const [manualProximities, setManualProximities] = useState<Proximity[]>([]);
   const [monthlyPrice, setMonthlyPrice] = useState("");
   const [street, setStreet] = useState("");
   const [neighborhood, setNeighborhood] = useState("");
@@ -188,6 +191,7 @@ export default function NewPropertyPage() {
       childrenAllowed,
       amenityKeys: Object.keys(amenityKeys).filter((k) => amenityKeys[k]),
       googlePlaces,
+      proximities: manualProximities,
       lat: coords.lat,
       lng: coords.lng,
       photoUrls: photos.map((p) => p.url),
@@ -676,14 +680,24 @@ export default function NewPropertyPage() {
               </div>
             ))}
 
-            {/* Proximidades reais (Google) — curadas pelo proprietário */}
+            {/* Proximidades manuais (sem depender do Google) */}
             <div className="rounded-xl border border-sage-200 p-4">
               <p className="text-sm font-bold text-forest">Proximidades</p>
               <p className="mb-3 text-xs text-muted">
-                Busque lugares reais perto do imóvel (hospital, universidade, coworking…). A
-                distância aparece ao vivo na página, pelo Google.
+                Liste pontos úteis perto do imóvel (hospital, universidade, mercado…) com a
+                distância. Aparecem na seção “O que tem por perto”.
               </p>
-              <PlacesPicker value={googlePlaces} onChange={setGooglePlaces} />
+              <ManualProximities value={manualProximities} onChange={setManualProximities} />
+
+              {/* Opção avançada: distância automática via Google (requer chave) */}
+              <details className="mt-4">
+                <summary className="cursor-pointer text-xs font-medium text-muted hover:text-forest">
+                  Distância automática pelo Google Maps (opcional, requer chave)
+                </summary>
+                <div className="mt-3">
+                  <PlacesPicker value={googlePlaces} onChange={setGooglePlaces} />
+                </div>
+              </details>
             </div>
           </div>
         )}
