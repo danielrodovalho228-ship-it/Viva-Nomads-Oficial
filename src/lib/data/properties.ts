@@ -166,7 +166,7 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     safe(supabase.from("property_amenities").select("category, label, sort_order").eq("property_id", base.id).order("sort_order")),
     safe(supabase.from("property_workspaces").select("name, type, distance_m").eq("property_id", base.id)),
     safe(supabase.from("property_proximities").select("category, name, note, sort_order").eq("property_id", base.id).order("sort_order")),
-    safe(supabase.from("reviews").select("author_name, rating, comment, created_at").eq("property_id", base.id).order("created_at", { ascending: false })),
+    safe(supabase.from("property_reviews").select("author_name, rating, comment, created_at").eq("property_id", base.id).order("created_at", { ascending: false })),
     ownerId ? safe(supabase.from("profiles").select("full_name, avatar_url, created_at, response_rate, is_verified").eq("id", ownerId).maybeSingle()) : Promise.resolve(null),
   ]);
 
