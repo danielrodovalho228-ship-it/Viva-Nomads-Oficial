@@ -12,9 +12,27 @@ import { cn, distanceKm } from "@/lib/utils";
 import { tierFromPhotoCount, searchPriority } from "@/lib/listing";
 import { LocationSearch } from "@/components/location-search";
 import type { GeoSuggestion } from "@/lib/integrations/geocoding";
+import { PROPERTY_TYPES } from "@/lib/amenities";
 
 /** Raio (km) padrão ao redor de um endereço geocodificado. */
 const DEFAULT_RADIUS_KM = 10;
+
+/** Normaliza o tipo do imóvel (chave canônica ou rótulo legado) p/ a chave. */
+function typeValue(pt: string): string {
+  const low = pt.toLowerCase();
+  if (PROPERTY_TYPES.some((t) => t.value === low)) return low;
+  const m = PROPERTY_TYPES.find(
+    (t) => t.label.toLowerCase() === low || t.label.toLowerCase().startsWith(low)
+  );
+  return m?.value ?? low;
+}
+
+/** Uma propriedade aceita a garantia escolhida no filtro? */
+function aceitaGarantia(p: Property, g: string): boolean {
+  if (!g) return true;
+  if (g === "fianca") return !!p.acceptsInsurance;
+  return (p.garantiasAceitas ?? []).includes(g); // caucao | titulo
+}
 
 export function SearchClient({ properties }: { properties: Property[] }) {
   const [locationQuery, setLocationQuery] = useState("");
@@ -25,6 +43,10 @@ export function SearchClient({ properties }: { properties: Property[] }) {
   const [maxPrice, setMaxPrice] = useState(0);
   const [minBedrooms, setMinBedrooms] = useState(0);
   const [maxPeriod, setMaxPeriod] = useState(0); // período mínimo aceito <= X
+  const [typeFilter, setTypeFilter] = useState(""); // tipo de imóvel ("" = todos)
+  const [garantia, setGarantia] = useState(""); // "" | caucao | fianca | titulo
+  const [petsOnly, setPetsOnly] = useState(false);
+  const [furnishedOnly, setFurnishedOnly] = useState(false);
   const [readyToLiveOnly, setReadyToLiveOnly] = useState(false);
   const [homeOfficeOnly, setHomeOfficeOnly] = useState(false);
   const [workLocatedOnly, setWorkLocatedOnly] = useState(false);
@@ -61,7 +83,13 @@ export function SearchClient({ properties }: { properties: Property[] }) {
     if ([30, 60, 90].includes(num("periodo"))) setMaxPeriod(num("periodo"));
     const ordem = sp.get("ordem");
     if (ordem === "recent" || ordem === "price-asc" || ordem === "price-desc") setSort(ordem);
+    const tipo = sp.get("tipo");
+    if (tipo && PROPERTY_TYPES.some((t) => t.value === tipo)) setTypeFilter(tipo);
+    const gar = sp.get("garantia");
+    if (gar === "caucao" || gar === "fianca" || gar === "titulo") setGarantia(gar);
     const on = (k: string) => sp.get(k) === "1";
+    if (on("pet")) setPetsOnly(true);
+    if (on("mobiliado")) setFurnishedOnly(true);
     if (on("pronto")) setReadyToLiveOnly(true);
     if (on("homeoffice")) setHomeOfficeOnly(true);
     if (on("localizado")) setWorkLocatedOnly(true);
@@ -94,7 +122,11 @@ export function SearchClient({ properties }: { properties: Property[] }) {
     put("preco", maxPrice > 0, String(maxPrice));
     put("quartos", minBedrooms > 0, String(minBedrooms));
     put("periodo", maxPeriod > 0, String(maxPeriod));
+    put("tipo", !!typeFilter, typeFilter);
+    put("garantia", !!garantia, garantia);
     put("ordem", sort !== "relevance", sort);
+    put("pet", petsOnly, "1");
+    put("mobiliado", furnishedOnly, "1");
     put("pronto", readyToLiveOnly, "1");
     put("homeoffice", homeOfficeOnly, "1");
     put("localizado", workLocatedOnly, "1");
@@ -109,6 +141,7 @@ export function SearchClient({ properties }: { properties: Property[] }) {
     );
   }, [
     locationQuery, geoCenter, radiusKm, maxPrice, minBedrooms, maxPeriod, sort,
+    typeFilter, garantia, petsOnly, furnishedOnly,
     readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly,
   ]);
 
@@ -120,6 +153,10 @@ export function SearchClient({ properties }: { properties: Property[] }) {
     setMaxPrice(0);
     setMinBedrooms(0);
     setMaxPeriod(0);
+    setTypeFilter("");
+    setGarantia("");
+    setPetsOnly(false);
+    setFurnishedOnly(false);
     setReadyToLiveOnly(false);
     setHomeOfficeOnly(false);
     setWorkLocatedOnly(false);
@@ -149,6 +186,10 @@ export function SearchClient({ properties }: { properties: Property[] }) {
       if (maxPrice && p.monthlyPrice > maxPrice) return false;
       if (minBedrooms && p.bedrooms < minBedrooms) return false;
       if (maxPeriod && p.minPeriodDays > maxPeriod) return false;
+      if (typeFilter && typeValue(p.propertyType) !== typeFilter) return false;
+      if (garantia && !aceitaGarantia(p, garantia)) return false;
+      if (petsOnly && !p.petsAllowed) return false;
+      if (furnishedOnly && !p.furnished) return false;
       if (readyToLiveOnly && !p.readyToLiveBadge) return false;
       if (homeOfficeOnly && !p.tagHomeOffice) return false;
       if (workLocatedOnly && !p.tagWorkLocated) return false;
@@ -174,13 +215,15 @@ export function SearchClient({ properties }: { properties: Property[] }) {
           searchPriority(tierFromPhotoCount(a.photos.length))
       );
     return list;
-  }, [properties, locationQuery, geoCenter, radiusKm, maxPrice, minBedrooms, maxPeriod, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly, sort]);
+  }, [properties, locationQuery, geoCenter, radiusKm, maxPrice, minBedrooms, maxPeriod, typeFilter, garantia, petsOnly, furnishedOnly, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly, sort]);
 
   const activeCount =
     (maxPrice ? 1 : 0) +
     (minBedrooms ? 1 : 0) +
     (maxPeriod ? 1 : 0) +
-    [readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly].filter(
+    (typeFilter ? 1 : 0) +
+    (garantia ? 1 : 0) +
+    [petsOnly, furnishedOnly, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly].filter(
       Boolean
     ).length;
 
@@ -270,6 +313,23 @@ export function SearchClient({ properties }: { properties: Property[] }) {
             </div>
           )}
           <Select
+            label="Tipo de imóvel"
+            value={typeFilter}
+            onChange={setTypeFilter}
+            options={[["", "Tipo de imóvel"], ...PROPERTY_TYPES.map((t) => [t.value, t.label] as [string, string])]}
+          />
+          <Select
+            label="Garantia aceita"
+            value={garantia}
+            onChange={setGarantia}
+            options={[
+              ["", "Garantia aceita"],
+              ["caucao", "Aceita caução"],
+              ["fianca", "Aceita seguro-fiança"],
+              ["titulo", "Aceita título"],
+            ]}
+          />
+          <Select
             label="Preço máximo"
             value={String(maxPrice)}
             onChange={(v) => setMaxPrice(Number(v))}
@@ -308,6 +368,12 @@ export function SearchClient({ properties }: { properties: Property[] }) {
           </Chip>
           <Chip on={homeOfficeOnly} onClick={() => setHomeOfficeOnly((v) => !v)}>
             💻 Para trabalhar de casa
+          </Chip>
+          <Chip on={furnishedOnly} onClick={() => setFurnishedOnly((v) => !v)}>
+            🛋️ Mobiliado
+          </Chip>
+          <Chip on={petsOnly} onClick={() => setPetsOnly((v) => !v)}>
+            🐾 Aceita pet
           </Chip>
           <Chip on={workLocatedOnly} onClick={() => setWorkLocatedOnly((v) => !v)}>
             📍 Bem localizado

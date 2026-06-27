@@ -28,6 +28,7 @@ import { PropertyMiniCard } from "@/components/property-mini-card";
 import { PhotoUploader, type PhotoItem } from "@/components/photo-uploader";
 import { MIN_PHOTOS, SUGGESTED_ROOMS, tierFromPhotoCount, TIER_META } from "@/lib/listing";
 import { GARANTIAS } from "@/lib/guarantees";
+import { PROPERTY_TYPES, AMENITY_GROUPS, propertyTypeLabel } from "@/lib/amenities";
 import { LocationDatalist } from "@/lib/locations";
 import { PHOTOS } from "@/lib/media";
 import type { Property } from "@/lib/types";
@@ -39,7 +40,7 @@ const STEP_META = [
   { label: "Endereço", icon: MapPin, title: "Endereço", subtitle: "Onde fica o imóvel." },
   { label: "Detalhes", icon: BedDouble, title: "Detalhes do imóvel", subtitle: "Cômodos, área e período." },
   { label: "Fotos", icon: Camera, title: "Fotos do imóvel", subtitle: "Mínimo de 8 — anúncio bem fotografado se destaca." },
-  { label: "Trabalho", icon: Briefcase, title: "Recursos de trabalho", subtitle: "O que torna o imóvel bom para quem trabalha." },
+  { label: "Comodidades", icon: Briefcase, title: "Comodidades", subtitle: "Marque o que o imóvel oferece — por categoria." },
   { label: "Preço", icon: Tag, title: "Descrição e preço", subtitle: "Como o anúncio se apresenta e quanto custa." },
   { label: "Revisão", icon: CheckCircle2, title: "Revisão", subtitle: "Confira tudo antes de publicar." },
 ] as const;
@@ -51,14 +52,22 @@ export default function NewPropertyPage() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiWarn, setAiWarn] = useState<string | null>(null);
   const [title, setTitle] = useState("");
-  const [propertyType, setPropertyType] = useState("Apartamento");
+  const [propertyType, setPropertyType] = useState("apartamento");
   const [description, setDescription] = useState("");
   const [bedrooms, setBedrooms] = useState("");
   const [bathrooms, setBathrooms] = useState("");
   const [areaM2, setAreaM2] = useState("");
+  const [parkingSpots, setParkingSpots] = useState("");
   const [minPeriod, setMinPeriod] = useState("30");
+  const [maxPeriod, setMaxPeriod] = useState("180");
+  const [availableFrom, setAvailableFrom] = useState("");
+  const [availableUntil, setAvailableUntil] = useState("");
   const [furnished, setFurnished] = useState(true);
   const [petsOk, setPetsOk] = useState(false);
+  const [smokingAllowed, setSmokingAllowed] = useState(false);
+  const [childrenAllowed, setChildrenAllowed] = useState(true);
+  // Comodidades selecionadas (chaves do catálogo único).
+  const [amenityKeys, setAmenityKeys] = useState<Record<string, boolean>>({});
   const [monthlyPrice, setMonthlyPrice] = useState("");
   const [street, setStreet] = useState("");
   const [neighborhood, setNeighborhood] = useState("");
@@ -104,7 +113,7 @@ export default function NewPropertyPage() {
   const previewProperty = {
     id: "preview",
     title: title || "Seu anúncio",
-    propertyType,
+    propertyType: propertyTypeLabel(propertyType),
     city: city || "Uberlândia",
     state: "MG",
     neighborhood: neighborhood || "Bairro",
@@ -165,6 +174,16 @@ export default function NewPropertyPage() {
       acceptsInsurance,
       garantiasAceitas: Object.keys(aceitaGarantia).filter((k) => aceitaGarantia[k]),
       prepFee,
+      // Enriquecimento (FASE 1/2)
+      parkingSpots: Number(parkingSpots) || 0,
+      availableFrom: availableFrom || undefined,
+      availableUntil: availableUntil || undefined,
+      maxPeriodDays: Number(maxPeriod) || undefined,
+      furnished,
+      petsAllowed: petsOk,
+      smokingAllowed,
+      childrenAllowed,
+      amenityKeys: Object.keys(amenityKeys).filter((k) => amenityKeys[k]),
       lat: coords.lat,
       lng: coords.lng,
       photoUrls: photos.map((p) => p.url),
@@ -390,10 +409,9 @@ export default function NewPropertyPage() {
           <div className="space-y-4">
             <Labeled label="Tipo de imóvel">
               <select value={propertyType} onChange={(e) => setPropertyType(e.target.value)} className="input">
-                <option>Apartamento</option>
-                <option>Casa</option>
-                <option>Studio</option>
-                <option>Kitnet</option>
+                {PROPERTY_TYPES.map((t) => (
+                  <option key={t.value} value={t.value}>{t.label}</option>
+                ))}
               </select>
             </Labeled>
 
@@ -488,7 +506,7 @@ export default function NewPropertyPage() {
         {/* ── ETAPA 3 — Detalhes ── */}
         {step === 2 && (
           <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               <Labeled label="Quartos">
                 <input type="number" min={0} value={bedrooms} onChange={(e) => setBedrooms(e.target.value)} className="input" />
               </Labeled>
@@ -498,19 +516,47 @@ export default function NewPropertyPage() {
               <Labeled label="Área (m²)">
                 <input type="number" min={0} value={areaM2} onChange={(e) => setAreaM2(e.target.value)} className="input" />
               </Labeled>
+              <Labeled label="Vagas">
+                <input type="number" min={0} value={parkingSpots} onChange={(e) => setParkingSpots(e.target.value)} className="input" />
+              </Labeled>
             </div>
-            <Labeled label="Período mínimo de locação">
-              <select value={minPeriod} onChange={(e) => setMinPeriod(e.target.value)} className="input">
-                <option value="30">30 dias</option>
-                <option value="60">60 dias</option>
-                <option value="90">90 dias</option>
-                <option value="180">180 dias</option>
-              </select>
-              <span className="mt-1 block text-xs text-muted">Locação por temporada: 30 a 180 dias.</span>
-            </Labeled>
+
+            <div className="rounded-xl border border-sage-200 p-4">
+              <p className="text-sm font-medium text-ink">Disponibilidade e prazo</p>
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                <Labeled label="Disponível a partir de">
+                  <input type="date" value={availableFrom} onChange={(e) => setAvailableFrom(e.target.value)} className="input" />
+                </Labeled>
+                <Labeled label="Disponível até (opcional)">
+                  <input type="date" value={availableUntil} onChange={(e) => setAvailableUntil(e.target.value)} className="input" />
+                </Labeled>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                <Labeled label="Duração mínima">
+                  <select value={minPeriod} onChange={(e) => setMinPeriod(e.target.value)} className="input">
+                    <option value="30">30 dias</option>
+                    <option value="60">60 dias</option>
+                    <option value="90">90 dias</option>
+                    <option value="180">180 dias</option>
+                  </select>
+                </Labeled>
+                <Labeled label="Duração máxima">
+                  <select value={maxPeriod} onChange={(e) => setMaxPeriod(e.target.value)} className="input">
+                    <option value="90">90 dias</option>
+                    <option value="180">180 dias</option>
+                    <option value="365">365 dias</option>
+                  </select>
+                </Labeled>
+              </div>
+              <span className="mt-2 block text-xs text-muted">Locação por temporada: 30 a 180 dias é o usual.</span>
+            </div>
+
             <div className="space-y-2">
+              <p className="text-sm font-medium text-ink">Regras</p>
               <Toggle checked={furnished} onChange={() => setFurnished((v) => !v)} label="Mobiliado e equipado" hint="Pré-requisito da locação por temporada Viva Nomads." />
               <Toggle checked={petsOk} onChange={() => setPetsOk((v) => !v)} label="Aceita pets" hint="Amplia o público interessado." />
+              <Toggle checked={childrenAllowed} onChange={() => setChildrenAllowed((v) => !v)} label="Aceita crianças" />
+              <Toggle checked={smokingAllowed} onChange={() => setSmokingAllowed((v) => !v)} label="Permite fumar" />
             </div>
           </div>
         )}
@@ -591,13 +637,40 @@ export default function NewPropertyPage() {
               height={600}
               className="aspect-[16/9] w-full rounded-xl object-cover"
             />
-            <div className="rounded-xl border border-sage-200 p-4 text-sm text-ink">
-              ✓ Importados da qualificação: home office, mesa, internet fibra.{" "}
-              {qual.tHome && <span className="font-medium text-forest">Etiqueta “Para trabalhar de casa” ativa.</span>}
-            </div>
-            <Labeled label="Espaços de trabalho próximos (nome — distância)">
-              <input className="input" placeholder="Coworking Center — 850 m" />
-            </Labeled>
+            {qual.tHome && (
+              <div className="rounded-xl border border-sage-200 p-4 text-sm text-ink">
+                ✓ Da qualificação:{" "}
+                <span className="font-medium text-forest">etiqueta “Para trabalhar de casa” ativa.</span>
+              </div>
+            )}
+
+            {/* Comodidades por categoria (catálogo único) */}
+            {AMENITY_GROUPS.map((g) => (
+              <div key={g.category}>
+                <p className="text-sm font-bold text-forest">{g.label}</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {g.items.map((it) => {
+                    const on = !!amenityKeys[it.key];
+                    return (
+                      <button
+                        key={it.key}
+                        type="button"
+                        aria-pressed={on}
+                        onClick={() => setAmenityKeys((s) => ({ ...s, [it.key]: !s[it.key] }))}
+                        className={cn(
+                          "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                          on
+                            ? "border-forest bg-forest text-white"
+                            : "border-sage-200 text-ink hover:border-sage"
+                        )}
+                      >
+                        {it.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
