@@ -106,10 +106,14 @@ export interface Property {
   furnished?: boolean; // mobiliado
   petsAllowed?: boolean;
   smokingAllowed?: boolean;
+  childrenAllowed?: boolean;
   maxGuests?: number;
+  availableUntil?: string; // ISO — "disponível até"
+  maxPeriodDays?: number; // duração máxima
   checkinAfter?: string; // ex.: "14:00"
   checkoutBefore?: string; // ex.: "11:00"
   amenityGroups?: AmenityGroup[]; // comodidades por categoria
+  garantiasAceitas?: string[]; // modalidades aceitas (caucao, titulo, …) — filtro
   proximities?: Proximity[]; // pontos úteis na região
   reviews?: Review[]; // avaliações reais
   owner?: OwnerProfile; // perfil de confiança do proprietário

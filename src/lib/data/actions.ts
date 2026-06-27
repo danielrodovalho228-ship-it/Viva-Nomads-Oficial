@@ -15,6 +15,7 @@ import { notify } from "@/lib/notifications";
 import { listingLimit, PLAN_LABEL } from "@/lib/plan";
 import type { SubscriptionPlan } from "@/lib/store";
 import { buildLeadNotification, LEAD_KIND_MSG, type LeadKind } from "@/lib/leads";
+import { amenityRows } from "@/lib/amenities";
 
 type ActionResult = { ok: boolean; demo?: boolean; id?: string; error?: string };
 
@@ -98,6 +99,19 @@ export async function createProperty(input: {
    * no painel do dono.
    */
   asDraft?: boolean;
+  // ── Enriquecimento (FASE 1/2) — gravados best-effort (requer migrações 0018/0019) ──
+  parkingSpots?: number;
+  condoFee?: number;
+  availableFrom?: string;
+  availableUntil?: string;
+  maxPeriodDays?: number;
+  furnished?: boolean;
+  petsAllowed?: boolean;
+  smokingAllowed?: boolean;
+  childrenAllowed?: boolean;
+  maxGuests?: number;
+  /** Chaves de comodidade selecionadas (catálogo único). */
+  amenityKeys?: string[];
 }): Promise<ActionResult> {
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
@@ -166,6 +180,47 @@ export async function createProperty(input: {
     .single();
 
   if (error) return { ok: false, error: error.message };
+
+  // Enriquecimento (campos das migrações 0018/0019). Best-effort: se a migração
+  // ainda não rodou, o update falha em silêncio mas o imóvel já foi criado.
+  try {
+    await supabase
+      .from("properties")
+      .update({
+        parking_spots: input.parkingSpots ?? 0,
+        condo_fee: input.condoFee ?? 0,
+        available_from: input.availableFrom ?? null,
+        available_until: input.availableUntil ?? null,
+        max_period_days: input.maxPeriodDays ?? null,
+        furnished: input.furnished ?? true,
+        pets_allowed: input.petsAllowed ?? null,
+        smoking_allowed: input.smokingAllowed ?? false,
+        children_allowed: input.childrenAllowed ?? null,
+        max_guests: input.maxGuests ?? null,
+      })
+      .eq("id", data.id);
+  } catch {
+    /* migração 0018/0019 ausente — segue sem os campos extras */
+  }
+
+  // Comodidades por categoria (catálogo único). Best-effort.
+  if (input.amenityKeys && input.amenityKeys.length > 0) {
+    const rows = amenityRows(input.amenityKeys);
+    if (rows.length > 0) {
+      try {
+        await supabase.from("property_amenities").insert(
+          rows.map((r, i) => ({
+            property_id: data.id,
+            category: r.category,
+            label: r.label,
+            sort_order: i,
+          }))
+        );
+      } catch {
+        /* tabela ausente — segue sem comodidades */
+      }
+    }
+  }
 
   // Persiste as fotos enviadas ao Storage (a primeira é a capa).
   if (input.photoUrls && input.photoUrls.length > 0) {
