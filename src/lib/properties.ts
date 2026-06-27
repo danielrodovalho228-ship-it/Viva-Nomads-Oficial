@@ -60,6 +60,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     maxGuests: 3,
     checkinAfter: "14:00",
     checkoutBefore: "11:00",
+    garantiasAceitas: ["caucao", "titulo"],
     amenityGroups: [
       { category: "trabalho", items: ["Internet fibra 300 Mbps", "Mesa de trabalho", "Cadeira ergonômica", "Monitor extra"] },
       { category: "cozinha", items: ["Fogão", "Geladeira", "Microondas", "Utensílios completos", "Cafeteira"] },
@@ -132,6 +133,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     maxGuests: 2,
     checkinAfter: "15:00",
     checkoutBefore: "11:00",
+    garantiasAceitas: ["caucao", "titulo"],
     amenityGroups: [
       { category: "trabalho", items: ["Internet fibra 200 Mbps", "Mesa de trabalho"] },
       { category: "cozinha", items: ["Cooktop", "Geladeira", "Microondas", "Utensílios básicos"] },
@@ -197,6 +199,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     furnished: true,
     availableFrom: "2026-09-01",
     maxGuests: 5,
+    garantiasAceitas: ["caucao"],
   },
 ];
 

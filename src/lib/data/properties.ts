@@ -48,6 +48,7 @@ interface PropertyRow {
   sublease_authorized: boolean | null;
   video_url: string | null;
   created_at: string | null;
+  garantias_aceitas: string[] | null;
   // Enriquecimento (migração 0018 — podem não existir se a migração não rodou).
   parking_spots: number | null;
   condo_fee: number | null;
@@ -55,7 +56,10 @@ interface PropertyRow {
   furnished: boolean | null;
   pets_allowed: boolean | null;
   smoking_allowed: boolean | null;
+  children_allowed: boolean | null;
   max_guests: number | null;
+  available_until: string | null;
+  max_period_days: number | null;
   checkin_after: string | null;
   checkout_before: string | null;
 }
@@ -125,9 +129,13 @@ function rowToProperty(row: PropertyRow): Property {
     furnished: row.furnished ?? undefined,
     petsAllowed: row.pets_allowed ?? undefined,
     smokingAllowed: row.smoking_allowed ?? undefined,
+    childrenAllowed: row.children_allowed ?? undefined,
     maxGuests: row.max_guests ?? undefined,
+    availableUntil: row.available_until ?? undefined,
+    maxPeriodDays: row.max_period_days ?? undefined,
     checkinAfter: row.checkin_after ?? undefined,
     checkoutBefore: row.checkout_before ?? undefined,
+    garantiasAceitas: row.garantias_aceitas ?? undefined,
   };
 }
 
