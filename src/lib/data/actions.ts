@@ -114,6 +114,8 @@ export async function createProperty(input: {
   amenityKeys?: string[];
   /** Proximidades Google curadas (só place_id + categoria + rótulo). */
   googlePlaces?: { placeId: string; categoria: string; rotulo?: string }[];
+  /** Proximidades manuais (nome + distância digitados). */
+  proximities?: { category: string; name: string; note?: string }[];
 }): Promise<ActionResult> {
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
@@ -226,6 +228,23 @@ export async function createProperty(input: {
       } catch {
         /* tabela ausente — segue sem comodidades */
       }
+    }
+  }
+
+  // Proximidades manuais (nome + distância). Best-effort.
+  if (input.proximities && input.proximities.length > 0) {
+    try {
+      await supabase.from("property_proximities").insert(
+        input.proximities.map((p, i) => ({
+          property_id: data.id,
+          category: p.category,
+          name: p.name,
+          note: p.note ?? null,
+          sort_order: i,
+        }))
+      );
+    } catch {
+      /* tabela ausente — segue sem proximidades */
     }
   }
 
