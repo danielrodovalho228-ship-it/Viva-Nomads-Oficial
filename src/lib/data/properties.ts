@@ -49,6 +49,7 @@ interface PropertyRow {
   video_url: string | null;
   created_at: string | null;
   garantias_aceitas: string[] | null;
+  google_places: { place_id: string; categoria: string; rotulo?: string }[] | null;
   // Enriquecimento (migração 0018 — podem não existir se a migração não rodou).
   parking_spots: number | null;
   condo_fee: number | null;
@@ -136,6 +137,9 @@ function rowToProperty(row: PropertyRow): Property {
     checkinAfter: row.checkin_after ?? undefined,
     checkoutBefore: row.checkout_before ?? undefined,
     garantiasAceitas: row.garantias_aceitas ?? undefined,
+    googlePlaces: row.google_places
+      ? row.google_places.map((g) => ({ placeId: g.place_id, categoria: g.categoria, rotulo: g.rotulo }))
+      : undefined,
   };
 }
 

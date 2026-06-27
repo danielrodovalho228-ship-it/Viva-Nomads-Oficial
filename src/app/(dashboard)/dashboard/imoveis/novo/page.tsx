@@ -29,6 +29,7 @@ import { PhotoUploader, type PhotoItem } from "@/components/photo-uploader";
 import { MIN_PHOTOS, SUGGESTED_ROOMS, tierFromPhotoCount, TIER_META } from "@/lib/listing";
 import { GARANTIAS } from "@/lib/guarantees";
 import { PROPERTY_TYPES, AMENITY_GROUPS, propertyTypeLabel } from "@/lib/amenities";
+import { PlacesPicker, type CuratedPlace } from "@/components/property/places-picker";
 import { LocationDatalist } from "@/lib/locations";
 import { PHOTOS } from "@/lib/media";
 import type { Property } from "@/lib/types";
@@ -68,6 +69,8 @@ export default function NewPropertyPage() {
   const [childrenAllowed, setChildrenAllowed] = useState(true);
   // Comodidades selecionadas (chaves do catálogo único).
   const [amenityKeys, setAmenityKeys] = useState<Record<string, boolean>>({});
+  // Proximidades reais (Google) — só place_id + categoria + rótulo.
+  const [googlePlaces, setGooglePlaces] = useState<CuratedPlace[]>([]);
   const [monthlyPrice, setMonthlyPrice] = useState("");
   const [street, setStreet] = useState("");
   const [neighborhood, setNeighborhood] = useState("");
@@ -184,6 +187,7 @@ export default function NewPropertyPage() {
       smokingAllowed,
       childrenAllowed,
       amenityKeys: Object.keys(amenityKeys).filter((k) => amenityKeys[k]),
+      googlePlaces,
       lat: coords.lat,
       lng: coords.lng,
       photoUrls: photos.map((p) => p.url),
@@ -671,6 +675,16 @@ export default function NewPropertyPage() {
                 </div>
               </div>
             ))}
+
+            {/* Proximidades reais (Google) — curadas pelo proprietário */}
+            <div className="rounded-xl border border-sage-200 p-4">
+              <p className="text-sm font-bold text-forest">Proximidades</p>
+              <p className="mb-3 text-xs text-muted">
+                Busque lugares reais perto do imóvel (hospital, universidade, coworking…). A
+                distância aparece ao vivo na página, pelo Google.
+              </p>
+              <PlacesPicker value={googlePlaces} onChange={setGooglePlaces} />
+            </div>
           </div>
         )}
 
