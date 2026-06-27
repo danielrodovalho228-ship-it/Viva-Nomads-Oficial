@@ -112,6 +112,8 @@ export async function createProperty(input: {
   maxGuests?: number;
   /** Chaves de comodidade selecionadas (catálogo único). */
   amenityKeys?: string[];
+  /** Proximidades Google curadas (só place_id + categoria + rótulo). */
+  googlePlaces?: { placeId: string; categoria: string; rotulo?: string }[];
 }): Promise<ActionResult> {
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
@@ -197,10 +199,15 @@ export async function createProperty(input: {
         smoking_allowed: input.smokingAllowed ?? false,
         children_allowed: input.childrenAllowed ?? null,
         max_guests: input.maxGuests ?? null,
+        google_places: (input.googlePlaces ?? []).map((g) => ({
+          place_id: g.placeId,
+          categoria: g.categoria,
+          rotulo: g.rotulo,
+        })),
       })
       .eq("id", data.id);
   } catch {
-    /* migração 0018/0019 ausente — segue sem os campos extras */
+    /* migração 0018/0019/0020 ausente — segue sem os campos extras */
   }
 
   // Comodidades por categoria (catálogo único). Best-effort.

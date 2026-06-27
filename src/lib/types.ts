@@ -114,7 +114,9 @@ export interface Property {
   checkoutBefore?: string; // ex.: "11:00"
   amenityGroups?: AmenityGroup[]; // comodidades por categoria
   garantiasAceitas?: string[]; // modalidades aceitas (caucao, titulo, …) — filtro
-  proximities?: Proximity[]; // pontos úteis na região
+  proximities?: Proximity[]; // pontos úteis na região (texto manual)
+  /** Proximidades Google curadas — só place_id (nome/distância resolvidos em runtime). */
+  googlePlaces?: { placeId: string; categoria: string; rotulo?: string }[];
   reviews?: Review[]; // avaliações reais
   owner?: OwnerProfile; // perfil de confiança do proprietário
 }

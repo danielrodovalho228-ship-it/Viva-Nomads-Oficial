@@ -61,6 +61,13 @@ export const SAMPLE_PROPERTIES: Property[] = [
     checkinAfter: "14:00",
     checkoutBefore: "11:00",
     garantiasAceitas: ["caucao", "titulo"],
+    // Proximidades Google (curadas) — place_ids ilustrativos no demo; em produção
+    // o proprietário escolhe lugares reais e a distância aparece ao vivo.
+    googlePlaces: [
+      { placeId: "ChIJ-demo-hospital-stamonica", categoria: "hospital", rotulo: "Hospital Santa Mônica" },
+      { placeId: "ChIJ-demo-ufu-campus", categoria: "universidade", rotulo: "UFU — Campus Santa Mônica" },
+      { placeId: "ChIJ-demo-asa-coworking", categoria: "coworking", rotulo: "ASA Coworking" },
+    ],
     amenityGroups: [
       { category: "trabalho", items: ["Internet fibra 300 Mbps", "Mesa de trabalho", "Cadeira ergonômica", "Monitor extra"] },
       { category: "cozinha", items: ["Fogão", "Geladeira", "Microondas", "Utensílios completos", "Cafeteira"] },
