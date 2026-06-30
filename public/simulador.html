@@ -5,27 +5,237 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <!-- Página privada: não indexar nem seguir links. -->
     <meta name="robots" content="noindex, nofollow" />
-    <title>Simulador · Viva Nomads</title>
+    <title>Simulador de receita · Viva Nomads</title>
     <style>
-      body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #f1f5f4;
-             font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #1f2933; }
-      .card { max-width: 520px; width: 92%; background: #fff; border: 1px solid #e5e7eb;
-              border-radius: 16px; padding: 32px; text-align: center; }
-      h1 { font-size: 22px; margin: 8px 0 12px; }
-      .brand span:first-child { color: #1E63D0; } .brand span:last-child { color: #6CBE2A; }
+      :root {
+        --forest: #0f3d2e;
+        --sage: #5a8a6b;
+        --gold: #c8a24b;
+        --bg: #f3f6f4;
+        --ink: #1f2933;
+        --muted: #6b7280;
+        --line: #e3e9e5;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0; background: var(--bg); color: var(--ink);
+        font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        line-height: 1.5;
+      }
+      .wrap { max-width: 820px; margin: 0 auto; padding: 20px 16px 56px; }
+      header { display: flex; align-items: center; gap: 10px; padding: 6px 0 16px; }
       .brand { font-weight: 800; font-size: 20px; letter-spacing: -0.5px; }
-      p { color: #5b6573; line-height: 1.6; font-size: 15px; }
-      code { background: #f1f5f4; padding: 2px 6px; border-radius: 6px; }
+      .brand .v { color: #1e63d0; } .brand .n { color: #6cbe2a; }
+      h1 { font-size: 22px; margin: 4px 0 2px; color: var(--forest); }
+      .sub { color: var(--muted); font-size: 14px; margin: 0 0 18px; }
+      .card { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 18px; margin-bottom: 16px; }
+      .card h2 { font-size: 15px; margin: 0 0 14px; color: var(--forest); text-transform: uppercase; letter-spacing: .04em; }
+      .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      @media (max-width: 560px) { .grid { grid-template-columns: 1fr; } }
+      label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 5px; }
+      input[type="number"] {
+        width: 100%; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px;
+        font-size: 15px; color: var(--ink); outline: none; background: #fff;
+      }
+      input[type="number"]:focus { border-color: var(--sage); }
+      .field { margin-bottom: 2px; }
+      .slider { margin-bottom: 14px; }
+      .slider .top { display: flex; justify-content: space-between; align-items: baseline; }
+      .slider .val { font-weight: 700; color: var(--forest); }
+      input[type="range"] { width: 100%; accent-color: var(--sage); margin-top: 6px; }
+      .src { display: flex; justify-content: space-between; align-items: baseline; padding: 9px 0; border-bottom: 1px dashed var(--line); }
+      .src:last-child { border-bottom: 0; }
+      .src .label { font-size: 14px; }
+      .src .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
+      .src .amt { font-variant-numeric: tabular-nums; font-weight: 600; }
+      .total { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 12px; border-top: 2px solid var(--forest); }
+      .total .lbl { font-weight: 700; }
+      .total .amt { font-size: 22px; font-weight: 800; color: var(--forest); font-variant-numeric: tabular-nums; }
+      .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+      @media (max-width: 560px) { .kpis { grid-template-columns: 1fr; } }
+      .kpi { background: #f8faf9; border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+      .kpi .k { font-size: 12px; color: var(--muted); }
+      .kpi .v { font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; }
+      .scn { margin-bottom: 14px; }
+      .scn:last-child { margin-bottom: 0; }
+      .scn .top { display: flex; justify-content: space-between; align-items: baseline; font-size: 14px; }
+      .scn .name { font-weight: 700; }
+      .scn .rev { font-weight: 700; color: var(--forest); font-variant-numeric: tabular-nums; }
+      .scn .meta { color: var(--muted); font-size: 12px; }
+      .bar { height: 14px; border-radius: 8px; background: #eef2f0; margin-top: 6px; overflow: hidden; }
+      .bar > span { display: block; height: 100%; border-radius: 8px; background: linear-gradient(90deg, var(--sage), var(--forest)); transition: width .3s ease; }
+      .actions { display: flex; justify-content: flex-end; }
+      button.reset {
+        border: 1px solid var(--line); background: #fff; color: var(--forest); font-weight: 600;
+        border-radius: 999px; padding: 9px 18px; font-size: 14px; cursor: pointer;
+      }
+      button.reset:hover { border-color: var(--sage); background: #f4f7f5; }
+      footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 22px; }
     </style>
   </head>
   <body>
-    <div class="card">
-      <div class="brand"><span>Viva</span><span>Nomads</span></div>
-      <h1>Simulador</h1>
-      <p>
-        Esta é a página do simulador (privada, não listada). Substitua o conteúdo de
-        <code>public/simulador.html</code> pelo HTML do simulador para publicá-lo aqui.
-      </p>
+    <div class="wrap">
+      <header>
+        <div class="brand"><span class="v">Viva</span><span class="n">Nomads</span></div>
+      </header>
+      <h1>Simulador de receita</h1>
+      <p class="sub">Edite as premissas e os volumes — tudo recalcula na hora. Números ilustrativos.</p>
+
+      <!-- PREMISSAS -->
+      <div class="card">
+        <h2>Premissas (por contrato)</h2>
+        <div class="grid">
+          <div class="field"><label>Aluguel médio / mês (R$)</label><input type="number" id="aluguelMedio" value="3000" min="0" step="50"></div>
+          <div class="field"><label>Duração média da estadia (meses)</label><input type="number" id="duracaoMeses" value="4" min="1" step="1"></div>
+          <div class="field"><label>Comissão sobre o 1º mês (%)</label><input type="number" id="comissaoPct" value="8" min="0" step="0.5"></div>
+          <div class="field"><label>Mensalidade do plano pago (R$)</label><input type="number" id="mensalidadePlano" value="129" min="0" step="1"></div>
+          <div class="field"><label>Repasse de serviço / contrato (R$)</label><input type="number" id="repasseServico" value="20" min="0" step="1"></div>
+          <div class="field"><label>Comissão de garantia / contrato (R$)</label><input type="number" id="comissaoGarantia" value="50" min="0" step="1"></div>
+          <div class="field"><label>Receita de destaque/anúncio / contrato (R$)</label><input type="number" id="receitaDestaque" value="30" min="0" step="1"></div>
+          <div class="field"><label>Custo total do mês (R$)</label><input type="number" id="custoMes" value="8000" min="0" step="100"></div>
+        </div>
+      </div>
+
+      <!-- VOLUMES -->
+      <div class="card">
+        <h2>Volumes do mês</h2>
+        <div class="slider">
+          <div class="top"><label style="margin:0">Aluguéis fechados no mês</label><span class="val" id="alugueisMesVal">10</span></div>
+          <input type="range" id="alugueisMes" min="0" max="100" value="10">
+        </div>
+        <div class="slider">
+          <div class="top"><label style="margin:0">Base acumulada de planos pagos</label><span class="val" id="basePlanosVal">40</span></div>
+          <input type="range" id="basePlanos" min="0" max="800" value="40">
+        </div>
+        <div class="slider">
+          <div class="top"><label style="margin:0">Contratos com destaque/anúncio no mês</label><span class="val" id="contratosDestaqueVal">6</span></div>
+          <input type="range" id="contratosDestaque" min="0" max="100" value="6">
+        </div>
+      </div>
+
+      <!-- RECEITA POR FONTE -->
+      <div class="card">
+        <h2>Receita por fonte (mês)</h2>
+        <div class="src"><span class="label"><span class="dot" style="background:#1e63d0"></span>Comissão por aluguel</span><span class="amt" id="srcComissao">—</span></div>
+        <div class="src"><span class="label"><span class="dot" style="background:#6cbe2a"></span>Mensalidade dos planos</span><span class="amt" id="srcPlanos">—</span></div>
+        <div class="src"><span class="label"><span class="dot" style="background:#c8a24b"></span>Comissão de garantia</span><span class="amt" id="srcGarantia">—</span></div>
+        <div class="src"><span class="label"><span class="dot" style="background:#5a8a6b"></span>Serviços (Aqui Resolve)</span><span class="amt" id="srcServicos">—</span></div>
+        <div class="src"><span class="label"><span class="dot" style="background:#0f3d2e"></span>Destaque / anúncio</span><span class="amt" id="srcDestaque">—</span></div>
+        <div class="total"><span class="lbl">Receita total</span><span class="amt" id="srcTotal">—</span></div>
+      </div>
+
+      <!-- INDICADORES -->
+      <div class="card">
+        <h2>Indicadores do mês</h2>
+        <div class="kpis">
+          <div class="kpi"><div class="k">Receita</div><div class="v" id="kpiReceita" style="color:var(--forest)">—</div></div>
+          <div class="kpi"><div class="k">Lucro (receita − custo)</div><div class="v" id="kpiLucro">—</div></div>
+          <div class="kpi"><div class="k">Margem</div><div class="v" id="kpiMargem" style="color:var(--gold)">—</div></div>
+        </div>
+      </div>
+
+      <!-- CENÁRIOS -->
+      <div class="card">
+        <h2>Cenários (mesmas premissas, volumes diferentes)</h2>
+        <div id="cenarios"></div>
+      </div>
+
+      <div class="actions">
+        <button class="reset" id="reset">↺ Voltar aos valores de exemplo</button>
+      </div>
+
+      <footer>Números ilustrativos. Não constituem promessa de resultado.</footer>
     </div>
+
+    <script>
+      var BRL = function (n) {
+        return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+      };
+      var DEFAULTS = {
+        aluguelMedio: 3000, duracaoMeses: 4, comissaoPct: 8, mensalidadePlano: 129,
+        repasseServico: 20, comissaoGarantia: 50, receitaDestaque: 30, custoMes: 8000,
+        alugueisMes: 10, basePlanos: 40, contratosDestaque: 6,
+      };
+      var NUM_IDS = ["aluguelMedio","duracaoMeses","comissaoPct","mensalidadePlano","repasseServico","comissaoGarantia","receitaDestaque","custoMes"];
+      var RANGE_IDS = ["alugueisMes","basePlanos","contratosDestaque"];
+      var $ = function (id) { return document.getElementById(id); };
+      var val = function (id) { return parseFloat($(id).value) || 0; };
+
+      // Cenários: [nome, aluguéis, base de planos] — destaque ~ 60% dos aluguéis.
+      var SCENARIOS = [
+        { name: "Início", alugueis: 5, base: 20 },
+        { name: "Tração", alugueis: 20, base: 120 },
+        { name: "Escala", alugueis: 60, base: 500 },
+      ];
+
+      function receita(p) {
+        var comissao = p.alugueisMes * p.aluguelMedio * (p.comissaoPct / 100);
+        var planos = p.basePlanos * p.mensalidadePlano;
+        var garantia = p.alugueisMes * p.comissaoGarantia;
+        var servicos = p.alugueisMes * p.repasseServico;
+        var destaque = p.contratosDestaque * p.receitaDestaque;
+        return { comissao: comissao, planos: planos, garantia: garantia, servicos: servicos, destaque: destaque,
+                 total: comissao + planos + garantia + servicos + destaque };
+      }
+
+      function premissas() {
+        return {
+          aluguelMedio: val("aluguelMedio"), comissaoPct: val("comissaoPct"),
+          mensalidadePlano: val("mensalidadePlano"), repasseServico: val("repasseServico"),
+          comissaoGarantia: val("comissaoGarantia"), receitaDestaque: val("receitaDestaque"),
+        };
+      }
+
+      function render() {
+        RANGE_IDS.forEach(function (id) { $(id + "Val").textContent = $(id).value; });
+
+        var base = premissas();
+        var cur = Object.assign({}, base, {
+          alugueisMes: val("alugueisMes"), basePlanos: val("basePlanos"), contratosDestaque: val("contratosDestaque"),
+        });
+        var r = receita(cur);
+        $("srcComissao").textContent = BRL(r.comissao);
+        $("srcPlanos").textContent = BRL(r.planos);
+        $("srcGarantia").textContent = BRL(r.garantia);
+        $("srcServicos").textContent = BRL(r.servicos);
+        $("srcDestaque").textContent = BRL(r.destaque);
+        $("srcTotal").textContent = BRL(r.total);
+
+        var custo = val("custoMes");
+        var lucro = r.total - custo;
+        var margem = r.total > 0 ? (lucro / r.total) * 100 : 0;
+        $("kpiReceita").textContent = BRL(r.total);
+        $("kpiLucro").textContent = BRL(lucro);
+        $("kpiLucro").style.color = lucro >= 0 ? "var(--forest)" : "#c0392b";
+        $("kpiMargem").textContent = (r.total > 0 ? margem.toFixed(0) : "0") + "%";
+
+        // Cenários + barras (a maior receita = barra cheia)
+        var totals = SCENARIOS.map(function (s) {
+          var p = Object.assign({}, base, {
+            alugueisMes: s.alugueis, basePlanos: s.base, contratosDestaque: Math.round(s.alugueis * 0.6),
+          });
+          return receita(p).total;
+        });
+        var max = Math.max.apply(null, totals.concat([1]));
+        var html = SCENARIOS.map(function (s, i) {
+          var pct = Math.max(2, (totals[i] / max) * 100);
+          return '<div class="scn">' +
+            '<div class="top"><span class="name">' + s.name + '</span><span class="rev">' + BRL(totals[i]) + '</span></div>' +
+            '<div class="meta">' + s.alugueis + ' aluguéis · ' + s.base + ' planos</div>' +
+            '<div class="bar"><span style="width:' + pct + '%"></span></div>' +
+          '</div>';
+        }).join("");
+        $("cenarios").innerHTML = html;
+      }
+
+      NUM_IDS.concat(RANGE_IDS).forEach(function (id) {
+        $(id).addEventListener("input", render);
+      });
+      $("reset").addEventListener("click", function () {
+        Object.keys(DEFAULTS).forEach(function (id) { $(id).value = DEFAULTS[id]; });
+        render();
+      });
+      render();
+    </script>
   </body>
 </html>

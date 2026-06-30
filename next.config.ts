@@ -18,14 +18,20 @@ const nextConfig: NextConfig = {
   },
   async rewrites() {
     return [
-      // Simulador (página estática privada): a URL limpa /simulador serve o
-      // arquivo public/simulador.html. Não listado em menu/sitemap — só por link.
+      // Simulador de receita (página estática privada): tanto /simulacao quanto
+      // /simulador servem public/simulador.html. Não listado em menu/sitemap —
+      // só por link direto. (/simulacao é a URL principal divulgada.)
+      { source: "/simulacao", destination: "/simulador.html" },
       { source: "/simulador", destination: "/simulador.html" },
     ];
   },
   async headers() {
     return [
       // noindex/nofollow no header HTTP (independe da meta tag dentro do HTML).
+      {
+        source: "/simulacao",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
       {
         source: "/simulador",
         headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
