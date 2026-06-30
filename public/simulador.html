@@ -51,11 +51,19 @@
       .total { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 12px; border-top: 2px solid var(--forest); }
       .total .lbl { font-weight: 700; }
       .total .amt { font-size: 22px; font-weight: 800; color: var(--forest); font-variant-numeric: tabular-nums; }
-      .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-      @media (max-width: 560px) { .kpis { grid-template-columns: 1fr; } }
+      .kpis { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+      @media (min-width: 620px) { .kpis { grid-template-columns: repeat(4, 1fr); } }
       .kpi { background: #f8faf9; border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
       .kpi .k { font-size: 12px; color: var(--muted); }
       .kpi .v { font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; }
+      /* Gráfico de composição (rosca + legenda) */
+      .chart { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+      .chart svg { flex: none; }
+      .legend { list-style: none; margin: 0; padding: 0; flex: 1; min-width: 220px; }
+      .legend li { display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 5px 0; }
+      .legend .sw { width: 11px; height: 11px; border-radius: 3px; flex: none; }
+      .legend .lg-pct { color: var(--muted); }
+      .legend .lg-amt { margin-left: auto; font-variant-numeric: tabular-nums; font-weight: 600; }
       .scn { margin-bottom: 14px; }
       .scn:last-child { margin-bottom: 0; }
       .scn .top { display: flex; justify-content: space-between; align-items: baseline; font-size: 14px; }
@@ -130,7 +138,22 @@
         <div class="kpis">
           <div class="kpi"><div class="k">Receita</div><div class="v" id="kpiReceita" style="color:var(--forest)">—</div></div>
           <div class="kpi"><div class="k">Lucro (receita − custo)</div><div class="v" id="kpiLucro">—</div></div>
-          <div class="kpi"><div class="k">Margem</div><div class="v" id="kpiMargem" style="color:var(--gold)">—</div></div>
+          <div class="kpi"><div class="k">Margem (lucro ÷ receita)</div><div class="v" id="kpiMargem" style="color:var(--gold)">—</div></div>
+          <div class="kpi"><div class="k">ROI (lucro ÷ custo)</div><div class="v" id="kpiRoi" style="color:var(--sage)">—</div></div>
+        </div>
+      </div>
+
+      <!-- GRÁFICO DE COMPOSIÇÃO -->
+      <div class="card">
+        <h2>Composição da receita</h2>
+        <div class="chart">
+          <svg viewBox="0 0 120 120" width="148" height="148" role="img" aria-label="Gráfico de composição da receita por fonte">
+            <circle cx="60" cy="60" r="48" fill="none" stroke="#eef2f0" stroke-width="16"></circle>
+            <g id="donut" transform="rotate(-90 60 60)"></g>
+            <text x="60" y="55" text-anchor="middle" font-size="8" fill="#6b7280">Receita</text>
+            <text x="60" y="70" text-anchor="middle" font-size="11" font-weight="800" fill="#0f3d2e" id="donutTotal">—</text>
+          </svg>
+          <ul class="legend" id="legend"></ul>
         </div>
       </div>
 
@@ -167,6 +190,36 @@
         { name: "Tração", alugueis: 20, base: 120 },
         { name: "Escala", alugueis: 60, base: 500 },
       ];
+
+      // Fontes (mesma ordem/cor da lista "Receita por fonte") para o gráfico.
+      var SOURCES = [
+        { key: "comissao", label: "Comissão por aluguel", color: "#1e63d0" },
+        { key: "planos", label: "Mensalidade dos planos", color: "#6cbe2a" },
+        { key: "garantia", label: "Comissão de garantia", color: "#c8a24b" },
+        { key: "servicos", label: "Serviços (Aqui Resolve)", color: "#5a8a6b" },
+        { key: "destaque", label: "Destaque / anúncio", color: "#0f3d2e" },
+      ];
+      var CIRC = 2 * Math.PI * 48;
+
+      function renderChart(r) {
+        var total = r.total || 1;
+        var off = 0, segs = "", legend = "";
+        SOURCES.forEach(function (s) {
+          var v = r[s.key];
+          var len = (v / total) * CIRC;
+          segs += '<circle cx="60" cy="60" r="48" fill="none" stroke="' + s.color +
+            '" stroke-width="16" stroke-dasharray="' + len + ' ' + (CIRC - len) +
+            '" stroke-dashoffset="' + (-off) + '"></circle>';
+          off += len;
+          var pct = r.total > 0 ? Math.round((v / total) * 100) : 0;
+          legend += '<li><span class="sw" style="background:' + s.color + '"></span>' +
+            '<span>' + s.label + '</span> <span class="lg-pct">' + pct + '%</span>' +
+            '<span class="lg-amt">' + BRL(v) + '</span></li>';
+        });
+        $("donut").innerHTML = segs;
+        $("legend").innerHTML = legend;
+        $("donutTotal").textContent = BRL(r.total);
+      }
 
       function receita(p) {
         var comissao = p.alugueisMes * p.aluguelMedio * (p.comissaoPct / 100);
@@ -208,6 +261,10 @@
         $("kpiLucro").textContent = BRL(lucro);
         $("kpiLucro").style.color = lucro >= 0 ? "var(--forest)" : "#c0392b";
         $("kpiMargem").textContent = (r.total > 0 ? margem.toFixed(0) : "0") + "%";
+        var roi = custo > 0 ? (lucro / custo) * 100 : 0;
+        $("kpiRoi").textContent = custo > 0 ? roi.toFixed(0) + "%" : "—";
+        $("kpiRoi").style.color = roi >= 0 ? "var(--sage)" : "#c0392b";
+        renderChart(r);
 
         // Cenários + barras (a maior receita = barra cheia)
         var totals = SCENARIOS.map(function (s) {
