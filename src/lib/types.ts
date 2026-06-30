@@ -113,7 +113,8 @@ export interface Property {
   checkinAfter?: string; // ex.: "14:00"
   checkoutBefore?: string; // ex.: "11:00"
   amenityGroups?: AmenityGroup[]; // comodidades por categoria
-  garantiasAceitas?: string[]; // modalidades aceitas (caucao, titulo, …) — filtro
+  faixasAceitas?: string[]; // faixas de prazo aceitas (temporada, media_estadia, longa)
+  garantiasAceitas?: string[]; // garantias aceitas (caucao_avista, caucao_parcelada, titulo, seguro_fianca)
   proximities?: Proximity[]; // pontos úteis na região (texto manual)
   /** Proximidades Google curadas — só place_id (nome/distância resolvidos em runtime). */
   googlePlaces?: { placeId: string; categoria: string; rotulo?: string }[];

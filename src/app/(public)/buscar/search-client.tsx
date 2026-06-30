@@ -13,6 +13,7 @@ import { tierFromPhotoCount, searchPriority } from "@/lib/listing";
 import { LocationSearch } from "@/components/location-search";
 import type { GeoSuggestion } from "@/lib/integrations/geocoding";
 import { PROPERTY_TYPES } from "@/lib/amenities";
+import { FAIXAS, GARANTIAS_FAIXA } from "@/lib/faixas";
 
 /** Raio (km) padrão ao redor de um endereço geocodificado. */
 const DEFAULT_RADIUS_KM = 10;
@@ -30,8 +31,9 @@ function typeValue(pt: string): string {
 /** Uma propriedade aceita a garantia escolhida no filtro? */
 function aceitaGarantia(p: Property, g: string): boolean {
   if (!g) return true;
-  if (g === "fianca") return !!p.acceptsInsurance;
-  return (p.garantiasAceitas ?? []).includes(g); // caucao | titulo
+  const arr = p.garantiasAceitas ?? [];
+  if (g === "seguro_fianca") return arr.includes("seguro_fianca") || !!p.acceptsInsurance;
+  return arr.includes(g); // caucao_avista | caucao_parcelada | titulo
 }
 
 export function SearchClient({ properties }: { properties: Property[] }) {
@@ -44,7 +46,9 @@ export function SearchClient({ properties }: { properties: Property[] }) {
   const [minBedrooms, setMinBedrooms] = useState(0);
   const [maxPeriod, setMaxPeriod] = useState(0); // período mínimo aceito <= X
   const [typeFilter, setTypeFilter] = useState(""); // tipo de imóvel ("" = todos)
-  const [garantia, setGarantia] = useState(""); // "" | caucao | fianca | titulo
+  const [faixa, setFaixa] = useState(""); // faixa de prazo ("" = todas)
+  const [dataEntrada, setDataEntrada] = useState(""); // disponível até esta data de entrada
+  const [garantia, setGarantia] = useState(""); // "" | caucao_avista | caucao_parcelada | titulo | seguro_fianca
   const [petsOnly, setPetsOnly] = useState(false);
   const [furnishedOnly, setFurnishedOnly] = useState(false);
   const [readyToLiveOnly, setReadyToLiveOnly] = useState(false);
@@ -85,8 +89,12 @@ export function SearchClient({ properties }: { properties: Property[] }) {
     if (ordem === "recent" || ordem === "price-asc" || ordem === "price-desc") setSort(ordem);
     const tipo = sp.get("tipo");
     if (tipo && PROPERTY_TYPES.some((t) => t.value === tipo)) setTypeFilter(tipo);
+    const fx = sp.get("faixa");
+    if (fx && FAIXAS.some((f) => f.key === fx)) setFaixa(fx);
+    const ent = sp.get("entrada");
+    if (ent && /^\d{4}-\d{2}-\d{2}$/.test(ent)) setDataEntrada(ent);
     const gar = sp.get("garantia");
-    if (gar === "caucao" || gar === "fianca" || gar === "titulo") setGarantia(gar);
+    if (gar && GARANTIAS_FAIXA.some((g) => g.key === gar)) setGarantia(gar);
     const on = (k: string) => sp.get(k) === "1";
     if (on("pet")) setPetsOnly(true);
     if (on("mobiliado")) setFurnishedOnly(true);
@@ -123,6 +131,8 @@ export function SearchClient({ properties }: { properties: Property[] }) {
     put("quartos", minBedrooms > 0, String(minBedrooms));
     put("periodo", maxPeriod > 0, String(maxPeriod));
     put("tipo", !!typeFilter, typeFilter);
+    put("faixa", !!faixa, faixa);
+    put("entrada", !!dataEntrada, dataEntrada);
     put("garantia", !!garantia, garantia);
     put("ordem", sort !== "relevance", sort);
     put("pet", petsOnly, "1");
@@ -141,7 +151,7 @@ export function SearchClient({ properties }: { properties: Property[] }) {
     );
   }, [
     locationQuery, geoCenter, radiusKm, maxPrice, minBedrooms, maxPeriod, sort,
-    typeFilter, garantia, petsOnly, furnishedOnly,
+    typeFilter, faixa, dataEntrada, garantia, petsOnly, furnishedOnly,
     readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly,
   ]);
 
@@ -154,6 +164,8 @@ export function SearchClient({ properties }: { properties: Property[] }) {
     setMinBedrooms(0);
     setMaxPeriod(0);
     setTypeFilter("");
+    setFaixa("");
+    setDataEntrada("");
     setGarantia("");
     setPetsOnly(false);
     setFurnishedOnly(false);
@@ -187,6 +199,8 @@ export function SearchClient({ properties }: { properties: Property[] }) {
       if (minBedrooms && p.bedrooms < minBedrooms) return false;
       if (maxPeriod && p.minPeriodDays > maxPeriod) return false;
       if (typeFilter && typeValue(p.propertyType) !== typeFilter) return false;
+      if (faixa && !(p.faixasAceitas ?? []).includes(faixa)) return false;
+      if (dataEntrada && p.availableFrom && p.availableFrom > dataEntrada) return false;
       if (garantia && !aceitaGarantia(p, garantia)) return false;
       if (petsOnly && !p.petsAllowed) return false;
       if (furnishedOnly && !p.furnished) return false;
@@ -215,13 +229,15 @@ export function SearchClient({ properties }: { properties: Property[] }) {
           searchPriority(tierFromPhotoCount(a.photos.length))
       );
     return list;
-  }, [properties, locationQuery, geoCenter, radiusKm, maxPrice, minBedrooms, maxPeriod, typeFilter, garantia, petsOnly, furnishedOnly, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly, sort]);
+  }, [properties, locationQuery, geoCenter, radiusKm, maxPrice, minBedrooms, maxPeriod, typeFilter, faixa, dataEntrada, garantia, petsOnly, furnishedOnly, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly, sort]);
 
   const activeCount =
     (maxPrice ? 1 : 0) +
     (minBedrooms ? 1 : 0) +
     (maxPeriod ? 1 : 0) +
     (typeFilter ? 1 : 0) +
+    (faixa ? 1 : 0) +
+    (dataEntrada ? 1 : 0) +
     (garantia ? 1 : 0) +
     [petsOnly, furnishedOnly, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly].filter(
       Boolean
@@ -319,16 +335,27 @@ export function SearchClient({ properties }: { properties: Property[] }) {
             options={[["", "Tipo de imóvel"], ...PROPERTY_TYPES.map((t) => [t.value, t.label] as [string, string])]}
           />
           <Select
+            label="Faixa de prazo"
+            value={faixa}
+            onChange={setFaixa}
+            options={[["", "Faixa de prazo"], ...FAIXAS.map((f) => [f.key, `${f.label} · ${f.resumo}`] as [string, string])]}
+          />
+          <Select
             label="Garantia aceita"
             value={garantia}
             onChange={setGarantia}
-            options={[
-              ["", "Garantia aceita"],
-              ["caucao", "Aceita caução"],
-              ["fianca", "Aceita seguro-fiança"],
-              ["titulo", "Aceita título"],
-            ]}
+            options={[["", "Garantia aceita"], ...GARANTIAS_FAIXA.map((g) => [g.key, g.label] as [string, string])]}
           />
+          <label className="inline-flex items-center gap-2 rounded-full border border-sage-200 bg-white px-4 py-2 text-sm text-ink">
+            <span className="text-muted">Entrada até</span>
+            <input
+              type="date"
+              value={dataEntrada}
+              onChange={(e) => setDataEntrada(e.target.value)}
+              aria-label="Data de entrada desejada"
+              className="bg-transparent text-ink outline-none focus:text-forest"
+            />
+          </label>
           <Select
             label="Preço máximo"
             value={String(maxPrice)}
