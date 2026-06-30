@@ -48,6 +48,7 @@ interface PropertyRow {
   sublease_authorized: boolean | null;
   video_url: string | null;
   created_at: string | null;
+  faixas_aceitas: string[] | null;
   garantias_aceitas: string[] | null;
   google_places: { place_id: string; categoria: string; rotulo?: string }[] | null;
   // Enriquecimento (migração 0018 — podem não existir se a migração não rodou).
@@ -136,6 +137,7 @@ function rowToProperty(row: PropertyRow): Property {
     maxPeriodDays: row.max_period_days ?? undefined,
     checkinAfter: row.checkin_after ?? undefined,
     checkoutBefore: row.checkout_before ?? undefined,
+    faixasAceitas: row.faixas_aceitas ?? undefined,
     garantiasAceitas: row.garantias_aceitas ?? undefined,
     googlePlaces: row.google_places
       ? row.google_places.map((g) => ({ placeId: g.place_id, categoria: g.categoria, rotulo: g.rotulo }))

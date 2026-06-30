@@ -27,7 +27,7 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import { PropertyMiniCard } from "@/components/property-mini-card";
 import { PhotoUploader, type PhotoItem } from "@/components/photo-uploader";
 import { MIN_PHOTOS, SUGGESTED_ROOMS, tierFromPhotoCount, TIER_META } from "@/lib/listing";
-import { GARANTIAS } from "@/lib/guarantees";
+import { FAIXAS, GARANTIAS_FAIXA } from "@/lib/faixas";
 import { PROPERTY_TYPES, AMENITY_GROUPS, propertyTypeLabel } from "@/lib/amenities";
 import { PlacesPicker, type CuratedPlace } from "@/components/property/places-picker";
 import { ManualProximities } from "@/components/property/manual-proximities";
@@ -85,13 +85,19 @@ export default function NewPropertyPage() {
   const [utilitiesMode, setUtilitiesMode] = useState<"fixed" | "real">("fixed");
   const [utilitiesEstimate, setUtilitiesEstimate] = useState(200);
   const [issuesInvoice, setIssuesInvoice] = useState(false);
-  const [acceptsInsurance, setAcceptsInsurance] = useState(false);
-  // Modalidades de garantia que o proprietário ACEITA (só preferência de
-  // aceite — não muda o caminho do dinheiro). Caução e título por padrão.
-  const [aceitaGarantia, setAceitaGarantia] = useState<Record<string, boolean>>({
-    caucao: true,
+  // Faixas de prazo aceitas (temporada / média estadia / longa).
+  const [faixas, setFaixas] = useState<Record<string, boolean>>({
+    temporada: true,
+    media_estadia: true,
+    longa: false,
+  });
+  // Garantias que o proprietário ACEITA (só preferência de aceite — não muda o
+  // caminho do dinheiro). Caução à vista e título por padrão.
+  const [garantias, setGarantias] = useState<Record<string, boolean>>({
+    caucao_avista: true,
+    caucao_parcelada: false,
     titulo: true,
-    garantidor_digital: false,
+    seguro_fianca: false,
   });
   const [prepFee, setPrepFee] = useState(450);
   const [ownershipType, setOwnershipType] = useState<"own" | "subleased">("own");
@@ -177,8 +183,10 @@ export default function NewPropertyPage() {
       utilitiesMode,
       utilitiesEstimate,
       issuesInvoice,
-      acceptsInsurance,
-      garantiasAceitas: Object.keys(aceitaGarantia).filter((k) => aceitaGarantia[k]),
+      // selo "Aceita Seguro-Fiança" deriva da garantia seguro_fianca.
+      acceptsInsurance: !!garantias.seguro_fianca,
+      faixasAceitas: Object.keys(faixas).filter((k) => faixas[k]),
+      garantiasAceitas: Object.keys(garantias).filter((k) => garantias[k]),
       prepFee,
       // Enriquecimento (FASE 1/2)
       parkingSpots: Number(parkingSpots) || 0,
@@ -559,6 +567,23 @@ export default function NewPropertyPage() {
               <span className="mt-2 block text-xs text-muted">Locação por temporada: 30 a 180 dias é o usual.</span>
             </div>
 
+            <div className="rounded-xl border border-sage-200 p-4">
+              <p className="text-sm font-medium text-ink">Faixas de prazo aceitas</p>
+              <p className="mb-3 text-xs text-muted">Cada faixa tem regras próprias. Marque as que você aceita.</p>
+              <div className="space-y-2">
+                {FAIXAS.map((f) => (
+                  <div key={f.key}>
+                    <Toggle
+                      checked={!!faixas[f.key]}
+                      onChange={() => setFaixas((s) => ({ ...s, [f.key]: !s[f.key] }))}
+                      label={`${f.label} · ${f.resumo}`}
+                    />
+                    {faixas[f.key] && <p className="ml-1 mt-1 text-xs text-muted">{f.aviso}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <div className="space-y-2">
               <p className="text-sm font-medium text-ink">Regras</p>
               <Toggle checked={furnished} onChange={() => setFurnished((v) => !v)} label="Mobiliado e equipado" hint="Pré-requisito da locação por temporada Viva Nomads." />
@@ -759,22 +784,20 @@ export default function NewPropertyPage() {
 
             <div className="space-y-2">
               <Toggle checked={issuesInvoice} onChange={() => setIssuesInvoice((v) => !v)} label="Este imóvel emite Nota Fiscal do aluguel" hint="Decisivo para o público corporativo (reembolso pela empresa)." />
-              <Toggle checked={acceptsInsurance} onChange={() => setAcceptsInsurance((v) => !v)} label="Aceito seguro-fiança como garantia" hint="Exibe o selo 'Aceita Seguro-Fiança' no anúncio." />
             </div>
 
-            <Labeled label="Modalidades de garantia que você aceita">
+            <Labeled label="Garantias que você aceita">
               <p className="mb-2 text-xs text-muted">
                 Só preferência de aceite — <strong>não muda o caminho do dinheiro</strong> (a
                 caução sempre vai para conta vinculada, nunca para a plataforma).
               </p>
               <div className="space-y-2">
-                {GARANTIAS.map((g) => (
+                {GARANTIAS_FAIXA.map((g) => (
                   <Toggle
-                    key={g.id}
-                    checked={!!aceitaGarantia[g.id]}
-                    onChange={() => setAceitaGarantia((s) => ({ ...s, [g.id]: !s[g.id] }))}
-                    label={`Aceito ${g.nome}`}
-                    hint={g.status === "ativo" ? undefined : "Disponível em breve — via parceiro."}
+                    key={g.key}
+                    checked={!!garantias[g.key]}
+                    onChange={() => setGarantias((s) => ({ ...s, [g.key]: !s[g.key] }))}
+                    label={`Aceito ${g.label}`}
                   />
                 ))}
               </div>

@@ -85,7 +85,9 @@ export async function createProperty(input: {
   utilitiesEstimate?: number;
   issuesInvoice?: boolean;
   acceptsInsurance?: boolean;
-  /** Modalidades de garantia que o proprietário aceita (só preferência de aceite). */
+  /** Faixas de prazo aceitas (temporada, media_estadia, longa). */
+  faixasAceitas?: string[];
+  /** Garantias que o proprietário aceita (caucao_avista, caucao_parcelada, titulo, seguro_fianca). */
   garantiasAceitas?: string[];
   prepFee?: number;
   lat?: number;
@@ -201,6 +203,7 @@ export async function createProperty(input: {
         smoking_allowed: input.smokingAllowed ?? false,
         children_allowed: input.childrenAllowed ?? null,
         max_guests: input.maxGuests ?? null,
+        faixas_aceitas: input.faixasAceitas ?? [],
         google_places: (input.googlePlaces ?? []).map((g) => ({
           place_id: g.placeId,
           categoria: g.categoria,

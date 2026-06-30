@@ -60,7 +60,8 @@ export const SAMPLE_PROPERTIES: Property[] = [
     maxGuests: 3,
     checkinAfter: "14:00",
     checkoutBefore: "11:00",
-    garantiasAceitas: ["caucao", "titulo"],
+    faixasAceitas: ["temporada", "media_estadia"],
+    garantiasAceitas: ["caucao_avista", "caucao_parcelada", "titulo", "seguro_fianca"],
     // Proximidades Google (curadas) — place_ids ilustrativos no demo; em produção
     // o proprietário escolhe lugares reais e a distância aparece ao vivo.
     googlePlaces: [
@@ -140,7 +141,8 @@ export const SAMPLE_PROPERTIES: Property[] = [
     maxGuests: 2,
     checkinAfter: "15:00",
     checkoutBefore: "11:00",
-    garantiasAceitas: ["caucao", "titulo"],
+    faixasAceitas: ["temporada", "media_estadia"],
+    garantiasAceitas: ["caucao_avista", "titulo", "seguro_fianca"],
     amenityGroups: [
       { category: "trabalho", items: ["Internet fibra 200 Mbps", "Mesa de trabalho"] },
       { category: "cozinha", items: ["Cooktop", "Geladeira", "Microondas", "Utensílios básicos"] },
@@ -206,7 +208,8 @@ export const SAMPLE_PROPERTIES: Property[] = [
     furnished: true,
     availableFrom: "2026-09-01",
     maxGuests: 5,
-    garantiasAceitas: ["caucao"],
+    faixasAceitas: ["media_estadia", "longa"],
+    garantiasAceitas: ["caucao_avista", "caucao_parcelada"],
   },
 ];
 

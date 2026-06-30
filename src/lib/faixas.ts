@@ -1,0 +1,84 @@
+/*
+  Catálogo único das faixas de prazo e das garantias aceitas. Fonte usada pelo
+  cadastro, pela busca e pelo fechamento — mesmos valores e rótulos em todo lugar.
+  Os avisos por faixa são CONFIGURÁVEIS aqui (texto, não regra fixa em UI); o
+  texto jurídico dos contratos vem depois, via tabela modelos_contrato.
+*/
+
+export type FaixaPrazo = "temporada" | "media_estadia" | "longa";
+
+export interface FaixaDef {
+  key: FaixaPrazo;
+  label: string;
+  min: number; // dias
+  max: number | null; // null = sem teto (180+)
+  resumo: string; // faixa de dias, curto
+  aviso: string; // explicação do regime (configurável)
+}
+
+export const FAIXAS: FaixaDef[] = [
+  {
+    key: "temporada",
+    label: "Temporada",
+    min: 30,
+    max: 90,
+    resumo: "30 a 90 dias",
+    aviso:
+      "Locação por temporada (art. 48 da Lei 8.245/91). Ao fim do prazo, a plataforma conduz a retomada do imóvel ou um novo contrato — não há prorrogação automática.",
+  },
+  {
+    key: "media_estadia",
+    label: "Média estadia",
+    min: 90,
+    max: 180,
+    resumo: "90 a 180 dias",
+    aviso:
+      "Estadia de média duração (90 a 180 dias): regime intermediário, com contrato próprio para o período.",
+  },
+  {
+    key: "longa",
+    label: "Longa duração",
+    min: 180,
+    max: null,
+    resumo: "180+ dias",
+    aviso:
+      "Locação de longa duração (180 dias ou mais): regras de locação residencial podem se aplicar — contrato específico.",
+  },
+];
+
+const FAIXA_BY_KEY: Record<string, FaixaDef> = Object.fromEntries(FAIXAS.map((f) => [f.key, f]));
+
+export function faixaLabel(key: string): string {
+  return FAIXA_BY_KEY[key]?.label ?? key;
+}
+
+/** Faixa “natural” para um prazo mínimo em dias (para sugestão no cadastro). */
+export function faixaForDays(dias: number): FaixaPrazo {
+  if (dias < 90) return "temporada";
+  if (dias < 180) return "media_estadia";
+  return "longa";
+}
+
+// ── Garantias aceitas (4 valores canônicos) ──
+
+export type GarantiaKey = "caucao_avista" | "caucao_parcelada" | "titulo" | "seguro_fianca";
+
+export interface GarantiaDef {
+  key: GarantiaKey;
+  label: string;
+}
+
+export const GARANTIAS_FAIXA: GarantiaDef[] = [
+  { key: "caucao_avista", label: "Caução à vista" },
+  { key: "caucao_parcelada", label: "Caução parcelada" },
+  { key: "titulo", label: "Título de capitalização" },
+  { key: "seguro_fianca", label: "Seguro-fiança" },
+];
+
+const GARANTIA_BY_KEY: Record<string, GarantiaDef> = Object.fromEntries(
+  GARANTIAS_FAIXA.map((g) => [g.key, g])
+);
+
+export function garantiaLabel(key: string): string {
+  return GARANTIA_BY_KEY[key]?.label ?? key;
+}
