@@ -100,8 +100,10 @@
           <div class="field"><label>Repasse de serviço / contrato (R$)</label><input type="number" id="repasseServico" value="20" min="0" step="1"></div>
           <div class="field"><label>Comissão de garantia / contrato (R$)</label><input type="number" id="comissaoGarantia" value="50" min="0" step="1"></div>
           <div class="field"><label>Receita de destaque/anúncio / contrato (R$)</label><input type="number" id="receitaDestaque" value="30" min="0" step="1"></div>
-          <div class="field"><label>Custo total do mês (R$)</label><input type="number" id="custoMes" value="8000" min="0" step="100"></div>
+          <div class="field"><label>Custo FIXO mensal (R$)</label><input type="number" id="custoFixo" value="4000" min="0" step="100"></div>
+          <div class="field"><label>Custo VARIÁVEL / contrato (R$)</label><input type="number" id="custoVariavel" value="120" min="0" step="10"></div>
         </div>
+        <p style="margin:10px 0 0;font-size:12px;color:var(--muted)">Custo do mês = fixo + variável × aluguéis fechados. Assim o ROI fica realista quando o volume cresce.</p>
       </div>
 
       <!-- VOLUMES -->
@@ -157,6 +159,40 @@
         </div>
       </div>
 
+      <!-- PROJEÇÃO NO TEMPO -->
+      <div class="card">
+        <h2>Projeção no tempo</h2>
+        <div class="grid">
+          <div class="field"><label>Horizonte (meses)</label><input type="number" id="projMeses" value="12" min="1" max="60" step="1"></div>
+          <div class="field"><label>Novos aluguéis / mês (base)</label><input type="number" id="projFechamentos" value="10" min="0" step="1"></div>
+          <div class="field"><label>Crescimento mensal dos fechamentos (%)</label><input type="number" id="projCresc" value="5" min="0" step="1"></div>
+          <div class="field"><label>Conversão em plano pago (%)</label><input type="number" id="projConversao" value="70" min="0" max="100" step="1"></div>
+          <div class="field"><label>Churn mensal da base (%)</label><input type="number" id="projChurn" value="3" min="0" max="100" step="1"></div>
+          <div class="field"><label>Base inicial de planos</label><input type="number" id="projBaseInicial" value="0" min="0" step="1"></div>
+        </div>
+
+        <div class="kpis" style="margin-top:14px">
+          <div class="kpi"><div class="k">Receita acumulada</div><div class="v" id="projRecAcum" style="color:var(--forest)">—</div></div>
+          <div class="kpi"><div class="k">Lucro acumulado</div><div class="v" id="projLucroAcum">—</div></div>
+          <div class="kpi"><div class="k">Base de planos no fim</div><div class="v" id="projBaseFim" style="color:var(--sage)">—</div></div>
+          <div class="kpi"><div class="k">Receita no último mês</div><div class="v" id="projRecUlt" style="color:var(--gold)">—</div></div>
+        </div>
+
+        <h3 style="font-size:13px;color:var(--muted);margin:20px 0 6px">Receita e lucro por mês</h3>
+        <svg id="chartBars" viewBox="0 0 600 190" style="width:100%;height:auto" role="img" aria-label="Barras de receita e lucro por mês"></svg>
+        <div style="display:flex;gap:16px;margin-top:2px">
+          <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)"><span class="sw" style="background:var(--sage)"></span>Receita</span>
+          <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)"><span class="sw" style="background:var(--gold)"></span>Lucro</span>
+        </div>
+
+        <h3 style="font-size:13px;color:var(--muted);margin:20px 0 6px">Receita e lucro acumulados</h3>
+        <svg id="chartLine" viewBox="0 0 600 190" style="width:100%;height:auto" role="img" aria-label="Linha de receita e lucro acumulados"></svg>
+        <div style="display:flex;gap:16px;margin-top:2px">
+          <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)"><span class="sw" style="background:var(--forest)"></span>Receita acumulada</span>
+          <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)"><span class="sw" style="background:var(--gold)"></span>Lucro acumulado</span>
+        </div>
+      </div>
+
       <!-- CENÁRIOS -->
       <div class="card">
         <h2>Cenários (mesmas premissas, volumes diferentes)</h2>
@@ -176,10 +212,12 @@
       };
       var DEFAULTS = {
         aluguelMedio: 3000, duracaoMeses: 4, comissaoPct: 8, mensalidadePlano: 129,
-        repasseServico: 20, comissaoGarantia: 50, receitaDestaque: 30, custoMes: 8000,
+        repasseServico: 20, comissaoGarantia: 50, receitaDestaque: 30,
+        custoFixo: 4000, custoVariavel: 120,
         alugueisMes: 10, basePlanos: 40, contratosDestaque: 6,
+        projMeses: 12, projFechamentos: 10, projCresc: 5, projConversao: 70, projChurn: 3, projBaseInicial: 0,
       };
-      var NUM_IDS = ["aluguelMedio","duracaoMeses","comissaoPct","mensalidadePlano","repasseServico","comissaoGarantia","receitaDestaque","custoMes"];
+      var NUM_IDS = ["aluguelMedio","duracaoMeses","comissaoPct","mensalidadePlano","repasseServico","comissaoGarantia","receitaDestaque","custoFixo","custoVariavel","projMeses","projFechamentos","projCresc","projConversao","projChurn","projBaseInicial"];
       var RANGE_IDS = ["alugueisMes","basePlanos","contratosDestaque"];
       var $ = function (id) { return document.getElementById(id); };
       var val = function (id) { return parseFloat($(id).value) || 0; };
@@ -239,6 +277,83 @@
         };
       }
 
+      // ── Projeção mês a mês ──
+      function computeProjection() {
+        var base = premissas();
+        var N = Math.min(60, Math.max(1, Math.round(val("projMeses"))));
+        var f0 = val("projFechamentos");
+        var g = val("projCresc") / 100;
+        var conv = val("projConversao") / 100;
+        var churn = val("projChurn") / 100;
+        var custoFixo = val("custoFixo"), custoVar = val("custoVariavel");
+        var basePlanos = val("projBaseInicial");
+        var months = [], recAcum = 0, lucroAcum = 0;
+        for (var i = 1; i <= N; i++) {
+          var f = f0 * Math.pow(1 + g, i - 1);
+          basePlanos = basePlanos * (1 - churn) + f * conv;
+          var r = receita(Object.assign({}, base, { alugueisMes: f, basePlanos: basePlanos, contratosDestaque: f }));
+          var custo = custoFixo + custoVar * f;
+          var lucro = r.total - custo;
+          recAcum += r.total; lucroAcum += lucro;
+          months.push({ i: i, fech: f, base: basePlanos, rev: r.total, custo: custo, lucro: lucro, recAcum: recAcum, lucroAcum: lucroAcum });
+        }
+        return months;
+      }
+
+      function renderBars(m) {
+        var W = 600, H = 190, padT = 10, padB = 22, padX = 8;
+        var max = Math.max.apply(null, m.map(function (x) { return x.rev; }).concat([1]));
+        var gw = (W - 2 * padX) / m.length;
+        var bw = Math.max(1, Math.min(13, gw / 2 - 1));
+        var base = H - padB, svg = "";
+        m.forEach(function (x, i) {
+          var gx = padX + i * gw + (gw / 2 - bw - 1);
+          var hR = (x.rev / max) * (H - padT - padB);
+          var hL = (Math.max(0, x.lucro) / max) * (H - padT - padB);
+          svg += '<rect x="' + gx.toFixed(1) + '" y="' + (base - hR).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + hR.toFixed(1) + '" fill="#5a8a6b" rx="1"></rect>';
+          svg += '<rect x="' + (gx + bw + 1).toFixed(1) + '" y="' + (base - hL).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + hL.toFixed(1) + '" fill="#c8a24b" rx="1"></rect>';
+        });
+        svg += '<line x1="' + padX + '" y1="' + base + '" x2="' + (W - padX) + '" y2="' + base + '" stroke="#e3e9e5"></line>';
+        // rótulos: 1º, meio e último mês
+        [0, Math.floor(m.length / 2), m.length - 1].forEach(function (idx) {
+          var gx = padX + idx * gw + gw / 2;
+          svg += '<text x="' + gx.toFixed(1) + '" y="' + (H - 6) + '" text-anchor="middle" font-size="10" fill="#6b7280">m' + m[idx].i + '</text>';
+        });
+        $("chartBars").innerHTML = svg;
+      }
+
+      function renderLine(m) {
+        var W = 600, H = 190, padT = 10, padB = 22, padX = 34;
+        var maxC = Math.max.apply(null, m.map(function (x) { return x.recAcum; }).concat([1]));
+        function pts(key) {
+          return m.map(function (x, i) {
+            var px = padX + (m.length === 1 ? 0 : (i / (m.length - 1)) * (W - padX - padX));
+            var py = (H - padB) - (Math.max(0, x[key]) / maxC) * (H - padT - padB);
+            return px.toFixed(1) + "," + py.toFixed(1);
+          }).join(" ");
+        }
+        var svg = '<line x1="' + padX + '" y1="' + (H - padB) + '" x2="' + (W - padX) + '" y2="' + (H - padB) + '" stroke="#e3e9e5"></line>';
+        svg += '<polyline fill="none" stroke="#0f3d2e" stroke-width="2.5" points="' + pts("recAcum") + '"></polyline>';
+        svg += '<polyline fill="none" stroke="#c8a24b" stroke-width="2" points="' + pts("lucroAcum") + '"></polyline>';
+        [0, m.length - 1].forEach(function (idx) {
+          var px = padX + (m.length === 1 ? 0 : (idx / (m.length - 1)) * (W - padX - padX));
+          svg += '<text x="' + px.toFixed(1) + '" y="' + (H - 6) + '" text-anchor="middle" font-size="10" fill="#6b7280">m' + m[idx].i + '</text>';
+        });
+        $("chartLine").innerHTML = svg;
+      }
+
+      function renderProjection() {
+        var m = computeProjection();
+        var last = m[m.length - 1];
+        $("projRecAcum").textContent = BRL(last.recAcum);
+        $("projLucroAcum").textContent = BRL(last.lucroAcum);
+        $("projLucroAcum").style.color = last.lucroAcum >= 0 ? "var(--forest)" : "#c0392b";
+        $("projBaseFim").textContent = Math.round(last.base).toLocaleString("pt-BR");
+        $("projRecUlt").textContent = BRL(last.rev);
+        renderBars(m);
+        renderLine(m);
+      }
+
       function render() {
         RANGE_IDS.forEach(function (id) { $(id + "Val").textContent = $(id).value; });
 
@@ -254,7 +369,8 @@
         $("srcDestaque").textContent = BRL(r.destaque);
         $("srcTotal").textContent = BRL(r.total);
 
-        var custo = val("custoMes");
+        // Custo do mês = fixo + variável × aluguéis fechados (volume atual).
+        var custo = val("custoFixo") + val("custoVariavel") * val("alugueisMes");
         var lucro = r.total - custo;
         var margem = r.total > 0 ? (lucro / r.total) * 100 : 0;
         $("kpiReceita").textContent = BRL(r.total);
@@ -265,6 +381,7 @@
         $("kpiRoi").textContent = custo > 0 ? roi.toFixed(0) + "%" : "—";
         $("kpiRoi").style.color = roi >= 0 ? "var(--sage)" : "#c0392b";
         renderChart(r);
+        renderProjection();
 
         // Cenários + barras (a maior receita = barra cheia)
         var totals = SCENARIOS.map(function (s) {
