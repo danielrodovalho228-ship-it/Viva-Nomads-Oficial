@@ -127,7 +127,7 @@ await goto("/dashboard/imoveis/novo"); await page.waitForTimeout(400);
 {
   for (let i = 0; i < 5; i++) { await (await btn(/Continuar/))?.click(); await page.waitForTimeout(150); }
   const b = await body();
-  if (/Modalidades de garantia que você aceita/.test(b)) ok("cadastro", "seção de modalidades aceitas"); else bug("cadastro", "seção de modalidades ausente");
+  if (/Garantias que você aceita/.test(b)) ok("cadastro", "seção de garantias aceitas"); else bug("cadastro", "seção de garantias ausente");
   if (/não muda o caminho do dinheiro/.test(b)) ok("cadastro", "aviso de preferência"); else bug("cadastro", "aviso de preferência ausente");
 }
 
