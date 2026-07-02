@@ -27,14 +27,13 @@ export function defaultMode(user: SessionUser): ViewMode {
 }
 
 /**
- * Modo efetivo: respeita a escolha do usuário (`activeMode`) desde que a conta
- * tenha aquele papel; senão cai no modo padrão. Garante que o modo ativo nunca
- * aponte para um papel que a conta não possui.
+ * Modo efetivo: respeita a escolha do usuário (`activeMode`). Qualquer conta pode
+ * transitar entre os dois mundos (proprietário ⇄ inquilino) — o `activeMode` é
+ * persistido, então a escolha sobrevive a recarregamentos. Sem escolha, cai no
+ * modo padrão do papel de cadastro.
  */
 export function resolveMode(user: SessionUser, activeMode: ViewMode | null): ViewMode {
-  const { isOwner, isTenant } = rolesOf(user);
-  if (activeMode === "owner" && isOwner) return "owner";
-  if (activeMode === "tenant" && isTenant) return "tenant";
+  if (activeMode === "owner" || activeMode === "tenant") return activeMode;
   return defaultMode(user);
 }
 
