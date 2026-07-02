@@ -112,7 +112,7 @@ export default async function MyPropertiesPage() {
                     <ButtonLink href={`/imoveis/${p.id}`} variant="outline" size="sm">
                       Ver
                     </ButtonLink>
-                    <ButtonLink href="/dashboard/imoveis/novo" variant="ghost" size="sm">
+                    <ButtonLink href={`/dashboard/imoveis/novo?id=${p.id}`} variant="ghost" size="sm">
                       Editar
                     </ButtonLink>
                   </div>

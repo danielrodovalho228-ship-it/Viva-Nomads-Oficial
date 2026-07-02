@@ -16,6 +16,8 @@ import { listingLimit, PLAN_LABEL } from "@/lib/plan";
 import type { SubscriptionPlan } from "@/lib/store";
 import { buildLeadNotification, LEAD_KIND_MSG, type LeadKind } from "@/lib/leads";
 import { amenityRows } from "@/lib/amenities";
+import { getPropertyForOwner } from "@/lib/data/properties";
+import type { Property } from "@/lib/types";
 
 type ActionResult = { ok: boolean; demo?: boolean; id?: string; error?: string };
 
@@ -63,7 +65,7 @@ export async function saveQualification(
 }
 
 /** Cria um imóvel (Fase 5), exigindo um checklist aprovado. */
-export async function createProperty(input: {
+export interface PropertyInput {
   title: string;
   description: string;
   propertyType: string;
@@ -118,7 +120,9 @@ export async function createProperty(input: {
   googlePlaces?: { placeId: string; categoria: string; rotulo?: string }[];
   /** Proximidades manuais (nome + distância digitados). */
   proximities?: { category: string; name: string; note?: string }[];
-}): Promise<ActionResult> {
+}
+
+export async function createProperty(input: PropertyInput): Promise<ActionResult> {
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
 
@@ -251,15 +255,23 @@ export async function createProperty(input: {
     }
   }
 
-  // Persiste as fotos enviadas ao Storage (a primeira é a capa).
-  if (input.photoUrls && input.photoUrls.length > 0) {
-    await supabase.from("property_photos").insert(
-      input.photoUrls.map((url, i) => ({
-        property_id: data.id,
-        url,
-        sort_order: i,
-      }))
-    );
+  // Persiste as fotos enviadas ao Storage (a primeira é a capa). Ignora URLs
+  // não persistentes (blob: do modo demo, ou upload que falhou) para não gravar
+  // imagem quebrada. Best-effort: uma falha aqui não derruba o cadastro base.
+  const persistableUrls = (input.photoUrls ?? []).filter((u) => u && !u.startsWith("blob:"));
+  if (persistableUrls.length > 0) {
+    try {
+      const { error } = await supabase.from("property_photos").insert(
+        persistableUrls.map((url, i) => ({
+          property_id: data.id,
+          url,
+          sort_order: i,
+        }))
+      );
+      if (error) console.error("[createProperty] falha ao gravar fotos:", error.message);
+    } catch (e) {
+      console.error("[createProperty] erro ao gravar fotos:", e);
+    }
   }
 
   // Mapeia espaços de trabalho próximos (Google Places) — sustenta o selo de trabalho.
@@ -278,6 +290,132 @@ export async function createProperty(input: {
   }
 
   return { ok: true, id: data.id };
+}
+
+/** Carrega um imóvel do dono para edição (prefill do wizard). Serializável. */
+export async function loadPropertyForEdit(id: string): Promise<Property | null> {
+  const p = await getPropertyForOwner(id);
+  return p ?? null;
+}
+
+/**
+ * Atualiza um imóvel existente (edição). Espelha os campos de createProperty,
+ * mas em UPDATE (escopo do dono via RLS) e re-sincroniza as tabelas filhas
+ * (comodidades, proximidades, fotos) apagando e regravando. Best-effort nas
+ * tabelas de enriquecimento — migração ausente não derruba a edição base.
+ */
+export async function updateProperty(id: string, input: PropertyInput): Promise<ActionResult> {
+  const supabase = await createClient();
+  if (!supabase) return { ok: true, demo: true };
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Não autenticado." };
+  if (!UUID_RE.test(id)) return { ok: false, error: "Imóvel inválido para edição." };
+
+  const { error } = await supabase
+    .from("properties")
+    .update({
+      title: input.title,
+      description: input.description,
+      property_type: input.propertyType,
+      city: input.city,
+      address: input.neighborhood,
+      lat: input.lat ?? null,
+      lng: input.lng ?? null,
+      bedrooms: input.bedrooms,
+      bathrooms: input.bathrooms,
+      area_m2: input.areaM2,
+      min_period_days: input.minPeriodDays,
+      monthly_price: input.monthlyPrice,
+      // Só (re)publica se for explicitamente "Publicar"; "Salvar rascunho" não
+      // despublica um anúncio já ativo.
+      ...(input.asDraft === false ? { status: "active" } : {}),
+      ready_to_live_score: input.readyToLiveScore,
+      ready_to_live_badge: input.readyToLiveScore >= 70,
+      tag_home_office: input.tagHomeOffice ?? false,
+      tag_work_located: input.tagWorkLocated ?? false,
+      tag_condo_approved: input.tagCondoApproved ?? false,
+      ownership_type: input.ownershipType ?? "own",
+      sublease_authorized:
+        (input.ownershipType ?? "own") === "own" ? true : input.subleaseAuthorized ?? false,
+      sublease_doc_url: input.subleaseDocUrl ?? null,
+      utilities_mode: input.utilitiesMode ?? "fixed",
+      utilities_estimate: input.utilitiesEstimate ?? 0,
+      issues_invoice: input.issuesInvoice ?? false,
+      accepts_insurance: input.acceptsInsurance ?? false,
+      garantias_aceitas: input.garantiasAceitas ?? [],
+      prep_fee: input.prepFee ?? 0,
+      video_url: input.videoUrl ?? null,
+    })
+    .eq("id", id)
+    .eq("owner_id", user.id);
+  if (error) return { ok: false, error: error.message };
+
+  // Enriquecimento (best-effort — requer migrações 0018/0019/0020).
+  try {
+    await supabase
+      .from("properties")
+      .update({
+        parking_spots: input.parkingSpots ?? 0,
+        condo_fee: input.condoFee ?? 0,
+        available_from: input.availableFrom ?? null,
+        available_until: input.availableUntil ?? null,
+        max_period_days: input.maxPeriodDays ?? null,
+        furnished: input.furnished ?? true,
+        pets_allowed: input.petsAllowed ?? null,
+        smoking_allowed: input.smokingAllowed ?? false,
+        children_allowed: input.childrenAllowed ?? null,
+        max_guests: input.maxGuests ?? null,
+        faixas_aceitas: input.faixasAceitas ?? [],
+        google_places: (input.googlePlaces ?? []).map((g) => ({
+          place_id: g.placeId,
+          categoria: g.categoria,
+          rotulo: g.rotulo,
+        })),
+      })
+      .eq("id", id)
+      .eq("owner_id", user.id);
+  } catch {
+    /* migração ausente — segue sem os campos extras */
+  }
+
+  // Re-sincroniza tabelas filhas: apaga as atuais e regrava as do formulário.
+  const resync = async (table: string, rows: Record<string, unknown>[]) => {
+    try {
+      await supabase.from(table).delete().eq("property_id", id);
+      if (rows.length > 0) await supabase.from(table).insert(rows);
+    } catch {
+      /* tabela ausente — ignora */
+    }
+  };
+  await resync(
+    "property_amenities",
+    amenityRows(input.amenityKeys ?? []).map((r, i) => ({
+      property_id: id,
+      category: r.category,
+      label: r.label,
+      sort_order: i,
+    }))
+  );
+  await resync(
+    "property_proximities",
+    (input.proximities ?? []).map((p, i) => ({
+      property_id: id,
+      category: p.category,
+      name: p.name,
+      note: p.note ?? null,
+      sort_order: i,
+    }))
+  );
+  await resync(
+    "property_photos",
+    (input.photoUrls ?? [])
+      .filter((u) => u && !u.startsWith("blob:"))
+      .map((url, i) => ({ property_id: id, url, sort_order: i }))
+  );
+
+  return { ok: true, id };
 }
 
 /** Adiciona ou remove um imóvel dos favoritos do inquilino. */
@@ -351,11 +489,12 @@ export async function requestLead(
       .maybeSingle();
     ownerId = (prop?.owner_id as string | undefined) ?? null;
     if (ownerId) {
-      const { data: o } = await supabase
-        .from("profiles")
-        .select("full_name, email, phone")
-        .eq("id", ownerId)
-        .maybeSingle();
+      // A RLS de `profiles` ("perfil próprio") bloqueia a sessão do inquilino de
+      // ler o contato do dono. A RPC SECURITY DEFINER `owner_notify_contact`
+      // (migração 0023) devolve o contato do dono de um anúncio ATIVO só para a
+      // notificação. Enquanto a migração não roda, o erro cai no fallback abaixo.
+      const { data: rpc } = await supabase.rpc("owner_notify_contact", { prop_id: propertyId });
+      const o = Array.isArray(rpc) ? rpc[0] : rpc;
       ownerEmail = o?.email ?? null;
       ownerPhone = o?.phone ?? null;
       ownerName = o?.full_name ?? null;
@@ -376,19 +515,35 @@ export async function requestLead(
   const tenantEmail = me?.email ?? user.email ?? "";
   const tenantPhone = me?.phone ?? "";
 
-  // Imóvel real: grava lead + abre conversa (best-effort; ignora falha de RLS/duplicado).
+  // Imóvel real: grava lead + abre conversa. Dedup por (imóvel, interessado)
+  // para que cliques repetidos não criem leads/mensagens duplicados.
   if (real && ownerId) {
-    await supabase
+    const { data: existing } = await supabase
       .from("leads")
-      .insert({ property_id: propertyId, owner_id: ownerId, tenant_id: user.id, status: "new" });
-    const conversationId = [user.id, ownerId].sort().join("_") + `_${propertyId}`;
-    await supabase.from("messages").insert({
-      conversation_id: conversationId,
-      sender_id: user.id,
-      receiver_id: ownerId,
-      property_id: propertyId,
-      body: LEAD_KIND_MSG[kind](propertyTitle),
-    });
+      .select("id")
+      .eq("property_id", propertyId)
+      .eq("tenant_id", user.id)
+      .maybeSingle();
+    if (!existing) {
+      const { error: leadErr } = await supabase
+        .from("leads")
+        .insert({ property_id: propertyId, owner_id: ownerId, tenant_id: user.id, status: "new" });
+      // 23505 = duplicado (corrida): não é erro real. Demais erros: registra.
+      if (leadErr && leadErr.code !== "23505") {
+        console.error("[requestLead] falha ao gravar lead:", leadErr.message);
+      }
+      const conversationId = [user.id, ownerId].sort().join("_") + `_${propertyId}`;
+      const { error: msgErr } = await supabase.from("messages").insert({
+        conversation_id: conversationId,
+        sender_id: user.id,
+        receiver_id: ownerId,
+        property_id: propertyId,
+        body: LEAD_KIND_MSG[kind](propertyTitle),
+      });
+      if (msgErr && msgErr.code !== "23505") {
+        console.error("[requestLead] falha ao abrir conversa:", msgErr.message);
+      }
+    }
   }
 
   // Notifica o dono — SEMPRE (real e demo). É isto que faz os botões funcionarem

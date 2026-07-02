@@ -272,6 +272,33 @@ export async function getProperty(id: string): Promise<Property | undefined> {
   }
 }
 
+/**
+ * Carrega um imóvel do PRÓPRIO dono para edição — qualquer status (inclusive
+ * rascunho/pausado), com o cliente autenticado (a RLS garante que só o dono lê o
+ * dele). Em modo demonstração, cai no imóvel de exemplo de mesmo id.
+ */
+export async function getPropertyForOwner(id: string): Promise<Property | undefined> {
+  const supabase = await createClient();
+  if (!supabase) return SAMPLE_PROPERTIES.find((p) => p.id === id);
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return undefined;
+    const { data } = await supabase
+      .from("properties")
+      .select("*")
+      .eq("id", id)
+      .eq("owner_id", user.id)
+      .maybeSingle();
+    if (!data) return SAMPLE_PROPERTIES.find((p) => p.id === id);
+    const base = rowToProperty(data as PropertyRow);
+    return enrichProperty(supabase, base, user.id);
+  } catch {
+    return undefined;
+  }
+}
+
 /** Anexa as fotos (capa) aos imóveis reais para os cards da busca. Best-effort. */
 async function attachCoverPhotos(supabase: SupabaseLike, list: Property[]): Promise<void> {
   if (list.length === 0) return;

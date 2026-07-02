@@ -94,6 +94,7 @@ const OWNER_ONLY = [
   "/dashboard/leads",
   "/dashboard/orcamentos",
   "/dashboard/fechamento",
+  "/dashboard/reembolsos",
   "/dashboard/assinatura",
 ];
 const TENANT_ONLY = ["/dashboard/favoritos", "/dashboard/comparar", "/dashboard/buscas"];

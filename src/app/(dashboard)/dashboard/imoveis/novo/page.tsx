@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Lock,
   ClipboardCheck,
@@ -20,7 +20,7 @@ import {
   CheckCircle2,
   PlayCircle,
 } from "lucide-react";
-import { createProperty } from "@/lib/data/actions";
+import { createProperty, updateProperty, loadPropertyForEdit } from "@/lib/data/actions";
 import { geocodeForSave } from "@/lib/integrations/geocoding";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button, ButtonLink } from "@/components/ui/button";
@@ -28,7 +28,7 @@ import { PropertyMiniCard } from "@/components/property-mini-card";
 import { PhotoUploader, type PhotoItem } from "@/components/photo-uploader";
 import { MIN_PHOTOS, SUGGESTED_ROOMS, tierFromPhotoCount, TIER_META } from "@/lib/listing";
 import { FAIXAS, GARANTIAS_FAIXA } from "@/lib/faixas";
-import { PROPERTY_TYPES, AMENITY_GROUPS, propertyTypeLabel } from "@/lib/amenities";
+import { PROPERTY_TYPES, AMENITY_GROUPS, propertyTypeLabel, amenityKeysFromLabels } from "@/lib/amenities";
 import { PlacesPicker, type CuratedPlace } from "@/components/property/places-picker";
 import { ManualProximities } from "@/components/property/manual-proximities";
 import { LocationDatalist } from "@/lib/locations";
@@ -107,6 +107,10 @@ export default function NewPropertyPage() {
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
+  // Edição: ?id= carrega um imóvel do dono para editar (em vez de criar novo).
+  const searchParams = useSearchParams();
+  const editId = searchParams.get("id");
+  const [editingId, setEditingId] = useState<string | null>(null);
   const router = useRouter();
 
   const subleaseBlocked = ownershipType === "subleased" && !subleaseAuthorized;
@@ -149,6 +153,13 @@ export default function NewPropertyPage() {
       setPublishError("Imóvel operado por sublocação exige a confirmação de autorização do proprietário antes de publicar.");
       return;
     }
+    // Duração máxima não pode ser menor que a mínima (evita range invertido).
+    const minDays = Number(minPeriod) || 30;
+    const maxDays = Number(maxPeriod) || 0;
+    if (maxDays && maxDays < minDays) {
+      setPublishError("A duração máxima não pode ser menor que a mínima. Ajuste os prazos.");
+      return;
+    }
     setPublishing(true);
     setPublishError(null);
     let q = { score: 0, tHome: false, tWork: false, tCondo: false };
@@ -162,7 +173,7 @@ export default function NewPropertyPage() {
     // não há coordenada válida (não some do mapa, não vai parar no oceano).
     const coords = await geocodeForSave({ street, neighborhood, city });
 
-    const res = await createProperty({
+    const payload = {
       title: title || "Imóvel mobiliado",
       description,
       propertyType,
@@ -202,24 +213,35 @@ export default function NewPropertyPage() {
       proximities: manualProximities,
       lat: coords.lat,
       lng: coords.lng,
-      photoUrls: photos.map((p) => p.url),
+      // Só URLs persistentes (Storage). URLs blob: do modo demo morrem ao
+      // recarregar — não devem ser gravadas como foto do imóvel.
+      photoUrls: photos.map((p) => p.url).filter((u) => u && !u.startsWith("blob:")),
       videoUrl: videoUrl.trim() || undefined,
       // "Salvar rascunho" => draft; "Publicar anúncio" => active (entra na busca).
       asDraft,
-    });
+    };
+
+    // Edição atualiza o imóvel existente; caso contrário, cria um novo.
+    const res = editingId ? await updateProperty(editingId, payload) : await createProperty(payload);
 
     setPublishing(false);
     if (!res.ok) {
-      setPublishError(res.error ?? "Não foi possível publicar.");
+      setPublishError(res.error ?? "Não foi possível salvar.");
       return;
     }
-    try {
-      localStorage.removeItem("vivanomads-novo-draft");
-    } catch {}
+    // Só limpa o rascunho de "novo anúncio" quando de fato criamos um novo.
+    if (!editingId) {
+      try {
+        localStorage.removeItem("vivanomads-novo-draft");
+      } catch {}
+    }
     router.push("/dashboard/imoveis");
   }
 
   useEffect(() => {
+    // Em edição (?id=), o carregamento vem do banco (efeito abaixo); não lê a
+    // qualificação nem o rascunho de "novo anúncio" para não misturar dados.
+    if (editId) return;
     const raw = sessionStorage.getItem("vivanomads-qualification");
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setApproved(raw ? JSON.parse(raw).eligible === true : false);
@@ -269,11 +291,67 @@ export default function NewPropertyPage() {
         // Fotos/documentos com URL persistente (Supabase Storage).
         if (Array.isArray(d.photos)) setPhotos(d.photos);
         if (Array.isArray(d.subleaseDoc)) setSubleaseDoc(d.subleaseDoc);
-        // Volta para a etapa em que a pessoa parou.
-        if (typeof d.step === "number" && d.step >= 0) setStep(d.step);
+        // Volta para a etapa em que a pessoa parou (limitada às etapas válidas,
+        // pois um rascunho de uma versão diferente do wizard poderia ter um
+        // índice fora do intervalo e quebrar STEP_META[step]).
+        if (typeof d.step === "number") setStep(Math.min(LAST, Math.max(0, Math.round(d.step))));
       }
     } catch {}
-  }, []);
+  }, [editId]);
+
+  // Edição: carrega o imóvel do dono e preenche o formulário. Não requer
+  // requalificação (já é um anúncio existente) e não usa o rascunho local.
+  useEffect(() => {
+    if (!editId) return;
+    let alive = true;
+    (async () => {
+      const p = await loadPropertyForEdit(editId);
+      if (!alive) return;
+      if (!p) {
+        setPublishError("Não foi possível carregar este imóvel para edição. Tente novamente.");
+        setApproved(true);
+        return;
+      }
+      setEditingId(editId);
+      setApproved(true);
+      setTitle(p.title || "");
+      setPropertyType(p.propertyType || "apartamento");
+      setDescription(p.description || "");
+      setBedrooms(p.bedrooms ? String(p.bedrooms) : "");
+      setBathrooms(p.bathrooms ? String(p.bathrooms) : "");
+      setAreaM2(p.areaM2 ? String(p.areaM2) : "");
+      setParkingSpots(p.parkingSpots ? String(p.parkingSpots) : "");
+      setMinPeriod(String(p.minPeriodDays || 30));
+      setMaxPeriod(p.maxPeriodDays ? String(p.maxPeriodDays) : "180");
+      setAvailableFrom(p.availableFrom ? p.availableFrom.slice(0, 10) : "");
+      setAvailableUntil(p.availableUntil ? p.availableUntil.slice(0, 10) : "");
+      setMonthlyPrice(p.monthlyPrice ? String(p.monthlyPrice) : "");
+      setNeighborhood(p.neighborhood || "");
+      setCity(p.city || "Uberlândia");
+      setFurnished(p.furnished ?? true);
+      setPetsOk(p.petsAllowed ?? false);
+      setSmokingAllowed(p.smokingAllowed ?? false);
+      setChildrenAllowed(p.childrenAllowed ?? true);
+      setUtilitiesMode(p.utilitiesMode === "real" ? "real" : "fixed");
+      setUtilitiesEstimate(p.utilitiesEstimate ?? 200);
+      setIssuesInvoice(!!p.issuesInvoice);
+      setPrepFee(p.prepFee ?? 450);
+      setOwnershipType(p.ownershipType === "subleased" ? "subleased" : "own");
+      setSubleaseAuthorized(!!p.subleaseAuthorized);
+      setVideoUrl(p.videoUrl || "");
+      setAmenityKeys(
+        Object.fromEntries(amenityKeysFromLabels(p.amenities || []).map((k) => [k, true]))
+      );
+      setGooglePlaces((p.googlePlaces || []).map((g) => ({ placeId: g.placeId, categoria: g.categoria, rotulo: g.rotulo })));
+      setManualProximities(p.proximities || []);
+      if (p.faixasAceitas?.length) setFaixas(Object.fromEntries(p.faixasAceitas.map((k) => [k, true])));
+      if (p.garantiasAceitas?.length) setGarantias(Object.fromEntries(p.garantiasAceitas.map((k) => [k, true])));
+      setPhotos((p.photos || []).map((url, i) => ({ id: `edit-${i}`, url, name: "", path: null, demo: false })));
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [editId]);
 
   // Auto-save do rascunho + indicador "Salvo ✓" (Bloco F).
   // Guarda TODOS os campos serializáveis + a etapa atual, para que trocar de
@@ -294,7 +372,8 @@ export default function NewPropertyPage() {
     subleaseDoc: subleaseDoc.filter((p) => p.url && !p.url.startsWith("blob:")),
   });
   useEffect(() => {
-    if (approved !== true) return;
+    // Não autossalva em modo edição (não deve poluir o rascunho de "novo anúncio").
+    if (approved !== true || editId) return;
     try {
       localStorage.setItem("vivanomads-novo-draft", draftJson);
     } catch {
@@ -308,7 +387,7 @@ export default function NewPropertyPage() {
       clearTimeout(t1);
       clearTimeout(t2);
     };
-  }, [approved, draftJson]);
+  }, [approved, draftJson, editId]);
 
   async function lookupCep(value: string) {
     const digits = value.replace(/\D/g, "");
@@ -377,10 +456,14 @@ export default function NewPropertyPage() {
   return (
     <div className="mx-auto max-w-5xl">
       <PageTitle
-        title="Anuncie seu imóvel"
-        subtitle="Em 7 etapas. Salvamos seu progresso automaticamente."
+        title={editingId ? "Editar anúncio" : "Anuncie seu imóvel"}
+        subtitle={
+          editingId
+            ? "Ajuste os dados do imóvel e salve as alterações."
+            : "Em 7 etapas. Salvamos seu progresso automaticamente."
+        }
         action={
-          saveStatus !== "idle" ? (
+          !editingId && saveStatus !== "idle" ? (
             <span
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium",
@@ -675,7 +758,8 @@ export default function NewPropertyPage() {
             )}
 
             <div className="mt-4">
-              <PhotoUploader photos={photos} onChange={setPhotos} />
+              {/* Até 24 fotos: permite alcançar o tier "premium" (20+) que a UI promete. */}
+              <PhotoUploader photos={photos} onChange={setPhotos} max={24} />
             </div>
 
             {/* Vídeo walk-through (opcional) — reduz o atrito de alugar sem visita */}
@@ -893,10 +977,14 @@ export default function NewPropertyPage() {
 
             <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
               <Button variant="outline" onClick={() => publish(true)} disabled={publishing || subleaseBlocked}>
-                Salvar como rascunho
+                {editingId ? "Salvar sem publicar" : "Salvar como rascunho"}
               </Button>
               <Button variant="gold" onClick={() => publish(false)} disabled={publishing || subleaseBlocked || photoBlocked}>
-                {publishing ? "Publicando..." : "Publicar anúncio"}
+                {publishing
+                  ? "Salvando..."
+                  : editingId
+                    ? "Salvar alterações"
+                    : "Publicar anúncio"}
               </Button>
             </div>
           </div>
