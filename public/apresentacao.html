@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Viva Nomads · Apresentação</title>
+    <style>
+      :root { --forest:#0f3d2e; --sage:#5a8a6b; --gold:#c8a24b; --ink:#1f2933; --muted:#9fb3aa; }
+      * { box-sizing: border-box; margin: 0; }
+      html,body { height: 100%; }
+      body {
+        background: radial-gradient(120% 90% at 50% 30%, #14392c 0%, #081c15 70%);
+        color: #fff; font-family: -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+        display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+      }
+      header { display:flex; align-items:center; justify-content:space-between; padding:14px 20px; }
+      .brand { font-weight:800; font-size:18px; letter-spacing:-.5px; }
+      .brand .v{color:#8fd0ff}.brand .n{color:#9fe06a}
+      .tools { display:flex; gap:8px; align-items:center; }
+      .tools button { background:rgba(255,255,255,.1); color:#fff; border:1px solid rgba(255,255,255,.18);
+        border-radius:999px; padding:7px 14px; font-size:13px; cursor:pointer; }
+      .tools button:hover { background:rgba(255,255,255,.18); }
+      .stage { flex:1; position:relative; display:flex; align-items:center; justify-content:center; padding:0 16px; }
+      .slide { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+        gap:16px; opacity:0; transition:opacity .35s ease; pointer-events:none; padding:0 16px 12px; }
+      .slide.active { opacity:1; pointer-events:auto; }
+      .cap { text-align:center; }
+      .cap .tag { color:var(--gold); font-size:13px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+      .cap h2 { font-size:clamp(20px,3.2vw,30px); margin-top:4px; }
+      .cap p { color:#cfe0d7; font-size:clamp(13px,1.8vw,16px); margin-top:4px; }
+      .shot { max-width:min(1120px,92vw); max-height:64vh; border-radius:14px; overflow:hidden;
+        box-shadow:0 24px 60px rgba(0,0,0,.5); border:1px solid rgba(255,255,255,.08); background:#0b1c16; }
+      .shot img { display:block; width:100%; height:100%; object-fit:contain; }
+      /* slide de capa */
+      .cover { text-align:center; }
+      .cover .wm { font-size:clamp(34px,7vw,72px); font-weight:800; letter-spacing:-1px; }
+      .cover .wm .v{color:#8fd0ff}.cover .wm .n{color:#9fe06a}
+      .cover .lead { font-size:clamp(16px,2.4vw,24px); color:#dbeee5; margin-top:14px; }
+      .cover .dom { display:inline-block; margin-top:22px; background:var(--gold); color:#0b1c16;
+        font-weight:700; border-radius:999px; padding:10px 22px; font-size:16px; }
+      /* navegação */
+      .nav { position:absolute; top:0; bottom:0; width:22%; cursor:pointer; }
+      .nav.prev{left:0} .nav.next{right:0}
+      .arrow { position:absolute; top:50%; transform:translateY(-50%); background:rgba(255,255,255,.12);
+        border:0; color:#fff; width:44px; height:44px; border-radius:50%; font-size:20px; cursor:pointer; }
+      .arrow.prev{left:12px} .arrow.next{right:12px}
+      footer { display:flex; align-items:center; gap:14px; justify-content:center; padding:12px 20px 18px; }
+      .dots { display:flex; gap:7px; flex-wrap:wrap; justify-content:center; max-width:70%; }
+      .dot { width:9px; height:9px; border-radius:50%; background:rgba(255,255,255,.28); cursor:pointer; }
+      .dot.active { background:var(--gold); }
+      .counter { color:var(--muted); font-size:13px; font-variant-numeric:tabular-nums; }
+      .hint { color:var(--muted); font-size:12px; text-align:center; padding-bottom:8px; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="brand"><span class="v">Viva</span><span class="n">Nomads</span> · Apresentação</div>
+      <div class="tools">
+        <button id="full">⛶ Tela cheia</button>
+      </div>
+    </header>
+
+    <div class="stage" id="stage">
+      <div class="nav prev" data-dir="-1"></div>
+      <div class="nav next" data-dir="1"></div>
+      <button class="arrow prev" data-dir="-1" aria-label="Anterior">‹</button>
+      <button class="arrow next" data-dir="1" aria-label="Próximo">›</button>
+    </div>
+
+    <footer>
+      <button class="arrow" style="position:static;width:36px;height:36px" data-dir="-1">‹</button>
+      <div class="dots" id="dots"></div>
+      <span class="counter" id="counter"></span>
+      <button class="arrow" style="position:static;width:36px;height:36px" data-dir="1">›</button>
+    </footer>
+    <div class="hint">Use as setas ← → do teclado, clique nas laterais ou deslize no celular.</div>
+
+    <script>
+      var BASE = "/apresentacao/";
+      var SLIDES = [
+        { cover: true },
+        { img:"01-home.jpg",           tag:"Para quem procura", title:"Home",                 sub:"Seu lar temporário — busque pela cidade" },
+        { img:"02-busca.jpg",          tag:"Para quem procura", title:"Busca de imóveis",     sub:"Resultados com mapa e filtros de média estadia" },
+        { img:"03-imovel.jpg",         tag:"Para quem procura", title:"Página do imóvel",     sub:"Galeria, comodidades, espaço de trabalho e proximidades" },
+        { img:"04-como-funciona.jpg",  tag:"Para quem procura", title:"Como funciona",        sub:"Do interesse ao contrato, tudo online" },
+        { img:"05-precos.jpg",         tag:"Para quem procura", title:"Preços",               sub:"Transparente, com tudo incluído" },
+        { img:"06-proprietarios.jpg",  tag:"Para quem procura", title:"Para proprietários",   sub:"Anuncie e receba inquilinos qualificados" },
+        { img:"07-simulacao.jpg",      tag:"Ferramenta",        title:"Simulador de receita", sub:"5 fontes de receita, projeção no tempo e gráficos" },
+        { img:"08-painel-visao.jpg",   tag:"Para quem anuncia", title:"Painel — visão geral", sub:"Todo o gerenciamento num só lugar" },
+        { img:"09-painel-leads.jpg",   tag:"Para quem anuncia", title:"Painel — leads",       sub:"Inquilinos verificados, pré-aprove num clique" },
+        { img:"10-painel-mensagens.jpg",tag:"Para quem anuncia",title:"Painel — mensagens",   sub:"Converse pela plataforma, histórico registrado" },
+        { img:"11-painel-carteira.jpg",tag:"Para quem anuncia", title:"Painel — carteira",    sub:"Ocupação, receita e contratos a vencer" },
+      ];
+      var stage=document.getElementById("stage"), dots=document.getElementById("dots"), counter=document.getElementById("counter");
+      var idx=0, els=[];
+      SLIDES.forEach(function(s,i){
+        var el=document.createElement("div"); el.className="slide";
+        if(s.cover){
+          el.innerHTML='<div class="cover"><div class="wm"><span class="v">Viva</span><span class="n">Nomads</span></div>'+
+            '<div class="lead">Aluguel mobiliado por temporada — 30+ dias<br>para nômades, executivos e profissionais em mudança</div>'+
+            '<div class="dom">vivanomads.com.br</div></div>';
+        } else {
+          el.innerHTML='<div class="cap"><div class="tag">'+s.tag+'</div><h2>'+s.title+'</h2><p>'+s.sub+'</p></div>'+
+            '<div class="shot"><img loading="lazy" src="'+BASE+s.img+'" alt="'+s.title+'"></div>';
+        }
+        stage.appendChild(el); els.push(el);
+        var dot=document.createElement("div"); dot.className="dot"; dot.onclick=function(){go(i)}; dots.appendChild(dot);
+      });
+      function go(n){ idx=(n+SLIDES.length)%SLIDES.length; els.forEach(function(e,i){e.classList.toggle("active",i===idx)});
+        [].forEach.call(dots.children,function(d,i){d.classList.toggle("active",i===idx)});
+        counter.textContent=(idx+1)+" / "+SLIDES.length; }
+      function move(d){ go(idx+d); }
+      document.querySelectorAll("[data-dir]").forEach(function(b){ b.addEventListener("click",function(e){e.stopPropagation();move(parseInt(b.dataset.dir,10))}); });
+      document.addEventListener("keydown",function(e){ if(e.key==="ArrowRight"||e.key===" ")move(1); if(e.key==="ArrowLeft")move(-1); });
+      document.getElementById("full").onclick=function(){ if(!document.fullscreenElement)document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen(); else document.exitFullscreen&&document.exitFullscreen(); };
+      var tx=0; stage.addEventListener("touchstart",function(e){tx=e.touches[0].clientX},{passive:true});
+      stage.addEventListener("touchend",function(e){var dx=e.changedTouches[0].clientX-tx; if(Math.abs(dx)>50)move(dx<0?1:-1)},{passive:true});
+      go(0);
+    </script>
+  </body>
+</html>
