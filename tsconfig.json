@@ -6,6 +6,9 @@
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
+    // Testes rodam no Node (node --test) importando `./x.ts` com extensão; com
+    // noEmit isso é seguro e evita erros TS5097 no typecheck.
+    "allowImportingTsExtensions": true,
     "esModuleInterop": true,
     "module": "esnext",
     "moduleResolution": "bundler",

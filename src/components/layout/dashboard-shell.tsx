@@ -25,8 +25,8 @@ import {
   RotateCcw,
   Menu,
   LogOut,
-  ArrowLeftRight,
-  ArrowRight,
+  Building2,
+  User,
 } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { Avatar } from "@/components/ui/avatar";
@@ -78,7 +78,11 @@ const ADMIN_NAV: NavItem[] = [
 const NAV_BY_MODE: Record<ViewMode, NavItem[]> = { owner: OWNER_NAV, tenant: TENANT_NAV };
 
 /** Para onde o convite leva ao ativar o segundo papel. */
-const MODE_ENTRY: Record<ViewMode, string> = { owner: "/qualificar", tenant: "/buscar" };
+/** Ícone de cada mundo no seletor de modo. */
+const MODE_ICON: Record<ViewMode, React.ComponentType<{ className?: string }>> = {
+  owner: Building2,
+  tenant: User,
+};
 
 /** Rotas exclusivas de cada papel (a verificação é compartilhada — adapta por
  *  modo). Acessá-las por URL no modo errado redireciona para a Visão geral. */
@@ -99,7 +103,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, signOut, setActiveMode } = useAuthStore();
-  const { mode, hasBoth } = useViewMode();
+  const { mode } = useViewMode();
 
   // Em modo demo (sem login), exibe uma identidade coerente (A5/A6).
   const display = user ?? DEMO_USER;
@@ -208,10 +212,10 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           </button>
         </div>
 
-        {/* Barra de modo: reforço permanente do papel + troca / convite */}
+        {/* Barra de modo: seletor sempre visível (proprietário ⇄ inquilino). */}
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-sage-200 bg-white px-5 py-2.5 sm:px-8 print:hidden">
-          <p className="flex items-center gap-2 text-sm text-muted">
-            <span className="hidden sm:inline">Você está no modo</span>
+          <p className="hidden items-center gap-2 text-sm text-muted sm:flex">
+            Você está no modo
             <span
               key={mode}
               className={cn(
@@ -224,11 +228,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               {meta.label}
             </span>
           </p>
-          {hasBoth ? (
-            <ModeSwitcher mode={mode} onSwitch={switchTo} />
-          ) : (
-            <RoleInvite mode={mode} />
-          )}
+          <ModeSwitcher mode={mode} onSwitch={switchTo} />
         </div>
 
         <main key={mode} className="mode-transition flex-1 p-5 sm:p-8">
@@ -239,46 +239,47 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** Botão de troca de modo, estilo Airbnb (mostra o modo atual e alterna). */
+/**
+ * Seletor de modo estilo Airbnb: pílula segmentada com dois mundos
+ * (Proprietário ⇄ Inquilino) e um indicador que desliza com animação para o
+ * lado ativo. Sempre visível — um clique alterna o mundo.
+ */
 function ModeSwitcher({ mode, onSwitch }: { mode: ViewMode; onSwitch: (m: ViewMode) => void }) {
-  const meta = MODE_META[mode];
-  const target = MODE_META[meta.other];
+  const modes: ViewMode[] = ["owner", "tenant"];
   return (
-    <button
-      type="button"
-      onClick={() => onSwitch(meta.other)}
-      title={`Trocar para o modo ${target.label}`}
-      className="group inline-flex items-center gap-2 rounded-full border border-sage-200 bg-white px-3.5 py-1.5 text-sm font-medium text-ink transition-[transform,colors] hover:border-sage hover:bg-surface-2 active:scale-95"
+    <div
+      role="tablist"
+      aria-label="Alternar entre Proprietário e Inquilino"
+      className="relative grid w-[16.5rem] grid-cols-2 rounded-full border border-sage-200 bg-surface-2 p-1"
     >
-      <span className={cn("h-2 w-2 rounded-full transition-colors", meta.accentDot)} aria-hidden />
-      Modo: {meta.label}
-      <ArrowLeftRight className="h-4 w-4 text-muted transition-transform group-hover:rotate-180" />
-    </button>
-  );
-}
-
-/** Convite de conversão para quem tem só um papel (ativa o outro). */
-function RoleInvite({ mode }: { mode: ViewMode }) {
-  const router = useRouter();
-  const activateRole = useAuthStore((s) => s.activateRole);
-  const other = MODE_META[mode].other;
-  const label =
-    other === "owner" ? "Tem um imóvel? Anuncie também" : "Procurando um imóvel? Busque também";
-
-  function accept() {
-    activateRole(other);
-    router.push(MODE_ENTRY[other]);
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={accept}
-      className="inline-flex items-center gap-1.5 rounded-full bg-forest px-3.5 py-1.5 text-sm font-medium text-white transition-colors hover:bg-forest-600"
-    >
-      {label}
-      <ArrowRight className="h-4 w-4" />
-    </button>
+      {/* Indicador deslizante (animação estilo Airbnb) */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-full bg-white shadow-sm ring-1 ring-black/5 transition-transform duration-300 ease-out"
+        style={{ transform: mode === "tenant" ? "translateX(100%)" : "translateX(0)" }}
+      />
+      {modes.map((m) => {
+        const meta = MODE_META[m];
+        const Icon = MODE_ICON[m];
+        const active = mode === m;
+        return (
+          <button
+            key={m}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            onClick={() => !active && onSwitch(m)}
+            className={cn(
+              "relative z-10 inline-flex items-center justify-center gap-1.5 rounded-full py-1.5 text-sm font-semibold transition-colors duration-200",
+              active ? meta.accentText : "text-muted hover:text-ink"
+            )}
+          >
+            <Icon className="h-4 w-4" />
+            {meta.label}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
