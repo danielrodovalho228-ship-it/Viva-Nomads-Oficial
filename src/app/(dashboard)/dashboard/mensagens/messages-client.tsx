@@ -5,6 +5,7 @@ import { Send, ArrowLeft } from "lucide-react";
 import { PageTitle } from "@/components/dashboard/primitives";
 import { sendMessage } from "@/lib/data/actions";
 import type { Conversation } from "@/lib/data/messages";
+import { guardContactInfo, GUARD_NOTICE } from "@/lib/messages/contact-guard";
 import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
 import { DEMO_CONVERSATIONS } from "@/lib/demo/seed";
 import { cn } from "@/lib/utils";
@@ -28,6 +29,8 @@ function MessagesInner({ initial, demo }: { initial: Conversation[]; demo: boole
   const [conversations, setConversations] = useState<Conversation[]>(initial);
   const [activeId, setActiveId] = useState<string>(initial[0]?.id ?? "");
   const [draft, setDraft] = useState("");
+  // Aviso de contato protegido (aparece quando algo foi mascarado no envio).
+  const [guardNotice, setGuardNotice] = useState(false);
   // No mobile, alterna entre lista e conversa (master-detail). No desktop, ambos.
   const [mobileView, setMobileView] = useState<"list" | "chat">("list");
 
@@ -41,7 +44,10 @@ function MessagesInner({ initial, demo }: { initial: Conversation[]; demo: boole
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!draft.trim() || !active) return;
-    const text = draft;
+    // Mesma máscara do servidor: o eco otimista mostra exatamente o que será
+    // gravado (telefones/e-mails protegidos até o aceite do proprietário).
+    const { text, masked } = guardContactInfo(draft);
+    setGuardNotice(masked);
     setDraft("");
     // Atualização otimista
     setConversations((prev) =>
@@ -142,6 +148,11 @@ function MessagesInner({ initial, demo }: { initial: Conversation[]; demo: boole
               </div>
             ))}
           </div>
+          {guardNotice && (
+            <p className="border-t border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-800">
+              {GUARD_NOTICE}
+            </p>
+          )}
           <form onSubmit={submit} className="flex items-center gap-2 border-t border-sage-200 p-3">
             <input
               value={draft}

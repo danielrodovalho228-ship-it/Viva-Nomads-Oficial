@@ -17,6 +17,8 @@ import type { SubscriptionPlan } from "@/lib/store";
 import { buildLeadNotification, LEAD_KIND_MSG, type LeadKind } from "@/lib/leads";
 import { amenityRows } from "@/lib/amenities";
 import { getPropertyForOwner } from "@/lib/data/properties";
+import { guardContactInfo } from "@/lib/messages/contact-guard";
+import { SITE_URL } from "@/lib/site";
 import type { Property } from "@/lib/types";
 
 type ActionResult = { ok: boolean; demo?: boolean; id?: string; error?: string };
@@ -669,13 +671,53 @@ export async function sendMessage(input: {
     [user.id, input.receiverId].sort().join("_") +
       (input.propertyId ? `_${input.propertyId}` : "");
 
+  // Proteção de contato: telefones/e-mails/links de mensageria são mascarados
+  // ANTES de gravar — a negociação fica registrada na plataforma e o contato
+  // direto só é liberado no fluxo oficial (após o aceite do proprietário).
+  const { text: safeBody } = guardContactInfo(input.body);
+
   const { error } = await supabase.from("messages").insert({
     conversation_id: conversationId,
     sender_id: user.id,
     receiver_id: input.receiverId,
     property_id: input.propertyId ?? null,
-    body: input.body,
+    body: safeBody,
   });
   if (error) return { ok: false, error: error.message };
+
+  // Notifica o destinatário por e-mail com o LINK para responder NO SITE
+  // (nunca por e-mail — mantém o registro). Best-effort: falha de notificação
+  // não derruba o envio. O contato vem da RPC escopada (migração 0024); sem a
+  // migração, segue sem notificar.
+  try {
+    const { data: rpc } = await supabase.rpc("message_notify_contact", {
+      target: input.receiverId,
+    });
+    const contact = Array.isArray(rpc) ? rpc[0] : rpc;
+    if (contact?.email) {
+      const { data: me } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", user.id)
+        .maybeSingle();
+      const senderName = me?.full_name ?? "Um usuário";
+      const preview = safeBody.length > 140 ? `${safeBody.slice(0, 140)}…` : safeBody;
+      const link = `${SITE_URL}/dashboard/mensagens`;
+      await notify({
+        event: "new_message",
+        email: contact.email,
+        name: contact.full_name ?? undefined,
+        detailsHtml:
+          `<p><strong>${senderName}</strong> escreveu:</p>` +
+          `<blockquote style="margin:8px 0;padding:8px 12px;border-left:3px solid #1e63d0;color:#374151">${preview}</blockquote>` +
+          `<p><a href="${link}" style="display:inline-block;background:#1e63d0;color:#fff;padding:10px 18px;border-radius:999px;text-decoration:none;font-weight:600">Responder no Viva Nomads</a></p>` +
+          `<p style="color:#6b7280;font-size:12px">Responda sempre pela plataforma — assim a conversa fica registrada e protegida. Não responda este e-mail.</p>`,
+        detailsText: `${senderName}: ${preview}\n\nResponda pela plataforma (a conversa fica registrada): ${link}`,
+      });
+    }
+  } catch {
+    /* notificação é best-effort */
+  }
+
   return { ok: true, id: conversationId };
 }
