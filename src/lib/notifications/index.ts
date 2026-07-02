@@ -6,6 +6,7 @@ export { isEmailConfigured, isWhatsappConfigured };
 /** Eventos que disparam notificação no funil (sem isso o funil vaza). */
 export type NotificationEvent =
   | "new_lead" // proprietário recebe um interessado
+  | "new_message" // nova mensagem no chat (proprietário OU inquilino)
   | "application_received" // candidatura recebida
   | "saved_search_match" // alerta de busca salva do inquilino
   | "verification_ready" // laudo CAF pronto
@@ -14,6 +15,7 @@ export type NotificationEvent =
 
 const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: string) => string }> = {
   new_lead: { subject: "Novo interessado no seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, você recebeu um novo lead no Viva Nomads.` },
+  new_message: { subject: "Você tem uma nova mensagem no Viva Nomads", body: (n) => `Olá${n ? " " + n : ""}, você recebeu uma nova mensagem no Viva Nomads.` },
   application_received: { subject: "Candidatura recebida", body: () => "Recebemos sua candidatura. O proprietário foi notificado." },
   saved_search_match: { subject: "Novo imóvel para sua busca", body: () => "Um imóvel novo combina com sua busca salva no Viva Nomads." },
   verification_ready: { subject: "Sua verificação está pronta", body: () => "Seu laudo de Inquilino Verificado está disponível." },
