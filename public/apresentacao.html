@@ -10,53 +10,99 @@
       * { box-sizing: border-box; margin: 0; }
       html,body { height: 100%; }
       body {
-        background: radial-gradient(120% 90% at 50% 30%, #14392c 0%, #081c15 70%);
+        background: radial-gradient(120% 90% at 50% 25%, #14392c 0%, #081c15 72%);
         color: #fff; font-family: -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
         display: flex; flex-direction: column; height: 100vh; overflow: hidden;
       }
-      header { display:flex; align-items:center; justify-content:space-between; padding:14px 20px; }
+      header { display:flex; align-items:center; justify-content:space-between; padding:12px 20px; }
       .brand { font-weight:800; font-size:18px; letter-spacing:-.5px; }
       .brand .v{color:#8fd0ff}.brand .n{color:#9fe06a}
       .tools { display:flex; gap:8px; align-items:center; }
       .tools button { background:rgba(255,255,255,.1); color:#fff; border:1px solid rgba(255,255,255,.18);
-        border-radius:999px; padding:7px 14px; font-size:13px; cursor:pointer; }
+        border-radius:999px; padding:7px 13px; font-size:13px; cursor:pointer; }
       .tools button:hover { background:rgba(255,255,255,.18); }
-      .stage { flex:1; position:relative; display:flex; align-items:center; justify-content:center; padding:0 16px; }
+      .tools button.on { background:var(--gold); color:#0b1c16; border-color:var(--gold); }
+      .stage { flex:1; position:relative; display:flex; align-items:center; justify-content:center; padding:0 16px; min-height:0; }
       .slide { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
-        gap:16px; opacity:0; transition:opacity .35s ease; pointer-events:none; padding:0 16px 12px; }
+        gap:16px; opacity:0; transition:opacity .35s ease; pointer-events:none; padding:6px 20px 8px; }
       .slide.active { opacity:1; pointer-events:auto; }
       .cap { text-align:center; }
       .cap .tag { color:var(--gold); font-size:13px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
       .cap h2 { font-size:clamp(20px,3.2vw,30px); margin-top:4px; }
       .cap p { color:#cfe0d7; font-size:clamp(13px,1.8vw,16px); margin-top:4px; }
-      .shot { max-width:min(1120px,92vw); max-height:64vh; border-radius:14px; overflow:hidden;
+      .shot { max-width:min(1120px,92vw); max-height:66vh; border-radius:14px; overflow:hidden;
         box-shadow:0 24px 60px rgba(0,0,0,.5); border:1px solid rgba(255,255,255,.08); background:#0b1c16; }
       .shot img { display:block; width:100%; height:100%; object-fit:contain; }
-      /* slide de capa */
-      .cover { text-align:center; }
-      .cover .wm { font-size:clamp(34px,7vw,72px); font-weight:800; letter-spacing:-1px; }
-      .cover .wm .v{color:#8fd0ff}.cover .wm .n{color:#9fe06a}
-      .cover .lead { font-size:clamp(16px,2.4vw,24px); color:#dbeee5; margin-top:14px; }
-      .cover .dom { display:inline-block; margin-top:22px; background:var(--gold); color:#0b1c16;
-        font-weight:700; border-radius:999px; padding:10px 22px; font-size:16px; }
+      video { max-width:min(430px,60vh); max-height:74vh; border-radius:20px; box-shadow:0 24px 60px rgba(0,0,0,.55); background:#000; }
+      /* conteúdo (narrativa) */
+      .content { width:min(1000px,94vw); text-align:left; }
+      .content .eyebrow { color:var(--gold); font-size:13px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; }
+      .content h2 { font-size:clamp(24px,4vw,40px); line-height:1.15; margin-top:8px; }
+      .content h2 .hl { color:var(--gold); }
+      .content p.lead { color:#dbeee5; font-size:clamp(15px,2vw,20px); margin-top:14px; line-height:1.5; }
+      .quote { font-size:clamp(22px,4.4vw,42px); line-height:1.3; font-weight:700; text-align:center; width:min(1000px,92vw); }
+      .quote .hl{color:var(--gold)}
+      .cols { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:22px; }
+      @media (max-width:720px){ .cols{grid-template-columns:1fr} }
+      .col { background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); border-radius:16px; padding:18px; }
+      .col h3 { font-size:17px; color:#9fe06a; }
+      .col.blue h3{ color:#8fd0ff; }
+      .col ul { margin:10px 0 0; padding-left:18px; color:#d7e6de; font-size:14.5px; line-height:1.6; }
+      .steps { counter-reset:s; display:grid; gap:12px; margin-top:20px; }
+      .step { display:flex; gap:14px; align-items:flex-start; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08); border-radius:14px; padding:12px 16px; }
+      .step b { counter-increment:s; }
+      .step .num { flex:none; width:34px; height:34px; border-radius:50%; background:var(--forest); border:2px solid var(--gold); color:#fff; display:grid; place-items:center; font-weight:800; }
+      .step div p { color:#cfe0d7; font-size:14px; margin-top:2px; }
+      .cards { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:20px; }
+      @media (max-width:720px){ .cards{grid-template-columns:1fr} }
+      .rcard { background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.09); border-radius:14px; padding:14px 16px; }
+      .rcard h4 { font-size:15px; color:#fff; } .rcard p { color:#cfe0d7; font-size:13.5px; margin-top:4px; }
+      .rev { display:grid; gap:8px; margin-top:18px; }
+      .rev .row { display:flex; justify-content:space-between; gap:12px; padding:9px 4px; border-bottom:1px dashed rgba(255,255,255,.14); font-size:15px; }
+      .rev .row b{ color:var(--gold); }
+      .withqr { display:flex; gap:26px; align-items:center; flex-wrap:wrap; }
+      .withqr .qr { text-align:center; }
+      .withqr .qr img { width:150px; height:150px; border-radius:12px; background:#fff; padding:6px; }
+      .withqr .qr span { display:block; margin-top:6px; font-size:12px; color:var(--muted); }
+      /* capa e cta */
+      .cover,.ctas { text-align:center; }
+      .cover .wm,.ctas .wm { font-size:clamp(34px,7vw,72px); font-weight:800; letter-spacing:-1px; }
+      .cover .wm .v,.ctas .wm .v{color:#8fd0ff}.cover .wm .n,.ctas .wm .n{color:#9fe06a}
+      .cover .lead { font-size:clamp(16px,2.4vw,24px); color:#dbeee5; margin-top:14px; line-height:1.5; }
+      .cover .dom,.ctas .dom { display:inline-block; margin-top:20px; background:var(--gold); color:#0b1c16; font-weight:700; border-radius:999px; padding:10px 22px; font-size:16px; }
+      .ctas .links { display:flex; gap:16px; justify-content:center; margin-top:20px; flex-wrap:wrap; }
+      .ctas .links a { color:#8fd0ff; font-size:15px; text-decoration:none; border-bottom:1px solid rgba(143,208,255,.4); }
+      .ctas .qrrow { display:flex; gap:26px; justify-content:center; margin-top:22px; }
+      .ctas .qrrow .qr img{ width:130px;height:130px;border-radius:12px;background:#fff;padding:6px } .ctas .qrrow .qr span{display:block;margin-top:6px;font-size:12px;color:var(--muted)}
       /* navegação */
-      .nav { position:absolute; top:0; bottom:0; width:22%; cursor:pointer; }
+      .nav { position:absolute; top:0; bottom:0; width:16%; cursor:pointer; z-index:2; }
       .nav.prev{left:0} .nav.next{right:0}
-      .arrow { position:absolute; top:50%; transform:translateY(-50%); background:rgba(255,255,255,.12);
-        border:0; color:#fff; width:44px; height:44px; border-radius:50%; font-size:20px; cursor:pointer; }
+      .arrow { position:absolute; top:50%; transform:translateY(-50%); background:rgba(255,255,255,.12); border:0; color:#fff; width:44px; height:44px; border-radius:50%; font-size:20px; cursor:pointer; z-index:3; }
       .arrow.prev{left:12px} .arrow.next{right:12px}
-      footer { display:flex; align-items:center; gap:14px; justify-content:center; padding:12px 20px 18px; }
-      .dots { display:flex; gap:7px; flex-wrap:wrap; justify-content:center; max-width:70%; }
-      .dot { width:9px; height:9px; border-radius:50%; background:rgba(255,255,255,.28); cursor:pointer; }
+      footer { display:flex; align-items:center; gap:14px; justify-content:center; padding:8px 20px; }
+      .dots { display:flex; gap:6px; flex-wrap:wrap; justify-content:center; max-width:64%; }
+      .dot { width:8px; height:8px; border-radius:50%; background:rgba(255,255,255,.28); cursor:pointer; }
       .dot.active { background:var(--gold); }
       .counter { color:var(--muted); font-size:13px; font-variant-numeric:tabular-nums; }
-      .hint { color:var(--muted); font-size:12px; text-align:center; padding-bottom:8px; }
+      .notes { display:none; background:rgba(0,0,0,.45); border-top:1px solid rgba(255,255,255,.12); color:#e6f0ea; font-size:14px; padding:10px 20px; text-align:center; }
+      body.shownotes .notes { display:block; }
+      .hint { color:var(--muted); font-size:12px; text-align:center; padding-bottom:6px; }
+      /* impressão / PDF */
+      @media print {
+        @page { size: 1280px 720px; margin: 0; }
+        body { height:auto; overflow:visible; display:block; background:#081c15; }
+        header,footer,.hint,.nav,.arrow,.notes,.tools { display:none !important; }
+        .stage { display:block; padding:0; }
+        .slide { position:relative; inset:auto; opacity:1 !important; page-break-after:always; height:720px; width:1280px; }
+      }
     </style>
   </head>
   <body>
     <header>
       <div class="brand"><span class="v">Viva</span><span class="n">Nomads</span> · Apresentação</div>
       <div class="tools">
+        <button id="notesBtn">🎤 Notas</button>
+        <button id="pdfBtn">⬇ PDF</button>
         <button id="full">⛶ Tela cheia</button>
       </div>
     </header>
@@ -68,52 +114,129 @@
       <button class="arrow next" data-dir="1" aria-label="Próximo">›</button>
     </div>
 
+    <div class="notes" id="notesBar"></div>
     <footer>
-      <button class="arrow" style="position:static;width:36px;height:36px" data-dir="-1">‹</button>
+      <button class="arrow" style="position:static;width:34px;height:34px" data-dir="-1">‹</button>
       <div class="dots" id="dots"></div>
       <span class="counter" id="counter"></span>
-      <button class="arrow" style="position:static;width:36px;height:36px" data-dir="1">›</button>
+      <button class="arrow" style="position:static;width:34px;height:34px" data-dir="1">›</button>
     </footer>
-    <div class="hint">Use as setas ← → do teclado, clique nas laterais ou deslize no celular.</div>
+    <div class="hint">Setas ← → do teclado · clique nas laterais · deslize no celular · “Notas” mostra a fala · “PDF” exporta o deck.</div>
 
     <script>
-      var BASE = "/apresentacao/";
+      var B = "/apresentacao/";
+      function shot(img, tag, title, sub, note){ return { html:
+        '<div class="cap"><div class="tag">'+tag+'</div><h2>'+title+'</h2><p>'+sub+'</p></div>'+
+        '<div class="shot"><img loading="lazy" src="'+B+img+'" alt="'+title+'"></div>', note:note }; }
+
       var SLIDES = [
-        { cover: true },
-        { img:"01-home.jpg",           tag:"Para quem procura", title:"Home",                 sub:"Seu lar temporário — busque pela cidade" },
-        { img:"02-busca.jpg",          tag:"Para quem procura", title:"Busca de imóveis",     sub:"Resultados com mapa e filtros de média estadia" },
-        { img:"03-imovel.jpg",         tag:"Para quem procura", title:"Página do imóvel",     sub:"Galeria, comodidades, espaço de trabalho e proximidades" },
-        { img:"04-como-funciona.jpg",  tag:"Para quem procura", title:"Como funciona",        sub:"Do interesse ao contrato, tudo online" },
-        { img:"05-precos.jpg",         tag:"Para quem procura", title:"Preços",               sub:"Transparente, com tudo incluído" },
-        { img:"06-proprietarios.jpg",  tag:"Para quem procura", title:"Para proprietários",   sub:"Anuncie e receba inquilinos qualificados" },
-        { img:"07-simulacao.jpg",      tag:"Ferramenta",        title:"Simulador de receita", sub:"5 fontes de receita, projeção no tempo e gráficos" },
-        { img:"08-painel-visao.jpg",   tag:"Para quem anuncia", title:"Painel — visão geral", sub:"Todo o gerenciamento num só lugar" },
-        { img:"09-painel-leads.jpg",   tag:"Para quem anuncia", title:"Painel — leads",       sub:"Inquilinos verificados, pré-aprove num clique" },
-        { img:"10-painel-mensagens.jpg",tag:"Para quem anuncia",title:"Painel — mensagens",   sub:"Converse pela plataforma, histórico registrado" },
-        { img:"11-painel-carteira.jpg",tag:"Para quem anuncia", title:"Painel — carteira",    sub:"Ocupação, receita e contratos a vencer" },
+        { html:'<div class="cover"><div class="wm"><span class="v">Viva</span><span class="n">Nomads</span></div>'+
+          '<div class="lead">A primeira plataforma brasileira de locação mobiliada de <b>média duração</b><br>para o profissional em movimento — contrato de verdade, garantia transparente e dinheiro sempre seguro.</div>'+
+          '<div class="dom">vivanomads.com.br</div></div>',
+          note:"Precisa morar alguns meses em outra cidade? O Viva Nomads é o seu lar temporário — mobiliado e pronto pra viver." },
+
+        { html:'<div class="cap"><div class="tag">Em 50 segundos</div><h2>O produto em vídeo</h2></div>'+
+          '<video src="'+B+'flow.mp4" controls playsinline></video>',
+          note:"Um tour rápido pelo produto — para quem procura e para quem anuncia." },
+
+        { html:'<div class="content"><div class="eyebrow">O problema que resolvemos</div>'+
+          '<h2>Existe um <span class="hl">vão no mercado</span> — e ninguém o preencheu</h2>'+
+          '<p class="lead">De um lado, o <b>Airbnb</b> resolve a curta temporada, mas foge de contrato e garantia. Do outro, o aluguel tradicional exige <b>12 meses, fiador e burocracia</b>. No meio — as estadias de <b>30 a 180 dias</b> de quem chega para um projeto, uma residência médica, um intercâmbio ou uma transição de carreira — não há solução pensada para essa pessoa.</p></div>',
+          note:"O mercado ignora a média estadia. É exatamente esse vão que o Viva Nomads ocupa." },
+
+        { html:'<div class="quote">Conectamos quem precisa <span class="hl">morar por alguns meses</span> a quem tem o imóvel certo — com <span class="hl">segurança para os dois lados</span>.</div>',
+          note:"A ideia em uma frase. Não somos imobiliária nem hotel: conectamos, verificamos, documentamos e registramos — sem nunca reter o dinheiro." },
+
+        { html:'<div class="content"><div class="eyebrow">Como funciona por dentro</div><h2>Dois lados, duas experiências</h2>'+
+          '<div class="cols"><div class="col"><h3>🏠 Painel do proprietário</h3><ul>'+
+          '<li>Cadastra o imóvel com fotos, comodidades e regras</li><li>Define prazos aceitos e garantias exigidas</li>'+
+          '<li>Recebe candidaturas de inquilinos já verificados</li><li>Acompanha contratos, pagamentos e reembolsos</li>'+
+          '<li>Recebe o pagamento direto, sem intermediação do dinheiro</li></ul></div>'+
+          '<div class="col blue"><h3>🧳 Painel do inquilino</h3><ul>'+
+          '<li>Busca por cidade, prazo, comodidades e proximidades</li><li>Filtra por imóveis que aceitam a garantia que pode dar</li>'+
+          '<li>Conversa com o proprietário pela plataforma</li><li>Candidata-se e assina o contrato da faixa certa</li>'+
+          '<li>Acompanha a estadia, a caução e o reembolso</li></ul></div></div></div>',
+          note:"Dois clientes com necessidades opostas. Por isso, dois painéis distintos — cada um vê só o que precisa." },
+
+        shot("01-home.jpg","Para quem procura","A porta de entrada","Comece pela cidade — estadias de 30+ dias","O inquilino começa pela cidade para onde vai."),
+        shot("02-busca.jpg","Para quem procura","Busca de média estadia","Mapa + filtros: prazo, garantia e comodidades","Resultados no mapa, com filtros pensados para quem fica meses."),
+        shot("03-imovel.jpg","Para quem procura","Página do imóvel","Galeria, comodidades, espaço de trabalho e proximidades","Cada anúncio é verificado, mobiliado e pronto pra trabalhar."),
+
+        { html:'<div class="content"><div class="eyebrow">Do anúncio ao contrato</div><h2>O caminho de uma locação</h2>'+
+          '<div class="steps">'+
+          '<div class="step"><span class="num">1</span><div><b>Cadastro e verificação</b><p>O proprietário anuncia; o inquilino cria conta e passa pela verificação de identidade (CAF).</p></div></div>'+
+          '<div class="step"><span class="num">2</span><div><b>Busca e descoberta</b><p>Encontra imóveis pelo prazo que precisa, com distâncias reais e comodidades filtráveis.</p></div></div>'+
+          '<div class="step"><span class="num">3</span><div><b>Conversa e candidatura</b><p>As partes conversam pela plataforma. O endereço exato só é liberado após o aceite.</p></div></div>'+
+          '<div class="step"><span class="num">4</span><div><b>Contrato e garantia</b><p>A plataforma aplica o contrato certo para a faixa de prazo; o inquilino escolhe a garantia.</p></div></div>'+
+          '<div class="step"><span class="num">5</span><div><b>Estadia e reembolso</b><p>Pagamento direto ao proprietário. Ao fim, vistoria e reembolso da caução documentado.</p></div></div>'+
+          '</div></div>',
+          note:"Cinco passos, do anúncio ao contrato — com verificação e privacidade em cada etapa." },
+
+        shot("04-como-funciona.jpg","Para quem procura","Sem burocracia","Do interesse ao contrato, tudo online","Sem fila, sem fiador surpresa, sem imobiliária."),
+
+        { html:'<div class="content"><div class="eyebrow">Segurança para os dois lados</div><h2>Proteções, caução e a <span class="hl">regra de ouro</span></h2>'+
+          '<div class="cards">'+
+          '<div class="rcard"><h4>💛 A regra de ouro</h4><p>A plataforma conecta, verifica e documenta — <b>nunca retém o dinheiro</b>. A caução fica em conta vinculada ou com a emissora, nunca com a plataforma.</p></div>'+
+          '<div class="rcard"><h4>💳 Caução flexível</h4><p>À vista (Pix/boleto) ou parcelada no cartão, sem travar o caixa. Ou título de capitalização.</p></div>'+
+          '<div class="rcard"><h4>🔎 Verificação CAF</h4><p>Todo inquilino é verificado por identidade. O proprietário sabe para quem está alugando.</p></div>'+
+          '<div class="rcard"><h4>📄 Contrato de verdade</h4><p>Cada faixa de prazo tem seu contrato, seguindo a Lei do Inquilinato.</p></div>'+
+          '</div></div>',
+          note:"O diferencial de confiança: dinheiro seguro, garantia flexível, inquilino verificado e contrato de verdade." },
+
+        shot("05-precos.jpg","Para quem procura","Preço transparente","Você sabe o que paga, com tudo incluído","Transparência total no custo — sem surpresa."),
+
+        { html:'<div class="content"><div class="eyebrow">O grande diferencial</div><h2>Por que o proprietário <span class="hl">assina um plano</span></h2>'+
+          '<p class="lead">O Viva Nomads não é só um lugar para anunciar — é a <b>ferramenta que administra a vida do proprietário como locador</b>. Sem a plataforma, ele gerencia imóveis em planilhas, conversas soltas no WhatsApp e contratos perdidos no e-mail. Com o plano, tudo fica num só lugar. Por isso ele paga uma mensalidade: <b>não pelo anúncio, mas pela gestão</b>.</p></div>',
+          note:"Aqui está o coração do negócio: a receita recorrente vem da GESTÃO, não do anúncio." },
+
+        shot("08-painel-visao.jpg","Para quem anuncia","Painel do proprietário","Todo o gerenciamento num só lugar","Imóveis, interessados e contratos — numa plataforma só."),
+        shot("09-painel-leads.jpg","Para quem anuncia","Inquilinos qualificados","Perfil verificado, pré-aprove num clique","Candidaturas de pessoas já verificadas, com prazo e garantia escolhidos."),
+        shot("10-painel-mensagens.jpg","Para quem anuncia","Converse pela plataforma","Histórico registrado — sem sair por fora","A conversa fica registrada: prova e proteção da comissão."),
+        shot("11-painel-carteira.jpg","Para quem anuncia","Sua carteira num relance","Ocupação, receita e contratos a vencer","O proprietário enxerga toda a operação num painel."),
+
+        { html:'<div class="content"><div class="eyebrow">Modelo de receita</div><h2>Cinco fontes, uma plataforma</h2>'+
+          '<div class="withqr"><div style="flex:1;min-width:300px"><div class="rev">'+
+          '<div class="row"><span>Comissão por aluguel</span><b>% do 1º mês</b></div>'+
+          '<div class="row"><span>Mensalidade dos planos (gestão)</span><b>recorrente</b></div>'+
+          '<div class="row"><span>Comissão de garantia</span><b>por contrato</b></div>'+
+          '<div class="row"><span>Serviços (Aqui Resolve)</span><b>por contrato</b></div>'+
+          '<div class="row"><span>Destaque / anúncio</span><b>por contrato</b></div>'+
+          '</div></div>'+
+          '<div class="qr"><img src="'+B+'qr-simulador.png" alt="QR simulador"><span>Simule ao vivo →<br>vivanomads.com.br/simulacao</span></div>'+
+          '</div></div>',
+          note:"Cinco fontes de receita — com a mensalidade recorrente no centro. Dá para simular no vivanomads.com.br/simulacao." },
+
+        shot("07-simulacao.jpg","Ferramenta","Simulador de receita","5 fontes, projeção no tempo e gráficos","Uma calculadora viva do modelo de negócio."),
+        shot("06-proprietarios.jpg","Chamado","Tem um imóvel?","Anuncie e receba inquilinos qualificados","Convite direto ao proprietário."),
+
+        { html:'<div class="ctas"><div class="wm"><span class="v">Viva</span><span class="n">Nomads</span></div>'+
+          '<div class="lead">Viva como local.</div>'+
+          '<div class="dom">vivanomads.com.br</div>'+
+          '<div class="qrrow"><div class="qr"><img src="'+B+'qr-site.png" alt="QR site"><span>Acesse o site</span></div>'+
+          '<div class="qr"><img src="'+B+'qr-simulador.png" alt="QR simulador"><span>Simulador</span></div></div>'+
+          '<div class="links"><a href="https://vivanomads.com.br" target="_blank">Site</a><a href="/simulacao" target="_blank">Simulador</a></div></div>',
+          note:"Viva Nomads. Viva como local. vivanomads.com.br." },
       ];
-      var stage=document.getElementById("stage"), dots=document.getElementById("dots"), counter=document.getElementById("counter");
+
+      var stage=document.getElementById("stage"), dots=document.getElementById("dots"),
+          counter=document.getElementById("counter"), notesBar=document.getElementById("notesBar");
       var idx=0, els=[];
       SLIDES.forEach(function(s,i){
-        var el=document.createElement("div"); el.className="slide";
-        if(s.cover){
-          el.innerHTML='<div class="cover"><div class="wm"><span class="v">Viva</span><span class="n">Nomads</span></div>'+
-            '<div class="lead">Aluguel mobiliado por temporada — 30+ dias<br>para nômades, executivos e profissionais em mudança</div>'+
-            '<div class="dom">vivanomads.com.br</div></div>';
-        } else {
-          el.innerHTML='<div class="cap"><div class="tag">'+s.tag+'</div><h2>'+s.title+'</h2><p>'+s.sub+'</p></div>'+
-            '<div class="shot"><img loading="lazy" src="'+BASE+s.img+'" alt="'+s.title+'"></div>';
-        }
+        var el=document.createElement("div"); el.className="slide"; el.innerHTML=s.html;
         stage.appendChild(el); els.push(el);
         var dot=document.createElement("div"); dot.className="dot"; dot.onclick=function(){go(i)}; dots.appendChild(dot);
       });
-      function go(n){ idx=(n+SLIDES.length)%SLIDES.length; els.forEach(function(e,i){e.classList.toggle("active",i===idx)});
+      function go(n){ idx=(n+SLIDES.length)%SLIDES.length;
+        els.forEach(function(e,i){ e.classList.toggle("active",i===idx); var v=e.querySelector("video"); if(v&&i!==idx){try{v.pause()}catch(e){}} });
         [].forEach.call(dots.children,function(d,i){d.classList.toggle("active",i===idx)});
-        counter.textContent=(idx+1)+" / "+SLIDES.length; }
+        counter.textContent=(idx+1)+" / "+SLIDES.length;
+        notesBar.textContent=SLIDES[idx].note||""; }
       function move(d){ go(idx+d); }
       document.querySelectorAll("[data-dir]").forEach(function(b){ b.addEventListener("click",function(e){e.stopPropagation();move(parseInt(b.dataset.dir,10))}); });
-      document.addEventListener("keydown",function(e){ if(e.key==="ArrowRight"||e.key===" ")move(1); if(e.key==="ArrowLeft")move(-1); });
-      document.getElementById("full").onclick=function(){ if(!document.fullscreenElement)document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen(); else document.exitFullscreen&&document.exitFullscreen(); };
+      document.addEventListener("keydown",function(e){ if(e.key==="ArrowRight"||e.key==="PageDown")move(1); if(e.key==="ArrowLeft"||e.key==="PageUp")move(-1); });
+      document.getElementById("full").onclick=function(){ if(!document.fullscreenElement)(document.documentElement.requestFullscreen||function(){})(); else (document.exitFullscreen||function(){})(); };
+      document.getElementById("notesBtn").onclick=function(){ document.body.classList.toggle("shownotes"); this.classList.toggle("on"); };
+      document.getElementById("pdfBtn").onclick=function(){ window.print(); };
       var tx=0; stage.addEventListener("touchstart",function(e){tx=e.touches[0].clientX},{passive:true});
       stage.addEventListener("touchend",function(e){var dx=e.changedTouches[0].clientX-tx; if(Math.abs(dx)>50)move(dx<0?1:-1)},{passive:true});
       go(0);
