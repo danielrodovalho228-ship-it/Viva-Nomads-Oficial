@@ -23,6 +23,8 @@ const nextConfig: NextConfig = {
       // só por link direto. (/simulacao é a URL principal divulgada.)
       { source: "/simulacao", destination: "/simulador.html" },
       { source: "/simulador", destination: "/simulador.html" },
+      // Apresentação (slideshow privado das telas). URL limpa /apresentacao.
+      { source: "/apresentacao", destination: "/apresentacao.html" },
     ];
   },
   async headers() {
@@ -38,6 +40,14 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/simulador.html",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
+      {
+        source: "/apresentacao",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
+      {
+        source: "/apresentacao.html",
         headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
       },
     ];
