@@ -99,3 +99,14 @@ export function amenityRows(keys: string[]): { category: AmenityCategory; label:
     .filter((k) => AMENITY_LABEL[k])
     .map((k) => ({ category: AMENITY_CATEGORY[k], label: AMENITY_LABEL[k] }));
 }
+
+/** rótulo → key (inverso de AMENITY_LABEL), para reconstruir a seleção ao editar. */
+export const AMENITY_KEY_BY_LABEL: Record<string, string> = {};
+for (const [key, label] of Object.entries(AMENITY_LABEL)) {
+  AMENITY_KEY_BY_LABEL[label] = key;
+}
+
+/** Converte rótulos gravados (property_amenities) de volta em chaves selecionadas. */
+export function amenityKeysFromLabels(labels: string[]): string[] {
+  return labels.map((l) => AMENITY_KEY_BY_LABEL[l]).filter(Boolean);
+}

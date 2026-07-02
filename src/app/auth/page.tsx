@@ -324,7 +324,7 @@ export default function AuthPage() {
               <p className="mt-2 text-sm text-muted">
                 Informe seu e-mail e enviaremos um link seguro para criar uma nova senha.
               </p>
-              <form onSubmit={handleForgot} className="mt-6 space-y-4">
+              <form onSubmit={handleForgot} method="post" className="mt-6 space-y-4">
                 <Input
                   icon={Mail}
                   type="email"
@@ -332,6 +332,8 @@ export default function AuthPage() {
                   value={email}
                   onChange={setEmail}
                   required
+                  name="email"
+                  autoComplete="email"
                 />
                 {error && <p className="text-sm text-red-600">{error}</p>}
                 {notice && (
@@ -425,7 +427,7 @@ export default function AuthPage() {
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+              <form onSubmit={handleSubmit} method="post" className="mt-6 space-y-4">
                 {mode === "signup" && (
                   <Input
                     icon={User}
@@ -443,6 +445,8 @@ export default function AuthPage() {
                   value={email}
                   onChange={setEmail}
                   required
+                  name="email"
+                  autoComplete="email"
                 />
                 <Input
                   icon={Lock}
@@ -451,6 +455,8 @@ export default function AuthPage() {
                   value={password}
                   onChange={setPassword}
                   required
+                  name="password"
+                  autoComplete={mode === "signup" ? "new-password" : "current-password"}
                 />
                 {mode === "signup" && (
                   <>
@@ -461,6 +467,8 @@ export default function AuthPage() {
                       value={confirmPassword}
                       onChange={setConfirmPassword}
                       required
+                      name="confirm-password"
+                      autoComplete="new-password"
                     />
                     {showReferral ? (
                       <Input
@@ -566,6 +574,8 @@ function Input({
   value,
   onChange,
   required,
+  name,
+  autoComplete,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   type: string;
@@ -573,6 +583,8 @@ function Input({
   value: string;
   onChange: (v: string) => void;
   required?: boolean;
+  name?: string;
+  autoComplete?: string;
 }) {
   const [show, setShow] = useState(false);
   const isPassword = type === "password";
@@ -585,6 +597,8 @@ function Input({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         required={required}
+        name={name}
+        autoComplete={autoComplete}
         className="w-full bg-transparent text-sm outline-none placeholder:text-muted"
       />
       {isPassword && (
