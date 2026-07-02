@@ -71,26 +71,34 @@ def phone_front():
 
 PHONE_FRONT=phone_front()
 
+TAG_A="PARA QUEM PROCURA"; TAG_B="PARA QUEM ANUNCIA"
 SCENES=[
-    dict(shot="home.png",        step="1", title="Seu lar temporário",    sub="Comece pela cidade — estadias de 30+ dias"),
-    dict(shot="buscar.png",      step="2", title="Busque no mapa",        sub="Filtre por prazo, garantia e comodidades"),
-    dict(shot="imovel.png",      step="3", title="Imóvel verificado",     sub="Mobiliado e pronto pra trabalhar"),
-    dict(shot="como-funciona.png",step="4",title="Sem burocracia",        sub="Do interesse ao contrato, tudo online"),
-    dict(shot="precos.png",      step="5", title="Preço transparente",    sub="Você sabe o que paga, com tudo incluído"),
-    dict(shot="proprietarios.png",step="6",title="Tem um imóvel?",        sub="Anuncie e receba interessados"),
+    dict(shot="home.png",        tag=TAG_A, title="Seu lar temporário",    sub="Comece pela cidade — estadias de 30+ dias"),
+    dict(shot="buscar.png",      tag=TAG_A, title="Busque no mapa",        sub="Filtre por prazo, garantia e comodidades"),
+    dict(shot="imovel.png",      tag=TAG_A, title="Imóvel verificado",     sub="Mobiliado e pronto pra trabalhar"),
+    dict(shot="como-funciona.png",tag=TAG_A,title="Sem burocracia",        sub="Do interesse ao contrato, tudo online"),
+    dict(shot="precos.png",      tag=TAG_A, title="Preço transparente",    sub="Você sabe o que paga, com tudo incluído"),
+    dict(shot="proprietarios.png",tag=TAG_A,title="Tem um imóvel?",        sub="Anuncie e receba interessados"),
 ]
+DASH=[
+    dict(shot="dash-visao.png",    tag=TAG_B, title="Painel do proprietário", sub="Todo o gerenciamento num só lugar"),
+    dict(shot="dash-leads.png",    tag=TAG_B, title="Inquilinos qualificados", sub="Veja o perfil verificado e aprove num clique"),
+    dict(shot="dash-mensagens.png",tag=TAG_B, title="Converse pela plataforma", sub="Histórico registrado — sem sair por fora"),
+    dict(shot="dash-carteira.png", tag=TAG_B, title="Sua carteira num relance", sub="Ocupação, receita e contratos a vencer"),
+]
+ALL_SCENES=SCENES+DASH
 CHIP="Estadias de 30+ dias · imóveis verificados"
-NSC=len(SCENES)
-DUR_INTRO=2.6; DUR_SCENE=4.8; DUR_OUTRO=3.4; FADE=0.3
+NSC=len(ALL_SCENES)
+DUR_INTRO=2.6; DUR_SCENE=4.3; DUR_DIV=2.2; DUR_OUTRO=3.4; FADE=0.3
 TITLE_F=font(56); SUB_F=font(30,False); STEP_F=font(26); CHIP_F=font(26,False)
 
 def draw_chrome(base, sc, idx, prog):
     """Draw header (step/title/sub), chip and progress bar onto base (RGB)."""
     d=ImageDraw.Draw(base,"RGBA")
-    # step pill
-    st=f"PASSO {sc['step']} / {NSC}"
+    # tag pill (segmento)
+    st=sc["tag"]
     w=d.textlength(st,font=STEP_F); px=W/2
-    d.rounded_rectangle([px-w/2-16,96,px+w/2+16,140],radius=22,fill=(200,162,75,40))
+    d.rounded_rectangle([px-w/2-18,96,px+w/2+18,140],radius=22,fill=(200,162,75,45))
     ctext(d,px,118,st,STEP_F,GOLD)
     ctext(d,W/2,190,sc["title"],TITLE_F,WHITE)
     for i,ln in enumerate(wrap(d,sc["sub"],SUB_F,W-160)):
@@ -121,7 +129,7 @@ def add_scene(writer, sc, idx):
     back=scene_back(sc); shot=prep_shot(sc)
     pan_max=max(0,shot.size[1]-IH); pan_max=min(pan_max,int(DUR_SCENE*330))
     n=int(DUR_SCENE*FPS)
-    prog=(idx+1)/NSC
+    prog=(idx+1)/NSC  # progresso global (0..1) sobre todas as cenas
     for k in range(n):
         t=k/max(1,n-1)
         pan=int(ease(t)*pan_max)
@@ -197,7 +205,10 @@ def main():
     # thumbnail 1s
     for _ in range(FPS): writer.append_data(np.asarray(thumb))
     card(writer,DUR_INTRO,"seu lar temporário",sub="em qualquer cidade")
-    for i,sc in enumerate(SCENES): add_scene(writer,sc,i)
+    gi=0
+    for sc in SCENES: add_scene(writer,sc,gi); gi+=1
+    card(writer,DUR_DIV,"o painel do proprietário",sub="gerencie tudo em um só lugar")
+    for sc in DASH: add_scene(writer,sc,gi); gi+=1
     card(writer,DUR_OUTRO,"viva como local",domain="vivanomads.com.br")
     writer.close()
     print("OK", path)
