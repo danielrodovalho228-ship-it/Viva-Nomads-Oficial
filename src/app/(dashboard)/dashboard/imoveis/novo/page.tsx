@@ -231,36 +231,75 @@ export default function NewPropertyPage() {
       const draft = localStorage.getItem("vivanomads-novo-draft");
       if (draft) {
         const d = JSON.parse(draft);
+        // Texto/números (guardados como string nos inputs).
         if (d.title) setTitle(d.title);
         if (d.propertyType) setPropertyType(d.propertyType);
         if (d.description) setDescription(d.description);
         if (d.bedrooms) setBedrooms(d.bedrooms);
         if (d.bathrooms) setBathrooms(d.bathrooms);
         if (d.areaM2) setAreaM2(d.areaM2);
+        if (d.parkingSpots) setParkingSpots(d.parkingSpots);
         if (d.minPeriod) setMinPeriod(d.minPeriod);
+        if (d.maxPeriod) setMaxPeriod(d.maxPeriod);
+        if (d.availableFrom) setAvailableFrom(d.availableFrom);
+        if (d.availableUntil) setAvailableUntil(d.availableUntil);
         if (d.monthlyPrice) setMonthlyPrice(d.monthlyPrice);
-        if (typeof d.furnished === "boolean") setFurnished(d.furnished);
-        if (typeof d.petsOk === "boolean") setPetsOk(d.petsOk);
         if (d.street) setStreet(d.street);
         if (d.neighborhood) setNeighborhood(d.neighborhood);
         if (d.city) setCity(d.city);
         if (d.cep) setCep(d.cep);
-        if (d.ownershipType) setOwnershipType(d.ownershipType);
         if (d.videoUrl) setVideoUrl(d.videoUrl);
+        // Regras do imóvel (booleanos).
+        if (typeof d.furnished === "boolean") setFurnished(d.furnished);
+        if (typeof d.petsOk === "boolean") setPetsOk(d.petsOk);
+        if (typeof d.smokingAllowed === "boolean") setSmokingAllowed(d.smokingAllowed);
+        if (typeof d.childrenAllowed === "boolean") setChildrenAllowed(d.childrenAllowed);
+        if (typeof d.issuesInvoice === "boolean") setIssuesInvoice(d.issuesInvoice);
+        // Seleções (mapas/listas) e comerciais.
+        if (d.amenityKeys && typeof d.amenityKeys === "object") setAmenityKeys(d.amenityKeys);
+        if (Array.isArray(d.googlePlaces)) setGooglePlaces(d.googlePlaces);
+        if (Array.isArray(d.manualProximities)) setManualProximities(d.manualProximities);
+        if (d.utilitiesMode === "fixed" || d.utilitiesMode === "real") setUtilitiesMode(d.utilitiesMode);
+        if (typeof d.utilitiesEstimate === "number") setUtilitiesEstimate(d.utilitiesEstimate);
+        if (d.faixas && typeof d.faixas === "object") setFaixas(d.faixas);
+        if (d.garantias && typeof d.garantias === "object") setGarantias(d.garantias);
+        if (typeof d.prepFee === "number") setPrepFee(d.prepFee);
+        if (d.ownershipType) setOwnershipType(d.ownershipType);
+        if (typeof d.subleaseAuthorized === "boolean") setSubleaseAuthorized(d.subleaseAuthorized);
+        // Fotos/documentos com URL persistente (Supabase Storage).
+        if (Array.isArray(d.photos)) setPhotos(d.photos);
+        if (Array.isArray(d.subleaseDoc)) setSubleaseDoc(d.subleaseDoc);
+        // Volta para a etapa em que a pessoa parou.
+        if (typeof d.step === "number" && d.step >= 0) setStep(d.step);
       }
     } catch {}
   }, []);
 
   // Auto-save do rascunho + indicador "Salvo ✓" (Bloco F).
+  // Guarda TODOS os campos serializáveis + a etapa atual, para que trocar de
+  // página e voltar não perca nada. Exceção: fotos/documentos (arquivos) não
+  // cabem com segurança no armazenamento local — por isso o aviso na tela.
+  const draftJson = JSON.stringify({
+    title, propertyType, description, bedrooms, bathrooms, areaM2, parkingSpots,
+    minPeriod, maxPeriod, availableFrom, availableUntil, monthlyPrice,
+    street, neighborhood, city, cep, videoUrl,
+    furnished, petsOk, smokingAllowed, childrenAllowed, issuesInvoice,
+    amenityKeys, googlePlaces, manualProximities,
+    utilitiesMode, utilitiesEstimate, faixas, garantias, prepFee,
+    ownershipType, subleaseAuthorized, step,
+    // Fotos/documentos só são guardados quando já têm URL persistente
+    // (Supabase Storage). URLs "blob:" do modo demo morrem ao recarregar,
+    // então ficam de fora para não restaurar imagens quebradas.
+    photos: photos.filter((p) => p.url && !p.url.startsWith("blob:")),
+    subleaseDoc: subleaseDoc.filter((p) => p.url && !p.url.startsWith("blob:")),
+  });
   useEffect(() => {
     if (approved !== true) return;
-    const draft = {
-      title, propertyType, description, bedrooms, bathrooms, areaM2, minPeriod, monthlyPrice,
-      furnished, petsOk, street, neighborhood, city, cep, ownershipType, videoUrl,
-    };
     try {
-      localStorage.setItem("vivanomads-novo-draft", JSON.stringify(draft));
-    } catch {}
+      localStorage.setItem("vivanomads-novo-draft", draftJson);
+    } catch {
+      /* cota do navegador cheia — o rascunho de texto ainda vale na próxima gravação */
+    }
     let on = true;
     const t1 = setTimeout(() => on && setSaveStatus("saving"), 0);
     const t2 = setTimeout(() => on && setSaveStatus("saved"), 500);
@@ -269,7 +308,7 @@ export default function NewPropertyPage() {
       clearTimeout(t1);
       clearTimeout(t2);
     };
-  }, [approved, title, propertyType, description, bedrooms, bathrooms, areaM2, minPeriod, monthlyPrice, furnished, petsOk, street, neighborhood, city, cep, ownershipType, videoUrl]);
+  }, [approved, draftJson]);
 
   async function lookupCep(value: string) {
     const digits = value.replace(/\D/g, "");
@@ -768,12 +807,23 @@ export default function NewPropertyPage() {
                   </button>
                 ))}
               </div>
-              {utilitiesMode === "fixed" && (
+              {utilitiesMode === "fixed" ? (
                 <div className="mt-3">
+                  <p className="mb-2 text-xs text-muted">
+                    O inquilino paga um <strong>valor fixo por mês</strong> junto do aluguel. Se o
+                    consumo real exceder cerca de 20% da estimativa, há cláusula de ajuste (cobrança
+                    complementar, com comprovante — registrada pela plataforma, não intermediada).
+                  </p>
                   <Labeled label="Estimativa (R$/mês)">
                     <input type="number" min={0} value={utilitiesEstimate || ""} onChange={(e) => setUtilitiesEstimate(Number(e.target.value))} className="input" placeholder="200" />
                   </Labeled>
                 </div>
+              ) : (
+                <p className="mt-3 text-xs text-muted">
+                  O inquilino paga a água, a luz e o gás pelo <strong>consumo real</strong> do
+                  período — pelo valor efetivo das faturas, sem valor fixo. Por isso não há nada a
+                  preencher aqui: o acerto é feito pelas contas reais.
+                </p>
               )}
             </div>
 
