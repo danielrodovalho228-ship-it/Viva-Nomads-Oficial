@@ -29,6 +29,14 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Estabelece a sessão de recuperação a partir do link antes de mostrar o form.
+  //
+  // O `createBrowserClient` (@supabase/ssr) usa PKCE com `detectSessionInUrl`:
+  // ele JÁ troca o `?code=` do link automaticamente e emite `PASSWORD_RECOVERY`.
+  // Por isso NÃO tentamos trocar o código de novo às cegas — um segundo
+  // `exchangeCodeForSession` no mesmo código LANÇA erro e, sem try/catch,
+  // deixava a tela travada em "Validando o link…". Aqui: ouvimos o evento,
+  // conferimos a sessão e, só como último recurso, trocamos o código — sempre
+  // com timeout para nunca ficar preso.
   useEffect(() => {
     const supabase = createClient();
     // Modo demonstração (sem Supabase): segue direto para o formulário.
@@ -37,21 +45,53 @@ export default function ResetPasswordPage() {
       setPhase("ready");
       return;
     }
-    (async () => {
-      const code = new URLSearchParams(window.location.search).get("code");
-      if (code) {
-        const { error } = await supabase.auth.exchangeCodeForSession(code);
-        if (!error) {
-          setPhase("ready");
-          return;
-        }
-        // Pode já ter sido trocado pelo cliente (detectSessionInUrl) — confirma.
+
+    let settled = false;
+    const markReady = () => {
+      if (!settled) {
+        settled = true;
+        setPhase("ready");
       }
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      setPhase(session ? "ready" : "invalid");
+    };
+
+    // A troca automática do link emite PASSWORD_RECOVERY/SIGNED_IN (assíncrono).
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session || event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") markReady();
+    });
+
+    (async () => {
+      try {
+        // A detecção automática pode já ter criado a sessão de recuperação.
+        const { data } = await supabase.auth.getSession();
+        if (data.session) return markReady();
+
+        // Fallback: troca manual do código (protegida — pode já ter sido usado).
+        const code = new URLSearchParams(window.location.search).get("code");
+        if (code) {
+          try {
+            const { error } = await supabase.auth.exchangeCodeForSession(code);
+            if (!error) return markReady();
+          } catch {
+            /* código já consumido pela detecção automática — segue para o timeout */
+          }
+        }
+      } catch {
+        /* ignora — o timeout abaixo decide */
+      }
+
+      // Dá um instante para o evento assíncrono chegar; senão, link inválido.
+      setTimeout(async () => {
+        if (settled) return;
+        const { data } = await supabase.auth.getSession();
+        if (data.session) markReady();
+        else {
+          settled = true;
+          setPhase("invalid");
+        }
+      }, 2000);
     })();
+
+    return () => sub.subscription.unsubscribe();
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
