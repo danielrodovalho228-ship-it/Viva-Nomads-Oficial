@@ -17,7 +17,8 @@ import { StatCard, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { DashboardBanner } from "@/components/dashboard/banner";
 import { ButtonLink } from "@/components/ui/button";
 import { useProperties } from "@/lib/use-properties";
-import { isSupabaseConfigured } from "@/lib/env";
+import { useDashDemo, DemoBadge } from "@/lib/demo/demo-mode";
+import { DEMO_PROPERTIES, DEMO_KPIS } from "@/lib/demo/seed";
 import { PHOTOS } from "@/lib/media";
 import { formatBRL } from "@/lib/utils";
 import { ReadyToLiveBadge } from "@/components/ui/badge";
@@ -34,8 +35,11 @@ export default function DashboardPage() {
 }
 
 function OwnerDashboard({ name }: { name: string }) {
-  const demo = !isSupabaseConfigured();
-  const allProperties = useProperties("/api/properties/mine").properties;
+  // Fonte demo: build de demonstração OU modo demonstração do admin. Os dados
+  // reais e o seed NUNCA se misturam — a fonte é uma ou outra.
+  const demo = useDashDemo();
+  const realProperties = useProperties("/api/properties/mine").properties;
+  const allProperties = demo ? DEMO_PROPERTIES.filter((p) => p.status === "active") : realProperties;
   const myProperties = allProperties.slice(0, 2);
 
   return (
@@ -80,15 +84,20 @@ function OwnerDashboard({ name }: { name: string }) {
         </div>
       </Panel>
 
+      {demo && (
+        <div className="mb-2">
+          <DemoBadge />
+        </div>
+      )}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Visualizações" value={demo ? "1.248" : "0"} icon={Eye} />
-        <StatCard label="Leads" value={demo ? "12" : "0"} icon={Users} />
-        <StatCard label="Mensagens" value={demo ? "5" : "0"} icon={MessageSquare} />
         <StatCard
-          label="Imóveis ativos"
-          value={demo ? "2" : String(allProperties.length)}
-          icon={Home}
+          label="Visualizações"
+          value={demo ? DEMO_KPIS.visualizacoes.toLocaleString("pt-BR") : "0"}
+          icon={Eye}
         />
+        <StatCard label="Leads" value={demo ? String(DEMO_KPIS.leads) : "0"} icon={Users} />
+        <StatCard label="Mensagens" value={demo ? String(DEMO_KPIS.mensagens) : "0"} icon={MessageSquare} />
+        <StatCard label="Imóveis ativos" value={String(allProperties.length)} icon={Home} />
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
@@ -152,7 +161,7 @@ function OwnerDashboard({ name }: { name: string }) {
 }
 
 function TenantDashboard({ name }: { name: string }) {
-  const demo = !isSupabaseConfigured();
+  const demo = useDashDemo();
   const recommended = useProperties("/api/properties").properties.slice(0, 3);
   return (
     <>

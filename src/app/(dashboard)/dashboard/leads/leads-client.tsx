@@ -6,6 +6,8 @@ import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives"
 import { ButtonLink } from "@/components/ui/button";
 import { OwnerDecisionNotice } from "@/components/legal-notice";
 import { leadScore, leadSummary, type Lead, type Light } from "@/lib/data/lead-types";
+import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
+import { DEMO_LEADS } from "@/lib/demo/seed";
 import { cn } from "@/lib/utils";
 
 /** Motivos de recusa pré-definidos (quick win #3). */
@@ -24,9 +26,12 @@ const LIGHT: Record<Light, { tone: string; label: string }> = {
 
 type LeadStatus = "open" | "approved" | "rejecting" | "rejected";
 
-export function LeadsClient({ leads }: { leads: Lead[] }) {
+export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
   const [status, setStatus] = useState<Record<string, LeadStatus>>({});
   const [reasons, setReasons] = useState<Record<string, string>>({});
+  // Modo demonstração (admin): lê o seed em memória; desligado, volta ao real.
+  const { on: demoOn } = useDemoMode();
+  const leads = demoOn ? DEMO_LEADS : realLeads;
 
   function set(id: string, s: LeadStatus) {
     setStatus((prev) => ({ ...prev, [id]: s }));
@@ -40,6 +45,7 @@ export function LeadsClient({ leads }: { leads: Lead[] }) {
       <PageTitle
         title="Leads"
         subtitle="Inquilinos interessados. Você vê o necessário para decidir; o contato direto é liberado após o aceite."
+        action={demoOn ? <DemoBadge /> : undefined}
       />
 
       {leads.length === 0 ? (

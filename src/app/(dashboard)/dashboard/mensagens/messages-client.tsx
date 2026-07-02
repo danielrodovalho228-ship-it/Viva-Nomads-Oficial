@@ -5,9 +5,26 @@ import { Send, ArrowLeft } from "lucide-react";
 import { PageTitle } from "@/components/dashboard/primitives";
 import { sendMessage } from "@/lib/data/actions";
 import type { Conversation } from "@/lib/data/messages";
+import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
+import { DEMO_CONVERSATIONS } from "@/lib/demo/seed";
 import { cn } from "@/lib/utils";
 
+/**
+ * Modo demonstração (admin): troca a fonte pelo seed e REMONTA o inner via
+ * `key` (o estado interno nasce da prop). Em demo, o envio não persiste nada.
+ */
 export function MessagesClient({ initial }: { initial: Conversation[] }) {
+  const { on: demoOn } = useDemoMode();
+  return (
+    <MessagesInner
+      key={demoOn ? "demo" : "real"}
+      initial={demoOn ? DEMO_CONVERSATIONS : initial}
+      demo={demoOn}
+    />
+  );
+}
+
+function MessagesInner({ initial, demo }: { initial: Conversation[]; demo: boolean }) {
   const [conversations, setConversations] = useState<Conversation[]>(initial);
   const [activeId, setActiveId] = useState<string>(initial[0]?.id ?? "");
   const [draft, setDraft] = useState("");
@@ -34,13 +51,16 @@ export function MessagesClient({ initial }: { initial: Conversation[] }) {
           : c
       )
     );
-    // Persiste (Supabase quando configurado; no-op em demo)
-    await sendMessage({
-      conversationId: active.id,
-      receiverId: active.otherId,
-      propertyId: active.propertyId,
-      body: text,
-    });
+    // Persiste (Supabase quando configurado). Em modo demonstração NUNCA
+    // grava: a conversa é fictícia e o envio fica só na tela.
+    if (!demo) {
+      await sendMessage({
+        conversationId: active.id,
+        receiverId: active.otherId,
+        propertyId: active.propertyId,
+        body: text,
+      });
+    }
   }
 
   if (!active) {
@@ -56,7 +76,7 @@ export function MessagesClient({ initial }: { initial: Conversation[] }) {
 
   return (
     <>
-      <PageTitle title="Mensagens" />
+      <PageTitle title="Mensagens" action={demo ? <DemoBadge /> : undefined} />
       <div className="grid h-[75vh] overflow-hidden rounded-2xl border border-sage-200 bg-white md:h-[70vh] md:grid-cols-3">
         {/* Lista — no mobile some quando uma conversa está aberta */}
         <aside

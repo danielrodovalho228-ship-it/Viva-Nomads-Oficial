@@ -32,6 +32,7 @@ import { Logo } from "@/components/ui/logo";
 import { Avatar } from "@/components/ui/avatar";
 import { useAuthStore, DEMO_USER, type ViewMode } from "@/lib/store";
 import { useViewMode, MODE_META } from "@/lib/roles";
+import { useDemoMode, DemoToggle, DemoBanner } from "@/lib/demo/demo-mode";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -125,6 +126,16 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     }
   }, [pathname, mode, router]);
 
+  // Modo demonstração (admin): aceita ?demo=1 / ?demo=0 na URL (estado é de
+  // sessão — lib/demo/demo-mode). Lê window.location para não exigir Suspense.
+  const { admin, setOn: setDemoOn } = useDemoMode();
+  useEffect(() => {
+    if (!admin) return;
+    const q = new URLSearchParams(window.location.search).get("demo");
+    if (q === "1") setDemoOn(true);
+    else if (q === "0") setDemoOn(false);
+  }, [admin, setDemoOn]);
+
   function handleSignOut() {
     signOut();
     router.push("/home");
@@ -213,6 +224,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           </button>
         </div>
 
+        {/* Aviso fixo do modo demonstração (só aparece quando ligado). */}
+        <DemoBanner />
+
         {/* Barra de modo: seletor sempre visível (proprietário ⇄ inquilino). */}
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-sage-200 bg-white px-5 py-2.5 sm:px-8 print:hidden">
           <p className="hidden items-center gap-2 text-sm text-muted sm:flex">
@@ -229,7 +243,11 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               {meta.label}
             </span>
           </p>
-          <ModeSwitcher mode={mode} onSwitch={switchTo} />
+          <div className="flex items-center gap-2">
+            {/* Toggle do modo demonstração — renderiza apenas para o admin. */}
+            <DemoToggle />
+            <ModeSwitcher mode={mode} onSwitch={switchTo} />
+          </div>
         </div>
 
         <main key={mode} className="mode-transition flex-1 p-5 sm:p-8">

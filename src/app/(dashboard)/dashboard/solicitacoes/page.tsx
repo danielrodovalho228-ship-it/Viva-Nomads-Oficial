@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ResponsiveOwnerBadge } from "@/components/ui/badge";
 import { ServiceOrderNotice } from "@/components/legal-notice";
 import { useViewMode } from "@/lib/roles";
-import { isSupabaseConfigured } from "@/lib/env";
+import { useDashDemo } from "@/lib/demo/demo-mode";
 import {
   SAMPLE_ORDERS,
   SO_CATEGORIES,
@@ -24,13 +24,18 @@ import {
 import { cn } from "@/lib/utils";
 
 export default function ServiceOrdersPage() {
+  // Modo real: começa sem chamados fictícios; demonstração (build sem Supabase
+  // OU modo demo do admin): mostra exemplos. `key` remonta o inner ao alternar,
+  // para o estado nascer da fonte certa — sem misturar real e fictício.
+  const demo = useDashDemo();
+  return <ServiceOrdersInner key={demo ? "demo" : "real"} demo={demo} />;
+}
+
+function ServiceOrdersInner({ demo }: { demo: boolean }) {
   // A tela aparece nos dois menus; a visão segue o MODO ativo (não o papel de
   // cadastro), para o conteúdo bater com o contexto em que o usuário está.
   const { mode } = useViewMode();
-  // Modo real: começa sem chamados fictícios; demo: mostra exemplos.
-  const [orders, setOrders] = useState<ServiceOrder[]>(
-    isSupabaseConfigured() ? [] : SAMPLE_ORDERS
-  );
+  const [orders, setOrders] = useState<ServiceOrder[]>(demo ? SAMPLE_ORDERS : []);
 
   if (mode === "tenant") return <TenantView orders={orders} setOrders={setOrders} />;
   return <OwnerView orders={orders} setOrders={setOrders} />;
