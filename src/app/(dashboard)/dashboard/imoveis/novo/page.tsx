@@ -60,6 +60,9 @@ export default function NewPropertyPage() {
   const [bathrooms, setBathrooms] = useState("");
   const [areaM2, setAreaM2] = useState("");
   const [parkingSpots, setParkingSpots] = useState("");
+  // Capacidade máxima de pessoas (Onda 1 — valida contra o nº de ocupantes no
+  // fechamento). Persistido em `max_guests`.
+  const [maxGuests, setMaxGuests] = useState("");
   const [minPeriod, setMinPeriod] = useState("30");
   const [maxPeriod, setMaxPeriod] = useState("180");
   const [availableFrom, setAvailableFrom] = useState("");
@@ -92,11 +95,10 @@ export default function NewPropertyPage() {
     longa: false,
   });
   // Garantias que o proprietário ACEITA (só preferência de aceite — não muda o
-  // caminho do dinheiro). Caução à vista e título por padrão.
+  // caminho do dinheiro). Caução à vista por padrão. (Título aposentado — Onda 1.)
   const [garantias, setGarantias] = useState<Record<string, boolean>>({
     caucao_avista: true,
     caucao_parcelada: false,
-    titulo: true,
     seguro_fianca: false,
   });
   const [prepFee, setPrepFee] = useState(450);
@@ -201,6 +203,7 @@ export default function NewPropertyPage() {
       prepFee,
       // Enriquecimento (FASE 1/2)
       parkingSpots: Number(parkingSpots) || 0,
+      maxGuests: Number(maxGuests) || undefined,
       availableFrom: availableFrom || undefined,
       availableUntil: availableUntil || undefined,
       maxPeriodDays: Number(maxPeriod) || undefined,
@@ -261,6 +264,7 @@ export default function NewPropertyPage() {
         if (d.bathrooms) setBathrooms(d.bathrooms);
         if (d.areaM2) setAreaM2(d.areaM2);
         if (d.parkingSpots) setParkingSpots(d.parkingSpots);
+        if (d.maxGuests) setMaxGuests(d.maxGuests);
         if (d.minPeriod) setMinPeriod(d.minPeriod);
         if (d.maxPeriod) setMaxPeriod(d.maxPeriod);
         if (d.availableFrom) setAvailableFrom(d.availableFrom);
@@ -321,6 +325,7 @@ export default function NewPropertyPage() {
       setBathrooms(p.bathrooms ? String(p.bathrooms) : "");
       setAreaM2(p.areaM2 ? String(p.areaM2) : "");
       setParkingSpots(p.parkingSpots ? String(p.parkingSpots) : "");
+      setMaxGuests(p.maxGuests ? String(p.maxGuests) : "");
       setMinPeriod(String(p.minPeriodDays || 30));
       setMaxPeriod(p.maxPeriodDays ? String(p.maxPeriodDays) : "180");
       setAvailableFrom(p.availableFrom ? p.availableFrom.slice(0, 10) : "");
@@ -358,7 +363,7 @@ export default function NewPropertyPage() {
   // página e voltar não perca nada. Exceção: fotos/documentos (arquivos) não
   // cabem com segurança no armazenamento local — por isso o aviso na tela.
   const draftJson = JSON.stringify({
-    title, propertyType, description, bedrooms, bathrooms, areaM2, parkingSpots,
+    title, propertyType, description, bedrooms, bathrooms, areaM2, parkingSpots, maxGuests,
     minPeriod, maxPeriod, availableFrom, availableUntil, monthlyPrice,
     street, neighborhood, city, cep, videoUrl,
     furnished, petsOk, smokingAllowed, childrenAllowed, issuesInvoice,
@@ -656,6 +661,10 @@ export default function NewPropertyPage() {
               </Labeled>
               <Labeled label="Vagas">
                 <input type="number" min={0} value={parkingSpots} onChange={(e) => setParkingSpots(e.target.value)} className="input" />
+              </Labeled>
+              <Labeled label="Capacidade máxima (pessoas)">
+                <input type="number" min={1} value={maxGuests} onChange={(e) => setMaxGuests(e.target.value)} className="input" placeholder="Ex.: 2" />
+                <span className="mt-1 block text-xs text-muted">Quantas pessoas o imóvel comporta. Validado no fechamento.</span>
               </Labeled>
             </div>
 

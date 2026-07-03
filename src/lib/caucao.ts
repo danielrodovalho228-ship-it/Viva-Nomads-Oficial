@@ -42,11 +42,27 @@ export const PRAZO_REEMBOLSO_DIAS = 30;
  * Caução sugerida para imóvel mobiliado: ~10% do valor dos móveis, com TETO de
  * 30% do total da estadia. A plataforma só sugere — o valor é acordado e fica
  * em conta vinculada, nunca com a plataforma.
+ *
+ * @deprecated Onda 1 (Dra. Beatriz): a caução passou a ser 50% do valor total
+ * do período (ver `calcularCaucao50`). Mantida para referência/histórico.
  */
 export function calcularCaucaoSugerida(valorMoveis: number, valorTotalEstadia: number): number {
   const base = Math.round(Math.max(0, valorMoveis) * PERC_MOVEIS);
   const teto = Math.round(Math.max(0, valorTotalEstadia) * TETO_ESTADIA);
   return Math.min(base, teto);
+}
+
+/** Fração da caução sobre o valor total do período (Onda 1: 50%). */
+export const PERC_CAUCAO = 0.5;
+
+/**
+ * Caução da Onda 1 (Dra. Beatriz): 50% do VALOR TOTAL do período locado,
+ * independentemente do prazo (30 ou 180 dias). Ex.: período de R$ 6.000 →
+ * caução de R$ 3.000. A plataforma apenas calcula e documenta — o valor vai
+ * para conta vinculada/instituição, NUNCA para a plataforma.
+ */
+export function calcularCaucao50(valorTotalPeriodo: number): number {
+  return Math.round(Math.max(0, valorTotalPeriodo) * PERC_CAUCAO);
 }
 
 /** Valor de cada parcela no cartão (arredondado). Para de 1 a MAX_PARCELAS. */
