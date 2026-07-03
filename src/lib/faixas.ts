@@ -59,7 +59,11 @@ export function faixaForDays(dias: number): FaixaPrazo {
   return "longa";
 }
 
-// ── Garantias aceitas (4 valores canônicos) ──
+// ── Garantias aceitas ──
+// Onda 1 (Dra. Beatriz): o "título de capitalização" foi APOSENTADO — não é
+// mais oferecido. A chave 'titulo' permanece no TIPO e no banco só para não
+// quebrar histórico (imóveis antigos que já a tinham); ela apenas não aparece
+// no catálogo `GARANTIAS_FAIXA`, então não é mais selecionável no cadastro.
 
 export type GarantiaKey = "caucao_avista" | "caucao_parcelada" | "titulo" | "seguro_fianca";
 
@@ -71,14 +75,17 @@ export interface GarantiaDef {
 export const GARANTIAS_FAIXA: GarantiaDef[] = [
   { key: "caucao_avista", label: "Caução à vista" },
   { key: "caucao_parcelada", label: "Caução parcelada" },
-  { key: "titulo", label: "Título de capitalização" },
   { key: "seguro_fianca", label: "Seguro-fiança" },
 ];
 
-const GARANTIA_BY_KEY: Record<string, GarantiaDef> = Object.fromEntries(
-  GARANTIAS_FAIXA.map((g) => [g.key, g])
-);
+/** Rótulo mesmo para chaves aposentadas (histórico), como 'titulo'. */
+const GARANTIA_LABELS: Record<string, string> = {
+  caucao_avista: "Caução à vista",
+  caucao_parcelada: "Caução parcelada",
+  titulo: "Título de capitalização",
+  seguro_fianca: "Seguro-fiança",
+};
 
 export function garantiaLabel(key: string): string {
-  return GARANTIA_BY_KEY[key]?.label ?? key;
+  return GARANTIA_LABELS[key] ?? key;
 }

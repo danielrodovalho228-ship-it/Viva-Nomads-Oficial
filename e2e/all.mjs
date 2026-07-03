@@ -75,8 +75,8 @@ await (await btn(/Continuar/))?.click(); await page.waitForTimeout(500);
   for (let i = 0; i < n; i++) { const t = (await cards.nth(i).innerText().catch(() => "")) || ""; if (/Cau[çc][ãa]o/.test(t)) caucao = cards.nth(i); if (/T[íi]tulo/.test(t)) titulo = cards.nth(i); if (/Garantidor digital/.test(t)) { garChecked = await cards.nth(i).getAttribute("aria-checked"); garDisabled = await cards.nth(i).isDisabled(); } }
   if ((await caucao?.getAttribute("aria-checked")) === "true") ok("garantia", "caução pré-selecionada (padrão)"); else bug("garantia", "caução não pré-selecionada");
   if (garDisabled === true && garChecked === "false") ok("garantia", "garantidor 'em breve' não selecionável"); else bug("garantia", "garantidor selecionável (flag deveria estar off)");
-  await titulo?.click(); await page.waitForTimeout(150);
-  if ((await caucao?.getAttribute("aria-checked")) === "false" && (await titulo?.getAttribute("aria-checked")) === "true") ok("garantia", "seleção única (título desmarca caução)"); else bug("garantia", "seleção única falhou");
+  // Onda 1: o título de capitalização foi APOSENTADO — não aparece mais.
+  if (!titulo) ok("garantia", "título aposentado (não aparece)"); else bug("garantia", "título ainda aparece (deveria estar aposentado)");
   await caucao?.click(); await page.waitForTimeout(200);
 }
 {

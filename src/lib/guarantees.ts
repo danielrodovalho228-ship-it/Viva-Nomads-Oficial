@@ -87,7 +87,10 @@ export const GARANTIAS: Garantia[] = [
     prazoMaxDias: 180,
     quemPaga: "inquilino",
     reembolsavel: true,
-    status: "ativo",
+    // Onda 1 (Dra. Beatriz): APOSENTADO — não é mais oferecido. Mantido no
+    // catálogo como 'inativo' (garantiasElegiveis o exclui) para preservar
+    // referência histórica sem quebrar contratos antigos.
+    status: "inativo",
     parceiroNome: null,
     observacao: "Resgatável ao fim do contrato. A plataforma documenta o número do título.",
   },

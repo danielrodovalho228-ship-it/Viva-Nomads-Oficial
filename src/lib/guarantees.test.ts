@@ -23,22 +23,29 @@ import {
   type Garantia,
 } from "./guarantees.ts";
 
-test("filtro por prazo: estadia de temporada (< 90 dias) mostra caução e título", () => {
+test("filtro por prazo: estadia de temporada (< 90 dias) mostra só caução (título aposentado)", () => {
   const elegiveis = garantiasElegiveis(60);
   assert.deepEqual(
     elegiveis.map((g) => g.id).sort(),
-    ["caucao", "titulo"],
-    "abaixo de 90 dias o garantidor digital (prazo mínimo 90) não entra"
+    ["caucao"],
+    "título aposentado (Onda 1) e garantidor digital (prazo mínimo 90) fora"
   );
 });
 
-test("filtro por prazo: estadia residencial (90–180 dias) inclui o slot de garantidor digital", () => {
+test("filtro por prazo: estadia residencial (90–180 dias) inclui caução + slot de garantidor", () => {
   const elegiveis = garantiasElegiveis(120);
   assert.deepEqual(
     elegiveis.map((g) => g.id).sort(),
-    ["caucao", "garantidor_digital", "titulo"],
-    "de 90 a 180 dias as três opções são elegíveis (garantidor como slot)"
+    ["caucao", "garantidor_digital"],
+    "de 90 a 180 dias: caução + garantidor (slot); título aposentado (Onda 1) fora"
   );
+});
+
+test("Onda 1: o título de capitalização foi aposentado — nunca é elegível", () => {
+  assert.ok(!garantiasElegiveis(60).some((g) => g.id === "titulo"));
+  assert.ok(!garantiasElegiveis(120).some((g) => g.id === "titulo"));
+  const titulo = GARANTIAS.find((g) => g.id === "titulo");
+  assert.equal(titulo?.status, "inativo", "o registro fica no catálogo, mas inativo");
 });
 
 test("limites do prazo do garantidor digital: 89 fora, 90 e 180 dentro, 181 fora", () => {
@@ -73,11 +80,11 @@ test("garantidor digital aparece como elegível mas NÃO é selecionável com a 
   );
 });
 
-test("seleção única: no máximo uma garantia selecionável por contrato (caução e título ativos)", () => {
+test("seleção única: no máximo uma garantia selecionável por contrato (só caução ativa)", () => {
   // A regra de UI é seleção única; o modelo garante que as opções de fato
-  // selecionáveis são só as 'ativo'. Hoje: caução e título.
+  // selecionáveis são só as 'ativo'. Após a Onda 1: só caução (título aposentado).
   const selecionaveis = garantiasElegiveis(60).filter(garantiaSelecionavel);
-  assert.deepEqual(selecionaveis.map((g) => g.id).sort(), ["caucao", "titulo"]);
+  assert.deepEqual(selecionaveis.map((g) => g.id).sort(), ["caucao"]);
   // Qualquer subconjunto de seleção válido tem tamanho 0 ou 1 — nunca 2.
   for (const g of selecionaveis) {
     const selecao: Garantia[] = [g];

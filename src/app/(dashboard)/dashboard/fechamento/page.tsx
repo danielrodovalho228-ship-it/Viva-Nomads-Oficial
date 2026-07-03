@@ -39,12 +39,18 @@ import {
   type Garantia,
 } from "@/lib/guarantees";
 import {
-  calcularCaucaoSugerida,
+  calcularCaucao50,
   valorParcela,
   MAX_PARCELAS,
   type FormaPagamentoCaucao,
 } from "@/lib/caucao";
 import { COMMISSION_BY_PLAN } from "@/lib/constants";
+import { faixaForDays, faixaLabel } from "@/lib/faixas";
+import {
+  selecionarModeloContrato,
+  faixaResumo,
+  CLAUSULAS_PLACEHOLDER,
+} from "@/lib/modelos-contrato";
 import { formatBRL, cn } from "@/lib/utils";
 
 const STEPS = ["Candidatura & verificação", "Garantia", "Serviços", "Patrimonial", "Contrato", "Resumo"];
@@ -63,13 +69,19 @@ const PROPERTY = {
   monthlyRent: PROPERTY_FULL.monthlyPrice,
   term: STAY_MESES,
 };
-// Estadia (mock) — usada na caução flexível e na trilha por prazo.
+// Capacidade máxima do imóvel (Onda 1) — do cadastro (max_guests).
+const CAPACIDADE = PROPERTY_FULL.maxGuests ?? 4;
+// Faixa de prazo desta estadia → seleciona o modelo de contrato (Onda 1).
+const FAIXA = faixaForDays(STAY_DAYS);
+const FAIXA_LABEL = faixaLabel(FAIXA);
+const FAIXA_RESUMO = faixaResumo(FAIXA);
+const MODELO_CONTRATO = selecionarModeloContrato(FAIXA, PROPERTY_FULL.propertyType);
+// Valor TOTAL do período locado (aluguel × meses) — base da caução.
 const VALOR_ESTADIA = PROPERTY.monthlyRent * STAY_MESES;
-// Valor estimado dos móveis do imóvel (mock — viria do inventário/cadastro).
-const VALOR_MOVEIS = 18_000;
-// Caução sugerida para mobiliado: ~10% dos móveis, com teto de 30% da estadia.
-// A plataforma só sugere; o valor fica em conta vinculada, nunca com a plataforma.
-const CAUCAO_SUGERIDA = calcularCaucaoSugerida(VALOR_MOVEIS, VALOR_ESTADIA);
+// Caução (Onda 1 · Dra. Beatriz): 50% do valor total do período, qualquer prazo.
+// A plataforma só calcula e documenta; o valor vai para conta vinculada/emissor,
+// NUNCA para a plataforma.
+const CAUCAO_50 = calcularCaucao50(VALOR_ESTADIA);
 // Garantias elegíveis para a duração desta estadia (filtro por prazo).
 const ELEGIVEIS = garantiasElegiveis(STAY_DAYS);
 // Serviços visíveis (inclui "em breve" como slot). Opcionais e combináveis.
@@ -94,6 +106,11 @@ export default function ClosingPage() {
   // Caução é a opção PADRÃO (obrigatória): nenhum fechamento avança sem garantia,
   // e a caução cobre todas as faixas de prazo (1..180). O usuário pode trocar.
   const [guaranteeId, setGuaranteeId] = useState<string | null>("caucao");
+  // Nº de pessoas que vão morar (Onda 1) — informado pelo inquilino, validado
+  // contra a capacidade do imóvel. Vai para o registro da locação (cláusula de
+  // ocupação). Excedeu a capacidade → bloqueia e sugere outro imóvel.
+  const [qtdOcupantes, setQtdOcupantes] = useState(1);
+  const ocupantesExcede = qtdOcupantes > CAPACIDADE;
   // Caução flexível: como o inquilino paga a caução (não trava o aluguel).
   // À vista → conta vinculada; parcelado → emissor do cartão. Nunca a plataforma.
   const [caucaoForma, setCaucaoForma] = useState<FormaPagamentoCaucao>("avista");
@@ -161,13 +178,14 @@ export default function ClosingPage() {
 
   // Etapas do stepper já alcançadas são clicáveis (A4).
   const maxReached = useMemo(() => {
-    if (!verified) return 0;
+    // Ocupação acima da capacidade trava o fechamento na 1ª etapa (Onda 1).
+    if (!verified || ocupantesExcede) return 0;
     if (!guaranteeId) return 1;
     // Serviços (2) é opcional: com a garantia escolhida, libera até patrimonial (3).
     if (patrimonial === null) return 3;
     if (!generated) return 4; // Resumo só após gerar o contrato
     return 5;
-  }, [verified, guaranteeId, patrimonial, generated]);
+  }, [verified, ocupantesExcede, guaranteeId, patrimonial, generated]);
 
   function goToStep(target: number) {
     if (target <= maxReached) setStep(target);
@@ -207,7 +225,7 @@ export default function ClosingPage() {
   }
 
   const canAdvance =
-    (step === 0 && verified) ||
+    (step === 0 && verified && !ocupantesExcede) ||
     (step === 1 && !!guaranteeId) ||
     step === 2 || // serviços: opcional, pode seguir sem escolher
     (step === 3 && patrimonial !== null) ||
@@ -217,6 +235,8 @@ export default function ClosingPage() {
   const pendingReason =
     step === 0 && !verified
       ? "Conclua a verificação de identidade para continuar."
+      : step === 0 && ocupantesExcede
+        ? `Este imóvel comporta até ${CAPACIDADE} pessoas. Reduza o número de ocupantes ou escolha outro imóvel.`
       : step === 1 && !guaranteeId
         ? "Selecione uma garantia para continuar."
         : step === 3 && patrimonial === null
@@ -310,6 +330,34 @@ export default function ClosingPage() {
               cafResult && <CafLaudo result={cafResult} />
             )}
 
+            {/* Ocupação (Onda 1): nº de pessoas × capacidade do imóvel. */}
+            <div className="rounded-xl border border-sage-200 p-4 text-sm">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="font-medium text-ink">Quantas pessoas vão morar?</p>
+                  <p className="text-xs text-muted">Este imóvel comporta até {CAPACIDADE} pessoas.</p>
+                </div>
+                <input
+                  type="number"
+                  min={1}
+                  value={qtdOcupantes}
+                  onChange={(e) => setQtdOcupantes(Math.max(1, Math.round(Number(e.target.value) || 1)))}
+                  aria-label="Número de ocupantes"
+                  className="w-20 rounded-lg border border-sage-200 bg-white px-3 py-2 text-center outline-none focus:border-sage"
+                />
+              </div>
+              {ocupantesExcede && (
+                <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">
+                  {qtdOcupantes} pessoas excede a capacidade deste imóvel ({CAPACIDADE}). Reduza o
+                  número ou{" "}
+                  <Link href="/buscar" className="font-medium underline">
+                    veja outros imóveis com mais espaço
+                  </Link>
+                  .
+                </p>
+              )}
+            </div>
+
             <OwnerDecisionNotice />
           </div>
         )}
@@ -328,8 +376,8 @@ export default function ClosingPage() {
               </p>
               <p className="mt-2 rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted">
                 {STAY_DAYS < 90
-                  ? "Até 89 dias (temporada): garantia por caução ou título — ideal para estadias curtas."
-                  : "90 a 180 dias (residencial): caução, título ou garantidor digital (em breve)."}
+                  ? "Até 89 dias (temporada): garantia por caução — ideal para estadias curtas."
+                  : "90 a 180 dias (residencial): caução ou garantidor digital (em breve)."}
               </p>
             </div>
 
@@ -400,7 +448,7 @@ export default function ClosingPage() {
                     {g.observacao && <p className="mt-2 text-sm text-muted">{g.observacao}</p>}
                     {!selectable && (
                       <p className="mt-2 text-xs text-muted">
-                        Disponível em breve — via parceiro. Por ora, escolha caução ou título.
+                        Disponível em breve — via parceiro. Por ora, escolha caução.
                       </p>
                     )}
                   </button>
@@ -446,7 +494,15 @@ export default function ClosingPage() {
             {selectedGarantia?.tipo === "caucao" && (
               <div className="space-y-3 rounded-xl border border-sage-200 p-4 text-sm">
                 <p className="font-medium text-ink">Como funciona a caução</p>
-                <Row label="Valor sugerido (mobiliado)" value={formatBRL(CAUCAO_SUGERIDA)} />
+                <Row
+                  label="Caução — 50% do valor total do período"
+                  value={formatBRL(CAUCAO_50)}
+                />
+                <p className="text-xs text-muted">
+                  {formatBRL(PROPERTY.monthlyRent)}/mês × {STAY_MESES} meses ={" "}
+                  {formatBRL(VALOR_ESTADIA)} · caução = 50% = {formatBRL(CAUCAO_50)}. Vai para conta
+                  vinculada — a plataforma nunca recebe.
+                </p>
 
                 {/* Caução flexível: o inquilino escolhe como pagar. */}
                 <div>
@@ -491,7 +547,7 @@ export default function ClosingPage() {
                       </label>
                       <Row
                         label={`${caucaoParcelas}x de`}
-                        value={`${formatBRL(valorParcela(CAUCAO_SUGERIDA, caucaoParcelas))}/mês`}
+                        value={`${formatBRL(valorParcela(CAUCAO_50, caucaoParcelas))}/mês`}
                       />
                     </div>
                   )}
@@ -679,6 +735,35 @@ export default function ClosingPage() {
                 Gerado e assinado digitalmente (validade jurídica · Lei 14.063/2020), art. 48
                 da Lei 8.245/91.
               </p>
+            </div>
+
+            {/* Modelo selecionado por FAIXA DE PRAZO (Onda 1 — estrutura). */}
+            <div className="rounded-xl border border-sage-200 p-4 text-sm">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="font-medium text-ink">{MODELO_CONTRATO.titulo}</p>
+                <span className="rounded-full bg-sage-100 px-2.5 py-1 text-xs font-medium text-forest">
+                  Faixa {FAIXA_LABEL} · {FAIXA_RESUMO}
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-muted">
+                Selecionado automaticamente pelo prazo ({STAY_DAYS} dias).{" "}
+                {MODELO_CONTRATO.textoPendente && (
+                  <span className="text-amber-700">Aguardando texto jurídico da advogada.</span>
+                )}
+              </p>
+              <div className="mt-3">
+                <p className="text-xs font-medium text-ink">Cláusulas a incluir (a redigir):</p>
+                <ul className="mt-1.5 grid gap-1">
+                  {CLAUSULAS_PLACEHOLDER.map((c) => (
+                    <li key={c.key} className="flex gap-2 text-xs text-muted">
+                      <span className="text-sage">•</span>
+                      <span>
+                        <strong className="text-ink">{c.titulo}:</strong> {c.nota}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
 
             {/* Rateio de custos */}
