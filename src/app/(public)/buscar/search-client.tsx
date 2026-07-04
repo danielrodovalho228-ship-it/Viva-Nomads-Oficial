@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { SlidersHorizontal, ChevronDown, MapPin, ArrowRight } from "lucide-react";
+import { SlidersHorizontal, ChevronDown, MapPin, ArrowRight, Users } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { PropertyCard } from "@/components/property-card";
 import { SearchMap } from "@/components/search-map";
@@ -44,6 +44,9 @@ export function SearchClient({ properties }: { properties: Property[] }) {
   const [radiusKm, setRadiusKm] = useState(DEFAULT_RADIUS_KM);
   const [maxPrice, setMaxPrice] = useState(0);
   const [minBedrooms, setMinBedrooms] = useState(0);
+  // Hóspedes (Onda 1): adultos + crianças → filtra pela capacidade do imóvel.
+  const [adults, setAdults] = useState(1);
+  const [children, setChildren] = useState(0);
   const [maxPeriod, setMaxPeriod] = useState(0); // período mínimo aceito <= X
   const [typeFilter, setTypeFilter] = useState(""); // tipo de imóvel ("" = todos)
   const [faixa, setFaixa] = useState(""); // faixa de prazo ("" = todas)
@@ -84,6 +87,8 @@ export function SearchClient({ properties }: { properties: Property[] }) {
     const num = (k: string) => Number(sp.get(k)) || 0;
     if ([2500, 3500, 5000].includes(num("preco"))) setMaxPrice(num("preco"));
     if ([1, 2, 3].includes(num("quartos"))) setMinBedrooms(num("quartos"));
+    if (num("adultos") >= 1) setAdults(Math.min(16, num("adultos")));
+    if (num("criancas") >= 1) setChildren(Math.min(10, num("criancas")));
     if ([30, 60, 90].includes(num("periodo"))) setMaxPeriod(num("periodo"));
     const ordem = sp.get("ordem");
     if (ordem === "recent" || ordem === "price-asc" || ordem === "price-desc") setSort(ordem);
@@ -129,6 +134,8 @@ export function SearchClient({ properties }: { properties: Property[] }) {
     const put = (k: string, on: boolean, v: string) => (on ? params.set(k, v) : params.delete(k));
     put("preco", maxPrice > 0, String(maxPrice));
     put("quartos", minBedrooms > 0, String(minBedrooms));
+    put("adultos", adults > 1, String(adults));
+    put("criancas", children > 0, String(children));
     put("periodo", maxPeriod > 0, String(maxPeriod));
     put("tipo", !!typeFilter, typeFilter);
     put("faixa", !!faixa, faixa);
@@ -150,7 +157,7 @@ export function SearchClient({ properties }: { properties: Property[] }) {
       qs ? `${window.location.pathname}?${qs}` : window.location.pathname
     );
   }, [
-    locationQuery, geoCenter, radiusKm, maxPrice, minBedrooms, maxPeriod, sort,
+    locationQuery, geoCenter, radiusKm, maxPrice, minBedrooms, adults, children, maxPeriod, sort,
     typeFilter, faixa, dataEntrada, garantia, petsOnly, furnishedOnly,
     readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly,
   ]);
@@ -162,6 +169,8 @@ export function SearchClient({ properties }: { properties: Property[] }) {
     setRadiusKm(DEFAULT_RADIUS_KM);
     setMaxPrice(0);
     setMinBedrooms(0);
+    setAdults(1);
+    setChildren(0);
     setMaxPeriod(0);
     setTypeFilter("");
     setFaixa("");
@@ -197,6 +206,9 @@ export function SearchClient({ properties }: { properties: Property[] }) {
       }
       if (maxPrice && p.monthlyPrice > maxPrice) return false;
       if (minBedrooms && p.bedrooms < minBedrooms) return false;
+      // Hóspedes: só exclui quando a capacidade É conhecida e menor que o total
+      // (imóveis sem capacidade cadastrada continuam aparecendo — não some estoque).
+      if (p.maxGuests != null && p.maxGuests < adults + children) return false;
       if (maxPeriod && p.minPeriodDays > maxPeriod) return false;
       if (typeFilter && typeValue(p.propertyType) !== typeFilter) return false;
       if (faixa && !(p.faixasAceitas ?? []).includes(faixa)) return false;
@@ -229,11 +241,12 @@ export function SearchClient({ properties }: { properties: Property[] }) {
           searchPriority(tierFromPhotoCount(a.photos.length))
       );
     return list;
-  }, [properties, locationQuery, geoCenter, radiusKm, maxPrice, minBedrooms, maxPeriod, typeFilter, faixa, dataEntrada, garantia, petsOnly, furnishedOnly, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly, sort]);
+  }, [properties, locationQuery, geoCenter, radiusKm, maxPrice, minBedrooms, adults, children, maxPeriod, typeFilter, faixa, dataEntrada, garantia, petsOnly, furnishedOnly, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly, sort]);
 
   const activeCount =
     (maxPrice ? 1 : 0) +
     (minBedrooms ? 1 : 0) +
+    (adults > 1 || children > 0 ? 1 : 0) +
     (maxPeriod ? 1 : 0) +
     (typeFilter ? 1 : 0) +
     (faixa ? 1 : 0) +
@@ -377,6 +390,12 @@ export function SearchClient({ properties }: { properties: Property[] }) {
               ["2", "2+ quartos"],
               ["3", "3+ quartos"],
             ]}
+          />
+          <GuestsPicker
+            adults={adults}
+            childrenCount={children}
+            onAdults={setAdults}
+            onChildren={setChildren}
           />
           <Select
             label="Período mínimo aceito"
@@ -559,5 +578,107 @@ function Select({
         </option>
       ))}
     </select>
+  );
+}
+
+/**
+ * Seletor de hóspedes estilo Airbnb (adultos + crianças). O total filtra pela
+ * capacidade do imóvel (max_guests). Imóveis sem capacidade cadastrada não são
+ * escondidos (ver filtro em `results`).
+ */
+function GuestsPicker({
+  adults,
+  childrenCount,
+  onAdults,
+  onChildren,
+}: {
+  adults: number;
+  childrenCount: number;
+  onAdults: (n: number) => void;
+  onChildren: (n: number) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const total = adults + childrenCount;
+  const ativo = adults > 1 || childrenCount > 0;
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-label="Hóspedes"
+        className={cn(
+          "inline-flex items-center gap-2 rounded-full border bg-white px-4 py-2 text-sm outline-none",
+          ativo ? "border-sage text-forest" : "border-sage-200 text-ink focus:border-sage"
+        )}
+      >
+        <Users className="h-4 w-4 text-sage" />
+        {ativo ? (total === 1 ? "1 hóspede" : `${total} hóspedes`) : "Hóspedes"}
+        <ChevronDown className="h-4 w-4 text-muted" />
+      </button>
+      {open && (
+        <>
+          {/* Backdrop invisível: clicar fora fecha. */}
+          <button
+            type="button"
+            aria-hidden
+            tabIndex={-1}
+            onClick={() => setOpen(false)}
+            className="fixed inset-0 z-30 cursor-default"
+          />
+          <div className="absolute left-0 z-40 mt-2 w-64 rounded-2xl border border-sage-200 bg-white p-4 shadow-lg">
+            <Stepper label="Adultos" hint="13 anos ou mais" value={adults} min={1} max={16} onChange={onAdults} />
+            <div className="my-3 h-px bg-sage-200" />
+            <Stepper label="Crianças" hint="até 12 anos" value={childrenCount} min={0} max={10} onChange={onChildren} />
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function Stepper({
+  label,
+  hint,
+  value,
+  min,
+  max,
+  onChange,
+}: {
+  label: string;
+  hint: string;
+  value: number;
+  min: number;
+  max: number;
+  onChange: (n: number) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <div>
+        <p className="text-sm font-medium text-ink">{label}</p>
+        <p className="text-xs text-muted">{hint}</p>
+      </div>
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          aria-label={`Menos ${label.toLowerCase()}`}
+          disabled={value <= min}
+          onClick={() => onChange(Math.max(min, value - 1))}
+          className="grid h-8 w-8 place-items-center rounded-full border border-sage-200 text-lg leading-none text-forest transition-colors hover:border-sage disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          −
+        </button>
+        <span className="w-5 text-center text-sm font-semibold tabular-nums">{value}</span>
+        <button
+          type="button"
+          aria-label={`Mais ${label.toLowerCase()}`}
+          disabled={value >= max}
+          onClick={() => onChange(Math.min(max, value + 1))}
+          className="grid h-8 w-8 place-items-center rounded-full border border-sage-200 text-lg leading-none text-forest transition-colors hover:border-sage disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          +
+        </button>
+      </div>
+    </div>
   );
 }
