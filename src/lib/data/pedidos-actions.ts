@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { guardContactInfo } from "@/lib/messages/contact-guard";
+import { listMyProperties } from "@/lib/data/properties";
 import {
   contemContato,
   detectarContato,
@@ -201,4 +202,141 @@ async function setPedidoStatus(pedidoId: string, status: string): Promise<Action
     .eq("id", pedidoId);
   if (error) return { ok: false, error: error.message };
   return { ok: true, id: pedidoId };
+}
+
+// ── Fluxo do proprietário ────────────────────────────────────────────────────
+
+export interface PropriedadeMinima {
+  id: string;
+  title: string;
+  city: string;
+  maxGuests?: number;
+  monthlyPrice: number;
+}
+
+/**
+ * Pedidos ativos para o proprietário: lê a VIEW `pedidos_publicos` (só colunas
+ * seguras — sem identidade do inquilino) e prioriza as cidades onde o dono tem
+ * imóvel PUBLICADO. Devolve também os imóveis publicados do dono, para o cliente
+ * casar capacidade × ocupantes e oferecer "Responder com meu imóvel" (ou o CTA
+ * de captação quando não há imóvel na cidade).
+ */
+export async function getPedidosParaProprietario(): Promise<{
+  pedidos: Record<string, unknown>[];
+  myProperties: PropriedadeMinima[];
+}> {
+  const supabase = await createClient();
+  if (!supabase) return { pedidos: [], myProperties: [] };
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { pedidos: [], myProperties: [] };
+
+  // Expiração lazy antes de listar.
+  try {
+    await supabase.rpc("expira_pedidos_moradia");
+  } catch {
+    /* best-effort */
+  }
+
+  const props = (await listMyProperties()).filter((p) => p.status === "active");
+  const myProperties: PropriedadeMinima[] = props.map((p) => ({
+    id: p.id,
+    title: p.title,
+    city: p.city,
+    maxGuests: p.maxGuests,
+    monthlyPrice: p.monthlyPrice,
+  }));
+  const cidades = new Set(props.map((p) => p.city.toLowerCase()));
+
+  const { data } = await supabase
+    .from("pedidos_publicos")
+    .select("*")
+    .order("criado_em", { ascending: false });
+  const todos = (data ?? []) as Record<string, unknown>[];
+  // Prioriza as cidades do dono; se ele não tem imóvel, mostra todos (captação).
+  const pedidos =
+    cidades.size === 0
+      ? todos
+      : todos.filter((p) => cidades.has(String(p.cidade ?? "").toLowerCase()));
+
+  return { pedidos, myProperties };
+}
+
+/** Respostas que EU (proprietário) enviei, com o imóvel e o status. */
+export async function getMinhasRespostas(): Promise<Record<string, unknown>[]> {
+  const supabase = await createClient();
+  if (!supabase) return [];
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data } = await supabase
+    .from("respostas_pedido")
+    .select("*, properties(id, title, city, monthly_price)")
+    .eq("proprietario_id", user.id)
+    .order("criado_em", { ascending: false });
+  return data ?? [];
+}
+
+/**
+ * Proprietário RESPONDE um pedido com um imóvel seu. Validação no SERVIDOR:
+ * o imóvel é dele e está publicado (também exigido pela RLS), e a capacidade do
+ * imóvel comporta os ocupantes do pedido. Filtro anti-contato na mensagem.
+ * A unicidade (um imóvel por pedido) é garantida pela constraint do banco.
+ */
+export async function responderPedido(
+  pedidoId: string,
+  imovelId: string,
+  mensagem?: string
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  if (!supabase) return { ok: true, demo: true };
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Entre para responder." };
+
+  const msg = (mensagem ?? "").trim();
+  if (msg && detectarContato(msg)) return { ok: false, error: CONTATO_AVISO };
+
+  // Pedido precisa estar ATIVO (lido pela view pública) — e traz os ocupantes.
+  const { data: pedido } = await supabase
+    .from("pedidos_publicos")
+    .select("id, qtd_ocupantes")
+    .eq("id", pedidoId)
+    .maybeSingle();
+  if (!pedido) return { ok: false, error: "Pedido não está mais disponível." };
+
+  // Imóvel precisa ser do dono e estar publicado; capacidade ≥ ocupantes.
+  const { data: imovel } = await supabase
+    .from("properties")
+    .select("id, owner_id, status, max_guests")
+    .eq("id", imovelId)
+    .maybeSingle();
+  if (!imovel || imovel.owner_id !== user.id)
+    return { ok: false, error: "Selecione um imóvel seu." };
+  if (imovel.status !== "active")
+    return { ok: false, error: "O imóvel precisa estar publicado para responder." };
+  const capacidade = imovel.max_guests as number | null;
+  const ocupantes = pedido.qtd_ocupantes as number;
+  if (capacidade != null && capacidade < ocupantes)
+    return {
+      ok: false,
+      error: `Este imóvel comporta até ${capacidade} pessoas; o pedido é para ${ocupantes}.`,
+    };
+
+  const { error } = await supabase.from("respostas_pedido").insert({
+    pedido_id: pedidoId,
+    proprietario_id: user.id,
+    imovel_id: imovelId,
+    mensagem: msg || null,
+  });
+  if (error) {
+    // 23505 = já respondeu este pedido com este imóvel (constraint única).
+    if (error.code === "23505")
+      return { ok: false, error: "Você já respondeu este pedido com esse imóvel." };
+    return { ok: false, error: error.message };
+  }
+  return { ok: true };
 }
