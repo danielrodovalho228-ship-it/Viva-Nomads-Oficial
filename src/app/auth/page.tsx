@@ -46,6 +46,7 @@ export default function AuthPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [referral, setReferral] = useState("");
   const [showReferral, setShowReferral] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false); // aceite explícito no cadastro
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null); // pós-cadastro / reset enviado
@@ -134,6 +135,7 @@ export default function AuthPage() {
       if (password.length < MIN_PASSWORD)
         return `A senha deve ter pelo menos ${MIN_PASSWORD} caracteres.`;
       if (password !== confirmPassword) return "A senha e a confirmação não coincidem.";
+      if (!acceptedTerms) return "É preciso aceitar os Termos de Uso e a Política de Privacidade.";
     } else if (!password) {
       return "Digite sua senha.";
     }
@@ -502,9 +504,42 @@ export default function AuthPage() {
                   </div>
                 )}
 
+                {/* Aceite explícito dos Termos e da Privacidade (obrigatório no cadastro). */}
+                {mode === "signup" && (
+                  <label className="flex items-start gap-2 text-sm text-muted">
+                    <input
+                      type="checkbox"
+                      checked={acceptedTerms}
+                      onChange={(e) => setAcceptedTerms(e.target.checked)}
+                      required
+                      aria-label="Aceito os Termos de Uso e a Política de Privacidade"
+                      className="mt-0.5 h-4 w-4 shrink-0 accent-forest"
+                    />
+                    <span>
+                      Li e aceito os{" "}
+                      <a href="/termos" target="_blank" className="font-medium text-forest underline">
+                        Termos de Uso
+                      </a>{" "}
+                      e a{" "}
+                      <a
+                        href="/privacidade"
+                        target="_blank"
+                        className="font-medium text-forest underline"
+                      >
+                        Política de Privacidade
+                      </a>
+                      .
+                    </span>
+                  </label>
+                )}
+
                 {error && <p className="text-sm text-red-600">{error}</p>}
 
-                <Button type="submit" className="w-full" disabled={loading}>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={loading || (mode === "signup" && !acceptedTerms)}
+                >
                   {loading && <Loader2 className="h-4 w-4 animate-spin" />}
                   {loading ? "Aguarde..." : mode === "login" ? "Entrar" : "Criar conta"}
                 </Button>

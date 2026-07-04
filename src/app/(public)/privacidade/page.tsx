@@ -27,7 +27,8 @@ export const metadata: Metadata = {
 const SUBPROCESSORS = [
   {
     name: "Asaas",
-    purpose: "Processamento de pagamentos, cobranças e repasses do aluguel",
+    purpose:
+      "Cobrança da assinatura e da comissão de fechamento (split único sobre o 1º mês); os aluguéis seguintes são pagos direto ao proprietário, fora da plataforma",
     data: "Nome, CPF/CNPJ, dados de contato e dados da transação",
   },
   {
