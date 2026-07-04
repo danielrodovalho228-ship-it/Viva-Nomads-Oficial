@@ -38,9 +38,17 @@ function OwnerDashboard({ name }: { name: string }) {
   // Fonte demo: build de demonstração OU modo demonstração do admin. Os dados
   // reais e o seed NUNCA se misturam — a fonte é uma ou outra.
   const demo = useDashDemo();
-  const realProperties = useProperties("/api/properties/mine").properties;
+  const { properties: realProperties, loading } = useProperties("/api/properties/mine");
   const allProperties = demo ? DEMO_PROPERTIES.filter((p) => p.status === "active") : realProperties;
   const myProperties = allProperties.slice(0, 2);
+
+  // Estado vazio como FUNIL (Dashboard Fase 1): proprietário sem imóvel publicado
+  // vê a visão geral inteira como um convite passo a passo, um CTA por vez —
+  // nada de menus mortos ou cards zerados. Só depois do carregamento (sem piscar
+  // o funil enquanto os imóveis reais chegam). No modo demo há exemplos.
+  if (!demo && !loading && allProperties.length === 0) {
+    return <OwnerFunnel name={name} />;
+  }
 
   return (
     <>
@@ -210,6 +218,96 @@ function TenantDashboard({ name }: { name: string }) {
           }
         />
       </div>
+    </>
+  );
+}
+
+/**
+ * Estado vazio como FUNIL (Dashboard Fase 1). Proprietário sem imóvel publicado
+ * vê um caminho único: Qualificar → Anunciar → Receber candidaturas, com UM CTA
+ * ativo por vez. Sem menus mortos nem cards zerados.
+ */
+function OwnerFunnel({ name }: { name: string }) {
+  const passos = [
+    {
+      n: 1,
+      titulo: "Qualifique seu imóvel",
+      texto: "Um checklist rápido confirma que o imóvel está pronto para morar e define o selo.",
+      cta: "Qualificar meu imóvel",
+      href: "/qualificar",
+      ativo: true,
+    },
+    {
+      n: 2,
+      titulo: "Publique o anúncio",
+      texto: "Fotos, preço e disponibilidade — quanto mais completo, mais candidaturas.",
+      cta: "Publicar anúncio",
+      href: "/qualificar",
+      ativo: false,
+    },
+    {
+      n: 3,
+      titulo: "Receba candidaturas e pedidos",
+      texto: "Inquilinos verificados chegam por candidatura ou pelos Pedidos de Moradia da sua cidade.",
+      cta: "Ver pedidos de moradia",
+      href: "/pedidos",
+      ativo: false,
+    },
+  ];
+
+  return (
+    <>
+      <DashboardBanner
+        className="mb-6"
+        image={PHOTOS.dashOwner}
+        alt="Sala de apartamento mobiliado preparada para anúncio"
+        title={`Bem-vindo${name ? `, ${name}` : ""}! 👋`}
+        subtitle="Vamos colocar seu primeiro imóvel no ar em 3 passos."
+        action={
+          <ButtonLink href="/qualificar" variant="accent">
+            <ClipboardCheck className="h-4 w-4" /> Começar agora
+          </ButtonLink>
+        }
+      />
+
+      <ol className="grid gap-4 lg:grid-cols-3">
+        {passos.map((p) => (
+          <li
+            key={p.n}
+            className={`rounded-2xl border p-5 ${
+              p.ativo ? "border-forest bg-white shadow-sm" : "border-line bg-surface-2"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <span
+                className={`grid h-7 w-7 place-items-center rounded-full text-sm font-bold ${
+                  p.ativo ? "bg-forest text-white" : "bg-white text-muted"
+                }`}
+              >
+                {p.n}
+              </span>
+              <h3 className="font-title font-bold text-ink">{p.titulo}</h3>
+            </div>
+            <p className="mt-2 text-sm text-muted">{p.texto}</p>
+            {p.ativo ? (
+              <ButtonLink href={p.href} variant="primary" className="mt-4 w-full justify-center">
+                {p.cta} <ArrowRight className="h-4 w-4" />
+              </ButtonLink>
+            ) : (
+              <p className="mt-4 text-xs font-medium text-muted">Depois do passo {p.n - 1}</p>
+            )}
+          </li>
+        ))}
+      </ol>
+
+      <p className="mt-6 rounded-xl border border-sage-200 bg-white px-4 py-3 text-sm text-muted">
+        A plataforma <strong className="text-ink">conecta, verifica, documenta e registra</strong> —
+        você fecha direto com o inquilino. Precisa de ajuda para começar?{" "}
+        <Link href="/como-funciona" className="font-medium text-forest hover:underline">
+          Veja como funciona
+        </Link>
+        .
+      </p>
     </>
   );
 }
