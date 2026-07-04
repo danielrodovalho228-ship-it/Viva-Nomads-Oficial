@@ -72,6 +72,56 @@ export const RESPOSTA_STATUS_LABEL: Record<string, string> = {
 /** Máximo de pedidos ATIVOS por inquilino (anti-abuso). */
 export const MAX_PEDIDOS_ATIVOS = 2;
 
+// ── Leads do proprietário (Dashboard Fase 2) ─────────────────────────────────
+
+/**
+ * Receita potencial do período de um pedido = orçamento mensal × prazo (meses).
+ * Estimativa pelo que o inquilino declarou — o lead chega precificado.
+ */
+export function receitaPotencial(orcamentoMensal: number, prazoMeses: number): number {
+  return Math.max(0, orcamentoMensal) * Math.max(0, Math.floor(prazoMeses));
+}
+
+/** Tolerância de orçamento na compatibilidade (o pedido pode pagar 15% a menos). */
+export const TOLERANCIA_ORCAMENTO = 0.15;
+
+export interface ImovelCompat {
+  city: string;
+  maxGuests?: number;
+  monthlyPrice: number;
+}
+export interface PedidoCompat {
+  cidade: string;
+  orcamento_mensal: number;
+  qtd_ocupantes: number;
+}
+
+/**
+ * Um pedido é COMPATÍVEL com o proprietário quando existe um imóvel ativo dele
+ * que casa: mesma cidade, orçamento ≥ menor aluguel na cidade (com tolerância de
+ * 15%) e capacidade ≥ ocupantes do pedido. Senão, é "demais pedido na cidade".
+ */
+export function pedidoCompativel(pedido: PedidoCompat, props: ImovelCompat[]): boolean {
+  const naCidade = props.filter(
+    (p) => p.city.trim().toLowerCase() === pedido.cidade.trim().toLowerCase()
+  );
+  if (naCidade.length === 0) return false;
+  const menorAluguel = Math.min(...naCidade.map((p) => p.monthlyPrice));
+  const orcamentoOk = pedido.orcamento_mensal >= menorAluguel * (1 - TOLERANCIA_ORCAMENTO);
+  const capacidadeOk = naCidade.some(
+    (p) => p.maxGuests == null || p.maxGuests >= pedido.qtd_ocupantes
+  );
+  return orcamentoOk && capacidadeOk;
+}
+
+/** Dias desde a publicação (para "publicado há N dias"). Datas ISO. */
+export function diasDesde(criadoEmISO: string, hojeISO: string): number {
+  const a = Date.parse(`${criadoEmISO.slice(0, 10)}T00:00:00Z`);
+  const b = Date.parse(`${hojeISO.slice(0, 10)}T00:00:00Z`);
+  if (Number.isNaN(a) || Number.isNaN(b)) return 0;
+  return Math.max(0, Math.round((b - a) / 86400000));
+}
+
 // ── Filtro anti-contato (bloqueia; não mascara) ──────────────────────────────
 const EMAIL_RE = /[\w.+-]+@[\w-]+\.[\w.-]{2,}/;
 // 8+ dígitos seguidos (com ou sem máscara) — cobre telefones digitados.

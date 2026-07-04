@@ -12,6 +12,8 @@ import {
   RESPOSTA_STATUS_LABEL,
   contemContato,
   CONTATO_AVISO,
+  receitaPotencial,
+  pedidoCompativel,
 } from "@/lib/pedidos/pedidos";
 import { responderPedido } from "@/lib/data/pedidos-actions";
 import type { PropriedadeMinima } from "@/lib/data/pedidos-actions";
@@ -46,9 +48,26 @@ export function PedidosProprietarioClient({
   minhasRespostas: Record<string, unknown>[];
 }) {
   const router = useRouter();
-  const lista = pedidos as unknown as PedidoPublico[];
+  const todos = pedidos as unknown as PedidoPublico[];
   const respostas = minhasRespostas as unknown as MinhaResposta[];
   const [aberto, setAberto] = useState<string | null>(null); // pedido em resposta
+  const [aba, setAba] = useState<"compat" | "demais">("compat");
+  const [ordem, setOrdem] = useState<"recentes" | "potencial" | "prazo">("recentes");
+
+  // Classifica em COMPATÍVEIS (batem com um imóvel ativo do dono) e DEMAIS.
+  const compat = todos.filter((p) => pedidoCompativel(p, myProperties));
+  const demais = todos.filter((p) => !pedidoCompativel(p, myProperties));
+  const base = aba === "compat" ? compat : demais;
+
+  const lista = [...base].sort((a, b) => {
+    if (ordem === "potencial")
+      return (
+        receitaPotencial(b.orcamento_mensal, b.prazo_meses) -
+        receitaPotencial(a.orcamento_mensal, a.prazo_meses)
+      );
+    if (ordem === "prazo") return b.prazo_meses - a.prazo_meses;
+    return (b.data_inicio ?? "").localeCompare(a.data_inicio ?? ""); // mais recentes
+  });
 
   // Status da minha resposta a um pedido (se já respondi).
   const minhaRespostaDoPedido = (pedidoId: string) =>
@@ -66,7 +85,7 @@ export function PedidosProprietarioClient({
         </div>
       </div>
 
-      {lista.length === 0 ? (
+      {todos.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-line bg-white p-12 text-center">
           <Megaphone className="mx-auto h-10 w-10 text-blue-500" />
           <h3 className="mt-4 font-title text-lg font-bold text-ink">Nenhum pedido ativo por aqui</h3>
@@ -75,6 +94,53 @@ export function PedidosProprietarioClient({
           </p>
         </div>
       ) : (
+        <>
+          {/* Tabs Compatíveis / Demais + ordenação (Dashboard Fase 2). */}
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="inline-flex rounded-full bg-surface-2 p-0.5 text-sm">
+              <button
+                type="button"
+                onClick={() => setAba("compat")}
+                className={cn(
+                  "rounded-full px-4 py-1.5 font-medium transition-colors",
+                  aba === "compat" ? "bg-forest text-white" : "text-muted"
+                )}
+              >
+                Compatíveis ({compat.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setAba("demais")}
+                className={cn(
+                  "rounded-full px-4 py-1.5 font-medium transition-colors",
+                  aba === "demais" ? "bg-forest text-white" : "text-muted"
+                )}
+              >
+                Demais na cidade ({demais.length})
+              </button>
+            </div>
+            <label className="flex items-center gap-2 text-sm text-muted">
+              Ordenar
+              <select
+                value={ordem}
+                onChange={(e) => setOrdem(e.target.value as typeof ordem)}
+                className="rounded-lg border border-line bg-white px-2 py-1 text-sm text-ink outline-none focus:border-sage"
+              >
+                <option value="recentes">Mais recentes</option>
+                <option value="potencial">Maior potencial</option>
+                <option value="prazo">Prazo mais longo</option>
+              </select>
+            </label>
+          </div>
+
+          {lista.length === 0 && (
+            <p className="rounded-2xl border border-dashed border-line bg-white px-5 py-8 text-center text-sm text-muted">
+              {aba === "compat"
+                ? "Nenhum pedido compatível agora. Veja os demais pedidos na cidade."
+                : "Sem outros pedidos na cidade no momento."}
+            </p>
+          )}
+
         <div className="grid gap-4 sm:grid-cols-2">
           {lista.map((p) => {
             const compativeis = myProperties.filter(
@@ -106,6 +172,17 @@ export function PedidosProprietarioClient({
                     </span>
                   )}
                 </div>
+
+                {/* Receita potencial do período — o lead chega precificado (Fase 2). */}
+                <div className="mt-3 flex items-baseline justify-between rounded-lg bg-champagne/15 px-3 py-2">
+                  <span className="text-xs font-medium text-muted">Potencial do período</span>
+                  <span className="font-title text-lg font-bold text-forest">
+                    {formatBRL(receitaPotencial(p.orcamento_mensal, p.prazo_meses))}
+                  </span>
+                </div>
+                <p className="mt-1 text-[11px] text-muted">
+                  Estimativa pelo orçamento e prazo declarados.
+                </p>
 
                 <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
                   <Meta label="Cidade" value={`${p.cidade}${p.uf ? `/${p.uf}` : ""}`} />
@@ -160,6 +237,7 @@ export function PedidosProprietarioClient({
             );
           })}
         </div>
+        </>
       )}
     </div>
   );
