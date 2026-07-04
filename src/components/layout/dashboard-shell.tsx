@@ -77,6 +77,7 @@ const TENANT_NAV: NavItem[] = [
 
 const ADMIN_NAV: NavItem[] = [
   { href: "/admin", label: "Admin", icon: ShieldCheck },
+  { href: "/admin/pedidos", label: "Moderar pedidos", icon: Megaphone },
 ];
 
 const NAV_BY_MODE: Record<ViewMode, NavItem[]> = { owner: OWNER_NAV, tenant: TENANT_NAV };
