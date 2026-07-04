@@ -16,7 +16,8 @@ export type NotificationEvent =
   | "pedido_novo_cidade" // novo pedido ativo na cidade → proprietários
   | "pedido_resposta" // proprietário respondeu → inquilino
   | "pedido_aceito" // inquilino aceitou para conversa → proprietário
-  | "pedido_expirando"; // pedido expira em 3 dias → inquilino
+  | "pedido_expirando" // pedido expira em 3 dias → inquilino
+  | "pedido_moderado"; // pedido ocultado pela moderação → inquilino
 
 const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: string) => string }> = {
   new_lead: { subject: "Novo interessado no seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, você recebeu um novo lead no Viva Nomads.` },
@@ -30,6 +31,7 @@ const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: string)
   pedido_resposta: { subject: "Um proprietário respondeu ao seu pedido", body: (n) => `Olá${n ? " " + n : ""}, um proprietário respondeu ao seu pedido de moradia com um imóvel. Veja e aceite para conversar.` },
   pedido_aceito: { subject: "Seu imóvel foi aceito para conversa", body: (n) => `Olá${n ? " " + n : ""}, um inquilino aceitou sua resposta e abriu a conversa. Responda pela plataforma.` },
   pedido_expirando: { subject: "Seu pedido de moradia expira em breve", body: (n) => `Olá${n ? " " + n : ""}, seu pedido de moradia expira em até 3 dias. Renove ou marque como atendido se já resolveu.` },
+  pedido_moderado: { subject: "Seu pedido de moradia foi ocultado", body: (n) => `Olá${n ? " " + n : ""}, seu pedido de moradia foi ocultado pela moderação. Veja o motivo e ajuste se necessário.` },
 };
 
 export interface NotifyResult {
