@@ -67,8 +67,10 @@ const EMAIL_RE = /[\w.+-]+@[\w-]+\.[\w.-]{2,}/;
 // 8+ dígitos seguidos (com ou sem máscara) — cobre telefones digitados.
 const PHONE_RE = /(?:\d[\s().-]?){8,}/;
 // Termos que puxam a conversa para fora da plataforma.
+// "insta"/"face" só isolados ou como instagram/facebook — NÃO casa "instalação",
+// "instante", "faceta" (falsos positivos que bloqueariam texto legítimo).
 const TERMOS_RE =
-  /\b(whats\w*|zap+|telegram|te\s?legram|insta\w*|face\w*|chama\s+no|me\s+chama|liga\s+(?:pra|para)|meu\s+(?:n[úu]mero|whats|zap|contato))\b/i;
+  /\b(whats\w*|zap+|telegram|te\s?legram|instagram|insta|facebook|face|chama\s+no|me\s+chama|liga\s+(?:pra|para)|meu\s+(?:n[úu]mero|whats|zap|contato))\b/i;
 // Links de mensageria externa.
 const MESSENGER_RE = /(?:https?:\/\/)?(?:wa\.me|api\.whatsapp\.com|chat\.whatsapp\.com|t\.me|telegram\.me)\//i;
 

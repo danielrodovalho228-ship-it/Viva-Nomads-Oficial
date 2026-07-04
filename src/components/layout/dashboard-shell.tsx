@@ -48,6 +48,7 @@ const OWNER_NAV: NavItem[] = [
   { href: "/dashboard", label: "Visão geral", icon: LayoutDashboard },
   { href: "/qualificar", label: "Qualificar imóvel", icon: ClipboardCheck },
   { href: "/dashboard/imoveis", label: "Meus imóveis", icon: Home },
+  { href: "/pedidos", label: "Pedidos de moradia", icon: Megaphone },
   { href: "/dashboard/carteira", label: "Carteira", icon: Briefcase, minPlan: "gestor" },
   { href: "/dashboard/viabilidade", label: "Viabilidade", icon: Calculator, minPlan: "gestor" },
   { href: "/dashboard/leads", label: "Leads", icon: Users },

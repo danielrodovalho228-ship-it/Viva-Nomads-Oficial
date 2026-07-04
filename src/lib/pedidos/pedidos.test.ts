@@ -38,6 +38,15 @@ test("texto limpo passa", () => {
   assert.equal(contemContato("Família de 3, buscando algo perto do centro."), false);
 });
 
+test("não bloqueia palavras legítimas parecidas com termos (instalação, faceta)", () => {
+  assert.equal(detectarContato("preciso de imóvel com boa instalação elétrica"), null);
+  assert.equal(detectarContato("gosto do acabamento e da faceta do apê"), null);
+  assert.equal(detectarContato("instante de mudança na minha vida"), null);
+  // mas ainda bloqueia os apps de verdade:
+  assert.equal(detectarContato("me acha no instagram"), "termo");
+  assert.equal(detectarContato("chama no insta"), "termo");
+});
+
 test("não bloqueia números curtos (CEP, valores)", () => {
   assert.equal(detectarContato("orçamento até 3500 por mês, CEP 38400"), null);
 });
