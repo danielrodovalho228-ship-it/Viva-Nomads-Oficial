@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PaginasInternasNav } from "@/components/apresentacao/paginas-nav";
 import { ModeloNegocio } from "@/components/modelo-negocio/modelo-negocio";
 
 // Página de apresentação (sócios/investidores/proprietários), divulgada só por
@@ -9,5 +10,10 @@ export const metadata: Metadata = {
 };
 
 export default function ModeloDeNegocioPage() {
-  return <ModeloNegocio />;
+  return (
+    <>
+      <PaginasInternasNav atual="/modelodenegocio" />
+      <ModeloNegocio />
+    </>
+  );
 }

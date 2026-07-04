@@ -168,7 +168,7 @@ export const FONTES: FonteReceita[] = [
   },
   {
     key: "servicos",
-    label: "Serviços (Aqui Resolve)",
+    label: "Serviços de parceiro (manutenção e reparos)",
     color: "#5a8a6b",
     desc: "Repasse por serviço prestado no contrato.",
   },

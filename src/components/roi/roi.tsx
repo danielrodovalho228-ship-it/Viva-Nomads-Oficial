@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { assinaturaMediaMix } from "@/config/planos";
 import styles from "./roi.module.css";
 
 // ── CONSTANTES (editáveis) ───────────────────────────────────────────────────
@@ -17,7 +18,10 @@ const DEFAULTS = {
   propsMes1: 10, // proprietários no mês 1
   cresc: 8, // crescimento mensal (%)
   churn: 3, // churn mensal (%)
-  assin: 89, // assinatura média (R$/mês)
+  // Assinatura média (R$/mês) DERIVADA do mix declarado dos planos (C3):
+  // 50% Gratuito, 35% Essencial, 15% Profissional (ver config/planos.ts).
+  // Editável no slider; a nota abaixo aponta a referência.
+  assin: assinaturaMediaMix(),
   locAno: 3, // locações por proprietário/ano
   comissao: 8, // comissão média (%)
 };
@@ -134,6 +138,10 @@ export function Roi() {
             <Slider label="Crescimento mensal" value={p.cresc} min={0} max={25} step={1} display={`${p.cresc}%`} onChange={(v) => set("cresc", v)} />
             <Slider label="Churn mensal" value={p.churn} min={0} max={15} step={1} display={`${p.churn}%`} onChange={(v) => set("churn", v)} />
             <Slider label="Assinatura média" value={p.assin} min={30} max={200} step={1} display={`${brl(p.assin)}/mês`} onChange={(v) => set("assin", v)} />
+            <p className={styles.cardHelp}>
+              Referência: mix dos planos (config/planos.ts) — 50% Gratuito, 35% Essencial, 15%
+              Profissional. Editável acima.
+            </p>
             <Slider label="Locações por proprietário/ano" value={p.locAno} min={1} max={6} step={1} display={`${p.locAno}×`} onChange={(v) => set("locAno", v)} />
             <Slider label="Comissão média" value={p.comissao} min={0} max={12} step={1} display={`${p.comissao}%`} onChange={(v) => set("comissao", v)} />
           </div>

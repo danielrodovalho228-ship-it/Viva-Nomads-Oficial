@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PaginasInternasNav } from "@/components/apresentacao/paginas-nav";
 import { Simulador } from "@/components/simulacao/simulador";
 
 // Página privada: divulgada só por link direto (não indexar nem seguir).
@@ -8,5 +9,10 @@ export const metadata: Metadata = {
 };
 
 export default function SimulacaoPage() {
-  return <Simulador />;
+  return (
+    <>
+      <PaginasInternasNav atual="/simulacao" />
+      <Simulador />
+    </>
+  );
 }
