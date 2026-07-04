@@ -1,0 +1,92 @@
+/* /roi — modelo financeiro da empresa (payback + ROI). Paleta da marca. */
+
+.page {
+  --forest: #0f3d2e;
+  --sage: #5a8a6b;
+  --gold: #c8a24b;
+  --bg: #f3f6f4;
+  --ink: #1f2933;
+  --muted: #6b7280;
+  --line: #e3e9e5;
+  --danger: #c0392b;
+
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-inter), -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+}
+.wrap { max-width: 1080px; margin: 0 auto; padding: 18px 16px 64px; }
+
+.topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 0 12px; }
+.brand { font-weight: 800; font-size: 20px; letter-spacing: -0.5px; text-decoration: none; }
+.brand .v { color: #1e63d0; }
+.brand .n { color: #6cbe2a; }
+
+/* Aviso obrigatório */
+.warn {
+  background: #fbfaf4;
+  border: 1px solid #ece3c9;
+  border-left: 4px solid var(--gold);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: #6b5518;
+  margin-bottom: 16px;
+}
+
+.hero { padding: 4px 0 16px; }
+.h1 { font-size: clamp(26px, 4vw, 38px); margin: 0 0 8px; color: var(--forest); font-weight: 800; letter-spacing: -0.5px; }
+.sub { color: var(--muted); font-size: 15px; margin: 0; max-width: 680px; }
+
+/* KPIs */
+.kpis { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
+@media (min-width: 760px) { .kpis { grid-template-columns: repeat(4, 1fr); } }
+.kpi { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; box-shadow: 0 1px 2px rgba(15,61,46,.04); }
+.kpi .k { font-size: 12px; color: var(--muted); font-weight: 600; }
+.kpi .v { font-size: clamp(20px, 3vw, 26px); font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.15; margin-top: 2px; }
+.kpi .hint { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+/* Painéis de premissas */
+.panels { display: grid; grid-template-columns: 1fr; gap: 16px; }
+@media (min-width: 860px) { .panels { grid-template-columns: 1fr 1fr; } }
+.card { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 18px; }
+.card h2 { font-size: 14px; margin: 0 0 4px; color: var(--forest); text-transform: uppercase; letter-spacing: .04em; font-weight: 700; }
+.cardHelp { font-size: 12px; color: var(--muted); margin: 0 0 14px; }
+
+.slider { margin-bottom: 14px; }
+.slider:last-child { margin-bottom: 0; }
+.slider .top { display: flex; justify-content: space-between; align-items: flex-end; gap: 10px; }
+.slider .lbl { font-size: 13px; color: var(--muted); }
+.slider .val { font-weight: 800; color: var(--forest); font-size: 17px; font-variant-numeric: tabular-nums; line-height: 1; }
+.slider input[type="range"] { width: 100%; accent-color: var(--sage); margin-top: 7px; }
+.slider input[type="range"]:focus-visible { outline: 2px solid var(--sage); outline-offset: 4px; }
+
+/* Gráficos */
+.charts { display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 16px; }
+@media (min-width: 860px) { .charts { grid-template-columns: 1fr 1fr; } }
+.chartCard { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; }
+.chartCard h3 { margin: 0 0 2px; font-size: 14px; color: var(--forest); font-weight: 700; }
+.chartCard .chartSub { margin: 0 0 10px; font-size: 12px; color: var(--muted); }
+.chartCard svg { width: 100%; height: auto; display: block; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 6px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+.legend .sw { width: 11px; height: 11px; border-radius: 3px; }
+
+/* Tabela anual */
+.tableWrap { overflow-x: auto; margin-top: 16px; }
+.table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.table th { text-align: left; padding: 9px 8px; border-bottom: 2px solid var(--forest); font-size: 12px; text-transform: uppercase; letter-spacing: .03em; color: var(--forest); }
+.table td { padding: 9px 8px; border-bottom: 1px dashed var(--line); font-variant-numeric: tabular-nums; }
+.table td.num, .table th.num { text-align: right; }
+.table td.neg { color: var(--danger); }
+.table td.pos { color: var(--forest); font-weight: 700; }
+
+/* Metodologia */
+.method { margin-top: 16px; }
+.method h2 { color: var(--forest); }
+.method ul { margin: 0; padding-left: 18px; }
+.method li { font-size: 13.5px; margin: 5px 0; }
+.method code { background: #f4f7f5; border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; font-size: 12.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+.footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 22px; }
