@@ -108,11 +108,17 @@ export function SearchClient({ properties }: { properties: Property[] }) {
       if ([5, 10, 20].includes(r)) setRadiusKm(r);
     }
     const num = (k: string) => Number(sp.get(k)) || 0;
-    if ([2500, 3500, 5000].includes(num("preco"))) setMaxPrice(num("preco"));
+    // Preço: aceita `orcamento` (busca do hero) OU `preco` (sync interno) — A3.
+    const orc = num("orcamento") || num("preco");
+    if ([2500, 3500, 5000].includes(orc)) setMaxPrice(orc);
     if ([1, 2, 3].includes(num("quartos"))) setMinBedrooms(num("quartos"));
     if (num("adultos") >= 1) setAdults(Math.min(16, num("adultos")));
     if (num("criancas") >= 1) setChildren(Math.min(10, num("criancas")));
-    if ([30, 60, 90].includes(num("periodo"))) setMaxPeriod(num("periodo"));
+    // Período: novos valores (60/120/180 = 1–2/3–4/5–6 meses) + legado do hero
+    // (30/90 → mapeados) — A3: a URL reflete no controle "Período da estadia".
+    const per = num("periodo");
+    const perMap: Record<number, number> = { 30: 60, 60: 60, 90: 120, 120: 120, 180: 180 };
+    if (perMap[per]) setMaxPeriod(perMap[per]);
     const ordem = sp.get("ordem");
     if (ordem === "recent" || ordem === "price-asc" || ordem === "price-desc") setSort(ordem);
     const tipo = sp.get("tipo");

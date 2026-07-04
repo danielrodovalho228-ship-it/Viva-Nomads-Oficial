@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Bath, BedDouble, Ruler, Star, PlayCircle, Users } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { formatBRL } from "@/lib/utils";
+import { calcularTudoIncluido } from "@/lib/precos";
 import { tierFromPhotoCount } from "@/lib/listing";
 import { ReadyToLiveBadge, PropertyTags, InvoiceBadge, InsuranceBadge } from "@/components/ui/badge";
 import { BrandImage } from "@/components/brand-image";
@@ -20,12 +21,10 @@ export function PropertyCard({
   const hasRealPhoto =
     typeof cover === "string" && (/^https?:\/\//.test(cover) || cover.startsWith("/"));
   const tier = tierFromPhotoCount(property.photos.length);
-  // Total "tudo incluído" no período buscado (aluguel + consumo fixo) × meses.
-  const mensalTudoIncluido =
-    property.monthlyPrice +
-    (property.utilitiesMode === "fixed" ? property.utilitiesEstimate : 0);
-  const totalPeriodo =
-    periodMonths && periodMonths > 0 ? mensalTudoIncluido * periodMonths : null;
+  // "Tudo incluído" pela FONTE ÚNICA (aluguel + condomínio + consumo fixo) — o
+  // mesmo número da página do imóvel. Total do período = mensal × meses.
+  const inc = calcularTudoIncluido(property);
+  const totalPeriodo = periodMonths && periodMonths > 0 ? inc.total * periodMonths : null;
 
   return (
     <Link
@@ -129,10 +128,10 @@ export function PropertyCard({
                 : "+ consumo medido"}
             </span>
           </div>
-          {/* Custo total estimado em destaque (quick win) */}
-          {property.utilitiesMode === "fixed" && property.utilitiesEstimate > 0 && (
+          {/* Custo total estimado — fonte única (aluguel + condomínio + consumo). */}
+          {inc.temExtras && (
             <p className="mt-1.5 text-xs font-semibold text-forest">
-              ≈ {formatBRL(property.monthlyPrice + property.utilitiesEstimate)}/mês tudo incluído
+              ≈ {formatBRL(inc.total)}/mês tudo incluído
             </p>
           )}
           {/* Total do período buscado (Fase 3) — só quando há período na busca. */}
