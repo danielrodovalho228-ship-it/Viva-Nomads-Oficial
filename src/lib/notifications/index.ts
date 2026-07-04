@@ -11,7 +11,12 @@ export type NotificationEvent =
   | "saved_search_match" // alerta de busca salva do inquilino
   | "verification_ready" // laudo CAF pronto
   | "contract_status" // status do contrato
-  | "subscription_status"; // status da assinatura
+  | "subscription_status" // status da assinatura
+  // Pedido de Moradia (Fase 4)
+  | "pedido_novo_cidade" // novo pedido ativo na cidade → proprietários
+  | "pedido_resposta" // proprietário respondeu → inquilino
+  | "pedido_aceito" // inquilino aceitou para conversa → proprietário
+  | "pedido_expirando"; // pedido expira em 3 dias → inquilino
 
 const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: string) => string }> = {
   new_lead: { subject: "Novo interessado no seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, você recebeu um novo lead no Viva Nomads.` },
@@ -21,6 +26,10 @@ const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: string)
   verification_ready: { subject: "Sua verificação está pronta", body: () => "Seu laudo de Inquilino Verificado está disponível." },
   contract_status: { subject: "Atualização do seu contrato", body: () => "Há uma atualização no seu contrato de locação." },
   subscription_status: { subject: "Atualização da sua assinatura", body: () => "Há uma atualização na sua assinatura Viva Nomads." },
+  pedido_novo_cidade: { subject: "Novo pedido de moradia na sua cidade", body: (n) => `Olá${n ? " " + n : ""}, um inquilino publicou um pedido de moradia na cidade de um dos seus imóveis. Veja se algum atende.` },
+  pedido_resposta: { subject: "Um proprietário respondeu ao seu pedido", body: (n) => `Olá${n ? " " + n : ""}, um proprietário respondeu ao seu pedido de moradia com um imóvel. Veja e aceite para conversar.` },
+  pedido_aceito: { subject: "Seu imóvel foi aceito para conversa", body: (n) => `Olá${n ? " " + n : ""}, um inquilino aceitou sua resposta e abriu a conversa. Responda pela plataforma.` },
+  pedido_expirando: { subject: "Seu pedido de moradia expira em breve", body: (n) => `Olá${n ? " " + n : ""}, seu pedido de moradia expira em até 3 dias. Renove ou marque como atendido se já resolveu.` },
 };
 
 export interface NotifyResult {
