@@ -1,9 +1,9 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Megaphone, ShieldCheck, Info, Loader2 } from "lucide-react";
+import { Megaphone, ShieldCheck, Info, Loader2, ChevronDown, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MOTIVOS, contemContato, CONTATO_AVISO, calcExpiraEm } from "@/lib/pedidos/pedidos";
 import { criarPedido } from "@/lib/data/pedidos-actions";
@@ -154,22 +154,10 @@ function NovoPedidoForm() {
                 className="w-full rounded-xl border border-line px-3.5 py-2.5 text-sm outline-none focus:border-sage"
               />
             </label>
-            <label>
+            <div>
               <span className="mb-1 block text-sm font-medium text-ink">Motivo</span>
-              <select
-                required
-                value={motivo}
-                onChange={(e) => setMotivo(e.target.value)}
-                className="w-full rounded-xl border border-line px-3.5 py-2.5 text-sm outline-none focus:border-sage"
-              >
-                <option value="">Selecione…</option>
-                {MOTIVOS.map((m) => (
-                  <option key={m.key} value={m.key}>
-                    {m.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+              <MotivoSelect value={motivo} onChange={setMotivo} />
+            </div>
           </div>
 
           <label className="block">
@@ -230,6 +218,80 @@ function NovoPedidoForm() {
           </div>
         </form>
       </div>
+    </div>
+  );
+}
+
+/** Seletor de motivo com rótulo + descrição por opção (dropdown, click-away). */
+function MotivoSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const atual = MOTIVOS.find((m) => m.key === value);
+
+  useEffect(() => {
+    if (!open) return;
+    function onDown(e: PointerEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("pointerdown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        className={`flex w-full items-center justify-between gap-2 rounded-xl border bg-white px-3.5 py-2.5 text-left text-sm outline-none ${
+          open ? "border-sage" : "border-line"
+        }`}
+      >
+        <span className={atual ? "text-ink" : "text-muted"}>
+          {atual ? atual.label : "Selecione o motivo da estadia…"}
+        </span>
+        <ChevronDown className={`h-4 w-4 shrink-0 text-muted transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open && (
+        <div
+          role="listbox"
+          className="absolute left-0 right-0 top-full z-30 mt-2 max-h-72 overflow-auto rounded-xl border border-line bg-white py-1 shadow-xl"
+        >
+          {MOTIVOS.map((m) => {
+            const ativo = m.key === value;
+            return (
+              <button
+                key={m.key}
+                type="button"
+                role="option"
+                aria-selected={ativo}
+                onClick={() => {
+                  onChange(m.key);
+                  setOpen(false);
+                }}
+                className={`flex w-full items-start justify-between gap-2 px-3.5 py-2 text-left hover:bg-surface-2 ${
+                  ativo ? "bg-sage-100" : ""
+                }`}
+              >
+                <span>
+                  <span className="block text-sm font-semibold text-forest">{m.label}</span>
+                  <span className="block text-xs text-muted">{m.descricao}</span>
+                </span>
+                {ativo && <Check className="mt-0.5 h-4 w-4 shrink-0 text-forest" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

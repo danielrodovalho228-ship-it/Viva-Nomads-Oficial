@@ -59,6 +59,7 @@ test("expiração = menor entre data_inicio+15 e criado_em+60", () => {
 });
 
 test("motivo público não identifica a pessoa", () => {
-  assert.equal(motivoPublico("trabalho_saude"), "Profissional da saúde");
+  assert.equal(motivoPublico("tratamento_medico"), "Tratamento de saúde");
+  assert.equal(motivoPublico("trabalho_remoto"), "Trabalho remoto");
   assert.equal(MAX_PEDIDOS_ATIVOS, 2);
 });

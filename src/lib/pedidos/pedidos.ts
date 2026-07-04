@@ -9,25 +9,35 @@
 */
 
 export type MotivoPedido =
-  | "trabalho_saude"
-  | "trabalho_corporativo"
-  | "transicao"
-  | "estudo"
+  | "trabalho_remoto"
+  | "tratamento_medico"
+  | "relocacao_corporativa"
+  | "intercambio_pos"
+  | "reforma_transicao"
+  | "mudanca_familiar"
+  | "aposentadoria_lifestyle"
+  | "viagem_longa"
   | "outro";
 
 export interface MotivoDef {
   key: MotivoPedido;
   label: string;
-  /** Profissão/rótulo genérico exibido no card público (sem identificar a pessoa). */
+  /** Descrição curta exibida abaixo do rótulo no seletor. */
+  descricao: string;
+  /** Rótulo genérico exibido no card público (sem identificar a pessoa). */
   publico: string;
 }
 
 export const MOTIVOS: MotivoDef[] = [
-  { key: "trabalho_saude", label: "Trabalho na área da saúde", publico: "Profissional da saúde" },
-  { key: "trabalho_corporativo", label: "Trabalho corporativo", publico: "Profissional corporativo" },
-  { key: "transicao", label: "Transição de vida", publico: "Em transição de vida" },
-  { key: "estudo", label: "Estudo", publico: "Estudante" },
-  { key: "outro", label: "Outro", publico: "Outro" },
+  { key: "trabalho_remoto", label: "Trabalho remoto", descricao: "Home office com base temporária", publico: "Trabalho remoto" },
+  { key: "tratamento_medico", label: "Tratamento médico", descricao: "Consulta, cirurgia, acompanhante", publico: "Tratamento de saúde" },
+  { key: "relocacao_corporativa", label: "Relocação corporativa", descricao: "Transferência, projeto, treinamento", publico: "Relocação corporativa" },
+  { key: "intercambio_pos", label: "Intercâmbio / Pós", descricao: "UFU, residência, especialização", publico: "Intercâmbio / pós-graduação" },
+  { key: "reforma_transicao", label: "Reforma / Transição", descricao: "Obras, espera por casa própria", publico: "Reforma / transição" },
+  { key: "mudanca_familiar", label: "Mudança familiar", descricao: "Família vindo se estabelecer", publico: "Mudança familiar" },
+  { key: "aposentadoria_lifestyle", label: "Aposentadoria / Lifestyle", descricao: "Sabático, temporada longa", publico: "Aposentadoria / lifestyle" },
+  { key: "viagem_longa", label: "Viagem longa", descricao: "Turismo prolongado, road trip", publico: "Viagem longa" },
+  { key: "outro", label: "Outro motivo", descricao: "Descreva na apresentação abaixo", publico: "Outro" },
 ];
 
 const MOTIVO_BY_KEY: Record<string, MotivoDef> = Object.fromEntries(MOTIVOS.map((m) => [m.key, m]));
