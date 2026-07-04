@@ -78,6 +78,21 @@ export const GARANTIAS_FAIXA: GarantiaDef[] = [
   { key: "seguro_fianca", label: "Seguro-fiança" },
 ];
 
+/**
+ * Flag da UI PÚBLICA para a modalidade "caução parcelada" (B1 do E2E). Enquanto
+ * a mecânica de pagamento da caução aguarda parecer jurídico, a interface
+ * pública NÃO expõe "à vista / parcelada" como opções distintas — mostra só
+ * "Caução". Religue com NEXT_PUBLIC_CAUCAO_PARCELADA_UI=on quando o jurídico
+ * liberar. Os valores/enum do banco permanecem intactos.
+ */
+export const CAUCAO_PARCELADA_UI = process.env.NEXT_PUBLIC_CAUCAO_PARCELADA_UI === "on";
+
+/** Garantias exibidas no filtro PÚBLICO da busca (caução unificada + seguro). */
+export const GARANTIAS_PUBLICAS: { key: string; label: string }[] = [
+  { key: "caucao", label: "Caução" },
+  { key: "seguro_fianca", label: "Seguro-fiança" },
+];
+
 /** Rótulo mesmo para chaves aposentadas (histórico), como 'titulo'. */
 const GARANTIA_LABELS: Record<string, string> = {
   caucao_avista: "Caução à vista",

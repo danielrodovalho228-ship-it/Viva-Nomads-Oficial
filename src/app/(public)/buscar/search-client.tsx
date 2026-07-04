@@ -13,7 +13,11 @@ import { tierFromPhotoCount, searchPriority } from "@/lib/listing";
 import { LocationSearch } from "@/components/location-search";
 import type { GeoSuggestion } from "@/lib/integrations/geocoding";
 import { PROPERTY_TYPES } from "@/lib/amenities";
-import { FAIXAS, GARANTIAS_FAIXA } from "@/lib/faixas";
+import { FAIXAS, GARANTIAS_FAIXA, GARANTIAS_PUBLICAS, CAUCAO_PARCELADA_UI } from "@/lib/faixas";
+
+// Filtro de garantia exibido na busca pública: caução unificada + seguro-fiança
+// (a modalidade parcelada fica fora da UI até o parecer — B1). Religa com a flag.
+const GARANTIAS_FILTRO = CAUCAO_PARCELADA_UI ? GARANTIAS_FAIXA : GARANTIAS_PUBLICAS;
 
 /** Raio (km) padrão ao redor de um endereço geocodificado. */
 const DEFAULT_RADIUS_KM = 10;
@@ -55,6 +59,9 @@ function aceitaGarantia(p: Property, g: string): boolean {
   if (!g) return true;
   const arr = p.garantiasAceitas ?? [];
   if (g === "seguro_fianca") return arr.includes("seguro_fianca") || !!p.acceptsInsurance;
+  // "caucao" (filtro público unificado) casa qualquer modalidade de caução.
+  if (g === "caucao")
+    return arr.some((x) => x === "caucao" || x.startsWith("caucao_"));
   return arr.includes(g); // caucao_avista | caucao_parcelada | titulo
 }
 
@@ -128,7 +135,7 @@ export function SearchClient({ properties }: { properties: Property[] }) {
     const ent = sp.get("entrada");
     if (ent && /^\d{4}-\d{2}-\d{2}$/.test(ent)) setDataEntrada(ent);
     const gar = sp.get("garantia");
-    if (gar && GARANTIAS_FAIXA.some((g) => g.key === gar)) setGarantia(gar);
+    if (gar && GARANTIAS_FILTRO.some((g) => g.key === gar)) setGarantia(gar);
     const on = (k: string) => sp.get(k) === "1";
     if (on("pet")) setPetsOnly(true);
     if (on("mobiliado")) setFurnishedOnly(true);
@@ -426,7 +433,7 @@ export function SearchClient({ properties }: { properties: Property[] }) {
               label="Garantia aceita"
               value={garantia}
               onChange={setGarantia}
-              options={[["", "Garantia aceita"], ...GARANTIAS_FAIXA.map((g) => [g.key, g.label] as [string, string])]}
+              options={[["", "Garantia aceita"], ...GARANTIAS_FILTRO.map((g) => [g.key, g.label] as [string, string])]}
             />
           )}
           <label className="inline-flex items-center gap-2 rounded-full border border-sage-200 bg-white px-4 py-2 text-sm text-ink">
@@ -562,7 +569,7 @@ export function SearchClient({ properties }: { properties: Property[] }) {
             )}
             {garantia && (
               <ActiveChip
-                label={GARANTIAS_FAIXA.find((g) => g.key === garantia)?.label ?? "Garantia"}
+                label={GARANTIAS_FILTRO.find((g) => g.key === garantia)?.label ?? "Garantia"}
                 onClear={() => setGarantia("")}
               />
             )}

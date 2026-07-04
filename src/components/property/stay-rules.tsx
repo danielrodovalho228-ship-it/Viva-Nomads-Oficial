@@ -61,7 +61,7 @@ export function StayRules({ property }: { property: Property }) {
           <ShieldCheck className="h-4 w-4 text-sage" /> Garantias e pagamento
         </h3>
         <ul className="mt-2 space-y-1 text-sm text-ink">
-          <li>• Caução flexível (à vista ou parcelada) — registrada e documentada pela plataforma.</li>
+          <li>• Caução conforme contrato — registrada e documentada pela plataforma.</li>
           {property.acceptsInsurance && <li>• Aceita seguro-fiança.</li>}
           <li className="text-muted">
             O pagamento do aluguel é feito direto ao proprietário — a plataforma conecta,
