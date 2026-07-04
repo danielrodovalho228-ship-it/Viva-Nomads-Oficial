@@ -45,6 +45,7 @@ import {
   type FormaPagamentoCaucao,
 } from "@/lib/caucao";
 import { COMMISSION_BY_PLAN } from "@/lib/constants";
+import { registrarLocacao } from "@/lib/data/actions";
 import { faixaForDays, faixaLabel } from "@/lib/faixas";
 import {
   selecionarModeloContrato,
@@ -217,6 +218,26 @@ export default function ClosingPage() {
           plan: OWNER_PLAN,
           name: TENANT.name,
         }),
+      }).catch(() => {});
+      // Garantia na chave do banco (caução vira à vista/parcelada pela forma).
+      const garantiaKey =
+        guaranteeId === "caucao"
+          ? caucaoForma === "parcelado"
+            ? "caucao_parcelada"
+            : "caucao_avista"
+          : guaranteeId ?? "caucao_avista";
+      // Registra a locação (Onda 1) — nº de ocupantes, caução 50%, garantia e
+      // faixa. Best-effort: no-op em demo/imóvel-exemplo; persiste no real.
+      await registrarLocacao({
+        propertyId: PROPERTY_FULL.id,
+        faixa: FAIXA,
+        modeloContratoId: null, // modelo ativa quando o texto jurídico entrar
+        periodoDias: STAY_DAYS,
+        valorTotal: VALOR_ESTADIA,
+        caucaoValor: CAUCAO_50,
+        garantia: garantiaKey,
+        qtdOcupantes: qtdOcupantes,
+        capacidadeSnapshot: CAPACIDADE,
       }).catch(() => {});
       setGenerated(true);
     } catch {
