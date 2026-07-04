@@ -14,11 +14,11 @@ export default async function SearchPage() {
   const properties = await listProperties();
   return (
     <>
-      {/* Banner do topo da busca — fachada de condomínio moderno (padrão premium) */}
+      {/* Banner do topo da busca — casa mobiliada com área de lazer (padrão premium) */}
       <div className="relative">
         <BrandImage
-          src={PHOTOS.condominio}
-          alt="Fachada de condomínio residencial moderno em Uberlândia"
+          src={PHOTOS.buscaHero}
+          alt="Casa mobiliada com piscina e área de lazer ao anoitecer"
           rounded="rounded-none"
           sizes="100vw"
           priority
@@ -26,7 +26,7 @@ export default async function SearchPage() {
           className="h-44 w-full object-cover sm:h-56"
         />
         {/* Overlay em gradiente para o texto branco ficar sempre legível */}
-        <div className="absolute inset-0 bg-gradient-to-r from-night/80 via-night/55 to-night/25" />
+        <div className="absolute inset-0 bg-gradient-to-r from-night/85 via-night/60 to-night/25" />
         <div className="container-page absolute inset-0 flex flex-col justify-center text-white">
           <h1 className="font-title text-3xl font-bold sm:text-4xl">
             Imóveis mobiliados em Uberlândia
