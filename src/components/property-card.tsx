@@ -1,18 +1,31 @@
 import Link from "next/link";
-import { Bath, BedDouble, Ruler, Star, PlayCircle } from "lucide-react";
+import { Bath, BedDouble, Ruler, Star, PlayCircle, Users } from "lucide-react";
 import type { Property } from "@/lib/types";
-import { formatBRL, cn } from "@/lib/utils";
-import { tierFromPhotoCount, TIER_META } from "@/lib/listing";
+import { formatBRL } from "@/lib/utils";
+import { tierFromPhotoCount } from "@/lib/listing";
 import { ReadyToLiveBadge, PropertyTags, InvoiceBadge, InsuranceBadge } from "@/components/ui/badge";
 import { BrandImage } from "@/components/brand-image";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
 import { FavoriteButton } from "@/components/favorite-button";
 
-export function PropertyCard({ property }: { property: Property }) {
+export function PropertyCard({
+  property,
+  periodMonths,
+}: {
+  property: Property;
+  /** Quando a busca tem período selecionado, mostra o total estimado do período. */
+  periodMonths?: number;
+}) {
   const cover = property.photos[0];
   const hasRealPhoto =
     typeof cover === "string" && (/^https?:\/\//.test(cover) || cover.startsWith("/"));
   const tier = tierFromPhotoCount(property.photos.length);
+  // Total "tudo incluído" no período buscado (aluguel + consumo fixo) × meses.
+  const mensalTudoIncluido =
+    property.monthlyPrice +
+    (property.utilitiesMode === "fixed" ? property.utilitiesEstimate : 0);
+  const totalPeriodo =
+    periodMonths && periodMonths > 0 ? mensalTudoIncluido * periodMonths : null;
 
   return (
     <Link
@@ -31,6 +44,7 @@ export function PropertyCard({ property }: { property: Property }) {
         ) : (
           <PhotoPlaceholder label={cover} className="h-full w-full" />
         )}
+        {/* Máximo 2 badges na foto: Pronto para Morar (prioridade 1) + Vídeo. */}
         <div className="absolute left-3 top-3 flex flex-col items-start gap-1.5">
           {property.readyToLiveBadge && <ReadyToLiveBadge size="sm" />}
           {property.videoUrl && (
@@ -42,18 +56,10 @@ export function PropertyCard({ property }: { property: Property }) {
         <div className="absolute right-3 top-3">
           <FavoriteButton propertyId={property.id} />
         </div>
-        <span className="absolute bottom-3 left-3 rounded-full bg-white/95 px-2.5 py-1 text-xs font-semibold text-ink shadow-sm">
-          {property.propertyType}
-        </span>
-        {/* Destaque por qualidade do anúncio (rodada 11) */}
+        {/* Destaque de anúncio — selo discreto (borda dourada), não um badge cheio. */}
         {tier !== "padrao" && (
-          <span
-            className={cn(
-              "absolute bottom-3 right-3 rounded-full px-2.5 py-1 text-xs font-semibold shadow-sm",
-              TIER_META[tier].tone
-            )}
-          >
-            {TIER_META[tier].label}
+          <span className="absolute bottom-3 right-3 rounded-full border border-gold bg-white/95 px-2 py-0.5 text-[11px] font-semibold text-forest shadow-sm">
+            Destaque
           </span>
         )}
       </div>
@@ -83,7 +89,9 @@ export function PropertyCard({ property }: { property: Property }) {
 
         <PropertyTags property={property} />
 
-        <div className="flex items-center gap-4 text-sm text-muted">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
+          {/* Tipo saiu da foto e virou metadado (Fase 3). */}
+          <span className="font-medium text-ink">{property.propertyType}</span>
           <span className="inline-flex items-center gap-1">
             <BedDouble className="h-4 w-4" /> {property.bedrooms}
           </span>
@@ -93,6 +101,11 @@ export function PropertyCard({ property }: { property: Property }) {
           <span className="inline-flex items-center gap-1">
             <Ruler className="h-4 w-4" /> {property.areaM2} m²
           </span>
+          {property.maxGuests != null && property.maxGuests > 0 && (
+            <span className="inline-flex items-center gap-1">
+              <Users className="h-4 w-4" /> até {property.maxGuests}
+            </span>
+          )}
         </div>
 
         {(property.issuesInvoice || property.acceptsInsurance) && (
@@ -120,6 +133,13 @@ export function PropertyCard({ property }: { property: Property }) {
           {property.utilitiesMode === "fixed" && property.utilitiesEstimate > 0 && (
             <p className="mt-1.5 text-xs font-semibold text-forest">
               ≈ {formatBRL(property.monthlyPrice + property.utilitiesEstimate)}/mês tudo incluído
+            </p>
+          )}
+          {/* Total do período buscado (Fase 3) — só quando há período na busca. */}
+          {totalPeriodo != null && (
+            <p className="mt-0.5 text-xs text-muted">
+              {periodMonths} {periodMonths === 1 ? "mês" : "meses"} ≈{" "}
+              <strong className="text-ink">{formatBRL(totalPeriodo)}</strong> tudo incluído
             </p>
           )}
         </div>
