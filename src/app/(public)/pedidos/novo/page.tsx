@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Megaphone, ShieldCheck, Info, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MOTIVOS, contemContato, CONTATO_AVISO, calcExpiraEm } from "@/lib/pedidos/pedidos";
@@ -10,13 +10,29 @@ import { criarPedido } from "@/lib/data/pedidos-actions";
 
 /** /pedidos/novo — o inquilino publica o que precisa (housing request reverso). */
 export default function NovoPedidoPage() {
+  return (
+    <Suspense fallback={<div className="container-page py-10" />}>
+      <NovoPedidoForm />
+    </Suspense>
+  );
+}
+
+function NovoPedidoForm() {
   const router = useRouter();
-  const [cidade, setCidade] = useState("");
-  const [uf, setUf] = useState("");
-  const [dataInicio, setDataInicio] = useState("");
-  const [prazoMeses, setPrazoMeses] = useState(6);
-  const [orcamento, setOrcamento] = useState("");
-  const [ocupantes, setOcupantes] = useState(1);
+  // Pré-preenche com os parâmetros vindos da busca (Fase 4 — zero resultado →
+  // pedido de moradia). URL como fonte da verdade; sem effect (evita re-render).
+  const sp = useSearchParams();
+  const inicioQ = sp.get("inicio") ?? "";
+  const mesesQ = Number(sp.get("meses"));
+  const ocupQ = Number(sp.get("adultos") || 0) + Number(sp.get("criancas") || 0);
+  const orcQ = sp.get("orcamento") ?? "";
+
+  const [cidade, setCidade] = useState(sp.get("cidade") ?? "");
+  const [uf, setUf] = useState((sp.get("uf") ?? "").toUpperCase().slice(0, 2));
+  const [dataInicio, setDataInicio] = useState(/^\d{4}-\d{2}-\d{2}$/.test(inicioQ) ? inicioQ : "");
+  const [prazoMeses, setPrazoMeses] = useState(mesesQ >= 1 && mesesQ <= 12 ? mesesQ : 6);
+  const [orcamento, setOrcamento] = useState(/^\d+$/.test(orcQ) ? orcQ : "");
+  const [ocupantes, setOcupantes] = useState(ocupQ >= 1 ? ocupQ : 1);
   const [motivo, setMotivo] = useState("");
   const [apresentacao, setApresentacao] = useState("");
   const [erro, setErro] = useState<string | null>(null);

@@ -34,6 +34,10 @@ function typeValue(pt: string): string {
 // estiver funcional (Fase 5). Oculto = grade de resultados em largura total.
 const MAPA_ON = process.env.NEXT_PUBLIC_MAPA_BUSCA === "on";
 
+// CTA do Pedido de Moradia no zero-resultado. Ligado por padrão (a rota
+// /pedidos/novo já existe); desligue com NEXT_PUBLIC_PEDIDO_MORADIA=off.
+const PEDIDO_MORADIA_ON = process.env.NEXT_PUBLIC_PEDIDO_MORADIA !== "off";
+
 /** ISO (yyyy-mm-dd) → dd/mm/aaaa (pt-BR), sem depender do locale do navegador. */
 function formatDatePtBR(iso: string): string {
   const [y, m, d] = iso.split("-");
@@ -281,6 +285,39 @@ export function SearchClient({ properties }: { properties: Property[] }) {
     (garantia ? 1 : 0) +
     (minBedrooms ? 1 : 0) +
     [homeOfficeOnly, petsOnly, invoiceOnly, insuranceOnly, operatedOnly].filter(Boolean).length;
+
+  // Link do Pedido de Moradia com os parâmetros da busca já preenchidos (Fase 4).
+  const pedidoHref = useMemo(() => {
+    const q = new URLSearchParams();
+    if (locationQuery.trim()) q.set("cidade", locationQuery.trim());
+    if (dataEntrada) q.set("inicio", dataEntrada);
+    if (maxPeriod > 0) q.set("meses", String(Math.round(maxPeriod / 30)));
+    if (adults > 1) q.set("adultos", String(adults));
+    if (children > 0) q.set("criancas", String(children));
+    if (maxPrice > 0) q.set("orcamento", String(maxPrice));
+    const s = q.toString();
+    return `/pedidos/novo${s ? `?${s}` : ""}`;
+  }, [locationQuery, dataEntrada, maxPeriod, adults, children, maxPrice]);
+
+  // "Ampliar a busca": afrouxa os filtros secundários, mantém a cidade e a data.
+  function ampliarBusca() {
+    setMaxPrice(0);
+    setMinBedrooms(0);
+    setAdults(1);
+    setChildren(0);
+    setMaxPeriod(0);
+    setTypeFilter("");
+    setGarantia("");
+    setFaixa("");
+    setPetsOnly(false);
+    setReadyToLiveOnly(false);
+    setHomeOfficeOnly(false);
+    setWorkLocatedOnly(false);
+    setInvoiceOnly(false);
+    setInsuranceOnly(false);
+    setOperatedOnly(false);
+    setFurnishedOnly(false);
+  }
 
   return (
     <div className="container-page py-6">
@@ -594,18 +631,47 @@ export function SearchClient({ properties }: { properties: Property[] }) {
             <div className="flex flex-col items-center rounded-2xl border border-dashed border-line p-12 text-center">
               <EmptySearchIllustration />
               <p className="mt-4 font-title text-lg font-bold text-ink">
-                Ainda não há imóveis para esta busca
+                {locationQuery.trim()
+                  ? `Ainda não temos imóvel para essa busca em ${locationQuery.trim()}.`
+                  : "Ainda não há imóveis para esta busca"}
               </p>
-              <p className="mt-1 max-w-sm text-sm text-muted">
-                Ajuste os filtros ou volte em breve — novos imóveis entram toda semana.
-              </p>
-              <button
-                type="button"
-                onClick={clearFilters}
-                className="mt-5 inline-flex items-center gap-1.5 rounded-full border border-sage-200 bg-white px-4 py-2 text-sm font-medium text-ink transition-colors hover:border-sage hover:bg-surface-2"
-              >
-                Limpar filtros
-              </button>
+              {/* Zero resultado vira PORTA do Pedido de Moradia (Fase 4). */}
+              {PEDIDO_MORADIA_ON ? (
+                <>
+                  <p className="mt-1 max-w-md text-sm text-muted">
+                    Diga o que você precisa e deixe os proprietários da cidade encontrarem você — a
+                    conversa acontece pela plataforma.
+                  </p>
+                  <div className="mt-5 flex flex-col items-center gap-3 sm:flex-row">
+                    <Link
+                      href={pedidoHref}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2.5 text-sm font-bold text-forest transition-colors hover:brightness-105"
+                    >
+                      📣 Publicar um Pedido de Moradia
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={ampliarBusca}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-sage-200 bg-white px-4 py-2 text-sm font-medium text-ink transition-colors hover:border-sage hover:bg-surface-2"
+                    >
+                      Ampliar a busca
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="mt-1 max-w-sm text-sm text-muted">
+                    Ajuste os filtros ou volte em breve — novos imóveis entram toda semana.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={clearFilters}
+                    className="mt-5 inline-flex items-center gap-1.5 rounded-full border border-sage-200 bg-white px-4 py-2 text-sm font-medium text-ink transition-colors hover:border-sage hover:bg-surface-2"
+                  >
+                    Limpar filtros
+                  </button>
+                </>
+              )}
               <Link
                 href="/qualificar"
                 className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-forest hover:text-blue-700"
@@ -631,6 +697,22 @@ export function SearchClient({ properties }: { properties: Property[] }) {
                   />
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* Poucos resultados (1–3): card discreto do Pedido de Moradia (Fase 4). */}
+          {PEDIDO_MORADIA_ON && results.length > 0 && results.length <= 3 && (
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-champagne/40 bg-champagne/10 px-5 py-4">
+              <p className="text-sm text-ink">
+                Não achou o ideal?{" "}
+                <span className="text-muted">Publique um Pedido de Moradia e receba ofertas.</span>
+              </p>
+              <Link
+                href={pedidoHref}
+                className="inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-sm font-bold text-forest transition-colors hover:brightness-105"
+              >
+                📣 Publicar pedido
+              </Link>
             </div>
           )}
         </div>
