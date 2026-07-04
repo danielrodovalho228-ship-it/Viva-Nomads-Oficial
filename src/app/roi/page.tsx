@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PaginasInternasNav } from "@/components/apresentacao/paginas-nav";
 import { Roi } from "@/components/roi/roi";
 
 // Página de apresentação (sócios/investidores), por link direto — não indexar.
@@ -8,5 +9,10 @@ export const metadata: Metadata = {
 };
 
 export default function RoiPage() {
-  return <Roi />;
+  return (
+    <>
+      <PaginasInternasNav atual="/roi" />
+      <Roi />
+    </>
+  );
 }

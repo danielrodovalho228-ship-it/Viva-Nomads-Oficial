@@ -14,7 +14,7 @@ export function Metodologia() {
           <li><strong>Comissão por aluguel</strong> = aluguel médio × comissão (%) × aluguéis fechados no mês.</li>
           <li><strong>Mensalidade dos planos</strong> = mensalidade do plano × base acumulada de planos pagos.</li>
           <li><strong>Comissão de garantia</strong> = comissão por contrato × aluguéis fechados no mês.</li>
-          <li><strong>Serviços (Aqui Resolve)</strong> = repasse por contrato × aluguéis fechados no mês.</li>
+          <li><strong>Serviços de parceiro (manutenção e reparos)</strong> = repasse por contrato × aluguéis fechados no mês.</li>
           <li><strong>Destaque / anúncio</strong> = receita por destaque × contratos com destaque no mês.</li>
           <li><strong>Receita total</strong> = soma das cinco fontes acima.</li>
         </ul>

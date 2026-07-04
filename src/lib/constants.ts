@@ -1,4 +1,5 @@
 import type { Persona } from "./types";
+import { PLANOS, COMISSAO_POR_PLANO } from "@/config/planos";
 
 /** Os 4 perfis de público-alvo (seção 0 do documento mestre). */
 export const PERSONAS: Persona[] = [
@@ -47,87 +48,27 @@ export const PUBLIC_NAV = [
  */
 export const CITIES = [{ slug: "uberlandia", name: "Uberlândia", state: "MG" }];
 
-/** Planos de assinatura do proprietário (modelo híbrido — Fase 10). */
-export const PLANS = [
-  {
-    id: "free",
-    name: "Gratuito",
-    price: 0,
-    commission: 0.12, // 12% no fechamento (porta de entrada)
-    tagline: "Para testar a plataforma",
-    featured: false,
-    listingLimit: 1,
-    features: [
-      "1 anúncio ativo (limitado)",
-      "Aparece na busca",
-      "Recebe consultas de inquilinos",
-      "Checklist de qualificação",
-    ],
-    cost: "Comissão de 12% no fechamento",
-    cta: "Começar grátis",
-  },
-  {
-    id: "essential",
-    name: "Essencial",
-    price: 49,
-    commission: 0.1, // 10% no fechamento
-    tagline: "Para quem tem alguns imóveis",
-    featured: true,
-    listingLimit: 5,
-    features: [
-      "Até 5 anúncios ativos",
-      "Selo Pronto para Morar",
-      "Destaque na busca",
-      "Painel de leads e mensagens",
-    ],
-    cost: "Comissão de 10% no fechamento",
-    cta: "Assinar Essencial",
-  },
-  {
-    id: "pro",
-    name: "Profissional",
-    price: 129,
-    commission: 0.08, // 8% no fechamento (por volume)
-    tagline: "Para quem vive de locação",
-    featured: false,
-    listingLimit: 20,
-    features: [
-      "Até 20 anúncios ativos",
-      "Tudo do Essencial",
-      "Prioridade máxima na busca",
-      "Contrato digital com validade jurídica incluído",
-    ],
-    cost: "Comissão de 8% no fechamento",
-    cta: "Assinar Profissional",
-  },
-  {
-    id: "gestor",
-    name: "Gestor",
-    price: null, // sob consulta
-    commission: null, // escalonada por volume
-    tagline: "Administradoras e coordenadores",
-    featured: false,
-    listingLimit: 999,
-    features: [
-      "Imóveis ilimitados",
-      "Tudo do Profissional",
-      "Gestão de carteira e múltiplos proprietários",
-      "Atendimento dedicado",
-    ],
-    cost: "Comissão escalonada por volume",
-    cta: "Falar com vendas",
-  },
-];
+/**
+ * Planos de assinatura do proprietário — DERIVADOS da fonte única
+ * `@/config/planos` (C2 do E2E). Mantém os nomes de campo usados pela /precos e
+ * pela calculadora; para mudar preço/comissão/benefício, edite config/planos.ts.
+ */
+export const PLANS = PLANOS.map((p) => ({
+  id: p.id,
+  name: p.nome,
+  price: p.precoMensal,
+  commission: p.comissao,
+  tagline: p.publico,
+  featured: p.destaque,
+  listingLimit: p.limiteAnuncios,
+  features: p.beneficios,
+  cost: p.custoLabel,
+  cta: p.cta,
+}));
 
 /**
- * Comissão de fechamento por plano — modelo híbrido com comissão DECRESCENTE
- * (v2 do contrato fracionado): Gratuito 12% → Essencial 10% → Profissional 8% →
- * Gestor 0% (comissão zera no topo; a receita do Gestor é a assinatura sob
- * consulta). A comissão incide UMA única vez por contrato-mãe, sobre 1 mês.
+ * Comissão de fechamento por plano — DERIVADA da fonte única (config/planos.ts).
+ * Gratuito 12% → Essencial 10% → Profissional 8% → Gestor 0% (comissão única por
+ * contrato-mãe, sobre 1 mês).
  */
-export const COMMISSION_BY_PLAN: Record<string, number> = {
-  free: 0.12,
-  essential: 0.1,
-  pro: 0.08,
-  gestor: 0, // Comissão ZERO no plano topo (Gestor) — decisão do modelo híbrido.
-};
+export const COMMISSION_BY_PLAN: Record<string, number> = COMISSAO_POR_PLANO;

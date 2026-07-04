@@ -129,7 +129,7 @@ export default function SubscriptionPage() {
               <h3 className="font-title text-lg font-bold text-ink">{plan.name}</h3>
               <div className="mt-2 flex items-baseline gap-1">
                 <span className="font-title text-3xl font-bold text-forest">
-                  {isCustom ? "Sob consulta" : plan.price === 0 ? "Grátis" : formatBRL(plan.price)}
+                  {isCustom ? "Sob consulta" : plan.price === 0 ? "Grátis" : formatBRL(plan.price ?? 0)}
                 </span>
                 {!!plan.price && <span className="text-sm text-muted">/mês</span>}
               </div>

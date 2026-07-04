@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PaginasInternasNav } from "@/components/apresentacao/paginas-nav";
 import { Decisao } from "@/components/decisao/decisao";
 
 // Documento interno (decisão do modelo de negócio) — link direto, não indexar.
@@ -8,5 +9,10 @@ export const metadata: Metadata = {
 };
 
 export default function DecisaoPage() {
-  return <Decisao />;
+  return (
+    <>
+      <PaginasInternasNav atual="/decisao" />
+      <Decisao />
+    </>
+  );
 }
