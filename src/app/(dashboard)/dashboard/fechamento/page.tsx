@@ -39,13 +39,13 @@ import {
   type Garantia,
 } from "@/lib/guarantees";
 import {
-  calcularCaucao50,
   valorParcela,
   MAX_PARCELAS,
   type FormaPagamentoCaucao,
 } from "@/lib/caucao";
 import { COMMISSION_BY_PLAN } from "@/lib/constants";
-import { registrarLocacao } from "@/lib/data/actions";
+import { registrarContrato } from "@/lib/data/actions";
+import { resumoContrato } from "@/lib/contrato-blocos";
 import { faixaForDays, faixaLabel } from "@/lib/faixas";
 import {
   selecionarModeloContrato,
@@ -61,35 +61,24 @@ const TENANT = { name: "Ana Carvalho", profile: "Médica · residência", foreig
 // Imóvel completo para o card do topo (Atualização 16) + número do contrato.
 const PROPERTY_FULL = SAMPLE_PROPERTIES.find((p) => p.id === "ube-001") ?? SAMPLE_PROPERTIES[0];
 const CONTRACT_NUMBER = formatDocNumber("contrato", 2026, 42);
-// Duração da estadia (mock — viria das datas do lead). 120 dias = trilha
-// residencial (90–180): caução + título + garantidor digital (slot "em breve").
-const STAY_DAYS = 120;
-const STAY_MESES = Math.round(STAY_DAYS / 30);
+// Prazo total pretendido (contrato-mãe). Inicial mock do lead (4 meses); o
+// inquilino ajusta no fechamento. Blocos de 2 meses (≤ 90 dias cada).
+const DEFAULT_MESES = 4;
+const MESES_MIN = 1;
+const MESES_MAX = 6;
+const TAMANHO_BLOCO = 2;
 const PROPERTY = {
   title: PROPERTY_FULL.title,
   monthlyRent: PROPERTY_FULL.monthlyPrice,
-  term: STAY_MESES,
 };
 // Capacidade máxima do imóvel (Onda 1) — do cadastro (max_guests).
 const CAPACIDADE = PROPERTY_FULL.maxGuests ?? 4;
-// Faixa de prazo desta estadia → seleciona o modelo de contrato (Onda 1).
-const FAIXA = faixaForDays(STAY_DAYS);
-const FAIXA_LABEL = faixaLabel(FAIXA);
-const FAIXA_RESUMO = faixaResumo(FAIXA);
-const MODELO_CONTRATO = selecionarModeloContrato(FAIXA, PROPERTY_FULL.propertyType);
-// Valor TOTAL do período locado (aluguel × meses) — base da caução.
-const VALOR_ESTADIA = PROPERTY.monthlyRent * STAY_MESES;
-// Caução (Onda 1 · Dra. Beatriz): 50% do valor total do período, qualquer prazo.
-// A plataforma só calcula e documenta; o valor vai para conta vinculada/emissor,
-// NUNCA para a plataforma.
-const CAUCAO_50 = calcularCaucao50(VALOR_ESTADIA);
-// Garantias elegíveis para a duração desta estadia (filtro por prazo).
-const ELEGIVEIS = garantiasElegiveis(STAY_DAYS);
 // Serviços visíveis (inclui "em breve" como slot). Opcionais e combináveis.
 const SERVICOS_VISIVEIS = servicosVisiveis();
-// Plano do proprietário define a comissão de fechamento (12% / 10% / 8%).
+// Plano do proprietário define a comissão de fechamento (12% / 10% / 8% / 0%).
 const OWNER_PLAN = "essential";
 const COMMISSION_RATE = COMMISSION_BY_PLAN[OWNER_PLAN];
+// Comissão do contrato-mãe: 1 mês × taxa, UMA vez (não por bloco, não recobra).
 const PLATFORM_COMMISSION = Math.round(PROPERTY.monthlyRent * COMMISSION_RATE);
 const OWNER_NET = PROPERTY.monthlyRent - PLATFORM_COMMISSION;
 // Taxa de limpeza/preparação (Bloco B)
@@ -98,6 +87,26 @@ const CHECKOUT_FEE = 250;
 
 export default function ClosingPage() {
   const [step, setStep] = useState(0);
+  // Prazo total pretendido (contrato-mãe) — o inquilino escolhe no fechamento.
+  const [prazoMeses, setPrazoMeses] = useState(DEFAULT_MESES);
+  // Derivações do prazo (dinâmicas). Nomes espelham os antigos p/ o JSX seguir.
+  const STAY_MESES = prazoMeses;
+  const STAY_DAYS = prazoMeses * 30;
+  const FAIXA = faixaForDays(STAY_DAYS);
+  const FAIXA_LABEL = faixaLabel(FAIXA);
+  const FAIXA_RESUMO = faixaResumo(FAIXA);
+  const MODELO_CONTRATO = useMemo(
+    () => selecionarModeloContrato(FAIXA, PROPERTY_FULL.propertyType),
+    [FAIXA]
+  );
+  const ELEGIVEIS = useMemo(() => garantiasElegiveis(STAY_DAYS), [STAY_DAYS]);
+  // Contrato fracionado: blocos de 2 meses, caução 50% por bloco, comissão única.
+  const resumo = useMemo(
+    () => resumoContrato(prazoMeses, PROPERTY.monthlyRent, COMMISSION_RATE, TAMANHO_BLOCO),
+    [prazoMeses]
+  );
+  const VALOR_ESTADIA = resumo.valorTotalPeriodo;
+  const CAUCAO_50 = resumo.caucaoTotal; // total do período (soma dos blocos)
   const [verified, setVerified] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [cafResult, setCafResult] = useState<CafResult | null>(null);
@@ -127,7 +136,7 @@ export default function ClosingPage() {
 
   const selectedGarantia = useMemo<Garantia | null>(
     () => ELEGIVEIS.find((g) => g.id === guaranteeId) ?? null,
-    [guaranteeId]
+    [guaranteeId, ELEGIVEIS]
   );
 
   function next() {
@@ -202,7 +211,7 @@ export default function ClosingPage() {
           ownerName: "Proprietário",
           propertyTitle: PROPERTY.title,
           monthlyRent: PROPERTY.monthlyRent,
-          termMonths: PROPERTY.term,
+          termMonths: prazoMeses,
           guarantee: selectedGarantia?.nome ?? "",
           costSplit: split,
         }),
@@ -226,19 +235,24 @@ export default function ClosingPage() {
             ? "caucao_parcelada"
             : "caucao_avista"
           : guaranteeId ?? "caucao_avista";
-      // Registra a locação (Onda 1) — nº de ocupantes, caução 50%, garantia e
-      // faixa. Best-effort: no-op em demo/imóvel-exemplo; persiste no real.
-      await registrarLocacao({
+      // Registra o CONTRATO-MÃE + blocos (contrato fracionado v2). A comissão
+      // fica no contrato-mãe (1 mês × taxa, UMA vez); cada bloco carrega a
+      // caução (50%). Best-effort: no-op em demo/imóvel-exemplo; persiste no real.
+      const inicioISO = new Date().toISOString().slice(0, 10);
+      await registrarContrato({
         propertyId: PROPERTY_FULL.id,
         faixa: FAIXA,
-        modeloContratoId: null, // modelo ativa quando o texto jurídico entrar
-        periodoDias: STAY_DAYS,
-        valorTotal: VALOR_ESTADIA,
-        caucaoValor: CAUCAO_50,
-        garantia: garantiaKey,
+        ownerPlan: OWNER_PLAN,
+        prazoTotalMeses: prazoMeses,
+        aluguelMensal: PROPERTY.monthlyRent,
+        tamanhoBlocoMeses: TAMANHO_BLOCO,
         qtdOcupantes: qtdOcupantes,
         capacidadeSnapshot: CAPACIDADE,
+        inicioISO,
+        caucaoForma: caucaoForma === "parcelado" ? "preauth_cartao" : "avista",
       }).catch(() => {});
+      // `garantiaKey` alimenta o texto do contrato (à vista/parcelada).
+      void garantiaKey;
       setGenerated(true);
     } catch {
       setGenerated(true);
@@ -379,6 +393,38 @@ export default function ClosingPage() {
               )}
             </div>
 
+            {/* Prazo total pretendido (contrato-mãe) + prévia dos blocos. */}
+            <div className="rounded-xl border border-sage-200 p-4 text-sm">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="font-medium text-ink">Por quanto tempo você quer ficar?</p>
+                  <p className="text-xs text-muted">
+                    Prazo total pretendido — cria o <strong>contrato-mãe</strong>. Contratado em{" "}
+                    blocos de {TAMANHO_BLOCO} meses (cada bloco ≤ 90 dias).
+                  </p>
+                </div>
+                <select
+                  value={prazoMeses}
+                  onChange={(e) => setPrazoMeses(Number(e.target.value))}
+                  aria-label="Prazo total em meses"
+                  className="rounded-lg border border-sage-200 bg-white px-3 py-2 outline-none focus:border-sage"
+                >
+                  {Array.from({ length: MESES_MAX - MESES_MIN + 1 }, (_, i) => MESES_MIN + i).map(
+                    (m) => (
+                      <option key={m} value={m}>
+                        {m} {m === 1 ? "mês" : "meses"}
+                      </option>
+                    )
+                  )}
+                </select>
+              </div>
+              <p className="mt-3 text-xs text-muted">
+                {resumo.blocos.length} {resumo.blocos.length === 1 ? "bloco" : "blocos"} ·{" "}
+                {formatBRL(PROPERTY.monthlyRent)}/mês · total do período{" "}
+                <strong className="text-ink">{formatBRL(resumo.valorTotalPeriodo)}</strong>.
+              </p>
+            </div>
+
             <OwnerDecisionNotice />
           </div>
         )}
@@ -514,15 +560,52 @@ export default function ClosingPage() {
             {/* Sub-fluxo conforme a garantia escolhida. */}
             {selectedGarantia?.tipo === "caucao" && (
               <div className="space-y-3 rounded-xl border border-sage-200 p-4 text-sm">
-                <p className="font-medium text-ink">Como funciona a caução</p>
-                <Row
-                  label="Caução — 50% do valor total do período"
-                  value={formatBRL(CAUCAO_50)}
-                />
+                <p className="font-medium text-ink">Caução por bloco (50% do bloco)</p>
                 <p className="text-xs text-muted">
-                  {formatBRL(PROPERTY.monthlyRent)}/mês × {STAY_MESES} meses ={" "}
-                  {formatBRL(VALOR_ESTADIA)} · caução = 50% = {formatBRL(CAUCAO_50)}. Vai para conta
-                  vinculada — a plataforma nunca recebe.
+                  O período é contratado em blocos de {TAMANHO_BLOCO} meses. Cada bloco tem a
+                  caução <strong>integral</strong> (50% do valor do bloco) — cabe no cartão e vai
+                  para a conta vinculada. A plataforma nunca recebe.
+                </p>
+
+                {/* Tabela transparente por bloco: aluguel, caução, desembolso. */}
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[380px] text-xs">
+                    <thead>
+                      <tr className="text-left text-muted">
+                        <th className="py-1.5 pr-2 font-medium">Bloco</th>
+                        <th className="py-1.5 pr-2 font-medium">Aluguel</th>
+                        <th className="py-1.5 pr-2 font-medium">Caução (50%)</th>
+                        <th className="py-1.5 font-medium">Desembolso</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {resumo.blocos.map((b) => (
+                        <tr key={b.numero} className="border-t border-sage-200/60">
+                          <td className="py-1.5 pr-2 text-ink">
+                            {b.numero} <span className="text-muted">({b.meses}m)</span>
+                          </td>
+                          <td className="py-1.5 pr-2 text-ink">{formatBRL(b.valor)}</td>
+                          <td className="py-1.5 pr-2 text-ink">{formatBRL(b.caucao)}</td>
+                          <td className="py-1.5 font-medium text-forest">
+                            {formatBRL(b.desembolso)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr className="border-t border-sage-200 font-medium text-ink">
+                        <td className="py-1.5 pr-2">Total</td>
+                        <td className="py-1.5 pr-2">{formatBRL(VALOR_ESTADIA)}</td>
+                        <td className="py-1.5 pr-2">{formatBRL(CAUCAO_50)}</td>
+                        <td className="py-1.5">{formatBRL(VALOR_ESTADIA + CAUCAO_50)}</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+                <p className="rounded-lg bg-sage-100 px-3 py-2 text-xs text-forest">
+                  Para começar você paga só o <strong>1º bloco</strong>:{" "}
+                  {formatBRL(resumo.desembolsoPrimeiroBloco)} (aluguel + caução). Os próximos blocos
+                  são contratados por renovação, sempre com seu aceite — nunca automática.
                 </p>
 
                 {/* Caução flexível: o inquilino escolhe como pagar. */}
@@ -553,7 +636,7 @@ export default function ClosingPage() {
                   {caucaoForma === "parcelado" && (
                     <div className="mt-3">
                       <label className="flex items-center justify-between gap-3">
-                        <span className="text-muted">Parcelas</span>
+                        <span className="text-muted">Parcelas (caução do 1º bloco)</span>
                         <select
                           value={caucaoParcelas}
                           onChange={(e) => setCaucaoParcelas(Number(e.target.value))}
@@ -568,8 +651,18 @@ export default function ClosingPage() {
                       </label>
                       <Row
                         label={`${caucaoParcelas}x de`}
-                        value={`${formatBRL(valorParcela(CAUCAO_50, caucaoParcelas))}/mês`}
+                        value={`${formatBRL(valorParcela(resumo.blocos[0]?.caucao ?? 0, caucaoParcelas))}/mês`}
                       />
+                      {/*
+                        NOTA TÉCNICA (Fase 4 — sem captura real ainda): quando a
+                        pré-autorização no cartão for integrada (aguarda parecer +
+                        gateway), lembrar que pré-autorizações expiram em ~5–30 dias
+                        (varia por adquirente/bandeira) e NÃO cobrem um bloco de 60
+                        dias sem renovar a autorização. A mecânica final (recaptura,
+                        renovação de auth ou caução via Pix/boleto para conta do
+                        proprietário) depende do jurídico. Aqui só registramos a
+                        forma escolhida — nenhum valor é capturado.
+                      */}
                     </div>
                   )}
                 </div>
@@ -599,16 +692,8 @@ export default function ClosingPage() {
                 </p>
               </div>
             )}
-            {selectedGarantia?.tipo === "titulo" && (
-              <div className="space-y-2 rounded-xl border border-sage-200 p-4 text-sm">
-                <p className="font-medium text-ink">Como funciona o título de capitalização</p>
-                <p className="text-muted">
-                  Encaminhamos ao parceiro emissor; o número do título é registrado e anexado ao
-                  contrato. Resgatável ao fim. A plataforma documenta — não emite nem garante o
-                  título.
-                </p>
-              </div>
-            )}
+            {/* Título de capitalização foi APOSENTADO (decisão de 2 advogados) —
+                não é mais oferecido como garantia. */}
             {selectedGarantia?.tipo === "garantidor_digital" && (
               <div className="space-y-2 rounded-xl border border-sage-200 p-4 text-sm">
                 <p className="font-medium text-ink">Como funciona o garantidor digital</p>
@@ -825,7 +910,7 @@ export default function ClosingPage() {
             <div className="rounded-xl bg-surface-2 p-4 text-sm">
               <Row label="Inquilino" value={TENANT.name} />
               <Row label="Imóvel" value={PROPERTY.title} />
-              <Row label="Prazo" value={`${PROPERTY.term} meses`} />
+              <Row label="Prazo" value={`${prazoMeses} meses`} />
               <Row label="Aluguel" value={`${formatBRL(PROPERTY.monthlyRent)}/mês`} />
               <Row label="Garantia" value={selectedGarantia?.nome ?? "—"} />
             </div>
@@ -873,8 +958,9 @@ export default function ClosingPage() {
                 Comissão de fechamento · {Math.round(COMMISSION_RATE * 100)}% (plano Essencial)
               </p>
               <p className="mt-1 text-xs text-muted">
-                Cobrada uma única vez sobre o 1º mês, via split. Os aluguéis seguintes vão
-                direto ao proprietário.
+                Cobrada <strong>uma única vez por contrato-mãe</strong>, sobre 1 mês, no
+                fechamento. Renovar ou estender blocos <strong>não gera nova comissão</strong>. Os
+                aluguéis seguintes vão direto ao proprietário.
               </p>
               <div className="mt-3 space-y-1">
                 <Row label="1º aluguel" value={formatBRL(PROPERTY.monthlyRent)} />

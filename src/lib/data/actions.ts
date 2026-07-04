@@ -20,6 +20,15 @@ import { getPropertyForOwner } from "@/lib/data/properties";
 import { guardContactInfo } from "@/lib/messages/contact-guard";
 import { SITE_URL } from "@/lib/site";
 import type { Property } from "@/lib/types";
+import { COMMISSION_BY_PLAN } from "@/lib/constants";
+import {
+  resumoContrato,
+  encadearDatas,
+  addDiasISO,
+  DIAS_POR_MES,
+  MESES_POR_BLOCO_PADRAO,
+  type BlocoComDatas,
+} from "@/lib/contrato-blocos";
 
 type ActionResult = { ok: boolean; demo?: boolean; id?: string; error?: string };
 
@@ -496,6 +505,175 @@ export async function registrarLocacao(input: LocacaoInput): Promise<ActionResul
     .single();
   if (error) return { ok: false, error: error.message };
   return { ok: true, id: data?.id };
+}
+
+// ── Contrato fracionado em blocos (v2) ───────────────────────────────────────
+
+export interface ContratoInput {
+  propertyId: string;
+  faixa: string; // temporada | media_estadia | longa
+  ownerPlan: string; // plano do proprietário → taxa de comissão
+  prazoTotalMeses: number; // prazo total pretendido (contrato-mãe)
+  aluguelMensal: number;
+  tamanhoBlocoMeses?: number; // padrão 2 (≤ 3 = 90 dias)
+  qtdOcupantes: number;
+  capacidadeSnapshot?: number | null;
+  inicioISO: string; // data de início do 1º bloco (yyyy-mm-dd)
+  caucaoForma?: "avista" | "preauth_cartao";
+}
+
+/**
+ * Registra o CONTRATO-MÃE + seus BLOCOS no fechamento. A comissão (1 mês × taxa
+ * do plano, UMA vez) fica no contrato-mãe — renovar/estender blocos não recobra.
+ * Cada bloco carrega a caução (50% do valor do bloco); a plataforma só calcula e
+ * documenta, NUNCA captura o dinheiro (regra de ouro). Best-effort: no-op em
+ * demo (sem Supabase), imóvel não-UUID (exemplos) ou visitante sem sessão.
+ */
+export async function registrarContrato(
+  input: ContratoInput
+): Promise<ActionResult & { blocos?: number }> {
+  const supabase = await createClient();
+  if (!supabase) return { ok: true, demo: true };
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Faça login para registrar o contrato." };
+  if (!UUID_RE.test(input.propertyId)) return { ok: true, demo: true };
+
+  const rate = COMMISSION_BY_PLAN[input.ownerPlan] ?? COMMISSION_BY_PLAN.free;
+  const tamanho = input.tamanhoBlocoMeses ?? MESES_POR_BLOCO_PADRAO;
+  const resumo = resumoContrato(input.prazoTotalMeses, input.aluguelMensal, rate, tamanho);
+
+  const { data: contrato, error: cErr } = await supabase
+    .from("contratos")
+    .insert({
+      property_id: input.propertyId,
+      tenant_id: user.id,
+      owner_plan: input.ownerPlan,
+      faixa: input.faixa,
+      prazo_total_dias: resumo.prazoTotalMeses * DIAS_POR_MES,
+      aluguel_mensal: input.aluguelMensal,
+      tamanho_bloco_meses: resumo.tamanhoBlocoMeses,
+      comissao_percent: resumo.comissaoPercent,
+      comissao_valor: resumo.comissaoValor,
+      qtd_ocupantes: Math.round(input.qtdOcupantes),
+      capacidade_snapshot: input.capacidadeSnapshot ?? null,
+    })
+    .select("id")
+    .single();
+  if (cErr) return { ok: false, error: cErr.message };
+
+  const comDatas = encadearDatas(input.inicioISO, resumo.blocos);
+  const rows = comDatas.map((b: BlocoComDatas, i) => ({
+    contrato_id: contrato!.id,
+    numero_bloco: b.numero,
+    inicio: b.inicio,
+    fim: b.fim,
+    meses: b.meses,
+    valor: b.valor,
+    caucao: b.caucao,
+    caucao_forma: input.caucaoForma ?? "avista",
+    // 1º bloco entra vigente; os demais ficam agendados até a renovação opt-in.
+    status: i === 0 ? "ativo" : "agendado",
+  }));
+  const { error: bErr } = await supabase.from("contrato_blocos").insert(rows);
+  // Best-effort: o contrato-mãe já existe mesmo se a inserção dos blocos falhar.
+  if (bErr) return { ok: true, id: contrato!.id, blocos: 0, error: bErr.message };
+  return { ok: true, id: contrato!.id, blocos: rows.length };
+}
+
+/**
+ * Renovação OPT-IN: cria o PRÓXIMO bloco do contrato-mãe (nunca automática —
+ * requisito jurídico). Não gera nova comissão. Avisa a outra parte (best-effort;
+ * o e-mail do dono vem da RPC `owner_notify_contact`). No-op em demo/sem sessão.
+ */
+export async function renovarBloco(
+  contratoId: string
+): Promise<ActionResult & { numeroBloco?: number }> {
+  const supabase = await createClient();
+  if (!supabase) return { ok: true, demo: true };
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Faça login para renovar." };
+  if (!UUID_RE.test(contratoId)) return { ok: true, demo: true };
+
+  const { data: contrato, error: cErr } = await supabase
+    .from("contratos")
+    .select("id, property_id, aluguel_mensal, tamanho_bloco_meses, status")
+    .eq("id", contratoId)
+    .maybeSingle();
+  if (cErr) return { ok: false, error: cErr.message };
+  if (!contrato) return { ok: false, error: "Contrato não encontrado." };
+
+  const { data: ultimo } = await supabase
+    .from("contrato_blocos")
+    .select("numero_bloco, fim")
+    .eq("contrato_id", contratoId)
+    .order("numero_bloco", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const meses = Math.min(3, Math.max(1, Number(contrato.tamanho_bloco_meses) || MESES_POR_BLOCO_PADRAO));
+  const aluguel = Number(contrato.aluguel_mensal) || 0;
+  const valor = aluguel * meses;
+  const inicio = (ultimo?.fim as string | undefined) ?? hojeISO();
+  const fim = addDiasISO(inicio, meses * DIAS_POR_MES);
+  const numero = ((ultimo?.numero_bloco as number | undefined) ?? 0) + 1;
+
+  const { error: bErr } = await supabase.from("contrato_blocos").insert({
+    contrato_id: contratoId,
+    numero_bloco: numero,
+    inicio,
+    fim,
+    meses,
+    valor,
+    caucao: Math.round(valor * 0.5),
+    status: "agendado",
+  });
+  if (bErr) return { ok: false, error: bErr.message };
+
+  // Mantém o contrato-mãe ativo (renovou antes de encerrar).
+  await supabase.from("contratos").update({ status: "ativo", encerrado_em: null }).eq("id", contratoId);
+
+  // Avisa o proprietário (best-effort) — a outra ponta do opt-in.
+  try {
+    const { data: rpc } = await supabase.rpc("owner_notify_contact", {
+      prop_id: contrato.property_id,
+    });
+    const o = Array.isArray(rpc) ? rpc[0] : rpc;
+    if (o?.email) {
+      await notify({
+        event: "contract_status",
+        email: o.email as string,
+        name: (o.full_name as string) ?? undefined,
+        detailsText: `O inquilino renovou a locação — bloco ${numero} (${inicio} a ${fim}).`,
+      });
+    }
+  } catch {
+    /* notificação é best-effort */
+  }
+
+  return { ok: true, numeroBloco: numero };
+}
+
+/**
+ * Checagem LAZY do ciclo de blocos (roda ao abrir o painel; o pg_cron cobre
+ * quando ninguém abre). Executa as transições de estado (encerramento por
+ * NÃO-renovação, ativação de blocos vigentes) via a função SQL idempotente
+ * `avancar_ciclo_blocos`. Best-effort e no-op em demo.
+ */
+export async function varrerCicloBlocos(): Promise<ActionResult> {
+  const supabase = await createClient();
+  if (!supabase) return { ok: true, demo: true };
+  const { error } = await supabase.rpc("avancar_ciclo_blocos");
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
+/** Data de hoje em ISO (yyyy-mm-dd) — isolada para manter as regras testáveis. */
+function hojeISO(): string {
+  return new Date().toISOString().slice(0, 10);
 }
 
 /**
