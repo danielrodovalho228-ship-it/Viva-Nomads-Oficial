@@ -39,14 +39,13 @@ export default function TermsPage() {
         </Section>
 
         <Section title="4. Verificação de inquilinos">
-          A análise de de identidade é <strong>informativa</strong>. A plataforma não aprova
+          A análise de identidade é <strong>informativa</strong>. A plataforma não aprova
           nem reprova inquilinos: a decisão de alugar é exclusivamente do proprietário.
         </Section>
 
         <Section title="5. Garantia locatícia">
-          O contrato exige <strong>uma única</strong> garantia (seguro-fiança, caução ou
-          título de capitalização). A exigência de mais de uma garantia é vedada por lei
-          (art. 42 da Lei 8.245/91) e não é permitida na plataforma.
+          O contrato exige <strong>uma única</strong> garantia (seguro-fiança ou caução), nos
+          termos do art. 37 e 42 da Lei 8.245/91.
         </Section>
 
         <Section title="6. Qualificação do imóvel">
