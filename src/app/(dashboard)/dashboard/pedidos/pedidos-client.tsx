@@ -17,6 +17,7 @@ import {
   recusarResposta,
   marcarAtendido,
   pausarPedido,
+  setNotifPrefs,
 } from "@/lib/data/pedidos-actions";
 
 /* Tipos frouxos (as linhas vêm do Supabase). */
@@ -54,9 +55,11 @@ const STATUS_TONE: Record<string, string> = {
 export function PedidosClient({
   pedidos,
   respostas,
+  prefs,
 }: {
   pedidos: Pedido[];
   respostas: Resposta[];
+  prefs: { email: boolean; whatsapp: boolean };
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
@@ -248,6 +251,78 @@ export function PedidosClient({
           })}
         </div>
       )}
+
+      {/* Preferências de notificação (o aviso in-app não desliga). */}
+      <NotifPrefs inicial={prefs} />
     </div>
+  );
+}
+
+function NotifPrefs({ inicial }: { inicial: { email: boolean; whatsapp: boolean } }) {
+  const [email, setEmail] = useState(inicial.email);
+  const [whatsapp, setWhatsapp] = useState(inicial.whatsapp);
+  const [salvo, setSalvo] = useState(false);
+
+  async function salvar(next: { email: boolean; whatsapp: boolean }) {
+    setEmail(next.email);
+    setWhatsapp(next.whatsapp);
+    setSalvo(false);
+    const res = await setNotifPrefs(next);
+    if (res.ok) {
+      setSalvo(true);
+      setTimeout(() => setSalvo(false), 2000);
+    }
+  }
+
+  return (
+    <div className="mt-6 rounded-2xl border border-line bg-white p-5 text-sm">
+      <p className="font-medium text-ink">Notificações</p>
+      <p className="mt-1 text-xs text-muted">
+        Avisos no site sempre aparecem. Você pode desligar e-mail e WhatsApp.
+      </p>
+      <div className="mt-3 space-y-2">
+        <Toggle label="Avisar por e-mail" on={email} onChange={(v) => salvar({ email: v, whatsapp })} />
+        <Toggle
+          label="Avisar por WhatsApp"
+          on={whatsapp}
+          onChange={(v) => salvar({ email, whatsapp: v })}
+        />
+      </div>
+      {salvo && <p className="mt-2 text-xs text-forest">Preferências salvas.</p>}
+    </div>
+  );
+}
+
+function Toggle({
+  label,
+  on,
+  onChange,
+}: {
+  label: string;
+  on: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <label className="flex items-center justify-between gap-3">
+      <span className="text-ink">{label}</span>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={on}
+        aria-label={label}
+        onClick={() => onChange(!on)}
+        className={cn(
+          "relative h-6 w-11 rounded-full transition-colors",
+          on ? "bg-forest" : "bg-line"
+        )}
+      >
+        <span
+          className={cn(
+            "absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform",
+            on ? "translate-x-5" : "translate-x-0.5"
+          )}
+        />
+      </button>
+    </label>
   );
 }
