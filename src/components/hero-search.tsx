@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { CalendarRange, Wallet, Search, Users, Minus, Plus } from "lucide-react";
 import { CityAutocomplete } from "@/components/city-autocomplete";
@@ -99,18 +100,43 @@ function GuestsField({
   onChildren: (n: number) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const popRef = useRef<HTMLDivElement>(null);
   const total = adults + childrenCount;
   const label =
     childrenCount > 0
       ? `${total} ${total === 1 ? "pessoa" : "pessoas"}`
       : `${adults} ${adults === 1 ? "adulto" : "adultos"}`;
 
-  // Fecha ao clicar fora / apertar Esc (sem overlay que intercepte cliques).
+  // Posiciona o popover em relação ao gatilho (portal no body → não é cortado
+  // pelo `overflow-hidden` da seção do hero). Recalcula ao rolar/redimensionar.
+  useLayoutEffect(() => {
+    if (!open) return;
+    const POP_W = 256; // w-64
+    function place() {
+      const el = triggerRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const left = Math.min(r.left, window.innerWidth - POP_W - 8);
+      setPos({ top: r.bottom + 8, left: Math.max(8, left), width: POP_W });
+    }
+    place();
+    window.addEventListener("scroll", place, true);
+    window.addEventListener("resize", place);
+    return () => {
+      window.removeEventListener("scroll", place, true);
+      window.removeEventListener("resize", place);
+    };
+  }, [open]);
+
+  // Fecha ao clicar fora (gatilho + popover) / apertar Esc.
   useEffect(() => {
     if (!open) return;
     function onDown(e: PointerEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const t = e.target as Node;
+      if (triggerRef.current?.contains(t) || popRef.current?.contains(t)) return;
+      setOpen(false);
     }
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") setOpen(false);
@@ -124,8 +150,9 @@ function GuestsField({
   }, [open]);
 
   return (
-    <div className="relative" ref={ref}>
+    <>
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-label="Quantidade de pessoas"
@@ -136,28 +163,36 @@ function GuestsField({
         <span className="truncate text-sm text-ink">{label}</span>
       </button>
 
-      {open && (
-        <div className="absolute left-0 top-full z-50 mt-2 w-64 rounded-2xl border border-line bg-white p-4 shadow-xl">
-          <GuestRow
-            label="Adultos"
-            hint="13+ anos"
-            value={adults}
-            min={1}
-            max={16}
-            onChange={onAdults}
-          />
-          <div className="my-3 h-px bg-line" />
-          <GuestRow
-            label="Crianças"
-            hint="0 a 12 anos"
-            value={childrenCount}
-            min={0}
-            max={10}
-            onChange={onChildren}
-          />
-        </div>
-      )}
-    </div>
+      {open &&
+        pos &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            ref={popRef}
+            style={{ position: "fixed", top: pos.top, left: pos.left, width: pos.width }}
+            className="z-[100] rounded-2xl border border-line bg-white p-4 shadow-xl"
+          >
+            <GuestRow
+              label="Adultos"
+              hint="13+ anos"
+              value={adults}
+              min={1}
+              max={16}
+              onChange={onAdults}
+            />
+            <div className="my-3 h-px bg-line" />
+            <GuestRow
+              label="Crianças"
+              hint="0 a 12 anos"
+              value={childrenCount}
+              min={0}
+              max={10}
+              onChange={onChildren}
+            />
+          </div>,
+          document.body
+        )}
+    </>
   );
 }
 
