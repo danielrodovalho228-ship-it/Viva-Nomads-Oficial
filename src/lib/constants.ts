@@ -119,10 +119,15 @@ export const PLANS = [
   },
 ];
 
-/** Comissão de fechamento por plano (Atualização 1 — rodada 2). */
+/**
+ * Comissão de fechamento por plano — modelo híbrido com comissão DECRESCENTE
+ * (v2 do contrato fracionado): Gratuito 12% → Essencial 10% → Profissional 8% →
+ * Gestor 0% (comissão zera no topo; a receita do Gestor é a assinatura sob
+ * consulta). A comissão incide UMA única vez por contrato-mãe, sobre 1 mês.
+ */
 export const COMMISSION_BY_PLAN: Record<string, number> = {
   free: 0.12,
   essential: 0.1,
   pro: 0.08,
-  gestor: 0.08,
+  gestor: 0, // Comissão ZERO no plano topo (Gestor) — decisão do modelo híbrido.
 };

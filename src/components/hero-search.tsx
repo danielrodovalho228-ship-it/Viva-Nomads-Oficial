@@ -57,7 +57,7 @@ export function HeroSearch() {
       </Field>
       <GuestsField
         adults={adults}
-        children={children}
+        childrenCount={children}
         onAdults={setAdults}
         onChildren={setChildren}
       />
@@ -89,20 +89,20 @@ export function HeroSearch() {
 /** Seletor de hóspedes (adultos + crianças) com popover — estilo Airbnb. */
 function GuestsField({
   adults,
-  children,
+  childrenCount,
   onAdults,
   onChildren,
 }: {
   adults: number;
-  children: number;
+  childrenCount: number;
   onAdults: (n: number) => void;
   onChildren: (n: number) => void;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const total = adults + children;
+  const total = adults + childrenCount;
   const label =
-    children > 0
+    childrenCount > 0
       ? `${total} ${total === 1 ? "pessoa" : "pessoas"}`
       : `${adults} ${adults === 1 ? "adulto" : "adultos"}`;
 
@@ -150,7 +150,7 @@ function GuestsField({
           <GuestRow
             label="Crianças"
             hint="0 a 12 anos"
-            value={children}
+            value={childrenCount}
             min={0}
             max={10}
             onChange={onChildren}
