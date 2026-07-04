@@ -625,7 +625,10 @@ export function SearchClient({ properties }: { properties: Property[] }) {
                     activeId === p.id && "ring-2 ring-champagne ring-offset-2"
                   )}
                 >
-                  <PropertyCard property={p} />
+                  <PropertyCard
+                    property={p}
+                    periodMonths={maxPeriod > 0 ? Math.round(maxPeriod / 30) : undefined}
+                  />
                 </div>
               ))}
             </div>
