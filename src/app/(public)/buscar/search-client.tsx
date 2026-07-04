@@ -29,6 +29,11 @@ function typeValue(pt: string): string {
 }
 
 /** Uma propriedade aceita a garantia escolhida no filtro? */
+// Mapa OCULTO por padrão até os tiles funcionarem de verdade (falta o token
+// NEXT_PUBLIC_MAPBOX_TOKEN). Ligue com NEXT_PUBLIC_MAPA_BUSCA=on quando o mapa
+// estiver funcional (Fase 5). Oculto = grade de resultados em largura total.
+const MAPA_ON = process.env.NEXT_PUBLIC_MAPA_BUSCA === "on";
+
 function aceitaGarantia(p: Property, g: string): boolean {
   if (!g) return true;
   const arr = p.garantiasAceitas ?? [];
@@ -360,12 +365,13 @@ export function SearchClient({ properties }: { properties: Property[] }) {
             options={[["", "Garantia aceita"], ...GARANTIAS_FAIXA.map((g) => [g.key, g.label] as [string, string])]}
           />
           <label className="inline-flex items-center gap-2 rounded-full border border-sage-200 bg-white px-4 py-2 text-sm text-ink">
-            <span className="text-muted">Entrada até</span>
+            <span className="text-muted">Entrada a partir de</span>
             <input
               type="date"
+              lang="pt-BR"
               value={dataEntrada}
               onChange={(e) => setDataEntrada(e.target.value)}
-              aria-label="Data de entrada desejada"
+              aria-label="Data de entrada desejada (a partir de)"
               className="bg-transparent text-ink outline-none focus:text-forest"
             />
           </label>
@@ -440,32 +446,40 @@ export function SearchClient({ properties }: { properties: Property[] }) {
         <p className="text-sm text-muted">
           {results.length} {results.length === 1 ? "imóvel encontrado" : "imóveis encontrados"}
         </p>
-        {/* Abas Lista/Mapa no mobile (não cabem lado a lado em 375px) */}
-        <div className="flex rounded-full bg-surface-2 p-0.5 lg:hidden">
-          <button
-            onClick={() => setMobileTab("list")}
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium",
-              mobileTab === "list" ? "bg-forest text-white" : "text-muted"
-            )}
-          >
-            <ListIcon className="h-4 w-4" /> Lista
-          </button>
-          <button
-            onClick={() => setMobileTab("map")}
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium",
-              mobileTab === "map" ? "bg-forest text-white" : "text-muted"
-            )}
-          >
-            <MapIcon className="h-4 w-4" /> Mapa
-          </button>
-        </div>
+        {/* Abas Lista/Mapa no mobile — só quando o mapa está ligado. */}
+        {MAPA_ON && (
+          <div className="flex rounded-full bg-surface-2 p-0.5 lg:hidden">
+            <button
+              onClick={() => setMobileTab("list")}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium",
+                mobileTab === "list" ? "bg-forest text-white" : "text-muted"
+              )}
+            >
+              <ListIcon className="h-4 w-4" /> Lista
+            </button>
+            <button
+              onClick={() => setMobileTab("map")}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium",
+                mobileTab === "map" ? "bg-forest text-white" : "text-muted"
+              )}
+            >
+              <MapIcon className="h-4 w-4" /> Mapa
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Lista (60%) + Mapa (40%) lado a lado no desktop; abas no mobile */}
-      <div className="mt-4 grid gap-6 lg:grid-cols-5">
-        <div className={cn("lg:col-span-3", mobileTab === "map" && "hidden lg:block")}>
+      {/* Com mapa: Lista (60%) + Mapa (40%). Sem mapa (padrão): grade em largura
+          total, 3 colunas no desktop. */}
+      <div className={cn("mt-4 grid gap-6", MAPA_ON && "lg:grid-cols-5")}>
+        <div
+          className={cn(
+            MAPA_ON && "lg:col-span-3",
+            MAPA_ON && mobileTab === "map" && "hidden lg:block"
+          )}
+        >
           {results.length === 0 ? (
             <div className="flex flex-col items-center rounded-2xl border border-dashed border-line p-12 text-center">
               <EmptySearchIllustration />
@@ -490,7 +504,7 @@ export function SearchClient({ properties }: { properties: Property[] }) {
               </Link>
             </div>
           ) : (
-            <div className="grid gap-6 sm:grid-cols-2">
+            <div className={cn("grid gap-6 sm:grid-cols-2", !MAPA_ON && "lg:grid-cols-3")}>
               {results.map((p) => (
                 <div
                   key={p.id}
@@ -508,19 +522,21 @@ export function SearchClient({ properties }: { properties: Property[] }) {
           )}
         </div>
 
-        {/* Mapa interativo com pins + sincronia lista↔mapa (rodada 11) */}
-        <div className={cn("lg:col-span-2 lg:block", mobileTab === "list" && "hidden lg:block")}>
-          <div className="lg:sticky lg:top-20">
-            <SearchMap
-              properties={results}
-              activeId={activeId}
-              onHover={setActiveId}
-              focus={geoCenter}
-              radiusKm={radiusKm}
-              className="h-[420px] w-full lg:h-[600px]"
-            />
+        {/* Mapa interativo — oculto por padrão (MAPA_ON) até os tiles carregarem. */}
+        {MAPA_ON && (
+          <div className={cn("lg:col-span-2 lg:block", mobileTab === "list" && "hidden lg:block")}>
+            <div className="lg:sticky lg:top-20">
+              <SearchMap
+                properties={results}
+                activeId={activeId}
+                onHover={setActiveId}
+                focus={geoCenter}
+                radiusKm={radiusKm}
+                className="h-[420px] w-full lg:h-[600px]"
+              />
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

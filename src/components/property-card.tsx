@@ -63,11 +63,16 @@ export function PropertyCard({ property }: { property: Property }) {
           <span className="truncate">
             {property.neighborhood}, {property.city}
           </span>
-          {property.reviewCount > 0 && (
+          {property.reviewCount > 0 ? (
             <span className="inline-flex shrink-0 items-center gap-1 font-medium text-ink">
               <Star className="h-3.5 w-3.5 fill-green-500 text-green-500" />
               {property.rating.toFixed(1)}
               <span className="text-muted">({property.reviewCount})</span>
+            </span>
+          ) : (
+            // Sem avaliação REAL no banco: nada de estrela inventada — selo honesto.
+            <span className="inline-flex shrink-0 items-center rounded-full bg-sage px-2 py-0.5 text-[11px] font-semibold text-white">
+              Novo na plataforma
             </span>
           )}
         </div>
