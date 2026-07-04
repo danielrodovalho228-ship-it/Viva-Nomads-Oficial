@@ -28,6 +28,7 @@ import {
   Building2,
   User,
   Megaphone,
+  Receipt,
 } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { Avatar } from "@/components/ui/avatar";
@@ -54,6 +55,7 @@ const OWNER_NAV: NavItem[] = [
   { href: "/dashboard/leads", label: "Leads", icon: Users },
   { href: "/dashboard/orcamentos", label: "Orçamentos", icon: FileText },
   { href: "/dashboard/fechamento", label: "Fechamento", icon: FileSignature },
+  { href: "/dashboard/contratos", label: "Contratos & blocos", icon: Receipt },
   { href: "/dashboard/reembolsos", label: "Reembolsos", icon: RotateCcw },
   { href: "/dashboard/solicitacoes", label: "Solicitações", icon: Wrench },
   { href: "/dashboard/mensagens", label: "Mensagens", icon: MessageSquare },
@@ -99,6 +101,7 @@ const OWNER_ONLY = [
   "/dashboard/leads",
   "/dashboard/orcamentos",
   "/dashboard/fechamento",
+  "/dashboard/contratos",
   "/dashboard/reembolsos",
   "/dashboard/assinatura",
 ];
