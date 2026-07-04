@@ -24,8 +24,10 @@ export interface Premissas {
   mensalidadePlano: number;
   /** Repasse de serviço por contrato (R$) — "Aqui Resolve". */
   repasseServico: number;
-  /** Comissão de garantia por contrato (R$). */
+  /** Comissão de garantia locatícia por contrato (R$). */
   comissaoGarantia: number;
+  /** Comissão de seguro incêndio por contrato (R$) — obrigatório por lei. */
+  comissaoSeguro: number;
   /** Receita de destaque/anúncio por contrato (R$). */
   receitaDestaque: number;
   /** Custo FIXO mensal (R$). */
@@ -118,6 +120,7 @@ export const PREMISSAS_PADRAO: Premissas = {
   mensalidadePlano: 129,
   repasseServico: 20,
   comissaoGarantia: 50,
+  comissaoSeguro: 40, // ~20% de um prêmio típico de R$ 200/ano de seguro incêndio
   receitaDestaque: 30,
   custoFixo: 4000,
   custoVariavel: 120,
@@ -162,9 +165,9 @@ export const FONTES: FonteReceita[] = [
   },
   {
     key: "garantia",
-    label: "Comissão de garantia",
+    label: "Comissão de garantias e seguros",
     color: "#c8a24b",
-    desc: "Receita por contrato que usa garantia.",
+    desc: "Comissão de garantia locatícia + seguro incêndio (obrigatório por lei) por contrato, via parceiro.",
   },
   {
     key: "servicos",
@@ -184,7 +187,7 @@ export const FONTES: FonteReceita[] = [
 export function receitaPorFonte(p: Premissas, v: Volumes): ReceitaFontes {
   const comissao = v.alugueisMes * p.aluguel * (p.comissaoPct / 100);
   const planos = v.basePlanos * p.mensalidadePlano;
-  const garantia = v.alugueisMes * p.comissaoGarantia;
+  const garantia = v.alugueisMes * (p.comissaoGarantia + p.comissaoSeguro);
   const servicos = v.alugueisMes * p.repasseServico;
   const destaque = v.contratosDestaque * p.receitaDestaque;
   return {

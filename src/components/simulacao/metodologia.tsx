@@ -13,7 +13,14 @@ export function Metodologia() {
         <ul>
           <li><strong>Comissão por aluguel</strong> = aluguel médio × comissão (%) × aluguéis fechados no mês.</li>
           <li><strong>Mensalidade dos planos</strong> = mensalidade do plano × base acumulada de planos pagos.</li>
-          <li><strong>Comissão de garantia</strong> = comissão por contrato × aluguéis fechados no mês.</li>
+          <li>
+            <strong>Comissão de garantias e seguros</strong> = (comissão de garantia + comissão de
+            seguro incêndio) por contrato × aluguéis fechados no mês.{" "}
+            <em>
+              Seguro incêndio é obrigatório em toda locação (art. 22, VIII, Lei 8.245/91) —
+              potencial de comissão em 100% dos contratos, via parceiro.
+            </em>
+          </li>
           <li><strong>Serviços de parceiro (manutenção e reparos)</strong> = repasse por contrato × aluguéis fechados no mês.</li>
           <li><strong>Destaque / anúncio</strong> = receita por destaque × contratos com destaque no mês.</li>
           <li><strong>Receita total</strong> = soma das cinco fontes acima.</li>
