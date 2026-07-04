@@ -11,6 +11,7 @@ import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
 import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
 import { DEMO_PROPERTIES, DEMO_PROPERTY_STATS } from "@/lib/demo/seed";
 import type { Property, PropertyStatus } from "@/lib/types";
+import { completudeAnuncio } from "@/lib/listing-completude";
 import { formatBRL, cn } from "@/lib/utils";
 
 /** Rótulo + tom do status do anúncio (rascunho/ativo/pausado/arquivado). */
@@ -62,6 +63,7 @@ export function MyPropertiesClient({ properties: real }: { properties: Property[
           {properties.map((p) => {
             const demoItem = demoOn;
             const stats = demoItem ? DEMO_PROPERTY_STATS[p.id] : undefined;
+            const comp = completudeAnuncio(p);
             return (
               <div
                 key={p.id}
@@ -127,6 +129,28 @@ export function MyPropertiesClient({ properties: real }: { properties: Property[
                       </span>
                     )}
                   </div>
+                  {/* Barra de completude do anúncio (Fase 3) — anúncio completo
+                      rende mais; mostra o % e o que falta. */}
+                  {!demoItem && comp.pct < 100 && (
+                    <div className="mt-3">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-medium text-ink">Anúncio {comp.pct}% completo</span>
+                        {!comp.podePublicar && (
+                          <span className="text-amber-700">mín. 5 fotos para publicar</span>
+                        )}
+                      </div>
+                      <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-surface-2">
+                        <div
+                          className="h-full rounded-full bg-forest transition-all"
+                          style={{ width: `${comp.pct}%` }}
+                        />
+                      </div>
+                      <p className="mt-1 text-[11px] text-muted">
+                        Falta: {comp.faltando.slice(0, 3).join(" · ")}
+                        {comp.faltando.length > 3 ? " …" : ""}
+                      </p>
+                    </div>
+                  )}
                   <div className="mt-auto flex items-center justify-between pt-3">
                     <span className="font-title text-xl font-bold text-forest">
                       {formatBRL(p.monthlyPrice)}
