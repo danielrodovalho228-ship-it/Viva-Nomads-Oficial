@@ -2,6 +2,7 @@ import { ChevronDown, FileText, MapPinned, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import type { Property } from "@/lib/types";
 import { formatBRL } from "@/lib/utils";
+import { calcularTudoIncluido } from "@/lib/precos";
 import { MatchGuaranteeNotice } from "@/components/legal-notice";
 
 /** Formata uma data ISO (YYYY-MM-DD) para DD/MM/AAAA. */
@@ -12,15 +13,28 @@ function formatDate(iso?: string): string | null {
 }
 
 /**
+ * Data de disponibilidade FUTURA em pt-BR, ou null se a data já passou (ou é
+ * hoje) — nesse caso a UI mostra "Disponível agora" (A7 do E2E: nada de data no
+ * passado). Compara strings ISO (yyyy-mm-dd), sem fuso.
+ */
+function disponivelFuturo(iso?: string): string | null {
+  if (!iso) return null;
+  const dia = iso.slice(0, 10);
+  const hoje = new Date().toISOString().slice(0, 10);
+  return dia > hoje ? formatDate(dia) : null;
+}
+
+/**
  * Card de preço lateral (sticky no desktop, no topo no mobile). Mostra o valor/mês,
  * o "tudo incluído", o detalhamento de custo expansível, a disponibilidade e os
  * botões de ação (recebidos via `actions`). Mantém a regra de ouro visível.
  */
 export function PriceCard({ property, actions }: { property: Property; actions: React.ReactNode }) {
-  const fixedUtilities = property.utilitiesMode === "fixed" ? property.utilitiesEstimate : 0;
-  const condo = property.condoFee ?? 0;
-  const allIncluded = property.monthlyPrice + condo + fixedUtilities;
-  const availableFrom = formatDate(property.availableFrom);
+  // "Tudo incluído" pela FONTE ÚNICA — o mesmo número do card da busca.
+  const inc = calcularTudoIncluido(property);
+  const condo = inc.condominio;
+  const allIncluded = inc.total;
+  const availableFrom = disponivelFuturo(property.availableFrom);
 
   return (
     <div className="sticky top-20 rounded-2xl border border-sage-200 bg-white p-6 shadow-sm">

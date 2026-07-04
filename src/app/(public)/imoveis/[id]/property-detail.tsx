@@ -40,6 +40,16 @@ export function PropertyDetail({ property, similar }: { property: Property; simi
   const [sent, setSent] = useState<{ duvida?: boolean; visita?: boolean }>({});
   const [selfNote, setSelfNote] = useState(false);
 
+  // Avaliações — FONTE ÚNICA (A2): usa o array real de reviews, igual à seção de
+  // avaliações. `rating` só é usado como média quando há review real.
+  const reviewsReais = property.reviews?.length ?? 0;
+  const mediaReal =
+    reviewsReais > 0
+      ? property.rating > 0
+        ? property.rating
+        : property.reviews!.reduce((s, r) => s + r.rating, 0) / reviewsReais
+      : 0;
+
   // Dúvida / visita / candidatura: registra o interesse e avisa o proprietário
   // (e-mail/WhatsApp). Candidatura segue para o fluxo de fechamento.
   async function handleLead(kind: LeadKind) {
@@ -167,10 +177,17 @@ export function PropertyDetail({ property, similar }: { property: Property; simi
             <h1 className="mt-2 font-title text-3xl font-bold text-ink">{property.title}</h1>
 
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              {property.reviewCount > 0 && (
+              {/* Fonte ÚNICA (A2): a contagem vem das avaliações REAIS (reviews),
+                  igual à seção de avaliações. Sem review real → selo honesto. */}
+              {reviewsReais > 0 ? (
                 <span className="inline-flex items-center gap-1 text-sm font-medium text-forest">
                   <Star className="h-4 w-4 fill-champagne text-champagne" />
-                  {property.rating.toFixed(1)} · {property.reviewCount} avaliações
+                  {mediaReal.toFixed(1)} · {reviewsReais}{" "}
+                  {reviewsReais === 1 ? "avaliação" : "avaliações"}
+                </span>
+              ) : (
+                <span className="inline-flex items-center rounded-full bg-sage px-2.5 py-0.5 text-xs font-semibold text-white">
+                  Novo na plataforma
                 </span>
               )}
               {property.issuesInvoice && <InvoiceBadge />}
