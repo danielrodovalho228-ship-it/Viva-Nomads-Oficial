@@ -7,6 +7,7 @@ import {
   Bath,
   BedDouble,
   Ruler,
+  Users,
   MapPin,
   Sofa,
   Car,
@@ -191,6 +192,12 @@ export function PropertyDetail({ property, similar }: { property: Property; simi
               <span className="inline-flex items-center gap-1.5">
                 <Ruler className="h-4 w-4" /> {property.areaM2} m²
               </span>
+              {property.maxGuests != null && (
+                <span className="inline-flex items-center gap-1.5">
+                  <Users className="h-4 w-4" /> Até {property.maxGuests}{" "}
+                  {property.maxGuests === 1 ? "pessoa" : "pessoas"}
+                </span>
+              )}
               {property.furnished && (
                 <span className="inline-flex items-center gap-1.5">
                   <Sofa className="h-4 w-4" /> Mobiliado

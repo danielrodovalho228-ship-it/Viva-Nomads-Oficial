@@ -451,6 +451,53 @@ export async function toggleFavorite(
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+export interface LocacaoInput {
+  propertyId: string;
+  faixa: string; // temporada | media_estadia | longa
+  modeloContratoId?: string | null;
+  periodoDias: number;
+  valorTotal: number; // aluguel × meses (base da caução)
+  caucaoValor: number; // 50% do valor total (Onda 1)
+  garantia: string; // caucao_avista | caucao_parcelada | seguro_fianca
+  qtdOcupantes: number;
+  capacidadeSnapshot?: number | null;
+}
+
+/**
+ * Registra a locação (Onda 1) na tabela `locacoes` ao fechar o contrato: nº de
+ * ocupantes (cláusula de ocupação), caução (50% do total), garantia, faixa e o
+ * modelo de contrato selecionado. Best-effort: em modo demo (sem Supabase),
+ * imóvel não-UUID (exemplos) ou visitante sem sessão, é no-op — não grava nada.
+ */
+export async function registrarLocacao(input: LocacaoInput): Promise<ActionResult> {
+  const supabase = await createClient();
+  if (!supabase) return { ok: true, demo: true };
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Faça login para registrar a locação." };
+  // Imóvel de exemplo (id textual) ou fluxo mock → não persiste.
+  if (!UUID_RE.test(input.propertyId)) return { ok: true, demo: true };
+  const { data, error } = await supabase
+    .from("locacoes")
+    .insert({
+      property_id: input.propertyId,
+      tenant_id: user.id,
+      faixa: input.faixa,
+      modelo_contrato_id: input.modeloContratoId ?? null,
+      periodo_dias: Math.round(input.periodoDias),
+      valor_total: input.valorTotal,
+      caucao_valor: input.caucaoValor,
+      garantia: input.garantia,
+      qtd_ocupantes: Math.round(input.qtdOcupantes),
+      capacidade_snapshot: input.capacidadeSnapshot ?? null,
+    })
+    .select("id")
+    .single();
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, id: data?.id };
+}
+
 /**
  * Registra o interesse de um inquilino (dúvida, visita ou candidatura) e AVISA
  * o proprietário por e-mail/WhatsApp — o canal real do funil.
