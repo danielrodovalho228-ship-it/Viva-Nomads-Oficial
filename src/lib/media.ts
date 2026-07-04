@@ -25,7 +25,7 @@ export const PHOTOS = {
   condominio: `${H}/home-condominio-tranquilo.webp`,
   ownerKeys: `${H}/home-proprietarios-chaves.webp`,
   // B — Busca
-  buscaHero: `${B}/busca-hero.webp`,
+  buscaHero: `${B}/busca-hero-villa.webp`,
   personas: {
     executivos: `${H}/persona-executivo.webp`,
     saude: `${H}/persona-saude.webp`,
