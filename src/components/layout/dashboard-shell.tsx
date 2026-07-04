@@ -27,6 +27,7 @@ import {
   LogOut,
   Building2,
   User,
+  Megaphone,
 } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { Avatar } from "@/components/ui/avatar";
@@ -63,6 +64,7 @@ const OWNER_NAV: NavItem[] = [
 const TENANT_NAV: NavItem[] = [
   { href: "/dashboard", label: "Visão geral", icon: LayoutDashboard },
   { href: "/dashboard/verificacao", label: "Inquilino Verificado", icon: BadgeCheck },
+  { href: "/dashboard/pedidos", label: "Meus pedidos", icon: Megaphone },
   { href: "/dashboard/favoritos", label: "Favoritos", icon: Heart },
   { href: "/dashboard/comparar", label: "Comparar", icon: GitCompare },
   { href: "/dashboard/solicitacoes", label: "Solicitações", icon: Wrench },
