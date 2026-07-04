@@ -8,7 +8,7 @@ import { PropertyCard } from "@/components/property-card";
 import { SearchMap } from "@/components/search-map";
 import { EmptySearchIllustration } from "@/components/illustrations";
 import { Map as MapIcon, List as ListIcon } from "lucide-react";
-import { cn, distanceKm } from "@/lib/utils";
+import { cn, distanceKm, formatBRL } from "@/lib/utils";
 import { tierFromPhotoCount, searchPriority } from "@/lib/listing";
 import { LocationSearch } from "@/components/location-search";
 import type { GeoSuggestion } from "@/lib/integrations/geocoding";
@@ -33,6 +33,19 @@ function typeValue(pt: string): string {
 // NEXT_PUBLIC_MAPBOX_TOKEN). Ligue com NEXT_PUBLIC_MAPA_BUSCA=on quando o mapa
 // estiver funcional (Fase 5). Oculto = grade de resultados em largura total.
 const MAPA_ON = process.env.NEXT_PUBLIC_MAPA_BUSCA === "on";
+
+/** ISO (yyyy-mm-dd) → dd/mm/aaaa (pt-BR), sem depender do locale do navegador. */
+function formatDatePtBR(iso: string): string {
+  const [y, m, d] = iso.split("-");
+  return y && m && d ? `${d}/${m}/${y}` : iso;
+}
+
+/** Rótulo do "Período da estadia" (dias → faixa de meses) para os chips ativos. */
+const PERIODO_LABEL: Record<number, string> = {
+  60: "1–2 meses",
+  120: "3–4 meses",
+  180: "5–6 meses",
+};
 
 function aceitaGarantia(p: Property, g: string): boolean {
   if (!g) return true;
@@ -66,6 +79,7 @@ export function SearchClient({ properties }: { properties: Property[] }) {
   const [insuranceOnly, setInsuranceOnly] = useState(false);
   const [operatedOnly, setOperatedOnly] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false); // acordeão de filtros no mobile
+  const [drawerOpen, setDrawerOpen] = useState(false); // painel "Mais filtros" (Fase 2)
   const [activeId, setActiveId] = useState<string | null>(null); // sincronia lista↔mapa
   const [mobileTab, setMobileTab] = useState<"list" | "map">("list");
   const [sort, setSort] = useState<"relevance" | "recent" | "price-asc" | "price-desc">("relevance");
@@ -261,6 +275,13 @@ export function SearchClient({ properties }: { properties: Property[] }) {
       Boolean
     ).length;
 
+  // Filtros que vivem no painel "Mais filtros" (para o contador do botão).
+  const secundariosAtivos =
+    (typeFilter ? 1 : 0) +
+    (garantia ? 1 : 0) +
+    (minBedrooms ? 1 : 0) +
+    [homeOfficeOnly, petsOnly, invoiceOnly, insuranceOnly, operatedOnly].filter(Boolean).length;
+
   return (
     <div className="container-page py-6">
       {/* Filtros (acordeão no mobile, sempre abertos no sm+) */}
@@ -346,24 +367,25 @@ export function SearchClient({ properties }: { properties: Property[] }) {
               </button>
             </div>
           )}
-          <Select
-            label="Tipo de imóvel"
-            value={typeFilter}
-            onChange={setTypeFilter}
-            options={[["", "Tipo de imóvel"], ...PROPERTY_TYPES.map((t) => [t.value, t.label] as [string, string])]}
-          />
-          <Select
-            label="Faixa de prazo"
-            value={faixa}
-            onChange={setFaixa}
-            options={[["", "Faixa de prazo"], ...FAIXAS.map((f) => [f.key, `${f.label} · ${f.resumo}`] as [string, string])]}
-          />
-          <Select
-            label="Garantia aceita"
-            value={garantia}
-            onChange={setGarantia}
-            options={[["", "Garantia aceita"], ...GARANTIAS_FAIXA.map((g) => [g.key, g.label] as [string, string])]}
-          />
+          {/* Secundários (Tipo/Garantia) — só no "Mais filtros". */}
+          {drawerOpen && (
+            <Select
+              label="Tipo de imóvel"
+              value={typeFilter}
+              onChange={setTypeFilter}
+              options={[["", "Tipo de imóvel"], ...PROPERTY_TYPES.map((t) => [t.value, t.label] as [string, string])]}
+            />
+          )}
+          {/* 'Faixa de prazo' fundida em 'Período da estadia' (abaixo) — um único
+              controle de período, no benchmark do Furnished Finder. */}
+          {drawerOpen && (
+            <Select
+              label="Garantia aceita"
+              value={garantia}
+              onChange={setGarantia}
+              options={[["", "Garantia aceita"], ...GARANTIAS_FAIXA.map((g) => [g.key, g.label] as [string, string])]}
+            />
+          )}
           <label className="inline-flex items-center gap-2 rounded-full border border-sage-200 bg-white px-4 py-2 text-sm text-ink">
             <span className="text-muted">Entrada a partir de</span>
             <input
@@ -386,17 +408,19 @@ export function SearchClient({ properties }: { properties: Property[] }) {
               ["5000", "Até R$ 5.000"],
             ]}
           />
-          <Select
-            label="Quartos (mínimo)"
-            value={String(minBedrooms)}
-            onChange={(v) => setMinBedrooms(Number(v))}
-            options={[
-              ["0", "Quartos"],
-              ["1", "1+ quarto"],
-              ["2", "2+ quartos"],
-              ["3", "3+ quartos"],
-            ]}
-          />
+          {drawerOpen && (
+            <Select
+              label="Quartos (mínimo)"
+              value={String(minBedrooms)}
+              onChange={(v) => setMinBedrooms(Number(v))}
+              options={[
+                ["0", "Quartos"],
+                ["1", "1+ quarto"],
+                ["2", "2+ quartos"],
+                ["3", "3+ quartos"],
+              ]}
+            />
+          )}
           <GuestsPicker
             adults={adults}
             childrenCount={children}
@@ -404,47 +428,133 @@ export function SearchClient({ properties }: { properties: Property[] }) {
             onChildren={setChildren}
           />
           <Select
-            label="Período mínimo aceito"
+            label="Período da estadia"
             value={String(maxPeriod)}
             onChange={(v) => setMaxPeriod(Number(v))}
             options={[
-              ["0", "Período"],
-              ["30", "Aceita 30 dias"],
-              ["60", "Aceita 60 dias"],
-              ["90", "Aceita 90 dias"],
+              ["0", "Período da estadia"],
+              ["60", "1–2 meses"],
+              ["120", "3–4 meses"],
+              ["180", "5–6 meses"],
             ]}
           />
 
+          {/* Selo proprietário — único elemento de marca na barra primária. */}
           <Chip on={readyToLiveOnly} onClick={() => setReadyToLiveOnly((v) => !v)} accent="gold">
             🏅 Pronto para Morar
           </Chip>
-          <Chip on={homeOfficeOnly} onClick={() => setHomeOfficeOnly((v) => !v)}>
-            💻 Para trabalhar de casa
-          </Chip>
-          <Chip on={furnishedOnly} onClick={() => setFurnishedOnly((v) => !v)}>
-            🛋️ Mobiliado
-          </Chip>
-          <Chip on={petsOnly} onClick={() => setPetsOnly((v) => !v)}>
-            🐾 Aceita pet
-          </Chip>
-          <Chip on={workLocatedOnly} onClick={() => setWorkLocatedOnly((v) => !v)}>
-            📍 Bem localizado
-          </Chip>
-          <Chip on={invoiceOnly} onClick={() => setInvoiceOnly((v) => !v)}>
-            📄 Com Nota Fiscal
-          </Chip>
-          <Chip on={insuranceOnly} onClick={() => setInsuranceOnly((v) => !v)}>
-            🛡️ Seguro-Fiança
-          </Chip>
-          <Chip on={operatedOnly} onClick={() => setOperatedOnly((v) => !v)}>
-            🤝 Gestor profissional
-          </Chip>
+
+          {/* Botão que abre/fecha os filtros secundários (2 níveis — Fase 2). */}
+          <button
+            type="button"
+            onClick={() => setDrawerOpen((v) => !v)}
+            aria-expanded={drawerOpen}
+            className="inline-flex items-center gap-1.5 rounded-full border border-sage-200 bg-white px-4 py-2 text-sm font-medium text-forest hover:border-sage"
+          >
+            <SlidersHorizontal className="h-4 w-4" />
+            {drawerOpen ? "Menos filtros" : "Mais filtros"}
+            {secundariosAtivos > 0 && (
+              <span className="grid h-5 min-w-5 place-items-center rounded-full bg-forest px-1.5 text-xs font-semibold text-white">
+                {secundariosAtivos}
+              </span>
+            )}
+          </button>
+
+          {/* 'Mobiliado' removido: todo imóvel da plataforma é mobiliado (promessa
+              da marca, não filtro). 'Bem localizado' removido: subjetivo, não
+              filtra nada objetivo. Dados no banco preservados. */}
+          {drawerOpen && (
+            <>
+              <Chip on={homeOfficeOnly} onClick={() => setHomeOfficeOnly((v) => !v)}>
+                💻 Para trabalhar de casa
+              </Chip>
+              <Chip on={petsOnly} onClick={() => setPetsOnly((v) => !v)}>
+                🐾 Aceita pet
+              </Chip>
+              <Chip on={invoiceOnly} onClick={() => setInvoiceOnly((v) => !v)}>
+                📄 Com Nota Fiscal
+              </Chip>
+              <Chip on={insuranceOnly} onClick={() => setInsuranceOnly((v) => !v)}>
+                🛡️ Seguro-Fiança
+              </Chip>
+              <Chip on={operatedOnly} onClick={() => setOperatedOnly((v) => !v)}>
+                🤝 Gestor profissional
+              </Chip>
+            </>
+          )}
         </div>
+
+        {/* Filtros ativos (chips removíveis) + Limpar filtros (Fase 2). */}
+        {activeCount > 0 && (
+          <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-line pt-3">
+            {maxPrice > 0 && (
+              <ActiveChip label={`Até ${formatBRL(maxPrice)}`} onClear={() => setMaxPrice(0)} />
+            )}
+            {minBedrooms > 0 && (
+              <ActiveChip label={`${minBedrooms}+ quartos`} onClear={() => setMinBedrooms(0)} />
+            )}
+            {(adults > 1 || children > 0) && (
+              <ActiveChip
+                label={`${adults + children} ${adults + children === 1 ? "hóspede" : "hóspedes"}`}
+                onClear={() => {
+                  setAdults(1);
+                  setChildren(0);
+                }}
+              />
+            )}
+            {maxPeriod > 0 && (
+              <ActiveChip label={PERIODO_LABEL[maxPeriod] ?? "Período"} onClear={() => setMaxPeriod(0)} />
+            )}
+            {typeFilter && (
+              <ActiveChip
+                label={PROPERTY_TYPES.find((t) => t.value === typeFilter)?.label ?? "Tipo"}
+                onClear={() => setTypeFilter("")}
+              />
+            )}
+            {dataEntrada && (
+              <ActiveChip
+                label={`Entrada ${formatDatePtBR(dataEntrada)}`}
+                onClear={() => setDataEntrada("")}
+              />
+            )}
+            {garantia && (
+              <ActiveChip
+                label={GARANTIAS_FAIXA.find((g) => g.key === garantia)?.label ?? "Garantia"}
+                onClear={() => setGarantia("")}
+              />
+            )}
+            {readyToLiveOnly && (
+              <ActiveChip label="Pronto para Morar" onClear={() => setReadyToLiveOnly(false)} />
+            )}
+            {homeOfficeOnly && (
+              <ActiveChip label="Trabalhar de casa" onClear={() => setHomeOfficeOnly(false)} />
+            )}
+            {petsOnly && <ActiveChip label="Aceita pet" onClear={() => setPetsOnly(false)} />}
+            {invoiceOnly && <ActiveChip label="Nota Fiscal" onClear={() => setInvoiceOnly(false)} />}
+            {insuranceOnly && (
+              <ActiveChip label="Seguro-Fiança" onClear={() => setInsuranceOnly(false)} />
+            )}
+            {operatedOnly && (
+              <ActiveChip label="Gestor profissional" onClear={() => setOperatedOnly(false)} />
+            )}
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="ml-1 text-sm font-medium text-forest underline hover:text-blue-700"
+            >
+              Limpar filtros
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="mt-4 flex items-center justify-between gap-3">
         <p className="text-sm text-muted">
-          {results.length} {results.length === 1 ? "imóvel encontrado" : "imóveis encontrados"}
+          <span className="font-medium text-ink">
+            {results.length} {results.length === 1 ? "imóvel" : "imóveis"}
+          </span>
+          {locationQuery.trim() && ` em ${locationQuery.trim()}`}
+          {dataEntrada && ` · entrada a partir de ${formatDatePtBR(dataEntrada)}`}
         </p>
         {/* Abas Lista/Mapa no mobile — só quando o mapa está ligado. */}
         {MAPA_ON && (
@@ -539,6 +649,23 @@ export function SearchClient({ properties }: { properties: Property[] }) {
         )}
       </div>
     </div>
+  );
+}
+
+/** Chip de filtro ATIVO — mostra o filtro aplicado com um × para remover. */
+function ActiveChip({ label, onClear }: { label: string; onClear: () => void }) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-sage-100 py-1 pl-3 pr-1.5 text-xs font-medium text-forest">
+      {label}
+      <button
+        type="button"
+        onClick={onClear}
+        aria-label={`Remover filtro ${label}`}
+        className="grid h-4 w-4 place-items-center rounded-full text-forest hover:bg-white"
+      >
+        ×
+      </button>
+    </span>
   );
 }
 
