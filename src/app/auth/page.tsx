@@ -52,6 +52,17 @@ export default function AuthPage() {
   const [notice, setNotice] = useState<string | null>(null); // pós-cadastro / reset enviado
   const [awaitingConfirm, setAwaitingConfirm] = useState(false);
 
+  // Destino pós-login: honra ?redirect=… (definido pelo proxy ao barrar rota
+  // protegida), aceitando SÓ caminhos internos ("/algo") — nunca URLs externas
+  // (evita open redirect). Lê window.location no clique (client-only) para não
+  // exigir Suspense e manter /auth estático.
+  function postAuthTarget(): string {
+    if (typeof window === "undefined") return "/dashboard";
+    const r = new URLSearchParams(window.location.search).get("redirect");
+    if (r && r.startsWith("/") && !r.startsWith("//")) return r;
+    return "/dashboard";
+  }
+
   function switchMode(m: Mode) {
     setMode(m);
     setError(null);
@@ -195,7 +206,7 @@ export default function AuthPage() {
         // Acesso real: a sessão é validada pelo Supabase e o AuthProvider hidrata
         // o usuário a partir dela. NUNCA fabricamos sessão local aqui — senão uma
         // senha errada (erro acima) ou o modo demo abririam o painel sem validação.
-        router.push("/dashboard");
+        router.push(postAuthTarget());
         router.refresh();
         return;
       }
@@ -210,7 +221,7 @@ export default function AuthPage() {
         email,
         role: role ?? "tenant",
       });
-      router.push("/dashboard");
+      router.push(postAuthTarget());
     } catch (err) {
       // Diagnóstico (DevTools do navegador) — erro COMPLETO do Supabase, não
       // exposto ao usuário. status/code identificam a causa real (trigger de
