@@ -105,11 +105,19 @@ export function PropertyJsonLd({ property }: { property: Property }) {
 
   const json = { "@context": "https://schema.org", "@graph": [product, breadcrumb] };
 
+  // SEGURANÇA: título/descrição do imóvel são escritos pelo proprietário. Ao
+  // injetar o JSON num <script>, é preciso escapar `<`, `>` e `&` — senão um
+  // título como `</script><img onerror=...>` quebraria a tag e viraria XSS
+  // armazenado na página pública. JSON.stringify sozinho NÃO escapa isso.
+  const safeJson = JSON.stringify(json)
+    .replace(/</g, "\\u003c")
+    .replace(/>/g, "\\u003e")
+    .replace(/&/g, "\\u0026");
+
   return (
     <script
       type="application/ld+json"
-      // JSON serializado — conteúdo controlado pela própria listagem.
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(json) }}
+      dangerouslySetInnerHTML={{ __html: safeJson }}
     />
   );
 }

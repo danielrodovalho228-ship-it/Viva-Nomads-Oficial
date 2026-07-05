@@ -62,7 +62,10 @@ export default function AuthPage() {
   function postAuthTarget(): string {
     if (typeof window === "undefined") return "/dashboard";
     const r = new URLSearchParams(window.location.search).get("redirect");
-    if (r && r.startsWith("/") && !r.startsWith("//")) return r;
+    // Só caminho interno: começa com "/" e o 2º caractere NÃO é "/" nem "\"
+    // ("//evil" e "/\evil" viram URL protocolo-relativo/externa em alguns
+    // navegadores — bloqueia o open redirect).
+    if (r && r[0] === "/" && r[1] !== "/" && r[1] !== "\\") return r;
     return "/dashboard";
   }
 
