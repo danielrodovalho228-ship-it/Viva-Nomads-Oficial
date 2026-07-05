@@ -62,6 +62,28 @@ export function addDias(iso: string, n: number): string {
   ).padStart(2, "0")}`;
 }
 
+export interface Bloqueio {
+  inicio: string; // ISO
+  fim: string; // ISO (inclusive)
+}
+
+/** Expande intervalos bloqueados em uma lista de dias ISO (inclusive). */
+export function expandirBloqueios(ranges: Bloqueio[], limiteDias = 400): string[] {
+  const dias: string[] = [];
+  for (const r of ranges) {
+    if (!r?.inicio || !r?.fim) continue;
+    let d = r.inicio.slice(0, 10);
+    const fim = r.fim.slice(0, 10);
+    let guard = 0;
+    while (t(d) <= t(fim) && guard < limiteDias) {
+      dias.push(d);
+      d = addDias(d, 1);
+      guard += 1;
+    }
+  }
+  return dias;
+}
+
 export interface ReservaInput {
   checkIn: string; // ISO
   checkOut: string; // ISO

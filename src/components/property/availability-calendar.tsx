@@ -10,8 +10,11 @@ import {
   mesesCalendario,
   estadiaLabel,
   validarReserva,
+  expandirBloqueios,
+  type Bloqueio,
 } from "@/lib/availability";
 import { solicitarReserva } from "@/lib/data/reservas-actions";
+import { getBlocks } from "@/lib/data/blocks-actions";
 import { useAuthStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
@@ -42,7 +45,14 @@ function brDate(iso: string): string {
 export function AvailabilityCalendar({ property }: { property: Property }) {
   const user = useAuthStore((s) => s.user);
   const [today, setToday] = useState<string | null>(null);
-  useEffect(() => setToday(ymd(new Date())), []);
+  const [blockDays, setBlockDays] = useState<string[]>([]);
+  useEffect(() => {
+    setToday(ymd(new Date()));
+    // Dias fechados pelo proprietário (leitura pública). [] sem backend.
+    getBlocks(property.id)
+      .then((r) => setBlockDays(expandirBloqueios(r as Bloqueio[])))
+      .catch(() => {});
+  }, [property.id]);
 
   const [checkIn, setCheckIn] = useState<string | null>(null);
   const [checkOut, setCheckOut] = useState<string | null>(null);
@@ -52,10 +62,7 @@ export function AvailabilityCalendar({ property }: { property: Property }) {
 
   const from = property.availableFrom?.slice(0, 10) || null;
   const until = property.availableUntil?.slice(0, 10) || null;
-  const bloqueados = useMemo(
-    () => (property as { blocks?: string[] }).blocks ?? [],
-    [property]
-  );
+  const bloqueados = blockDays;
 
   const anchorStr = from || today;
   const meses = useMemo(() => (anchorStr ? mesesCalendario(anchorStr, 3) : []), [anchorStr]);
