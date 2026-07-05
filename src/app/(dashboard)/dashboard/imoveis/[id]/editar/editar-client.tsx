@@ -22,6 +22,7 @@ import {
 import { PageTitle } from "@/components/dashboard/primitives";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { PhotoUploader, type PhotoItem } from "@/components/photo-uploader";
+import { BlockCalendar } from "@/components/property/block-calendar";
 import { AMENITY_GROUPS, amenityKeysFromLabels } from "@/lib/amenities";
 import { completudeAnuncio } from "@/lib/listing-completude";
 import { updateProperty, type PropertyInput } from "@/lib/data/actions";
@@ -351,6 +352,12 @@ export function EditarImovelClient({
                 className="w-full rounded-xl border border-sage-200 px-3 py-2.5 outline-none focus:border-sage"
               />
             </label>
+          </div>
+
+          {/* Datas bloqueadas (o dono fecha períodos) — salva sozinho. */}
+          <div className="mt-6 border-t border-sage-200 pt-5">
+            <p className="mb-1 font-medium text-ink">Fechar datas</p>
+            <BlockCalendar propertyId={property.id} />
           </div>
         </Section>
 

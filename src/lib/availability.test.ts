@@ -13,6 +13,7 @@ import {
   diasEntre,
   addDias,
   validarReserva,
+  expandirBloqueios,
 } from "./availability.ts";
 
 // 1) dia dentro da janela → disponível
@@ -149,4 +150,20 @@ test("19: bloqueio fora do período não afeta", () => {
 test("20: janela aberta respeita só o máximo", () => {
   const r = validarReserva({ fromISO: "2026-08-01", checkIn: "2026-09-01", checkOut: "2026-11-01", minDias: 30, maxDias: 180 });
   assert.equal(r.ok, true);
+});
+
+// 21) expandir bloqueios em dias (inclusive) e detectar no validador
+test("21: expandirBloqueios inclusivo", () => {
+  const dias = expandirBloqueios([{ inicio: "2026-09-10", fim: "2026-09-12" }]);
+  assert.deepEqual(dias, ["2026-09-10", "2026-09-11", "2026-09-12"]);
+  const r = validarReserva({
+    fromISO: "2026-08-01",
+    untilISO: "2027-02-01",
+    checkIn: "2026-09-05",
+    checkOut: "2026-10-05",
+    minDias: 30,
+    maxDias: 180,
+    bloqueados: expandirBloqueios([{ inicio: "2026-09-10", fim: "2026-09-12" }]),
+  });
+  assert.equal(r.ok, false);
 });
