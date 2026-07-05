@@ -32,6 +32,17 @@ export function PhotoUploader({
   const ownerId = useAuthStore((s) => s.user?.id);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Índice sendo arrastado (reordenar por drag — a 1ª posição é a capa).
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+
+  /** Reordena a galeria movendo `from` para a posição `to` (a[0] = capa). */
+  function reorder(from: number, to: number) {
+    if (from === to || from < 0 || to < 0) return;
+    const next = [...photos];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    onChange(next);
+  }
 
   async function handleFiles(files: FileList | null) {
     if (!files || files.length === 0) return;
@@ -75,7 +86,19 @@ export function PhotoUploader({
         {photos.map((p, i) => (
           <div
             key={p.id}
-            className="group relative aspect-square overflow-hidden rounded-xl border border-sage-200"
+            draggable
+            onDragStart={() => setDragIndex(i)}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault();
+              if (dragIndex !== null) reorder(dragIndex, i);
+              setDragIndex(null);
+            }}
+            onDragEnd={() => setDragIndex(null)}
+            className={cn(
+              "group relative aspect-square cursor-move overflow-hidden rounded-xl border border-sage-200",
+              dragIndex === i && "opacity-50 ring-2 ring-forest"
+            )}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={p.url} alt={p.name} className="h-full w-full object-cover" />
@@ -139,7 +162,8 @@ export function PhotoUploader({
       </div>
 
       <p className="mt-2 text-xs text-muted">
-        {photos.length}/{max} fotos · a primeira é a capa do anúncio. JPG ou PNG até 8 MB.
+        {photos.length}/{max} fotos · a primeira é a capa do anúncio. Arraste para reordenar. JPG
+        ou PNG até 8 MB.
       </p>
       {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
     </div>

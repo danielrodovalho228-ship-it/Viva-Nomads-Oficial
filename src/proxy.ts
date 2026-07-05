@@ -33,8 +33,15 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
   const isAdminRoute = pathname.startsWith("/admin");
+  // O módulo Pedido de Moradia exige sessão em TODAS as rotas (criar pedido,
+  // listar, responder). O guard de rota é a 1ª porta; a RLS (inquilino_id =
+  // auth.uid()) é a trava real no banco.
+  const isPedidosRoute = pathname === "/pedidos" || pathname.startsWith("/pedidos/");
   const isProtected =
-    pathname.startsWith("/dashboard") || pathname.startsWith("/qualificar") || isAdminRoute;
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/qualificar") ||
+    isPedidosRoute ||
+    isAdminRoute;
 
   // Sem sessão em rota protegida → login (guardando o destino pretendido).
   if (isProtected && !user) {
@@ -67,5 +74,13 @@ export const config = {
   // Inclui os caminhos "nus" (/dashboard, /admin) além dos subcaminhos — em
   // alguns matchers "/dashboard/:path*" não casa o /dashboard exato, deixando a
   // rota raiz passar sem o guard (era o sintoma do QA: /dashboard sem login).
-  matcher: ["/dashboard", "/dashboard/:path*", "/qualificar", "/admin", "/admin/:path*"],
+  matcher: [
+    "/dashboard",
+    "/dashboard/:path*",
+    "/qualificar",
+    "/pedidos",
+    "/pedidos/:path*",
+    "/admin",
+    "/admin/:path*",
+  ],
 };

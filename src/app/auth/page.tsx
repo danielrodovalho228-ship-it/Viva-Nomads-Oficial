@@ -52,11 +52,45 @@ export default function AuthPage() {
   const [notice, setNotice] = useState<string | null>(null); // pós-cadastro / reset enviado
   const [awaitingConfirm, setAwaitingConfirm] = useState(false);
 
+  // Destino pós-login: honra ?redirect=… (definido pelo proxy ao barrar rota
+  // protegida), aceitando SÓ caminhos internos ("/algo") — nunca URLs externas
+  // (evita open redirect). Lê window.location no clique (client-only) para não
+  // exigir Suspense e manter /auth estático.
+  function postAuthTarget(): string {
+    if (typeof window === "undefined") return "/dashboard";
+    const r = new URLSearchParams(window.location.search).get("redirect");
+    if (r && r.startsWith("/") && !r.startsWith("//")) return r;
+    return "/dashboard";
+  }
+
   function switchMode(m: Mode) {
     setMode(m);
     setError(null);
     setNotice(null);
     setAwaitingConfirm(false);
+  }
+
+  /**
+   * Blindagem contra "spinner infinito": se o Supabase não responder em ~20s
+   * (projeto pausado, rede bloqueada, credenciais de ambiente erradas), a
+   * promessa nunca resolveria e o botão giraria para sempre. Aqui forçamos um
+   * erro claro para o usuário — em vez de travar a tela.
+   */
+  function withTimeout<T>(promise: PromiseLike<T>, ms = 20000): Promise<T> {
+    return Promise.race([
+      Promise.resolve(promise),
+      new Promise<T>((_, reject) =>
+        setTimeout(
+          () =>
+            reject(
+              new Error(
+                "O servidor de acesso não respondeu. Verifique sua conexão e tente novamente."
+              )
+            ),
+          ms
+        )
+      ),
+    ]);
   }
 
   async function handleGoogle() {
@@ -158,19 +192,21 @@ export default function AuthPage() {
     try {
       if (supabase) {
         if (mode === "signup") {
-          const { data, error } = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-              data: {
-                full_name: name,
-                role,
-                person_type: personType,
-                referred_by: referral || null,
+          const { data, error } = await withTimeout(
+            supabase.auth.signUp({
+              email,
+              password,
+              options: {
+                data: {
+                  full_name: name,
+                  role,
+                  person_type: personType,
+                  referred_by: referral || null,
+                },
+                emailRedirectTo: `${SITE_URL}/auth/callback`,
               },
-              emailRedirectTo: `${SITE_URL}/auth/callback`,
-            },
-          });
+            })
+          );
           if (error) throw error;
           // E-mail JÁ cadastrado: com "Confirm email" ligado, o Supabase NÃO
           // devolve erro no signUp — retorna um usuário "ofuscado" sem
@@ -189,13 +225,15 @@ export default function AuthPage() {
             return;
           }
         } else {
-          const { error } = await supabase.auth.signInWithPassword({ email, password });
+          const { error } = await withTimeout(
+            supabase.auth.signInWithPassword({ email, password })
+          );
           if (error) throw error;
         }
         // Acesso real: a sessão é validada pelo Supabase e o AuthProvider hidrata
         // o usuário a partir dela. NUNCA fabricamos sessão local aqui — senão uma
         // senha errada (erro acima) ou o modo demo abririam o painel sem validação.
-        router.push("/dashboard");
+        router.push(postAuthTarget());
         router.refresh();
         return;
       }
@@ -210,7 +248,7 @@ export default function AuthPage() {
         email,
         role: role ?? "tenant",
       });
-      router.push("/dashboard");
+      router.push(postAuthTarget());
     } catch (err) {
       // Diagnóstico (DevTools do navegador) — erro COMPLETO do Supabase, não
       // exposto ao usuário. status/code identificam a causa real (trigger de
