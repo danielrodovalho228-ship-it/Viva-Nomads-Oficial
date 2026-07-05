@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
+import { requireUser } from "@/lib/api-auth";
 import { createSubscription, type BillingType } from "@/lib/payments/asaas";
 import { PLANS } from "@/lib/constants";
 
 /** Cria a assinatura recorrente do proprietário via Asaas (PIX/boleto/cartão). */
 export async function POST(request: Request) {
+  // Segurança: exige sessão em produção (demo/preview passa direto).
+  const { block } = await requireUser();
+  if (block) return block;
   const body = await request.json().catch(() => ({}));
   const { planId, billingType, name, email, cpfCnpj } = body as {
     planId?: string;
