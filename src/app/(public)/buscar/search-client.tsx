@@ -1,11 +1,18 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { SlidersHorizontal, ChevronDown, MapPin, ArrowRight, Users } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { PropertyCard } from "@/components/property-card";
-import { SearchMap } from "@/components/search-map";
+// Mapbox (~200 KB) só é carregado quando o mapa é realmente exibido (flag
+// NEXT_PUBLIC_MAPA_BUSCA=on). Sem isto, o mapbox-gl pesava no bundle da busca
+// mesmo com o mapa desligado. `ssr: false` — é componente 100% de navegador.
+const SearchMap = dynamic(
+  () => import("@/components/search-map").then((m) => m.SearchMap),
+  { ssr: false }
+);
 import { EmptySearchIllustration } from "@/components/illustrations";
 import { Map as MapIcon, List as ListIcon } from "lucide-react";
 import { cn, distanceKm, formatBRL } from "@/lib/utils";

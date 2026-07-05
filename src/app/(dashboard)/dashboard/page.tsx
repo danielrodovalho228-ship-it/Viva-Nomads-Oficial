@@ -123,12 +123,18 @@ function OwnerDashboard({ name }: { name: string }) {
                 {myProperties.map((p) => (
                   <li key={p.id} className="flex items-center justify-between gap-3 py-3">
                     <div>
-                      <Link
-                        href={`/imoveis/${p.id}`}
-                        className="font-medium text-ink hover:text-forest"
-                      >
-                        {p.title}
-                      </Link>
+                      {/* Imóveis de demonstração não têm página real (/imoveis/demo-*
+                          daria 404) — mostra como texto. Reais viram link. */}
+                      {demo ? (
+                        <span className="font-medium text-ink">{p.title}</span>
+                      ) : (
+                        <Link
+                          href={`/imoveis/${p.id}`}
+                          className="font-medium text-ink hover:text-forest"
+                        >
+                          {p.title}
+                        </Link>
+                      )}
                       <p className="text-sm text-muted">
                         {formatBRL(p.monthlyPrice)}/mês · {p.neighborhood}
                       </p>
