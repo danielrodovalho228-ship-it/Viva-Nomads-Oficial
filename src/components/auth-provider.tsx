@@ -9,6 +9,9 @@ import type { UserRole } from "@/lib/types";
  * Sincroniza a sessão do Supabase com o estado global (Zustand).
  * Em modo demonstração (sem Supabase), não faz nada e o login local persiste.
  */
+/** Tempo máximo de sessão: 24h desde o login → pede login de novo. */
+const SESSION_MAX_MS = 24 * 60 * 60 * 1000;
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const setUser = useAuthStore((s) => s.setUser);
   const setAuthChecked = useAuthStore((s) => s.setAuthChecked);
@@ -83,6 +86,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
     return () => sub.subscription.unsubscribe();
   }, [setUser, setAuthChecked]);
+
+  // ── Expiração da sessão em 24h ───────────────────────────────────────────────
+  // Roda em toda página (AuthProvider está no layout raiz). Ao logar, marca-se
+  // `sessionStartedAt`; passadas 24h, desloga (Supabase + store) e leva ao login.
+  // Sessões antigas (sem carimbo) ganham o relógio a partir de agora.
+  useEffect(() => {
+    function verificar() {
+      const s = useAuthStore.getState();
+      if (!s.user) return;
+      if (!s.sessionStartedAt) {
+        s.startSession(); // inicializa o relógio de sessões pré-existentes
+        return;
+      }
+      if (Date.now() - s.sessionStartedAt > SESSION_MAX_MS) {
+        createClient()
+          ?.auth.signOut()
+          .catch(() => {});
+        s.signOut();
+        if (typeof window !== "undefined" && !window.location.pathname.startsWith("/auth")) {
+          window.location.href = "/auth?expired=1";
+        }
+      }
+    }
+    verificar();
+    const id = setInterval(verificar, 60_000); // checa a cada minuto
+    return () => clearInterval(id);
+  }, []);
 
   return <>{children}</>;
 }
