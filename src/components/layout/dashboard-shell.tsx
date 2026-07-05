@@ -166,7 +166,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       <div className="flex h-16 shrink-0 items-center overflow-hidden border-b border-white/10 px-4">
         <Logo light className="max-w-full" />
       </div>
-      <nav key={mode} className="mode-transition flex-1 space-y-1 p-3">
+      <nav key={mode} className="mode-transition flex-1 space-y-1 overflow-y-auto p-3">
         {nav.map((item) => {
           const active = pathname === item.href;
           const Icon = item.icon;
@@ -208,9 +208,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <div className="flex min-h-screen w-full bg-surface-2">
-      {/* Sidebar desktop */}
-      <aside className="hidden w-64 shrink-0 bg-forest lg:block print:hidden">{sidebar}</aside>
+    // App-shell: no desktop a altura trava na viewport e SÓ o conteúdo (main)
+    // rola — a sidebar e as barras do topo ficam fixas. Em mobile/print volta ao
+    // fluxo normal (rolagem da página inteira).
+    <div className="flex min-h-screen w-full bg-surface-2 lg:h-screen lg:overflow-hidden print:h-auto print:overflow-visible">
+      {/* Sidebar desktop — fixa (altura da viewport). */}
+      <aside className="hidden w-64 shrink-0 bg-forest lg:block lg:h-screen print:hidden">{sidebar}</aside>
 
       {/* Drawer mobile */}
       {open && (
@@ -220,7 +223,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col lg:overflow-hidden print:overflow-visible">
         {/* Topbar mobile (logo + menu) */}
         <div className="flex h-16 items-center justify-between border-b border-sage-200 bg-white px-4 lg:hidden print:hidden">
           <Logo />
@@ -259,7 +262,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
-        <main key={mode} className="mode-transition flex-1 p-5 sm:p-8">
+        <main key={mode} className="mode-transition flex-1 p-5 sm:p-8 lg:overflow-y-auto print:overflow-visible">
           {children}
         </main>
       </div>
