@@ -48,3 +48,60 @@ export function estadiaLabel(min?: number | null, max?: number | null): string {
   const mx = max && max > 0 ? max : 180;
   return `${mn} a ${mx} dias`;
 }
+
+/** Nº de dias entre duas datas ISO (checkOut − checkIn). Negativo se invertido. */
+export function diasEntre(aISO: string, bISO: string): number {
+  return Math.round((t(bISO) - t(aISO)) / 86400000);
+}
+
+/** Soma `n` dias a uma data ISO (yyyy-mm-dd), sem fuso. */
+export function addDias(iso: string, n: number): string {
+  const d = new Date(t(iso) + n * 86400000);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+    d.getDate()
+  ).padStart(2, "0")}`;
+}
+
+export interface ReservaInput {
+  checkIn: string; // ISO
+  checkOut: string; // ISO
+  fromISO: string; // início efetivo da disponibilidade
+  untilISO?: string | null;
+  minDias?: number | null;
+  maxDias?: number | null;
+  bloqueados?: string[]; // dias ISO fechados pelo proprietário
+}
+
+export interface ReservaResultado {
+  ok: boolean;
+  dias: number;
+  motivo?: string;
+}
+
+/**
+ * Valida uma tentativa de reserva contra a janela de disponibilidade, a estadia
+ * mínima/máxima e os dias bloqueados. Retorna o nº de dias e, se inválida, o
+ * motivo em texto (pronto para exibir).
+ */
+export function validarReserva(i: ReservaInput): ReservaResultado {
+  const min = i.minDias && i.minDias > 0 ? i.minDias : 30;
+  const max = i.maxDias && i.maxDias > 0 ? i.maxDias : 180;
+  const dias = diasEntre(i.checkIn, i.checkOut);
+
+  if (dias <= 0) return { ok: false, dias, motivo: "A saída deve ser depois da entrada." };
+  if (t(i.checkIn) < t(i.fromISO))
+    return { ok: false, dias, motivo: "A entrada é antes do início da disponibilidade." };
+  if (i.untilISO && t(i.checkOut) > t(i.untilISO))
+    return { ok: false, dias, motivo: "A saída passa do fim da disponibilidade." };
+  if (dias < min) return { ok: false, dias, motivo: `Estadia mínima de ${min} dias.` };
+  if (dias > max) return { ok: false, dias, motivo: `Estadia máxima de ${max} dias.` };
+
+  const bloq = new Set(i.bloqueados ?? []);
+  if (bloq.size > 0) {
+    // Checa cada noite [checkIn, checkOut).
+    for (let d = i.checkIn; t(d) < t(i.checkOut); d = addDias(d, 1)) {
+      if (bloq.has(d)) return { ok: false, dias, motivo: "Há dias indisponíveis no período." };
+    }
+  }
+  return { ok: true, dias };
+}
