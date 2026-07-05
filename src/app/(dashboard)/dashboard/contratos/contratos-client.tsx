@@ -12,8 +12,6 @@ import {
   Plus,
   CircleDollarSign,
   Users,
-  Star,
-  Loader2,
 } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
@@ -29,8 +27,7 @@ import {
   type ContratoView,
   type BlocoView,
 } from "@/lib/data/contratos-actions";
-import { avaliar } from "@/lib/data/avaliacoes-actions";
-import { validarAvaliacao } from "@/lib/avaliacoes";
+import { AvaliacaoForm } from "@/components/avaliacao-form";
 import { formatBRL, cn } from "@/lib/utils";
 
 /** Texto imutável da regra de ouro (declaratório — nunca movimenta valores). */
@@ -257,109 +254,16 @@ function ContratoCard({
       </div>
 
       {/* Avaliar o inquilino (reputação bidirecional). */}
-      <AvaliarInquilino contrato={contrato} demo={demo} />
-    </Panel>
-  );
-}
-
-/** Painel de avaliação do inquilino pelo proprietário (1 vez por contrato). */
-function AvaliarInquilino({ contrato, demo }: { contrato: ContratoView; demo: boolean }) {
-  const [rating, setRating] = useState(0);
-  const [hover, setHover] = useState(0);
-  const [comentario, setComentario] = useState("");
-  const [aberto, setAberto] = useState(false);
-  const [enviando, setEnviando] = useState(false);
-  const [enviado, setEnviado] = useState(false);
-  const [erro, setErro] = useState<string | null>(null);
-
-  async function enviar() {
-    setErro(null);
-    const msg = validarAvaliacao(rating, comentario);
-    if (msg) {
-      setErro(msg);
-      return;
-    }
-    setEnviando(true);
-    const r = await avaliar({
-      contratoId: contrato.id,
-      alvoId: contrato.tenantId,
-      papelAutor: "proprietario",
-      rating,
-      comentario,
-    });
-    setEnviando(false);
-    if (r.ok) setEnviado(true);
-    else setErro(r.error ?? "Não foi possível avaliar.");
-  }
-
-  if (enviado) {
-    return (
-      <p className="mt-4 inline-flex items-center gap-1.5 border-t border-sage-200 pt-3 text-sm text-forest">
-        <Check className="h-4 w-4" />
-        {demo
-          ? "Avaliação de exemplo registrada."
-          : "Avaliação enviada — obrigado por construir a reputação da plataforma."}
-      </p>
-    );
-  }
-
-  if (!aberto) {
-    return (
-      <button
-        type="button"
-        onClick={() => setAberto(true)}
-        className="mt-4 inline-flex items-center gap-1.5 border-t border-sage-200 pt-3 text-sm font-medium text-forest hover:underline"
-      >
-        <Star className="h-4 w-4" /> Avaliar o inquilino
-      </button>
-    );
-  }
-
-  return (
-    <div className="mt-4 border-t border-sage-200 pt-4">
-      <p className="text-sm font-medium text-ink">Como foi a locação com este inquilino?</p>
-      <div className="mt-2 flex items-center gap-1" role="radiogroup" aria-label="Nota de 1 a 5">
-        {[1, 2, 3, 4, 5].map((n) => (
-          <button
-            key={n}
-            type="button"
-            aria-label={`${n} estrela${n > 1 ? "s" : ""}`}
-            aria-checked={rating === n}
-            role="radio"
-            onMouseEnter={() => setHover(n)}
-            onMouseLeave={() => setHover(0)}
-            onClick={() => setRating(n)}
-          >
-            <Star
-              className={cn(
-                "h-6 w-6 transition-colors",
-                (hover || rating) >= n ? "fill-champagne text-champagne" : "text-sage-200"
-              )}
-            />
-          </button>
-        ))}
-      </div>
-      <textarea
-        rows={2}
-        value={comentario}
-        onChange={(e) => setComentario(e.target.value)}
+      <AvaliacaoForm
+        contratoId={contrato.id}
+        alvoId={contrato.tenantId}
+        papelAutor="proprietario"
+        abrirLabel="Avaliar o inquilino"
+        titulo="Como foi a locação com este inquilino?"
         placeholder="Comentário (opcional) — pontualidade, cuidado com o imóvel, comunicação…"
-        className="mt-3 w-full rounded-xl border border-sage-200 px-3 py-2 text-sm outline-none focus:border-sage"
+        demo={demo}
       />
-      {erro && <p className="mt-2 text-sm text-red-600">{erro}</p>}
-      <div className="mt-3 flex items-center gap-3">
-        <Button variant="gold" size="sm" onClick={enviar} disabled={enviando || rating === 0}>
-          {enviando ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Enviar avaliação
-        </Button>
-        <button
-          type="button"
-          onClick={() => setAberto(false)}
-          className="text-xs font-medium text-muted underline hover:text-ink"
-        >
-          Cancelar
-        </button>
-      </div>
-    </div>
+    </Panel>
   );
 }
 

@@ -69,6 +69,7 @@ const TENANT_NAV: NavItem[] = [
   { href: "/dashboard", label: "Visão geral", icon: LayoutDashboard },
   { href: "/dashboard/verificacao", label: "Inquilino Verificado", icon: BadgeCheck },
   { href: "/dashboard/pedidos", label: "Meus pedidos", icon: Megaphone },
+  { href: "/dashboard/locacoes", label: "Minhas locações", icon: Receipt },
   { href: "/dashboard/favoritos", label: "Favoritos", icon: Heart },
   { href: "/dashboard/comparar", label: "Comparar", icon: GitCompare },
   { href: "/dashboard/solicitacoes", label: "Solicitações", icon: Wrench },
@@ -107,7 +108,12 @@ const OWNER_ONLY = [
   "/dashboard/reembolsos",
   "/dashboard/assinatura",
 ];
-const TENANT_ONLY = ["/dashboard/favoritos", "/dashboard/comparar", "/dashboard/buscas"];
+const TENANT_ONLY = [
+  "/dashboard/favoritos",
+  "/dashboard/comparar",
+  "/dashboard/buscas",
+  "/dashboard/locacoes",
+];
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
@@ -255,7 +261,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               {meta.label}
             </span>
           </p>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
             {/* Toggle do modo demonstração — renderiza apenas para o admin. */}
             <DemoToggle />
             <ModeSwitcher mode={mode} onSwitch={switchTo} />
