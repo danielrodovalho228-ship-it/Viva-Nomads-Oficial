@@ -225,16 +225,27 @@ export default function AuthPage() {
             return;
           }
         } else {
-          const { error } = await withTimeout(
+          const { data, error } = await withTimeout(
             supabase.auth.signInWithPassword({ email, password })
           );
           if (error) throw error;
+          // Seta o usuário SÍNCRONO a partir da sessão VALIDADA pelo Supabase —
+          // não é "fabricar" sessão (o login já passou). Sem isto, o painel
+          // dependia do AuthProvider (assíncrono) e o AuthGuard podia quicar de
+          // volta para /auth (hidratado && sem usuário) — o login "não entrava".
+          const u = data.user;
+          if (u) {
+            setUser({
+              id: u.id,
+              name: (u.user_metadata?.full_name as string | undefined) ?? u.email ?? "Usuário",
+              fullName: u.user_metadata?.full_name as string | undefined,
+              email: u.email ?? "",
+              role: (u.user_metadata?.role as UserRole) ?? "tenant",
+            });
+          }
         }
-        // Acesso real: a sessão é validada pelo Supabase e o AuthProvider hidrata
-        // o usuário a partir dela. NUNCA fabricamos sessão local aqui — senão uma
-        // senha errada (erro acima) ou o modo demo abririam o painel sem validação.
+        // Navega já com o usuário na store (o AuthProvider enriquece depois).
         router.push(postAuthTarget());
-        router.refresh();
         return;
       }
 
