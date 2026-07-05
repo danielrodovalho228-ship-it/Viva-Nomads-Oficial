@@ -44,6 +44,14 @@ interface AuthState {
   user: SessionUser | null;
   /** Papel ativo escolhido pelo usuário; null = derivar do `role` de cadastro. */
   activeMode: ViewMode | null;
+  /**
+   * A sessão já foi CONFERIDA (getSession do Supabase resolveu, ou o modo demo
+   * assumiu). NÃO é persistida: começa `false` a cada carga e evita que o
+   * AuthGuard mande para /auth antes de a sessão real ter chance de hidratar
+   * (a causa do "entra e sai" ao navegar).
+   */
+  authChecked: boolean;
+  setAuthChecked: (v: boolean) => void;
   /** Define o usuário logado (modo demo ou pós-login Supabase). */
   setUser: (user: SessionUser | null) => void;
   /** Troca o papel ativo (inquilino ⇄ proprietário). */
@@ -63,7 +71,10 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       user: null,
       activeMode: null,
-      setUser: (user) => set({ user }),
+      authChecked: false,
+      setAuthChecked: (authChecked) => set({ authChecked }),
+      // Setar o usuário implica que a sessão foi conferida.
+      setUser: (user) => set({ user, authChecked: true }),
       setActiveMode: (activeMode) => set({ activeMode }),
       activateRole: (mode) =>
         set((s) => ({
@@ -72,8 +83,13 @@ export const useAuthStore = create<AuthState>()(
             ? { ...s.user, ...(mode === "owner" ? { isOwner: true } : { isTenant: true }) }
             : s.user,
         })),
-      signOut: () => set({ user: null, activeMode: null }),
+      signOut: () => set({ user: null, activeMode: null, authChecked: true }),
     }),
-    { name: "vivanomads-auth" }
+    {
+      name: "vivanomads-auth",
+      // Só o usuário e o papel ativo são persistidos — `authChecked` deve
+      // recomeçar `false` a cada carga para o guard esperar a conferência real.
+      partialize: (s) => ({ user: s.user, activeMode: s.activeMode }),
+    }
   )
 );

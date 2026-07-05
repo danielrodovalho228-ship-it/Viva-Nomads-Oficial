@@ -2,15 +2,24 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LayoutDashboard } from "lucide-react";
 import { PUBLIC_NAV } from "@/lib/constants";
 import { Logo } from "@/components/ui/logo";
 import { ButtonLink } from "@/components/ui/button";
+import { useAuthStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  // Reconhece a sessão: sem isto o cabeçalho mostrava "Entrar" mesmo logado.
+  // `mounted` evita mismatch de hidratação (o servidor sempre renderiza o estado
+  // deslogado; o cliente corrige após reidratar o store).
+  const user = useAuthStore((s) => s.user);
+  const [mounted, setMounted] = useState(false);
+  const loggedIn = mounted && !!user;
+
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -44,9 +53,15 @@ export function Navbar() {
         </div>
 
         <div className="hidden items-center gap-2 lg:flex">
-          <ButtonLink href="/auth" variant="ghost" size="sm">
-            Entrar
-          </ButtonLink>
+          {loggedIn ? (
+            <ButtonLink href="/dashboard" variant="ghost" size="sm">
+              <LayoutDashboard className="h-4 w-4" /> Meu painel
+            </ButtonLink>
+          ) : (
+            <ButtonLink href="/auth" variant="ghost" size="sm">
+              Entrar
+            </ButtonLink>
+          )}
           <ButtonLink href="/qualificar" variant="accent" size="sm">
             Anunciar imóvel
           </ButtonLink>
@@ -75,9 +90,15 @@ export function Navbar() {
               </Link>
             ))}
             <div className="mt-2 flex flex-col gap-2">
-              <ButtonLink href="/auth" variant="outline" onClick={() => setOpen(false)}>
-                Entrar
-              </ButtonLink>
+              {loggedIn ? (
+                <ButtonLink href="/dashboard" variant="outline" onClick={() => setOpen(false)}>
+                  <LayoutDashboard className="h-4 w-4" /> Meu painel
+                </ButtonLink>
+              ) : (
+                <ButtonLink href="/auth" variant="outline" onClick={() => setOpen(false)}>
+                  Entrar
+                </ButtonLink>
+              )}
               <ButtonLink href="/qualificar" variant="accent" onClick={() => setOpen(false)}>
                 Anunciar imóvel
               </ButtonLink>

@@ -15,6 +15,7 @@ import { useAuthStore } from "@/lib/store";
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
+  const authChecked = useAuthStore((s) => s.authChecked);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -31,11 +32,16 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     return unsub;
   }, []);
 
+  // Só redireciona quando: o localStorage já reidratou E a sessão do Supabase
+  // já foi CONFERIDA (authChecked) E mesmo assim não há usuário. Sem o
+  // `authChecked`, um /dashboard aberto direto (sem usuário persistido) mandava
+  // para /auth antes de a sessão real hidratar — o "entra e sai".
   useEffect(() => {
-    if (hydrated && !user) router.replace("/auth");
-  }, [hydrated, user, router]);
+    if (hydrated && authChecked && !user) router.replace("/auth");
+  }, [hydrated, authChecked, user, router]);
 
-  if (!hydrated || !user) {
+  // Com usuário → libera. Sem usuário mas ainda conferindo → aguarda (spinner).
+  if (!user) {
     return (
       <div className="grid min-h-screen place-items-center bg-surface-2">
         <Loader2 className="h-6 w-6 animate-spin text-forest" />
