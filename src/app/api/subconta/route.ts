@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireUser } from "@/lib/api-auth";
 import { createSubaccount } from "@/lib/payments/asaas";
 
 /**
@@ -6,6 +7,9 @@ import { createSubaccount } from "@/lib/payments/asaas";
  * ⚠️ A apiKey é devolvida só uma vez — o chamador deve persistir criptografada.
  */
 export async function POST(request: Request) {
+  // Segurança: exige sessão em produção (demo/preview passa direto).
+  const { block } = await requireUser();
+  if (block) return block;
   const body = await request.json().catch(() => ({}));
   const { name, email, cpfCnpj, mobilePhone } = body as {
     name?: string;

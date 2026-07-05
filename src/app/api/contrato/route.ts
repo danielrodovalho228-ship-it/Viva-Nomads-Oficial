@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
+import { requireUser } from "@/lib/api-auth";
 import { createContract, type ContractInput } from "@/lib/integrations/zapsign";
 
 /** Gera o contrato de locação por temporada via ZapSign. */
 export async function POST(request: Request) {
+  // Segurança: exige sessão em produção (demo/preview passa direto).
+  const { block } = await requireUser();
+  if (block) return block;
   const body = (await request.json().catch(() => ({}))) as Partial<ContractInput>;
 
   if (!body.tenantName || !body.ownerName || !body.propertyTitle) {

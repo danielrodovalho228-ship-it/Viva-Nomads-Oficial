@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
+import { requireUser } from "@/lib/api-auth";
 import { emitInvoice, type InvoiceType } from "@/lib/integrations/nfse";
 
 /** Emite NFS-e de uma receita da plataforma (comissão, assinatura, serviço). */
 export async function POST(request: Request) {
+  // Segurança: exige sessão em produção (demo/preview passa direto).
+  const { block } = await requireUser();
+  if (block) return block;
   const body = await request.json().catch(() => ({}));
   const { type, amount, description, customerName, customerDocument, referenceId } = body as {
     type?: InvoiceType;

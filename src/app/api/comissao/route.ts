@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
+import { requireUser } from "@/lib/api-auth";
 import { createCommissionCharge } from "@/lib/payments/asaas";
 import { COMMISSION_BY_PLAN } from "@/lib/constants";
 
 /** Cria a cobrança de comissão de fechamento (split) sobre o 1º mês. */
 export async function POST(request: Request) {
+  // Segurança: exige sessão em produção (demo/preview passa direto).
+  const { block } = await requireUser();
+  if (block) return block;
   const body = await request.json().catch(() => ({}));
   const { firstMonthRent, plan, ownerWalletId, name, email } = body as {
     firstMonthRent?: number;
