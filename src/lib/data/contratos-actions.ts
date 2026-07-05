@@ -87,6 +87,49 @@ function toPagamento(p: Record<string, unknown>): PagamentoView {
   };
 }
 
+/** Locação do INQUILINO (visão simplificada) para avaliar o proprietário. */
+export interface LocacaoView {
+  id: string; // contrato_id
+  propertyId: string;
+  propertyTitle: string;
+  ownerId: string;
+  aluguelMensal: number;
+  status: string;
+  criadoEm: string;
+}
+
+/**
+ * Minhas locações (visão do INQUILINO): contratos onde tenant_id = eu, com o
+ * proprietário do imóvel (para avaliar). Best-effort: [] em demo/sem sessão.
+ */
+export async function getMinhasLocacoes(): Promise<LocacaoView[]> {
+  const supabase = await createClient();
+  if (!supabase) return [];
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data } = await supabase
+    .from("contratos")
+    .select("id, property_id, aluguel_mensal, status, created_at, properties(title, owner_id)")
+    .eq("tenant_id", user.id)
+    .order("created_at", { ascending: false });
+
+  return ((data ?? []) as Record<string, unknown>[]).map((c) => {
+    const prop = (c.properties as { title?: string; owner_id?: string } | null) ?? {};
+    return {
+      id: String(c.id),
+      propertyId: String(c.property_id),
+      propertyTitle: prop.title ?? "Imóvel",
+      ownerId: String(prop.owner_id ?? ""),
+      aluguelMensal: Number(c.aluguel_mensal),
+      status: String(c.status ?? "ativo"),
+      criadoEm: String(c.created_at),
+    };
+  });
+}
+
 /**
  * Contratos do proprietário (contrato-mãe + blocos + pagamentos declarados).
  * Filtra pelos imóveis DELE (a RLS também restringe às partes do contrato).
