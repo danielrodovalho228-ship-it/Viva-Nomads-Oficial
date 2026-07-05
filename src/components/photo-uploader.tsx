@@ -19,15 +19,23 @@ export interface PhotoItem extends UploadedPhoto {
  * Galeria de upload de fotos do imóvel (Supabase Storage).
  * A primeira foto é tratada como capa. Suporta múltiplos arquivos,
  * preview, remoção e estado de envio.
+ *
+ * `uploader`/`remover` permitem trocar o destino: por padrão, o bucket PÚBLICO
+ * de fotos; para DOCUMENTOS privados (autorização de sublocação), passa-se o
+ * uploader do bucket privado.
  */
 export function PhotoUploader({
   photos,
   onChange,
   max = 12,
+  uploader = uploadPropertyPhoto,
+  remover = removePropertyPhoto,
 }: {
   photos: PhotoItem[];
   onChange: (photos: PhotoItem[]) => void;
   max?: number;
+  uploader?: (file: File, ownerId?: string) => Promise<UploadedPhoto>;
+  remover?: (path: string | null) => Promise<void>;
 }) {
   const ownerId = useAuthStore((s) => s.user?.id);
   const [uploading, setUploading] = useState(false);
@@ -62,7 +70,7 @@ export function PhotoUploader({
           setError("Cada foto deve ter no máximo 8 MB.");
           continue;
         }
-        const result = await uploadPropertyPhoto(file, ownerId);
+        const result = await uploader(file, ownerId);
         uploaded.push({ ...result, id: crypto.randomUUID(), name: file.name });
       }
       onChange([...photos, ...uploaded]);
@@ -73,7 +81,7 @@ export function PhotoUploader({
 
   async function remove(item: PhotoItem) {
     onChange(photos.filter((p) => p.id !== item.id));
-    await removePropertyPhoto(item.path);
+    await remover(item.path);
   }
 
   function makeCover(item: PhotoItem) {
