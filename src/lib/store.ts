@@ -52,6 +52,13 @@ interface AuthState {
    */
   authChecked: boolean;
   setAuthChecked: (v: boolean) => void;
+  /**
+   * Momento do login (epoch ms). A sessão expira 24h depois — o AuthProvider
+   * desloga e pede login de novo. Persistido para valer entre recargas/abas.
+   */
+  sessionStartedAt: number | null;
+  /** Inicia (ou reinicia) o relógio de 24h — chamado no login. */
+  startSession: () => void;
   /** Define o usuário logado (modo demo ou pós-login Supabase). */
   setUser: (user: SessionUser | null) => void;
   /** Troca o papel ativo (inquilino ⇄ proprietário). */
@@ -72,7 +79,9 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       activeMode: null,
       authChecked: false,
+      sessionStartedAt: null,
       setAuthChecked: (authChecked) => set({ authChecked }),
+      startSession: () => set({ sessionStartedAt: Date.now() }),
       // Setar o usuário implica que a sessão foi conferida.
       setUser: (user) => set({ user, authChecked: true }),
       setActiveMode: (activeMode) => set({ activeMode }),
@@ -83,13 +92,18 @@ export const useAuthStore = create<AuthState>()(
             ? { ...s.user, ...(mode === "owner" ? { isOwner: true } : { isTenant: true }) }
             : s.user,
         })),
-      signOut: () => set({ user: null, activeMode: null, authChecked: true }),
+      signOut: () =>
+        set({ user: null, activeMode: null, authChecked: true, sessionStartedAt: null }),
     }),
     {
       name: "vivanomads-auth",
-      // Só o usuário e o papel ativo são persistidos — `authChecked` deve
-      // recomeçar `false` a cada carga para o guard esperar a conferência real.
-      partialize: (s) => ({ user: s.user, activeMode: s.activeMode }),
+      // Persistimos usuário, papel ativo e o início da sessão (relógio de 24h).
+      // `authChecked` fica de fora para recomeçar `false` a cada carga.
+      partialize: (s) => ({
+        user: s.user,
+        activeMode: s.activeMode,
+        sessionStartedAt: s.sessionStartedAt,
+      }),
     }
   )
 );

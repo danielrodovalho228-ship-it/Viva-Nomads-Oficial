@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Building2,
@@ -34,6 +34,7 @@ type Mode = "login" | "signup" | "forgot";
 export default function AuthPage() {
   const router = useRouter();
   const setUser = useAuthStore((s) => s.setUser);
+  const startSession = useAuthStore((s) => s.startSession);
   const [mode, setMode] = useState<Mode>("login");
   // Sem papel pré-selecionado: o usuário escolhe conscientemente proprietário
   // OU inquilino no cadastro (evita criar proprietário sem querer).
@@ -54,6 +55,16 @@ export default function AuthPage() {
   // Login falhou porque NÃO existe conta com este e-mail → oferece cadastro
   // (em vez de "e-mail ou senha incorretos", que faz o usuário resetar senha à toa).
   const [semConta, setSemConta] = useState(false);
+
+  // Sessão de 24h expirou (o AuthProvider redireciona com ?expired=1).
+  useEffect(() => {
+    if (
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("expired") === "1"
+    ) {
+      setNotice("Sua sessão de 24h expirou. Entre novamente para continuar.");
+    }
+  }, []);
 
   // Destino pós-login: honra ?redirect=… (definido pelo proxy ao barrar rota
   // protegida), aceitando SÓ caminhos internos ("/algo") — nunca URLs externas
@@ -277,6 +288,8 @@ export default function AuthPage() {
             });
           }
         }
+        // Inicia o relógio de 24h da sessão (expira e pede login de novo).
+        startSession();
         // Navega já com o usuário na store (o AuthProvider enriquece depois).
         router.push(postAuthTarget());
         return;
@@ -292,6 +305,7 @@ export default function AuthPage() {
         email,
         role: role ?? "tenant",
       });
+      startSession();
       router.push(postAuthTarget());
     } catch (err) {
       // Diagnóstico (DevTools do navegador) — erro COMPLETO do Supabase, não
@@ -616,6 +630,13 @@ export default function AuthPage() {
                 )}
 
                 {error && <p className="text-sm text-red-600">{error}</p>}
+
+                {/* Aviso informativo (ex.: sessão de 24h expirou). */}
+                {notice && (
+                  <p className="flex items-start gap-2 rounded-lg bg-sage-100 px-3 py-2 text-sm text-forest">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" /> {notice}
+                  </p>
+                )}
 
                 {/* Não há conta com este e-mail → convida a cadastrar (em vez de
                     ficar tentando senha/recuperação). */}
