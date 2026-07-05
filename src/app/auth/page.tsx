@@ -22,6 +22,7 @@ import { BrandImage } from "@/components/brand-image";
 import { PHOTOS } from "@/lib/media";
 import { TaxSimulator } from "@/components/tax-simulator";
 import { useAuthStore } from "@/lib/store";
+import { resetPropertiesCache } from "@/lib/use-properties";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { SITE_URL } from "@/lib/site";
 import { friendlyAuthError, isEmailSendError, isValidEmail, MIN_PASSWORD } from "@/lib/auth-errors";
@@ -290,6 +291,8 @@ export default function AuthPage() {
         }
         // Inicia o relógio de 24h da sessão (expira e pede login de novo).
         startSession();
+        // Cache de imóveis começa limpo p/ o novo usuário (mesma aba).
+        resetPropertiesCache();
         // Navega já com o usuário na store (o AuthProvider enriquece depois).
         router.push(postAuthTarget());
         return;
