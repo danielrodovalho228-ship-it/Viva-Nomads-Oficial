@@ -46,6 +46,7 @@ export interface ContratoView {
   id: string;
   propertyId: string;
   propertyTitle: string;
+  tenantId: string;
   city: string;
   aluguelMensal: number;
   prazoTotalDias: number;
@@ -130,6 +131,7 @@ export async function getMeusContratos(): Promise<ContratoView[]> {
       id: String(c.id),
       propertyId: String(c.property_id),
       propertyTitle: meta?.title ?? "Imóvel",
+      tenantId: String(c.tenant_id ?? ""),
       city: meta?.city ?? "",
       aluguelMensal: Number(c.aluguel_mensal),
       prazoTotalDias: Number(c.prazo_total_dias),
