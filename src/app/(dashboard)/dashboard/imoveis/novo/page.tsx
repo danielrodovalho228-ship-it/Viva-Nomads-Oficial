@@ -26,6 +26,7 @@ import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { PropertyMiniCard } from "@/components/property-mini-card";
 import { PhotoUploader, type PhotoItem } from "@/components/photo-uploader";
+import { uploadPropertyDoc, removePropertyDoc } from "@/lib/data/storage";
 import { MIN_PHOTOS, SUGGESTED_ROOMS, tierFromPhotoCount, TIER_META } from "@/lib/listing";
 import { FAIXAS, GARANTIAS_FAIXA } from "@/lib/faixas";
 import { PROPERTY_TYPES, AMENITY_GROUPS, propertyTypeLabel, amenityKeysFromLabels } from "@/lib/amenities";
@@ -192,7 +193,9 @@ export default function NewPropertyPage() {
       tagCondoApproved: q.tCondo,
       ownershipType,
       subleaseAuthorized,
-      subleaseDocUrl: subleaseDoc[0]?.url,
+      // Guarda o PATH do bucket privado (estável); a URL assinada expira. Cai
+      // na url só se for preview local (demo/sem migração).
+      subleaseDocUrl: subleaseDoc[0]?.path ?? subleaseDoc[0]?.url,
       utilitiesMode,
       utilitiesEstimate,
       issuesInvoice,
@@ -591,7 +594,12 @@ export default function NewPropertyPage() {
                     <span className="mb-1.5 block text-sm font-medium text-ink">
                       Autorização de sublocação <span className="font-normal text-muted">(opcional)</span>
                     </span>
-                    <PhotoUploader photos={subleaseDoc} onChange={setSubleaseDoc} />
+                    <PhotoUploader
+                      photos={subleaseDoc}
+                      onChange={setSubleaseDoc}
+                      uploader={uploadPropertyDoc}
+                      remover={removePropertyDoc}
+                    />
                     <p className="mt-1.5 text-xs text-muted">
                       Você pode continuar sem enviar agora. Recomendamos anexar a autorização
                       para evitar problemas futuros.
