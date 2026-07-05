@@ -51,6 +51,9 @@ export default function AuthPage() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null); // pós-cadastro / reset enviado
   const [awaitingConfirm, setAwaitingConfirm] = useState(false);
+  // Login falhou porque NÃO existe conta com este e-mail → oferece cadastro
+  // (em vez de "e-mail ou senha incorretos", que faz o usuário resetar senha à toa).
+  const [semConta, setSemConta] = useState(false);
 
   // Destino pós-login: honra ?redirect=… (definido pelo proxy ao barrar rota
   // protegida), aceitando SÓ caminhos internos ("/algo") — nunca URLs externas
@@ -68,6 +71,7 @@ export default function AuthPage() {
     setError(null);
     setNotice(null);
     setAwaitingConfirm(false);
+    setSemConta(false);
   }
 
   /**
@@ -180,6 +184,7 @@ export default function AuthPage() {
     e.preventDefault();
     setError(null);
     setNotice(null);
+    setSemConta(false);
 
     const validationError = validate();
     if (validationError) {
@@ -228,7 +233,32 @@ export default function AuthPage() {
           const { data, error } = await withTimeout(
             supabase.auth.signInWithPassword({ email, password })
           );
-          if (error) throw error;
+          if (error) {
+            const m = (error.message || "").toLowerCase();
+            // E-mail ainda não confirmado → orienta a confirmar (não é senha errada).
+            if (m.includes("not confirmed") || m.includes("confirm")) {
+              setError("Seu e-mail ainda não foi confirmado. Verifique a caixa de entrada (e o spam).");
+              setLoading(false);
+              return;
+            }
+            // Credenciais inválidas: descobre se é conta INEXISTENTE (pede cadastro)
+            // ou senha incorreta (conta existe). Degrada para o genérico se a RPC
+            // ainda não estiver aplicada no banco.
+            let existe = true;
+            try {
+              const { data: ex } = await supabase.rpc("email_existe", { e: email });
+              if (ex === false) existe = false;
+            } catch {
+              /* migração 0031 ausente — mantém comportamento genérico */
+            }
+            if (!existe) {
+              setSemConta(true);
+              setError(null);
+              setLoading(false);
+              return;
+            }
+            throw error; // conta existe → senha incorreta (mensagem padrão)
+          }
           // Seta o usuário SÍNCRONO a partir da sessão VALIDADA pelo Supabase —
           // não é "fabricar" sessão (o login já passou). Sem isto, o painel
           // dependia do AuthProvider (assíncrono) e o AuthGuard podia quicar de
@@ -583,6 +613,25 @@ export default function AuthPage() {
                 )}
 
                 {error && <p className="text-sm text-red-600">{error}</p>}
+
+                {/* Não há conta com este e-mail → convida a cadastrar (em vez de
+                    ficar tentando senha/recuperação). */}
+                {semConta && mode === "login" && (
+                  <div className="rounded-xl border border-sage-200 bg-surface-2 p-4 text-sm">
+                    <p className="font-medium text-ink">Ainda não há conta com este e-mail.</p>
+                    <p className="mt-1 text-muted">
+                      Confira se digitou certo — ou crie uma conta agora, é rápido.
+                    </p>
+                    <Button
+                      type="button"
+                      variant="gold"
+                      className="mt-3 w-full"
+                      onClick={() => switchMode("signup")}
+                    >
+                      Criar conta com {email}
+                    </Button>
+                  </div>
+                )}
 
                 <Button
                   type="submit"
