@@ -2,6 +2,7 @@ import Image from "next/image";
 import { BadgeCheck, Clock, Handshake } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { ResponsiveOwnerBadge } from "@/components/ui/badge";
+import { OwnerRating } from "@/components/property/owner-rating";
 
 /** "desde 2025" / "desde mar. 2025" a partir de uma data ISO. */
 function memberSinceLabel(iso?: string): string | null {
@@ -49,6 +50,7 @@ export function OwnerCard({ property }: { property: Property }) {
             {(owner?.verified ?? true) && <BadgeCheck className="h-4 w-4 text-blue-600" />}
           </p>
           <p className="text-sm text-muted">Proprietário verificado</p>
+          <OwnerRating propertyId={property.id} />
           <div className="mt-1.5">
             <ResponsiveOwnerBadge />
           </div>
