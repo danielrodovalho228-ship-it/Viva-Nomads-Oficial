@@ -31,6 +31,7 @@ import { WorkspaceSection } from "@/components/property/workspace-section";
 import { LocationNearby } from "@/components/property/location-nearby";
 import { GoogleProximities } from "@/components/property/google-proximities";
 import { StayRules } from "@/components/property/stay-rules";
+import { AvailabilityCalendar } from "@/components/property/availability-calendar";
 import { OwnerCard } from "@/components/property/owner-card";
 import { Reviews } from "@/components/property/reviews";
 
@@ -251,6 +252,7 @@ export function PropertyDetail({ property, similar }: { property: Property; simi
 
           <AmenitiesGrid property={property} />
           <WorkspaceSection property={property} />
+          <AvailabilityCalendar property={property} />
           <LocationNearby property={property} />
           <GoogleProximities property={property} />
           <StayRules property={property} />
