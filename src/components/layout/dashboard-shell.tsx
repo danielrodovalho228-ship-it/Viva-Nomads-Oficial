@@ -56,6 +56,7 @@ const OWNER_NAV: NavItem[] = [
   { href: "/dashboard/orcamentos", label: "Orçamentos", icon: FileText },
   { href: "/dashboard/fechamento", label: "Fechamento", icon: FileSignature },
   { href: "/dashboard/contratos", label: "Contratos & blocos", icon: Receipt },
+  { href: "/dashboard/ferramentas", label: "Ferramentas", icon: Wrench },
   { href: "/dashboard/reembolsos", label: "Reembolsos", icon: RotateCcw },
   { href: "/dashboard/solicitacoes", label: "Solicitações", icon: Wrench },
   { href: "/dashboard/mensagens", label: "Mensagens", icon: MessageSquare },
@@ -102,6 +103,7 @@ const OWNER_ONLY = [
   "/dashboard/orcamentos",
   "/dashboard/fechamento",
   "/dashboard/contratos",
+  "/dashboard/ferramentas",
   "/dashboard/reembolsos",
   "/dashboard/assinatura",
 ];
