@@ -1,6 +1,7 @@
 import { HeartPulse, GraduationCap, Briefcase, ShoppingCart, Bus, MapPin } from "lucide-react";
 import type { ProximityCategory, Property } from "@/lib/types";
-import { PropertyMap, type MapMarker } from "@/components/property-map";
+import type { MapMarker } from "@/components/property-map";
+import { PropertyMap } from "@/components/property-map-lazy";
 
 const PROXIMITY_META: Record<ProximityCategory, { label: string; icon: React.ComponentType<{ className?: string }> }> = {
   saude: { label: "Saúde", icon: HeartPulse },

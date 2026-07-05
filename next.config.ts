@@ -1,7 +1,15 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Não anuncia o framework no header (higiene) e reduz JS: só os ícones usados
+  // do lucide-react entram no bundle (tree-shaking do pacote).
+  poweredByHeader: false,
+  experimental: {
+    optimizePackageImports: ["lucide-react"],
+  },
   images: {
+    // AVIF/WebP: imagens bem menores que JPEG/PNG onde o navegador suporta.
+    formats: ["image/avif", "image/webp"],
     remotePatterns: [
       // Fotografia interina (carrega em produção; substituir por fotos reais do cliente)
       { protocol: "https", hostname: "images.unsplash.com" },
