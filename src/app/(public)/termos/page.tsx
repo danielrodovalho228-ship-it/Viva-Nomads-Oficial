@@ -25,7 +25,7 @@ export default function TermsPage() {
 
         <Section title="2. Posição da plataforma (conectador)">
           O Viva Nomads <strong>não é locador, fiador, garantidor nem parte do contrato</strong>{" "}
-          de locação. Atua exclusivamente conectando as partes, oferecendo verificação de
+          de locação. Atua exclusivamente conectando as partes, oferecendo verificação
           de identidade, cotação de garantia locatícia (seguradoras parceiras) e geração de
           contrato (ZapSign). A relação locatícia é firmada diretamente entre proprietário e
           inquilino.
