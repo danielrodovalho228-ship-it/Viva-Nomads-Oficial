@@ -4,6 +4,7 @@ import type { Property } from "@/lib/types";
 import { formatBRL } from "@/lib/utils";
 import { calcularTudoIncluido } from "@/lib/precos";
 import { tierFromPhotoCount } from "@/lib/listing";
+import { SELO_NF_UI } from "@/lib/flags";
 import { ReadyToLiveBadge, PropertyTags, InvoiceBadge, InsuranceBadge } from "@/components/ui/badge";
 import { BrandImage } from "@/components/brand-image";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
@@ -107,9 +108,9 @@ export function PropertyCard({
           )}
         </div>
 
-        {(property.issuesInvoice || property.acceptsInsurance) && (
+        {((SELO_NF_UI && property.issuesInvoice) || property.acceptsInsurance) && (
           <div className="flex flex-wrap gap-1.5">
-            {property.issuesInvoice && <InvoiceBadge />}
+            {SELO_NF_UI && property.issuesInvoice && <InvoiceBadge />}
             {property.acceptsInsurance && <InsuranceBadge />}
           </div>
         )}

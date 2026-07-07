@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { Property } from "@/lib/types";
 import { formatBRL } from "@/lib/utils";
 import { calcularTudoIncluido } from "@/lib/precos";
+import { SELO_NF_UI } from "@/lib/flags";
 import { MatchGuaranteeNotice } from "@/components/legal-notice";
 
 /** Formata uma data ISO (YYYY-MM-DD) para DD/MM/AAAA. */
@@ -84,7 +85,7 @@ export function PriceCard({ property, actions }: { property: Property; actions: 
               </span>
             </p>
           )}
-          {property.issuesInvoice && (
+          {SELO_NF_UI && property.issuesInvoice && (
             <p className="inline-flex items-center gap-1 text-xs font-medium text-blue-700">
               <FileText className="h-3.5 w-3.5" /> Emite Nota Fiscal do aluguel
             </p>
