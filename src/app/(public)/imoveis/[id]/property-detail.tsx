@@ -20,6 +20,7 @@ import {
 import type { Property } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { PropertyTags, InvoiceBadge, InsuranceBadge } from "@/components/ui/badge";
+import { SELO_NF_UI } from "@/lib/flags";
 import { PropertyCard } from "@/components/property-card";
 import { PropertyGallery } from "@/components/property-gallery";
 import { VideoWalkthrough } from "@/components/video-walkthrough";
@@ -191,7 +192,7 @@ export function PropertyDetail({ property, similar }: { property: Property; simi
                   Novo na plataforma
                 </span>
               )}
-              {property.issuesInvoice && <InvoiceBadge />}
+              {SELO_NF_UI && property.issuesInvoice && <InvoiceBadge />}
               {property.acceptsInsurance && <InsuranceBadge />}
             </div>
 

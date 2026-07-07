@@ -78,7 +78,7 @@ export default function SubscriptionPage() {
       <Panel className="mb-6">
         <p className="text-sm font-medium text-ink">Visualizar como plano (demonstração)</p>
         <p className="mt-0.5 text-xs text-muted">
-          Recursos de operador (Carteira, Viabilidade) aparecem apenas no plano Gestor.
+          Recursos de operador (viabilidade e consolidação do portfólio) aparecem apenas no plano Gestor.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           {(["free", "essential", "pro", "gestor"] as const).map((p) => (

@@ -6,23 +6,17 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Home,
-  Users,
   MessageSquare,
   CreditCard,
   Settings,
   Heart,
   Search,
-  ClipboardCheck,
   ShieldCheck,
   FileSignature,
   BadgeCheck,
   GitCompare,
   Gift,
   Wrench,
-  Briefcase,
-  Calculator,
-  FileText,
-  RotateCcw,
   Menu,
   LogOut,
   Building2,
@@ -35,6 +29,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { useAuthStore, DEMO_USER, type ViewMode } from "@/lib/store";
 import { useViewMode, MODE_META } from "@/lib/roles";
 import { useDemoMode, DemoToggle, DemoBanner } from "@/lib/demo/demo-mode";
+import { PROGRAMA_INDICACAO } from "@/lib/flags";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -55,22 +50,23 @@ interface NavItem {
  *     layout — nunca 404, página em branco ou rota pública.
  *  O e2e `qa-full.mjs` verifica que nenhum item de menu renderiza fora da casca.
  */
+/**
+ * Menu do PROPRIETÁRIO — EXATAMENTE 9 itens (decisão de produto). O que saiu não
+ * foi apagado: as rotas continuam vivas no código, só sem link no menu.
+ *  - Qualificar imóvel → CTA dentro de Meus imóveis e da Visão geral.
+ *  - Viabilidade, Orçamentos, Solicitações → cards do hub Ferramentas (fonte única).
+ *  - Leads → some do menu (conceito do proprietário é Pedidos de moradia; ver relatório).
+ *  - Carteira, Reembolsos → fora do menu (vocabulário que conflita com a regra de ouro).
+ *  - Indicações → atrás da flag PROGRAMA_INDICACAO até o programa existir.
+ */
 const OWNER_NAV: NavItem[] = [
   { href: "/dashboard", label: "Visão geral", icon: LayoutDashboard },
-  { href: "/qualificar", label: "Qualificar imóvel", icon: ClipboardCheck },
   { href: "/dashboard/imoveis", label: "Meus imóveis", icon: Home },
   { href: "/dashboard/pedidos-cidade", label: "Pedidos de moradia", icon: Megaphone },
-  { href: "/dashboard/carteira", label: "Carteira", icon: Briefcase, minPlan: "gestor" },
-  { href: "/dashboard/viabilidade", label: "Viabilidade", icon: Calculator, minPlan: "gestor" },
-  { href: "/dashboard/leads", label: "Leads", icon: Users },
-  { href: "/dashboard/orcamentos", label: "Orçamentos", icon: FileText },
+  { href: "/dashboard/mensagens", label: "Mensagens", icon: MessageSquare },
   { href: "/dashboard/fechamento", label: "Fechamento", icon: FileSignature },
   { href: "/dashboard/contratos", label: "Contratos & blocos", icon: Receipt },
   { href: "/dashboard/ferramentas", label: "Ferramentas", icon: Wrench },
-  { href: "/dashboard/reembolsos", label: "Reembolsos", icon: RotateCcw },
-  { href: "/dashboard/solicitacoes", label: "Solicitações", icon: Wrench },
-  { href: "/dashboard/mensagens", label: "Mensagens", icon: MessageSquare },
-  { href: "/dashboard/indicacoes", label: "Indicações", icon: Gift },
   { href: "/dashboard/assinatura", label: "Assinatura", icon: CreditCard },
   { href: "/dashboard/conta", label: "Conta", icon: Settings },
 ];
@@ -141,6 +137,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   if (display.role === "admin" && mode === "owner") nav = [...OWNER_NAV, ...ADMIN_NAV];
   // Itens de operador só aparecem no plano Gestor.
   nav = nav.filter((item) => !item.minPlan || plan === item.minPlan);
+  // Indicações só aparece quando o programa existir (flag). Rota fica viva.
+  nav = nav.filter((item) => item.href !== "/dashboard/indicacoes" || PROGRAMA_INDICACAO);
 
   // Guarda de rota por papel: acessar por URL uma tela exclusiva do OUTRO modo
   // redireciona para a Visão geral. Rotas compartilhadas (mensagens, conta,
