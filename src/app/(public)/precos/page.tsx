@@ -34,8 +34,8 @@ interface Service {
  * Caução e garantia digital são alternativas: por lei, só uma por contrato.
  */
 const TENANT_SERVICES: Service[] = [
-  { icon: ShieldCheck, title: "Garantia digital (sem depósito)", benefit: "Entre sem deixar dinheiro preso: uma taxa mensal diluída garante o aluguel, sem depósito de entrada. Contratada com parceiro, sujeita a análise.", price: "Orçamento sob análise", statusLabel: "Via parceiro", statusTone: "partner", tone: "cotacao", cta: "Ver opções de garantia", href: "/dashboard/fechamento", highlight: "Recomendada · sem depósito" },
-  { icon: PiggyBank, title: "Caução (depósito devolvível)", benefit: "Depósito devolvível em conta vinculada (proprietário + inquilino), nos termos do contrato e da Lei 8.245/91 — devolvido ao fim da estadia. Vai para conta vinculada, nunca para a plataforma.", price: "Sem mensalidade", statusLabel: "Disponível", statusTone: "ok", tone: "avulso", cta: "Ver opções de garantia", href: "/dashboard/fechamento" },
+  { icon: ShieldCheck, title: "Garantia digital (sem depósito)", benefit: "Entre sem deixar dinheiro preso: uma taxa mensal diluída garante o aluguel, sem depósito de entrada. Contratada com parceiro, sujeita a análise.", price: "Orçamento sob análise", statusLabel: "Via parceiro", statusTone: "partner", tone: "cotacao", cta: "Ver opções de garantia", href: "/como-funciona#garantias", highlight: "Recomendada · sem depósito" },
+  { icon: PiggyBank, title: "Caução (depósito devolvível)", benefit: "Depósito devolvível em conta vinculada (proprietário + inquilino), nos termos do contrato e da Lei 8.245/91 — devolvido ao fim da estadia. Vai para conta vinculada, nunca para a plataforma.", price: "Sem mensalidade", statusLabel: "Disponível", statusTone: "ok", tone: "avulso", cta: "Ver opções de garantia", href: "/como-funciona#garantias" },
 ];
 
 const OWNER_SERVICES: Service[] = [

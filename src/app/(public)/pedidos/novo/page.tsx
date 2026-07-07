@@ -75,37 +75,49 @@ function NovoPedidoForm() {
   }
 
   return (
-    <div className="container-page py-10">
-      <div className="mx-auto max-w-2xl">
-        {/* Cabeçalho profissional: proposta de valor + como funciona em 3 passos. */}
-        <div className="mb-6">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-sage-100 px-3 py-1 text-xs font-semibold text-forest">
-            <Megaphone className="h-3.5 w-3.5" /> Pedido de moradia
-          </span>
-          <h1 className="mt-3 font-title text-3xl font-bold text-ink">
-            Deixe os imóveis virem até você
-          </h1>
-          <p className="mt-2 text-ink/80">
-            Em vez de procurar um a um, diga o que você precisa. Os proprietários da cidade veem seu
-            pedido e respondem com os imóveis que combinam — de graça, pela plataforma.
-          </p>
-          <div className="mt-4 grid gap-2 sm:grid-cols-3">
-            {[
-              { icon: MessageSquare, t: "Você publica", d: "Cidade, datas, orçamento e perfil." },
-              { icon: CircleCheck, t: "Proprietários respondem", d: "Só imóveis que atendem." },
-              { icon: Clock, t: "Sem custo e sem spam", d: "Contato só pela plataforma." },
-            ].map((s) => (
-              <div key={s.t} className="flex items-start gap-2 rounded-xl border border-sage-200 bg-white p-3">
-                <s.icon className="mt-0.5 h-4 w-4 shrink-0 text-forest" />
-                <div>
-                  <p className="text-sm font-semibold text-ink">{s.t}</p>
-                  <p className="text-xs text-muted">{s.d}</p>
+    <div className="pb-16">
+      {/* HERO — banner de topo com proposta de valor e "como funciona" em 3 passos. */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-forest via-forest to-[#123a2e] text-white">
+        <Megaphone
+          aria-hidden
+          className="pointer-events-none absolute -right-8 -top-8 h-48 w-48 rotate-12 text-white/[0.07]"
+        />
+        <div className="container-page py-12 md:py-16">
+          <div className="mx-auto max-w-3xl">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white ring-1 ring-white/20">
+              <Megaphone className="h-3.5 w-3.5" /> Pedido de moradia
+            </span>
+            <h1 className="mt-4 font-title text-3xl font-bold leading-tight md:text-[2.6rem]">
+              Deixe os imóveis virem até você
+            </h1>
+            <p className="mt-3 max-w-2xl text-white/85 md:text-lg">
+              Em vez de procurar um a um, diga o que você precisa. Os proprietários da cidade veem
+              seu pedido e respondem com os imóveis que combinam — de graça, pela plataforma.
+            </p>
+            <div className="mt-7 grid gap-2.5 sm:grid-cols-3">
+              {[
+                { icon: MessageSquare, t: "Você publica", d: "Cidade, datas, orçamento e perfil." },
+                { icon: CircleCheck, t: "Proprietários respondem", d: "Só imóveis que atendem." },
+                { icon: Clock, t: "Sem custo e sem spam", d: "Contato só pela plataforma." },
+              ].map((s) => (
+                <div
+                  key={s.t}
+                  className="flex items-start gap-2 rounded-xl bg-white/10 p-3 ring-1 ring-white/15 backdrop-blur-sm"
+                >
+                  <s.icon className="mt-0.5 h-4 w-4 shrink-0 text-champagne" />
+                  <div>
+                    <p className="text-sm font-semibold text-white">{s.t}</p>
+                    <p className="text-xs text-white/70">{s.d}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
+      </section>
 
+      <div className="container-page">
+        <div className="relative z-10 mx-auto -mt-8 max-w-2xl">
         {!user && (
           <p className="mb-4 flex items-start gap-2 rounded-xl border border-champagne/50 bg-champagne/10 px-3.5 py-2.5 text-sm text-ink">
             <Info className="mt-0.5 h-4 w-4 shrink-0 text-forest" />
@@ -251,6 +263,7 @@ function NovoPedidoForm() {
             </Button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   );
