@@ -1,4 +1,30 @@
 import { cn } from "@/lib/utils";
+import { HardHat } from "lucide-react";
+
+/**
+ * Placeholder padrão "Em construção" — SEMPRE dentro da casca do dashboard
+ * (regra 0.5). Toda rota nova do menu que ainda não tem a tela pronta renderiza
+ * este componente em vez de 404, página em branco ou rota pública. Assim o
+ * usuário nunca "cai fora" do painel.
+ */
+export function EmConstrucao({
+  title,
+  text = "Estamos finalizando esta área. Em breve ela aparece aqui, dentro do seu painel.",
+}: {
+  title: string;
+  text?: string;
+}) {
+  return (
+    <>
+      <PageTitle title={title} subtitle="Em construção" />
+      <EmptyState
+        icon={HardHat}
+        title="Em construção"
+        text={text}
+      />
+    </>
+  );
+}
 
 export function PageTitle({
   title,

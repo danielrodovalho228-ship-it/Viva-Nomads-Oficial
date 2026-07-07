@@ -48,6 +48,11 @@ export default function HowItWorksPage() {
       </section>
 
       <Steps title="Para quem busca um imóvel" steps={TENANT_STEPS} eager tone="tenant" badge="Para inquilinos" />
+
+      {/* Garantias da locação (inquilino) — âncora #garantias. Destino correto do
+          CTA "Ver opções de garantia" (antes levava à área do proprietário). */}
+      <GarantiasInquilino />
+
       {/* Faixa de fundo separa visualmente os dois fluxos (reforço no mobile) */}
       <div className="border-y border-sage-200 bg-surface-2">
         <Steps title="Para proprietários" steps={OWNER_STEPS} tone="owner" badge="Para proprietários" />
@@ -65,6 +70,61 @@ export default function HowItWorksPage() {
         </div>
       </section>
     </>
+  );
+}
+
+/**
+ * Explicação das garantias para o INQUILINO (linguagem de quem vai alugar).
+ * Fonte única e neutra: enquanto a parceria de seguro-fiança não estiver
+ * assinada, o status é honesto ("via parceiro — em estruturação"), no mesmo
+ * padrão do hub de Ferramentas. Âncora #garantias.
+ */
+function GarantiasInquilino() {
+  return (
+    <section id="garantias" className="container-page section-y scroll-mt-24">
+      <span className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-champagne/15 px-3 py-1 text-xs font-semibold text-champagne-600">
+        <span className="h-1.5 w-1.5 rounded-full bg-current" />
+        Para inquilinos
+      </span>
+      <h2 className="font-title text-3xl font-bold text-ink">Garantias da locação</h2>
+      <p className="mt-3 max-w-2xl text-muted">
+        Por lei, cada contrato usa <strong>uma</strong> garantia. Você escolhe a que
+        preferir, com a mesma proteção para as duas partes — e nada fica com a plataforma.
+      </p>
+      <div className="mt-8 grid gap-6 md:grid-cols-2">
+        <div className="rounded-2xl border border-sage-200 bg-white p-6">
+          <div className="grid h-11 w-11 place-items-center rounded-xl bg-forest text-white">
+            <ShieldCheck className="h-5 w-5" />
+          </div>
+          <h3 className="mt-4 font-title text-lg font-bold text-ink">Caução (depósito devolvível)</h3>
+          <p className="mt-2 text-sm text-muted">
+            Um depósito que fica em conta vinculada e <strong>volta para você</strong> ao fim da
+            estadia, nos termos do contrato e da Lei 8.245/91. Sem mensalidade.
+          </p>
+          <span className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-sage-100 px-2.5 py-1 text-xs font-semibold text-forest">
+            Disponível
+          </span>
+        </div>
+        <div className="rounded-2xl border border-sage-200 bg-white p-6">
+          <div className="grid h-11 w-11 place-items-center rounded-xl bg-forest text-white">
+            <FileSignature className="h-5 w-5" />
+          </div>
+          <h3 className="mt-4 font-title text-lg font-bold text-ink">Seguro-fiança (sem depósito)</h3>
+          <p className="mt-2 text-sm text-muted">
+            Entre <strong>sem deixar dinheiro preso</strong>: uma mensalidade diluída cobre o
+            aluguel, contratada com parceiro e sujeita a análise. Ideal para quem prefere não
+            imobilizar caixa.
+          </p>
+          <span className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">
+            Via parceiro — em estruturação
+          </span>
+        </div>
+      </div>
+      <p className="mt-4 text-xs text-muted">
+        A Viva Nomads conecta, verifica e documenta — não é fiadora, seguradora nem retém
+        valores. A garantia é combinada no fechamento, conforme o que o imóvel aceita.
+      </p>
+    </section>
   );
 }
 

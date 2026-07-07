@@ -45,11 +45,21 @@ interface NavItem {
   minPlan?: "gestor";
 }
 
+/**
+ * REGRA PERMANENTE (0.5) — integridade da casca do dashboard:
+ *  1. Todo `href` de item de menu aponta para uma rota INTERNA do grupo de
+ *     layout (dashboard): `/dashboard/*`, `/qualificar` ou `/admin*`. Assim a
+ *     tela sempre abre DENTRO da casca (menu lateral + topo), nunca "solta".
+ *  2. Rota nova do painel nasce em `src/app/(dashboard)/…` — jamais em (public).
+ *  3. Rota de menu cuja tela ainda não existe usa <EmConstrucao/> dentro do
+ *     layout — nunca 404, página em branco ou rota pública.
+ *  O e2e `qa-full.mjs` verifica que nenhum item de menu renderiza fora da casca.
+ */
 const OWNER_NAV: NavItem[] = [
   { href: "/dashboard", label: "Visão geral", icon: LayoutDashboard },
   { href: "/qualificar", label: "Qualificar imóvel", icon: ClipboardCheck },
   { href: "/dashboard/imoveis", label: "Meus imóveis", icon: Home },
-  { href: "/pedidos", label: "Pedidos de moradia", icon: Megaphone },
+  { href: "/dashboard/pedidos-cidade", label: "Pedidos de moradia", icon: Megaphone },
   { href: "/dashboard/carteira", label: "Carteira", icon: Briefcase, minPlan: "gestor" },
   { href: "/dashboard/viabilidade", label: "Viabilidade", icon: Calculator, minPlan: "gestor" },
   { href: "/dashboard/leads", label: "Leads", icon: Users },
@@ -107,6 +117,7 @@ const OWNER_ONLY = [
   "/dashboard/ferramentas",
   "/dashboard/reembolsos",
   "/dashboard/assinatura",
+  "/dashboard/pedidos-cidade",
 ];
 const TENANT_ONLY = [
   "/dashboard/favoritos",

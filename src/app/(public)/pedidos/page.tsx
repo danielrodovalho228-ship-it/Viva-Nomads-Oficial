@@ -1,22 +1,11 @@
-import type { Metadata } from "next";
-import { getPedidosParaProprietario, getMinhasRespostas } from "@/lib/data/pedidos-actions";
-import { PedidosProprietarioClient } from "./pedidos-prop-client";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Pedidos de moradia — responda com seus imóveis",
-  robots: { index: false, follow: false },
-};
-
-export default async function PedidosProprietarioPage() {
-  const [{ pedidos, myProperties }, minhasRespostas] = await Promise.all([
-    getPedidosParaProprietario(),
-    getMinhasRespostas(),
-  ]);
-  return (
-    <PedidosProprietarioClient
-      pedidos={pedidos}
-      myProperties={myProperties}
-      minhasRespostas={minhasRespostas}
-    />
-  );
+/**
+ * A visão do PROPRIETÁRIO dos Pedidos de Moradia agora mora DENTRO da casca do
+ * dashboard, em /dashboard/pedidos-cidade (bug 0.4: aqui, no grupo (public),
+ * ela abria "solta", sem menu nem topo). Mantemos a rota antiga como
+ * redirecionamento para não quebrar links salvos.
+ */
+export default function PedidosLegacyRedirect() {
+  redirect("/dashboard/pedidos-cidade");
 }
