@@ -20,8 +20,10 @@ import { DEMO_CONTRACTS } from "@/lib/demo/seed";
 import {
   planejarBlocos,
   encadearDatas,
+  comissaoContrato,
   DIAS_POR_MES,
 } from "@/lib/contrato-blocos";
+import { COMISSAO_POR_PLANO } from "@/config/planos";
 import {
   marcarPagamentoRecebido,
   type ContratoView,
@@ -60,6 +62,9 @@ function statusMeta(status: string) {
  * blocos com as regras reais (blocos de 2 meses, caução 50%) e um pagamento já
  * confirmado no 1º bloco — para o piloto/investidor ver o fluxo declaratório.
  */
+/** Trilha de comissão dos contratos de DEMONSTRAÇÃO: Profissional (8%). */
+const DEMO_COMISSAO_PCT = COMISSAO_POR_PLANO.pro;
+
 function buildDemoContratos(hojeISO: string): ContratoView[] {
   return DEMO_CONTRACTS.map((c, ci) => {
     // Prazo total plausível (~6 meses) para render um belo encadeamento.
@@ -107,7 +112,10 @@ function buildDemoContratos(hojeISO: string): ContratoView[] {
       aluguelMensal: c.valorMes,
       prazoTotalDias: prazoMeses * DIAS_POR_MES,
       tamanhoBlocoMeses: 2,
-      comissaoValor: c.valorMes,
+      // Comissão = % × 1º aluguel, UMA vez (regra correta). Exemplo demo usa a
+      // trilha do Profissional (8%) — NUNCA "1 mês de aluguel cheio".
+      comissaoValor: comissaoContrato(c.valorMes, DEMO_COMISSAO_PCT),
+      comissaoPercent: DEMO_COMISSAO_PCT,
       qtdOcupantes: 1 + (ci % 3),
       status: "ativo",
       criadoEm: c.inicio,
@@ -221,11 +229,14 @@ function ContratoCard({
         </span>
       </div>
 
-      {/* Comissão única (contrato-mãe) — reforço do modelo. */}
+      {/* Comissão única (contrato-mãe) — % do 1º aluguel, NUNCA "1 mês de aluguel". */}
       <p className="mt-3 rounded-lg bg-champagne/10 px-3 py-2 text-xs text-forest">
-        Comissão do contrato-mãe: <strong>{formatBRL(contrato.comissaoValor)}</strong> — cobrada{" "}
-        <strong>uma única vez</strong>. Renovar ou estender blocos não gera nova comissão; os
-        aluguéis vão direto a você.
+        Comissão do contrato-mãe: <strong>{formatBRL(contrato.comissaoValor)}</strong>
+        {contrato.comissaoPercent > 0 && (
+          <> ({Math.round(contrato.comissaoPercent * 100)}% do 1º aluguel)</>
+        )}{" "}
+        — cobrada <strong>uma única vez</strong>. Renovar ou estender blocos não gera nova
+        comissão; os aluguéis vão direto a você.
       </p>
 
       {/* Timeline dos blocos */}

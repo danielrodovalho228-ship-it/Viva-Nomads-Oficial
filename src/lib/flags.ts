@@ -12,3 +12,11 @@ export const PROGRAMA_INDICACAO = process.env.NEXT_PUBLIC_PROGRAMA_INDICACAO ===
  * definição correta (recibo / NF só para PJ) sai depois com o jurídico.
  */
 export const SELO_NF_UI = process.env.NEXT_PUBLIC_SELO_NF_UI === "on";
+
+/**
+ * Piloto "Fundador": banner em /precos com assinatura gratuita por 12 meses aos
+ * 20 primeiros proprietários (recursos do Profissional), comissão de fechamento
+ * normal (8%) e 20% de desconto vitalício quando a cobrança começar. Nenhuma
+ * cobrança de assinatura é ativada no piloto.
+ */
+export const PLANO_FUNDADOR = process.env.NEXT_PUBLIC_PLANO_FUNDADOR === "on";
