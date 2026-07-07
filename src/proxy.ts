@@ -33,10 +33,14 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
   const isAdminRoute = pathname.startsWith("/admin");
-  // O módulo Pedido de Moradia exige sessão em TODAS as rotas (criar pedido,
-  // listar, responder). O guard de rota é a 1ª porta; a RLS (inquilino_id =
-  // auth.uid()) é a trava real no banco.
-  const isPedidosRoute = pathname === "/pedidos" || pathname.startsWith("/pedidos/");
+  // O módulo Pedido de Moradia exige sessão para LISTAR/responder (o mural expõe
+  // pedidos de inquilinos). EXCEÇÃO: /pedidos/novo é público — o inquilino vê o
+  // formulário sem logar e só precisa de sessão para PUBLICAR (o server action
+  // exige auth.uid() e a RLS é a trava real). Assim o CTA "Publicar pedido" do
+  // topo não bate numa parede de login antes de a pessoa ver do que se trata.
+  const isPedidosRoute =
+    pathname !== "/pedidos/novo" &&
+    (pathname === "/pedidos" || pathname.startsWith("/pedidos/"));
   const isProtected =
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/qualificar") ||

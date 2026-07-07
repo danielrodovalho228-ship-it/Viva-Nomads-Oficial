@@ -3,10 +3,11 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Megaphone, ShieldCheck, Info, Loader2, ChevronDown, Check } from "lucide-react";
+import { Megaphone, ShieldCheck, Info, Loader2, ChevronDown, Check, CircleCheck, Clock, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MOTIVOS, contemContato, CONTATO_AVISO, calcExpiraEm } from "@/lib/pedidos/pedidos";
 import { criarPedido } from "@/lib/data/pedidos-actions";
+import { useAuthStore } from "@/lib/store";
 
 /** /pedidos/novo — o inquilino publica o que precisa (housing request reverso). */
 export default function NovoPedidoPage() {
@@ -19,6 +20,7 @@ export default function NovoPedidoPage() {
 
 function NovoPedidoForm() {
   const router = useRouter();
+  const user = useAuthStore((s) => s.user);
   // Pré-preenche com os parâmetros vindos da busca (Fase 4 — zero resultado →
   // pedido de moradia). URL como fonte da verdade; sem effect (evita re-render).
   const sp = useSearchParams();
@@ -48,6 +50,11 @@ function NovoPedidoForm() {
       setErro(CONTATO_AVISO);
       return;
     }
+    // Deslogado: leva ao login guardando o destino (volta para cá após entrar).
+    if (!user) {
+      router.push("/auth?redirect=/pedidos/novo");
+      return;
+    }
     setEnviando(true);
     const res = await criarPedido({
       cidade,
@@ -70,17 +77,42 @@ function NovoPedidoForm() {
   return (
     <div className="container-page py-10">
       <div className="mx-auto max-w-2xl">
-        <div className="mb-6 flex items-center gap-3">
-          <span className="grid h-11 w-11 place-items-center rounded-2xl bg-sage-100 text-forest">
-            <Megaphone className="h-5 w-5" />
+        {/* Cabeçalho profissional: proposta de valor + como funciona em 3 passos. */}
+        <div className="mb-6">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-sage-100 px-3 py-1 text-xs font-semibold text-forest">
+            <Megaphone className="h-3.5 w-3.5" /> Pedido de moradia
           </span>
-          <div>
-            <h1 className="font-title text-2xl font-bold text-ink">Publicar pedido de moradia</h1>
-            <p className="text-sm text-muted">
-              Diga o que você precisa — os proprietários da cidade respondem com os imóveis deles.
-            </p>
+          <h1 className="mt-3 font-title text-3xl font-bold text-ink">
+            Deixe os imóveis virem até você
+          </h1>
+          <p className="mt-2 text-ink/80">
+            Em vez de procurar um a um, diga o que você precisa. Os proprietários da cidade veem seu
+            pedido e respondem com os imóveis que combinam — de graça, pela plataforma.
+          </p>
+          <div className="mt-4 grid gap-2 sm:grid-cols-3">
+            {[
+              { icon: MessageSquare, t: "Você publica", d: "Cidade, datas, orçamento e perfil." },
+              { icon: CircleCheck, t: "Proprietários respondem", d: "Só imóveis que atendem." },
+              { icon: Clock, t: "Sem custo e sem spam", d: "Contato só pela plataforma." },
+            ].map((s) => (
+              <div key={s.t} className="flex items-start gap-2 rounded-xl border border-sage-200 bg-white p-3">
+                <s.icon className="mt-0.5 h-4 w-4 shrink-0 text-forest" />
+                <div>
+                  <p className="text-sm font-semibold text-ink">{s.t}</p>
+                  <p className="text-xs text-muted">{s.d}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
+
+        {!user && (
+          <p className="mb-4 flex items-start gap-2 rounded-xl border border-champagne/50 bg-champagne/10 px-3.5 py-2.5 text-sm text-ink">
+            <Info className="mt-0.5 h-4 w-4 shrink-0 text-forest" />
+            Preencha à vontade — ao publicar, pedimos um login rápido (ou cadastro) para os
+            proprietários poderem responder você.
+          </p>
+        )}
 
         <form onSubmit={submit} className="space-y-5 rounded-2xl border border-line bg-white p-6">
           <div className="grid gap-4 sm:grid-cols-3">
@@ -203,9 +235,11 @@ function NovoPedidoForm() {
           )}
 
           <div className="flex items-center justify-end gap-3">
-            <Link href="/dashboard/pedidos" className="text-sm text-muted hover:text-ink">
-              Ver meus pedidos
-            </Link>
+            {user && (
+              <Link href="/dashboard/pedidos" className="text-sm text-muted hover:text-ink">
+                Ver meus pedidos
+              </Link>
+            )}
             <Button type="submit" variant="gold" disabled={enviando || contatoNoTexto}>
               {enviando ? (
                 <>

@@ -98,6 +98,7 @@ export interface Property {
   internetTier?: InternetTier; // qualidade da internet por categoria de uso (rodada 20)
   nearbyWorkspaces: Workspace[];
   ownerName: string;
+  ownerId?: string; // dono do imóvel (para saber se o visitante é o próprio dono)
   createdAt?: string; // data de cadastro (ISO) — ordenação "Adicionados recentemente"
   // ── Enriquecimento da página (todos opcionais; a seção some quando ausente) ──
   parkingSpots?: number; // vagas

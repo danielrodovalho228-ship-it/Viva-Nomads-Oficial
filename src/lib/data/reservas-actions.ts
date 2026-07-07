@@ -28,6 +28,12 @@ export async function solicitarReserva(
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Entre para solicitar a reserva." };
 
+  // Anúncios de demonstração (ube-001 etc.) não têm linha no banco — o id não é
+  // UUID. Evita o confuso "Imóvel não encontrado" com uma mensagem clara.
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!UUID_RE.test(propertyId))
+    return { ok: false, error: "Este é um anúncio de demonstração — a reserva fica disponível nos imóveis reais." };
+
   const { data: imovel } = await supabase
     .from("properties")
     .select("owner_id")
@@ -35,7 +41,8 @@ export async function solicitarReserva(
     .maybeSingle();
   const ownerId = imovel?.owner_id as string | undefined;
   if (!ownerId) return { ok: false, error: "Imóvel não encontrado." };
-  if (ownerId === user.id) return { ok: false, error: "Este imóvel é seu." };
+  if (ownerId === user.id)
+    return { ok: false, error: "Este imóvel é seu — você não pode reservá-lo. Gerencie-o em Meus imóveis." };
 
   const conversationId = [user.id, ownerId].sort().join("_") + `_${propertyId}`;
   const body = guardContactInfo(

@@ -207,6 +207,7 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
       date: r.created_at,
     })),
     ownerName: ownerRow?.full_name ?? base.ownerName,
+    ownerId: ownerId ?? base.ownerId,
     owner: ownerRow
       ? {
           name: ownerRow.full_name ?? "Proprietário",
