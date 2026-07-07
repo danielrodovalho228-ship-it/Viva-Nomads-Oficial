@@ -51,7 +51,8 @@ export interface ContratoView {
   aluguelMensal: number;
   prazoTotalDias: number;
   tamanhoBlocoMeses: number;
-  comissaoValor: number;
+  comissaoValor: number; // % × 1º aluguel, UMA vez (snapshot do plano no fechamento)
+  comissaoPercent: number; // 0..1 — taxa aplicada (para exibir "X% do 1º aluguel")
   qtdOcupantes: number;
   status: string;
   criadoEm: string;
@@ -180,6 +181,7 @@ export async function getMeusContratos(): Promise<ContratoView[]> {
       prazoTotalDias: Number(c.prazo_total_dias),
       tamanhoBlocoMeses: Number(c.tamanho_bloco_meses ?? 2),
       comissaoValor: Number(c.comissao_valor ?? 0),
+      comissaoPercent: Number(c.comissao_percent ?? 0),
       qtdOcupantes: Number(c.qtd_ocupantes ?? 1),
       status: String(c.status ?? "ativo"),
       criadoEm: String(c.created_at),

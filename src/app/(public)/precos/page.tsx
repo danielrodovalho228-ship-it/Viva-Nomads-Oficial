@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Check, Percent, Camera, FileSignature, ShieldCheck, UserCheck, ClipboardList, Receipt, Banknote, PiggyBank } from "lucide-react";
 import { PLANS } from "@/lib/constants";
+import { PLANO_FUNDADOR } from "@/lib/flags";
 import { CommissionCalculator } from "./commission-calculator";
 import { ButtonLink } from "@/components/ui/button";
 import { formatBRL, cn } from "@/lib/utils";
@@ -127,6 +128,22 @@ function ServiceCard({ s }: { s: Service }) {
 export default function PricingPage() {
   return (
     <>
+      {PLANO_FUNDADOR && (
+        <div className="border-b border-champagne/40 bg-champagne/15">
+          <div className="container-page flex flex-wrap items-center justify-center gap-x-2 gap-y-1 py-3 text-center text-sm text-ink">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-forest px-2.5 py-0.5 text-xs font-bold text-white">
+              Piloto Fundador
+            </span>
+            <span>
+              Assinatura <strong>gratuita por 12 meses</strong> para os 20 primeiros proprietários,
+              com todos os recursos do plano <strong>Profissional</strong>. Comissão de fechamento
+              normal (8%). Fundadores mantêm <strong>20% de desconto vitalício</strong> quando a
+              cobrança começar.
+            </span>
+          </div>
+        </div>
+      )}
+
       <section className="bg-forest section-y text-center text-white">
         <div className="container-page">
           <h1 className="font-title text-4xl font-bold md:text-5xl">Anuncie de graça</h1>
