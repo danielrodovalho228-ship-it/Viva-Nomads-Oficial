@@ -36,6 +36,7 @@ export const PERSONAS: Persona[] = [
 /** Navegação pública. */
 export const PUBLIC_NAV = [
   { href: "/buscar", label: "Buscar imóveis" },
+  { href: "/pedidos/novo", label: "Publicar pedido" },
   { href: "/como-funciona", label: "Como funciona" },
   { href: "/para-proprietarios", label: "Para proprietários" },
   { href: "/precos", label: "Planos" },

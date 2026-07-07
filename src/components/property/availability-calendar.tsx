@@ -64,6 +64,11 @@ export function AvailabilityCalendar({ property }: { property: Property }) {
   const until = property.availableUntil?.slice(0, 10) || null;
   const bloqueados = blockDays;
 
+  // Anúncio de demonstração (id não-UUID, ex.: ube-001): não é reservável.
+  const isDemo = !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(property.id);
+  // O próprio dono não pode reservar o imóvel dele.
+  const isOwner = !!user && !!property.ownerId && property.ownerId === user.id;
+
   const anchorStr = from || today;
   const meses = useMemo(() => (anchorStr ? mesesCalendario(anchorStr, 3) : []), [anchorStr]);
 
@@ -260,6 +265,19 @@ export function AvailabilityCalendar({ property }: { property: Property }) {
                 Mensagens
               </Link>
               .
+            </p>
+          ) : isDemo ? (
+            <p className="mt-3 flex items-center gap-1.5 rounded-lg bg-sage-100 px-3 py-2 text-sm text-forest">
+              <CircleAlert className="h-4 w-4 shrink-0" /> Anúncio de demonstração — a solicitação de
+              reserva fica disponível nos imóveis reais da plataforma.
+            </p>
+          ) : isOwner ? (
+            <p className="mt-3 flex flex-wrap items-center gap-1.5 rounded-lg bg-sage-100 px-3 py-2 text-sm text-forest">
+              <CircleAlert className="h-4 w-4 shrink-0" /> Este é o seu imóvel — você não pode
+              reservá-lo.
+              <Link href="/dashboard/imoveis" className="font-medium underline">
+                Gerenciar em Meus imóveis
+              </Link>
             </p>
           ) : (
             <div className="mt-3">
