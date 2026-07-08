@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import {
-  Calculator,
   TrendingUp,
   Percent,
   FileText,
@@ -38,13 +37,6 @@ const GRUPOS: Grupo[] = [
     titulo: "Análise & cálculo",
     descricao: "Entenda o retorno antes de anunciar.",
     itens: [
-      {
-        href: "/dashboard/viabilidade",
-        title: "Viabilidade de mobiliar",
-        desc: "Vale a pena mobiliar? Compare o aluguel vazio × mobiliado e o payback.",
-        icon: Calculator,
-        tag: "Plano Gestor",
-      },
       {
         href: "/dashboard/simulador",
         title: "Simulador de rentabilidade",
