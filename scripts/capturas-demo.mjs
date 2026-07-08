@@ -202,10 +202,13 @@ const TELAS = [
     fullPage: true,
   },
   {
-    arquivo: "10-simulacao.png",
-    rota: "/simulacao",
-    chave: "text=/Comiss[ãa]o de garantias e seguros/i",
-    fullPage: false,
+    // Simulador do PROPRIETÁRIO (não a página interna dos sócios /simulacao,
+    // agora restrita a admin). Mostra receita líquida + comparador de planos.
+    arquivo: "10-simulador.png",
+    rota: "/dashboard/simulador",
+    painel: true,
+    chave: "text=/Receita l[íi]quida estimada/i",
+    fullPage: true,
   },
 ];
 
