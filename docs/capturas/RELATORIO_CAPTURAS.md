@@ -1,8 +1,8 @@
 # Relatório de capturas — Viva Nomads
 
-- **Data/hora:** 2026-07-05T02:21:10.665Z
-- **BASE_URL:** http://localhost:3299
-- **Commit:** 9197a6a
+- **Data/hora:** 2026-07-08T13:01:12.570Z
+- **BASE_URL:** http://localhost:3222
+- **Commit:** c1cc297
 - **Modo:** demonstração injetada (sem login real)
 
 | Tela | Status | Motivo | Arquivo |
@@ -16,5 +16,5 @@
 | 07-ferramentas | CAPTURADA | — | 07-ferramentas.png |
 | 08-fechamento | CAPTURADA | — | 08-fechamento.png |
 | 09-contratos | CAPTURADA | — | 09-contratos.png |
-| 10-simulacao | CAPTURADA | — | 10-simulacao.png |
+| 10-simulador | CAPTURADA | — | 10-simulador.png |
 
