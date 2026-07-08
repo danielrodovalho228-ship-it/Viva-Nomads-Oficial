@@ -201,6 +201,29 @@ export default function SubscriptionPage() {
         </Panel>
       )}
 
+      {/* D1 — cobranças da assinatura moram AQUI (não em "Carteira"/"Reembolsos"
+          do menu). Assinatura é o único lugar de dinheiro da plataforma, e mesmo
+          assim só a assinatura: o aluguel nunca passa pela Viva Nomads. */}
+      <Panel className="mt-6" title="Pagamentos da assinatura">
+        <p className="text-sm text-muted">
+          Histórico de cobranças da sua assinatura (PIX, boleto ou cartão). O aluguel do inquilino
+          nunca passa pela plataforma.
+        </p>
+        <p className="mt-3 rounded-lg bg-surface-2 px-3 py-2 text-sm text-muted">
+          Nenhuma cobrança até agora — seu plano atual é <strong className="text-ink">Gratuito</strong>.
+        </p>
+      </Panel>
+
+      <Panel className="mt-6" title="Reembolsos da assinatura">
+        <p className="text-sm text-muted">
+          Eventuais estornos de cobranças da assinatura aparecem aqui. (Não confundir com a caução
+          da locação, que é combinada entre proprietário e inquilino, fora da plataforma.)
+        </p>
+        <p className="mt-3 rounded-lg bg-surface-2 px-3 py-2 text-sm text-muted">
+          Nenhum reembolso de assinatura.
+        </p>
+      </Panel>
+
       <p className="mt-6 text-sm text-muted">
         Cada plano define o limite de anúncios ativos. O pagamento do aluguel é feito direto ao
         proprietário — a assinatura cobre apenas o uso da plataforma.

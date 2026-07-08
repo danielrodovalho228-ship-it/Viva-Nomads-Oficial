@@ -33,6 +33,13 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
   const isAdminRoute = pathname.startsWith("/admin");
+  // Páginas INTERNAS (deck dos sócios: receita da PLATAFORMA, não do proprietário).
+  // Exigem admin + noindex — um proprietário jamais deve vê-las (vazamento crítico).
+  // Ligado por padrão; desliga com PAGES_INTERNAS_PRIVADAS=off.
+  const INTERNAL_PAGES = ["/simulacao", "/roi", "/modelodenegocio", "/socios", "/decisao"];
+  const isInternalPage =
+    process.env.PAGES_INTERNAS_PRIVADAS !== "off" &&
+    INTERNAL_PAGES.some((p) => pathname === p || pathname.startsWith(p + "/"));
   // O módulo Pedido de Moradia exige sessão para LISTAR/responder (o mural expõe
   // pedidos de inquilinos). EXCEÇÃO: /pedidos/novo é público — o inquilino vê o
   // formulário sem logar e só precisa de sessão para PUBLICAR (o server action
@@ -45,7 +52,8 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/qualificar") ||
     isPedidosRoute ||
-    isAdminRoute;
+    isAdminRoute ||
+    isInternalPage;
 
   // Sem sessão em rota protegida → login (guardando o destino pretendido).
   if (isProtected && !user) {
@@ -55,10 +63,10 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
-  // Área de admin exige papel admin (validado no servidor, não só no cliente).
-  // O papel vem da tabela `profiles` (fonte confiável), não do user_metadata
-  // editável. Não-admin é mandado para a Visão geral.
-  if (isAdminRoute && user) {
+  // Admin e páginas internas exigem papel admin (validado no servidor, não só no
+  // cliente). O papel vem da tabela `profiles` (fonte confiável), não do
+  // user_metadata editável. Não-admin é mandado para a Visão geral.
+  if ((isAdminRoute || isInternalPage) && user) {
     const { data: profile } = await supabase
       .from("profiles")
       .select("role")
@@ -70,6 +78,9 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(redirectUrl);
     }
   }
+
+  // Páginas internas nunca indexadas (reforço ao gate).
+  if (isInternalPage) response.headers.set("X-Robots-Tag", "noindex, nofollow");
 
   return response;
 }
@@ -86,5 +97,13 @@ export const config = {
     "/pedidos/:path*",
     "/admin",
     "/admin/:path*",
+    // Páginas internas (deck dos sócios) — gate admin + noindex.
+    "/simulacao",
+    "/simulacao/:path*",
+    "/roi",
+    "/roi/:path*",
+    "/modelodenegocio",
+    "/socios",
+    "/decisao",
   ],
 };
