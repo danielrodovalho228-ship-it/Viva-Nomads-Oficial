@@ -116,6 +116,7 @@ const OWNER_ONLY = [
   "/dashboard/pedidos-cidade",
   "/dashboard/simulador",
   "/dashboard/roi-imovel",
+  "/dashboard/garantias",
 ];
 const TENANT_ONLY = [
   "/dashboard/favoritos",

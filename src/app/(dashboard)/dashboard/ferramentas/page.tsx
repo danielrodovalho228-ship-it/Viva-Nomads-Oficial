@@ -168,10 +168,9 @@ export default function FerramentasPage() {
               </span>
             </div>
 
-            {/* Card informativo de garantias (leva ao fechamento, onde a garantia
-                é escolhida). Tem CTA porque a funcionalidade existe. */}
+            {/* Garantia locatícia → página própria (explica a caução + status). */}
             <Link
-              href="/dashboard/fechamento"
+              href="/dashboard/garantias"
               className="group flex flex-col rounded-2xl border border-sage-200 bg-white p-5 transition-colors hover:border-sage hover:bg-surface-2"
             >
               <div className="flex items-center justify-between">
@@ -181,16 +180,17 @@ export default function FerramentasPage() {
               </div>
               <h3 className="mt-3 font-title font-bold text-ink">Garantia locatícia</h3>
               <p className="mt-1 flex-1 text-sm text-muted">
-                Caução (padrão) ou garantidor digital (em breve). Uma garantia por contrato — o
-                dinheiro nunca fica com a plataforma.
+                Caução Viva (50% por bloco, devolvível) ou seguro-fiança via parceiro (em
+                estruturação). Uma garantia por contrato — o dinheiro nunca fica com a plataforma.
               </p>
               <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-forest">
-                Ver no fechamento
+                Ver garantias e cauções
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </span>
             </Link>
 
-            {/* Card de solicitações/manutenção (serviços de parceiro). */}
+            {/* Solicitações de manutenção — documentadas entre inquilino e proprietário
+                (insumo do dossiê). SEM prometer rede de parceiros (ainda não existe). */}
             <Link
               href="/dashboard/solicitacoes"
               className="group flex flex-col rounded-2xl border border-sage-200 bg-white p-5 transition-colors hover:border-sage hover:bg-surface-2"
@@ -200,10 +200,11 @@ export default function FerramentasPage() {
                   <Wrench className="h-5 w-5" />
                 </span>
               </div>
-              <h3 className="mt-3 font-title font-bold text-ink">Manutenção & serviços</h3>
+              <h3 className="mt-3 font-title font-bold text-ink">Solicitações de manutenção</h3>
               <p className="mt-1 flex-1 text-sm text-muted">
-                Solicite reparos e serviços de parceiros. A plataforma conecta e documenta — não
-                executa o serviço.
+                O inquilino reporta um problema (com foto); você responde e resolve. Tudo fica
+                registrado no histórico do contrato. Rede de parceiros de manutenção — em
+                estruturação.
               </p>
               <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-forest">
                 Abrir solicitações
