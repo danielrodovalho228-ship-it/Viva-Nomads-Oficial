@@ -11,7 +11,7 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { TaxSimulator } from "@/components/tax-simulator";
 import { createClient } from "@/lib/supabase/client";
 import { friendlyAuthError, MIN_PASSWORD } from "@/lib/auth-errors";
-import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
 
 export default function AccountPage() {
   // Identidade exibida — usa a sessão (ou a demo) para pré-preencher os campos.
@@ -215,11 +215,9 @@ function NotificationsPanel() {
     <Panel title="Notificações" className="mt-6">
       <div className="space-y-2">
         {items.map((it) => (
-          <button
+          <div
             key={it.key}
-            type="button"
-            onClick={() => setPrefs((p) => ({ ...p, [it.key]: !p[it.key] }))}
-            className="flex w-full items-center justify-between gap-3 rounded-xl border border-sage-200 px-4 py-3 text-left hover:border-sage"
+            className="flex w-full items-center justify-between gap-3 rounded-xl border border-sage-200 px-4 py-3 text-left"
           >
             <span>
               <span className="flex items-center gap-2 text-sm font-medium text-ink">
@@ -227,20 +225,12 @@ function NotificationsPanel() {
               </span>
               <span className="mt-0.5 block text-xs text-muted">{it.hint}</span>
             </span>
-            <span
-              className={cn(
-                "relative h-6 w-11 shrink-0 rounded-full transition-colors",
-                prefs[it.key] ? "bg-forest" : "bg-sage-200"
-              )}
-            >
-              <span
-                className={cn(
-                  "absolute top-0.5 h-5 w-5 rounded-full bg-white transition-all",
-                  prefs[it.key] ? "left-[1.375rem]" : "left-0.5"
-                )}
-              />
-            </span>
-          </button>
+            <Switch
+              checked={prefs[it.key]}
+              onChange={() => setPrefs((p) => ({ ...p, [it.key]: !p[it.key] }))}
+              label={it.label}
+            />
+          </div>
         ))}
       </div>
     </Panel>
