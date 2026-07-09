@@ -9,6 +9,7 @@ import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { PasswordInput } from "@/components/ui/password-input";
 import { TaxSimulator } from "@/components/tax-simulator";
+import { AvatarUploader } from "@/components/account/avatar-uploader";
 import { createClient } from "@/lib/supabase/client";
 import { friendlyAuthError, MIN_PASSWORD } from "@/lib/auth-errors";
 import { Switch } from "@/components/ui/switch";
@@ -39,6 +40,9 @@ export default function AccountPage() {
           <Button>Salvar alterações</Button>
         </div>
       </Panel>
+
+      {/* Foto de perfil (Fase 2) — opcional; visibilidade decidida no servidor. */}
+      <AvatarUploader />
 
       {mode !== "tenant" && (
         <div className="mt-6">

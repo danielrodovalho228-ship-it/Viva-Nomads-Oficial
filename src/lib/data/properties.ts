@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createPublicClient } from "@/lib/supabase/public";
 import type { Property, AmenityGroup } from "@/lib/types";
 import { SAMPLE_PROPERTIES } from "@/lib/properties";
+import { signAvatarPath } from "@/lib/data/avatar-url";
 
 /*
   Camada de acesso a imóveis. Usa o Supabase quando configurado; caso
@@ -185,6 +186,10 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
 
   const ownerRow = owner as { full_name: string | null; avatar_url: string | null; created_at: string | null; response_rate: number | null; is_verified: boolean | null } | null;
 
+  // Foto do proprietário é PÚBLICA (podeVerAvatar owner = true). O bucket é
+  // privado, então assinamos o caminho no servidor (admin) — null vira iniciais.
+  const ownerAvatarUrl = await signAvatarPath(ownerRow?.avatar_url ?? null);
+
   return {
     ...base,
     photos: ((photos as { url: string }[] | null) ?? []).map((p) => p.url),
@@ -211,7 +216,7 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     owner: ownerRow
       ? {
           name: ownerRow.full_name ?? "Proprietário",
-          avatarUrl: ownerRow.avatar_url ?? undefined,
+          avatarUrl: ownerAvatarUrl ?? undefined,
           memberSince: ownerRow.created_at ?? undefined,
           responseRate: ownerRow.response_rate ?? undefined,
           verified: ownerRow.is_verified ?? undefined,
