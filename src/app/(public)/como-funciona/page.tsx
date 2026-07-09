@@ -41,31 +41,39 @@ export default function HowItWorksPage() {
         <div className="container-page max-w-3xl">
           <h1 className="font-title text-4xl font-bold md:text-5xl">Como funciona</h1>
           <p className="mt-5 text-lg text-white/80">
-            Do anúncio ao contrato, com verificação e segurança em cada passo — para inquilino
-            e proprietário.
+            Do anúncio ao contrato, com verificação e segurança em cada passo — para{" "}
+            <a href="#para-inquilinos" className="font-semibold text-white underline decoration-white/40 underline-offset-4 hover:decoration-white">
+              inquilino
+            </a>{" "}
+            e{" "}
+            <a href="#para-proprietarios" className="font-semibold text-white underline decoration-white/40 underline-offset-4 hover:decoration-white">
+              proprietário
+            </a>.
           </p>
         </div>
       </section>
 
-      <Steps title="Para quem busca um imóvel" steps={TENANT_STEPS} eager tone="tenant" badge="Para inquilinos" />
+      {/* Sub-navegação ancorada — atalhos para as três partes da história. */}
+      <SubNav />
+
+      <Steps id="para-inquilinos" title="Para quem busca um imóvel" steps={TENANT_STEPS} eager tone="tenant" badge="Para inquilinos" />
 
       {/* Dois caminhos do inquilino: buscar (fluxo acima) ou publicar um pedido. */}
       <DoisCaminhos />
 
-      {/* Garantias da locação (inquilino) — âncora #garantias. Destino correto do
-          CTA "Ver opções de garantia" (antes levava à área do proprietário). */}
-      <GarantiasInquilino />
-
-      {/* O que acontece durante e ao fim da estadia (texto neutro, sem prazos). */}
-      <DuranteDepois />
-
-      {/* Faixa de fundo separa visualmente os dois fluxos (reforço no mobile) */}
+      {/* Grupo "Garantias e estadia" em off-white — respiro entre os blocos. */}
       <div className="border-y border-sage-200 bg-surface-2">
-        <Steps title="Para proprietários" steps={OWNER_STEPS} tone="owner" badge="Para proprietários" />
-        {/* Reforço de segurança do proprietário (sem vistoria/dossiê — pós-QA). */}
-        <ProtegidoPor />
+        {/* Garantias da locação (dupla perspectiva) — âncora #garantias. */}
+        <GarantiasInquilino />
+        {/* O que acontece durante e ao fim da estadia (texto neutro, sem prazos). */}
+        <DuranteDepois />
       </div>
 
+      <Steps id="para-proprietarios" title="Para proprietários" steps={OWNER_STEPS} tone="owner" badge="Para proprietários" />
+      {/* Reforço de segurança do proprietário (sem vistoria/dossiê — pós-QA). */}
+      <ProtegidoPor />
+
+      <div className="border-t border-sage-200 bg-surface-2">
       <section className="container-page section-y text-center">
         <h2 className="font-title text-3xl font-bold text-ink">Pronto para começar?</h2>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
@@ -77,6 +85,7 @@ export default function HowItWorksPage() {
           </ButtonLink>
         </div>
       </section>
+      </div>
     </>
   );
 }
@@ -292,12 +301,41 @@ function ProtegidoPor() {
   );
 }
 
+/**
+ * Sub-navegação ancorada (logo abaixo do hero): atalhos para as três partes da
+ * história única. Rola suave (scroll-smooth no <html>) até âncoras com
+ * scroll-margin. No mobile, as pílulas ficam em linha rolável (sem quebrar).
+ */
+function SubNav() {
+  const links = [
+    { href: "#para-inquilinos", label: "Para quem busca" },
+    { href: "#garantias", label: "Garantias e estadia" },
+    { href: "#para-proprietarios", label: "Para proprietários" },
+  ];
+  return (
+    <nav aria-label="Seções desta página" className="border-b border-sage-200 bg-surface">
+      <div className="container-page flex gap-2 overflow-x-auto py-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {links.map((l) => (
+          <a
+            key={l.href}
+            href={l.href}
+            className="whitespace-nowrap rounded-full border border-sage-200 px-4 py-2 text-sm font-medium text-ink transition-colors hover:border-sage hover:bg-surface-2"
+          >
+            {l.label}
+          </a>
+        ))}
+      </div>
+    </nav>
+  );
+}
+
 function Steps({
   title,
   steps,
   eager = false,
   tone = "tenant",
   badge,
+  id,
 }: {
   title: string;
   steps: {
@@ -312,11 +350,13 @@ function Steps({
   /** Acento por perfil: verde = inquilinos, azul = proprietários. */
   tone?: "tenant" | "owner";
   badge?: string;
+  /** Âncora da seção (para a sub-navegação); adiciona scroll-margin. */
+  id?: string;
 }) {
   const badgeClass =
     tone === "owner" ? "bg-blue-50 text-blue-500" : "bg-champagne/15 text-champagne-600";
   return (
-    <section className="container-page section-y">
+    <section id={id} className="container-page section-y scroll-mt-24">
       {badge && (
         <span className={`mb-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${badgeClass}`}>
           <span className="h-1.5 w-1.5 rounded-full bg-current" />
