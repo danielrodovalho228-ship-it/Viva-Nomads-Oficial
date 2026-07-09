@@ -1,5 +1,6 @@
 import { Home, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { iniciais, corAvatar } from "@/lib/avatar";
 
 /** Modo do avatar — espelha o "mundo" ativo (proprietário/inquilino). */
 export type AvatarMode = "owner" | "tenant";
@@ -24,38 +25,51 @@ export function Avatar({
   name,
   size = 40,
   mode,
+  photoUrl,
   badgeRing = "ring-forest",
   className,
 }: {
   name: string;
   size?: number;
   mode?: AvatarMode;
+  /**
+   * URL da foto — só passe quando o CHAMADOR tem DIREITO a ela (a rota da API
+   * aplica `podeVerAvatar`). Ausente = iniciais (padrão). A foto do inquilino
+   * chega aqui apenas quando a API a emite (relação em estado aceito).
+   */
+  photoUrl?: string;
   /** Cor do anel de recorte do selo — combine com o fundo (padrão: forest). */
   badgeRing?: string;
   className?: string;
 }) {
-  const initials = name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((w) => w.charAt(0).toUpperCase())
-    .join("");
+  const initials = iniciais(name);
 
   const m = mode ? MODE_STYLE[mode] : null;
   const BadgeIcon = m?.icon;
   const badge = Math.round(size * 0.44);
 
-  const face = (
-    <span
+  const face = photoUrl ? (
+    // eslint-disable-next-line @next/next/no-img-element -- avatar pequeno, tamanho fixo, URL assinada/rota própria
+    <img
+      src={photoUrl}
+      alt=""
       className={cn(
-        "inline-grid h-full w-full place-items-center rounded-full bg-gradient-brand font-title font-bold text-white transition-[box-shadow] duration-300",
+        "h-full w-full rounded-full object-cover transition-[box-shadow] duration-300",
         m && cn("ring-2 ring-offset-2 ring-offset-forest", m.ring),
         className
       )}
-      style={{ fontSize: size * 0.4 }}
+    />
+  ) : (
+    <span
+      className={cn(
+        "inline-grid h-full w-full place-items-center rounded-full font-title font-bold text-white transition-[box-shadow] duration-300",
+        m && cn("ring-2 ring-offset-2 ring-offset-forest", m.ring),
+        className
+      )}
+      style={{ fontSize: size * 0.4, backgroundColor: corAvatar(name) }}
       aria-hidden
     >
-      {initials || "?"}
+      {initials}
     </span>
   );
 
