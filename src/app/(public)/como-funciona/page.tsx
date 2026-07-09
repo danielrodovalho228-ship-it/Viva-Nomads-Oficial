@@ -8,12 +8,6 @@ import {
   Home,
   ClipboardCheck,
   Award,
-  Megaphone,
-  Wallet,
-  Repeat,
-  PiggyBank,
-  UserCheck,
-  Flame,
 } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { StepImage } from "@/components/step-image";
@@ -175,31 +169,31 @@ function DoisCaminhos() {
         e deixar os proprietários virem até você.
       </p>
       <div className="mt-6 grid gap-6 md:grid-cols-2">
-        <div className="flex flex-col rounded-2xl border border-sage-200 bg-white p-6">
-          <div className="grid h-11 w-11 place-items-center rounded-xl bg-forest text-white">
-            <Search className="h-5 w-5" />
+        <div className="flex flex-col overflow-hidden rounded-2xl border border-sage-200 bg-white">
+          <StepImage src="/images/busca/busca-hero-villa.webp" alt="Imóvel mobiliado disponível para temporada" />
+          <div className="flex flex-1 flex-col p-6">
+            <h3 className="font-title text-lg font-bold text-ink">Buscar imóveis</h3>
+            <p className="mt-2 flex-1 text-sm text-muted">
+              Explore os imóveis mobiliados por cidade, período e orçamento — é o passo a passo
+              acima, do primeiro contato até a assinatura.
+            </p>
+            <ButtonLink href="/buscar" variant="outline" className="mt-5 self-start">
+              Buscar imóveis
+            </ButtonLink>
           </div>
-          <h3 className="mt-4 font-title text-lg font-bold text-ink">Buscar imóveis</h3>
-          <p className="mt-2 flex-1 text-sm text-muted">
-            Explore os imóveis mobiliados por cidade, período e orçamento — é o passo a passo
-            acima, do primeiro contato até a assinatura.
-          </p>
-          <ButtonLink href="/buscar" variant="outline" className="mt-5 self-start">
-            Buscar imóveis
-          </ButtonLink>
         </div>
-        <div className="flex flex-col rounded-2xl border border-sage-200 bg-white p-6">
-          <div className="grid h-11 w-11 place-items-center rounded-xl bg-forest text-white">
-            <Megaphone className="h-5 w-5" />
+        <div className="flex flex-col overflow-hidden rounded-2xl border border-sage-200 bg-white">
+          <StepImage src="/images/como-funciona/02-converse.webp" alt="Proprietária respondendo a um pedido por vídeo" />
+          <div className="flex flex-1 flex-col p-6">
+            <h3 className="font-title text-lg font-bold text-ink">Publicar um Pedido de Moradia</h3>
+            <p className="mt-2 flex-1 text-sm text-muted">
+              Diga o que você precisa e os proprietários da cidade respondem com os imóveis deles.
+              Sua identidade só aparece para quem você aceitar.
+            </p>
+            <ButtonLink href="/pedidos/novo" variant="primary" className="mt-5 self-start">
+              Publicar pedido
+            </ButtonLink>
           </div>
-          <h3 className="mt-4 font-title text-lg font-bold text-ink">Publicar um Pedido de Moradia</h3>
-          <p className="mt-2 flex-1 text-sm text-muted">
-            Diga o que você precisa e os proprietários da cidade respondem com os imóveis deles.
-            Sua identidade só aparece para quem você aceitar.
-          </p>
-          <ButtonLink href="/pedidos/novo" variant="primary" className="mt-5 self-start">
-            Publicar pedido
-          </ButtonLink>
         </div>
       </div>
     </section>
@@ -214,17 +208,20 @@ function DoisCaminhos() {
 function DuranteDepois() {
   const itens = [
     {
-      icon: Wallet,
+      img: "/images/home/home-diferencial-homeoffice.webp",
+      alt: "Pessoa organizando os pagamentos no computador em casa",
       title: "Pagamentos",
       text: "Vão direto ao proprietário e ficam registrados na plataforma. Nada passa pela Viva Nomads.",
     },
     {
-      icon: Repeat,
+      img: "/images/home/home-hero-chegada.webp",
+      alt: "Hóspede chegando com a bagagem para mais um período de estadia",
       title: "Renovação",
       text: "A estadia se renova em blocos, sem nova comissão a cada período.",
     },
     {
-      icon: PiggyBank,
+      img: "/images/home/home-proprietarios-chaves.webp",
+      alt: "Entrega das chaves ao fim da estadia",
       title: "Devolução da caução",
       text: "Ao fim da estadia, conforme o contrato, com tudo documentado.",
     },
@@ -233,18 +230,15 @@ function DuranteDepois() {
     <section className="container-page pb-4">
       <h2 className="font-title text-2xl font-bold text-ink">Durante e depois da estadia</h2>
       <div className="mt-6 grid gap-6 sm:grid-cols-3">
-        {itens.map((it) => {
-          const Icon = it.icon;
-          return (
-            <div key={it.title} className="flex flex-col">
-              <div className="grid h-11 w-11 place-items-center rounded-xl bg-forest text-white">
-                <Icon className="h-5 w-5" />
-              </div>
-              <h3 className="mt-4 font-title text-lg font-bold text-ink">{it.title}</h3>
+        {itens.map((it) => (
+          <div key={it.title} className="flex flex-col overflow-hidden rounded-2xl border border-sage-200 bg-white">
+            <StepImage src={it.img} alt={it.alt} />
+            <div className="flex flex-1 flex-col p-5">
+              <h3 className="font-title text-lg font-bold text-ink">{it.title}</h3>
               <p className="mt-2 text-sm text-muted">{it.text}</p>
             </div>
-          );
-        })}
+          </div>
+        ))}
       </div>
       <p className="mt-6 text-xs text-muted">
         A Viva Nomads registra e documenta cada etapa — não retém valores nem é parte no
@@ -262,17 +256,20 @@ function DuranteDepois() {
 function ProtegidoPor() {
   const itens = [
     {
-      icon: UserCheck,
+      img: "/images/como-funciona/03-verifique.webp",
+      alt: "Inquilino apresentando o documento de identidade para verificação",
       title: "Inquilino verificado",
       text: "Identidade e análise antes de qualquer conversa.",
     },
     {
-      icon: FileSignature,
+      img: "/images/como-funciona/08-feche.webp",
+      alt: "Aperto de mãos fechando o contrato de locação",
       title: "Garantia do contrato",
       text: "Caução direto na sua conta ou seguro-fiança — escolhida no fechamento.",
     },
     {
-      icon: Flame,
+      img: "/images/home/home-condominio-tranquilo.webp",
+      alt: "Fachada de um condomínio residencial",
       title: "Seguro incêndio",
       text: "Obrigatório por lei em toda locação; contratação via parceiro (em estruturação).",
     },
@@ -280,24 +277,16 @@ function ProtegidoPor() {
   return (
     <section className="container-page pb-14">
       <h2 className="font-title text-2xl font-bold text-ink">Você fica protegido por</h2>
-      <div className="mt-6 grid gap-4 sm:grid-cols-3">
-        {itens.map((it) => {
-          const Icon = it.icon;
-          return (
-            <div
-              key={it.title}
-              className="flex items-start gap-3 rounded-2xl border border-sage-200 bg-white p-5"
-            >
-              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-forest text-white">
-                <Icon className="h-5 w-5" />
-              </div>
-              <div className="min-w-0">
-                <h3 className="font-title text-base font-bold text-ink">{it.title}</h3>
-                <p className="mt-1 text-sm text-muted">{it.text}</p>
-              </div>
+      <div className="mt-6 grid gap-6 sm:grid-cols-3">
+        {itens.map((it) => (
+          <div key={it.title} className="flex flex-col overflow-hidden rounded-2xl border border-sage-200 bg-white">
+            <StepImage src={it.img} alt={it.alt} />
+            <div className="flex flex-1 flex-col p-5">
+              <h3 className="font-title text-lg font-bold text-ink">{it.title}</h3>
+              <p className="mt-2 text-sm text-muted">{it.text}</p>
             </div>
-          );
-        })}
+          </div>
+        ))}
       </div>
     </section>
   );
