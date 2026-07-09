@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Send, ArrowLeft } from "lucide-react";
 import { PageTitle } from "@/components/dashboard/primitives";
+import { Avatar } from "@/components/ui/avatar";
 import { sendMessage } from "@/lib/data/actions";
+import { getAvatarUrl } from "@/lib/data/avatar-actions";
 import type { Conversation } from "@/lib/data/messages";
 import { guardContactInfo, GUARD_NOTICE } from "@/lib/messages/contact-guard";
 import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
@@ -30,6 +32,30 @@ function MessagesInner({ initial, demo }: { initial: Conversation[]; demo: boole
   const [conversations, setConversations] = useState<Conversation[]>(initial);
   const [activeId, setActiveId] = useState<string>(initial[0]?.id ?? "");
   const [draft, setDraft] = useState("");
+  // Fotos das conversas (map conversationId → URL). O SERVIDOR decide: foto do
+  // proprietário é pública; foto do inquilino só vem se a relação foi aceita.
+  // Sem direito / demo → null → o Avatar cai para iniciais. Nunca em demo.
+  const [avatars, setAvatars] = useState<Record<string, string | null>>({});
+  useEffect(() => {
+    if (demo) return;
+    let alive = true;
+    (async () => {
+      const entries = await Promise.all(
+        conversations
+          .filter((c) => c.otherId)
+          .map(async (c) => {
+            const { url } = await getAvatarUrl({ targetId: c.otherId as string, propertyId: c.propertyId });
+            return [c.id, url] as const;
+          })
+      );
+      if (alive) setAvatars(Object.fromEntries(entries));
+    })().catch(() => {});
+    return () => {
+      alive = false;
+    };
+    // Recarrega quando o conjunto de conversas muda (ids).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [demo, conversations.map((c) => c.id).join(",")]);
   // Aviso de contato protegido (aparece quando algo foi mascarado no envio).
   const [guardNotice, setGuardNotice] = useState(false);
   // No mobile, alterna entre lista e conversa (master-detail). No desktop, ambos.
@@ -101,15 +127,18 @@ function MessagesInner({ initial, demo }: { initial: Conversation[]; demo: boole
               key={c.id}
               onClick={() => openConversation(c.id)}
               className={cn(
-                "flex w-full flex-col items-start gap-0.5 border-b border-sage-200 px-4 py-3 text-left transition-colors",
+                "flex w-full items-center gap-3 border-b border-sage-200 px-4 py-3 text-left transition-colors",
                 active.id === c.id ? "bg-blue-50 md:bg-blue-50" : "hover:bg-surface-2"
               )}
             >
-              <div className="flex w-full items-center justify-between gap-2">
-                <span className="font-medium text-ink">{c.name}</span>
-                <span className="shrink-0 text-xs text-muted">{c.property}</span>
-              </div>
-              <span className="line-clamp-1 text-sm text-muted">{c.preview}</span>
+              <Avatar name={c.name} size={40} photoUrl={avatars[c.id] ?? undefined} />
+              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <span className="flex w-full items-center justify-between gap-2">
+                  <span className="truncate font-medium text-ink">{c.name}</span>
+                  <span className="shrink-0 text-xs text-muted">{c.property}</span>
+                </span>
+                <span className="line-clamp-1 text-sm text-muted">{c.preview}</span>
+              </span>
             </button>
           ))}
         </aside>
@@ -130,6 +159,7 @@ function MessagesInner({ initial, demo }: { initial: Conversation[]; demo: boole
             >
               <ArrowLeft className="h-5 w-5 text-ink" />
             </button>
+            <Avatar name={active.name} size={36} photoUrl={avatars[active.id] ?? undefined} />
             <div className="min-w-0">
               <p className="truncate font-medium text-ink">{active.name}</p>
               {active.property && (

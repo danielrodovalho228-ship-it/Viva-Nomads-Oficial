@@ -3,6 +3,7 @@ import { BadgeCheck, Clock, Handshake } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { ResponsiveOwnerBadge } from "@/components/ui/badge";
 import { OwnerRating } from "@/components/property/owner-rating";
+import { iniciais, corAvatar } from "@/lib/avatar";
 
 /** "desde 2025" / "desde mar. 2025" a partir de uma data ISO. */
 function memberSinceLabel(iso?: string): string | null {
@@ -39,8 +40,12 @@ export function OwnerCard({ property }: { property: Property }) {
             className="h-14 w-14 rounded-full object-cover"
           />
         ) : (
-          <div className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-sage-100 font-title text-lg font-bold text-forest">
-            {name.charAt(0)}
+          <div
+            className="grid h-14 w-14 shrink-0 place-items-center rounded-full font-title text-lg font-bold text-white"
+            style={{ backgroundColor: corAvatar(name) }}
+            aria-hidden
+          >
+            {iniciais(name)}
           </div>
         )}
 

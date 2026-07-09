@@ -27,6 +27,7 @@ import {
 import { Logo } from "@/components/ui/logo";
 import { Avatar } from "@/components/ui/avatar";
 import { useAuthStore, DEMO_USER, type ViewMode } from "@/lib/store";
+import { getMyAvatarUrl } from "@/lib/data/avatar-actions";
 import { useViewMode, MODE_META } from "@/lib/roles";
 import { useDemoMode, DemoToggle, DemoBanner } from "@/lib/demo/demo-mode";
 import { PROGRAMA_INDICACAO } from "@/lib/flags";
@@ -136,6 +137,20 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const display = user ?? DEMO_USER;
   const plan = display.plan ?? "free";
 
+  // Minha própria foto de perfil (opcional) para o avatar do topo.
+  const [myPhoto, setMyPhoto] = useState<string | null>(null);
+  useEffect(() => {
+    let alive = true;
+    getMyAvatarUrl()
+      .then((r) => {
+        if (alive) setMyPhoto(r.url);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [user?.id]);
+
   let nav = NAV_BY_MODE[mode];
   if (display.role === "admin" && mode === "owner") nav = [...OWNER_NAV, ...ADMIN_NAV];
   // Itens de operador só aparecem no plano Gestor.
@@ -208,7 +223,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       </nav>
       <div className="border-t border-white/10 p-3">
         <div className="flex items-center gap-3 px-3 py-2">
-          <Avatar name={display.name} size={36} mode={mode} />
+          <Avatar name={display.name} size={36} mode={mode} photoUrl={myPhoto ?? undefined} />
           <div className="min-w-0 text-xs">
             <p className="truncate font-medium text-white">{display.name}</p>
             <p className="text-white/60">Conta: {labelForRole(display.role)}</p>
