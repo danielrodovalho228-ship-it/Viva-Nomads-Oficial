@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
-  FileSignature,
   ShieldCheck,
   Check,
   Clock,
@@ -152,9 +152,9 @@ export function ContratosClient({
 
       {contratos.length === 0 ? (
         <EmptyState
-          icon={FileSignature}
+          illustration={<Image src="/media/empty-contratos.webp" alt="" width={176} height={176} className="h-44 w-44" />}
           title="Nenhum contrato ainda"
-          text="Quando você fechar uma locação, o contrato-mãe e seus blocos aparecem aqui — com o registro dos recebimentos."
+          text="Seu primeiro fechamento aparece aqui — o contrato-mãe, os blocos e o registro dos recebimentos."
           action={
             <Link href="/dashboard/fechamento">
               <Button variant="gold">Ir para o fechamento</Button>
