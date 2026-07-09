@@ -43,7 +43,7 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
   return (
     <>
       <PageTitle
-        title="Leads"
+        title="Interessados"
         subtitle="Inquilinos interessados. Você vê o necessário para decidir; o contato direto é liberado após o aceite."
         action={demoOn ? <DemoBadge /> : undefined}
       />

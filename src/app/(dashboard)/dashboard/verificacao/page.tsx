@@ -32,7 +32,7 @@ const VERIFY_COPY = {
     badge: "Proprietário Verificado",
     button: "Verificar meu perfil de proprietário",
     ctaTitle: "Selo de confiança ativado",
-    ctaBody: "Seu selo Proprietário Verificado passa a aparecer nos seus anúncios — mais confiança para o inquilino e melhor conversão dos seus leads.",
+    ctaBody: "Seu selo Proprietário Verificado passa a aparecer nos seus anúncios — mais confiança para o inquilino e melhor conversão dos seus interessados.",
   },
 } as const;
 
