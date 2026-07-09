@@ -132,13 +132,14 @@ export function sampleEmails(): SampleEmail[] {
     },
     {
       key: "transacional",
-      subject: "Novo lead no seu imóvel · Viva Nomads",
+      subject: "Novo interessado no seu imóvel · Viva Nomads",
       html: brandedEmail({
-        title: "Você tem um novo lead 🎉",
-        intro: "Um inquilino demonstrou interesse no seu imóvel \"Studio premium no Centro\". Responda rápido para aumentar a chance de fechar.",
-        button: "Ver o lead",
-        url: `${SITE_URL}/dashboard/leads`,
-        outro: "Exemplo de e-mail transacional do app (Resend).",
+        title: "Você tem um novo interessado 🎉",
+        intro:
+          "Alguém demonstrou interesse no seu imóvel \"Studio premium no Centro\". Responda pela plataforma — o contato fica registrado e protegido.",
+        button: "Responder pela plataforma",
+        url: `${SITE_URL}/dashboard/mensagens`,
+        outro: "Exemplo de e-mail transacional do app (Resend). Não expõe contato da outra parte.",
       }),
     },
   ];
