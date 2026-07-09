@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Viva Nomads · Loader (referência)</title>
+    <!--
+      Tela de carregamento oficial (REFERÊNCIA visual para o componente <VivaLoader>).
+      Autossuficiente: sem fontes/scripts externos. Usa a marca "N" vetorial oficial
+      (mesma de src/components/ui/logo.tsx) e os tokens de marca:
+        primária #143C8C · secundária #1E63D0 · CTA/verde #6CBE2A · preto #0A0A0A.
+      Respeita prefers-reduced-motion (a animação para; a marca continua visível).
+    -->
+    <style>
+      :root {
+        --blue-700: #143c8c;
+        --blue-500: #1e63d0;
+        --blue-300: #2e8be6;
+        --green-500: #6cbe2a;
+        --green-300: #8fd63a;
+        --night: #0a0a0a;
+        --ink: #0f1722;
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body { height: 100%; }
+      body {
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background:
+          radial-gradient(120% 90% at 50% 20%, #0e2452 0%, #071633 55%, #050d1f 100%);
+        color: #eaf1ff;
+        font-family: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        overflow: hidden;
+      }
+
+      .loader {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 22px;
+        text-align: center;
+        padding: 24px;
+      }
+
+      /* Halo pulsante atrás da marca */
+      .mark {
+        position: relative;
+        width: 96px;
+        height: 96px;
+        display: grid;
+        place-items: center;
+      }
+      .mark::before {
+        content: "";
+        position: absolute;
+        inset: -34px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(46, 139, 230, 0.28) 0%, rgba(46, 139, 230, 0) 70%);
+        animation: halo 2s ease-in-out infinite;
+      }
+      .mark .brand {
+        position: relative;
+        width: 96px;
+        height: 96px;
+        filter: drop-shadow(0 8px 24px rgba(20, 60, 140, 0.45));
+        animation: rise 2.2s ease-in-out infinite;
+      }
+
+      /* Anel de progresso indeterminado, nas cores da marca */
+      .mark .ring {
+        width: 132px;
+        height: 132px;
+        position: absolute;
+        inset: -18px;
+      }
+      .ring circle {
+        fill: none;
+        stroke-width: 4;
+        stroke-linecap: round;
+        transform-origin: center;
+      }
+      .ring .track { stroke: rgba(255, 255, 255, 0.08); }
+      .ring .arc {
+        stroke: url(#ringGrad);
+        stroke-dasharray: 90 220;
+        animation: spin 1.15s linear infinite;
+      }
+
+      .wordmark {
+        font-size: 1.55rem;
+        font-weight: 800;
+        letter-spacing: -0.4px;
+      }
+      .wordmark .viva { color: #4f9bff; }
+      .wordmark .nomads { color: var(--green-300); }
+
+      .hint {
+        font-size: 0.82rem;
+        color: rgba(234, 241, 255, 0.62);
+        letter-spacing: 0.2px;
+      }
+
+      /* três pontinhos de "carregando" */
+      .dots { display: inline-flex; gap: 5px; margin-left: 2px; }
+      .dots i {
+        width: 5px; height: 5px; border-radius: 50%;
+        background: var(--green-500);
+        display: inline-block;
+        animation: blink 1.2s ease-in-out infinite;
+      }
+      .dots i:nth-child(2) { animation-delay: 0.18s; }
+      .dots i:nth-child(3) { animation-delay: 0.36s; }
+
+      @keyframes spin { to { transform: rotate(360deg); } }
+      @keyframes halo {
+        0%, 100% { transform: scale(0.9); opacity: 0.55; }
+        50% { transform: scale(1.08); opacity: 1; }
+      }
+      @keyframes rise {
+        0%, 100% { transform: translateY(2px); }
+        50% { transform: translateY(-4px); }
+      }
+      @keyframes blink {
+        0%, 100% { opacity: 0.25; transform: translateY(0); }
+        50% { opacity: 1; transform: translateY(-2px); }
+      }
+
+      /* Acessibilidade: sem movimento, mostra marca estática */
+      @media (prefers-reduced-motion: reduce) {
+        .mark::before, .mark svg, .ring .arc, .dots i { animation: none !important; }
+        .ring .arc { stroke-dasharray: 200 120; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="loader" role="status" aria-live="polite" aria-label="Carregando a Viva Nomads">
+      <div class="mark">
+        <!-- Anel de progresso -->
+        <svg class="ring" viewBox="0 0 100 100" aria-hidden="true">
+          <defs>
+            <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#1e63d0" />
+              <stop offset="1" stop-color="#8fd63a" />
+            </linearGradient>
+          </defs>
+          <circle class="track" cx="50" cy="50" r="46" />
+          <circle class="arc" cx="50" cy="50" r="46" />
+        </svg>
+
+        <!-- Marca "N" oficial (idêntica ao BrandMark do app) -->
+        <svg class="brand" viewBox="0 0 100 100" aria-hidden="true">
+          <defs>
+            <linearGradient id="vn-blue" x1="20" y1="86" x2="70" y2="14" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#143C8C" />
+              <stop offset="1" stop-color="#2E8BE6" />
+            </linearGradient>
+            <linearGradient id="vn-green" x1="66" y1="86" x2="86" y2="14" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#4FA01E" />
+              <stop offset="1" stop-color="#8FD63A" />
+            </linearGradient>
+          </defs>
+          <path d="M16 14h17v72H16z" fill="url(#vn-blue)" />
+          <path d="M19 14h17l48 72H67z" fill="url(#vn-blue)" />
+          <path d="M67 14h17v60c0 7-4 12-11 12h-6z" fill="url(#vn-green)" />
+          <path d="M37 86l13-22" stroke="#fff" stroke-width="3" stroke-linecap="round" />
+          <path d="M47 86l8-18" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 6" />
+        </svg>
+      </div>
+
+      <div class="wordmark"><span class="viva">Viva</span><span class="nomads">Nomads</span></div>
+
+      <p class="hint">
+        Preparando seu espaço
+        <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+      </p>
+    </div>
+  </body>
+</html>
