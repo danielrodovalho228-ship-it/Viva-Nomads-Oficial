@@ -20,7 +20,7 @@ export type NotificationEvent =
   | "pedido_moderado"; // pedido ocultado pela moderação → inquilino
 
 const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: string) => string }> = {
-  new_lead: { subject: "Novo interessado no seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, você recebeu um novo lead no Viva Nomads.` },
+  new_lead: { subject: "Novo interessado no seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, você recebeu um novo interessado no Viva Nomads.` },
   new_message: { subject: "Você tem uma nova mensagem no Viva Nomads", body: (n) => `Olá${n ? " " + n : ""}, você recebeu uma nova mensagem no Viva Nomads.` },
   application_received: { subject: "Candidatura recebida", body: () => "Recebemos sua candidatura. O proprietário foi notificado." },
   saved_search_match: { subject: "Novo imóvel para sua busca", body: () => "Um imóvel novo combina com sua busca salva no Viva Nomads." },
