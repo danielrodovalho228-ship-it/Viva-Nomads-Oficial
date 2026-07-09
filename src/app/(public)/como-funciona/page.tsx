@@ -12,6 +12,8 @@ import {
   Wallet,
   Repeat,
   PiggyBank,
+  UserCheck,
+  Flame,
 } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { StepImage } from "@/components/step-image";
@@ -66,6 +68,8 @@ export default function HowItWorksPage() {
       {/* Faixa de fundo separa visualmente os dois fluxos (reforço no mobile) */}
       <div className="border-y border-sage-200 bg-surface-2">
         <Steps title="Para proprietários" steps={OWNER_STEPS} tone="owner" badge="Para proprietários" />
+        {/* Reforço de segurança do proprietário (sem vistoria/dossiê — pós-QA). */}
+        <ProtegidoPor />
       </div>
 
       <section className="container-page section-y text-center">
@@ -84,18 +88,14 @@ export default function HowItWorksPage() {
 }
 
 /**
- * Explicação das garantias para o INQUILINO (linguagem de quem vai alugar).
- * Fonte única e neutra: enquanto a parceria de seguro-fiança não estiver
- * assinada, o status é honesto ("via parceiro — em estruturação"), no mesmo
- * padrão do hub de Ferramentas. Âncora #garantias.
+ * Garantias da locação com DUPLA perspectiva (inquilino e proprietário) — a
+ * garantia protege as duas partes. Fonte única e neutra: enquanto a parceria de
+ * seguro-fiança não estiver assinada, o status é honesto ("via parceiro — em
+ * estruturação"), no mesmo padrão do hub de Ferramentas. Âncora #garantias.
  */
 function GarantiasInquilino() {
   return (
     <section id="garantias" className="container-page section-y scroll-mt-24">
-      <span className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-champagne/15 px-3 py-1 text-xs font-semibold text-champagne-600">
-        <span className="h-1.5 w-1.5 rounded-full bg-current" />
-        Para inquilinos
-      </span>
       <h2 className="font-title text-3xl font-bold text-ink">Garantias da locação</h2>
       <p className="mt-3 max-w-2xl text-muted">
         Por lei, cada contrato usa <strong>uma</strong> garantia. Você escolhe a que
@@ -107,10 +107,22 @@ function GarantiasInquilino() {
             <ShieldCheck className="h-5 w-5" />
           </div>
           <h3 className="mt-4 font-title text-lg font-bold text-ink">Caução (depósito devolvível)</h3>
-          <p className="mt-2 text-sm text-muted">
-            Um depósito que fica em conta vinculada e <strong>volta para você</strong> ao fim da
-            estadia, nos termos do contrato e da Lei 8.245/91. Sem mensalidade.
-          </p>
+          <dl className="mt-3 space-y-2.5 text-sm">
+            <div>
+              <dt className="font-semibold text-ink">Para o inquilino</dt>
+              <dd className="text-muted">
+                Depósito <strong>devolvível</strong> ao fim da estadia, nos termos do contrato e
+                da Lei 8.245/91. Sem mensalidade.
+              </dd>
+            </div>
+            <div>
+              <dt className="font-semibold text-ink">Para o proprietário</dt>
+              <dd className="text-muted">
+                O valor fica na <strong>sua conta</strong> antes da entrada — cobertura imediata
+                para danos ou inadimplência, com tudo documentado.
+              </dd>
+            </div>
+          </dl>
           <span className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-sage-100 px-2.5 py-1 text-xs font-semibold text-forest">
             Disponível
           </span>
@@ -120,11 +132,22 @@ function GarantiasInquilino() {
             <FileSignature className="h-5 w-5" />
           </div>
           <h3 className="mt-4 font-title text-lg font-bold text-ink">Seguro-fiança (sem depósito)</h3>
-          <p className="mt-2 text-sm text-muted">
-            Entre <strong>sem deixar dinheiro preso</strong>: uma mensalidade diluída cobre o
-            aluguel, contratada com parceiro e sujeita a análise. Ideal para quem prefere não
-            imobilizar caixa.
-          </p>
+          <dl className="mt-3 space-y-2.5 text-sm">
+            <div>
+              <dt className="font-semibold text-ink">Para o inquilino</dt>
+              <dd className="text-muted">
+                Entre <strong>sem imobilizar dinheiro</strong>: mensalidade diluída, sujeita a
+                análise.
+              </dd>
+            </div>
+            <div>
+              <dt className="font-semibold text-ink">Para o proprietário</dt>
+              <dd className="text-muted">
+                A seguradora cobre o aluguel em caso de inadimplência. Via parceiro — em
+                estruturação.
+              </dd>
+            </div>
+          </dl>
           <span className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">
             Via parceiro — em estruturação
           </span>
@@ -227,6 +250,55 @@ function DuranteDepois() {
         A Viva Nomads registra e documenta cada etapa — não retém valores nem é parte no
         pagamento.
       </p>
+    </section>
+  );
+}
+
+/**
+ * Faixa "Você fica protegido por" (proprietário): 3 camadas de segurança já
+ * existentes. Sem vistoria/dossiê — só entram quando forem construídos (pós-QA).
+ * Seguro incêndio: obrigação legal em toda locação; contratação via parceiro.
+ */
+function ProtegidoPor() {
+  const itens = [
+    {
+      icon: UserCheck,
+      title: "Inquilino verificado",
+      text: "Identidade e análise antes de qualquer conversa.",
+    },
+    {
+      icon: FileSignature,
+      title: "Garantia do contrato",
+      text: "Caução direto na sua conta ou seguro-fiança — escolhida no fechamento.",
+    },
+    {
+      icon: Flame,
+      title: "Seguro incêndio",
+      text: "Obrigatório por lei em toda locação; contratação via parceiro (em estruturação).",
+    },
+  ];
+  return (
+    <section className="container-page pb-14">
+      <h2 className="font-title text-2xl font-bold text-ink">Você fica protegido por</h2>
+      <div className="mt-6 grid gap-4 sm:grid-cols-3">
+        {itens.map((it) => {
+          const Icon = it.icon;
+          return (
+            <div
+              key={it.title}
+              className="flex items-start gap-3 rounded-2xl border border-sage-200 bg-white p-5"
+            >
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-forest text-white">
+                <Icon className="h-5 w-5" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="font-title text-base font-bold text-ink">{it.title}</h3>
+                <p className="mt-1 text-sm text-muted">{it.text}</p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </section>
   );
 }
