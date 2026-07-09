@@ -8,6 +8,10 @@ import {
   Home,
   ClipboardCheck,
   Award,
+  Megaphone,
+  Wallet,
+  Repeat,
+  PiggyBank,
 } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { StepImage } from "@/components/step-image";
@@ -31,7 +35,7 @@ const OWNER_STEPS = [
   { icon: ClipboardCheck, img: "/media/como-funciona-03-qualifique.webp", alt: "Mulher analisando um perfil no tablet", title: "Qualifique o imóvel", text: "Passe pelo checklist e mostre que seu imóvel está pronto." },
   { icon: Award, img: `${IMG}/06-selo.webp`, alt: "Apartamento mobiliado com espaço de trabalho em casa", title: "Ganhe o selo", text: "Conquiste o selo Pronto para Morar e ganhe destaque na busca." },
   { icon: Home, img: `${IMG}/07-anuncie.webp`, alt: "Proprietário publicando o anúncio do imóvel", title: "Anuncie", text: "Publique fotos e descrição e receba consultas de inquilinos verificados." },
-  { icon: KeyRound, img: "/media/como-funciona-04-chaves.webp", alt: "Casal recebendo as chaves do imóvel, aperto de mãos", title: "Feche com segurança", text: "Você decide, gera o contrato e recebe — tudo organizado." },
+  { icon: KeyRound, img: "/media/como-funciona-04-chaves.webp", alt: "Casal recebendo as chaves do imóvel, aperto de mãos", title: "Feche com segurança", text: "Você decide, gera o contrato e recebe direto na sua conta — a plataforma registra e documenta cada recebimento." },
 ];
 
 export default function HowItWorksPage() {
@@ -49,9 +53,15 @@ export default function HowItWorksPage() {
 
       <Steps title="Para quem busca um imóvel" steps={TENANT_STEPS} eager tone="tenant" badge="Para inquilinos" />
 
+      {/* Dois caminhos do inquilino: buscar (fluxo acima) ou publicar um pedido. */}
+      <DoisCaminhos />
+
       {/* Garantias da locação (inquilino) — âncora #garantias. Destino correto do
           CTA "Ver opções de garantia" (antes levava à área do proprietário). */}
       <GarantiasInquilino />
+
+      {/* O que acontece durante e ao fim da estadia (texto neutro, sem prazos). */}
+      <DuranteDepois />
 
       {/* Faixa de fundo separa visualmente os dois fluxos (reforço no mobile) */}
       <div className="border-y border-sage-200 bg-surface-2">
@@ -123,6 +133,99 @@ function GarantiasInquilino() {
       <p className="mt-4 text-xs text-muted">
         A Viva Nomads conecta, verifica e documenta — não é fiadora, seguradora nem retém
         valores. A garantia é combinada no fechamento, conforme o que o imóvel aceita.
+      </p>
+    </section>
+  );
+}
+
+/**
+ * Dois caminhos para o inquilino, logo após o fluxo de busca: (a) buscar
+ * imóveis (o passo a passo acima) ou (b) publicar um Pedido de Moradia e deixar
+ * os proprietários responderem. Mesmo padrão visual dos cards da página.
+ */
+function DoisCaminhos() {
+  return (
+    <section className="container-page pb-4">
+      <h2 className="font-title text-2xl font-bold text-ink">Dois caminhos</h2>
+      <p className="mt-2 max-w-2xl text-muted">
+        Você escolhe como chegar ao imóvel: procurar por conta própria ou dizer o que precisa
+        e deixar os proprietários virem até você.
+      </p>
+      <div className="mt-6 grid gap-6 md:grid-cols-2">
+        <div className="flex flex-col rounded-2xl border border-sage-200 bg-white p-6">
+          <div className="grid h-11 w-11 place-items-center rounded-xl bg-forest text-white">
+            <Search className="h-5 w-5" />
+          </div>
+          <h3 className="mt-4 font-title text-lg font-bold text-ink">Buscar imóveis</h3>
+          <p className="mt-2 flex-1 text-sm text-muted">
+            Explore os imóveis mobiliados por cidade, período e orçamento — é o passo a passo
+            acima, do primeiro contato até a assinatura.
+          </p>
+          <ButtonLink href="/buscar" variant="outline" className="mt-5 self-start">
+            Buscar imóveis
+          </ButtonLink>
+        </div>
+        <div className="flex flex-col rounded-2xl border border-sage-200 bg-white p-6">
+          <div className="grid h-11 w-11 place-items-center rounded-xl bg-forest text-white">
+            <Megaphone className="h-5 w-5" />
+          </div>
+          <h3 className="mt-4 font-title text-lg font-bold text-ink">Publicar um Pedido de Moradia</h3>
+          <p className="mt-2 flex-1 text-sm text-muted">
+            Diga o que você precisa e os proprietários da cidade respondem com os imóveis deles.
+            Sua identidade só aparece para quem você aceitar.
+          </p>
+          <ButtonLink href="/pedidos/novo" variant="primary" className="mt-5 self-start">
+            Publicar pedido
+          </ButtonLink>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * O que acontece DURANTE e ao FIM da estadia. Texto neutro e declaratório — sem
+ * prazos inventados (aguarda parecer): a plataforma registra e documenta; o
+ * dinheiro nunca passa por ela. Vistoria/dossiê NÃO entram aqui ainda (pós-QA).
+ */
+function DuranteDepois() {
+  const itens = [
+    {
+      icon: Wallet,
+      title: "Pagamentos",
+      text: "Vão direto ao proprietário e ficam registrados na plataforma. Nada passa pela Viva Nomads.",
+    },
+    {
+      icon: Repeat,
+      title: "Renovação",
+      text: "A estadia se renova em blocos, sem nova comissão a cada período.",
+    },
+    {
+      icon: PiggyBank,
+      title: "Devolução da caução",
+      text: "Ao fim da estadia, conforme o contrato, com tudo documentado.",
+    },
+  ];
+  return (
+    <section className="container-page pb-4">
+      <h2 className="font-title text-2xl font-bold text-ink">Durante e depois da estadia</h2>
+      <div className="mt-6 grid gap-6 sm:grid-cols-3">
+        {itens.map((it) => {
+          const Icon = it.icon;
+          return (
+            <div key={it.title} className="flex flex-col">
+              <div className="grid h-11 w-11 place-items-center rounded-xl bg-forest text-white">
+                <Icon className="h-5 w-5" />
+              </div>
+              <h3 className="mt-4 font-title text-lg font-bold text-ink">{it.title}</h3>
+              <p className="mt-2 text-sm text-muted">{it.text}</p>
+            </div>
+          );
+        })}
+      </div>
+      <p className="mt-6 text-xs text-muted">
+        A Viva Nomads registra e documenta cada etapa — não retém valores nem é parte no
+        pagamento.
       </p>
     </section>
   );
