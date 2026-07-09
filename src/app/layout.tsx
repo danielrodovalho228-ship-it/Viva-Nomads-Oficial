@@ -49,7 +49,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" className={`${inter.variable} h-full`}>
+    <html lang="pt-BR" className={`${inter.variable} h-full scroll-smooth`}>
       <body className="min-h-full flex flex-col bg-surface text-ink">
         <AuthProvider>{children}</AuthProvider>
       </body>
