@@ -84,7 +84,16 @@ export function AvatarUploader() {
         .from(AVATARS_BUCKET)
         .upload(path, blob, { upsert: true, contentType: "image/webp", cacheControl: "0" });
       if (upErr) {
-        setError("Não foi possível enviar a foto agora. Tente novamente.");
+        // Mensagem específica quando o recurso ainda não foi provisionado no
+        // Supabase (bucket ausente = migração 0037 não aplicada) — evita
+        // "tente novamente" para um erro que não se resolve tentando de novo.
+        const msg = (upErr.message || "").toLowerCase();
+        if (msg.includes("bucket") && (msg.includes("not found") || msg.includes("exist"))) {
+          setError("O envio de foto ainda não está habilitado nesta conta. (Falta aplicar a migração de avatares no servidor.)");
+        } else {
+          setError("Não foi possível enviar a foto agora. Tente novamente.");
+        }
+        if (typeof console !== "undefined") console.error("[avatar upload]", upErr);
         return;
       }
       const res = await setMyAvatarPath(path);
