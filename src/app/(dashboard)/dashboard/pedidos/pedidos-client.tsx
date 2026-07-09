@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Megaphone, Plus, Check, X, Pause, Play, MessageSquare, Home } from "lucide-react";
+import Image from "next/image";
+import { Plus, Check, X, Pause, Play, MessageSquare, Home } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -93,7 +94,7 @@ export function PedidosClient({
       {pedidos.length === 0 ? (
         <Panel>
           <EmptyState
-            icon={Megaphone}
+            illustration={<Image src="/media/empty-pedidos.webp" alt="" width={176} height={176} className="h-44 w-44" />}
             title="Você ainda não tem pedidos"
             text="Publique um pedido de moradia e deixe os proprietários da cidade encontrarem você."
             action={

@@ -22,16 +22,16 @@ const IMG = "/images/como-funciona";
 
 const TENANT_STEPS = [
   { icon: Search, img: `${IMG}/01-busque.webp`, alt: "Profissional pesquisando imóveis mobiliados no notebook", title: "Busque", text: "Encontre imóveis mobiliados por cidade, período e orçamento." },
-  { icon: MessageSquare, img: `${IMG}/02-converse.webp`, alt: "Pessoa em videochamada conversando com o proprietário", title: "Converse", text: "Fale direto com o proprietário, tire dúvidas e combine os detalhes." },
+  { icon: MessageSquare, img: "/media/como-funciona-01-converse.webp", alt: "Mulher jovem sorrindo no laptop, conversando pela plataforma", title: "Converse", text: "Fale direto com o proprietário, tire dúvidas e combine os detalhes." },
   { icon: ShieldCheck, img: `${IMG}/03-verifique.webp`, alt: "Verificação de identidade com documento", title: "Verifique-se", text: "Confirme sua identidade uma vez e candidate-se com um clique." },
-  { icon: FileSignature, img: `${IMG}/04-assine.webp`, alt: "Entrega de chaves após a assinatura do contrato", title: "Assine", text: "Assine o contrato digital com validade jurídica e receba as chaves." },
+  { icon: FileSignature, img: "/media/como-funciona-02-assine.webp", alt: "Homem assinando o contrato pelo celular", title: "Assine", text: "Assine o contrato digital com validade jurídica e receba as chaves." },
 ];
 
 const OWNER_STEPS = [
-  { icon: ClipboardCheck, img: `${IMG}/05-qualifique.webp`, alt: "Proprietário avaliando o imóvel com checklist", title: "Qualifique o imóvel", text: "Passe pelo checklist e mostre que seu imóvel está pronto." },
+  { icon: ClipboardCheck, img: "/media/como-funciona-03-qualifique.webp", alt: "Mulher analisando um perfil no tablet", title: "Qualifique o imóvel", text: "Passe pelo checklist e mostre que seu imóvel está pronto." },
   { icon: Award, img: `${IMG}/06-selo.webp`, alt: "Apartamento mobiliado com espaço de trabalho em casa", title: "Ganhe o selo", text: "Conquiste o selo Pronto para Morar e ganhe destaque na busca." },
   { icon: Home, img: `${IMG}/07-anuncie.webp`, alt: "Proprietário publicando o anúncio do imóvel", title: "Anuncie", text: "Publique fotos e descrição e receba consultas de inquilinos verificados." },
-  { icon: KeyRound, img: `${IMG}/08-feche.webp`, alt: "Aperto de mão entre proprietário e inquilino", title: "Feche com segurança", text: "Você decide, gera o contrato e recebe — tudo organizado." },
+  { icon: KeyRound, img: "/media/como-funciona-04-chaves.webp", alt: "Casal recebendo as chaves do imóvel, aperto de mãos", title: "Feche com segurança", text: "Você decide, gera o contrato e recebe — tudo organizado." },
 ];
 
 export default function HowItWorksPage() {

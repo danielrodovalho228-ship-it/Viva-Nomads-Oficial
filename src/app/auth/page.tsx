@@ -19,7 +19,6 @@ import {
 import { Logo } from "@/components/ui/logo";
 import { Button } from "@/components/ui/button";
 import { BrandImage } from "@/components/brand-image";
-import { PHOTOS } from "@/lib/media";
 import { TaxSimulator } from "@/components/tax-simulator";
 import { useAuthStore } from "@/lib/store";
 import { resetPropertiesCache } from "@/lib/use-properties";
@@ -343,13 +342,10 @@ export default function AuthPage() {
     <div className="grid min-h-screen lg:grid-cols-2">
       {/* Lado da marca — foto distinta para login e cadastro (plano C1/C2) */}
       <div className="relative hidden overflow-hidden lg:block">
+        {/* Fase 2.3 — imagem lateral serena (vertical), só em >= 1024px. */}
         <BrandImage
-          src={mode === "login" ? PHOTOS.authLogin : PHOTOS.authSignup}
-          alt={
-            mode === "login"
-              ? "Profissional trabalhando concentrado em apartamento mobiliado ao anoitecer"
-              : "Pessoa abrindo a porta de um novo apartamento mobiliado, mala ao lado"
-          }
+          src="/media/auth-lateral.webp"
+          alt="Pessoa relaxando junto à janela em um apartamento mobiliado e tranquilo"
           rounded="rounded-none"
           sizes="50vw"
           priority

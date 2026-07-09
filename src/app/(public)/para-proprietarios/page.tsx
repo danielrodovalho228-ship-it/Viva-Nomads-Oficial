@@ -42,12 +42,13 @@ export default function ForLandlordsPage() {
               </ButtonLink>
             </div>
           </div>
+          {/* Fase 2.1 — destaque do topo. */}
           <BrandImage
-            src={PHOTOS.ownerKeys}
-            alt="Proprietária sorrindo com chaves em apartamento mobiliado pronto para alugar"
+            src="/media/hero-proprietarios.webp"
+            alt="Proprietária segurando as chaves em uma sala mobiliada e iluminada"
             sizes="(max-width: 768px) 100vw, 50vw"
             priority
-            className="aspect-[4/3] w-full rounded-3xl"
+            className="aspect-video w-full rounded-3xl"
           />
         </div>
       </section>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Send, ArrowLeft } from "lucide-react";
 import { PageTitle } from "@/components/dashboard/primitives";
 import { sendMessage } from "@/lib/data/actions";
@@ -73,9 +74,13 @@ function MessagesInner({ initial, demo }: { initial: Conversation[]; demo: boole
     return (
       <>
         <PageTitle title="Mensagens" />
-        <p className="rounded-2xl border border-dashed border-line bg-white p-12 text-center text-muted">
-          Nenhuma conversa ainda.
-        </p>
+        <div className="rounded-2xl border border-dashed border-line bg-white p-12 text-center">
+          <Image src="/media/empty-mensagens.webp" alt="" width={176} height={176} className="mx-auto h-44 w-44" />
+          <h3 className="mt-4 font-title text-lg font-bold text-ink">Nenhuma conversa ainda</h3>
+          <p className="mx-auto mt-2 max-w-md text-sm text-muted">
+            Quando um interessado enviar uma mensagem sobre um imóvel, a conversa aparece aqui.
+          </p>
+        </div>
       </>
     );
   }

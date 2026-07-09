@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { Info } from "lucide-react";
 import { PLANOS, type PlanoId } from "@/config/planos";
 
@@ -16,7 +17,17 @@ export function SimHero({
   stats: { label: string; valor: string }[];
 }) {
   return (
-    <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-forest to-sage p-6 text-white sm:p-8">
+    <section className="relative overflow-hidden rounded-2xl p-6 text-white sm:p-8">
+      {/* Fundo: foto de interior (Fase 2.4) SOB o gradiente ~0.85 — o texto manda. */}
+      <Image
+        src="/media/banner-simulador.webp"
+        alt=""
+        aria-hidden
+        fill
+        sizes="100vw"
+        className="pointer-events-none object-cover"
+      />
+      <div aria-hidden className="absolute inset-0 bg-gradient-to-br from-forest/95 to-sage/85" />
       <Icon aria-hidden className="pointer-events-none absolute -right-6 -top-6 h-40 w-40 text-white/[0.08]" />
       <div className="relative">
         <h2 className="font-title text-2xl font-bold sm:text-3xl">{titulo}</h2>
