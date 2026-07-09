@@ -211,7 +211,7 @@ function NotificationsPanel() {
     marketing: false,
   });
   const items: { key: keyof typeof prefs; label: string; hint: string }[] = [
-    { key: "leads", label: "Novos leads e consultas", hint: "Avise quando um interessado entrar em contato." },
+    { key: "leads", label: "Novos interessados e consultas", hint: "Avise quando um interessado entrar em contato." },
     { key: "messages", label: "Mensagens", hint: "Notificações de novas mensagens no chat." },
     { key: "marketing", label: "Novidades e dicas", hint: "E-mails ocasionais sobre a plataforma." },
   ];

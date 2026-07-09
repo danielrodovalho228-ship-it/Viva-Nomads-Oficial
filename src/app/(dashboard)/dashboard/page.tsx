@@ -103,7 +103,7 @@ function OwnerDashboard({ name }: { name: string }) {
           value={demo ? DEMO_KPIS.visualizacoes.toLocaleString("pt-BR") : "0"}
           icon={Eye}
         />
-        <StatCard label="Leads" value={demo ? String(DEMO_KPIS.leads) : "0"} icon={Users} />
+        <StatCard label="Interessados" value={demo ? String(DEMO_KPIS.leads) : "0"} icon={Users} />
         <StatCard label="Mensagens" value={demo ? String(DEMO_KPIS.mensagens) : "0"} icon={MessageSquare} />
         <StatCard label="Imóveis ativos" value={String(allProperties.length)} icon={Home} />
       </div>
