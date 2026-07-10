@@ -74,7 +74,7 @@ const OWNER_NAV: NavItem[] = [
 
 const TENANT_NAV: NavItem[] = [
   { href: "/dashboard", label: "Visão geral", icon: LayoutDashboard },
-  { href: "/dashboard/verificacao", label: "Inquilino Verificado", icon: BadgeCheck },
+  { href: "/dashboard/verificacao", label: "Verificação", icon: BadgeCheck },
   { href: "/dashboard/pedidos", label: "Meus pedidos", icon: Megaphone },
   { href: "/dashboard/locacoes", label: "Minhas locações", icon: Receipt },
   { href: "/dashboard/favoritos", label: "Favoritos", icon: Heart },
