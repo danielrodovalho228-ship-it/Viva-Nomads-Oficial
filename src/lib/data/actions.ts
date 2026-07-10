@@ -925,7 +925,8 @@ export async function sendMessage(input: {
         .select("full_name")
         .eq("id", user.id)
         .maybeSingle();
-      const senderName = me?.full_name ?? "Um usuário";
+      // Identidade pós-aceite: só o PRIMEIRO nome no e-mail (nunca o sobrenome).
+      const senderName = (me?.full_name ?? "").trim().split(/\s+/)[0] || "Um usuário";
       const preview = safeBody.length > 140 ? `${safeBody.slice(0, 140)}…` : safeBody;
       const link = `${SITE_URL}/dashboard/mensagens`;
       await notify({
