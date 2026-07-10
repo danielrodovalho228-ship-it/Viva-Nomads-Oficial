@@ -52,9 +52,12 @@ export function OwnerCard({ property }: { property: Property }) {
         <div className="min-w-0">
           <p className="flex items-center gap-1.5 font-title font-bold text-ink">
             {name}
-            {(owner?.verified ?? true) && <BadgeCheck className="h-4 w-4 text-blue-600" />}
+            {/* Selo só quando VERIFICADO de fato (nunca por padrão). */}
+            {owner?.verified === true && <BadgeCheck className="h-4 w-4 text-blue-600" />}
           </p>
-          <p className="text-sm text-muted">Proprietário verificado</p>
+          <p className="text-sm text-muted">
+            {owner?.verified === true ? "Proprietário verificado" : "Proprietário"}
+          </p>
           <OwnerRating propertyId={property.id} />
           <div className="mt-1.5">
             <ResponsiveOwnerBadge />
