@@ -1,6 +1,6 @@
 import { sendEmail, isEmailConfigured } from "./email";
 import { sendWhatsapp, isWhatsappConfigured } from "./whatsapp";
-import { brandedNotification, notificationText } from "./templates";
+import { brandedNotification, notificationText, emailImage } from "./templates";
 import { SITE_URL } from "@/lib/site";
 
 export { isEmailConfigured, isWhatsappConfigured };
@@ -21,19 +21,20 @@ export type NotificationEvent =
   | "pedido_expirando" // pedido expira em 3 dias → inquilino
   | "pedido_moderado"; // pedido ocultado pela moderação → inquilino
 
-const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: string) => string }> = {
-  new_lead: { subject: "Novo interessado no seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, você recebeu um novo interessado no Viva Nomads.` },
-  new_message: { subject: "Você tem uma nova mensagem no Viva Nomads", body: (n) => `Olá${n ? " " + n : ""}, você recebeu uma nova mensagem no Viva Nomads.` },
-  application_received: { subject: "Candidatura recebida", body: () => "Recebemos sua candidatura. O proprietário foi notificado." },
-  saved_search_match: { subject: "Novo imóvel para sua busca", body: () => "Um imóvel novo combina com sua busca salva no Viva Nomads." },
-  verification_ready: { subject: "Sua verificação está pronta", body: () => "Seu laudo de Inquilino Verificado está disponível." },
-  contract_status: { subject: "Atualização do seu contrato", body: () => "Há uma atualização no seu contrato de locação." },
-  subscription_status: { subject: "Atualização da sua assinatura", body: () => "Há uma atualização na sua assinatura Viva Nomads." },
-  pedido_novo_cidade: { subject: "Novo pedido de moradia na sua cidade", body: (n) => `Olá${n ? " " + n : ""}, um inquilino publicou um pedido de moradia na cidade de um dos seus imóveis. Veja se algum atende.` },
-  pedido_resposta: { subject: "Um proprietário respondeu ao seu pedido", body: (n) => `Olá${n ? " " + n : ""}, um proprietário respondeu ao seu pedido de moradia com um imóvel. Veja e aceite para conversar.` },
-  pedido_aceito: { subject: "Seu imóvel foi aceito para conversa", body: (n) => `Olá${n ? " " + n : ""}, um inquilino aceitou sua resposta e abriu a conversa. Responda pela plataforma.` },
-  pedido_expirando: { subject: "Seu pedido de moradia expira em breve", body: (n) => `Olá${n ? " " + n : ""}, seu pedido de moradia expira em até 3 dias. Renove ou marque como atendido se já resolveu.` },
-  pedido_moderado: { subject: "Seu pedido de moradia foi ocultado", body: (n) => `Olá${n ? " " + n : ""}, seu pedido de moradia foi ocultado pela moderação. Veja o motivo e ajuste se necessário.` },
+// `img` = chave da imagem de assunto (public/media/email/<img>.jpg).
+const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: string) => string; img: string }> = {
+  new_lead: { subject: "Novo interessado no seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, você recebeu um novo interessado no Viva Nomads.`, img: "novo-interessado" },
+  new_message: { subject: "Você tem uma nova mensagem no Viva Nomads", body: (n) => `Olá${n ? " " + n : ""}, você recebeu uma nova mensagem no Viva Nomads.`, img: "nova-mensagem" },
+  application_received: { subject: "Candidatura recebida", body: () => "Recebemos sua candidatura. O proprietário foi notificado.", img: "candidatura-recebida" },
+  saved_search_match: { subject: "Novo imóvel para sua busca", body: () => "Um imóvel novo combina com sua busca salva no Viva Nomads.", img: "transacional" },
+  verification_ready: { subject: "Sua verificação está pronta", body: () => "Seu laudo de Inquilino Verificado está disponível.", img: "candidatura-recebida" },
+  contract_status: { subject: "Atualização do seu contrato", body: () => "Há uma atualização no seu contrato de locação.", img: "pedido-resposta" },
+  subscription_status: { subject: "Atualização da sua assinatura", body: () => "Há uma atualização na sua assinatura Viva Nomads.", img: "transacional" },
+  pedido_novo_cidade: { subject: "Novo pedido de moradia na sua cidade", body: (n) => `Olá${n ? " " + n : ""}, um inquilino publicou um pedido de moradia na cidade de um dos seus imóveis. Veja se algum atende.`, img: "transacional" },
+  pedido_resposta: { subject: "Um proprietário respondeu ao seu pedido", body: (n) => `Olá${n ? " " + n : ""}, um proprietário respondeu ao seu pedido de moradia com um imóvel. Veja e aceite para conversar.`, img: "pedido-resposta" },
+  pedido_aceito: { subject: "Seu imóvel foi aceito para conversa", body: (n) => `Olá${n ? " " + n : ""}, um inquilino aceitou sua resposta e abriu a conversa. Responda pela plataforma.`, img: "nova-mensagem" },
+  pedido_expirando: { subject: "Seu pedido de moradia expira em breve", body: (n) => `Olá${n ? " " + n : ""}, seu pedido de moradia expira em até 3 dias. Renove ou marque como atendido se já resolveu.`, img: "transacional" },
+  pedido_moderado: { subject: "Seu pedido de moradia foi ocultado", body: (n) => `Olá${n ? " " + n : ""}, seu pedido de moradia foi ocultado pela moderação. Veja o motivo e ajuste se necessário.`, img: "transacional" },
 };
 
 export interface NotifyResult {
@@ -70,6 +71,7 @@ export async function notify(params: {
         intro: tpl.body(params.name),
         detailsHtml: params.detailsHtml,
         cta,
+        image: emailImage(tpl.img, tpl.subject),
       });
       const text = notificationText({
         title: tpl.subject,
