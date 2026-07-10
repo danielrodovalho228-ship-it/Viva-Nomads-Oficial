@@ -3,7 +3,8 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Percent, Info } from "lucide-react";
-import { PageTitle } from "@/components/dashboard/primitives";
+import { PageTitle, EmConstrucao } from "@/components/dashboard/primitives";
+import { FERRAMENTAS_REAIS } from "@/lib/flags";
 import { useAuthStore, DEMO_USER } from "@/lib/store";
 import { plano as getPlano, type PlanoId } from "@/config/planos";
 import { simularROI, type EntradaROI } from "@/lib/simulador";
@@ -14,6 +15,20 @@ const INCLUI =
   "Móveis dos quartos e sala, cozinha equipada, eletrodomésticos, cama/colchão, mesa de trabalho, cortinas e utensílios.";
 
 export default function RoiImovelPage() {
+  // Ferramenta EM DESENVOLVIMENTO (B2): enquanto a flag está OFF, o card abre o
+  // placeholder. A implementação real fica preservada abaixo, atrás da flag.
+  if (!FERRAMENTAS_REAIS) {
+    return (
+      <EmConstrucao
+        title="Calculadora de ROI"
+        text="A calculadora de retorno do investimento em mobiliar está em desenvolvimento e chega em breve, aqui no seu painel."
+      />
+    );
+  }
+  return <RoiImovelReal />;
+}
+
+function RoiImovelReal() {
   const user = useAuthStore((s) => s.user);
   const planoAtivo = ((user ?? DEMO_USER).plan ?? "free") as PlanoId;
 

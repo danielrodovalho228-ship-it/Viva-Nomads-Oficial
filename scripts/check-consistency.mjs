@@ -45,6 +45,18 @@ const MONEY = [
 //    parte para o cliente (o defeito original do e-mail de interessado).
 const PROFILE_LEAK = /profiles!.*\b(email|phone|telefone)\b/i;
 
+// 3) Vazamento de DADO DE DEMONSTRAÇÃO em superfície de usuário (QA 10/07):
+//    personas e números de contrato fictícios ("Ana Carvalho", "VN-CT-2026-…")
+//    só podem aparecer em código que renderiza SOB o gate de demonstração
+//    (useDashDemo / demo ? …). Se uma dessas strings estiver numa tela sem gate,
+//    ela vaza para conta real. A trava exige `consistency-ignore` na MESMA linha
+//    quando o uso é legítimo (literal do seed/persona usado só no ramo demo).
+const DEMO_LEAK = [
+  /\bAna Carvalho\b/,
+  /\bMarcos Andrade\b/,
+  /\b(?:CTR|VN-CT)-20\d{2}-\d{3,4}\b/,
+];
+
 function walk(dir) {
   const out = [];
   let entries;
@@ -77,6 +89,15 @@ for (const dir of SCAN_DIRS) {
       }
       if (PROFILE_LEAK.test(line))
         violations.push({ rel, n: i + 1, why: "join de perfil traz contato ao cliente", line: line.trim() });
+      for (const rx of DEMO_LEAK) {
+        if (rx.test(line))
+          violations.push({
+            rel,
+            n: i + 1,
+            why: `dado de demonstração fora do gate demo (${rx})`,
+            line: line.trim(),
+          });
+      }
     });
   }
 }

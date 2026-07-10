@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ResponsiveOwnerBadge } from "@/components/ui/badge";
 import { ServiceOrderNotice } from "@/components/legal-notice";
 import { useViewMode } from "@/lib/roles";
-import { useDashDemo } from "@/lib/demo/demo-mode";
+import { useDashDemo, useDisplayUser } from "@/lib/demo/demo-mode";
 import {
   SAMPLE_ORDERS,
   SO_CATEGORIES,
@@ -35,9 +35,18 @@ function ServiceOrdersInner({ demo }: { demo: boolean }) {
   // A tela aparece nos dois menus; a visão segue o MODO ativo (não o papel de
   // cadastro), para o conteúdo bater com o contexto em que o usuário está.
   const { mode } = useViewMode();
+  const displayUser = useDisplayUser();
   const [orders, setOrders] = useState<ServiceOrder[]>(demo ? SAMPLE_ORDERS : []);
 
-  if (mode === "tenant") return <TenantView orders={orders} setOrders={setOrders} />;
+  // Identidade do inquilino nos chamados: no demo é a persona dos exemplos (para
+  // casar com SAMPLE_ORDERS); no real é o nome do próprio usuário — nunca um nome
+  // fictício estampado no chamado de conta real.
+  const tenantName = demo
+    ? "Ana Carvalho" // consistency-ignore: persona de demonstração, ramo demo apenas
+    : displayUser?.fullName?.trim() || displayUser?.name?.trim() || "";
+
+  if (mode === "tenant")
+    return <TenantView orders={orders} setOrders={setOrders} tenantName={tenantName} />;
   return <OwnerView orders={orders} setOrders={setOrders} />;
 }
 
@@ -154,15 +163,17 @@ function OwnerView({
 function TenantView({
   orders,
   setOrders,
+  tenantName,
 }: {
   orders: ServiceOrder[];
   setOrders: (o: ServiceOrder[]) => void;
+  tenantName: string;
 }) {
   const [openForm, setOpenForm] = useState(false);
   const [category, setCategory] = useState<SOCategory>("hidraulica");
   const [priority, setPriority] = useState<SOPriority>("media");
   const [description, setDescription] = useState("");
-  const mine = orders.filter((o) => o.tenantName === "Ana Carvalho");
+  const mine = orders.filter((o) => o.tenantName === tenantName);
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -170,7 +181,7 @@ function TenantView({
     const novo: ServiceOrder = {
       id: `so-${Date.now()}`,
       property: "Apto Santa Mônica",
-      tenantName: "Ana Carvalho",
+      tenantName,
       category,
       priority,
       description,

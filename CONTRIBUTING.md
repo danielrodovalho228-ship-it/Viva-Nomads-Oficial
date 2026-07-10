@@ -30,6 +30,11 @@ Todo o vocabulário do produto tem que sustentar isso.
    página existente** — não como novo item de menu, salvo decisão explícita de produto.
    Menu atual: Visão geral · Meus imóveis · Pedidos de moradia · Mensagens · Fechamento ·
    Contratos & blocos · Ferramentas · Assinatura · Conta. Grupo Admin só para `role=admin`.
+   **O menu do inquilino tem no máximo 7 itens** (mesma regra). Menu atual: Visão geral ·
+   Meus pedidos · Favoritos & comparações · Minhas locações · Mensagens · Verificação ·
+   Conta. Comparar e Buscas salvas são **abas** dentro de "Favoritos & comparações"
+   (`src/components/dashboard/favoritos-tabs.tsx`), não itens de menu. "Solicitações" é
+   **contextual**: só entra no menu quando há locação ativa (`useHasActiveLocacao`).
 5. **Papel:** nenhum link de contexto de um papel aponta para página do outro papel.
    Área de admin só existe no DOM para `role=admin` (não é hide por CSS) e tem guard
    de papel no cliente **e** no proxy.

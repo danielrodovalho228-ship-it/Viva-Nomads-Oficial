@@ -1,5 +1,6 @@
+import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { HardHat } from "lucide-react";
+import { ArrowUpRight, HardHat } from "lucide-react";
 
 /**
  * Placeholder padrão "Em construção" — SEMPRE dentro da casca do dashboard
@@ -50,20 +51,35 @@ export function StatCard({
   label,
   value,
   icon: Icon,
+  href,
 }: {
   label: string;
   value: string | number;
   icon: React.ComponentType<{ className?: string }>;
+  /** Opcional: transforma o card num atalho para a seção correspondente. */
+  href?: string;
 }) {
-  return (
-    <div className="rounded-2xl border border-sage-200 bg-white p-5">
+  const body = (
+    <>
       <div className="flex items-center justify-between">
         <span className="text-sm text-muted">{label}</span>
         <Icon className="h-5 w-5 text-sage" />
       </div>
       <p className="mt-2 font-title text-3xl font-bold text-forest">{value}</p>
-    </div>
+    </>
   );
+  if (href) {
+    return (
+      <Link
+        href={href}
+        className="group relative block rounded-2xl border border-sage-200 bg-white p-5 transition-colors hover:border-sage"
+      >
+        {body}
+        <ArrowUpRight className="absolute bottom-4 right-4 h-4 w-4 text-sage-200 transition-colors group-hover:text-sage" />
+      </Link>
+    );
+  }
+  return <div className="rounded-2xl border border-sage-200 bg-white p-5">{body}</div>;
 }
 
 export function Panel({

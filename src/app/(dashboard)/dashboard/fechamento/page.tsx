@@ -17,8 +17,9 @@ import {
   Clock,
   Info,
 } from "lucide-react";
-import { PageTitle, Panel } from "@/components/dashboard/primitives";
-import { Button } from "@/components/ui/button";
+import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
+import { Button, ButtonLink } from "@/components/ui/button";
+import { useDashDemo } from "@/lib/demo/demo-mode";
 import { PropertyMiniCard } from "@/components/property-mini-card";
 import { DocumentShare } from "@/components/document-share";
 import { SAMPLE_PROPERTIES } from "@/lib/properties";
@@ -56,8 +57,9 @@ import { formatBRL, cn } from "@/lib/utils";
 
 const STEPS = ["Candidatura & verificação", "Garantia", "Serviços", "Patrimonial", "Contrato", "Resumo"];
 
-// Inquilino e imóvel da candidatura (mock — viria do lead selecionado).
-const TENANT = { name: "Ana Carvalho", profile: "Médica · residência", foreigner: false };
+// Inquilino e imóvel da candidatura (mock — viria do lead selecionado). Usado
+// SÓ no ramo demo (ClosingPreview), nunca em conta real — ver gate abaixo.
+const TENANT = { name: "Ana Carvalho", profile: "Médica · residência", foreigner: false }; // consistency-ignore: persona de demonstração, renderizada só sob o gate demo
 // Imóvel completo para o card do topo (Atualização 16) + número do contrato.
 const PROPERTY_FULL = SAMPLE_PROPERTIES.find((p) => p.id === "ube-001") ?? SAMPLE_PROPERTIES[0];
 const CONTRACT_NUMBER = formatDocNumber("contrato", 2026, 42);
@@ -85,7 +87,48 @@ const OWNER_NET = PROPERTY.monthlyRent - PLATFORM_COMMISSION;
 const PREP_FEE = 450;
 const CHECKOUT_FEE = 250;
 
+/**
+ * Fechamento (B4/B5/B6 — fronteira demo/real). O fluxo abaixo é um PREVIEW
+ * populado com dados de exemplo (inquilino, imóvel e número de contrato
+ * fictícios). Por isso ele só renderiza no MODO DEMONSTRAÇÃO. Conta real (demo
+ * desligado) vê o estado honesto de `FechamentoReal` — o fechamento de verdade
+ * abre a partir de uma candidatura aceita, sem nenhum dado fictício vazando.
+ * Regra: preview só no modo demo.
+ */
 export default function ClosingPage() {
+  const demo = useDashDemo();
+  return demo ? <ClosingPreview /> : <FechamentoReal />;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   CONTA REAL — sem candidatura selecionada ainda. Estado honesto, dentro da
+   casca. Nenhum nome ou número de contrato fictício para conta real.
+   ───────────────────────────────────────────────────────────────────────── */
+function FechamentoReal() {
+  return (
+    <div className="mx-auto max-w-3xl">
+      <PageTitle
+        title="Fechamento"
+        subtitle="O fechamento abre quando você aceita uma candidatura."
+      />
+      <EmptyState
+        icon={FileSignature}
+        title="Nenhuma candidatura em fechamento"
+        text="Quando você aceitar uma candidatura, ela aparece aqui com verificação, garantia, serviços e a geração do contrato — sempre com os dados reais do inquilino. A plataforma conecta, verifica e documenta; o acordo é fechado direto entre vocês."
+        action={
+          <ButtonLink href="/dashboard/mensagens" variant="primary">
+            <ArrowRight className="h-4 w-4" /> Ver conversas e candidaturas
+          </ButtonLink>
+        }
+      />
+      <div className="mt-4">
+        <OwnerDecisionNotice />
+      </div>
+    </div>
+  );
+}
+
+function ClosingPreview() {
   const [step, setStep] = useState(0);
   // Prazo total pretendido (contrato-mãe) — o inquilino escolhe no fechamento.
   const [prazoMeses, setPrazoMeses] = useState(DEFAULT_MESES);

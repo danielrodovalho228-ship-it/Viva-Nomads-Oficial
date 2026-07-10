@@ -4,7 +4,7 @@ import { Simulador } from "@/components/simulacao/simulador";
 
 // Página privada: divulgada só por link direto (não indexar nem seguir).
 export const metadata: Metadata = {
-  title: "Simulador de receita",
+  title: "Simulação do negócio — documento interno dos sócios",
   robots: { index: false, follow: false },
 };
 
