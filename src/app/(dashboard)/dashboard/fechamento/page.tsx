@@ -17,9 +17,10 @@ import {
   Clock,
   Info,
 } from "lucide-react";
-import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
-import { Button, ButtonLink } from "@/components/ui/button";
-import { useDashDemo } from "@/lib/demo/demo-mode";
+import { PageTitle, Panel } from "@/components/dashboard/primitives";
+import { Button } from "@/components/ui/button";
+import { useDashDemo, DemoBadge } from "@/lib/demo/demo-mode";
+import { KYC_PORTAO_RIGIDO } from "@/lib/flags";
 import { PropertyMiniCard } from "@/components/property-mini-card";
 import { DocumentShare } from "@/components/document-share";
 import { SAMPLE_PROPERTIES } from "@/lib/properties";
@@ -88,47 +89,31 @@ const PREP_FEE = 450;
 const CHECKOUT_FEE = 250;
 
 /**
- * Fechamento (B4/B5/B6 — fronteira demo/real). O fluxo abaixo é um PREVIEW
- * populado com dados de exemplo (inquilino, imóvel e número de contrato
- * fictícios). Por isso ele só renderiza no MODO DEMONSTRAÇÃO. Conta real (demo
- * desligado) vê o estado honesto de `FechamentoReal` — o fechamento de verdade
- * abre a partir de uma candidatura aceita, sem nenhum dado fictício vazando.
- * Regra: preview só no modo demo.
+ * Fechamento (reteste QA item 2 — portão do KYC SUAVE).
+ *  - MODO DEMONSTRAÇÃO (admin): fluxo completo com dados de exemplo e selo
+ *    "Exemplo"; a verificação sai verde (laudo de demonstração).
+ *  - CONTA REAL (demo desligado): o mesmo fluxo é NAVEGÁVEL, mas SEM persona ou
+ *    número de contrato fictício (inquilino "Candidato(a)"), e a verificação —
+ *    ainda indisponível — registra "Verificação pendente", visível ao
+ *    proprietário no resumo. Endurece com a flag KYC_PORTAO_RIGIDO quando a CAF
+ *    integrar (aí a conta real só avança com verificação concluída).
  */
 export default function ClosingPage() {
   const demo = useDashDemo();
-  return demo ? <ClosingPreview /> : <FechamentoReal />;
+  return <ClosingFlow demo={demo} />;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────
-   CONTA REAL — sem candidatura selecionada ainda. Estado honesto, dentro da
-   casca. Nenhum nome ou número de contrato fictício para conta real.
-   ───────────────────────────────────────────────────────────────────────── */
-function FechamentoReal() {
-  return (
-    <div className="mx-auto max-w-3xl">
-      <PageTitle
-        title="Fechamento"
-        subtitle="O fechamento abre quando você aceita uma candidatura."
-      />
-      <EmptyState
-        icon={FileSignature}
-        title="Nenhuma candidatura em fechamento"
-        text="Quando você aceitar uma candidatura, ela aparece aqui com verificação, garantia, serviços e a geração do contrato — sempre com os dados reais do inquilino. A plataforma conecta, verifica e documenta; o acordo é fechado direto entre vocês."
-        action={
-          <ButtonLink href="/dashboard/mensagens" variant="primary">
-            <ArrowRight className="h-4 w-4" /> Ver conversas e candidaturas
-          </ButtonLink>
-        }
-      />
-      <div className="mt-4">
-        <OwnerDecisionNotice />
-      </div>
-    </div>
-  );
-}
+/** Inquilino neutro para a conta real (sem persona fictícia — item 3). */
+const TENANT_NEUTRO = { name: "Candidato(a)", profile: "Aguardando dados do candidato", foreigner: false };
 
-function ClosingPreview() {
+function ClosingFlow({ demo }: { demo: boolean }) {
+  // Assunto do fechamento: dados de exemplo só no modo demo; conta real usa um
+  // sujeito neutro e nenhum número de contrato fictício.
+  const tenant = demo ? TENANT : TENANT_NEUTRO;
+  const contractNumber = demo ? CONTRACT_NUMBER : "—";
+  // Status da verificação: "none" (não iniciada) → "ok" (laudo verde, demo) ou
+  // "pendente" (conta real, CAF indisponível — portão suave).
+  const [verifStatus, setVerifStatus] = useState<"none" | "ok" | "pendente">("none");
   const [step, setStep] = useState(0);
   // Prazo total pretendido (contrato-mãe) — o inquilino escolhe no fechamento.
   const [prazoMeses, setPrazoMeses] = useState(DEFAULT_MESES);
@@ -198,9 +183,21 @@ function ClosingPreview() {
 
   async function runVerification() {
     setVerifying(true);
-    // Laudo de demonstração — usado se a API falhar, garantindo que o semáforo
-    // sempre apareça e o fluxo possa avançar (A4).
-    const demo: CafResult = {
+
+    // CONTA REAL — a CAF ainda não está integrada. Portão SUAVE (padrão): registra
+    // "Verificação pendente" e AVANÇA (a pendência fica visível ao proprietário no
+    // resumo). Portão RÍGIDO (flag): sem verificação real, não avança.
+    if (!demo) {
+      setCafResult(null);
+      setVerifStatus("pendente");
+      setVerified(!KYC_PORTAO_RIGIDO);
+      setVerifying(false);
+      return;
+    }
+
+    // MODO DEMONSTRAÇÃO — laudo de exemplo (verde). Usado também se a API falhar,
+    // garantindo que o semáforo apareça e o fluxo avance (A4).
+    const demoLaudo: CafResult = {
       light: "green",
       identity: true,
       liveness: true,
@@ -217,13 +214,14 @@ function ClosingPreview() {
       const res = await fetch("/api/caf/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: TENANT.name }),
+        body: JSON.stringify({ name: tenant.name }),
       });
-      const data = res.ok ? ((await res.json()) as CafResult) : demo;
-      setCafResult(data?.light ? data : demo);
+      const data = res.ok ? ((await res.json()) as CafResult) : demoLaudo;
+      setCafResult(data?.light ? data : demoLaudo);
     } catch {
-      setCafResult(demo);
+      setCafResult(demoLaudo);
     } finally {
+      setVerifStatus("ok");
       setVerified(true);
       setVerifying(false);
     }
@@ -250,7 +248,7 @@ function ClosingPreview() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          tenantName: TENANT.name,
+          tenantName: tenant.name,
           ownerName: "Proprietário",
           propertyTitle: PROPERTY.title,
           monthlyRent: PROPERTY.monthlyRent,
@@ -268,7 +266,7 @@ function ClosingPreview() {
         body: JSON.stringify({
           firstMonthRent: PROPERTY.monthlyRent,
           plan: OWNER_PLAN,
-          name: TENANT.name,
+          name: tenant.name,
         }),
       }).catch(() => {});
       // Garantia na chave do banco (caução vira à vista/parcelada pela forma).
@@ -327,8 +325,17 @@ function ClosingPreview() {
     <div>
       <PageTitle
         title="Fechamento"
-        subtitle={`Contrato ${CONTRACT_NUMBER} · você está fechando uma candidatura`}
+        subtitle={
+          demo
+            ? `Contrato ${contractNumber} · você está fechando uma candidatura`
+            : "Fluxo do fechamento — os dados do inquilino e a verificação entram quando a candidatura é aceita."
+        }
       />
+      {demo && (
+        <div className="mb-4">
+          <DemoBadge />
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Resumo lateral (sticky no desktop) — aproveita a largura da tela */}
@@ -338,9 +345,9 @@ function ClosingPreview() {
             {/* Identificação clara dos papéis (A6) */}
             <div className="flex flex-wrap items-center gap-2 rounded-xl border border-line bg-white px-4 py-3 text-sm">
               <span className="rounded-full bg-blue-50 px-2.5 py-1 font-medium text-blue-700">
-                Inquilino: {TENANT.name}
+                Inquilino: {tenant.name}
               </span>
-              <span className="text-muted">{TENANT.profile}</span>
+              <span className="text-muted">{tenant.profile}</span>
               <ArrowRight className="h-4 w-4 text-muted" />
               <span className="rounded-full bg-surface-2 px-2.5 py-1 font-medium text-ink">
                 {PROPERTY.title}
@@ -389,11 +396,11 @@ function ClosingPreview() {
             <div>
               <h2 className="font-title text-lg font-bold text-ink">Candidatura e verificação</h2>
               <p className="mt-1 text-sm text-muted">
-                {TENANT.name} · {TENANT.profile}
+                {tenant.name} · {tenant.profile}
               </p>
             </div>
 
-            {!verified ? (
+            {verifStatus === "none" ? (
               <div className="rounded-xl border border-sage-200 p-5 text-center">
                 <ShieldCheck className="mx-auto h-10 w-10 text-sage" />
                 <p className="mt-3 text-sm text-muted">
@@ -404,8 +411,20 @@ function ClosingPreview() {
                   {verifying ? "Verificando..." : "Iniciar verificação de identidade"}
                 </Button>
               </div>
+            ) : verifStatus === "ok" && cafResult ? (
+              <CafLaudo result={cafResult} />
             ) : (
-              cafResult && <CafLaudo result={cafResult} />
+              // Portão SUAVE (conta real): verificação indisponível → pendente.
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-5">
+                <p className="flex items-center gap-2 font-title font-bold text-amber-800">
+                  <Clock className="h-5 w-5" /> Verificação pendente
+                </p>
+                <p className="mt-2 text-sm text-amber-800/90">
+                  A verificação de identidade abre em breve (via parceiro, em estruturação). Por ora,
+                  o fechamento segue com a pendência <strong>registrada</strong> — ela aparece no
+                  resumo e é visível na negociação. {KYC_PORTAO_RIGIDO ? "" : "Você pode continuar."}
+                </p>
+              </div>
             )}
 
             {/* Ocupação (Onda 1): nº de pessoas × capacidade do imóvel. */}
@@ -951,7 +970,7 @@ function ClosingPreview() {
 
             {/* Resumo de campos dinâmicos do contrato */}
             <div className="rounded-xl bg-surface-2 p-4 text-sm">
-              <Row label="Inquilino" value={TENANT.name} />
+              <Row label="Inquilino" value={tenant.name} />
               <Row label="Imóvel" value={PROPERTY.title} />
               <Row label="Prazo" value={`${prazoMeses} meses`} />
               <Row label="Aluguel" value={`${formatBRL(PROPERTY.monthlyRent)}/mês`} />
@@ -1042,13 +1061,13 @@ function ClosingPreview() {
                 {/* Compartilhamento profissional (Atualização 17) */}
                 <div className="pt-2">
                   <DocumentShare
-                    docNumber={CONTRACT_NUMBER}
+                    docNumber={contractNumber}
                     shareUrl={
                       typeof window !== "undefined"
-                        ? `${window.location.origin}/dashboard/fechamento?doc=${CONTRACT_NUMBER}`
-                        : `https://vivanomads.com.br/doc/${CONTRACT_NUMBER}`
+                        ? `${window.location.origin}/dashboard/fechamento?doc=${contractNumber}`
+                        : `https://vivanomads.com.br/doc/${contractNumber}`
                     }
-                    summary={`Contrato de locação por temporada — ${TENANT.name} · ${PROPERTY.title} · ${formatBRL(PROPERTY.monthlyRent)}/mês`}
+                    summary={`Contrato de locação por temporada — ${tenant.name} · ${PROPERTY.title} · ${formatBRL(PROPERTY.monthlyRent)}/mês`}
                   />
                 </div>
               </div>
@@ -1075,11 +1094,13 @@ function ClosingPreview() {
             </div>
             <div className="rounded-xl bg-surface-2 p-4 text-left text-sm">
               <Row
-                label="Inquilino verificado"
+                label="Verificação do inquilino"
                 value={
-                  cafResult
+                  verifStatus === "ok" && cafResult
                     ? `${TRAFFIC_LIGHT_META[cafResult.light].emoji} ${TRAFFIC_LIGHT_META[cafResult.light].label}`
-                    : "—"
+                    : verifStatus === "pendente"
+                      ? "⏳ Verificação pendente"
+                      : "—"
                 }
               />
               <Row label="Garantia" value={selectedGarantia?.nome ?? "—"} />

@@ -28,6 +28,50 @@ export async function setPreferredMode(mode: ViewMode): Promise<{ ok: boolean }>
   return { ok: !error };
 }
 
+/**
+ * Resolve o modo INICIAL da sessão NO SERVIDOR (reteste QA item 1), nesta ordem:
+ *   (a) última preferência salva no perfil (`preferred_mode`);
+ *   (b) papel da conta — admin/proprietário, OU proprietário com imóvel → owner;
+ *       inquilino → tenant;
+ *   (c) conta nova sem papel definido → null (dispara a pergunta de 1º acesso).
+ * Assim, deep-link em aba nova nunca cai em Inquilino por padrão para quem é
+ * proprietário. null em demo/preview (sem Supabase) — o cliente decide.
+ */
+export async function resolveInitialMode(): Promise<ViewMode | null> {
+  const supabase = await createClient();
+  if (!supabase) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("preferred_mode, role")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  // (a) preferência salva vence sempre.
+  const pm = profile?.preferred_mode;
+  if (pm === "owner" || pm === "tenant") return pm;
+
+  // (b) papel da conta.
+  const role = profile?.role;
+  if (role === "admin" || role === "owner") return "owner";
+
+  // (b) proprietário "de fato": tem ao menos um imóvel cadastrado.
+  const { count } = await supabase
+    .from("properties")
+    .select("id", { count: "exact", head: true })
+    .eq("owner_id", user.id);
+  if ((count ?? 0) > 0) return "owner";
+
+  if (role === "tenant") return "tenant";
+
+  // (c) conta nova sem papel → deixa a pergunta de primeiro acesso decidir.
+  return null;
+}
+
 /** Lê o modo preferido do perfil. null = sem escolha (deriva do papel). */
 export async function getPreferredMode(): Promise<ViewMode | null> {
   const supabase = await createClient();

@@ -27,7 +27,7 @@ import { useAuthStore, type SessionUser, type ViewMode } from "@/lib/store";
 import { getMyAvatarUrl } from "@/lib/data/avatar-actions";
 import { setPreferredMode } from "@/lib/data/mode-actions";
 import { useHasActiveLocacao } from "@/lib/use-active-locacao";
-import { useViewMode, MODE_META } from "@/lib/roles";
+import { useViewMode, MODE_META, primeiroNomeExibicao } from "@/lib/roles";
 import { useDemoMode, DemoToggle, DemoBanner, useDisplayUser } from "@/lib/demo/demo-mode";
 import { PROGRAMA_INDICACAO } from "@/lib/flags";
 import { cn } from "@/lib/utils";
@@ -151,6 +151,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const display: SessionUser =
     displayUser ?? { id: "", name: "", email: "", role: "tenant" };
   const plan = display.plan ?? "free";
+  // Nome seguro para o rodapé/avatar: nome do perfil ou rótulo neutro — NUNCA
+  // o e-mail cru (que é o fallback de `display.name`). Reteste QA item 4.
+  const nomeSidebar = primeiroNomeExibicao(displayUser) || "Minha conta";
 
   // Minha própria foto de perfil (opcional) para o avatar do topo.
   const [myPhoto, setMyPhoto] = useState<string | null>(null);
@@ -258,9 +261,10 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       </nav>
       <div className="border-t border-white/10 p-3">
         <div className="flex items-center gap-3 px-3 py-2">
-          <Avatar name={display.name} size={36} mode={mode} photoUrl={myPhoto ?? undefined} />
+          <Avatar name={nomeSidebar} size={36} mode={mode} photoUrl={myPhoto ?? undefined} />
           <div className="min-w-0 text-xs">
-            <p className="truncate font-medium text-white">{display.name}</p>
+            {/* Item 4: nunca o e-mail cru — nome do perfil ou rótulo neutro. */}
+            <p className="truncate font-medium text-white">{nomeSidebar}</p>
             {/* B7: o rodapé reflete o MODO ATUAL (não o papel de cadastro). */}
             <p className="text-white/60">Modo: {meta.label}</p>
           </div>

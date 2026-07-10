@@ -31,3 +31,14 @@ export const PLANO_FUNDADOR = process.env.NEXT_PUBLIC_PLANO_FUNDADOR === "on";
  * NEXT_PUBLIC_FERRAMENTAS_REAIS="on" quando a versão final entrar.
  */
 export const FERRAMENTAS_REAIS = process.env.NEXT_PUBLIC_FERRAMENTAS_REAIS === "on";
+
+/**
+ * Portão do KYC no Fechamento. OFF por padrão = portão SUAVE (reteste QA item 2):
+ * enquanto a verificação (CAF) não está integrada, a conta real avança o
+ * fechamento com status "Verificação pendente" (registrado e visível ao
+ * proprietário no resumo), em vez de travar. Ligue com
+ * NEXT_PUBLIC_KYC_PORTAO_RIGIDO="on" quando a CAF integrar — aí a conta real só
+ * avança com verificação concluída (o modo demonstração sempre avança, com selo
+ * de exemplo).
+ */
+export const KYC_PORTAO_RIGIDO = process.env.NEXT_PUBLIC_KYC_PORTAO_RIGIDO === "on";

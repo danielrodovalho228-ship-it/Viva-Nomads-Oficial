@@ -12,7 +12,7 @@ import {
   ClipboardCheck,
   ArrowRight,
 } from "lucide-react";
-import { useViewMode } from "@/lib/roles";
+import { useViewMode, primeiroNomeExibicao } from "@/lib/roles";
 import { StatCard, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { DashboardBanner } from "@/components/dashboard/banner";
 import { PropertyRow } from "@/components/dashboard/property-row";
@@ -31,9 +31,9 @@ export default function DashboardPage() {
   // com demo desligado (fronteira demo/real). Sem nome → "Olá!".
   const user = useDisplayUser();
   const { mode } = useViewMode();
-  // Saudação com o nome real; sem nome coletado, cai em "Olá!" — nunca
-  // "visitante" nem a parte local do e-mail (pré-lançamento, ALTA 3).
-  const firstName = user?.fullName?.trim() ? user.fullName.trim().split(" ")[0] : "";
+  // Saudação com o primeiro nome do perfil; sem nome, saudação neutra — NUNCA o
+  // e-mail cru (reteste QA item 4).
+  const firstName = primeiroNomeExibicao(user);
 
   return (
     <>
