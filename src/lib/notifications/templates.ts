@@ -10,7 +10,15 @@ import { buildLeadNotification } from "@/lib/leads";
 
 const MARK = `${SITE_URL}/email-mark.png`;
 
-function layout(inner: string): string {
+/** Hero opcional: imagem correspondente ao assunto, full-width sob o cabeçalho. */
+function heroRow(image?: { src: string; alt: string }): string {
+  if (!image) return "";
+  return `<tr><td style="padding:0;font-size:0;line-height:0;">
+    <img src="${image.src}" alt="${image.alt}" width="600" style="display:block;width:100%;max-width:600px;height:auto;border:0;" />
+  </td></tr>`;
+}
+
+function layout(inner: string, image?: { src: string; alt: string }): string {
   return `<!doctype html><html lang="pt-BR"><body style="margin:0;padding:0;background:#f1f5f4;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f4;padding:24px 12px;"><tr><td align="center">
     <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#fff;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;">
@@ -20,6 +28,7 @@ function layout(inner: string): string {
           <td style="vertical-align:middle;padding-left:10px;font-size:20px;font-weight:800;letter-spacing:-0.5px;"><span style="color:#1E63D0;">Viva</span><span style="color:#6CBE2A;">Nomads</span></td>
         </tr></table>
       </td></tr>
+      ${heroRow(image)}
       <tr><td style="padding:32px;">${inner}</td></tr>
       <tr><td style="padding:20px 32px;background:#f8fafc;border-top:1px solid #eef2f1;">
         <p style="margin:0;font-size:12px;line-height:1.6;color:#9ca3af;">Viva Nomads — locação mobiliada por temporada (30 a 180 dias).<br>Se você não solicitou este e-mail, pode ignorá-lo com segurança.</p>
@@ -35,25 +44,34 @@ function button(url: string, label: string): string {
   </td></tr></table>`;
 }
 
+type Hero = { src: string; alt: string };
+
+/** URL da imagem de assunto do e-mail (hospedada em public/media/email/). */
+export function emailImage(key: string, alt: string): Hero {
+  return { src: `${SITE_URL}/media/email/${key}.jpg`, alt };
+}
+
 /** E-mail com título, texto e botão (CTA). */
-export function brandedEmail(o: { title: string; intro: string; button: string; url: string; outro?: string }): string {
+export function brandedEmail(o: { title: string; intro: string; button: string; url: string; outro?: string; image?: Hero }): string {
   return layout(
     `<h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;color:#143C8C;">${o.title}</h1>
      <p style="margin:0 0 22px;font-size:15px;line-height:1.6;color:#374151;">${o.intro}</p>
      ${button(o.url, o.button)}
-     ${o.outro ? `<p style="margin:22px 0 0;font-size:13px;line-height:1.6;color:#6b7280;">${o.outro}</p>` : ""}`
+     ${o.outro ? `<p style="margin:22px 0 0;font-size:13px;line-height:1.6;color:#6b7280;">${o.outro}</p>` : ""}`,
+    o.image
   );
 }
 
 /** E-mail com código (OTP) em destaque, sem botão. */
-export function brandedCodeEmail(o: { title: string; intro: string; code: string; outro?: string }): string {
+export function brandedCodeEmail(o: { title: string; intro: string; code: string; outro?: string; image?: Hero }): string {
   return layout(
     `<h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;color:#143C8C;">${o.title}</h1>
      <p style="margin:0 0 22px;font-size:15px;line-height:1.6;color:#374151;">${o.intro}</p>
      <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;"><tr><td align="center" style="padding:18px;background:#f2fbe9;border:1px dashed #8FD63A;border-radius:12px;">
        <span style="font-size:34px;font-weight:800;letter-spacing:8px;color:#143C8C;">${o.code}</span>
      </td></tr></table>
-     ${o.outro ? `<p style="margin:22px 0 0;font-size:13px;line-height:1.6;color:#6b7280;">${o.outro}</p>` : ""}`
+     ${o.outro ? `<p style="margin:22px 0 0;font-size:13px;line-height:1.6;color:#6b7280;">${o.outro}</p>` : ""}`,
+    o.image
   );
 }
 
@@ -69,6 +87,7 @@ export function brandedNotification(o: {
   detailsHtml?: string;
   cta?: { label: string; url: string };
   outro?: string;
+  image?: Hero;
 }): string {
   const gapAfterIntro = o.detailsHtml || o.cta ? "18px" : "0";
   return layout(
@@ -76,7 +95,8 @@ export function brandedNotification(o: {
      <p style="margin:0 0 ${gapAfterIntro};font-size:15px;line-height:1.6;color:#374151;">${o.intro}</p>
      ${o.detailsHtml ?? ""}
      ${o.cta ? `<div style="margin-top:20px;">${button(o.cta.url, o.cta.label)}</div>` : ""}
-     ${o.outro ? `<p style="margin:22px 0 0;font-size:13px;line-height:1.6;color:#6b7280;">${o.outro}</p>` : ""}`
+     ${o.outro ? `<p style="margin:22px 0 0;font-size:13px;line-height:1.6;color:#6b7280;">${o.outro}</p>` : ""}`,
+    o.image
   );
 }
 
@@ -120,6 +140,7 @@ export function notificationSamples(): SampleEmail[] {
         title: "Novo interessado no seu imóvel",
         intro: "Olá Marcos, você recebeu um novo interessado no Viva Nomads.",
         detailsHtml: lead.detailsHtml,
+        image: emailImage("novo-interessado", "Pessoa buscando imóveis no notebook"),
       }),
     },
     {
@@ -132,6 +153,7 @@ export function notificationSamples(): SampleEmail[] {
           `<p style="margin:0 0 6px"><strong>Ana</strong> escreveu:</p>` +
           `<blockquote style="margin:8px 0;padding:8px 12px;border-left:3px solid #1e63d0;color:#374151">Oi! O imóvel ainda está disponível para setembro?</blockquote>` +
           `<p style="margin:12px 0 0"><a href="${SITE_URL}/dashboard/mensagens" style="display:inline-block;background:#1e63d0;color:#fff;padding:11px 20px;border-radius:999px;text-decoration:none;font-weight:600">Ler e responder</a></p>`,
+        image: emailImage("nova-mensagem", "Conversa pela plataforma"),
       }),
     },
     {
@@ -141,6 +163,7 @@ export function notificationSamples(): SampleEmail[] {
         title: "Candidatura recebida",
         intro: "Recebemos sua candidatura. O proprietário foi notificado.",
         cta: { label: "Abrir no Viva Nomads", url: `${SITE_URL}/dashboard` },
+        image: emailImage("candidatura-recebida", "Verificação e documentos"),
       }),
     },
     {
@@ -151,6 +174,7 @@ export function notificationSamples(): SampleEmail[] {
         intro:
           "Olá Ana, um proprietário respondeu ao seu pedido de moradia com um imóvel. Veja e aceite para conversar.",
         cta: { label: "Ver a resposta", url: `${SITE_URL}/dashboard/pedidos` },
+        image: emailImage("pedido-resposta", "Acordo entre proprietário e inquilino"),
       }),
     },
   ];
@@ -169,6 +193,7 @@ export function sampleEmails(): SampleEmail[] {
         button: "Confirmar e-mail",
         url,
         outro: "Por segurança, este link expira em algumas horas.",
+        image: emailImage("confirmar-cadastro", "Boas-vindas ao Viva Nomads"),
       }),
     },
     {
@@ -180,6 +205,7 @@ export function sampleEmails(): SampleEmail[] {
         button: "Criar nova senha",
         url,
         outro: "Se não foi você, ignore este e-mail — sua senha continua a mesma.",
+        image: emailImage("redefinir-senha", "Sua conta segura no Viva Nomads"),
       }),
     },
     {
@@ -191,6 +217,7 @@ export function sampleEmails(): SampleEmail[] {
         button: "Entrar agora",
         url,
         outro: "Este link é de uso único e expira em breve.",
+        image: emailImage("link-de-acesso", "Entrada no Viva Nomads"),
       }),
     },
     {
@@ -201,6 +228,7 @@ export function sampleEmails(): SampleEmail[] {
         intro: "Você recebeu um convite para participar do Viva Nomads. Clique no botão abaixo para criar sua conta.",
         button: "Aceitar convite",
         url,
+        image: emailImage("convite", "Bem-vindo ao Viva Nomads"),
       }),
     },
     {
@@ -212,6 +240,7 @@ export function sampleEmails(): SampleEmail[] {
         button: "Confirmar novo e-mail",
         url,
         outro: "Se você não pediu essa troca, ignore este e-mail.",
+        image: emailImage("trocar-email", "Atualização da sua conta"),
       }),
     },
     {
@@ -222,6 +251,7 @@ export function sampleEmails(): SampleEmail[] {
         intro: "Para concluir uma ação sensível na sua conta, use o código de verificação abaixo:",
         code: "824519",
         outro: "O código expira em alguns minutos. Nunca compartilhe este código com ninguém.",
+        image: emailImage("reautenticacao", "Verificação de segurança"),
       }),
     },
     {
@@ -234,6 +264,7 @@ export function sampleEmails(): SampleEmail[] {
         button: "Responder pela plataforma",
         url: `${SITE_URL}/dashboard/mensagens`,
         outro: "Exemplo de e-mail transacional do app (Resend). Não expõe contato da outra parte.",
+        image: emailImage("transacional", "Imóvel mobiliado para temporada"),
       }),
     },
   ];
