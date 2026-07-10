@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "node --test 'src/**/*.test.ts'",
+    "check:consistency": "node scripts/check-consistency.mjs",
     "e2e": "node e2e/all.mjs",
     "screenshots": "node scripts/screenshots.mjs",
     "capturas": "node scripts/capturas-demo.mjs"
