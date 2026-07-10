@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      # Trava de consistência (regra de ouro + vazamento de contato).
+      - name: Consistência (vocabulário + vazamento)
+        run: npm run check:consistency
+
+      # Tipos e testes puros.
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Testes
+        run: npm test
+
+      # Build de produção.
+      - name: Build
+        run: npm run build
