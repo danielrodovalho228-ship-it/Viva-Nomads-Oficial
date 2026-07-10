@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
-import { sampleEmails, brandedNotification } from "@/lib/notifications/templates";
-import { buildLeadNotification } from "@/lib/leads";
-import { SITE_URL } from "@/lib/site";
+import { sampleEmails, notificationSamples } from "@/lib/notifications/templates";
 
 // Preview NUNCA deve ser indexado nem exposto por engano.
 export const metadata: Metadata = { robots: { index: false, follow: false } };
@@ -35,57 +33,9 @@ export default async function DevEmailsPage({
     );
   }
 
-  // Notificações transacionais de produção (mesmo template do notify()).
-  const lead = buildLeadNotification("candidatura", "Studio no Centro", { name: "Ana Carvalho" });
-  const dashboardCta = { label: "Abrir no Viva Nomads", url: `${SITE_URL}/dashboard` };
-
-  const notifs: { key: string; subject: string; html: string }[] = [
-    {
-      key: "novo-interessado",
-      subject: "Novo interessado no seu imóvel",
-      html: brandedNotification({
-        title: "Novo interessado no seu imóvel",
-        intro: "Olá Marcos, você recebeu um novo interessado no Viva Nomads.",
-        detailsHtml: lead.detailsHtml,
-      }),
-    },
-    {
-      key: "nova-mensagem",
-      subject: "Você tem uma nova mensagem no Viva Nomads",
-      html: brandedNotification({
-        title: "Você tem uma nova mensagem",
-        intro: "Olá Marcos, você recebeu uma nova mensagem no Viva Nomads.",
-        detailsHtml:
-          `<p style="margin:0 0 6px"><strong>Ana</strong> escreveu:</p>` +
-          `<blockquote style="margin:8px 0;padding:8px 12px;border-left:3px solid #1e63d0;color:#374151">Oi! O imóvel ainda está disponível para setembro?</blockquote>` +
-          `<p style="margin:12px 0 0"><a href="${SITE_URL}/dashboard/mensagens" style="display:inline-block;background:#1e63d0;color:#fff;padding:11px 20px;border-radius:999px;text-decoration:none;font-weight:600">Ler e responder</a></p>`,
-      }),
-    },
-    {
-      key: "candidatura-recebida",
-      subject: "Candidatura recebida",
-      html: brandedNotification({
-        title: "Candidatura recebida",
-        intro: "Recebemos sua candidatura. O proprietário foi notificado.",
-        cta: dashboardCta,
-      }),
-    },
-    {
-      key: "pedido-resposta",
-      subject: "Um proprietário respondeu ao seu pedido",
-      html: brandedNotification({
-        title: "Um proprietário respondeu ao seu pedido",
-        intro:
-          "Olá Ana, um proprietário respondeu ao seu pedido de moradia com um imóvel. Veja e aceite para conversar.",
-        cta: { label: "Ver a resposta", url: `${SITE_URL}/dashboard/pedidos` },
-      }),
-    },
-  ];
-
-  const auth = sampleEmails();
   const groups = [
-    { title: "Transacionais (Resend · notify)", items: notifs },
-    { title: "Autenticação (Supabase Auth · artes)", items: auth },
+    { title: "Transacionais (Resend · notify)", items: notificationSamples() },
+    { title: "Autenticação (Supabase Auth · artes)", items: sampleEmails() },
   ];
 
   return (
