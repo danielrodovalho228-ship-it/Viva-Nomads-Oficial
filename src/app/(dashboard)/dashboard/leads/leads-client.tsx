@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Link2, Lock, Unlock, Phone, Mail, Users, X, Check, Send, ArrowDownWideNarrow } from "lucide-react";
+import { Lock, Users, X, Check, Send, ArrowDownWideNarrow, MessageSquare } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { ButtonLink } from "@/components/ui/button";
 import { OwnerDecisionNotice } from "@/components/legal-notice";
@@ -44,7 +44,7 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
     <>
       <PageTitle
         title="Interessados"
-        subtitle="Inquilinos interessados. Você vê o necessário para decidir; o contato direto é liberado após o aceite."
+        subtitle="Inquilinos interessados. Você vê o necessário para decidir; ao aprovar, responda pela plataforma — onde a conversa fica registrada e protegida."
         action={demoOn ? <DemoBadge /> : undefined}
       />
 
@@ -89,29 +89,14 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
                           {c}
                         </span>
                       ))}
-                      {l.linkedin && (
-                        <a
-                          href={l.linkedin}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 rounded-full bg-[#0a66c2]/10 px-2.5 py-1 text-xs font-medium text-[#0a66c2]"
-                        >
-                          <Link2 className="h-3.5 w-3.5" /> LinkedIn
-                        </a>
-                      )}
                     </div>
                   </div>
 
                   <div className="text-right">
                     {open ? (
-                      <div className="rounded-xl bg-sage-100 p-3 text-sm">
-                        <p className="flex items-center gap-1.5 text-forest">
-                          <Phone className="h-4 w-4" /> {l.phone}
-                        </p>
-                        <p className="mt-1 flex items-center gap-1.5 text-forest">
-                          <Mail className="h-4 w-4" /> {l.email}
-                        </p>
-                      </div>
+                      <ButtonLink href="/dashboard/mensagens" variant="primary" size="sm">
+                        <MessageSquare className="h-4 w-4" /> Responder pela plataforma
+                      </ButtonLink>
                     ) : st === "rejected" ? (
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1.5 text-sm font-medium text-red-600">
                         <X className="h-4 w-4" /> Recusado
@@ -128,7 +113,7 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
                           onClick={() => set(l.id, "approved")}
                           className="inline-flex items-center gap-2 rounded-full bg-forest px-4 py-2 text-sm font-medium text-white hover:bg-forest-700"
                         >
-                          <Unlock className="h-4 w-4" /> Pré-aprovar e liberar contato
+                          <Check className="h-4 w-4" /> Aprovar e responder
                         </button>
                       </div>
                     ) : null}

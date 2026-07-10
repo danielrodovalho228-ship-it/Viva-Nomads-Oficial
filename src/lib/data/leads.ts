@@ -8,9 +8,15 @@ export type { Lead, Light } from "./lead-types";
 interface LeadRow {
   id: string;
   status: string;
-  tenant: { full_name: string | null; email: string | null; phone: string | null; professional_category: string | null; linkedin_url: string | null } | null;
+  tenant: { full_name: string | null; professional_category: string | null } | null;
   property: { title: string | null } | null;
   verification: { traffic_light: Light | null; risk_categories: string[] | null }[] | null;
+}
+
+/** Só o primeiro nome (identidade pós-aceite: sem sobrenome/contato na lista). */
+function primeiroNome(nome: string | null | undefined): string {
+  const n = (nome || "").trim().split(/\s+/)[0];
+  return n || "Interessado";
 }
 
 /**
@@ -31,7 +37,7 @@ export async function listLeads(): Promise<Lead[]> {
     .from("leads")
     .select(
       `id, status,
-       tenant:profiles!leads_tenant_id_fkey ( full_name, email, phone, professional_category, linkedin_url ),
+       tenant:profiles!leads_tenant_id_fkey ( full_name, professional_category ),
        property:properties!leads_property_id_fkey ( title ),
        verification:tenant_verifications ( traffic_light, risk_categories )`
     )
@@ -44,15 +50,12 @@ export async function listLeads(): Promise<Lead[]> {
     const v = r.verification?.[0];
     return {
       id: r.id,
-      name: r.tenant?.full_name ?? "Inquilino",
+      name: primeiroNome(r.tenant?.full_name),
       property: r.property?.title ?? "Imóvel",
       category: r.tenant?.professional_category ?? "—",
       riskCategories: v?.risk_categories ?? ["Verificação pendente"],
       light: v?.traffic_light ?? "yellow",
       verified: !!v?.traffic_light,
-      linkedin: r.tenant?.linkedin_url ?? undefined,
-      phone: r.tenant?.phone ?? "—",
-      email: r.tenant?.email ?? "—",
     };
   });
 }

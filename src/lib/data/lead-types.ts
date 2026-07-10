@@ -7,7 +7,7 @@ export type Light = "green" | "yellow" | "red";
 
 export interface Lead {
   id: string;
-  name: string;
+  name: string; // só primeiro nome (identidade pós-aceite: nada de contato aqui)
   property: string;
   category: string;
   riskCategories: string[];
@@ -15,9 +15,8 @@ export interface Lead {
   verified: boolean;
   desiredPeriodDays?: number; // período pretendido (para o resumo em uma linha)
   budgetMatch?: boolean; // orçamento compatível com o aluguel
-  linkedin?: string;
-  phone: string;
-  email: string;
+  // PRIVACIDADE: telefone/e-mail/LinkedIn NÃO entram aqui. O proprietário
+  // decide pelo perfil de risco e responde pela plataforma (conversa já aberta).
 }
 
 /** Rótulo curto do semáforo (para o resumo em uma linha). */
@@ -56,9 +55,6 @@ export const SAMPLE_LEADS: Lead[] = [
     verified: true,
     desiredPeriodDays: 90,
     budgetMatch: true,
-    linkedin: "https://linkedin.com/in/ana-exemplo",
-    phone: "(34) 99999-0001",
-    email: "ana@exemplo.com",
   },
   {
     id: "2",
@@ -70,9 +66,6 @@ export const SAMPLE_LEADS: Lead[] = [
     verified: true,
     desiredPeriodDays: 60,
     budgetMatch: true,
-    linkedin: "https://linkedin.com/in/rafael-exemplo",
-    phone: "(34) 99999-0002",
-    email: "rafael@exemplo.com",
   },
   {
     id: "3",
@@ -84,7 +77,5 @@ export const SAMPLE_LEADS: Lead[] = [
     verified: false,
     desiredPeriodDays: 30,
     budgetMatch: false,
-    phone: "(34) 99999-0003",
-    email: "julia@exemplo.com",
   },
 ];

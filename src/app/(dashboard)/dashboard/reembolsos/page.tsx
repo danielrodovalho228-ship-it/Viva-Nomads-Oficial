@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import {
-  ClipboardCheck,
   Plus,
   Trash2,
   BellRing,
@@ -45,7 +44,6 @@ function Row({ label, value, strong }: { label: string; value: string; strong?: 
 
 export default function ReembolsosPage() {
   // Fluxo 100% de DOCUMENTAÇÃO. A plataforma nunca movimenta o valor.
-  const [vistoriaRegistrada, setVistoriaRegistrada] = useState(false);
   const [descontos, setDescontos] = useState<DescontoReembolso[]>([]);
   const [motivo, setMotivo] = useState("");
   const [valor, setValor] = useState<number>(0);
@@ -98,22 +96,14 @@ export default function ReembolsosPage() {
             </div>
           </Panel>
 
-          {/* a) Vistoria de saída */}
-          <Panel title="1. Vistoria de saída">
+          {/* a) Comparação com a entrada (o ciclo de vistorias com fotos está por vir) */}
+          <Panel title="1. Compare com o estado de entrada">
             <p className="text-sm text-muted">
-              Registre a vistoria de saída (fotos e itens) para comparar com a de entrada. É o
-              que fundamenta eventuais descontos.
+              Compare o estado do imóvel com o registrado no início da locação — é o que
+              fundamenta eventuais descontos. O ciclo de vistorias com fotos e itens está{" "}
+              <strong className="text-ink">em estruturação</strong>; por ora, anexe as evidências
+              em cada desconto abaixo.
             </p>
-            {vistoriaRegistrada ? (
-              <p className="mt-3 flex items-center gap-2 rounded-lg bg-sage-100 px-3 py-2 text-sm text-forest">
-                <CheckCircle2 className="h-4 w-4" /> Vistoria de saída registrada e comparada à de
-                entrada.
-              </p>
-            ) : (
-              <Button variant="gold" className="mt-3" onClick={() => setVistoriaRegistrada(true)}>
-                <ClipboardCheck className="h-4 w-4" /> Registrar vistoria de saída
-              </Button>
-            )}
           </Panel>
 
           {/* b) Descontos comprovados */}
@@ -195,11 +185,7 @@ export default function ReembolsosPage() {
               {PRAZO_REEMBOLSO_DIAS} dias após a entrega das chaves) e gera o comprovante.
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                onClick={notificarERegistrarPrazo}
-                disabled={!vistoriaRegistrada}
-              >
+              <Button variant="outline" onClick={notificarERegistrarPrazo}>
                 <BellRing className="h-4 w-4" /> Notificar partes e registrar prazo
               </Button>
               <Button
@@ -213,11 +199,6 @@ export default function ReembolsosPage() {
             {prazoLimite && (
               <p className="mt-3 text-sm text-muted">
                 Prazo limite de devolução: <strong className="text-ink">{prazoLimite}</strong>.
-              </p>
-            )}
-            {!vistoriaRegistrada && (
-              <p className="mt-2 text-xs text-muted">
-                Registre a vistoria de saída (passo 1) para habilitar esta etapa.
               </p>
             )}
           </Panel>
