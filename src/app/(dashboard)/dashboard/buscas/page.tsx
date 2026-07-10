@@ -1,6 +1,7 @@
 import { Search, Bell } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { ButtonLink } from "@/components/ui/button";
+import { FavoritosTabs } from "@/components/dashboard/favoritos-tabs";
 import { isSupabaseConfigured } from "@/lib/env";
 
 const SAMPLE_SAVED = [
@@ -14,6 +15,7 @@ export default function SavedSearchesPage() {
 
   return (
     <>
+      <FavoritosTabs />
       <PageTitle
         title="Buscas salvas"
         subtitle="Receba avisos quando novos imóveis combinarem com seus filtros."

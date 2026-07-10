@@ -10,12 +10,9 @@ import {
   CreditCard,
   Settings,
   Heart,
-  Search,
   ShieldCheck,
   FileSignature,
   BadgeCheck,
-  GitCompare,
-  Gift,
   Wrench,
   Menu,
   LogOut,
@@ -26,10 +23,12 @@ import {
 } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { Avatar } from "@/components/ui/avatar";
-import { useAuthStore, DEMO_USER, type ViewMode } from "@/lib/store";
+import { useAuthStore, type SessionUser, type ViewMode } from "@/lib/store";
 import { getMyAvatarUrl } from "@/lib/data/avatar-actions";
+import { setPreferredMode } from "@/lib/data/mode-actions";
+import { useHasActiveLocacao } from "@/lib/use-active-locacao";
 import { useViewMode, MODE_META } from "@/lib/roles";
-import { useDemoMode, DemoToggle, DemoBanner } from "@/lib/demo/demo-mode";
+import { useDemoMode, DemoToggle, DemoBanner, useDisplayUser } from "@/lib/demo/demo-mode";
 import { PROGRAMA_INDICACAO } from "@/lib/flags";
 import { cn } from "@/lib/utils";
 
@@ -72,19 +71,31 @@ const OWNER_NAV: NavItem[] = [
   { href: "/dashboard/conta", label: "Conta", icon: Settings },
 ];
 
+/**
+ * Menu do INQUILINO — EXATAMENTE 7 itens (mesma regra do proprietário). O que
+ * saiu não foi apagado: as rotas seguem vivas, só sem link fixo no menu.
+ *  - Comparar + Buscas salvas → abas dentro de "Favoritos & comparações"
+ *    (+ atalho de Buscas salvas na Visão geral).
+ *  - Solicitações → contextual: só entra no menu quando há locação ATIVA
+ *    (antes disso, o card vive dentro de Minhas locações).
+ *  - Indicações → atrás da flag PROGRAMA_INDICACAO até o programa existir.
+ */
 const TENANT_NAV: NavItem[] = [
   { href: "/dashboard", label: "Visão geral", icon: LayoutDashboard },
-  { href: "/dashboard/verificacao", label: "Verificação", icon: BadgeCheck },
   { href: "/dashboard/pedidos", label: "Meus pedidos", icon: Megaphone },
+  { href: "/dashboard/favoritos", label: "Favoritos & comparações", icon: Heart },
   { href: "/dashboard/locacoes", label: "Minhas locações", icon: Receipt },
-  { href: "/dashboard/favoritos", label: "Favoritos", icon: Heart },
-  { href: "/dashboard/comparar", label: "Comparar", icon: GitCompare },
-  { href: "/dashboard/solicitacoes", label: "Solicitações", icon: Wrench },
-  { href: "/dashboard/buscas", label: "Buscas salvas", icon: Search },
   { href: "/dashboard/mensagens", label: "Mensagens", icon: MessageSquare },
-  { href: "/dashboard/indicacoes", label: "Indicações", icon: Gift },
+  { href: "/dashboard/verificacao", label: "Verificação", icon: BadgeCheck },
   { href: "/dashboard/conta", label: "Conta", icon: Settings },
 ];
+
+/** Item contextual do inquilino: entra só quando há locação ativa. */
+const TENANT_SOLICITACOES: NavItem = {
+  href: "/dashboard/solicitacoes",
+  label: "Solicitações",
+  icon: Wrench,
+};
 
 const ADMIN_NAV: NavItem[] = [
   { href: "/admin", label: "Admin", icon: ShieldCheck },
@@ -130,11 +141,15 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const { user, signOut, setActiveMode } = useAuthStore();
-  const { mode } = useViewMode();
+  const { signOut, setActiveMode } = useAuthStore();
+  const { mode, isOwner, isTenant } = useViewMode();
 
-  // Em modo demo (sem login), exibe uma identidade coerente (A5/A6).
-  const display = user ?? DEMO_USER;
+  // Identidade de EXIBIÇÃO (fronteira demo/real): o AuthGuard garante usuário na
+  // casca; a persona demo ("Marcos") só entra quando o modo demo vale. Nunca um
+  // nome fictício para conta real. Fallback neutro (nome vazio), jamais DEMO_USER.
+  const displayUser = useDisplayUser();
+  const display: SessionUser =
+    displayUser ?? { id: "", name: "", email: "", role: "tenant" };
   const plan = display.plan ?? "free";
 
   // Minha própria foto de perfil (opcional) para o avatar do topo.
@@ -149,24 +164,42 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     return () => {
       alive = false;
     };
-  }, [user?.id]);
+  }, [displayUser?.id]);
+
+  // Inquilino: "Solicitações" entra no menu só quando há locação ativa.
+  const hasActiveLoc = useHasActiveLocacao(mode === "tenant");
 
   let nav = NAV_BY_MODE[mode];
   if (display.role === "admin" && mode === "owner") nav = [...OWNER_NAV, ...ADMIN_NAV];
+  if (mode === "tenant" && hasActiveLoc) {
+    // Insere logo após "Minhas locações" (mantém o teto de 7 + 1 contextual).
+    const i = nav.findIndex((n) => n.href === "/dashboard/locacoes");
+    nav = i >= 0 ? [...nav.slice(0, i + 1), TENANT_SOLICITACOES, ...nav.slice(i + 1)] : nav;
+  }
   // Itens de operador só aparecem no plano Gestor.
   nav = nav.filter((item) => !item.minPlan || plan === item.minPlan);
   // Indicações só aparece quando o programa existir (flag). Rota fica viva.
   nav = nav.filter((item) => item.href !== "/dashboard/indicacoes" || PROGRAMA_INDICACAO);
 
-  // Guarda de rota por papel: acessar por URL uma tela exclusiva do OUTRO modo
-  // redireciona para a Visão geral. Rotas compartilhadas (mensagens, conta,
-  // indicações, solicitações, verificação) seguem acessíveis nos dois modos.
+  // Guarda de rota por papel (B1). Ao abrir por URL/deep-link uma tela exclusiva
+  // do OUTRO modo, a regra deixou de ser "sempre redireciona": se a conta TEM o
+  // papel daquela rota, o modo TROCA para o certo (e grava no perfil) e a tela
+  // abre — um link de proprietário nunca cai na visão de inquilino. Só quando a
+  // conta não tem o papel é que volta para a Visão geral. Rotas compartilhadas
+  // (mensagens, conta, indicações, solicitações, verificação) valem nos dois.
   useEffect(() => {
     const exclusive = mode === "owner" ? TENANT_ONLY : OWNER_ONLY;
-    if (exclusive.some((prefix) => pathname === prefix || pathname.startsWith(prefix + "/"))) {
+    const hits = exclusive.some((p) => pathname === p || pathname.startsWith(p + "/"));
+    if (!hits) return;
+    const target: ViewMode = mode === "owner" ? "tenant" : "owner";
+    const contaTemPapel = target === "owner" ? isOwner : isTenant;
+    if (contaTemPapel) {
+      setActiveMode(target);
+      setPreferredMode(target).catch(() => {});
+    } else {
       router.replace("/dashboard");
     }
-  }, [pathname, mode, router]);
+  }, [pathname, mode, isOwner, isTenant, router, setActiveMode]);
 
   // Modo demonstração (admin): aceita ?demo=1 / ?demo=0 na URL (estado é de
   // sessão — lib/demo/demo-mode). Lê window.location para não exigir Suspense.
@@ -185,6 +218,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
   function switchTo(next: ViewMode) {
     setActiveMode(next);
+    // Grava a escolha no perfil (B1): refresh/nova aba/outro dispositivo mantêm.
+    setPreferredMode(next).catch(() => {});
     setOpen(false);
     // Se a tela atual não existe no novo modo, volta para a Visão geral
     // (evita ficar numa rota do outro papel após a troca).
@@ -226,7 +261,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           <Avatar name={display.name} size={36} mode={mode} photoUrl={myPhoto ?? undefined} />
           <div className="min-w-0 text-xs">
             <p className="truncate font-medium text-white">{display.name}</p>
-            <p className="text-white/60">Conta: {labelForRole(display.role)}</p>
+            {/* B7: o rodapé reflete o MODO ATUAL (não o papel de cadastro). */}
+            <p className="text-white/60">Modo: {meta.label}</p>
           </div>
         </div>
         <button
@@ -345,10 +381,4 @@ function ModeSwitcher({ mode, onSwitch }: { mode: ViewMode; onSwitch: (m: ViewMo
       })}
     </div>
   );
-}
-
-function labelForRole(role: string) {
-  if (role === "owner") return "Proprietário";
-  if (role === "tenant") return "Inquilino";
-  return "Administrador";
 }

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { GitCompare, Check, Minus, Award } from "lucide-react";
 import { PageTitle, EmptyState } from "@/components/dashboard/primitives";
 import { ButtonLink } from "@/components/ui/button";
+import { FavoritosTabs } from "@/components/dashboard/favoritos-tabs";
 import { useFavoritesStore } from "@/lib/favorites-store";
 import { useProperties } from "@/lib/use-properties";
 import { formatBRL, cn } from "@/lib/utils";
@@ -17,6 +18,7 @@ export default function ComparePage() {
   if (items.length < 2) {
     return (
       <>
+        <FavoritosTabs />
         <PageTitle title="Comparar imóveis" />
         <EmptyState
           icon={GitCompare}
@@ -78,6 +80,7 @@ export default function ComparePage() {
 
   return (
     <>
+      <FavoritosTabs />
       <PageTitle
         title="Comparar imóveis"
         subtitle={`${items.length} imóveis · compatibilidade com seu perfil de trabalho`}

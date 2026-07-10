@@ -12,7 +12,6 @@ import {
   ClipboardCheck,
   ArrowRight,
 } from "lucide-react";
-import { useAuthStore, DEMO_USER } from "@/lib/store";
 import { useViewMode } from "@/lib/roles";
 import { StatCard, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { DashboardBanner } from "@/components/dashboard/banner";
@@ -21,18 +20,20 @@ import { TenantOnboarding } from "@/components/dashboard/tenant-onboarding";
 import { RoleWelcomeModal } from "@/components/dashboard/role-welcome-modal";
 import { ButtonLink } from "@/components/ui/button";
 import { useProperties } from "@/lib/use-properties";
-import { useDashDemo, DemoBadge } from "@/lib/demo/demo-mode";
+import { useDashDemo, DemoBadge, useDisplayUser } from "@/lib/demo/demo-mode";
 import { DEMO_PROPERTIES, DEMO_KPIS } from "@/lib/demo/seed";
 import { PHOTOS, coverPhoto } from "@/lib/media";
 import { formatBRL } from "@/lib/utils";
 import { ReadyToLiveBadge } from "@/components/ui/badge";
 
 export default function DashboardPage() {
-  const user = useAuthStore((s) => s.user) ?? DEMO_USER;
+  // Identidade de EXIBIÇÃO: nunca cai na persona demo ("Marcos") para conta real
+  // com demo desligado (fronteira demo/real). Sem nome → "Olá!".
+  const user = useDisplayUser();
   const { mode } = useViewMode();
   // Saudação com o nome real; sem nome coletado, cai em "Olá!" — nunca
   // "visitante" nem a parte local do e-mail (pré-lançamento, ALTA 3).
-  const firstName = user.fullName?.trim() ? user.fullName.trim().split(" ")[0] : "";
+  const firstName = user?.fullName?.trim() ? user.fullName.trim().split(" ")[0] : "";
 
   return (
     <>
@@ -201,9 +202,9 @@ function TenantDashboard({ name }: { name: string }) {
       <TenantOnboarding name={name} />
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard label="Favoritos" value={demo ? "3" : "0"} icon={Heart} />
-        <StatCard label="Buscas salvas" value={demo ? "2" : "0"} icon={Search} />
-        <StatCard label="Mensagens" value={demo ? "1" : "0"} icon={MessageSquare} />
+        <StatCard label="Favoritos" value={demo ? "3" : "0"} icon={Heart} href="/dashboard/favoritos" />
+        <StatCard label="Buscas salvas" value={demo ? "2" : "0"} icon={Search} href="/dashboard/buscas" />
+        <StatCard label="Mensagens" value={demo ? "1" : "0"} icon={MessageSquare} href="/dashboard/mensagens" />
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">

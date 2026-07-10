@@ -35,6 +35,13 @@ yarn-error.log*
 # ...mas os exemplos (sem segredos) são versionados para documentar as variáveis.
 !.env.example
 !.env.capturas.example
+!.env.testes.example
+
+# Playwright (suíte E2E — npm run testes)
+/playwright-report/
+/tests/e2e/.auth/
+/tests/e2e/.artifacts/
+/test-results/
 
 # vercel
 .vercel

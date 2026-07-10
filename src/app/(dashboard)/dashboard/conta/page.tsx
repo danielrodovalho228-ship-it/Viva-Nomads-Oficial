@@ -3,20 +3,23 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Lock, Bell, Trash2, Check } from "lucide-react";
-import { useAuthStore, DEMO_USER } from "@/lib/store";
+import { useAuthStore } from "@/lib/store";
 import { useViewMode } from "@/lib/roles";
+import { useDisplayUser } from "@/lib/demo/demo-mode";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { PasswordInput } from "@/components/ui/password-input";
 import { TaxSimulator } from "@/components/tax-simulator";
 import { AvatarUploader } from "@/components/account/avatar-uploader";
+import { CategoriaProfissional } from "@/components/account/categoria-profissional";
 import { createClient } from "@/lib/supabase/client";
 import { friendlyAuthError, MIN_PASSWORD } from "@/lib/auth-errors";
 import { Switch } from "@/components/ui/switch";
 
 export default function AccountPage() {
-  // Identidade exibida — usa a sessão (ou a demo) para pré-preencher os campos.
-  const user = useAuthStore((s) => s.user) ?? DEMO_USER;
+  // Identidade exibida — usa a sessão real; a persona demo só quando o modo demo
+  // vale (fronteira demo/real). Nunca pré-preenche com nome fictício no real.
+  const user = useDisplayUser();
   // As seções específicas (tributação / perfil profissional) seguem o MODO
   // ativo; o campo "Perfil" continua mostrando o papel de cadastro.
   const { mode } = useViewMode();
@@ -58,16 +61,7 @@ export default function AccountPage() {
             o substituem.
           </p>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <label className="block">
-              <span className="mb-1.5 block text-sm font-medium text-ink">Categoria profissional</span>
-              <select className="w-full rounded-xl border border-sage-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-sage">
-                <option>Médico / saúde</option>
-                <option>Executivo / corporativo</option>
-                <option>Nômade digital / remoto</option>
-                <option>Estudante / intercâmbio</option>
-                <option>Outro</option>
-              </select>
-            </label>
+            <CategoriaProfissional />
             <label className="block">
               <span className="mb-1.5 block text-sm font-medium text-ink">LinkedIn (opcional)</span>
               <input
@@ -77,7 +71,6 @@ export default function AccountPage() {
               />
             </label>
           </div>
-          <Button className="mt-4">Salvar perfil</Button>
         </Panel>
       )}
 
@@ -243,7 +236,7 @@ function NotificationsPanel() {
 
 function DangerZone() {
   const router = useRouter();
-  const user = useAuthStore((s) => s.user) ?? DEMO_USER;
+  const user = useDisplayUser();
   const signOut = useAuthStore((s) => s.signOut);
   const [step, setStep] = useState(0); // 0 = botão, 1 = consequências, 2 = senha
   const [password, setPassword] = useState("");
@@ -264,7 +257,7 @@ function DangerZone() {
       if (supabase) {
         // Confirma a identidade reautenticando com a senha atual.
         const { error: authError } = await supabase.auth.signInWithPassword({
-          email: user.email,
+          email: user?.email ?? "",
           password,
         });
         if (authError) {

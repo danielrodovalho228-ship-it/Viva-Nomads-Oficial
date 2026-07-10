@@ -15,6 +15,7 @@ const SESSION_MAX_MS = 24 * 60 * 60 * 1000;
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const setUser = useAuthStore((s) => s.setUser);
   const setAuthChecked = useAuthStore((s) => s.setAuthChecked);
+  const setActiveMode = useAuthStore((s) => s.setActiveMode);
 
   useEffect(() => {
     const supabase = createClient();
@@ -50,7 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const { data: profile } = await supabase!
           .from("profiles")
-          .select("full_name, role")
+          .select("full_name, role, preferred_mode")
           .eq("id", u.id)
           .maybeSingle();
         if (profile && (profile.full_name || profile.role)) {
@@ -62,6 +63,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             role: (profile.role as UserRole) ?? metaRole,
           });
         }
+        // Modo ativo é PREFERÊNCIA DE PERFIL (B1): o servidor é a autoridade no
+        // login. Se o perfil tem um modo salvo, ele vence o valor local — assim
+        // refresh, deep-link, nova aba e outro dispositivo mantêm a escolha.
+        const pm = (profile as { preferred_mode?: string } | null)?.preferred_mode;
+        if (pm === "owner" || pm === "tenant") setActiveMode(pm);
       } catch {
         /* mantém o usuário já setado a partir da sessão */
       }
@@ -85,7 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (session) hydrate(session);
     });
     return () => sub.subscription.unsubscribe();
-  }, [setUser, setAuthChecked]);
+  }, [setUser, setAuthChecked, setActiveMode]);
 
   // ── Expiração da sessão em 24h ───────────────────────────────────────────────
   // Roda em toda página (AuthProvider está no layout raiz). Ao logar, marca-se

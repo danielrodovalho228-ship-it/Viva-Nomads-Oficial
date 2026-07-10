@@ -10,9 +10,10 @@ import {
   Lock,
   CheckCircle2,
 } from "lucide-react";
-import { PageTitle, Panel } from "@/components/dashboard/primitives";
-import { Button } from "@/components/ui/button";
+import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { PlatformLegalNotice } from "@/components/legal-notice";
+import { useDashDemo } from "@/lib/demo/demo-mode";
 import {
   calcularReembolso,
   totalDescontos,
@@ -25,8 +26,8 @@ import { formatBRL } from "@/lib/utils";
 // Locação encerrada (mock — viria do contrato/fechamento). A caução está em
 // conta vinculada em nome do locador; a plataforma só documenta o reembolso.
 const LOCACAO = {
-  contrato: "VN-CT-2026-0042",
-  inquilino: "Ana Carvalho",
+  contrato: "VN-CT-2026-0042", // consistency-ignore: dado de demonstração (ReembolsoPreview)
+  inquilino: "Ana Carvalho", // consistency-ignore: persona de demonstração (ReembolsoPreview)
   imovel: "Apartamento mobiliado · Centro",
   caucao: 1800,
 };
@@ -42,7 +43,42 @@ function Row({ label, value, strong }: { label: string; value: string; strong?: 
   );
 }
 
+/**
+ * Reembolso da caução (fronteira demo/real). O fluxo abaixo usa uma locação
+ * encerrada de EXEMPLO (contrato e inquilino fictícios), então só renderiza no
+ * MODO DEMONSTRAÇÃO. Conta real vê o estado honesto — o reembolso abre a partir
+ * de uma locação encerrada de verdade, sem dado fictício.
+ */
 export default function ReembolsosPage() {
+  const demo = useDashDemo();
+  return demo ? <ReembolsoPreview /> : <ReembolsoReal />;
+}
+
+function ReembolsoReal() {
+  return (
+    <div className="mx-auto max-w-3xl">
+      <PageTitle
+        title="Reembolso da caução"
+        subtitle="O cálculo do reembolso abre quando uma locação é encerrada."
+      />
+      <EmptyState
+        icon={FileCheck2}
+        title="Nenhuma locação encerrada"
+        text="Ao encerrar uma locação, a plataforma calcula o reembolso da caução, notifica as partes e registra o prazo legal — com os dados reais do contrato. O pagamento é feito pelo locador; a plataforma nunca movimenta o valor."
+        action={
+          <ButtonLink href="/dashboard/contratos" variant="primary">
+            Ver contratos e locações
+          </ButtonLink>
+        }
+      />
+      <div className="mt-4">
+        <PlatformLegalNotice />
+      </div>
+    </div>
+  );
+}
+
+function ReembolsoPreview() {
   // Fluxo 100% de DOCUMENTAÇÃO. A plataforma nunca movimenta o valor.
   const [descontos, setDescontos] = useState<DescontoReembolso[]>([]);
   const [motivo, setMotivo] = useState("");

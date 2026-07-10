@@ -5,6 +5,7 @@ import { PageTitle, EmptyState } from "@/components/dashboard/primitives";
 import { PropertyCard } from "@/components/property-card";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyTripIllustration } from "@/components/illustrations";
+import { FavoritosTabs } from "@/components/dashboard/favoritos-tabs";
 import { useFavoritesStore } from "@/lib/favorites-store";
 import { useProperties } from "@/lib/use-properties";
 
@@ -15,6 +16,7 @@ export default function FavoritesPage() {
 
   return (
     <>
+      <FavoritosTabs />
       <PageTitle
         title="Favoritos"
         subtitle="Imóveis que você salvou para comparar depois."

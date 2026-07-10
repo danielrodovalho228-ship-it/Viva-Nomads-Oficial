@@ -104,10 +104,10 @@ export function Simulador() {
           </div>
         </div>
 
-        <h1 className={styles.h1}>Simulador de receita</h1>
+        <h1 className={styles.h1}>Simulação do negócio — documento interno dos sócios</h1>
         <p className={styles.sub}>
-          Modelo ilustrativo das fontes de receita da plataforma. Edite as premissas e os volumes —
-          tudo recalcula na hora.
+          Modelo ilustrativo das fontes de receita da plataforma (uso interno dos sócios, não é a
+          ferramenta do proprietário). Edite as premissas e os volumes — tudo recalcula na hora.
         </p>
 
         <KpiBar r={mes} />
