@@ -1,5 +1,7 @@
 import { sendEmail, isEmailConfigured } from "./email";
 import { sendWhatsapp, isWhatsappConfigured } from "./whatsapp";
+import { brandedNotification, notificationText } from "./templates";
+import { SITE_URL } from "@/lib/site";
 
 export { isEmailConfigured, isWhatsappConfigured };
 
@@ -58,11 +60,24 @@ export async function notify(params: {
 
   if (params.email) {
     try {
-      const r = await sendEmail({
-        to: params.email,
-        subject: tpl.subject,
-        html: `<p>${tpl.body(params.name)}</p>${params.detailsHtml ?? ""}`,
+      // Eventos com detailsHtml já trazem seu próprio botão (ex.: "Responder
+      // pela plataforma"); os demais ganham um CTA padrão para o painel.
+      const cta = params.detailsHtml
+        ? undefined
+        : { label: "Abrir no Viva Nomads", url: `${SITE_URL}/dashboard` };
+      const html = brandedNotification({
+        title: tpl.subject,
+        intro: tpl.body(params.name),
+        detailsHtml: params.detailsHtml,
+        cta,
       });
+      const text = notificationText({
+        title: tpl.subject,
+        intro: tpl.body(params.name),
+        detailsText: params.detailsText,
+        cta,
+      });
+      const r = await sendEmail({ to: params.email, subject: tpl.subject, html, text });
       result.email = r.demo ? "demo" : !r.error;
     } catch {
       result.email = false;

@@ -56,6 +56,48 @@ export function brandedCodeEmail(o: { title: string; intro: string; code: string
   );
 }
 
+/**
+ * E-mail de NOTIFICAÇÃO brandado (layout-mãe): título + texto + bloco opcional
+ * de detalhes (já vem com CSS inline) + UM botão. Usado pelo notify() de
+ * produção para que todo e-mail transacional saia com a marca — e nunca exponha
+ * contato da outra parte (isso é responsabilidade de quem monta o detailsHtml).
+ */
+export function brandedNotification(o: {
+  title: string;
+  intro: string;
+  detailsHtml?: string;
+  cta?: { label: string; url: string };
+  outro?: string;
+}): string {
+  const gapAfterIntro = o.detailsHtml || o.cta ? "18px" : "0";
+  return layout(
+    `<h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;color:#143C8C;">${o.title}</h1>
+     <p style="margin:0 0 ${gapAfterIntro};font-size:15px;line-height:1.6;color:#374151;">${o.intro}</p>
+     ${o.detailsHtml ?? ""}
+     ${o.cta ? `<div style="margin-top:20px;">${button(o.cta.url, o.cta.label)}</div>` : ""}
+     ${o.outro ? `<p style="margin:22px 0 0;font-size:13px;line-height:1.6;color:#6b7280;">${o.outro}</p>` : ""}`
+  );
+}
+
+/** Versão TEXTO PURO (multipart) da notificação — mesma informação, sem HTML. */
+export function notificationText(o: {
+  title: string;
+  intro: string;
+  detailsText?: string;
+  cta?: { label: string; url: string };
+}): string {
+  return [
+    o.title,
+    "",
+    o.intro,
+    o.detailsText ? `\n${o.detailsText}` : "",
+    o.cta ? `\n${o.cta.label}: ${o.cta.url}` : "",
+    "\n— Viva Nomads · locação mobiliada por temporada",
+  ]
+    .filter((l) => l !== "")
+    .join("\n");
+}
+
 export interface SampleEmail {
   key: string;
   subject: string;
