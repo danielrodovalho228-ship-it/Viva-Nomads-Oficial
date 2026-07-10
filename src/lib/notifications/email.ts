@@ -17,6 +17,8 @@ export async function sendEmail(params: {
   to: string;
   subject: string;
   html: string;
+  /** Versão texto puro (multipart). Melhora entregabilidade e acessibilidade. */
+  text?: string;
 }): Promise<EmailResult> {
   if (!isEmailConfigured()) {
     return { demo: true };
@@ -33,6 +35,7 @@ export async function sendEmail(params: {
       to: params.to,
       subject: params.subject,
       html: params.html,
+      ...(params.text ? { text: params.text } : {}),
     }),
   });
 
