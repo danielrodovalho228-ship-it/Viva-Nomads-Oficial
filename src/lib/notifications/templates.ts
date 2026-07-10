@@ -6,6 +6,7 @@
   Usados pela rota /api/test-email?all=1 para enviar um exemplo de cada modelo.
 */
 import { SITE_URL } from "@/lib/site";
+import { buildLeadNotification } from "@/lib/leads";
 
 const MARK = `${SITE_URL}/email-mark.png`;
 
@@ -102,6 +103,57 @@ export interface SampleEmail {
   key: string;
   subject: string;
   html: string;
+}
+
+/**
+ * Exemplos dos e-mails TRANSACIONAIS reais (os que o notify() envia), com dados
+ * fictícios — para revisão em /dev/emails e via /api/test-email?all=1. NÃO
+ * expõem contato da outra parte (o de interessado usa buildLeadNotification).
+ */
+export function notificationSamples(): SampleEmail[] {
+  const lead = buildLeadNotification("candidatura", "Studio no Centro", { name: "Ana Carvalho" });
+  return [
+    {
+      key: "novo-interessado",
+      subject: "Novo interessado no seu imóvel",
+      html: brandedNotification({
+        title: "Novo interessado no seu imóvel",
+        intro: "Olá Marcos, você recebeu um novo interessado no Viva Nomads.",
+        detailsHtml: lead.detailsHtml,
+      }),
+    },
+    {
+      key: "nova-mensagem",
+      subject: "Você tem uma nova mensagem no Viva Nomads",
+      html: brandedNotification({
+        title: "Você tem uma nova mensagem",
+        intro: "Olá Marcos, você recebeu uma nova mensagem no Viva Nomads.",
+        detailsHtml:
+          `<p style="margin:0 0 6px"><strong>Ana</strong> escreveu:</p>` +
+          `<blockquote style="margin:8px 0;padding:8px 12px;border-left:3px solid #1e63d0;color:#374151">Oi! O imóvel ainda está disponível para setembro?</blockquote>` +
+          `<p style="margin:12px 0 0"><a href="${SITE_URL}/dashboard/mensagens" style="display:inline-block;background:#1e63d0;color:#fff;padding:11px 20px;border-radius:999px;text-decoration:none;font-weight:600">Ler e responder</a></p>`,
+      }),
+    },
+    {
+      key: "candidatura-recebida",
+      subject: "Candidatura recebida",
+      html: brandedNotification({
+        title: "Candidatura recebida",
+        intro: "Recebemos sua candidatura. O proprietário foi notificado.",
+        cta: { label: "Abrir no Viva Nomads", url: `${SITE_URL}/dashboard` },
+      }),
+    },
+    {
+      key: "pedido-resposta",
+      subject: "Um proprietário respondeu ao seu pedido",
+      html: brandedNotification({
+        title: "Um proprietário respondeu ao seu pedido",
+        intro:
+          "Olá Ana, um proprietário respondeu ao seu pedido de moradia com um imóvel. Veja e aceite para conversar.",
+        cta: { label: "Ver a resposta", url: `${SITE_URL}/dashboard/pedidos` },
+      }),
+    },
+  ];
 }
 
 /** Um exemplo de cada modelo (com dados fictícios) para revisar o visual. */

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { sendEmail, isEmailConfigured } from "@/lib/notifications/email";
-import { sampleEmails } from "@/lib/notifications/templates";
+import { sampleEmails, notificationSamples } from "@/lib/notifications/templates";
 import { testRouteForbidden } from "@/lib/test-guard";
 
 /**
@@ -32,8 +32,8 @@ export async function GET(request: Request) {
   }
 
   if (all) {
-    // Envia um exemplo de cada modelo branded para revisão visual.
-    const samples = sampleEmails();
+    // Envia um exemplo de CADA modelo branded (transacionais + auth) para revisão.
+    const samples = [...notificationSamples(), ...sampleEmails()];
     const sent = [];
     for (const s of samples) {
       const r = await sendEmail({ to, subject: `[TESTE] ${s.subject}`, html: s.html });
