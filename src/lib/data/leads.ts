@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { categoriaLabel } from "@/config/categorias-profissionais";
 import { SAMPLE_LEADS, type Lead, type Light } from "./lead-types";
 
 // Re-exporta os utilitários puros para compatibilidade com importações server-side.
@@ -52,7 +53,7 @@ export async function listLeads(): Promise<Lead[]> {
       id: r.id,
       name: primeiroNome(r.tenant?.full_name),
       property: r.property?.title ?? "Imóvel",
-      category: r.tenant?.professional_category ?? "—",
+      category: categoriaLabel(r.tenant?.professional_category) || "—",
       riskCategories: v?.risk_categories ?? ["Verificação pendente"],
       light: v?.traffic_light ?? "yellow",
       verified: !!v?.traffic_light,

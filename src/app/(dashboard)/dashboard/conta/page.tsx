@@ -11,6 +11,7 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import { PasswordInput } from "@/components/ui/password-input";
 import { TaxSimulator } from "@/components/tax-simulator";
 import { AvatarUploader } from "@/components/account/avatar-uploader";
+import { CategoriaProfissional } from "@/components/account/categoria-profissional";
 import { createClient } from "@/lib/supabase/client";
 import { friendlyAuthError, MIN_PASSWORD } from "@/lib/auth-errors";
 import { Switch } from "@/components/ui/switch";
@@ -60,16 +61,7 @@ export default function AccountPage() {
             o substituem.
           </p>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <label className="block">
-              <span className="mb-1.5 block text-sm font-medium text-ink">Categoria profissional</span>
-              <select className="w-full rounded-xl border border-sage-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-sage">
-                <option>Médico / saúde</option>
-                <option>Executivo / corporativo</option>
-                <option>Nômade digital / remoto</option>
-                <option>Estudante / intercâmbio</option>
-                <option>Outro</option>
-              </select>
-            </label>
+            <CategoriaProfissional />
             <label className="block">
               <span className="mb-1.5 block text-sm font-medium text-ink">LinkedIn (opcional)</span>
               <input
@@ -79,7 +71,6 @@ export default function AccountPage() {
               />
             </label>
           </div>
-          <Button className="mt-4">Salvar perfil</Button>
         </Panel>
       )}
 
