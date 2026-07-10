@@ -27,6 +27,17 @@ export function defaultMode(user: SessionUser): ViewMode {
 }
 
 /**
+ * Nome de EXIBIÇÃO seguro: primeiro nome do perfil (fullName). NUNCA devolve o
+ * e-mail cru — sem nome coletado, devolve "" e a UI cai num rótulo neutro
+ * (reteste QA item 4). O `name` da sessão pode ser o e-mail (fallback do
+ * AuthProvider), por isso não deve ser usado direto na tela.
+ */
+export function primeiroNomeExibicao(user: SessionUser | null | undefined): string {
+  const full = user?.fullName?.trim();
+  return full ? full.split(" ")[0] : "";
+}
+
+/**
  * Modo efetivo: respeita a escolha do usuário (`activeMode`). Qualquer conta pode
  * transitar entre os dois mundos (proprietário ⇄ inquilino) — o `activeMode` é
  * persistido, então a escolha sobrevive a recarregamentos. Sem escolha, cai no
