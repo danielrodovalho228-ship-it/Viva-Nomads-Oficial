@@ -114,3 +114,17 @@ export function galleryFor(propertyId: string, n: number): string[] {
   const base = PROPERTY_PHOTOS[propertyId] ?? PHOTOS.galleryRooms;
   return Array.from({ length: n }, (_, i) => base[i % base.length]);
 }
+
+/**
+ * Foto de CAPA (miniatura) de um imóvel: usa a 1ª foto real do anúncio quando
+ * existe; senão, uma foto de ambiente determinística pelo id (nunca quebra, e o
+ * mesmo imóvel mostra sempre a mesma capa).
+ */
+export function coverPhoto(propertyId: string, photos?: string[]): string {
+  if (photos && photos.length > 0) return photos[0];
+  const real = PROPERTY_PHOTOS[propertyId];
+  if (real && real.length > 0) return real[0];
+  let h = 0;
+  for (let i = 0; i < propertyId.length; i++) h = (h * 31 + propertyId.charCodeAt(i)) >>> 0;
+  return PHOTOS.galleryRooms[h % PHOTOS.galleryRooms.length];
+}

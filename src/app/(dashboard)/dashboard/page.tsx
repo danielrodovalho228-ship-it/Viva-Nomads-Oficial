@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import {
   Eye,
   Users,
@@ -15,11 +16,14 @@ import { useAuthStore, DEMO_USER } from "@/lib/store";
 import { useViewMode } from "@/lib/roles";
 import { StatCard, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { DashboardBanner } from "@/components/dashboard/banner";
+import { PropertyRow } from "@/components/dashboard/property-row";
+import { TenantOnboarding } from "@/components/dashboard/tenant-onboarding";
+import { RoleWelcomeModal } from "@/components/dashboard/role-welcome-modal";
 import { ButtonLink } from "@/components/ui/button";
 import { useProperties } from "@/lib/use-properties";
 import { useDashDemo, DemoBadge } from "@/lib/demo/demo-mode";
 import { DEMO_PROPERTIES, DEMO_KPIS } from "@/lib/demo/seed";
-import { PHOTOS } from "@/lib/media";
+import { PHOTOS, coverPhoto } from "@/lib/media";
 import { formatBRL } from "@/lib/utils";
 import { ReadyToLiveBadge } from "@/components/ui/badge";
 
@@ -30,8 +34,13 @@ export default function DashboardPage() {
   // "visitante" nem a parte local do e-mail (pré-lançamento, ALTA 3).
   const firstName = user.fullName?.trim() ? user.fullName.trim().split(" ")[0] : "";
 
-  if (mode === "tenant") return <TenantDashboard name={firstName} />;
-  return <OwnerDashboard name={firstName} />;
+  return (
+    <>
+      {/* Pergunta de papel no primeiro login (uma vez só). */}
+      <RoleWelcomeModal />
+      {mode === "tenant" ? <TenantDashboard name={firstName} /> : <OwnerDashboard name={firstName} />}
+    </>
+  );
 }
 
 function OwnerDashboard({ name }: { name: string }) {
@@ -122,22 +131,31 @@ function OwnerDashboard({ name }: { name: string }) {
               <ul className="divide-y divide-sage-200">
                 {myProperties.map((p) => (
                   <li key={p.id} className="flex items-center justify-between gap-3 py-3">
-                    <div>
-                      {/* Imóveis de demonstração não têm página real (/imoveis/demo-*
-                          daria 404) — mostra como texto. Reais viram link. */}
-                      {demo ? (
-                        <span className="font-medium text-ink">{p.title}</span>
-                      ) : (
-                        <Link
-                          href={`/imoveis/${p.id}`}
-                          className="font-medium text-ink hover:text-forest"
-                        >
-                          {p.title}
-                        </Link>
-                      )}
-                      <p className="text-sm text-muted">
-                        {formatBRL(p.monthlyPrice)}/mês · {p.neighborhood}
-                      </p>
+                    <div className="flex min-w-0 items-center gap-3">
+                      <Image
+                        src={coverPhoto(p.id, p.photos)}
+                        alt=""
+                        width={56}
+                        height={56}
+                        className="h-14 w-14 shrink-0 rounded-xl object-cover"
+                      />
+                      <div className="min-w-0">
+                        {/* Imóveis de demonstração não têm página real (/imoveis/demo-*
+                            daria 404) — mostra como texto. Reais viram link. */}
+                        {demo ? (
+                          <span className="font-medium text-ink">{p.title}</span>
+                        ) : (
+                          <Link
+                            href={`/imoveis/${p.id}`}
+                            className="font-medium text-ink hover:text-forest"
+                          >
+                            {p.title}
+                          </Link>
+                        )}
+                        <p className="text-sm text-muted">
+                          {formatBRL(p.monthlyPrice)}/mês · {p.neighborhood}
+                        </p>
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
                       {p.readyToLiveBadge && <ReadyToLiveBadge />}
@@ -179,18 +197,8 @@ function TenantDashboard({ name }: { name: string }) {
   const recommended = useProperties("/api/properties").properties.slice(0, 3);
   return (
     <>
-      <DashboardBanner
-        className="mb-6"
-        image={PHOTOS.dashTenant}
-        alt="Canto aconchegante de apartamento mobiliado com luz da manhã"
-        title={`Olá${name ? `, ${name}` : "!"} 👋`}
-        subtitle="Encontre o imóvel certo para a sua próxima fase."
-        action={
-          <ButtonLink href="/buscar" variant="accent">
-            <Search className="h-4 w-4" /> Buscar imóveis
-          </ButtonLink>
-        }
-      />
+      {/* Primeiro acesso: checklist de 3 passos (ou o banner, quando concluído/oculto). */}
+      <TenantOnboarding name={name} />
 
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard label="Favoritos" value={demo ? "3" : "0"} icon={Heart} />
@@ -200,18 +208,18 @@ function TenantDashboard({ name }: { name: string }) {
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <Panel title="Imóveis recomendados">
-          <ul className="divide-y divide-sage-200">
+          <div className="divide-y divide-sage-200">
             {recommended.map((p) => (
-              <li key={p.id} className="flex items-center justify-between py-3">
-                <Link href={`/imoveis/${p.id}`} className="text-sm font-medium text-ink hover:text-forest">
-                  {p.title}
-                </Link>
-                <span className="text-sm font-semibold text-forest">
-                  {formatBRL(p.monthlyPrice)}
-                </span>
-              </li>
+              <PropertyRow
+                key={p.id}
+                id={p.id}
+                title={p.title}
+                monthlyPrice={p.monthlyPrice}
+                neighborhood={p.neighborhood}
+                photos={p.photos}
+              />
             ))}
-          </ul>
+          </div>
         </Panel>
         <EmptyState
           icon={Heart}
