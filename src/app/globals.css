@@ -247,3 +247,14 @@ textarea:focus-visible,
     padding-bottom: 3rem;
   }
 }
+
+/* Micro-recompensa: o chip "Etiqueta conquistada" pulsa uma vez ao completar.
+   Respeita prefers-reduced-motion (sem animação para quem pediu menos movimento). */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes tagPop {
+    0% { transform: scale(0.9); }
+    50% { transform: scale(1.06); }
+    100% { transform: scale(1); }
+  }
+  .tag-earned-pop { animation: tagPop 0.45s ease-out; }
+}

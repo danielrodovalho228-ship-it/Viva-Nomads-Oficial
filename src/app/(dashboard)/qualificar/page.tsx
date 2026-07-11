@@ -13,12 +13,19 @@ import {
   MapPin,
   Info,
   ShieldCheck,
+  DoorOpen,
+  Armchair,
+  Wifi,
+  Building2,
+  Users,
+  Coffee,
 } from "lucide-react";
 import Image from "next/image";
 import { validarArquivoDoc } from "@/lib/upload-limits";
 import {
   type EligibilityState,
   type QualityState,
+  type TagItem,
   eligibilityChecks,
   isEligible,
   temPendenciaConvencao,
@@ -531,7 +538,7 @@ export default function QualificationChecklistPage() {
           title="Para trabalhar de casa"
           earned={tHome}
           items={homeOfficeItems(quality)}
-          onToggle={(label) => toggleQuality(homeKey(label))}
+          onToggle={(key) => toggleQuality(key)}
           banner="/media/como-funciona-01-converse.webp"
           bannerAlt="Pessoa trabalhando de casa no notebook"
         />
@@ -540,7 +547,7 @@ export default function QualificationChecklistPage() {
           title="Bem localizado para trabalho"
           earned={tWork}
           items={workLocatedItems(quality)}
-          onToggle={(label) => toggleQuality(workKey(label))}
+          onToggle={(key) => toggleQuality(key)}
           banner="/media/como-funciona-03-qualifique.webp"
           bannerAlt="Pessoa avaliando opções pela vizinhança no tablet"
         />
@@ -573,22 +580,16 @@ export default function QualificationChecklistPage() {
   );
 }
 
-function homeKey(label: string): keyof QualityState {
-  const m: Record<string, keyof QualityState> = {
-    "Cômodo/escritório dedicado": "hasHomeOffice",
-    "Mesa de trabalho adequada": "hasDesk",
-    "Cadeira de trabalho": "hasChair",
-  };
-  return m[label];
-}
-function workKey(label: string): keyof QualityState {
-  const m: Record<string, keyof QualityState> = {
-    "Coworking a menos de 2 km": "coworking2km",
-    "Sala de reunião próxima": "meetingRoom",
-    "Café de trabalho a menos de 1 km": "cafe1km",
-  };
-  return m[label];
-}
+/** Ícone temático por item de etiqueta (upgrade visual dos cards). */
+const TAG_ICON: Record<TagItem["icon"], React.ComponentType<{ className?: string }>> = {
+  office: DoorOpen,
+  desk: Laptop,
+  chair: Armchair,
+  wifi: Wifi,
+  coworking: Building2,
+  meeting: Users,
+  cafe: Coffee,
+};
 
 function CheckRow({
   checked,
@@ -737,12 +738,14 @@ function TagBlock({
   icon: React.ComponentType<{ className?: string }>;
   title: string;
   earned: boolean;
-  items: { label: string; on: boolean; readonly?: boolean }[];
-  onToggle: (label: string) => void;
+  items: TagItem[];
+  onToggle: (key: keyof QualityState) => void;
   /** Faixa fina de imagem no topo do card (ADENDO) — ambienta, sem chip. */
   banner?: string;
   bannerAlt?: string;
 }) {
+  const toggleaveis = items.filter((i) => !i.readonly);
+  const marcados = toggleaveis.filter((i) => i.on).length;
   return (
     <div className="mt-4 overflow-hidden rounded-xl border border-sage-200">
       {/* Faixa mais baixa que a do selo (~90px) e sem texto — hierarquia. */}
@@ -752,51 +755,59 @@ function TagBlock({
         </div>
       )}
       <div className="p-4">
-      <div className="flex items-center justify-between">
-        <span className="flex items-center gap-2 font-medium text-ink">
-          <Icon className="h-5 w-5 text-sage" /> {title}
-        </span>
-        {earned ? (
-          <span className="rounded-full bg-sage-100 px-2.5 py-1 text-xs font-medium text-sage">
-            Etiqueta conquistada ✓
+        <div className="flex items-center justify-between gap-2">
+          <span className="flex items-center gap-2 font-medium text-ink">
+            <Icon className="h-5 w-5 text-sage" /> {title}
+            <span className="text-xs font-normal text-muted">
+              {marcados}/{toggleaveis.length} marcados
+            </span>
           </span>
-        ) : (
-          <span className="text-xs text-muted">Marque todos os itens para ganhar esta etiqueta</span>
-        )}
-      </div>
-      <div className="mt-3 grid gap-2 sm:grid-cols-2">
-        {items.map((it) => {
-          const readonly = "readonly" in it && it.readonly;
-          return (
-            <button
-              key={it.label}
-              type="button"
-              role="checkbox"
-              aria-checked={it.on}
-              aria-label={it.label}
-              onClick={() => !readonly && onToggle(it.label)}
-              disabled={readonly}
-              title={readonly ? "Definida pela categoria de internet no selo base" : undefined}
-              className={cn(
-                "flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest focus-visible:ring-offset-2",
-                it.on ? "border-sage bg-sage-100 text-forest" : "border-sage-200 text-ink hover:border-sage",
-                readonly && "cursor-default hover:border-sage-200"
-              )}
-            >
-              <span
+          {earned ? (
+            <span className="tag-earned-pop shrink-0 rounded-full bg-sage-100 px-2.5 py-1 text-xs font-medium text-forest">
+              Etiqueta conquistada ✓
+            </span>
+          ) : (
+            <span className="shrink-0 text-right text-xs text-muted">
+              Marque todos os itens para ganhar esta etiqueta
+            </span>
+          )}
+        </div>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          {items.map((it) => {
+            const ItemIcon = TAG_ICON[it.icon];
+            return (
+              <button
+                key={it.key}
+                type="button"
+                role="checkbox"
+                aria-checked={it.on}
+                aria-label={it.label}
+                onClick={() => !it.readonly && onToggle(it.key as keyof QualityState)}
+                disabled={it.readonly}
+                title={it.readonly ? "Definida pela categoria de internet no selo base" : undefined}
                 className={cn(
-                  "grid h-4 w-4 shrink-0 place-items-center rounded border",
-                  it.on ? "border-forest bg-forest text-white" : "border-sage-200"
+                  "flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest focus-visible:ring-offset-2",
+                  it.on ? "border-blue-200 bg-blue-50 text-forest" : "border-sage-200 text-ink hover:border-sage",
+                  it.readonly && "cursor-default opacity-90 hover:border-sage-200"
                 )}
               >
-                {it.on && <CheckCircle2 className="h-3 w-3" />}
-              </span>
-              {it.label}
-            </button>
-          );
-        })}
-      </div>
+                <span
+                  className={cn(
+                    "grid h-5 w-5 shrink-0 place-items-center rounded border",
+                    it.on ? "border-forest bg-forest text-white" : "border-sage-200 text-sage"
+                  )}
+                >
+                  {it.on ? <CheckCircle2 className="h-3.5 w-3.5" /> : <ItemIcon className="h-3 w-3" />}
+                </span>
+                {it.label}
+              </button>
+            );
+          })}
+        </div>
+        <p className="mt-3 text-xs text-muted">
+          Vira filtro na busca — inquilinos que procuram isso encontram seu imóvel primeiro.
+        </p>
       </div>
     </div>
   );
