@@ -218,70 +218,104 @@ const rel = { notas: [], linhas: [] };
 const browser = await chromium.launch({
   executablePath: process.env.PLAYWRIGHT_CHROMIUM || undefined,
 });
-const context = await browser.newContext({
-  viewport: { width: 1440, height: 900 },
-  deviceScaleFactor: 2,
-  locale: "pt-BR",
-  timezoneId: "America/Sao_Paulo",
-});
-const page = await context.newPage();
 
-const logado = await login(page);
-if (!logado && !DEMO_INJECT) {
+/**
+ * Captura um CONJUNTO de telas num viewport dado. O `sufixo` distingue o retrato
+ * mobile do desktop no nome do arquivo (ex.: 05-dashboard-mobile.png), então o
+ * mesmo roteiro passa a existir nos DOIS tamanhos e uma regressão de
+ * responsividade aparece na foto (ADENDO item 6). Cada conjunto usa um contexto
+ * próprio (login/estado isolados). Devolve false se o login real não concluiu.
+ */
+async function capturarConjunto({ viewport, sufixo, telas }) {
+  const context = await browser.newContext({
+    viewport,
+    deviceScaleFactor: 2,
+    locale: "pt-BR",
+    timezoneId: "America/Sao_Paulo",
+  });
+  const page = await context.newPage();
+
+  const logado = await login(page);
+  if (!logado && !DEMO_INJECT) {
+    await context.close();
+    return false;
+  }
+
+  let demoLigado = false;
+  for (const tela of telas) {
+    const arquivo = tela.arquivo.replace(/\.png$/, `${sufixo}.png`);
+    const linha = { tela: arquivo.replace(/\.png$/, ""), status: "PENDENTE", motivo: "", arquivo };
+    try {
+      const resp = await page.goto(`${BASE_URL}${tela.rota}`, { waitUntil: "domcontentloaded" });
+      const status = resp ? resp.status() : 0;
+      const url = page.url();
+      if (status === 404 || /\/auth(\?|$)/.test(url)) {
+        linha.motivo = status === 404 ? "rota inexistente (404)" : "redirecionou para /auth (sem sessão/guard)";
+        rel.linhas.push(linha);
+        continue;
+      }
+
+      // Painel: liga demo (uma vez por conjunto) e garante papel Proprietário.
+      if (tela.painel && !demoLigado) {
+        await ligarModoDemo(page, rel);
+        demoLigado = true;
+      }
+      if (tela.painel) await papelProprietario(page);
+
+      await esperarEstavel(page);
+      if (tela.preparo) {
+        try {
+          await tela.preparo(page);
+        } catch (e) {
+          rel.notas.push(`${linha.tela}: preparo falhou (${String(e).slice(0, 60)}) — capturando mesmo assim.`);
+        }
+      }
+
+      // Valida o elemento-chave do roteiro.
+      // "attached" (presente no DOM) é o critério do inventário — evita falso
+      // DIVERGENTE quando o elemento existe mas o primeiro match é um nó auxiliar
+      // (ex.: <title> de SVG) que o Playwright considera não-visível.
+      let achou = true;
+      try {
+        await page.locator(tela.chave).first().waitFor({ timeout: 5000, state: "attached" });
+      } catch {
+        achou = false;
+      }
+
+      await page.screenshot({ path: join(OUT, arquivo), fullPage: !!tela.fullPage });
+      linha.status = achou ? "CAPTURADA" : "DIVERGENTE";
+      linha.motivo = achou ? "" : "elemento-chave do roteiro não encontrado nesta tela";
+    } catch (e) {
+      linha.status = "PENDENTE";
+      linha.motivo = `erro: ${String(e).slice(0, 80)}`;
+    }
+    rel.linhas.push(linha);
+    console.log(`  ${linha.status.padEnd(10)} ${linha.tela}`);
+  }
+
+  await context.close();
+  return true;
+}
+
+// Conjunto DESKTOP (1440×900): todas as telas do roteiro.
+const okDesktop = await capturarConjunto({
+  viewport: { width: 1440, height: 900 },
+  sufixo: "",
+  telas: TELAS,
+});
+if (!okDesktop && !DEMO_INJECT) {
   await browser.close();
   process.exit(0); // inventário, não teste — sai limpo
 }
 
-let demoLigado = false;
-for (const tela of TELAS) {
-  const linha = { tela: tela.arquivo.replace(/\.png$/, ""), status: "PENDENTE", motivo: "", arquivo: tela.arquivo };
-  try {
-    const resp = await page.goto(`${BASE_URL}${tela.rota}`, { waitUntil: "domcontentloaded" });
-    const status = resp ? resp.status() : 0;
-    const url = page.url();
-    if (status === 404 || /\/auth(\?|$)/.test(url)) {
-      linha.motivo = status === 404 ? "rota inexistente (404)" : "redirecionou para /auth (sem sessão/guard)";
-      rel.linhas.push(linha);
-      continue;
-    }
-
-    // Painel: liga demo (uma vez) e garante papel Proprietário.
-    if (tela.painel && !demoLigado) {
-      await ligarModoDemo(page, rel);
-      demoLigado = true;
-    }
-    if (tela.painel) await papelProprietario(page);
-
-    await esperarEstavel(page);
-    if (tela.preparo) {
-      try {
-        await tela.preparo(page);
-      } catch (e) {
-        rel.notas.push(`${linha.tela}: preparo falhou (${String(e).slice(0, 60)}) — capturando mesmo assim.`);
-      }
-    }
-
-    // Valida o elemento-chave do roteiro.
-    // "attached" (presente no DOM) é o critério do inventário — evita falso
-    // DIVERGENTE quando o elemento existe mas o primeiro match é um nó auxiliar
-    // (ex.: <title> de SVG) que o Playwright considera não-visível.
-    let achou = true;
-    try {
-      await page.locator(tela.chave).first().waitFor({ timeout: 5000, state: "attached" });
-    } catch {
-      achou = false;
-    }
-
-    await page.screenshot({ path: join(OUT, tela.arquivo), fullPage: !!tela.fullPage });
-    linha.status = achou ? "CAPTURADA" : "DIVERGENTE";
-    linha.motivo = achou ? "" : "elemento-chave do roteiro não encontrado nesta tela";
-  } catch (e) {
-    linha.status = "PENDENTE";
-    linha.motivo = `erro: ${String(e).slice(0, 80)}`;
-  }
-  rel.linhas.push(linha);
-  console.log(`  ${linha.status.padEnd(10)} ${linha.tela}`);
-}
+// Conjunto MOBILE (390×844 — iPhone): guarda de responsividade das telas do
+// painel (ADENDO item 6). Só as telas do painel, onde mora a densidade da UI.
+console.log("\n  — conjunto mobile (390px) —");
+await capturarConjunto({
+  viewport: { width: 390, height: 844 },
+  sufixo: "-mobile",
+  telas: TELAS.filter((t) => t.painel),
+});
 
 // ── Relatório (Markdown) ────────────────────────────────────────────────────
 const agora = new Date().toISOString();
@@ -367,7 +401,10 @@ const html = `<!doctype html><html><head><meta charset="utf-8"><style>
   ).join("")}
 </body></html>`;
 
-const pdfPage = await context.newPage();
+// Contexto próprio para renderizar o PDF (os conjuntos de captura já fecharam
+// os seus). A4 retrato, tamanho fixo — independe do viewport das telas.
+const pdfContext = await browser.newContext();
+const pdfPage = await pdfContext.newPage();
 await pdfPage.setContent(html, { waitUntil: "load" });
 await pdfPage.pdf({
   path: join(OUT, "RELATORIO_CAPTURAS.pdf"),
@@ -375,6 +412,7 @@ await pdfPage.pdf({
   printBackground: true,
   margin: { top: "0", bottom: "0", left: "0", right: "0" },
 });
+await pdfContext.close();
 
 await browser.close();
 
