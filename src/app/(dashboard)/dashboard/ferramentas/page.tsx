@@ -15,7 +15,6 @@ import {
   Sparkles,
 } from "lucide-react";
 import { PageTitle } from "@/components/dashboard/primitives";
-import { FERRAMENTAS_REAIS } from "@/lib/flags";
 import { useAuthStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
@@ -25,8 +24,6 @@ interface Ferramenta {
   desc: string;
   icon: React.ComponentType<{ className?: string }>;
   tag?: string; // ex.: "Plano Gestor"
-  /** Tela em desenvolvimento: abre o placeholder até a flag FERRAMENTAS_REAIS. */
-  soon?: boolean;
 }
 
 interface Grupo {
@@ -45,14 +42,12 @@ const GRUPOS: Grupo[] = [
         title: "Simulador de rentabilidade (do seu imóvel)",
         desc: "Quanto o SEU imóvel rende por mês na Viva Nomads — receita, custos e líquido.",
         icon: TrendingUp,
-        soon: true,
       },
       {
         href: "/dashboard/roi-imovel",
         title: "Calculadora de ROI",
         desc: "Vale a pena mobiliar? Payback do investimento e retorno anual.",
         icon: Percent,
-        soon: true,
       },
     ],
   },
@@ -65,7 +60,6 @@ const GRUPOS: Grupo[] = [
         title: "Orçamentos",
         desc: "Monte e compartilhe propostas para os interessados.",
         icon: FileText,
-        soon: true,
       },
       {
         href: "/dashboard/fechamento",
@@ -104,9 +98,6 @@ export default function FerramentasPage() {
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {g.itens.map((f) => {
                 const bloqueado = f.tag === "Plano Gestor" && !isGestor;
-                // Em desenvolvimento: o card leva ao placeholder dentro da casca
-                // (nunca redirect). Sinaliza "Em breve" com honestidade.
-                const emBreve = !!f.soon && !FERRAMENTAS_REAIS;
                 return (
                   <Link
                     key={f.href}
@@ -117,37 +108,24 @@ export default function FerramentasPage() {
                       <span className="grid h-10 w-10 place-items-center rounded-xl bg-sage-100 text-forest">
                         <f.icon className="h-5 w-5" />
                       </span>
-                      {emBreve ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
-                          <Lock className="h-3 w-3" /> Em breve
+                      {f.tag && (
+                        <span
+                          className={cn(
+                            "rounded-full px-2.5 py-1 text-xs font-medium",
+                            bloqueado
+                              ? "bg-champagne/20 text-forest"
+                              : "bg-sage-100 text-forest"
+                          )}
+                        >
+                          {f.tag}
                         </span>
-                      ) : (
-                        f.tag && (
-                          <span
-                            className={cn(
-                              "rounded-full px-2.5 py-1 text-xs font-medium",
-                              bloqueado
-                                ? "bg-champagne/20 text-forest"
-                                : "bg-sage-100 text-forest"
-                            )}
-                          >
-                            {f.tag}
-                          </span>
-                        )
                       )}
                     </div>
                     <h3 className="mt-3 font-title font-bold text-ink">{f.title}</h3>
                     <p className="mt-1 flex-1 text-sm text-muted">{f.desc}</p>
-                    <span
-                      className={cn(
-                        "mt-3 inline-flex items-center gap-1 text-sm font-medium",
-                        emBreve ? "text-muted" : "text-forest"
-                      )}
-                    >
-                      {emBreve ? "Em breve" : bloqueado ? "Fazer upgrade" : "Abrir"}
-                      {!emBreve && (
-                        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-                      )}
+                    <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-forest">
+                      {bloqueado ? "Fazer upgrade" : "Abrir"}
+                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                     </span>
                   </Link>
                 );
@@ -199,27 +177,15 @@ export default function FerramentasPage() {
                 <span className="grid h-10 w-10 place-items-center rounded-xl bg-sage-100 text-forest">
                   <ShieldCheck className="h-5 w-5" />
                 </span>
-                {!FERRAMENTAS_REAIS && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
-                    <Lock className="h-3 w-3" /> Em breve
-                  </span>
-                )}
               </div>
               <h3 className="mt-3 font-title font-bold text-ink">Garantia locatícia</h3>
               <p className="mt-1 flex-1 text-sm text-muted">
                 Caução Viva (50% por bloco, devolvível) ou seguro-fiança via parceiro (em
                 estruturação). Uma garantia por contrato — o dinheiro nunca fica com a plataforma.
               </p>
-              <span
-                className={cn(
-                  "mt-3 inline-flex items-center gap-1 text-sm font-medium",
-                  FERRAMENTAS_REAIS ? "text-forest" : "text-muted"
-                )}
-              >
-                {FERRAMENTAS_REAIS ? "Ver garantias e cauções" : "Em breve"}
-                {FERRAMENTAS_REAIS && (
-                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-                )}
+              <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-forest">
+                Ver garantias e cauções
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </span>
             </Link>
 

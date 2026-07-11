@@ -12,8 +12,7 @@ import {
   Hash,
   CheckCircle2,
 } from "lucide-react";
-import { PageTitle, Panel, EmptyState, EmConstrucao } from "@/components/dashboard/primitives";
-import { FERRAMENTAS_REAIS } from "@/lib/flags";
+import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { PropertyMiniCard } from "@/components/property-mini-card";
 import { DocumentShare } from "@/components/document-share";
@@ -35,20 +34,6 @@ import { formatBRL, cn } from "@/lib/utils";
 type View = "list" | "new" | "doc";
 
 export default function OrcamentosPage() {
-  // Ferramenta EM DESENVOLVIMENTO (B2): com a flag OFF, abre o placeholder dentro
-  // da casca. A implementação real fica preservada abaixo, atrás da flag.
-  if (!FERRAMENTAS_REAIS) {
-    return (
-      <EmConstrucao
-        title="Orçamentos"
-        text="O envio de orçamentos numerados está em desenvolvimento e chega em breve, aqui no seu painel."
-      />
-    );
-  }
-  return <OrcamentosReal />;
-}
-
-function OrcamentosReal() {
   const [view, setView] = useState<View>("list");
   const [active, setActive] = useState<DocumentRecord | null>(null);
 
