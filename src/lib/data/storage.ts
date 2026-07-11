@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { stripImageExif } from "@/lib/image/strip-exif";
 
 export const PROPERTY_PHOTOS_BUCKET = "property-photos";
 
@@ -20,17 +21,21 @@ export async function uploadPropertyPhoto(
 ): Promise<UploadedPhoto> {
   const supabase = createClient();
 
+  // Remove o EXIF (inclusive GPS/endereço) ANTES de qualquer coisa — vale também
+  // para o preview local do modo demo, para nunca expor a geolocalização.
+  const safe = await stripImageExif(file);
+
   if (!supabase) {
-    return { url: URL.createObjectURL(file), path: null, demo: true };
+    return { url: URL.createObjectURL(safe), path: null, demo: true };
   }
 
-  const ext = file.name.split(".").pop() ?? "jpg";
+  const ext = safe.name.split(".").pop() ?? "jpg";
   const folder = ownerId ?? "anon";
   const path = `${folder}/${crypto.randomUUID()}.${ext}`;
 
   const { error } = await supabase.storage
     .from(PROPERTY_PHOTOS_BUCKET)
-    .upload(path, file, { cacheControl: "3600", upsert: false });
+    .upload(path, safe, { cacheControl: "3600", upsert: false });
 
   if (error) {
     // Falha de upload: cai para preview local para não travar o fluxo.
