@@ -62,6 +62,9 @@ export async function saveQualification(
       // Caminho do documento no bucket PRIVADO (migration 0041). Só a referência
       // — a exibição usa URL assinada. null quando não enviado.
       document_path: documentPath ?? null,
+      // Anti-fraude (migration 0042): documento enviado entra "em análise"; um
+      // admin aprova/recusa. Só aprovado libera Publicar. Sem documento: none.
+      document_status: documentPath ? "pending" : "none",
       eligible,
       // Selo base + etiquetas (Atualização 11)
       ready_to_live_score,
@@ -77,6 +80,34 @@ export async function saveQualification(
 
   if (error) return { ok: false, error: error.message };
   return { ok: true, id: data.id };
+}
+
+export type DocumentStatus = "none" | "pending" | "approved" | "rejected";
+
+/**
+ * Estado da verificação do documento do proprietário logado (última
+ * qualificação). O editor usa isto para o portão de Publicar (item 1 do QA):
+ * só `approved` libera. Em demo/preview (sem Supabase) devolve `approved` para
+ * não travar os fluxos de demonstração.
+ */
+export async function getMyDocumentStatus(): Promise<{ status: DocumentStatus; reason: string | null }> {
+  const supabase = await createClient();
+  if (!supabase) return { status: "approved", reason: null };
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { status: "none", reason: null };
+  const { data } = await supabase
+    .from("qualification_checklists")
+    .select("document_status, document_review_reason")
+    .eq("owner_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return {
+    status: ((data?.document_status as DocumentStatus) ?? "none"),
+    reason: (data?.document_review_reason as string) ?? null,
+  };
 }
 
 /** Cria um imóvel (Fase 5), exigindo um checklist aprovado. */
@@ -145,6 +176,25 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Não autenticado." };
+
+  // Portão anti-fraude NO SERVIDOR (item 1): publicar (status active) exige a
+  // última qualificação com documento APROVADO. Rascunho passa. Enforcement real
+  // — o gate do cliente é só UX.
+  if (input.asDraft === false) {
+    const { data: q } = await supabase
+      .from("qualification_checklists")
+      .select("document_status")
+      .eq("owner_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if ((q?.document_status ?? "none") !== "approved") {
+      return {
+        ok: false,
+        error: "Documentação do imóvel ainda não aprovada. Salve como rascunho — a publicação libera após a verificação.",
+      };
+    }
+  }
 
   // Feature gating por plano (validado no servidor): respeita o limite de
   // anúncios do plano do proprietário. Sem assinatura, vale o plano gratuito.

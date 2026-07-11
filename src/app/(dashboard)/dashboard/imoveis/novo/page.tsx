@@ -22,7 +22,7 @@ import {
   ShieldCheck,
   XCircle,
 } from "lucide-react";
-import { createProperty, updateProperty, loadPropertyForEdit } from "@/lib/data/actions";
+import { createProperty, updateProperty, loadPropertyForEdit, getMyDocumentStatus, type DocumentStatus } from "@/lib/data/actions";
 import { geocodeForSave } from "@/lib/integrations/geocoding";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button, ButtonLink } from "@/components/ui/button";
@@ -54,6 +54,10 @@ const LAST = STEP_META.length - 1;
 
 export default function NewPropertyPage() {
   const [approved, setApproved] = useState<boolean | null>(null);
+  // Estado da verificação do documento (anti-fraude, item 1). Só "approved"
+  // libera Publicar. Em demo/preview vem "approved" (não trava).
+  const [docStatus, setDocStatus] = useState<DocumentStatus>("approved");
+  const [docReason, setDocReason] = useState<string | null>(null);
   const [step, setStep] = useState(0);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiWarn, setAiWarn] = useState<string | null>(null);
@@ -134,7 +138,26 @@ export default function NewPropertyPage() {
     { label: "Preço mensal maior que zero", ok: Number(monthlyPrice) > 0, step: 5 },
   ];
   const completudeOk = completude.every((c) => c.ok);
-  const podePublicar = completudeOk && !subleaseBlocked;
+  // Portão do documento (item 1): publicar exige documento APROVADO. Não vale na
+  // edição de um imóvel que já existe (editingId) — ele já passou. Em demo, o
+  // status vem "approved".
+  const docAprovado = !!editingId || docStatus === "approved";
+  const podePublicar = completudeOk && !subleaseBlocked && docAprovado;
+
+  // Busca o estado da verificação do documento uma vez (portão de Publicar).
+  useEffect(() => {
+    let alive = true;
+    getMyDocumentStatus()
+      .then((r) => {
+        if (!alive) return;
+        setDocStatus(r.status);
+        setDocReason(r.reason);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   // Barra de qualidade do anúncio: fotos + descrição + recursos (rodada 11).
   const quality = Math.min(
@@ -164,6 +187,16 @@ export default function NewPropertyPage() {
   } as Property;
 
   async function publish(asDraft = false) {
+    // Publicar exige documento aprovado (anti-fraude, item 1). Rascunho sempre
+    // pode. Não vale na edição de imóvel já existente.
+    if (!asDraft && !editingId && docStatus !== "approved") {
+      setPublishError(
+        docStatus === "rejected"
+          ? "Documentação não aprovada — reenvie na qualificação para publicar."
+          : "Documentação em análise. Você pode salvar como rascunho; a publicação libera após a aprovação."
+      );
+      return;
+    }
     // Publicação exige tudo verde na checklist de completude (item 3). Rascunho
     // salva mesmo incompleto (o autosave depende disso).
     if (!asDraft) {
@@ -1067,6 +1100,29 @@ export default function NewPropertyPage() {
               <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                 <strong>Publicação bloqueada.</strong> Confirme a autorização de sublocação no passo{" "}
                 <button type="button" onClick={() => setStep(0)} className="font-medium underline">Tipo e operação</button>.
+              </div>
+            )}
+
+            {/* Portão da verificação do documento (item 1). Não aparece na edição
+                de um imóvel já existente. */}
+            {!editingId && docStatus === "pending" && (
+              <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>
+                  <strong>Documentação em análise.</strong> Nossa equipe está verificando a matrícula/contrato.
+                  Você pode <strong>salvar como rascunho</strong> e continuar editando; a publicação libera
+                  assim que o documento for aprovado (avisamos por e-mail).
+                </span>
+              </div>
+            )}
+            {!editingId && docStatus === "rejected" && (
+              <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>
+                  <strong>Documentação não aprovada.</strong>
+                  {docReason ? ` Motivo: ${docReason}.` : ""} Reenvie o documento na{" "}
+                  <a href="/qualificar" className="font-medium underline">qualificação</a> para liberar a publicação.
+                </span>
               </div>
             )}
             {publishError && <p className="text-sm text-red-600">{publishError}</p>}
