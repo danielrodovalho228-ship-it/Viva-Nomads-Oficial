@@ -181,7 +181,11 @@ export function MyPropertiesClient({ properties: real }: { properties: Property[
                           </ButtonLink>
                         )}
                         <ButtonLink
-                          href={`/dashboard/imoveis/${p.id}/editar`}
+                          href={
+                            p.status === "draft"
+                              ? `/dashboard/imoveis/novo?draft=${p.id}`
+                              : `/dashboard/imoveis/${p.id}/editar`
+                          }
                           variant={p.status === "draft" ? "gold" : "ghost"}
                           size="sm"
                         >

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -23,7 +23,7 @@ import {
   XCircle,
   AlertTriangle,
 } from "lucide-react";
-import { createProperty, updateProperty, loadPropertyForEdit, getMyDocumentStatus, type DocumentStatus } from "@/lib/data/actions";
+import { createProperty, updateProperty, loadPropertyForEdit, getMyDocumentStatus, saveDraftData, loadDraftData, type DocumentStatus } from "@/lib/data/actions";
 import { geocodeForSave } from "@/lib/integrations/geocoding";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button, ButtonLink } from "@/components/ui/button";
@@ -115,7 +115,10 @@ export default function NewPropertyPage() {
   const [subleaseAuthorized, setSubleaseAuthorized] = useState(false);
   const [subleaseDoc, setSubleaseDoc] = useState<PhotoItem[]>([]);
   const [qual, setQual] = useState({ baseBadge: false, tHome: false, tWork: false });
-  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+  // Autosave no SERVIDOR (P0): status honesto + id do rascunho + hora do salvamento.
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [savedAt, setSavedAt] = useState<string>("");
+  const [draftServerId, setDraftServerId] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
   // Edição: ?id= carrega um imóvel do dono para editar (em vez de criar novo).
@@ -293,8 +296,11 @@ export default function NewPropertyPage() {
       asDraft,
     };
 
-    // Edição atualiza o imóvel existente; caso contrário, cria um novo.
-    const res = editingId ? await updateProperty(editingId, payload) : await createProperty(payload);
+    // Edição OU rascunho já persistido no servidor → ATUALIZA a mesma linha
+    // (converte o rascunho em ativo ao publicar; nunca cria duplicado). Só cria
+    // do zero quando não há id de rascunho ainda.
+    const targetId = editingId || draftServerId;
+    const res = targetId ? await updateProperty(targetId, payload) : await createProperty(payload);
 
     setPublishing(false);
     if (!res.ok) {
@@ -310,10 +316,73 @@ export default function NewPropertyPage() {
     router.push("/dashboard/imoveis");
   }
 
+  // Aplica um snapshot de rascunho (localStorage OU servidor) ao formulário.
+  // Fonte única da restauração — usada pela retomada local e pela retomada por
+  // `?draft=<id>` (servidor), para nunca divergirem.
+  function aplicarDraft(d: Record<string, unknown>) {
+    const s = (v: unknown) => (typeof v === "string" ? v : undefined);
+    if (s(d.title)) setTitle(d.title as string);
+    if (s(d.propertyType)) setPropertyType(d.propertyType as string);
+    if (s(d.description)) setDescription(d.description as string);
+    if (s(d.bedrooms)) setBedrooms(d.bedrooms as string);
+    if (s(d.bathrooms)) setBathrooms(d.bathrooms as string);
+    if (s(d.areaM2)) setAreaM2(d.areaM2 as string);
+    if (s(d.parkingSpots)) setParkingSpots(d.parkingSpots as string);
+    if (s(d.maxGuests)) setMaxGuests(d.maxGuests as string);
+    if (s(d.minPeriod)) setMinPeriod(d.minPeriod as string);
+    if (s(d.maxPeriod)) setMaxPeriod(d.maxPeriod as string);
+    if (s(d.availableFrom)) setAvailableFrom(d.availableFrom as string);
+    if (s(d.availableUntil)) setAvailableUntil(d.availableUntil as string);
+    if (s(d.monthlyPrice)) setMonthlyPrice(d.monthlyPrice as string);
+    if (s(d.street)) setStreet(d.street as string);
+    if (s(d.neighborhood)) setNeighborhood(d.neighborhood as string);
+    if (s(d.city)) setCity(d.city as string);
+    if (s(d.cep)) setCep(d.cep as string);
+    if (s(d.videoUrl)) setVideoUrl(d.videoUrl as string);
+    if (typeof d.furnished === "boolean") setFurnished(d.furnished);
+    if (typeof d.petsOk === "boolean") setPetsOk(d.petsOk);
+    if (typeof d.smokingAllowed === "boolean") setSmokingAllowed(d.smokingAllowed);
+    if (typeof d.childrenAllowed === "boolean") setChildrenAllowed(d.childrenAllowed);
+    if (typeof d.issuesInvoice === "boolean") setIssuesInvoice(d.issuesInvoice);
+    if (d.amenityKeys && typeof d.amenityKeys === "object") setAmenityKeys(d.amenityKeys as Record<string, boolean>);
+    if (Array.isArray(d.googlePlaces)) setGooglePlaces(d.googlePlaces as CuratedPlace[]);
+    if (Array.isArray(d.manualProximities))
+      setManualProximities(d.manualProximities as Parameters<typeof setManualProximities>[0]);
+    if (d.utilitiesMode === "fixed" || d.utilitiesMode === "real") setUtilitiesMode(d.utilitiesMode);
+    if (typeof d.utilitiesEstimate === "number") setUtilitiesEstimate(d.utilitiesEstimate);
+    if (d.faixas && typeof d.faixas === "object") setFaixas(d.faixas as Record<string, boolean>);
+    if (d.garantias && typeof d.garantias === "object") setGarantias(d.garantias as Record<string, boolean>);
+    if (typeof d.prepFee === "number") setPrepFee(d.prepFee);
+    if (d.ownershipType === "own" || d.ownershipType === "subleased") setOwnershipType(d.ownershipType);
+    if (typeof d.subleaseAuthorized === "boolean") setSubleaseAuthorized(d.subleaseAuthorized);
+    if (Array.isArray(d.photos)) setPhotos(d.photos as PhotoItem[]);
+    if (Array.isArray(d.subleaseDoc)) setSubleaseDoc(d.subleaseDoc as PhotoItem[]);
+    if (typeof d.step === "number") setStep(Math.min(LAST, Math.max(0, Math.round(d.step))));
+  }
+
+  // Retomada por `?draft=<id>` — carrega o snapshot do SERVIDOR e restaura tudo
+  // (campos + etapa). É o "Continuar editando" de um rascunho de Meus imóveis.
+  const draftParam = searchParams.get("draft");
   useEffect(() => {
-    // Em edição (?id=), o carregamento vem do banco (efeito abaixo); não lê a
-    // qualificação nem o rascunho de "novo anúncio" para não misturar dados.
-    if (editId) return;
+    if (!draftParam) return;
+    let alive = true;
+    (async () => {
+      const d = await loadDraftData(draftParam);
+      if (!alive) return;
+      draftIdRef.current = draftParam;
+      setDraftServerId(draftParam);
+      setApproved(true);
+      if (d && typeof d === "object") aplicarDraft(d as Record<string, unknown>);
+    })();
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draftParam]);
+
+  useEffect(() => {
+    // Em edição (?id=) ou retomada de rascunho (?draft=), não lê o rascunho local.
+    if (editId || draftParam) return;
     const raw = sessionStorage.getItem("vivanomads-qualification");
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setApproved(raw ? JSON.parse(raw).eligible === true : false);
@@ -323,54 +392,10 @@ export default function NewPropertyPage() {
         setQual({ baseBadge: !!q.baseBadge, tHome: !!q.tHome, tWork: !!q.tWork });
       }
       const draft = localStorage.getItem("vivanomads-novo-draft");
-      if (draft) {
-        const d = JSON.parse(draft);
-        // Texto/números (guardados como string nos inputs).
-        if (d.title) setTitle(d.title);
-        if (d.propertyType) setPropertyType(d.propertyType);
-        if (d.description) setDescription(d.description);
-        if (d.bedrooms) setBedrooms(d.bedrooms);
-        if (d.bathrooms) setBathrooms(d.bathrooms);
-        if (d.areaM2) setAreaM2(d.areaM2);
-        if (d.parkingSpots) setParkingSpots(d.parkingSpots);
-        if (d.maxGuests) setMaxGuests(d.maxGuests);
-        if (d.minPeriod) setMinPeriod(d.minPeriod);
-        if (d.maxPeriod) setMaxPeriod(d.maxPeriod);
-        if (d.availableFrom) setAvailableFrom(d.availableFrom);
-        if (d.availableUntil) setAvailableUntil(d.availableUntil);
-        if (d.monthlyPrice) setMonthlyPrice(d.monthlyPrice);
-        if (d.street) setStreet(d.street);
-        if (d.neighborhood) setNeighborhood(d.neighborhood);
-        if (d.city) setCity(d.city);
-        if (d.cep) setCep(d.cep);
-        if (d.videoUrl) setVideoUrl(d.videoUrl);
-        // Regras do imóvel (booleanos).
-        if (typeof d.furnished === "boolean") setFurnished(d.furnished);
-        if (typeof d.petsOk === "boolean") setPetsOk(d.petsOk);
-        if (typeof d.smokingAllowed === "boolean") setSmokingAllowed(d.smokingAllowed);
-        if (typeof d.childrenAllowed === "boolean") setChildrenAllowed(d.childrenAllowed);
-        if (typeof d.issuesInvoice === "boolean") setIssuesInvoice(d.issuesInvoice);
-        // Seleções (mapas/listas) e comerciais.
-        if (d.amenityKeys && typeof d.amenityKeys === "object") setAmenityKeys(d.amenityKeys);
-        if (Array.isArray(d.googlePlaces)) setGooglePlaces(d.googlePlaces);
-        if (Array.isArray(d.manualProximities)) setManualProximities(d.manualProximities);
-        if (d.utilitiesMode === "fixed" || d.utilitiesMode === "real") setUtilitiesMode(d.utilitiesMode);
-        if (typeof d.utilitiesEstimate === "number") setUtilitiesEstimate(d.utilitiesEstimate);
-        if (d.faixas && typeof d.faixas === "object") setFaixas(d.faixas);
-        if (d.garantias && typeof d.garantias === "object") setGarantias(d.garantias);
-        if (typeof d.prepFee === "number") setPrepFee(d.prepFee);
-        if (d.ownershipType) setOwnershipType(d.ownershipType);
-        if (typeof d.subleaseAuthorized === "boolean") setSubleaseAuthorized(d.subleaseAuthorized);
-        // Fotos/documentos com URL persistente (Supabase Storage).
-        if (Array.isArray(d.photos)) setPhotos(d.photos);
-        if (Array.isArray(d.subleaseDoc)) setSubleaseDoc(d.subleaseDoc);
-        // Volta para a etapa em que a pessoa parou (limitada às etapas válidas,
-        // pois um rascunho de uma versão diferente do wizard poderia ter um
-        // índice fora do intervalo e quebrar STEP_META[step]).
-        if (typeof d.step === "number") setStep(Math.min(LAST, Math.max(0, Math.round(d.step))));
-      }
+      if (draft) aplicarDraft(JSON.parse(draft));
     } catch {}
-  }, [editId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editId, draftParam]);
 
   // Edição: carrega o imóvel do dono e preenche o formulário. Não requer
   // requalificação (já é um anúncio existente) e não usa o rascunho local.
@@ -445,22 +470,53 @@ export default function NewPropertyPage() {
     photos: photos.filter((p) => p.url && !p.url.startsWith("blob:")),
     subleaseDoc: subleaseDoc.filter((p) => p.url && !p.url.startsWith("blob:")),
   });
+  // Autosave REAL no servidor (P0). draftIdRef guarda o id de forma síncrona (o
+  // 1º save insere e fixa o id; os seguintes ATUALIZAM — sem rascunhos
+  // duplicados). localStorage segue como cinto secundário.
+  const draftIdRef = useRef<string | null>(null);
   useEffect(() => {
-    // Não autossalva em modo edição (não deve poluir o rascunho de "novo anúncio").
+    // Não autossalva em modo edição (?id — imóvel existente, não é rascunho novo).
     if (approved !== true || editId) return;
     try {
       localStorage.setItem("vivanomads-novo-draft", draftJson);
     } catch {
-      /* cota do navegador cheia — o rascunho de texto ainda vale na próxima gravação */
+      /* cota do navegador cheia — o rascunho ainda tenta o servidor */
     }
+    // Não cria rascunho vazio (evita lixo ao só abrir a página).
+    const vazio =
+      !title.trim() && !description.trim() && !street.trim() && !neighborhood.trim() &&
+      photos.length === 0 && !(Number(monthlyPrice) > 0) && !bedrooms && !bathrooms && !areaM2;
+    if (vazio) return;
+
     let on = true;
-    const t1 = setTimeout(() => on && setSaveStatus("saving"), 0);
-    const t2 = setTimeout(() => on && setSaveStatus("saved"), 500);
+    setSaveStatus("saving");
+    const t = setTimeout(async () => {
+      if (!on) return;
+      const res = await saveDraftData({
+        id: draftIdRef.current,
+        title,
+        city,
+        monthlyPrice: Number(monthlyPrice) || 0,
+        data: JSON.parse(draftJson),
+      });
+      if (!on) return;
+      if (res.ok) {
+        if (res.id) {
+          draftIdRef.current = res.id;
+          setDraftServerId(res.id);
+        }
+        setSaveStatus("saved");
+        setSavedAt(new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }));
+      } else {
+        // Falha real de gravação → avisa (não finge sucesso). Demo não tem backend.
+        setSaveStatus(res.demo ? "saved" : "error");
+      }
+    }, 2000);
     return () => {
       on = false;
-      clearTimeout(t1);
-      clearTimeout(t2);
+      clearTimeout(t);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [approved, draftJson, editId]);
 
   async function lookupCep(value: string) {
@@ -541,12 +597,20 @@ export default function NewPropertyPage() {
             <span
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium",
-                saveStatus === "saved" ? "bg-sage-100 text-forest" : "bg-surface-2 text-muted"
+                saveStatus === "saved"
+                  ? "bg-sage-100 text-forest"
+                  : saveStatus === "error"
+                    ? "bg-red-50 text-red-700"
+                    : "bg-surface-2 text-muted"
               )}
             >
               {saveStatus === "saved" ? (
                 <>
-                  <Check className="h-3.5 w-3.5" /> Rascunho salvo
+                  <Check className="h-3.5 w-3.5" /> Salvo{savedAt ? ` às ${savedAt}` : ""}
+                </>
+              ) : saveStatus === "error" ? (
+                <>
+                  <XCircle className="h-3.5 w-3.5" /> Sem conexão — não salvo
                 </>
               ) : (
                 "Salvando…"
