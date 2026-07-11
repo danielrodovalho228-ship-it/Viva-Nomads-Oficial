@@ -51,7 +51,7 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
       {leads.length === 0 ? (
         <EmptyState
           icon={Users}
-          title="Nenhum lead ainda"
+          title="Nenhum interessado ainda"
           text="Quando um inquilino enviar uma consulta sobre seus imóveis, ele aparece aqui."
         />
       ) : (

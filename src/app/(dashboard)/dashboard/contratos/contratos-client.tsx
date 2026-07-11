@@ -154,7 +154,7 @@ export function ContratosClient({
         <EmptyState
           illustration={<Image src="/media/empty-contratos.webp" alt="" width={176} height={176} className="h-44 w-44" />}
           title="Nenhum contrato ainda"
-          text="Seu primeiro fechamento aparece aqui — o contrato-mãe, os blocos e o registro dos recebimentos."
+          text="Seu primeiro fechamento aparece aqui — o contrato, os blocos e o registro dos recebimentos."
           action={
             <Link href="/dashboard/fechamento">
               <Button variant="gold">Ir para o fechamento</Button>
@@ -231,7 +231,7 @@ function ContratoCard({
 
       {/* Comissão única (contrato-mãe) — % do 1º aluguel, NUNCA "1 mês de aluguel". */}
       <p className="mt-3 rounded-lg bg-champagne/10 px-3 py-2 text-xs text-forest">
-        Comissão do contrato-mãe: <strong>{formatBRL(contrato.comissaoValor)}</strong>
+        Comissão do contrato: <strong>{formatBRL(contrato.comissaoValor)}</strong>
         {contrato.comissaoPercent > 0 && (
           <> ({Math.round(contrato.comissaoPercent * 100)}% do 1º aluguel)</>
         )}{" "}

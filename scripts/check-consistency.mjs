@@ -61,6 +61,27 @@ const DEMO_LEAK = [
   /\b(?:CTR|VN-CT)-20\d{2}-\d{3,4}\b/,
 ];
 
+// 4) Jargão interno em superfície de USUÁRIO (ADENDO /qualificar, item 2).
+//    "Camada 1/2" e "contrato-mãe" são alto-sinal → banidos direto (raros em
+//    código). "gate/flag/lead" vivem legitimamente em CÓDIGO (nomes de
+//    componente como PlanGate, flags.ts, classe CSS .lead, rota /api/test-lead)
+//    — por isso só contam em linhas que NÃO parecem código. Caso legítimo:
+//    `consistency-ignore` na mesma linha.
+const JARGAO_DURO = [/\bCamada [12]\b/, /contrato-m[ãa]e/i];
+const JARGAO_PALAVRA = /\b(gate|flag|lead)\b/i;
+function pareceCodigo(linha) {
+  const t = linha.trimStart();
+  return (
+    t.startsWith("//") ||
+    t.startsWith("*") ||
+    t.startsWith("/*") ||
+    t.startsWith("{/*") || // comentário JSX
+    t.startsWith("import ") ||
+    t.startsWith("export ") ||
+    /className|styles\.|PlanGate|plan-gate|\/api\/|test-lead|\.module\.css|href=|src=/.test(linha)
+  );
+}
+
 function walk(dir) {
   const out = [];
   let entries;
@@ -101,6 +122,16 @@ for (const dir of SCAN_DIRS) {
             why: `dado de demonstração fora do gate demo (${rx})`,
             line: line.trim(),
           });
+      }
+      // Jargão só conta em TEXTO de tela: pula rotas /api e linhas que parecem
+      // código (comentários, imports, classes, nomes de componente/CSS/rota).
+      if (!rel.includes("/api/") && !pareceCodigo(line)) {
+        for (const rx of JARGAO_DURO) {
+          if (rx.test(line))
+            violations.push({ rel, n: i + 1, why: `jargão interno na tela (${rx})`, line: line.trim() });
+        }
+        if (JARGAO_PALAVRA.test(line))
+          violations.push({ rel, n: i + 1, why: "jargão interno na tela (gate/flag/lead)", line: line.trim() });
       }
     });
   }

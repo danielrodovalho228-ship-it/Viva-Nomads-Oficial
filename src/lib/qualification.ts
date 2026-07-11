@@ -51,9 +51,19 @@ export function eligibilityChecks(s: EligibilityState) {
   ];
 }
 
+/**
+ * Elegível para publicar: todos os 6 requisitos + a convenção RESPONDIDA e não
+ * proibitiva. "Sim" e "Não sei" liberam (ver desdobramentos na UI: "Não sei"
+ * publica COM PENDÊNCIA); "" (sem resposta) ainda não elegível; "Não" bloqueia.
+ */
 export function isEligible(s: EligibilityState): boolean {
   const allRequired = eligibilityChecks(s).every((c) => c.ok);
-  return allRequired && s.condoAllows !== "no";
+  return allRequired && s.condoAllows !== "no" && s.condoAllows !== "";
+}
+
+/** Convenção respondida como "não sei" → publica, mas com pendência sinalizada. */
+export function temPendenciaConvencao(s: EligibilityState): boolean {
+  return s.condoAllows === "unknown";
 }
 
 /** Itens do selo BASE "Pronto para Morar" com pesos. */

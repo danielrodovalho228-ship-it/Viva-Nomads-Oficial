@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   CheckCircle2,
@@ -14,12 +14,14 @@ import {
   Info,
   ShieldCheck,
 } from "lucide-react";
+import Image from "next/image";
 import { validarArquivoDoc } from "@/lib/upload-limits";
 import {
   type EligibilityState,
   type QualityState,
   eligibilityChecks,
   isEligible,
+  temPendenciaConvencao,
   readyToLiveItems,
   readyToLiveScore,
   homeOfficeItems,
@@ -32,7 +34,7 @@ import {
 import { INTERNET_TIERS, INTERNET_META, type InternetTier } from "@/lib/internet";
 import { Button } from "@/components/ui/button";
 import { ReadyToLiveBadge } from "@/components/ui/badge";
-import { saveQualification } from "@/lib/data/actions";
+import { saveQualification, getMyDocumentStatus, type DocumentStatus } from "@/lib/data/actions";
 import { cn } from "@/lib/utils";
 
 const initialEligibility: EligibilityState = {
@@ -71,6 +73,23 @@ export default function QualificationChecklistPage() {
   const [docBusy, setDocBusy] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+  // Estado da verificação do documento (reconciliar o veredito com a moderação —
+  // ADENDO elegibilidade item 3). "none" até enviar; após salvar vira "pending".
+  const [docStatus, setDocStatus] = useState<DocumentStatus>("none");
+  const [docReason, setDocReason] = useState<string | null>(null);
+  useEffect(() => {
+    let alive = true;
+    getMyDocumentStatus()
+      .then((r) => {
+        if (!alive) return;
+        setDocStatus(r.status);
+        setDocReason(r.reason);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
   // Só mostra o veredito (APROVADO/NÃO ELEGÍVEL) depois da 1ª interação — evita
   // banner vermelho prematuro num onboarding ainda neutro (N3).
   const [hasInteracted, setHasInteracted] = useState(false);
@@ -90,17 +109,66 @@ export default function QualificationChecklistPage() {
   const soFaltaDoc =
     faltando.length === 1 && faltando[0].key === "hasDocument" && !condoBlocked;
 
-  function mensagemElegibilidade(): string {
-    if (eligible) return "Todos os requisitos foram atendidos.";
-    if (condoBlocked)
-      return "A convenção do condomínio proíbe locação por temporada — o imóvel não pode ser publicado.";
+  const requisitosOk = reqDone === reqTotal;
+  const pendenciaConvencao = temPendenciaConvencao(elig); // "não sei"
+  const precisaResponderConvencao = elig.condoAllows === "";
+
+  function mensagemBasica(): string {
     if (soFaltaDoc)
       return "Envie a documentação do imóvel (matrícula ou contrato de gestão) para concluir.";
     if (faltando.length === 1) return `Falta 1 requisito: ${faltando[0].label}.`;
     if (faltando.length > 1)
       return `Faltam ${faltando.length} requisitos obrigatórios — complete os itens marcados acima.`;
-    // Todos os 6 itens ok, mas ainda não respondeu o condomínio (neutro).
-    return "Responda se o condomínio permite locação por temporada para concluir.";
+    return "Complete os requisitos obrigatórios para concluir.";
+  }
+
+  type VeredictoTone = "green" | "amber" | "red" | "info";
+  // Veredito reconciliado com a MODERAÇÃO (ADENDO elegibilidade): nunca diz
+  // "APROVADO PARA PUBLICAR" no upload — só depois que o admin aprova.
+  function veredito(): { tone: VeredictoTone; titulo: string; msg: string } {
+    if (condoBlocked)
+      return {
+        tone: "red",
+        titulo: "NÃO ELEGÍVEL",
+        msg: "Se a convenção proíbe, não podemos publicar — anunciar contra a convenção expõe você a conflito com o condomínio e a cancelamento do contrato.",
+      };
+    if (!requisitosOk)
+      return {
+        tone: hasInteracted ? "red" : "info",
+        titulo: hasInteracted
+          ? soFaltaDoc
+            ? "FALTA A DOCUMENTAÇÃO"
+            : "REQUISITOS INCOMPLETOS"
+          : "Vamos qualificar seu imóvel",
+        msg: mensagemBasica(),
+      };
+    if (precisaResponderConvencao)
+      return {
+        tone: "info",
+        titulo: "QUASE LÁ",
+        msg: "Responda se o condomínio permite locação mobiliada de média duração para concluir.",
+      };
+    // Requisitos completos + convenção respondida (sim / não sei) → reflete a moderação.
+    let base: { tone: VeredictoTone; titulo: string; msg: string };
+    if (docStatus === "approved")
+      base = { tone: "green", titulo: "APROVADO PARA PUBLICAR ✓", msg: "Documentação conferida. Seu anúncio pode ser publicado." };
+    else if (docStatus === "rejected")
+      base = { tone: "red", titulo: "DOCUMENTAÇÃO RECUSADA", msg: `${docReason ? docReason + ". " : ""}Envie o documento novamente.` };
+    else
+      base = {
+        tone: "green",
+        titulo: "REQUISITOS COMPLETOS",
+        msg: "Documentação em análise pela equipe. Você já pode montar o anúncio; a publicação libera com a aprovação.",
+      };
+    if (pendenciaConvencao && docStatus !== "approved" && docStatus !== "rejected")
+      base = {
+        tone: "amber",
+        titulo: "COMPLETO COM PENDÊNCIA",
+        msg:
+          base.msg +
+          " Pendência: confirme a regra do seu condomínio antes do primeiro contrato — recomendamos resolver já (evita cancelamento e dor de cabeça com o síndico).",
+      };
+    return base;
   }
 
   const tHome = tagHomeOffice(quality);
@@ -130,28 +198,45 @@ export default function QualificationChecklistPage() {
 
   return (
     <div className="mx-auto max-w-5xl">
-      <header className="mb-8">
-        <p className="font-title text-sm font-bold uppercase tracking-wide text-blue-500">
-          Porta de entrada do anúncio
-        </p>
-        <h1 className="mt-1 font-title text-3xl font-bold text-ink">Qualificação do imóvel</h1>
-        <p className="mt-2 text-muted">
-          A Camada 1 garante que isto é locação por temporada regular; a Camada 2 gera o selo{" "}
-          <span className="font-medium text-forest">Pronto para Morar</span> e as etiquetas de
-          especialização.
-        </p>
+      {/* Banner de topo (item 4): foto de interior SOB o gradiente da marca (lado
+          esquerdo mais escuro), texto branco. Altura contida (~180px). */}
+      <header
+        className="relative mb-8 flex flex-col justify-center overflow-hidden rounded-2xl p-6 text-white sm:p-8"
+        style={{ minHeight: 180 }}
+      >
+        <Image
+          src="/media/banner-simulador.webp"
+          alt=""
+          aria-hidden
+          fill
+          sizes="100vw"
+          className="pointer-events-none object-cover"
+        />
+        <div aria-hidden className="absolute inset-0 bg-gradient-to-r from-night/90 via-forest/85 to-forest/60" />
+        <div className="relative">
+          <p className="font-title text-xs font-bold uppercase tracking-wide text-white/80">
+            Antes de anunciar
+          </p>
+          <h1 className="mt-1 font-title text-2xl font-bold sm:text-3xl">Qualificação do imóvel</h1>
+          <p className="mt-2 max-w-2xl text-sm text-white/85 sm:text-base">
+            Duas etapas rápidas: primeiro confirmamos que seu imóvel está pronto e regular para
+            locação mobiliada de média duração. Depois, você soma pontos para conquistar o selo{" "}
+            <span className="font-semibold">Pronto para Morar</span> — que dá destaque ao seu
+            anúncio na busca.
+          </p>
+        </div>
       </header>
 
-      {/* CAMADA 1 — ELEGIBILIDADE */}
+      {/* SEÇÃO 1 — REQUISITOS OBRIGATÓRIOS */}
       <section className="rounded-2xl border border-sage-200 bg-white p-6 sm:p-8">
         <div className="flex items-center gap-2">
           <span className="grid h-7 w-7 place-items-center rounded-full bg-forest text-sm font-bold text-white">
             1
           </span>
-          <h2 className="font-title text-xl font-bold text-ink">Elegibilidade</h2>
+          <h2 className="font-title text-xl font-bold text-ink">Requisitos obrigatórios</h2>
         </div>
         <p className="mt-2 text-sm text-muted">
-          Itens obrigatórios. Se algum faltar, o imóvel não pode ser publicado.
+          Se algum faltar, o imóvel não pode ser publicado.
         </p>
 
         <div className="mt-6 space-y-2">
@@ -268,8 +353,17 @@ export default function QualificationChecklistPage() {
 
         <fieldset className="mt-5">
           <legend className="text-sm font-medium text-ink">
-            A convenção do condomínio permite locação por temporada?
+            A convenção do condomínio permite locação mobiliada de média duração (30–180 dias)?
           </legend>
+          <details className="group mt-1">
+            <summary className="inline-flex cursor-pointer list-none items-center gap-1 text-xs font-medium text-forest">
+              <Info className="h-3.5 w-3.5" /> Como descobrir?
+            </summary>
+            <p className="mt-1.5 rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted">
+              Pergunte ao síndico ou consulte a convenção — em geral está no capítulo de uso das
+              unidades. Imóvel fora de condomínio: marque “Sim”.
+            </p>
+          </details>
           <div className="mt-3 flex flex-wrap gap-2">
             {(
               [
@@ -307,9 +401,14 @@ export default function QualificationChecklistPage() {
         {/* Barra de progresso dos requisitos (item 1 do QA) */}
         <div className="mt-6">
           <div className="flex items-center justify-between text-sm">
-            <span className="font-medium text-ink">Requisitos obrigatórios</span>
+            <span className="font-medium text-ink">Progresso</span>
             <span className="tabular-nums text-muted">
-              {reqDone}/{reqTotal}
+              {reqDone}/{reqTotal} requisitos
+              {pendenciaConvencao && (
+                <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
+                  +1 pendência
+                </span>
+              )}
             </span>
           </div>
           <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-sage-100">
@@ -323,54 +422,46 @@ export default function QualificationChecklistPage() {
           </div>
         </div>
 
-        <div
-          className={cn(
-            "mt-4 flex items-center gap-3 rounded-xl px-4 py-4",
-            eligible ? "bg-sage-100" : hasInteracted ? "bg-red-50" : "bg-surface-2"
-          )}
-        >
-          {eligible ? (
-            <CheckCircle2 className="h-6 w-6 shrink-0 text-forest" />
-          ) : hasInteracted ? (
-            <XCircle className="h-6 w-6 shrink-0 text-red-600" />
-          ) : (
-            <Info className="h-6 w-6 shrink-0 text-blue-500" />
-          )}
-          <div>
-            <p
-              className={cn(
-                "font-title font-bold",
-                eligible ? "text-forest" : hasInteracted ? "text-red-700" : "text-ink"
-              )}
-            >
-              {eligible
-                ? "APROVADO PARA PUBLICAR"
-                : hasInteracted
-                  ? soFaltaDoc
-                    ? "FALTA A DOCUMENTAÇÃO"
-                    : "NÃO ELEGÍVEL"
-                  : "Vamos qualificar seu imóvel"}
-            </p>
-            <p className="text-sm text-muted">
-              {hasInteracted || eligible
-                ? mensagemElegibilidade()
-                : "Marque os itens obrigatórios abaixo para liberar a publicação."}
-            </p>
-          </div>
-        </div>
+        {(() => {
+          const v = veredito();
+          const TONE = {
+            green: { box: "bg-sage-100", title: "text-forest", icon: CheckCircle2, iconColor: "text-forest" },
+            amber: { box: "bg-amber-50", title: "text-amber-800", icon: AlertTriangle, iconColor: "text-amber-600" },
+            red: { box: "bg-red-50", title: "text-red-700", icon: XCircle, iconColor: "text-red-600" },
+            info: { box: "bg-surface-2", title: "text-ink", icon: Info, iconColor: "text-blue-500" },
+          }[v.tone];
+          const VIcon = TONE.icon;
+          return (
+            <div className={cn("mt-4 flex items-center gap-3 rounded-xl px-4 py-4", TONE.box)}>
+              <VIcon className={cn("h-6 w-6 shrink-0", TONE.iconColor)} />
+              <div>
+                <p className={cn("font-title font-bold", TONE.title)}>{v.titulo}</p>
+                <p className="text-sm text-muted">{v.msg}</p>
+              </div>
+            </div>
+          );
+        })()}
       </section>
 
-      {/* CAMADA 2 — SELO BASE + ETIQUETAS */}
+      {/* SEÇÃO 2 — SELO PRONTO PARA MORAR */}
       <section className="mt-6 rounded-2xl border border-sage-200 bg-white p-6 sm:p-8">
         <div className="flex items-center gap-2">
           <span className="grid h-7 w-7 place-items-center rounded-full bg-forest text-sm font-bold text-white">
             2
           </span>
-          <h2 className="font-title text-xl font-bold text-ink">Selo Pronto para Morar + etiquetas</h2>
+          <h2 className="font-title text-xl font-bold text-ink">
+            Selo Pronto para Morar{" "}
+            <span className="text-base font-medium text-muted">(opcional, recomendado)</span>
+          </h2>
         </div>
+        <p className="mt-2 text-sm text-muted">
+          Quanto mais itens, mais completo seu anúncio aparece para os inquilinos.
+        </p>
 
-        {/* Barra do selo base */}
-        <div className="sticky top-4 z-10 mt-6 rounded-xl border border-sage-200 bg-white/95 p-4 backdrop-blur">
+        {/* Placar do selo. Sticky APENAS a partir de md (item 3): no mobile fica
+            estático no topo da seção (não gruda nem cobre itens). Fundo opaco para
+            nunca deixar conteúdo aparecer por baixo; z abaixo de modais (z-50). */}
+        <div className="mt-6 rounded-xl border border-sage-200 bg-white p-4 md:sticky md:top-4 md:z-10 md:shadow-sm">
           <div className="flex items-end justify-between">
             <div className="flex items-center gap-2">
               <Award className={cn("h-5 w-5", baseBadge ? "text-champagne-600" : "text-sage")} />
@@ -390,6 +481,22 @@ export default function QualificationChecklistPage() {
               ? "Parabéns! Seu imóvel ganhou o selo Pronto para Morar e será bem ranqueado. 🏅"
               : `Some ${READY_TO_LIVE_THRESHOLD - score} ponto(s) para conquistar o selo Pronto para Morar.`}
           </p>
+        </div>
+
+        {/* Faixa de imagem motivacional (ADENDO): resultado que o selo promete.
+            Abaixo da dobra → lazy. Chip reforça o benefício, não é decoração. */}
+        <div className="relative mt-6 h-36 overflow-hidden rounded-xl sm:h-40">
+          <Image
+            src="/media/hero-proprietarios.webp"
+            alt="Sala mobiliada pronta para receber inquilinos"
+            fill
+            loading="lazy"
+            sizes="(max-width: 640px) 100vw, 768px"
+            className="object-cover object-center"
+          />
+          <span className="absolute bottom-3 left-3 rounded-full bg-night/70 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-sm">
+            Imóveis com o selo ganham destaque na busca
+          </span>
         </div>
 
         {/* Itens do selo base */}
@@ -425,6 +532,8 @@ export default function QualificationChecklistPage() {
           earned={tHome}
           items={homeOfficeItems(quality)}
           onToggle={(label) => toggleQuality(homeKey(label))}
+          banner="/media/como-funciona-01-converse.webp"
+          bannerAlt="Pessoa trabalhando de casa no notebook"
         />
         <TagBlock
           icon={MapPin}
@@ -432,6 +541,8 @@ export default function QualificationChecklistPage() {
           earned={tWork}
           items={workLocatedItems(quality)}
           onToggle={(label) => toggleQuality(workKey(label))}
+          banner="/media/como-funciona-03-qualifique.webp"
+          bannerAlt="Pessoa avaliando opções pela vizinhança no tablet"
         />
       </section>
 
@@ -446,7 +557,7 @@ export default function QualificationChecklistPage() {
       {/* AÇÃO */}
       <div className="mt-6 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-muted">
-          {eligible ? "Salve para liberar a publicação do anúncio." : "Conclua a Camada 1 para liberar a publicação."}
+          {eligible ? "Salve para liberar a publicação do anúncio." : "Conclua os requisitos obrigatórios para liberar a publicação."}
         </p>
         {saved ? (
           <Button variant="accent" onClick={() => router.push("/dashboard/imoveis/novo")}>
@@ -620,15 +731,27 @@ function TagBlock({
   earned,
   items,
   onToggle,
+  banner,
+  bannerAlt,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   title: string;
   earned: boolean;
   items: { label: string; on: boolean; readonly?: boolean }[];
   onToggle: (label: string) => void;
+  /** Faixa fina de imagem no topo do card (ADENDO) — ambienta, sem chip. */
+  banner?: string;
+  bannerAlt?: string;
 }) {
   return (
-    <div className="mt-4 rounded-xl border border-sage-200 p-4">
+    <div className="mt-4 overflow-hidden rounded-xl border border-sage-200">
+      {/* Faixa mais baixa que a do selo (~90px) e sem texto — hierarquia. */}
+      {banner && (
+        <div className="relative h-[90px] w-full">
+          <Image src={banner} alt={bannerAlt ?? ""} fill loading="lazy" sizes="(max-width: 640px) 100vw, 768px" className="object-cover object-center" />
+        </div>
+      )}
+      <div className="p-4">
       <div className="flex items-center justify-between">
         <span className="flex items-center gap-2 font-medium text-ink">
           <Icon className="h-5 w-5 text-sage" /> {title}
@@ -638,7 +761,7 @@ function TagBlock({
             Etiqueta conquistada ✓
           </span>
         ) : (
-          <span className="text-xs text-muted">Marque todos para conquistar</span>
+          <span className="text-xs text-muted">Marque todos os itens para ganhar esta etiqueta</span>
         )}
       </div>
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
@@ -673,6 +796,7 @@ function TagBlock({
             </button>
           );
         })}
+      </div>
       </div>
     </div>
   );
