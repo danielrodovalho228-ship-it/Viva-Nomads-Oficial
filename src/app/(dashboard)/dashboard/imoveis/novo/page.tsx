@@ -23,7 +23,8 @@ import {
   XCircle,
   AlertTriangle,
 } from "lucide-react";
-import { createProperty, updateProperty, loadPropertyForEdit, getMyDocumentStatus, saveDraftData, loadDraftData, type DocumentStatus } from "@/lib/data/actions";
+import { createProperty, updateProperty, loadPropertyForEdit, getMyDocumentStatus, saveDraftData, loadDraftData, getLatestDraft, type DocumentStatus } from "@/lib/data/actions";
+import { draftCompletionPct } from "@/lib/draft-progress";
 import { geocodeForSave } from "@/lib/integrations/geocoding";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button, ButtonLink } from "@/components/ui/button";
@@ -119,6 +120,10 @@ export default function NewPropertyPage() {
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [savedAt, setSavedAt] = useState<string>("");
   const [draftServerId, setDraftServerId] = useState<string | null>(null);
+  // "Novo anúncio detecta rascunho": rascunho anterior do dono, oferecido para
+  // retomada quando a página abre em branco (sem ?draft/?id). Dispensável.
+  const [existingDraft, setExistingDraft] = useState<{ id: string; pct: number } | null>(null);
+  const [draftBannerDismissed, setDraftBannerDismissed] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
   // Edição: ?id= carrega um imóvel do dono para editar (em vez de criar novo).
@@ -357,6 +362,10 @@ export default function NewPropertyPage() {
     if (typeof d.subleaseAuthorized === "boolean") setSubleaseAuthorized(d.subleaseAuthorized);
     if (Array.isArray(d.photos)) setPhotos(d.photos as PhotoItem[]);
     if (Array.isArray(d.subleaseDoc)) setSubleaseDoc(d.subleaseDoc as PhotoItem[]);
+    if (d.qual && typeof d.qual === "object") {
+      const q = d.qual as Record<string, unknown>;
+      setQual({ baseBadge: !!q.baseBadge, tHome: !!q.tHome, tWork: !!q.tWork });
+    }
     if (typeof d.step === "number") setStep(Math.min(LAST, Math.max(0, Math.round(d.step))));
   }
 
@@ -464,6 +473,9 @@ export default function NewPropertyPage() {
     amenityKeys, googlePlaces, manualProximities,
     utilitiesMode, utilitiesEstimate, faixas, garantias, prepFee,
     ownershipType, subleaseAuthorized, step,
+    // Qualificação (selo + etiquetas). Guardada no rascunho para a retomada por
+    // `?draft` (que não passa pela sessionStorage) nunca zerar o 6/6 do selo.
+    qual,
     // Fotos/documentos só são guardados quando já têm URL persistente
     // (Supabase Storage). URLs "blob:" do modo demo morrem ao recarregar,
     // então ficam de fora para não restaurar imagens quebradas.
@@ -519,6 +531,38 @@ export default function NewPropertyPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [approved, draftJson, editId]);
 
+  // Guarda de saída (cinto além do autosave): avisa antes de fechar/recarregar a
+  // aba com alteração ainda não persistida — dentro da janela de debounce
+  // ("Salvando…") ou após falha de rede ("não salvo"). Ref para não reassinar o
+  // listener a cada tecla. Edição (?id) não é rascunho — sem guarda.
+  const unsavedRef = useRef(false);
+  unsavedRef.current = !editId && (saveStatus === "saving" || saveStatus === "error");
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (!unsavedRef.current) return;
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, []);
+
+  // "Novo anúncio detecta rascunho": ao abrir em branco (sem ?draft/?id), busca o
+  // rascunho anterior do dono e oferece retomá-lo — em vez de começar do zero e
+  // deixar um órfão para trás.
+  useEffect(() => {
+    if (editId || draftParam) return;
+    let alive = true;
+    getLatestDraft()
+      .then((d) => {
+        if (alive && d) setExistingDraft({ id: d.id, pct: draftCompletionPct(d.data as never) });
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [editId, draftParam]);
+
   async function lookupCep(value: string) {
     const digits = value.replace(/\D/g, "");
     if (digits.length !== 8) return;
@@ -536,6 +580,39 @@ export default function NewPropertyPage() {
     } finally {
       setCepLoading(false);
     }
+  }
+
+  // "Começar outro" (banner de detecção): esquece o rascunho anterior nesta
+  // sessão e limpa o formulário para um anúncio novo do zero. O autosave então
+  // cria uma linha nova (draftIdRef zerado) — o rascunho anterior fica intacto
+  // em Meus imóveis.
+  function comecarOutro() {
+    setDraftBannerDismissed(true);
+    try {
+      localStorage.removeItem("vivanomads-novo-draft");
+    } catch {}
+    draftIdRef.current = null;
+    setDraftServerId(null);
+    setSaveStatus("idle");
+    setStep(0);
+    setTitle("");
+    setDescription("");
+    setPropertyType("apartamento");
+    setBedrooms("");
+    setBathrooms("");
+    setAreaM2("");
+    setParkingSpots("");
+    setMaxGuests("");
+    setMonthlyPrice("");
+    setStreet("");
+    setNeighborhood("");
+    setCep("");
+    setVideoUrl("");
+    setPhotos([]);
+    setSubleaseDoc([]);
+    setAmenityKeys({});
+    setGooglePlaces([]);
+    setManualProximities([]);
   }
 
   function generateAI() {
@@ -636,6 +713,42 @@ export default function NewPropertyPage() {
           <p className="text-sm text-white/80">Quanto mais completo, mais visibilidade na busca.</p>
         </div>
       </div>
+
+      {/* Detecção de rascunho em andamento (P0): abriu em branco mas já existe um
+          rascunho salvo — oferece retomar de onde parou em vez de recomeçar. */}
+      {!editingId && !draftParam && existingDraft && !draftServerId && !draftBannerDismissed && (
+        <div className="mb-5 flex flex-col gap-3 rounded-2xl border border-champagne bg-champagne/10 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-champagne/40 text-forest">
+              <ClipboardCheck className="h-5 w-5" />
+            </span>
+            <div>
+              <p className="font-title text-sm font-bold text-ink">
+                Você tem um anúncio em andamento
+                {existingDraft.pct > 0 ? ` (${existingDraft.pct}% completo)` : ""}
+              </p>
+              <p className="text-xs text-muted">
+                Retome de onde parou — seus dados foram salvos automaticamente.
+              </p>
+            </div>
+          </div>
+          <div className="flex shrink-0 gap-2">
+            <Button variant="outline" size="sm" onClick={comecarOutro}>
+              Começar outro
+            </Button>
+            <Button
+              variant="gold"
+              size="sm"
+              onClick={() => {
+                setDraftBannerDismissed(true);
+                router.push(`/dashboard/imoveis/novo?draft=${existingDraft.id}`);
+              }}
+            >
+              Continuar <ArrowRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Stepper + barra de progresso */}
       <div className="mb-5">

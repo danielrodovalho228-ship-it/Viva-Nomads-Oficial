@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -11,8 +12,11 @@ import {
   Search,
   ClipboardCheck,
   ArrowRight,
+  PencilLine,
 } from "lucide-react";
 import { useViewMode, primeiroNomeExibicao } from "@/lib/roles";
+import { getLatestDraft } from "@/lib/data/actions";
+import { draftCompletionPct } from "@/lib/draft-progress";
 import { StatCard, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { DashboardBanner } from "@/components/dashboard/banner";
 import { PropertyRow } from "@/components/dashboard/property-row";
@@ -49,19 +53,38 @@ function OwnerDashboard({ name }: { name: string }) {
   // reais e o seed NUNCA se misturam — a fonte é uma ou outra.
   const demo = useDashDemo();
   const { properties: realProperties, loading } = useProperties("/api/properties/mine");
-  const allProperties = demo ? DEMO_PROPERTIES.filter((p) => p.status === "active") : realProperties;
+  // Só imóveis ATIVOS contam como "imóvel publicado". Rascunhos (status='draft')
+  // não entram nos KPIs nem na lista "Meus imóveis" da visão geral — eles têm o
+  // próprio card de "anúncio em andamento" abaixo.
+  const allProperties = (demo ? DEMO_PROPERTIES : realProperties).filter((p) => p.status === "active");
   const myProperties = allProperties.slice(0, 2);
+
+  // Rascunho em andamento (P0): card de pendência "continue de onde parou".
+  const [draft, setDraft] = useState<{ id: string; pct: number } | null>(null);
+  useEffect(() => {
+    if (demo) return;
+    let alive = true;
+    getLatestDraft()
+      .then((d) => {
+        if (alive && d) setDraft({ id: d.id, pct: draftCompletionPct(d.data as never) });
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [demo]);
 
   // Estado vazio como FUNIL (Dashboard Fase 1): proprietário sem imóvel publicado
   // vê a visão geral inteira como um convite passo a passo, um CTA por vez —
   // nada de menus mortos ou cards zerados. Só depois do carregamento (sem piscar
   // o funil enquanto os imóveis reais chegam). No modo demo há exemplos.
   if (!demo && !loading && allProperties.length === 0) {
-    return <OwnerFunnel name={name} />;
+    return <OwnerFunnel name={name} draft={draft} />;
   }
 
   return (
     <>
+      {draft && <DraftPendingCard draft={draft} className="mb-6" />}
       <DashboardBanner
         className="mb-6"
         image={PHOTOS.dashOwner}
@@ -244,7 +267,41 @@ function TenantDashboard({ name }: { name: string }) {
  * vê um caminho único: Qualificar → Anunciar → Receber candidaturas, com UM CTA
  * ativo por vez. Sem menus mortos nem cards zerados.
  */
-function OwnerFunnel({ name }: { name: string }) {
+/** Card de pendência "Anúncio em andamento" (P0) — atalho para retomar o
+ * rascunho de onde parou, com o % completo honesto. */
+function DraftPendingCard({
+  draft,
+  className,
+}: {
+  draft: { id: string; pct: number };
+  className?: string;
+}) {
+  return (
+    <div
+      className={`flex flex-col gap-3 rounded-2xl border border-champagne bg-champagne/10 p-4 sm:flex-row sm:items-center sm:justify-between ${className ?? ""}`}
+    >
+      <div className="flex items-start gap-3">
+        <span className="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-full bg-champagne/40 text-forest">
+          <PencilLine className="h-5 w-5" />
+        </span>
+        <div className="min-w-0">
+          <p className="font-title text-sm font-bold text-ink">
+            Anúncio em andamento{draft.pct > 0 ? ` — ${draft.pct}% completo` : ""}
+          </p>
+          <p className="text-xs text-muted">Continue de onde parou. Seu rascunho está salvo.</p>
+        </div>
+      </div>
+      <Link
+        href={`/dashboard/imoveis/novo?draft=${draft.id}`}
+        className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full bg-forest px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-forest/90"
+      >
+        Continuar edição <ArrowRight className="h-4 w-4" />
+      </Link>
+    </div>
+  );
+}
+
+function OwnerFunnel({ name, draft }: { name: string; draft?: { id: string; pct: number } | null }) {
   const passos = [
     {
       n: 1,
@@ -274,6 +331,7 @@ function OwnerFunnel({ name }: { name: string }) {
 
   return (
     <>
+      {draft && <DraftPendingCard draft={draft} className="mb-6" />}
       <DashboardBanner
         className="mb-6"
         image={PHOTOS.dashOwner}
