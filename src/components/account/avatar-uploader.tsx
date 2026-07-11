@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Loader2, Camera, Trash2, Check, ShieldCheck } from "lucide-react";
 import { useAuthStore, DEMO_USER } from "@/lib/store";
 import { useViewMode } from "@/lib/roles";
+import { displayName } from "@/lib/display-name";
 import { Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
@@ -133,7 +134,8 @@ export function AvatarUploader() {
     <Panel title="Foto de perfil" className="mt-6">
       <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
         <div className="shrink-0">
-          <Avatar name={user.fullName ?? user.email} size={88} photoUrl={photoUrl ?? undefined} />
+          {/* Iniciais pela fonte única — NUNCA o e-mail (item 1 do fechamento). */}
+          <Avatar name={displayName(user) ?? ""} size={88} photoUrl={photoUrl ?? undefined} />
         </div>
 
         <div className="min-w-0 flex-1">

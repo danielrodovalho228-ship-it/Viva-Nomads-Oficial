@@ -192,7 +192,9 @@ function DemoFlow({
       const res = await fetch("/api/caf/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: user?.name ?? "Inquilino" }),
+        // Laudo usa o NOME COMPLETO do perfil (nunca o e-mail cru que o campo
+        // `name` carrega como fallback técnico) — item 1 do fechamento do QA.
+        body: JSON.stringify({ name: user?.fullName ?? "Inquilino" }),
       });
       setResult((await res.json()) as CafResult);
       setValidUntil(new Date(Date.now() + 90 * 86400000).toLocaleDateString("pt-BR"));

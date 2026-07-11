@@ -54,6 +54,10 @@ const PROFILE_LEAK = /profiles!.*\b(email|phone|telefone)\b/i;
 const DEMO_LEAK = [
   /\bAna Carvalho\b/,
   /\bMarcos Andrade\b/,
+  // Nome da conta de TESTE (inquilino-teste) — nunca pode ser hardcoded numa
+  // superfície de usuário (item 1 do fechamento do QA: o nome vem SEMPRE do
+  // perfil, via lib/display-name; nada de string de nome na UI).
+  /\bLucas Gabriel\b/,
   /\b(?:CTR|VN-CT)-20\d{2}-\d{3,4}\b/,
 ];
 

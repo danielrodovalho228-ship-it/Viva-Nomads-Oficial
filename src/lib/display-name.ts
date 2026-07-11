@@ -18,3 +18,24 @@ export function primeiroNome(nomeCompleto: string | null | undefined): string {
   if (!n || n.includes("@")) return "";
   return n.split(/\s+/)[0];
 }
+
+/** Formato mínimo de perfil aceito pelo util (qualquer origem de nome). */
+export interface PerfilNome {
+  fullName?: string | null;
+  full_name?: string | null;
+  name?: string | null;
+}
+
+/**
+ * FONTE ÚNICA (assinatura pedida no fechamento do QA): recebe um perfil e
+ * devolve o PRIMEIRO nome, ou `null` quando não há nome próprio — o chamador
+ * usa uma saudação NEUTRA (nunca e-mail, nunca persona fictícia). O campo
+ * `name` (que pode carregar o e-mail como fallback técnico) é passado pelo
+ * mesmo filtro de `primeiroNome`, então um e-mail vira `null`.
+ */
+export function displayName(profile: PerfilNome | null | undefined): string | null {
+  if (!profile) return null;
+  const bruto = profile.fullName ?? profile.full_name ?? profile.name ?? null;
+  const nome = primeiroNome(bruto);
+  return nome || null;
+}

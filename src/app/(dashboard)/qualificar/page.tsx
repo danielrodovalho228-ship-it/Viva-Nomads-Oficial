@@ -15,6 +15,8 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { validarArquivoDoc } from "@/lib/upload-limits";
+import { uploadPropertyDoc } from "@/lib/data/storage";
+import { useAuthStore } from "@/lib/store";
 import {
   type EligibilityState,
   type QualityState,
@@ -65,8 +67,11 @@ export default function QualificationChecklistPage() {
   const router = useRouter();
   const [elig, setElig] = useState<EligibilityState>(initialEligibility);
   const [quality, setQuality] = useState<QualityState>(initialQuality);
+  const userId = useAuthStore((s) => s.user?.id);
   const [docName, setDocName] = useState<string | null>(null);
+  const [docPath, setDocPath] = useState<string | null>(null);
   const [docErro, setDocErro] = useState<string | null>(null);
+  const [docBusy, setDocBusy] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   // Só mostra o veredito (APROVADO/NÃO ELEGÍVEL) depois da 1ª interação — evita
@@ -121,7 +126,7 @@ export default function QualificationChecklistPage() {
         JSON.stringify({ eligible, score, baseBadge, tHome, tWork, tCondo })
       );
     }
-    await saveQualification(elig, quality);
+    await saveQualification(elig, quality, docPath);
     setSaving(false);
     setSaved(true);
   }
@@ -202,7 +207,7 @@ export default function QualificationChecklistPage() {
                 {docName ? "Enviado" : "Pendente"}
               </span>
               <span className="rounded-full bg-forest px-3 py-1.5 text-xs font-medium text-white">
-                {docName ? "Trocar" : "Enviar"}
+                {docBusy ? "Enviando…" : docName ? "Trocar" : "Enviar"}
               </span>
             </span>
             <input
@@ -210,21 +215,33 @@ export default function QualificationChecklistPage() {
               accept=".pdf,.jpg,.jpeg,.png"
               aria-label="Enviar documentação do imóvel (matrícula ou contrato de gestão)"
               className="sr-only"
-              onChange={(e) => {
+              disabled={docBusy}
+              onChange={async (e) => {
                 const f = e.target.files?.[0];
+                e.target.value = ""; // permite re-selecionar o mesmo arquivo
                 setHasInteracted(true);
-                if (f) {
-                  const invalido = validarArquivoDoc({ type: f.type, size: f.size });
-                  if (invalido) {
-                    setDocErro(invalido);
-                    setDocName(null);
-                    setElig((s) => ({ ...s, hasDocument: false }));
-                    return;
-                  }
+                if (!f) return;
+                // Validação de tipo/tamanho no cliente; o bucket revalida no servidor.
+                const invalido = validarArquivoDoc({ type: f.type, size: f.size });
+                if (invalido) {
+                  setDocErro(invalido);
+                  return;
                 }
                 setDocErro(null);
-                setDocName(f ? `${f.name} · ${(f.size / 1024 / 1024).toFixed(1)} MB` : null);
-                setElig((s) => ({ ...s, hasDocument: !!f }));
+                setDocBusy(true);
+                try {
+                  // Sobe para o bucket PRIVADO property-docs (RLS por dono,
+                  // migration 0032). Guardamos só o PATH — a exibição usa URL
+                  // assinada com expiração.
+                  const up = await uploadPropertyDoc(f, userId);
+                  setDocName(`${f.name} · ${(f.size / 1024 / 1024).toFixed(1)} MB`);
+                  setDocPath(up.path);
+                  setElig((s) => ({ ...s, hasDocument: true }));
+                } catch {
+                  setDocErro("Não foi possível enviar o documento agora. Tente novamente.");
+                } finally {
+                  setDocBusy(false);
+                }
               }}
             />
           </label>
