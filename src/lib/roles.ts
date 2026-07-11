@@ -11,6 +11,7 @@
  */
 
 import { useAuthStore, DEMO_USER, type SessionUser, type ViewMode } from "./store";
+import { primeiroNome } from "./display-name";
 
 export type { ViewMode };
 
@@ -27,19 +28,21 @@ export function defaultMode(user: SessionUser): ViewMode {
 }
 
 /**
- * FONTE ÚNICA do nome exibido do próprio usuário (QA item 5). Regra definitiva:
+ * FONTE ÚNICA do nome exibido do próprio usuário (QA item 5 + ADENDO item 3).
+ * Fina camada sobre `primeiroNome` (lib/display-name — server+client), aplicada
+ * ao `SessionUser`:
  *  • origem = `profiles.full_name` (chega em `SessionUser.fullName`);
- *  • devolve o PRIMEIRO nome; sem nome coletado, devolve "" e a UI cai num
- *    rótulo neutro ("Olá!" na saudação, "Minha conta" no rodapé);
- *  • NUNCA o e-mail cru (o `SessionUser.name` tem o e-mail como fallback do
+ *  • devolve o PRIMEIRO nome; sem nome (ou valor com "@"), devolve "" e a UI cai
+ *    num rótulo neutro ("Olá!" na saudação, "Minha conta" no rodapé);
+ *  • NUNCA o e-mail cru — a rejeição de "@" mora em `primeiroNome`, na fonte, e
+ *    não em cada tela (o `SessionUser.name` tem o e-mail como fallback do
  *    AuthProvider — por isso `name` não deve ir direto para a tela);
  *  • NUNCA uma persona de demonstração em conta real (a persona só entra via
  *    `useDisplayUser`, que só devolve DEMO_USER com o modo demo ligado).
  * Todo lugar que mostra o nome do próprio usuário DEVE passar por aqui.
  */
 export function primeiroNomeExibicao(user: SessionUser | null | undefined): string {
-  const full = user?.fullName?.trim();
-  return full ? full.split(" ")[0] : "";
+  return primeiroNome(user?.fullName);
 }
 
 /**

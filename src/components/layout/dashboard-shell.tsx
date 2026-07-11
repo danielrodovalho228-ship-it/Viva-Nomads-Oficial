@@ -332,8 +332,11 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         {/* Aviso fixo do modo demonstração (só aparece quando ligado). */}
         <DemoBanner />
 
-        {/* Barra de modo: seletor sempre visível (proprietário ⇄ inquilino). */}
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-sage-200 bg-white px-5 py-2.5 sm:px-8 print:hidden">
+        {/* Barra de modo: seletor sempre visível (proprietário ⇄ inquilino).
+            Mobile (ADENDO item 2): coluna única compacta — toggle de demo (admin)
+            reduzido em cima, seletor segmentado full-width embaixo. Sem flutuação
+            desalinhada. A partir de sm volta à linha com o rótulo do modo. */}
+        <div className="flex flex-col gap-2 border-b border-sage-200 bg-white px-4 py-2.5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-8 print:hidden">
           <p className="hidden items-center gap-2 text-sm text-muted sm:flex">
             Você está no modo
             <span
@@ -348,9 +351,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               {meta.label}
             </span>
           </p>
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            {/* Toggle do modo demonstração — renderiza apenas para o admin. */}
-            <DemoToggle />
+          <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-end">
+            {/* Toggle do modo demonstração — renderiza apenas para o admin.
+                No mobile fica alinhado à direita, acima do seletor. */}
+            <div className="flex justify-end sm:block">
+              <DemoToggle />
+            </div>
             <ModeSwitcher mode={mode} onSwitch={switchTo} />
           </div>
         </div>
@@ -374,7 +380,7 @@ function ModeSwitcher({ mode, onSwitch }: { mode: ViewMode; onSwitch: (m: ViewMo
     <div
       role="tablist"
       aria-label="Alternar entre Proprietário e Inquilino"
-      className="relative grid w-[16.5rem] grid-cols-2 rounded-full border border-sage-200 bg-surface-2 p-1"
+      className="relative grid w-full grid-cols-2 rounded-full border border-sage-200 bg-surface-2 p-1 sm:w-[16.5rem]"
     >
       {/* Indicador deslizante (animação estilo Airbnb) */}
       <span
