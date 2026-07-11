@@ -24,7 +24,13 @@ export function LocationNearby({ property }: { property: Property }) {
     label: "Imóvel",
     kind: "property",
   };
-  const hasProximities = (property.proximities?.length ?? 0) > 0;
+  // Antes do aceite, limitamos os POIs exibidos para não re-identificar o
+  // endereço por combinação (item 4 do QA): no máximo 4, sem a lista completa.
+  const MAX_POIS_PUBLICOS = 4;
+  const todosProximities = property.proximities ?? [];
+  const proximities = todosProximities.slice(0, MAX_POIS_PUBLICOS);
+  const ocultos = todosProximities.length - proximities.length;
+  const hasProximities = proximities.length > 0;
 
   return (
     <section aria-labelledby="localizacao-title">
@@ -48,7 +54,7 @@ export function LocationNearby({ property }: { property: Property }) {
         <>
           <h3 className="mt-6 text-sm font-bold text-forest">O que tem por perto</h3>
           <ul className="mt-3 grid gap-2 sm:grid-cols-2">
-            {property.proximities!.map((p) => {
+            {proximities.map((p) => {
               const meta = PROXIMITY_META[p.category];
               const Icon = meta?.icon ?? MapPin;
               return (
@@ -68,6 +74,11 @@ export function LocationNearby({ property }: { property: Property }) {
               );
             })}
           </ul>
+          {ocultos > 0 && (
+            <p className="mt-2 text-xs text-muted">
+              +{ocultos} ponto(s) de interesse revelados após o aceite da candidatura.
+            </p>
+          )}
         </>
       )}
     </section>

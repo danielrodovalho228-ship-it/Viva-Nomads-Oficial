@@ -7,6 +7,7 @@ import {
   removePropertyPhoto,
   type UploadedPhoto,
 } from "@/lib/data/storage";
+import { validarArquivoFotoImovel } from "@/lib/upload-limits";
 import { useAuthStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
@@ -62,12 +63,12 @@ export function PhotoUploader({
     try {
       const uploaded: PhotoItem[] = [];
       for (const file of chosen) {
-        if (!file.type.startsWith("image/")) {
-          setError("Apenas imagens são aceitas.");
-          continue;
-        }
-        if (file.size > 8 * 1024 * 1024) {
-          setError("Cada foto deve ter no máximo 8 MB.");
+        // Validação de tipo/tamanho no cliente (feedback rápido). O bucket do
+        // Supabase revalida no servidor (migration 0040) — o accept do input não
+        // é a trava real.
+        const invalido = validarArquivoFotoImovel({ type: file.type, size: file.size });
+        if (invalido) {
+          setError(invalido);
           continue;
         }
         const result = await uploader(file, ownerId);

@@ -12,7 +12,9 @@ import {
   Laptop,
   MapPin,
   Info,
+  ShieldCheck,
 } from "lucide-react";
+import { validarArquivoDoc } from "@/lib/upload-limits";
 import {
   type EligibilityState,
   type QualityState,
@@ -64,6 +66,7 @@ export default function QualificationChecklistPage() {
   const [elig, setElig] = useState<EligibilityState>(initialEligibility);
   const [quality, setQuality] = useState<QualityState>(initialQuality);
   const [docName, setDocName] = useState<string | null>(null);
+  const [docErro, setDocErro] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   // Só mostra o veredito (APROVADO/NÃO ELEGÍVEL) depois da 1ª interação — evita
@@ -74,6 +77,29 @@ export default function QualificationChecklistPage() {
   const score = useMemo(() => readyToLiveScore(quality), [quality]);
   const baseBadge = score >= READY_TO_LIVE_THRESHOLD;
   const condoBlocked = elig.condoAllows === "no";
+
+  // Progresso e diagnóstico dos requisitos obrigatórios (item 1 do QA de
+  // cadastro). Em vez da mensagem genérica quando tudo está satisfeito menos o
+  // documento, apontamos EXATAMENTE o que falta.
+  const reqChecks = eligibilityChecks(elig);
+  const reqTotal = reqChecks.length; // 6 requisitos
+  const reqDone = reqChecks.filter((c) => c.ok).length;
+  const faltando = reqChecks.filter((c) => !c.ok);
+  const soFaltaDoc =
+    faltando.length === 1 && faltando[0].key === "hasDocument" && !condoBlocked;
+
+  function mensagemElegibilidade(): string {
+    if (eligible) return "Todos os requisitos foram atendidos.";
+    if (condoBlocked)
+      return "A convenção do condomínio proíbe locação por temporada — o imóvel não pode ser publicado.";
+    if (soFaltaDoc)
+      return "Envie a documentação do imóvel (matrícula ou contrato de gestão) para concluir.";
+    if (faltando.length === 1) return `Falta 1 requisito: ${faltando[0].label}.`;
+    if (faltando.length > 1)
+      return `Faltam ${faltando.length} requisitos obrigatórios — complete os itens marcados acima.`;
+    // Todos os 6 itens ok, mas ainda não respondeu o condomínio (neutro).
+    return "Responda se o condomínio permite locação por temporada para concluir.";
+  }
 
   const tHome = tagHomeOffice(quality);
   const tWork = tagWorkLocated(quality);
@@ -143,6 +169,7 @@ export default function QualificationChecklistPage() {
           <label
             className={cn(
               "flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-dashed px-4 py-3 transition-colors",
+              "focus-within:outline-none focus-within:ring-2 focus-within:ring-forest focus-within:ring-offset-2",
               docName
                 ? "border-sage bg-sage-100"
                 : "border-sage-200 bg-surface-2 hover:border-sage"
@@ -163,21 +190,58 @@ export default function QualificationChecklistPage() {
                 </span>
               </span>
             </span>
-            <span className="rounded-full bg-forest px-3 py-1.5 text-xs font-medium text-white">
-              {docName ? "Trocar" : "Enviar"}
+            <span className="flex shrink-0 items-center gap-2">
+              {/* Estado do documento: pendente → enviado (a aprovação vem depois,
+                  na revisão do anúncio). */}
+              <span
+                className={cn(
+                  "rounded-full px-2 py-0.5 text-[11px] font-semibold",
+                  docName ? "bg-sage-100 text-forest" : "bg-amber-100 text-amber-800"
+                )}
+              >
+                {docName ? "Enviado" : "Pendente"}
+              </span>
+              <span className="rounded-full bg-forest px-3 py-1.5 text-xs font-medium text-white">
+                {docName ? "Trocar" : "Enviar"}
+              </span>
             </span>
             <input
               type="file"
               accept=".pdf,.jpg,.jpeg,.png"
-              className="hidden"
+              aria-label="Enviar documentação do imóvel (matrícula ou contrato de gestão)"
+              className="sr-only"
               onChange={(e) => {
                 const f = e.target.files?.[0];
                 setHasInteracted(true);
-                setDocName(f ? f.name : null);
+                if (f) {
+                  const invalido = validarArquivoDoc({ type: f.type, size: f.size });
+                  if (invalido) {
+                    setDocErro(invalido);
+                    setDocName(null);
+                    setElig((s) => ({ ...s, hasDocument: false }));
+                    return;
+                  }
+                }
+                setDocErro(null);
+                setDocName(f ? `${f.name} · ${(f.size / 1024 / 1024).toFixed(1)} MB` : null);
                 setElig((s) => ({ ...s, hasDocument: !!f }));
               }}
             />
           </label>
+          {docErro && <p className="text-sm text-red-600">{docErro}</p>}
+
+          {/* Nota de tratamento de dados (LGPD) — o documento pode conter CPF e
+              matrícula. TODO(juridico): Beatriz revisar a redação final. */}
+          <p className="flex items-start gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted">
+            <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-sage" />
+            <span>
+              Guardamos este documento em <strong className="text-ink">armazenamento privado</strong>,
+              com <strong className="text-ink">acesso restrito</strong> a você e à nossa equipe de
+              verificação, usado <strong className="text-ink">apenas</strong> para confirmar a
+              titularidade/gestão do imóvel. O link é temporário e assinado — nunca público. Você pode
+              solicitar a remoção a qualquer momento.
+            </span>
+          </p>
         </div>
 
         <fieldset className="mt-5">
@@ -218,18 +282,37 @@ export default function QualificationChecklistPage() {
           )}
         </fieldset>
 
+        {/* Barra de progresso dos requisitos (item 1 do QA) */}
+        <div className="mt-6">
+          <div className="flex items-center justify-between text-sm">
+            <span className="font-medium text-ink">Requisitos obrigatórios</span>
+            <span className="tabular-nums text-muted">
+              {reqDone}/{reqTotal}
+            </span>
+          </div>
+          <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-sage-100">
+            <div
+              className={cn(
+                "h-full rounded-full transition-all duration-300",
+                eligible ? "bg-forest" : "bg-champagne"
+              )}
+              style={{ width: `${(reqDone / reqTotal) * 100}%` }}
+            />
+          </div>
+        </div>
+
         <div
           className={cn(
-            "mt-6 flex items-center gap-3 rounded-xl px-4 py-4",
+            "mt-4 flex items-center gap-3 rounded-xl px-4 py-4",
             eligible ? "bg-sage-100" : hasInteracted ? "bg-red-50" : "bg-surface-2"
           )}
         >
           {eligible ? (
-            <CheckCircle2 className="h-6 w-6 text-forest" />
+            <CheckCircle2 className="h-6 w-6 shrink-0 text-forest" />
           ) : hasInteracted ? (
-            <XCircle className="h-6 w-6 text-red-600" />
+            <XCircle className="h-6 w-6 shrink-0 text-red-600" />
           ) : (
-            <Info className="h-6 w-6 text-blue-500" />
+            <Info className="h-6 w-6 shrink-0 text-blue-500" />
           )}
           <div>
             <p
@@ -241,15 +324,15 @@ export default function QualificationChecklistPage() {
               {eligible
                 ? "APROVADO PARA PUBLICAR"
                 : hasInteracted
-                  ? "NÃO ELEGÍVEL"
+                  ? soFaltaDoc
+                    ? "FALTA A DOCUMENTAÇÃO"
+                    : "NÃO ELEGÍVEL"
                   : "Vamos qualificar seu imóvel"}
             </p>
             <p className="text-sm text-muted">
-              {eligible
-                ? "Todos os requisitos foram atendidos."
-                : hasInteracted
-                  ? "Marque todos os itens obrigatórios e garanta que o condomínio não proíbe."
-                  : "Marque os itens obrigatórios abaixo para liberar a publicação."}
+              {hasInteracted || eligible
+                ? mensagemElegibilidade()
+                : "Marque os itens obrigatórios abaixo para liberar a publicação."}
             </p>
           </div>
         </div>
@@ -395,6 +478,7 @@ function CheckRow({
       disabled={disabled}
       className={cn(
         "flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition-colors",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest focus-visible:ring-offset-2",
         checked ? "border-sage bg-sage-100" : "border-sage-200 bg-white hover:border-sage",
         disabled && "cursor-default opacity-90"
       )}
@@ -432,6 +516,7 @@ function ScoreRow({
       onClick={onToggle}
       className={cn(
         "flex w-full items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left transition-colors",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-champagne-600 focus-visible:ring-offset-2",
         on ? "border-champagne bg-champagne/10" : "border-sage-200 bg-white hover:border-sage"
       )}
     >
@@ -549,6 +634,7 @@ function TagBlock({
               title={readonly ? "Definida pela categoria de internet no selo base" : undefined}
               className={cn(
                 "flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest focus-visible:ring-offset-2",
                 it.on ? "border-sage bg-sage-100 text-forest" : "border-sage-200 text-ink hover:border-sage",
                 readonly && "cursor-default hover:border-sage-200"
               )}
