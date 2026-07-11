@@ -101,9 +101,12 @@ export function Panel({
   className?: string;
 }) {
   // Container-base do painel: padding compacto no mobile (ADENDO item 5 — token
-  // central, não correção tela a tela), espaçoso a partir de sm.
+  // central, não correção tela a tela), espaçoso a partir de sm. `min-w-0` é
+  // essencial: como item de grid/flex, sem ele o padrão `min-width:auto` deixa
+  // conteúdo com `truncate` (nowrap) esticar a coluna além da viewport — era a
+  // origem do scroll horizontal a 390px na lista "Imóveis recomendados".
   return (
-    <section className={cn("rounded-2xl border border-sage-200 bg-white p-4 sm:p-6", className)}>
+    <section className={cn("min-w-0 rounded-2xl border border-sage-200 bg-white p-4 sm:p-6", className)}>
       {title && <h2 className="mb-3 font-title text-lg font-bold text-ink sm:mb-4">{title}</h2>}
       {children}
     </section>
