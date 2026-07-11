@@ -1042,3 +1042,67 @@ export async function countMyDrafts(): Promise<number> {
     .eq("status", "draft");
   return count ?? 0;
 }
+
+/**
+ * Autosave do RASCUNHO no servidor (P0 — perda de dados). Faz upsert de uma
+ * linha `properties` status='draft' guardando o estado COMPLETO do editor em
+ * `draft_data` (migration 0043) + os poucos campos NOT NULL (title/city/price)
+ * para o card de "Meus imóveis". Sem geocode, sem tabelas-filhas, sem checar
+ * limite de plano (rascunho não consome vaga). Devolve o id do rascunho para as
+ * próximas gravações atualizarem a mesma linha. Demo/preview: no-op de sucesso.
+ */
+export async function saveDraftData(snap: {
+  id?: string | null;
+  title?: string;
+  city?: string;
+  monthlyPrice?: number;
+  data: unknown;
+}): Promise<{ ok: boolean; id?: string; error?: string; demo?: boolean }> {
+  const supabase = await createClient();
+  if (!supabase) return { ok: true, demo: true };
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Não autenticado." };
+
+  const fields = {
+    owner_id: user.id,
+    status: "draft" as const,
+    title: (snap.title?.trim() || "Rascunho de anúncio").slice(0, 200),
+    city: snap.city?.trim() || "Uberlândia",
+    monthly_price: Number.isFinite(snap.monthlyPrice) ? (snap.monthlyPrice as number) : 0,
+    draft_data: snap.data as object,
+  };
+
+  if (snap.id) {
+    const { error } = await supabase
+      .from("properties")
+      .update(fields)
+      .eq("id", snap.id)
+      .eq("owner_id", user.id)
+      .eq("status", "draft");
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, id: snap.id };
+  }
+  const { data, error } = await supabase.from("properties").insert(fields).select("id").single();
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, id: data.id };
+}
+
+/** Carrega o estado salvo (draft_data) de um rascunho do dono, para retomar. */
+export async function loadDraftData(id: string): Promise<unknown | null> {
+  const supabase = await createClient();
+  if (!supabase) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data } = await supabase
+    .from("properties")
+    .select("draft_data")
+    .eq("id", id)
+    .eq("owner_id", user.id)
+    .eq("status", "draft")
+    .maybeSingle();
+  return data?.draft_data ?? null;
+}
