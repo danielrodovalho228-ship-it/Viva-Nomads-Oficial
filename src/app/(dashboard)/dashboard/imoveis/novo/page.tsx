@@ -19,6 +19,8 @@ import {
   Tag,
   CheckCircle2,
   PlayCircle,
+  ShieldCheck,
+  XCircle,
 } from "lucide-react";
 import { createProperty, updateProperty, loadPropertyForEdit } from "@/lib/data/actions";
 import { geocodeForSave } from "@/lib/integrations/geocoding";
@@ -33,6 +35,7 @@ import { PROPERTY_TYPES, AMENITY_GROUPS, propertyTypeLabel, amenityKeysFromLabel
 import { PlacesPicker, type CuratedPlace } from "@/components/property/places-picker";
 import { ManualProximities } from "@/components/property/manual-proximities";
 import { LocationDatalist } from "@/lib/locations";
+import { GERACAO_IA_ATIVA } from "@/lib/flags";
 import { PHOTOS } from "@/lib/media";
 import type { Property, Proximity } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -120,6 +123,19 @@ export default function NewPropertyPage() {
   const photosMissing = Math.max(0, MIN_PHOTOS - photos.length);
   const photoBlocked = photos.length < MIN_PHOTOS;
 
+  // Checklist de completude para a Revisão (item 3 do QA): PUBLICAR só libera
+  // com tudo verde. A navegação entre etapas continua livre (bom p/ autosave);
+  // a trava é só na publicação. Cada item aponta a etapa onde se resolve.
+  const completude = [
+    { label: "Endereço preenchido", ok: !!(street.trim() && neighborhood.trim() && city.trim()), step: 1 },
+    { label: "Período mínimo definido", ok: (Number(minPeriod) || 0) > 0, step: 2 },
+    { label: `Ao menos ${MIN_PHOTOS} fotos`, ok: photos.length >= MIN_PHOTOS, step: 3 },
+    { label: "Título do anúncio", ok: title.trim().length >= 3, step: 5 },
+    { label: "Preço mensal maior que zero", ok: Number(monthlyPrice) > 0, step: 5 },
+  ];
+  const completudeOk = completude.every((c) => c.ok);
+  const podePublicar = completudeOk && !subleaseBlocked;
+
   // Barra de qualidade do anúncio: fotos + descrição + recursos (rodada 11).
   const quality = Math.min(
     100,
@@ -148,6 +164,16 @@ export default function NewPropertyPage() {
   } as Property;
 
   async function publish(asDraft = false) {
+    // Publicação exige tudo verde na checklist de completude (item 3). Rascunho
+    // salva mesmo incompleto (o autosave depende disso).
+    if (!asDraft) {
+      const falta = completude.find((c) => !c.ok);
+      if (falta) {
+        setPublishError(`Falta concluir: ${falta.label.toLowerCase()}.`);
+        setStep(falta.step);
+        return;
+      }
+    }
     if (!asDraft && photoBlocked) {
       setPublishError(`Adicione pelo menos ${MIN_PHOTOS} fotos para publicar. Faltam ${photosMissing}.`);
       return;
@@ -651,6 +677,16 @@ export default function NewPropertyPage() {
                 <input value={city} onChange={(e) => setCity(e.target.value)} className="input" />
               </Labeled>
             </div>
+
+            {/* Privacidade do endereço (item 5 do QA) */}
+            <p className="flex items-start gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted">
+              <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-sage" />
+              <span>
+                <strong className="text-ink">Rua e número NUNCA aparecem no anúncio público</strong> —
+                mostramos só a região aproximada (um círculo do bairro, sem o pino exato). O endereço
+                completo é liberado apenas <strong className="text-ink">após o aceite</strong> da candidatura.
+              </span>
+            </p>
           </div>
         )}
 
@@ -779,6 +815,14 @@ export default function NewPropertyPage() {
               <PhotoUploader photos={photos} onChange={setPhotos} max={24} />
             </div>
 
+            {/* Privacidade das fotos (item 4 do QA): as fotos sobem re-codificadas,
+                sem metadados — inclusive a localização (GPS) embutida pelo celular. */}
+            <p className="mt-2 flex items-start gap-1.5 text-xs text-muted">
+              <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-sage" />
+              Removemos os metadados das fotos ao enviar — <strong className="text-ink">inclusive a
+              localização (GPS)</strong> — para o endereço exato nunca sair na imagem.
+            </p>
+
             {/* Vídeo walk-through (opcional) — reduz o atrito de alugar sem visita */}
             <div className="mt-5 rounded-xl border border-sage-200 p-4">
               <Labeled label="Link do vídeo do imóvel (opcional)">
@@ -870,17 +914,19 @@ export default function NewPropertyPage() {
         {/* ── ETAPA 6 — Descrição e preço ── */}
         {step === 5 && (
           <div className="space-y-4">
-            <div className="rounded-xl bg-champagne/10 px-4 py-3">
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-sm text-forest">
-                  Gerar título e descrição com IA <span className="text-muted">(usa suas fotos como contexto)</span>
-                </span>
-                <Button size="sm" variant="gold" onClick={generateAI} disabled={aiLoading}>
-                  <Sparkles className="h-4 w-4" /> {aiLoading ? "Gerando..." : "Gerar"}
-                </Button>
+            {/* Geração por IA atrás de flag (item 7 do QA): desligada até haver
+                provedor definido e cobertura na Política de Privacidade. */}
+            {GERACAO_IA_ATIVA && (
+              <div className="rounded-xl bg-champagne/10 px-4 py-3">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm text-forest">Gerar título e descrição com IA</span>
+                  <Button size="sm" variant="gold" onClick={generateAI} disabled={aiLoading}>
+                    <Sparkles className="h-4 w-4" /> {aiLoading ? "Gerando..." : "Gerar"}
+                  </Button>
+                </div>
+                {aiWarn && <p className="mt-2 text-xs font-medium text-red-600">{aiWarn}</p>}
               </div>
-              {aiWarn && <p className="mt-2 text-xs font-medium text-red-600">{aiWarn}</p>}
-            </div>
+            )}
             <Labeled label="Título do anúncio">
               <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex.: Studio mobiliado no Centro" className="input" />
             </Labeled>
@@ -966,6 +1012,39 @@ export default function NewPropertyPage() {
               </div>
             </div>
 
+            {/* Checklist de completude (item 3 do QA): PUBLICAR só com tudo verde. */}
+            <div className="rounded-xl border border-sage-200 p-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-ink">Pronto para publicar?</p>
+                <span className="text-xs text-muted">
+                  {completude.filter((c) => c.ok).length}/{completude.length}
+                </span>
+              </div>
+              <ul className="mt-3 space-y-1.5">
+                {completude.map((c) => (
+                  <li key={c.label} className="flex items-center justify-between gap-2 text-sm">
+                    <span className="flex items-center gap-2">
+                      {c.ok ? (
+                        <CheckCircle2 className="h-4 w-4 shrink-0 text-forest" />
+                      ) : (
+                        <XCircle className="h-4 w-4 shrink-0 text-red-500" />
+                      )}
+                      <span className={c.ok ? "text-ink" : "text-muted"}>{c.label}</span>
+                    </span>
+                    {!c.ok && (
+                      <button
+                        type="button"
+                        onClick={() => setStep(c.step)}
+                        className="shrink-0 text-xs font-medium text-forest underline"
+                      >
+                        Resolver
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
             {/* Barra de qualidade do anúncio */}
             <div className="rounded-xl border border-sage-200 p-4">
               <div className="flex items-center justify-between text-sm">
@@ -996,7 +1075,7 @@ export default function NewPropertyPage() {
               <Button variant="outline" onClick={() => publish(true)} disabled={publishing || subleaseBlocked}>
                 {editingId ? "Salvar sem publicar" : "Salvar como rascunho"}
               </Button>
-              <Button variant="gold" onClick={() => publish(false)} disabled={publishing || subleaseBlocked || photoBlocked}>
+              <Button variant="gold" onClick={() => publish(false)} disabled={publishing || !podePublicar}>
                 {publishing
                   ? "Salvando..."
                   : editingId

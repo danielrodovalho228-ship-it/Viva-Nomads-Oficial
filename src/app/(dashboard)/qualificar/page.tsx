@@ -15,8 +15,6 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { validarArquivoDoc } from "@/lib/upload-limits";
-import { uploadPropertyDoc } from "@/lib/data/storage";
-import { useAuthStore } from "@/lib/store";
 import {
   type EligibilityState,
   type QualityState,
@@ -67,7 +65,6 @@ export default function QualificationChecklistPage() {
   const router = useRouter();
   const [elig, setElig] = useState<EligibilityState>(initialEligibility);
   const [quality, setQuality] = useState<QualityState>(initialQuality);
-  const userId = useAuthStore((s) => s.user?.id);
   const [docName, setDocName] = useState<string | null>(null);
   const [docPath, setDocPath] = useState<string | null>(null);
   const [docErro, setDocErro] = useState<string | null>(null);
@@ -230,12 +227,20 @@ export default function QualificationChecklistPage() {
                 setDocErro(null);
                 setDocBusy(true);
                 try {
-                  // Sobe para o bucket PRIVADO property-docs (RLS por dono,
-                  // migration 0032). Guardamos só o PATH — a exibição usa URL
-                  // assinada com expiração.
-                  const up = await uploadPropertyDoc(f, userId);
+                  // Envia ao servidor, que valida o TIPO REAL (magic bytes) e o
+                  // tamanho antes de gravar no bucket PRIVADO property-docs (RLS
+                  // por dono, 0032). Guardamos só o PATH — a exibição usa URL
+                  // assinada. Fecha o furo do "PDF de 2 KB aceito" (item 6).
+                  const fd = new FormData();
+                  fd.append("file", f);
+                  const res = await fetch("/api/upload/documento", { method: "POST", body: fd });
+                  const data = (await res.json().catch(() => ({}))) as { path?: string | null; error?: string };
+                  if (!res.ok) {
+                    setDocErro(data.error ?? "Não foi possível enviar o documento agora.");
+                    return;
+                  }
                   setDocName(`${f.name} · ${(f.size / 1024 / 1024).toFixed(1)} MB`);
-                  setDocPath(up.path);
+                  setDocPath(data.path ?? null);
                   setElig((s) => ({ ...s, hasDocument: true }));
                 } catch {
                   setDocErro("Não foi possível enviar o documento agora. Tente novamente.");
