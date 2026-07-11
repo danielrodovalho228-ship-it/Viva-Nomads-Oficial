@@ -17,34 +17,14 @@ export async function proxy(request: NextRequest) {
   const supaKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   // ── PÁGINAS INTERNAS DOS SÓCIOS (deck/simulações) ──────────────────────────
-  // Gate por lista central (lib/socios/access). Libera QUALQUER uma: (a) sessão
-  // ADMIN; ou (b) cookie de sócio válido (tela de desbloqueio). Roda ANTES do
-  // resto e mesmo sem Supabase — o cookie não depende do banco. Ligado por
-  // padrão; desliga com PAGES_INTERNAS_PRIVADAS=off.
+  // Gate por lista central (lib/socios/access). PORTA ÚNICA: só o cookie de
+  // sócio válido (obtido na tela de desbloqueio digitando o código) libera —
+  // SEM exceção para admin. Daniel, Romulo e Danilo passam pela mesma senha.
+  // Roda ANTES do resto e não depende do Supabase. Desliga com
+  // PAGES_INTERNAS_PRIVADAS=off.
   if (process.env.PAGES_INTERNAS_PRIVADAS !== "off" && isInternalPath(pathname)) {
     const response = NextResponse.next({ request });
-    let allowed = await sociosCookieValido(request.cookies.get(SOCIOS_COOKIE)?.value);
-
-    if (!allowed && supaUrl && supaKey) {
-      const supabase = createServerClient(supaUrl, supaKey, {
-        cookies: {
-          getAll: () => request.cookies.getAll(),
-          setAll: (list) =>
-            list.forEach(({ name, value, options }) => response.cookies.set(name, value, options)),
-        },
-      });
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", user.id)
-          .single();
-        if (profile?.role === "admin") allowed = true;
-      }
-    }
+    const allowed = await sociosCookieValido(request.cookies.get(SOCIOS_COOKIE)?.value);
 
     if (!allowed) {
       const url = request.nextUrl.clone();
