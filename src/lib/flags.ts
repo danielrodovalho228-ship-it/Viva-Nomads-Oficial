@@ -31,3 +31,15 @@ export const PLANO_FUNDADOR = process.env.NEXT_PUBLIC_PLANO_FUNDADOR === "on";
  * de exemplo).
  */
 export const KYC_PORTAO_RIGIDO = process.env.NEXT_PUBLIC_KYC_PORTAO_RIGIDO === "on";
+
+/**
+ * Geração por IA de título/descrição do anúncio. OFF por padrão (item 7 do QA do
+ * editor). Hoje o botão é um MOCK — não envia foto nem texto a nenhum provedor
+ * externo (título/descrição são canned, gerados no navegador). Enquanto:
+ *   • não houver um provedor real definido, E
+ *   • o envio das fotos não estiver descrito na Política de Privacidade,
+ * a funcionalidade fica desligada por esta flag. TODO(juridico — Beatriz):
+ * antes de ligar (NEXT_PUBLIC_GERACAO_IA="on"), documentar qual provedor recebe
+ * as fotos e cobrir o tratamento na Política de Privacidade.
+ */
+export const GERACAO_IA_ATIVA = process.env.NEXT_PUBLIC_GERACAO_IA === "on";

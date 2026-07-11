@@ -159,11 +159,19 @@ export function MyPropertiesClient({ properties: real }: { properties: Property[
                     {/* Itens fictícios não têm página/edição real — sem links. */}
                     {!demoItem && (
                       <div className="flex gap-2">
-                        <ButtonLink href={`/imoveis/${p.id}`} variant="outline" size="sm">
-                          Ver
-                        </ButtonLink>
-                        <ButtonLink href={`/dashboard/imoveis/${p.id}/editar`} variant="ghost" size="sm">
-                          Editar
+                        {/* Rascunho não tem página pública ainda — só "Continuar
+                            editando" (item 2 do QA: rascunho recuperável). */}
+                        {p.status !== "draft" && (
+                          <ButtonLink href={`/imoveis/${p.id}`} variant="outline" size="sm">
+                            Ver
+                          </ButtonLink>
+                        )}
+                        <ButtonLink
+                          href={`/dashboard/imoveis/${p.id}/editar`}
+                          variant={p.status === "draft" ? "gold" : "ghost"}
+                          size="sm"
+                        >
+                          {p.status === "draft" ? "Continuar editando" : "Editar"}
                         </ButtonLink>
                       </div>
                     )}
