@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { Plus, Bath, BedDouble, Home, Handshake } from "lucide-react";
+import { Plus, Bath, BedDouble, Home, Handshake, Trash2 } from "lucide-react";
+import { deleteProperty } from "@/lib/data/actions";
 import { PageTitle, EmptyState } from "@/components/dashboard/primitives";
 import { EmptyBuildingIllustration } from "@/components/illustrations";
 import { ButtonLink } from "@/components/ui/button";
@@ -30,7 +32,19 @@ const hasPhoto = (s?: string) =>
  */
 export function MyPropertiesClient({ properties: real }: { properties: Property[] }) {
   const { on: demoOn } = useDemoMode();
-  const properties = demoOn ? DEMO_PROPERTIES : real;
+  // Ids excluídos nesta sessão (rascunhos descartados) — some da lista na hora.
+  const [removidos, setRemovidos] = useState<Set<string>>(new Set());
+  const [excluindo, setExcluindo] = useState<string | null>(null);
+  const properties = (demoOn ? DEMO_PROPERTIES : real).filter((p) => !removidos.has(p.id));
+
+  async function excluirRascunho(id: string) {
+    if (!confirm("Excluir este rascunho? Esta ação não pode ser desfeita.")) return;
+    setExcluindo(id);
+    const res = await deleteProperty(id);
+    setExcluindo(null);
+    if (res.ok) setRemovidos((s) => new Set(s).add(id));
+    else alert(res.error ?? "Não foi possível excluir agora.");
+  }
 
   return (
     <>
@@ -173,6 +187,18 @@ export function MyPropertiesClient({ properties: real }: { properties: Property[
                         >
                           {p.status === "draft" ? "Continuar editando" : "Editar"}
                         </ButtonLink>
+                        {/* Excluir rascunho (item 1 do reteste — limpa órfãos). */}
+                        {p.status === "draft" && (
+                          <button
+                            type="button"
+                            onClick={() => excluirRascunho(p.id)}
+                            disabled={excluindo === p.id}
+                            title="Excluir rascunho"
+                            className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>

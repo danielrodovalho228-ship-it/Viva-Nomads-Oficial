@@ -21,6 +21,7 @@ import {
   PlayCircle,
   ShieldCheck,
   XCircle,
+  AlertTriangle,
 } from "lucide-react";
 import { createProperty, updateProperty, loadPropertyForEdit, getMyDocumentStatus, type DocumentStatus } from "@/lib/data/actions";
 import { geocodeForSave } from "@/lib/integrations/geocoding";
@@ -30,7 +31,7 @@ import { PropertyMiniCard } from "@/components/property-mini-card";
 import { PhotoUploader, type PhotoItem } from "@/components/photo-uploader";
 import { uploadPropertyDoc, removePropertyDoc } from "@/lib/data/storage";
 import { MIN_PHOTOS, SUGGESTED_ROOMS, tierFromPhotoCount, TIER_META } from "@/lib/listing";
-import { FAIXAS, GARANTIAS_FAIXA } from "@/lib/faixas";
+import { FAIXAS, GARANTIAS_CADASTRO } from "@/lib/faixas";
 import { PROPERTY_TYPES, AMENITY_GROUPS, propertyTypeLabel, amenityKeysFromLabels } from "@/lib/amenities";
 import { PlacesPicker, type CuratedPlace } from "@/components/property/places-picker";
 import { ManualProximities } from "@/components/property/manual-proximities";
@@ -126,23 +127,29 @@ export default function NewPropertyPage() {
   const subleaseBlocked = ownershipType === "subleased" && !subleaseAuthorized;
   const photosMissing = Math.max(0, MIN_PHOTOS - photos.length);
   const photoBlocked = photos.length < MIN_PHOTOS;
+  const fotosMsg = photosMissing === 1 ? "Falta 1 foto" : `Faltam ${photosMissing} fotos`;
 
   // Checklist de completude para a Revisão (item 3 do QA): PUBLICAR só libera
   // com tudo verde. A navegação entre etapas continua livre (bom p/ autosave);
   // a trava é só na publicação. Cada item aponta a etapa onde se resolve.
+  // Detalhes básicos: um imóvel de verdade tem ao menos 1 banheiro e área > 0
+  // (quartos podem ser 0 — studio). Fecha o furo do anúncio "0/0/0" (item 1).
+  const detalhesOk = (Number(bathrooms) || 0) >= 1 && (Number(areaM2) || 0) > 0;
+  const docAprovado = !!editingId || docStatus === "approved";
+  const garantiaOk = Object.values(garantias).some(Boolean);
+
   const completude = [
     { label: "Endereço preenchido", ok: !!(street.trim() && neighborhood.trim() && city.trim()), step: 1 },
+    { label: "Detalhes básicos (quartos, banheiros, área)", ok: detalhesOk, step: 2 },
     { label: "Período mínimo definido", ok: (Number(minPeriod) || 0) > 0, step: 2 },
     { label: `Ao menos ${MIN_PHOTOS} fotos`, ok: photos.length >= MIN_PHOTOS, step: 3 },
     { label: "Título do anúncio", ok: title.trim().length >= 3, step: 5 },
     { label: "Preço mensal maior que zero", ok: Number(monthlyPrice) > 0, step: 5 },
+    // O gate humano aparece AQUI (pendente/aprovada). Não vale na edição.
+    { label: "Documentação aprovada", ok: docAprovado, step: 0, docItem: true },
   ];
   const completudeOk = completude.every((c) => c.ok);
-  // Portão do documento (item 1): publicar exige documento APROVADO. Não vale na
-  // edição de um imóvel que já existe (editingId) — ele já passou. Em demo, o
-  // status vem "approved".
-  const docAprovado = !!editingId || docStatus === "approved";
-  const podePublicar = completudeOk && !subleaseBlocked && docAprovado;
+  const podePublicar = completudeOk && !subleaseBlocked && garantiaOk;
 
   // Busca o estado da verificação do documento uma vez (portão de Publicar).
   useEffect(() => {
@@ -170,7 +177,7 @@ export default function NewPropertyPage() {
   // Imóvel "ao vivo" para o preview do card (montado conforme preenche).
   const previewProperty = {
     id: "preview",
-    title: title || "Seu anúncio",
+    title: title.trim() || "Sem título ainda",
     propertyType: propertyTypeLabel(propertyType),
     city: city || "Uberlândia",
     state: "MG",
@@ -809,7 +816,7 @@ export default function NewPropertyPage() {
               <div className="flex items-center justify-between text-sm">
                 <span className="font-medium text-ink">
                   {photos.length} / {MIN_PHOTOS} fotos
-                  {photoBlocked && <span className="ml-2 text-red-600">Faltam {photosMissing}</span>}
+                  {photoBlocked && <span className="ml-2 text-red-600">{fotosMsg}</span>}
                 </span>
                 {photos.length >= MIN_PHOTOS && (
                   <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-semibold", TIER_META[tierFromPhotoCount(photos.length)].tone)}>
@@ -1021,16 +1028,39 @@ export default function NewPropertyPage() {
                 Só preferência de aceite — <strong>não muda o caminho do dinheiro</strong> (a
                 caução sempre vai para conta vinculada, nunca para a plataforma).
               </p>
-              <div className="space-y-2">
-                {GARANTIAS_FAIXA.map((g) => (
-                  <Toggle
-                    key={g.key}
-                    checked={!!garantias[g.key]}
-                    onChange={() => setGarantias((s) => ({ ...s, [g.key]: !s[g.key] }))}
-                    label={`Aceito ${g.label}`}
-                  />
-                ))}
+              <div className="space-y-3">
+                {GARANTIAS_CADASTRO.map((g) =>
+                  g.disabled ? (
+                    // Seguro-fiança visível porém desabilitado até o parceiro fechar.
+                    <div
+                      key={g.key}
+                      className="flex items-center justify-between gap-3 rounded-xl border border-sage-200 bg-surface-2 px-4 py-3 opacity-70"
+                    >
+                      <span className="text-sm font-medium text-muted">Aceito {g.label}</span>
+                      {g.badge && (
+                        <span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-semibold text-amber-800">
+                          {g.badge}
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <div key={g.key}>
+                      <Toggle
+                        checked={!!garantias[g.key]}
+                        onChange={() => setGarantias((s) => ({ ...s, [g.key]: !s[g.key] }))}
+                        label={`Aceito ${g.label}`}
+                      />
+                      {g.microtext && <p className="ml-1 mt-1 text-xs text-muted">{g.microtext}</p>}
+                    </div>
+                  )
+                )}
               </div>
+              {!garantiaOk && (
+                <p className="mt-3 flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                  Escolha ao menos uma garantia — contrato sem garantia deixa você sem cobertura de danos.
+                </p>
+              )}
             </Labeled>
           </div>
         )}
@@ -1064,15 +1094,27 @@ export default function NewPropertyPage() {
                       )}
                       <span className={c.ok ? "text-ink" : "text-muted"}>{c.label}</span>
                     </span>
-                    {!c.ok && (
-                      <button
-                        type="button"
-                        onClick={() => setStep(c.step)}
-                        className="shrink-0 text-xs font-medium text-forest underline"
-                      >
-                        Resolver
-                      </button>
-                    )}
+                    {!c.ok &&
+                      ("docItem" in c && c.docItem ? (
+                        // O item do documento não é uma etapa do editor: mostra o
+                        // estado da moderação em vez de "Resolver".
+                        <span
+                          className={cn(
+                            "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold",
+                            docStatus === "rejected" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-800"
+                          )}
+                        >
+                          {docStatus === "rejected" ? "Recusada" : "Em análise"}
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setStep(c.step)}
+                          className="shrink-0 text-xs font-medium text-forest underline"
+                        >
+                          Resolver
+                        </button>
+                      ))}
                   </li>
                 ))}
               </ul>
@@ -1087,12 +1129,37 @@ export default function NewPropertyPage() {
               <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface-2">
                 <div className="h-full rounded-full bg-forest transition-all" style={{ width: `${quality}%` }} />
               </div>
-              <p className="mt-2 text-xs text-muted">Fotos + descrição + selo aumentam a visibilidade.</p>
+              {/* Qualidade ACIONÁVEL (item 3): o que ainda dá para somar. */}
+              {(() => {
+                const dicas = [
+                  photos.length < 12 && { t: `Chegar a 12 fotos (tem ${photos.length}) — anúncio completo`, p: "+15%" },
+                  photos.length >= 12 && photos.length < 20 && { t: `Chegar a 20 fotos (tem ${photos.length}) — anúncio premium`, p: "+prioridade" },
+                  description.trim().length <= 30 && { t: "Descrição com 150+ palavras", p: "+20%" },
+                  !qual.baseBadge && { t: "Conquistar o selo Pronto para Morar na qualificação", p: "+20%" },
+                ].filter(Boolean) as { t: string; p: string }[];
+                if (dicas.length === 0)
+                  return <p className="mt-2 text-xs text-forest">Ótimo — seu anúncio está no topo da qualidade. 🏅</p>;
+                return (
+                  <details className="mt-2 group">
+                    <summary className="cursor-pointer list-none text-xs font-medium text-forest">
+                      O que aumenta a qualidade ({dicas.length})
+                    </summary>
+                    <ul className="mt-2 space-y-1">
+                      {dicas.map((d) => (
+                        <li key={d.t} className="flex items-center justify-between gap-2 text-xs text-muted">
+                          <span>{d.t}</span>
+                          <span className="shrink-0 font-semibold text-forest">{d.p}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                );
+              })()}
             </div>
 
             {photoBlocked && (
               <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                <strong>Faltam {photosMissing} foto(s) para publicar.</strong> O mínimo é {MIN_PHOTOS}. Você pode salvar como rascunho e completar depois.{" "}
+                <strong>{fotosMsg} para publicar.</strong> O mínimo é {MIN_PHOTOS}. Você pode salvar como rascunho e completar depois.{" "}
                 <button type="button" onClick={() => setStep(3)} className="font-medium underline">Ir para Fotos</button>.
               </div>
             )}
@@ -1131,7 +1198,13 @@ export default function NewPropertyPage() {
               <Button variant="outline" onClick={() => publish(true)} disabled={publishing || subleaseBlocked}>
                 {editingId ? "Salvar sem publicar" : "Salvar como rascunho"}
               </Button>
-              <Button variant="gold" onClick={() => publish(false)} disabled={publishing || !podePublicar}>
+              <Button
+                variant={podePublicar ? "gold" : "outline"}
+                onClick={() => publish(false)}
+                disabled={publishing || !podePublicar}
+                title={podePublicar ? undefined : "Resolva os itens pendentes acima"}
+                className={podePublicar ? undefined : "cursor-not-allowed opacity-60"}
+              >
                 {publishing
                   ? "Salvando..."
                   : editingId
