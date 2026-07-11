@@ -125,7 +125,7 @@ export function MyPropertiesClient({ properties: real }: { properties: Property[
                     </span>
                     {stats && (
                       <span className="text-xs">
-                        {stats.leads} lead(s) · {stats.views} visualizações
+                        {stats.leads} interessado(s) · {stats.views} visualizações
                       </span>
                     )}
                   </div>

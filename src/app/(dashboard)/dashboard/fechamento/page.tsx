@@ -461,7 +461,7 @@ function ClosingFlow({ demo }: { demo: boolean }) {
                 <div>
                   <p className="font-medium text-ink">Por quanto tempo você quer ficar?</p>
                   <p className="text-xs text-muted">
-                    Prazo total pretendido — cria o <strong>contrato-mãe</strong>. Contratado em{" "}
+                    Prazo total pretendido — cria o <strong>contrato</strong>. Contratado em{" "}
                     blocos de {TAMANHO_BLOCO} meses (cada bloco ≤ 90 dias).
                   </p>
                 </div>
@@ -1020,7 +1020,7 @@ function ClosingFlow({ demo }: { demo: boolean }) {
                 Comissão de fechamento · {Math.round(COMMISSION_RATE * 100)}% (plano Essencial)
               </p>
               <p className="mt-1 text-xs text-muted">
-                Cobrada <strong>uma única vez por contrato-mãe</strong>, sobre 1 mês, no
+                Cobrada <strong>uma única vez por contrato</strong>, sobre 1 mês, no
                 fechamento. Renovar ou estender blocos <strong>não gera nova comissão</strong>. Os
                 aluguéis seguintes vão direto ao proprietário.
               </p>
