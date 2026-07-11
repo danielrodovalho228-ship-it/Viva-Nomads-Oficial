@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { guardSocios } from "@/lib/socios/guard";
 import { PaginasInternasNav } from "@/components/apresentacao/paginas-nav";
 import { ModeloNegocio } from "@/components/modelo-negocio/modelo-negocio";
 
@@ -9,7 +10,10 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function ModeloDeNegocioPage() {
+export const dynamic = "force-dynamic";
+
+export default async function ModeloDeNegocioPage() {
+  await guardSocios("/modelodenegocio");
   return (
     <>
       <PaginasInternasNav atual="/modelodenegocio" />
