@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -190,10 +190,28 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   // abre — um link de proprietário nunca cai na visão de inquilino. Só quando a
   // conta não tem o papel é que volta para a Visão geral. Rotas compartilhadas
   // (mensagens, conta, indicações, solicitações, verificação) valem nos dois.
+  // Guarda de rota por papel. Distingue DUAS situações que caem no mesmo estado
+  // (modo X + rota exclusiva do outro modo), mas pedem respostas opostas:
+  //  • MUDOU O MODO (o usuário clicou no seletor estando numa rota do modo
+  //    antigo) → ele quer trocar de mundo: sai para a Visão geral (item 4 — sem
+  //    reverter a escolha, o que causava "2 cliques para pegar");
+  //  • MUDOU A ROTA (deep-link/URL para uma rota exclusiva no modo errado) → ele
+  //    quer aquela tela: TROCA o modo para o certo se a conta tem o papel (B1),
+  //    senão volta para a Visão geral.
+  const prevGuard = useRef({ mode, pathname });
   useEffect(() => {
+    const prev = prevGuard.current;
+    const modeChanged = prev.mode !== mode;
+    prevGuard.current = { mode, pathname };
+
     const exclusive = mode === "owner" ? TENANT_ONLY : OWNER_ONLY;
     const hits = exclusive.some((p) => pathname === p || pathname.startsWith(p + "/"));
     if (!hits) return;
+
+    if (modeChanged) {
+      router.replace("/dashboard");
+      return;
+    }
     const target: ViewMode = mode === "owner" ? "tenant" : "owner";
     const contaTemPapel = target === "owner" ? isOwner : isTenant;
     if (contaTemPapel) {
@@ -226,6 +244,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     setOpen(false);
     // Se a tela atual não existe no novo modo, volta para a Visão geral
     // (evita ficar numa rota do outro papel após a troca).
+    // Sair de rota exclusiva ao trocar de modo é tratado pelo guard (que detecta
+    // a troca de modo e redireciona), evitando o "2 cliques para pegar".
     const allowed = NAV_BY_MODE[next].some((item) => item.href === pathname);
     if (!allowed) router.push("/dashboard");
   }

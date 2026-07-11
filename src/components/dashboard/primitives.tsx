@@ -3,10 +3,14 @@ import { cn } from "@/lib/utils";
 import { ArrowUpRight, HardHat } from "lucide-react";
 
 /**
- * Placeholder padrão "Em construção" — SEMPRE dentro da casca do dashboard
- * (regra 0.5). Toda rota nova do menu que ainda não tem a tela pronta renderiza
- * este componente em vez de 404, página em branco ou rota pública. Assim o
- * usuário nunca "cai fora" do painel.
+ * Placeholder padrão "Em construção" — SEMPRE dentro da casca do dashboard.
+ *
+ * REGRA DEFINITIVA (QA 10/07, revoga a anterior): este placeholder é EXCLUSIVO
+ * para rota que AINDA NÃO EXISTE no código (nasce apontada no menu antes da
+ * tela). Página JÁ CONSTRUÍDA **nunca** regride para este placeholder — na
+ * dúvida, pergunte antes de rebaixar. (Simulador, ROI, Orçamentos e Garantias
+ * já existem e renderizam a ferramenta real; foram reativados após uma
+ * regressão que os havia trocado por este placeholder.)
  */
 export function EmConstrucao({
   title,

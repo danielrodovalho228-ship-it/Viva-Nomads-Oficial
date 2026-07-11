@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { TrendingUp, Home, Sparkles } from "lucide-react";
-import { PageTitle, EmConstrucao } from "@/components/dashboard/primitives";
+import { PageTitle } from "@/components/dashboard/primitives";
 import { useAuthStore, DEMO_USER } from "@/lib/store";
 import { useProperties } from "@/lib/use-properties";
 import { PLANOS, plano as getPlano, type PlanoId } from "@/config/planos";
@@ -13,7 +13,7 @@ import {
   type EntradaRentabilidade,
   type PlanoCalc,
 } from "@/lib/simulador";
-import { PLANO_FUNDADOR, FERRAMENTAS_REAIS } from "@/lib/flags";
+import { PLANO_FUNDADOR } from "@/lib/flags";
 import { formatBRL } from "@/lib/utils";
 import { NumInput, ResultCard, SimDisclaimer, SimHero, PlanoPills } from "@/components/simulador/ui";
 
@@ -26,21 +26,6 @@ const PLANOS_CALC: PlanoCalc[] = PLANOS.map((p) => ({
 }));
 
 export default function SimuladorPage() {
-  // Ferramenta EM DESENVOLVIMENTO: enquanto a flag está OFF, o card do hub abre
-  // o placeholder padrão dentro da casca. A implementação real fica preservada
-  // abaixo (SimuladorReal), atrás da flag (B2).
-  if (!FERRAMENTAS_REAIS) {
-    return (
-      <EmConstrucao
-        title="Simulador de rentabilidade"
-        text="A calculadora de rentabilidade do seu imóvel está em desenvolvimento e chega em breve, aqui no seu painel."
-      />
-    );
-  }
-  return <SimuladorReal />;
-}
-
-function SimuladorReal() {
   const user = useAuthStore((s) => s.user);
   const planoAtivo = ((user ?? DEMO_USER).plan ?? "free") as PlanoId;
   const { properties } = useProperties("/api/properties/mine");

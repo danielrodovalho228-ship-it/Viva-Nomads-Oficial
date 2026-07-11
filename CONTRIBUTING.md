@@ -24,7 +24,9 @@ Todo o vocabulário do produto tem que sustentar isso.
    do grupo `(public)`.
 3. **Item de menu sem página pronta usa o placeholder padrão** `<EmConstrucao/>`
    (`src/components/dashboard/primitives.tsx`) — nunca 404, nunca página em branco,
-   nunca rota pública.
+   nunca rota pública. **REGRA DEFINITIVA (QA 10/07):** o `<EmConstrucao/>` é
+   exclusivo para rota que **ainda não existe** no código. Página **já construída
+   NUNCA regride** para o placeholder — na dúvida, pergunte antes de rebaixar.
 4. **O menu do proprietário tem no máximo 9 itens.** Funcionalidade nova entra como
    **card do hub Ferramentas** (`/dashboard/ferramentas`) ou como **seção de uma
    página existente** — não como novo item de menu, salvo decisão explícita de produto.

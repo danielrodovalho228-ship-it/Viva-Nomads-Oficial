@@ -22,17 +22,6 @@ export const SELO_NF_UI = process.env.NEXT_PUBLIC_SELO_NF_UI === "on";
 export const PLANO_FUNDADOR = process.env.NEXT_PUBLIC_PLANO_FUNDADOR === "on";
 
 /**
- * Ferramentas do proprietário (Simulador de rentabilidade, Calculadora de ROI,
- * Garantias, Orçamentos). OFF por padrão: essas telas estão EM DESENVOLVIMENTO —
- * as versões reais têm spec própria e chegam depois (decisão de produto, QA
- * 10/07). Enquanto OFF, os cards do hub abrem o placeholder padrão "Em
- * construção" DENTRO da casca (nunca redirect, nunca 404). A implementação atual
- * de cada tela fica preservada no código, atrás desta flag — ligar com
- * NEXT_PUBLIC_FERRAMENTAS_REAIS="on" quando a versão final entrar.
- */
-export const FERRAMENTAS_REAIS = process.env.NEXT_PUBLIC_FERRAMENTAS_REAIS === "on";
-
-/**
  * Portão do KYC no Fechamento. OFF por padrão = portão SUAVE (reteste QA item 2):
  * enquanto a verificação (CAF) não está integrada, a conta real avança o
  * fechamento com status "Verificação pendente" (registrado e visível ao

@@ -27,10 +27,15 @@ export function defaultMode(user: SessionUser): ViewMode {
 }
 
 /**
- * Nome de EXIBIÇÃO seguro: primeiro nome do perfil (fullName). NUNCA devolve o
- * e-mail cru — sem nome coletado, devolve "" e a UI cai num rótulo neutro
- * (reteste QA item 4). O `name` da sessão pode ser o e-mail (fallback do
- * AuthProvider), por isso não deve ser usado direto na tela.
+ * FONTE ÚNICA do nome exibido do próprio usuário (QA item 5). Regra definitiva:
+ *  • origem = `profiles.full_name` (chega em `SessionUser.fullName`);
+ *  • devolve o PRIMEIRO nome; sem nome coletado, devolve "" e a UI cai num
+ *    rótulo neutro ("Olá!" na saudação, "Minha conta" no rodapé);
+ *  • NUNCA o e-mail cru (o `SessionUser.name` tem o e-mail como fallback do
+ *    AuthProvider — por isso `name` não deve ir direto para a tela);
+ *  • NUNCA uma persona de demonstração em conta real (a persona só entra via
+ *    `useDisplayUser`, que só devolve DEMO_USER com o modo demo ligado).
+ * Todo lugar que mostra o nome do próprio usuário DEVE passar por aqui.
  */
 export function primeiroNomeExibicao(user: SessionUser | null | undefined): string {
   const full = user?.fullName?.trim();
