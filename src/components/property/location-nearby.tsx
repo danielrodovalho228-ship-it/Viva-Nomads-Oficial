@@ -3,6 +3,23 @@ import type { ProximityCategory, Property } from "@/lib/types";
 import type { MapMarker } from "@/components/property-map";
 import { PropertyMap } from "@/components/property-map-lazy";
 
+/**
+ * Distância APROXIMADA para o anúncio público (item 2 do QA): arredonda os
+ * minutos para o múltiplo de 5 mais próximo (mín. 5) e prefixa "~", para não
+ * dar precisão que ajude a triangular o endereço antes do aceite. Sem minutos
+ * no texto (ex.: "a pé"), devolve nada — evita combinação hiperespecífica.
+ */
+function distanciaAprox(note?: string): string | undefined {
+  if (!note) return undefined;
+  const m = note.match(/(\d+)\s*min/i);
+  if (!m) return undefined;
+  const min = parseInt(m[1], 10);
+  if (!Number.isFinite(min)) return undefined;
+  const arred = Math.max(5, Math.round(min / 5) * 5);
+  const modo = /p[ée]/i.test(note) ? " a pé" : /carro|autom[óo]vel|dirig/i.test(note) ? " de carro" : "";
+  return `~${arred} min${modo}`;
+}
+
 const PROXIMITY_META: Record<ProximityCategory, { label: string; icon: React.ComponentType<{ className?: string }> }> = {
   saude: { label: "Saúde", icon: HeartPulse },
   educacao: { label: "Educação", icon: GraduationCap },
@@ -57,6 +74,7 @@ export function LocationNearby({ property }: { property: Property }) {
             {proximities.map((p) => {
               const meta = PROXIMITY_META[p.category];
               const Icon = meta?.icon ?? MapPin;
+              const dist = distanciaAprox(p.note);
               return (
                 <li
                   key={`${p.category}-${p.name}`}
@@ -67,7 +85,7 @@ export function LocationNearby({ property }: { property: Property }) {
                     <span className="block text-sm font-medium text-ink">{p.name}</span>
                     <span className="block text-xs text-muted">
                       {meta?.label ?? p.category}
-                      {p.note ? ` · ${p.note}` : ""}
+                      {dist ? ` · ${dist}` : ""}
                     </span>
                   </span>
                 </li>

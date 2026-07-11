@@ -35,7 +35,8 @@ type ActionResult = { ok: boolean; demo?: boolean; id?: string; error?: string }
 /** Persiste o checklist de qualificação (Fase 4). */
 export async function saveQualification(
   elig: EligibilityState,
-  quality: QualityState
+  quality: QualityState,
+  documentPath?: string | null
 ): Promise<ActionResult> {
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
@@ -58,6 +59,9 @@ export async function saveQualification(
       habitable: elig.habitable,
       is_owner_or_agent: elig.isOwnerOrAgent,
       condo_allows: elig.condoAllows || "unknown",
+      // Caminho do documento no bucket PRIVADO (migration 0041). Só a referência
+      // — a exibição usa URL assinada. null quando não enviado.
+      document_path: documentPath ?? null,
       eligible,
       // Selo base + etiquetas (Atualização 11)
       ready_to_live_score,
