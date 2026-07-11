@@ -104,13 +104,14 @@ function NovoPedidoSplit() {
         </div>
       </aside>
 
-      {/* LADO DIREITO — formulário em card branco elevado. */}
-      <div className="px-4 py-8 sm:px-8 lg:px-10">
-        <div className="mx-auto max-w-xl">
+      {/* LADO DIREITO — card branco "flutua" sobre off-white; no desktop a coluna
+          tem a altura da imagem e centraliza o card na vertical (sem vão branco). */}
+      <div className="bg-[#F7F6F2] px-4 py-8 sm:px-8 lg:flex lg:min-h-[calc(100vh-4.5rem)] lg:items-center lg:px-10 lg:py-10">
+        <div className="mx-auto w-full max-w-xl">
           <PedidoForm />
 
           {/* Mobile: checklist + passos abaixo do formulário. */}
-          <div className="mt-8 rounded-2xl border border-line bg-surface-2 p-6 lg:hidden">
+          <div className="mt-8 rounded-2xl border border-line bg-white p-6 lg:hidden">
             <ChecklistLight />
             <PassosLight />
           </div>
