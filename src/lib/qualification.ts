@@ -102,21 +102,33 @@ export function tagCondoApproved(elig: EligibilityState): boolean {
   return elig.condoAllows === "yes";
 }
 
-/** Itens das etiquetas (para exibir o que falta). */
-export function homeOfficeItems(q: QualityState) {
+/**
+ * Itens das etiquetas. Cada item carrega a `key` do estado (fim do mapeamento
+ * frágil por rótulo — era a causa do bug do card "Bem localizado", cujos labels
+ * não batiam com o mapa) e um `icon` temático para a UI.
+ */
+export interface TagItem {
+  key: keyof QualityState | "internet";
+  icon: "office" | "desk" | "chair" | "wifi" | "coworking" | "meeting" | "cafe";
+  label: string;
+  on: boolean;
+  readonly?: boolean;
+}
+
+export function homeOfficeItems(q: QualityState): TagItem[] {
   return [
-    { label: "Cômodo/escritório dedicado", on: q.hasHomeOffice },
-    { label: "Mesa de trabalho adequada", on: q.hasDesk },
-    { label: "Cadeira de trabalho", on: q.hasChair },
+    { key: "hasHomeOffice", icon: "office", label: "Cômodo/escritório dedicado", on: q.hasHomeOffice },
+    { key: "hasDesk", icon: "desk", label: "Mesa de trabalho adequada", on: q.hasDesk },
+    { key: "hasChair", icon: "chair", label: "Cadeira de trabalho", on: q.hasChair },
     // Internet vem da categoria escolhida no selo base (não é um toggle aqui).
-    { label: "Internet que aguenta trabalho", on: internetWorksForRemote(q.internetTier), readonly: true },
+    { key: "internet", icon: "wifi", label: "Internet que aguenta trabalho", on: internetWorksForRemote(q.internetTier), readonly: true },
   ];
 }
 
-export function workLocatedItems(q: QualityState) {
+export function workLocatedItems(q: QualityState): TagItem[] {
   return [
-    { label: "Coworking na região", on: q.coworking2km },
-    { label: "Sala de reunião por perto", on: q.meetingRoom },
-    { label: "Café de trabalho na região", on: q.cafe1km },
+    { key: "coworking2km", icon: "coworking", label: "Coworking na região", on: q.coworking2km },
+    { key: "meetingRoom", icon: "meeting", label: "Sala de reunião por perto", on: q.meetingRoom },
+    { key: "cafe1km", icon: "cafe", label: "Café de trabalho na região", on: q.cafe1km },
   ];
 }
