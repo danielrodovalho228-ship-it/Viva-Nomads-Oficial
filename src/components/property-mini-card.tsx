@@ -61,7 +61,9 @@ export function PropertyMiniCard({ property }: { property: Property }) {
             </span>
           </div>
           <span className="font-title text-base font-bold text-ink">
-            {formatBRL(property.monthlyPrice)}
+            {/* Preço 0 = anúncio ainda incompleto → "R$ —" (nunca "R$ 0", que
+                parece imóvel de graça). Anúncio publicado sempre tem preço > 0. */}
+            {property.monthlyPrice > 0 ? formatBRL(property.monthlyPrice) : "R$ —"}
             <span className="text-xs font-normal text-muted">/mês</span>
           </span>
         </div>

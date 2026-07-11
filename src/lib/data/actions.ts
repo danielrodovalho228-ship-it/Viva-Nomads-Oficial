@@ -1001,3 +1001,44 @@ export async function sendMessage(input: {
 
   return { ok: true, id: conversationId };
 }
+
+/**
+ * Exclui um imóvel do proprietário logado (usado para descartar RASCUNHOS).
+ * Apaga as tabelas-filhas (best-effort) e a linha do imóvel — sempre escopado a
+ * owner_id (a RLS reforça). Demo/preview: no-op de sucesso.
+ */
+export async function deleteProperty(id: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  if (!supabase) return { ok: true, demo: true };
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Não autenticado." };
+
+  for (const table of ["property_photos", "property_amenities", "property_proximities"]) {
+    try {
+      await supabase.from(table).delete().eq("property_id", id);
+    } catch {
+      /* tabela ausente — ignora */
+    }
+  }
+  const { error } = await supabase.from("properties").delete().eq("id", id).eq("owner_id", user.id);
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
+/** Quantos RASCUNHOS o proprietário logado tem (para o "Novo anúncio" oferecer retomar). */
+export async function countMyDrafts(): Promise<number> {
+  const supabase = await createClient();
+  if (!supabase) return 0;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return 0;
+  const { count } = await supabase
+    .from("properties")
+    .select("id", { count: "exact", head: true })
+    .eq("owner_id", user.id)
+    .eq("status", "draft");
+  return count ?? 0;
+}

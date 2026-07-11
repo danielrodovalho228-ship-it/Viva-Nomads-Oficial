@@ -87,6 +87,35 @@ export const GARANTIAS_FAIXA: GarantiaDef[] = [
  */
 export const CAUCAO_PARCELADA_UI = process.env.NEXT_PUBLIC_CAUCAO_PARCELADA_UI === "on";
 
+export interface GarantiaCadastro {
+  key: GarantiaKey;
+  label: string;
+  microtext?: string;
+  disabled?: boolean;
+  badge?: string;
+}
+
+/**
+ * Garantias oferecidas no CADASTRO do anúncio (estados honestos — ADENDO
+ * garantias). TODO(juridico): redação final da caução e do seguro.
+ *  • Caução renomeada e explicada (depósito devolvível, conta vinculada).
+ *  • "Caução parcelada" só aparece com a flag (fora da UI até o parecer).
+ *  • Seguro-fiança VISÍVEL porém DESABILITADO ("Em breve — via parceiro") — o
+ *    produto ainda não existe; marcar hoje bateria em nada no fechamento.
+ */
+export const GARANTIAS_CADASTRO: GarantiaCadastro[] = [
+  {
+    key: "caucao_avista",
+    label: "Caução (depósito devolvível)",
+    microtext:
+      "50% antes da entrada, direto na SUA conta vinculada; o restante conforme o contrato. Devolvida ao inquilino no fim, após a vistoria de saída.",
+  },
+  ...(CAUCAO_PARCELADA_UI
+    ? [{ key: "caucao_parcelada" as GarantiaKey, label: "Caução parcelada" }]
+    : []),
+  { key: "seguro_fianca", label: "Seguro-fiança", disabled: true, badge: "Em breve — via parceiro" },
+];
+
 /** Garantias exibidas no filtro PÚBLICO da busca (caução unificada + seguro). */
 export const GARANTIAS_PUBLICAS: { key: string; label: string }[] = [
   { key: "caucao", label: "Caução" },
