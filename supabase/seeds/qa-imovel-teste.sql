@@ -62,12 +62,15 @@ begin
       owner_id, furnished, accepts_30days, iptu_ok, habitable,
       is_owner_or_agent, condo_allows, eligible,
       ready_to_live_score, ready_to_live_badge,
-      tag_home_office, tag_work_located, tag_condo_approved, internet_tier, status
+      tag_home_office, tag_work_located, tag_condo_approved, internet_tier, status,
+      -- Documento já verificado, para o QA conseguir PUBLICAR (item 1).
+      document_status
     ) values (
       v_owner, true, true, true, true,
       true, 'yes', true,
       85, true,
-      true, false, true, 'trabalho_remoto', 'approved'
+      true, false, true, 'trabalho_remoto', 'approved',
+      'approved'
     );
   end if;
 

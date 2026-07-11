@@ -20,7 +20,10 @@ export type NotificationEvent =
   | "pedido_resposta" // proprietário respondeu → inquilino
   | "pedido_aceito" // inquilino aceitou para conversa → proprietário
   | "pedido_expirando" // pedido expira em 3 dias → inquilino
-  | "pedido_moderado"; // pedido ocultado pela moderação → inquilino
+  | "pedido_moderado" // pedido ocultado pela moderação → inquilino
+  // Verificação do documento do imóvel (anti-fraude) → proprietário
+  | "documento_aprovado"
+  | "documento_recusado";
 
 // `img` = chave da imagem de assunto (public/media/email/<img>.jpg).
 const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: string) => string; img: string }> = {
@@ -36,6 +39,8 @@ const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: string)
   pedido_aceito: { subject: "Seu imóvel foi aceito para conversa", body: (n) => `Olá${n ? " " + n : ""}, um inquilino aceitou sua resposta e abriu a conversa. Responda pela plataforma.`, img: "nova-mensagem" },
   pedido_expirando: { subject: "Seu pedido de moradia expira em breve", body: (n) => `Olá${n ? " " + n : ""}, seu pedido de moradia expira em até 3 dias. Renove ou marque como atendido se já resolveu.`, img: "transacional" },
   pedido_moderado: { subject: "Seu pedido de moradia foi ocultado", body: (n) => `Olá${n ? " " + n : ""}, seu pedido de moradia foi ocultado pela moderação. Veja o motivo e ajuste se necessário.`, img: "transacional" },
+  documento_aprovado: { subject: "Documentação aprovada — você já pode publicar", body: (n) => `Olá${n ? " " + n : ""}, a documentação do seu imóvel foi verificada e aprovada. Seu anúncio já pode ser publicado.`, img: "candidatura-recebida" },
+  documento_recusado: { subject: "Documentação não aprovada", body: (n) => `Olá${n ? " " + n : ""}, a documentação enviada não pôde ser aprovada. Veja o motivo, ajuste e reenvie para liberar a publicação.`, img: "pedido-resposta" },
 };
 
 export interface NotifyResult {
