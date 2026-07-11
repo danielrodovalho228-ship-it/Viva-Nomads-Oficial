@@ -1106,3 +1106,34 @@ export async function loadDraftData(id: string): Promise<unknown | null> {
     .maybeSingle();
   return data?.draft_data ?? null;
 }
+
+/** Rascunho mais recente do dono (para "Novo anúncio detecta rascunho" e o card
+ * de pendência da Visão geral). Devolve o snapshot completo (`data`) para o
+ * cálculo honesto de "% completo". null se não houver. */
+export async function getLatestDraft(): Promise<{
+  id: string;
+  title: string;
+  data: unknown;
+} | null> {
+  const supabase = await createClient();
+  if (!supabase) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data } = await supabase
+    .from("properties")
+    .select("id, title, draft_data")
+    .eq("owner_id", user.id)
+    .eq("status", "draft")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return data
+    ? {
+        id: data.id as string,
+        title: (data.title as string) || "Rascunho de anúncio",
+        data: data.draft_data ?? null,
+      }
+    : null;
+}
