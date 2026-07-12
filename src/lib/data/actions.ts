@@ -774,7 +774,8 @@ function hojeISO(): string {
 export async function requestLead(
   propertyId: string,
   propertyTitle: string,
-  kind: LeadKind
+  kind: LeadKind,
+  note?: string
 ): Promise<ActionResult & { needsAuth?: boolean; selfOwned?: boolean }> {
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
@@ -844,12 +845,18 @@ export async function requestLead(
         console.error("[requestLead] falha ao gravar lead:", leadErr.message);
       }
       const conversationId = [user.id, ownerId].sort().join("_") + `_${propertyId}`;
+      // Mensagem do inquilino: usa o texto que ele escreveu (dúvida/horários),
+      // com contato mascarado (regra de ouro — nada de telefone/e-mail no chat
+      // antes do aceite); sem texto, cai na mensagem padrão da ação.
+      const corpo = note && note.trim()
+        ? guardContactInfo(note.trim().slice(0, 1000)).text
+        : LEAD_KIND_MSG[kind](propertyTitle);
       const { error: msgErr } = await supabase.from("messages").insert({
         conversation_id: conversationId,
         sender_id: user.id,
         receiver_id: ownerId,
         property_id: propertyId,
-        body: LEAD_KIND_MSG[kind](propertyTitle),
+        body: corpo,
       });
       if (msgErr && msgErr.code !== "23505") {
         console.error("[requestLead] falha ao abrir conversa:", msgErr.message);

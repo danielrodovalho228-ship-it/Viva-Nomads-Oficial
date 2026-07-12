@@ -46,6 +46,9 @@ export function PropertyDetail({ property, similar }: { property: Property; simi
   const [selfNote, setSelfNote] = useState(false);
   const [leadErro, setLeadErro] = useState<string | null>(null);
   const [candidatouSe, setCandidatouSe] = useState(false);
+  // Composer de dúvida/visita: o inquilino escreve a mensagem de verdade.
+  const [composeKind, setComposeKind] = useState<"duvida" | "visita" | null>(null);
+  const [composeText, setComposeText] = useState("");
 
   // Avaliações — FONTE ÚNICA (A2): usa o array real de reviews, igual à seção de
   // avaliações. `rating` só é usado como média quando há review real.
@@ -59,32 +62,33 @@ export function PropertyDetail({ property, similar }: { property: Property; simi
 
   // Dúvida / visita / candidatura: registra o interesse e avisa o proprietário
   // (e-mail/WhatsApp). Candidatura segue para o fluxo de fechamento.
-  async function handleLead(kind: LeadKind) {
+  async function handleLead(kind: LeadKind, note?: string) {
     setPending(kind);
     setLeadErro(null);
-    const r = await requestLead(property.id, property.title, kind).catch(() => null);
+    const r = await requestLead(property.id, property.title, kind, note).catch(() => null);
     setPending(null);
     if (r?.needsAuth) {
       // Sem sessão: leva ao login e volta para este anúncio depois de entrar.
       router.push(`/auth?redirect=/imoveis/${property.id}`);
-      return;
+      return false;
     }
     if (r?.selfOwned) {
       setSelfNote(true);
-      return;
+      return false;
     }
     // Falha real (rede/servidor): NUNCA deixa o botão "morto" — mostra o erro.
     if (!r || !r.ok) {
       setLeadErro("Não foi possível enviar agora. Verifique a conexão e tente novamente.");
-      return;
+      return false;
     }
     if (kind === "candidatura") {
       // Candidatura NÃO é fechamento (este nasce quando o PROPRIETÁRIO aceita):
       // confirma o envio e aponta o acompanhamento em Mensagens.
       setCandidatouSe(true);
-      return;
+      return true;
     }
     setSent((s) => ({ ...s, [kind]: true }));
+    return true;
   }
 
   const citySlug = property.city
@@ -144,7 +148,10 @@ export function PropertyDetail({ property, similar }: { property: Property; simi
         <Button
           variant="outline"
           size="sm"
-          onClick={() => handleLead("duvida")}
+          onClick={() => {
+            setComposeText("");
+            setComposeKind("duvida");
+          }}
           disabled={pending !== null || sent.duvida}
         >
           {sent.duvida ? (
@@ -161,7 +168,10 @@ export function PropertyDetail({ property, similar }: { property: Property; simi
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => handleLead("visita")}
+          onClick={() => {
+            setComposeText("");
+            setComposeKind("visita");
+          }}
           disabled={pending !== null || sent.visita}
         >
           {sent.visita ? (
@@ -194,8 +204,66 @@ export function PropertyDetail({ property, similar }: { property: Property; simi
     </div>
   );
 
+  // Modal de composição da dúvida/visita — o inquilino escreve o que quer.
+  const composer = composeKind && (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-night/40 p-0 sm:items-center sm:p-4"
+      role="dialog"
+      aria-modal="true"
+      onClick={() => setComposeKind(null)}
+    >
+      <div
+        className="w-full max-w-md rounded-t-2xl bg-white p-5 shadow-xl sm:rounded-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 className="font-title text-lg font-bold text-ink">
+          {composeKind === "duvida" ? "Tirar uma dúvida" : "Agendar uma visita"}
+        </h3>
+        <p className="mt-1 text-sm text-muted">
+          {composeKind === "duvida"
+            ? "Escreva sua pergunta sobre o imóvel. O proprietário responde pela plataforma."
+            : "Diga os dias e horários que funcionam para você. O proprietário confirma pela plataforma."}
+        </p>
+        <textarea
+          rows={4}
+          autoFocus
+          value={composeText}
+          onChange={(e) => setComposeText(e.target.value)}
+          placeholder={
+            composeKind === "duvida"
+              ? "Ex.: O condomínio tem academia? Aceita 2 pessoas?"
+              : "Ex.: Posso visitar quinta ou sexta à tarde?"
+          }
+          className="mt-3 w-full rounded-xl border border-sage-200 px-3.5 py-2.5 text-sm outline-none focus:border-sage"
+        />
+        <p className="mt-1 flex items-center gap-1 text-xs text-muted">
+          <ShieldCheck className="h-3.5 w-3.5 text-sage" /> Não compartilhe telefone ou e-mail aqui —
+          o contato é liberado após o aceite.
+        </p>
+        {leadErro && <p className="mt-2 text-sm text-red-600">{leadErro}</p>}
+        <div className="mt-4 flex justify-end gap-2">
+          <Button variant="ghost" size="sm" onClick={() => setComposeKind(null)} disabled={pending !== null}>
+            Cancelar
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
+            disabled={pending !== null || composeText.trim().length < 3}
+            onClick={async () => {
+              const ok = await handleLead(composeKind, composeText);
+              if (ok) setComposeKind(null);
+            }}
+          >
+            {pending !== null ? "Enviando..." : "Enviar"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="container-page py-8">
+      {composer}
       {/* Breadcrumb (navegação + SEO) */}
       <nav
         aria-label="Trilha de navegação"
