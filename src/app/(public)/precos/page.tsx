@@ -36,7 +36,7 @@ interface Service {
  */
 const TENANT_SERVICES: Service[] = [
   { icon: ShieldCheck, title: "Garantia digital (sem depósito)", benefit: "Entre sem deixar dinheiro preso: uma taxa mensal diluída garante o aluguel, sem depósito de entrada. Contratada com parceiro, sujeita a análise.", price: "Orçamento sob análise", statusLabel: "Via parceiro", statusTone: "partner", tone: "cotacao", cta: "Ver opções de garantia", href: "/como-funciona#garantias", highlight: "Recomendada · sem depósito" },
-  { icon: PiggyBank, title: "Caução (depósito devolvível)", benefit: "Depósito devolvível em conta vinculada (proprietário + inquilino), nos termos do contrato e da Lei 8.245/91 — devolvido ao fim da estadia. Vai para conta vinculada, nunca para a plataforma.", price: "Sem mensalidade", statusLabel: "Disponível", statusTone: "ok", tone: "avulso", cta: "Ver opções de garantia", href: "/como-funciona#garantias" },
+  { icon: PiggyBank, title: "Caução (depósito devolvível)", benefit: "Depósito devolvível em conta vinculada — conta bancária conjunta (proprietário + inquilino), à qual a plataforma não tem acesso —, nos termos do contrato e da Lei 8.245/91, devolvido ao fim da estadia.", price: "Sem mensalidade", statusLabel: "Disponível", statusTone: "ok", tone: "avulso", cta: "Ver opções de garantia", href: "/como-funciona#garantias" },
 ];
 
 const OWNER_SERVICES: Service[] = [

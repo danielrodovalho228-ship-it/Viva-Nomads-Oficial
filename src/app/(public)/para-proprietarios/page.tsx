@@ -90,7 +90,7 @@ export default function ForLandlordsPage() {
                 "Checklist de qualificação que comprova a regularidade da locação.",
                 "Selo Pronto para Morar para anunciar mais caro.",
                 "Verificação de identidade do inquilino com laudo de semáforo.",
-                "Orçamento de seguro-fiança dentro da plataforma.",
+                "Orçamento de Garantia digital dentro da plataforma.",
                 "Contrato de temporada gerado e assinado digitalmente, com validade jurídica.",
                 "Pagamento do aluguel direto na sua conta.",
               ].map((item) => (

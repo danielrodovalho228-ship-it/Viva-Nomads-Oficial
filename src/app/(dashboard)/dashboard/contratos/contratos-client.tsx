@@ -448,7 +448,7 @@ function RegistrarRecebimento({
   return (
     <div className="mt-3 rounded-xl border border-sage-200 bg-white p-3">
       <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-ink">
-        <ShieldCheck className="h-3.5 w-3.5 text-sage" /> Registrar recebimento (declaratório)
+        <ShieldCheck className="h-3.5 w-3.5 text-sage" /> Registrar recebimento (você declara; a plataforma só registra)
       </p>
       <div className="grid gap-2 sm:grid-cols-3">
         <label className="text-xs text-muted">
