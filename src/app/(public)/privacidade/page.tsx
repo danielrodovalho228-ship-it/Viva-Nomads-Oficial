@@ -116,6 +116,14 @@ export default function PrivacyPage() {
           </p>
         </section>
 
+        <Section title="5. Geração de texto por IA">
+          Ao usar o gerador opcional de título e descrição do anúncio, enviamos a um provedor de
+          inteligência artificial apenas os <strong>dados do imóvel</strong> (tipo, região,
+          cômodos, área e comodidades) para redigir o texto. <strong>Não enviamos seu contato, o
+          endereço exato nem dados pessoais.</strong> O texto sugerido pode ser editado e é de
+          responsabilidade do proprietário revisá-lo antes de publicar.
+        </Section>
+
         <Section title="6. Verificação de identidade do inquilino">
           A verificação trata identidade, documento e prova de vida. O resultado é apresentado
           ao proprietário como análise informativa em 3 níveis (verde/amarelo/vermelho). Os dados brutos sensíveis ficam

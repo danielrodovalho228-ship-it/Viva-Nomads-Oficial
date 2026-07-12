@@ -55,6 +55,7 @@ interface PropertyRow {
   // Enriquecimento (migração 0018 — podem não existir se a migração não rodou).
   parking_spots: number | null;
   condo_fee: number | null;
+  descricao_gerada_por_ia: boolean | null;
   available_from: string | null;
   furnished: boolean | null;
   pets_allowed: boolean | null;
@@ -128,6 +129,7 @@ function rowToProperty(row: PropertyRow): Property {
     // Enriquecimento (escalares; relações são carregadas por enrichProperty).
     parkingSpots: row.parking_spots ?? undefined,
     condoFee: row.condo_fee != null ? Number(row.condo_fee) : undefined,
+    descricaoGeradaPorIa: row.descricao_gerada_por_ia === true,
     availableFrom: row.available_from ?? undefined,
     furnished: row.furnished ?? undefined,
     petsAllowed: row.pets_allowed ?? undefined,
