@@ -28,6 +28,29 @@ test("mascara link de WhatsApp/Telegram", () => {
   assert.equal(guardContactInfo("t.me/fulano").masked, true);
 });
 
+test("mascara perfil de rede social por URL", () => {
+  assert.equal(guardContactInfo("meu insta é instagram.com/maria.nomad").masked, true);
+  assert.equal(guardContactInfo("https://www.facebook.com/fulano.de.tal").masked, true);
+  assert.equal(guardContactInfo("tiktok.com/@viajante").masked, true);
+});
+
+test("mascara @handle solto (me chama no insta @maria.silva)", () => {
+  const r = guardContactInfo("me chama no insta @maria.silva");
+  assert.equal(r.masked, true);
+  assert.ok(!r.text.includes("@maria.silva"));
+  assert.ok(r.text.includes(MASK));
+});
+
+test("T-TRAV-F: mascara os 3 padrões (telefone, e-mail, @instagram)", () => {
+  const r = guardContactInfo(
+    "liga (34) 99999-0001, e-mail joao@teste.com ou me segue no insta @joao.nomad",
+  );
+  assert.equal(r.masked, true);
+  assert.ok(!r.text.includes("99999"), "telefone não mascarado");
+  assert.ok(!r.text.includes("joao@teste.com"), "e-mail não mascarado");
+  assert.ok(!r.text.includes("@joao.nomad"), "handle não mascarado");
+});
+
 test("NÃO mascara CEP, data, valor e texto comum", () => {
   for (const s of [
     "o CEP é 38400-000",

@@ -25,6 +25,13 @@ const PHONE_CANDIDATE_RE = /\+?\d[\d\s().-]{7,}\d/g;
 /** Links de mensageria externa (WhatsApp/Telegram) — tiram a conversa da trilha. */
 const MESSENGER_RE = /(https?:\/\/)?(wa\.me|api\.whatsapp\.com|chat\.whatsapp\.com|t\.me|telegram\.me)\/\S+/gi;
 
+/** Perfis de rede social (instagram/facebook/tiktok) por URL. */
+const SOCIAL_URL_RE = /(?:https?:\/\/)?(?:www\.)?(?:instagram|facebook|fb|tiktok)\.com\/\S+/gi;
+
+/** @handle solto (ex.: @maria.silva) — típico "me chama no insta @...". Captura
+ *  o char anterior para não colidir com e-mails (já mascarados antes). */
+const HANDLE_RE = /(^|[^\w@])@([a-zA-Z0-9._]{2,30})/g;
+
 export interface GuardResult {
   /** Texto com os contatos mascarados. */
   text: string;
@@ -51,6 +58,16 @@ export function guardContactInfo(input: string): GuardResult {
     if (digits.length < 10 || digits.length > 13) return m;
     masked = true;
     return MASK;
+  });
+  text = text.replace(SOCIAL_URL_RE, () => {
+    masked = true;
+    return MASK;
+  });
+  // @handle solto — roda por último (e-mails/URLs já mascarados). Preserva o
+  // caractere anterior capturado.
+  text = text.replace(HANDLE_RE, (_m, pre: string) => {
+    masked = true;
+    return `${pre}${MASK}`;
   });
 
   return { text, masked };
