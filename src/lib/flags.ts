@@ -33,13 +33,15 @@ export const PLANO_FUNDADOR = process.env.NEXT_PUBLIC_PLANO_FUNDADOR === "on";
 export const KYC_PORTAO_RIGIDO = process.env.NEXT_PUBLIC_KYC_PORTAO_RIGIDO === "on";
 
 /**
- * Geração por IA de título/descrição do anúncio. OFF por padrão (item 7 do QA do
- * editor). Hoje o botão é um MOCK — não envia foto nem texto a nenhum provedor
- * externo (título/descrição são canned, gerados no navegador). Enquanto:
- *   • não houver um provedor real definido, E
- *   • o envio das fotos não estiver descrito na Política de Privacidade,
- * a funcionalidade fica desligada por esta flag. TODO(juridico — Beatriz):
- * antes de ligar (NEXT_PUBLIC_GERACAO_IA="on"), documentar qual provedor recebe
- * as fotos e cobrir o tratamento na Política de Privacidade.
+ * Geração por IA de título/descrição do anúncio. OFF por padrão até o provedor
+ * ser habilitado. Implementação real (não mais mock): rota de servidor
+ * `/api/ai/anuncio` chama a API da Anthropic (Claude) — a chave (ANTHROPIC_API_KEY)
+ * vive SÓ no servidor, nunca no cliente. Só campos seguros do imóvel vão ao
+ * modelo (sem endereço exato/contato/PII), com rate-limit de 10/dia e trilha de
+ * auditoria (migration 0045). Coberto na Política de Privacidade (seção 5).
+ *
+ * Para LIGAR em produção: definir ANTHROPIC_API_KEY (server) e
+ * NEXT_PUBLIC_GERACAO_IA="on". A rota exige as DUAS coisas; sem a chave ou a
+ * flag, responde 503 sem chamar o provedor.
  */
 export const GERACAO_IA_ATIVA = process.env.NEXT_PUBLIC_GERACAO_IA === "on";

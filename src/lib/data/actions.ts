@@ -179,6 +179,7 @@ export interface PropertyInput {
   // ── Enriquecimento (FASE 1/2) — gravados best-effort (requer migrações 0018/0019) ──
   parkingSpots?: number;
   condoFee?: number;
+  descricaoGeradaPorIa?: boolean;
   availableFrom?: string;
   availableUntil?: string;
   maxPeriodDays?: number;
@@ -291,6 +292,7 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
       .update({
         parking_spots: input.parkingSpots ?? 0,
         condo_fee: input.condoFee ?? 0,
+        descricao_gerada_por_ia: input.descricaoGeradaPorIa ?? false,
         available_from: input.availableFrom ?? null,
         available_until: input.availableUntil ?? null,
         max_period_days: input.maxPeriodDays ?? null,
@@ -451,6 +453,7 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
       .update({
         parking_spots: input.parkingSpots ?? 0,
         condo_fee: input.condoFee ?? 0,
+        descricao_gerada_por_ia: input.descricaoGeradaPorIa ?? false,
         available_from: input.availableFrom ?? null,
         available_until: input.availableUntil ?? null,
         max_period_days: input.maxPeriodDays ?? null,

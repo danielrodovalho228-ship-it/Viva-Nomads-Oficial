@@ -103,6 +103,7 @@ export interface Property {
   // ── Enriquecimento da página (todos opcionais; a seção some quando ausente) ──
   parkingSpots?: number; // vagas
   condoFee?: number; // condomínio (R$/mês), separado das contas de consumo
+  descricaoGeradaPorIa?: boolean; // auditoria: descrição gerada por IA
   availableFrom?: string; // ISO — "disponível a partir de"
   furnished?: boolean; // mobiliado
   petsAllowed?: boolean;

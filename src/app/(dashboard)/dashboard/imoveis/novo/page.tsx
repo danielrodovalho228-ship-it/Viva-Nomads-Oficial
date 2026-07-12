@@ -65,6 +65,8 @@ export default function NewPropertyPage() {
   const [step, setStep] = useState(0);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiWarn, setAiWarn] = useState<string | null>(null);
+  // Auditoria: descrição gerada por IA (some ao editar à mão). Persistido.
+  const [descricaoGeradaPorIa, setDescricaoGeradaPorIa] = useState(false);
   const [title, setTitle] = useState("");
   const [propertyType, setPropertyType] = useState("apartamento");
   const [description, setDescription] = useState("");
@@ -318,6 +320,7 @@ export default function NewPropertyPage() {
       // na url só se for preview local (demo/sem migração).
       subleaseDocUrl: subleaseDoc[0]?.path ?? subleaseDoc[0]?.url,
       condoFee: Number(condoFee) || 0,
+      descricaoGeradaPorIa,
       utilitiesMode,
       utilitiesEstimate,
       issuesInvoice,
@@ -388,6 +391,7 @@ export default function NewPropertyPage() {
     if (s(d.availableUntil)) setAvailableUntil(d.availableUntil as string);
     if (s(d.monthlyPrice)) setMonthlyPrice(d.monthlyPrice as string);
     if (s(d.condoFee)) setCondoFee(d.condoFee as string);
+    if (typeof d.descricaoGeradaPorIa === "boolean") setDescricaoGeradaPorIa(d.descricaoGeradaPorIa);
     if (s(d.street)) setStreet(d.street as string);
     if (s(d.neighborhood)) setNeighborhood(d.neighborhood as string);
     if (s(d.city)) setCity(d.city as string);
@@ -492,6 +496,7 @@ export default function NewPropertyPage() {
       setUtilitiesMode(p.utilitiesMode === "real" ? "real" : "fixed");
       setUtilitiesEstimate(p.utilitiesEstimate ?? 200);
       setCondoFee(p.condoFee ? String(p.condoFee) : "");
+      setDescricaoGeradaPorIa(!!p.descricaoGeradaPorIa);
       setIssuesInvoice(!!p.issuesInvoice);
       setPrepFee(p.prepFee ?? 450);
       setOwnershipType(p.ownershipType === "subleased" ? "subleased" : "own");
@@ -521,7 +526,7 @@ export default function NewPropertyPage() {
     street, neighborhood, city, cep, videoUrl,
     furnished, petsOk, smokingAllowed, childrenAllowed, issuesInvoice,
     amenityKeys, googlePlaces, manualProximities,
-    condoFee, utilitiesMode, utilitiesEstimate, faixas, garantias, prepFee,
+    condoFee, descricaoGeradaPorIa, utilitiesMode, utilitiesEstimate, faixas, garantias, prepFee,
     ownershipType, subleaseAuthorized, step,
     // Qualificação (selo + etiquetas). Guardada no rascunho para a retomada por
     // `?draft` (que não passa pela sessionStorage) nunca zerar o 6/6 do selo.
@@ -665,20 +670,48 @@ export default function NewPropertyPage() {
     setManualProximities([]);
   }
 
-  function generateAI() {
-    if (photos.length === 0) {
-      setAiWarn("Adicione fotos primeiro para gerar uma descrição mais precisa.");
-      return;
-    }
+  // Gera título/descrição pela IA (rota do servidor — a chave NUNCA vem ao
+  // cliente). Envia só campos SEGUROS do imóvel (sem endereço exato/PII). Marca
+  // a descrição como gerada por IA (auditoria) até o dono editar à mão.
+  async function generateAI() {
     setAiWarn(null);
     setAiLoading(true);
-    setTimeout(() => {
-      setTitle("Apartamento mobiliado com home office, pronto para sua estadia");
-      setDescription(
-        "Imóvel mobiliado e equipado, pronto para morar. Ambientes claros, cozinha completa e espaço de trabalho — ideal para estadias de média duração. (Descrição gerada com base nas fotos enviadas.)"
-      );
+    try {
+      const comodidades = AMENITY_GROUPS.flatMap((g) => g.items)
+        .filter((it) => amenityKeys[it.key])
+        .map((it) => it.label);
+      const brief = {
+        tipo: propertyTypeLabel(propertyType),
+        cidade: city,
+        bairro: neighborhood,
+        quartos: Number(bedrooms) || undefined,
+        banheiros: Number(bathrooms) || undefined,
+        areaM2: Number(areaM2) || undefined,
+        vagas: Number(parkingSpots) || undefined,
+        mobiliado: furnished,
+        aceitaPet: petsOk,
+        comodidades,
+        faixas: FAIXAS.filter((f) => faixas[f.key]).map((f) => f.label),
+        temHomeOffice: qual.tHome,
+      };
+      const res = await fetch("/api/ai/anuncio", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(brief),
+      });
+      const data = (await res.json().catch(() => ({}))) as { titulo?: string; descricao?: string; error?: string };
+      if (!res.ok || !data.titulo || !data.descricao) {
+        setAiWarn(data.error ?? "Não foi possível gerar agora. Tente novamente.");
+        return;
+      }
+      setTitle(data.titulo);
+      setDescription(data.descricao);
+      setDescricaoGeradaPorIa(true);
+    } catch {
+      setAiWarn("Não foi possível gerar agora. Verifique a conexão e tente novamente.");
+    } finally {
       setAiLoading(false);
-    }, 900);
+    }
   }
 
   if (approved === null) return null;
@@ -1204,6 +1237,16 @@ export default function NewPropertyPage() {
                   </Button>
                 </div>
                 {aiWarn && <p className="mt-2 text-xs font-medium text-red-600">{aiWarn}</p>}
+                <p className="mt-2 text-xs text-muted">
+                  Enviamos só os dados do imóvel (tipo, região, cômodos, comodidades) a um provedor
+                  de IA para redigir o texto — <strong className="text-ink">sem seu contato nem o
+                  endereço exato</strong>. Revise antes de publicar; o texto é sua responsabilidade.
+                </p>
+                {descricaoGeradaPorIa && (
+                  <p className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-forest">
+                    <Sparkles className="h-3.5 w-3.5" /> Descrição gerada por IA — revise e ajuste.
+                  </p>
+                )}
               </div>
             )}
             <Labeled label="Título do anúncio">
@@ -1211,7 +1254,17 @@ export default function NewPropertyPage() {
               <Erro msg={erros.titulo} />
             </Labeled>
             <Labeled label="Descrição">
-              <textarea rows={4} value={description} onChange={(e) => setDescription(e.target.value)} className="input" placeholder="Descreva o imóvel..." />
+              <textarea
+                rows={4}
+                value={description}
+                onChange={(e) => {
+                  setDescription(e.target.value);
+                  // Editou à mão → deixa de ser "gerada por IA" (auditoria honesta).
+                  setDescricaoGeradaPorIa(false);
+                }}
+                className="input"
+                placeholder="Descreva o imóvel..."
+              />
             </Labeled>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Labeled label="Aluguel mensal (R$)">
