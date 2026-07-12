@@ -13,9 +13,12 @@ import {
   Car,
   Star,
   Check,
+  CheckCircle2,
   FileSignature,
   MessageSquare,
   CalendarCheck,
+  ShieldCheck,
+  ArrowRight,
 } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -42,6 +45,7 @@ export function PropertyDetail({ property, similar }: { property: Property; simi
   const [sent, setSent] = useState<{ duvida?: boolean; visita?: boolean }>({});
   const [selfNote, setSelfNote] = useState(false);
   const [leadErro, setLeadErro] = useState<string | null>(null);
+  const [candidatouSe, setCandidatouSe] = useState(false);
 
   // Avaliações — FONTE ÚNICA (A2): usa o array real de reviews, igual à seção de
   // avaliações. `rating` só é usado como média quando há review real.
@@ -75,7 +79,9 @@ export function PropertyDetail({ property, similar }: { property: Property; simi
       return;
     }
     if (kind === "candidatura") {
-      router.push("/dashboard/fechamento");
+      // Candidatura NÃO é fechamento (este nasce quando o PROPRIETÁRIO aceita):
+      // confirma o envio e aponta o acompanhamento em Mensagens.
+      setCandidatouSe(true);
       return;
     }
     setSent((s) => ({ ...s, [kind]: true }));
@@ -87,8 +93,42 @@ export function PropertyDetail({ property, similar }: { property: Property; simi
     .replace(/[̀-ͯ]/g, "")
     .replace(/\s+/g, "-");
 
+  // Confirmação da candidatura (não é fechamento): o proprietário recebeu o
+  // perfil; o acompanhamento segue em Mensagens. Nudge de verificação — nunca
+  // bloqueio (candidatar sem selo é permitido; o dono vê "verificação pendente").
+  const confirmacaoCandidatura = (
+    <div className="flex flex-col gap-3 rounded-2xl border border-sage-200 bg-sage-100 p-4 text-center">
+      <CheckCircle2 className="mx-auto h-8 w-8 text-forest" />
+      <div>
+        <p className="font-title font-bold text-ink">Candidatura enviada</p>
+        <p className="mt-1 text-sm text-muted">
+          O proprietário recebeu seu perfil. O acompanhamento segue em Mensagens — se ele aceitar,
+          vocês conversam e partem para o fechamento.
+        </p>
+      </div>
+      <Link
+        href="/dashboard/mensagens"
+        className="inline-flex items-center justify-center gap-1.5 rounded-full bg-forest px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-forest/90"
+      >
+        <MessageSquare className="h-4 w-4" /> Acompanhar em Mensagens
+      </Link>
+      <Link
+        href="/dashboard/verificacao?como=inquilino"
+        className="flex items-start gap-2 rounded-xl bg-blue-50 px-3 py-2.5 text-left text-xs text-blue-800 transition-colors hover:bg-blue-100"
+      >
+        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />
+        <span>
+          <strong>Aumente suas chances:</strong> candidatos verificados passam mais confiança.
+          Verifique-se — leva poucos minutos. <ArrowRight className="inline h-3 w-3" />
+        </span>
+      </Link>
+    </div>
+  );
+
   // Bloco de ações reutilizado dentro do card de preço.
-  const actions = (
+  const actions = candidatouSe ? (
+    confirmacaoCandidatura
+  ) : (
     <div className="flex flex-col gap-2">
       <Button
         variant="gold"

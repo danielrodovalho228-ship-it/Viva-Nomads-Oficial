@@ -126,6 +126,9 @@ export default function NewPropertyPage() {
   const [existingDraft, setExistingDraft] = useState<{ id: string; pct: number } | null>(null);
   const [draftBannerDismissed, setDraftBannerDismissed] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  // Validação POR ETAPA (item QA): "Continuar" trava com campo obrigatório vazio
+  // (mensagem no próprio campo). Voltar segue livre; a Revisão é o portão final.
+  const [erros, setErros] = useState<Record<string, string>>({});
   const [publishError, setPublishError] = useState<string | null>(null);
   // Edição: ?id= carrega um imóvel do dono para editar (em vez de criar novo).
   const searchParams = useSearchParams();
@@ -159,6 +162,45 @@ export default function NewPropertyPage() {
   ];
   const completudeOk = completude.every((c) => c.ok);
   const podePublicar = completudeOk && !subleaseBlocked && garantiaOk;
+
+  /** Campos obrigatórios da etapa atual (chave → mensagem). Vazio = pode avançar.
+   * Só barra o AVANÇO ("Continuar"); voltar e pular para etapas já visitadas
+   * seguem livres, e a Revisão continua sendo o portão final da publicação. */
+  function validarEtapa(s: number): Record<string, string> {
+    const e: Record<string, string> = {};
+    if (s === 0 && ownershipType === "subleased" && !subleaseAuthorized)
+      e.sublocacao = "Confirme a autorização de sublocação para continuar.";
+    if (s === 1) {
+      if (!street.trim()) e.rua = "Informe o endereço (rua e número).";
+      if (!neighborhood.trim()) e.bairro = "Informe o bairro.";
+      if (!city.trim()) e.cidade = "Informe a cidade.";
+    }
+    if (s === 2) {
+      if ((Number(bathrooms) || 0) < 1) e.banheiros = "Informe ao menos 1 banheiro.";
+      if ((Number(areaM2) || 0) <= 0) e.area = "Informe a área do imóvel (m²).";
+    }
+    if (s === 3 && photos.length === 0)
+      e.fotos = "Adicione ao menos 1 foto para continuar (o mínimo para publicar é " + MIN_PHOTOS + ").";
+    if (s === 5) {
+      if (title.trim().length < 3) e.titulo = "Dê um título ao anúncio (mín. 3 caracteres).";
+      if (!(Number(monthlyPrice) > 0)) e.preco = "Informe o aluguel mensal.";
+      if (!garantiaOk) e.garantia = "Escolha ao menos uma garantia.";
+    }
+    return e;
+  }
+
+  /** Avança se a etapa atual estiver válida; senão fixa os erros nos campos. */
+  function avancarEtapa() {
+    const e = validarEtapa(step);
+    setErros(e);
+    if (Object.keys(e).length === 0) setStep((s) => Math.min(LAST, s + 1));
+  }
+
+  /** Volta/pula para trás sempre livre — limpa as mensagens de erro. */
+  function voltarEtapa() {
+    setErros({});
+    setStep((s) => Math.max(0, s - 1));
+  }
 
   // Busca o estado da verificação do documento uma vez (portão de Publicar).
   useEffect(() => {
@@ -758,7 +800,12 @@ export default function NewPropertyPage() {
             <button
               key={s.label}
               type="button"
-              onClick={() => i <= step && setStep(i)}
+              onClick={() => {
+                if (i <= step) {
+                  setErros({});
+                  setStep(i);
+                }
+              }}
               disabled={i > step}
               className={cn(
                 "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors",
@@ -834,6 +881,7 @@ export default function NewPropertyPage() {
                     label="Tenho autorização do proprietário para sublocar este imóvel"
                     hint="Declaração obrigatória — verificável a qualquer momento."
                   />
+                  <Erro msg={erros.sublocacao} />
                   <div>
                     <span className="mb-1.5 block text-sm font-medium text-ink">
                       Autorização de sublocação <span className="font-normal text-muted">(opcional)</span>
@@ -879,6 +927,7 @@ export default function NewPropertyPage() {
             </Labeled>
             <Labeled label="Endereço (rua e número)">
               <input value={street} onChange={(e) => setStreet(e.target.value)} className="input" placeholder="Rua, número" />
+              <Erro msg={erros.rua} />
             </Labeled>
             <div className="grid grid-cols-2 gap-3">
               <Labeled label="Bairro">
@@ -890,9 +939,11 @@ export default function NewPropertyPage() {
                   className="input"
                 />
                 <LocationDatalist id="novo-bairros" />
+                <Erro msg={erros.bairro} />
               </Labeled>
               <Labeled label="Cidade">
                 <input value={city} onChange={(e) => setCity(e.target.value)} className="input" />
+                <Erro msg={erros.cidade} />
               </Labeled>
             </div>
 
@@ -917,9 +968,11 @@ export default function NewPropertyPage() {
               </Labeled>
               <Labeled label="Banheiros">
                 <input type="number" min={0} value={bathrooms} onChange={(e) => setBathrooms(e.target.value)} className="input" />
+                <Erro msg={erros.banheiros} />
               </Labeled>
               <Labeled label="Área (m²)">
                 <input type="number" min={0} value={areaM2} onChange={(e) => setAreaM2(e.target.value)} className="input" />
+                <Erro msg={erros.area} />
               </Labeled>
               <Labeled label="Vagas">
                 <input type="number" min={0} value={parkingSpots} onChange={(e) => setParkingSpots(e.target.value)} className="input" />
@@ -1031,6 +1084,7 @@ export default function NewPropertyPage() {
             <div className="mt-4">
               {/* Até 24 fotos: permite alcançar o tier "premium" (20+) que a UI promete. */}
               <PhotoUploader photos={photos} onChange={setPhotos} max={24} />
+              <Erro msg={erros.fotos} />
             </div>
 
             {/* Privacidade das fotos (item 4 do QA): as fotos sobem re-codificadas,
@@ -1147,12 +1201,14 @@ export default function NewPropertyPage() {
             )}
             <Labeled label="Título do anúncio">
               <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex.: Studio mobiliado no Centro" className="input" />
+              <Erro msg={erros.titulo} />
             </Labeled>
             <Labeled label="Descrição">
               <textarea rows={4} value={description} onChange={(e) => setDescription(e.target.value)} className="input" placeholder="Descreva o imóvel..." />
             </Labeled>
             <Labeled label="Aluguel mensal (R$)">
               <input type="number" min={0} value={monthlyPrice} onChange={(e) => setMonthlyPrice(e.target.value)} className="input" placeholder="3200" />
+              <Erro msg={erros.preco} />
             </Labeled>
 
             <div className="rounded-xl border border-sage-200 p-4">
@@ -1403,10 +1459,10 @@ export default function NewPropertyPage() {
         {/* Navegação */}
         {step < LAST && (
           <div className="mt-6 flex justify-between">
-            <Button variant="ghost" onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0}>
+            <Button variant="ghost" onClick={voltarEtapa} disabled={step === 0}>
               <ArrowLeft className="h-4 w-4" /> Voltar
             </Button>
-            <Button onClick={() => setStep((s) => Math.min(LAST, s + 1))}>
+            <Button onClick={avancarEtapa}>
               Continuar <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
@@ -1419,6 +1475,16 @@ export default function NewPropertyPage() {
 
       <style>{`.input{width:100%;border-radius:0.75rem;border:1px solid var(--color-sage-200);background:#fff;padding:0.625rem 0.875rem;font-size:0.875rem;outline:none}.input:focus{border-color:var(--color-sage)}`}</style>
     </div>
+  );
+}
+
+/** Mensagem de erro de validação sob um campo (item QA — validação por etapa). */
+function Erro({ msg }: { msg?: string }) {
+  if (!msg) return null;
+  return (
+    <p className="mt-1 flex items-center gap-1 text-xs font-medium text-red-600" role="alert">
+      <AlertTriangle className="h-3.5 w-3.5 shrink-0" /> {msg}
+    </p>
   );
 }
 
