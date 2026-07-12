@@ -99,9 +99,11 @@ export function PriceCard({ property, actions }: { property: Property; actions: 
         {availableFrom ? `Disponível a partir de ${availableFrom}` : "Disponível agora"}
       </p>
 
-      {/* Promoção do Inquilino Verificado no funil */}
+      {/* Promoção do Inquilino Verificado no funil — leva à verificação já no
+          contexto de INQUILINO (candidatura é ação de inquilino), mesmo que quem
+          navega seja um proprietário-admin. */}
       <Link
-        href="/dashboard/verificacao"
+        href="/dashboard/verificacao?como=inquilino"
         className="mt-5 flex items-start gap-2 rounded-xl bg-blue-50 px-3 py-2.5 text-xs text-blue-800 transition-colors hover:bg-blue-100"
       >
         <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />

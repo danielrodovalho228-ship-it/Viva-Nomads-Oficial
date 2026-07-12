@@ -87,7 +87,7 @@ export function CommissionCalculator() {
               <th className="pb-2 font-medium">Plano</th>
               <th className="pb-2 font-medium">Taxa por aluguel</th>
               <th className="pb-2 font-medium">Mensalidade</th>
-              <th className="pb-2 text-right font-medium">Total que você paga no mês</th>
+              <th className="pb-2 text-right font-medium">Total naquele mês*</th>
             </tr>
           </thead>
           <tbody>
@@ -100,12 +100,14 @@ export function CommissionCalculator() {
                 )}
               >
                 <td className="py-2.5 font-medium text-ink">
-                  {r.name}
-                  {r.id === best.id && (
-                    <span className="ml-2 rounded-full bg-forest px-2 py-0.5 text-[10px] font-semibold text-white">
-                      melhor custo
-                    </span>
-                  )}
+                  <span className="flex flex-wrap items-center gap-2">
+                    <span>{r.name}</span>
+                    {r.id === best.id && (
+                      <span className="rounded-full bg-forest px-2 py-0.5 text-[10px] font-semibold text-white">
+                        melhor custo
+                      </span>
+                    )}
+                  </span>
                 </td>
                 <td className="py-2.5 text-ink">
                   {Math.round(r.commission * 100)}% · {formatBRL(r.commissionCost)}
@@ -122,12 +124,18 @@ export function CommissionCalculator() {
         </table>
       </div>
 
-      <p className="mt-4 text-xs text-muted">
-        Exemplo: um imóvel de {formatBRL(rent)} por mês, com {closings}{" "}
-        {closings === 1 ? "aluguel fechado" : "aluguéis fechados"} no mês — no plano{" "}
+      <p className="mt-4 rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted">
+        <strong className="text-ink">* A taxa por aluguel é única, por contrato.</strong> Ela só
+        entra na conta no mês em que você fecha o contrato — nos meses seguintes você paga
+        apenas a mensalidade. A tabela mostra o total do mês em que você fecha {closings}{" "}
+        {closings === 1 ? "contrato" : "contratos"}.
+      </p>
+      <p className="mt-3 text-xs text-muted">
+        Exemplo: um imóvel de {formatBRL(rent)} por mês. No mês em que você fecha {closings}{" "}
+        {closings === 1 ? "contrato" : "contratos"}, no plano{" "}
         <strong className="text-ink">{best.name}</strong> você paga {formatBRL(best.total)} no
-        total. Quanto mais imóveis você aluga, mais vale a pena pagar a mensalidade para ter uma
-        taxa menor.
+        total (mensalidade + taxa única de cada contrato). Quanto mais imóveis você aluga, mais
+        vale a pena a mensalidade com taxa menor.
       </p>
     </div>
   );

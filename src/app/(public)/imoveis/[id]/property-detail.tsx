@@ -41,6 +41,7 @@ export function PropertyDetail({ property, similar }: { property: Property; simi
   const [pending, setPending] = useState<LeadKind | null>(null);
   const [sent, setSent] = useState<{ duvida?: boolean; visita?: boolean }>({});
   const [selfNote, setSelfNote] = useState(false);
+  const [leadErro, setLeadErro] = useState<string | null>(null);
 
   // Avaliações — FONTE ÚNICA (A2): usa o array real de reviews, igual à seção de
   // avaliações. `rating` só é usado como média quando há review real.
@@ -56,14 +57,21 @@ export function PropertyDetail({ property, similar }: { property: Property; simi
   // (e-mail/WhatsApp). Candidatura segue para o fluxo de fechamento.
   async function handleLead(kind: LeadKind) {
     setPending(kind);
+    setLeadErro(null);
     const r = await requestLead(property.id, property.title, kind).catch(() => null);
     setPending(null);
     if (r?.needsAuth) {
-      router.push("/auth");
+      // Sem sessão: leva ao login e volta para este anúncio depois de entrar.
+      router.push(`/auth?redirect=/imoveis/${property.id}`);
       return;
     }
     if (r?.selfOwned) {
       setSelfNote(true);
+      return;
+    }
+    // Falha real (rede/servidor): NUNCA deixa o botão "morto" — mostra o erro.
+    if (!r || !r.ok) {
+      setLeadErro("Não foi possível enviar agora. Verifique a conexão e tente novamente.");
       return;
     }
     if (kind === "candidatura") {
@@ -133,6 +141,7 @@ export function PropertyDetail({ property, similar }: { property: Property; simi
           Enviamos seu contato ao proprietário — ele responde por e-mail/WhatsApp.
         </p>
       )}
+      {leadErro && <p className="text-center text-xs text-red-600">{leadErro}</p>}
       {selfNote && (
         <p className="text-center text-xs text-muted">
           Este é o seu anúncio. Os interessados aparecem em{" "}
