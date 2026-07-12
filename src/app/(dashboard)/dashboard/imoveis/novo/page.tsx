@@ -41,7 +41,8 @@ import { LocationDatalist } from "@/lib/locations";
 import { GERACAO_IA_ATIVA } from "@/lib/flags";
 import { PHOTOS } from "@/lib/media";
 import type { Property, Proximity } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, formatBRL } from "@/lib/utils";
+import { COMMISSION_BY_PLAN } from "@/lib/constants";
 
 /** Metadados das 7 etapas do wizard (rodada 15). */
 const STEP_META = [
@@ -89,6 +90,9 @@ export default function NewPropertyPage() {
   // Proximidades manuais (nome + distância digitados) — sem depender do Google.
   const [manualProximities, setManualProximities] = useState<Proximity[]>([]);
   const [monthlyPrice, setMonthlyPrice] = useState("");
+  // Condomínio (R$/mês) — entra no "tudo incluído" do inquilino (fonte única
+  // lib/precos). Separado das contas de consumo.
+  const [condoFee, setCondoFee] = useState("");
   const [street, setStreet] = useState("");
   const [neighborhood, setNeighborhood] = useState("");
   const [city, setCity] = useState("Uberlândia");
@@ -313,6 +317,7 @@ export default function NewPropertyPage() {
       // Guarda o PATH do bucket privado (estável); a URL assinada expira. Cai
       // na url só se for preview local (demo/sem migração).
       subleaseDocUrl: subleaseDoc[0]?.path ?? subleaseDoc[0]?.url,
+      condoFee: Number(condoFee) || 0,
       utilitiesMode,
       utilitiesEstimate,
       issuesInvoice,
@@ -382,6 +387,7 @@ export default function NewPropertyPage() {
     if (s(d.availableFrom)) setAvailableFrom(d.availableFrom as string);
     if (s(d.availableUntil)) setAvailableUntil(d.availableUntil as string);
     if (s(d.monthlyPrice)) setMonthlyPrice(d.monthlyPrice as string);
+    if (s(d.condoFee)) setCondoFee(d.condoFee as string);
     if (s(d.street)) setStreet(d.street as string);
     if (s(d.neighborhood)) setNeighborhood(d.neighborhood as string);
     if (s(d.city)) setCity(d.city as string);
@@ -485,6 +491,7 @@ export default function NewPropertyPage() {
       setChildrenAllowed(p.childrenAllowed ?? true);
       setUtilitiesMode(p.utilitiesMode === "real" ? "real" : "fixed");
       setUtilitiesEstimate(p.utilitiesEstimate ?? 200);
+      setCondoFee(p.condoFee ? String(p.condoFee) : "");
       setIssuesInvoice(!!p.issuesInvoice);
       setPrepFee(p.prepFee ?? 450);
       setOwnershipType(p.ownershipType === "subleased" ? "subleased" : "own");
@@ -514,7 +521,7 @@ export default function NewPropertyPage() {
     street, neighborhood, city, cep, videoUrl,
     furnished, petsOk, smokingAllowed, childrenAllowed, issuesInvoice,
     amenityKeys, googlePlaces, manualProximities,
-    utilitiesMode, utilitiesEstimate, faixas, garantias, prepFee,
+    condoFee, utilitiesMode, utilitiesEstimate, faixas, garantias, prepFee,
     ownershipType, subleaseAuthorized, step,
     // Qualificação (selo + etiquetas). Guardada no rascunho para a retomada por
     // `?draft` (que não passa pela sessionStorage) nunca zerar o 6/6 do selo.
@@ -1206,10 +1213,69 @@ export default function NewPropertyPage() {
             <Labeled label="Descrição">
               <textarea rows={4} value={description} onChange={(e) => setDescription(e.target.value)} className="input" placeholder="Descreva o imóvel..." />
             </Labeled>
-            <Labeled label="Aluguel mensal (R$)">
-              <input type="number" min={0} value={monthlyPrice} onChange={(e) => setMonthlyPrice(e.target.value)} className="input" placeholder="3200" />
-              <Erro msg={erros.preco} />
-            </Labeled>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Labeled label="Aluguel mensal (R$)">
+                <input type="number" min={0} value={monthlyPrice} onChange={(e) => setMonthlyPrice(e.target.value)} className="input" placeholder="3200" />
+                {Number(monthlyPrice) > 0 && (
+                  <span className="mt-1 block text-xs text-muted">{formatBRL(Number(monthlyPrice))}/mês</span>
+                )}
+                <Erro msg={erros.preco} />
+              </Labeled>
+              <Labeled label="Condomínio (R$/mês)">
+                <input type="number" min={0} value={condoFee} onChange={(e) => setCondoFee(e.target.value)} className="input" placeholder="0" />
+                <span className="mt-1 block text-xs text-muted">
+                  {Number(condoFee) > 0 ? `${formatBRL(Number(condoFee))}/mês` : "Deixe 0 se não houver."}
+                </span>
+              </Labeled>
+            </div>
+
+            {/* Prévia do custo mensal do inquilino (fonte única lib/precos:
+                aluguel + condomínio + consumo fixo). Atualiza ao digitar. */}
+            {(() => {
+              const aluguel = Number(monthlyPrice) || 0;
+              const condo = Number(condoFee) || 0;
+              const consumoFixo = utilitiesMode === "fixed" ? utilitiesEstimate || 0 : 0;
+              const tudo = aluguel + condo + consumoFixo;
+              if (aluguel <= 0) return null;
+              return (
+                <div className="rounded-xl border border-sage-200 bg-sage-100/50 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+                    Prévia — o inquilino vê
+                  </p>
+                  <p className="mt-1 font-title text-2xl font-bold text-forest">
+                    {formatBRL(tudo)}
+                    <span className="text-sm font-normal text-muted">/mês tudo incluído</span>
+                  </p>
+                  <dl className="mt-2 space-y-0.5 text-xs text-muted">
+                    <div className="flex justify-between"><dt>Aluguel</dt><dd>{formatBRL(aluguel)}</dd></div>
+                    {condo > 0 && <div className="flex justify-between"><dt>Condomínio</dt><dd>{formatBRL(condo)}</dd></div>}
+                    {consumoFixo > 0 && (
+                      <div className="flex justify-between"><dt>Consumo (fixo estimado)</dt><dd>{formatBRL(consumoFixo)}</dd></div>
+                    )}
+                    {utilitiesMode === "real" && (
+                      <div className="flex justify-between"><dt>Consumo (água/luz/gás)</dt><dd>conforme medição</dd></div>
+                    )}
+                  </dl>
+                </div>
+              );
+            })()}
+
+            {/* Transparência da comissão (config/planos) — a plataforma NÃO fica
+                com o aluguel; cobra a comissão só no fechamento, uma única vez. */}
+            {Number(monthlyPrice) > 0 && (
+              <p className="flex items-start gap-2 rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted">
+                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-sage" />
+                <span>
+                  <strong className="text-ink">Você recebe o aluguel direto na sua conta.</strong> A
+                  plataforma cobra comissão <strong>só quando fechar</strong> — uma vez, sobre o 1º
+                  mês:{" "}
+                  {formatBRL(Math.round(Number(monthlyPrice) * (COMMISSION_BY_PLAN.free ?? 0.12)))}{" "}
+                  sem assinatura (12%), caindo para {formatBRL(Math.round(Number(monthlyPrice) * (COMMISSION_BY_PLAN.essential ?? 0.1)))} (10%) ou{" "}
+                  {formatBRL(Math.round(Number(monthlyPrice) * (COMMISSION_BY_PLAN.pro ?? 0.08)))} (8%) com plano.{" "}
+                  <a href="/precos" className="font-medium text-forest underline">ver planos</a>.
+                </span>
+              </p>
+            )}
 
             <div className="rounded-xl border border-sage-200 p-4">
               <p className="text-sm font-medium text-ink">Despesas de consumo (água, luz, gás)</p>
