@@ -93,7 +93,7 @@ export default function VerificationPage() {
   return (
     <div className="mx-auto max-w-5xl">
       <PageTitle title={C.title} subtitle={C.subtitle} />
-      {demo ? <DemoFlow copy={C} mode={mode} /> : <RealNaoVerificado copy={C} />}
+      {demo ? <DemoFlow copy={C} mode={mode} /> : <RealNaoVerificado copy={C} perfil={perfilCopy} />}
     </div>
   );
 }
@@ -102,7 +102,7 @@ export default function VerificationPage() {
    CONTA REAL — integração via parceiro EM ESTRUTURAÇÃO.
    Nunca nasce verificada nem exibe selo sem verificação real concluída.
    ───────────────────────────────────────────────────────────────────────── */
-function RealNaoVerificado({ copy }: { copy: VerifyCopy }) {
+function RealNaoVerificado({ copy, perfil }: { copy: VerifyCopy; perfil: "tenant" | "owner" }) {
   const [avisar, setAvisar] = useState(false);
 
   useEffect(() => {
@@ -170,9 +170,25 @@ function RealNaoVerificado({ copy }: { copy: VerifyCopy }) {
         <p className="mt-4 flex items-start gap-2 rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted">
           <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           Você já pode se candidatar sem o selo — o proprietário vê{" "}
-          <strong className="text-ink">verificação pendente</strong> no lugar do laudo até a
+          <strong className="text-ink">verificação pendente</strong> no lugar do resultado até a
           verificação abrir. Seus dados serão tratados apenas para a verificação (LGPD).
         </p>
+
+        {/* Inquilino: caminho REAL de conclusão — a candidatura acontece no
+            anúncio, não aqui. Sem selo é permitido; damos o atalho. */}
+        {perfil === "tenant" && (
+          <div className="mt-4 border-t border-sage-200 pt-4">
+            <p className="text-sm font-medium text-ink">Quer se candidatar agora?</p>
+            <p className="mt-1 text-xs text-muted">
+              Você não precisa esperar a verificação. Abra um imóvel e toque em{" "}
+              <strong className="text-ink">Candidatar-se</strong> — o proprietário recebe seu perfil
+              com a verificação marcada como pendente.
+            </p>
+            <ButtonLink href="/buscar" variant="gold" className="mt-3">
+              <Search className="h-4 w-4" /> Explorar imóveis e me candidatar
+            </ButtonLink>
+          </div>
+        )}
       </Panel>
     </div>
   );
