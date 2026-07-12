@@ -28,12 +28,12 @@ export const FAIXAS: FaixaDef[] = [
   },
   {
     key: "media_estadia",
-    label: "Média estadia",
+    label: "Média duração",
     min: 90,
     max: 180,
     resumo: "90 a 180 dias",
     aviso:
-      "Estadia de média duração (90 a 180 dias): contrato próprio para o período, diferente da temporada curta.",
+      "Locação de média duração (90 a 180 dias): contrato próprio para o período, diferente da locação de curta duração.",
   },
   {
     key: "longa",

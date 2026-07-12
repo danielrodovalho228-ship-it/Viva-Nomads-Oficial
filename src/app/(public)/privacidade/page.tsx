@@ -73,7 +73,7 @@ export default function PrivacyPage() {
         <Section title="4. Compartilhamento">
           Compartilhamos apenas o necessário com nossos suboperadores (relacionados na seção
           abaixo) e entre as partes de uma negociação — de forma assimétrica e controlada. O
-          proprietário vê do inquilino um laudo em <strong>semáforo</strong> (sem dados brutos
+          proprietário vê do inquilino um <strong>resultado em 3 níveis (verde/amarelo/vermelho)</strong> (sem dados brutos
           sensíveis); o contato direto só é liberado após o aceite.
         </Section>
 
@@ -118,7 +118,7 @@ export default function PrivacyPage() {
 
         <Section title="6. Verificação de identidade do inquilino">
           A verificação trata identidade, documento e prova de vida. O resultado é apresentado
-          ao proprietário como análise informativa (semáforo). Os dados brutos sensíveis ficam
+          ao proprietário como análise informativa em 3 níveis (verde/amarelo/vermelho). Os dados brutos sensíveis ficam
           restritos e não são expostos a terceiros sem necessidade.
         </Section>
 
