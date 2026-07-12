@@ -532,7 +532,7 @@ export function SearchClient({ properties }: { properties: Property[] }) {
                 📄 Com Nota Fiscal
               </Chip>
               <Chip on={insuranceOnly} onClick={() => setInsuranceOnly((v) => !v)}>
-                🛡️ Garantia digital
+                🛡️ Seguro-Fiança
               </Chip>
               <Chip on={operatedOnly} onClick={() => setOperatedOnly((v) => !v)}>
                 🤝 Gestor profissional
@@ -589,7 +589,7 @@ export function SearchClient({ properties }: { properties: Property[] }) {
             {petsOnly && <ActiveChip label="Aceita pet" onClear={() => setPetsOnly(false)} />}
             {invoiceOnly && <ActiveChip label="Nota Fiscal" onClear={() => setInvoiceOnly(false)} />}
             {insuranceOnly && (
-              <ActiveChip label="Garantia digital" onClear={() => setInsuranceOnly(false)} />
+              <ActiveChip label="Seguro-Fiança" onClear={() => setInsuranceOnly(false)} />
             )}
             {operatedOnly && (
               <ActiveChip label="Gestor profissional" onClear={() => setOperatedOnly(false)} />

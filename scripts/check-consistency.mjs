@@ -79,6 +79,13 @@ const OVERCLAIM = [
   /propriedade\s+(verificad|garantid|conferid|comprovad)[ao]/i,
   /im[óo]vel\s+(verificad|garantid|conferid|comprovad)o/i,
 ];
+
+// 6) "Garantia/garantidor digital" é PROIBIDO em superfície de usuário: sugere
+//    garantia DA plataforma (fere a regra de ouro). O produto do parceiro é
+//    "seguro-fiança" (termo legal — art. 37, Lei 8.245). Um nome comercial só
+//    nasce COM o parceiro assinado. A categoria guarda-chuva "Garantia
+//    locatícia" continua permitida. Escape legítimo: `consistency-ignore`.
+const GARANTIA_BANIDA = /\bgarant(ia|idor)\s+digital\b/i;
 function pareceCodigo(linha) {
   const t = linha.trimStart();
   return (
@@ -151,6 +158,13 @@ for (const dir of SCAN_DIRS) {
               line: line.trim(),
             });
         }
+        if (GARANTIA_BANIDA.test(line))
+          violations.push({
+            rel,
+            n: i + 1,
+            why: "garantia 'digital' sugere garantia da plataforma — use 'seguro-fiança'",
+            line: line.trim(),
+          });
       }
     });
   }

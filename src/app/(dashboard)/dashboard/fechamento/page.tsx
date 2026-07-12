@@ -506,7 +506,7 @@ function ClosingFlow({ demo }: { demo: boolean }) {
               <p className="mt-2 rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted">
                 {STAY_DAYS < 90
                   ? "Até 89 dias (temporada): garantia por caução — ideal para estadias curtas."
-                  : "90 a 180 dias (residencial): caução ou garantidor digital (em breve)."}
+                  : "90 a 180 dias (residencial): caução ou seguro-fiança (em breve)."}
               </p>
             </div>
 
@@ -759,7 +759,7 @@ function ClosingFlow({ demo }: { demo: boolean }) {
                 não é mais oferecido como garantia. */}
             {selectedGarantia?.tipo === "garantidor_digital" && (
               <div className="space-y-2 rounded-xl border border-sage-200 p-4 text-sm">
-                <p className="font-medium text-ink">Como funciona o garantidor digital</p>
+                <p className="font-medium text-ink">Como funciona o seguro-fiança</p>
                 <p className="text-muted">
                   A plataforma conecta você ao parceiro garantidor. O inquilino contrata
                   diretamente — a plataforma registra e documenta a apólice. Não há depósito

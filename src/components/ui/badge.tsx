@@ -130,7 +130,7 @@ export function InvoiceBadge({ className }: { className?: string }) {
   );
 }
 
-/** Selo "Aceita Garantia digital" — sinaliza segurança (produto do parceiro). */
+/** Selo "Aceita Seguro-Fiança" — sinaliza segurança (produto do parceiro). */
 export function InsuranceBadge({ className }: { className?: string }) {
   return (
     <span
@@ -140,7 +140,7 @@ export function InsuranceBadge({ className }: { className?: string }) {
       )}
     >
       <ShieldCheck className="h-3.5 w-3.5" aria-hidden />
-      Aceita Garantia digital
+      Aceita Seguro-Fiança
     </span>
   );
 }
