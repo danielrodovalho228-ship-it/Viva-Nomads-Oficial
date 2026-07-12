@@ -1204,7 +1204,8 @@ export default function NewPropertyPage() {
             <Labeled label="Garantias que você aceita">
               <p className="mb-2 text-xs text-muted">
                 Só preferência de aceite — <strong>não muda o caminho do dinheiro</strong> (a
-                caução sempre vai para conta vinculada, nunca para a plataforma).
+                caução sempre vai para a conta vinculada — conta bancária conjunta à qual a
+                plataforma não tem acesso).
               </p>
               <div className="space-y-3">
                 {GARANTIAS_CADASTRO.map((g) =>

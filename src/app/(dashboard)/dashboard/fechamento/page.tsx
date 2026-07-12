@@ -740,8 +740,9 @@ function ClosingFlow({ demo }: { demo: boolean }) {
                   <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                   {caucaoForma === "avista" ? (
                     <>
-                      O depósito vai para uma <strong>conta vinculada</strong> em nome do locador,
-                      fora da plataforma, e é devolvido ao fim.
+                      O depósito vai para uma <strong>conta vinculada</strong> — uma conta bancária
+                      conjunta (proprietário + inquilino), à qual a plataforma não tem acesso — e é
+                      devolvido ao fim.
                     </>
                   ) : (
                     <>

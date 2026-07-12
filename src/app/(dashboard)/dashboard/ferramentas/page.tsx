@@ -70,7 +70,7 @@ const GRUPOS: Grupo[] = [
       {
         href: "/dashboard/contratos",
         title: "Contratos & blocos",
-        desc: "Acompanhe os blocos e registre os recebimentos (declaratório).",
+        desc: "Acompanhe os blocos e registre os recebimentos — você mesmo declara; a plataforma só registra.",
         icon: Receipt,
       },
     ],
@@ -180,7 +180,7 @@ export default function FerramentasPage() {
               </div>
               <h3 className="mt-3 font-title font-bold text-ink">Garantia locatícia</h3>
               <p className="mt-1 flex-1 text-sm text-muted">
-                Caução Viva (50% por bloco, devolvível) ou seguro-fiança via parceiro (em
+                Caução Viva (50% por bloco, devolvível) ou Garantia digital via parceiro (em
                 estruturação). Uma garantia por contrato — o dinheiro nunca fica com a plataforma.
               </p>
               <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-forest">

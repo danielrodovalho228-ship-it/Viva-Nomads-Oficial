@@ -75,7 +75,7 @@ export function GarantiasClient({ contratos }: { contratos: ContratoView[] }) {
             <li className="flex items-start gap-2">
               <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-forest" />
               <span>
-                <strong>Uma garantia por contrato</strong> — por lei, caução e seguro-fiança não se
+                <strong>Uma garantia por contrato</strong> — por lei, caução e Garantia digital não se
                 somam.
               </span>
             </li>
@@ -93,13 +93,13 @@ export function GarantiasClient({ contratos }: { contratos: ContratoView[] }) {
           </p>
         </Panel>
 
-        <Panel title="Seguro-fiança (alternativa)">
+        <Panel title="Garantia digital (alternativa)">
           <p className="text-sm text-ink">
             Para quem prefere não imobilizar caixa: uma mensalidade diluída cobre o aluguel, sem
             depósito. Contratado com parceiro e sujeito a análise.
           </p>
           <span className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">
-            Seguro-fiança via parceiro — em estruturação
+            Garantia digital via parceiro — em estruturação
           </span>
           <p className="mt-4 text-xs text-muted">
             A Viva Nomads conecta, verifica e documenta — não é fiadora nem seguradora.
