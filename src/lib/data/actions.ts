@@ -36,7 +36,8 @@ type ActionResult = { ok: boolean; demo?: boolean; id?: string; error?: string }
 export async function saveQualification(
   elig: EligibilityState,
   quality: QualityState,
-  documentPath?: string | null
+  documentPath?: string | null,
+  documentHash?: string | null
 ): Promise<ActionResult> {
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
@@ -62,6 +63,10 @@ export async function saveQualification(
       // Caminho do documento no bucket PRIVADO (migration 0041). Só a referência
       // — a exibição usa URL assinada. null quando não enviado.
       document_path: documentPath ?? null,
+      // Impressão digital do arquivo (0044) — detecta reuso entre contas na
+      // conferência. Carimbo de quando foi enviado (distinto do created_at).
+      document_hash_sha256: documentPath ? (documentHash ?? null) : null,
+      document_uploaded_at: documentPath ? new Date().toISOString() : null,
       // Anti-fraude (migration 0042): documento enviado entra "em análise"; um
       // admin aprova/recusa. Só aprovado libera Publicar. Sem documento: none.
       document_status: documentPath ? "pending" : "none",
@@ -79,6 +84,28 @@ export async function saveQualification(
     .single();
 
   if (error) return { ok: false, error: error.message };
+
+  // Documento entrou na fila → avisa os admins (best-effort; nunca trava nem
+  // vaza dados do documento — só o fato de que há item para conferir).
+  if (documentPath) {
+    try {
+      const { data: admins } = await supabase
+        .from("profiles")
+        .select("email, full_name, notif_email")
+        .eq("role", "admin");
+      for (const a of admins ?? []) {
+        if (a.email && a.notif_email !== false) {
+          await notify({
+            event: "documento_recebido",
+            email: a.email as string,
+            name: (a.full_name as string) ?? undefined,
+          });
+        }
+      }
+    } catch {
+      /* best-effort */
+    }
+  }
   return { ok: true, id: data.id };
 }
 

@@ -69,6 +69,16 @@ const DEMO_LEAK = [
 //    `consistency-ignore` na mesma linha.
 const JARGAO_DURO = [/\bCamada [12]\b/, /contrato-m[ãa]e/i];
 const JARGAO_PALAVRA = /\b(gate|flag|lead)\b/i;
+
+// 5) Overclaim jurídico da conferência de documentos (fila de moderação). Nós
+//    conferimos o DOCUMENTO enviado — não atestamos propriedade nem garantimos o
+//    imóvel. Banir "propriedade/imóvel verificado(a)/garantido(a)/conferido(a)/
+//    comprovado(a)" em superfície de usuário. O selo correto é "Documentação
+//    conferida". Escape legítimo: `consistency-ignore` na linha.
+const OVERCLAIM = [
+  /propriedade\s+(verificad|garantid|conferid|comprovad)[ao]/i,
+  /im[óo]vel\s+(verificad|garantid|conferid|comprovad)o/i,
+];
 function pareceCodigo(linha) {
   const t = linha.trimStart();
   return (
@@ -132,6 +142,15 @@ for (const dir of SCAN_DIRS) {
         }
         if (JARGAO_PALAVRA.test(line))
           violations.push({ rel, n: i + 1, why: "jargão interno na tela (gate/flag/lead)", line: line.trim() });
+        for (const rx of OVERCLAIM) {
+          if (rx.test(line))
+            violations.push({
+              rel,
+              n: i + 1,
+              why: `overclaim: conferimos o documento, não a propriedade (${rx})`,
+              line: line.trim(),
+            });
+        }
       }
     });
   }

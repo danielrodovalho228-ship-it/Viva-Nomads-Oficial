@@ -28,6 +28,7 @@ import { draftCompletionPct } from "@/lib/draft-progress";
 import { geocodeForSave } from "@/lib/integrations/geocoding";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button, ButtonLink } from "@/components/ui/button";
+import { DocConferidaBadge } from "@/components/ui/badge";
 import { PropertyMiniCard } from "@/components/property-mini-card";
 import { PhotoUploader, type PhotoItem } from "@/components/photo-uploader";
 import { uploadPropertyDoc, removePropertyDoc } from "@/lib/data/storage";
@@ -1367,6 +1368,12 @@ export default function NewPropertyPage() {
                   {docReason ? ` Motivo: ${docReason}.` : ""} Reenvie o documento na{" "}
                   <a href="/qualificar" className="font-medium underline">qualificação</a> para liberar a publicação.
                 </span>
+              </div>
+            )}
+            {!editingId && docStatus === "approved" && (
+              <div className="flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-900">
+                <DocConferidaBadge size="sm" />
+                <span>Documento conferido pela equipe — você já pode publicar.</span>
               </div>
             )}
             {publishError && <p className="text-sm text-red-600">{publishError}</p>}

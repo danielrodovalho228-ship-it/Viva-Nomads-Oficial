@@ -40,7 +40,7 @@ import {
 } from "@/lib/qualification";
 import { INTERNET_TIERS, INTERNET_META, type InternetTier } from "@/lib/internet";
 import { Button } from "@/components/ui/button";
-import { ReadyToLiveBadge } from "@/components/ui/badge";
+import { ReadyToLiveBadge, DocConferidaBadge } from "@/components/ui/badge";
 import { saveQualification, getMyDocumentStatus, type DocumentStatus } from "@/lib/data/actions";
 import { cn } from "@/lib/utils";
 
@@ -76,6 +76,7 @@ export default function QualificationChecklistPage() {
   const [quality, setQuality] = useState<QualityState>(initialQuality);
   const [docName, setDocName] = useState<string | null>(null);
   const [docPath, setDocPath] = useState<string | null>(null);
+  const [docHash, setDocHash] = useState<string | null>(null);
   const [docErro, setDocErro] = useState<string | null>(null);
   const [docBusy, setDocBusy] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -198,7 +199,7 @@ export default function QualificationChecklistPage() {
         JSON.stringify({ eligible, score, baseBadge, tHome, tWork, tCondo })
       );
     }
-    await saveQualification(elig, quality, docPath);
+    await saveQualification(elig, quality, docPath, docHash);
     setSaving(false);
     setSaved(true);
   }
@@ -326,13 +327,14 @@ export default function QualificationChecklistPage() {
                   const fd = new FormData();
                   fd.append("file", f);
                   const res = await fetch("/api/upload/documento", { method: "POST", body: fd });
-                  const data = (await res.json().catch(() => ({}))) as { path?: string | null; error?: string };
+                  const data = (await res.json().catch(() => ({}))) as { path?: string | null; hash?: string | null; error?: string };
                   if (!res.ok) {
                     setDocErro(data.error ?? "Não foi possível enviar o documento agora.");
                     return;
                   }
                   setDocName(`${f.name} · ${(f.size / 1024 / 1024).toFixed(1)} MB`);
                   setDocPath(data.path ?? null);
+                  setDocHash(data.hash ?? null);
                   setElig((s) => ({ ...s, hasDocument: true }));
                 } catch {
                   setDocErro("Não foi possível enviar o documento agora. Tente novamente.");
@@ -444,6 +446,12 @@ export default function QualificationChecklistPage() {
               <div>
                 <p className={cn("font-title font-bold", TONE.title)}>{v.titulo}</p>
                 <p className="text-sm text-muted">{v.msg}</p>
+                {/* Selo da conferência do documento (não da propriedade). */}
+                {docStatus === "approved" && (
+                  <div className="mt-2">
+                    <DocConferidaBadge size="sm" />
+                  </div>
+                )}
               </div>
             </div>
           );

@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { notify } from "@/lib/notifications";
 import { primeiroNome } from "@/lib/display-name";
+import { tipoVisualizacaoDoc, type VisualizacaoDoc } from "@/lib/moderacao-doc";
 
 type ActionResult = { ok: boolean; demo?: boolean; error?: string };
 
@@ -13,8 +14,12 @@ export interface DocumentoPendente {
   id: string; // id da qualificação
   ownerId: string;
   ownerNome: string; // primeiro nome (exibição) — NUNCA o e-mail
+  ownerNomeCompleto: string | null; // nome completo p/ conferir contra o documento
+  refImovel: string | null; // endereço/imóvel do cadastro p/ comparação lado a lado
   criadoEm: string | null;
   docUrl: string | null; // URL assinada curta para o admin abrir (nunca pública)
+  docTipo: VisualizacaoDoc; // como exibir inline (imagem | pdf | outro)
+  duplicado: number; // quantos OUTROS cadastros têm o MESMO arquivo (sinal de fraude)
 }
 
 /**
@@ -29,7 +34,7 @@ export async function listDocumentosPendentes(): Promise<DocumentoPendente[]> {
   if (!supabase) return [];
   const { data } = await supabase
     .from("qualification_checklists")
-    .select("id, owner_id, document_path, created_at")
+    .select("id, owner_id, document_path, document_hash_sha256, created_at")
     .eq("document_status", "pending")
     .order("created_at", { ascending: true })
     .limit(200);
@@ -37,11 +42,36 @@ export async function listDocumentosPendentes(): Promise<DocumentoPendente[]> {
   const out: DocumentoPendente[] = [];
   for (const r of data ?? []) {
     const ownerId = r.owner_id as string;
-    const { data: prof } = await supabase
-      .from("profiles")
-      .select("full_name")
-      .eq("id", ownerId)
+    const nomeCompleto = (
+      await supabase.from("profiles").select("full_name").eq("id", ownerId).maybeSingle()
+    ).data?.full_name as string | undefined;
+
+    // Referência do imóvel (bairro/cidade do cadastro mais recente do dono) para
+    // a conferência lado a lado — o admin compara com o que consta no documento.
+    let refImovel: string | null = null;
+    const { data: prop } = await supabase
+      .from("properties")
+      .select("title, neighborhood, city")
+      .eq("owner_id", ownerId)
+      .order("created_at", { ascending: false })
+      .limit(1)
       .maybeSingle();
+    if (prop) {
+      const local = [prop.neighborhood, prop.city].filter(Boolean).join(", ");
+      refImovel = [prop.title, local].filter(Boolean).join(" — ") || null;
+    }
+
+    // Reuso do MESMO arquivo em outros cadastros (impressão digital, 0044).
+    let duplicado = 0;
+    if (r.document_hash_sha256) {
+      const { count } = await supabase
+        .from("qualification_checklists")
+        .select("id", { count: "exact", head: true })
+        .eq("document_hash_sha256", r.document_hash_sha256 as string)
+        .neq("id", r.id as string);
+      duplicado = count ?? 0;
+    }
+
     let docUrl: string | null = null;
     if (r.document_path) {
       const { data: signed } = await supabase.storage
@@ -52,12 +82,28 @@ export async function listDocumentosPendentes(): Promise<DocumentoPendente[]> {
     out.push({
       id: r.id as string,
       ownerId,
-      ownerNome: primeiroNome(prof?.full_name as string | undefined) || "Proprietário",
+      ownerNome: primeiroNome(nomeCompleto) || "Proprietário",
+      ownerNomeCompleto: nomeCompleto || null,
+      refImovel,
       criadoEm: (r.created_at as string) ?? null,
       docUrl,
+      docTipo: tipoVisualizacaoDoc(r.document_path as string | null),
+      duplicado,
     });
   }
   return out;
+}
+
+/** Quantidade de documentos aguardando conferência — para o badge do nav admin.
+ * A RLS `is_admin()` libera; para não-admin devolve 0 (a política não casa). */
+export async function countDocumentosPendentes(): Promise<number> {
+  const supabase = await createClient();
+  if (!supabase) return 0;
+  const { count } = await supabase
+    .from("qualification_checklists")
+    .select("id", { count: "exact", head: true })
+    .eq("document_status", "pending");
+  return count ?? 0;
 }
 
 /**
