@@ -18,11 +18,11 @@ export default function ForLandlordsPage() {
         <div className="container-page grid items-center gap-10 md:grid-cols-2">
           <div>
             <h1 className="font-title text-4xl font-bold leading-tight md:text-5xl">
-              Mais <span className="text-green-300">margem</span> que a locação por
-              curtíssimo prazo
+              Mais <span className="text-green-300">margem</span> que o aluguel de
+              curta duração
             </h1>
             <p className="mt-5 max-w-lg text-lg text-white/80">
-              Locação por temporada de 30 a 180 dias, com contrato formal e inquilino
+              Locação mobiliada de média duração (30 a 180 dias), com contrato formal e inquilino
               verificado. Menos entra-e-sai, menos meses com o imóvel parado e com água, luz,
               condomínio e IPTU que podem ser transferidos ao inquilino conforme o contrato.
             </p>
@@ -57,11 +57,11 @@ export default function ForLandlordsPage() {
       <section className="container-page section-y">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="font-title text-3xl font-bold text-ink md:text-4xl">
-            Como o modelo de média temporada reduz seus custos
+            Como o modelo de média duração reduz seus custos
           </h2>
           <p className="mt-4 text-lg text-muted">
-            O modelo de temporada de média duração reduz os maiores custos do aluguel por
-            curtíssimo prazo.
+            A locação mobiliada de média duração reduz os maiores custos do aluguel de
+            curta duração.
           </p>
         </div>
         <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -89,7 +89,7 @@ export default function ForLandlordsPage() {
               {[
                 "Checklist de qualificação que comprova a regularidade da locação.",
                 "Selo Pronto para Morar para anunciar mais caro.",
-                "Verificação de identidade do inquilino com laudo de semáforo.",
+                "Verificação de identidade do inquilino com resultado em 3 níveis (verde/amarelo/vermelho).",
                 "Orçamento de seguro-fiança dentro da plataforma.",
                 "Contrato de temporada gerado e assinado digitalmente, com validade jurídica.",
                 "Pagamento do aluguel direto na sua conta.",

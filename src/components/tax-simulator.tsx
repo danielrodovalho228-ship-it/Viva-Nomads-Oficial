@@ -106,6 +106,28 @@ export function TaxSimulator() {
           LC 214/2025). Alíquotas sujeitas a alteração.
         </p>
       </div>
+
+      {/* Glossário das siglas — abre no lugar (melhor que tooltip no mobile). */}
+      <details className="mt-3 rounded-xl border border-sage-200 bg-white p-3 text-xs">
+        <summary className="cursor-pointer font-medium text-forest">
+          O que significam as siglas?
+        </summary>
+        <dl className="mt-2 space-y-1.5 text-muted">
+          {[
+            ["IBS", "Imposto sobre Bens e Serviços — novo imposto (estados/municípios) da Reforma Tributária."],
+            ["CBS", "Contribuição sobre Bens e Serviços — novo tributo federal da Reforma Tributária."],
+            ["LC 214/2025", "Lei Complementar que regulamenta a Reforma Tributária (base destes cálculos)."],
+            ["Lucro presumido", "Regime em que o imposto da empresa é calculado sobre uma margem de lucro presumida por lei, não sobre o lucro real."],
+            ["IRPF", "Imposto de Renda da Pessoa Física."],
+            ["NFS-e", "Nota Fiscal de Serviço eletrônica."],
+          ].map(([sigla, desc]) => (
+            <div key={sigla}>
+              <dt className="inline font-semibold text-ink">{sigla}</dt>
+              <dd className="inline"> — {desc}</dd>
+            </div>
+          ))}
+        </dl>
+      </details>
     </div>
   );
 }

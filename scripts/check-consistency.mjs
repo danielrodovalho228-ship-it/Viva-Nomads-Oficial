@@ -86,6 +86,11 @@ const OVERCLAIM = [
 //    nasce COM o parceiro assinado. A categoria guarda-chuva "Garantia
 //    locatícia" continua permitida. Escape legítimo: `consistency-ignore`.
 const GARANTIA_BANIDA = /\bgarant(ia|idor)\s+digital\b/i;
+
+// 7) Termos de prazo fora do padrão. UI/marketing usam "média duração"; "média
+//    estadia" e "curtíssimo prazo" são variações soltas e ficam banidas. Ver a
+//    decisão de terminologia (temporada só em contexto jurídico — art. 48).
+const PRAZO_BANIDO = [/m[ée]dia\s+estadia/i, /curt[íi]ssim[oa]\s+prazo/i];
 function pareceCodigo(linha) {
   const t = linha.trimStart();
   return (
@@ -165,6 +170,15 @@ for (const dir of SCAN_DIRS) {
             why: "garantia 'digital' sugere garantia da plataforma — use 'seguro-fiança'",
             line: line.trim(),
           });
+        for (const rx of PRAZO_BANIDO) {
+          if (rx.test(line))
+            violations.push({
+              rel,
+              n: i + 1,
+              why: `termo de prazo fora do padrão (${rx}) — use "média duração" / "curta duração"`,
+              line: line.trim(),
+            });
+        }
       }
     });
   }
