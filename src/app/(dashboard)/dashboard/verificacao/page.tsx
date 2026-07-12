@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   ShieldCheck,
   ShieldAlert,
@@ -55,10 +56,10 @@ const VERIFY_COPY: Record<"tenant" | "owner", VerifyCopy> = {
     button: "Verificar identidade como inquilino",
     ctaTitle: "Candidatura com um clique ativada",
     ctaBody:
-      "Ao encontrar um imóvel, basta clicar em Candidatar-se: enviamos seu laudo (semáforo) e uma mensagem ao proprietário automaticamente.",
+      "Ao encontrar um imóvel, basta clicar em Candidatar-se: enviamos seu resultado (em 3 níveis — verde, amarelo ou vermelho) e uma mensagem ao proprietário automaticamente.",
     unlocks: [
       "Candidatura com 1 clique em qualquer imóvel",
-      "Seu laudo (semáforo) enviado ao proprietário automaticamente",
+      "Seu resultado (verde/amarelo/vermelho) enviado ao proprietário automaticamente",
     ],
   },
   owner: {
@@ -80,7 +81,14 @@ const VERIFY_COPY: Record<"tenant" | "owner", VerifyCopy> = {
 export default function VerificationPage() {
   const demo = useDashDemo();
   const { mode } = useViewMode();
-  const C = VERIFY_COPY[mode];
+  // Intenção explícita (?como=inquilino|proprietario) tem prioridade sobre o
+  // modo atual: um proprietário-admin que chega aqui por um CTA de CANDIDATURA
+  // (ação de inquilino) precisa ver a cópia de inquilino, não a de proprietário.
+  const params = useSearchParams();
+  const como = params.get("como");
+  const perfilCopy: "tenant" | "owner" =
+    como === "inquilino" ? "tenant" : como === "proprietario" ? "owner" : mode;
+  const C = VERIFY_COPY[perfilCopy];
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -221,8 +229,8 @@ function DemoFlow({
           </p>
           <div className="mx-auto mt-5 max-w-md space-y-2 text-left text-sm">
             <Bullet>Identidade confirmada por documento oficial e foto (selfie).</Bullet>
-            <Bullet>Análise antifraude, com resultado em semáforo.</Bullet>
-            <Bullet>Cobre brasileiros e estrangeiros (CRNM/RNE).</Bullet>
+            <Bullet>Análise antifraude, com resultado em 3 níveis (verde/amarelo/vermelho).</Bullet>
+            <Bullet>Cobre brasileiros e estrangeiros (documento de estrangeiro CRNM/RNE).</Bullet>
           </div>
           <Button variant="gold" className="mt-6" onClick={verify} disabled={loading}>
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
