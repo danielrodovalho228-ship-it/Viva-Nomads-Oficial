@@ -26,6 +26,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { useAuthStore, type SessionUser, type ViewMode } from "@/lib/store";
 import { getMyAvatarUrl } from "@/lib/data/avatar-actions";
 import { setPreferredMode } from "@/lib/data/mode-actions";
+import { countDocumentosPendentes } from "@/lib/data/documentos-admin";
 import { useHasActiveLocacao } from "@/lib/use-active-locacao";
 import { useViewMode, MODE_META, primeiroNomeExibicao } from "@/lib/roles";
 import { useDemoMode, DemoToggle, DemoBanner, useDisplayUser } from "@/lib/demo/demo-mode";
@@ -38,6 +39,8 @@ interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
   /** Plano mínimo para exibir o item (operador / Gestor). */
   minPlan?: "gestor";
+  /** Contador dinâmico (ex.: documentos aguardando conferência no nav admin). */
+  badgeCount?: number;
 }
 
 /**
@@ -170,11 +173,31 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     };
   }, [displayUser?.id]);
 
+  // Documentos aguardando conferência — badge no item "Documentos" do nav admin.
+  const [docsPendentes, setDocsPendentes] = useState(0);
+  useEffect(() => {
+    if (display.role !== "admin") return;
+    let alive = true;
+    countDocumentosPendentes()
+      .then((n) => {
+        if (alive) setDocsPendentes(n);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [display.role, pathname]);
+
   // Inquilino: "Solicitações" entra no menu só quando há locação ativa.
   const hasActiveLoc = useHasActiveLocacao(mode === "tenant");
 
   let nav = NAV_BY_MODE[mode];
-  if (display.role === "admin" && mode === "owner") nav = [...OWNER_NAV, ...ADMIN_NAV];
+  if (display.role === "admin" && mode === "owner")
+    nav = [...OWNER_NAV, ...ADMIN_NAV].map((item) =>
+      item.href === "/admin/documentos" && docsPendentes > 0
+        ? { ...item, badgeCount: docsPendentes }
+        : item
+    );
   if (mode === "tenant" && hasActiveLoc) {
     // Insere logo após "Minhas locações" (mantém o teto de 7 + 1 contextual).
     const i = nav.findIndex((n) => n.href === "/dashboard/locacoes");
@@ -275,7 +298,15 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               )}
             >
               <Icon className="h-4.5 w-4.5" />
-              {item.label}
+              <span className="flex-1">{item.label}</span>
+              {item.badgeCount ? (
+                <span
+                  className="grid h-5 min-w-5 place-items-center rounded-full bg-champagne px-1.5 text-[11px] font-bold text-forest"
+                  aria-label={`${item.badgeCount} aguardando`}
+                >
+                  {item.badgeCount > 99 ? "99+" : item.badgeCount}
+                </span>
+              ) : null}
             </Link>
           );
         })}

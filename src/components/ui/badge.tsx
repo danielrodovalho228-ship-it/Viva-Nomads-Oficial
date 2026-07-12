@@ -89,6 +89,32 @@ export function PropertyTags({
   );
 }
 
+/**
+ * Selo "Documentação conferida" — a equipe conferiu o DOCUMENTO enviado
+ * (matrícula / contrato de gestão). NÃO afirma propriedade nem garante o imóvel
+ * (ver a regra de vocabulário em scripts/check-consistency.mjs).
+ */
+export function DocConferidaBadge({
+  className,
+  size = "md",
+}: {
+  className?: string;
+  size?: "sm" | "md";
+}) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full border border-green-300 bg-green-50 font-semibold text-green-900",
+        size === "sm" ? "px-2.5 py-1 text-xs" : "px-3 py-1.5 text-[13px]",
+        className
+      )}
+    >
+      <ShieldCheck className={size === "sm" ? "h-3.5 w-3.5" : "h-4 w-4"} aria-hidden />
+      Documentação conferida
+    </span>
+  );
+}
+
 /** Selo "Emite Nota Fiscal" — decisivo para o público corporativo. */
 export function InvoiceBadge({ className }: { className?: string }) {
   return (

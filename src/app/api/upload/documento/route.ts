@@ -56,6 +56,14 @@ export async function POST(request: Request) {
     );
   }
 
+  // Impressão digital do arquivo (SHA-256) — detecta REUSO da mesma matrícula
+  // entre contas na conferência (anti-fraude, 0044). Só o hash é persistido, não
+  // o conteúdo. Nada do documento vai para log.
+  const hashBuf = await crypto.subtle.digest("SHA-256", bytes);
+  const hash = Array.from(new Uint8Array(hashBuf))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+
   const ext = tipoReal === "application/pdf" ? "pdf" : tipoReal === "image/png" ? "png" : "jpg";
   const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
   const { error } = await supabase.storage
@@ -65,5 +73,5 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Não foi possível salvar o documento." }, { status: 500 });
   }
 
-  return NextResponse.json({ path });
+  return NextResponse.json({ path, hash });
 }
