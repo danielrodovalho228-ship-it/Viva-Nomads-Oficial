@@ -32,10 +32,10 @@ interface Service {
  * parceiro) e separados por QUEM contrata. O botão não cobra aqui: leva ao
  * momento certo (reserva/contrato para o inquilino; anúncio para o
  * proprietário). A plataforma intermedia e documenta; nunca é a garantidora.
- * Caução e garantia digital são alternativas: por lei, só uma por contrato.
+ * Caução e seguro-fiança são alternativas: por lei, só uma por contrato.
  */
 const TENANT_SERVICES: Service[] = [
-  { icon: ShieldCheck, title: "Garantia digital (sem depósito)", benefit: "Entre sem deixar dinheiro preso: uma taxa mensal diluída garante o aluguel, sem depósito de entrada. Contratada com parceiro, sujeita a análise.", price: "Orçamento sob análise", statusLabel: "Via parceiro", statusTone: "partner", tone: "cotacao", cta: "Ver opções de garantia", href: "/como-funciona#garantias", highlight: "Recomendada · sem depósito" },
+  { icon: ShieldCheck, title: "Seguro-fiança (sem depósito)", benefit: "Entre sem deixar dinheiro preso: uma taxa mensal diluída garante o aluguel, sem depósito de entrada. Contratada com parceiro, sujeita a análise.", price: "Orçamento sob análise", statusLabel: "Via parceiro", statusTone: "partner", tone: "cotacao", cta: "Ver opções de garantia", href: "/como-funciona#garantias", highlight: "Recomendada · sem depósito" },
   { icon: PiggyBank, title: "Caução (depósito devolvível)", benefit: "Depósito devolvível em conta vinculada — conta bancária conjunta (proprietário + inquilino), à qual a plataforma não tem acesso —, nos termos do contrato e da Lei 8.245/91, devolvido ao fim da estadia.", price: "Sem mensalidade", statusLabel: "Disponível", statusTone: "ok", tone: "avulso", cta: "Ver opções de garantia", href: "/como-funciona#garantias" },
 ];
 
@@ -235,7 +235,7 @@ export default function PricingPage() {
             </p>
             <p className="mx-auto mt-3 max-w-xl rounded-lg bg-white px-3 py-2 text-sm text-muted">
               <strong className="text-ink">Garantia, do seu jeito:</strong> escolha entre taxa
-              mensal sem depósito (garantia digital) ou caução devolvível. Por lei, só uma
+              mensal sem depósito (seguro-fiança) ou caução devolvível. Por lei, só uma
               garantia por contrato. A plataforma organiza e documenta; não é a garantidora.
             </p>
           </div>

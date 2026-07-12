@@ -50,7 +50,7 @@ export const GUARANTEE_OPTIONS: {
 }[] = [
   {
     id: "seguro_fianca",
-    name: "Garantia digital",
+    name: "Seguro-fiança",
     recommended: true,
     status: "parceiro",
     deposit: "none",

@@ -134,7 +134,7 @@ function GarantiasInquilino() {
           <div className="grid h-11 w-11 place-items-center rounded-xl bg-forest text-white">
             <FileSignature className="h-5 w-5" />
           </div>
-          <h3 className="mt-4 font-title text-lg font-bold text-ink">Garantia digital (sem depósito)</h3>
+          <h3 className="mt-4 font-title text-lg font-bold text-ink">Seguro-fiança (sem depósito)</h3>
           <dl className="mt-3 space-y-2.5 text-sm">
             <div>
               <dt className="font-semibold text-ink">Para o inquilino</dt>
@@ -146,7 +146,7 @@ function GarantiasInquilino() {
             <div>
               <dt className="font-semibold text-ink">Para o proprietário</dt>
               <dd className="text-muted">
-                O parceiro garantidor cobre o aluguel em caso de inadimplência. Via parceiro — em
+                A seguradora parceira cobre o aluguel em caso de inadimplência. Via parceiro — em
                 estruturação.
               </dd>
             </div>
@@ -274,7 +274,7 @@ function ProtegidoPor() {
       img: "/images/como-funciona/08-feche.webp",
       alt: "Aperto de mãos fechando o contrato de locação",
       title: "Garantia do contrato",
-      text: "Caução direto na sua conta ou Garantia digital — escolhida no fechamento.",
+      text: "Caução direto na sua conta ou seguro-fiança — escolhida no fechamento.",
     },
     {
       img: "/images/home/home-condominio-tranquilo.webp",

@@ -75,7 +75,7 @@ export interface GarantiaDef {
 export const GARANTIAS_FAIXA: GarantiaDef[] = [
   { key: "caucao_avista", label: "Caução à vista" },
   { key: "caucao_parcelada", label: "Caução parcelada" },
-  { key: "seguro_fianca", label: "Garantia digital" },
+  { key: "seguro_fianca", label: "Seguro-fiança" },
 ];
 
 /**
@@ -113,13 +113,13 @@ export const GARANTIAS_CADASTRO: GarantiaCadastro[] = [
   ...(CAUCAO_PARCELADA_UI
     ? [{ key: "caucao_parcelada" as GarantiaKey, label: "Caução parcelada" }]
     : []),
-  { key: "seguro_fianca", label: "Garantia digital", disabled: true, badge: "Em breve — via parceiro" },
+  { key: "seguro_fianca", label: "Seguro-fiança", disabled: true, badge: "Em breve — via parceiro" },
 ];
 
 /** Garantias exibidas no filtro PÚBLICO da busca (caução unificada + seguro). */
 export const GARANTIAS_PUBLICAS: { key: string; label: string }[] = [
   { key: "caucao", label: "Caução" },
-  { key: "seguro_fianca", label: "Garantia digital" },
+  { key: "seguro_fianca", label: "Seguro-fiança" },
 ];
 
 /** Rótulo mesmo para chaves aposentadas (histórico), como 'titulo'. */
@@ -127,7 +127,7 @@ const GARANTIA_LABELS: Record<string, string> = {
   caucao_avista: "Caução à vista",
   caucao_parcelada: "Caução parcelada",
   titulo: "Título de capitalização",
-  seguro_fianca: "Garantia digital",
+  seguro_fianca: "Seguro-fiança",
 };
 
 export function garantiaLabel(key: string): string {

@@ -96,7 +96,7 @@ export const GARANTIAS: Garantia[] = [
   },
   {
     id: "garantidor_digital",
-    nome: "Garantidor digital",
+    nome: "Seguro-fiança",
     tipo: "garantidor_digital",
     prazoMinDias: 90,
     prazoMaxDias: 180,
