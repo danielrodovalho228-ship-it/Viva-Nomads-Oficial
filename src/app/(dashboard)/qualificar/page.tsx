@@ -473,10 +473,9 @@ export default function QualificationChecklistPage() {
           Quanto mais itens, mais completo seu anúncio aparece para os inquilinos.
         </p>
 
-        {/* Placar do selo. Sticky APENAS a partir de md (item 3): no mobile fica
-            estático no topo da seção (não gruda nem cobre itens). Fundo opaco para
-            nunca deixar conteúdo aparecer por baixo; z abaixo de modais (z-50). */}
-        <div className="mt-6 rounded-xl border border-sage-200 bg-white p-4 md:sticky md:top-4 md:z-10 md:shadow-sm">
+        {/* Placar do selo — ESTÁTICO no fluxo (ancorado na seção). Nada de sticky:
+            o placar não acompanha o scroll nem "flutua" sobre os itens. */}
+        <div className="mt-6 rounded-xl border border-sage-200 bg-white p-4 shadow-sm">
           <div className="flex items-end justify-between">
             <div className="flex items-center gap-2">
               <Award className={cn("h-5 w-5", baseBadge ? "text-champagne-600" : "text-sage")} />
