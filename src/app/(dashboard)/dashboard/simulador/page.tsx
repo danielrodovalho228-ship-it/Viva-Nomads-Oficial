@@ -10,6 +10,7 @@ import { PLANOS, plano as getPlano, type PlanoId } from "@/config/planos";
 import {
   simularRentabilidade,
   compararPlanos,
+  recomendarPlano,
   type EntradaRentabilidade,
   type PlanoCalc,
 } from "@/lib/simulador";
@@ -44,6 +45,8 @@ export default function SimuladorPage() {
     [aluguelMensal, condoIptu, contas, mesesOcupados, prazoMedioMeses, p?.comissao, p?.assinaturaAnual]
   );
   const comparador = useMemo(() => compararPlanos(entrada, PLANOS_CALC), [aluguelMensal, condoIptu, contas, mesesOcupados, prazoMedioMeses]);
+  // Recomendação honesta pelo volume real (regra 3) — pode ser o Gratuito.
+  const recomendado = useMemo(() => recomendarPlano(entrada, PLANOS_CALC), [aluguelMensal, condoIptu, contas, mesesOcupados, prazoMedioMeses]);
 
   function usarMeuImovel() {
     const im = properties[0];
@@ -142,6 +145,19 @@ export default function SimuladorPage() {
             <span>
               <strong>Piloto Fundador:</strong> no piloto a assinatura é <strong>R$ 0</strong> — você só paga a
               comissão de <strong>8%</strong> (trilha Profissional) no fechamento.
+            </span>
+          </p>
+        )}
+
+        {recomendado && (
+          <p
+            data-testid="plano-recomendado"
+            className="mt-4 flex items-start gap-2 rounded-xl border border-forest/30 bg-forest/5 px-4 py-3 text-sm text-ink"
+          >
+            <TrendingUp className="mt-0.5 h-4 w-4 shrink-0 text-forest" />
+            <span>
+              <strong>Recomendado para você: {recomendado.nome}.</strong> {recomendado.motivo} A
+              gente diz na lata — mesmo quando o melhor plano é o Gratuito.
             </span>
           </p>
         )}

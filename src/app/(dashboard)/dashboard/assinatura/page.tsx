@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Check, Percent, QrCode, Barcode, CreditCard, Copy, Loader2 } from "lucide-react";
 import { PLANS } from "@/lib/constants";
 import { useAuthStore, DEMO_USER, type SubscriptionPlan } from "@/lib/store";
+import { getGestorElegibilidade, type GestorElegibilidade } from "@/lib/data/planos-actions";
+import { GESTOR_MIN_IMOVEIS_VALIDADOS } from "@/lib/planos/gestor";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { formatBRL, cn } from "@/lib/utils";
@@ -38,6 +40,15 @@ export default function SubscriptionPage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<SubResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Elegibilidade do Gestor (regra 1): barreira como META, nunca porta muda.
+  const [gestor, setGestor] = useState<GestorElegibilidade | null>(null);
+  useEffect(() => {
+    let alive = true;
+    getGestorElegibilidade()
+      .then((g) => { if (alive) setGestor(g); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
 
   async function subscribe(planId: string) {
     setSelected(planId);
@@ -146,20 +157,34 @@ export default function SubscriptionPage() {
                   <Percent className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600" /> {plan.cost}
                 </p>
               )}
-              <Button
-                variant={current ? "outline" : plan.featured ? "gold" : "primary"}
-                className="mt-5 w-full"
-                disabled={current || plan.price === 0 || isCustom}
-                onClick={() => subscribe(plan.id)}
-              >
-                {current
-                  ? "Plano atual"
-                  : isCustom
-                    ? plan.cta
-                    : plan.price === 0
-                      ? "Plano gratuito"
-                      : plan.cta}
-              </Button>
+              {isCustom ? (
+                /* Gestor é plano de ELEGIBILIDADE — venda assistida no piloto.
+                   Nunca uma porta muda: mostra o critério (meta) + o canal. */
+                <div className="mt-5">
+                  <p className="mb-2 rounded-lg bg-surface-2 px-2.5 py-2 text-xs text-muted">
+                    {gestor?.elegivel
+                      ? "✓ Você é elegível ao Gestor. Fale com a gente para ativar."
+                      : `Disponível para administradoras ou 5+ imóveis com documentação aprovada${
+                          gestor ? ` — você tem ${gestor.imoveisValidados}/${GESTOR_MIN_IMOVEIS_VALIDADOS}` : ""
+                        }.`}
+                  </p>
+                  <a
+                    href="mailto:contato@vivanomads.com.br?subject=Plano%20Gestor"
+                    className="flex w-full items-center justify-center rounded-xl border border-forest px-4 py-2.5 text-sm font-semibold text-forest hover:bg-forest/5"
+                  >
+                    Fale com a gente
+                  </a>
+                </div>
+              ) : (
+                <Button
+                  variant={current ? "outline" : plan.featured ? "gold" : "primary"}
+                  className="mt-5 w-full"
+                  disabled={current || plan.price === 0}
+                  onClick={() => subscribe(plan.id)}
+                >
+                  {current ? "Plano atual" : plan.price === 0 ? "Plano gratuito" : plan.cta}
+                </Button>
+              )}
             </div>
           );
         })}

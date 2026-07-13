@@ -206,12 +206,21 @@ export default function PricingPage() {
                 </div>
               )}
 
+              {/* Gestor é plano de ELEGIBILIDADE (regra 1): a barreira vira meta,
+                  nunca porta muda. */}
+              {plan.price === null && (
+                <p className="mt-5 rounded-lg bg-surface-2 px-2.5 py-2 text-xs text-muted">
+                  Para administradoras ou proprietários com 5+ imóveis de documentação
+                  aprovada. Ativação com nosso time.
+                </p>
+              )}
+
               <ButtonLink
-                href="/dashboard/assinatura"
+                href={plan.price === null ? "mailto:contato@vivanomads.com.br?subject=Plano%20Gestor" : "/dashboard/assinatura"}
                 variant={plan.featured ? "gold" : "outline"}
                 className="mt-8 w-full"
               >
-                {plan.cta}
+                {plan.price === null ? "Fale com a gente" : plan.cta}
               </ButtonLink>
             </div>
           ))}
