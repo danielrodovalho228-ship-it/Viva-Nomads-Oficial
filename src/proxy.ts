@@ -123,5 +123,7 @@ export const config = {
     "/socios/:path*",
     "/decisao",
     "/decisao/:path*",
+    "/tributario",
+    "/tributario/:path*",
   ],
 };

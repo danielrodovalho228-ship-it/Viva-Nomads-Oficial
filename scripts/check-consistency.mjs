@@ -34,11 +34,15 @@ const EXCLUDE = [
 //    são termos legítimos e NÃO entram aqui.
 const MONEY = [
   /\bsaldo\b/i,
-  /\brepasse\b/i,
+  /\brepass(e|amos|ar|es)\b/i, // repasse / repassamos / repassar
   /receba pela plataforma/i,
   /processamos o pagamento/i,
   /movimenta(mos)? o dinheiro/i,
   /transferimos o (aluguel|valor)/i,
+  // Contradições diretas da regra de ouro (proteção inversa): variedade na
+  // AFIRMAÇÃO é ok, tolerância ZERO na contradição.
+  /liberamos o (valor|aluguel|dinheiro)/i,
+  /intermedia(mos)? o pagamento/i,
 ];
 
 // 2) Vazamento de contato: join de perfil trazendo e-mail/telefone da outra

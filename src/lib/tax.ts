@@ -6,15 +6,17 @@
 
 export type PersonType = "pf" | "pj";
 
-// Alíquotas estimadas (espelham a aba Tributacao_PF_PJ da planilha).
-const IRPF_RATE = 0.275; // IRPF (faixa superior, carnê-leão)
-const IBS_CBS_RATE = 0.0183; // IBS+CBS sobre locação
-const PJ_PRESUMIDO_RATE = 0.1088; // lucro presumido (locação)
-const PJ_ACCOUNTING_YEAR = 5000; // custo estimado de contador/PJ por ano
+// Alíquotas estimadas (espelham a aba Tributacao_PF_PJ da planilha). EXPORTADAS
+// para a memória de cálculo (/tributario) declarar EXATAMENTE o que o simulador
+// usa — fonte única: se a taxa muda aqui, a memória muda junto.
+export const IRPF_RATE = 0.275; // IRPF (faixa superior, carnê-leão) — alíquota ÚNICA (simplificação)
+export const IBS_CBS_RATE = 0.0183; // IBS+CBS sobre locação (estimativa da LC 214)
+export const PJ_PRESUMIDO_RATE = 0.1088; // lucro presumido (locação) — já somado (IRPJ+adicional+CSLL+PIS/COFINS)
+export const PJ_ACCOUNTING_YEAR = 5000; // custo estimado de contador/PJ por ano (só no limiar da recomendação)
 
 // Gatilhos cumulativos para a PF virar contribuinte de IBS/CBS.
-const PF_CONTRIBUTOR_MIN_PROPERTIES = 4; // "mais de 3 imóveis"
-const PF_CONTRIBUTOR_MIN_ANNUAL = 240000; // receita anual > R$ 240 mil
+export const PF_CONTRIBUTOR_MIN_PROPERTIES = 4; // "mais de 3 imóveis"
+export const PF_CONTRIBUTOR_MIN_ANNUAL = 240000; // receita anual > R$ 240 mil
 
 export interface TaxInput {
   monthlyRent: number; // receita de aluguel mensal (total da carteira)
