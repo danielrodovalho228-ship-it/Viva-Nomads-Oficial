@@ -208,8 +208,8 @@ export default async function HomePage() {
               Uma categoria à parte: estadia de meses, com contrato de verdade.
             </h2>
             <p className="mt-5 text-lg text-white/65">
-              Estadia de meses, com contrato de verdade, inquilino verificado e custos
-              organizados. Tempo para morar com tranquilidade, no seu ritmo.
+              Inquilino verificado, contrato digital, custos organizados e o aluguel direto na
+              conta do proprietário. Tempo para morar no seu ritmo.
             </p>
           </div>
 
@@ -237,13 +237,18 @@ export default async function HomePage() {
                 <tbody className="divide-y divide-white/[0.06]">
                   <CompareRow label="Estadia de 30 a 180 dias" a="yes" b="no" c="partial" />
                   <CompareRow label="Mobiliado e pronto para morar" a="yes" b="yes" c="no" />
-                  <CompareRow label="Contrato com validade jurídica" a="yes" b="no" c="yes" />
-                  <CompareRow label="Custos de consumo transferíveis ao inquilino" a="yes" b="no" c="yes" />
-                  <CompareRow label="Contrato formal por temporada" a="yes" b="no" c="partial" />
-                  <CompareRow label="Selo Pronto para Morar" a="yes" b="no" c="no" />
+                  <CompareRow label="Contrato digital de média duração" a="yes" b="no" c="partial" />
+                  <CompareRow label="Inquilino verificado antes da conversa" a="yes" b="partial" c="yes" />
+                  <CompareRow label="Dinheiro direto na conta do proprietário" a="yes" b="no" c="no" />
+                  <CompareRow label="Custo ao dono: taxa única por contrato" a="yes" b="no" c="no" />
+                  <CompareRow label="Inquilino paga R$ 0 de taxa de plataforma" a="yes" b="no" c="yes" />
                 </tbody>
               </table>
             </div>
+            <p className="px-5 pb-4 pt-3 text-xs text-white/40">
+              Comparativo referente à locação mobiliada de média duração, conforme políticas
+              públicas das plataformas.
+            </p>
           </div>
         </div>
       </section>
