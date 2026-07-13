@@ -183,46 +183,63 @@ test.describe("T-TRAV-C — Candidatura sem verificação = confirmação + nudg
   });
 });
 
-// ─────────────────── D — Fechamento fracionado: estrutura ────────────────────
-test.describe("T-TRAV-D — Fechamento 4 meses: blocos, caução 50%, comissão única @criticos", () => {
-  test.use({ storageState: authFile("proprietario") });
-
-  test("prazo de 4 meses gera 2 blocos com caução 50% e comissão única", async ({ page }) => {
-    await page.goto("/dashboard/fechamento", { waitUntil: "networkidle" });
-
-    // Passo 0: define o prazo em 4 meses (default já é 4, mas garantimos).
-    const prazo = page.getByLabel(/Prazo total em meses/i);
-    if (await prazo.isVisible().catch(() => false)) {
-      await prazo.selectOption("4");
+// ─────────────────── D — Fechamento herda a candidatura aceita ───────────────
+test.describe("T-TRAV-D — Fechamento herda a candidatura aceita real @criticos", () => {
+  test("candidatura aceita → fechamento com imóvel real, 2 blocos e R$ 12.800", async ({
+    browser,
+  }) => {
+    // (1) Inquilino candidata-se ao imóvel semeado (R$ 3.200/mês). Idempotente.
+    const ctxInq = await browser.newContext({ storageState: authFile("inquilino") });
+    const pageInq = await ctxInq.newPage();
+    await pageInq.goto(`/imoveis/${SEED_PROPERTY_ID}`, { waitUntil: "networkidle" });
+    const candidatar = pageInq.getByRole("button", { name: /^Candidatar-se$/i });
+    if (!(await candidatar.isVisible().catch(() => false))) {
+      await ctxInq.close();
+      test.skip(true, "Imóvel semeado ausente — rode `npm run seed:teste` no projeto de teste.");
+      return;
     }
-    // Preview do passo 0 já cita blocos e "total do período".
-    await expect(page.getByText(/2 blocos/i).first()).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByText(/total do per[íi]odo/i).first()).toBeVisible();
+    await candidatar.click();
+    await expect(pageInq.getByText(/Candidatura enviada/i)).toBeVisible({ timeout: 15_000 });
+    await ctxInq.close();
 
-    // Avança pelos passos até a garantia/caução e o resumo.
-    async function irPara(passo: RegExp, alvo: RegExp): Promise<boolean> {
-      for (let i = 0; i < 6; i++) {
-        if (await page.getByText(alvo).first().isVisible().catch(() => false)) return true;
-        const continuar = page.getByRole("button", { name: /Continuar/i }).first();
-        if (!(await continuar.isVisible().catch(() => false))) break;
-        await continuar.click();
-        await page.waitForTimeout(400);
-      }
-      return page.getByText(alvo).first().isVisible().catch(() => false);
+    // (2) Proprietário ACEITA a candidatura (persiste + congela a comissão).
+    const ctxDono = await browser.newContext({ storageState: authFile("proprietario") });
+    const pageDono = await ctxDono.newPage();
+    await pageDono.goto("/dashboard/leads", { waitUntil: "networkidle" });
+    const aprovar = pageDono.getByRole("button", { name: /Aprovar e responder/i }).first();
+    if (await aprovar.isVisible().catch(() => false)) {
+      await aprovar.click();
+      await pageDono.waitForTimeout(1500); // deixa o server action persistir
     }
+    // (se já estava aceita de uma execução anterior, seguimos direto)
 
-    // Caução 50% aparece quando a garantia é caução (selecionamos se houver opção).
-    const caucaoOpt = page.getByText(/Caução/i).first();
-    if (await caucaoOpt.isVisible().catch(() => false)) {
-      await caucaoOpt.click().catch(() => {});
+    // (3) Fechamento herda a candidatura: imóvel real (R$ 3.200), 4 meses → 2
+    //     blocos, total R$ 12.800, e a comissão congelada do plano no aceite.
+    await pageDono.goto("/dashboard/fechamento", { waitUntil: "networkidle" });
+    // Nunca a guarda "sem candidatura" — o fechamento agora EXISTE.
+    await expect(pageDono.getByText(/Nenhuma candidatura aceita/i)).toHaveCount(0);
+
+    const prazo = pageDono.getByLabel(/Prazo total em meses/i);
+    if (await prazo.isVisible().catch(() => false)) await prazo.selectOption("4");
+
+    await expect(pageDono.getByText(/2 blocos/i).first()).toBeVisible({ timeout: 10_000 });
+    await expect(pageDono.getByText(/total do per[íi]odo/i).first()).toBeVisible();
+    // Valor exato herdado do imóvel semeado (3.200 × 4).
+    await expect(pageDono.locator("body")).toContainText(/12\.800/);
+
+    // Avança até o resumo e confere a comissão congelada ("plano Y").
+    for (let i = 0; i < 6; i++) {
+      if (await pageDono.getByText(/Comissão deste contrato/i).first().isVisible().catch(() => false)) break;
+      const continuar = pageDono.getByRole("button", { name: /Continuar/i }).first();
+      if (!(await continuar.isVisible().catch(() => false))) break;
+      await continuar.click();
+      await pageDono.waitForTimeout(400);
     }
-    // Em algum passo o resumo mostra a comissão ÚNICA do plano.
-    const achouComissao = await irPara(/Contrato/i, /Comissão de fechamento/i);
-    if (achouComissao) {
-      await expect(page.getByText(/Comissão de fechamento/i).first()).toBeVisible();
-      // Percentual única do plano (não por bloco): "· N%".
-      await expect(page.getByText(/Comissão de fechamento.*%/i).first()).toBeVisible();
+    const comissao = pageDono.getByText(/Comissão deste contrato/i).first();
+    if (await comissao.isVisible().catch(() => false)) {
+      await expect(comissao).toContainText(/%.*plano/i);
     }
+    await ctxDono.close();
   });
 });
 

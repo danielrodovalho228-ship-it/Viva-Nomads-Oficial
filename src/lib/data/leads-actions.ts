@@ -3,8 +3,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify } from "@/lib/notifications";
-import { COMISSAO_POR_PLANO, type PlanoId } from "@/config/planos";
+import { COMISSAO_POR_PLANO, plano as planoPorId, type PlanoId } from "@/config/planos";
 import { situacaoCandidatura, type RotuloCandidatura } from "@/lib/candidaturas/status";
+import { getPropertyForOwner } from "@/lib/data/properties";
+import { formatDocNumber } from "@/lib/documents";
+import type { Property } from "@/lib/types";
 
 interface ActionResult {
   ok: boolean;
@@ -171,4 +174,92 @@ export async function listMinhasCandidaturas(): Promise<MinhaCandidatura[]> {
     situacao: situacaoCandidatura(r.status, engajou.has(`${r.owner_id}_${r.property_id}`)),
     createdAt: r.created_at,
   }));
+}
+
+/** Número de contrato determinístico a partir do id da candidatura aceita. */
+function numeroContrato(leadId: string, acceptedAt: string | null): string {
+  const ano = Number((acceptedAt ?? "").slice(0, 4)) || 2026;
+  let h = 0;
+  for (const c of leadId) h = (h * 31 + c.charCodeAt(0)) % 10000;
+  return formatDocNumber("contrato", ano, h || 1);
+}
+
+/**
+ * Contexto do FECHAMENTO a partir de uma candidatura ACEITA real. Autoridade no
+ * servidor: só o dono da candidatura, e SÓ com status 'accepted'. Herda imóvel,
+ * partes e valores; a comissão é a CONGELADA no aceite (não o plano atual —
+ * regra anti-relâmpago). Sem candidatura aceita → null (o fechamento não existe
+ * sem ela; fim do imóvel-amostra fixo).
+ */
+export interface FechamentoContexto {
+  leadId: string;
+  property: Property;
+  tenantName: string;
+  planoId: string;
+  planoNome: string;
+  comissaoRate: number; // 0..1, congelada no aceite
+  acceptedAt: string | null;
+  contractNumber: string;
+}
+
+export async function getFechamentoContext(
+  leadId?: string,
+): Promise<FechamentoContexto | null> {
+  const supabase = await createClient();
+  if (!supabase) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  // A candidatura aceita mais recente do dono (ou a apontada por leadId).
+  let q = supabase
+    .from("leads")
+    .select("id, tenant_id, property_id, accepted_plan, accepted_commission_rate, accepted_at")
+    .eq("owner_id", user.id)
+    .eq("status", "accepted")
+    .order("accepted_at", { ascending: false })
+    .limit(1);
+  if (leadId) q = q.eq("id", leadId);
+  const { data: lead } = await q.maybeSingle();
+  if (!lead) return null;
+
+  // Imóvel (escopo do dono) — fonte real do card, valores e tipo.
+  const property = await getPropertyForOwner(lead.property_id as string);
+  if (!property) return null;
+
+  // Nome do inquilino: revelado pós-aceite (nome completo). Lido via service
+  // role (só exibição ao dono habilitado) — nunca contato.
+  let tenantName = "Candidato(a)";
+  try {
+    const admin = createAdminClient();
+    if (admin) {
+      const { data: t } = await admin
+        .from("profiles")
+        .select("full_name")
+        .eq("id", lead.tenant_id)
+        .maybeSingle();
+      if (t?.full_name && !String(t.full_name).includes("@")) tenantName = t.full_name;
+    }
+  } catch {
+    /* mantém o neutro */
+  }
+
+  const planoId = ((lead.accepted_plan as string) ?? "free") as PlanoId;
+  // Comissão CONGELADA no aceite; retrocompatível se o snapshot faltar.
+  const comissaoRate =
+    typeof lead.accepted_commission_rate === "number"
+      ? lead.accepted_commission_rate
+      : COMISSAO_POR_PLANO[planoId] ?? COMISSAO_POR_PLANO.free;
+
+  return {
+    leadId: lead.id as string,
+    property,
+    tenantName,
+    planoId,
+    planoNome: planoPorId(planoId)?.nome ?? "Gratuito",
+    comissaoRate,
+    acceptedAt: (lead.accepted_at as string) ?? null,
+    contractNumber: numeroContrato(lead.id as string, (lead.accepted_at as string) ?? null),
+  };
 }
