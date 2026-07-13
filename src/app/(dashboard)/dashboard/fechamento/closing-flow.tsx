@@ -1003,8 +1003,9 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
               </p>
               <p className="mt-1 text-xs text-muted">
                 Cobrada <strong>uma única vez por contrato</strong>, sobre 1 mês, no
-                fechamento. Renovar ou estender blocos <strong>não gera nova comissão</strong>. Os
-                aluguéis seguintes vão direto ao proprietário.
+                fechamento. Renovar ou estender blocos <strong>não gera nova comissão</strong>. O
+                aluguel vai do inquilino <strong>direto para a sua conta</strong> — a plataforma
+                nunca toca no dinheiro.
               </p>
               <div className="mt-3 space-y-1">
                 <Row label="1º aluguel" value={formatBRL(PROPERTY.monthlyRent)} />

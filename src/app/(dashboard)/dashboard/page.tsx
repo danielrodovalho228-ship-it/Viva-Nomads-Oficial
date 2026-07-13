@@ -14,6 +14,7 @@ import {
   ArrowRight,
   PencilLine,
   FileSignature,
+  Wallet,
 } from "lucide-react";
 import { useViewMode, primeiroNomeExibicao } from "@/lib/roles";
 import { getLatestDraft } from "@/lib/data/actions";
@@ -142,6 +143,15 @@ function OwnerDashboard({ name }: { name: string }) {
         <StatCard label="Mensagens" value={demo ? String(DEMO_KPIS.mensagens) : "0"} icon={MessageSquare} />
         <StatCard label="Imóveis ativos" value={String(allProperties.length)} icon={Home} />
       </div>
+
+      {/* Regra de ouro, dita com todas as letras onde o dono pensa em dinheiro. */}
+      <p className="mt-4 flex items-start gap-2 rounded-xl border border-forest/20 bg-forest/5 px-4 py-3 text-sm text-ink">
+        <Wallet className="mt-0.5 h-4 w-4 shrink-0 text-forest" />
+        <span>
+          O aluguel vai do inquilino <strong>direto para a sua conta</strong> — a plataforma nunca
+          toca no dinheiro.
+        </span>
+      </p>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
         <Panel title="Meus imóveis" className="lg:col-span-2">
