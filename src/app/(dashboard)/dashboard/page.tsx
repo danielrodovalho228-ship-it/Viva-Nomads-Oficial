@@ -13,6 +13,7 @@ import {
   ClipboardCheck,
   ArrowRight,
   PencilLine,
+  FileSignature,
 } from "lucide-react";
 import { useViewMode, primeiroNomeExibicao } from "@/lib/roles";
 import { getLatestDraft } from "@/lib/data/actions";
@@ -225,8 +226,10 @@ function TenantDashboard({ name }: { name: string }) {
       {/* Primeiro acesso: checklist de 3 passos (ou o banner, quando concluído/oculto). */}
       <TenantOnboarding name={name} />
 
-      {/* Mobile: 3 KPIs compactos numa única linha (ADENDO item 1). */}
-      <div className="grid grid-cols-3 gap-2.5 sm:gap-4">
+      {/* KPIs de acesso rápido: 2×2 no mobile, 4 em linha no desktop. Candidaturas
+          é o lar do acompanhamento (envio → resposta) — sem novo item no menu. */}
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-4">
+        <StatCard label="Candidaturas" value={demo ? "2" : "0"} icon={FileSignature} href="/dashboard/candidaturas" />
         <StatCard label="Favoritos" value={demo ? "3" : "0"} icon={Heart} href="/dashboard/favoritos" />
         <StatCard label="Buscas salvas" value={demo ? "2" : "0"} icon={Search} href="/dashboard/buscas" />
         <StatCard label="Mensagens" value={demo ? "1" : "0"} icon={MessageSquare} href="/dashboard/mensagens" />

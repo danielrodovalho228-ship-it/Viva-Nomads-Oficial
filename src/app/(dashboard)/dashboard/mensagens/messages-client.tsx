@@ -72,7 +72,7 @@ function MessagesInner({ initial, demo }: { initial: Conversation[]; demo: boole
     e.preventDefault();
     if (!draft.trim() || !active) return;
     // Mesma máscara do servidor: o eco otimista mostra exatamente o que será
-    // gravado (telefones/e-mails protegidos até o aceite do proprietário).
+    // gravado (telefones/e-mails sempre protegidos — a conversa fica na plataforma).
     const { text, masked } = guardContactInfo(draft);
     setGuardNotice(masked);
     setDraft("");

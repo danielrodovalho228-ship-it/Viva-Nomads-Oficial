@@ -161,6 +161,26 @@ test.describe("T-TRAV-C — Candidatura sem verificação = confirmação + nudg
       /bloquead|imped|não pode|precisa verificar antes/i,
     );
   });
+
+  test("acompanhamento em /dashboard/candidaturas usa vocabulário digno (nunca 'recusada')", async ({
+    page,
+  }) => {
+    // Garante ao menos uma candidatura (idempotente — dedup por imóvel+inquilino).
+    await page.goto(`/imoveis/${SEED_PROPERTY_ID}`, { waitUntil: "networkidle" });
+    const candidatar = page.getByRole("button", { name: /^Candidatar-se$/i });
+    if (await candidatar.isVisible().catch(() => false)) {
+      await candidatar.click();
+      await expect(page.getByText(/Candidatura enviada/i)).toBeVisible({ timeout: 15_000 });
+    }
+
+    await page.goto("/dashboard/candidaturas", { waitUntil: "networkidle" });
+    await expect(page.getByRole("heading", { name: /Minhas candidaturas/i })).toBeVisible();
+    // A página existe e sobrevive ao reload (estado no servidor, não no cliente).
+    await page.reload({ waitUntil: "networkidle" });
+    await expect(page.getByRole("heading", { name: /Minhas candidaturas/i })).toBeVisible();
+    // NUNCA jargão de recusa na tela do inquilino.
+    await expect(page.locator("body")).not.toContainText(/recusad|rejeitad/i);
+  });
 });
 
 // ─────────────────── D — Fechamento fracionado: estrutura ────────────────────

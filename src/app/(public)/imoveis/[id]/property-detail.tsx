@@ -237,8 +237,8 @@ export function PropertyDetail({ property, similar }: { property: Property; simi
           className="mt-3 w-full rounded-xl border border-sage-200 px-3.5 py-2.5 text-sm outline-none focus:border-sage"
         />
         <p className="mt-1 flex items-center gap-1 text-xs text-muted">
-          <ShieldCheck className="h-3.5 w-3.5 text-sage" /> Não compartilhe telefone ou e-mail aqui —
-          o contato é liberado após o aceite.
+          <ShieldCheck className="h-3.5 w-3.5 text-sage" /> Não compartilhe telefone ou e-mail —
+          a conversa segue toda pela plataforma.
         </p>
         {leadErro && <p className="mt-2 text-sm text-red-600">{leadErro}</p>}
         <div className="mt-4 flex justify-end gap-2">

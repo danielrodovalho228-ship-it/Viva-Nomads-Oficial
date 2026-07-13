@@ -2,9 +2,10 @@
  * Proteção de contato nas conversas (padrão de marketplaces).
  *
  * Mascara telefones, e-mails e links de mensageria externa trocados no chat,
- * ANTES de gravar/exibir. Motivo: manter a negociação registrada na plataforma
- * (trilha para disputas) e liberar contato direto apenas no fluxo oficial —
- * o telefone do proprietário só é liberado após o aceite do proprietário.
+ * ANTES de gravar/exibir. Motivo: a negociação segue registrada na plataforma
+ * (trilha para disputas). Contato direto (telefone/e-mail) NÃO é trocado em fase
+ * alguma — nem após o aceite; o aceite revela identidade (nome + foto), não
+ * contato, e a conversa continua exclusivamente pela plataforma.
  *
  * Função pura e client-safe: usada no servidor (fonte da verdade, antes do
  * insert) e no cliente (eco otimista igual ao que o servidor grava).
@@ -75,4 +76,4 @@ export function guardContactInfo(input: string): GuardResult {
 
 /** Aviso curto exibido quando algo foi mascarado. */
 export const GUARD_NOTICE =
-  "Para sua segurança, telefones e e-mails são protegidos no chat. O contato direto é liberado após o aceite do proprietário.";
+  "Para sua segurança, telefones e e-mails são protegidos no chat. A negociação segue toda pela plataforma — o contato direto não é trocado.";
