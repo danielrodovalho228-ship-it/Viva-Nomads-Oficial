@@ -346,6 +346,27 @@ export default function QualificationChecklistPage() {
           </label>
           {docErro && <p className="text-sm text-red-600">{docErro}</p>}
 
+          {/* Dica de foto legível — JPG/PNG já são aceitos; o que trava a
+              conferência é a imagem ruim, não o formato. */}
+          <p className="text-xs text-muted">
+            Pode enviar uma <strong className="text-ink">foto</strong> do documento: tire de cima,
+            com boa luz e o <strong className="text-ink">documento inteiro</strong> no quadro.
+          </p>
+
+          {/* Guia: como obter a matrícula atualizada (disclosure nativo — sem JS). */}
+          <details className="rounded-lg border border-line bg-surface-2 px-3 py-2 text-xs text-muted">
+            <summary className="cursor-pointer font-medium text-forest">
+              Como obter sua matrícula atualizada
+            </summary>
+            <p className="mt-2">
+              Peça a <strong className="text-ink">certidão de matrícula atualizada</strong> no site do{" "}
+              <strong className="text-ink">cartório de registro de imóveis</strong> da cidade do
+              imóvel — a maioria emite online. Custa por volta de{" "}
+              <strong className="text-ink">R$ 50</strong> e chega em <strong className="text-ink">PDF</strong>,
+              pronto para enviar aqui.
+            </p>
+          </details>
+
           {/* Nota de tratamento de dados (LGPD) — o documento pode conter CPF e
               matrícula. TODO(juridico): Beatriz revisar a redação final. */}
           <p className="flex items-start gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted">
