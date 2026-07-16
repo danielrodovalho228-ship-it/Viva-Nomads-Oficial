@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { TrendingUp, Home, Sparkles } from "lucide-react";
+import { TrendingUp, Home, Sparkles, Download } from "lucide-react";
+import { imprimirSimulacao } from "@/lib/print-simulacao";
 import { PageTitle } from "@/components/dashboard/primitives";
 import { useAuthStore, DEMO_USER } from "@/lib/store";
 import { useProperties } from "@/lib/use-properties";
@@ -131,6 +132,33 @@ export default function SimuladorPage() {
             <p className="font-title text-3xl font-bold">{formatBRL(res.receitaLiquidaAnual)}</p>
             <p className="mt-1 text-sm text-white/85">Média de <strong>{formatBRL(res.mediaMensal)}/mês</strong> no bolso.</p>
           </div>
+          <button
+            type="button"
+            onClick={() =>
+              imprimirSimulacao({
+                titulo: "Simulação de rentabilidade",
+                subtitulo: `Plano ${p?.nome ?? "—"}`,
+                entradas: [
+                  { label: "Aluguel mensal pretendido", valor: formatBRL(aluguelMensal) },
+                  { label: "Condomínio + IPTU (mês)", valor: formatBRL(condoIptu) },
+                  { label: "Contas incluídas (mês)", valor: formatBRL(contas) },
+                  { label: "Meses ocupados no ano", valor: String(mesesOcupados) },
+                  { label: "Prazo médio por contrato", valor: `${prazoMedioMeses} meses` },
+                ],
+                resultados: [
+                  { label: "Receita bruta / ano", valor: formatBRL(res.receitaBrutaAnual) },
+                  { label: "Custos / ano", valor: `− ${formatBRL(res.custosAnuais)}` },
+                  { label: `Comissão Viva (${Math.round((p?.comissao ?? 0) * 100)}%)`, valor: `− ${formatBRL(res.comissaoAnual)}` },
+                  { label: "Assinatura / ano", valor: res.assinaturaAnual > 0 ? `− ${formatBRL(res.assinaturaAnual)}` : "Grátis" },
+                  { label: "Receita líquida / ano", valor: formatBRL(res.receitaLiquidaAnual) },
+                  { label: "Média mensal no bolso", valor: `${formatBRL(res.mediaMensal)}/mês` },
+                ],
+              })
+            }
+            className="inline-flex items-center gap-2 rounded-xl border border-sage-200 px-4 py-2.5 text-sm font-medium text-forest hover:border-sage"
+          >
+            <Download className="h-4 w-4" /> Baixar PDF
+          </button>
         </div>
       </div>
 
