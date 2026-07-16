@@ -13,6 +13,7 @@ import { TaxSimulator } from "@/components/tax-simulator";
 import { AvatarUploader } from "@/components/account/avatar-uploader";
 import { CategoriaProfissional } from "@/components/account/categoria-profissional";
 import { createClient } from "@/lib/supabase/client";
+import { nomeCompletoLimpo } from "@/lib/display-name";
 import { friendlyAuthError, MIN_PASSWORD } from "@/lib/auth-errors";
 import { Switch } from "@/components/ui/switch";
 
@@ -32,7 +33,9 @@ export default function AccountPage() {
         <div className="grid gap-4 sm:grid-cols-2">
           <Field
             label="Nome completo"
-            defaultValue={user?.fullName ?? ""}
+            // Não exibe o e-mail como se fosse o nome (full_name poluído por
+            // fluxo antigo): campo vazio convida o nome real.
+            defaultValue={nomeCompletoLimpo(user?.fullName)}
             placeholder="Seu nome completo"
           />
           <Field label="E-mail" defaultValue={user?.email ?? ""} type="email" />

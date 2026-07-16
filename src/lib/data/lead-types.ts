@@ -7,7 +7,9 @@ export type Light = "green" | "yellow" | "red";
 
 export interface Lead {
   id: string;
-  name: string; // só primeiro nome (identidade pós-aceite: nada de contato aqui)
+  /** Status cru persistido (leads.status): 'new' | 'accepted' | 'rejected'. */
+  status?: string;
+  name: string; // primeiro nome; nome COMPLETO só após o aceite. Nunca contato.
   property: string;
   category: string;
   riskCategories: string[];

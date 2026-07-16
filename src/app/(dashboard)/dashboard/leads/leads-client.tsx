@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { Lock, Users, X, Check, Send, ArrowDownWideNarrow, MessageSquare } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { ButtonLink } from "@/components/ui/button";
 import { OwnerDecisionNotice } from "@/components/legal-notice";
 import { leadScore, leadSummary, type Lead, type Light } from "@/lib/data/lead-types";
+import { aceitarCandidatura, recusarCandidatura } from "@/lib/data/leads-actions";
 import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
 import { DEMO_LEADS } from "@/lib/demo/seed";
 import { cn } from "@/lib/utils";
@@ -26,15 +27,44 @@ const LIGHT: Record<Light, { tone: string; label: string }> = {
 
 type LeadStatus = "open" | "approved" | "rejecting" | "rejected";
 
+/** Estado inicial da UI a partir do status PERSISTIDO (sobrevive a refresh). */
+function uiInicial(persisted: string | undefined): LeadStatus {
+  if (persisted === "accepted") return "approved";
+  if (persisted === "rejected") return "rejected";
+  return "open";
+}
+
 export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
   const [status, setStatus] = useState<Record<string, LeadStatus>>({});
   const [reasons, setReasons] = useState<Record<string, string>>({});
+  const [pending, startTransition] = useTransition();
   // Modo demonstração (admin): lê o seed em memória; desligado, volta ao real.
   const { on: demoOn } = useDemoMode();
   const leads = demoOn ? DEMO_LEADS : realLeads;
 
   function set(id: string, s: LeadStatus) {
     setStatus((prev) => ({ ...prev, [id]: s }));
+  }
+
+  /** Aprova: persiste no servidor (real) e atualiza a UI. Demo: só UI. */
+  function aprovar(id: string) {
+    set(id, "approved");
+    if (demoOn) return;
+    startTransition(async () => {
+      const r = await aceitarCandidatura(id);
+      if (!r.ok) set(id, "open"); // reverte se o servidor recusar
+    });
+  }
+
+  /** Recusa: persiste no servidor (real, silencioso) e atualiza a UI. */
+  function recusar(id: string) {
+    set(id, "rejected");
+    if (demoOn) return;
+    const motivo = reasons[id];
+    startTransition(async () => {
+      const r = await recusarCandidatura(id, motivo);
+      if (!r.ok) set(id, "rejecting");
+    });
   }
 
   // Ordena por qualidade: verificados e de perfil verde no topo (quick win).
@@ -62,7 +92,7 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
           </p>
           <div className="grid gap-4">
             {ordered.map((l) => {
-            const st = status[l.id] ?? "open";
+            const st = status[l.id] ?? uiInicial(l.status);
             const open = st === "approved";
             return (
               <Panel key={l.id}>
@@ -110,8 +140,9 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
                           <X className="h-4 w-4" /> Recusar
                         </button>
                         <button
-                          onClick={() => set(l.id, "approved")}
-                          className="inline-flex items-center gap-2 rounded-full bg-forest px-4 py-2 text-sm font-medium text-white hover:bg-forest-700"
+                          onClick={() => aprovar(l.id)}
+                          disabled={pending}
+                          className="inline-flex items-center gap-2 rounded-full bg-forest px-4 py-2 text-sm font-medium text-white hover:bg-forest-700 disabled:opacity-50"
                         >
                           <Check className="h-4 w-4" /> Aprovar e responder
                         </button>
@@ -124,7 +155,8 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
                 {st === "rejecting" && (
                   <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4">
                     <p className="text-sm font-medium text-red-700">
-                      Recusar {l.name} — escolha um motivo (será enviado ao interessado)
+                      Recusar {l.name} — escolha um motivo (fica registrado para seu controle;
+                      o interessado vê apenas que a candidatura não seguiu adiante)
                     </p>
                     {/* Motivos pré-definidos em um clique (quick win #3) */}
                     <div className="mt-2 flex flex-wrap gap-1.5">
@@ -159,11 +191,11 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
                         Cancelar
                       </button>
                       <button
-                        onClick={() => set(l.id, "rejected")}
-                        disabled={!(reasons[l.id] ?? "").trim()}
+                        onClick={() => recusar(l.id)}
+                        disabled={!(reasons[l.id] ?? "").trim() || pending}
                         className="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
                       >
-                        <Send className="h-4 w-4" /> Enviar recusa
+                        <Send className="h-4 w-4" /> Confirmar recusa
                       </button>
                     </div>
                   </div>
@@ -172,14 +204,15 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
                 {st === "rejected" && reasons[l.id] && (
                   <p className="mt-3 flex items-start gap-1.5 text-xs text-muted">
                     <Check className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    Motivo enviado ao interessado: “{reasons[l.id]}”
+                    Motivo registrado (não enviado ao interessado): “{reasons[l.id]}”
                   </p>
                 )}
 
                 {st === "open" && (
                   <p className="mt-3 flex items-center gap-1.5 text-xs text-muted">
                     <Lock className="h-3.5 w-3.5" />
-                    Telefone, e-mail e endereço exato ficam ocultos até o aceite (LGPD).
+                    Telefone e e-mail nunca são exibidos — a conversa segue pela plataforma. O
+                    endereço exato do imóvel é liberado após o aceite.
                   </p>
                 )}
 

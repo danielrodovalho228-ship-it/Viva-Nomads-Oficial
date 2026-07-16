@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { Button } from "@/components/ui/button";
+import { ShareButton } from "@/components/share-button";
 import { PropertyTags, InvoiceBadge, InsuranceBadge } from "@/components/ui/badge";
 import { SELO_NF_UI } from "@/lib/flags";
 import { PropertyCard } from "@/components/property-card";
@@ -237,8 +238,8 @@ export function PropertyDetail({ property, similar }: { property: Property; simi
           className="mt-3 w-full rounded-xl border border-sage-200 px-3.5 py-2.5 text-sm outline-none focus:border-sage"
         />
         <p className="mt-1 flex items-center gap-1 text-xs text-muted">
-          <ShieldCheck className="h-3.5 w-3.5 text-sage" /> Não compartilhe telefone ou e-mail aqui —
-          o contato é liberado após o aceite.
+          <ShieldCheck className="h-3.5 w-3.5 text-sage" /> Não compartilhe telefone ou e-mail —
+          a conversa segue toda pela plataforma.
         </p>
         {leadErro && <p className="mt-2 text-sm text-red-600">{leadErro}</p>}
         <div className="mt-4 flex justify-end gap-2">
@@ -290,8 +291,11 @@ export function PropertyDetail({ property, similar }: { property: Property; simi
         <div className="space-y-10 lg:col-span-2">
           {/* Cabeçalho */}
           <header>
-            <div className="flex items-center gap-2 text-sm text-muted">
-              <MapPin className="h-4 w-4" /> {property.neighborhood}, {property.city} - {property.state}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-sm text-muted">
+                <MapPin className="h-4 w-4" /> {property.neighborhood}, {property.city} - {property.state}
+              </div>
+              <ShareButton title={property.title} text={`${property.title} — Viva Nomads`} />
             </div>
             <h1 className="mt-2 font-title text-3xl font-bold text-ink">{property.title}</h1>
 
