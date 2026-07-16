@@ -14,6 +14,7 @@
     "testes:criticos": "playwright test --grep @criticos",
     "testes:report": "playwright show-report",
     "seed:teste": "node scripts/seed-test-data.mjs",
+    "check:migracoes": "node scripts/check-migracoes.mjs",
     "screenshots": "node scripts/screenshots.mjs",
     "capturas": "node scripts/capturas-demo.mjs"
   },
