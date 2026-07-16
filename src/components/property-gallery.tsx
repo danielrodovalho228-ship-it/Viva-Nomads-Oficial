@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { X, Images, ChevronLeft, ChevronRight } from "lucide-react";
 import { BrandImage } from "@/components/brand-image";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
@@ -243,8 +243,38 @@ function Lightbox({
 }) {
   const prev = () => setIndex((index - 1 + photos.length) % photos.length);
   const next = () => setIndex((index + 1) % photos.length);
+
+  // Teclado (desktop/a11y): ←/→ navegam, Esc fecha.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "ArrowLeft") prev();
+      else if (e.key === "ArrowRight") next();
+      else if (e.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [index, photos.length]);
+
+  // Swipe em tela cheia (mobile): arrasto horizontal > 40px troca a foto.
+  const touchX = useRef<number | null>(null);
+  function onTouchStart(e: React.TouchEvent) {
+    touchX.current = e.touches[0]?.clientX ?? null;
+  }
+  function onTouchEnd(e: React.TouchEvent) {
+    if (touchX.current == null || photos.length < 2) return;
+    const dx = (e.changedTouches[0]?.clientX ?? touchX.current) - touchX.current;
+    if (dx > 40) prev();
+    else if (dx < -40) next();
+    touchX.current = null;
+  }
+
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-night/95">
+    <div
+      className="fixed inset-0 z-50 flex flex-col bg-night/95"
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+    >
       <div className="flex items-center justify-between p-4 text-white">
         <span className="text-sm">
           {index + 1} / {photos.length}
