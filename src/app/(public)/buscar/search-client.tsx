@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SlidersHorizontal, ChevronDown, MapPin, ArrowRight, Users } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { PropertyCard } from "@/components/property-card";
@@ -109,7 +109,7 @@ export function SearchClient({ properties }: { properties: Property[] }) {
 
   // Restaura a busca da URL: endereço/raio + todos os filtros, para links
   // compartilhados e reloads mostrarem exatamente os filtros ativos (M7).
-  useEffect(() => {
+  const restaurarFiltrosDaURL = useCallback(() => {
     const sp = new URLSearchParams(window.location.search);
     const local = sp.get("local");
     const lat = Number(sp.get("lat"));
@@ -153,6 +153,24 @@ export function SearchClient({ properties }: { properties: Property[] }) {
     if (on("seguro")) setInsuranceOnly(true);
     if (on("gestor")) setOperatedOnly(true);
   }, []);
+
+  // Restaura no mount (link compartilhado / reload) e re-aplica a cada
+  // voltar/avançar do navegador (popstate) — sem o listener, navegar no
+  // histórico deixaria os controles dessincronizados da URL. Ao re-aplicar por
+  // popstate, marca skipNextSync para não reescrever a URL que o histórico
+  // acabou de restaurar.
+  useEffect(() => {
+    restaurarFiltrosDaURL();
+  }, [restaurarFiltrosDaURL]);
+
+  useEffect(() => {
+    const onPop = () => {
+      skipNextSync.current = true;
+      restaurarFiltrosDaURL();
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, [restaurarFiltrosDaURL]);
 
   // Reflete a busca atual na URL (replaceState — sem recarregar nem rolar),
   // para o endereço e o raio serem compartilháveis / sobreviverem a um reload.
