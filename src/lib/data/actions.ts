@@ -771,6 +771,11 @@ function hojeISO(): string {
  * aplicada — ver migração 0017). Retorna `needsAuth` se o visitante não estiver
  * logado e `selfOwned` se for o próprio dono abrindo o anúncio.
  */
+// Anti-flood: teto de contatos que um inquilino dispara por hora (mesmo espírito
+// do IA_LIMITE_DIA). 20 cobre o uso legítimo — o inquilino interessado contata
+// vários imóveis — e corta scripts de spam de notificação ao proprietário.
+const LEAD_LIMITE_HORA = 20;
+
 export async function requestLead(
   propertyId: string,
   propertyTitle: string,
@@ -827,6 +832,33 @@ export async function requestLead(
   const tenantEmail = me?.email ?? user.email ?? "";
   const tenantPhone = me?.phone ?? "";
 
+  // Anti-flood: conta os leads REAIS do inquilino na última hora. Protege o
+  // proprietário de spam de notificação e o custo de e-mail/WhatsApp. Cliques
+  // repetidos no MESMO imóvel já são deduplicados abaixo (não contam), então o
+  // teto mira a largura — muitos imóveis distintos em pouco tempo.
+  if (real) {
+    const desdeUmaHora = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { count } = await supabase
+      .from("leads")
+      .select("id", { count: "exact", head: true })
+      .eq("tenant_id", user.id)
+      .gte("created_at", desdeUmaHora);
+    if ((count ?? 0) >= LEAD_LIMITE_HORA) {
+      return {
+        ok: false,
+        error: "Você atingiu o limite de contatos por hora. Tente novamente em instantes.",
+      };
+    }
+  }
+
+  // Contato novo? Só notifica o dono quando há de fato um lead novo — clique
+  // repetido no mesmo imóvel não re-notifica. Exceção: candidatura sempre
+  // notifica (evento de maior valor no piloto); o teto de 20/h barra a
+  // repetição. Distinguir "1ª candidatura" de "candidatura repetida" exigiria
+  // registrar o kind no lead (migração) — hoje o lead é único por (imóvel,
+  // inquilino) e o status 'new' não codifica o kind.
+  let novoContato = true;
+
   // Imóvel real: grava lead + abre conversa. Dedup por (imóvel, interessado)
   // para que cliques repetidos não criem leads/mensagens duplicados.
   if (real && ownerId) {
@@ -836,6 +868,7 @@ export async function requestLead(
       .eq("property_id", propertyId)
       .eq("tenant_id", user.id)
       .maybeSingle();
+    novoContato = !existing;
     if (!existing) {
       const { error: leadErr } = await supabase
         .from("leads")
@@ -864,21 +897,24 @@ export async function requestLead(
     }
   }
 
-  // Notifica o dono — SEMPRE (real e demo). É isto que faz os botões funcionarem
-  // de verdade: o lead chega ao e-mail/WhatsApp do proprietário.
-  const { detailsHtml, detailsText } = buildLeadNotification(kind, propertyTitle, {
-    name: tenantName,
-    email: tenantEmail,
-    phone: tenantPhone,
-  });
-  await notify({
-    event: "new_lead",
-    email: ownerEmail ?? undefined,
-    phone: ownerPhone ?? undefined,
-    name: ownerName ?? undefined,
-    detailsHtml,
-    detailsText,
-  });
+  // Notifica o dono só em contato NOVO — ou sempre que for candidatura (evento
+  // de maior valor; o teto de 20/h barra repetição). É isto que faz os botões
+  // funcionarem de verdade: o lead chega ao e-mail/WhatsApp do proprietário.
+  if (novoContato || kind === "candidatura") {
+    const { detailsHtml, detailsText } = buildLeadNotification(kind, propertyTitle, {
+      name: tenantName,
+      email: tenantEmail,
+      phone: tenantPhone,
+    });
+    await notify({
+      event: "new_lead",
+      email: ownerEmail ?? undefined,
+      phone: ownerPhone ?? undefined,
+      name: ownerName ?? undefined,
+      detailsHtml,
+      detailsText,
+    });
+  }
 
   return { ok: true };
 }
