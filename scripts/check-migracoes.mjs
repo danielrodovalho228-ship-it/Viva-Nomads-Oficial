@@ -33,6 +33,7 @@ const CHECKS = [
   { mig: "0046", desc: "aceite: leads.accepted_commission_rate", table: "leads", col: "accepted_commission_rate", critica: false },
   { mig: "0047a", desc: "planos: profiles.account_type", table: "profiles", col: "account_type", critica: false },
   { mig: "0047b", desc: "planos: tabela account_type_audit", table: "account_type_audit", col: "id", critica: false },
+  { mig: "0048", desc: "push: tabela push_tokens", table: "push_tokens", col: "id", critica: false },
 ];
 
 /** Aplicada? Tenta ler a marca; erro de coluna/tabela ausente = FALTANDO. */

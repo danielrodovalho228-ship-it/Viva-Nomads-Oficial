@@ -43,6 +43,7 @@ re-enfileiraria documentos já aprovados). Em dúvida, rode `check:migracoes` an
 | 0044 document_conference | Hash anti-fraude + auditoria quem/quando | ⬜ conferir |
 | 0046 candidatura_aceite (#212) | Aceite persistido + comissão congelada | ⬜ ao mergear #212 |
 | 0047 account_type (#212) | Gestor por elegibilidade + auditoria | ⬜ ao mergear #212 |
+| 0048 push_tokens | Notificações push do app nativo | ⬜ ao lançar o app |
 
 > 0043 (rascunho) e 0045 (IA) são de features anteriores; o check também as
 > reporta para completude.
