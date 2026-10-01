@@ -111,8 +111,17 @@ export function gallery(n: number): string[] {
  * genéricos se o imóvel ainda não tiver fotos próprias.
  */
 export function galleryFor(propertyId: string, n: number): string[] {
-  const base = PROPERTY_PHOTOS[propertyId] ?? PHOTOS.galleryRooms;
-  return Array.from({ length: n }, (_, i) => base[i % base.length]);
+  const real = PROPERTY_PHOTOS[propertyId];
+  if (real && real.length > 0) {
+    return Array.from({ length: n }, (_, i) => real[i % real.length]);
+  }
+  // Fallback ilustrativo (ambientes genéricos): rotaciona o início por um hash do
+  // id para que imóveis sem fotos próprias não mostrem todos a MESMA capa.
+  const base = PHOTOS.galleryRooms;
+  let h = 0;
+  for (let i = 0; i < propertyId.length; i++) h = (h * 31 + propertyId.charCodeAt(i)) >>> 0;
+  const off = h % base.length;
+  return Array.from({ length: n }, (_, i) => base[(i + off) % base.length]);
 }
 
 /**
