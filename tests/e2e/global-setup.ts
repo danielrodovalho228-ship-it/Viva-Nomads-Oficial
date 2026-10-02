@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { chromium, type FullConfig } from "@playwright/test";
 import { ALL_ROLES, OPTIONAL_ROLES, hasAccount, type Role } from "./fixtures/accounts";
-import { authFile, loginAs, writeRolesManifest } from "./fixtures/auth";
+import { authFile, loginAs, writeRolesManifest, type RoleInfo } from "./fixtures/auth";
 
 /**
  * Loga UMA vez cada papel (inquilino, proprietário, admin) e salva o
@@ -41,22 +41,23 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
 
   // Papéis opcionais só entram na rodada quando têm credenciais configuradas.
   const roles: Role[] = [...ALL_ROLES, ...OPTIONAL_ROLES.filter(hasAccount)];
-  const ready: Partial<Record<Role, boolean>> = {};
+  const manifest: Partial<Record<Role, RoleInfo>> = {};
 
   const browser = await chromium.launch({ executablePath });
   try {
     for (const role of roles) {
-      // Sem credenciais → pula com aviso e grava estado vazio.
+      // (1) SEM credenciais → problema de INFRA: pula com aviso e estado vazio.
       if (!hasAccount(role)) {
         console.warn(
-          `[e2e] Papel "${role}" sem credenciais (TESTES_${role.toUpperCase()}_*). ` +
-            `Pulando login — os specs desse papel serão SKIP.`
+          `[e2e] Papel "${role}" SEM credenciais (TESTES_${role.toUpperCase()}_*). ` +
+            `Pulando — specs desse papel ficam SKIP (infra).`
         );
         fs.writeFileSync(authFile(role), EMPTY_STATE, "utf8");
-        ready[role] = false;
+        manifest[role] = { status: "missing" };
         continue;
       }
 
+      // (2) COM credenciais → login tem que funcionar. Se falhar, é DEFEITO.
       const context = await browser.newContext({
         baseURL,
         ...(extraHTTPHeaders ? { extraHTTPHeaders } : {}),
@@ -65,16 +66,27 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
       try {
         await loginAs(page, role);
         await context.storageState({ path: authFile(role) });
-        ready[role] = true;
+        manifest[role] = { status: "ready" };
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
-        console.warn(
-          `[e2e] Login do papel "${role}" FALHOU: ${msg}. ` +
-            `Gravando estado vazio — os specs desse papel serão SKIP ` +
-            `(verifique a conta/segredos e, no preview, o bypass da Vercel).`
+        const finalUrl = page.url();
+        const screenshot = path.join(path.dirname(authFile(role)), `_fail_${role}.png`);
+        try {
+          await page.screenshot({ path: screenshot, fullPage: true });
+        } catch {
+          /* screenshot é best-effort */
+        }
+        console.error(
+          `[e2e] LOGIN DO PAPEL "${role}" FALHOU (credenciais PRESENTES) — ` +
+            `DEFEITO de produto, não infra.\n` +
+            `         erro: ${msg}\n` +
+            `         URL final: ${finalUrl}\n` +
+            `         screenshot: ${screenshot}`
         );
+        // NÃO lança: deixa a suíte rodar e os demais papéis serem avaliados. O
+        // spec `auth-setup` transforma este estado em FALHA ALTA e visível.
         fs.writeFileSync(authFile(role), EMPTY_STATE, "utf8");
-        ready[role] = false;
+        manifest[role] = { status: "login_failed", error: msg, finalUrl, screenshot };
       } finally {
         await context.close();
       }
@@ -83,14 +95,15 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
     await browser.close();
   }
 
-  writeRolesManifest(ready);
+  writeRolesManifest(manifest);
 
-  const ok = Object.entries(ready)
-    .filter(([, v]) => v)
-    .map(([r]) => r);
-  const pulados = Object.entries(ready)
-    .filter(([, v]) => !v)
-    .map(([r]) => r);
-  console.log(`[e2e] Papéis prontos: ${ok.join(", ") || "nenhum"}.`);
-  if (pulados.length) console.log(`[e2e] Papéis pulados (specs em SKIP): ${pulados.join(", ")}.`);
+  const by = (s: string) =>
+    Object.entries(manifest)
+      .filter(([, v]) => v?.status === s)
+      .map(([r]) => r);
+  console.log(`[e2e] Login OK: ${by("ready").join(", ") || "nenhum"}.`);
+  const missing = by("missing");
+  const failed = by("login_failed");
+  if (missing.length) console.log(`[e2e] SKIP por falta de credencial (infra): ${missing.join(", ")}.`);
+  if (failed.length) console.error(`[e2e] FALHA DE LOGIN (defeito): ${failed.join(", ")}.`);
 }

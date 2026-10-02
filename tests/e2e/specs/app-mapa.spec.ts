@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { authFile } from "../fixtures/auth";
+import { authFile, roleReady } from "../fixtures/auth";
 
 /**
  * Teste #9 do "Mapa do App" (viewport de celular 390×844).
@@ -40,6 +40,11 @@ function abaProprietario(page: Page) {
 }
 
 test.describe("T9 — modo inquilino ⇄ proprietário @criticos", () => {
+  // Precisa de sessão real de inquilino. Se o login falhou/faltou, o #9 dá SKIP
+  // (o sinal alto do login quebrado está no spec `auth-setup`), para A/B/C nunca
+  // acusarem "defeito de comportamento" por falta de sessão.
+  test.skip(!roleReady("inquilino"), "Sessão de inquilino indisponível (ver spec auth-setup).");
+
   test("A — conta inquilina abre em modo Inquilino", async ({ page }) => {
     await page.goto("/dashboard");
     await expect(seletor(page)).toBeVisible({ timeout: 15_000 });

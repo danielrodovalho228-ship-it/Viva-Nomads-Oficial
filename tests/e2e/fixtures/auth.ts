@@ -16,27 +16,51 @@ export function authFile(role: Role): string {
 }
 
 /**
- * Grava o manifesto de papéis prontos (login real OK). Chamado uma vez pelo
- * global-setup. Specs de um papel ausente/falho leem `roleReady` e dão SKIP —
- * assim um papel sem conta (ex.: proprietario1 inexistente) não derruba a suíte.
+ * Situação de cada papel após o global-setup:
+ *  • "ready"        — login real OK (storageState válido).
+ *  • "missing"      — SEM credenciais → pular os specs (problema de INFRA).
+ *  • "login_failed" — credenciais PRESENTES mas o login falhou → é DEFEITO de
+ *                     produto; o spec `auth-setup` falha ALTO com o erro exato.
  */
-export function writeRolesManifest(ready: Partial<Record<Role, boolean>>): void {
-  fs.mkdirSync(AUTH_DIR, { recursive: true });
-  fs.writeFileSync(ROLES_MANIFEST, JSON.stringify(ready, null, 2), "utf8");
+export type RoleStatus = "ready" | "missing" | "login_failed";
+
+export interface RoleInfo {
+  status: RoleStatus;
+  /** Mensagem do Supabase / erro do login (só em login_failed). */
+  error?: string;
+  /** URL em que o login parou (ex.: tela de proteção da Vercel). */
+  finalUrl?: string;
+  /** Caminho do screenshot capturado na falha de login. */
+  screenshot?: string;
 }
 
 /**
- * true se o papel autenticou no global-setup (storageState válido). Default
- * `false` quando o manifesto não existe ou o papel não está lá — o spec então
- * dá SKIP (nunca acusa falha de comportamento por falta de conta/infra).
+ * Grava o manifesto de situação dos papéis. Chamado uma vez pelo global-setup.
+ * Specs leem `roleReady`/`roleStatus` — assim um papel sem conta não derruba a
+ * suíte, e um login quebrado vira FALHA explícita (não um skip silencioso).
  */
-export function roleReady(role: Role): boolean {
+export function writeRolesManifest(manifest: Partial<Record<Role, RoleInfo>>): void {
+  fs.mkdirSync(AUTH_DIR, { recursive: true });
+  fs.writeFileSync(ROLES_MANIFEST, JSON.stringify(manifest, null, 2), "utf8");
+}
+
+/** Situação do papel (default "missing" quando o manifesto não existe). */
+export function roleStatus(role: Role): RoleInfo {
   try {
     const raw = fs.readFileSync(ROLES_MANIFEST, "utf8");
-    return (JSON.parse(raw) as Partial<Record<Role, boolean>>)[role] === true;
+    return (JSON.parse(raw) as Partial<Record<Role, RoleInfo>>)[role] ?? { status: "missing" };
   } catch {
-    return false;
+    return { status: "missing" };
   }
+}
+
+/**
+ * true só quando o papel autenticou. Os specs do papel usam isto para dar SKIP
+ * quando ele NÃO está pronto (ausente OU com login falho) — a falha de login
+ * aparece ALTA no spec `auth-setup`, não como ruído em cada spec do papel.
+ */
+export function roleReady(role: Role): boolean {
+  return roleStatus(role).status === "ready";
 }
 
 /**
