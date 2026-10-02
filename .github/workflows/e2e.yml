@@ -50,6 +50,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Diagnóstico do bypass ANTES de instalar nada (falha em segundos). Nunca
+      # imprime o segredo (só se está vazio e o tamanho). Aborta se o bypass não
+      # devolver 200 — assim não se gasta 2 min de instalação para dar "tudo barrado".
+      - name: Diagnóstico do bypass da Vercel
+        run: |
+          echo "== Diagnóstico do bypass (sem expor o segredo) =="
+          if [ -z "${VERCEL_AUTOMATION_BYPASS_SECRET}" ]; then
+            echo "SECRET: VAZIO — não chegou ao job (causa 1: lugar errado no GitHub; use Settings > Secrets and variables > Actions > Repository secrets)."
+          else
+            echo "SECRET: preenchido (tamanho=${#VERCEL_AUTOMATION_BYPASS_SECRET})."
+          fi
+          echo "BASE_URL: ${TESTES_BASE_URL}"
+          NO=$(curl -s -o /dev/null -w "%{http_code}" "${TESTES_BASE_URL}/api/health" || echo "000")
+          WITH=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "x-vercel-protection-bypass: ${VERCEL_AUTOMATION_BYPASS_SECRET}" \
+            -H "x-vercel-set-bypass-cookie: true" \
+            "${TESTES_BASE_URL}/api/health" || echo "000")
+          echo "HTTP /api/health  ->  sem header: ${NO}   com header: ${WITH}"
+          if [ "${WITH}" = "200" ]; then
+            echo "Bypass OK (200). Seguindo para a suíte."
+          else
+            echo "::error::Bypass NAO passou (com header=${WITH}, esperado 200). Suite abortada."
+            echo "Leitura: SECRET vazio -> causa 1 (lugar errado no GitHub). 401/403 com header -> causa 2 (valor errado). 200 aqui mas Playwright cai na Vercel -> causa 3 (envio do header no codigo)."
+            exit 1
+          fi
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
