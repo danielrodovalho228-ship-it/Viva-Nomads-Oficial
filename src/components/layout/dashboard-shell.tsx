@@ -28,7 +28,7 @@ import { getMyAvatarUrl } from "@/lib/data/avatar-actions";
 import { setPreferredMode } from "@/lib/data/mode-actions";
 import { countDocumentosPendentes } from "@/lib/data/documentos-admin";
 import { useHasActiveLocacao } from "@/lib/use-active-locacao";
-import { useViewMode, MODE_META, primeiroNomeExibicao } from "@/lib/roles";
+import { useViewMode, MODE_META, identidadeUsuario } from "@/lib/roles";
 import { useDemoMode, DemoToggle, DemoBanner, useDisplayUser } from "@/lib/demo/demo-mode";
 import { PROGRAMA_INDICACAO } from "@/lib/flags";
 import { cn } from "@/lib/utils";
@@ -155,9 +155,10 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const display: SessionUser =
     displayUser ?? { id: "", name: "", email: "", role: "tenant" };
   const plan = display.plan ?? "free";
-  // Nome seguro para o rodapé/avatar: nome do perfil ou rótulo neutro — NUNCA
-  // o e-mail cru (que é o fallback de `display.name`). Reteste QA item 4.
-  const nomeSidebar = primeiroNomeExibicao(displayUser) || "Minha conta";
+  // Identidade do rodapé/avatar (fonte única): nome do perfil; sem nome, o
+  // "usuário" do e-mail (parte antes do @) — identifica sem expor o e-mail
+  // inteiro; só então cai no rótulo neutro. NUNCA o e-mail cru.
+  const nomeSidebar = identidadeUsuario(displayUser);
 
   // Minha própria foto de perfil (opcional) para o avatar do topo.
   const [myPhoto, setMyPhoto] = useState<string | null>(null);

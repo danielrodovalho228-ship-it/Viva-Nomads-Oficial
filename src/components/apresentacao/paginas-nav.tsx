@@ -19,6 +19,7 @@ const PAGINAS: PaginaRef[] = [
   { href: "/roi", nome: "ROI", resumo: "payback e break-even da empresa" },
   { href: "/socios", nome: "Sócios", resumo: "quem faz o quê" },
   { href: "/decisao", nome: "Decisão", resumo: "híbrido × tradicional" },
+  { href: "/tributario", nome: "Tributário", resumo: "memória de cálculo PF × PJ (parecer)" },
 ];
 
 /** Barra discreta com links entre as páginas internas. `atual` = href da página. */

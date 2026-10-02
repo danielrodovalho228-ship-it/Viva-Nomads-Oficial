@@ -92,6 +92,58 @@ export const PROPERTY_PHOTOS: Record<string, string[]> = {
     `${I}/ube/ube-003-quintal.webp`,
     `${I}/ube/ube-003-fachada.webp`,
   ],
+  "ube-004": [
+    `${I}/ube/ube-004-sala.webp`,
+    `${I}/ube/ube-004-fachada.webp`,
+  ],
+  "ube-005": [
+    `${I}/ube/ube-005-sala.webp`,
+    `${I}/ube/ube-005-quarto.webp`,
+  ],
+  "ube-006": [
+    `${I}/ube/ube-006-sala.webp`,
+    `${I}/ube/ube-006-home-office.webp`,
+    `${I}/ube/ube-006-quarto.webp`,
+  ],
+  "ube-007": [
+    `${I}/ube/ube-007-ambiente.webp`,
+    `${I}/ube/ube-007-cozinha.webp`,
+  ],
+  "ube-008": [
+    `${I}/ube/ube-008-sala.webp`,
+    `${I}/ube/ube-008-quarto.webp`,
+    `${I}/ube/ube-008-quintal.webp`,
+  ],
+  "ube-009": [
+    `${I}/ube/ube-009-sala.webp`,
+    `${I}/ube/ube-009-mesa-estudos.webp`,
+  ],
+  "ube-010": [
+    `${I}/ube/ube-010-sala.webp`,
+    `${I}/ube/ube-010-quarto.webp`,
+  ],
+  "ube-011": [
+    `${I}/ube/ube-011-ambiente.webp`,
+    `${I}/ube/ube-011-mesa-estudos.webp`,
+  ],
+  "ube-012": [
+    `${I}/ube/ube-012-sala.webp`,
+    `${I}/ube/ube-012-home-office.webp`,
+  ],
+  "ube-013": [
+    `${I}/ube/ube-013-sala.webp`,
+    `${I}/ube/ube-013-quarto.webp`,
+    `${I}/ube/ube-013-quintal.webp`,
+  ],
+  "ube-014": [
+    `${I}/ube/ube-014-sala.webp`,
+    `${I}/ube/ube-014-quarto.webp`,
+    `${I}/ube/ube-014-varanda-gourmet.webp`,
+  ],
+  "ube-015": [
+    `${I}/ube/ube-015-ambiente.webp`,
+    `${I}/ube/ube-015-cozinha.webp`,
+  ],
 };
 
 /**
@@ -111,8 +163,17 @@ export function gallery(n: number): string[] {
  * genéricos se o imóvel ainda não tiver fotos próprias.
  */
 export function galleryFor(propertyId: string, n: number): string[] {
-  const base = PROPERTY_PHOTOS[propertyId] ?? PHOTOS.galleryRooms;
-  return Array.from({ length: n }, (_, i) => base[i % base.length]);
+  const real = PROPERTY_PHOTOS[propertyId];
+  if (real && real.length > 0) {
+    return Array.from({ length: n }, (_, i) => real[i % real.length]);
+  }
+  // Fallback ilustrativo (ambientes genéricos): rotaciona o início por um hash do
+  // id para que imóveis sem fotos próprias não mostrem todos a MESMA capa.
+  const base = PHOTOS.galleryRooms;
+  let h = 0;
+  for (let i = 0; i < propertyId.length; i++) h = (h * 31 + propertyId.charCodeAt(i)) >>> 0;
+  const off = h % base.length;
+  return Array.from({ length: n }, (_, i) => base[(i + off) % base.length]);
 }
 
 /**

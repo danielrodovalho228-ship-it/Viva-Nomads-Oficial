@@ -22,6 +22,10 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   return {
     title,
     description,
+    // Canonical próprio da página (auto-referente). Sem isto, o anúncio herda
+    // o `alternates.canonical: "/"` do layout raiz e o Google trata todo imóvel
+    // como duplicata da home.
+    alternates: { canonical: `/imoveis/${property.id}` },
     openGraph: {
       title,
       description,

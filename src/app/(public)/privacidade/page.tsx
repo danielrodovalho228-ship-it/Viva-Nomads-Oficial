@@ -74,7 +74,8 @@ export default function PrivacyPage() {
           Compartilhamos apenas o necessário com nossos suboperadores (relacionados na seção
           abaixo) e entre as partes de uma negociação — de forma assimétrica e controlada. O
           proprietário vê do inquilino um <strong>resultado em 3 níveis (verde/amarelo/vermelho)</strong> (sem dados brutos
-          sensíveis); o contato direto só é liberado após o aceite.
+          sensíveis). Após o aceite, revela-se a identidade (nome e foto), nunca o contato direto:
+          telefone e e-mail não são trocados — a conversa segue toda pela plataforma.
         </Section>
 
         {/* 5. Suboperadores — tabela única (com quem compartilhamos) */}

@@ -346,6 +346,27 @@ export default function QualificationChecklistPage() {
           </label>
           {docErro && <p className="text-sm text-red-600">{docErro}</p>}
 
+          {/* Dica de foto legível — JPG/PNG já são aceitos; o que trava a
+              conferência é a imagem ruim, não o formato. */}
+          <p className="text-xs text-muted">
+            Pode enviar uma <strong className="text-ink">foto</strong> do documento: tire de cima,
+            com boa luz e o <strong className="text-ink">documento inteiro</strong> no quadro.
+          </p>
+
+          {/* Guia: como obter a matrícula atualizada (disclosure nativo — sem JS). */}
+          <details className="rounded-lg border border-line bg-surface-2 px-3 py-2 text-xs text-muted">
+            <summary className="cursor-pointer font-medium text-forest">
+              Como obter sua matrícula atualizada
+            </summary>
+            <p className="mt-2">
+              Peça a <strong className="text-ink">certidão de matrícula atualizada</strong> no site do{" "}
+              <strong className="text-ink">cartório de registro de imóveis</strong> da cidade do
+              imóvel — a maioria emite online. Custa por volta de{" "}
+              <strong className="text-ink">R$ 50</strong> e chega em <strong className="text-ink">PDF</strong>,
+              pronto para enviar aqui.
+            </p>
+          </details>
+
           {/* Nota de tratamento de dados (LGPD) — o documento pode conter CPF e
               matrícula. TODO(juridico): Beatriz revisar a redação final. */}
           <p className="flex items-start gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted">
@@ -473,10 +494,9 @@ export default function QualificationChecklistPage() {
           Quanto mais itens, mais completo seu anúncio aparece para os inquilinos.
         </p>
 
-        {/* Placar do selo. Sticky APENAS a partir de md (item 3): no mobile fica
-            estático no topo da seção (não gruda nem cobre itens). Fundo opaco para
-            nunca deixar conteúdo aparecer por baixo; z abaixo de modais (z-50). */}
-        <div className="mt-6 rounded-xl border border-sage-200 bg-white p-4 md:sticky md:top-4 md:z-10 md:shadow-sm">
+        {/* Placar do selo — ESTÁTICO no fluxo (ancorado na seção). Nada de sticky:
+            o placar não acompanha o scroll nem "flutua" sobre os itens. */}
+        <div className="mt-6 rounded-xl border border-sage-200 bg-white p-4 shadow-sm">
           <div className="flex items-end justify-between">
             <div className="flex items-center gap-2">
               <Award className={cn("h-5 w-5", baseBadge ? "text-champagne-600" : "text-sage")} />

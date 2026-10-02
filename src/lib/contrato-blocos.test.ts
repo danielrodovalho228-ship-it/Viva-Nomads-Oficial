@@ -68,6 +68,19 @@ test("resumo do contrato: totais e comissão única", () => {
   assert.equal(r.blocos.length, 3);
 });
 
+test("T-TRAV-D: fechamento de 4 meses @3200 → 2 blocos, total R$12.800, caução 50% do bloco, comissão única", () => {
+  const r = resumoContrato(4, 3200, 0.1, 2);
+  assert.equal(r.blocos.length, 2); // 4 meses / 2 = 2 blocos
+  assert.equal(r.valorTotalPeriodo, 12800); // 3200 × 4
+  for (const bloco of r.blocos) {
+    assert.equal(bloco.meses, 2);
+    assert.equal(bloco.valor, 6400); // 3200 × 2
+    assert.equal(bloco.caucao, 3200); // 50% do bloco (metade de 6400)
+  }
+  assert.equal(r.comissaoValor, 320); // 1 mês × 10%, UMA vez no contrato (não por bloco)
+  assert.equal(r.desembolsoPrimeiroBloco, 9600); // 6400 aluguel + 3200 caução
+});
+
 test("addDiasISO soma dias corretamente (sem depender de now)", () => {
   assert.equal(addDiasISO("2026-01-01", 30), "2026-01-31");
   assert.equal(addDiasISO("2026-01-31", 1), "2026-02-01");

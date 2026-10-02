@@ -26,7 +26,7 @@ export default async function OG({ params }: { params: Promise<{ id: string }> }
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", fontSize: 34, fontWeight: 800 }}>
-            <span style={{ color: "#2E8BE6" }}>Viva</span>
+            <span style={{ color: "#2e7d5b" }}>Viva</span>
             <span style={{ color: "#6CBE2A" }}>Nomads</span>
           </div>
           {p?.readyToLiveBadge && (
@@ -38,7 +38,7 @@ export default async function OG({ params }: { params: Promise<{ id: string }> }
                 fontWeight: 700,
                 padding: "10px 22px",
                 borderRadius: 999,
-                background: "linear-gradient(135deg, #1E63D0, #6CBE2A)",
+                background: "linear-gradient(135deg, #1c6b3a, #6CBE2A)",
               }}
             >
               Pronto para Morar

@@ -73,6 +73,19 @@ export async function relacaoAceitaEntreServidor(
         .maybeSingle();
       if (resposta) return true;
     }
+
+    // 3) Candidatura (lead) aceita pelo proprietário. Ancora a revelação de
+    //    identidade (nome completo + foto) ao aceite persistido — nunca antes,
+    //    e nunca contato (e-mail/telefone continuam ocultos em toda fase).
+    const { data: lead } = await admin
+      .from("leads")
+      .select("id")
+      .eq("owner_id", ownerId)
+      .eq("tenant_id", tenantId)
+      .eq("status", "accepted")
+      .limit(1)
+      .maybeSingle();
+    if (lead) return true;
   } catch {
     return false; // fail-closed
   }

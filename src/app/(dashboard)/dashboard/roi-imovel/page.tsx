@@ -2,11 +2,12 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Percent, Info } from "lucide-react";
+import { Percent, Info, Download } from "lucide-react";
 import { PageTitle } from "@/components/dashboard/primitives";
 import { useAuthStore, DEMO_USER } from "@/lib/store";
 import { plano as getPlano, type PlanoId } from "@/config/planos";
 import { simularROI, type EntradaROI } from "@/lib/simulador";
+import { imprimirSimulacao } from "@/lib/print-simulacao";
 import { formatBRL } from "@/lib/utils";
 import { NumInput, ResultCard, SimDisclaimer, SimHero, PlanoPills } from "@/components/simulador/ui";
 
@@ -96,6 +97,31 @@ export default function RoiImovelPage() {
             </div>
             <p className="mt-3 text-[11px] text-muted">O mobiliado desconta o investimento no ano 1 — por isso pode começar atrás e ultrapassar depois.</p>
           </div>
+
+          <button
+            type="button"
+            onClick={() =>
+              imprimirSimulacao({
+                titulo: "Calculadora de ROI — mobiliar o imóvel",
+                subtitulo: `Plano ${p?.nome ?? "—"}`,
+                entradas: [
+                  { label: "Investimento para mobiliar", valor: formatBRL(investimentoMobiliar) },
+                  { label: "Aluguel vazio (mês)", valor: formatBRL(aluguelVazio) },
+                  { label: "Aluguel mobiliado (mês)", valor: formatBRL(aluguelMobiliado) },
+                  { label: "Meses ocupados no ano", valor: String(mesesOcupados) },
+                ],
+                resultados: [
+                  { label: "Prêmio do mobiliado", valor: `+ ${formatBRL(res.premioMensal)}/mês` },
+                  { label: "Ganho líquido adicional / ano", valor: formatBRL(res.ganhoAdicionalAnual) },
+                  { label: "Payback do investimento", valor: res.paybackMeses ? `${res.paybackMeses} meses` : "—" },
+                  { label: "ROI anual", valor: `${Math.round(res.roiAnual * 100)}%` },
+                ],
+              })
+            }
+            className="inline-flex items-center gap-2 rounded-xl border border-sage-200 px-4 py-2.5 text-sm font-medium text-forest hover:border-sage"
+          >
+            <Download className="h-4 w-4" /> Baixar PDF
+          </button>
         </div>
       </div>
 

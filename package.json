@@ -13,11 +13,22 @@
     "testes": "playwright test",
     "testes:criticos": "playwright test --grep @criticos",
     "testes:report": "playwright show-report",
+    "seed:teste": "node scripts/seed-test-data.mjs",
+    "check:migracoes": "node scripts/check-migracoes.mjs",
     "screenshots": "node scripts/screenshots.mjs",
-    "capturas": "node scripts/capturas-demo.mjs"
+    "capturas": "node scripts/capturas-demo.mjs",
+    "cap:add:android": "cap add android",
+    "cap:add:ios": "cap add ios",
+    "cap:sync": "cap sync",
+    "cap:android": "cap open android",
+    "cap:ios": "cap open ios"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.111.0",
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/core": "^8.5.2",
+    "@capacitor/ios": "^8.5.2",
+    "@capacitor/push-notifications": "^8.1.2",
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.108.2",
     "clsx": "^2.1.1",
@@ -30,6 +41,7 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.5.2",
     "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4",
     "@types/mapbox-gl": "^3.4.1",

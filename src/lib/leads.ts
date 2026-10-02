@@ -51,7 +51,7 @@ export function buildLeadNotification(
   const detailsHtml =
     `<p style="margin:16px 0 6px"><strong>${LEAD_KIND_LABEL[kind]}</strong> — ${propertyTitle}</p>` +
     `<p style="margin:0 0 12px">Interessado: <strong>${first}</strong></p>` +
-    `<p style="margin:0"><a href="${link}" style="display:inline-block;background:#1e63d0;color:#fff;padding:11px 20px;border-radius:999px;text-decoration:none;font-weight:600">Responder pela plataforma</a></p>` +
+    `<p style="margin:0"><a href="${link}" style="display:inline-block;background:#1c6b3a;color:#fff;padding:11px 20px;border-radius:999px;text-decoration:none;font-weight:600">Responder pela plataforma</a></p>` +
     `<p style="color:#6b7280;font-size:12px;margin:12px 0 0">Converse pela plataforma — assim tudo fica registrado e protegido. O contato é revelado conforme o andamento. Não responda este e-mail.</p>`;
   const detailsText =
     `${LEAD_KIND_LABEL[kind]} — ${propertyTitle}\nInteressado: ${first}\n\nResponda pela plataforma (a conversa fica registrada): ${link}`;

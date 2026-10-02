@@ -184,6 +184,7 @@ export default function NewPropertyPage() {
     if (s === 2) {
       if ((Number(bathrooms) || 0) < 1) e.banheiros = "Informe ao menos 1 banheiro.";
       if ((Number(areaM2) || 0) <= 0) e.area = "Informe a área do imóvel (m²).";
+      if ((Number(maxGuests) || 0) < 1) e.hospedes = "Informe a capacidade (nº de hóspedes).";
     }
     if (s === 3 && photos.length === 0)
       e.fotos = "Adicione ao menos 1 foto para continuar (o mínimo para publicar é " + MIN_PHOTOS + ").";
@@ -1020,6 +1021,7 @@ export default function NewPropertyPage() {
               <Labeled label="Capacidade máxima (pessoas)">
                 <input type="number" min={1} value={maxGuests} onChange={(e) => setMaxGuests(e.target.value)} className="input" placeholder="Ex.: 2" />
                 <span className="mt-1 block text-xs text-muted">Quantas pessoas o imóvel comporta. Validado no fechamento.</span>
+                <Erro msg={erros.hospedes} />
               </Labeled>
             </div>
 

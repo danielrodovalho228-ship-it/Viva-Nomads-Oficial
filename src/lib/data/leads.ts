@@ -14,10 +14,21 @@ interface LeadRow {
   verification: { traffic_light: Light | null; risk_categories: string[] | null }[] | null;
 }
 
-/** Só o primeiro nome (identidade pós-aceite: sem sobrenome/contato na lista). */
+/** Só o primeiro nome — enquanto a candidatura NÃO foi aceita. */
 function primeiroNome(nome: string | null | undefined): string {
   const n = (nome || "").trim().split(/\s+/)[0];
   return n || "Interessado";
+}
+
+/**
+ * Nome exibido ao proprietário: nome COMPLETO após o aceite (identidade
+ * revelada — nome + foto + verificação, NUNCA contato); só o primeiro nome
+ * enquanto em aberto/recusado.
+ */
+function nomeExibido(nome: string | null | undefined, status: string): string {
+  const completo = (nome || "").trim();
+  if (status === "accepted" && completo) return completo;
+  return primeiroNome(nome);
 }
 
 /**
@@ -51,7 +62,8 @@ export async function listLeads(): Promise<Lead[]> {
     const v = r.verification?.[0];
     return {
       id: r.id,
-      name: primeiroNome(r.tenant?.full_name),
+      status: r.status,
+      name: nomeExibido(r.tenant?.full_name, r.status),
       property: r.property?.title ?? "Imóvel",
       category: categoriaLabel(r.tenant?.professional_category) || "—",
       riskCategories: v?.risk_categories ?? ["Verificação pendente"],

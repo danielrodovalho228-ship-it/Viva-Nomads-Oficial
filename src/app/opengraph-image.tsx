@@ -28,7 +28,7 @@ export default function OG() {
             width: 520,
             height: 520,
             borderRadius: 520,
-            background: "linear-gradient(135deg, #143C8C, #1E63D0, #6CBE2A)",
+            background: "linear-gradient(135deg, #123b26, #1c6b3a, #6CBE2A)",
             opacity: 0.5,
             filter: "blur(40px)",
           }}
@@ -40,11 +40,11 @@ export default function OG() {
               width: 56,
               height: 56,
               borderRadius: 16,
-              background: "linear-gradient(135deg, #143C8C, #6CBE2A)",
+              background: "linear-gradient(135deg, #123b26, #6CBE2A)",
             }}
           />
           <div style={{ display: "flex", fontSize: 38, fontWeight: 800 }}>
-            <span style={{ color: "#2E8BE6" }}>Viva</span>
+            <span style={{ color: "#2e7d5b" }}>Viva</span>
             <span style={{ color: "#6CBE2A" }}>Nomads</span>
           </div>
         </div>

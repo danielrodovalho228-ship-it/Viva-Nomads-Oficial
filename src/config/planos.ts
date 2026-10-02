@@ -92,7 +92,7 @@ export const PLANOS: Plano[] = [
     beneficios: [
       "Imóveis ilimitados",
       "Tudo do Profissional",
-      "Gestão de carteira e múltiplos proprietários",
+      "Feito para administradoras — recursos de carteira em construção com os primeiros gestores parceiros",
       "Atendimento dedicado",
     ],
     custoLabel: "Comissão zero — você paga só a assinatura",

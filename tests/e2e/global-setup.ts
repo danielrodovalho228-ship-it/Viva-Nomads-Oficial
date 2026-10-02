@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { chromium, type FullConfig } from "@playwright/test";
-import { ALL_ROLES } from "./fixtures/accounts";
+import { ALL_ROLES, OPTIONAL_ROLES, hasAccount } from "./fixtures/accounts";
 import { authFile, loginAs } from "./fixtures/auth";
 
 /**
@@ -16,9 +16,12 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
 
   fs.mkdirSync(path.dirname(authFile("inquilino")), { recursive: true });
 
+  // Papéis opcionais só entram na rodada quando têm credenciais configuradas.
+  const roles = [...ALL_ROLES, ...OPTIONAL_ROLES.filter(hasAccount)];
+
   const browser = await chromium.launch({ executablePath });
   try {
-    for (const role of ALL_ROLES) {
+    for (const role of roles) {
       const context = await browser.newContext({ baseURL });
       const page = await context.newPage();
       await loginAs(page, role);

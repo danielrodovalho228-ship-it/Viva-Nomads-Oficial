@@ -23,6 +23,7 @@ export default function robots(): MetadataRoute.Robots {
         "/modelodenegocio",
         "/socios",
         "/decisao",
+        "/tributario",
         "/acesso-socios",
         "/dev",
       ],

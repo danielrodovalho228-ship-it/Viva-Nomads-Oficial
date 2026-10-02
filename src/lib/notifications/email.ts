@@ -11,6 +11,29 @@ export interface EmailResult {
   demo: boolean;
   id?: string;
   error?: string;
+  /** true quando capturado no outbox de teste (nada saiu para a rede). */
+  captured?: boolean;
+}
+
+/**
+ * Captura de e-mail para testes (E2E). Com EMAIL_TEST_OUTBOX definido, o envio
+ * é curto-circuitado e a mensagem é anexada (JSONL) ao arquivo apontado — nada
+ * é enviado para endereços reais. Só ativa fora de produção, como salvaguarda.
+ */
+async function captureToOutbox(
+  outbox: string,
+  params: { to: string; subject: string; html: string; text?: string },
+): Promise<void> {
+  const { appendFile } = await import("node:fs/promises");
+  const line =
+    JSON.stringify({
+      to: params.to,
+      subject: params.subject,
+      text: params.text ?? "",
+      // gravamos só um trecho do HTML — o suficiente para asserção, sem ruído.
+      htmlLen: params.html.length,
+    }) + "\n";
+  await appendFile(outbox, line, "utf8");
 }
 
 export async function sendEmail(params: {
@@ -20,6 +43,12 @@ export async function sendEmail(params: {
   /** Versão texto puro (multipart). Melhora entregabilidade e acessibilidade. */
   text?: string;
 }): Promise<EmailResult> {
+  const outbox = process.env.EMAIL_TEST_OUTBOX;
+  if (outbox && process.env.NODE_ENV !== "production") {
+    await captureToOutbox(outbox, params);
+    return { demo: true, captured: true };
+  }
+
   if (!isEmailConfigured()) {
     return { demo: true };
   }

@@ -2,9 +2,10 @@
  * Proteção de contato nas conversas (padrão de marketplaces).
  *
  * Mascara telefones, e-mails e links de mensageria externa trocados no chat,
- * ANTES de gravar/exibir. Motivo: manter a negociação registrada na plataforma
- * (trilha para disputas) e liberar contato direto apenas no fluxo oficial —
- * o telefone do proprietário só é liberado após o aceite do proprietário.
+ * ANTES de gravar/exibir. Motivo: a negociação segue registrada na plataforma
+ * (trilha para disputas). Contato direto (telefone/e-mail) NÃO é trocado em fase
+ * alguma — nem após o aceite; o aceite revela identidade (nome + foto), não
+ * contato, e a conversa continua exclusivamente pela plataforma.
  *
  * Função pura e client-safe: usada no servidor (fonte da verdade, antes do
  * insert) e no cliente (eco otimista igual ao que o servidor grava).
@@ -24,6 +25,13 @@ const PHONE_CANDIDATE_RE = /\+?\d[\d\s().-]{7,}\d/g;
 
 /** Links de mensageria externa (WhatsApp/Telegram) — tiram a conversa da trilha. */
 const MESSENGER_RE = /(https?:\/\/)?(wa\.me|api\.whatsapp\.com|chat\.whatsapp\.com|t\.me|telegram\.me)\/\S+/gi;
+
+/** Perfis de rede social (instagram/facebook/tiktok) por URL. */
+const SOCIAL_URL_RE = /(?:https?:\/\/)?(?:www\.)?(?:instagram|facebook|fb|tiktok)\.com\/\S+/gi;
+
+/** @handle solto (ex.: @maria.silva) — típico "me chama no insta @...". Captura
+ *  o char anterior para não colidir com e-mails (já mascarados antes). */
+const HANDLE_RE = /(^|[^\w@])@([a-zA-Z0-9._]{2,30})/g;
 
 export interface GuardResult {
   /** Texto com os contatos mascarados. */
@@ -52,10 +60,20 @@ export function guardContactInfo(input: string): GuardResult {
     masked = true;
     return MASK;
   });
+  text = text.replace(SOCIAL_URL_RE, () => {
+    masked = true;
+    return MASK;
+  });
+  // @handle solto — roda por último (e-mails/URLs já mascarados). Preserva o
+  // caractere anterior capturado.
+  text = text.replace(HANDLE_RE, (_m, pre: string) => {
+    masked = true;
+    return `${pre}${MASK}`;
+  });
 
   return { text, masked };
 }
 
 /** Aviso curto exibido quando algo foi mascarado. */
 export const GUARD_NOTICE =
-  "Para sua segurança, telefones e e-mails são protegidos no chat. O contato direto é liberado após o aceite do proprietário.";
+  "Para sua segurança, telefones e e-mails são protegidos no chat. A negociação segue toda pela plataforma — o contato direto não é trocado.";

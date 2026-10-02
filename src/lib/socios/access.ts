@@ -19,6 +19,7 @@ export const INTERNAL_PAGES = [
   "/modelodenegocio",
   "/socios",
   "/decisao",
+  "/tributario",
 ] as const;
 
 /** Nome do cookie httpOnly assinado do sócio. */

@@ -13,6 +13,8 @@ import {
   ClipboardCheck,
   ArrowRight,
   PencilLine,
+  FileSignature,
+  Wallet,
 } from "lucide-react";
 import { useViewMode, primeiroNomeExibicao } from "@/lib/roles";
 import { getLatestDraft } from "@/lib/data/actions";
@@ -142,6 +144,15 @@ function OwnerDashboard({ name }: { name: string }) {
         <StatCard label="Imóveis ativos" value={String(allProperties.length)} icon={Home} />
       </div>
 
+      {/* Regra de ouro, dita com todas as letras onde o dono pensa em dinheiro. */}
+      <p className="mt-4 flex items-start gap-2 rounded-xl border border-forest/20 bg-forest/5 px-4 py-3 text-sm text-ink">
+        <Wallet className="mt-0.5 h-4 w-4 shrink-0 text-forest" />
+        <span>
+          O aluguel vai do inquilino <strong>direto para a sua conta</strong> — a plataforma nunca
+          toca no dinheiro.
+        </span>
+      </p>
+
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
         <Panel title="Meus imóveis" className="lg:col-span-2">
           {myProperties.length === 0 ? (
@@ -225,8 +236,10 @@ function TenantDashboard({ name }: { name: string }) {
       {/* Primeiro acesso: checklist de 3 passos (ou o banner, quando concluído/oculto). */}
       <TenantOnboarding name={name} />
 
-      {/* Mobile: 3 KPIs compactos numa única linha (ADENDO item 1). */}
-      <div className="grid grid-cols-3 gap-2.5 sm:gap-4">
+      {/* KPIs de acesso rápido: 2×2 no mobile, 4 em linha no desktop. Candidaturas
+          é o lar do acompanhamento (envio → resposta) — sem novo item no menu. */}
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-4">
+        <StatCard label="Candidaturas" value={demo ? "2" : "0"} icon={FileSignature} href="/dashboard/candidaturas" />
         <StatCard label="Favoritos" value={demo ? "3" : "0"} icon={Heart} href="/dashboard/favoritos" />
         <StatCard label="Buscas salvas" value={demo ? "2" : "0"} icon={Search} href="/dashboard/buscas" />
         <StatCard label="Mensagens" value={demo ? "1" : "0"} icon={MessageSquare} href="/dashboard/mensagens" />

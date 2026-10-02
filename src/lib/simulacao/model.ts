@@ -154,7 +154,7 @@ export const FONTES: FonteReceita[] = [
   {
     key: "comissao",
     label: "Comissão por aluguel",
-    color: "#1e63d0",
+    color: "#1c6b3a",
     desc: "% sobre o 1º aluguel de cada contrato fechado.",
   },
   {

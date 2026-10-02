@@ -11,7 +11,7 @@
  */
 
 import { useAuthStore, DEMO_USER, type SessionUser, type ViewMode } from "./store";
-import { primeiroNome } from "./display-name";
+import { primeiroNome, usuarioDoEmail } from "./display-name";
 
 export type { ViewMode };
 
@@ -43,6 +43,16 @@ export function defaultMode(user: SessionUser): ViewMode {
  */
 export function primeiroNomeExibicao(user: SessionUser | null | undefined): string {
   return primeiroNome(user?.fullName);
+}
+
+/**
+ * Identidade curta do PRÓPRIO usuário para o rodapé/avatar: primeiro nome do
+ * perfil; sem nome, o "usuário" do e-mail (parte antes do @) — que identifica
+ * sem expor o e-mail inteiro; em último caso, rótulo neutro. Fonte única do
+ * rótulo do rodapé da casca.
+ */
+export function identidadeUsuario(user: SessionUser | null | undefined): string {
+  return primeiroNomeExibicao(user) || usuarioDoEmail(user?.email) || "Minha conta";
 }
 
 /**

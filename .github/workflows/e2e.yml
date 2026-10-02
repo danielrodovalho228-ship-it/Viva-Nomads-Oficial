@@ -28,12 +28,21 @@ jobs:
       TESTES_INQUILINO_EMAIL: ${{ secrets.TESTES_INQUILINO_EMAIL }}
       TESTES_INQUILINO_SENHA: ${{ secrets.TESTES_INQUILINO_SENHA }}
       TESTES_INQUILINO_NOME: ${{ secrets.TESTES_INQUILINO_NOME }}
+      # inquilino2 é OPCIONAL (T-TRAV-C recusa a 2ª); ausente → os testes se pulam.
+      TESTES_INQUILINO2_EMAIL: ${{ secrets.TESTES_INQUILINO2_EMAIL }}
+      TESTES_INQUILINO2_SENHA: ${{ secrets.TESTES_INQUILINO2_SENHA }}
+      TESTES_INQUILINO2_NOME: ${{ secrets.TESTES_INQUILINO2_NOME }}
       TESTES_PROPRIETARIO_EMAIL: ${{ secrets.TESTES_PROPRIETARIO_EMAIL }}
       TESTES_PROPRIETARIO_SENHA: ${{ secrets.TESTES_PROPRIETARIO_SENHA }}
       TESTES_PROPRIETARIO_NOME: ${{ secrets.TESTES_PROPRIETARIO_NOME }}
       TESTES_ADMIN_EMAIL: ${{ secrets.TESTES_ADMIN_EMAIL }}
       TESTES_ADMIN_SENHA: ${{ secrets.TESTES_ADMIN_SENHA }}
       TESTES_ADMIN_NOME: ${{ secrets.TESTES_ADMIN_NOME }}
+      # Seed (service role do projeto de TESTE) — habilita T-TRAV-B/C (pedido +
+      # imóvel publicado). Se o segredo não existir, o passo de seed é pulado e
+      # os testes dependentes se pulam sozinhos (resilientes).
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.TESTES_SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.TESTES_SUPABASE_SERVICE_ROLE_KEY }}
     steps:
       - uses: actions/checkout@v4
 
@@ -47,6 +56,10 @@ jobs:
 
       - name: Instalar Chromium do Playwright
         run: npx playwright install --with-deps chromium
+
+      - name: Semear dados de teste (se houver service role)
+        if: ${{ env.SUPABASE_SERVICE_ROLE_KEY != '' }}
+        run: npm run seed:teste
 
       - name: Rodar suíte E2E
         run: npm run testes

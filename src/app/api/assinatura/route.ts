@@ -17,6 +17,15 @@ export async function POST(request: Request) {
     cpfCnpj?: string;
   };
 
+  // Gestor NÃO é auto-serviço: é plano de elegibilidade, ativado por venda
+  // assistida no piloto. Nunca é cobrável por aqui, elegível ou não.
+  if (planId === "gestor") {
+    return NextResponse.json(
+      { error: "O plano Gestor é ativado com nosso time. Fale com a gente." },
+      { status: 403 }
+    );
+  }
+
   const plan = PLANS.find((p) => p.id === planId);
   if (!plan || !plan.price) {
     return NextResponse.json({ error: "Plano inválido para cobrança." }, { status: 400 });

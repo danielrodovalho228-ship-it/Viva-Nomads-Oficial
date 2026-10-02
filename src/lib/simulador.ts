@@ -107,6 +107,35 @@ export function compararPlanos(e: EntradaRentabilidade, planos: PlanoCalc[]): Li
   });
 }
 
+export interface Recomendacao {
+  planoId: PlanoId;
+  nome: string;
+  motivo: string;
+}
+
+/**
+ * Recomenda o plano pelo VOLUME real do proprietário (regra 3): o que deixa mais
+ * líquido no bolso dele com os inputs informados. A honestidade É a feature — se
+ * a resposta é "o Gratuito é seu melhor plano", é isso que aparece. O Gestor
+ * (sob consulta / venda assistida) fica FORA da recomendação automática.
+ */
+export function recomendarPlano(
+  e: EntradaRentabilidade,
+  planos: PlanoCalc[]
+): Recomendacao | null {
+  const linhas = compararPlanos(e, planos).filter((l) => !l.sobConsulta);
+  if (!linhas.length) return null;
+  // Maior líquido ao proprietário vence (empate → mantém o primeiro, mais barato).
+  const melhor = linhas.reduce((a, b) =>
+    b.liquidoProprietario > a.liquidoProprietario ? b : a
+  );
+  const meses = Math.min(12, Math.max(0, e.mesesOcupados));
+  const contratos = contratosPorAno(meses, e.prazoMedioMeses);
+  const nCon = Math.round(contratos * 10) / 10;
+  const motivo = `Com ~${nCon} contrato(s)/ano no valor informado, o ${melhor.nome} deixa mais no seu bolso.`;
+  return { planoId: melhor.planoId, nome: melhor.nome, motivo };
+}
+
 export interface EntradaROI {
   investimentoMobiliar: number;
   aluguelVazio: number;

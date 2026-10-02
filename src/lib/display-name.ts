@@ -19,6 +19,28 @@ export function primeiroNome(nomeCompleto: string | null | undefined): string {
   return n.split(/\s+/)[0];
 }
 
+/**
+ * "Usuário" do e-mail: a parte antes do "@". Identifica o dono da conta sem
+ * expor o e-mail inteiro — usado como fallback amigável quando não há nome
+ * próprio (rodapé/avatar). "" se não houver e-mail válido.
+ */
+export function usuarioDoEmail(email: string | null | undefined): string {
+  const e = (email ?? "").trim();
+  const at = e.indexOf("@");
+  return at > 0 ? e.slice(0, at) : "";
+}
+
+/**
+ * Nome completo para EDIÇÃO (campo "Nome completo" da Conta): devolve o nome
+ * como está, exceto quando o valor foi poluído com o e-mail em algum fluxo
+ * antigo (contém "@") — nesse caso devolve "" para o campo convidar o nome real,
+ * em vez de exibir o e-mail como se fosse o nome.
+ */
+export function nomeCompletoLimpo(fullName: string | null | undefined): string {
+  const n = (fullName ?? "").trim();
+  return n.includes("@") ? "" : n;
+}
+
 /** Formato mínimo de perfil aceito pelo util (qualquer origem de nome). */
 export interface PerfilNome {
   fullName?: string | null;

@@ -4,8 +4,19 @@ import {
   contratosPorAno,
   simularRentabilidade,
   compararPlanos,
+  recomendarPlano,
   simularROI,
+  type PlanoCalc,
 } from "./simulador.ts";
+
+// Espelha config/planos.ts (Grátis 12%/R$0, Essencial 10%/R$588, Pro 8%/R$1548,
+// Gestor sob consulta).
+const PLANOS_CALC: PlanoCalc[] = [
+  { id: "free", nome: "Gratuito", comissao: 0.12, assinaturaAnual: 0 },
+  { id: "essential", nome: "Essencial", comissao: 0.1, assinaturaAnual: 588 },
+  { id: "pro", nome: "Profissional", comissao: 0.08, assinaturaAnual: 1548 },
+  { id: "gestor", nome: "Gestor", comissao: 0, assinaturaAnual: null },
+];
 
 test("contratosPorAno = meses / prazo (limitado a 12 meses)", () => {
   assert.equal(contratosPorAno(10, 4), 2.5);
@@ -55,6 +66,35 @@ test("comparador: líquido cai conforme comissão/assinatura sobem", () => {
   assert.equal(gestor.sobConsulta, true);
   // Gestor: sem comissão e assinatura 0 no cálculo → maior líquido
   assert.ok(gestor.liquidoProprietario >= pro.liquidoProprietario);
+});
+
+test("recomendação: BAIXO volume → Gratuito é o melhor plano (honestidade)", () => {
+  // 3.000/mês, 6 meses ocupados, prazo 6 → ~1 contrato/ano. A assinatura anual
+  // não se paga: o Gratuito deixa mais líquido.
+  const r = recomendarPlano(
+    { aluguelMensal: 3000, condoIptu: 0, contas: 0, mesesOcupados: 6, prazoMedioMeses: 6 },
+    PLANOS_CALC
+  );
+  assert.equal(r?.planoId, "free");
+});
+
+test("recomendação: ALTO volume/valor → plano pago vence e MUDA com o volume", () => {
+  // 10.000/mês, 12 meses, prazo 2 → 6 contratos/ano. A economia de comissão
+  // supera a assinatura: o recomendado deixa de ser o Gratuito.
+  const r = recomendarPlano(
+    { aluguelMensal: 10000, condoIptu: 0, contas: 0, mesesOcupados: 12, prazoMedioMeses: 2 },
+    PLANOS_CALC
+  );
+  assert.notEqual(r?.planoId, "free");
+  assert.equal(r?.planoId, "pro"); // 8% + 1548 < 10% + 588 < 12% neste volume
+});
+
+test("recomendação: Gestor (sob consulta) nunca é recomendado automaticamente", () => {
+  const r = recomendarPlano(
+    { aluguelMensal: 99999, condoIptu: 0, contas: 0, mesesOcupados: 12, prazoMedioMeses: 2 },
+    PLANOS_CALC
+  );
+  assert.notEqual(r?.planoId, "gestor");
 });
 
 test("ROI: prêmio, payback e roi anual coerentes", () => {

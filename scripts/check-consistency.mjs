@@ -34,11 +34,15 @@ const EXCLUDE = [
 //    são termos legítimos e NÃO entram aqui.
 const MONEY = [
   /\bsaldo\b/i,
-  /\brepasse\b/i,
+  /\brepass(e|amos|ar|es)\b/i, // repasse / repassamos / repassar
   /receba pela plataforma/i,
   /processamos o pagamento/i,
   /movimenta(mos)? o dinheiro/i,
   /transferimos o (aluguel|valor)/i,
+  // Contradições diretas da regra de ouro (proteção inversa): variedade na
+  // AFIRMAÇÃO é ok, tolerância ZERO na contradição.
+  /liberamos o (valor|aluguel|dinheiro)/i,
+  /intermedia(mos)? o pagamento/i,
 ];
 
 // 2) Vazamento de contato: join de perfil trazendo e-mail/telefone da outra
@@ -91,6 +95,13 @@ const GARANTIA_BANIDA = /\bgarant(ia|idor)\s+digital\b/i;
 //    estadia" e "curtíssimo prazo" são variações soltas e ficam banidas. Ver a
 //    decisão de terminologia (temporada só em contexto jurídico — art. 48).
 const PRAZO_BANIDO = [/m[ée]dia\s+estadia/i, /curt[íi]ssim[oa]\s+prazo/i];
+
+// 8) Contato "liberado após o aceite" é PROIBIDO: telefone/e-mail nunca são
+//    trocados — a conversa segue toda pela plataforma (regra de ouro). O aceite
+//    revela IDENTIDADE (nome + foto), não contato. Exige a palavra "contato"
+//    perto de "liberad(o) ... aceite" — NÃO pega "endereço liberado após o
+//    aceite" (revelação legítima do endereço). Escape: `consistency-ignore`.
+const CONTATO_BANIDO = /\bcontato\b(?:(?!\.).){0,60}liberad[ao](?:(?!\.).){0,25}aceite/i;
 function pareceCodigo(linha) {
   const t = linha.trimStart();
   return (
@@ -179,6 +190,13 @@ for (const dir of SCAN_DIRS) {
               line: line.trim(),
             });
         }
+        if (CONTATO_BANIDO.test(line))
+          violations.push({
+            rel,
+            n: i + 1,
+            why: "contato NUNCA é liberado — telefone/e-mail não são trocados; a conversa segue pela plataforma (o aceite revela identidade, não contato)",
+            line: line.trim(),
+          });
       }
     });
   }
