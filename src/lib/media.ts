@@ -118,6 +118,32 @@ export const PROPERTY_PHOTOS: Record<string, string[]> = {
     `${I}/ube/ube-009-sala.webp`,
     `${I}/ube/ube-009-mesa-estudos.webp`,
   ],
+  "ube-010": [
+    `${I}/ube/ube-010-sala.webp`,
+    `${I}/ube/ube-010-quarto.webp`,
+  ],
+  "ube-011": [
+    `${I}/ube/ube-011-ambiente.webp`,
+    `${I}/ube/ube-011-mesa-estudos.webp`,
+  ],
+  "ube-012": [
+    `${I}/ube/ube-012-sala.webp`,
+    `${I}/ube/ube-012-home-office.webp`,
+  ],
+  "ube-013": [
+    `${I}/ube/ube-013-sala.webp`,
+    `${I}/ube/ube-013-quarto.webp`,
+    `${I}/ube/ube-013-quintal.webp`,
+  ],
+  "ube-014": [
+    `${I}/ube/ube-014-sala.webp`,
+    `${I}/ube/ube-014-quarto.webp`,
+    `${I}/ube/ube-014-varanda-gourmet.webp`,
+  ],
+  "ube-015": [
+    `${I}/ube/ube-015-ambiente.webp`,
+    `${I}/ube/ube-015-cozinha.webp`,
+  ],
 };
 
 /**
