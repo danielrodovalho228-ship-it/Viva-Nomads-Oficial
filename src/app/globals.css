@@ -7,13 +7,15 @@
 */
 @theme {
   /* ── Azul de marca (primária) ── */
-  --color-blue-50: #eef4ff;
-  --color-blue-100: #d9e6ff;
-  --color-blue-200: #b3ccff;
-  --color-blue-300: #2e8be6;
-  --color-blue-500: #1e63d0;
-  --color-blue-700: #143c8c;
-  --color-blue-900: #0b2a66;
+  --color-blue-50: #eef6ef;
+  --color-blue-100: #d7ecdd;
+  --color-blue-200: #b2dcc0;
+  --color-blue-300: #3fa06a;
+  --color-blue-500: #1c6b3a;
+  --color-blue-600: #1a5a33;
+  --color-blue-700: #184a30;
+  --color-blue-800: #153f29;
+  --color-blue-900: #123b26;
 
   /* ── Verde-limão de marca (acento) ── */
   --color-green-50: #f2fbe9;
@@ -32,12 +34,12 @@
   --color-surface-2: #f5f7fa;
 
   /* ── Aliases semânticos (compat. com componentes existentes) ── */
-  --color-forest: #143c8c; /* primária (era verde-floresta) */
-  --color-forest-700: #0b2a66;
-  --color-forest-600: #1751c0;
-  --color-sage: #1e63d0; /* secundária */
-  --color-sage-100: #eef4ff;
-  --color-sage-200: #e2e7ee;
+  --color-forest: #1c6b3a; /* primária (verde-marca, alinhado ao deck) */
+  --color-forest-700: #123b26;
+  --color-forest-600: #238049;
+  --color-sage: #2e7d5b; /* secundária (verde médio) */
+  --color-sage-100: #eef6ef;
+  --color-sage-200: #dce9e0;
   --color-champagne: #6cbe2a; /* CTA/selo */
   --color-champagne-600: #4fa01e;
 
@@ -52,7 +54,7 @@
   --background: #ffffff;
   --foreground: #0f1722;
   /* Gradiente assinatura azul→verde (só em elementos de marca) */
-  --gradient-brand: linear-gradient(135deg, #143c8c 0%, #1e63d0 45%, #6cbe2a 100%);
+  --gradient-brand: linear-gradient(135deg, #123b26 0%, #1c6b3a 45%, #6cbe2a 100%);
 }
 
 body {
@@ -219,7 +221,7 @@ textarea:focus-visible,
   z-index: 100;
   transform: translateY(-150%);
   border-radius: 0.5rem;
-  background: var(--color-forest, #143c8c);
+  background: var(--color-forest, #123b26);
   padding: 0.625rem 1rem;
   font-size: 0.875rem;
   font-weight: 600;

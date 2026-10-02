@@ -31,8 +31,8 @@ export function BrandMark({ size = 32 }: { size?: number }) {
     <svg width={size} height={size} viewBox="0 0 100 100" fill="none" aria-hidden>
       <defs>
         <linearGradient id="vn-blue" x1="20" y1="86" x2="70" y2="14" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#143C8C" />
-          <stop offset="1" stopColor="#2E8BE6" />
+          <stop stopColor="#123B26" />
+          <stop offset="1" stopColor="#2E7D5B" />
         </linearGradient>
         <linearGradient id="vn-green" x1="66" y1="86" x2="86" y2="14" gradientUnits="userSpaceOnUse">
           <stop stopColor="#4FA01E" />
@@ -54,7 +54,7 @@ export function BrandMark({ size = 32 }: { size?: number }) {
 function Wordmark({ light }: { light?: boolean }) {
   return (
     <span className="font-title text-[1.2rem] font-bold tracking-tight leading-none">
-      <span style={{ color: light ? "#4f9bff" : "#1E63D0" }}>Viva</span>
+      <span style={{ color: light ? "#BFE3C8" : "#123B26" }}>Viva</span>
       <span style={{ color: light ? "#8FD63A" : "#6CBE2A" }}>Nomads</span>
     </span>
   );

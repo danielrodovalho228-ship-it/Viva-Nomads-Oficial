@@ -66,9 +66,9 @@ export function iniciais(nome: string): string {
 
 /** Paleta de fundos (escuros o bastante p/ iniciais brancas legíveis). */
 export const AVATAR_PALETTE = [
-  "#143c8c", // azul (primária)
-  "#1e63d0", // azul médio
-  "#0b2a66", // azul escuro
+  "#123b26", // azul (primária)
+  "#1c6b3a", // azul médio
+  "#123b26", // azul escuro
   "#2f6310", // verde escuro
   "#4fa01e", // verde médio
   "#5b6573", // slate

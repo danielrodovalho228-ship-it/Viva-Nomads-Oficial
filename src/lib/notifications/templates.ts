@@ -25,7 +25,7 @@ function layout(inner: string, image?: { src: string; alt: string }): string {
       <tr><td style="padding:22px 32px;border-bottom:1px solid #eef2f1;">
         <table role="presentation" cellpadding="0" cellspacing="0"><tr>
           <td style="vertical-align:middle;"><img src="${MARK}" width="34" height="34" alt="Viva Nomads" style="display:block;border:0;"></td>
-          <td style="vertical-align:middle;padding-left:10px;font-size:20px;font-weight:800;letter-spacing:-0.5px;"><span style="color:#1E63D0;">Viva</span><span style="color:#6CBE2A;">Nomads</span></td>
+          <td style="vertical-align:middle;padding-left:10px;font-size:20px;font-weight:800;letter-spacing:-0.5px;"><span style="color:#1c6b3a;">Viva</span><span style="color:#6CBE2A;">Nomads</span></td>
         </tr></table>
       </td></tr>
       ${heroRow(image)}
@@ -39,7 +39,7 @@ function layout(inner: string, image?: { src: string; alt: string }): string {
 }
 
 function button(url: string, label: string): string {
-  return `<table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="border-radius:10px;background:#1E63D0;">
+  return `<table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="border-radius:10px;background:#1c6b3a;">
     <a href="${url}" style="display:inline-block;padding:13px 28px;font-size:15px;font-weight:700;color:#fff;text-decoration:none;border-radius:10px;">${label}</a>
   </td></tr></table>`;
 }
@@ -54,7 +54,7 @@ export function emailImage(key: string, alt: string): Hero {
 /** E-mail com título, texto e botão (CTA). */
 export function brandedEmail(o: { title: string; intro: string; button: string; url: string; outro?: string; image?: Hero }): string {
   return layout(
-    `<h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;color:#143C8C;">${o.title}</h1>
+    `<h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;color:#123b26;">${o.title}</h1>
      <p style="margin:0 0 22px;font-size:15px;line-height:1.6;color:#374151;">${o.intro}</p>
      ${button(o.url, o.button)}
      ${o.outro ? `<p style="margin:22px 0 0;font-size:13px;line-height:1.6;color:#6b7280;">${o.outro}</p>` : ""}`,
@@ -65,10 +65,10 @@ export function brandedEmail(o: { title: string; intro: string; button: string; 
 /** E-mail com código (OTP) em destaque, sem botão. */
 export function brandedCodeEmail(o: { title: string; intro: string; code: string; outro?: string; image?: Hero }): string {
   return layout(
-    `<h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;color:#143C8C;">${o.title}</h1>
+    `<h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;color:#123b26;">${o.title}</h1>
      <p style="margin:0 0 22px;font-size:15px;line-height:1.6;color:#374151;">${o.intro}</p>
      <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;"><tr><td align="center" style="padding:18px;background:#f2fbe9;border:1px dashed #8FD63A;border-radius:12px;">
-       <span style="font-size:34px;font-weight:800;letter-spacing:8px;color:#143C8C;">${o.code}</span>
+       <span style="font-size:34px;font-weight:800;letter-spacing:8px;color:#123b26;">${o.code}</span>
      </td></tr></table>
      ${o.outro ? `<p style="margin:22px 0 0;font-size:13px;line-height:1.6;color:#6b7280;">${o.outro}</p>` : ""}`,
     o.image
@@ -91,7 +91,7 @@ export function brandedNotification(o: {
 }): string {
   const gapAfterIntro = o.detailsHtml || o.cta ? "18px" : "0";
   return layout(
-    `<h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;color:#143C8C;">${o.title}</h1>
+    `<h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;color:#123b26;">${o.title}</h1>
      <p style="margin:0 0 ${gapAfterIntro};font-size:15px;line-height:1.6;color:#374151;">${o.intro}</p>
      ${o.detailsHtml ?? ""}
      ${o.cta ? `<div style="margin-top:20px;">${button(o.cta.url, o.cta.label)}</div>` : ""}
@@ -151,8 +151,8 @@ export function notificationSamples(): SampleEmail[] {
         intro: "Olá Marcos, você recebeu uma nova mensagem no Viva Nomads.",
         detailsHtml:
           `<p style="margin:0 0 6px"><strong>Ana</strong> escreveu:</p>` +
-          `<blockquote style="margin:8px 0;padding:8px 12px;border-left:3px solid #1e63d0;color:#374151">Oi! O imóvel ainda está disponível para setembro?</blockquote>` +
-          `<p style="margin:12px 0 0"><a href="${SITE_URL}/dashboard/mensagens" style="display:inline-block;background:#1e63d0;color:#fff;padding:11px 20px;border-radius:999px;text-decoration:none;font-weight:600">Ler e responder</a></p>`,
+          `<blockquote style="margin:8px 0;padding:8px 12px;border-left:3px solid #1c6b3a;color:#374151">Oi! O imóvel ainda está disponível para setembro?</blockquote>` +
+          `<p style="margin:12px 0 0"><a href="${SITE_URL}/dashboard/mensagens" style="display:inline-block;background:#1c6b3a;color:#fff;padding:11px 20px;border-radius:999px;text-decoration:none;font-weight:600">Ler e responder</a></p>`,
         image: emailImage("nova-mensagem", "Conversa pela plataforma"),
       }),
     },

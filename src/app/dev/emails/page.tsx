@@ -47,7 +47,7 @@ export default async function DevEmailsPage({
         </p>
         {groups.map((g) => (
           <section key={g.title} style={{ marginBottom: 32 }}>
-            <h2 style={{ fontSize: 16, margin: "0 0 12px", color: "#143c8c" }}>{g.title}</h2>
+            <h2 style={{ fontSize: 16, margin: "0 0 12px", color: "#123b26" }}>{g.title}</h2>
             <div
               style={{
                 display: "grid",

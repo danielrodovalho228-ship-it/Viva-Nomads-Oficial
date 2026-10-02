@@ -16,7 +16,7 @@ export interface MapMarker {
   kind?: "property" | "workspace";
 }
 
-const AREA_COLOR = "#143c8c"; // primária de marca (forest)
+const AREA_COLOR = "#123b26"; // primária de marca (forest)
 const APPROX_RADIUS_KM = 0.5; // raio da área aproximada exibida
 
 /** Arredonda ~3 casas (≈110 m) para não expor o ponto exato (privacidade). */

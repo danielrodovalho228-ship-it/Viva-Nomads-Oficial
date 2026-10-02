@@ -1062,8 +1062,8 @@ export async function sendMessage(input: {
         name: contact.full_name ?? undefined,
         detailsHtml:
           `<p><strong>${senderName}</strong> escreveu:</p>` +
-          `<blockquote style="margin:8px 0;padding:8px 12px;border-left:3px solid #1e63d0;color:#374151">${preview}</blockquote>` +
-          `<p><a href="${link}" style="display:inline-block;background:#1e63d0;color:#fff;padding:10px 18px;border-radius:999px;text-decoration:none;font-weight:600">Responder no Viva Nomads</a></p>` +
+          `<blockquote style="margin:8px 0;padding:8px 12px;border-left:3px solid #1c6b3a;color:#374151">${preview}</blockquote>` +
+          `<p><a href="${link}" style="display:inline-block;background:#1c6b3a;color:#fff;padding:10px 18px;border-radius:999px;text-decoration:none;font-weight:600">Responder no Viva Nomads</a></p>` +
           `<p style="color:#6b7280;font-size:12px">Responda sempre pela plataforma — assim a conversa fica registrada e protegida. Não responda este e-mail.</p>`,
         detailsText: `${senderName}: ${preview}\n\nResponda pela plataforma (a conversa fica registrada): ${link}`,
       });

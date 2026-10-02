@@ -34,7 +34,7 @@ const pinClass = (active: boolean) =>
   );
 
 // Cor primária de marca (forest) para o traçado do raio.
-const RADIUS_COLOR = "#143c8c";
+const RADIUS_COLOR = "#123b26";
 const RADIUS_SRC = "viva-radius";
 const RADIUS_FILL = "viva-radius-fill";
 const RADIUS_LINE = "viva-radius-line";
