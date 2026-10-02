@@ -2,6 +2,14 @@
 
 Guia passo a passo para colocar a plataforma no ar.
 
+> **Caminho mínimo viável (tira do demo e põe no ar):** basta **(1)** criar o
+> projeto Supabase e rodar as 48 migrations, **(2)** deploy na Vercel com as
+> **4 variáveis obrigatórias** (`NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_SUPABASE_URL`,
+> `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`) e **(3)** apontar
+> o domínio. O resto (Asaas, Mapbox, CAF, ZapSign, WhatsApp, IA) são integrações
+> que podem entrar depois — sem elas, essas features ficam inativas, mas o núcleo
+> (contas, anúncios, candidatura, moderação) funciona.
+
 ---
 
 ## 1. Pré-requisitos
@@ -16,19 +24,10 @@ Guia passo a passo para colocar a plataforma no ar.
 ## 2. Banco de dados (Supabase)
 
 1. Crie um projeto no Supabase (região **South America / São Paulo**).
-2. No SQL Editor, rode **em ordem** todas as migrations de `supabase/migrations/`:
-   - `0001_initial_schema.sql`
-   - `0002_storage_property_photos.sql`
-   - `0003_round2_updates.sql`
-   - `0004_round3_updates.sql`
-   - `0005_round4_apis.sql`
-   - `0006_round5_cleaning_service_orders.sql`
-   - `0007_round7_badges_operator.sql` — selos em camadas (Pronto para Morar +
-     etiquetas) e perfil operador (próprio vs. sublocação autorizada).
-   - `0008_round8_documents.sql` — fluxo Orçamento → Fechamento → Contrato
-     (documentos numerados ORC/CTR-AAAA-NNNN, versionados e com itens editáveis).
-   - `0009_round11_listing_quality.sql` — qualidade do anúncio (photo_count,
-     tier padrão/completo/premium) e regra de mínimo de 8 fotos para publicar.
+2. No SQL Editor, rode **TODAS** as migrations de `supabase/migrations/` **em ordem numérica**, de `0001_initial_schema.sql` até `0048_push_tokens.sql` (48 arquivos). Não pule nenhuma.
+   - **Críticas para o piloto** (moderação de documentos — o "portão de publicar"): **`0042_document_moderation.sql`** e **`0044_document_conference.sql`**. Sem elas, publicar anúncio não exige documento aprovado (o furo que você quer evitar).
+   - **Atalho:** `supabase/producao/aplicar-piloto.sql` reúne 0042+0044+0046+0047 na ordem certa (detalhes em `supabase/producao/CHECKLIST.md`). ⚠️ O `UPDATE` de requeue da 0044 só deve rodar uma vez.
+   - **Confira depois:** `npm run check:migracoes` (apontando as envs de produção) mostra ✅/❌ por migração crítica — exit 1 se faltar moderação.
    - (opcional) `supabase/seed.sql` — depois de criar um usuário proprietário.
 3. Em **Authentication → Providers**, ative **Email** e **Google** (OAuth).
    - Em Google, configure o redirect: `https://vivanomads.com.br/auth/callback`.
