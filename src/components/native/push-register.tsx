@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { registrarPushToken } from "@/lib/data/push-actions";
+import { PUSH_ATIVO } from "@/lib/flags";
 
 /**
  * Registro de push — SÓ no app nativo (Capacitor); no-op na web (imports
@@ -31,6 +32,11 @@ export function PushRegister() {
     let cancelled = false;
     (async () => {
       try {
+        // PROTEÇÃO: sem a flag (que só se liga quando o build já tem o
+        // google-services.json), NÃO tocamos no plugin — `register()` sem Firebase
+        // derruba o app no Android, e o erro nativo não é pegável aqui.
+        if (!PUSH_ATIVO) return;
+
         const { Capacitor } = await import("@capacitor/core");
         if (!Capacitor?.isNativePlatform?.()) return; // web: ignora
 

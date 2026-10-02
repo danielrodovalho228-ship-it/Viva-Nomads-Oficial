@@ -12,6 +12,10 @@ import type { CapacitorConfig } from "@capacitor/cli";
  *
  * Para testar contra um ambiente local, troque `server.url` por
  * http://SEU_IP:3000 e deixe `cleartext: true` (só em dev).
+ *
+ * Push: o app só chama `PushNotifications.register()` quando a flag
+ * `NEXT_PUBLIC_PUSH_ATIVO="on"` está ligada (ver src/lib/flags.ts e PLAY-STORE.md).
+ * Isso evita o crash nativo de registrar push sem o `google-services.json` no build.
  */
 const config: CapacitorConfig = {
   appId: "br.com.vivanomads.app",

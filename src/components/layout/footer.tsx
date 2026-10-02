@@ -39,6 +39,7 @@ export function Footer() {
           <FooterLink href="/dashboard">Meu painel</FooterLink>
           <FooterLink href="/termos">Termos de Uso</FooterLink>
           <FooterLink href="/privacidade">Privacidade</FooterLink>
+          <FooterLink href="/excluir-conta">Excluir conta</FooterLink>
         </FooterCol>
       </div>
 

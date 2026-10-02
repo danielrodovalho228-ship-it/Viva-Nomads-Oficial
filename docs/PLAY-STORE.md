@@ -42,6 +42,19 @@ O **ícone e o splash** já foram gerados (verde da marca) e versionados.
    JSON da conta de serviço do Firebase (Service accounts → Generate new private
    key). Sem ela, o envio de push é um no-op (não quebra nada).
 
+> ⚠️ **PROTEÇÃO IMPORTANTE — não trave o app sem o Firebase.** No Android, chamar
+> `PushNotifications.register()` **sem** o `google-services.json` no build derruba o
+> app (erro nativo de FirebaseApp, que o try/catch do JS não pega). Por isso o app
+> só tenta registrar push quando a flag **`NEXT_PUBLIC_PUSH_ATIVO="on"`** está
+> ligada (na Vercel). **Mantenha-a DESLIGADA** até que o app **publicado/instalado**
+> já contenha o `google-services.json`. Ordem segura:
+> 1. Gere o 1º app de teste **sem** Firebase e **com a flag OFF** → o push nem é
+>    tentado, o app não quebra.
+> 2. Faça o Firebase, coloque o `google-services.json` em `android/app/`, gere um
+>    novo `.aab` e publique/instale.
+> 3. **Só então** ligue `NEXT_PUBLIC_PUSH_ATIVO="on"` na Vercel → o push passa a
+>    funcionar em todos os apps atualizados.
+
 ---
 
 ## 3. Criar a chave de assinatura (uma vez só)
@@ -115,13 +128,13 @@ O `.aab` sai em `android/app/build/outputs/bundle/release/`.
 
 - **Política de privacidade (URL):** `https://vivanomads.com.br/privacidade`
 - **Exclusão de conta:**
-  - **No app:** já existe em **Conta → excluir conta** (usa a função
-    `delete_user_account()`, que apaga o perfil e cascateia os dados).
-  - **Na web (a Play também exige um link público, acessível sem instalar):**
-    hoje **ainda não há** uma página pública dedicada. ⚠️ **Pendência pequena:**
-    criar uma rota pública (ex.: `/excluir-conta`) ou uma seção em `/privacidade`
-    explicando como pedir a exclusão e o que é apagado. Deixe isso pronto antes de
-    preencher o formulário (posso implementar num PR curto).
+  - **No app:** **Conta → Excluir conta** (usa `delete_user_account()`, apaga o
+    perfil e cascateia os dados).
+  - **Na web (link público exigido pela Play):** **`https://vivanomads.com.br/excluir-conta`**
+    — página pública (sem login) que explica o caminho pelo app e tem um formulário
+    que envia, por e-mail, um link de confirmação; ao confirmar, a conta é apagada.
+    Linkada no rodapé e na `/privacidade`. **Use esta URL** no campo de exclusão de
+    conta da Play Console.
 - **Formulário "Segurança dos dados" (Data safety)** — preencher com o que o app
   coleta:
 
@@ -205,6 +218,8 @@ Rode no emulador do Android Studio e confirme:
       `native-bridge`).
 - [ ] **Mapa, vídeo e imagens** continuam carregando **dentro** do app (não devem
       ser interceptados).
-- [ ] **Push:** depois do login aparece a frase pedindo permissão; ao aceitar, o
-      token é registrado. (O disparo real precisa do Firebase + `FCM_SERVICE_ACCOUNT_JSON`.)
+- [ ] **Push:** com `NEXT_PUBLIC_PUSH_ATIVO="on"` **e** o `google-services.json` no
+      build, após o login aparece a frase pedindo permissão e o token é registrado.
+      Com a flag OFF (ou sem o arquivo), o push **não é tentado** e o app **não
+      quebra**. (O disparo real precisa também do `FCM_SERVICE_ACCOUNT_JSON` na Vercel.)
 - [ ] **Logout** remove o token do aparelho (celular compartilhado).
