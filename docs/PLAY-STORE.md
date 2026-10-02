@@ -78,6 +78,13 @@ senhas** (gerenciador de senhas + cópia offline). Esta é a sua **chave de uplo
 
 ## 4. Gerar o `.aab` assinado
 
+> 🚫 **REGRA — nunca gere um `.aab`/APK sem o `google-services.json`** em
+> `android/app/`. A flag `NEXT_PUBLIC_PUSH_ATIVO` fica na Vercel e é **global**:
+> ela vale para todos ao mesmo tempo e **não protege apps já instalados**. Se você
+> distribuir um app sem Firebase e depois ligar a flag, os aparelhos com o app
+> antigo fecham sozinhos. Portanto: **faça o Firebase ANTES do primeiro app**,
+> inclua sempre o `google-services.json` no build, e só então ligue a flag.
+
 ### Opção A — Android Studio (mais simples)
 1. `npx cap open android` (abre o projeto no Android Studio).
 2. **Build → Generate Signed Bundle / APK → Android App Bundle**.

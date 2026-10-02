@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Loader2, CheckCircle2, AlertTriangle, Trash2 } from "lucide-react";
 import { confirmarExclusaoConta } from "@/lib/data/account-delete";
 
-type Fase = "pronto" | "sem-token" | "apagando" | "ok" | "erro";
+type Fase = "pronto" | "sem-token" | "apagando" | "ok" | "bloqueado" | "erro";
 
 /**
  * Confirmação da exclusão. A exclusão SÓ acontece no CLIQUE do botão — nunca no
@@ -16,6 +16,7 @@ export default function ConfirmarExclusaoPage() {
   const [token, setToken] = useState<string | null>(null);
   const [fase, setFase] = useState<Fase>("pronto");
   const [erro, setErro] = useState<string | null>(null);
+  const [anonimizado, setAnonimizado] = useState(false);
 
   useEffect(() => {
     let t: string | null = null;
@@ -36,8 +37,13 @@ export default function ConfirmarExclusaoPage() {
     setFase("apagando");
     try {
       const r = await confirmarExclusaoConta(token);
-      if (r.ok) setFase("ok");
-      else {
+      if (r.ok) {
+        setAnonimizado(!!r.anonymized);
+        setFase("ok");
+      } else if (r.blocked) {
+        setErro(r.error ?? "");
+        setFase("bloqueado");
+      } else {
         setErro(r.error ?? "Não foi possível excluir agora.");
         setFase("erro");
       }
@@ -54,13 +60,30 @@ export default function ConfirmarExclusaoPage() {
           <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-sage-100">
             <CheckCircle2 className="h-7 w-7 text-forest" />
           </div>
-          <h1 className="mt-4 font-title text-2xl font-bold text-ink">Conta excluída</h1>
+          <h1 className="mt-4 font-title text-2xl font-bold text-ink">
+            {anonimizado ? "Dados removidos" : "Conta excluída"}
+          </h1>
           <p className="mt-2 text-sm text-muted">
-            Sua conta e seus dados foram apagados. Sentiremos sua falta — você é bem-vindo de volta
-            quando quiser.
+            {anonimizado
+              ? "Seus dados pessoais (nome, e-mail, telefone e foto) foram removidos e o acesso foi encerrado. Registros de contratos são mantidos sem identificação pelo prazo exigido por lei."
+              : "Sua conta e seus dados foram apagados. Sentiremos sua falta — você é bem-vindo de volta quando quiser."}
           </p>
           <Link href="/home" className="mt-6 inline-flex rounded-xl bg-forest px-4 py-2.5 text-sm font-semibold text-white">
             Voltar ao início
+          </Link>
+        </div>
+      ) : fase === "bloqueado" ? (
+        <div className="text-center">
+          <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-amber-50">
+            <AlertTriangle className="h-7 w-7 text-amber-600" />
+          </div>
+          <h1 className="mt-4 font-title text-2xl font-bold text-ink">Encerre a locação primeiro</h1>
+          <p className="mt-2 text-sm text-muted">{erro}</p>
+          <Link
+            href="/dashboard/contratos"
+            className="mt-6 inline-flex rounded-xl border border-sage-200 px-4 py-2.5 text-sm font-medium text-forest"
+          >
+            Ver meus contratos
           </Link>
         </div>
       ) : fase === "sem-token" ? (

@@ -53,9 +53,19 @@ export default function ExcluirContaPage() {
           <li>Documentos enviados e o token de notificações do aparelho.</li>
         </ul>
         <p className="mt-3 text-sm text-muted">
-          <strong className="text-ink">Prazo:</strong> a exclusão é feita na hora da confirmação.
-          Cópias em backups de segurança são expurgadas em até 30 dias. Registros que a lei exige
-          manter (por exemplo, fiscais) podem ser retidos pelo prazo legal, de forma isolada.
+          <strong className="text-ink">Locação ativa:</strong> se você tiver uma locação ou contrato
+          em vigor, a exclusão é <strong className="text-ink">bloqueada</strong> até o encerramento —
+          assim preservamos os registros exigidos enquanto o contrato vale.
+        </p>
+        <p className="mt-2 text-sm text-muted">
+          <strong className="text-ink">Histórico de contratos:</strong> se você já teve contratos, em
+          vez de apagar tudo, <strong className="text-ink">removemos sua identidade</strong> (nome,
+          e-mail, telefone e foto) e encerramos o acesso, mantendo os contratos e pagamentos
+          <strong className="text-ink"> sem identificação</strong> pelo prazo exigido por lei.
+        </p>
+        <p className="mt-2 text-sm text-muted">
+          <strong className="text-ink">Prazo:</strong> a ação é feita na hora da confirmação. Cópias
+          em backups de segurança são expurgadas em até 30 dias.
         </p>
       </section>
 

@@ -21,6 +21,36 @@ import { isValidEmail } from "@/lib/auth-errors";
 
 const TOKEN_TTL_S = 60 * 60; // 1 hora
 
+type AdminClient = NonNullable<ReturnType<typeof createAdminClient>>;
+
+/**
+ * Verifica se o usuário é parte de contratos/locações (como inquilino OU dono).
+ * Em caso de erro de leitura, assume o pior (há histórico ativo) — nunca deixa
+ * cair no apagar em cascata, que destruiria registros de retenção legal.
+ */
+async function situacaoContratos(
+  admin: AdminClient,
+  uid: string
+): Promise<{ temHistorico: boolean; temAtivo: boolean }> {
+  try {
+    const [tC, oC, tL, oL] = await Promise.all([
+      admin.from("contratos").select("status").eq("tenant_id", uid),
+      admin.from("contratos").select("status, properties!inner(owner_id)").eq("properties.owner_id", uid),
+      admin.from("locacoes").select("id").eq("tenant_id", uid),
+      admin.from("locacoes").select("id, properties!inner(owner_id)").eq("properties.owner_id", uid),
+    ]);
+    if ([tC, oC, tL, oL].some((r) => r.error)) return { temHistorico: true, temAtivo: true };
+    const contratos = [...(tC.data ?? []), ...(oC.data ?? [])] as { status?: string }[];
+    const locacoes = [...(tL.data ?? []), ...(oL.data ?? [])];
+    return {
+      temHistorico: contratos.length > 0 || locacoes.length > 0,
+      temAtivo: contratos.some((c) => c.status === "ativo"),
+    };
+  } catch {
+    return { temHistorico: true, temAtivo: true };
+  }
+}
+
 function b64url(input: Buffer | string): string {
   return Buffer.from(input).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
@@ -103,7 +133,9 @@ export async function solicitarExclusaoConta(email: string): Promise<{ ok: boole
  * Passo 2 — confirma e APAGA. Chamado por um clique explícito na página de
  * confirmação (nunca no carregamento, para scanners de e-mail não dispararem).
  */
-export async function confirmarExclusaoConta(token: string): Promise<{ ok: boolean; error?: string }> {
+export async function confirmarExclusaoConta(
+  token: string
+): Promise<{ ok: boolean; error?: string; blocked?: boolean; anonymized?: boolean }> {
   const admin = createAdminClient();
   const secret = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!admin || !secret) return { ok: false, error: "Serviço indisponível no momento." };
@@ -117,10 +149,40 @@ export async function confirmarExclusaoConta(token: string): Promise<{ ok: boole
       .select("id")
       .ilike("email", email)
       .maybeSingle();
-    if (!prof?.id) return { ok: true }; // já não existe: trata como sucesso (idempotente)
+    if (!prof?.id) return { ok: true }; // já não existe: idempotente
+    const uid = prof.id as string;
 
-    // Remove auth.users → cascata (mesmo efeito de delete_user_account()).
-    const { error } = await admin.auth.admin.deleteUser(prof.id as string);
+    const { temHistorico, temAtivo } = await situacaoContratos(admin, uid);
+
+    // (1) Locação/contrato ATIVO → bloqueia (encerre antes).
+    if (temAtivo) {
+      return {
+        ok: false,
+        blocked: true,
+        error:
+          "Você tem uma locação ou contrato ativo. Encerre a locação antes de excluir a conta — " +
+          "assim preservamos os registros exigidos enquanto o contrato está em vigor.",
+      };
+    }
+
+    // (2) Histórico de contratos → ANONIMIZA (retenção legal), não apaga.
+    // Depende da migração 0049 (função anonimizar_conta). Se ela ainda não foi
+    // aplicada, NÃO cai no apagar em cascata: bloqueia com orientação.
+    if (temHistorico) {
+      const { error } = await admin.rpc("anonimizar_conta", { target: uid });
+      if (error) {
+        return {
+          ok: false,
+          error:
+            "No momento não é possível excluir contas com histórico de contratos por aqui. " +
+            "Fale conosco pelos canais oficiais para concluir.",
+        };
+      }
+      return { ok: true, anonymized: true };
+    }
+
+    // (3) Sem contratos → apaga de fato (auth.users → cascata).
+    const { error } = await admin.auth.admin.deleteUser(uid);
     if (error) return { ok: false, error: "Não foi possível excluir agora. Tente novamente." };
     return { ok: true };
   } catch {
