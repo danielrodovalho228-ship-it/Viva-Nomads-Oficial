@@ -1,10 +1,24 @@
 import { sendEmail, isEmailConfigured } from "./email";
 import { sendWhatsapp, isWhatsappConfigured } from "./whatsapp";
+import { sendPush } from "./push";
 import { brandedNotification, notificationText, emailImage } from "./templates";
 import { SITE_URL } from "@/lib/site";
 import { primeiroNome } from "@/lib/display-name";
 
 export { isEmailConfigured, isWhatsappConfigured };
+
+/** Aceita só caminho interno ("/rota"), nunca "//" nem URL externa (mesma regra do ?next=). */
+function urlInterna(u: string | undefined, fallback = "/dashboard"): string {
+  return u && u[0] === "/" && u[1] !== "/" && u[1] !== "\\" ? u : fallback;
+}
+
+/** Garante que a promessa do push nunca segura o notify() além de `ms`. */
+function comLimite<T>(p: Promise<T>, ms = 6000): Promise<T | null> {
+  return Promise.race([
+    p.catch(() => null),
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), ms)),
+  ]);
+}
 
 /** Eventos que disparam notificação no funil (sem isso o funil vaza). */
 export type NotificationEvent =
@@ -50,6 +64,8 @@ const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: string)
 export interface NotifyResult {
   email: boolean | "demo";
   whatsapp: boolean | "demo";
+  /** Push nativo (app). Ausente quando não há `userId`. */
+  push?: boolean | "demo";
 }
 
 /**
@@ -61,6 +77,10 @@ export async function notify(params: {
   email?: string;
   phone?: string;
   name?: string;
+  /** Id do perfil destinatário — habilita o push nativo (app). */
+  userId?: string;
+  /** Rota interna para o deep-link do push (ex.: "/dashboard/leads"). */
+  pushUrl?: string;
   /** HTML extra (detalhes do lead: imóvel, interessado, contato) anexado ao e-mail. */
   detailsHtml?: string;
   /** Texto extra anexado à mensagem de WhatsApp. */
@@ -71,6 +91,19 @@ export async function notify(params: {
   // Saudação SEMPRE pela fonte única (item 3): primeiro nome, e nunca o e-mail
   // cru — se `name` vier como e-mail (fallback comum), vira saudação neutra.
   const nome = primeiroNome(params.name);
+
+  // PUSH em PARALELO ao e-mail: dispara já, sem await aqui (não atrasa nada).
+  // Conteúdo GENÉRICO (só o evento + link) — nunca contato, sobrenome ou valores.
+  const pushPromise = params.userId
+    ? comLimite(
+        sendPush({
+          userId: params.userId,
+          title: tpl.subject,
+          body: tpl.body(), // sem nome/detalhe — privacidade
+          url: urlInterna(params.pushUrl),
+        })
+      )
+    : null;
 
   if (params.email) {
     try {
@@ -107,6 +140,13 @@ export async function notify(params: {
     } catch {
       result.whatsapp = false;
     }
+  }
+
+  if (pushPromise) {
+    const pr = await pushPromise; // já estava rodando em paralelo
+    if (pr && "demo" in pr) result.push = "demo";
+    else if (pr && "sent" in pr) result.push = pr.sent > 0;
+    else result.push = false;
   }
 
   return result;
