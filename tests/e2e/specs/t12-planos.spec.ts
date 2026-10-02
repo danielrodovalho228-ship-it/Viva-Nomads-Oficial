@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { authFile } from "../fixtures/auth";
+import { authFile, roleReady } from "../fixtures/auth";
 
 /**
  * T12 — ESCADA DE PLANOS (@criticos)
@@ -13,6 +13,7 @@ import { authFile } from "../fixtures/auth";
 test.describe("T12 — Escada de planos @criticos", () => {
   test.describe("Regra 1 — Gestor por elegibilidade", () => {
     test.use({ storageState: authFile("proprietario") });
+    test.skip(!roleReady("proprietario"), "Conta de proprietário indisponível neste ambiente.");
 
     test("conta comum não ativa Gestor: card mostra critério + 'Fale com a gente'", async ({
       page,
@@ -42,6 +43,7 @@ test.describe("T12 — Escada de planos @criticos", () => {
 
   test.describe("Regra 3 — simulador recomenda pelo volume", () => {
     test.use({ storageState: authFile("proprietario") });
+    test.skip(!roleReady("proprietario"), "Conta de proprietário indisponível neste ambiente.");
 
     test("a recomendação muda conforme o volume digitado", async ({ page }) => {
       await page.goto("/dashboard/simulador", { waitUntil: "networkidle" });

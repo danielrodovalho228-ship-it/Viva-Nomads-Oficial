@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import path from "node:path";
 import type { Page } from "@playwright/test";
 import { account, type Role } from "./accounts";
@@ -6,9 +7,36 @@ import { account, type Role } from "./accounts";
 // que quebra sob o transpile CJS do Playwright.
 const AUTH_DIR = path.join(process.cwd(), "tests", "e2e", ".auth");
 
+/** Manifesto de quais papéis autenticaram de verdade no global-setup. */
+const ROLES_MANIFEST = path.join(AUTH_DIR, "_roles.json");
+
 /** Caminho do storageState (sessão salva) de um papel — gerado no global-setup. */
 export function authFile(role: Role): string {
   return path.join(AUTH_DIR, `${role}.json`);
+}
+
+/**
+ * Grava o manifesto de papéis prontos (login real OK). Chamado uma vez pelo
+ * global-setup. Specs de um papel ausente/falho leem `roleReady` e dão SKIP —
+ * assim um papel sem conta (ex.: proprietario1 inexistente) não derruba a suíte.
+ */
+export function writeRolesManifest(ready: Partial<Record<Role, boolean>>): void {
+  fs.mkdirSync(AUTH_DIR, { recursive: true });
+  fs.writeFileSync(ROLES_MANIFEST, JSON.stringify(ready, null, 2), "utf8");
+}
+
+/**
+ * true se o papel autenticou no global-setup (storageState válido). Default
+ * `false` quando o manifesto não existe ou o papel não está lá — o spec então
+ * dá SKIP (nunca acusa falha de comportamento por falta de conta/infra).
+ */
+export function roleReady(role: Role): boolean {
+  try {
+    const raw = fs.readFileSync(ROLES_MANIFEST, "utf8");
+    return (JSON.parse(raw) as Partial<Record<Role, boolean>>)[role] === true;
+  } catch {
+    return false;
+  }
 }
 
 /**

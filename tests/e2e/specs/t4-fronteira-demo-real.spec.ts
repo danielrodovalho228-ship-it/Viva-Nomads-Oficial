@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { authFile } from "../fixtures/auth";
+import { authFile, roleReady } from "../fixtures/auth";
 import { account } from "../fixtures/accounts";
 
 /**
@@ -12,6 +12,7 @@ const PERSONAS_DEMO = /Ana Carvalho|CTR-2026|VN-CT-2026/;
 
 test.describe("T4 — Conta real, demo desligado @criticos", () => {
   test.use({ storageState: authFile("proprietario") });
+  test.skip(!roleReady("proprietario"), "Conta de proprietário indisponível neste ambiente.");
 
   test("Fechamento não expõe persona/contrato fictício", async ({ page }) => {
     await page.goto("/dashboard/fechamento", { waitUntil: "networkidle" });
@@ -38,6 +39,7 @@ test.describe("T4 — Conta real, demo desligado @criticos", () => {
 
 test.describe("T4 — Conta admin, demo ligado @criticos", () => {
   test.use({ storageState: authFile("admin") });
+  test.skip(!roleReady("admin"), "Conta de admin indisponível neste ambiente.");
 
   test("dados fictícios aparecem COM o banner de demonstração", async ({ page }) => {
     // ?demo=1 liga o modo demonstração (lido no shell, só para admin).

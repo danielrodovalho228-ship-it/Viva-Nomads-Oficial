@@ -25,6 +25,10 @@ jobs:
     timeout-minutes: 20
     env:
       TESTES_BASE_URL: ${{ github.event.deployment_status.target_url || github.event.inputs.base_url }}
+      # Bypass da Deployment Protection da Vercel (preview protegido). Sem ele, a
+      # suíte cai na tela de login da Vercel. O config/global-setup só mandam os
+      # headers quando esta variável existe.
+      VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
       TESTES_INQUILINO_EMAIL: ${{ secrets.TESTES_INQUILINO_EMAIL }}
       TESTES_INQUILINO_SENHA: ${{ secrets.TESTES_INQUILINO_SENHA }}
       TESTES_INQUILINO_NOME: ${{ secrets.TESTES_INQUILINO_NOME }}

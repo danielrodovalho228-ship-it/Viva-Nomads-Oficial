@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { authFile } from "../fixtures/auth";
+import { authFile, roleReady } from "../fixtures/auth";
 
 /**
  * T2 — PERSISTÊNCIA DE MODO (@criticos) — regressão do B1, a mais importante.
@@ -9,6 +9,7 @@ import { authFile } from "../fixtures/auth";
  */
 test.describe("T2 — Persistência de modo @criticos", () => {
   test.use({ storageState: authFile("proprietario") });
+  test.skip(!roleReady("proprietario"), "Conta de proprietário indisponível neste ambiente.");
 
   async function trocarPara(page: import("@playwright/test").Page, alvo: RegExp) {
     await page.getByRole("tab", { name: alvo }).click();

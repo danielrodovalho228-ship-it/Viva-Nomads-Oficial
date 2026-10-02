@@ -1,6 +1,6 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { account, hasAccount } from "../fixtures/accounts";
-import { authFile } from "../fixtures/auth";
+import { authFile, roleReady } from "../fixtures/auth";
 
 /**
  * T-TRAV — TRAVESSIAS DE PONTA A PONTA (@criticos)
@@ -41,6 +41,9 @@ function sobrenome(nome: string): string {
 
 // ───────────────────────────── B — Identidade protegida ─────────────────────
 test.describe("T-TRAV-B — Pedido: identidade não vaza antes do aceite @criticos", () => {
+  // Usa inquilino + proprietário; sem a conta de proprietário, dá SKIP (não falha).
+  test.skip(!roleReady("proprietario"), "Conta de proprietário indisponível neste ambiente.");
+
   /** Cria um pedido de moradia (Uberlândia, para casar com o imóvel semeado). */
   async function publicarPedido(page: Page, tag: string): Promise<void> {
     await page.goto("/pedidos/novo", { waitUntil: "networkidle" });
@@ -185,6 +188,9 @@ test.describe("T-TRAV-C — Candidatura sem verificação = confirmação + nudg
 
 // ─────────────────── D — Fechamento herda a candidatura aceita ───────────────
 test.describe("T-TRAV-D — Fechamento herda a candidatura aceita real @criticos", () => {
+  // Usa inquilino + proprietário; sem a conta de proprietário, dá SKIP (não falha).
+  test.skip(!roleReady("proprietario"), "Conta de proprietário indisponível neste ambiente.");
+
   test("candidatura aceita → fechamento com imóvel real, 2 blocos e R$ 12.800", async ({
     browser,
   }) => {

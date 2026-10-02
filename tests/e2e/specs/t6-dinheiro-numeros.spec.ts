@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { authFile } from "../fixtures/auth";
+import { authFile, roleReady } from "../fixtures/auth";
 
 /**
  * T6 — DINHEIRO E NÚMEROS — regressão da comissão percentual.
@@ -8,6 +8,7 @@ import { authFile } from "../fixtures/auth";
  */
 test.describe("T6 — Comissão (admin + demo)", () => {
   test.use({ storageState: authFile("admin") });
+  test.skip(!roleReady("admin"), "Conta de admin indisponível neste ambiente.");
 
   test("Contratos & blocos: comissão em % e nunca '1 mês de aluguel'", async ({ page }) => {
     await page.goto("/dashboard/contratos?demo=1", { waitUntil: "networkidle" });

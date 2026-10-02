@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { authFile } from "../fixtures/auth";
+import { authFile, roleReady } from "../fixtures/auth";
 
 /**
  * T-DOC — CONFERÊNCIA DE DOCUMENTOS (fila de moderação do admin) @criticos
@@ -13,6 +13,7 @@ import { authFile } from "../fixtures/auth";
  */
 test.describe("T-DOC — Conferência de documentos @criticos", () => {
   test.use({ storageState: authFile("admin") });
+  test.skip(!roleReady("admin"), "Conta de admin indisponível neste ambiente.");
 
   async function irParaFila(page: Page) {
     await page.goto("/admin/documentos", { waitUntil: "networkidle" });

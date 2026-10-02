@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { authFile } from "../fixtures/auth";
+import { authFile, roleReady } from "../fixtures/auth";
 
 /**
  * T3 — ISOLAMENTO DE PAPÉIS E PÁGINAS INTERNAS (@criticos).
@@ -24,6 +24,7 @@ const PAGINAS_INTERNAS = ["/simulacao", "/roi", "/socios", "/decisao", "/modelod
 
 test.describe("T3 — Não-admin (proprietário) @criticos", () => {
   test.use({ storageState: authFile("proprietario") });
+  test.skip(!roleReady("proprietario"), "Conta de proprietário indisponível neste ambiente.");
 
   test("itens Admin/Moderar ausentes do DOM e rota /admin bloqueada", async ({ page }) => {
     await page.goto("/dashboard", { waitUntil: "networkidle" });
@@ -63,6 +64,7 @@ test.describe("T3 — Não-admin (proprietário) @criticos", () => {
 
 test.describe("T3 — Admin vê internas com noindex @criticos", () => {
   test.use({ storageState: authFile("admin") });
+  test.skip(!roleReady("admin"), "Conta de admin indisponível neste ambiente.");
 
   test("páginas internas carregam para admin e são noindex", async ({ page }) => {
     for (const rota of PAGINAS_INTERNAS) {

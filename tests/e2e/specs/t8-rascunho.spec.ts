@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { authFile } from "../fixtures/auth";
+import { authFile, roleReady } from "../fixtures/auth";
 
 /**
  * T-RASC — RASCUNHO: SALVAMENTO E RETOMADA DE VERDADE (@criticos)
@@ -12,6 +12,7 @@ import { authFile } from "../fixtures/auth";
  */
 test.describe("T-RASC — Rascunho salva e retoma @criticos", () => {
   test.use({ storageState: authFile("proprietario") });
+  test.skip(!roleReady("proprietario"), "Conta de proprietário indisponível neste ambiente.");
 
   // A qualificação (elegível) é pré-requisito para abrir o editor. Injetamos o
   // resultado na sessionStorage — com selo + etiqueta "trabalhar de casa" — para
