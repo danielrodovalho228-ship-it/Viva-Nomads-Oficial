@@ -22,6 +22,14 @@ test.describe("Setup — login das contas de teste @criticos", () => {
         `Credencial de "${role}" ausente (TESTES_${role.toUpperCase()}_*). SKIP por infra, não defeito.`
       );
 
+      // Barrado pela proteção da Vercel (bypass ausente/errado) = INFRA, não
+      // defeito de login. SKIP com o motivo — não acusa o produto à toa.
+      test.skip(
+        s.status === "blocked_infra",
+        `"${role}" barrado pela proteção da Vercel (infra). URL final: ${s.finalUrl ?? "?"}. ` +
+          `Confira o secret VERCEL_AUTOMATION_BYPASS_SECRET.`
+      );
+
       if (s.status === "login_failed") {
         if (s.screenshot) {
           await testInfo

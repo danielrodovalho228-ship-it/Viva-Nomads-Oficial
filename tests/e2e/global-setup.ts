@@ -32,6 +32,19 @@ function bypassHeaders(): Record<string, string> | undefined {
     : undefined;
 }
 
+/**
+ * Login que parou numa URL do domínio da Vercel (vercel.com/login, /sso-api) =
+ * barrado pela Deployment Protection. É INFRA (bypass ausente/errado), NÃO um
+ * defeito de login do app. Discrimina as duas coisas para o relatório não mentir.
+ */
+function barradoPelaVercel(finalUrl: string): boolean {
+  try {
+    return new URL(finalUrl).host.endsWith("vercel.com");
+  } catch {
+    return /vercel\.com\/(login|sso)/.test(finalUrl);
+  }
+}
+
 export default async function globalSetup(config: FullConfig): Promise<void> {
   const baseURL = (config.projects[0]?.use?.baseURL as string) || "http://localhost:3000";
   const executablePath = process.env.PLAYWRIGHT_CHROMIUM_PATH || undefined;
@@ -76,17 +89,28 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
         } catch {
           /* screenshot é best-effort */
         }
-        console.error(
-          `[e2e] LOGIN DO PAPEL "${role}" FALHOU (credenciais PRESENTES) — ` +
-            `DEFEITO de produto, não infra.\n` +
-            `         erro: ${msg}\n` +
-            `         URL final: ${finalUrl}\n` +
-            `         screenshot: ${screenshot}`
-        );
-        // NÃO lança: deixa a suíte rodar e os demais papéis serem avaliados. O
-        // spec `auth-setup` transforma este estado em FALHA ALTA e visível.
         fs.writeFileSync(authFile(role), EMPTY_STATE, "utf8");
-        manifest[role] = { status: "login_failed", error: msg, finalUrl, screenshot };
+
+        if (barradoPelaVercel(finalUrl)) {
+          // INFRA: o preview está protegido e o bypass não passou (segredo ausente
+          // ou errado). NÃO é defeito de login — specs do papel dão SKIP.
+          console.warn(
+            `[e2e] Papel "${role}" BARRADO pela proteção da Vercel (infra, não defeito).\n` +
+              `         URL final: ${finalUrl}\n` +
+              `         → confira o secret VERCEL_AUTOMATION_BYPASS_SECRET no repo.`
+          );
+          manifest[role] = { status: "blocked_infra", error: msg, finalUrl, screenshot };
+        } else {
+          // DEFEITO: chegou no app e o login falhou de verdade. Falha ALTA.
+          console.error(
+            `[e2e] LOGIN DO PAPEL "${role}" FALHOU no app (credenciais PRESENTES) — ` +
+              `DEFEITO de produto.\n` +
+              `         erro: ${msg}\n` +
+              `         URL final: ${finalUrl}\n` +
+              `         screenshot: ${screenshot}`
+          );
+          manifest[role] = { status: "login_failed", error: msg, finalUrl, screenshot };
+        }
       } finally {
         await context.close();
       }
@@ -103,7 +127,9 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
       .map(([r]) => r);
   console.log(`[e2e] Login OK: ${by("ready").join(", ") || "nenhum"}.`);
   const missing = by("missing");
+  const blocked = by("blocked_infra");
   const failed = by("login_failed");
   if (missing.length) console.log(`[e2e] SKIP por falta de credencial (infra): ${missing.join(", ")}.`);
-  if (failed.length) console.error(`[e2e] FALHA DE LOGIN (defeito): ${failed.join(", ")}.`);
+  if (blocked.length) console.warn(`[e2e] BARRADO pela Vercel (infra, não defeito): ${blocked.join(", ")}.`);
+  if (failed.length) console.error(`[e2e] FALHA DE LOGIN no app (defeito): ${failed.join(", ")}.`);
 }

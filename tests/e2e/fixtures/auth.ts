@@ -17,12 +17,15 @@ export function authFile(role: Role): string {
 
 /**
  * Situação de cada papel após o global-setup:
- *  • "ready"        — login real OK (storageState válido).
- *  • "missing"      — SEM credenciais → pular os specs (problema de INFRA).
- *  • "login_failed" — credenciais PRESENTES mas o login falhou → é DEFEITO de
- *                     produto; o spec `auth-setup` falha ALTO com o erro exato.
+ *  • "ready"         — login real OK (storageState válido).
+ *  • "missing"       — SEM credenciais → pular os specs (problema de INFRA).
+ *  • "blocked_infra" — o login não chegou no app: caiu na proteção da Vercel
+ *                      (preview protegido / bypass ausente ou errado). É INFRA,
+ *                      não defeito — o spec `auth-setup` dá SKIP com o motivo.
+ *  • "login_failed"  — chegou no app (/auth) mas o login falhou de verdade →
+ *                      DEFEITO de produto; o spec `auth-setup` falha ALTO.
  */
-export type RoleStatus = "ready" | "missing" | "login_failed";
+export type RoleStatus = "ready" | "missing" | "blocked_infra" | "login_failed";
 
 export interface RoleInfo {
   status: RoleStatus;
