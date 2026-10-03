@@ -23,6 +23,10 @@ export async function GET() {
       nfse: isNfseConfigured(),
       email: isEmailConfigured(),
       whatsapp: isWhatsappConfigured(),
+      // Exclusão pública de conta (assina o HMAC do link + apaga/anonimiza):
+      // depende do SERVICE ROLE. Falso aqui = fluxo público indisponível.
+      account_deletion:
+        !!process.env.NEXT_PUBLIC_SUPABASE_URL && !!process.env.SUPABASE_SERVICE_ROLE_KEY,
     },
   });
 }

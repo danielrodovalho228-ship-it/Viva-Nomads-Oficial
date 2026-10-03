@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/auth-provider";
+import { NativeBridge } from "@/components/native/native-bridge";
 import { SITE_URL, SITE_NAME } from "@/lib/site";
 
 // Tipografia única do site (Atualização 18): Inter para títulos e corpo,
@@ -51,7 +52,10 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className={`${inter.variable} h-full scroll-smooth`}>
       <body className="min-h-full flex flex-col bg-surface text-ink">
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <NativeBridge />
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

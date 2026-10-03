@@ -911,6 +911,8 @@ export async function requestLead(
       email: ownerEmail ?? undefined,
       phone: ownerPhone ?? undefined,
       name: ownerName ?? undefined,
+      userId: ownerId ?? undefined,
+      pushUrl: "/dashboard/leads",
       detailsHtml,
       detailsText,
     });
@@ -946,6 +948,8 @@ export async function createLead(propertyId: string, ownerId: string): Promise<A
       email: owner.email ?? undefined,
       phone: owner.phone ?? undefined,
       name: owner.full_name ?? undefined,
+      userId: ownerId,
+      pushUrl: "/dashboard/leads",
     });
   }
   return { ok: true };

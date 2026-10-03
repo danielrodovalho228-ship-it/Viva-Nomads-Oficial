@@ -154,6 +154,8 @@ export async function moderarDocumento(
         event: aprovado ? "documento_aprovado" : "documento_recusado",
         email: prof.email as string,
         name: (prof.full_name as string) ?? undefined,
+        userId: qual.owner_id as string,
+        pushUrl: "/dashboard/imoveis",
         detailsHtml: aprovado
           ? undefined
           : `<p style="margin:12px 0 0;color:#334155;">Motivo: ${motivoLimpo}</p>`,

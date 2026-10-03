@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Política de Privacidade",
@@ -134,7 +135,11 @@ export default function PrivacyPage() {
         <Section title="7. Seus direitos (LGPD)">
           Você pode solicitar acesso, correção, portabilidade, anonimização ou exclusão dos seus
           dados, além de revogar consentimentos. Para exercer, fale conosco pelos canais
-          oficiais da plataforma.
+          oficiais da plataforma. Para excluir sua conta e todos os dados, use a página{" "}
+          <Link href="/excluir-conta" className="font-medium text-forest underline">
+            Excluir conta
+          </Link>{" "}
+          (pelo app ou por confirmação por e-mail).
         </Section>
 
         <Section title="8. Segurança e retenção">

@@ -26,6 +26,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { useAuthStore, type SessionUser, type ViewMode } from "@/lib/store";
 import { getMyAvatarUrl } from "@/lib/data/avatar-actions";
 import { setPreferredMode } from "@/lib/data/mode-actions";
+import { removerPushToken } from "@/lib/data/push-actions";
 import { countDocumentosPendentes } from "@/lib/data/documentos-admin";
 import { useHasActiveLocacao } from "@/lib/use-active-locacao";
 import { useViewMode, MODE_META, identidadeUsuario } from "@/lib/roles";
@@ -258,6 +259,17 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   }, [admin, setDemoOn]);
 
   function handleSignOut() {
+    // Celular compartilhado: apaga o token de push DESTE aparelho antes de sair,
+    // senão o próximo usuário receberia as notificações desta conta. Best-effort.
+    try {
+      const t = localStorage.getItem("vn-push-token");
+      if (t) {
+        removerPushToken(t).catch(() => {});
+        localStorage.removeItem("vn-push-token");
+      }
+    } catch {
+      /* localStorage indisponível: segue o logout */
+    }
     signOut();
     router.push("/home");
   }

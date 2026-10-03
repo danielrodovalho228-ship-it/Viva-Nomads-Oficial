@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { guardContactInfo } from "@/lib/messages/contact-guard";
 import { listMyProperties } from "@/lib/data/properties";
 import { notify } from "@/lib/notifications";
@@ -24,13 +25,22 @@ type Recip = {
   phone?: string | null;
   full_name?: string | null;
   notif_whatsapp?: boolean | null;
+  /** Id do perfil destinatário — habilita o push (quando disponível). */
+  id?: string | null;
 };
+
+type PedidoEvent = "pedido_novo_cidade" | "pedido_resposta" | "pedido_aceito" | "pedido_expirando";
+
+/** Deep-link interno do push por evento. */
+const PUSH_URL: Record<PedidoEvent, string> = {
+  pedido_novo_cidade: "/dashboard/pedidos-cidade",
+  pedido_resposta: "/dashboard/pedidos",
+  pedido_aceito: "/dashboard/mensagens",
+  pedido_expirando: "/dashboard/pedidos",
+};
+
 async function notificar(
-  event:
-    | "pedido_novo_cidade"
-    | "pedido_resposta"
-    | "pedido_aceito"
-    | "pedido_expirando",
+  event: PedidoEvent,
   r: Recip,
   detalhe: { detailsHtml: string; detailsText: string }
 ) {
@@ -42,6 +52,8 @@ async function notificar(
       // WhatsApp é canal de SAÍDA e opt-in (adapter em modo demo sem config).
       phone: r.notif_whatsapp === false ? undefined : r.phone ?? undefined,
       name: r.full_name ?? undefined,
+      userId: r.id ?? undefined,
+      pushUrl: PUSH_URL[event],
       detailsHtml: detalhe.detailsHtml,
       detailsText: detalhe.detailsText,
     });
@@ -477,7 +489,26 @@ export async function responderPedido(
   try {
     const { data: rcp } = await supabase.rpc("pedido_inquilino_recipient", { pedido: pedidoId });
     const inq = Array.isArray(rcp) ? rcp[0] : rcp;
-    if (inq?.email) await notificar("pedido_resposta", inq as Recip, detalheResposta());
+    if (inq?.email) {
+      // Id do inquilino para o push (service role; nunca exposto ao cliente).
+      let inqId: string | undefined = (inq as { id?: string }).id ?? undefined;
+      if (!inqId) {
+        try {
+          const admin = createAdminClient();
+          if (admin) {
+            const { data: p } = await admin
+              .from("pedidos_moradia")
+              .select("inquilino_id")
+              .eq("id", pedidoId)
+              .maybeSingle();
+            inqId = (p as { inquilino_id?: string } | null)?.inquilino_id ?? undefined;
+          }
+        } catch {
+          /* best-effort — push é opcional */
+        }
+      }
+      await notificar("pedido_resposta", { ...(inq as Recip), id: inqId }, detalheResposta());
+    }
   } catch {
     /* best-effort */
   }

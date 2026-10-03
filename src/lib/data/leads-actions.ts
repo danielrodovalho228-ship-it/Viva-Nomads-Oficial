@@ -77,7 +77,13 @@ export async function aceitarCandidatura(leadId: string): Promise<ActionResult> 
         .eq("id", lead.tenant_id)
         .maybeSingle();
       if (t?.email) {
-        await notify({ event: "candidatura_aceita", email: t.email, name: t.full_name ?? undefined });
+        await notify({
+          event: "candidatura_aceita",
+          email: t.email,
+          name: t.full_name ?? undefined,
+          userId: lead.tenant_id,
+          pushUrl: "/dashboard/candidaturas",
+        });
       }
     }
   } catch {
