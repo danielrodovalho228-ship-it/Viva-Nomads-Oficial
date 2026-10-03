@@ -213,6 +213,14 @@ textarea:focus-visible,
   }
 }
 
+/* Bottom sheet (Fase 1b) — sobe de baixo; respeita reduced-motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .bs-backdrop { animation: bs-fade 0.2s ease-out; }
+  .bs-panel { animation: bs-rise 0.25s cubic-bezier(0.22, 1, 0.36, 1); }
+  @keyframes bs-fade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes bs-rise { from { transform: translateY(16px); opacity: 0.6; } to { transform: none; opacity: 1; } }
+}
+
 /* Skip link "Pular para o conteúdo": fora da tela até receber foco (a11y). */
 .skip-link {
   position: fixed;

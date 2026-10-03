@@ -30,6 +30,7 @@ import { removerPushToken } from "@/lib/data/push-actions";
 import { countDocumentosPendentes } from "@/lib/data/documentos-admin";
 import { useHasActiveLocacao } from "@/lib/use-active-locacao";
 import { useViewMode, MODE_META, identidadeUsuario } from "@/lib/roles";
+import { MobileTabBar } from "@/components/layout/mobile-tab-bar";
 import { useDemoMode, DemoToggle, DemoBanner, useDisplayUser } from "@/lib/demo/demo-mode";
 import { PROGRAMA_INDICACAO } from "@/lib/flags";
 import { cn } from "@/lib/utils";
@@ -408,8 +409,14 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
         <main key={mode} className="mode-transition flex-1 p-5 sm:p-8 lg:overflow-y-auto print:overflow-visible">
           {children}
+          {/* Espaço para a barra inferior não cobrir o conteúdo (só mobile). */}
+          <div className="h-20 md:hidden print:hidden" aria-hidden />
         </main>
       </div>
+
+      {/* Barra inferior do app (ciente do modo); esconde-se no desktop e nas
+          telas de fluxo. Verde = inquilino, âmbar = proprietário. */}
+      <MobileTabBar world={mode === "owner" ? "owner" : "tenant"} />
     </div>
   );
 }
