@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { BrandImage } from "@/components/brand-image";
 import { TaxSimulator } from "@/components/tax-simulator";
 import { useAuthStore } from "@/lib/store";
+import { useExpoApp } from "@/lib/use-native";
 import { resetPropertiesCache } from "@/lib/use-properties";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { SITE_URL } from "@/lib/site";
@@ -35,6 +36,12 @@ export default function AuthPage() {
   const router = useRouter();
   const setUser = useAuthStore((s) => s.setUser);
   const startSession = useAuthStore((s) => s.startSession);
+  // No app Expo em iOS, a v1 é só e-mail: o botão do Google some para não
+  // disparar a exigência da Apple de "Entrar com Apple" (atrasaria a aprovação).
+  // No Android e na web o botão continua. `ready` evita piscar na web até a
+  // detecção montar.
+  const expo = useExpoApp();
+  const ocultarGoogle = expo.ready && expo.isApp && expo.platform === "ios";
   const [mode, setMode] = useState<Mode>("login");
   // Sem papel pré-selecionado: o usuário escolhe conscientemente proprietário
   // OU inquilino no cadastro (evita criar proprietário sem querer).
@@ -666,19 +673,23 @@ export default function AuthPage() {
                 </Button>
               </form>
 
-              <div className="my-6 flex items-center gap-3 text-xs text-muted">
-                <span className="h-px flex-1 bg-sage-200" /> ou{" "}
-                <span className="h-px flex-1 bg-sage-200" />
-              </div>
-              <Button
-                variant="outline"
-                className="w-full"
-                type="button"
-                disabled={loading}
-                onClick={handleGoogle}
-              >
-                <Globe className="h-4 w-4" /> Continuar com Google
-              </Button>
+              {!ocultarGoogle && (
+                <>
+                  <div className="my-6 flex items-center gap-3 text-xs text-muted">
+                    <span className="h-px flex-1 bg-sage-200" /> ou{" "}
+                    <span className="h-px flex-1 bg-sage-200" />
+                  </div>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    type="button"
+                    disabled={loading}
+                    onClick={handleGoogle}
+                  >
+                    <Globe className="h-4 w-4" /> Continuar com Google
+                  </Button>
+                </>
+              )}
             </>
           )}
 

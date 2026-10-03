@@ -2,6 +2,7 @@ import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { AuthGuard } from "@/components/layout/auth-guard";
 import { ModeInitializer } from "@/components/layout/mode-initializer";
 import { PushRegister } from "@/components/native/push-register";
+import { ExpoPushBridge } from "@/components/native/expo-push-bridge";
 import { resolveInitialMode } from "@/lib/data/mode-actions";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -12,6 +13,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <AuthGuard>
       <ModeInitializer initialMode={initialMode} />
       <PushRegister />
+      <ExpoPushBridge />
       <DashboardShell>{children}</DashboardShell>
     </AuthGuard>
   );

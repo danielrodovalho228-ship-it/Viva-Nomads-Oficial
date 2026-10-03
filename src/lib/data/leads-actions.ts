@@ -94,9 +94,13 @@ export async function aceitarCandidatura(leadId: string): Promise<ActionResult> 
 }
 
 /**
- * RECUSA da candidatura — persiste no servidor com o motivo (visível só ao
- * dono). Push SILENCIOSO: sem e-mail ao inquilino. Na tela dele, o estado é
- * digno ("Não seguiu adiante"), nunca "recusada".
+ * RECUSA da candidatura — persiste no servidor com o motivo (visível só ao dono).
+ *
+ * Aviso ao inquilino com DIGNIDADE (decisão de produto): manda uma notificação
+ * gentil ("não seguiu adiante", nunca "recusada", sem o motivo) para que ele não
+ * fique no escuro. O conteúdo do push é genérico (sem motivo/PII). Na tela dele,
+ * o estado continua digno ("Não seguiu adiante"). Best-effort: a notificação
+ * nunca quebra o fluxo.
  */
 export async function recusarCandidatura(leadId: string, motivo?: string): Promise<ActionResult> {
   const supabase = await createClient();
@@ -108,7 +112,7 @@ export async function recusarCandidatura(leadId: string, motivo?: string): Promi
 
   const { data: lead, error: lErr } = await supabase
     .from("leads")
-    .select("id, owner_id")
+    .select("id, owner_id, tenant_id")
     .eq("id", leadId)
     .maybeSingle();
   if (lErr) return { ok: false, error: lErr.message };
@@ -125,6 +129,30 @@ export async function recusarCandidatura(leadId: string, motivo?: string): Promi
     })
     .eq("id", leadId);
   if (uErr) return { ok: false, error: uErr.message };
+
+  // Aviso digno ao inquilino (e-mail + push), best-effort. Contato lido via
+  // service role (nunca devolvido ao cliente); o motivo NÃO é enviado.
+  try {
+    const admin = createAdminClient();
+    if (admin) {
+      const { data: t } = await admin
+        .from("profiles")
+        .select("email, full_name")
+        .eq("id", lead.tenant_id)
+        .maybeSingle();
+      if (t?.email) {
+        await notify({
+          event: "candidatura_arquivada",
+          email: t.email,
+          name: t.full_name ?? undefined,
+          userId: lead.tenant_id,
+          pushUrl: "/dashboard/candidaturas",
+        });
+      }
+    }
+  } catch {
+    /* notificação nunca quebra o fluxo */
+  }
 
   return { ok: true };
 }

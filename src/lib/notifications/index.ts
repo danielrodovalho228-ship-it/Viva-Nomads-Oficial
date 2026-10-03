@@ -26,6 +26,7 @@ export type NotificationEvent =
   | "new_message" // nova mensagem no chat (proprietário OU inquilino)
   | "application_received" // candidatura recebida
   | "candidatura_aceita" // proprietário aceitou a candidatura → inquilino
+  | "candidatura_arquivada" // candidatura não seguiu adiante → inquilino (copy digna)
   | "saved_search_match" // alerta de busca salva do inquilino
   | "verification_ready" // laudo CAF pronto
   | "contract_status" // status do contrato
@@ -47,6 +48,9 @@ const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: string)
   new_message: { subject: "Você tem uma nova mensagem no Viva Nomads", body: (n) => `Olá${n ? " " + n : ""}, você recebeu uma nova mensagem no Viva Nomads.`, img: "nova-mensagem" },
   application_received: { subject: "Candidatura recebida", body: () => "Recebemos sua candidatura. O proprietário foi notificado.", img: "candidatura-recebida" },
   candidatura_aceita: { subject: "Sua candidatura foi aceita", body: (n) => `Boa notícia${n ? ", " + n : ""}! O proprietário aceitou sua candidatura. A conversa está liberada em Mensagens — a negociação segue toda pela plataforma.`, img: "nova-mensagem" },
+  // Recusa com DIGNIDADE: nunca a palavra "recusada", sem motivo, e um convite a
+  // seguir. O inquilino não fica no escuro, mas também não leva um "não" seco.
+  candidatura_arquivada: { subject: "Atualização da sua candidatura", body: (n) => `Olá${n ? " " + n : ""}, sua candidatura não seguiu adiante desta vez. Continue explorando — há outros imóveis esperando por você no Viva Nomads.`, img: "transacional" },
   saved_search_match: { subject: "Novo imóvel para sua busca", body: () => "Um imóvel novo combina com sua busca salva no Viva Nomads.", img: "transacional" },
   verification_ready: { subject: "Sua verificação está pronta", body: () => "Seu laudo de Inquilino Verificado está disponível.", img: "candidatura-recebida" },
   contract_status: { subject: "Atualização do seu contrato", body: () => "Há uma atualização no seu contrato de locação.", img: "pedido-resposta" },

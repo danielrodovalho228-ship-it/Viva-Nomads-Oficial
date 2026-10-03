@@ -1064,6 +1064,10 @@ export async function sendMessage(input: {
         event: "new_message",
         email: contact.email,
         name: contact.full_name ?? undefined,
+        // Push ao destinatário (genérico, sem prévia/PII). O id é o próprio
+        // receiverId da mensagem — o deep-link abre o chat no app.
+        userId: input.receiverId,
+        pushUrl: "/dashboard/mensagens",
         detailsHtml:
           `<p><strong>${senderName}</strong> escreveu:</p>` +
           `<blockquote style="margin:8px 0;padding:8px 12px;border-left:3px solid #1c6b3a;color:#374151">${preview}</blockquote>` +

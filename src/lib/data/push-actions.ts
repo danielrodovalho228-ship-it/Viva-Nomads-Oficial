@@ -4,12 +4,17 @@ import { createClient } from "@/lib/supabase/server";
 
 /**
  * Registra/atualiza o token de push do dispositivo do usuário logado.
- * Chamado pelo app nativo (Capacitor) após o SO liberar as notificações.
- * Upsert por `token`: um token pertence a um aparelho/usuário.
+ * Chamado pelo app nativo (Capacitor, provider "fcm") ou pelo app Expo
+ * (provider "expo", token ExponentPushToken[...]) após o SO liberar as
+ * notificações. Upsert por `token`: um token pertence a um aparelho/usuário.
+ *
+ * `provider` diz ao remetente (push.ts) por qual canal enviar. Default "fcm"
+ * mantém o comportamento do Capacitor. A coluna existe a partir da migração 0051.
  */
 export async function registrarPushToken(
   token: string,
-  platform: "android" | "ios" | "web"
+  platform: "android" | "ios" | "web",
+  provider: "fcm" | "expo" | "apns" = "fcm"
 ): Promise<{ ok: boolean }> {
   if (!token) return { ok: false };
   const supabase = await createClient();
@@ -21,11 +26,11 @@ export async function registrarPushToken(
   if (!user) return { ok: false };
 
   const { error } = await supabase.from("push_tokens").upsert(
-    { token, platform, user_id: user.id, updated_at: new Date().toISOString() },
+    { token, platform, provider, user_id: user.id, updated_at: new Date().toISOString() },
     { onConflict: "token" }
   );
   if (error) {
-    // Tabela ainda não migrada (0048) ou erro transitório: não quebra o app.
+    // Tabela ainda não migrada (0048/0051) ou erro transitório: não quebra o app.
     console.error("[push] falha ao registrar token:", error.message);
     return { ok: false };
   }
