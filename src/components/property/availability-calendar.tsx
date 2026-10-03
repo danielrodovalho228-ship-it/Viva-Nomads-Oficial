@@ -69,7 +69,9 @@ export function AvailabilityCalendar({ property }: { property: Property }) {
   // O próprio dono não pode reservar o imóvel dele.
   const isOwner = !!user && !!property.ownerId && property.ownerId === user.id;
 
-  const anchorStr = from || today;
+  // O calendário nunca começa no passado: âncora = o MAIOR entre o início do
+  // anúncio e hoje. (Um `availableFrom` já vencido mostrava meses passados.)
+  const anchorStr = from && today ? (from > today ? from : today) : from || today;
   const meses = useMemo(() => (anchorStr ? mesesCalendario(anchorStr, 3) : []), [anchorStr]);
 
   if (!anchorStr) return null;

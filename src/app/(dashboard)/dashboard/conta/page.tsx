@@ -283,7 +283,7 @@ function DangerZone() {
         await supabase.auth.signOut();
       }
       signOut();
-      router.push("/home");
+      router.push("/");
     } finally {
       setLoading(false);
     }

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import {
   Briefcase,
@@ -17,6 +18,7 @@ import {
   Sofa,
 } from "lucide-react";
 import { PERSONAS } from "@/lib/constants";
+import { SELOS } from "@/config/selos";
 import { PHOTOS } from "@/lib/media";
 import { listProperties } from "@/lib/data/properties";
 import { ButtonLink } from "@/components/ui/button";
@@ -37,6 +39,12 @@ const PERSONA_PHOTOS: Record<string, string> = {
   saude: PHOTOS.personas.saude,
   familias: PHOTOS.personas.familias,
   nomades: PHOTOS.personas.nomades,
+};
+
+// A home é servida em "/" (URL principal única). O antigo "/home" faz 301 para
+// cá (ver next.config.ts). Canonical próprio evita qualquer ambiguidade.
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
 };
 
 export default async function HomePage() {
@@ -184,8 +192,8 @@ export default async function HomePage() {
             </h2>
             <p className="mt-5 text-lg text-muted">
               Mais que uma cama: além do selo{" "}
-              <strong className="text-ink">Pronto para Morar</strong>, etiquetas mostram a
-              aptidão de cada imóvel para o trabalho remoto.
+              <strong className="text-ink">{SELOS.prontoParaMorar.nome}</strong> ({SELOS.prontoParaMorar.resumo}),
+              etiquetas mostram a aptidão de cada imóvel para o trabalho remoto.
             </p>
             <div className="mt-6 flex flex-wrap gap-2">
               <SpecTag kind="home_office" />
@@ -247,7 +255,7 @@ export default async function HomePage() {
             </div>
             <p className="px-5 pb-4 pt-3 text-xs text-white/40">
               Comparativo referente à locação mobiliada de média duração, conforme políticas
-              públicas das plataformas.
+              públicas das plataformas. Informações conferidas em outubro de 2026.
             </p>
           </div>
         </div>
@@ -428,26 +436,30 @@ function CompareRow({
   );
 }
 
+// Texto REAL em cada célula (o ícone é só decoração, aria-hidden) — antes a
+// célula era só ícone e a IA/leitor de tela liam vazio.
+const MARK_LABEL: Record<"yes" | "no" | "partial", string> = {
+  yes: "Sim",
+  no: "Não",
+  partial: "Parcial",
+};
+
 function Mark({ v, brand = false }: { v: "yes" | "no" | "partial"; brand?: boolean }) {
-  if (v === "yes")
-    return (
-      <span
-        className={`grid h-6 w-6 place-items-center rounded-full ${
-          brand ? "bg-green-500 text-night" : "bg-white/10 text-green-300"
-        }`}
-      >
-        <Check className="h-4 w-4" />
-      </span>
-    );
-  if (v === "partial")
-    return (
-      <span className="grid h-6 w-6 place-items-center rounded-full bg-white/10 text-white/50">
-        <Minus className="h-4 w-4" />
-      </span>
-    );
+  const Icon = v === "yes" ? Check : v === "partial" ? Minus : X;
+  const dot =
+    v === "yes"
+      ? brand
+        ? "bg-green-500 text-night"
+        : "bg-white/10 text-green-300"
+      : v === "partial"
+        ? "bg-white/10 text-white/50"
+        : "bg-white/5 text-white/30";
   return (
-    <span className="grid h-6 w-6 place-items-center rounded-full bg-white/5 text-white/30">
-      <X className="h-4 w-4" />
+    <span className="inline-flex items-center gap-1.5">
+      <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-full ${dot}`}>
+        <Icon className="h-4 w-4" aria-hidden />
+      </span>
+      <span className="text-xs text-white/70">{MARK_LABEL[v]}</span>
     </span>
   );
 }

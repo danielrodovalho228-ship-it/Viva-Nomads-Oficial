@@ -148,7 +148,7 @@ export function ModeloNegocio() {
     <div className={styles.page}>
       <div className={styles.wrap}>
         <div className={`${styles.topbar} ${styles.noprint}`}>
-          <a className={styles.brand} href="/home">
+          <a className={styles.brand} href="/">
             <span className={styles.v}>Viva</span>
             <span className={styles.n}>Nomads</span>
           </a>
