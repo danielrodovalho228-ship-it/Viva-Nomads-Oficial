@@ -267,10 +267,17 @@ function DangerZone() {
           setError("Senha incorreta. Tente novamente.");
           return;
         }
-        // Apaga DE FATO os dados pessoais (LGPD), não só desativa.
+        // Apaga/anonimiza os dados pessoais (LGPD). O servidor decide: bloqueia
+        // com locação ativa, anonimiza quem tem histórico de contratos, apaga o resto.
         const { error: delError } = await supabase.rpc("delete_user_account");
         if (delError) {
-          setError("Não foi possível excluir agora. Tente novamente em instantes.");
+          if ((delError.message || "").includes("LOCACAO_ATIVA")) {
+            setError(
+              "Você tem uma locação ou contrato ativo. Encerre a locação antes de excluir a conta."
+            );
+          } else {
+            setError("Não foi possível excluir agora. Tente novamente em instantes.");
+          }
           return;
         }
         await supabase.auth.signOut();
@@ -285,8 +292,10 @@ function DangerZone() {
   return (
     <Panel title="Excluir conta" className="mt-6 border-red-200">
       <p className="text-sm font-medium text-red-600">
-        Esta ação é permanente. Todos os seus dados, imóveis e contratos serão removidos e
-        não podem ser recuperados (LGPD — direito ao esquecimento).
+        Esta ação remove seus dados pessoais (LGPD — direito ao esquecimento). Com locação
+        ativa, a exclusão é bloqueada até o encerramento. Se você tiver histórico de contratos,
+        sua identidade é removida e os contratos/pagamentos são mantidos sem identificação pelo
+        prazo exigido por lei.
       </p>
 
       {step === 0 && (
@@ -303,9 +312,11 @@ function DangerZone() {
           <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-red-700">
             <li>Dados pessoais e perfil de verificação</li>
             <li>Anúncios e imóveis cadastrados</li>
-            <li>Contratos, documentos e histórico</li>
             <li>Favoritos, candidaturas e mensagens</li>
           </ul>
+          <p className="mt-2 text-xs text-red-700">
+            Contratos e pagamentos, se existirem, são mantidos sem identificação pelo prazo legal.
+          </p>
           <div className="mt-3 flex gap-2">
             <Button variant="ghost" size="sm" onClick={reset}>
               Cancelar
