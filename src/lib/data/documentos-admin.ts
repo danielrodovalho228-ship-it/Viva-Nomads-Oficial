@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { notify } from "@/lib/notifications";
 import { primeiroNome } from "@/lib/display-name";
 import { tipoVisualizacaoDoc, type VisualizacaoDoc } from "@/lib/moderacao-doc";
+import { ehAdmin } from "@/lib/data/admin-guard";
 
 type ActionResult = { ok: boolean; demo?: boolean; error?: string };
 
@@ -110,8 +111,9 @@ export async function countDocumentosPendentes(): Promise<number> {
 /**
  * Admin APROVA ou RECUSA um documento (recusa exige motivo). Grava o desfecho +
  * quem/quando e NOTIFICA o proprietário por e-mail (layout-mãe) nos dois casos.
- * Só aprovado libera o botão Publicar do dono. A RLS `is_admin()` autoriza o
- * update; se um não-admin chamar, o update não casa nenhuma linha.
+ * Só aprovado libera o botão Publicar do dono. A3: exige ADMIN aqui (antes só
+ * confiava na RLS — e a regra do dono deixava ele aprovar o próprio documento) e
+ * ninguém modera o PRÓPRIO documento. O banco reforça (0056).
  */
 export async function moderarDocumento(
   qualId: string,
@@ -124,6 +126,7 @@ export async function moderarDocumento(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Não autenticado." };
+  if (!(await ehAdmin(supabase, user.id))) return { ok: false, error: "Sem permissão." };
 
   const motivoLimpo = (motivo ?? "").trim();
   if (!aprovado && !motivoLimpo) return { ok: false, error: "Informe o motivo da recusa." };
@@ -138,6 +141,7 @@ export async function moderarDocumento(
     })
     .eq("id", qualId)
     .eq("document_status", "pending") // só modera o que está na fila
+    .neq("owner_id", user.id) // ninguém aprova o próprio documento
     .select("owner_id")
     .maybeSingle();
   if (error) return { ok: false, error: error.message };

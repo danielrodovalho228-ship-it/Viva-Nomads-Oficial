@@ -1,50 +1,71 @@
 import { NextResponse } from "next/server";
-import { requireUser } from "@/lib/api-auth";
-import { createSubscription, type BillingType } from "@/lib/payments/asaas";
+import { createClient } from "@/lib/supabase/server";
+import { createSubscription, isAsaasConfigured, type BillingType } from "@/lib/payments/asaas";
 import { PLANS } from "@/lib/constants";
+import { IntegracaoNaoConfigurada, MSG_NAO_CONFIGURADA, emProducao } from "@/lib/integracoes";
+import { consumirLimite, DIA } from "@/lib/limites";
 
-/** Cria a assinatura recorrente do proprietário via Asaas (PIX/boleto/cartão). */
+const FORMAS: BillingType[] = ["PIX", "BOLETO", "CREDIT_CARD"];
+
+/**
+ * Assinatura do plano do proprietário (Asaas). A5: nome, e-mail e CPF/CNPJ vêm
+ * do PERFIL (não do pedido); o preço vem da tabela de planos do servidor; no
+ * máximo 1 pedido de assinatura por conta a cada 24h (cada pedido cria cliente
+ * e assinatura no Asaas). O plano só muda quando o pagamento confirmar (webhook).
+ */
 export async function POST(request: Request) {
-  // Segurança: exige sessão em produção (demo/preview passa direto).
-  const { block } = await requireUser();
-  if (block) return block;
-  const body = await request.json().catch(() => ({}));
-  const { planId, billingType, name, email, cpfCnpj } = body as {
-    planId?: string;
-    billingType?: BillingType;
-    name?: string;
-    email?: string;
-    cpfCnpj?: string;
-  };
+  const supabase = await createClient();
+  if (!supabase) return NextResponse.json({ error: "Serviço indisponível." }, { status: 503 });
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
 
-  // Gestor NÃO é auto-serviço: é plano de elegibilidade, ativado por venda
-  // assistida no piloto. Nunca é cobrável por aqui, elegível ou não.
-  if (planId === "gestor") {
+  const body = (await request.json().catch(() => ({}))) as { planId?: string; billingType?: string };
+  if (body.planId === "gestor") {
     return NextResponse.json(
       { error: "O plano Gestor é ativado com nosso time. Fale com a gente." },
       { status: 403 }
     );
   }
-
-  const plan = PLANS.find((p) => p.id === planId);
+  const plan = PLANS.find((p) => p.id === body.planId);
   if (!plan || !plan.price) {
     return NextResponse.json({ error: "Plano inválido para cobrança." }, { status: 400 });
+  }
+  const billingType = FORMAS.includes(body.billingType as BillingType) ? (body.billingType as BillingType) : "PIX";
+
+  const { data: perfil } = await supabase
+    .from("profiles")
+    .select("full_name, email, cpf, cnpj, person_type")
+    .eq("id", user.id)
+    .maybeSingle();
+  const documento = String((perfil?.person_type === "pj" ? perfil?.cnpj : perfil?.cpf) ?? "").replace(/\D/g, "");
+
+  if (!isAsaasConfigured() && emProducao()) {
+    return NextResponse.json({ error: MSG_NAO_CONFIGURADA }, { status: 503 });
+  }
+  if (!(await consumirLimite(`assinatura:user:${user.id}`, 1, DIA))) {
+    return NextResponse.json(
+      { error: "Já recebemos um pedido de assinatura seu hoje. Confira seu e-mail ou fale com a gente." },
+      { status: 429 }
+    );
   }
 
   try {
     const result = await createSubscription({
-      customerName: name ?? "Proprietário",
-      customerEmail: email ?? "sem-email@vivanomads.com.br",
-      cpfCnpj,
+      customerName: (perfil?.full_name as string) || "Proprietário",
+      customerEmail: (perfil?.email as string) || user.email || "sem-email@vivanomads.com.br",
+      cpfCnpj: documento || undefined,
       planValue: plan.price,
       planName: plan.name,
-      billingType: billingType ?? "PIX",
+      billingType,
     });
     return NextResponse.json(result);
   } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Falha ao criar assinatura." },
-      { status: 500 }
-    );
+    if (err instanceof IntegracaoNaoConfigurada) {
+      return NextResponse.json({ error: MSG_NAO_CONFIGURADA }, { status: 503 });
+    }
+    console.error("[assinatura] falha:", err);
+    return NextResponse.json({ error: "Falha ao criar a assinatura." }, { status: 502 });
   }
 }

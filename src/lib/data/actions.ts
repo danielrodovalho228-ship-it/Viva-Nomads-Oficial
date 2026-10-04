@@ -11,7 +11,6 @@ import {
   tagCondoApproved,
 } from "@/lib/qualification";
 import { findNearbyWorkspaces } from "@/lib/integrations/places";
-import { createSubaccount } from "@/lib/payments/asaas";
 import { notify } from "@/lib/notifications";
 import { listingLimit, PLAN_LABEL } from "@/lib/plan";
 import type { SubscriptionPlan } from "@/lib/store";
@@ -20,6 +19,7 @@ import { amenityRows } from "@/lib/amenities";
 import { getPropertyForOwner } from "@/lib/data/properties";
 import { guardContactInfo } from "@/lib/messages/contact-guard";
 import { isExemplo, EXEMPLO_SEM_CONTATO } from "@/lib/demo-listing";
+import { ehAdmin } from "@/lib/data/admin-guard";
 import { conversationId as idConversa } from "@/lib/messages/conversation-id";
 import { SITE_URL } from "@/lib/site";
 import type { Property } from "@/lib/types";
@@ -210,8 +210,10 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
 
   // Portão anti-fraude NO SERVIDOR (item 1): publicar (status active) exige a
   // última qualificação com documento APROVADO. Rascunho passa. Enforcement real
-  // — o gate do cliente é só UX.
-  if (input.asDraft === false) {
+  // — o gate do cliente é só UX. A3: vale sempre que NÃO for rascunho (antes só
+  // com asDraft === false, e omitir o campo publicava sem aprovação). O banco
+  // reforça a mesma regra (0056).
+  if (!input.asDraft) {
     const { data: q } = await supabase
       .from("qualification_checklists")
       .select("document_status")
@@ -409,6 +411,24 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Não autenticado." };
   if (!UUID_RE.test(id)) return { ok: false, error: "Imóvel inválido para edição." };
+
+  // A3: (re)publicar exige o documento APROVADO — o mesmo portão do createProperty
+  // (antes a edição publicava sem checar). O banco reforça (0056).
+  if (input.asDraft === false) {
+    const { data: q } = await supabase
+      .from("qualification_checklists")
+      .select("document_status")
+      .eq("owner_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if ((q?.document_status ?? "none") !== "approved") {
+      return {
+        ok: false,
+        error: "Documentação do imóvel ainda não aprovada. Salve como rascunho — a publicação libera após a verificação.",
+      };
+    }
+  }
 
   const { error } = await supabase
     .from("properties")
@@ -933,37 +953,6 @@ export async function requestLead(
   return { ok: true };
 }
 
-/**
- * Cria a subconta Asaas do proprietário aprovado (walletId p/ split) e guarda
- * em payment_accounts. ⚠️ a apiKey deve ser persistida criptografada.
- */
-export async function createOwnerSubaccount(input: {
-  ownerId: string;
-  name: string;
-  email: string;
-  cpfCnpj: string;
-  phone?: string;
-}): Promise<ActionResult> {
-  const supabase = await createClient();
-  const sub = await createSubaccount({
-    name: input.name,
-    email: input.email,
-    cpfCnpj: input.cpfCnpj,
-    mobilePhone: input.phone,
-  });
-  if (!supabase) return { ok: true, demo: true, id: sub.walletId };
-
-  const { error } = await supabase.from("payment_accounts").upsert({
-    owner_id: input.ownerId,
-    gateway: "asaas",
-    asaas_wallet_id: sub.walletId,
-    asaas_subaccount_apikey: sub.apiKey, // em produção: criptografar antes de gravar
-    status: sub.status,
-  });
-  if (error) return { ok: false, error: error.message };
-  return { ok: true, id: sub.walletId };
-}
-
 /** Aprova ou recusa um checklist de qualificação (admin). */
 export async function reviewChecklist(
   id: string,
@@ -976,11 +965,14 @@ export async function reviewChecklist(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Não autenticado." };
+  // A3: revisão é da equipe, e ninguém revisa o próprio checklist (banco reforça na 0056).
+  if (!(await ehAdmin(supabase, user.id))) return { ok: false, error: "Sem permissão." };
 
   const { error } = await supabase
     .from("qualification_checklists")
     .update({ status: approved ? "approved" : "not_eligible" })
-    .eq("id", id);
+    .eq("id", id)
+    .neq("owner_id", user.id);
   if (error) return { ok: false, error: error.message };
   return { ok: true };
 }

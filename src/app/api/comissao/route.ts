@@ -1,41 +1,37 @@
 import { NextResponse } from "next/server";
-import { requireUser } from "@/lib/api-auth";
 import { createCommissionCharge } from "@/lib/payments/asaas";
-import { COMMISSION_BY_PLAN } from "@/lib/constants";
+import { IntegracaoNaoConfigurada, MSG_NAO_CONFIGURADA } from "@/lib/integracoes";
+import { carregarFechamento, reservarFechamento, concluirFechamento } from "@/lib/data/fechamento-servidor";
 
-/** Cria a cobrança de comissão de fechamento (split) sobre o 1º mês. */
+/**
+ * Comissão de fechamento (1º aluguel com split). A5: recebe SÓ o id da
+ * candidatura aceita; valor, taxa, carteira do dono e dados do pagador vêm do
+ * banco. Uma cobrança por candidatura.
+ */
 export async function POST(request: Request) {
-  // Segurança: exige sessão em produção (demo/preview passa direto).
-  const { block } = await requireUser();
-  if (block) return block;
-  const body = await request.json().catch(() => ({}));
-  const { firstMonthRent, plan, ownerWalletId, name, email } = body as {
-    firstMonthRent?: number;
-    plan?: string;
-    ownerWalletId?: string;
-    name?: string;
-    email?: string;
-  };
+  const body = (await request.json().catch(() => ({}))) as { leadId?: unknown };
+  const f = await carregarFechamento(body.leadId);
+  if ("error" in f) return NextResponse.json({ error: f.error }, { status: f.status });
 
-  if (!firstMonthRent || firstMonthRent <= 0) {
-    return NextResponse.json({ error: "Valor do aluguel inválido." }, { status: 400 });
+  if (!(await reservarFechamento(f.leadId, "comissao"))) {
+    return NextResponse.json({ error: "A comissão desta candidatura já foi gerada." }, { status: 409 });
   }
-
-  const commissionRate = COMMISSION_BY_PLAN[plan ?? "free"] ?? 0.12;
-
   try {
     const result = await createCommissionCharge({
-      firstMonthRent,
-      commissionRate,
-      ownerWalletId,
-      customerName: name ?? "Inquilino",
-      customerEmail: email ?? "sem-email@vivanomads.com.br",
+      firstMonthRent: f.aluguelMensal,
+      commissionRate: f.comissaoRate,
+      ownerWalletId: f.ownerWalletId ?? undefined,
+      customerName: f.tenantNome,
+      customerEmail: f.tenantEmail ?? "sem-email@vivanomads.com.br",
     });
+    await concluirFechamento(f.leadId, "comissao", result.chargeId);
     return NextResponse.json(result);
   } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Falha ao cobrar comissão." },
-      { status: 500 }
-    );
+    await concluirFechamento(f.leadId, "comissao", null);
+    if (err instanceof IntegracaoNaoConfigurada) {
+      return NextResponse.json({ error: MSG_NAO_CONFIGURADA }, { status: 503 });
+    }
+    console.error("[comissao] falha:", err);
+    return NextResponse.json({ error: "Falha ao gerar a cobrança." }, { status: 502 });
   }
 }

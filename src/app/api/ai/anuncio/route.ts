@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
 import { GERACAO_IA_ATIVA } from "@/lib/flags";
+import { consumirLimite, ipHash, DIA } from "@/lib/limites";
 import {
   montarBrief,
   limparSaida,
@@ -17,8 +18,10 @@ import {
  *
  * Segurança: a chave da API (ANTHROPIC_API_KEY) vive SÓ no servidor — nunca é
  * exposta ao cliente. A rota é gated por flag (GERACAO_IA_ATIVA) e por chave
- * presente; sem qualquer uma delas, responde 503 sem chamar o provedor. Rate
- * limit de 10/dia por proprietário (migration 0045). Só campos SEGUROS do
+ * presente; sem qualquer uma delas, responde 503 sem chamar o provedor. Cada
+ * chamada custa: exige login de PROPRIETÁRIO (ou admin), corpo de no máximo
+ * 8 KB, e limites de 10/dia por pessoa e 30/dia por IP — contados ANTES de
+ * chamar o modelo (tentativa que falha também conta). Só campos SEGUROS do
  * imóvel vão ao modelo (allowlist em montarBrief — nada de endereço/contato/PII),
  * e a saída passa por um guarda-corpo que remove contato que porventura escape.
  */
@@ -38,22 +41,41 @@ export async function POST(request: Request) {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
 
-  // Rate limit: janela de 24h por proprietário.
-  const desde = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-  const { count } = await supabase
-    .from("ai_generations")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", user.id)
-    .gte("created_at", desde);
-  if ((count ?? 0) >= IA_LIMITE_DIA) {
+  // Só quem anuncia (proprietário) ou admin.
+  const { data: perfil } = await supabase
+    .from("profiles")
+    .select("role, preferred_mode")
+    .eq("id", user.id)
+    .maybeSingle();
+  const podeAnunciar =
+    perfil?.role === "owner" || perfil?.role === "admin" || perfil?.preferred_mode === "owner";
+  if (!podeAnunciar) {
+    return NextResponse.json({ error: "Disponível para proprietários." }, { status: 403 });
+  }
+
+  // Corpo pequeno: o brief tem só campos curtos (allowlist em montarBrief).
+  const cru = await request.text().catch(() => "");
+  if (cru.length > 8 * 1024) {
+    return NextResponse.json({ error: "Dados demais para gerar o anúncio." }, { status: 413 });
+  }
+  let body: AnuncioBriefInput = {};
+  try {
+    const parsed: unknown = JSON.parse(cru || "{}");
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) body = parsed as AnuncioBriefInput;
+  } catch {
+    return NextResponse.json({ error: "Pedido inválido." }, { status: 400 });
+  }
+  const brief = montarBrief(body);
+
+  // Limites (antes de chamar o modelo): por pessoa e por IP, janela de 24h.
+  const okPessoa = await consumirLimite(`ia:user:${user.id}`, IA_LIMITE_DIA, DIA);
+  const okIp = okPessoa && (await consumirLimite(`ia:ip:${ipHash(request)}`, IA_LIMITE_DIA * 3, DIA));
+  if (!okPessoa || !okIp) {
     return NextResponse.json(
       { error: `Limite de ${IA_LIMITE_DIA} gerações por dia atingido. Tente novamente amanhã.` },
       { status: 429 }
     );
   }
-
-  const body = (await request.json().catch(() => ({}))) as AnuncioBriefInput;
-  const brief = montarBrief(body);
 
   try {
     const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });

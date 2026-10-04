@@ -8,6 +8,8 @@
 
 import type { CafResult, TrafficLight } from "@/lib/closing";
 
+import { exigirChaveEmProducao } from "@/lib/integracoes";
+
 const API_BASE = process.env.CAF_API_BASE ?? "https://api.combateafraude.com";
 
 export function isCafConfigured() {
@@ -23,6 +25,7 @@ export interface CafRequest {
 /** Dispara (ou simula) a verificação CAF e devolve um laudo com semáforo. */
 export async function verifyTenant(req: CafRequest): Promise<CafResult> {
   if (!isCafConfigured()) {
+    exigirChaveEmProducao("CAF");
     return {
       light: "green",
       identity: true,
