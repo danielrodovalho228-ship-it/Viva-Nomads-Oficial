@@ -28,3 +28,15 @@ test("texto comum e acentos passam, com limite de tamanho", () => {
 test("valores com ponto não viram link removido", () => {
   assert.equal(semLinks("Aluguel R$ 3.500,00 por mês"), "Aluguel R$ 3.500,00 por mês");
 });
+
+test("abreviações de endereço não são links (fronteira depois do domínio)", () => {
+  for (const t of ["Av.Brasil 100", "R.Coronel Antônio", "Ed.Topázio, apto 12", "Al.Santos", "Pç.Tubal Vilela"]) {
+    assert.equal(semLinks(t), t, t);
+  }
+});
+
+test("domínios de verdade continuam removidos, inclusive com pontuação depois", () => {
+  assert.equal(semLinks("veja golpe.com."), "veja [link removido].");
+  assert.equal(semLinks("acesse pagamento.com.br/pix?x=1 agora"), "acesse [link removido] agora");
+  assert.equal(semLinks("(site.xyz)"), "([link removido])");
+});

@@ -4,6 +4,7 @@ import { createSubscription, isAsaasConfigured, type BillingType } from "@/lib/p
 import { PLANS } from "@/lib/constants";
 import { IntegracaoNaoConfigurada, MSG_NAO_CONFIGURADA, emProducao } from "@/lib/integracoes";
 import { consumirLimite, DIA } from "@/lib/limites";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 const FORMAS: BillingType[] = ["PIX", "BOLETO", "CREDIT_CARD"];
 
@@ -60,6 +61,23 @@ export async function POST(request: Request) {
       planName: plan.name,
       billingType,
     });
+    // Registra a assinatura como PENDENTE: o webhook do Asaas a encontra pelo
+    // id e só a ativa quando o pagamento confirmar (o plano vale a partir daí).
+    if (!result.demo) {
+      const admin = createAdminClient();
+      const { error: subErr } = admin
+        ? await admin.from("subscriptions").insert({
+            owner_id: user.id,
+            gateway: "asaas",
+            gateway_customer_id: result.customerId ?? null,
+            gateway_subscription_id: result.subscriptionId,
+            billing_type: billingType,
+            plan: plan.id,
+            status: "pending",
+          })
+        : { error: { message: "sem service role" } };
+      if (subErr) console.error("[assinatura] assinatura criada no Asaas mas não registrada:", result.subscriptionId, subErr.message);
+    }
     return NextResponse.json(result);
   } catch (err) {
     if (err instanceof IntegracaoNaoConfigurada) {

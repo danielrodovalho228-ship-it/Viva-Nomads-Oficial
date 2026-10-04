@@ -7,8 +7,23 @@ import { createAdminClient } from "@/lib/supabase/admin";
  * erro, devolve false — rota paga não roda sem limite.
  */
 export async function consumirLimite(chave: string, maximo: number, janelaSegundos: number): Promise<boolean> {
+  return (await situacaoLimite(chave, maximo, janelaSegundos)) === "ok";
+}
+
+/**
+ * Situação do limite: "ok" (consumiu), "estourou" (passou do máximo) ou
+ * "erro" (sem service role, sem a migração ou falha no banco).
+ */
+export async function situacaoLimite(
+  chave: string,
+  maximo: number,
+  janelaSegundos: number
+): Promise<"ok" | "estourou" | "erro"> {
   const admin = createAdminClient();
-  if (!admin) return false;
+  if (!admin) {
+    console.error("[limites] indisponível: sem SUPABASE_SERVICE_ROLE_KEY");
+    return "erro";
+  }
   const { data, error } = await admin.rpc("consumir_limite", {
     chave,
     maximo,
@@ -16,9 +31,20 @@ export async function consumirLimite(chave: string, maximo: number, janelaSegund
   });
   if (error) {
     console.error("[limites] indisponível:", error.message);
-    return false;
+    return "erro";
   }
-  return data === true;
+  return data === true ? "ok" : "estourou";
+}
+
+/**
+ * Para ações GRATUITAS do usuário (e-mail do chat, renovação): só barra quando
+ * o limite de fato estourou. Falha de infraestrutura deixa passar (e fica no
+ * log) — sem isso, um problema no limitador parava os e-mails do chat e dizia
+ * "muitos pedidos" a quem nunca pediu. Rotas PAGAS continuam usando
+ * consumirLimite (falha fechada).
+ */
+export async function dentroDoLimite(chave: string, maximo: number, janelaSegundos: number): Promise<boolean> {
+  return (await situacaoLimite(chave, maximo, janelaSegundos)) !== "estourou";
 }
 
 /** IP do pedido (primeiro do x-forwarded-for), como HASH — nunca o IP cru. */

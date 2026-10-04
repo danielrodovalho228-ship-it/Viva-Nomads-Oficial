@@ -10,8 +10,12 @@
 */
 import { escaparHtml } from "../escapar-html.ts";
 
+// Endereço com protocolo/www, ou domínio com TLD conhecido. As fronteiras
+// (sem letra/número/hífen colado antes do nome nem depois do TLD, com \p{L}
+// para pegar acentos) evitam apagar texto comum: "Av.Brasil", "R.Coronel",
+// "Ed.Topázio" não são links.
 const URL_RE =
-  /\b(?:(?:https?|ftp):\/\/|www\.)[^\s<>"']+|\b[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:com|net|org|br|io|app|link|xyz|info|me|co|ly|site|online|top|click|shop|pro|biz)(?:\.[a-z]{2})?(?:\/[^\s<>"']*)?/gi;
+  /(?:(?:https?|ftp):\/\/|www\.)[^\s<>"']+|(?<![\p{L}\d.-])[\p{L}\d-]+(?:\.[\p{L}\d-]+)*\.(?:com|net|org|br|io|app|link|xyz|info|me|co|ly|site|online|top|click|shop|pro|biz)(?:\.[a-z]{2})?(?![\p{L}\d-])(?:\/[^\s<>"']*)?/giu;
 
 /** Troca endereços da web por "[link removido]" (só no e-mail). */
 export function semLinks(t: string): string {

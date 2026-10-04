@@ -52,7 +52,7 @@ const VERIFY_COPY: Record<"tenant" | "owner", VerifyCopy> = {
     title: "Verificação",
     subtitle: "Verifique uma vez e candidate-se com um clique em qualquer imóvel.",
     heading: "Crie seu passaporte de locação",
-    badge: "Inquilino Verificado",
+    badge: "Identidade conferida",
     button: "Verificar identidade como inquilino",
     ctaTitle: "Candidatura com um clique ativada",
     ctaBody:

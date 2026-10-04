@@ -1,5 +1,7 @@
 import crypto from "node:crypto";
 import { NextResponse } from "next/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { processarAvisoAsaas, type RepoAsaas } from "@/lib/payments/asaas-webhook";
 
 /**
  * Webhook do Asaas: confirma pagamentos e atualiza o status da assinatura.
@@ -26,17 +28,46 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Payload inválido." }, { status: 400 });
   }
 
-  // Eventos típicos: PAYMENT_CONFIRMED, PAYMENT_RECEIVED, PAYMENT_OVERDUE.
-  // Aqui atualizaríamos a tabela subscriptions/transactions no Supabase.
-  switch (event.event) {
-    case "PAYMENT_CONFIRMED":
-    case "PAYMENT_RECEIVED":
-      // TODO: marcar assinatura como ativa / registrar transação
-      break;
-    case "PAYMENT_OVERDUE":
-      // TODO: marcar assinatura como inadimplente
-      break;
-  }
+  const admin = createAdminClient();
+  if (!admin) return NextResponse.json({ error: "Serviço indisponível." }, { status: 503 });
 
-  return NextResponse.json({ received: true });
+  // Acesso ao banco pelo servidor (service role) — só depois do token conferido.
+  const repo: RepoAsaas = {
+    async registrarEvento(chave, evento, paymentId) {
+      const { error } = await admin.from("asaas_eventos").insert({ chave, evento, payment_id: paymentId });
+      if (!error) return true;
+      if (error.code === "23505") return false; // já processado
+      throw new Error(error.message);
+    },
+    async desfazerEvento(chave) {
+      await admin.from("asaas_eventos").delete().eq("chave", chave);
+    },
+    async atualizarAssinatura(id, dados) {
+      const { data, error } = await admin
+        .from("subscriptions")
+        .update(dados)
+        .eq("gateway_subscription_id", id)
+        .select("id");
+      if (error) throw new Error(error.message);
+      return (data ?? []).length > 0;
+    },
+    async atualizarCobranca(id, dados) {
+      const { data, error } = await admin
+        .from("cobrancas_fechamento")
+        .update(dados)
+        .eq("externo_id", id)
+        .select("lead_id");
+      if (error) throw new Error(error.message);
+      return (data ?? []).length > 0;
+    },
+  };
+
+  const r = await processarAvisoAsaas(event, repo);
+  if (!r.ok) {
+    console.error("[asaas-webhook] falha:", r.erro);
+    // 500: o Asaas reenvia o aviso mais tarde (o registro foi desfeito).
+    return NextResponse.json({ error: "Falha ao processar." }, { status: 500 });
+  }
+  if (r.acao === "sem_alvo") console.warn("[asaas-webhook] pagamento sem assinatura/cobrança local:", event?.payment?.id);
+  return NextResponse.json({ received: true, acao: r.acao });
 }
