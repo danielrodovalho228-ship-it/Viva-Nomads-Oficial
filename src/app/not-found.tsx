@@ -1,9 +1,18 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Logo } from "@/components/ui/logo";
 import { ButtonLink } from "@/components/ui/button";
 import { NotFoundIllustration } from "@/components/illustrations";
 import { PropertyCard } from "@/components/property-card";
 import { listProperties } from "@/lib/data/properties";
+
+// 404: só o noindex do Next (sem canonical nem o robots da raiz).
+export const metadata: Metadata = {
+  title: "Página não encontrada",
+  // null: não herda o "index, follow" da raiz — fica só o "noindex" que o
+  // próprio Next põe na 404 (antes saíam os dois, contraditórios).
+  robots: null,
+};
 
 export default async function NotFound() {
   // Transforma o erro em retenção: mostra imóveis disponíveis de verdade.

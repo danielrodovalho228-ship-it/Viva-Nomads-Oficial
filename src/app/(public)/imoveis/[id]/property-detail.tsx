@@ -134,8 +134,8 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
       >
         <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />
         <span>
-          <strong>Aumente suas chances:</strong> candidatos verificados passam mais confiança.
-          Verifique-se — leva poucos minutos. <ArrowRight className="inline h-3 w-3" />
+          <strong>Verificação de identidade: em breve.</strong> Complete seu perfil enquanto isso
+          — ajuda o proprietário a decidir. <ArrowRight className="inline h-3 w-3" />
         </span>
       </Link>
     </div>

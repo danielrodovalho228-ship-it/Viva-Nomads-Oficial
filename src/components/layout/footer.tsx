@@ -56,9 +56,9 @@ export function Footer() {
 function FooterCol({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h4 className="mb-4 font-title text-sm font-bold uppercase tracking-wider text-white">
+      <h2 className="mb-4 font-title text-sm font-bold uppercase tracking-wider text-white">
         {title}
-      </h4>
+      </h2>
       <ul className="space-y-3 text-sm">{children}</ul>
     </div>
   );

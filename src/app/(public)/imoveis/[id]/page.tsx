@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   if (!property) return { title: "Imóvel não encontrado" };
 
   const title = `${property.title} — ${formatBRL(property.monthlyPrice)}/mês`;
-  const description = `${property.propertyType} mobiliado em ${property.neighborhood}, ${property.city}. ${property.bedrooms} quartos · ${property.areaM2} m² · período mínimo ${property.minPeriodDays} dias.`;
+  const description = `${property.propertyType} ${adjetivoMobiliado(property.propertyType)} em ${property.neighborhood}, ${property.city}. ${property.bedrooms} quartos · ${property.areaM2} m² · período mínimo ${property.minPeriodDays} dias.`;
 
   return {
     title,
@@ -60,4 +60,11 @@ export default async function PropertyDetailPage({ params }: Params) {
       <PropertyDetail property={property} similar={similar} />
     </>
   );
+}
+
+/** Concordância: "Casa mobiliada", "Apartamento mobiliado". */
+function adjetivoMobiliado(tipo: string | null | undefined): string {
+  return /^(casa|kitnet|quitinete|cobertura|su[ií]te|ch[aá]cara|loja|sala)/i.test(String(tipo ?? "").trim())
+    ? "mobiliada"
+    : "mobiliado";
 }

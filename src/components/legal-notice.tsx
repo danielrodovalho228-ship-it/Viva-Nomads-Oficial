@@ -34,7 +34,7 @@ export function PlatformLegalNotice({ className }: { className?: string }) {
     >
       <Scale className="mt-0.5 h-4 w-4 shrink-0 text-sage" />
       <p>
-        O Viva Nomads <strong className="text-forest">conecta, verifica e documenta</strong> —
+        O Viva Nomads <strong className="text-forest">conecta e documenta</strong> —
         não é locador, fiador nem garantidor, e não responde pelo aluguel. A decisão de alugar
         é exclusivamente do proprietário.
       </p>

@@ -11,7 +11,7 @@ export interface FaixaDef {
   key: FaixaPrazo;
   label: string;
   min: number; // dias
-  max: number | null; // null = sem teto (180+)
+  max: number; // dias (no máximo 180)
   resumo: string; // faixa de dias, curto
   aviso: string; // explicação do regime (configurável)
 }
@@ -24,7 +24,7 @@ export const FAIXAS: FaixaDef[] = [
     max: 90,
     resumo: "30 a 90 dias",
     aviso:
-      "Locação por temporada (art. 48 da Lei 8.245/91). Ao fim do prazo, a plataforma conduz a retomada do imóvel ou um novo contrato — não há prorrogação automática.",
+      "Locação por temporada (art. 48 da Lei 8.245/91). Ao fim do prazo, proprietário e inquilino combinam a saída ou um novo contrato pela plataforma — não há prorrogação automática.",
   },
   {
     key: "media_estadia",
@@ -35,28 +35,21 @@ export const FAIXAS: FaixaDef[] = [
     aviso:
       "Locação de média duração (90 a 180 dias): contrato próprio para o período, diferente da locação de curta duração.",
   },
-  {
-    key: "longa",
-    label: "Longa duração",
-    min: 180,
-    max: null,
-    resumo: "180+ dias",
-    aviso:
-      "Locação de longa duração (180 dias ou mais): regras de locação residencial podem se aplicar — contrato específico.",
-  },
 ];
+// "Longa duração (180+ dias)" saiu: a plataforma é de 30 a 180 dias. A chave
+// 'longa' fica no TIPO só para não quebrar registros antigos.
 
 const FAIXA_BY_KEY: Record<string, FaixaDef> = Object.fromEntries(FAIXAS.map((f) => [f.key, f]));
 
 export function faixaLabel(key: string): string {
+  if (key === "longa") return "Média duração";
   return FAIXA_BY_KEY[key]?.label ?? key;
 }
 
 /** Faixa “natural” para um prazo mínimo em dias (para sugestão no cadastro). */
 export function faixaForDays(dias: number): FaixaPrazo {
   if (dias < 90) return "temporada";
-  if (dias < 180) return "media_estadia";
-  return "longa";
+  return "media_estadia"; // o máximo da plataforma é 180 dias
 }
 
 // ── Garantias aceitas ──

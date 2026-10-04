@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/privacidade" },
   title: "Política de Privacidade",
   description:
     "Como o Viva Nomads coleta, usa e protege os dados pessoais de proprietários e inquilinos, em conformidade com a LGPD (Lei 13.709/2018).",
@@ -19,7 +20,7 @@ export const metadata: Metadata = {
   - [ ] Encarregado (DPO): incluir contato e como exercer os direitos do titular.
   - [ ] Retenção: alinhar prazos de guarda e finalidade ao restante da política.
   - [ ] Coerência com os Termos de Uso (que citam Asaas/ZapSign) e o disclaimer
-        "conecta, verifica, documenta e registra — não é locador, fiador,
+        "conecta, documenta e registra — não é locador, fiador,
         garantidor nem executora".
 */
 
@@ -39,7 +40,7 @@ const SUBPROCESSORS = [
   },
   {
     name: "CAF (Combate à Fraude)",
-    purpose: "Verificação de identidade e prevenção à fraude",
+    purpose: "Verificação de identidade e prevenção à fraude — quando disponível (ainda não ativa)",
     data: "Nome, CPF, documento de identidade e dados de validação/biometria, quando aplicável",
   },
 ] as const;
@@ -60,22 +61,20 @@ export default function PrivacyPage() {
         <Section title="2. Dados que coletamos">
           Dados de cadastro (nome, e-mail, telefone), perfil (proprietário/inquilino, tipo PF/PJ),
           dados de imóveis e anúncios, mensagens trocadas na plataforma e, quando você opta pela
-          verificação, o resultado da análise (em formato de laudo). Pagamentos são processados
+          verificação (quando disponível), o resultado da análise. Pagamentos são processados
           por parceiros (ver <strong>Suboperadores</strong>, abaixo) — não armazenamos dados
           completos de cartão.
         </Section>
 
         <Section title="3. Como usamos">
-          Para operar a plataforma: criar e exibir anúncios, conectar as partes, viabilizar a
-          verificação de inquilino, gerar contrato, cobrar assinatura/serviços e enviar
+          Para operar a plataforma: criar e exibir anúncios, conectar as partes, gerar contrato, cobrar assinatura/serviços e enviar
           notificações (e-mail/WhatsApp) sobre sua conta e negociações.
         </Section>
 
         <Section title="4. Compartilhamento">
           Compartilhamos apenas o necessário com nossos suboperadores (relacionados na seção
           abaixo) e entre as partes de uma negociação — de forma assimétrica e controlada. O
-          proprietário vê do inquilino um <strong>resultado em 3 níveis (verde/amarelo/vermelho)</strong> (sem dados brutos
-          sensíveis). Após o aceite, revela-se a identidade (nome e foto), nunca o contato direto:
+          proprietário não vê dados sensíveis do inquilino antes do aceite. Após o aceite, revela-se a identidade (nome e foto), nunca o contato direto:
           telefone e e-mail não são trocados — a conversa segue toda pela plataforma.
         </Section>
 
@@ -118,7 +117,7 @@ export default function PrivacyPage() {
           </p>
         </section>
 
-        <Section title="5. Geração de texto por IA">
+        <Section title="6. Geração de texto por IA">
           Ao usar o gerador opcional de título e descrição do anúncio, enviamos a um provedor de
           inteligência artificial apenas os <strong>dados do imóvel</strong> (tipo, região,
           cômodos, área e comodidades) para redigir o texto. <strong>Não enviamos seu contato, o
@@ -126,13 +125,14 @@ export default function PrivacyPage() {
           responsabilidade do proprietário revisá-lo antes de publicar.
         </Section>
 
-        <Section title="6. Verificação de identidade do inquilino">
-          A verificação trata identidade, documento e prova de vida. O resultado é apresentado
-          ao proprietário como análise informativa em 3 níveis (verde/amarelo/vermelho). Os dados brutos sensíveis ficam
-          restritos e não são expostos a terceiros sem necessidade.
+        <Section title="7. Verificação de identidade do inquilino (em breve)">
+          A verificação de identidade <strong>ainda não está disponível</strong>. Quando estiver,
+          tratará identidade, documento e prova de vida, com o resultado apresentado ao
+          proprietário como análise informativa; os dados brutos sensíveis ficarão restritos e não
+          serão expostos a terceiros sem necessidade. Esta seção será atualizada antes do início.
         </Section>
 
-        <Section title="7. Seus direitos (LGPD)">
+        <Section title="8. Seus direitos (LGPD)">
           Você pode solicitar acesso, correção, portabilidade, anonimização ou exclusão dos seus
           dados, além de revogar consentimentos. Para exercer, fale conosco pelos canais
           oficiais da plataforma. Para excluir sua conta e todos os dados, use a página{" "}
@@ -142,12 +142,12 @@ export default function PrivacyPage() {
           (pelo app ou por confirmação por e-mail).
         </Section>
 
-        <Section title="8. Segurança e retenção">
+        <Section title="9. Segurança e retenção">
           Adotamos medidas técnicas e organizacionais para proteger seus dados, que são retidos
           pelo tempo necessário às finalidades acima e às obrigações legais.
         </Section>
 
-        <Section title="9. Cookies">
+        <Section title="10. Cookies">
           Usamos cookies essenciais para autenticação e funcionamento, e cookies de análise para
           melhorar o produto. Você pode gerenciá-los no seu navegador.
         </Section>

@@ -28,9 +28,10 @@ export function AppHeader() {
           <ChevronLeft className="h-6 w-6" />
         </button>
       )}
-      <h1 className={raiz ? "px-3 font-title text-base font-bold text-ink" : "font-title text-base font-bold text-ink"}>
+      {/* <p>, não <h1>: o título principal (h1) é o da própria página. */}
+      <p className={raiz ? "px-3 font-title text-base font-bold text-ink" : "font-title text-base font-bold text-ink"}>
         {tituloDaTelaApp(pathname)}
-      </h1>
+      </p>
     </header>
   );
 }

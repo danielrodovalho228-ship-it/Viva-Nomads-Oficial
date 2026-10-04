@@ -47,6 +47,7 @@ export function CityAutocomplete({
           }}
           onFocus={() => setOpen(true)}
           placeholder={placeholder}
+          aria-label={placeholder}
           autoComplete="off"
           className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-muted"
         />

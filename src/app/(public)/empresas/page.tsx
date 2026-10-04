@@ -3,6 +3,7 @@ import { Building2, FileText, BarChart3, MapPin } from "lucide-react";
 import { EmpresasForm } from "./empresas-form";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/empresas" },
   title: "Para empresas",
   description:
     "Mobilidade corporativa com locação mobiliada de média duração: imóveis prontos, nota fiscal e relatórios. Fale com a gente.",

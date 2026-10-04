@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, Children, cloneElement, isValidElement } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -104,6 +104,8 @@ export default function NewPropertyPage() {
   const [city, setCity] = useState("Uberlândia");
   const [cep, setCep] = useState("");
   const [cepLoading, setCepLoading] = useState(false);
+  // Bairro do CEP diferente do digitado: pergunta em vez de trocar sem aviso.
+  const [bairroDoCep, setBairroDoCep] = useState<string | null>(null);
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
   const [videoUrl, setVideoUrl] = useState("");
   const [utilitiesMode, setUtilitiesMode] = useState<"fixed" | "real">("fixed");
@@ -113,7 +115,6 @@ export default function NewPropertyPage() {
   const [faixas, setFaixas] = useState<Record<string, boolean>>({
     temporada: true,
     media_estadia: true,
-    longa: false,
   });
   // Garantias que o proprietário ACEITA (só preferência de aceite — não muda o
   // caminho do dinheiro). Caução à vista por padrão. (Título aposentado — Onda 1.)
@@ -635,9 +636,15 @@ export default function NewPropertyPage() {
       const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
       const data = await res.json();
       if (!data.erro) {
-        if (data.logradouro) setStreet(data.logradouro);
-        if (data.bairro) setNeighborhood(data.bairro);
-        if (data.localidade) setCity(data.localidade);
+        // Só preenche o que está VAZIO — vale o que o dono digitou. Bairro
+        // diferente vira uma pergunta (antes "Santa Mônica" virava "Saraiva").
+        if (data.logradouro && !street.trim()) setStreet(data.logradouro);
+        if (data.localidade && !city.trim()) setCity(data.localidade);
+        if (data.bairro) {
+          const digitado = neighborhood.trim();
+          if (!digitado) setNeighborhood(data.bairro);
+          else if (digitado.toLowerCase() !== String(data.bairro).trim().toLowerCase()) setBairroDoCep(data.bairro);
+        }
       }
     } catch {
       /* sem rede — preenche manual */
@@ -972,7 +979,7 @@ export default function NewPropertyPage() {
                 )}
               </div>
               <span className="mt-1 block text-xs text-muted">
-                Digite o CEP para preencher rua, bairro e cidade automaticamente.
+                Digite o CEP para preencher rua, bairro e cidade que estiverem em branco.
               </span>
             </Labeled>
             <Labeled label="Endereço (rua e número)">
@@ -990,6 +997,25 @@ export default function NewPropertyPage() {
                 />
                 <LocationDatalist id="novo-bairros" />
                 <Erro msg={erros.bairro} />
+                {bairroDoCep && (
+                  <span className="mt-1 block rounded-lg bg-amber-50 px-2 py-1.5 text-xs text-amber-900" role="status">
+                    O CEP indica <strong>{bairroDoCep}</strong> — confirmar?{" "}
+                    <button
+                      type="button"
+                      className="font-semibold underline"
+                      onClick={() => {
+                        setNeighborhood(bairroDoCep);
+                        setBairroDoCep(null);
+                      }}
+                    >
+                      Usar {bairroDoCep}
+                    </button>{" "}
+                    ·{" "}
+                    <button type="button" className="font-semibold underline" onClick={() => setBairroDoCep(null)}>
+                      Manter {neighborhood}
+                    </button>
+                  </span>
+                )}
               </Labeled>
               <Labeled label="Cidade">
                 <input value={city} onChange={(e) => setCity(e.target.value)} className="input" />
@@ -1618,10 +1644,21 @@ function Erro({ msg }: { msg?: string }) {
 }
 
 function Labeled({ label, children }: { label: string; children: React.ReactNode }) {
+  // Além do <label> em volta, o campo ganha um nome acessível explícito
+  // (leitores de tela/validadores que não seguem o rótulo implícito).
+  const [primeiro, ...resto] = Children.toArray(children);
+  const campo =
+    isValidElement<Record<string, unknown>>(primeiro) &&
+    typeof primeiro.type === "string" &&
+    ["input", "select", "textarea"].includes(primeiro.type) &&
+    !primeiro.props["aria-label"]
+      ? cloneElement(primeiro, { "aria-label": label })
+      : primeiro;
   return (
     <label className="block">
       <span className="mb-1.5 block text-sm font-medium text-ink">{label}</span>
-      {children}
+      {campo}
+      {resto}
     </label>
   );
 }

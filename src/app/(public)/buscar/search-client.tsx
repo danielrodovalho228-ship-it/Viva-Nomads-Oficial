@@ -719,6 +719,8 @@ export function SearchClient({ properties }: { properties: Property[] }) {
             </div>
           ) : (
             <div className={cn("grid gap-6 sm:grid-cols-2", !MAPA_ON && "lg:grid-cols-3")}>
+              {/* h2 (invisível) entre o h1 do topo e os h3 dos cards — sem pular nível. */}
+              <h2 className="sr-only">Imóveis encontrados</h2>
               {results.map((p) => (
                 <div
                   key={p.id}

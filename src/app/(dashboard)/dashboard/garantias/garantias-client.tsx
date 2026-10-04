@@ -103,7 +103,7 @@ export function GarantiasClient({ contratos }: { contratos: ContratoView[] }) {
             Seguro-fiança via parceiro — em estruturação
           </span>
           <p className="mt-4 text-xs text-muted">
-            A Viva Nomads conecta, verifica e documenta — não é fiadora nem seguradora.
+            A Viva Nomads conecta e documenta — não é fiadora nem seguradora.
           </p>
         </Panel>
       </div>
