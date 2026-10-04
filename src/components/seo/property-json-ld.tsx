@@ -2,6 +2,7 @@ import type { Property } from "@/lib/types";
 import { SITE_URL, SITE_NAME } from "@/lib/site";
 import { isExemplo } from "@/lib/demo-listing";
 import { avaliacaoReal } from "@/lib/reviews";
+import { hojeBR } from "@/lib/utils";
 
 /**
  * Disponibilidade Schema.org derivada das datas REAIS (não só do status):
@@ -11,7 +12,7 @@ import { avaliacaoReal } from "@/lib/reviews";
  */
 function disponibilidadeSchema(property: Property): string {
   if (property.status !== "active") return "https://schema.org/OutOfStock";
-  const hoje = new Date().toISOString().slice(0, 10);
+  const hoje = hojeBR();
   const from = property.availableFrom?.slice(0, 10);
   const until = property.availableUntil?.slice(0, 10);
   if (from && from > hoje) return "https://schema.org/PreOrder";

@@ -53,12 +53,39 @@ export function cityFromSlug(slug: string): string {
   );
 }
 
+/** Fuso de referência das datas da plataforma (o mercado é o Brasil). */
+export const FUSO_BR = "America/Sao_Paulo";
+
+/** "AAAA-MM-DD" de um instante, no horário de Brasília (não em UTC). */
+export function isoDiaBR(instante: Date): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: FUSO_BR,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(instante);
+}
+
+/** "Hoje" no horário de Brasília (AAAA-MM-DD). Às 22h de Brasília ainda é hoje. */
+export function hojeBR(agora: Date = new Date()): string {
+  return isoDiaBR(agora);
+}
+
 /**
- * Data no formato brasileiro (10/07/2026) a partir de "AAAA-MM-DD" ou ISO.
- * Lê só a parte da data (sem fuso), para "2026-07-10" não virar dia 09.
+ * Data no formato brasileiro (10/07/2026). "AAAA-MM-DD" (só data) é lido como
+ * está — "2026-07-10" não vira dia 09. Data COM HORA (timestamp) é convertida
+ * para o horário de Brasília: "2026-10-20T02:00:00Z" é dia 19 em Brasília.
  */
 export function dataBR(iso: string | null | undefined): string {
-  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso ?? ""));
+  const txt = String(iso ?? "");
+  if (/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/.test(txt)) {
+    const d = new Date(txt.replace(" ", "T"));
+    if (!Number.isNaN(d.getTime())) {
+      const [a, m, dia] = isoDiaBR(d).split("-");
+      return `${dia}/${m}/${a}`;
+    }
+  }
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(txt);
   return m ? `${m[3]}/${m[2]}/${m[1]}` : "—";
 }
 

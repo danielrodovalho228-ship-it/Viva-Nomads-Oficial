@@ -4,10 +4,12 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify } from "@/lib/notifications";
 import { COMISSAO_POR_PLANO, plano as planoPorId, type PlanoId } from "@/config/planos";
+import { planoDoProprietario } from "@/lib/data/plano-efetivo";
 import { situacaoCandidatura, type RotuloCandidatura } from "@/lib/candidaturas/status";
 import { getPropertyForOwner } from "@/lib/data/properties";
 import { formatDocNumber } from "@/lib/documents";
 import type { Property } from "@/lib/types";
+import { erroBancoPT } from "@/lib/erros-banco";
 
 interface ActionResult {
   ok: boolean;
@@ -40,7 +42,7 @@ export async function aceitarCandidatura(leadId: string): Promise<ActionResult> 
     .select("id, owner_id, tenant_id, status")
     .eq("id", leadId)
     .maybeSingle();
-  if (lErr) return { ok: false, error: lErr.message };
+  if (lErr) return { ok: false, error: erroBancoPT(lErr) };
   if (!lead) return { ok: false, error: "Candidatura não encontrada." };
   if (lead.owner_id !== user.id) return { ok: false, error: "Sem permissão." };
   if (lead.status !== "new") return { ok: false, error: "Esta candidatura já foi decidida." };
@@ -52,16 +54,8 @@ export async function aceitarCandidatura(leadId: string): Promise<ActionResult> 
 
   // Snapshot do plano do DONO agora → congela a comissão do contrato. O plano
   // só muda pelo servidor (0057: assinatura é só leitura para o dono).
-  // Só assinatura ATIVA conta (pendente/vencida = plano gratuito).
-  const { data: sub } = await admin
-    .from("subscriptions")
-    .select("plan")
-    .eq("owner_id", user.id)
-    .eq("status", "active")
-    .order("current_period_end", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  const plano = ((sub?.plan as string) ?? "free") as PlanoId;
+  // Assinatura ATIVA; sem ela, Profissional se Fundador nos 12 meses grátis.
+  const plano = await planoDoProprietario(admin, user.id);
   const comissao = COMISSAO_POR_PLANO[plano] ?? COMISSAO_POR_PLANO.free;
 
   const { error: uErr } = await admin
@@ -76,7 +70,7 @@ export async function aceitarCandidatura(leadId: string): Promise<ActionResult> 
     .eq("id", leadId)
     .eq("owner_id", user.id)
     .eq("status", "new");
-  if (uErr) return { ok: false, error: uErr.message };
+  if (uErr) return { ok: false, error: erroBancoPT(uErr) };
 
   // E-mail ao inquilino (só para notificação; contato do inquilino é lido via
   // service role, nunca devolvido ao cliente). Best-effort — nunca quebra.
@@ -123,7 +117,7 @@ export async function recusarCandidatura(leadId: string, motivo?: string): Promi
     .select("id, owner_id, status")
     .eq("id", leadId)
     .maybeSingle();
-  if (lErr) return { ok: false, error: lErr.message };
+  if (lErr) return { ok: false, error: erroBancoPT(lErr) };
   if (!lead) return { ok: false, error: "Candidatura não encontrada." };
   if (lead.owner_id !== user.id) return { ok: false, error: "Sem permissão." };
   if (lead.status !== "new") return { ok: false, error: "Esta candidatura já foi decidida." };
@@ -142,7 +136,7 @@ export async function recusarCandidatura(leadId: string, motivo?: string): Promi
     .eq("id", leadId)
     .eq("owner_id", user.id)
     .eq("status", "new");
-  if (uErr) return { ok: false, error: uErr.message };
+  if (uErr) return { ok: false, error: erroBancoPT(uErr) };
 
   return { ok: true };
 }

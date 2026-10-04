@@ -3,28 +3,39 @@
  *  chamam a MESMA função → mesmo resultado). */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { simulateTax, irpfMensal, PF_CONTRIBUTOR_MIN_ANNUAL } from "./tax.ts";
+import { simulateTax, irpfMensal, irpfMensalTabela, PF_CONTRIBUTOR_MIN_ANNUAL } from "./tax.ts";
 import { simulateTax as simulateTaxMemoria } from "./tributario.ts";
 
-test("PF de 1 imóvel a R$ 3.200/mês: carnê-leão progressivo, sem IBS/CBS", () => {
+test("PF de 1 imóvel a R$ 3.200/mês: redutor da Lei 15.270 zera o carnê-leão", () => {
   const r = simulateTax({ monthlyRent: 3200, propertyCount: 1 });
   assert.equal(r.annualRevenue, 38400);
   assert.equal(r.pfIsContributor, false);
-  // 3.200 × 15% − 394,16 = 85,84/mês → 1.030/ano (antes: 27,5% fixo = 10.560).
-  assert.equal(r.pfAnnualTax, 1030);
+  // Antes: 3.200 × 15% − 394,16 = 85,84/mês → R$ 1.030/ano. Com o redutor
+  // (rendimento até R$ 5.000/mês), o imposto é zero.
+  assert.equal(r.pfAnnualTax, 0);
 });
 
-test("tabela progressiva mensal: faixas e parcela a deduzir", () => {
-  assert.equal(irpfMensal(2000), 0); // isento
-  assert.equal(Math.round(irpfMensal(10000) * 100) / 100, 1841.27); // 27,5% − 908,73
+test("tabela progressiva mensal: faixas e parcela a deduzir (sem redutor)", () => {
+  assert.equal(irpfMensalTabela(2000), 0); // isento
+  assert.equal(Math.round(irpfMensalTabela(3200) * 100) / 100, 85.84);
+  assert.equal(Math.round(irpfMensalTabela(10000) * 100) / 100, 1841.27); // 27,5% − 908,73
   assert.equal(irpfMensal(-50), 0);
 });
 
-test("R$ 10 mil/mês: PF ~R$ 22 mil/ano (não R$ 33 mil) e diferença real ~R$ 6,6 mil", () => {
+test("redutor da Lei 15.270: zero até R$ 5.000, decrescente até R$ 7.350, nada acima", () => {
+  assert.equal(irpfMensal(5000), 0);
+  // 6.000: tabela 741,27 − redução (978,62 − 0,133145 × 6.000 = 179,75) = 561,52
+  assert.equal(Math.round(irpfMensal(6000) * 100) / 100, 561.52);
+  // 7.350: redução zero → imposto da tabela
+  assert.equal(Math.round(irpfMensal(7350) * 100) / 100, Math.round(irpfMensalTabela(7350) * 100) / 100);
+  assert.equal(Math.round(irpfMensal(10000) * 100) / 100, 1841.27);
+});
+
+test("R$ 10 mil/mês: PF ~R$ 22 mil/ano; PJ presumido 11,33% (IBS/CBS 2026 = teste compensável)", () => {
   const r = simulateTax({ monthlyRent: 10000, propertyCount: 1 });
   assert.equal(r.pfAnnualTax, 22095);
-  assert.equal(r.pjAnnualTax, 15252);
-  assert.equal(r.taxSavings, 6843);
+  assert.equal(r.pjAnnualTax, 13596); // 120.000 × 11,33%
+  assert.equal(r.taxSavings, 8499);
 });
 
 test("despesas dedutíveis reduzem o imposto da PF", () => {

@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { validarAvaliacao } from "@/lib/avaliacoes";
+import { erroBancoPT } from "@/lib/erros-banco";
 
 type ActionResult = { ok: boolean; demo?: boolean; error?: string };
 
@@ -49,8 +50,7 @@ export async function avaliar(input: AvaliacaoInput): Promise<ActionResult> {
   if (error) {
     if (error.code === "23505") return { ok: false, error: "Você já avaliou esta pessoa." };
     // 23514: regra do banco (contrato não encerrado, não é parte…) — já em pt-BR.
-    if (error.code === "23514") return { ok: false, error: error.message };
-    return { ok: false, error: "Não foi possível registrar a avaliação." };
+    return { ok: false, error: erroBancoPT(error, "Não foi possível registrar a avaliação.") };
   }
   return { ok: true };
 }

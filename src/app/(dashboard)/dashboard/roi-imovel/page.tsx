@@ -37,6 +37,8 @@ export default function RoiImovelPage() {
     reposicaoAnualPct: reposicaoPct / 100,
   };
   const p = getPlano(planoId);
+  // Gestor: assinatura "sob consulta" (null) — não vira R$ 0 em silêncio.
+  const sobConsulta = p?.assinaturaAnual == null;
   const res = useMemo(
     () => simularROI(entrada, p?.comissao ?? 0, p?.assinaturaAnual ?? 0),
     [investimentoMobiliar, aluguelVazio, aluguelMobiliado, mesesOcupados, contasMensais, reposicaoPct, p?.comissao, p?.assinaturaAnual]
@@ -105,9 +107,23 @@ export default function RoiImovelPage() {
 
         {/* Resultado */}
         <div className="space-y-4">
+          {sobConsulta && (
+            <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              A assinatura do plano {p?.nome} é <strong>sob consulta</strong> e NÃO está no cálculo — os
+              números abaixo ficam acima do real. Fale com a gente para o valor da sua carteira.
+            </p>
+          )}
           <div className="grid grid-cols-2 gap-4">
             <ResultCard label="Prêmio do mobiliado" value={premioTexto} hint={premioDica} />
-            <ResultCard label="Ganho líquido adicional / ano" value={formatBRL(res.ganhoAdicionalAnual)} hint="já descontando comissão, assinatura, contas e reposição" />
+            <ResultCard
+              label="Ganho líquido adicional / ano"
+              value={formatBRL(res.ganhoAdicionalAnual)}
+              hint={
+                sobConsulta
+                  ? "descontando comissão, contas e reposição — SEM a assinatura (sob consulta)"
+                  : "já descontando comissão, assinatura, contas e reposição"
+              }
+            />
             <ResultCard label="Payback do investimento" value={paybackTexto} hint={paybackDica} />
             <ResultCard label="ROI anual" value={roiTexto} hint={res.roiAnual === null ? "sem investimento para comparar" : undefined} />
           </div>

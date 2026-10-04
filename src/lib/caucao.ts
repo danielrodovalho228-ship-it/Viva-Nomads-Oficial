@@ -7,6 +7,7 @@
   do locador) ou para a instituição emissora (no parcelado) — nunca para a
   plataforma. O reembolso é PAGO pelo locador; a plataforma só documenta.
 */
+import { REGRAS_CONTRATO } from "../config/planos.ts";
 
 export type FormaPagamentoCaucao = "avista" | "parcelado";
 export type DestinoValor = "conta_vinculada" | "emissor";
@@ -53,7 +54,7 @@ export function calcularCaucaoSugerida(valorMoveis: number, valorTotalEstadia: n
 }
 
 /** Fração da caução sobre o valor total do período (Onda 1: 50%). */
-export const PERC_CAUCAO = 0.5;
+export const PERC_CAUCAO = REGRAS_CONTRATO.caucaoFracaoBloco; // fonte única: config/planos
 
 /**
  * Caução da Onda 1 (Dra. Beatriz): 50% do VALOR TOTAL do período locado,

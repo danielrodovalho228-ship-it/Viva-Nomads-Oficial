@@ -10,6 +10,12 @@ import {
   comissaoContrato,
   resumoContrato,
   encadearDatas,
+  fimInclusivoISO,
+  diasInclusivos,
+  caucaoDoBloco,
+  cabeNoPrazoMaximo,
+  PRAZO_MAX_DIAS,
+  PRAZO_MAX_MESES,
   addDiasISO,
   MAX_MESES_BLOCO,
   DIAS_POR_MES,
@@ -86,19 +92,41 @@ test("addDiasISO soma dias corretamente (sem depender de now)", () => {
   assert.equal(addDiasISO("2026-01-31", 1), "2026-02-01");
 });
 
-test("encadearDatas: blocos contíguos, cada um ≤ 90 dias", () => {
+test("encadearDatas: fim inclusivo, próximo bloco no dia seguinte, cada um ≤ 90 dias", () => {
   const blocos = planejarBlocos(6, 3000, 2);
   const comDatas = encadearDatas("2026-01-01", blocos);
   assert.equal(comDatas[0].inicio, "2026-01-01");
-  // cada bloco começa onde o anterior terminou
+  assert.equal(comDatas[0].fim, "2026-03-01"); // 60 dias: 01/01 a 01/03 (inclusive)
   for (let i = 1; i < comDatas.length; i++) {
-    assert.equal(comDatas[i].inicio, comDatas[i - 1].fim);
+    assert.equal(comDatas[i].inicio, addDiasISO(comDatas[i - 1].fim, 1));
   }
-  // nenhum bloco excede 90 dias
   for (const b of comDatas) {
-    const dias =
-      (Date.parse(`${b.fim}T00:00:00Z`) - Date.parse(`${b.inicio}T00:00:00Z`)) / 86400000;
+    const dias = diasInclusivos(b.inicio, b.fim);
     assert.ok(dias <= 90, `bloco ${b.numero} tem ${dias} dias`);
     assert.equal(dias, b.meses * DIAS_POR_MES);
   }
+  // 6 meses = 180 dias no total, nunca 181+.
+  assert.equal(diasInclusivos(comDatas[0].inicio, comDatas[comDatas.length - 1].fim), 180);
+});
+
+test("fim inclusivo: 90 dias a partir de 31/01 terminam em 30/04 (antes 01/05 = 91 dias)", () => {
+  assert.equal(fimInclusivoISO("2026-01-31", 90), "2026-04-30");
+  assert.equal(diasInclusivos("2026-01-31", "2026-05-01"), 91);
+  assert.equal(diasInclusivos("2026-01-31", fimInclusivoISO("2026-01-31", 90)), 90);
+});
+
+test("caução do bloco: 50% do bloco, mas a soma do contrato nunca passa de 3 aluguéis", () => {
+  assert.equal(caucaoDoBloco(6000, 3000, 0), 3000);
+  assert.equal(caucaoDoBloco(6000, 3000, 7000), 2000); // só falta 2.000 para 9.000
+  assert.equal(caucaoDoBloco(6000, 3000, 9000), 0);
+  // 6 meses em blocos de 3: 4.500 + 4.500 = 9.000 = 3 aluguéis.
+  const total = planejarBlocos(6, 3000, 3).reduce((s, b) => s + b.caucao, 0);
+  assert.ok(total <= 3 * 3000);
+});
+
+test("renovação só cabe até 180 dias no total", () => {
+  assert.equal(cabeNoPrazoMaximo(120, 2), true); // 120 + 60 = 180
+  assert.equal(cabeNoPrazoMaximo(150, 2), false); // 210
+  assert.equal(PRAZO_MAX_DIAS, 180);
+  assert.equal(PRAZO_MAX_MESES, 6);
 });

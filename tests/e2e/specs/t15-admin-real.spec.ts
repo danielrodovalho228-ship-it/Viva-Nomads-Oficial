@@ -17,9 +17,16 @@ test.describe("T15 — Admin real", () => {
       await expect(corpo).not.toContainText(falso);
     }
     // Cartões de contagem presentes (o valor vem do banco; "—" só sem conexão).
-    for (const rotulo of ["Usuários", "Imóveis ativos", "Checklists pendentes", "Documentos pendentes"]) {
+    for (const rotulo of ["Usuários", "Imóveis ativos"]) {
       await expect(corpo.getByText(rotulo, { exact: true }).first()).toBeVisible();
     }
+    // A fila de checklists (sempre vazia: a qualificação nunca fica pendente)
+    // saiu; o portão humano é o documento, com link para a fila dele.
+    await expect(corpo).not.toContainText("Checklists pendentes");
+    await expect(corpo.getByRole("link", { name: /Documentos de imóvel para conferir/ })).toHaveAttribute(
+      "href",
+      "/admin/documentos"
+    );
     await expect(corpo).not.toContainText("modo demonstração");
   });
 

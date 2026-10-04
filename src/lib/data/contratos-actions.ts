@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { listMyProperties } from "@/lib/data/properties";
+import { erroBancoPT } from "@/lib/erros-banco";
 
 /**
  * Contratos & blocos do PROPRIETÁRIO + registro DECLARATÓRIO de pagamento
@@ -233,7 +234,7 @@ export async function marcarPagamentoRecebido(input: PagamentoInput): Promise<Ac
     })
     .select("id")
     .single();
-  if (error) return { ok: false, error: error.message };
+  if (error) return { ok: false, error: erroBancoPT(error) };
   return { ok: true, id: data?.id };
 }
 
@@ -255,6 +256,6 @@ export async function confirmarPagamento(pagamentoId: string): Promise<ActionRes
     // confirmado_em é carimbado pelo banco (0057: o inquilino só grava a confirmação).
     .update({ confirmado_pelo_inquilino: true })
     .eq("id", pagamentoId);
-  if (error) return { ok: false, error: error.message };
+  if (error) return { ok: false, error: erroBancoPT(error) };
   return { ok: true, id: pagamentoId };
 }

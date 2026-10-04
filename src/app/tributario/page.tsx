@@ -125,8 +125,8 @@ export default async function TributarioPage() {
             <strong className="text-ink">{formatBRL(exemplo.pfAnnualTax)}</strong> e a PJ{" "}
             <strong className="text-ink">{formatBRL(exemplo.pjAnnualTax)}</strong> ao ano. Tudo o que
             o modelo <strong>não captura</strong> está declarado acima como “🔶 premissa implícita —
-            confirmar”. Destaque honesto: a alíquota de IRPF é ÚNICA (faixa superior), então o modelo{" "}
-            <strong>provavelmente superestima o imposto da PF em rendas moderadas</strong>.
+            confirmar”. A PF usa a tabela progressiva do carnê-leão com o redutor da{" "}
+            <strong>Lei 15.270/2025</strong> (imposto zero até R$ 5.000/mês de aluguel tributável).
           </p>
         </section>
 
