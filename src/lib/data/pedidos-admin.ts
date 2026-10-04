@@ -5,6 +5,7 @@ import { notify } from "@/lib/notifications";
 import { SITE_URL } from "@/lib/site";
 import { textoEmail } from "@/lib/notifications/texto-seguro";
 import { logModeracao } from "@/lib/data/moderacao-log";
+import { ehAdmin } from "@/lib/data/admin-guard";
 
 type ActionResult = { ok: boolean; demo?: boolean; error?: string };
 
@@ -35,6 +36,7 @@ export async function moderarPedido(pedidoId: string, motivo: string): Promise<A
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Não autenticado." };
+  if (!(await ehAdmin(supabase, user.id))) return { ok: false, error: "Sem permissão." };
   const motivoLimpo = (motivo ?? "").trim();
   if (!motivoLimpo) return { ok: false, error: "Informe o motivo da moderação." };
 
@@ -81,6 +83,8 @@ export async function reativarPedido(pedidoId: string): Promise<ActionResult> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Não autenticado." };
+  // Antes não conferia admin (o banco também passa a barrar — 0062).
+  if (!(await ehAdmin(supabase, user.id))) return { ok: false, error: "Sem permissão." };
   const { error } = await supabase
     .from("pedidos_moradia")
     .update({ status: "ativo", removido_motivo: null })

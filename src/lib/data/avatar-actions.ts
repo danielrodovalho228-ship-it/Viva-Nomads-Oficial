@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { AVATARS_BUCKET } from "@/lib/supabase/admin";
+import { AVATARS_BUCKET, createAdminClient } from "@/lib/supabase/admin";
+import { ehAvatarDoUsuario } from "@/lib/avatar-image";
 import { podeVerAvatar } from "@/lib/avatar";
 import {
   signAvatarPath,
@@ -16,7 +17,8 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 
 /**
  * Persiste o caminho da foto (após o upload no client) no perfil do próprio
- * usuário. RLS garante que só o dono atualiza a própria linha. No-op em demo.
+ * usuário. Só aceita o caminho canônico DELE (`<uid>/avatar.webp`) e grava pelo
+ * servidor — avatar_url saiu do grant de coluna (0062). No-op em demo.
  */
 export async function setMyAvatarPath(path: string): Promise<{ ok: boolean }> {
   const supabase = await createClient();
@@ -25,7 +27,10 @@ export async function setMyAvatarPath(path: string): Promise<{ ok: boolean }> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false };
-  const { error } = await supabase
+  if (!ehAvatarDoUsuario(path, user.id)) return { ok: false };
+  const admin = createAdminClient();
+  if (!admin) return { ok: false };
+  const { error } = await admin
     .from("profiles")
     .update({ avatar_url: path, avatar_atualizado_em: new Date().toISOString() })
     .eq("id", user.id);
@@ -47,7 +52,7 @@ export async function clearMyAvatar(): Promise<{ ok: boolean }> {
   if (path) {
     await supabase.storage.from(AVATARS_BUCKET).remove([path]);
   }
-  await supabase
+  await (createAdminClient() ?? supabase)
     .from("profiles")
     .update({ avatar_url: null, avatar_atualizado_em: new Date().toISOString() })
     .eq("id", user.id);
@@ -66,7 +71,7 @@ export async function getMyAvatarUrl(): Promise<UrlResult> {
   // O dono lê o próprio arquivo pela RLS — mas assinamos via admin para não
   // depender de a policy de leitura estar exatamente assim; é a MINHA foto.
   const path = await getAvatarPath(user.id);
-  return { url: await signAvatarPath(path) };
+  return { url: await signAvatarPath(path, user.id) };
 }
 
 /**
@@ -96,7 +101,7 @@ export async function getAvatarUrl(params: {
 
   // Eu mesmo.
   if (viewerId && viewerId === targetId) {
-    return { url: await signAvatarPath(targetPath) };
+    return { url: await signAvatarPath(targetPath, targetId) };
   }
 
   // Admin (moderação).
@@ -133,5 +138,5 @@ export async function getAvatarUrl(params: {
   });
   if (!pode) return { url: null };
 
-  return { url: await signAvatarPath(targetPath) };
+  return { url: await signAvatarPath(targetPath, targetId) };
 }

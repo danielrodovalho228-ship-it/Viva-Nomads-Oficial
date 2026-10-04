@@ -116,10 +116,12 @@ export async function saveQualification(
   // vaza dados do documento — só o fato de que há item para conferir).
   if (documentPath) {
     try {
-      const { data: admins } = await supabase
-        .from("profiles")
-        .select("email, full_name, notif_email")
-        .eq("role", "admin");
+      // Pelo servidor: a RLS de profiles só mostra o próprio perfil ao dono,
+      // então a lista vinha vazia e o aviso nunca saía.
+      const admin = createAdminClient();
+      const { data: admins } = admin
+        ? await admin.from("profiles").select("email, full_name, notif_email").eq("role", "admin")
+        : { data: [] as { email: string | null; full_name: string | null; notif_email: boolean | null }[] };
       for (const a of admins ?? []) {
         if (a.email && a.notif_email !== false) {
           await notify({

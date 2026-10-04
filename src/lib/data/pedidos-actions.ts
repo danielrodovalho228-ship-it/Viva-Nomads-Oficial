@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { consumirLimite, DIA } from "@/lib/limites";
 import { guardContactInfo } from "@/lib/messages/contact-guard";
 import { conversationId as idConversa } from "@/lib/messages/conversation-id";
 import { listMyProperties } from "@/lib/data/properties";
@@ -84,6 +85,8 @@ export interface PedidoInput {
  * obrigatórios, filtro anti-contato na apresentação (bloqueia telefone/e-mail/
  * mensageria) e limite de 2 pedidos ativos. Best-effort: no-op em demo/sem sessão.
  */
+const PEDIDOS_POR_DIA = 3;
+
 export async function criarPedido(input: PedidoInput): Promise<ActionResult> {
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
@@ -107,6 +110,14 @@ export async function criarPedido(input: PedidoInput): Promise<ActionResult> {
   if (!isMotivo(input.motivo)) return { ok: false, error: "Selecione um motivo válido." };
   if (input.apresentacao && contemContato(input.apresentacao))
     return { ok: false, error: CONTATO_AVISO };
+
+  // Limite por dia (cada pedido avisa proprietários por e-mail): sem ele,
+  // publicar/pausar em loop disparava avisos sem fim. Falha fechada.
+  if (!(await consumirLimite(`pedido:${user.id}`, PEDIDOS_POR_DIA, DIA)))
+    return {
+      ok: false,
+      error: `Você já publicou ${PEDIDOS_POR_DIA} pedidos hoje. Tente novamente amanhã.`,
+    };
 
   // Limite anti-abuso: no máximo 2 pedidos ativos por inquilino.
   const { count } = await supabase

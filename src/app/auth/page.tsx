@@ -267,14 +267,20 @@ export default function AuthPage() {
               return;
             }
             // Credenciais inválidas: descobre se é conta INEXISTENTE (pede cadastro)
-            // ou senha incorreta (conta existe). Degrada para o genérico se a RPC
-            // ainda não estiver aplicada no banco.
+            // ou senha incorreta (conta existe). Degrada para o genérico se a
+            // consulta falhar ou estourar o limite.
             let existe = true;
             try {
-              const { data: ex } = await supabase.rpc("email_existe", { e: email });
-              if (ex === false) existe = false;
+              // Pelo servidor, com limite por IP (a RPC não é mais pública).
+              const res = await fetch("/api/auth/email-existe", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email }),
+              });
+              const j = (await res.json().catch(() => ({}))) as { existe?: boolean | null };
+              if (j.existe === false) existe = false;
             } catch {
-              /* migração 0031 ausente — mantém comportamento genérico */
+              /* sem resposta — mantém comportamento genérico */
             }
             if (!existe) {
               setSemConta(true);

@@ -38,8 +38,8 @@ $DB -f "$R/supabase/migrations/0061_publicar_qualificacao_fotos.sql" >/dev/null
 $DB -f "$R/supabase/migrations/0061_publicar_qualificacao_fotos.sql" >/dev/null  # reaplicar é seguro
 $DB -f "$H/fase_novo0061.sql" >/dev/null
 $DB -f "$H/fase_pre0062.sql" >/dev/null
-$DB -f "$R/supabase/migrations/0062_perfil_sem_insert_delete.sql" >/dev/null
-$DB -f "$R/supabase/migrations/0062_perfil_sem_insert_delete.sql" >/dev/null  # reaplicar é seguro
+$DB -f "$R/supabase/migrations/0062_seguranca_p0.sql" >/dev/null
+$DB -f "$R/supabase/migrations/0062_seguranca_p0.sql" >/dev/null  # reaplicar é seguro
 $DB -f "$H/fase_novo0062.sql" >/dev/null
 psql -q -d p0_teste -P pager=off -f "$R/supabase/producao/verificar-seguranca.sql" 2>&1 | grep -E "^ [A-H][0-9a-z.]" | sed 's/  */ /g'
 $DB -f "$R/supabase/producao/rollback/0062_rollback.sql" >/dev/null

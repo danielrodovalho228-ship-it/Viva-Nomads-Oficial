@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { consumirLimite, DIA } from "@/lib/limites";
 import {
   DOC_MAX_BYTES,
   DOC_MIN_BYTES,
@@ -25,6 +26,14 @@ export async function POST(request: Request) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
+
+  // Limite de envios por dia (falha fechada) — o arquivo vai para o bucket.
+  if (!(await consumirLimite(`doc-upload:${user.id}`, 20, DIA))) {
+    return NextResponse.json(
+      { error: "Muitos envios de documento hoje. Tente novamente amanhã." },
+      { status: 429 }
+    );
+  }
 
   const form = await request.formData().catch(() => null);
   const file = form?.get("file");
