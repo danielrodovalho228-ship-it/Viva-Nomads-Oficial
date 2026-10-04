@@ -25,7 +25,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DateFieldBR } from "@/components/ui/date-field-br";
-import { MOTIVOS, contemContato, CONTATO_AVISO, calcExpiraEm } from "@/lib/pedidos/pedidos";
+import { MOTIVOS, contemContato, CONTATO_AVISO, calcExpiraEm, PRAZO_MAX_MESES } from "@/lib/pedidos/pedidos";
+import { MUNICIPIOS, UFS } from "@/lib/municipios";
 import { criarPedido } from "@/lib/data/pedidos-actions";
 import { useAuthStore } from "@/lib/store";
 
@@ -202,7 +203,7 @@ function PedidoForm() {
   const [cidade, setCidade] = useState(sp.get("cidade") ?? "");
   const [uf, setUf] = useState((sp.get("uf") ?? "").toUpperCase().slice(0, 2));
   const [dataInicio, setDataInicio] = useState(/^\d{4}-\d{2}-\d{2}$/.test(inicioQ) ? inicioQ : "");
-  const [prazoMeses, setPrazoMeses] = useState(mesesQ >= 1 && mesesQ <= 12 ? mesesQ : 6);
+  const [prazoMeses, setPrazoMeses] = useState(mesesQ >= 1 && mesesQ <= PRAZO_MAX_MESES ? mesesQ : PRAZO_MAX_MESES);
   const [orcamento, setOrcamento] = useState(/^\d+$/.test(orcQ) ? orcQ : "");
   const [ocupantes, setOcupantes] = useState(ocupQ >= 1 ? ocupQ : 1);
   const [motivo, setMotivo] = useState("");
@@ -260,22 +261,38 @@ function PedidoForm() {
         <div className="grid gap-4 sm:grid-cols-3">
           <label className="sm:col-span-2">
             <span className="mb-1 block text-sm font-medium text-ink">Cidade</span>
+            {/* Nome da lista do IBGE (sugestões por UF): evita a mesma cidade
+                escrita de dois jeitos. O servidor confere de novo. */}
             <input
               required
               value={cidade}
               onChange={(e) => setCidade(e.target.value)}
-              placeholder="Uberlândia"
+              placeholder={uf ? "Comece a digitar a cidade" : "Escolha a UF primeiro"}
+              list="cidades-uf"
+              autoComplete="off"
               className="w-full rounded-xl border border-line px-3.5 py-2.5 text-sm outline-none focus:border-sage"
             />
+            <datalist id="cidades-uf">
+              {(MUNICIPIOS[uf] ?? []).map((c) => (
+                <option key={c} value={c} />
+              ))}
+            </datalist>
           </label>
           <label>
             <span className="mb-1 block text-sm font-medium text-ink">UF</span>
-            <input
+            <select
+              required
               value={uf}
-              onChange={(e) => setUf(e.target.value.toUpperCase().slice(0, 2))}
-              placeholder="MG"
-              className="w-full rounded-xl border border-line px-3.5 py-2.5 text-sm uppercase outline-none focus:border-sage"
-            />
+              onChange={(e) => setUf(e.target.value)}
+              className="w-full rounded-xl border border-line px-3.5 py-2.5 text-sm outline-none focus:border-sage"
+            >
+              <option value="">UF</option>
+              {UFS.map((u) => (
+                <option key={u} value={u}>
+                  {u}
+                </option>
+              ))}
+            </select>
           </label>
         </div>
 
@@ -296,7 +313,7 @@ function PedidoForm() {
               onChange={(e) => setPrazoMeses(Number(e.target.value))}
               className="w-full rounded-xl border border-line px-3.5 py-2.5 text-sm outline-none focus:border-sage"
             >
-              {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+              {Array.from({ length: PRAZO_MAX_MESES }, (_, i) => i + 1).map((m) => (
                 <option key={m} value={m}>
                   {m} {m === 1 ? "mês" : "meses"}
                 </option>

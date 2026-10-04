@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Megaphone, ShieldCheck, Home, Plus, Info, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { formatBRL, cn } from "@/lib/utils";
+import { formatBRL, cn, dataBR } from "@/lib/utils";
 import {
   motivoLabel,
   motivoPublico,
@@ -186,11 +186,11 @@ export function PedidosProprietarioClient({
 
                 <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
                   <Meta label="Cidade" value={`${p.cidade}${p.uf ? `/${p.uf}` : ""}`} />
-                  <Meta label="A partir de" value={p.data_inicio} />
+                  <Meta label="A partir de" value={dataBR(p.data_inicio)} />
                   <Meta label="Período" value={`${p.prazo_meses} meses`} />
                   <Meta label="Ocupantes" value={`${p.qtd_ocupantes}`} />
                   <Meta label="Orçamento" value={`${formatBRL(p.orcamento_mensal)}/mês`} />
-                  <Meta label="Expira" value={p.expira_em?.slice(0, 10)} />
+                  <Meta label="Expira" value={dataBR(p.expira_em)} />
                 </div>
 
                 {p.apresentacao && (

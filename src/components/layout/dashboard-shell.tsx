@@ -21,6 +21,8 @@ import {
   Megaphone,
   Receipt,
   Users,
+  Search,
+  FileText,
 } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { Avatar } from "@/components/ui/avatar";
@@ -92,6 +94,8 @@ const OWNER_NAV: NavItem[] = [
  */
 const TENANT_NAV: NavItem[] = [
   { href: "/dashboard", label: "Visão geral", icon: LayoutDashboard },
+  { href: "/buscar", label: "Buscar imóveis", icon: Search },
+  { href: "/dashboard/candidaturas", label: "Candidaturas", icon: FileText },
   { href: "/dashboard/pedidos", label: "Meus pedidos", icon: Megaphone },
   { href: "/dashboard/favoritos", label: "Favoritos & comparações", icon: Heart },
   { href: "/dashboard/locacoes", label: "Minhas locações", icon: Receipt },

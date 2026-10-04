@@ -91,12 +91,12 @@ function OwnerView({
         <StatCard label="Em aberto" value={openCount} icon={Wrench} />
         <StatCard
           label="Resposta média"
-          value={`${metrics.avgFirstResponseH.toFixed(0)}h`}
+          value={metrics.respondedCount ? `${metrics.avgFirstResponseH.toFixed(0)}h` : "—"}
           icon={Clock}
         />
         <StatCard
           label="Resolução média"
-          value={`${metrics.avgResolutionH.toFixed(0)}h`}
+          value={metrics.resolvedCount ? `${metrics.avgResolutionH.toFixed(0)}h` : "—"}
           icon={CheckCircle2}
         />
       </div>

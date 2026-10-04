@@ -125,5 +125,12 @@ export function ownerMetrics(orders: ServiceOrder[]) {
   );
   // Responsivo: responde em < 12h e resolve em < 48h (em média).
   const responsive = responded.length > 0 && avgFirstResponseH < 12 && avgResolutionH < 48;
-  return { avgFirstResponseH, avgResolutionH, responsive };
+  // Quantos entram em cada média: sem nenhum, a tela mostra "—" (não "0h").
+  return {
+    avgFirstResponseH,
+    avgResolutionH,
+    responsive,
+    respondedCount: responded.length,
+    resolvedCount: resolved.length,
+  };
 }

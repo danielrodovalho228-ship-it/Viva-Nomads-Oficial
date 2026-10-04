@@ -15,6 +15,27 @@ test.describe("T2 — Persistência de modo @criticos", () => {
     await expect(page.locator("aside")).toContainText(/Modo:/);
   }
 
+  test("UM clique logo após carregar troca o modo e sobrevive ao F5", async ({ page }) => {
+    // Regressão do "só funciona no 2º clique": a leitura do perfil que termina
+    // DEPOIS do clique desfazia a troca. Clica assim que a página abre.
+    await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+    const aside = page.locator("aside");
+    await expect(aside).toContainText(/Modo:/);
+    const atualEhDono = /Modo:\s*Propriet/i.test(await aside.innerText());
+    const alvo = atualEhDono ? /Inquilino/i : /Propriet/i;
+    await page.getByRole("tab", { name: alvo }).click(); // um clique só
+    await expect(aside).toContainText(atualEhDono ? /Modo:\s*Inquilino/i : /Modo:\s*Propriet/i);
+    // Espera as leituras de perfil em voo terminarem: o modo não pode voltar.
+    await page.waitForLoadState("networkidle");
+    await expect(aside).toContainText(atualEhDono ? /Modo:\s*Inquilino/i : /Modo:\s*Propriet/i);
+    await page.reload({ waitUntil: "networkidle" });
+    await expect(aside).toContainText(atualEhDono ? /Modo:\s*Inquilino/i : /Modo:\s*Propriet/i);
+    // Volta ao modo original (a conta é compartilhada com outros specs).
+    await page.getByRole("tab", { name: atualEhDono ? /Propriet/i : /Inquilino/i }).click();
+    await expect(aside).toContainText(atualEhDono ? /Modo:\s*Propriet/i : /Modo:\s*Inquilino/i);
+    await page.waitForLoadState("networkidle");
+  });
+
   test("alternar modo + F5 mantém a escolha", async ({ page }) => {
     await page.goto("/dashboard");
     // Alterna para Inquilino, recarrega, confirma que MANTÉM.
