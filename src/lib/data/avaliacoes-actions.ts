@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { validarAvaliacao } from "@/lib/avaliacoes";
 
 type ActionResult = { ok: boolean; demo?: boolean; error?: string };
@@ -16,8 +17,8 @@ export interface AvaliacaoInput {
 }
 
 /**
- * Registra a avaliação da OUTRA parte de um contrato. RLS garante autor_id =
- * quem chama; a unicidade (contrato, autor) impede duplicar. Best-effort:
+ * Registra a avaliação da OUTRA parte de um contrato ENCERRADO. Grava pelo
+ * servidor; a unicidade (contrato, autor) impede duplicar. Best-effort:
  * no-op em demo/sem sessão/ids não-UUID.
  */
 export async function avaliar(input: AvaliacaoInput): Promise<ActionResult> {
@@ -33,7 +34,11 @@ export async function avaliar(input: AvaliacaoInput): Promise<ActionResult> {
   if (!UUID_RE.test(input.contratoId) || !UUID_RE.test(input.alvoId))
     return { ok: true, demo: true };
 
-  const { error } = await supabase.from("avaliacoes").insert({
+  // Só o servidor grava (0062): o banco confere contrato encerrado, partes
+  // do contrato e autor ≠ alvo. O autor é SEMPRE quem está logado.
+  const admin = createAdminClient();
+  if (!admin) return { ok: false, error: "Avaliações indisponíveis no momento." };
+  const { error } = await admin.from("avaliacoes").insert({
     contrato_id: input.contratoId,
     autor_id: user.id,
     alvo_id: input.alvoId,
@@ -43,7 +48,9 @@ export async function avaliar(input: AvaliacaoInput): Promise<ActionResult> {
   });
   if (error) {
     if (error.code === "23505") return { ok: false, error: "Você já avaliou esta pessoa." };
-    return { ok: false, error: error.message };
+    // 23514: regra do banco (contrato não encerrado, não é parte…) — já em pt-BR.
+    if (error.code === "23514") return { ok: false, error: error.message };
+    return { ok: false, error: "Não foi possível registrar a avaliação." };
   }
   return { ok: true };
 }

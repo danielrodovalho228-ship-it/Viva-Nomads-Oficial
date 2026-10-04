@@ -54,3 +54,8 @@ export function validarArquivoAvatar(file: AvatarFileMeta): string | null {
 export function avatarPath(userId: string): string {
   return `${userId}/avatar.webp`;
 }
+
+/** O caminho é a foto CANÔNICA deste usuário? (nunca o arquivo de outra pessoa) */
+export function ehAvatarDoUsuario(path: string | null | undefined, userId: string | null | undefined): boolean {
+  return !!path && !!userId && path === avatarPath(userId);
+}

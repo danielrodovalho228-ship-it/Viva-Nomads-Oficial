@@ -5,6 +5,7 @@ import {
   outputSize,
   validarArquivoAvatar,
   avatarPath,
+  ehAvatarDoUsuario,
   MAX_AVATAR_PX,
   MAX_AVATAR_BYTES,
 } from "./avatar-image.ts";
@@ -50,4 +51,14 @@ test("validarArquivoAvatar: rejeita não-imagem, vazio e grande demais", () => {
 
 test("avatarPath: 1ª pasta é o dono (casa com a RLS)", () => {
   assert.equal(avatarPath("abc-123"), "abc-123/avatar.webp");
+});
+
+test("ehAvatarDoUsuario: só a foto canônica do próprio usuário", () => {
+  assert.equal(ehAvatarDoUsuario("abc-123/avatar.webp", "abc-123"), true);
+  // Caminho de OUTRA pessoa (antes era assinado com a chave de serviço).
+  assert.equal(ehAvatarDoUsuario("outra-pessoa/avatar.webp", "abc-123"), false);
+  assert.equal(ehAvatarDoUsuario("abc-123/../outra/avatar.webp", "abc-123"), false);
+  assert.equal(ehAvatarDoUsuario("abc-123/documento.pdf", "abc-123"), false);
+  assert.equal(ehAvatarDoUsuario(null, "abc-123"), false);
+  assert.equal(ehAvatarDoUsuario("abc-123/avatar.webp", null), false);
 });

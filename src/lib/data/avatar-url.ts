@@ -9,15 +9,23 @@
  */
 
 import { createAdminClient, AVATARS_BUCKET, AVATAR_SIGNED_TTL } from "@/lib/supabase/admin";
+import { ehAvatarDoUsuario } from "@/lib/avatar-image";
 
-/** Assina um caminho do bucket privado de avatares. null se não puder. */
-export async function signAvatarPath(path: string | null | undefined): Promise<string | null> {
-  if (!path) return null;
+/**
+ * Assina a foto de perfil de `ownerId`. Só assina o caminho canônico DELE
+ * (`<ownerId>/avatar.webp`): um avatar_url apontando para o arquivo de outra
+ * pessoa nunca vira URL assinada pela chave de serviço. null se não puder.
+ */
+export async function signAvatarPath(
+  path: string | null | undefined,
+  ownerId: string | null | undefined
+): Promise<string | null> {
+  if (!ehAvatarDoUsuario(path, ownerId)) return null;
   const admin = createAdminClient();
   if (!admin) return null;
   const { data, error } = await admin.storage
     .from(AVATARS_BUCKET)
-    .createSignedUrl(path, AVATAR_SIGNED_TTL);
+    .createSignedUrl(path as string, AVATAR_SIGNED_TTL);
   if (error) return null;
   return data?.signedUrl ?? null;
 }

@@ -212,7 +212,7 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
 
   // Foto do proprietário é PÚBLICA (podeVerAvatar owner = true). O bucket é
   // privado, então assinamos o caminho no servidor (admin) — null vira iniciais.
-  const ownerAvatarUrl = await signAvatarPath(ownerRow?.avatar_url ?? null);
+  const ownerAvatarUrl = await signAvatarPath(ownerRow?.avatar_url ?? null, ownerId);
 
   return {
     ...base,
