@@ -8,7 +8,7 @@ import { signAvatarPath } from "@/lib/data/avatar-url";
  * Colunas SEGURAS de `properties` para leitura (público e dono). NUNCA inclui
  * exact_address, responsavel_local_*, draft_data ou sublease_doc_url — essas são
  * privadas (RPC property_private_details). DEVE espelhar o grant por coluna da
- * migração 0052; ao adicionar coluna nova em properties, inclua aqui E no grant
+ * migração 0053; ao adicionar coluna nova em properties, inclua aqui E no grant
  * (o `npm run check:migracoes` avisa se divergir). Trocar `select("*")` por esta
  * lista é o que impede o PostgREST anônimo de puxar coluna sensível.
  */

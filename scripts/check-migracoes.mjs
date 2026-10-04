@@ -37,7 +37,7 @@ const CHECKS = [
 ];
 
 /*
-  C4 (0052) — properties usa GRANT POR COLUNA. Coluna nova em properties que
+  C4 (0053) — properties usa GRANT POR COLUNA. Coluna nova em properties que
   NÃO entrar no grant (e em PROPERTY_PUBLIC_COLUMNS, src/lib/data/properties.ts)
   some do site sem erro claro. Este aviso compara as colunas reais da tabela com
   as listas conhecidas e aponta qualquer coluna "órfã".
@@ -85,7 +85,7 @@ async function avisoGrantProperties() {
     console.log("✅ properties: todas as colunas estão no grant público ou na lista privada.");
   } else {
     console.log(
-      `⚠️  properties: coluna(s) FORA do grant da 0052: ${orfas.join(", ")}.\n` +
+      `⚠️  properties: coluna(s) FORA do grant da 0053: ${orfas.join(", ")}.\n` +
         "    Sem grant, ela SOME do site (anon/authenticated não leem). Se for pública,\n" +
         "    inclua no GRANT SELECT de uma nova migração E em PROPERTY_PUBLIC_COLUMNS;\n" +
         "    se for privada, exponha só pela RPC property_private_details."

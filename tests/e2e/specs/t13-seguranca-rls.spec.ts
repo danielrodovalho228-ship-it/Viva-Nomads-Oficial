@@ -3,7 +3,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { account, hasAccount } from "../fixtures/accounts";
 
 /**
- * T13 — Segurança no BANCO (P0 / migração 0052). Não usa navegador: fala direto
+ * T13 — Segurança no BANCO (P0 / migrações 0052 + 0053). Não usa navegador: fala direto
  * com o PostgREST como faria um atacante com a chave anon (que é pública).
  *
  *  C2  usuário comum NÃO consegue virar admin nem mexer em campo de confiança;
@@ -11,7 +11,8 @@ import { account, hasAccount } from "../fixtures/accounts";
  *  C3  as RPCs de contato (PII) não executam para usuário logado.
  *  C4  colunas sensíveis de properties não são legíveis (anon nem logado).
  *
- * Só passa DEPOIS da 0052 aplicada no banco alvo — é o teste de regressão dela.
+ * C2 passa depois da 0052; C3 e C4 só depois da 0053. Rode após aplicar as DUAS.
+ * Usa a conta TESTES_INQUILINO_* e, se houver, também TESTES_PROPRIETARIO_*.
  * Sem env (URL/anon key/conta de teste), o teste é pulado.
  *
  * Escrita: o único UPDATE real regrava preferred_mode com o MESMO valor lido
@@ -25,19 +26,21 @@ function cliente(): SupabaseClient {
   return createClient(URL!, ANON!, { auth: { persistSession: false } });
 }
 
-async function logado(): Promise<{ sb: SupabaseClient; uid: string }> {
+async function logado(papel: "inquilino" | "proprietario" = "inquilino"): Promise<{ sb: SupabaseClient; uid: string }> {
   const sb = cliente();
-  const a = account("inquilino");
+  const a = account(papel);
   const { data, error } = await sb.auth.signInWithPassword({ email: a.email, password: a.senha });
   if (error || !data.user) throw new Error(`Login da conta de teste falhou: ${error?.message}`);
   return { sb, uid: data.user.id };
 }
 
-test.describe("T13 segurança RLS (0052) @criticos @seguranca", () => {
+test.describe("T13 segurança RLS (0052+0053) @criticos @seguranca", () => {
   test.skip(!temEnv, "Sem NEXT_PUBLIC_SUPABASE_URL/ANON_KEY ou conta de teste do inquilino.");
 
-  test("C2: usuário comum não vira admin nem altera campos de confiança", async () => {
-    const { sb, uid } = await logado();
+  for (const papel of ["inquilino", "proprietario"] as const) {
+  test(`C2 (${papel}): não vira admin nem altera campos de confiança`, async () => {
+    test.skip(!hasAccount(papel), `Sem conta de teste TESTES_${papel.toUpperCase()}_*.`);
+    const { sb, uid } = await logado(papel);
     const { data: antes } = await sb
       .from("profiles")
       .select("role, is_verified, verification_progress, account_type, preferred_mode")
@@ -52,6 +55,7 @@ test.describe("T13 segurança RLS (0052) @criticos @seguranca", () => {
       { verification_progress: 100 },
       { account_type: "gestor" },
       { fundador: true },
+      { person_type: "pj" },
     ];
     for (const patch of tentativas) {
       const { error } = await sb.from("profiles").update(patch).eq("id", uid);
@@ -77,6 +81,7 @@ test.describe("T13 segurança RLS (0052) @criticos @seguranca", () => {
       .eq("id", uid);
     expect(okErr).toBeNull();
   });
+  }
 
   test("C3: RPCs de contato (PII) não executam para usuário logado", async () => {
     const { sb } = await logado();
