@@ -1,12 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Gift, Copy, Check, Users, BadgeDollarSign } from "lucide-react";
 import { PageTitle, Panel, StatCard } from "@/components/dashboard/primitives";
 import { useAuthStore } from "@/lib/store";
 import { SITE_URL } from "@/lib/site";
+import { createClient } from "@/lib/supabase/client";
 
-/** Gera um código de indicação a partir do nome/id do usuário. */
+/**
+ * Código calculado no navegador — mesma fórmula da 0052 (gerar_referral_code).
+ * Só vale como reserva (modo demo / perfil ainda sem código): a fonte de
+ * verdade é profiles.referral_code, que o cadastro resolve em referred_by.
+ */
 function referralCode(name: string, id: string) {
   const first = (name.split(" ")[0] || "VIVA").toUpperCase().replace(/[^A-Z]/g, "").slice(0, 8);
   const suffix = id.replace(/[^a-zA-Z0-9]/g, "").slice(0, 3).toUpperCase() || "000";
@@ -16,11 +21,30 @@ function referralCode(name: string, id: string) {
 export default function ReferralsPage() {
   const user = useAuthStore((s) => s.user);
   const [copied, setCopied] = useState(false);
+  const [codigoBanco, setCodigoBanco] = useState<string | null>(null);
 
-  const code = useMemo(
+  useEffect(() => {
+    const supabase = createClient();
+    if (!supabase || !user?.id) return;
+    let vivo = true;
+    supabase
+      .from("profiles")
+      .select("referral_code")
+      .eq("id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (vivo) setCodigoBanco((data as { referral_code?: string | null } | null)?.referral_code ?? null);
+      });
+    return () => {
+      vivo = false;
+    };
+  }, [user?.id]);
+
+  const calculado = useMemo(
     () => referralCode(user?.name ?? "Viva", user?.id ?? "000"),
     [user]
   );
+  const code = codigoBanco ?? calculado;
   const link = `${SITE_URL}/auth?ref=${code}`;
 
   function copy() {

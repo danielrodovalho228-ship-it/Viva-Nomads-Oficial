@@ -15,6 +15,15 @@ import { defineConfig, devices } from "@playwright/test";
 const BASE_URL = (process.env.TESTES_BASE_URL || "http://localhost:3000").replace(/\/$/, "");
 const CHROMIUM = process.env.PLAYWRIGHT_CHROMIUM_PATH || undefined;
 
+// Preview da Vercel com Deployment Protection: sem o bypass, o Playwright cairia
+// na tela de login da Vercel. Com o segredo (VERCEL_AUTOMATION_BYPASS_SECRET),
+// cada request leva os headers oficiais de bypass. Ausente → nenhum header
+// (rodada local/produção sem proteção).
+const BYPASS = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+const BYPASS_HEADERS = BYPASS
+  ? { "x-vercel-protection-bypass": BYPASS, "x-vercel-set-bypass-cookie": "true" }
+  : undefined;
+
 export default defineConfig({
   testDir: "./tests/e2e/specs",
   globalSetup: "./tests/e2e/global-setup.ts",
@@ -34,6 +43,7 @@ export default defineConfig({
     trace: "on-first-retry",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
+    ...(BYPASS_HEADERS ? { extraHTTPHeaders: BYPASS_HEADERS } : {}),
     ...(CHROMIUM ? { launchOptions: { executablePath: CHROMIUM } } : {}),
   },
   projects: [
