@@ -57,7 +57,10 @@ test.describe("T-TRAV-B — Pedido: identidade não vaza antes do aceite @critic
       .getByPlaceholder(/Conte um pouco do seu perfil/i)
       .fill(`Perfil de teste ${tag}. Procuro imovel mobiliado de media duracao.`);
     await page.getByRole("button", { name: /Publicar pedido/i }).click();
-    // Sucesso → cai na lista do inquilino.
+    // Sucesso → mostra quantos imóveis combinam agora; depois vai à lista.
+    await expect(page.getByRole("heading", { name: "Pedido publicado" })).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByText(/compatíve(l|is) agora|Nenhum imóvel combina com tudo agora/)).toBeVisible();
+    await page.getByRole("button", { name: "Ver meus pedidos" }).click();
     await page.waitForURL(/\/dashboard\/pedidos/, { timeout: 20_000 });
   }
 

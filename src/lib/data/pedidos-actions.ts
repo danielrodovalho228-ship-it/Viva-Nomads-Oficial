@@ -7,8 +7,9 @@ import { guardContactInfo } from "@/lib/messages/contact-guard";
 import { conversationId as idConversa } from "@/lib/messages/conversation-id";
 import { listMyProperties } from "@/lib/data/properties";
 import { notify } from "@/lib/notifications";
+import { avisarCompativeisDoPedido, paresCompat } from "@/lib/data/pedidos-compat";
+import { melhorPor, porQueCombina } from "@/lib/pedidos/compatibilidade";
 import {
-  detalheNovoPedido,
   detalheResposta,
   detalheAceito,
   detalheExpirando,
@@ -34,11 +35,10 @@ type Recip = {
   id?: string | null;
 };
 
-type PedidoEvent = "pedido_novo_cidade" | "pedido_resposta" | "pedido_aceito" | "pedido_expirando";
+type PedidoEvent = "pedido_resposta" | "pedido_aceito" | "pedido_expirando";
 
 /** Deep-link interno do push por evento. */
 const PUSH_URL: Record<PedidoEvent, string> = {
-  pedido_novo_cidade: "/dashboard/pedidos-cidade",
   pedido_resposta: "/dashboard/pedidos",
   pedido_aceito: "/dashboard/mensagens",
   pedido_expirando: "/dashboard/pedidos",
@@ -78,6 +78,9 @@ export interface PedidoInput {
   qtdOcupantes: number;
   motivo: string;
   apresentacao?: string;
+  /** O pedido inclui pet / crianças (só compatível com anúncio que aceita). */
+  pets?: boolean;
+  criancas?: boolean;
 }
 
 /**
@@ -87,7 +90,9 @@ export interface PedidoInput {
  */
 const PEDIDOS_POR_DIA = 3;
 
-export async function criarPedido(input: PedidoInput): Promise<ActionResult> {
+export async function criarPedido(
+  input: PedidoInput
+): Promise<ActionResult & { compativeis?: number; sugestao?: string | null }> {
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
   const {
@@ -143,27 +148,24 @@ export async function criarPedido(input: PedidoInput): Promise<ActionResult> {
       qtd_ocupantes: Math.round(input.qtdOcupantes),
       motivo: input.motivo,
       apresentacao: input.apresentacao?.trim() || null,
+      pets: !!input.pets,
+      criancas: !!input.criancas,
       // expira_em é preenchido pelo trigger set_pedido_expira_em.
     })
     .select("id, cidade")
     .single();
   if (error || !data) return { ok: false, error: error?.message ?? "Falha ao publicar o pedido." };
 
-  // (a) Avisa proprietários com imóvel ativo na cidade (opt-in). Best-effort.
+  // (a) Avisa SÓ os donos com imóvel COMPATÍVEL (regra do banco, 0064) — antes
+  // ia para todos os donos da cidade. Devolve quantos imóveis combinam agora.
+  let compat: { compativeis: number; sugestao: string | null } = { compativeis: 0, sugestao: null };
   try {
-    // C3: RPC de contato em massa só via service role, depois de o pedido do
-    // próprio inquilino ter sido gravado (RLS) logo acima.
-    const admin = createAdminClient();
-    const { data: donos } = admin
-      ? await admin.rpc("pedido_owner_recipients", { cidade_alvo: data.cidade as string })
-      : { data: null };
-    const detalhe = detalheNovoPedido(cidade);
-    for (const d of (donos ?? []) as Recip[]) await notificar("pedido_novo_cidade", d, detalhe);
+    compat = await avisarCompativeisDoPedido(data.id as string);
   } catch {
-    /* best-effort */
+    /* best-effort: o pedido já foi publicado */
   }
 
-  return { ok: true, id: data?.id };
+  return { ok: true, id: data?.id, compativeis: compat.compativeis, sugestao: compat.sugestao };
 }
 
 /** Meus pedidos (inquilino). Best-effort: [] em demo/sem sessão. */
@@ -437,7 +439,25 @@ export async function getPedidosParaProprietario(): Promise<{
       ? todos
       : todos.filter((p) => cidades.has(chaveCidade(String(p.cidade ?? ""))));
 
-  return { pedidos, myProperties };
+  // Compatibilidade REAL (função do banco, só pelo servidor): o melhor imóvel
+  // DESTE dono para cada pedido, com situação, nota e o porquê.
+  const admin = createAdminClient();
+  const pares = admin ? await paresCompat(admin, { dono: user.id }) : [];
+  const melhor = melhorPor(pares, "pedido_id");
+  const anotados = pedidos.map((p) => {
+    const par = melhor.get(String(p.id));
+    return {
+      ...p,
+      situacao: par?.situacao ?? "demais",
+      compat_imovel_id: par && par.situacao !== "demais" ? par.imovel_id : null,
+      compat_imovel_titulo: par && par.situacao !== "demais" ? par.titulo : null,
+      compat_nota: par && par.situacao !== "demais" ? par.nota : null,
+      compat_motivo: par?.situacao === "quase" ? par.motivo : null,
+      compat_porque: par?.situacao === "compativel" ? porQueCombina(par) : [],
+    };
+  });
+
+  return { pedidos: anotados, myProperties };
 }
 
 /** Respostas que EU (proprietário) enviei, com o imóvel e o status. */

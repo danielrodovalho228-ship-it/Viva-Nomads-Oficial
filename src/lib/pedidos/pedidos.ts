@@ -85,37 +85,9 @@ export function receitaPotencial(orcamentoMensal: number, prazoMeses: number): n
   return Math.max(0, orcamentoMensal) * Math.max(0, Math.floor(prazoMeses));
 }
 
-/** Tolerância de orçamento na compatibilidade (o pedido pode pagar 15% a menos). */
-export const TOLERANCIA_ORCAMENTO = 0.15;
-
-export interface ImovelCompat {
-  city: string;
-  maxGuests?: number;
-  monthlyPrice: number;
-}
-export interface PedidoCompat {
-  cidade: string;
-  orcamento_mensal: number;
-  qtd_ocupantes: number;
-}
-
-/**
- * Um pedido é COMPATÍVEL com o proprietário quando existe um imóvel ativo dele
- * que casa: mesma cidade, orçamento ≥ menor aluguel na cidade (com tolerância de
- * 15%) e capacidade ≥ ocupantes do pedido. Senão, é "demais pedido na cidade".
- */
-export function pedidoCompativel(pedido: PedidoCompat, props: ImovelCompat[]): boolean {
-  const naCidade = props.filter(
-    (p) => p.city.trim().toLowerCase() === pedido.cidade.trim().toLowerCase()
-  );
-  if (naCidade.length === 0) return false;
-  const menorAluguel = Math.min(...naCidade.map((p) => p.monthlyPrice));
-  const orcamentoOk = pedido.orcamento_mensal >= menorAluguel * (1 - TOLERANCIA_ORCAMENTO);
-  const capacidadeOk = naCidade.some(
-    (p) => p.maxGuests == null || p.maxGuests >= pedido.qtd_ocupantes
-  );
-  return orcamentoOk && capacidadeOk;
-}
+// A compatibilidade pedido × imóvel é calculada no BANCO (função
+// compatibilidade_pedidos, 0064) — uma regra só para e-mail, tela e testes.
+// Textos e agrupamentos: src/lib/pedidos/compatibilidade.ts.
 
 /** Dias desde a publicação (para "publicado há N dias"). Datas ISO. */
 export function diasDesde(criadoEmISO: string, hojeISO: string): number {

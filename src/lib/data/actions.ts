@@ -19,6 +19,7 @@ import type { SubscriptionPlan } from "@/lib/store";
 import { buildLeadNotification, LEAD_KIND_MSG, type LeadKind } from "@/lib/leads";
 import { amenityRows } from "@/lib/amenities";
 import { fotosDoDono, urlsDoRascunho } from "@/lib/fotos-anuncio";
+import { avisarPedidosDoImovel } from "@/lib/data/pedidos-compat";
 import { INTERNET_META } from "@/lib/internet";
 import { getPropertyForOwner } from "@/lib/data/properties";
 import { guardContactInfo } from "@/lib/messages/contact-guard";
@@ -474,6 +475,14 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
       error: "O imóvel foi salvo como rascunho, mas não pôde ser publicado: " + stErr.message,
     };
   }
+  // Publicado agora: avisa os pedidos ativos que ele atende (dono e inquilino).
+  if (!input.asDraft) {
+    try {
+      await avisarPedidosDoImovel(data.id as string);
+    } catch {
+      /* best-effort */
+    }
+  }
 
   return { ok: true, id: data.id };
 }
@@ -511,6 +520,10 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
       };
     }
   }
+
+  // Status ANTES da edição: só a PUBLICAÇÃO (rascunho/pausado → ativo) avisa
+  // os pedidos compatíveis — editar um anúncio já ativo não reenvia avisos.
+  const { data: antes } = await supabase.from("properties").select("status").eq("id", id).maybeSingle();
 
   // Fotos ANTES do status: o banco só deixa publicar com 8 fotos gravadas em
   // property_photos (0009). Antes elas eram regravadas DEPOIS da mudança para
@@ -617,6 +630,14 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
       sort_order: i,
     }))
   );
+
+  if (input.asDraft === false && antes?.status !== "active") {
+    try {
+      await avisarPedidosDoImovel(id);
+    } catch {
+      /* best-effort */
+    }
+  }
 
   return { ok: true, id };
 }

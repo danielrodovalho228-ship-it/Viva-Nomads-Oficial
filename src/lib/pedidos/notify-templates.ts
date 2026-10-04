@@ -35,15 +35,6 @@ function bloco(texto: string, ctaLabel: string, path: string): NotifDetalhe {
   };
 }
 
-/** Novo pedido na cidade → proprietário (leva à lista de pedidos). */
-export function detalheNovoPedido(cidade: string): NotifDetalhe {
-  return bloco(
-    `Um inquilino publicou um pedido de moradia em ${cidade}. Responda com um imóvel seu.`,
-    "Ver pedidos",
-    "/pedidos"
-  );
-}
-
 /** Nova resposta → inquilino (leva ao painel de pedidos dele). */
 export function detalheResposta(): NotifDetalhe {
   return bloco(

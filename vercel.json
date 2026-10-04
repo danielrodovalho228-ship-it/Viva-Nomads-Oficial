@@ -11,5 +11,6 @@
         { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization" }
       ]
     }
-  ]
+  ],
+  "crons": [{ "path": "/api/cron/resumo-pedidos", "schedule": "0 11 * * *" }]
 }

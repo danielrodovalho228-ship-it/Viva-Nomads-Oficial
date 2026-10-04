@@ -32,7 +32,10 @@ export type NotificationEvent =
   | "contract_status" // status do contrato
   | "subscription_status" // status da assinatura
   // Pedido de Moradia (Fase 4)
-  | "pedido_novo_cidade" // novo pedido ativo na cidade → proprietários
+  | "pedido_novo_cidade" // (legado) novo pedido na cidade → proprietários
+  | "pedido_compativel" // pedido compatível com um imóvel do dono → proprietário
+  | "pedido_resumo" // resumo diário dos pedidos compatíveis além do limite → proprietário
+  | "pedido_imovel_novo" // imóvel compatível publicado depois → inquilino
   | "pedido_resposta" // proprietário respondeu → inquilino
   | "pedido_aceito" // inquilino aceitou para conversa → proprietário
   | "pedido_expirando" // pedido expira em 3 dias → inquilino
@@ -56,6 +59,9 @@ const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: string)
   contract_status: { subject: "Atualização do seu contrato", body: () => "Há uma atualização no seu contrato de locação.", img: "pedido-resposta" },
   subscription_status: { subject: "Atualização da sua assinatura", body: () => "Há uma atualização na sua assinatura Viva Nomads.", img: "transacional" },
   pedido_novo_cidade: { subject: "Novo pedido de moradia na sua cidade", body: (n) => `Olá${n ? " " + n : ""}, um inquilino publicou um pedido de moradia na cidade de um dos seus imóveis. Veja se algum atende.`, img: "transacional" },
+  pedido_compativel: { subject: "Pedido de moradia compatível com o seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, um pedido de moradia combina com um imóvel seu. Veja por que e responda pela plataforma.`, img: "transacional" },
+  pedido_resumo: { subject: "Resumo do dia: pedidos compatíveis com seus imóveis", body: (n) => `Olá${n ? " " + n : ""}, estes pedidos de moradia combinam com imóveis seus.`, img: "transacional" },
+  pedido_imovel_novo: { subject: "Surgiu um imóvel compatível com o seu pedido", body: (n) => `Olá${n ? " " + n : ""}, um imóvel publicado agora combina com o seu pedido de moradia. O proprietário também foi avisado.`, img: "pedido-resposta" },
   pedido_resposta: { subject: "Um proprietário respondeu ao seu pedido", body: (n) => `Olá${n ? " " + n : ""}, um proprietário respondeu ao seu pedido de moradia com um imóvel. Veja e aceite para conversar.`, img: "pedido-resposta" },
   pedido_aceito: { subject: "Seu imóvel foi aceito para conversa", body: (n) => `Olá${n ? " " + n : ""}, um inquilino aceitou sua resposta e abriu a conversa. Responda pela plataforma.`, img: "nova-mensagem" },
   pedido_expirando: { subject: "Seu pedido de moradia expira em breve", body: (n) => `Olá${n ? " " + n : ""}, seu pedido de moradia expira em até 3 dias. Renove ou marque como atendido se já resolveu.`, img: "transacional" },
@@ -91,8 +97,11 @@ export async function notify(params: {
   detailsHtml?: string;
   /** Texto extra anexado à mensagem de WhatsApp. */
   detailsText?: string;
+  /** Assunto específico (texto puro; dado do usuário é limpo aqui). */
+  subject?: string;
 }): Promise<NotifyResult> {
-  const tpl = TEMPLATES[params.event];
+  const base = TEMPLATES[params.event];
+  const tpl = params.subject ? { ...base, subject: textoPlano(params.subject, 120) } : base;
   const result: NotifyResult = { email: false, whatsapp: false };
   // Saudação SEMPRE pela fonte única (item 3): primeiro nome, e nunca o e-mail
   // cru — se `name` vier como e-mail (fallback comum), vira saudação neutra.
