@@ -233,10 +233,13 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
 
   // Feature gating por plano (validado no servidor): respeita o limite de
   // anúncios do plano do proprietário. Sem assinatura, vale o plano gratuito.
+  // Só assinatura ATIVA conta (pendente/vencida = plano gratuito).
   const { data: sub } = await supabase
     .from("subscriptions")
     .select("plan")
     .eq("owner_id", user.id)
+    .eq("status", "active")
+    .order("current_period_end", { ascending: false })
     .limit(1)
     .maybeSingle();
   const plan = (sub?.plan ?? "free") as SubscriptionPlan;
