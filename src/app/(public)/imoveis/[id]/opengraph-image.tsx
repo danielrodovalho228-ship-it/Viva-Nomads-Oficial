@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { ImageResponse } from "next/og";
 import { getProperty } from "@/lib/data/properties";
 import { formatBRL } from "@/lib/utils";
@@ -9,6 +11,8 @@ export const contentType = "image/png";
 export default async function OG({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const p = await getProperty(id);
+  const mark = await readFile(join(process.cwd(), "public/brand/novo/vn-mark-128.png"));
+  const markSrc = `data:image/png;base64,${mark.toString("base64")}`;
 
   return new ImageResponse(
     (
@@ -25,9 +29,24 @@ export default async function OG({ params }: { params: Promise<{ id: string }> }
         }}
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", fontSize: 34, fontWeight: 800 }}>
-            <span style={{ color: "#2e7d5b" }}>Viva</span>
-            <span style={{ color: "#6CBE2A" }}>Nomads</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 56,
+                height: 56,
+                borderRadius: 12,
+                background: "#FFFFFF",
+              }}
+            >
+              <img src={markSrc} width={44} height={44} alt="" />
+            </div>
+            <div style={{ display: "flex", fontSize: 34, fontWeight: 800 }}>
+              <span style={{ color: "#FFFFFF" }}>Viva</span>
+              <span style={{ color: "#8FD63A" }}>Nomads</span>
+            </div>
           </div>
           {p?.readyToLiveBadge && (
             <div

@@ -25,7 +25,7 @@ function layout(inner: string, image?: { src: string; alt: string }): string {
       <tr><td style="padding:22px 32px;border-bottom:1px solid #eef2f1;">
         <table role="presentation" cellpadding="0" cellspacing="0"><tr>
           <td style="vertical-align:middle;"><img src="${MARK}" width="34" height="34" alt="Viva Nomads" style="display:block;border:0;"></td>
-          <td style="vertical-align:middle;padding-left:10px;font-size:20px;font-weight:800;letter-spacing:-0.5px;"><span style="color:#1c6b3a;">Viva</span><span style="color:#6CBE2A;">Nomads</span></td>
+          <td style="vertical-align:middle;padding-left:10px;font-size:20px;font-weight:800;letter-spacing:-0.5px;"><span style="color:#0A4FD6;">Viva</span><span style="color:#5DBB1E;">Nomads</span></td>
         </tr></table>
       </td></tr>
       ${heroRow(image)}
