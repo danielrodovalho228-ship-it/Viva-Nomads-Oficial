@@ -1,7 +1,7 @@
 import { ChevronDown, FileText, MapPinned, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import type { Property } from "@/lib/types";
-import { formatBRL } from "@/lib/utils";
+import { hojeBR, formatBRL } from "@/lib/utils";
 import { calcularTudoIncluido } from "@/lib/precos";
 import { SELO_NF_UI } from "@/lib/flags";
 import { MatchGuaranteeNotice } from "@/components/legal-notice";
@@ -21,7 +21,7 @@ function formatDate(iso?: string): string | null {
 function disponivelFuturo(iso?: string): string | null {
   if (!iso) return null;
   const dia = iso.slice(0, 10);
-  const hoje = new Date().toISOString().slice(0, 10);
+  const hoje = hojeBR();
   return dia > hoje ? formatDate(dia) : null;
 }
 

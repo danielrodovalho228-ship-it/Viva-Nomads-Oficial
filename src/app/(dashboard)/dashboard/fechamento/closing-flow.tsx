@@ -53,7 +53,7 @@ import {
   faixaResumo,
   CLAUSULAS_PLACEHOLDER,
 } from "@/lib/modelos-contrato";
-import { formatBRL, cn } from "@/lib/utils";
+import { hojeBR, formatBRL, cn } from "@/lib/utils";
 
 const STEPS = ["Candidatura & verificação", "Garantia", "Serviços", "Patrimonial", "Contrato", "Resumo"];
 
@@ -83,7 +83,6 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   // Comissão CONGELADA no aceite (não o plano atual) — 1 mês × taxa, UMA vez.
   const COMMISSION_RATE = ctx.comissaoRate;
   const PLATFORM_COMMISSION = Math.round(PROPERTY.monthlyRent * COMMISSION_RATE);
-  const OWNER_NET = PROPERTY.monthlyRent - PLATFORM_COMMISSION;
   const tenant = { name: ctx.tenantName, profile: demo ? "Médica · residência" : "Candidatura aceita", foreigner: false };
   const contractNumber = ctx.contractNumber;
   // Data do aceite (DD/MM/AAAA) para exibir "plano Y em DD/MM".
@@ -227,7 +226,8 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
       });
       const data = await res.json();
       setSignUrl(data.signUrl ?? null);
-      // Registra a comissão de fechamento (split sobre o 1º mês).
+      // Gera a cobrança da comissão — do PROPRIETÁRIO, à parte (o aluguel nunca
+      // passa pela plataforma).
       await fetch("/api/comissao", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -244,7 +244,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
       // Registra o CONTRATO-MÃE + blocos (contrato fracionado v2). A comissão
       // fica no contrato-mãe (1 mês × taxa, UMA vez); cada bloco carrega a
       // caução (50%). Best-effort: no-op em demo/imóvel-exemplo; persiste no real.
-      const inicioISO = new Date().toISOString().slice(0, 10);
+      const inicioISO = hojeBR();
       // A6: inquilino, imóvel, aluguel e taxa vêm da candidatura aceita (servidor).
       await registrarContrato({
         leadId: ctx.leadId,
@@ -979,24 +979,24 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
               </div>
             </div>
 
-            {/* Comissão de fechamento (split sobre o 1º mês) */}
+            {/* Comissão de fechamento: cobrada do proprietário, à parte */}
             <div className="rounded-xl border border-champagne/40 bg-champagne/10 p-4 text-sm">
               <p className="font-title font-bold text-forest">
                 Comissão deste contrato: {Math.round(COMMISSION_RATE * 100)}% — plano {ctx.planoNome}
                 {aceiteBR ? ` em ${aceiteBR}` : ""}
               </p>
               <p className="mt-1 text-xs text-muted">
-                Cobrada <strong>uma única vez por contrato</strong>, sobre 1 mês, no
-                fechamento. Renovar ou estender blocos <strong>não gera nova comissão</strong>. O
-                aluguel vai do inquilino <strong>direto para a sua conta</strong> — a plataforma
-                nunca toca no dinheiro.
+                Cobrada de você <strong>uma única vez por contrato</strong>, em uma cobrança à
+                parte, no fechamento. Renovar ou estender blocos <strong>não gera nova
+                comissão</strong>. Todo aluguel, inclusive o 1º, vai do inquilino{" "}
+                <strong>direto para a sua conta</strong> — a plataforma nunca cobra nem repassa
+                aluguel.
               </p>
               <div className="mt-3 space-y-1">
-                <Row label="1º aluguel" value={formatBRL(PROPERTY.monthlyRent)} />
-                <Row label="Comissão da plataforma" value={`− ${formatBRL(PLATFORM_COMMISSION)}`} />
+                <Row label="Base de cálculo (1 aluguel)" value={formatBRL(PROPERTY.monthlyRent)} />
                 <div className="flex items-center justify-between border-t border-champagne/40 pt-1 font-medium text-forest">
-                  <span>Líquido ao proprietário</span>
-                  <span>{formatBRL(OWNER_NET)}</span>
+                  <span>Comissão cobrada de você ({Math.round(COMMISSION_RATE * 100)}%)</span>
+                  <span>{formatBRL(PLATFORM_COMMISSION)}</span>
                 </div>
               </div>
               {/* Incentivo de upgrade (A7). A comissão DESTE contrato está
@@ -1086,7 +1086,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
               <Row label="Contrato" value={generated ? "Enviado para assinatura" : "Pendente"} />
               <Row
                 label={`Comissão (${Math.round(COMMISSION_RATE * 100)}%)`}
-                value={`${formatBRL(PLATFORM_COMMISSION)} · líquido ao dono ${formatBRL(OWNER_NET)}`}
+                value={`${formatBRL(PLATFORM_COMMISSION)} · cobrança à parte, do proprietário`}
               />
             </div>
             <p className="rounded-lg bg-sage-100 px-3 py-2 text-left text-sm text-forest">

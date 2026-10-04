@@ -7,6 +7,7 @@ import { tipoVisualizacaoDoc, type VisualizacaoDoc } from "@/lib/moderacao-doc";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { textoEmail } from "@/lib/notifications/texto-seguro";
 import { logModeracao } from "@/lib/data/moderacao-log";
+import { erroBancoPT } from "@/lib/erros-banco";
 
 type ActionResult = { ok: boolean; demo?: boolean; error?: string };
 
@@ -150,7 +151,7 @@ export async function moderarDocumento(
     .neq("owner_id", user.id) // ninguém aprova o próprio documento
     .select("owner_id")
     .maybeSingle();
-  if (error) return { ok: false, error: error.message };
+  if (error) return { ok: false, error: erroBancoPT(error) };
   if (!qual) return { ok: false, error: "Documento não encontrado na fila (ou sem permissão)." };
   await logModeracao(
     supabase,

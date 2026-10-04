@@ -29,7 +29,7 @@ import {
   type DocumentRecord,
   type LineItem,
 } from "@/lib/documents";
-import { formatBRL, cn } from "@/lib/utils";
+import { hojeBR, formatBRL, cn } from "@/lib/utils";
 
 type View = "list" | "new" | "doc";
 
@@ -148,7 +148,7 @@ function buildNewDoc(input: {
   total: number;
 }): DocumentRecord {
   const now = new Date();
-  const today = now.toISOString().slice(0, 10);
+  const today = hojeBR(now);
   const validUntil = new Date(now.getTime() + input.validDays * 86400000)
     .toISOString()
     .slice(0, 10);

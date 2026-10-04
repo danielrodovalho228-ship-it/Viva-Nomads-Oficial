@@ -4,8 +4,9 @@ import { IntegracaoNaoConfigurada, MSG_NAO_CONFIGURADA } from "@/lib/integracoes
 import { carregarFechamento, reservarFechamento, concluirFechamento } from "@/lib/data/fechamento-servidor";
 
 /**
- * Comissão de fechamento (1º aluguel com split). A5: recebe SÓ o id da
- * candidatura aceita; valor, taxa, carteira do dono e dados do pagador vêm do
+ * Comissão de fechamento: cobrança À PARTE, do PROPRIETÁRIO, de 1 aluguel ×
+ * taxa congelada no aceite. A plataforma nunca cobra nem repassa o aluguel.
+ * Recebe SÓ o id da candidatura aceita; valor, taxa e dados do pagador vêm do
  * banco. Uma cobrança por candidatura.
  */
 export async function POST(request: Request) {
@@ -18,11 +19,11 @@ export async function POST(request: Request) {
   }
   try {
     const result = await createCommissionCharge({
-      firstMonthRent: f.aluguelMensal,
+      aluguelMensal: f.aluguelMensal,
       commissionRate: f.comissaoRate,
-      ownerWalletId: f.ownerWalletId ?? undefined,
-      customerName: f.tenantNome,
-      customerEmail: f.tenantEmail ?? "sem-email@vivanomads.com.br",
+      ownerName: f.ownerNome,
+      ownerEmail: f.ownerEmail ?? "sem-email@vivanomads.com.br",
+      ownerCpfCnpj: f.ownerCpfCnpj ?? undefined,
     });
     await concluirFechamento(f.leadId, "comissao", result.chargeId);
     return NextResponse.json(result);

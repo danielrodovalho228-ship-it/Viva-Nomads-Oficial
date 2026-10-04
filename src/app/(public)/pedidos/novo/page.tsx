@@ -29,6 +29,7 @@ import { MOTIVOS, contemContato, CONTATO_AVISO, calcExpiraEm, PRAZO_MAX_MESES } 
 import { MUNICIPIOS, UFS } from "@/lib/municipios";
 import { criarPedido } from "@/lib/data/pedidos-actions";
 import { useAuthStore } from "@/lib/store";
+import { hojeBR } from "@/lib/utils";
 
 /** Ícone por motivo (a lib MOTIVOS segue pura; o mapa visual vive aqui). */
 const MOTIVO_ICON: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -427,7 +428,7 @@ function PedidoForm() {
           <p className="rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted">
             Seu pedido expira em{" "}
             <strong className="text-ink">
-              {calcExpiraEm(dataInicio, new Date().toISOString().slice(0, 10))}
+              {calcExpiraEm(dataInicio, hojeBR())}
             </strong>{" "}
             (o menor entre 15 dias após o início e 60 dias após publicar).
           </p>

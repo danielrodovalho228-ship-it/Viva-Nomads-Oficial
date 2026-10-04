@@ -14,6 +14,7 @@ const API_BASE =
     : "https://sandbox.asaas.com/api/v3";
 
 import { exigirChaveEmProducao } from "@/lib/integracoes";
+import { valorComissao } from "@/lib/comissao";
 
 export type BillingType = "PIX" | "BOLETO" | "CREDIT_CARD";
 
@@ -116,68 +117,80 @@ export async function createSubscription(params: {
 export interface CommissionResult {
   demo: boolean;
   chargeId: string;
-  grossAmount: number; // 1º mês de aluguel
-  commissionRate: number; // 0.08 a 0.12 conforme o plano
+  /** Base de cálculo: 1 mês de aluguel (NÃO é cobrado — só serve de base). */
+  baseAluguel: number;
+  commissionRate: number; // taxa congelada no aceite
+  /** Valor cobrado do PROPRIETÁRIO. */
   platformCommission: number;
-  ownerNet: number;
   status: string;
 }
 
 /**
- * Cobra (ou simula) a comissão de fechamento sobre o 1º mês de aluguel,
- * com split: a plataforma retém a comissão e o restante vai ao proprietário.
- * Os aluguéis seguintes vão direto ao proprietário, fora da plataforma.
+ * Cobra (ou simula) a COMISSÃO de fechamento do PROPRIETÁRIO, como cobrança à
+ * parte. Regra de ouro: a plataforma nunca movimenta o aluguel — o inquilino
+ * paga o aluguel direto ao proprietário. Antes esta função gerava um PIX do 1º
+ * aluguel INTEIRO para o inquilino com split ao dono (e, sem carteira do dono,
+ * o aluguel todo ficava com a plataforma).
  */
 export async function createCommissionCharge(params: {
-  firstMonthRent: number;
+  aluguelMensal: number;
   commissionRate: number;
-  ownerWalletId?: string; // conta-filha do proprietário no Asaas
-  customerName: string;
-  customerEmail: string;
+  ownerName: string;
+  ownerEmail: string;
+  ownerCpfCnpj?: string;
 }): Promise<CommissionResult> {
-  const platformCommission = Math.round(params.firstMonthRent * params.commissionRate);
-  const ownerNet = params.firstMonthRent - platformCommission;
+  const platformCommission = valorComissao(params.aluguelMensal, params.commissionRate);
 
   if (!isAsaasConfigured()) {
     exigirChaveEmProducao("Asaas");
     return {
       demo: true,
       chargeId: `demo_${Math.random().toString(36).slice(2, 10)}`,
-      grossAmount: params.firstMonthRent,
+      baseAluguel: params.aluguelMensal,
       commissionRate: params.commissionRate,
       platformCommission,
-      ownerNet,
       status: "PENDING",
+    };
+  }
+  if (platformCommission <= 0) {
+    // Plano sem comissão (Gestor): nada a cobrar.
+    return {
+      demo: false,
+      chargeId: "sem_comissao",
+      baseAluguel: params.aluguelMensal,
+      commissionRate: params.commissionRate,
+      platformCommission: 0,
+      status: "NOT_APPLICABLE",
     };
   }
 
   const customer = await asaasFetch<{ id: string }>("/customers", {
     method: "POST",
-    body: JSON.stringify({ name: params.customerName, email: params.customerEmail }),
+    body: JSON.stringify({
+      name: params.ownerName,
+      email: params.ownerEmail,
+      ...(params.ownerCpfCnpj ? { cpfCnpj: params.ownerCpfCnpj } : {}),
+    }),
   });
 
-  // Cobrança única do 1º mês com split para a carteira do proprietário.
+  // Cobrança ÚNICA da comissão, do proprietário. Sem split, sem aluguel.
   const charge = await asaasFetch<{ id: string; status: string }>("/payments", {
     method: "POST",
     body: JSON.stringify({
       customer: customer.id,
       billingType: "PIX",
-      value: params.firstMonthRent,
-      dueDate: new Date(Date.now() + 86400000).toISOString().slice(0, 10),
-      description: "Viva Nomads — 1º aluguel (comissão de fechamento retida)",
-      split: params.ownerWalletId
-        ? [{ walletId: params.ownerWalletId, fixedValue: ownerNet }]
-        : undefined,
+      value: platformCommission,
+      dueDate: new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10),
+      description: `Viva Nomads — comissão de fechamento (${Math.round(params.commissionRate * 100)}% sobre 1 aluguel)`,
     }),
   });
 
   return {
     demo: false,
     chargeId: charge.id,
-    grossAmount: params.firstMonthRent,
+    baseAluguel: params.aluguelMensal,
     commissionRate: params.commissionRate,
     platformCommission,
-    ownerNet,
     status: charge.status,
   };
 }

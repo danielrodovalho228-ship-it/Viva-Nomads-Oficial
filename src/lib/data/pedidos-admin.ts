@@ -7,6 +7,7 @@ import { textoEmail } from "@/lib/notifications/texto-seguro";
 import { logModeracao } from "@/lib/data/moderacao-log";
 import { metricasPedidos, type MetricasPedidos } from "@/lib/data/pedidos-compat";
 import { ehAdmin } from "@/lib/data/admin-guard";
+import { erroBancoPT } from "@/lib/erros-banco";
 
 type ActionResult = { ok: boolean; demo?: boolean; error?: string };
 
@@ -58,7 +59,7 @@ export async function moderarPedido(pedidoId: string, motivo: string): Promise<A
     .eq("id", pedidoId)
     .select("id, inquilino_id")
     .maybeSingle();
-  if (error) return { ok: false, error: error.message };
+  if (error) return { ok: false, error: erroBancoPT(error) };
   if (!pedido) return { ok: false, error: "Pedido não encontrado (ou sem permissão)." };
 
   await logModeracao(supabase, user.id, "ocultar_pedido", "pedido_moradia", pedidoId, motivoLimpo);
@@ -101,7 +102,7 @@ export async function reativarPedido(pedidoId: string): Promise<ActionResult> {
     .from("pedidos_moradia")
     .update({ status: "ativo", removido_motivo: null })
     .eq("id", pedidoId);
-  if (error) return { ok: false, error: error.message };
+  if (error) return { ok: false, error: erroBancoPT(error) };
   await logModeracao(supabase, user.id, "reativar_pedido", "pedido_moradia", pedidoId);
   return { ok: true };
 }

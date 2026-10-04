@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { COMISSAO_POR_PLANO } from "@/config/planos";
+import { taxaDoContrato } from "@/config/planos";
 
 /**
  * A5: os dados de uma cobrança/contrato de fechamento vêm SÓ do banco, a partir
@@ -15,16 +15,17 @@ export interface DadosFechamento {
   comissaoRate: number;
   ownerId: string;
   ownerNome: string;
+  /** Pagador da comissão: o PROPRIETÁRIO. */
+  ownerEmail: string | null;
+  ownerCpfCnpj: string | null;
   tenantId: string;
   tenantNome: string;
   tenantEmail: string | null;
-  ownerWalletId: string | null;
 }
 
 export type FalhaFechamento = { status: number; error: string };
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const TAXAS_VALIDAS = new Set(Object.values(COMISSAO_POR_PLANO));
 
 export async function carregarFechamento(leadId: unknown): Promise<DadosFechamento | FalhaFechamento> {
   if (typeof leadId !== "string" || !UUID_RE.test(leadId)) return { status: 400, error: "Candidatura inválida." };
@@ -46,26 +47,18 @@ export async function carregarFechamento(leadId: unknown): Promise<DadosFechamen
     .maybeSingle();
   if (!lead) return { status: 404, error: "Candidatura aceita não encontrada." };
 
-  const [{ data: imovel }, { data: dono }, { data: inquilino }, { data: conta }] = await Promise.all([
+  const [{ data: imovel }, { data: dono }, { data: inquilino }] = await Promise.all([
     admin.from("properties").select("title, monthly_price, owner_id").eq("id", lead.property_id).maybeSingle(),
-    admin.from("profiles").select("full_name").eq("id", lead.owner_id).maybeSingle(),
+    admin.from("profiles").select("full_name, email, cpf, cnpj, person_type").eq("id", lead.owner_id).maybeSingle(),
     admin.from("profiles").select("full_name, email").eq("id", lead.tenant_id).maybeSingle(),
-    admin
-      .from("payment_accounts")
-      .select("asaas_wallet_id")
-      .eq("owner_id", lead.owner_id)
-      .not("asaas_wallet_id", "is", null)
-      .limit(1)
-      .maybeSingle(),
   ]);
   if (!imovel || imovel.owner_id !== lead.owner_id) return { status: 404, error: "Imóvel não encontrado." };
   const aluguel = Number(imovel.monthly_price);
   if (!Number.isFinite(aluguel) || aluguel <= 0) return { status: 400, error: "Imóvel sem valor de aluguel." };
 
-  // Taxa congelada no aceite — só se for uma das taxas reais de plano.
-  // (A trava completa de quem grava a taxa entra no P1 (b).)
-  const congelada = Number(lead.accepted_commission_rate);
-  const comissaoRate = TAXAS_VALIDAS.has(congelada) ? congelada : COMISSAO_POR_PLANO.free;
+  // Taxa congelada no aceite; NULL cai para a do plano no aceite (nunca 0).
+  const comissaoRate = taxaDoContrato(lead.accepted_commission_rate, lead.accepted_plan);
+  const docDono = String((dono?.person_type === "pj" ? dono?.cnpj : dono?.cpf) ?? "").replace(/\D/g, "");
 
   return {
     leadId: lead.id as string,
@@ -75,10 +68,11 @@ export async function carregarFechamento(leadId: unknown): Promise<DadosFechamen
     comissaoRate,
     ownerId: lead.owner_id as string,
     ownerNome: (dono?.full_name as string) || "Proprietário",
+    ownerEmail: (dono?.email as string) ?? null,
+    ownerCpfCnpj: docDono || null,
     tenantId: lead.tenant_id as string,
     tenantNome: (inquilino?.full_name as string) || "Inquilino",
     tenantEmail: (inquilino?.email as string) ?? null,
-    ownerWalletId: (conta?.asaas_wallet_id as string) ?? null,
   };
 }
 

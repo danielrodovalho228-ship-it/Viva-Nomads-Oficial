@@ -139,3 +139,45 @@ export function assinaturaMediaMix(mix: Record<PlanoId, number> = MIX_ROI): numb
   }
   return peso > 0 ? Math.round(soma / peso) : 0;
 }
+
+/**
+ * Taxa de comissão que vale para um contrato: a CONGELADA no aceite; se ela não
+ * foi gravada (null) ou não é uma taxa real de plano, a do PLANO registrado no
+ * aceite; sem plano válido, a do Gratuito. Antes `Number(null)` virava 0 — a
+ * taxa do Gestor — e a comissão saía R$ 0.
+ */
+export function taxaDoContrato(congelada: unknown, planoNoAceite: unknown): number {
+  const validas = new Set(Object.values(COMISSAO_POR_PLANO));
+  if (congelada !== null && congelada !== undefined && congelada !== "") {
+    const n = Number(congelada);
+    if (Number.isFinite(n) && validas.has(n)) return n;
+  }
+  if (typeof planoNoAceite === "string" && planoNoAceite in COMISSAO_POR_PLANO) {
+    return COMISSAO_POR_PLANO[planoNoAceite as PlanoId];
+  }
+  return COMISSAO_POR_PLANO.free;
+}
+
+/**
+ * Assinatura anual do Gestor usada SÓ em modelos internos (/modelodenegocio).
+ * O preço público é "sob consulta" — nunca exibir como preço do plano.
+ */
+export const GESTOR_ASSINATURA_ANUAL_ESTIMADA = 3000;
+
+/**
+ * Regras do CONTRATO — fonte única (prazo, teto legal, caução, blocos).
+ * Lei 8.245/91: temporada até 90 dias por bloco (art. 48); caução até 3
+ * aluguéis (art. 38 §2º). Produto: prazo de 1 a 6 meses, no máximo 180 dias.
+ */
+export const REGRAS_CONTRATO = {
+  prazoMinMeses: 1,
+  prazoMaxMeses: 6,
+  prazoMaxDias: 180,
+  diasPorMes: 30,
+  maxDiasBloco: 90,
+  mesesPorBlocoPadrao: 2,
+  /** Caução de cada bloco = 50% do valor do bloco. */
+  caucaoFracaoBloco: 0.5,
+  /** Soma das cauções do contrato ≤ 3 aluguéis (art. 38 §2º). */
+  caucaoMaxAlugueis: 3,
+} as const;

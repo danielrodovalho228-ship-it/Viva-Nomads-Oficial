@@ -30,7 +30,7 @@ const SUBPROCESSORS = [
   {
     name: "Asaas",
     purpose:
-      "Cobrança da assinatura e da comissão de fechamento (split único sobre o 1º mês); os aluguéis seguintes são pagos direto ao proprietário, fora da plataforma",
+      "Cobrança da assinatura e da comissão de fechamento, ambas do proprietário (a comissão é uma cobrança à parte, de 1 aluguel × a taxa do plano); todos os aluguéis, inclusive o 1º, são pagos pelo inquilino direto ao proprietário, fora da plataforma",
     data: "Nome, CPF/CNPJ, dados de contato e dados da transação",
   },
   {

@@ -7,6 +7,7 @@ import {
   faltamParaGestor,
   type AccountType,
 } from "@/lib/planos/gestor";
+import { erroBancoPT } from "@/lib/erros-banco";
 
 export interface GestorElegibilidade {
   elegivel: boolean;
@@ -95,7 +96,7 @@ export async function definirAccountType(
     .from("profiles")
     .update({ account_type: novoTipo })
     .eq("id", profileId);
-  if (uErr) return { ok: false, error: uErr.message };
+  if (uErr) return { ok: false, error: erroBancoPT(uErr) };
 
   await admin.from("account_type_audit").insert({
     profile_id: profileId,

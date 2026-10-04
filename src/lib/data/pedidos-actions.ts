@@ -24,6 +24,7 @@ import {
 } from "@/lib/pedidos/pedidos";
 import { cidadeOficial } from "@/lib/municipios";
 import { chaveCidade } from "@/lib/cidades";
+import { erroBancoPT } from "@/lib/erros-banco";
 
 /** Aviso in-app + e-mail (+ WhatsApp adapter, se opt-in). Best-effort. */
 type Recip = {
@@ -154,7 +155,7 @@ export async function criarPedido(
     })
     .select("id, cidade")
     .single();
-  if (error || !data) return { ok: false, error: error?.message ?? "Falha ao publicar o pedido." };
+  if (error || !data) return { ok: false, error: erroBancoPT(error, "Falha ao publicar o pedido.") };
 
   // (a) Avisa SÓ os donos com imóvel COMPATÍVEL (regra do banco, 0064) — antes
   // ia para todos os donos da cidade. Devolve quantos imóveis combinam agora.
@@ -261,14 +262,14 @@ export async function aceitarResposta(respostaId: string): Promise<ActionResult>
     .select("id, pedido_id, proprietario_id, imovel_id")
     .eq("id", respostaId)
     .maybeSingle();
-  if (rErr) return { ok: false, error: rErr.message };
+  if (rErr) return { ok: false, error: erroBancoPT(rErr) };
   if (!resposta) return { ok: false, error: "Resposta não encontrada." };
 
   const { error: uErr } = await supabase
     .from("respostas_pedido")
     .update({ status: "aceita_para_conversa" })
     .eq("id", respostaId);
-  if (uErr) return { ok: false, error: uErr.message };
+  if (uErr) return { ok: false, error: erroBancoPT(uErr) };
 
   // Abre a conversa interna (mesmo id do requestLead: pessoas + imóvel).
   const ownerId = resposta.proprietario_id as string;
@@ -319,7 +320,7 @@ export async function recusarResposta(respostaId: string, motivo?: string): Prom
     .from("respostas_pedido")
     .update({ status: "recusada", recusa_motivo: limpo || null })
     .eq("id", respostaId);
-  if (error) return { ok: false, error: error.message };
+  if (error) return { ok: false, error: erroBancoPT(error) };
   return { ok: true, id: respostaId };
 }
 
@@ -340,7 +341,7 @@ async function setPedidoStatus(pedidoId: string, status: string): Promise<Action
     .from("pedidos_moradia")
     .update({ status })
     .eq("id", pedidoId);
-  if (error) return { ok: false, error: error.message };
+  if (error) return { ok: false, error: erroBancoPT(error) };
   return { ok: true, id: pedidoId };
 }
 
@@ -378,7 +379,7 @@ export async function setNotifPrefs(prefs: {
     .from("profiles")
     .update({ notif_email: prefs.email, notif_whatsapp: prefs.whatsapp })
     .eq("id", user.id);
-  if (error) return { ok: false, error: error.message };
+  if (error) return { ok: false, error: erroBancoPT(error) };
   return { ok: true };
 }
 
@@ -538,7 +539,7 @@ export async function responderPedido(
     // 23505 = já respondeu este pedido com este imóvel (constraint única).
     if (error.code === "23505")
       return { ok: false, error: "Você já respondeu este pedido com esse imóvel." };
-    return { ok: false, error: error.message };
+    return { ok: false, error: erroBancoPT(error) };
   }
 
   // (b) Avisa o inquilino da nova resposta. C3: contato só no servidor (service

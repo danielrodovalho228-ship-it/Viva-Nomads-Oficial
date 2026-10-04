@@ -1,4 +1,5 @@
 import type { SubscriptionPlan } from "@/lib/store";
+import { LIMITE_ANUNCIOS } from "@/config/planos";
 
 /**
  * Regras de plano — puras e SEM dependência de cliente (zustand/React), para
@@ -14,13 +15,8 @@ export const PLAN_RANK: Record<SubscriptionPlan, number> = {
   gestor: 3,
 };
 
-/** Limite de anúncios ativos por plano (espelha constants.PLANS.listingLimit). */
-export const LISTING_LIMIT: Record<SubscriptionPlan, number> = {
-  free: 1,
-  essential: 5,
-  pro: 20,
-  gestor: 999,
-};
+/** Limite de anúncios ATIVOS por plano — lido da fonte única (config/planos). */
+export const LISTING_LIMIT: Record<SubscriptionPlan, number> = LIMITE_ANUNCIOS;
 
 /** Rótulo amigável do plano. */
 export const PLAN_LABEL: Record<SubscriptionPlan, string> = {

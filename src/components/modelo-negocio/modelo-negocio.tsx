@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import styles from "./modelo-negocio.module.css";
+import { PLANOS as PLANOS_CONFIG, GESTOR_ASSINATURA_ANUAL_ESTIMADA } from "@/config/planos";
 
 // ── CONSTANTES (fáceis de editar) ───────────────────────────────────────────
 // Modelo HÍBRIDO: assinatura do plano + comissão que CAI por plano até ZERO no
@@ -15,12 +17,20 @@ interface Plano {
 }
 type PlanoKey = "gratuito" | "essencial" | "profissional" | "gestor";
 
-const PLANOS: Plano[] = [
-  { key: "gratuito", nome: "Gratuito", comissao: 0.12, subAno: 0 },
-  { key: "essencial", nome: "Essencial", comissao: 0.1, subAno: 588 }, // R$49/mês
-  { key: "profissional", nome: "Profissional", comissao: 0.08, subAno: 1548 }, // R$129/mês
-  { key: "gestor", nome: "Gestor", comissao: 0.0, subAno: 3000 }, // sob consulta (estimado)
-];
+// Lido da FONTE ÚNICA (config/planos): comissão e assinatura de cada plano. O
+// Gestor é "sob consulta" no site; aqui entra a estimativa interna declarada lá.
+const CHAVE_POR_ID: Record<string, PlanoKey> = {
+  free: "gratuito",
+  essential: "essencial",
+  pro: "profissional",
+  gestor: "gestor",
+};
+const PLANOS: Plano[] = PLANOS_CONFIG.map((p) => ({
+  key: CHAVE_POR_ID[p.id],
+  nome: p.nome,
+  comissao: p.comissao,
+  subAno: p.assinaturaAnual ?? GESTOR_ASSINATURA_ANUAL_ESTIMADA,
+}));
 const PLANO_BY_KEY = Object.fromEntries(PLANOS.map((p) => [p.key, p])) as Record<PlanoKey, Plano>;
 
 const AIRBNB_IMPACTO = 0.14; // impacto total do Airbnb sobre o aluguel (ref. mercado)
@@ -148,10 +158,10 @@ export function ModeloNegocio() {
     <div className={styles.page}>
       <div className={styles.wrap}>
         <div className={`${styles.topbar} ${styles.noprint}`}>
-          <a className={styles.brand} href="/">
+          <Link className={styles.brand} href="/">
             <span className={styles.v}>Viva</span>
             <span className={styles.n}>Nomads</span>
-          </a>
+          </Link>
         </div>
 
         <header className={styles.hero}>
@@ -322,7 +332,11 @@ export function ModeloNegocio() {
           <h2>Premissas</h2>
           <ul>
             <li>Comissão cobrada <strong>uma vez</strong>, sobre o 1º mês de cada locação: <strong>12% / 10% / 8% / 0%</strong> (Gratuito → Gestor).</li>
-            <li>Assinatura anual por plano: <strong>R$ 0 / 588 / 1.548 / 3.000</strong>.</li>
+            <li>
+              Assinatura anual por plano:{" "}
+              <strong>{PLANOS.map((p) => (p.subAno === 0 ? "R$ 0" : p.subAno.toLocaleString("pt-BR"))).join(" / ")}</strong>{" "}
+              (Gestor: estimativa interna — no site é sob consulta).
+            </li>
             <li>Impacto do Airbnb sobre o aluguel: <strong>~14%</strong> (referência de mercado).</li>
             <li>“Só assinatura” = comissão zero (plano topo / modelo Furnished Finder).</li>
           </ul>

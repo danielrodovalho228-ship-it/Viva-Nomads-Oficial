@@ -17,21 +17,42 @@
   NUNCA para a plataforma.
 */
 
-/**
- * Fração da caução por bloco (50%). Espelha `PERC_CAUCAO` de `caucao.ts` — este
- * módulo é mantido SEM imports (como caucao.ts e guarantees.ts) para poder ser
- * testado com `node --test`, que não resolve o alias `@/`.
- */
-export const PERC_CAUCAO_BLOCO = 0.5;
+import { REGRAS_CONTRATO } from "../config/planos.ts";
+
+/** Fração da caução por bloco (50%) — de REGRAS_CONTRATO (fonte única). */
+export const PERC_CAUCAO_BLOCO = REGRAS_CONTRATO.caucaoFracaoBloco;
 
 /** Tamanho padrão do bloco, em meses (configurável no fechamento). */
-export const MESES_POR_BLOCO_PADRAO = 2;
+export const MESES_POR_BLOCO_PADRAO = REGRAS_CONTRATO.mesesPorBlocoPadrao;
 /** Teto legal de dias por bloco (temporada — art. 48). */
-export const MAX_DIAS_BLOCO = 90;
+export const MAX_DIAS_BLOCO = REGRAS_CONTRATO.maxDiasBloco;
 /** Dias por mês usados no encadeamento das datas (aproximação comercial). */
-export const DIAS_POR_MES = 30;
+export const DIAS_POR_MES = REGRAS_CONTRATO.diasPorMes;
 /** Máximo de meses por bloco para não estourar 90 dias (90 / 30 = 3). */
 export const MAX_MESES_BLOCO = Math.floor(MAX_DIAS_BLOCO / DIAS_POR_MES);
+/** Prazo total do contrato: 1 a 6 meses, no máximo 180 dias. */
+export const PRAZO_MIN_MESES = REGRAS_CONTRATO.prazoMinMeses;
+export const PRAZO_MAX_MESES = REGRAS_CONTRATO.prazoMaxMeses;
+export const PRAZO_MAX_DIAS = REGRAS_CONTRATO.prazoMaxDias;
+/** Caução total do contrato ≤ 3 aluguéis (art. 38 §2º). */
+export const CAUCAO_MAX_ALUGUEIS = REGRAS_CONTRATO.caucaoMaxAlugueis;
+
+/**
+ * Caução do PRÓXIMO bloco: 50% do valor do bloco, limitada ao que falta para
+ * a soma das cauções do contrato chegar a 3 aluguéis.
+ */
+export function caucaoDoBloco(valorBloco: number, aluguelMensal: number, caucaoJaExigida: number): number {
+  const teto = Math.max(0, aluguelMensal * CAUCAO_MAX_ALUGUEIS - Math.max(0, caucaoJaExigida));
+  return Math.min(Math.round(Math.max(0, valorBloco) * PERC_CAUCAO_BLOCO), Math.round(teto));
+}
+
+/**
+ * O contrato pode ganhar um bloco de `mesesNovo` meses? Só se o total (dias já
+ * contratados + novo bloco) não passar de 180 dias.
+ */
+export function cabeNoPrazoMaximo(diasJaContratados: number, mesesNovo: number): boolean {
+  return Math.max(0, diasJaContratados) + Math.max(0, mesesNovo) * DIAS_POR_MES <= PRAZO_MAX_DIAS;
+}
 
 export interface BlocoPlano {
   numero: number;
@@ -59,10 +80,12 @@ export function planejarBlocos(
   const blocos: BlocoPlano[] = [];
   let restante = total;
   let numero = 1;
+  let caucaoAcumulada = 0;
   while (restante > 0) {
     const meses = Math.min(passo, restante);
     const valor = aluguel * meses;
-    const caucao = Math.round(valor * PERC_CAUCAO_BLOCO);
+    const caucao = caucaoDoBloco(valor, aluguel, caucaoAcumulada);
+    caucaoAcumulada += caucao;
     blocos.push({ numero, meses, valor, caucao, desembolso: valor + caucao });
     restante -= meses;
     numero += 1;
@@ -133,16 +156,30 @@ export interface BlocoComDatas extends BlocoPlano {
 }
 
 /**
- * Encadeia as datas dos blocos a partir de um início (ISO). Cada bloco começa
- * onde o anterior termina; `fim = inicio + meses×30`. Garante que nenhum bloco
- * excede 90 dias (o próprio `planejarBlocos` já limita os meses).
+ * Último dia (INCLUSIVO) de um período de `dias` que começa em `inicioISO`:
+ * `fim = início + dias − 1`. Ex.: 30 dias a partir de 01/01 → 30/01 (antes
+ * 31/01, um dia a mais por bloco — 31/01 a 01/05 davam 91 dias).
+ */
+export function fimInclusivoISO(inicioISO: string, dias: number): string {
+  return addDiasISO(inicioISO, Math.max(1, Math.round(dias)) - 1);
+}
+
+/** Dias corridos de um período com início e fim INCLUSIVOS. */
+export function diasInclusivos(inicioISO: string, fimISO: string): number {
+  return Math.round((Date.parse(`${fimISO}T00:00:00Z`) - Date.parse(`${inicioISO}T00:00:00Z`)) / 86400000) + 1;
+}
+
+/**
+ * Encadeia as datas dos blocos a partir de um início (ISO). Cada bloco dura
+ * `meses×30` dias com fim INCLUSIVO, e o seguinte começa no dia SEGUINTE ao fim
+ * do anterior. Nenhum bloco excede 90 dias (`planejarBlocos` limita os meses).
  */
 export function encadearDatas(inicioISO: string, blocos: BlocoPlano[]): BlocoComDatas[] {
   let cursor = inicioISO;
   return blocos.map((b) => {
     const inicio = cursor;
-    const fim = addDiasISO(inicio, b.meses * DIAS_POR_MES);
-    cursor = fim;
+    const fim = fimInclusivoISO(inicio, b.meses * DIAS_POR_MES);
+    cursor = addDiasISO(fim, 1);
     return { ...b, inicio, fim };
   });
 }

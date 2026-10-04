@@ -7,6 +7,7 @@
   filtro anti-contato bloqueia telefone/e-mail/mensageria no texto do pedido —
   se passasse, a conversa escaparia da plataforma no dia 1.
 */
+import { REGRAS_CONTRATO } from "../../config/planos.ts";
 
 export type MotivoPedido =
   | "trabalho_remoto"
@@ -73,7 +74,7 @@ export const RESPOSTA_STATUS_LABEL: Record<string, string> = {
 export const MAX_PEDIDOS_ATIVOS = 2;
 
 /** Prazo máximo do pedido: a plataforma é de 30 a 180 dias (6 meses). */
-export const PRAZO_MAX_MESES = 6;
+export const PRAZO_MAX_MESES = REGRAS_CONTRATO.prazoMaxMeses; // fonte única: config/planos
 
 // ── Leads do proprietário (Dashboard Fase 2) ─────────────────────────────────
 

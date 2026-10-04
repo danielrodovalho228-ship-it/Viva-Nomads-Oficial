@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { erroBancoPT } from "@/lib/erros-banco";
 
 export interface BlocoDatas {
   id: string;
@@ -49,7 +50,7 @@ export async function addBlock(
     .insert({ property_id: propertyId, inicio, fim })
     .select("id")
     .single();
-  if (error) return { ok: false, error: error.message };
+  if (error) return { ok: false, error: erroBancoPT(error) };
   return { ok: true, id: data?.id };
 }
 
@@ -59,6 +60,6 @@ export async function removeBlock(id: string): Promise<ActionResult> {
   if (!supabase) return { ok: true, demo: true };
   if (!UUID_RE.test(id)) return { ok: true, demo: true };
   const { error } = await supabase.from("property_blocks").delete().eq("id", id);
-  if (error) return { ok: false, error: error.message };
+  if (error) return { ok: false, error: erroBancoPT(error) };
   return { ok: true };
 }

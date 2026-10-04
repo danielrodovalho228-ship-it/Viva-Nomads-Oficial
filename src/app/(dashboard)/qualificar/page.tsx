@@ -89,7 +89,7 @@ export default function QualificationChecklistPage() {
   // Qualificação POR IMÓVEL: `?imovel=<id>` diz qual imóvel está sendo
   // qualificado (mostrado no topo). Sem ele, é o imóvel que será anunciado em
   // seguida (a qualificação fica à espera e é ligada a ele ao criar).
-  const [imovel, setImovel] = useState<{ id: string; titulo: string; local: string } | null>(null);
+  const [imovel, setImovel] = useState<{ id: string; titulo: string; local: string; rascunho: boolean } | null>(null);
   const [imovelInvalido, setImovelInvalido] = useState(false);
   useEffect(() => {
     let alive = true;
@@ -637,7 +637,7 @@ export default function QualificationChecklistPage() {
           <Button
             variant="accent"
             onClick={() =>
-              router.push(imovel ? `/dashboard/imoveis/novo?id=${imovel.id}` : "/dashboard/imoveis/novo")
+              router.push(rotaVoltarAoAnuncio(imovel))
             }
           >
             {imovel ? "Voltar ao anúncio" : "Continuar para o anúncio"} <ArrowRight className="h-4 w-4" />
@@ -655,6 +655,16 @@ export default function QualificationChecklistPage() {
       )}
     </div>
   );
+}
+
+/**
+ * Para onde "Voltar ao anúncio" leva: rascunho reabre pelo `?draft=` (retoma o
+ * snapshot salvo — `?id=` abria o editor de anúncio publicado, vazio para um
+ * rascunho); publicado, pela edição; sem imóvel, um anúncio novo.
+ */
+function rotaVoltarAoAnuncio(imovel: { id: string; rascunho: boolean } | null): string {
+  if (!imovel) return "/dashboard/imoveis/novo";
+  return imovel.rascunho ? `/dashboard/imoveis/novo?draft=${imovel.id}` : `/dashboard/imoveis/novo?id=${imovel.id}`;
 }
 
 /** Ícone temático por item de etiqueta (upgrade visual dos cards). */

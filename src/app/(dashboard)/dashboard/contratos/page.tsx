@@ -1,5 +1,6 @@
 import { getMeusContratos } from "@/lib/data/contratos-actions";
 import { ContratosClient } from "./contratos-client";
+import { hojeBR } from "@/lib/utils";
 
 /**
  * "Contratos & blocos" (Dashboard Fase 4): o servidor busca os contratos REAIS
@@ -10,6 +11,6 @@ import { ContratosClient } from "./contratos-client";
  */
 export default async function ContratosPage() {
   const contratos = await getMeusContratos();
-  const hojeISO = new Date().toISOString().slice(0, 10);
+  const hojeISO = hojeBR();
   return <ContratosClient contratos={contratos} hojeISO={hojeISO} />;
 }

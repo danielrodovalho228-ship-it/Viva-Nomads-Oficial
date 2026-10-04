@@ -5,6 +5,8 @@ import { PLANS } from "@/lib/constants";
 import { IntegracaoNaoConfigurada, MSG_NAO_CONFIGURADA, emProducao } from "@/lib/integracoes";
 import { consumirLimite, DIA } from "@/lib/limites";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { fundadorNoGratis, fimGratisFundador, precoComDescontoFundador } from "@/lib/fundador";
+import { dataBR } from "@/lib/utils";
 
 const FORMAS: BillingType[] = ["PIX", "BOLETO", "CREDIT_CARD"];
 
@@ -37,10 +39,21 @@ export async function POST(request: Request) {
 
   const { data: perfil } = await supabase
     .from("profiles")
-    .select("full_name, email, cpf, cnpj, person_type")
+    .select("full_name, email, cpf, cnpj, person_type, fundador, fundador_em")
     .eq("id", user.id)
     .maybeSingle();
   const documento = String((perfil?.person_type === "pj" ? perfil?.cnpj : perfil?.cpf) ?? "").replace(/\D/g, "");
+
+  // Fundador nos 12 meses grátis já tem o Profissional: não cobra nada agora.
+  if (fundadorNoGratis(perfil?.fundador as boolean | undefined, perfil?.fundador_em as string | undefined)) {
+    const fim = fimGratisFundador(true, perfil?.fundador_em as string);
+    return NextResponse.json(
+      {
+        error: `Você é Fundador: o plano Profissional está liberado sem custo até ${fim ? dataBR(fim) : "o fim dos 12 meses"}.`,
+      },
+      { status: 409 }
+    );
+  }
 
   if (!isAsaasConfigured() && emProducao()) {
     return NextResponse.json({ error: MSG_NAO_CONFIGURADA }, { status: 503 });
@@ -57,7 +70,8 @@ export async function POST(request: Request) {
       customerName: (perfil?.full_name as string) || "Proprietário",
       customerEmail: (perfil?.email as string) || user.email || "sem-email@vivanomads.com.br",
       cpfCnpj: documento || undefined,
-      planValue: plan.price,
+      // Fundador: 20% de desconto vitalício quando a cobrança começa.
+      planValue: precoComDescontoFundador(plan.price, perfil?.fundador as boolean | undefined),
       planName: plan.name,
       billingType,
     });

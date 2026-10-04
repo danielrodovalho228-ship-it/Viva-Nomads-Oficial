@@ -19,6 +19,9 @@ import type { SubscriptionPlan } from "@/lib/store";
 import { buildLeadNotification, LEAD_KIND_MSG, type LeadKind } from "@/lib/leads";
 import { amenityRows } from "@/lib/amenities";
 import { fotosDoDono, urlsDoRascunho } from "@/lib/fotos-anuncio";
+import { taxaDoContrato } from "@/config/planos";
+import { erroBancoPT } from "@/lib/erros-banco";
+import { planoDoProprietario } from "@/lib/data/plano-efetivo";
 import { avisarPedidosDoImovel } from "@/lib/data/pedidos-compat";
 import { INTERNET_META } from "@/lib/internet";
 import { getPropertyForOwner } from "@/lib/data/properties";
@@ -27,13 +30,21 @@ import { isExemplo, EXEMPLO_SEM_CONTATO } from "@/lib/demo-listing";
 import { conversationId as idConversa } from "@/lib/messages/conversation-id";
 import { SITE_URL } from "@/lib/site";
 import type { Property } from "@/lib/types";
-import { COMMISSION_BY_PLAN } from "@/lib/constants";
+import { hojeBR, dataBR } from "@/lib/utils";
 import {
   resumoContrato,
   encadearDatas,
   addDiasISO,
+  fimInclusivoISO,
+  diasInclusivos,
+  caucaoDoBloco,
+  cabeNoPrazoMaximo,
   DIAS_POR_MES,
   MESES_POR_BLOCO_PADRAO,
+  MAX_MESES_BLOCO,
+  PRAZO_MIN_MESES,
+  PRAZO_MAX_MESES,
+  PRAZO_MAX_DIAS,
   type BlocoComDatas,
 } from "@/lib/contrato-blocos";
 
@@ -168,7 +179,7 @@ export async function getMyDocumentStatus(
 /** Título e endereço de um imóvel do PRÓPRIO dono (cabeçalho do /qualificar). */
 export async function resumoImovelDoDono(
   id: string
-): Promise<{ id: string; titulo: string; local: string } | null> {
+): Promise<{ id: string; titulo: string; local: string; rascunho: boolean } | null> {
   const supabase = await createClient();
   if (!supabase || !UUID_RE.test(id)) return null;
   const {
@@ -177,7 +188,7 @@ export async function resumoImovelDoDono(
   if (!user) return null;
   const { data } = await supabase
     .from("properties")
-    .select("id, title, address, city")
+    .select("id, title, address, city, status")
     .eq("id", id)
     .eq("owner_id", user.id)
     .maybeSingle();
@@ -186,6 +197,7 @@ export async function resumoImovelDoDono(
     id: data.id as string,
     titulo: (data.title as string) || "Imóvel sem título",
     local: [data.address, data.city].filter(Boolean).join(", "),
+    rascunho: data.status === "draft",
   };
 }
 
@@ -291,27 +303,11 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
     };
   }
 
-  // Feature gating por plano (validado no servidor): respeita o limite de
-  // anúncios do plano do proprietário. Sem assinatura, vale o plano gratuito.
-  // Só assinatura ATIVA conta (pendente/vencida = plano gratuito).
-  const { data: sub } = await supabase
-    .from("subscriptions")
-    .select("plan")
-    .eq("owner_id", user.id)
-    .eq("status", "active")
-    .order("current_period_end", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  const plan = (sub?.plan ?? "free") as SubscriptionPlan;
-  const { count } = await supabase
-    .from("properties")
-    .select("id", { count: "exact", head: true })
-    .eq("owner_id", user.id);
-  if ((count ?? 0) >= listingLimit(plan)) {
-    return {
-      ok: false,
-      error: `Seu plano (${PLAN_LABEL[plan]}) permite até ${listingLimit(plan)} anúncio(s). Faça upgrade para publicar mais.`,
-    };
+  // Limite de anúncios ATIVOS do plano (rascunho e pausado não contam). Só
+  // pesa quando o anúncio vai ser publicado agora.
+  if (!input.asDraft) {
+    const limite = await limiteDePublicacao(supabase, user.id, null);
+    if (limite) return { ok: false, error: limite };
   }
 
   const { data, error } = await supabase
@@ -353,7 +349,7 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
     .select("id")
     .single();
 
-  if (error) return { ok: false, error: error.message };
+  if (error) return { ok: false, error: erroBancoPT(error) };
 
   // Enriquecimento (campos das migrações 0018/0019). Best-effort: se a migração
   // ainda não rodou, o update falha em silêncio mas o imóvel já foi criado.
@@ -472,7 +468,7 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
     return {
       ok: false,
       id: data.id,
-      error: "O imóvel foi salvo como rascunho, mas não pôde ser publicado: " + stErr.message,
+      error: "O imóvel foi salvo como rascunho, mas não pôde ser publicado: " + erroBancoPT(stErr),
     };
   }
   // Publicado agora: avisa os pedidos ativos que ele atende (dono e inquilino).
@@ -519,6 +515,13 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
         error: "Documentação do imóvel ainda não aprovada. Salve como rascunho — a publicação libera após a verificação.",
       };
     }
+  }
+
+  // Publicar conta no limite de anúncios ATIVOS do plano (antes a edição
+  // publicava sem checar).
+  if (input.asDraft === false) {
+    const limite = await limiteDePublicacao(supabase, user.id, id);
+    if (limite) return { ok: false, error: limite };
   }
 
   // Status ANTES da edição: só a PUBLICAÇÃO (rascunho/pausado → ativo) avisa
@@ -571,7 +574,7 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
     })
     .eq("id", id)
     .eq("owner_id", user.id);
-  if (error) return { ok: false, error: error.message };
+  if (error) return { ok: false, error: erroBancoPT(error) };
 
   // Enriquecimento (best-effort — requer migrações 0018/0019/0020).
   try {
@@ -661,14 +664,14 @@ export async function toggleFavorite(
     const { error } = await supabase
       .from("favorites")
       .insert({ tenant_id: user.id, property_id: propertyId });
-    if (error && error.code !== "23505") return { ok: false, error: error.message };
+    if (error && error.code !== "23505") return { ok: false, error: erroBancoPT(error) };
   } else {
     const { error } = await supabase
       .from("favorites")
       .delete()
       .eq("tenant_id", user.id)
       .eq("property_id", propertyId);
-    if (error) return { ok: false, error: error.message };
+    if (error) return { ok: false, error: erroBancoPT(error) };
   }
   return { ok: true };
 }
@@ -718,7 +721,7 @@ export async function registrarLocacao(input: LocacaoInput): Promise<ActionResul
     })
     .select("id")
     .single();
-  if (error) return { ok: false, error: error.message };
+  if (error) return { ok: false, error: erroBancoPT(error) };
   return { ok: true, id: data?.id };
 }
 
@@ -737,7 +740,6 @@ export interface ContratoInput {
 }
 
 const FAIXAS_CONTRATO = new Set(["temporada", "media_estadia", "longa"]);
-const TAXAS_DE_PLANO = new Set(Object.values(COMMISSION_BY_PLAN));
 
 /**
  * Registra o CONTRATO-MÃE + seus BLOCOS no fechamento. A comissão (1 mês × taxa
@@ -788,15 +790,16 @@ export async function registrarContrato(
   }
 
   const prazo = Math.round(Number(input.prazoTotalMeses));
-  if (!(prazo >= 1 && prazo <= 12)) return { ok: false, error: "Prazo inválido (1 a 12 meses)." };
+  if (!(prazo >= PRAZO_MIN_MESES && prazo <= PRAZO_MAX_MESES))
+    return { ok: false, error: `Prazo inválido (${PRAZO_MIN_MESES} a ${PRAZO_MAX_MESES} meses, até ${PRAZO_MAX_DIAS} dias).` };
   if (!FAIXAS_CONTRATO.has(input.faixa)) return { ok: false, error: "Faixa de prazo inválida." };
   const ocupantes = Math.round(Number(input.qtdOcupantes));
   if (!(ocupantes >= 1 && ocupantes <= 20)) return { ok: false, error: "Número de ocupantes inválido." };
   if (!/^\d{4}-\d{2}-\d{2}$/.test(input.inicioISO)) return { ok: false, error: "Data de início inválida." };
 
   const plano = (lead.accepted_plan as string) ?? "free";
-  const congelada = Number(lead.accepted_commission_rate);
-  const rate = TAXAS_DE_PLANO.has(congelada) ? congelada : COMMISSION_BY_PLAN.free;
+  // NULL cai para a taxa do plano no aceite (antes Number(null) = 0 = Gestor).
+  const rate = taxaDoContrato(lead.accepted_commission_rate, lead.accepted_plan);
   const tamanho = Math.min(3, Math.max(1, Math.round(Number(input.tamanhoBlocoMeses ?? MESES_POR_BLOCO_PADRAO))));
   const resumo = resumoContrato(prazo, aluguel, rate, tamanho);
 
@@ -830,23 +833,30 @@ export async function registrarContrato(
     valor: b.valor,
     caucao: b.caucao,
     caucao_forma: input.caucaoForma === "preauth_cartao" ? "preauth_cartao" : "avista",
-    // 1º bloco entra vigente; os demais ficam agendados até a renovação opt-in.
-    status: i === 0 ? "ativo" : "agendado",
+    // 1º bloco entra vigente; os demais ficam PENDENTES DE ACEITE das duas
+    // partes (antes "agendado" — o ciclo diário os ativava sozinho).
+    status: i === 0 ? "ativo" : "pendente_aceite",
   }));
   const { error: bErr } = await admin.from("contrato_blocos").insert(rows);
   // Best-effort: o contrato-mãe já existe mesmo se a inserção dos blocos falhar.
-  if (bErr) return { ok: true, id: contrato!.id, blocos: 0, error: bErr.message };
+  if (bErr) return { ok: true, id: contrato!.id, blocos: 0, error: erroBancoPT(bErr) };
   return { ok: true, id: contrato!.id, blocos: rows.length };
 }
 
 /**
- * Renovação OPT-IN: cria o PRÓXIMO bloco do contrato-mãe (nunca automática —
- * requisito jurídico). Não gera nova comissão. Avisa a outra parte (best-effort;
- * o e-mail do dono vem da RPC `owner_notify_contact`). No-op em demo/sem sessão.
+ * Renovação com ACEITE DAS DUAS PARTES (nunca automática — requisito jurídico).
+ * Quem chama (proprietário ou inquilino do contrato) dá o SEU aceite ao
+ * próximo bloco:
+ *  • havendo bloco "pendente_aceite", registra o aceite desta parte; com os
+ *    dois aceites o bloco vira "agendado" (e o ciclo diário o ativa na data);
+ *  • não havendo, propõe um novo bloco — se couber no teto de 180 dias — já
+ *    com o aceite de quem propôs, e avisa a outra parte.
+ * Caução do bloco limitada para a soma do contrato não passar de 3 aluguéis
+ * (art. 38 §2º). Não gera nova comissão. O banco confere tudo de novo (0063).
  */
 export async function renovarBloco(
   contratoId: string
-): Promise<ActionResult & { numeroBloco?: number }> {
+): Promise<ActionResult & { numeroBloco?: number; aguardandoOutraParte?: boolean }> {
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
   const {
@@ -857,82 +867,127 @@ export async function renovarBloco(
 
   const { data: contrato, error: cErr } = await supabase
     .from("contratos")
-    .select("id, property_id, aluguel_mensal, tamanho_bloco_meses, status")
+    .select("id, property_id, tenant_id, aluguel_mensal, tamanho_bloco_meses, status")
     .eq("id", contratoId)
     .maybeSingle();
-  if (cErr) return { ok: false, error: cErr.message };
-  // A6: a leitura acima já passa pela RLS (só as partes do contrato veem).
+  if (cErr) return { ok: false, error: "Não foi possível ler o contrato." };
+  // A leitura acima já passa pela RLS (só as partes do contrato veem).
   if (!contrato) return { ok: false, error: "Contrato não encontrado." };
   if (contrato.status !== "ativo") return { ok: false, error: "Só contratos ativos podem ser renovados." };
   const admin = createAdminClient();
   if (!admin) return { ok: false, error: "Serviço indisponível." };
 
-  const { data: ultimo } = await supabase
-    .from("contrato_blocos")
-    .select("numero_bloco, fim")
-    .eq("contrato_id", contratoId)
-    .order("numero_bloco", { ascending: false })
-    .limit(1)
+  const { data: imovel } = await admin
+    .from("properties")
+    .select("owner_id")
+    .eq("id", contrato.property_id)
     .maybeSingle();
+  const papel: "proprietario" | "inquilino" | null =
+    imovel?.owner_id === user.id ? "proprietario" : contrato.tenant_id === user.id ? "inquilino" : null;
+  if (!papel) return { ok: false, error: "Só as partes do contrato podem renovar." };
+  const colunaAceite = papel === "proprietario" ? "aceite_proprietario_em" : "aceite_inquilino_em";
+  const colunaOutra = papel === "proprietario" ? "aceite_inquilino_em" : "aceite_proprietario_em";
 
-  // Uma renovação por vez: com um bloco futuro já AGENDADO, novo pedido não
-  // cria outro bloco nem manda outro e-mail ao proprietário (antes dava para
-  // empilhar blocos e e-mails clicando várias vezes).
-  const { count: agendados } = await admin
-    .from("contrato_blocos")
-    .select("id", { count: "exact", head: true })
-    .eq("contrato_id", contratoId)
-    .eq("status", "agendado");
-  if ((agendados ?? 0) > 0) {
-    return { ok: false, error: "A renovação já foi pedida. O próximo bloco está agendado." };
-  }
-  if (!(await dentroDoLimite(`renovar:${contratoId}`, 3, DIA_SEGUNDOS))) {
+  if (!(await dentroDoLimite(`renovar:${contratoId}:${user.id}`, 3, DIA_SEGUNDOS))) {
     return { ok: false, error: "Muitos pedidos de renovação hoje. Tente amanhã." };
   }
 
-  const meses = Math.min(3, Math.max(1, Number(contrato.tamanho_bloco_meses) || MESES_POR_BLOCO_PADRAO));
-  const aluguel = Number(contrato.aluguel_mensal) || 0;
-  const valor = aluguel * meses;
-  const inicio = (ultimo?.fim as string | undefined) ?? hojeISO();
-  const fim = addDiasISO(inicio, meses * DIAS_POR_MES);
-  const numero = ((ultimo?.numero_bloco as number | undefined) ?? 0) + 1;
+  const { data: blocos } = await admin
+    .from("contrato_blocos")
+    .select("id, numero_bloco, inicio, fim, caucao, status, aceite_proprietario_em, aceite_inquilino_em")
+    .eq("contrato_id", contratoId)
+    .order("numero_bloco", { ascending: true });
+  const lista = (blocos ?? []) as Record<string, unknown>[];
+  const validos = lista.filter((b) => b.status !== "nao_aceito");
 
-  // A6: gravado pelo servidor (0057 tirou a escrita do usuário em blocos).
-  const { error: bErr } = await admin.from("contrato_blocos").insert({
-    contrato_id: contratoId,
-    numero_bloco: numero,
-    inicio,
-    fim,
-    meses,
-    valor,
-    caucao: Math.round(valor * 0.5),
-    status: "agendado",
-  });
-  if (bErr) return { ok: false, error: bErr.message };
+  let numero: number;
+  let inicio: string;
+  let fim: string;
+  let aguardando: boolean;
 
-  // Mantém o contrato-mãe ativo (renovou antes de encerrar).
-  await admin.from("contratos").update({ status: "ativo", encerrado_em: null }).eq("id", contratoId);
+  const pendente = validos.find((b) => b.status === "pendente_aceite");
+  if (pendente) {
+    // Aceite desta parte num bloco já proposto.
+    const outraJaAceitou = !!pendente[colunaOutra];
+    const { error } = await admin
+      .from("contrato_blocos")
+      .update({
+        [colunaAceite]: (pendente[colunaAceite] as string | null) ?? new Date().toISOString(),
+        ...(outraJaAceitou ? { status: "agendado" } : {}),
+      })
+      .eq("id", pendente.id as string)
+      .eq("status", "pendente_aceite");
+    if (error) return { ok: false, error: "Não foi possível registrar o aceite." };
+    numero = pendente.numero_bloco as number;
+    inicio = pendente.inicio as string;
+    fim = pendente.fim as string;
+    aguardando = !outraJaAceitou;
+  } else {
+    // Proposta de um novo bloco (com o aceite de quem propõe).
+    const meses = Math.min(MAX_MESES_BLOCO, Math.max(1, Number(contrato.tamanho_bloco_meses) || MESES_POR_BLOCO_PADRAO));
+    const diasContratados = validos.reduce(
+      (soma, b) => soma + diasInclusivos(b.inicio as string, b.fim as string),
+      0
+    );
+    if (!cabeNoPrazoMaximo(diasContratados, meses)) {
+      return {
+        ok: false,
+        error: `O contrato chegou ao prazo máximo de ${PRAZO_MAX_DIAS} dias. Para continuar, é preciso um novo contrato.`,
+      };
+    }
+    const aluguel = Number(contrato.aluguel_mensal) || 0;
+    const valor = aluguel * meses;
+    const caucaoExigida = validos.reduce((soma, b) => soma + (Number(b.caucao) || 0), 0);
+    const ultimo = validos[validos.length - 1];
+    inicio = ultimo ? addDiasISO(ultimo.fim as string, 1) : hojeISO();
+    fim = fimInclusivoISO(inicio, meses * DIAS_POR_MES);
+    numero = ((lista[lista.length - 1]?.numero_bloco as number | undefined) ?? 0) + 1;
+    const { error: bErr } = await admin.from("contrato_blocos").insert({
+      contrato_id: contratoId,
+      numero_bloco: numero,
+      inicio,
+      fim,
+      meses,
+      valor,
+      caucao: caucaoDoBloco(valor, aluguel, caucaoExigida),
+      status: "pendente_aceite",
+      [colunaAceite]: new Date().toISOString(),
+    });
+    if (bErr) return { ok: false, error: "Não foi possível propor a renovação." };
+    aguardando = true;
+  }
 
-  // Avisa o proprietário (best-effort) — a outra ponta do opt-in.
+  // Avisa a OUTRA parte (best-effort): precisa do aceite dela, ou a renovação
+  // foi confirmada pelos dois.
   try {
-    // C3: RPC de contato (PII) só via service role no servidor.
-    const { data: rpc } = admin
-      ? await admin.rpc("owner_notify_contact", { prop_id: contrato.property_id })
-      : { data: null };
-    const o = Array.isArray(rpc) ? rpc[0] : rpc;
-    if (o?.email) {
+    let destino: { email?: string | null; full_name?: string | null } | null = null;
+    if (papel === "inquilino") {
+      const { data: rpc } = await admin.rpc("owner_notify_contact", { prop_id: contrato.property_id });
+      destino = (Array.isArray(rpc) ? rpc[0] : rpc) ?? null;
+    } else {
+      const { data: inq } = await admin
+        .from("profiles")
+        .select("email, full_name, notif_email")
+        .eq("id", contrato.tenant_id as string)
+        .maybeSingle();
+      destino = inq && inq.notif_email !== false ? inq : null;
+    }
+    if (destino?.email) {
+      const quem = papel === "inquilino" ? "O inquilino" : "O proprietário";
       await notify({
         event: "contract_status",
-        email: o.email as string,
-        name: (o.full_name as string) ?? undefined,
-        detailsText: `O inquilino renovou a locação — bloco ${numero} (${inicio} a ${fim}).`,
+        email: destino.email,
+        name: destino.full_name ?? undefined,
+        detailsText: aguardando
+          ? `${quem} quer renovar a locação: bloco ${numero} (${dataBR(inicio)} a ${dataBR(fim)}). A renovação só vale com o seu aceite — abra Contratos no painel.`
+          : `Renovação confirmada pelas duas partes: bloco ${numero} (${dataBR(inicio)} a ${dataBR(fim)}).`,
       });
     }
   } catch {
     /* notificação é best-effort */
   }
 
-  return { ok: true, numeroBloco: numero };
+  return { ok: true, numeroBloco: numero, aguardandoOutraParte: aguardando };
 }
 
 /**
@@ -945,13 +1000,13 @@ export async function varrerCicloBlocos(): Promise<ActionResult> {
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
   const { error } = await supabase.rpc("avancar_ciclo_blocos");
-  if (error) return { ok: false, error: error.message };
+  if (error) return { ok: false, error: erroBancoPT(error) };
   return { ok: true };
 }
 
 /** Data de hoje em ISO (yyyy-mm-dd) — isolada para manter as regras testáveis. */
 function hojeISO(): string {
-  return new Date().toISOString().slice(0, 10);
+  return hojeBR();
 }
 
 /**
@@ -1241,7 +1296,7 @@ export async function deleteProperty(id: string): Promise<ActionResult> {
     }
   }
   const { error } = await supabase.from("properties").delete().eq("id", id).eq("owner_id", user.id);
-  if (error) return { ok: false, error: error.message };
+  if (error) return { ok: false, error: erroBancoPT(error) };
   return { ok: true };
 }
 
@@ -1299,14 +1354,38 @@ export async function saveDraftData(snap: {
       .eq("id", snap.id)
       .eq("owner_id", user.id)
       .eq("status", "draft");
-    if (error) return { ok: false, error: error.message };
+    if (error) return { ok: false, error: erroBancoPT(error) };
     await sincronizarFotos(supabase, snap.id, user.id, urlsDoRascunho(snap.data));
     return { ok: true, id: snap.id };
   }
   const { data, error } = await supabase.from("properties").insert(fields).select("id").single();
-  if (error) return { ok: false, error: error.message };
+  if (error) return { ok: false, error: erroBancoPT(error) };
   await sincronizarFotos(supabase, data.id as string, user.id, urlsDoRascunho(snap.data));
   return { ok: true, id: data.id };
+}
+
+/**
+ * Mensagem de bloqueio se publicar mais um anúncio estoura o limite de anúncios
+ * ATIVOS do plano efetivo (assinatura ou Fundador); null se pode. `exceto` = o
+ * próprio imóvel sendo (re)publicado (já ativo não conta duas vezes).
+ */
+async function limiteDePublicacao(
+  supabase: NonNullable<Awaited<ReturnType<typeof createClient>>>,
+  ownerId: string,
+  exceto: string | null
+): Promise<string | null> {
+  const plan = (await planoDoProprietario(supabase, ownerId)) as SubscriptionPlan;
+  let q = supabase
+    .from("properties")
+    .select("id", { count: "exact", head: true })
+    .eq("owner_id", ownerId)
+    .eq("status", "active");
+  if (exceto) q = q.neq("id", exceto);
+  const { count } = await q;
+  if ((count ?? 0) >= listingLimit(plan)) {
+    return `Seu plano (${PLAN_LABEL[plan]}) permite até ${listingLimit(plan)} anúncio(s) publicado(s). Pause um anúncio ou faça upgrade para publicar mais.`;
+  }
+  return null;
 }
 
 /**

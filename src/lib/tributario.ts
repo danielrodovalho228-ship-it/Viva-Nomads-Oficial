@@ -10,8 +10,9 @@
  */
 import {
   simulateTax,
-  IBS_CBS_RATE,
+  IBS_CBS_TESTE_2026,
   PJ_PRESUMIDO_RATE,
+  REDUTOR_LEI_15270,
   PJ_ACCOUNTING_YEAR,
   PF_CONTRIBUTOR_MIN_PROPERTIES,
   PF_CONTRIBUTOR_MIN_ANNUAL,
@@ -39,13 +40,14 @@ export const PREMISSAS_PF: Premissa[] = [
   {
     chave: "irpf_rate",
     rotulo: "IRPF da PF",
-    valor: "tabela progressiva mensal do carnê-leão (0% a 27,5%, com parcela a deduzir)",
+    valor: "tabela progressiva mensal do carnê-leão (0% a 27,5%, com parcela a deduzir) + redutor da Lei 15.270/2025",
     status: "confirmado",
     nota:
       "Calculado mês a mês: aluguel do mês (menos as despesas dedutíveis) × alíquota da " +
-      "faixa − parcela a deduzir, × 12. Tabela vigente desde maio/2025. Não inclui a " +
-      "redução da Lei 15.270/2025 para rendas até R$ 7.350/mês (nessa faixa o imposto " +
-      "real pode ser menor).",
+      "faixa − parcela a deduzir; depois o redutor mensal: rendimento até " +
+      `${brl(REDUTOR_LEI_15270.isencaoAte)} → imposto zero; de ${brl(REDUTOR_LEI_15270.isencaoAte)} a ` +
+      `${brl(REDUTOR_LEI_15270.faixaAte)} → redução de R$ 978,62 − 0,133145 × rendimento; ` +
+      `acima, sem redução. × 12. Fonte: ${REDUTOR_LEI_15270.fonte}.`,
   },
   {
     chave: "pf_deducoes",
@@ -59,7 +61,9 @@ export const PREMISSAS_PF: Premissa[] = [
     rotulo: "PF vira contribuinte de IBS/CBS quando",
     valor: `${PF_CONTRIBUTOR_MIN_PROPERTIES}+ imóveis E receita anual > ${brl(PF_CONTRIBUTOR_MIN_ANNUAL)}`,
     status: "confirmado",
-    nota: `Regra cumulativa. Ao disparar, soma ${pct(IBS_CBS_RATE)} à carga da PF.`,
+    nota:
+      `Regra cumulativa. Em 2026 o IBS/CBS é só a alíquota-teste de ${pct(IBS_CBS_TESTE_2026)}, ` +
+      "compensável com PIS/COFINS — custo líquido zero; a carga plena da transição (2027+) não é modelada.",
   },
 ];
 
@@ -68,11 +72,12 @@ export const PREMISSAS_PJ: Premissa[] = [
   {
     chave: "pj_presumido",
     rotulo: "Carga da PJ sobre a receita",
-    valor: `${pct(PJ_PRESUMIDO_RATE)} (pré-somada) + ${pct(IBS_CBS_RATE)} de IBS/CBS`,
-    status: "implicito",
+    valor: `${pct(PJ_PRESUMIDO_RATE)} da receita (lucro presumido de locação)`,
+    status: "confirmado",
     nota:
-      "A alíquota da PJ vem PRÉ-SOMADA (não há decomposição de presunção %, IRPJ, " +
-      "adicional, CSLL, PIS/COFINS). Confirmar o regime (Lucro Presumido?) e cada componente.",
+      "Presunção de 32%: IRPJ 15% × 32% = 4,80% + CSLL 9% × 32% = 2,88% + PIS 0,65% + " +
+      "COFINS 3% = 11,33%. O adicional de IRPJ (10% acima de R$ 20 mil/mês de lucro " +
+      "presumido) só pesa em carteiras grandes e não entra.",
   },
   {
     chave: "pj_custos_ignorados",
@@ -87,16 +92,16 @@ export const PREMISSAS_PJ: Premissa[] = [
 export const PREMISSA_IBS_CBS: Premissa = {
   chave: "ibs_cbs",
   rotulo: "IBS/CBS (LC 214/2025)",
-  valor: `${pct(IBS_CBS_RATE)} (estimativa única)`,
+  valor: `2026: alíquota-teste de ${pct(IBS_CBS_TESTE_2026)} (CBS 0,9% + IBS 0,1%), compensável — custo líquido zero`,
   status: "implicito",
   nota:
-    "Número único estimado — o simulador NÃO modela o cronograma de transição nem os " +
-    "critérios de incidência por regulamentação. Espaço para as conclusões do parecer.",
+    "Em 2026 o tributo é só destacado na nota e compensado com PIS/COFINS. O simulador " +
+    "NÃO modela a transição (2027+) nem os redutores específicos de locação — confirmar no parecer.",
 };
 
 /** Perguntas abertas para o parecer do Vinicius (seção 7 do documento). */
 export const PERGUNTAS_PARECER: string[] = [
-  "A tabela de IRPF e a mecânica do carnê-leão estão corretas? (hoje é alíquota única — superestima?)",
+  "A tabela progressiva do carnê-leão com o redutor da Lei 15.270/2025 está correta para aluguel?",
   "O regime e as alíquotas do cenário PJ estão corretos para locação de imóvel próprio?",
   "As simplificações são aceitáveis para um simulador EDUCATIVO?",
   "O disclaimer exibido ao usuário é suficiente?",
