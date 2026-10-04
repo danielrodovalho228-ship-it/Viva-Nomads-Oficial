@@ -25,9 +25,9 @@ const STEPS: Step[] = [
   {
     id: "verificar",
     icon: ShieldCheck,
-    title: "Verifique sua identidade",
-    text: "Leva 2 minutos e destrava suas candidaturas.",
-    ctas: [{ label: "Verificar identidade", href: "/dashboard/verificacao", variant: "primary" }],
+    title: "Verificação de identidade (em breve)",
+    text: "Você já pode se candidatar sem ela. Quando abrir, avisamos — e ela reforça seu perfil.",
+    ctas: [{ label: "Saber mais", href: "/dashboard/verificacao", variant: "outline" }],
   },
   {
     id: "encontrar",

@@ -123,7 +123,8 @@ export function PropertyCard({
         {((SELO_NF_UI && property.issuesInvoice) || property.acceptsInsurance) && (
           <div className="flex flex-wrap gap-1.5">
             {SELO_NF_UI && property.issuesInvoice && <InvoiceBadge />}
-            {property.acceptsInsurance && <InsuranceBadge />}
+            {/* Seguro-fiança em estruturação: exemplo não promete. */}
+            {!exemplo && property.acceptsInsurance && <InsuranceBadge />}
           </div>
         )}
 

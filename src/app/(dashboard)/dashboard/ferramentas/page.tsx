@@ -218,7 +218,7 @@ export default function FerramentasPage() {
         <p className="flex items-start gap-2 rounded-xl border border-sage-200 bg-surface-2 px-4 py-3 text-sm text-muted">
           <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-sage" />
           Em todas as ferramentas, a Viva Nomads <strong>calcula, conecta e documenta</strong> — o
-          dinheiro (aluguel, caução, seguros) vai direto ao proprietário, à conta vinculada ou ao
+          dinheiro (aluguel, caução, seguros) vai direto ao proprietário, à poupança da caução ou ao
           parceiro. A plataforma nunca retém valores.
         </p>
       </div>

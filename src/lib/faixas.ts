@@ -98,7 +98,7 @@ export interface GarantiaCadastro {
 /**
  * Garantias oferecidas no CADASTRO do anúncio (estados honestos — ADENDO
  * garantias). TODO(juridico): redação final da caução e do seguro.
- *  • Caução renomeada e explicada (depósito devolvível, conta vinculada).
+ *  • Caução renomeada e explicada (depósito devolvível, poupança da caução).
  *  • "Caução parcelada" só aparece com a flag (fora da UI até o parecer).
  *  • Seguro-fiança VISÍVEL porém DESABILITADO ("Em breve — via parceiro") — o
  *    produto ainda não existe; marcar hoje bateria em nada no fechamento.
@@ -108,7 +108,7 @@ export const GARANTIAS_CADASTRO: GarantiaCadastro[] = [
     key: "caucao_avista",
     label: "Caução (depósito devolvível)",
     microtext:
-      "50% antes da entrada, direto na SUA conta vinculada; o restante conforme o contrato. Devolvida ao inquilino no fim, após a vistoria de saída.",
+      "50% antes da entrada, numa conta poupança da caução (art. 38, §2º); o restante conforme o contrato. Devolvida ao inquilino no fim, após a vistoria de saída.",
   },
   ...(CAUCAO_PARCELADA_UI
     ? [{ key: "caucao_parcelada" as GarantiaKey, label: "Caução parcelada" }]

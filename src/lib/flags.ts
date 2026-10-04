@@ -65,3 +65,10 @@ export const PUSH_ATIVO = process.env.NEXT_PUBLIC_PUSH_ATIVO === "on";
  * abrem o site).
  */
 export const LOGIN_GOOGLE_ATIVO = process.env.NEXT_PUBLIC_LOGIN_GOOGLE_ATIVO === "on";
+
+/**
+ * Pré-lançamento (lançamento oficial em 2027). LIGADO por padrão — o site está
+ * em pré-lançamento; desliga com NEXT_PUBLIC_PRE_LANCAMENTO="off" no dia do
+ * lançamento. Mostra o aviso nas páginas públicas (e trava a assinatura paga).
+ */
+export const PRE_LANCAMENTO = process.env.NEXT_PUBLIC_PRE_LANCAMENTO !== "off";

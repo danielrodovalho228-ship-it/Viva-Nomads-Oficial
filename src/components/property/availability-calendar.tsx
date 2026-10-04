@@ -120,7 +120,7 @@ export function AvailabilityCalendar({ property }: { property: Property }) {
     const r = await solicitarReserva(property.id, checkIn, checkOut);
     setEnviando(false);
     if (r.ok) setEnviado(true);
-    else setErroEnvio(r.error ?? "Não foi possível solicitar a reserva.");
+    else setErroEnvio(r.error ?? "Não foi possível enviar as datas.");
   }
 
   return (
@@ -148,8 +148,8 @@ export function AvailabilityCalendar({ property }: { property: Property }) {
         )}
       </p>
       <p className="mt-1 text-sm text-muted">
-        Toque na <strong>entrada</strong> e depois na <strong>saída</strong> para solicitar uma
-        reserva.
+        Toque na <strong>entrada</strong> e depois na <strong>saída</strong> para escolher o
+        período e enviá-lo ao proprietário.
       </p>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -288,7 +288,7 @@ export function AvailabilityCalendar({ property }: { property: Property }) {
                   href={`/auth?redirect=/imoveis/${property.id}`}
                   className="inline-flex items-center gap-2 rounded-xl bg-forest px-4 py-2.5 text-sm font-semibold text-white hover:bg-forest/90"
                 >
-                  Entrar para solicitar reserva
+                  Entrar para enviar as datas
                 </Link>
               ) : (
                 <button
@@ -303,12 +303,12 @@ export function AvailabilityCalendar({ property }: { property: Property }) {
                   )}
                 >
                   {enviando ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                  Solicitar reserva
+                  Enviar as datas ao proprietário
                 </button>
               )}
               {erroEnvio && <p className="mt-2 text-sm text-red-600">{erroEnvio}</p>}
               <p className="mt-2 text-xs text-muted">
-                A solicitação abre a conversa com o proprietário — o pagamento é combinado
+                O envio abre a conversa com o proprietário — o pagamento é combinado
                 direto com ele. A plataforma não retém valores.
               </p>
             </div>

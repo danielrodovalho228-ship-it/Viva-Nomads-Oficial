@@ -34,7 +34,7 @@ export const TRAFFIC_LIGHT_META: Record<
   red: { label: "Alto risco", emoji: "🔴", tone: "text-red-700 bg-red-50", ring: "ring-red-200" },
 };
 
-/** Opções de garantia locatícia. Apenas UMA pode ser escolhida (art. 42). */
+/** Opções de garantia locatícia. Apenas UMA pode ser escolhida (art. 37, parágrafo único). */
 export const GUARANTEE_OPTIONS: {
   id: GuaranteeType;
   name: string;
@@ -65,14 +65,14 @@ export const GUARANTEE_OPTIONS: {
     status: "disponivel",
     deposit: "refundable",
     summary:
-      "Depósito de até 3 aluguéis em conta vinculada (locador + locatário), devolvido ao fim da locação, descontados eventuais danos.",
+      "Depósito de até 3 aluguéis em conta poupança (art. 38, §2º), devolvido ao fim da locação, descontados eventuais danos.",
     pros: [
       "Sem análise de crédito",
       "Devolvido ao inquilino no fim",
       "Boa opção para estrangeiros sem histórico no Brasil",
     ],
     cons: ["Imobiliza capital na entrada", "Proteção limitada ao valor depositado (art. 38)"],
-    note: "O depósito vai para conta vinculada (locador + locatário) — nunca para a conta do Viva Nomads.",
+    note: "O depósito vai para uma conta poupança (art. 38, §2º da Lei 8.245/91) — nunca para a conta do Viva Nomads.",
   },
   {
     id: "titulo_cap",
@@ -81,7 +81,7 @@ export const GUARANTEE_OPTIONS: {
     deposit: "none",
     summary:
       "Meio-termo: o inquilino adquire um título que serve de lastro para eventuais débitos e é resgatado ao fim do contrato.",
-    pros: ["Sem depósito em conta vinculada", "Resgatável ao fim do contrato"],
+    pros: ["Sem depósito de caução", "Resgatável ao fim do contrato"],
     cons: ["Rentabilidade baixa", "Cobertura limitada ao valor do título"],
   },
 ];

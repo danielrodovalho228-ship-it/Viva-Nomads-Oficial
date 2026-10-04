@@ -1057,8 +1057,7 @@ export default function NewPropertyPage() {
                   <select value={maxPeriod} onChange={(e) => setMaxPeriod(e.target.value)} className="input">
                     <option value="90">90 dias</option>
                     <option value="180">180 dias</option>
-                    <option value="365">365 dias</option>
-                  </select>
+                                      </select>
                 </Labeled>
               </div>
               <span className="mt-2 block text-xs text-muted">Locação por temporada: 30 a 180 dias é o usual.</span>
@@ -1390,8 +1389,8 @@ export default function NewPropertyPage() {
             <Labeled label="Garantias que você aceita">
               <p className="mb-2 text-xs text-muted">
                 Só preferência de aceite — <strong>não muda o caminho do dinheiro</strong> (a
-                caução sempre vai para a conta vinculada — conta bancária conjunta à qual a
-                plataforma não tem acesso).
+                caução em dinheiro vai para uma conta poupança, como manda o art. 38, §2º da Lei
+                8.245/91 — a plataforma não tem acesso).
               </p>
               <div className="space-y-3">
                 {GARANTIAS_CADASTRO.map((g) =>

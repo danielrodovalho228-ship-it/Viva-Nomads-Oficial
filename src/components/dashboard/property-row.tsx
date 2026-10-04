@@ -3,6 +3,7 @@ import Image from "next/image";
 import { ChevronRight } from "lucide-react";
 import { coverPhoto } from "@/lib/media";
 import { formatBRL } from "@/lib/utils";
+import { isExemplo } from "@/lib/demo-listing";
 
 /**
  * Linha de imóvel com MINIATURA da foto de capa (56px, cantos arredondados) +
@@ -38,6 +39,12 @@ export function PropertyRow({
       />
       <span className="min-w-0 flex-1">
         <span className="block truncate text-sm font-medium text-ink">{title}</span>
+        {/* Anúncio de exemplo: selo honesto também nas listas do painel. */}
+        {isExemplo(id) && (
+          <span className="mt-0.5 inline-flex rounded-full bg-night/85 px-2 py-0.5 text-[10px] font-semibold text-white">
+            Exemplo ilustrativo
+          </span>
+        )}
         <span className="block text-sm font-semibold text-forest">
           {formatBRL(monthlyPrice)}
           <span className="font-normal text-muted">/mês</span>

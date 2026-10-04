@@ -77,7 +77,7 @@ export const GARANTIAS: Garantia[] = [
     status: "ativo",
     parceiroNome: null,
     observacao:
-      "Depósito em conta vinculada (locador + locatário), devolvido ao fim. A plataforma registra; nunca recebe nem retém o valor.",
+      "Depósito em conta poupança (art. 38, §2º), devolvido ao fim. A plataforma registra; nunca recebe nem retém o valor.",
   },
   {
     id: "titulo",

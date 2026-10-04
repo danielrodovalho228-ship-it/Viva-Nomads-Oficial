@@ -24,7 +24,7 @@ import {
 import { formatBRL } from "@/lib/utils";
 
 // Locação encerrada (mock — viria do contrato/fechamento). A caução está em
-// conta vinculada em nome do locador; a plataforma só documenta o reembolso.
+// poupança da caução (art. 38, §2º); a plataforma só documenta o reembolso.
 const LOCACAO = {
   contrato: "VN-CT-2026-0042", // consistency-ignore: dado de demonstração (ReembolsoPreview)
   inquilino: "Ana Carvalho", // consistency-ignore: persona de demonstração (ReembolsoPreview)
@@ -128,7 +128,7 @@ function ReembolsoPreview() {
               <Row label="Contrato" value={LOCACAO.contrato} />
               <Row label="Inquilino" value={LOCACAO.inquilino} />
               <Row label="Imóvel" value={LOCACAO.imovel} />
-              <Row label="Caução em conta vinculada" value={formatBRL(LOCACAO.caucao)} />
+              <Row label="Caução na poupança" value={formatBRL(LOCACAO.caucao)} />
             </div>
           </Panel>
 
@@ -248,7 +248,7 @@ function ReembolsoPreview() {
               <p className="mt-3 flex items-start gap-2 text-sm text-muted">
                 <Lock className="mt-0.5 h-4 w-4 shrink-0" />O pagamento de{" "}
                 <strong className="text-ink">{formatBRL(valorDevolver)}</strong> é feito pelo{" "}
-                <strong className="text-ink">locador</strong>, da conta vinculada direto ao
+                <strong className="text-ink">locador</strong>, da poupança da caução direto ao
                 inquilino. A plataforma <strong className="text-ink">não transfere valores</strong>{" "}
                 — apenas marca o status e guarda a prova.
               </p>

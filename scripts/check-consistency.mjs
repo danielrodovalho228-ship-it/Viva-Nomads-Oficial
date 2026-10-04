@@ -111,6 +111,12 @@ const PROMESSA_BANIDA = [
   /apartamentos\s+(mobiliados|prontos)/i,
   /inquilinos?\s+verificados?/i,
   /garantia\s+do\s+aluguel/i,
+  // Caução vai para conta POUPANÇA (art. 38, §2º) — "conta vinculada" saiu (T5).
+  /conta\s+vinculada/i,
+  // Art. 42 é a locação SEM garantia; caução = art. 38, uma garantia só = art. 37.
+  /art\.?\s*42\b/i,
+  // Promessa de prazo que não existe (T8/T12).
+  /leva\s+2\s+minutos/i,
 ];
 function pareceCodigo(linha) {
   const t = linha.trimStart();

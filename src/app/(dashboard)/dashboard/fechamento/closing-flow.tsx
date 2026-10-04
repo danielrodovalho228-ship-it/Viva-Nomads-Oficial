@@ -58,7 +58,7 @@ import { formatBRL, cn } from "@/lib/utils";
 const STEPS = ["Candidatura & verificação", "Garantia", "Serviços", "Patrimonial", "Contrato", "Resumo"];
 
 // Prazo total pretendido (contrato-mãe). Inicial 4 meses; o inquilino ajusta no
-// fechamento. Blocos de 2 meses (≤ 90 dias cada).
+// fechamento. Blocos de até 90 dias.
 const DEFAULT_MESES = 4;
 const MESES_MIN = 1;
 const MESES_MAX = 6;
@@ -107,7 +107,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
     [FAIXA]
   );
   const ELEGIVEIS = useMemo(() => garantiasElegiveis(STAY_DAYS), [STAY_DAYS]);
-  // Contrato fracionado: blocos de 2 meses, caução 50% por bloco, comissão única.
+  // Contrato fracionado: blocos de até 90 dias, caução 50% por bloco, comissão única.
   const resumo = useMemo(
     () => resumoContrato(prazoMeses, PROPERTY.monthlyRent, COMMISSION_RATE, TAMANHO_BLOCO),
     [prazoMeses]
@@ -129,7 +129,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   const [qtdOcupantes, setQtdOcupantes] = useState(1);
   const ocupantesExcede = qtdOcupantes > CAPACIDADE;
   // Caução flexível: como o inquilino paga a caução (não trava o aluguel).
-  // À vista → conta vinculada; parcelado → emissor do cartão. Nunca a plataforma.
+  // À vista → poupança da caução (art. 38, §2º); parcelado → emissor do cartão. Nunca a plataforma.
   const [caucaoForma, setCaucaoForma] = useState<FormaPagamentoCaucao>("avista");
   const [caucaoParcelas, setCaucaoParcelas] = useState(MAX_PARCELAS);
   // Serviços adicionais: multi-seleção (combináveis), separados da garantia e
@@ -571,7 +571,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                   <Lock className="mt-0.5 h-4 w-4 shrink-0 text-forest" />
                   <span>
                     <strong className="text-ink">Seu dinheiro nunca fica com a plataforma</strong> —
-                    fica em conta vinculada e volta para você.
+                    fica numa conta poupança (art. 38, §2º) e volta para você.
                   </span>
                 </li>
               </ul>
@@ -590,7 +590,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                 <p className="text-xs text-muted">
                   O período é contratado em blocos de {TAMANHO_BLOCO} meses. Cada bloco tem a
                   caução <strong>integral</strong> (50% do valor do bloco) — cabe no cartão e vai
-                  para a conta vinculada. A plataforma nunca recebe.
+                  para a poupança da caução. A plataforma nunca recebe.
                 </p>
 
                 {/* Tabela transparente por bloco: aluguel, caução, desembolso. */}
@@ -704,9 +704,9 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                   <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                   {caucaoForma === "avista" ? (
                     <>
-                      O depósito vai para uma <strong>conta vinculada</strong> — uma conta bancária
-                      conjunta (proprietário + inquilino), à qual a plataforma não tem acesso — e é
-                      devolvido ao fim.
+                      O depósito vai para uma <strong>conta poupança</strong>, como manda o art. 38, §2º
+                      da Lei 8.245/91 — a plataforma não tem acesso — e é devolvido ao fim, com
+                      os rendimentos a favor do inquilino.
                     </>
                   ) : (
                     <>
