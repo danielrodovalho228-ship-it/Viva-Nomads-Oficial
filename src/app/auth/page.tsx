@@ -57,12 +57,20 @@ export default function AuthPage() {
   const [semConta, setSemConta] = useState(false);
 
   // Sessão de 24h expirou (o AuthProvider redireciona com ?expired=1).
+  // Link de indicação (?ref=CÓDIGO): abre o cadastro com o código preenchido.
+  // (lê a URL só no cliente — sem useSearchParams, que exigiria Suspense)
   useEffect(() => {
-    if (
-      typeof window !== "undefined" &&
-      new URLSearchParams(window.location.search).get("expired") === "1"
-    ) {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("expired") === "1") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setNotice("Sua sessão de 24h expirou. Entre novamente para continuar.");
+    }
+    const ref = params.get("ref")?.trim().slice(0, 40);
+    if (ref) {
+      setReferral(ref);
+      setShowReferral(true);
+      setMode("signup");
     }
   }, []);
 
