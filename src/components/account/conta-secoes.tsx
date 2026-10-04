@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Lock, Bell, Trash2, Check } from "lucide-react";
 import { useAuthStore } from "@/lib/store";
@@ -15,6 +15,8 @@ import { createClient } from "@/lib/supabase/client";
 import { nomeCompletoLimpo } from "@/lib/display-name";
 import { friendlyAuthError, MIN_PASSWORD } from "@/lib/auth-errors";
 import { Switch } from "@/components/ui/switch";
+import { getMeusDados, salvarMeusDados } from "@/lib/data/perfil-actions";
+import { getNotifPrefs, setNotifPrefs } from "@/lib/data/pedidos-actions";
 
 
 /*
@@ -24,23 +26,109 @@ import { Switch } from "@/components/ui/switch";
 
 export function DadosPessoais() {
   const user = useDisplayUser();
+  const { mode } = useViewMode();
+  const setUser = useAuthStore((s) => s.setUser);
+  const [nome, setNome] = useState(nomeCompletoLimpo(user?.fullName));
+  const [telefone, setTelefone] = useState("");
+  const [linkedin, setLinkedin] = useState("");
+  const [email, setEmail] = useState(user?.email ?? "");
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+  const [ok, setOk] = useState(false);
+
+  // Carrega os dados GRAVADOS (antes o formulário só mostrava valores locais).
+  useEffect(() => {
+    let vivo = true;
+    getMeusDados()
+      .then((d) => {
+        if (!vivo || !d) return;
+        setNome(nomeCompletoLimpo(d.fullName));
+        setTelefone(d.phone);
+        setLinkedin(d.linkedin);
+        setEmail(d.email);
+      })
+      .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, []);
+
+  async function salvar(e: React.FormEvent) {
+    e.preventDefault();
+    setErro(null);
+    setOk(false);
+    setSalvando(true);
+    const r = await salvarMeusDados({
+      fullName: nome,
+      phone: telefone,
+      ...(mode === "tenant" ? { linkedin } : {}),
+    }).catch(() => ({ ok: false as const, error: "Sem conexão. Tente de novo.", dados: undefined }));
+    setSalvando(false);
+    if (!r.ok || !r.dados) {
+      setErro(r.error ?? "Não foi possível salvar.");
+      return;
+    }
+    setNome(r.dados.fullName);
+    setTelefone(r.dados.phone ?? "");
+    if (mode === "tenant") setLinkedin(r.dados.linkedin ?? "");
+    // O nome novo aparece já no menu e no topo.
+    const atual = useAuthStore.getState().user;
+    if (atual) setUser({ ...atual, name: r.dados.fullName, fullName: r.dados.fullName });
+    setOk(true);
+  }
+
   return (
     <Panel title="Dados pessoais">
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field
-          label="Nome completo"
-          // Não exibe o e-mail como se fosse o nome (full_name poluído por
-          // fluxo antigo): campo vazio convida o nome real.
-          defaultValue={nomeCompletoLimpo(user?.fullName)}
-          placeholder="Seu nome completo"
-        />
-        <Field label="E-mail" defaultValue={user?.email ?? ""} type="email" />
-        <Field label="Telefone" placeholder="(34) 90000-0000" />
-        <Field label="Perfil" defaultValue={roleLabel(user?.role)} readOnly />
-      </div>
-      <div className="mt-6">
-        <Button>Salvar alterações</Button>
-      </div>
+      <form onSubmit={salvar}>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field
+            label="Nome completo"
+            value={nome}
+            onChange={(e) => setNome(e.target.value)}
+            placeholder="Seu nome completo"
+            autoComplete="name"
+            required
+          />
+          <Field label="E-mail" value={email} type="email" readOnly title="Para trocar o e-mail, fale com a gente." />
+          <Field
+            label="Telefone"
+            value={telefone}
+            onChange={(e) => setTelefone(e.target.value)}
+            placeholder="(34) 90000-0000"
+            inputMode="tel"
+            autoComplete="tel"
+          />
+          <Field label="Perfil" defaultValue={roleLabel(user?.role)} readOnly />
+          {mode === "tenant" && (
+            <Field
+              label="LinkedIn (opcional)"
+              value={linkedin}
+              onChange={(e) => setLinkedin(e.target.value)}
+              placeholder="https://linkedin.com/in/seu-perfil"
+              inputMode="url"
+            />
+          )}
+        </div>
+        <p className="mt-3 text-xs text-muted">
+          O telefone não aparece para outros usuários: é usado só para avisos da plataforma.
+        </p>
+        {erro && (
+          <p role="alert" className="mt-3 text-sm text-red-600">
+            {erro}
+          </p>
+        )}
+        {ok && (
+          <p className="mt-3 flex items-center gap-2 text-sm text-forest">
+            <Check className="h-4 w-4" /> Dados salvos.
+          </p>
+        )}
+        <div className="mt-6">
+          <Button type="submit" disabled={salvando}>
+            {salvando ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            Salvar alterações
+          </Button>
+        </div>
+      </form>
     </Panel>
   );
 }
@@ -64,14 +152,7 @@ export function PerfilDoModo() {
           </p>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <CategoriaProfissional />
-            <label className="block">
-              <span className="mb-1.5 block text-sm font-medium text-ink">LinkedIn (opcional)</span>
-              <input
-                type="url"
-                placeholder="https://linkedin.com/in/seu-perfil"
-                className="w-full rounded-xl border border-sage-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-sage"
-              />
-            </label>
+            <p className="self-end text-xs text-muted">O LinkedIn fica em Dados pessoais.</p>
           </div>
         </Panel>
       )}
@@ -113,10 +194,32 @@ export function ChangePassword() {
       setError("A nova senha e a confirmação não coincidem.");
       return;
     }
+    if (!current) {
+      setError("Informe a senha atual.");
+      return;
+    }
+    if (next === current) {
+      setError("A nova senha precisa ser diferente da atual.");
+      return;
+    }
     const supabase = createClient();
     setLoading(true);
     try {
       if (supabase) {
+        // Confere a senha ATUAL antes de trocar (antes era ignorada: qualquer
+        // pessoa com o aparelho desbloqueado trocava a senha).
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user?.email) throw new Error("Sessão expirada. Entre de novo.");
+        const { error: atualErro } = await supabase.auth.signInWithPassword({
+          email: user.email,
+          password: current,
+        });
+        if (atualErro) {
+          setError("Senha atual incorreta.");
+          return;
+        }
         const { error } = await supabase.auth.updateUser({ password: next });
         if (error) throw error;
       }
@@ -134,7 +237,7 @@ export function ChangePassword() {
   return (
     <Panel title="Alterar senha" className="mt-6">
       <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2">
-        <PwdField label="Senha atual" value={current} onChange={setCurrent} />
+        <PwdField label="Senha atual" value={current} onChange={setCurrent} autoComplete="current-password" />
         <span className="hidden sm:block" />
         <PwdField label="Nova senha" value={next} onChange={setNext} />
         <PwdField label="Confirmar nova senha" value={confirm} onChange={setConfirm} />
@@ -159,10 +262,12 @@ function PwdField({
   label,
   value,
   onChange,
+  autoComplete = "new-password",
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
+  autoComplete?: string;
 }) {
   return (
     <label className="block">
@@ -170,7 +275,7 @@ function PwdField({
       <PasswordInput
         value={value}
         onChange={onChange}
-        autoComplete="new-password"
+        autoComplete={autoComplete}
         className="rounded-xl border border-sage-200 bg-white px-3.5 py-2.5 focus-within:border-sage"
         inputClassName="text-sm"
       />
@@ -179,15 +284,52 @@ function PwdField({
 }
 
 export function NotificationsPanel() {
-  const [prefs, setPrefs] = useState({
-    leads: true,
-    messages: true,
-    marketing: false,
-  });
-  const items: { key: keyof typeof prefs; label: string; hint: string }[] = [
-    { key: "leads", label: "Novos interessados e consultas", hint: "Avise quando um interessado entrar em contato." },
-    { key: "messages", label: "Mensagens", hint: "Notificações de novas mensagens no chat." },
-    { key: "marketing", label: "Novidades e dicas", hint: "E-mails ocasionais sobre a plataforma." },
+  // Preferências GRAVADAS no perfil (notif_email / notif_whatsapp). Antes os
+  // interruptores só mudavam na tela e não correspondiam a nada no banco.
+  const [prefs, setPrefs] = useState<{ email: boolean; whatsapp: boolean } | null>(null);
+  const [salvando, setSalvando] = useState<"email" | "whatsapp" | null>(null);
+  const [erro, setErro] = useState<string | null>(null);
+  const [ok, setOk] = useState(false);
+
+  useEffect(() => {
+    let vivo = true;
+    getNotifPrefs()
+      .then((p) => vivo && setPrefs(p))
+      .catch(() => vivo && setPrefs({ email: true, whatsapp: true }));
+    return () => {
+      vivo = false;
+    };
+  }, []);
+
+  async function alternar(chave: "email" | "whatsapp") {
+    if (!prefs) return;
+    const anterior = prefs;
+    const novo = { ...prefs, [chave]: !prefs[chave] };
+    setPrefs(novo);
+    setErro(null);
+    setOk(false);
+    setSalvando(chave);
+    const r = await setNotifPrefs(novo).catch(() => ({ ok: false, error: "Sem conexão." }));
+    setSalvando(null);
+    if (!r.ok) {
+      setPrefs(anterior); // volta o interruptor: não gravou
+      setErro("Não foi possível salvar a preferência. Tente de novo.");
+      return;
+    }
+    setOk(true);
+  }
+
+  const items: { key: "email" | "whatsapp"; label: string; hint: string }[] = [
+    {
+      key: "email",
+      label: "Avisos por e-mail",
+      hint: "Novos interessados, mensagens e respostas aos seus pedidos.",
+    },
+    {
+      key: "whatsapp",
+      label: "Avisos por WhatsApp",
+      hint: "Os mesmos avisos pelo WhatsApp, quando o canal estiver ativo.",
+    },
   ];
   return (
     <Panel title="Notificações" className="mt-6">
@@ -200,17 +342,29 @@ export function NotificationsPanel() {
             <span>
               <span className="flex items-center gap-2 text-sm font-medium text-ink">
                 <Bell className="h-4 w-4 text-sage" /> {it.label}
+                {salvando === it.key && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted" />}
               </span>
               <span className="mt-0.5 block text-xs text-muted">{it.hint}</span>
             </span>
             <Switch
-              checked={prefs[it.key]}
-              onChange={() => setPrefs((p) => ({ ...p, [it.key]: !p[it.key] }))}
+              checked={prefs ? prefs[it.key] : false}
+              onChange={() => alternar(it.key)}
               label={it.label}
+              disabled={!prefs || salvando !== null}
             />
           </div>
         ))}
       </div>
+      {erro && (
+        <p role="alert" className="mt-3 text-sm text-red-600">
+          {erro}
+        </p>
+      )}
+      {ok && (
+        <p className="mt-3 flex items-center gap-2 text-sm text-forest">
+          <Check className="h-4 w-4" /> Preferência salva.
+        </p>
+      )}
     </Panel>
   );
 }
