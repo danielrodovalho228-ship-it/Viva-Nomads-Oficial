@@ -252,7 +252,8 @@ export async function confirmarPagamento(pagamentoId: string): Promise<ActionRes
 
   const { error } = await supabase
     .from("pagamentos_bloco")
-    .update({ confirmado_pelo_inquilino: true, confirmado_em: new Date().toISOString() })
+    // confirmado_em é carimbado pelo banco (0057: o inquilino só grava a confirmação).
+    .update({ confirmado_pelo_inquilino: true })
     .eq("id", pagamentoId);
   if (error) return { ok: false, error: error.message };
   return { ok: true, id: pagamentoId };

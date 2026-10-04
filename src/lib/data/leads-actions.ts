@@ -43,9 +43,16 @@ export async function aceitarCandidatura(leadId: string): Promise<ActionResult> 
   if (lErr) return { ok: false, error: lErr.message };
   if (!lead) return { ok: false, error: "Candidatura não encontrada." };
   if (lead.owner_id !== user.id) return { ok: false, error: "Sem permissão." };
+  if (lead.status !== "new") return { ok: false, error: "Esta candidatura já foi decidida." };
 
-  // Snapshot do plano do DONO agora → congela a comissão do contrato.
-  const { data: sub } = await supabase
+  // A1: a decisão é gravada pelo SERVIDOR (0057 tirou o UPDATE do dono em
+  // leads — dava para trocar o inquilino ou zerar a taxa congelada).
+  const admin = createAdminClient();
+  if (!admin) return { ok: false, error: "Serviço indisponível." };
+
+  // Snapshot do plano do DONO agora → congela a comissão do contrato. O plano
+  // só muda pelo servidor (0057: assinatura é só leitura para o dono).
+  const { data: sub } = await admin
     .from("subscriptions")
     .select("plan")
     .eq("owner_id", user.id)
@@ -54,7 +61,7 @@ export async function aceitarCandidatura(leadId: string): Promise<ActionResult> 
   const plano = ((sub?.plan as string) ?? "free") as PlanoId;
   const comissao = COMISSAO_POR_PLANO[plano] ?? COMISSAO_POR_PLANO.free;
 
-  const { error: uErr } = await supabase
+  const { error: uErr } = await admin
     .from("leads")
     .update({
       status: "accepted",
@@ -63,7 +70,9 @@ export async function aceitarCandidatura(leadId: string): Promise<ActionResult> 
       accepted_plan: plano,
       accepted_commission_rate: comissao,
     })
-    .eq("id", leadId);
+    .eq("id", leadId)
+    .eq("owner_id", user.id)
+    .eq("status", "new");
   if (uErr) return { ok: false, error: uErr.message };
 
   // E-mail ao inquilino (só para notificação; contato do inquilino é lido via
@@ -108,14 +117,18 @@ export async function recusarCandidatura(leadId: string, motivo?: string): Promi
 
   const { data: lead, error: lErr } = await supabase
     .from("leads")
-    .select("id, owner_id")
+    .select("id, owner_id, status")
     .eq("id", leadId)
     .maybeSingle();
   if (lErr) return { ok: false, error: lErr.message };
   if (!lead) return { ok: false, error: "Candidatura não encontrada." };
   if (lead.owner_id !== user.id) return { ok: false, error: "Sem permissão." };
+  if (lead.status !== "new") return { ok: false, error: "Esta candidatura já foi decidida." };
 
-  const { error: uErr } = await supabase
+  // A1: gravado pelo servidor (0057), depois da checagem de dono acima.
+  const admin = createAdminClient();
+  if (!admin) return { ok: false, error: "Serviço indisponível." };
+  const { error: uErr } = await admin
     .from("leads")
     .update({
       status: "rejected",
@@ -123,7 +136,9 @@ export async function recusarCandidatura(leadId: string, motivo?: string): Promi
       reject_reason: motivo?.trim()?.slice(0, 500) || null,
       decided_by: user.id,
     })
-    .eq("id", leadId);
+    .eq("id", leadId)
+    .eq("owner_id", user.id)
+    .eq("status", "new");
   if (uErr) return { ok: false, error: uErr.message };
 
   return { ok: true };

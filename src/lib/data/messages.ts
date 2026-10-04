@@ -46,7 +46,6 @@ interface MsgRow {
   property_id: string | null;
   body: string;
   created_at: string;
-  sender: { full_name: string | null } | null;
   property: { title: string | null } | null;
 }
 
@@ -68,7 +67,6 @@ export async function listConversations(): Promise<Conversation[]> {
     .from("messages")
     .select(
       `id, conversation_id, sender_id, receiver_id, property_id, body, created_at,
-       sender:profiles!messages_sender_id_fkey ( full_name ),
        property:properties!messages_property_id_fkey ( title )`
     )
     .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
@@ -83,7 +81,7 @@ export async function listConversations(): Promise<Conversation[]> {
     if (!byConv.has(m.conversation_id)) {
       byConv.set(m.conversation_id, {
         id: m.conversation_id,
-        name: mine ? "Conversa" : (m.sender?.full_name ?? "Conversa"),
+        name: "Conversa",
         property: m.property?.title ?? "",
         preview: "",
         otherId,
@@ -94,7 +92,20 @@ export async function listConversations(): Promise<Conversation[]> {
     const conv = byConv.get(m.conversation_id)!;
     conv.messages.push({ id: m.id, from: mine ? "me" : "them", text: m.body });
     conv.preview = m.body;
-    if (!mine && m.sender?.full_name) conv.name = m.sender.full_name;
+  }
+
+  // A1: o nome da outra pessoa é só o PRIMEIRO nome, e só para quem tem conversa
+  // ou candidatura com você (RPC primeiros_nomes, 0057). Sem a RPC, fica "Conversa".
+  const outros = [...new Set([...byConv.values()].map((c) => c.otherId).filter(Boolean))] as string[];
+  if (outros.length > 0) {
+    const { data: nomes } = await supabase.rpc("primeiros_nomes", { ids: outros });
+    const porId = new Map(
+      ((nomes ?? []) as { id: string; primeiro_nome: string | null }[]).map((n) => [n.id, n.primeiro_nome])
+    );
+    for (const conv of byConv.values()) {
+      const nome = conv.otherId ? porId.get(conv.otherId) : null;
+      conv.name = nome || "Conversa";
+    }
   }
   return [...byConv.values()];
 }

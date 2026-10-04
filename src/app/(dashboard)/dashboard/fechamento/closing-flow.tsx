@@ -80,7 +80,6 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   const PROPERTY_FULL = ctx.property;
   const PROPERTY = { title: PROPERTY_FULL.title, monthlyRent: PROPERTY_FULL.monthlyPrice };
   const CAPACIDADE = PROPERTY_FULL.maxGuests ?? 4;
-  const OWNER_PLAN = ctx.planoId;
   // Comissão CONGELADA no aceite (não o plano atual) — 1 mês × taxa, UMA vez.
   const COMMISSION_RATE = ctx.comissaoRate;
   const PLATFORM_COMMISSION = Math.round(PROPERTY.monthlyRent * COMMISSION_RATE);
@@ -175,8 +174,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
       return;
     }
 
-    // MODO DEMONSTRAÇÃO — laudo de exemplo (verde). Usado também se a API falhar,
-    // garantindo que o semáforo apareça e o fluxo avance (A4).
+    // MODO DEMONSTRAÇÃO — laudo de exemplo (verde), sempre rotulado como exemplo.
     const demoLaudo: CafResult = {
       light: "green",
       identity: true,
@@ -185,26 +183,18 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
       coversForeigners: true,
       demo: true,
       notes: [
+        "Exemplo de demonstração — não é uma verificação real",
         "Identidade confirmada",
         "Prova de vida aprovada",
-        "Sem execuções fiscais relevantes",
       ],
     };
-    try {
-      const res = await fetch("/api/caf/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: tenant.name }),
-      });
-      const data = res.ok ? ((await res.json()) as CafResult) : demoLaudo;
-      setCafResult(data?.light ? data : demoLaudo);
-    } catch {
-      setCafResult(demoLaudo);
-    } finally {
-      setVerifStatus("ok");
-      setVerified(true);
-      setVerifying(false);
-    }
+    // Só demonstração (admin, fora de produção): laudo de EXEMPLO local. Não
+    // chama a verificação real — ela só vale para o CPF da própria pessoa (A5)
+    // e gastaria a cota de 90 dias de quem apresenta.
+    setCafResult(demoLaudo);
+    setVerifStatus("ok");
+    setVerified(true);
+    setVerifying(false);
   }
 
   // Etapas do stepper já alcançadas são clicáveis (A4).
@@ -255,12 +245,11 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
       // fica no contrato-mãe (1 mês × taxa, UMA vez); cada bloco carrega a
       // caução (50%). Best-effort: no-op em demo/imóvel-exemplo; persiste no real.
       const inicioISO = new Date().toISOString().slice(0, 10);
+      // A6: inquilino, imóvel, aluguel e taxa vêm da candidatura aceita (servidor).
       await registrarContrato({
-        propertyId: PROPERTY_FULL.id,
+        leadId: ctx.leadId,
         faixa: FAIXA,
-        ownerPlan: OWNER_PLAN,
         prazoTotalMeses: prazoMeses,
-        aluguelMensal: PROPERTY.monthlyRent,
         tamanhoBlocoMeses: TAMANHO_BLOCO,
         qtdOcupantes: qtdOcupantes,
         capacidadeSnapshot: CAPACIDADE,
