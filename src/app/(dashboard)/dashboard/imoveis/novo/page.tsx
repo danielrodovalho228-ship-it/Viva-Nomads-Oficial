@@ -43,6 +43,8 @@ import { PHOTOS } from "@/lib/media";
 import type { Property, Proximity } from "@/lib/types";
 import { cn, formatBRL } from "@/lib/utils";
 import { COMMISSION_BY_PLAN } from "@/lib/constants";
+import { useAuthStore } from "@/lib/store";
+import { draftKey, DRAFT_KEY_LEGADO } from "@/lib/local-keys";
 
 /** Metadados das 7 etapas do wizard (rodada 15). */
 const STEP_META = [
@@ -57,6 +59,8 @@ const STEP_META = [
 const LAST = STEP_META.length - 1;
 
 export default function NewPropertyPage() {
+  // T1: o rascunho local é POR USUÁRIO — nunca abre o de outra conta.
+  const userId = useAuthStore((s) => s.user?.id ?? null);
   const [approved, setApproved] = useState<boolean | null>(null);
   // Estado da verificação do documento (anti-fraude, item 1). Só "approved"
   // libera Publicar. Em demo/preview vem "approved" (não trava).
@@ -367,7 +371,8 @@ export default function NewPropertyPage() {
     // Só limpa o rascunho de "novo anúncio" quando de fato criamos um novo.
     if (!editingId) {
       try {
-        localStorage.removeItem("vivanomads-novo-draft");
+        localStorage.removeItem(DRAFT_KEY_LEGADO);
+        if (userId) localStorage.removeItem(draftKey(userId));
       } catch {}
     }
     router.push("/dashboard/imoveis");
@@ -454,11 +459,13 @@ export default function NewPropertyPage() {
         const q = JSON.parse(raw);
         setQual({ baseBadge: !!q.baseBadge, tHome: !!q.tHome, tWork: !!q.tWork });
       }
-      const draft = localStorage.getItem("vivanomads-novo-draft");
+      // Chave antiga (global, sem dono) é descartada — podia ser de outra conta.
+      localStorage.removeItem(DRAFT_KEY_LEGADO);
+      const draft = userId ? localStorage.getItem(draftKey(userId)) : null;
       if (draft) aplicarDraft(JSON.parse(draft));
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editId, draftParam]);
+  }, [editId, draftParam, userId]);
 
   // Edição: carrega o imóvel do dono e preenche o formulário. Não requer
   // requalificação (já é um anúncio existente) e não usa o rascunho local.
@@ -546,7 +553,7 @@ export default function NewPropertyPage() {
     // Não autossalva em modo edição (?id — imóvel existente, não é rascunho novo).
     if (approved !== true || editId) return;
     try {
-      localStorage.setItem("vivanomads-novo-draft", draftJson);
+      if (userId) localStorage.setItem(draftKey(userId), draftJson);
     } catch {
       /* cota do navegador cheia — o rascunho ainda tenta o servidor */
     }
@@ -585,7 +592,7 @@ export default function NewPropertyPage() {
       clearTimeout(t);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [approved, draftJson, editId]);
+  }, [approved, draftJson, editId, userId]);
 
   // Guarda de saída (cinto além do autosave): avisa antes de fechar/recarregar a
   // aba com alteração ainda não persistida — dentro da janela de debounce
@@ -645,7 +652,8 @@ export default function NewPropertyPage() {
   function comecarOutro() {
     setDraftBannerDismissed(true);
     try {
-      localStorage.removeItem("vivanomads-novo-draft");
+      localStorage.removeItem(DRAFT_KEY_LEGADO);
+        if (userId) localStorage.removeItem(draftKey(userId));
     } catch {}
     draftIdRef.current = null;
     setDraftServerId(null);

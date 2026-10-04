@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { UserRole } from "./types";
+import { limparChavesLocais } from "./local-keys";
+import { useFavoritesStore } from "./favorites-store";
 
 /** Planos de assinatura do proprietário (constants.PLANS). */
 export type SubscriptionPlan = "free" | "essential" | "pro" | "gestor";
@@ -83,7 +85,12 @@ export const useAuthStore = create<AuthState>()(
       setAuthChecked: (authChecked) => set({ authChecked }),
       startSession: () => set({ sessionStartedAt: Date.now() }),
       // Setar o usuário implica que a sessão foi conferida.
-      setUser: (user) => set({ user, authChecked: true }),
+      setUser: (user) => {
+        // T11: favoritos pertencem a UMA conta — outra conta no mesmo navegador
+        // começa do zero (a fonte de verdade é o banco).
+        useFavoritesStore.getState().bindUser(user?.id ?? null);
+        set({ user, authChecked: true });
+      },
       setActiveMode: (activeMode) => set({ activeMode }),
       activateRole: (mode) =>
         set((s) => ({
@@ -92,8 +99,13 @@ export const useAuthStore = create<AuthState>()(
             ? { ...s.user, ...(mode === "owner" ? { isOwner: true } : { isTenant: true }) }
             : s.user,
         })),
-      signOut: () =>
-        set({ user: null, activeMode: null, authChecked: true, sessionStartedAt: null }),
+      signOut: () => {
+        // T1/T11: apaga rascunho local, favoritos e demais chaves vivanomads-*
+        // (o persist regrava a sessão vazia logo abaixo).
+        limparChavesLocais();
+        useFavoritesStore.getState().reset();
+        set({ user: null, activeMode: null, authChecked: true, sessionStartedAt: null });
+      },
     }),
     {
       name: "vivanomads-auth",
