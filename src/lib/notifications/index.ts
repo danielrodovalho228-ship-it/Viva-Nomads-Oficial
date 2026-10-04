@@ -4,6 +4,7 @@ import { sendPush } from "./push";
 import { brandedNotification, notificationText, emailImage } from "./templates";
 import { SITE_URL } from "@/lib/site";
 import { primeiroNome } from "@/lib/display-name";
+import { textoEmail, textoPlano } from "./texto-seguro";
 
 export { isEmailConfigured, isWhatsappConfigured };
 
@@ -91,6 +92,10 @@ export async function notify(params: {
   // Saudação SEMPRE pela fonte única (item 3): primeiro nome, e nunca o e-mail
   // cru — se `name` vier como e-mail (fallback comum), vira saudação neutra.
   const nome = primeiroNome(params.name);
+  // O nome é texto do usuário: no HTML vai escapado e sem links; no texto puro
+  // (e-mail multipart, WhatsApp), só sem links.
+  const nomeHtml = textoEmail(nome, 40);
+  const nomeTexto = textoPlano(nome, 40);
 
   // PUSH em PARALELO ao e-mail: dispara já, sem await aqui (não atrasa nada).
   // Conteúdo GENÉRICO (só o evento + link) — nunca contato, sobrenome ou valores.
@@ -114,14 +119,14 @@ export async function notify(params: {
         : { label: "Abrir no Viva Nomads", url: `${SITE_URL}/dashboard` };
       const html = brandedNotification({
         title: tpl.subject,
-        intro: tpl.body(nome),
+        intro: tpl.body(nomeHtml),
         detailsHtml: params.detailsHtml,
         cta,
         image: emailImage(tpl.img, tpl.subject),
       });
       const text = notificationText({
         title: tpl.subject,
-        intro: tpl.body(nome),
+        intro: tpl.body(nomeTexto),
         detailsText: params.detailsText,
         cta,
       });
@@ -134,7 +139,7 @@ export async function notify(params: {
 
   if (params.phone) {
     try {
-      const message = tpl.body(nome) + (params.detailsText ? `\n\n${params.detailsText}` : "");
+      const message = tpl.body(nomeTexto) + (params.detailsText ? `\n\n${params.detailsText}` : "");
       const r = await sendWhatsapp({ phone: params.phone, message });
       result.whatsapp = r.demo ? "demo" : r.ok;
     } catch {

@@ -1,6 +1,8 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { consumirLimite, HORA, DIA as DIA_SEGUNDOS } from "@/lib/limites";
+import { textoEmail, textoPlano } from "@/lib/notifications/texto-seguro";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { EligibilityState, QualityState } from "@/lib/qualification";
 import {
@@ -773,6 +775,21 @@ export async function renovarBloco(
     .limit(1)
     .maybeSingle();
 
+  // Uma renovação por vez: com um bloco futuro já AGENDADO, novo pedido não
+  // cria outro bloco nem manda outro e-mail ao proprietário (antes dava para
+  // empilhar blocos e e-mails clicando várias vezes).
+  const { count: agendados } = await admin
+    .from("contrato_blocos")
+    .select("id", { count: "exact", head: true })
+    .eq("contrato_id", contratoId)
+    .eq("status", "agendado");
+  if ((agendados ?? 0) > 0) {
+    return { ok: false, error: "A renovação já foi pedida. O próximo bloco está agendado." };
+  }
+  if (!(await consumirLimite(`renovar:${contratoId}`, 3, DIA_SEGUNDOS))) {
+    return { ok: false, error: "Muitos pedidos de renovação hoje. Tente amanhã." };
+  }
+
   const meses = Math.min(3, Math.max(1, Number(contrato.tamanho_bloco_meses) || MESES_POR_BLOCO_PADRAO));
   const aluguel = Number(contrato.aluguel_mensal) || 0;
   const valor = aluguel * meses;
@@ -853,7 +870,9 @@ const LEAD_LIMITE_HORA = 20;
 
 export async function requestLead(
   propertyId: string,
-  propertyTitle: string,
+  // Ignorado: o título vem do BANCO. O que o navegador manda não entra no
+  // e-mail oficial (dava para enviar um título com link de golpe).
+  _tituloDoCliente: string,
   kind: LeadKind,
   note?: string
 ): Promise<ActionResult & { needsAuth?: boolean; selfOwned?: boolean; exemplo?: boolean }> {
@@ -874,13 +893,15 @@ export async function requestLead(
   let ownerEmail: string | null = null;
   let ownerPhone: string | null = null;
   let ownerName: string | null = null;
+  let propertyTitle = "seu imóvel";
   {
     const { data: prop } = await supabase
       .from("properties")
-      .select("owner_id")
+      .select("owner_id, title")
       .eq("id", propertyId)
       .maybeSingle();
     ownerId = (prop?.owner_id as string | undefined) ?? null;
+    propertyTitle = ((prop?.title as string | undefined) ?? "").trim() || propertyTitle;
     if (ownerId) {
       // A RLS de `profiles` ("perfil próprio") bloqueia a sessão do inquilino de
       // ler o contato do dono. A RPC SECURITY DEFINER `owner_notify_contact`
@@ -1084,7 +1105,14 @@ export async function sendMessage(input: {
           .eq("id", destinatarioId)
           .maybeSingle()
       : { data: null };
-    if (contact?.email) {
+    // Anti-spam de e-mail: no máximo 1 e-mail por conversa a cada 30 min (o
+    // resto da rajada fica só no site) e 30 e-mails/hora disparados por quem
+    // escreve. A mensagem em si SEMPRE é gravada — só o e-mail é contido.
+    const podeAvisar =
+      !!contact?.email &&
+      (await consumirLimite(`msg-email:${conversationId}:${destinatarioId}`, 1, 30 * 60)) &&
+      (await consumirLimite(`msg-email-remetente:${user.id}`, 30, HORA));
+    if (contact?.email && podeAvisar) {
       const { data: me } = await supabase
         .from("profiles")
         .select("full_name")
@@ -1092,18 +1120,21 @@ export async function sendMessage(input: {
         .maybeSingle();
       // Identidade pós-aceite: só o PRIMEIRO nome no e-mail (nunca o sobrenome).
       const senderName = (me?.full_name ?? "").trim().split(/\s+/)[0] || "Um usuário";
-      const preview = safeBody.length > 140 ? `${safeBody.slice(0, 140)}…` : safeBody;
+      // Nome e prévia são texto do USUÁRIO: sem HTML ativo e sem links no e-mail.
+      const nomeHtml = textoEmail(senderName, 40);
+      const previewHtml = textoEmail(safeBody, 140);
+      const previewTexto = textoPlano(safeBody, 140);
       const link = `${SITE_URL}/dashboard/mensagens`;
       await notify({
         event: "new_message",
         email: contact.email,
         name: contact.full_name ?? undefined,
         detailsHtml:
-          `<p><strong>${senderName}</strong> escreveu:</p>` +
-          `<blockquote style="margin:8px 0;padding:8px 12px;border-left:3px solid #1c6b3a;color:#374151">${preview}</blockquote>` +
+          `<p><strong>${nomeHtml}</strong> escreveu:</p>` +
+          `<blockquote style="margin:8px 0;padding:8px 12px;border-left:3px solid #1c6b3a;color:#374151">${previewHtml}</blockquote>` +
           `<p><a href="${link}" style="display:inline-block;background:#1c6b3a;color:#fff;padding:10px 18px;border-radius:999px;text-decoration:none;font-weight:600">Responder no Viva Nomads</a></p>` +
           `<p style="color:#6b7280;font-size:12px">Responda sempre pela plataforma — assim a conversa fica registrada e protegida. Não responda este e-mail.</p>`,
-        detailsText: `${senderName}: ${preview}\n\nResponda pela plataforma (a conversa fica registrada): ${link}`,
+        detailsText: `${textoPlano(senderName, 40)}: ${previewTexto}\n\nResponda pela plataforma (a conversa fica registrada): ${link}`,
       });
     }
   } catch {

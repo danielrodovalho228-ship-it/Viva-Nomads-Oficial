@@ -29,6 +29,14 @@ test.describe("T7 — Fluxo público", () => {
     await expect(page.locator("body")).toContainText(/R\$\s?\d/); // preço
   });
 
+  test("/api/health público não lista as integrações", async ({ request }) => {
+    const res = await request.get("/api/health");
+    expect(res.status()).toBe(200);
+    const json = await res.json();
+    expect(json.ok).toBe(true);
+    expect(json).not.toHaveProperty("integrations");
+  });
+
   test("robots.txt libera o público e bloqueia internas, sem 'Disallow: /' global", async ({ request }) => {
     const res = await request.get("/robots.txt");
     expect(res.status()).toBe(200);

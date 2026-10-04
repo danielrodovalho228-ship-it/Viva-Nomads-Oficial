@@ -50,7 +50,7 @@ const OWNER_SERVICES: Service[] = [
  */
 const TECH_BENEFITS = [
   { icon: FileSignature, title: "Contrato assinado digitalmente", text: "Contrato de locação por temporada com validade jurídica." },
-  { icon: UserCheck, title: "Inquilino verificado", text: "Identidade e perfil confirmados antes de fechar o aluguel." },
+  { icon: UserCheck, title: "Conversa registrada", text: "Toda a negociação fica na plataforma, com o contato protegido até o aceite." },
   { icon: Banknote, title: "Aluguel direto na conta do proprietário", text: "O pagamento do aluguel vai direto ao proprietário." },
   { icon: Receipt, title: "Nota fiscal disponível", text: "Emissão da nota fiscal do aluguel conforme a legislação." },
 ] as const;

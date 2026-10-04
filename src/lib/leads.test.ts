@@ -85,3 +85,15 @@ test("ignora email/phone injetados pelo chamador (defesa em profundidade)", () =
   assert.ok(!detailsText.includes("34988887777"));
   assert.ok(!detailsHtml.includes("Souza"), "sobrenome vazou");
 });
+
+test("título e nome com HTML/link não viram link no e-mail oficial", () => {
+  const { detailsHtml, detailsText } = buildLeadNotification(
+    "candidatura",
+    `Studio <a href="https://golpe.com/pix">pague aqui</a>`,
+    { name: `<img src=x onerror=alert(1)>João` }
+  );
+  assert.ok(!/<a href="https:\/\/golpe/.test(detailsHtml), "link do usuário virou âncora");
+  assert.ok(!/golpe\.com/.test(detailsHtml), "domínio do golpe no HTML");
+  assert.ok(!/golpe\.com/.test(detailsText), "domínio do golpe no texto");
+  assert.ok(!detailsHtml.includes("<img"), "tag do usuário no HTML");
+});

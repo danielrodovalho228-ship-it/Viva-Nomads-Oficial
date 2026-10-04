@@ -68,7 +68,7 @@ export default function ForLandlordsPage() {
           <Benefit icon={Receipt} title="Custos que podem ser transferidos" text="Água, luz, condomínio e IPTU podem ser do inquilino durante a estadia, conforme o contrato." />
           <Benefit icon={TrendingUp} title="Menos imóvel parado" text="Um inquilino por uma temporada inteira, inclusive nos meses fracos do turismo." />
           <Benefit icon={FileSignature} title="Contrato com validade jurídica" text="Contrato de locação por temporada gerado e assinado digitalmente, com validade jurídica." />
-          <Benefit icon={ShieldCheck} title="Inquilino verificado" text="Verificação de identidade e garantia do aluguel: você decide com segurança." />
+          <Benefit icon={ShieldCheck} title="Garantia e conversa registrada" text="Caução ou seguro-fiança no contrato, e toda a negociação registrada na plataforma." />
         </div>
       </section>
 
