@@ -1,0 +1,21 @@
+-- 0065 — correções da revisão.
+reset role;
+select t('NOVO@0065','ciclo diário roda com o bloco antigo agendado','passa',$q$select public.avancar_ciclo_blocos()$q$);
+select v('NOVO@0065','…e ativa o bloco 2 antigo na data','select status from contrato_blocos where id=''b6500000-0000-0000-0000-000000000002''','ativo');
+select t('NOVO@0065','comprovar caução de contrato antigo de 12 meses funciona','passa',$q$update contrato_blocos set caucao_status='comprovada' where id='b6500000-0000-0000-0001-000000000001'$q$);
+select t('ATAQUE@0065','bloco NOVO que leva o contrato a 181 dias continua barrado','falha',$q$insert into contrato_blocos(contrato_id,numero_bloco,inicio,fim,meses,valor,caucao,status) values ('dddddd65-0000-0000-0000-000000000003',3,current_date+110,current_date+170,2,6000,0,'pendente_aceite')$q$);
+select t('ATAQUE@0065','pendente vira agendado sem os dois aceites','falha',$q$update contrato_blocos set status='agendado', aceite_inquilino_em=now() where id='b6500000-0000-0000-0000-000000000032'$q$);
+select t('NOVO@0065','aceites simultâneos','passa',$q$update contrato_blocos set aceite_proprietario_em=now(), aceite_inquilino_em=now() where id='b6500000-0000-0000-0000-000000000032'$q$);
+select v('NOVO@0065','…o banco promove para agendado','select status from contrato_blocos where id=''b6500000-0000-0000-0000-000000000032''','agendado');
+select v('NOVO@0065','teto de 180 dias do contrato-mãe é NOT VALID','select convalidated::text from pg_constraint where conname=''contratos_prazo_max_180''','false');
+select t('ATAQUE@0065','contrato-mãe NOVO de 181 dias','falha',$q$insert into contratos(property_id,tenant_id,status,aluguel_mensal,prazo_total_dias) values ('aaaaaaa1-0000-0000-0000-000000000001','22222222-2222-2222-2222-222222222222','ativo',3000,181)$q$);
+select v('NOVO@0065','Fundador sem data recebeu a data','select (fundador_em is not null)::text from profiles where id=''f0000000-0000-0000-0000-000000000001''','true');
+set role service_role;
+select v('NOVO@0065','livre só até a 1ª semana NÃO serve para 4 meses','select situacao from compatibilidade_pedidos(''bbbbbb64-0000-0000-0000-000000000001'', ''a6400000-0000-0000-0000-000000000010'')','demais');
+reset role;
+update public.properties set available_until = null where id = 'a6400000-0000-0000-0000-000000000010';
+set role service_role;
+select v('NOVO@0065','sem data de saída limite, segue compatível','select situacao from compatibilidade_pedidos(''bbbbbb64-0000-0000-0000-000000000001'', ''a6400000-0000-0000-0000-000000000010'')','compativel');
+reset role;
+update public.properties set status = 'draft' where id = 'a6400000-0000-0000-0000-000000000010';
+update public.profiles set fundador = false, fundador_em = null where id = 'f0000000-0000-0000-0000-000000000001';
