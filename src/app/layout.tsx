@@ -5,6 +5,7 @@ import { AuthProvider } from "@/components/auth-provider";
 import { NativeBridge } from "@/components/native/native-bridge";
 import { SITE_URL, SITE_NAME } from "@/lib/site";
 import { AppModeBridge } from "@/components/app/app-mode-bridge";
+import { OrigemVisita } from "@/components/app/origem-visita";
 import { APP_PREPAINT_SCRIPT } from "@/lib/app-mode";
 
 // Tipografia única do site (Atualização 18): Inter para títulos e corpo,
@@ -65,6 +66,7 @@ export default function RootLayout({
         <AuthProvider>
           <NativeBridge />
           <AppModeBridge />
+          <OrigemVisita />
           {children}
         </AuthProvider>
       </body>

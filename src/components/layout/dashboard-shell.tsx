@@ -23,6 +23,7 @@ import {
   Users,
   Search,
   FileText,
+  TrendingUp,
 } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { Avatar } from "@/components/ui/avatar";
@@ -115,6 +116,7 @@ const ADMIN_NAV: NavItem[] = [
   { href: "/admin", label: "Admin", icon: ShieldCheck },
   { href: "/admin/pedidos", label: "Moderar pedidos", icon: Megaphone },
   { href: "/admin/documentos", label: "Documentos", icon: FileSignature },
+  { href: "/admin/marketing", label: "Marketing", icon: TrendingUp },
 ];
 
 const NAV_BY_MODE: Record<ViewMode, NavItem[]> = { owner: OWNER_NAV, tenant: TENANT_NAV };

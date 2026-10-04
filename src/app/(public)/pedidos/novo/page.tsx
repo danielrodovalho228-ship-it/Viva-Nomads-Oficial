@@ -28,6 +28,7 @@ import { DateFieldBR } from "@/components/ui/date-field-br";
 import { MOTIVOS, contemContato, CONTATO_AVISO, calcExpiraEm, PRAZO_MAX_MESES } from "@/lib/pedidos/pedidos";
 import { MUNICIPIOS, UFS } from "@/lib/municipios";
 import { criarPedido } from "@/lib/data/pedidos-actions";
+import { registrarEvento } from "@/lib/eventos/registrar";
 import { useAuthStore } from "@/lib/store";
 import { hojeBR } from "@/lib/utils";
 
@@ -247,6 +248,7 @@ function PedidoForm() {
     });
     setEnviando(false);
     if (res.ok) {
+      registrarEvento("publicar_pedido", { cidade });
       setResultado({ compativeis: res.compativeis ?? 0, sugestao: res.sugestao ?? null });
     } else {
       setErro(res.error ?? "Não foi possível publicar o pedido.");

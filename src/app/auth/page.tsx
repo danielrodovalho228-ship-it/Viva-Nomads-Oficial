@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Building2,
@@ -30,6 +30,7 @@ import type { PersonType } from "@/lib/tax";
 import { cn } from "@/lib/utils";
 import { safeInternalPath } from "@/lib/safe-redirect";
 import { LOGIN_GOOGLE_ATIVO } from "@/lib/flags";
+import { registrarEvento } from "@/lib/eventos/registrar";
 
 type Mode = "login" | "signup" | "forgot";
 
@@ -79,6 +80,14 @@ export default function AuthPage() {
       setMode("signup");
     }
   }, []);
+
+  // Evento anônimo (0067): abriu o formulário de cadastro (1 vez por visita).
+  const cadastroIniciado = useRef(false);
+  useEffect(() => {
+    if (mode !== "signup" || cadastroIniciado.current) return;
+    cadastroIniciado.current = true;
+    registrarEvento("iniciar_cadastro");
+  }, [mode]);
 
   // Destino pós-login: honra ?redirect=… (definido pelo proxy ao barrar rota
   // protegida), aceitando SÓ caminhos internos ("/algo") — nunca URLs externas
@@ -248,6 +257,7 @@ export default function AuthPage() {
             setLoading(false);
             return;
           }
+          registrarEvento("concluir_cadastro");
           // Sem sessão imediata = precisa confirmar o e-mail (Atualização 20.4).
           if (!data.session) {
             setAwaitingConfirm(true);
