@@ -259,6 +259,22 @@ select 'G4. A2 máscara funciona' as checagem,
        case when public.mask_contact('me chama no (34) 99999-0001') !~ '99999' then 'OK' else 'FALHOU' end as resultado;
 
 
+-- ████ H — DEPOIS DA 0060 (qualificação por imóvel) ████████████████████████
+
+select 'H1. publicar/selos leem a qualificação DO IMÓVEL' as checagem,
+       case when prosrc like '%qc.property_id = new.id%' then 'OK' else 'ANTIGO — ainda lê a última do dono' end as resultado
+from pg_proc where proname = 'properties_protege_campos';
+
+select 'H2. dono não edita checklist gravado nem troca o imóvel' as checagem,
+       case when prosrc like '%to_jsonb(new)%' and prosrc like '%já pertence a outro imóvel%'
+            then 'OK' else 'ANTIGO' end as resultado
+from pg_proc where proname = 'qualificacao_protege_revisao';
+
+select 'H3. checklists sem imóvel (precisam reenviar / ligar ao próximo anúncio)' as checagem,
+       count(*)::text as resultado
+from public.qualification_checklists where property_id is null;
+
+
 -- ████ D — LIMPEZA (só depois de alguns dias sem problema) ███████████████████
 -- A tabela abaixo guarda o draft_data (com a rua) que a 0052/0053 tiraram dos
 -- anúncios ativos, só para o rollback. Quando não precisar mais de rollback:

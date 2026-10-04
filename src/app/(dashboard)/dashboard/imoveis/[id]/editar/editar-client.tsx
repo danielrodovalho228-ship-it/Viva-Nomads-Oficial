@@ -24,7 +24,7 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import { PhotoUploader, type PhotoItem } from "@/components/photo-uploader";
 import { BlockCalendar } from "@/components/property/block-calendar";
 import { AMENITY_GROUPS, amenityKeysFromLabels } from "@/lib/amenities";
-import { completudeAnuncio } from "@/lib/listing-completude";
+import { completudeAnuncio, MIN_FOTOS_PUBLICAR } from "@/lib/listing-completude";
 import { updateProperty, type PropertyInput } from "@/lib/data/actions";
 import type { Property } from "@/lib/types";
 import { formatBRL, cn } from "@/lib/utils";
@@ -92,7 +92,7 @@ export function EditarImovelClient({
   const [publishing, setPublishing] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // Completude ao vivo (reaproveita a regra pura — min. 5 fotos p/ publicar).
+  // Completude ao vivo (reaproveita a regra pura — mínimo de fotos p/ publicar).
   const comp = useMemo(
     () =>
       completudeAnuncio({
@@ -273,7 +273,7 @@ export function EditarImovelClient({
         </div>
         {!comp.podePublicar && (
           <p className="mt-2 text-xs text-amber-700">
-            Para publicar são necessárias no mínimo <strong>5 fotos</strong>.
+            Para publicar são necessárias no mínimo <strong>{MIN_FOTOS_PUBLICAR} fotos</strong>.
           </p>
         )}
         {erro && <p className="mt-2 text-sm text-red-600">{erro}</p>}
