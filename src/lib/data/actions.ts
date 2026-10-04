@@ -40,7 +40,10 @@ export async function saveQualification(
   elig: EligibilityState,
   quality: QualityState,
   documentPath?: string | null,
-  documentHash?: string | null
+  documentHash?: string | null,
+  /** Imóvel qualificado (`/qualificar?imovel=<id>`). Sem ele, a qualificação
+   *  fica à espera e é ligada ao PRÓXIMO imóvel criado (createProperty). */
+  propertyId?: string | null
 ): Promise<ActionResult> {
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
@@ -50,6 +53,19 @@ export async function saveQualification(
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Não autenticado." };
 
+  // A qualificação é do IMÓVEL: só de um imóvel do próprio dono (o banco
+  // confere de novo — 0060).
+  if (propertyId) {
+    if (!UUID_RE.test(propertyId)) return { ok: false, error: "Imóvel inválido." };
+    const { data: prop } = await supabase
+      .from("properties")
+      .select("id")
+      .eq("id", propertyId)
+      .eq("owner_id", user.id)
+      .maybeSingle();
+    if (!prop) return { ok: false, error: "Imóvel não encontrado." };
+  }
+
   const eligible = isEligible(elig);
   const ready_to_live_score = readyToLiveScore(quality);
 
@@ -57,6 +73,7 @@ export async function saveQualification(
     .from("qualification_checklists")
     .insert({
       owner_id: user.id,
+      property_id: propertyId ?? null,
       furnished: elig.furnished,
       accepts_30days: elig.accepts30days,
       iptu_ok: elig.iptuOk,
@@ -120,24 +137,65 @@ export type DocumentStatus = "none" | "pending" | "approved" | "rejected";
  * só `approved` libera. Em demo/preview (sem Supabase) devolve `approved` para
  * não travar os fluxos de demonstração.
  */
-export async function getMyDocumentStatus(): Promise<{ status: DocumentStatus; reason: string | null }> {
+export async function getMyDocumentStatus(
+  propertyId?: string | null
+): Promise<{ status: DocumentStatus; reason: string | null }> {
   const supabase = await createClient();
   if (!supabase) return { status: "approved", reason: null };
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { status: "none", reason: null };
-  const { data } = await supabase
-    .from("qualification_checklists")
-    .select("document_status, document_review_reason")
-    .eq("owner_id", user.id)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  // Por IMÓVEL: a qualificação dele; imóvel novo: a qualificação à espera
+  // (ainda sem imóvel), que será ligada a ele ao criar.
+  const q = await qualificacaoDoImovel(supabase, user.id, propertyId ?? null);
   return {
-    status: ((data?.document_status as DocumentStatus) ?? "none"),
-    reason: (data?.document_review_reason as string) ?? null,
+    status: ((q?.document_status as DocumentStatus) ?? "none"),
+    reason: (q?.document_review_reason as string) ?? null,
   };
+}
+
+/** Título e endereço de um imóvel do PRÓPRIO dono (cabeçalho do /qualificar). */
+export async function resumoImovelDoDono(
+  id: string
+): Promise<{ id: string; titulo: string; local: string } | null> {
+  const supabase = await createClient();
+  if (!supabase || !UUID_RE.test(id)) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data } = await supabase
+    .from("properties")
+    .select("id, title, address, city")
+    .eq("id", id)
+    .eq("owner_id", user.id)
+    .maybeSingle();
+  if (!data) return null;
+  return {
+    id: data.id as string,
+    titulo: (data.title as string) || "Imóvel sem título",
+    local: [data.address, data.city].filter(Boolean).join(", "),
+  };
+}
+
+/**
+ * Qualificação que vale para um imóvel: a mais recente LIGADA a ele; para um
+ * imóvel ainda não criado (propertyId null), a mais recente do dono ainda sem
+ * imóvel. Nunca a de outro imóvel (antes valia "a última do dono").
+ */
+async function qualificacaoDoImovel(
+  supabase: NonNullable<Awaited<ReturnType<typeof createClient>>>,
+  ownerId: string,
+  propertyId: string | null
+): Promise<{ id: string; document_status: string | null; document_review_reason: string | null } | null> {
+  let q = supabase
+    .from("qualification_checklists")
+    .select("id, document_status, document_review_reason")
+    .eq("owner_id", ownerId);
+  q = propertyId ? q.eq("property_id", propertyId) : q.is("property_id", null);
+  const { data } = await q.order("created_at", { ascending: false }).limit(1).maybeSingle();
+  return (data as { id: string; document_status: string | null; document_review_reason: string | null } | null) ?? null;
 }
 
 /** Cria um imóvel (Fase 5), exigindo um checklist aprovado. */
@@ -213,20 +271,14 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
   // — o gate do cliente é só UX. A3: vale sempre que NÃO for rascunho (antes só
   // com asDraft === false, e omitir o campo publicava sem aprovação). O banco
   // reforça a mesma regra (0056).
-  if (!input.asDraft) {
-    const { data: q } = await supabase
-      .from("qualification_checklists")
-      .select("document_status")
-      .eq("owner_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if ((q?.document_status ?? "none") !== "approved") {
-      return {
-        ok: false,
-        error: "Documentação do imóvel ainda não aprovada. Salve como rascunho — a publicação libera após a verificação.",
-      };
-    }
+  // Qualificação POR IMÓVEL: a que está à espera (sem imóvel) é ligada a este
+  // imóvel novo. Publicar exige que ELA tenha o documento aprovado.
+  const qualificacao = await qualificacaoDoImovel(supabase, user.id, null);
+  if (!input.asDraft && (qualificacao?.document_status ?? "none") !== "approved") {
+    return {
+      ok: false,
+      error: "Documentação do imóvel ainda não aprovada. Salve como rascunho — a publicação libera após a verificação.",
+    };
   }
 
   // Feature gating por plano (validado no servidor): respeita o limite de
@@ -265,8 +317,9 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
       area_m2: input.areaM2,
       min_period_days: input.minPeriodDays,
       monthly_price: input.monthlyPrice,
-      // Publicar => "active" (visível na busca pública); rascunho => "draft".
-      status: input.asDraft ? "draft" : "active",
+      // Nasce rascunho: a qualificação é ligada logo abaixo e só então o
+      // imóvel é publicado (o banco confere o documento DESTE imóvel — 0060).
+      status: "draft",
       ready_to_live_score: input.readyToLiveScore,
       ready_to_live_badge: input.readyToLiveScore >= 70,
       tag_home_office: input.tagHomeOffice ?? false,
@@ -388,6 +441,28 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
     }
   }
 
+  // Liga a qualificação à espera a ESTE imóvel e aplica o status pedido (o
+  // trigger copia selos/etiquetas dela e confere o documento ao publicar).
+  if (qualificacao) {
+    await supabase
+      .from("qualification_checklists")
+      .update({ property_id: data.id })
+      .eq("id", qualificacao.id)
+      .eq("owner_id", user.id)
+      .is("property_id", null);
+  }
+  const { error: stErr } = await supabase
+    .from("properties")
+    .update({ status: input.asDraft ? "draft" : "active" })
+    .eq("id", data.id);
+  if (stErr && !input.asDraft) {
+    return {
+      ok: false,
+      id: data.id,
+      error: "O imóvel foi salvo como rascunho, mas não pôde ser publicado: " + stErr.message,
+    };
+  }
+
   return { ok: true, id: data.id };
 }
 
@@ -415,13 +490,8 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
   // A3: (re)publicar exige o documento APROVADO — o mesmo portão do createProperty
   // (antes a edição publicava sem checar). O banco reforça (0056).
   if (input.asDraft === false) {
-    const { data: q } = await supabase
-      .from("qualification_checklists")
-      .select("document_status")
-      .eq("owner_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    // Documento DESTE imóvel (não o último do dono).
+    const q = await qualificacaoDoImovel(supabase, user.id, id);
     if ((q?.document_status ?? "none") !== "approved") {
       return {
         ok: false,

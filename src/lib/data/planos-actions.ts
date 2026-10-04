@@ -41,13 +41,15 @@ export async function getGestorElegibilidade(): Promise<GestorElegibilidade> {
     .maybeSingle();
   const accountType = ((perfil?.account_type as string) ?? "individual") as AccountType;
 
-  // Imóveis com documentação aprovada (um checklist por imóvel).
-  const { count } = await supabase
+  // Imóveis DISTINTOS com documentação aprovada. Antes contava checklists:
+  // o mesmo documento enviado 5 vezes "virava" 5 imóveis (Gestor indevido).
+  const { data: aprovadas } = await supabase
     .from("qualification_checklists")
-    .select("id", { count: "exact", head: true })
+    .select("property_id")
     .eq("owner_id", user.id)
-    .eq("document_status", "approved");
-  const imoveisValidados = count ?? 0;
+    .eq("document_status", "approved")
+    .not("property_id", "is", null);
+  const imoveisValidados = new Set((aprovadas ?? []).map((r) => r.property_id as string)).size;
 
   return {
     elegivel: gestorElegivel({ accountType, imoveisValidados }),

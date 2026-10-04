@@ -13,7 +13,7 @@ import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
 import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
 import { DEMO_PROPERTIES, DEMO_PROPERTY_STATS } from "@/lib/demo/seed";
 import type { Property, PropertyStatus } from "@/lib/types";
-import { completudeAnuncio } from "@/lib/listing-completude";
+import { completudeAnuncio, MIN_FOTOS_PUBLICAR } from "@/lib/listing-completude";
 import { formatBRL, cn } from "@/lib/utils";
 
 /** Rótulo + tom do status do anúncio (rascunho/ativo/pausado/arquivado). */
@@ -150,7 +150,7 @@ export function MyPropertiesClient({ properties: real }: { properties: Property[
                       <div className="flex items-center justify-between text-xs">
                         <span className="font-medium text-ink">Anúncio {comp.pct}% completo</span>
                         {!comp.podePublicar && (
-                          <span className="text-amber-700">mín. 5 fotos para publicar</span>
+                          <span className="text-amber-700">mín. {MIN_FOTOS_PUBLICAR} fotos para publicar</span>
                         )}
                       </div>
                       <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-surface-2">
@@ -191,6 +191,12 @@ export function MyPropertiesClient({ properties: real }: { properties: Property[
                         >
                           {p.status === "draft" ? "Continuar editando" : "Editar"}
                         </ButtonLink>
+                        {/* Qualificação é POR IMÓVEL: cada rascunho qualifica o seu. */}
+                        {p.status === "draft" && (
+                          <ButtonLink href={`/qualificar?imovel=${p.id}`} variant="outline" size="sm">
+                            Qualificação
+                          </ButtonLink>
+                        )}
                         {/* Excluir rascunho (item 1 do reteste — limpa órfãos). */}
                         {p.status === "draft" && (
                           <button

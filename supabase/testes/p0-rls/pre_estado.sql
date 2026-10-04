@@ -164,6 +164,7 @@ create policy "proprietário atualiza status" on public.service_orders for updat
 create table public.qualification_checklists (
   id uuid primary key default gen_random_uuid(),
   owner_id uuid references public.profiles (id) on delete cascade,
+  property_id uuid references public.properties (id) on delete set null, -- existe em produção desde a 0001
   eligible boolean default false, status text not null default 'pending',
   ready_to_live_score int default 0, ready_to_live_badge boolean default false,
   tag_home_office boolean default false, tag_work_located boolean default false, tag_condo_approved boolean default false,

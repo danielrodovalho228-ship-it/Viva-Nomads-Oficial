@@ -6,6 +6,11 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { completudeAnuncio, MIN_FOTOS_PUBLICAR } from "./listing-completude.ts";
+import { MIN_PHOTOS } from "./listing.ts";
+
+test("mínimo de fotos igual ao do Anunciar (MIN_PHOTOS)", () => {
+  assert.equal(MIN_FOTOS_PUBLICAR, MIN_PHOTOS);
+});
 
 test("anúncio vazio: 0% e não pode publicar", () => {
   const r = completudeAnuncio({});
@@ -16,7 +21,7 @@ test("anúncio vazio: 0% e não pode publicar", () => {
 
 test("anúncio completo: 100%", () => {
   const r = completudeAnuncio({
-    photos: ["/a.jpg", "/b.jpg", "/c.jpg", "/d.jpg", "/e.jpg"],
+    photos: ["/a.jpg", "/b.jpg", "/c.jpg", "/d.jpg", "/e.jpg", "/f.jpg", "/g.jpg", "/h.jpg"],
     description: "x".repeat(60),
     monthlyPrice: 3000,
     maxGuests: 4,
@@ -31,7 +36,7 @@ test("anúncio completo: 100%", () => {
   assert.equal(r.faltando.length, 0);
 });
 
-test("menos de 5 fotos: não pode publicar e fotos consta como faltando", () => {
+test("menos fotos que o mínimo: não pode publicar e fotos consta como faltando", () => {
   const r = completudeAnuncio({ photos: ["/a.jpg", "/b.jpg"], monthlyPrice: 3000 });
   assert.equal(r.podePublicar, false);
   assert.ok(r.faltando.some((f) => f.includes(String(MIN_FOTOS_PUBLICAR))));

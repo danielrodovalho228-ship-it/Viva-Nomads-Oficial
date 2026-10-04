@@ -41,7 +41,7 @@ import {
 import { INTERNET_TIERS, INTERNET_META, type InternetTier } from "@/lib/internet";
 import { Button } from "@/components/ui/button";
 import { ReadyToLiveBadge, DocConferidaBadge } from "@/components/ui/badge";
-import { saveQualification, getMyDocumentStatus, type DocumentStatus } from "@/lib/data/actions";
+import { saveQualification, getMyDocumentStatus, resumoImovelDoDono, type DocumentStatus } from "@/lib/data/actions";
 import { cn } from "@/lib/utils";
 
 const initialEligibility: EligibilityState = {
@@ -85,15 +85,24 @@ export default function QualificationChecklistPage() {
   // ADENDO elegibilidade item 3). "none" até enviar; após salvar vira "pending".
   const [docStatus, setDocStatus] = useState<DocumentStatus>("none");
   const [docReason, setDocReason] = useState<string | null>(null);
+  // Qualificação POR IMÓVEL: `?imovel=<id>` diz qual imóvel está sendo
+  // qualificado (mostrado no topo). Sem ele, é o imóvel que será anunciado em
+  // seguida (a qualificação fica à espera e é ligada a ele ao criar).
+  const [imovel, setImovel] = useState<{ id: string; titulo: string; local: string } | null>(null);
+  const [imovelInvalido, setImovelInvalido] = useState(false);
   useEffect(() => {
     let alive = true;
-    getMyDocumentStatus()
-      .then((r) => {
-        if (!alive) return;
-        setDocStatus(r.status);
-        setDocReason(r.reason);
-      })
-      .catch(() => {});
+    const id = new URLSearchParams(window.location.search).get("imovel");
+    (async () => {
+      const resumo = id ? await resumoImovelDoDono(id).catch(() => null) : null;
+      if (!alive) return;
+      if (id && !resumo) setImovelInvalido(true);
+      setImovel(resumo);
+      const r = await getMyDocumentStatus(resumo?.id ?? null).catch(() => null);
+      if (!alive || !r) return;
+      setDocStatus(r.status);
+      setDocReason(r.reason);
+    })();
     return () => {
       alive = false;
     };
@@ -199,8 +208,12 @@ export default function QualificationChecklistPage() {
         JSON.stringify({ eligible, score, baseBadge, tHome, tWork, tCondo })
       );
     }
-    await saveQualification(elig, quality, docPath, docHash);
+    const r = await saveQualification(elig, quality, docPath, docHash, imovel?.id ?? null);
     setSaving(false);
+    if (r && !r.ok) {
+      setDocErro(r.error ?? "Não foi possível salvar a qualificação.");
+      return;
+    }
     setSaved(true);
   }
 
@@ -234,6 +247,23 @@ export default function QualificationChecklistPage() {
           </p>
         </div>
       </header>
+
+      {/* De qual imóvel é esta qualificação (o documento vale só para ele). */}
+      {imovel ? (
+        <p className="mb-6 rounded-xl border border-sage-200 bg-white px-4 py-3 text-sm text-ink">
+          Qualificando: <strong>{imovel.titulo}</strong>
+          {imovel.local && <span className="text-muted"> · {imovel.local}</span>}
+        </p>
+      ) : imovelInvalido ? (
+        <p className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          Imóvel não encontrado entre os seus. Volte a Meus imóveis e escolha o imóvel.
+        </p>
+      ) : (
+        <p className="mb-6 rounded-xl border border-sage-200 bg-white px-4 py-3 text-sm text-muted">
+          Esta qualificação vale para o <strong className="text-ink">próximo imóvel</strong> que você anunciar. Cada
+          imóvel tem a sua qualificação e o seu documento.
+        </p>
+      )}
 
       {/* SEÇÃO 1 — REQUISITOS OBRIGATÓRIOS */}
       <section className="rounded-2xl border border-sage-200 bg-white p-6 sm:p-8">
@@ -595,8 +625,13 @@ export default function QualificationChecklistPage() {
           {eligible ? "Salve para liberar a publicação do anúncio." : "Conclua os requisitos obrigatórios para liberar a publicação."}
         </p>
         {saved ? (
-          <Button variant="accent" onClick={() => router.push("/dashboard/imoveis/novo")}>
-            Continuar para o anúncio <ArrowRight className="h-4 w-4" />
+          <Button
+            variant="accent"
+            onClick={() =>
+              router.push(imovel ? `/dashboard/imoveis/novo?id=${imovel.id}` : "/dashboard/imoveis/novo")
+            }
+          >
+            {imovel ? "Voltar ao anúncio" : "Continuar para o anúncio"} <ArrowRight className="h-4 w-4" />
           </Button>
         ) : (
           <Button disabled={!eligible || saving} onClick={save}>

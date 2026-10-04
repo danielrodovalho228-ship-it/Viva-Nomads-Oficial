@@ -213,10 +213,11 @@ export default function NewPropertyPage() {
     setStep((s) => Math.max(0, s - 1));
   }
 
-  // Busca o estado da verificação do documento uma vez (portão de Publicar).
+  // Estado da verificação do documento DESTE imóvel (portão de Publicar). Na
+  // edição, a qualificação do imóvel; no imóvel novo, a que está à espera.
   useEffect(() => {
     let alive = true;
-    getMyDocumentStatus()
+    getMyDocumentStatus(editId)
       .then((r) => {
         if (!alive) return;
         setDocStatus(r.status);
@@ -226,7 +227,7 @@ export default function NewPropertyPage() {
     return () => {
       alive = false;
     };
-  }, []);
+  }, [editId]);
 
   // Barra de qualidade do anúncio: fotos + descrição + recursos (rodada 11).
   const quality = Math.min(
@@ -741,7 +742,7 @@ export default function NewPropertyPage() {
             <strong>APROVADO PARA PUBLICAR</strong>. É o que garante que o anúncio é locação
             por temporada regular.
           </p>
-          <ButtonLink href="/qualificar" variant="gold" className="mt-6">
+          <ButtonLink href={editId ? `/qualificar?imovel=${editId}` : "/qualificar"} variant="gold" className="mt-6">
             <ClipboardCheck className="h-4 w-4" /> Ir para a qualificação
           </ButtonLink>
         </Panel>
@@ -1552,7 +1553,7 @@ export default function NewPropertyPage() {
                 <span>
                   <strong>Documentação não aprovada.</strong>
                   {docReason ? ` Motivo: ${docReason}.` : ""} Reenvie o documento na{" "}
-                  <a href="/qualificar" className="font-medium underline">qualificação</a> para liberar a publicação.
+                  <a href={editId ? `/qualificar?imovel=${editId}` : "/qualificar"} className="font-medium underline">qualificação</a> para liberar a publicação.
                 </span>
               </div>
             )}

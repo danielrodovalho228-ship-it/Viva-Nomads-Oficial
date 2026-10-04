@@ -4,7 +4,7 @@
   "Anúncio completo rende mais": este cálculo dá ao proprietário um % e a lista
   do que falta. Mantido SEM imports para rodar no `node --test`.
 
-  Só usa campos que existem no Property. O mínimo de 5 fotos para PUBLICAR
+  Só usa campos que existem no Property. O mínimo de fotos para PUBLICAR
   (ADENDO 3-B) é sinalizado por `podePublicar`.
 */
 
@@ -32,11 +32,14 @@ export interface ResultadoCompletude {
   pct: number; // 0..100
   itens: ItemCompletude[];
   faltando: string[]; // rótulos dos itens não preenchidos
-  podePublicar: boolean; // exige ≥ 5 fotos (ADENDO 3-B)
+  podePublicar: boolean; // exige ≥ MIN_FOTOS_PUBLICAR fotos
 }
 
 /** Nº mínimo de fotos para publicar (ADENDO 3-B). */
-export const MIN_FOTOS_PUBLICAR = 5;
+/** Mesmo mínimo do Anunciar (MIN_PHOTOS em src/lib/listing.ts). Repetido
+ *  aqui porque este módulo é puro, sem imports (roda no node --test); o teste
+ *  confere que os dois batem. */
+export const MIN_FOTOS_PUBLICAR = 8;
 
 function temFoto(s?: string): boolean {
   return typeof s === "string" && (/^https?:\/\//.test(s) || s.startsWith("/"));
