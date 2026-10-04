@@ -22,7 +22,10 @@ export async function GET(request: Request) {
   if (blocked) return blocked;
 
   const { searchParams } = new URL(request.url);
-  const to = searchParams.get("to") ?? "dtrodovalho40@gmail.com";
+  const to = (searchParams.get("to") ?? "").trim();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) {
+    return NextResponse.json({ ok: false, error: "Informe o destinatário: ?to=email@exemplo.com" }, { status: 400 });
+  }
   const all = searchParams.get("all") === "1";
   const kindParam = (searchParams.get("kind") ?? "duvida") as LeadKind;
   const title = searchParams.get("title") ?? "Studio premium no Centro";

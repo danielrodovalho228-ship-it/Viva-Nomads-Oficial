@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
+import { safeInternalPath } from "@/lib/safe-redirect";
 
 /**
  * Confirmação de e-mail via `token_hash` + `verifyOtp` — fluxo server-side
@@ -15,14 +16,15 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const token_hash = searchParams.get("token_hash");
   const type = searchParams.get("type") as EmailOtpType | null;
-  const next = searchParams.get("next") ?? "/dashboard";
+  // A7: `next` só pode ser caminho interno; nunca concatenar com a origem.
+  const next = safeInternalPath(searchParams.get("next"));
 
   if (token_hash && type) {
     const supabase = await createClient();
     if (supabase) {
       const { error } = await supabase.auth.verifyOtp({ type, token_hash });
       // Confirmado (ou já confirmado antes por um pré-carregamento): segue ao destino.
-      if (!error) return NextResponse.redirect(`${origin}${next}`);
+      if (!error) return NextResponse.redirect(new URL(next, origin));
     }
   }
   // Falha (token inválido/expirado): manda ao login com um aviso amigável.

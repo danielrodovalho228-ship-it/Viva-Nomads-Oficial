@@ -16,3 +16,7 @@ export function isExemplo(idOrProperty: string | { id: string }): boolean {
   const id = typeof idOrProperty === "string" ? idOrProperty : idOrProperty.id;
   return !UUID_RE.test(id);
 }
+
+/** Mensagem única quando alguém tenta contato/candidatura num anúncio de exemplo. */
+export const EXEMPLO_SEM_CONTATO =
+  "Este é um anúncio de exemplo — candidaturas e contatos ficam disponíveis nos imóveis reais.";

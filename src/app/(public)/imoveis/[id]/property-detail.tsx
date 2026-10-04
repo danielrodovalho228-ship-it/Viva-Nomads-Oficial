@@ -39,7 +39,7 @@ import { StayRules } from "@/components/property/stay-rules";
 import { AvailabilityCalendar } from "@/components/property/availability-calendar";
 import { OwnerCard } from "@/components/property/owner-card";
 import { Reviews } from "@/components/property/reviews";
-import { isExemplo } from "@/lib/demo-listing";
+import { isExemplo, EXEMPLO_SEM_CONTATO } from "@/lib/demo-listing";
 
 export function PropertyDetail({ property, similar }: { property: Property; similar: Property[] }) {
   const router = useRouter();
@@ -77,6 +77,10 @@ export function PropertyDetail({ property, similar }: { property: Property; simi
     }
     if (r?.selfOwned) {
       setSelfNote(true);
+      return false;
+    }
+    if (r?.exemplo) {
+      setLeadErro(EXEMPLO_SEM_CONTATO);
       return false;
     }
     // Falha real (rede/servidor): NUNCA deixa o botão "morto" — mostra o erro.
@@ -132,8 +136,25 @@ export function PropertyDetail({ property, similar }: { property: Property; simi
     </div>
   );
 
+  // T9: anúncio de EXEMPLO não tem proprietário — sem candidatura, dúvida ou
+  // visita (nada é enviado a ninguém). Nota neutra no lugar dos botões.
+  const notaExemplo = (
+    <div className="flex flex-col gap-2 rounded-2xl border border-line bg-white p-4 text-center">
+      <p className="text-sm font-semibold text-ink">Anúncio de exemplo</p>
+      <p className="text-xs text-muted">{EXEMPLO_SEM_CONTATO}</p>
+      <Link
+        href="/buscar"
+        className="inline-flex items-center justify-center gap-1.5 rounded-full border border-forest px-4 py-2 text-sm font-semibold text-forest transition-colors hover:bg-sage-100"
+      >
+        Ver imóveis <ArrowRight className="h-4 w-4" />
+      </Link>
+    </div>
+  );
+
   // Bloco de ações reutilizado dentro do card de preço.
-  const actions = candidatouSe ? (
+  const actions = exemplo ? (
+    notaExemplo
+  ) : candidatouSe ? (
     confirmacaoCandidatura
   ) : (
     <div className="flex flex-col gap-2">

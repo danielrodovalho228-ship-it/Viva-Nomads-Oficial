@@ -9,6 +9,10 @@
  *
  * O estado vive apenas na SESSÃO do navegador (sessionStorage) — fechar a aba
  * volta ao real. Também aceita ?demo=1 / ?demo=0 na URL (lido no shell).
+ *
+ * DESLIGADO EM PRODUÇÃO: só existe com NEXT_PUBLIC_MODO_DEMO_PAINEL=1 (ligue
+ * apenas no ambiente Preview da Vercel, para apresentações). Sem a flag, nem o
+ * botão aparece e ?demo=1 é ignorado.
  */
 
 import { create } from "zustand";
@@ -17,13 +21,15 @@ import { useAuthStore, DEMO_USER, type SessionUser } from "@/lib/store";
 import { isSupabaseConfigured } from "@/lib/env";
 import { cn } from "@/lib/utils";
 
-/** E-mail do super admin (reforço à role 'admin' do perfil). */
-export const ADMIN_EMAIL = "dtrodovalho40@gmail.com";
+/** O modo demonstração existe neste ambiente? (flag explícita; padrão: não) */
+export const MODO_DEMO_PERMITIDO = process.env.NEXT_PUBLIC_MODO_DEMO_PAINEL === "1";
 
-/** Admin = role 'admin' no perfil (preferência) OU o e-mail do super admin. */
+/**
+ * Admin (só para a INTERFACE) = role 'admin' no perfil. Sem e-mail fixo no
+ * código. A autorização real de admin é sempre validada no servidor.
+ */
 export function isAdminUser(user: SessionUser | null | undefined): boolean {
-  if (!user) return false;
-  return user.role === "admin" || user.email?.toLowerCase() === ADMIN_EMAIL;
+  return user?.role === "admin";
 }
 
 interface DemoState {
@@ -54,8 +60,8 @@ export function useDemoMode(): { admin: boolean; on: boolean; setOn: (on: boolea
   const user = useAuthStore((s) => s.user);
   const on = useDemoStore((s) => s.on);
   const setOn = useDemoStore((s) => s.setOn);
-  const admin = isAdminUser(user);
-  // O modo só vale se o usuário É admin — outro usuário nunca ativa.
+  const admin = isAdminUser(user) && MODO_DEMO_PERMITIDO;
+  // O modo só vale se o ambiente permite E o usuário é admin.
   return { admin, on: admin && on, setOn };
 }
 

@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { guardContactInfo } from "@/lib/messages/contact-guard";
+import { conversationId as idConversa } from "@/lib/messages/conversation-id";
 
 type ActionResult = { ok: boolean; demo?: boolean; error?: string };
 
@@ -44,7 +45,7 @@ export async function solicitarReserva(
   if (ownerId === user.id)
     return { ok: false, error: "Este imóvel é seu — você não pode reservá-lo. Gerencie-o em Meus imóveis." };
 
-  const conversationId = [user.id, ownerId].sort().join("_") + `_${propertyId}`;
+  const conversationId = idConversa(user.id, ownerId, propertyId);
   const body = guardContactInfo(
     `Tenho interesse em reservar de ${brDate(checkIn)} a ${brDate(checkOut)}. Podemos conversar pela plataforma?`
   ).text;
@@ -56,6 +57,9 @@ export async function solicitarReserva(
     property_id: propertyId,
     body,
   });
-  if (error) return { ok: false, error: error.message };
+  if (error) {
+    console.error("[solicitarReserva] falha ao gravar mensagem:", error.code, error.message);
+    return { ok: false, error: "Não foi possível enviar o pedido de reserva agora. Tente de novo em instantes." };
+  }
   return { ok: true };
 }

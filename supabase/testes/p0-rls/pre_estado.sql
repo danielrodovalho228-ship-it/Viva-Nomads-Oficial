@@ -133,6 +133,66 @@ create table public.respostas_pedido (
   unique (pedido_id, imovel_id)
 );
 
+-- documents (0008) e service_orders (0006), com as políticas de produção.
+create table public.documents (
+  id uuid primary key default gen_random_uuid(),
+  doc_number text not null unique, doc_type text not null default 'orcamento',
+  property_id uuid references public.properties (id) on delete set null,
+  owner_id uuid not null references public.profiles (id) on delete cascade,
+  tenant_id uuid references public.profiles (id) on delete set null,
+  tenant_name text not null, status text not null default 'rascunho',
+  total_value numeric(10, 2) not null default 0, created_at timestamptz not null default now()
+);
+alter table public.documents enable row level security;
+create policy "documentos do proprietário" on public.documents for all using (owner_id = auth.uid()) with check (owner_id = auth.uid());
+create policy "inquilino vê o documento" on public.documents for select using (tenant_id = auth.uid());
+
+create table public.service_orders (
+  id uuid primary key default gen_random_uuid(),
+  property_id uuid not null references public.properties (id) on delete cascade,
+  tenant_id uuid not null references public.profiles (id) on delete cascade,
+  owner_id uuid not null references public.profiles (id) on delete cascade,
+  category text not null default 'outros', description text not null,
+  status text not null default 'aberto', opened_at timestamptz not null default now()
+);
+alter table public.service_orders enable row level security;
+create policy "chamados das partes" on public.service_orders for select using (tenant_id = auth.uid() or owner_id = auth.uid());
+create policy "inquilino abre chamado" on public.service_orders for insert with check (tenant_id = auth.uid());
+create policy "proprietário atualiza status" on public.service_orders for update using (owner_id = auth.uid());
+
+-- qualification_checklists (0001+0007+0041/0042/0044) e fotos com o recálculo da 0009.
+create table public.qualification_checklists (
+  id uuid primary key default gen_random_uuid(),
+  owner_id uuid references public.profiles (id) on delete cascade,
+  eligible boolean default false, status text not null default 'pending',
+  ready_to_live_score int default 0, ready_to_live_badge boolean default false,
+  tag_home_office boolean default false, tag_work_located boolean default false, tag_condo_approved boolean default false,
+  document_path text, document_status text default 'none', document_review_reason text,
+  document_reviewed_at timestamptz, document_reviewed_by uuid, document_hash_sha256 text,
+  created_at timestamptz default now()
+);
+alter table public.qualification_checklists enable row level security;
+create policy "dono gerencia seus checklists" on public.qualification_checklists for all using (owner_id = auth.uid()) with check (owner_id = auth.uid());
+-- (as duas da 0042 entram depois do is_admin, no fim deste arquivo)
+
+create table public.property_photos (
+  id uuid primary key default gen_random_uuid(),
+  property_id uuid not null references public.properties (id) on delete cascade, url text, sort_order int default 0
+);
+alter table public.properties alter column listing_quality_tier set default 'padrao';
+create or replace function public.recalc_listing_quality(p_property uuid) returns void language plpgsql as $$
+declare v_count int;
+begin
+  select count(*) into v_count from public.property_photos where property_id = p_property;
+  update public.properties set photo_count = v_count,
+    listing_quality_tier = case when v_count >= 20 then 'premium' when v_count >= 12 then 'completo' else 'padrao' end
+  where id = p_property;
+end; $$;
+create or replace function public.trg_recalc_listing_quality() returns trigger language plpgsql as $$
+begin perform public.recalc_listing_quality(coalesce(new.property_id, old.property_id)); return null; end; $$;
+create trigger property_photos_quality after insert or delete on public.property_photos
+  for each row execute function public.trg_recalc_listing_quality();
+
 -- is_admin (0011).
 create or replace function public.is_admin() returns boolean
 language sql stable security definer set search_path = public as $$
@@ -231,6 +291,9 @@ begin
 end; $$;
 revoke all on function public.anonimizar_conta(uuid) from public, anon, authenticated;
 grant execute on function public.anonimizar_conta(uuid) to service_role;
+
+create policy "qualif: admin lê" on public.qualification_checklists for select to authenticated using (public.is_admin());
+create policy "qualif: admin modera" on public.qualification_checklists for update to authenticated using (public.is_admin()) with check (public.is_admin());
 
 -- Tabela de resultados do teste (escrita por qualquer papel).
 create table public.resultado (ordem serial, fase text, caso text, esperado text, obtido text, ok boolean, detalhe text);

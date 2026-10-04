@@ -2,7 +2,8 @@
   Integração de pagamento nativo brasileiro — Asaas.
   Suporta assinatura recorrente do proprietário, PIX, boleto e cartão,
   além de split (modelo híbrido). Em produção define ASAAS_API_KEY;
-  sem a chave, opera em modo demonstração com dados simulados.
+  sem a chave, simula SÓ fora de produção — em produção recusa com
+  IntegracaoNaoConfigurada (ver src/lib/integracoes.ts).
 
   Docs: https://docs.asaas.com  (sandbox: https://sandbox.asaas.com/api/v3)
 */
@@ -11,6 +12,8 @@ const API_BASE =
   process.env.ASAAS_ENV === "production"
     ? "https://api.asaas.com/v3"
     : "https://sandbox.asaas.com/api/v3";
+
+import { exigirChaveEmProducao } from "@/lib/integracoes";
 
 export type BillingType = "PIX" | "BOLETO" | "CREDIT_CARD";
 
@@ -57,6 +60,7 @@ export async function createSubscription(params: {
   billingType: BillingType;
 }): Promise<SubscriptionResult> {
   if (!isAsaasConfigured()) {
+    exigirChaveEmProducao("Asaas");
     // Modo demonstração — devolve um resultado plausível sem chamar a API.
     return {
       demo: true,
@@ -106,56 +110,6 @@ export async function createSubscription(params: {
   };
 }
 
-export interface SubaccountResult {
-  demo: boolean;
-  walletId: string;
-  /** apiKey é devolvida só uma vez — armazenar criptografada imediatamente. */
-  apiKey: string;
-  status: string;
-}
-
-/**
- * Cria (ou simula) uma subconta Asaas para um proprietário aprovado.
- * Recomendado: chamar quando o checklist é aprovado. A resposta traz o
- * walletId (usado no split) e a apiKey (devolvida só uma vez).
- * Nota regulatória: subcontas via API passam por avaliação com limites iniciais.
- */
-export async function createSubaccount(params: {
-  name: string;
-  email: string;
-  cpfCnpj: string;
-  mobilePhone?: string;
-}): Promise<SubaccountResult> {
-  if (!isAsaasConfigured()) {
-    return {
-      demo: true,
-      walletId: `demo_wallet_${Math.random().toString(36).slice(2, 10)}`,
-      apiKey: `demo_apikey_${Math.random().toString(36).slice(2, 14)}`,
-      status: "PENDING",
-    };
-  }
-
-  const acc = await asaasFetch<{ walletId: string; apiKey: string; accountStatus?: string }>(
-    "/accounts",
-    {
-      method: "POST",
-      body: JSON.stringify({
-        name: params.name,
-        email: params.email,
-        cpfCnpj: params.cpfCnpj,
-        mobilePhone: params.mobilePhone,
-      }),
-    }
-  );
-
-  return {
-    demo: false,
-    walletId: acc.walletId,
-    apiKey: acc.apiKey, // armazenar criptografada — devolvida apenas nesta resposta
-    status: acc.accountStatus ?? "PENDING",
-  };
-}
-
 export interface CommissionResult {
   demo: boolean;
   chargeId: string;
@@ -182,6 +136,7 @@ export async function createCommissionCharge(params: {
   const ownerNet = params.firstMonthRent - platformCommission;
 
   if (!isAsaasConfigured()) {
+    exigirChaveEmProducao("Asaas");
     return {
       demo: true,
       chargeId: `demo_${Math.random().toString(36).slice(2, 10)}`,

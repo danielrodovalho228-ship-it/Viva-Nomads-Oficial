@@ -5,6 +5,8 @@
   Docs: https://docs.zapsign.com.br
 */
 
+import { exigirChaveEmProducao } from "@/lib/integracoes";
+
 const API_BASE = "https://api.zapsign.com.br/api/v1";
 
 export function isZapsignConfigured() {
@@ -32,6 +34,7 @@ export interface ContractResult {
 /** Gera (ou simula) o contrato no ZapSign e retorna o documento para assinatura. */
 export async function createContract(input: ContractInput): Promise<ContractResult> {
   if (!isZapsignConfigured()) {
+    exigirChaveEmProducao("ZapSign");
     return {
       demo: true,
       docId: `demo_${Math.random().toString(36).slice(2, 10)}`,

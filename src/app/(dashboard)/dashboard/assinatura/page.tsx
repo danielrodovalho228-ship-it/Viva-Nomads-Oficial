@@ -67,8 +67,7 @@ export default function SubscriptionPage() {
         body: JSON.stringify({
           planId: selected,
           billingType: billing,
-          name: user?.name,
-          email: user?.email,
+          // Nome, e-mail e CPF/CNPJ: o servidor lê do perfil (A5).
         }),
       });
       const data = await res.json();
