@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { consumirLimite, HORA, DIA as DIA_SEGUNDOS } from "@/lib/limites";
+import { dentroDoLimite, HORA, DIA as DIA_SEGUNDOS } from "@/lib/limites";
 import { textoEmail, textoPlano } from "@/lib/notifications/texto-seguro";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { EligibilityState, QualityState } from "@/lib/qualification";
@@ -789,7 +789,7 @@ export async function renovarBloco(
   if ((agendados ?? 0) > 0) {
     return { ok: false, error: "A renovação já foi pedida. O próximo bloco está agendado." };
   }
-  if (!(await consumirLimite(`renovar:${contratoId}`, 3, DIA_SEGUNDOS))) {
+  if (!(await dentroDoLimite(`renovar:${contratoId}`, 3, DIA_SEGUNDOS))) {
     return { ok: false, error: "Muitos pedidos de renovação hoje. Tente amanhã." };
   }
 
@@ -1113,8 +1113,8 @@ export async function sendMessage(input: {
     // escreve. A mensagem em si SEMPRE é gravada — só o e-mail é contido.
     const podeAvisar =
       !!contact?.email &&
-      (await consumirLimite(`msg-email:${conversationId}:${destinatarioId}`, 1, 30 * 60)) &&
-      (await consumirLimite(`msg-email-remetente:${user.id}`, 30, HORA));
+      (await dentroDoLimite(`msg-email:${conversationId}:${destinatarioId}`, 1, 30 * 60)) &&
+      (await dentroDoLimite(`msg-email-remetente:${user.id}`, 30, HORA));
     if (contact?.email && podeAvisar) {
       const { data: me } = await supabase
         .from("profiles")
