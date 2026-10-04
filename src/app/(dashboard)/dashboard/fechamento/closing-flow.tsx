@@ -1091,7 +1091,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
             </div>
             <p className="rounded-lg bg-sage-100 px-3 py-2 text-left text-sm text-forest">
               ⭐ Ao fim da locação, você e o inquilino poderão se avaliar — construindo
-              reputação na plataforma (Proprietário e Inquilino Verificados).
+              reputação na plataforma.
             </p>
             <PlatformLegalNotice className="text-left" />
           </div>
