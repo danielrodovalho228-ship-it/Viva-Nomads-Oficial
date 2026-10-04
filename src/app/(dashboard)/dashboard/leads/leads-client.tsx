@@ -106,7 +106,7 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
                       <h3 className="font-title text-lg font-bold text-ink">{l.name}</h3>
                       {l.verified && (
                         <span className="rounded-full bg-champagne px-2 py-0.5 text-xs font-semibold text-night">
-                          Inquilino Verificado
+                          Inquilino Verificado {/* consistency-ignore: só aparece com laudo real (l.verified) */}
                         </span>
                       )}
                     </div>

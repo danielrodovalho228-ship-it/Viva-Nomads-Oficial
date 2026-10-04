@@ -102,6 +102,16 @@ const PRAZO_BANIDO = [/m[ée]dia\s+estadia/i, /curt[íi]ssim[oa]\s+prazo/i];
 //    perto de "liberad(o) ... aceite" — NÃO pega "endereço liberado após o
 //    aceite" (revelação legítima do endereço). Escape: `consistency-ignore`.
 const CONTATO_BANIDO = /\bcontato\b(?:(?!\.).){0,60}liberad[ao](?:(?!\.).){0,25}aceite/i;
+// 9) Promessas que não existem ou ferem a marca (revisão 04/10): "Apartamentos
+//    mobiliados/prontos" (o certo é "imóveis mobiliados"), "inquilino(s)
+//    verificado(s)" enquanto a verificação está em breve, e "garantia do
+//    aluguel" (a plataforma nunca é garantidora). Só em linha de TEXTO (não em
+//    código/comentário). Escape legítimo: `consistency-ignore` na linha.
+const PROMESSA_BANIDA = [
+  /apartamentos\s+(mobiliados|prontos)/i,
+  /inquilinos?\s+verificados?/i,
+  /garantia\s+do\s+aluguel/i,
+];
 function pareceCodigo(linha) {
   const t = linha.trimStart();
   return (
@@ -190,6 +200,16 @@ for (const dir of SCAN_DIRS) {
               line: line.trim(),
             });
         }
+        if (!pareceCodigo(line))
+          for (const rx of PROMESSA_BANIDA) {
+            if (rx.test(line))
+              violations.push({
+                rel,
+                n: i + 1,
+                why: `promessa fora da regra da marca (${rx}) — "imóveis mobiliados"; sem "inquilino verificado" nem "garantia do aluguel"`,
+                line: line.trim(),
+              });
+          }
         if (CONTATO_BANIDO.test(line))
           violations.push({
             rel,
