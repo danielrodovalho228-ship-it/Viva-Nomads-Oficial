@@ -214,6 +214,54 @@ for (const file of walk(join(ROOT, "src/lib/data"))) {
     });
 }
 
+// P0 (0053): properties tem SELECT POR COLUNA para anon/authenticated. Em
+// qualquer leitura de properties pelo app, `select("*")`, `select()` vazio
+// (devolve todas as colunas) ou embed `properties(*)` FALHA em produção — e
+// pedir coluna sensível (exact_address, draft_data, responsavel_local_*,
+// sublease_doc_url) também. Use PROPERTY_PUBLIC_COLUMNS ou colunas explícitas;
+// campos privados só pela RPC property_private_details.
+const PROP_SENSIVEIS = /exact_address|draft_data|responsavel_local|sublease_doc_url/;
+function linhaDe(texto, idx) {
+  return texto.slice(0, idx).split("\n").length;
+}
+for (const dir of ["src"]) {
+  for (const file of walk(join(ROOT, dir))) {
+    if (!/\.(ts|tsx)$/.test(file)) continue;
+    const rel = relative(ROOT, file);
+    const texto = readFileSync(file, "utf8");
+    const linhas = texto.split("\n");
+    const ignorada = (n) => (linhas[n - 1] ?? "").includes("consistency-ignore");
+    // 1) .from("properties") ... primeira .select(...) da mesma cadeia.
+    const rxFrom = /\.from\(\s*["'`]properties["'`]\s*\)/g;
+    let m;
+    while ((m = rxFrom.exec(texto))) {
+      // A cadeia vai até o primeiro ";" ou até o próximo ".from(" (outra query).
+      const resto = texto.slice(m.index, m.index + 800);
+      const fins = [resto.indexOf(";"), (() => { const i = resto.slice(1).search(/\.from\(/); return i < 0 ? -1 : i + 1; })()]
+        .filter((i) => i > 0);
+      const cadeia = fins.length ? resto.slice(0, Math.min(...fins)) : resto;
+      const sel = /\.select\(\s*(?:(["'`])([^"'`]*)\1)?\s*[,)]/.exec(cadeia);
+      if (!sel) continue;
+      const arg = sel[2];
+      const n = linhaDe(texto, m.index + sel.index);
+      if (ignorada(n)) continue;
+      const vazio = sel[1] === undefined && /\.select\(\s*\)/.test(cadeia.slice(sel.index, sel.index + 12));
+      if (arg === "*" || vazio) {
+        violations.push({ rel, n, why: 'properties: select("*")/select() vazio quebra com o grant por coluna (0053) — use PROPERTY_PUBLIC_COLUMNS', line: (linhas[n - 1] ?? "").trim() });
+      } else if (arg && PROP_SENSIVEIS.test(arg)) {
+        violations.push({ rel, n, why: "properties: coluna sensível no select — leia pela RPC property_private_details", line: (linhas[n - 1] ?? "").trim() });
+      }
+    }
+    // 2) embed properties(*) / properties!fk(*) em selects de outras tabelas.
+    const rxEmbed = /properties(?:![\w]+)?\s*\(\s*\*\s*\)/g;
+    while ((m = rxEmbed.exec(texto))) {
+      const n = linhaDe(texto, m.index);
+      if (ignorada(n)) continue;
+      violations.push({ rel, n, why: "embed properties(*) quebra com o grant por coluna (0053) — liste as colunas", line: (linhas[n - 1] ?? "").trim() });
+    }
+  }
+}
+
 if (violations.length === 0) {
   console.log("✓ Consistência OK — sem vocabulário de dinheiro nem vazamento de contato em superfícies de usuário.");
   process.exit(0);

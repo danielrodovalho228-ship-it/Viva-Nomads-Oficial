@@ -88,3 +88,12 @@ reset role; set role authenticated; select set_config('request.jwt.claims','{"su
 select v('NOVO@0052','tem_relacao_pedido_com: dono2 ↔ inquilino do pedido','select tem_relacao_pedido_com(''22222222-2222-2222-2222-222222222222'')::text','true');
 reset role; set role anon; select set_config('request.jwt.claims','{}',false);
 select t('ATAQUE@0052','tem_relacao_pedido_com: anon não executa','falha',$q$select tem_relacao_pedido_com('22222222-2222-2222-2222-222222222222')$q$);
+-- Limites dos casos (c) e (d)
+reset role; set role authenticated; select set_config('request.jwt.claims','{"sub":"11111111-1111-1111-1111-111111111111"}',false);
+select t('ATAQUE@0052','(c) dono manda p/ si mesmo via próprio anúncio','falha',$q$insert into messages(conversation_id,sender_id,receiver_id,property_id,body) values ('cx','11111111-1111-1111-1111-111111111111','11111111-1111-1111-1111-111111111111','aaaaaaa1-0000-0000-0000-000000000001','eu')$q$);
+select t('ATAQUE@0052','(d) dono escreve ao estranho em OUTRA conversa','falha',$q$insert into messages(conversation_id,sender_id,receiver_id,body) values ('outra','11111111-1111-1111-1111-111111111111','33333333-3333-3333-3333-333333333333','oi de novo')$q$);
+select t('ATAQUE@0052','(d) dono escreve ao estranho sem conversation_id','falha',$q$insert into messages(sender_id,receiver_id,body) values ('11111111-1111-1111-1111-111111111111','33333333-3333-3333-3333-333333333333','oi')$q$);
+reset role; set role authenticated; select set_config('request.jwt.claims','{"sub":"33333333-3333-3333-3333-333333333333"}',false);
+select t('ATAQUE@0052','(c) sem property_id para o dono','falha',$q$insert into messages(conversation_id,sender_id,receiver_id,body) values ('cy','33333333-3333-3333-3333-333333333333','11111111-1111-1111-1111-111111111111','oi')$q$);
+select t('ATAQUE@0052','(c) anúncio em RASCUNHO','falha',$q$insert into messages(conversation_id,sender_id,receiver_id,property_id,body) values ('cz','33333333-3333-3333-3333-333333333333','11111111-1111-1111-1111-111111111111','aaaaaaa4-0000-0000-0000-000000000004','oi')$q$);
+select t('ATAQUE@0052','(c) anúncio ativo mas destinatário não é o dono','falha',$q$insert into messages(conversation_id,sender_id,receiver_id,property_id,body) values ('cw','33333333-3333-3333-3333-333333333333','44444444-4444-4444-4444-444444444444','aaaaaaa1-0000-0000-0000-000000000001','oi')$q$);

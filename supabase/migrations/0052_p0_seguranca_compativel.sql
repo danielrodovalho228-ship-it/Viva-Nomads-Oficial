@@ -139,9 +139,10 @@ grant execute on function public.tem_relacao_pedido_com(uuid) to authenticated;
 -- messages INSERT: remetente é quem está logado E existe relação real:
 --   (a) um lead entre as partes (dúvida, visita ou candidatura — qualquer status);
 --   (b) uma resposta a Pedido de Moradia entre as partes (os dois sentidos);
---   (c) 1º contato SOBRE um anúncio ATIVO, para o DONO dele (ex.: "Solicitar
---       reserva", que abre a conversa sem lead);
---   (d) resposta a quem já mandou mensagem para você.
+--   (c) 1º contato SOBRE um anúncio ATIVO (com property_id), para o DONO dele,
+--       e o remetente não é o dono (ex.: "Solicitar reserva", que abre a
+--       conversa sem lead — sai no P1, quando a reserva criar lead);
+--   (d) resposta a quem já te escreveu NA MESMA conversa (conversation_id).
 -- Antes, bastava sender_id = auth.uid(): dava para "mandar mensagem" a qualquer
 -- uuid e forjar a relação que liberava o contato (message_notify_contact).
 drop policy if exists "enviar mensagem" on public.messages;
@@ -155,16 +156,29 @@ create policy "enviar mensagem" on public.messages
            or (l.owner_id  = auth.uid() and l.tenant_id = messages.receiver_id)
       )
       or public.tem_relacao_pedido_com(messages.receiver_id)
-      or exists (
-        select 1 from public.properties p
-        where p.id = messages.property_id
-          and p.status = 'active'
-          and p.owner_id = messages.receiver_id
+      -- (c) 1º contato: COM property_id, para o DONO desse imóvel ATIVO, e o
+      --     remetente não é o próprio dono. (Sai no P1, quando "Solicitar
+      --     reserva" passar a criar lead.)
+      or (
+        messages.property_id is not null
+        and exists (
+          select 1 from public.properties p
+          where p.id = messages.property_id
+            and p.status = 'active'
+            and p.owner_id = messages.receiver_id
+            and p.owner_id <> auth.uid()
+        )
       )
-      or exists (
-        select 1 from public.messages m
-        where m.sender_id = messages.receiver_id
-          and m.receiver_id = auth.uid()
+      -- (d) resposta só a quem já te escreveu NESTA conversa (mesmo
+      --     conversation_id, que já carrega o imóvel), não a qualquer pessoa.
+      or (
+        messages.conversation_id is not null
+        and exists (
+          select 1 from public.messages m
+          where m.sender_id = messages.receiver_id
+            and m.receiver_id = auth.uid()
+            and m.conversation_id = messages.conversation_id
+        )
       )
     )
   );
