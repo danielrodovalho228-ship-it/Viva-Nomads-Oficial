@@ -209,6 +209,10 @@ function PedidoForm() {
   const [ocupantes, setOcupantes] = useState(ocupQ >= 1 ? ocupQ : 1);
   const [motivo, setMotivo] = useState("");
   const [apresentacao, setApresentacao] = useState("");
+  const [pets, setPets] = useState(false);
+  const [criancas, setCriancas] = useState(Number(sp.get("criancas") || 0) > 0);
+  // Depois de publicar: quantos imóveis combinam AGORA (regra do banco).
+  const [resultado, setResultado] = useState<{ compativeis: number; sugestao: string | null } | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
 
@@ -237,13 +241,50 @@ function PedidoForm() {
       qtdOcupantes: ocupantes,
       motivo,
       apresentacao: apresentacao || undefined,
+      pets,
+      criancas,
     });
     setEnviando(false);
     if (res.ok) {
-      router.push("/dashboard/pedidos");
+      setResultado({ compativeis: res.compativeis ?? 0, sugestao: res.sugestao ?? null });
     } else {
       setErro(res.error ?? "Não foi possível publicar o pedido.");
     }
+  }
+
+  if (resultado) {
+    const n = resultado.compativeis;
+    return (
+      <div className="rounded-2xl border border-line bg-white p-6 shadow-lg sm:p-7" role="status" aria-live="polite">
+        <h2 className="font-title text-xl font-bold text-ink">Pedido publicado</h2>
+        {n > 0 ? (
+          <p className="mt-3 rounded-xl bg-sage-100 px-4 py-3 text-sm text-forest">
+            <strong>
+              {n} {n === 1 ? "imóvel compatível" : "imóveis compatíveis"} agora
+            </strong>{" "}
+            — {n === 1 ? "o proprietário foi avisado" : "os proprietários foram avisados"}. Quando alguém
+            responder, você recebe um aviso; a conversa é pela plataforma.
+          </p>
+        ) : (
+          <div className="mt-3 space-y-2 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <p>
+              <strong>Nenhum imóvel combina com tudo agora.</strong> Avisaremos você quando surgir um.
+            </p>
+            {resultado.sugestao && <p>{resultado.sugestao}</p>}
+            <p>
+              Para ajustar, pause este pedido em{" "}
+              <Link href="/dashboard/pedidos" className="font-medium underline">
+                Meus pedidos
+              </Link>{" "}
+              e publique outro com o orçamento, a data ou o prazo ajustados.
+            </p>
+          </div>
+        )}
+        <div className="mt-5 flex justify-end">
+          <Button onClick={() => router.push("/dashboard/pedidos")}>Ver meus pedidos</Button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -332,6 +373,19 @@ function PedidoForm() {
             />
           </label>
         </div>
+
+        {/* Só imóveis que aceitam entram como compatíveis. */}
+        <fieldset className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink">
+          <legend className="sr-only">Pet e crianças</legend>
+          <label className="inline-flex items-center gap-2">
+            <input type="checkbox" checked={pets} onChange={(e) => setPets(e.target.checked)} className="h-4 w-4 accent-forest" />
+            Vou com pet
+          </label>
+          <label className="inline-flex items-center gap-2">
+            <input type="checkbox" checked={criancas} onChange={(e) => setCriancas(e.target.checked)} className="h-4 w-4 accent-forest" />
+            Vou com crianças
+          </label>
+        </fieldset>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <label>

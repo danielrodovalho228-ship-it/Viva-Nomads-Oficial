@@ -5,6 +5,7 @@ import { notify } from "@/lib/notifications";
 import { SITE_URL } from "@/lib/site";
 import { textoEmail } from "@/lib/notifications/texto-seguro";
 import { logModeracao } from "@/lib/data/moderacao-log";
+import { metricasPedidos, type MetricasPedidos } from "@/lib/data/pedidos-compat";
 import { ehAdmin } from "@/lib/data/admin-guard";
 
 type ActionResult = { ok: boolean; demo?: boolean; error?: string };
@@ -22,6 +23,17 @@ export async function adminListPedidos(): Promise<Record<string, unknown>[]> {
     .order("criado_em", { ascending: false })
     .limit(500);
   return data ?? [];
+}
+
+/** Números dos pedidos (últimos 30 dias) — só para admin. */
+export async function getMetricasPedidosAdmin(): Promise<MetricasPedidos | null> {
+  const supabase = await createClient();
+  if (!supabase) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user || !(await ehAdmin(supabase, user.id))) return null;
+  return metricasPedidos(30);
 }
 
 /**

@@ -12,7 +12,6 @@ import {
   motivoPublico,
   MAX_PEDIDOS_ATIVOS,
   receitaPotencial,
-  pedidoCompativel,
   diasDesde,
 } from "./pedidos.ts";
 
@@ -70,26 +69,6 @@ test("motivo público não identifica a pessoa", () => {
 test("receita potencial = orçamento × prazo", () => {
   assert.equal(receitaPotencial(3500, 6), 21000);
   assert.equal(receitaPotencial(0, 6), 0);
-});
-
-test("compatibilidade: cidade + orçamento (tol. 15%) + capacidade", () => {
-  const props = [{ city: "Uberlândia", maxGuests: 4, monthlyPrice: 3000 }];
-  assert.equal(
-    pedidoCompativel({ cidade: "Uberlândia", orcamento_mensal: 2600, qtd_ocupantes: 3 }, props),
-    true
-  );
-  assert.equal(
-    pedidoCompativel({ cidade: "Uberlândia", orcamento_mensal: 2000, qtd_ocupantes: 3 }, props),
-    false
-  );
-  assert.equal(
-    pedidoCompativel({ cidade: "Uberlândia", orcamento_mensal: 4000, qtd_ocupantes: 6 }, props),
-    false
-  );
-  assert.equal(
-    pedidoCompativel({ cidade: "Curitiba", orcamento_mensal: 4000, qtd_ocupantes: 2 }, props),
-    false
-  );
 });
 
 test("diasDesde conta dias entre datas ISO", () => {

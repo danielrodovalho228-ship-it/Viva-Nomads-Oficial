@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Megaphone, ShieldCheck, Home, Plus, Info, Check } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Megaphone, ShieldCheck, Home, Plus, Info, Check, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatBRL, cn, dataBR } from "@/lib/utils";
 import {
@@ -13,8 +13,8 @@ import {
   contemContato,
   CONTATO_AVISO,
   receitaPotencial,
-  pedidoCompativel,
 } from "@/lib/pedidos/pedidos";
+import { chaveCidade } from "@/lib/cidades";
 import { responderPedido } from "@/lib/data/pedidos-actions";
 import type { PropriedadeMinima } from "@/lib/data/pedidos-actions";
 
@@ -30,6 +30,15 @@ type PedidoPublico = {
   apresentacao: string | null;
   expira_em: string;
   inquilino_verificado: boolean;
+  pets?: boolean | null;
+  criancas?: boolean | null;
+  // Compatibilidade REAL (calculada no banco para o MEU melhor imóvel).
+  situacao: "compativel" | "quase" | "demais";
+  compat_imovel_id: string | null;
+  compat_imovel_titulo: string | null;
+  compat_nota: number | null;
+  compat_motivo: string | null;
+  compat_porque: string[];
 };
 type MinhaResposta = {
   pedido_id: string;
@@ -51,15 +60,31 @@ export function PedidosProprietarioClient({
   const todos = pedidos as unknown as PedidoPublico[];
   const respostas = minhasRespostas as unknown as MinhaResposta[];
   const [aberto, setAberto] = useState<string | null>(null); // pedido em resposta
-  const [aba, setAba] = useState<"compat" | "demais">("compat");
-  const [ordem, setOrdem] = useState<"recentes" | "potencial" | "prazo">("recentes");
+  const [aba, setAba] = useState<"compativel" | "quase" | "demais">("compativel");
+  const [ordem, setOrdem] = useState<"nota" | "recentes" | "potencial" | "prazo">("nota");
 
-  // Classifica em COMPATÍVEIS (batem com um imóvel ativo do dono) e DEMAIS.
-  const compat = todos.filter((p) => pedidoCompativel(p, myProperties));
-  const demais = todos.filter((p) => !pedidoCompativel(p, myProperties));
-  const base = aba === "compat" ? compat : demais;
+  // Abas pela regra do banco (o MESMO imóvel atende tudo — não "algum imóvel").
+  const compat = todos.filter((p) => p.situacao === "compativel");
+  const quase = todos.filter((p) => p.situacao === "quase");
+  const demais = todos.filter((p) => p.situacao === "demais");
+  const base = aba === "compativel" ? compat : aba === "quase" ? quase : demais;
+
+  // Link do e-mail ("Responder com este imóvel"): abre o pedido já respondendo.
+  const params = useSearchParams();
+  const pedidoDoLink = params.get("pedido");
+  const imovelDoLink = params.get("imovel");
+  useEffect(() => {
+    if (!pedidoDoLink) return;
+    const p = todos.find((x) => x.id === pedidoDoLink);
+    if (!p) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setAba(p.situacao);
+    setAberto(p.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pedidoDoLink]);
 
   const lista = [...base].sort((a, b) => {
+    if (ordem === "nota") return (b.compat_nota ?? -1) - (a.compat_nota ?? -1);
     if (ordem === "potencial")
       return (
         receitaPotencial(b.orcamento_mensal, b.prazo_meses) -
@@ -97,27 +122,28 @@ export function PedidosProprietarioClient({
         <>
           {/* Tabs Compatíveis / Demais + ordenação (Dashboard Fase 2). */}
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <div className="inline-flex rounded-full bg-surface-2 p-0.5 text-sm">
-              <button
-                type="button"
-                onClick={() => setAba("compat")}
-                className={cn(
-                  "rounded-full px-4 py-1.5 font-medium transition-colors",
-                  aba === "compat" ? "bg-forest text-white" : "text-muted"
-                )}
-              >
-                Compatíveis ({compat.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setAba("demais")}
-                className={cn(
-                  "rounded-full px-4 py-1.5 font-medium transition-colors",
-                  aba === "demais" ? "bg-forest text-white" : "text-muted"
-                )}
-              >
-                Demais na cidade ({demais.length})
-              </button>
+            <div className="inline-flex flex-wrap rounded-full bg-surface-2 p-0.5 text-sm" role="tablist">
+              {(
+                [
+                  ["compativel", `Compatíveis (${compat.length})`],
+                  ["quase", `Quase (${quase.length})`],
+                  ["demais", `Demais na cidade (${demais.length})`],
+                ] as const
+              ).map(([chave, rotulo]) => (
+                <button
+                  key={chave}
+                  type="button"
+                  role="tab"
+                  aria-selected={aba === chave}
+                  onClick={() => setAba(chave)}
+                  className={cn(
+                    "rounded-full px-4 py-1.5 font-medium transition-colors",
+                    aba === chave ? "bg-forest text-white" : "text-muted"
+                  )}
+                >
+                  {rotulo}
+                </button>
+              ))}
             </div>
             <label className="flex items-center gap-2 text-sm text-muted">
               Ordenar
@@ -126,6 +152,7 @@ export function PedidosProprietarioClient({
                 onChange={(e) => setOrdem(e.target.value as typeof ordem)}
                 className="rounded-lg border border-line bg-white px-2 py-1 text-sm text-ink outline-none focus:border-sage"
               >
+                <option value="nota">Melhor combinação</option>
                 <option value="recentes">Mais recentes</option>
                 <option value="potencial">Maior potencial</option>
                 <option value="prazo">Prazo mais longo</option>
@@ -135,22 +162,24 @@ export function PedidosProprietarioClient({
 
           {lista.length === 0 && (
             <p className="rounded-2xl border border-dashed border-line bg-white px-5 py-8 text-center text-sm text-muted">
-              {aba === "compat"
-                ? "Nenhum pedido compatível agora. Veja os demais pedidos na cidade."
-                : "Sem outros pedidos na cidade no momento."}
+              {aba === "compativel"
+                ? "Nenhum pedido combina com um imóvel seu agora. Veja os que quase combinam."
+                : aba === "quase"
+                  ? "Nenhum pedido quase compatível no momento."
+                  : "Sem outros pedidos na cidade no momento."}
             </p>
           )}
 
         <div className="grid gap-4 sm:grid-cols-2">
           {lista.map((p) => {
-            const compativeis = myProperties.filter(
-              (m) =>
-                m.city.toLowerCase() === p.cidade.toLowerCase() &&
-                (m.maxGuests == null || m.maxGuests >= p.qtd_ocupantes)
-            );
-            const temImovelNaCidade = myProperties.some(
-              (m) => m.city.toLowerCase() === p.cidade.toLowerCase()
-            );
+            const naCidade = myProperties.filter((m) => chaveCidade(m.city) === chaveCidade(p.cidade));
+            // O imóvel que combina (ou o do link do e-mail) vem primeiro no seletor.
+            const preferido = p.id === pedidoDoLink && imovelDoLink ? imovelDoLink : p.compat_imovel_id;
+            const compativeis = [
+              ...naCidade.filter((m) => m.id === preferido),
+              ...naCidade.filter((m) => m.id !== preferido),
+            ];
+            const temImovelNaCidade = naCidade.length > 0;
             const jaRespondi = minhaRespostaDoPedido(p.id);
             return (
               <article
@@ -199,6 +228,37 @@ export function PedidosProprietarioClient({
                   </p>
                 )}
 
+                {(p.pets || p.criancas) && (
+                  <p className="mt-2 text-xs text-muted">
+                    {[p.pets && "Com pet", p.criancas && "Com crianças"].filter(Boolean).join(" · ")}
+                  </p>
+                )}
+
+                {/* Qual imóvel MEU combina e por quê (ou o que falta). */}
+                {p.situacao !== "demais" && p.compat_imovel_titulo && (
+                  <div
+                    className={cn(
+                      "mt-3 rounded-lg px-3 py-2 text-sm",
+                      p.situacao === "compativel" ? "bg-sage-100 text-forest" : "bg-amber-50 text-amber-900"
+                    )}
+                  >
+                    <p className="flex items-center gap-1.5 font-semibold">
+                      <Sparkles className="h-4 w-4" />
+                      {p.situacao === "compativel" ? "Combina com" : "Quase combina com"} “{p.compat_imovel_titulo}”
+                      {p.compat_nota != null && <span className="ml-auto text-xs font-medium">nota {p.compat_nota}/100</span>}
+                    </p>
+                    {p.situacao === "compativel" ? (
+                      <ul className="mt-1 list-disc pl-5 text-xs">
+                        {p.compat_porque.map((m) => (
+                          <li key={m}>{m}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      p.compat_motivo && <p className="mt-1 text-xs">Falta pouco: {p.compat_motivo}.</p>
+                    )}
+                  </div>
+                )}
+
                 {/* Ação: responder / status / CTA de captação */}
                 <div className="mt-4">
                   {jaRespondi ? (
@@ -213,10 +273,6 @@ export function PedidosProprietarioClient({
                         <Plus className="h-4 w-4" /> Cadastrar imóvel em {p.cidade}
                       </Button>
                     </Link>
-                  ) : compativeis.length === 0 ? (
-                    <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
-                      Seus imóveis em {p.cidade} não comportam {p.qtd_ocupantes} pessoas.
-                    </p>
                   ) : aberto === p.id ? (
                     <ResponderForm
                       pedido={p}
@@ -229,7 +285,8 @@ export function PedidosProprietarioClient({
                     />
                   ) : (
                     <Button variant="gold" className="w-full" onClick={() => setAberto(p.id)}>
-                      <Home className="h-4 w-4" /> Responder com meu imóvel
+                      <Home className="h-4 w-4" />{" "}
+                      {p.situacao === "compativel" ? "Responder com este imóvel" : "Responder com meu imóvel"}
                     </Button>
                   )}
                 </div>

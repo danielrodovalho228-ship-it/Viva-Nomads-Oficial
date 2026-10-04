@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { EyeOff, RotateCcw } from "lucide-react";
-import { PageTitle, Panel } from "@/components/dashboard/primitives";
+import { EyeOff, RotateCcw, Megaphone, Sparkles, Mail, MessageSquare, Clock } from "lucide-react";
+import { PageTitle, Panel, StatCard } from "@/components/dashboard/primitives";
+import type { MetricasPedidos } from "@/lib/data/pedidos-compat";
 import { Button } from "@/components/ui/button";
 import { formatBRL, cn } from "@/lib/utils";
 import { motivoLabel, PEDIDO_STATUS_LABEL } from "@/lib/pedidos/pedidos";
@@ -32,7 +33,13 @@ const TONE: Record<string, string> = {
   removido_admin: "bg-red-50 text-red-700",
 };
 
-export function AdminPedidosClient({ pedidos }: { pedidos: Record<string, unknown>[] }) {
+export function AdminPedidosClient({
+  pedidos,
+  metricas,
+}: {
+  pedidos: Record<string, unknown>[];
+  metricas: MetricasPedidos | null;
+}) {
   const router = useRouter();
   const lista = pedidos as unknown as Pedido[];
   const [busy, setBusy] = useState<string | null>(null);
@@ -62,6 +69,7 @@ export function AdminPedidosClient({ pedidos }: { pedidos: Record<string, unknow
         title="Moderação de pedidos"
         subtitle="Ocultar pedidos impróprios (com motivo, notificando o inquilino) e reativar."
       />
+      <MetricasPedidosPainel m={metricas} />
       <Panel className="p-0 pt-6">
         <div className="overflow-x-auto px-6 pb-6">
           {lista.length === 0 ? (
@@ -156,5 +164,29 @@ export function AdminPedidosClient({ pedidos }: { pedidos: Record<string, unknow
         onConfirm={ocultar}
       />
     </>
+  );
+}
+
+/** Números do funil de pedidos (últimos 30 dias). "—" quando não há dado. */
+function MetricasPedidosPainel({ m }: { m: MetricasPedidos | null }) {
+  const pct =
+    m && m.pedidos > 0 ? `${Math.round((m.pedidos_com_compativel / m.pedidos) * 100)}%` : "—";
+  const taxa =
+    m && m.avisos_email + m.avisos_resumo > 0
+      ? `${Math.round((m.avisos_respondidos / (m.avisos_email + m.avisos_resumo)) * 100)}%`
+      : "—";
+  const horas =
+    m?.horas_media_resposta == null ? "—" : `${String(m.horas_media_resposta).replace(".", ",")} h`;
+  return (
+    <div className="mb-6">
+      <p className="mb-2 text-sm text-muted">Últimos 30 dias</p>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5 sm:gap-4">
+        <StatCard label="Pedidos" value={m?.pedidos ?? "—"} icon={Megaphone} />
+        <StatCard label="Com compatível ao publicar" value={pct} icon={Sparkles} />
+        <StatCard label="Avisos enviados" value={m ? m.avisos_email + m.avisos_resumo : "—"} icon={Mail} />
+        <StatCard label="Taxa de resposta" value={taxa} icon={MessageSquare} />
+        <StatCard label="Tempo médio de resposta" value={horas} icon={Clock} />
+      </div>
+    </div>
   );
 }
