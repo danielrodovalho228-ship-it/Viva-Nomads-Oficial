@@ -268,3 +268,41 @@ textarea:focus-visible,
   }
   .tag-earned-pop { animation: tagPop 0.45s ease-out; }
 }
+
+/*
+  MODO APP (Android/iPhone) — <html data-app="1"> é marcado antes da 1ª pintura
+  (src/lib/app-mode.ts). No app: some o "site" (menu de cima, rodapé, barras do
+  painel web) e aparece a casca do app (barra inferior de 5 abas por papel e
+  cabeçalho curto). Fora do app nada muda.
+*/
+.app-only {
+  display: none !important;
+}
+html[data-app] .web-only {
+  display: none !important;
+}
+html[data-app] .app-only {
+  display: revert !important;
+}
+html[data-app] .app-only-flex {
+  display: flex !important;
+}
+.app-only-flex {
+  display: none !important;
+}
+/* A barra inferior do app aparece em qualquer largura dentro do app. */
+html[data-app] .vn-tabbar {
+  display: block !important;
+}
+/* Sem "puxa e estica" nem seleção acidental de texto nos controles do app. */
+html[data-app] body {
+  overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
+}
+html[data-app] .vn-tabbar-spacer {
+  display: block !important;
+}
+/* No app a barra inferior existe em qualquer largura: o conteúdo não fica por baixo dela. */
+html[data-app] .vn-main {
+  padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px)) !important;
+}

@@ -21,6 +21,10 @@ const config: CapacitorConfig = {
   appId: "br.com.vivanomads.app",
   appName: "Viva Nomads",
   webDir: "www",
+  // Marca o app no user-agent: o SITE reconhece o app no servidor já na 1ª
+  // requisição (modo app enxuto, src/lib/app-mode.ts). Vale a partir do
+  // próximo build do Android; o build atual é reconhecido pelo navegador.
+  appendUserAgent: "VivaNomadsApp/1.0 (capacitor)",
   server: {
     url: "https://vivanomads.com.br",
     androidScheme: "https",

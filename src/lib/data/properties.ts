@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { isExemplo } from "@/lib/demo-listing";
 import { createPublicClient } from "@/lib/supabase/public";
 import type { Property, AmenityGroup } from "@/lib/types";
 import { SAMPLE_PROPERTIES } from "@/lib/properties";
@@ -281,6 +282,9 @@ export async function getProperty(id: string): Promise<Property | undefined> {
   const supabase = createPublicClient();
   // Modo demonstração (sem Supabase): dados de exemplo.
   if (!supabase) return SAMPLE_PROPERTIES.find((p) => p.id === id);
+  // Anúncio de exemplo (id não-uuid, ex.: "ube-001"): nem consulta o banco —
+  // a coluna é uuid e a consulta só voltava 400.
+  if (isExemplo(id)) return showDemoProperties() ? SAMPLE_PROPERTIES.find((p) => p.id === id) : undefined;
 
   try {
     // `maybeSingle` devolve null (sem erro) para zero linhas — evita o PGRST116
@@ -315,6 +319,7 @@ export async function getPropertyForOwner(id: string): Promise<Property | undefi
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) return undefined;
+    if (isExemplo(id)) return SAMPLE_PROPERTIES.find((p) => p.id === id);
     const { data } = await supabase
       .from("properties")
       .select(PROPERTY_PUBLIC_COLUMNS)

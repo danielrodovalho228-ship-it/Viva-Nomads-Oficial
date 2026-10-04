@@ -54,5 +54,17 @@ export default defineConfig({
         ...(CHROMIUM ? { launchOptions: { executablePath: CHROMIUM } } : {}),
       },
     },
+    {
+      // Modo app (Android/iPhone): tela de celular + o marcador "VivaNomadsApp"
+      // que o app nativo acrescenta ao user-agent. Só o T14 roda aqui.
+      name: "app-mobile",
+      testMatch: /t14-app-mode\.spec\.ts/,
+      use: {
+        ...devices["Pixel 7"],
+        viewport: { width: 390, height: 844 },
+        userAgent: `${devices["Pixel 7"].userAgent} VivaNomadsApp/1.0 (capacitor)`,
+        ...(CHROMIUM ? { launchOptions: { executablePath: CHROMIUM } } : {}),
+      },
+    },
   ],
 });

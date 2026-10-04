@@ -21,6 +21,9 @@ export function RoleWelcomeModal() {
 
   useEffect(() => {
     if (!user) return; // só usuário real logado
+    // No app o papel já foi escolhido na tela de boas-vindas (e lá não há
+    // "seletor no topo"): o modal não aparece.
+    if (document.documentElement.dataset.app === "1") return;
     try {
       if (localStorage.getItem(ASKED_KEY)) return;
     } catch {
@@ -97,7 +100,7 @@ export function RoleWelcomeModal() {
               Anunciar meu imóvel
             </span>
             <span className="mt-1 block text-sm text-muted">
-              Qualifique seu imóvel e receba inquilinos verificados.
+              Qualifique seu imóvel e receba candidaturas.
             </span>
           </button>
         </div>

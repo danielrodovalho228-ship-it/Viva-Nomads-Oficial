@@ -4,6 +4,8 @@ import "./globals.css";
 import { AuthProvider } from "@/components/auth-provider";
 import { NativeBridge } from "@/components/native/native-bridge";
 import { SITE_URL, SITE_NAME } from "@/lib/site";
+import { AppModeBridge } from "@/components/app/app-mode-bridge";
+import { APP_PREPAINT_SCRIPT } from "@/lib/app-mode";
 
 // Tipografia única do site (Atualização 18): Inter para títulos e corpo,
 // variando apenas o peso. Desenhada para telas — sem corte de descidas/acentos.
@@ -54,10 +56,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" className={`${inter.variable} h-full scroll-smooth`}>
+    <html lang="pt-BR" className={`${inter.variable} h-full scroll-smooth`} suppressHydrationWarning>
+      <head>
+        {/* Modo app (Android/iPhone): marca <html data-app> antes da 1ª pintura. */}
+        <script dangerouslySetInnerHTML={{ __html: APP_PREPAINT_SCRIPT }} />
+      </head>
       <body className="min-h-full flex flex-col bg-surface text-ink">
         <AuthProvider>
           <NativeBridge />
+          <AppModeBridge />
           {children}
         </AuthProvider>
       </body>
