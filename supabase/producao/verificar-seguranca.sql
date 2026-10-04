@@ -9,9 +9,11 @@
 --      sobrar itens da 0052 em diante. SEM isso a 0052 falha (teste ORDEM).
 --   1) ANTES: rodar só a seção A (+ backup-antes-p0.sql) → guardar a saída
 --      (as seções B/C/D citam objetos que só existem depois das migrações)
---   2) aplicar 0052 → rodar A + B      → tudo "OK"
+--   2) aplicar 0052 → rodar A + B      → tudo "OK" (exceto B3c/B4b/B8, que
+--      são da 0054)
 --   3) merge + deploy no ar → testar o site
 --   4) aplicar 0053 → rodar A + B + C  → tudo "OK"
+--   4b) aplicar 0054 (a qualquer momento depois da 0052) → B3c/B4b/B8 "OK"
 --   5) depois de alguns dias sem problema: seção D (apagar o backup do draft_data)
 -- ════════════════════════════════════════════════════════════════════════════
 
@@ -69,7 +71,16 @@ from information_schema.column_privileges
 where table_schema = 'public' and table_name = 'profiles'
   and grantee in ('authenticated', 'anon') and privilege_type = 'UPDATE'
   and column_name in ('role', 'email', 'is_verified', 'verification_progress', 'fundador',
-                      'fundador_em', 'account_type', 'cpf', 'person_type', 'anonymized_at');
+                      'fundador_em', 'account_type', 'cpf', 'person_type', 'anonymized_at',
+                      'referred_by', 'referral_code');
+
+-- B3c (0054)
+select 'B3c. C2 trigger trava indicação (0054)' as checagem,
+       case when pg_get_functiondef(p.oid) like '%referred_by%'
+             and pg_get_functiondef(p.oid) like '%referral_code%'
+            then 'OK — referred_by e referral_code travados' else 'FALTANDO' end as status
+from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+where n.nspname = 'public' and p.proname = 'profiles_bloqueia_confianca';
 
 -- B4) C3a — políticas novas de leads e messages ------------------------------
 select 'B4. C3a ' || tablename || ' / ' || policyname as checagem,
@@ -82,6 +93,14 @@ from pg_policies
 where schemaname = 'public'
   and ((tablename = 'leads' and policyname = 'inquilino cria lead')
     or (tablename = 'messages' and policyname = 'enviar mensagem'));
+
+-- B4b (0054)
+select 'B4b. C3a resposta (d) no mesmo imóvel (0054)' as checagem,
+       -- o Postgres reescreve "is not distinct from" como "NOT (... IS DISTINCT FROM ...)"
+       case when with_check ilike '%m.property_id IS DISTINCT FROM messages.property_id%'
+            then 'OK — exige o mesmo imóvel' else 'FALTANDO — (d) sem limite de imóvel' end as status
+from pg_policies
+where schemaname = 'public' and tablename = 'messages' and policyname = 'enviar mensagem';
 
 -- B5) C4a — property_private_details existe e volta VAZIA para um estranho ----
 select 'B5. C4a RPC existe' as checagem,
@@ -113,6 +132,32 @@ select 'B7. PJ1 person_type divergente' as checagem,
        u.raw_user_meta_data ->> 'person_type' as escolhido_no_cadastro
 from public.profiles p join auth.users u on u.id = p.id
 where coalesce(u.raw_user_meta_data ->> 'person_type', 'pf') <> p.person_type::text
+order by u.email;
+
+-- B8) (0054) Indicação — cadastro grava referred_by e todo perfil ativo tem código ---
+select 'B8. IND handle_new_user grava referred_by' as checagem,
+       case when pg_get_functiondef(p.oid) like '%referred_by%'
+            then 'OK — grava' else 'FALTANDO — código descartado (0054 não aplicada)' end as status
+from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+where n.nspname = 'public' and p.proname = 'handle_new_user';
+
+select 'B8b. IND perfis ativos sem referral_code' as checagem, count(*) as linhas
+from public.profiles where referral_code is null and anonymized_at is null;
+
+-- B8c) Cadastros ANTIGOS que digitaram um código VÁLIDO de outra pessoa
+--      (descartado na época). A 0054 NÃO preenche esses — decida caso a caso. Para gravar um:
+--      update profiles set referred_by = '<uuid de quem indicou>' where id = '<uuid>';
+select 'B8c. IND código digitado e descartado' as checagem,
+       u.email, u.raw_user_meta_data ->> 'referred_by' as codigo_digitado,
+       ind.email as quem_indicou
+from public.profiles p
+join auth.users u on u.id = p.id
+join public.profiles ind
+  on ind.referral_code in (upper(trim(u.raw_user_meta_data ->> 'referred_by')),
+                           'VIVA-' || upper(trim(u.raw_user_meta_data ->> 'referred_by')))
+ and ind.id <> p.id
+where p.referred_by is null
+  and coalesce(trim(u.raw_user_meta_data ->> 'referred_by'), '') <> ''
 order by u.email;
 
 
