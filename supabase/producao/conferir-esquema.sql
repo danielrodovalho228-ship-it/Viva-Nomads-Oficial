@@ -171,7 +171,12 @@ with e(m, k, t, c) as (values
   ('0054','F','handle_new_user',''),
   ('0054','F','profiles_bloqueia_confianca',''),
   ('0055','T','exclusao_conta_pedidos',''),
-  ('0055','F','uid_por_email_exato','')
+  ('0055','F','uid_por_email_exato',''),
+  ('0056','T','limites_uso',''),
+  ('0056','T','cobrancas_fechamento',''),
+  ('0056','F','qualificacao_protege_revisao',''),
+  ('0056','F','properties_protege_campos',''),
+  ('0056','F','consumir_limite','')
 )
 select m as migracao,
        string_agg(k || ':' || t || case when c <> '' then '.' || c else '' end, ', ') as faltando

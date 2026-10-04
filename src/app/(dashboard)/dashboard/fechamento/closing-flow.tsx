@@ -227,11 +227,9 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
       const res = await fetch("/api/contrato", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        // A5: partes, imóvel e aluguel vêm do banco (pela candidatura aceita).
         body: JSON.stringify({
-          tenantName: tenant.name,
-          ownerName: "Proprietário",
-          propertyTitle: PROPERTY.title,
-          monthlyRent: PROPERTY.monthlyRent,
+          leadId: ctx.leadId,
           termMonths: prazoMeses,
           guarantee: selectedGarantia?.nome ?? "",
           costSplit: split,
@@ -243,11 +241,8 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
       await fetch("/api/comissao", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          firstMonthRent: PROPERTY.monthlyRent,
-          plan: OWNER_PLAN,
-          name: tenant.name,
-        }),
+        // A5: valor, taxa e carteira vêm do banco (pela candidatura aceita).
+        body: JSON.stringify({ leadId: ctx.leadId }),
       }).catch(() => {});
       // Garantia na chave do banco (caução vira à vista/parcelada pela forma).
       const garantiaKey =

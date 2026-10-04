@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { sendEmail } from "@/lib/notifications/email";
+import { consumirLimite, ipHash, HORA } from "@/lib/limites";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +26,14 @@ export async function POST(request: Request) {
   }
 
   // Endereço da EMPRESA (nunca um e-mail pessoal de fallback).
+  // Anti-spam: 5 envios por hora por IP (cada envio é um e-mail).
+  if (!(await consumirLimite(`empresas:ip:${ipHash(request)}`, 5, HORA))) {
+    return NextResponse.json(
+      { error: "Recebemos vários envios seguidos. Tente de novo em alguns minutos." },
+      { status: 429 }
+    );
+  }
+
   const to = process.env.EMPRESAS_LEAD_EMAIL ?? "contato@vivanomads.com.br";
 
   const esc = (s: string) =>

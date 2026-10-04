@@ -15,6 +15,8 @@
 --   4) aplicar 0053 → rodar A + B + C  → tudo "OK"
 --   4b) aplicar 0054 (a qualquer momento depois da 0052) → B3c/B4b/B8 "OK"
 --   4c) aplicar 0055 (P1 dados) → rodar E → "OK" (E3: só service_role)
+--   4d) aplicar 0056 (P1 integridade/limites) ANTES do deploy do PR (a)
+--       → rodar F → F1 "OK", F2 0 linhas, F3 só service_role
 --   5) depois de alguns dias sem problema: seção D (apagar o backup do draft_data)
 -- ════════════════════════════════════════════════════════════════════════════
 
@@ -210,6 +212,24 @@ select 'E4. M1 pedidos de exclusão sem acesso de usuário' as checagem,
              and not has_table_privilege('anon', c.oid, 'SELECT')
             then 'OK' else 'VULNERÁVEL' end as status
 from pg_class c where c.oid = 'public.exclusao_conta_pedidos'::regclass;
+
+
+-- ████ F — DEPOIS DA 0056 (P1 integridade/limites) ██████████████████████████
+
+select 'F1. A3 travas de documento e anúncio' as checagem,
+       case when count(*) = 2 then 'OK — 2 triggers' else 'FALTANDO — ' || count(*) || ' de 2' end as status
+from pg_trigger
+where tgname in ('trg_qualificacao_protege_revisao', 'trg_properties_protege_campos') and not tgisinternal;
+
+select 'F2. A3 documentos aprovados sem revisor (ou pelo próprio dono)' as checagem, count(*) as linhas
+from public.qualification_checklists
+where document_status = 'approved' and (document_reviewed_by is null or document_reviewed_by = owner_id);
+
+select 'F3. A5 consumir_limite só para o servidor' as checagem,
+       coalesce(string_agg(distinct g.grantee, ', '), '(ninguém)') as quem_pode_executar
+from information_schema.role_routine_grants g
+where g.routine_schema = 'public' and g.routine_name = 'consumir_limite'
+  and g.grantee in ('anon', 'authenticated', 'service_role') and g.privilege_type = 'EXECUTE';
 
 
 -- ████ D — LIMPEZA (só depois de alguns dias sem problema) ███████████████████
