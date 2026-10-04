@@ -25,6 +25,10 @@ jobs:
     timeout-minutes: 20
     env:
       TESTES_BASE_URL: ${{ github.event.deployment_status.target_url || github.event.inputs.base_url }}
+      # Bypass da Deployment Protection da Vercel (preview protegido). Sem ele, a
+      # suíte cai na tela de login da Vercel. O config/global-setup só mandam os
+      # headers quando esta variável existe.
+      VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
       TESTES_INQUILINO_EMAIL: ${{ secrets.TESTES_INQUILINO_EMAIL }}
       TESTES_INQUILINO_SENHA: ${{ secrets.TESTES_INQUILINO_SENHA }}
       TESTES_INQUILINO_NOME: ${{ secrets.TESTES_INQUILINO_NOME }}
@@ -45,6 +49,32 @@ jobs:
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.TESTES_SUPABASE_SERVICE_ROLE_KEY }}
     steps:
       - uses: actions/checkout@v4
+
+      # Diagnóstico do bypass ANTES de instalar nada (falha em segundos). Nunca
+      # imprime o segredo (só se está vazio e o tamanho). Aborta se o bypass não
+      # devolver 200 — assim não se gasta 2 min de instalação para dar "tudo barrado".
+      - name: Diagnóstico do bypass da Vercel
+        run: |
+          echo "== Diagnóstico do bypass (sem expor o segredo) =="
+          if [ -z "${VERCEL_AUTOMATION_BYPASS_SECRET}" ]; then
+            echo "SECRET: VAZIO — não chegou ao job (causa 1: lugar errado no GitHub; use Settings > Secrets and variables > Actions > Repository secrets)."
+          else
+            echo "SECRET: preenchido (tamanho=${#VERCEL_AUTOMATION_BYPASS_SECRET})."
+          fi
+          echo "BASE_URL: ${TESTES_BASE_URL}"
+          NO=$(curl -s -o /dev/null -w "%{http_code}" "${TESTES_BASE_URL}/api/health" || echo "000")
+          WITH=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "x-vercel-protection-bypass: ${VERCEL_AUTOMATION_BYPASS_SECRET}" \
+            -H "x-vercel-set-bypass-cookie: true" \
+            "${TESTES_BASE_URL}/api/health" || echo "000")
+          echo "HTTP /api/health  ->  sem header: ${NO}   com header: ${WITH}"
+          if [ "${WITH}" = "200" ]; then
+            echo "Bypass OK (200). Seguindo para a suíte."
+          else
+            echo "::error::Bypass NAO passou (com header=${WITH}, esperado 200). Suite abortada."
+            echo "Leitura: SECRET vazio -> causa 1 (lugar errado no GitHub). 401/403 com header -> causa 2 (valor errado). 200 aqui mas Playwright cai na Vercel -> causa 3 (envio do header no codigo)."
+            exit 1
+          fi
 
       - uses: actions/setup-node@v4
         with:
