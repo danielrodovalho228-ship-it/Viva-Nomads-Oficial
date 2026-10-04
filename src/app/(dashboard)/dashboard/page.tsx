@@ -335,7 +335,7 @@ function OwnerFunnel({ name, draft }: { name: string; draft?: { id: string; pct:
     {
       n: 3,
       titulo: "Receba candidaturas e pedidos",
-      texto: "Inquilinos verificados chegam por candidatura ou pelos Pedidos de Moradia da sua cidade.",
+      texto: "Interessados chegam por candidatura ou pelos Pedidos de Moradia da sua cidade.",
       cta: "Ver pedidos de moradia",
       href: "/pedidos",
       ativo: false,

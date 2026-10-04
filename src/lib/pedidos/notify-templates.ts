@@ -13,6 +13,7 @@
 */
 
 import { SITE_URL } from "@/lib/site";
+import { textoEmail, textoPlano } from "@/lib/notifications/texto-seguro";
 
 export interface NotifDetalhe {
   detailsHtml: string; // anexado ao corpo do e-mail
@@ -23,13 +24,14 @@ function link(path: string): string {
   return `${SITE_URL}${path}`;
 }
 
+/** `texto` vai escapado e sem links (pode levar dado digitado, ex.: a cidade). */
 function bloco(texto: string, ctaLabel: string, path: string): NotifDetalhe {
   const url = link(path);
   return {
-    detailsHtml: `<p style="margin:12px 0 0;color:#334155;">${texto}</p>
+    detailsHtml: `<p style="margin:12px 0 0;color:#334155;">${textoEmail(texto, 400)}</p>
       <p style="margin:12px 0 0;"><a href="${url}" style="color:#0f3d2e;font-weight:700;">${ctaLabel} →</a></p>`,
     // Canal de SAÍDA: sempre encerra convidando a responder pela plataforma.
-    detailsText: `${texto}\n\nResponda pela plataforma: ${url}`,
+    detailsText: `${textoPlano(texto, 400)}\n\nResponda pela plataforma: ${url}`,
   };
 }
 

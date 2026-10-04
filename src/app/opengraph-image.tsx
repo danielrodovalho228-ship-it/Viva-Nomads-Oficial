@@ -54,12 +54,12 @@ export default function OG() {
             Moradia mobiliada para a sua nova fase
           </div>
           <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 30, marginTop: 20 }}>
-            Locação por temporada de 30 a 180 dias · contrato de verdade · inquilino verificado
+            Imóveis mobiliados de 30 a 180 dias · contrato de verdade
           </div>
         </div>
 
         <div style={{ display: "flex", gap: 14 }}>
-          {["Pronto para Morar", "Contrato formal", "Inquilino verificado"].map((t) => (
+          {["Pronto para Morar", "Contrato formal", "Conversa registrada"].map((t) => (
             <div
               key={t}
               style={{

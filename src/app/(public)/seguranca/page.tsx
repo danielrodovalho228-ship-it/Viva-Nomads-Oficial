@@ -89,11 +89,11 @@ export default function SegurancaPage() {
               certo. O contato direto não é trocado — a negociação segue toda por aqui.
             </p>
           </Faq>
-          <Faq q="O que é o inquilino verificado?">
+          <Faq q="Vai haver verificação do inquilino?">
             <p>
-              Um resultado de verificação em três níveis (verde/amarelo/vermelho) que o proprietário
-              vê <strong className="text-ink">antes de conversar</strong>, sem expor dados sensíveis
-              brutos. A identidade completa só aparece após o aceite.
+              Está em preparação e ainda não está disponível. Quando estiver, o proprietário verá um
+              resultado em três níveis (verde/amarelo/vermelho) antes de conversar, sem dados
+              sensíveis brutos. Hoje, a identidade completa só aparece após o aceite.
             </p>
           </Faq>
           {/* Resposta pública sobre corretagem/CRECI. TODO(juridico): redação

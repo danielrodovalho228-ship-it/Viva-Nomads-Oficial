@@ -12,7 +12,7 @@ export function Footer() {
           <Logo href="/" light />
           <p className="mt-5 max-w-xs text-sm leading-relaxed text-white/60">
             Locação mobiliada por temporada (30 a 180 dias) para profissionais em transição.
-            Contrato de verdade, inquilino verificado e custos organizados.
+            Contrato de verdade, conversa registrada e custos organizados.
           </p>
         </div>
 

@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     template: "%s · Viva Nomads",
   },
   description:
-    "Apartamentos mobiliados e prontos para morar, por temporada de 30 a 180 dias. Contrato com validade jurídica e inquilino verificado.",
+    "Imóveis mobiliados e prontos para morar, por temporada de 30 a 180 dias. Contrato com validade jurídica e conversa registrada na plataforma.",
   keywords: [
     "locação por temporada",
     "imóvel mobiliado mensal",
