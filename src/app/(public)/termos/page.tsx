@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { PlatformLegalNotice } from "@/components/legal-notice";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/termos" },
   title: "Termos de Uso",
   description:
     "Termos de Uso do Viva Nomads. A plataforma conecta proprietários e inquilinos — não é parte do contrato de locação.",
@@ -25,9 +26,9 @@ export default function TermsPage() {
 
         <Section title="2. Posição da plataforma (conectador)">
           O Viva Nomads <strong>não é locador, fiador, garantidor nem parte do contrato</strong>{" "}
-          de locação. Atua exclusivamente conectando as partes, oferecendo verificação
-          de identidade, cotação de garantia locatícia (seguradoras parceiras) e geração de
-          contrato (ZapSign). A relação locatícia é firmada diretamente entre proprietário e
+          de locação. Atua exclusivamente conectando as partes e oferecendo geração de contrato
+          (ZapSign); a verificação de identidade e a cotação de garantia locatícia com parceiros
+          estão em preparação. A relação locatícia é firmada diretamente entre proprietário e
           inquilino.
         </Section>
 
@@ -38,8 +39,9 @@ export default function TermsPage() {
           opcionais.
         </Section>
 
-        <Section title="4. Verificação de inquilinos">
-          A análise de identidade é <strong>informativa</strong>. A plataforma não aprova
+        <Section title="4. Verificação de inquilinos (em breve)">
+          A verificação de identidade ainda não está disponível. Quando estiver, a análise será{" "}
+          <strong>informativa</strong>. A plataforma não aprova
           nem reprova inquilinos: a decisão de alugar é exclusivamente do proprietário.
         </Section>
 

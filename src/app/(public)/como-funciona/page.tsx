@@ -13,6 +13,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { StepImage } from "@/components/step-image";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/como-funciona" },
   title: "Como funciona",
   description:
     "Entenda como funciona a locação mobiliada por temporada no Viva Nomads — para inquilinos e para proprietários.",
@@ -23,7 +24,7 @@ const IMG = "/images/como-funciona";
 const TENANT_STEPS = [
   { icon: Search, img: `${IMG}/01-busque.webp`, alt: "Profissional pesquisando imóveis mobiliados no notebook", title: "Busque", text: "Encontre imóveis mobiliados por cidade, período e orçamento." },
   { icon: MessageSquare, img: "/media/como-funciona-01-converse.webp", alt: "Mulher jovem sorrindo no laptop, conversando pela plataforma", title: "Converse", text: "Fale direto com o proprietário, tire dúvidas e combine os detalhes." },
-  { icon: ShieldCheck, img: `${IMG}/03-verifique.webp`, alt: "Verificação de identidade com documento", title: "Verifique-se", text: "Confirme sua identidade uma vez e candidate-se com um clique." },
+  { icon: ShieldCheck, img: `${IMG}/03-verifique.webp`, alt: "Verificação de identidade com documento", title: "Candidate-se", text: "Envie sua candidatura pela plataforma. A verificação de identidade chega em breve." },
   { icon: FileSignature, img: "/media/como-funciona-02-assine.webp", alt: "Homem assinando o contrato pelo celular", title: "Assine", text: "Assine o contrato digital com validade jurídica e receba as chaves." },
 ];
 
@@ -41,7 +42,7 @@ export default function HowItWorksPage() {
         <div className="container-page max-w-3xl">
           <h1 className="font-title text-4xl font-bold md:text-5xl">Como funciona</h1>
           <p className="mt-5 text-lg text-white/80">
-            Do anúncio ao contrato, com verificação e segurança em cada passo — para{" "}
+            Do anúncio ao contrato, com registro e segurança em cada passo — para{" "}
             <a href="#para-inquilinos" className="font-semibold text-white underline decoration-white/40 underline-offset-4 hover:decoration-white">
               inquilino
             </a>{" "}
@@ -121,8 +122,9 @@ function GarantiasInquilino() {
             <div>
               <dt className="font-semibold text-ink">Para o proprietário</dt>
               <dd className="text-muted">
-                O valor fica na <strong>sua conta</strong> antes da entrada — cobertura imediata
-                para danos ou inadimplência, com tudo documentado.
+                A caução é <strong>depositada em conta poupança</strong> (art. 38 §2º da Lei
+                8.245/91) antes da entrada — cobertura para danos ou inadimplência, com tudo
+                documentado.
               </dd>
             </div>
           </dl>
@@ -157,7 +159,7 @@ function GarantiasInquilino() {
         </div>
       </div>
       <p className="mt-4 text-xs text-muted">
-        A Viva Nomads conecta, verifica e documenta — não é fiadora, seguradora nem retém
+        A Viva Nomads conecta e documenta — não é fiadora, seguradora nem retém
         valores. A garantia é combinada no fechamento, conforme o que o imóvel aceita.
       </p>
     </section>
@@ -274,7 +276,7 @@ function ProtegidoPor() {
       img: "/images/como-funciona/08-feche.webp",
       alt: "Aperto de mãos fechando o contrato de locação",
       title: "Garantia do contrato",
-      text: "Caução direto na sua conta ou seguro-fiança — escolhida no fechamento.",
+      text: "Caução depositada em conta poupança (art. 38 §2º) ou seguro-fiança via parceiro — escolhida no fechamento.",
     },
     {
       img: "/images/home/home-condominio-tranquilo.webp",

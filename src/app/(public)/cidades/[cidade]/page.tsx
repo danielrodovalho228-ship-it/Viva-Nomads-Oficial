@@ -1,3 +1,4 @@
+import { isExemplo } from "@/lib/demo-listing";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { listPropertiesByCity } from "@/lib/data/properties";
@@ -15,15 +16,24 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { cidade } = await params;
   const name = cityFromSlug(cidade);
   const properties = await listPropertiesByCity(name);
+  const reais = properties.filter((p) => !isExemplo(p.id)).length;
   const title = `Imóveis mobiliados mensais em ${name}`;
   const description = `Alugue imóveis mobiliados por temporada de 30 a 180 dias em ${name}. Para profissionais em transição: executivos, médicos, famílias e nômades digitais.`;
   return {
     title,
     description,
-    // Sem inventário: noindex para evitar página fina (doorway) no Google.
-    robots: properties.length === 0 ? { index: false, follow: true } : undefined,
+    // Sem inventário REAL (vazio ou só exemplos): noindex para evitar página
+    // fina (doorway). Robots sempre explícito.
+    robots: reais === 0 ? { index: false, follow: true } : { index: true, follow: true },
     alternates: { canonical: `/cidades/${cidade}` },
-    openGraph: { title, description, locale: "pt_BR", url: `/cidades/${cidade}` },
+    // openGraph aqui substitui o da raiz inteiro: a imagem precisa vir junto.
+    openGraph: {
+      title,
+      description,
+      locale: "pt_BR",
+      url: `/cidades/${cidade}`,
+      images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: title }],
+    },
   };
 }
 
@@ -60,9 +70,11 @@ export default async function CityLandingPage({ params }: Params) {
       <section className="container-page section-y">
         <div className="flex items-center justify-between">
           <h2 className="font-title text-2xl font-bold text-ink">
-            {properties.length > 0
-              ? `${properties.length} imóveis em ${name}`
-              : `Em breve, imóveis em ${name}`}
+            {properties.length === 0
+              ? `Em breve, imóveis em ${name}`
+              : properties.every((p) => isExemplo(p.id))
+                ? `${properties.length} ${properties.length === 1 ? "anúncio" : "anúncios"} de exemplo em ${name}`
+                : `${properties.length} imóveis em ${name}`}
           </h2>
           <ButtonLink href="/buscar" variant="outline" size="sm">
             Ver toda a busca

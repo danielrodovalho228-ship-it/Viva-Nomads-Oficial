@@ -108,7 +108,7 @@ export function PriceCard({ property, actions }: { property: Property; actions: 
       >
         <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />
         <span>
-          <strong>Verifique-se uma vez</strong> e candidate-se a qualquer imóvel com um clique.
+          <strong>Verificação de identidade: em breve.</strong> Por enquanto, candidate-se direto pela plataforma.
         </span>
       </Link>
 

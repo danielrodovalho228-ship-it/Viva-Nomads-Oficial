@@ -57,11 +57,10 @@ const PASSOS = [
 
 /** /pedidos/novo — o inquilino publica o que precisa (housing request reverso). */
 export default function NovoPedidoPage() {
-  return (
-    <Suspense fallback={<div className="container-page py-10" />}>
-      <NovoPedidoSplit />
-    </Suspense>
-  );
+  // Só o formulário (lê ?cidade=… da busca) fica sob Suspense; o título, o texto
+  // e os passos saem no HTML do servidor (antes a página inteira esperava o
+  // cliente e o Google via uma tela vazia).
+  return <NovoPedidoSplit />;
 }
 
 function NovoPedidoSplit() {
@@ -109,7 +108,9 @@ function NovoPedidoSplit() {
           tem a altura da imagem e centraliza o card na vertical (sem vão branco). */}
       <div className="bg-[#F7F6F2] px-4 py-8 sm:px-8 lg:flex lg:min-h-[calc(100vh-4.5rem)] lg:items-center lg:px-10 lg:py-10">
         <div className="mx-auto w-full max-w-xl">
-          <PedidoForm />
+          <Suspense fallback={<div className="min-h-[32rem] rounded-2xl border border-line bg-white" aria-busy="true" />}>
+            <PedidoForm />
+          </Suspense>
 
           {/* Mobile: checklist + passos abaixo do formulário. */}
           <div className="mt-8 rounded-2xl border border-line bg-white p-6 lg:hidden">

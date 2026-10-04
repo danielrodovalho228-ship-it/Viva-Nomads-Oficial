@@ -1,3 +1,4 @@
+import { isExemplo } from "@/lib/demo-listing";
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
@@ -49,6 +50,8 @@ export const metadata: Metadata = {
 
 export default async function HomePage() {
   const featured = (await listProperties()).slice(0, 3);
+  // Enquanto só há exemplos, a seção diz isso (nada de "Disponíveis agora").
+  const soExemplos = featured.length > 0 && featured.every((p) => isExemplo(p.id));
 
   return (
     <>
@@ -76,17 +79,6 @@ export default async function HomePage() {
             <div className="mt-9 max-w-2xl">
               <HeroSearch />
             </div>
-            {/* Locações acima de 180 dias (1C) */}
-            <p className="mt-3 text-sm text-white/55">
-              Precisa de mais de 180 dias?{" "}
-              <a
-                href="mailto:contato@vivanomads.com.br?subject=Loca%C3%A7%C3%A3o%20acima%20de%20180%20dias"
-                className="font-medium text-green-300 underline-offset-2 hover:underline"
-              >
-                Fale conosco
-              </a>
-              .
-            </p>
             {/* Trust badges com ícones (1E) */}
             <div className="mt-6 grid grid-cols-3 gap-3 sm:flex sm:flex-wrap sm:items-center sm:gap-x-7">
               <TrustItem icon={FileSignature} text="Contrato por temporada (art. 48)" />
@@ -315,9 +307,9 @@ export default async function HomePage() {
         <div className="container-page">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div className="max-w-xl">
-              <Eyebrow>Imóveis em destaque</Eyebrow>
+              <Eyebrow>{soExemplos ? "Anúncios de exemplo" : "Imóveis em destaque"}</Eyebrow>
               <h2 className="mt-4 font-title font-bold text-ink display-lg">
-                Disponíveis agora
+                {soExemplos ? "Veja como os imóveis aparecem" : "Imóveis mobiliados para morar"}
               </h2>
             </div>
             <Link
@@ -367,7 +359,7 @@ function WorkFeature({
         <Icon className="h-5 w-5" />
       </span>
       <div>
-        <h4 className="font-title text-base font-bold text-ink">{title}</h4>
+        <h3 className="font-title text-base font-bold text-ink">{title}</h3>
         <p className="text-sm text-muted">{text}</p>
       </div>
     </li>

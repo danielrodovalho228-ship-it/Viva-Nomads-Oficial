@@ -772,6 +772,7 @@ function Input({
       <input
         type={isPassword && show ? "text" : type}
         placeholder={placeholder}
+        aria-label={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         required={required}

@@ -6,6 +6,7 @@ import { BrandImage } from "@/components/brand-image";
 import { PHOTOS } from "@/lib/media";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/para-proprietarios" },
   title: "Para proprietários — locação por temporada com mais margem",
   description:
     "Anuncie seu imóvel mobiliado para locação por temporada de 30 a 180 dias. Menos rotatividade, menos meses com o imóvel parado e custos que podem ser transferidos ao inquilino conforme o contrato.",
@@ -68,7 +69,7 @@ export default function ForLandlordsPage() {
           <Benefit icon={Receipt} title="Custos que podem ser transferidos" text="Água, luz, condomínio e IPTU podem ser do inquilino durante a estadia, conforme o contrato." />
           <Benefit icon={TrendingUp} title="Menos imóvel parado" text="Um inquilino por uma temporada inteira, inclusive nos meses fracos do turismo." />
           <Benefit icon={FileSignature} title="Contrato com validade jurídica" text="Contrato de locação por temporada gerado e assinado digitalmente, com validade jurídica." />
-          <Benefit icon={ShieldCheck} title="Caução ou seguro-fiança" text="A garantia é escolhida no contrato entre você e o inquilino. A plataforma organiza e documenta; não é a garantidora." />
+          <Benefit icon={ShieldCheck} title="Caução ou seguro-fiança" text="A garantia é escolhida no contrato entre você e o inquilino: caução em conta poupança ou seguro-fiança via parceiro (em estruturação). A plataforma organiza e documenta; não é a garantidora." />
         </div>
       </section>
 
@@ -87,10 +88,10 @@ export default function ForLandlordsPage() {
             </h2>
             <ul className="mt-6 space-y-4">
               {[
-                "Checklist de qualificação que comprova a regularidade da locação.",
+                "Checklist de qualificação que ajuda a declarar a regularidade da locação.",
                 "Selo Pronto para Morar para anunciar mais caro.",
-                "Verificação de identidade do inquilino com resultado em 3 níveis (verde/amarelo/vermelho).",
-                "Orçamento de seguro-fiança dentro da plataforma.",
+                "Verificação de identidade do inquilino — em breve.",
+                "Seguro-fiança via parceiro — em estruturação.",
                 "Contrato de temporada gerado e assinado digitalmente, com validade jurídica.",
                 "Pagamento do aluguel direto na sua conta.",
               ].map((item) => (

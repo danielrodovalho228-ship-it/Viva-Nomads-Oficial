@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import { ShieldCheck, AlertTriangle, MessageSquareLock, Wallet, FileSearch } from "lucide-react";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/seguranca" },
   title: "Sua segurança",
   description:
-    "Como o Viva Nomads protege proprietários e inquilinos contra os golpes mais comuns em locação: verificação, conversa na plataforma, dinheiro direto ao proprietário e dossiê do inquilino.",
+    "Como o Viva Nomads protege proprietários e inquilinos contra os golpes mais comuns em locação: conversa na plataforma, dinheiro direto ao proprietário e dossiê do inquilino.",
 };
 
 const GOLPES = [
@@ -23,7 +24,7 @@ const GOLPES = [
   {
     golpe: "Perfil falso / inquilino sem histórico.",
     protecao:
-      "O proprietário vê um resultado de verificação (verde/amarelo/vermelho) antes de conversar, e a identidade só é revelada após o aceite — nome e foto, nunca contato.",
+      "A identidade só é revelada após o aceite — nome e foto, nunca contato. A verificação de identidade do inquilino chega em breve.",
     icon: FileSearch,
   },
   {
@@ -91,9 +92,8 @@ export default function SegurancaPage() {
           </Faq>
           <Faq q="Vai haver verificação do inquilino?">
             <p>
-              Está em preparação e ainda não está disponível. Quando estiver, o proprietário verá um
-              resultado em três níveis (verde/amarelo/vermelho) antes de conversar, sem dados
-              sensíveis brutos. Hoje, a identidade completa só aparece após o aceite.
+              Em breve — ainda não está disponível. Hoje, a identidade completa só aparece após o
+              aceite, e nunca o contato direto.
             </p>
           </Faq>
           {/* Resposta pública sobre corretagem/CRECI. TODO(juridico): redação

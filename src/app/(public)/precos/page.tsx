@@ -7,9 +7,10 @@ import { ButtonLink } from "@/components/ui/button";
 import { formatBRL, cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/precos" },
   title: "Planos",
   description:
-    "Planos de assinatura para proprietários: Gratuito, Essencial e Profissional. Mais serviços opcionais como garantia, vistoria e fotografia.",
+    "Planos para proprietários de imóveis mobiliados: Gratuito, Essencial, Profissional e Gestor (administradoras, sob consulta). Comissão só no fechamento e serviços opcionais.",
 };
 
 type ServiceTone = "incluido" | "avulso" | "cotacao" | "gratis";
@@ -35,7 +36,7 @@ interface Service {
  * Caução e seguro-fiança são alternativas: por lei, só uma por contrato.
  */
 const TENANT_SERVICES: Service[] = [
-  { icon: ShieldCheck, title: "Seguro-fiança (sem depósito)", benefit: "Entre sem deixar dinheiro preso: uma taxa mensal diluída garante o aluguel, sem depósito de entrada. Contratada com parceiro, sujeita a análise.", price: "Orçamento sob análise", statusLabel: "Via parceiro", statusTone: "partner", tone: "cotacao", cta: "Ver opções de garantia", href: "/como-funciona#garantias", highlight: "Recomendada · sem depósito" },
+  { icon: ShieldCheck, title: "Seguro-fiança (sem depósito)", benefit: "Entre sem deixar dinheiro preso: uma taxa mensal diluída garante o aluguel, sem depósito de entrada. Contratada com parceiro, sujeita a análise.", price: "Orçamento sob análise", statusLabel: "Via parceiro — em estruturação", statusTone: "partner", tone: "cotacao", cta: "Ver opções de garantia", href: "/como-funciona#garantias", highlight: "Recomendada · sem depósito" },
   { icon: PiggyBank, title: "Caução (depósito devolvível)", benefit: "Depósito devolvível de até 3 aluguéis em conta poupança, como manda o art. 38, §2º da Lei 8.245/91 — a plataforma não tem acesso —, devolvido ao fim da estadia.", price: "Sem mensalidade", statusLabel: "Disponível", statusTone: "ok", tone: "avulso", cta: "Ver opções de garantia", href: "/como-funciona#garantias" },
 ];
 
@@ -52,7 +53,7 @@ const TECH_BENEFITS = [
   { icon: FileSignature, title: "Contrato assinado digitalmente", text: "Contrato de locação por temporada com validade jurídica." },
   { icon: UserCheck, title: "Conversa registrada", text: "Toda a negociação fica na plataforma, com o contato protegido até o aceite." },
   { icon: Banknote, title: "Aluguel direto na conta do proprietário", text: "O pagamento do aluguel vai direto ao proprietário." },
-  { icon: Receipt, title: "Nota fiscal disponível", text: "Emissão da nota fiscal do aluguel conforme a legislação." },
+  { icon: Receipt, title: "Nota fiscal dos serviços", text: "NF dos serviços da plataforma (assinatura e comissão), conforme a legislação." },
 ] as const;
 
 const ICON_TONE: Record<ServiceTone, string> = {
@@ -156,6 +157,7 @@ export default function PricingPage() {
       </section>
 
       <section className="container-page -mt-10 pb-16">
+        <h2 className="sr-only">Planos para proprietários</h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {PLANS.map((plan) => (
             <div

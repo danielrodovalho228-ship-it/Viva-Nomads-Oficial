@@ -44,7 +44,8 @@ export function MobileHeader({
       >
         <ArrowLeft className="h-5 w-5" />
       </button>
-      <h1 className="min-w-0 flex-1 truncate font-title text-base font-bold text-ink">{title}</h1>
+      {/* <p>, não <h1>: o h1 é o da própria página (um só por página). */}
+      <p className="min-w-0 flex-1 truncate font-title text-base font-bold text-ink">{title}</p>
       {action ? <div className="shrink-0">{action}</div> : null}
     </header>
   );
