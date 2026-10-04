@@ -250,7 +250,7 @@ export const DEMO_CONTRACTS: DemoContract[] = [
     terminaEmDias: 12, // alimenta o alerta de vencimento
     valorMes: 3200,
     status: "ativo",
-    garantia: "Caução à vista (conta vinculada)",
+    garantia: "Caução à vista (poupança)",
     caucao: 6400,
   },
   {
@@ -274,7 +274,7 @@ export const DEMO_CONTRACTS: DemoContract[] = [
     terminaEmDias: 129,
     valorMes: 2600,
     status: "ativo",
-    garantia: "Caução parcelada (conta vinculada)",
+    garantia: "Caução parcelada (poupança)",
     caucao: 5200,
   },
 ];

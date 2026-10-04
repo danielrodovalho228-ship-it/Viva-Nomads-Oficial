@@ -13,7 +13,7 @@
   • Caução do bloco = 50% do valor do bloco (aluguel × meses do bloco).
 
   Regra de ouro: a plataforma só CALCULA, exibe e documenta — o dinheiro
-  (aluguel e caução) vai para o proprietário / conta vinculada / emissor,
+  (aluguel e caução) vai para o proprietário / poupança da caução / emissor,
   NUNCA para a plataforma.
 */
 

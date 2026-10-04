@@ -36,7 +36,7 @@ function fromContratos(contratos: ContratoView[]): LinhaCaucao[] {
   });
 }
 
-/** Cauções de DEMONSTRAÇÃO (a caução Viva é 50% do bloco de 2 meses = 1 aluguel). */
+/** Cauções de DEMONSTRAÇÃO (a caução Viva é 50% do bloco; bloco padrão de 2 meses = 1 aluguel). */
 function demoCaucoes(): LinhaCaucao[] {
   return DEMO_CONTRACTS.map((c, i) => ({
     id: `demo-cau-${i}`,
@@ -68,8 +68,9 @@ export function GarantiasClient({ contratos }: { contratos: ContratoView[] }) {
             <li className="flex items-start gap-2">
               <PiggyBank className="mt-0.5 h-4 w-4 shrink-0 text-forest" />
               <span>
-                <strong>50% do bloco</strong> (contrato por blocos de 2 meses), <strong>devolvível</strong> ao
-                fim da estadia — nos termos do contrato e da Lei 8.245/91 (art. 42).
+                <strong>50% do bloco</strong> (contrato por blocos de até 90 dias), <strong>devolvível</strong> ao
+                fim da estadia — em conta poupança, até 3 aluguéis (Lei 8.245/91, art. 38, §2º;
+                na locação para temporada, art. 49).
               </span>
             </li>
             <li className="flex items-start gap-2">

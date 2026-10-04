@@ -247,7 +247,7 @@ function PedidoForm() {
 
   return (
     <div className="rounded-2xl border border-line bg-white p-6 shadow-lg sm:p-7">
-      <h2 className="font-title text-xl font-bold text-ink">Publique seu pedido — leva 2 minutos</h2>
+      <h2 className="font-title text-xl font-bold text-ink">Publique seu pedido</h2>
 
       {!user && (
         <p className="mt-3 flex items-start gap-2 rounded-xl border border-champagne/50 bg-champagne/10 px-3.5 py-2.5 text-sm text-ink">

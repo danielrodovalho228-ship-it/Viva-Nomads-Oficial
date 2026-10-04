@@ -56,10 +56,10 @@ const VERIFY_COPY: Record<"tenant" | "owner", VerifyCopy> = {
     button: "Verificar identidade como inquilino",
     ctaTitle: "Candidatura com um clique ativada",
     ctaBody:
-      "Ao encontrar um imóvel, basta clicar em Candidatar-se: enviamos seu resultado (em 3 níveis — verde, amarelo ou vermelho) e uma mensagem ao proprietário automaticamente.",
+      "Ao encontrar um imóvel, basta clicar em Candidatar-se: enviamos o resumo do resultado (sem seus documentos) e uma mensagem ao proprietário automaticamente.",
     unlocks: [
       "Candidatura com 1 clique em qualquer imóvel",
-      "Seu resultado (verde/amarelo/vermelho) enviado ao proprietário automaticamente",
+      "O resumo do resultado enviado ao proprietário automaticamente",
     ],
   },
   owner: {
@@ -245,7 +245,7 @@ function DemoFlow({
           </p>
           <div className="mx-auto mt-5 max-w-md space-y-2 text-left text-sm">
             <Bullet>Identidade confirmada por documento oficial e foto (selfie).</Bullet>
-            <Bullet>Análise antifraude, com resultado em 3 níveis (verde/amarelo/vermelho).</Bullet>
+            <Bullet>Análise antifraude, com um resumo do resultado para o proprietário (sem os documentos).</Bullet>
             <Bullet>Cobre brasileiros e estrangeiros (documento de estrangeiro CRNM/RNE).</Bullet>
           </div>
           <Button variant="gold" className="mt-6" onClick={verify} disabled={loading}>

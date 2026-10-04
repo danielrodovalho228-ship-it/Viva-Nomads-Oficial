@@ -3,7 +3,7 @@
 
   Princípio inegociável (regra de ouro): a plataforma conecta, verifica,
   documenta e registra — NUNCA recebe, retém nem transfere o valor. Por isso
-  aqui só há CÁLCULO e REGISTRO. O dinheiro vai para a conta vinculada (em nome
+  aqui só há CÁLCULO e REGISTRO. O dinheiro vai para a poupança da caução (em nome
   do locador) ou para a instituição emissora (no parcelado) — nunca para a
   plataforma. O reembolso é PAGO pelo locador; a plataforma só documenta.
 */
@@ -41,7 +41,7 @@ export const PRAZO_REEMBOLSO_DIAS = 30;
 /**
  * Caução sugerida para imóvel mobiliado: ~10% do valor dos móveis, com TETO de
  * 30% do total da estadia. A plataforma só sugere — o valor é acordado e fica
- * em conta vinculada, nunca com a plataforma.
+ * em poupança da caução, nunca com a plataforma.
  *
  * @deprecated Onda 1 (Dra. Beatriz): a caução passou a ser 50% do valor total
  * do período (ver `calcularCaucao50`). Mantida para referência/histórico.
@@ -59,7 +59,7 @@ export const PERC_CAUCAO = 0.5;
  * Caução da Onda 1 (Dra. Beatriz): 50% do VALOR TOTAL do período locado,
  * independentemente do prazo (30 ou 180 dias). Ex.: período de R$ 6.000 →
  * caução de R$ 3.000. A plataforma apenas calcula e documenta — o valor vai
- * para conta vinculada/instituição, NUNCA para a plataforma.
+ * para poupança da caução/instituição, NUNCA para a plataforma.
  */
 export function calcularCaucao50(valorTotalPeriodo: number): number {
   return Math.round(Math.max(0, valorTotalPeriodo) * PERC_CAUCAO);
@@ -73,7 +73,7 @@ export function valorParcela(total: number, parcelas: number): number {
 
 /**
  * Destino do valor conforme a forma de pagamento — NUNCA a plataforma:
- * à vista → conta vinculada (em nome do locador); parcelado → emissor do cartão.
+ * à vista → poupança da caução (em nome do locador); parcelado → emissor do cartão.
  */
 export function destinoValor(forma: FormaPagamentoCaucao): DestinoValor {
   return forma === "parcelado" ? "emissor" : "conta_vinculada";
@@ -86,7 +86,7 @@ export function totalDescontos(descontos: DescontoReembolso[]): number {
 
 /**
  * Valor a devolver = caução − descontos comprovados, nunca negativo. É só o
- * cálculo do que o LOCADOR deve devolver (da conta vinculada direto ao
+ * cálculo do que o LOCADOR deve devolver (da poupança da caução direto ao
  * inquilino); a plataforma documenta, não paga.
  */
 export function calcularReembolso(caucao: number, descontos: DescontoReembolso[]): number {

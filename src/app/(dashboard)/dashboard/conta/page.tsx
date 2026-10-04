@@ -31,15 +31,13 @@ export default function AccountPage() {
         <AvatarUploader />
         <PerfilDoModo />
         <Panel title="Verificação" className="mt-6">
+          {/* Sem progresso inventado: a verificação ainda não existe (em breve). */}
           <p className="text-sm text-muted">
-            Complete a verificação de identidade para gerar mais confiança. Progresso atual:{" "}
-            <strong className="text-forest">60%</strong>.
+            A verificação de identidade abre em breve, por meio de um parceiro. Você pode usar a
+            plataforma normalmente enquanto isso.
           </p>
-          <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-sage-100">
-            <div className="h-full w-[60%] rounded-full bg-champagne" />
-          </div>
           <ButtonLink href="/dashboard/verificacao" variant="outline" className="mt-5">
-            Continuar verificação
+            Saber mais
           </ButtonLink>
         </Panel>
         {/* Alterar senha (Atualização 20.7) */}

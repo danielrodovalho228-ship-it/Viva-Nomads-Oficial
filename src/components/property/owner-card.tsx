@@ -59,9 +59,12 @@ export function OwnerCard({ property }: { property: Property }) {
             {owner?.verified === true ? "Proprietário verificado" : "Proprietário"}
           </p>
           <OwnerRating propertyId={property.id} />
-          <div className="mt-1.5">
-            <ResponsiveOwnerBadge />
-          </div>
+          {/* "Responsivo" só com taxa de resposta REAL alta (antes aparecia para todos). */}
+          {owner?.responseRate != null && owner.responseRate >= 90 && (
+            <div className="mt-1.5">
+              <ResponsiveOwnerBadge />
+            </div>
+          )}
 
           <div className="mt-3 flex flex-wrap gap-4 text-sm text-ink">
             {since && (

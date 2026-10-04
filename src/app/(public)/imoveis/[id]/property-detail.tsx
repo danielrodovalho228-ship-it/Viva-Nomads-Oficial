@@ -41,7 +41,11 @@ import { OwnerCard } from "@/components/property/owner-card";
 import { Reviews } from "@/components/property/reviews";
 import { isExemplo, EXEMPLO_SEM_CONTATO } from "@/lib/demo-listing";
 
-export function PropertyDetail({ property, similar }: { property: Property; similar: Property[] }) {
+export function PropertyDetail({ property: anuncio, similar }: { property: Property; similar: Property[] }) {
+  // Anúncio de EXEMPLO: sem nota, avaliações, selos do dono, taxa de resposta,
+  // "Aceita Seguro-Fiança" (em estruturação) nem dados do Google — nada disso
+  // existe de verdade para um anúncio ilustrativo.
+  const property = isExemplo(anuncio) ? semSinaisInventados(anuncio) : anuncio;
   const router = useRouter();
   const [pending, setPending] = useState<LeadKind | null>(null);
   const [sent, setSent] = useState<{ duvida?: boolean; visita?: boolean }>({});
@@ -386,7 +390,7 @@ export function PropertyDetail({ property, similar }: { property: Property; simi
             <section>
               <VideoWalkthrough url={property.videoUrl} title={property.title} />
               <p className="mt-1.5 text-xs text-muted">
-                Tour em vídeo gravado pelo proprietário — veja o imóvel antes de agendar a visita.
+                {isExemplo(property) ? "Vídeo ilustrativo." : "Tour em vídeo gravado pelo proprietário."}
               </p>
             </section>
           )}
@@ -430,4 +434,16 @@ export function PropertyDetail({ property, similar }: { property: Property; simi
       )}
     </div>
   );
+}
+
+/** Exemplo ilustrativo sem números e selos que não existem de verdade. */
+function semSinaisInventados(p: Property): Property {
+  return {
+    ...p,
+    rating: 0,
+    reviews: [],
+    acceptsInsurance: false,
+    googlePlaces: [],
+    owner: p.owner ? { name: p.owner.name, avatarUrl: p.owner.avatarUrl } : undefined,
+  };
 }
