@@ -552,6 +552,8 @@ export async function toggleFavorite(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Não autenticado." };
+  // Anúncio de exemplo: favorito fica só no aparelho (property_id é uuid).
+  if (isExemplo(propertyId)) return { ok: true, demo: true };
 
   if (favorite) {
     const { error } = await supabase

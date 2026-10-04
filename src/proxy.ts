@@ -6,6 +6,31 @@ import {
   SOCIOS_COOKIE,
   SOCIOS_UNLOCK_PATH,
 } from "@/lib/socios/access";
+import { APP_COOKIE, appHome, isAppUserAgent, isMarketingPath } from "@/lib/app-mode";
+
+/**
+ * Papel para a aba inicial do APP: preferência salva, senão o papel de
+ * cadastro (owner/admin → proprietário). Sem sessão → null (boas-vindas).
+ */
+async function papelDoApp(request: NextRequest): Promise<"owner" | "tenant" | null> {
+  const supaUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supaKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!supaUrl || !supaKey) return "tenant";
+  const supabase = createServerClient(supaUrl, supaKey, {
+    cookies: { getAll: () => request.cookies.getAll(), setAll: () => {} },
+  });
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data: p } = await supabase
+    .from("profiles")
+    .select("role, preferred_mode")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (p?.preferred_mode === "owner" || p?.preferred_mode === "tenant") return p.preferred_mode;
+  return p?.role === "owner" || p?.role === "admin" ? "owner" : "tenant";
+}
 
 /**
  * Proxy (Next.js 16) — substitui a antiga convenção `middleware`.
@@ -13,6 +38,33 @@ import {
  */
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // ── MODO APP (Android/iPhone) ─────────────────────────────────────────────
+  // Dentro do app, páginas de marketing não existem: vão para a aba inicial do
+  // papel. Roda ANTES de tudo (inclusive do portão dos sócios). No site normal,
+  // só lê um cookie/cabeçalho e segue.
+  const ehApp =
+    request.cookies.get(APP_COOKIE)?.value === "1" || isAppUserAgent(request.headers.get("user-agent"));
+  if (ehApp && pathname === "/app/boas-vindas") {
+    const papel = await papelDoApp(request);
+    if (papel) {
+      const url = request.nextUrl.clone();
+      url.pathname = appHome(papel);
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+    return NextResponse.next();
+  }
+  if (ehApp && isMarketingPath(pathname)) {
+    const url = request.nextUrl.clone();
+    url.pathname = appHome(await papelDoApp(request));
+    url.search = "";
+    return NextResponse.redirect(url);
+  }
+  // Site normal: home e marketing públicos seguem direto (sem consultar o
+  // Supabase a cada visita). As internas dos sócios continuam no portão abaixo.
+  if (isMarketingPath(pathname) && !isInternalPath(pathname)) return NextResponse.next();
+
   const supaUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supaKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -105,6 +157,18 @@ export const config = {
   // As entradas de páginas internas espelham lib/socios/access.INTERNAL_PAGES —
   // ao adicionar uma página interna, atualize a lista LÁ e adicione aqui.
   matcher: [
+    // Modo app: home e páginas de marketing (redirecionam DENTRO do app).
+    "/",
+    "/app/boas-vindas",
+    "/home",
+    "/como-funciona",
+    "/para-proprietarios",
+    "/precos",
+    "/planos",
+    "/empresas",
+    "/acesso-socios",
+    "/cidades/:path*",
+    "/simulador",
     "/dashboard",
     "/dashboard/:path*",
     "/qualificar",

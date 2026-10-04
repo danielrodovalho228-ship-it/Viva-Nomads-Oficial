@@ -20,17 +20,20 @@ import {
   User,
   Megaphone,
   Receipt,
+  Users,
 } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { Avatar } from "@/components/ui/avatar";
 import { useAuthStore, type SessionUser, type ViewMode } from "@/lib/store";
 import { getMyAvatarUrl } from "@/lib/data/avatar-actions";
 import { setPreferredMode } from "@/lib/data/mode-actions";
+import { createClient } from "@/lib/supabase/client";
 import { removerPushToken } from "@/lib/data/push-actions";
 import { countDocumentosPendentes } from "@/lib/data/documentos-admin";
 import { useHasActiveLocacao } from "@/lib/use-active-locacao";
 import { useViewMode, MODE_META, identidadeUsuario } from "@/lib/roles";
 import { MobileTabBar } from "@/components/layout/mobile-tab-bar";
+import { AppHeader } from "@/components/app/app-header";
 import { useDemoMode, DemoToggle, DemoBanner, useDisplayUser } from "@/lib/demo/demo-mode";
 import { PROGRAMA_INDICACAO } from "@/lib/flags";
 import { cn } from "@/lib/utils";
@@ -67,6 +70,8 @@ interface NavItem {
 const OWNER_NAV: NavItem[] = [
   { href: "/dashboard", label: "Visão geral", icon: LayoutDashboard },
   { href: "/dashboard/imoveis", label: "Meus imóveis", icon: Home },
+  // Candidaturas recebidas — a tela existia, mas tinha saído do menu (achado do teste).
+  { href: "/dashboard/leads", label: "Interessados", icon: Users },
   { href: "/dashboard/pedidos-cidade", label: "Pedidos de moradia", icon: Megaphone },
   { href: "/dashboard/mensagens", label: "Mensagens", icon: MessageSquare },
   { href: "/dashboard/fechamento", label: "Fechamento", icon: FileSignature },
@@ -271,15 +276,21 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     } catch {
       /* localStorage indisponível: segue o logout */
     }
+    // Encerra a sessão TAMBÉM no Supabase (antes só limpava o estado local e o
+    // cookie de sessão seguia válido).
+    createClient()?.auth.signOut().catch(() => {});
     signOut();
     router.push("/");
   }
 
-  function switchTo(next: ViewMode) {
+  async function switchTo(next: ViewMode) {
     setActiveMode(next);
-    // Grava a escolha no perfil (B1): refresh/nova aba/outro dispositivo mantêm.
-    setPreferredMode(next).catch(() => {});
     setOpen(false);
+    // Grava a escolha no perfil (B1): refresh/nova aba/outro dispositivo mantêm.
+    // ESPERA a gravação antes de navegar: sem isso, se o painel recarregava antes
+    // de o servidor gravar, ele devolvia a preferência ANTIGA e desfazia a troca
+    // (achado 8.3 — "trocar para Proprietário não funcionou").
+    await setPreferredMode(next).catch(() => {});
     // Se a tela atual não existe no novo modo, volta para a Visão geral
     // (evita ficar numa rota do outro papel após a troca).
     // Sair de rota exclusiva ao trocar de modo é tratado pelo guard (que detecta
@@ -352,7 +363,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     // fluxo normal (rolagem da página inteira).
     <div className="flex min-h-screen w-full bg-surface-2 lg:h-screen lg:overflow-hidden print:h-auto print:overflow-visible">
       {/* Sidebar desktop — fixa (altura da viewport). */}
-      <aside className="hidden w-64 shrink-0 bg-forest lg:block lg:h-screen print:hidden">{sidebar}</aside>
+      <aside className="web-only hidden w-64 shrink-0 bg-forest lg:block lg:h-screen print:hidden">{sidebar}</aside>
 
       {/* Drawer mobile */}
       {open && (
@@ -364,7 +375,10 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
       <div className="flex min-w-0 flex-1 flex-col lg:overflow-hidden print:overflow-visible">
         {/* Topbar mobile (logo + menu) */}
-        <div className="flex h-16 items-center justify-between border-b border-sage-200 bg-white px-4 lg:hidden print:hidden">
+        {/* Modo app: cabeçalho curto (voltar + título), no lugar do topo do site. */}
+        <AppHeader />
+
+        <div className="web-only flex h-16 items-center justify-between border-b border-sage-200 bg-white px-4 lg:hidden print:hidden">
           <Logo />
           <button
             className="grid h-10 w-10 place-items-center rounded-lg text-forest"
@@ -382,7 +396,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             Mobile (ADENDO item 2): coluna única compacta — toggle de demo (admin)
             reduzido em cima, seletor segmentado full-width embaixo. Sem flutuação
             desalinhada. A partir de sm volta à linha com o rótulo do modo. */}
-        <div className="flex flex-col gap-2 border-b border-sage-200 bg-white px-4 py-2.5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-8 print:hidden">
+        <div className="web-only flex flex-col gap-2 border-b border-sage-200 bg-white px-4 py-2.5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-8 print:hidden">
           <p className="hidden items-center gap-2 text-sm text-muted sm:flex">
             Você está no modo
             <span
@@ -410,7 +424,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         <main key={mode} className="mode-transition flex-1 p-5 sm:p-8 lg:overflow-y-auto print:overflow-visible">
           {children}
           {/* Espaço para a barra inferior não cobrir o conteúdo (só mobile). */}
-          <div className="h-20 md:hidden print:hidden" aria-hidden />
+          <div className="vn-tabbar-spacer h-20 md:hidden print:hidden" aria-hidden />
         </main>
       </div>
 

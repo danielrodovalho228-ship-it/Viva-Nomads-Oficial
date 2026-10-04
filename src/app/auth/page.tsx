@@ -68,6 +68,10 @@ export default function AuthPage() {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setNotice("Sua sessão de 24h expirou. Entre novamente para continuar.");
     }
+    // App (boas-vindas): papel já escolhido e cadastro aberto (?papel=owner|tenant&cadastro=1).
+    const papel = params.get("papel");
+    if (papel === "owner" || papel === "tenant") setRole(papel);
+    if (params.get("cadastro") === "1") setMode("signup");
     const ref = params.get("ref")?.trim().slice(0, 40);
     if (ref) {
       setReferral(ref);

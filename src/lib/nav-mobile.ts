@@ -7,6 +7,8 @@ import {
   Building2,
   Users,
   Settings,
+  FileText,
+  UserRound,
 } from "lucide-react";
 
 /**
@@ -18,7 +20,7 @@ export interface MobileTab {
   href: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
-  /** Exige login — sem sessão, a aba leva a /auth?next=<href>. */
+  /** Exige login — sem sessão, a aba leva a /auth?redirect=<href>. */
   authRequired?: boolean;
   /** Chave de contador (badge). Preenchido pela casca quando houver dado. */
   badge?: "mensagens" | "interessados";
@@ -41,6 +43,71 @@ export const OWNER_TABS: MobileTab[] = [
   { href: "/dashboard/mensagens", label: "Mensagens", icon: MessageSquare, badge: "mensagens" },
   { href: "/dashboard/conta", label: "Conta", icon: Settings },
 ];
+
+/**
+ * MODO APP (Android/iPhone) — 5 abas por papel (mapa de telas, seções 2 e 3).
+ * Inquilino abre em Buscar; proprietário, no Painel. A troca de papel fica em Conta.
+ */
+export const TENANT_APP_TABS: MobileTab[] = [
+  { href: "/buscar", label: "Buscar", icon: Search },
+  { href: "/dashboard/favoritos", label: "Favoritos", icon: Heart, authRequired: true },
+  { href: "/dashboard/candidaturas", label: "Candidaturas", icon: FileText, authRequired: true },
+  { href: "/dashboard/mensagens", label: "Mensagens", icon: MessageSquare, authRequired: true, badge: "mensagens" },
+  { href: "/dashboard/conta", label: "Conta", icon: UserRound, authRequired: true },
+];
+
+export const OWNER_APP_TABS: MobileTab[] = [
+  { href: "/dashboard", label: "Painel", icon: LayoutDashboard },
+  { href: "/dashboard/imoveis", label: "Imóveis", icon: Building2 },
+  { href: "/dashboard/leads", label: "Interessados", icon: Users, badge: "interessados" },
+  { href: "/dashboard/mensagens", label: "Mensagens", icon: MessageSquare, badge: "mensagens" },
+  { href: "/dashboard/conta", label: "Conta", icon: UserRound },
+];
+
+/** Títulos das telas no cabeçalho curto do app. */
+const TITULOS_APP: [RegExp, string][] = [
+  [/^\/dashboard\/?$/, "Painel"],
+  [/^\/dashboard\/imoveis\/novo/, "Anunciar imóvel"],
+  [/^\/dashboard\/imoveis\/[^/]+\/editar/, "Editar anúncio"],
+  [/^\/dashboard\/imoveis/, "Imóveis"],
+  [/^\/dashboard\/leads/, "Interessados"],
+  [/^\/dashboard\/mensagens/, "Mensagens"],
+  [/^\/dashboard\/favoritos/, "Favoritos"],
+  [/^\/dashboard\/comparar/, "Comparar"],
+  [/^\/dashboard\/candidaturas/, "Candidaturas"],
+  [/^\/dashboard\/pedidos-cidade/, "Pedidos na cidade"],
+  [/^\/dashboard\/pedidos/, "Meus pedidos"],
+  [/^\/dashboard\/conta\/perfil/, "Perfil"],
+  [/^\/dashboard\/conta\/seguranca/, "Senha e segurança"],
+  [/^\/dashboard\/conta\/notificacoes/, "Notificações"],
+  [/^\/dashboard\/conta\/ajuda/, "Ajuda e contato"],
+  [/^\/dashboard\/conta\/excluir/, "Excluir conta"],
+  [/^\/dashboard\/conta/, "Conta"],
+  [/^\/dashboard\/verificacao/, "Verificação"],
+  [/^\/dashboard\/ferramentas/, "Ferramentas"],
+  [/^\/dashboard\/assinatura/, "Plano"],
+  [/^\/dashboard\/indicacoes/, "Indicações"],
+  [/^\/dashboard\/fechamento/, "Fechamento"],
+  [/^\/dashboard\/contratos/, "Contratos"],
+  [/^\/dashboard\/locacoes/, "Minha estadia"],
+  [/^\/dashboard\/solicitacoes/, "Chamados"],
+  [/^\/dashboard\/orcamentos/, "Orçamentos"],
+  [/^\/buscar/, "Buscar"],
+  [/^\/imoveis\//, "Anúncio"],
+  [/^\/pedidos\/novo/, "Novo pedido de moradia"],
+  [/^\/termos/, "Termos de uso"],
+  [/^\/privacidade/, "Privacidade"],
+];
+
+export function tituloDaTelaApp(pathname: string): string {
+  for (const [re, t] of TITULOS_APP) if (re.test(pathname)) return t;
+  return "Viva Nomads";
+}
+
+/** Abas principais do app (sem botão Voltar no cabeçalho). */
+export function ehAbaRaizApp(pathname: string): boolean {
+  return [...TENANT_APP_TABS, ...OWNER_APP_TABS].some((t) => t.href === pathname);
+}
 
 /**
  * Telas de FLUXO escondem a barra inferior (seção 2.1): filtros, candidatar-se,
