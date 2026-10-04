@@ -8,8 +8,6 @@
 --
 --   C1   handle_new_user só aceita 'owner' | 'tenant'.
 --   PJ1  handle_new_user grava person_type (pf|pj) escolhido no cadastro.
---   IND  handle_new_user grava referred_by (código de indicação → uuid) e gera
---        o referral_code; contas existentes recebem o código da tela.
 --   C2   UPDATE de profiles só nas colunas de preferência + trigger de confiança.
 --   C3a  RLS nova de leads e messages (relação real entre as partes).
 --   C4a  RPC property_private_details; limpeza do draft_data dos anúncios ativos
@@ -20,82 +18,15 @@
 -- Rollback: supabase/producao/rollback/0052_rollback.sql
 -- ════════════════════════════════════════════════════════════════════════════
 
--- ── Indicação — código gravado no banco ─────────────────────────────────────
--- profiles.referral_code existia (0003) mas NUNCA era preenchido: a página de
--- indicações calculava o código no navegador e o cadastro descartava o código
--- digitado. Mesma fórmula da tela (VIVA-<1º nome, só A–Z, até 8><3 primeiros
--- caracteres do id>), para os links já compartilhados continuarem valendo. Em
--- colisão (código já usado por outra pessoa) alonga o sufixo com o id.
-create or replace function public.gerar_referral_code(nome text, uid uuid)
-returns text
-language plpgsql
-stable
-security definer
-set search_path = public
-as $$
-declare
-  primeiro text := split_part(coalesce(nome, ''), ' ', 1);
-  hex text := upper(replace(uid::text, '-', ''));
-  base text;
-  cod text;
-  n int := 3;
-begin
-  if primeiro = '' then primeiro := 'VIVA'; end if;
-  base := 'VIVA-' || left(regexp_replace(upper(primeiro), '[^A-Z]', '', 'g'), 8);
-  loop
-    cod := base || left(hex, n);
-    exit when not exists (
-      select 1 from public.profiles where referral_code = cod and id <> uid
-    );
-    n := n + 1;
-    if n > 32 then return null; end if;
-  end loop;
-  return cod;
-end;
-$$;
-revoke all on function public.gerar_referral_code(text, uuid) from public, anon, authenticated;
-
--- Contas já existentes ganham o código (o mesmo que a tela já mostrava).
-do $$
-declare r record;
-begin
-  for r in
-    select id, coalesce(full_name, email) as nome
-      from public.profiles
-     where referral_code is null and anonymized_at is null
-     order by created_at, id
-  loop
-    update public.profiles
-       set referral_code = public.gerar_referral_code(r.nome, r.id)
-     where id = r.id;
-  end loop;
-end;
-$$;
-
--- ── C1 + PJ1 + indicação — handle_new_user ──────────────────────────────────
+-- ── C1 + PJ1 — handle_new_user ──────────────────────────────────────────────
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
 security definer
 set search_path = public
 as $$
-declare
-  cod_indicacao text := upper(trim(coalesce(new.raw_user_meta_data ->> 'referred_by', '')));
-  indicador uuid;
 begin
-  -- Indicação: resolve o código digitado para o uuid de quem indicou. Código
-  -- inválido (ou do próprio usuário) é ignorado — o cadastro nunca falha por isso.
-  -- Aceita com ou sem o prefixo "VIVA-".
-  if cod_indicacao <> '' then
-    select p.id into indicador
-      from public.profiles p
-     where p.referral_code in (cod_indicacao, 'VIVA-' || cod_indicacao)
-       and p.id <> new.id
-       and p.anonymized_at is null
-     limit 1;
-  end if;
-
-  insert into public.profiles (id, full_name, email, role, person_type, referred_by)
+  insert into public.profiles (id, full_name, email, role, person_type)
   values (
     new.id,
     nullif(new.raw_user_meta_data ->> 'full_name', ''),
@@ -110,22 +41,9 @@ begin
     case
       when new.raw_user_meta_data ->> 'person_type' = 'pj' then 'pj'::person_type
       else 'pf'::person_type
-    end,
-    indicador
+    end
   )
   on conflict (id) do nothing;
-
-  -- Código próprio de indicação, em bloco separado: se algo der errado aqui, o
-  -- perfil (já gravado acima) fica, só sem código.
-  begin
-    update public.profiles
-       set referral_code = public.gerar_referral_code(
-             coalesce(nullif(new.raw_user_meta_data ->> 'full_name', ''), new.email), new.id)
-     where id = new.id and referral_code is null;
-  exception
-    when others then
-      raise warning 'handle_new_user (referral_code): % (%):', sqlerrm, sqlstate;
-  end;
   return new;
 exception
   when others then
@@ -168,8 +86,6 @@ begin
      or new.cpf                   is distinct from old.cpf
      or new.person_type           is distinct from old.person_type
      or new.anonymized_at         is distinct from old.anonymized_at
-     or new.referred_by           is distinct from old.referred_by
-     or new.referral_code         is distinct from old.referral_code
   then
     raise exception 'Alteração de campo protegido do perfil não permitida'
       using errcode = '42501';
@@ -226,7 +142,7 @@ grant execute on function public.tem_relacao_pedido_com(uuid) to authenticated;
 --   (c) 1º contato SOBRE um anúncio ATIVO (com property_id), para o DONO dele,
 --       e o remetente não é o dono (ex.: "Solicitar reserva", que abre a
 --       conversa sem lead — sai no P1, quando a reserva criar lead);
---   (d) resposta a quem já te escreveu NA MESMA conversa e sobre o MESMO imóvel.
+--   (d) resposta a quem já te escreveu NA MESMA conversa (conversation_id).
 -- Antes, bastava sender_id = auth.uid(): dava para "mandar mensagem" a qualquer
 -- uuid e forjar a relação que liberava o contato (message_notify_contact).
 drop policy if exists "enviar mensagem" on public.messages;
@@ -253,9 +169,8 @@ create policy "enviar mensagem" on public.messages
             and p.owner_id <> auth.uid()
         )
       )
-      -- (d) resposta só a quem já te escreveu NESTA conversa e SOBRE O MESMO
-      --     imóvel (property_id igual, ou os dois nulos) — não a qualquer
-      --     mensagem anterior daquela pessoa.
+      -- (d) resposta só a quem já te escreveu NESTA conversa (mesmo
+      --     conversation_id, que já carrega o imóvel), não a qualquer pessoa.
       or (
         messages.conversation_id is not null
         and exists (
@@ -263,7 +178,6 @@ create policy "enviar mensagem" on public.messages
           where m.sender_id = messages.receiver_id
             and m.receiver_id = auth.uid()
             and m.conversation_id = messages.conversation_id
-            and m.property_id is not distinct from messages.property_id
         )
       )
     )

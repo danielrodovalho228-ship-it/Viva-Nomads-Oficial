@@ -37,10 +37,6 @@ exception
 end;
 $$;
 
--- Indicação — a função geradora sai. Os referral_code/referred_by já gravados
--- FICAM (são só dados, não abrem nada; a tela antiga calcula o mesmo código).
-drop function if exists public.gerar_referral_code(text, uuid);
-
 -- C2 — sem trigger e UPDATE de volta na tabela inteira (padrão do Supabase).
 drop trigger if exists trg_profiles_bloqueia_confianca on public.profiles;
 drop function if exists public.profiles_bloqueia_confianca();

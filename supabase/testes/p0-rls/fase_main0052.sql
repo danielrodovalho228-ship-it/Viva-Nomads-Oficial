@@ -97,40 +97,40 @@ reset role; set role authenticated; select set_config('request.jwt.claims','{"su
 select t('ATAQUE@0052','(c) sem property_id para o dono','falha',$q$insert into messages(conversation_id,sender_id,receiver_id,body) values ('cy','33333333-3333-3333-3333-333333333333','11111111-1111-1111-1111-111111111111','oi')$q$);
 select t('ATAQUE@0052','(c) anúncio em RASCUNHO','falha',$q$insert into messages(conversation_id,sender_id,receiver_id,property_id,body) values ('cz','33333333-3333-3333-3333-333333333333','11111111-1111-1111-1111-111111111111','aaaaaaa4-0000-0000-0000-000000000004','oi')$q$);
 select t('ATAQUE@0052','(c) anúncio ativo mas destinatário não é o dono','falha',$q$insert into messages(conversation_id,sender_id,receiver_id,property_id,body) values ('cw','33333333-3333-3333-3333-333333333333','44444444-4444-4444-4444-444444444444','aaaaaaa1-0000-0000-0000-000000000001','oi')$q$);
--- (d) só no MESMO imóvel: a conversa c2 (estranho→dono) é sobre o Ativo 1.
+-- 0054: (d) só no MESMO imóvel: a conversa c2 (estranho→dono) é sobre o Ativo 1.
 reset role; set role authenticated; select set_config('request.jwt.claims','{"sub":"11111111-1111-1111-1111-111111111111"}',false);
-select t('ATAQUE@0052','(d) dono responde c2 citando OUTRO imóvel','falha',$q$insert into messages(conversation_id,sender_id,receiver_id,property_id,body) values ('c2','11111111-1111-1111-1111-111111111111','33333333-3333-3333-3333-333333333333','aaaaaaa4-0000-0000-0000-000000000004','e este?')$q$);
-select t('ATAQUE@0052','(d) dono responde c2 sem imóvel (a conversa tem)','falha',$q$insert into messages(conversation_id,sender_id,receiver_id,body) values ('c2','11111111-1111-1111-1111-111111111111','33333333-3333-3333-3333-333333333333','oi')$q$);
-select t('NOVO@0052','(d) dono responde c2 no mesmo imóvel','passa',$q$insert into messages(conversation_id,sender_id,receiver_id,property_id,body) values ('c2','11111111-1111-1111-1111-111111111111','33333333-3333-3333-3333-333333333333','aaaaaaa1-0000-0000-0000-000000000001','combinado')$q$);
+select t('ATAQUE@0054','(d) dono responde c2 citando OUTRO imóvel','falha',$q$insert into messages(conversation_id,sender_id,receiver_id,property_id,body) values ('c2','11111111-1111-1111-1111-111111111111','33333333-3333-3333-3333-333333333333','aaaaaaa4-0000-0000-0000-000000000004','e este?')$q$);
+select t('ATAQUE@0054','(d) dono responde c2 sem imóvel (a conversa tem)','falha',$q$insert into messages(conversation_id,sender_id,receiver_id,body) values ('c2','11111111-1111-1111-1111-111111111111','33333333-3333-3333-3333-333333333333','oi')$q$);
+select t('NOVO@0054','(d) dono responde c2 no mesmo imóvel','passa',$q$insert into messages(conversation_id,sender_id,receiver_id,property_id,body) values ('c2','11111111-1111-1111-1111-111111111111','33333333-3333-3333-3333-333333333333','aaaaaaa1-0000-0000-0000-000000000001','combinado')$q$);
 -- (d) os dois nulos: conversa sem imóvel (admin→inquilino, gravada pelo servidor).
 reset role; insert into messages(conversation_id,sender_id,receiver_id,body) values ('cn','44444444-4444-4444-4444-444444444444','22222222-2222-2222-2222-222222222222','aviso');
 set role authenticated; select set_config('request.jwt.claims','{"sub":"22222222-2222-2222-2222-222222222222"}',false);
-select t('NOVO@0052','(d) responde conversa sem imóvel (nulo = nulo)','passa',$q$insert into messages(conversation_id,sender_id,receiver_id,body) values ('cn','22222222-2222-2222-2222-222222222222','44444444-4444-4444-4444-444444444444','ok')$q$);
-select t('ATAQUE@0052','(d) responde conversa sem imóvel citando um imóvel','falha',$q$insert into messages(conversation_id,sender_id,receiver_id,property_id,body) values ('cn','22222222-2222-2222-2222-222222222222','44444444-4444-4444-4444-444444444444','aaaaaaa1-0000-0000-0000-000000000001','e o ativo 1?')$q$);
+select t('NOVO@0054','(d) responde conversa sem imóvel (nulo = nulo)','passa',$q$insert into messages(conversation_id,sender_id,receiver_id,body) values ('cn','22222222-2222-2222-2222-222222222222','44444444-4444-4444-4444-444444444444','ok')$q$);
+select t('ATAQUE@0054','(d) responde conversa sem imóvel citando um imóvel','falha',$q$insert into messages(conversation_id,sender_id,receiver_id,property_id,body) values ('cn','22222222-2222-2222-2222-222222222222','44444444-4444-4444-4444-444444444444','aaaaaaa1-0000-0000-0000-000000000001','e o ativo 1?')$q$);
 
 -- INDICAÇÃO — código gravado, referred_by resolvido, campos travados.
 reset role;
-select v('IND@0052','backfill: conta antiga ganha o código da tela','select referral_code from profiles where id=''11111111-1111-1111-1111-111111111111''','VIVA-DONO111');
-select v('IND@0052','backfill: nenhuma conta ativa sem código','select count(*)::text from profiles where referral_code is null and anonymized_at is null','0');
-select v('IND@0052','cadastro novo gera o próprio código','select referral_code from profiles where id=''66666666-6666-6666-6666-666666666666''','VIVA-NOVO666');
+select v('IND@0054','backfill: conta antiga ganha o código da tela','select referral_code from profiles where id=''11111111-1111-1111-1111-111111111111''','VIVA-DONO111');
+select v('IND@0054','backfill: nenhuma conta ativa sem código','select count(*)::text from profiles where referral_code is null and anonymized_at is null','0');
+select v('IND@0054','cadastro novo gera o próprio código','select referral_code from profiles where id=''66666666-6666-6666-6666-666666666666''','VIVA-NOVO666');
 insert into auth.users (id, email, raw_user_meta_data) values ('81000000-0000-0000-0000-000000000001','ind1@t.com','{"role":"tenant","full_name":"Ind Um","referred_by":"  viva-dono111 "}');
-select v('IND@0052','código válido (minúsculo/espaços) → uuid de quem indicou','select referred_by::text from profiles where id=''81000000-0000-0000-0000-000000000001''','11111111-1111-1111-1111-111111111111');
+select v('IND@0054','código válido (minúsculo/espaços) → uuid de quem indicou','select referred_by::text from profiles where id=''81000000-0000-0000-0000-000000000001''','11111111-1111-1111-1111-111111111111');
 insert into auth.users (id, email, raw_user_meta_data) values ('82000000-0000-0000-0000-000000000002','ind2@t.com','{"role":"owner","full_name":"Ind Dois","referred_by":"DONO555"}');
-select v('IND@0052','código sem o prefixo VIVA- também vale','select referred_by::text from profiles where id=''82000000-0000-0000-0000-000000000002''','55555555-5555-5555-5555-555555555555');
+select v('IND@0054','código sem o prefixo VIVA- também vale','select referred_by::text from profiles where id=''82000000-0000-0000-0000-000000000002''','55555555-5555-5555-5555-555555555555');
 insert into auth.users (id, email, raw_user_meta_data) values ('83000000-0000-0000-0000-000000000003','ind3@t.com','{"role":"tenant","full_name":"Ind Tres","referred_by":"VIVA-NAOEXISTE999"}');
-select v('IND@0052','código inválido → referred_by nulo','select coalesce(referred_by::text,''(nulo)'') from profiles where id=''83000000-0000-0000-0000-000000000003''','(nulo)');
-select v('IND@0052','código inválido não impede o cadastro','select role::text from profiles where id=''83000000-0000-0000-0000-000000000003''','tenant');
+select v('IND@0054','código inválido → referred_by nulo','select coalesce(referred_by::text,''(nulo)'') from profiles where id=''83000000-0000-0000-0000-000000000003''','(nulo)');
+select v('IND@0054','código inválido não impede o cadastro','select role::text from profiles where id=''83000000-0000-0000-0000-000000000003''','tenant');
 insert into auth.users (id, email, raw_user_meta_data) values ('88800000-0000-0000-0000-000000000008','auto@t.com','{"role":"tenant","full_name":"Auto","referred_by":"VIVA-AUTO888"}');
-select v('IND@0052','o próprio código → referred_by nulo','select coalesce(referred_by::text,''(nulo)'') from profiles where id=''88800000-0000-0000-0000-000000000008''','(nulo)');
-select v('IND@0052','... e o código dele é esse mesmo','select referral_code from profiles where id=''88800000-0000-0000-0000-000000000008''','VIVA-AUTO888');
+select v('IND@0054','o próprio código → referred_by nulo','select coalesce(referred_by::text,''(nulo)'') from profiles where id=''88800000-0000-0000-0000-000000000008''','(nulo)');
+select v('IND@0054','... e o código dele é esse mesmo','select referral_code from profiles where id=''88800000-0000-0000-0000-000000000008''','VIVA-AUTO888');
 insert into auth.users (id, email, raw_user_meta_data) values ('11190000-0000-0000-0000-000000000009','dono3@t.com','{"role":"owner","full_name":"Dono Três"}');
-select v('IND@0052','colisão de código alonga o sufixo','select referral_code from profiles where id=''11190000-0000-0000-0000-000000000009''','VIVA-DONO1119');
+select v('IND@0054','colisão de código alonga o sufixo','select referral_code from profiles where id=''11190000-0000-0000-0000-000000000009''','VIVA-DONO1119');
 set role authenticated; select set_config('request.jwt.claims','{"sub":"83000000-0000-0000-0000-000000000003"}',false);
-select t('ATAQUE@0052','C2 grava referred_by depois do cadastro','falha',$q$update profiles set referred_by='11111111-1111-1111-1111-111111111111' where id='83000000-0000-0000-0000-000000000003'$q$);
-select t('ATAQUE@0052','C2 troca o próprio referral_code','falha',$q$update profiles set referral_code='VIVA-TOP' where id='83000000-0000-0000-0000-000000000003'$q$);
-select t('ATAQUE@0052','gerar_referral_code não executa para usuário','falha',$q$select gerar_referral_code('x','83000000-0000-0000-0000-000000000003')$q$);
+select t('ATAQUE@0054','C2 grava referred_by depois do cadastro','falha',$q$update profiles set referred_by='11111111-1111-1111-1111-111111111111' where id='83000000-0000-0000-0000-000000000003'$q$);
+select t('ATAQUE@0054','C2 troca o próprio referral_code','falha',$q$update profiles set referral_code='VIVA-TOP' where id='83000000-0000-0000-0000-000000000003'$q$);
+select t('ATAQUE@0054','gerar_referral_code não executa para usuário','falha',$q$select gerar_referral_code('x','83000000-0000-0000-0000-000000000003')$q$);
 reset role; grant update (referred_by, referral_code) on public.profiles to authenticated;
 set role authenticated; select set_config('request.jwt.claims','{"sub":"83000000-0000-0000-0000-000000000003"}',false);
-select t('ATAQUE@0052','C2 TRIGGER sozinho barra referred_by','falha',$q$update profiles set referred_by='11111111-1111-1111-1111-111111111111' where id='83000000-0000-0000-0000-000000000003'$q$);
-select t('ATAQUE@0052','C2 TRIGGER sozinho barra referral_code','falha',$q$update profiles set referral_code='VIVA-TOP' where id='83000000-0000-0000-0000-000000000003'$q$);
+select t('ATAQUE@0054','C2 TRIGGER sozinho barra referred_by','falha',$q$update profiles set referred_by='11111111-1111-1111-1111-111111111111' where id='83000000-0000-0000-0000-000000000003'$q$);
+select t('ATAQUE@0054','C2 TRIGGER sozinho barra referral_code','falha',$q$update profiles set referral_code='VIVA-TOP' where id='83000000-0000-0000-0000-000000000003'$q$);
 reset role; revoke update (referred_by, referral_code) on public.profiles from authenticated;

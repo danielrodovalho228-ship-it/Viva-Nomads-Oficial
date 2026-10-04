@@ -9,5 +9,3 @@ select t('RB0052','policy antiga de mensagem (sem relação) volta','passa',$q$i
 select t('RB0052','update de perfil na tabela inteira volta','passa',$q$update profiles set role='tenant' where id='22222222-2222-2222-2222-222222222222'$q$);
 reset role;
 select v('RB0052','função auxiliar de Pedido removida','select count(*)::text from pg_proc where proname=''tem_relacao_pedido_com''','0');
-select v('RB0052','gerar_referral_code removida','select count(*)::text from pg_proc where proname=''gerar_referral_code''','0');
-select v('RB0052','códigos de indicação já gravados ficam','select referral_code from profiles where id=''11111111-1111-1111-1111-111111111111''','VIVA-DONO111');
