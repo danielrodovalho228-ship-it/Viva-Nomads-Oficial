@@ -42,7 +42,7 @@ import { INTERNET_TIERS, INTERNET_META, type InternetTier } from "@/lib/internet
 import { Button } from "@/components/ui/button";
 import { ReadyToLiveBadge, DocConferidaBadge } from "@/components/ui/badge";
 import { saveQualification, getMyDocumentStatus, resumoImovelDoDono, type DocumentStatus } from "@/lib/data/actions";
-import { cn } from "@/lib/utils";
+import { cn, numBR } from "@/lib/utils";
 
 const initialEligibility: EligibilityState = {
   furnished: false,
@@ -362,7 +362,7 @@ export default function QualificationChecklistPage() {
                     setDocErro(data.error ?? "Não foi possível enviar o documento agora.");
                     return;
                   }
-                  setDocName(`${f.name} · ${(f.size / 1024 / 1024).toFixed(1)} MB`);
+                  setDocName(`${f.name} · ${numBR(f.size / 1024 / 1024, 1)} MB`);
                   setDocPath(data.path ?? null);
                   setDocHash(data.hash ?? null);
                   setElig((s) => ({ ...s, hasDocument: true }));

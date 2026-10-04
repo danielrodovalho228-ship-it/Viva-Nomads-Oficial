@@ -5,7 +5,7 @@ import { Calculator, TrendingUp, Clock, Percent, Wallet } from "lucide-react";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { PlanGate } from "@/components/dashboard/plan-gate";
 import { computeViability } from "@/lib/viability";
-import { formatBRL } from "@/lib/utils";
+import { formatBRL, numBR } from "@/lib/utils";
 
 export default function ViabilityPage() {
   return (
@@ -86,7 +86,7 @@ function Calc() {
                 className="w-full accent-[var(--color-forest)]"
               />
               <span className="mt-1 block text-xs text-muted">
-                ≈ {r.monthsOccupied.toFixed(1)} meses ocupados por ano
+                ≈ {numBR(r.monthsOccupied, 1)} meses ocupados por ano
               </span>
             </label>
           </div>

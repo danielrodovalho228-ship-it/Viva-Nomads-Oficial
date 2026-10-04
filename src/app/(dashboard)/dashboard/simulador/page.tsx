@@ -16,7 +16,7 @@ import {
   type PlanoCalc,
 } from "@/lib/simulador";
 import { PLANO_FUNDADOR } from "@/lib/flags";
-import { formatBRL } from "@/lib/utils";
+import { formatBRL, numBR } from "@/lib/utils";
 import { NumInput, ResultCard, SimDisclaimer, SimHero, PlanoPills } from "@/components/simulador/ui";
 import { MAX_ALUGUEL_MENSAL } from "@/lib/campos-valor";
 
@@ -127,7 +127,7 @@ export default function SimuladorPage() {
           <div className="grid grid-cols-2 gap-4">
             <ResultCard label="Receita bruta / ano" value={formatBRL(res.receitaBrutaAnual)} />
             <ResultCard label="Custos / ano" value={`− ${formatBRL(res.custosAnuais)}`} />
-            <ResultCard label={`Comissão Viva (${Math.round((p?.comissao ?? 0) * 100)}%)`} value={`− ${formatBRL(res.comissaoAnual)}`} hint={`${res.contratosPorAno.toFixed(1)} contrato(s)/ano · % do 1º aluguel`} />
+            <ResultCard label={`Comissão Viva (${Math.round((p?.comissao ?? 0) * 100)}%)`} value={`− ${formatBRL(res.comissaoAnual)}`} hint={`${numBR(res.contratosPorAno, 1)} contrato(s)/ano · % do 1º aluguel`} />
             <ResultCard label="Assinatura / ano" value={sobConsulta ? "Sob consulta" : res.assinaturaAnual > 0 ? `− ${formatBRL(res.assinaturaAnual)}` : "Grátis"} />
           </div>
           <div className="rounded-2xl border border-forest bg-forest p-5 text-white">

@@ -12,3 +12,11 @@ test("dataBR formata AAAA-MM-DD e ISO sem mudar o dia por fuso", () => {
   assert.equal(dataBR(null), "—");
   assert.equal(dataBR("ontem"), "—");
 });
+
+test("numBR usa vírgula decimal e trata valores inválidos", async () => {
+  const { numBR } = await import("./utils.ts");
+  assert.equal(numBR(18.4123, 2), "18,41");
+  assert.equal(numBR(4.8), "4,8");
+  assert.equal(numBR(1234.5, 1), "1.234,5");
+  assert.equal(numBR(Infinity), "—");
+});

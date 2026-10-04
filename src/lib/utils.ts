@@ -61,3 +61,9 @@ export function dataBR(iso: string | null | undefined): string {
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso ?? ""));
   return m ? `${m[3]}/${m[2]}/${m[1]}` : "—";
 }
+
+/** Número com vírgula decimal (pt-BR): numBR(18.4123, 2) → "18,41". */
+export function numBR(v: number, casas = 1): string {
+  if (!Number.isFinite(v)) return "—";
+  return v.toLocaleString("pt-BR", { minimumFractionDigits: casas, maximumFractionDigits: casas });
+}

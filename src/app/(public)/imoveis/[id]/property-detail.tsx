@@ -1,5 +1,6 @@
 "use client";
 
+import { numBR } from "@/lib/utils";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -338,7 +339,7 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
               {reviewsReais > 0 ? (
                 <span className="inline-flex items-center gap-1 text-sm font-medium text-forest">
                   <Star className="h-4 w-4 fill-champagne text-champagne" />
-                  {mediaReal.toFixed(1)} · {reviewsReais}{" "}
+                  {numBR(mediaReal, 1)} · {reviewsReais}{" "}
                   {reviewsReais === 1 ? "avaliação" : "avaliações"}
                 </span>
               ) : (
