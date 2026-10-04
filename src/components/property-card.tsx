@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Bath, BedDouble, Ruler, Star, PlayCircle, Users } from "lucide-react";
 import type { Property } from "@/lib/types";
-import { formatBRL } from "@/lib/utils";
+import { formatBRL, numBR } from "@/lib/utils";
 import { calcularTudoIncluido } from "@/lib/precos";
 import { tierFromPhotoCount } from "@/lib/listing";
 import { SELO_NF_UI } from "@/lib/flags";
@@ -84,7 +84,7 @@ export function PropertyCard({
           ) : property.reviewCount > 0 ? (
             <span className="inline-flex shrink-0 items-center gap-1 font-medium text-ink">
               <Star className="h-3.5 w-3.5 fill-green-500 text-green-500" />
-              {property.rating.toFixed(1)}
+              {numBR(property.rating, 1)}
               <span className="text-muted">({property.reviewCount})</span>
             </span>
           ) : (

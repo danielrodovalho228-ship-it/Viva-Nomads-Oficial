@@ -8,7 +8,7 @@ import { useAuthStore, DEMO_USER } from "@/lib/store";
 import { plano as getPlano, type PlanoId } from "@/config/planos";
 import { simularROI, type EntradaROI } from "@/lib/simulador";
 import { imprimirSimulacao } from "@/lib/print-simulacao";
-import { formatBRL } from "@/lib/utils";
+import { formatBRL, numBR } from "@/lib/utils";
 import { MAX_ALUGUEL_MENSAL, MAX_INVESTIMENTO } from "@/lib/campos-valor";
 import { NumInput, ResultCard, SimDisclaimer, SimHero, PlanoPills } from "@/components/simulador/ui";
 
@@ -55,7 +55,7 @@ export default function RoiImovelPage() {
       ? "o mobiliado não rende mais que o vazio"
       : res.paybackMeses === 0
         ? "sem investimento a recuperar"
-        : `≈ ${(res.paybackMeses / 12).toFixed(1)} anos`;
+        : `≈ ${numBR(res.paybackMeses / 12, 1)} anos`;
   const roiTexto = res.roiAnual === null ? "—" : `${Math.round(res.roiAnual * 100)}%`;
 
   const maxAbs = Math.max(1, ...res.acumulado.flatMap((a) => [Math.abs(a.mobiliado), Math.abs(a.vazio)]));

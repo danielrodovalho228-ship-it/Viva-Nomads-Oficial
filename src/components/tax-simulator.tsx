@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { Calculator, TrendingDown, AlertTriangle, Building2, User } from "lucide-react";
 import { simulateTax, PJ_ACCOUNTING_YEAR } from "@/lib/tax";
 import { limitar, avisoTeto, MAX_RECEITA_CARTEIRA } from "@/lib/campos-valor";
-import { formatBRL, cn } from "@/lib/utils";
+import { formatBRL, cn, numBR } from "@/lib/utils";
 
 /**
  * Simulador tributário PF x PJ (educativo, não é aconselhamento fiscal).
@@ -187,7 +187,7 @@ function Card({
         <span className="font-title font-bold text-ink">{title}</span>
       </div>
       <p className="mt-3 font-title text-2xl font-bold text-forest">{formatBRL(tax)}</p>
-      <p className="text-xs text-muted">por ano · ~{(rate * 100).toFixed(2)}% efetivo</p>
+      <p className="text-xs text-muted">por ano · ~{numBR(rate * 100, 2)}% efetivo</p>
       <p className="mt-2 text-xs text-muted">{note}</p>
     </div>
   );

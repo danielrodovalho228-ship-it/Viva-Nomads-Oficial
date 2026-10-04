@@ -1,4 +1,5 @@
 import { Star } from "lucide-react";
+import { numBR } from "@/lib/utils";
 import type { Property, Review } from "@/lib/types";
 
 /** "abr. 2026" a partir de uma data ISO. */
@@ -26,7 +27,7 @@ export function Reviews({ property }: { property: Property }) {
         Avaliações
         <span className="inline-flex items-center gap-1 text-base font-semibold text-forest">
           <Star className="h-4 w-4 fill-champagne text-champagne" />
-          {avg.toFixed(1)} · {reviews.length}
+          {numBR(avg, 1)} · {reviews.length}
         </span>
       </h2>
 
@@ -38,7 +39,7 @@ export function Reviews({ property }: { property: Property }) {
               <div className="flex items-center justify-between">
                 <span className="font-medium text-ink">{r.author}</span>
                 <span className="inline-flex items-center gap-1 text-sm text-forest">
-                  <Star className="h-4 w-4 fill-champagne text-champagne" /> {r.rating.toFixed(1)}
+                  <Star className="h-4 w-4 fill-champagne text-champagne" /> {numBR(r.rating, 1)}
                 </span>
               </div>
               {date && <p className="text-xs text-muted">{date}</p>}
