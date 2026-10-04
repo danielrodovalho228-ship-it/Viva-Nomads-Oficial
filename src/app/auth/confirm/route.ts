@@ -17,7 +17,8 @@ export async function GET(request: Request) {
   const token_hash = searchParams.get("token_hash");
   const type = searchParams.get("type") as EmailOtpType | null;
   // A7: `next` só pode ser caminho interno; nunca concatenar com a origem.
-  const next = safeInternalPath(searchParams.get("next"));
+  // Recuperação de senha SEMPRE termina na tela de nova senha.
+  const next = type === "recovery" ? "/auth/reset" : safeInternalPath(searchParams.get("next"));
 
   if (token_hash && type) {
     const supabase = await createClient();

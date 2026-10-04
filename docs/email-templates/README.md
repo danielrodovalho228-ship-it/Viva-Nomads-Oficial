@@ -8,8 +8,14 @@ o cliente de e-mail bloquear imagens.
 ## E-mails de autenticação (Supabase)
 
 Em **Supabase → Authentication → Emails → Templates**, cole o HTML de cada
-arquivo no template correspondente. O Supabase substitui a variável
-`{{ .ConfirmationURL }}` automaticamente.
+arquivo no template correspondente. Os links usam `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=…`
+— a validação é feita pelo NOSSO servidor (/auth/confirm), então o link funciona
+em qualquer navegador/aparelho (inclusive pedido no app e aberto no e-mail do
+computador) e não depende da lista de "Redirect URLs" do Supabase.
+
+> **Redefinir senha (02):** até 04/10/2026 usava `{{ .ConfirmationURL }}`. Com ele,
+> o link caía na home quando `/auth/reset` não estava em Redirect URLs, e a tela
+> de nova senha nunca abria. Cole a versão nova no template **Reset password**.
 
 | Arquivo | Template no Supabase |
 |---|---|
