@@ -19,10 +19,18 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
   // Papéis opcionais só entram na rodada quando têm credenciais configuradas.
   const roles = [...ALL_ROLES, ...OPTIONAL_ROLES.filter(hasAccount)];
 
+  // Preview com Deployment Protection da Vercel: sem os headers de bypass, o
+  // login cairia na tela de acesso da Vercel (o config do Playwright não se
+  // aplica a este navegador, aberto à parte).
+  const secret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+  const extraHTTPHeaders = secret
+    ? { "x-vercel-protection-bypass": secret, "x-vercel-set-bypass-cookie": "true" }
+    : undefined;
+
   const browser = await chromium.launch({ executablePath });
   try {
     for (const role of roles) {
-      const context = await browser.newContext({ baseURL });
+      const context = await browser.newContext({ baseURL, ...(extraHTTPHeaders ? { extraHTTPHeaders } : {}) });
       const page = await context.newPage();
       await loginAs(page, role);
       await context.storageState({ path: authFile(role) });
