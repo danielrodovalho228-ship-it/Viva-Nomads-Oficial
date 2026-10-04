@@ -3,7 +3,7 @@
 import { numBR } from "@/lib/utils";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Bath,
   BedDouble,
@@ -41,6 +41,7 @@ import { AvailabilityCalendar } from "@/components/property/availability-calenda
 import { OwnerCard } from "@/components/property/owner-card";
 import { Reviews } from "@/components/property/reviews";
 import { isExemplo, EXEMPLO_SEM_CONTATO } from "@/lib/demo-listing";
+import { registrarEvento } from "@/lib/eventos/registrar";
 
 export function PropertyDetail({ property: anuncio, similar }: { property: Property; similar: Property[] }) {
   // Anúncio de EXEMPLO: sem nota, avaliações, selos do dono, taxa de resposta,
@@ -70,7 +71,13 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
 
   // Dúvida / visita / candidatura: registra o interesse e avisa o proprietário
   // (e-mail/WhatsApp). Candidatura segue para o fluxo de fechamento.
+  // Evento anônimo de uso (0067): uma visualização por abertura do anúncio.
+  useEffect(() => {
+    if (!isExemplo(property)) registrarEvento("ver_anuncio", { imovelId: property.id, cidade: property.city });
+  }, [property]);
+
   async function handleLead(kind: LeadKind, note?: string) {
+    if (kind === "candidatura") registrarEvento("iniciar_candidatura", { imovelId: property.id, cidade: property.city });
     setPending(kind);
     setLeadErro(null);
     const r = await requestLead(property.id, property.title, kind, note).catch(() => null);
@@ -97,6 +104,7 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
       // Candidatura NÃO é fechamento (este nasce quando o PROPRIETÁRIO aceita):
       // confirma o envio e aponta o acompanhamento em Mensagens.
       setCandidatouSe(true);
+      registrarEvento("enviar_candidatura", { imovelId: property.id, cidade: property.city });
       return true;
     }
     setSent((s) => ({ ...s, [kind]: true }));

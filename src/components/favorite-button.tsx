@@ -4,6 +4,7 @@ import { Heart } from "lucide-react";
 import { useFavoritesStore } from "@/lib/favorites-store";
 import { toggleFavorite } from "@/lib/data/actions";
 import { cn } from "@/lib/utils";
+import { registrarEvento } from "@/lib/eventos/registrar";
 
 /** Botão de favoritar (coração). Persiste no store e sincroniza best-effort. */
 export function FavoriteButton({
@@ -22,6 +23,7 @@ export function FavoriteButton({
     const next = !isFavorite;
     toggle(propertyId);
     void toggleFavorite(propertyId, next);
+    if (next) registrarEvento("favoritar", { imovelId: propertyId });
   }
 
   return (

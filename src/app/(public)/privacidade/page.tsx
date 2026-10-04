@@ -19,6 +19,9 @@ export const metadata: Metadata = {
         e necessidade de consentimento específico e destacado.
   - [ ] Encarregado (DPO): incluir contato e como exercer os direitos do titular.
   - [ ] Retenção: alinhar prazos de guarda e finalidade ao restante da política.
+  - [ ] Seção 11 (eventos anônimos de uso, 0067): conferir base legal
+        (legítimo interesse, art. 7º IX) e se o vínculo ao usuário logado
+        (usuario_id) exige menção específica.
   - [ ] Coerência com os Termos de Uso (que citam Asaas/ZapSign) e o disclaimer
         "conecta, documenta e registra — não é locador, fiador,
         garantidor nem executora".
@@ -49,7 +52,7 @@ export default function PrivacyPage() {
   return (
     <div className="container-page max-w-3xl py-12 md:py-16">
       <h1 className="font-title text-4xl font-bold text-ink">Política de Privacidade</h1>
-      <p className="mt-3 text-muted">Última atualização: junho de 2026 · LGPD (Lei 13.709/2018)</p>
+      <p className="mt-3 text-muted">Última atualização: outubro de 2026 · LGPD (Lei 13.709/2018)</p>
 
       <div className="mt-8 space-y-8">
         <Section title="1. Quem somos">
@@ -150,6 +153,17 @@ export default function PrivacyPage() {
         <Section title="10. Cookies">
           Usamos cookies essenciais para autenticação e funcionamento, e cookies de análise para
           melhorar o produto. Você pode gerenciá-los no seu navegador.
+        </Section>
+
+        <Section title="11. Dados de uso da navegação">
+          Para melhorar o serviço, registramos de forma <strong>anônima</strong> algumas ações no
+          site e no app — por exemplo, uma busca, a abertura de um anúncio, um favorito ou o envio
+          de uma candidatura — com a cidade, o imóvel envolvido, a origem da visita (como um link
+          do Instagram ou do Google, guardada por 30 dias em um cookie) e se o acesso foi pelo
+          site ou pelo app. <strong>Não guardamos seu IP, e-mail, nome nem o que você digita.</strong>{" "}
+          Quem não está logado é contado por um código que muda todo dia e não identifica a pessoa.
+          Esses registros só aparecem para a equipe em números agregados e são apagados após 18
+          meses.
         </Section>
       </div>
     </div>

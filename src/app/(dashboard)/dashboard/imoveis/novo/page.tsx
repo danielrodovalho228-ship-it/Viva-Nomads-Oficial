@@ -45,6 +45,7 @@ import { cn, formatBRL } from "@/lib/utils";
 import { COMMISSION_BY_PLAN } from "@/lib/constants";
 import { useAuthStore } from "@/lib/store";
 import { draftKey, DRAFT_KEY_LEGADO } from "@/lib/local-keys";
+import { registrarEvento } from "@/lib/eventos/registrar";
 
 /** Metadados das 7 etapas do wizard (rodada 15). */
 const STEP_META = [
@@ -214,6 +215,11 @@ export default function NewPropertyPage() {
     setStep((s) => Math.max(0, s - 1));
   }
 
+  // Evento anônimo (0067): começou um anúncio novo (edição não conta).
+  useEffect(() => {
+    if (!editId) registrarEvento("iniciar_anuncio");
+  }, [editId]);
+
   // Estado da verificação do documento DESTE imóvel (portão de Publicar). Na
   // edição, a qualificação do imóvel; no imóvel novo, a que está à espera.
   useEffect(() => {
@@ -370,6 +376,8 @@ export default function NewPropertyPage() {
       setPublishError(res.error ?? "Não foi possível salvar.");
       return;
     }
+    // Evento anônimo (0067): publicação de anúncio novo (não a reedição).
+    if (!asDraft && !editingId) registrarEvento("publicar_anuncio", { imovelId: targetId, cidade: city });
     // Só limpa o rascunho de "novo anúncio" quando de fato criamos um novo.
     if (!editingId) {
       try {

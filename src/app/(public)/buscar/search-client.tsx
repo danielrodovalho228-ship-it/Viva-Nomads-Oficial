@@ -20,6 +20,8 @@ import { tierFromPhotoCount, searchPriority } from "@/lib/listing";
 import { LocationSearch } from "@/components/location-search";
 import type { GeoSuggestion } from "@/lib/integrations/geocoding";
 import { PROPERTY_TYPES } from "@/lib/amenities";
+import { registrarEvento } from "@/lib/eventos/registrar";
+import { chaveCidade } from "@/lib/cidades";
 import { FAIXAS, GARANTIAS_FAIXA, GARANTIAS_PUBLICAS, CAUCAO_PARCELADA_UI } from "@/lib/faixas";
 
 // Filtro de garantia exibido na busca pública: caução unificada + seguro-fiança
@@ -222,6 +224,22 @@ export function SearchClient({ properties }: { properties: Property[] }) {
     typeFilter, faixa, dataEntrada, garantia, petsOnly, furnishedOnly,
     readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly,
   ]);
+
+  // Evento anônimo "busca" (0067): 1 por local pesquisado, depois que a pessoa
+  // para de digitar. Só a CIDADE vai (e só se for de um anúncio da lista) —
+  // nunca o texto digitado, que pode ser um endereço.
+  const ultimaBusca = useRef<string | null>(null);
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const q = chaveCidade(locationQuery);
+      const cidade = q ? (properties.find((p) => p.city && q.includes(chaveCidade(p.city)))?.city ?? null) : null;
+      const chave = cidade ? chaveCidade(cidade) : q ? "?" : "";
+      if (ultimaBusca.current === chave) return;
+      ultimaBusca.current = chave;
+      registrarEvento("busca", { cidade });
+    }, 1500);
+    return () => window.clearTimeout(timer);
+  }, [locationQuery, properties]);
 
   // Zera todos os filtros (usado no estado vazio para o usuário recomeçar).
   function clearFilters() {
