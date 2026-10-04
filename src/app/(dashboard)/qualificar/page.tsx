@@ -81,6 +81,7 @@ export default function QualificationChecklistPage() {
   const [docBusy, setDocBusy] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saveErro, setSaveErro] = useState<string | null>(null);
   // Estado da verificação do documento (reconciliar o veredito com a moderação —
   // ADENDO elegibilidade item 3). "none" até enviar; após salvar vira "pending".
   const [docStatus, setDocStatus] = useState<DocumentStatus>("none");
@@ -202,16 +203,24 @@ export default function QualificationChecklistPage() {
 
   async function save() {
     setSaving(true);
+    setSaveErro(null);
     if (typeof window !== "undefined") {
       sessionStorage.setItem(
         "vivanomads-qualification",
         JSON.stringify({ eligible, score, baseBadge, tHome, tWork, tCondo })
       );
     }
-    const r = await saveQualification(elig, quality, docPath, docHash, imovel?.id ?? null);
+    let r: Awaited<ReturnType<typeof saveQualification>>;
+    try {
+      r = await saveQualification(elig, quality, docPath, docHash, imovel?.id ?? null);
+    } catch {
+      r = { ok: false, error: "Não foi possível salvar a qualificação agora. Tente novamente." };
+    }
     setSaving(false);
     if (r && !r.ok) {
-      setDocErro(r.error ?? "Não foi possível salvar a qualificação.");
+      // Erro da GRAVAÇÃO aparece junto do botão (antes ia para perto do campo
+      // do documento, como se fosse problema do arquivo).
+      setSaveErro(r.error ?? "Não foi possível salvar a qualificação.");
       return;
     }
     setSaved(true);
@@ -639,6 +648,11 @@ export default function QualificationChecklistPage() {
           </Button>
         )}
       </div>
+      {saveErro && (
+        <p className="mt-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="status" aria-live="polite">
+          {saveErro}
+        </p>
+      )}
     </div>
   );
 }
