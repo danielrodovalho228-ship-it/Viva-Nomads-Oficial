@@ -21,7 +21,6 @@ import { amenityRows } from "@/lib/amenities";
 import { getPropertyForOwner } from "@/lib/data/properties";
 import { guardContactInfo } from "@/lib/messages/contact-guard";
 import { isExemplo, EXEMPLO_SEM_CONTATO } from "@/lib/demo-listing";
-import { ehAdmin } from "@/lib/data/admin-guard";
 import { conversationId as idConversa } from "@/lib/messages/conversation-id";
 import { SITE_URL } from "@/lib/site";
 import type { Property } from "@/lib/types";

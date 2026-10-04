@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { notify } from "@/lib/notifications";
-import { escaparHtml } from "@/lib/escapar-html";
+import { textoEmail } from "@/lib/notifications/texto-seguro";
 import { logModeracao } from "@/lib/data/moderacao-log";
 
 type ActionResult = { ok: boolean; demo?: boolean; error?: string };
@@ -207,7 +207,7 @@ export async function revisarChecklist(
         pushUrl: "/dashboard/imoveis",
         detailsHtml: aprovado
           ? undefined
-          : `<p style="margin:12px 0 0;color:#334155;">Motivo: ${escaparHtml(motivoLimpo)}</p>`,
+          : `<p style="margin:12px 0 0;color:#334155;">Motivo: ${textoEmail(motivoLimpo, 500)}</p>`,
         detailsText: aprovado ? undefined : `Motivo: ${motivoLimpo}`,
       });
     }

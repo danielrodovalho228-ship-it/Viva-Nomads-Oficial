@@ -18,9 +18,11 @@ const DOC_LABEL: Record<string, { texto: string; tom: string }> = {
 export function AdminPainelClient({
   resumo,
   checklists,
+  aviso,
 }: {
   resumo: ResumoAdmin | null;
   checklists: ChecklistPendente[];
+  aviso: string | null;
 }) {
   const router = useRouter();
   const [ocupado, setOcupado] = useState<string | null>(null);
@@ -50,9 +52,9 @@ export function AdminPainelClient({
     <>
       <PageTitle title="Administração" subtitle="Números reais da plataforma e checklists para revisar." />
 
-      {!resumo && (
+      {aviso && (
         <p className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          Sem conexão com o banco (modo demonstração): nenhum número real para mostrar.
+          {aviso}
         </p>
       )}
 
@@ -159,6 +161,9 @@ export function AdminPainelClient({
       </Panel>
 
       <MotivoDialog
+        // key: cada abertura começa limpa (o motivo digitado e cancelado não
+        // reaparece na próxima recusa).
+        key={recusando?.id ?? "fechado"}
         open={!!recusando}
         titulo="Recusar checklist"
         descricao={

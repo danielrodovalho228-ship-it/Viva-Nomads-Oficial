@@ -7,5 +7,14 @@ import { AdminPainelClient } from "./admin-painel-client";
  */
 export default async function AdminPage() {
   const [resumo, checklists] = await Promise.all([getResumoAdmin(), listChecklistsPendentes()]);
-  return <AdminPainelClient resumo={resumo} checklists={checklists} />;
+  // Por que não há números: sem Supabase é o modo demonstração; com Supabase e
+  // sem a chave de serviço, é configuração faltando (não "demonstração").
+  const aviso = resumo
+    ? null
+    : !process.env.NEXT_PUBLIC_SUPABASE_URL
+      ? "Sem conexão com o banco (modo demonstração): nenhum número real para mostrar."
+      : !process.env.SUPABASE_SERVICE_ROLE_KEY
+        ? "Chave de serviço não configurada (SUPABASE_SERVICE_ROLE_KEY): os números e a fila não podem ser lidos."
+        : "Não foi possível ler os números agora.";
+  return <AdminPainelClient resumo={resumo} checklists={checklists} aviso={aviso} />;
 }

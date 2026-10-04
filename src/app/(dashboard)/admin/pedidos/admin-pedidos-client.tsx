@@ -142,6 +142,8 @@ export function AdminPedidosClient({ pedidos }: { pedidos: Record<string, unknow
       </Panel>
 
       <MotivoDialog
+        // key: cada abertura começa limpa (sem o motivo de uma tentativa anterior).
+        key={ocultando?.id ?? "fechado"}
         open={!!ocultando}
         titulo="Ocultar pedido"
         descricao={
