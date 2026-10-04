@@ -22,8 +22,8 @@ export default function ForLandlordsPage() {
               curta duração
             </h1>
             <p className="mt-5 max-w-lg text-lg text-white/80">
-              Locação mobiliada de média duração (30 a 180 dias), com contrato formal e inquilino
-              verificado. Menos entra-e-sai, menos meses com o imóvel parado e com água, luz,
+              Locação mobiliada de média duração (30 a 180 dias), com contrato formal e a
+              negociação registrada na plataforma. Menos entra-e-sai, menos meses com o imóvel parado e com água, luz,
               condomínio e IPTU que podem ser transferidos ao inquilino conforme o contrato.
             </p>
             <p className="mt-4 text-white/90">
@@ -68,7 +68,7 @@ export default function ForLandlordsPage() {
           <Benefit icon={Receipt} title="Custos que podem ser transferidos" text="Água, luz, condomínio e IPTU podem ser do inquilino durante a estadia, conforme o contrato." />
           <Benefit icon={TrendingUp} title="Menos imóvel parado" text="Um inquilino por uma temporada inteira, inclusive nos meses fracos do turismo." />
           <Benefit icon={FileSignature} title="Contrato com validade jurídica" text="Contrato de locação por temporada gerado e assinado digitalmente, com validade jurídica." />
-          <Benefit icon={ShieldCheck} title="Garantia e conversa registrada" text="Caução ou seguro-fiança no contrato, e toda a negociação registrada na plataforma." />
+          <Benefit icon={ShieldCheck} title="Caução ou seguro-fiança" text="A garantia é escolhida no contrato entre você e o inquilino. A plataforma organiza e documenta; não é a garantidora." />
         </div>
       </section>
 

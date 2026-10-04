@@ -37,8 +37,8 @@ export default function EmpresasPage() {
         Moradia de média duração para o seu time
       </h1>
       <p className="mt-4 text-lg text-muted">
-        Locação mobiliada de 30 a 180 dias para mobilidade corporativa — imóveis prontos, inquilino
-        verificado e a negociação toda pela plataforma. O aluguel vai direto ao proprietário; a
+        Locação mobiliada de 30 a 180 dias para mobilidade corporativa — imóveis prontos, contrato
+        formal e a negociação toda pela plataforma. O aluguel vai direto ao proprietário; a
         plataforma nunca toca no dinheiro.
       </p>
 
