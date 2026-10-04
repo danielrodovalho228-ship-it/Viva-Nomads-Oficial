@@ -18,6 +18,8 @@ import { listingLimit, PLAN_LABEL } from "@/lib/plan";
 import type { SubscriptionPlan } from "@/lib/store";
 import { buildLeadNotification, LEAD_KIND_MSG, type LeadKind } from "@/lib/leads";
 import { amenityRows } from "@/lib/amenities";
+import { fotosDoDono, urlsDoRascunho } from "@/lib/fotos-anuncio";
+import { INTERNET_META } from "@/lib/internet";
 import { getPropertyForOwner } from "@/lib/data/properties";
 import { guardContactInfo } from "@/lib/messages/contact-guard";
 import { isExemplo, EXEMPLO_SEM_CONTATO } from "@/lib/demo-listing";
@@ -98,13 +100,17 @@ export async function saveQualification(
       tag_home_office: tagHomeOffice(quality),
       tag_work_located: tagWorkLocated(quality),
       tag_condo_approved: tagCondoApproved(elig),
-      internet_tier: quality.internetTier,
+      internet_tier: quality.internetTier in INTERNET_META ? quality.internetTier : null,
       status: eligible ? "approved" : "not_eligible",
     })
     .select("id")
     .single();
 
-  if (error) return { ok: false, error: error.message };
+  if (error) {
+    // Nunca mostra a mensagem técnica do banco (em inglês) ao proprietário.
+    console.error("[saveQualification] falha ao gravar:", error.message);
+    return { ok: false, error: "Não foi possível salvar a qualificação agora. Tente novamente em instantes." };
+  }
 
   // Documento entrou na fila → avisa os admins (best-effort; nunca trava nem
   // vaza dados do documento — só o fato de que há item para conferir).
@@ -414,7 +420,7 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
   // Persiste as fotos enviadas ao Storage (a primeira é a capa). Ignora URLs
   // não persistentes (blob: do modo demo, ou upload que falhou) para não gravar
   // imagem quebrada. Best-effort: uma falha aqui não derruba o cadastro base.
-  const persistableUrls = (input.photoUrls ?? []).filter((u) => u && !u.startsWith("blob:"));
+  const persistableUrls = fotosDoDono(input.photoUrls ?? [], user.id);
   if (persistableUrls.length > 0) {
     try {
       const { error } = await supabase.from("property_photos").insert(
@@ -503,6 +509,11 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
       };
     }
   }
+
+  // Fotos ANTES do status: o banco só deixa publicar com 8 fotos gravadas em
+  // property_photos (0009). Antes elas eram regravadas DEPOIS da mudança para
+  // 'active', e o rascunho (fotos só no draft_data) nunca publicava.
+  await sincronizarFotos(supabase, id, user.id, input.photoUrls ?? []);
 
   const { error } = await supabase
     .from("properties")
@@ -603,12 +614,6 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
       note: p.note ?? null,
       sort_order: i,
     }))
-  );
-  await resync(
-    "property_photos",
-    (input.photoUrls ?? [])
-      .filter((u) => u && !u.startsWith("blob:"))
-      .map((url, i) => ({ property_id: id, url, sort_order: i }))
   );
 
   return { ok: true, id };
@@ -1272,11 +1277,47 @@ export async function saveDraftData(snap: {
       .eq("owner_id", user.id)
       .eq("status", "draft");
     if (error) return { ok: false, error: error.message };
+    await sincronizarFotos(supabase, snap.id, user.id, urlsDoRascunho(snap.data));
     return { ok: true, id: snap.id };
   }
   const { data, error } = await supabase.from("properties").insert(fields).select("id").single();
   if (error) return { ok: false, error: error.message };
+  await sincronizarFotos(supabase, data.id as string, user.id, urlsDoRascunho(snap.data));
   return { ok: true, id: data.id };
+}
+
+/**
+ * Grava as fotos do anúncio em `property_photos` (a 1ª é a capa) — é daí que
+ * saem a contagem do "Meus imóveis", o photo_count e a trava de 8 fotos para
+ * publicar. Só regrava quando a lista mudou (o autosave roda a cada edição).
+ * Só fotos do bucket na pasta do dono. Best-effort: falha não derruba o salvar.
+ */
+async function sincronizarFotos(
+  supabase: NonNullable<Awaited<ReturnType<typeof createClient>>>,
+  propertyId: string,
+  ownerId: string,
+  urls: readonly unknown[]
+): Promise<void> {
+  const novas = fotosDoDono(urls, ownerId);
+  try {
+    const { data: atuais } = await supabase
+      .from("property_photos")
+      .select("url")
+      .eq("property_id", propertyId)
+      .order("sort_order");
+    const iguais =
+      (atuais ?? []).length === novas.length && (atuais ?? []).every((r, i) => r.url === novas[i]);
+    if (iguais) return;
+    await supabase.from("property_photos").delete().eq("property_id", propertyId);
+    if (novas.length > 0) {
+      const { error } = await supabase
+        .from("property_photos")
+        .insert(novas.map((url, i) => ({ property_id: propertyId, url, sort_order: i })));
+      if (error) console.error("[sincronizarFotos] falha ao gravar fotos:", error.message);
+    }
+  } catch (e) {
+    console.error("[sincronizarFotos] erro:", e);
+  }
 }
 
 /** Carrega o estado salvo (draft_data) de um rascunho do dono, para retomar. */
