@@ -18,6 +18,7 @@ import {
 import { PLANO_FUNDADOR } from "@/lib/flags";
 import { formatBRL } from "@/lib/utils";
 import { NumInput, ResultCard, SimDisclaimer, SimHero, PlanoPills } from "@/components/simulador/ui";
+import { MAX_ALUGUEL_MENSAL } from "@/lib/campos-valor";
 
 const PRAZOS = [2, 3, 4, 6];
 const PLANOS_CALC: PlanoCalc[] = PLANOS.map((p) => ({
@@ -41,6 +42,8 @@ export default function SimuladorPage() {
 
   const entrada: EntradaRentabilidade = { aluguelMensal, condoIptu, contas, mesesOcupados, prazoMedioMeses };
   const p = getPlano(planoId);
+  // Gestor: assinatura "sob consulta" (null) — não é grátis.
+  const sobConsulta = p?.assinaturaAnual === null;
   const res = useMemo(
     () => simularRentabilidade(entrada, p?.comissao ?? 0, p?.assinaturaAnual ?? 0),
     [aluguelMensal, condoIptu, contas, mesesOcupados, prazoMedioMeses, p?.comissao, p?.assinaturaAnual]
@@ -88,9 +91,9 @@ export default function SimuladorPage() {
             )}
           </div>
           <div className="mt-4 space-y-4">
-            <NumInput label="Aluguel mensal pretendido" value={aluguelMensal} onChange={setAluguel} step={100} prefix="R$" />
-            <NumInput label="Condomínio + IPTU (mês)" value={condoIptu} onChange={setCondoIptu} step={50} prefix="R$" />
-            <NumInput label="Contas incluídas — água/luz/internet (mês)" value={contas} onChange={setContas} step={50} prefix="R$" />
+            <NumInput label="Aluguel mensal pretendido" value={aluguelMensal} onChange={setAluguel} step={100} prefix="R$" max={MAX_ALUGUEL_MENSAL} />
+            <NumInput label="Condomínio + IPTU (mês)" value={condoIptu} onChange={setCondoIptu} step={50} prefix="R$" max={MAX_ALUGUEL_MENSAL} />
+            <NumInput label="Contas incluídas — água/luz/internet (mês)" value={contas} onChange={setContas} step={50} prefix="R$" max={MAX_ALUGUEL_MENSAL} />
             <div>
               <label className="mb-1 block text-sm font-medium text-ink">
                 Meses ocupados no ano: <strong className="text-forest">{mesesOcupados}</strong>
@@ -125,12 +128,18 @@ export default function SimuladorPage() {
             <ResultCard label="Receita bruta / ano" value={formatBRL(res.receitaBrutaAnual)} />
             <ResultCard label="Custos / ano" value={`− ${formatBRL(res.custosAnuais)}`} />
             <ResultCard label={`Comissão Viva (${Math.round((p?.comissao ?? 0) * 100)}%)`} value={`− ${formatBRL(res.comissaoAnual)}`} hint={`${res.contratosPorAno.toFixed(1)} contrato(s)/ano · % do 1º aluguel`} />
-            <ResultCard label="Assinatura / ano" value={res.assinaturaAnual > 0 ? `− ${formatBRL(res.assinaturaAnual)}` : "Grátis"} />
+            <ResultCard label="Assinatura / ano" value={sobConsulta ? "Sob consulta" : res.assinaturaAnual > 0 ? `− ${formatBRL(res.assinaturaAnual)}` : "Grátis"} />
           </div>
           <div className="rounded-2xl border border-forest bg-forest p-5 text-white">
             <p className="text-sm text-white/80">Receita líquida estimada / ano</p>
             <p className="font-title text-3xl font-bold">{formatBRL(res.receitaLiquidaAnual)}</p>
-            <p className="mt-1 text-sm text-white/85">Média de <strong>{formatBRL(res.mediaMensal)}/mês</strong> no bolso.</p>
+            <p className="mt-1 text-sm text-white/85">
+              {sobConsulta ? (
+                <>Antes da assinatura do plano Gestor (sob consulta) — o valor final depende dela.</>
+              ) : (
+                <>Média de <strong>{formatBRL(res.mediaMensal)}/mês</strong> no bolso.</>
+              )}
+            </p>
           </div>
           <button
             type="button"
@@ -149,7 +158,7 @@ export default function SimuladorPage() {
                   { label: "Receita bruta / ano", valor: formatBRL(res.receitaBrutaAnual) },
                   { label: "Custos / ano", valor: `− ${formatBRL(res.custosAnuais)}` },
                   { label: `Comissão Viva (${Math.round((p?.comissao ?? 0) * 100)}%)`, valor: `− ${formatBRL(res.comissaoAnual)}` },
-                  { label: "Assinatura / ano", valor: res.assinaturaAnual > 0 ? `− ${formatBRL(res.assinaturaAnual)}` : "Grátis" },
+                  { label: "Assinatura / ano", valor: sobConsulta ? "Sob consulta" : res.assinaturaAnual > 0 ? `− ${formatBRL(res.assinaturaAnual)}` : "Grátis" },
                   { label: "Receita líquida / ano", valor: formatBRL(res.receitaLiquidaAnual) },
                   { label: "Média mensal no bolso", valor: `${formatBRL(res.mediaMensal)}/mês` },
                 ],
@@ -207,8 +216,9 @@ export default function SimuladorPage() {
                   <td className="py-2.5 pr-4 font-medium text-ink">{l.nome}</td>
                   <td className="py-2.5 pr-4 text-ink">{Math.round(l.comissaoPct * 100)}%</td>
                   <td className="py-2.5 pr-4 text-ink">{l.sobConsulta ? "Sob consulta" : l.assinaturaAnual === 0 ? "Grátis" : formatBRL(l.assinaturaAnual)}</td>
-                  <td className="py-2.5 pr-4 text-ink">{formatBRL(l.totalVivaAnual)}</td>
-                  <td className="py-2.5 pr-4 font-semibold text-forest">{formatBRL(l.liquidoProprietario)}</td>
+                  {/* Assinatura "sob consulta" não é R$ 0: sem o valor, o total fica em aberto. */}
+                  <td className="py-2.5 pr-4 text-ink">{l.sobConsulta ? "—" : formatBRL(l.totalVivaAnual)}</td>
+                  <td className="py-2.5 pr-4 font-semibold text-forest">{l.sobConsulta ? "Sob consulta" : formatBRL(l.liquidoProprietario)}</td>
                 </tr>
               ))}
             </tbody>

@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { Calculator, TrendingDown, AlertTriangle, Building2, User } from "lucide-react";
-import { simulateTax } from "@/lib/tax";
+import { simulateTax, PJ_ACCOUNTING_YEAR } from "@/lib/tax";
+import { limitar, avisoTeto, MAX_RECEITA_CARTEIRA } from "@/lib/campos-valor";
 import { formatBRL, cn } from "@/lib/utils";
 
 /**
@@ -12,11 +13,18 @@ import { formatBRL, cn } from "@/lib/utils";
 export function TaxSimulator() {
   const [monthlyRent, setMonthlyRent] = useState(10000);
   const [propertyCount, setPropertyCount] = useState(4);
+  const [deducoes, setDeducoes] = useState(0);
 
   const r = useMemo(
-    () => simulateTax({ monthlyRent, propertyCount }),
-    [monthlyRent, propertyCount]
+    () =>
+      simulateTax({
+        monthlyRent: limitar(monthlyRent, MAX_RECEITA_CARTEIRA),
+        propertyCount: Math.max(0, Math.floor(propertyCount)),
+        monthlyDeductions: limitar(deducoes, MAX_RECEITA_CARTEIRA),
+      }),
+    [monthlyRent, propertyCount, deducoes]
   );
+  const aviso = avisoTeto(monthlyRent, MAX_RECEITA_CARTEIRA);
 
   return (
     <div className="rounded-2xl border border-sage-200 bg-white p-6">
@@ -25,7 +33,7 @@ export function TaxSimulator() {
         <h3 className="font-title text-lg font-bold text-ink">Simulador tributário PF × PJ</h3>
       </div>
 
-      <div className="mt-5 grid gap-4 sm:grid-cols-2">
+      <div className="mt-5 grid gap-4 sm:grid-cols-3">
         <label className="block">
           <span className="mb-1.5 block text-sm font-medium text-ink">
             Receita de aluguel mensal (total)
@@ -48,7 +56,20 @@ export function TaxSimulator() {
             className="w-full rounded-xl border border-sage-200 px-3.5 py-2.5 text-sm outline-none focus:border-sage"
           />
         </label>
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-medium text-ink">
+            Despesas que você paga por mês (IPTU, condomínio, administração)
+          </span>
+          <input
+            type="number"
+            min={0}
+            value={deducoes || ""}
+            onChange={(e) => setDeducoes(Number(e.target.value))}
+            className="w-full rounded-xl border border-sage-200 px-3.5 py-2.5 text-sm outline-none focus:border-sage"
+          />
+        </label>
       </div>
+      {aviso && <p className="mt-2 text-xs text-amber-700">{aviso}</p>}
 
       {/* Resultado */}
       <div className="mt-5 grid gap-3 sm:grid-cols-2">
@@ -60,8 +81,8 @@ export function TaxSimulator() {
           rate={r.pfRate}
           note={
             r.pfIsContributor
-              ? "Contribuinte de IBS/CBS (regra cumulativa atendida)"
-              : "Apenas IRPF (não atinge IBS/CBS)"
+              ? "Carnê-leão (tabela progressiva) + IBS/CBS (regra cumulativa atendida)"
+              : "Carnê-leão pela tabela progressiva (não atinge IBS/CBS)"
           }
         />
         <Card
@@ -84,6 +105,13 @@ export function TaxSimulator() {
           </strong>{" "}
           resultaria em menor carga estimada — diferença de{" "}
           <strong className="text-forest">{formatBRL(Math.abs(r.taxSavings))}</strong>/ano.
+          {r.taxSavings > 0 && (
+            <>
+              {" "}
+              Manter uma PJ custa cerca de {formatBRL(PJ_ACCOUNTING_YEAR)}/ano (contador e taxas)
+              {r.taxSavings <= PJ_ACCOUNTING_YEAR ? ", o que consome essa diferença" : ""}.
+            </>
+          )}{" "}
           Valores estimados.
         </span>
       </div>
@@ -159,7 +187,7 @@ function Card({
         <span className="font-title font-bold text-ink">{title}</span>
       </div>
       <p className="mt-3 font-title text-2xl font-bold text-forest">{formatBRL(tax)}</p>
-      <p className="text-xs text-muted">por ano · ~{(rate * 100).toFixed(2)}%</p>
+      <p className="text-xs text-muted">por ano · ~{(rate * 100).toFixed(2)}% efetivo</p>
       <p className="mt-2 text-xs text-muted">{note}</p>
     </div>
   );

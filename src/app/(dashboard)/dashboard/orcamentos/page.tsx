@@ -240,22 +240,34 @@ function NewBudget({
   const canAdvance = step === 0 || (step === 1 && tenantName.trim().length > 0) || step === 2;
 
   if (!property) {
+    // Layout padrão (título + EmptyState), não uma linha solta (item 8 do QA).
     return (
-      <Panel>
-        <p className="text-sm text-muted">
-          {loading ? "Carregando seus imóveis…" : "Cadastre um imóvel para criar orçamentos."}
-        </p>
-        <div className="mt-4 flex gap-2">
-          {!loading && (
-            <Link href="/dashboard/imoveis/novo" className="text-sm font-semibold text-forest underline">
-              Cadastrar imóvel
-            </Link>
-          )}
-          <button type="button" onClick={onCancel} className="text-sm text-muted underline">
-            Voltar
-          </button>
-        </div>
-      </Panel>
+      <>
+        <PageTitle title="Novo orçamento" subtitle="Imóvel → interessado → valores" />
+        {loading ? (
+          <Panel>
+            <p className="text-sm text-muted">Carregando seus imóveis…</p>
+          </Panel>
+        ) : (
+          <EmptyState
+            title="Cadastre um imóvel primeiro"
+            text="O orçamento parte de um imóvel seu: valores, condições e o anúncio de referência."
+            action={
+              <div className="flex flex-wrap justify-center gap-3">
+                <Link
+                  href="/dashboard/imoveis/novo"
+                  className="inline-flex items-center rounded-full bg-forest px-5 py-2.5 text-sm font-medium text-white hover:bg-forest-700"
+                >
+                  Cadastrar imóvel
+                </Link>
+                <button type="button" onClick={onCancel} className="text-sm font-medium text-muted underline">
+                  Voltar
+                </button>
+              </div>
+            }
+          />
+        )}
+      </>
     );
   }
 

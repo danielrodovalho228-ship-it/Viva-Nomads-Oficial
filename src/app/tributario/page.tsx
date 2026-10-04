@@ -93,7 +93,7 @@ export default async function TributarioPage() {
             <p className="font-semibold text-ink">Exemplo ao vivo — R$ 3.200/mês, 1 imóvel:</p>
             <ul className="mt-2 space-y-1 text-muted">
               <li>Base anual: <strong className="text-ink">{formatBRL(exemplo.annualRevenue)}</strong></li>
-              <li>Alíquota PF aplicada: <strong className="text-ink">{pct(exemplo.pfRate)}</strong> {exemplo.pfIsContributor ? "(inclui IBS/CBS)" : "(só IRPF)"}</li>
+              <li>Alíquota efetiva da PF: <strong className="text-ink">{pct(exemplo.pfRate)}</strong> {exemplo.pfIsContributor ? "(inclui IBS/CBS)" : "(só IRPF, tabela progressiva)"}</li>
               <li>Imposto PF estimado/ano: <strong className="text-ink">{formatBRL(exemplo.pfAnnualTax)}</strong></li>
             </ul>
           </div>

@@ -10,7 +10,6 @@
  */
 import {
   simulateTax,
-  IRPF_RATE,
   IBS_CBS_RATE,
   PJ_PRESUMIDO_RATE,
   PJ_ACCOUNTING_YEAR,
@@ -39,20 +38,21 @@ const brl = (v: number) => `R$ ${v.toLocaleString("pt-BR")}`;
 export const PREMISSAS_PF: Premissa[] = [
   {
     chave: "irpf_rate",
-    rotulo: "Alíquota de IRPF aplicada",
-    valor: `${pct(IRPF_RATE)} (única, sobre a receita bruta)`,
-    status: "implicito",
+    rotulo: "IRPF da PF",
+    valor: "tabela progressiva mensal do carnê-leão (0% a 27,5%, com parcela a deduzir)",
+    status: "confirmado",
     nota:
-      "O cálculo usa a faixa SUPERIOR do IRPF como alíquota única — NÃO há tabela " +
-      "progressiva, parcela a deduzir nem mecânica mensal do carnê-leão. Isso " +
-      "PROVAVELMENTE SUPERESTIMA o imposto da PF em rendas moderadas (a pergunta nº 1 do parecer).",
+      "Calculado mês a mês: aluguel do mês (menos as despesas dedutíveis) × alíquota da " +
+      "faixa − parcela a deduzir, × 12. Tabela vigente desde maio/2025. Não inclui a " +
+      "redução da Lei 15.270/2025 para rendas até R$ 7.350/mês (nessa faixa o imposto " +
+      "real pode ser menor).",
   },
   {
     chave: "pf_deducoes",
-    rotulo: "Deduções da PF (condomínio, IPTU, manutenção)",
-    valor: "nenhuma",
-    status: "implicito",
-    nota: "O código não deduz custos do locador na PF — confirmar se é aceitável para um simulador educativo.",
+    rotulo: "Deduções da PF (IPTU, condomínio, taxa de administração)",
+    valor: "informadas pelo proprietário (padrão: nenhuma)",
+    status: "confirmado",
+    nota: "Despesas pagas pelo proprietário saem da base do carnê-leão antes da tabela.",
   },
   {
     chave: "pf_ibs_cbs",
