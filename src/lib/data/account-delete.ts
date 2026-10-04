@@ -1,11 +1,18 @@
 "use server";
 
-import crypto from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/notifications/email";
 import { brandedNotification, notificationText } from "@/lib/notifications/templates";
 import { SITE_URL } from "@/lib/site";
 import { isValidEmail } from "@/lib/auth-errors";
+import { headers } from "next/headers";
+import {
+  EXCLUSAO_TTL_S,
+  criarTokenExclusao,
+  hashSeguro,
+  lerTokenExclusao,
+  normalizarEmail,
+} from "@/lib/conta/exclusao-token";
 
 /**
  * Exclusão de conta pela PÁGINA PÚBLICA (/excluir-conta), exigida pela Play Store:
@@ -15,11 +22,17 @@ import { isValidEmail } from "@/lib/auth-errors";
  * que o próprio usuário usa dentro do app) e cascateia perfil, imóveis, leads,
  * mensagens, contratos, favoritos, tokens de push, etc.
  *
- * Token: assinado por HMAC com o SERVICE_ROLE_KEY (server-only), com validade de
- * 1h e preso ao e-mail — stateless, não precisa de tabela.
+ * M1 (migração 0055):
+ *  - a conta é achada por e-mail EXATO em auth.users (RPC uid_por_email_exato) —
+ *    antes era `ilike`, e "_"/"%" no e-mail digitado viravam coringa (dava para
+ *    mandar o link para a SUA caixa e apagar a conta de outra pessoa);
+ *  - o token leva o id do PEDIDO e o uid; vale 30 min e é de USO ÚNICO
+ *    (exclusao_conta_pedidos.usado_em);
+ *  - limite de pedidos por e-mail e por IP (só hashes são guardados).
  */
 
-const TOKEN_TTL_S = 60 * 60; // 1 hora
+const LIMITE_POR_EMAIL_HORA = 3;
+const LIMITE_POR_IP_HORA = 10;
 
 type AdminClient = NonNullable<ReturnType<typeof createAdminClient>>;
 
@@ -51,37 +64,12 @@ async function situacaoContratos(
   }
 }
 
-function b64url(input: Buffer | string): string {
-  return Buffer.from(input).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-}
-function b64urlDecode(s: string): Buffer {
-  return Buffer.from(s.replace(/-/g, "+").replace(/_/g, "/"), "base64");
-}
-
-function assinar(payload: string, secret: string): string {
-  return b64url(crypto.createHmac("sha256", secret).update(payload).digest());
-}
-
-function criarToken(email: string, secret: string): string {
-  const payload = b64url(JSON.stringify({ e: email.toLowerCase(), exp: Math.floor(Date.now() / 1000) + TOKEN_TTL_S }));
-  return `${payload}.${assinar(payload, secret)}`;
-}
-
-/** Verifica o token (assinatura + validade) e devolve o e-mail, ou null. */
-function lerToken(token: string, secret: string): string | null {
-  const [payload, sig] = token.split(".");
-  if (!payload || !sig) return null;
-  const esperado = assinar(payload, secret);
-  // Comparação em tempo constante.
-  const a = b64urlDecode(sig);
-  const b = b64urlDecode(esperado);
-  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
+async function ipDoPedido(): Promise<string> {
   try {
-    const { e, exp } = JSON.parse(b64urlDecode(payload).toString("utf8")) as { e: string; exp: number };
-    if (!e || !exp || exp < Math.floor(Date.now() / 1000)) return null;
-    return e;
+    const h = await headers();
+    return (h.get("x-forwarded-for")?.split(",")[0] ?? h.get("x-real-ip") ?? "").trim() || "desconhecido";
   } catch {
-    return null;
+    return "desconhecido";
   }
 }
 
@@ -92,28 +80,60 @@ function lerToken(token: string, secret: string): string | null {
 export async function solicitarExclusaoConta(email: string): Promise<{ ok: boolean }> {
   const mensagemNeutra = { ok: true };
   if (!isValidEmail(email)) return { ok: false };
+  const e = normalizarEmail(email);
 
   const admin = createAdminClient();
   const secret = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!admin || !secret) return mensagemNeutra; // demo/sem servidor: não vaza nada
 
   try {
-    const { data: prof } = await admin
-      .from("profiles")
-      .select("id, full_name")
-      .ilike("email", email.trim())
-      .maybeSingle();
+    const emailHash = hashSeguro("email", e, secret);
+    const ipHash = hashSeguro("ip", await ipDoPedido(), secret);
+    const umaHoraAtras = new Date(Date.now() - 60 * 60 * 1000).toISOString();
 
-    if (prof?.id) {
-      const token = criarToken(email.trim(), secret);
+    // Limite por e-mail e por IP (conta TODOS os pedidos, com ou sem conta).
+    // Sem a tabela (0055 não aplicada) ou com erro: NÃO envia (falha fechada).
+    const [porEmail, porIp] = await Promise.all([
+      admin.from("exclusao_conta_pedidos").select("id", { count: "exact", head: true })
+        .eq("email_hash", emailHash).gte("criado_em", umaHoraAtras),
+      admin.from("exclusao_conta_pedidos").select("id", { count: "exact", head: true })
+        .eq("ip_hash", ipHash).gte("criado_em", umaHoraAtras),
+    ]);
+    if (porEmail.error || porIp.error) {
+      console.error("[excluir-conta] limite indisponível:", porEmail.error?.message ?? porIp.error?.message);
+      return mensagemNeutra;
+    }
+    if ((porEmail.count ?? 0) >= LIMITE_POR_EMAIL_HORA || (porIp.count ?? 0) >= LIMITE_POR_IP_HORA) {
+      return mensagemNeutra;
+    }
+
+    // Conta pelo e-mail EXATO (auth.users), nunca por padrão/coringa.
+    const { data: uid, error: rpcErr } = await admin.rpc("uid_por_email_exato", { e });
+    if (rpcErr) {
+      console.error("[excluir-conta] busca da conta falhou:", rpcErr.message);
+      return mensagemNeutra;
+    }
+
+    const { data: pedido, error: insErr } = await admin
+      .from("exclusao_conta_pedidos")
+      .insert({ uid: (uid as string | null) ?? null, email_hash: emailHash, ip_hash: ipHash })
+      .select("id")
+      .single();
+    if (insErr || !pedido) {
+      console.error("[excluir-conta] falha ao registrar pedido:", insErr?.message);
+      return mensagemNeutra;
+    }
+
+    if (uid) {
+      const token = criarTokenExclusao({ j: pedido.id as string, u: uid as string, e }, secret);
       const url = `${SITE_URL}/excluir-conta/confirmar?token=${encodeURIComponent(token)}`;
       const title = "Confirme a exclusão da sua conta";
       const intro =
         "Recebemos um pedido para excluir sua conta no Viva Nomads. Se foi você, confirme " +
-        "no botão abaixo. O link vale por 1 hora. Se não foi você, ignore este e-mail — " +
-        "nada será apagado.";
+        "no botão abaixo. O link vale por 30 minutos e só pode ser usado uma vez. Se não " +
+        "foi você, ignore este e-mail — nada será apagado.";
       await sendEmail({
-        to: email.trim(),
+        to: e,
         subject: title,
         html: brandedNotification({
           title,
@@ -140,17 +160,29 @@ export async function confirmarExclusaoConta(
   const secret = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!admin || !secret) return { ok: false, error: "Serviço indisponível no momento." };
 
-  const email = lerToken(token, secret);
-  if (!email) return { ok: false, error: "Link inválido ou expirado. Peça um novo." };
+  const invalido = { ok: false, error: "Link inválido, expirado ou já usado. Peça um novo." };
+  const t = lerTokenExclusao(token, secret);
+  if (!t) return invalido;
 
   try {
-    const { data: prof } = await admin
-      .from("profiles")
-      .select("id")
-      .ilike("email", email)
-      .maybeSingle();
-    if (!prof?.id) return { ok: true }; // já não existe: idempotente
-    const uid = prof.id as string;
+    // USO ÚNICO: marca o pedido como usado de forma atômica (só passa uma vez,
+    // dentro dos 30 min e para o mesmo uid do token).
+    const limite = new Date(Date.now() - EXCLUSAO_TTL_S * 1000).toISOString();
+    const { data: usado, error: usoErr } = await admin
+      .from("exclusao_conta_pedidos")
+      .update({ usado_em: new Date().toISOString() })
+      .eq("id", t.j)
+      .eq("uid", t.u)
+      .is("usado_em", null)
+      .gte("criado_em", limite)
+      .select("id");
+    if (usoErr || !usado || usado.length !== 1) return invalido;
+
+    // A conta ainda é a do link: o e-mail ATUAL do uid tem que ser exatamente o do token.
+    const { data: conta, error: contaErr } = await admin.auth.admin.getUserById(t.u);
+    if (contaErr || !conta?.user) return { ok: true }; // já não existe: idempotente
+    if (normalizarEmail(conta.user.email ?? "") !== t.e) return invalido;
+    const uid = t.u;
 
     const { temHistorico, temAtivo } = await situacaoContratos(admin, uid);
 

@@ -14,6 +14,7 @@
 --   3) merge + deploy no ar → testar o site
 --   4) aplicar 0053 → rodar A + B + C  → tudo "OK"
 --   4b) aplicar 0054 (a qualquer momento depois da 0052) → B3c/B4b/B8 "OK"
+--   4c) aplicar 0055 (P1 dados) → rodar E → "OK" (E3: só service_role)
 --   5) depois de alguns dias sem problema: seção D (apagar o backup do draft_data)
 -- ════════════════════════════════════════════════════════════════════════════
 
@@ -185,6 +186,30 @@ where table_schema = 'public' and table_name = 'properties'
   and grantee = 'anon' and privilege_type = 'SELECT';
 
 -- C4) draft_data: rode de novo a B6. Esperado: 0.
+
+
+-- ████ E — DEPOIS DA 0055 (P1 dados) ████████████████████████████████████████
+
+select 'E1. F1 documents exige imóvel do dono' as checagem,
+       case when with_check like '%properties%' then 'OK' else 'VULNERÁVEL — política antiga' end as status
+from pg_policies where schemaname = 'public' and tablename = 'documents' and policyname = 'documentos do proprietário';
+
+select 'E2. F1 chamado exige contrato e dono real' as checagem,
+       case when with_check like '%contratos%' and with_check like '%properties%' then 'OK' else 'VULNERÁVEL — política antiga' end as status
+from pg_policies where schemaname = 'public' and tablename = 'service_orders' and policyname = 'inquilino abre chamado';
+
+select 'E3. M1 uid_por_email_exato só para o servidor' as checagem,
+       coalesce(string_agg(distinct g.grantee, ', '), '(ninguém)') as quem_pode_executar
+from information_schema.role_routine_grants g
+where g.routine_schema = 'public' and g.routine_name = 'uid_por_email_exato'
+  and g.grantee in ('anon', 'authenticated', 'service_role') and g.privilege_type = 'EXECUTE';
+
+select 'E4. M1 pedidos de exclusão sem acesso de usuário' as checagem,
+       case when c.relrowsecurity
+             and not has_table_privilege('authenticated', c.oid, 'SELECT')
+             and not has_table_privilege('anon', c.oid, 'SELECT')
+            then 'OK' else 'VULNERÁVEL' end as status
+from pg_class c where c.oid = 'public.exclusao_conta_pedidos'::regclass;
 
 
 -- ████ D — LIMPEZA (só depois de alguns dias sem problema) ███████████████████

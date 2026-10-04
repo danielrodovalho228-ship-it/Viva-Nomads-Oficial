@@ -180,16 +180,18 @@ function NewBudget({
   onCancel: () => void;
   onCreated: (d: DocumentRecord) => void;
 }) {
-  // Imóveis REAIS do proprietário (com fallback aos exemplos no modo demo/vazio).
-  const { properties: ownerProps } = useProperties("/api/properties/mine");
-  const properties = ownerProps.length > 0 ? ownerProps : SAMPLE_PROPERTIES;
+  // F1: no modo REAL, só os imóveis do PRÓPRIO proprietário (nunca os de
+  // exemplo — não são dele). Exemplos só no build de demonstração (sem Supabase).
+  const real = isSupabaseConfigured();
+  const { properties: ownerProps, loading } = useProperties("/api/properties/mine");
+  const properties = real ? ownerProps : ownerProps.length > 0 ? ownerProps : SAMPLE_PROPERTIES;
   const [step, setStep] = useState(0);
-  const [propertyId, setPropertyId] = useState(SAMPLE_PROPERTIES[0].id);
+  const [propertyId, setPropertyId] = useState(real ? "" : SAMPLE_PROPERTIES[0].id);
   const [tenantName, setTenantName] = useState("");
   const [tenantContact, setTenantContact] = useState("");
   const [validDays, setValidDays] = useState(7);
   const property = properties.find((p) => p.id === propertyId) ?? properties[0];
-  const [items, setItems] = useState<LineItem[]>(() => buildDefaultLineItems(property));
+  const [items, setItems] = useState<LineItem[]>(() => (property ? buildDefaultLineItems(property) : []));
 
   // Quando os imóveis reais carregam, seleciona o primeiro e refaz os itens.
   useEffect(() => {
@@ -236,6 +238,26 @@ function NewBudget({
   }
 
   const canAdvance = step === 0 || (step === 1 && tenantName.trim().length > 0) || step === 2;
+
+  if (!property) {
+    return (
+      <Panel>
+        <p className="text-sm text-muted">
+          {loading ? "Carregando seus imóveis…" : "Cadastre um imóvel para criar orçamentos."}
+        </p>
+        <div className="mt-4 flex gap-2">
+          {!loading && (
+            <Link href="/dashboard/imoveis/novo" className="text-sm font-semibold text-forest underline">
+              Cadastrar imóvel
+            </Link>
+          )}
+          <button type="button" onClick={onCancel} className="text-sm text-muted underline">
+            Voltar
+          </button>
+        </div>
+      </Panel>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-2xl">

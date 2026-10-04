@@ -133,6 +133,33 @@ create table public.respostas_pedido (
   unique (pedido_id, imovel_id)
 );
 
+-- documents (0008) e service_orders (0006), com as políticas de produção.
+create table public.documents (
+  id uuid primary key default gen_random_uuid(),
+  doc_number text not null unique, doc_type text not null default 'orcamento',
+  property_id uuid references public.properties (id) on delete set null,
+  owner_id uuid not null references public.profiles (id) on delete cascade,
+  tenant_id uuid references public.profiles (id) on delete set null,
+  tenant_name text not null, status text not null default 'rascunho',
+  total_value numeric(10, 2) not null default 0, created_at timestamptz not null default now()
+);
+alter table public.documents enable row level security;
+create policy "documentos do proprietário" on public.documents for all using (owner_id = auth.uid()) with check (owner_id = auth.uid());
+create policy "inquilino vê o documento" on public.documents for select using (tenant_id = auth.uid());
+
+create table public.service_orders (
+  id uuid primary key default gen_random_uuid(),
+  property_id uuid not null references public.properties (id) on delete cascade,
+  tenant_id uuid not null references public.profiles (id) on delete cascade,
+  owner_id uuid not null references public.profiles (id) on delete cascade,
+  category text not null default 'outros', description text not null,
+  status text not null default 'aberto', opened_at timestamptz not null default now()
+);
+alter table public.service_orders enable row level security;
+create policy "chamados das partes" on public.service_orders for select using (tenant_id = auth.uid() or owner_id = auth.uid());
+create policy "inquilino abre chamado" on public.service_orders for insert with check (tenant_id = auth.uid());
+create policy "proprietário atualiza status" on public.service_orders for update using (owner_id = auth.uid());
+
 -- is_admin (0011).
 create or replace function public.is_admin() returns boolean
 language sql stable security definer set search_path = public as $$

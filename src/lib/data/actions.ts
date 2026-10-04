@@ -19,6 +19,8 @@ import { buildLeadNotification, LEAD_KIND_MSG, type LeadKind } from "@/lib/leads
 import { amenityRows } from "@/lib/amenities";
 import { getPropertyForOwner } from "@/lib/data/properties";
 import { guardContactInfo } from "@/lib/messages/contact-guard";
+import { isExemplo, EXEMPLO_SEM_CONTATO } from "@/lib/demo-listing";
+import { conversationId as idConversa } from "@/lib/messages/conversation-id";
 import { SITE_URL } from "@/lib/site";
 import type { Property } from "@/lib/types";
 import { COMMISSION_BY_PLAN } from "@/lib/constants";
@@ -771,11 +773,9 @@ function hojeISO(): string {
  * Registra o interesse de um inquilino (dúvida, visita ou candidatura) e AVISA
  * o proprietário por e-mail/WhatsApp — o canal real do funil.
  *
- * Resolve o dono automaticamente: imóvel real (id uuid no banco) usa o owner_id
- * da linha; imóvel demo (id textual, fora do banco) vai para o dono configurado
- * (DEMO_OWNER_EMAIL — o super admin). Para imóveis reais também tenta gravar o
- * lead + abrir a conversa (best-effort; persiste quando a RLS de insert estiver
- * aplicada — ver migração 0017). Retorna `needsAuth` se o visitante não estiver
+ * O dono é o owner_id da linha do imóvel; grava o lead + abre a conversa.
+ * Anúncio de EXEMPLO (id não-uuid) é recusado (`exemplo`): não tem dono e nada
+ * é enviado a ninguém (T9). Retorna `needsAuth` se o visitante não estiver
  * logado e `selfOwned` se for o próprio dono abrindo o anúncio.
  */
 // Anti-flood: teto de contatos que um inquilino dispara por hora (mesmo espírito
@@ -788,7 +788,11 @@ export async function requestLead(
   propertyTitle: string,
   kind: LeadKind,
   note?: string
-): Promise<ActionResult & { needsAuth?: boolean; selfOwned?: boolean }> {
+): Promise<ActionResult & { needsAuth?: boolean; selfOwned?: boolean; exemplo?: boolean }> {
+  // T9: anúncio de EXEMPLO não tem dono — nada de candidatura, contato nem e-mail
+  // (antes ia o nome do inquilino para um e-mail pessoal de fallback).
+  if (isExemplo(propertyId)) return { ok: false, exemplo: true, error: EXEMPLO_SEM_CONTATO };
+
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
 
@@ -797,15 +801,12 @@ export async function requestLead(
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, needsAuth: true, error: "Entre para falar com o proprietário." };
 
-  const real = UUID_RE.test(propertyId);
-
-  // Dono do imóvel: real → owner_id da linha; demo (ou perfil oculto pela RLS) →
-  // e-mail configurado do super admin.
+  // Dono do imóvel: owner_id da linha; contato só pela RPC (service role).
   let ownerId: string | null = null;
   let ownerEmail: string | null = null;
   let ownerPhone: string | null = null;
   let ownerName: string | null = null;
-  if (real) {
+  {
     const { data: prop } = await supabase
       .from("properties")
       .select("owner_id")
@@ -828,26 +829,28 @@ export async function requestLead(
       ownerName = o?.full_name ?? null;
     }
   }
-  if (!ownerEmail) ownerEmail = process.env.DEMO_OWNER_EMAIL ?? "dtrodovalho40@gmail.com";
+  if (!ownerId) return { ok: false, error: "Imóvel não encontrado ou indisponível." };
+  // T9: sem e-mail do dono (RPC falhou/sem service role) NÃO há desvio para outro
+  // endereço — o aviso segue por push (userId) e fica o registro no log.
+  if (!ownerEmail) console.warn("[requestLead] sem e-mail do proprietário; aviso só por push", propertyId);
 
   // O próprio dono abrindo seu anúncio: não gera lead para si mesmo.
   if (ownerId && ownerId === user.id) return { ok: true, selfOwned: true };
 
   // Identidade do interessado (perfil próprio — permitido pela RLS).
+  // Só o nome: o aviso ao dono mostra o PRIMEIRO nome (contato nunca sai).
   const { data: me } = await supabase
     .from("profiles")
-    .select("full_name, email, phone")
+    .select("full_name")
     .eq("id", user.id)
     .maybeSingle();
-  const tenantName = me?.full_name ?? user.email ?? "Interessado";
-  const tenantEmail = me?.email ?? user.email ?? "";
-  const tenantPhone = me?.phone ?? "";
+  const tenantName = me?.full_name ?? "Interessado";
 
   // Anti-flood: conta os leads REAIS do inquilino na última hora. Protege o
   // proprietário de spam de notificação e o custo de e-mail/WhatsApp. Cliques
   // repetidos no MESMO imóvel já são deduplicados abaixo (não contam), então o
   // teto mira a largura — muitos imóveis distintos em pouco tempo.
-  if (real) {
+  {
     const desdeUmaHora = new Date(Date.now() - 60 * 60 * 1000).toISOString();
     const { count } = await supabase
       .from("leads")
@@ -872,7 +875,7 @@ export async function requestLead(
 
   // Imóvel real: grava lead + abre conversa. Dedup por (imóvel, interessado)
   // para que cliques repetidos não criem leads/mensagens duplicados.
-  if (real && ownerId) {
+  {
     const { data: existing } = await supabase
       .from("leads")
       .select("id")
@@ -888,7 +891,7 @@ export async function requestLead(
       if (leadErr && leadErr.code !== "23505") {
         console.error("[requestLead] falha ao gravar lead:", leadErr.message);
       }
-      const conversationId = [user.id, ownerId].sort().join("_") + `_${propertyId}`;
+      const conversationId = idConversa(user.id, ownerId, propertyId);
       // Mensagem do inquilino: usa o texto que ele escreveu (dúvida/horários),
       // com contato mascarado (regra de ouro — nada de telefone/e-mail no chat
       // antes do aceite); sem texto, cai na mensagem padrão da ação.
@@ -902,8 +905,8 @@ export async function requestLead(
         property_id: propertyId,
         body: corpo,
       });
-      if (msgErr && msgErr.code !== "23505") {
-        console.error("[requestLead] falha ao abrir conversa:", msgErr.message);
+      if (msgErr) {
+        console.error("[requestLead] falha ao abrir conversa:", msgErr.code, msgErr.message);
       }
     }
   }
@@ -914,8 +917,6 @@ export async function requestLead(
   if (novoContato || kind === "candidatura") {
     const { detailsHtml, detailsText } = buildLeadNotification(kind, propertyTitle, {
       name: tenantName,
-      email: tenantEmail,
-      phone: tenantPhone,
     });
     await notify({
       event: "new_lead",
@@ -929,40 +930,6 @@ export async function requestLead(
     });
   }
 
-  return { ok: true };
-}
-
-/** Registra uma consulta de inquilino como lead para o proprietário. */
-export async function createLead(propertyId: string, ownerId: string): Promise<ActionResult> {
-  const supabase = await createClient();
-  if (!supabase) return { ok: true, demo: true };
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "Não autenticado." };
-
-  const { error } = await supabase
-    .from("leads")
-    .insert({ property_id: propertyId, owner_id: ownerId, tenant_id: user.id, status: "new" });
-  if (error) return { ok: false, error: error.message };
-
-  // Notifica o proprietário (e-mail/WhatsApp) — sem isso o funil vaza.
-  const { data: owner } = await supabase
-    .from("profiles")
-    .select("full_name, email, phone")
-    .eq("id", ownerId)
-    .single();
-  if (owner) {
-    await notify({
-      event: "new_lead",
-      email: owner.email ?? undefined,
-      phone: owner.phone ?? undefined,
-      name: owner.full_name ?? undefined,
-      userId: ownerId,
-      pushUrl: "/dashboard/leads",
-    });
-  }
   return { ok: true };
 }
 
@@ -1033,10 +1000,9 @@ export async function sendMessage(input: {
   } = await supabase.auth.getUser();
   if (!user || !input.receiverId) return { ok: false, error: "Dados incompletos." };
 
-  const conversationId =
-    input.conversationId ??
-    [user.id, input.receiverId].sort().join("_") +
-      (input.propertyId ? `_${input.propertyId}` : "");
+  // Id SEMPRE recalculado no servidor (as duas pessoas + imóvel): o valor que
+  // vem do cliente é ignorado, para não dar para "entrar" em outra conversa.
+  const conversationId = idConversa(user.id, input.receiverId, input.propertyId);
 
   // Proteção de contato: telefones/e-mails/links de mensageria são mascarados
   // ANTES de gravar — a negociação fica registrada na plataforma e o contato
@@ -1054,7 +1020,10 @@ export async function sendMessage(input: {
     })
     .select("receiver_id")
     .single();
-  if (error || !gravada) return { ok: false, error: error?.message ?? "Falha ao enviar." };
+  if (error || !gravada) {
+    console.error("[sendMessage] falha ao gravar:", error?.code, error?.message);
+    return { ok: false, error: "Não foi possível enviar a mensagem agora. Tente de novo em instantes." };
+  }
   // Destinatário pela LINHA GRAVADA (que passou na RLS), não pelo parâmetro.
   const destinatarioId = gravada.receiver_id as string;
 

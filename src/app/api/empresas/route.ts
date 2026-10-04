@@ -24,10 +24,8 @@ export async function POST(request: Request) {
     );
   }
 
-  const to =
-    process.env.EMPRESAS_LEAD_EMAIL ??
-    process.env.DEMO_OWNER_EMAIL ??
-    "contato@vivanomads.com.br";
+  // Endereço da EMPRESA (nunca um e-mail pessoal de fallback).
+  const to = process.env.EMPRESAS_LEAD_EMAIL ?? "contato@vivanomads.com.br";
 
   const esc = (s: string) =>
     s.replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c] ?? c));

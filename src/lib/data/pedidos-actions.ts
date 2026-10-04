@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { guardContactInfo } from "@/lib/messages/contact-guard";
+import { conversationId as idConversa } from "@/lib/messages/conversation-id";
 import { listMyProperties } from "@/lib/data/properties";
 import { notify } from "@/lib/notifications";
 import {
@@ -249,10 +250,10 @@ export async function aceitarResposta(respostaId: string): Promise<ActionResult>
     .eq("id", respostaId);
   if (uErr) return { ok: false, error: uErr.message };
 
-  // Abre a conversa interna (mesma convenção de conversation_id do requestLead).
+  // Abre a conversa interna (mesmo id do requestLead: pessoas + imóvel).
   const ownerId = resposta.proprietario_id as string;
   const imovelId = resposta.imovel_id as string;
-  const conversationId = [user.id, ownerId].sort().join("_") + `_${imovelId}`;
+  const conversationId = idConversa(user.id, ownerId, imovelId);
   const body = guardContactInfo(
     "Aceitei sua resposta ao meu pedido de moradia. Podemos conversar por aqui?"
   ).text;
@@ -265,7 +266,12 @@ export async function aceitarResposta(respostaId: string): Promise<ActionResult>
       property_id: imovelId,
       body,
     })
-    .then(undefined, () => {});
+    .then(
+      ({ error }) => {
+        if (error) console.error("[aceitarResposta] falha ao abrir conversa:", error.code, error.message);
+      },
+      (e) => console.error("[aceitarResposta] falha ao abrir conversa:", e)
+    );
 
   // (c) Avisa o proprietário que sua resposta foi aceita (via RPC do imóvel).
   try {
