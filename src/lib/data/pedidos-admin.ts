@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { notify } from "@/lib/notifications";
 import { SITE_URL } from "@/lib/site";
 import { textoEmail } from "@/lib/notifications/texto-seguro";
+import { logModeracao } from "@/lib/data/moderacao-log";
 
 type ActionResult = { ok: boolean; demo?: boolean; error?: string };
 
@@ -20,26 +21,6 @@ export async function adminListPedidos(): Promise<Record<string, unknown>[]> {
     .order("criado_em", { ascending: false })
     .limit(500);
   return data ?? [];
-}
-
-/** Registra a ação de moderação no log (quem, o quê, quando). Best-effort. */
-async function logModeracao(
-  supabase: NonNullable<Awaited<ReturnType<typeof createClient>>>,
-  adminId: string,
-  acao: string,
-  alvoId: string,
-  motivo?: string
-) {
-  await supabase
-    .from("moderacao_log")
-    .insert({
-      admin_id: adminId,
-      acao,
-      alvo_tipo: "pedido_moradia",
-      alvo_id: alvoId,
-      motivo: motivo ?? null,
-    })
-    .then(undefined, () => {});
 }
 
 /**
@@ -66,7 +47,7 @@ export async function moderarPedido(pedidoId: string, motivo: string): Promise<A
   if (error) return { ok: false, error: error.message };
   if (!pedido) return { ok: false, error: "Pedido não encontrado (ou sem permissão)." };
 
-  await logModeracao(supabase, user.id, "ocultar_pedido", pedidoId, motivoLimpo);
+  await logModeracao(supabase, user.id, "ocultar_pedido", "pedido_moradia", pedidoId, motivoLimpo);
 
   // Notifica o inquilino (admin lê o perfil dele via is_admin).
   try {
@@ -105,6 +86,6 @@ export async function reativarPedido(pedidoId: string): Promise<ActionResult> {
     .update({ status: "ativo", removido_motivo: null })
     .eq("id", pedidoId);
   if (error) return { ok: false, error: error.message };
-  await logModeracao(supabase, user.id, "reativar_pedido", pedidoId);
+  await logModeracao(supabase, user.id, "reativar_pedido", "pedido_moradia", pedidoId);
   return { ok: true };
 }

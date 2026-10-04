@@ -21,7 +21,6 @@ import { amenityRows } from "@/lib/amenities";
 import { getPropertyForOwner } from "@/lib/data/properties";
 import { guardContactInfo } from "@/lib/messages/contact-guard";
 import { isExemplo, EXEMPLO_SEM_CONTATO } from "@/lib/demo-listing";
-import { ehAdmin } from "@/lib/data/admin-guard";
 import { conversationId as idConversa } from "@/lib/messages/conversation-id";
 import { SITE_URL } from "@/lib/site";
 import type { Property } from "@/lib/types";
@@ -1092,30 +1091,6 @@ export async function requestLead(
     });
   }
 
-  return { ok: true };
-}
-
-/** Aprova ou recusa um checklist de qualificação (admin). */
-export async function reviewChecklist(
-  id: string,
-  approved: boolean
-): Promise<ActionResult> {
-  const supabase = await createClient();
-  if (!supabase) return { ok: true, demo: true };
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "Não autenticado." };
-  // A3: revisão é da equipe, e ninguém revisa o próprio checklist (banco reforça na 0056).
-  if (!(await ehAdmin(supabase, user.id))) return { ok: false, error: "Sem permissão." };
-
-  const { error } = await supabase
-    .from("qualification_checklists")
-    .update({ status: approved ? "approved" : "not_eligible" })
-    .eq("id", id)
-    .neq("owner_id", user.id);
-  if (error) return { ok: false, error: error.message };
   return { ok: true };
 }
 

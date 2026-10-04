@@ -102,7 +102,13 @@ function DocCard({ doc, onDone }: { doc: DocumentoPendente; onDone: () => void }
           <FileText className="h-5 w-5 text-forest" />
         </span>
         <div className="min-w-0">
-          <p className="font-medium text-ink">{doc.ownerNome}</p>
+          <p className="font-medium text-ink">
+            {doc.ownerNome}
+            <span className="font-normal text-muted">
+              {" · "}
+              {doc.tituloImovel ?? "sem imóvel cadastrado ainda"}
+            </span>
+          </p>
           <p className="text-xs text-muted">
             Enviado {doc.criadoEm ? new Date(doc.criadoEm).toLocaleDateString("pt-BR") : "—"}
           </p>
