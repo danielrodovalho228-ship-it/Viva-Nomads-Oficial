@@ -28,54 +28,84 @@ grant execute on function auth.uid() to anon, authenticated, service_role;
 create type user_role as enum ('owner', 'tenant', 'admin');
 create type person_type as enum ('pf', 'pj');
 
--- profiles (0001 + alters).
+-- ATENÇÃO: espelha o esquema REAL de produção (conferido em 04/10/2026), que
+-- difere do repositório: profiles.role é TEXT, messages.conversation_id é UUID,
+-- e faltam as partes da 0018, 0035 e 0036 (o run.sh aplica esses arquivos reais
+-- antes do P0, como será feito em produção).
+create type property_status as enum ('draft', 'active', 'paused');
+
+-- profiles (como em produção, sem response_rate/is_verified/fundador*).
 create table public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   full_name text, email text, phone text,
-  role user_role not null default 'tenant',
+  role text not null default 'tenant',
   verification_progress int not null default 0,
   created_at timestamptz default now(),
   person_type person_type default 'pf', cpf text, cnpj text, company_name text,
-  needs_nfse boolean default false, referral_code text unique, referred_by uuid,
-  linkedin_url text, professional_category text, avatar_url text, response_rate int,
-  is_verified boolean not null default false,
+  needs_nfse boolean default false, referral_code text unique, referred_by uuid references public.profiles(id),
+  linkedin_url text, professional_category text,
   notif_email boolean not null default true, notif_whatsapp boolean not null default true,
-  fundador boolean not null default false, fundador_em timestamptz,
-  avatar_atualizado_em timestamptz, preferred_mode text,
-  account_type text not null default 'individual', anonymized_at timestamptz
+  avatar_url text, avatar_atualizado_em timestamptz,
+  preferred_mode text check (preferred_mode in ('owner', 'tenant')),
+  account_type text not null default 'individual' check (account_type in ('individual', 'gestor')),
+  anonymized_at timestamptz
 );
 
--- properties: colunas públicas + sensíveis.
+-- properties (como em produção, sem as colunas da 0018 e da 0036).
 create table public.properties (
   id uuid primary key default gen_random_uuid(),
   owner_id uuid references public.profiles(id),
-  title text not null, description text, property_type text, city text not null,
-  state text, address text, lat numeric, lng numeric, bedrooms int, bathrooms int,
-  area_m2 numeric, min_period_days int not null default 30, monthly_price numeric not null default 0,
-  utilities_mode text, utilities_estimate numeric, utilities_overage_margin numeric,
+  title text not null, description text, property_type text, address text,
+  city text not null, state text, lat float8, lng float8, bedrooms int, bathrooms int,
+  area_m2 int, min_period_days int not null default 30, monthly_price numeric not null default 0,
+  status property_status not null default 'draft',
+  work_ready_badge boolean, work_score int, created_at timestamptz default now(),
+  utilities_mode text, utilities_estimate numeric, utilities_overage_margin int,
+  issues_invoice boolean, accepts_insurance boolean,
+  exact_address text, approximate_area text, rating numeric, review_count int,
   prep_fee numeric, checkout_cleaning_enabled boolean, checkout_cleaning_fee numeric,
-  issues_invoice boolean, accepts_insurance boolean, rating numeric, review_count int,
-  status text not null default 'draft', ready_to_live_badge boolean, ready_to_live_score int,
+  ready_to_live_badge boolean, ready_to_live_score int,
   tag_home_office boolean, tag_work_located boolean, tag_condo_approved boolean,
-  ownership_type text, sublease_authorized boolean, video_url text,
-  created_at timestamptz default now(), faixas_aceitas text[], garantias_aceitas text[],
-  google_places jsonb, parking_spots int, condo_fee numeric, descricao_gerada_por_ia boolean,
-  available_from date, furnished boolean, pets_allowed boolean, smoking_allowed boolean,
-  children_allowed boolean, max_guests int, available_until date, max_period_days int,
-  checkin_after text, checkout_before text,
-  -- sensíveis
-  exact_address text, responsavel_local_nome text, responsavel_local_telefone text,
-  responsavel_local_email text, responsavel_local_user_id uuid, draft_data jsonb,
-  sublease_doc_url text
+  ownership_type text, sublease_authorized boolean, sublease_doc_url text,
+  photo_count int, listing_quality_tier text, video_url text, garantias_aceitas text[],
+  available_until date, max_period_days int, children_allowed boolean,
+  google_places jsonb, faixas_aceitas text[], draft_data jsonb, descricao_gerada_por_ia boolean
 );
+
+-- property_reviews já existe em produção (com as políticas da 0018).
+create table public.property_reviews (
+  id uuid primary key default gen_random_uuid(),
+  property_id uuid not null references public.properties (id) on delete cascade,
+  author_name text not null, rating numeric(2, 1) not null, comment text,
+  created_at timestamptz not null default now()
+);
+
+-- contratos (0026) — a 0036 estende o check de status e cria as vistorias.
+create table public.contratos (
+  id uuid primary key default gen_random_uuid(),
+  property_id uuid references public.properties(id),
+  tenant_id uuid references auth.users(id),
+  status text not null default 'ativo',
+  created_at timestamptz default now(),
+  constraint contratos_status_check check (status in ('ativo','encerrado_sem_renovacao','concluido','cancelado'))
+);
+
+-- storage mínimo (a 0036 cria o bucket e as políticas de fotos).
+create schema storage;
+create table storage.buckets (id text primary key, name text, public boolean);
+create table storage.objects (id uuid primary key default gen_random_uuid(), bucket_id text, name text);
+alter table storage.objects enable row level security;
+create or replace function storage.foldername(name text) returns text[]
+language sql immutable as $$ select (string_to_array(name, '/'))[1:array_length(string_to_array(name, '/'), 1) - 1] $$;
 
 create table public.leads (
   id uuid primary key default gen_random_uuid(),
-  property_id uuid references public.properties(id),
   owner_id uuid references public.profiles(id),
   tenant_id uuid references public.profiles(id),
+  property_id uuid references public.properties(id),
   status text not null default 'new',
   created_at timestamptz default now(),
+  contact_unlocked boolean,
   accepted_at timestamptz, rejected_at timestamptz, reject_reason text, decided_by uuid,
   accepted_plan text, accepted_commission_rate numeric,
   unique (property_id, tenant_id)
@@ -83,8 +113,8 @@ create table public.leads (
 
 create table public.messages (
   id uuid primary key default gen_random_uuid(),
-  conversation_id text, sender_id uuid, receiver_id uuid,
-  property_id uuid references public.properties(id), body text,
+  conversation_id uuid, sender_id uuid, receiver_id uuid,
+  property_id uuid references public.properties(id), body text, read boolean default false,
   created_at timestamptz default now()
 );
 

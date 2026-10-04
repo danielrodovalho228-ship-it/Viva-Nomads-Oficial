@@ -3,6 +3,10 @@
 -- (a seção B5 usa begin/rollback e não muda nada).
 --
 -- Sequência:
+--   0) ALINHAMENTO (produção estava sem partes da 0018, 0035 e 0036):
+--      conferir-esquema.sql → aplicar 0018, 0035, 0036 (arquivos do repo, como
+--      estão — são idempotentes) → conferir-esquema.sql de novo: só podem
+--      sobrar itens da 0052 em diante. SEM isso a 0052 falha (teste ORDEM).
 --   1) ANTES: rodar só a seção A (+ backup-antes-p0.sql) → guardar a saída
 --      (as seções B/C/D citam objetos que só existem depois das migrações)
 --   2) aplicar 0052 → rodar A + B      → tudo "OK"
