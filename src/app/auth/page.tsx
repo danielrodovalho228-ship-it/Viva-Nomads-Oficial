@@ -29,6 +29,7 @@ import type { UserRole } from "@/lib/types";
 import type { PersonType } from "@/lib/tax";
 import { cn } from "@/lib/utils";
 import { safeInternalPath } from "@/lib/safe-redirect";
+import { LOGIN_GOOGLE_ATIVO } from "@/lib/flags";
 
 type Mode = "login" | "signup" | "forgot";
 
@@ -117,6 +118,7 @@ export default function AuthPage() {
   }
 
   async function handleGoogle() {
+    if (!LOGIN_GOOGLE_ATIVO) return;
     const supabase = createClient();
     if (!supabase) {
       setError("Login com Google requer Supabase configurado.");
@@ -671,19 +673,24 @@ export default function AuthPage() {
                 </Button>
               </form>
 
-              <div className="my-6 flex items-center gap-3 text-xs text-muted">
-                <span className="h-px flex-1 bg-sage-200" /> ou{" "}
-                <span className="h-px flex-1 bg-sage-200" />
-              </div>
-              <Button
-                variant="outline"
-                className="w-full"
-                type="button"
-                disabled={loading}
-                onClick={handleGoogle}
-              >
-                <Globe className="h-4 w-4" /> Continuar com Google
-              </Button>
+              {/* Google só com o provedor ativado no Supabase (flag desligada por padrão). */}
+              {LOGIN_GOOGLE_ATIVO && (
+                <>
+                  <div className="my-6 flex items-center gap-3 text-xs text-muted">
+                    <span className="h-px flex-1 bg-sage-200" /> ou{" "}
+                    <span className="h-px flex-1 bg-sage-200" />
+                  </div>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    type="button"
+                    disabled={loading}
+                    onClick={handleGoogle}
+                  >
+                    <Globe className="h-4 w-4" /> Continuar com Google
+                  </Button>
+                </>
+              )}
             </>
           )}
 

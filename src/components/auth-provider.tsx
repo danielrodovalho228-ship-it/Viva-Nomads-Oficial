@@ -88,6 +88,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
         return;
       }
+      // Sessão NOVA (login, link de recuperação/confirmação): reinicia o relógio
+      // de 24h. Sem isso, um carimbo antigo no navegador fazia a sessão recém-
+      // criada ser tratada como "vencida" e o site deslogava na hora.
+      if (event === "SIGNED_IN" || event === "PASSWORD_RECOVERY") {
+        useAuthStore.getState().startSession();
+      }
+      // Link de recuperação que caiu fora de /auth/reset (ex.: redirecionamento
+      // não autorizado no Supabase → home): leva para a tela de nova senha.
+      if (
+        event === "PASSWORD_RECOVERY" &&
+        typeof window !== "undefined" &&
+        !window.location.pathname.startsWith("/auth/reset")
+      ) {
+        window.location.href = "/auth/reset";
+        return;
+      }
       if (session) hydrate(session);
     });
     return () => sub.subscription.unsubscribe();

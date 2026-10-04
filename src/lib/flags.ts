@@ -55,3 +55,13 @@ export const GERACAO_IA_ATIVA = process.env.NEXT_PUBLIC_GERACAO_IA === "on";
  * app publicado/instalado já contém o `google-services.json`. Ver PLAY-STORE.md.
  */
 export const PUSH_ATIVO = process.env.NEXT_PUBLIC_PUSH_ATIVO === "on";
+
+/**
+ * Login com Google. OFF por padrão: o provedor Google NÃO está ativado no
+ * Supabase (Auth → Providers) — com o botão visível, quem clicava caía num JSON
+ * de erro ("Unsupported provider"). Para LIGAR: ativar o provedor no Supabase
+ * (passo a passo em docs/auth/LOGIN-GOOGLE.md) e definir
+ * NEXT_PUBLIC_LOGIN_GOOGLE_ATIVO="on". Vale para o site e para os apps (que
+ * abrem o site).
+ */
+export const LOGIN_GOOGLE_ATIVO = process.env.NEXT_PUBLIC_LOGIN_GOOGLE_ATIVO === "on";
