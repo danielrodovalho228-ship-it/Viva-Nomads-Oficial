@@ -5,6 +5,7 @@ import { formatBRL } from "@/lib/utils";
 import { calcularTudoIncluido } from "@/lib/precos";
 import { tierFromPhotoCount } from "@/lib/listing";
 import { SELO_NF_UI } from "@/lib/flags";
+import { isExemplo } from "@/lib/demo-listing";
 import { ReadyToLiveBadge, PropertyTags, InvoiceBadge, InsuranceBadge } from "@/components/ui/badge";
 import { BrandImage } from "@/components/brand-image";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
@@ -19,6 +20,7 @@ export function PropertyCard({
   periodMonths?: number;
 }) {
   const cover = property.photos[0];
+  const exemplo = isExemplo(property);
   const hasRealPhoto =
     typeof cover === "string" && (/^https?:\/\//.test(cover) || cover.startsWith("/"));
   const tier = tierFromPhotoCount(property.photos.length);
@@ -46,6 +48,11 @@ export function PropertyCard({
         )}
         {/* Máximo 2 badges na foto: Pronto para Morar (prioridade 1) + Vídeo. */}
         <div className="absolute left-3 top-3 flex flex-col items-start gap-1.5">
+          {exemplo && (
+            <span className="inline-flex items-center rounded-full bg-night/85 px-2 py-0.5 text-[11px] font-semibold text-white">
+              Exemplo ilustrativo
+            </span>
+          )}
           {property.readyToLiveBadge && <ReadyToLiveBadge size="sm" />}
           {property.videoUrl && (
             <span className="inline-flex items-center gap-1 rounded-full bg-night/85 px-2 py-0.5 text-xs font-semibold text-white">
@@ -69,7 +76,12 @@ export function PropertyCard({
           <span className="truncate">
             {property.neighborhood}, {property.city}
           </span>
-          {property.reviewCount > 0 ? (
+          {exemplo ? (
+            // Anúncio de exemplo: nunca mostra nota (seria fictícia).
+            <span className="inline-flex shrink-0 items-center text-[11px] font-medium text-muted">
+              Anúncio de exemplo
+            </span>
+          ) : property.reviewCount > 0 ? (
             <span className="inline-flex shrink-0 items-center gap-1 font-medium text-ink">
               <Star className="h-3.5 w-3.5 fill-green-500 text-green-500" />
               {property.rating.toFixed(1)}

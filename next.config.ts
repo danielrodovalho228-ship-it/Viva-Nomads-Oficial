@@ -19,6 +19,10 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      // UMA URL só para a home: "/" é a principal; "/home" (links antigos) faz
+      // 301 para a raiz. Antes "/" redirecionava para "/home" e as duas ficavam
+      // no sitemap/canonical — conteúdo duplicado.
+      { source: "/home", destination: "/", permanent: true },
       // /planos é natural de digitar e pode ter links antigos; a página canônica
       // é /precos (o rótulo "Planos" no menu/rodapé já aponta para /precos).
       { source: "/planos", destination: "/precos", permanent: true },

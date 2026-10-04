@@ -126,15 +126,18 @@ export async function criarPedido(input: PedidoInput): Promise<ActionResult> {
       apresentacao: input.apresentacao?.trim() || null,
       // expira_em é preenchido pelo trigger set_pedido_expira_em.
     })
-    .select("id")
+    .select("id, cidade")
     .single();
-  if (error) return { ok: false, error: error.message };
+  if (error || !data) return { ok: false, error: error?.message ?? "Falha ao publicar o pedido." };
 
   // (a) Avisa proprietários com imóvel ativo na cidade (opt-in). Best-effort.
   try {
-    const { data: donos } = await supabase.rpc("pedido_owner_recipients", {
-      cidade_alvo: cidade,
-    });
+    // C3: RPC de contato em massa só via service role, depois de o pedido do
+    // próprio inquilino ter sido gravado (RLS) logo acima.
+    const admin = createAdminClient();
+    const { data: donos } = admin
+      ? await admin.rpc("pedido_owner_recipients", { cidade_alvo: data.cidade as string })
+      : { data: null };
     const detalhe = detalheNovoPedido(cidade);
     for (const d of (donos ?? []) as Recip[]) await notificar("pedido_novo_cidade", d, detalhe);
   } catch {
@@ -266,7 +269,11 @@ export async function aceitarResposta(respostaId: string): Promise<ActionResult>
 
   // (c) Avisa o proprietário que sua resposta foi aceita (via RPC do imóvel).
   try {
-    const { data: rpc } = await supabase.rpc("owner_notify_contact", { prop_id: imovelId });
+    // C3: RPC de contato (PII) só via service role no servidor.
+    const admin = createAdminClient();
+    const { data: rpc } = admin
+      ? await admin.rpc("owner_notify_contact", { prop_id: imovelId })
+      : { data: null };
     const o = Array.isArray(rpc) ? rpc[0] : rpc;
     if (o?.email) await notificar("pedido_aceito", o as Recip, detalheAceito());
   } catch {
@@ -471,43 +478,47 @@ export async function responderPedido(
       error: `Este imóvel comporta até ${capacidade} pessoas; o pedido é para ${ocupantes}.`,
     };
 
-  const { error } = await supabase.from("respostas_pedido").insert({
-    pedido_id: pedidoId,
-    proprietario_id: user.id,
-    imovel_id: imovelId,
-    mensagem: msg || null,
-  });
-  if (error) {
+  const { data: respGravada, error } = await supabase
+    .from("respostas_pedido")
+    .insert({
+      pedido_id: pedidoId,
+      proprietario_id: user.id,
+      imovel_id: imovelId,
+      mensagem: msg || null,
+    })
+    .select("pedido_id")
+    .single();
+  if (error || !respGravada) {
+    if (!error) return { ok: false, error: "Falha ao registrar a resposta." };
     // 23505 = já respondeu este pedido com este imóvel (constraint única).
     if (error.code === "23505")
       return { ok: false, error: "Você já respondeu este pedido com esse imóvel." };
     return { ok: false, error: error.message };
   }
 
-  // (b) Avisa o inquilino da nova resposta (RPC libera o contato só porque este
-  // proprietário acabou de responder — nunca expõe o e-mail ao cliente).
+  // (b) Avisa o inquilino da nova resposta. C3: contato só no servidor (service
+  // role). A relação já foi provada — o INSERT da resposta acima passou na RLS
+  // (dono de imóvel ativo + pedido ativo). Nunca expõe o e-mail ao cliente.
   try {
-    const { data: rcp } = await supabase.rpc("pedido_inquilino_recipient", { pedido: pedidoId });
-    const inq = Array.isArray(rcp) ? rcp[0] : rcp;
-    if (inq?.email) {
-      // Id do inquilino para o push (service role; nunca exposto ao cliente).
-      let inqId: string | undefined = (inq as { id?: string }).id ?? undefined;
-      if (!inqId) {
-        try {
-          const admin = createAdminClient();
-          if (admin) {
-            const { data: p } = await admin
-              .from("pedidos_moradia")
-              .select("inquilino_id")
-              .eq("id", pedidoId)
-              .maybeSingle();
-            inqId = (p as { inquilino_id?: string } | null)?.inquilino_id ?? undefined;
-          }
-        } catch {
-          /* best-effort — push é opcional */
+    const admin = createAdminClient();
+    if (admin) {
+      const { data: p } = await admin
+        .from("pedidos_moradia")
+        .select("inquilino_id")
+        // Pedido pela LINHA GRAVADA (resposta que passou na RLS), não pelo parâmetro.
+        .eq("id", respGravada.pedido_id as string)
+        .maybeSingle();
+      const inqId = (p as { inquilino_id?: string } | null)?.inquilino_id;
+      if (inqId) {
+        const { data: inq } = await admin
+          .from("profiles")
+          .select("full_name, email, phone, notif_whatsapp")
+          .eq("id", inqId)
+          .maybeSingle();
+        if (inq?.email) {
+          await notificar("pedido_resposta", { ...(inq as Recip), id: inqId }, detalheResposta());
         }
       }
-      await notificar("pedido_resposta", { ...(inq as Recip), id: inqId }, detalheResposta());
     }
   } catch {
     /* best-effort */

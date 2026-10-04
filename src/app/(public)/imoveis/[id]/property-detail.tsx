@@ -39,6 +39,7 @@ import { StayRules } from "@/components/property/stay-rules";
 import { AvailabilityCalendar } from "@/components/property/availability-calendar";
 import { OwnerCard } from "@/components/property/owner-card";
 import { Reviews } from "@/components/property/reviews";
+import { isExemplo } from "@/lib/demo-listing";
 
 export function PropertyDetail({ property, similar }: { property: Property; similar: Property[] }) {
   const router = useRouter();
@@ -53,6 +54,7 @@ export function PropertyDetail({ property, similar }: { property: Property; simi
 
   // Avaliações — FONTE ÚNICA (A2): usa o array real de reviews, igual à seção de
   // avaliações. `rating` só é usado como média quando há review real.
+  const exemplo = isExemplo(property);
   const reviewsReais = property.reviews?.length ?? 0;
   const mediaReal =
     reviewsReais > 0
@@ -270,7 +272,7 @@ export function PropertyDetail({ property, similar }: { property: Property; simi
         aria-label="Trilha de navegação"
         className="mb-4 flex flex-wrap items-center gap-1.5 text-sm text-muted"
       >
-        <Link href="/home" className="hover:text-forest">Início</Link>
+        <Link href="/" className="hover:text-forest">Início</Link>
         <span aria-hidden>›</span>
         <Link href="/buscar" className="hover:text-forest">Buscar imóveis</Link>
         <span aria-hidden>›</span>
@@ -300,6 +302,12 @@ export function PropertyDetail({ property, similar }: { property: Property; simi
             <h1 className="mt-2 font-title text-3xl font-bold text-ink">{property.title}</h1>
 
             <div className="mt-3 flex flex-wrap items-center gap-2">
+              {/* Anúncio de exemplo (ilustrativo): selo honesto e visível. */}
+              {exemplo && (
+                <span className="inline-flex items-center rounded-full bg-night/85 px-2.5 py-0.5 text-xs font-semibold text-white">
+                  Exemplo ilustrativo
+                </span>
+              )}
               {/* Fonte ÚNICA (A2): a contagem vem das avaliações REAIS (reviews),
                   igual à seção de avaliações. Sem review real → selo honesto. */}
               {reviewsReais > 0 ? (

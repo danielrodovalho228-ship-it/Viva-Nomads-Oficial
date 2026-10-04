@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Award, FileText, ShieldCheck, Zap, Laptop, MapPin, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SELOS } from "@/config/selos";
 
 /** Selo "Proprietário Responsivo" (Bloco C) — responde/resolve rápido. */
 export function ResponsiveOwnerBadge({ className }: { className?: string }) {
@@ -37,7 +38,7 @@ export function ReadyToLiveBadge({
       )}
     >
       <Award className={size === "sm" ? "h-3.5 w-3.5" : "h-4 w-4"} aria-hidden />
-      Pronto para Morar
+      {SELOS.prontoParaMorar.nome}
     </span>
   );
 }
@@ -45,9 +46,9 @@ export function ReadyToLiveBadge({
 export type SpecTagKind = "home_office" | "work_located" | "condo";
 
 const SPEC_TAG_META: Record<SpecTagKind, { label: string; icon: typeof Laptop }> = {
-  home_office: { label: "Para trabalhar de casa", icon: Laptop },
-  work_located: { label: "Bem localizado p/ trabalho", icon: MapPin },
-  condo: { label: "Aceito em condomínio", icon: Building2 },
+  home_office: { label: SELOS.homeOffice.nome, icon: Laptop },
+  work_located: { label: SELOS.bemLocalizado.nome, icon: MapPin },
+  condo: { label: SELOS.aceitoCondominio.nome, icon: Building2 },
 };
 
 /** Etiqueta de especialização (verde sálvia, menor) — soma ao selo base. */
@@ -110,7 +111,7 @@ export function DocConferidaBadge({
       )}
     >
       <ShieldCheck className={size === "sm" ? "h-3.5 w-3.5" : "h-4 w-4"} aria-hidden />
-      Documentação conferida
+      {SELOS.documentacaoConferida.nome}
     </span>
   );
 }

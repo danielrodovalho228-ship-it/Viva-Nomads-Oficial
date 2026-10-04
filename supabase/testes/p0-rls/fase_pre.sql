@@ -1,0 +1,14 @@
+reset role; set role authenticated; select set_config('request.jwt.claims', '{"sub":"22222222-2222-2222-2222-222222222222"}', false);
+select t('PRE','C2 inquilino vira admin (furo hoje)','passa',$q$update profiles set role='admin' where id='22222222-2222-2222-2222-222222222222'$q$);
+reset role; update profiles set role='tenant' where id='22222222-2222-2222-2222-222222222222';
+reset role; set role anon; select set_config('request.jwt.claims', '{}', false);
+select t('PRE','C4 anon lê exact_address (furo hoje)','passa',$q$select exact_address from properties where status='active'$q$);
+reset role; set role authenticated; select set_config('request.jwt.claims', '{"sub":"33333333-3333-3333-3333-333333333333"}', false);
+select t('PRE','C3 estranho msg p/ admin sem relação (furo hoje)','passa',$q$insert into messages(sender_id,receiver_id,body) values ('33333333-3333-3333-3333-333333333333','44444444-4444-4444-4444-444444444444','oi')$q$);
+reset role; delete from messages where sender_id='33333333-3333-3333-3333-333333333333';
+reset role; set role authenticated; select set_config('request.jwt.claims','{"sub":"55555555-5555-5555-5555-555555555555"}',false);
+select t('PRE','responderPedido já falha HOJE (sem P0)','falha',$q$insert into respostas_pedido(pedido_id,proprietario_id,imovel_id) values ('bbbbbbb1-0000-0000-0000-000000000001','55555555-5555-5555-5555-555555555555','aaaaaaa3-0000-0000-0000-000000000003')$q$);
+reset role;
+select v('PRE','B1 do roteiro acusa a função ANTIGA','select (pg_get_functiondef(''public.handle_new_user''::regproc) like ''%''''tenant'''', ''''admin''''%'')::text','true');
+insert into auth.users (id, email, raw_user_meta_data) values ('90000000-0000-0000-0000-000000000009','pre@t.com','{"role":"tenant","full_name":"Pre","referred_by":"VIVA-DONO111"}');
+select v('PRE','cadastro descarta o código de indicação (hoje)','select coalesce(referred_by::text,''(nulo)'') || ''/'' || coalesce(referral_code,''(nulo)'') from profiles where id=''90000000-0000-0000-0000-000000000009''','(nulo)/(nulo)');

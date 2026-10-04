@@ -23,7 +23,7 @@ export default function ImovelNotFound() {
           <Search className="h-4 w-4" /> Ver imóveis disponíveis
         </ButtonLink>
         <Link
-          href="/home"
+          href="/"
           className="inline-flex items-center gap-1.5 text-sm font-medium text-muted hover:text-forest"
         >
           <Home className="h-4 w-4" /> Voltar ao início

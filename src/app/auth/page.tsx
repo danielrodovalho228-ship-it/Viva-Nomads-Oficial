@@ -64,12 +64,20 @@ export default function AuthPage() {
   const [semConta, setSemConta] = useState(false);
 
   // Sessão de 24h expirou (o AuthProvider redireciona com ?expired=1).
+  // Link de indicação (?ref=CÓDIGO): abre o cadastro com o código preenchido.
+  // (lê a URL só no cliente — sem useSearchParams, que exigiria Suspense)
   useEffect(() => {
-    if (
-      typeof window !== "undefined" &&
-      new URLSearchParams(window.location.search).get("expired") === "1"
-    ) {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("expired") === "1") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setNotice("Sua sessão de 24h expirou. Entre novamente para continuar.");
+    }
+    const ref = params.get("ref")?.trim().slice(0, 40);
+    if (ref) {
+      setReferral(ref);
+      setShowReferral(true);
+      setMode("signup");
     }
   }, []);
 
@@ -361,7 +369,7 @@ export default function AuthPage() {
         />
         <div className="absolute inset-0 bg-night/65" />
         <div className="absolute inset-0 flex flex-col justify-between p-12 text-white">
-          <Logo href="/home" light />
+          <Logo href="/" light />
           <div>
             <h1 className="font-title text-4xl font-bold leading-tight">
               {mode === "login" ? "Bem-vindo de volta." : "Sua nova fase começa aqui."}
@@ -379,7 +387,7 @@ export default function AuthPage() {
       <div className="flex items-center justify-center p-6 sm:p-12">
         <div className="w-full max-w-md">
           <div className="mb-8 lg:hidden">
-            <Logo href="/home" />
+            <Logo href="/" />
           </div>
 
           {/* ── Pós-cadastro: confirmar e-mail (Atualização 20.4) ── */}

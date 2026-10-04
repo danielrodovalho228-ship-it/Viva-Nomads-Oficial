@@ -1,0 +1,11 @@
+reset role;
+insert into auth.users (id, email, raw_user_meta_data) values ('77777777-7777-7777-7777-777777777777','rb@t.com','{"role":"admin"}');
+select v('RB0052','handle_new_user voltou ao original (aceita admin)','select role::text from profiles where id=''77777777-7777-7777-7777-777777777777''','admin');
+select v('RB0052','RPC privada removida','select count(*)::text from pg_proc where proname=''property_private_details''','0');
+select v('RB0052','trigger de confiança removido','select count(*)::text from pg_trigger where tgname=''trg_profiles_bloqueia_confianca''','0');
+select v('RB0052','draft limpo pela 0052 devolvido (P1)','select draft_data->>''street'' from properties where id=''aaaaaaa1-0000-0000-0000-000000000001''','Rua Secreta 123');
+reset role; set role authenticated; select set_config('request.jwt.claims', '{"sub":"22222222-2222-2222-2222-222222222222"}', false);
+select t('RB0052','policy antiga de mensagem (sem relação) volta','passa',$q$insert into messages(sender_id,receiver_id,body) values ('22222222-2222-2222-2222-222222222222','44444444-4444-4444-4444-444444444444','x')$q$);
+select t('RB0052','update de perfil na tabela inteira volta','passa',$q$update profiles set role='tenant' where id='22222222-2222-2222-2222-222222222222'$q$);
+reset role;
+select v('RB0052','função auxiliar de Pedido removida','select count(*)::text from pg_proc where proname=''tem_relacao_pedido_com''','0');

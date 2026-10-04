@@ -68,7 +68,7 @@ export default function ConfirmarExclusaoPage() {
               ? "Seus dados pessoais (nome, e-mail, telefone e foto) foram removidos e o acesso foi encerrado. Registros de contratos são mantidos sem identificação pelo prazo exigido por lei."
               : "Sua conta e seus dados foram apagados. Sentiremos sua falta — você é bem-vindo de volta quando quiser."}
           </p>
-          <Link href="/home" className="mt-6 inline-flex rounded-xl bg-forest px-4 py-2.5 text-sm font-semibold text-white">
+          <Link href="/" className="mt-6 inline-flex rounded-xl bg-forest px-4 py-2.5 text-sm font-semibold text-white">
             Voltar ao início
           </Link>
         </div>
@@ -119,7 +119,7 @@ export default function ConfirmarExclusaoPage() {
               Excluir minha conta definitivamente
             </button>
             <Link
-              href="/home"
+              href="/"
               className="inline-flex items-center justify-center rounded-xl border border-sage-200 px-4 py-2.5 text-sm font-medium text-muted"
             >
               Cancelar

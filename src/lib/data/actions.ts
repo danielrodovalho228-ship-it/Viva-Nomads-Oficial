@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { EligibilityState, QualityState } from "@/lib/qualification";
 import {
   isEligible,
@@ -423,8 +424,9 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
       min_period_days: input.minPeriodDays,
       monthly_price: input.monthlyPrice,
       // Só (re)publica se for explicitamente "Publicar"; "Salvar rascunho" não
-      // despublica um anúncio já ativo.
-      ...(input.asDraft === false ? { status: "active" } : {}),
+      // despublica um anúncio já ativo. Ao publicar, ZERA o draft_data (ele guarda
+      // a rua exata e a linha fica pública — C4/T1).
+      ...(input.asDraft === false ? { status: "active", draft_data: null } : {}),
       ready_to_live_score: input.readyToLiveScore,
       ready_to_live_badge: input.readyToLiveScore >= 70,
       tag_home_office: input.tagHomeOffice ?? false,
@@ -433,7 +435,10 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
       ownership_type: input.ownershipType ?? "own",
       sublease_authorized:
         (input.ownershipType ?? "own") === "own" ? true : input.subleaseAuthorized ?? false,
-      sublease_doc_url: input.subleaseDocUrl ?? null,
+      // Só grava o documento de sublocação quando o dono enviou um nesta edição.
+      // A edição não recarrega esse campo — mandar null por ausência APAGAVA o
+      // documento a cada edição (mesmo padrão do risco do endereço).
+      ...(input.subleaseDocUrl !== undefined ? { sublease_doc_url: input.subleaseDocUrl } : {}),
       utilities_mode: input.utilitiesMode ?? "fixed",
       utilities_estimate: input.utilitiesEstimate ?? 0,
       issues_invoice: input.issuesInvoice ?? false,
@@ -722,9 +727,11 @@ export async function renovarBloco(
 
   // Avisa o proprietário (best-effort) — a outra ponta do opt-in.
   try {
-    const { data: rpc } = await supabase.rpc("owner_notify_contact", {
-      prop_id: contrato.property_id,
-    });
+    // C3: RPC de contato (PII) só via service role no servidor.
+    const admin = createAdminClient();
+    const { data: rpc } = admin
+      ? await admin.rpc("owner_notify_contact", { prop_id: contrato.property_id })
+      : { data: null };
     const o = Array.isArray(rpc) ? rpc[0] : rpc;
     if (o?.email) {
       await notify({
@@ -810,7 +817,11 @@ export async function requestLead(
       // ler o contato do dono. A RPC SECURITY DEFINER `owner_notify_contact`
       // (migração 0023) devolve o contato do dono de um anúncio ATIVO só para a
       // notificação. Enquanto a migração não roda, o erro cai no fallback abaixo.
-      const { data: rpc } = await supabase.rpc("owner_notify_contact", { prop_id: propertyId });
+      // C3: RPC de contato (PII) só via service role no servidor (não mais pela sessão).
+      const admin = createAdminClient();
+      const { data: rpc } = admin
+        ? await admin.rpc("owner_notify_contact", { prop_id: propertyId })
+        : { data: null };
       const o = Array.isArray(rpc) ? rpc[0] : rpc;
       ownerEmail = o?.email ?? null;
       ownerPhone = o?.phone ?? null;
@@ -1032,24 +1043,38 @@ export async function sendMessage(input: {
   // direto só é liberado no fluxo oficial (após o aceite do proprietário).
   const { text: safeBody } = guardContactInfo(input.body);
 
-  const { error } = await supabase.from("messages").insert({
-    conversation_id: conversationId,
-    sender_id: user.id,
-    receiver_id: input.receiverId,
-    property_id: input.propertyId ?? null,
-    body: safeBody,
-  });
-  if (error) return { ok: false, error: error.message };
+  const { data: gravada, error } = await supabase
+    .from("messages")
+    .insert({
+      conversation_id: conversationId,
+      sender_id: user.id,
+      receiver_id: input.receiverId,
+      property_id: input.propertyId ?? null,
+      body: safeBody,
+    })
+    .select("receiver_id")
+    .single();
+  if (error || !gravada) return { ok: false, error: error?.message ?? "Falha ao enviar." };
+  // Destinatário pela LINHA GRAVADA (que passou na RLS), não pelo parâmetro.
+  const destinatarioId = gravada.receiver_id as string;
 
   // Notifica o destinatário por e-mail com o LINK para responder NO SITE
   // (nunca por e-mail — mantém o registro). Best-effort: falha de notificação
   // não derruba o envio. O contato vem da RPC escopada (migração 0024); sem a
   // migração, segue sem notificar.
   try {
-    const { data: rpc } = await supabase.rpc("message_notify_contact", {
-      target: input.receiverId,
-    });
-    const contact = Array.isArray(rpc) ? rpc[0] : rpc;
+    // C3: contato (PII) só no servidor, via service role. A relação entre as
+    // partes já foi provada: o INSERT acima passou na RLS de messages (exige
+    // lead ou resposta a pedido). A RPC antiga dependia de auth.uid(), que é
+    // nulo com service role — por isso a leitura direta, escopada ao destinatário.
+    const admin = createAdminClient();
+    const { data: contact } = admin
+      ? await admin
+          .from("profiles")
+          .select("full_name, email, phone")
+          .eq("id", destinatarioId)
+          .maybeSingle()
+      : { data: null };
     if (contact?.email) {
       const { data: me } = await supabase
         .from("profiles")
@@ -1178,14 +1203,10 @@ export async function loadDraftData(id: string): Promise<unknown | null> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
-  const { data } = await supabase
-    .from("properties")
-    .select("draft_data")
-    .eq("id", id)
-    .eq("owner_id", user.id)
-    .eq("status", "draft")
-    .maybeSingle();
-  return data?.draft_data ?? null;
+  // C4: draft_data saiu do SELECT por coluna; o dono lê pela RPC (checa owner).
+  const { data } = await supabase.rpc("property_private_details", { prop_id: id });
+  const row = Array.isArray(data) ? data[0] : data;
+  return (row as { draft_data?: unknown } | null)?.draft_data ?? null;
 }
 
 /** Rascunho mais recente do dono (para "Novo anúncio detecta rascunho" e o card
@@ -1204,17 +1225,19 @@ export async function getLatestDraft(): Promise<{
   if (!user) return null;
   const { data } = await supabase
     .from("properties")
-    .select("id, title, draft_data")
+    .select("id, title")
     .eq("owner_id", user.id)
     .eq("status", "draft")
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
-  return data
-    ? {
-        id: data.id as string,
-        title: (data.title as string) || "Rascunho de anúncio",
-        data: data.draft_data ?? null,
-      }
-    : null;
+  if (!data) return null;
+  // C4: draft_data vem pela RPC (coluna sensível fora do SELECT por coluna).
+  const { data: priv } = await supabase.rpc("property_private_details", { prop_id: data.id });
+  const row = Array.isArray(priv) ? priv[0] : priv;
+  return {
+    id: data.id as string,
+    title: (data.title as string) || "Rascunho de anúncio",
+    data: (row as { draft_data?: unknown } | null)?.draft_data ?? null,
+  };
 }

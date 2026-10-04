@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { SAMPLE_PROPERTIES } from "@/lib/properties";
 import { getProperty, listProperties } from "@/lib/data/properties";
 import { isDemoMode } from "@/lib/env";
+import { isExemplo } from "@/lib/demo-listing";
 import { formatBRL } from "@/lib/utils";
 import { PropertyJsonLd } from "@/components/seo/property-json-ld";
 import { PropertyDetail } from "./property-detail";
@@ -22,10 +23,11 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   return {
     title,
     description,
-    // Canonical próprio da página (auto-referente). Sem isto, o anúncio herda
-    // o `alternates.canonical: "/"` do layout raiz e o Google trata todo imóvel
-    // como duplicata da home.
+    // Canonical próprio da página (auto-referente).
     alternates: { canonical: `/imoveis/${property.id}` },
+    // Anúncio de EXEMPLO (ilustrativo): fora do Google (noindex), mas ainda
+    // visível ao visitante com o selo "Exemplo ilustrativo".
+    ...(isExemplo(property.id) ? { robots: { index: false, follow: true } } : {}),
     openGraph: {
       title,
       description,

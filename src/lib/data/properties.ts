@@ -4,6 +4,27 @@ import type { Property, AmenityGroup } from "@/lib/types";
 import { SAMPLE_PROPERTIES } from "@/lib/properties";
 import { signAvatarPath } from "@/lib/data/avatar-url";
 
+/**
+ * Colunas SEGURAS de `properties` para leitura (público e dono). NUNCA inclui
+ * exact_address, responsavel_local_*, draft_data ou sublease_doc_url — essas são
+ * privadas (RPC property_private_details). DEVE espelhar o grant por coluna da
+ * migração 0053; ao adicionar coluna nova em properties, inclua aqui E no grant
+ * (o `npm run check:migracoes` avisa se divergir). Trocar `select("*")` por esta
+ * lista é o que impede o PostgREST anônimo de puxar coluna sensível.
+ */
+export const PROPERTY_PUBLIC_COLUMNS =
+  "id, owner_id, title, description, property_type, city, state, address, " +
+  "lat, lng, bedrooms, bathrooms, area_m2, min_period_days, monthly_price, " +
+  "utilities_mode, utilities_estimate, utilities_overage_margin, prep_fee, " +
+  "checkout_cleaning_enabled, checkout_cleaning_fee, issues_invoice, " +
+  "accepts_insurance, rating, review_count, status, ready_to_live_badge, " +
+  "ready_to_live_score, tag_home_office, tag_work_located, tag_condo_approved, " +
+  "ownership_type, sublease_authorized, video_url, created_at, faixas_aceitas, " +
+  "garantias_aceitas, google_places, parking_spots, condo_fee, " +
+  "descricao_gerada_por_ia, available_from, furnished, pets_allowed, " +
+  "smoking_allowed, children_allowed, max_guests, available_until, " +
+  "max_period_days, checkin_after, checkout_before";
+
 /*
   Camada de acesso a imóveis. Usa o Supabase quando configurado; caso
   contrário, cai para os dados de exemplo (modo demonstração).
@@ -235,7 +256,7 @@ export async function listProperties(): Promise<Property[]> {
   try {
     const { data, error } = await supabase
       .from("properties")
-      .select("*")
+      .select(PROPERTY_PUBLIC_COLUMNS)
       .eq("status", "active")
       .order("created_at", { ascending: false });
 
@@ -245,8 +266,9 @@ export async function listProperties(): Promise<Property[]> {
     if (error) console.error("[listProperties] Supabase error:", error.code, error.message);
     // Imóveis reais + anúncios demo (enquanto o flag estiver ligado), sem 500.
     if (error || !data) return withDemos([]);
-    const mapped = (data as PropertyRow[]).map(rowToProperty);
+    const mapped = (data as unknown as PropertyRow[]).map(rowToProperty);
     await attachCoverPhotos(supabase, mapped); // capa real para os cards (best-effort)
+    await attachReviewAggregates(supabase, mapped); // nota/contagem REAL (fonte única)
     return withDemos(mapped);
   } catch (e) {
     // Falha de rede/consulta → só os demos (ou vazio, se desligados), nunca 500.
@@ -266,14 +288,14 @@ export async function getProperty(id: string): Promise<Property | undefined> {
     // por URL direta → 404 (não vaza). id mal formado cai no catch → 404.
     const { data, error } = await supabase
       .from("properties")
-      .select("*")
+      .select(PROPERTY_PUBLIC_COLUMNS)
       .eq("id", id)
       .eq("status", "active")
       .maybeSingle();
     if (error) console.error("[getProperty] Supabase error:", error.code, error.message);
     // Sem linha no banco: cai para o anúncio demo de mesmo id (se habilitado).
     if (!data) return showDemoProperties() ? SAMPLE_PROPERTIES.find((p) => p.id === id) : undefined;
-    const base = rowToProperty(data as PropertyRow);
+    const base = rowToProperty(data as unknown as PropertyRow);
     return enrichProperty(supabase, base, (data as { owner_id?: string }).owner_id ?? null);
   } catch {
     return showDemoProperties() ? SAMPLE_PROPERTIES.find((p) => p.id === id) : undefined;
@@ -295,12 +317,12 @@ export async function getPropertyForOwner(id: string): Promise<Property | undefi
     if (!user) return undefined;
     const { data } = await supabase
       .from("properties")
-      .select("*")
+      .select(PROPERTY_PUBLIC_COLUMNS)
       .eq("id", id)
       .eq("owner_id", user.id)
       .maybeSingle();
     if (!data) return SAMPLE_PROPERTIES.find((p) => p.id === id);
-    const base = rowToProperty(data as PropertyRow);
+    const base = rowToProperty(data as unknown as PropertyRow);
     return enrichProperty(supabase, base, user.id);
   } catch {
     return undefined;
@@ -331,6 +353,43 @@ async function attachCoverPhotos(supabase: SupabaseLike, list: Property[]): Prom
   }
 }
 
+/**
+ * Sincroniza `rating`/`reviewCount` dos cards a partir das avaliações REAIS
+ * (`property_reviews`) — a MESMA fonte da página de detalhe e do JSON-LD. Assim o
+ * card nunca mostra uma contagem diferente da que o usuário vê no anúncio.
+ * Best-effort: tabela ausente/consulta falha → mantém os escalares como vieram.
+ */
+async function attachReviewAggregates(supabase: SupabaseLike, list: Property[]): Promise<void> {
+  if (list.length === 0) return;
+  try {
+    const ids = list.map((p) => p.id);
+    const { data } = await supabase
+      .from("property_reviews")
+      .select("property_id, rating")
+      .in("property_id", ids);
+    const agg = new Map<string, { soma: number; n: number }>();
+    for (const row of ((data as { property_id: string; rating: number }[] | null) ?? [])) {
+      const cur = agg.get(row.property_id) ?? { soma: 0, n: 0 };
+      cur.soma += Number(row.rating) || 0;
+      cur.n += 1;
+      agg.set(row.property_id, cur);
+    }
+    for (const p of list) {
+      const a = agg.get(p.id);
+      if (a && a.n > 0) {
+        p.reviewCount = a.n;
+        p.rating = Math.round((a.soma / a.n) * 10) / 10;
+      } else {
+        // Sem avaliação real → zera (nada de escalar herdado inflando o card).
+        p.reviewCount = 0;
+        p.rating = 0;
+      }
+    }
+  } catch {
+    /* tabela ausente / falha → mantém os escalares */
+  }
+}
+
 export async function listPropertiesByCity(city: string): Promise<Property[]> {
   const all = await listProperties();
   return all.filter((p) => p.city.toLowerCase() === city.toLowerCase());
@@ -352,10 +411,10 @@ export async function listMyProperties(): Promise<Property[]> {
 
   const { data, error } = await supabase
     .from("properties")
-    .select("*")
+    .select(PROPERTY_PUBLIC_COLUMNS)
     .eq("owner_id", user.id)
     .order("created_at", { ascending: false });
 
   if (error || !data) return [];
-  return (data as PropertyRow[]).map(rowToProperty);
+  return (data as unknown as PropertyRow[]).map(rowToProperty);
 }

@@ -12,7 +12,7 @@ export default async function NotFound() {
   return (
     <div className="flex min-h-screen flex-col bg-surface-2">
       <header className="container-page py-6">
-        <Logo href="/home" />
+        <Logo href="/" />
       </header>
 
       <main className="container-page flex flex-1 flex-col items-center justify-center py-10 text-center">
@@ -26,7 +26,7 @@ export default async function NotFound() {
           <ButtonLink href="/buscar" variant="primary">
             Buscar imóveis
           </ButtonLink>
-          <ButtonLink href="/home" variant="outline">
+          <ButtonLink href="/" variant="outline">
             Ir para o início
           </ButtonLink>
         </div>

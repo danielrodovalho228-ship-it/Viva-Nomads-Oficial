@@ -2,14 +2,16 @@ import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/site";
 import { CITIES } from "@/lib/constants";
 import { listProperties } from "@/lib/data/properties";
+import { isExemplo } from "@/lib/demo-listing";
 
 /** Sitemap dinâmico (vivanomads.com.br) — páginas públicas, cidades e imóveis. */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
 
+  // UMA URL só para a home: "/" (o antigo "/home" faz 301 para cá, então não
+  // entra no sitemap — evita conteúdo duplicado).
   const staticRoutes = [
     "",
-    "/home",
     "/buscar",
     "/como-funciona",
     "/para-proprietarios",
@@ -22,7 +24,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     url: `${SITE_URL}${path}`,
     lastModified: now,
     changeFrequency: "weekly" as const,
-    priority: path === "" || path === "/home" ? 1 : 0.7,
+    priority: path === "" ? 1 : 0.7,
   }));
 
   const cityRoutes = CITIES.map((c) => ({
@@ -32,10 +34,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }));
 
-  const properties = await listProperties();
+  // Só imóveis REAIS no sitemap — os de exemplo (ilustrativos) ficam de fora.
+  const properties = (await listProperties()).filter((p) => !isExemplo(p));
   const propertyRoutes = properties.map((p) => ({
     url: `${SITE_URL}/imoveis/${p.id}`,
-    lastModified: now,
+    lastModified: p.createdAt ? new Date(p.createdAt) : now,
     changeFrequency: "daily" as const,
     priority: 0.6,
   }));

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { listPropertiesByCity } from "@/lib/data/properties";
 import { cityFromSlug } from "@/lib/utils";
 import { CITIES } from "@/lib/constants";
+import { SELOS } from "@/config/selos";
 import { PropertyCard } from "@/components/property-card";
 import { ButtonLink } from "@/components/ui/button";
 
@@ -40,7 +41,7 @@ export default async function CityLandingPage({ params }: Params) {
       <section className="bg-forest section-y text-white">
         <div className="container-page">
           <nav className="text-sm text-white/60">
-            <Link href="/home" className="hover:text-champagne">
+            <Link href="/" className="hover:text-champagne">
               Início
             </Link>{" "}
             / <span className="text-white/80">{name}</span>
@@ -99,9 +100,11 @@ export default async function CityLandingPage({ params }: Params) {
           </p>
           <p className="mt-3 leading-relaxed">
             Todos os imóveis do Viva Nomads em {name} são mobiliados e qualificados. Os que
-            têm o selo <strong className="text-forest">Pronto para Morar</strong> oferecem
-            home office, internet fibra e coworkings próximos — ideais para quem trabalha
-            remoto ou está em projeto temporário na cidade.
+            têm o selo <strong className="text-forest">{SELOS.prontoParaMorar.nome}</strong> são{" "}
+            {SELOS.prontoParaMorar.resumo}; etiquetas como{" "}
+            <strong className="text-forest">{SELOS.homeOffice.nome}</strong> ({SELOS.homeOffice.resumo})
+            e <strong className="text-forest">{SELOS.bemLocalizado.nome}</strong> ({SELOS.bemLocalizado.resumo})
+            ajudam quem trabalha remoto ou está em projeto temporário na cidade.
           </p>
         </div>
       </section>

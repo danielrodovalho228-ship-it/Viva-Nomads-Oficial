@@ -51,13 +51,14 @@ export async function listDocumentosPendentes(): Promise<DocumentoPendente[]> {
     let refImovel: string | null = null;
     const { data: prop } = await supabase
       .from("properties")
-      .select("title, neighborhood, city")
+      .select("title, address, city")
       .eq("owner_id", ownerId)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
     if (prop) {
-      const local = [prop.neighborhood, prop.city].filter(Boolean).join(", ");
+      // `address` é a coluna do bairro (não há coluna "neighborhood" — antes vinha vazio).
+      const local = [prop.address, prop.city].filter(Boolean).join(", ");
       refImovel = [prop.title, local].filter(Boolean).join(" — ") || null;
     }
 
