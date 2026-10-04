@@ -142,16 +142,25 @@ export interface EntradaROI {
   aluguelMobiliado: number;
   mesesOcupados: number;
   prazoMedioMeses: number;
+  /** Contas incluídas no aluguel mobiliado (água, luz, internet), por mês ocupado. */
+  contasMensais?: number;
+  /** Reposição e desgaste da mobília, em % do investimento por ano (ex.: 0.1). */
+  reposicaoAnualPct?: number;
 }
 
 export interface ResultadoROI {
+  /** Diferença mensal mobiliado − vazio. PODE ser negativa. */
   premioMensal: number;
   premioPct: number;
   netMobiliadoAnual: number;
   netVazioAnual: number;
   ganhoAdicionalAnual: number;
+  /** 0 = imediato (sem investimento e com ganho); null = não se paga. */
   paybackMeses: number | null;
-  roiAnual: number;
+  /** null quando não há investimento (ROI indefinido). */
+  roiAnual: number | null;
+  /** Custos do mobiliado no ano (contas + reposição), já descontados. */
+  custosMobiliadoAnual: number;
   acumulado: { ano: number; mobiliado: number; vazio: number }[];
 }
 
@@ -162,17 +171,25 @@ export function simularROI(e: EntradaROI, comissaoPct: number, assinaturaAno: nu
   const invest = n(e.investimentoMobiliar);
   const contratos = contratosPorAno(meses, e.prazoMedioMeses);
 
-  const premioMensal = Math.max(0, mob - vazio);
+  // Prêmio de verdade: negativo quando o mobiliado rende menos que o vazio
+  // (antes ficava "+R$ 0 (0%)" ao lado de um ganho negativo).
+  const premioMensal = mob - vazio;
   const premioPct = vazio > 0 ? premioMensal / vazio : 0;
 
+  // F4: o mobiliado paga as contas incluídas e repõe a mobília.
+  const contasAnual = n(e.contasMensais ?? 0) * meses;
+  const reposicaoAnual = invest * Math.max(0, e.reposicaoAnualPct ?? 0);
+  const custosMobiliadoAnual = Math.round(contasAnual + reposicaoAnual);
+
   const comissaoAnualMob = contratos * Math.max(0, comissaoPct) * mob;
-  const netMobiliadoAnual = Math.round(mob * meses - comissaoAnualMob - n(assinaturaAno));
+  const netMobiliadoAnual = Math.round(mob * meses - comissaoAnualMob - n(assinaturaAno) - custosMobiliadoAnual);
   const netVazioAnual = Math.round(vazio * 12);
   const ganhoAdicionalAnual = netMobiliadoAnual - netVazioAnual;
 
+  // Sem investimento e com ganho → payback imediato e ROI indefinido.
   const paybackMeses =
-    ganhoAdicionalAnual > 0 ? Math.ceil(invest / (ganhoAdicionalAnual / 12)) : null;
-  const roiAnual = invest > 0 ? ganhoAdicionalAnual / invest : 0;
+    ganhoAdicionalAnual > 0 ? (invest > 0 ? Math.ceil(invest / (ganhoAdicionalAnual / 12)) : 0) : null;
+  const roiAnual = invest > 0 ? ganhoAdicionalAnual / invest : null;
 
   const acumulado = [1, 2, 3].map((ano) => ({
     ano,
@@ -180,5 +197,15 @@ export function simularROI(e: EntradaROI, comissaoPct: number, assinaturaAno: nu
     vazio: Math.round(netVazioAnual * ano),
   }));
 
-  return { premioMensal, premioPct, netMobiliadoAnual, netVazioAnual, ganhoAdicionalAnual, paybackMeses, roiAnual, acumulado };
+  return {
+    premioMensal,
+    premioPct,
+    netMobiliadoAnual,
+    netVazioAnual,
+    ganhoAdicionalAnual,
+    paybackMeses,
+    roiAnual,
+    custosMobiliadoAnual,
+    acumulado,
+  };
 }

@@ -110,7 +110,7 @@ test("ROI: prêmio, payback e roi anual coerentes", () => {
   assert.equal(r.netVazioAnual, 1800 * 12); // 21600
   assert.equal(r.ganhoAdicionalAnual, 27852 - 21600); // 6252
   assert.equal(r.paybackMeses, Math.ceil(25000 / (6252 / 12)));
-  assert.ok(r.roiAnual > 0);
+  assert.ok((r.roiAnual ?? 0) > 0);
   assert.equal(r.acumulado.length, 3);
   assert.equal(r.acumulado[0].mobiliado, 27852 - 25000); // ano 1 desconta investimento
 });
@@ -123,4 +123,35 @@ test("ROI: sem ganho adicional → payback null", () => {
   );
   assert.equal(r.premioMensal, 0);
   assert.equal(r.paybackMeses, null);
+});
+
+test("ROI: mobiliado abaixo do vazio mostra prêmio NEGATIVO de verdade", () => {
+  const r = simularROI(
+    { investimentoMobiliar: 25000, aluguelVazio: 3000, aluguelMobiliado: 2800, mesesOcupados: 10, prazoMedioMeses: 4 },
+    0.08,
+    0
+  );
+  assert.equal(r.premioMensal, -200);
+  assert.ok(r.ganhoAdicionalAnual < 0);
+  assert.equal(r.paybackMeses, null);
+});
+
+test("ROI: investimento zero e ganho positivo → payback imediato e ROI indefinido", () => {
+  const r = simularROI(
+    { investimentoMobiliar: 0, aluguelVazio: 1800, aluguelMobiliado: 3000, mesesOcupados: 10, prazoMedioMeses: 4 },
+    0,
+    0
+  );
+  assert.ok(r.ganhoAdicionalAnual > 0);
+  assert.equal(r.paybackMeses, 0);
+  assert.equal(r.roiAnual, null);
+});
+
+test("ROI: contas incluídas e reposição da mobília entram como custo do mobiliado (F4)", () => {
+  const base = { investimentoMobiliar: 25000, aluguelVazio: 1800, aluguelMobiliado: 3000, mesesOcupados: 10, prazoMedioMeses: 4 };
+  const sem = simularROI(base, 0.08, 1548);
+  const com = simularROI({ ...base, contasMensais: 400, reposicaoAnualPct: 0.1 }, 0.08, 1548);
+  // 400 × 10 meses + 10% de 25.000 = 6.500 a menos por ano
+  assert.equal(com.custosMobiliadoAnual, 6500);
+  assert.equal(sem.netMobiliadoAnual - com.netMobiliadoAnual, 6500);
 });

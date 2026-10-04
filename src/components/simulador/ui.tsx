@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import { Info } from "lucide-react";
 import { PLANOS, type PlanoId } from "@/config/planos";
@@ -55,13 +56,17 @@ export function NumInput({
   onChange,
   step = 1,
   prefix,
+  max,
 }: {
   label: string;
   value: number;
   onChange: (v: number) => void;
   step?: number;
   prefix?: string;
+  /** Teto do campo: acima dele, usa o máximo e avisa (antes aceitava R$ 99 mi). */
+  max?: number;
 }) {
+  const [passou, setPassou] = useState(false);
   return (
     <label className="block">
       <span className="mb-1 block text-sm font-medium text-ink">{label}</span>
@@ -71,12 +76,24 @@ export function NumInput({
           type="number"
           inputMode="numeric"
           min={0}
+          max={max}
           step={step}
           value={value}
-          onChange={(e) => onChange(Math.max(0, Math.round(Number(e.target.value) || 0)))}
+          onChange={(e) => {
+            const v = Math.max(0, Math.round(Number(e.target.value) || 0));
+            const acima = max !== undefined && v > max;
+            setPassou(acima);
+            onChange(acima ? (max as number) : v);
+          }}
           className="w-full rounded-xl bg-transparent px-3 py-2.5 text-sm outline-none"
         />
       </div>
+      {passou && max !== undefined && (
+        <span className="mt-1 block text-xs text-amber-700">
+          Máximo aceito: {prefix ? `${prefix} ` : ""}
+          {max.toLocaleString("pt-BR")}. Usamos esse valor no cálculo.
+        </span>
+      )}
     </label>
   );
 }

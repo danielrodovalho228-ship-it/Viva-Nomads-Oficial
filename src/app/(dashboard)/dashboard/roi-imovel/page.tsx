@@ -9,6 +9,7 @@ import { plano as getPlano, type PlanoId } from "@/config/planos";
 import { simularROI, type EntradaROI } from "@/lib/simulador";
 import { imprimirSimulacao } from "@/lib/print-simulacao";
 import { formatBRL } from "@/lib/utils";
+import { MAX_ALUGUEL_MENSAL, MAX_INVESTIMENTO } from "@/lib/campos-valor";
 import { NumInput, ResultCard, SimDisclaimer, SimHero, PlanoPills } from "@/components/simulador/ui";
 
 const INCLUI =
@@ -23,13 +24,39 @@ export default function RoiImovelPage() {
   const [aluguelVazio, setVazio] = useState(1800);
   const [aluguelMobiliado, setMob] = useState(3000);
   const [mesesOcupados, setMeses] = useState(10);
+  const [contasMensais, setContas] = useState(400);
+  const [reposicaoPct, setReposicao] = useState(10);
 
-  const entrada: EntradaROI = { investimentoMobiliar, aluguelVazio, aluguelMobiliado, mesesOcupados, prazoMedioMeses: 4 };
+  const entrada: EntradaROI = {
+    investimentoMobiliar,
+    aluguelVazio,
+    aluguelMobiliado,
+    mesesOcupados,
+    prazoMedioMeses: 4,
+    contasMensais,
+    reposicaoAnualPct: reposicaoPct / 100,
+  };
   const p = getPlano(planoId);
   const res = useMemo(
     () => simularROI(entrada, p?.comissao ?? 0, p?.assinaturaAnual ?? 0),
-    [investimentoMobiliar, aluguelVazio, aluguelMobiliado, mesesOcupados, p?.comissao, p?.assinaturaAnual]
+    [investimentoMobiliar, aluguelVazio, aluguelMobiliado, mesesOcupados, contasMensais, reposicaoPct, p?.comissao, p?.assinaturaAnual]
   );
+
+  // Textos dos resultados (prêmio com sinal; payback/ROI sem investimento).
+  const premioTexto = `${res.premioMensal >= 0 ? "+ " : "− "}${formatBRL(Math.abs(res.premioMensal))}/mês`;
+  const premioDica =
+    res.premioMensal >= 0
+      ? `${Math.round(res.premioPct * 100)}% acima do vazio`
+      : `${Math.round(Math.abs(res.premioPct) * 100)}% abaixo do vazio`;
+  const paybackTexto =
+    res.paybackMeses === null ? "—" : res.paybackMeses === 0 ? "Imediato" : `${res.paybackMeses} meses`;
+  const paybackDica =
+    res.paybackMeses === null
+      ? "o mobiliado não rende mais que o vazio"
+      : res.paybackMeses === 0
+        ? "sem investimento a recuperar"
+        : `≈ ${(res.paybackMeses / 12).toFixed(1)} anos`;
+  const roiTexto = res.roiAnual === null ? "—" : `${Math.round(res.roiAnual * 100)}%`;
 
   const maxAbs = Math.max(1, ...res.acumulado.flatMap((a) => [Math.abs(a.mobiliado), Math.abs(a.vazio)]));
 
@@ -54,13 +81,15 @@ export default function RoiImovelPage() {
           <h2 className="font-title text-lg font-bold text-ink">Seus números</h2>
           <div className="mt-4 space-y-4">
             <div>
-              <NumInput label="Investimento para mobiliar" value={investimentoMobiliar} onChange={setInvest} step={1000} prefix="R$" />
+              <NumInput label="Investimento para mobiliar" value={investimentoMobiliar} onChange={setInvest} step={1000} prefix="R$" max={MAX_INVESTIMENTO} />
               <p className="mt-1 flex items-start gap-1.5 text-xs text-muted">
                 <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {INCLUI}
               </p>
             </div>
-            <NumInput label="Aluguel VAZIO de referência (mês)" value={aluguelVazio} onChange={setVazio} step={100} prefix="R$" />
-            <NumInput label="Aluguel MOBILIADO pretendido (mês)" value={aluguelMobiliado} onChange={setMob} step={100} prefix="R$" />
+            <NumInput label="Aluguel VAZIO de referência (mês)" value={aluguelVazio} onChange={setVazio} step={100} prefix="R$" max={MAX_ALUGUEL_MENSAL} />
+            <NumInput label="Aluguel MOBILIADO pretendido (mês)" value={aluguelMobiliado} onChange={setMob} step={100} prefix="R$" max={MAX_ALUGUEL_MENSAL} />
+            <NumInput label="Contas incluídas no mobiliado (água, luz, internet) por mês" value={contasMensais} onChange={setContas} step={50} prefix="R$" max={MAX_ALUGUEL_MENSAL} />
+            <NumInput label="Reposição e desgaste da mobília (% do investimento por ano)" value={reposicaoPct} onChange={setReposicao} step={1} max={100} />
             <div>
               <label className="mb-1 block text-sm font-medium text-ink">
                 Meses ocupados no ano (mobiliado): <strong className="text-forest">{mesesOcupados}</strong>
@@ -77,10 +106,10 @@ export default function RoiImovelPage() {
         {/* Resultado */}
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <ResultCard label="Prêmio do mobiliado" value={`+ ${formatBRL(res.premioMensal)}/mês`} hint={`${Math.round(res.premioPct * 100)}% acima do vazio`} />
-            <ResultCard label="Ganho líquido adicional / ano" value={formatBRL(res.ganhoAdicionalAnual)} hint="já descontando comissão e assinatura" />
-            <ResultCard label="Payback do investimento" value={res.paybackMeses ? `${res.paybackMeses} meses` : "—"} hint={res.paybackMeses ? `≈ ${(res.paybackMeses / 12).toFixed(1)} anos` : "sem ganho adicional"} />
-            <ResultCard label="ROI anual" value={`${Math.round(res.roiAnual * 100)}%`} />
+            <ResultCard label="Prêmio do mobiliado" value={premioTexto} hint={premioDica} />
+            <ResultCard label="Ganho líquido adicional / ano" value={formatBRL(res.ganhoAdicionalAnual)} hint="já descontando comissão, assinatura, contas e reposição" />
+            <ResultCard label="Payback do investimento" value={paybackTexto} hint={paybackDica} />
+            <ResultCard label="ROI anual" value={roiTexto} hint={res.roiAnual === null ? "sem investimento para comparar" : undefined} />
           </div>
 
           {/* Gráfico simples: acumulado ano 1-2-3 mobiliado × vazio */}
@@ -111,10 +140,10 @@ export default function RoiImovelPage() {
                   { label: "Meses ocupados no ano", valor: String(mesesOcupados) },
                 ],
                 resultados: [
-                  { label: "Prêmio do mobiliado", valor: `+ ${formatBRL(res.premioMensal)}/mês` },
+                  { label: "Prêmio do mobiliado", valor: premioTexto },
                   { label: "Ganho líquido adicional / ano", valor: formatBRL(res.ganhoAdicionalAnual) },
-                  { label: "Payback do investimento", valor: res.paybackMeses ? `${res.paybackMeses} meses` : "—" },
-                  { label: "ROI anual", valor: `${Math.round(res.roiAnual * 100)}%` },
+                  { label: "Payback do investimento", valor: paybackTexto },
+                  { label: "ROI anual", valor: roiTexto },
                 ],
               })
             }
