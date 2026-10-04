@@ -12,7 +12,7 @@ verde-limão `#6CBE2A` + preto `#0A0A0A`.
 4. Avise — eu troco a referência interina (Unsplash) pelo arquivo real em `src/lib/media.ts`.
 
 > Estado atual: os slots usam **fotos Unsplash interinas** (carregam no deploy da Vercel).
-> Ilustrações de estado vazio/404, avatares, favicon e OG são gerados **em código** (definitivos).
+> Ilustrações de estado vazio/404, avatares e a imagem de compartilhamento (OG) são gerados **em código**; o logo, o favicon e os ícones vêm dos arquivos oficiais em `public/brand/novo/`.
 
 ### Sufixo de estilo (cole no fim de todo prompt fotográfico)
 > Fotografia editorial realista, luz natural suave e difusa, contexto brasileiro
@@ -31,7 +31,7 @@ verde-limão `#6CBE2A` + preto `#0A0A0A`.
 | Card/galeria de imóvel | 4:3 / 3:2 | 1200×900 | `imovel-{slug}-{n}.webp` |
 | Painel de auth | 4:5 / 3:4 | 1200×1500 | `auth-login-side.webp` / `auth-signup-side.webp` |
 | Open Graph | 1.91:1 | 1200×630 | gerado em código (`next/og`) |
-| Favicon / app icon | 1:1 | 512/180/32 | gerado em código (símbolo "N") |
+| Favicon / app icon | 1:1 | 512/180/32 | arquivos oficiais do logo (public/brand/novo) |
 
 ## A — Home (`public/images/home/`)
 
@@ -69,7 +69,7 @@ verde-limão `#6CBE2A` + preto `#0A0A0A`.
 
 ## Gerados em código (definitivos — não precisa gerar)
 
-- **Favicon / app icons** — `src/app/icon.svg`, `src/app/apple-icon.svg` (símbolo "N" com gradiente).
+- **Favicon / app icons** — `src/app/icon.png`, `src/app/favicon.ico`, `src/app/apple-icon.png` e `public/icon-*.png`, copiados dos arquivos oficiais do logo novo (ver `public/brand/README.md`).
 - **Open Graph** — `next/og` (default + por imóvel).
 - **Estados vazios / 404** — ilustrações SVG em azul + verde-limão.
 - **Avatares** — iniciais sobre gradiente azul→verde.
