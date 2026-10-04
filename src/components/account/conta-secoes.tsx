@@ -94,7 +94,7 @@ export function DadosPessoais() {
             label="Telefone"
             value={telefone}
             onChange={(e) => setTelefone(e.target.value)}
-            placeholder="(34) 90000-0000"
+            placeholder="(34) 99999-0000 ou +1 …"
             inputMode="tel"
             autoComplete="tel"
           />
