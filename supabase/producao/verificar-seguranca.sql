@@ -17,6 +17,8 @@
 --   4c) aplicar 0055 (P1 dados) → rodar E → "OK" (E3: só service_role)
 --   4d) aplicar 0056 (P1 integridade/limites) ANTES do deploy do PR (a)
 --       → rodar F → F1 "OK", F2 0 linhas, F3 só service_role
+--   4e) aplicar 0057 (P1 contratos/candidaturas/contato) ANTES do deploy do PR (b)
+--       → rodar G → tudo "OK"
 --   5) depois de alguns dias sem problema: seção D (apagar o backup do draft_data)
 -- ════════════════════════════════════════════════════════════════════════════
 
@@ -230,6 +232,31 @@ select 'F3. A5 consumir_limite só para o servidor' as checagem,
 from information_schema.role_routine_grants g
 where g.routine_schema = 'public' and g.routine_name = 'consumir_limite'
   and g.grantee in ('anon', 'authenticated', 'service_role') and g.privilege_type = 'EXECUTE';
+
+
+-- ████ G — DEPOIS DA 0057 (P1 contratos, candidaturas, contato) █████████████
+
+select 'G1. A6/A1 regras de escrita do usuário que NÃO podem existir' as checagem,
+       coalesce(string_agg(tablename || ' / ' || policyname, '; '), 'OK — nenhuma') as resultado
+from pg_policies
+where schemaname = 'public'
+  and ((tablename = 'subscriptions' and policyname = 'assinatura do dono')
+    or (tablename = 'contratos' and policyname in ('inquilino cria contrato', 'partes atualizam contrato'))
+    or (tablename = 'contrato_blocos' and policyname in ('partes criam bloco', 'partes atualizam bloco'))
+    or (tablename = 'leads' and policyname = 'dono decide candidatura'));
+
+select 'G2. A1/A6 travas (pagamento, resposta) e A2 (máscara)' as checagem,
+       case when count(*) = 3 then 'OK — 3 triggers' else 'FALTANDO — ' || count(*) || ' de 3' end as resultado
+from pg_trigger
+where tgname in ('trg_pagamentos_confirmacao', 'trg_respostas_pedido_transicao', 'messages_mask_contact')
+  and not tgisinternal;
+
+select 'G3. A2 bloqueio de contato nos textos livres' as checagem,
+       case when count(*) = 7 then 'OK — 7 campos' else 'FALTANDO — ' || count(*) || ' de 7' end as resultado
+from pg_trigger where tgname like 'contato\_%' escape '\' and not tgisinternal;
+
+select 'G4. A2 máscara funciona' as checagem,
+       case when public.mask_contact('me chama no (34) 99999-0001') !~ '99999' then 'OK' else 'FALHOU' end as resultado;
 
 
 -- ████ D — LIMPEZA (só depois de alguns dias sem problema) ███████████████████

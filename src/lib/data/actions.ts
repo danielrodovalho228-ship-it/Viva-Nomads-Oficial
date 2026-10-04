@@ -621,11 +621,10 @@ export async function registrarLocacao(input: LocacaoInput): Promise<ActionResul
 // ── Contrato fracionado em blocos (v2) ───────────────────────────────────────
 
 export interface ContratoInput {
-  propertyId: string;
+  /** Candidatura ACEITA de onde o contrato nasce (inquilino, imóvel, aluguel e taxa vêm dela). */
+  leadId: string;
   faixa: string; // temporada | media_estadia | longa
-  ownerPlan: string; // plano do proprietário → taxa de comissão
   prazoTotalMeses: number; // prazo total pretendido (contrato-mãe)
-  aluguelMensal: number;
   tamanhoBlocoMeses?: number; // padrão 2 (≤ 3 = 90 dias)
   qtdOcupantes: number;
   capacidadeSnapshot?: number | null;
@@ -633,12 +632,20 @@ export interface ContratoInput {
   caucaoForma?: "avista" | "preauth_cartao";
 }
 
+const FAIXAS_CONTRATO = new Set(["temporada", "media_estadia", "longa"]);
+const TAXAS_DE_PLANO = new Set(Object.values(COMMISSION_BY_PLAN));
+
 /**
  * Registra o CONTRATO-MÃE + seus BLOCOS no fechamento. A comissão (1 mês × taxa
  * do plano, UMA vez) fica no contrato-mãe — renovar/estender blocos não recobra.
  * Cada bloco carrega a caução (50% do valor do bloco); a plataforma só calcula e
- * documenta, NUNCA captura o dinheiro (regra de ouro). Best-effort: no-op em
- * demo (sem Supabase), imóvel não-UUID (exemplos) ou visitante sem sessão.
+ * documenta, NUNCA captura o dinheiro (regra de ouro).
+ *
+ * A6: o contrato nasce da candidatura ACEITA do dono logado — inquilino
+ * (tenant_id = o do lead; antes gravava o DONO como inquilino), imóvel, aluguel
+ * (do anúncio) e taxa (congelada no aceite) vêm do banco, nunca da tela. Um
+ * contrato por candidatura. Gravado pelo servidor (0057 tirou a escrita do
+ * usuário em contratos/blocos).
  */
 export async function registrarContrato(
   input: ContratoInput
@@ -649,30 +656,65 @@ export async function registrarContrato(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Faça login para registrar o contrato." };
-  if (!UUID_RE.test(input.propertyId)) return { ok: true, demo: true };
+  if (!UUID_RE.test(input.leadId)) return { ok: true, demo: true };
 
-  const rate = COMMISSION_BY_PLAN[input.ownerPlan] ?? COMMISSION_BY_PLAN.free;
-  const tamanho = input.tamanhoBlocoMeses ?? MESES_POR_BLOCO_PADRAO;
-  const resumo = resumoContrato(input.prazoTotalMeses, input.aluguelMensal, rate, tamanho);
+  const { data: lead } = await supabase
+    .from("leads")
+    .select("id, owner_id, tenant_id, property_id, accepted_plan, accepted_commission_rate")
+    .eq("id", input.leadId)
+    .eq("owner_id", user.id)
+    .eq("status", "accepted")
+    .maybeSingle();
+  if (!lead) return { ok: false, error: "Candidatura aceita não encontrada." };
 
-  const { data: contrato, error: cErr } = await supabase
+  const admin = createAdminClient();
+  if (!admin) return { ok: false, error: "Serviço indisponível." };
+
+  const { data: existente } = await admin.from("contratos").select("id").eq("lead_id", lead.id).maybeSingle();
+  if (existente) return { ok: true, id: existente.id as string, blocos: 0 };
+
+  const { data: imovel } = await admin
+    .from("properties")
+    .select("monthly_price, owner_id")
+    .eq("id", lead.property_id)
+    .maybeSingle();
+  const aluguel = Number(imovel?.monthly_price);
+  if (!imovel || imovel.owner_id !== user.id || !(aluguel > 0)) {
+    return { ok: false, error: "Imóvel sem valor de aluguel." };
+  }
+
+  const prazo = Math.round(Number(input.prazoTotalMeses));
+  if (!(prazo >= 1 && prazo <= 12)) return { ok: false, error: "Prazo inválido (1 a 12 meses)." };
+  if (!FAIXAS_CONTRATO.has(input.faixa)) return { ok: false, error: "Faixa de prazo inválida." };
+  const ocupantes = Math.round(Number(input.qtdOcupantes));
+  if (!(ocupantes >= 1 && ocupantes <= 20)) return { ok: false, error: "Número de ocupantes inválido." };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.inicioISO)) return { ok: false, error: "Data de início inválida." };
+
+  const plano = (lead.accepted_plan as string) ?? "free";
+  const congelada = Number(lead.accepted_commission_rate);
+  const rate = TAXAS_DE_PLANO.has(congelada) ? congelada : COMMISSION_BY_PLAN.free;
+  const tamanho = Math.min(3, Math.max(1, Math.round(Number(input.tamanhoBlocoMeses ?? MESES_POR_BLOCO_PADRAO))));
+  const resumo = resumoContrato(prazo, aluguel, rate, tamanho);
+
+  const { data: contrato, error: cErr } = await admin
     .from("contratos")
     .insert({
-      property_id: input.propertyId,
-      tenant_id: user.id,
-      owner_plan: input.ownerPlan,
+      lead_id: lead.id,
+      property_id: lead.property_id,
+      tenant_id: lead.tenant_id,
+      owner_plan: plano,
       faixa: input.faixa,
       prazo_total_dias: resumo.prazoTotalMeses * DIAS_POR_MES,
-      aluguel_mensal: input.aluguelMensal,
+      aluguel_mensal: aluguel,
       tamanho_bloco_meses: resumo.tamanhoBlocoMeses,
       comissao_percent: resumo.comissaoPercent,
       comissao_valor: resumo.comissaoValor,
-      qtd_ocupantes: Math.round(input.qtdOcupantes),
+      qtd_ocupantes: ocupantes,
       capacidade_snapshot: input.capacidadeSnapshot ?? null,
     })
     .select("id")
     .single();
-  if (cErr) return { ok: false, error: cErr.message };
+  if (cErr) return { ok: false, error: "Não foi possível registrar o contrato." };
 
   const comDatas = encadearDatas(input.inicioISO, resumo.blocos);
   const rows = comDatas.map((b: BlocoComDatas, i) => ({
@@ -683,11 +725,11 @@ export async function registrarContrato(
     meses: b.meses,
     valor: b.valor,
     caucao: b.caucao,
-    caucao_forma: input.caucaoForma ?? "avista",
+    caucao_forma: input.caucaoForma === "preauth_cartao" ? "preauth_cartao" : "avista",
     // 1º bloco entra vigente; os demais ficam agendados até a renovação opt-in.
     status: i === 0 ? "ativo" : "agendado",
   }));
-  const { error: bErr } = await supabase.from("contrato_blocos").insert(rows);
+  const { error: bErr } = await admin.from("contrato_blocos").insert(rows);
   // Best-effort: o contrato-mãe já existe mesmo se a inserção dos blocos falhar.
   if (bErr) return { ok: true, id: contrato!.id, blocos: 0, error: bErr.message };
   return { ok: true, id: contrato!.id, blocos: rows.length };
@@ -715,7 +757,11 @@ export async function renovarBloco(
     .eq("id", contratoId)
     .maybeSingle();
   if (cErr) return { ok: false, error: cErr.message };
+  // A6: a leitura acima já passa pela RLS (só as partes do contrato veem).
   if (!contrato) return { ok: false, error: "Contrato não encontrado." };
+  if (contrato.status !== "ativo") return { ok: false, error: "Só contratos ativos podem ser renovados." };
+  const admin = createAdminClient();
+  if (!admin) return { ok: false, error: "Serviço indisponível." };
 
   const { data: ultimo } = await supabase
     .from("contrato_blocos")
@@ -732,7 +778,8 @@ export async function renovarBloco(
   const fim = addDiasISO(inicio, meses * DIAS_POR_MES);
   const numero = ((ultimo?.numero_bloco as number | undefined) ?? 0) + 1;
 
-  const { error: bErr } = await supabase.from("contrato_blocos").insert({
+  // A6: gravado pelo servidor (0057 tirou a escrita do usuário em blocos).
+  const { error: bErr } = await admin.from("contrato_blocos").insert({
     contrato_id: contratoId,
     numero_bloco: numero,
     inicio,
@@ -745,12 +792,11 @@ export async function renovarBloco(
   if (bErr) return { ok: false, error: bErr.message };
 
   // Mantém o contrato-mãe ativo (renovou antes de encerrar).
-  await supabase.from("contratos").update({ status: "ativo", encerrado_em: null }).eq("id", contratoId);
+  await admin.from("contratos").update({ status: "ativo", encerrado_em: null }).eq("id", contratoId);
 
   // Avisa o proprietário (best-effort) — a outra ponta do opt-in.
   try {
     // C3: RPC de contato (PII) só via service role no servidor.
-    const admin = createAdminClient();
     const { data: rpc } = admin
       ? await admin.rpc("owner_notify_contact", { prop_id: contrato.property_id })
       : { data: null };

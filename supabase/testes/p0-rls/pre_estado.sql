@@ -295,6 +295,50 @@ grant execute on function public.anonimizar_conta(uuid) to service_role;
 create policy "qualif: admin lê" on public.qualification_checklists for select to authenticated using (public.is_admin());
 create policy "qualif: admin modera" on public.qualification_checklists for update to authenticated using (public.is_admin()) with check (public.is_admin());
 
+-- A6/A1/A2: tabelas com o formato e as regras ATUAIS de produção (pré-0057).
+create table public.subscriptions (
+  id uuid primary key default gen_random_uuid(), owner_id uuid not null references public.profiles(id),
+  plan text not null default 'free', status text
+);
+alter table public.subscriptions enable row level security;
+create policy "assinatura do dono" on public.subscriptions for all using (owner_id = auth.uid()) with check (owner_id = auth.uid());
+alter table public.contratos add column aluguel_mensal numeric, add column comissao_percent numeric default 0;
+alter table public.contratos enable row level security;
+create policy "contrato visível às partes" on public.contratos for select using (tenant_id = auth.uid() or exists (select 1 from public.properties p where p.id = contratos.property_id and p.owner_id = auth.uid()));
+create policy "inquilino cria contrato" on public.contratos for insert with check (tenant_id = auth.uid());
+create policy "partes atualizam contrato" on public.contratos for update using (tenant_id = auth.uid() or exists (select 1 from public.properties p where p.id = contratos.property_id and p.owner_id = auth.uid()));
+create table public.contrato_blocos (
+  id uuid primary key default gen_random_uuid(), contrato_id uuid not null references public.contratos(id) on delete cascade,
+  numero_bloco int, valor numeric, caucao numeric, caucao_status text default 'pendente', status text default 'agendado'
+);
+alter table public.contrato_blocos enable row level security;
+create policy "bloco visível às partes" on public.contrato_blocos for select using (exists (select 1 from public.contratos c where c.id = contrato_blocos.contrato_id and (c.tenant_id = auth.uid() or exists (select 1 from public.properties p where p.id = c.property_id and p.owner_id = auth.uid()))));
+create policy "partes criam bloco" on public.contrato_blocos for insert with check (exists (select 1 from public.contratos c where c.id = contrato_blocos.contrato_id and (c.tenant_id = auth.uid() or exists (select 1 from public.properties p where p.id = c.property_id and p.owner_id = auth.uid()))));
+create policy "partes atualizam bloco" on public.contrato_blocos for update using (exists (select 1 from public.contratos c where c.id = contrato_blocos.contrato_id and (c.tenant_id = auth.uid() or exists (select 1 from public.properties p where p.id = c.property_id and p.owner_id = auth.uid()))));
+create table public.pagamentos_bloco (
+  id uuid primary key default gen_random_uuid(), bloco_id uuid references public.contrato_blocos(id), contrato_id uuid references public.contratos(id),
+  tipo text default 'aluguel', valor numeric, data_pagamento date, marcado_por uuid,
+  confirmado_pelo_inquilino boolean default false, confirmado_em timestamptz
+);
+alter table public.pagamentos_bloco enable row level security;
+create policy "pagamento visível às partes" on public.pagamentos_bloco for select using (exists (select 1 from public.contratos c where c.id = pagamentos_bloco.contrato_id and (c.tenant_id = auth.uid() or exists (select 1 from public.properties p where p.id = c.property_id and p.owner_id = auth.uid()))));
+create policy "proprietário registra recebimento" on public.pagamentos_bloco for insert with check (marcado_por = auth.uid() and exists (select 1 from public.contratos c join public.properties p on p.id = c.property_id where c.id = pagamentos_bloco.contrato_id and p.owner_id = auth.uid()));
+create policy "inquilino confirma pagamento" on public.pagamentos_bloco for update using (exists (select 1 from public.contratos c where c.id = pagamentos_bloco.contrato_id and c.tenant_id = auth.uid()));
+create table public.locacoes (
+  id uuid primary key default gen_random_uuid(), property_id uuid references public.properties(id), tenant_id uuid,
+  valor_total numeric, caucao_valor numeric
+);
+alter table public.locacoes enable row level security;
+create policy "inquilino cria locação" on public.locacoes for insert with check (tenant_id = auth.uid());
+create table public.avaliacoes (
+  id uuid primary key default gen_random_uuid(), contrato_id uuid, autor_id uuid, alvo_id uuid, rating int, comentario text
+);
+alter table public.avaliacoes enable row level security;
+create policy "autor avalia" on public.avaliacoes for insert with check (autor_id = auth.uid());
+alter table public.pedidos_moradia add column apresentacao text;
+alter table public.respostas_pedido add column recusa_motivo text;
+-- leads: colunas de decisão (0004/0046) e a regra do dono da 0046.
+
 -- Tabela de resultados do teste (escrita por qualquer papel).
 create table public.resultado (ordem serial, fase text, caso text, esperado text, obtido text, ok boolean, detalhe text);
 grant all on public.resultado to public;
