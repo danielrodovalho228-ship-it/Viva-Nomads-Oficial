@@ -5,6 +5,8 @@ import { notify } from "@/lib/notifications";
 import { primeiroNome } from "@/lib/display-name";
 import { tipoVisualizacaoDoc, type VisualizacaoDoc } from "@/lib/moderacao-doc";
 import { ehAdmin } from "@/lib/data/admin-guard";
+import { escaparHtml } from "@/lib/escapar-html";
+import { logModeracao } from "@/lib/data/moderacao-log";
 
 type ActionResult = { ok: boolean; demo?: boolean; error?: string };
 
@@ -17,6 +19,7 @@ export interface DocumentoPendente {
   ownerNome: string; // primeiro nome (exibição) — NUNCA o e-mail
   ownerNomeCompleto: string | null; // nome completo p/ conferir contra o documento
   refImovel: string | null; // endereço/imóvel do cadastro p/ comparação lado a lado
+  tituloImovel: string | null; // título do anúncio, ao lado do nome do dono
   criadoEm: string | null;
   docUrl: string | null; // URL assinada curta para o admin abrir (nunca pública)
   docTipo: VisualizacaoDoc; // como exibir inline (imagem | pdf | outro)
@@ -35,7 +38,7 @@ export async function listDocumentosPendentes(): Promise<DocumentoPendente[]> {
   if (!supabase) return [];
   const { data } = await supabase
     .from("qualification_checklists")
-    .select("id, owner_id, document_path, document_hash_sha256, created_at")
+    .select("id, owner_id, property_id, document_path, document_hash_sha256, created_at")
     .eq("document_status", "pending")
     .order("created_at", { ascending: true })
     .limit(200);
@@ -49,14 +52,16 @@ export async function listDocumentosPendentes(): Promise<DocumentoPendente[]> {
 
     // Referência do imóvel (bairro/cidade do cadastro mais recente do dono) para
     // a conferência lado a lado — o admin compara com o que consta no documento.
+    // O imóvel LIGADO à qualificação, quando houver; senão o mais recente do dono.
     let refImovel: string | null = null;
-    const { data: prop } = await supabase
-      .from("properties")
-      .select("title, address, city")
-      .eq("owner_id", ownerId)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    const propQuery = supabase.from("properties").select("title, address, city");
+    const { data: prop } = r.property_id
+      ? await propQuery.eq("id", r.property_id as string).maybeSingle()
+      : await propQuery
+          .eq("owner_id", ownerId)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
     if (prop) {
       // `address` é a coluna do bairro (não há coluna "neighborhood" — antes vinha vazio).
       const local = [prop.address, prop.city].filter(Boolean).join(", ");
@@ -87,6 +92,7 @@ export async function listDocumentosPendentes(): Promise<DocumentoPendente[]> {
       ownerNome: primeiroNome(nomeCompleto) || "Proprietário",
       ownerNomeCompleto: nomeCompleto || null,
       refImovel,
+      tituloImovel: (prop?.title as string | undefined) || null,
       criadoEm: (r.created_at as string) ?? null,
       docUrl,
       docTipo: tipoVisualizacaoDoc(r.document_path as string | null),
@@ -146,6 +152,14 @@ export async function moderarDocumento(
     .maybeSingle();
   if (error) return { ok: false, error: error.message };
   if (!qual) return { ok: false, error: "Documento não encontrado na fila (ou sem permissão)." };
+  await logModeracao(
+    supabase,
+    user.id,
+    aprovado ? "aprovar_documento" : "recusar_documento",
+    "qualificacao",
+    qualId,
+    aprovado ? null : motivoLimpo
+  );
 
   // E-mail ao proprietário nos dois desfechos (best-effort — não trava a ação).
   try {
@@ -163,7 +177,7 @@ export async function moderarDocumento(
         pushUrl: "/dashboard/imoveis",
         detailsHtml: aprovado
           ? undefined
-          : `<p style="margin:12px 0 0;color:#334155;">Motivo: ${motivoLimpo}</p>`,
+          : `<p style="margin:12px 0 0;color:#334155;">Motivo: ${escaparHtml(motivoLimpo)}</p>`,
         detailsText: aprovado ? undefined : `Motivo: ${motivoLimpo}`,
       });
     }

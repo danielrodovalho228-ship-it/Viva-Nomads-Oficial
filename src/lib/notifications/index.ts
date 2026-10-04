@@ -40,7 +40,10 @@ export type NotificationEvent =
   // Verificação do documento do imóvel (anti-fraude) → proprietário
   | "documento_aprovado"
   | "documento_recusado"
-  | "documento_recebido"; // novo documento na fila → admin
+  | "documento_recebido" // novo documento na fila → admin
+  // Checklist de qualificação revisado pela equipe → proprietário
+  | "checklist_aprovado"
+  | "checklist_recusado";
 
 // `img` = chave da imagem de assunto (public/media/email/<img>.jpg).
 const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: string) => string; img: string }> = {
@@ -59,6 +62,8 @@ const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: string)
   pedido_moderado: { subject: "Seu pedido de moradia foi ocultado", body: (n) => `Olá${n ? " " + n : ""}, seu pedido de moradia foi ocultado pela moderação. Veja o motivo e ajuste se necessário.`, img: "transacional" },
   documento_aprovado: { subject: "Documentação aprovada — você já pode publicar", body: (n) => `Olá${n ? " " + n : ""}, a documentação do seu imóvel foi verificada e aprovada. Seu anúncio já pode ser publicado.`, img: "candidatura-recebida" },
   documento_recusado: { subject: "Documentação não aprovada", body: (n) => `Olá${n ? " " + n : ""}, a documentação enviada não pôde ser aprovada. Veja o motivo, ajuste e reenvie para liberar a publicação.`, img: "pedido-resposta" },
+  checklist_aprovado: { subject: "Qualificação do imóvel aprovada", body: (n) => `Olá${n ? " " + n : ""}, a equipe Viva Nomads revisou e aprovou a qualificação do seu imóvel.`, img: "candidatura-recebida" },
+  checklist_recusado: { subject: "Qualificação do imóvel não aprovada", body: (n) => `Olá${n ? " " + n : ""}, a equipe Viva Nomads revisou a qualificação do seu imóvel e ela não foi aprovada. Veja o motivo, ajuste e envie de novo.`, img: "pedido-resposta" },
   documento_recebido: { subject: "Novo documento de imóvel para conferir", body: () => "Um proprietário enviou a documentação do imóvel. Há um item aguardando conferência na fila de moderação.", img: "transacional" },
 };
 

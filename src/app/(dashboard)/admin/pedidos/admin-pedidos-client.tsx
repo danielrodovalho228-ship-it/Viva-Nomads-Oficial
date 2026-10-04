@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { formatBRL, cn } from "@/lib/utils";
 import { motivoLabel, PEDIDO_STATUS_LABEL } from "@/lib/pedidos/pedidos";
 import { moderarPedido, reativarPedido } from "@/lib/data/pedidos-admin";
+import { MotivoDialog } from "@/components/admin/motivo-dialog";
 
 type Pedido = {
   id: string;
@@ -35,21 +36,23 @@ export function AdminPedidosClient({ pedidos }: { pedidos: Record<string, unknow
   const router = useRouter();
   const lista = pedidos as unknown as Pedido[];
   const [busy, setBusy] = useState<string | null>(null);
+  const [erro, setErro] = useState<Record<string, string>>({});
+  const [ocultando, setOcultando] = useState<Pedido | null>(null);
 
-  async function ocultar(id: string) {
-    const motivo = window.prompt("Motivo da moderação (será registrado e enviado ao inquilino):");
-    if (motivo == null) return;
-    setBusy(id);
-    const res = await moderarPedido(id, motivo);
-    setBusy(null);
-    if (!res.ok && res.error) alert(res.error);
+  async function ocultar(motivo: string): Promise<string | null> {
+    if (!ocultando) return null;
+    const res = await moderarPedido(ocultando.id, motivo);
+    if (!res.ok) return res.error ?? "Não foi possível ocultar.";
+    setOcultando(null);
     router.refresh();
+    return null;
   }
   async function reativar(id: string) {
     setBusy(id);
+    setErro((e) => ({ ...e, [id]: "" }));
     const res = await reativarPedido(id);
     setBusy(null);
-    if (!res.ok && res.error) alert(res.error);
+    if (!res.ok) setErro((e) => ({ ...e, [id]: res.error ?? "Não foi possível reativar." }));
     router.refresh();
   }
 
@@ -117,13 +120,18 @@ export function AdminPedidosClient({ pedidos }: { pedidos: Record<string, unknow
                         ) : (
                           <Button
                             variant="ghost"
-                            onClick={() => ocultar(p.id)}
+                            onClick={() => setOcultando(p)}
                             disabled={busy === p.id}
                           >
                             <EyeOff className="h-4 w-4" /> Ocultar
                           </Button>
                         )}
                       </div>
+                      {erro[p.id] && (
+                        <p role="alert" className="mt-1 text-right text-xs text-red-600">
+                          {erro[p.id]}
+                        </p>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -132,6 +140,19 @@ export function AdminPedidosClient({ pedidos }: { pedidos: Record<string, unknow
           )}
         </div>
       </Panel>
+
+      <MotivoDialog
+        open={!!ocultando}
+        titulo="Ocultar pedido"
+        descricao={
+          ocultando
+            ? `${motivoLabel(ocultando.motivo)} · ${ocultando.cidade}. O motivo fica registrado e vai ao inquilino.`
+            : undefined
+        }
+        confirmar="Ocultar"
+        onCancel={() => setOcultando(null)}
+        onConfirm={ocultar}
+      />
     </>
   );
 }

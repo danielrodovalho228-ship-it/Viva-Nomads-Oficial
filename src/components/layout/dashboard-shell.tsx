@@ -200,8 +200,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const hasActiveLoc = useHasActiveLocacao(mode === "tenant");
 
   let nav = NAV_BY_MODE[mode];
-  if (display.role === "admin" && mode === "owner")
-    nav = [...OWNER_NAV, ...ADMIN_NAV].map((item) =>
+  // Admin vê o grupo Admin em QUALQUER modo (antes sumia no modo inquilino).
+  if (display.role === "admin")
+    nav = [...nav, ...ADMIN_NAV].map((item) =>
       item.href === "/admin/documentos" && docsPendentes > 0
         ? { ...item, badgeCount: docsPendentes }
         : item
