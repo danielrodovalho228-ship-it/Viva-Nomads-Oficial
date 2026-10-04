@@ -8,7 +8,7 @@ import { Plus, Check, X, Pause, Play, MessageSquare, Home } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { formatBRL, cn } from "@/lib/utils";
+import { formatBRL, cn, dataBR } from "@/lib/utils";
 import {
   motivoLabel,
   PEDIDO_STATUS_LABEL,
@@ -130,16 +130,34 @@ export function PedidosClient({
                     </div>
                     <p className="mt-1 text-sm text-muted">
                       {p.cidade}
-                      {p.uf ? `/${p.uf}` : ""} · a partir de {p.data_inicio} · {p.prazo_meses} meses ·{" "}
+                      {p.uf ? `/${p.uf}` : ""} · a partir de {dataBR(p.data_inicio)} · {p.prazo_meses} meses ·{" "}
                       {p.qtd_ocupantes} {p.qtd_ocupantes === 1 ? "pessoa" : "pessoas"} · até{" "}
                       {formatBRL(p.orcamento_mensal)}/mês
                     </p>
                     {p.apresentacao && (
                       <p className="mt-2 max-w-2xl text-sm text-ink">{p.apresentacao}</p>
                     )}
-                    <p className="mt-1 text-xs text-muted">Expira em {p.expira_em?.slice(0, 10)}</p>
+                    <p className="mt-1 text-xs text-muted">
+                      {p.status === "expirado" ? "Expirou em" : "Expira em"} {dataBR(p.expira_em)}
+                    </p>
                   </div>
                   {/* Ações do pedido */}
+                  {p.status === "expirado" && (
+                    // Renovar = publicar de novo com os mesmos dados (o pedido
+                    // expirado não volta a aparecer para os proprietários).
+                    <Link
+                      href={`/pedidos/novo?${new URLSearchParams({
+                        cidade: p.cidade,
+                        uf: p.uf ?? "",
+                        meses: String(p.prazo_meses),
+                        orcamento: String(Math.round(p.orcamento_mensal)),
+                        adultos: String(p.qtd_ocupantes),
+                      }).toString()}`}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-forest px-4 py-2 text-sm font-medium text-white hover:bg-forest-700"
+                    >
+                      <Play className="h-4 w-4" /> Renovar pedido
+                    </Link>
+                  )}
                   {(p.status === "ativo" || p.status === "pausado") && (
                     <div className="flex flex-wrap gap-2">
                       <Button
@@ -177,7 +195,11 @@ export function PedidosClient({
                   </p>
                   {rs.length === 0 ? (
                     <p className="text-sm text-muted">
-                      Nenhuma resposta ainda. Proprietários com imóvel em {p.cidade} verão seu pedido.
+                      {p.status === "expirado"
+                        ? "Expirado: os proprietários não veem mais este pedido. Renove para voltar a receber respostas."
+                        : p.status === "ativo"
+                          ? `Nenhuma resposta ainda. Proprietários com imóvel em ${p.cidade} verão seu pedido.`
+                          : "Nenhuma resposta."}
                     </p>
                   ) : (
                     <div className="space-y-3">

@@ -18,7 +18,10 @@ import {
   isMotivo,
   CONTATO_AVISO,
   MAX_PEDIDOS_ATIVOS,
+  PRAZO_MAX_MESES,
 } from "@/lib/pedidos/pedidos";
+import { cidadeOficial } from "@/lib/municipios";
+import { chaveCidade } from "@/lib/cidades";
 
 /** Aviso in-app + e-mail (+ WhatsApp adapter, se opt-in). Best-effort. */
 type Recip = {
@@ -90,11 +93,15 @@ export async function criarPedido(input: PedidoInput): Promise<ActionResult> {
   if (!user) return { ok: false, error: "Entre para publicar um pedido." };
 
   // Validações de servidor (fonte da verdade).
-  const cidade = (input.cidade ?? "").trim();
-  if (!cidade) return { ok: false, error: "Informe a cidade." };
+  // Cidade OFICIAL (lista do IBGE, com acento) — "Uberlandia" vira
+  // "Uberlândia" e não divide a mesma cidade em duas.
+  if (!(input.cidade ?? "").trim()) return { ok: false, error: "Informe a cidade." };
+  const oficial = cidadeOficial(input.cidade ?? "", input.uf ?? "");
+  if (!oficial) return { ok: false, error: "Escolha a UF e uma cidade da lista." };
+  const cidade = oficial.cidade;
   if (!input.dataInicio) return { ok: false, error: "Informe a data de início." };
-  if (!(input.prazoMeses >= 1 && input.prazoMeses <= 12))
-    return { ok: false, error: "Prazo deve ser entre 1 e 12 meses." };
+  if (!(input.prazoMeses >= 1 && input.prazoMeses <= PRAZO_MAX_MESES))
+    return { ok: false, error: `Prazo deve ser entre 1 e ${PRAZO_MAX_MESES} meses (30 a 180 dias).` };
   if (!(input.orcamentoMensal >= 0)) return { ok: false, error: "Orçamento inválido." };
   if (!(input.qtdOcupantes >= 1)) return { ok: false, error: "Informe o número de ocupantes." };
   if (!isMotivo(input.motivo)) return { ok: false, error: "Selecione um motivo válido." };
@@ -118,7 +125,7 @@ export async function criarPedido(input: PedidoInput): Promise<ActionResult> {
     .insert({
       inquilino_id: user.id,
       cidade,
-      uf: input.uf ?? null,
+      uf: oficial.uf,
       data_inicio: input.dataInicio,
       prazo_meses: Math.round(input.prazoMeses),
       orcamento_mensal: input.orcamentoMensal,
@@ -405,7 +412,8 @@ export async function getPedidosParaProprietario(): Promise<{
     maxGuests: p.maxGuests,
     monthlyPrice: p.monthlyPrice,
   }));
-  const cidades = new Set(props.map((p) => p.city.toLowerCase()));
+  // Comparação sem acento/maiúscula: "Uberlandia" e "Uberlândia" são a mesma.
+  const cidades = new Set(props.map((p) => chaveCidade(p.city)));
 
   const { data } = await supabase
     .from("pedidos_publicos")
@@ -416,7 +424,7 @@ export async function getPedidosParaProprietario(): Promise<{
   const pedidos =
     cidades.size === 0
       ? todos
-      : todos.filter((p) => cidades.has(String(p.cidade ?? "").toLowerCase()));
+      : todos.filter((p) => cidades.has(chaveCidade(String(p.cidade ?? ""))));
 
   return { pedidos, myProperties };
 }

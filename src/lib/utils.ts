@@ -52,3 +52,12 @@ export function cityFromSlug(slug: string): string {
       .join(" ")
   );
 }
+
+/**
+ * Data no formato brasileiro (10/07/2026) a partir de "AAAA-MM-DD" ou ISO.
+ * Lê só a parte da data (sem fuso), para "2026-07-10" não virar dia 09.
+ */
+export function dataBR(iso: string | null | undefined): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso ?? ""));
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : "—";
+}

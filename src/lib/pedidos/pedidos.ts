@@ -72,6 +72,9 @@ export const RESPOSTA_STATUS_LABEL: Record<string, string> = {
 /** Máximo de pedidos ATIVOS por inquilino (anti-abuso). */
 export const MAX_PEDIDOS_ATIVOS = 2;
 
+/** Prazo máximo do pedido: a plataforma é de 30 a 180 dias (6 meses). */
+export const PRAZO_MAX_MESES = 6;
+
 // ── Leads do proprietário (Dashboard Fase 2) ─────────────────────────────────
 
 /**

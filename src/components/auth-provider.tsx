@@ -26,7 +26,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    async function hydrate(session: import("@supabase/supabase-js").Session | null) {
+    // Perfil lido UMA vez por usuário nesta carga de página. Antes, cada evento
+    // de auth (getSession, INITIAL_SESSION, TOKEN_REFRESHED…) relia o perfil,
+    // reescrevia o usuário e REAPLICAVA o modo salvo — se o clique no seletor
+    // acontecia antes da última leitura voltar, ela desfazia a troca ("só
+    // funciona no segundo clique") e a casca re-renderizava várias vezes.
+    const perfilLido = new Set<string>();
+
+    async function hydrate(
+      session: import("@supabase/supabase-js").Session | null,
+      forcarPerfil = false
+    ) {
       if (!session?.user) {
         setUser(null);
         return;
@@ -34,17 +44,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const u = session.user;
       const metaName = (u.user_metadata?.full_name as string | undefined) || undefined;
       const metaRole = (u.user_metadata?.role as UserRole) ?? "tenant";
+      const atual = useAuthStore.getState().user;
 
       // Loga IMEDIATAMENTE a partir da sessão — o login NUNCA fica preso na
-      // consulta a `profiles` (que pode estar vazia/lenta/indisponível). O
-      // `name` é só para exibição e cai no e-mail completo quando não há nome.
-      setUser({
-        id: u.id,
-        name: metaName ?? u.email ?? "Usuário",
-        fullName: metaName,
-        email: u.email ?? "",
-        role: metaRole,
-      });
+      // consulta a `profiles`. Só quando ainda não há este usuário no estado:
+      // não rebaixa um usuário já completo (papel/plano do perfil) para o da sessão.
+      if (!atual || atual.id !== u.id) {
+        setUser({
+          id: u.id,
+          name: metaName ?? u.email ?? "Usuário",
+          fullName: metaName,
+          email: u.email ?? "",
+          role: metaRole,
+        });
+      }
+
+      if (perfilLido.has(u.id) && !forcarPerfil) return;
+      perfilLido.add(u.id);
+
+      // Modo no INÍCIO da leitura: se o usuário trocar de modo enquanto o
+      // perfil carrega, a escolha dele vence o valor salvo.
+      const modoAntes = useAuthStore.getState().activeMode;
 
       // Enriquece com o perfil (fonte CONFIÁVEL de nome/papel para a UI) sem
       // travar o login; a autorização de admin é validada no servidor (proxy).
@@ -55,7 +75,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .eq("id", u.id)
           .maybeSingle();
         if (profile && (profile.full_name || profile.role)) {
+          const agora = useAuthStore.getState().user;
           setUser({
+            ...(agora && agora.id === u.id ? agora : {}),
             id: u.id,
             name: profile.full_name ?? metaName ?? u.email ?? "Usuário",
             fullName: profile.full_name ?? metaName,
@@ -64,12 +86,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           });
         }
         // Modo ativo é PREFERÊNCIA DE PERFIL (B1): o servidor é a autoridade no
-        // login. Se o perfil tem um modo salvo, ele vence o valor local — assim
-        // refresh, deep-link, nova aba e outro dispositivo mantêm a escolha.
+        // login — salvo se o usuário já trocou de modo durante a leitura.
         const pm = (profile as { preferred_mode?: string } | null)?.preferred_mode;
-        if (pm === "owner" || pm === "tenant") setActiveMode(pm);
+        if ((pm === "owner" || pm === "tenant") && useAuthStore.getState().activeMode === modoAntes) {
+          setActiveMode(pm);
+        }
       } catch {
-        /* mantém o usuário já setado a partir da sessão */
+        perfilLido.delete(u.id); // tenta de novo no próximo evento
       }
     }
 
@@ -104,7 +127,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         window.location.href = "/auth/reset";
         return;
       }
-      if (session) hydrate(session);
+      // Login novo ou perfil alterado: relê o perfil. Demais eventos (sessão
+      // inicial, renovação do token) não precisam ler de novo.
+      if (session) hydrate(session, event === "SIGNED_IN" || event === "USER_UPDATED");
     });
     return () => sub.subscription.unsubscribe();
   }, [setUser, setAuthChecked, setActiveMode]);
