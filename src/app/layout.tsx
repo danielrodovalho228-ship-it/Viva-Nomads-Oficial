@@ -41,7 +41,11 @@ export const metadata: Metadata = {
     follow: true,
     googleBot: { index: true, follow: true, "max-image-preview": "large" },
   },
-  alternates: { canonical: "/" },
+  // Sem canonical global aqui: antes, TODAS as páginas herdavam `canonical: "/"`
+  // e se declaravam cópia da home. Sem canonical declarado, o Google usa a própria
+  // URL como canônica (auto-referente) — o certo. As páginas que precisam de um
+  // canonical explícito (/, /imoveis/[id], /cidades/[cidade]) o definem no próprio
+  // generateMetadata.
 };
 
 export default function RootLayout({

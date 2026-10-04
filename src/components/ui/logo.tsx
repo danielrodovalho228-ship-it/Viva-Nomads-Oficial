@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
  * basta soltar os arquivos em public/brand/ e trocar por <Image/> (ver ASSETS.md).
  */
 export function Logo({
-  href = "/home",
+  href = "/",
   light = false,
   className,
 }: {

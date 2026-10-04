@@ -272,7 +272,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       /* localStorage indisponível: segue o logout */
     }
     signOut();
-    router.push("/home");
+    router.push("/");
   }
 
   function switchTo(next: ViewMode) {

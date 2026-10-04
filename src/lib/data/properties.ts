@@ -268,6 +268,7 @@ export async function listProperties(): Promise<Property[]> {
     if (error || !data) return withDemos([]);
     const mapped = (data as unknown as PropertyRow[]).map(rowToProperty);
     await attachCoverPhotos(supabase, mapped); // capa real para os cards (best-effort)
+    await attachReviewAggregates(supabase, mapped); // nota/contagem REAL (fonte única)
     return withDemos(mapped);
   } catch (e) {
     // Falha de rede/consulta → só os demos (ou vazio, se desligados), nunca 500.
@@ -349,6 +350,43 @@ async function attachCoverPhotos(supabase: SupabaseLike, list: Property[]): Prom
     }
   } catch {
     /* tabela ausente / falha → mantém sem fotos */
+  }
+}
+
+/**
+ * Sincroniza `rating`/`reviewCount` dos cards a partir das avaliações REAIS
+ * (`property_reviews`) — a MESMA fonte da página de detalhe e do JSON-LD. Assim o
+ * card nunca mostra uma contagem diferente da que o usuário vê no anúncio.
+ * Best-effort: tabela ausente/consulta falha → mantém os escalares como vieram.
+ */
+async function attachReviewAggregates(supabase: SupabaseLike, list: Property[]): Promise<void> {
+  if (list.length === 0) return;
+  try {
+    const ids = list.map((p) => p.id);
+    const { data } = await supabase
+      .from("property_reviews")
+      .select("property_id, rating")
+      .in("property_id", ids);
+    const agg = new Map<string, { soma: number; n: number }>();
+    for (const row of ((data as { property_id: string; rating: number }[] | null) ?? [])) {
+      const cur = agg.get(row.property_id) ?? { soma: 0, n: 0 };
+      cur.soma += Number(row.rating) || 0;
+      cur.n += 1;
+      agg.set(row.property_id, cur);
+    }
+    for (const p of list) {
+      const a = agg.get(p.id);
+      if (a && a.n > 0) {
+        p.reviewCount = a.n;
+        p.rating = Math.round((a.soma / a.n) * 10) / 10;
+      } else {
+        // Sem avaliação real → zera (nada de escalar herdado inflando o card).
+        p.reviewCount = 0;
+        p.rating = 0;
+      }
+    }
+  } catch {
+    /* tabela ausente / falha → mantém os escalares */
   }
 }
 

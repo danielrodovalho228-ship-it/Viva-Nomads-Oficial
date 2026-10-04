@@ -37,7 +37,7 @@ export function MobileTabBar({
   function isActive(href: string): boolean {
     if (pathname === href) return true;
     // Abas "raiz" não acendem em sub-rotas (senão Painel/Início ficariam sempre ativos).
-    if (href === "/home" || href === "/dashboard") return false;
+    if (href === "/" || href === "/dashboard") return false;
     return pathname.startsWith(href + "/");
   }
 

@@ -354,7 +354,7 @@ export default function AuthPage() {
         />
         <div className="absolute inset-0 bg-night/65" />
         <div className="absolute inset-0 flex flex-col justify-between p-12 text-white">
-          <Logo href="/home" light />
+          <Logo href="/" light />
           <div>
             <h1 className="font-title text-4xl font-bold leading-tight">
               {mode === "login" ? "Bem-vindo de volta." : "Sua nova fase começa aqui."}
@@ -372,7 +372,7 @@ export default function AuthPage() {
       <div className="flex items-center justify-center p-6 sm:p-12">
         <div className="w-full max-w-md">
           <div className="mb-8 lg:hidden">
-            <Logo href="/home" />
+            <Logo href="/" />
           </div>
 
           {/* ── Pós-cadastro: confirmar e-mail (Atualização 20.4) ── */}

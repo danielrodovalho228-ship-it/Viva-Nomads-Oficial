@@ -75,7 +75,7 @@ export function Roi() {
     <div className={styles.page}>
       <div className={styles.wrap}>
         <div className={styles.topbar}>
-          <a className={styles.brand} href="/home">
+          <a className={styles.brand} href="/">
             <span className={styles.v}>Viva</span>
             <span className={styles.n}>Nomads</span>
           </a>

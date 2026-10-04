@@ -1,5 +1,23 @@
 import type { Property } from "@/lib/types";
 import { SITE_URL, SITE_NAME } from "@/lib/site";
+import { isExemplo } from "@/lib/demo-listing";
+import { avaliacaoReal } from "@/lib/reviews";
+
+/**
+ * Disponibilidade Schema.org derivada das datas REAIS (não só do status):
+ *  • fora do ar (status ≠ active) → OutOfStock;
+ *  • disponível hoje (dentro de [availableFrom, availableUntil]) → InStock;
+ *  • só a partir de uma data futura → PreOrder.
+ */
+function disponibilidadeSchema(property: Property): string {
+  if (property.status !== "active") return "https://schema.org/OutOfStock";
+  const hoje = new Date().toISOString().slice(0, 10);
+  const from = property.availableFrom?.slice(0, 10);
+  const until = property.availableUntil?.slice(0, 10);
+  if (from && from > hoje) return "https://schema.org/PreOrder";
+  if (until && until < hoje) return "https://schema.org/OutOfStock";
+  return "https://schema.org/InStock";
+}
 
 /** Absolutiza URLs de imagem (o JSON-LD pede URLs completas). */
 function absolute(url: string): string {
@@ -28,6 +46,11 @@ function citySlug(city: string): string {
  * nos resultados de busca. Tudo derivado da listagem real — nada fixo.
  */
 export function PropertyJsonLd({ property }: { property: Property }) {
+  // Anúncio de EXEMPLO (ilustrativo): nunca emite dados estruturados — não
+  // anuncia preço/avaliação de inventário fictício ao Google/IAs. (Também é
+  // noindex e fica fora do sitemap.)
+  if (isExemplo(property)) return null;
+
   const pageUrl = `${SITE_URL}/imoveis/${property.id}`;
   const images = property.photos
     .filter((p) => typeof p === "string" && (/^https?:\/\//.test(p) || p.startsWith("/")))
@@ -54,10 +77,7 @@ export function PropertyJsonLd({ property }: { property: Property }) {
         unitCode: "MON",
         referenceQuantity: { "@type": "QuantitativeValue", value: 1, unitCode: "MON" },
       },
-      availability:
-        property.status === "active"
-          ? "https://schema.org/InStock"
-          : "https://schema.org/PreOrder",
+      availability: disponibilidadeSchema(property),
       url: pageUrl,
     },
     // Localização aproximada (sem endereço exato — liberado só após o aceite).
@@ -77,12 +97,14 @@ export function PropertyJsonLd({ property }: { property: Property }) {
     ],
   };
 
-  // Avaliação só entra quando existe de verdade (evita rich snippet inflado).
-  if (property.reviewCount > 0) {
+  // Avaliação pela FONTE ÚNICA (avaliações reais) — só entra quando existe de
+  // verdade, com a MESMA contagem exibida na página (evita rich snippet inflado).
+  const avaliacao = avaliacaoReal(property);
+  if (avaliacao.count > 0) {
     product.aggregateRating = {
       "@type": "AggregateRating",
-      ratingValue: property.rating,
-      reviewCount: property.reviewCount,
+      ratingValue: avaliacao.value,
+      reviewCount: avaliacao.count,
       bestRating: 5,
       worstRating: 1,
     };
@@ -91,7 +113,7 @@ export function PropertyJsonLd({ property }: { property: Property }) {
   const breadcrumb = {
     "@type": "BreadcrumbList",
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Início", item: `${SITE_URL}/home` },
+      { "@type": "ListItem", position: 1, name: "Início", item: `${SITE_URL}/` },
       { "@type": "ListItem", position: 2, name: "Buscar imóveis", item: `${SITE_URL}/buscar` },
       {
         "@type": "ListItem",

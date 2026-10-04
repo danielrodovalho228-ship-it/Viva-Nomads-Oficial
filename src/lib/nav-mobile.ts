@@ -26,7 +26,7 @@ export interface MobileTab {
 
 /** Modo inquilino — 5 abas. */
 export const TENANT_TABS: MobileTab[] = [
-  { href: "/home", label: "Início", icon: Home },
+  { href: "/", label: "Início", icon: Home },
   { href: "/buscar", label: "Buscar", icon: Search },
   { href: "/dashboard/favoritos", label: "Favoritos", icon: Heart, authRequired: true },
   { href: "/dashboard/mensagens", label: "Mensagens", icon: MessageSquare, authRequired: true, badge: "mensagens" },

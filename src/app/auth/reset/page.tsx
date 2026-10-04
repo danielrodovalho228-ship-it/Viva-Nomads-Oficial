@@ -124,7 +124,7 @@ export default function ResetPasswordPage() {
   return (
     <div className="flex min-h-screen items-center justify-center p-6">
       <div className="w-full max-w-md">
-        <Logo href="/home" />
+        <Logo href="/" />
 
         {phase === "checking" && (
           <div className="mt-12 flex items-center justify-center gap-2 text-muted">
