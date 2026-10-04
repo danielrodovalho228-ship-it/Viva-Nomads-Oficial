@@ -36,6 +36,63 @@ const CHECKS = [
   { mig: "0048", desc: "push: tabela push_tokens", table: "push_tokens", col: "id", critica: false },
 ];
 
+/*
+  C4 (0052) — properties usa GRANT POR COLUNA. Coluna nova em properties que
+  NÃO entrar no grant (e em PROPERTY_PUBLIC_COLUMNS, src/lib/data/properties.ts)
+  some do site sem erro claro. Este aviso compara as colunas reais da tabela com
+  as listas conhecidas e aponta qualquer coluna "órfã".
+*/
+const PROPERTIES_PUBLICAS = [
+  "id", "owner_id", "title", "description", "property_type", "city", "state", "address",
+  "lat", "lng", "bedrooms", "bathrooms", "area_m2", "min_period_days", "monthly_price",
+  "utilities_mode", "utilities_estimate", "utilities_overage_margin", "prep_fee",
+  "checkout_cleaning_enabled", "checkout_cleaning_fee", "issues_invoice",
+  "accepts_insurance", "rating", "review_count", "status", "ready_to_live_badge",
+  "ready_to_live_score", "tag_home_office", "tag_work_located", "tag_condo_approved",
+  "ownership_type", "sublease_authorized", "video_url", "created_at", "faixas_aceitas",
+  "garantias_aceitas", "google_places", "parking_spots", "condo_fee",
+  "descricao_gerada_por_ia", "available_from", "furnished", "pets_allowed",
+  "smoking_allowed", "children_allowed", "max_guests", "available_until",
+  "max_period_days", "checkin_after", "checkout_before",
+];
+// Privadas de propósito (fora do grant; só via RPC property_private_details).
+const PROPERTIES_PRIVADAS = [
+  "exact_address", "responsavel_local_nome", "responsavel_local_telefone",
+  "responsavel_local_email", "responsavel_local_user_id", "draft_data", "sublease_doc_url",
+];
+
+/** Lista as colunas reais de properties (amostra de 1 linha via service role). */
+async function colunasDeProperties() {
+  const { data, error } = await admin.from("properties").select("*").limit(1);
+  if (error || !data || data.length === 0) return null; // tabela vazia: não dá p/ inferir
+  return Object.keys(data[0]);
+}
+
+async function avisoGrantProperties() {
+  let cols;
+  try {
+    cols = await colunasDeProperties();
+  } catch {
+    cols = null;
+  }
+  if (!cols) {
+    console.log("ℹ️  properties: sem linha para inferir colunas — aviso de grant pulado.");
+    return;
+  }
+  const conhecidas = new Set([...PROPERTIES_PUBLICAS, ...PROPERTIES_PRIVADAS]);
+  const orfas = cols.filter((c) => !conhecidas.has(c));
+  if (orfas.length === 0) {
+    console.log("✅ properties: todas as colunas estão no grant público ou na lista privada.");
+  } else {
+    console.log(
+      `⚠️  properties: coluna(s) FORA do grant da 0052: ${orfas.join(", ")}.\n` +
+        "    Sem grant, ela SOME do site (anon/authenticated não leem). Se for pública,\n" +
+        "    inclua no GRANT SELECT de uma nova migração E em PROPERTY_PUBLIC_COLUMNS;\n" +
+        "    se for privada, exponha só pela RPC property_private_details."
+    );
+  }
+}
+
 /** Aplicada? Tenta ler a marca; erro de coluna/tabela ausente = FALTANDO. */
 async function aplicada({ table, col }) {
   const { error } = await admin.from(table).select(col, { head: true, count: "exact" }).limit(1);
@@ -63,6 +120,9 @@ async function main() {
     console.log(`${tag}${crit}  ${c.mig} — ${c.desc}`);
     if (!ok && c.critica) faltaCritica = true;
   }
+
+  console.log("");
+  await avisoGrantProperties();
 
   if (faltaCritica) {
     console.error(
