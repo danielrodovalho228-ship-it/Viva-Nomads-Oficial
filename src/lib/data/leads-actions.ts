@@ -52,10 +52,13 @@ export async function aceitarCandidatura(leadId: string): Promise<ActionResult> 
 
   // Snapshot do plano do DONO agora → congela a comissão do contrato. O plano
   // só muda pelo servidor (0057: assinatura é só leitura para o dono).
+  // Só assinatura ATIVA conta (pendente/vencida = plano gratuito).
   const { data: sub } = await admin
     .from("subscriptions")
     .select("plan")
     .eq("owner_id", user.id)
+    .eq("status", "active")
+    .order("current_period_end", { ascending: false })
     .limit(1)
     .maybeSingle();
   const plano = ((sub?.plan as string) ?? "free") as PlanoId;

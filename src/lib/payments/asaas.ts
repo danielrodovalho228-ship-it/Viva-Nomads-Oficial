@@ -42,6 +42,8 @@ async function asaasFetch<T>(path: string, init?: RequestInit): Promise<T> {
 export interface SubscriptionResult {
   demo: boolean;
   subscriptionId: string;
+  /** Cliente no Asaas (só no modo real). */
+  customerId?: string;
   billingType: BillingType;
   value: number;
   /** Link de pagamento (boleto/cartão) ou payload PIX copia-e-cola. */
@@ -104,6 +106,7 @@ export async function createSubscription(params: {
   return {
     demo: false,
     subscriptionId: sub.id,
+    customerId: customer.id,
     billingType: params.billingType,
     value: params.planValue,
     status: sub.status,
