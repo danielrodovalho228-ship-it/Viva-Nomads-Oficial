@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { listMyProperties } from "@/lib/data/properties";
 import { erroBancoPT } from "@/lib/erros-banco";
 
@@ -149,7 +150,7 @@ export async function getMeusContratos(): Promise<ContratoView[]> {
   // Avança o ciclo de blocos (encerramento por não-renovação etc.) — o pg_cron
   // cobre quando ninguém abre o painel. Best-effort.
   try {
-    await supabase.rpc("avancar_ciclo_blocos");
+    await createAdminClient()?.rpc("avancar_ciclo_blocos"); // só o servidor executa (0070)
   } catch {
     /* best-effort */
   }

@@ -1,0 +1,30 @@
+-- 0070 — rotinas e gatilhos fora da API; métricas sem anônimo.
+set role anon; select set_config('request.jwt.claims','{}',false);
+select t('ATAQUE@0070','anônimo roda o ciclo dos contratos','falha',$q$select public.avancar_ciclo_blocos()$q$);
+select t('ATAQUE@0070','anônimo expira pedidos','falha',$q$select public.expira_pedidos_moradia()$q$);
+select t('ATAQUE@0070','anônimo lê owner_response_metrics','falha',$q$select count(*) from public.owner_response_metrics$q$);
+select t('ATAQUE@0070','anônimo chama recalc_listing_quality','falha',$q$select public.recalc_listing_quality('aaaaaaa1-0000-0000-0000-000000000001')$q$);
+select t('ATAQUE@0070','anônimo chama função de gatilho como RPC','falha',$q$select public.set_pedido_expira_em()$q$);
+reset role;
+set role authenticated; select set_config('request.jwt.claims','{"sub":"33333333-3333-3333-3333-333333333333"}',false);
+select t('ATAQUE@0070','logado roda o ciclo dos contratos','falha',$q$select public.avancar_ciclo_blocos()$q$);
+select t('ATAQUE@0070','logado expira pedidos','falha',$q$select public.expira_pedidos_moradia()$q$);
+select v('ATAQUE@0070','logado sem chamados não vê métricas de outros donos','select count(*)::text from public.owner_response_metrics','0');
+reset role;
+-- Gatilhos continuam disparando sem EXECUTE para o papel que escreve.
+set role authenticated; select set_config('request.jwt.claims','{"sub":"11111111-1111-1111-1111-111111111111"}',false);
+select v('NOVO@0070','dono vê só a própria métrica (security_invoker)','select count(*)::text from public.owner_response_metrics','1');
+select t('NOVO@0070','dono envia foto: gatilho de qualidade dispara','passa',$q$insert into property_photos(property_id,url) values ('aaaaaaa1-0000-0000-0000-000000000001','https://x.supabase.co/storage/v1/object/public/property-photos/11111111-1111-1111-1111-111111111111/g70.jpg')$q$);
+reset role;
+set role authenticated; select set_config('request.jwt.claims','{"sub":"22222222-2222-2222-2222-222222222222"}',false);
+select t('NOVO@0070','inquilino publica pedido: gatilho de expiração dispara','passa',$q$insert into pedidos_moradia(id,inquilino_id,cidade,data_inicio) values ('bbbbbb70-0000-0000-0000-000000000001','22222222-2222-2222-2222-222222222222','Uberlândia',current_date + 10)$q$);
+reset role;
+select v('NOVO@0070','…expira_em foi preenchido pelo gatilho','select (expira_em is not null)::text from pedidos_moradia where id=''bbbbbb70-0000-0000-0000-000000000001''','true');
+set role service_role; select set_config('request.jwt.claims','{"role":"service_role"}',false);
+select t('NOVO@0070','servidor roda o ciclo','passa',$q$select public.avancar_ciclo_blocos()$q$);
+select t('NOVO@0070','servidor expira pedidos','passa',$q$select public.expira_pedidos_moradia()$q$);
+reset role;
+select t('NOVO@0070','pg_cron (postgres) roda o ciclo','passa',$q$select public.avancar_ciclo_blocos()$q$);
+select v('NOVO@0070','search_path fixo em set_pedido_expira_em','select (proconfig @> array[''search_path=public''])::text from pg_proc where proname=''set_pedido_expira_em''','true');
+select v('NOVO@0070','owner_response_metrics é security_invoker','select (reloptions @> array[''security_invoker=on''])::text from pg_class where relname=''owner_response_metrics''','true');
+delete from public.pedidos_moradia where id = 'bbbbbb70-0000-0000-0000-000000000001';

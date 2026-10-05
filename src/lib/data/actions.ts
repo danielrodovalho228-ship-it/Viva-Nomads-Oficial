@@ -999,7 +999,14 @@ export async function renovarBloco(
 export async function varrerCicloBlocos(): Promise<ActionResult> {
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
-  const { error } = await supabase.rpc("avancar_ciclo_blocos");
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Não autenticado." };
+  // A rotina saiu da API (0070): roda pelo servidor.
+  const admin = createAdminClient();
+  if (!admin) return { ok: true };
+  const { error } = await admin.rpc("avancar_ciclo_blocos");
   if (error) return { ok: false, error: erroBancoPT(error) };
   return { ok: true };
 }

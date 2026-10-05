@@ -179,7 +179,7 @@ export async function getMeusPedidos() {
   if (!user) return [];
   // Roda a expiração lazy antes de listar (o pg_cron cobre quando ninguém abre).
   try {
-    await supabase.rpc("expira_pedidos_moradia");
+    await createAdminClient()?.rpc("expira_pedidos_moradia"); // só o servidor executa (0070)
   } catch {
     /* best-effort */
   }
@@ -413,7 +413,7 @@ export async function getPedidosParaProprietario(): Promise<{
 
   // Expiração lazy antes de listar.
   try {
-    await supabase.rpc("expira_pedidos_moradia");
+    await createAdminClient()?.rpc("expira_pedidos_moradia"); // só o servidor executa (0070)
   } catch {
     /* best-effort */
   }
