@@ -4,6 +4,7 @@ import { TrendingUp, FileSignature, Receipt, ShieldCheck, Check, ArrowRight } fr
 import { ButtonLink } from "@/components/ui/button";
 import { BrandImage } from "@/components/brand-image";
 import { PHOTOS } from "@/lib/media";
+import { CAUCAO_FRASE } from "@/lib/faixas";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/para-proprietarios" },
@@ -69,7 +70,7 @@ export default function ForLandlordsPage() {
           <Benefit icon={Receipt} title="Custos que podem ser transferidos" text="Água, luz, condomínio e IPTU podem ser do inquilino durante a estadia, conforme o contrato." />
           <Benefit icon={TrendingUp} title="Menos imóvel parado" text="Um inquilino por uma temporada inteira, inclusive nos meses fracos do turismo." />
           <Benefit icon={FileSignature} title="Contrato com validade jurídica" text="Contrato de locação por temporada gerado e assinado digitalmente, com validade jurídica." />
-          <Benefit icon={ShieldCheck} title="Caução ou seguro-fiança" text="A garantia é escolhida no contrato entre você e o inquilino: caução em conta poupança ou seguro-fiança via parceiro (em estruturação). A plataforma organiza e documenta; não é a garantidora." />
+          <Benefit icon={ShieldCheck} title="Caução ou seguro-fiança" text={`A garantia é escolhida no contrato entre você e o inquilino. ${CAUCAO_FRASE} Ou seguro-fiança da seguradora parceira (em estruturação). A plataforma organiza e documenta; não é a garantidora.`} />
         </div>
       </section>
 

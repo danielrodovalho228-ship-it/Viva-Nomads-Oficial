@@ -60,6 +60,14 @@ export function faixaForDays(dias: number): FaixaPrazo {
 
 export type GarantiaKey = "caucao_avista" | "caucao_parcelada" | "titulo" | "seguro_fianca";
 
+/**
+ * Frase ÚNICA da caução em todo o site (nome: só "Caução", sem a marca — a
+ * plataforma não guarda nem garante o dinheiro; ver CDC). Mudar aqui muda em
+ * todo lugar. TODO(juridico): redação validada com a Dra. Beatriz.
+ */
+export const CAUCAO_FRASE =
+  "Caução devolvível de até 3 aluguéis, em poupança — a plataforma não tem acesso ao dinheiro.";
+
 export interface GarantiaDef {
   key: GarantiaKey;
   label: string;
@@ -100,8 +108,7 @@ export const GARANTIAS_CADASTRO: GarantiaCadastro[] = [
   {
     key: "caucao_avista",
     label: "Caução (depósito devolvível)",
-    microtext:
-      "50% antes da entrada, numa conta poupança da caução (art. 38, §2º); o restante conforme o contrato. Devolvida ao inquilino no fim, após a vistoria de saída.",
+    microtext: `${CAUCAO_FRASE} 50% antes da entrada (art. 38, §2º da Lei 8.245/91); o restante conforme o contrato. Devolvida ao inquilino no fim, após a vistoria de saída.`,
   },
   ...(CAUCAO_PARCELADA_UI
     ? [{ key: "caucao_parcelada" as GarantiaKey, label: "Caução parcelada" }]
