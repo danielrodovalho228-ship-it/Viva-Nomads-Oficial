@@ -84,39 +84,46 @@ export async function saveQualification(
   const eligible = isEligible(elig);
   const ready_to_live_score = readyToLiveScore(quality);
 
-  const { data, error } = await supabase
+  const linha = {
+    owner_id: user.id,
+    property_id: propertyId ?? null,
+    furnished: elig.furnished,
+    accepts_30days: elig.accepts30days,
+    iptu_ok: elig.iptuOk,
+    habitable: elig.habitable,
+    is_owner_or_agent: elig.isOwnerOrAgent,
+    condo_allows: elig.condoAllows || "unknown",
+    // Caminho do documento no bucket PRIVADO (migration 0041). Só a referência
+    // — a exibição usa URL assinada. null quando não enviado: aí o banco herda o
+    // documento (e a revisão) da qualificação anterior do mesmo imóvel (0072).
+    document_path: documentPath ?? null,
+    // Impressão digital do arquivo (0044) — detecta reuso entre contas na
+    // conferência. Carimbo de quando foi enviado (distinto do created_at).
+    document_hash_sha256: documentPath ? (documentHash ?? null) : null,
+    document_uploaded_at: documentPath ? new Date().toISOString() : null,
+    // Anti-fraude (migration 0042): documento enviado entra "em análise"; um
+    // admin aprova/recusa. Só aprovado libera Publicar. O banco decide (0060/0072).
+    document_status: documentPath ? "pending" : "none",
+    eligible,
+    // Selo base + etiquetas (Atualização 11)
+    ready_to_live_score,
+    ready_to_live_badge: ready_to_live_score >= 70,
+    tag_home_office: tagHomeOffice(quality),
+    tag_work_located: tagWorkLocated(quality),
+    tag_condo_approved: tagCondoApproved(elig),
+    internet_tier: quality.internetTier in INTERNET_META ? quality.internetTier : null,
+    status: eligible ? "approved" : "not_eligible",
+  };
+  // O estado completo da tela (0072) — para o /qualificar abrir preenchido.
+  let { data, error } = await supabase
     .from("qualification_checklists")
-    .insert({
-      owner_id: user.id,
-      property_id: propertyId ?? null,
-      furnished: elig.furnished,
-      accepts_30days: elig.accepts30days,
-      iptu_ok: elig.iptuOk,
-      habitable: elig.habitable,
-      is_owner_or_agent: elig.isOwnerOrAgent,
-      condo_allows: elig.condoAllows || "unknown",
-      // Caminho do documento no bucket PRIVADO (migration 0041). Só a referência
-      // — a exibição usa URL assinada. null quando não enviado.
-      document_path: documentPath ?? null,
-      // Impressão digital do arquivo (0044) — detecta reuso entre contas na
-      // conferência. Carimbo de quando foi enviado (distinto do created_at).
-      document_hash_sha256: documentPath ? (documentHash ?? null) : null,
-      document_uploaded_at: documentPath ? new Date().toISOString() : null,
-      // Anti-fraude (migration 0042): documento enviado entra "em análise"; um
-      // admin aprova/recusa. Só aprovado libera Publicar. Sem documento: none.
-      document_status: documentPath ? "pending" : "none",
-      eligible,
-      // Selo base + etiquetas (Atualização 11)
-      ready_to_live_score,
-      ready_to_live_badge: ready_to_live_score >= 70,
-      tag_home_office: tagHomeOffice(quality),
-      tag_work_located: tagWorkLocated(quality),
-      tag_condo_approved: tagCondoApproved(elig),
-      internet_tier: quality.internetTier in INTERNET_META ? quality.internetTier : null,
-      status: eligible ? "approved" : "not_eligible",
-    })
+    .insert({ ...linha, formulario: { versao: 1, elig, quality } })
     .select("id")
     .single();
+  // Sem a 0072 aplicada a coluna não existe: grava sem o formulário.
+  if (error && (error.code === "PGRST204" || /formulario/.test(error.message))) {
+    ({ data, error } = await supabase.from("qualification_checklists").insert(linha).select("id").single());
+  }
 
   if (error) {
     // Nunca mostra a mensagem técnica do banco (em inglês) ao proprietário.
@@ -147,7 +154,7 @@ export async function saveQualification(
       /* best-effort */
     }
   }
-  return { ok: true, id: data.id };
+  return { ok: true, id: (data as { id: string }).id };
 }
 
 export type DocumentStatus = "none" | "pending" | "approved" | "rejected";
@@ -174,6 +181,44 @@ export async function getMyDocumentStatus(
     status: ((q?.document_status as DocumentStatus) ?? "none"),
     reason: (q?.document_review_reason as string) ?? null,
   };
+}
+
+/**
+ * Qualificação já salva deste imóvel (ou a que está à espera), para o
+ * /qualificar abrir PREENCHIDO. Usa o formulário completo (0072); em linhas
+ * antigas, refaz os requisitos pelas colunas. `temDocumento`: já há documento
+ * enviado — a tela não pede de novo (salvar sem documento novo o mantém).
+ */
+export async function carregarQualificacao(
+  propertyId?: string | null
+): Promise<{ elig: EligibilityState; quality: Partial<QualityState> | null; temDocumento: boolean } | null> {
+  const supabase = await createClient();
+  if (!supabase) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  if (propertyId && !UUID_RE.test(propertyId)) return null;
+  let q = supabase.from("qualification_checklists").select("*").eq("owner_id", user.id);
+  q = propertyId ? q.eq("property_id", propertyId) : q.is("property_id", null);
+  const { data } = await q.order("created_at", { ascending: false }).limit(1).maybeSingle();
+  if (!data) return null;
+  const temDocumento = !!data.document_path;
+  const form = (data.formulario ?? null) as { elig?: Partial<EligibilityState>; quality?: Partial<QualityState> } | null;
+  const condo = data.condo_allows as string | null;
+  const elig: EligibilityState = {
+    furnished: form?.elig?.furnished ?? !!data.furnished,
+    accepts30days: form?.elig?.accepts30days ?? !!data.accepts_30days,
+    iptuOk: form?.elig?.iptuOk ?? !!data.iptu_ok,
+    habitable: form?.elig?.habitable ?? !!data.habitable,
+    isOwnerOrAgent: form?.elig?.isOwnerOrAgent ?? !!data.is_owner_or_agent,
+    hasDocument: temDocumento,
+    condoAllows: (form?.elig?.condoAllows ??
+      (condo === "yes" || condo === "no" || condo === "unknown" ? condo : "")) as EligibilityState["condoAllows"],
+  };
+  const quality: Partial<QualityState> | null =
+    form?.quality ?? (data.internet_tier ? { internetTier: data.internet_tier as QualityState["internetTier"] } : null);
+  return { elig, quality, temDocumento };
 }
 
 /** Título e endereço de um imóvel do PRÓPRIO dono (cabeçalho do /qualificar). */

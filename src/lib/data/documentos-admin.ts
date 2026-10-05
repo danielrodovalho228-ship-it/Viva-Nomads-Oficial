@@ -44,8 +44,13 @@ export async function listDocumentosPendentes(): Promise<DocumentoPendente[]> {
     .order("created_at", { ascending: true })
     .limit(200);
 
+  // Um item por documento: re-salvar a qualificação repete o documento em
+  // outra linha (0072) — mostra só a mais recente de cada (dono, imóvel, arquivo).
+  const unicos = new Map<string, NonNullable<typeof data>[number]>();
+  for (const r of data ?? []) unicos.set(`${r.owner_id}|${r.property_id ?? ""}|${r.document_path}`, r);
+
   const out: DocumentoPendente[] = [];
-  for (const r of data ?? []) {
+  for (const r of unicos.values()) {
     const ownerId = r.owner_id as string;
     const nomeCompleto = (
       await supabase.from("profiles").select("full_name").eq("id", ownerId).maybeSingle()
@@ -108,11 +113,13 @@ export async function listDocumentosPendentes(): Promise<DocumentoPendente[]> {
 export async function countDocumentosPendentes(): Promise<number> {
   const supabase = await createClient();
   if (!supabase) return 0;
-  const { count } = await supabase
+  const { data } = await supabase
     .from("qualification_checklists")
-    .select("id", { count: "exact", head: true })
-    .eq("document_status", "pending");
-  return count ?? 0;
+    .select("owner_id, property_id, document_path")
+    .eq("document_status", "pending")
+    .limit(500);
+  // Conta documentos, não linhas (o mesmo documento pode se repetir — 0072).
+  return new Set((data ?? []).map((r) => `${r.owner_id}|${r.property_id ?? ""}|${r.document_path}`)).size;
 }
 
 /**
@@ -138,7 +145,18 @@ export async function moderarDocumento(
   const motivoLimpo = (motivo ?? "").trim();
   if (!aprovado && !motivoLimpo) return { ok: false, error: "Informe o motivo da recusa." };
 
-  const { data: qual, error } = await supabase
+  // O mesmo documento pode estar em mais de uma linha "em análise": salvar a
+  // qualificação de novo sem trocar o arquivo herda o documento (0072). A
+  // decisão vale para TODAS essas linhas — senão a mais recente (a que o
+  // editor lê) ficava pendente e o Publicar não liberava.
+  const { data: alvo } = await supabase
+    .from("qualification_checklists")
+    .select("owner_id, property_id, document_path")
+    .eq("id", qualId)
+    .eq("document_status", "pending")
+    .maybeSingle();
+  if (!alvo?.document_path) return { ok: false, error: "Documento não encontrado na fila (ou sem permissão)." };
+  let upd = supabase
     .from("qualification_checklists")
     .update({
       document_status: aprovado ? "approved" : "rejected",
@@ -146,12 +164,14 @@ export async function moderarDocumento(
       document_reviewed_at: new Date().toISOString(),
       document_reviewed_by: user.id,
     })
-    .eq("id", qualId)
+    .eq("owner_id", alvo.owner_id as string)
+    .eq("document_path", alvo.document_path as string)
     .eq("document_status", "pending") // só modera o que está na fila
-    .neq("owner_id", user.id) // ninguém aprova o próprio documento
-    .select("owner_id")
-    .maybeSingle();
+    .neq("owner_id", user.id); // ninguém aprova o próprio documento
+  upd = alvo.property_id ? upd.eq("property_id", alvo.property_id as string) : upd.is("property_id", null);
+  const { data: linhas, error } = await upd.select("owner_id");
   if (error) return { ok: false, error: erroBancoPT(error) };
+  const qual = linhas?.[0];
   if (!qual) return { ok: false, error: "Documento não encontrado na fila (ou sem permissão)." };
   await logModeracao(
     supabase,

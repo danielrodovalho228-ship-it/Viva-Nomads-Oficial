@@ -41,7 +41,7 @@ import {
 import { INTERNET_TIERS, INTERNET_META, type InternetTier } from "@/lib/internet";
 import { Button } from "@/components/ui/button";
 import { ReadyToLiveBadge, DocConferidaBadge } from "@/components/ui/badge";
-import { saveQualification, getMyDocumentStatus, resumoImovelDoDono, type DocumentStatus } from "@/lib/data/actions";
+import { saveQualification, getMyDocumentStatus, resumoImovelDoDono, carregarQualificacao, type DocumentStatus } from "@/lib/data/actions";
 import { cn, numBR } from "@/lib/utils";
 
 const initialEligibility: EligibilityState = {
@@ -89,6 +89,9 @@ export default function QualificationChecklistPage() {
   // Qualificação POR IMÓVEL: `?imovel=<id>` diz qual imóvel está sendo
   // qualificado (mostrado no topo). Sem ele, é o imóvel que será anunciado em
   // seguida (a qualificação fica à espera e é ligada a ele ao criar).
+  // Só mostra o veredito (APROVADO/NÃO ELEGÍVEL) depois da 1ª interação — evita
+  // banner vermelho prematuro num onboarding ainda neutro (N3).
+  const [hasInteracted, setHasInteracted] = useState(false);
   const [imovel, setImovel] = useState<{ id: string; titulo: string; local: string; rascunho: boolean } | null>(null);
   const [imovelInvalido, setImovelInvalido] = useState(false);
   useEffect(() => {
@@ -99,8 +102,21 @@ export default function QualificationChecklistPage() {
       if (!alive) return;
       if (id && !resumo) setImovelInvalido(true);
       setImovel(resumo);
-      const r = await getMyDocumentStatus(resumo?.id ?? null).catch(() => null);
-      if (!alive || !r) return;
+      const [r, salvo] = await Promise.all([
+        getMyDocumentStatus(resumo?.id ?? null).catch(() => null),
+        carregarQualificacao(resumo?.id ?? null).catch(() => null),
+      ]);
+      if (!alive) return;
+      // Qualificação já salva: a tela abre PREENCHIDA (antes abria 0/6). O
+      // documento enviado não é pedido de novo — salvar sem trocar o mantém
+      // (e mantém a aprovação: 0072).
+      if (salvo) {
+        setElig(salvo.elig);
+        if (salvo.quality) setQuality((q) => ({ ...q, ...salvo.quality }));
+        if (salvo.temDocumento) setDocName("Documento já enviado");
+        setHasInteracted(true);
+      }
+      if (!r) return;
       setDocStatus(r.status);
       setDocReason(r.reason);
     })();
@@ -108,10 +124,6 @@ export default function QualificationChecklistPage() {
       alive = false;
     };
   }, []);
-  // Só mostra o veredito (APROVADO/NÃO ELEGÍVEL) depois da 1ª interação — evita
-  // banner vermelho prematuro num onboarding ainda neutro (N3).
-  const [hasInteracted, setHasInteracted] = useState(false);
-
   const eligible = isEligible(elig);
   const score = useMemo(() => readyToLiveScore(quality), [quality]);
   const baseBadge = score >= READY_TO_LIVE_THRESHOLD;
