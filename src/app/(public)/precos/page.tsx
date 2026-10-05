@@ -5,6 +5,7 @@ import { PLANO_FUNDADOR } from "@/lib/flags";
 import { CommissionCalculator } from "./commission-calculator";
 import { ButtonLink } from "@/components/ui/button";
 import { formatBRL, cn } from "@/lib/utils";
+import { CAUCAO_FRASE } from "@/lib/faixas";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/precos" },
@@ -37,7 +38,7 @@ interface Service {
  */
 const TENANT_SERVICES: Service[] = [
   { icon: ShieldCheck, title: "Seguro-fiança (sem depósito)", benefit: "Entre sem deixar dinheiro preso: uma taxa mensal diluída garante o aluguel, sem depósito de entrada. Contratada com parceiro, sujeita a análise.", price: "Orçamento sob análise", statusLabel: "Via parceiro — em estruturação", statusTone: "partner", tone: "cotacao", cta: "Ver opções de garantia", href: "/como-funciona#garantias", highlight: "Recomendada · sem depósito" },
-  { icon: PiggyBank, title: "Caução (depósito devolvível)", benefit: "Depósito devolvível de até 3 aluguéis em conta poupança, como manda o art. 38, §2º da Lei 8.245/91 — a plataforma não tem acesso —, devolvido ao fim da estadia.", price: "Sem mensalidade", statusLabel: "Disponível", statusTone: "ok", tone: "avulso", cta: "Ver opções de garantia", href: "/como-funciona#garantias" },
+  { icon: PiggyBank, title: "Caução (depósito devolvível)", benefit: `${CAUCAO_FRASE} Como manda o art. 38, §2º da Lei 8.245/91; devolvida ao fim da estadia.`, price: "Sem mensalidade", statusLabel: "Disponível", statusTone: "ok", tone: "avulso", cta: "Ver opções de garantia", href: "/como-funciona#garantias" },
 ];
 
 const OWNER_SERVICES: Service[] = [

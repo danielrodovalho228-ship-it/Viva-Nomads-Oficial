@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { StepImage } from "@/components/step-image";
+import { CAUCAO_FRASE } from "@/lib/faixas";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/como-funciona" },
@@ -122,9 +123,8 @@ function GarantiasInquilino() {
             <div>
               <dt className="font-semibold text-ink">Para o proprietário</dt>
               <dd className="text-muted">
-                A caução é <strong>depositada em conta poupança</strong> (art. 38 §2º da Lei
-                8.245/91) antes da entrada — cobertura para danos ou inadimplência, com tudo
-                documentado.
+                {CAUCAO_FRASE} Depositada antes da entrada (art. 38 §2º da Lei 8.245/91), cobre
+                danos ou aluguel em aberto conforme o contrato — com tudo documentado.
               </dd>
             </div>
           </dl>
@@ -276,7 +276,7 @@ function ProtegidoPor() {
       img: "/images/como-funciona/08-feche.webp",
       alt: "Aperto de mãos fechando o contrato de locação",
       title: "Garantia do contrato",
-      text: "Caução depositada em conta poupança (art. 38 §2º) ou seguro-fiança via parceiro — escolhida no fechamento.",
+      text: `${CAUCAO_FRASE} Ou seguro-fiança da seguradora parceira, quando disponível — escolhida no fechamento.`,
     },
     {
       img: "/images/home/home-condominio-tranquilo.webp",
