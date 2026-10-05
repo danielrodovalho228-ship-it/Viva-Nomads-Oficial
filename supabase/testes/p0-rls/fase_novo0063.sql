@@ -44,7 +44,7 @@ select t('NOVO@0063','admin marca 20 Fundadores','passa',$q$select count(public.
 select v('NOVO@0063','fundador_em carimbado','select count(*)::text from profiles where fundador and fundador_em is not null','20');
 select t('ATAQUE@0063','21º Fundador','falha',$q$select public.marcar_fundador('f0000000-0000-0000-0000-000000000021')$q$);
 set role authenticated; select set_config('request.jwt.claims','{"sub":"11111111-1111-1111-1111-111111111111"}',false);
-select t('ATAQUE@0063','proprietário se marca Fundador','falha',$q$select public.marcar_fundador('11111111-1111-1111-1111-111111111111')$q$);
+select t('ATAQUE@0063','proprietário se marca Fundador com as 20 vagas cheias (barra pelo teto; a permissão é testada na 0068)','falha',$q$select public.marcar_fundador('11111111-1111-1111-1111-111111111111')$q$);
 reset role;
 update public.profiles set fundador = false, fundador_em = null where email like 'f%@t.com';
 
