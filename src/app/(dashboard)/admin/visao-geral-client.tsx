@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { PageTitle, Panel, StatCard } from "@/components/dashboard/primitives";
 import { Sparkline, Funil } from "@/components/admin/graficos";
+import { FiltrosAdmin } from "@/components/admin/filtros";
 import {
   ArrowRight,
   Building2,
@@ -22,7 +22,6 @@ import {
 import { cn } from "@/lib/utils";
 import {
   BLOCOS,
-  PERIODOS,
   PRECISA,
   csvVisaoGeral,
   fmtHoras,
@@ -73,7 +72,7 @@ export function VisaoGeralClient({
     <>
       <PageTitle title="Administração" subtitle="Números reais da plataforma e o que precisa da equipe." />
 
-      <Filtros periodo={periodo} cidade={cidade} cidades={cidades} />
+      <FiltrosAdmin base="/admin" periodo={periodo} cidade={cidade} cidades={cidades} />
 
       {aviso && (
         <p className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{aviso}</p>
@@ -139,88 +138,6 @@ export function VisaoGeralClient({
         </p>
       )}
     </>
-  );
-}
-
-// ── Filtros: período e cidade (uma linha acima dos gráficos) ─────────────────
-function Filtros({ periodo, cidade, cidades }: { periodo: Periodo; cidade: string | null; cidades: string[] }) {
-  const router = useRouter();
-  const [de, setDe] = useState(periodo.inicio);
-  const [ate, setAte] = useState(periodo.fim);
-
-  function url(extra: Record<string, string | null>): string {
-    const p = new URLSearchParams();
-    const base: Record<string, string | null> = {
-      periodo: periodo.id,
-      de: periodo.id === "custom" ? periodo.inicio : null,
-      ate: periodo.id === "custom" ? periodo.fim : null,
-      cidade,
-      ...extra,
-    };
-    for (const [k, v] of Object.entries(base)) if (v) p.set(k, v);
-    const qs = p.toString();
-    return qs ? `/admin?${qs}` : "/admin";
-  }
-
-  return (
-    <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-sage-200 bg-white p-3 sm:flex-row sm:flex-wrap sm:items-end sm:p-4">
-      <div role="group" aria-label="Período" className="flex flex-wrap gap-1.5">
-        {PERIODOS.filter((p) => p.id !== "custom").map((p) => (
-          <Link
-            key={p.id}
-            href={url({ periodo: p.id, de: null, ate: null })}
-            aria-current={periodo.id === p.id ? "true" : undefined}
-            className={cn(
-              "rounded-lg px-3 py-1.5 text-sm",
-              periodo.id === p.id ? "bg-forest text-white" : "border border-line text-ink hover:border-forest"
-            )}
-          >
-            {p.rotulo}
-          </Link>
-        ))}
-      </div>
-      <form
-        className="flex flex-wrap items-end gap-2"
-        onSubmit={(e) => {
-          e.preventDefault();
-          router.push(url({ periodo: "custom", de, ate }));
-        }}
-      >
-        <label className="text-xs text-muted">
-          De
-          <input type="date" value={de} onChange={(e) => setDe(e.target.value)} className="mt-0.5 block rounded-lg border border-line px-2 py-1.5 text-sm text-ink" />
-        </label>
-        <label className="text-xs text-muted">
-          Até
-          <input type="date" value={ate} onChange={(e) => setAte(e.target.value)} className="mt-0.5 block rounded-lg border border-line px-2 py-1.5 text-sm text-ink" />
-        </label>
-        <button
-          type="submit"
-          className={cn(
-            "rounded-lg px-3 py-1.5 text-sm",
-            periodo.id === "custom" ? "bg-forest text-white" : "border border-line text-ink hover:border-forest"
-          )}
-        >
-          Aplicar
-        </button>
-      </form>
-      <label className="text-xs text-muted sm:ml-auto">
-        Cidade
-        <select
-          value={cidade ?? ""}
-          onChange={(e) => router.push(url({ cidade: e.target.value || null }))}
-          className="mt-0.5 block w-full rounded-lg border border-line bg-white px-2 py-1.5 text-sm text-ink sm:w-48"
-        >
-          <option value="">Todas as cidades</option>
-          {cidade && !cidades.includes(cidade) && <option value={cidade}>{cidade}</option>}
-          {cidades.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
-      </label>
-    </div>
   );
 }
 

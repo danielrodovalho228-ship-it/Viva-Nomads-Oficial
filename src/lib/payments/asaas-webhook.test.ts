@@ -5,10 +5,11 @@
 */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { processarAvisoAsaas, fimDoPeriodo, type RepoAsaas } from "./asaas-webhook.ts";
+import { processarAvisoAsaas, fimDoPeriodo, valorPago, type RepoAsaas, type Recebimento } from "./asaas-webhook.ts";
 
-function repoFalso(opts: { assinaturas?: string[]; cobrancas?: string[]; falhar?: boolean } = {}) {
+function repoFalso(opts: { assinaturas?: string[]; cobrancas?: string[]; falhar?: boolean; falharRecebimento?: boolean } = {}) {
   const eventos = new Set<string>();
+  const recebimentos = new Map<string, Recebimento>();
   const assinaturas = new Map<string, Record<string, unknown>>((opts.assinaturas ?? []).map((s) => [s, {}]));
   const cobrancas = new Map<string, Record<string, unknown>>((opts.cobrancas ?? []).map((c) => [c, {}]));
   const repo: RepoAsaas = {
@@ -32,8 +33,12 @@ function repoFalso(opts: { assinaturas?: string[]; cobrancas?: string[]; falhar?
       cobrancas.set(id, { ...cobrancas.get(id), ...dados });
       return true;
     },
+    async registrarRecebimento(dados) {
+      if (opts.falharRecebimento) throw new Error("livro fora");
+      if (!recebimentos.has(dados.paymentId)) recebimentos.set(dados.paymentId, dados); // único por pagamento
+    },
   };
-  return { repo, eventos, assinaturas, cobrancas };
+  return { repo, eventos, assinaturas, cobrancas, recebimentos };
 }
 
 const AGORA = new Date("2026-10-04T12:00:00Z");
@@ -108,4 +113,46 @@ test("pagamento sem linha correspondente não quebra (sem_alvo)", async () => {
 
 test("fimDoPeriodo sem vencimento usa a data atual", () => {
   assert.equal(fimDoPeriodo(null, AGORA), "2026-11-04T12:00:00.000Z");
+});
+
+test("recebimento: assinatura paga entra no livro com valor; CONFIRMED + RECEIVED conta uma vez", async () => {
+  const f = repoFalso({ assinaturas: ["sub_9"] });
+  const pagamento = { id: "pay_9", subscription: "sub_9", dueDate: "2026-10-05", paymentDate: "2026-10-04", value: 49 };
+  await processarAvisoAsaas({ event: "PAYMENT_CONFIRMED", payment: pagamento }, f.repo, AGORA);
+  await processarAvisoAsaas({ event: "PAYMENT_RECEIVED", payment: pagamento }, f.repo, AGORA);
+  assert.equal(f.recebimentos.size, 1);
+  assert.deepEqual(f.recebimentos.get("pay_9"), {
+    tipo: "assinatura",
+    paymentId: "pay_9",
+    subscriptionId: "sub_9",
+    valor: 49,
+    pagoEm: "2026-10-04T12:00:00Z",
+  });
+});
+
+test("recebimento: comissão paga entra; vencida, sem valor ou sem alvo não entra", async () => {
+  const f = repoFalso({ cobrancas: ["pay_c1", "pay_c2", "pay_c3"] });
+  await processarAvisoAsaas({ event: "PAYMENT_RECEIVED", payment: { id: "pay_c1", value: "320.5" } }, f.repo, AGORA);
+  await processarAvisoAsaas({ event: "PAYMENT_OVERDUE", payment: { id: "pay_c2", value: 100 } }, f.repo, AGORA);
+  await processarAvisoAsaas({ event: "PAYMENT_RECEIVED", payment: { id: "pay_c3" } }, f.repo, AGORA);
+  await processarAvisoAsaas({ event: "PAYMENT_RECEIVED", payment: { id: "pay_x", value: 10 } }, f.repo, AGORA);
+  assert.deepEqual([...f.recebimentos.keys()], ["pay_c1"]);
+  assert.equal(f.recebimentos.get("pay_c1")?.valor, 320.5);
+  assert.equal(f.recebimentos.get("pay_c1")?.tipo, "comissao");
+});
+
+test("recebimento: falha no livro desfaz o aviso (o Asaas reenvia)", async () => {
+  const f = repoFalso({ cobrancas: ["pay_f"], falharRecebimento: true });
+  const r = await processarAvisoAsaas({ event: "PAYMENT_RECEIVED", payment: { id: "pay_f", value: 10 } }, f.repo, AGORA);
+  assert.equal(r.ok, false);
+  assert.equal(f.eventos.size, 0);
+});
+
+test("valorPago: só número positivo", () => {
+  assert.equal(valorPago(49), 49);
+  assert.equal(valorPago("12.345"), 12.35);
+  assert.equal(valorPago(0), null);
+  assert.equal(valorPago(-5), null);
+  assert.equal(valorPago("abc"), null);
+  assert.equal(valorPago(undefined), null);
 });

@@ -69,3 +69,59 @@ export function Funil({ etapas }: { etapas: { rotulo: string; valor: number | nu
     </div>
   );
 }
+
+/** Barras por mês (uma série). Mês sem dado (null) fica sem barra, com "—" no tooltip. */
+export function BarrasMensais({
+  dados,
+  rotulo,
+  formatar,
+}: {
+  dados: { mes: string; rotuloMes: string; v: number | null }[];
+  rotulo: string;
+  formatar: (v: number | null) => string;
+}) {
+  return (
+    <div className="h-56 w-full" role="img" aria-label={`${rotulo} por mês`}>
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={dados} margin={{ top: 8, right: 4, bottom: 0, left: 4 }} barCategoryGap={6}>
+          <XAxis dataKey="rotuloMes" tickLine={false} axisLine={{ stroke: "#e2e7ee" }} tick={{ fill: MUDO, fontSize: 11 }} interval="preserveStartEnd" />
+          <YAxis hide domain={[0, (max: number) => Math.max(1, max)]} />
+          <Tooltip
+            cursor={{ fill: "#eef6ef" }}
+            contentStyle={{ fontSize: 12, borderRadius: 8, borderColor: "#e2e7ee", color: TINTA }}
+            formatter={(_, __, p) => [formatar((p?.payload as { v: number | null }).v), rotulo]}
+          />
+          <Bar dataKey="v" fill={COR} radius={[4, 4, 0, 0]} isAnimationActive={false} />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+/** Linha por mês (uma série); null quebra a linha (antes do histórico). */
+export function LinhaMensal({
+  dados,
+  rotulo,
+  formatar,
+}: {
+  dados: { mes: string; rotuloMes: string; v: number | null }[];
+  rotulo: string;
+  formatar: (v: number | null) => string;
+}) {
+  return (
+    <div className="h-56 w-full" role="img" aria-label={`${rotulo} por mês`}>
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={dados} margin={{ top: 8, right: 8, bottom: 0, left: 8 }}>
+          <XAxis dataKey="rotuloMes" tickLine={false} axisLine={{ stroke: "#e2e7ee" }} tick={{ fill: MUDO, fontSize: 11 }} interval="preserveStartEnd" />
+          <YAxis hide domain={[0, (max: number) => Math.max(1, max)]} />
+          <Tooltip
+            cursor={{ stroke: "#e2e7ee", strokeWidth: 1 }}
+            contentStyle={{ fontSize: 12, borderRadius: 8, borderColor: "#e2e7ee", color: TINTA }}
+            formatter={(_, __, p) => [formatar((p?.payload as { v: number | null }).v), rotulo]}
+          />
+          <Line type="monotone" dataKey="v" stroke={COR} strokeWidth={2} dot={{ r: 4, fill: COR, strokeWidth: 0 }} connectNulls={false} isAnimationActive={false} />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
