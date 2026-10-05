@@ -1,0 +1,26 @@
+-- 0069 — visão geral do /admin: só a equipe, números certos, sem NaN.
+set role anon; select set_config('request.jwt.claims','{}',false);
+select t('ATAQUE@0069','anônimo chama a visão geral','falha',$q$select public.admin_visao_geral(current_date - 29, current_date)$q$);
+select t('ATAQUE@0069','anônimo chama a função interna','falha',$q$select public.admin_metricas_periodo(now() - interval '1 day', now(), null)$q$);
+reset role;
+set role authenticated; select set_config('request.jwt.claims','{"sub":"11111111-1111-1111-1111-111111111111"}',false);
+select t('ATAQUE@0069','proprietário chama a visão geral','falha',$q$select public.admin_visao_geral(current_date - 29, current_date)$q$);
+select t('ATAQUE@0069','logado chama a função interna','falha',$q$select public.admin_metricas_periodo(now() - interval '1 day', now(), null)$q$);
+reset role;
+set role authenticated; select set_config('request.jwt.claims','{"sub":"44444444-4444-4444-4444-444444444444"}',false);
+select t('NOVO@0069','admin vê a visão geral','passa',$q$select public.admin_visao_geral(current_date - 29, current_date)$q$);
+select t('NOVO@0069','período invertido é recusado','falha',$q$select public.admin_visao_geral(current_date, current_date - 1)$q$);
+select v('NOVO@0069','cidade A: 1 candidatura no período, a de 40 dias no anterior','select (x->''atual''->>''candidaturas'') || ''/'' || (x->''anterior''->>''candidaturas'') from (select public.admin_visao_geral(current_date - 29, current_date, ''Vilarejo Sessenta e Nove'') x) s','1/1');
+select v('NOVO@0069','cidade A: 1 candidatura aceita, decisão em 24 h','select (x->''atual''->>''candidaturas_aceitas'') || ''/'' || (x->''atual''->>''horas_mediana_decisao'') from (select public.admin_visao_geral(current_date - 29, current_date, ''Vilarejo Sessenta e Nove'') x) s','1/24.0');
+select v('NOVO@0069','filtro de cidade (grafia livre): cidade B tem 1 candidatura e 1 busca','select (x->''atual''->>''candidaturas'') || ''/'' || (x->''atual''->>''buscas'') from (select public.admin_visao_geral(current_date - 29, current_date, ''  OUTRA sessenta e nove '') x) s','1/1');
+select v('NOVO@0069','com cidade, cadastro (sem cidade) vem null — nunca número enganoso','select coalesce(public.admin_visao_geral(current_date - 29, current_date, ''Vilarejo Sessenta e Nove'')->''atual''->>''novos_inquilinos'', ''null'')','null');
+select v('NOVO@0069','série tem 1 ponto por dia','select jsonb_array_length(public.admin_visao_geral(current_date - 6, current_date)->''serie'')::text','7');
+select v('NOVO@0069','precisa: inclui as 2 candidaturas sem resposta há +48 h','select ((public.admin_visao_geral(current_date - 6, current_date)->''precisa''->''candidaturas_sem_resposta_48h''->>''n'')::int >= 2)::text','true');
+select v('NOVO@0069','nada de NaN/Infinity no JSON','select (public.admin_visao_geral(current_date - 89, current_date)::text !~* ''nan|infinity'')::text','true');
+select v('NOVO@0069','período sem nada: mediana vem null, não 0','select coalesce(public.admin_visao_geral(current_date - 400, current_date - 370)->''atual''->>''horas_mediana_decisao'', ''null'')','null');
+reset role;
+set role service_role; select set_config('request.jwt.claims','{"role":"service_role"}',false);
+select t('NOVO@0069','servidor (cache) chama a visão geral','passa',$q$select public.admin_visao_geral(current_date - 6, current_date)$q$);
+reset role;
+select v('NOVO@0069','sem filtro: bate com a contagem direta (sem RLS) dos últimos 30 dias','select ((public.admin_visao_geral(current_date - 29, current_date)->''atual''->>''candidaturas'')::int = (select count(*) from leads where created_at >= (current_date - 29)::timestamp at time zone ''America/Sao_Paulo''))::text','true');
+update public.properties set status = 'draft' where id::text like 'a6900000%';
