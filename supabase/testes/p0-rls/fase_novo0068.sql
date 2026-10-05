@@ -1,0 +1,23 @@
+-- 0068 — marcar_fundador só para admin, servidor e SQL Editor (vagas livres).
+reset role;
+update public.profiles set fundador = false, fundador_em = null;
+set role authenticated; select set_config('request.jwt.claims','{"sub":"11111111-1111-1111-1111-111111111111"}',false);
+select t('ATAQUE@0068','proprietário se marca Fundador (com vagas livres)','falha',$q$select public.marcar_fundador('11111111-1111-1111-1111-111111111111')$q$);
+reset role;
+set role authenticated; select set_config('request.jwt.claims','{"sub":"22222222-2222-2222-2222-222222222222"}',false);
+select t('ATAQUE@0068','inquilino marca outro proprietário','falha',$q$select public.marcar_fundador('11111111-1111-1111-1111-111111111111')$q$);
+reset role;
+select v('ATAQUE@0068','…ninguém virou Fundador','select count(*)::text from profiles where fundador','0');
+set role anon; select set_config('request.jwt.claims','{}',false);
+select t('ATAQUE@0068','anônimo chama a função','falha',$q$select public.marcar_fundador('11111111-1111-1111-1111-111111111111')$q$);
+reset role;
+set role authenticated; select set_config('request.jwt.claims','{"sub":"44444444-4444-4444-4444-444444444444"}',false);
+select t('NOVO@0068','admin marca Fundador','passa',$q$select public.marcar_fundador('11111111-1111-1111-1111-111111111111')$q$);
+reset role;
+update public.profiles set fundador = false, fundador_em = null;
+set role service_role; select set_config('request.jwt.claims','{"role":"service_role"}',false);
+select t('NOVO@0068','servidor marca Fundador','passa',$q$select public.marcar_fundador('11111111-1111-1111-1111-111111111111')$q$);
+reset role;
+update public.profiles set fundador = false, fundador_em = null;
+select t('NOVO@0068','SQL Editor (postgres direto) marca Fundador','passa',$q$select public.marcar_fundador('11111111-1111-1111-1111-111111111111')$q$);
+update public.profiles set fundador = false, fundador_em = null;
