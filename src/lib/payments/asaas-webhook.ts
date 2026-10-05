@@ -13,6 +13,10 @@
       • comissão → 'vencido'.
   Demais eventos: só confirmados como recebidos.
 
+  Pagamento confirmado com valor > 0 também entra no livro de RECEBIMENTOS
+  (0071) — base do financeiro do admin. Um registro por pagamento: o Asaas
+  manda CONFIRMED e depois RECEIVED do mesmo pagamento, e só conta uma vez.
+
   Idempotência por (payment.id, evento): o Asaas reenvia o mesmo aviso; só o
   primeiro altera o banco. Se o processamento falhar, o registro é desfeito
   para o Asaas tentar de novo.
@@ -25,7 +29,7 @@ export interface PagamentoAsaas {
   subscription?: string | null;
   dueDate?: string | null; // AAAA-MM-DD
   paymentDate?: string | null;
-  value?: number;
+  value?: number | string;
 }
 
 export interface AvisoAsaas {
@@ -48,6 +52,23 @@ export interface RepoAsaas {
     paymentId: string,
     dados: { status: "pago" | "vencido"; pago_em?: string | null }
   ): Promise<boolean>;
+  /** Livro de recebimentos (0071). Pagamento repetido é ignorado pelo banco. */
+  registrarRecebimento(dados: Recebimento): Promise<void>;
+}
+
+export interface Recebimento {
+  tipo: "assinatura" | "comissao";
+  paymentId: string;
+  /** Assinatura: id no Asaas (o repo acha dono e plano). */
+  subscriptionId?: string;
+  valor: number;
+  pagoEm: string;
+}
+
+/** Valor pago em reais, ou null se ausente/inválido (não registra). */
+export function valorPago(v: unknown): number | null {
+  const n = typeof v === "number" ? v : typeof v === "string" ? Number(v) : NaN;
+  return Number.isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : null;
 }
 
 export type ResultadoAviso =
@@ -80,20 +101,23 @@ export async function processarAvisoAsaas(
 
   try {
     const pago = evento !== "PAYMENT_OVERDUE";
+    const pagoEm = pagamento.paymentDate ? `${pagamento.paymentDate}T12:00:00Z` : agora.toISOString();
+    const valor = valorPago(pagamento.value);
     const subId = String(pagamento.subscription ?? "").trim();
     if (subId) {
       const achou = await repo.atualizarAssinatura(
         subId,
         pago ? { status: "active", current_period_end: fimDoPeriodo(pagamento.dueDate, agora) } : { status: "overdue" }
       );
+      if (achou && pago && valor !== null) {
+        await repo.registrarRecebimento({ tipo: "assinatura", paymentId, subscriptionId: subId, valor, pagoEm });
+      }
       return { ok: true, acao: achou ? "assinatura" : "sem_alvo" };
     }
-    const achou = await repo.atualizarCobranca(
-      paymentId,
-      pago
-        ? { status: "pago", pago_em: pagamento.paymentDate ? `${pagamento.paymentDate}T12:00:00Z` : agora.toISOString() }
-        : { status: "vencido" }
-    );
+    const achou = await repo.atualizarCobranca(paymentId, pago ? { status: "pago", pago_em: pagoEm } : { status: "vencido" });
+    if (achou && pago && valor !== null) {
+      await repo.registrarRecebimento({ tipo: "comissao", paymentId, valor, pagoEm });
+    }
     return { ok: true, acao: achou ? "cobranca" : "sem_alvo" };
   } catch (e) {
     await repo.desfazerEvento(chave).catch(() => {});

@@ -55,6 +55,21 @@ test.describe("T15 — Admin real", () => {
     expect(await page.locator("main").innerText()).not.toMatch(/NaN|Infinity/);
   });
 
+  test("financeiro: números honestos, \"i\" e aviso do aluguel", async ({ page }) => {
+    for (const periodo of ["7", "30", "ano"]) {
+      await page.goto(`/admin/financeiro?periodo=${periodo}`, { waitUntil: "networkidle" });
+      const corpo = page.locator("main");
+      await expect(corpo.getByRole("heading", { name: "Financeiro", level: 1 })).toBeVisible();
+      expect(await corpo.innerText(), `periodo=${periodo}`).not.toMatch(/NaN|Infinity|undefined/);
+    }
+    await expect(page.locator("main")).toContainText("não passa pela plataforma");
+    await page.getByRole("button", { name: "Como é calculado: LTV" }).click();
+    await expect(page.locator("main")).toContainText("ARPU ÷ churn mensal");
+    // Filtro de cidade: assinaturas e marketing viram "—" (não têm cidade).
+    await page.goto("/admin/financeiro?periodo=30&cidade=Cidade%20Que%20Nao%20Existe", { waitUntil: "networkidle" });
+    expect(await page.locator("main").innerText()).not.toMatch(/NaN|Infinity|undefined/);
+  });
+
   test("moderação de pedidos não usa a janelinha do navegador", async ({ page }) => {
     let abriuPrompt = false;
     page.on("dialog", async (d) => {

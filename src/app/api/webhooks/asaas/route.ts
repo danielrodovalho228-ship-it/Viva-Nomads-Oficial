@@ -60,6 +60,35 @@ export async function POST(request: Request) {
       if (error) throw new Error(error.message);
       return (data ?? []).length > 0;
     },
+    // Livro de recebimentos (0071): dono/plano (assinatura) ou candidatura
+    // (comissão) resolvidos aqui; pagamento repetido é ignorado (payment_id único).
+    async registrarRecebimento(r) {
+      let owner_id: string | null = null;
+      let plano: string | null = null;
+      let lead_id: string | null = null;
+      if (r.tipo === "assinatura" && r.subscriptionId) {
+        const { data } = await admin
+          .from("subscriptions")
+          .select("owner_id, plan")
+          .eq("gateway_subscription_id", r.subscriptionId)
+          .maybeSingle();
+        owner_id = (data?.owner_id as string | undefined) ?? null;
+        plano = (data?.plan as string | undefined) ?? null;
+      } else if (r.tipo === "comissao") {
+        const { data } = await admin
+          .from("cobrancas_fechamento")
+          .select("lead_id")
+          .eq("externo_id", r.paymentId)
+          .maybeSingle();
+        lead_id = (data?.lead_id as string | undefined) ?? null;
+      }
+      const { error } = await admin.from("recebimentos").upsert(
+        { tipo: r.tipo, payment_id: r.paymentId, owner_id, plano, lead_id, valor: r.valor, pago_em: r.pagoEm },
+        { onConflict: "payment_id", ignoreDuplicates: true }
+      );
+      // Sem a 0071 aplicada a tabela não existe: não trava o webhook por isso.
+      if (error && error.code !== "42P01" && error.code !== "PGRST205") throw new Error(error.message);
+    },
   };
 
   const r = await processarAvisoAsaas(event, repo);
