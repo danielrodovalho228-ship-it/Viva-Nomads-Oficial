@@ -145,6 +145,8 @@ export default function NewPropertyPage() {
   // Edição: ?id= carrega um imóvel do dono para editar (em vez de criar novo).
   const searchParams = useSearchParams();
   const editId = searchParams.get("id");
+  // Retomada de rascunho do servidor: `?draft=<id>`.
+  const draftParam = searchParams.get("draft");
   const [editingId, setEditingId] = useState<string | null>(null);
   const router = useRouter();
 
@@ -220,11 +222,15 @@ export default function NewPropertyPage() {
     if (!editId) registrarEvento("iniciar_anuncio");
   }, [editId]);
 
-  // Estado da verificação do documento DESTE imóvel (portão de Publicar). Na
-  // edição, a qualificação do imóvel; no imóvel novo, a que está à espera.
+  // Estado da verificação do documento DESTE imóvel (portão de Publicar). O
+  // imóvel pode ter vindo por ?id= (edição), ?draft= (rascunho) ou ter virado
+  // rascunho no servidor durante a sessão — antes só o ?id= contava, e um
+  // rascunho com documento APROVADO seguia "Em análise" e sem Publicar.
+  // Imóvel ainda sem id: a qualificação à espera (ligada a ele ao criar).
+  const imovelId = editId ?? draftParam ?? draftServerId;
   useEffect(() => {
     let alive = true;
-    getMyDocumentStatus(editId)
+    getMyDocumentStatus(imovelId)
       .then((r) => {
         if (!alive) return;
         setDocStatus(r.status);
@@ -234,7 +240,7 @@ export default function NewPropertyPage() {
     return () => {
       alive = false;
     };
-  }, [editId]);
+  }, [imovelId]);
 
   // Barra de qualidade do anúncio: fotos + descrição + recursos (rodada 11).
   const quality = Math.min(
@@ -440,7 +446,6 @@ export default function NewPropertyPage() {
 
   // Retomada por `?draft=<id>` — carrega o snapshot do SERVIDOR e restaura tudo
   // (campos + etapa). É o "Continuar editando" de um rascunho de Meus imóveis.
-  const draftParam = searchParams.get("draft");
   useEffect(() => {
     if (!draftParam) return;
     let alive = true;
@@ -757,7 +762,7 @@ export default function NewPropertyPage() {
             <strong>APROVADO PARA PUBLICAR</strong>. É o que garante que o anúncio é locação
             por temporada regular.
           </p>
-          <ButtonLink href={editId ? `/qualificar?imovel=${editId}` : "/qualificar"} variant="gold" className="mt-6">
+          <ButtonLink href={imovelId ? `/qualificar?imovel=${imovelId}` : "/qualificar"} variant="gold" className="mt-6">
             <ClipboardCheck className="h-4 w-4" /> Ir para a qualificação
           </ButtonLink>
         </Panel>
@@ -1499,10 +1504,14 @@ export default function NewPropertyPage() {
                         <span
                           className={cn(
                             "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold",
-                            docStatus === "rejected" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-800"
+                            docStatus === "rejected"
+                              ? "bg-red-100 text-red-700"
+                              : docStatus === "pending"
+                                ? "bg-amber-100 text-amber-800"
+                                : "bg-surface-2 text-muted"
                           )}
                         >
-                          {docStatus === "rejected" ? "Recusada" : "Em análise"}
+                          {docStatus === "rejected" ? "Recusada" : docStatus === "pending" ? "Em análise" : "Não enviado"}
                         </span>
                       ) : (
                         <button
@@ -1580,13 +1589,23 @@ export default function NewPropertyPage() {
                 </span>
               </div>
             )}
+            {!editingId && docStatus === "none" && (
+              <div className="flex items-start gap-2 rounded-xl border border-sage-200 bg-surface-2 px-4 py-3 text-sm text-ink">
+                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-forest" />
+                <span>
+                  <strong>Documento do imóvel ainda não enviado.</strong> Envie a matrícula ou o contrato na{" "}
+                  <a href={imovelId ? `/qualificar?imovel=${imovelId}` : "/qualificar"} className="font-medium underline">qualificação</a>
+                  ; a publicação libera depois que a equipe conferir.
+                </span>
+              </div>
+            )}
             {!editingId && docStatus === "rejected" && (
               <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                 <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
                 <span>
                   <strong>Documentação não aprovada.</strong>
                   {docReason ? ` Motivo: ${docReason}.` : ""} Reenvie o documento na{" "}
-                  <a href={editId ? `/qualificar?imovel=${editId}` : "/qualificar"} className="font-medium underline">qualificação</a> para liberar a publicação.
+                  <a href={imovelId ? `/qualificar?imovel=${imovelId}` : "/qualificar"} className="font-medium underline">qualificação</a> para liberar a publicação.
                 </span>
               </div>
             )}
