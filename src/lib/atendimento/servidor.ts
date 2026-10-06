@@ -6,6 +6,8 @@ import { SITE_URL } from "@/lib/site";
 import { PRAZOS, PRAZO_MANUTENCAO_H, prazoManutencao, type Prioridade, type UrgenciaManutencao } from "@/config/atendimento";
 import { guardContactInfo } from "@/lib/messages/contact-guard";
 import { urgenciaManutencao } from "@/lib/atendimento/classificar";
+import { situacaoLimite } from "@/lib/limites";
+import { equipeAvisadaDaMensagem, JANELA_AVISO_EQUIPE_S } from "@/lib/atendimento/dono";
 
 /**
  * Atendimento — utilidades SÓ DO SERVIDOR: token da nota de 1 a 5 (um clique,
@@ -131,6 +133,25 @@ export async function avisarEquipe(c: ChamadoResumo, motivo: string): Promise<vo
       detailsHtml: `<p style="margin:12px 0 0;color:#334155;"><strong>${textoEmail(c.numero_publico, 20)}</strong> · ${textoEmail(c.assunto, 140)}<br/>${textoEmail(motivo, 200)}</p><p style="margin:16px 0 0;"><a href="${SITE_URL}/admin/atendimento/${c.id}" style="color:#1c6b3a;font-weight:600;">Abrir no admin</a></p>`,
     }).catch(() => null);
   }
+}
+
+/**
+ * A pessoa respondeu (pela Central ou por e-mail): registra no histórico e, se
+ * quem atende é a equipe, avisa os admins — no máximo 1 aviso por chamado a
+ * cada 15 min. Se o limitador falhar, avisa assim mesmo (melhor um e-mail a
+ * mais que uma mensagem esquecida).
+ */
+export async function registrarMensagemDaPessoa(
+  c: ChamadoResumo & { responsavel_tipo: string; status: string },
+  autorId: string | null,
+  canal: "site" | "email"
+): Promise<void> {
+  const admin = createAdminClient();
+  if (!admin) return;
+  await admin.from("chamado_eventos").insert({ chamado_id: c.id, ator_tipo: "usuario", ator_id: autorId, acao: "mensagem", detalhe: canal === "email" ? "por e-mail" : "pela Central de Ajuda" });
+  if (!equipeAvisadaDaMensagem(c)) return;
+  if ((await situacaoLimite(`equipe-msg:${c.id}`, 1, JANELA_AVISO_EQUIPE_S)) === "estourou") return;
+  await avisarEquipe(c, "nova mensagem da pessoa");
 }
 
 // ── Manutenção (formulário e Viva usam a MESMA regra) ──────────────────────

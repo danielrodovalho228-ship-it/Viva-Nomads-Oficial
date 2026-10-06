@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { guardContactInfo } from "@/lib/messages/contact-guard";
 import { calcularPrazos, mensagemPrazo } from "@/config/atendimento";
 import { avisoEmergencia, classificar } from "@/lib/atendimento/classificar";
-import { avisarEquipe, avisarUsuario, type ChamadoResumo } from "@/lib/atendimento/servidor";
+import { avisarEquipe, avisarUsuario, registrarMensagemDaPessoa, type ChamadoResumo } from "@/lib/atendimento/servidor";
 import { consumirLimite, HORA } from "@/lib/limites";
 import { rodarViva, vivaAtiva } from "@/lib/atendimento/viva-servidor";
 import { AVISO_VIVA, ehGolpe, ORIENTACAO_GOLPE } from "@/lib/atendimento/viva-regras";
@@ -77,6 +77,7 @@ export async function POST(request: Request) {
       if (c.status === "resolvido") {
         await admin.from("chamado_eventos").insert({ chamado_id: c.id, ator_tipo: "usuario", acao: "reaberto", de: "resolvido", para: "em_andamento", detalhe: "por e-mail" });
       }
+      await registrarMensagemDaPessoa(c as ChamadoResumo & { responsavel_tipo: string; status: string }, usuarioId, "email");
       if (c.responsavel_tipo === "ia" && vivaAtiva()) after(() => rodarViva(c.id as string));
       return NextResponse.json({ ok: true, chamado: c.numero_publico, acao: "resposta" });
     }
