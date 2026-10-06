@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import styles from "./modelo-negocio.module.css";
-import { PLANOS as PLANOS_CONFIG, GESTOR_ASSINATURA_ANUAL_ESTIMADA } from "@/config/planos";
+import { PLANOS as PLANOS_CONFIG, GESTOR_ASSINATURA_ANUAL_ESTIMADA, MERCADO } from "@/config/planos";
 
 // ── CONSTANTES (fáceis de editar) ───────────────────────────────────────────
 // Modelo HÍBRIDO: assinatura do plano + comissão que CAI por plano até ZERO no
@@ -33,7 +33,7 @@ const PLANOS: Plano[] = PLANOS_CONFIG.map((p) => ({
 }));
 const PLANO_BY_KEY = Object.fromEntries(PLANOS.map((p) => [p.key, p])) as Record<PlanoKey, Plano>;
 
-const AIRBNB_IMPACTO = 0.14; // impacto total do Airbnb sobre o aluguel (ref. mercado)
+const AIRBNB_IMPACTO = MERCADO.airbnbTaxa; // taxa do Airbnb para anfitriões (fonte única: config/planos)
 
 interface Cenario {
   nome: string;
@@ -49,6 +49,16 @@ const CENARIOS: Cenario[] = [
   { nome: "Estúdio econômico", desc: "R$ 1.800 · 3 meses · 3×/ano", aluguel: 1800, meses: 3, locacoes: 3 },
 ];
 
+// Preço e comissão dos cartões vêm da fonte única (nada fixo aqui).
+function rotuloComissao(id: string): string {
+  const c = PLANOS_CONFIG.find((p) => p.id === id)?.comissao ?? 0;
+  return c === 0 ? "Comissão ZERO" : `Comissão ${Math.round(c * 1000) / 10}% de 1 aluguel`;
+}
+function precoMes(id: string): string {
+  const v = PLANOS_CONFIG.find((p) => p.id === id)?.precoMensal;
+  return v ? `R$ ${v}/mês` : "Sob consulta";
+}
+
 // Cartões da seção de planos (foco em vantagem, não em preço).
 const PLAN_CARDS: {
   key: PlanoKey;
@@ -63,15 +73,15 @@ const PLAN_CARDS: {
   {
     key: "gratuito",
     preco: "Grátis",
-    comissaoLabel: "Comissão 12%",
+    comissaoLabel: rotuloComissao("free"),
     audience: "Para começar",
     features: ["1 anúncio ativo", "Contato pela plataforma", "Selo Pronto para Morar"],
     why: "Publique sem custo e teste a plataforma antes de assinar.",
   },
   {
     key: "essencial",
-    preco: "R$ 49/mês",
-    comissaoLabel: "Comissão 10%",
+    preco: precoMes("essential"),
+    comissaoLabel: rotuloComissao("essential"),
     audience: "Para quem aluga de vez em quando",
     tag: "Mais popular",
     variant: "featured",
@@ -80,8 +90,8 @@ const PLAN_CARDS: {
   },
   {
     key: "profissional",
-    preco: "R$ 129/mês",
-    comissaoLabel: "Comissão 8%",
+    preco: precoMes("pro"),
+    comissaoLabel: rotuloComissao("pro"),
     audience: "Para quem vive de locação",
     features: ["Até 20 anúncios", "Prioridade máxima na busca", "Contrato digital com validade jurídica incluído"],
     why: "Contrato incluído e comissão menor — escala com você.",
@@ -223,7 +233,7 @@ export function ModeloNegocio() {
                   onClick={() => setPlanoKey(p.key)}
                 >
                   {p.nome}
-                  <small>{p.comissao === 0 ? "0% comissão" : `${Math.round(p.comissao * 100)}% comissão`}</small>
+                  <small>{p.comissao === 0 ? "comissão zero" : `comissão de ${Math.round(p.comissao * 1000) / 10}% de 1 aluguel`}</small>
                 </button>
               ))}
             </div>
@@ -249,7 +259,7 @@ export function ModeloNegocio() {
             </p>
             <p className={styles.payback}>
               {plano.subAno === 0 ? (
-                <>Sem assinatura, nada a recuperar — a plataforma cobra só a comissão de {Math.round(plano.comissao * 100)}%.</>
+                <>Sem assinatura, nada a recuperar — a plataforma cobra só a comissão de {Math.round(plano.comissao * 1000) / 10}% de 1 aluguel, uma vez por contrato.</>
               ) : (
                 <>A assinatura de <b>{brl(plano.subAno)}/ano</b> se paga com <b>{calc.diasParaPagar} dias</b> de aluguel deste imóvel. Uma locação já cobre o ano inteiro.</>
               )}
@@ -331,13 +341,13 @@ export function ModeloNegocio() {
         <div className={`${styles.card} ${styles.premissas}`}>
           <h2>Premissas</h2>
           <ul>
-            <li>Comissão cobrada <strong>uma vez</strong>, sobre o 1º mês de cada locação: <strong>12% / 10% / 8% / 0%</strong> (Gratuito → Gestor).</li>
+            <li>Comissão cobrada <strong>uma vez</strong>, sobre o 1º mês de cada locação: <strong>{PLANOS_CONFIG.map((p) => `${Math.round(p.comissao * 1000) / 10}%`).join(" / ")}</strong> (Gratuito → Gestor).</li>
             <li>
               Assinatura anual por plano:{" "}
               <strong>{PLANOS.map((p) => (p.subAno === 0 ? "R$ 0" : p.subAno.toLocaleString("pt-BR"))).join(" / ")}</strong>{" "}
               (Gestor: estimativa interna — no site é sob consulta).
             </li>
-            <li>Impacto do Airbnb sobre o aluguel: <strong>~14%</strong> (referência de mercado).</li>
+            <li>Taxa do Airbnb para anfitriões: <strong>{Math.round(AIRBNB_IMPACTO * 100)}%</strong> ({MERCADO.airbnbFonte})</li>
             <li>“Só assinatura” = comissão zero (plano topo / modelo Furnished Finder).</li>
           </ul>
           <span className={styles.ill}>Valores ilustrativos — não são projeção contábil.</span>

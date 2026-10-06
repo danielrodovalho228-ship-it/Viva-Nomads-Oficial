@@ -5,6 +5,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { BrandImage } from "@/components/brand-image";
 import { PHOTOS } from "@/lib/media";
 import { CAUCAO_FRASE } from "@/lib/faixas";
+import { ComparativoPrecos } from "@/components/precos/comparativo-precos";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/para-proprietarios" },
@@ -52,6 +53,13 @@ export default function ForLandlordsPage() {
             priority
             className="aspect-video w-full rounded-3xl"
           />
+        </div>
+      </section>
+
+      {/* Quanto custa, em reais, contra o Airbnb (versão curta; a completa fica em /precos). */}
+      <section className="container-page pt-12">
+        <div className="mx-auto max-w-2xl">
+          <ComparativoPrecos variante="curto" />
         </div>
       </section>
 

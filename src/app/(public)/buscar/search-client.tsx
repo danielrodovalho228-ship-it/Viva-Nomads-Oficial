@@ -648,6 +648,7 @@ export function SearchClient({ properties }: { properties: Property[] }) {
           </span>
           {locationQuery.trim() && ` em ${locationQuery.trim()}`}
           {dataEntrada && ` · entrada a partir de ${formatDatePtBR(dataEntrada)}`}
+          <span> · R$ 0 de taxa para você</span>
         </p>
         {/* Abas Lista/Mapa no mobile — só quando o mapa está ligado. */}
         {MAPA_ON && (

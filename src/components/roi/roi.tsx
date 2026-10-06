@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { assinaturaMediaMix } from "@/config/planos";
+import { assinaturaMediaMix, comissaoMediaMixPct } from "@/config/planos";
 import styles from "./roi.module.css";
 
 // ── CONSTANTES (editáveis) ───────────────────────────────────────────────────
@@ -23,7 +23,7 @@ const DEFAULTS = {
   // Editável no slider; a nota abaixo aponta a referência.
   assin: assinaturaMediaMix(),
   locAno: 3, // locações por proprietário/ano
-  comissao: 8, // comissão média (%)
+  comissao: comissaoMediaMixPct(), // comissão média (%) pelo mix dos planos (config/planos)
 };
 
 const brl = (n: number) =>

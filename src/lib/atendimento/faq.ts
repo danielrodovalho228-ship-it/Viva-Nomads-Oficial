@@ -3,7 +3,8 @@
   regras do produto (config/planos.ts, REGRAS_CONTRATO, CAUCAO_FRASE). A IA do
   PR 2 também responde a partir daqui. Puro (testável com node --test).
 */
-import { PLANOS, REGRAS_CONTRATO } from "../../config/planos.ts";
+import { ALUGUEL_EXEMPLO, MERCADO, MESES_EXEMPLO, PLANOS, REGRAS_CONTRATO, reaisInteiros } from "../../config/planos.ts";
+import { calcularComparativo } from "../comparativo-precos.ts";
 import { CAUCAO_FRASE } from "../faixas.ts";
 
 export interface Pergunta {
@@ -22,11 +23,15 @@ export type PerfilAjuda = "visitante" | "sem_contrato" | "com_contrato";
 const PRAZOS_MANUTENCAO =
   "O proprietário é avisado na hora e tem prazo para responder: 4 horas em urgências (sem água, sem luz, vazamento), 24 horas nos casos médios e 72 horas nos demais.";
 
-const brl = (n: number) => `R$ ${n.toLocaleString("pt-BR")}`;
-const planosPagos = PLANOS.filter((p) => p.precoMensal && p.precoMensal > 0)
-  .map((p) => `${p.nome}: ${brl(p.precoMensal!)}/mês, comissão de ${Math.round(p.comissao * 100)}%`)
+// Custo em reais, no exemplo das telas de preço (mesma conta do comparativo).
+const exemplo = calcularComparativo(ALUGUEL_EXEMPLO, MESES_EXEMPLO);
+const custoPlanos = exemplo.planos
+  .map((p) => {
+    const pl = PLANOS.find((x) => x.id === p.id)!;
+    const mensal = pl.precoMensal ? `${reaisInteiros(pl.precoMensal)}/mês` : "sem mensalidade";
+    return `${pl.nome} (${mensal}): ${reaisInteiros(p.total)}${p.mensalidades ? ` (${reaisInteiros(p.comissao)} de comissão + ${reaisInteiros(p.mensalidades)} de mensalidades)` : " de comissão"}`;
+  })
   .join("; ");
-const gratis = PLANOS.find((p) => p.id === "free");
 
 export const FAQ: Pergunta[] = [
   {
@@ -38,8 +43,8 @@ export const FAQ: Pergunta[] = [
   {
     id: "custo-anunciar",
     pergunta: "Quanto custa anunciar?",
-    resposta: `Há um plano ${gratis?.nome ?? "Gratuito"} (${gratis?.limiteAnuncios ?? 1} anúncio, comissão de ${Math.round((gratis?.comissao ?? 0.12) * 100)}% no fechamento) e planos pagos — ${planosPagos}. A comissão é cobrada só do proprietário, uma vez por contrato, sobre 1 aluguel. Detalhes em Planos.`,
-    termos: ["preco", "plano", "anunciar", "comissao", "mensalidade", "assinatura"],
+    resposta: `Anunciar é grátis. Você paga só quando fecha: a comissão é uma porcentagem de um aluguel, cobrada uma vez por contrato, e só o proprietário paga. Num contrato de ${reaisInteiros(ALUGUEL_EXEMPLO)} por ${MESES_EXEMPLO} meses: ${custoPlanos}. No Airbnb, o mesmo contrato custaria ${reaisInteiros(exemplo.airbnb)} (${Math.round(MERCADO.airbnbTaxa * 100)}% de todo o período). Faça a sua conta em /precos.`,
+    termos: ["preco", "plano", "anunciar", "comissao", "mensalidade", "assinatura", "quanto custa", "airbnb"],
   },
   {
     id: "inquilino-paga",

@@ -63,7 +63,7 @@ function statusMeta(status: string) {
  * blocos com as regras reais (blocos de 2 meses, caução 50%) e um pagamento já
  * confirmado no 1º bloco — para o piloto/investidor ver o fluxo declaratório.
  */
-/** Trilha de comissão dos contratos de DEMONSTRAÇÃO: Profissional (8%). */
+/** Trilha de comissão dos contratos de DEMONSTRAÇÃO: a do Profissional (config/planos). */
 const DEMO_COMISSAO_PCT = COMISSAO_POR_PLANO.pro;
 
 function buildDemoContratos(hojeISO: string): ContratoView[] {

@@ -42,7 +42,8 @@ import { GERACAO_IA_ATIVA } from "@/lib/flags";
 import { PHOTOS } from "@/lib/media";
 import type { Property, Proximity } from "@/lib/types";
 import { cn, formatBRL } from "@/lib/utils";
-import { COMMISSION_BY_PLAN } from "@/lib/constants";
+import { COMISSAO_POR_PLANO, textoComissao } from "@/config/planos";
+import { LinhaComparativoAnuncio } from "@/components/precos/comparativo-precos";
 import { useAuthStore } from "@/lib/store";
 import { draftKey, DRAFT_KEY_LEGADO } from "@/lib/local-keys";
 import { registrarEvento } from "@/lib/eventos/registrar";
@@ -1369,15 +1370,14 @@ export default function NewPropertyPage() {
                 <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-sage" />
                 <span>
                   <strong className="text-ink">Você recebe o aluguel direto na sua conta.</strong> A
-                  plataforma cobra comissão <strong>só quando fechar</strong> — uma vez, sobre o 1º
-                  mês:{" "}
-                  {formatBRL(Math.round(Number(monthlyPrice) * (COMMISSION_BY_PLAN.free ?? 0.12)))}{" "}
-                  sem assinatura (12%), caindo para {formatBRL(Math.round(Number(monthlyPrice) * (COMMISSION_BY_PLAN.essential ?? 0.1)))} (10%) ou{" "}
-                  {formatBRL(Math.round(Number(monthlyPrice) * (COMMISSION_BY_PLAN.pro ?? 0.08)))} (8%) com plano.{" "}
-                  <a href="/precos" className="font-medium text-forest underline">ver planos</a>.
+                  plataforma cobra comissão <strong>só quando fechar</strong>:{" "}
+                  {textoComissao(COMISSAO_POR_PLANO.free, Number(monthlyPrice))} no Gratuito, caindo para{" "}
+                  {formatBRL(Math.round(Number(monthlyPrice) * COMISSAO_POR_PLANO.essential))} no Essencial ou{" "}
+                  {formatBRL(Math.round(Number(monthlyPrice) * COMISSAO_POR_PLANO.pro))} no Profissional.
                 </span>
               </p>
             )}
+            <LinhaComparativoAnuncio aluguel={Number(monthlyPrice)} />
 
             <div className="rounded-xl border border-sage-200 p-4">
               <p className="text-sm font-medium text-ink">Despesas de consumo (água, luz, gás)</p>

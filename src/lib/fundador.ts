@@ -1,7 +1,7 @@
 /*
   Piloto FUNDADOR — regras PURAS (sem imports, testável com node --test).
   Promessa pública (/precos): os 20 primeiros proprietários têm a assinatura
-  GRATUITA por 12 meses com os recursos do Profissional (comissão de 8%) e,
+  GRATUITA por 12 meses com os recursos do Profissional (comissão do Profissional, config/planos) e,
   quando a cobrança começar, 20% de desconto vitalício.
   O limite de 20 vagas é garantido pelo banco (0063).
 */

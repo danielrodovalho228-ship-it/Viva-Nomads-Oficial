@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { Check, Percent, Camera, FileSignature, ShieldCheck, UserCheck, ClipboardList, Receipt, Banknote, PiggyBank } from "lucide-react";
 import { PLANS } from "@/lib/constants";
+import { plano as planoPorId, textoComissao } from "@/config/planos";
+import { ComparativoPrecos } from "@/components/precos/comparativo-precos";
 import { PLANO_FUNDADOR } from "@/lib/flags";
-import { CommissionCalculator } from "./commission-calculator";
 import { ButtonLink } from "@/components/ui/button";
 import { formatBRL, cn } from "@/lib/utils";
 import { CAUCAO_FRASE } from "@/lib/faixas";
@@ -139,7 +140,7 @@ export default function PricingPage() {
             <span>
               Assinatura <strong>gratuita por 12 meses</strong> para os 20 primeiros proprietários,
               com todos os recursos do plano <strong>Profissional</strong>. Comissão de fechamento
-              normal (8%). Fundadores mantêm <strong>20% de desconto vitalício</strong> quando a
+              normal ({textoComissao(planoPorId("pro")!.comissao)}). Fundadores mantêm <strong>20% de desconto vitalício</strong> quando a
               cobrança começar.
             </span>
           </div>
@@ -158,6 +159,10 @@ export default function PricingPage() {
       </section>
 
       <section className="container-page -mt-10 pb-16">
+        {/* Comparativo no topo: quanto se paga, em reais, contra o Airbnb. */}
+        <div className="mb-10">
+          <ComparativoPrecos />
+        </div>
         <h2 className="sr-only">Planos para proprietários</h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {PLANS.map((plan) => (
@@ -229,10 +234,6 @@ export default function PricingPage() {
           ))}
         </div>
 
-        {/* Calculadora — conta pronta (clareza de preço) */}
-        <div className="mt-12">
-          <CommissionCalculator />
-        </div>
       </section>
 
       {/* Serviços opcionais — reais, com preço e separados por quem contrata */}

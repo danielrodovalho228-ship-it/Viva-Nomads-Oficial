@@ -1,3 +1,7 @@
+import { plano } from "../../config/planos.ts";
+
+// Premissa da trilha Profissional, lida da fonte única (config/planos).
+const PRO = plano("pro")!;
 /**
  * Modelo de receita do Simulador (Viva Nomads) — funções PURAS e determinísticas.
  *
@@ -116,8 +120,8 @@ export interface FonteReceita {
 export const PREMISSAS_PADRAO: Premissas = {
   aluguel: 3000,
   duracao: 4,
-  comissaoPct: 8,
-  mensalidadePlano: 129,
+  comissaoPct: Math.round(PRO.comissao * 1000) / 10, // trilha Profissional (config/planos)
+  mensalidadePlano: PRO.precoMensal ?? 0,
   repasseServico: 20,
   comissaoGarantia: 50,
   comissaoSeguro: 40, // ~20% de um prêmio típico de R$ 200/ano de seguro incêndio

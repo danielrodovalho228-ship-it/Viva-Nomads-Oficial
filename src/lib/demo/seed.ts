@@ -298,7 +298,7 @@ export const DEMO_PORTFOLIO: (PortfolioUnit & { _demo: true })[] = [
 export const DEMO_KPIS = {
   ...DEMO_FLAG,
   receitaMes: DEMO_PORTFOLIO.reduce((s, u) => s + u.monthlyRent, 0), // R$ 22.050
-  comissoesMes: 1764, // ~8% sobre fechamentos do mês
+  comissoesMes: 1764, // valor ilustrativo de comissões no mês (demonstração)
   ocupacaoPct: Math.round(
     (DEMO_PORTFOLIO.filter((u) => u.status === "occupied").length / DEMO_PORTFOLIO.length) * 100
   ), // 88% (~86%)

@@ -5,7 +5,7 @@
   servidor filtra pelo dono do chamado.
 */
 import { FAQ } from "./faq.ts";
-import { PLANOS, REGRAS_CONTRATO } from "../../config/planos.ts";
+import { ALUGUEL_EXEMPLO, PLANOS, REGRAS_CONTRATO, textoComissao } from "../../config/planos.ts";
 import { HORARIO_HUMANO, PRAZOS, PRAZO_MANUTENCAO_H } from "../../config/atendimento.ts";
 
 
@@ -14,7 +14,7 @@ const brl = (n: number) => `R$ ${n.toLocaleString("pt-BR")}`;
 function fontes(): string {
   const faq = FAQ.map((p) => `- [faq:${p.id}] ${p.pergunta}\n  ${p.resposta}${p.porPerfil?.com_contrato ? `\n  (Para quem tem contrato ativo: ${p.porPerfil.com_contrato})` : ""}`).join("\n");
   const planos = PLANOS.map(
-    (p) => `- ${p.nome}: ${p.precoMensal === null ? "assinatura sob consulta" : p.precoMensal > 0 ? `${brl(p.precoMensal)}/mês` : "sem mensalidade"}, comissão de ${Math.round(p.comissao * 100)}% no fechamento, até ${Number.isFinite(p.limiteAnuncios) ? p.limiteAnuncios : "ilimitados"} anúncio(s)`
+    (p) => `- ${p.nome}: ${p.precoMensal === null ? "assinatura sob consulta" : p.precoMensal > 0 ? `${brl(p.precoMensal)}/mês` : "sem mensalidade"}, comissão: ${textoComissao(p.comissao, ALUGUEL_EXEMPLO)} num aluguel de R$ ${ALUGUEL_EXEMPLO.toLocaleString("pt-BR")}, até ${Number.isFinite(p.limiteAnuncios) ? p.limiteAnuncios : "ilimitados"} anúncio(s)`
   ).join("\n");
   const prazos = (Object.keys(PRAZOS) as (keyof typeof PRAZOS)[])
     .map((k) => `- ${k.toUpperCase()} (${PRAZOS[k].rotulo}): ${PRAZOS[k].descricao}`)
@@ -25,7 +25,7 @@ function fontes(): string {
     "",
     "## Planos para proprietários (fonte oficial)",
     planos,
-    "A comissão é cobrada só do proprietário, uma vez por contrato, sobre 1 aluguel. O inquilino não paga nada à plataforma.",
+    "A comissão é cobrada só do proprietário, uma vez por contrato, sobre 1 aluguel. O inquilino não paga nada à plataforma (R$ 0 de taxa). Ao falar de comissão, diga sempre em reais: \"X% de um aluguel, uma vez (≈ R$ Y)\". Comparação completa com o Airbnb em /precos.",
     "",
     "## Regras do contrato (fonte oficial)",
     `- Locação por temporada (art. 48 da Lei 8.245/91): de ${REGRAS_CONTRATO.prazoMinMeses} a ${REGRAS_CONTRATO.prazoMaxMeses} meses, no máximo ${REGRAS_CONTRATO.prazoMaxDias} dias, em blocos de até ${REGRAS_CONTRATO.maxDiasBloco} dias.`,

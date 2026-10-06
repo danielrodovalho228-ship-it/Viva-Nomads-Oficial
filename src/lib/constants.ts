@@ -69,7 +69,7 @@ export const PLANS = PLANOS.map((p) => ({
 
 /**
  * Comissão de fechamento por plano — DERIVADA da fonte única (config/planos.ts).
- * Gratuito 12% → Essencial 10% → Profissional 8% → Gestor 0% (comissão única por
- * contrato-mãe, sobre 1 mês).
+ * Cai do Gratuito ao Gestor (zero); comissão única por contrato-mãe, sobre 1
+ * aluguel. Os percentuais vivem só em config/planos.ts.
  */
 export const COMMISSION_BY_PLAN: Record<string, number> = COMISSAO_POR_PLANO;
