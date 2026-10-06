@@ -31,6 +31,11 @@ import {
   type BlocoView,
 } from "@/lib/data/contratos-actions";
 import { AvaliacaoForm } from "@/components/avaliacao-form";
+import { DevolucaoCaucaoDono, ListaDocumentos } from "@/components/documentos/documentos-contrato";
+import type { documentosDosContratos } from "@/lib/data/documentos-actions";
+import { STATUS_CONTRATO_ENCERRADO } from "@/lib/fiscal/devolucao";
+
+type Extras = Awaited<ReturnType<typeof documentosDosContratos>>;
 import { formatBRL, cn } from "@/lib/utils";
 
 /** Texto imutável da regra de ouro (declaratório — nunca movimenta valores). */
@@ -129,9 +134,11 @@ function buildDemoContratos(hojeISO: string): ContratoView[] {
 export function ContratosClient({
   contratos: real,
   hojeISO,
+  extras = {},
 }: {
   contratos: ContratoView[];
   hojeISO: string;
+  extras?: Extras;
 }) {
   const { on: demoOn } = useDemoMode();
   const demoContratos = useMemo(() => buildDemoContratos(hojeISO), [hojeISO]);
@@ -165,7 +172,7 @@ export function ContratosClient({
       ) : (
         <div className="space-y-5">
           {contratos.map((c) => (
-            <ContratoCard key={c.id} contrato={c} hojeISO={hojeISO} demo={demoOn} />
+            <ContratoCard key={c.id} contrato={c} hojeISO={hojeISO} demo={demoOn} extra={demoOn ? undefined : extras[c.id]} />
           ))}
         </div>
       )}
@@ -177,10 +184,12 @@ function ContratoCard({
   contrato,
   hojeISO,
   demo,
+  extra,
 }: {
   contrato: ContratoView;
   hojeISO: string;
   demo: boolean;
+  extra?: Extras[string];
 }) {
   const pagosPorBloco = useMemo(() => {
     const m = new Map<string, number>();
@@ -265,6 +274,19 @@ function ContratoCard({
           Caução (soma dos blocos): <strong className="text-ink">{formatBRL(caucaoTotal)}</strong>
         </span>
       </div>
+
+      {extra && (
+        <>
+          <DevolucaoCaucaoDono
+            contratoId={contrato.id}
+            encerrado={(STATUS_CONTRATO_ENCERRADO as readonly string[]).includes(contrato.status)}
+            caucaoConfirmada={extra.caucaoConfirmada}
+            acerto={extra.acerto}
+            hojeISO={hojeISO}
+          />
+          <ListaDocumentos documentos={extra.documentos} />
+        </>
+      )}
 
       {/* Avaliar o inquilino (reputação bidirecional). */}
       <AvaliacaoForm
@@ -368,6 +390,7 @@ function BlocoRow({
             blocoId={bloco.id}
             contratoId={contratoId}
             valorSugerido={restante > 0 ? restante : aluguelMensal}
+            caucaoSugerida={bloco.caucao}
             hojeISO={hojeISO}
             demo={demo}
           />
@@ -386,17 +409,24 @@ function RegistrarRecebimento({
   blocoId,
   contratoId,
   valorSugerido,
+  caucaoSugerida,
   hojeISO,
   demo,
 }: {
   blocoId: string;
   contratoId: string;
   valorSugerido: number;
+  caucaoSugerida: number;
   hojeISO: string;
   demo: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const [tipo, setTipo] = useState<"aluguel" | "caucao">("aluguel");
   const [valor, setValor] = useState(String(valorSugerido));
+  // Encargos pagos junto com o aluguel (vão para o recibo). Opcionais.
+  const [condominio, setCondominio] = useState("");
+  const [iptu, setIptu] = useState("");
+  const [contas, setContas] = useState("");
   const [forma, setForma] = useState("pix");
   const [data, setData] = useState(hojeISO);
   const [obs, setObs] = useState("");
@@ -410,8 +440,16 @@ function RegistrarRecebimento({
     const r = await marcarPagamentoRecebido({
       blocoId,
       contratoId,
-      tipo: "aluguel",
+      tipo,
       valor: Number(valor) || 0,
+      encargos:
+        tipo === "aluguel"
+          ? [
+              { rotulo: "Condomínio", valor: Number(condominio) || 0 },
+              { rotulo: "IPTU", valor: Number(iptu) || 0 },
+              { rotulo: "Contas (água, luz, gás, internet)", valor: Number(contas) || 0 },
+            ].filter((e) => e.valor > 0)
+          : [],
       forma: forma as "pix" | "boleto" | "transferencia" | "dinheiro" | "outro",
       dataPagamento: data,
       observacao: obs || undefined,
@@ -430,7 +468,9 @@ function RegistrarRecebimento({
         <Check className="h-3.5 w-3.5" />
         {demo
           ? "Registro de exemplo — em produção fica no histórico do contrato."
-          : "Recebimento registrado. O inquilino pode confirmar."}
+          : tipo === "caucao"
+            ? "Caução registrada. Quando o inquilino confirmar, sai o comprovante da caução."
+            : "Recebimento registrado. Quando o inquilino confirmar, sai o recibo em PDF para os dois."}
       </p>
     );
   }
@@ -452,9 +492,25 @@ function RegistrarRecebimento({
       <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-ink">
         <ShieldCheck className="h-3.5 w-3.5 text-sage" /> Registrar recebimento (você declara; a plataforma só registra)
       </p>
+      <div className="mb-2 inline-flex rounded-lg border border-sage-200 p-0.5 text-xs" role="group" aria-label="Tipo de recebimento">
+        {(["aluguel", "caucao"] as const).map((t) => (
+          <button
+            key={t}
+            type="button"
+            aria-pressed={tipo === t}
+            onClick={() => {
+              setTipo(t);
+              setValor(String(t === "caucao" ? caucaoSugerida : valorSugerido));
+            }}
+            className={cn("rounded-md px-3 py-1 font-medium", tipo === t ? "bg-sage-100 text-forest" : "text-muted")}
+          >
+            {t === "aluguel" ? "Aluguel" : "Caução"}
+          </button>
+        ))}
+      </div>
       <div className="grid gap-2 sm:grid-cols-3">
         <label className="text-xs text-muted">
-          Valor
+          {tipo === "caucao" ? "Valor da caução" : "Valor do aluguel"}
           <input
             type="number"
             min={0}
@@ -487,6 +543,29 @@ function RegistrarRecebimento({
           />
         </label>
       </div>
+      {tipo === "aluguel" && (
+        <div className="mt-2 grid gap-2 sm:grid-cols-3">
+          {(
+            [
+              ["Condomínio (opcional)", condominio, setCondominio],
+              ["IPTU (opcional)", iptu, setIptu],
+              ["Contas (opcional)", contas, setContas],
+            ] as const
+          ).map(([rotulo, v, set]) => (
+            <label key={rotulo} className="text-xs text-muted">
+              {rotulo}
+              <input
+                type="number"
+                min={0}
+                value={v}
+                onChange={(e) => set(e.target.value)}
+                placeholder="0"
+                className="mt-1 w-full rounded-lg border border-sage-200 px-2 py-1.5 text-sm text-ink outline-none focus:border-sage"
+              />
+            </label>
+          ))}
+        </div>
+      )}
       <input
         type="text"
         value={obs}

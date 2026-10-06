@@ -85,3 +85,17 @@ insert into public.caucao_acertos (id, contrato_id, tipo, caucao_total, valor_de
 select t('NOVO@0074','excluir quem registrou um acerto de caução não falha','passa',$q$delete from auth.users where id = '77777776-0000-0000-0000-000000000000'$q$);
 select v('NOVO@0074','…o acerto fica, sem o autor','select (registrado_por is null)::text from caucao_acertos where id = ''e7400000-0000-0000-0000-000000000009''','true');
 delete from public.caucao_acertos where id = 'e7400000-0000-0000-0000-000000000009';
+-- Acerto da caução: só o servidor escreve (o termo depende do status).
+set role authenticated; select set_config('request.jwt.claims','{"sub":"11111111-1111-1111-1111-111111111111"}',false);
+select t('ATAQUE@0074','dono registra acerto direto pela API','falha',$q$insert into caucao_acertos(contrato_id,tipo,caucao_total,valor_devolvido,status,registrado_por) values ('dddddddd-0000-0000-0000-000000000001','devolucao_integral',3000,3000,'devolvida_integral','11111111-1111-1111-1111-111111111111')$q$);
+reset role;
+insert into public.caucao_acertos (id, contrato_id, tipo, caucao_total, valor_devolvido, status, registrado_por) values
+ ('e7400000-0000-0000-0000-00000000000a','dddddddd-0000-0000-0000-000000000001','desconto',3000,2500,'aguardando_confirmacao','11111111-1111-1111-1111-111111111111');
+set role authenticated; select set_config('request.jwt.claims','{"sub":"11111111-1111-1111-1111-111111111111"}',false);
+select t('ATAQUE@0074','dono marca a própria devolução como confirmada','falha',$q$update caucao_acertos set status = 'desconto_confirmado' where id = 'e7400000-0000-0000-0000-00000000000a'$q$);
+reset role;
+set role authenticated; select set_config('request.jwt.claims','{"sub":"22222222-2222-2222-2222-222222222222"}',false);
+select t('ATAQUE@0074','inquilino apaga o acerto','falha',$q$delete from caucao_acertos where id = 'e7400000-0000-0000-0000-00000000000a'$q$);
+select v('NOVO@0074','…mas o inquilino ainda VÊ o acerto do contrato dele','select count(*)::text from caucao_acertos where id = ''e7400000-0000-0000-0000-00000000000a''','1');
+reset role;
+delete from public.caucao_acertos where id = 'e7400000-0000-0000-0000-00000000000a';

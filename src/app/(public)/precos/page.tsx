@@ -3,7 +3,7 @@ import { Check, Percent, Camera, FileSignature, ShieldCheck, UserCheck, Clipboar
 import { PLANS } from "@/lib/constants";
 import { plano as planoPorId, textoComissao } from "@/config/planos";
 import { ComparativoPrecos } from "@/components/precos/comparativo-precos";
-import { PLANO_FUNDADOR } from "@/lib/flags";
+import { NFSE_ATIVA, PLANO_FUNDADOR } from "@/lib/flags";
 import { ButtonLink } from "@/components/ui/button";
 import { formatBRL, cn } from "@/lib/utils";
 import { CAUCAO_FRASE } from "@/lib/faixas";
@@ -55,7 +55,11 @@ const TECH_BENEFITS = [
   { icon: FileSignature, title: "Contrato assinado digitalmente", text: "Contrato de locação por temporada com validade jurídica." },
   { icon: UserCheck, title: "Conversa registrada", text: "Toda a negociação fica na plataforma, com o contato protegido até o aceite." },
   { icon: Banknote, title: "Aluguel direto na conta do proprietário", text: "O pagamento do aluguel vai direto ao proprietário." },
-  { icon: Receipt, title: "Nota fiscal dos serviços", text: "NF dos serviços da plataforma (assinatura e comissão), conforme a legislação." },
+  {
+    icon: Receipt,
+    title: "Nota fiscal dos serviços",
+    text: `NF dos serviços da plataforma (assinatura e comissão), ${NFSE_ATIVA ? "emitida automaticamente a cada cobrança" : "emitida após a abertura do CNPJ"}.`,
+  },
 ] as const;
 
 const ICON_TONE: Record<ServiceTone, string> = {

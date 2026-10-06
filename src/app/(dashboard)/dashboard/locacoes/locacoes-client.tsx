@@ -9,6 +9,8 @@ import { AvaliacaoForm } from "@/components/avaliacao-form";
 import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
 import { DEMO_CONTRACTS } from "@/lib/demo/seed";
 import type { LocacaoView } from "@/lib/data/contratos-actions";
+import type { documentosDosContratos } from "@/lib/data/documentos-actions";
+import { ConfirmarPagamentos, DevolucaoCaucaoInquilino, ListaDocumentos } from "@/components/documentos/documentos-contrato";
 import { formatBRL } from "@/lib/utils";
 
 /** Locações de DEMONSTRAÇÃO (a partir do seed) para o piloto/testes. */
@@ -21,10 +23,17 @@ function buildDemoLocacoes(): LocacaoView[] {
     aluguelMensal: c.valorMes,
     status: "ativo",
     criadoEm: c.inicio,
+    pagamentos: [],
   }));
 }
 
-export function LocacoesClient({ locacoes: real }: { locacoes: LocacaoView[] }) {
+export function LocacoesClient({
+  locacoes: real,
+  extras = {},
+}: {
+  locacoes: LocacaoView[];
+  extras?: Awaited<ReturnType<typeof documentosDosContratos>>;
+}) {
   const { on: demoOn } = useDemoMode();
   const demoLocacoes = useMemo(() => buildDemoLocacoes(), []);
   const locacoes = demoOn ? demoLocacoes : real;
@@ -63,6 +72,15 @@ export function LocacoesClient({ locacoes: real }: { locacoes: LocacaoView[] }) 
                   {l.status === "ativo" ? "Ativa" : l.status}
                 </span>
               </div>
+
+              {/* Confirmar pagamentos → recibo; documentos; devolução da caução. */}
+              {!demoOn && (
+                <>
+                  <ConfirmarPagamentos pagamentos={l.pagamentos} />
+                  <DevolucaoCaucaoInquilino acerto={extras[l.id]?.acerto ?? null} />
+                  <ListaDocumentos documentos={extras[l.id]?.documentos ?? []} />
+                </>
+              )}
 
               {/* Inquilino avalia o proprietário. */}
               <AvaliacaoForm

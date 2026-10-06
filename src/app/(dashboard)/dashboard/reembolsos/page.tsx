@@ -63,8 +63,8 @@ function ReembolsoReal() {
       />
       <EmptyState
         icon={FileCheck2}
-        title="Nenhuma locação encerrada"
-        text="Ao encerrar uma locação, a plataforma calcula o reembolso da caução, notifica as partes e registra o prazo legal — com os dados reais do contrato. O pagamento é feito pelo locador; a plataforma nunca movimenta o valor."
+        title="A devolução da caução fica no contrato"
+        text="Quando a locação termina, registre a devolução em Contratos & blocos. O inquilino confirma, e o termo de devolução em PDF vai para os dois. O pagamento é feito pelo locador; a plataforma nunca movimenta o valor."
         action={
           <ButtonLink href="/dashboard/contratos" variant="primary">
             Ver contratos e locações
@@ -229,7 +229,7 @@ function ReembolsoPreview() {
                 onClick={gerarComprovante}
                 disabled={!prazoLimite || status === "registrado"}
               >
-                <FileCheck2 className="h-4 w-4" /> Gerar comprovante de reembolso
+                <FileCheck2 className="h-4 w-4" /> Gerar comprovante de reembolso (exemplo)
               </Button>
             </div>
             {prazoLimite && (
@@ -243,7 +243,7 @@ function ReembolsoPreview() {
           {status === "registrado" && (
             <Panel>
               <div className="flex items-center gap-2 rounded-xl bg-sage-100 px-4 py-3 text-sm text-forest">
-                <CheckCircle2 className="h-5 w-5" /> Reembolso registrado · comprovante gerado.
+                <CheckCircle2 className="h-5 w-5" /> Exemplo registrado. Na conta real, o termo de devolução em PDF sai quando o inquilino confirma, em Contratos &amp; blocos.
               </div>
               <p className="mt-3 flex items-start gap-2 text-sm text-muted">
                 <Lock className="mt-0.5 h-4 w-4 shrink-0" />O pagamento de{" "}

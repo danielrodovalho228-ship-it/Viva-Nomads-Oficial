@@ -14,6 +14,14 @@ export const PROGRAMA_INDICACAO = process.env.NEXT_PUBLIC_PROGRAMA_INDICACAO ===
 export const SELO_NF_UI = process.env.NEXT_PUBLIC_SELO_NF_UI === "on";
 
 /**
+ * NFS-e da Viva (só do que ela vende: assinatura e comissão, para o
+ * proprietário). OFF até existir CNPJ e a emissão pelo Asaas (PR F2). Com OFF,
+ * as telas dizem "emitida após a abertura do CNPJ" — nunca prometem o que ainda
+ * não sai.
+ */
+export const NFSE_ATIVA = process.env.NEXT_PUBLIC_NFSE_ATIVA === "on";
+
+/**
  * Piloto "Fundador": banner em /precos com assinatura gratuita por 12 meses aos
  * 20 primeiros proprietários (recursos do Profissional), comissão de fechamento
  * do Profissional (4%, lib/fundador.ts) e 20% de desconto vitalício quando a cobrança começar. Nenhuma

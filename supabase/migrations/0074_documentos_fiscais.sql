@@ -215,6 +215,13 @@ alter table public.caucao_acertos drop constraint if exists caucao_acertos_regis
 alter table public.caucao_acertos add constraint caucao_acertos_registrado_por_fkey
   foreign key (registrado_por) references auth.users (id) on delete set null;
 
--- 10) Fora do escopo, mas certo: ninguém da API trunca tabela.
+-- 10) Acerto e descontos da caução: escrita SÓ pelo servidor. Antes, a política
+--     "partes" (for all) deixava qualquer parte inserir, mudar o status para
+--     "devolvida" ou apagar — e o termo de devolução depende desse status.
+--     O servidor confere o papel: o dono registra, o inquilino confirma.
+revoke insert, update, delete on public.caucao_acertos from anon, authenticated;
+revoke insert, update, delete on public.caucao_descontos from anon, authenticated;
+
+-- 11) Fora do escopo, mas certo: ninguém da API trunca tabela.
 revoke truncate on all tables in schema public from anon, authenticated;
 alter default privileges in schema public revoke truncate on tables from anon, authenticated;

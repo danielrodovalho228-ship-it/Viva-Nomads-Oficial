@@ -2,6 +2,7 @@
 -- antes (são registros de retenção legal). Não devolve o TRUNCATE a anon/
 -- authenticated (de propósito: era um furo).
 begin;
+grant insert, update, delete on public.caucao_acertos, public.caucao_descontos to authenticated;
 -- registrado_por volta a NO ACTION; acertos sem autor (conta excluída) impedem o NOT NULL — ficam sem ele.
 alter table public.caucao_acertos drop constraint if exists caucao_acertos_registrado_por_fkey;
 alter table public.caucao_acertos add constraint caucao_acertos_registrado_por_fkey foreign key (registrado_por) references auth.users (id);

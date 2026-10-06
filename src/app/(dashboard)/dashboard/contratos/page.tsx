@@ -1,4 +1,5 @@
 import { getMeusContratos } from "@/lib/data/contratos-actions";
+import { documentosDosContratos } from "@/lib/data/documentos-actions";
 import { ContratosClient } from "./contratos-client";
 import { hojeBR } from "@/lib/utils";
 
@@ -12,5 +13,7 @@ import { hojeBR } from "@/lib/utils";
 export default async function ContratosPage() {
   const contratos = await getMeusContratos();
   const hojeISO = hojeBR();
-  return <ContratosClient contratos={contratos} hojeISO={hojeISO} />;
+  // Recibos, comprovantes e a devolução da caução de cada contrato (o RLS filtra).
+  const extras = await documentosDosContratos(contratos.map((c) => c.id));
+  return <ContratosClient contratos={contratos} hojeISO={hojeISO} extras={extras} />;
 }
