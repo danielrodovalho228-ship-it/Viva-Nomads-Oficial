@@ -3,7 +3,7 @@
 
   Daqui saem, sem cópia à mão:
     • o arquivo da Apple (/.well-known/apple-app-site-association) — iPhone;
-    • o filtro de links do Android (AndroidManifest; um teste confere que bate);
+    • o filtro de links do Android (android.intentFilters do app.json do Expo);
     • o aviso "Esta parte fica no site" dentro do app;
     • a faixa "Abrir no app" no site do celular.
 
@@ -27,7 +27,11 @@ interface Regra {
 const exato = (caminho: string): Regra => ({ caminho, abaixo: false });
 const ramo = (caminho: string): Regra => ({ caminho, abaixo: true });
 
-/** Telas do app (primordiais). Proposta a partir do que o app mostra hoje (abas + painel). */
+/**
+ * Telas do app. Decisão do Daniel: tudo fica no app, MENOS assinatura/planos
+ * pagos, fechamento, simuladores e admin (e as páginas de marketing). A lista é
+ * explícita de propósito: uma tela nova só entra no app quando for colocada aqui.
+ */
 export const ROTAS_APP: Regra[] = [
   exato("/auth"), // entrar / criar conta
   ramo("/app"), // boas-vindas do app
@@ -46,7 +50,15 @@ export const ROTAS_APP: Regra[] = [
   ramo("/dashboard/locacoes"),
   ramo("/dashboard/solicitacoes"), // manutenção
   ramo("/dashboard/buscas"), // buscas salvas
-  exato("/dashboard/imoveis"), // lista "Meus imóveis" (criar/editar fica no site)
+  ramo("/dashboard/imoveis"), // meus imóveis, criar e editar anúncio (fotos pelo celular)
+  ramo("/qualificar"), // qualificação, que vem antes do anúncio
+  ramo("/dashboard/verificacao"),
+  ramo("/dashboard/carteira"),
+  ramo("/dashboard/orcamentos"),
+  ramo("/dashboard/reembolsos"),
+  ramo("/dashboard/garantias"),
+  ramo("/dashboard/comparar"),
+  ramo("/dashboard/indicacoes"),
   ramo("/dashboard/conta"), // perfil
   exato("/excluir-conta"), // as lojas exigem excluir a conta DENTRO do app
   exato("/privacidade"),
@@ -141,14 +153,21 @@ export function assetlinks(pacote: string, fingerprints: string[]): unknown {
   ];
 }
 
-/** Entradas <data> do intent-filter do Android, na mesma ordem da lista. */
-export function filtrosAndroid(): { atributo: "path" | "pathPrefix"; valor: string }[] {
-  return ROTAS_APP.flatMap((r) =>
+/**
+ * android.intentFilters do app.json do Expo (App Links). Android não tem
+ * exclusão: por isso a lista de inclusão é explícita e não cobre telas só do site.
+ */
+export function intentFiltersExpo(): unknown[] {
+  const data = ROTAS_APP.flatMap((r) =>
     r.abaixo
       ? [
-          { atributo: "path" as const, valor: r.caminho },
-          { atributo: "pathPrefix" as const, valor: `${r.caminho}/` },
+          { scheme: "https", host: DOMINIO_APP, path: r.caminho },
+          { scheme: "https", host: DOMINIO_APP, pathPrefix: `${r.caminho}/` },
         ]
-      : [{ atributo: "path" as const, valor: r.caminho }]
+      : [{ scheme: "https", host: DOMINIO_APP, path: r.caminho }]
   );
+  return [
+    { action: "VIEW", autoVerify: true, data, category: ["BROWSABLE", "DEFAULT"] },
+    { action: "VIEW", data: [{ scheme: "vivanomads" }], category: ["BROWSABLE", "DEFAULT"] },
+  ];
 }
