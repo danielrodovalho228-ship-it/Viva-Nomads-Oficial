@@ -1,5 +1,5 @@
 #!/bin/bash
-# Teste do P0/P1 (0052/0054/0053/0055/0056/0057/0060/0061/0062/0063/0064/0065/0066/0067/0068/0069/0070/0071/0072/0073 + rollbacks) num Postgres LOCAL descartável — nunca em produção.
+# Teste do P0/P1 (0052/0054/0053/0055/0056/0057/0060/0061/0062/0063/0064/0065/0066/0067/0068/0069/0070/0071/0072/0073/0074 + rollbacks) num Postgres LOCAL descartável — nunca em produção.
 # Reproduz o estado atual (políticas/funções copiadas das migrações) e executa os
 # ARQUIVOS REAIS de migração e rollback do repo, simulando anon/authenticated/
 # service_role. Uso: PGHOST=/tmp/pgs PGPORT=5499 PGUSER=postgres supabase/testes/p0-rls/run.sh
@@ -86,7 +86,12 @@ $DB -f "$R/supabase/migrations/0073_atendimento_chamados.sql" >/dev/null
 $DB -f "$R/supabase/migrations/0073_atendimento_chamados.sql" >/dev/null  # reaplicar é seguro
 $DB -f "$H/fase_novo0073.sql" >/dev/null
 $DB -f "$H/fase_google_senha.sql" >/dev/null
+$DB -f "$H/fase_pre0074.sql" >/dev/null
+$DB -f "$R/supabase/migrations/0074_documentos_fiscais.sql" >/dev/null
+$DB -f "$R/supabase/migrations/0074_documentos_fiscais.sql" >/dev/null  # reaplicar é seguro
+$DB -f "$H/fase_novo0074.sql" >/dev/null
 psql -q -d p0_teste -P pager=off -f "$R/supabase/producao/verificar-seguranca.sql" 2>&1 | grep -E "^ [A-H][0-9a-z.]" | sed 's/  */ /g'
+$DB -f "$R/supabase/producao/rollback/0074_rollback.sql" >/dev/null
 $DB -f "$R/supabase/producao/rollback/0073_rollback.sql" >/dev/null
 $DB -f "$R/supabase/producao/rollback/0072_rollback.sql" >/dev/null
 $DB -f "$R/supabase/producao/rollback/0071_rollback.sql" >/dev/null
