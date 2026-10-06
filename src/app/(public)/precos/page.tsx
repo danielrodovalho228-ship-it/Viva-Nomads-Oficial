@@ -38,7 +38,7 @@ interface Service {
  * Caução e seguro-fiança são alternativas: por lei, só uma por contrato.
  */
 const TENANT_SERVICES: Service[] = [
-  { icon: ShieldCheck, title: "Seguro-fiança (sem depósito)", benefit: "Entre sem deixar dinheiro preso: uma taxa mensal diluída garante o aluguel, sem depósito de entrada. Contratada com parceiro, sujeita a análise.", price: "Orçamento sob análise", statusLabel: "Via parceiro — em estruturação", statusTone: "partner", tone: "cotacao", cta: "Ver opções de garantia", href: "/como-funciona#garantias", highlight: "Recomendada · sem depósito" },
+  { icon: ShieldCheck, title: "Seguro-fiança (sem depósito)", benefit: "Entre sem deixar dinheiro preso: uma taxa mensal diluída garante o aluguel, sem depósito de entrada. Contratada com parceiro, sujeita a análise.", price: "Orçamento sob análise", statusLabel: "Via parceiro — em estruturação", statusTone: "partner", tone: "cotacao", cta: "Ver opções de garantia", href: "/como-funciona#garantias", highlight: "Sem depósito · parceiro em estruturação" },
   { icon: PiggyBank, title: "Caução (depósito devolvível)", benefit: `${CAUCAO_FRASE} Como manda o art. 38, §2º da Lei 8.245/91; devolvida ao fim da estadia.`, price: "Sem mensalidade", statusLabel: "Disponível", statusTone: "ok", tone: "avulso", cta: "Ver opções de garantia", href: "/como-funciona#garantias" },
 ];
 

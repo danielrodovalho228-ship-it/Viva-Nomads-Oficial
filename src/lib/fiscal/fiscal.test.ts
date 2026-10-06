@@ -126,4 +126,7 @@ test("achados do #271: /precos condiciona a NF à NFSE_ATIVA; exemplos sem avali
   assert.doesNotMatch(exemplos, /rating: [1-9]|reviewCount: [1-9]/);
   assert.doesNotMatch(exemplos, /issuesInvoice: true/);
   assert.doesNotMatch(exemplos, /nota fiscal/i);
+  // QA 06/out: "imóveis mobiliados", nunca "Apartamento…" no texto dos exemplos; seguro-fiança sem parceiro não é "Recomendada".
+  assert.doesNotMatch(exemplos.replace(/propertyType: "Apartamento"/g, ""), /apartamento/i);
+  assert.doesNotMatch(precos, /Recomendad/);
 });
