@@ -1,9 +1,10 @@
+-- (datas no fuso de Brasília, como o ciclo diário — current_date é UTC e quebrava entre 21h e 0h)
 -- 0065 — correções da revisão.
 reset role;
 select t('NOVO@0065','ciclo diário roda com o bloco antigo agendado','passa',$q$select public.avancar_ciclo_blocos()$q$);
 select v('NOVO@0065','…e ativa o bloco 2 antigo na data','select status from contrato_blocos where id=''b6500000-0000-0000-0000-000000000002''','ativo');
 select t('NOVO@0065','comprovar caução de contrato antigo de 12 meses funciona','passa',$q$update contrato_blocos set caucao_status='comprovada' where id='b6500000-0000-0000-0001-000000000001'$q$);
-select t('ATAQUE@0065','bloco NOVO que leva o contrato a 181 dias continua barrado','falha',$q$insert into contrato_blocos(contrato_id,numero_bloco,inicio,fim,meses,valor,caucao,status) values ('dddddd65-0000-0000-0000-000000000003',3,current_date+110,current_date+170,2,6000,0,'pendente_aceite')$q$);
+select t('ATAQUE@0065','bloco NOVO que leva o contrato a 181 dias continua barrado','falha',$q$insert into contrato_blocos(contrato_id,numero_bloco,inicio,fim,meses,valor,caucao,status) values ('dddddd65-0000-0000-0000-000000000003',3,(now() at time zone 'America/Sao_Paulo')::date+110,(now() at time zone 'America/Sao_Paulo')::date+170,2,6000,0,'pendente_aceite')$q$);
 select t('ATAQUE@0065','pendente vira agendado sem os dois aceites','falha',$q$update contrato_blocos set status='agendado', aceite_inquilino_em=now() where id='b6500000-0000-0000-0000-000000000032'$q$);
 select t('NOVO@0065','aceites simultâneos','passa',$q$update contrato_blocos set aceite_proprietario_em=now(), aceite_inquilino_em=now() where id='b6500000-0000-0000-0000-000000000032'$q$);
 select v('NOVO@0065','…o banco promove para agendado','select status from contrato_blocos where id=''b6500000-0000-0000-0000-000000000032''','agendado');

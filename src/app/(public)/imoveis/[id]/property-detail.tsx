@@ -1,5 +1,6 @@
 "use client";
 
+import { ProblemaComIsto } from "@/components/ajuda/problema-com-isto";
 import { numBR } from "@/lib/utils";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -331,7 +332,10 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
               <div className="flex items-center gap-2 text-sm text-muted">
                 <MapPin className="h-4 w-4" /> {property.neighborhood}, {property.city} - {property.state}
               </div>
-              <ShareButton title={property.title} text={`${property.title} — Viva Nomads`} />
+              <span className="flex items-center gap-3">
+                {!exemplo && <ProblemaComIsto tipo="anuncio" id={property.id} />}
+                <ShareButton title={property.title} text={`${property.title} — Viva Nomads`} />
+              </span>
             </div>
             <h1 className="mt-2 font-title text-3xl font-bold text-ink">{property.title}</h1>
 

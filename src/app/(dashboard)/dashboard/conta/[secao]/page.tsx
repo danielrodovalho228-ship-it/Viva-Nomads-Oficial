@@ -3,8 +3,8 @@
 import { use } from "react";
 import { notFound } from "next/navigation";
 import { AvatarUploader } from "@/components/account/avatar-uploader";
+import { CentralAjuda } from "@/components/ajuda/central-ajuda";
 import {
-  AjudaContato,
   ChangePassword,
   DadosPessoais,
   DangerZone,
@@ -37,11 +37,8 @@ export default function ContaSecaoPage({ params }: { params: Promise<{ secao: st
         </div>
       );
     case "ajuda":
-      return (
-        <div className="mx-auto max-w-xl">
-          <AjudaContato />
-        </div>
-      );
+      // App: a MESMA Central de Ajuda do site, aqui dentro (sem tela nova).
+      return <CentralAjuda canal="app" />;
     case "excluir":
       return (
         <div className="mx-auto max-w-xl">

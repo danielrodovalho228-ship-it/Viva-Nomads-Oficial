@@ -1,0 +1,290 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Clock, Trash2 } from "lucide-react";
+import { PageTitle, Panel } from "@/components/dashboard/primitives";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { PRAZOS, estadoPrazo, type Prioridade } from "@/config/atendimento";
+import { apagarMacro, salvarMacro, type ChamadoAdmin, type Macro } from "@/lib/data/atendimento-actions";
+
+const ABAS = [
+  { id: "fila", rotulo: "Fila" },
+  { id: "aprovacao", rotulo: "Aprovação" },
+  { id: "metricas", rotulo: "Métricas" },
+  { id: "respostas", rotulo: "Respostas prontas" },
+] as const;
+
+const STATUS: Record<string, string> = {
+  aberto: "Aberto",
+  aguardando_usuario: "Aguardando usuário",
+  aguardando_aprovacao: "Aguardando aprovação",
+  em_andamento: "Em andamento",
+  resolvido: "Resolvido",
+  encerrado: "Encerrado",
+};
+
+export function relogio(c: ChamadoAdmin, agora: Date): { cor: string; texto: string } {
+  const estado = estadoPrazo(new Date(c.criado_em), new Date(c.prazo_primeira_resposta), agora, !!c.primeira_resposta_em);
+  const restMin = Math.round((new Date(c.prazo_primeira_resposta).getTime() - agora.getTime()) / 60000);
+  const fmt = (m: number) => (Math.abs(m) >= 120 ? `${Math.round(Math.abs(m) / 60)} h` : `${Math.abs(m)} min`);
+  if (estado === "cumprido") return { cor: "bg-surface-2 text-muted", texto: "respondido" };
+  if (estado === "estourado") return { cor: "bg-red-100 text-red-800", texto: `estourou há ${fmt(restMin)}` };
+  if (estado === "em_risco") return { cor: "bg-amber-100 text-amber-800", texto: `${fmt(restMin)} restantes` };
+  return { cor: "bg-green-100 text-green-800", texto: `${fmt(restMin)} restantes` };
+}
+
+export function AtendimentoClient({
+  aba,
+  fila,
+  aprovacao,
+  metricas,
+  macros,
+  filtros,
+  semAcesso,
+  agoraISO,
+}: {
+  aba: (typeof ABAS)[number]["id"];
+  fila: ChamadoAdmin[];
+  aprovacao: ChamadoAdmin[];
+  metricas: Record<string, unknown> | null;
+  macros: Macro[];
+  filtros: { prioridade?: string; tipo?: string; responsavel?: string; busca?: string; fechados?: boolean };
+  semAcesso: boolean;
+  agoraISO: string;
+}) {
+  const agora = new Date(agoraISO);
+  return (
+    <>
+      <PageTitle title="Atendimento" subtitle="Chamados por prioridade e prazo. Simulações ficam fora." />
+      {semAcesso && (
+        <p className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          Sem acesso aos chamados agora (banco sem a migração 0073, sem chave de serviço ou sem permissão).
+        </p>
+      )}
+      <nav aria-label="Seções do atendimento" className="mb-6 flex flex-wrap gap-1.5">
+        {ABAS.map((a) => (
+          <Link
+            key={a.id}
+            href={`/admin/atendimento?aba=${a.id}`}
+            aria-current={aba === a.id ? "page" : undefined}
+            className={cn("rounded-lg px-3 py-1.5 text-sm", aba === a.id ? "bg-forest text-white" : "border border-line text-ink hover:border-forest")}
+          >
+            {a.rotulo}
+            {a.id === "aprovacao" && aprovacao.length > 0 && <span className="ml-1.5 rounded-full bg-amber-200 px-1.5 text-xs text-amber-900">{aprovacao.length}</span>}
+          </Link>
+        ))}
+      </nav>
+
+      {aba === "fila" && (
+        <>
+          <Filtros filtros={filtros} />
+          <Tabela itens={fila} agora={agora} vazio="Nenhum chamado na fila com esses filtros." />
+        </>
+      )}
+      {aba === "aprovacao" && (
+        <Panel title="Aguardando aprovação">
+          <p className="mb-3 text-sm text-muted">Casos preparados para decisão (estorno, exceção, documento contestado, conflito). No PR 2, a assistente Viva prepara o resumo e a resposta sugerida.</p>
+          <Tabela itens={aprovacao} agora={agora} vazio="Nada aguardando aprovação." />
+        </Panel>
+      )}
+      {aba === "metricas" && <Metricas m={metricas} />}
+      {aba === "respostas" && <Macros macros={macros} />}
+    </>
+  );
+}
+
+function Filtros({ filtros }: { filtros: { prioridade?: string; tipo?: string; responsavel?: string; busca?: string; fechados?: boolean } }) {
+  const campo = "rounded-lg border border-line bg-white px-2 py-1.5 text-sm text-ink";
+  return (
+    <form method="get" action="/admin/atendimento" className="mb-4 flex flex-wrap items-end gap-2 rounded-2xl border border-sage-200 bg-white p-3">
+      <input type="hidden" name="aba" value="fila" />
+      <label className="text-xs text-muted">
+        Busca
+        <input name="q" defaultValue={filtros.busca} placeholder="VN-000123 ou assunto" className={cn(campo, "mt-0.5 block w-52")} />
+      </label>
+      <label className="text-xs text-muted">
+        Prioridade
+        <select name="prioridade" defaultValue={filtros.prioridade ?? ""} className={cn(campo, "mt-0.5 block")}>
+          <option value="">Todas</option>
+          {(["p1", "p2", "p3", "p4"] as Prioridade[]).map((p) => (
+            <option key={p} value={p}>
+              {p.toUpperCase()} {PRAZOS[p].rotulo}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="text-xs text-muted">
+        Tipo
+        <select name="tipo" defaultValue={filtros.tipo ?? ""} className={cn(campo, "mt-0.5 block")}>
+          <option value="">Todos</option>
+          <option value="suporte">Suporte</option>
+          <option value="manutencao">Manutenção</option>
+          <option value="seguranca">Segurança</option>
+        </select>
+      </label>
+      <label className="text-xs text-muted">
+        Responsável
+        <select name="responsavel" defaultValue={filtros.responsavel ?? ""} className={cn(campo, "mt-0.5 block")}>
+          <option value="">Todos</option>
+          <option value="humano">Pessoa</option>
+          <option value="ia">IA</option>
+        </select>
+      </label>
+      <label className="flex items-center gap-1.5 text-xs text-muted">
+        <input type="checkbox" name="fechados" value="1" defaultChecked={filtros.fechados} /> Incluir resolvidos
+      </label>
+      <Button type="submit" variant="outline">
+        Filtrar
+      </Button>
+    </form>
+  );
+}
+
+function Tabela({ itens, agora, vazio }: { itens: ChamadoAdmin[]; agora: Date; vazio: string }) {
+  if (itens.length === 0) return <p className="rounded-2xl border border-sage-200 bg-white p-4 text-sm text-muted">{vazio}</p>;
+  return (
+    <ul className="grid min-w-0 gap-2">
+      {itens.map((c) => {
+        const r = relogio(c, agora);
+        return (
+          <li key={c.id} className="min-w-0">
+            <Link href={`/admin/atendimento/${c.id}`} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-xl border border-sage-200 bg-white px-4 py-3 hover:border-forest">
+              <span className="min-w-0 flex-1 basis-56">
+                <span className="flex min-w-0 items-center gap-2">
+                  <span className={cn("rounded px-1.5 py-0.5 text-xs font-bold", c.prioridade === "p1" ? "bg-red-600 text-white" : c.prioridade === "p2" ? "bg-amber-500 text-white" : "bg-surface-2 text-ink")}>
+                    {c.prioridade.toUpperCase()}
+                  </span>
+                  <span className="truncate font-medium text-ink">{c.assunto}</span>
+                </span>
+                <span className="mt-0.5 block text-xs text-muted">
+                  {c.numero_publico} · {c.tipo} · {c.canal} · {STATUS[c.status] ?? c.status}
+                  {c.visitante_email ? " · visitante" : ""}
+                </span>
+              </span>
+              <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium", r.cor)}>
+                <Clock className="h-3.5 w-3.5" /> {r.texto}
+              </span>
+            </Link>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+function n(v: unknown): number | null {
+  const x = typeof v === "number" ? v : v == null ? NaN : Number(v);
+  return Number.isFinite(x) ? x : null;
+}
+function pct(a: unknown, b: unknown): string {
+  const x = n(a);
+  const y = n(b);
+  return x === null || y === null || y <= 0 ? "—" : `${Math.round((x / y) * 100)}%`;
+}
+function num(v: unknown, suf = ""): string {
+  const x = n(v);
+  return x === null ? "—" : `${x.toLocaleString("pt-BR")}${suf}`;
+}
+
+function Metricas({ m }: { m: Record<string, unknown> | null }) {
+  if (!m) return <Panel><p className="text-sm text-muted">— sem dados (migração 0073 pendente ou sem acesso).</p></Panel>;
+  const est = (m.estourados as Record<string, number>) ?? {};
+  const cards: [string, string, string][] = [
+    ["Chamados no período", num(m.total), "Chamados reais abertos nos últimos dias (simulação fora)."],
+    ["Abertos agora", num(m.abertos), "Sem resolver nem encerrar."],
+    ["1ª resposta — média", num(m.primeira_resposta_media_min, " min"), "Do abrir até a primeira resposta de uma pessoa."],
+    ["1ª resposta — p90", num(m.primeira_resposta_p90_min, " min"), "9 em cada 10 respondidos até este tempo."],
+    ["Resolução — média", num(m.resolucao_media_h, " h"), "Do abrir até marcar resolvido."],
+    ["Resolvidos pela IA", pct(m.resolvidos_ia, m.resolvidos), "Resolvidos sem pessoa ÷ resolvidos (a IA entra no PR 2)."],
+    ["Pediram uma pessoa", pct(m.pediu_humano, m.total), "Chamados em que a pessoa pediu atendimento humano."],
+    ["Reabertos em 7 dias", pct(m.reabertos_7d, m.resolvidos), "Voltaram em até 7 dias depois de resolvidos."],
+    ["Satisfação (4–5)", pct(m.satisfacao_4_5, m.satisfacao_notas), "Notas 4 ou 5 ÷ notas recebidas."],
+    ["Nota média", num(m.satisfacao_media), "Média das notas de 1 a 5."],
+    ["Chamados por 100 contratos", pct(m.total, m.contratos_periodo).replace("%", ""), "Chamados ÷ contratos do período × 100."],
+    ["Manutenção — resposta do dono", num(m.manutencao_resposta_media_h, " h"), "Média até a 1ª resposta do proprietário."],
+  ];
+  return (
+    <>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {cards.map(([t, v, f]) => (
+          <div key={t} className="rounded-xl border border-line bg-white p-3" title={f}>
+            <p className="text-sm text-muted">{t}</p>
+            <p className="mt-1 font-title text-2xl font-bold text-ink">{v}</p>
+            <p className="mt-1 text-xs text-muted">{f}</p>
+          </div>
+        ))}
+      </div>
+      <Panel title="Prazos estourados por prioridade" className="mt-6">
+        <p className="text-sm text-ink">
+          {(["p1", "p2", "p3", "p4"] as const).map((p) => `${p.toUpperCase()}: ${est[p] ?? 0}`).join(" · ")} · Manutenções sem resposta: {num(m.manutencao_sem_resposta)}
+        </p>
+      </Panel>
+    </>
+  );
+}
+
+function Macros({ macros }: { macros: Macro[] }) {
+  const router = useRouter();
+  const [edit, setEdit] = useState<{ id?: string; titulo: string; corpo: string }>({ titulo: "", corpo: "" });
+  const [erro, setErro] = useState<string | null>(null);
+  async function salvar(e: React.FormEvent) {
+    e.preventDefault();
+    const r = await salvarMacro(edit);
+    if (!r.ok) setErro(r.error);
+    else {
+      setErro(null);
+      setEdit({ titulo: "", corpo: "" });
+      router.refresh();
+    }
+  }
+  return (
+    <div className="grid gap-6 lg:grid-cols-2">
+      <Panel title={edit.id ? "Editar resposta pronta" : "Nova resposta pronta"}>
+        <form onSubmit={salvar} className="grid gap-3">
+          <input required maxLength={80} placeholder="Título" value={edit.titulo} onChange={(e) => setEdit({ ...edit, titulo: e.target.value })} className="rounded-xl border border-line px-3 py-2 text-sm" />
+          <textarea required maxLength={3000} rows={6} placeholder="Texto (use {nome} para o primeiro nome)" value={edit.corpo} onChange={(e) => setEdit({ ...edit, corpo: e.target.value })} className="rounded-xl border border-line px-3 py-2 text-sm" />
+          {erro && <p className="text-sm text-red-700">{erro}</p>}
+          <div className="flex gap-2">
+            <Button type="submit">Salvar</Button>
+            {edit.id && (
+              <Button type="button" variant="outline" onClick={() => setEdit({ titulo: "", corpo: "" })}>
+                Cancelar
+              </Button>
+            )}
+          </div>
+        </form>
+      </Panel>
+      <Panel title="Respostas prontas">
+        {macros.length === 0 ? (
+          <p className="text-sm text-muted">Nenhuma ainda.</p>
+        ) : (
+          <ul className="divide-y divide-line">
+            {macros.map((m) => (
+              <li key={m.id} className="flex items-start justify-between gap-3 py-2.5">
+                <button type="button" onClick={() => setEdit(m)} className="min-w-0 text-left">
+                  <span className="block font-medium text-ink">{m.titulo}</span>
+                  <span className="block truncate text-xs text-muted">{m.corpo}</span>
+                </button>
+                <button
+                  type="button"
+                  aria-label={`Apagar ${m.titulo}`}
+                  onClick={async () => {
+                    if (!window.confirm("Apagar esta resposta pronta?")) return;
+                    await apagarMacro(m.id);
+                    router.refresh();
+                  }}
+                  className="shrink-0 rounded-lg p-1.5 text-muted hover:bg-red-50 hover:text-red-700"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Panel>
+    </div>
+  );
+}

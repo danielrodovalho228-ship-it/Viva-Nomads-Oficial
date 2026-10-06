@@ -12,5 +12,8 @@
       ]
     }
   ],
-  "crons": [{ "path": "/api/cron/resumo-pedidos", "schedule": "0 11 * * *" }]
+  "crons": [
+    { "path": "/api/cron/resumo-pedidos", "schedule": "0 11 * * *" },
+    { "path": "/api/cron/atendimento", "schedule": "0 10 * * *" }
+  ]
 }

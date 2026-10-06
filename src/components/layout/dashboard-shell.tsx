@@ -25,6 +25,7 @@ import {
   FileText,
   TrendingUp,
   Wallet,
+  LifeBuoy,
 } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { Avatar } from "@/components/ui/avatar";
@@ -117,6 +118,7 @@ const ADMIN_NAV: NavItem[] = [
   { href: "/admin", label: "Admin", icon: ShieldCheck },
   { href: "/admin/pedidos", label: "Moderar pedidos", icon: Megaphone },
   { href: "/admin/documentos", label: "Documentos", icon: FileSignature },
+  { href: "/admin/atendimento", label: "Atendimento", icon: LifeBuoy },
   { href: "/admin/financeiro", label: "Financeiro", icon: Wallet },
   { href: "/admin/marketing", label: "Marketing", icon: TrendingUp },
 ];

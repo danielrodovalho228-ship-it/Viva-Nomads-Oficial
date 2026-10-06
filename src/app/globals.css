@@ -306,3 +306,13 @@ html[data-app] .vn-tabbar-spacer {
 html[data-app] .vn-main {
   padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px)) !important;
 }
+
+/* Botão "Ajuda" fixo: acima da barra inferior do celular; no desktop, no canto. */
+:root {
+  --ajuda-bottom: 5.25rem;
+}
+@media (min-width: 768px) {
+  :root {
+    --ajuda-bottom: 1.5rem;
+  }
+}

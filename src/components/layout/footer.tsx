@@ -23,6 +23,7 @@ export function Footer() {
           <FooterLink href="/empresas">Para empresas</FooterLink>
           <FooterLink href="/precos">Planos</FooterLink>
           <FooterLink href="/seguranca">Sua segurança</FooterLink>
+          <FooterLink href="/ajuda">Central de Ajuda</FooterLink>
         </FooterCol>
 
         <FooterCol title="Cidades">
