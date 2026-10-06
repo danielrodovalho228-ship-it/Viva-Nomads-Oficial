@@ -21,6 +21,7 @@ const SCAN_DIRS = ["src/app", "src/components"];
 // Diretórios/arquivos isentos (ferramentas internas de modelagem de negócio).
 const EXCLUDE = [
   "src/components/simulacao",
+  "src/components/financeiro",
   "src/components/modelo-negocio",
   "src/app/(public)/simulacao",
   "src/app/(public)/roi",

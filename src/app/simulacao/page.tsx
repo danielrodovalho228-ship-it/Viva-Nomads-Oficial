@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { guardSocios } from "@/lib/socios/guard";
 import { PaginasInternasNav } from "@/components/apresentacao/paginas-nav";
-import { Simulador } from "@/components/simulacao/simulador";
+import { ModeloFinanceiro } from "@/components/financeiro/modelo-financeiro";
 
 // Página privada: divulgada só por link direto (não indexar nem seguir).
 export const metadata: Metadata = {
@@ -16,7 +16,7 @@ export default async function SimulacaoPage() {
   return (
     <>
       <PaginasInternasNav atual="/simulacao" />
-      <Simulador />
+      <ModeloFinanceiro pagina="simulacao" />
     </>
   );
 }

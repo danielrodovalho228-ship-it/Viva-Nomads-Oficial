@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { guardSocios } from "@/lib/socios/guard";
 import { PaginasInternasNav } from "@/components/apresentacao/paginas-nav";
-import { Roi } from "@/components/roi/roi";
+import { ModeloFinanceiro } from "@/components/financeiro/modelo-financeiro";
 
 // Página de apresentação (sócios/investidores), por link direto — não indexar.
 export const metadata: Metadata = {
@@ -16,7 +16,7 @@ export default async function RoiPage() {
   return (
     <>
       <PaginasInternasNav atual="/roi" />
-      <Roi />
+      <ModeloFinanceiro pagina="roi" />
     </>
   );
 }
