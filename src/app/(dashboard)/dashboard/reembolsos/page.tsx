@@ -28,7 +28,7 @@ import { formatBRL } from "@/lib/utils";
 const LOCACAO = {
   contrato: "VN-CT-2026-0042", // consistency-ignore: dado de demonstração (ReembolsoPreview)
   inquilino: "Ana Carvalho", // consistency-ignore: persona de demonstração (ReembolsoPreview)
-  imovel: "Apartamento mobiliado · Centro",
+  imovel: "Imóvel mobiliado · Centro",
   caucao: 1800,
 };
 
