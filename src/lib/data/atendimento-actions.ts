@@ -19,7 +19,8 @@ import {
   type UrgenciaManutencao,
 } from "@/config/atendimento";
 import { avisoEmergencia, categoria, classificar, ehNumeroPublico, numeroEmergencia } from "@/lib/atendimento/classificar";
-import { avisarEquipe, avisarProprietarioManutencao, avisarUsuario, criarOrdemManutencao, pessoaValida, type ChamadoResumo, type OrdemCriada } from "@/lib/atendimento/servidor";
+import { avisarEquipe, avisarProprietarioManutencao, avisarUsuario, criarOrdemManutencao, pessoaValida, registrarMensagemDaPessoa, type ChamadoResumo, type OrdemCriada } from "@/lib/atendimento/servidor";
+import { chamadoDoDono, type ClienteChamados } from "@/lib/atendimento/dono";
 import { escalarParaPessoa, rodarViva, vivaAtiva, chamarClaude } from "@/lib/atendimento/viva-servidor";
 import { atenderViva } from "@/lib/atendimento/viva-motor";
 import { CENARIOS, entradaDoCenario, falhasDoCenario, ferramentasDeTeste } from "@/lib/atendimento/viva-cenarios";
@@ -251,18 +252,43 @@ export async function meuChamado(numero: string): Promise<{ chamado: ChamadoList
   if (!ehNumeroPublico(numero)) return null;
   const supabase = await createClient();
   if (!supabase) return null;
-  const { data: c } = await supabase
-    .from("chamados")
-    .select("id, numero_publico, assunto, status, prioridade, tipo, criado_em, atualizado_em, nota_satisfacao, responsavel_tipo")
-    .eq("numero_publico", numero.trim().toUpperCase())
-    .maybeSingle();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const c = await chamadoDoDono<ChamadoLista & { usuario_id: string | null; nota_satisfacao: number | null; responsavel_tipo: string }>(
+    supabase as unknown as ClienteChamados,
+    user.id,
+    { numero: numero.trim().toUpperCase() },
+    "id, numero_publico, assunto, status, prioridade, tipo, criado_em, atualizado_em, nota_satisfacao, responsavel_tipo"
+  );
   if (!c) return null;
   const { data: m } = await supabase
     .from("chamado_mensagens")
     .select("id, autor, corpo, criado_em")
     .eq("chamado_id", c.id)
+    .eq("interno", false)
     .order("criado_em", { ascending: true });
   return { chamado: c as ChamadoLista & { nota_satisfacao: number | null; responsavel_tipo: string }, mensagens: (m ?? []) as MensagemChamado[] };
+}
+
+/**
+ * Link de chamado aberto com OUTRA conta logada. Para o admin, devolve o caminho
+ * do chamado no Admin (e com que conta está logado) — a Central não deixa o admin
+ * agir como a cliente. Para os demais, null (não revela que o chamado existe).
+ */
+export async function chamadoDeOutraConta(numero: string): Promise<{ adminUrl: string; logadoComo: string } | null> {
+  if (!ehNumeroPublico(numero)) return null;
+  const supabase = await createClient();
+  const admin = createAdminClient();
+  if (!supabase || !admin) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user || !(await ehAdmin(supabase, user.id))) return null;
+  const { data: c } = await admin.from("chamados").select("id, usuario_id").eq("numero_publico", numero.trim().toUpperCase()).maybeSingle();
+  if (!c || c.usuario_id === user.id) return null;
+  return { adminUrl: `/admin/atendimento/${c.id}`, logadoComo: user.email ?? "sua conta de admin" };
 }
 
 /** A pessoa responde no próprio chamado (reabre se estava resolvido). */
@@ -279,9 +305,14 @@ export async function responderMeuChamado(chamadoId: string, texto: string): Pro
   if ((await situacaoLimite(`chamado-msg:${user.id}`, 40, HORA)) === "estourou") {
     return { ok: false, error: "Muitas mensagens em pouco tempo. Aguarde um pouco." };
   }
-  // RLS confirma que o chamado é dela.
-  const { data: c } = await supabase.from("chamados").select("id, status, prioridade, responsavel_tipo").eq("id", chamadoId).maybeSingle();
-  if (!c) return { ok: false, error: "Chamado não encontrado." };
+  // Só a dona responde aqui (admin responde pelo Admin → Atendimento).
+  const c = await chamadoDoDono<ChamadoResumo & { status: string; responsavel_tipo: string }>(
+    supabase as unknown as ClienteChamados,
+    user.id,
+    { id: chamadoId },
+    "id, numero_publico, assunto, status, prioridade, responsavel_tipo"
+  );
+  if (!c) return { ok: false, error: "Chamado não encontrado nesta conta." };
   if (c.status === "encerrado") return { ok: false, error: "Este chamado foi encerrado. Abra um novo, se precisar." };
 
   const { prioridade: prioridadeTexto, emergencia } = classificar("duvida", corpo);
@@ -302,6 +333,7 @@ export async function responderMeuChamado(chamadoId: string, texto: string): Pro
     const { data: full } = await admin.from("chamados").select("id, numero_publico, assunto, prioridade, usuario_id").eq("id", c.id).single();
     if (full) await avisarEquipe(full as ChamadoResumo, "subiu para P1 pela mensagem da pessoa");
   }
+  await registrarMensagemDaPessoa(c, user.id, "site");
   if (c.responsavel_tipo === "ia" && vivaAtiva()) after(() => rodarViva(c.id as string));
   return { ok: true };
 }
@@ -314,9 +346,8 @@ export async function pedirPessoa(chamadoId: string): Promise<Res> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Entre na sua conta." };
-  // RLS confirma que o chamado é dela.
-  const { data: c } = await supabase.from("chamados").select("id").eq("id", chamadoId).maybeSingle();
-  if (!c) return { ok: false, error: "Chamado não encontrado." };
+  const c = await chamadoDoDono(supabase as unknown as ClienteChamados, user.id, { id: chamadoId }, "id");
+  if (!c) return { ok: false, error: "Chamado não encontrado nesta conta." };
   return (await escalarParaPessoa(chamadoId, "a pessoa pediu", "usuario", user.id)) ? { ok: true } : { ok: false, error: "Este chamado já foi encerrado." };
 }
 
@@ -336,11 +367,12 @@ export async function marcarResolvido(chamadoId: string): Promise<Res> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Entre na sua conta." };
-  const { data: c } = await supabase
-    .from("chamados")
-    .select("id, numero_publico, assunto, prioridade, status, usuario_id, visitante_email, visitante_nome")
-    .eq("id", chamadoId)
-    .maybeSingle();
+  const c = await chamadoDoDono<ChamadoResumo & { status: string }>(
+    supabase as unknown as ClienteChamados,
+    user.id,
+    { id: chamadoId },
+    "id, numero_publico, assunto, prioridade, status, visitante_email, visitante_nome"
+  );
   if (!c || c.status !== "aguardando_usuario") return { ok: false, error: "Este chamado não está aguardando você." };
   const agora = new Date().toISOString();
   await admin.from("chamados").update({ status: "resolvido", resolvido_em: agora, atualizado_em: agora }).eq("id", c.id);

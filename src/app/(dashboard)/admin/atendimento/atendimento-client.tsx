@@ -21,7 +21,7 @@ const ABAS = [
 const STATUS: Record<string, string> = {
   aberto: "Aberto",
   aguardando_usuario: "Aguardando usuário",
-  aguardando_aprovacao: "Aguardando aprovação",
+  aguardando_aprovacao: "Aguardando aprovação interna",
   em_andamento: "Em andamento",
   resolvido: "Resolvido",
   encerrado: "Encerrado",
@@ -86,8 +86,8 @@ export function AtendimentoClient({
         </>
       )}
       {aba === "aprovacao" && (
-        <Panel title="Aguardando aprovação">
-          <p className="mb-3 text-sm text-muted">Casos preparados para decisão (estorno, exceção, documento contestado, conflito). No PR 2, a assistente Viva prepara o resumo e a resposta sugerida.</p>
+        <Panel title="Aguardando aprovação interna">
+          <p className="mb-3 text-sm text-muted">Aprovação da equipe, não do cliente (o cliente vê &ldquo;Em análise pela equipe&rdquo;). Casos preparados para decisão: estorno, exceção, documento contestado, conflito. A Viva prepara o resumo e a resposta sugerida.</p>
           <Tabela itens={aprovacao} agora={agora} vazio="Nada aguardando aprovação." />
         </Panel>
       )}

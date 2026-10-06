@@ -11,13 +11,14 @@ import { PRAZOS, type Prioridade } from "@/config/atendimento";
 import { primeiroNome } from "@/lib/display-name";
 import { alterarChamado, avaliarRespostaIA, responderComoAdmin, type chamadoAdmin, type Macro } from "@/lib/data/atendimento-actions";
 import { relogio } from "../atendimento-client";
+import { EXPLICA_AGUARDANDO_APROVACAO } from "@/lib/atendimento/dono";
 
 type Dados = NonNullable<Awaited<ReturnType<typeof chamadoAdmin>>>;
 const AUTOR: Record<string, string> = { usuario: "Pessoa", admin: "Equipe", ia: "Viva (IA)", sistema: "Sistema" };
 const STATUS: Record<string, string> = {
   aberto: "Aberto",
   aguardando_usuario: "Aguardando usuário",
-  aguardando_aprovacao: "Aguardando aprovação",
+  aguardando_aprovacao: "Aguardando aprovação interna",
   em_andamento: "Em andamento",
   resolvido: "Resolvido",
   encerrado: "Encerrado",
@@ -59,6 +60,11 @@ export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; 
         <ArrowLeft className="h-4 w-4" /> Fila
       </Link>
       <PageTitle title={c.assunto} subtitle={`${c.numero_publico} · ${c.tipo} · ${c.canal} · ${STATUS[c.status] ?? c.status}`} />
+      {c.status === "aguardando_aprovacao" && (
+        <p className="-mt-2 mb-4 text-xs text-muted" data-testid="explica-aprovacao">
+          {EXPLICA_AGUARDANDO_APROVACAO}
+        </p>
+      )}
       <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">
         <div className="min-w-0">
           <Panel title="Conversa">
@@ -231,7 +237,7 @@ export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; 
               </Button>
               {c.status !== "aguardando_aprovacao" && c.status !== "encerrado" && (
                 <Button variant="outline" disabled={ocupado} onClick={() => agir(() => alterarChamado(c.id, { status: "aguardando_aprovacao" }))}>
-                  Mandar para aprovação
+                  Mandar para aprovação interna
                 </Button>
               )}
               {c.status !== "resolvido" && c.status !== "encerrado" && (

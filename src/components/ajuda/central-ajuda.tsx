@@ -11,6 +11,7 @@ import { avisoEmergencia, CATEGORIAS, detectarEmergencia } from "@/lib/atendimen
 import { HORARIO_HUMANO } from "@/config/atendimento";
 import {
   abrirChamado,
+  chamadoDeOutraConta,
   meuChamado,
   meusChamados,
   marcarResolvido,
@@ -433,13 +434,20 @@ function ConfirmarPessoa({ link, onFeito }: { link: { c: string; s: string }; on
 
 function DetalheChamado({ numero, onVoltar }: { numero: string; onVoltar: () => void }) {
   const [dados, setDados] = useState<Awaited<ReturnType<typeof meuChamado>> | undefined>(undefined);
+  // Chamado de OUTRA conta aberto por um admin (link do e-mail do cliente): só aviso, sem agir como a cliente.
+  const [outraConta, setOutraConta] = useState<Awaited<ReturnType<typeof chamadoDeOutraConta>>>(null);
   const [texto, setTexto] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [voltas, setVoltas] = useState(0);
 
   const carregar = useCallback(() => {
-    meuChamado(numero).then(setDados).catch(() => setDados(null));
+    meuChamado(numero)
+      .then((d) => {
+        setDados(d);
+        if (d === null) chamadoDeOutraConta(numero).then(setOutraConta).catch(() => {});
+      })
+      .catch(() => setDados(null));
   }, [numero]);
   useEffect(() => {
     carregar();
@@ -495,6 +503,17 @@ function DetalheChamado({ numero, onVoltar }: { numero: string; onVoltar: () => 
       </button>
       {dados === undefined ? (
         <p className="text-sm text-muted">Carregando…</p>
+      ) : dados === null && outraConta ? (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900" data-testid="chamado-outra-conta">
+          <p className="font-semibold">Este chamado é de outra conta.</p>
+          <p className="mt-1">
+            Você está logado como <strong>{outraConta.logadoComo}</strong>. A equipe responde pelo Admin → Atendimento, nunca pela
+            Central de Ajuda do cliente.
+          </p>
+          <ButtonLink href={outraConta.adminUrl} size="sm" className="mt-3">
+            Abrir no Admin
+          </ButtonLink>
+        </div>
       ) : dados === null ? (
         <p className="text-sm text-muted">Chamado não encontrado. Entre com a conta que abriu o chamado.</p>
       ) : (
