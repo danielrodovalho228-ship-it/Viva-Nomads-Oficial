@@ -2,6 +2,9 @@
 -- antes (são registros de retenção legal). Não devolve o TRUNCATE a anon/
 -- authenticated (de propósito: era um furo).
 begin;
+-- registrado_por volta a NO ACTION; acertos sem autor (conta excluída) impedem o NOT NULL — ficam sem ele.
+alter table public.caucao_acertos drop constraint if exists caucao_acertos_registrado_por_fkey;
+alter table public.caucao_acertos add constraint caucao_acertos_registrado_por_fkey foreign key (registrado_por) references auth.users (id);
 drop function if exists public.conferir_documento(text);
 drop function if exists public.proximo_numero_documento(text);
 drop table if exists public.documentos_fiscais;

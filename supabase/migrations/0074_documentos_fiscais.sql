@@ -208,6 +208,13 @@ insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_typ
 values ('documentos', 'documentos', false, 2097152, array['application/pdf'])
 on conflict (id) do update set public = false, file_size_limit = excluded.file_size_limit, allowed_mime_types = excluded.allowed_mime_types;
 
--- 9) Fora do escopo, mas certo: ninguém da API trunca tabela.
+-- 9) Acerto de caução: quem registrou pode ter a conta excluída — o acerto fica,
+--    sem o autor (antes: NO ACTION travava a exclusão do dono).
+alter table public.caucao_acertos alter column registrado_por drop not null;
+alter table public.caucao_acertos drop constraint if exists caucao_acertos_registrado_por_fkey;
+alter table public.caucao_acertos add constraint caucao_acertos_registrado_por_fkey
+  foreign key (registrado_por) references auth.users (id) on delete set null;
+
+-- 10) Fora do escopo, mas certo: ninguém da API trunca tabela.
 revoke truncate on all tables in schema public from anon, authenticated;
 alter default privileges in schema public revoke truncate on tables from anon, authenticated;

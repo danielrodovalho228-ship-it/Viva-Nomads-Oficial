@@ -59,8 +59,6 @@ update public.profiles set full_name = 'Nome Novo', cpf = null where id = '77777
 select v('NOVO@0074','…o recibo mantém o nome e o CPF da emissão','select locatario_nome || '' · '' || locatario_doc from documentos_fiscais where id = ''f7400000-0000-0000-0000-000000000002''','Inquilina Setenta Quatro · 111.222.333-44');
 -- Exclusão de fato (ex.: pelo admin): a cascata apaga contrato/pagamento/acerto; o documento fica e nada trava.
 select t('NOVO@0074','excluir a conta da inquilina de Y (contrato em cascata) não falha','passa',$q$delete from auth.users where id = '77777774-0000-0000-0000-000000000000'$q$);
--- Já existente em produção (não é da 0074): caucao_acertos.registrado_por é NO ACTION.
-delete from public.caucao_acertos where registrado_por = '77777775-0000-0000-0000-000000000000';
 select t('NOVO@0074','excluir a conta do dono de Y (imóvel em cascata) não falha','passa',$q$delete from auth.users where id = '77777775-0000-0000-0000-000000000000'$q$);
 select v('NOVO@0074','os 2 documentos de Y continuam guardados, sem ligações','select count(*)::text from documentos_fiscais where id in (''f7400000-0000-0000-0000-000000000002'',''f7400000-0000-0000-0000-000000000003'') and contrato_id is null and owner_id is null and tenant_id is null and pagamento_id is null and acerto_id is null','2');
 select v('NOVO@0074','…com o retrato da emissão intacto','select locatario_nome || '' · '' || locatario_doc from documentos_fiscais where id = ''f7400000-0000-0000-0000-000000000002''','Inquilina Setenta Quatro · 111.222.333-44');
@@ -79,3 +77,11 @@ delete from public.documentos_fiscais where numero like '%-T-%';
 delete from public.pagamentos_bloco where contrato_id = 'd7400000-0000-0000-0000-000000000001';
 delete from public.contrato_blocos where contrato_id = 'd7400000-0000-0000-0000-000000000001';
 delete from public.contratos where id = 'd7400000-0000-0000-0000-000000000001';
+-- registrado_por: excluir quem registrou um acerto não trava; o acerto fica sem o autor.
+reset role;
+insert into auth.users (id, email, raw_user_meta_data) values ('77777776-0000-0000-0000-000000000000','dono76@t.com','{"role":"owner","full_name":"Dono 76"}');
+insert into public.caucao_acertos (id, contrato_id, tipo, caucao_total, valor_devolvido, status, registrado_por) values
+ ('e7400000-0000-0000-0000-000000000009','dddddddd-0000-0000-0000-000000000001','devolucao_integral',3000,3000,'devolvida_integral','77777776-0000-0000-0000-000000000000');
+select t('NOVO@0074','excluir quem registrou um acerto de caução não falha','passa',$q$delete from auth.users where id = '77777776-0000-0000-0000-000000000000'$q$);
+select v('NOVO@0074','…o acerto fica, sem o autor','select (registrado_por is null)::text from caucao_acertos where id = ''e7400000-0000-0000-0000-000000000009''','true');
+delete from public.caucao_acertos where id = 'e7400000-0000-0000-0000-000000000009';
