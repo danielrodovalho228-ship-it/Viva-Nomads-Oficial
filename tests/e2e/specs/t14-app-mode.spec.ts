@@ -35,6 +35,13 @@ test.describe("T14 — Modo app", () => {
   test.describe("anônimo", () => {
     test.use({ storageState: { cookies: [], origins: [] } });
 
+    test("entrar no app: sem Google e com a dica para quem entrou com Google no site", async ({ page }) => {
+      await page.goto("/auth");
+      await esperarModoApp(page);
+      await expect(page.getByTestId("dica-google-app")).toContainText("Esqueci minha senha");
+      await expect(page.getByRole("button", { name: /Continuar com Google/ })).toHaveCount(0);
+    });
+
     test("/ e páginas de marketing não existem no app", async ({ page }) => {
       for (const rota of ["/", "/home", "/como-funciona", "/precos"]) {
         await page.goto(rota);
