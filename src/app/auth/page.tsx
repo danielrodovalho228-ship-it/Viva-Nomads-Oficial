@@ -30,6 +30,7 @@ import type { PersonType } from "@/lib/tax";
 import { cn } from "@/lib/utils";
 import { safeInternalPath } from "@/lib/safe-redirect";
 import { LOGIN_GOOGLE_ATIVO } from "@/lib/flags";
+import { useIsNative } from "@/lib/use-native";
 import { registrarEvento } from "@/lib/eventos/registrar";
 
 type Mode = "login" | "signup" | "forgot";
@@ -39,6 +40,10 @@ export default function AuthPage() {
   const setUser = useAuthStore((s) => s.setUser);
   const startSession = useAuthStore((s) => s.startSession);
   const [mode, setMode] = useState<Mode>("login");
+  // Dentro do app: sem login com Google (o Google bloqueia login em WebView e, no
+  // iPhone, exigiria também "Entrar com a Apple"). Quem entrou com Google no site
+  // cria uma senha pelo "Esqueci minha senha" — mesma conta, mesmo e-mail.
+  const noApp = useIsNative();
   // Sem papel pré-selecionado: o usuário escolhe conscientemente proprietário
   // OU inquilino no cadastro (evita criar proprietário sem querer).
   const [role, setRole] = useState<UserRole | null>(null);
@@ -627,6 +632,11 @@ export default function AuthPage() {
                     </button>
                   </div>
                 )}
+                {mode === "login" && noApp && (
+                  <p className="text-xs text-muted" data-testid="dica-google-app">
+                    Entrou com Google no site? Toque em &quot;Esqueci minha senha&quot; para criar uma senha e usar o app.
+                  </p>
+                )}
 
                 {/* Aceite explícito dos Termos e da Privacidade (obrigatório no cadastro). */}
                 {mode === "signup" && (
@@ -696,7 +706,7 @@ export default function AuthPage() {
               </form>
 
               {/* Google só com o provedor ativado no Supabase (flag desligada por padrão). */}
-              {LOGIN_GOOGLE_ATIVO && (
+              {LOGIN_GOOGLE_ATIVO && !noApp && (
                 <>
                   <div className="my-6 flex items-center gap-3 text-xs text-muted">
                     <span className="h-px flex-1 bg-sage-200" /> ou{" "}

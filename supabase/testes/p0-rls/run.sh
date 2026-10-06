@@ -85,6 +85,7 @@ $DB -f "$H/fase_pre0073.sql" >/dev/null
 $DB -f "$R/supabase/migrations/0073_atendimento_chamados.sql" >/dev/null
 $DB -f "$R/supabase/migrations/0073_atendimento_chamados.sql" >/dev/null  # reaplicar é seguro
 $DB -f "$H/fase_novo0073.sql" >/dev/null
+$DB -f "$H/fase_google_senha.sql" >/dev/null
 psql -q -d p0_teste -P pager=off -f "$R/supabase/producao/verificar-seguranca.sql" 2>&1 | grep -E "^ [A-H][0-9a-z.]" | sed 's/  */ /g'
 $DB -f "$R/supabase/producao/rollback/0073_rollback.sql" >/dev/null
 $DB -f "$R/supabase/producao/rollback/0072_rollback.sql" >/dev/null

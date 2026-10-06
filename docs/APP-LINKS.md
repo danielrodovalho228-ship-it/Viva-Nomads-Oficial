@@ -488,18 +488,20 @@ Depois: `eas build -p all` e `eas submit`. O EAS liga o Associated Domains no Ap
    - **iPhone:** o EAS cria a chave APNs sozinho no `eas build`.
 6. **Testes:** unitário da separação Expo × FCM e do tratamento de `DeviceNotRegistered`; manual com um aparelho de cada sistema.
 
-## Login com Google no app (plano — não implementado)
-**Por que falha hoje:** o Google bloqueia login dentro de WebView (erro `disallowed_useragent`). Por isso o app do iPhone mostra um alerta.
+## Login social no app — decisão
+- **iPhone (lançamento): só e-mail e senha.** Nada de Google nem Apple agora: se o iPhone oferecer Google, a Apple exige também uma opção de login focada em privacidade ("Entrar com a Apple").
+- **Quem entrou com Google no site:** dentro do app, a tela de entrar mostra "Entrou com Google no site? Toque em 'Esqueci minha senha' para criar uma senha e usar o app." O botão do Google não aparece no app.
+  - **Mesma conta:** o Auth do Supabase guarda um usuário por e-mail (índice `users_email_partial_key`, conferido em produção) e só atualiza a senha desse usuário.
+  - **Mesmo perfil:** o perfil nasce só no cadastro (gatilho `on_auth_user_created`, de INSERT). Redefinir a senha não cria outro.
+  - **Testes:** a fase `GOOGLE→SENHA` da suíte de banco (`supabase/testes/p0-rls/fase_google_senha.sql`); o e2e T14 confere a dica no app.
+- **Android: Google pelo navegador do sistema** (a implementar no `viva-nomads-app`, quando ele estiver no GitHub):
+  1. no app, o site chama `signInWithOAuth({ provider: "google", options: { redirectTo: "vivanomads://auth/callback", skipBrowserRedirect: true } })`, e o verificador PKCE fica na WebView;
+  2. o site manda `postMessage({ tipo: "login-google", url })`, e o app chama `WebBrowser.openAuthSessionAsync(url, "vivanomads://auth/callback")`;
+  3. o app leva a WebView a `/auth/callback?code=…`, que troca o código pela sessão. O código sozinho não serve para nada;
+  4. Supabase → Authentication → URL Configuration: acrescentar `vivanomads://auth/callback`.
 
-**Proposta, sem passar sessão na URL:** login no navegador do sistema, com PKCE, voltando ao app pelo esquema.
-1. No app, "Continuar com Google" chama no site `signInWithOAuth({ provider: "google", options: { redirectTo: "vivanomads://auth/callback", skipBrowserRedirect: true } })`. O verificador PKCE fica guardado **na WebView**.
-2. O site entrega a URL do Google ao app:
-   - iPhone: `postMessage({ tipo: "login-google", url })`, e o app chama `WebBrowser.openAuthSessionAsync(url, "vivanomads://auth/callback")`;
-   - Android: a mesma chamada, pelo mesmo app Expo.
-3. O Google volta para `vivanomads://auth/callback?code=…`. O app leva a WebView a `/auth/callback?code=…`, que troca o código pela sessão usando o verificador que só ela tem. O código sozinho não serve para nada.
-4. Supabase → Authentication → URL Configuration: acrescentar `vivanomads://auth/callback` em Redirect URLs.
-
-**Alternativa:** login nativo (Google Sign-In SDK + `signInWithIdToken`). Exige client IDs próprios de iOS e Android e mais código nativo. Recomendo a primeira.
+  Quando isso existir, a dica e o "sem Google" passam a valer só no iPhone.
+- **Pós-lançamento:** Google **e** "Entrar com a Apple" juntos no iPhone, se fizer falta.
 
 ## Roteiro de teste manual (depois dos builds)
 Em cada aparelho (iPhone e Android), **com** o app novo instalado e **sem** o app, toque no link de:
