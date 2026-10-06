@@ -13,7 +13,7 @@ import {
   proximaAbertura,
   somarHorasUteis,
 } from "../../config/atendimento.ts";
-import { classificar, detectarEmergencia, detectarRiscoP1, urgenciaManutencao, AVISO_EMERGENCIA } from "./classificar.ts";
+import { avisoEmergencia, classificar, detectarEmergencia, detectarRiscoP1, numeroEmergencia, urgenciaManutencao, AVISO_EMERGENCIA } from "./classificar.ts";
 
 // Horas em Brasília = UTC−3.
 const br = (iso: string) => new Date(`${iso}-03:00`);
@@ -87,6 +87,59 @@ test("emergência: gás, incêndio, violência (com e sem acento)", () => {
   assert.equal(AVISO_EMERGENCIA, "Em emergência ligue 193 (bombeiros) ou 190 (polícia).");
 });
 
+test("emergência: as 3 frases da revisão viram aviso e P1", () => {
+  const casos: [string, string, "193" | "190"][] = [
+    ["o proprietário disse que vai me bater", "violencia", "190"],
+    ["arrombaram a porta e invadiram o imóvel", "invasao", "190"],
+    ["curto-circuito, saiu fumaça da tomada", "eletrica", "193"],
+  ];
+  for (const [frase, tipo, numero] of casos) {
+    const e = detectarEmergencia(frase);
+    assert.equal(e, tipo, frase);
+    assert.equal(numeroEmergencia(e!), numero, frase);
+    assert.match(avisoEmergencia(e), new RegExp(`Ligue agora para ${numero}`), frase);
+    assert.equal(classificar("duvida", frase).prioridade, "p1", frase);
+  }
+});
+
+test("emergência: variações (flexões, sem acento, maiúsculas)", () => {
+  const casos: [string, "193" | "190"][] = [
+    ["ELE ME ESPANCOU ontem à noite", "190"],
+    ["o dono ameaçou me matar", "190"],
+    ["o vizinho puxou uma faca pra mim", "190"],
+    ["tem um homem armado na porta", "190"],
+    ["alguem entrou no apto enquanto eu dormia e roubaram meu notebook", "190"],
+    ["Fui roubada dentro do imovel", "190"],
+    ["houve uma invasão no prédio", "190"],
+    ["levei um choque eletrico no chuveiro", "193"],
+    ["a tomada está faiscando", "193"],
+    ["cheiro de queimado vindo do quadro de luz", "193"],
+    ["o botijão está vazando", "193"],
+    ["teve uma explosão na cozinha", "193"],
+    ["incendio no predio", "193"],
+  ];
+  for (const [frase, numero] of casos) {
+    const e = detectarEmergencia(frase);
+    assert.ok(e, frase);
+    assert.equal(numeroEmergencia(e!), numero, frase);
+  }
+});
+
+test("emergência: sem falso positivo em frases comuns", () => {
+  for (const frase of [
+    "O chuveiro queimou",
+    "faça o favor de responder",
+    "esse preço é um roubo",
+    "a conta de gás veio alta",
+    "o vizinho fuma e a fumaça de cigarro entra",
+    "quero bater um papo sobre o contrato",
+    "o armário da cozinha está quebrado",
+  ]) {
+    assert.equal(detectarEmergencia(frase), null, frase);
+  }
+  assert.equal(avisoEmergencia(null), AVISO_EMERGENCIA);
+});
+
 test("risco que vira P1: golpe, Pix direto, trancado", () => {
   assert.equal(detectarRiscoP1("O dono pediu para eu pagar a caução por Pix direto pra ele"), true);
   assert.equal(detectarRiscoP1("Cheguei e o imóvel está trancado, ninguém atende"), true);
@@ -110,7 +163,8 @@ test("urgência da manutenção: falta de água é urgente", () => {
   assert.equal(urgenciaManutencao("ok", "urgente"), "urgente");
 });
 
-import { FAQ, buscarFaq } from "./faq.ts";
+import { FAQ, buscarFaq, respostaPara } from "./faq.ts";
+import { CATEGORIAS } from "./classificar.ts";
 
 test("FAQ: caução fala de poupança e 50% — nunca 'conta vinculada'", () => {
   const c = FAQ.find((p) => p.id === "caucao")!;
@@ -126,4 +180,21 @@ test("FAQ: busca com erro de digitação e sem acento", () => {
   assert.equal(buscarFaq("esqueci a senha")[0].id, "senha");
   assert.equal(buscarFaq("whatsapp do proprietario")[0].id, "contato");
   assert.equal(buscarFaq("").length, FAQ.length);
+});
+
+test("FAQ manutenção: a opção só é citada para quem tem contrato ativo", () => {
+  const m = FAQ.find((p) => p.id === "manutencao")!;
+  const rotulo = CATEGORIAS.find((c) => c.key === "manutencao")!.rotulo;
+  assert.match(respostaPara(m, "com_contrato"), new RegExp(rotulo));
+  assert.doesNotMatch(respostaPara(m, "visitante"), new RegExp(rotulo));
+  assert.doesNotMatch(respostaPara(m, "sem_contrato"), new RegExp(rotulo));
+  assert.match(respostaPara(m, "visitante"), /Entre na sua conta e abra pelo seu contrato \("Problema com isto\?"\)/);
+  for (const perfil of ["visitante", "sem_contrato", "com_contrato"] as const) assert.match(respostaPara(m, perfil), /4 horas/);
+});
+
+test("FAQ pagamento por fora: sem falar da poupança da caução", () => {
+  const g = FAQ.find((p) => p.id === "golpe")!;
+  assert.doesNotMatch(g.resposta, /poupança|conta pessoal/);
+  assert.match(g.resposta, /^Não pague nada fora do que está no contrato assinado pela plataforma\. A Viva Nomads nunca pede Pix ou depósito\./);
+  assert.match(g.resposta, /até 1 hora \(7h às 22h\)/);
 });

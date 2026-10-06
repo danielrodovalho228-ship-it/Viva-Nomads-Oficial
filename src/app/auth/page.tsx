@@ -270,9 +270,11 @@ export default function AuthPage() {
           );
           if (error) {
             const m = (error.message || "").toLowerCase();
-            // E-mail ainda não confirmado → orienta a confirmar (não é senha errada).
+            // E-mail ainda não confirmado → tela "Confirme seu e-mail", que tem o
+            // botão "Reenviar e-mail de confirmação" (não é senha errada).
             if (m.includes("not confirmed") || m.includes("confirm")) {
-              setError("Seu e-mail ainda não foi confirmado. Verifique a caixa de entrada (e o spam).");
+              setNotice("Seu e-mail ainda não foi confirmado. Verifique a caixa de entrada (e o spam) ou reenvie abaixo.");
+              setAwaitingConfirm(true);
               setLoading(false);
               return;
             }

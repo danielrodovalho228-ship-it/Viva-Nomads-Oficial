@@ -19,7 +19,7 @@ import {
   type Prioridade,
   type UrgenciaManutencao,
 } from "@/config/atendimento";
-import { AVISO_EMERGENCIA, categoria, classificar, ehNumeroPublico, urgenciaManutencao } from "@/lib/atendimento/classificar";
+import { avisoEmergencia, categoria, classificar, ehNumeroPublico, numeroEmergencia, urgenciaManutencao } from "@/lib/atendimento/classificar";
 import { avisarEquipe, avisarUsuario, type ChamadoResumo } from "@/lib/atendimento/servidor";
 
 /**
@@ -198,7 +198,7 @@ export async function abrirChamado(
 
   // Mensagem da pessoa + resposta automática (emergência primeiro; prazo).
   const aviso = [
-    emergencia ? AVISO_EMERGENCIA : null,
+    emergencia ? avisoEmergencia(emergencia) : null,
     manut
       ? `Abrimos o pedido de manutenção para o proprietário: ele tem até ${PRAZO_MANUTENCAO_H[manut.urgencia]} horas para responder. Você acompanha por aqui.`
       : null,
@@ -222,7 +222,7 @@ export async function abrirChamado(
   // Avisos: pessoa (número do chamado), equipe (P1/P2), proprietário (manutenção).
   await avisarUsuario(c, "chamado_aberto", `<p style="margin:12px 0 0;color:#334155;">${textoEmail(aviso, 600)}</p>`);
   if (prioridade === "p1" || prioridade === "p2") {
-    await avisarEquipe(c, emergencia ? `EMERGÊNCIA (${emergencia}) — orientado a ligar 193/190` : cat.rotulo);
+    await avisarEquipe(c, emergencia ? `EMERGÊNCIA (${emergencia}) — orientado a ligar ${numeroEmergencia(emergencia)}` : cat.rotulo);
   }
   if (manut) {
     const { data: dono } = await admin.from("profiles").select("email, full_name, notif_email").eq("id", manut.ownerId).maybeSingle();
@@ -316,8 +316,10 @@ export async function responderMeuChamado(chamadoId: string, texto: string): Pro
   if (!c) return { ok: false, error: "Chamado não encontrado." };
   if (c.status === "encerrado") return { ok: false, error: "Este chamado foi encerrado. Abra um novo, se precisar." };
 
-  const urgente = classificar("duvida", corpo).prioridade === "p1";
+  const { prioridade: prioridadeTexto, emergencia } = classificar("duvida", corpo);
+  const urgente = prioridadeTexto === "p1";
   await admin.from("chamado_mensagens").insert({ chamado_id: c.id, autor: "usuario", autor_id: user.id, corpo: limpar(corpo, 4000) });
+  if (emergencia) await admin.from("chamado_mensagens").insert({ chamado_id: c.id, autor: "sistema", corpo: avisoEmergencia(emergencia) });
   const novoStatus = c.status === "aguardando_aprovacao" ? "aguardando_aprovacao" : "em_andamento";
   const mudancas: Record<string, unknown> = { status: novoStatus, atualizado_em: new Date().toISOString() };
   if (urgente && c.prioridade !== "p1") mudancas.prioridade = "p1";

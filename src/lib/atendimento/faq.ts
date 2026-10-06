@@ -12,7 +12,15 @@ export interface Pergunta {
   resposta: string;
   /** Palavras que a busca também reconhece. */
   termos: string[];
+  /** Resposta diferente conforme quem lê (ex.: só quem tem contrato ativo vê a opção de manutenção). */
+  porPerfil?: Partial<Record<PerfilAjuda, string>>;
 }
+
+/** Quem está lendo a Central de Ajuda. */
+export type PerfilAjuda = "visitante" | "sem_contrato" | "com_contrato";
+
+const PRAZOS_MANUTENCAO =
+  "O proprietário é avisado na hora e tem prazo para responder: 4 horas em urgências (sem água, sem luz, vazamento), 24 horas nos casos médios e 72 horas nos demais.";
 
 const brl = (n: number) => `R$ ${n.toLocaleString("pt-BR")}`;
 const planosPagos = PLANOS.filter((p) => p.precoMensal && p.precoMensal > 0)
@@ -63,7 +71,7 @@ export const FAQ: Pergunta[] = [
     id: "email-confirmacao",
     pergunta: "Não recebi o e-mail de confirmação",
     resposta:
-      "Confira a caixa de spam e as abas Promoções/Atualizações. Se não estiver lá, entre em Entrar → \"Criar conta\" com o mesmo e-mail: o sistema reenvia a confirmação. Persistindo, abra um chamado.",
+      "Confira a caixa de spam e as abas Promoções/Atualizações. Se não estiver lá, vá em Entrar e digite o seu e-mail e a senha: como a conta ainda não foi confirmada, aparece o botão \"Reenviar e-mail de confirmação\". Persistindo, abra um chamado.",
     termos: ["email", "confirmacao", "confirmar", "nao recebi", "spam"],
   },
   {
@@ -83,15 +91,18 @@ export const FAQ: Pergunta[] = [
   {
     id: "manutencao",
     pergunta: "Algo quebrou no imóvel. O que eu faço?",
-    resposta:
-      "Abra um chamado em \"Manutenção no imóvel\" (ou pelo \"Problema com isto?\" no seu contrato). O proprietário é avisado na hora e tem prazo para responder: 4 horas em urgências (sem água, sem luz, vazamento), 24 horas nos casos médios e 72 horas nos demais.",
+    resposta: `Entre na sua conta e abra pelo seu contrato ("Problema com isto?"). ${PRAZOS_MANUTENCAO}`,
     termos: ["manutencao", "quebrou", "conserto", "chuveiro", "agua", "luz", "vazamento"],
+    porPerfil: {
+      sem_contrato: `O pedido de manutenção é aberto pelo contrato ("Problema com isto?" em Contratos) e aparece para quem tem contrato ativo pela plataforma. ${PRAZOS_MANUTENCAO}`,
+      com_contrato: `Abra um chamado em "Manutenção no imóvel" (ou pelo "Problema com isto?" no seu contrato). ${PRAZOS_MANUTENCAO}`,
+    },
   },
   {
     id: "golpe",
     pergunta: "Pediram para eu pagar por fora (Pix direto). É seguro?",
     resposta:
-      "Não pague e abra um chamado em \"Segurança, golpe ou pagamento por fora\" — uma pessoa da equipe responde em até 1 hora (das 7h às 22h). A caução vai para uma poupança e a plataforma nunca pede depósito em conta pessoal.",
+      "Não pague nada fora do que está no contrato assinado pela plataforma. A Viva Nomads nunca pede Pix ou depósito. Abra um chamado em \"Segurança, golpe ou pagamento por fora\" — uma pessoa responde em até 1 hora (7h às 22h).",
     termos: ["golpe", "pix", "por fora", "fraude", "pagamento"],
   },
   {
@@ -101,6 +112,11 @@ export const FAQ: Pergunta[] = [
     termos: ["cancelar", "pedido", "pausar", "excluir pedido"],
   },
 ];
+
+/** A resposta certa para quem está lendo. */
+export function respostaPara(p: Pergunta, perfil: PerfilAjuda): string {
+  return p.porPerfil?.[perfil] ?? p.resposta;
+}
 
 function normalizar(t: string): string {
   return t.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");

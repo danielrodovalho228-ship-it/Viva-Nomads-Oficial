@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { guardContactInfo } from "@/lib/messages/contact-guard";
 import { calcularPrazos, mensagemPrazo } from "@/config/atendimento";
-import { AVISO_EMERGENCIA, classificar } from "@/lib/atendimento/classificar";
+import { avisoEmergencia, classificar } from "@/lib/atendimento/classificar";
 import { avisarEquipe, avisarUsuario, type ChamadoResumo } from "@/lib/atendimento/servidor";
 import { consumirLimite, HORA } from "@/lib/limites";
 
@@ -100,7 +100,7 @@ export async function POST(request: Request) {
     .select("id, numero_publico, assunto, prioridade, usuario_id, visitante_email, visitante_nome")
     .single();
   if (error || !novo) return NextResponse.json({ error: "Falha ao registrar." }, { status: 500 });
-  const aviso = [emergencia ? AVISO_EMERGENCIA : null, mensagemPrazo(prioridade, agora)].filter(Boolean).join(" ");
+  const aviso = [emergencia ? avisoEmergencia(emergencia) : null, mensagemPrazo(prioridade, agora)].filter(Boolean).join(" ");
   await admin.from("chamado_mensagens").insert([
     { chamado_id: novo.id, autor: "usuario", autor_id: usuarioId, corpo },
     { chamado_id: novo.id, autor: "sistema", corpo: aviso },

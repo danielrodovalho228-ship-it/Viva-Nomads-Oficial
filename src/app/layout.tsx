@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     "locação por temporada",
     "imóvel mobiliado mensal",
     "aluguel 30 dias",
-    "apartamento mobiliado pronto para morar",
+    "imóvel mobiliado pronto para morar",
     "Viva Nomads",
   ],
   openGraph: {
