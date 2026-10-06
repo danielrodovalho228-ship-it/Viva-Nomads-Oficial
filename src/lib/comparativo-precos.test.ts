@@ -173,3 +173,9 @@ test("/modelodenegocio e /precos usam o mesmo cálculo e o mesmo gráfico", () =
   assert.match(precos, /custoAnualPorPlano\(imoveis, locacoes \* imoveis, aluguel\)/);
   assert.match(precos, /<GraficoCustoPorImovel /);
 });
+
+test("contato do site é suporte@ (contato@ saiu)", () => {
+  const raiz = new URL("../", import.meta.url).pathname;
+  const achados = arquivos(raiz).filter((a) => readFileSync(a, "utf8").includes("contato@vivanomads"));
+  assert.deepEqual(achados, []);
+});

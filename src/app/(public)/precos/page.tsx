@@ -227,7 +227,7 @@ export default function PricingPage() {
               )}
 
               <ButtonLink
-                href={plan.price === null ? "mailto:contato@vivanomads.com.br?subject=Plano%20Gestor" : "/dashboard/assinatura"}
+                href={plan.price === null ? "mailto:suporte@vivanomads.com.br?subject=Plano%20Gestor" : "/dashboard/assinatura"}
                 variant={plan.featured ? "gold" : "outline"}
                 className="mt-8 w-full"
               >

@@ -374,7 +374,7 @@ export function ModeloNegocio() {
                 </ul>
                 <div className={styles.pwhy}>{pc.why}</div>
                 {pc.contato && GESTOR_PRECO.ligado && (
-                  <a className={styles.pcontato} href="mailto:contato@vivanomads.com.br?subject=Plano%20Gestor">
+                  <a className={styles.pcontato} href="mailto:suporte@vivanomads.com.br?subject=Plano%20Gestor">
                     Fale com a gente
                   </a>
                 )}
