@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, ArrowLeft, ChevronDown, LifeBuoy, MessageSquare, Search, Send } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { AlertTriangle, ArrowLeft, CheckCircle2, ChevronDown, LifeBuoy, MessageSquare, Search, Send, UserRound } from "lucide-react";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { cn, dataBR } from "@/lib/utils";
 import { useAuthStore } from "@/lib/store";
 import { FAQ, buscarFaq, respostaPara, type PerfilAjuda } from "@/lib/atendimento/faq";
@@ -13,7 +13,10 @@ import {
   abrirChamado,
   meuChamado,
   meusChamados,
+  marcarResolvido,
   meusContratosAtivos,
+  pedirPessoa,
+  pedirPessoaPorLink,
   responderMeuChamado,
   type ChamadoLista,
   type MensagemChamado,
@@ -45,6 +48,7 @@ export function CentralAjuda({ canal }: { canal: "site" | "app" }) {
   const [numeroAberto, setNumeroAberto] = useState<string | null>(null);
   const [contexto, setContexto] = useState<{ tipo: string; id: string } | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
+  const [pessoaLink, setPessoaLink] = useState<{ c: string; s: string } | null>(null);
   const [lista, setLista] = useState<ChamadoLista[] | null>(null);
   const [contratos, setContratos] = useState<{ id: string; titulo: string }[]>([]);
   const perfil: PerfilAjuda = !user ? "visitante" : contratos.length > 0 ? "com_contrato" : "sem_contrato";
@@ -75,6 +79,9 @@ export function CentralAjuda({ canal }: { canal: "site" | "app" }) {
     if (p.get("avaliado") === "1") setAviso("Obrigado pela sua nota! Ela ajuda a melhorar o atendimento.");
     if (p.get("avaliacao") === "invalida") setAviso("Esse link de avaliação não é válido.");
     if (p.get("novo") === "1") setAba("novo");
+    const pc = p.get("pessoa");
+    const ps = p.get("s");
+    if (pc && ps) setPessoaLink({ c: pc, s: ps });
   }, []);
 
   useEffect(() => {
@@ -96,6 +103,16 @@ export function CentralAjuda({ canal }: { canal: "site" | "app" }) {
   return (
     <div className="mx-auto w-full max-w-3xl">
       {aviso && <p className="mb-4 rounded-xl border border-sage-200 bg-sage-100 px-4 py-3 text-sm text-ink">{aviso}</p>}
+      {pessoaLink && (
+        <ConfirmarPessoa
+          link={pessoaLink}
+          onFeito={(msg) => {
+            setPessoaLink(null);
+            setAviso(msg);
+            if (typeof window !== "undefined") window.history.replaceState(null, "", window.location.pathname);
+          }}
+        />
+      )}
 
       {aba === "chamado" && numeroAberto ? (
         <DetalheChamado numero={numeroAberto} onVoltar={voltar} />
@@ -128,9 +145,17 @@ export function CentralAjuda({ canal }: { canal: "site" | "app" }) {
               Abra um chamado: você recebe um número e acompanha tudo por aqui. Atendimento humano das{" "}
               {HORARIO_HUMANO.inicio}h às {HORARIO_HUMANO.fim}h, todos os dias.
             </p>
-            <Button className="mt-4" onClick={() => setAba("novo")}>
+            {/* Link de verdade: funciona mesmo se clicado antes do JavaScript carregar. */}
+            <ButtonLink
+              href="?novo=1"
+              className="mt-4"
+              onClick={(e) => {
+                e.preventDefault();
+                setAba("novo");
+              }}
+            >
               <LifeBuoy className="h-4 w-4" /> Abrir chamado
-            </Button>
+            </ButtonLink>
           </section>
           {user && (
             <section className="mt-6 rounded-2xl border border-sage-200 bg-white p-4 sm:p-6">
@@ -380,11 +405,38 @@ function AvisoEmergencia({ texto }: { texto: string }) {
   );
 }
 
+/** Link "Falar com uma pessoa" do e-mail: confirma antes (robôs de e-mail não clicam botões). */
+function ConfirmarPessoa({ link, onFeito }: { link: { c: string; s: string }; onFeito: (msg: string) => void }) {
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+  return (
+    <section className="mb-4 rounded-2xl border border-sage-200 bg-white p-4 sm:p-6">
+      <h2 className="font-title text-lg font-bold text-ink">Falar com uma pessoa da equipe?</h2>
+      <p className="mt-1 text-sm text-muted">Passamos seu chamado para a equipe agora. A resposta chega por e-mail.</p>
+      {erro && <p className="mt-2 text-sm text-red-700">{erro}</p>}
+      <Button
+        className="mt-4"
+        disabled={enviando}
+        onClick={async () => {
+          setEnviando(true);
+          const r = await pedirPessoaPorLink(link.c, link.s).catch(() => ({ ok: false as const, error: "Falha de conexão." }));
+          setEnviando(false);
+          if (r.ok) onFeito("Pronto! Seu chamado está com uma pessoa da equipe.");
+          else setErro(r.error);
+        }}
+      >
+        <UserRound className="h-4 w-4" /> {enviando ? "Passando…" : "Sim, falar com uma pessoa"}
+      </Button>
+    </section>
+  );
+}
+
 function DetalheChamado({ numero, onVoltar }: { numero: string; onVoltar: () => void }) {
   const [dados, setDados] = useState<Awaited<ReturnType<typeof meuChamado>> | undefined>(undefined);
   const [texto, setTexto] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [voltas, setVoltas] = useState(0);
 
   const carregar = useCallback(() => {
     meuChamado(numero).then(setDados).catch(() => setDados(null));
@@ -392,6 +444,21 @@ function DetalheChamado({ numero, onVoltar }: { numero: string; onVoltar: () => 
   useEffect(() => {
     carregar();
   }, [carregar]);
+
+  // A Viva responde em segundos (no servidor, depois da mensagem): confere a
+  // cada 2,5 s por até 1 minuto enquanto a última mensagem ainda é da pessoa.
+  const ultima = dados?.mensagens.at(-1);
+  const comViva = dados?.chamado.responsavel_tipo === "ia";
+  const vivaEscrevendo =
+    !!dados && comViva && !!ultima && (ultima.autor === "usuario" || ultima.autor === "sistema") && !["resolvido", "encerrado"].includes(dados.chamado.status) && voltas < 24;
+  useEffect(() => {
+    if (!vivaEscrevendo) return;
+    const t = setTimeout(() => {
+      setVoltas((v) => v + 1);
+      carregar();
+    }, 2500);
+    return () => clearTimeout(t);
+  }, [vivaEscrevendo, voltas, carregar]);
 
   async function responder(e: React.FormEvent) {
     e.preventDefault();
@@ -403,9 +470,23 @@ function DetalheChamado({ numero, onVoltar }: { numero: string; onVoltar: () => 
     if (!r.ok) setErro(r.error);
     else {
       setTexto("");
+      setVoltas(0);
       carregar();
     }
   }
+
+  async function acao(fn: (id: string) => Promise<{ ok: boolean; error?: string }>) {
+    if (!dados) return;
+    setEnviando(true);
+    setErro(null);
+    const r = await fn(dados.chamado.id).catch(() => ({ ok: false, error: "Falha de conexão." }));
+    setEnviando(false);
+    if (!r.ok) setErro(r.error ?? "Não foi possível agora.");
+    else carregar();
+  }
+
+  const aberto = !!dados && dados.chamado.status !== "encerrado";
+  const idUltimaViva = dados?.mensagens.filter((m) => m.autor === "ia").at(-1)?.id;
 
   return (
     <section className="rounded-2xl border border-sage-200 bg-white p-4 sm:p-6">
@@ -421,6 +502,7 @@ function DetalheChamado({ numero, onVoltar }: { numero: string; onVoltar: () => 
           <h2 className="font-title text-lg font-bold text-ink">{dados.chamado.assunto}</h2>
           <p className="mt-1 text-sm text-muted">
             {dados.chamado.numero_publico} · {STATUS[dados.chamado.status] ?? dados.chamado.status}
+            {comViva ? " · com a Viva (assistente virtual)" : ""}
           </p>
           <ol className="mt-4 space-y-3">
             {dados.mensagens.map((m: MensagemChamado) => (
@@ -435,10 +517,41 @@ function DetalheChamado({ numero, onVoltar }: { numero: string; onVoltar: () => 
                   <MessageSquare className="h-3.5 w-3.5" /> {AUTOR[m.autor]} · {new Date(m.criado_em).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" })}
                 </span>
                 <span className="whitespace-pre-wrap">{m.corpo}</span>
+                {m.autor === "ia" && aberto && (
+                  <span className="mt-3 flex flex-wrap gap-2">
+                    {comViva ? (
+                      <button
+                        type="button"
+                        disabled={enviando}
+                        onClick={() => acao(pedirPessoa)}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-forest px-3 py-1.5 text-xs font-semibold text-forest hover:bg-sage-100 disabled:opacity-50"
+                      >
+                        <UserRound className="h-3.5 w-3.5" /> Falar com uma pessoa
+                      </button>
+                    ) : (
+                      <span className="text-xs text-muted">Uma pessoa da equipe está cuidando do seu chamado.</span>
+                    )}
+                    {comViva && m.id === idUltimaViva && dados.chamado.status === "aguardando_usuario" && (
+                      <button
+                        type="button"
+                        disabled={enviando}
+                        onClick={() => acao(marcarResolvido)}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-xs font-semibold text-ink hover:bg-surface-2 disabled:opacity-50"
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5" /> Sim, resolveu
+                      </button>
+                    )}
+                  </span>
+                )}
               </li>
             ))}
+            {vivaEscrevendo && (
+              <li className="mr-6 rounded-xl border border-dashed border-line px-4 py-3 text-sm text-muted" aria-live="polite">
+                A Viva está escrevendo…
+              </li>
+            )}
           </ol>
-          {dados.chamado.status !== "encerrado" ? (
+          {aberto ? (
             <form onSubmit={responder} className="mt-4">
               <label className="block text-sm">
                 <span className="sr-only">Sua resposta</span>

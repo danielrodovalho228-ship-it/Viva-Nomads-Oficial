@@ -2,25 +2,28 @@
 
 import crypto from "node:crypto";
 import { headers } from "next/headers";
+import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { situacaoLimite, HORA } from "@/lib/limites";
 import { guardContactInfo } from "@/lib/messages/contact-guard";
-import { notify } from "@/lib/notifications";
 import { textoEmail } from "@/lib/notifications/texto-seguro";
 import { isValidEmail } from "@/lib/auth-errors";
 import {
   calcularPrazos,
   dentroDoHorario,
   mensagemPrazo,
-  prazoManutencao,
   PRAZO_MANUTENCAO_H,
   type Prioridade,
   type UrgenciaManutencao,
 } from "@/config/atendimento";
-import { avisoEmergencia, categoria, classificar, ehNumeroPublico, numeroEmergencia, urgenciaManutencao } from "@/lib/atendimento/classificar";
-import { avisarEquipe, avisarUsuario, type ChamadoResumo } from "@/lib/atendimento/servidor";
+import { avisoEmergencia, categoria, classificar, ehNumeroPublico, numeroEmergencia } from "@/lib/atendimento/classificar";
+import { avisarEquipe, avisarProprietarioManutencao, avisarUsuario, criarOrdemManutencao, pessoaValida, type ChamadoResumo, type OrdemCriada } from "@/lib/atendimento/servidor";
+import { escalarParaPessoa, rodarViva, vivaAtiva, chamarClaude } from "@/lib/atendimento/viva-servidor";
+import { atenderViva } from "@/lib/atendimento/viva-motor";
+import { CENARIOS, entradaDoCenario, falhasDoCenario, ferramentasDeTeste } from "@/lib/atendimento/viva-cenarios";
+import { AVISO_VIVA, ehGolpe, ORIENTACAO_GOLPE } from "@/lib/atendimento/viva-regras";
 
 /**
  * Atendimento (PR 1, sem IA). TODA escrita é do servidor (service role) depois
@@ -33,7 +36,6 @@ type Res<T = object> = ({ ok: true } & T) | { ok: false; error: string };
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const CONTEXTOS = ["pedido", "contrato", "anuncio"] as const;
 type Contexto = (typeof CONTEXTOS)[number];
-const CATEGORIAS_SO = ["hidraulica", "eletrica", "eletrodomesticos", "estrutura", "internet", "outros"] as const;
 
 async function ipHashAtual(): Promise<string> {
   const h = await headers();
@@ -128,48 +130,23 @@ export async function abrirChamado(
 
   // Manutenção: cria a ordem para o proprietário (inquilino com contrato ativo).
   let serviceOrderId: string | null = null;
-  let manut: { ownerId: string; urgencia: UrgenciaManutencao; propertyTitle: string } | null = null;
+  let manut: OrdemCriada | null = null;
   if (tipo === "manutencao") {
     if (!user) return { ok: false, error: "Entre na sua conta para pedir manutenção." };
     const contratoId = input.contratoId ?? (contextoTipo === "contrato" ? contextoId : null);
-    if (!contratoId || !UUID_RE.test(contratoId)) return { ok: false, error: "Escolha o contrato do imóvel." };
-    const { data: ct } = await admin
-      .from("contratos")
-      .select("id, tenant_id, status, property_id, properties(owner_id, title)")
-      .eq("id", contratoId)
-      .maybeSingle();
-    const prop = ct?.properties as { owner_id?: string; title?: string } | null;
-    if (!ct || ct.tenant_id !== user.id || !["ativo", "encerrado_em_acerto"].includes(ct.status as string) || !prop?.owner_id) {
-      return { ok: false, error: "Manutenção só pode ser pedida no contrato ativo do seu imóvel." };
-    }
-    const urgencia = urgenciaManutencao(mensagem, input.urgencia);
-    const catSo = (CATEGORIAS_SO as readonly string[]).includes(input.categoriaManutencao ?? "") ? input.categoriaManutencao : "outros";
-    const { data: so, error: soErr } = await admin
-      .from("service_orders")
-      .insert({
-        contract_id: null,
-        property_id: ct.property_id,
-        tenant_id: user.id,
-        owner_id: prop.owner_id,
-        category: catSo,
-        priority: urgencia,
-        description: limpar(mensagem, 2000),
-        status: "aberto",
-      })
-      .select("id")
-      .single();
-    if (soErr || !so) {
-      console.error("[atendimento] ordem de manutenção:", soErr?.message);
-      return { ok: false, error: "Não foi possível registrar a manutenção agora. Tente de novo." };
-    }
-    serviceOrderId = so.id as string;
+    if (!contratoId) return { ok: false, error: "Escolha o contrato do imóvel." };
+    const r = await criarOrdemManutencao({ tenantId: user.id, contratoId, mensagem, urgencia: input.urgencia, categoria: input.categoriaManutencao });
+    if (!r.ok) return { ok: false, error: r.error };
+    manut = r.ordem;
+    serviceOrderId = manut.serviceOrderId;
     contextoTipo = "manutencao";
     contextoId = serviceOrderId;
-    manut = { ownerId: prop.owner_id, urgencia, propertyTitle: prop.title ?? "seu imóvel" };
-    if (prioridade !== "p1") prioridade = urgencia === "urgente" ? "p2" : "p3";
+    if (prioridade !== "p1") prioridade = manut.urgencia === "urgente" ? "p2" : "p3";
   }
 
   const prazos = calcularPrazos(prioridade, agora);
+  // Com a Viva ligada, ela atende primeiro (menos emergência/P1, que já vão para uma pessoa).
+  const comViva = vivaAtiva() && !emergencia && prioridade !== "p1";
   const assunto = limpar(input.assunto?.trim() || mensagem.split("\n")[0], 140) || cat.rotulo;
   const { data: chamado, error } = await admin
     .from("chamados")
@@ -185,6 +162,7 @@ export async function abrirChamado(
       contexto_tipo: contextoTipo,
       contexto_id: contextoId,
       service_order_id: serviceOrderId,
+      responsavel_tipo: comViva ? "ia" : "humano",
       prazo_primeira_resposta: prazos.primeiraResposta.toISOString(),
       prazo_resolucao: prazos.resolucao.toISOString(),
     })
@@ -199,10 +177,11 @@ export async function abrirChamado(
   // Mensagem da pessoa + resposta automática (emergência primeiro; prazo).
   const aviso = [
     emergencia ? avisoEmergencia(emergencia) : null,
+    ehGolpe(mensagem) ? ORIENTACAO_GOLPE : null,
     manut
       ? `Abrimos o pedido de manutenção para o proprietário: ele tem até ${PRAZO_MANUTENCAO_H[manut.urgencia]} horas para responder. Você acompanha por aqui.`
       : null,
-    mensagemPrazo(prioridade, agora),
+    comViva ? AVISO_VIVA : mensagemPrazo(prioridade, agora),
   ]
     .filter(Boolean)
     .join(" ");
@@ -224,20 +203,8 @@ export async function abrirChamado(
   if (prioridade === "p1" || prioridade === "p2") {
     await avisarEquipe(c, emergencia ? `EMERGÊNCIA (${emergencia}) — orientado a ligar ${numeroEmergencia(emergencia)}` : cat.rotulo);
   }
-  if (manut) {
-    const { data: dono } = await admin.from("profiles").select("email, full_name, notif_email").eq("id", manut.ownerId).maybeSingle();
-    if (dono?.email && dono.notif_email !== false) {
-      await notify({
-        event: "manutencao_nova",
-        email: dono.email as string,
-        name: (dono.full_name as string) ?? undefined,
-        userId: manut.ownerId,
-        pushUrl: "/dashboard/solicitacoes",
-        subject: `Manutenção ${manut.urgencia === "urgente" ? "URGENTE " : ""}no imóvel — responda em até ${PRAZO_MANUTENCAO_H[manut.urgencia]} h`,
-        detailsHtml: `<p style="margin:12px 0 0;color:#334155;">Imóvel: <strong>${textoEmail(manut.propertyTitle, 120)}</strong><br/>Prazo para responder: até ${prazoManutencao(manut.urgencia, agora).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" })}.</p>`,
-      }).catch(() => null);
-    }
-  }
+  if (manut) await avisarProprietarioManutencao(manut, agora);
+  if (comViva) after(() => rodarViva(c.id));
 
   return { ok: true, numero: c.numero_publico, aviso, emergencia: !!emergencia };
 }
@@ -279,13 +246,13 @@ export interface MensagemChamado {
 }
 
 /** Um chamado da pessoa, pelo número (RLS esconde notas internas). */
-export async function meuChamado(numero: string): Promise<{ chamado: ChamadoLista & { nota_satisfacao: number | null }; mensagens: MensagemChamado[] } | null> {
+export async function meuChamado(numero: string): Promise<{ chamado: ChamadoLista & { nota_satisfacao: number | null; responsavel_tipo: string }; mensagens: MensagemChamado[] } | null> {
   if (!ehNumeroPublico(numero)) return null;
   const supabase = await createClient();
   if (!supabase) return null;
   const { data: c } = await supabase
     .from("chamados")
-    .select("id, numero_publico, assunto, status, prioridade, tipo, criado_em, atualizado_em, nota_satisfacao")
+    .select("id, numero_publico, assunto, status, prioridade, tipo, criado_em, atualizado_em, nota_satisfacao, responsavel_tipo")
     .eq("numero_publico", numero.trim().toUpperCase())
     .maybeSingle();
   if (!c) return null;
@@ -294,7 +261,7 @@ export async function meuChamado(numero: string): Promise<{ chamado: ChamadoList
     .select("id, autor, corpo, criado_em")
     .eq("chamado_id", c.id)
     .order("criado_em", { ascending: true });
-  return { chamado: c as ChamadoLista & { nota_satisfacao: number | null }, mensagens: (m ?? []) as MensagemChamado[] };
+  return { chamado: c as ChamadoLista & { nota_satisfacao: number | null; responsavel_tipo: string }, mensagens: (m ?? []) as MensagemChamado[] };
 }
 
 /** A pessoa responde no próprio chamado (reabre se estava resolvido). */
@@ -312,7 +279,7 @@ export async function responderMeuChamado(chamadoId: string, texto: string): Pro
     return { ok: false, error: "Muitas mensagens em pouco tempo. Aguarde um pouco." };
   }
   // RLS confirma que o chamado é dela.
-  const { data: c } = await supabase.from("chamados").select("id, status, prioridade").eq("id", chamadoId).maybeSingle();
+  const { data: c } = await supabase.from("chamados").select("id, status, prioridade, responsavel_tipo").eq("id", chamadoId).maybeSingle();
   if (!c) return { ok: false, error: "Chamado não encontrado." };
   if (c.status === "encerrado") return { ok: false, error: "Este chamado foi encerrado. Abra um novo, se precisar." };
 
@@ -320,6 +287,8 @@ export async function responderMeuChamado(chamadoId: string, texto: string): Pro
   const urgente = prioridadeTexto === "p1";
   await admin.from("chamado_mensagens").insert({ chamado_id: c.id, autor: "usuario", autor_id: user.id, corpo: limpar(corpo, 4000) });
   if (emergencia) await admin.from("chamado_mensagens").insert({ chamado_id: c.id, autor: "sistema", corpo: avisoEmergencia(emergencia) });
+  // Golpe: orientação na hora (num chamado com a Viva, ela mesma diz isso ao passar para a equipe).
+  else if (ehGolpe(corpo) && !(c.responsavel_tipo === "ia" && vivaAtiva())) await admin.from("chamado_mensagens").insert({ chamado_id: c.id, autor: "sistema", corpo: ORIENTACAO_GOLPE });
   const novoStatus = c.status === "aguardando_aprovacao" ? "aguardando_aprovacao" : "em_andamento";
   const mudancas: Record<string, unknown> = { status: novoStatus, atualizado_em: new Date().toISOString() };
   if (urgente && c.prioridade !== "p1") mudancas.prioridade = "p1";
@@ -332,6 +301,50 @@ export async function responderMeuChamado(chamadoId: string, texto: string): Pro
     const { data: full } = await admin.from("chamados").select("id, numero_publico, assunto, prioridade, usuario_id").eq("id", c.id).single();
     if (full) await avisarEquipe(full as ChamadoResumo, "subiu para P1 pela mensagem da pessoa");
   }
+  if (c.responsavel_tipo === "ia" && vivaAtiva()) after(() => rodarViva(c.id as string));
+  return { ok: true };
+}
+
+/** "Falar com uma pessoa" (botão no chamado). Passa na hora, sem insistir. */
+export async function pedirPessoa(chamadoId: string): Promise<Res> {
+  const supabase = await createClient();
+  if (!supabase || !UUID_RE.test(chamadoId)) return { ok: false, error: "Chamado inválido." };
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Entre na sua conta." };
+  // RLS confirma que o chamado é dela.
+  const { data: c } = await supabase.from("chamados").select("id").eq("id", chamadoId).maybeSingle();
+  if (!c) return { ok: false, error: "Chamado não encontrado." };
+  return (await escalarParaPessoa(chamadoId, "a pessoa pediu", "usuario", user.id)) ? { ok: true } : { ok: false, error: "Este chamado já foi encerrado." };
+}
+
+/** "Falar com uma pessoa" pelo link do e-mail (assinado; vale para visitante). */
+export async function pedirPessoaPorLink(chamadoId: string, assinatura: string): Promise<Res> {
+  if (!UUID_RE.test(chamadoId) || !pessoaValida(chamadoId, assinatura)) return { ok: false, error: "Link inválido." };
+  if ((await situacaoLimite(`pessoa-link:${chamadoId}`, 5, HORA)) === "estourou") return { ok: false, error: "Aguarde um pouco." };
+  return (await escalarParaPessoa(chamadoId, "a pessoa pediu (link do e-mail)", "usuario")) ? { ok: true } : { ok: false, error: "Este chamado já foi encerrado." };
+}
+
+/** "Sim, resolveu" — a pessoa fecha o chamado que a Viva respondeu (e recebe o pedido de nota). */
+export async function marcarResolvido(chamadoId: string): Promise<Res> {
+  const supabase = await createClient();
+  const admin = createAdminClient();
+  if (!supabase || !admin || !UUID_RE.test(chamadoId)) return { ok: false, error: "Chamado inválido." };
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Entre na sua conta." };
+  const { data: c } = await supabase
+    .from("chamados")
+    .select("id, numero_publico, assunto, prioridade, status, usuario_id, visitante_email, visitante_nome")
+    .eq("id", chamadoId)
+    .maybeSingle();
+  if (!c || c.status !== "aguardando_usuario") return { ok: false, error: "Este chamado não está aguardando você." };
+  const agora = new Date().toISOString();
+  await admin.from("chamados").update({ status: "resolvido", resolvido_em: agora, atualizado_em: agora }).eq("id", c.id);
+  await admin.from("chamado_eventos").insert({ chamado_id: c.id, ator_tipo: "usuario", ator_id: user.id, acao: "status", de: "aguardando_usuario", para: "resolvido", detalhe: "a pessoa marcou como resolvido" });
+  await avisarUsuario(c as ChamadoResumo, "chamado_resolvido");
   return { ok: true };
 }
 
@@ -470,7 +483,8 @@ export async function responderComoAdmin(id: string, texto: string, interno: boo
   await ctx.admin.from("chamado_mensagens").insert({ chamado_id: id, autor: "admin", autor_id: ctx.userId, corpo, interno });
   if (!interno) {
     const agora = new Date().toISOString();
-    const mud: Record<string, unknown> = { status: "aguardando_usuario", atualizado_em: agora, responsavel_admin: ctx.userId };
+    // Resposta da equipe: o chamado passa a ser dela (a Viva não volta a responder nele).
+    const mud: Record<string, unknown> = { status: "aguardando_usuario", atualizado_em: agora, responsavel_admin: ctx.userId, responsavel_tipo: "humano" };
     if (!c.primeira_resposta_em) mud.primeira_resposta_em = agora;
     await ctx.admin.from("chamados").update(mud).eq("id", id);
     await ctx.admin.from("chamado_eventos").insert({ chamado_id: id, ator_tipo: "admin", ator_id: ctx.userId, acao: "respondido", de: c.status as string, para: "aguardando_usuario" });
@@ -555,10 +569,93 @@ export async function apagarMacro(id: string): Promise<Res> {
   return error ? { ok: false, error: "Não foi possível apagar." } : { ok: true };
 }
 
+/** Admin: "boa resposta" ou "corrigir" numa resposta da Viva (melhora macros e FAQ). */
+export async function avaliarRespostaIA(chamadoId: string, mensagemId: number, nota: "boa" | "corrigir", correcao?: string): Promise<Res> {
+  const ctx = await exigirAdmin();
+  if (!ctx || !UUID_RE.test(chamadoId) || !Number.isInteger(mensagemId)) return { ok: false, error: "Sem permissão." };
+  const { data: m } = await ctx.admin.from("chamado_mensagens").select("id").eq("id", mensagemId).eq("chamado_id", chamadoId).eq("autor", "ia").maybeSingle();
+  if (!m) return { ok: false, error: "Resposta não encontrada." };
+  const texto = (correcao ?? "").trim().slice(0, 2000);
+  if (nota === "corrigir" && texto.length < 3) return { ok: false, error: "Escreva como a resposta deveria ser." };
+  await ctx.admin.from("chamado_eventos").insert({
+    chamado_id: chamadoId,
+    ator_tipo: "admin",
+    ator_id: ctx.userId,
+    acao: nota === "boa" ? "ia_boa_resposta" : "ia_corrigir",
+    de: String(mensagemId),
+    detalhe: nota === "corrigir" ? texto : null,
+  });
+  return { ok: true };
+}
+
+export interface ResultadoCenario {
+  n: number;
+  mensagem: string;
+  critico: boolean;
+  quemResolve: string;
+  prazo: string;
+  rota: string;
+  destino: string;
+  prioridade: string;
+  resposta: string | null;
+  falhas: string[];
+  chamadas: number;
+}
+
+/**
+ * Admin: roda os 14 cenários com a IA DE VERDADE (ferramentas de mentira, nada
+ * toca o banco). Custa ~14 atendimentos; limitado a 3 rodadas por dia.
+ */
+export async function testarViva(): Promise<{ ok: true; resultados: ResultadoCenario[] } | { ok: false; error: string }> {
+  const ctx = await exigirAdmin();
+  if (!ctx) return { ok: false, error: "Sem permissão." };
+  if (!process.env.ANTHROPIC_API_KEY) return { ok: false, error: "Falta a ANTHROPIC_API_KEY na Vercel." };
+  if ((await situacaoLimite("viva:teste", 3, 24 * HORA)) === "estourou") return { ok: false, error: "Limite de 3 rodadas por dia." };
+  const modelo = chamarClaude();
+  const resultados = await Promise.all(
+    CENARIOS.map(async (c) => {
+      const r = await atenderViva(entradaDoCenario(c), modelo, ferramentasDeTeste());
+      return {
+        n: c.n,
+        mensagem: c.mensagem,
+        critico: c.critico,
+        quemResolve: c.esperado.quemResolve,
+        prazo: c.esperado.prazo,
+        rota: r.rota,
+        destino: r.destino,
+        prioridade: r.prioridade,
+        resposta: r.resposta,
+        falhas: falhasDoCenario(c, r),
+        chamadas: r.uso.chamadas,
+      };
+    })
+  );
+  return { ok: true, resultados };
+}
+
 export async function metricasAtendimento(dias = 30): Promise<Record<string, unknown> | null> {
   const ctx = await exigirAdmin();
   if (!ctx) return null;
   const { data, error } = await ctx.admin.rpc("admin_atendimento_metricas", { p_dias: dias });
   if (error) return null;
-  return data as Record<string, unknown>;
+  // Qualidade da Viva: "boa resposta" × "corrigir" no período (+ as últimas correções).
+  const desde = new Date(Date.now() - Math.max(1, Math.min(dias, 400)) * 24 * HORA * 1000).toISOString();
+  const { data: fb } = await ctx.admin
+    .from("chamado_eventos")
+    .select("acao, detalhe, criado_em, chamados!inner(numero_publico, simulacao)")
+    .in("acao", ["ia_boa_resposta", "ia_corrigir"])
+    .eq("chamados.simulacao", false)
+    .gte("criado_em", desde)
+    .order("criado_em", { ascending: false })
+    .limit(500);
+  const lista = fb ?? [];
+  return {
+    ...(data as Record<string, unknown>),
+    viva_boas: lista.filter((e) => e.acao === "ia_boa_resposta").length,
+    viva_corrigir: lista.filter((e) => e.acao === "ia_corrigir").length,
+    viva_correcoes: lista
+      .filter((e) => e.acao === "ia_corrigir")
+      .slice(0, 10)
+      .map((e) => ({ numero: (e.chamados as unknown as { numero_publico?: string })?.numero_publico ?? "", texto: e.detalhe as string, em: e.criado_em as string })),
+  };
 }

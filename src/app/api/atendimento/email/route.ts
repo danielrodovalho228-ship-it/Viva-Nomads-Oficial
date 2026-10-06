@@ -1,11 +1,13 @@
 import crypto from "node:crypto";
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { guardContactInfo } from "@/lib/messages/contact-guard";
 import { calcularPrazos, mensagemPrazo } from "@/config/atendimento";
 import { avisoEmergencia, classificar } from "@/lib/atendimento/classificar";
 import { avisarEquipe, avisarUsuario, type ChamadoResumo } from "@/lib/atendimento/servidor";
 import { consumirLimite, HORA } from "@/lib/limites";
+import { rodarViva, vivaAtiva } from "@/lib/atendimento/viva-servidor";
+import { AVISO_VIVA, ehGolpe, ORIENTACAO_GOLPE } from "@/lib/atendimento/viva-regras";
 
 /**
  * ENTRADA POR E-MAIL (ajuda@vivanomads.com.br) — atrás da flag
@@ -65,7 +67,7 @@ export async function POST(request: Request) {
   if (num) {
     const { data: c } = await admin
       .from("chamados")
-      .select("id, numero_publico, assunto, prioridade, status, usuario_id, visitante_email, visitante_nome")
+      .select("id, numero_publico, assunto, prioridade, status, usuario_id, visitante_email, visitante_nome, responsavel_tipo")
       .eq("numero_publico", num)
       .maybeSingle();
     const dono = c && ((usuarioId && c.usuario_id === usuarioId) || (c.visitante_email && c.visitante_email === remetente.email));
@@ -75,6 +77,7 @@ export async function POST(request: Request) {
       if (c.status === "resolvido") {
         await admin.from("chamado_eventos").insert({ chamado_id: c.id, ator_tipo: "usuario", acao: "reaberto", de: "resolvido", para: "em_andamento", detalhe: "por e-mail" });
       }
+      if (c.responsavel_tipo === "ia" && vivaAtiva()) after(() => rodarViva(c.id as string));
       return NextResponse.json({ ok: true, chamado: c.numero_publico, acao: "resposta" });
     }
   }
@@ -83,6 +86,7 @@ export async function POST(request: Request) {
   const { tipo, prioridade, emergencia } = classificar("duvida", `${assunto}\n${texto}`);
   const agora = new Date();
   const prazos = calcularPrazos(prioridade, agora);
+  const comViva = vivaAtiva() && !emergencia && prioridade !== "p1";
   const { data: novo, error } = await admin
     .from("chamados")
     .insert({
@@ -93,6 +97,7 @@ export async function POST(request: Request) {
       categoria: "duvida",
       prioridade,
       canal: "email",
+      responsavel_tipo: comViva ? "ia" : "humano",
       assunto: guardContactInfo(assunto.replace(/^(re|fw|fwd|enc):\s*/i, "").trim() || texto.split("\n")[0]).text.slice(0, 140) || "Mensagem por e-mail",
       prazo_primeira_resposta: prazos.primeiraResposta.toISOString(),
       prazo_resolucao: prazos.resolucao.toISOString(),
@@ -100,7 +105,7 @@ export async function POST(request: Request) {
     .select("id, numero_publico, assunto, prioridade, usuario_id, visitante_email, visitante_nome")
     .single();
   if (error || !novo) return NextResponse.json({ error: "Falha ao registrar." }, { status: 500 });
-  const aviso = [emergencia ? avisoEmergencia(emergencia) : null, mensagemPrazo(prioridade, agora)].filter(Boolean).join(" ");
+  const aviso = [emergencia ? avisoEmergencia(emergencia) : null, ehGolpe(texto) ? ORIENTACAO_GOLPE : null, comViva ? AVISO_VIVA : mensagemPrazo(prioridade, agora)].filter(Boolean).join(" ");
   await admin.from("chamado_mensagens").insert([
     { chamado_id: novo.id, autor: "usuario", autor_id: usuarioId, corpo },
     { chamado_id: novo.id, autor: "sistema", corpo: aviso },
@@ -108,5 +113,6 @@ export async function POST(request: Request) {
   await admin.from("chamado_eventos").insert({ chamado_id: novo.id, ator_tipo: "sistema", acao: "aberto", para: prioridade, detalhe: "por e-mail" });
   await avisarUsuario(novo as ChamadoResumo, "chamado_aberto");
   if (prioridade === "p1" || prioridade === "p2") await avisarEquipe(novo as ChamadoResumo, "chegou por e-mail");
+  if (comViva) after(() => rodarViva(novo.id as string));
   return NextResponse.json({ ok: true, chamado: novo.numero_publico, acao: "novo" });
 }

@@ -3,7 +3,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { notify } from "@/lib/notifications";
 import { textoEmail } from "@/lib/notifications/texto-seguro";
 import { SITE_URL } from "@/lib/site";
-import { PRAZOS, type Prioridade } from "@/config/atendimento";
+import { PRAZOS, PRAZO_MANUTENCAO_H, prazoManutencao, type Prioridade, type UrgenciaManutencao } from "@/config/atendimento";
+import { guardContactInfo } from "@/lib/messages/contact-guard";
+import { urgenciaManutencao } from "@/lib/atendimento/classificar";
 
 /**
  * Atendimento — utilidades SÓ DO SERVIDOR: token da nota de 1 a 5 (um clique,
@@ -27,6 +29,22 @@ export function notaValida(chamadoId: string, nota: number, assinatura: string):
 
 export function linkNota(chamadoId: string, nota: number): string {
   return `${SITE_URL}/api/atendimento/avaliar?c=${chamadoId}&n=${nota}&s=${assinarNota(chamadoId, nota)}`;
+}
+
+/** Link "Falar com uma pessoa" do e-mail (assinado; funciona sem login). Abre a
+ *  Central com um botão de confirmação: robôs que abrem links de e-mail não
+ *  passam o chamado sozinhos. */
+function assinarPessoa(chamadoId: string): string {
+  return crypto.createHmac("sha256", segredo()).update(`pessoa:${chamadoId}`).digest("hex").slice(0, 32);
+}
+
+export function pessoaValida(chamadoId: string, assinatura: string): boolean {
+  if (!/^[0-9a-f]{32}$/.test(assinatura)) return false;
+  return crypto.timingSafeEqual(Buffer.from(assinarPessoa(chamadoId)), Buffer.from(assinatura));
+}
+
+export function linkPessoa(chamadoId: string): string {
+  return `${SITE_URL}/ajuda?pessoa=${chamadoId}&s=${assinarPessoa(chamadoId)}`;
 }
 
 export interface ChamadoResumo {
@@ -113,4 +131,86 @@ export async function avisarEquipe(c: ChamadoResumo, motivo: string): Promise<vo
       detailsHtml: `<p style="margin:12px 0 0;color:#334155;"><strong>${textoEmail(c.numero_publico, 20)}</strong> · ${textoEmail(c.assunto, 140)}<br/>${textoEmail(motivo, 200)}</p><p style="margin:16px 0 0;"><a href="${SITE_URL}/admin/atendimento/${c.id}" style="color:#1c6b3a;font-weight:600;">Abrir no admin</a></p>`,
     }).catch(() => null);
   }
+}
+
+// ── Manutenção (formulário e Viva usam a MESMA regra) ──────────────────────
+const CATEGORIAS_SO = ["hidraulica", "eletrica", "eletrodomesticos", "estrutura", "internet", "outros"] as const;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export interface OrdemCriada {
+  serviceOrderId: string;
+  urgencia: UrgenciaManutencao;
+  ownerId: string;
+  propertyTitle: string;
+}
+
+/**
+ * Abre a ordem de manutenção para o proprietário, no contrato ATIVO da pessoa
+ * inquilina. Sem contrato informado, usa o único contrato ativo (se houver só um).
+ * A urgência é a maior entre a escolhida e a que o texto indica (falta de água = urgente).
+ */
+export async function criarOrdemManutencao(input: {
+  tenantId: string;
+  contratoId: string | null;
+  mensagem: string;
+  urgencia?: UrgenciaManutencao;
+  categoria?: string;
+}): Promise<{ ok: true; ordem: OrdemCriada } | { ok: false; error: string }> {
+  const admin = createAdminClient();
+  if (!admin) return { ok: false, error: "Indisponível no momento." };
+  let contratoId = input.contratoId;
+  if (!contratoId) {
+    const { data: ativos } = await admin.from("contratos").select("id").eq("tenant_id", input.tenantId).in("status", ["ativo", "encerrado_em_acerto"]).limit(2);
+    if (!ativos || ativos.length === 0) return { ok: false, error: "Manutenção só pode ser pedida no contrato ativo do seu imóvel." };
+    if (ativos.length > 1) return { ok: false, error: "Há mais de um contrato ativo: diga em qual imóvel é o problema." };
+    contratoId = ativos[0].id as string;
+  }
+  if (!UUID_RE.test(contratoId)) return { ok: false, error: "Escolha o contrato do imóvel." };
+  const { data: ct } = await admin
+    .from("contratos")
+    .select("id, tenant_id, status, property_id, properties(owner_id, title)")
+    .eq("id", contratoId)
+    .maybeSingle();
+  const prop = ct?.properties as { owner_id?: string; title?: string } | null;
+  if (!ct || ct.tenant_id !== input.tenantId || !["ativo", "encerrado_em_acerto"].includes(ct.status as string) || !prop?.owner_id) {
+    return { ok: false, error: "Manutenção só pode ser pedida no contrato ativo do seu imóvel." };
+  }
+  const urgencia = urgenciaManutencao(input.mensagem, input.urgencia);
+  const categoria = (CATEGORIAS_SO as readonly string[]).includes(input.categoria ?? "") ? input.categoria : "outros";
+  const { data: so, error } = await admin
+    .from("service_orders")
+    .insert({
+      contract_id: null,
+      property_id: ct.property_id,
+      tenant_id: input.tenantId,
+      owner_id: prop.owner_id,
+      category: categoria,
+      priority: urgencia,
+      description: guardContactInfo(input.mensagem.trim().slice(0, 2000)).text,
+      status: "aberto",
+    })
+    .select("id")
+    .single();
+  if (error || !so) {
+    console.error("[atendimento] ordem de manutenção:", error?.message);
+    return { ok: false, error: "Não foi possível registrar a manutenção agora. Tente de novo." };
+  }
+  return { ok: true, ordem: { serviceOrderId: so.id as string, urgencia, ownerId: prop.owner_id, propertyTitle: prop.title ?? "seu imóvel" } };
+}
+
+/** E-mail ao proprietário: manutenção nova (ou lembrete), com o prazo. */
+export async function avisarProprietarioManutencao(ordem: OrdemCriada, agora: Date, lembrete = false): Promise<void> {
+  const admin = createAdminClient();
+  if (!admin) return;
+  const { data: dono } = await admin.from("profiles").select("email, full_name, notif_email").eq("id", ordem.ownerId).maybeSingle();
+  if (!dono?.email || dono.notif_email === false) return;
+  await notify({
+    event: "manutencao_nova",
+    email: dono.email as string,
+    name: (dono.full_name as string) ?? undefined,
+    userId: ordem.ownerId,
+    pushUrl: "/dashboard/solicitacoes",
+    subject: `${lembrete ? "Lembrete: " : ""}Manutenção ${ordem.urgencia === "urgente" ? "URGENTE " : ""}no imóvel — responda em até ${PRAZO_MANUTENCAO_H[ordem.urgencia]} h`,
+    detailsHtml: `<p style="margin:12px 0 0;color:#334155;">Imóvel: <strong>${textoEmail(ordem.propertyTitle, 120)}</strong><br/>Prazo para responder: até ${prazoManutencao(ordem.urgencia, agora).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" })}.</p>`,
+  }).catch(() => null);
 }
