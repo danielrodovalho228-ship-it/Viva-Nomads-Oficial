@@ -77,7 +77,6 @@ const PLANOS_BASE: Plano[] = [
       "Até 20 anúncios ativos",
       "Tudo do Essencial",
       "Prioridade máxima na busca",
-      "Contrato digital com validade jurídica incluído",
     ],
     custoLabel: "",
     cta: "Assinar Profissional",

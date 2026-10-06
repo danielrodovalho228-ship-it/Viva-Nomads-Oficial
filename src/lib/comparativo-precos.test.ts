@@ -7,7 +7,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { calcularComparativo, custoAnualPorPlano, planoMaisBarato } from "./comparativo-precos.ts";
+import { calcularComparativo, custoAnualPorPlano, planoMaisBarato, textoLimite } from "./comparativo-precos.ts";
 import { COMISSAO_POR_PLANO, PLANOS, taxaDoContrato, textoComissao } from "../config/planos.ts";
 
 test("tabela nova: 12% / 8% / 4% / 0% e mensalidades R$ 0 / 49 / 129 / sob consulta", () => {
@@ -38,6 +38,37 @@ test("qual plano compensa, por cenário", () => {
   assert.equal(planoMaisBarato(10, 40, 5000), "pro"); // Ess: 16000+588 · Pro: 8000+1548
   // Mais de 20 imóveis: só o Gestor (sob consulta)
   assert.equal(planoMaisBarato(25, 50, 3000), "gestor");
+});
+
+test("limite de anúncios: plano acima do limite fica desabilitado e nunca 'compensa'", () => {
+  const disp = (imoveis: number) => Object.fromEntries(custoAnualPorPlano(imoveis, 3, 2400).map((x) => [x.id, x.disponivel]));
+  // 1 imóvel, 3 contratos → Gratuito
+  assert.equal(planoMaisBarato(1, 3, 2400), "free");
+  assert.deepEqual(disp(1), { free: true, essential: true, pro: true, gestor: true });
+  // 2 imóveis → Gratuito desabilitado ("Limite de 1 anúncio")
+  const dois = custoAnualPorPlano(2, 3, 2400).find((x) => x.id === "free")!;
+  assert.equal(dois.disponivel, false);
+  assert.equal(dois.total, null);
+  assert.equal(textoLimite(dois.limite), "Limite de 1 anúncio");
+  assert.notEqual(planoMaisBarato(2, 3, 2400), "free");
+  // 6 imóveis → só Profissional e Gestor
+  assert.deepEqual(disp(6), { free: false, essential: false, pro: true, gestor: true });
+  assert.equal(textoLimite(5), "Limite de 5 anúncios");
+  assert.equal(planoMaisBarato(6, 3, 2400), "pro");
+  // Mesmo com 0 contrato (Gratuito seria R$ 0), plano sem vaga não compensa
+  assert.equal(planoMaisBarato(6, 0, 2400), "pro");
+});
+
+test("limites vêm de config/planos.ts", () => {
+  for (const p of PLANOS) assert.equal(custoAnualPorPlano(1, 0, 2400).find((x) => x.id === p.id)!.limite, p.limiteAnuncios);
+  assert.deepEqual(PLANOS.map((p) => p.limiteAnuncios).slice(0, 3), [1, 5, 20]);
+});
+
+test("Profissional não vende o contrato digital como exclusivo (acompanha toda locação)", () => {
+  const pro = PLANOS.find((p) => p.id === "pro")!;
+  assert.ok(!pro.beneficios.some((b) => /contrato digital/i.test(b)));
+  const modelo = readFileSync(new URL("../components/modelo-negocio/modelo-negocio.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(modelo, /Contrato digital com validade jurídica incluído|Contrato incluído/);
 });
 
 test("texto da comissão sempre em reais", () => {

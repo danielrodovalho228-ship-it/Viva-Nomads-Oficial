@@ -51,9 +51,18 @@ export function calcularComparativo(aluguel: number, meses: number): Comparativo
 export interface CustoAnual {
   id: PlanoId;
   nome: string;
-  /** null = o plano não comporta tantos imóveis. */
+  /** null = o plano não comporta tantos imóveis (ou é sob consulta). */
   total: number | null;
   sobConsulta: boolean;
+  /** Anúncios ativos permitidos (config/planos.ts). */
+  limite: number;
+  /** false = mais imóveis que o limite: aparece desabilitado e nunca "compensa". */
+  disponivel: boolean;
+}
+
+/** "Limite de 1 anúncio" / "Limite de 5 anúncios". */
+export function textoLimite(limite: number): string {
+  return `Limite de ${limite} ${limite === 1 ? "anúncio" : "anúncios"}`;
 }
 
 /**
@@ -66,15 +75,16 @@ export function custoAnualPorPlano(imoveis: number, contratosAno: number, alugue
   const c = Math.max(0, Math.round(Number(contratosAno) || 0));
   const a = Math.max(0, Number(aluguel) || 0);
   return PLANOS.map((p) => {
-    if (p.precoMensal === null) return { id: p.id, nome: p.nome, total: null, sobConsulta: true };
-    if (p.limiteAnuncios < n) return { id: p.id, nome: p.nome, total: null, sobConsulta: false };
-    return { id: p.id, nome: p.nome, total: dinheiro(c * a * p.comissao + 12 * p.precoMensal), sobConsulta: false };
+    const base = { id: p.id, nome: p.nome, limite: p.limiteAnuncios, disponivel: p.limiteAnuncios >= n };
+    if (!base.disponivel) return { ...base, total: null, sobConsulta: false };
+    if (p.precoMensal === null) return { ...base, total: null, sobConsulta: true };
+    return { ...base, total: dinheiro(c * a * p.comissao + 12 * p.precoMensal), sobConsulta: false };
   });
 }
 
 /** O plano mais barato do cenário (ou "gestor" quando nenhum plano com preço comporta). */
 export function planoMaisBarato(imoveis: number, contratosAno: number, aluguel: number): PlanoId {
-  const opcoes = custoAnualPorPlano(imoveis, contratosAno, aluguel).filter((x) => x.total !== null) as (CustoAnual & { total: number })[];
+  const opcoes = custoAnualPorPlano(imoveis, contratosAno, aluguel).filter((x) => x.disponivel && x.total !== null) as (CustoAnual & { total: number })[];
   if (opcoes.length === 0) return "gestor";
   return opcoes.reduce((a, b) => (b.total < a.total ? b : a)).id;
 }

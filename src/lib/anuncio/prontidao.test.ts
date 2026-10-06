@@ -4,6 +4,7 @@
 */
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { readFileSync } from "node:fs";
 
 import { fatosDaLinha, MIN_FOTOS, OBRIGATORIOS_ROTULOS, prontidaoAnuncio, type FatosAnuncio, type LinhaAnuncio } from "./prontidao.ts";
 import { MIN_PHOTOS } from "../listing.ts";
@@ -101,4 +102,9 @@ test("FAQ 'Por que meu anúncio não publica?' lista exatamente os obrigatórios
   assert.ok(faq);
   for (const r of OBRIGATORIOS_ROTULOS) assert.ok(faq.resposta.toLowerCase().includes(r.toLowerCase()), r);
   assert.match(faq.resposta, /não impedem a publicação/);
+});
+
+test("'100% · Pronto para publicar' em Meus imóveis, Visão geral e editor", () => {
+  const ler = (p: string) => readFileSync(new URL(`../../app/(dashboard)/dashboard/${p}`, import.meta.url), "utf8");
+  for (const p of ["imoveis/imoveis-client.tsx", "page.tsx", "imoveis/[id]/editar/editar-client.tsx"]) assert.match(ler(p), /100% · [Pp]ronto para publicar/, p);
 });

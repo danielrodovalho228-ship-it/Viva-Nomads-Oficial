@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Calculator, Scale } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ALUGUEL_EXEMPLO, MERCADO, MESES_EXEMPLO, PLANOS, REGRAS_CONTRATO, textoComissao, reaisInteiros } from "@/config/planos";
-import { calcularComparativo, custoAnualPorPlano, planoMaisBarato } from "@/lib/comparativo-precos";
+import { calcularComparativo, custoAnualPorPlano, planoMaisBarato, textoLimite } from "@/lib/comparativo-precos";
 
 /**
  * "Quanto você paga: Viva Nomads × Airbnb" — componente ÚNICO, com números só
@@ -151,12 +151,21 @@ function QualPlanoCompensa({ aluguel }: { aluguel: number }) {
         {linhas.map((l) => (
           <li
             key={l.id}
-            className={cn("rounded-xl border px-3 py-2 text-sm", l.id === melhor ? "border-forest bg-sage-100 font-semibold text-forest" : "border-line text-ink")}
+            aria-disabled={!l.disponivel || undefined}
+            data-testid={`plano-ano-${l.id}`}
+            className={cn(
+              "rounded-xl border px-3 py-2 text-sm",
+              !l.disponivel
+                ? "border-dashed border-line bg-surface-2 text-muted opacity-60"
+                : l.id === melhor
+                  ? "border-forest bg-sage-100 font-semibold text-forest"
+                  : "border-line text-ink"
+            )}
           >
             <span className="block">{l.nome}</span>
             <span className="block">
-              {l.sobConsulta ? "sob consulta" : l.total === null ? "não comporta tantos imóveis" : `${reaisInteiros(l.total)}/ano`}
-              {l.id === melhor ? " · o que compensa" : ""}
+              {!l.disponivel ? textoLimite(l.limite) : l.sobConsulta ? "sob consulta" : `${reaisInteiros(l.total ?? 0)}/ano`}
+              {l.disponivel && l.id === melhor ? " · o que compensa" : ""}
             </span>
           </li>
         ))}
