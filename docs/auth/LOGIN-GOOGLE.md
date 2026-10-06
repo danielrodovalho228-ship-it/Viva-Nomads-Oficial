@@ -41,9 +41,10 @@ Leva uns 30 minutos.
   - (previews da Vercel, se quiser testar lá) `https://*-daniels-projects-386afd6c.vercel.app/**`
 
 ## 5. Apps
-- **Android (Capacitor):** o app abre o site; o login Google abre no navegador do
-  sistema e volta pelo `/auth/callback`. Teste depois de ligar a flag.
-- **iPhone (Expo):** na v1, **não** usar Google — a Apple exige "Entrar com a Apple"
+- **App (Expo, iPhone e Android):** o Google bloqueia login dentro de WebView. O plano
+  (navegador do sistema + PKCE, voltando por `vivanomads://auth/callback`) está em
+  `docs/APP-LINKS.md`.
+- **iPhone:** na v1, **não** usar Google — a Apple exige "Entrar com a Apple"
   quando há login social. O app Expo já mostra "Entre com e-mail e senha no app" se
   a página tentar abrir `accounts.google.com`. Para o iPhone ganhar Google, é preciso
   antes implementar Sign in with Apple.

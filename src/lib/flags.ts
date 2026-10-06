@@ -46,15 +46,6 @@ export const KYC_PORTAO_RIGIDO = process.env.NEXT_PUBLIC_KYC_PORTAO_RIGIDO === "
  */
 export const GERACAO_IA_ATIVA = process.env.NEXT_PUBLIC_GERACAO_IA === "on";
 
-/**
- * Push no app nativo (Android/iOS). OFF por padrão — PROTEÇÃO IMPORTANTE: no
- * Android, chamar `PushNotifications.register()` SEM o `google-services.json` no
- * build derruba o app (erro nativo de FirebaseApp não inicializado, que o
- * try/catch do JS NÃO pega). Então o `PushRegister` só chama `register()` quando
- * esta flag está ON. LIGUE (`NEXT_PUBLIC_PUSH_ATIVO="on"`) somente DEPOIS que o
- * app publicado/instalado já contém o `google-services.json`. Ver PLAY-STORE.md.
- */
-export const PUSH_ATIVO = process.env.NEXT_PUBLIC_PUSH_ATIVO === "on";
 
 /**
  * Login com Google. OFF por padrão: o provedor Google NÃO está ativado no

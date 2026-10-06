@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/auth-provider";
-import { NativeBridge } from "@/components/native/native-bridge";
 import { SITE_URL, SITE_NAME } from "@/lib/site";
 import { AppModeBridge } from "@/components/app/app-mode-bridge";
 import { LinksDoApp } from "@/components/app/links-do-app";
@@ -68,7 +67,6 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col bg-surface text-ink">
         <AuthProvider>
-          <NativeBridge />
           <AppModeBridge />
           <OrigemVisita />
           <BotaoAjuda />

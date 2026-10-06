@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 
 /**
  * Registra/atualiza o token de push do dispositivo do usuário logado.
- * Chamado pelo app nativo (Capacitor) após o SO liberar as notificações.
+ * Chamado pelo site dentro do app (Expo) depois que o celular libera as notificações.
  * Upsert por `token`: um token pertence a um aparelho/usuário.
  */
 export async function registrarPushToken(

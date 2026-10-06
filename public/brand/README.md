@@ -22,13 +22,7 @@ some sobre o verde-escuro).
 - PWA: `public/icon-192.png`, `public/icon-512.png` e as versões `-maskable`.
 - E-mails: `public/email-mark.png`.
 - Imagem de compartilhamento: `src/app/opengraph-image.tsx` (lê `novo/vn-mark-128.png`).
-- App Android: `android/app/src/main/res/` — gerado de `assets/` (cópias dos mestres):
-
-```bash
-npx @capacitor/assets generate --android \
-  --iconBackgroundColor '#FFFFFF' --iconBackgroundColorDark '#FFFFFF' \
-  --splashBackgroundColor '#FFFFFF' --splashBackgroundColorDark '#FFFFFF'
-```
+- App (Expo, viva-nomads-app): ícone e splash ficam no `app.json` do app (`icon`, `splash`, `android.adaptiveIcon`), a partir dos mestres em `assets/`.
 
 `assets/icon-foreground.png` = `android-adaptive-foreground.png`,
 `assets/icon-background.png` = `android-adaptive-background.png`,

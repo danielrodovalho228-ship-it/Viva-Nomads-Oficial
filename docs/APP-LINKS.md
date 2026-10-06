@@ -88,7 +88,7 @@ Os dois têm de responder 200, em JSON e sem redirecionamento. Validadores:
 - Google: <https://developers.google.com/digital-asset-links/tools/generator>
 
 ## App Expo (viva-nomads-app) — iPhone e Android
-**Um app só.** O Capacitor (pasta `android/` do site) vai ser aposentado num PR separado. Os dois usam o mesmo identificador (`br.com.vivanomads.app`), e só um pode ir para a Play.
+**Um app só.** O Capacitor foi aposentado (veja `docs/CAPACITOR-APOSENTADO.md`).
 
 **app.json** (trecho gerado de `rotas-app.ts`; junte ao que já existe):
 ```json
