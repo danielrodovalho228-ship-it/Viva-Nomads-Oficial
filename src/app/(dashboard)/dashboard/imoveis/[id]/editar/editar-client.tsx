@@ -111,12 +111,10 @@ export function EditarImovelClient({
         documento: fatos?.documento ?? "approved",
         limitePlanoOk: fatos?.limitePlanoOk ?? null,
         descricao: description,
-        capacidade: Number(maxGuests) || 0,
-        disponivelDesde: !!availableFrom,
         selo: fatos?.selo ?? !!property.readyToLiveBadge,
         video: fatos?.video ?? !!property.videoUrl,
       }),
-    [fatos, property, bathrooms, areaM2, minPeriod, photos, title, monthlyPrice, description, maxGuests, availableFrom]
+    [fatos, property, bathrooms, areaM2, minPeriod, photos, title, monthlyPrice, description]
   );
   const [publicadoAgora, setPublicadoAgora] = useState(false);
   const publicado = publicadoAgora || property.status === "active";
@@ -235,7 +233,7 @@ export function EditarImovelClient({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="font-title text-lg font-bold text-ink" data-testid="prontidao">
-              {publicado ? "Anúncio publicado" : comp.podePublicar ? "Pronto para publicar" : `Anúncio ${comp.pct}% completo`}
+              {publicado ? "Anúncio publicado" : comp.podePublicar ? "100% · Pronto para publicar" : `Anúncio ${comp.pct}% completo`}
             </p>
             {!comp.podePublicar && (
               <p className="mt-0.5 text-sm text-muted">Falta para publicar: {comp.faltam.join(" · ")}</p>

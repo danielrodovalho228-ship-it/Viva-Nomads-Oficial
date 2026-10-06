@@ -301,7 +301,7 @@ function DraftPendingCard({
         </span>
         <div className="min-w-0">
           <p className="font-title text-sm font-bold text-ink">
-            {draft.pronto ? "Anúncio pronto para publicar" : `Anúncio em andamento${draft.pct > 0 ? ` — ${draft.pct}% completo` : ""}`}
+            {draft.pronto ? "Anúncio 100% · pronto para publicar" : `Anúncio em andamento${draft.pct > 0 ? ` — ${draft.pct}% completo` : ""}`}
           </p>
           <p className="text-xs text-muted" data-testid="prontidao-visao-geral">
             {draft.pronto

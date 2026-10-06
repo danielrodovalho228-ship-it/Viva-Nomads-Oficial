@@ -93,8 +93,8 @@ const PLAN_CARDS: {
     preco: precoMes("pro"),
     comissaoLabel: rotuloComissao("pro"),
     audience: "Para quem vive de locação",
-    features: ["Até 20 anúncios", "Prioridade máxima na busca", "Contrato digital com validade jurídica incluído"],
-    why: "Contrato incluído e comissão menor — escala com você.",
+    features: ["Até 20 anúncios", "Prioridade máxima na busca"],
+    why: "Comissão menor e mais anúncios — escala com você.",
   },
   {
     key: "gestor",

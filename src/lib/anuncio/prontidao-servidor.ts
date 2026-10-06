@@ -14,7 +14,7 @@ import { fatosDaLinha, prontidaoAnuncio, type FatosAnuncio, type LinhaAnuncio, t
 type Cliente = any;
 
 const COLUNAS =
-  "id, status, title, address, city, bathrooms, area_m2, min_period_days, monthly_price, garantias_aceitas, ownership_type, sublease_authorized, description, max_guests, available_from, ready_to_live_badge, video_url";
+  "id, status, title, address, city, bathrooms, area_m2, min_period_days, monthly_price, garantias_aceitas, ownership_type, sublease_authorized, description, ready_to_live_badge, video_url";
 
 /** Fatos do banco por imóvel (o editor usa como base e sobrepõe o que está sendo editado). */
 export async function fatosDosImoveis(cliente: Cliente, ownerId: string, ids?: string[]): Promise<Map<string, FatosAnuncio>> {
