@@ -3,13 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Clock, Lock, Send } from "lucide-react";
+import { ArrowLeft, Clock, Lock, Pencil, Send, ThumbsUp } from "lucide-react";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { cn, dataBR } from "@/lib/utils";
 import { PRAZOS, type Prioridade } from "@/config/atendimento";
 import { primeiroNome } from "@/lib/display-name";
-import { alterarChamado, responderComoAdmin, type chamadoAdmin, type Macro } from "@/lib/data/atendimento-actions";
+import { alterarChamado, avaliarRespostaIA, responderComoAdmin, type chamadoAdmin, type Macro } from "@/lib/data/atendimento-actions";
 import { relogio } from "../atendimento-client";
 
 type Dados = NonNullable<Awaited<ReturnType<typeof chamadoAdmin>>>;
@@ -22,6 +22,12 @@ const STATUS: Record<string, string> = {
   resolvido: "Resolvido",
   encerrado: "Encerrado",
 };
+/** Da nota da Viva, "Usar como resposta" pega só a resposta sugerida. */
+function respostaDaNota(corpo: string): string {
+  const i = corpo.indexOf("Resposta sugerida:\n");
+  return i >= 0 ? corpo.slice(i + "Resposta sugerida:\n".length).trim() : corpo;
+}
+
 const fmt = (iso: string) => new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" });
 
 export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; macros: Macro[]; agoraISO: string }) {
@@ -31,6 +37,9 @@ export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; 
   const [interno, setInterno] = useState(false);
   const [ocupado, setOcupado] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [corrigindo, setCorrigindo] = useState<number | null>(null);
+  const [correcao, setCorrecao] = useState("");
+  const avaliadas = new Map(eventos.filter((e) => e.acao === "ia_boa_resposta" || e.acao === "ia_corrigir").map((e) => [Number(e.de), e.acao]));
   const r = relogio(c, new Date(agoraISO));
   const nome = primeiroNome(pessoa?.nome ?? c.visitante_nome) || "tudo bem";
 
@@ -68,9 +77,49 @@ export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; 
                   </span>
                   <span className="whitespace-pre-wrap text-ink">{m.corpo}</span>
                   {m.interno && (
-                    <button type="button" onClick={() => setTexto(m.corpo)} className="mt-2 block text-xs font-medium text-forest underline">
+                    <button type="button" onClick={() => setTexto(respostaDaNota(m.corpo))} className="mt-2 block text-xs font-medium text-forest underline">
                       Usar como resposta
                     </button>
+                  )}
+                  {m.autor === "ia" && !m.interno && (
+                    <span className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                      {avaliadas.has(m.id) ? (
+                        <span className="text-muted">{avaliadas.get(m.id) === "ia_boa_resposta" ? "Marcada como boa resposta" : "Correção registrada"}</span>
+                      ) : (
+                        <>
+                          <button type="button" disabled={ocupado} onClick={() => agir(() => avaliarRespostaIA(c.id, m.id, "boa"))} className="inline-flex items-center gap-1 font-medium text-forest underline">
+                            <ThumbsUp className="h-3.5 w-3.5" /> Boa resposta
+                          </button>
+                          <button type="button" onClick={() => setCorrigindo(m.id)} className="inline-flex items-center gap-1 font-medium text-amber-800 underline">
+                            <Pencil className="h-3.5 w-3.5" /> Corrigir
+                          </button>
+                        </>
+                      )}
+                    </span>
+                  )}
+                  {corrigindo === m.id && (
+                    <span className="mt-2 block">
+                      <textarea
+                        rows={3}
+                        value={correcao}
+                        onChange={(e) => setCorrecao(e.target.value)}
+                        placeholder="Como a Viva deveria ter respondido (vira base para respostas prontas e FAQ)"
+                        className="w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink focus:border-forest focus:outline-none"
+                      />
+                      <Button
+                        size="sm"
+                        className="mt-2"
+                        disabled={ocupado}
+                        onClick={async () => {
+                          if (await agir(() => avaliarRespostaIA(c.id, m.id, "corrigir", correcao))) {
+                            setCorrigindo(null);
+                            setCorrecao("");
+                          }
+                        }}
+                      >
+                        Salvar correção
+                      </Button>
+                    </span>
                   )}
                 </li>
               ))}

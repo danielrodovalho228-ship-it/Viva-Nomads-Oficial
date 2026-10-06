@@ -101,9 +101,14 @@ export function prazoManutencao(urgencia: UrgenciaManutencao, agora: Date): Date
 
 /** Frase para o usuário: quando uma pessoa responde. */
 export function mensagemPrazo(prioridade: Prioridade, agora: Date): string {
+  return `Recebemos. ${frasePrazo(prioridade, agora)}`;
+}
+
+/** Só o prazo (sem o "Recebemos."), para compor com outras frases. */
+export function frasePrazo(prioridade: Prioridade, agora: Date): string {
   const base = PRAZOS[prioridade].descricao;
-  if (dentroDoHorario(agora)) return `Recebemos. Pela prioridade (${PRAZOS[prioridade].rotulo.toLowerCase()}), ${base}.`;
-  return `Recebemos. Nosso horário de atendimento é das ${HORARIO_HUMANO.inicio}h às ${HORARIO_HUMANO.fim}h; uma pessoa responde a partir das ${HORARIO_HUMANO.inicio}h (${base}).`;
+  if (dentroDoHorario(agora)) return `Pela prioridade (${PRAZOS[prioridade].rotulo.toLowerCase()}), ${base}.`;
+  return `Nosso horário de atendimento é das ${HORARIO_HUMANO.inicio}h às ${HORARIO_HUMANO.fim}h; uma pessoa responde a partir das ${HORARIO_HUMANO.inicio}h (${base}).`;
 }
 
 /** Estado do prazo para o relógio da fila: verde, amarelo (≥ 75% do tempo) ou vermelho. */

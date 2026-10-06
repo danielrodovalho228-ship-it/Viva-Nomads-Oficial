@@ -8,7 +8,7 @@ import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { PRAZOS, estadoPrazo, type Prioridade } from "@/config/atendimento";
-import { apagarMacro, salvarMacro, type ChamadoAdmin, type Macro } from "@/lib/data/atendimento-actions";
+import { apagarMacro, salvarMacro, testarViva, type ChamadoAdmin, type Macro, type ResultadoCenario } from "@/lib/data/atendimento-actions";
 
 const ABAS = [
   { id: "fila", rotulo: "Fila" },
@@ -90,7 +90,12 @@ export function AtendimentoClient({
           <Tabela itens={aprovacao} agora={agora} vazio="Nada aguardando aprovação." />
         </Panel>
       )}
-      {aba === "metricas" && <Metricas m={metricas} />}
+      {aba === "metricas" && (
+        <>
+          <Metricas m={metricas} />
+          <TestarViva />
+        </>
+      )}
       {aba === "respostas" && <Macros macros={macros} />}
     </>
   );
@@ -195,17 +200,19 @@ function Metricas({ m }: { m: Record<string, unknown> | null }) {
   const cards: [string, string, string][] = [
     ["Chamados no período", num(m.total), "Chamados reais abertos nos últimos dias (simulação fora)."],
     ["Abertos agora", num(m.abertos), "Sem resolver nem encerrar."],
-    ["1ª resposta — média", num(m.primeira_resposta_media_min, " min"), "Do abrir até a primeira resposta de uma pessoa."],
+    ["1ª resposta — média", num(m.primeira_resposta_media_min, " min"), "Do abrir até a primeira resposta (da Viva ou de uma pessoa)."],
     ["1ª resposta — p90", num(m.primeira_resposta_p90_min, " min"), "9 em cada 10 respondidos até este tempo."],
     ["Resolução — média", num(m.resolucao_media_h, " h"), "Do abrir até marcar resolvido."],
-    ["Resolvidos pela IA", pct(m.resolvidos_ia, m.resolvidos), "Resolvidos sem pessoa ÷ resolvidos (a IA entra no PR 2)."],
+    ["Resolvidos pela IA", pct(m.resolvidos_ia, m.resolvidos), "Resolvidos só pela Viva ÷ resolvidos."],
     ["Pediram uma pessoa", pct(m.pediu_humano, m.total), "Chamados em que a pessoa pediu atendimento humano."],
     ["Reabertos em 7 dias", pct(m.reabertos_7d, m.resolvidos), "Voltaram em até 7 dias depois de resolvidos."],
     ["Satisfação (4–5)", pct(m.satisfacao_4_5, m.satisfacao_notas), "Notas 4 ou 5 ÷ notas recebidas."],
     ["Nota média", num(m.satisfacao_media), "Média das notas de 1 a 5."],
     ["Chamados por 100 contratos", pct(m.total, m.contratos_periodo).replace("%", ""), "Chamados ÷ contratos do período × 100."],
     ["Manutenção — resposta do dono", num(m.manutencao_resposta_media_h, " h"), "Média até a 1ª resposta do proprietário."],
+    ["Viva — boas respostas", pct(m.viva_boas, Number(m.viva_boas ?? 0) + Number(m.viva_corrigir ?? 0)), "Marcadas como \"boa resposta\" ÷ respostas avaliadas pela equipe."],
   ];
+  const correcoes = (m.viva_correcoes as { numero: string; texto: string; em: string }[] | undefined) ?? [];
   return (
     <>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -222,6 +229,18 @@ function Metricas({ m }: { m: Record<string, unknown> | null }) {
           {(["p1", "p2", "p3", "p4"] as const).map((p) => `${p.toUpperCase()}: ${est[p] ?? 0}`).join(" · ")} · Manutenções sem resposta: {num(m.manutencao_sem_resposta)}
         </p>
       </Panel>
+      {correcoes.length > 0 && (
+        <Panel title="Correções da Viva (para melhorar respostas prontas e FAQ)" className="mt-6">
+          <ul className="space-y-2 text-sm">
+            {correcoes.map((c, i) => (
+              <li key={i} className="rounded-lg border border-line p-2">
+                <span className="text-xs text-muted">{c.numero}</span>
+                <p className="whitespace-pre-wrap text-ink">{c.texto}</p>
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      )}
     </>
   );
 }
@@ -286,5 +305,59 @@ function Macros({ macros }: { macros: Macro[] }) {
         )}
       </Panel>
     </div>
+  );
+}
+
+/** Roda os 14 cenários com a IA de verdade (ferramentas de mentira; nada toca o banco). */
+function TestarViva() {
+  const [rodando, setRodando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+  const [res, setRes] = useState<ResultadoCenario[] | null>(null);
+  const certos = res?.filter((r) => r.falhas.length === 0).length ?? 0;
+  const criticosOk = res ? res.filter((r) => r.critico).every((r) => r.falhas.length === 0) : false;
+  return (
+    <Panel title="Testar a Viva (14 cenários)" className="mt-6">
+      <p className="text-sm text-muted">
+        Roda os 14 cenários do plano de teste com a IA de verdade e dados de mentira (não cria chamado nem manda e-mail). Aprovação: pelo menos 12 de 14
+        certos e nenhum erro nos cenários 6, 7, 13 e 14. Até 3 rodadas por dia.
+      </p>
+      <Button
+        className="mt-3"
+        size="sm"
+        disabled={rodando}
+        onClick={async () => {
+          setRodando(true);
+          setErro(null);
+          const r = await testarViva().catch(() => ({ ok: false as const, error: "Falha de conexão." }));
+          setRodando(false);
+          if (r.ok) setRes(r.resultados);
+          else setErro(r.error);
+        }}
+      >
+        {rodando ? "Rodando… (até 1 minuto)" : "Rodar os 14 cenários"}
+      </Button>
+      {erro && <p className="mt-2 text-sm text-red-700">{erro}</p>}
+      {res && (
+        <>
+          <p className={cn("mt-4 text-sm font-semibold", certos >= 12 && criticosOk ? "text-forest" : "text-red-700")}>
+            {certos} de 14 certos · críticos (6, 7, 13, 14): {criticosOk ? "todos certos" : "ERRO"} → {certos >= 12 && criticosOk ? "APROVADO" : "REPROVADO"}
+          </p>
+          <ul className="mt-3 divide-y divide-line text-sm">
+            {res.map((r) => (
+              <li key={r.n} className="py-2">
+                <p className="font-medium text-ink">
+                  {r.falhas.length === 0 ? "✓" : "✗"} {r.n}. “{r.mensagem}”{r.critico ? " · crítico" : ""}
+                </p>
+                <p className="text-xs text-muted">
+                  Esperado: {r.quemResolve}, {r.prazo} · Obtido: {r.rota} → {r.destino}, {r.prioridade.toUpperCase()} · {r.chamadas} chamada(s) à IA
+                </p>
+                {r.resposta && <p className="mt-1 whitespace-pre-wrap rounded-lg bg-surface-2 p-2 text-xs text-ink">{r.resposta}</p>}
+                {r.falhas.length > 0 && <p className="mt-1 text-xs text-red-700">{r.falhas.join(" · ")}</p>}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </Panel>
   );
 }
