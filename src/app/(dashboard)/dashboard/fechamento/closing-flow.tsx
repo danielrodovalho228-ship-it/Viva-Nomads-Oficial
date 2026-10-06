@@ -44,6 +44,7 @@ import {
   type FormaPagamentoCaucao,
 } from "@/lib/caucao";
 import { COMMISSION_BY_PLAN } from "@/lib/constants";
+import { pctDeUmAluguel, textoComissao } from "@/config/planos";
 import { registrarContrato } from "@/lib/data/actions";
 import type { FechamentoContexto } from "@/lib/data/leads-actions";
 import { resumoContrato } from "@/lib/contrato-blocos";
@@ -982,7 +983,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
             {/* Comissão de fechamento: cobrada do proprietário, à parte */}
             <div className="rounded-xl border border-champagne/40 bg-champagne/10 p-4 text-sm">
               <p className="font-title font-bold text-forest">
-                Comissão deste contrato: {Math.round(COMMISSION_RATE * 100)}% — plano {ctx.planoNome}
+                Comissão deste contrato: {textoComissao(COMMISSION_RATE, PROPERTY.monthlyRent)} — plano {ctx.planoNome}
                 {aceiteBR ? ` em ${aceiteBR}` : ""}
               </p>
               <p className="mt-1 text-xs text-muted">
@@ -995,16 +996,16 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
               <div className="mt-3 space-y-1">
                 <Row label="Base de cálculo (1 aluguel)" value={formatBRL(PROPERTY.monthlyRent)} />
                 <div className="flex items-center justify-between border-t border-champagne/40 pt-1 font-medium text-forest">
-                  <span>Comissão cobrada de você ({Math.round(COMMISSION_RATE * 100)}%)</span>
+                  <span>Comissão cobrada de você ({pctDeUmAluguel(COMMISSION_RATE)}, uma vez)</span>
                   <span>{formatBRL(PLATFORM_COMMISSION)}</span>
                 </div>
               </div>
               {/* Incentivo de upgrade (A7). A comissão DESTE contrato está
                   congelada; o upgrade vale para os PRÓXIMOS aceites. */}
               <p className="mt-3 border-t border-champagne/40 pt-3 text-xs text-muted">
-                Esta comissão ({Math.round(COMMISSION_RATE * 100)}%, plano {ctx.planoNome}) ficou travada
+                Esta comissão ({textoComissao(COMMISSION_RATE)}, plano {ctx.planoNome}) ficou travada
                 na data do aceite. No plano <strong className="text-ink">Profissional</strong> seria{" "}
-                {Math.round(COMMISSION_BY_PLAN.pro * 100)}% — vale para os próximos aceites.{" "}
+                {textoComissao(COMMISSION_BY_PLAN.pro)} — vale para os próximos aceites.{" "}
                 <Link href="/dashboard/assinatura" className="font-medium text-blue-500 hover:text-blue-700">
                   Fazer upgrade →
                 </Link>
@@ -1085,7 +1086,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
               <Row label="Seguro patrimonial" value={patrimonial ? "Contratado" : "Não contratado"} />
               <Row label="Contrato" value={generated ? "Enviado para assinatura" : "Pendente"} />
               <Row
-                label={`Comissão (${Math.round(COMMISSION_RATE * 100)}%)`}
+                label={`Comissão (${pctDeUmAluguel(COMMISSION_RATE)}, uma vez)`}
                 value={`${formatBRL(PLATFORM_COMMISSION)} · cobrança à parte, do proprietário`}
               />
             </div>

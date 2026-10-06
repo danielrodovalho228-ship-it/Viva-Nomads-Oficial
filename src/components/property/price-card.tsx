@@ -45,6 +45,7 @@ export function PriceCard({ property, actions }: { property: Property; actions: 
         </span>
         <span className="text-muted">/mês</span>
       </div>
+      <p className="mt-0.5 text-xs text-muted">R$ 0 de taxa para você: o inquilino não paga nada à plataforma.</p>
 
       {allIncluded > property.monthlyPrice && (
         <p className="mt-1 text-sm text-muted">

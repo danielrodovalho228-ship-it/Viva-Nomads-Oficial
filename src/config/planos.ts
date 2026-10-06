@@ -5,8 +5,10 @@
   consomem SÓ deste arquivo.
 
   Modelo híbrido com comissão DECRESCENTE (uma única vez por contrato-mãe,
-  sobre 1 mês): Gratuito 12% → Essencial 10% → Profissional 8% → Gestor 0%
-  (comissão ZERO no topo; a receita do Gestor é só a assinatura sob consulta).
+  sobre 1 aluguel): Gratuito → Essencial → Profissional → Gestor (zero no topo;
+  a receita do Gestor é só a assinatura sob consulta). Os percentuais vivem SÓ
+  aqui; nas telas, sempre em reais ("12% de um aluguel, uma vez (≈ R$ X)").
+  Tabela atual: decisão do Daniel, out/2026.
 */
 
 export type PlanoId = "free" | "essential" | "pro" | "gestor";
@@ -25,7 +27,7 @@ export interface Plano {
   cta: string;
 }
 
-export const PLANOS: Plano[] = [
+const PLANOS_BASE: Plano[] = [
   {
     id: "free",
     nome: "Gratuito",
@@ -41,7 +43,7 @@ export const PLANOS: Plano[] = [
       "Recebe consultas de inquilinos",
       "Checklist de qualificação",
     ],
-    custoLabel: "Comissão de 12% no fechamento",
+    custoLabel: "",
     cta: "Começar grátis",
   },
   {
@@ -50,7 +52,7 @@ export const PLANOS: Plano[] = [
     publico: "Para quem tem alguns imóveis",
     precoMensal: 49,
     assinaturaAnual: 588,
-    comissao: 0.1,
+    comissao: 0.08,
     limiteAnuncios: 5,
     destaque: true,
     beneficios: [
@@ -59,7 +61,7 @@ export const PLANOS: Plano[] = [
       "Destaque na busca",
       "Painel de leads e mensagens",
     ],
-    custoLabel: "Comissão de 10% no fechamento",
+    custoLabel: "",
     cta: "Assinar Essencial",
   },
   {
@@ -68,7 +70,7 @@ export const PLANOS: Plano[] = [
     publico: "Para quem vive de locação",
     precoMensal: 129,
     assinaturaAnual: 1548,
-    comissao: 0.08,
+    comissao: 0.04,
     limiteAnuncios: 20,
     destaque: false,
     beneficios: [
@@ -77,7 +79,7 @@ export const PLANOS: Plano[] = [
       "Prioridade máxima na busca",
       "Contrato digital com validade jurídica incluído",
     ],
-    custoLabel: "Comissão de 8% no fechamento",
+    custoLabel: "",
     cta: "Assinar Profissional",
   },
   {
@@ -99,6 +101,53 @@ export const PLANOS: Plano[] = [
     cta: "Falar com vendas",
   },
 ];
+
+/** Texto da comissão, sempre em reais: "12% de um aluguel, uma vez (≈ R$ 288)". */
+export function textoComissao(comissao: number, aluguel?: number): string {
+  if (comissao === 0) return "Comissão zero: você paga só a assinatura";
+  const pct = `${Math.round(comissao * 1000) / 10}`.replace(".", ",");
+  const valor = aluguel && aluguel > 0 ? ` (≈ ${reaisInteiros(aluguel * comissao)})` : "";
+  return `${pct}% de um aluguel, uma vez por contrato${valor}`;
+}
+
+/** Forma curta para tabelas e rótulos com o valor em R$ ao lado: "12% de 1 aluguel". */
+export function pctDeUmAluguel(comissao: number): string {
+  return comissao === 0 ? "zero" : `${`${Math.round(comissao * 1000) / 10}`.replace(".", ",")}% de 1 aluguel`;
+}
+
+/** R$ sem centavos, pt-BR (puro; sem depender de utils). */
+export function reaisInteiros(v: number): string {
+  return `R$ ${Math.round(v).toLocaleString("pt-BR")}`;
+}
+
+/** Aluguel de exemplo das telas de preço (comparativo e textos). */
+export const ALUGUEL_EXEMPLO = 2400;
+export const MESES_EXEMPLO = 4;
+
+export const PLANOS: Plano[] = PLANOS_BASE.map((p) => ({
+  ...p,
+  custoLabel: p.custoLabel || textoComissao(p.comissao, ALUGUEL_EXEMPLO) + (p.comissao ? ` no exemplo de ${reaisInteiros(ALUGUEL_EXEMPLO)}` : ""),
+}));
+
+/**
+ * Referências de MERCADO para o comparativo (fonte única também — nenhum outro
+ * arquivo repete estes números).
+ */
+export const MERCADO = {
+  /** Airbnb: taxa única de 16% para anfitriões no Brasil (central de ajuda do Airbnb, out/2026). */
+  airbnbTaxa: 0.16,
+  airbnbFonte: "Airbnb: taxa única de 16% para anfitriões no Brasil (central de ajuda do Airbnb, out/2026).",
+  /** Imobiliária tradicional (média de mercado): 1º aluguel + 8% de administração ao mês. */
+  imobiliariaAdmMensal: 0.08,
+  imobiliariaPrimeiroAluguel: 1,
+  dataReferencia: "out/2026",
+} as const;
+
+/**
+ * Todas as taxas que JÁ foram oferecidas (inclui as antigas). Uma taxa
+ * congelada no aceite continua valendo mesmo depois de a tabela mudar.
+ */
+export const TAXAS_HISTORICAS: readonly number[] = [0.12, 0.1, 0.08, 0.04, 0];
 
 const BY_ID: Record<string, Plano> = Object.fromEntries(PLANOS.map((p) => [p.id, p]));
 
@@ -128,6 +177,18 @@ export const MIX_ROI: Record<PlanoId, number> = {
   gestor: 0,
 };
 
+/** Comissão média (em %) pelo mix declarado — premissa dos simuladores internos. */
+export function comissaoMediaMixPct(mix: Record<PlanoId, number> = MIX_ROI): number {
+  let soma = 0;
+  let peso = 0;
+  for (const p of PLANOS) {
+    const w = mix[p.id] ?? 0;
+    soma += p.comissao * w;
+    peso += w;
+  }
+  return peso > 0 ? Math.round((soma / peso) * 1000) / 10 : 0;
+}
+
 export function assinaturaMediaMix(mix: Record<PlanoId, number> = MIX_ROI): number {
   let soma = 0;
   let peso = 0;
@@ -147,7 +208,8 @@ export function assinaturaMediaMix(mix: Record<PlanoId, number> = MIX_ROI): numb
  * taxa do Gestor — e a comissão saía R$ 0.
  */
 export function taxaDoContrato(congelada: unknown, planoNoAceite: unknown): number {
-  const validas = new Set(Object.values(COMISSAO_POR_PLANO));
+  // Vale a taxa do ACEITE, mesmo que a tabela tenha mudado depois.
+  const validas = new Set([...TAXAS_HISTORICAS, ...Object.values(COMISSAO_POR_PLANO)]);
   if (congelada !== null && congelada !== undefined && congelada !== "") {
     const n = Number(congelada);
     if (Number.isFinite(n) && validas.has(n)) return n;
