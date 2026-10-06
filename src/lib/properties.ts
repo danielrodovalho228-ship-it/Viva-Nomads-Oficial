@@ -18,9 +18,9 @@ function emDias(n: number): string {
 export const SAMPLE_PROPERTIES: Property[] = [
   {
     id: "ube-001",
-    title: "Apartamento mobiliado com home office no Santa Mônica",
+    title: "Imóvel mobiliado com home office no Santa Mônica",
     description:
-      "Apartamento completo, pronto para morar, com cômodo dedicado ao trabalho, internet fibra e ótima localização para quem está chegando a Uberlândia.",
+      "Imóvel completo, pronto para morar, com cômodo dedicado ao trabalho, internet fibra e ótima localização para quem está chegando a Uberlândia.",
     propertyType: "Apartamento",
     city: "Uberlândia",
     state: "MG",
@@ -270,9 +270,9 @@ export const SAMPLE_PROPERTIES: Property[] = [
   },
   {
     id: "ube-005",
-    title: "Apartamento 2 quartos para pacientes e acompanhantes",
+    title: "Imóvel mobiliado de 2 quartos para pacientes e acompanhantes",
     description:
-      "Apartamento silencioso e acessível, pensado para famílias que acompanham um tratamento prolongado em Uberlândia. Próximo aos principais hospitais, com estrutura completa para estadias de semanas a meses.",
+      "Imóvel silencioso e acessível, pensado para famílias que acompanham um tratamento prolongado em Uberlândia. Próximo aos principais hospitais, com estrutura completa para estadias de semanas a meses.",
     propertyType: "Apartamento",
     city: "Uberlândia",
     state: "MG",
@@ -325,9 +325,9 @@ export const SAMPLE_PROPERTIES: Property[] = [
   },
   {
     id: "ube-006",
-    title: "Apartamento executivo mobiliado no Centro",
+    title: "Imóvel executivo mobiliado no Centro",
     description:
-      "Apartamento de alto padrão para executivos em transferência ou projeto corporativo. Localização central, home office equipado e tudo pronto para trabalhar no primeiro dia.",
+      "Imóvel de alto padrão para executivos em transferência ou projeto corporativo. Localização central, home office equipado e tudo pronto para trabalhar no primeiro dia.",
     propertyType: "Apartamento",
     city: "Uberlândia",
     state: "MG",
@@ -488,9 +488,9 @@ export const SAMPLE_PROPERTIES: Property[] = [
   },
   {
     id: "ube-009",
-    title: "Apartamento para pós-graduação e pesquisadores — Santa Mônica",
+    title: "Imóvel mobiliado para pós-graduação e pesquisadores — Santa Mônica",
     description:
-      "Apartamento compacto e tranquilo ao lado do campus Santa Mônica da UFU. Perfeito para pós-graduandos, professores visitantes e pesquisadores em estadia temporária.",
+      "Imóvel compacto e tranquilo ao lado do campus Santa Mônica da UFU. Perfeito para pós-graduandos, professores visitantes e pesquisadores em estadia temporária.",
     propertyType: "Apartamento",
     city: "Uberlândia",
     state: "MG",
@@ -545,9 +545,9 @@ export const SAMPLE_PROPERTIES: Property[] = [
   },
   {
     id: "ube-010",
-    title: "Apartamento 2 quartos mobiliado no Tibery",
+    title: "Imóvel de 2 quartos mobiliado no Tibery",
     description:
-      "Apartamento confortável e bem localizado, ideal para quem chega a Uberlândia por alguns meses. Mobiliado e pronto para morar.",
+      "Imóvel confortável e bem localizado, ideal para quem chega a Uberlândia por alguns meses. Mobiliado e pronto para morar.",
     propertyType: "Apartamento",
     city: "Uberlândia",
     state: "MG",
@@ -645,9 +645,9 @@ export const SAMPLE_PROPERTIES: Property[] = [
   },
   {
     id: "ube-012",
-    title: "Apartamento 1 quarto para profissional — Saraiva",
+    title: "Imóvel mobiliado de 1 quarto para profissional — Saraiva",
     description:
-      "Apartamento de 1 quarto, moderno e silencioso, ideal para um profissional em projeto de média duração na cidade.",
+      "Imóvel de 1 quarto, moderno e silencioso, ideal para um profissional em projeto de média duração na cidade.",
     propertyType: "Apartamento",
     city: "Uberlândia",
     state: "MG",
@@ -746,9 +746,9 @@ export const SAMPLE_PROPERTIES: Property[] = [
   },
   {
     id: "ube-014",
-    title: "Apartamento 3 quartos premium — Cidade Jardim",
+    title: "Imóvel mobiliado de 3 quartos premium — Cidade Jardim",
     description:
-      "Apartamento amplo e sofisticado em bairro nobre, para executivos com família ou estadias de alto padrão. Lazer completo no condomínio.",
+      "Imóvel amplo e sofisticado em bairro nobre, para executivos com família ou estadias de alto padrão. Lazer completo no condomínio.",
     propertyType: "Apartamento",
     city: "Uberlândia",
     state: "MG",
