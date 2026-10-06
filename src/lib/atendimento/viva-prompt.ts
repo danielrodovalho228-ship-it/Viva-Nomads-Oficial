@@ -8,7 +8,6 @@ import { FAQ } from "./faq.ts";
 import { PLANOS, REGRAS_CONTRATO } from "../../config/planos.ts";
 import { HORARIO_HUMANO, PRAZOS, PRAZO_MANUTENCAO_H } from "../../config/atendimento.ts";
 
-export const MODELO_VIVA = "claude-opus-5-5";
 
 const brl = (n: number) => `R$ ${n.toLocaleString("pt-BR")}`;
 

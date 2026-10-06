@@ -23,6 +23,7 @@ import { avisarEquipe, avisarProprietarioManutencao, avisarUsuario, criarOrdemMa
 import { escalarParaPessoa, rodarViva, vivaAtiva, chamarClaude } from "@/lib/atendimento/viva-servidor";
 import { atenderViva } from "@/lib/atendimento/viva-motor";
 import { CENARIOS, entradaDoCenario, falhasDoCenario, ferramentasDeTeste } from "@/lib/atendimento/viva-cenarios";
+import { cotacaoDolar, custoUsd, modeloViva, PRECOS_USD } from "@/lib/atendimento/viva-custo";
 import { AVISO_VIVA, ehGolpe, ORIENTACAO_GOLPE } from "@/lib/atendimento/viva-regras";
 
 /**
@@ -600,21 +601,29 @@ export interface ResultadoCenario {
   resposta: string | null;
   falhas: string[];
   chamadas: number;
+  /** Custo estimado desta conversa, em R$ (null: modelo fora da tabela de preços). */
+  custoReais: number | null;
 }
 
 /**
  * Admin: roda os 14 cenários com a IA DE VERDADE (ferramentas de mentira, nada
  * toca o banco). Custa ~14 atendimentos; limitado a 3 rodadas por dia.
  */
-export async function testarViva(): Promise<{ ok: true; resultados: ResultadoCenario[] } | { ok: false; error: string }> {
+export async function testarViva(
+  modeloEscolhido?: string
+): Promise<{ ok: true; modelo: string; cotacao: number; resultados: ResultadoCenario[] } | { ok: false; error: string }> {
   const ctx = await exigirAdmin();
   if (!ctx) return { ok: false, error: "Sem permissão." };
+  // Para comparar: qualquer modelo da tabela de preços; sem escolha, o configurado.
+  const modelo = modeloEscolhido && PRECOS_USD[modeloEscolhido] ? modeloEscolhido : modeloViva();
+  const cotacao = cotacaoDolar();
   if (!process.env.ANTHROPIC_API_KEY) return { ok: false, error: "Falta a ANTHROPIC_API_KEY na Vercel." };
   if ((await situacaoLimite("viva:teste", 3, 24 * HORA)) === "estourou") return { ok: false, error: "Limite de 3 rodadas por dia." };
-  const modelo = chamarClaude();
+  const chamar = chamarClaude(modelo);
   const resultados = await Promise.all(
     CENARIOS.map(async (c) => {
-      const r = await atenderViva(entradaDoCenario(c), modelo, ferramentasDeTeste());
+      const r = await atenderViva(entradaDoCenario(c), chamar, ferramentasDeTeste());
+      const usd = custoUsd(modelo, r.uso);
       return {
         n: c.n,
         mensagem: c.mensagem,
@@ -627,10 +636,11 @@ export async function testarViva(): Promise<{ ok: true; resultados: ResultadoCen
         resposta: r.resposta,
         falhas: falhasDoCenario(c, r),
         chamadas: r.uso.chamadas,
+        custoReais: usd === null ? null : usd * cotacao,
       };
     })
   );
-  return { ok: true, resultados };
+  return { ok: true, modelo, cotacao, resultados };
 }
 
 export async function metricasAtendimento(dias = 30): Promise<Record<string, unknown> | null> {

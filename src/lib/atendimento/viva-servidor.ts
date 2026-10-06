@@ -7,7 +7,8 @@ import { SITE_URL } from "@/lib/site";
 import { calcularPrazos, frasePrazo, type Prioridade, type UrgenciaManutencao } from "@/config/atendimento";
 import { MIN_FOTOS_PUBLICAR } from "@/lib/listing-completude";
 import { atenderViva, maisUrgente, type ChamarModelo, type Ferramentas, type ResultadoViva } from "@/lib/atendimento/viva-motor";
-import { contextoChamado, MODELO_VIVA, type FerramentaDef } from "@/lib/atendimento/viva-prompt";
+import { contextoChamado, type FerramentaDef } from "@/lib/atendimento/viva-prompt";
+import { aceitaEsforco, aceitaReserva, cotacaoDolar, custoUsd, modeloViva } from "@/lib/atendimento/viva-custo";
 import { primeiroNome, RESPOSTA_PESSOA, ROTULO_APROVACAO } from "@/lib/atendimento/viva-regras";
 import {
   avisarEquipe,
@@ -56,17 +57,17 @@ interface ChamadoViva extends ChamadoResumo {
 const CAMPOS = "id, numero_publico, assunto, prioridade, status, categoria, canal, usuario_id, visitante_email, visitante_nome, contexto_tipo, contexto_id, service_order_id, responsavel_tipo, primeira_resposta_em";
 
 // ── Modelo ──────────────────────────────────────────────────────────────────
-export function chamarClaude(): ChamarModelo {
+/** Chamada ao modelo. `modelo` padrão: ATENDIMENTO_IA_MODELO (ou o atual). */
+export function chamarClaude(modelo: string = modeloViva()): ChamarModelo {
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, timeout: 60_000, maxRetries: 1 });
   return async ({ system, tools, messages }) => {
     const res = await client.beta.messages.create({
-      model: MODELO_VIVA,
+      model: modelo,
       max_tokens: 4096,
       // Conversa curta de atendimento: esforço baixo basta e sai mais barato.
-      output_config: { effort: "low" },
+      ...(aceitaEsforco(modelo) ? { output_config: { effort: "low" as const } } : {}),
       // Se o modelo recusar por segurança, a API tenta de novo no modelo reserva.
-      betas: ["server-side-fallback-2026-06-01"],
-      fallbacks: [{ model: "claude-opus-4-8" }],
+      ...(aceitaReserva(modelo) ? { betas: ["server-side-fallback-2026-06-01"], fallbacks: [{ model: "claude-opus-4-8" }] } : {}),
       system: [{ type: "text", text: system, cache_control: { type: "ephemeral" } }],
       tools: tools.map((t: FerramentaDef) => ({ name: t.name, description: t.description, input_schema: t.input_schema })),
       messages: messages as Anthropic.Beta.Messages.BetaMessageParam[],
@@ -270,13 +271,18 @@ export function ferramentasReais(admin: Admin, c: ChamadoViva, agora: Date): Fer
 }
 
 // ── Gravar o resultado ─────────────────────────────────────────────────────
+function custoTexto(r: ResultadoViva): string {
+  const usd = custoUsd(modeloViva(), r.uso);
+  return usd === null ? "" : ` · custo estimado R$ ${(usd * cotacaoDolar()).toFixed(3).replace(".", ",")}`;
+}
+
 function notaInterna(r: ResultadoViva): string {
   const linhas = [
     `Viva · rota: ${r.rota} (${r.motivo}) → ${r.destino === "ia" ? "Viva segue" : r.destino === "aprovacao" ? "fila de aprovação" : "equipe"}`,
     `Fontes: ${r.fontes.length ? r.fontes.join(", ") : "fontes oficiais do prompt (FAQ, planos, regras)"}`,
     r.acoes.length ? `Ações: ${r.acoes.join(", ")}` : "",
     r.bloqueio ? `Resposta da IA barrada: ${r.bloqueio}` : "",
-    r.uso.chamadas ? `Uso: ${r.uso.chamadas} chamada(s), ${r.uso.entrada} tokens de entrada (${r.uso.cacheLida} do cache), ${r.uso.saida} de saída` : "",
+    r.uso.chamadas ? `Uso: ${r.uso.chamadas} chamada(s) ao ${modeloViva()}, ${r.uso.entrada + r.uso.cacheEscrita + r.uso.cacheLida} tokens de entrada (${r.uso.cacheLida} do cache), ${r.uso.saida} de saída${custoTexto(r)}` : "",
   ];
   if (r.aprovacao) {
     linhas.push(

@@ -8,6 +8,7 @@ import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { PRAZOS, estadoPrazo, type Prioridade } from "@/config/atendimento";
+import { PRECOS_USD } from "@/lib/atendimento/viva-custo";
 import { apagarMacro, salvarMacro, testarViva, type ChamadoAdmin, type Macro, type ResultadoCenario } from "@/lib/data/atendimento-actions";
 
 const ABAS = [
@@ -313,6 +314,13 @@ function TestarViva() {
   const [rodando, setRodando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [res, setRes] = useState<ResultadoCenario[] | null>(null);
+  const [modelo, setModelo] = useState("");
+  const [usado, setUsado] = useState<{ modelo: string; cotacao: number } | null>(null);
+  const [porMes, setPorMes] = useState(300);
+  // Custo médio só das conversas que chamaram a IA (as decididas pelo código custam zero).
+  const comIA = res?.filter((r) => r.chamadas > 0 && r.custoReais !== null) ?? [];
+  const media = comIA.length ? comIA.reduce((s, r) => s + (r.custoReais ?? 0), 0) / comIA.length : null;
+  const brl = (n: number, casas = 2) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: casas, maximumFractionDigits: casas });
   const certos = res?.filter((r) => r.falhas.length === 0).length ?? 0;
   const criticosOk = res ? res.filter((r) => r.critico).every((r) => r.falhas.length === 0) : false;
   return (
@@ -321,6 +329,17 @@ function TestarViva() {
         Roda os 14 cenários do plano de teste com a IA de verdade e dados de mentira (não cria chamado nem manda e-mail). Aprovação: pelo menos 12 de 14
         certos e nenhum erro nos cenários 6, 7, 13 e 14. Até 3 rodadas por dia.
       </p>
+      <label className="mt-3 block text-sm">
+        <span className="mb-1 block font-medium text-ink">Modelo</span>
+        <select value={modelo} onChange={(e) => setModelo(e.target.value)} className="w-full max-w-xs rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink">
+          <option value="">O configurado (ATENDIMENTO_IA_MODELO)</option>
+          {Object.entries(PRECOS_USD).map(([id, p]) => (
+            <option key={id} value={id}>
+              {p.rotulo} — US$ {p.entrada}/{p.saida} por milhão
+            </option>
+          ))}
+        </select>
+      </label>
       <Button
         className="mt-3"
         size="sm"
@@ -328,10 +347,12 @@ function TestarViva() {
         onClick={async () => {
           setRodando(true);
           setErro(null);
-          const r = await testarViva().catch(() => ({ ok: false as const, error: "Falha de conexão." }));
+          const r = await testarViva(modelo || undefined).catch(() => ({ ok: false as const, error: "Falha de conexão." }));
           setRodando(false);
-          if (r.ok) setRes(r.resultados);
-          else setErro(r.error);
+          if (r.ok) {
+            setRes(r.resultados);
+            setUsado({ modelo: r.modelo, cotacao: r.cotacao });
+          } else setErro(r.error);
         }}
       >
         {rodando ? "Rodando… (até 1 minuto)" : "Rodar os 14 cenários"}
@@ -342,6 +363,26 @@ function TestarViva() {
           <p className={cn("mt-4 text-sm font-semibold", certos >= 12 && criticosOk ? "text-forest" : "text-red-700")}>
             {certos} de 14 certos · críticos (6, 7, 13, 14): {criticosOk ? "todos certos" : "ERRO"} → {certos >= 12 && criticosOk ? "APROVADO" : "REPROVADO"}
           </p>
+          {usado && (
+            <div className="mt-3 rounded-xl border border-line bg-surface-2 p-3 text-sm text-ink">
+              <p>
+                <strong>{PRECOS_USD[usado.modelo]?.rotulo ?? usado.modelo}</strong> · custo médio por conversa com IA:{" "}
+                <strong>{media === null ? "—" : brl(media, 3)}</strong> (dólar a R$ {usado.cotacao.toFixed(2).replace(".", ",")})
+              </p>
+              <label className="mt-2 flex flex-wrap items-center gap-2">
+                Conversas com IA por mês:
+                <input
+                  type="number"
+                  min={0}
+                  value={porMes}
+                  onChange={(e) => setPorMes(Math.max(0, Number(e.target.value) || 0))}
+                  className="w-24 rounded-lg border border-line bg-white px-2 py-1"
+                />
+                → <strong>{media === null ? "—" : brl(media * porMes)}</strong> por mês
+              </label>
+              <p className="mt-1 text-xs text-muted">Emergência, golpe, pedido de pessoa e de contato são decididos pelo código e não custam nada.</p>
+            </div>
+          )}
           <ul className="mt-3 divide-y divide-line text-sm">
             {res.map((r) => (
               <li key={r.n} className="py-2">
@@ -350,6 +391,7 @@ function TestarViva() {
                 </p>
                 <p className="text-xs text-muted">
                   Esperado: {r.quemResolve}, {r.prazo} · Obtido: {r.rota} → {r.destino}, {r.prioridade.toUpperCase()} · {r.chamadas} chamada(s) à IA
+                  {r.custoReais !== null && r.chamadas > 0 ? ` · ${brl(r.custoReais, 3)}` : ""}
                 </p>
                 {r.resposta && <p className="mt-1 whitespace-pre-wrap rounded-lg bg-surface-2 p-2 text-xs text-ink">{r.resposta}</p>}
                 {r.falhas.length > 0 && <p className="mt-1 text-xs text-red-700">{r.falhas.join(" · ")}</p>}

@@ -34,7 +34,7 @@ export interface BlocoModelo {
 export interface RespostaModelo {
   stop_reason: string | null;
   content: BlocoModelo[];
-  usage?: { input_tokens?: number | null; output_tokens?: number | null; cache_read_input_tokens?: number | null };
+  usage?: { input_tokens?: number | null; output_tokens?: number | null; cache_read_input_tokens?: number | null; cache_creation_input_tokens?: number | null };
 }
 export interface MensagemModelo {
   role: "user" | "assistant";
@@ -94,7 +94,7 @@ export interface ResultadoViva {
   acoes: string[];
   /** Por que a resposta da IA foi barrada (vai para a nota interna). */
   bloqueio: string | null;
-  uso: { chamadas: number; entrada: number; saida: number; cacheLida: number };
+  uso: { chamadas: number; entrada: number; saida: number; cacheLida: number; cacheEscrita: number };
 }
 
 const ORDEM: Prioridade[] = ["p1", "p2", "p3", "p4"];
@@ -136,7 +136,7 @@ function base(e: EntradaViva, rota: Rota, motivo: string): ResultadoViva {
     fontes: [],
     acoes: tentativaInjecao(e.texto) ? ["tentativa_injecao"] : [],
     bloqueio: null,
-    uso: { chamadas: 0, entrada: 0, saida: 0, cacheLida: 0 },
+    uso: { chamadas: 0, entrada: 0, saida: 0, cacheLida: 0, cacheEscrita: 0 },
   };
 }
 
@@ -210,6 +210,7 @@ export async function atenderViva(e: EntradaViva, modelo: ChamarModelo | null, f
       r.uso.entrada += resp.usage?.input_tokens ?? 0;
       r.uso.saida += resp.usage?.output_tokens ?? 0;
       r.uso.cacheLida += resp.usage?.cache_read_input_tokens ?? 0;
+      r.uso.cacheEscrita += resp.usage?.cache_creation_input_tokens ?? 0;
 
       if (resp.stop_reason === "refusal" || resp.stop_reason === "max_tokens") {
         return { ...r, fontes, acoes, manutencao, prioridade, resposta: RESPOSTA_FALHA, bloqueio: `modelo parou (${resp.stop_reason})` };
