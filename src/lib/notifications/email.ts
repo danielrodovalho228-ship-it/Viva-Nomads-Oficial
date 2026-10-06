@@ -42,6 +42,8 @@ export async function sendEmail(params: {
   html: string;
   /** Versão texto puro (multipart). Melhora entregabilidade e acessibilidade. */
   text?: string;
+  /** Anexos (ex.: o PDF do recibo). Conteúdo em base64. */
+  attachments?: { filename: string; content: string }[];
 }): Promise<EmailResult> {
   const outbox = process.env.EMAIL_TEST_OUTBOX;
   if (outbox && process.env.NODE_ENV !== "production") {
@@ -65,6 +67,7 @@ export async function sendEmail(params: {
       subject: params.subject,
       html: params.html,
       ...(params.text ? { text: params.text } : {}),
+      ...(params.attachments?.length ? { attachments: params.attachments } : {}),
     }),
   });
 

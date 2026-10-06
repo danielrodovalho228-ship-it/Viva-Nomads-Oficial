@@ -1,7 +1,9 @@
 "use server";
 
+import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { emitirDoPagamento } from "@/lib/fiscal/emitir";
 import { listMyProperties } from "@/lib/data/properties";
 import { erroBancoPT } from "@/lib/erros-banco";
 
@@ -99,6 +101,8 @@ export interface LocacaoView {
   aluguelMensal: number;
   status: string;
   criadoEm: string;
+  /** Pagamentos registrados pelo proprietário (o inquilino confirma → recibo). */
+  pagamentos: PagamentoView[];
 }
 
 /**
@@ -115,7 +119,7 @@ export async function getMinhasLocacoes(): Promise<LocacaoView[]> {
 
   const { data } = await supabase
     .from("contratos")
-    .select("id, property_id, aluguel_mensal, status, created_at, properties(title, owner_id)")
+    .select("id, property_id, aluguel_mensal, status, created_at, properties(title, owner_id), pagamentos_bloco(*)")
     .eq("tenant_id", user.id)
     .order("created_at", { ascending: false });
 
@@ -129,6 +133,7 @@ export async function getMinhasLocacoes(): Promise<LocacaoView[]> {
       aluguelMensal: Number(c.aluguel_mensal),
       status: String(c.status ?? "ativo"),
       criadoEm: String(c.created_at),
+      pagamentos: ((c.pagamentos_bloco as Record<string, unknown>[]) ?? []).map(toPagamento),
     };
   });
 }
@@ -201,6 +206,8 @@ export interface PagamentoInput {
   forma?: "pix" | "boleto" | "transferencia" | "dinheiro" | "outro";
   dataPagamento: string; // ISO yyyy-mm-dd
   observacao?: string;
+  /** Encargos pagos junto (condomínio, IPTU, contas) — vão para o recibo. */
+  encargos?: { rotulo: string; valor: number }[];
 }
 
 /**
@@ -232,6 +239,10 @@ export async function marcarPagamentoRecebido(input: PagamentoInput): Promise<Ac
       data_pagamento: input.dataPagamento,
       marcado_por: user.id,
       observacao: input.observacao?.trim() || null,
+      encargos: (input.encargos ?? [])
+        .filter((e) => e.rotulo?.trim() && Number(e.valor) > 0)
+        .slice(0, 8)
+        .map((e) => ({ rotulo: e.rotulo.trim().slice(0, 60), valor: Math.round(Number(e.valor) * 100) / 100 })),
     })
     .select("id")
     .single();
@@ -258,5 +269,8 @@ export async function confirmarPagamento(pagamentoId: string): Promise<ActionRes
     .update({ confirmado_pelo_inquilino: true })
     .eq("id", pagamentoId);
   if (error) return { ok: false, error: erroBancoPT(error) };
+  // Registrado pelo dono + confirmado pelo inquilino → recibo (ou comprovante da
+  // caução) em PDF, por e-mail às duas partes. Depois da resposta: não atrasa a tela.
+  after(() => emitirDoPagamento(pagamentoId));
   return { ok: true, id: pagamentoId };
 }
