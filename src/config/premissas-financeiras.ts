@@ -38,15 +38,6 @@ export const FUNDADORES = {
   comissao: plano("pro")!.comissao,
 };
 
-/** Seguro incêndio via parceiro: ≈ 20% de um prêmio de R$ 200/ano. Liga quando o parceiro estiver ativo. */
-export const SEGURO_INCENDIO = {
-  porContrato: 40,
-  aviso: "depende do modelo com a seguradora: corretor SUSEP ou representante",
-  aPartirDoMes: 9,
-  parceiroAtivo: true,
-  fonte: "https://www.seguroviagem.srv.br/blog/quanto-custa-seguro-residencial/",
-};
-
 /** Assinatura: % dos donos novos que assinam, valor médio pago e churn. */
 export const ASSINATURA = { mediaPagantes: 55, churnMensal: 0.03 };
 
@@ -111,10 +102,95 @@ export const CENARIOS: Record<CenarioId, Cenario> = {
   otimista: { id: "otimista", nome: "Otimista", contratosIniciais: 3, crescimentoMensal: 2.2, teto: 80, donosNovosMes: 10, assinam: 0.35 },
 };
 
-// ── Receitas futuras (DESLIGADAS: não existem hoje) ─────────────────────────
-export const RECEITAS_FUTURAS: (Item & { ligada: false })[] = [
-  { rotulo: "Destaque / anúncio pago", valor: 30, unidade: "R$/contrato", ligada: false, obs: "Produto não existe hoje." },
-  { rotulo: "Comissão de garantia locatícia", valor: 50, unidade: "R$/contrato", ligada: false, obs: "Seguro-fiança: parceiro em estruturação." },
-  { rotulo: "Serviços de parceiro (manutenção e reparos)", valor: 20, unidade: "R$/contrato", ligada: false, obs: "Não existe hoje." },
-  { rotulo: "Vistoria e fotos via parceiro", valor: 0, unidade: "a combinar", ligada: false, obs: "Futuro, opcional." },
+// ── Receitas de parceiros (POTENCIAL: todas desligadas por padrão) ─────────
+/*
+  A receita BASE é só comissão + assinaturas. Parceiros entram na mesma conta
+  (com o imposto da Viva) apenas quando ligados na tela. Nenhum tem contrato
+  assinado: é potencial, nunca receita garantida.
+
+  Seguros: a Viva como REPRESENTANTE de seguros (Res. CNSP 431/2021) recebe um
+  percentual do prêmio, ajustável de 0% a 15% (padrão 10%). Sem registro na
+  SUSEP; não pode condicionar a locação ao seguro (venda casada).
+*/
+
+/** Duração média de um contrato (meses) — premissa para os prêmios mensais. A confirmar com os dados reais. */
+export const MESES_MEDIOS_CONTRATO = 3;
+
+export const REPRESENTANTE_SEGUROS = {
+  min: 0,
+  max: 0.15,
+  padrao: 0.1,
+  texto: "Viva como representante de seguros (Res. CNSP 431/2021)",
+  aviso: "estimativa, sem contrato fechado com seguradora",
+} as const;
+
+export type ParceiroStatus = "sem parceiro" | "em conversa" | "em estudo";
+
+export interface Parceiro {
+  id: string;
+  nome: string;
+  /** "seguro": receita = prêmio × % do representante; "servico": receita fixa por unidade. */
+  tipo: "seguro" | "servico";
+  /** Seguro: prêmio por unidade (R$). Serviço: o que a Viva recebe por unidade (R$). */
+  valorUnidade: number;
+  /** Fração dos contratos que contratam (0..1). */
+  adesao: number;
+  unidadesPorContrato: number;
+  /** Mês da projeção em que a receita começa (1..36). */
+  mesInicio: number;
+  status: ParceiroStatus;
+  detalhe: string;
+  fonte?: string;
+}
+
+export const PARCEIROS: Parceiro[] = [
+  {
+    id: "seguro_incendio",
+    nome: "Seguro incêndio",
+    tipo: "seguro",
+    valorUnidade: 200,
+    adesao: 0.3,
+    unidadesPorContrato: 1,
+    mesInicio: 9,
+    status: "em conversa",
+    detalhe: "Prêmio ≈ R$ 200. Em conversa com a i2B; a Chubb também é candidata.",
+    fonte: "https://www.seguroviagem.srv.br/blog/quanto-custa-seguro-residencial/",
+  },
+  {
+    id: "seguro_fianca",
+    nome: "Seguro-fiança",
+    tipo: "seguro",
+    valorUnidade: Math.round((ALUGUEL_MEDIO * MESES_MEDIOS_CONTRATO) / 12),
+    adesao: 0.1,
+    unidadesPorContrato: 1,
+    mesInicio: 9,
+    status: "em estudo",
+    detalhe: `Prêmio estimado ≈ 1 aluguel por ano, proporcional a ${MESES_MEDIOS_CONTRATO} meses. Chubb aceita temporada até 90 dias (com danos aos móveis). Alternativa à caução: uma garantia só.`,
+  },
+  {
+    id: "seguro_danos",
+    nome: "Seguro de danos ao imóvel",
+    tipo: "seguro",
+    valorUnidade: 69 * MESES_MEDIOS_CONTRATO,
+    adesao: 0.1,
+    unidadesPorContrato: 1,
+    mesInicio: 9,
+    status: "em estudo",
+    detalhe: `EasyCover/Now Seguros: R$ 69 a R$ 118 por mês por imóvel (usamos R$ 69 × ${MESES_MEDIOS_CONTRATO} meses). Contratado pelo proprietário.`,
+  },
+  { id: "vistoria", nome: "Vistoria", tipo: "servico", valorUnidade: 25, adesao: 0.2, unidadesPorContrato: 2, mesInicio: 4, status: "sem parceiro", detalhe: "Entrada e saída." },
+  { id: "fotografia", nome: "Fotografia", tipo: "servico", valorUnidade: 45, adesao: 0.1, unidadesPorContrato: 1, mesInicio: 4, status: "sem parceiro", detalhe: "Fotos do anúncio." },
+  { id: "limpeza", nome: "Limpeza/manutenção", tipo: "servico", valorUnidade: 20, adesao: 0.1, unidadesPorContrato: 1, mesInicio: 6, status: "sem parceiro", detalhe: "Entre locações." },
+  { id: "carro", nome: "Carro mensal (Nômade Drive)", tipo: "servico", valorUnidade: 50, adesao: 0.05, unidadesPorContrato: 1, mesInicio: 13, status: "em conversa", detalhe: "Indicação de aluguel mensal de carro." },
+  { id: "mudanca", nome: "Mudança/frete", tipo: "servico", valorUnidade: 20, adesao: 0.05, unidadesPorContrato: 1, mesInicio: 6, status: "sem parceiro", detalhe: "Indicação." },
 ];
+
+/** Receita do parceiro por contrato fechado (R$, antes do imposto). */
+export function receitaParceiroPorContrato(p: Parceiro, pctSeguro: number = REPRESENTANTE_SEGUROS.padrao): number {
+  const pct = Math.min(REPRESENTANTE_SEGUROS.max, Math.max(REPRESENTANTE_SEGUROS.min, pctSeguro));
+  const porUnidade = p.tipo === "seguro" ? p.valorUnidade * pct : p.valorUnidade;
+  return porUnidade * p.adesao * p.unidadesPorContrato;
+}
+
+/** Selo fixo da visão do investidor. */
+export const SELO_POTENCIAL = "Potencial — parcerias sem contrato assinado não são receita garantida";

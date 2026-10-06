@@ -10,7 +10,9 @@
     donos. Depois dos 12 meses, assinam na mesma proporção dos outros.
   • Dos donos novos (não Fundadores), a fração do cenário assina um plano pago
     (média R$ 55/mês), com churn de 3% ao mês.
-  • Seguro incêndio a partir do mês 9 (parceiro ativo).
+  • Receita BASE = comissão + assinaturas. Parceiros (seguros como
+    representante, serviços) só entram quando ligados, a partir do mês de
+    início de cada um: contratos × receita do parceiro por contrato.
   • Custo variável por contrato + imposto sobre a receita (6% ou 15,5%); custo fixo
     + marketing por mês; investimento único no mês 0.
 */
@@ -27,8 +29,11 @@ import {
   INVESTIMENTO_INICIAL,
   MES_PRIMEIRO_CONTRATO,
   MIX_PLANOS,
-  SEGURO_INCENDIO,
+  OPERADOR_OPCOES,
+  PARCEIROS,
+  REPRESENTANTE_SEGUROS,
   marketingDoMes,
+  receitaParceiroPorContrato,
   type CenarioId,
 } from "../../config/premissas-financeiras.ts";
 
@@ -39,6 +44,10 @@ export interface Opcoes {
   custoFixo?: number;
   /** Imposto da Viva sobre a receita (padrão 6%; 15,5% no anexo V). */
   imposto?: number;
+  /** Parceiros LIGADOS (ids de PARCEIROS). Padrão: nenhum — receita base pura. */
+  parceiros?: readonly string[];
+  /** % do prêmio que a Viva recebe como representante de seguros (0 a 15%; padrão 10%). */
+  pctSeguro?: number;
 }
 
 export interface Mes {
@@ -48,7 +57,10 @@ export interface Mes {
   assinantes: number;
   receitaComissao: number;
   receitaAssinatura: number;
-  receitaSeguro: number;
+  /** Comissão + assinaturas. */
+  receitaBase: number;
+  /** Parceiros ligados (potencial). */
+  receitaParceiros: number;
   receita: number;
   custoVariavel: number;
   custoFixo: number;
@@ -60,6 +72,8 @@ export interface Mes {
 export interface Ano {
   ano: number;
   contratos: number;
+  receitaBase: number;
+  receitaParceiros: number;
   receita: number;
   resultado: number;
 }
@@ -98,6 +112,19 @@ export function contratosNoMes(id: CenarioId, m: number): number {
   return Math.min(c.teto, c.contratosIniciais + c.crescimentoMensal * (m - MES_PRIMEIRO_CONTRATO));
 }
 
+/** Parceiros ligados nas opções (ids desconhecidos são ignorados). */
+function parceirosLigados(op: Opcoes) {
+  const ids = new Set(op.parceiros ?? []);
+  return PARCEIROS.filter((p) => ids.has(p.id));
+}
+
+/** Receita dos parceiros ligados por contrato no mês m (antes do imposto). */
+export function parceirosPorContrato(op: Opcoes, m = Infinity): number {
+  return parceirosLigados(op)
+    .filter((p) => m >= p.mesInicio)
+    .reduce((s, p) => s + receitaParceiroPorContrato(p, op.pctSeguro ?? REPRESENTANTE_SEGUROS.padrao), 0);
+}
+
 export function projetar(id: CenarioId, op: Opcoes): Projecao {
   const cen = CENARIOS[id];
   const fixo = op.custoFixo ?? CUSTO_FIXO_PADRAO;
@@ -133,8 +160,9 @@ export function projetar(id: CenarioId, op: Opcoes): Projecao {
     const fatiaFundadores = donos > 0 ? fundadoresAtivos / donos : 0;
     const receitaComissao = contratos * (fatiaFundadores * comFundador + (1 - fatiaFundadores) * comMix);
     const receitaAssinatura = assinantes * ASSINATURA.mediaPagantes;
-    const receitaSeguro = SEGURO_INCENDIO.parceiroAtivo && m >= SEGURO_INCENDIO.aPartirDoMes ? contratos * SEGURO_INCENDIO.porContrato : 0;
-    const receita = receitaComissao + receitaAssinatura + receitaSeguro;
+    const receitaBase = receitaComissao + receitaAssinatura;
+    const receitaParceiros = contratos * parceirosPorContrato(op, m);
+    const receita = receitaBase + receitaParceiros;
     const custoVariavel = contratos * (CUSTO_FERRAMENTAS_POR_CONTRATO + op.operador) + (op.imposto ?? IMPOSTO_SOBRE_RECEITA) * receita;
     const marketing = marketingDoMes(m);
     const resultado = receita - custoVariavel - fixo - marketing;
@@ -145,7 +173,7 @@ export function projetar(id: CenarioId, op: Opcoes): Projecao {
     }
     if (mesPrimeiroPositivo === null && resultado > 0) mesPrimeiroPositivo = m;
     if (mesPayback === null && caixa >= 0) mesPayback = m;
-    meses.push({ m, contratos, donos, assinantes, receitaComissao, receitaAssinatura, receitaSeguro, receita, custoVariavel, custoFixo: fixo, marketing, resultado, caixa });
+    meses.push({ m, contratos, donos, assinantes, receitaComissao, receitaAssinatura, receitaBase, receitaParceiros, receita, custoVariavel, custoFixo: fixo, marketing, resultado, caixa });
   }
 
   const anos: Ano[] = [0, 1, 2].map((a) => {
@@ -153,6 +181,8 @@ export function projetar(id: CenarioId, op: Opcoes): Projecao {
     return {
       ano: a + 1,
       contratos: fatia.reduce((s, x) => s + x.contratos, 0),
+      receitaBase: fatia.reduce((s, x) => s + x.receitaBase, 0),
+      receitaParceiros: fatia.reduce((s, x) => s + x.receitaParceiros, 0),
       receita: fatia.reduce((s, x) => s + x.receita, 0),
       resultado: fatia.reduce((s, x) => s + x.resultado, 0),
     };
@@ -161,7 +191,7 @@ export function projetar(id: CenarioId, op: Opcoes): Projecao {
 }
 
 export interface PorContrato {
-  /** Comissão média (mix) + seguro incêndio. */
+  /** Comissão média (mix) + parceiros ligados (todos já iniciados). */
   receita: number;
   /** Ferramentas + imposto sobre a receita + operador. */
   custoVariavel: number;
@@ -170,12 +200,30 @@ export interface PorContrato {
   empate: [number, number];
 }
 
-/** Conta de UM contrato típico (dono comum, seguro ativo). */
+/** Conta de UM contrato típico (dono comum; parceiros só se ligados). */
 export function porContrato(op: Opcoes): PorContrato {
   const fixo = op.custoFixo ?? CUSTO_FIXO_PADRAO;
-  const receita = comissaoMediaPorContrato() + (SEGURO_INCENDIO.parceiroAtivo ? SEGURO_INCENDIO.porContrato : 0);
+  const receita = comissaoMediaPorContrato() + parceirosPorContrato(op);
   const custoVariavel = CUSTO_FERRAMENTAS_POR_CONTRATO + (op.imposto ?? IMPOSTO_SOBRE_RECEITA) * receita + op.operador;
   const margem = receita - custoVariavel;
   const empate = (mkt: number) => (margem > 0 ? (fixo + mkt) / margem : Infinity);
   return { receita, custoVariavel, margem, empate: [empate(marketingDoMes(12)), empate(marketingDoMes(13))] };
+}
+
+export interface LinhaInvestidor {
+  operador: number;
+  anos: Ano[];
+  piorCaixa: number;
+  mesPayback: number | null;
+}
+
+/**
+ * Visão do investidor: 3 anos do cenário, com e sem operador, separando a
+ * receita base da receita de parceiros escolhidos (potencial).
+ */
+export function visaoInvestidor(id: CenarioId, op: Omit<Opcoes, "operador">, operadores: readonly number[] = OPERADOR_OPCOES): LinhaInvestidor[] {
+  return operadores.map((operador) => {
+    const p = projetar(id, { ...op, operador });
+    return { operador, anos: p.anos, piorCaixa: p.piorCaixa, mesPayback: p.mesPayback };
+  });
 }

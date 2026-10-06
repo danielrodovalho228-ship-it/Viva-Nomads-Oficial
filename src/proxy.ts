@@ -2,7 +2,8 @@ import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import {
   isInternalPath,
-  sociosCookieValido,
+  acessoInterno,
+  INVESTIDOR_COOKIE,
   SOCIOS_COOKIE,
   SOCIOS_UNLOCK_PATH,
 } from "@/lib/socios/access";
@@ -76,7 +77,11 @@ export async function proxy(request: NextRequest) {
   // PAGES_INTERNAS_PRIVADAS=off.
   if (process.env.PAGES_INTERNAS_PRIVADAS !== "off" && isInternalPath(pathname)) {
     const response = NextResponse.next({ request });
-    const allowed = await sociosCookieValido(request.cookies.get(SOCIOS_COOKIE)?.value);
+    // Sócio abre todas; o código do investidor abre só o /simulacao.
+    const allowed = !!(await acessoInterno(pathname, {
+      socio: request.cookies.get(SOCIOS_COOKIE)?.value,
+      investidor: request.cookies.get(INVESTIDOR_COOKIE)?.value,
+    }));
 
     if (!allowed) {
       const url = request.nextUrl.clone();
