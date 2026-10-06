@@ -6,6 +6,7 @@
 import { ALUGUEL_EXEMPLO, MERCADO, MESES_EXEMPLO, PLANOS, REGRAS_CONTRATO, reaisInteiros } from "../../config/planos.ts";
 import { calcularComparativo } from "../comparativo-precos.ts";
 import { CAUCAO_FRASE } from "../faixas.ts";
+import { OBRIGATORIOS_ROTULOS } from "../anuncio/prontidao.ts";
 
 export interface Pergunta {
   id: string;
@@ -69,7 +70,8 @@ export const FAQ: Pergunta[] = [
     id: "anuncio-nao-publica",
     pergunta: "Por que meu anúncio não publica?",
     resposta:
-      "Para publicar, o anúncio precisa de pelo menos 8 fotos, dos dados básicos (endereço, cômodos, preço e garantia) e do documento do imóvel conferido pela equipe. Na etapa Revisão do anúncio aparece exatamente o que falta. Se o documento está \"Em análise\", é só aguardar: avisamos por e-mail quando for aprovado.",
+      // Mesma lista da prontidão (lib/anuncio/prontidao): o que o FAQ diz é o que o Publicar confere.
+      `Para publicar, o anúncio precisa de: ${OBRIGATORIOS_ROTULOS.map((r) => r.charAt(0).toLowerCase() + r.slice(1)).join("; ")}. Selo Pronto para Morar, vídeo e descrição longa ajudam, mas não impedem a publicação. Em Meus imóveis e na etapa Revisão aparece exatamente o que falta. Se o documento está "Em análise", é só aguardar: avisamos por e-mail quando for aprovado.`,
     termos: ["publicar", "anuncio", "documento", "analise", "fotos", "travado"],
   },
   {

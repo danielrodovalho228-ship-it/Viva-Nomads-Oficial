@@ -24,7 +24,7 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import { PhotoUploader, type PhotoItem } from "@/components/photo-uploader";
 import { BlockCalendar } from "@/components/property/block-calendar";
 import { AMENITY_GROUPS, amenityKeysFromLabels } from "@/lib/amenities";
-import { completudeAnuncio, MIN_FOTOS_PUBLICAR } from "@/lib/listing-completude";
+import { MIN_FOTOS, prontidaoAnuncio, type FatosAnuncio } from "@/lib/anuncio/prontidao";
 import { updateProperty, type PropertyInput } from "@/lib/data/actions";
 import type { Property } from "@/lib/types";
 import { formatBRL, cn } from "@/lib/utils";
@@ -53,9 +53,12 @@ const DESC_PROMPTS = [
 export function EditarImovelClient({
   property,
   demo,
+  fatos,
 }: {
   property: Property;
   demo: boolean;
+  /** Fatos do banco (documento, plano, garantia, selo…). null = sem backend. */
+  fatos: FatosAnuncio | null;
 }) {
   // ── Estado editável (prefill do imóvel carregado) ──────────────────────────
   const [title, setTitle] = useState(property.title ?? "");
@@ -92,32 +95,31 @@ export function EditarImovelClient({
   const [publishing, setPublishing] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // Completude ao vivo (reaproveita a regra pura — mínimo de fotos p/ publicar).
+  // Prontidão ao vivo (fonte única: lib/anuncio/prontidao). Base = fatos do
+  // banco; por cima, o que a pessoa está editando agora.
   const comp = useMemo(
     () =>
-      completudeAnuncio({
-        photos: photos.map((p) => p.url),
-        description,
-        monthlyPrice: Number(monthlyPrice) || 0,
-        maxGuests: Number(maxGuests) || 0,
-        areaM2: Number(areaM2) || 0,
-        availableFrom,
-        garantiasAceitas: property.garantiasAceitas ?? [],
-        readyToLiveBadge: property.readyToLiveBadge,
-        videoUrl: property.videoUrl,
+      prontidaoAnuncio({
+        enderecoOk: fatos?.enderecoOk ?? !!(property.neighborhood && property.city),
+        detalhesOk: (Number(bathrooms) || 0) >= 1 && (Number(areaM2) || 0) > 0,
+        periodoOk: (Number(minPeriod) || 0) > 0,
+        fotos: photos.length,
+        titulo: title.trim() || property.title,
+        preco: Number(monthlyPrice) || 0,
+        garantiaOk: fatos?.garantiaOk ?? (property.garantiasAceitas ?? []).length > 0,
+        sublocacaoOk: fatos?.sublocacaoOk ?? true,
+        documento: fatos?.documento ?? "approved",
+        limitePlanoOk: fatos?.limitePlanoOk ?? null,
+        descricao: description,
+        capacidade: Number(maxGuests) || 0,
+        disponivelDesde: !!availableFrom,
+        selo: fatos?.selo ?? !!property.readyToLiveBadge,
+        video: fatos?.video ?? !!property.videoUrl,
       }),
-    [
-      photos,
-      description,
-      monthlyPrice,
-      maxGuests,
-      areaM2,
-      availableFrom,
-      property.garantiasAceitas,
-      property.readyToLiveBadge,
-      property.videoUrl,
-    ]
+    [fatos, property, bathrooms, areaM2, minPeriod, photos, title, monthlyPrice, description, maxGuests, availableFrom]
   );
+  const [publicadoAgora, setPublicadoAgora] = useState(false);
+  const publicado = publicadoAgora || property.status === "active";
 
   /** Monta o PropertyInput COMPLETO a partir do estado atual + pass-through. */
   function buildInput(asDraft?: boolean): PropertyInput {
@@ -170,7 +172,7 @@ export function EditarImovelClient({
     };
   }
 
-  async function saveSection(key: string, asDraft?: boolean) {
+  async function saveSection(key: string, asDraft?: boolean): Promise<boolean> {
     setSavingSection(key);
     setErro(null);
     setSavedSection(null);
@@ -182,12 +184,13 @@ export function EditarImovelClient({
     } else {
       setErro(res.error ?? "Não foi possível salvar.");
     }
+    return res.ok;
   }
 
   async function publish() {
     if (!comp.podePublicar) return;
     setPublishing(true);
-    await saveSection("publicar", false);
+    if (await saveSection("publicar", false)) setPublicadoAgora(true);
     setPublishing(false);
   }
 
@@ -231,22 +234,18 @@ export function EditarImovelClient({
       <div className="mb-6 rounded-2xl border border-sage-200 bg-white p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="font-title text-lg font-bold text-ink">
-              Anúncio {comp.pct}% completo
+            <p className="font-title text-lg font-bold text-ink" data-testid="prontidao">
+              {publicado ? "Anúncio publicado" : comp.podePublicar ? "Pronto para publicar" : `Anúncio ${comp.pct}% completo`}
             </p>
-            {comp.pct < 100 ? (
-              <p className="mt-0.5 text-sm text-muted">
-                Falta: {comp.faltando.slice(0, 4).join(" · ")}
-                {comp.faltando.length > 4 ? " …" : ""}
-              </p>
-            ) : (
-              <p className="mt-0.5 text-sm text-forest">
-                Tudo pronto — seu anúncio está completo. 🎉
-              </p>
+            {!comp.podePublicar && (
+              <p className="mt-0.5 text-sm text-muted">Falta para publicar: {comp.faltam.join(" · ")}</p>
+            )}
+            {comp.melhorar.length > 0 && (
+              <p className="mt-0.5 text-xs text-muted">Para melhorar (opcional): {comp.melhorar.join(" · ")}</p>
             )}
           </div>
           <div className="flex items-center gap-2">
-            {comp.pct >= 100 && (
+            {publicado && (
               <Button variant="outline" size="sm" onClick={share}>
                 {copied ? (
                   <>
@@ -259,10 +258,12 @@ export function EditarImovelClient({
                 )}
               </Button>
             )}
-            <Button variant="gold" size="sm" onClick={publish} disabled={!comp.podePublicar || publishing}>
-              {publishing ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              Publicar
-            </Button>
+            {!publicado && (
+              <Button variant="gold" size="sm" onClick={publish} disabled={!comp.podePublicar || publishing}>
+                {publishing ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                Publicar
+              </Button>
+            )}
           </div>
         </div>
         <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface-2">
@@ -271,11 +272,6 @@ export function EditarImovelClient({
             style={{ width: `${comp.pct}%` }}
           />
         </div>
-        {!comp.podePublicar && (
-          <p className="mt-2 text-xs text-amber-700">
-            Para publicar são necessárias no mínimo <strong>{MIN_FOTOS_PUBLICAR} fotos</strong>.
-          </p>
-        )}
         {erro && <p className="mt-2 text-sm text-red-600">{erro}</p>}
       </div>
 
@@ -292,7 +288,7 @@ export function EditarImovelClient({
         >
           <p className="mb-3 text-sm text-muted">
             A <strong>primeira foto é a capa</strong>. Arraste para reordenar ou use a estrela para
-            definir a capa. Mínimo de 5 para publicar.
+            definir a capa. Mínimo de {MIN_FOTOS} para publicar.
           </p>
           <PhotoUploader photos={photos} onChange={setPhotos} max={20} />
         </Section>

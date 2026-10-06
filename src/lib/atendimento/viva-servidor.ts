@@ -5,7 +5,7 @@ import { notify } from "@/lib/notifications";
 import { textoEmail } from "@/lib/notifications/texto-seguro";
 import { SITE_URL } from "@/lib/site";
 import { calcularPrazos, frasePrazo, type Prioridade, type UrgenciaManutencao } from "@/config/atendimento";
-import { MIN_FOTOS_PUBLICAR } from "@/lib/listing-completude";
+import { prontidaoDosImoveis } from "@/lib/anuncio/prontidao-servidor";
 import { atenderViva, maisUrgente, type ChamarModelo, type Ferramentas, type ResultadoViva } from "@/lib/atendimento/viva-motor";
 import { contextoChamado, type FerramentaDef } from "@/lib/atendimento/viva-prompt";
 import { aceitaEsforco, aceitaReserva, cotacaoDolar, custoUsd, modeloViva } from "@/lib/atendimento/viva-custo";
@@ -163,21 +163,22 @@ export function ferramentasReais(admin: Admin, c: ChamadoViva, agora: Date): Fer
     },
     ver_status_anuncio: async (input) => {
       if (!uid) return SEM_CONTA;
-      let q = admin.from("properties").select("id, title, status, photo_count, monthly_price, description").eq("owner_id", uid).limit(10);
+      // Prontidão da fonte única (a mesma de Meus imóveis e do Publicar), só dos imóveis DESTA pessoa.
+      let q = admin.from("properties").select("id, title, status").eq("owner_id", uid).limit(10);
       if (typeof input.imovel_id === "string" && input.imovel_id) q = q.eq("id", input.imovel_id);
       const { data: props } = await q;
       if (!props?.length) return { conteudo: "Nenhum anúncio desta pessoa." };
-      const { data: docs } = await admin.from("qualification_checklists").select("property_id, document_status").in("property_id", props.map((p) => p.id));
+      const prontidao = await prontidaoDosImoveis(admin, uid, props.map((p) => p.id as string));
       const lista = props.map((p) => {
-        const doc = (docs ?? []).find((d) => d.property_id === p.id)?.document_status ?? "none";
-        const falta: string[] = [];
-        if ((p.photo_count ?? 0) < MIN_FOTOS_PUBLICAR) falta.push(`Fotos: tem ${p.photo_count ?? 0}, precisa de pelo menos ${MIN_FOTOS_PUBLICAR}`);
-        if (!p.monthly_price) falta.push("Preço mensal");
-        if (((p.description as string) ?? "").trim().length < 60) falta.push("Descrição (60+ caracteres)");
-        if (doc === "none") falta.push("Documento do imóvel: não enviado");
-        if (doc === "pending") falta.push("Documento do imóvel: em análise pela equipe (avisamos por e-mail quando for aprovado)");
-        if (doc === "rejected") falta.push("Documento do imóvel: reprovado — envie de novo");
-        return { id: p.id, imovel: p.title, status: ({ draft: "rascunho", active: "publicado", paused: "pausado" } as Record<string, string>)[p.status as string] ?? p.status, falta };
+        const pr = prontidao.get(p.id as string);
+        return {
+          id: p.id,
+          imovel: p.title,
+          status: ({ draft: "rascunho", active: "publicado", paused: "pausado" } as Record<string, string>)[p.status as string] ?? p.status,
+          pode_publicar: pr?.podePublicar ?? false,
+          falta_para_publicar: pr?.faltam ?? [],
+          opcional_para_melhorar_nao_bloqueia: pr?.melhorar ?? [],
+        };
       });
       return { conteudo: json(lista) };
     },

@@ -18,7 +18,6 @@ import {
 } from "lucide-react";
 import { useViewMode, primeiroNomeExibicao } from "@/lib/roles";
 import { getLatestDraft } from "@/lib/data/actions";
-import { draftCompletionPct } from "@/lib/draft-progress";
 import { StatCard, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { DashboardBanner } from "@/components/dashboard/banner";
 import { PropertyRow } from "@/components/dashboard/property-row";
@@ -62,13 +61,14 @@ function OwnerDashboard({ name }: { name: string }) {
   const myProperties = allProperties.slice(0, 2);
 
   // Rascunho em andamento (P0): card de pendência "continue de onde parou".
-  const [draft, setDraft] = useState<{ id: string; pct: number } | null>(null);
+  const [draft, setDraft] = useState<RascunhoPendente | null>(null);
   useEffect(() => {
     if (demo) return;
     let alive = true;
     getLatestDraft()
       .then((d) => {
-        if (alive && d) setDraft({ id: d.id, pct: draftCompletionPct(d.data as never) });
+        // Prontidão da fonte única (a mesma de Meus imóveis e do Publicar).
+        if (alive && d) setDraft({ id: d.id, pct: d.prontidao?.pct ?? 0, pronto: !!d.prontidao?.podePublicar, faltam: d.prontidao?.faltam ?? [] });
       })
       .catch(() => {});
     return () => {
@@ -282,11 +282,13 @@ function TenantDashboard({ name }: { name: string }) {
  */
 /** Card de pendência "Anúncio em andamento" (P0) — atalho para retomar o
  * rascunho de onde parou, com o % completo honesto. */
+type RascunhoPendente = { id: string; pct: number; pronto: boolean; faltam: string[] };
+
 function DraftPendingCard({
   draft,
   className,
 }: {
-  draft: { id: string; pct: number };
+  draft: RascunhoPendente;
   className?: string;
 }) {
   return (
@@ -299,22 +301,28 @@ function DraftPendingCard({
         </span>
         <div className="min-w-0">
           <p className="font-title text-sm font-bold text-ink">
-            Anúncio em andamento{draft.pct > 0 ? ` — ${draft.pct}% completo` : ""}
+            {draft.pronto ? "Anúncio pronto para publicar" : `Anúncio em andamento${draft.pct > 0 ? ` — ${draft.pct}% completo` : ""}`}
           </p>
-          <p className="text-xs text-muted">Continue de onde parou. Seu rascunho está salvo.</p>
+          <p className="text-xs text-muted" data-testid="prontidao-visao-geral">
+            {draft.pronto
+              ? "Tudo o que é obrigatório está feito. Abra e toque em Publicar."
+              : draft.faltam.length
+                ? `Falta para publicar: ${draft.faltam.join(" · ")}`
+                : "Continue de onde parou. Seu rascunho está salvo."}
+          </p>
         </div>
       </div>
       <Link
         href={`/dashboard/imoveis/novo?draft=${draft.id}`}
         className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full bg-forest px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-forest/90"
       >
-        Continuar edição <ArrowRight className="h-4 w-4" />
+        {draft.pronto ? "Revisar e publicar" : "Continuar edição"} <ArrowRight className="h-4 w-4" />
       </Link>
     </div>
   );
 }
 
-function OwnerFunnel({ name, draft }: { name: string; draft?: { id: string; pct: number } | null }) {
+function OwnerFunnel({ name, draft }: { name: string; draft?: RascunhoPendente | null }) {
   const passos = [
     {
       n: 1,

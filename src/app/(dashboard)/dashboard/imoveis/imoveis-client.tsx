@@ -13,7 +13,7 @@ import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
 import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
 import { DEMO_PROPERTIES, DEMO_PROPERTY_STATS } from "@/lib/demo/seed";
 import type { Property, PropertyStatus } from "@/lib/types";
-import { completudeAnuncio, MIN_FOTOS_PUBLICAR } from "@/lib/listing-completude";
+import type { Prontidao } from "@/lib/anuncio/prontidao";
 import { formatBRL, cn } from "@/lib/utils";
 
 /** Rótulo + tom do status do anúncio (rascunho/ativo/pausado/arquivado). */
@@ -30,7 +30,7 @@ const hasPhoto = (s?: string) =>
  * Lista "Meus imóveis". Em modo demonstração (admin) a fonte vira o seed em
  * memória (8 imóveis fictícios); desligado, volta à lista real do servidor.
  */
-export function MyPropertiesClient({ properties: real }: { properties: Property[] }) {
+export function MyPropertiesClient({ properties: real, prontidao = {} }: { properties: Property[]; prontidao?: Record<string, Prontidao> }) {
   const { on: demoOn } = useDemoMode();
   // Ids excluídos nesta sessão (rascunhos descartados) — some da lista na hora.
   const [removidos, setRemovidos] = useState<Set<string>>(new Set());
@@ -77,7 +77,7 @@ export function MyPropertiesClient({ properties: real }: { properties: Property[
           {properties.map((p) => {
             const demoItem = demoOn;
             const stats = demoItem ? DEMO_PROPERTY_STATS[p.id] : undefined;
-            const comp = completudeAnuncio(p);
+            const comp = prontidao[p.id];
             return (
               <div
                 key={p.id}
@@ -143,26 +143,20 @@ export function MyPropertiesClient({ properties: real }: { properties: Property[
                       </span>
                     )}
                   </div>
-                  {/* Barra de completude do anúncio (Fase 3) — anúncio completo
-                      rende mais; mostra o % e o que falta. */}
-                  {!demoItem && comp.pct < 100 && (
-                    <div className="mt-3">
+                  {/* Prontidão (fonte única: lib/anuncio/prontidao). "Falta" só tem
+                      obrigatórios; selo/vídeo aparecem à parte, como melhoria. */}
+                  {!demoItem && comp && p.status !== "active" && (
+                    <div className="mt-3" data-testid="prontidao">
                       <div className="flex items-center justify-between text-xs">
-                        <span className="font-medium text-ink">Anúncio {comp.pct}% completo</span>
-                        {!comp.podePublicar && (
-                          <span className="text-amber-700">mín. {MIN_FOTOS_PUBLICAR} fotos para publicar</span>
-                        )}
+                        <span className="font-medium text-ink">
+                          {comp.podePublicar ? "Pronto para publicar" : `Anúncio ${comp.pct}% completo`}
+                        </span>
                       </div>
                       <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-surface-2">
-                        <div
-                          className="h-full rounded-full bg-forest transition-all"
-                          style={{ width: `${comp.pct}%` }}
-                        />
+                        <div className="h-full rounded-full bg-forest transition-all" style={{ width: `${comp.pct}%` }} />
                       </div>
-                      <p className="mt-1 text-[11px] text-muted">
-                        Falta: {comp.faltando.slice(0, 3).join(" · ")}
-                        {comp.faltando.length > 3 ? " …" : ""}
-                      </p>
+                      {comp.faltam.length > 0 && <p className="mt-1 text-[11px] text-amber-800">Falta para publicar: {comp.faltam.join(" · ")}</p>}
+                      {comp.melhorar.length > 0 && <p className="mt-0.5 text-[11px] text-muted">Para melhorar (opcional): {comp.melhorar.join(" · ")}</p>}
                     </div>
                   )}
                   <div className="mt-auto flex items-center justify-between pt-3">
