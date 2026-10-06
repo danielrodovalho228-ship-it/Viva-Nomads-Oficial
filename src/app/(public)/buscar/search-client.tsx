@@ -23,6 +23,7 @@ import { PROPERTY_TYPES } from "@/lib/amenities";
 import { registrarEvento } from "@/lib/eventos/registrar";
 import { chaveCidade } from "@/lib/cidades";
 import { FAIXAS, GARANTIAS_FAIXA, GARANTIAS_PUBLICAS, CAUCAO_PARCELADA_UI } from "@/lib/faixas";
+import { SELO_NF_UI } from "@/lib/flags";
 
 // Filtro de garantia exibido na busca pública: caução unificada + seguro-fiança
 // (a modalidade parcelada fica fora da UI até o parecer — B1). Religa com a flag.
@@ -151,7 +152,8 @@ export function SearchClient({ properties }: { properties: Property[] }) {
     if (on("pronto")) setReadyToLiveOnly(true);
     if (on("homeoffice")) setHomeOfficeOnly(true);
     if (on("localizado")) setWorkLocatedOnly(true);
-    if (on("nota")) setInvoiceOnly(true);
+    // "Com Nota Fiscal" só existe com a chave do selo ligada (aluguel de PF é recibo, não NF).
+    if (SELO_NF_UI && on("nota")) setInvoiceOnly(true);
     if (on("seguro")) setInsuranceOnly(true);
     if (on("gestor")) setOperatedOnly(true);
   }, []);
@@ -564,9 +566,11 @@ export function SearchClient({ properties }: { properties: Property[] }) {
               <Chip on={petsOnly} onClick={() => setPetsOnly((v) => !v)}>
                 🐾 Aceita pet
               </Chip>
-              <Chip on={invoiceOnly} onClick={() => setInvoiceOnly((v) => !v)}>
-                📄 Com Nota Fiscal
-              </Chip>
+              {SELO_NF_UI && (
+                <Chip on={invoiceOnly} onClick={() => setInvoiceOnly((v) => !v)}>
+                  📄 Com Nota Fiscal
+                </Chip>
+              )}
               <Chip on={insuranceOnly} onClick={() => setInsuranceOnly((v) => !v)}>
                 🛡️ Seguro-Fiança
               </Chip>
@@ -623,7 +627,7 @@ export function SearchClient({ properties }: { properties: Property[] }) {
               <ActiveChip label="Trabalhar de casa" onClear={() => setHomeOfficeOnly(false)} />
             )}
             {petsOnly && <ActiveChip label="Aceita pet" onClear={() => setPetsOnly(false)} />}
-            {invoiceOnly && <ActiveChip label="Nota Fiscal" onClear={() => setInvoiceOnly(false)} />}
+            {SELO_NF_UI && invoiceOnly && <ActiveChip label="Nota Fiscal" onClear={() => setInvoiceOnly(false)} />}
             {insuranceOnly && (
               <ActiveChip label="Seguro-Fiança" onClear={() => setInsuranceOnly(false)} />
             )}

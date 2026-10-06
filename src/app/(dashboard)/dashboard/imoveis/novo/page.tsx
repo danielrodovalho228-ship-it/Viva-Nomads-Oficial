@@ -38,7 +38,7 @@ import { PROPERTY_TYPES, AMENITY_GROUPS, propertyTypeLabel, amenityKeysFromLabel
 import { PlacesPicker, type CuratedPlace } from "@/components/property/places-picker";
 import { ManualProximities } from "@/components/property/manual-proximities";
 import { LocationDatalist } from "@/lib/locations";
-import { GERACAO_IA_ATIVA } from "@/lib/flags";
+import { GERACAO_IA_ATIVA, SELO_NF_UI } from "@/lib/flags";
 import { PHOTOS } from "@/lib/media";
 import type { Property, Proximity } from "@/lib/types";
 import { cn, formatBRL } from "@/lib/utils";
@@ -1423,9 +1423,13 @@ export default function NewPropertyPage() {
               <span className="mt-1 block text-xs text-muted">Limpeza profunda antes da entrada — cobrada uma única vez.</span>
             </Labeled>
 
-            <div className="space-y-2">
-              <Toggle checked={issuesInvoice} onChange={() => setIssuesInvoice((v) => !v)} label="Este imóvel emite Nota Fiscal do aluguel" hint="Decisivo para o público corporativo (reembolso pela empresa)." />
-            </div>
+            {/* Escondido com a chave do selo (SELO_NF_UI): proprietário PF emite recibo, não NF.
+                O dado (issues_invoice) continua no banco, sem mudança. */}
+            {SELO_NF_UI && (
+              <div className="space-y-2">
+                <Toggle checked={issuesInvoice} onChange={() => setIssuesInvoice((v) => !v)} label="Este imóvel emite Nota Fiscal do aluguel" hint="Decisivo para o público corporativo (reembolso pela empresa)." />
+              </div>
+            )}
 
             <Labeled label="Garantias que você aceita">
               <p className="mb-2 text-xs text-muted">
