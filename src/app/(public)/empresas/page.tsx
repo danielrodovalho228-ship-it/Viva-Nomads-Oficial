@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/empresas" },
   title: "Para empresas",
   description:
-    "Mobilidade corporativa com locação mobiliada de média duração: imóveis prontos, nota fiscal e relatórios. Fale com a gente.",
+    "Mobilidade corporativa com locação mobiliada de média duração: imóveis prontos, recibo do aluguel para reembolso e relatórios. Fale com a gente.",
 };
 
 const PILARES = [
@@ -18,8 +18,8 @@ const PILARES = [
   },
   {
     icon: FileText,
-    titulo: "Nota fiscal",
-    texto: "Emissão de nota fiscal dos serviços da plataforma, para o seu financeiro fechar sem dor de cabeça.",
+    titulo: "Recibo para reembolso",
+    texto: "Recibo mensal do aluguel em nome do proprietário + contrato assinado, aceitos para reembolso. A Viva Nomads não cobra nada do inquilino.",
   },
   {
     icon: BarChart3,
