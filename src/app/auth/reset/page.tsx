@@ -9,6 +9,7 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import { PasswordInput } from "@/components/ui/password-input";
 import { createClient } from "@/lib/supabase/client";
 import { friendlyAuthError, MIN_PASSWORD } from "@/lib/auth-errors";
+import { useCelularNoNavegador, VoltarParaApp } from "@/components/app/voltar-para-app";
 
 type Phase = "checking" | "ready" | "invalid" | "done";
 
@@ -27,6 +28,7 @@ export default function ResetPasswordPage() {
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const celular = useCelularNoNavegador();
 
   // Estabelece a sessão de recuperação a partir do link antes de mostrar o form.
   //
@@ -113,7 +115,8 @@ export default function ResetPasswordPage() {
         if (error) throw error;
       }
       setPhase("done");
-      setTimeout(() => router.push("/auth"), 2500);
+      // No celular, a pessoa escolhe: voltar para o app ou entrar no site.
+      if (!celular) setTimeout(() => router.push("/auth"), 2500);
     } catch (err) {
       setError(friendlyAuthError(err instanceof Error ? err.message : ""));
     } finally {
@@ -153,10 +156,18 @@ export default function ResetPasswordPage() {
             <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-sage-100">
               <CheckCircle2 className="h-7 w-7 text-forest" />
             </div>
-            <h1 className="mt-4 font-title text-2xl font-bold text-ink">Senha redefinida</h1>
+            <h1 className="mt-4 font-title text-2xl font-bold text-ink">Pronto! Senha redefinida</h1>
             <p className="mt-2 text-sm text-muted">
-              Tudo certo! Você já pode entrar com a nova senha. Redirecionando…
+              {celular ? "Você já pode entrar com a nova senha, no app ou no site." : "Tudo certo! Você já pode entrar com a nova senha. Redirecionando…"}
             </p>
+            {celular && (
+              <div className="mt-6 space-y-3">
+                <VoltarParaApp />
+                <ButtonLink href="/auth" variant="outline" className="w-full">
+                  Entrar no site
+                </ButtonLink>
+              </div>
+            )}
           </div>
         )}
 

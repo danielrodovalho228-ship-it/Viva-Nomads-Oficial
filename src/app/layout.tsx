@@ -5,6 +5,7 @@ import { AuthProvider } from "@/components/auth-provider";
 import { NativeBridge } from "@/components/native/native-bridge";
 import { SITE_URL, SITE_NAME } from "@/lib/site";
 import { AppModeBridge } from "@/components/app/app-mode-bridge";
+import { LinksDoApp } from "@/components/app/links-do-app";
 import { OrigemVisita } from "@/components/app/origem-visita";
 import { BotaoAjuda } from "@/components/ajuda/botao-ajuda";
 import { APP_PREPAINT_SCRIPT } from "@/lib/app-mode";
@@ -19,6 +20,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  // Banner "Abrir no app" do iPhone (Safari) — só quando o app estiver na App Store.
+  ...(process.env.NEXT_PUBLIC_IOS_APP_ID ? { itunes: { appId: process.env.NEXT_PUBLIC_IOS_APP_ID } } : {}),
   metadataBase: new URL(SITE_URL),
   title: {
     default: "Viva Nomads — Locação mobiliada por temporada, de 30 a 180 dias",
@@ -69,6 +72,7 @@ export default function RootLayout({
           <AppModeBridge />
           <OrigemVisita />
           <BotaoAjuda />
+          <LinksDoApp />
           {children}
         </AuthProvider>
       </body>

@@ -139,16 +139,19 @@ export async function notify(params: {
 
   if (params.email) {
     try {
-      // Eventos com detailsHtml já trazem seu próprio botão (ex.: "Responder
-      // pela plataforma"); os demais ganham um CTA padrão para o painel.
-      const cta = params.detailsHtml
+      // Detalhes que já trazem um link (ex.: "Responder pela plataforma") ficam
+      // com ele; os demais ganham UM botão para a tela EXATA do evento
+      // (a mesma do push) — nunca a home. Com o app instalado, o link abre o app.
+      const cta = params.detailsHtml && /<a\s/i.test(params.detailsHtml)
         ? undefined
-        : { label: "Abrir no Viva Nomads", url: `${SITE_URL}/dashboard` };
+        : { label: "Abrir no Viva Nomads", url: `${SITE_URL}${urlInterna(params.pushUrl)}` };
       const html = brandedNotification({
         title: tpl.subject,
         intro: tpl.body(nomeHtml),
         detailsHtml: params.detailsHtml,
         cta,
+        // Só depois que a versão do app com links diretos estiver nas lojas.
+        outro: process.env.APP_LINKS_ATIVO === "on" ? "Se você tem o app Viva Nomads, ele abre direto no app." : undefined,
         image: emailImage(tpl.img, tpl.subject),
       });
       const text = notificationText({

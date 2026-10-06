@@ -36,6 +36,10 @@ const nextConfig: NextConfig = {
     return [
       // Apresentação (slideshow privado das telas). URL limpa /apresentacao.
       { source: "/apresentacao", destination: "/apresentacao.html" },
+      // Verificação de domínio dos apps (links de e-mail abrindo o app). Rewrite,
+      // não redirect: Apple e Google exigem resposta direta neste endereço.
+      { source: "/.well-known/apple-app-site-association", destination: "/api/well-known/apple" },
+      { source: "/.well-known/assetlinks.json", destination: "/api/well-known/android" },
     ];
   },
   async headers() {
