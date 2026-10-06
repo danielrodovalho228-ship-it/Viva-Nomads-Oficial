@@ -1,5 +1,8 @@
 import Link from "next/link";
 import { loadPropertyForEdit } from "@/lib/data/actions";
+import { createClient } from "@/lib/supabase/server";
+import { fatosDosImoveis } from "@/lib/anuncio/prontidao-servidor";
+import type { FatosAnuncio } from "@/lib/anuncio/prontidao";
 import { EditarImovelClient } from "./editar-client";
 
 /**
@@ -36,5 +39,16 @@ export default async function EditarImovelPage({
     );
   }
 
-  return <EditarImovelClient property={property} demo={demo} />;
+  // Fatos do banco para a prontidão (documento, limite do plano, garantia, selo…);
+  // o editor sobrepõe ao vivo os campos que a pessoa está mexendo.
+  let fatos: FatosAnuncio | null = null;
+  const supabase = await createClient();
+  if (supabase) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user) fatos = (await fatosDosImoveis(supabase, user.id, [id])).get(id) ?? null;
+  }
+
+  return <EditarImovelClient property={property} demo={demo} fatos={fatos} />;
 }

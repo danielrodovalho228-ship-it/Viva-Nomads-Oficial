@@ -24,7 +24,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { createProperty, updateProperty, loadPropertyForEdit, getMyDocumentStatus, saveDraftData, loadDraftData, getLatestDraft, type DocumentStatus } from "@/lib/data/actions";
-import { draftCompletionPct } from "@/lib/draft-progress";
+import { prontidaoAnuncio } from "@/lib/anuncio/prontidao";
 import { geocodeForSave } from "@/lib/integrations/geocoding";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button, ButtonLink } from "@/components/ui/button";
@@ -155,27 +155,31 @@ export default function NewPropertyPage() {
   const photoBlocked = photos.length < MIN_PHOTOS;
   const fotosMsg = photosMissing === 1 ? "Falta 1 foto" : `Faltam ${photosMissing} fotos`;
 
-  // Checklist de completude para a Revisão (item 3 do QA): PUBLICAR só libera
-  // com tudo verde. A navegação entre etapas continua livre (bom p/ autosave);
-  // a trava é só na publicação. Cada item aponta a etapa onde se resolve.
-  // Detalhes básicos: um imóvel de verdade tem ao menos 1 banheiro e área > 0
-  // (quartos podem ser 0 — studio). Fecha o furo do anúncio "0/0/0" (item 1).
-  const detalhesOk = (Number(bathrooms) || 0) >= 1 && (Number(areaM2) || 0) > 0;
-  const docAprovado = !!editingId || docStatus === "approved";
+  // Checklist da Revisão = PRONTIDÃO (fonte única: lib/anuncio/prontidao — a
+  // mesma de Meus imóveis, Visão geral, servidor do Publicar, FAQ e Viva).
+  // Publicar só libera com os OBRIGATÓRIOS verdes; os opcionais (selo, vídeo…)
+  // nunca bloqueiam. A navegação entre etapas continua livre (autosave).
   const garantiaOk = Object.values(garantias).some(Boolean);
-
-  const completude = [
-    { label: "Endereço preenchido", ok: !!(street.trim() && neighborhood.trim() && city.trim()), step: 1 },
-    { label: "Detalhes básicos (quartos, banheiros, área)", ok: detalhesOk, step: 2 },
-    { label: "Período mínimo definido", ok: (Number(minPeriod) || 0) > 0, step: 2 },
-    { label: `Ao menos ${MIN_PHOTOS} fotos`, ok: photos.length >= MIN_PHOTOS, step: 3 },
-    { label: "Título do anúncio", ok: title.trim().length >= 3, step: 5 },
-    { label: "Preço mensal maior que zero", ok: Number(monthlyPrice) > 0, step: 5 },
-    // O gate humano aparece AQUI (pendente/aprovada). Não vale na edição.
-    { label: "Documentação aprovada", ok: docAprovado, step: 0, docItem: true },
-  ];
-  const completudeOk = completude.every((c) => c.ok);
-  const podePublicar = completudeOk && !subleaseBlocked && garantiaOk;
+  const prontidao = prontidaoAnuncio({
+    enderecoOk: !!(street.trim() && neighborhood.trim() && city.trim()),
+    detalhesOk: (Number(bathrooms) || 0) >= 1 && (Number(areaM2) || 0) > 0,
+    periodoOk: (Number(minPeriod) || 0) > 0,
+    fotos: photos.length,
+    titulo: title,
+    preco: Number(monthlyPrice) || 0,
+    garantiaOk,
+    sublocacaoOk: !subleaseBlocked,
+    documento: docStatus,
+    // O limite do plano é conferido no servidor ao publicar.
+    limitePlanoOk: null,
+    descricao: description,
+    capacidade: Number(maxGuests) || 0,
+    disponivelDesde: !!availableFrom,
+    selo: qual.baseBadge,
+    video: !!videoUrl.trim(),
+  });
+  const completude = prontidao.obrigatorios;
+  const podePublicar = prontidao.podePublicar;
 
   /** Campos obrigatórios da etapa atual (chave → mensagem). Vazio = pode avançar.
    * Só barra o AVANÇO ("Continuar"); voltar e pular para etapas já visitadas
@@ -285,8 +289,8 @@ export default function NewPropertyPage() {
     if (!asDraft) {
       const falta = completude.find((c) => !c.ok);
       if (falta) {
-        setPublishError(`Falta concluir: ${falta.label.toLowerCase()}.`);
-        setStep(falta.step);
+        setPublishError(`Falta para publicar: ${prontidao.faltam.join("; ")}.`);
+        if (falta.key !== "documento") setStep(falta.etapa);
         return;
       }
     }
@@ -633,7 +637,7 @@ export default function NewPropertyPage() {
     let alive = true;
     getLatestDraft()
       .then((d) => {
-        if (alive && d) setExistingDraft({ id: d.id, pct: draftCompletionPct(d.data as never) });
+        if (alive && d) setExistingDraft({ id: d.id, pct: d.prontidao?.pct ?? 0 });
       })
       .catch(() => {});
     return () => {
@@ -1488,7 +1492,7 @@ export default function NewPropertyPage() {
               </div>
               <ul className="mt-3 space-y-1.5">
                 {completude.map((c) => (
-                  <li key={c.label} className="flex items-center justify-between gap-2 text-sm">
+                  <li key={c.key} className="flex items-center justify-between gap-2 text-sm">
                     <span className="flex items-center gap-2">
                       {c.ok ? (
                         <CheckCircle2 className="h-4 w-4 shrink-0 text-forest" />
@@ -1498,7 +1502,7 @@ export default function NewPropertyPage() {
                       <span className={c.ok ? "text-ink" : "text-muted"}>{c.label}</span>
                     </span>
                     {!c.ok &&
-                      ("docItem" in c && c.docItem ? (
+                      (c.key === "documento" ? (
                         // O item do documento não é uma etapa do editor: mostra o
                         // estado da moderação em vez de "Resolver".
                         <span
@@ -1516,7 +1520,7 @@ export default function NewPropertyPage() {
                       ) : (
                         <button
                           type="button"
-                          onClick={() => setStep(c.step)}
+                          onClick={() => setStep(c.etapa)}
                           className="shrink-0 text-xs font-medium text-forest underline"
                         >
                           Resolver
@@ -1525,6 +1529,11 @@ export default function NewPropertyPage() {
                   </li>
                 ))}
               </ul>
+              {prontidao.melhorar.length > 0 && (
+                <p className="mt-3 border-t border-sage-200 pt-2 text-xs text-muted" data-testid="prontidao-opcionais">
+                  Para melhorar (opcional, não impede publicar): {prontidao.melhorar.join(" · ")}
+                </p>
+              )}
             </div>
 
             {/* Barra de qualidade do anúncio */}

@@ -94,7 +94,7 @@ export const FERRAMENTAS_VIVA: FerramentaDef[] = [
   { name: "ver_meus_contratos", description: "Lista os contratos da pessoa (como inquilina ou proprietária): imóvel, status, datas e blocos.", input_schema: vazio },
   { name: "ver_status_caucao", description: "Mostra a caução de cada bloco de um contrato da pessoa (valor, forma, status). Sem contrato_id, usa o contrato mais recente.", input_schema: comId("contrato_id", "id do contrato, ou null") },
   { name: "ver_status_documento", description: "Mostra o status do documento de cada imóvel do proprietário (sem documento, em análise, aprovado, reprovado com motivo).", input_schema: vazio },
-  { name: "ver_status_anuncio", description: "Diz o que falta para publicar um anúncio da pessoa (fotos, preço, descrição, documento). Sem imovel_id, olha todos os anúncios dela.", input_schema: comId("imovel_id", "id do imóvel, ou null") },
+  { name: "ver_status_anuncio", description: "Diz se cada anúncio da pessoa pode ser publicado, o que falta (só itens obrigatórios) e o que é opcional para melhorar (nunca bloqueia). Sem imovel_id, olha todos os anúncios dela.", input_schema: comId("imovel_id", "id do imóvel, ou null") },
   { name: "reenviar_email_confirmacao", description: "Reenvia o e-mail de confirmação de cadastro para o e-mail da pessoa do chamado.", input_schema: vazio },
   { name: "enviar_link_redefinir_senha", description: "Envia o link para criar uma nova senha para o e-mail da pessoa do chamado.", input_schema: vazio },
   {

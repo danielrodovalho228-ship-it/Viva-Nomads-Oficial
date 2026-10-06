@@ -421,5 +421,8 @@ export async function listMyProperties(): Promise<Property[]> {
     .order("created_at", { ascending: false });
 
   if (error || !data) return [];
-  return (data as unknown as PropertyRow[]).map(rowToProperty);
+  const lista = (data as unknown as PropertyRow[]).map(rowToProperty);
+  // As fotos vêm de property_photos (sem isso o card ficava sem capa).
+  await attachCoverPhotos(supabase, lista);
+  return lista;
 }

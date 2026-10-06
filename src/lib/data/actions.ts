@@ -25,6 +25,8 @@ import { planoDoProprietario } from "@/lib/data/plano-efetivo";
 import { avisarPedidosDoImovel } from "@/lib/data/pedidos-compat";
 import { INTERNET_META } from "@/lib/internet";
 import { getPropertyForOwner } from "@/lib/data/properties";
+import { prontidaoDoImovel } from "@/lib/anuncio/prontidao-servidor";
+import type { Prontidao } from "@/lib/anuncio/prontidao";
 import { guardContactInfo } from "@/lib/messages/contact-guard";
 import { isExemplo, EXEMPLO_SEM_CONTATO } from "@/lib/demo-listing";
 import { conversationId as idConversa } from "@/lib/messages/conversation-id";
@@ -325,6 +327,22 @@ export interface PropertyInput {
   proximities?: { category: string; name: string; note?: string }[];
 }
 
+/**
+ * Portão final do Publicar: a MESMA prontidão de Meus imóveis, Visão geral, FAQ
+ * e Viva (lib/anuncio/prontidao), lida do banco depois de salvar. Só os itens
+ * obrigatórios barram; selo, vídeo e demais opcionais nunca.
+ */
+async function faltaParaPublicar(
+  supabase: NonNullable<Awaited<ReturnType<typeof createClient>>>,
+  ownerId: string,
+  id: string
+): Promise<string | null> {
+  const pr = await prontidaoDoImovel(supabase, ownerId, id);
+  if (!pr) return "Imóvel não encontrado.";
+  if (pr.podePublicar) return null;
+  return `Ainda falta para publicar: ${pr.faltam.join("; ")}.`;
+}
+
 export async function createProperty(input: PropertyInput): Promise<ActionResult> {
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
@@ -506,6 +524,10 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
       .eq("owner_id", user.id)
       .is("property_id", null);
   }
+  if (!input.asDraft) {
+    const falta = await faltaParaPublicar(supabase, user.id, data.id as string);
+    if (falta) return { ok: false, id: data.id, error: `${falta} O anúncio ficou salvo como rascunho.` };
+  }
   const { error: stErr } = await supabase
     .from("properties")
     .update({ status: input.asDraft ? "draft" : "active" })
@@ -594,10 +616,6 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
       area_m2: input.areaM2,
       min_period_days: input.minPeriodDays,
       monthly_price: input.monthlyPrice,
-      // Só (re)publica se for explicitamente "Publicar"; "Salvar rascunho" não
-      // despublica um anúncio já ativo. Ao publicar, ZERA o draft_data (ele guarda
-      // a rua exata e a linha fica pública — C4/T1).
-      ...(input.asDraft === false ? { status: "active", draft_data: null } : {}),
       ready_to_live_score: input.readyToLiveScore,
       ready_to_live_badge: input.readyToLiveScore >= 70,
       tag_home_office: input.tagHomeOffice ?? false,
@@ -679,6 +697,21 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
       sort_order: i,
     }))
   );
+
+  // Só (re)publica se for explicitamente "Publicar"; "Salvar rascunho" não
+  // despublica um anúncio já ativo. Publica DEPOIS de salvar tudo e de passar
+  // pela prontidão (fonte única). Ao publicar, ZERA o draft_data (ele guarda a
+  // rua exata e a linha fica pública — C4/T1).
+  if (input.asDraft === false) {
+    const falta = await faltaParaPublicar(supabase, user.id, id);
+    if (falta) return { ok: false, id, error: `${falta} Suas alterações foram salvas.` };
+    const { error: pubErr } = await supabase
+      .from("properties")
+      .update({ status: "active", draft_data: null })
+      .eq("id", id)
+      .eq("owner_id", user.id);
+    if (pubErr) return { ok: false, id, error: erroBancoPT(pubErr) };
+  }
 
   if (input.asDraft === false && antes?.status !== "active") {
     try {
@@ -1497,6 +1530,8 @@ export async function getLatestDraft(): Promise<{
   id: string;
   title: string;
   data: unknown;
+  /** Prontidão real (fonte única) — o "% completo" e o "falta" de todas as telas. */
+  prontidao: Prontidao | null;
 } | null> {
   const supabase = await createClient();
   if (!supabase) return null;
@@ -1520,5 +1555,6 @@ export async function getLatestDraft(): Promise<{
     id: data.id as string,
     title: (data.title as string) || "Rascunho de anúncio",
     data: (row as { draft_data?: unknown } | null)?.draft_data ?? null,
+    prontidao: await prontidaoDoImovel(supabase, user.id, data.id as string),
   };
 }
