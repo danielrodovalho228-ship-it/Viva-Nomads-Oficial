@@ -149,7 +149,7 @@ export function MyPropertiesClient({ properties: real, prontidao = {} }: { prope
                     <div className="mt-3" data-testid="prontidao">
                       <div className="flex items-center justify-between text-xs">
                         <span className="font-medium text-ink">
-                          {comp.podePublicar ? "Pronto para publicar" : `Anúncio ${comp.pct}% completo`}
+                          {comp.podePublicar ? "100% · Pronto para publicar" : `Anúncio ${comp.pct}% completo`}
                         </span>
                       </div>
                       <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-surface-2">

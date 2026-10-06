@@ -71,7 +71,7 @@ export const FAQ: Pergunta[] = [
     pergunta: "Por que meu anúncio não publica?",
     resposta:
       // Mesma lista da prontidão (lib/anuncio/prontidao): o que o FAQ diz é o que o Publicar confere.
-      `Para publicar, o anúncio precisa de: ${OBRIGATORIOS_ROTULOS.map((r) => r.charAt(0).toLowerCase() + r.slice(1)).join("; ")}. Selo Pronto para Morar, vídeo e descrição longa ajudam, mas não impedem a publicação. Em Meus imóveis e na etapa Revisão aparece exatamente o que falta. Se o documento está "Em análise", é só aguardar: avisamos por e-mail quando for aprovado.`,
+      `Para publicar, o anúncio precisa de: ${OBRIGATORIOS_ROTULOS.map((r) => r.charAt(0).toLowerCase() + r.slice(1)).join("; ")}. Selo Pronto para Morar e vídeo ajudam, mas não impedem a publicação. Em Meus imóveis e na etapa Revisão aparece exatamente o que falta. Se o documento está "Em análise", é só aguardar: avisamos por e-mail quando for aprovado.`,
     termos: ["publicar", "anuncio", "documento", "analise", "fotos", "travado"],
   },
   {
