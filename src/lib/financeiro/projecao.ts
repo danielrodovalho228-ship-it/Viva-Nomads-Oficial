@@ -11,7 +11,7 @@
   • Dos donos novos (não Fundadores), a fração do cenário assina um plano pago
     (média R$ 55/mês), com churn de 3% ao mês.
   • Seguro incêndio a partir do mês 9 (parceiro ativo).
-  • Custo variável por contrato + 6% de imposto sobre a receita; custo fixo
+  • Custo variável por contrato + imposto sobre a receita (6% ou 15,5%); custo fixo
     + marketing por mês; investimento único no mês 0.
 */
 import {
@@ -37,6 +37,8 @@ export interface Opcoes {
   operador: number;
   /** Custo fixo mensal (padrão: soma dos fixos = R$ 989). */
   custoFixo?: number;
+  /** Imposto da Viva sobre a receita (padrão 6%; 15,5% no anexo V). */
+  imposto?: number;
 }
 
 export interface Mes {
@@ -133,7 +135,7 @@ export function projetar(id: CenarioId, op: Opcoes): Projecao {
     const receitaAssinatura = assinantes * ASSINATURA.mediaPagantes;
     const receitaSeguro = SEGURO_INCENDIO.parceiroAtivo && m >= SEGURO_INCENDIO.aPartirDoMes ? contratos * SEGURO_INCENDIO.porContrato : 0;
     const receita = receitaComissao + receitaAssinatura + receitaSeguro;
-    const custoVariavel = contratos * (CUSTO_FERRAMENTAS_POR_CONTRATO + op.operador) + IMPOSTO_SOBRE_RECEITA * receita;
+    const custoVariavel = contratos * (CUSTO_FERRAMENTAS_POR_CONTRATO + op.operador) + (op.imposto ?? IMPOSTO_SOBRE_RECEITA) * receita;
     const marketing = marketingDoMes(m);
     const resultado = receita - custoVariavel - fixo - marketing;
     caixa += resultado;
@@ -172,7 +174,7 @@ export interface PorContrato {
 export function porContrato(op: Opcoes): PorContrato {
   const fixo = op.custoFixo ?? CUSTO_FIXO_PADRAO;
   const receita = comissaoMediaPorContrato() + (SEGURO_INCENDIO.parceiroAtivo ? SEGURO_INCENDIO.porContrato : 0);
-  const custoVariavel = CUSTO_FERRAMENTAS_POR_CONTRATO + IMPOSTO_SOBRE_RECEITA * receita + op.operador;
+  const custoVariavel = CUSTO_FERRAMENTAS_POR_CONTRATO + (op.imposto ?? IMPOSTO_SOBRE_RECEITA) * receita + op.operador;
   const margem = receita - custoVariavel;
   const empate = (mkt: number) => (margem > 0 ? (fixo + mkt) / margem : Infinity);
   return { receita, custoVariavel, margem, empate: [empate(marketingDoMes(12)), empate(marketingDoMes(13))] };

@@ -5,7 +5,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { comissaoMediaPorContrato, CUSTO_FERRAMENTAS_POR_CONTRATO, CUSTO_FIXO_PADRAO, porContrato, projetar } from "./projecao.ts";
-import { CUSTO_FIXO_FAIXA, FUNDADORES, RECEITAS_FUTURAS, REFERENCIA } from "../../config/premissas-financeiras.ts";
+import { CUSTO_FIXO_FAIXA, FUNDADORES, IMPOSTO_OPCOES, IMPOSTO_SOBRE_RECEITA, RECEITAS_FUTURAS, REFERENCIA, SEGURO_INCENDIO } from "../../config/premissas-financeiras.ts";
 import { COMISSAO_POR_PLANO } from "../../config/planos.ts";
 
 /** |real − esperado| ≤ 2% do esperado. */
@@ -71,4 +71,20 @@ test("receitas que não existem hoje ficam desligadas e fora da conta", () => {
 test("custo fixo editável muda o resultado (faixa alta piora o caixa)", () => {
   const alto = projetar("base", { operador: 0, custoFixo: CUSTO_FIXO_FAIXA.max });
   assert.ok(alto.piorCaixa < projetar("base", { operador: 0 }).piorCaixa);
+});
+
+test("imposto da Viva: padrão 6%; anexo V (15,5%) → margem ≈ R$ 208 e empate de 9 a 12 (17 a 24 com operador)", () => {
+  assert.deepEqual([...IMPOSTO_OPCOES], [0.06, 0.155]);
+  assert.equal(IMPOSTO_SOBRE_RECEITA, 0.06);
+  const v = porContrato({ operador: 0, imposto: 0.155 });
+  assert.equal(Math.round(v.margem), 208);
+  assert.deepEqual(v.empate.map((x) => Math.ceil(x)), [9, 12]);
+  assert.deepEqual(porContrato({ operador: 100, imposto: 0.155 }).empate.map((x) => Math.ceil(x)), [17, 24]);
+  // O padrão continua sendo 6%: os números travados acima não mudam.
+  assert.equal(porContrato({ operador: 0 }).margem, porContrato({ operador: 0, imposto: 0.06 }).margem);
+  assert.ok(projetar("base", { operador: 0, imposto: 0.155 }).piorCaixa < projetar("base", { operador: 0 }).piorCaixa);
+});
+
+test("seguro incêndio traz o aviso do modelo com a seguradora", () => {
+  assert.match(SEGURO_INCENDIO.aviso, /corretor SUSEP ou representante/);
 });
