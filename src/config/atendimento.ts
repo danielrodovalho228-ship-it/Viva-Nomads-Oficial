@@ -111,6 +111,36 @@ export function frasePrazo(prioridade: Prioridade, agora: Date): string {
   return `Nosso horário de atendimento é das ${HORARIO_HUMANO.inicio}h às ${HORARIO_HUMANO.fim}h; uma pessoa responde a partir das ${HORARIO_HUMANO.inicio}h (${base}).`;
 }
 
+/**
+ * Estado gravado em chamados.sla_estado — MESMA regra da varredura do banco
+ * (atendimento_varrer_prazos, 0075):
+ *  • sem 1ª resposta: relógio da 1ª resposta (75% do tempo = em risco);
+ *  • 1ª resposta fora do prazo: estourado (fica registrado);
+ *  • respondido no prazo: passa a valer o prazo de RESOLUÇÃO;
+ *  • resolvido/encerrado: ok se cumpriu os dois prazos, senão estourado.
+ */
+export function slaDoChamado(c: {
+  criadoEm: Date;
+  prazoPrimeiraResposta: Date;
+  primeiraRespostaEm: Date | null;
+  prazoResolucao: Date;
+  resolvidoEm: Date | null;
+  fechado: boolean;
+  agora: Date;
+}): "ok" | "em_risco" | "estourado" {
+  const t = (d: Date) => d.getTime();
+  const relogio = (prazo: Date) =>
+    t(c.agora) >= t(prazo) ? "estourado" : t(c.agora) - t(c.criadoEm) >= 0.75 * (t(prazo) - t(c.criadoEm)) ? "em_risco" : "ok";
+  if (c.fechado) {
+    const resposta = c.primeiraRespostaEm ?? c.resolvidoEm ?? c.agora;
+    const fim = c.resolvidoEm ?? c.agora;
+    return t(resposta) <= t(c.prazoPrimeiraResposta) && t(fim) <= t(c.prazoResolucao) ? "ok" : "estourado";
+  }
+  if (!c.primeiraRespostaEm) return relogio(c.prazoPrimeiraResposta);
+  if (t(c.primeiraRespostaEm) > t(c.prazoPrimeiraResposta)) return "estourado";
+  return relogio(c.prazoResolucao);
+}
+
 /** Estado do prazo para o relógio da fila: verde, amarelo (≥ 75% do tempo) ou vermelho. */
 export function estadoPrazo(abertoEm: Date, prazo: Date, agora: Date, respondido: boolean): "ok" | "em_risco" | "estourado" | "cumprido" {
   if (respondido) return "cumprido";

@@ -378,6 +378,7 @@ export async function marcarResolvido(chamadoId: string): Promise<Res> {
   if (!c || c.status !== "aguardando_usuario") return { ok: false, error: "Este chamado não está aguardando você." };
   const agora = new Date().toISOString();
   await admin.from("chamados").update({ status: "resolvido", resolvido_em: agora, atualizado_em: agora }).eq("id", c.id);
+  await admin.rpc("atendimento_varrer_prazos");
   await admin.from("chamado_eventos").insert({ chamado_id: c.id, ator_tipo: "usuario", ator_id: user.id, acao: "status", de: "aguardando_usuario", para: "resolvido", detalhe: "a pessoa marcou como resolvido" });
   await avisarUsuario(c as ChamadoResumo, "chamado_resolvido");
   return { ok: true };
@@ -531,6 +532,8 @@ export async function responderComoAdmin(id: string, texto: string, interno: boo
     const mud: Record<string, unknown> = { status: "aguardando_usuario", atualizado_em: agora, responsavel_admin: ctx.userId, responsavel_tipo: "humano" };
     if (!c.primeira_resposta_em) mud.primeira_resposta_em = agora;
     await ctx.admin.from("chamados").update(mud).eq("id", id);
+    // Respondido: o prazo passa a ser o de resolução (ou fica "estourado" se a resposta atrasou).
+    await ctx.admin.rpc("atendimento_varrer_prazos");
     await ctx.admin.from("chamado_eventos").insert({ chamado_id: id, ator_tipo: "admin", ator_id: ctx.userId, acao: "respondido", de: c.status as string, para: "aguardando_usuario" });
     await avisarUsuario(c as ChamadoResumo, "chamado_respondido", `<blockquote style="margin:12px 0 0;padding:10px 14px;border-left:3px solid #1c6b3a;color:#334155;">${textoEmail(corpo, 1500)}</blockquote>`);
   }
@@ -575,6 +578,8 @@ export async function alterarChamado(
   const { error } = await ctx.admin.from("chamados").update(upd).eq("id", id);
   if (error) return { ok: false, error: "Não foi possível salvar." };
   await ctx.admin.from("chamado_eventos").insert(eventos.map((e) => ({ ...e, chamado_id: id, ator_tipo: "admin", ator_id: ctx.userId })));
+  // Prioridade (prazos novos) ou status mudou: o estado do prazo é recalculado pela regra do banco.
+  if (upd.prioridade || upd.status) await ctx.admin.rpc("atendimento_varrer_prazos");
   if (mud.status === "resolvido") await avisarUsuario(c as ChamadoResumo, "chamado_resolvido");
   return { ok: true };
 }
