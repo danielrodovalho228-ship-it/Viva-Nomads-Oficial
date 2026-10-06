@@ -54,6 +54,9 @@ export default async function TributarioPage() {
     <>
       <PaginasInternasNav atual="/tributario" />
       <main className="mx-auto max-w-3xl px-5 py-10 font-[var(--font-inter)] text-ink">
+        <p className="mb-6 rounded-xl border-l-4 border-amber-500 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900" data-testid="aviso-tributario">
+          Simulação educativa do imposto do proprietário — premissas pendentes do parecer do contador.
+        </p>
         {/* 1. Cabeçalho */}
         <header>
           <p className="text-xs font-semibold uppercase tracking-wide text-forest">
