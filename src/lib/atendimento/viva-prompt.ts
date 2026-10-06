@@ -5,7 +5,7 @@
   servidor filtra pelo dono do chamado.
 */
 import { FAQ } from "./faq.ts";
-import { ALUGUEL_EXEMPLO, PLANOS, REGRAS_CONTRATO, textoComissao } from "../../config/planos.ts";
+import { ALUGUEL_EXEMPLO, GESTOR_PRECO, GESTOR_RESUMO, PLANOS, REGRAS_CONTRATO, textoComissao } from "../../config/planos.ts";
 import { HORARIO_HUMANO, PRAZOS, PRAZO_MANUTENCAO_H } from "../../config/atendimento.ts";
 
 
@@ -14,7 +14,7 @@ const brl = (n: number) => `R$ ${n.toLocaleString("pt-BR")}`;
 function fontes(): string {
   const faq = FAQ.map((p) => `- [faq:${p.id}] ${p.pergunta}\n  ${p.resposta}${p.porPerfil?.com_contrato ? `\n  (Para quem tem contrato ativo: ${p.porPerfil.com_contrato})` : ""}`).join("\n");
   const planos = PLANOS.map(
-    (p) => `- ${p.nome}: ${p.precoMensal === null ? "assinatura sob consulta" : p.precoMensal > 0 ? `${brl(p.precoMensal)}/mês` : "sem mensalidade"}, comissão: ${textoComissao(p.comissao, ALUGUEL_EXEMPLO)} num aluguel de R$ ${ALUGUEL_EXEMPLO.toLocaleString("pt-BR")}, até ${Number.isFinite(p.limiteAnuncios) ? p.limiteAnuncios : "ilimitados"} anúncio(s)`
+    (p) => `- ${p.nome}: ${p.precoMensal === null ? (GESTOR_PRECO.ligado ? `${GESTOR_RESUMO} (${GESTOR_PRECO.imoveisInclusos} imóveis incluídos, ${brl(GESTOR_PRECO.porImovelAdicional)}/mês por imóvel adicional; ativação com a equipe)` : "assinatura sob consulta") : p.precoMensal > 0 ? `${brl(p.precoMensal)}/mês` : "sem mensalidade"}, comissão: ${textoComissao(p.comissao, ALUGUEL_EXEMPLO)} num aluguel de R$ ${ALUGUEL_EXEMPLO.toLocaleString("pt-BR")}, até ${Number.isFinite(p.limiteAnuncios) ? p.limiteAnuncios : "ilimitados"} anúncio(s)`
   ).join("\n");
   const prazos = (Object.keys(PRAZOS) as (keyof typeof PRAZOS)[])
     .map((k) => `- ${k.toUpperCase()} (${PRAZOS[k].rotulo}): ${PRAZOS[k].descricao}`)

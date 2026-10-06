@@ -4,12 +4,16 @@
  * Gestor é plano de ELEGIBILIDADE, não de prateleira: disponível só para
  *  (a) contas do tipo 'gestor' (administradora — marcada por admin, com
  *      auditoria); ou
- *  (b) proprietários com 5+ imóveis de documentação APROVADA.
- * Sem elegibilidade, o card do Gestor vira META ("valide 5 imóveis para
+ *  (b) proprietários com 20+ imóveis de documentação APROVADA — o mesmo
+ *      mínimo do preço do Gestor (GESTOR_PRECO.minimoImoveis, config/planos):
+ *      abaixo disso o Profissional sai mais barato e o Gestor só tiraria
+ *      comissão de quem tem poucos imóveis de aluguel alto.
+ * Sem elegibilidade, o card do Gestor vira META ("valide N imóveis para
  * desbloquear") + venda assistida ("Fale com a gente"), nunca porta muda.
  */
+import { GESTOR_PRECO } from "../../config/planos.ts";
 
-export const GESTOR_MIN_IMOVEIS_VALIDADOS = 5;
+export const GESTOR_MIN_IMOVEIS_VALIDADOS: number = GESTOR_PRECO.minimoImoveis;
 
 export type AccountType = "individual" | "gestor";
 
