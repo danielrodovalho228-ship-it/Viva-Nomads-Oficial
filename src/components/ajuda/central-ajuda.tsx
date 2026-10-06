@@ -36,7 +36,7 @@ const STATUS: Record<string, string> = {
   resolvido: "Resolvido",
   encerrado: "Encerrado",
 };
-const AUTOR: Record<string, string> = { usuario: "Você", admin: "Equipe Viva Nomads", ia: "Viva (assistente virtual)", sistema: "Viva Nomads" };
+const AUTOR: Record<string, string> = { usuario: "Você", admin: "Equipe Viva Nomads", ia: "Viva (assistente virtual) · Resposta automática da Viva Nomads", sistema: "Viva Nomads" };
 const CONTEXTO_ROTULO: Record<string, string> = { pedido: "seu Pedido de Moradia", contrato: "seu contrato", anuncio: "este anúncio" };
 
 function lerParams(): URLSearchParams {

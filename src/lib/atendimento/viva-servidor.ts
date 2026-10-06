@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { consumirLimite, DIA, HORA } from "@/lib/limites";
+import { consumirLimite, DIA } from "@/lib/limites";
 import { notify } from "@/lib/notifications";
 import { textoEmail } from "@/lib/notifications/texto-seguro";
 import { SITE_URL } from "@/lib/site";
@@ -82,14 +82,26 @@ const SEM_CONTA = { conteudo: "Visitante sem conta: não há dados para consulta
 const json = (v: unknown) => JSON.stringify(v).slice(0, 5000);
 const data = (s: string | null | undefined) => (s ? new Date(s).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }) : null);
 
-async function emailDoChamado(admin: Admin, c: ChamadoViva): Promise<{ email: string | null; userId: string | null }> {
-  if (c.usuario_id) {
-    const { data: p } = await admin.from("profiles").select("email").eq("id", c.usuario_id).maybeSingle();
-    return { email: (p?.email as string) ?? null, userId: c.usuario_id };
-  }
-  if (!c.visitante_email) return { email: null, userId: null };
-  const { data: p } = await admin.from("profiles").select("id").ilike("email", c.visitante_email).maybeSingle();
-  return { email: c.visitante_email, userId: (p?.id as string) ?? null };
+/**
+ * Travas das ações da Viva (decisão do Daniel, out/2026): envio de e-mail SÓ
+ * para o e-mail JÁ CADASTRADO da conta LOGADA que abriu o chamado — nunca para
+ * e-mail ou telefone dito na conversa (as ferramentas nem recebem endereço) e
+ * nunca para visitante sem login. Limite por CONTA a cada 24h; lembrete ao dono
+ * 1× a cada 24h por ordem de serviço. Toda ação vira evento no chamado.
+ */
+export const LIMITE_ACOES_VIVA = { reenvio: 3, senha: 3, lembrete: 1 } as const;
+
+async function emailDaConta(admin: Admin, c: ChamadoViva): Promise<{ email: string | null; userId: string | null }> {
+  if (!c.usuario_id) return { email: null, userId: null };
+  const { data: p } = await admin.from("profiles").select("email").eq("id", c.usuario_id).maybeSingle();
+  return { email: (p?.email as string) ?? null, userId: c.usuario_id };
+}
+
+const SEM_LOGIN_EMAIL =
+  "Por segurança, só envio para o e-mail de uma conta conectada. Sem conseguir entrar: na tela Entrar, use \"Esqueci minha senha\" (ou o reenvio da confirmação). Para trocar o e-mail da conta, abro um chamado para a equipe.";
+
+async function registrarAcaoViva(admin: Admin, c: ChamadoViva, acao: string, detalhe: string) {
+  await admin.from("chamado_eventos").insert({ chamado_id: c.id, ator_tipo: "ia", acao, detalhe: detalhe.slice(0, 300) });
 }
 
 export function ferramentasReais(admin: Admin, c: ChamadoViva, agora: Date): Ferramentas {
@@ -184,20 +196,28 @@ export function ferramentasReais(admin: Admin, c: ChamadoViva, agora: Date): Fer
       return { conteudo: json(lista) };
     },
     reenviar_email_confirmacao: async () => {
-      const { email, userId } = await emailDoChamado(admin, c);
-      if (!email || !userId) return { conteudo: "Não há conta com o e-mail deste chamado. A pessoa pode criar a conta em Entrar." };
-      if (!(await consumirLimite(`viva:reenvio:${c.id}`, 2, HORA))) return { conteudo: "Já reenviei há pouco. Peça para conferir o spam e aguardar alguns minutos.", erro: true };
+      const { email, userId } = await emailDaConta(admin, c);
+      if (!email || !userId) return { conteudo: SEM_LOGIN_EMAIL };
       const { data: u } = await admin.auth.admin.getUserById(userId);
       if (u?.user?.email_confirmed_at) return { conteudo: "O e-mail desta conta já está confirmado: é só entrar com e-mail e senha." };
+      if (!(await consumirLimite(`viva:reenvio:${userId}`, LIMITE_ACOES_VIVA.reenvio, DIA))) {
+        await registrarAcaoViva(admin, c, "viva_limite", "reenvio da confirmação recusado: limite de 24h");
+        return { conteudo: `Já reenviei ${LIMITE_ACOES_VIVA.reenvio} vezes nas últimas 24 horas. Peça para conferir o spam; se não chegar, passo para a equipe.`, erro: true };
+      }
       const { error } = await admin.auth.resend({ type: "signup", email, options: { emailRedirectTo: `${SITE_URL}/auth/callback` } });
-      return error ? { conteudo: "Não consegui reenviar agora.", erro: true } : { conteudo: "E-mail de confirmação reenviado para o endereço da conta." };
+      await registrarAcaoViva(admin, c, "viva_reenvio_confirmacao", error ? "falhou" : "enviado ao e-mail cadastrado da conta");
+      return error ? { conteudo: "Não consegui reenviar agora.", erro: true } : { conteudo: "E-mail de confirmação reenviado para o e-mail cadastrado na conta." };
     },
     enviar_link_redefinir_senha: async () => {
-      const { email, userId } = await emailDoChamado(admin, c);
-      if (!email || !userId) return { conteudo: "Não há conta com o e-mail deste chamado." };
-      if (!(await consumirLimite(`viva:senha:${c.id}`, 2, HORA))) return { conteudo: "Já enviei há pouco. Peça para conferir o spam.", erro: true };
+      const { email, userId } = await emailDaConta(admin, c);
+      if (!email || !userId) return { conteudo: SEM_LOGIN_EMAIL };
+      if (!(await consumirLimite(`viva:senha:${userId}`, LIMITE_ACOES_VIVA.senha, DIA))) {
+        await registrarAcaoViva(admin, c, "viva_limite", "link de nova senha recusado: limite de 24h");
+        return { conteudo: `Já enviei ${LIMITE_ACOES_VIVA.senha} vezes nas últimas 24 horas. Peça para conferir o spam; se não chegar, passo para a equipe.`, erro: true };
+      }
       const { error } = await admin.auth.resetPasswordForEmail(email, { redirectTo: `${SITE_URL}/auth/reset` });
-      return error ? { conteudo: "Não consegui enviar agora.", erro: true } : { conteudo: "Link para criar uma nova senha enviado para o e-mail da conta." };
+      await registrarAcaoViva(admin, c, "viva_link_senha", error ? "falhou" : "enviado ao e-mail cadastrado da conta");
+      return error ? { conteudo: "Não consegui enviar agora.", erro: true } : { conteudo: "Link para criar uma nova senha enviado para o e-mail cadastrado na conta." };
     },
     abrir_ordem_manutencao: async (input) => {
       if (!uid) return SEM_CONTA;
@@ -216,6 +236,7 @@ export function ferramentasReais(admin: Admin, c: ChamadoViva, agora: Date): Fer
         .update({ service_order_id: r.ordem.serviceOrderId, tipo: "manutencao", contexto_tipo: "manutencao", contexto_id: r.ordem.serviceOrderId })
         .eq("id", c.id);
       await avisarProprietarioManutencao(r.ordem, agora);
+      await registrarAcaoViva(admin, c, "viva_ordem_manutencao", `ordem ${r.ordem.serviceOrderId} aberta (${r.ordem.urgencia}); proprietário avisado`);
       const horas = { urgente: 4, media: 24, baixa: 72 }[r.ordem.urgencia];
       return {
         conteudo: `Ordem de manutenção aberta (${r.ordem.urgencia}) no imóvel ${r.ordem.propertyTitle}. O proprietário foi avisado por e-mail e tem até ${horas} horas para responder.`,
@@ -225,7 +246,6 @@ export function ferramentasReais(admin: Admin, c: ChamadoViva, agora: Date): Fer
     lembrar_proprietario: async (input) => {
       if (!uid) return SEM_CONTA;
       const assunto = input.assunto === "manutencao" ? "manutencao" : "candidatura";
-      if (!(await consumirLimite(`viva:lembrete:${assunto}:${uid}`, 1, DIA))) return { conteudo: "Já lembrei o proprietário nas últimas 24 horas.", erro: true };
       if (assunto === "manutencao") {
         const { data: so } = await admin
           .from("service_orders")
@@ -236,13 +256,17 @@ export function ferramentasReais(admin: Admin, c: ChamadoViva, agora: Date): Fer
           .limit(1)
           .maybeSingle();
         if (!so) return { conteudo: "Não há manutenção aberta desta pessoa." };
+        // 1 lembrete a cada 24h POR ORDEM de serviço.
+        if (!(await consumirLimite(`viva:lembrete:os:${so.id}`, LIMITE_ACOES_VIVA.lembrete, DIA))) return { conteudo: "Já lembrei o proprietário desta manutenção nas últimas 24 horas.", erro: true };
         await avisarProprietarioManutencao(
           { serviceOrderId: so.id as string, ownerId: so.owner_id as string, urgencia: so.priority as UrgenciaManutencao, propertyTitle: (so.properties as unknown as { title?: string } | null)?.title ?? "seu imóvel" },
           agora,
           true
         );
+        await registrarAcaoViva(admin, c, "viva_lembrete_dono", `manutenção ${so.id}`);
         return { conteudo: "Lembrete da manutenção enviado ao proprietário." };
       }
+      if (!(await consumirLimite(`viva:lembrete:candidatura:${uid}`, LIMITE_ACOES_VIVA.lembrete, DIA))) return { conteudo: "Já lembrei o proprietário nas últimas 24 horas.", erro: true };
       const { data: lead } = await admin.from("leads").select("owner_id").eq("tenant_id", uid).eq("status", "new").order("created_at", { ascending: false }).limit(1).maybeSingle();
       if (!lead) return { conteudo: "Não há candidatura aguardando resposta." };
       const { data: dono } = await admin.from("profiles").select("email, full_name, notif_email").eq("id", lead.owner_id).maybeSingle();
@@ -256,6 +280,7 @@ export function ferramentasReais(admin: Admin, c: ChamadoViva, agora: Date): Fer
           subject: "Lembrete: um interessado aguarda sua resposta",
         }).catch(() => null);
       }
+      await registrarAcaoViva(admin, c, "viva_lembrete_dono", "candidatura");
       return { conteudo: "Lembrete da candidatura enviado ao proprietário." };
     },
     preparar_para_aprovacao: async (input) => ({
