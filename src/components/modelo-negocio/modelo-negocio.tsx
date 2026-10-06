@@ -3,13 +3,16 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import styles from "./modelo-negocio.module.css";
-import { PLANOS as PLANOS_CONFIG, GESTOR_ASSINATURA_ANUAL_ESTIMADA, MERCADO } from "@/config/planos";
+import { PLANOS as PLANOS_CONFIG, GESTOR_PRECO, GESTOR_RESUMO, MERCADO, assinaturaAnualGestor, type PlanoId } from "@/config/planos";
+import { custoAnualPorPlano, planoMaisBarato, textoIndisponivel } from "@/lib/comparativo-precos";
+import { GraficoCustoPorImovel } from "@/components/precos/grafico-custo-por-imovel";
 
 // ── CONSTANTES (fáceis de editar) ───────────────────────────────────────────
 // Modelo HÍBRIDO: assinatura do plano + comissão que CAI por plano até ZERO no
 // topo. A comissão é cobrada UMA vez, no fechamento, sobre o 1º mês de cada
 // locação (não é mensal).
 interface Plano {
+  id: PlanoId;
   key: PlanoKey;
   nome: string;
   comissao: number; // fração sobre o 1º mês de cada locação
@@ -17,8 +20,8 @@ interface Plano {
 }
 type PlanoKey = "gratuito" | "essencial" | "profissional" | "gestor";
 
-// Lido da FONTE ÚNICA (config/planos): comissão e assinatura de cada plano. O
-// Gestor é "sob consulta" no site; aqui entra a estimativa interna declarada lá.
+// Lido da FONTE ÚNICA (config/planos): comissão e assinatura de cada plano. A
+// assinatura do Gestor depende da quantidade de imóveis (assinaturaAnualGestor).
 const CHAVE_POR_ID: Record<string, PlanoKey> = {
   free: "gratuito",
   essential: "essencial",
@@ -26,11 +29,14 @@ const CHAVE_POR_ID: Record<string, PlanoKey> = {
   gestor: "gestor",
 };
 const PLANOS: Plano[] = PLANOS_CONFIG.map((p) => ({
+  id: p.id,
   key: CHAVE_POR_ID[p.id],
   nome: p.nome,
   comissao: p.comissao,
-  subAno: p.assinaturaAnual ?? GESTOR_ASSINATURA_ANUAL_ESTIMADA,
+  subAno: p.assinaturaAnual ?? assinaturaAnualGestor(GESTOR_PRECO.imoveisInclusos),
 }));
+/** Assinatura anual do plano para `imoveis` imóveis (só a do Gestor varia). */
+const subAnoPara = (p: Plano, imoveis: number) => (p.id === "gestor" ? assinaturaAnualGestor(imoveis) : p.subAno);
 const PLANO_BY_KEY = Object.fromEntries(PLANOS.map((p) => [p.key, p])) as Record<PlanoKey, Plano>;
 
 const AIRBNB_IMPACTO = MERCADO.airbnbTaxa; // taxa do Airbnb para anfitriões (fonte única: config/planos)
@@ -58,6 +64,7 @@ function precoMes(id: string): string {
   const v = PLANOS_CONFIG.find((p) => p.id === id)?.precoMensal;
   return v ? `R$ ${v}/mês` : "Sob consulta";
 }
+const precoGestor = GESTOR_PRECO.ligado ? `a partir de R$ ${GESTOR_PRECO.mensalBase}/mês` : "Sob consulta";
 
 // Cartões da seção de planos (foco em vantagem, não em preço).
 const PLAN_CARDS: {
@@ -69,6 +76,7 @@ const PLAN_CARDS: {
   variant?: "featured" | "gestor";
   features: string[];
   why: string;
+  contato?: boolean;
 }[] = [
   {
     key: "gratuito",
@@ -98,9 +106,9 @@ const PLAN_CARDS: {
   },
   {
     key: "gestor",
-    preco: "Sob consulta",
+    preco: precoGestor,
     comissaoLabel: "Comissão ZERO",
-    audience: "Administradoras e coordenadores",
+    audience: GESTOR_PRECO.ligado ? `Para carteiras de ${GESTOR_PRECO.minimoImoveis}+ imóveis` : "Administradoras e coordenadores",
     tag: "Comissão ZERO",
     variant: "gestor",
     features: [
@@ -113,6 +121,7 @@ const PLAN_CARDS: {
     ],
     why:
       "100% do aluguel fica com o proprietário — a plataforma vive só da assinatura, como o Furnished Finder. É o plano que menos parece imobiliária.",
+    contato: true,
   },
 ];
 
@@ -126,42 +135,53 @@ export function ModeloNegocio() {
   const [aluguel, setAluguel] = useState(CENARIOS[0].aluguel);
   const [meses, setMeses] = useState(CENARIOS[0].meses);
   const [locacoes, setLocacoes] = useState(CENARIOS[0].locacoes);
-  const [planoKey, setPlanoKey] = useState<PlanoKey>("essencial");
+  const [imoveis, setImoveis] = useState(1);
+  // null = segue o plano mais barato para a quantidade de imóveis.
+  const [escolhido, setEscolhido] = useState<PlanoKey | null>(null);
   const [cenarioAtivo, setCenarioAtivo] = useState<string | null>(CENARIOS[0].nome);
 
+  // Custo por plano = assinatura anual + comissão × aluguel × locações × imóveis.
+  const custos = useMemo(() => custoAnualPorPlano(imoveis, locacoes * imoveis, aluguel), [imoveis, locacoes, aluguel]);
+  const custoDe = (k: PlanoKey) => custos.find((c) => c.id === PLANO_BY_KEY[k].id)!;
+  const maisBarato = CHAVE_POR_ID[planoMaisBarato(imoveis, locacoes * imoveis, aluguel)];
+  const planoKey: PlanoKey = escolhido && custoDe(escolhido).disponivel ? escolhido : maisBarato;
   const plano = PLANO_BY_KEY[planoKey];
+  const subAno = subAnoPara(plano, imoveis);
 
   const calc = useMemo(() => {
-    const aluguelAno = aluguel * meses * locacoes;
-    const comissao = aluguel * plano.comissao * locacoes;
-    const propVN = aluguelAno - comissao - plano.subAno;
+    const aluguelAno = aluguel * meses * locacoes * imoveis;
+    const comissao = aluguel * plano.comissao * locacoes * imoveis;
+    const propVN = aluguelAno - comissao - subAno;
     const propAirbnb = aluguelAno * (1 - AIRBNB_IMPACTO);
-    const platTotal = comissao + plano.subAno;
-    const platAssinatura = plano.subAno;
-    const diasParaPagar = plano.subAno === 0 ? 0 : Math.ceil(plano.subAno / (aluguel / 30));
+    const platTotal = comissao + subAno;
+    const platAssinatura = subAno;
+    const diasParaPagar = subAno === 0 ? 0 : Math.ceil(subAno / ((aluguel * imoveis) / 30));
     return { aluguelAno, comissao, propVN, propAirbnb, platTotal, platAssinatura, diasParaPagar };
-  }, [aluguel, meses, locacoes, plano]);
+  }, [aluguel, meses, locacoes, imoveis, plano, subAno]);
 
   function aplicarCenario(c: Cenario) {
     setAluguel(c.aluguel);
     setMeses(c.meses);
     setLocacoes(c.locacoes);
     setCenarioAtivo(c.nome);
+    setEscolhido(null);
   }
+  const textoImoveis = `${imoveis} ${imoveis === 1 ? "imóvel" : "imóveis"}`;
+  const totalMaisBarato = custoDe(maisBarato).total;
 
   const diffOwner = calc.propVN - calc.propAirbnb;
   const vnGanha = diffOwner >= 0;
 
   // Gráfico B: receita da plataforma por plano (mesmo cenário atual).
-  const platPorPlano = PLANOS.map((p) => ({
+  const platPorPlano = PLANOS.filter((p) => custoDe(p.key).disponivel).map((p) => ({
     label: p.nome,
-    assinatura: p.subAno,
-    comissao: aluguel * p.comissao * locacoes,
+    assinatura: subAnoPara(p, imoveis),
+    comissao: aluguel * p.comissao * locacoes * imoveis,
   }));
   // Gráfico C: proprietário nos 4 cenários, no plano selecionado.
   const propPorCenario = CENARIOS.map((c) => ({
     label: c.nome.split(" ")[0],
-    value: c.aluguel * c.meses * c.locacoes - c.aluguel * plano.comissao * c.locacoes - plano.subAno,
+    value: (c.aluguel * c.meses * c.locacoes - c.aluguel * plano.comissao * c.locacoes) * imoveis - subAno,
   }));
 
   return (
@@ -215,27 +235,39 @@ export function ModeloNegocio() {
           <Slider label="Prazo de cada locação" value={meses} min={1} max={6} step={1}
             display={`${meses} ${meses === 1 ? "mês" : "meses"}`}
             onChange={(v) => { setMeses(v); setCenarioAtivo(null); }} />
-          <Slider label="Locações no ano" value={locacoes} min={1} max={6} step={1} display={`${locacoes}×`}
+          <Slider label="Locações no ano (por imóvel)" value={locacoes} min={1} max={6} step={1} display={`${locacoes}×`}
             onChange={(v) => { setLocacoes(v); setCenarioAtivo(null); }} />
+          <Slider label="Quantos imóveis você tem?" value={imoveis} min={1} max={30} step={1} display={textoImoveis}
+            onChange={(v) => { setImoveis(v); setEscolhido(null); }} />
 
           <div style={{ marginTop: 14 }}>
             <div className={styles.top} style={{ marginBottom: 8 }}>
               <span className={styles.lbl}>Plano do proprietário</span>
             </div>
             <div className={styles.planSelect} role="tablist" aria-label="Plano">
-              {PLANOS.map((p) => (
-                <button
-                  key={p.key}
-                  type="button"
-                  role="tab"
-                  aria-selected={planoKey === p.key}
-                  className={`${styles.planBtn} ${planoKey === p.key ? styles.active : ""}`}
-                  onClick={() => setPlanoKey(p.key)}
-                >
-                  {p.nome}
-                  <small>{p.comissao === 0 ? "comissão zero" : `comissão de ${Math.round(p.comissao * 1000) / 10}% de 1 aluguel`}</small>
-                </button>
-              ))}
+              {PLANOS.map((p) => {
+                const c = custoDe(p.key);
+                return (
+                  <button
+                    key={p.key}
+                    type="button"
+                    role="tab"
+                    aria-selected={planoKey === p.key}
+                    disabled={!c.disponivel}
+                    data-testid={`plano-${p.id}`}
+                    className={`${styles.planBtn} ${planoKey === p.key ? styles.active : ""}`}
+                    onClick={() => setEscolhido(p.key)}
+                  >
+                    {p.nome}
+                    {c.disponivel && p.key === maisBarato && <span className={styles.barato}>Mais barato para você</span>}
+                    <small>
+                      {!c.disponivel
+                        ? textoIndisponivel(c, imoveis)
+                        : `${brl(c.total ?? 0)}/ano · ${p.comissao === 0 ? "comissão zero" : `comissão de ${Math.round(p.comissao * 1000) / 10}% de 1 aluguel`}`}
+                    </small>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -243,25 +275,30 @@ export function ModeloNegocio() {
         {/* Resultado */}
         <div className={styles.results}>
           <div className={`${styles.result} ${styles.owner}`}>
-            <h3>Proprietário · no ano ({plano.nome})</h3>
+            <h3>Proprietário · {textoImoveis} · no ano ({plano.nome})</h3>
             <div className={styles.headline}>{brl(calc.propVN)}</div>
             <div className={styles.cap}>fica no bolso com o Viva Nomads</div>
             <div className={styles.compare}>
               <span>No Airbnb ficaria</span>
               <span className={styles.amt}>{brl(calc.propAirbnb)}</span>
             </div>
+            {totalMaisBarato !== null && (
+              <p className={styles.note} data-testid="mais-barato">
+                Com {textoImoveis}, o <b>{PLANO_BY_KEY[maisBarato].nome}</b> sai mais barato: <b>{brl(totalMaisBarato)}</b> no ano.
+              </p>
+            )}
             <p className={styles.note}>
               {vnGanha ? (
-                <>Fica com <b>{brl(diffOwner)}</b> a mais no ano do que no Airbnb — com contrato, verificação e garantia.</>
+                <>Fica com <b>{brl(diffOwner)}</b> a mais no ano do que no Airbnb — com contrato e caução documentada.</>
               ) : (
-                <>O Airbnb deixaria <b>{brl(-diffOwner)}</b> a mais, mas sem contrato, verificação nem garantia.</>
+                <>O Airbnb deixaria <b>{brl(-diffOwner)}</b> a mais, mas sem contrato nem caução documentada.</>
               )}
             </p>
             <p className={styles.payback}>
-              {plano.subAno === 0 ? (
+              {subAno === 0 ? (
                 <>Sem assinatura, nada a recuperar — a plataforma cobra só a comissão de {Math.round(plano.comissao * 1000) / 10}% de 1 aluguel, uma vez por contrato.</>
               ) : (
-                <>A assinatura de <b>{brl(plano.subAno)}/ano</b> se paga com <b>{calc.diasParaPagar} dias</b> de aluguel deste imóvel. Uma locação já cobre o ano inteiro.</>
+                <>A assinatura de <b>{brl(subAno)}/ano</b> se paga com <b>{calc.diasParaPagar} {calc.diasParaPagar === 1 ? "dia" : "dias"}</b> de aluguel {imoveis === 1 ? "deste imóvel" : `dos ${imoveis} imóveis`}.</>
               )}
             </p>
           </div>
@@ -309,7 +346,11 @@ export function ModeloNegocio() {
           </div>
 
           <div className={`${styles.chartCard} ${styles.chartFull}`}>
-            <h3>Proprietário nos 4 cenários · {plano.nome}</h3>
+            <GraficoCustoPorImovel aluguel={aluguel} meses={meses} locacoes={locacoes} imoveis={imoveis} plano={plano.id} />
+          </div>
+
+          <div className={`${styles.chartCard} ${styles.chartFull}`}>
+            <h3>Proprietário nos 4 cenários · {plano.nome} · {textoImoveis}</h3>
             <p className={styles.chartSub}>Quanto fica no bolso no ano, no plano selecionado.</p>
             <SimpleBars bars={propPorCenario.map((c) => ({ label: c.label, value: c.value, color: C.forest }))} />
           </div>
@@ -332,6 +373,11 @@ export function ModeloNegocio() {
                   ))}
                 </ul>
                 <div className={styles.pwhy}>{pc.why}</div>
+                {pc.contato && GESTOR_PRECO.ligado && (
+                  <a className={styles.pcontato} href="mailto:suporte@vivanomads.com.br?subject=Plano%20Gestor">
+                    Fale com a gente
+                  </a>
+                )}
               </div>
             ))}
           </div>
@@ -345,8 +391,9 @@ export function ModeloNegocio() {
             <li>
               Assinatura anual por plano:{" "}
               <strong>{PLANOS.map((p) => (p.subAno === 0 ? "R$ 0" : p.subAno.toLocaleString("pt-BR"))).join(" / ")}</strong>{" "}
-              (Gestor: estimativa interna — no site é sob consulta).
+              (Gestor: {GESTOR_RESUMO}; {GESTOR_PRECO.imoveisInclusos} imóveis incluídos e R$ {GESTOR_PRECO.porImovelAdicional}/mês por imóvel adicional).
             </li>
+            <li>Custo do plano no ano = assinatura anual + comissão × aluguel × locações × imóveis. Plano acima do limite de anúncios não entra; empate fica com o plano mais simples.</li>
             <li>Taxa do Airbnb para anfitriões: <strong>{Math.round(AIRBNB_IMPACTO * 100)}%</strong> ({MERCADO.airbnbFonte})</li>
             <li>“Só assinatura” = comissão zero (plano topo / modelo Furnished Finder).</li>
           </ul>

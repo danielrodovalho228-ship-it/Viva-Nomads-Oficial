@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const to = process.env.EMPRESAS_LEAD_EMAIL ?? "contato@vivanomads.com.br";
+  const to = process.env.EMPRESAS_LEAD_EMAIL ?? "suporte@vivanomads.com.br";
 
   const esc = (s: string) =>
     s.replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c] ?? c));

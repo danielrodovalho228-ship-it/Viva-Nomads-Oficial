@@ -4,8 +4,9 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Calculator, Scale } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ALUGUEL_EXEMPLO, MERCADO, MESES_EXEMPLO, PLANOS, REGRAS_CONTRATO, textoComissao, reaisInteiros } from "@/config/planos";
-import { calcularComparativo, custoAnualPorPlano, planoMaisBarato, textoLimite } from "@/lib/comparativo-precos";
+import { ALUGUEL_EXEMPLO, GESTOR_PRECO, GESTOR_RESUMO, MERCADO, MESES_EXEMPLO, PLANOS, REGRAS_CONTRATO, textoComissao, reaisInteiros } from "@/config/planos";
+import { calcularComparativo, custoAnualPorPlano, planoMaisBarato, textoIndisponivel } from "@/lib/comparativo-precos";
+import { GraficoCustoPorImovel } from "./grafico-custo-por-imovel";
 
 /**
  * "Quanto você paga: Viva Nomads × Airbnb" — componente ÚNICO, com números só
@@ -127,17 +128,18 @@ export function ComparativoPrecos({ variante = "completo" }: { variante?: "compl
         })}
       </ul>
 
-      <QualPlanoCompensa aluguel={aluguel} />
+      <QualPlanoCompensa aluguel={aluguel} meses={meses} />
       <Rodape />
     </div>
   );
 }
 
-function QualPlanoCompensa({ aluguel }: { aluguel: number }) {
+function QualPlanoCompensa({ aluguel, meses }: { aluguel: number; meses: number }) {
   const [imoveis, setImoveis] = useState(1);
-  const [contratos, setContratos] = useState(3);
-  const linhas = useMemo(() => custoAnualPorPlano(imoveis, contratos, aluguel), [imoveis, contratos, aluguel]);
-  const melhor = planoMaisBarato(imoveis, contratos, aluguel);
+  const [locacoes, setLocacoes] = useState(2);
+  // Uma comissão por contrato: contratos no ano = locações por imóvel × imóveis.
+  const linhas = useMemo(() => custoAnualPorPlano(imoveis, locacoes * imoveis, aluguel), [imoveis, locacoes, aluguel]);
+  const melhor = planoMaisBarato(imoveis, locacoes * imoveis, aluguel);
   return (
     <div className="mt-6 rounded-2xl border border-sage-200 p-4">
       <p className="flex items-center gap-2 font-title text-lg font-bold text-ink">
@@ -145,7 +147,7 @@ function QualPlanoCompensa({ aluguel }: { aluguel: number }) {
       </p>
       <div className="mt-3 grid gap-4 sm:grid-cols-2">
         <Campo rotulo="Imóveis anunciados" valor={imoveis} onChange={(n) => setImoveis(Math.max(1, Math.round(n)))} min={1} max={999} />
-        <Campo rotulo="Contratos fechados por ano" valor={contratos} onChange={(n) => setContratos(Math.round(n))} min={0} max={200} />
+        <Campo rotulo="Locações por imóvel no ano" valor={locacoes} onChange={(n) => setLocacoes(Math.round(n))} min={0} max={12} />
       </div>
       <ul className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
         {linhas.map((l) => (
@@ -164,13 +166,19 @@ function QualPlanoCompensa({ aluguel }: { aluguel: number }) {
           >
             <span className="block">{l.nome}</span>
             <span className="block">
-              {!l.disponivel ? textoLimite(l.limite) : l.sobConsulta ? "sob consulta" : `${reaisInteiros(l.total ?? 0)}/ano`}
-              {l.disponivel && l.id === melhor ? " · o que compensa" : ""}
+              {!l.disponivel ? textoIndisponivel(l, imoveis) : l.sobConsulta ? "sob consulta" : `${reaisInteiros(l.total ?? 0)}/ano`}
+              {l.disponivel && l.id === melhor ? " · mais barato para você" : ""}
             </span>
           </li>
         ))}
       </ul>
-      <p className="mt-2 text-xs text-muted">Custo no ano = comissões dos contratos (uma por contrato) + 12 mensalidades, com aluguel médio de {reaisInteiros(aluguel)}.</p>
+      <p className="mt-2 text-xs text-muted">
+        Custo no ano = assinatura anual + comissão (uma por contrato, sobre 1 aluguel de {reaisInteiros(aluguel)}) × locações × imóveis. Gestor: {GESTOR_RESUMO}; acima de {GESTOR_PRECO.imoveisInclusos} imóveis,{" "}
+        {reaisInteiros(GESTOR_PRECO.porImovelAdicional)}/mês por imóvel adicional.
+      </p>
+      <div className="mt-5 border-t border-sage-200 pt-4">
+        <GraficoCustoPorImovel aluguel={aluguel} meses={meses} locacoes={locacoes} imoveis={imoveis} plano={melhor} />
+      </div>
     </div>
   );
 }

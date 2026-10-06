@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Check, Percent, Camera, FileSignature, ShieldCheck, UserCheck, ClipboardList, Receipt, Banknote, PiggyBank } from "lucide-react";
 import { PLANS } from "@/lib/constants";
-import { plano as planoPorId, textoComissao } from "@/config/planos";
+import { GESTOR_PRECO, GESTOR_RESUMO, plano as planoPorId, reaisInteiros, textoComissao } from "@/config/planos";
 import { ComparativoPrecos } from "@/components/precos/comparativo-precos";
 import { NFSE_ATIVA, PLANO_FUNDADOR } from "@/lib/flags";
 import { ButtonLink } from "@/components/ui/button";
@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/precos" },
   title: "Planos",
   description:
-    "Planos para proprietários de imóveis mobiliados: Gratuito, Essencial, Profissional e Gestor (administradoras, sob consulta). Comissão só no fechamento e serviços opcionais.",
+    `Planos para proprietários de imóveis mobiliados: Gratuito, Essencial, Profissional e Gestor (administradoras, a partir de ${reaisInteiros(GESTOR_PRECO.mensalBase)}/mês). Comissão só no fechamento e serviços opcionais.`,
 };
 
 type ServiceTone = "incluido" | "avulso" | "cotacao" | "gratis";
@@ -187,14 +187,17 @@ export default function PricingPage() {
               <h3 className="font-title text-2xl font-bold text-ink">{plan.name}</h3>
               <p className="mt-1 text-sm text-muted">{plan.tagline}</p>
               <div className="mt-5 flex items-baseline gap-1">
+                {plan.price === null && GESTOR_PRECO.ligado && <span className="text-sm text-muted">a partir de</span>}
                 <span className="font-title text-4xl font-bold text-forest">
                   {plan.price === null
-                    ? "Sob consulta"
+                    ? GESTOR_PRECO.ligado
+                      ? reaisInteiros(GESTOR_PRECO.mensalBase)
+                      : "Sob consulta"
                     : plan.price === 0
                       ? "Grátis"
                       : formatBRL(plan.price)}
                 </span>
-                {!!plan.price && <span className="text-muted">/mês</span>}
+                {(!!plan.price || (plan.price === null && GESTOR_PRECO.ligado)) && <span className="text-muted">/mês</span>}
               </div>
 
               <ul className="mt-6 flex-1 space-y-3">
@@ -222,13 +225,13 @@ export default function PricingPage() {
                   nunca porta muda. */}
               {plan.price === null && (
                 <p className="mt-5 rounded-lg bg-surface-2 px-2.5 py-2 text-xs text-muted">
-                  Para administradoras ou proprietários com 5+ imóveis de documentação
-                  aprovada. Ativação com nosso time.
+                  {GESTOR_PRECO.ligado ? `${GESTOR_RESUMO[0].toUpperCase()}${GESTOR_RESUMO.slice(1)}. ${GESTOR_PRECO.imoveisInclusos} imóveis incluídos; ${reaisInteiros(GESTOR_PRECO.porImovelAdicional)}/mês por imóvel adicional.` : "Para administradoras e carteiras grandes."} Ativação
+                  com nosso time.
                 </p>
               )}
 
               <ButtonLink
-                href={plan.price === null ? "mailto:contato@vivanomads.com.br?subject=Plano%20Gestor" : "/dashboard/assinatura"}
+                href={plan.price === null ? "mailto:suporte@vivanomads.com.br?subject=Plano%20Gestor" : "/dashboard/assinatura"}
                 variant={plan.featured ? "gold" : "outline"}
                 className="mt-8 w-full"
               >

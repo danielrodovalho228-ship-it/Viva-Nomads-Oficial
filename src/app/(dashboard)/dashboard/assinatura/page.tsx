@@ -168,7 +168,7 @@ export default function SubscriptionPage() {
                         }.`}
                   </p>
                   <a
-                    href="mailto:contato@vivanomads.com.br?subject=Plano%20Gestor"
+                    href="mailto:suporte@vivanomads.com.br?subject=Plano%20Gestor"
                     className="flex w-full items-center justify-center rounded-xl border border-forest px-4 py-2.5 text-sm font-semibold text-forest hover:bg-forest/5"
                   >
                     Fale com a gente
