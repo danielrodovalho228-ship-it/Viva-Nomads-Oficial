@@ -138,6 +138,19 @@
 .planBtn:hover { color: var(--ink); }
 .planBtn.active { background: var(--forest); color: #fff; }
 .planBtn.active small { opacity: .85; }
+.planBtn:disabled { cursor: not-allowed; opacity: .5; text-decoration: none; }
+.planBtn:disabled:hover { color: var(--muted); }
+.barato {
+  display: block;
+  margin: 3px auto 2px;
+  width: fit-content;
+  border-radius: 999px;
+  background: var(--gold);
+  color: #3a2c07;
+  padding: 1px 7px;
+  font-size: 10px;
+  font-weight: 800;
+}
 
 /* ── Payback ── */
 .payback {
@@ -204,6 +217,18 @@
   padding-top: 10px;
 }
 .plan.gestor .pwhy { color: #6b5518; }
+.plan .pcontato {
+  margin-top: 10px;
+  display: block;
+  text-align: center;
+  border-radius: 10px;
+  background: var(--forest);
+  color: #fff;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
 
 /* ── Resultado: 2 cartões ── */
 .results { display: grid; grid-template-columns: 1fr; gap: 16px; }

@@ -220,10 +220,30 @@ export function taxaDoContrato(congelada: unknown, planoNoAceite: unknown): numb
 }
 
 /**
- * Assinatura anual do Gestor usada SÓ em modelos internos (/modelodenegocio).
- * O preço público é "sob consulta" — nunca exibir como preço do plano.
+ * Preço do Gestor (decisão do Daniel, out/2026): R$ 500/mês com 20 imóveis
+ * incluídos + R$ 25 por imóvel adicional, comissão zero. Nos cartões aparece
+ * como "a partir de R$ 500/mês". Entra nos comparativos só a partir de
+ * `minimoImoveis`: com 19 imóveis o Gestor (R$ 6.000) já sairia mais barato
+ * que o Profissional (R$ 6.108 no cenário Residência médica) e o canibalizaria.
+ * `precoMensal` do plano continua null (ativação com o time), então os painéis
+ * que tratam "sob consulta" não mudam.
  */
-export const GESTOR_ASSINATURA_ANUAL_ESTIMADA = 3000;
+export const GESTOR_PRECO = {
+  ligado: true,
+  mensalBase: 500,
+  imoveisInclusos: 20,
+  porImovelAdicional: 25,
+  minimoImoveis: 20,
+} as const;
+
+/** Assinatura anual do Gestor para `imoveis` imóveis (base + adicionais acima dos inclusos). */
+export function assinaturaAnualGestor(imoveis: number): number {
+  const n = Math.max(1, Math.round(Number(imoveis) || 1));
+  return 12 * (GESTOR_PRECO.mensalBase + GESTOR_PRECO.porImovelAdicional * Math.max(0, n - GESTOR_PRECO.imoveisInclusos));
+}
+
+/** "a partir de R$ 500/mês · comissão zero · para carteiras de 20+ imóveis" */
+export const GESTOR_RESUMO = `a partir de ${reaisInteiros(GESTOR_PRECO.mensalBase)}/mês · comissão zero · para carteiras de ${GESTOR_PRECO.minimoImoveis}+ imóveis`;
 
 /**
  * Regras do CONTRATO — fonte única (prazo, teto legal, caução, blocos).

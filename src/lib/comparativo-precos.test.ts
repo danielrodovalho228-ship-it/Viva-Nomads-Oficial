@@ -7,8 +7,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { calcularComparativo, custoAnualPorPlano, planoMaisBarato, textoLimite } from "./comparativo-precos.ts";
-import { COMISSAO_POR_PLANO, PLANOS, taxaDoContrato, textoComissao } from "../config/planos.ts";
+import { airbnbPorImovelAno, calcularComparativo, custoAnualPorPlano, planoMaisBarato, serieCustoPorImovel, textoIndisponivel, textoLimite } from "./comparativo-precos.ts";
+import { COMISSAO_POR_PLANO, GESTOR_PRECO, GESTOR_RESUMO, PLANOS, assinaturaAnualGestor, taxaDoContrato, textoComissao } from "../config/planos.ts";
 
 test("tabela nova: 12% / 8% / 4% / 0% e mensalidades R$ 0 / 49 / 129 / sob consulta", () => {
   assert.deepEqual(COMISSAO_POR_PLANO, { free: 0.12, essential: 0.08, pro: 0.04, gestor: 0 });
@@ -36,7 +36,7 @@ test("qual plano compensa, por cenário", () => {
   assert.equal(planoMaisBarato(3, 10, 2400), "essential"); // empate (R$ 2.508 × R$ 2.508): fica o plano mais simples
   // Muitos contratos e aluguel alto: o Profissional compensa
   assert.equal(planoMaisBarato(10, 40, 5000), "pro"); // Ess: 16000+588 · Pro: 8000+1548
-  // Mais de 20 imóveis: só o Gestor (sob consulta)
+  // Mais de 20 imóveis: só o Gestor
   assert.equal(planoMaisBarato(25, 50, 3000), "gestor");
 });
 
@@ -44,15 +44,15 @@ test("limite de anúncios: plano acima do limite fica desabilitado e nunca 'comp
   const disp = (imoveis: number) => Object.fromEntries(custoAnualPorPlano(imoveis, 3, 2400).map((x) => [x.id, x.disponivel]));
   // 1 imóvel, 3 contratos → Gratuito
   assert.equal(planoMaisBarato(1, 3, 2400), "free");
-  assert.deepEqual(disp(1), { free: true, essential: true, pro: true, gestor: true });
+  assert.deepEqual(disp(1), { free: true, essential: true, pro: true, gestor: false });
   // 2 imóveis → Gratuito desabilitado ("Limite de 1 anúncio")
   const dois = custoAnualPorPlano(2, 3, 2400).find((x) => x.id === "free")!;
   assert.equal(dois.disponivel, false);
   assert.equal(dois.total, null);
   assert.equal(textoLimite(dois.limite), "Limite de 1 anúncio");
   assert.notEqual(planoMaisBarato(2, 3, 2400), "free");
-  // 6 imóveis → só Profissional e Gestor
-  assert.deepEqual(disp(6), { free: false, essential: false, pro: true, gestor: true });
+  // 6 imóveis → só o Profissional (o Gestor começa em 20)
+  assert.deepEqual(disp(6), { free: false, essential: false, pro: true, gestor: false });
   assert.equal(textoLimite(5), "Limite de 5 anúncios");
   assert.equal(planoMaisBarato(6, 3, 2400), "pro");
   // Mesmo com 0 contrato (Gratuito seria R$ 0), plano sem vaga não compensa
@@ -110,4 +110,66 @@ test("nenhum outro arquivo tem percentual de comissão fixo", () => {
       });
   }
   assert.deepEqual(violacoes, []);
+});
+
+/** Residência médica: R$ 3.000, 6 meses, 2 locações por imóvel no ano. */
+const RM = { aluguel: 3000, meses: 6, locacoes: 2 };
+const melhorRM = (n: number) => planoMaisBarato(n, RM.locacoes * n, RM.aluguel);
+const totalRM = (n: number, id: string) => custoAnualPorPlano(n, RM.locacoes * n, RM.aluguel).find((x) => x.id === id)!.total;
+
+test("Gestor: R$ 500/mês com 20 imóveis incluídos + R$ 25 por adicional, comissão zero, a partir de 20", () => {
+  assert.deepEqual({ ...GESTOR_PRECO }, { ligado: true, mensalBase: 500, imoveisInclusos: 20, porImovelAdicional: 25, minimoImoveis: 20 });
+  assert.equal(COMISSAO_POR_PLANO.gestor, 0);
+  assert.equal(assinaturaAnualGestor(20), 6000);
+  assert.equal(assinaturaAnualGestor(25), 12 * (500 + 5 * 25));
+  assert.equal(GESTOR_RESUMO, "a partir de R$ 500/mês · comissão zero · para carteiras de 20+ imóveis");
+  // Abaixo de 20 o Gestor não entra: com 19 ele (R$ 6.000) canibalizaria o Profissional (R$ 6.108).
+  assert.equal(totalRM(19, "gestor"), null);
+  assert.equal(totalRM(19, "pro"), 6108);
+  assert.equal(textoIndisponivel(custoAnualPorPlano(19, 38, 3000).find((x) => x.id === "gestor")!, 19), "A partir de 20 imóveis");
+  assert.equal(textoIndisponivel(custoAnualPorPlano(6, 12, 3000).find((x) => x.id === "essential")!, 6), "Limite de 5 anúncios");
+});
+
+test("Residência médica: plano mais barato por quantidade de imóveis", () => {
+  assert.equal(melhorRM(1), "free");
+  assert.equal(totalRM(1, "free"), 720);
+  assert.equal(melhorRM(2), "essential");
+  // 4 imóveis: Essencial e Profissional empatam (R$ 2.508) → fica o mais simples
+  assert.equal(totalRM(4, "essential"), 2508);
+  assert.equal(totalRM(4, "pro"), 2508);
+  assert.equal(melhorRM(4), "essential");
+  for (const n of [5, 10, 19]) assert.equal(melhorRM(n), "pro", `${n} imóveis`);
+  for (const n of [20, 25]) assert.equal(melhorRM(n), "gestor", `${n} imóveis`);
+  assert.equal(totalRM(20, "gestor"), 6000);
+  assert.equal(totalRM(25, "gestor"), 7500);
+  assert.equal(totalRM(25, "pro"), null); // acima do limite de 20 anúncios
+});
+
+test("gráfico 'Custo por imóvel no ano': Airbnb = 16% × aluguel × meses × locações; empate Essencial × Pro em 4", () => {
+  assert.equal(airbnbPorImovelAno(3000, 6, 2), 5760);
+  const s = serieCustoPorImovel(RM.aluguel, RM.meses, RM.locacoes);
+  assert.equal(s.airbnb, 5760);
+  assert.equal(s.ate, 20);
+  assert.equal(s.empateEssencialPro, 4);
+  const pontos = Object.fromEntries(s.planos.map((p) => [p.id, p.pontos]));
+  assert.deepEqual(pontos.free, [{ imoveis: 1, porImovel: 720 }]);
+  assert.deepEqual(pontos.essential.map((p) => p.imoveis), [1, 2, 3, 4, 5]);
+  assert.deepEqual(pontos.pro.map((p) => p.imoveis), Array.from({ length: 20 }, (_, i) => i + 1));
+  assert.deepEqual(pontos.gestor, [{ imoveis: 20, porImovel: 300 }]);
+  assert.equal(pontos.pro.find((p) => p.imoveis === 5)!.porImovel, 2748 / 5);
+  // Fora da faixa do Essencial (aluguel baixo) não há marcador
+  assert.equal(serieCustoPorImovel(1000, 2, 1).empateEssencialPro, null);
+});
+
+test("/modelodenegocio e /precos usam o mesmo cálculo e o mesmo gráfico", () => {
+  const ler = (p: string) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
+  const modelo = ler("components/modelo-negocio/modelo-negocio.tsx");
+  assert.match(modelo, /custoAnualPorPlano\(imoveis, locacoes \* imoveis, aluguel\)/);
+  assert.match(modelo, /<GraficoCustoPorImovel /);
+  assert.match(modelo, /Mais barato para você/);
+  assert.match(modelo, /Quantos imóveis você tem\?" value=\{imoveis\} min=\{1\} max=\{30\}/);
+  assert.doesNotMatch(modelo, /GESTOR_ASSINATURA_ANUAL_ESTIMADA/);
+  const precos = ler("components/precos/comparativo-precos.tsx");
+  assert.match(precos, /custoAnualPorPlano\(imoveis, locacoes \* imoveis, aluguel\)/);
+  assert.match(precos, /<GraficoCustoPorImovel /);
 });
