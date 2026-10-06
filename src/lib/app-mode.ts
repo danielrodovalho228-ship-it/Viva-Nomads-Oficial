@@ -1,12 +1,10 @@
 /**
- * MODO APP — quando o site roda DENTRO dos apps (Android/Capacitor, iPhone/Expo),
+ * MODO APP — quando o site roda DENTRO do app (Expo, iPhone e Android),
  * vira um app enxuto: sem home de marketing, menu de cima e rodapé; barra
  * inferior de 5 abas por papel.
  *
  * Como o app é reconhecido:
- *  - iPhone (Expo): user-agent com "VivaNomadsApp" e/ou window.VivaNomadsApp;
- *  - Android (Capacitor): Capacitor.isNativePlatform() no navegador (o build
- *    atual não marca o user-agent; o próximo build marca — capacitor.config.ts);
+ *  - user-agent com "VivaNomadsApp" e/ou window.VivaNomadsApp (app Expo);
  *  - depois da 1ª detecção no navegador, o cookie `vn_app=1` faz o SERVIDOR
  *    (proxy) reconhecer o app nas próximas requisições, sem "piscar" o site.
  *
@@ -64,8 +62,7 @@ export const APP_PREPAINT_SCRIPT = `(function(){try{
 var c=document.cookie.indexOf('${APP_COOKIE}=1')>-1;
 var u=/VivaNomadsApp/i.test(navigator.userAgent);
 var w=!!(window.VivaNomadsApp||window.__VN_APP__);
-var cap=!!(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform());
-if(c||u||w||cap){document.documentElement.setAttribute('data-app','1');
+if(c||u||w){document.documentElement.setAttribute('data-app','1');
 var m=document.querySelector('meta[name=viewport]');
 if(m){m.setAttribute('content','width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover');}}
 }catch(e){}})();`;

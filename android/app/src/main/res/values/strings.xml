@@ -1,7 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<resources>
-    <string name="app_name">Viva Nomads</string>
-    <string name="title_activity_main">Viva Nomads</string>
-    <string name="package_name">br.com.vivanomads.app</string>
-    <string name="custom_url_scheme">br.com.vivanomads.app</string>
-</resources>

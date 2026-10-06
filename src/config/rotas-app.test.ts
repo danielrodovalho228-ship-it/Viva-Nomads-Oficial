@@ -6,7 +6,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { aasa, assetlinks, caminhoDoLink, destinoDaRota, filtrosAndroid, ROTAS_APP } from "./rotas-app.ts";
+import { aasa, assetlinks, caminhoDoLink, destinoDaRota, intentFiltersExpo, ROTAS_APP } from "./rotas-app.ts";
 import { safeInternalPath } from "../lib/safe-redirect.ts";
 import { GET as getApple } from "../app/api/well-known/apple/route.ts";
 import { GET as getAndroid } from "../app/api/well-known/android/route.ts";
@@ -32,6 +32,10 @@ test("telas do app", () => {
     "/dashboard/pedidos-cidade?pedido=1",
     "/dashboard/solicitacoes",
     "/dashboard/imoveis",
+    "/dashboard/imoveis/novo",
+    "/dashboard/imoveis/123/editar",
+    "/qualificar",
+    "/dashboard/verificacao",
     "/dashboard/conta",
     "/dashboard/conta/ajuda",
     "/dashboard/favoritos",
@@ -46,15 +50,12 @@ test("telas só do site", () => {
     "/admin",
     "/admin/atendimento/1",
     "/admin/financeiro",
-    "/dashboard/imoveis/novo",
-    "/dashboard/imoveis/123/editar",
     "/dashboard/fechamento",
     "/dashboard/assinatura",
     "/dashboard/simulador",
     "/dashboard/roi-imovel",
     "/dashboard/viabilidade",
     "/dashboard/ferramentas",
-    "/qualificar",
     "/simulacao",
     "/precos",
     "/",
@@ -108,13 +109,19 @@ test("assetlinks.json no formato do Google", () => {
   ]);
 });
 
-test("AndroidManifest: o filtro de links bate com a lista do app", () => {
-  const xml = readFileSync(new URL("../../android/app/src/main/AndroidManifest.xml", import.meta.url), "utf8");
-  const bloco = xml.slice(xml.indexOf('android:autoVerify="true"'), xml.indexOf("</intent-filter>", xml.indexOf('android:autoVerify="true"')));
-  assert.match(bloco, /android:host="vivanomads\.com\.br"/);
-  const noXml = [...bloco.matchAll(/android:(path|pathPrefix)="([^"]+)"/g)].map((m) => `${m[1]}:${m[2]}`);
-  assert.deepEqual(noXml, filtrosAndroid().map((f) => `${f.atributo}:${f.valor}`));
-  assert.match(xml, /android:scheme="vivanomads"/);
+test("Expo (app.json): intentFilters com autoVerify, https, host e só as telas do app", () => {
+  const [links, esquema] = intentFiltersExpo() as { action: string; autoVerify?: boolean; data: Record<string, string>[]; category: string[] }[];
+  assert.equal(links.autoVerify, true);
+  assert.deepEqual(links.category, ["BROWSABLE", "DEFAULT"]);
+  assert.ok(links.data.every((d) => d.scheme === "https" && d.host === "vivanomads.com.br"));
+  for (const d of links.data) {
+    const caminho = d.path ?? d.pathPrefix;
+    assert.equal(destinoDaRota(d.pathPrefix ? `${caminho}x` : caminho), "app", caminho);
+  }
+  for (const fora of ["/admin", "/dashboard/assinatura", "/dashboard/fechamento", "/dashboard/simulador", "/auth/confirm"]) {
+    assert.ok(!links.data.some((d) => d.path === fora || (d.pathPrefix && fora.startsWith(d.pathPrefix))), fora);
+  }
+  assert.deepEqual(esquema.data, [{ scheme: "vivanomads" }]);
 });
 
 test(".well-known: JSON com content-type certo; 404 sem configuração", async () => {

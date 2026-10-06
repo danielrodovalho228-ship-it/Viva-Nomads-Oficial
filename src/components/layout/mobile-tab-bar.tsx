@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * Barra inferior do app (Fase 1b). Visível só em telas < md OU dentro do app
- * nativo (Capacitor) — no desktop o layout atual continua. Esconde-se sozinha
+ * (Expo) — no desktop o layout atual continua. Esconde-se sozinha
  * nas telas de fluxo (isFlowRoute). Acento verde (inquilino) ou âmbar
  * (proprietário). Abas que exigem login, sem sessão, levam a /auth?next=.
  *

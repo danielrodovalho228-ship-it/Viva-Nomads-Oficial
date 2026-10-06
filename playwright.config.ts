@@ -62,7 +62,7 @@ export default defineConfig({
       use: {
         ...devices["Pixel 7"],
         viewport: { width: 390, height: 844 },
-        userAgent: `${devices["Pixel 7"].userAgent} VivaNomadsApp/1.0 (capacitor)`,
+        userAgent: `${devices["Pixel 7"].userAgent} VivaNomadsApp/1.0 (expo)`,
         ...(CHROMIUM ? { launchOptions: { executablePath: CHROMIUM } } : {}),
       },
     },

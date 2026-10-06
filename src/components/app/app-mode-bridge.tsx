@@ -26,15 +26,7 @@ export function AppModeBridge() {
       }
     };
 
-    if (isAppUserAgent(navigator.userAgent) || w.VivaNomadsApp || w.__VN_APP__) {
-      marcar();
-    } else {
-      import("@capacitor/core")
-        .then(({ Capacitor }) => {
-          if (Capacitor?.isNativePlatform?.()) marcar();
-        })
-        .catch(() => {});
-    }
+    if (isAppUserAgent(navigator.userAgent) || w.VivaNomadsApp || w.__VN_APP__) marcar();
     return () => {
       vivo = false;
     };

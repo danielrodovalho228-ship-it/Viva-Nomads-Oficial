@@ -7,9 +7,9 @@ import { test } from "node:test";
 
 import { isAppUserAgent, isMarketingPath, appHome } from "./app-mode.ts";
 
-test("reconhece o user-agent do app (Expo e Capacitor marcado)", () => {
+test("reconhece o user-agent do app (Expo)", () => {
   assert.equal(isAppUserAgent("Mozilla/5.0 (iPhone) VivaNomadsApp/1.0 (expo)"), true);
-  assert.equal(isAppUserAgent("Mozilla/5.0 (Linux; Android 14; wv) VivaNomadsApp/1.0 (capacitor)"), true);
+  assert.equal(isAppUserAgent("Mozilla/5.0 (Linux; Android 14; wv) VivaNomadsApp/1.0 (expo)"), true);
   assert.equal(isAppUserAgent("Mozilla/5.0 (Macintosh) Chrome/130"), false);
   assert.equal(isAppUserAgent(null), false);
 });
