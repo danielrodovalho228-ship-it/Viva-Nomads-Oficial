@@ -14,7 +14,9 @@ import {
   CUSTOS_POR_CONTRATO,
   DOLAR,
   FUNDADORES,
+  IMPOSTO_OPCOES,
   IMPOSTO_SOBRE_RECEITA,
+  IMPOSTO_TEXTO,
   INVESTIMENTO_INICIAL,
   MES_PRIMEIRO_CONTRATO,
   MIX_PLANOS,
@@ -55,8 +57,10 @@ export function ModeloFinanceiro({ pagina }: { pagina: "simulacao" | "roi" }) {
   const [cenario, setCenario] = useState<CenarioId>("base");
   const [operador, setOperador] = useState<number>(0);
   const [custoFixo, setCustoFixo] = useState<number>(CUSTO_FIXO_PADRAO);
+  const [imposto, setImposto] = useState<number>(IMPOSTO_SOBRE_RECEITA);
 
-  const op = useMemo(() => ({ operador, custoFixo }), [operador, custoFixo]);
+  const op = useMemo(() => ({ operador, custoFixo, imposto }), [operador, custoFixo, imposto]);
+  const pctImposto = `${(imposto * 100).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`;
   const proj = useMemo(() => projetar(cenario, op), [cenario, op]);
   const todos = useMemo(() => Object.fromEntries(ORDEM.map((id) => [id, projetar(id, op)])) as Record<CenarioId, Projecao>, [op]);
   const unit = useMemo(() => porContrato(op), [op]);
@@ -100,6 +104,14 @@ export function ModeloFinanceiro({ pagina }: { pagina: "simulacao" | "roi" }) {
               </button>
             ))}
           </div>
+          <div className={styles.toggles} role="group" aria-label="Imposto da Viva">
+            <span className={styles.lbl}>Imposto da Viva ({IMPOSTO_TEXTO}):</span>
+            {IMPOSTO_OPCOES.map((v) => (
+              <button key={v} type="button" className={styles.pill} aria-pressed={imposto === v} onClick={() => setImposto(v)}>
+                {(v * 100).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%{v === IMPOSTO_OPCOES[1] ? " (anexo V)" : ""}
+              </button>
+            ))}
+          </div>
           <div className={styles.slider} style={{ marginTop: 14 }}>
             <div className={styles.top}>
               <label className={styles.lbl} htmlFor="custo-fixo">
@@ -113,8 +125,8 @@ export function ModeloFinanceiro({ pagina }: { pagina: "simulacao" | "roi" }) {
 
         {/* Por contrato */}
         <div className={styles.kpibar} data-testid="kpis-contrato">
-          <Kpi k="Receita por contrato" v={brl2(unit.receita)} hint={`comissão média ${brl2(comissaoMediaPorContrato())} + seguro ${brl(SEGURO_INCENDIO.porContrato)}`} />
-          <Kpi k="Custo variável por contrato" v={brl2(unit.custoVariavel)} hint={`ferramentas + ${Math.round(IMPOSTO_SOBRE_RECEITA * 100)}% de imposto${operador ? " + operador" : ""}`} />
+          <Kpi k="Receita por contrato" v={brl2(unit.receita)} hint={`comissão média ${brl2(comissaoMediaPorContrato())} + seguro ${brl(SEGURO_INCENDIO.porContrato)} (depende do modelo com a seguradora)`} />
+          <Kpi k="Custo variável por contrato" v={brl2(unit.custoVariavel)} hint={`ferramentas + ${pctImposto} de imposto${operador ? " + operador" : ""}`} />
           <Kpi k="Margem por contrato" v={brl2(unit.margem)} hint="receita − custo variável" />
           <Kpi k="Contratos/mês para empatar" v={`${Math.ceil(unit.empate[0])} a ${Math.ceil(unit.empate[1])}`} hint="fixo + marketing, sem contar assinaturas" />
         </div>
@@ -194,7 +206,7 @@ export function ModeloFinanceiro({ pagina }: { pagina: "simulacao" | "roi" }) {
             titulo="Custos por contrato"
             itens={CUSTOS_POR_CONTRATO}
             rodape={[
-              ["Imposto (Simples, faixa inicial — confirmar com o contador)", `${Math.round(IMPOSTO_SOBRE_RECEITA * 100)}% da receita`],
+              [`Imposto da Viva (${IMPOSTO_TEXTO})`, `${pctImposto} da receita`],
               ["Operador local (opcional)", operador ? brl(operador) : "R$ 0 (sócios fazem)"],
             ]}
           />
@@ -232,7 +244,10 @@ export function ModeloFinanceiro({ pagina }: { pagina: "simulacao" | "roi" }) {
                 <strong>Assinaturas:</strong> donos novos entram desde o mês 1; a fração do cenário assina (média {brl(ASSINATURA.mediaPagantes)}/mês), com churn de{" "}
                 {Math.round(ASSINATURA.churnMensal * 100)}% ao mês.
               </li>
-              <li>Contratos começam no mês {MES_PRIMEIRO_CONTRATO} e crescem em linha reta até o teto do cenário. Seguro incêndio ({brl(SEGURO_INCENDIO.porContrato)} por contrato) a partir do mês {SEGURO_INCENDIO.aPartirDoMes}.</li>
+              <li>Contratos começam no mês {MES_PRIMEIRO_CONTRATO} e crescem em linha reta até o teto do cenário. Seguro incêndio ({brl(SEGURO_INCENDIO.porContrato)} por contrato) a partir do mês {SEGURO_INCENDIO.aPartirDoMes} — <strong>{SEGURO_INCENDIO.aviso}</strong>; enquanto não estiver confirmado com a parceira, essa receita não é garantida.</li>
+              <li>
+                <strong>Imposto da Viva:</strong> {pctImposto} sobre toda a receita (assinatura, comissão, seguro), {IMPOSTO_TEXTO}.
+              </li>
               <li>
                 <strong>Custo fixo:</strong> {brl(CUSTO_FIXO_PADRAO)}/mês por padrão ({CUSTO_FIXO_FAIXA.texto}).
               </li>

@@ -41,6 +41,7 @@ export const FUNDADORES = {
 /** Seguro incêndio via parceiro: ≈ 20% de um prêmio de R$ 200/ano. Liga quando o parceiro estiver ativo. */
 export const SEGURO_INCENDIO = {
   porContrato: 40,
+  aviso: "depende do modelo com a seguradora: corretor SUSEP ou representante",
   aPartirDoMes: 9,
   parceiroAtivo: true,
   fonte: "https://www.seguroviagem.srv.br/blog/quanto-custa-seguro-residencial/",
@@ -57,8 +58,14 @@ export const CUSTOS_POR_CONTRATO: Item[] = [
   { rotulo: "Cobrança da comissão (Pix + nota + aviso)", valor: 3.5, unidade: "R$/contrato", fonte: "https://www.asaas.com/precos-e-taxas", obs: "Pix R$ 1,99 + nota R$ 0,49 + aviso R$ 0,99." },
   { rotulo: "Atendimento da Viva (IA)", valor: 5, unidade: "R$/contrato", fonte: "https://finout.io/blog/anthropic-api-pricing" },
 ];
-/** Simples Nacional, faixa inicial — a confirmar com o contador. */
-export const IMPOSTO_SOBRE_RECEITA = 0.06;
+/**
+ * Imposto da Viva sobre TODA a receita (Simples Nacional). O anexo depende da
+ * atividade cadastrada e da folha: a definir pelo contador na abertura do CNPJ.
+ * Padrão 6% (faixa inicial); 15,5% se cair no anexo V.
+ */
+export const IMPOSTO_OPCOES = [0.06, 0.155] as const;
+export const IMPOSTO_SOBRE_RECEITA = IMPOSTO_OPCOES[0];
+export const IMPOSTO_TEXTO = "a definir pelo contador – anexo do Simples";
 /** Operador local por contrato: R$ 0 (sócios fazem) ou R$ 100. */
 export const OPERADOR_OPCOES = [0, 100] as const;
 
