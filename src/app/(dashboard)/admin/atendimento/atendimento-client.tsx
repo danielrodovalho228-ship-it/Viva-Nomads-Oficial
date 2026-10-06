@@ -28,10 +28,20 @@ const STATUS: Record<string, string> = {
 };
 
 export function relogio(c: ChamadoAdmin, agora: Date): { cor: string; texto: string } {
-  const estado = estadoPrazo(new Date(c.criado_em), new Date(c.prazo_primeira_resposta), agora, !!c.primeira_resposta_em);
-  const restMin = Math.round((new Date(c.prazo_primeira_resposta).getTime() - agora.getTime()) / 60000);
   const fmt = (m: number) => (Math.abs(m) >= 120 ? `${Math.round(Math.abs(m) / 60)} h` : `${Math.abs(m)} min`);
-  if (estado === "cumprido") return { cor: "bg-surface-2 text-muted", texto: "respondido" };
+  const primeira = new Date(c.prazo_primeira_resposta);
+  if (c.primeira_resposta_em) {
+    // Respondido: atrasado fica marcado; no prazo, passa a contar o prazo de resolução.
+    if (new Date(c.primeira_resposta_em).getTime() > primeira.getTime()) return { cor: "bg-red-100 text-red-800", texto: "1ª resposta fora do prazo" };
+    if (c.status === "resolvido" || c.status === "encerrado") return { cor: "bg-surface-2 text-muted", texto: "respondido" };
+    const estado = estadoPrazo(new Date(c.criado_em), new Date(c.prazo_resolucao), agora, false);
+    const rest = Math.round((new Date(c.prazo_resolucao).getTime() - agora.getTime()) / 60000);
+    if (estado === "estourado") return { cor: "bg-red-100 text-red-800", texto: `resolução estourou há ${fmt(rest)}` };
+    if (estado === "em_risco") return { cor: "bg-amber-100 text-amber-800", texto: `resolução: ${fmt(rest)} restantes` };
+    return { cor: "bg-surface-2 text-muted", texto: `respondido · resolver em ${fmt(rest)}` };
+  }
+  const estado = estadoPrazo(new Date(c.criado_em), primeira, agora, false);
+  const restMin = Math.round((primeira.getTime() - agora.getTime()) / 60000);
   if (estado === "estourado") return { cor: "bg-red-100 text-red-800", texto: `estourou há ${fmt(restMin)}` };
   if (estado === "em_risco") return { cor: "bg-amber-100 text-amber-800", texto: `${fmt(restMin)} restantes` };
   return { cor: "bg-green-100 text-green-800", texto: `${fmt(restMin)} restantes` };
