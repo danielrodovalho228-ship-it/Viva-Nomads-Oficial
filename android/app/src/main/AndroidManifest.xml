@@ -18,6 +18,63 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- App Links: https://vivanomads.com.br nas telas do app (lista em src/config/rotas-app.ts;
+                 um teste confere que esta lista bate). Confirmar e-mail, trocar senha e
+                 telas só do site ficam de fora: abrem no navegador. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" />
+                <data android:host="vivanomads.com.br" />
+                <data android:path="/auth" />
+                <data android:path="/app" />
+                <data android:pathPrefix="/app/" />
+                <data android:path="/buscar" />
+                <data android:pathPrefix="/buscar/" />
+                <data android:path="/imoveis" />
+                <data android:pathPrefix="/imoveis/" />
+                <data android:path="/pedidos" />
+                <data android:pathPrefix="/pedidos/" />
+                <data android:path="/ajuda" />
+                <data android:pathPrefix="/ajuda/" />
+                <data android:path="/dashboard" />
+                <data android:path="/dashboard/mensagens" />
+                <data android:pathPrefix="/dashboard/mensagens/" />
+                <data android:path="/dashboard/favoritos" />
+                <data android:pathPrefix="/dashboard/favoritos/" />
+                <data android:path="/dashboard/candidaturas" />
+                <data android:pathPrefix="/dashboard/candidaturas/" />
+                <data android:path="/dashboard/leads" />
+                <data android:pathPrefix="/dashboard/leads/" />
+                <data android:path="/dashboard/pedidos" />
+                <data android:pathPrefix="/dashboard/pedidos/" />
+                <data android:path="/dashboard/pedidos-cidade" />
+                <data android:pathPrefix="/dashboard/pedidos-cidade/" />
+                <data android:path="/dashboard/contratos" />
+                <data android:pathPrefix="/dashboard/contratos/" />
+                <data android:path="/dashboard/locacoes" />
+                <data android:pathPrefix="/dashboard/locacoes/" />
+                <data android:path="/dashboard/solicitacoes" />
+                <data android:pathPrefix="/dashboard/solicitacoes/" />
+                <data android:path="/dashboard/buscas" />
+                <data android:pathPrefix="/dashboard/buscas/" />
+                <data android:path="/dashboard/imoveis" />
+                <data android:path="/dashboard/conta" />
+                <data android:pathPrefix="/dashboard/conta/" />
+                <data android:path="/excluir-conta" />
+                <data android:path="/privacidade" />
+                <data android:path="/termos" />
+                <data android:path="/seguranca" />
+            </intent-filter>
+            <!-- vivanomads://caminho (ex.: "Voltar para o app" depois de confirmar o e-mail). -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="vivanomads" />
+            </intent-filter>
+
         </activity>
 
         <provider

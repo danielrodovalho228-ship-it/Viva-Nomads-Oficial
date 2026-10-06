@@ -25,7 +25,12 @@ export async function GET(request: Request) {
     if (supabase) {
       const { error } = await supabase.auth.verifyOtp({ type, token_hash });
       // Confirmado (ou já confirmado antes por um pré-carregamento): segue ao destino.
-      if (!error) return NextResponse.redirect(new URL(next, origin));
+      // No celular, a confirmação de cadastro passa pelo "Pronto!" (com "Voltar para o app").
+      if (!error) {
+        const celular = /Android|iPhone|iPad|iPod/i.test(request.headers.get("user-agent") ?? "");
+        if (celular && type !== "recovery") return NextResponse.redirect(new URL(`/auth/pronto?next=${encodeURIComponent(next)}`, origin));
+        return NextResponse.redirect(new URL(next, origin));
+      }
     }
   }
   // Falha (token inválido/expirado): manda ao login com um aviso amigável.
