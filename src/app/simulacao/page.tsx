@@ -5,18 +5,21 @@ import { ModeloFinanceiro } from "@/components/financeiro/modelo-financeiro";
 
 // Página privada: divulgada só por link direto (não indexar nem seguir).
 export const metadata: Metadata = {
-  title: "Simulação do negócio — documento interno dos sócios",
+  title: "Simulação do negócio",
   robots: { index: false, follow: false },
 };
 
 export const dynamic = "force-dynamic";
 
 export default async function SimulacaoPage() {
-  await guardSocios("/simulacao");
+  // Sócio: página completa. Investidor (código próprio): só esta página, sem o
+  // menu das outras internas, em modo leitura.
+  const quem = await guardSocios("/simulacao");
+  const investidor = quem === "investidor";
   return (
     <>
-      <PaginasInternasNav atual="/simulacao" />
-      <ModeloFinanceiro pagina="simulacao" />
+      {!investidor && <PaginasInternasNav atual="/simulacao" />}
+      <ModeloFinanceiro pagina="simulacao" leitura={investidor} />
     </>
   );
 }
