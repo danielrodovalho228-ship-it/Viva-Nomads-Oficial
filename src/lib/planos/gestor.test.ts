@@ -7,10 +7,12 @@ test("account_type='gestor' → elegível independente do nº de imóveis", () =
   assert.equal(gestorElegivel({ accountType: "gestor", imoveisValidados: 0 }), true);
 });
 
-test("5+ imóveis validados → elegível; menos → não", () => {
-  assert.equal(gestorElegivel({ accountType: "individual", imoveisValidados: 5 }), true);
-  assert.equal(gestorElegivel({ accountType: "individual", imoveisValidados: 6 }), true);
-  assert.equal(gestorElegivel({ accountType: "individual", imoveisValidados: 4 }), false);
+test("20+ imóveis validados → elegível; menos → não (mesmo mínimo do preço do Gestor)", () => {
+  assert.equal(GESTOR_MIN_IMOVEIS_VALIDADOS, 20);
+  assert.equal(gestorElegivel({ accountType: "individual", imoveisValidados: 20 }), true);
+  assert.equal(gestorElegivel({ accountType: "individual", imoveisValidados: 25 }), true);
+  assert.equal(gestorElegivel({ accountType: "individual", imoveisValidados: 19 }), false);
+  assert.equal(gestorElegivel({ accountType: "individual", imoveisValidados: 5 }), false);
   assert.equal(gestorElegivel({ accountType: "individual", imoveisValidados: 0 }), false);
 });
 
@@ -20,7 +22,7 @@ test("conta comum sem imóveis validados NÃO ativa Gestor (barreira)", () => {
 
 test("faltamParaGestor conta o que resta até o limiar", () => {
   assert.equal(faltamParaGestor(0), GESTOR_MIN_IMOVEIS_VALIDADOS);
-  assert.equal(faltamParaGestor(3), 2);
-  assert.equal(faltamParaGestor(5), 0);
-  assert.equal(faltamParaGestor(9), 0);
+  assert.equal(faltamParaGestor(3), 17);
+  assert.equal(faltamParaGestor(20), 0);
+  assert.equal(faltamParaGestor(30), 0);
 });

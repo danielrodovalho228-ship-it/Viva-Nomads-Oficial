@@ -163,7 +163,7 @@ export default function SubscriptionPage() {
                   <p className="mb-2 rounded-lg bg-surface-2 px-2.5 py-2 text-xs text-muted">
                     {gestor?.elegivel
                       ? "✓ Você é elegível ao Gestor. Fale com a gente para ativar."
-                      : `Disponível para administradoras ou 5+ imóveis com documentação aprovada${
+                      : `Disponível para administradoras ou ${GESTOR_MIN_IMOVEIS_VALIDADOS}+ imóveis com documentação aprovada${
                           gestor ? ` — você tem ${gestor.imoveisValidados}/${GESTOR_MIN_IMOVEIS_VALIDADOS}` : ""
                         }.`}
                   </p>
