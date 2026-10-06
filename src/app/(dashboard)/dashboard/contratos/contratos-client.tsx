@@ -1,5 +1,6 @@
 "use client";
 
+import { ProblemaComIsto } from "@/components/ajuda/problema-com-isto";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -198,6 +199,7 @@ function ContratoCard({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 className="font-title text-lg font-bold text-ink">{contrato.propertyTitle}</h2>
+          {!demo && <ProblemaComIsto tipo="contrato" id={contrato.id} className="mt-1" />}
           <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted">
             <span className="inline-flex items-center gap-1">
               <CircleDollarSign className="h-3.5 w-3.5" /> {formatBRL(contrato.aluguelMensal)}/mês

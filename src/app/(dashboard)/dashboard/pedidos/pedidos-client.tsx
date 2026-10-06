@@ -1,5 +1,6 @@
 "use client";
 
+import { ProblemaComIsto } from "@/components/ajuda/problema-com-isto";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -187,6 +188,8 @@ export function PedidosClient({
                     </div>
                   )}
                 </div>
+
+                <ProblemaComIsto tipo="pedido" id={p.id} className="mt-3" />
 
                 {/* Respostas recebidas */}
                 <div className="mt-4 border-t border-line pt-4">

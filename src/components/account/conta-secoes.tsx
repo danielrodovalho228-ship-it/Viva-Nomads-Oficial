@@ -163,13 +163,24 @@ export function PerfilDoModo() {
 export function AjudaContato() {
   return (
     <Panel title="Ajuda & contato" className="mt-6">
-      <p className="text-sm text-muted">Precisa de ajuda? Fale com a nossa equipe pelo canal oficial.</p>
-      <a
-        href="mailto:contato@vivanomads.com.br?subject=Ajuda%20—%20Viva%20Nomads"
-        className="mt-3 inline-flex items-center gap-2 rounded-xl border border-sage-200 px-4 py-2.5 text-sm font-medium text-forest hover:border-sage"
-      >
-        contato@vivanomads.com.br
-      </a>
+      <p className="text-sm text-muted">
+        Dúvidas, problemas ou segurança: a Central de Ajuda tem respostas rápidas e abre um chamado com uma pessoa da
+        equipe quando precisar.
+      </p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <a
+          href="/ajuda"
+          className="inline-flex items-center gap-2 rounded-xl border border-sage-200 px-4 py-2.5 text-sm font-medium text-forest hover:border-sage"
+        >
+          Central de Ajuda
+        </a>
+        <a
+          href="/ajuda?novo=1"
+          className="inline-flex items-center gap-2 rounded-xl border border-sage-200 px-4 py-2.5 text-sm font-medium text-forest hover:border-sage"
+        >
+          Abrir chamado
+        </a>
+      </div>
     </Panel>
   );
 }

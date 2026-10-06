@@ -46,7 +46,14 @@ export type NotificationEvent =
   | "documento_recebido" // novo documento na fila → admin
   // Checklist de qualificação revisado pela equipe → proprietário
   | "checklist_aprovado"
-  | "checklist_recusado";
+  | "checklist_recusado"
+  // Atendimento (chamados) — assunto específico vem em `subject` (com o número)
+  | "chamado_aberto" // → quem abriu
+  | "chamado_respondido" // → quem abriu
+  | "chamado_resolvido" // → quem abriu (com a nota de 1 a 5)
+  | "chamado_equipe" // P1/P2, aprovação, prazo em risco → admins
+  | "manutencao_nova" // inquilino abriu manutenção → proprietário
+  | "manutencao_atrasada"; // prazo da manutenção vencido → proprietário
 
 // `img` = chave da imagem de assunto (public/media/email/<img>.jpg).
 const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: string) => string; img: string }> = {
@@ -70,6 +77,12 @@ const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: string)
   documento_recusado: { subject: "Documentação não aprovada", body: (n) => `Olá${n ? " " + n : ""}, a documentação enviada não pôde ser aprovada. Veja o motivo, ajuste e reenvie para liberar a publicação.`, img: "pedido-resposta" },
   checklist_aprovado: { subject: "Qualificação do imóvel aprovada", body: (n) => `Olá${n ? " " + n : ""}, a equipe Viva Nomads revisou e aprovou a qualificação do seu imóvel.`, img: "candidatura-recebida" },
   checklist_recusado: { subject: "Qualificação do imóvel não aprovada", body: (n) => `Olá${n ? " " + n : ""}, a equipe Viva Nomads revisou a qualificação do seu imóvel e ela não foi aprovada. Veja o motivo, ajuste e envie de novo.`, img: "pedido-resposta" },
+  chamado_aberto: { subject: "Recebemos seu chamado", body: (n) => `Olá${n ? " " + n : ""}, recebemos seu chamado na Central de Ajuda do Viva Nomads. Você acompanha e responde por lá.`, img: "transacional" },
+  chamado_respondido: { subject: "Seu chamado foi respondido", body: (n) => `Olá${n ? " " + n : ""}, há uma resposta da equipe Viva Nomads no seu chamado.`, img: "nova-mensagem" },
+  chamado_resolvido: { subject: "Seu chamado foi resolvido", body: (n) => `Olá${n ? " " + n : ""}, marcamos seu chamado como resolvido. Se algo ficou pendente, é só responder por lá.`, img: "transacional" },
+  chamado_equipe: { subject: "Atendimento: chamado precisa da equipe", body: () => "Um chamado na Central de Ajuda precisa da equipe.", img: "transacional" },
+  manutencao_nova: { subject: "Pedido de manutenção no seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, o inquilino abriu um pedido de manutenção no seu imóvel. Responda pela plataforma dentro do prazo.`, img: "transacional" },
+  manutencao_atrasada: { subject: "Manutenção sem resposta — prazo vencido", body: (n) => `Olá${n ? " " + n : ""}, o pedido de manutenção do seu inquilino passou do prazo sem resposta. Responda pela plataforma.`, img: "transacional" },
   documento_recebido: { subject: "Novo documento de imóvel para conferir", body: () => "Um proprietário enviou a documentação do imóvel. Há um item aguardando conferência na fila de moderação.", img: "transacional" },
 };
 
