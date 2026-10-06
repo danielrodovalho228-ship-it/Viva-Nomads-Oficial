@@ -22,8 +22,6 @@ const TESTE_DDF86C66: LinhaAnuncio = {
   ownership_type: "own",
   sublease_authorized: true,
   description: "x".repeat(219),
-  max_guests: 3,
-  available_from: "2026-10-15",
   ready_to_live_badge: false,
   video_url: null,
 };
@@ -38,20 +36,32 @@ test("ddf86c66: 8 fotos + documento aprovado → pode publicar; selo e vídeo s�
   assert.deepEqual(p.melhorar, ["Selo Pronto para Morar", "Vídeo do imóvel"]);
 });
 
-test("opcionais NUNCA bloqueiam nem entram no 'falta'", () => {
-  const f = { ...completo(), descricao: "", capacidade: 0, disponivelDesde: false, selo: false, video: false };
-  const p = prontidaoAnuncio(f);
-  assert.equal(p.podePublicar, true);
-  assert.deepEqual(p.faltam, []);
-  assert.equal(p.melhorar.length, 5);
-  for (const o of p.opcionais) assert.ok(!p.obrigatorios.some((i) => i.key === o.key));
+test("opcionais (só Selo e Vídeo) NUNCA bloqueiam, nem entram no 'falta', nem baixam a %", () => {
+  const sem = prontidaoAnuncio({ ...completo(), selo: false, video: false });
+  const com = prontidaoAnuncio({ ...completo(), selo: true, video: true });
+  assert.deepEqual(sem.opcionais.map((o) => o.key), ["selo", "video"]);
+  assert.equal(sem.podePublicar, true);
+  assert.deepEqual(sem.faltam, []);
+  assert.equal(sem.pct, 100);
+  assert.equal(com.pct, 100);
+  assert.deepEqual(com.melhorar, []);
+});
+
+test("descrição é obrigatória (mín. 60 caracteres) e endereço está na lista", () => {
+  const curta = prontidaoAnuncio({ ...completo(), descricao: "x".repeat(59) });
+  assert.equal(curta.podePublicar, false);
+  assert.deepEqual(curta.faltam, ["Descrição com 60+ caracteres (tem 59)"]);
+  assert.ok(prontidaoAnuncio({ ...completo(), descricao: "x".repeat(60) }).podePublicar);
+  assert.ok(OBRIGATORIOS_ROTULOS.includes("Endereço preenchido"));
+  const semEndereco = fatosDaLinha({ ...TESTE_DDF86C66, address: "" }, 8, "approved", true);
+  assert.deepEqual(prontidaoAnuncio(semEndereco).faltam, ["Endereço preenchido"]);
 });
 
 test("fotos abaixo do mínimo bloqueiam, com a contagem", () => {
   const p = prontidaoAnuncio({ ...completo(), fotos: 7 });
   assert.equal(p.podePublicar, false);
   assert.deepEqual(p.faltam, [`Pelo menos ${MIN_FOTOS} fotos (tem 7)`]);
-  assert.equal(p.pct, 88);
+  assert.equal(p.pct, 89); // 8 de 9 obrigatórios
 });
 
 test("documento: cada estado tem a sua explicação", () => {
@@ -71,7 +81,7 @@ test("sublocação sem autorização e plano sem vaga bloqueiam; limite null (ed
 
 test("anúncio vazio: nada cumprido, 0%", () => {
   const vazio = fatosDaLinha(
-    { ...TESTE_DDF86C66, title: "", address: "", city: "", bathrooms: 0, area_m2: 0, min_period_days: 0, monthly_price: 0, garantias_aceitas: [] },
+    { ...TESTE_DDF86C66, title: "", address: "", city: "", bathrooms: 0, area_m2: 0, min_period_days: 0, monthly_price: 0, garantias_aceitas: [], description: "" },
     0,
     "none",
     true

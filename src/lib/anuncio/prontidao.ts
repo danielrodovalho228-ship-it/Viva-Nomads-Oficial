@@ -6,11 +6,12 @@
 
   Dois grupos que NUNCA se misturam:
     • obrigatórios — sem eles não publica (o banco também barra fotos e documento);
-    • opcionais    — melhoram o anúncio (selo, vídeo…). Nunca bloqueiam e nunca
-                     entram no "falta".
+    • opcionais    — só Selo Pronto para Morar e vídeo. Melhoram o anúncio,
+                     nunca bloqueiam, nunca entram no "falta" nem baixam a %.
 */
 
 export const MIN_FOTOS = 8;
+export const MIN_DESCRICAO = 60;
 
 export type StatusDocumento = "none" | "pending" | "approved" | "rejected";
 
@@ -28,10 +29,9 @@ export interface FatosAnuncio {
   documento: StatusDocumento;
   /** null = não se aplica/não verificado aqui (ex.: editor sem consulta do plano). */
   limitePlanoOk: boolean | null;
-  // Opcionais
+  /** Obrigatória: mínimo de MIN_DESCRICAO caracteres. */
   descricao: string;
-  capacidade: number;
-  disponivelDesde: boolean;
+  // Opcionais
   selo: boolean;
   video: boolean;
 }
@@ -72,6 +72,7 @@ export const OBRIGATORIOS_ROTULOS = [
   "Período mínimo definido",
   `Pelo menos ${MIN_FOTOS} fotos`,
   "Título do anúncio",
+  `Descrição com ${MIN_DESCRICAO}+ caracteres`,
   "Preço mensal",
   "Garantia aceita",
   "Documento do imóvel aprovado",
@@ -84,18 +85,22 @@ export function prontidaoAnuncio(f: FatosAnuncio): Prontidao {
     { key: "periodo", label: OBRIGATORIOS_ROTULOS[2], ok: f.periodoOk, etapa: 2 },
     { key: "fotos", label: OBRIGATORIOS_ROTULOS[3], ok: f.fotos >= MIN_FOTOS, etapa: 3, detalhe: f.fotos < MIN_FOTOS ? `tem ${f.fotos}` : undefined },
     { key: "titulo", label: OBRIGATORIOS_ROTULOS[4], ok: f.titulo.trim().length >= 3, etapa: 5 },
-    { key: "preco", label: OBRIGATORIOS_ROTULOS[5], ok: f.preco > 0, etapa: 5 },
-    { key: "garantia", label: OBRIGATORIOS_ROTULOS[6], ok: f.garantiaOk, etapa: 5 },
-    { key: "documento", label: OBRIGATORIOS_ROTULOS[7], ok: f.documento === "approved", etapa: 0, detalhe: f.documento === "approved" ? undefined : DOC_DETALHE[f.documento] },
+    {
+      key: "descricao",
+      label: OBRIGATORIOS_ROTULOS[5],
+      ok: f.descricao.trim().length >= MIN_DESCRICAO,
+      etapa: 5,
+      detalhe: f.descricao.trim().length < MIN_DESCRICAO ? `tem ${f.descricao.trim().length}` : undefined,
+    },
+    { key: "preco", label: OBRIGATORIOS_ROTULOS[6], ok: f.preco > 0, etapa: 5 },
+    { key: "garantia", label: OBRIGATORIOS_ROTULOS[7], ok: f.garantiaOk, etapa: 5 },
+    { key: "documento", label: OBRIGATORIOS_ROTULOS[8], ok: f.documento === "approved", etapa: 0, detalhe: f.documento === "approved" ? undefined : DOC_DETALHE[f.documento] },
   ];
   if (!f.sublocacaoOk) obrigatorios.push({ key: "sublocacao", label: "Autorização de sublocação", ok: false, etapa: 0 });
   if (f.limitePlanoOk === false) {
     obrigatorios.push({ key: "limite", label: "Vaga no seu plano", ok: false, etapa: 6, detalhe: "o plano já tem o máximo de anúncios publicados — pause um ou faça upgrade" });
   }
   const opcionais: ItemProntidao[] = [
-    { key: "descricao", label: "Descrição com 60+ caracteres", ok: f.descricao.trim().length >= 60, etapa: 5 },
-    { key: "capacidade", label: "Capacidade (pessoas)", ok: f.capacidade > 0, etapa: 2 },
-    { key: "disponibilidade", label: "Disponível a partir de", ok: f.disponivelDesde, etapa: 2 },
     { key: "selo", label: "Selo Pronto para Morar", ok: f.selo, etapa: 0 },
     { key: "video", label: "Vídeo do imóvel", ok: f.video, etapa: 3 },
   ];
@@ -123,8 +128,6 @@ export interface LinhaAnuncio {
   ownership_type: string | null;
   sublease_authorized: boolean | null;
   description: string | null;
-  max_guests: number | null;
-  available_from: string | null;
   ready_to_live_badge: boolean | null;
   video_url: string | null;
 }
@@ -142,8 +145,6 @@ export function fatosDaLinha(p: LinhaAnuncio, fotos: number, documento: StatusDo
     documento,
     limitePlanoOk,
     descricao: p.description ?? "",
-    capacidade: Number(p.max_guests) || 0,
-    disponivelDesde: !!p.available_from,
     selo: !!p.ready_to_live_badge,
     video: !!p.video_url,
   };

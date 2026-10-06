@@ -173,8 +173,6 @@ export default function NewPropertyPage() {
     // O limite do plano é conferido no servidor ao publicar.
     limitePlanoOk: null,
     descricao: description,
-    capacidade: Number(maxGuests) || 0,
-    disponivelDesde: !!availableFrom,
     selo: qual.baseBadge,
     video: !!videoUrl.trim(),
   });
