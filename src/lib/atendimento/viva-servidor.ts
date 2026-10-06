@@ -10,6 +10,7 @@ import { atenderViva, maisUrgente, type ChamarModelo, type Ferramentas, type Res
 import { contextoChamado, type FerramentaDef } from "@/lib/atendimento/viva-prompt";
 import { aceitaEsforco, aceitaReserva, cotacaoDolar, custoUsd, modeloViva } from "@/lib/atendimento/viva-custo";
 import { primeiroNome, RESPOSTA_PESSOA, ROTULO_APROVACAO } from "@/lib/atendimento/viva-regras";
+import { podeDevolverParaViva, sugerirRespostaMotor, transcricaoParaRascunho, type Sugestao } from "@/lib/atendimento/copiloto";
 import {
   avisarEquipe,
   avisarProprietarioManutencao,
@@ -446,4 +447,71 @@ export async function escalarParaPessoa(chamadoId: string, motivo: string, ator:
   await admin.from("chamado_eventos").insert({ chamado_id: c.id, ator_tipo: ator, ator_id: atorId ?? null, acao: ator === "usuario" ? "pediu_humano" : "escalado", para: "humano", detalhe: motivo });
   await avisarEquipe(c, ator === "usuario" ? "a pessoa pediu para falar com alguém" : motivo);
   return true;
+}
+
+// ── Copiloto da equipe ─────────────────────────────────────────────────────
+/**
+ * Rascunho da próxima resposta da EQUIPE (botão "Sugerir resposta"). Só lê:
+ * as ferramentas de ação nem chegam ao modelo. Não grava mensagem nenhuma —
+ * quem envia é a pessoa da equipe, depois de ver o texto e as fontes.
+ */
+export async function sugerirRascunho(chamadoId: string): Promise<Sugestao | null> {
+  if (!vivaAtiva()) return null;
+  const admin = createAdminClient();
+  if (!admin) return null;
+  const { data } = await admin.from("chamados").select(CAMPOS).eq("id", chamadoId).maybeSingle();
+  const c = data as ChamadoViva | null;
+  if (!c) return null;
+  const { data: msgs } = await admin.from("chamado_mensagens").select("autor, corpo, interno").eq("chamado_id", c.id).order("criado_em", { ascending: true });
+  const agora = new Date();
+  let nome: string | null = primeiroNome(c.visitante_nome);
+  let papel: string | null = null;
+  let temContratoAtivo = false;
+  if (c.usuario_id) {
+    const [{ data: perfil }, { count }] = await Promise.all([
+      admin.from("profiles").select("full_name, role").eq("id", c.usuario_id).maybeSingle(),
+      admin.from("contratos").select("id", { count: "exact", head: true }).eq("tenant_id", c.usuario_id).in("status", ["ativo", "encerrado_em_acerto"]),
+    ]);
+    nome = primeiroNome(perfil?.full_name as string | null);
+    papel = ({ owner: "proprietário", tenant: "inquilino", admin: "equipe" } as Record<string, string>)[perfil?.role as string] ?? null;
+    temContratoAtivo = (count ?? 0) > 0;
+  }
+  const contexto = contextoChamado({
+    numero: c.numero_publico,
+    categoria: c.categoria,
+    canal: c.canal,
+    nome,
+    logado: !!c.usuario_id,
+    papel,
+    contexto: { tipo: c.contexto_tipo, id: c.contexto_id },
+    temContratoAtivo,
+    agoraBR: agora.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "long", dateStyle: "short", timeStyle: "short" } as Intl.DateTimeFormatOptions),
+  });
+  const conversa = transcricaoParaRascunho(contexto, (msgs ?? []) as { autor: "usuario" | "ia" | "admin" | "sistema"; corpo: string; interno: boolean }[]);
+  return sugerirRespostaMotor(conversa, chamarClaude(), ferramentasReais(admin, c, agora));
+}
+
+/**
+ * "Devolver para a Viva" (só P3/P4). Se a última palavra é da pessoa, quem
+ * chama roda a Viva logo depois (after); senão, ela responde na próxima mensagem.
+ */
+export async function devolverChamadoParaViva(chamadoId: string, adminId: string): Promise<{ ok: true; respondeAgora: boolean } | { ok: false; error: string }> {
+  if (!vivaAtiva()) return { ok: false, error: "A Viva está desligada (ATENDIMENTO_IA_ATIVO)." };
+  const admin = createAdminClient();
+  if (!admin) return { ok: false, error: "Indisponível." };
+  const { data } = await admin.from("chamados").select(CAMPOS).eq("id", chamadoId).maybeSingle();
+  const c = data as ChamadoViva | null;
+  if (!c) return { ok: false, error: "Chamado não encontrado." };
+  const pode = podeDevolverParaViva(c.prioridade, c.status);
+  if (!pode.ok) return { ok: false, error: pode.motivo ?? "Não pode voltar para a Viva." };
+  const { data: msgs } = await admin.from("chamado_mensagens").select("autor").eq("chamado_id", c.id).eq("interno", false).order("criado_em", { ascending: true });
+  const autores = ((msgs ?? []) as { autor: string }[]).map((m) => m.autor);
+  const ultimaPessoa = autores.lastIndexOf("usuario");
+  const respondeAgora = ultimaPessoa >= 0 && !autores.slice(ultimaPessoa + 1).some((a) => a === "ia" || a === "admin");
+  await admin
+    .from("chamados")
+    .update({ responsavel_tipo: "ia", status: respondeAgora ? "em_andamento" : "aguardando_usuario", sla_estado: "ok", atualizado_em: new Date().toISOString() })
+    .eq("id", c.id);
+  await admin.from("chamado_eventos").insert({ chamado_id: c.id, ator_tipo: "admin", ator_id: adminId, acao: "devolvido_ia", de: "humano", para: "ia", detalhe: respondeAgora ? "a Viva responde agora" : "a Viva responde na próxima mensagem" });
+  return { ok: true, respondeAgora };
 }

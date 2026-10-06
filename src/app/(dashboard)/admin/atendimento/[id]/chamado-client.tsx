@@ -3,13 +3,15 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Clock, Lock, Pencil, Send, ThumbsUp } from "lucide-react";
+import { ArrowLeft, Bot, Clock, Lock, Pencil, Send, ThumbsUp } from "lucide-react";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { cn, dataBR } from "@/lib/utils";
 import { PRAZOS, type Prioridade } from "@/config/atendimento";
 import { primeiroNome } from "@/lib/display-name";
-import { alterarChamado, avaliarRespostaIA, responderComoAdmin, type chamadoAdmin, type Macro } from "@/lib/data/atendimento-actions";
+import { alterarChamado, avaliarRespostaIA, devolverParaViva, responderComoAdmin, type chamadoAdmin, type Macro } from "@/lib/data/atendimento-actions";
+import { mascararEmail, podeDevolverParaViva } from "@/lib/atendimento/copiloto-regras";
+import { BotaoSugerir, FontesDaSugestao, QuemEAPessoa, type SugestaoVista } from "./copiloto";
 import { relogio } from "../atendimento-client";
 import { EXPLICA_AGUARDANDO_APROVACAO } from "@/lib/atendimento/dono";
 
@@ -23,6 +25,14 @@ const STATUS: Record<string, string> = {
   resolvido: "Resolvido",
   encerrado: "Encerrado",
 };
+/** Rótulos do histórico para as ações do copiloto. */
+const ACAO: Record<string, string> = {
+  consulta_pessoa: "consultou Quem é a pessoa",
+  sugestao_ia: "pediu sugestão da Viva",
+  devolvido_ia: "devolveu para a Viva",
+  mensagem: "mensagem da pessoa",
+};
+
 /** Da nota da Viva, "Usar como resposta" pega só a resposta sugerida. */
 function respostaDaNota(corpo: string): string {
   const i = corpo.indexOf("Resposta sugerida:\n");
@@ -33,8 +43,11 @@ const fmt = (iso: string) => new Date(iso).toLocaleString("pt-BR", { timeZone: "
 
 export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; macros: Macro[]; agoraISO: string }) {
   const router = useRouter();
-  const { chamado: c, mensagens, eventos, pessoa, contextoLink } = dados;
+  const { chamado: c, mensagens, eventos, pessoa, contextoLink, iaAtiva } = dados;
   const [texto, setTexto] = useState("");
+  // Rascunho da Viva: só envia depois de conferir as fontes.
+  const [sugestao, setSugestao] = useState<SugestaoVista | null>(null);
+  const devolver = podeDevolverParaViva(c.prioridade, c.status);
   const [interno, setInterno] = useState(false);
   const [ocupado, setOcupado] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -154,6 +167,18 @@ export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; 
                   </select>
                 </label>
               )}
+              <div className="mb-2">
+                <BotaoSugerir
+                  chamadoId={c.id}
+                  disponivel={iaAtiva}
+                  onSugestao={(t, sv) => {
+                    setTexto(t);
+                    setInterno(false);
+                    setSugestao(sv);
+                  }}
+                />
+              </div>
+              {sugestao && <FontesDaSugestao s={sugestao} onConferir={(v) => setSugestao({ ...sugestao, conferida: v })} />}
               <textarea
                 rows={5}
                 maxLength={5000}
@@ -166,11 +191,15 @@ export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; 
                 <input type="checkbox" checked={interno} onChange={(e) => setInterno(e.target.checked)} /> Nota interna (a pessoa não vê)
               </label>
               {erro && <p className="mt-2 text-sm text-red-700">{erro}</p>}
+              {sugestao && !sugestao.conferida && !interno && <p className="mt-2 text-xs text-amber-800">Marque &ldquo;Conferi as fontes e o texto&rdquo; para enviar o rascunho da Viva.</p>}
               <Button
                 className="mt-3"
-                disabled={ocupado || !texto.trim()}
+                disabled={ocupado || !texto.trim() || (!!sugestao && !sugestao.conferida && !interno)}
                 onClick={async () => {
-                  if (await agir(() => responderComoAdmin(c.id, texto, interno))) setTexto("");
+                  if (await agir(() => responderComoAdmin(c.id, texto, interno))) {
+                    setTexto("");
+                    setSugestao(null);
+                  }
                 }}
               >
                 <Send className="h-4 w-4" /> {interno ? "Salvar nota" : "Enviar resposta (e-mail à pessoa)"}
@@ -200,7 +229,7 @@ export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; 
             ) : (
               <p className="text-sm text-ink">
                 Visitante (sem conta)
-                <span className="block text-xs text-muted">{c.visitante_email}</span>
+                <span className="block text-xs text-muted">{mascararEmail(c.visitante_email)}</span>
               </p>
             )}
             {c.contexto_tipo && (
@@ -214,6 +243,9 @@ export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; 
                 ) : null}
               </p>
             )}
+          </Panel>
+          <Panel title="Quem é a pessoa">
+            <QuemEAPessoa chamadoId={c.id} />
           </Panel>
           <Panel title="Ações">
             <label className="block text-xs text-muted">
@@ -235,6 +267,12 @@ export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; 
               <Button variant="outline" disabled={ocupado} onClick={() => agir(() => alterarChamado(c.id, { atribuirAMim: true }))}>
                 Atribuir a mim
               </Button>
+              {/* Só P3/P4 voltam para a Viva; P1/P2 ficam sempre com a equipe. */}
+              {devolver.ok && c.responsavel_tipo === "humano" && (
+                <Button variant="outline" disabled={ocupado || !iaAtiva} title={iaAtiva ? undefined : "A Viva está desligada"} onClick={() => agir(() => devolverParaViva(c.id))}>
+                  <Bot className="h-4 w-4" /> Devolver para a Viva
+                </Button>
+              )}
               {c.status !== "aguardando_aprovacao" && c.status !== "encerrado" && (
                 <Button variant="outline" disabled={ocupado} onClick={() => agir(() => alterarChamado(c.id, { status: "aguardando_aprovacao" }))}>
                   Mandar para aprovação interna
@@ -260,7 +298,7 @@ export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; 
             <ul className="space-y-1 text-xs text-muted">
               {eventos.map((e, i) => (
                 <li key={i}>
-                  {fmt(e.criado_em)} · {e.ator_tipo}: {e.acao}
+                  {fmt(e.criado_em)} · {e.ator_nome ?? e.ator_tipo}: {ACAO[e.acao] ?? e.acao}
                   {e.de || e.para ? ` (${e.de ?? "—"} → ${e.para ?? "—"})` : ""}
                   {e.detalhe ? ` · ${e.detalhe}` : ""}
                 </li>

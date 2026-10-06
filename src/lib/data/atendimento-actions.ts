@@ -21,7 +21,9 @@ import {
 import { avisoEmergencia, categoria, classificar, ehNumeroPublico, numeroEmergencia } from "@/lib/atendimento/classificar";
 import { avisarEquipe, avisarProprietarioManutencao, avisarUsuario, criarOrdemManutencao, pessoaValida, registrarMensagemDaPessoa, type ChamadoResumo, type OrdemCriada } from "@/lib/atendimento/servidor";
 import { chamadoDoDono, type ClienteChamados } from "@/lib/atendimento/dono";
-import { escalarParaPessoa, rodarViva, vivaAtiva, chamarClaude } from "@/lib/atendimento/viva-servidor";
+import { escalarParaPessoa, rodarViva, vivaAtiva, chamarClaude, sugerirRascunho, devolverChamadoParaViva } from "@/lib/atendimento/viva-servidor";
+import { contarPorStatus, ehContaNova, mascararEmail, papelLegivel, rotuloFerramenta, type PessoaResumo } from "@/lib/atendimento/copiloto";
+import { prontidaoDosImoveis } from "@/lib/anuncio/prontidao-servidor";
 import { atenderViva } from "@/lib/atendimento/viva-motor";
 import { CENARIOS, entradaDoCenario, falhasDoCenario, ferramentasDeTeste } from "@/lib/atendimento/viva-cenarios";
 import { cotacaoDolar, custoUsd, modeloViva, PRECOS_USD } from "@/lib/atendimento/viva-custo";
@@ -467,9 +469,11 @@ export async function filaAtendimento(f: FiltrosFila = {}): Promise<ChamadoAdmin
 export async function chamadoAdmin(id: string): Promise<{
   chamado: ChamadoAdmin;
   mensagens: MensagemChamado[];
-  eventos: { acao: string; de: string | null; para: string | null; detalhe: string | null; ator_tipo: string; criado_em: string }[];
+  eventos: { acao: string; de: string | null; para: string | null; detalhe: string | null; ator_tipo: string; ator_nome: string | null; criado_em: string }[];
   pessoa: { nome: string | null; papel: string | null; criado_em: string | null } | null;
   contextoLink: string | null;
+  /** A Viva está ligada (Sugerir resposta / Devolver para a Viva). */
+  iaAtiva: boolean;
 } | null> {
   const ctx = await exigirAdmin();
   if (!ctx || !UUID_RE.test(id)) return null;
@@ -477,7 +481,7 @@ export async function chamadoAdmin(id: string): Promise<{
   if (!c) return null;
   const [{ data: m }, { data: e }, pessoa] = await Promise.all([
     ctx.admin.from("chamado_mensagens").select("id, autor, corpo, interno, criado_em").eq("chamado_id", id).order("criado_em"),
-    ctx.admin.from("chamado_eventos").select("acao, de, para, detalhe, ator_tipo, criado_em").eq("chamado_id", id).order("criado_em"),
+    ctx.admin.from("chamado_eventos").select("acao, de, para, detalhe, ator_tipo, ator_id, criado_em").eq("chamado_id", id).order("criado_em"),
     c.usuario_id
       ? ctx.admin.from("profiles").select("full_name, role, created_at").eq("id", c.usuario_id).maybeSingle()
       : Promise.resolve({ data: null }),
@@ -492,10 +496,17 @@ export async function chamadoAdmin(id: string): Promise<{
           ? null
           : null;
   const p = (pessoa as { data: { full_name?: string; role?: string; created_at?: string } | null }).data;
+  // Quem fez cada ação da equipe (ex.: quem consultou "Quem é a pessoa").
+  type EventoBruto = { acao: string; de: string | null; para: string | null; detalhe: string | null; ator_tipo: string; ator_id: string | null; criado_em: string };
+  const brutos = (e ?? []) as EventoBruto[];
+  const idsEquipe = [...new Set(brutos.filter((x) => x.ator_tipo === "admin" && x.ator_id).map((x) => x.ator_id as string))];
+  const { data: equipe } = idsEquipe.length ? await ctx.admin.from("profiles").select("id, full_name").in("id", idsEquipe) : { data: [] };
+  const nomeEquipe = new Map((equipe ?? []).map((x) => [x.id as string, (x.full_name as string) ?? null]));
   return {
     chamado: ch,
     mensagens: (m ?? []) as MensagemChamado[],
-    eventos: (e ?? []) as { acao: string; de: string | null; para: string | null; detalhe: string | null; ator_tipo: string; criado_em: string }[],
+    eventos: brutos.map(({ ator_id, ...x }) => ({ ...x, ator_nome: ator_id ? nomeEquipe.get(ator_id) ?? null : null })),
+    iaAtiva: vivaAtiva(),
     pessoa: p ? { nome: p.full_name ?? null, papel: p.role ?? null, criado_em: p.created_at ?? null } : null,
     contextoLink,
   };
@@ -700,4 +711,107 @@ export async function metricasAtendimento(dias = 30): Promise<Record<string, unk
       .slice(0, 10)
       .map((e) => ({ numero: (e.chamados as unknown as { numero_publico?: string })?.numero_publico ?? "", texto: e.detalhe as string, em: e.criado_em as string })),
   };
+}
+
+// ═══════════════════════════ COPILOTO DA EQUIPE ══════════════════════════════
+
+/**
+ * "Quem é a pessoa": o mínimo para resolver o chamado (LGPD). Sem CPF, sem
+ * telefone, e-mail mascarado. CADA consulta fica no histórico do chamado
+ * (quem viu, quando).
+ */
+export async function quemEAPessoa(chamadoId: string): Promise<Res<{ pessoa: PessoaResumo }>> {
+  const ctx = await exigirAdmin();
+  if (!ctx || !UUID_RE.test(chamadoId)) return { ok: false, error: "Sem acesso." };
+  const { admin } = ctx;
+  const { data: c } = await admin.from("chamados").select("id, usuario_id, visitante_email, visitante_nome").eq("id", chamadoId).maybeSingle();
+  if (!c) return { ok: false, error: "Chamado não encontrado." };
+  await admin.from("chamado_eventos").insert({ chamado_id: c.id, ator_tipo: "admin", ator_id: ctx.userId, acao: "consulta_pessoa", detalhe: "painel Quem é a pessoa" });
+
+  if (!c.usuario_id) {
+    return {
+      ok: true,
+      pessoa: { tipo: "visitante", nome: (c.visitante_nome as string) ?? null, emailMascarado: mascararEmail(c.visitante_email as string), papel: null, contaDesde: null, contaNova: false, anuncios: [], contratos: [], pedidos: [], chamadosAnteriores: [] },
+    };
+  }
+  const uid = c.usuario_id as string;
+  const camposContrato = "id, status, properties!inner(title, owner_id), contrato_blocos(inicio, fim)";
+  const [{ data: perfil }, { data: props }, { data: comoInquilino }, { data: comoDono }, { data: pedidos }, { data: anteriores }] = await Promise.all([
+    admin.from("profiles").select("full_name, email, role, created_at").eq("id", uid).maybeSingle(),
+    admin.from("properties").select("id, title, status").eq("owner_id", uid).order("created_at", { ascending: false }).limit(10),
+    admin.from("contratos").select(camposContrato).eq("tenant_id", uid).order("created_at", { ascending: false }).limit(5),
+    admin.from("contratos").select(camposContrato).eq("properties.owner_id", uid).order("created_at", { ascending: false }).limit(5),
+    admin.from("pedidos_moradia").select("status").eq("inquilino_id", uid).limit(50),
+    admin.from("chamados").select("numero_publico, assunto, status, criado_em").eq("usuario_id", uid).neq("id", c.id).eq("simulacao", false).order("criado_em", { ascending: false }).limit(5),
+  ]);
+  const prontidao = props?.length ? await prontidaoDosImoveis(admin, uid, props.map((p) => p.id as string)) : new Map();
+  type LinhaContrato = { status: string; properties: { title?: string } | null; contrato_blocos: { inicio: string | null; fim: string | null }[] | null };
+  const contrato = (k: LinhaContrato, papel: "inquilino" | "proprietário") => {
+    const blocos = (k.contrato_blocos ?? []).filter((b) => b.inicio || b.fim);
+    return {
+      imovel: k.properties?.title ?? "Imóvel",
+      papel,
+      status: k.status,
+      inicio: blocos.map((b) => b.inicio).filter(Boolean).sort()[0] ?? null,
+      fim: blocos.map((b) => b.fim).filter(Boolean).sort().at(-1) ?? null,
+    };
+  };
+  return {
+    ok: true,
+    pessoa: {
+      tipo: "conta",
+      nome: (perfil?.full_name as string) ?? null,
+      emailMascarado: mascararEmail(perfil?.email as string),
+      papel: papelLegivel(perfil?.role as string),
+      contaDesde: (perfil?.created_at as string) ?? null,
+      contaNova: ehContaNova(perfil?.created_at as string),
+      anuncios: (props ?? []).map((p) => {
+        const pr = prontidao.get(p.id as string);
+        return { titulo: (p.title as string) || "Sem título", status: p.status as string, podePublicar: !!pr?.podePublicar, faltam: pr?.faltam ?? [] };
+      }),
+      contratos: [
+        ...((comoInquilino ?? []) as unknown as LinhaContrato[]).map((k) => contrato(k, "inquilino")),
+        ...((comoDono ?? []) as unknown as LinhaContrato[]).map((k) => contrato(k, "proprietário")),
+      ],
+      pedidos: contarPorStatus((pedidos ?? []) as { status: string }[]),
+      chamadosAnteriores: (anteriores ?? []).map((k) => ({ numero: k.numero_publico as string, assunto: k.assunto as string, status: k.status as string, criadoEm: k.criado_em as string })),
+    },
+  };
+}
+
+/**
+ * "Sugerir resposta": rascunho da Viva + as fontes que ela consultou. NADA é
+ * enviado aqui — o texto vai para a caixa de resposta e a equipe envia depois
+ * de ler. A sugestão fica registrada no histórico (com as fontes).
+ */
+export async function sugerirResposta(
+  chamadoId: string
+): Promise<Res<{ texto: string; fontes: { rotulo: string; resumo: string; erro: boolean }[]; aviso: string | null; custo: string | null }>> {
+  const ctx = await exigirAdmin();
+  if (!ctx || !UUID_RE.test(chamadoId)) return { ok: false, error: "Sem acesso." };
+  if (!vivaAtiva()) return { ok: false, error: "A Viva está desligada (ATENDIMENTO_IA_ATIVO e ANTHROPIC_API_KEY)." };
+  if ((await situacaoLimite(`copiloto:${ctx.userId}`, 60, HORA)) === "estourou") return { ok: false, error: "Muitas sugestões em pouco tempo. Aguarde um pouco." };
+  const s = await sugerirRascunho(chamadoId);
+  if (!s) return { ok: false, error: "Chamado não encontrado." };
+  const fontes = s.fontes.map((f) => ({ rotulo: rotuloFerramenta(f.ferramenta), resumo: f.resumo, erro: f.erro }));
+  const usd = custoUsd(modeloViva(), s.uso);
+  await ctx.admin.from("chamado_eventos").insert({
+    chamado_id: chamadoId,
+    ator_tipo: "admin",
+    ator_id: ctx.userId,
+    acao: "sugestao_ia",
+    detalhe: `fontes: ${fontes.length ? fontes.map((f) => f.rotulo).join(", ") : "só as fontes oficiais"}${s.aviso ? ` · ${s.aviso}` : ""}`.slice(0, 300),
+  });
+  if (!s.ok) return { ok: false, error: s.aviso ?? "A Viva não conseguiu sugerir agora." };
+  return { ok: true, texto: s.texto, fontes, aviso: s.aviso, custo: usd === null ? null : `R$ ${(usd * cotacaoDolar()).toFixed(3).replace(".", ",")}` };
+}
+
+/** "Devolver para a Viva" — só P3/P4 (P1/P2 nunca voltam para a IA). */
+export async function devolverParaViva(chamadoId: string): Promise<Res> {
+  const ctx = await exigirAdmin();
+  if (!ctx || !UUID_RE.test(chamadoId)) return { ok: false, error: "Sem acesso." };
+  const r = await devolverChamadoParaViva(chamadoId, ctx.userId);
+  if (!r.ok) return r;
+  if (r.respondeAgora) after(() => rodarViva(chamadoId));
+  return { ok: true };
 }
