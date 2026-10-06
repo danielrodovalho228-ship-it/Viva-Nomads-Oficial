@@ -6,8 +6,8 @@ import { AlertTriangle, ArrowLeft, ChevronDown, LifeBuoy, MessageSquare, Search,
 import { Button } from "@/components/ui/button";
 import { cn, dataBR } from "@/lib/utils";
 import { useAuthStore } from "@/lib/store";
-import { FAQ, buscarFaq } from "@/lib/atendimento/faq";
-import { AVISO_EMERGENCIA, CATEGORIAS, detectarEmergencia } from "@/lib/atendimento/classificar";
+import { FAQ, buscarFaq, respostaPara, type PerfilAjuda } from "@/lib/atendimento/faq";
+import { avisoEmergencia, CATEGORIAS, detectarEmergencia } from "@/lib/atendimento/classificar";
 import { HORARIO_HUMANO } from "@/config/atendimento";
 import {
   abrirChamado,
@@ -46,6 +46,12 @@ export function CentralAjuda({ canal }: { canal: "site" | "app" }) {
   const [contexto, setContexto] = useState<{ tipo: string; id: string } | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   const [lista, setLista] = useState<ChamadoLista[] | null>(null);
+  const [contratos, setContratos] = useState<{ id: string; titulo: string }[]>([]);
+  const perfil: PerfilAjuda = !user ? "visitante" : contratos.length > 0 ? "com_contrato" : "sem_contrato";
+
+  useEffect(() => {
+    if (user) meusContratosAtivos().then(setContratos).catch(() => setContratos([]));
+  }, [user]);
 
   const recarregar = useCallback(() => {
     if (user) meusChamados().then(setLista).catch(() => setLista([]));
@@ -98,6 +104,7 @@ export function CentralAjuda({ canal }: { canal: "site" | "app" }) {
           canal={canal}
           contexto={contexto}
           logado={!!user}
+          contratos={contratos}
           onCancelar={() => {
             setContexto(null);
             setAba("inicio");
@@ -114,7 +121,7 @@ export function CentralAjuda({ canal }: { canal: "site" | "app" }) {
         />
       ) : (
         <>
-          <Perguntas />
+          <Perguntas perfil={perfil} />
           <section className="mt-6 rounded-2xl border border-sage-200 bg-white p-4 sm:p-6">
             <h2 className="font-title text-lg font-bold text-ink">Não achou a resposta?</h2>
             <p className="mt-1 text-sm text-muted">
@@ -164,7 +171,7 @@ export function CentralAjuda({ canal }: { canal: "site" | "app" }) {
   );
 }
 
-function Perguntas() {
+function Perguntas({ perfil }: { perfil: PerfilAjuda }) {
   const [q, setQ] = useState("");
   const [aberta, setAberta] = useState<string | null>(null);
   const resultado = useMemo(() => buscarFaq(q), [q]);
@@ -196,7 +203,7 @@ function Perguntas() {
                 {p.pergunta}
                 <ChevronDown className={cn("h-4 w-4 shrink-0 text-muted transition-transform", aberta === p.id && "rotate-180")} />
               </button>
-              {aberta === p.id && <p className="pb-3 text-sm leading-relaxed text-muted">{p.resposta}</p>}
+              {aberta === p.id && <p className="pb-3 text-sm leading-relaxed text-muted">{respostaPara(p, perfil)}</p>}
             </li>
           ))}
         </ul>
@@ -210,12 +217,14 @@ function NovoChamado({
   canal,
   contexto,
   logado,
+  contratos,
   onCancelar,
   onAberto,
 }: {
   canal: "site" | "app";
   contexto: { tipo: string; id: string } | null;
   logado: boolean;
+  contratos: { id: string; titulo: string }[];
   onCancelar: () => void;
   onAberto: (numero: string) => void;
 }) {
@@ -223,17 +232,11 @@ function NovoChamado({
   const [mensagem, setMensagem] = useState("");
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
-  const [contratos, setContratos] = useState<{ id: string; titulo: string }[]>([]);
   const [contratoId, setContratoId] = useState<string>(contexto?.tipo === "contrato" ? contexto.id : "");
   const [urgencia, setUrgencia] = useState<"urgente" | "media" | "baixa">("media");
   const [catManut, setCatManut] = useState("outros");
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
-  const emergencia = detectarEmergencia(mensagem);
-
-  useEffect(() => {
-    if (logado) meusContratosAtivos().then(setContratos).catch(() => setContratos([]));
-  }, [logado]);
 
   const categorias = CATEGORIAS.filter((c) => !c.exigeContrato || contratos.length > 0);
   const manutencao = cat === "manutencao";
@@ -271,11 +274,7 @@ function NovoChamado({
       <h2 className="font-title text-lg font-bold text-ink">Abrir chamado</h2>
       {contexto && <p className="mt-1 text-sm text-muted">Sobre {CONTEXTO_ROTULO[contexto.tipo]} — a equipe já recebe o link.</p>}
 
-      {emergencia && (
-        <p role="alert" className="mt-4 flex items-start gap-2 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" /> {AVISO_EMERGENCIA}
-        </p>
-      )}
+      <AvisoEmergencia texto={mensagem} />
 
       <div className="mt-4 grid gap-4">
         <label className="block text-sm">
@@ -370,6 +369,17 @@ function NovoChamado({
   );
 }
 
+/** 193 ou 190 antes de tudo, enquanto a pessoa ainda está digitando. */
+function AvisoEmergencia({ texto }: { texto: string }) {
+  const emergencia = detectarEmergencia(texto);
+  if (!emergencia) return null;
+  return (
+    <p role="alert" className="mt-4 flex items-start gap-2 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">
+      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" /> {avisoEmergencia(emergencia)}
+    </p>
+  );
+}
+
 function DetalheChamado({ numero, onVoltar }: { numero: string; onVoltar: () => void }) {
   const [dados, setDados] = useState<Awaited<ReturnType<typeof meuChamado>> | undefined>(undefined);
   const [texto, setTexto] = useState("");
@@ -442,6 +452,7 @@ function DetalheChamado({ numero, onVoltar }: { numero: string; onVoltar: () => 
                   className="w-full rounded-xl border border-line bg-white px-3 py-2.5 text-sm text-ink focus:border-forest focus:outline-none"
                 />
               </label>
+              <AvisoEmergencia texto={texto} />
               {erro && <p className="mt-2 text-sm text-red-700">{erro}</p>}
               <Button type="submit" className="mt-3" disabled={enviando}>
                 <Send className="h-4 w-4" /> {enviando ? "Enviando…" : "Enviar"}
