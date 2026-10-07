@@ -14,6 +14,20 @@ import {
   type Conversa,
 } from "./central.ts";
 import { montarMensagens, responderChat, responderReuniao, type Deps } from "./motor.ts";
+import { retratoEmTexto, type Retrato } from "./retrato.ts";
+
+const RETRATO: Retrato = {
+  em: "2026-10-07T11:15:00Z",
+  cadastros: { proprietarios: 5, inquilinos: 3, admins: 1, total: 9, pareceTeste: 9 },
+  imoveis: { total: 3, publicados: 2 },
+  pedidos: { total: 0, ultimas24h: 0 },
+  leads: { total: 0, ultimas24h: 0 },
+  contratosPorStatus: {},
+  chamadosAbertosPorPrioridade: { p2: 1 },
+  rondas: [],
+  ordensPendentes: [],
+  agentes: [{ nome: "Bruno", status: "ativo", rotina_texto: "Todo dia 02:52 Brasília" }],
+};
 
 const ag = (slug: string, nome: string, extra: Partial<Agente> = {}): Agente => ({
   slug,
@@ -39,6 +53,7 @@ function fake(over: Partial<Deps> = {}) {
     rondas: async () => [],
     ordensAbertas: async () => [],
     historico: async () => [],
+    retrato: async () => RETRATO,
     gravar: async (l) => void gravadas.push(...l),
     modelo: async (p) => {
       chamadas.push(p);
@@ -169,4 +184,38 @@ test("API reunião: JSON inválido → fallback amigável (200), sem ata", async
 test("API reunião: precisa de alguém além do Moacir", async () => {
   const { d } = fake();
   assert.equal((await responderReuniao(d, { pauta: "x", participantes: [] })).status, 400);
+});
+
+test("retrato: 'temos algum cliente?' — contagens reais, hora da consulta, sem dado pessoal", () => {
+  const t = retratoEmTexto(RETRATO);
+  assert.match(t, /dados de 07\/10 08:15/); // 11:15 UTC = 08:15 em Brasília
+  assert.match(t, /Cadastros: 9 \(proprietários 5, inquilinos 3, admins 1\); destes, 9 parecem contas de teste/);
+  assert.match(t, /Imóveis: 3 \(publicados 2\)/);
+  assert.match(t, /Pedidos de moradia: 0/);
+  assert.match(t, /Contratos por status: nenhum/);
+  assert.match(t, /Chamados abertos por prioridade: p2: 1/);
+  assert.doesNotMatch(t, /@/, "nenhum e-mail no retrato");
+});
+
+test("retrato: 'o que rodou de madrugada?' — lista as rondas da tabela, ou diz que não há", () => {
+  assert.match(retratoEmTexto(RETRATO), /nenhuma ronda registrada na Central ainda/);
+  const com = retratoEmTexto({ ...RETRATO, rondas: [{ agente: "Bruno", status: "ok", em: "2026-10-07T05:53:00Z", resumo: "Varredura sem achados." }] });
+  assert.match(com, /07\/10 02:53 — Bruno \(ok\): Varredura sem achados\./);
+  assert.match(com, /Próxima ronda de cada agente ativo: Bruno: amanhã 02:52 Brasília/);
+  assert.match(retratoEmTexto(null), /indisponível/);
+});
+
+test("retrato entra no prompt do chat e da reunião, com a regra de citar a hora", async () => {
+  const { d, chamadas } = fake();
+  await responderChat(d, { slug: "bruno", texto: "Temos algum cliente?" });
+  await responderReuniao(d, { pauta: "Clientes", participantes: ["bruno"] });
+  for (const c of chamadas) {
+    assert.match(c.system, /RETRATO DO MOMENTO \(dados de/);
+    assert.match(c.system, /cite "dados de <hora>"/);
+    assert.match(c.system, /não está no retrato/);
+  }
+  // Falha na consulta não derruba o chat: o prompt diz que o retrato está indisponível.
+  const sem = fake({ retrato: async () => { throw new Error("x"); } });
+  assert.equal((await responderChat(sem.d, { slug: "bruno", texto: "oi" })).status, 200);
+  assert.match(sem.chamadas[0].system, /indisponível/);
 });

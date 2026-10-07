@@ -199,6 +199,10 @@ export function avisoOrdem(a: Pick<Agente, "nome" | "rotina_texto">, agora: Date
 }
 
 // ── Prompt ─────────────────────────────────────────────────────────────────
+/** Regra de uso do retrato (fica aqui para não criar import circular). */
+export const REGRA_RETRATO = `- Para números da empresa, use SÓ o RETRATO DO MOMENTO e cite "dados de <hora>". Se a pergunta pede algo que não está no retrato, diga claramente que não está no retrato.
+- "Cliente" = cadastro que não parece conta de teste. Se todos parecem teste, diga que ainda não há clientes reais, com os números.`;
+
 export const CONTEXTO_VIVA = `Viva Nomads é uma plataforma brasileira de locação de imóveis mobiliados por temporada, de 30 a 180 dias, que liga proprietários e inquilinos com contrato com validade jurídica, conversa registrada na plataforma e Caução como garantia. O dono é o Daniel. Você faz parte da equipe de agentes que cuida da operação; o Moacir é o gerente geral.`;
 
 export const REGRAS = `Regras:
@@ -206,7 +210,7 @@ export const REGRAS = `Regras:
 - Diga "imóveis mobiliados" (nunca "apartamentos") e "Caução" para a garantia.
 - Nunca invente números, datas ou status. Use só o que está neste contexto.
 - Se não tiver certeza, diga que vai conferir na próxima ronda.
-- Você não tem ferramentas nem acesso ao banco nesta conversa; não prometa ações que não pode fazer agora.
+- Você não tem ferramentas nem acesso livre ao banco nesta conversa: só o retrato abaixo. Não prometa ações que não pode fazer agora.
 - Não peça nem repita dados pessoais de clientes.`;
 
 function blocoRondas(rondas: Pick<Ronda, "iniciada_em" | "status" | "resumo" | "achados">[]): string {
@@ -227,7 +231,7 @@ function blocoOrdens(ordens: Pick<Ordem, "texto" | "status" | "criada_em">[]): s
   return ordens.map((o) => `• (${o.status}) ${o.texto.slice(0, 600)}`).join("\n");
 }
 
-export function systemChat(a: Agente, rondas: Ronda[], ordens: Ordem[]): string {
+export function systemChat(a: Agente, rondas: Ronda[], ordens: Ordem[], retrato = ""): string {
   return `${CONTEXTO_VIVA}
 
 Você é ${a.nome}, ${a.cargo}. ${a.briefing}
@@ -238,8 +242,8 @@ ${blocoRondas(rondas.slice(0, 3))}
 
 Ordens do Daniel ainda abertas para você:
 ${blocoOrdens(ordens)}
-
-${REGRAS}`;
+${retrato ? `\n${retrato}\n` : ""}
+${REGRAS}${retrato ? `\n${REGRA_RETRATO}` : ""}`;
 }
 
 export interface Participante {
@@ -247,7 +251,7 @@ export interface Participante {
   rondas: Ronda[];
 }
 
-export function systemReuniao(ps: Participante[]): string {
+export function systemReuniao(ps: Participante[], retrato = ""): string {
   const blocos = ps
     .map((p) => `## ${p.agente.nome} (slug: ${p.agente.slug}) — ${p.agente.cargo}\n${p.agente.briefing}\nÚltimas rondas:\n${blocoRondas(p.rondas.slice(0, 3))}`)
     .join("\n\n");
@@ -257,8 +261,8 @@ Simule uma reunião curta da equipe sobre a pauta do Daniel. Cada participante f
 
 Participantes:
 ${blocos}
-
-${REGRAS}
+${retrato ? `\n${retrato}\n` : ""}
+${REGRAS}${retrato ? `\n${REGRA_RETRATO}` : ""}
 - Responda SÓ com JSON no formato {"falas":[{"slug":"...","texto":"..."}],"consolidado":{"texto":"...","passos":[{"dono":"slug","acao":"..."}]}}.`;
 }
 
