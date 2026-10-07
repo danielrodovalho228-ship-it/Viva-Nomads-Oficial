@@ -55,6 +55,16 @@ test("seed do laboratório: só 127.0.0.1/localhost, senha da noite, e-mails .te
   assert.ok(emails.every((e) => e.endsWith("@lab.vivanomads.test")), emails.join(", "));
 });
 
+test("seed do laboratório: a limpeza das personas só roda depois da trava de banco local", () => {
+  const seed = raiz("scripts/lab/seed-lab.mjs");
+  const trava = seed.indexOf("process.exit(1)");
+  const chamada = seed.indexOf("await limparPersonas()");
+  assert.ok(trava > 0 && chamada > trava, "limparPersonas() precisa vir depois da recusa de host não local");
+  // Só apaga e-mails do domínio reservado do laboratório.
+  assert.match(seed, /u\.email\.endsWith\("@lab\.vivanomads\.test"\)/);
+  assert.match(seed, /emails\.has\(u\.email\)/);
+});
+
 test("workflow do laboratório: sem segredos, banco local, modo simulado", () => {
   const wf = raiz(".github/workflows/laboratorio.yml");
   assert.doesNotMatch(wf, /secrets\./);

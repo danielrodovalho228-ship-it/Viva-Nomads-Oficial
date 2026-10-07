@@ -6,13 +6,17 @@ import { authFile } from "../fixtures/auth";
  * A comissão de fechamento é % do 1º aluguel (ex.: 8%), UMA vez — nunca o
  * aluguel cheio, nunca "1 mês de aluguel".
  */
-test.describe("T6 — Comissão (admin + demo)", () => {
-  test.use({ storageState: authFile("admin") });
+test.describe("T6 — Comissão (contrato real do proprietário)", () => {
+  test.use({ storageState: authFile("proprietario") });
 
   test("Contratos & blocos: comissão em % e nunca '1 mês de aluguel'", async ({ page }) => {
-    await page.goto("/dashboard/contratos?demo=1", { waitUntil: "networkidle" });
+    // Dado REAL (o laboratório cria o contrato no seed), sem modo demonstração.
+    await page.goto("/dashboard/contratos", { waitUntil: "networkidle" });
     const corpo = await page.locator("body").innerText();
-    expect(corpo).toMatch(/\d+\s*%/); // há percentual exibido
+    // No laboratório o contrato existe sempre (seed): lá, faltar é falha, não pulo.
+    const noLaboratorio = process.env.INTEGRACOES_SIMULADAS === "on";
+    test.skip(!noLaboratorio && !/Comissão do contrato/i.test(corpo), "Esta conta não tem contrato neste ambiente");
+    expect(corpo).toMatch(/\d+%\s*do 1º aluguel/); // percentual sobre o 1º aluguel
     expect(corpo).not.toMatch(/1 m[êe]s de aluguel/i);
     expect(corpo).not.toMatch(/comiss[ãa]o.*aluguel cheio/i);
   });

@@ -36,12 +36,28 @@ test.describe("T4 — Conta real, demo desligado @criticos", () => {
   });
 });
 
-test.describe("T4 — Conta admin, demo ligado @criticos", () => {
+/**
+ * O modo demonstração só EXISTE com NEXT_PUBLIC_MODO_DEMO_PAINEL=1 (preview
+ * para apresentações). Sem a flag — produção e laboratório — o ?demo=1 tem de
+ * ser ignorado até para o admin. Com a flag, o exemplo aparece sempre com o
+ * aviso de demonstração. (A tela de Fechamento não tem mais dados de exemplo;
+ * a de Contratos ainda tem.)
+ */
+const DEMO_LIGADO_NO_AMBIENTE = process.env.NEXT_PUBLIC_MODO_DEMO_PAINEL === "1";
+
+test.describe("T4 — Conta admin e o ?demo=1 @criticos", () => {
   test.use({ storageState: authFile("admin") });
 
-  test("dados fictícios aparecem COM o banner de demonstração", async ({ page }) => {
-    // ?demo=1 liga o modo demonstração (lido no shell, só para admin).
-    await page.goto("/dashboard/fechamento?demo=1", { waitUntil: "networkidle" });
+  test("sem a flag do ambiente, ?demo=1 é ignorado: nada fictício, nenhum aviso", async ({ page }) => {
+    test.skip(DEMO_LIGADO_NO_AMBIENTE, "Ambiente com modo demonstração ligado");
+    await page.goto("/dashboard/contratos?demo=1", { waitUntil: "networkidle" });
+    await expect(page.locator("body")).not.toContainText(PERSONAS_DEMO);
+    await expect(page.locator("body")).not.toContainText(/Modo demonstração · dados fictícios/i);
+  });
+
+  test("com a flag, os exemplos aparecem COM o aviso de demonstração", async ({ page }) => {
+    test.skip(!DEMO_LIGADO_NO_AMBIENTE, "Modo demonstração desligado neste ambiente (NEXT_PUBLIC_MODO_DEMO_PAINEL)");
+    await page.goto("/dashboard/contratos?demo=1", { waitUntil: "networkidle" });
     await expect(page.locator("body")).toContainText(/dados fictícios|Modo demonstração/i);
     await expect(page.locator("body")).toContainText(PERSONAS_DEMO);
   });

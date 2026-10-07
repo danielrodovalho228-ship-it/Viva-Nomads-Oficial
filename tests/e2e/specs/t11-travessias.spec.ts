@@ -1,6 +1,7 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { account, hasAccount } from "../fixtures/accounts";
 import { authFile } from "../fixtures/auth";
+import { marcadorPedido, preencherPedido, publicarPreenchido } from "../fixtures/pedido";
 
 /**
  * T-TRAV — TRAVESSIAS DE PONTA A PONTA (@criticos)
@@ -28,10 +29,8 @@ import { authFile } from "../fixtures/auth";
 const SEED_PROPERTY_ID =
   process.env.TESTES_SEED_PROPERTY_ID || "11111111-1111-4111-8111-111111111111";
 
-/** Marca única por execução para rastrear o pedido criado sem colidir. */
-function marca(): string {
-  return `TRAV${Date.now().toString().slice(-7)}`;
-}
+/** Marca única por execução (só letras: dígitos demais parecem telefone). */
+const marca = marcadorPedido;
 
 /** Última palavra do nome = sobrenome (o que NÃO pode vazar antes do aceite). */
 function sobrenome(nome: string): string {
@@ -41,27 +40,11 @@ function sobrenome(nome: string): string {
 
 // ───────────────────────────── B — Identidade protegida ─────────────────────
 test.describe("T-TRAV-B — Pedido: identidade não vaza antes do aceite @criticos", () => {
-  /** Cria um pedido de moradia (Uberlândia, para casar com o imóvel semeado). */
+  /** Cria um pedido de moradia (Uberlândia/MG, para casar com o imóvel semeado). */
   async function publicarPedido(page: Page, tag: string): Promise<void> {
-    await page.goto("/pedidos/novo", { waitUntil: "networkidle" });
-    await page.getByPlaceholder("Uberlândia").fill("Uberlândia");
-    await page.getByPlaceholder("MG").fill("MG");
-    await page.getByPlaceholder("dd/mm/aaaa").fill("15/09/2026");
-    await page.locator('input[type="number"]').first().fill("2");
-    await page.getByPlaceholder("3500").fill("3200");
-    // Motivo é um dropdown custom (listbox/option).
-    await page.getByText(/Selecione o motivo da estadia/i).click();
-    await page.getByRole("option").first().click();
     // Apresentação carrega a marca — deve APARECER para o dono (conteúdo flui).
-    await page
-      .getByPlaceholder(/Conte um pouco do seu perfil/i)
-      .fill(`Perfil de teste ${tag}. Procuro imovel mobiliado de media duracao.`);
-    await page.getByRole("button", { name: /Publicar pedido/i }).click();
-    // Sucesso → mostra quantos imóveis combinam agora; depois vai à lista.
-    await expect(page.getByRole("heading", { name: "Pedido publicado" })).toBeVisible({ timeout: 20_000 });
-    await expect(page.getByText(/compatíve(l|is) agora|Nenhum imóvel combina com tudo agora/)).toBeVisible();
-    await page.getByRole("button", { name: "Ver meus pedidos" }).click();
-    await page.waitForURL(/\/dashboard\/pedidos/, { timeout: 20_000 });
+    await preencherPedido(page, { apresentacao: `Perfil de ${tag}. Procuro imovel mobiliado de media duracao.` });
+    await publicarPreenchido(page);
   }
 
   /** Marca todos os pedidos ativos como atendidos (libera o limite de 2). */
@@ -89,6 +72,9 @@ test.describe("T-TRAV-B — Pedido: identidade não vaza antes do aceite @critic
       await publicarPedido(pageInq, tag);
     } catch (e) {
       await ctxInq.close();
+      // No laboratório isto é teste de SEGURANÇA e tem de rodar: falhar a
+      // pré-condição é falha, não pulo. Fora dele (preview), segue pulando.
+      if (process.env.INTEGRACOES_SIMULADAS === "on") throw e;
       test.skip(true, `Não foi possível publicar o pedido (pré-condição): ${String(e)}`);
       return;
     }
@@ -115,6 +101,9 @@ test.describe("T-TRAV-B — Pedido: identidade não vaza antes do aceite @critic
 
     const fio = corpos.join("\n");
     const sn = sobrenome(inq.nome);
+
+    // O conteúdo do pedido CHEGA ao dono (senão a ausência abaixo não prova nada).
+    expect(fio, "o pedido de teste não chegou ao dono").toContain(tag);
 
     // A REGRA DE OURO: e-mail e sobrenome do inquilino não podem trafegar.
     expect(fio, "e-mail do inquilino vazou no fio pré-aceite").not.toContain(inq.email);

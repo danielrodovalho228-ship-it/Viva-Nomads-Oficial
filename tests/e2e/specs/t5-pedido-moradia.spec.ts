@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 import { PROD_HOST } from "../fixtures/accounts";
-import { marcadorCidade, preencherPedido, encerrarPedido } from "../fixtures/pedido";
+import { marcadorPedido, preencherPedido, publicarPreenchido, encerrarPedido } from "../fixtures/pedido";
 
 // Trecho estável do aviso de contato (lib/pedidos/pedidos.ts → CONTATO_AVISO).
 const CONTATO_AVISO_RE = /o contato acontece pela plataforma/i;
@@ -29,7 +29,6 @@ test.describe("T5 — Pedido de moradia", () => {
 
   test("telefone na apresentação → bloqueio visível e publicação impedida", async ({ page }) => {
     await preencherPedido(page, {
-      cidade: marcadorCidade(),
       apresentacao: "Oi, me chama no 34 99999-8888 pra combinar a visita.",
     });
     // Aviso de contato visível…
@@ -40,18 +39,16 @@ test.describe("T5 — Pedido de moradia", () => {
 
   test("sem contato → publica com sucesso e é encerrado ao final", async ({ page }) => {
     test.skip(!podeEscrever, "Alvo é produção; escrita pulada (rode contra o preview).");
-    const cidade = marcadorCidade();
+    const marcador = marcadorPedido();
     try {
       await preencherPedido(page, {
-        cidade,
-        apresentacao: "Profissional em mudança de cidade, perfil tranquilo, sem pets.",
+        apresentacao: `Profissional em mudança de cidade, perfil tranquilo, sem pets. ${marcador}`,
       });
-      await page.getByRole("button", { name: /Publicar pedido/i }).click();
-      // Sucesso: cai na lista de pedidos e o pedido recém-criado aparece.
-      await page.waitForURL(/\/dashboard\/pedidos/, { timeout: 20000 });
-      await expect(page.locator("section", { hasText: cidade })).toBeVisible();
+      // Sucesso: "Pedido publicado" → lista de pedidos com o recém-criado.
+      await publicarPreenchido(page);
+      await expect(page.locator("section", { hasText: marcador })).toBeVisible();
     } finally {
-      await encerrarPedido(page, cidade); // limpeza idempotente
+      await encerrarPedido(page, marcador); // limpeza idempotente
     }
   });
 });
