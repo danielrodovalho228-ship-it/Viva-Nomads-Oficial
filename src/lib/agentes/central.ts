@@ -213,7 +213,7 @@ export const REGRAS = `Regras:
 - Você não tem ferramentas nem acesso livre ao banco nesta conversa: só o retrato abaixo. Não prometa ações que não pode fazer agora.
 - Não peça nem repita dados pessoais de clientes.`;
 
-function blocoRondas(rondas: Pick<Ronda, "iniciada_em" | "status" | "resumo" | "achados">[]): string {
+function blocoRondas(rondas: Pick<Ronda, "iniciada_em" | "status" | "resumo" | "achados">[], limiteResumo = 1200): string {
   if (!rondas.length) return "Nenhuma ronda registrada ainda.";
   return rondas
     .map((r) => {
@@ -221,7 +221,7 @@ function blocoRondas(rondas: Pick<Ronda, "iniciada_em" | "status" | "resumo" | "
         .slice(0, 8)
         .map((a) => `  - ${a?.prioridade ?? "—"}: ${a?.titulo ?? a?.detalhe ?? ""}`.slice(0, 300))
         .join("\n");
-      return `• ${r.iniciada_em.slice(0, 16).replace("T", " ")} UTC — ${r.status}: ${r.resumo.slice(0, 1200)}${ach ? `\n${ach}` : ""}`;
+      return `• ${r.iniciada_em.slice(0, 16).replace("T", " ")} UTC — ${r.status}: ${r.resumo.slice(0, limiteResumo)}${ach ? `\n${ach}` : ""}`;
     })
     .join("\n");
 }
@@ -231,19 +231,27 @@ function blocoOrdens(ordens: Pick<Ordem, "texto" | "status" | "criada_em">[]): s
   return ordens.map((o) => `• (${o.status}) ${o.texto.slice(0, 600)}`).join("\n");
 }
 
+/** O gerente: a ronda dele é o boletim diário, base para "como estamos?". */
+export const SLUG_GERENTE = "moacir";
+
+export const REGRA_BOLETIM = `- Você é o gerente: para "como estamos?", "o que rodou?" e parecidos, parta do seu ÚLTIMO BOLETIM (sua ronda mais recente, acima) e complete com o retrato do momento. Diga a hora do boletim. Se ainda não há boletim, diga isso e responda só com o retrato.`;
+
 export function systemChat(a: Agente, rondas: Ronda[], ordens: Ordem[], retrato = ""): string {
+  const gerente = a.slug === SLUG_GERENTE;
+  const rondasTexto = gerente
+    ? `Seu último boletim (base para "como estamos?"):\n${blocoRondas(rondas.slice(0, 1), 4000)}${rondas.length > 1 ? `\n\nBoletins anteriores:\n${blocoRondas(rondas.slice(1, 3))}` : ""}`
+    : `Suas últimas rondas:\n${blocoRondas(rondas.slice(0, 3))}`;
   return `${CONTEXTO_VIVA}
 
 Você é ${a.nome}, ${a.cargo}. ${a.briefing}
 Rotina: ${a.rotina_texto ?? "sem rotina fixa"}.${a.status === "planejado" ? "\nVocê ainda está PLANEJADO: não faz rondas. Diga isso se perguntarem pelo seu trabalho." : ""}
 
-Suas últimas rondas:
-${blocoRondas(rondas.slice(0, 3))}
+${rondasTexto}
 
 Ordens do Daniel ainda abertas para você:
 ${blocoOrdens(ordens)}
 ${retrato ? `\n${retrato}\n` : ""}
-${REGRAS}${retrato ? `\n${REGRA_RETRATO}` : ""}`;
+${REGRAS}${retrato ? `\n${REGRA_RETRATO}` : ""}${gerente ? `\n${REGRA_BOLETIM}` : ""}`;
 }
 
 export interface Participante {
@@ -253,11 +261,15 @@ export interface Participante {
 
 export function systemReuniao(ps: Participante[], retrato = ""): string {
   const blocos = ps
-    .map((p) => `## ${p.agente.nome} (slug: ${p.agente.slug}) — ${p.agente.cargo}\n${p.agente.briefing}\nÚltimas rondas:\n${blocoRondas(p.rondas.slice(0, 3))}`)
+    .map((p) =>
+      p.agente.slug === SLUG_GERENTE
+        ? `## ${p.agente.nome} (slug: ${p.agente.slug}) — ${p.agente.cargo}\n${p.agente.briefing}\nÚltimo boletim do gerente (base da situação):\n${blocoRondas(p.rondas.slice(0, 1), 4000)}`
+        : `## ${p.agente.nome} (slug: ${p.agente.slug}) — ${p.agente.cargo}\n${p.agente.briefing}\nÚltimas rondas:\n${blocoRondas(p.rondas.slice(0, 3))}`
+    )
     .join("\n\n");
   return `${CONTEXTO_VIVA}
 
-Simule uma reunião curta da equipe sobre a pauta do Daniel. Cada participante fala uma vez, do ponto de vista do próprio cargo, usando só o que sabe. O Moacir fala por último e consolida em passos com dono.
+Simule uma reunião curta da equipe sobre a pauta do Daniel. Cada participante fala uma vez, do ponto de vista do próprio cargo, usando só o que sabe. O Moacir fala por último e consolida em passos com dono, partindo do último boletim dele.
 
 Participantes:
 ${blocos}

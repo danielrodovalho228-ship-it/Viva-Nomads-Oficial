@@ -219,3 +219,22 @@ test("retrato entra no prompt do chat e da reunião, com a regra de citar a hora
   assert.equal((await responderChat(sem.d, { slug: "bruno", texto: "oi" })).status, 200);
   assert.match(sem.chamadas[0].system, /indisponível/);
 });
+
+test("Moacir: o último boletim é a base de 'como estamos?' (chat e reunião)", async () => {
+  const boletim = { id: "b", agente_slug: "moacir", iniciada_em: "2026-10-07T13:07:00Z", concluida_em: null, status: "ok" as const, resumo: "Boletim: Viva em pré-lançamento; 9 cadastros de teste; Bruno ✔, Helena ✔.", achados: [], link_sessao: null };
+  const moacir = AGENTES[0];
+  const s = systemChat(moacir, [boletim], [], "RETRATO DO MOMENTO (dados de 07/10 10:15)");
+  assert.match(s, /Seu último boletim \(base para "como estamos\?"\):\n• 2026-10-07 13:07 UTC — ok: Boletim: Viva em pré-lançamento/);
+  assert.match(s, /parta do seu ÚLTIMO BOLETIM/);
+  // Outro agente não recebe a regra do gerente.
+  assert.doesNotMatch(systemChat(AGENTES[1], [], []), /ÚLTIMO BOLETIM/);
+
+  const { d, chamadas } = fake({ rondas: async (slug) => (slug === "moacir" ? [boletim] : []) });
+  await responderReuniao(d, { pauta: "Como estamos?", participantes: ["bruno"] });
+  assert.match(chamadas[0].system, /Último boletim do gerente \(base da situação\):\n• 2026-10-07 13:07 UTC — ok: Boletim:/);
+});
+
+test("rotina do boletim do gerente é lida como horário do Texas", () => {
+  const agora = new Date("2026-10-07T12:00:00Z"); // 07:00 no Texas
+  assert.equal(proximaRonda("Todo dia 08:07 Texas (boletim do gerente)", agora), "hoje 08:07 Texas");
+});
