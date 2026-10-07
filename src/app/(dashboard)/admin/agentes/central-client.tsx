@@ -332,8 +332,8 @@ function Equipe({ dados, agora, onConversar }: { dados: DadosCentral; agora: Dat
   const ultimas = useMemo(() => ultimaPorAgente(dados.rondas), [dados.rondas]);
   const pend = (slug: string) => dados.ordens.filter((o) => o.agente_slug === slug && o.status === "pendente").length;
   const card = (a: Agente, grande = false) => <CardAgente key={a.slug} a={a} ultima={ultimas[a.slug]} pendentes={pend(a.slug)} agora={agora} grande={grande} onConversar={onConversar} />;
-  const moacir = dados.agentes.find((a) => a.slug === "moacir");
-  const otavio = dados.agentes.find((a) => a.slug === "otavio");
+  // Comando = todo agente do esquadrão (Moacir, Otávio, Rafael…), na ordem do banco.
+  const comando = dados.agentes.filter((a) => a.esquadrao === "comando");
   const esquadroes: Esquadrao[] = ["operacoes", "tecnologia", "crescimento", "financas"];
   const plataforma = dados.agentes.filter((a) => a.esquadrao === "plataforma");
 
@@ -354,8 +354,7 @@ function Equipe({ dados, agora, onConversar }: { dados: DadosCentral; agora: Dat
 
       <Rotulo>Comando</Rotulo>
       <div className="grid gap-3 lg:grid-cols-2">
-        {moacir && card(moacir, true)}
-        {otavio && card(otavio, true)}
+        {comando.map((a) => card(a, true))}
       </div>
 
       <Rotulo>Esquadrões</Rotulo>

@@ -57,6 +57,9 @@ jobs:
       - name: Acertar com produção (role como texto + políticas extras)
         run: psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/lab/alinhar-producao.sql
 
+      - name: Conferir o banco (asserções de segurança)
+        run: psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/lab/conferir-banco.sql
+
       - name: Chaves locais e senha da noite (mascaradas)
         run: |
           eval "$(supabase status -o env | grep -E '^(ANON_KEY|SERVICE_ROLE_KEY)=')"

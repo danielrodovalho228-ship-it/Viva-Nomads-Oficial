@@ -82,10 +82,10 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'",
               // 'unsafe-inline'/'unsafe-eval' cobrem o bootstrap do Next e o
               // mapbox-gl; endurecer com nonce é um próximo passo.
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com",
               "worker-src 'self' blob:",
               "connect-src 'self' https://*.supabase.co https://api.mapbox.com https://events.mapbox.com https://viacep.com.br",
-              "frame-src 'self' https://player.vimeo.com https://www.youtube.com",
+              "frame-src 'self' https://player.vimeo.com https://www.youtube.com https://challenges.cloudflare.com",
             ].join("; "),
           },
         ],
