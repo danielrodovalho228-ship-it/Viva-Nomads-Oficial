@@ -11,6 +11,7 @@ import { executarAgora, type Deps, type DepsExecutar } from "@/lib/agentes/motor
 import { modeloGerenteSimulado, nomeDoOrganograma, PREFIXO_MOACIR, type Consulta, type DepsGerente, type ModeloGerente } from "@/lib/agentes/gerente";
 import { horaBrasilia, retratoEmTexto } from "@/lib/agentes/retrato";
 import { ultimaPorAgente } from "@/lib/agentes/painel";
+import { consultasDaArea, numeroMigracao, type Conferencia, type MigracaoAplicada } from "@/lib/agentes/ao-vivo";
 import { chamadosEsperandoEquipe } from "@/lib/atendimento/escalonamento";
 import { systemChat } from "@/lib/agentes/central";
 import type { Retrato } from "@/lib/agentes/retrato";
@@ -102,6 +103,13 @@ export async function depsReais(): Promise<Deps | null> {
       return res.content.map((b) => (b.type === "text" ? b.text : "")).join("").trim();
     },
   };
+  // Todos os agentes: dados AO VIVO da área + conferência das pendências da ronda.
+  deps.aoVivo = async (slug) => {
+    const partes = await Promise.all(consultasDaArea(slug).map((c) => consultaAoVivo(c, supabase).catch(() => `(${c}: falhou agora)`)));
+    const conferencia = await conferenciaAgora();
+    return { dados: partes.join("\n\n").slice(0, 6000), conferencia };
+  };
+  deps.chatSimulado = integracoesSimuladas();
   deps.gerente = montarGerente(deps, supabase, modelo);
   return deps;
 }
@@ -109,6 +117,45 @@ export async function depsReais(): Promise<Deps | null> {
 // ── Moacir gerente: consultas AO VIVO (prontas, sem SQL livre, sem dado pessoal) ──
 const CONTATO = /\b[\w.+-]+@[\w-]+\.[\w.]+\b|\(?\b\d{2}\)?\s?9?\d{4}[-\s]?\d{4}\b/g;
 type Sessao = NonNullable<Awaited<ReturnType<typeof createClient>>>;
+
+/** Migrações aplicadas em produção (0088: só versão e nome, só o servidor lê). null = indisponível. */
+async function migracoesAplicadas(): Promise<MigracaoAplicada[] | null> {
+  const admin = createAdminClient();
+  if (!admin) return null;
+  const { data, error } = await admin.rpc("migracoes_aplicadas");
+  return error ? null : ((data ?? []) as MigracaoAplicada[]);
+}
+
+/** Chamados resolvidos nos últimos 7 dias (sem dado pessoal). */
+async function chamadosResolvidos(): Promise<{ numero_publico: string; resolvido_em: string | null; encerrado_em: string | null; nota_satisfacao: number | null; categoria: string }[] | null> {
+  const admin = createAdminClient();
+  if (!admin) return null;
+  const desde = new Date(Date.now() - 7 * 24 * 3600_000).toISOString();
+  const { data, error } = await admin
+    .from("chamados")
+    .select("numero_publico, resolvido_em, encerrado_em, nota_satisfacao, categoria")
+    .in("status", ["resolvido", "encerrado"])
+    .eq("simulacao", false)
+    .or(`resolvido_em.gte.${desde},encerrado_em.gte.${desde}`)
+    .order("resolvido_em", { ascending: false, nullsFirst: false })
+    .limit(30);
+  return error ? null : (data ?? []);
+}
+
+/** O que o banco diz AGORA, para conferir as pendências da última ronda de qualquer agente. */
+async function conferenciaAgora(): Promise<Conferencia> {
+  const admin = createAdminClient();
+  const [migracoes, resolvidos, abertos] = await Promise.all([
+    migracoesAplicadas(),
+    chamadosResolvidos(),
+    admin ? admin.from("chamados").select("numero_publico").not("status", "in", "(resolvido,encerrado)").limit(200) : Promise.resolve({ data: [] }),
+  ]);
+  return {
+    migracoes: migracoes ?? [],
+    resolvidos: (resolvidos ?? []).map((r) => ({ numero: r.numero_publico, quando: (r.resolvido_em ?? r.encerrado_em) as string, nota: r.nota_satisfacao })),
+    abertos: ((abertos.data ?? []) as { numero_publico: string }[]).map((x) => x.numero_publico),
+  };
+}
 
 async function consultaAoVivo(c: Consulta, supabase: Sessao): Promise<string> {
   const agora = new Date().toISOString();
@@ -160,15 +207,24 @@ async function consultaAoVivo(c: Consulta, supabase: Sessao): Promise<string> {
       ? `Versão no ar: commit ${sha.slice(0, 7)} — "${(process.env.VERCEL_GIT_COMMIT_MESSAGE ?? "").split("\n")[0].slice(0, 140)}" ${cab}.`
       : "Não consigo ver o deploy daqui (fora da Vercel). Próximo passo: conferir no painel da Vercel.";
   }
-  return "Não consigo listar as migrações aplicadas daqui (o site não lê a tabela de migrações). Próximo passo: pedir ao Claude Code ou conferir no Supabase.";
+  if (c === "chamados_resolvidos") {
+    const r = await chamadosResolvidos();
+    if (!r) return "Não consegui consultar os chamados resolvidos agora.";
+    if (!r.length) return `Nenhum chamado resolvido nos últimos 7 dias ${cab}.`;
+    return `Chamados resolvidos nos últimos 7 dias ${cab}:\n${r
+      .map((x) => `${x.numero_publico} · ${x.categoria} · resolvido ${horaBrasilia((x.resolvido_em ?? x.encerrado_em) as string)}${x.nota_satisfacao ? ` · nota ${x.nota_satisfacao}` : " · sem nota"}`)
+      .join("\n")}`;
+  }
+  const m = await migracoesAplicadas();
+  if (!m) return "Não consigo listar as migrações aplicadas agora (falta a 0088 ou o banco não respondeu). Próximo passo: conferir no Supabase.";
+  const ultimas = m.slice(0, 15).map((x) => `${numeroMigracao(x) ?? x.version} · ${x.name}`);
+  return `Migrações aplicadas em produção ${cab} — as 15 mais recentes:\n${ultimas.join("\n")}`;
 }
 
 /** Dados ao vivo da área de cada agente (para perguntar_agente). */
 async function dadosDaArea(slug: string, supabase: Sessao): Promise<string> {
-  if (slug === "viva") return consultaAoVivo("chamados_abertos", supabase);
-  if (slug === "bruno" || slug === "otavio" || slug === "renato") return consultaAoVivo("rondas_recentes", supabase);
-  if (slug === "helena") return consultaAoVivo("ordens_pendentes", supabase);
-  return consultaAoVivo("contagens", supabase);
+  const partes = await Promise.all(consultasDaArea(slug).map((c) => consultaAoVivo(c, supabase).catch(() => `(${c}: falhou agora)`)));
+  return partes.join("\n\n").slice(0, 6000);
 }
 
 function montarGerente(base: Deps, supabase: Sessao, modelo: string): Deps["gerente"] {
@@ -185,7 +241,8 @@ function montarGerente(base: Deps, supabase: Sessao, modelo: string): Deps["gere
       if (!a) return { nome: slug, resposta: "Agente não encontrado." };
       const area = await dadosDaArea(slug, supabase);
       if (simulado) {
-        const n = (area.match(/VN-\d+/g) ?? []).length;
+        // Primeiro bloco da área da Viva = chamados abertos (os resolvidos vêm depois).
+        const n = (area.split("\n\n")[0].match(/VN-\d+/g) ?? []).length;
         const resposta =
           slug === "viva"
             ? n

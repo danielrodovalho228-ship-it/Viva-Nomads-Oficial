@@ -30,7 +30,10 @@ test.describe("T21 — Central de Agentes v2", () => {
     // O Renato (engenheiro) aparece em Tecnologia, com foto.
     const renato = central.getByTestId("agente-renato");
     await expect(renato).toContainText("Engenheiro");
-    expect(await renato.locator('img[src="/agentes/renato.webp"]').evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(256);
+    // A foto é lazy: com a faixa de chamados no topo o cartão pode nascer fora da tela.
+    const fotoRenato = renato.locator('img[src="/agentes/renato.webp"]');
+    await fotoRenato.scrollIntoViewIfNeeded();
+    await expect.poll(() => fotoRenato.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(256);
     await expect(central.getByTestId("agente-moacir")).toBeVisible();
     await expect(central.getByTestId("agente-otavio")).toBeVisible();
     const bruno = central.getByTestId("agente-bruno");
@@ -40,8 +43,9 @@ test.describe("T21 — Central de Agentes v2", () => {
     await expect(central.getByTestId("agente-marina")).toContainText("Falhou");
     // Foto em public/agentes/<slug>.webp carrega de verdade.
     const foto = bruno.locator('img[src="/agentes/bruno.webp"]');
+    await foto.scrollIntoViewIfNeeded();
     await expect(foto).toBeVisible();
-    expect(await foto.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(256);
+    await expect.poll(() => foto.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(256);
     // A Viva atende no chat do site (sem tarefa agendada): "No ar", não "Sem ronda".
     const viva = central.getByTestId("agente-viva");
     await expect(viva).toContainText("No ar");

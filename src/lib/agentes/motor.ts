@@ -28,6 +28,7 @@ import {
 import { retratoEmTexto, type Retrato } from "./retrato.ts";
 import { CONTEXTO_VIVA, SLUG_GERENTE } from "./central.ts";
 import { investigar, systemGerente, type DepsGerente, type ModeloGerente } from "./gerente.ts";
+import { blocoAoVivo, conferirPendencias, marcarResolvidos, REGRA_AO_VIVO, respostaSimuladaAgente, type Conferencia } from "./ao-vivo.ts";
 
 export interface Mensagem {
   role: "user" | "assistant";
@@ -47,6 +48,13 @@ export interface Deps {
   /** Retrato do momento (só contagens); null se a consulta falhar. */
   retrato(): Promise<Retrato | null>;
   modelo(p: { system: string; messages: Mensagem[]; maxTokens: number; json: boolean }): Promise<string>;
+  /**
+   * Dados AO VIVO da área do agente (consultas prontas) + o que o banco diz
+   * agora sobre migrações e chamados, para conferir a última ronda. null = falhou.
+   */
+  aoVivo?(slug: string): Promise<{ dados: string; conferencia: Conferencia } | null>;
+  /** Laboratório (sem IA): resposta montada pelas regras, sem chamar o modelo. */
+  chatSimulado?: boolean;
   /** Moacir gerente: modelo com ferramentas + consultas ao vivo. Sem ele, o Moacir conversa como os outros. */
   gerente?: { modelo: ModeloGerente; ferramentas: DepsGerente };
 }
@@ -120,19 +128,33 @@ export async function responderChat(d: Deps, entrada: unknown): Promise<Resposta
     return { status: 200, body: { resposta: honesta, acao } };
   }
 
-  const [rondas, ordens, hist, retrato] = await Promise.all([
+  const [rondasBrutas, ordens, hist, retrato, aoVivo] = await Promise.all([
     d.rondas(slug, 3),
     d.ordensAbertas(slug),
     d.historico(slug, 10),
     d.retrato().catch(() => null),
+    d.aoVivo ? d.aoVivo(slug).catch(() => null) : Promise.resolve(null),
   ]);
+  // Pendência da ronda que o banco já mostra resolvida vem marcada (o modelo não repete como aberta).
+  const rondas = aoVivo ? marcarResolvidos(rondasBrutas, aoVivo.conferencia) : rondasBrutas;
   // A pergunta conta no limite mesmo se o modelo falhar.
   await d.gravar([{ agente_slug: slug, papel: "daniel", autor_slug: null, texto: pergunta }]);
   let resposta: string;
-  try {
-    resposta = (await d.modelo({ system: systemChat(agente, rondas, ordens, retratoEmTexto(retrato)), messages: montarMensagens(hist, pergunta), maxTokens: MAX_TOKENS_CHAT, json: false })).trim();
-  } catch {
-    return { status: 502, body: { erro: FALHA_MSG } };
+  const agora = new Date();
+  if (d.chatSimulado) {
+    resposta = aoVivo
+      ? respostaSimuladaAgente({ nome: agente.nome, ultima: rondasBrutas[0] ?? null, conferencia: aoVivo.conferencia, agora })
+      : "Não consegui ler os dados ao vivo agora (laboratório).";
+  } else {
+    const textoRondas = rondasBrutas.map((r) => `${r.resumo} ${(Array.isArray(r.achados) ? r.achados : []).map((a) => `${a?.titulo ?? ""} ${a?.detalhe ?? ""}`).join(" ")}`).join("\n");
+    const extra = aoVivo
+      ? `\n\n${blocoAoVivo(aoVivo.dados, conferirPendencias(`${textoRondas}\n${ordens.map((o) => o.texto).join("\n")}`, aoVivo.conferencia), agora)}\n\n${REGRA_AO_VIVO}`
+      : "\n\n- Não consegui ler os dados ao vivo agora: avise que a informação é da sua última ronda e diga a hora dela.";
+    try {
+      resposta = (await d.modelo({ system: `${systemChat(agente, rondas, ordens, retratoEmTexto(retrato))}${extra}`, messages: montarMensagens(hist, pergunta), maxTokens: MAX_TOKENS_CHAT, json: false })).trim();
+    } catch {
+      return { status: 502, body: { erro: FALHA_MSG } };
+    }
   }
   if (!resposta) resposta = "Não consegui responder agora. Vou conferir na próxima ronda.";
   // Rede de segurança: se o modelo prometeu agir, troca pela resposta honesta.
