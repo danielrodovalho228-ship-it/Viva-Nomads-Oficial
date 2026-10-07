@@ -30,6 +30,8 @@ interface Conferido {
   periodo_fim: string | null;
   locador: string;
   locatario: string;
+  /** Anulado (0083): o documento existiu, mas não vale mais. Documento fiscal nunca é apagado. */
+  anulado_em: string | null;
 }
 
 async function consultar(codigo: string): Promise<{ estado: "ok" | "nao" | "limite" | "indisponivel"; doc: Conferido | null }> {
@@ -57,9 +59,15 @@ export default async function ConferirPage({ params }: { params: Promise<{ codig
         <h1 className="font-title text-2xl font-bold text-ink">Conferir documento</h1>
         {estado === "ok" && doc ? (
           <>
-            <p className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-forest" data-testid="conferir-ok">
-              <CheckCircle2 className="h-5 w-5" /> Documento autêntico, gerado pela plataforma Viva Nomads.
-            </p>
+            {doc.anulado_em ? (
+              <p className="mt-3 inline-flex items-start gap-2 text-sm font-semibold text-red-700" data-testid="conferir-anulado">
+                <XCircle className="mt-0.5 h-5 w-5 shrink-0" /> Documento ANULADO em {dataBR(doc.anulado_em)}. Foi gerado pela plataforma, mas não vale mais.
+              </p>
+            ) : (
+              <p className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-forest" data-testid="conferir-ok">
+                <CheckCircle2 className="h-5 w-5" /> Documento autêntico, gerado pela plataforma Viva Nomads.
+              </p>
+            )}
             <dl className="mt-4 space-y-2 text-sm">
               {[
                 ["Documento", ROTULO_TIPO[doc.tipo as TipoDocumento] ?? doc.tipo],

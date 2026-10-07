@@ -92,6 +92,52 @@ export function listaImoveis(siteUrl: string, imoveis: { id: string; title: stri
   };
 }
 
+/** Página da cidade (#34): Place (a cidade) + ItemList só com imóveis reais (lista vazia é honesta). */
+export function paginaCidade(
+  siteUrl: string,
+  cidade: { slug: string; name: string; state: string },
+  imoveis: { id: string; title: string }[],
+  ehExemplo: (id: string) => boolean
+) {
+  const url = `${siteUrl}/cidades/${cidade.slug}`;
+  const { numberOfItems, itemListElement } = listaImoveis(siteUrl, imoveis, ehExemplo);
+  const lugar = {
+    "@type": "Place",
+    "@id": `${url}#cidade`,
+    name: `${cidade.name}, ${cidade.state}`,
+    url,
+    address: { "@type": "PostalAddress", addressLocality: cidade.name, addressRegion: cidade.state, addressCountry: "BR" },
+  };
+  const lista = {
+    "@type": "ItemList",
+    "@id": `${url}#imoveis`,
+    name: `Imóveis mobiliados por temporada em ${cidade.name}`,
+    url,
+    about: { "@id": `${url}#cidade` },
+    numberOfItems,
+    itemListElement,
+  };
+  return { "@context": "https://schema.org", "@graph": [lugar, lista] as [typeof lugar, typeof lista] };
+}
+
+/** /para-proprietarios (#34): o serviço oferecido ao proprietário. Preço fica nas ofertas de /precos. */
+export function servicoProprietarios(siteUrl: string, cidades: { name: string; state: string }[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    "@id": `${siteUrl}/para-proprietarios#servico`,
+    name: "Anúncio e gestão de locação por temporada para proprietários",
+    serviceType: "Locação por temporada de imóveis mobiliados (30 a 180 dias)",
+    description:
+      "Anuncie seu imóvel mobiliado para locação por temporada de 30 a 180 dias, com contrato e conversa registrada na plataforma.",
+    url: `${siteUrl}/para-proprietarios`,
+    provider: { "@type": "Organization", "@id": `${siteUrl}/#organizacao`, name: ORG.nome, url: siteUrl },
+    areaServed: cidades.map((c) => ({ "@type": "City", name: `${c.name}, ${c.state}` })),
+    audience: { "@type": "Audience", audienceType: "Proprietários de imóveis mobiliados" },
+    offers: { "@type": "Offer", url: `${siteUrl}/precos`, seller: { "@type": "Organization", name: ORG.nome } },
+  };
+}
+
 /** JSON seguro para <script>: escapa <, > e & (título é texto do usuário). */
 export function jsonSeguro(dados: unknown): string {
   return JSON.stringify(dados).replace(/</g, "\\u003c").replace(/>/g, "\\u003e").replace(/&/g, "\\u0026");

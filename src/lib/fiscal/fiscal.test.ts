@@ -118,6 +118,21 @@ test("download só pelo RLS da pessoa + URL assinada de 10 min; conferência pú
   assert.match(conferir, /robots: \{ index: false, follow: false \}/);
 });
 
+test("#14 (0083): documento fiscal não se apaga; anulação lógica aparece na conferência pública", () => {
+  const sql = readFileSync(new URL("../../../supabase/migrations/0083_pacote_otavio.sql", import.meta.url), "utf8");
+  assert.match(sql, /before delete on public\.documentos_fiscais/);
+  assert.match(sql, /before truncate on public\.documentos_fiscais/);
+  assert.match(sql, /revoke delete, truncate on public\.documentos_fiscais from anon, authenticated, service_role/);
+  assert.doesNotMatch(sql, /raise notice/i);
+  const conferir = ler("app/(public)/conferir/[codigo]/page.tsx");
+  assert.match(conferir, /doc\.anulado_em \?/);
+  assert.match(conferir, /data-testid="conferir-anulado"/);
+  // Nenhum código apaga documento fiscal.
+  for (const f of ["lib/fiscal/emitir.ts", "lib/data/documentos-actions.ts", "app/api/documentos/[id]/route.ts"]) {
+    assert.doesNotMatch(ler(f), /from\("documentos_fiscais"\)[\s\S]{0,80}\.delete\(/);
+  }
+});
+
 test("achados do #271: /precos condiciona a NF à NFSE_ATIVA; exemplos sem avaliação inventada e sem 'emite nota fiscal'", () => {
   const precos = ler("app/(public)/precos/page.tsx");
   assert.match(precos, /NFSE_ATIVA \? "emitida automaticamente a cada cobrança" : "emitida após a abertura do CNPJ"/);

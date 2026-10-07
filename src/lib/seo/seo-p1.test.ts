@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { faqPage, jsonSeguro, listaImoveis, ofertasPlanos, organizacao } from "./estruturados.ts";
+import { faqPage, jsonSeguro, listaImoveis, ofertasPlanos, organizacao, paginaCidade, servicoProprietarios } from "./estruturados.ts";
 import { llmsFullTxt, llmsTxt } from "./llms.ts";
 
 const URL_SITE = "https://vivanomads.com.br";
@@ -23,6 +23,29 @@ test("JSON-LD: Organization/WebSite, FAQPage, ofertas dos planos e lista só de 
   assert.equal(lista.itemListElement[0].url, `${URL_SITE}/imoveis/11111111-1111-4111-8111-111111111111`);
   // Título vindo do proprietário não quebra o <script>.
   assert.doesNotMatch(jsonSeguro({ t: "</script><img onerror=x>" }), /<\/script>|</);
+});
+
+test("#34: JSON-LD de /cidades/uberlandia (Place + ItemList só reais) e /para-proprietarios (Service)", () => {
+  const ube = { slug: "uberlandia", name: "Uberlândia", state: "MG" };
+  const cid = paginaCidade(URL_SITE, ube, [{ id: "ube-001", title: "Exemplo" }, { id: "11111111-1111-4111-8111-111111111111", title: "Real" }], (id) => id.startsWith("ube-"));
+  assert.equal(cid["@context"], "https://schema.org");
+  const [lugar, lista] = cid["@graph"];
+  assert.equal(lugar["@type"], "Place");
+  assert.deepEqual(lugar.address, { "@type": "PostalAddress", addressLocality: "Uberlândia", addressRegion: "MG", addressCountry: "BR" });
+  assert.equal(lista["@type"], "ItemList");
+  assert.equal(lista.numberOfItems, 1, "exemplo nunca entra");
+  assert.equal(lista.url, `${URL_SITE}/cidades/uberlandia`);
+  assert.ok(!("@context" in lista), "@context só no topo do @graph");
+  assert.equal(paginaCidade(URL_SITE, ube, [], () => false)["@graph"][1].numberOfItems, 0);
+
+  const serv = servicoProprietarios(URL_SITE, [ube]);
+  assert.equal(serv["@type"], "Service");
+  assert.equal(serv.provider["@id"], `${URL_SITE}/#organizacao`);
+  assert.deepEqual(serv.areaServed, [{ "@type": "City", name: "Uberlândia, MG" }]);
+  assert.doesNotMatch(JSON.stringify(serv), /aggregateRating|"price"/, "sem nota nem preço inventado");
+
+  assert.match(ler("src/app/(public)/cidades/[cidade]/page.tsx"), /<JsonLd dados=\{paginaCidade\(SITE_URL, infoCidade, properties/);
+  assert.match(ler("src/app/(public)/para-proprietarios/page.tsx"), /<JsonLd dados=\{servicoProprietarios\(SITE_URL, CITIES\)\} \/>/);
 });
 
 test("/llms.txt e /llms-full.txt: fatos oficiais, sem imóvel de exemplo e sem promessa proibida", () => {
