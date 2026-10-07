@@ -5,7 +5,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { ehSensivel, notaSugestao, quemAtende, respostaDaSugestao, SUGESTAO_SIMULADA, textoAcolhimento } from "./acolhimento.ts";
+import { ehSensivel, notaSugestao, quemAtende, respostaDaSugestao, textoAcolhimento } from "./acolhimento.ts";
 import { validarResposta } from "./viva-regras.ts";
 
 const ler = (p: string) => readFileSync(new URL(`../../${p}`, import.meta.url), "utf8");
@@ -37,7 +37,6 @@ test("nota de sugestão: o botão 'Aprovar e enviar' lê só a resposta", () => 
   assert.match(n, /Consultou: Contratos, Caução\./);
   assert.equal(respostaDaSugestao(n), "Olá, Ana! Conferimos a Caução do seu contrato…");
   assert.equal(respostaDaSugestao("nota qualquer da equipe"), null);
-  assert.match(SUGESTAO_SIMULADA, /SIMULADO/);
 });
 
 test("ligações: site e e-mail usam a mesma regra; aprovar pega o texto do banco, não do navegador", () => {

@@ -7,6 +7,7 @@
 import { FAQ } from "./faq.ts";
 import { ALUGUEL_EXEMPLO, GESTOR_PRECO, GESTOR_RESUMO, PLANOS, REGRAS_CONTRATO, textoComissao } from "../../config/planos.ts";
 import { PRAZO_MANUTENCAO_H, PROMESSA_ATENDIMENTO } from "../../config/atendimento.ts";
+import { SITUACAO_VIVA } from "../../config/situacao-viva.ts";
 
 
 const brl = (n: number) => `R$ ${n.toLocaleString("pt-BR")}`;
@@ -29,6 +30,11 @@ export function fontes(): string {
     `- Locação por temporada (art. 48 da Lei 8.245/91): de ${REGRAS_CONTRATO.prazoMinMeses} a ${REGRAS_CONTRATO.prazoMaxMeses} meses, no máximo ${REGRAS_CONTRATO.prazoMaxDias} dias, em blocos de até ${REGRAS_CONTRATO.maxDiasBloco} dias.`,
     `- Caução: ${Math.round(REGRAS_CONTRATO.caucaoFracaoBloco * 100)}% do valor de cada bloco, sem passar de ${REGRAS_CONTRATO.caucaoMaxAlugueis} aluguéis no total, depositada em poupança (art. 38, §2º). Volta no fim, depois da vistoria de saída.`,
     "- Contato direto (telefone, e-mail, redes) nunca é trocado: a conversa fica toda na plataforma.",
+    "",
+    "## Situação da Viva hoje (fonte oficial)",
+    `- ${SITUACAO_VIVA.fase}`,
+    `- Seguros: ${SITUACAO_VIVA.seguros}`,
+    `- ${SITUACAO_VIVA.semInformacao}`,
     "",
     "## Prazos de atendimento (os ÚNICOS que você pode citar)",
     `${PROMESSA_ATENDIMENTO}. Não prometa resposta humana fora destes prazos nem "na hora".`,

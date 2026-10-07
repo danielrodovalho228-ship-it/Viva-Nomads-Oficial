@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { consumirLimite, DIA } from "@/lib/limites";
 import { integracoesSimuladas } from "@/lib/integracoes";
+import { agoraBRTexto } from "@/lib/atendimento/data-br";
 import { notify } from "@/lib/notifications";
 import { textoEmail } from "@/lib/notifications/texto-seguro";
 import { SITE_URL } from "@/lib/site";
@@ -12,7 +13,8 @@ import { contextoChamado, type FerramentaDef } from "@/lib/atendimento/viva-prom
 import { aceitaEsforco, aceitaReserva, cotacaoDolar, custoUsd, modeloViva } from "@/lib/atendimento/viva-custo";
 import { primeiroNome, RESPOSTA_PESSOA, ROTULO_APROVACAO } from "@/lib/atendimento/viva-regras";
 import { podeDevolverParaViva, rotuloFerramenta, sugerirRespostaMotor, transcricaoParaRascunho, type Sugestao } from "@/lib/atendimento/copiloto";
-import { notaSugestao, SUGESTAO_SIMULADA, textoAcolhimento } from "@/lib/atendimento/acolhimento";
+import { notaSugestao, textoAcolhimento } from "@/lib/atendimento/acolhimento";
+import { lerResumo, resumoPorRegra, sugestaoPorRegra, SYSTEM_RESUMO, type ResumoChamado } from "@/lib/atendimento/resumo";
 import { categoria as categoriaDef } from "@/lib/atendimento/classificar";
 import {
   avisarEquipe,
@@ -429,7 +431,7 @@ export async function rodarViva(chamadoId: string): Promise<void> {
           papel,
           contexto: { tipo: c.contexto_tipo, id: c.contexto_id },
           temContratoAtivo,
-          agoraBR: agora.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "long", dateStyle: "short", timeStyle: "short" } as Intl.DateTimeFormatOptions),
+          agoraBR: agoraBRTexto(agora),
         }),
         historico: lista.slice(0, ultimaPessoa),
         respostasIA: lista.filter((m) => m.autor === "ia").length,
@@ -488,7 +490,9 @@ export async function acolherNaEquipe(chamadoId: string): Promise<void> {
         fontes = s.fontes.map((f) => rotuloFerramenta(f.ferramenta));
       }
     } else if (integracoesSimuladas()) {
-      texto = SUGESTAO_SIMULADA;
+      // Laboratório (sem IA): rascunho só com textos oficiais, marcado como simulado.
+      const { data: pessoa } = await admin.from("chamado_mensagens").select("corpo").eq("chamado_id", c.id).eq("autor", "usuario").order("criado_em").limit(1).maybeSingle();
+      texto = sugestaoPorRegra((pessoa?.corpo as string) ?? "", primeiroNome(c.visitante_nome), !c.usuario_id);
       simulacao = true;
     }
     if (texto) {
@@ -565,7 +569,7 @@ export async function sugerirRascunho(chamadoId: string): Promise<Sugestao | nul
     papel,
     contexto: { tipo: c.contexto_tipo, id: c.contexto_id },
     temContratoAtivo,
-    agoraBR: agora.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "long", dateStyle: "short", timeStyle: "short" } as Intl.DateTimeFormatOptions),
+    agoraBR: agoraBRTexto(agora),
   });
   const conversa = transcricaoParaRascunho(contexto, (msgs ?? []) as { autor: "usuario" | "ia" | "admin" | "sistema"; corpo: string; interno: boolean }[]);
   return sugerirRespostaMotor(conversa, chamarClaude(), ferramentasReais(admin, c, agora));
@@ -594,4 +598,41 @@ export async function devolverChamadoParaViva(chamadoId: string, adminId: string
     .eq("id", c.id);
   await admin.from("chamado_eventos").insert({ chamado_id: c.id, ator_tipo: "admin", ator_id: adminId, acao: "devolvido_ia", de: "humano", para: "ia", detalhe: respondeAgora ? "a Viva responde agora" : "a Viva responde na próxima mensagem" });
   return { ok: true, respondeAgora };
+}
+
+/**
+ * "Resumo e ações" do chamado. Com a Viva ligada, a IA resume a conversa
+ * pública (sem notas internas, sem dados pessoais); sem IA ou se falhar,
+ * resumo por regras. Quem guarda como nota é a action (atendimento-actions).
+ */
+export async function gerarResumo(chamadoId: string): Promise<{ resumo: ResumoChamado; simulacao: boolean } | null> {
+  const admin = createAdminClient();
+  if (!admin) return null;
+  const { data } = await admin.from("chamados").select(CAMPOS).eq("id", chamadoId).maybeSingle();
+  const c = data as ChamadoViva | null;
+  if (!c) return null;
+  const { data: msgs } = await admin.from("chamado_mensagens").select("autor, corpo, interno").eq("chamado_id", c.id).eq("interno", false).order("criado_em", { ascending: true });
+  const lista = (msgs ?? []) as { autor: "usuario" | "ia" | "admin" | "sistema"; corpo: string; interno: boolean }[];
+  const textoPessoa = lista.filter((m) => m.autor === "usuario").map((m) => m.corpo).join("\n");
+  const regras = () => resumoPorRegra(textoPessoa, !c.usuario_id);
+  if (!vivaAtiva()) return { resumo: regras(), simulacao: integracoesSimuladas() };
+  if (!(await consumirLimite("viva:dia", limiteDia(), DIA))) return { resumo: regras(), simulacao: false };
+  try {
+    const modelo = modeloViva();
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, timeout: 45_000, maxRetries: 1 });
+    const contexto = `Chamado ${c.numero_publico} · categoria ${c.categoria} · prioridade ${c.prioridade} · ${c.usuario_id ? "pessoa com conta" : "visitante sem conta"}`;
+    const res = await client.beta.messages.create({
+      model: modelo,
+      max_tokens: 1200,
+      ...(aceitaEsforco(modelo) ? { output_config: { effort: "low" as const } } : {}),
+      ...(aceitaReserva(modelo) ? { betas: ["server-side-fallback-2026-06-01"], fallbacks: [{ model: "claude-opus-4-8" }] } : {}),
+      system: SYSTEM_RESUMO,
+      messages: [{ role: "user", content: transcricaoParaRascunho(contexto, lista) }],
+    });
+    const bruto = res.content.map((b) => (b.type === "text" ? b.text : "")).join("");
+    return { resumo: lerResumo(bruto, "ia") ?? regras(), simulacao: false };
+  } catch (e) {
+    console.error("[viva] resumo:", e instanceof Error ? e.message : e);
+    return { resumo: regras(), simulacao: false };
+  }
 }
