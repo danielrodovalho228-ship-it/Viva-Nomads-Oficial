@@ -105,7 +105,12 @@ $DB -f "$H/fase_pre0079.sql" >/dev/null
 $DB -f "$R/supabase/migrations/0079_plano_gestor.sql" >/dev/null
 $DB -f "$R/supabase/migrations/0079_plano_gestor.sql" >/dev/null  # reaplicar é seguro
 $DB -f "$H/fase_novo0079.sql" >/dev/null
+$DB -f "$H/fase_pre0080.sql" >/dev/null
+$DB -f "$R/supabase/migrations/0080_exclusao_conta_fotos.sql" >/dev/null
+$DB -f "$R/supabase/migrations/0080_exclusao_conta_fotos.sql" >/dev/null  # reaplicar é seguro
+$DB -f "$H/fase_novo0080.sql" >/dev/null
 psql -q -d p0_teste -P pager=off -f "$R/supabase/producao/verificar-seguranca.sql" 2>&1 | grep -E "^ [A-H][0-9a-z.]" | sed 's/  */ /g'
+$DB -f "$R/supabase/producao/rollback/0080_rollback.sql" >/dev/null
 $DB -f "$R/supabase/producao/rollback/0079_rollback.sql" >/dev/null
 $DB -f "$R/supabase/producao/rollback/0078_rollback.sql" >/dev/null
 $DB -f "$R/supabase/producao/rollback/0077_rollback.sql" >/dev/null

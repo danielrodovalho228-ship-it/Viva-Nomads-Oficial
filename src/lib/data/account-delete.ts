@@ -13,6 +13,7 @@ import {
   lerTokenExclusao,
   normalizarEmail,
 } from "@/lib/conta/exclusao-token";
+import { confirmarExclusao, LINK_INVALIDO } from "@/lib/conta/exclusao-fluxo";
 
 /**
  * Exclusão de conta pela PÁGINA PÚBLICA (/excluir-conta), exigida pela Play Store:
@@ -152,6 +153,8 @@ export async function solicitarExclusaoConta(email: string): Promise<{ ok: boole
 /**
  * Passo 2 — confirma e APAGA. Chamado por um clique explícito na página de
  * confirmação (nunca no carregamento, para scanners de e-mail não dispararem).
+ * A ordem e a regra do link (liberado de novo se a exclusão falhar) ficam em
+ * lib/conta/exclusao-fluxo, com testes.
  */
 export async function confirmarExclusaoConta(
   token: string
@@ -160,64 +163,51 @@ export async function confirmarExclusaoConta(
   const secret = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!admin || !secret) return { ok: false, error: "Serviço indisponível no momento." };
 
-  const invalido = { ok: false, error: "Link inválido, expirado ou já usado. Peça um novo." };
   const t = lerTokenExclusao(token, secret);
-  if (!t) return invalido;
+  if (!t) return { ok: false, error: LINK_INVALIDO };
+  const uid = t.u;
 
-  try {
-    // USO ÚNICO: marca o pedido como usado de forma atômica (só passa uma vez,
-    // dentro dos 30 min e para o mesmo uid do token).
-    const limite = new Date(Date.now() - EXCLUSAO_TTL_S * 1000).toISOString();
-    const { data: usado, error: usoErr } = await admin
-      .from("exclusao_conta_pedidos")
-      .update({ usado_em: new Date().toISOString() })
-      .eq("id", t.j)
-      .eq("uid", t.u)
-      .is("usado_em", null)
-      .gte("criado_em", limite)
-      .select("id");
-    if (usoErr || !usado || usado.length !== 1) return invalido;
-
-    // A conta ainda é a do link: o e-mail ATUAL do uid tem que ser exatamente o do token.
-    const { data: conta, error: contaErr } = await admin.auth.admin.getUserById(t.u);
-    if (contaErr || !conta?.user) return { ok: true }; // já não existe: idempotente
-    if (normalizarEmail(conta.user.email ?? "") !== t.e) return invalido;
-    const uid = t.u;
-
-    const { temHistorico, temAtivo } = await situacaoContratos(admin, uid);
-
-    // (1) Locação/contrato ATIVO → bloqueia (encerre antes).
-    if (temAtivo) {
-      return {
-        ok: false,
-        blocked: true,
-        error:
-          "Você tem uma locação ou contrato ativo. Encerre a locação antes de excluir a conta — " +
-          "assim preservamos os registros exigidos enquanto o contrato está em vigor.",
-      };
-    }
-
-    // (2) Histórico de contratos → ANONIMIZA (retenção legal), não apaga.
-    // Depende da migração 0049 (função anonimizar_conta). Se ela ainda não foi
-    // aplicada, NÃO cai no apagar em cascata: bloqueia com orientação.
-    if (temHistorico) {
-      const { error } = await admin.rpc("anonimizar_conta", { target: uid });
-      if (error) {
-        return {
-          ok: false,
-          error:
-            "No momento não é possível excluir contas com histórico de contratos por aqui. " +
-            "Fale conosco pelos canais oficiais para concluir.",
-        };
-      }
-      return { ok: true, anonymized: true };
-    }
-
-    // (3) Sem contratos → apaga de fato (auth.users → cascata).
-    const { error } = await admin.auth.admin.deleteUser(uid);
-    if (error) return { ok: false, error: "Não foi possível excluir agora. Tente novamente." };
-    return { ok: true };
-  } catch {
-    return { ok: false, error: "Não foi possível excluir agora. Tente novamente." };
-  }
+  return confirmarExclusao(
+    {
+      // USO ÚNICO: marca o pedido como usado de forma atômica (só passa uma vez,
+      // dentro dos 30 min e para o mesmo uid do token).
+      async marcarUsado() {
+        const limite = new Date(Date.now() - EXCLUSAO_TTL_S * 1000).toISOString();
+        const { data, error } = await admin
+          .from("exclusao_conta_pedidos")
+          .update({ usado_em: new Date().toISOString() })
+          .eq("id", t.j)
+          .eq("uid", uid)
+          .is("usado_em", null)
+          .gte("criado_em", limite)
+          .select("id");
+        return !error && !!data && data.length === 1;
+      },
+      async liberar() {
+        await admin.from("exclusao_conta_pedidos").update({ usado_em: null }).eq("id", t.j).eq("uid", uid);
+      },
+      async emailAtual() {
+        const { data, error } = await admin.auth.admin.getUserById(uid);
+        // Só "não existe" conta como já excluída; erro de rede/serviço é falha (link liberado).
+        if (error) {
+          if ((error as { status?: number }).status === 404) return null;
+          throw error;
+        }
+        if (!data?.user) return null;
+        return normalizarEmail(data.user.email ?? "");
+      },
+      situacao: () => situacaoContratos(admin, uid),
+      // Depende da 0049 (anonimizar_conta). Sem ela, NÃO cai no apagar em cascata.
+      async anonimizar() {
+        const { error } = await admin.rpc("anonimizar_conta", { target: uid });
+        return !error;
+      },
+      async apagar() {
+        const { error } = await admin.auth.admin.deleteUser(uid);
+        if (error) console.error("[excluir-conta] falha ao apagar:", error.message || error.code);
+        return !error;
+      },
+    },
+    t.e
+  );
 }
