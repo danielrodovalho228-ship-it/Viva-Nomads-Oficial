@@ -493,7 +493,8 @@ function RegistrarRecebimento({
         <ShieldCheck className="h-3.5 w-3.5 text-sage" /> Registrar recebimento (você declara; a plataforma só registra)
       </p>
       <div className="mb-2 inline-flex rounded-lg border border-sage-200 p-0.5 text-xs" role="group" aria-label="Tipo de recebimento">
-        {(["aluguel", "caucao"] as const).map((t) => (
+        {/* Sem caução no bloco (ex.: contrato com seguro-fiança) não há recebimento de caução: uma garantia só. */}
+        {(caucaoSugerida > 0 ? (["aluguel", "caucao"] as const) : (["aluguel"] as const)).map((t) => (
           <button
             key={t}
             type="button"
