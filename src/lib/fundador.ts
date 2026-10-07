@@ -29,10 +29,14 @@ export function fundadorNoGratis(
   return !!fim && agora.getTime() < new Date(fim).getTime();
 }
 
+/** Planos pagos que existem no banco (plan_type, 0079 incluiu o Gestor). */
+const PLANOS_PAGOS = new Set(["essential", "pro", "gestor"]);
+
 /**
  * Plano que vale para o proprietário: a assinatura ATIVA, se houver (pagou →
  * vale o que pagou); senão, Profissional enquanto Fundador no período grátis;
- * senão, Gratuito.
+ * senão, Gratuito. Valor desconhecido nunca vira plano (sem limite definido,
+ * a trava de anúncios deixaria passar).
  */
 export function planoEfetivo(
   planoAssinaturaAtiva: string | null | undefined,
@@ -40,7 +44,7 @@ export function planoEfetivo(
   fundadorEm: string | null | undefined,
   agora: Date = new Date()
 ): string {
-  if (planoAssinaturaAtiva && planoAssinaturaAtiva !== "free") return planoAssinaturaAtiva;
+  if (planoAssinaturaAtiva && PLANOS_PAGOS.has(planoAssinaturaAtiva)) return planoAssinaturaAtiva;
   if (fundadorNoGratis(fundador, fundadorEm, agora)) return "pro";
   return "free";
 }
