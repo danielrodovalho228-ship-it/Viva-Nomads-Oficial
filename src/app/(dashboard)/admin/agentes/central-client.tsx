@@ -8,7 +8,6 @@ import {
   ROTULO_STATUS,
   avisoOrdem,
   duracao,
-  iniciais,
   prioridadesDe,
   statusDoAgente,
   tempoRelativo,
@@ -19,31 +18,41 @@ import {
   type Ronda,
   type StatusAgente,
 } from "@/lib/agentes/central";
+import { COR_RONDA_HEX, achadosDaPrioridade, corDaRonda, indicadores, proximaDoAgente, resumoCurto, rondaRecente, ultimaPorAgente } from "@/lib/agentes/painel";
 import { deixarOrdem, type DadosCentral } from "@/lib/data/agentes-actions";
+import { AvatarAgente, Hex } from "@/components/admin/agentes/avatar";
+import { RedeAoVivo } from "@/components/admin/agentes/rede";
+import { ChipPrioridade, RaioX } from "@/components/admin/agentes/raiox";
+import styles from "@/components/admin/agentes/central.module.css";
 
 /*
-  Central de Agentes — tema escuro próprio (fundo #050A18 com grade sutil),
-  Plus Jakarta Sans no texto e JetBrains Mono nos horários. Quatro abas:
-  Equipe · Rondas · Conversar · Sala de reunião. O site não dispara agentes:
-  ordens ficam no banco e o agente lê na próxima ronda.
+  Central de Agentes v2 — o visual do QG dentro do admin: sala de comando
+  escura (#050A18 com grade), avatares hexagonais com foto e anel da última
+  ronda. Abas: Equipe · Rede ao vivo · Raio-X · Diário de bordo · Conversar ·
+  Sala de reunião. Tudo vem do banco (agentes, agentes_rondas, agentes_ordens);
+  a página se atualiza sozinha a cada 90 s. O site não dispara agentes: ordens
+  ficam no banco e o agente lê na próxima ronda.
 */
 
-const ABAS = ["Equipe", "Rondas", "Conversar", "Sala de reunião"] as const;
+const ABAS = ["Equipe", "Rede ao vivo", "Raio-X da Viva", "Diário de bordo", "Conversar", "Sala de reunião"] as const;
 type Aba = (typeof ABAS)[number];
+const ATUALIZA_MS = 90_000;
 
 const COR_STATUS: Record<StatusAgente, string> = {
   espera: "#7FD321",
   alerta: "#FFB547",
-  falhou: "#FF7A6B",
+  falhou: "#FF5470",
   sem_ronda: "#8C9AC4",
   planejado: "#8C9AC4",
   pausado: "#8C9AC4",
 };
 const COR_ORDEM: Record<Ordem["status"], string> = { pendente: "#FFB547", lida: "#38BDF8", concluida: "#7FD321", cancelada: "#8C9AC4" };
 const ROTULO_ORDEM: Record<Ordem["status"], string> = { pendente: "Pendente", lida: "Lida", concluida: "Concluída", cancelada: "Cancelada" };
-const COR_RONDA: Record<Ronda["status"], string> = { ok: "#7FD321", alerta: "#FFB547", falhou: "#FF7A6B" };
+const COR_RONDA: Record<Ronda["status"], string> = { ok: "#7FD321", alerta: "#FFB547", falhou: "#FF5470" };
+const ROTULO_RONDA: Record<Ronda["status"], string> = { ok: "OK", alerta: "Alerta", falhou: "Falhou" };
 
 const mono = { fontFamily: "var(--font-mono-agentes), ui-monospace, monospace" };
+const display = { fontFamily: "var(--font-display-agentes), var(--font-jakarta), sans-serif" };
 
 function useAgora(ms = 30_000): Date | null {
   const [agora, setAgora] = useState<Date | null>(null);
@@ -62,20 +71,9 @@ function useAgora(ms = 30_000): Date | null {
 const hora = (d: Date | null, tz: string) => (d ? d.toLocaleTimeString("pt-BR", { timeZone: tz, hour: "2-digit", minute: "2-digit" }) : "--:--");
 const dataHora = (iso: string) => new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 
-export function Hex({ nome, cor, tamanho = 44 }: { nome: string; cor: string; tamanho?: number }) {
-  return (
-    <svg width={tamanho} height={tamanho} viewBox="0 0 100 100" aria-hidden className="shrink-0">
-      <polygon points="50,3 93,27 93,73 50,97 7,73 7,27" fill={cor} fillOpacity="0.16" stroke={cor} strokeWidth="4" />
-      <text x="50" y="50" dominantBaseline="central" textAnchor="middle" fontSize="32" fontWeight="700" fill={cor}>
-        {iniciais(nome)}
-      </text>
-    </svg>
-  );
-}
-
 function Chip({ cor, children }: { cor: string; children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-semibold" style={{ borderColor: `${cor}66`, color: cor, background: `${cor}14` }}>
+    <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2 py-0.5 text-[11px] font-semibold" style={{ borderColor: `${cor}66`, color: cor, background: `${cor}14` }}>
       <span className="h-1.5 w-1.5 rounded-full" style={{ background: cor }} />
       {children}
     </span>
@@ -91,17 +89,40 @@ function Vazio({ titulo, texto }: { titulo: string; texto: string }) {
   );
 }
 
+function Rotulo({ children }: { children: React.ReactNode }) {
+  return (
+    <h2 className="mb-2.5 mt-7 flex items-center gap-2.5 text-[11px] uppercase tracking-[.14em] text-[#8C9AC4] after:h-px after:flex-1 after:bg-gradient-to-r after:from-white/15 after:to-transparent">
+      {children}
+    </h2>
+  );
+}
+
 const botao = "rounded-lg px-3 py-2 text-sm font-semibold transition disabled:opacity-50";
-const botaoAzul = `${botao} bg-[#3D7BFF] text-white hover:bg-[#2f6af0]`;
+const botaoAzul = `${botao} bg-[#005DFC] text-white hover:bg-[#2C7BFF]`;
 const botaoLinha = `${botao} border border-white/15 text-white hover:bg-white/5`;
 const campoBase = "rounded-lg border border-white/15 bg-[#0B1430] px-3 py-2 text-sm text-white placeholder:text-[#5d6a93] focus:border-[#3D7BFF] focus:outline-none";
 const campo = `w-full ${campoBase}`;
 
 export function CentralAgentes({ dados }: { dados: DadosCentral }) {
+  const router = useRouter();
   const [aba, setAba] = useState<Aba>("Equipe");
   const [conversarCom, setConversarCom] = useState<string | null>(null);
   const agora = useAgora();
   const porSlug = useMemo(() => Object.fromEntries(dados.agentes.map((a) => [a.slug, a])), [dados.agentes]);
+  const kpi = useMemo(() => (agora ? indicadores(dados.agentes, dados.rondas, agora) : null), [dados.agentes, dados.rondas, agora]);
+  const [lidoEm, setLidoEm] = useState<Date | null>(null);
+
+  // "Ao vivo": relê o banco a cada 90 s enquanto a aba do navegador está visível.
+  useEffect(() => {
+    const marca = setTimeout(() => setLidoEm(new Date()), 0);
+    const t = setInterval(() => {
+      if (document.visibilityState === "visible") router.refresh();
+    }, ATUALIZA_MS);
+    return () => {
+      clearTimeout(marca);
+      clearInterval(t);
+    };
+  }, [router, dados]);
 
   function abrirConversa(slug: string) {
     setConversarCom(slug);
@@ -110,35 +131,50 @@ export function CentralAgentes({ dados }: { dados: DadosCentral }) {
 
   return (
     <div
-      className="-m-5 min-h-screen text-[#E6ECFF] sm:-m-8"
+      className="-m-5 min-h-screen overflow-x-hidden text-[#E8EEFF] sm:-m-8"
       style={{
         fontFamily: "var(--font-jakarta), system-ui, sans-serif",
         backgroundColor: "#050A18",
-        backgroundImage: "linear-gradient(rgba(140,154,196,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(140,154,196,0.06) 1px, transparent 1px)",
-        backgroundSize: "32px 32px",
+        backgroundImage:
+          "radial-gradient(900px 500px at 85% -10%, rgba(0,93,252,.22), transparent 60%), linear-gradient(rgba(61,123,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(61,123,255,0.05) 1px, transparent 1px)",
+        backgroundSize: "auto, 40px 40px, 40px 40px",
       }}
       data-testid="central-agentes"
     >
-      <header className="sticky top-0 z-20 border-b border-white/10 bg-[#050A18]/90 px-4 backdrop-blur sm:px-8">
-        <div className="flex flex-wrap items-center justify-between gap-3 py-3">
-          <h1 className="text-lg font-bold text-white">Central de Agentes</h1>
-          <div className="flex gap-4 text-xs text-[#8C9AC4]" style={mono}>
+      <header className="sticky top-0 z-20 border-b border-white/10 bg-[#050A18]/85 px-4 backdrop-blur sm:px-8">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3">
+          <div className="flex items-center gap-2.5">
+            <span className="grid h-[34px] w-[34px] place-items-center rounded-[10px] bg-gradient-to-br from-[#005DFC] to-[#38BDF8] text-[13px] font-bold text-white shadow-[0_0_24px_rgba(0,93,252,.5)]" style={display}>
+              VN
+            </span>
+            <div>
+              <h1 className="text-[15px] font-bold tracking-wide text-white" style={display}>
+                Central de Agentes
+              </h1>
+              <p className="text-[11px] uppercase tracking-[.12em] text-[#8C9AC4]">Viva Nomads · sala de comando</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-3.5 text-xs text-[#8C9AC4] sm:ml-auto" style={mono}>
             <span>
-              Brasília <b className="text-white">{hora(agora, "America/Sao_Paulo")}</b>
+              Brasília <b className="font-medium text-white">{hora(agora, "America/Sao_Paulo")}</b>
             </span>
             <span>
-              Texas <b className="text-white">{hora(agora, "America/Chicago")}</b>
+              Texas <b className="font-medium text-white">{hora(agora, "America/Chicago")}</b>
             </span>
           </div>
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/15 px-2.5 py-1 text-xs text-[#8C9AC4]">
+            <span className={styles.ponto} />
+            Ao vivo · dados de {hora(lidoEm, "America/Chicago")} TX
+          </span>
         </div>
-        <nav className="-mb-px flex gap-1 overflow-x-auto" role="tablist">
+        <nav className="-mb-px flex gap-1 overflow-x-auto pb-2" role="tablist" style={{ scrollbarWidth: "none" }}>
           {ABAS.map((a) => (
             <button
               key={a}
               role="tab"
               aria-selected={aba === a}
               onClick={() => setAba(a)}
-              className={`whitespace-nowrap border-b-2 px-2 py-2 text-[13px] font-semibold sm:px-3 sm:text-sm ${aba === a ? "border-[#3D7BFF] text-white" : "border-transparent text-[#8C9AC4] hover:text-white"}`}
+              className={`whitespace-nowrap rounded-[10px] border px-3 py-1.5 text-[13px] font-semibold sm:text-sm ${aba === a ? "border-white/20 bg-[#111F47] text-white" : "border-transparent text-[#8C9AC4] hover:text-white"}`}
             >
               {a}
             </button>
@@ -146,13 +182,42 @@ export function CentralAgentes({ dados }: { dados: DadosCentral }) {
         </nav>
       </header>
 
-      <div className="px-4 py-6 sm:px-8">
+      <div className="mx-auto max-w-[1280px] px-4 pb-16 sm:px-8">
+        <section className={`grid items-end gap-4 lg:grid-cols-[1.3fr_1fr] lg:gap-6 ${aba === "Equipe" ? "py-7" : "py-4"}`}>
+          <div className={aba === "Equipe" ? "" : "hidden lg:block"}>
+            <p className="text-[clamp(24px,3.6vw,36px)] font-bold leading-tight tracking-tight text-white" style={display}>
+              A equipe trabalhando{" "}
+              <span className="bg-gradient-to-r from-[#38BDF8] to-[#7FD321] bg-clip-text text-transparent">24 horas</span>, cada agente com nome e função.
+            </p>
+            <p className="mt-2 max-w-[60ch] text-sm text-[#8C9AC4]">Status, rondas e achados vêm direto do banco. Converse com um agente, reúna vários de uma vez ou deixe uma ordem para a próxima ronda.</p>
+          </div>
+          <div className="grid grid-cols-4 gap-2" data-testid="kpis">
+            {[
+              [kpi?.ativos, "agentes ativos"],
+              [kpi?.rondas24h, "rondas em 24 h"],
+              [kpi?.falhas, "falharam na última"],
+              [kpi?.p1, "achados P1"],
+            ].map(([v, l]) => (
+              <div key={String(l)} className="min-w-0 rounded-xl border border-white/10 bg-[#0D1838]/60 px-2 py-2 sm:px-3 sm:py-2.5">
+                <b className="block text-lg font-medium text-white sm:text-[22px]" style={mono}>
+                  {v ?? "–"}
+                </b>
+                <span className="block text-[9.5px] uppercase leading-tight tracking-wide text-[#8C9AC4] sm:text-[11px] sm:tracking-wider">{l}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+
         {dados.agentes.length === 0 ? (
           <Vazio titulo="Nenhum agente cadastrado" texto="A tabela de agentes está vazia ou a migração 0078 ainda não foi aplicada neste banco." />
         ) : aba === "Equipe" ? (
           <Equipe dados={dados} agora={agora} onConversar={abrirConversa} />
-        ) : aba === "Rondas" ? (
-          <Rondas dados={dados} porSlug={porSlug} agora={agora} />
+        ) : aba === "Rede ao vivo" ? (
+          <RedeAoVivo agentes={dados.agentes} rondas={dados.rondas} agora={agora} />
+        ) : aba === "Raio-X da Viva" ? (
+          <RaioX agentes={dados.agentes} rondas={dados.rondas} agora={agora} onConversar={abrirConversa} />
+        ) : aba === "Diário de bordo" ? (
+          <Diario dados={dados} porSlug={porSlug} agora={agora} />
         ) : aba === "Conversar" ? (
           <Conversar dados={dados} inicial={conversarCom} agora={agora} />
         ) : (
@@ -164,46 +229,86 @@ export function CentralAgentes({ dados }: { dados: DadosCentral }) {
 }
 
 // ── Equipe ─────────────────────────────────────────────────────────────────
-function CardAgente({ a, ultima, pendentes, agora, onConversar }: { a: Agente; ultima?: Ronda; pendentes: number; agora: Date | null; onConversar: (s: string) => void }) {
+function CardAgente({
+  a,
+  ultima,
+  pendentes,
+  agora,
+  grande = false,
+  onConversar,
+}: {
+  a: Agente;
+  ultima?: Ronda;
+  pendentes: number;
+  agora: Date | null;
+  grande?: boolean;
+  onConversar: (s: string) => void;
+}) {
   const cor = COR_ESQUADRAO[a.esquadrao];
   const st = statusDoAgente(a, ultima);
+  const ativo = a.status === "ativo";
+  const anel = ativo ? COR_RONDA_HEX[corDaRonda(ultima)] : undefined;
   const dur = ultima ? duracao(ultima.iniciada_em, ultima.concluida_em) : null;
+  const proxima = agora ? proximaDoAgente(a, agora) : null;
+  const p1 = achadosDaPrioridade(ultima, "P0", "P1");
   return (
-    <article className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-[#0B1430]/80 p-4" data-testid={`agente-${a.slug}`}>
-      <div className="flex items-start gap-3">
-        <Hex nome={a.nome} cor={cor} />
-        <div className="min-w-0 flex-1">
-          <p className="font-bold text-white">{a.nome}</p>
-          <p className="text-xs text-[#8C9AC4]">{a.cargo}</p>
-          <div className="mt-1.5">
-            <Chip cor={COR_STATUS[st]}>{ROTULO_STATUS[st]}</Chip>
-          </div>
-        </div>
-      </div>
-      {a.rotina_texto && (
-        <p className="text-xs text-[#AEB9DD]" style={mono}>
-          {a.rotina_texto}
-        </p>
-      )}
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#8C9AC4]">
-        <span>
-          Última ronda:{" "}
-          <b className="text-white" style={mono}>
-            {ultima && agora ? `${tempoRelativo(ultima.iniciada_em, agora)}${dur ? ` · ${dur}` : ""}` : "—"}
-          </b>
-        </span>
-        <span>
-          Ordens pendentes: <b className="text-white">{pendentes}</b>
-        </span>
-      </div>
-      <div className="mt-auto flex flex-wrap gap-2">
-        <button className={botaoLinha} onClick={() => onConversar(a.slug)}>
-          Conversar
-        </button>
-        {ultima?.link_sessao && (
-          <a className={botaoLinha} href={ultima.link_sessao} target="_blank" rel="noopener noreferrer">
-            Abrir ronda
-          </a>
+    <article
+      className={`relative grid min-w-0 gap-3 rounded-xl border border-white/10 bg-gradient-to-b from-[#0D1838] to-[#0D1838]/70 transition hover:border-[color:var(--c)] ${grande ? "grid-cols-[64px_1fr] p-3.5" : "grid-cols-[52px_1fr] p-3"} ${ativo ? "" : "opacity-60"}`}
+      style={{ ["--c" as string]: `${cor}99` }}
+      data-testid={`agente-${a.slug}`}
+    >
+      <AvatarAgente slug={a.slug} nome={a.nome} cor={cor} anel={anel} recente={!!agora && rondaRecente(ultima, agora)} tamanho={grande ? 64 : 52} />
+      <div className="min-w-0">
+        <h3 className="flex flex-wrap items-center gap-2 text-base font-bold text-white">
+          {a.nome} <Chip cor={COR_STATUS[st]}>{ROTULO_STATUS[st]}</Chip>
+        </h3>
+        <p className="text-[13px] text-[#8C9AC4]">{a.cargo}</p>
+        {ativo ? (
+          <>
+            <dl className="mt-2.5 grid grid-cols-[auto_1fr] gap-x-2.5 gap-y-0.5 text-xs text-[#8C9AC4]" style={mono}>
+              <dt>Última</dt>
+              <dd className="text-white" data-testid="ultima-ronda">
+                {ultima && agora ? `${tempoRelativo(ultima.iniciada_em, agora)}${dur ? ` · ${dur}` : ""}` : "—"}
+              </dd>
+              <dt>Próxima</dt>
+              <dd className="text-white">{proxima ?? a.rotina_texto ?? "—"}</dd>
+              {pendentes > 0 && (
+                <>
+                  <dt>Ordens</dt>
+                  <dd className="text-white">{pendentes} pendente{pendentes > 1 ? "s" : ""}</dd>
+                </>
+              )}
+            </dl>
+            {ultima?.resumo && (
+              <p className="mt-2 border-l-2 pl-2 text-[12.5px] text-[#C3CDEB]" style={{ borderColor: cor }} data-testid="resumo-ronda">
+                {resumoCurto(ultima.resumo)}
+              </p>
+            )}
+            {p1.length > 0 && (
+              <ul className="mt-2 space-y-1 text-[12.5px] text-[#FFC2CC]" data-testid="achados-p1">
+                {p1.slice(0, 3).map((x, i) => (
+                  <li key={i}>
+                    <ChipPrioridade p={String(x.prioridade)} />
+                    {x.titulo ?? x.detalhe}
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="mt-2.5 flex flex-wrap items-center gap-2">
+              <button className="rounded-lg bg-[#005DFC] px-3 py-1.5 text-[13px] font-semibold text-white hover:bg-[#2C7BFF]" onClick={() => onConversar(a.slug)}>
+                Conversar
+              </button>
+              {ultima?.link_sessao && (
+                <a className="text-xs font-semibold text-[#38BDF8] hover:underline" href={ultima.link_sessao} target="_blank" rel="noopener noreferrer">
+                  Abrir última ronda ↗
+                </a>
+              )}
+            </div>
+          </>
+        ) : (
+          <p className="mt-2 text-[13px] text-[#C3CDEB]">
+            {a.esquadrao === "plataforma" ? "Vai trabalhar dentro do app, com inquilinos e proprietários." : "Agente proposto. Peça ao Moacir para ativar."}
+          </p>
         )}
       </div>
     </article>
@@ -211,77 +316,117 @@ function CardAgente({ a, ultima, pendentes, agora, onConversar }: { a: Agente; u
 }
 
 function Equipe({ dados, agora, onConversar }: { dados: DadosCentral; agora: Date | null; onConversar: (s: string) => void }) {
-  const ultima = (slug: string) => dados.rondas.find((r) => r.agente_slug === slug);
+  const ultimas = useMemo(() => ultimaPorAgente(dados.rondas), [dados.rondas]);
   const pend = (slug: string) => dados.ordens.filter((o) => o.agente_slug === slug && o.status === "pendente").length;
-  const card = (a: Agente) => <CardAgente key={a.slug} a={a} ultima={ultima(a.slug)} pendentes={pend(a.slug)} agora={agora} onConversar={onConversar} />;
+  const card = (a: Agente, grande = false) => <CardAgente key={a.slug} a={a} ultima={ultimas[a.slug]} pendentes={pend(a.slug)} agora={agora} grande={grande} onConversar={onConversar} />;
   const moacir = dados.agentes.find((a) => a.slug === "moacir");
   const otavio = dados.agentes.find((a) => a.slug === "otavio");
   const esquadroes: Esquadrao[] = ["operacoes", "tecnologia", "crescimento", "financas"];
-  const linha = <div className="mx-auto h-5 w-px bg-white/15" aria-hidden />;
+  const plataforma = dados.agentes.filter((a) => a.esquadrao === "plataforma");
 
   return (
-    <div className="space-y-2">
-      <div className="mx-auto flex max-w-sm items-center gap-3 rounded-2xl border border-[#3D7BFF]/40 bg-[#0B1430]/80 p-4">
-        <Hex nome="Daniel" cor="#E6ECFF" />
-        <div>
-          <p className="font-bold text-white">Daniel</p>
-          <p className="text-xs text-[#8C9AC4]">Dono · aprova tudo que vai para produção</p>
-        </div>
+    <div>
+      <Rotulo>Comando</Rotulo>
+      <div className="grid gap-3 lg:grid-cols-3">
+        <article className="grid grid-cols-[64px_1fr] gap-3 rounded-xl border border-[#7FD321]/40 bg-gradient-to-b from-[#0D1838] to-[#0D1838]/70 p-3.5" data-testid="agente-daniel">
+          <span className={`${styles.hex} block h-16 w-16 bg-[#0B1638]`}>
+            <Hex nome="Daniel R" cor="#7FD321" tamanho={64} />
+          </span>
+          <div className="min-w-0">
+            <h3 className="flex flex-wrap items-center gap-2 text-base font-bold text-white">
+              Daniel <Chip cor="#7FD321">Fundador</Chip>
+            </h3>
+            <p className="text-[13px] text-[#8C9AC4]">Aprova, decide e assina</p>
+            <p className="mt-2 text-[13px] text-[#C3CDEB]">Tudo que muda o site, o banco, publica ou manda mensagem passa por você. Os agentes preparam; você aprova.</p>
+          </div>
+        </article>
+        {moacir && card(moacir, true)}
+        {otavio && card(otavio, true)}
       </div>
-      {moacir && (
-        <>
-          {linha}
-          <div className="mx-auto max-w-sm">{card(moacir)}</div>
-        </>
-      )}
-      {otavio && (
-        <>
-          {linha}
-          <div className="mx-auto max-w-sm">{card(otavio)}</div>
-        </>
-      )}
-      {linha}
-      <div className="grid gap-6 pt-2 md:grid-cols-2 xl:grid-cols-4">
+
+      <Rotulo>Esquadrões</Rotulo>
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         {esquadroes.map((e) => {
           const lista = dados.agentes.filter((a) => a.esquadrao === e);
           return (
-            <section key={e} className="space-y-3">
-              <h2 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider" style={{ color: COR_ESQUADRAO[e] }}>
-                <span className="h-2 w-2 rounded-full" style={{ background: COR_ESQUADRAO[e] }} /> {NOME_ESQUADRAO[e]}
-              </h2>
-              {lista.length ? lista.map(card) : <p className="text-xs text-[#8C9AC4]">Ninguém neste esquadrão ainda.</p>}
+            <section key={e} className="flex min-w-0 flex-col gap-2.5 rounded-2xl border border-white/10 bg-[#0A1430]/55 p-3">
+              <h3 className="flex items-center gap-2 text-xs font-bold uppercase tracking-[.12em] text-[#8C9AC4]">
+                <i className="h-2 w-2 rounded-sm" style={{ background: COR_ESQUADRAO[e] }} /> {NOME_ESQUADRAO[e]}
+              </h3>
+              {lista.length ? lista.map((a) => card(a)) : <p className="text-xs text-[#8C9AC4]">Ninguém neste esquadrão ainda.</p>}
             </section>
           );
         })}
       </div>
-      <section className="space-y-3 pt-8">
-        <h2 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider" style={{ color: COR_ESQUADRAO.plataforma }}>
-          <span className="h-2 w-2 rounded-full" style={{ background: COR_ESQUADRAO.plataforma }} /> {NOME_ESQUADRAO.plataforma}
-        </h2>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {dados.agentes.filter((a) => a.esquadrao === "plataforma").map((a) => (
-            <div key={a.slug} className="flex items-center gap-3 rounded-2xl border border-dashed border-white/15 p-3 opacity-80" data-testid={`agente-${a.slug}`}>
-              <Hex nome={a.nome} cor={COR_ESQUADRAO.plataforma} tamanho={36} />
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-bold text-white">{a.nome}</p>
-                <p className="truncate text-xs text-[#8C9AC4]">{a.cargo}</p>
-              </div>
-              <Chip cor={COR_STATUS.planejado}>{ROTULO_STATUS[statusDoAgente(a, undefined)]}</Chip>
-            </div>
-          ))}
-        </div>
-      </section>
+
+      {plataforma.length > 0 && (
+        <>
+          <Rotulo>{NOME_ESQUADRAO.plataforma} · agentes dentro do app</Rotulo>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{plataforma.map((a) => card(a))}</div>
+        </>
+      )}
     </div>
   );
 }
 
-// ── Rondas ─────────────────────────────────────────────────────────────────
+// ── Diário de bordo ────────────────────────────────────────────────────────
+function Diario({ dados, porSlug, agora }: { dados: DadosCentral; porSlug: Record<string, Agente>; agora: Date | null }) {
+  const ultimas = useMemo(() => Object.values(ultimaPorAgente(dados.rondas)).sort((x, y) => new Date(y.iniciada_em).getTime() - new Date(x.iniciada_em).getTime()), [dados.rondas]);
+  return (
+    <div className="mx-auto max-w-3xl">
+      <Rotulo>Última ronda de cada agente</Rotulo>
+      {ultimas.length === 0 ? (
+        <Vazio titulo="Nenhuma ronda registrada ainda" texto="Quando os agentes chamarem registrar_ronda no fim de cada ronda, a última de cada um aparece aqui." />
+      ) : (
+        <ul className="space-y-2" data-testid="diario">
+          {ultimas.map((r) => {
+            const a = porSlug[r.agente_slug];
+            const achados = (Array.isArray(r.achados) ? r.achados : []).filter((x) => /^P[0-3]$/i.test(String(x?.prioridade ?? "")));
+            return (
+              <li key={r.id} className="grid grid-cols-[40px_1fr] gap-3 rounded-xl border border-white/10 bg-[#0D1838]/55 p-3">
+                {a ? <AvatarAgente slug={a.slug} nome={a.nome} cor={COR_ESQUADRAO[a.esquadrao]} anel={COR_RONDA[r.status]} recente={!!agora && rondaRecente(r, agora)} tamanho={40} /> : <span />}
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <b className="text-white">{a?.nome ?? r.agente_slug}</b>
+                    <Chip cor={COR_RONDA[r.status]}>{ROTULO_RONDA[r.status]}</Chip>
+                    <span className="text-xs text-[#8C9AC4]" style={mono}>
+                      {dataHora(r.iniciada_em)} BR{agora ? ` · ${tempoRelativo(r.iniciada_em, agora)}` : ""}
+                    </span>
+                  </div>
+                  {r.resumo && <p className="mt-1 text-[13px] text-[#C3CDEB]">{resumoCurto(r.resumo, 260)}</p>}
+                  {achados.length > 0 && (
+                    <ul className="mt-1.5 space-y-0.5 text-[13px] text-[#C3CDEB]">
+                      {achados.slice(0, 5).map((x, i) => (
+                        <li key={i}>
+                          <ChipPrioridade p={String(x.prioridade)} />
+                          {x.titulo ?? x.detalhe}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {r.link_sessao && (
+                    <a href={r.link_sessao} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block text-xs font-semibold text-[#38BDF8] hover:underline">
+                      Abrir ronda ↗
+                    </a>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      <Rotulo>Histórico</Rotulo>
+      <Rondas dados={dados} porSlug={porSlug} agora={agora} />
+    </div>
+  );
+}
+
 function Rondas({ dados, porSlug, agora }: { dados: DadosCentral; porSlug: Record<string, Agente>; agora: Date | null }) {
   const [agente, setAgente] = useState("");
   const [prio, setPrio] = useState("");
   const lista = dados.rondas.filter((r) => (!agente || r.agente_slug === agente) && (!prio || prioridadesDe(r).includes(prio)));
   return (
-    <div className="mx-auto max-w-3xl space-y-4">
+    <div className="space-y-4">
       <div className="flex flex-wrap gap-2">
         <select aria-label="Filtrar por agente" className={campoBase} value={agente} onChange={(e) => setAgente(e.target.value)}>
           <option value="">Todos os agentes</option>
@@ -298,46 +443,36 @@ function Rondas({ dados, porSlug, agora }: { dados: DadosCentral; porSlug: Recor
           ))}
         </select>
       </div>
-      {dados.rondas.length === 0 ? (
-        <Vazio titulo="Nenhuma ronda registrada ainda" texto="Quando os agentes passarem a chamar registrar_ronda no fim de cada ronda, as últimas 50 aparecem aqui." />
-      ) : lista.length === 0 ? (
+      {dados.rondas.length === 0 ? null : lista.length === 0 ? (
         <Vazio titulo="Nada com esse filtro" texto="Troque o agente ou a prioridade." />
       ) : (
-        <ol className="relative space-y-4 border-l border-white/10 pl-5">
+        <ol className="relative space-y-3 border-l border-white/10 pl-5">
           {lista.map((r) => {
             const a = porSlug[r.agente_slug];
             const dur = duracao(r.iniciada_em, r.concluida_em);
             return (
               <li key={r.id} className="relative">
                 <span className="absolute -left-[27px] top-3 h-3 w-3 rounded-full ring-4 ring-[#050A18]" style={{ background: COR_RONDA[r.status] }} />
-                <div className="rounded-2xl border border-white/10 bg-[#0B1430]/80 p-4">
+                <div className="rounded-xl border border-white/10 bg-[#0B1430]/80 p-3">
                   <div className="flex flex-wrap items-center gap-2">
-                    {a && <Hex nome={a.nome} cor={COR_ESQUADRAO[a.esquadrao]} tamanho={28} />}
                     <b className="text-white">{a?.nome ?? r.agente_slug}</b>
-                    <Chip cor={COR_RONDA[r.status]}>{r.status === "ok" ? "OK" : r.status === "alerta" ? "Alerta" : "Falhou"}</Chip>
+                    <Chip cor={COR_RONDA[r.status]}>{ROTULO_RONDA[r.status]}</Chip>
                     <span className="ml-auto text-xs text-[#8C9AC4]" style={mono}>
                       {dataHora(r.iniciada_em)}
                       {agora ? ` · ${tempoRelativo(r.iniciada_em, agora)}` : ""}
                       {dur ? ` · ${dur}` : ""}
                     </span>
                   </div>
-                  {r.resumo && <p className="mt-2 whitespace-pre-line text-sm text-[#C9D2F0]">{r.resumo}</p>}
+                  {r.resumo && <p className="mt-1.5 whitespace-pre-line text-sm text-[#C9D2F0]">{r.resumo}</p>}
                   {Array.isArray(r.achados) && r.achados.length > 0 && (
-                    <ul className="mt-2 space-y-1">
+                    <ul className="mt-1.5 space-y-1">
                       {r.achados.map((x, i) => (
-                        <li key={i} className="flex gap-2 text-sm">
-                          <span className="shrink-0 rounded bg-white/10 px-1.5 text-[11px] font-bold text-white" style={mono}>
-                            {String(x?.prioridade ?? "—").toUpperCase()}
-                          </span>
-                          <span className="text-[#C9D2F0]">{x?.titulo ?? x?.detalhe ?? ""}</span>
+                        <li key={i} className="text-sm text-[#C9D2F0]">
+                          <ChipPrioridade p={String(x?.prioridade ?? "—")} />
+                          {x?.titulo ?? x?.detalhe ?? ""}
                         </li>
                       ))}
                     </ul>
-                  )}
-                  {r.link_sessao && (
-                    <a href={r.link_sessao} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-sm font-semibold text-[#38BDF8] hover:underline">
-                      Abrir ronda
-                    </a>
                   )}
                 </div>
               </li>
@@ -410,7 +545,7 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
             }}
             className={`flex shrink-0 items-center gap-2 rounded-xl border px-3 py-2 text-left ${x.slug === slug ? "border-[#3D7BFF] bg-[#3D7BFF]/10" : "border-white/10 hover:bg-white/5"}`}
           >
-            <Hex nome={x.nome} cor={COR_ESQUADRAO[x.esquadrao]} tamanho={28} />
+            <AvatarAgente slug={x.slug} nome={x.nome} cor={COR_ESQUADRAO[x.esquadrao]} tamanho={32} />
             <span className="min-w-0">
               <span className="block text-sm font-semibold text-white">{x.nome}</span>
               <span className="hidden truncate text-[11px] text-[#8C9AC4] lg:block">{x.cargo}</span>
@@ -423,7 +558,7 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
         <section className="flex min-w-0 flex-col gap-4">
           <div className="rounded-2xl border border-white/10 bg-[#0B1430]/80 p-4">
             <div className="flex items-center gap-3">
-              <Hex nome={a.nome} cor={COR_ESQUADRAO[a.esquadrao]} tamanho={36} />
+              <AvatarAgente slug={a.slug} nome={a.nome} cor={COR_ESQUADRAO[a.esquadrao]} tamanho={44} />
               <div>
                 <p className="font-bold text-white">{a.nome}</p>
                 <p className="text-xs text-[#8C9AC4]">{a.cargo}</p>
@@ -572,7 +707,7 @@ function Sala({ dados, porSlug }: { dados: DadosCentral; porSlug: Record<string,
             return (
               <div key={chave} className="rounded-2xl border border-white/10 bg-[#0B1430]/80 p-4">
                 <div className="flex items-center gap-2">
-                  {a && <Hex nome={a.nome} cor={COR_ESQUADRAO[a.esquadrao]} tamanho={28} />}
+                  {a && <AvatarAgente slug={a.slug} nome={a.nome} cor={COR_ESQUADRAO[a.esquadrao]} tamanho={32} />}
                   <b className="text-white">{a?.nome ?? f.slug}</b>
                   <span className="text-xs text-[#8C9AC4]">{a?.cargo}</span>
                 </div>

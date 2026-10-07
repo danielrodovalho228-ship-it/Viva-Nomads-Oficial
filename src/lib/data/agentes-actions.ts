@@ -24,7 +24,7 @@ export async function carregarCentral(): Promise<DadosCentral> {
   if (!supabase) return VAZIO;
   const [a, r, o, c, at] = await Promise.all([
     supabase.from("agentes").select("slug, nome, cargo, esquadrao, rotina_texto, trigger_id, status, briefing, ordem").order("ordem"),
-    supabase.from("agentes_rondas").select("id, agente_slug, iniciada_em, concluida_em, status, resumo, achados, link_sessao").order("iniciada_em", { ascending: false }).limit(50),
+    supabase.from("agentes_rondas").select("id, agente_slug, iniciada_em, concluida_em, status, resumo, achados, link_sessao").order("iniciada_em", { ascending: false }).limit(200),
     supabase.from("agentes_ordens").select("id, agente_slug, texto, criada_em, status, resposta").order("criada_em", { ascending: false }).limit(100),
     supabase.from("agentes_conversas").select("id, agente_slug, papel, autor_slug, texto, criado_em").not("agente_slug", "is", null).order("criado_em", { ascending: false }).limit(300),
     supabase.from("agentes_conversas").select("id, agente_slug, papel, autor_slug, texto, criado_em").is("agente_slug", null).eq("papel", "sistema").order("criado_em", { ascending: false }).limit(20),

@@ -263,6 +263,23 @@ async function main() {
   if (eDoc) throw new Error(`documento de teste: ${eDoc.message}`);
   console.log("✓ documento de teste para /conferir");
 
+  // Rondas de teste da Central de Agentes (só no banco local; marcadas [lab]).
+  await admin.from("agentes_rondas").delete().like("resumo", "[lab]%");
+  const minAtras = (m) => new Date(Date.now() - m * 60_000).toISOString();
+  const rondasLab = [
+    ["bruno", 5, "alerta", "[lab] Varri site, banco e Vercel. Duas coisas para a fila.", [{ prioridade: "P1", titulo: "Função sem search_path no Supabase" }, { prioridade: "P2", titulo: "Sitemap com URL que dá 404" }]],
+    ["otavio", 180, "ok", "[lab] Conferi em produção os 3 itens do último pacote; todos verificados.", []],
+    ["carla", 60, "ok", "[lab] Relatório do dia: 0 contratos novos, 2 pedidos, 23 imóveis (dados de teste).", []],
+    ["helena", 240, "alerta", "[lab] Pendências do Daniel atualizadas.", [{ prioridade: "P2", titulo: "Contador ainda não respondeu sobre o CNPJ" }]],
+    ["rafael", 600, "ok", "[lab] SEO: páginas de cidade indexáveis.", [{ prioridade: "P3", titulo: "Título da home com 70 caracteres" }]],
+    ["marina", 2880, "falhou", "[lab] A ronda parou antes de ler os saldos dos serviços.", []],
+  ];
+  for (const [slug, m, status, resumo, achados] of rondasLab) {
+    const { error } = await admin.from("agentes_rondas").insert({ agente_slug: slug, iniciada_em: minAtras(m), concluida_em: minAtras(m - 2), status, resumo, achados });
+    if (error) throw new Error(`ronda ${slug}: ${error.message}`);
+  }
+  console.log("✓ rondas de teste da Central de Agentes");
+
   // Saídas: env para a suíte E2E (sem imprimir a senha) + lista de contas sem senha.
   const ge = process.env.GITHUB_ENV;
   if (ge) {

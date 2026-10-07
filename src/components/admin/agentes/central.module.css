@@ -1,0 +1,131 @@
+/* Central de Agentes v2 — o que o Tailwind não cobre: hexágono, anéis, camadas 3D e movimento. */
+
+.hex {
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+}
+
+.avatar {
+  position: relative;
+  isolation: isolate;
+  flex-shrink: 0;
+}
+.anel {
+  position: absolute;
+  inset: -3px;
+  z-index: -1;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+}
+.recente::after {
+  content: "";
+  position: absolute;
+  inset: -7px;
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  border-top-color: var(--anel);
+  border-right-color: var(--anel);
+  animation: girar 1.2s linear infinite;
+}
+
+.ponto {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: #7fd321;
+  animation: ping 2s infinite;
+}
+
+/* Raio-X: pilha de camadas em perspectiva */
+.palco {
+  position: relative;
+  overflow: hidden;
+  perspective: 1300px;
+  height: 520px;
+}
+.pilha {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(420px, 74%);
+  height: 210px;
+  transform-style: preserve-3d;
+  transform: translate(-50%, -50%) rotateX(58deg) rotateZ(-38deg);
+  transition: transform 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.camada {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1.5px solid var(--cor);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--cor) 26%, transparent), rgba(6, 16, 42, 0.88));
+  box-shadow: 0 0 30px color-mix(in srgb, var(--cor) 25%, transparent);
+  transform: translateZ(calc(var(--i) * 14px));
+  transition: transform 0.9s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s, box-shadow 0.3s;
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+}
+.aberto .camada {
+  transform: translateZ(calc(var(--i) * 70px));
+}
+.aberto .pilha {
+  transform: translate(-50%, -32%) rotateX(58deg) rotateZ(-38deg);
+}
+.escolhida {
+  border-width: 2.5px;
+  box-shadow: 0 0 50px var(--cor);
+}
+.esmaecido .camada:not(.escolhida) {
+  opacity: 0.35;
+}
+
+.aparece {
+  animation: aparece 0.35s ease both;
+}
+
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes ping {
+  0% {
+    box-shadow: 0 0 0 0 rgba(127, 211, 33, 0.55);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(127, 211, 33, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(127, 211, 33, 0);
+  }
+}
+@keyframes aparece {
+  from {
+    opacity: 0.4;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (max-width: 680px) {
+  .palco {
+    height: 420px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .recente::after,
+  .ponto,
+  .aparece {
+    animation: none;
+  }
+  .pilha,
+  .camada {
+    transition: none;
+  }
+}
