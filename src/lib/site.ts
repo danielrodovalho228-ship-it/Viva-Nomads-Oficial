@@ -7,7 +7,7 @@ export const SITE_DOMAIN = "vivanomads.com.br";
 
 /**
  * E-mail público do suporte: o único endereço que o site mostra, remetente e
- * "responder para" dos e-mails de chamado. contato@ até o apelido suporte@
- * existir (decisão do Daniel, out/2026) — trocar só aqui.
+ * "responder para" dos e-mails de chamado. contato@ fica para assuntos
+ * comerciais e não aparece no site (decisão do Daniel, out/2026).
  */
-export const SUPORTE_EMAIL = "contato@vivanomads.com.br";
+export const SUPORTE_EMAIL = "suporte@vivanomads.com.br";

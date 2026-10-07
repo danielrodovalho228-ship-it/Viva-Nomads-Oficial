@@ -174,6 +174,11 @@ test("/modelodenegocio e /precos usam o mesmo cálculo e o mesmo gráfico", () =
   assert.match(precos, /<GraficoCustoPorImovel /);
 });
 
+test("e-mail de suporte do site é o suporte@ (contato@ é só comercial)", async () => {
+  const { SUPORTE_EMAIL } = await import("./site.ts");
+  assert.equal(SUPORTE_EMAIL, "suporte@vivanomads.com.br");
+});
+
 test("e-mail do site sai de um lugar só (SUPORTE_EMAIL em lib/site.ts)", () => {
   const raiz = new URL("../", import.meta.url).pathname;
   const achados = arquivos(raiz).filter(
