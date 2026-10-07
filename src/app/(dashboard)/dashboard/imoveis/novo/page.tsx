@@ -47,6 +47,7 @@ import { LinhaComparativoAnuncio } from "@/components/precos/comparativo-precos"
 import { useAuthStore } from "@/lib/store";
 import { draftKey, DRAFT_KEY_LEGADO } from "@/lib/local-keys";
 import { registrarEvento } from "@/lib/eventos/registrar";
+import { etapaLiberada, etapaMaisAvancada, etapaMaxDoRascunho } from "@/lib/etapas-anuncio";
 
 /** Metadados das 7 etapas do wizard (rodada 15). */
 const STEP_META = [
@@ -69,6 +70,14 @@ export default function NewPropertyPage() {
   const [docStatus, setDocStatus] = useState<DocumentStatus>("approved");
   const [docReason, setDocReason] = useState<string | null>(null);
   const [step, setStep] = useState(0);
+  // Etapa mais avançada já visitada (bug 13 da L2): guardada no rascunho, para a
+  // retomada deixar pular de novo até onde a pessoa já tinha chegado.
+  const [etapaMax, setEtapaMax] = useState(0);
+  /** Muda de etapa lembrando a mais avançada já visitada. */
+  function irPara(i: number) {
+    setEtapaMax((m) => etapaMaisAvancada(m, step, i));
+    setStep(i);
+  }
   const [aiLoading, setAiLoading] = useState(false);
   const [aiWarn, setAiWarn] = useState<string | null>(null);
   // Auditoria: descrição gerada por IA (some ao editar à mão). Persistido.
@@ -211,13 +220,13 @@ export default function NewPropertyPage() {
   function avancarEtapa() {
     const e = validarEtapa(step);
     setErros(e);
-    if (Object.keys(e).length === 0) setStep((s) => Math.min(LAST, s + 1));
+    if (Object.keys(e).length === 0) irPara(Math.min(LAST, step + 1));
   }
 
   /** Volta/pula para trás sempre livre — limpa as mensagens de erro. */
   function voltarEtapa() {
     setErros({});
-    setStep((s) => Math.max(0, s - 1));
+    irPara(Math.max(0, step - 1));
   }
 
   // Evento anônimo (0067): começou um anúncio novo (edição não conta).
@@ -289,7 +298,7 @@ export default function NewPropertyPage() {
       const falta = completude.find((c) => !c.ok);
       if (falta) {
         setPublishError(`Falta para publicar: ${prontidao.faltam.join("; ")}.`);
-        if (falta.key !== "documento") setStep(falta.etapa);
+        if (falta.key !== "documento") irPara(falta.etapa);
         return;
       }
     }
@@ -445,6 +454,7 @@ export default function NewPropertyPage() {
       setQual({ baseBadge: !!q.baseBadge, tHome: !!q.tHome, tWork: !!q.tWork });
     }
     if (typeof d.step === "number") setStep(Math.min(LAST, Math.max(0, Math.round(d.step))));
+    setEtapaMax(etapaMaxDoRascunho(d, LAST));
   }
 
   // Retomada por `?draft=<id>` — carrega o snapshot do SERVIDOR e restaura tudo
@@ -580,7 +590,7 @@ export default function NewPropertyPage() {
     furnished, petsOk, smokingAllowed, childrenAllowed, issuesInvoice,
     amenityKeys, googlePlaces, manualProximities,
     condoFee, descricaoGeradaPorIa, utilitiesMode, utilitiesEstimate, faixas, garantias, prepFee,
-    ownershipType, subleaseAuthorized, step,
+    ownershipType, subleaseAuthorized, step, etapaMax: Math.max(etapaMax, step),
     // Qualificação (selo + etiquetas). Guardada no rascunho para a retomada por
     // `?draft` (que não passa pela sessionStorage) nunca zerar o 6/6 do selo.
     qual,
@@ -698,6 +708,7 @@ export default function NewPropertyPage() {
     setDraftServerId(null);
     setSaveStatus("idle");
     setStep(0);
+    setEtapaMax(0);
     setTitle("");
     setDescription("");
     setPropertyType("apartamento");
@@ -889,17 +900,17 @@ export default function NewPropertyPage() {
               key={s.label}
               type="button"
               onClick={() => {
-                if (i <= step) {
+                if (etapaLiberada(i, step, etapaMax)) {
                   setErros({});
-                  setStep(i);
+                  irPara(i);
                 }
               }}
-              disabled={i > step}
+              disabled={!etapaLiberada(i, step, etapaMax)}
               className={cn(
                 "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors",
                 i === step
                   ? "bg-forest text-white"
-                  : i < step
+                  : etapaLiberada(i, step, etapaMax)
                     ? "bg-sage-100 text-forest hover:bg-blue-100"
                     : "bg-surface-2 text-muted"
               )}
@@ -1537,7 +1548,7 @@ export default function NewPropertyPage() {
                       ) : (
                         <button
                           type="button"
-                          onClick={() => setStep(c.etapa)}
+                          onClick={() => irPara(c.etapa)}
                           className="shrink-0 text-xs font-medium text-forest underline"
                         >
                           Resolver
@@ -1593,13 +1604,13 @@ export default function NewPropertyPage() {
             {photoBlocked && (
               <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                 <strong>{fotosMsg} para publicar.</strong> O mínimo é {MIN_PHOTOS}. Você pode salvar como rascunho e completar depois.{" "}
-                <button type="button" onClick={() => setStep(3)} className="font-medium underline">Ir para Fotos</button>.
+                <button type="button" onClick={() => irPara(3)} className="font-medium underline">Ir para Fotos</button>.
               </div>
             )}
             {subleaseBlocked && (
               <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                 <strong>Publicação bloqueada.</strong> Confirme a autorização de sublocação no passo{" "}
-                <button type="button" onClick={() => setStep(0)} className="font-medium underline">Tipo e operação</button>.
+                <button type="button" onClick={() => irPara(0)} className="font-medium underline">Tipo e operação</button>.
               </div>
             )}
 
