@@ -42,12 +42,15 @@ test("nota de sugestão: o botão 'Aprovar e enviar' lê só a resposta", () => 
 test("ligações: site e e-mail usam a mesma regra; aprovar pega o texto do banco, não do navegador", () => {
   const acoes = ler("lib/data/atendimento-actions.ts");
   assert.match(acoes, /const atende = quemAtende\(/);
-  assert.match(acoes, /else if \(atende === "equipe_com_acolhimento"\) after\(\(\) => acolherNaEquipe\(c\.id\)\)/);
+  assert.match(acoes, /else if \(atende === "equipe_com_acolhimento"\) after\(\(\) => responderNaEquipe\(c\.id, "abertura"\)\)/);
+  // Nova mensagem num chamado com a equipe: a Viva sugere/responde e avisa o Daniel com a sugestão.
+  assert.match(acoes, /else if \(comEquipe\) after\(\(\) => responderNaEquipe\(c\.id as string, "mensagem"\)\)/);
   assert.match(acoes, /export async function aprovarSugestao\(chamadoId: string, mensagemId: number\)/);
   const email = ler("app/api/atendimento/email/route.ts");
   assert.match(email, /const catKey = triagem\("duvida"/);
-  assert.match(email, /acolherNaEquipe\(novo\.id as string\)/);
+  assert.match(email, /responderNaEquipe\(novo\.id as string, "abertura"\)/);
+  assert.match(email, /responderNaEquipe\(c\.id as string, "mensagem"\)/);
   const serv = ler("lib/atendimento/viva-servidor.ts");
-  assert.match(serv, /if \(\(jaRespondido \?\? 0\) > 0\) return; \/\/ idempotente/);
+  assert.match(serv, /if \(momento === "abertura" && publicas\.some\(\(m\) => m\.autor === "ia" \|\| m\.autor === "admin"\)\) return; \/\/ idempotente/);
   assert.match(serv, /vivaAtiva\(\) && \(await consumirLimite\("viva:dia", limiteDia\(\), DIA\)\)/);
 });

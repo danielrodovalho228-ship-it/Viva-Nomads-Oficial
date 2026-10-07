@@ -118,7 +118,7 @@ export async function avisarUsuario(
 }
 
 /** Avisa os admins (e-mail + push): P1/P2, aprovação, prazo em risco. */
-export async function avisarEquipe(c: ChamadoResumo, motivo: string): Promise<void> {
+export async function avisarEquipe(c: ChamadoResumo, motivo: string, detalhesHtml?: string): Promise<void> {
   const admin = createAdminClient();
   if (!admin) return;
   const { data: admins } = await admin.from("profiles").select("id, email, full_name, notif_email").eq("role", "admin");
@@ -131,7 +131,9 @@ export async function avisarEquipe(c: ChamadoResumo, motivo: string): Promise<vo
       userId: a.id as string,
       pushUrl: `/admin/atendimento/${c.id}`,
       subject: `${c.prioridade.toUpperCase()} ${rotulo} — ${c.numero_publico}: ${motivo}`,
-      detailsHtml: `<p style="margin:12px 0 0;color:#334155;"><strong>${textoEmail(c.numero_publico, 20)}</strong> · ${textoEmail(c.assunto, 140)}<br/>${textoEmail(motivo, 200)}</p><p style="margin:16px 0 0;"><a href="${SITE_URL}/admin/atendimento/${c.id}" style="color:#1c6b3a;font-weight:600;">Abrir no admin</a></p>`,
+      detailsHtml:
+        detalhesHtml ??
+        `<p style="margin:12px 0 0;color:#334155;"><strong>${textoEmail(c.numero_publico, 20)}</strong> · ${textoEmail(c.assunto, 140)}<br/>${textoEmail(motivo, 200)}</p><p style="margin:16px 0 0;"><a href="${SITE_URL}/admin/atendimento/${c.id}" style="color:#1c6b3a;font-weight:600;">Abrir no admin</a></p>`,
     }).catch(() => null);
   }
 }
@@ -145,12 +147,14 @@ export async function avisarEquipe(c: ChamadoResumo, motivo: string): Promise<vo
 export async function registrarMensagemDaPessoa(
   c: ChamadoResumo & { responsavel_tipo: string; status: string },
   autorId: string | null,
-  canal: "site" | "email"
+  canal: "site" | "email",
+  /** false: quem chama roda o responderNaEquipe, que manda o e-mail já com a sugestão. */
+  avisar = true
 ): Promise<void> {
   const admin = createAdminClient();
   if (!admin) return;
   await admin.from("chamado_eventos").insert({ chamado_id: c.id, ator_tipo: "usuario", ator_id: autorId, acao: "mensagem", detalhe: canal === "email" ? "por e-mail" : "pela Central de Ajuda" });
-  if (!equipeAvisadaDaMensagem(c)) return;
+  if (!avisar || !equipeAvisadaDaMensagem(c)) return;
   if ((await situacaoLimite(`equipe-msg:${c.id}`, 1, JANELA_AVISO_EQUIPE_S)) === "estourou") return;
   await avisarEquipe(c, "nova mensagem da pessoa");
 }

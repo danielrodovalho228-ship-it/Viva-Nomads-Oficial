@@ -77,8 +77,10 @@ const MUITO_NEGATIVO =
 const INJECAO =
   /\b(ignore|ignora|esqueca|esquece|desconsidere)\b.{0,40}\b(instruc|regra|prompt|orientac)|\bsou (o |a )?(admin|administrador\w*|dono da plataforma|desenvolvedor\w*|ceo)\b|\bmodo (desenvolvedor|admin|deus)\b|\bsystem prompt\b|\bprompt do sistema\b/;
 
+/** Pediu pessoa: as frases ("quero falar com um atendente"…) ou só "pessoa"/"humano" (o rodapé pede isso). */
 export function pedeHumano(texto: string): boolean {
-  return PEDE_HUMANO.test(normalizar(texto));
+  const t = normalizar(texto);
+  return PEDE_HUMANO.test(t) || /^(uma |um )?(pessoa|humano|humana|atendente)[\s.!]*$/.test(t.trim());
 }
 export function pedeContato(texto: string): boolean {
   return PEDE_CONTATO.test(normalizar(texto));

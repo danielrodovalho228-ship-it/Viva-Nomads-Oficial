@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { consumirLimite, DIA } from "@/lib/limites";
+import { consumirLimite, DIA, situacaoLimite } from "@/lib/limites";
 import { integracoesSimuladas } from "@/lib/integracoes";
 import { agoraBRTexto } from "@/lib/atendimento/data-br";
 import { notify } from "@/lib/notifications";
@@ -14,7 +14,9 @@ import { aceitaEsforco, aceitaReserva, cotacaoDolar, custoUsd, modeloViva } from
 import { primeiroNome, RESPOSTA_PESSOA, ROTULO_APROVACAO } from "@/lib/atendimento/viva-regras";
 import { podeDevolverParaViva, rotuloFerramenta, sugerirRespostaMotor, transcricaoParaRascunho, type Sugestao } from "@/lib/atendimento/copiloto";
 import { motivoParaAprovacao, notaSugestao, textoAcolhimento } from "@/lib/atendimento/acolhimento";
-import { lerResumo, resumoPorRegra, sugestaoPorRegra, SYSTEM_RESUMO, type ResumoChamado } from "@/lib/atendimento/resumo";
+import { lerResumo, notaResumo, resumoPorRegra, sugestaoPorRegra, SYSTEM_RESUMO, type ResumoChamado } from "@/lib/atendimento/resumo";
+import { htmlAvisoEquipe, pedePessoaNoTexto, prioridadeAcima, relataErroTecnico, RODAPE_AUTOMATICO, textoOrdemErro, urlDoErro } from "@/lib/atendimento/autonomo";
+import { JANELA_AVISO_EQUIPE_S } from "@/lib/atendimento/dono";
 import { categoria as categoriaDef } from "@/lib/atendimento/classificar";
 import {
   avisarEquipe,
@@ -398,6 +400,8 @@ export async function rodarViva(chamadoId: string): Promise<void> {
     const ultimaPessoa = lista.map((m) => m.autor).lastIndexOf("usuario");
     if (ultimaPessoa < 0 || lista.slice(ultimaPessoa + 1).some((m) => m.autor === "ia" || m.autor === "admin")) return;
     const agora = new Date();
+    // Erro técnico relatado → ordem para o Renato e o Otávio (antes de a Viva responder).
+    if (relataErroTecnico(lista[ultimaPessoa].corpo)) await encaminharErroTecnico(admin, c, lista[ultimaPessoa].corpo).catch(() => null);
 
     if (!(await consumirLimite("viva:dia", limiteDia(), DIA))) {
       await escalarParaPessoa(c.id, "limite diário da Viva atingido", "sistema");
@@ -451,31 +455,69 @@ export async function rodarViva(chamadoId: string): Promise<void> {
 }
 
 /**
- * Chamado que fica com a EQUIPE (categoria sensível ou "falar com uma pessoa"):
- * 1) acolhimento na hora, da Viva, com número e prazo (conta como 1ª resposta);
- * 2) resposta SUGERIDA como nota interna, para aprovar com 1 clique.
- * O acolhimento é texto fixo (sem IA, sem custo). A sugestão usa a IA só com a
- * Viva ligada e dentro do teto diário; no laboratório vira um rascunho simulado.
+ * Chamado que fica com a EQUIPE (categoria sensível ou "falar com uma pessoa").
+ * Roda na ABERTURA e a cada NOVA MENSAGEM da pessoa, sem esperar o admin abrir:
+ * 1) abertura: acolhimento na hora (número e prazo; conta como 1ª resposta) e o
+ *    "Resumo e ações" já guardado para o Daniel;
+ * 2) resposta SUGERIDA pela Viva. Se for 100% oficial, sem risco, e a pessoa NÃO
+ *    pediu para falar com uma pessoa, a Viva envia sozinha (com o rodapé
+ *    "Responda 'pessoa'"); senão vira nota interna para "Aprovar e enviar";
+ * 3) erro técnico relatado → ordem para o Renato e o Otávio;
+ * 4) e-mail ao Daniel com resumo, ações e a sugestão (no máximo 1 por 15 min
+ *    por chamado nas mensagens seguintes).
+ * Acolhimento = texto fixo. A sugestão usa a IA só com a Viva ligada e dentro do
+ * teto diário; no laboratório vira um rascunho simulado.
  */
-export async function acolherNaEquipe(chamadoId: string): Promise<void> {
+export async function responderNaEquipe(chamadoId: string, momento: "abertura" | "mensagem" = "abertura"): Promise<void> {
   const admin = createAdminClient();
   if (!admin) return;
+  let c: (ChamadoViva & { prazo_primeira_resposta: string }) | null = null;
   try {
     const { data } = await admin.from("chamados").select(`${CAMPOS}, prazo_primeira_resposta`).eq("id", chamadoId).maybeSingle();
-    const c = data as (ChamadoViva & { prazo_primeira_resposta: string }) | null;
+    c = data as (ChamadoViva & { prazo_primeira_resposta: string }) | null;
     if (!c || c.responsavel_tipo !== "humano" || ["resolvido", "encerrado"].includes(c.status)) return;
-    const { count: jaRespondido } = await admin
-      .from("chamado_mensagens")
-      .select("id", { count: "exact", head: true })
-      .eq("chamado_id", c.id)
-      .in("autor", ["ia", "admin"]);
-    if ((jaRespondido ?? 0) > 0) return; // idempotente: só a primeira vez
+    const { data: todas } = await admin.from("chamado_mensagens").select("autor, corpo, interno").eq("chamado_id", c.id).order("criado_em", { ascending: true });
+    const publicas = ((todas ?? []) as { autor: string; corpo: string; interno: boolean }[]).filter((m) => !m.interno);
+    const ultimaPessoa = publicas.map((m) => m.autor).lastIndexOf("usuario");
+    if (ultimaPessoa < 0) return;
+    const respondida = publicas.slice(ultimaPessoa + 1).some((m) => m.autor === "ia" || m.autor === "admin");
+    if (momento === "abertura" && publicas.some((m) => m.autor === "ia" || m.autor === "admin")) return; // idempotente
+    if (momento === "mensagem" && respondida) return;
     const agora = new Date();
     const rotulo = categoriaDef(c.categoria)?.rotulo ?? "atendimento";
-    const { data: daPessoa } = await admin.from("chamado_mensagens").select("corpo").eq("chamado_id", c.id).eq("autor", "usuario").order("criado_em");
-    const textoPessoa = (daPessoa ?? []).map((m) => m.corpo as string).join("\n");
+    const textoPessoa = publicas.filter((m) => m.autor === "usuario").map((m) => m.corpo).join("\n");
+    const ultimaMsg = publicas[ultimaPessoa].corpo;
 
-    // 1) Sugestão: IA (Viva ligada, dentro do teto) ou, no laboratório, só textos oficiais.
+    // Pediu PESSOA (na abertura ou agora): nunca resposta da IA; prioridade +1 (uma vez).
+    const { count: jaPediu } = await admin.from("chamado_eventos").select("id", { count: "exact", head: true }).eq("chamado_id", c.id).eq("acao", "pediu_humano");
+    let pediuPessoa = (jaPediu ?? 0) > 0;
+    let pediuAgora = false;
+    if (momento === "mensagem" && !pediuPessoa && pedePessoaNoTexto(ultimaMsg)) {
+      pediuPessoa = true;
+      pediuAgora = true;
+      const nova = prioridadeAcima(c.prioridade);
+      await admin.from("chamados").update({ prioridade: nova, status: "em_andamento", atualizado_em: agora.toISOString() }).eq("id", c.id);
+      await admin.from("chamado_eventos").insert({ chamado_id: c.id, ator_tipo: "usuario", acao: "pediu_humano", de: c.prioridade, para: nova, detalhe: "pediu para falar com uma pessoa no chamado" });
+      await admin.from("chamado_mensagens").insert({ chamado_id: c.id, autor: "sistema", corpo: `${RESPOSTA_PESSOA} ${frasePrazo(nova)}` });
+      c = { ...c, prioridade: nova };
+    }
+
+    // Erro técnico relatado → ordem para o Renato (corrige) e o Otávio (acompanha).
+    const erroTecnico = relataErroTecnico(momento === "abertura" ? textoPessoa : ultimaMsg);
+    if (erroTecnico) await encaminharErroTecnico(admin, c, momento === "abertura" ? textoPessoa : ultimaMsg);
+
+    // Resumo e ações já prontos quando o Daniel abrir (só na abertura).
+    let resumo: ResumoChamado | null = null;
+    if (momento === "abertura") {
+      const g = await gerarResumo(c.id).catch(() => null);
+      if (g) {
+        resumo = g.resumo;
+        await admin.from("chamado_mensagens").insert({ chamado_id: c.id, autor: "ia", interno: true, simulacao: g.simulacao, corpo: notaResumo(g.resumo) });
+        await registrarAcaoViva(admin, c, "resumo_ia", "gerado na abertura");
+      }
+    }
+
+    // Sugestão: IA (Viva ligada, dentro do teto) ou, no laboratório, só textos oficiais.
     let texto: string | null = null;
     let fontes: string[] = [];
     let aviso: string | null = null;
@@ -488,39 +530,87 @@ export async function acolherNaEquipe(chamadoId: string): Promise<void> {
         aviso = s.aviso;
       }
     } else if (integracoesSimuladas()) {
-      texto = sugestaoPorRegra(textoPessoa, primeiroNome(c.visitante_nome), !c.usuario_id);
+      texto = sugestaoPorRegra(momento === "abertura" ? textoPessoa : ultimaMsg, primeiroNome(c.visitante_nome), !c.usuario_id);
       simulacao = true;
     }
 
-    // 2) Resposta 100% oficial → a Viva responde sozinha (decisão do Daniel, 07/10).
-    //    Dinheiro já pago, reembolso, disputa, jurídico, dado pessoal ou falta de
-    //    informação → acolhimento + sugestão para o Daniel aprovar.
-    const motivo = motivoParaAprovacao(textoPessoa, texto, aviso);
+    // Resposta 100% oficial e sem risco → a Viva responde sozinha (decisão do Daniel,
+    // 07/10) — MENOS quando a pessoa pediu para falar com uma pessoa.
+    // Erro técnico: a resposta "oficial" genérica não ajuda — fica com a equipe (o Renato já recebeu a ordem).
+    const motivo = pediuPessoa ? "pediu para falar com uma pessoa" : erroTecnico ? "erro técnico (encaminhado ao Renato)" : motivoParaAprovacao(momento === "abertura" ? textoPessoa : ultimaMsg, texto, aviso);
     const sozinha = !motivo && !!texto;
-    await admin.from("chamado_mensagens").insert({
-      chamado_id: c.id,
-      autor: "ia",
-      corpo: textoAcolhimento({ numero: c.numero_publico, rotulo, prazo: new Date(c.prazo_primeira_resposta), respondidoPelaViva: sozinha }),
-    });
+    if (momento === "abertura") {
+      await admin.from("chamado_mensagens").insert({
+        chamado_id: c.id,
+        autor: "ia",
+        corpo: textoAcolhimento({ numero: c.numero_publico, rotulo, prazo: new Date(c.prazo_primeira_resposta), respondidoPelaViva: sozinha }),
+      });
+    }
     const mud: Record<string, unknown> = { atualizado_em: agora.toISOString() };
     if (!c.primeira_resposta_em) mud.primeira_resposta_em = agora.toISOString();
     if (sozinha) mud.status = "aguardando_usuario"; // a vez é da pessoa; se ela responder, volta para a equipe
     await admin.from("chamados").update(mud).eq("id", c.id);
 
     if (sozinha) {
-      await admin.from("chamado_mensagens").insert({ chamado_id: c.id, autor: "ia", simulacao, corpo: texto!.slice(0, 5000) });
+      const resposta = `${texto!.slice(0, 4800)}\n\n${RODAPE_AUTOMATICO}`;
+      await admin.from("chamado_mensagens").insert({ chamado_id: c.id, autor: "ia", simulacao, corpo: resposta });
       await registrarAcaoViva(admin, c, "respondido_viva", `respondido pela Viva (informação oficial)${fontes.length ? ` · fontes: ${fontes.join(", ")}` : ""}`);
-      await avisarUsuario(c as unknown as ChamadoResumo, "chamado_respondido", `<blockquote style="margin:12px 0 0;padding:10px 14px;border-left:3px solid #1c6b3a;color:#334155;">${textoEmail(texto!, 1500)}</blockquote>`);
+      await avisarUsuario(c as unknown as ChamadoResumo, "chamado_respondido", `<blockquote style="margin:12px 0 0;padding:10px 14px;border-left:3px solid #1c6b3a;color:#334155;">${textoEmail(resposta, 1600)}</blockquote>`);
     } else {
-      await registrarAcaoViva(admin, c, "acolhido", `acolhimento automático; aguarda o Daniel: ${motivo ?? "sem sugestão"}`);
+      if (momento === "abertura") await registrarAcaoViva(admin, c, "acolhido", `acolhimento automático; aguarda o Daniel: ${motivo ?? "sem sugestão"}`);
       if (texto) {
         await admin.from("chamado_mensagens").insert({ chamado_id: c.id, autor: "ia", interno: true, simulacao, corpo: notaSugestao(texto, fontes) });
         await registrarAcaoViva(admin, c, "sugestao_ia", `sugestão para aprovar (${motivo})${fontes.length ? ` · fontes: ${fontes.join(", ")}` : ""}`);
       }
     }
+
+    // E-mail ao Daniel: resumo, ações e a sugestão (ou o que a Viva já respondeu).
+    // Pedido de pessoa avisa sempre; as outras mensagens, no máximo 1 e-mail por 15 min.
+    const podeAvisar = momento === "abertura" || pediuAgora || (await situacaoLimite(`equipe-msg:${c.id}`, 1, JANELA_AVISO_EQUIPE_S)) !== "estourou";
+    if (podeAvisar) {
+      const motivoEmail =
+        momento === "abertura"
+          ? `novo chamado · ${rotulo}${pediuPessoa ? " · pediu uma pessoa" : ""}${sozinha ? " · a Viva já respondeu" : ""}`
+          : pediuAgora
+            ? "a pessoa pediu para falar com alguém"
+            : sozinha
+              ? "nova mensagem · a Viva já respondeu"
+              : "nova mensagem da pessoa";
+      await avisarEquipe(
+        c as unknown as ChamadoResumo,
+        motivoEmail,
+        htmlAvisoEquipe({ numero: c.numero_publico, assunto: c.assunto, motivo: motivoEmail, linkAdmin: `${SITE_URL}/admin/atendimento/${c.id}`, resumo, sugestao: texto, respondidaPelaViva: sozinha })
+      );
+    }
   } catch (e) {
-    console.error("[viva] acolhimento:", e instanceof Error ? e.message : e);
+    console.error("[viva] equipe:", e instanceof Error ? e.message : e);
+    // Sem a parte automática, o Daniel ainda precisa saber do chamado.
+    if (c) await avisarEquipe(c as unknown as ChamadoResumo, momento === "abertura" ? "novo chamado (sem a sugestão da Viva)" : "nova mensagem da pessoa").catch(() => null);
   }
+}
+
+/** Compatível com quem já chamava: só a abertura. */
+export async function acolherNaEquipe(chamadoId: string): Promise<void> {
+  return responderNaEquipe(chamadoId, "abertura");
+}
+
+/**
+ * Erro técnico relatado no chamado: uma ordem para o Renato (corrige e abre PR)
+ * e outra para o Otávio (acompanha), com o código do chamado, a URL e a
+ * mensagem SEM dado pessoal. Uma vez por chamado. O P1 do Renato, com a 0087,
+ * dispara a rotina dele na hora (encaminhamento urgente).
+ */
+async function encaminharErroTecnico(admin: Admin, c: ChamadoViva, mensagem: string): Promise<void> {
+  const { count } = await admin.from("chamado_eventos").select("id", { count: "exact", head: true }).eq("chamado_id", c.id).eq("acao", "erro_tecnico");
+  if ((count ?? 0) > 0) return;
+  const url = urlDoErro(mensagem) ?? (c.contexto_tipo && c.contexto_id ? `${c.contexto_tipo} ${c.contexto_id}` : null);
+  for (const [para, prioridade] of [["renato", "P1"], ["otavio", "P2"]] as const) {
+    const texto = textoOrdemErro({ numero: c.numero_publico, url, mensagem, para });
+    // Com a 0087: origem = Viva e prioridade (o Renato é disparado na hora). Sem ela, ordem simples.
+    const { error } = await admin.from("agentes_ordens").insert({ agente_slug: para, texto, origem_slug: "viva", prioridade });
+    if (error) await admin.from("agentes_ordens").insert({ agente_slug: para, texto });
+  }
+  await registrarAcaoViva(admin, c, "erro_tecnico", `erro técnico encaminhado ao Renato e ao Otávio${url ? ` · ${url}` : ""}`);
 }
 
 /** Passa o chamado para uma pessoa (botão, link do e-mail ou falha). */
@@ -532,11 +622,14 @@ export async function escalarParaPessoa(chamadoId: string, motivo: string, ator:
   if (!c || c.status === "encerrado") return false;
   if (c.responsavel_tipo === "humano" && c.status !== "resolvido" && c.status !== "aguardando_usuario") return true; // já está com a equipe
   const agora = new Date();
-  const prazos = calcularPrazos(c.prioridade, agora);
+  // Pediu pessoa: a prioridade sobe um nível (decisão do Daniel, 07/10).
+  const prioridade = ator === "usuario" ? prioridadeAcima(c.prioridade) : c.prioridade;
+  const prazos = calcularPrazos(prioridade, agora);
   await admin
     .from("chamados")
     .update({
       responsavel_tipo: "humano",
+      prioridade,
       status: "aberto",
       primeira_resposta_em: null,
       prazo_primeira_resposta: prazos.primeiraResposta.toISOString(),
@@ -546,9 +639,9 @@ export async function escalarParaPessoa(chamadoId: string, motivo: string, ator:
       atualizado_em: agora.toISOString(),
     })
     .eq("id", c.id);
-  await admin.from("chamado_mensagens").insert({ chamado_id: c.id, autor: "sistema", corpo: `${RESPOSTA_PESSOA} ${frasePrazo(c.prioridade)}` });
-  await admin.from("chamado_eventos").insert({ chamado_id: c.id, ator_tipo: ator, ator_id: atorId ?? null, acao: ator === "usuario" ? "pediu_humano" : "escalado", para: "humano", detalhe: motivo });
-  await avisarEquipe(c, ator === "usuario" ? "a pessoa pediu para falar com alguém" : motivo);
+  await admin.from("chamado_mensagens").insert({ chamado_id: c.id, autor: "sistema", corpo: `${RESPOSTA_PESSOA} ${frasePrazo(prioridade)}` });
+  await admin.from("chamado_eventos").insert({ chamado_id: c.id, ator_tipo: ator, ator_id: atorId ?? null, acao: ator === "usuario" ? "pediu_humano" : "escalado", de: c.prioridade, para: ator === "usuario" ? prioridade : "humano", detalhe: motivo });
+  await avisarEquipe({ ...c, prioridade }, ator === "usuario" ? "a pessoa pediu para falar com alguém" : motivo);
   return true;
 }
 

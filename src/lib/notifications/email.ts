@@ -57,7 +57,9 @@ export async function sendEmail(params: {
   }
 
   if (!isEmailConfigured()) {
-    await registrarSimulado("email", { para: params.to, assunto: params.subject, anexos: params.attachments?.length ?? 0 });
+    // Laboratório: o corpo vai em texto puro (sem tags) para os testes conferirem o conteúdo.
+    const corpo = params.html.replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim().slice(0, 4000);
+    await registrarSimulado("email", { para: params.to, assunto: params.subject, anexos: params.attachments?.length ?? 0, corpo });
     return { demo: true };
   }
 

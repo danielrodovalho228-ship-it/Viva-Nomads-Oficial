@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { iniciais, tempoRelativo, type Agente, type Ronda } from "@/lib/agentes/central";
-import { ATUALIZA_REDE_MS, COR_EVENTO, linhasAcesas, ROTULO_EVENTO, type EventoRede, type LinhaAcesa } from "@/lib/agentes/eventos";
+import { ATUALIZA_REDE_MS, ATUALIZA_REDE_S, COR_EVENTO, linhasAcesas, ROTULO_EVENTO, type EventoRede, type LinhaAcesa } from "@/lib/agentes/eventos";
 import { eventosDaRede } from "@/lib/data/agentes-actions";
 import {
   COR_RONDA_HEX,
@@ -20,7 +20,7 @@ import { fotoDoAgente } from "./avatar";
   Rede ao vivo REAL: as linhas tracejadas são o organograma (quem passa trabalho
   para quem); uma linha só ACENDE, com pacote andando, quando houve evento de
   verdade nas últimas 24 h (ronda, encaminhamento, ordem, chamado, PR, deploy). Ao lado,
-  a linha do tempo desses eventos; tudo relido a cada 30 s. Cor do nó = status
+  a linha do tempo desses eventos; tudo relido a cada 15 s. Cor do nó = status
   da última ronda; anel pulsando = ronda de menos de 15 min. O briefing leva a "câmera"
   de agente em agente, com legenda escrita na hora a partir do resumo REAL.
   prefers-reduced-motion: sem pacotes andando, sem pulso, câmera sem animação.
@@ -48,7 +48,7 @@ export function RedeAoVivo({ agentes, rondas, agora }: { agentes: Agente[]; rond
   const ultimas = useMemo(() => ultimaPorAgente(rondas), [rondas]);
   const passos = useMemo<PassoBriefing[]>(() => (agora ? roteiroBriefing(agentes, rondas, agora) : []), [agentes, rondas, agora]);
 
-  // Eventos reais (últimas 24 h), relidos a cada 30 s com a aba visível.
+  // Eventos reais (últimas 24 h), relidos a cada 15 s com a aba visível.
   const [eventos, setEventos] = useState<EventoRede[] | null>(null);
   const [lidoEm, setLidoEm] = useState<string | null>(null);
   const [erro, setErro] = useState(false);
@@ -377,9 +377,9 @@ function LinhaDoTempo({ eventos, lidoEm, erro, agora }: { eventos: EventoRede[] 
     <aside className="flex max-h-[540px] min-w-0 flex-col border-t border-white/10 lg:border-l lg:border-t-0" data-testid="rede-linha-do-tempo">
       <div className="flex items-baseline justify-between gap-2 border-b border-white/10 px-4 py-2.5">
         <b className="text-sm text-white">Últimas 24 h</b>
-        <span className="font-mono text-[11px] text-[#8C9AC4]">{lidoEm ? `lido ${horaBR(lidoEm)} · a cada 30 s` : "lendo…"}</span>
+        <span className="font-mono text-[11px] text-[#8C9AC4]">{lidoEm ? `lido ${horaBR(lidoEm)} · a cada ${ATUALIZA_REDE_S} s` : "lendo…"}</span>
       </div>
-      {erro && <p className="px-4 py-2 text-xs text-[#FF7A6B]">Não consegui ler os eventos agora; tento de novo em 30 s.</p>}
+      {erro && <p className="px-4 py-2 text-xs text-[#FF7A6B]">Não consegui ler os eventos agora; tento de novo em {ATUALIZA_REDE_S} s.</p>}
       {eventos !== null && eventos.length === 0 ? (
         <p className="px-4 py-4 text-sm text-[#8C9AC4]">Nenhum evento nas últimas 24 h.</p>
       ) : (

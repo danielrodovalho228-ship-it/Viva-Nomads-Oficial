@@ -36,6 +36,8 @@ const ACAO: Record<string, string> = {
   sugestao_editada: "enviou a sugestão da Viva editada",
   resumo_ia: "resumo e ações da Viva",
   acolhido: "acolhimento automático",
+  pediu_humano: "pediu para falar com uma pessoa",
+  erro_tecnico: "erro técnico encaminhado ao Renato e ao Otávio",
   respondido_viva: "respondido pela Viva",
   escalado_2h: "2 h sem resposta da equipe (aviso ao Daniel)",
   escalado_6h: "6 h sem resposta da equipe (vermelho na Central)",

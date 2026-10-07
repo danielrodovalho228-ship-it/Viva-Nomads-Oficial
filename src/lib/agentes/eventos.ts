@@ -40,7 +40,9 @@ export const ROTULO_EVENTO: Record<TipoEvento, string> = {
 
 export const JANELA_EVENTOS_H = 24;
 /** Atualização da Rede ao vivo. */
-export const ATUALIZA_REDE_MS = 30_000;
+export const ATUALIZA_REDE_MS = 15_000;
+/** Para os textos da tela ("a cada 15 s"). */
+export const ATUALIZA_REDE_S = ATUALIZA_REDE_MS / 1000;
 
 export interface ChamadoEvento {
   acao: string;
@@ -162,6 +164,9 @@ export function montarEventos(f: FontesRede, agora: Date): EventoRede[] {
     const n = c.numero ?? "chamado";
     if (c.acao === "aberto") ev.push({ em: c.criado_em, de: "site", para: "viva", tipo: "chamado", texto: `Chamado ${n} aberto` });
     else if (c.acao === "respondido_viva") ev.push({ em: c.criado_em, de: "viva", para: "site", tipo: "chamado", texto: `Viva respondeu ${n} sozinha` });
+    else if (c.acao === "sugestao_ia") ev.push({ em: c.criado_em, de: "viva", para: "daniel", tipo: "chamado", texto: `Viva deixou a resposta sugerida de ${n} para você aprovar` });
+    else if (c.acao === "erro_tecnico") ev.push({ em: c.criado_em, de: "viva", para: "renato", tipo: "chamado", texto: `${n}: erro técnico encaminhado ao Renato` });
+    else if (c.acao === "pediu_humano") ev.push({ em: c.criado_em, de: "site", para: "daniel", tipo: "chamado", texto: `${n}: a pessoa pediu para falar com alguém` });
     else if (c.ator_tipo === "admin" && ["respondido", "sugestao_aprovada", "sugestao_editada"].includes(c.acao))
       ev.push({ em: c.criado_em, de: "daniel", para: "site", tipo: "chamado", texto: `Equipe respondeu ${n}` });
   }
