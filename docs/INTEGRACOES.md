@@ -20,6 +20,13 @@
 - **Ordem:** 1) chave pública + deploy; 2) só então ligar no Supabase. Ao contrário, o Supabase recusa login sem token.
 - Sem a chave pública o widget não aparece (laboratório, dev e preview seguem iguais).
 
+### 1c. Central de Agentes — "Executar agora" (token por rotina)
+- **Para quê:** o botão "Executar agora" em /admin/agentes dispara na hora a rotina real do agente (API de rotinas do claude.ai), em vez de esperar a próxima ronda.
+- **Onde gerar (um por agente):** claude.ai/code/routines → clique na rotina (ex.: "Renato · Engenheiro Viva Nomads") → menu ao lado do nome → **Editar** → *Select a trigger* → **Add another trigger** → **API** → **Generate token**. O token aparece **uma vez só**; para trocar, volte ao mesmo lugar e clique **Regenerate** (ou **Revoke**).
+- **Onde guardar:** Vercel → Settings → Environment Variables → Production: `AGENTE_TOKEN_<SLUG>` (ex.: `AGENTE_TOKEN_RENATO`, `AGENTE_TOKEN_BRUNO`, `AGENTE_TOKEN_OTAVIO`) + redeploy. **Só no servidor**: nunca no navegador, no banco ou no repositório.
+- **Sem o token** de um agente, o botão grava a ordem e avisa que ela fica para a próxima ronda.
+- **Limites:** 20 disparos por admin em 24 h (nosso); a API de rotinas aceita até 100 por hora por conta. Os conectores da rotina (ex.: Supabase) valem também no disparo — o Renato precisa do Supabase para ler a ordem e registrar a ronda.
+
 ### 2. Asaas — pagamentos (Brasil)
 - **Para quê:** assinatura recorrente do proprietário, comissão de fechamento com **split**, PIX/boleto/cartão.
 - **Env:** `ASAAS_API_KEY`, `ASAAS_WEBHOOK_TOKEN`, `ASAAS_ENV` (`sandbox`|`production`)

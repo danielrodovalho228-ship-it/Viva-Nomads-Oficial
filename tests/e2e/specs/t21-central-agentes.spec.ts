@@ -46,7 +46,10 @@ test.describe("T21 — Central de Agentes v2", () => {
     await expect(viva).toContainText("No ar");
     await expect(viva.getByTestId("no-ar")).toContainText("Atende no chat da /ajuda e por e-mail; não faz rondas.");
     await expect(viva).not.toContainText("Sem ronda ainda");
-    expect(await viva.locator('img[src="/agentes/viva.webp"]').evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(256);
+    // Foto abaixo da dobra carrega sob demanda: rola até ela e espera carregar.
+    const fotoViva = viva.locator('img[src="/agentes/viva.webp"]');
+    await fotoViva.scrollIntoViewIfNeeded();
+    await expect.poll(() => fotoViva.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(256);
     await expect(central.getByTestId("agente-vitoria")).toContainText("Planejado");
     await semRolagemLateral(page);
   });
@@ -89,6 +92,36 @@ test.describe("T21 — Central de Agentes v2", () => {
     const renato = page.getByRole("button", { name: /Renato/ }).first();
     await expect(renato).toBeVisible();
     await expect(renato.locator('img[src="/agentes/renato.webp"]')).toHaveCount(1);
+  });
+
+  test("Executar agora: correção pedida ao Bruno vai para o Renato, dispara e a ordem aparece como Enviada", async ({ page }) => {
+    const marca = `t21-${Date.now()}`;
+    await page.goto("/admin/agentes", { waitUntil: "networkidle" });
+    await abrirAba(page, "Conversar");
+    await page.locator('aside[aria-label="Agentes"]').getByRole("button", { name: /Bruno/ }).click();
+    await page.getByPlaceholder("Escreva para Bruno…").fill(`corrija o sitemap com URL que dá 404 (${marca})`);
+    const botao = page.getByTestId("executar-agora");
+    await expect(botao).toHaveText("Executar agora → Renato");
+    await botao.click();
+    // Laboratório: disparo simulado (nada sai para a rede), link de sessão fictício.
+    await expect(page.getByTestId("aviso-ordem")).toContainText("Renato começou agora");
+    await expect(page.getByRole("link", { name: "Abrir a sessão" })).toHaveAttribute("href", /^https:\/\/claude\.ai\/code\//);
+    const ordem = page.getByTestId("ordem").filter({ hasText: marca });
+    await expect(ordem).toHaveAttribute("data-estado", "enviada");
+    await expect(ordem).toContainText("Enviada");
+    await expect(ordem.getByRole("link", { name: "Ver sessão" })).toBeVisible();
+  });
+
+  test("Chat honesto: pedido de ação não promete — oferece Executar agora para quem faz", async ({ page }) => {
+    await page.goto("/admin/agentes", { waitUntil: "networkidle" });
+    await abrirAba(page, "Conversar");
+    await page.locator('aside[aria-label="Agentes"]').getByRole("button", { name: /Moacir/ }).click();
+    await page.getByPlaceholder("Escreva para Moacir…").fill("corrige o bug do /conferir e aplica a migração");
+    await page.getByRole("button", { name: "Perguntar" }).click();
+    await expect(page.getByText(/precisa de uma sessão real — use Executar agora \(vai para Renato\)/).last()).toBeVisible();
+    const sug = page.getByTestId("sugestao-executar");
+    await expect(sug).toContainText("Renato");
+    await expect(sug.getByRole("button", { name: "Executar agora → Renato" })).toBeEnabled();
   });
 
   test("Diário de bordo: última ronda de cada agente com chips de prioridade", async ({ page }) => {

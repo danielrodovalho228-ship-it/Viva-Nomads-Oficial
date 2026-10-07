@@ -4,8 +4,10 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { aceitaEsforco, aceitaReserva, modeloViva } from "@/lib/atendimento/viva-custo";
-import { inicioDoDiaBrasilia, modeloAgentes, SCHEMA_REUNIAO, TIMEOUT_MS, type Agente, type Conversa, type Ordem, type Ronda } from "@/lib/agentes/central";
-import type { Deps } from "@/lib/agentes/motor";
+import { LIMITE_DISPAROS_DIA, inicioDoDiaBrasilia, modeloAgentes, nomeVarToken, SCHEMA_REUNIAO, TIMEOUT_MS, type Agente, type Conversa, type Ordem, type Ronda } from "@/lib/agentes/central";
+import { consumirLimite, DIA } from "@/lib/limites";
+import { integracoesSimuladas, registrarSimulado } from "@/lib/integracoes";
+import type { Deps, DepsExecutar } from "@/lib/agentes/motor";
 import type { Retrato } from "@/lib/agentes/retrato";
 
 /**
@@ -93,6 +95,70 @@ export async function depsReais(): Promise<Deps | null> {
       });
       if (res.stop_reason === "refusal") return "";
       return res.content.map((b) => (b.type === "text" ? b.text : "")).join("").trim();
+    },
+  };
+}
+
+/**
+ * "Executar agora": grava a ordem com o cliente da SESSÃO (RLS is_admin()) e
+ * dispara a rotina real pela API de rotinas do claude.ai. O token de cada
+ * rotina fica SÓ no servidor, em AGENTE_TOKEN_<SLUG> (ex.: AGENTE_TOKEN_RENATO);
+ * nunca vai para o navegador nem para o banco.
+ */
+export async function depsExecutarReais(): Promise<DepsExecutar | null> {
+  const supabase = await createClient();
+  if (!supabase) return null;
+  const simulado = integracoesSimuladas();
+  return {
+    async adminId() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      return user && (await ehAdmin(supabase, user.id)) ? user.id : null;
+    },
+    async agentes() {
+      const { data } = await supabase.from("agentes").select("slug, nome, cargo, esquadrao, rotina_texto, trigger_id, status, briefing, ordem").order("ordem");
+      return (data ?? []) as Agente[];
+    },
+    async consumirDisparo(adminId) {
+      return consumirLimite(`agentes-executar:${adminId}`, LIMITE_DISPAROS_DIA, DIA);
+    },
+    async criarOrdem(slug, texto) {
+      const { data, error } = await supabase.from("agentes_ordens").insert({ agente_slug: slug, texto }).select("id").single();
+      return error ? null : (data.id as string);
+    },
+    async registrarDisparo(ordemId, r) {
+      // Colunas da 0085. Antes dela, o update falha e a ordem segue como "Aguardando ronda".
+      await supabase
+        .from("agentes_ordens")
+        .update({ disparada_em: new Date().toISOString(), sessao_url: r.sessao_url ?? null, disparo_erro: r.erro ?? null })
+        .eq("id", ordemId);
+    },
+    token(slug) {
+      const t = process.env[nomeVarToken(slug)]?.trim();
+      if (t) return simulado ? "simulado" : t;
+      return simulado ? "simulado" : null;
+    },
+    async disparar(url, token, texto) {
+      if (token === "simulado") {
+        await registrarSimulado("rotina", { url, texto });
+        return { sessao_url: "https://claude.ai/code/session_simulada" };
+      }
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "anthropic-beta": "experimental-cc-routine-2026-04-01",
+          "anthropic-version": "2023-06-01",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ text: texto }),
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const j = (await res.json().catch(() => ({}))) as { claude_code_session_url?: unknown };
+      const link = typeof j.claude_code_session_url === "string" && j.claude_code_session_url.startsWith("https://claude.ai/") ? j.claude_code_session_url : null;
+      return { sessao_url: link };
     },
   };
 }
