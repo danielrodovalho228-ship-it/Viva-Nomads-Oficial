@@ -19,7 +19,7 @@ import { fotoDoAgente } from "./avatar";
 /*
   Rede ao vivo REAL: as linhas tracejadas são o organograma (quem passa trabalho
   para quem); uma linha só ACENDE, com pacote andando, quando houve evento de
-  verdade nas últimas 24 h (ronda, repasse, ordem, chamado, PR, deploy). Ao lado,
+  verdade nas últimas 24 h (ronda, encaminhamento, ordem, chamado, PR, deploy). Ao lado,
   a linha do tempo desses eventos; tudo relido a cada 30 s. Cor do nó = status
   da última ronda; anel pulsando = ronda de menos de 15 min. O briefing leva a "câmera"
   de agente em agente, com legenda escrita na hora a partir do resumo REAL.

@@ -1,7 +1,7 @@
--- 0087 — Repasse entre agentes (Central de Agentes).
+-- 0087 — Encaminhamento entre agentes (Central de Agentes).
 -- Achado com "para":"<slug>" vira ordem para esse agente (origem = quem achou).
 -- Quando o destinatário fecha a ordem (registrar_ronda p_ordens), a resposta
--- volta para quem repassou como uma ordem de retorno (que não gera outro retorno).
+-- volta para quem encaminhou como uma ordem de retorno (que não gera outro retorno).
 -- O disparo na hora (P0/P1) é feito pelo servidor do site, que tem os tokens.
 -- Só colunas novas (nullable) + registrar_ronda com o MESMO formato (create or
 -- replace, sem DROP). RLS e grants da 0078 seguem valendo. Sem NOTICE.
@@ -16,8 +16,8 @@ begin
       add column retorno_de uuid references public.agentes_ordens(id) on delete set null,
       add column prioridade text check (prioridade is null or prioridade in ('P0','P1','P2','P3'));
   end if;
-  if not exists (select 1 from pg_indexes where schemaname = 'public' and indexname = 'agentes_ordens_repasse') then
-    create index agentes_ordens_repasse on public.agentes_ordens (criada_em desc) where origem_slug is not null;
+  if not exists (select 1 from pg_indexes where schemaname = 'public' and indexname = 'agentes_ordens_encaminhamento') then
+    create index agentes_ordens_encaminhamento on public.agentes_ordens (criada_em desc) where origem_slug is not null;
   end if;
 end;
 $$;
@@ -46,12 +46,12 @@ begin
      where id = any(coalesce(p_ordens,'{}')) and agente_slug = p_slug and status in ('pendente','lida')
     returning id, origem_slug, retorno_de, texto
   loop
-    -- A resposta volta para quem repassou (uma vez; retorno não gera retorno).
+    -- A resposta volta para quem encaminhou (uma vez; retorno não gera retorno).
     if o.origem_slug is not null and o.retorno_de is null and o.origem_slug <> p_slug
        and exists (select 1 from public.agentes g where g.slug = o.origem_slug and g.status = 'ativo') then
       insert into public.agentes_ordens (agente_slug, texto, origem_slug, origem_ronda, retorno_de, criado_por)
       values (o.origem_slug,
-              left(format('Retorno de %s sobre o que você repassou ("%s"): %s%s',
+              left(format('Retorno de %s sobre o que você encaminhou ("%s"): %s%s',
                           coalesce(v_nome, p_slug), left(o.texto, 300),
                           coalesce(nullif(v_resumo, ''), 'sem resumo'),
                           case when p_link is not null then ' ' || p_link else '' end), 4000),
@@ -71,7 +71,7 @@ begin
   loop
     insert into public.agentes_ordens (agente_slug, texto, origem_slug, origem_ronda, prioridade, criado_por)
     values (a.destino,
-            left(format('Repasse de %s (%s): %s%s', coalesce(v_nome, p_slug), coalesce(a.prio, 'sem prioridade'),
+            left(format('Encaminhado por %s (%s): %s%s', coalesce(v_nome, p_slug), coalesce(a.prio, 'sem prioridade'),
                         coalesce(nullif(btrim(a.achado->>'titulo'), ''), nullif(btrim(a.achado->>'detalhe'), ''), 'achado sem título'),
                         case when nullif(btrim(a.achado->>'titulo'), '') is not null and nullif(btrim(a.achado->>'detalhe'), '') is not null
                              then ' — ' || btrim(a.achado->>'detalhe') else '' end), 4000),

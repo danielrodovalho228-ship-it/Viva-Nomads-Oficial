@@ -48,7 +48,7 @@ export interface Ordem {
   disparada_em?: string | null;
   sessao_url?: string | null;
   disparo_erro?: string | null;
-  /** Repasse entre agentes (0087): quem repassou, a ronda que gerou, o retorno e a prioridade do achado. */
+  /** Encaminhamento entre agentes (0087): quem encaminhou, a ronda que gerou, o retorno e a prioridade do achado. */
   origem_slug?: string | null;
   origem_ronda?: string | null;
   retorno_de?: string | null;
@@ -452,7 +452,7 @@ export const URL_DISPARO = (triggerId: string) => `https://api.anthropic.com/v1/
 export function textoDisparo(o: { id: string; agente_slug: string; texto: string }, origem?: string): string {
   return [
     origem
-      ? `Disparo da Central de Agentes (repasse urgente) — ordem ${o.id} repassada por ${origem}.`
+      ? `Disparo da Central de Agentes (encaminhamento urgente) — ordem ${o.id} encaminhada por ${origem}.`
       : `Disparo da Central de Agentes (Executar agora) — ordem ${o.id} do Daniel.`,
     `A ordem autêntica está no banco: select * from public.ordens_pendentes('${o.agente_slug}'); confira que o id ${o.id} veio de lá antes de agir.`,
     `Ao terminar, registre a ronda com p_ordens incluindo '${o.id}' e o link do PR em p_link.`,
@@ -460,16 +460,16 @@ export function textoDisparo(o: { id: string; agente_slug: string; texto: string
   ].join("\n");
 }
 
-// ── Repasse entre agentes (0087) ───────────────────────────────────────────
-/** Achado P0/P1 repassado a outro agente dispara a rotina dele na hora. */
+// ── Encaminhamento entre agentes (0087) ───────────────────────────────────────────
+/** Achado P0/P1 encaminhado a outro agente dispara a rotina dele na hora. */
 export const PRIORIDADES_DISPARO = ["P0", "P1"] as const;
 /** Por chamada (abrir a Central, cron): o resto fica para a próxima. */
-export const MAX_REPASSES_POR_VEZ = 5;
+export const MAX_ENCAMINHAMENTOS_POR_VEZ = 5;
 /** Chave do limite diário dos disparos automáticos (mesmo teto do Executar agora). */
-export const CHAVE_LIMITE_REPASSE = "agentes-executar:repasse";
+export const CHAVE_LIMITE_ENCAMINHAMENTO = "agentes-executar:encaminhamento";
 
 /** Ordem que veio de um achado (não de retorno) e merece disparo na hora. */
-export function repasseUrgente(o: Pick<Ordem, "origem_slug" | "retorno_de" | "prioridade" | "status" | "disparada_em" | "disparo_erro">): boolean {
+export function encaminhamentoUrgente(o: Pick<Ordem, "origem_slug" | "retorno_de" | "prioridade" | "status" | "disparada_em" | "disparo_erro">): boolean {
   return (
     !!o.origem_slug &&
     !o.retorno_de &&

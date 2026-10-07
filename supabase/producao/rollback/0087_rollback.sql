@@ -1,5 +1,5 @@
--- Rollback da 0087: registrar_ronda volta ao corpo da 0078 e saem as colunas do repasse.
--- (As ordens de repasse/retorno já criadas continuam como ordens comuns.)
+-- Rollback da 0087: registrar_ronda volta ao corpo da 0078 e saem as colunas do encaminhamento.
+-- (As ordens de encaminhamento/retorno já criadas continuam como ordens comuns.)
 begin;
 set local lock_timeout = '5s';
 create or replace function public.registrar_ronda(
@@ -18,7 +18,7 @@ begin
 end $$;
 revoke all on function public.registrar_ronda(text,timestamptz,timestamptz,text,text,jsonb,uuid[],text) from public, anon, authenticated;
 grant execute on function public.registrar_ronda(text,timestamptz,timestamptz,text,text,jsonb,uuid[],text) to service_role;
-drop index if exists public.agentes_ordens_repasse;
+drop index if exists public.agentes_ordens_encaminhamento;
 alter table public.agentes_ordens
   drop column if exists prioridade,
   drop column if exists retorno_de,

@@ -6,9 +6,9 @@
 import {
   LIMITE_DIA,
   LIMITE_DISPAROS_DIA,
-  MAX_REPASSES_POR_VEZ,
+  MAX_ENCAMINHAMENTOS_POR_VEZ,
   URL_DISPARO,
-  repasseUrgente,
+  encaminhamentoUrgente,
   destinoDaOrdem,
   pedeAcao,
   prometeAcao,
@@ -251,9 +251,9 @@ export async function executarAgora(d: DepsExecutar, entrada: unknown): Promise<
   }
 }
 
-// ── Repasse entre agentes: disparo automático dos P0/P1 ────────────────────
-export interface DepsRepasse {
-  /** Ordens de repasse ainda não disparadas (a função filtra de novo). */
+// ── Encaminhamento entre agentes: disparo automático dos P0/P1 ────────────────────
+export interface DepsEncaminhamento {
+  /** Ordens de encaminhamento ainda não disparadas (a função filtra de novo). */
   candidatas(): Promise<Pick<Ordem, "id" | "agente_slug" | "texto" | "status" | "origem_slug" | "retorno_de" | "prioridade" | "disparada_em" | "disparo_erro">[]>;
   agentes(): Promise<Pick<Agente, "slug" | "nome" | "status" | "trigger_id">[]>;
   /** Marca disparada_em só se ninguém marcou antes (evita disparo duplo). */
@@ -265,20 +265,20 @@ export interface DepsRepasse {
   disparar(url: string, token: string, texto: string): Promise<{ sessao_url: string | null }>;
 }
 
-export interface ResultadoRepasse {
+export interface ResultadoEncaminhamento {
   disparadas: string[];
   falhas: { id: string; motivo: string }[];
 }
 
 /**
- * Achado P0/P1 que outro agente repassou (0087) → dispara a rotina do
+ * Achado P0/P1 que outro agente encaminhou (0087) → dispara a rotina do
  * destinatário na hora, dentro do limite diário. Sem rotina, sem token, limite
  * estourado ou falha: a ordem fica gravada (ele lê na próxima ronda) e o motivo
  * aparece na tela. Roda ao abrir a Central, na Rede ao vivo e no cron.
  */
-export async function dispararRepasses(d: DepsRepasse): Promise<ResultadoRepasse> {
-  const out: ResultadoRepasse = { disparadas: [], falhas: [] };
-  const fila = (await d.candidatas()).filter(repasseUrgente).slice(0, MAX_REPASSES_POR_VEZ);
+export async function dispararEncaminhamentos(d: DepsEncaminhamento): Promise<ResultadoEncaminhamento> {
+  const out: ResultadoEncaminhamento = { disparadas: [], falhas: [] };
+  const fila = (await d.candidatas()).filter(encaminhamentoUrgente).slice(0, MAX_ENCAMINHAMENTOS_POR_VEZ);
   if (!fila.length) return out;
   const agentes = await d.agentes();
   for (const o of fila) {

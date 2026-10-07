@@ -4,10 +4,10 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { aceitaEsforco, aceitaReserva, modeloViva } from "@/lib/atendimento/viva-custo";
-import { CHAVE_LIMITE_REPASSE, LIMITE_DISPAROS_DIA, inicioDoDiaBrasilia, modeloAgentes, nomeVarToken, SCHEMA_REUNIAO, TIMEOUT_MS, type Agente, type Conversa, type Ordem, type Ronda } from "@/lib/agentes/central";
+import { CHAVE_LIMITE_ENCAMINHAMENTO, LIMITE_DISPAROS_DIA, inicioDoDiaBrasilia, modeloAgentes, nomeVarToken, SCHEMA_REUNIAO, TIMEOUT_MS, type Agente, type Conversa, type Ordem, type Ronda } from "@/lib/agentes/central";
 import { consumirLimite, DIA } from "@/lib/limites";
 import { integracoesSimuladas, registrarSimulado } from "@/lib/integracoes";
-import { dispararRepasses, executarAgora, type Deps, type DepsExecutar, type DepsRepasse, type ResultadoRepasse } from "@/lib/agentes/motor";
+import { dispararEncaminhamentos, executarAgora, type Deps, type DepsExecutar, type DepsEncaminhamento, type ResultadoEncaminhamento } from "@/lib/agentes/motor";
 import { modeloGerenteSimulado, nomeDoOrganograma, PREFIXO_MOACIR, type Consulta, type DepsGerente, type ModeloGerente } from "@/lib/agentes/gerente";
 import { horaBrasilia, retratoEmTexto } from "@/lib/agentes/retrato";
 import { ultimaPorAgente } from "@/lib/agentes/painel";
@@ -360,11 +360,11 @@ async function dispararRotina(url: string, token: string, texto: string): Promis
 }
 
 /**
- * Repasse entre agentes (0087): dispara na hora as ordens P0/P1 que um agente
- * repassou a outro. `db` é o cliente da sessão do admin (RLS is_admin()) ou o
+ * Encaminhamento entre agentes (0087): dispara na hora as ordens P0/P1 que um agente
+ * encaminhou a outro. `db` é o cliente da sessão do admin (RLS is_admin()) ou o
  * de serviço (cron). Limite diário próprio, com o mesmo teto do Executar agora.
  */
-export function depsRepasse(db: SupabaseClient): DepsRepasse {
+export function depsEncaminhamento(db: SupabaseClient): DepsEncaminhamento {
   return {
     async candidatas() {
       const desde = new Date(Date.now() - 24 * 3600_000).toISOString();
@@ -397,7 +397,7 @@ export function depsRepasse(db: SupabaseClient): DepsRepasse {
         .select("id");
       return (data ?? []).length === 1;
     },
-    consumirDisparo: () => consumirLimite(CHAVE_LIMITE_REPASSE, LIMITE_DISPAROS_DIA, DIA),
+    consumirDisparo: () => consumirLimite(CHAVE_LIMITE_ENCAMINHAMENTO, LIMITE_DISPAROS_DIA, DIA),
     async registrarDisparo(ordemId, r) {
       await db.from("agentes_ordens").update({ sessao_url: r.sessao_url ?? null, disparo_erro: r.erro ?? null }).eq("id", ordemId);
     },
@@ -406,15 +406,15 @@ export function depsRepasse(db: SupabaseClient): DepsRepasse {
   };
 }
 
-/** Dispara os repasses urgentes com o cliente da sessão (só admin). */
-export async function dispararRepassesDaSessao(): Promise<ResultadoRepasse | null> {
+/** Dispara os encaminhamentos urgentes com o cliente da sessão (só admin). */
+export async function dispararEncaminhamentosDaSessao(): Promise<ResultadoEncaminhamento | null> {
   const supabase = await createClient();
   if (!supabase) return null;
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user || !(await ehAdmin(supabase, user.id))) return null;
-  return dispararRepasses(depsRepasse(supabase));
+  return dispararEncaminhamentos(depsEncaminhamento(supabase));
 }
 
 /** E-mails que parecem de teste/laboratório (heurística só para contar). */

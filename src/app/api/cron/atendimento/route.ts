@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { depsRepasse } from "@/lib/agentes/servidor";
-import { dispararRepasses } from "@/lib/agentes/motor";
+import { depsEncaminhamento } from "@/lib/agentes/servidor";
+import { dispararEncaminhamentos } from "@/lib/agentes/motor";
 import { avisarEquipe, type ChamadoResumo } from "@/lib/atendimento/servidor";
 import { notify } from "@/lib/notifications";
 import { chamadosEsperandoEquipe } from "@/lib/atendimento/escalonamento";
@@ -30,8 +30,8 @@ export async function GET(request: Request) {
     () => null
   );
 
-  // Repasse entre agentes (0087): P0/P1 que ninguém disparou ainda (Central fechada).
-  await dispararRepasses(depsRepasse(admin)).catch(() => null);
+  // Encaminhamento entre agentes (0087): P0/P1 que ninguém disparou ainda (Central fechada).
+  await dispararEncaminhamentos(depsEncaminhamento(admin)).catch(() => null);
 
   await admin.rpc("atendimento_varrer_prazos");
   const umaHora = new Date(Date.now() - 3600_000).toISOString();
