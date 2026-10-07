@@ -1,0 +1,340 @@
+/*
+  Central de Agentes — regras PURAS (sem banco, sem rede). Usadas pela tela
+  /admin/agentes, pelas rotas /api/admin/agentes/* e pelos testes (node --test).
+  Imports relativos com .ts: este arquivo roda direto no node.
+*/
+
+export type Esquadrao = "comando" | "operacoes" | "tecnologia" | "crescimento" | "financas" | "plataforma";
+
+export interface Agente {
+  slug: string;
+  nome: string;
+  cargo: string;
+  esquadrao: Esquadrao;
+  rotina_texto: string | null;
+  trigger_id: string | null;
+  status: "ativo" | "planejado" | "pausado";
+  briefing: string;
+  ordem: number;
+}
+
+export interface Achado {
+  prioridade?: string;
+  titulo?: string;
+  detalhe?: string;
+}
+
+export interface Ronda {
+  id: string;
+  agente_slug: string;
+  iniciada_em: string;
+  concluida_em: string | null;
+  status: "ok" | "alerta" | "falhou";
+  resumo: string;
+  achados: Achado[];
+  link_sessao: string | null;
+}
+
+export interface Ordem {
+  id: string;
+  agente_slug: string;
+  texto: string;
+  criada_em: string;
+  status: "pendente" | "lida" | "concluida" | "cancelada";
+  resposta: string | null;
+}
+
+export interface Conversa {
+  id: string;
+  agente_slug: string | null;
+  papel: "daniel" | "agente" | "sistema";
+  autor_slug: string | null;
+  texto: string;
+  criado_em: string;
+}
+
+export const COR_ESQUADRAO: Record<Esquadrao, string> = {
+  comando: "#3D7BFF",
+  operacoes: "#7FD321",
+  tecnologia: "#38BDF8",
+  crescimento: "#FFB547",
+  financas: "#FF7A6B",
+  plataforma: "#8C9AC4",
+};
+
+export const NOME_ESQUADRAO: Record<Esquadrao, string> = {
+  comando: "Comando",
+  operacoes: "Operações",
+  tecnologia: "Tecnologia",
+  crescimento: "Crescimento",
+  financas: "Finanças",
+  plataforma: "Plataforma (em construção)",
+};
+
+/** Limite de perguntas ao modelo por admin por dia (chat + reunião). */
+export const LIMITE_DIA = 60;
+export const MAX_TOKENS_CHAT = 600;
+export const MAX_TOKENS_REUNIAO = 1500;
+export const TIMEOUT_MS = 60_000;
+
+const MODELO_OK = /^claude-[a-z0-9-]{3,60}$/;
+
+/** AGENTES_MODELO; senão o mesmo da Viva (ATENDIMENTO_IA_MODELO / padrão). */
+export function modeloAgentes(agentes: string | undefined, padraoViva: string): string {
+  const v = (agentes ?? "").trim();
+  return MODELO_OK.test(v) ? v : padraoViva;
+}
+
+export function iniciais(nome: string): string {
+  const p = nome.trim().split(/\s+/).filter(Boolean);
+  if (p.length === 0) return "?";
+  if (p.length === 1) return p[0].slice(0, 2).toUpperCase();
+  return (p[0][0] + p[p.length - 1][0]).toUpperCase();
+}
+
+// ── Status ─────────────────────────────────────────────────────────────────
+export type StatusAgente = "espera" | "alerta" | "falhou" | "sem_ronda" | "planejado" | "pausado";
+
+export const ROTULO_STATUS: Record<StatusAgente, string> = {
+  espera: "Em espera",
+  alerta: "Alerta",
+  falhou: "Falhou",
+  sem_ronda: "Sem ronda ainda",
+  planejado: "Planejado",
+  pausado: "Pausado",
+};
+
+export function statusDoAgente(a: Pick<Agente, "status">, ultima: Pick<Ronda, "status"> | undefined): StatusAgente {
+  if (a.status === "planejado") return "planejado";
+  if (a.status === "pausado") return "pausado";
+  if (!ultima) return "sem_ronda";
+  return ultima.status === "ok" ? "espera" : ultima.status;
+}
+
+export function prioridadesDe(r: Pick<Ronda, "achados">): string[] {
+  return (Array.isArray(r.achados) ? r.achados : [])
+    .map((a) => String(a?.prioridade ?? "").toUpperCase())
+    .filter((p) => /^P[0-3]$/.test(p));
+}
+
+/** Achados P1 nas rondas das últimas 24h (badge do menu). */
+export function contarP1(rondas: Pick<Ronda, "achados" | "iniciada_em">[], agora: Date): number {
+  const desde = agora.getTime() - 24 * 3600_000;
+  return rondas
+    .filter((r) => new Date(r.iniciada_em).getTime() >= desde)
+    .reduce((n, r) => n + prioridadesDe(r).filter((p) => p === "P1").length, 0);
+}
+
+// ── Tempo ──────────────────────────────────────────────────────────────────
+export function tempoRelativo(iso: string, agora: Date): string {
+  const s = Math.max(0, Math.round((agora.getTime() - new Date(iso).getTime()) / 1000));
+  if (s < 60) return "agora";
+  const m = Math.round(s / 60);
+  if (m < 60) return `há ${m} min`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `há ${h} h`;
+  const d = Math.round(h / 24);
+  return d === 1 ? "há 1 dia" : `há ${d} dias`;
+}
+
+export function duracao(inicio: string, fim: string | null): string | null {
+  if (!fim) return null;
+  const s = Math.max(0, Math.round((new Date(fim).getTime() - new Date(inicio).getTime()) / 1000));
+  if (s < 60) return `${s} s`;
+  const m = Math.round(s / 60);
+  return m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${m % 60} min`;
+}
+
+export const FUSO = { "Brasília": "America/Sao_Paulo", Texas: "America/Chicago" } as const;
+type Cidade = keyof typeof FUSO;
+
+/** Hora local (h, min, dia da semana 0=domingo) num fuso. */
+export function horaLocal(agora: Date, fuso: string): { h: number; min: number; dow: number } {
+  const p = new Intl.DateTimeFormat("en-US", { timeZone: fuso, hour: "2-digit", minute: "2-digit", weekday: "short", hourCycle: "h23" }).formatToParts(agora);
+  const get = (t: string) => p.find((x) => x.type === t)?.value ?? "";
+  const dow = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(get("weekday"));
+  return { h: Number(get("hour")), min: Number(get("minute")), dow };
+}
+
+const DIAS: Record<string, number> = { domingo: 0, segunda: 1, terca: 2, quarta: 3, quinta: 4, sexta: 5, sabado: 6 };
+const NOME_DIA = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
+const semAcento = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+
+/**
+ * Próximo horário da ronda, lido do texto da rotina ("Todo dia 06:13 Brasília",
+ * "Quintas 07:39 Brasília"). Devolve "hoje 06:13 Brasília", "amanhã…", "quinta…"
+ * — ou null quando a rotina não tem horário fixo.
+ */
+export function proximaRonda(rotina: string | null, agora: Date): string | null {
+  if (!rotina) return null;
+  const t = semAcento(rotina);
+  const hm = t.match(/(\d{1,2}):(\d{2})\s+(brasilia|texas)/);
+  if (!hm) return null;
+  const cidade: Cidade = hm[3] === "texas" ? "Texas" : "Brasília";
+  const h = Number(hm[1]);
+  const min = Number(hm[2]);
+  let dias: number[] | null = null;
+  if (/todo dia|todos os dias|diari/.test(t)) dias = [0, 1, 2, 3, 4, 5, 6];
+  else {
+    const d = Object.entries(DIAS).filter(([k]) => new RegExp(`\\b${k}s?\\b`).test(t)).map(([, v]) => v);
+    if (d.length) dias = d;
+  }
+  if (!dias) return null;
+  const agoraLocal = horaLocal(agora, FUSO[cidade]);
+  const minAgora = agoraLocal.h * 60 + agoraLocal.min;
+  for (let k = 0; k <= 7; k++) {
+    const dow = (agoraLocal.dow + k) % 7;
+    if (!dias.includes(dow)) continue;
+    if (k === 0 && h * 60 + min <= minAgora) continue;
+    const quando = k === 0 ? "hoje" : k === 1 ? "amanhã" : NOME_DIA[dow];
+    return `${quando} ${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")} ${cidade}`;
+  }
+  return null;
+}
+
+export function avisoOrdem(a: Pick<Agente, "nome" | "rotina_texto">, agora: Date): string {
+  const p = proximaRonda(a.rotina_texto, agora);
+  return `O ${a.nome} lê na próxima ronda (${p ?? a.rotina_texto ?? "sem horário definido"}).`;
+}
+
+// ── Prompt ─────────────────────────────────────────────────────────────────
+export const CONTEXTO_VIVA = `Viva Nomads é uma plataforma brasileira de locação de imóveis mobiliados por temporada, de 30 a 180 dias, que liga proprietários e inquilinos com contrato com validade jurídica, conversa registrada na plataforma e Caução como garantia. O dono é o Daniel. Você faz parte da equipe de agentes que cuida da operação; o Moacir é o gerente geral.`;
+
+export const REGRAS = `Regras:
+- Responda em português do Brasil, curto e direto.
+- Diga "imóveis mobiliados" (nunca "apartamentos") e "Caução" para a garantia.
+- Nunca invente números, datas ou status. Use só o que está neste contexto.
+- Se não tiver certeza, diga que vai conferir na próxima ronda.
+- Você não tem ferramentas nem acesso ao banco nesta conversa; não prometa ações que não pode fazer agora.
+- Não peça nem repita dados pessoais de clientes.`;
+
+function blocoRondas(rondas: Pick<Ronda, "iniciada_em" | "status" | "resumo" | "achados">[]): string {
+  if (!rondas.length) return "Nenhuma ronda registrada ainda.";
+  return rondas
+    .map((r) => {
+      const ach = (Array.isArray(r.achados) ? r.achados : [])
+        .slice(0, 8)
+        .map((a) => `  - ${a?.prioridade ?? "—"}: ${a?.titulo ?? a?.detalhe ?? ""}`.slice(0, 300))
+        .join("\n");
+      return `• ${r.iniciada_em.slice(0, 16).replace("T", " ")} UTC — ${r.status}: ${r.resumo.slice(0, 1200)}${ach ? `\n${ach}` : ""}`;
+    })
+    .join("\n");
+}
+
+function blocoOrdens(ordens: Pick<Ordem, "texto" | "status" | "criada_em">[]): string {
+  if (!ordens.length) return "Nenhuma ordem pendente.";
+  return ordens.map((o) => `• (${o.status}) ${o.texto.slice(0, 600)}`).join("\n");
+}
+
+export function systemChat(a: Agente, rondas: Ronda[], ordens: Ordem[]): string {
+  return `${CONTEXTO_VIVA}
+
+Você é ${a.nome}, ${a.cargo}. ${a.briefing}
+Rotina: ${a.rotina_texto ?? "sem rotina fixa"}.${a.status === "planejado" ? "\nVocê ainda está PLANEJADO: não faz rondas. Diga isso se perguntarem pelo seu trabalho." : ""}
+
+Suas últimas rondas:
+${blocoRondas(rondas.slice(0, 3))}
+
+Ordens do Daniel ainda abertas para você:
+${blocoOrdens(ordens)}
+
+${REGRAS}`;
+}
+
+export interface Participante {
+  agente: Agente;
+  rondas: Ronda[];
+}
+
+export function systemReuniao(ps: Participante[]): string {
+  const blocos = ps
+    .map((p) => `## ${p.agente.nome} (slug: ${p.agente.slug}) — ${p.agente.cargo}\n${p.agente.briefing}\nÚltimas rondas:\n${blocoRondas(p.rondas.slice(0, 3))}`)
+    .join("\n\n");
+  return `${CONTEXTO_VIVA}
+
+Simule uma reunião curta da equipe sobre a pauta do Daniel. Cada participante fala uma vez, do ponto de vista do próprio cargo, usando só o que sabe. O Moacir fala por último e consolida em passos com dono.
+
+Participantes:
+${blocos}
+
+${REGRAS}
+- Responda SÓ com JSON no formato {"falas":[{"slug":"...","texto":"..."}],"consolidado":{"texto":"...","passos":[{"dono":"slug","acao":"..."}]}}.`;
+}
+
+export const SCHEMA_REUNIAO = {
+  type: "object",
+  additionalProperties: false,
+  required: ["falas", "consolidado"],
+  properties: {
+    falas: {
+      type: "array",
+      items: { type: "object", additionalProperties: false, required: ["slug", "texto"], properties: { slug: { type: "string" }, texto: { type: "string" } } },
+    },
+    consolidado: {
+      type: "object",
+      additionalProperties: false,
+      required: ["texto", "passos"],
+      properties: {
+        texto: { type: "string" },
+        passos: {
+          type: "array",
+          items: { type: "object", additionalProperties: false, required: ["dono", "acao"], properties: { dono: { type: "string" }, acao: { type: "string" } } },
+        },
+      },
+    },
+  },
+} as const;
+
+export interface Reuniao {
+  falas: { slug: string; texto: string }[];
+  consolidado: { texto: string; passos: { dono: string; acao: string }[] };
+}
+
+export const REUNIAO_FALHOU: Reuniao = {
+  falas: [],
+  consolidado: {
+    texto: "Não consegui montar a ata desta vez. Tente de novo em instantes ou deixe a pauta como ordem para o Moacir.",
+    passos: [],
+  },
+};
+
+/**
+ * Lê o JSON da reunião. Só aceita falas de quem participou; o Moacir sempre por
+ * último. Qualquer coisa fora do formato → null (a rota usa REUNIAO_FALHOU).
+ */
+export function lerReuniao(texto: string, slugs: string[]): Reuniao | null {
+  let bruto: unknown;
+  try {
+    const t = texto.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+    bruto = JSON.parse(t);
+  } catch {
+    return null;
+  }
+  const o = bruto as Partial<Reuniao> | null;
+  if (!o || !Array.isArray(o.falas) || !o.consolidado || typeof o.consolidado.texto !== "string") return null;
+  const ok = new Set(slugs);
+  const falas = o.falas
+    .filter((f) => f && typeof f.slug === "string" && typeof f.texto === "string" && ok.has(f.slug) && f.texto.trim())
+    .map((f) => ({ slug: f.slug, texto: f.texto.trim().slice(0, 2000) }));
+  if (!falas.length) return null;
+  const ordenadas = [...falas.filter((f) => f.slug !== "moacir"), ...falas.filter((f) => f.slug === "moacir")];
+  const passos = (Array.isArray(o.consolidado.passos) ? o.consolidado.passos : [])
+    .filter((p) => p && typeof p.dono === "string" && typeof p.acao === "string" && p.acao.trim())
+    .map((p) => ({ dono: p.dono, acao: p.acao.trim().slice(0, 600) }))
+    .slice(0, 12);
+  return { falas: ordenadas, consolidado: { texto: o.consolidado.texto.trim().slice(0, 3000), passos } };
+}
+
+/** Ata em texto (cabe nos 8000 caracteres de agentes_conversas). */
+export function ataEmTexto(pauta: string, r: Reuniao, nomes: Record<string, string>): string {
+  const n = (s: string) => nomes[s] ?? s;
+  const falas = r.falas.map((f) => `${n(f.slug)}: ${f.texto}`).join("\n\n");
+  const passos = r.consolidado.passos.map((p, i) => `${i + 1}. ${n(p.dono)} — ${p.acao}`).join("\n");
+  return `Pauta: ${pauta}\n\n${falas}\n\nConsolidado: ${r.consolidado.texto}${passos ? `\n${passos}` : ""}`.slice(0, 8000);
+}
+
+/** Início do dia em Brasília (UTC-3, sem horário de verão desde 2019). */
+export function inicioDoDiaBrasilia(agora: Date): Date {
+  const local = new Date(agora.getTime() - 3 * 3600_000);
+  return new Date(Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate(), 3));
+}

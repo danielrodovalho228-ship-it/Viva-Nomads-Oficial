@@ -99,7 +99,10 @@ $DB -f "$H/fase_novo0076.sql" >/dev/null
 $DB -f "$R/supabase/migrations/0077_pedidos_publicos_invoker.sql" >/dev/null
 $DB -f "$R/supabase/migrations/0077_pedidos_publicos_invoker.sql" >/dev/null  # reaplicar é seguro
 $DB -f "$H/fase_novo0077.sql" >/dev/null
+$DB -f "$R/supabase/migrations/0078_central_agentes.sql" >/dev/null
+$DB -f "$H/fase_novo0078.sql" >/dev/null
 psql -q -d p0_teste -P pager=off -f "$R/supabase/producao/verificar-seguranca.sql" 2>&1 | grep -E "^ [A-H][0-9a-z.]" | sed 's/  */ /g'
+$DB -f "$R/supabase/producao/rollback/0078_rollback.sql" >/dev/null
 $DB -f "$R/supabase/producao/rollback/0077_rollback.sql" >/dev/null
 $DB -f "$R/supabase/producao/rollback/0076_rollback.sql" >/dev/null
 $DB -f "$R/supabase/producao/rollback/0075_rollback.sql" >/dev/null

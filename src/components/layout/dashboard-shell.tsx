@@ -26,6 +26,7 @@ import {
   TrendingUp,
   Wallet,
   LifeBuoy,
+  Bot,
 } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { Avatar } from "@/components/ui/avatar";
@@ -35,6 +36,7 @@ import { setPreferredMode } from "@/lib/data/mode-actions";
 import { createClient } from "@/lib/supabase/client";
 import { removerPushToken } from "@/lib/data/push-actions";
 import { countDocumentosPendentes } from "@/lib/data/documentos-admin";
+import { contarAchadosP1 } from "@/lib/data/agentes-actions";
 import { useHasActiveLocacao } from "@/lib/use-active-locacao";
 import { useViewMode, MODE_META, identidadeUsuario } from "@/lib/roles";
 import { MobileTabBar } from "@/components/layout/mobile-tab-bar";
@@ -121,6 +123,7 @@ const ADMIN_NAV: NavItem[] = [
   { href: "/admin/atendimento", label: "Atendimento", icon: LifeBuoy },
   { href: "/admin/financeiro", label: "Financeiro", icon: Wallet },
   { href: "/admin/marketing", label: "Marketing", icon: TrendingUp },
+  { href: "/admin/agentes", label: "Agentes", icon: Bot },
 ];
 
 const NAV_BY_MODE: Record<ViewMode, NavItem[]> = { owner: OWNER_NAV, tenant: TENANT_NAV };
@@ -206,6 +209,21 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     };
   }, [display.role, pathname]);
 
+  // Achados P1 das rondas nas últimas 24h — badge do item "Agentes".
+  const [achadosP1, setAchadosP1] = useState(0);
+  useEffect(() => {
+    if (display.role !== "admin") return;
+    let alive = true;
+    contarAchadosP1()
+      .then((n) => {
+        if (alive) setAchadosP1(n);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [display.role, pathname]);
+
   // Inquilino: "Solicitações" entra no menu só quando há locação ativa.
   const hasActiveLoc = useHasActiveLocacao(mode === "tenant");
 
@@ -215,7 +233,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     nav = [...nav, ...ADMIN_NAV].map((item) =>
       item.href === "/admin/documentos" && docsPendentes > 0
         ? { ...item, badgeCount: docsPendentes }
-        : item
+        : item.href === "/admin/agentes" && achadosP1 > 0
+          ? { ...item, badgeCount: achadosP1 }
+          : item
     );
   if (mode === "tenant" && hasActiveLoc) {
     // Insere logo após "Minhas locações" (mantém o teto de 7 + 1 contextual).

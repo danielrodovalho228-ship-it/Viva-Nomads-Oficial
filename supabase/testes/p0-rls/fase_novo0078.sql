@@ -1,0 +1,38 @@
+-- 0078 — Central de Agentes: só admin lê/escreve; funções só para o service_role.
+reset role;
+select v('NOVO@0078','RLS ligada nas 4 tabelas','select count(*)::text from pg_class where oid in (''public.agentes''::regclass,''public.agentes_rondas''::regclass,''public.agentes_ordens''::regclass,''public.agentes_conversas''::regclass) and relrowsecurity','4');
+select v('NOVO@0078','16 agentes no cadastro','select count(*)::text from public.agentes','16');
+select v('NOVO@0078','anon sem execute nas 2 funções','select (has_function_privilege(''anon'',''public.registrar_ronda(text,timestamptz,timestamptz,text,text,jsonb,uuid[],text)'',''execute'') or has_function_privilege(''anon'',''public.ordens_pendentes(text)'',''execute''))::text','false');
+select v('NOVO@0078','authenticated sem execute nas 2 funções','select (has_function_privilege(''authenticated'',''public.registrar_ronda(text,timestamptz,timestamptz,text,text,jsonb,uuid[],text)'',''execute'') or has_function_privilege(''authenticated'',''public.ordens_pendentes(text)'',''execute''))::text','false');
+-- Ronda de EXEMPLO só aqui (ambiente de teste), pela função do service_role.
+set role service_role;
+select public.registrar_ronda('bruno', now() - interval '5 minutes', now(), 'alerta', 'Ronda de exemplo (teste).', '[{"prioridade":"P1","titulo":"Exemplo"}]'::jsonb);
+reset role;
+set role anon; select set_config('request.jwt.claims','{}',false);
+select t('ATAQUE@0078','anônimo lê agentes','falha',$q$select count(*) from agentes$q$);
+select t('ATAQUE@0078','anônimo chama ordens_pendentes','falha',$q$select * from ordens_pendentes('bruno')$q$);
+reset role;
+set role authenticated; select set_config('request.jwt.claims','{"sub":"22222222-2222-2222-2222-222222222222"}',false);
+select v('ATAQUE@0078','usuário comum não vê agentes','select count(*)::text from agentes','0');
+select v('ATAQUE@0078','usuário comum não vê rondas','select count(*)::text from agentes_rondas','0');
+select t('ATAQUE@0078','usuário comum deixa ordem','falha',$q$insert into agentes_ordens (agente_slug, texto) values ('bruno','x')$q$);
+select t('ATAQUE@0078','usuário comum grava conversa','falha',$q$insert into agentes_conversas (agente_slug, papel, texto) values ('bruno','daniel','x')$q$);
+select t('ATAQUE@0078','usuário comum registra ronda','falha',$q$select registrar_ronda('bruno', now(), now(), 'ok', 'x')$q$);
+reset role;
+set role authenticated; select set_config('request.jwt.claims','{"sub":"44444444-4444-4444-4444-444444444444"}',false);
+select v('NOVO@0078','admin vê os 16 agentes','select count(*)::text from agentes','16');
+select v('NOVO@0078','admin vê a ronda de exemplo','select count(*)::text from agentes_rondas','1');
+select t('NOVO@0078','admin deixa ordem','passa',$q$insert into agentes_ordens (agente_slug, texto) values ('bruno','Conferir o build')$q$);
+select v('NOVO@0078','ordem fica no nome do admin','select count(*)::text from agentes_ordens where criado_por=''44444444-4444-4444-4444-444444444444''','1');
+select t('NOVO@0078','admin grava conversa','passa',$q$insert into agentes_conversas (agente_slug, papel, texto) values ('bruno','daniel','Oi')$q$);
+select t('ATAQUE@0078','admin insere ronda direto','falha',$q$insert into agentes_rondas (agente_slug, status) values ('bruno','ok')$q$);
+select t('ATAQUE@0078','admin apaga ordem','falha',$q$delete from agentes_ordens$q$);
+select t('ATAQUE@0078','admin chama registrar_ronda','falha',$q$select registrar_ronda('bruno', now(), now(), 'ok', 'x')$q$);
+reset role;
+set role service_role;
+select v('NOVO@0078','ordens_pendentes entrega a ordem','select count(*)::text from ordens_pendentes(''bruno'')','1');
+select v('NOVO@0078','…e marca como lida','select status from agentes_ordens limit 1','lida');
+select registrar_ronda('bruno', now(), now(), 'ok', 'Feito.', '[]'::jsonb, array(select id from agentes_ordens));
+select v('NOVO@0078','registrar_ronda conclui a ordem atendida','select status from agentes_ordens limit 1','concluida');
+reset role;
+delete from agentes_conversas; delete from agentes_ordens; delete from agentes_rondas;
