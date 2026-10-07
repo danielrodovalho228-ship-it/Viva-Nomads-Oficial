@@ -9,7 +9,7 @@ import { formatBRL, cn } from "@/lib/utils";
 import { CAUCAO_FRASE } from "@/lib/faixas";
 import { JsonLd } from "@/components/seo/json-ld";
 import { ofertasPlanos } from "@/lib/seo/estruturados";
-import { SITE_URL } from "@/lib/site";
+import { SITE_URL, SUPORTE_EMAIL } from "@/lib/site";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/precos" },
@@ -235,7 +235,7 @@ export default function PricingPage() {
               )}
 
               <ButtonLink
-                href={plan.price === null ? "mailto:suporte@vivanomads.com.br?subject=Plano%20Gestor" : "/dashboard/assinatura"}
+                href={plan.price === null ? `mailto:${SUPORTE_EMAIL}?subject=Plano%20Gestor` : "/dashboard/assinatura"}
                 variant={plan.featured ? "gold" : "outline"}
                 className="mt-8 w-full"
               >

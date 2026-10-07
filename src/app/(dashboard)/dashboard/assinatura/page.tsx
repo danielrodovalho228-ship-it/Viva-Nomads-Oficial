@@ -9,6 +9,7 @@ import { GESTOR_MIN_IMOVEIS_VALIDADOS } from "@/lib/planos/gestor";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { formatBRL, cn } from "@/lib/utils";
+import { SUPORTE_EMAIL } from "@/lib/site";
 
 type Billing = "PIX" | "BOLETO" | "CREDIT_CARD";
 
@@ -168,7 +169,7 @@ export default function SubscriptionPage() {
                         }.`}
                   </p>
                   <a
-                    href="mailto:suporte@vivanomads.com.br?subject=Plano%20Gestor"
+                    href={`mailto:${SUPORTE_EMAIL}?subject=Plano%20Gestor`}
                     className="flex w-full items-center justify-center rounded-xl border border-forest px-4 py-2.5 text-sm font-semibold text-forest hover:bg-forest/5"
                   >
                     Fale com a gente

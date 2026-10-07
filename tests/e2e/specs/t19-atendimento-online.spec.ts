@@ -77,7 +77,7 @@ test.describe("T19 — Logado @criticos", () => {
     await page.goto("/ajuda", { waitUntil: "networkidle" });
     await expect(page.locator("body")).toContainText("Assistente Viva 24 h · resposta de uma pessoa em até 24 h");
     await expect(page.locator("body")).not.toContainText(/7h às 22h|Atendimento humano/);
-    await expect(page.getByRole("link", { name: "suporte@vivanomads.com.br" }).first()).toBeVisible();
+    await expect(page.getByRole("link", { name: /^(contato|suporte)@vivanomads\.com\.br$/ }).first()).toBeVisible();
     const bloco = page.getByTestId("viva-chat-bloco");
     await bloco.getByRole("button", { name: /Falar com uma pessoa/i }).click();
     await bloco.getByLabel("Pedido para a equipe").fill("Quero ajuda para entender a devolução da caução.");

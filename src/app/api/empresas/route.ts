@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { sendEmail } from "@/lib/notifications/email";
 import { consumirLimite, ipHash, HORA } from "@/lib/limites";
+import { SUPORTE_EMAIL } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +35,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const to = process.env.EMPRESAS_LEAD_EMAIL ?? "suporte@vivanomads.com.br";
+  const to = process.env.EMPRESAS_LEAD_EMAIL ?? SUPORTE_EMAIL;
 
   const esc = (s: string) =>
     s.replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c] ?? c));
