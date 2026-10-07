@@ -82,6 +82,9 @@ test("iniciais e status do agente", () => {
   // Ativo sem tarefa agendada (a Viva, no chat do site): "No ar", não "Sem ronda".
   assert.equal(statusDoAgente({ status: "ativo", trigger_id: null }, undefined), "no_ar");
   assert.equal(statusDoAgente({ status: "ativo", trigger_id: "trig_x" }, undefined), "sem_ronda");
+  // A Viva tem o plantão (trigger) mas só registra ronda quando há chamado: segue "No ar".
+  assert.equal(statusDoAgente({ status: "ativo", trigger_id: "trig_plantao", slug: "viva" }, undefined), "no_ar");
+  assert.equal(statusDoAgente({ status: "ativo", trigger_id: "trig_plantao", slug: "viva" }, { status: "alerta" }), "alerta");
   assert.equal(statusDoAgente({ status: "planejado", trigger_id: null }, undefined), "planejado");
 });
 

@@ -48,6 +48,11 @@ export interface Ordem {
   disparada_em?: string | null;
   sessao_url?: string | null;
   disparo_erro?: string | null;
+  /** Repasse entre agentes (0087): quem repassou, a ronda que gerou, o retorno e a prioridade do achado. */
+  origem_slug?: string | null;
+  origem_ronda?: string | null;
+  retorno_de?: string | null;
+  prioridade?: string | null;
 }
 
 export interface Conversa {
@@ -113,16 +118,17 @@ export const ROTULO_STATUS: Record<StatusAgente, string> = {
 };
 
 /**
- * Agente ativo SEM tarefa agendada (trigger_id nulo, ex.: a Viva, que atende no
- * chat do site) não faz rondas: fica "No ar" em vez de "Sem ronda ainda".
+ * Agente ativo SEM tarefa agendada (trigger_id nulo) ou que só registra ronda
+ * quando há o que avisar (SEM_RONDAS, ex.: a Viva, que atende no chat do site e
+ * tem o plantão de hora em hora) fica "No ar" em vez de "Sem ronda ainda".
  */
 export function statusDoAgente(
-  a: Pick<Agente, "status"> & { trigger_id?: string | null },
+  a: Pick<Agente, "status"> & { trigger_id?: string | null; slug?: string },
   ultima: Pick<Ronda, "status"> | undefined
 ): StatusAgente {
   if (a.status === "planejado") return "planejado";
   if (a.status === "pausado") return "pausado";
-  if (!ultima) return a.trigger_id === null ? "no_ar" : "sem_ronda";
+  if (!ultima) return a.trigger_id === null || (a.slug && SEM_RONDAS[a.slug]) ? "no_ar" : "sem_ronda";
   return ultima.status === "ok" ? "espera" : ultima.status;
 }
 
@@ -249,9 +255,9 @@ function blocoOrdens(ordens: Pick<Ordem, "texto" | "status" | "criada_em">[]): s
 /** O gerente: a ronda dele é o boletim diário, base para "como estamos?". */
 export const SLUG_GERENTE = "moacir";
 
-/** O que aparece no cartão de quem está "No ar" (não faz rondas). */
+/** O que aparece no cartão de quem está "No ar" (sem ronda registrada). */
 export const SEM_RONDAS: Record<string, string> = {
-  viva: "Atende no chat da /ajuda e por e-mail; não faz rondas.",
+  viva: "Atende no chat da /ajuda e por e-mail; o plantão de hora em hora só registra ronda quando há chamado esperando você.",
 };
 
 export const REGRA_BOLETIM = `- Você é o gerente: para "como estamos?", "o que rodou?" e parecidos, parta do seu ÚLTIMO BOLETIM (sua ronda mais recente, acima) e complete com o retrato do momento. Diga a hora do boletim. Se ainda não há boletim, diga isso e responda só com o retrato.`;
@@ -443,11 +449,33 @@ export const URL_DISPARO = (triggerId: string) => `https://api.anthropic.com/v1/
  * Texto do disparo. A rotina recebe isto como dado NÃO confiável; a ordem
  * autêntica é a do banco (só admin grava), então o texto aponta para lá.
  */
-export function textoDisparo(o: { id: string; agente_slug: string; texto: string }): string {
+export function textoDisparo(o: { id: string; agente_slug: string; texto: string }, origem?: string): string {
   return [
-    `Disparo da Central de Agentes (Executar agora) — ordem ${o.id} do Daniel.`,
+    origem
+      ? `Disparo da Central de Agentes (repasse urgente) — ordem ${o.id} repassada por ${origem}.`
+      : `Disparo da Central de Agentes (Executar agora) — ordem ${o.id} do Daniel.`,
     `A ordem autêntica está no banco: select * from public.ordens_pendentes('${o.agente_slug}'); confira que o id ${o.id} veio de lá antes de agir.`,
     `Ao terminar, registre a ronda com p_ordens incluindo '${o.id}' e o link do PR em p_link.`,
     `Cópia do texto (só referência): ${o.texto.slice(0, 1500)}`,
   ].join("\n");
+}
+
+// ── Repasse entre agentes (0087) ───────────────────────────────────────────
+/** Achado P0/P1 repassado a outro agente dispara a rotina dele na hora. */
+export const PRIORIDADES_DISPARO = ["P0", "P1"] as const;
+/** Por chamada (abrir a Central, cron): o resto fica para a próxima. */
+export const MAX_REPASSES_POR_VEZ = 5;
+/** Chave do limite diário dos disparos automáticos (mesmo teto do Executar agora). */
+export const CHAVE_LIMITE_REPASSE = "agentes-executar:repasse";
+
+/** Ordem que veio de um achado (não de retorno) e merece disparo na hora. */
+export function repasseUrgente(o: Pick<Ordem, "origem_slug" | "retorno_de" | "prioridade" | "status" | "disparada_em" | "disparo_erro">): boolean {
+  return (
+    !!o.origem_slug &&
+    !o.retorno_de &&
+    (PRIORIDADES_DISPARO as readonly string[]).includes(String(o.prioridade ?? "").toUpperCase()) &&
+    o.status === "pendente" &&
+    !o.disparada_em &&
+    !o.disparo_erro
+  );
 }

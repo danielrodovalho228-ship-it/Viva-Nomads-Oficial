@@ -721,6 +721,12 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
                   <li key={o.id} className="border-t border-white/5 pt-3 first:border-0 first:pt-0" data-testid="ordem" data-estado={estado}>
                     <div className="flex flex-wrap items-center gap-2">
                       <Chip cor={COR_ESTADO[estado]}>{ROTULO_ESTADO[estado]}</Chip>
+                      {o.origem_slug && (
+                        <span className="text-xs font-semibold text-[#FF7A6B]" data-testid="ordem-origem">
+                          {o.retorno_de ? "retorno de" : "repasse de"} {dados.agentes.find((x) => x.slug === o.origem_slug)?.nome ?? o.origem_slug}
+                          {o.prioridade ? ` · ${o.prioridade}` : ""}
+                        </span>
+                      )}
                       <span className="text-xs text-[#8C9AC4]" style={mono}>
                         {dataHora(o.criada_em)}
                       </span>
