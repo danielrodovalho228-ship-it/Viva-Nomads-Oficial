@@ -12,6 +12,8 @@ import { account, hasAccount } from "../fixtures/accounts";
  *           grava uma vez só e a conferência pública diz "anulado". Cria um
  *           informe anual próprio (ano livre) porque documento não pode ser
  *           apagado depois — o do seed fica intacto para o /conferir.
+ *  #32      anon não escreve em nenhuma das 43 tabelas (amostra pelo PostgREST:
+ *           "permission denied" = sem privilégio, antes até do RLS); logado segue escrevendo.
  *
  * Sem env (URL/anon key/conta de teste), o teste é pulado.
  */
@@ -82,5 +84,29 @@ test.describe("T22 pacote do Otávio (0083) @seguranca", () => {
     const html = await (await request.get(`/conferir/${codigo}`)).text();
     expect(html).toContain('data-testid="conferir-anulado"');
     expect(html).not.toContain('data-testid="conferir-ok"');
+  });
+
+  test("#32: anon sem INSERT/UPDATE/DELETE nas tabelas; inquilino logado continua favoritando", async () => {
+    const anon = cliente();
+    const id = "00000000-0000-0000-0000-000000000000";
+    for (const tabela of ["properties", "leads", "messages", "favorites", "reviews", "documents", "pedidos_moradia", "contratos", "subscriptions", "vistorias"]) {
+      const ins = await anon.from(tabela).insert({ id });
+      expect(ins.error?.message ?? "", `anon inseriu em ${tabela}`).toMatch(/permission denied/);
+      const upd = await anon.from(tabela).update({ id }).eq("id", id);
+      expect(upd.error?.message ?? "", `anon atualizou ${tabela}`).toMatch(/permission denied/);
+      const del = await anon.from(tabela).delete().eq("id", id);
+      expect(del.error?.message ?? "", `anon apagou de ${tabela}`).toMatch(/permission denied/);
+    }
+    // Leitura pública continua (vitrine de imóveis).
+    expect((await anon.from("properties").select("id").limit(1)).error).toBeNull();
+
+    // Logado: favoritar e desfavoritar (escrita com RLS de auth.uid()).
+    test.skip(!hasAccount("inquilino"), "Sem conta do inquilino.");
+    const inq = await logado("inquilino");
+    const uid = (await inq.auth.getUser()).data.user!.id;
+    const { data: imovel } = await inq.from("properties").select("id").limit(1).single();
+    await inq.from("favorites").delete().eq("tenant_id", uid).eq("property_id", imovel!.id);
+    expect((await inq.from("favorites").insert({ tenant_id: uid, property_id: imovel!.id })).error).toBeNull();
+    expect((await inq.from("favorites").delete().eq("tenant_id", uid).eq("property_id", imovel!.id)).error).toBeNull();
   });
 });

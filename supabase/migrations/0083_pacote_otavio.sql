@@ -78,3 +78,26 @@ as $$
 $$;
 revoke all on function public.conferir_documento(text) from public;
 grant execute on function public.conferir_documento(text) to anon, authenticated, service_role;
+
+-- 3) #32 — anon (chave pública, sem login) tinha INSERT/UPDATE/DELETE em 43 tabelas.
+--    O RLS já barrava (toda política de escrita exige auth.uid() ou is_admin(), e
+--    as 23 tabelas sem política de escrita não aceitam nada), mas o grant não
+--    deve existir: tira a escrita de anon. EXCEÇÕES: nenhuma — conferido em
+--    produção em 07/10/2026 (políticas, gatilhos e funções INVOKER que anon executa).
+--    Logado (authenticated) e service_role ficam como estão. SELECT de anon também.
+revoke insert, update, delete on table
+  public.account_type_audit, public.ai_generations, public.contracts, public.contrato_blocos,
+  public.contratos, public.document_counters, public.document_line_items, public.documents,
+  public.favorites, public.garantias, public.guarantees, public.insurance_quotes,
+  public.invoices, public.leads, public.locacoes, public.messages,
+  public.modelos_contrato, public.moderacao_log, public.pagamentos_bloco, public.payment_accounts,
+  public.pedidos_moradia, public.properties, public.property_amenities, public.property_blocks,
+  public.property_photos, public.property_proximities, public.property_workspaces, public.push_tokens,
+  public.qualification_checklists, public.referral_credits, public.referrals, public.respostas_pedido,
+  public.reviews, public.service_order_messages, public.service_orders, public.servicos_adicionais,
+  public.subscriptions, public.tenant_verifications, public.transactions, public.utility_extra_charges,
+  public.vistoria_fotos, public.vistoria_itens, public.vistorias
+from anon;
+-- Tabela nova criada por migração (dono postgres) não nasce mais com escrita para anon.
+-- Se um dia uma tabela precisar receber escrita sem login, o grant vai explícito na migração.
+alter default privileges for role postgres in schema public revoke insert, update, delete on tables from anon;
