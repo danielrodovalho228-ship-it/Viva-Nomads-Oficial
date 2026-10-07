@@ -6,7 +6,9 @@ import { calcularPrazos, mensagemPrazo } from "@/config/atendimento";
 import { avisoEmergencia, classificar } from "@/lib/atendimento/classificar";
 import { avisarEquipe, avisarUsuario, registrarMensagemDaPessoa, type ChamadoResumo } from "@/lib/atendimento/servidor";
 import { consumirLimite, HORA } from "@/lib/limites";
-import { rodarViva, vivaAtiva } from "@/lib/atendimento/viva-servidor";
+import { acolherNaEquipe, rodarViva, vivaAtiva } from "@/lib/atendimento/viva-servidor";
+import { quemAtende } from "@/lib/atendimento/acolhimento";
+import { triagem } from "@/lib/atendimento/filas";
 import { AVISO_VIVA, ehGolpe, ORIENTACAO_GOLPE } from "@/lib/atendimento/viva-regras";
 
 /**
@@ -84,10 +86,13 @@ export async function POST(request: Request) {
   }
 
   // Chamado novo.
-  const { tipo, prioridade, emergencia } = classificar("duvida", `${assunto}\n${texto}`);
+  // Mesma triagem do site: e-mail sobre Caução, cobrança, imóvel… cai na fila certa (e fica com a equipe).
+  const catKey = triagem("duvida", `${assunto}\n${texto}`);
+  const { tipo, prioridade, emergencia } = classificar(catKey, `${assunto}\n${texto}`);
   const agora = new Date();
   const prazos = calcularPrazos(prioridade, agora);
-  const comViva = vivaAtiva() && !emergencia && prioridade !== "p1";
+  const atende = quemAtende({ vivaAtiva: vivaAtiva(), emergencia: !!emergencia, prioridade, pedePessoa: false, categoria: catKey });
+  const comViva = atende === "viva";
   const { data: novo, error } = await admin
     .from("chamados")
     .insert({
@@ -95,7 +100,7 @@ export async function POST(request: Request) {
       visitante_email: usuarioId ? null : remetente.email,
       visitante_nome: usuarioId ? null : remetente.nome,
       tipo: tipo === "manutencao" ? "suporte" : tipo,
-      categoria: "duvida",
+      categoria: catKey,
       prioridade,
       canal: "email",
       responsavel_tipo: comViva ? "ia" : "humano",
@@ -115,5 +120,6 @@ export async function POST(request: Request) {
   await avisarUsuario(novo as ChamadoResumo, "chamado_aberto");
   if (prioridade === "p1" || prioridade === "p2") await avisarEquipe(novo as ChamadoResumo, "chegou por e-mail");
   if (comViva) after(() => rodarViva(novo.id as string));
+  else if (atende === "equipe_com_acolhimento") after(() => acolherNaEquipe(novo.id as string));
   return NextResponse.json({ ok: true, chamado: novo.numero_publico, acao: "novo" });
 }

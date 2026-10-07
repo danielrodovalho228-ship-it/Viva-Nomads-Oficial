@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { cn, dataBR } from "@/lib/utils";
 import { PRAZOS, type Prioridade } from "@/config/atendimento";
 import { primeiroNome } from "@/lib/display-name";
-import { alterarChamado, avaliarRespostaIA, devolverParaViva, responderComoAdmin, type chamadoAdmin, type Macro } from "@/lib/data/atendimento-actions";
+import { alterarChamado, aprovarSugestao, avaliarRespostaIA, devolverParaViva, responderComoAdmin, type chamadoAdmin, type Macro } from "@/lib/data/atendimento-actions";
+import { respostaDaSugestao } from "@/lib/atendimento/acolhimento";
 import { mascararEmail, podeDevolverParaViva } from "@/lib/atendimento/copiloto-regras";
 import { BotaoSugerir, FontesDaSugestao, QuemEAPessoa, type SugestaoVista } from "./copiloto";
 import { relogio } from "../atendimento-client";
@@ -28,7 +29,9 @@ const STATUS: Record<string, string> = {
 /** Rótulos do histórico para as ações do copiloto. */
 const ACAO: Record<string, string> = {
   consulta_pessoa: "consultou Quem é a pessoa",
-  sugestao_ia: "pediu sugestão da Viva",
+  sugestao_ia: "sugestão da Viva",
+  sugestao_aprovada: "aprovou e enviou a sugestão da Viva",
+  acolhido: "acolhimento automático",
   devolvido_ia: "devolveu para a Viva",
   mensagem: "mensagem da pessoa",
 };
@@ -53,6 +56,8 @@ export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; 
   const [erro, setErro] = useState<string | null>(null);
   const [corrigindo, setCorrigindo] = useState<number | null>(null);
   const [correcao, setCorrecao] = useState("");
+  const aprovadas = new Set(eventos.filter((e) => e.acao === "sugestao_aprovada").map((e) => Number(e.de)));
+  const respondido = mensagens.some((m) => m.autor === "admin" && !m.interno);
   const avaliadas = new Map(eventos.filter((e) => e.acao === "ia_boa_resposta" || e.acao === "ia_corrigir").map((e) => [Number(e.de), e.acao]));
   const r = relogio(c, new Date(agoraISO));
   const nome = primeiroNome(pessoa?.nome ?? c.visitante_nome) || "tudo bem";
@@ -96,9 +101,23 @@ export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; 
                   </span>
                   <span className="whitespace-pre-wrap text-ink">{m.corpo}</span>
                   {m.interno && (
-                    <button type="button" onClick={() => setTexto(respostaDaNota(m.corpo))} className="mt-2 block text-xs font-medium text-forest underline">
-                      Usar como resposta
-                    </button>
+                    <span className="mt-2 flex flex-wrap items-center gap-3">
+                      {m.autor === "ia" && respostaDaSugestao(m.corpo) && !aprovadas.has(m.id) && !respondido && (
+                        <Button
+                          size="sm"
+                          variant="gold"
+                          disabled={ocupado}
+                          data-testid="aprovar-sugestao"
+                          onClick={() => agir(() => aprovarSugestao(c.id, m.id))}
+                        >
+                          <Send className="h-3.5 w-3.5" /> Aprovar e enviar
+                        </Button>
+                      )}
+                      {aprovadas.has(m.id) && <span className="text-xs font-medium text-forest">Aprovada e enviada</span>}
+                      <button type="button" onClick={() => setTexto(respostaDaNota(m.corpo))} className="text-xs font-medium text-forest underline">
+                        {m.autor === "ia" && respostaDaSugestao(m.corpo) ? "Editar antes de enviar" : "Usar como resposta"}
+                      </button>
+                    </span>
                   )}
                   {m.autor === "ia" && !m.interno && (
                     <span className="mt-2 flex flex-wrap items-center gap-2 text-xs">

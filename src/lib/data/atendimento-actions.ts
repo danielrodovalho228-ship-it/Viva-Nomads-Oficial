@@ -21,7 +21,8 @@ import { avisoEmergencia, categoria, classificar, ehNumeroPublico, numeroEmergen
 import { avisarEquipe, avisarProprietarioManutencao, avisarUsuario, criarOrdemManutencao, pessoaValida, registrarMensagemDaPessoa, type ChamadoResumo, type OrdemCriada } from "@/lib/atendimento/servidor";
 import { chamadoDoDono, type ClienteChamados } from "@/lib/atendimento/dono";
 import { FILAS, ehFila, filaDaCategoria, triagem } from "@/lib/atendimento/filas";
-import { escalarParaPessoa, rodarViva, vivaAtiva, chamarClaude, sugerirRascunho, devolverChamadoParaViva } from "@/lib/atendimento/viva-servidor";
+import { acolherNaEquipe, escalarParaPessoa, rodarViva, vivaAtiva, chamarClaude, sugerirRascunho, devolverChamadoParaViva } from "@/lib/atendimento/viva-servidor";
+import { quemAtende, respostaDaSugestao } from "@/lib/atendimento/acolhimento";
 import { contarPorStatus, ehContaNova, mascararEmail, papelLegivel, rotuloFerramenta, type PessoaResumo } from "@/lib/atendimento/copiloto";
 import { prontidaoDosImoveis } from "@/lib/anuncio/prontidao-servidor";
 import { atenderViva } from "@/lib/atendimento/viva-motor";
@@ -153,8 +154,11 @@ export async function abrirChamado(
   }
 
   const prazos = calcularPrazos(prioridade, agora);
-  // Com a Viva ligada, ela atende primeiro (menos emergência/P1, que já vão para uma pessoa).
-  const comViva = vivaAtiva() && !emergencia && prioridade !== "p1" && !input.pedePessoa;
+  // Quem atende primeiro: categorias simples → a Viva inteira; sensíveis (Caução,
+  // contrato, cobrança…), P1 e "falar com uma pessoa" → equipe, com acolhimento
+  // na hora e resposta sugerida para aprovar. Emergência: só a orientação fixa.
+  const atende = quemAtende({ vivaAtiva: vivaAtiva(), emergencia: !!emergencia, prioridade, pedePessoa: !!input.pedePessoa, categoria: cat.key });
+  const comViva = atende === "viva";
   const assunto = limpar(input.assunto?.trim() || mensagem.split("\n")[0], 140) || cat.rotulo;
   const { data: chamado, error } = await admin
     .from("chamados")
@@ -213,6 +217,7 @@ export async function abrirChamado(
   await avisarEquipe(c, emergencia ? `EMERGÊNCIA (${emergencia}) — orientado a ligar ${numeroEmergencia(emergencia)}` : `novo chamado · ${fila} · ${cat.rotulo}`);
   if (manut) await avisarProprietarioManutencao(manut, agora);
   if (comViva) after(() => rodarViva(c.id));
+  else if (atende === "equipe_com_acolhimento") after(() => acolherNaEquipe(c.id));
 
   return { ok: true, numero: c.numero_publico, aviso, emergencia: !!emergencia };
 }
@@ -544,6 +549,22 @@ export async function responderComoAdmin(id: string, texto: string, interno: boo
     await ctx.admin.from("chamado_eventos").insert({ chamado_id: id, ator_tipo: "admin", ator_id: ctx.userId, acao: "respondido", de: c.status as string, para: "aguardando_usuario" });
     await avisarUsuario(c as ChamadoResumo, "chamado_respondido", `<blockquote style="margin:12px 0 0;padding:10px 14px;border-left:3px solid #1c6b3a;color:#334155;">${textoEmail(corpo, 1500)}</blockquote>`);
   }
+  return { ok: true };
+}
+
+/**
+ * "Aprovar e enviar" a resposta sugerida pela Viva (nota interna): o texto vem
+ * do BANCO (não do navegador) e sai como resposta da equipe, com e-mail à pessoa.
+ */
+export async function aprovarSugestao(chamadoId: string, mensagemId: number): Promise<Res> {
+  const ctx = await exigirAdmin();
+  if (!ctx || !UUID_RE.test(chamadoId) || !Number.isInteger(mensagemId)) return { ok: false, error: "Sem permissão." };
+  const { data: m } = await ctx.admin.from("chamado_mensagens").select("id, chamado_id, autor, interno, simulacao, corpo").eq("id", mensagemId).maybeSingle();
+  const texto = m && m.chamado_id === chamadoId && m.autor === "ia" && m.interno ? respostaDaSugestao(m.corpo as string) : null;
+  if (!texto) return { ok: false, error: "Sugestão não encontrada neste chamado." };
+  const r = await responderComoAdmin(chamadoId, texto, false);
+  if (!r.ok) return r;
+  await ctx.admin.from("chamado_eventos").insert({ chamado_id: chamadoId, ator_tipo: "admin", ator_id: ctx.userId, acao: "sugestao_aprovada", de: String(mensagemId) });
   return { ok: true };
 }
 

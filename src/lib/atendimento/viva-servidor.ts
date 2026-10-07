@@ -11,7 +11,9 @@ import { atenderViva, maisUrgente, type ChamarModelo, type Ferramentas, type Res
 import { contextoChamado, type FerramentaDef } from "@/lib/atendimento/viva-prompt";
 import { aceitaEsforco, aceitaReserva, cotacaoDolar, custoUsd, modeloViva } from "@/lib/atendimento/viva-custo";
 import { primeiroNome, RESPOSTA_PESSOA, ROTULO_APROVACAO } from "@/lib/atendimento/viva-regras";
-import { podeDevolverParaViva, sugerirRespostaMotor, transcricaoParaRascunho, type Sugestao } from "@/lib/atendimento/copiloto";
+import { podeDevolverParaViva, rotuloFerramenta, sugerirRespostaMotor, transcricaoParaRascunho, type Sugestao } from "@/lib/atendimento/copiloto";
+import { notaSugestao, SUGESTAO_SIMULADA, textoAcolhimento } from "@/lib/atendimento/acolhimento";
+import { categoria as categoriaDef } from "@/lib/atendimento/classificar";
 import {
   avisarEquipe,
   avisarProprietarioManutencao,
@@ -443,6 +445,58 @@ export async function rodarViva(chamadoId: string): Promise<void> {
   } catch (e) {
     console.error("[viva] falha:", e instanceof Error ? e.message : e);
     await escalarParaPessoa(chamadoId, "falha da Viva", "sistema").catch(() => null);
+  }
+}
+
+/**
+ * Chamado que fica com a EQUIPE (categoria sensível ou "falar com uma pessoa"):
+ * 1) acolhimento na hora, da Viva, com número e prazo (conta como 1ª resposta);
+ * 2) resposta SUGERIDA como nota interna, para aprovar com 1 clique.
+ * O acolhimento é texto fixo (sem IA, sem custo). A sugestão usa a IA só com a
+ * Viva ligada e dentro do teto diário; no laboratório vira um rascunho simulado.
+ */
+export async function acolherNaEquipe(chamadoId: string): Promise<void> {
+  const admin = createAdminClient();
+  if (!admin) return;
+  try {
+    const { data } = await admin.from("chamados").select(`${CAMPOS}, prazo_primeira_resposta`).eq("id", chamadoId).maybeSingle();
+    const c = data as (ChamadoViva & { prazo_primeira_resposta: string }) | null;
+    if (!c || c.responsavel_tipo !== "humano" || ["resolvido", "encerrado"].includes(c.status)) return;
+    const { count: jaRespondido } = await admin
+      .from("chamado_mensagens")
+      .select("id", { count: "exact", head: true })
+      .eq("chamado_id", c.id)
+      .in("autor", ["ia", "admin"]);
+    if ((jaRespondido ?? 0) > 0) return; // idempotente: só a primeira vez
+    const agora = new Date();
+    const rotulo = categoriaDef(c.categoria)?.rotulo ?? "atendimento";
+    await admin.from("chamado_mensagens").insert({
+      chamado_id: c.id,
+      autor: "ia",
+      corpo: textoAcolhimento({ numero: c.numero_publico, rotulo, prazo: new Date(c.prazo_primeira_resposta) }),
+    });
+    if (!c.primeira_resposta_em) await admin.from("chamados").update({ primeira_resposta_em: agora.toISOString(), atualizado_em: agora.toISOString() }).eq("id", c.id);
+    await registrarAcaoViva(admin, c, "acolhido", "acolhimento automático; fica com a equipe");
+
+    let texto: string | null = null;
+    let fontes: string[] = [];
+    let simulacao = false;
+    if (vivaAtiva() && (await consumirLimite("viva:dia", limiteDia(), DIA))) {
+      const s = await sugerirRascunho(c.id);
+      if (s?.ok && s.texto) {
+        texto = s.texto;
+        fontes = s.fontes.map((f) => rotuloFerramenta(f.ferramenta));
+      }
+    } else if (integracoesSimuladas()) {
+      texto = SUGESTAO_SIMULADA;
+      simulacao = true;
+    }
+    if (texto) {
+      await admin.from("chamado_mensagens").insert({ chamado_id: c.id, autor: "ia", interno: true, simulacao, corpo: notaSugestao(texto, fontes) });
+      await registrarAcaoViva(admin, c, "sugestao_ia", `sugestão para aprovar${fontes.length ? ` · fontes: ${fontes.join(", ")}` : ""}`);
+    }
+  } catch (e) {
+    console.error("[viva] acolhimento:", e instanceof Error ? e.message : e);
   }
 }
 
