@@ -35,6 +35,8 @@ const nextConfig: NextConfig = {
       // /planos é natural de digitar e pode ter links antigos; a página canônica
       // é /precos (o rótulo "Planos" no menu/rodapé já aponta para /precos).
       { source: "/planos", destination: "/precos", permanent: true },
+      // Link antigo/intuitivo: quem procura "anunciar" cai na página do proprietário (301).
+      { source: "/anunciar", destination: "/para-proprietarios", statusCode: 301 },
       // O simulador agora é uma rota React em /simulacao (URL principal divulgada).
       // Links antigos para /simulador e a página estática apontam para ela.
       { source: "/simulador", destination: "/simulacao", permanent: true },

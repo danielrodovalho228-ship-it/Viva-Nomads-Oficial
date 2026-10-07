@@ -3,6 +3,10 @@ import { listProperties } from "@/lib/data/properties";
 import { BrandImage } from "@/components/brand-image";
 import { PHOTOS } from "@/lib/media";
 import { SearchClient } from "./search-client";
+import { JsonLd } from "@/components/seo/json-ld";
+import { listaImoveis } from "@/lib/seo/estruturados";
+import { isExemplo } from "@/lib/demo-listing";
+import { SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/buscar" },
@@ -45,6 +49,7 @@ export default async function SearchPage({
         </div>
       </div>
       <SearchClient properties={properties} />
+      <JsonLd dados={listaImoveis(SITE_URL, properties, (id) => isExemplo(id))} />
     </>
   );
 }

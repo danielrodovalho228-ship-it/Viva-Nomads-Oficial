@@ -7,6 +7,9 @@ import { NFSE_ATIVA, PLANO_FUNDADOR } from "@/lib/flags";
 import { ButtonLink } from "@/components/ui/button";
 import { formatBRL, cn } from "@/lib/utils";
 import { CAUCAO_FRASE } from "@/lib/faixas";
+import { JsonLd } from "@/components/seo/json-ld";
+import { ofertasPlanos } from "@/lib/seo/estruturados";
+import { SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/precos" },
@@ -135,6 +138,7 @@ function ServiceCard({ s }: { s: Service }) {
 export default function PricingPage() {
   return (
     <>
+      <JsonLd dados={ofertasPlanos(SITE_URL)} />
       {PLANO_FUNDADOR && (
         <div className="border-b border-champagne/40 bg-champagne/15">
           <div className="container-page flex flex-wrap items-center justify-center gap-x-2 gap-y-1 py-3 text-center text-sm text-ink">
