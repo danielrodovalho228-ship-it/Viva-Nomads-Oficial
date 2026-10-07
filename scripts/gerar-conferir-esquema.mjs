@@ -4,7 +4,9 @@
 import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 
 const DIR = "supabase/migrations";
-const linhas = [];
+let linhas = [];
+/** tabela → última migração que a apagou (drop table). */
+const apagadas = new Map();
 for (const f of readdirSync(DIR).filter((n) => n.endsWith(".sql")).sort()) {
   const m = f.slice(0, 4);
   const s = readFileSync(`${DIR}/${f}`, "utf8").replace(/--[^\n]*/g, "");
@@ -12,7 +14,10 @@ for (const f of readdirSync(DIR).filter((n) => n.endsWith(".sql")).sort()) {
   for (const [, t, corpo] of s.matchAll(/alter table (?:if exists )?(?:only )?(?:public\.)?(\w+)\s+(add column[^;]*)/gi))
     for (const [, c] of corpo.matchAll(/add column (?:if not exists )?(\w+)/gi)) linhas.push([m, "C", t, c]);
   for (const [, fn] of s.matchAll(/create (?:or replace )?function (?:public\.)?(\w+)/gi)) linhas.push([m, "F", fn, ""]);
+  for (const [, t] of s.matchAll(/drop table (?:if exists )?(?:public\.)?(\w+)/gi)) apagadas.set(t, m);
 }
+// O que uma migração posterior apagou não é cobrado (se foi recriada, vale a nova linha).
+linhas = linhas.filter(([m, k, t]) => !((k === "T" || k === "C") && apagadas.has(t) && m < apagadas.get(t)));
 const valores = linhas.map((l) => `('${l.join("','")}')`).join(",\n  ");
 writeFileSync(
   "supabase/producao/conferir-esquema.sql",

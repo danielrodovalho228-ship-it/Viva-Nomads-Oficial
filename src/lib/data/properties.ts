@@ -193,7 +193,7 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     safe(supabase.from("property_amenities").select("category, label, sort_order").eq("property_id", base.id).order("sort_order")),
     safe(supabase.from("property_workspaces").select("name, type, distance_m").eq("property_id", base.id)),
     safe(supabase.from("property_proximities").select("category, name, note, sort_order").eq("property_id", base.id).order("sort_order")),
-    safe(supabase.from("property_reviews").select("author_name, rating, comment, created_at").eq("property_id", base.id).order("created_at", { ascending: false })),
+    safe(supabase.from("avaliacoes").select("nota_geral, comentario_publico, publicada_em").eq("imovel_id", base.id).eq("papel_autor", "inquilino").eq("status", "publicada").order("publicada_em", { ascending: false })),
     ownerId ? safe(supabase.from("profiles").select("full_name, avatar_url, created_at, response_rate, is_verified").eq("id", ownerId).maybeSingle()) : Promise.resolve(null),
   ]);
 
@@ -229,11 +229,12 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
       name: p.name,
       note: p.note ?? undefined,
     })),
-    reviews: ((reviews as { author_name: string; rating: number; comment: string | null; created_at: string }[] | null) ?? []).map((r) => ({
-      author: r.author_name,
-      rating: Number(r.rating),
-      comment: r.comment ?? "",
-      date: r.created_at,
+    // Avaliação real de quem morou (0089): sem nome digitado — "Inquilino verificado".
+    reviews: ((reviews as { nota_geral: number; comentario_publico: string | null; publicada_em: string | null }[] | null) ?? []).map((r) => ({
+      author: "Inquilino verificado",
+      rating: Number(r.nota_geral),
+      comment: r.comentario_publico ?? "",
+      date: r.publicada_em ?? undefined,
     })),
     ownerName: ownerRow?.full_name ?? base.ownerName,
     ownerId: ownerId ?? base.ownerId,
@@ -360,7 +361,7 @@ async function attachCoverPhotos(supabase: SupabaseLike, list: Property[]): Prom
 
 /**
  * Sincroniza `rating`/`reviewCount` dos cards a partir das avaliações REAIS
- * (`property_reviews`) — a MESMA fonte da página de detalhe e do JSON-LD. Assim o
+ * (`avaliacoes` publicadas pelo inquilino, 0089) — a MESMA fonte da página de detalhe e do JSON-LD. Assim o
  * card nunca mostra uma contagem diferente da que o usuário vê no anúncio.
  * Best-effort: tabela ausente/consulta falha → mantém os escalares como vieram.
  */
@@ -369,15 +370,17 @@ async function attachReviewAggregates(supabase: SupabaseLike, list: Property[]):
   try {
     const ids = list.map((p) => p.id);
     const { data } = await supabase
-      .from("property_reviews")
-      .select("property_id, rating")
-      .in("property_id", ids);
+      .from("avaliacoes")
+      .select("imovel_id, nota_geral")
+      .in("imovel_id", ids)
+      .eq("papel_autor", "inquilino")
+      .eq("status", "publicada");
     const agg = new Map<string, { soma: number; n: number }>();
-    for (const row of ((data as { property_id: string; rating: number }[] | null) ?? [])) {
-      const cur = agg.get(row.property_id) ?? { soma: 0, n: 0 };
-      cur.soma += Number(row.rating) || 0;
+    for (const row of ((data as { imovel_id: string; nota_geral: number }[] | null) ?? [])) {
+      const cur = agg.get(row.imovel_id) ?? { soma: 0, n: 0 };
+      cur.soma += Number(row.nota_geral) || 0;
       cur.n += 1;
-      agg.set(row.property_id, cur);
+      agg.set(row.imovel_id, cur);
     }
     for (const p of list) {
       const a = agg.get(p.id);

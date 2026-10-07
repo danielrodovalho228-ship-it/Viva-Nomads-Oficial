@@ -22,11 +22,30 @@ export function reputacaoLabel(media: number, n: number): string {
   return `${nota} (${conta})`;
 }
 
+/** Limite de cada comentário (público, privado para a outra parte, privado para a Viva). */
+export const LIMITE_COMENTARIO = 500;
+
 /** Valida uma avaliação antes de enviar. */
 export function validarAvaliacao(rating: number, comentario?: string): string | null {
   if (!(rating >= 1 && rating <= 5)) return "Escolha de 1 a 5 estrelas.";
-  if (comentario && comentario.length > 1000) return "Comentário muito longo (máx. 1000).";
+  if (comentario && comentario.length > LIMITE_COMENTARIO) return `Comentário muito longo (máx. ${LIMITE_COMENTARIO}).`;
   return null;
+}
+
+/**
+ * Ofensa/discriminação — MESMA lista da função do banco public.contem_ofensa
+ * (0089). Quem cai aqui não é bloqueado: a avaliação vai para a moderação.
+ */
+export const OFENSAS = [
+  "porra", "caralho", "merda", "bosta", "puta", "puto", "putaria", "foda", "fodase", "fdp", "vsf", "tnc", "pqp", "cu", "buceta",
+  "arrombad[oa]", "desgracad[oa]", "vagabund[oa]", "otari[oa]", "babaca", "imbecil", "retardad[oa]", "escrot[oa]", "piranha", "vadia",
+  "corno", "viado", "veado", "bicha", "traveco", "sapatao", "macaco", "macaca", "crioul[oa]", "favelad[oa]",
+] as const;
+const RE_OFENSA = new RegExp(`(?<![\\p{L}\\d])(${OFENSAS.join("|")})(?![\\p{L}\\d])`, "u");
+const semAcento = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+export function contemOfensa(texto: string | null | undefined): boolean {
+  return !!texto && RE_OFENSA.test(semAcento(texto));
 }
 
 /** Papel oposto — quem o autor avalia. */

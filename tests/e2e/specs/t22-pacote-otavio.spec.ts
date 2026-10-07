@@ -89,7 +89,7 @@ test.describe("T22 pacote do Otávio (0083) @seguranca", () => {
   test("#32: anon sem INSERT/UPDATE/DELETE nas tabelas; inquilino logado continua favoritando", async () => {
     const anon = cliente();
     const id = "00000000-0000-0000-0000-000000000000";
-    for (const tabela of ["properties", "leads", "messages", "favorites", "reviews", "documents", "pedidos_moradia", "contratos", "subscriptions", "vistorias"]) {
+    for (const tabela of ["properties", "leads", "messages", "favorites", "avaliacoes", "documents", "pedidos_moradia", "contratos", "subscriptions", "vistorias"]) {
       const ins = await anon.from(tabela).insert({ id });
       expect(ins.error?.message ?? "", `anon inseriu em ${tabela}`).toMatch(/permission denied/);
       const upd = await anon.from(tabela).update({ id }).eq("id", id);
