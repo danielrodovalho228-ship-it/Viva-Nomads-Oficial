@@ -244,12 +244,14 @@ function FormPessoa({ logado, msgs, onCancelar }: { logado: boolean; msgs: MsgCh
       <div className="rounded-2xl border border-sage-200 bg-white p-3 text-ink" data-testid="chamado-aberto-chat">
         <p className="font-semibold">Chamado {ok.numero} aberto.</p>
         <p className="mt-1 text-xs text-muted">
-          A conversa foi anexada. {logado ? "Você acompanha em Ajuda → Meus chamados." : "Enviamos a confirmação para o seu e-mail; a resposta chega por lá."} {PROMESSA_ATENDIMENTO.split(" · ")[1]}. Dúvidas: {SUPORTE_EMAIL}.
+          A conversa foi anexada. {logado ? "Você acompanha em Ajuda → Meus chamados." : "Enviamos a confirmação para o seu e-mail; a resposta chega por lá."} Uma pessoa responde em até 24 h. Dúvidas: {SUPORTE_EMAIL}.
         </p>
         {logado && (
-          <Link href={`/ajuda?chamado=${ok.numero}`} className="mt-2 inline-block text-xs font-semibold text-forest underline">
+          // <a> de propósito: na própria /ajuda, um Link só trocaria a URL e a
+          // Central (que lê o ?chamado= ao abrir) não mostraria o chamado.
+          <a href={`/ajuda?chamado=${ok.numero}`} className="mt-2 inline-block text-xs font-semibold text-forest underline">
             Abrir o chamado
-          </Link>
+          </a>
         )}
       </div>
     );
@@ -259,7 +261,7 @@ function FormPessoa({ logado, msgs, onCancelar }: { logado: boolean; msgs: MsgCh
   return (
     <div className="space-y-2 rounded-2xl border border-sage-200 bg-white p-3" data-testid="form-pessoa">
       <p className="text-sm font-semibold text-ink">Falar com uma pessoa</p>
-      <p className="text-xs text-muted">Abrimos um chamado com esta conversa. {PROMESSA_ATENDIMENTO.split(" · ")[1]}.</p>
+      <p className="text-xs text-muted">Abrimos um chamado com esta conversa. Uma pessoa responde em até 24 h.</p>
       {!logado && (
         <>
           <input className={campo} placeholder="Seu nome" value={nome} maxLength={60} onChange={(e) => setNome(e.target.value)} aria-label="Seu nome" />
