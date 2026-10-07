@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { consumirLimite, DIA } from "@/lib/limites";
 import { integracoesSimuladas } from "@/lib/integracoes";
+import { agoraBRTexto } from "@/lib/atendimento/data-br";
 import { notify } from "@/lib/notifications";
 import { textoEmail } from "@/lib/notifications/texto-seguro";
 import { SITE_URL } from "@/lib/site";
@@ -429,7 +430,7 @@ export async function rodarViva(chamadoId: string): Promise<void> {
           papel,
           contexto: { tipo: c.contexto_tipo, id: c.contexto_id },
           temContratoAtivo,
-          agoraBR: agora.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "long", dateStyle: "short", timeStyle: "short" } as Intl.DateTimeFormatOptions),
+          agoraBR: agoraBRTexto(agora),
         }),
         historico: lista.slice(0, ultimaPessoa),
         respostasIA: lista.filter((m) => m.autor === "ia").length,
@@ -565,7 +566,7 @@ export async function sugerirRascunho(chamadoId: string): Promise<Sugestao | nul
     papel,
     contexto: { tipo: c.contexto_tipo, id: c.contexto_id },
     temContratoAtivo,
-    agoraBR: agora.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "long", dateStyle: "short", timeStyle: "short" } as Intl.DateTimeFormatOptions),
+    agoraBR: agoraBRTexto(agora),
   });
   const conversa = transcricaoParaRascunho(contexto, (msgs ?? []) as { autor: "usuario" | "ia" | "admin" | "sistema"; corpo: string; interno: boolean }[]);
   return sugerirRespostaMotor(conversa, chamarClaude(), ferramentasReais(admin, c, agora));
