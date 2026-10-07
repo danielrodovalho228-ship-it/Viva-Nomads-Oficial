@@ -11,6 +11,9 @@ import { authFile } from "../fixtures/auth";
  * Requer a migration 0043 (properties.draft_data) aplicada no banco de teste.
  */
 test.describe("T-RASC — Rascunho salva e retoma @criticos", () => {
+  // Em ordem, num worker só: os testes deste arquivo mexem no MESMO estado da
+  // conta (modo preferido / rascunhos) e se atrapalhavam com fullyParallel.
+  test.describe.configure({ mode: "default" });
   test.use({ storageState: authFile("proprietario") });
 
   // A qualificação (elegível) é pré-requisito para abrir o editor. Injetamos o
@@ -75,12 +78,19 @@ test.describe("T-RASC — Rascunho salva e retoma @criticos", () => {
   test("T-RASC-3 — 'Novo anúncio' detecta rascunho e 'Começar outro' limpa", async ({ page }) => {
     const marca = await novoComEndereco(page);
     await esperarSalvo(page);
-    // Abre o editor de novo, em branco: deve detectar o rascunho anterior.
+    // Bug 12: o 1º autosave fixa ?draft=<id> na URL (F5 retoma o mesmo rascunho).
+    await expect(page).toHaveURL(/\/dashboard\/imoveis\/novo\?draft=/);
+    const id = new URL(page.url()).searchParams.get("draft");
+    // Abre o editor de novo, em branco: deve detectar o rascunho anterior, sem
+    // aplicar a cópia local nem criar outro rascunho por baixo (bug 12).
     await page.goto("/dashboard/imoveis/novo", { waitUntil: "networkidle" });
     await expect(page.getByText(/Você tem um anúncio em andamento/i)).toBeVisible({ timeout: 10_000 });
+    await page.waitForTimeout(3_000); // passa o debounce do autosave
+    await expect(page).toHaveURL(/\/dashboard\/imoveis\/novo$/);
+    await expect(page.getByText(/Você tem um anúncio em andamento/i)).toBeVisible();
     // "Continuar" retoma o rascunho detectado.
     await page.getByRole("button", { name: "Continuar", exact: true }).first().click();
-    await expect(page).toHaveURL(/\?draft=/);
+    await expect(page).toHaveURL(new RegExp(`\\?draft=${id}`));
     await expect(page.locator('input[list="novo-bairros"]')).toHaveValue(marca);
   });
 

@@ -450,7 +450,9 @@ export default function NewPropertyPage() {
   // Retomada por `?draft=<id>` — carrega o snapshot do SERVIDOR e restaura tudo
   // (campos + etapa). É o "Continuar editando" de um rascunho de Meus imóveis.
   useEffect(() => {
-    if (!draftParam) return;
+    // Já é o rascunho aberto nesta tela (a URL ganhou ?draft= após o 1º
+    // autosave): não recarrega, senão apagaria o que foi digitado no meio.
+    if (!draftParam || draftParam === draftIdRef.current) return;
     let alive = true;
     (async () => {
       const d = await loadDraftData(draftParam);
@@ -479,9 +481,34 @@ export default function NewPropertyPage() {
       }
       // Chave antiga (global, sem dono) é descartada — podia ser de outra conta.
       localStorage.removeItem(DRAFT_KEY_LEGADO);
-      const draft = userId ? localStorage.getItem(draftKey(userId)) : null;
-      if (draft) aplicarDraft(JSON.parse(draft));
     } catch {}
+    // Bug 12 (L2): abrir "Novo anúncio" em branco aplicava a cópia local, e o
+    // autosave criava OUTRO rascunho no servidor (duplicado), o que escondia o
+    // aviso "anúncio em andamento". Agora pergunta ao servidor primeiro: com
+    // rascunho lá, oferece retomar (banner); sem, usa a cópia local (cinto).
+    let alive = true;
+    const local = (() => {
+      try {
+        return userId ? localStorage.getItem(draftKey(userId)) : null;
+      } catch {
+        return null;
+      }
+    })();
+    const aplicarLocal = () => {
+      try {
+        if (alive && local) aplicarDraft(JSON.parse(local));
+      } catch {}
+    };
+    getLatestDraft()
+      .then((d) => {
+        if (!alive) return;
+        if (d) setExistingDraft({ id: d.id, pct: d.prontidao?.pct ?? 0 });
+        else aplicarLocal();
+      })
+      .catch(aplicarLocal);
+    return () => {
+      alive = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editId, draftParam, userId]);
 
@@ -595,8 +622,12 @@ export default function NewPropertyPage() {
       if (!on) return;
       if (res.ok) {
         if (res.id) {
+          const novo = draftIdRef.current !== res.id;
           draftIdRef.current = res.id;
           setDraftServerId(res.id);
+          // A URL passa a apontar para este rascunho: recarregar retoma ELE, e
+          // abrir "Novo anúncio" de novo detecta e oferece retomar (bug 12).
+          if (novo && !editId) window.history.replaceState(null, "", `/dashboard/imoveis/novo?draft=${res.id}`);
         }
         setSaveStatus("saved");
         setSavedAt(new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }));
@@ -627,22 +658,6 @@ export default function NewPropertyPage() {
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
   }, []);
-
-  // "Novo anúncio detecta rascunho": ao abrir em branco (sem ?draft/?id), busca o
-  // rascunho anterior do dono e oferece retomá-lo — em vez de começar do zero e
-  // deixar um órfão para trás.
-  useEffect(() => {
-    if (editId || draftParam) return;
-    let alive = true;
-    getLatestDraft()
-      .then((d) => {
-        if (alive && d) setExistingDraft({ id: d.id, pct: d.prontidao?.pct ?? 0 });
-      })
-      .catch(() => {});
-    return () => {
-      alive = false;
-    };
-  }, [editId, draftParam]);
 
   async function lookupCep(value: string) {
     const digits = value.replace(/\D/g, "");
