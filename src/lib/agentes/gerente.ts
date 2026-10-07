@@ -8,7 +8,7 @@
 */
 import { horaBrasilia } from "./retrato.ts";
 
-export const CONSULTAS = ["chamados_abertos", "contagens", "rondas_recentes", "ordens_pendentes", "ultimo_deploy", "migracoes"] as const;
+export const CONSULTAS = ["chamados_abertos", "chamados_resolvidos", "contagens", "rondas_recentes", "ordens_pendentes", "ultimo_deploy", "migracoes"] as const;
 export type Consulta = (typeof CONSULTAS)[number];
 
 /** Organograma: assunto → quem cuida. */
@@ -44,7 +44,7 @@ export const FERRAMENTAS_GERENTE: FerramentaGerente[] = [
   {
     name: "consultar_banco",
     description:
-      "Consulta pronta e só de leitura, com dados AO VIVO. chamados_abertos: número, categoria, prioridade, status e prazos (sem dados pessoais). contagens: cadastros, imóveis, pedidos, leads, contratos. rondas_recentes: última ronda e achados P1/P2 de cada agente. ordens_pendentes: ordens do Daniel ainda abertas. ultimo_deploy e migracoes: o que der para verificar.",
+      "Consulta pronta e só de leitura, com dados AO VIVO. chamados_abertos: número, categoria, prioridade, status e prazos (sem dados pessoais). contagens: cadastros, imóveis, pedidos, leads, contratos. rondas_recentes: última ronda e achados P1/P2 de cada agente. chamados_resolvidos: resolvidos nos últimos 7 dias, com hora e nota. ordens_pendentes: ordens do Daniel ainda abertas. ultimo_deploy: versão no ar. migracoes: migrações aplicadas em produção (versão e nome) — confira aqui antes de dizer que uma migração está pendente.",
     input_schema: { type: "object", properties: { consulta: { type: "string", enum: [...CONSULTAS] } }, required: ["consulta"], additionalProperties: false },
   },
   {
