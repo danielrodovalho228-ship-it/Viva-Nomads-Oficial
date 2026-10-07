@@ -58,6 +58,13 @@ test("indicadores: ativos, rondas 24 h, falhas e P1 só das últimas rondas", ()
   assert.deepEqual(indicadores(agentes, rondas, agora), { ativos: 2, rondas24h: 2, falhas: 1, p1: 2 });
 });
 
+test("rede: o Renato recebe o pacote do Otávio e entrega PRs ao Daniel", () => {
+  const fl = fluxosDaRede(nosDaRede([ag("otavio", "Otávio"), ag("renato", "Renato"), ag("moacir", "Moacir")]));
+  assert.ok(fl.some(([a, b]) => a === "otavio" && b === "renato"));
+  assert.ok(fl.some(([a, b]) => a === "renato" && b === "daniel"));
+  assert.ok(fl.some(([a, b]) => a === "moacir" && b === "renato"));
+});
+
 test("rede: só agentes ativos do banco; fluxos sem nó faltando", () => {
   const nos = nosDaRede([ag("bruno", "Bruno"), ag("otavio", "Otávio"), ag("marina", "Marina", "pausado")]);
   const ids = nos.map((x) => x.id);

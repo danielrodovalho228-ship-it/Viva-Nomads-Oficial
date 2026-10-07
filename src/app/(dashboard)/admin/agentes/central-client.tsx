@@ -105,7 +105,7 @@ const botaoLinha = `${botao} border border-white/15 text-white hover:bg-white/5`
 const campoBase = "rounded-lg border border-white/15 bg-[#0B1430] px-3 py-2 text-sm text-white placeholder:text-[#5d6a93] focus:border-[#3D7BFF] focus:outline-none";
 const campo = `w-full ${campoBase}`;
 
-export function CentralAgentes({ dados, fotoDono = null }: { dados: DadosCentral; fotoDono?: string | null }) {
+export function CentralAgentes({ dados }: { dados: DadosCentral }) {
   const router = useRouter();
   const [aba, setAba] = useState<Aba>("Equipe");
   const [conversarCom, setConversarCom] = useState<string | null>(null);
@@ -213,9 +213,9 @@ export function CentralAgentes({ dados, fotoDono = null }: { dados: DadosCentral
         {dados.agentes.length === 0 ? (
           <Vazio titulo="Nenhum agente cadastrado" texto="A tabela de agentes está vazia ou a migração 0078 ainda não foi aplicada neste banco." />
         ) : aba === "Equipe" ? (
-          <Equipe dados={dados} agora={agora} fotoDono={fotoDono} onConversar={abrirConversa} />
+          <Equipe dados={dados} agora={agora} onConversar={abrirConversa} />
         ) : aba === "Rede ao vivo" ? (
-          <RedeAoVivo agentes={dados.agentes} rondas={dados.rondas} agora={agora} fotoDono={fotoDono} />
+          <RedeAoVivo agentes={dados.agentes} rondas={dados.rondas} agora={agora} />
         ) : aba === "Raio-X da Viva" ? (
           <RaioX agentes={dados.agentes} rondas={dados.rondas} agora={agora} onConversar={abrirConversa} />
         ) : aba === "Diário de bordo" ? (
@@ -328,7 +328,7 @@ function CardAgente({
   );
 }
 
-function Equipe({ dados, agora, fotoDono, onConversar }: { dados: DadosCentral; agora: Date | null; fotoDono: string | null; onConversar: (s: string) => void }) {
+function Equipe({ dados, agora, onConversar }: { dados: DadosCentral; agora: Date | null; onConversar: (s: string) => void }) {
   const ultimas = useMemo(() => ultimaPorAgente(dados.rondas), [dados.rondas]);
   const pend = (slug: string) => dados.ordens.filter((o) => o.agente_slug === slug && o.status === "pendente").length;
   const card = (a: Agente, grande = false) => <CardAgente key={a.slug} a={a} ultima={ultimas[a.slug]} pendentes={pend(a.slug)} agora={agora} grande={grande} onConversar={onConversar} />;
@@ -342,7 +342,7 @@ function Equipe({ dados, agora, fotoDono, onConversar }: { dados: DadosCentral; 
       <Rotulo>Dono</Rotulo>
       {/* Não é agente (não está em public.agentes): sem status, rondas nem botões. */}
       <article className="grid grid-cols-[72px_1fr] items-center gap-4 rounded-xl border border-[#7FD321]/50 bg-gradient-to-b from-[#0D1838] to-[#0D1838]/70 p-4" data-testid="agente-daniel">
-        <AvatarAgente slug="daniel" nome="Daniel Rodovalho" cor="#7FD321" anel="#7FD321" tamanho={72} src={fotoDono} semFoto={!fotoDono} />
+        <AvatarAgente slug="daniel" nome="Daniel Rodovalho" cor="#7FD321" anel="#7FD321" tamanho={72} />
         <div className="min-w-0">
           <h3 className="flex flex-wrap items-center gap-2 text-lg font-bold text-white">
             Daniel Rodovalho <Chip cor="#7FD321">Dono</Chip>
@@ -698,9 +698,9 @@ function Sala({ dados, porSlug }: { dados: DadosCentral; porSlug: Record<string,
                 disabled={fixo}
                 onClick={() => alternar(a.slug)}
                 aria-pressed={on}
-                className={`flex items-center gap-2 rounded-full border px-3 py-1 text-sm ${on ? "border-[#3D7BFF] bg-[#3D7BFF]/15 text-white" : "border-white/15 text-[#8C9AC4]"}`}
+                className={`flex items-center gap-2 rounded-full border py-1 pl-1 pr-3 text-sm ${on ? "border-[#3D7BFF] bg-[#3D7BFF]/15 text-white" : "border-white/15 text-[#8C9AC4] opacity-70"}`}
               >
-                <span className="h-2 w-2 rounded-full" style={{ background: COR_ESQUADRAO[a.esquadrao] }} />
+                <AvatarAgente slug={a.slug} nome={a.nome} cor={COR_ESQUADRAO[a.esquadrao]} tamanho={24} />
                 {a.nome}
                 {fixo && <span className="text-[10px]">(fecha)</span>}
               </button>

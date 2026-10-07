@@ -86,7 +86,6 @@ const NOS_FIXOS: NoRede[] = [
   { id: "daniel", rotulo: "Daniel", pos: [0.5, 0.08], posEstreito: [0.5, 0.04] },
   { id: "fila", rotulo: "Fila de correções", doc: true, pos: [0.2, 0.62], posEstreito: [0.2, 0.62] },
   { id: "pendencias", rotulo: "Pendências", doc: true, pos: [0.78, 0.5], posEstreito: [0.8, 0.6] },
-  { id: "claude-code", rotulo: "Claude Code", doc: true, pos: [0.36, 0.9], posEstreito: [0.44, 0.8] },
 ];
 
 const POS_AGENTE: Record<string, { pos: [number, number]; posEstreito: [number, number] }> = {
@@ -100,15 +99,20 @@ const POS_AGENTE: Record<string, { pos: [number, number]; posEstreito: [number, 
   helena: { pos: [0.92, 0.3], posEstreito: [0.86, 0.4] },
   thiago: { pos: [0.94, 0.72], posEstreito: [0.88, 0.8] },
   sergio: { pos: [0.72, 0.86], posEstreito: [0.7, 0.96] },
+  renato: { pos: [0.36, 0.9], posEstreito: [0.44, 0.8] },
 };
 
-/** Quem passa trabalho para quem (pedido do Daniel, out/2026). */
+/** Quem passa trabalho para quem (pedido do Daniel, out/2026). O Renato
+ * (engenheiro) recebe o pacote do Otávio e a revisão do Moacir e entrega PRs
+ * para o Daniel mesclar. */
 export const FLUXOS: [string, string, TipoFluxo][] = [
   ["bruno", "fila", "achados"],
   ["marina", "fila", "achados"],
   ["rafael", "fila", "achados"],
   ["fila", "otavio", "achados"],
-  ["otavio", "claude-code", "pacote"],
+  ["otavio", "renato", "pacote"],
+  ["moacir", "renato", "relatorio"],
+  ["renato", "daniel", "pacote"],
   ["helena", "pendencias", "pendencias"],
   ["thiago", "pendencias", "pendencias"],
   ["sergio", "pendencias", "pendencias"],
@@ -141,7 +145,7 @@ export interface PassoBriefing {
 }
 
 /** Ordem em que a câmera percorre o mapa: segue o caminho do trabalho. */
-export const ORDEM_BRIEFING = ["bruno", "marina", "rafael", "otavio", "helena", "thiago", "sergio", "luana", "carla", "moacir"];
+export const ORDEM_BRIEFING = ["bruno", "marina", "rafael", "otavio", "renato", "helena", "thiago", "sergio", "luana", "carla", "moacir"];
 
 /** Um passo por agente ativo, com o resumo REAL da última ronda (ou "sem ronda"). */
 export function roteiroBriefing(agentes: Agente[], rondas: Ronda[], agora: Date): PassoBriefing[] {
@@ -193,7 +197,7 @@ export const CAMADAS: Camada[] = [
     sub: "inquilino · proprietário · chamados · vistoria",
     cor: "#7FD321",
     descricao: "O que inquilinos e proprietários usam: pedidos, contratos, chamados, rascunho do anúncio e vistoria.",
-    quem: ["marina", "otavio", "viva", "vitoria"],
+    quem: ["marina", "renato", "otavio", "viva", "vitoria"],
     chave: /\bapp\b|tela|rascunho|pedido|chamado|vistoria|dashboard|painel|modo|login|cadastro|formul/i,
   },
   {
@@ -211,7 +215,7 @@ export const CAMADAS: Camada[] = [
     sub: "Supabase · RLS · rotinas · migrações",
     cor: "#38BDF8",
     descricao: "O núcleo: dados, permissões por usuário, rotinas de prazos e migrações. É onde um erro custa mais caro.",
-    quem: ["bruno", "otavio"],
+    quem: ["bruno", "renato", "otavio"],
     chave: /supabase|rls|banco|migra|sql|fun[çc][ãa]o|security|seguran|senha|exclus|lgpd|vazad|policy|grant/i,
   },
   {

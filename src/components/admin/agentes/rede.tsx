@@ -36,7 +36,7 @@ function useMenosMovimento(): boolean {
   return reduz;
 }
 
-export function RedeAoVivo({ agentes, rondas, agora, fotoDono = null }: { agentes: Agente[]; rondas: Ronda[]; agora: Date | null; fotoDono?: string | null }) {
+export function RedeAoVivo({ agentes, rondas, agora }: { agentes: Agente[]; rondas: Ronda[]; agora: Date | null }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const reduz = useMenosMovimento();
   const nos = useMemo(() => nosDaRede(agentes), [agentes]);
@@ -65,14 +65,14 @@ export function RedeAoVivo({ agentes, rondas, agora, fotoDono = null }: { agente
     if (!ctx) return;
     const fotos: Record<string, HTMLImageElement | null> = {};
     for (const n of nos) {
-      if (n.doc || (n.id === "daniel" && !fotoDono)) continue;
+      if (n.doc) continue;
       const img = new Image();
       img.onload = () => {
         fotos[n.id] = img;
         if (reduz) desenhar();
       };
       img.onerror = () => (fotos[n.id] = null);
-      img.src = n.id === "daniel" ? fotoDono! : fotoDoAgente(n.id);
+      img.src = fotoDoAgente(n.id);
     }
     const pacotes = fluxos.map((_, i) => ({ t: (i * 0.37) % 1, v: 0.0025 + ((i * 7) % 5) * 0.0007 }));
     const cam = { x: 0, y: 0, s: 1 };
@@ -230,7 +230,7 @@ export function RedeAoVivo({ agentes, rondas, agora, fotoDono = null }: { agente
       redesenhar.current = null;
       window.removeEventListener("resize", aoMudar);
     };
-  }, [nos, fluxos, ultimas, reduz, fotoDono]);
+  }, [nos, fluxos, ultimas, reduz]);
 
   // Briefing: legenda digitada e avanço automático.
   const atual = passo >= 0 ? passos[passo] : null;
@@ -298,7 +298,7 @@ export function RedeAoVivo({ agentes, rondas, agora, fotoDono = null }: { agente
         <span><i className="mr-1.5 inline-block h-0.5 w-4 align-middle" style={{ background: COR_FLUXO.achados }} />achados para a fila</span>
         <span><i className="mr-1.5 inline-block h-0.5 w-4 align-middle" style={{ background: COR_FLUXO.pendencias }} />pendências do Daniel</span>
         <span><i className="mr-1.5 inline-block h-0.5 w-4 align-middle" style={{ background: COR_FLUXO.relatorio }} />relatórios</span>
-        <span><i className="mr-1.5 inline-block h-0.5 w-4 align-middle" style={{ background: COR_FLUXO.pacote }} />pacote para o Claude Code</span>
+        <span><i className="mr-1.5 inline-block h-0.5 w-4 align-middle" style={{ background: COR_FLUXO.pacote }} />pacote do Otávio e PRs do Renato</span>
         <span>Nó: <b className="text-[#7FD321]">ok</b> · <b className="text-[#FFB547]">alerta</b> · <b className="text-[#FF5470]">falhou</b> · anel pulsando = ronda há menos de 15 min</span>
       </div>
     </div>
