@@ -94,21 +94,29 @@ export function iniciais(nome: string): string {
 }
 
 // ── Status ─────────────────────────────────────────────────────────────────
-export type StatusAgente = "espera" | "alerta" | "falhou" | "sem_ronda" | "planejado" | "pausado";
+export type StatusAgente = "espera" | "alerta" | "falhou" | "sem_ronda" | "no_ar" | "planejado" | "pausado";
 
 export const ROTULO_STATUS: Record<StatusAgente, string> = {
   espera: "Em espera",
   alerta: "Alerta",
   falhou: "Falhou",
   sem_ronda: "Sem ronda ainda",
+  no_ar: "No ar",
   planejado: "Planejado",
   pausado: "Pausado",
 };
 
-export function statusDoAgente(a: Pick<Agente, "status">, ultima: Pick<Ronda, "status"> | undefined): StatusAgente {
+/**
+ * Agente ativo SEM tarefa agendada (trigger_id nulo, ex.: a Viva, que atende no
+ * chat do site) não faz rondas: fica "No ar" em vez de "Sem ronda ainda".
+ */
+export function statusDoAgente(
+  a: Pick<Agente, "status"> & { trigger_id?: string | null },
+  ultima: Pick<Ronda, "status"> | undefined
+): StatusAgente {
   if (a.status === "planejado") return "planejado";
   if (a.status === "pausado") return "pausado";
-  if (!ultima) return "sem_ronda";
+  if (!ultima) return a.trigger_id === null ? "no_ar" : "sem_ronda";
   return ultima.status === "ok" ? "espera" : ultima.status;
 }
 
@@ -233,6 +241,11 @@ function blocoOrdens(ordens: Pick<Ordem, "texto" | "status" | "criada_em">[]): s
 
 /** O gerente: a ronda dele é o boletim diário, base para "como estamos?". */
 export const SLUG_GERENTE = "moacir";
+
+/** O que aparece no cartão de quem está "No ar" (não faz rondas). */
+export const SEM_RONDAS: Record<string, string> = {
+  viva: "Atende no chat da /ajuda e por e-mail; não faz rondas.",
+};
 
 export const REGRA_BOLETIM = `- Você é o gerente: para "como estamos?", "o que rodou?" e parecidos, parta do seu ÚLTIMO BOLETIM (sua ronda mais recente, acima) e complete com o retrato do momento. Diga a hora do boletim. Se ainda não há boletim, diga isso e responda só com o retrato.`;
 

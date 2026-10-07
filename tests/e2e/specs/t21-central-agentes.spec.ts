@@ -36,7 +36,13 @@ test.describe("T21 — Central de Agentes v2", () => {
     const foto = bruno.locator('img[src="/agentes/bruno.webp"]');
     await expect(foto).toBeVisible();
     expect(await foto.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(256);
-    await expect(central.getByTestId("agente-viva")).toContainText("Planejado");
+    // A Viva atende no chat do site (sem tarefa agendada): "No ar", não "Sem ronda".
+    const viva = central.getByTestId("agente-viva");
+    await expect(viva).toContainText("No ar");
+    await expect(viva.getByTestId("no-ar")).toContainText("Atende no chat da /ajuda e por e-mail; não faz rondas.");
+    await expect(viva).not.toContainText("Sem ronda ainda");
+    expect(await viva.locator('img[src="/agentes/viva.webp"]').evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(256);
+    await expect(central.getByTestId("agente-vitoria")).toContainText("Planejado");
     await semRolagemLateral(page);
   });
 

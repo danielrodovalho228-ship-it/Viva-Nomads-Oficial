@@ -6,6 +6,7 @@ import {
   COR_ESQUADRAO,
   NOME_ESQUADRAO,
   ROTULO_STATUS,
+  SEM_RONDAS,
   avisoOrdem,
   duracao,
   prioridadesDe,
@@ -43,6 +44,7 @@ const COR_STATUS: Record<StatusAgente, string> = {
   alerta: "#FFB547",
   falhou: "#FF5470",
   sem_ronda: "#8C9AC4",
+  no_ar: "#7FD321",
   planejado: "#8C9AC4",
   pausado: "#8C9AC4",
 };
@@ -247,7 +249,7 @@ function CardAgente({
   const cor = COR_ESQUADRAO[a.esquadrao];
   const st = statusDoAgente(a, ultima);
   const ativo = a.status === "ativo";
-  const anel = ativo ? COR_RONDA_HEX[corDaRonda(ultima)] : undefined;
+  const anel = st === "no_ar" ? COR_STATUS.no_ar : ativo ? COR_RONDA_HEX[corDaRonda(ultima)] : undefined;
   const dur = ultima ? duracao(ultima.iniciada_em, ultima.concluida_em) : null;
   const proxima = agora ? proximaDoAgente(a, agora) : null;
   const p1 = achadosDaPrioridade(ultima, "P0", "P1");
@@ -263,7 +265,18 @@ function CardAgente({
           {a.nome} <Chip cor={COR_STATUS[st]}>{ROTULO_STATUS[st]}</Chip>
         </h3>
         <p className="text-[13px] text-[#8C9AC4]">{a.cargo}</p>
-        {ativo ? (
+        {st === "no_ar" ? (
+          <>
+            <p className="mt-2 text-[13px] text-[#C3CDEB]" data-testid="no-ar">
+              {SEM_RONDAS[a.slug] ?? "Não faz rondas."}
+            </p>
+            {a.rotina_texto && (
+              <p className="mt-1.5 text-xs text-[#8C9AC4]" style={mono}>
+                {a.rotina_texto}
+              </p>
+            )}
+          </>
+        ) : ativo ? (
           <>
             <dl className="mt-2.5 grid grid-cols-[auto_1fr] gap-x-2.5 gap-y-0.5 text-xs text-[#8C9AC4]" style={mono}>
               <dt>Última</dt>
