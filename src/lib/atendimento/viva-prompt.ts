@@ -6,7 +6,7 @@
 */
 import { FAQ } from "./faq.ts";
 import { ALUGUEL_EXEMPLO, GESTOR_PRECO, GESTOR_RESUMO, PLANOS, REGRAS_CONTRATO, textoComissao } from "../../config/planos.ts";
-import { PRAZOS, PRAZO_MANUTENCAO_H, PROMESSA_ATENDIMENTO } from "../../config/atendimento.ts";
+import { PRAZO_MANUTENCAO_H, PROMESSA_ATENDIMENTO } from "../../config/atendimento.ts";
 
 
 const brl = (n: number) => `R$ ${n.toLocaleString("pt-BR")}`;
@@ -16,9 +16,7 @@ export function fontes(): string {
   const planos = PLANOS.map(
     (p) => `- ${p.nome}: ${p.precoMensal === null ? (GESTOR_PRECO.ligado ? `${GESTOR_RESUMO} (${GESTOR_PRECO.imoveisInclusos} imóveis incluídos, ${brl(GESTOR_PRECO.porImovelAdicional)}/mês por imóvel adicional; ativação com a equipe)` : "assinatura sob consulta") : p.precoMensal > 0 ? `${brl(p.precoMensal)}/mês` : "sem mensalidade"}, comissão: ${textoComissao(p.comissao, ALUGUEL_EXEMPLO)} num aluguel de R$ ${ALUGUEL_EXEMPLO.toLocaleString("pt-BR")}, até ${Number.isFinite(p.limiteAnuncios) ? p.limiteAnuncios : "ilimitados"} anúncio(s)`
   ).join("\n");
-  const prazos = (Object.keys(PRAZOS) as (keyof typeof PRAZOS)[])
-    .map((k) => `- ${k.toUpperCase()} (${PRAZOS[k].rotulo}): ${PRAZOS[k].descricao}`)
-    .join("\n");
+  const prazos = `Prazo de uma pessoa da equipe: até 24 h para qualquer caso; casos urgentes (golpe, segurança, emergência) têm prioridade máxima e a equipe é avisada na hora. Não cite prazo menor que 24 h.`;
   return [
     "## Perguntas frequentes (fonte oficial)",
     faq,

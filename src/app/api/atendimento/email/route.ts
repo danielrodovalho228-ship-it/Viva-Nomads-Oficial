@@ -106,7 +106,7 @@ export async function POST(request: Request) {
     .select("id, numero_publico, assunto, prioridade, usuario_id, visitante_email, visitante_nome")
     .single();
   if (error || !novo) return NextResponse.json({ error: "Falha ao registrar." }, { status: 500 });
-  const aviso = [emergencia ? avisoEmergencia(emergencia) : null, ehGolpe(texto) ? ORIENTACAO_GOLPE : null, comViva ? AVISO_VIVA : mensagemPrazo(prioridade, agora)].filter(Boolean).join(" ");
+  const aviso = [emergencia ? avisoEmergencia(emergencia) : null, ehGolpe(texto) ? ORIENTACAO_GOLPE : null, comViva ? AVISO_VIVA : mensagemPrazo(prioridade)].filter(Boolean).join(" ");
   await admin.from("chamado_mensagens").insert([
     { chamado_id: novo.id, autor: "usuario", autor_id: usuarioId, corpo },
     { chamado_id: novo.id, autor: "sistema", corpo: aviso },

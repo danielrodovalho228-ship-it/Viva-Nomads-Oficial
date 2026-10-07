@@ -12,7 +12,6 @@ import { textoEmail } from "@/lib/notifications/texto-seguro";
 import { isValidEmail } from "@/lib/auth-errors";
 import {
   calcularPrazos,
-  dentroDoHorario,
   mensagemPrazo,
   PRAZO_MANUTENCAO_H,
   type Prioridade,
@@ -190,7 +189,7 @@ export async function abrirChamado(
     manut
       ? `Abrimos o pedido de manutenção para o proprietário: ele tem até ${PRAZO_MANUTENCAO_H[manut.urgencia]} horas para responder. Você acompanha por aqui.`
       : null,
-    comViva ? AVISO_VIVA : mensagemPrazo(prioridade, agora),
+    comViva ? AVISO_VIVA : mensagemPrazo(prioridade),
   ]
     .filter(Boolean)
     .join(" ");
@@ -204,7 +203,7 @@ export async function abrirChamado(
     ator_id: user?.id ?? null,
     acao: "aberto",
     para: prioridade,
-    detalhe: `${cat.key}${emergencia ? ` · emergência: ${emergencia}` : ""}${dentroDoHorario(agora) ? "" : " · fora do horário"}`,
+    detalhe: `${cat.key}${emergencia ? ` · emergência: ${emergencia}` : ""}`,
   });
 
   // Avisos: pessoa (número do chamado), equipe (TODO chamado novo, com a fila),
