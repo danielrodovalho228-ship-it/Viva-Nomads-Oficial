@@ -26,6 +26,8 @@ import {
   type Ronda,
 } from "./central.ts";
 import { retratoEmTexto, type Retrato } from "./retrato.ts";
+import { CONTEXTO_VIVA, SLUG_GERENTE } from "./central.ts";
+import { investigar, systemGerente, type DepsGerente, type ModeloGerente } from "./gerente.ts";
 
 export interface Mensagem {
   role: "user" | "assistant";
@@ -45,6 +47,8 @@ export interface Deps {
   /** Retrato do momento (só contagens); null se a consulta falhar. */
   retrato(): Promise<Retrato | null>;
   modelo(p: { system: string; messages: Mensagem[]; maxTokens: number; json: boolean }): Promise<string>;
+  /** Moacir gerente: modelo com ferramentas + consultas ao vivo. Sem ele, o Moacir conversa como os outros. */
+  gerente?: { modelo: ModeloGerente; ferramentas: DepsGerente };
 }
 
 export interface Resposta {
@@ -87,6 +91,22 @@ export async function responderChat(d: Deps, entrada: unknown): Promise<Resposta
   const todos = await d.agentes();
   const agente = todos.find((a) => a.slug === slug);
   if (!agente) return { status: 404, body: { erro: "Agente não encontrado." } };
+
+  // Moacir gerente: investiga (banco ao vivo, pergunta aos colegas, dispara quem faz).
+  if (slug === SLUG_GERENTE && d.gerente) {
+    await d.gravar([{ agente_slug: slug, papel: "daniel", autor_slug: null, texto: pergunta }]);
+    let out: { resposta: string; trilha: { autor: string; texto: string }[] };
+    try {
+      out = await investigar(pergunta, systemGerente({ briefing: agente.briefing, agora: new Date(), contexto: CONTEXTO_VIVA }), d.gerente.modelo, d.gerente.ferramentas);
+    } catch {
+      return { status: 502, body: { erro: FALHA_MSG } };
+    }
+    const resposta = out.resposta.slice(0, 8000);
+    // Cada passo vira uma linha própria (inserts em sequência: ordem de criação = ordem da conversa).
+    for (const p of out.trilha) await d.gravar([{ agente_slug: slug, papel: "agente", autor_slug: p.autor, texto: p.texto.slice(0, 8000) }]);
+    await d.gravar([{ agente_slug: slug, papel: "agente", autor_slug: slug, texto: resposta }]);
+    return { status: 200, body: { resposta, trilha: out.trilha } };
+  }
 
   // Pedido de AÇÃO: o chat não faz nada no mundo. Resposta honesta, sem gastar
   // modelo, e a tela oferece "Executar agora" para o agente certo.

@@ -540,10 +540,11 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
     setTexto("");
     try {
       const r = await fetch("/api/admin/agentes/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, texto: pergunta }) });
-      const j = (await r.json().catch(() => ({}))) as { resposta?: string; erro?: string; acao?: { slug: string; nome: string } };
+      const j = (await r.json().catch(() => ({}))) as { resposta?: string; erro?: string; acao?: { slug: string; nome: string }; trilha?: { autor: string; texto: string }[] };
       if (!r.ok || !j.resposta) setErro(j.erro ?? "Não consegui falar com o agente agora.");
       else {
-        setExtra((e) => [...e, { id: `r-${agoraIso}`, agente_slug: slug, papel: "agente", autor_slug: slug, texto: j.resposta!, criado_em: new Date().toISOString() }]);
+        const passos = (j.trilha ?? []).map((p, i) => ({ id: `t-${agoraIso}-${i}`, agente_slug: slug, papel: "agente" as const, autor_slug: p.autor, texto: p.texto, criado_em: new Date().toISOString() }));
+        setExtra((e) => [...e, ...passos, { id: `r-${agoraIso}`, agente_slug: slug, papel: "agente", autor_slug: slug, texto: j.resposta!, criado_em: new Date().toISOString() }]);
         // Pedido de ação: o chat não faz; oferece a sessão real do agente certo.
         setSugestao(j.acao ? { ...j.acao, texto: pergunta } : null);
       }
@@ -633,13 +634,21 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
                   Nenhuma conversa com {a.nome} ainda. Pergunte algo sobre as rondas, ou deixe uma ordem para a próxima.
                 </p>
               ) : (
-                thread.map((c) => (
-                  <div key={c.id} className={`max-w-[85%] whitespace-pre-line rounded-2xl px-3 py-2 text-sm ${c.papel === "daniel" ? "ml-auto bg-[#3D7BFF] text-white" : "bg-white/5 text-[#DCE3FA]"}`}>
-                    {c.texto}
-                  </div>
-                ))
+                thread.map((c) => {
+                  // Trilha da investigação do gerente ("Moacir → Viva: …", "Viva: …", "Disparei…").
+                  const passo = c.papel === "agente" && (c.autor_slug !== c.agente_slug || /^(Moacir → |Disparei |Não consegui disparar )/.test(c.texto));
+                  return passo ? (
+                    <div key={c.id} data-testid="passo-gerente" className="ml-3 max-w-[85%] whitespace-pre-line border-l-2 border-[#38BDF8]/50 py-0.5 pl-3 text-xs text-[#AEB9DD]">
+                      {c.texto}
+                    </div>
+                  ) : (
+                    <div key={c.id} className={`max-w-[85%] whitespace-pre-line rounded-2xl px-3 py-2 text-sm ${c.papel === "daniel" ? "ml-auto bg-[#3D7BFF] text-white" : "bg-white/5 text-[#DCE3FA]"}`}>
+                      {c.texto}
+                    </div>
+                  );
+                })
               )}
-              {ocupado && <p className="text-xs text-[#8C9AC4]">{a.nome} está escrevendo…</p>}
+              {ocupado && <p className="text-xs text-[#8C9AC4]">{a.slug === "moacir" ? "Moacir está investigando (banco ao vivo e a equipe)…" : `${a.nome} está escrevendo…`}</p>}
               {sugestao && (
                 <div className="rounded-xl border border-[#38BDF8]/40 bg-[#38BDF8]/10 p-3 text-sm text-[#DCE3FA]" data-testid="sugestao-executar">
                   <p>Isso precisa de uma sessão real. Vai para <strong>{sugestao.nome}</strong>.</p>

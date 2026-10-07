@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { createClient } from "@supabase/supabase-js";
 import { authFile } from "../fixtures/auth";
 
 /**
@@ -115,13 +116,68 @@ test.describe("T21 — Central de Agentes v2", () => {
   test("Chat honesto: pedido de ação não promete — oferece Executar agora para quem faz", async ({ page }) => {
     await page.goto("/admin/agentes", { waitUntil: "networkidle" });
     await abrirAba(page, "Conversar");
-    await page.locator('aside[aria-label="Agentes"]').getByRole("button", { name: /Moacir/ }).click();
-    await page.getByPlaceholder("Escreva para Moacir…").fill("corrige o bug do /conferir e aplica a migração");
+    // Agentes comuns não fazem nada no mundo pelo chat (o Moacir gerente é o único que investiga e dispara).
+    await page.locator('aside[aria-label="Agentes"]').getByRole("button", { name: /Bruno/ }).click();
+    await page.getByPlaceholder("Escreva para Bruno…").fill("corrige o bug do /conferir e aplica a migração");
     await page.getByRole("button", { name: "Perguntar" }).click();
     await expect(page.getByText(/precisa de uma sessão real — use Executar agora \(vai para Renato\)/).last()).toBeVisible();
     const sug = page.getByTestId("sugestao-executar");
     await expect(sug).toContainText("Renato");
     await expect(sug.getByRole("button", { name: "Executar agora → Renato" })).toBeEnabled();
+  });
+
+  test("Moacir gerente: 'chegou chamado novo?' consulta o banco, pergunta à Viva e responde com código e prazo", async ({ page, browser }) => {
+    test.skip(process.env.INTEGRACOES_SIMULADAS !== "on", "Abre chamado de verdade: só no laboratório.");
+    // Um chamado novo de visitante (como chega de verdade, pelo chat da /ajuda).
+    const vis = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+    const p = await vis.newPage();
+    await p.goto("/ajuda", { waitUntil: "networkidle" });
+    const bloco = p.getByTestId("viva-chat-bloco");
+    await bloco.getByRole("button", { name: /Falar com uma pessoa/i }).click();
+    const form = p.getByTestId("form-pessoa");
+    await form.getByLabel("Seu nome").fill("Visitante T21");
+    await form.getByLabel("Seu e-mail").fill(`t21.${Date.now()}@lab.vivanomads.test`);
+    await form.getByLabel("Pedido para a equipe").fill("Quero saber como funciona a Caução antes de anunciar.");
+    await form.getByRole("button", { name: "Abrir chamado" }).click();
+    const ok = p.getByTestId("chamado-aberto-chat");
+    await expect(ok).toBeVisible({ timeout: 20_000 });
+    const numero = (await ok.innerText()).match(/VN-\d+/)![0];
+    await vis.close();
+
+    await page.goto("/admin/agentes", { waitUntil: "networkidle" });
+    await abrirAba(page, "Conversar");
+    await page.locator('aside[aria-label="Agentes"]').getByRole("button", { name: /Moacir/ }).click();
+    await page.getByPlaceholder("Escreva para Moacir…").fill("Chegou chamado novo?");
+    await page.getByRole("button", { name: "Perguntar" }).click();
+    const passos = page.getByTestId("passo-gerente");
+    await expect(passos.filter({ hasText: "Moacir → Viva:" }).last()).toBeVisible({ timeout: 20_000 });
+    await expect(passos.filter({ hasText: /^Viva: Tenho \d+ chamado/ }).last()).toBeVisible();
+    const resposta = page.getByText(/^O que encontrei: /).last();
+    await expect(resposta).toContainText(numero);
+    await expect(resposta).toContainText(/Prazo: \d{2}\/\d{2} \d{2}:\d{2}/);
+    await expect(resposta).toContainText(/dados de \d{2}\/\d{2} \d{2}:\d{2}/);
+  });
+
+  test("Retorno: execução que o Moacir disparou terminou → o resultado aparece na conversa dele", async ({ page }) => {
+    const URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    test.skip(!URL || !SERVICE, "Precisa da service role do laboratório.");
+    const adm = createClient(URL!, SERVICE!, { auth: { persistSession: false } });
+    const { data: ordem } = await adm.from("agentes_ordens").insert({ agente_slug: "renato", texto: "Pedido do Moacir (chat da Central): corrigir o sitemap [t21]", status: "concluida" }).select("id").single();
+    await adm.rpc("registrar_ronda", {
+      p_slug: "renato", p_inicio: new Date().toISOString(), p_fim: new Date().toISOString(), p_status: "ok",
+      p_resumo: "[lab] PR aberto com a correção do sitemap.", p_achados: [], p_ordens: [ordem!.id], p_link: "https://github.com/danielrodovalho228-ship-it/Viva-Nomads-Oficial/pull/999",
+    });
+    await page.goto("/admin/agentes", { waitUntil: "networkidle" });
+    await abrirAba(page, "Conversar");
+    await page.locator('aside[aria-label="Agentes"]').getByRole("button", { name: /Moacir/ }).click();
+    const retorno = page.getByText(`(ordem ${ordem!.id})`);
+    await expect(retorno).toContainText("Retorno: Renato terminou o que eu pedi (ok).");
+    await expect(retorno).toContainText("pull/999");
+    // Uma vez só: recarregar não duplica.
+    await page.reload({ waitUntil: "networkidle" });
+    const { count } = await adm.from("agentes_conversas").select("id", { count: "exact", head: true }).like("texto", `%(ordem ${ordem!.id})%`);
+    expect(count).toBe(1);
   });
 
   test("Diário de bordo: última ronda de cada agente com chips de prioridade", async ({ page }) => {
