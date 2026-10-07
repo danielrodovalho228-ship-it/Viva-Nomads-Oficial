@@ -86,6 +86,9 @@ const NOS_FIXOS: NoRede[] = [
   { id: "daniel", rotulo: "Daniel", pos: [0.5, 0.08], posEstreito: [0.5, 0.04] },
   { id: "fila", rotulo: "Fila de correções", doc: true, pos: [0.2, 0.62], posEstreito: [0.2, 0.62] },
   { id: "pendencias", rotulo: "Pendências", doc: true, pos: [0.78, 0.5], posEstreito: [0.8, 0.6] },
+  // Rede ao vivo real: chamados chegam do site; PRs e deploys vêm do GitHub.
+  { id: "site", rotulo: "Site", doc: true, pos: [0.08, 0.1], posEstreito: [0.74, 0.07] },
+  { id: "github", rotulo: "GitHub", doc: true, pos: [0.3, 0.2], posEstreito: [0.3, 0.12] },
 ];
 
 const POS_AGENTE: Record<string, { pos: [number, number]; posEstreito: [number, number] }> = {
@@ -100,6 +103,7 @@ const POS_AGENTE: Record<string, { pos: [number, number]; posEstreito: [number, 
   thiago: { pos: [0.94, 0.72], posEstreito: [0.88, 0.8] },
   sergio: { pos: [0.72, 0.86], posEstreito: [0.7, 0.96] },
   renato: { pos: [0.36, 0.9], posEstreito: [0.44, 0.8] },
+  viva: { pos: [0.16, 0.3], posEstreito: [0.68, 0.34] },
 };
 
 /** Quem passa trabalho para quem (pedido do Daniel, out/2026). O Renato

@@ -27,6 +27,13 @@
 - **Sem o token** de um agente, o botão grava a ordem e avisa que ela fica para a próxima ronda.
 - **Limites:** 20 disparos por admin em 24 h (nosso); a API de rotinas aceita até 100 por hora por conta. Os conectores da rotina (ex.: Supabase) valem também no disparo — o Renato precisa do Supabase para ler a ordem e registrar a ronda.
 
+### 1d. Central de Agentes — repasse entre agentes (0087) e Rede ao vivo real
+- **Repasse:** na ronda, o agente põe `"para":"<slug>"` no achado, por exemplo `{"prioridade":"P1","titulo":"Login cai no Safari","detalhe":"erro 500","para":"otavio"}`. O `registrar_ronda` cria a ordem para esse agente (só se ele estiver ativo e não for o próprio autor; até 10 por ronda).
+- **Disparo na hora:** P0 e P1 disparam a rotina do destinatário com o mesmo `AGENTE_TOKEN_<SLUG>`. Isso acontece ao abrir a Central, a cada 30 s na Rede ao vivo e no cron diário de atendimento. O teto é próprio, de 20 por 24 h. P2 e P3 ficam para a próxima ronda.
+- **Resposta:** quando o destinatário fecha a ordem (com `p_ordens` no `registrar_ronda`), o resumo dele volta como ordem de **retorno** para quem repassou. Um retorno não gera outro retorno.
+- **Prompt das rotinas:** para usar o repasse, cada rotina precisa saber que pode pôr `"para"` nos achados. Ajuste o texto das rotinas no claude.ai quando quiser ligar isso.
+- **Rede ao vivo:** mostra rondas, ordens e chamados do banco, e PRs e deploys da API pública do GitHub (cache de 5 min). `GITHUB_TOKEN` é opcional: só aumenta o limite da API e deve ser criado com permissão só de leitura.
+
 ### 2. Asaas — pagamentos (Brasil)
 - **Para quê:** assinatura recorrente do proprietário, comissão de fechamento com **split**, PIX/boleto/cartão.
 - **Env:** `ASAAS_API_KEY`, `ASAAS_WEBHOOK_TOKEN`, `ASAAS_ENV` (`sandbox`|`production`)

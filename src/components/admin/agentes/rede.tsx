@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { iniciais, type Agente, type Ronda } from "@/lib/agentes/central";
+import { iniciais, tempoRelativo, type Agente, type Ronda } from "@/lib/agentes/central";
+import { ATUALIZA_REDE_MS, COR_EVENTO, linhasAcesas, ROTULO_EVENTO, type EventoRede, type LinhaAcesa } from "@/lib/agentes/eventos";
+import { eventosDaRede } from "@/lib/data/agentes-actions";
 import {
-  COR_FLUXO,
   COR_RONDA_HEX,
   corDaRonda,
   fluxosDaRede,
@@ -16,8 +17,11 @@ import {
 import { fotoDoAgente } from "./avatar";
 
 /*
-  Rede ao vivo: quem passa trabalho para quem. Cor do nó = status da última
-  ronda; anel pulsando = ronda de menos de 15 min. O briefing leva a "câmera"
+  Rede ao vivo REAL: as linhas tracejadas são o organograma (quem passa trabalho
+  para quem); uma linha só ACENDE, com pacote andando, quando houve evento de
+  verdade nas últimas 24 h (ronda, repasse, ordem, chamado, PR, deploy). Ao lado,
+  a linha do tempo desses eventos; tudo relido a cada 30 s. Cor do nó = status
+  da última ronda; anel pulsando = ronda de menos de 15 min. O briefing leva a "câmera"
   de agente em agente, com legenda escrita na hora a partir do resumo REAL.
   prefers-reduced-motion: sem pacotes andando, sem pulso, câmera sem animação.
 */
@@ -44,6 +48,35 @@ export function RedeAoVivo({ agentes, rondas, agora }: { agentes: Agente[]; rond
   const ultimas = useMemo(() => ultimaPorAgente(rondas), [rondas]);
   const passos = useMemo<PassoBriefing[]>(() => (agora ? roteiroBriefing(agentes, rondas, agora) : []), [agentes, rondas, agora]);
 
+  // Eventos reais (últimas 24 h), relidos a cada 30 s com a aba visível.
+  const [eventos, setEventos] = useState<EventoRede[] | null>(null);
+  const [lidoEm, setLidoEm] = useState<string | null>(null);
+  const [erro, setErro] = useState(false);
+  useEffect(() => {
+    let vivo = true;
+    const carregar = async () => {
+      const r = await eventosDaRede().catch(() => null);
+      if (!vivo) return;
+      if (r) {
+        setEventos(r.eventos);
+        setLidoEm(r.lidoEm);
+        setErro(false);
+      } else setErro(true);
+    };
+    const primeiro = setTimeout(carregar, 0);
+    const t = setInterval(() => {
+      if (document.visibilityState === "visible") carregar();
+    }, ATUALIZA_REDE_MS);
+    return () => {
+      vivo = false;
+      clearTimeout(primeiro);
+      clearInterval(t);
+    };
+  }, []);
+  const ids = useMemo(() => new Set(nos.map((n) => n.id)), [nos]);
+  const linhas = useMemo(() => linhasAcesas(eventos ?? []).filter((l) => ids.has(l.de) && ids.has(l.para)), [eventos, ids]);
+  const linhasRef = useRef<LinhaAcesa[]>([]);
+
   const [passo, setPasso] = useState(-1);
   const [digitado, setDigitado] = useState(0);
   const foco = passo >= 0 ? passos[passo]?.no ?? null : null;
@@ -53,9 +86,10 @@ export function RedeAoVivo({ agentes, rondas, agora }: { agentes: Agente[]; rond
   useEffect(() => {
     focoRef.current = foco;
     agoraRef.current = agora;
+    linhasRef.current = linhas;
     // Com movimento reduzido não há laço de animação: redesenha na mudança.
     if (reduz) redesenhar.current?.();
-  }, [foco, agora, reduz]);
+  }, [foco, agora, reduz, linhas]);
 
   // Desenho contínuo (ou um quadro só, com movimento reduzido).
   useEffect(() => {
@@ -74,7 +108,7 @@ export function RedeAoVivo({ agentes, rondas, agora }: { agentes: Agente[]; rond
       img.onerror = () => (fotos[n.id] = null);
       img.src = fotoDoAgente(n.id);
     }
-    const pacotes = fluxos.map((_, i) => ({ t: (i * 0.37) % 1, v: 0.0025 + ((i * 7) % 5) * 0.0007 }));
+    const pacotes: Record<string, number> = {};
     const cam = { x: 0, y: 0, s: 1 };
     let W = 0;
     let H = 0;
@@ -130,28 +164,45 @@ export function RedeAoVivo({ agentes, rondas, agora }: { agentes: Agente[]; rond
       ctx!.scale(cam.s, cam.s);
       const agoraMs = Date.now();
 
-      fluxos.forEach(([a, b, tipo], i) => {
+      // Organograma: linha tracejada e fina, sem pacote (não é evento).
+      ctx!.setLineDash([3, 5]);
+      for (const [a, b] of fluxos) {
         const [x1, y1] = P(a);
         const [x2, y2] = P(b);
-        const quente = f && (a === f || b === f);
-        ctx!.strokeStyle = COR_FLUXO[tipo] + (quente ? "cc" : f ? "1c" : "40");
-        ctx!.lineWidth = quente ? 2.4 : 1.2;
+        ctx!.strokeStyle = "#8C9AC4" + (f ? "10" : "26");
+        ctx!.lineWidth = 1;
         ctx!.beginPath();
         ctx!.moveTo(x1, y1);
         ctx!.lineTo(x2, y2);
         ctx!.stroke();
-        const p = pacotes[i];
-        const x = x1 + (x2 - x1) * p.t;
-        const y = y1 + (y2 - y1) * p.t;
-        ctx!.fillStyle = COR_FLUXO[tipo];
-        ctx!.shadowColor = COR_FLUXO[tipo];
+      }
+      ctx!.setLineDash([]);
+
+      // Linhas ACESAS: só onde houve evento real nas últimas 24 h.
+      for (const l of linhasRef.current) {
+        const [x1, y1] = P(l.de);
+        const [x2, y2] = P(l.para);
+        const quente = f && (l.de === f || l.para === f);
+        const idadeH = (agoraMs - new Date(l.ultimo).getTime()) / 3600_000;
+        const forca = idadeH < 1 ? "ee" : idadeH < 6 ? "aa" : "66";
+        const cor = COR_EVENTO[l.tipo];
+        ctx!.strokeStyle = cor + (f && !quente ? "30" : forca);
+        ctx!.lineWidth = Math.min(4.5, 1.6 + l.quantos * 0.4) + (quente ? 0.8 : 0);
+        ctx!.beginPath();
+        ctx!.moveTo(x1, y1);
+        ctx!.lineTo(x2, y2);
+        ctx!.stroke();
+        const chave = `${l.de}|${l.para}`;
+        const t = pacotes[chave] ?? 0;
+        ctx!.fillStyle = cor;
+        ctx!.shadowColor = cor;
         ctx!.shadowBlur = 10;
         ctx!.beginPath();
-        ctx!.arc(x, y, 2.6, 0, Math.PI * 2);
+        ctx!.arc(x1 + (x2 - x1) * t, y1 + (y2 - y1) * t, 3, 0, Math.PI * 2);
         ctx!.fill();
         ctx!.shadowBlur = 0;
-        if (!reduz) p.t = (p.t + p.v) % 1;
-      });
+        pacotes[chave] = reduz ? 0.5 : (t + 0.004 + Math.min(0.006, l.quantos * 0.0008)) % 1;
+      }
 
       for (const n of nos) {
         const [x, y] = P(n.id);
@@ -282,25 +333,78 @@ export function RedeAoVivo({ agentes, rondas, agora }: { agentes: Agente[]; rond
           </>
         )}
       </div>
-      <div className="relative">
-        <canvas ref={canvas} className="block h-[540px] w-full" aria-label="Mapa de quem passa trabalho para quem, com a cor do status da última ronda de cada agente" role="img" />
-        {atual && (
-          <div className="absolute inset-x-3 top-3 rounded-xl border border-white/15 bg-[#050A18]/90 px-4 py-3 text-sm backdrop-blur" aria-live="polite" data-testid="briefing-legenda">
-            <span className="block font-mono text-[11px] text-[#8C9AC4]">
-              {String(passo + 1).padStart(2, "0")} / {passos.length}
-            </span>
-            <b style={{ color: atual.cor === "sem" ? "#38BDF8" : COR_RONDA_HEX[atual.cor] }}>{atual.titulo}</b>
-            <p className="mt-0.5 text-[#DCE3FA]">{atual.texto.slice(0, digitado)}</p>
-          </div>
-        )}
+      <div className="grid lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="relative">
+          <canvas ref={canvas} className="block h-[540px] w-full" aria-label="Mapa de quem passa trabalho para quem, com a cor do status da última ronda de cada agente" role="img" />
+          {atual && (
+            <div className="absolute inset-x-3 top-3 rounded-xl border border-white/15 bg-[#050A18]/90 px-4 py-3 text-sm backdrop-blur" aria-live="polite" data-testid="briefing-legenda">
+              <span className="block font-mono text-[11px] text-[#8C9AC4]">
+                {String(passo + 1).padStart(2, "0")} / {passos.length}
+              </span>
+              <b style={{ color: atual.cor === "sem" ? "#38BDF8" : COR_RONDA_HEX[atual.cor] }}>{atual.titulo}</b>
+              <p className="mt-0.5 text-[#DCE3FA]">{atual.texto.slice(0, digitado)}</p>
+            </div>
+          )}
+          {eventos !== null && linhas.length === 0 && !atual && (
+            <p className="pointer-events-none absolute inset-x-3 bottom-3 rounded-lg bg-[#050A18]/85 px-3 py-2 text-center text-xs text-[#8C9AC4]">
+              Nenhum evento real nas últimas 24 h: as linhas só acendem quando alguém faz alguma coisa.
+            </p>
+          )}
+        </div>
+        <LinhaDoTempo eventos={eventos} lidoEm={lidoEm} erro={erro} agora={agora} />
       </div>
       <div className="flex flex-wrap gap-x-4 gap-y-1 border-t border-white/10 px-4 py-2.5 text-xs text-[#8C9AC4]">
-        <span><i className="mr-1.5 inline-block h-0.5 w-4 align-middle" style={{ background: COR_FLUXO.achados }} />achados para a fila</span>
-        <span><i className="mr-1.5 inline-block h-0.5 w-4 align-middle" style={{ background: COR_FLUXO.pendencias }} />pendências do Daniel</span>
-        <span><i className="mr-1.5 inline-block h-0.5 w-4 align-middle" style={{ background: COR_FLUXO.relatorio }} />relatórios</span>
-        <span><i className="mr-1.5 inline-block h-0.5 w-4 align-middle" style={{ background: COR_FLUXO.pacote }} />pacote do Otávio e PRs do Renato</span>
+        {(Object.keys(COR_EVENTO) as (keyof typeof COR_EVENTO)[])
+          .filter((t) => t !== "retorno")
+          .map((t) => (
+            <span key={t}>
+              <i className="mr-1.5 inline-block h-0.5 w-4 align-middle" style={{ background: COR_EVENTO[t] }} />
+              {t === "ordem" ? "ordem e retorno" : ROTULO_EVENTO[t]}
+            </span>
+          ))}
+        <span>tracejado = organograma (sem evento) · linha acesa = evento real em 24 h</span>
         <span>Nó: <b className="text-[#7FD321]">ok</b> · <b className="text-[#FFB547]">alerta</b> · <b className="text-[#FF5470]">falhou</b> · anel pulsando = ronda há menos de 15 min</span>
       </div>
     </div>
+  );
+}
+
+const horaBR = (iso: string) => new Date(iso).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
+
+/** Linha do tempo dos eventos reais, do mais novo para o mais antigo. */
+function LinhaDoTempo({ eventos, lidoEm, erro, agora }: { eventos: EventoRede[] | null; lidoEm: string | null; erro: boolean; agora: Date | null }) {
+  return (
+    <aside className="flex max-h-[540px] min-w-0 flex-col border-t border-white/10 lg:border-l lg:border-t-0" data-testid="rede-linha-do-tempo">
+      <div className="flex items-baseline justify-between gap-2 border-b border-white/10 px-4 py-2.5">
+        <b className="text-sm text-white">Últimas 24 h</b>
+        <span className="font-mono text-[11px] text-[#8C9AC4]">{lidoEm ? `lido ${horaBR(lidoEm)} · a cada 30 s` : "lendo…"}</span>
+      </div>
+      {erro && <p className="px-4 py-2 text-xs text-[#FF7A6B]">Não consegui ler os eventos agora; tento de novo em 30 s.</p>}
+      {eventos !== null && eventos.length === 0 ? (
+        <p className="px-4 py-4 text-sm text-[#8C9AC4]">Nenhum evento nas últimas 24 h.</p>
+      ) : (
+        <ol className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
+          {(eventos ?? []).map((e, i) => (
+            <li key={`${e.em}-${i}`} className="flex gap-2.5 rounded-lg px-2 py-1.5 text-sm hover:bg-white/5" data-tipo={e.tipo}>
+              <span className="mt-1.5 inline-block h-2 w-2 shrink-0 rounded-full" style={{ background: COR_EVENTO[e.tipo] }} aria-hidden />
+              <span className="min-w-0 flex-1">
+                <span className="block break-words text-[#DCE3FA]">
+                  {e.link ? (
+                    <a href={e.link} target="_blank" rel="noreferrer" className="underline decoration-white/30 underline-offset-2 hover:decoration-white">
+                      {e.texto}
+                    </a>
+                  ) : (
+                    e.texto
+                  )}
+                </span>
+                <span className="font-mono text-[11px] text-[#8C9AC4]">
+                  {horaBR(e.em)} · {agora ? tempoRelativo(e.em, agora) : ""} · {ROTULO_EVENTO[e.tipo]}
+                </span>
+              </span>
+            </li>
+          ))}
+        </ol>
+      )}
+    </aside>
   );
 }

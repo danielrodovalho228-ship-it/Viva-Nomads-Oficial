@@ -6,7 +6,9 @@
 import {
   LIMITE_DIA,
   LIMITE_DISPAROS_DIA,
+  MAX_REPASSES_POR_VEZ,
   URL_DISPARO,
+  repasseUrgente,
   destinoDaOrdem,
   pedeAcao,
   prometeAcao,
@@ -247,4 +249,66 @@ export async function executarAgora(d: DepsExecutar, entrada: unknown): Promise<
     await d.registrarDisparo(ordemId, { erro: motivo });
     return { status: 502, body: { ordemId, erro: `Não consegui disparar o ${agente.nome} (${motivo}). A ordem ficou gravada para a próxima ronda.` } };
   }
+}
+
+// ── Repasse entre agentes: disparo automático dos P0/P1 ────────────────────
+export interface DepsRepasse {
+  /** Ordens de repasse ainda não disparadas (a função filtra de novo). */
+  candidatas(): Promise<Pick<Ordem, "id" | "agente_slug" | "texto" | "status" | "origem_slug" | "retorno_de" | "prioridade" | "disparada_em" | "disparo_erro">[]>;
+  agentes(): Promise<Pick<Agente, "slug" | "nome" | "status" | "trigger_id">[]>;
+  /** Marca disparada_em só se ninguém marcou antes (evita disparo duplo). */
+  reservar(ordemId: string): Promise<boolean>;
+  /** Consome 1 do limite diário dos disparos automáticos. */
+  consumirDisparo(): Promise<boolean>;
+  registrarDisparo(ordemId: string, r: { sessao_url?: string | null; erro?: string }): Promise<void>;
+  token(slug: string): string | null;
+  disparar(url: string, token: string, texto: string): Promise<{ sessao_url: string | null }>;
+}
+
+export interface ResultadoRepasse {
+  disparadas: string[];
+  falhas: { id: string; motivo: string }[];
+}
+
+/**
+ * Achado P0/P1 que outro agente repassou (0087) → dispara a rotina do
+ * destinatário na hora, dentro do limite diário. Sem rotina, sem token, limite
+ * estourado ou falha: a ordem fica gravada (ele lê na próxima ronda) e o motivo
+ * aparece na tela. Roda ao abrir a Central, na Rede ao vivo e no cron.
+ */
+export async function dispararRepasses(d: DepsRepasse): Promise<ResultadoRepasse> {
+  const out: ResultadoRepasse = { disparadas: [], falhas: [] };
+  const fila = (await d.candidatas()).filter(repasseUrgente).slice(0, MAX_REPASSES_POR_VEZ);
+  if (!fila.length) return out;
+  const agentes = await d.agentes();
+  for (const o of fila) {
+    if (!(await d.reservar(o.id))) continue;
+    const falhou = async (motivo: string) => {
+      await d.registrarDisparo(o.id, { erro: motivo });
+      out.falhas.push({ id: o.id, motivo });
+    };
+    const ag = agentes.find((a) => a.slug === o.agente_slug);
+    if (!ag || ag.status !== "ativo" || !ag.trigger_id) {
+      await falhou("sem rotina para disparar");
+      continue;
+    }
+    if (!(await d.consumirDisparo())) {
+      await falhou(`limite de ${LIMITE_DISPAROS_DIA} disparos em 24 h`);
+      continue;
+    }
+    const token = d.token(ag.slug);
+    if (!token) {
+      await falhou("sem token da rotina");
+      continue;
+    }
+    const origem = agentes.find((a) => a.slug === o.origem_slug)?.nome ?? o.origem_slug ?? "outro agente";
+    try {
+      const r = await d.disparar(URL_DISPARO(ag.trigger_id), token, textoDisparo(o, origem));
+      await d.registrarDisparo(o.id, { sessao_url: r.sessao_url });
+      out.disparadas.push(o.id);
+    } catch (e) {
+      await falhou(e instanceof Error ? e.message.slice(0, 200) : "falha");
+    }
+  }
+  return out;
 }

@@ -4,10 +4,10 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { aceitaEsforco, aceitaReserva, modeloViva } from "@/lib/atendimento/viva-custo";
-import { LIMITE_DISPAROS_DIA, inicioDoDiaBrasilia, modeloAgentes, nomeVarToken, SCHEMA_REUNIAO, TIMEOUT_MS, type Agente, type Conversa, type Ordem, type Ronda } from "@/lib/agentes/central";
+import { CHAVE_LIMITE_REPASSE, LIMITE_DISPAROS_DIA, inicioDoDiaBrasilia, modeloAgentes, nomeVarToken, SCHEMA_REUNIAO, TIMEOUT_MS, type Agente, type Conversa, type Ordem, type Ronda } from "@/lib/agentes/central";
 import { consumirLimite, DIA } from "@/lib/limites";
 import { integracoesSimuladas, registrarSimulado } from "@/lib/integracoes";
-import { executarAgora, type Deps, type DepsExecutar } from "@/lib/agentes/motor";
+import { dispararRepasses, executarAgora, type Deps, type DepsExecutar, type DepsRepasse, type ResultadoRepasse } from "@/lib/agentes/motor";
 import { modeloGerenteSimulado, nomeDoOrganograma, PREFIXO_MOACIR, type Consulta, type DepsGerente, type ModeloGerente } from "@/lib/agentes/gerente";
 import { horaBrasilia, retratoEmTexto } from "@/lib/agentes/retrato";
 import { ultimaPorAgente } from "@/lib/agentes/painel";
@@ -15,6 +15,7 @@ import { consultasDaArea, numeroMigracao, type Conferencia, type MigracaoAplicad
 import { chamadosEsperandoEquipe } from "@/lib/atendimento/escalonamento";
 import { systemChat } from "@/lib/agentes/central";
 import type { Retrato } from "@/lib/agentes/retrato";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 /**
  * Dependências REAIS da Central de Agentes. Lê e grava só nas 4 tabelas da
@@ -297,7 +298,6 @@ function montarGerente(base: Deps, supabase: Sessao, modelo: string): Deps["gere
 export async function depsExecutarReais(): Promise<DepsExecutar | null> {
   const supabase = await createClient();
   if (!supabase) return null;
-  const simulado = integracoesSimuladas();
   return {
     async adminId() {
       const {
@@ -323,33 +323,98 @@ export async function depsExecutarReais(): Promise<DepsExecutar | null> {
         .update({ disparada_em: new Date().toISOString(), sessao_url: r.sessao_url ?? null, disparo_erro: r.erro ?? null })
         .eq("id", ordemId);
     },
-    token(slug) {
-      const t = process.env[nomeVarToken(slug)]?.trim();
-      if (t) return simulado ? "simulado" : t;
-      return simulado ? "simulado" : null;
-    },
-    async disparar(url, token, texto) {
-      if (token === "simulado") {
-        await registrarSimulado("rotina", { url, texto });
-        return { sessao_url: "https://claude.ai/code/session_simulada" };
-      }
-      const res = await fetch(url, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "anthropic-beta": "experimental-cc-routine-2026-04-01",
-          "anthropic-version": "2023-06-01",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ text: texto }),
-        signal: AbortSignal.timeout(15_000),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const j = (await res.json().catch(() => ({}))) as { claude_code_session_url?: unknown };
-      const link = typeof j.claude_code_session_url === "string" && j.claude_code_session_url.startsWith("https://claude.ai/") ? j.claude_code_session_url : null;
-      return { sessao_url: link };
-    },
+    token: tokenDaRotina,
+    disparar: dispararRotina,
   };
+}
+
+/** Token da rotina do agente (só servidor). No laboratório, "simulado". */
+function tokenDaRotina(slug: string): string | null {
+  const simulado = integracoesSimuladas();
+  const t = process.env[nomeVarToken(slug)]?.trim();
+  if (t) return simulado ? "simulado" : t;
+  return simulado ? "simulado" : null;
+}
+
+/** Dispara a rotina pela API de rotinas do claude.ai (no laboratório, só registra). */
+async function dispararRotina(url: string, token: string, texto: string): Promise<{ sessao_url: string | null }> {
+  if (token === "simulado") {
+    await registrarSimulado("rotina", { url, texto });
+    return { sessao_url: "https://claude.ai/code/session_simulada" };
+  }
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "anthropic-beta": "experimental-cc-routine-2026-04-01",
+      "anthropic-version": "2023-06-01",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ text: texto }),
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const j = (await res.json().catch(() => ({}))) as { claude_code_session_url?: unknown };
+  const link = typeof j.claude_code_session_url === "string" && j.claude_code_session_url.startsWith("https://claude.ai/") ? j.claude_code_session_url : null;
+  return { sessao_url: link };
+}
+
+/**
+ * Repasse entre agentes (0087): dispara na hora as ordens P0/P1 que um agente
+ * repassou a outro. `db` é o cliente da sessão do admin (RLS is_admin()) ou o
+ * de serviço (cron). Limite diário próprio, com o mesmo teto do Executar agora.
+ */
+export function depsRepasse(db: SupabaseClient): DepsRepasse {
+  return {
+    async candidatas() {
+      const desde = new Date(Date.now() - 24 * 3600_000).toISOString();
+      const { data, error } = await db
+        .from("agentes_ordens")
+        .select("id, agente_slug, texto, status, origem_slug, retorno_de, prioridade, disparada_em, disparo_erro")
+        .not("origem_slug", "is", null)
+        .is("retorno_de", null)
+        .in("prioridade", ["P0", "P1"])
+        .eq("status", "pendente")
+        .is("disparada_em", null)
+        .is("disparo_erro", null)
+        .gte("criada_em", desde)
+        .order("criada_em")
+        .limit(20);
+      // Antes da 0087 as colunas não existem: nada a disparar.
+      return error ? [] : ((data ?? []) as Ordem[]);
+    },
+    async agentes() {
+      const { data } = await db.from("agentes").select("slug, nome, status, trigger_id");
+      return (data ?? []) as Agente[];
+    },
+    async reservar(ordemId) {
+      const { data } = await db
+        .from("agentes_ordens")
+        .update({ disparada_em: new Date().toISOString() })
+        .eq("id", ordemId)
+        .is("disparada_em", null)
+        .is("disparo_erro", null)
+        .select("id");
+      return (data ?? []).length === 1;
+    },
+    consumirDisparo: () => consumirLimite(CHAVE_LIMITE_REPASSE, LIMITE_DISPAROS_DIA, DIA),
+    async registrarDisparo(ordemId, r) {
+      await db.from("agentes_ordens").update({ sessao_url: r.sessao_url ?? null, disparo_erro: r.erro ?? null }).eq("id", ordemId);
+    },
+    token: tokenDaRotina,
+    disparar: dispararRotina,
+  };
+}
+
+/** Dispara os repasses urgentes com o cliente da sessão (só admin). */
+export async function dispararRepassesDaSessao(): Promise<ResultadoRepasse | null> {
+  const supabase = await createClient();
+  if (!supabase) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user || !(await ehAdmin(supabase, user.id))) return null;
+  return dispararRepasses(depsRepasse(supabase));
 }
 
 /** E-mails que parecem de teste/laboratório (heurística só para contar). */

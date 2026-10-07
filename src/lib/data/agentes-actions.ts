@@ -7,6 +7,9 @@ import { categoria } from "@/lib/atendimento/classificar";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { PREFIXO_MOACIR } from "@/lib/agentes/gerente";
 import { avisoOrdem, contarP1, type Agente, type Conversa, type Ordem, type Ronda } from "@/lib/agentes/central";
+import { JANELA_EVENTOS_H, montarEventos, type ChamadoEvento, type EventoRede, type FontesRede } from "@/lib/agentes/eventos";
+import { eventosGithub } from "@/lib/agentes/github";
+import { dispararRepassesDaSessao } from "@/lib/agentes/servidor";
 
 /**
  * Central de Agentes — leituras e "Deixar ordem". Tudo com o cliente da sessão:
@@ -121,4 +124,44 @@ export async function contarAchadosP1(): Promise<number> {
   const desde = new Date(Date.now() - 24 * 3600_000).toISOString();
   const { data } = await supabase.from("agentes_rondas").select("iniciada_em, achados").gte("iniciada_em", desde).limit(500);
   return contarP1((data ?? []) as Pick<Ronda, "achados" | "iniciada_em">[], new Date());
+}
+
+/**
+ * Rede ao vivo REAL: eventos das últimas 24 h (rondas, ordens, chamados, PRs e
+ * deploys). A tela chama a cada 30 s; de carona, dispara os repasses P0/P1
+ * que ainda não saíram (0087). Só admin (RLS is_admin() nas tabelas).
+ */
+export async function eventosDaRede(): Promise<{ eventos: EventoRede[]; lidoEm: string } | null> {
+  const supabase = await createClient();
+  if (!supabase) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user || !(await ehAdmin(supabase, user.id))) return null;
+  await dispararRepassesDaSessao().catch(() => null);
+  const agora = new Date();
+  const desde = new Date(agora.getTime() - JANELA_EVENTOS_H * 3600_000).toISOString();
+  const [a, r, o, c, gh] = await Promise.all([
+    supabase.from("agentes").select("slug, nome"),
+    supabase.from("agentes_rondas").select("agente_slug, iniciada_em, status, achados, link_sessao").gte("iniciada_em", desde).order("iniciada_em", { ascending: false }).limit(200),
+    supabase.from("agentes_ordens").select("*").or(`criada_em.gte.${desde},atualizada_em.gte.${desde}`).order("criada_em", { ascending: false }).limit(200),
+    supabase.from("chamado_eventos").select("acao, ator_tipo, criado_em, chamados(numero_publico)").eq("simulacao", false).gte("criado_em", desde).in("acao", ["aberto", "respondido_viva", "respondido", "sugestao_aprovada", "sugestao_editada"]).order("criado_em", { ascending: false }).limit(200),
+    eventosGithub(),
+  ]);
+  const nomes = Object.fromEntries(((a.data ?? []) as Pick<Agente, "slug" | "nome">[]).map((x) => [x.slug, x.nome]));
+  const chamados: ChamadoEvento[] = ((c.data ?? []) as { acao: string; ator_tipo: string; criado_em: string; chamados: { numero_publico: string } | { numero_publico: string }[] | null }[]).map((e) => ({
+    acao: e.acao,
+    ator_tipo: e.ator_tipo,
+    criado_em: e.criado_em,
+    numero: (Array.isArray(e.chamados) ? e.chamados[0]?.numero_publico : e.chamados?.numero_publico) ?? null,
+  }));
+  const fontes: FontesRede = {
+    nomes,
+    rondas: (r.data ?? []) as FontesRede["rondas"],
+    ordens: (o.data ?? []) as FontesRede["ordens"],
+    chamados,
+    prs: gh.prs,
+    deploys: gh.deploys,
+  };
+  return { eventos: montarEventos(fontes, agora).slice(0, 80), lidoEm: agora.toISOString() };
 }
