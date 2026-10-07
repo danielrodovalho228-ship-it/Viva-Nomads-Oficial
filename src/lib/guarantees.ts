@@ -61,6 +61,48 @@ export function garantidorStatus(flagAtiva: boolean): CatalogStatus {
   return flagAtiva ? "ativo" : "em_breve";
 }
 
+/**
+ * Faixa de prazo (dias) em que o seguro-fiança pode ser escolhido. CONFIGURÁVEL
+ * sem PR: NEXT_PUBLIC_FIANCA_PRAZO_MIN_DIAS / _MAX_DIAS (padrão 90 a 180). Ex.:
+ * a Chubb aceita temporada até 90 dias com concordância prévia → min 1, max 90.
+ * Sempre dentro de 1..180 (teto do produto); valor inválido volta ao padrão.
+ */
+export function faixaFianca(env: { min?: string; max?: string } = {}): { minDias: number; maxDias: number } {
+  const num = (v: string | undefined, padrao: number) => {
+    const n = Math.round(Number(v));
+    return v !== undefined && v !== "" && Number.isFinite(n) && n >= 1 && n <= 180 ? n : padrao;
+  };
+  const minDias = num(env.min, 90);
+  const maxDias = num(env.max, 180);
+  return minDias <= maxDias ? { minDias, maxDias } : { minDias: 90, maxDias: 180 };
+}
+export const FIANCA_PRAZO = faixaFianca({
+  min: process.env.NEXT_PUBLIC_FIANCA_PRAZO_MIN_DIAS,
+  max: process.env.NEXT_PUBLIC_FIANCA_PRAZO_MAX_DIAS,
+});
+
+/** Chave gravada em contratos.garantia (0076). Uma só por contrato. */
+export type GarantiaContrato = "caucao" | "seguro_fianca";
+export function garantiaDoContrato(garantiaId: string | null | undefined): GarantiaContrato {
+  return garantiaId === "garantidor_digital" ? "seguro_fianca" : "caucao";
+}
+
+/**
+ * O servidor confere a escolha: seguro-fiança só com a flag ligada e o prazo
+ * dentro da faixa configurada. Caução vale de 1 a 180 dias.
+ */
+export function validarGarantia(
+  garantia: GarantiaContrato,
+  prazoDias: number,
+  opts: { fiancaAtiva: boolean; faixa: { minDias: number; maxDias: number } } = { fiancaAtiva: GARANTIDOR_DIGITAL_ATIVO, faixa: FIANCA_PRAZO }
+): { ok: true } | { ok: false; error: string } {
+  if (garantia === "caucao") return { ok: true };
+  if (!opts.fiancaAtiva) return { ok: false, error: "O seguro-fiança ainda não está disponível. Escolha a caução." };
+  if (prazoDias < opts.faixa.minDias || prazoDias > opts.faixa.maxDias)
+    return { ok: false, error: `O seguro-fiança vale para contratos de ${opts.faixa.minDias} a ${opts.faixa.maxDias} dias.` };
+  return { ok: true };
+}
+
 /** Texto jurídico canônico — sempre visível na etapa de garantia. */
 export const REGRA_DE_OURO =
   "A plataforma conecta, verifica, documenta e registra — não é locadora, fiadora, garantidora nem executora.";
@@ -98,8 +140,8 @@ export const GARANTIAS: Garantia[] = [
     id: "garantidor_digital",
     nome: "Seguro-fiança",
     tipo: "garantidor_digital",
-    prazoMinDias: 90,
-    prazoMaxDias: 180,
+    prazoMinDias: FIANCA_PRAZO.minDias,
+    prazoMaxDias: FIANCA_PRAZO.maxDias,
     quemPaga: "inquilino",
     reembolsavel: false,
     // Selecionável só quando a flag liga E um parceiro estiver cadastrado.

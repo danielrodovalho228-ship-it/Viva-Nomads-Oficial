@@ -33,6 +33,8 @@ import {
 import {
   garantiasElegiveis,
   garantiaSelecionavel,
+  garantiaDoContrato,
+  FIANCA_PRAZO,
   servicosVisiveis,
   servicoSelecionavel,
   REGRA_DE_OURO,
@@ -123,6 +125,8 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   // Caução é a opção PADRÃO (obrigatória): nenhum fechamento avança sem garantia,
   // e a caução cobre todas as faixas de prazo (1..180). O usuário pode trocar.
   const [guaranteeId, setGuaranteeId] = useState<string | null>("caucao");
+  // "Sua proteção": o inquilino confirma que leu a comparação antes de seguir.
+  const [cienteProtecao, setCienteProtecao] = useState(false);
   // Nº de pessoas que vão morar (Onda 1) — informado pelo inquilino, validado
   // contra a capacidade do imóvel. Vai para o registro da locação (cláusula de
   // ocupação). Excedeu a capacidade → bloqueia e sugere outro imóvel.
@@ -201,12 +205,12 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   const maxReached = useMemo(() => {
     // Ocupação acima da capacidade trava o fechamento na 1ª etapa (Onda 1).
     if (!verified || ocupantesExcede) return 0;
-    if (!guaranteeId) return 1;
+    if (!guaranteeId || !cienteProtecao) return 1;
     // Serviços (2) é opcional: com a garantia escolhida, libera até patrimonial (3).
     if (patrimonial === null) return 3;
     if (!generated) return 4; // Resumo só após gerar o contrato
     return 5;
-  }, [verified, ocupantesExcede, guaranteeId, patrimonial, generated]);
+  }, [verified, ocupantesExcede, guaranteeId, cienteProtecao, patrimonial, generated]);
 
   function goToStep(target: number) {
     if (target <= maxReached) setStep(target);
@@ -256,6 +260,8 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
         capacidadeSnapshot: CAPACIDADE,
         inicioISO,
         caucaoForma: caucaoForma === "parcelado" ? "preauth_cartao" : "avista",
+        // Garantia ÚNICA (art. 37): seguro-fiança → blocos sem caução (servidor e banco conferem).
+        garantia: garantiaDoContrato(guaranteeId),
       }).catch(() => {});
       // `garantiaKey` alimenta o texto do contrato (à vista/parcelada).
       void garantiaKey;
@@ -267,7 +273,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
 
   const canAdvance =
     (step === 0 && verified && !ocupantesExcede) ||
-    (step === 1 && !!guaranteeId) ||
+    (step === 1 && !!guaranteeId && cienteProtecao) ||
     step === 2 || // serviços: opcional, pode seguir sem escolher
     (step === 3 && patrimonial !== null) ||
     (step === 4 && generated);
@@ -280,6 +286,8 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
         ? `Este imóvel comporta até ${CAPACIDADE} pessoas. Reduza o número de ocupantes ou escolha outro imóvel.`
       : step === 1 && !guaranteeId
         ? "Selecione uma garantia para continuar."
+        : step === 1 && !cienteProtecao
+          ? "Leia \"Sua proteção\" e marque \"Li e entendi\" para continuar."
         : step === 3 && patrimonial === null
           ? "Defina o seguro patrimonial para continuar."
           : step === 4 && !generated
@@ -469,9 +477,9 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                 são as opções:
               </p>
               <p className="mt-2 rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted">
-                {STAY_DAYS < 90
-                  ? "Até 89 dias (temporada): garantia por caução — ideal para estadias curtas."
-                  : "90 a 180 dias (residencial): caução ou seguro-fiança (em breve)."}
+                {STAY_DAYS < FIANCA_PRAZO.minDias || STAY_DAYS > FIANCA_PRAZO.maxDias
+                  ? `Para este prazo, a garantia é a caução. O seguro-fiança vale de ${FIANCA_PRAZO.minDias} a ${FIANCA_PRAZO.maxDias} dias.`
+                  : `De ${FIANCA_PRAZO.minDias} a ${FIANCA_PRAZO.maxDias} dias: caução ou seguro-fiança.`}
               </p>
             </div>
 
@@ -550,33 +558,8 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
               })}
             </div>
 
-            {/* Como funciona a sua proteção — diferencial (lidera pelo benefício). */}
-            <div className="rounded-xl border border-sage-200 bg-surface-2 p-4 text-sm">
-              <p className="font-medium text-ink">Como funciona a sua proteção</p>
-              <ul className="mt-2 space-y-1.5 text-muted">
-                <li className="flex items-start gap-2">
-                  <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-forest" />
-                  <span>
-                    <strong className="text-ink">Garantia de verdade:</strong> cobre o aluguel,
-                    não só danos.
-                  </span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Clock className="mt-0.5 h-4 w-4 shrink-0 text-forest" />
-                  <span>
-                    <strong className="text-ink">Feita para 30 a 180 dias</strong> — no prazo da
-                    sua estadia.
-                  </span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Lock className="mt-0.5 h-4 w-4 shrink-0 text-forest" />
-                  <span>
-                    <strong className="text-ink">Seu dinheiro nunca fica com a plataforma</strong> —
-                    fica numa conta poupança (art. 38, §2º) e volta para você.
-                  </span>
-                </li>
-              </ul>
-            </div>
+            {/* Sua proteção — as duas opções lado a lado, com os valores reais do contrato. */}
+            <SuaProtecao caucao={CAUCAO_50} aluguel={PROPERTY.monthlyRent} ciente={cienteProtecao} onCiente={setCienteProtecao} />
 
             {/* Regra de ouro — sempre visível na etapa de garantia. */}
             <p className="flex items-start gap-2 rounded-lg border border-sage-200 bg-surface-2 px-3 py-2 text-xs text-muted">
@@ -1177,6 +1160,64 @@ function Row({ label, value }: { label: string; value: string }) {
     <div className="flex items-center justify-between py-1">
       <span className="text-muted">{label}</span>
       <span className="font-medium text-ink">{value}</span>
+    </div>
+  );
+}
+
+/**
+ * "Sua proteção" (G1): caução × seguro-fiança lado a lado, com o valor real da
+ * caução (50% de cada bloco, soma limitada a 3 aluguéis). Prêmio do seguro =
+ * cotação da seguradora (nunca número inventado). Uma garantia só (art. 37).
+ */
+export function SuaProtecao({
+  caucao,
+  aluguel,
+  ciente,
+  onCiente,
+}: {
+  caucao: number;
+  aluguel: number;
+  ciente: boolean;
+  onCiente: (v: boolean) => void;
+}) {
+  const linhas: [string, string, string][] = [
+    ["Quanto você paga", `${formatBRL(caucao)} depositados na entrada (50% de cada bloco, no máximo 3 aluguéis = ${formatBRL(aluguel * 3)})`, "O prêmio do seguro (valor de cotação da seguradora)"],
+    ["Volta para você?", "Sim, no fim, com o rendimento da poupança, menos os descontos com prova", "Não"],
+    ["O que cobre para o proprietário", `Aluguel e danos até ${formatBRL(caucao)}`, "Aluguel e danos até o limite da apólice"],
+    ["Se você quebrar algo", "O conserto é descontado da caução", "A seguradora paga o proprietário e cobra de você"],
+  ];
+  return (
+    <div className="rounded-xl border border-sage-200 p-4 text-sm" data-testid="sua-protecao">
+      <p className="font-title text-base font-bold text-ink">Sua proteção</p>
+      <p className="mt-1 text-xs text-muted">A lei permite uma garantia só. Compare antes de escolher:</p>
+      <div className="mt-3 overflow-x-auto">
+        <table className="w-full min-w-[320px] text-xs">
+          <thead>
+            <tr className="text-left text-muted">
+              <th className="py-1.5 pr-2 font-medium" />
+              <th className="py-1.5 pr-2 font-semibold text-ink">Caução</th>
+              <th className="py-1.5 font-semibold text-ink">Seguro-fiança</th>
+            </tr>
+          </thead>
+          <tbody>
+            {linhas.map(([rotulo, a, b]) => (
+              <tr key={rotulo} className="border-t border-sage-200 align-top">
+                <td className="py-2 pr-2 font-medium text-ink">{rotulo}</td>
+                <td className="py-2 pr-2 text-muted">{a}</td>
+                <td className="py-2 text-muted">{b}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <ul className="mt-3 space-y-1.5 rounded-lg bg-surface-2 px-3 py-2 text-xs font-medium text-ink">
+        <li>Em qualquer opção, você responde pelos danos que causar.</li>
+        <li>Desgaste normal e defeitos são do proprietário.</li>
+      </ul>
+      <label className="mt-3 flex items-start gap-2 text-sm text-ink">
+        <input type="checkbox" className="mt-0.5" checked={ciente} onChange={(e) => onCiente(e.target.checked)} data-testid="ciente-protecao" />
+        <span>Li e entendi.</span>
+      </label>
     </div>
   );
 }

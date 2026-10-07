@@ -49,6 +49,7 @@ import {
   PRAZO_MAX_DIAS,
   type BlocoComDatas,
 } from "@/lib/contrato-blocos";
+import { validarGarantia, type GarantiaContrato } from "@/lib/guarantees";
 
 type ActionResult = { ok: boolean; demo?: boolean; id?: string; error?: string };
 
@@ -816,6 +817,8 @@ export interface ContratoInput {
   capacidadeSnapshot?: number | null;
   inicioISO: string; // data de início do 1º bloco (yyyy-mm-dd)
   caucaoForma?: "avista" | "preauth_cartao";
+  /** Garantia ÚNICA escolhida (art. 37). Padrão: caução. Seguro-fiança → blocos sem caução. */
+  garantia?: GarantiaContrato;
 }
 
 const FAIXAS_CONTRATO = new Set(["temporada", "media_estadia", "longa"]);
@@ -881,6 +884,10 @@ export async function registrarContrato(
   const rate = taxaDoContrato(lead.accepted_commission_rate, lead.accepted_plan);
   const tamanho = Math.min(3, Math.max(1, Math.round(Number(input.tamanhoBlocoMeses ?? MESES_POR_BLOCO_PADRAO))));
   const resumo = resumoContrato(prazo, aluguel, rate, tamanho);
+  // Garantia única: o servidor confere a escolha (fiança só ligada e na faixa de prazo).
+  const garantia: GarantiaContrato = input.garantia === "seguro_fianca" ? "seguro_fianca" : "caucao";
+  const okGarantia = validarGarantia(garantia, resumo.prazoTotalMeses * DIAS_POR_MES);
+  if (!okGarantia.ok) return { ok: false, error: okGarantia.error };
 
   const { data: contrato, error: cErr } = await admin
     .from("contratos")
@@ -897,6 +904,7 @@ export async function registrarContrato(
       comissao_valor: resumo.comissaoValor,
       qtd_ocupantes: ocupantes,
       capacidade_snapshot: input.capacidadeSnapshot ?? null,
+      garantia,
     })
     .select("id")
     .single();
@@ -910,7 +918,8 @@ export async function registrarContrato(
     fim: b.fim,
     meses: b.meses,
     valor: b.valor,
-    caucao: b.caucao,
+    // Seguro-fiança: nenhuma caução (uma só garantia; o banco também recusa).
+    caucao: garantia === "seguro_fianca" ? 0 : b.caucao,
     caucao_forma: input.caucaoForma === "preauth_cartao" ? "preauth_cartao" : "avista",
     // 1º bloco entra vigente; os demais ficam PENDENTES DE ACEITE das duas
     // partes (antes "agendado" — o ciclo diário os ativava sozinho).
@@ -946,7 +955,7 @@ export async function renovarBloco(
 
   const { data: contrato, error: cErr } = await supabase
     .from("contratos")
-    .select("id, property_id, tenant_id, aluguel_mensal, tamanho_bloco_meses, status")
+    .select("id, property_id, tenant_id, aluguel_mensal, tamanho_bloco_meses, status, garantia")
     .eq("id", contratoId)
     .maybeSingle();
   if (cErr) return { ok: false, error: "Não foi possível ler o contrato." };
@@ -1028,7 +1037,7 @@ export async function renovarBloco(
       fim,
       meses,
       valor,
-      caucao: caucaoDoBloco(valor, aluguel, caucaoExigida),
+      caucao: contrato.garantia === "seguro_fianca" ? 0 : caucaoDoBloco(valor, aluguel, caucaoExigida),
       status: "pendente_aceite",
       [colunaAceite]: new Date().toISOString(),
     });
