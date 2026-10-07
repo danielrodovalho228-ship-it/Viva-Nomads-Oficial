@@ -230,9 +230,35 @@ export const REGRAS = `Regras:
 - Diga "imóveis mobiliados" (nunca "apartamentos") e "Caução" para a garantia.
 - Nunca invente números, datas ou status. Use só o que está neste contexto.
 - Se não tiver certeza, diga que vai conferir na próxima ronda.
-- Você não tem ferramentas nem acesso livre ao banco nesta conversa: só o retrato abaixo.
-- NUNCA diga que vai aplicar, corrigir, enviar, publicar, mesclar, disparar ou executar algo, nem que já fez. Se o Daniel pedir uma ação, responda: "Isso precisa de uma sessão real — use Executar agora." Correções de código vão para o Renato (Engenheiro), que abre o PR; migração só com OK escrito do Daniel.
+- Você não tem ferramentas nem acesso livre ao banco nesta conversa: só o retrato e os dados ao vivo abaixo.
+- NUNCA diga que vai aplicar, corrigir, enviar, publicar, mesclar, disparar ou executar algo, nem que já fez. Se o Daniel pedir uma ação, responda: "Isso precisa de uma sessão real — use Executar agora." Correções de código vão para o Renato (Engenheiro), que abre o PR; migração só com OK escrito do Daniel no Claude Code.
 - Não peça nem repita dados pessoais de clientes.`;
+
+/** Só estas coisas dependem do Daniel (CEO). O resto a equipe resolve. */
+export const DECISOES_DO_CEO = "dinheiro, contrato, jurídico e parceiros; publicar algo público; aprovar migração e mesclar PR; configurações que só ele acessa";
+
+export const REGRA_CEO = `- Só dependem do Daniel: ${DECISOES_DO_CEO}. Para todo o resto, diga QUEM da equipe faz e quando (o Renato corrige código e abre o PR, o Otávio confere a fila, a Helena cuida das pendências) — nunca "aguardando aprovação do Daniel".
+- Este chat NÃO registra aprovação: "ok", "aprovado" ou parecido aqui não aprova migração nem merge.`;
+
+/** Mensagem do Daniel que é só uma aprovação ("ok", "tudo aprovado", "pode aplicar"…). */
+const RE_APROVA_EM_QUALQUER_PARTE = /\b(aprovo|autorizo|tudo aprovado|pode aplicar|pode mesclar|pode fazer o merge|ok,? (pode )?aplicar)\b/i;
+const RE_APROVA_NO_INICIO = /^(ok|okay|okk+|sim|aprovad[oa]s?|autorizad[oa]|liberad[oa]|de acordo|fechado|manda ver|pode seguir|pode ir)\b/i;
+export function pedeAprovacao(texto: string): boolean {
+  const t = texto.trim();
+  if (!t || t.includes("?")) return false;
+  if (RE_APROVA_EM_QUALQUER_PARTE.test(t)) return true;
+  return RE_APROVA_NO_INICIO.test(t) && t.length <= 40;
+}
+export const RESPOSTA_APROVACAO =
+  "Aprovação de migração ou merge só vale pelo Claude Code (você digita o OK lá) ou rodando o SQL no SQL Editor. Daqui do chat eu não registro nada como aprovado.";
+
+const RE_ESPERA_DANIEL = /aguardando (a |sua |a sua )?aprova[cç][aã]o|aguarda(ndo)? (o )?(seu )?ok|depende (de você|do daniel)|precisa (da sua|de sua) aprova[cç][aã]o/i;
+const RE_ASSUNTO_DO_CEO = /migra[cç]|merge|mescl|dinheiro|pagament|cobran[cç]|contrat|jur[ií]dic|advog|parceir|segurador|publica|post|configura|vercel|supabase|token|cnpj|contador/i;
+/** Resposta que joga no Daniel algo que não é dele (rede de segurança da REGRA_CEO). */
+export function esperaDanielIndevida(resposta: string): boolean {
+  return resposta.split(/\n+/).some((linha) => RE_ESPERA_DANIEL.test(linha) && !RE_ASSUNTO_DO_CEO.test(linha));
+}
+export const NOTA_CEO = "(Isso não depende do Daniel: a equipe resolve — correção de código é com o Renato, a fila com o Otávio.)";
 
 function blocoRondas(rondas: Pick<Ronda, "iniciada_em" | "status" | "resumo" | "achados">[], limiteResumo = 1200): string {
   if (!rondas.length) return "Nenhuma ronda registrada ainda.";
@@ -277,7 +303,8 @@ ${rondasTexto}
 Ordens do Daniel ainda abertas para você:
 ${blocoOrdens(ordens)}
 ${retrato ? `\n${retrato}\n` : ""}
-${REGRAS}${retrato ? `\n${REGRA_RETRATO}` : ""}${gerente ? `\n${REGRA_BOLETIM}` : ""}`;
+${REGRAS}
+${REGRA_CEO}${retrato ? `\n${REGRA_RETRATO}` : ""}${gerente ? `\n${REGRA_BOLETIM}` : ""}`;
 }
 
 export interface Participante {
@@ -300,7 +327,8 @@ Simule uma reunião curta da equipe sobre a pauta do Daniel. Cada participante f
 Participantes:
 ${blocos}
 ${retrato ? `\n${retrato}\n` : ""}
-${REGRAS}${retrato ? `\n${REGRA_RETRATO}` : ""}
+${REGRAS}
+${REGRA_CEO}${retrato ? `\n${REGRA_RETRATO}` : ""}
 - Responda SÓ com JSON no formato {"falas":[{"slug":"...","texto":"..."}],"consolidado":{"texto":"...","passos":[{"dono":"slug","acao":"..."}]}}.`;
 }
 
