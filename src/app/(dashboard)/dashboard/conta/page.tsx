@@ -9,6 +9,7 @@ import {
   ChangePassword,
   DadosPessoais,
   DangerZone,
+  DocumentoPessoa,
   NotificationsPanel,
   PerfilDoModo,
 } from "@/components/account/conta-secoes";
@@ -27,6 +28,7 @@ export default function AccountPage() {
       <div className="web-only mx-auto max-w-5xl">
         <PageTitle title="Conta" subtitle="Seus dados pessoais e preferências." />
         <DadosPessoais />
+        <DocumentoPessoa />
         {/* Foto de perfil (Fase 2) — opcional; visibilidade decidida no servidor. */}
         <AvatarUploader />
         <PerfilDoModo />

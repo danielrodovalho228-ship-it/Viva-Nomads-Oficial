@@ -15,7 +15,7 @@ import { createClient } from "@/lib/supabase/client";
 import { nomeCompletoLimpo } from "@/lib/display-name";
 import { friendlyAuthError, MIN_PASSWORD } from "@/lib/auth-errors";
 import { Switch } from "@/components/ui/switch";
-import { getMeusDados, salvarMeusDados } from "@/lib/data/perfil-actions";
+import { getMeusDados, salvarMeusDados, getMeuDocumento, salvarMeuDocumento, type MeuDocumento } from "@/lib/data/perfil-actions";
 import { getNotifPrefs, setNotifPrefs } from "@/lib/data/pedidos-actions";
 import { useCaptcha } from "@/components/seguranca/captcha";
 import { MSG_CAPTCHA_PENDENTE, comCaptcha, podeEnviar } from "@/lib/seguranca/captcha";
@@ -132,6 +132,101 @@ export function DadosPessoais() {
         </div>
       </form>
     </Panel>
+  );
+}
+
+/**
+ * Documento (CPF ou CNPJ) — Cadastro confiável. Vai no contrato, na cobrança e
+ * na nota. Depois de salvo aparece só MASCARADO; para trocar, fala com o suporte.
+ */
+export function DocumentoPessoa() {
+  const [doc, setDoc] = useState<MeuDocumento | null | undefined>(undefined);
+  const [cpf, setCpf] = useState("");
+  const [cnpj, setCnpj] = useState("");
+  const [razao, setRazao] = useState("");
+  const [cpfRep, setCpfRep] = useState("");
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+  const [ok, setOk] = useState(false);
+
+  useEffect(() => {
+    let vivo = true;
+    getMeuDocumento()
+      .then((d) => vivo && setDoc(d))
+      .catch(() => vivo && setDoc(null));
+    return () => {
+      vivo = false;
+    };
+  }, []);
+
+  async function salvar(e: React.FormEvent) {
+    e.preventDefault();
+    setErro(null);
+    setSalvando(true);
+    const r = await salvarMeuDocumento(doc?.tipo === "pj" ? { cnpj, razaoSocial: razao, cpfRepresentante: cpfRep } : { cpf }).catch(() => ({
+      ok: false as const,
+      error: "Sem conexão. Tente de novo.",
+      documento: undefined,
+    }));
+    setSalvando(false);
+    if (!r.ok) return setErro(r.error ?? "Não foi possível salvar.");
+    if (r.documento) setDoc(r.documento);
+    setOk(true);
+  }
+
+  if (doc === undefined || doc === null) return null; // carregando ou demonstração
+  const pj = doc.tipo === "pj";
+  return (
+    <section id="documento" className="scroll-mt-24">
+      <Panel title={pj ? "Documento da empresa (CNPJ)" : "Documento (CPF)"} className="mt-6">
+        <p className="text-sm text-muted">
+          Vai no contrato, na cobrança e na nota fiscal. Fica guardado com segurança: só você e a equipe da Viva Nomads
+          veem, e aqui ele aparece mascarado. É pedido antes de aceitar uma candidatura, assinar um plano ou fechar contrato.
+        </p>
+        {doc.completo ? (
+          <div className="mt-4 grid gap-3 sm:grid-cols-2" data-testid="documento-cadastrado">
+            {pj ? (
+              <>
+                <Field label="CNPJ" value={doc.cnpj ?? ""} readOnly />
+                <Field label="Razão social" value={doc.razaoSocial ?? ""} readOnly />
+                <Field label="CPF do representante" value={doc.cpfRepresentante ?? ""} readOnly />
+              </>
+            ) : (
+              <Field label="CPF" value={doc.cpf ?? ""} readOnly />
+            )}
+            <p className="flex items-center gap-2 text-sm text-forest sm:col-span-2">
+              <Check className="h-4 w-4" /> Documento cadastrado. Para trocar, fale com o suporte.
+            </p>
+          </div>
+        ) : (
+          <form onSubmit={salvar} className="mt-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              {pj ? (
+                <>
+                  <Field label="CNPJ" value={cnpj} onChange={(e) => setCnpj(e.target.value)} placeholder="00.000.000/0000-00" inputMode="numeric" required />
+                  <Field label="Razão social" value={razao} onChange={(e) => setRazao(e.target.value)} placeholder="Como está no cartão do CNPJ" required />
+                  <Field label="CPF do representante" value={cpfRep} onChange={(e) => setCpfRep(e.target.value)} placeholder="000.000.000-00" inputMode="numeric" required />
+                </>
+              ) : (
+                <Field label="CPF" value={cpf} onChange={(e) => setCpf(e.target.value)} placeholder="000.000.000-00" inputMode="numeric" autoComplete="off" required />
+              )}
+            </div>
+            {erro && (
+              <p role="alert" className="mt-3 text-sm text-red-600">
+                {erro}
+              </p>
+            )}
+            {ok && <p className="mt-3 text-sm text-forest">Documento salvo.</p>}
+            <div className="mt-5">
+              <Button type="submit" disabled={salvando}>
+                {salvando ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                Salvar documento
+              </Button>
+            </div>
+          </form>
+        )}
+      </Panel>
+    </section>
   );
 }
 

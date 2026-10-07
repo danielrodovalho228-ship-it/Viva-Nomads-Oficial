@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { Lock, Users, X, Check, Send, ArrowDownWideNarrow, MessageSquare } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { ButtonLink } from "@/components/ui/button";
@@ -10,6 +11,7 @@ import { aceitarCandidatura, recusarCandidatura } from "@/lib/data/leads-actions
 import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
 import { DEMO_LEADS } from "@/lib/demo/seed";
 import { cn } from "@/lib/utils";
+import { LINK_DOCUMENTO, MSG_DOCUMENTO } from "@/lib/documento-pessoa";
 
 /** Motivos de recusa pré-definidos (quick win #3). */
 const REJECT_REASONS = [
@@ -37,6 +39,7 @@ function uiInicial(persisted: string | undefined): LeadStatus {
 export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
   const [status, setStatus] = useState<Record<string, LeadStatus>>({});
   const [reasons, setReasons] = useState<Record<string, string>>({});
+  const [erro, setErro] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   // Modo demonstração (admin): lê o seed em memória; desligado, volta ao real.
   const { on: demoOn } = useDemoMode();
@@ -52,7 +55,10 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
     if (demoOn) return;
     startTransition(async () => {
       const r = await aceitarCandidatura(id);
-      if (!r.ok) set(id, "open"); // reverte se o servidor recusar
+      if (!r.ok) {
+        set(id, "open"); // reverte se o servidor recusar — e diz por quê
+        setErro(r.error ?? "Não foi possível aprovar agora. Tente de novo.");
+      } else setErro(null);
     });
   }
 
@@ -77,6 +83,17 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
         subtitle="Inquilinos interessados. Você vê o necessário para decidir; ao aprovar, responda pela plataforma — onde a conversa fica registrada e protegida."
         action={demoOn ? <DemoBadge /> : undefined}
       />
+
+      {erro && (
+        <div role="alert" data-testid="aceite-erro" className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <p>{erro}</p>
+          {erro === MSG_DOCUMENTO.aceitar && (
+            <Link href={LINK_DOCUMENTO} className="mt-2 inline-block font-semibold text-forest underline">
+              Informar meu documento
+            </Link>
+          )}
+        </div>
+      )}
 
       {leads.length === 0 ? (
         <EmptyState
