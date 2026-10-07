@@ -12,7 +12,8 @@
 --   • publicação ÀS CEGAS: as duas do mesmo contrato aparecem quando ambas
 --     chegam, ou quando vence o prazo de 14 dias (publicar_avaliacoes, cron diário);
 --   • comentário com telefone/e-mail/rede ou ofensa vai para 'em_moderacao'.
--- + cartão da Fernanda: Confiança e Reputação (continua 'planejado').
+-- O cartão da Fernanda NÃO é mexido aqui: o Moacir já o ativou em produção
+-- (07/10/2026, "Confiança, Cadastro e Reputação", rotina 05:47).
 --
 -- TRAVA: se qualquer uma das 3 tabelas tiver linha, a migração PARA (nada some).
 -- Sem NOTICE. Rollback: supabase/producao/rollback/0089_rollback.sql
@@ -257,8 +258,3 @@ grant execute on function public.avaliacoes_recebidas() to authenticated;
 revoke all on function public.avaliacao_valida() from public, anon, authenticated;
 revoke all on function public.avaliacao_apos_envio() from public, anon, authenticated;
 
--- Fernanda: Confiança e Reputação (cuida das avaliações quando estiverem no ar).
-update public.agentes
-   set cargo = 'Confiança e Reputação',
-       briefing = 'Antifraude de cadastros e moderação das avaliações entre inquilino e proprietário: filtra ofensas e dados pessoais, detecta avaliação falsa ou retaliação, calcula a reputação e os selos.'
- where slug = 'fernanda';
