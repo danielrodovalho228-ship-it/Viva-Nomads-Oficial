@@ -1,7 +1,7 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { account, hasAccount } from "../fixtures/accounts";
 import { authFile } from "../fixtures/auth";
-import { marcadorPedido, preencherPedido, publicarPreenchido } from "../fixtures/pedido";
+import { encerrarPedido, marcadorPedido, preencherPedido, publicarPreenchido } from "../fixtures/pedido";
 
 /**
  * T-TRAV — TRAVESSIAS DE PONTA A PONTA (@criticos)
@@ -47,21 +47,20 @@ test.describe("T-TRAV-B — Pedido: identidade não vaza antes do aceite @critic
     await publicarPreenchido(page);
   }
 
-  /** Marca todos os pedidos ativos como atendidos (libera o limite de 2). */
-  async function limparPedidos(browser: Browser): Promise<void> {
+  /**
+   * Encerra SÓ o pedido deste teste (pela marca). Antes marcava todos os
+   * pedidos da conta — e o T5, que usa o mesmo inquilino em paralelo, perdia o
+   * dele no meio do teste.
+   */
+  async function limparPedidos(browser: Browser, tag: string): Promise<void> {
     const ctx = await browser.newContext({ storageState: authFile("inquilino") });
     const page = await ctx.newPage();
-    await page.goto("/dashboard/pedidos", { waitUntil: "networkidle" });
-    for (let i = 0; i < 10; i++) {
-      const botao = page.getByRole("button", { name: /Marcar atendido/i }).first();
-      if (!(await botao.isVisible().catch(() => false))) break;
-      await botao.click();
-      await page.waitForTimeout(500);
-    }
+    await encerrarPedido(page, tag).catch(() => {});
     await ctx.close();
   }
 
   test("o dono vê o pedido, mas nunca o e-mail/sobrenome do inquilino", async ({ browser }) => {
+    test.setTimeout(90_000); // publica, abre o mural do dono e limpa: 3 sessões
     const inq = account("inquilino");
     const tag = marca();
 
@@ -112,22 +111,11 @@ test.describe("T-TRAV-B — Pedido: identidade não vaza antes do aceite @critic
     }
 
     await ctxDono.close();
-    await limparPedidos(browser);
+    await limparPedidos(browser, tag);
   });
 
-  test.afterAll(async ({ browser }) => {
-    // Salvaguarda: garante que nenhum pedido de teste ficou ativo.
-    const ctx = await browser.newContext({ storageState: authFile("inquilino") });
-    const page = await ctx.newPage();
-    await page.goto("/dashboard/pedidos", { waitUntil: "networkidle" }).catch(() => {});
-    for (let i = 0; i < 10; i++) {
-      const botao = page.getByRole("button", { name: /Marcar atendido/i }).first();
-      if (!(await botao.isVisible().catch(() => false))) break;
-      await botao.click();
-      await page.waitForTimeout(500);
-    }
-    await ctx.close();
-  });
+  // Sem afterAll aqui: uma varredura por marca pegaria o pedido do T5 rodando
+  // em paralelo. Sobras ficam para o global-teardown (fim de toda a suíte).
 });
 
 // ──────────────────── C — Candidatura sem verificação: nudge ─────────────────

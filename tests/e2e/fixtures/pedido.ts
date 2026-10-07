@@ -50,7 +50,13 @@ export async function preencherPedido(page: Page, opts: PreencherOpts): Promise<
 /** Publica (formulário já preenchido) e vai para "Meus pedidos". */
 export async function publicarPreenchido(page: Page): Promise<void> {
   await page.getByRole("button", { name: /Publicar pedido/i }).click();
-  await page.getByRole("heading", { name: "Pedido publicado" }).waitFor({ timeout: 20_000 });
+  try {
+    await page.getByRole("heading", { name: "Pedido publicado" }).waitFor({ timeout: 20_000 });
+  } catch (e) {
+    // Mostra o erro que a tela exibiu (limite de pedidos, validação…).
+    const aviso = await page.locator("form p.text-red-700").first().innerText().catch(() => "");
+    throw new Error(`Pedido não publicado${aviso ? `: ${aviso}` : ""} (${String(e).slice(0, 120)})`);
+  }
   await page.getByRole("button", { name: "Ver meus pedidos" }).click();
   await page.waitForURL(/\/dashboard\/pedidos/, { timeout: 20_000 });
 }
