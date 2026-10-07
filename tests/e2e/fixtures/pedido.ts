@@ -41,8 +41,9 @@ export async function preencherPedido(page: Page, opts: PreencherOpts): Promise<
   await page.getByPlaceholder("dd/mm/aaaa").fill(dataBRDaqui(7));
   await page.getByPlaceholder("3500").fill(opts.orcamento ?? "3200");
   // Motivo é um seletor customizado (botão → listbox).
+  // (Só as opções da lista do motivo: o campo UF também tem <option>.)
   await page.getByText(/Selecione o motivo da estadia/i).click();
-  await page.getByRole("option").first().click();
+  await page.getByRole("listbox").getByRole("option").first().click();
   await page.getByPlaceholder(/Conte um pouco do seu perfil/i).fill(opts.apresentacao);
 }
 
