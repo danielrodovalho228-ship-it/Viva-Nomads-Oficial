@@ -2,6 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { lerDocumento } from "@/lib/data/documento-servidor";
+import { documentoCompleto, mascararCnpj, mascararCpf, validarDocumento, type DocumentoInput, type TipoPessoa } from "@/lib/documento-pessoa";
 import { contemContato } from "@/lib/pedidos/pedidos";
 import { validarNome, normalizarTelefone, validarLinkedin } from "@/lib/conta-validacao";
 import {
@@ -137,4 +140,70 @@ export async function salvarMeusDados(input: {
   }
   revalidatePath("/dashboard/conta");
   return { ok: true, dados: { fullName: nome.valor, phone: tel.valor, linkedin: li?.ok ? li.valor : null } };
+}
+
+export interface MeuDocumento {
+  tipo: TipoPessoa;
+  completo: boolean;
+  /** Sempre MASCARADO: o número inteiro não sai do servidor. */
+  cpf: string | null;
+  cnpj: string | null;
+  razaoSocial: string | null;
+  cpfRepresentante: string | null;
+}
+
+/** O MEU documento (CPF ou CNPJ), mascarado. null sem sessão/demo. */
+export async function getMeuDocumento(): Promise<MeuDocumento | null> {
+  const supabase = await createClient();
+  const admin = createAdminClient();
+  if (!supabase || !admin) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const p = await lerDocumento(admin, user.id);
+  if (!p) return null;
+  return {
+    tipo: p.person_type === "pj" ? "pj" : "pf",
+    completo: documentoCompleto(p),
+    cpf: mascararCpf(p.cpf),
+    cnpj: mascararCnpj(p.cnpj),
+    razaoSocial: (p.company_name as string | null) ?? null,
+    cpfRepresentante: mascararCpf(p.cpf_representante),
+  };
+}
+
+/**
+ * Grava o MEU documento (Cadastro confiável, 0090). Validação dos dígitos aqui
+ * e no banco. Uma vez completo, só a equipe troca (evita trocar de CPF depois
+ * de um contrato). O tipo (PF/PJ) é o escolhido no cadastro. Grava pelo
+ * servidor: o usuário não edita esses campos direto (0090).
+ */
+export async function salvarMeuDocumento(input: Omit<DocumentoInput, "tipo">): Promise<Result & { documento?: MeuDocumento }> {
+  const supabase = await createClient();
+  const admin = createAdminClient();
+  if (!supabase || !admin) return { ok: false, error: "Indisponível no momento." };
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Sessão expirada. Entre de novo." };
+  const atual = await lerDocumento(admin, user.id);
+  if (!atual) return { ok: false, error: "Perfil não encontrado." };
+  if (documentoCompleto(atual)) return { ok: false, error: "Seu documento já está cadastrado. Para trocar, fale com o suporte." };
+  const tipo: TipoPessoa = atual.person_type === "pj" ? "pj" : "pf";
+  const v = validarDocumento({ ...input, tipo });
+  if (!v.ok) return { ok: false, error: v.erro };
+  const update =
+    tipo === "pf"
+      ? { cpf: v.doc.cpf }
+      : { cnpj: v.doc.cnpj, company_name: v.doc.razaoSocial, cpf_representante: v.doc.cpfRepresentante };
+  const { error } = await admin.from("profiles").update(update).eq("id", user.id);
+  if (error) {
+    if (error.code === "23505") return { ok: false, error: "Este CPF já está cadastrado em outra conta. Se for seu, fale com o suporte." };
+    if (error.code === "23514") return { ok: false, error: tipo === "pf" ? "CPF inválido." : "CNPJ ou CPF do representante inválido." };
+    console.error("[salvarMeuDocumento]", error.code, error.message);
+    return { ok: false, error: "Não foi possível salvar agora. Tente de novo." };
+  }
+  revalidatePath("/dashboard/conta");
+  return { ok: true, documento: (await getMeuDocumento()) ?? undefined };
 }

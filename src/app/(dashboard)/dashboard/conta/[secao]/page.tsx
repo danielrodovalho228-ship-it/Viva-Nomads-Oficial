@@ -8,6 +8,7 @@ import {
   ChangePassword,
   DadosPessoais,
   DangerZone,
+  DocumentoPessoa,
   NotificationsPanel,
   PerfilDoModo,
 } from "@/components/account/conta-secoes";
@@ -20,6 +21,7 @@ export default function ContaSecaoPage({ params }: { params: Promise<{ secao: st
       return (
         <div className="mx-auto max-w-xl">
           <DadosPessoais />
+          <DocumentoPessoa />
           <AvatarUploader />
           <PerfilDoModo />
         </div>

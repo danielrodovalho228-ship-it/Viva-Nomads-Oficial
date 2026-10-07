@@ -7,6 +7,8 @@ import { consumirLimite, DIA } from "@/lib/limites";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fundadorNoGratis, fimGratisFundador, precoComDescontoFundador } from "@/lib/fundador";
 import { dataBR } from "@/lib/utils";
+import { documentoParaContrato, MSG_DOCUMENTO } from "@/lib/documento-pessoa";
+import { lerDocumento } from "@/lib/data/documento-servidor";
 
 const FORMAS: BillingType[] = ["PIX", "BOLETO", "CREDIT_CARD"];
 
@@ -42,7 +44,6 @@ export async function POST(request: Request) {
     .select("full_name, email, cpf, cnpj, person_type, fundador, fundador_em")
     .eq("id", user.id)
     .maybeSingle();
-  const documento = String((perfil?.person_type === "pj" ? perfil?.cnpj : perfil?.cpf) ?? "").replace(/\D/g, "");
 
   // Fundador nos 12 meses grátis já tem o Profissional: não cobra nada agora.
   if (fundadorNoGratis(perfil?.fundador as boolean | undefined, perfil?.fundador_em as string | undefined)) {
@@ -54,6 +55,11 @@ export async function POST(request: Request) {
       { status: 409 }
     );
   }
+
+  // Cadastro confiável: a cobrança e a nota saem no CPF/CNPJ de quem assina.
+  const adminDoc = createAdminClient();
+  const documento = adminDoc ? documentoParaContrato(await lerDocumento(adminDoc, user.id)) : null;
+  if (!documento) return NextResponse.json({ error: MSG_DOCUMENTO.assinar }, { status: 400 });
 
   if (!isAsaasConfigured() && emProducao()) {
     return NextResponse.json({ error: MSG_NAO_CONFIGURADA }, { status: 503 });
@@ -69,7 +75,7 @@ export async function POST(request: Request) {
     const result = await createSubscription({
       customerName: (perfil?.full_name as string) || "Proprietário",
       customerEmail: (perfil?.email as string) || user.email || "sem-email@vivanomads.com.br",
-      cpfCnpj: documento || undefined,
+      cpfCnpj: documento,
       // Fundador: 20% de desconto vitalício quando a cobrança começa.
       planValue: precoComDescontoFundador(plan.price, perfil?.fundador as boolean | undefined),
       planName: plan.name,

@@ -178,13 +178,26 @@ async function criarContrato(propertyId, tenantId) {
   return data.id;
 }
 
+// CPF de teste VÁLIDO (dígitos certos) e único por persona: o aceite, a assinatura
+// e o fechamento exigem o documento (0090). O T31 apaga e devolve o de uma persona.
+function cpfLab(n) {
+  const base = String(310000000 + n * 7919).slice(0, 9).split("").map(Number);
+  const dv = (d) => {
+    const r = (d.reduce((s, x, i) => s + x * (d.length + 1 - i), 0) * 10) % 11;
+    return r === 10 ? 0 : r;
+  };
+  base.push(dv(base));
+  base.push(dv(base));
+  return base.join("");
+}
+
 async function garantirUsuario(p) {
   const { data, error } = await admin.auth.admin.createUser({ email: p.email, password: senha, email_confirm: true, user_metadata: { full_name: p.nome } });
   if (error) throw new Error(`${p.email}: ${error.message}`);
   const id = data.user.id;
   const { error: e2 } = await admin
     .from("profiles")
-    .upsert({ id, email: p.email, full_name: p.nome, role: p.role, ...(p.gestor ? { account_type: "gestor" } : {}) }, { onConflict: "id" });
+    .upsert({ id, email: p.email, full_name: p.nome, role: p.role, cpf: cpfLab(PERSONAS.indexOf(p) + 1), ...(p.gestor ? { account_type: "gestor" } : {}) }, { onConflict: "id" });
   if (e2) throw new Error(`perfil ${p.email}: ${e2.message}`);
   if (p.plano) {
     const { error: e3 } = await admin.from("subscriptions").insert({ owner_id: id, plan: p.plano, status: "active", gateway: "asaas" });

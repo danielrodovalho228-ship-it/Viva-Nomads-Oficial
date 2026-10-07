@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { taxaDoContrato } from "@/config/planos";
+import { cpfValido, documentoParaContrato, MSG_DOCUMENTO } from "@/lib/documento-pessoa";
+import { lerDocumento } from "@/lib/data/documento-servidor";
 
 /**
  * A5: os dados de uma cobrança/contrato de fechamento vêm SÓ do banco, a partir
@@ -47,10 +49,12 @@ export async function carregarFechamento(leadId: unknown): Promise<DadosFechamen
     .maybeSingle();
   if (!lead) return { status: 404, error: "Candidatura aceita não encontrada." };
 
-  const [{ data: imovel }, { data: dono }, { data: inquilino }] = await Promise.all([
+  const [{ data: imovel }, { data: dono }, { data: inquilino }, docDonoPerfil, docInquilino] = await Promise.all([
     admin.from("properties").select("title, monthly_price, owner_id").eq("id", lead.property_id).maybeSingle(),
-    admin.from("profiles").select("full_name, email, cpf, cnpj, person_type").eq("id", lead.owner_id).maybeSingle(),
+    admin.from("profiles").select("full_name, email").eq("id", lead.owner_id).maybeSingle(),
     admin.from("profiles").select("full_name, email").eq("id", lead.tenant_id).maybeSingle(),
+    lerDocumento(admin, lead.owner_id as string),
+    lerDocumento(admin, lead.tenant_id as string),
   ]);
   if (!imovel || imovel.owner_id !== lead.owner_id) return { status: 404, error: "Imóvel não encontrado." };
   const aluguel = Number(imovel.monthly_price);
@@ -58,7 +62,10 @@ export async function carregarFechamento(leadId: unknown): Promise<DadosFechamen
 
   // Taxa congelada no aceite; NULL cai para a do plano no aceite (nunca 0).
   const comissaoRate = taxaDoContrato(lead.accepted_commission_rate, lead.accepted_plan);
-  const docDono = String((dono?.person_type === "pj" ? dono?.cnpj : dono?.cpf) ?? "").replace(/\D/g, "");
+  // Cadastro confiável: contrato e cobrança só com o documento das DUAS partes.
+  const docDono = documentoParaContrato(docDonoPerfil);
+  if (!docDono) return { status: 409, error: MSG_DOCUMENTO.fecharDono };
+  if (!cpfValido(docInquilino?.cpf)) return { status: 409, error: MSG_DOCUMENTO.fecharInquilino };
 
   return {
     leadId: lead.id as string,
@@ -69,7 +76,7 @@ export async function carregarFechamento(leadId: unknown): Promise<DadosFechamen
     ownerId: lead.owner_id as string,
     ownerNome: (dono?.full_name as string) || "Proprietário",
     ownerEmail: (dono?.email as string) ?? null,
-    ownerCpfCnpj: docDono || null,
+    ownerCpfCnpj: docDono,
     tenantId: lead.tenant_id as string,
     tenantNome: (inquilino?.full_name as string) || "Inquilino",
     tenantEmail: (inquilino?.email as string) ?? null,

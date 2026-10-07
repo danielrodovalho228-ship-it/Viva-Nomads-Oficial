@@ -10,6 +10,8 @@ import { getPropertyForOwner } from "@/lib/data/properties";
 import { formatDocNumber } from "@/lib/documents";
 import type { Property } from "@/lib/types";
 import { erroBancoPT } from "@/lib/erros-banco";
+import { lerDocumento, temDocumento } from "@/lib/data/documento-servidor";
+import { cpfValido, documentoCompleto, MSG_DOCUMENTO } from "@/lib/documento-pessoa";
 
 interface ActionResult {
   ok: boolean;
@@ -51,6 +53,8 @@ export async function aceitarCandidatura(leadId: string): Promise<ActionResult> 
   // leads — dava para trocar o inquilino ou zerar a taxa congelada).
   const admin = createAdminClient();
   if (!admin) return { ok: false, error: "Serviço indisponível." };
+  // Cadastro confiável: o documento do dono vai no contrato — exigido ANTES do aceite.
+  if (!(await temDocumento(admin, user.id))) return { ok: false, error: MSG_DOCUMENTO.aceitar };
 
   // Snapshot do plano do DONO agora → congela a comissão do contrato. O plano
   // só muda pelo servidor (0057: assinatura é só leitura para o dono).
@@ -218,6 +222,8 @@ export interface FechamentoContexto {
   comissaoRate: number; // 0..1, congelada no aceite
   acceptedAt: string | null;
   contractNumber: string;
+  /** Cadastro confiável: o que falta (CPF/CNPJ do dono ou do inquilino) para gerar o contrato. */
+  documentoPendente?: { quem: "dono" | "inquilino"; mensagem: string } | null;
 }
 
 export async function getFechamentoContext(
@@ -249,9 +255,13 @@ export async function getFechamentoContext(
   // Nome do inquilino: revelado pós-aceite (nome completo). Lido via service
   // role (só exibição ao dono habilitado) — nunca contato.
   let tenantName = "Candidato(a)";
+  let documentoPendente: FechamentoContexto["documentoPendente"] = null;
   try {
     const admin = createAdminClient();
     if (admin) {
+      const [docDono, docInq] = await Promise.all([lerDocumento(admin, user.id), lerDocumento(admin, lead.tenant_id as string)]);
+      if (!documentoCompleto(docDono)) documentoPendente = { quem: "dono", mensagem: MSG_DOCUMENTO.fecharDono };
+      else if (!cpfValido(docInq?.cpf)) documentoPendente = { quem: "inquilino", mensagem: MSG_DOCUMENTO.fecharInquilino };
       const { data: t } = await admin
         .from("profiles")
         .select("full_name")
@@ -279,5 +289,6 @@ export async function getFechamentoContext(
     comissaoRate,
     acceptedAt: (lead.accepted_at as string) ?? null,
     contractNumber: numeroContrato(lead.id as string, (lead.accepted_at as string) ?? null),
+    documentoPendente,
   };
 }

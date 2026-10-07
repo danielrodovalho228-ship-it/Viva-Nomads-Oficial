@@ -309,6 +309,17 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
           <DemoBadge />
         </div>
       )}
+      {ctx.documentoPendente && (
+        <div role="alert" data-testid="documento-pendente" className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <p className="font-semibold">Falta um documento para gerar o contrato</p>
+          <p className="mt-1">{ctx.documentoPendente.mensagem}</p>
+          {ctx.documentoPendente.quem === "dono" && (
+            <Link href="/dashboard/conta#documento" className="mt-2 inline-block font-semibold text-forest underline">
+              Informar meu documento
+            </Link>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Resumo lateral (sticky no desktop) — aproveita a largura da tela */}
