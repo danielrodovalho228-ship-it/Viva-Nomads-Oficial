@@ -48,7 +48,9 @@ grant execute on function public.pedidos_publicos_lista() to anon, authenticated
 create or replace view public.pedidos_publicos
   with (security_invoker = on)
 as
-  select l.id, l.cidade, l.uf, l.data_inicio, l.prazo_meses, l.orcamento_mensal, l.qtd_ocupantes,
+  -- numeric(12,2) explícito: o retorno da função perde a precisão, e a view
+  -- não pode mudar o tipo da coluna (em produção ela é numeric(12,2)).
+  select l.id, l.cidade, l.uf, l.data_inicio, l.prazo_meses, l.orcamento_mensal::numeric(12, 2) as orcamento_mensal, l.qtd_ocupantes,
          l.motivo, l.apresentacao, l.status, l.criado_em, l.expira_em, l.inquilino_verificado,
          l.pets, l.criancas
     from public.pedidos_publicos_lista() l;
