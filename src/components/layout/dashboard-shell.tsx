@@ -32,7 +32,7 @@ import { Logo } from "@/components/ui/logo";
 import { Avatar } from "@/components/ui/avatar";
 import { useAuthStore, type SessionUser, type ViewMode } from "@/lib/store";
 import { getMyAvatarUrl } from "@/lib/data/avatar-actions";
-import { setPreferredMode } from "@/lib/data/mode-actions";
+import { salvarModo } from "@/lib/salvar-modo";
 import { createClient } from "@/lib/supabase/client";
 import { removerPushToken } from "@/lib/data/push-actions";
 import { countDocumentosPendentes } from "@/lib/data/documentos-admin";
@@ -279,7 +279,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     const contaTemPapel = target === "owner" ? isOwner : isTenant;
     if (contaTemPapel) {
       setActiveMode(target);
-      setPreferredMode(target).catch(() => {});
+      salvarModo(target).catch(() => {});
     } else {
       router.replace("/dashboard");
     }
@@ -321,7 +321,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     // ESPERA a gravação antes de navegar: sem isso, se o painel recarregava antes
     // de o servidor gravar, ele devolvia a preferência ANTIGA e desfazia a troca
     // (achado 8.3 — "trocar para Proprietário não funcionou").
-    await setPreferredMode(next).catch(() => {});
+    await salvarModo(next);
     // Se a tela atual não existe no novo modo, volta para a Visão geral
     // (evita ficar numa rota do outro papel após a troca).
     // Sair de rota exclusiva ao trocar de modo é tratado pelo guard (que detecta

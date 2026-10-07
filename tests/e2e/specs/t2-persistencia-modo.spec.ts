@@ -13,6 +13,9 @@ import { hasAccount } from "../fixtures/accounts";
 const CONTA_T2 = hasAccount("proprietario_pro") ? "proprietario_pro" : "proprietario";
 
 test.describe("T2 — Persistência de modo @criticos", () => {
+  // Em ordem, num worker só: os testes deste arquivo mexem no MESMO estado da
+  // conta (modo preferido / rascunhos) e se atrapalhavam com fullyParallel.
+  test.describe.configure({ mode: "default" });
   test.use({ storageState: authFile(CONTA_T2) });
 
   async function trocarPara(page: import("@playwright/test").Page, alvo: RegExp) {
@@ -72,6 +75,31 @@ test.describe("T2 — Persistência de modo @criticos", () => {
     await aba2.goto("/dashboard", { waitUntil: "networkidle" });
     await expect(aba2.locator("aside")).toContainText(/Modo:\s*Inquilino/i);
     await aba2.close();
+  });
+
+  test("bug 6 — F5 e nova aba logo após trocar, com a gravação ainda não feita, mantêm a troca", async ({ page, context }) => {
+    await page.goto("/dashboard", { waitUntil: "networkidle" });
+    await trocarPara(page, /Propriet/i);
+    await expect(page.locator("aside")).toContainText(/Modo:\s*Propriet/i);
+    await page.waitForLoadState("networkidle");
+    // Segura a gravação do modo (server action = POST com cabeçalho next-action):
+    // simula recarregar antes de o servidor gravar.
+    const segurar = (route: import("@playwright/test").Route) =>
+      route.request().method() === "POST" && route.request().headers()["next-action"] ? route.abort() : route.fallback();
+    await page.route("**/*", segurar);
+    await page.getByRole("tab", { name: /Inquilino/i }).click();
+    await expect(page.locator("aside")).toContainText(/Modo:\s*Inquilino/i);
+    await page.unroute("**/*", segurar);
+    await page.reload({ waitUntil: "networkidle" });
+    await expect(page.locator("aside")).toContainText(/Modo:\s*Inquilino/i);
+    // Ao abrir, a troca pendente foi regravada: outra aba também vê Inquilino.
+    const aba2 = await context.newPage();
+    await aba2.goto("/dashboard", { waitUntil: "networkidle" });
+    await expect(aba2.locator("aside")).toContainText(/Modo:\s*Inquilino/i);
+    await aba2.close();
+    // Volta ao Proprietário (estado esperado pelos outros testes desta conta).
+    await trocarPara(page, /Propriet/i);
+    await page.waitForLoadState("networkidle");
   });
 
   test("B3 — página pública com sessão não mostra 'Entrar'", async ({ page }) => {

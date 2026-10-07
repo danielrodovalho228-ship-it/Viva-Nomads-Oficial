@@ -11,6 +11,9 @@ import { authFile } from "../fixtures/auth";
  * Requer a migration 0043 (properties.draft_data) aplicada no banco de teste.
  */
 test.describe("T-RASC — Rascunho salva e retoma @criticos", () => {
+  // Em ordem, num worker só: os testes deste arquivo mexem no MESMO estado da
+  // conta (modo preferido / rascunhos) e se atrapalhavam com fullyParallel.
+  test.describe.configure({ mode: "default" });
   test.use({ storageState: authFile("proprietario") });
 
   // A qualificação (elegível) é pré-requisito para abrir o editor. Injetamos o
@@ -75,25 +78,49 @@ test.describe("T-RASC — Rascunho salva e retoma @criticos", () => {
   test("T-RASC-3 — 'Novo anúncio' detecta rascunho e 'Começar outro' limpa", async ({ page }) => {
     const marca = await novoComEndereco(page);
     await esperarSalvo(page);
-    // Abre o editor de novo, em branco: deve detectar o rascunho anterior.
+    // Bug 12: o 1º autosave fixa ?draft=<id> na URL (F5 retoma o mesmo rascunho).
+    await expect(page).toHaveURL(/\/dashboard\/imoveis\/novo\?draft=/);
+    const id = new URL(page.url()).searchParams.get("draft");
+    // Abre o editor de novo, em branco: deve detectar o rascunho anterior, sem
+    // aplicar a cópia local nem criar outro rascunho por baixo (bug 12).
     await page.goto("/dashboard/imoveis/novo", { waitUntil: "networkidle" });
     await expect(page.getByText(/Você tem um anúncio em andamento/i)).toBeVisible({ timeout: 10_000 });
+    await page.waitForTimeout(3_000); // passa o debounce do autosave
+    await expect(page).toHaveURL(/\/dashboard\/imoveis\/novo$/);
+    await expect(page.getByText(/Você tem um anúncio em andamento/i)).toBeVisible();
     // "Continuar" retoma o rascunho detectado.
     await page.getByRole("button", { name: "Continuar", exact: true }).first().click();
-    await expect(page).toHaveURL(/\?draft=/);
+    await expect(page).toHaveURL(new RegExp(`\\?draft=${id}`));
     await expect(page.locator('input[list="novo-bairros"]')).toHaveValue(marca);
   });
 
-  test("T-RASC-4 — retomar NÃO zera a qualificação (selo/etiquetas)", async ({ page }) => {
+  test("T-RASC-4 — retomar não trava etapas já visitadas nem zera a qualificação (bug 13)", async ({ page }) => {
     await novoComEndereco(page);
+    // Percorre até Comodidades pelo "Continuar" (cada etapa valida o mínimo).
+    await page.getByRole("button", { name: "Continuar", exact: true }).click();
+    await page.getByLabel("Banheiros", { exact: true }).fill("1");
+    await page.getByLabel("Área (m²)", { exact: true }).fill("45");
+    await page.getByLabel(/Capacidade máxima/).fill("2");
+    await page.getByRole("button", { name: "Continuar", exact: true }).click();
+    await page.locator('input[type="file"]').first().setInputFiles("public/images/imoveis/ube/ube-001-sala.webp");
+    await expect(page.getByText(/^1\/24 fotos/)).toBeVisible({ timeout: 20_000 });
+    await page.getByRole("button", { name: "Continuar", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Comodidades" })).toBeVisible();
+    // Volta ao Endereço pelo topo e deixa salvar: o rascunho fica na etapa 2.
+    await page.getByRole("button", { name: /Endereço/ }).click();
     await esperarSalvo(page);
-    // Retoma pela Visão geral e confere que a etiqueta da qualificação segue viva
-    // (foi guardada no rascunho, não veio da sessionStorage desta navegação).
+    await page.waitForTimeout(2_500);
+    await esperarSalvo(page);
+    // Retoma pela Visão geral: abre no Endereço, e Comodidades segue clicável.
     await page.goto("/dashboard", { waitUntil: "networkidle" });
     await page.getByRole("link", { name: /Continuar edição/i }).click();
     await expect(page).toHaveURL(/\?draft=/);
-    // Vai até a etapa Comodidades (índice 4) pelo stepper e confere a etiqueta.
-    await page.getByRole("button", { name: /Comodidades/i }).click();
+    await expect(page.getByPlaceholder("Rua, número")).toBeVisible();
+    const comodidades = page.getByRole("button", { name: /Comodidades/i });
+    await expect(comodidades).toBeEnabled();
+    await expect(page.getByRole("button", { name: /Preço/i })).toBeDisabled(); // nunca visitada
+    await comodidades.click();
+    // A etiqueta da qualificação veio do rascunho (não da sessionStorage).
     await expect(page.getByText(/Para trabalhar de casa”? ativa|trabalhar de casa/i)).toBeVisible();
   });
 
