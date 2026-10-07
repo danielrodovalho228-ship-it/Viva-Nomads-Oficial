@@ -110,7 +110,7 @@ function corpo(fonte: string, nome: string): string {
   return fonte.slice(i, j < 0 ? undefined : j);
 }
 
-test("servidor: consulta da pessoa vai para o histórico; sugestão não grava mensagem; devolver checa P3/P4", () => {
+test("servidor: consulta da pessoa vai para o histórico; sugestão só vira NOTA INTERNA (nunca vai para a pessoa); devolver checa P3/P4", () => {
   const acoes = readFileSync(new URL("../../src/lib/data/atendimento-actions.ts", import.meta.url), "utf8");
   const quem = corpo(acoes, "quemEAPessoa");
   assert.match(quem, /exigirAdmin\(\)/);
@@ -119,7 +119,12 @@ test("servidor: consulta da pessoa vai para o histórico; sugestão não grava m
   assert.doesNotMatch(quem, /\bphone\b|\bcpf\b/i);
   const sug = corpo(acoes, "sugerirResposta");
   assert.match(sug, /exigirAdmin\(\)/);
-  assert.doesNotMatch(sug, /chamado_mensagens/);
+  // A sugestão é guardada como nota INTERNA (para "Enviar como está" ler do banco);
+  // a pessoa só recebe quando o admin clica. Nunca uma mensagem pública daqui.
+  const inserts = sug.match(/from\("chamado_mensagens"\)\s*\.insert\(\{[^}]*\}/g) ?? [];
+  assert.equal(inserts.length, 1);
+  assert.match(inserts[0], /interno: true/);
+  assert.doesNotMatch(sug, /responderComoAdmin|avisarUsuario/);
   assert.match(corpo(acoes, "devolverParaViva"), /exigirAdmin\(\)/);
   const servidor = readFileSync(new URL("../../src/lib/atendimento/viva-servidor.ts", import.meta.url), "utf8");
   assert.match(corpo(servidor, "devolverChamadoParaViva"), /podeDevolverParaViva\(c\.prioridade, c\.status\)/);
