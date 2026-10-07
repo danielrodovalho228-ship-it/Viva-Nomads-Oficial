@@ -128,7 +128,7 @@ export async function contarAchadosP1(): Promise<number> {
 
 /**
  * Rede ao vivo REAL: eventos das últimas 24 h (rondas, ordens, chamados, PRs e
- * deploys). A tela chama a cada 30 s; de carona, dispara os encaminhamentos P0/P1
+ * deploys). A tela chama a cada 15 s; de carona, dispara os encaminhamentos P0/P1
  * que ainda não saíram (0087). Só admin (RLS is_admin() nas tabelas).
  */
 export async function eventosDaRede(): Promise<{ eventos: EventoRede[]; lidoEm: string } | null> {
@@ -145,7 +145,7 @@ export async function eventosDaRede(): Promise<{ eventos: EventoRede[]; lidoEm: 
     supabase.from("agentes").select("slug, nome"),
     supabase.from("agentes_rondas").select("agente_slug, iniciada_em, status, achados, link_sessao").gte("iniciada_em", desde).order("iniciada_em", { ascending: false }).limit(200),
     supabase.from("agentes_ordens").select("*").or(`criada_em.gte.${desde},atualizada_em.gte.${desde}`).order("criada_em", { ascending: false }).limit(200),
-    supabase.from("chamado_eventos").select("acao, ator_tipo, criado_em, chamados(numero_publico)").eq("simulacao", false).gte("criado_em", desde).in("acao", ["aberto", "respondido_viva", "respondido", "sugestao_aprovada", "sugestao_editada"]).order("criado_em", { ascending: false }).limit(200),
+    supabase.from("chamado_eventos").select("acao, ator_tipo, criado_em, chamados(numero_publico)").eq("simulacao", false).gte("criado_em", desde).in("acao", ["aberto", "respondido_viva", "sugestao_ia", "erro_tecnico", "pediu_humano", "respondido", "sugestao_aprovada", "sugestao_editada"]).order("criado_em", { ascending: false }).limit(200),
     eventosGithub(),
   ]);
   const nomes = Object.fromEntries(((a.data ?? []) as Pick<Agente, "slug" | "nome">[]).map((x) => [x.slug, x.nome]));

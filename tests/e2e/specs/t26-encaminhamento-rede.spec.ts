@@ -83,19 +83,19 @@ test.describe("T26 — Encaminhamento entre agentes e Rede ao vivo real", () => 
     await expect(ordem.getByTestId("ordem-origem")).toHaveText("encaminhado por Helena · P2");
   });
 
-  test("Rede ao vivo: linha do tempo com eventos reais de 24 h e atualização sozinha a cada 30 s", async ({ page }) => {
+  test("Rede ao vivo: linha do tempo com eventos reais de 24 h e atualização sozinha a cada 15 s", async ({ page }) => {
     test.setTimeout(90_000);
     const marca = `${Date.now()}`.slice(-5);
     await ronda("bruno", `[lab] rede ${marca}`, [{ prioridade: "P1", titulo: `rede ${marca}`, para: "otavio" }]);
     await page.goto("/admin/agentes", { waitUntil: "networkidle" });
     await abrirAba(page, "Rede ao vivo");
     const linha = page.getByTestId("rede-linha-do-tempo");
-    await expect(linha).toContainText(/lido \d\d:\d\d · a cada 30 s/);
+    await expect(linha).toContainText(/lido \d\d:\d\d · a cada 15 s/);
     await expect(linha.locator('li[data-tipo="encaminhamento"]').filter({ hasText: "Bruno → Otávio: 1 achado (P1)" }).first()).toBeVisible();
     await expect(linha.locator('li[data-tipo="ronda"]').filter({ hasText: "Bruno fez ronda com alerta: 1 achado (P1)" }).first()).toBeVisible();
-    // Evento novo aparece SEM recarregar a página (atualização de 30 s).
+    // Evento novo aparece SEM recarregar a página (atualização de 15 s).
     const antes = await linha.locator('li[data-tipo="ronda"]').filter({ hasText: "Carla fez ronda" }).count();
     await ronda("carla", `[lab] relatório ${marca}`, []);
-    await expect(linha.locator('li[data-tipo="ronda"]').filter({ hasText: "Carla fez ronda" })).toHaveCount(antes + 1, { timeout: 45_000 });
+    await expect(linha.locator('li[data-tipo="ronda"]').filter({ hasText: "Carla fez ronda" })).toHaveCount(antes + 1, { timeout: 25_000 });
   });
 });

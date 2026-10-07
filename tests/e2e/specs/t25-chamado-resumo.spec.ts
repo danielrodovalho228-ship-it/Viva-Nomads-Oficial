@@ -31,6 +31,10 @@ test.describe("T25 — Resumo e ações + sugestão pronta", () => {
     const numero = (await ok.innerText()).match(/VN-\d+/)![0];
     await dono.close();
     const { data: c } = await adm().from("chamados").select("id").eq("numero_publico", numero).single();
+    // A Viva já deixou resumo e sugestão SEM o admin abrir (abertura do chamado).
+    await expect
+      .poll(async () => ((await adm().from("chamado_mensagens").select("id").eq("chamado_id", c!.id).eq("interno", true).like("corpo", "%Resposta sugerida:%")).data ?? []).length, { timeout: 20_000 })
+      .toBe(1);
 
     const ctx = await browser.newContext({ storageState: authFile("admin") });
     const page = await ctx.newPage();
@@ -43,9 +47,10 @@ test.describe("T25 — Resumo e ações + sugestão pronta", () => {
     await expect(card.getByTestId("resumo-acoes-lista")).toContainText("Thiago");
     await expect(card).toContainText("Prazo");
 
-    // Informação oficial: a Viva já respondeu sozinha ao cliente (decisão do Daniel, 07/10).
-    await expect(page.locator("body")).toContainText("A Viva já respondeu logo abaixo com a informação oficial");
-    await expect(page.locator("body")).toContainText("respondido pela Viva");
+    // Pediu PESSOA: nunca resposta da IA (decisão do Daniel, 07/10) — só o acolhimento e a sugestão para aprovar.
+    await expect(page.locator("body")).toContainText("Um especialista da equipe responde até");
+    await expect(page.locator("body")).not.toContainText("A Viva já respondeu logo abaixo");
+    await expect(page.locator("body")).toContainText("pediu para falar com uma pessoa");
     // Sugestão já na caixa (para complementar): honesta sobre seguros e com o pré-lançamento.
     const caixa = page.locator("textarea").last();
     await expect(caixa).toHaveValue(/ainda NÃO oferece seguro/);

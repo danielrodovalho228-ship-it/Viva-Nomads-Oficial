@@ -6,7 +6,7 @@ import { calcularPrazos, mensagemPrazo } from "@/config/atendimento";
 import { avisoEmergencia, classificar } from "@/lib/atendimento/classificar";
 import { avisarEquipe, avisarUsuario, registrarMensagemDaPessoa, type ChamadoResumo } from "@/lib/atendimento/servidor";
 import { consumirLimite, HORA } from "@/lib/limites";
-import { acolherNaEquipe, rodarViva, vivaAtiva } from "@/lib/atendimento/viva-servidor";
+import { responderNaEquipe, rodarViva, vivaAtiva } from "@/lib/atendimento/viva-servidor";
 import { quemAtende } from "@/lib/atendimento/acolhimento";
 import { triagem } from "@/lib/atendimento/filas";
 import { AVISO_VIVA, ehGolpe, ORIENTACAO_GOLPE } from "@/lib/atendimento/viva-regras";
@@ -79,8 +79,10 @@ export async function POST(request: Request) {
       if (c.status === "resolvido") {
         await admin.from("chamado_eventos").insert({ chamado_id: c.id, ator_tipo: "usuario", acao: "reaberto", de: "resolvido", para: "em_andamento", detalhe: "por e-mail" });
       }
-      await registrarMensagemDaPessoa(c as ChamadoResumo & { responsavel_tipo: string; status: string }, usuarioId, "email");
+      const comEquipe = c.responsavel_tipo === "humano";
+      await registrarMensagemDaPessoa(c as ChamadoResumo & { responsavel_tipo: string; status: string }, usuarioId, "email", !comEquipe);
       if (c.responsavel_tipo === "ia" && vivaAtiva()) after(() => rodarViva(c.id as string));
+      else if (comEquipe) after(() => responderNaEquipe(c.id as string, "mensagem"));
       return NextResponse.json({ ok: true, chamado: c.numero_publico, acao: "resposta" });
     }
   }
@@ -118,8 +120,9 @@ export async function POST(request: Request) {
   ]);
   await admin.from("chamado_eventos").insert({ chamado_id: novo.id, ator_tipo: "sistema", acao: "aberto", para: prioridade, detalhe: "por e-mail" });
   await avisarUsuario(novo as ChamadoResumo, "chamado_aberto");
-  if (prioridade === "p1" || prioridade === "p2") await avisarEquipe(novo as ChamadoResumo, "chegou por e-mail");
+  // Com a equipe: o e-mail ao Daniel sai do responderNaEquipe, já com resumo e sugestão.
+  if ((prioridade === "p1" || prioridade === "p2") && atende !== "equipe_com_acolhimento") await avisarEquipe(novo as ChamadoResumo, "chegou por e-mail");
   if (comViva) after(() => rodarViva(novo.id as string));
-  else if (atende === "equipe_com_acolhimento") after(() => acolherNaEquipe(novo.id as string));
+  else if (atende === "equipe_com_acolhimento") after(() => responderNaEquipe(novo.id as string, "abertura"));
   return NextResponse.json({ ok: true, chamado: novo.numero_publico, acao: "novo" });
 }

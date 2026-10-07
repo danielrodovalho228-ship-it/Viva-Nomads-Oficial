@@ -21,7 +21,8 @@ import { avisoEmergencia, categoria, classificar, ehNumeroPublico, numeroEmergen
 import { avisarEquipe, avisarProprietarioManutencao, avisarUsuario, criarOrdemManutencao, pessoaValida, registrarMensagemDaPessoa, type ChamadoResumo, type OrdemCriada } from "@/lib/atendimento/servidor";
 import { chamadoDoDono, type ClienteChamados } from "@/lib/atendimento/dono";
 import { FILAS, ehFila, filaDaCategoria, triagem } from "@/lib/atendimento/filas";
-import { acolherNaEquipe, escalarParaPessoa, gerarResumo, rodarViva, vivaAtiva, chamarClaude, sugerirRascunho, devolverChamadoParaViva } from "@/lib/atendimento/viva-servidor";
+import { prioridadeAcima } from "@/lib/atendimento/autonomo";
+import { responderNaEquipe, escalarParaPessoa, gerarResumo, rodarViva, vivaAtiva, chamarClaude, sugerirRascunho, devolverChamadoParaViva } from "@/lib/atendimento/viva-servidor";
 import { notaSugestao } from "@/lib/atendimento/acolhimento";
 import { primeiroNome } from "@/lib/atendimento/viva-regras";
 import { notaResumo, resumoDaNota, sugestaoPorRegra, type ResumoChamado } from "@/lib/atendimento/resumo";
@@ -157,6 +158,8 @@ export async function abrirChamado(
     if (prioridade !== "p1") prioridade = manut.urgencia === "urgente" ? "p2" : "p3";
   }
 
+  // "Falar com uma pessoa": prioridade sobe um nível (decisão do Daniel, 07/10).
+  if (input.pedePessoa && !emergencia) prioridade = prioridadeAcima(prioridade);
   const prazos = calcularPrazos(prioridade, agora);
   // Quem atende primeiro: categorias simples → a Viva inteira; sensíveis (Caução,
   // contrato, cobrança…), P1 e "falar com uma pessoa" → equipe, com acolhimento
@@ -213,15 +216,22 @@ export async function abrirChamado(
     para: prioridade,
     detalhe: `${cat.key}${emergencia ? ` · emergência: ${emergencia}` : ""}`,
   });
+  // Quem pediu pessoa nunca recebe resposta da IA (o responderNaEquipe confere este evento).
+  if (input.pedePessoa) {
+    await admin.from("chamado_eventos").insert({ chamado_id: c.id, ator_tipo: user ? "usuario" : "sistema", ator_id: user?.id ?? null, acao: "pediu_humano", para: prioridade, detalhe: "abriu pelo \"Falar com uma pessoa\"" });
+  }
 
   // Avisos: pessoa (número do chamado), equipe (TODO chamado novo, com a fila),
   // proprietário (manutenção).
   await avisarUsuario(c, "chamado_aberto", `<p style="margin:12px 0 0;color:#334155;">${textoEmail(aviso, 600)}</p>`);
   const fila = FILAS[filaDaCategoria(cat.key)].rotulo;
-  await avisarEquipe(c, emergencia ? `EMERGÊNCIA (${emergencia}) — orientado a ligar ${numeroEmergencia(emergencia)}` : `novo chamado · ${fila} · ${cat.rotulo}`);
+  // Chamado com a equipe: o e-mail ao Daniel sai do responderNaEquipe, já com resumo e sugestão.
+  if (atende !== "equipe_com_acolhimento") {
+    await avisarEquipe(c, emergencia ? `EMERGÊNCIA (${emergencia}) — orientado a ligar ${numeroEmergencia(emergencia)}` : `novo chamado · ${fila} · ${cat.rotulo}`);
+  }
   if (manut) await avisarProprietarioManutencao(manut, agora);
   if (comViva) after(() => rodarViva(c.id));
-  else if (atende === "equipe_com_acolhimento") after(() => acolherNaEquipe(c.id));
+  else if (atende === "equipe_com_acolhimento") after(() => responderNaEquipe(c.id, "abertura"));
 
   return { ok: true, numero: c.numero_publico, aviso, emergencia: !!emergencia };
 }
@@ -348,8 +358,11 @@ export async function responderMeuChamado(chamadoId: string, texto: string): Pro
     const { data: full } = await admin.from("chamados").select("id, numero_publico, assunto, prioridade, usuario_id").eq("id", c.id).single();
     if (full) await avisarEquipe(full as ChamadoResumo, "subiu para P1 pela mensagem da pessoa");
   }
-  await registrarMensagemDaPessoa(c, user.id, "site");
+  // Com a equipe: a Viva sugere (ou responde, se for oficial) e avisa o Daniel já com a sugestão.
+  const comEquipe = c.responsavel_tipo === "humano";
+  await registrarMensagemDaPessoa(c, user.id, "site", !comEquipe);
   if (c.responsavel_tipo === "ia" && vivaAtiva()) after(() => rodarViva(c.id as string));
+  else if (comEquipe) after(() => responderNaEquipe(c.id as string, "mensagem"));
   return { ok: true };
 }
 

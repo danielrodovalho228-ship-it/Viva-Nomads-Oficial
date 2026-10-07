@@ -180,7 +180,7 @@ test("chamados, PRs e deploys; tudo do mais novo para o mais antigo", () => {
   );
   assert.deepEqual(
     ev.map((e) => e.texto),
-    ["Deploy em Production (abcdef1)", "Daniel mesclou o PR #303", "PR #304 aberto: Viva com autonomia", "Equipe respondeu VN-000201", "Viva respondeu VN-000200 sozinha", "Chamado VN-000200 aberto"]
+    ["Deploy em Production (abcdef1)", "Daniel mesclou o PR #303", "PR #304 aberto: Viva com autonomia", "Equipe respondeu VN-000201", "Viva deixou a resposta sugerida de VN-000201 para você aprovar", "Viva respondeu VN-000200 sozinha", "Chamado VN-000200 aberto"]
   );
   assert.equal(ev.find((e) => e.tipo === "pr")!.link, "https://github.com/x/y/pull/303");
   assert.deepEqual(lerPrs({ message: "rate limit" }), []);

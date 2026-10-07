@@ -29,6 +29,22 @@ async function abrirComoVisitante(page: Page, pedido: string, email: string): Pr
   return (await ok.innerText()).match(/VN-\d+/)![0];
 }
 
+/** Formulário de chamado com assunto (/ajuda?novo=1) — NÃO é o "Falar com uma pessoa". */
+async function abrirPeloFormulario(page: Page, assunto: string, pedido: string, email: string): Promise<string> {
+  await page.goto("/ajuda?novo=1", { waitUntil: "networkidle" });
+  await page.getByLabel("Assunto").selectOption({ label: assunto });
+  await page.getByLabel("O que aconteceu?").fill(pedido);
+  await page.getByLabel("Seu nome").fill("Visitante T24");
+  await page.getByLabel("Seu e-mail (para a resposta)").fill(email);
+  await page.getByRole("button", { name: "Enviar chamado" }).click();
+  const adm = createClient(URL!, SERVICE!, { auth: { persistSession: false } });
+  let numero = "";
+  await expect
+    .poll(async () => (numero = ((await adm.from("chamados").select("numero_publico").eq("visitante_email", email).maybeSingle()).data?.numero_publico as string) ?? ""), { timeout: 20_000 })
+    .toMatch(/^VN-\d+/);
+  return numero;
+}
+
 test.describe("T24 — Acolhimento e resposta sugerida", () => {
   test.skip(!noLaboratorio || !URL || !SERVICE, "Só no laboratório (banco local + service role).");
   test.describe.configure({ mode: "default" });
@@ -42,18 +58,20 @@ test.describe("T24 — Acolhimento e resposta sugerida", () => {
 
   test("reembolso de Caução: acolhimento + sugestão para o Daniel aprovar (dinheiro já pago)", async ({ browser }) => {
     const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
-    const numero = await abrirComoVisitante(await ctx.newPage(), `Minha caução ainda não foi devolvida depois da saída do imóvel. (${Date.now()})`, `t24.${Date.now()}@lab.vivanomads.test`);
+    const numero = await abrirPeloFormulario(await ctx.newPage(), "Contrato ou caução", `Minha caução ainda não foi devolvida depois da saída do imóvel. (${Date.now()})`, `t24.${Date.now()}@lab.vivanomads.test`);
     await ctx.close();
-    await expect.poll(async () => (await mensagens(numero)).ms.filter((m) => m.autor === "ia").length, { timeout: 20_000 }).toBe(2);
+    // acolhimento (público) + resumo e ações + sugestão (internos)
+    await expect.poll(async () => (await mensagens(numero)).ms.filter((m) => m.autor === "ia").length, { timeout: 20_000 }).toBe(3);
     const { c, ms } = await mensagens(numero);
-    expect(c.categoria).toBe("caucao");
+    expect(c.categoria, "a triagem pelo texto põe na fila da Caução").toBe("caucao");
     expect(c.responsavel_tipo).toBe("humano");
     expect(c.primeira_resposta_em, "acolhimento conta como 1ª resposta").toBeTruthy();
     const publicas = ms.filter((m) => m.autor === "ia" && !m.interno);
     expect(publicas).toHaveLength(1);
     expect(publicas[0].corpo).toContain(numero);
     expect(publicas[0].corpo).toMatch(/Um especialista da equipe responde até \d{2}\/\d{2} às \d{2}:\d{2} \(horário de Brasília\)/);
-    const nota = ms.find((m) => m.autor === "ia" && m.interno)!;
+    expect(ms.some((m) => m.interno && m.corpo.startsWith("[resumo-e-acoes]")), "resumo já pronto na abertura").toBe(true);
+    const nota = ms.find((m) => m.autor === "ia" && m.interno && m.corpo.includes("Resposta sugerida:"))!;
     expect(nota.corpo).toContain("Resposta sugerida:");
     expect(nota.simulacao).toBe(true);
     const { data: ev } = await adm().from("chamado_eventos").select("detalhe").eq("chamado_id", (await adm().from("chamados").select("id").eq("numero_publico", numero).single()).data!.id).eq("acao", "acolhido");
@@ -64,14 +82,16 @@ test.describe("T24 — Acolhimento e resposta sugerida", () => {
     for (const pedido of ["Meu anúncio não publica, aparece um aviso de documento pendente.", "Sou proprietário e quero entender como funciona o Caução. Vocês oferecem seguro?"]) {
       const email = `t24.sozinha.${Date.now()}@lab.vivanomads.test`;
       const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
-      const numero = await abrirComoVisitante(await ctx.newPage(), `${pedido} (${Date.now()})`, email);
+      const assunto = pedido.includes("anúncio") ? "Meu anúncio não publica" : "Contrato ou caução";
+      const numero = await abrirPeloFormulario(await ctx.newPage(), assunto, `${pedido} (${Date.now()})`, email);
       await ctx.close();
       await expect.poll(async () => (await mensagens(numero)).ms.filter((m) => m.autor === "ia" && !m.interno).length, { timeout: 20_000 }).toBe(2);
       const { ms } = await mensagens(numero);
-      expect(ms.some((m) => m.interno)).toBe(false);
+      expect(ms.some((m) => m.interno && m.corpo.includes("Resposta sugerida:")), "sem nota de sugestão: já respondeu").toBe(false);
       const [acolhe, resposta] = ms.filter((m) => m.autor === "ia" && !m.interno);
       expect(acolhe.corpo).toContain("A Viva já respondeu logo abaixo com a informação oficial");
       expect(resposta.corpo).toContain("Obrigado por falar com a Viva Nomads");
+      expect(resposta.corpo).toContain('Resposta automática da Viva. Quer falar com uma pessoa? Responda "pessoa".');
       const { data: c } = await adm().from("chamados").select("id, status, responsavel_tipo").eq("numero_publico", numero).single();
       expect(c!.status).toBe("aguardando_usuario");
       expect(c!.responsavel_tipo).toBe("humano");
@@ -98,12 +118,37 @@ test.describe("T24 — Acolhimento e resposta sugerida", () => {
     await adm().from("chamados").update({ status: "encerrado" }).eq("id", novo!.id);
   });
 
+  test("'Falar com uma pessoa' com dúvida oficial: NUNCA resposta da IA, prioridade sobe e o e-mail ao Daniel leva a sugestão", async ({ browser }) => {
+    const email = `t24.pessoa.${Date.now()}@lab.vivanomads.test`;
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+    const numero = await abrirComoVisitante(await ctx.newPage(), `Sou proprietário e quero entender como funciona o Caução. (${Date.now()})`, email);
+    await ctx.close();
+    await expect.poll(async () => (await mensagens(numero)).ms.some((m) => m.interno && m.corpo.includes("Resposta sugerida:")), { timeout: 20_000 }).toBe(true);
+    const { ms } = await mensagens(numero);
+    const publicasIA = ms.filter((m) => m.autor === "ia" && !m.interno);
+    expect(publicasIA, "só o acolhimento").toHaveLength(1);
+    expect(publicasIA[0].corpo).toContain("Um especialista da equipe responde até");
+    const { data: c } = await adm().from("chamados").select("id, prioridade, status").eq("numero_publico", numero).single();
+    expect(c!.prioridade, "Caução (p2) não vira urgência (p1) só por pedir pessoa").toBe("p2");
+    const { data: ev } = await adm().from("chamado_eventos").select("acao, detalhe").eq("chamado_id", c!.id).in("acao", ["pediu_humano", "acolhido", "respondido_viva"]);
+    expect(ev!.map((e) => e.acao).sort()).toEqual(["acolhido", "pediu_humano"]);
+    expect(ev!.find((e) => e.acao === "acolhido")!.detalhe).toContain("pediu para falar com uma pessoa");
+    if (LAB_OUTBOX && fs.existsSync(LAB_OUTBOX)) {
+      const aviso = fs.readFileSync(LAB_OUTBOX, "utf8").split("\n").find((l) => l.includes(`— ${numero}: novo chamado`));
+      expect(aviso, "e-mail ao Daniel").toBeTruthy();
+      expect(aviso).toContain("pediu uma pessoa");
+      expect(aviso).toContain("Resposta sugerida pela Viva");
+      expect(aviso).toContain("Aprovar e enviar no admin");
+      expect(aviso).toContain("Resumo");
+    }
+  });
+
   test("admin aprova a sugestão com 1 clique: vira resposta da equipe e sai o e-mail", async ({ browser }) => {
     const email = `t24.aprova.${Date.now()}@lab.vivanomads.test`;
     const vis = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const numero = await abrirComoVisitante(await vis.newPage(), `A devolução da caução está atrasada (${Date.now()})`, email);
     await vis.close();
-    await expect.poll(async () => (await mensagens(numero)).ms.some((m) => m.interno && m.autor === "ia"), { timeout: 20_000 }).toBe(true);
+    await expect.poll(async () => (await mensagens(numero)).ms.some((m) => m.interno && m.autor === "ia" && m.corpo.includes("Resposta sugerida:")), { timeout: 20_000 }).toBe(true);
     const { data: c } = await adm().from("chamados").select("id").eq("numero_publico", numero).single();
 
     const ctx = await browser.newContext({ storageState: authFile("admin") });
