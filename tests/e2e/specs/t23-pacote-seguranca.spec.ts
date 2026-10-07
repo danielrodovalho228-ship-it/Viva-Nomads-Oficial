@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { account, hasAccount } from "../fixtures/accounts";
+import { authFile } from "../fixtures/auth";
 
 /**
  * T23 — Pacote de segurança (migração 0084). Fala direto com o PostgREST e,
@@ -9,6 +10,8 @@ import { account, hasAccount } from "../fixtures/accounts";
  *  2  anon não executa is_admin/pode_ver_contrato/pedido_ativo/pedido_inquilino,
  *     e NADA público quebra: imóveis, fotos, amenidades, avaliações, /buscar,
  *     página do imóvel, /conferir. Logado: admin segue admin; o mural segue.
+ *  6  Central de Agentes: Rafael = Conselheiro do Dono (comando, domingos 20:47);
+ *     Bruno = TI, QA, segurança e SEO técnico. Aparece na tela /admin/agentes.
  *
  * Sem env (URL/anon key/contas de teste), o teste é pulado.
  */
@@ -81,5 +84,20 @@ test.describe("T23 pacote de segurança (0084) @seguranca", () => {
     expect(mural.error).toBeNull();
     const meus = await dono.from("properties").select("id").limit(1);
     expect(meus.error).toBeNull();
+  });
+
+  test("6: Rafael Conselheiro do Dono e Bruno com SEO técnico, no banco e na Central", async ({ browser }) => {
+    const adm = await logado("admin");
+    const { data } = await adm.from("agentes").select("slug, cargo, esquadrao, rotina_texto").in("slug", ["rafael", "bruno"]);
+    const por = Object.fromEntries((data ?? []).map((a) => [a.slug, a]));
+    expect(por.rafael).toMatchObject({ cargo: "Conselheiro do Dono", esquadrao: "comando", rotina_texto: "Domingos 20:47 Brasília" });
+    expect(por.bruno.cargo).toBe("TI, QA, segurança e SEO técnico");
+
+    const ctx = await browser.newContext({ storageState: authFile("admin") });
+    const page = await ctx.newPage();
+    await page.goto("/admin/agentes", { waitUntil: "networkidle" });
+    await expect(page.getByTestId("agente-rafael")).toContainText("Conselheiro do Dono");
+    await expect(page.getByTestId("agente-bruno")).toContainText("SEO técnico");
+    await ctx.close();
   });
 });

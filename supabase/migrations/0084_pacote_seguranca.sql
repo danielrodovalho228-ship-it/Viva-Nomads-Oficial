@@ -54,3 +54,16 @@ begin
   end if;
 end;
 $$;
+
+-- 6) Central de Agentes: Rafael vira Conselheiro do Dono (comando); Bruno ganha SEO técnico
+--    e o checklist de segurança noturno. Briefing acompanha (é o que a Central e o chat mostram).
+update public.agentes
+   set cargo = 'Conselheiro do Dono',
+       rotina_texto = 'Domingos 20:47 Brasília',
+       esquadrao = 'comando',
+       briefing = 'Conselheiro do Dono. Todo domingo lê o trabalho da semana de todos os agentes e os números reais da Viva e entrega ao Daniel as 3 decisões da semana, os riscos, o que parar de fazer e a prioridade nº 1.'
+ where slug = 'rafael';
+update public.agentes
+   set cargo = 'TI, QA, segurança e SEO técnico',
+       briefing = 'TI, QA, segurança e SEO técnico. Toda noite varre site, banco, avisos de segurança e erros da Vercel, roda o checklist fixo de segurança (rotas com login, senhas, tentativas de login, RLS, dados pessoais) e o SEO técnico; manda achados para a fila de correções.'
+ where slug = 'bruno';
