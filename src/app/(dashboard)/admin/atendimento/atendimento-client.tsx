@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { PRAZOS, estadoPrazo, type Prioridade } from "@/config/atendimento";
 import { PRECOS_USD } from "@/lib/atendimento/viva-custo";
+import { FILAS, ORDEM_FILAS, filaDaCategoria } from "@/lib/atendimento/filas";
 import { apagarMacro, salvarMacro, testarViva, type ChamadoAdmin, type Macro, type ResultadoCenario } from "@/lib/data/atendimento-actions";
 
 const ABAS = [
@@ -62,7 +63,7 @@ export function AtendimentoClient({
   aprovacao: ChamadoAdmin[];
   metricas: Record<string, unknown> | null;
   macros: Macro[];
-  filtros: { prioridade?: string; tipo?: string; responsavel?: string; busca?: string; fechados?: boolean };
+  filtros: { fila?: string; prioridade?: string; tipo?: string; responsavel?: string; busca?: string; fechados?: boolean };
   semAcesso: boolean;
   agoraISO: string;
 }) {
@@ -112,7 +113,7 @@ export function AtendimentoClient({
   );
 }
 
-function Filtros({ filtros }: { filtros: { prioridade?: string; tipo?: string; responsavel?: string; busca?: string; fechados?: boolean } }) {
+function Filtros({ filtros }: { filtros: { fila?: string; prioridade?: string; tipo?: string; responsavel?: string; busca?: string; fechados?: boolean } }) {
   const campo = "rounded-lg border border-line bg-white px-2 py-1.5 text-sm text-ink";
   return (
     <form method="get" action="/admin/atendimento" className="mb-4 flex flex-wrap items-end gap-2 rounded-2xl border border-sage-200 bg-white p-3">
@@ -120,6 +121,17 @@ function Filtros({ filtros }: { filtros: { prioridade?: string; tipo?: string; r
       <label className="text-xs text-muted">
         Busca
         <input name="q" defaultValue={filtros.busca} placeholder="VN-000123 ou assunto" className={cn(campo, "mt-0.5 block w-52")} />
+      </label>
+      <label className="text-xs text-muted">
+        Fila
+        <select name="fila" defaultValue={filtros.fila ?? ""} className={cn(campo, "mt-0.5 block")}>
+          <option value="">Todas</option>
+          {ORDEM_FILAS.map((f) => (
+            <option key={f} value={f}>
+              {FILAS[f].rotulo}
+            </option>
+          ))}
+        </select>
       </label>
       <label className="text-xs text-muted">
         Prioridade
@@ -176,7 +188,7 @@ function Tabela({ itens, agora, vazio }: { itens: ChamadoAdmin[]; agora: Date; v
                   <span className="truncate font-medium text-ink">{c.assunto}</span>
                 </span>
                 <span className="mt-0.5 block text-xs text-muted">
-                  {c.numero_publico} · {c.tipo} · {c.canal} · {STATUS[c.status] ?? c.status}
+                  {c.numero_publico} · {FILAS[filaDaCategoria(c.categoria)].rotulo} · {c.canal} · {STATUS[c.status] ?? c.status}
                   {c.visitante_email ? " · visitante" : ""}
                 </span>
               </span>

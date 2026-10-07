@@ -8,7 +8,7 @@ import { cn, dataBR } from "@/lib/utils";
 import { useAuthStore } from "@/lib/store";
 import { FAQ, buscarFaq, respostaPara, type PerfilAjuda } from "@/lib/atendimento/faq";
 import { avisoEmergencia, CATEGORIAS, detectarEmergencia } from "@/lib/atendimento/classificar";
-import { HORARIO_HUMANO } from "@/config/atendimento";
+import { PROMESSA_ATENDIMENTO } from "@/config/atendimento";
 import {
   abrirChamado,
   chamadoDeOutraConta,
@@ -143,8 +143,7 @@ export function CentralAjuda({ canal }: { canal: "site" | "app" }) {
           <section className="mt-6 rounded-2xl border border-sage-200 bg-white p-4 sm:p-6">
             <h2 className="font-title text-lg font-bold text-ink">Não achou a resposta?</h2>
             <p className="mt-1 text-sm text-muted">
-              Abra um chamado: você recebe um número e acompanha tudo por aqui. Atendimento humano das{" "}
-              {HORARIO_HUMANO.inicio}h às {HORARIO_HUMANO.fim}h, todos os dias.
+              Abra um chamado: você recebe um número e acompanha tudo por aqui. {PROMESSA_ATENDIMENTO}.
             </p>
             {/* Link de verdade: funciona mesmo se clicado antes do JavaScript carregar. */}
             <ButtonLink
@@ -264,7 +263,7 @@ function NovoChamado({
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
-  const categorias = CATEGORIAS.filter((c) => !c.exigeContrato || contratos.length > 0);
+  const categorias = CATEGORIAS.filter((c) => !c.interna && (!c.exigeContrato || contratos.length > 0));
   const manutencao = cat === "manutencao";
 
   async function enviar(e: React.FormEvent) {

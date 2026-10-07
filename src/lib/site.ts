@@ -4,3 +4,6 @@ export const SITE_URL =
 
 export const SITE_NAME = "Viva Nomads";
 export const SITE_DOMAIN = "vivanomads.com.br";
+
+/** E-mail público do suporte: remetente e "responder para" dos e-mails de chamado. */
+export const SUPORTE_EMAIL = "suporte@vivanomads.com.br";

@@ -9,7 +9,13 @@
 export type Prioridade = "p1" | "p2" | "p3" | "p4";
 export type UrgenciaManutencao = "urgente" | "media" | "baixa";
 
-/** Janela de atendimento humano (hora local de Brasília), todos os dias. */
+/**
+ * Promessa pública do atendimento (decisão do Daniel, out/2026): a Viva responde
+ * 24 h e uma pessoa em até 24 h. Não prometer janela humana que não se cumpre.
+ */
+export const PROMESSA_ATENDIMENTO = "Assistente Viva 24 h · resposta de uma pessoa em até 24 h";
+
+/** Janela INTERNA de atendimento humano (hora de Brasília): conta os prazos (SLA) do admin. */
 export const HORARIO_HUMANO = { inicio: 7, fim: 22 } as const;
 const OFFSET_BRASILIA_MIN = -180;
 
@@ -108,7 +114,7 @@ export function mensagemPrazo(prioridade: Prioridade, agora: Date): string {
 export function frasePrazo(prioridade: Prioridade, agora: Date): string {
   const base = PRAZOS[prioridade].descricao;
   if (dentroDoHorario(agora)) return `Pela prioridade (${PRAZOS[prioridade].rotulo.toLowerCase()}), ${base}.`;
-  return `Nosso horário de atendimento é das ${HORARIO_HUMANO.inicio}h às ${HORARIO_HUMANO.fim}h; uma pessoa responde a partir das ${HORARIO_HUMANO.inicio}h (${base}).`;
+  return `A Viva responde 24 h; uma pessoa da equipe responde a partir das ${HORARIO_HUMANO.inicio}h (${base}).`;
 }
 
 /**

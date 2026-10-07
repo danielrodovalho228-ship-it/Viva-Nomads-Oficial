@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Logo } from "@/components/ui/logo";
 import { CITIES } from "@/lib/constants";
+import { SUPORTE_EMAIL } from "@/lib/site";
+import { PROMESSA_ATENDIMENTO } from "@/config/atendimento";
 
 export function Footer() {
   return (
@@ -13,6 +15,14 @@ export function Footer() {
           <p className="mt-5 max-w-xs text-sm leading-relaxed text-white/60">
             Locação mobiliada por temporada (30 a 180 dias) para profissionais em transição.
             Contrato de verdade, conversa registrada e custos organizados.
+          </p>
+          <p className="mt-4 text-sm text-white/60">
+            Suporte:{" "}
+            <a href={`mailto:${SUPORTE_EMAIL}`} className="font-semibold text-white/80 hover:text-white">
+              {SUPORTE_EMAIL}
+            </a>
+            <br />
+            <span className="text-xs text-white/50">{PROMESSA_ATENDIMENTO}</span>
           </p>
         </div>
 

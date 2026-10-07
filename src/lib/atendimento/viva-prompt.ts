@@ -6,12 +6,12 @@
 */
 import { FAQ } from "./faq.ts";
 import { ALUGUEL_EXEMPLO, GESTOR_PRECO, GESTOR_RESUMO, PLANOS, REGRAS_CONTRATO, textoComissao } from "../../config/planos.ts";
-import { HORARIO_HUMANO, PRAZOS, PRAZO_MANUTENCAO_H } from "../../config/atendimento.ts";
+import { PRAZOS, PRAZO_MANUTENCAO_H, PROMESSA_ATENDIMENTO } from "../../config/atendimento.ts";
 
 
 const brl = (n: number) => `R$ ${n.toLocaleString("pt-BR")}`;
 
-function fontes(): string {
+export function fontes(): string {
   const faq = FAQ.map((p) => `- [faq:${p.id}] ${p.pergunta}\n  ${p.resposta}${p.porPerfil?.com_contrato ? `\n  (Para quem tem contrato ativo: ${p.porPerfil.com_contrato})` : ""}`).join("\n");
   const planos = PLANOS.map(
     (p) => `- ${p.nome}: ${p.precoMensal === null ? (GESTOR_PRECO.ligado ? `${GESTOR_RESUMO} (${GESTOR_PRECO.imoveisInclusos} imóveis incluídos, ${brl(GESTOR_PRECO.porImovelAdicional)}/mês por imóvel adicional; ativação com a equipe)` : "assinatura sob consulta") : p.precoMensal > 0 ? `${brl(p.precoMensal)}/mês` : "sem mensalidade"}, comissão: ${textoComissao(p.comissao, ALUGUEL_EXEMPLO)} num aluguel de R$ ${ALUGUEL_EXEMPLO.toLocaleString("pt-BR")}, até ${Number.isFinite(p.limiteAnuncios) ? p.limiteAnuncios : "ilimitados"} anúncio(s)`
@@ -33,7 +33,7 @@ function fontes(): string {
     "- Contato direto (telefone, e-mail, redes) nunca é trocado: a conversa fica toda na plataforma.",
     "",
     "## Prazos de atendimento (os ÚNICOS que você pode citar)",
-    `Atendimento humano das ${HORARIO_HUMANO.inicio}h às ${HORARIO_HUMANO.fim}h, todos os dias.`,
+    `${PROMESSA_ATENDIMENTO}. Não prometa resposta humana fora destes prazos nem "na hora".`,
     prazos,
     `- Manutenção: o proprietário tem ${PRAZO_MANUTENCAO_H.urgente} horas nas urgências (sem água, sem luz, vazamento), ${PRAZO_MANUTENCAO_H.media} horas nos casos médios e ${PRAZO_MANUTENCAO_H.baixa} horas nos demais.`,
     "",

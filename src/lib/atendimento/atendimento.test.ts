@@ -196,5 +196,12 @@ test("FAQ pagamento por fora: sem falar da poupança da caução", () => {
   const g = FAQ.find((p) => p.id === "golpe")!;
   assert.doesNotMatch(g.resposta, /poupança|conta pessoal/);
   assert.match(g.resposta, /^Não pague nada fora do que está no contrato assinado pela plataforma\. A Viva Nomads nunca pede Pix ou depósito\./);
-  assert.match(g.resposta, /até 1 hora \(7h às 22h\)/);
+  assert.match(g.resposta, /prioridade máxima/);
+});
+
+test("promessa pública: Viva 24 h e pessoa em até 24 h — nunca a janela 7h–22h", async () => {
+  const { PROMESSA_ATENDIMENTO } = await import("../../config/atendimento.ts");
+  assert.equal(PROMESSA_ATENDIMENTO, "Assistente Viva 24 h · resposta de uma pessoa em até 24 h");
+  for (const p of FAQ) assert.doesNotMatch(p.resposta, /7h às 22h/, p.id);
+  assert.doesNotMatch(mensagemPrazo("p2", br("2026-10-06T23:00")), /Nosso horário de atendimento/);
 });
