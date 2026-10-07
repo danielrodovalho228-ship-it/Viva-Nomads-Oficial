@@ -1,5 +1,6 @@
--- 0083 — Pacote do Otávio (07/10/2026). Sem NOTICE; reaplicar é seguro.
--- Teste: tests/e2e/specs/t22-pacote-otavio.spec.ts (fala direto com o PostgREST).
+-- Viva Nomads — aplicar 0083 (pacote do Otávio: #29/#25, #14, #32). Sem NOTICE na primeira aplicação.
+-- Rollback: supabase/producao/rollback/0083_rollback.sql
+begin;
 
 -- 1) #29 + #25 — pedidos_publicos_lista() é SECURITY DEFINER e anon podia executar.
 --    Só quem está logado usa (getPedidosParaProprietario e responderPedido, em
@@ -102,3 +103,19 @@ from anon;
 -- Tabela nova criada por migração (dono postgres) não nasce mais com escrita para anon.
 -- Se um dia uma tabela precisar receber escrita sem login, o grant vai explícito na migração.
 alter default privileges for role postgres in schema public revoke insert, update, delete on tables from anon;
+
+insert into supabase_migrations.schema_migrations (version, name, statements, created_by)
+select '20261007000083', '0083_pacote_otavio',
+       array['-- conteúdo em supabase/migrations/0083_pacote_otavio.sql'], 'danielrodovalho228@gmail.com'
+ where not exists (select 1 from supabase_migrations.schema_migrations where version = '20261007000083');
+commit;
+
+-- Conferência (esperado: false, false, 0, t, t, 0)
+select has_function_privilege('anon', 'public.pedidos_publicos_lista()', 'EXECUTE') as anon_executa_lista,
+       has_table_privilege('anon', 'public.pedidos_publicos', 'SELECT') as anon_le_view;
+select count(*) as tabelas_com_escrita_anon from pg_class c join pg_namespace n on n.oid = c.relnamespace
+ where n.nspname = 'public' and c.relkind in ('r', 'p')
+   and (has_table_privilege('anon', c.oid, 'INSERT') or has_table_privilege('anon', c.oid, 'UPDATE') or has_table_privilege('anon', c.oid, 'DELETE'));
+select exists (select 1 from pg_trigger where tgname = 'documentos_fiscais_sem_delete') as trava_delete,
+       exists (select 1 from pg_trigger where tgname = 'documentos_fiscais_sem_truncate') as trava_truncate;
+select count(*) as service_role_pode_apagar from (select 1 where has_table_privilege('service_role', 'public.documentos_fiscais', 'DELETE')) x;
