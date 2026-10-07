@@ -3,6 +3,8 @@ import { CentralAjuda } from "@/components/ajuda/central-ajuda";
 import { VivaChatBloco } from "@/components/ajuda/viva-chat";
 import { PROMESSA_ATENDIMENTO } from "@/config/atendimento";
 import { SUPORTE_EMAIL } from "@/lib/site";
+import { JsonLd } from "@/components/seo/json-ld";
+import { faqPage } from "@/lib/seo/estruturados";
 
 export const metadata: Metadata = {
   title: "Central de Ajuda",
@@ -27,6 +29,7 @@ export default function AjudaPage() {
       <div className="mt-8">
         <CentralAjuda canal="site" />
       </div>
+      <JsonLd dados={faqPage()} />
     </div>
   );
 }

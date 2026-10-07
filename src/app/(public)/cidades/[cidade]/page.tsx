@@ -15,16 +15,15 @@ interface Params {
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { cidade } = await params;
   const name = cityFromSlug(cidade);
-  const properties = await listPropertiesByCity(name);
-  const reais = properties.filter((p) => !isExemplo(p.id)).length;
   const title = `Imóveis mobiliados mensais em ${name}`;
   const description = `Alugue imóveis mobiliados por temporada de 30 a 180 dias em ${name}. Para profissionais em transição: executivos, médicos, famílias e nômades digitais.`;
   return {
     title,
     description,
-    // Sem inventário REAL (vazio ou só exemplos): noindex para evitar página
-    // fina (doorway). Robots sempre explícito.
-    robots: reais === 0 ? { index: false, follow: true } : { index: true, follow: true },
+    // Página local principal (texto próprio da cidade): sempre indexável — antes
+    // ficava noindex sem anúncio real e a Viva sumia do Google na cidade. Os
+    // imóveis de EXEMPLO continuam fora do índice (página do imóvel e sitemap).
+    robots: { index: true, follow: true },
     alternates: { canonical: `/cidades/${cidade}` },
     // openGraph aqui substitui o da raiz inteiro: a imagem precisa vir junto.
     openGraph: {

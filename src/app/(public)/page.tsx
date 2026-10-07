@@ -28,6 +28,9 @@ import { BrandImage } from "@/components/brand-image";
 import { PropertyCard } from "@/components/property-card";
 import { HeroSearch } from "@/components/hero-search";
 import { HeroVideoBg } from "@/components/hero-video-bg";
+import { JsonLd } from "@/components/seo/json-ld";
+import { organizacao } from "@/lib/seo/estruturados";
+import { SITE_URL } from "@/lib/site";
 
 const PERSONA_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   Briefcase,
@@ -55,6 +58,7 @@ export default async function HomePage() {
 
   return (
     <>
+      <JsonLd dados={organizacao(SITE_URL)} />
       {/* ───────── HERO (preto, gradiente azul→verde) ───────── */}
       <section className="relative overflow-hidden bg-night text-white">
         {/* Fundo de vídeo (Fase 1) — poster = LCP; vídeo só em desktop sem reduced-motion. */}

@@ -24,6 +24,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { deflateSync } from "node:zlib";
 import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { randomBytes } from "node:crypto";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const chave = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -243,8 +244,27 @@ async function main() {
     if (error) throw new Error(`qualificação ${i}: ${error.message}`);
   }
   console.log("✓ imóveis: 3 avulsos + 20 do Gestor (8 fotos cada)");
-  await criarContrato(imovel1, ids.INQUILINO3);
+  const contratoId = await criarContrato(imovel1, ids.INQUILINO3);
   console.log("✓ contrato: Paulo Essencial × Ana Souza (60 dias, comissão 8%)");
+  // Documento de verdade para a conferência pública (/conferir/<código>):
+  // informe anual, o único tipo que não exige pagamento ou acerto.
+  const codigoConferir = randomBytes(16).toString("hex");
+  const { error: eDoc } = await admin.from("documentos_fiscais").insert({
+    tipo: "informe_anual",
+    numero: `INF-LAB-${Date.now()}`,
+    ano: new Date().getFullYear(),
+    contrato_id: contratoId,
+    owner_id: ids.PROPRIETARIO,
+    tenant_id: ids.INQUILINO3,
+    locador_nome: "Paulo Essencial",
+    locatario_nome: "Ana Souza",
+    valor: 3200,
+    hash: randomBytes(32).toString("hex"),
+    codigo_verificacao: codigoConferir,
+    pdf_path: "lab/informe-de-teste.pdf",
+  });
+  if (eDoc) throw new Error(`documento de teste: ${eDoc.message}`);
+  console.log("✓ documento de teste para /conferir");
 
   // Saídas: env para a suíte E2E (sem imprimir a senha) + lista de contas sem senha.
   const ge = process.env.GITHUB_ENV;
@@ -252,6 +272,7 @@ async function main() {
     for (const p of PERSONAS) {
       appendFileSync(ge, `TESTES_${p.chave}_EMAIL=${p.email}\nTESTES_${p.chave}_SENHA=${senha}\nTESTES_${p.chave}_NOME=${p.nome}\n`);
     }
+    appendFileSync(ge, `TESTES_CONFERIR_CODIGO=${codigoConferir}\n`);
   }
   mkdirSync("tests/laboratorio/saida", { recursive: true });
   writeFileSync("tests/laboratorio/saida/contas.json", JSON.stringify(PERSONAS.map(({ chave, email, nome, role }) => ({ chave, email, nome, role })), null, 2));
