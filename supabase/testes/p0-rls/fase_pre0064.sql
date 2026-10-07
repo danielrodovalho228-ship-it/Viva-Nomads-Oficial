@@ -8,7 +8,7 @@ create or replace function public.chave_cidade(t text) returns text language sql
 $$;
 alter table public.pedidos_moradia
   add column if not exists uf text, add column if not exists data_inicio date,
-  add column if not exists prazo_meses int, add column if not exists orcamento_mensal numeric,
+  add column if not exists prazo_meses int, add column if not exists orcamento_mensal numeric(12,2),
   add column if not exists qtd_ocupantes int, add column if not exists motivo text,
   add column if not exists apresentacao text, add column if not exists expira_em timestamptz,
   add column if not exists removido_motivo text;
