@@ -4,7 +4,6 @@ import type { Property } from "@/lib/types";
 import { hojeBR, formatBRL } from "@/lib/utils";
 import { calcularTudoIncluido } from "@/lib/precos";
 import { SELO_NF_UI } from "@/lib/flags";
-import { MatchGuaranteeNotice } from "@/components/legal-notice";
 
 /** Formata uma data ISO (YYYY-MM-DD) para DD/MM/AAAA. */
 function formatDate(iso?: string): string | null {
@@ -115,8 +114,6 @@ export function PriceCard({ property, actions }: { property: Property; actions: 
 
       {/* Ações (Candidatar-se / Tirar dúvida / Agendar visita) — vêm da página */}
       <div className="mt-3">{actions}</div>
-
-      <MatchGuaranteeNotice className="mt-4" />
 
       <p className="mt-4 flex items-start gap-1.5 text-xs text-muted">
         <MapPinned className="mt-0.5 h-3.5 w-3.5 shrink-0" />
