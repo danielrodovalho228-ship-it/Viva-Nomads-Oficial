@@ -40,3 +40,17 @@ grant execute on function public.is_admin() to authenticated, service_role;
 grant execute on function public.pode_ver_contrato(uuid) to authenticated, service_role;
 grant execute on function public.pedido_ativo(uuid) to authenticated, service_role;
 grant execute on function public.pedido_inquilino(uuid) to authenticated, service_role;
+
+-- 4) pg_net fora do schema public (advisor "extension_in_public"). O pg_net não aceita
+--    ALTER EXTENSION ... SET SCHEMA (não é relocável): apaga e recria em extensions.
+--    As funções continuam em net.* (atendimento_tique chama net.http_get e confere
+--    com to_regproc antes). Perde só o histórico de respostas (net._http_response).
+--    Sem pg_net instalado (laboratório), não faz nada.
+do $$
+begin
+  if exists (select 1 from pg_extension where extname = 'pg_net' and extnamespace = 'public'::regnamespace) then
+    drop extension pg_net;
+    create extension pg_net with schema extensions;
+  end if;
+end;
+$$;
