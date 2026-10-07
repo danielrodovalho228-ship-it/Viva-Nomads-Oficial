@@ -5,12 +5,12 @@
   Docs: https://docs.zapsign.com.br
 */
 
-import { exigirChaveEmProducao } from "@/lib/integracoes";
+import { exigirChaveEmProducao, integracoesSimuladas, registrarSimulado } from "@/lib/integracoes";
 
 const API_BASE = "https://api.zapsign.com.br/api/v1";
 
 export function isZapsignConfigured() {
-  return !!process.env.ZAPSIGN_API_TOKEN;
+  return !!process.env.ZAPSIGN_API_TOKEN && !integracoesSimuladas();
 }
 
 export interface ContractInput {
@@ -35,6 +35,7 @@ export interface ContractResult {
 export async function createContract(input: ContractInput): Promise<ContractResult> {
   if (!isZapsignConfigured()) {
     exigirChaveEmProducao("ZapSign");
+    await registrarSimulado("zapsign", { acao: "contrato" });
     return {
       demo: true,
       docId: `demo_${Math.random().toString(36).slice(2, 10)}`,

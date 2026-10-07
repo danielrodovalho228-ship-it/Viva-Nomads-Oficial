@@ -13,13 +13,13 @@ const API_BASE =
     ? "https://api.asaas.com/v3"
     : "https://sandbox.asaas.com/api/v3";
 
-import { exigirChaveEmProducao } from "@/lib/integracoes";
+import { exigirChaveEmProducao, integracoesSimuladas, registrarSimulado } from "@/lib/integracoes";
 import { valorComissao } from "@/lib/comissao";
 
 export type BillingType = "PIX" | "BOLETO" | "CREDIT_CARD";
 
 export function isAsaasConfigured() {
-  return !!process.env.ASAAS_API_KEY;
+  return !!process.env.ASAAS_API_KEY && !integracoesSimuladas();
 }
 
 async function asaasFetch<T>(path: string, init?: RequestInit): Promise<T> {
@@ -64,6 +64,7 @@ export async function createSubscription(params: {
 }): Promise<SubscriptionResult> {
   if (!isAsaasConfigured()) {
     exigirChaveEmProducao("Asaas");
+    await registrarSimulado("asaas", { acao: "assinatura" });
     // Modo demonstração — devolve um resultado plausível sem chamar a API.
     return {
       demo: true,
@@ -143,6 +144,7 @@ export async function createCommissionCharge(params: {
 
   if (!isAsaasConfigured()) {
     exigirChaveEmProducao("Asaas");
+    await registrarSimulado("asaas", { acao: "cobranca_comissao" });
     return {
       demo: true,
       chargeId: `demo_${Math.random().toString(36).slice(2, 10)}`,

@@ -2,9 +2,10 @@
   E-mail transacional (Resend). Sem RESEND_API_KEY, opera em modo demonstração
   (apenas registra no console/retorno). Docs: https://resend.com/docs
 */
+import { integracoesSimuladas, registrarSimulado } from "../integracoes.ts";
 
 export function isEmailConfigured() {
-  return !!process.env.RESEND_API_KEY;
+  return !!process.env.RESEND_API_KEY && !integracoesSimuladas();
 }
 
 export interface EmailResult {
@@ -52,6 +53,7 @@ export async function sendEmail(params: {
   }
 
   if (!isEmailConfigured()) {
+    await registrarSimulado("email", { para: params.to, assunto: params.subject, anexos: params.attachments?.length ?? 0 });
     return { demo: true };
   }
 

@@ -1,5 +1,12 @@
 import type { NextConfig } from "next";
 
+// Laboratório de testes: o modo simulado (nada sai para a rede) NUNCA pode ir
+// para produção. Com a chave ligada num build de produção da Vercel, o build falha.
+const LABORATORIO = process.env.INTEGRACOES_SIMULADAS === "on";
+if (LABORATORIO && process.env.VERCEL_ENV === "production") {
+  throw new Error("INTEGRACOES_SIMULADAS=on é só para o laboratório de testes — nunca em produção.");
+}
+
 const nextConfig: NextConfig = {
   // Não anuncia o framework no header (higiene) e reduz JS: só os ícones usados
   // do lucide-react entram no bundle (tree-shaking do pacote).
@@ -15,6 +22,8 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "images.unsplash.com" },
       // Fotos reais enviadas ao Supabase Storage
       { protocol: "https", hostname: "*.supabase.co" },
+      // Laboratório: fotos no Supabase local.
+      ...(LABORATORIO ? [{ protocol: "http" as const, hostname: "127.0.0.1", port: "54321" }] : []),
     ],
   },
   async redirects() {

@@ -50,3 +50,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 screenshots/
+
+# Laboratório de testes (Supabase local)
+supabase/.temp/
+supabase/.branches/
+tests/laboratorio/saida/

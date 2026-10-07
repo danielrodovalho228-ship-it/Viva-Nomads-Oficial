@@ -1,0 +1,119 @@
+name: Laboratório de testes (noturno)
+
+# Toda noite: sobe um Supabase LOCAL do zero dentro do runner (CLI + Docker),
+# aplica TODAS as migrações + o acerto com produção, cria as personas (Ana,
+# Paulo, Roberta, Gustavo) com uma senha nova, builda o site em modo
+# INTEGRACOES_SIMULADAS (nada sai para a rede) e roda a suíte E2E contra
+# localhost. Nenhum segredo de produção é usado aqui — o banco morre no fim.
+on:
+  schedule:
+    - cron: "0 6 * * *" # 01h no Texas (horário de verão), 03h em Brasília
+  workflow_dispatch:
+  # Valida o próprio laboratório quando ele muda (o PR não fica vermelho por
+  # falhas conhecidas da suíte: elas vão no resumo e no relatório).
+  pull_request:
+    paths:
+      - ".github/workflows/laboratorio.yml"
+      - "supabase/config.toml"
+      - "supabase/lab/**"
+      - "supabase/migrations/**"
+      - "scripts/lab/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: laboratorio
+  cancel-in-progress: true
+
+jobs:
+  laboratorio:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SITE_URL: http://localhost:3123
+      INTEGRACOES_SIMULADAS: "on"
+      LAB_OUTBOX: ${{ github.workspace }}/tests/laboratorio/saida/envios-simulados.jsonl
+      TESTES_BASE_URL: http://localhost:3123
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.120.0
+
+      - name: Subir o Supabase local (todas as migrações)
+        run: supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,postgres-meta,mailpit,realtime
+
+      - name: Acertar com produção (role como texto + políticas extras)
+        run: psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/lab/alinhar-producao.sql
+
+      - name: Chaves locais e senha da noite (mascaradas)
+        run: |
+          eval "$(supabase status -o env | grep -E '^(ANON_KEY|SERVICE_ROLE_KEY)=')"
+          SENHA="$(openssl rand -hex 16)"
+          SOCIOS="lab-$(openssl rand -hex 8)"
+          echo "::add-mask::$ANON_KEY"; echo "::add-mask::$SERVICE_ROLE_KEY"; echo "::add-mask::$SENHA"; echo "::add-mask::$SOCIOS"
+          {
+            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY"
+            echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY"
+            echo "LAB_SENHA=$SENHA"
+            echo "SOCIOS_ACCESS_CODE=$SOCIOS"
+          } >> "$GITHUB_ENV"
+
+      - name: Criar as personas e os imóveis de teste
+        run: node scripts/lab/seed-lab.mjs
+
+      - name: Build do site (modo simulado)
+        run: npm run build
+
+      - name: Subir o site em localhost:3123
+        run: |
+          npx next start -p 3123 > tests/laboratorio/saida/servidor.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf -o /dev/null http://localhost:3123/ && break; sleep 2; done
+          curl -sf -o /dev/null http://localhost:3123/ || (cat tests/laboratorio/saida/servidor.log; exit 1)
+
+      - name: Instalar Chromium do Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Rodar a suíte E2E
+        id: e2e
+        continue-on-error: true
+        run: npx playwright test --reporter=list,html,json --workers=2 > tests/laboratorio/saida/e2e.txt 2>&1
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: tests/laboratorio/saida/resultado.json
+
+      - name: Resumo da noite
+        if: ${{ !cancelled() }}
+        run: |
+          {
+            echo "## Laboratório — $(date -u +%Y-%m-%d)"
+            grep -E "^\s+[0-9]+ (passed|failed|skipped|flaky)" tests/laboratorio/saida/e2e.txt || true
+            echo
+            echo "Envios simulados (nada saiu para a rede):"
+            if [ -f "$LAB_OUTBOX" ]; then cut -d'"' -f4 "$LAB_OUTBOX" | sort | uniq -c; else echo "nenhum"; fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Guardar relatório, prints e vídeos das falhas
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: laboratorio-${{ github.run_id }}
+          path: |
+            playwright-report/
+            tests/e2e/.artifacts/
+            tests/laboratorio/saida/
+          retention-days: 14
+
+      - name: Marcar a execução como falha se algum teste falhou
+        if: ${{ steps.e2e.outcome == 'failure' && github.event_name != 'pull_request' }}
+        run: exit 1

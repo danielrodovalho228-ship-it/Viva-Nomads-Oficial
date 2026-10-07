@@ -8,8 +8,10 @@
  * Local e Preview seguem com a simulação.
  */
 export class IntegracaoNaoConfigurada extends Error {
-  constructor(public readonly servico: string) {
+  readonly servico: string;
+  constructor(servico: string) {
     super(`Integração não configurada: ${servico}`);
+    this.servico = servico;
     this.name = "IntegracaoNaoConfigurada";
   }
 }
@@ -24,3 +26,23 @@ export function exigirChaveEmProducao(servico: string): void {
 }
 
 export const MSG_NAO_CONFIGURADA = "Integração não configurada.";
+
+/**
+ * LABORATÓRIO DE TESTES: com INTEGRACOES_SIMULADAS=on, TODAS as integrações
+ * (e-mail, WhatsApp, Asaas, ZapSign, CAF, IA) ficam como "sem chave" mesmo que
+ * alguma chave exista — nada sai para a rede — e cada envio que "teria
+ * acontecido" vira uma linha JSON em LAB_OUTBOX, para os testes conferirem.
+ * NUNCA vale em produção (VERCEL_ENV=production): lá é ignorado, e o
+ * next.config recusa o build com a chave ligada.
+ */
+export function integracoesSimuladas(): boolean {
+  return process.env.INTEGRACOES_SIMULADAS === "on" && !emProducao();
+}
+
+/** Registra no LAB_OUTBOX (JSONL) o que teria sido enviado. Sem LAB_OUTBOX, não faz nada. */
+export async function registrarSimulado(servico: string, dados: Record<string, unknown>): Promise<void> {
+  const arquivo = process.env.LAB_OUTBOX;
+  if (!integracoesSimuladas() || !arquivo) return;
+  const { appendFile } = await import("node:fs/promises");
+  await appendFile(arquivo, JSON.stringify({ servico, em: new Date().toISOString(), ...dados }) + "\n", "utf8").catch(() => undefined);
+}
