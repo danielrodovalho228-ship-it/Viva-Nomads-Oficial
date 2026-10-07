@@ -81,7 +81,7 @@ test.describe("T24 — Acolhimento e resposta sugerida", () => {
 
     const { ms } = await mensagens(numero);
     const enviada = ms.find((m) => m.autor === "admin" && !m.interno);
-    expect(enviada?.corpo).toContain("Conferimos o seu chamado");
+    expect(enviada?.corpo).toContain("Obrigado por falar com a Viva Nomads");
     if (LAB_OUTBOX && fs.existsSync(LAB_OUTBOX)) {
       const linhas = fs.readFileSync(LAB_OUTBOX, "utf8");
       expect(linhas).toContain(`Recebemos seu chamado — ${numero}`);

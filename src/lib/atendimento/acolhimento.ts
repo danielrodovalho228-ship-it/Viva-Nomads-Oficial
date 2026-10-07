@@ -55,7 +55,3 @@ export function respostaDaSugestao(corpo: string): string | null {
   const t = corpo.slice(i + "Resposta sugerida:\n".length).trim();
   return t || null;
 }
-
-/** Rascunho do laboratório (sem IA): deixa claro que é simulado. */
-export const SUGESTAO_SIMULADA =
-  "Olá! Conferimos o seu chamado e vamos te responder com os detalhes do seu caso. (Rascunho SIMULADO do laboratório — sem IA.)";

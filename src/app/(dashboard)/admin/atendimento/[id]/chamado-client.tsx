@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Bot, Clock, Lock, Pencil, Send, ThumbsUp } from "lucide-react";
@@ -9,10 +9,12 @@ import { Button } from "@/components/ui/button";
 import { cn, dataBR } from "@/lib/utils";
 import { PRAZOS, type Prioridade } from "@/config/atendimento";
 import { primeiroNome } from "@/lib/display-name";
-import { alterarChamado, aprovarSugestao, avaliarRespostaIA, devolverParaViva, responderComoAdmin, type chamadoAdmin, type Macro } from "@/lib/data/atendimento-actions";
+import { alterarChamado, aprovarSugestao, avaliarRespostaIA, devolverParaViva, enviarSugestaoEditada, responderComoAdmin, sugerirResposta, type chamadoAdmin, type Macro } from "@/lib/data/atendimento-actions";
+import { ehNotaResumo } from "@/lib/atendimento/resumo";
+import { ResumoEAcoes } from "./resumo-acoes";
 import { respostaDaSugestao } from "@/lib/atendimento/acolhimento";
 import { mascararEmail, podeDevolverParaViva } from "@/lib/atendimento/copiloto-regras";
-import { BotaoSugerir, FontesDaSugestao, QuemEAPessoa, type SugestaoVista } from "./copiloto";
+import { QuemEAPessoa } from "./copiloto";
 import { relogio } from "../atendimento-client";
 import { EXPLICA_AGUARDANDO_APROVACAO } from "@/lib/atendimento/dono";
 
@@ -30,7 +32,9 @@ const STATUS: Record<string, string> = {
 const ACAO: Record<string, string> = {
   consulta_pessoa: "consultou Quem é a pessoa",
   sugestao_ia: "sugestão da Viva",
-  sugestao_aprovada: "aprovou e enviou a sugestão da Viva",
+  sugestao_aprovada: "enviou a sugestão da Viva como está",
+  sugestao_editada: "enviou a sugestão da Viva editada",
+  resumo_ia: "resumo e ações da Viva",
   acolhido: "acolhimento automático",
   devolvido_ia: "devolveu para a Viva",
   mensagem: "mensagem da pessoa",
@@ -46,21 +50,58 @@ const fmt = (iso: string) => new Date(iso).toLocaleString("pt-BR", { timeZone: "
 
 export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; macros: Macro[]; agoraISO: string }) {
   const router = useRouter();
-  const { chamado: c, mensagens, eventos, pessoa, contextoLink, iaAtiva } = dados;
-  const [texto, setTexto] = useState("");
-  // Rascunho da Viva: só envia depois de conferir as fontes.
-  const [sugestao, setSugestao] = useState<SugestaoVista | null>(null);
+  const { chamado: c, eventos, pessoa, contextoLink, iaAtiva, sugestaoAuto, historico } = dados;
+  // O resumo vai no cartão do topo; na conversa ficam só as mensagens e notas.
+  const mensagens = dados.mensagens.filter((m) => !(m.interno && ehNotaResumo(m.corpo)));
+  // Ao abrir, a última sugestão da Viva ainda não usada já vem na caixa (nota
+  // interna no banco: "Enviar como está" lê de lá).
+  const [base, setBase] = useState<{ mensagemId: number; texto: string } | null>(() => {
+    if (c.status === "resolvido" || c.status === "encerrado") return null;
+    const usadas = new Set(eventos.filter((e) => e.acao === "sugestao_aprovada" || e.acao === "sugestao_editada").map((e) => Number(e.de)));
+    const ultima = [...mensagens].reverse().find((m) => m.autor === "ia" && m.interno && respostaDaSugestao(m.corpo));
+    if (!ultima || usadas.has(ultima.id) || mensagens.some((m) => m.autor === "admin" && !m.interno && m.id > ultima.id)) return null;
+    return { mensagemId: ultima.id, texto: respostaDaSugestao(ultima.corpo)! };
+  });
+  const [texto, setTexto] = useState(() => base?.texto ?? "");
+  const [gerando, setGerando] = useState(false);
+  const caixa = useRef<HTMLTextAreaElement>(null);
   const devolver = podeDevolverParaViva(c.prioridade, c.status);
   const [interno, setInterno] = useState(false);
   const [ocupado, setOcupado] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [corrigindo, setCorrigindo] = useState<number | null>(null);
   const [correcao, setCorrecao] = useState("");
-  const aprovadas = new Set(eventos.filter((e) => e.acao === "sugestao_aprovada").map((e) => Number(e.de)));
-  const respondido = mensagens.some((m) => m.autor === "admin" && !m.interno);
+  const aprovadas = new Set(eventos.filter((e) => e.acao === "sugestao_aprovada" || e.acao === "sugestao_editada").map((e) => Number(e.de)));
+  // Sugestão "vencida": já houve resposta pública da equipe depois dela.
+  const respondidaDepois = (id: number) => mensagens.some((m) => m.autor === "admin" && !m.interno && m.id > id);
+  const fechado = c.status === "resolvido" || c.status === "encerrado";
   const avaliadas = new Map(eventos.filter((e) => e.acao === "ia_boa_resposta" || e.acao === "ia_corrigir").map((e) => [Number(e.de), e.acao]));
   const r = relogio(c, new Date(agoraISO));
   const nome = primeiroNome(pessoa?.nome ?? c.visitante_nome) || "tudo bem";
+
+  // Sem sugestão aberta e com a Viva disponível: pede uma ao abrir (fica guardada como nota).
+  const pediu = useRef(false);
+  useEffect(() => {
+    if (fechado || base || texto || !sugestaoAuto || pediu.current) return;
+    if (mensagens.some((m) => m.autor === "admin" && !m.interno)) return; // já respondido: "Gerar outra" sob demanda
+    pediu.current = true;
+    void gerarOutra();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dados]);
+
+  async function gerarOutra() {
+    setGerando(true);
+    setErro(null);
+    const r = await sugerirResposta(c.id).catch(() => ({ ok: false as const, error: "Falha de conexão." }));
+    setGerando(false);
+    if (!r.ok) return setErro(r.error);
+    if (r.mensagemId) setBase({ mensagemId: r.mensagemId, texto: r.texto });
+    setTexto(r.texto);
+    setInterno(false);
+    router.refresh();
+  }
+
+  const editada = !!base && texto.trim() !== base.texto.trim();
 
   async function agir(fn: () => Promise<{ ok: boolean; error?: string }>) {
     setOcupado(true);
@@ -83,6 +124,15 @@ export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; 
           {EXPLICA_AGUARDANDO_APROVACAO}
         </p>
       )}
+      <ResumoEAcoes
+        chamadoId={c.id}
+        quemEh={
+          pessoa
+            ? `${pessoa.papel === "owner" ? "Proprietário" : pessoa.papel === "tenant" ? "Inquilino" : pessoa.papel ?? "Cadastrado"} cadastrado${pessoa.criado_em ? ` desde ${dataBR(pessoa.criado_em)}` : ""} · ${historico.anuncios} anúncio(s) · ${historico.pedidos} pedido(s) · ${historico.chamadosAnteriores} chamado(s) anterior(es)`
+            : `Visitante sem cadastro · ${historico.chamadosAnteriores} chamado(s) anterior(es) com o mesmo e-mail`
+        }
+        sla={{ texto: r.texto, cor: r.cor, risco: c.sla_estado === "em_risco" ? "em risco" : c.sla_estado === "estourado" ? "estourado" : "" }}
+      />
       <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">
         <div className="min-w-0">
           <Panel title="Conversa">
@@ -102,7 +152,7 @@ export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; 
                   <span className="whitespace-pre-wrap text-ink">{m.corpo}</span>
                   {m.interno && (
                     <span className="mt-2 flex flex-wrap items-center gap-3">
-                      {m.autor === "ia" && respostaDaSugestao(m.corpo) && !aprovadas.has(m.id) && !respondido && (
+                      {m.autor === "ia" && respostaDaSugestao(m.corpo) && !aprovadas.has(m.id) && !respondidaDepois(m.id) && (
                         <Button
                           size="sm"
                           variant="gold"
@@ -186,19 +236,31 @@ export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; 
                   </select>
                 </label>
               )}
-              <div className="mb-2">
-                <BotaoSugerir
-                  chamadoId={c.id}
-                  disponivel={iaAtiva}
-                  onSugestao={(t, sv) => {
-                    setTexto(t);
-                    setInterno(false);
-                    setSugestao(sv);
-                  }}
-                />
-              </div>
-              {sugestao && <FontesDaSugestao s={sugestao} onConferir={(v) => setSugestao({ ...sugestao, conferida: v })} />}
+              {(base || gerando || sugestaoAuto) && (
+                <div className="mb-2 rounded-xl border border-forest/20 bg-sage-100/60 p-3 text-sm" data-testid="sugestao-pronta">
+                  <p className="text-ink">
+                    {gerando ? "A Viva está escrevendo uma sugestão…" : base ? (editada ? "Sugestão da Viva editada por você." : "Sugestão da Viva já está na caixa abaixo — revise e envie.") : "Sem sugestão ainda."}
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <Button size="sm" variant="gold" disabled={ocupado || gerando || !base || editada || interno} data-testid="enviar-sugestao" onClick={async () => {
+                      if (base && (await agir(() => aprovarSugestao(c.id, base.mensagemId)))) {
+                        setTexto("");
+                        setBase(null);
+                      }
+                    }}>
+                      <Send className="h-3.5 w-3.5" /> Enviar sugestão como está
+                    </Button>
+                    <Button size="sm" variant="outline" disabled={!base} onClick={() => caixa.current?.focus()}>
+                      <Pencil className="h-3.5 w-3.5" /> Editar
+                    </Button>
+                    <Button size="sm" variant="outline" disabled={ocupado || gerando || !sugestaoAuto} onClick={gerarOutra} data-testid="gerar-outra">
+                      <Bot className="h-3.5 w-3.5" /> Gerar outra
+                    </Button>
+                  </div>
+                </div>
+              )}
               <textarea
+                ref={caixa}
                 rows={5}
                 maxLength={5000}
                 value={texto}
@@ -210,18 +272,18 @@ export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; 
                 <input type="checkbox" checked={interno} onChange={(e) => setInterno(e.target.checked)} /> Nota interna (a pessoa não vê)
               </label>
               {erro && <p className="mt-2 text-sm text-red-700">{erro}</p>}
-              {sugestao && !sugestao.conferida && !interno && <p className="mt-2 text-xs text-amber-800">Marque &ldquo;Conferi as fontes e o texto&rdquo; para enviar o rascunho da Viva.</p>}
               <Button
                 className="mt-3"
-                disabled={ocupado || !texto.trim() || (!!sugestao && !sugestao.conferida && !interno)}
+                disabled={ocupado || !texto.trim()}
                 onClick={async () => {
-                  if (await agir(() => responderComoAdmin(c.id, texto, interno))) {
+                  const envio = base && editada && !interno ? () => enviarSugestaoEditada(c.id, texto, base.mensagemId) : () => responderComoAdmin(c.id, texto, interno);
+                  if (await agir(envio)) {
                     setTexto("");
-                    setSugestao(null);
+                    setBase(null);
                   }
                 }}
               >
-                <Send className="h-4 w-4" /> {interno ? "Salvar nota" : "Enviar resposta (e-mail à pessoa)"}
+                <Send className="h-4 w-4" /> {interno ? "Salvar nota" : base && editada ? "Enviar resposta editada (e-mail à pessoa)" : "Enviar resposta (e-mail à pessoa)"}
               </Button>
             </Panel>
           )}

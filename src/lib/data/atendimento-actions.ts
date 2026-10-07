@@ -21,7 +21,11 @@ import { avisoEmergencia, categoria, classificar, ehNumeroPublico, numeroEmergen
 import { avisarEquipe, avisarProprietarioManutencao, avisarUsuario, criarOrdemManutencao, pessoaValida, registrarMensagemDaPessoa, type ChamadoResumo, type OrdemCriada } from "@/lib/atendimento/servidor";
 import { chamadoDoDono, type ClienteChamados } from "@/lib/atendimento/dono";
 import { FILAS, ehFila, filaDaCategoria, triagem } from "@/lib/atendimento/filas";
-import { acolherNaEquipe, escalarParaPessoa, rodarViva, vivaAtiva, chamarClaude, sugerirRascunho, devolverChamadoParaViva } from "@/lib/atendimento/viva-servidor";
+import { acolherNaEquipe, escalarParaPessoa, gerarResumo, rodarViva, vivaAtiva, chamarClaude, sugerirRascunho, devolverChamadoParaViva } from "@/lib/atendimento/viva-servidor";
+import { notaSugestao } from "@/lib/atendimento/acolhimento";
+import { primeiroNome } from "@/lib/atendimento/viva-regras";
+import { notaResumo, resumoDaNota, sugestaoPorRegra, type ResumoChamado } from "@/lib/atendimento/resumo";
+import { integracoesSimuladas } from "@/lib/integracoes";
 import { quemAtende, respostaDaSugestao } from "@/lib/atendimento/acolhimento";
 import { contarPorStatus, ehContaNova, mascararEmail, papelLegivel, rotuloFerramenta, type PessoaResumo } from "@/lib/atendimento/copiloto";
 import { prontidaoDosImoveis } from "@/lib/anuncio/prontidao-servidor";
@@ -487,11 +491,23 @@ export async function chamadoAdmin(id: string): Promise<{
   contextoLink: string | null;
   /** A Viva está ligada (Sugerir resposta / Devolver para a Viva). */
   iaAtiva: boolean;
+  /** Sugestões automáticas disponíveis (Viva ligada ou laboratório simulado). */
+  sugestaoAuto: boolean;
+  /** Só contagens, para o cartão "Resumo e ações" (sem dado pessoal). */
+  historico: { anuncios: number; pedidos: number; chamadosAnteriores: number };
 } | null> {
   const ctx = await exigirAdmin();
   if (!ctx || !UUID_RE.test(id)) return null;
   const { data: c } = await ctx.admin.from("chamados").select(COLS_ADMIN).eq("id", id).maybeSingle();
   if (!c) return null;
+  const conta = (q: PromiseLike<{ count: number | null }>) => Promise.resolve(q).then((r) => r.count ?? 0);
+  const [anuncios, pedidos, chamadosAnteriores] = c.usuario_id
+    ? await Promise.all([
+        conta(ctx.admin.from("properties").select("id", { count: "exact", head: true }).eq("owner_id", c.usuario_id)),
+        conta(ctx.admin.from("pedidos_moradia").select("id", { count: "exact", head: true }).eq("inquilino_id", c.usuario_id)),
+        conta(ctx.admin.from("chamados").select("id", { count: "exact", head: true }).eq("usuario_id", c.usuario_id).neq("id", id)),
+      ])
+    : [0, 0, c.visitante_email ? await conta(ctx.admin.from("chamados").select("id", { count: "exact", head: true }).eq("visitante_email", c.visitante_email).neq("id", id)) : 0];
   const [{ data: m }, { data: e }, pessoa] = await Promise.all([
     ctx.admin.from("chamado_mensagens").select("id, autor, corpo, interno, criado_em").eq("chamado_id", id).order("criado_em"),
     ctx.admin.from("chamado_eventos").select("acao, de, para, detalhe, ator_tipo, ator_id, criado_em").eq("chamado_id", id).order("criado_em"),
@@ -520,6 +536,8 @@ export async function chamadoAdmin(id: string): Promise<{
     mensagens: (m ?? []) as MensagemChamado[],
     eventos: brutos.map(({ ator_id, ...x }) => ({ ...x, ator_nome: ator_id ? nomeEquipe.get(ator_id) ?? null : null })),
     iaAtiva: vivaAtiva(),
+    sugestaoAuto: vivaAtiva() || integracoesSimuladas(),
+    historico: { anuncios, pedidos, chamadosAnteriores },
     pessoa: p ? { nome: p.full_name ?? null, papel: p.role ?? null, criado_em: p.created_at ?? null } : null,
     contextoLink,
   };
@@ -819,24 +837,88 @@ export async function quemEAPessoa(chamadoId: string): Promise<Res<{ pessoa: Pes
  */
 export async function sugerirResposta(
   chamadoId: string
-): Promise<Res<{ texto: string; fontes: { rotulo: string; resumo: string; erro: boolean }[]; aviso: string | null; custo: string | null }>> {
+): Promise<Res<{ texto: string; mensagemId: number | null; fontes: { rotulo: string; resumo: string; erro: boolean }[]; aviso: string | null; custo: string | null }>> {
   const ctx = await exigirAdmin();
   if (!ctx || !UUID_RE.test(chamadoId)) return { ok: false, error: "Sem acesso." };
-  if (!vivaAtiva()) return { ok: false, error: "A Viva está desligada (ATENDIMENTO_IA_ATIVO e ANTHROPIC_API_KEY)." };
+  const lab = !vivaAtiva() && integracoesSimuladas();
+  if (!vivaAtiva() && !lab) return { ok: false, error: "A Viva está desligada (ATENDIMENTO_IA_ATIVO e ANTHROPIC_API_KEY)." };
   if ((await situacaoLimite(`copiloto:${ctx.userId}`, 60, HORA)) === "estourou") return { ok: false, error: "Muitas sugestões em pouco tempo. Aguarde um pouco." };
-  const s = await sugerirRascunho(chamadoId);
-  if (!s) return { ok: false, error: "Chamado não encontrado." };
-  const fontes = s.fontes.map((f) => ({ rotulo: rotuloFerramenta(f.ferramenta), resumo: f.resumo, erro: f.erro }));
-  const usd = custoUsd(modeloViva(), s.uso);
+
+  let texto: string;
+  let fontes: { rotulo: string; resumo: string; erro: boolean }[] = [];
+  let aviso: string | null = null;
+  let custo: string | null = null;
+  if (lab) {
+    // Laboratório (sem IA): rascunho só com textos oficiais, marcado como simulado.
+    const { data: c } = await ctx.admin.from("chamados").select("usuario_id, visitante_nome").eq("id", chamadoId).maybeSingle();
+    if (!c) return { ok: false, error: "Chamado não encontrado." };
+    const { data: ms } = await ctx.admin.from("chamado_mensagens").select("corpo").eq("chamado_id", chamadoId).eq("autor", "usuario").order("criado_em");
+    texto = sugestaoPorRegra((ms ?? []).map((m) => m.corpo as string).join("\n"), primeiroNome(c.visitante_nome as string | null), !c.usuario_id);
+  } else {
+    const s = await sugerirRascunho(chamadoId);
+    if (!s) return { ok: false, error: "Chamado não encontrado." };
+    fontes = s.fontes.map((f) => ({ rotulo: rotuloFerramenta(f.ferramenta), resumo: f.resumo, erro: f.erro }));
+    const usd = custoUsd(modeloViva(), s.uso);
+    custo = usd === null ? null : `R$ ${(usd * cotacaoDolar()).toFixed(3).replace(".", ",")}`;
+    aviso = s.aviso;
+    if (!s.ok) {
+      await ctx.admin.from("chamado_eventos").insert({ chamado_id: chamadoId, ator_tipo: "admin", ator_id: ctx.userId, acao: "sugestao_ia", detalhe: `falhou${s.aviso ? ` · ${s.aviso}` : ""}`.slice(0, 300) });
+      return { ok: false, error: s.aviso ?? "A Viva não conseguiu sugerir agora." };
+    }
+    texto = s.texto;
+  }
+  // Guardada como nota interna: "Enviar como está" lê do banco e não gasta IA de novo.
+  const { data: nota } = await ctx.admin
+    .from("chamado_mensagens")
+    .insert({ chamado_id: chamadoId, autor: "ia", interno: true, simulacao: lab, corpo: notaSugestao(texto, fontes.map((f) => f.rotulo)) })
+    .select("id")
+    .single();
   await ctx.admin.from("chamado_eventos").insert({
     chamado_id: chamadoId,
     ator_tipo: "admin",
     ator_id: ctx.userId,
     acao: "sugestao_ia",
-    detalhe: `fontes: ${fontes.length ? fontes.map((f) => f.rotulo).join(", ") : "só as fontes oficiais"}${s.aviso ? ` · ${s.aviso}` : ""}`.slice(0, 300),
+    detalhe: `fontes: ${fontes.length ? fontes.map((f) => f.rotulo).join(", ") : "só as fontes oficiais"}${aviso ? ` · ${aviso}` : ""}`.slice(0, 300),
   });
-  if (!s.ok) return { ok: false, error: s.aviso ?? "A Viva não conseguiu sugerir agora." };
-  return { ok: true, texto: s.texto, fontes, aviso: s.aviso, custo: usd === null ? null : `R$ ${(usd * cotacaoDolar()).toFixed(3).replace(".", ",")}` };
+  return { ok: true, texto, mensagemId: (nota?.id as number) ?? null, fontes, aviso, custo };
+}
+
+/**
+ * "Resumo e ações" (topo da tela do chamado): devolve o guardado; gera na
+ * primeira abertura ou com "Atualizar resumo". Guardado como nota interna.
+ */
+export async function resumoDoChamado(chamadoId: string, refazer = false): Promise<Res<{ resumo: ResumoChamado }>> {
+  const ctx = await exigirAdmin();
+  if (!ctx || !UUID_RE.test(chamadoId)) return { ok: false, error: "Sem acesso." };
+  if (!refazer) {
+    const { data: notas } = await ctx.admin
+      .from("chamado_mensagens")
+      .select("corpo")
+      .eq("chamado_id", chamadoId)
+      .eq("interno", true)
+      .like("corpo", "[resumo-e-acoes]%")
+      .order("criado_em", { ascending: false })
+      .limit(1);
+    const salvo = notas?.[0] ? resumoDaNota(notas[0].corpo as string) : null;
+    if (salvo) return { ok: true, resumo: salvo };
+  }
+  if ((await situacaoLimite(`resumo:${ctx.userId}`, 30, HORA)) === "estourou") return { ok: false, error: "Muitos resumos em pouco tempo. Aguarde um pouco." };
+  const g = await gerarResumo(chamadoId);
+  if (!g) return { ok: false, error: "Chamado não encontrado." };
+  await ctx.admin.from("chamado_mensagens").insert({ chamado_id: chamadoId, autor: "ia", interno: true, simulacao: g.simulacao, corpo: notaResumo(g.resumo) });
+  await ctx.admin.from("chamado_eventos").insert({ chamado_id: chamadoId, ator_tipo: "admin", ator_id: ctx.userId, acao: "resumo_ia", detalhe: refazer ? "atualizado" : "gerado ao abrir" });
+  return { ok: true, resumo: g.resumo };
+}
+
+/** Resposta da equipe que partiu de uma sugestão da Viva e foi EDITADA (fica no histórico). */
+export async function enviarSugestaoEditada(chamadoId: string, texto: string, baseMensagemId: number): Promise<Res> {
+  const r = await responderComoAdmin(chamadoId, texto, false);
+  if (!r.ok) return r;
+  const ctx = await exigirAdmin();
+  if (ctx && Number.isInteger(baseMensagemId)) {
+    await ctx.admin.from("chamado_eventos").insert({ chamado_id: chamadoId, ator_tipo: "admin", ator_id: ctx.userId, acao: "sugestao_editada", de: String(baseMensagemId) });
+  }
+  return { ok: true };
 }
 
 /** "Devolver para a Viva" — só P3/P4 (P1/P2 nunca voltam para a IA). */
