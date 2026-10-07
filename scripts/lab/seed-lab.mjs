@@ -281,6 +281,8 @@ async function main() {
     const { error } = await admin.from("agentes_rondas").insert({ agente_slug: slug, iniciada_em: minAtras(m), concluida_em: minAtras(m - 2), status, resumo, achados });
     if (error) throw new Error(`ronda ${slug}: ${error.message}`);
   }
+  // Como em produção: a Viva está no ar (chat da /ajuda), sem tarefa agendada.
+  await admin.from("agentes").update({ status: "ativo", rotina_texto: "No site, 24 h (chat da /ajuda)", trigger_id: null }).eq("slug", "viva");
   console.log("✓ rondas de teste da Central de Agentes");
 
   // Saídas: env para a suíte E2E (sem imprimir a senha) + lista de contas sem senha.

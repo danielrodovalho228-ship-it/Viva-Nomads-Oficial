@@ -20,11 +20,16 @@ test.describe("T21 — Central de Agentes v2", () => {
   test("Equipe: Daniel → Moacir → Otávio, foto, status da última ronda e achados P1 reais", async ({ page }) => {
     await page.goto("/admin/agentes", { waitUntil: "networkidle" });
     const central = page.getByTestId("central-agentes");
-    // Dono no topo: não é agente — sem botões; a foto não é arquivo público.
+    // Dono no topo: não é agente — sem botões; com foto.
     const dono = central.getByTestId("agente-daniel");
     await expect(dono).toContainText("Daniel Rodovalho");
     await expect(dono).toContainText("Dono");
     await expect(dono.getByRole("button")).toHaveCount(0);
+    expect(await dono.locator('img[src="/agentes/daniel.webp"]').evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(256);
+    // O Renato (engenheiro) aparece em Tecnologia, com foto.
+    const renato = central.getByTestId("agente-renato");
+    await expect(renato).toContainText("Engenheiro");
+    expect(await renato.locator('img[src="/agentes/renato.webp"]').evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(256);
     await expect(central.getByTestId("agente-moacir")).toBeVisible();
     await expect(central.getByTestId("agente-otavio")).toBeVisible();
     const bruno = central.getByTestId("agente-bruno");
@@ -36,12 +41,20 @@ test.describe("T21 — Central de Agentes v2", () => {
     const foto = bruno.locator('img[src="/agentes/bruno.webp"]');
     await expect(foto).toBeVisible();
     expect(await foto.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(256);
-    await expect(central.getByTestId("agente-viva")).toContainText("Planejado");
+    // A Viva atende no chat do site (sem tarefa agendada): "No ar", não "Sem ronda".
+    const viva = central.getByTestId("agente-viva");
+    await expect(viva).toContainText("No ar");
+    await expect(viva.getByTestId("no-ar")).toContainText("Atende no chat da /ajuda e por e-mail; não faz rondas.");
+    await expect(viva).not.toContainText("Sem ronda ainda");
+    expect(await viva.locator('img[src="/agentes/viva.webp"]').evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(256);
+    await expect(central.getByTestId("agente-vitoria")).toContainText("Planejado");
     await semRolagemLateral(page);
   });
 
-  test("foto do dono não fica pública (só URL assinada na página de admin)", async ({ request }) => {
-    expect((await request.get("/agentes/daniel.webp")).status()).toBe(404);
+  test("foto do dono é pública em /agentes/daniel.webp (autorizado pelo Daniel)", async ({ request }) => {
+    const r = await request.get("/agentes/daniel.webp");
+    expect(r.status()).toBe(200);
+    expect(r.headers()["content-type"]).toMatch(/image\/webp/);
   });
 
   test("Rede ao vivo e briefing com o resumo real da última ronda", async ({ page }) => {
@@ -66,6 +79,16 @@ test.describe("T21 — Central de Agentes v2", () => {
     await page.getByRole("button", { name: "Parceiros", exact: true }).click();
     await expect(info).toContainText("Contador ainda não respondeu sobre o CNPJ");
     await semRolagemLateral(page);
+  });
+
+  test("Conversar e Sala de reunião: todos com foto, Renato incluído", async ({ page }) => {
+    await page.goto("/admin/agentes", { waitUntil: "networkidle" });
+    await abrirAba(page, "Conversar");
+    await expect(page.getByRole("button", { name: /Renato/ }).first()).toBeVisible();
+    await abrirAba(page, "Sala de reunião");
+    const renato = page.getByRole("button", { name: /Renato/ }).first();
+    await expect(renato).toBeVisible();
+    await expect(renato.locator('img[src="/agentes/renato.webp"]')).toHaveCount(1);
   });
 
   test("Diário de bordo: última ronda de cada agente com chips de prioridade", async ({ page }) => {

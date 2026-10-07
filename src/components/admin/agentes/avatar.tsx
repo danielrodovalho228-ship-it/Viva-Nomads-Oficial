@@ -30,7 +30,6 @@ export function AvatarAgente({
   recente = false,
   tamanho = 52,
   semFoto = false,
-  src,
 }: {
   slug: string;
   nome: string;
@@ -39,8 +38,6 @@ export function AvatarAgente({
   recente?: boolean;
   tamanho?: number;
   semFoto?: boolean;
-  /** Endereço da foto quando não é public/agentes/<slug>.webp (ex.: URL assinada do dono). */
-  src?: string | null;
 }) {
   const [falhou, setFalhou] = useState(false);
   const foto = !semFoto && !falhou;
@@ -53,7 +50,7 @@ export function AvatarAgente({
       {anel && <span className={styles.anel} style={{ background: anel }} />}
       {foto ? (
         // eslint-disable-next-line @next/next/no-img-element -- 256 px local, sem otimização
-        <img src={src ?? fotoDoAgente(slug)} alt="" width={tamanho} height={tamanho} loading="lazy" onError={() => setFalhou(true)} className={`${styles.hex} block h-full w-full bg-[#0B1638] object-cover`} />
+        <img src={fotoDoAgente(slug)} alt="" width={tamanho} height={tamanho} loading="lazy" onError={() => setFalhou(true)} className={`${styles.hex} block h-full w-full bg-[#0B1638] object-cover`} />
       ) : (
         <span className={`${styles.hex} block h-full w-full bg-[#0B1638]`}>
           <Hex nome={nome} cor={cor} tamanho={tamanho} />

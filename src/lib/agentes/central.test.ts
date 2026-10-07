@@ -79,6 +79,10 @@ test("iniciais e status do agente", () => {
   assert.equal(statusDoAgente({ status: "ativo" }, undefined), "sem_ronda");
   assert.equal(statusDoAgente({ status: "ativo" }, { status: "ok" }), "espera");
   assert.equal(statusDoAgente({ status: "ativo" }, { status: "falhou" }), "falhou");
+  // Ativo sem tarefa agendada (a Viva, no chat do site): "No ar", não "Sem ronda".
+  assert.equal(statusDoAgente({ status: "ativo", trigger_id: null }, undefined), "no_ar");
+  assert.equal(statusDoAgente({ status: "ativo", trigger_id: "trig_x" }, undefined), "sem_ronda");
+  assert.equal(statusDoAgente({ status: "planejado", trigger_id: null }, undefined), "planejado");
 });
 
 test("próxima ronda a partir da rotina (fusos de Brasília e Texas)", () => {
