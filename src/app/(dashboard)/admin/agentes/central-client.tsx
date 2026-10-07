@@ -24,7 +24,7 @@ import {
   type StatusAgente,
 } from "@/lib/agentes/central";
 import { COR_RONDA_HEX, achadosDaPrioridade, corDaRonda, indicadores, proximaDoAgente, resumoCurto, rondaRecente, ultimaPorAgente } from "@/lib/agentes/painel";
-import { deixarOrdem, type DadosCentral } from "@/lib/data/agentes-actions";
+import { deixarOrdem, type ChamadoVermelho, type DadosCentral } from "@/lib/data/agentes-actions";
 import { AvatarAgente } from "@/components/admin/agentes/avatar";
 import { RedeAoVivo } from "@/components/admin/agentes/rede";
 import { ChipPrioridade, RaioX } from "@/components/admin/agentes/raiox";
@@ -117,7 +117,7 @@ const botaoVerde = `${botao} bg-[#7FD321] text-[#06210A] hover:bg-[#95E23F]`;
 const campoBase = "rounded-lg border border-white/15 bg-[#0B1430] px-3 py-2 text-sm text-white placeholder:text-[#5d6a93] focus:border-[#3D7BFF] focus:outline-none";
 const campo = `w-full ${campoBase}`;
 
-export function CentralAgentes({ dados }: { dados: DadosCentral }) {
+export function CentralAgentes({ dados, vermelhos = [] }: { dados: DadosCentral; vermelhos?: ChamadoVermelho[] }) {
   const router = useRouter();
   const [aba, setAba] = useState<Aba>("Equipe");
   const [conversarCom, setConversarCom] = useState<string | null>(null);
@@ -155,6 +155,22 @@ export function CentralAgentes({ dados }: { dados: DadosCentral }) {
       }}
       data-testid="central-agentes"
     >
+      {vermelhos.length > 0 && (
+        <div className="border-b border-[#FF5470]/40 bg-[#FF5470]/15 px-4 py-2.5 text-sm text-[#FFD1D9] sm:px-8" role="alert" data-testid="chamados-vermelhos">
+          <b className="text-white">
+            {vermelhos.length} chamado{vermelhos.length > 1 ? "s" : ""} sem resposta da equipe há 6 h ou mais:
+          </b>{" "}
+          {vermelhos.map((c, i) => (
+            <span key={c.id}>
+              {i > 0 && " · "}
+              <a href={`/admin/atendimento/${c.id}`} className="font-semibold text-white underline">
+                {c.numero}
+              </a>{" "}
+              ({c.categoria}, {c.horas} h)
+            </span>
+          ))}
+        </div>
+      )}
       <header className="sticky top-0 z-20 border-b border-white/10 bg-[#050A18]/85 px-4 backdrop-blur sm:px-8">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3">
           <div className="flex items-center gap-2.5">
