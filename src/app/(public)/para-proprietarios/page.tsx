@@ -6,6 +6,10 @@ import { BrandImage } from "@/components/brand-image";
 import { PHOTOS } from "@/lib/media";
 import { CAUCAO_FRASE } from "@/lib/faixas";
 import { ComparativoPrecos } from "@/components/precos/comparativo-precos";
+import { JsonLd } from "@/components/seo/json-ld";
+import { servicoProprietarios } from "@/lib/seo/estruturados";
+import { SITE_URL } from "@/lib/site";
+import { CITIES } from "@/lib/constants";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/para-proprietarios" },
@@ -17,6 +21,7 @@ export const metadata: Metadata = {
 export default function ForLandlordsPage() {
   return (
     <>
+      <JsonLd dados={servicoProprietarios(SITE_URL, CITIES)} />
       <section className="bg-forest section-y text-white">
         <div className="container-page grid items-center gap-10 md:grid-cols-2">
           <div>

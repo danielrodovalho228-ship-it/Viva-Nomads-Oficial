@@ -7,6 +7,9 @@ import { CITIES } from "@/lib/constants";
 import { SELOS } from "@/config/selos";
 import { PropertyCard } from "@/components/property-card";
 import { ButtonLink } from "@/components/ui/button";
+import { JsonLd } from "@/components/seo/json-ld";
+import { paginaCidade } from "@/lib/seo/estruturados";
+import { SITE_URL } from "@/lib/site";
 
 interface Params {
   params: Promise<{ cidade: string }>;
@@ -44,9 +47,11 @@ export default async function CityLandingPage({ params }: Params) {
   const { cidade } = await params;
   const name = cityFromSlug(cidade);
   const properties = await listPropertiesByCity(name);
+  const infoCidade = CITIES.find((c) => c.slug === cidade);
 
   return (
     <>
+      {infoCidade && <JsonLd dados={paginaCidade(SITE_URL, infoCidade, properties, (id) => isExemplo(id))} />}
       <section className="bg-forest section-y text-white">
         <div className="container-page">
           <nav className="text-sm text-white/60">
