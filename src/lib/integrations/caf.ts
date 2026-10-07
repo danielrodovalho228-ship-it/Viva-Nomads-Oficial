@@ -8,12 +8,12 @@
 
 import type { CafResult, TrafficLight } from "@/lib/closing";
 
-import { exigirChaveEmProducao } from "@/lib/integracoes";
+import { exigirChaveEmProducao, integracoesSimuladas, registrarSimulado } from "@/lib/integracoes";
 
 const API_BASE = process.env.CAF_API_BASE ?? "https://api.combateafraude.com";
 
 export function isCafConfigured() {
-  return !!process.env.CAF_API_TOKEN;
+  return !!process.env.CAF_API_TOKEN && !integracoesSimuladas();
 }
 
 export interface CafRequest {
@@ -26,6 +26,7 @@ export interface CafRequest {
 export async function verifyTenant(req: CafRequest): Promise<CafResult> {
   if (!isCafConfigured()) {
     exigirChaveEmProducao("CAF");
+    await registrarSimulado("caf", { acao: "verificacao" });
     return {
       light: "green",
       identity: true,

@@ -3,6 +3,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
 import { GERACAO_IA_ATIVA } from "@/lib/flags";
 import { consumirLimite, ipHash, DIA } from "@/lib/limites";
+import { integracoesSimuladas } from "@/lib/integracoes";
 import {
   montarBrief,
   limparSaida,
@@ -27,7 +28,7 @@ import {
  */
 export async function POST(request: Request) {
   // Portão duplo: flag ligada E chave presente. Sem isso, feature dorme.
-  if (!GERACAO_IA_ATIVA || !process.env.ANTHROPIC_API_KEY) {
+  if (!GERACAO_IA_ATIVA || !process.env.ANTHROPIC_API_KEY || integracoesSimuladas()) {
     return NextResponse.json(
       { error: "A geração por IA está desativada no momento." },
       { status: 503 }

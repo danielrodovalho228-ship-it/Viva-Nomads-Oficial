@@ -3,9 +3,10 @@
   configurar ZAPI_INSTANCE, ZAPI_TOKEN e ZAPI_CLIENT_TOKEN. Sem configuração,
   opera em modo demonstração. (Alternativas: Twilio, Meta WhatsApp Business.)
 */
+import { integracoesSimuladas, registrarSimulado } from "../integracoes.ts";
 
 export function isWhatsappConfigured() {
-  return !!process.env.ZAPI_INSTANCE && !!process.env.ZAPI_TOKEN;
+  return !!process.env.ZAPI_INSTANCE && !!process.env.ZAPI_TOKEN && !integracoesSimuladas();
 }
 
 export interface WhatsappResult {
@@ -33,6 +34,8 @@ export async function sendWhatsapp(params: {
   message: string;
 }): Promise<WhatsappResult> {
   if (!isWhatsappConfigured()) {
+    // Só o fato do envio (nunca o telefone nem o texto: o laboratório não guarda contato).
+    await registrarSimulado("whatsapp", { tamanho: params.message.length });
     return { demo: true, ok: true };
   }
   const phone = telefoneParaWhatsapp(params.phone);

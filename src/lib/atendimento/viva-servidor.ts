@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { consumirLimite, DIA } from "@/lib/limites";
+import { integracoesSimuladas } from "@/lib/integracoes";
 import { notify } from "@/lib/notifications";
 import { textoEmail } from "@/lib/notifications/texto-seguro";
 import { SITE_URL } from "@/lib/site";
@@ -33,7 +34,7 @@ import {
  */
 
 export function vivaAtiva(): boolean {
-  return process.env.ATENDIMENTO_IA_ATIVO === "on" && !!process.env.ANTHROPIC_API_KEY;
+  return process.env.ATENDIMENTO_IA_ATIVO === "on" && !!process.env.ANTHROPIC_API_KEY && !integracoesSimuladas();
 }
 
 /** Limite de custo: atendimentos da Viva por dia (ATENDIMENTO_IA_LIMITE_DIA, padrão 300). */
