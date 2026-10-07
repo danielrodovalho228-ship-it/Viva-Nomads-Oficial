@@ -20,7 +20,7 @@ import {
 import { useAuthStore } from "@/lib/store";
 import { useViewMode, MODE_META, identidadeUsuario } from "@/lib/roles";
 import { useDisplayUser } from "@/lib/demo/demo-mode";
-import { setPreferredMode } from "@/lib/data/mode-actions";
+import { salvarModo } from "@/lib/salvar-modo";
 import { removerPushToken } from "@/lib/data/push-actions";
 import { createClient } from "@/lib/supabase/client";
 import { appHome } from "@/lib/app-mode";
@@ -43,7 +43,7 @@ export function ContaMenu() {
   async function trocarModo() {
     setActiveMode(outro);
     // Espera gravar a preferência antes de navegar (ver dashboard-shell: 8.3).
-    await setPreferredMode(outro).catch(() => {});
+    await salvarModo(outro);
     router.replace(appHome(outro));
   }
 

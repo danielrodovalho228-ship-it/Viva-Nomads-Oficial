@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Home, Search, X } from "lucide-react";
 import { useAuthStore } from "@/lib/store";
-import { setPreferredMode } from "@/lib/data/mode-actions";
+import { salvarModo } from "@/lib/salvar-modo";
 
 const ASKED_KEY = "vivanomads-role-asked";
 
@@ -44,7 +44,7 @@ export function RoleWelcomeModal() {
   function pick(mode: "tenant" | "owner") {
     setActiveMode(mode);
     // Conta nova grava o modo no perfil já no primeiro acesso (B1).
-    setPreferredMode(mode).catch(() => {});
+    salvarModo(mode).catch(() => {});
     done();
     if (mode === "owner") router.push("/qualificar");
   }

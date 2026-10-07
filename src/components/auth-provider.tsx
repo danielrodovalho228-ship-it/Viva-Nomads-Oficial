@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuthStore } from "@/lib/store";
 import type { UserRole } from "@/lib/types";
+import { lerPendente } from "@/lib/modo-pendente";
 
 /**
  * Sincroniza a sessão do Supabase com o estado global (Zustand).
@@ -87,8 +88,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         // Modo ativo é PREFERÊNCIA DE PERFIL (B1): o servidor é a autoridade no
         // login — salvo se o usuário já trocou de modo durante a leitura.
+        // Também vence uma troca recente que o servidor ainda não confirmou
+        // (bug 6 da L2) — o ModeInitializer já a aplicou e está regravando.
         const pm = (profile as { preferred_mode?: string } | null)?.preferred_mode;
-        if ((pm === "owner" || pm === "tenant") && useAuthStore.getState().activeMode === modoAntes) {
+        const pendente = lerPendente(typeof window === "undefined" ? null : window.localStorage);
+        if ((pm === "owner" || pm === "tenant") && !pendente && useAuthStore.getState().activeMode === modoAntes) {
           setActiveMode(pm);
         }
       } catch {
