@@ -12,8 +12,8 @@
 --   • publicação ÀS CEGAS: as duas do mesmo contrato aparecem quando ambas
 --     chegam, ou quando vence o prazo de 14 dias (publicar_avaliacoes, cron diário);
 --   • comentário com telefone/e-mail/rede ou ofensa vai para 'em_moderacao'.
--- O cartão da Fernanda NÃO é mexido aqui: o Moacir já o ativou em produção
--- (07/10/2026, "Confiança, Cadastro e Reputação", rotina 05:47).
+-- Cartão da Fernanda: grava os MESMOS valores que o Moacir já pôs em produção
+-- (07/10/2026, "Confiança, Cadastro e Reputação", ativa, rotina 05:47) — nunca o antigo.
 --
 -- TRAVA: se qualquer uma das 3 tabelas tiver linha, a migração PARA (nada some).
 -- Sem NOTICE. Rollback: supabase/producao/rollback/0089_rollback.sql
@@ -258,3 +258,11 @@ grant execute on function public.avaliacoes_recebidas() to authenticated;
 revoke all on function public.avaliacao_valida() from public, anon, authenticated;
 revoke all on function public.avaliacao_apos_envio() from public, anon, authenticated;
 
+-- Fernanda: o mesmo cartão que o Moacir gravou em produção em 07/10/2026
+-- (idempotente: lá não muda nada; num banco novo, ela já nasce ativa).
+update public.agentes
+   set cargo = 'Confiança, Cadastro e Reputação',
+       status = 'ativo',
+       rotina_texto = 'Todo dia 05:47 Brasília',
+       trigger_id = 'trig_01DjEJvriUb7DgGXbPZJd4YX'
+ where slug = 'fernanda';
