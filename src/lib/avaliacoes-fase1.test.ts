@@ -55,8 +55,8 @@ test("0089: às cegas — publica quando a outra parte enviou ou quando vencem o
   assert.match(codigo, /contem_ofensa\(new\.comentario_publico\)/);
 });
 
-test("0089: Fernanda vira Confiança e Reputação e continua planejada", () => {
-  assert.match(codigo, /set cargo = 'Confiança e Reputação',/);
-  assert.match(codigo, /briefing = 'Antifraude de cadastros e moderação das avaliações entre inquilino e proprietário: filtra ofensas e dados pessoais, detecta avaliação falsa ou retaliação, calcula a reputação e os selos\.'/);
-  assert.doesNotMatch(codigo, /status = 'ativo'[\s\S]*where slug = 'fernanda'/);
+test("0089 e o rollback não mexem no cartão da Fernanda (o Moacir já o ativou em produção)", () => {
+  assert.doesNotMatch(codigo, /where slug = 'fernanda'/);
+  for (const f of ["../../supabase/producao/aplicar-0089.sql", "../../supabase/producao/rollback/0089_rollback.sql"])
+    assert.doesNotMatch(readFileSync(new URL(f, import.meta.url), "utf8").replace(/--.*$/gm, ""), /fernanda/i);
 });

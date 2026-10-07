@@ -243,11 +243,6 @@ grant execute on function public.avaliacoes_recebidas() to authenticated;
 revoke all on function public.avaliacao_valida() from public, anon, authenticated;
 revoke all on function public.avaliacao_apos_envio() from public, anon, authenticated;
 
--- Fernanda: Confiança e Reputação (cuida das avaliações quando estiverem no ar).
-update public.agentes
-   set cargo = 'Confiança e Reputação',
-       briefing = 'Antifraude de cadastros e moderação das avaliações entre inquilino e proprietário: filtra ofensas e dados pessoais, detecta avaliação falsa ou retaliação, calcula a reputação e os selos.'
- where slug = 'fernanda';
 
 insert into supabase_migrations.schema_migrations (version, name, statements, created_by)
 select '20261007000089', '0089_avaliacoes_fase1',
@@ -261,4 +256,3 @@ select to_regclass('public.reviews') as reviews_sumiu, to_regclass('public.prope
 select has_column_privilege('anon', 'public.avaliacoes', 'nota_privada_parte', 'select') as anon_le_privada,
        has_column_privilege('anon', 'public.avaliacoes', 'comentario_publico', 'select') as anon_le_publico,
        has_table_privilege('authenticated', 'public.avaliacoes', 'delete') as logado_apaga;
-select cargo, status from public.agentes where slug = 'fernanda';

@@ -1,4 +1,4 @@
--- Rollback da 0089: volta as 3 tabelas como estavam em 07/10/2026 (VAZIAS) e o cartão da Fernanda.
+-- Rollback da 0089: volta as 3 tabelas como estavam em 07/10/2026 (VAZIAS). O cartão da Fernanda não é mexido.
 -- ATENÇÃO: apaga as avaliações gravadas no formato novo. Só rode se ainda não houver avaliação real.
 begin;
 set local lock_timeout = '5s';
@@ -88,6 +88,5 @@ create trigger trg_avaliacao_valida before insert or update on public.avaliacoes
 create trigger contato_avaliacao_comentario before insert or update of comentario on public.avaliacoes
   for each row execute function public.bloqueia_contato_texto('comentario', 'rigoroso');
 
-update public.agentes set cargo = 'Antifraude', briefing = 'Antifraude de cadastros e pagamentos.' where slug = 'fernanda';
 delete from supabase_migrations.schema_migrations where version = '20261007000089';
 commit;
