@@ -78,6 +78,9 @@ end $$;
 revoke all on function public.registrar_ronda(text,timestamptz,timestamptz,text,text,jsonb,uuid[],text) from public, anon, authenticated;
 grant execute on function public.registrar_ronda(text,timestamptz,timestamptz,text,text,jsonb,uuid[],text) to service_role;
 
+-- Viva: a rotina "Viva · Plantão de chamados" passa a ser a dela.
+update public.agentes set trigger_id = 'trig_01HrZe3NpeM8ntv4bZtePisD' where slug = 'viva' and trigger_id is null;
+
 insert into supabase_migrations.schema_migrations (version, name, statements, created_by)
 select '20261007000087', '0087_repasse_entre_agentes',
        array['-- conteúdo em supabase/migrations/0087_repasse_entre_agentes.sql'], 'danielrodovalho228@gmail.com'
@@ -88,3 +91,4 @@ commit;
 select column_name from information_schema.columns
  where table_schema = 'public' and table_name = 'agentes_ordens' and column_name in ('origem_slug','origem_ronda','retorno_de','prioridade') order by 1;
 select has_function_privilege('anon', 'public.registrar_ronda(text,timestamptz,timestamptz,text,text,jsonb,uuid[],text)', 'execute') as anon_executa;
+select slug, trigger_id from public.agentes where slug = 'viva';

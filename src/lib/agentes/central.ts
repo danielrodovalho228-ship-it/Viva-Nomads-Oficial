@@ -118,16 +118,17 @@ export const ROTULO_STATUS: Record<StatusAgente, string> = {
 };
 
 /**
- * Agente ativo SEM tarefa agendada (trigger_id nulo, ex.: a Viva, que atende no
- * chat do site) não faz rondas: fica "No ar" em vez de "Sem ronda ainda".
+ * Agente ativo SEM tarefa agendada (trigger_id nulo) ou que só registra ronda
+ * quando há o que avisar (SEM_RONDAS, ex.: a Viva, que atende no chat do site e
+ * tem o plantão de hora em hora) fica "No ar" em vez de "Sem ronda ainda".
  */
 export function statusDoAgente(
-  a: Pick<Agente, "status"> & { trigger_id?: string | null },
+  a: Pick<Agente, "status"> & { trigger_id?: string | null; slug?: string },
   ultima: Pick<Ronda, "status"> | undefined
 ): StatusAgente {
   if (a.status === "planejado") return "planejado";
   if (a.status === "pausado") return "pausado";
-  if (!ultima) return a.trigger_id === null ? "no_ar" : "sem_ronda";
+  if (!ultima) return a.trigger_id === null || (a.slug && SEM_RONDAS[a.slug]) ? "no_ar" : "sem_ronda";
   return ultima.status === "ok" ? "espera" : ultima.status;
 }
 
@@ -254,9 +255,9 @@ function blocoOrdens(ordens: Pick<Ordem, "texto" | "status" | "criada_em">[]): s
 /** O gerente: a ronda dele é o boletim diário, base para "como estamos?". */
 export const SLUG_GERENTE = "moacir";
 
-/** O que aparece no cartão de quem está "No ar" (não faz rondas). */
+/** O que aparece no cartão de quem está "No ar" (sem ronda registrada). */
 export const SEM_RONDAS: Record<string, string> = {
-  viva: "Atende no chat da /ajuda e por e-mail; não faz rondas.",
+  viva: "Atende no chat da /ajuda e por e-mail; o plantão de hora em hora só registra ronda quando há chamado esperando você.",
 };
 
 export const REGRA_BOLETIM = `- Você é o gerente: para "como estamos?", "o que rodou?" e parecidos, parta do seu ÚLTIMO BOLETIM (sua ronda mais recente, acima) e complete com o retrato do momento. Diga a hora do boletim. Se ainda não há boletim, diga isso e responda só com o retrato.`;

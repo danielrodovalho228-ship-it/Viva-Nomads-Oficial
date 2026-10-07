@@ -24,5 +24,6 @@ alter table public.agentes_ordens
   drop column if exists retorno_de,
   drop column if exists origem_ronda,
   drop column if exists origem_slug;
+update public.agentes set trigger_id = null where slug = 'viva' and trigger_id = 'trig_01HrZe3NpeM8ntv4bZtePisD';
 delete from supabase_migrations.schema_migrations where version = '20261007000087';
 commit;

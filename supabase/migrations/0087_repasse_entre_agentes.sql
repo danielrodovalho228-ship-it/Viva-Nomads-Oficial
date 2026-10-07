@@ -82,3 +82,7 @@ end $$;
 
 revoke all on function public.registrar_ronda(text,timestamptz,timestamptz,text,text,jsonb,uuid[],text) from public, anon, authenticated;
 grant execute on function public.registrar_ronda(text,timestamptz,timestamptz,text,text,jsonb,uuid[],text) to service_role;
+
+-- Viva: a rotina "Viva · Plantão de chamados" (de hora em hora, 07:23–23:23 Brasília)
+-- passa a ser a dela — "Executar agora" pode acordá-la (com AGENTE_TOKEN_VIVA).
+update public.agentes set trigger_id = 'trig_01HrZe3NpeM8ntv4bZtePisD' where slug = 'viva' and trigger_id is null;

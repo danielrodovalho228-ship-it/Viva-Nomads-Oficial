@@ -46,10 +46,10 @@ test.describe("T21 — Central de Agentes v2", () => {
     await foto.scrollIntoViewIfNeeded();
     await expect(foto).toBeVisible();
     await expect.poll(() => foto.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(256);
-    // A Viva atende no chat do site (sem tarefa agendada): "No ar", não "Sem ronda".
+    // A Viva atende no chat do site (o plantão só registra ronda quando há chamado): "No ar", não "Sem ronda".
     const viva = central.getByTestId("agente-viva");
     await expect(viva).toContainText("No ar");
-    await expect(viva.getByTestId("no-ar")).toContainText("Atende no chat da /ajuda e por e-mail; não faz rondas.");
+    await expect(viva.getByTestId("no-ar")).toContainText("Atende no chat da /ajuda e por e-mail; o plantão de hora em hora só registra ronda quando há chamado esperando você.");
     await expect(viva).not.toContainText("Sem ronda ainda");
     // Foto abaixo da dobra carrega sob demanda: rola até ela e espera carregar.
     const fotoViva = viva.locator('img[src="/agentes/viva.webp"]');
