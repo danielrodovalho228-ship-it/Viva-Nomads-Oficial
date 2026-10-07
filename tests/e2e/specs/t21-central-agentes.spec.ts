@@ -20,7 +20,11 @@ test.describe("T21 — Central de Agentes v2", () => {
   test("Equipe: Daniel → Moacir → Otávio, foto, status da última ronda e achados P1 reais", async ({ page }) => {
     await page.goto("/admin/agentes", { waitUntil: "networkidle" });
     const central = page.getByTestId("central-agentes");
-    await expect(central.getByTestId("agente-daniel")).toBeVisible();
+    // Dono no topo: não é agente — sem botões; a foto não é arquivo público.
+    const dono = central.getByTestId("agente-daniel");
+    await expect(dono).toContainText("Daniel Rodovalho");
+    await expect(dono).toContainText("Dono");
+    await expect(dono.getByRole("button")).toHaveCount(0);
     await expect(central.getByTestId("agente-moacir")).toBeVisible();
     await expect(central.getByTestId("agente-otavio")).toBeVisible();
     const bruno = central.getByTestId("agente-bruno");
@@ -34,6 +38,10 @@ test.describe("T21 — Central de Agentes v2", () => {
     expect(await foto.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(256);
     await expect(central.getByTestId("agente-viva")).toContainText("Planejado");
     await semRolagemLateral(page);
+  });
+
+  test("foto do dono não fica pública (só URL assinada na página de admin)", async ({ request }) => {
+    expect((await request.get("/agentes/daniel.webp")).status()).toBe(404);
   });
 
   test("Rede ao vivo e briefing com o resumo real da última ronda", async ({ page }) => {
