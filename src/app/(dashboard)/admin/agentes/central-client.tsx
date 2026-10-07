@@ -20,7 +20,7 @@ import {
 } from "@/lib/agentes/central";
 import { COR_RONDA_HEX, achadosDaPrioridade, corDaRonda, indicadores, proximaDoAgente, resumoCurto, rondaRecente, ultimaPorAgente } from "@/lib/agentes/painel";
 import { deixarOrdem, type DadosCentral } from "@/lib/data/agentes-actions";
-import { AvatarAgente, Hex } from "@/components/admin/agentes/avatar";
+import { AvatarAgente } from "@/components/admin/agentes/avatar";
 import { RedeAoVivo } from "@/components/admin/agentes/rede";
 import { ChipPrioridade, RaioX } from "@/components/admin/agentes/raiox";
 import styles from "@/components/admin/agentes/central.module.css";
@@ -103,7 +103,7 @@ const botaoLinha = `${botao} border border-white/15 text-white hover:bg-white/5`
 const campoBase = "rounded-lg border border-white/15 bg-[#0B1430] px-3 py-2 text-sm text-white placeholder:text-[#5d6a93] focus:border-[#3D7BFF] focus:outline-none";
 const campo = `w-full ${campoBase}`;
 
-export function CentralAgentes({ dados }: { dados: DadosCentral }) {
+export function CentralAgentes({ dados, fotoDono = null }: { dados: DadosCentral; fotoDono?: string | null }) {
   const router = useRouter();
   const [aba, setAba] = useState<Aba>("Equipe");
   const [conversarCom, setConversarCom] = useState<string | null>(null);
@@ -211,9 +211,9 @@ export function CentralAgentes({ dados }: { dados: DadosCentral }) {
         {dados.agentes.length === 0 ? (
           <Vazio titulo="Nenhum agente cadastrado" texto="A tabela de agentes está vazia ou a migração 0078 ainda não foi aplicada neste banco." />
         ) : aba === "Equipe" ? (
-          <Equipe dados={dados} agora={agora} onConversar={abrirConversa} />
+          <Equipe dados={dados} agora={agora} fotoDono={fotoDono} onConversar={abrirConversa} />
         ) : aba === "Rede ao vivo" ? (
-          <RedeAoVivo agentes={dados.agentes} rondas={dados.rondas} agora={agora} />
+          <RedeAoVivo agentes={dados.agentes} rondas={dados.rondas} agora={agora} fotoDono={fotoDono} />
         ) : aba === "Raio-X da Viva" ? (
           <RaioX agentes={dados.agentes} rondas={dados.rondas} agora={agora} onConversar={abrirConversa} />
         ) : aba === "Diário de bordo" ? (
@@ -315,7 +315,7 @@ function CardAgente({
   );
 }
 
-function Equipe({ dados, agora, onConversar }: { dados: DadosCentral; agora: Date | null; onConversar: (s: string) => void }) {
+function Equipe({ dados, agora, fotoDono, onConversar }: { dados: DadosCentral; agora: Date | null; fotoDono: string | null; onConversar: (s: string) => void }) {
   const ultimas = useMemo(() => ultimaPorAgente(dados.rondas), [dados.rondas]);
   const pend = (slug: string) => dados.ordens.filter((o) => o.agente_slug === slug && o.status === "pendente").length;
   const card = (a: Agente, grande = false) => <CardAgente key={a.slug} a={a} ultima={ultimas[a.slug]} pendentes={pend(a.slug)} agora={agora} grande={grande} onConversar={onConversar} />;
@@ -326,20 +326,21 @@ function Equipe({ dados, agora, onConversar }: { dados: DadosCentral; agora: Dat
 
   return (
     <div>
+      <Rotulo>Dono</Rotulo>
+      {/* Não é agente (não está em public.agentes): sem status, rondas nem botões. */}
+      <article className="grid grid-cols-[72px_1fr] items-center gap-4 rounded-xl border border-[#7FD321]/50 bg-gradient-to-b from-[#0D1838] to-[#0D1838]/70 p-4" data-testid="agente-daniel">
+        <AvatarAgente slug="daniel" nome="Daniel Rodovalho" cor="#7FD321" anel="#7FD321" tamanho={72} src={fotoDono} semFoto={!fotoDono} />
+        <div className="min-w-0">
+          <h3 className="flex flex-wrap items-center gap-2 text-lg font-bold text-white">
+            Daniel Rodovalho <Chip cor="#7FD321">Dono</Chip>
+          </h3>
+          <p className="text-[13px] text-[#8C9AC4]">Fundador · aprova, decide e assina</p>
+          <p className="mt-2 text-[13px] text-[#C3CDEB]">Tudo que muda o site, o banco, publica ou manda mensagem passa por você. Os agentes preparam; você aprova.</p>
+        </div>
+      </article>
+
       <Rotulo>Comando</Rotulo>
-      <div className="grid gap-3 lg:grid-cols-3">
-        <article className="grid grid-cols-[64px_1fr] gap-3 rounded-xl border border-[#7FD321]/40 bg-gradient-to-b from-[#0D1838] to-[#0D1838]/70 p-3.5" data-testid="agente-daniel">
-          <span className={`${styles.hex} block h-16 w-16 bg-[#0B1638]`}>
-            <Hex nome="Daniel R" cor="#7FD321" tamanho={64} />
-          </span>
-          <div className="min-w-0">
-            <h3 className="flex flex-wrap items-center gap-2 text-base font-bold text-white">
-              Daniel <Chip cor="#7FD321">Fundador</Chip>
-            </h3>
-            <p className="text-[13px] text-[#8C9AC4]">Aprova, decide e assina</p>
-            <p className="mt-2 text-[13px] text-[#C3CDEB]">Tudo que muda o site, o banco, publica ou manda mensagem passa por você. Os agentes preparam; você aprova.</p>
-          </div>
-        </article>
+      <div className="grid gap-3 lg:grid-cols-2">
         {moacir && card(moacir, true)}
         {otavio && card(otavio, true)}
       </div>
