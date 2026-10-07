@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { ehAdmin } from "@/lib/data/admin-guard";
+import { PREFIXO_MOACIR } from "@/lib/agentes/gerente";
 import { avisoOrdem, contarP1, type Agente, type Conversa, type Ordem, type Ronda } from "@/lib/agentes/central";
 
 /**
@@ -52,6 +53,42 @@ export async function deixarOrdem(slug: string, texto: string): Promise<{ ok: bo
   const { error } = await supabase.from("agentes_ordens").insert({ agente_slug: slug, texto: t });
   if (error) return { ok: false, erro: "Não consegui gravar a ordem." };
   return { ok: true, aviso: avisoOrdem(ag as Pick<Agente, "nome" | "rotina_texto">, new Date()) };
+}
+
+/**
+ * Retorno do Moacir: execução que ELE disparou (ordem "Pedido do Moacir…")
+ * terminou (a ronda fechou a ordem) → posta o resultado na conversa dele, uma
+ * vez só (a linha leva "(ordem <id>)"). Roda ao abrir a Central.
+ */
+export async function postarRetornosDoMoacir(): Promise<number> {
+  const supabase = await createClient();
+  if (!supabase) return 0;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user || !(await ehAdmin(supabase, user.id))) return 0;
+  const { data: ordens } = await supabase
+    .from("agentes_ordens")
+    .select("id, agente_slug, texto")
+    .eq("status", "concluida")
+    .like("texto", `${PREFIXO_MOACIR}%`)
+    .order("atualizada_em", { ascending: false })
+    .limit(10);
+  let n = 0;
+  for (const o of ordens ?? []) {
+    const marca = `(ordem ${o.id})`;
+    const { count } = await supabase.from("agentes_conversas").select("id", { count: "exact", head: true }).eq("agente_slug", "moacir").like("texto", `%${marca}%`);
+    if ((count ?? 0) > 0) continue;
+    const { data: r } = await supabase.from("agentes_rondas").select("resumo, link_sessao, status").contains("ordens_atendidas", [o.id]).order("iniciada_em", { ascending: false }).limit(1).maybeSingle();
+    const { data: ag } = await supabase.from("agentes").select("nome").eq("slug", o.agente_slug).maybeSingle();
+    const nome = (ag?.nome as string) ?? o.agente_slug;
+    const texto = r
+      ? `Retorno: ${nome} terminou o que eu pedi (${r.status}). ${String(r.resumo).replace(/\s+/g, " ").slice(0, 400)}${r.link_sessao ? ` ${r.link_sessao}` : ""} ${marca}`
+      : `Retorno: ${nome} marcou o meu pedido como concluído, mas não achei a ronda com o resultado. Vou conferir na próxima. ${marca}`;
+    const { error } = await supabase.from("agentes_conversas").insert({ agente_slug: "moacir", papel: "agente", autor_slug: "moacir", texto });
+    if (!error) n++;
+  }
+  return n;
 }
 
 /** Achados P1 nas rondas das últimas 24h — badge do item "Agentes" no menu. */

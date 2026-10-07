@@ -7,7 +7,11 @@ import { aceitaEsforco, aceitaReserva, modeloViva } from "@/lib/atendimento/viva
 import { LIMITE_DISPAROS_DIA, inicioDoDiaBrasilia, modeloAgentes, nomeVarToken, SCHEMA_REUNIAO, TIMEOUT_MS, type Agente, type Conversa, type Ordem, type Ronda } from "@/lib/agentes/central";
 import { consumirLimite, DIA } from "@/lib/limites";
 import { integracoesSimuladas, registrarSimulado } from "@/lib/integracoes";
-import type { Deps, DepsExecutar } from "@/lib/agentes/motor";
+import { executarAgora, type Deps, type DepsExecutar } from "@/lib/agentes/motor";
+import { modeloGerenteSimulado, nomeDoOrganograma, PREFIXO_MOACIR, type Consulta, type DepsGerente, type ModeloGerente } from "@/lib/agentes/gerente";
+import { horaBrasilia, retratoEmTexto } from "@/lib/agentes/retrato";
+import { ultimaPorAgente } from "@/lib/agentes/painel";
+import { systemChat } from "@/lib/agentes/central";
 import type { Retrato } from "@/lib/agentes/retrato";
 
 /**
@@ -20,7 +24,7 @@ export async function depsReais(): Promise<Deps | null> {
   if (!supabase) return null;
   const modelo = modeloAgentes(process.env.AGENTES_MODELO, modeloViva());
 
-  return {
+  const deps: Deps = {
     async adminId() {
       const {
         data: { user },
@@ -97,6 +101,127 @@ export async function depsReais(): Promise<Deps | null> {
       return res.content.map((b) => (b.type === "text" ? b.text : "")).join("").trim();
     },
   };
+  deps.gerente = montarGerente(deps, supabase, modelo);
+  return deps;
+}
+
+// ── Moacir gerente: consultas AO VIVO (prontas, sem SQL livre, sem dado pessoal) ──
+const CONTATO = /\b[\w.+-]+@[\w-]+\.[\w.]+\b|\(?\b\d{2}\)?\s?9?\d{4}[-\s]?\d{4}\b/g;
+type Sessao = NonNullable<Awaited<ReturnType<typeof createClient>>>;
+
+async function consultaAoVivo(c: Consulta, supabase: Sessao): Promise<string> {
+  const agora = new Date().toISOString();
+  const cab = `(dados de ${horaBrasilia(agora)}, horário de Brasília)`;
+  if (c === "contagens") return retratoEmTexto(await retratoDoMomento());
+  if (c === "chamados_abertos") {
+    const admin = createAdminClient();
+    if (!admin) return "Não consegui consultar os chamados agora.";
+    const { data } = await admin
+      .from("chamados")
+      .select("numero_publico, categoria, prioridade, status, responsavel_tipo, sla_estado, prazo_primeira_resposta, primeira_resposta_em, criado_em")
+      .not("status", "in", "(resolvido,encerrado)")
+      .eq("simulacao", false)
+      .order("criado_em", { ascending: false })
+      .limit(15);
+    if (!data?.length) return `Nenhum chamado aberto ${cab}.`;
+    return `Chamados abertos ${cab} — mais novos primeiro:\n${data
+      .map(
+        (x) =>
+          `${x.numero_publico} · ${x.categoria} · ${String(x.prioridade).toUpperCase()} · ${x.status} · com ${x.responsavel_tipo === "ia" ? "a Viva" : "a equipe"} · aberto ${horaBrasilia(x.criado_em as string)}; prazo 1ª resposta ${horaBrasilia(x.prazo_primeira_resposta as string)}; ${x.primeira_resposta_em ? "já respondido" : "sem resposta ainda"}; SLA ${x.sla_estado}`
+      )
+      .join("\n")}`;
+  }
+  if (c === "rondas_recentes") {
+    const { data } = await supabase.from("agentes_rondas").select("id, agente_slug, iniciada_em, concluida_em, status, resumo, achados, link_sessao").order("iniciada_em", { ascending: false }).limit(60);
+    const ult = Object.values(ultimaPorAgente((data ?? []) as Ronda[]));
+    if (!ult.length) return `Nenhuma ronda registrada ${cab}.`;
+    return `Última ronda de cada agente ${cab}:\n${ult
+      .map((r) => {
+        const ach = (Array.isArray(r.achados) ? r.achados : []).filter((a) => /^P[12]$/i.test(String(a?.prioridade ?? ""))).slice(0, 4).map((a) => `${a.prioridade}: ${a.titulo}`).join("; ");
+        return `${r.agente_slug} · ${horaBrasilia(r.iniciada_em)} · ${r.status}: ${r.resumo.replace(CONTATO, "[contato]").replace(/\s+/g, " ").slice(0, 240)}${ach ? ` · achados ${ach}` : ""}`;
+      })
+      .join("\n")}`;
+  }
+  if (c === "ordens_pendentes") {
+    const { data } = await supabase.from("agentes_ordens").select("agente_slug, texto, status, criada_em").in("status", ["pendente", "lida"]).order("criada_em", { ascending: false }).limit(20);
+    if (!data?.length) return `Nenhuma ordem aberta ${cab}.`;
+    return `Ordens abertas ${cab}:\n${data.map((o) => `${o.agente_slug} · ${o.status === "lida" ? "em execução" : "aguardando"} · ${horaBrasilia(o.criada_em as string)}: ${String(o.texto).slice(0, 160)}`).join("\n")}`;
+  }
+  if (c === "ultimo_deploy") {
+    const sha = process.env.VERCEL_GIT_COMMIT_SHA;
+    return sha
+      ? `Versão no ar: commit ${sha.slice(0, 7)} — "${(process.env.VERCEL_GIT_COMMIT_MESSAGE ?? "").split("\n")[0].slice(0, 140)}" ${cab}.`
+      : "Não consigo ver o deploy daqui (fora da Vercel). Próximo passo: conferir no painel da Vercel.";
+  }
+  return "Não consigo listar as migrações aplicadas daqui (o site não lê a tabela de migrações). Próximo passo: pedir ao Claude Code ou conferir no Supabase.";
+}
+
+/** Dados ao vivo da área de cada agente (para perguntar_agente). */
+async function dadosDaArea(slug: string, supabase: Sessao): Promise<string> {
+  if (slug === "viva") return consultaAoVivo("chamados_abertos", supabase);
+  if (slug === "bruno" || slug === "otavio" || slug === "renato") return consultaAoVivo("rondas_recentes", supabase);
+  if (slug === "helena") return consultaAoVivo("ordens_pendentes", supabase);
+  return consultaAoVivo("contagens", supabase);
+}
+
+function montarGerente(base: Deps, supabase: Sessao, modelo: string): Deps["gerente"] {
+  const simulado = integracoesSimuladas();
+  if (!simulado && !process.env.ANTHROPIC_API_KEY) return undefined;
+  let nomes: Record<string, string> = {};
+  const ferramentas: DepsGerente = {
+    nomeDe: (slug) => nomes[slug] ?? nomeDoOrganograma(slug),
+    consultar: (c) => consultaAoVivo(c, supabase),
+    async perguntarAgente(slug, pergunta) {
+      const agentes = await base.agentes();
+      nomes = Object.fromEntries(agentes.map((a) => [a.slug, a.nome]));
+      const a = agentes.find((x) => x.slug === slug);
+      if (!a) return { nome: slug, resposta: "Agente não encontrado." };
+      const area = await dadosDaArea(slug, supabase);
+      if (simulado) {
+        const n = (area.match(/VN-\d+/g) ?? []).length;
+        const resposta =
+          slug === "viva"
+            ? n
+              ? `Tenho ${n} chamado(s) aberto(s). O mais novo: ${area.split("\n")[1] ?? ""}. Os sensíveis (Caução, contrato, cobrança) ficam com o Daniel; deixei a resposta sugerida no chamado.`
+              : "Nenhum chamado aberto agora."
+            : `Pelos dados de agora: ${area.split("\n").slice(0, 2).join(" ")}`;
+        return { nome: a.nome, resposta: resposta.slice(0, 1200) };
+      }
+      const [rondas, ordens] = await Promise.all([base.rondas(slug, 3), base.ordensAbertas(slug)]);
+      const r = await base.modelo({
+        system: `${systemChat(a, rondas, ordens)}\n\nDADOS AO VIVO DA SUA ÁREA:\n${area}\n\nQuem pergunta é o Moacir (gerente). Responda em até 4 linhas, só com o que está nos dados.`,
+        messages: [{ role: "user", content: pergunta }],
+        maxTokens: 600,
+        json: false,
+      });
+      return { nome: a.nome, resposta: (r || "Não consegui responder agora.").slice(0, 1200) };
+    },
+    async executar(slug, ordem) {
+      const d = await depsExecutarReais();
+      if (!d) return { ok: false, texto: "Sem permissão." };
+      const r = await executarAgora(d, { slug, texto: `${PREFIXO_MOACIR}${ordem}` });
+      const b = r.body as { aviso?: string; erro?: string; sessao_url?: string | null; ordemId?: string };
+      return r.status === 200
+        ? { ok: true, texto: `${b.aviso ?? "Disparado."}${b.sessao_url ? ` Sessão: ${b.sessao_url}` : ""} (ordem ${b.ordemId})` }
+        : { ok: false, texto: b.erro ?? "Não consegui disparar." };
+    },
+  };
+  const modeloGerente: ModeloGerente = simulado
+    ? modeloGerenteSimulado(new Date())
+    : async ({ system, tools, messages }) => {
+        const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, timeout: TIMEOUT_MS, maxRetries: 1 });
+        const res = await client.beta.messages.create({
+          model: modelo,
+          max_tokens: 1500,
+          ...(aceitaEsforco(modelo) ? { output_config: { effort: "low" as const } } : {}),
+          ...(aceitaReserva(modelo) ? { betas: ["server-side-fallback-2026-06-01"], fallbacks: [{ model: "claude-opus-4-8" }] } : {}),
+          system,
+          tools: tools.map((t) => ({ name: t.name, description: t.description, input_schema: t.input_schema as unknown as Anthropic.Beta.Messages.BetaTool.InputSchema })),
+          messages: messages as Anthropic.Beta.Messages.BetaMessageParam[],
+        });
+        return res as unknown as Awaited<ReturnType<ModeloGerente>>;
+      };
+  return { modelo: modeloGerente, ferramentas };
 }
 
 /**
