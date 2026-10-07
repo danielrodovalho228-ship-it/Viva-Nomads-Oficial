@@ -12,6 +12,13 @@
     • GITHUB_ENV (quando existir): TESTES_* para a suíte E2E existente;
     • tests/laboratorio/saida/contas.json: só papéis e e-mails (sem senha).
 
+  Contrato: Paulo Essencial × Ana Souza no imóvel 1 (60 dias, comissão 8% do
+  1º aluguel), para as telas de contrato terem dado REAL (sem modo demo).
+
+  Rodar de novo no mesmo banco: as personas do laboratório (só e-mails
+  @lab.vivanomads.test) são apagadas antes — a trava abaixo garante que isso só
+  acontece no Supabase LOCAL.
+
   Uso: NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321 SUPABASE_SERVICE_ROLE_KEY=… LAB_SENHA=… node scripts/lab/seed-lab.mjs
 */
 import { createClient } from "@supabase/supabase-js";
@@ -105,6 +112,68 @@ async function urlsDasFotos() {
   return urls;
 }
 
+/**
+ * Apaga as personas de uma rodada anterior (só e-mails do domínio reservado do
+ * laboratório). O apagar em auth.users leva junto perfil, imóveis e o resto em
+ * cascata. Só chega aqui depois da trava de banco LOCAL lá em cima.
+ */
+async function limparPersonas() {
+  const emails = new Set(PERSONAS.map((p) => p.email));
+  const { data, error } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+  if (error) throw new Error(`listar usuários: ${error.message}`);
+  const antigos = (data?.users ?? []).filter((u) => u.email && emails.has(u.email) && u.email.endsWith("@lab.vivanomads.test"));
+  for (const u of antigos) {
+    // Imóveis antes do usuário: apagar em cascata pelo Auth esbarra no gatilho
+    // recalc_listing_quality, que o serviço de Auth não pode executar.
+    const { error: eImoveis } = await admin.from("properties").delete().eq("owner_id", u.id);
+    if (eImoveis) throw new Error(`apagar imóveis de ${u.email}: ${eImoveis.message}`);
+    const { error: e } = await admin.auth.admin.deleteUser(u.id);
+    if (e) throw new Error(`apagar ${u.email}: ${e.message || e.code || "erro do Auth"}`);
+  }
+  if (antigos.length) console.log(`✓ ${antigos.length} persona(s) da rodada anterior apagada(s)`);
+}
+
+/** Contrato real (sem demo) para as telas de contrato: 60 dias, 1 bloco ativo de 2 meses. */
+async function criarContrato(propertyId, tenantId) {
+  const aluguel = 3200;
+  const pct = 0.08; // Essencial (config/planos)
+  const hoje = new Date();
+  const iso = (d) => d.toISOString().slice(0, 10);
+  const inicio = new Date(hoje.getTime() - 10 * 86400000);
+  const fim = new Date(inicio.getTime() + 59 * 86400000);
+  const { data, error } = await admin
+    .from("contratos")
+    .insert({
+      property_id: propertyId,
+      tenant_id: tenantId,
+      owner_plan: "essential",
+      faixa: "temporada",
+      prazo_total_dias: 60,
+      aluguel_mensal: aluguel,
+      tamanho_bloco_meses: 2,
+      comissao_percent: pct,
+      comissao_valor: aluguel * pct,
+      qtd_ocupantes: 1,
+      status: "ativo",
+      garantia: "caucao",
+    })
+    .select("id")
+    .single();
+  if (error) throw new Error(`contrato: ${error.message}`);
+  const { error: e2 } = await admin.from("contrato_blocos").insert({
+    contrato_id: data.id,
+    numero_bloco: 1,
+    inicio: iso(inicio),
+    fim: iso(fim),
+    meses: 2,
+    valor: aluguel * 2,
+    caucao: aluguel,
+    status: "ativo",
+  });
+  if (e2) throw new Error(`bloco do contrato: ${e2.message}`);
+  return data.id;
+}
+
 async function garantirUsuario(p) {
   const { data, error } = await admin.auth.admin.createUser({ email: p.email, password: senha, email_confirm: true, user_metadata: { full_name: p.nome } });
   if (error) throw new Error(`${p.email}: ${error.message}`);
@@ -151,6 +220,7 @@ async function criarImovel(ownerId, i, fotos, extra = {}) {
 }
 
 async function main() {
+  await limparPersonas();
   const fotos = await urlsDasFotos();
   const ids = {};
   for (const p of PERSONAS) {
@@ -158,7 +228,7 @@ async function main() {
     console.log(`✓ ${p.chave.padEnd(22)} ${p.email}`);
   }
   // Paulo Essencial: o imóvel publicado da suíte E2E (R$ 3.200/mês).
-  await criarImovel(ids.PROPRIETARIO, 1, fotos, { ready_to_live_badge: true });
+  const imovel1 = await criarImovel(ids.PROPRIETARIO, 1, fotos, { ready_to_live_badge: true });
   await criarImovel(ids.PROPRIETARIO_GRATUITO, 2, fotos);
   await criarImovel(ids.PROPRIETARIO_PRO, 3, fotos);
   // Paulo Gestor: 20 imóveis com documentação APROVADA (elegível ao Gestor).
@@ -170,6 +240,8 @@ async function main() {
     if (error) throw new Error(`qualificação ${i}: ${error.message}`);
   }
   console.log("✓ imóveis: 3 avulsos + 20 do Gestor (8 fotos cada)");
+  await criarContrato(imovel1, ids.INQUILINO3);
+  console.log("✓ contrato: Paulo Essencial × Ana Souza (60 dias, comissão 8%)");
 
   // Saídas: env para a suíte E2E (sem imprimir a senha) + lista de contas sem senha.
   const ge = process.env.GITHUB_ENV;

@@ -1,45 +1,70 @@
 import type { Page } from "@playwright/test";
 
 /**
- * Helpers do T5 (Pedido de Moradia) — criação e LIMPEZA idempotente.
+ * Helpers do Pedido de Moradia (T5 e T11) — criação e LIMPEZA idempotente.
  *
- * Como o formulário não tem título, usamos a CIDADE como marcador único e
- * reconhecível (`E2E-<ts>-<rnd>`): identifica o pedido do teste sem colidir com
- * dado real e permite encerrá-lo no teardown. "Encerrar" = Marcar atendido
- * (tira o pedido do mural ativo) — a plataforma não expõe exclusão dura.
+ * A cidade agora vem da lista do IBGE (UF primeiro, depois a cidade; o servidor
+ * confere), então o marcador único do teste vai na APRESENTAÇÃO — texto que
+ * aparece no card de "Meus pedidos" e no mural do dono. Só letras: um marcador
+ * com muitos dígitos poderia ser lido como telefone pela trava de contato.
+ * "Encerrar" = Marcar atendido (tira o pedido do mural ativo).
  */
-export function marcadorCidade(): string {
-  return `E2E-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+export function marcadorPedido(): string {
+  const letras = "abcdefghjkmnpqrstuvwxyz";
+  let s = "";
+  for (let i = 0; i < 8; i++) s += letras[Math.floor(Math.random() * letras.length)];
+  return `teste${s}`;
 }
 
-/** Marcador que identifica QUALQUER cidade de teste (varredura no teardown). */
-export const MARCADOR_RE = /E2E-\d+/;
+/** Marcador que identifica QUALQUER pedido de teste (varredura no teardown). */
+export const MARCADOR_RE = /\bteste[a-z]{8}\b/;
+
+/** Data no formato do campo (dd/mm/aaaa), `dias` a partir de hoje. */
+export function dataBRDaqui(dias: number): string {
+  const d = new Date(Date.now() + dias * 86400000);
+  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+}
 
 interface PreencherOpts {
-  cidade: string;
-  /** Texto da apresentação (para T5 com/sem contato). Vazio = deixa em branco. */
-  apresentacao?: string;
+  /** Apresentação (marcador do teste, ou o texto com contato do T5). */
+  apresentacao: string;
+  cidade?: string;
+  uf?: string;
+  orcamento?: string;
 }
 
 /** Preenche o formulário /pedidos/novo (sem publicar). */
 export async function preencherPedido(page: Page, opts: PreencherOpts): Promise<void> {
   await page.goto("/pedidos/novo", { waitUntil: "networkidle" });
-  await page.locator('input[placeholder="Uberlândia"]').first().fill(opts.cidade);
-  const dataFutura = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
-  await page.locator('input[type="date"]').first().fill(dataFutura);
-  await page.locator('input[placeholder="3500"]').first().fill("3000");
+  await page.locator("select").filter({ has: page.locator('option[value="MG"]') }).first().selectOption(opts.uf ?? "MG");
+  await page.getByPlaceholder("Comece a digitar a cidade").fill(opts.cidade ?? "Uberlândia");
+  await page.getByPlaceholder("dd/mm/aaaa").fill(dataBRDaqui(7));
+  await page.getByPlaceholder("3500").fill(opts.orcamento ?? "3200");
   // Motivo é um seletor customizado (botão → listbox).
-  await page.getByRole("button", { name: /Selecione o motivo/i }).click();
-  await page.getByRole("option").first().click();
-  if (opts.apresentacao !== undefined) {
-    await page.locator("textarea").first().fill(opts.apresentacao);
-  }
+  // (Só as opções da lista do motivo: o campo UF também tem <option>.)
+  await page.getByText(/Selecione o motivo da estadia/i).click();
+  await page.getByRole("listbox").getByRole("option").first().click();
+  await page.getByPlaceholder(/Conte um pouco do seu perfil/i).fill(opts.apresentacao);
 }
 
-/** Encerra (Marca atendido) o pedido cuja cidade contém o marcador. Best-effort. */
-export async function encerrarPedido(page: Page, cidade: string): Promise<void> {
+/** Publica (formulário já preenchido) e vai para "Meus pedidos". */
+export async function publicarPreenchido(page: Page): Promise<void> {
+  await page.getByRole("button", { name: /Publicar pedido/i }).click();
+  try {
+    await page.getByRole("heading", { name: "Pedido publicado" }).waitFor({ timeout: 20_000 });
+  } catch (e) {
+    // Mostra o erro que a tela exibiu (limite de pedidos, validação…).
+    const aviso = await page.locator("form p.text-red-700").first().innerText().catch(() => "");
+    throw new Error(`Pedido não publicado${aviso ? `: ${aviso}` : ""} (${String(e).slice(0, 120)})`);
+  }
+  await page.getByRole("button", { name: "Ver meus pedidos" }).click();
+  await page.waitForURL(/\/dashboard\/pedidos/, { timeout: 20_000 });
+}
+
+/** Encerra (Marca atendido) o pedido que contém o marcador. Best-effort. */
+export async function encerrarPedido(page: Page, marcador: string): Promise<void> {
   await page.goto("/dashboard/pedidos", { waitUntil: "networkidle" });
-  const card = page.locator("section", { hasText: cidade });
+  const card = page.locator("section", { hasText: marcador });
   if ((await card.count()) === 0) return; // já limpo
   const btn = card.getByRole("button", { name: /Marcar atendido/i });
   if ((await btn.count()) === 0) return;

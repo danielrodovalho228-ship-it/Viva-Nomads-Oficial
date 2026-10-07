@@ -4,13 +4,15 @@ import { authFile } from "../fixtures/auth";
 /**
  * T3 — ISOLAMENTO DE PAPÉIS E PÁGINAS INTERNAS (@criticos).
  * Não-admin não vê nem alcança área de admin; páginas internas (deck dos sócios)
- * são gated no proxy (redirect) + noindex. Menu do proprietário = exatamente 9
- * itens, na ordem, cada um abrindo DENTRO da casca.
+ * ficam atrás do código dos sócios (porta única, SEM exceção para admin) +
+ * noindex. Menu do proprietário = exatamente 10 itens, na ordem, cada um
+ * abrindo DENTRO da casca.
  */
 
 const OWNER_MENU = [
   "Visão geral",
   "Meus imóveis",
+  "Interessados",
   "Pedidos de moradia",
   "Mensagens",
   "Fechamento",
@@ -32,15 +34,17 @@ test.describe("T3 — Não-admin (proprietário) @criticos", () => {
     await expect(page).toHaveURL(/\/dashboard(?!\/)/); // redirecionado para a Visão geral
   });
 
-  test("páginas internas bloqueadas para não-admin (redirect)", async ({ page }) => {
+  test("páginas internas pedem o código dos sócios (redirect)", async ({ page }) => {
     for (const rota of PAGINAS_INTERNAS) {
       await page.goto(rota, { waitUntil: "networkidle" });
       await expect(page, `esperava redirect fora de ${rota}`).not.toHaveURL(new RegExp(`${rota}$`));
-      await expect(page).toHaveURL(/\/dashboard|\/auth/);
+      const url = new URL(page.url());
+      expect(url.pathname).toBe("/acesso-socios");
+      expect(url.searchParams.get("next")).toBe(rota);
     }
   });
 
-  test("menu do proprietário: exatamente 9 itens, na ordem", async ({ page }) => {
+  test("menu do proprietário: exatamente 10 itens, na ordem", async ({ page }) => {
     await page.goto("/dashboard", { waitUntil: "networkidle" });
     // Garante modo Proprietário.
     const tab = page.getByRole("tab", { name: /Propriet/i });
@@ -61,13 +65,24 @@ test.describe("T3 — Não-admin (proprietário) @criticos", () => {
   });
 });
 
-test.describe("T3 — Admin vê internas com noindex @criticos", () => {
+test.describe("T3 — Internas: só com o código, e noindex @criticos", () => {
   test.use({ storageState: authFile("admin") });
 
-  test("páginas internas carregam para admin e são noindex", async ({ page }) => {
+  test("admin sem o código também é barrado (porta única)", async ({ page }) => {
+    await page.goto("/simulacao", { waitUntil: "networkidle" });
+    await expect(page).toHaveURL(/\/acesso-socios\?next=%2Fsimulacao/);
+  });
+
+  test("com o código dos sócios, as internas abrem e são noindex", async ({ page }) => {
+    const codigo = process.env.SOCIOS_ACCESS_CODE;
+    test.skip(!codigo, "SOCIOS_ACCESS_CODE não definido neste ambiente");
+    await page.goto("/acesso-socios?next=%2Fsocios", { waitUntil: "networkidle" });
+    await page.locator('input[name="codigo"]').fill(codigo!);
+    await page.getByRole("button", { name: "Entrar" }).click();
+    await expect(page).toHaveURL(/\/socios$/);
     for (const rota of PAGINAS_INTERNAS) {
       const resp = await page.goto(rota, { waitUntil: "networkidle" });
-      await expect(page, `admin deveria acessar ${rota}`).toHaveURL(new RegExp(`${rota}$`));
+      await expect(page, `com o código deveria abrir ${rota}`).toHaveURL(new RegExp(`${rota}$`));
       // noindex vem do metadata da página e/ou do header X-Robots-Tag (proxy).
       const meta = await page.locator('meta[name="robots"]').getAttribute("content").catch(() => null);
       const header = resp?.headers()["x-robots-tag"] ?? "";

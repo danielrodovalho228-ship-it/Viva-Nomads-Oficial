@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
+import { hasAccount } from "../fixtures/accounts";
 
 /**
  * T2 — PERSISTÊNCIA DE MODO (@criticos) — regressão do B1, a mais importante.
@@ -7,8 +8,12 @@ import { authFile } from "../fixtures/auth";
  * servidor; refresh, deep-link e nova aba mantêm. Deep-link a rota exclusiva de
  * proprietário abre no modo certo (nunca cai na visão de inquilino).
  */
+// Conta própria quando existir (laboratório): trocar o modo do proprietário
+// compartilhado mudava o menu dos specs que rodam em paralelo (T3).
+const CONTA_T2 = hasAccount("proprietario_pro") ? "proprietario_pro" : "proprietario";
+
 test.describe("T2 — Persistência de modo @criticos", () => {
-  test.use({ storageState: authFile("proprietario") });
+  test.use({ storageState: authFile(CONTA_T2) });
 
   async function trocarPara(page: import("@playwright/test").Page, alvo: RegExp) {
     await page.getByRole("tab", { name: alvo }).click();

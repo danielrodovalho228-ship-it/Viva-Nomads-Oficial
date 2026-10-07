@@ -18,11 +18,12 @@ test.describe("T12 — Escada de planos @criticos", () => {
       page,
     }) => {
       await page.goto("/dashboard/assinatura", { waitUntil: "networkidle" });
-      // O card do Gestor existe.
+      // O card do Gestor existe. `.last()`: entre os divs que contêm o título,
+      // o card é o mais interno (o `.first()` pegava a grade com todos os planos).
       const cardGestor = page
         .locator("div")
         .filter({ has: page.getByRole("heading", { name: /^Gestor$/ }) })
-        .first();
+        .last();
       await expect(cardGestor).toBeVisible();
       // Não há botão de ativar/assinar o Gestor — só "Fale com a gente".
       await expect(cardGestor.getByRole("button", { name: /Assinar|Ativar|Plano atual/i })).toHaveCount(0);
@@ -57,7 +58,8 @@ test.describe("T12 — Escada de planos @criticos", () => {
       await mesesSlider.fill("6");
       await page.getByRole("button", { name: /^6 meses$/ }).click();
       await page.waitForTimeout(400);
-      await expect(reco).toContainText(/Gratuito/i);
+      // O texto fixo do card também cita o "Gratuito"; vale só o plano recomendado.
+      await expect(reco).toContainText(/Recomendado para você:\s*Gratuito/i);
 
       // Cenário ALTO volume/valor: aluguel alto, muitos meses, prazo curto (mais
       // contratos/ano) → a economia de comissão supera a assinatura: sai do Grátis.
@@ -65,8 +67,8 @@ test.describe("T12 — Escada de planos @criticos", () => {
       await mesesSlider.fill("12");
       await page.getByRole("button", { name: /^2 meses$/ }).click();
       await page.waitForTimeout(400);
-      await expect(reco).not.toContainText(/Gratuito/i);
-      await expect(reco).toContainText(/Essencial|Profissional/i);
+      await expect(reco).not.toContainText(/Recomendado para você:\s*Gratuito/i);
+      await expect(reco).toContainText(/Recomendado para você:\s*(Essencial|Profissional)/i);
     });
   });
 });

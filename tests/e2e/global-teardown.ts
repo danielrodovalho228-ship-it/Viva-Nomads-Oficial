@@ -5,7 +5,7 @@ import { MARCADOR_RE } from "./fixtures/pedido";
 
 /**
  * Cinturão + suspensório da idempotência: varre e encerra qualquer pedido de
- * teste (cidade "E2E-…") que tenha sobrado — por exemplo se um teste morreu no
+ * teste (marcador "teste…" na apresentação) que tenha sobrado — por exemplo se um teste morreu no
  * meio. Best-effort: nunca falha o run. Usa a sessão salva do inquilino.
  */
 export default async function globalTeardown(_config: FullConfig): Promise<void> {

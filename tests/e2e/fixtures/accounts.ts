@@ -3,7 +3,7 @@
  * Três papéis: inquilino, proprietário e admin de teste. O `nome` esperado é
  * usado no T4 para conferir a saudação/sidebar contra o nome REAL da conta.
  */
-export type Role = "inquilino" | "inquilino2" | "proprietario" | "admin";
+export type Role = "inquilino" | "inquilino2" | "proprietario" | "proprietario_pro" | "admin";
 
 export interface Account {
   role: Role;
@@ -28,6 +28,7 @@ const KEYS: Record<Role, string> = {
   inquilino: "INQUILINO",
   inquilino2: "INQUILINO2",
   proprietario: "PROPRIETARIO",
+  proprietario_pro: "PROPRIETARIO_PRO",
   admin: "ADMIN",
 };
 
@@ -48,9 +49,13 @@ export function hasAccount(role: Role): boolean {
   return !!process.env[`TESTES_${k}_EMAIL`] && !!process.env[`TESTES_${k}_SENHA`];
 }
 
-/** Papéis sempre presentes. `inquilino2` é opcional (T-TRAV-C: recusa a 2ª). */
+/**
+ * Papéis sempre presentes. Opcionais: `inquilino2` (T-TRAV-C: recusa a 2ª) e
+ * `proprietario_pro` (o T2 troca o modo da conta; numa conta só dele não
+ * atrapalha os outros specs que rodam em paralelo com o proprietário).
+ */
 export const ALL_ROLES: Role[] = ["inquilino", "proprietario", "admin"];
-export const OPTIONAL_ROLES: Role[] = ["inquilino2"];
+export const OPTIONAL_ROLES: Role[] = ["inquilino2", "proprietario_pro"];
 
 /** Domínio de produção — usado para impedir escrita acidental no banco real (T5). */
 export const PROD_HOST = "vivanomads.com.br";
