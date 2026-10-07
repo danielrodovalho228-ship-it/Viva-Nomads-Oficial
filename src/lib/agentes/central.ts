@@ -73,7 +73,8 @@ export const NOME_ESQUADRAO: Record<Esquadrao, string> = {
 
 /** Limite de perguntas ao modelo por admin por dia (chat + reunião). */
 export const LIMITE_DIA = 60;
-export const MAX_TOKENS_CHAT = 600;
+/** Inclui o raciocínio interno do modelo; 1000 evita resposta cortada. */
+export const MAX_TOKENS_CHAT = 1000;
 export const MAX_TOKENS_REUNIAO = 1500;
 export const TIMEOUT_MS = 60_000;
 

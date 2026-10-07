@@ -5,6 +5,8 @@
 */
 import {
   LIMITE_DIA,
+  MAX_TOKENS_CHAT,
+  MAX_TOKENS_REUNIAO,
   REUNIAO_FALHOU,
   ataEmTexto,
   lerReuniao,
@@ -80,7 +82,7 @@ export async function responderChat(d: Deps, entrada: unknown): Promise<Resposta
   await d.gravar([{ agente_slug: slug, papel: "daniel", autor_slug: null, texto: pergunta }]);
   let resposta: string;
   try {
-    resposta = (await d.modelo({ system: systemChat(agente, rondas, ordens), messages: montarMensagens(hist, pergunta), maxTokens: 600, json: false })).trim();
+    resposta = (await d.modelo({ system: systemChat(agente, rondas, ordens), messages: montarMensagens(hist, pergunta), maxTokens: MAX_TOKENS_CHAT, json: false })).trim();
   } catch {
     return { status: 502, body: { erro: FALHA_MSG } };
   }
@@ -106,7 +108,7 @@ export async function responderReuniao(d: Deps, entrada: unknown): Promise<Respo
   await d.gravar([{ agente_slug: null, papel: "daniel", autor_slug: null, texto: `Pauta: ${pauta}` }]);
   let reuniao: Reuniao | null = null;
   try {
-    const bruto = await d.modelo({ system: systemReuniao(ps), messages: [{ role: "user", content: `Pauta do Daniel: ${pauta}` }], maxTokens: 1500, json: true });
+    const bruto = await d.modelo({ system: systemReuniao(ps), messages: [{ role: "user", content: `Pauta do Daniel: ${pauta}` }], maxTokens: MAX_TOKENS_REUNIAO, json: true });
     reuniao = lerReuniao(bruto, escolhidos.map((a) => a.slug));
   } catch {
     reuniao = null;

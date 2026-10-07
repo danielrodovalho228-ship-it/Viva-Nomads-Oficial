@@ -120,13 +120,13 @@ test("API: limite de 60 por dia", async () => {
   assert.equal((await responderChat(ok.d, { slug: "bruno", texto: "oi" })).status, 200);
 });
 
-test("API chat: grava pergunta e resposta, 600 tokens", async () => {
+test("API chat: grava pergunta e resposta, 1000 tokens", async () => {
   const { d, gravadas, chamadas } = fake();
   const r = await responderChat(d, { slug: "bruno", texto: " Como está o build? " });
   assert.equal(r.status, 200);
   assert.equal(r.body.resposta, "Tudo certo por aqui.");
   assert.deepEqual(gravadas.map((g) => g.papel), ["daniel", "agente"]);
-  assert.equal(chamadas[0].maxTokens, 600);
+  assert.equal(chamadas[0].maxTokens, 1000);
   assert.equal((await responderChat(d, { slug: "nao-existe", texto: "oi" })).status, 404);
   assert.equal((await responderChat(d, { slug: "bruno", texto: "" })).status, 400);
 });
