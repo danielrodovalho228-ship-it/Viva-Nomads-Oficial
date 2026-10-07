@@ -6,16 +6,20 @@ import {
   COR_ESQUADRAO,
   NOME_ESQUADRAO,
   ROTULO_STATUS,
+  ROTULO_ESTADO,
   SEM_RONDAS,
   avisoOrdem,
+  destinoDaOrdem,
   duracao,
+  estadoDaOrdem,
+  linkDaOrdem,
   prioridadesDe,
   statusDoAgente,
   tempoRelativo,
   type Agente,
   type Conversa,
   type Esquadrao,
-  type Ordem,
+  type EstadoOrdem,
   type Ronda,
   type StatusAgente,
 } from "@/lib/agentes/central";
@@ -31,8 +35,9 @@ import styles from "@/components/admin/agentes/central.module.css";
   escura (#050A18 com grade), avatares hexagonais com foto e anel da última
   ronda. Abas: Equipe · Rede ao vivo · Raio-X · Diário de bordo · Conversar ·
   Sala de reunião. Tudo vem do banco (agentes, agentes_rondas, agentes_ordens);
-  a página se atualiza sozinha a cada 90 s. O site não dispara agentes: ordens
-  ficam no banco e o agente lê na próxima ronda.
+  a página se atualiza sozinha a cada 90 s. "Deixar ordem" grava para a próxima
+  ronda; "Executar agora" grava e dispara a rotina real do agente na hora
+  (token só no servidor). O chat só conversa: não faz nada no mundo.
 */
 
 const ABAS = ["Equipe", "Rede ao vivo", "Raio-X da Viva", "Diário de bordo", "Conversar", "Sala de reunião"] as const;
@@ -48,8 +53,14 @@ const COR_STATUS: Record<StatusAgente, string> = {
   planejado: "#8C9AC4",
   pausado: "#8C9AC4",
 };
-const COR_ORDEM: Record<Ordem["status"], string> = { pendente: "#FFB547", lida: "#38BDF8", concluida: "#7FD321", cancelada: "#8C9AC4" };
-const ROTULO_ORDEM: Record<Ordem["status"], string> = { pendente: "Pendente", lida: "Lida", concluida: "Concluída", cancelada: "Cancelada" };
+const COR_ESTADO: Record<EstadoOrdem, string> = {
+  aguardando: "#FFB547",
+  enviada: "#38BDF8",
+  falhou: "#FF5470",
+  em_execucao: "#3D7BFF",
+  concluida: "#7FD321",
+  cancelada: "#8C9AC4",
+};
 const COR_RONDA: Record<Ronda["status"], string> = { ok: "#7FD321", alerta: "#FFB547", falhou: "#FF5470" };
 const ROTULO_RONDA: Record<Ronda["status"], string> = { ok: "OK", alerta: "Alerta", falhou: "Falhou" };
 
@@ -102,6 +113,7 @@ function Rotulo({ children }: { children: React.ReactNode }) {
 const botao = "rounded-lg px-3 py-2 text-sm font-semibold transition disabled:opacity-50";
 const botaoAzul = `${botao} bg-[#005DFC] text-white hover:bg-[#2C7BFF]`;
 const botaoLinha = `${botao} border border-white/15 text-white hover:bg-white/5`;
+const botaoVerde = `${botao} bg-[#7FD321] text-[#06210A] hover:bg-[#95E23F]`;
 const campoBase = "rounded-lg border border-white/15 bg-[#0B1430] px-3 py-2 text-sm text-white placeholder:text-[#5d6a93] focus:border-[#3D7BFF] focus:outline-none";
 const campo = `w-full ${campoBase}`;
 
@@ -506,8 +518,13 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
   const [aviso, setAviso] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
+  const [sugestao, setSugestao] = useState<{ slug: string; nome: string; texto: string } | null>(null);
+  const [linkSessao, setLinkSessao] = useState<string | null>(null);
   const [, startTransition] = useTransition();
   const a = dados.agentes.find((x) => x.slug === slug);
+  // Correção de código vai para o Renato (Engenheiro), que abre o PR.
+  const destino = a ? dados.agentes.find((x) => x.slug === destinoDaOrdem(a.slug, texto, dados.agentes)) ?? a : null;
+  const podeExecutar = (x: Agente | null | undefined) => !!x && x.status === "ativo" && !!x.trigger_id;
   const ids = new Set(dados.conversas.map((c) => c.id));
   const thread = [...dados.conversas, ...extra.filter((c) => !ids.has(c.id))].filter((c) => c.agente_slug === slug);
   const ordens = dados.ordens.filter((o) => o.agente_slug === slug);
@@ -523,9 +540,40 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
     setTexto("");
     try {
       const r = await fetch("/api/admin/agentes/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, texto: pergunta }) });
-      const j = (await r.json().catch(() => ({}))) as { resposta?: string; erro?: string };
+      const j = (await r.json().catch(() => ({}))) as { resposta?: string; erro?: string; acao?: { slug: string; nome: string } };
       if (!r.ok || !j.resposta) setErro(j.erro ?? "Não consegui falar com o agente agora.");
-      else setExtra((e) => [...e, { id: `r-${agoraIso}`, agente_slug: slug, papel: "agente", autor_slug: slug, texto: j.resposta!, criado_em: new Date().toISOString() }]);
+      else {
+        setExtra((e) => [...e, { id: `r-${agoraIso}`, agente_slug: slug, papel: "agente", autor_slug: slug, texto: j.resposta!, criado_em: new Date().toISOString() }]);
+        // Pedido de ação: o chat não faz; oferece a sessão real do agente certo.
+        setSugestao(j.acao ? { ...j.acao, texto: pergunta } : null);
+      }
+    } catch {
+      setErro("Sem conexão. Tente de novo.");
+    } finally {
+      setOcupado(false);
+    }
+  }
+
+  async function executar(alvo: string, ordemTexto: string) {
+    if (!ordemTexto.trim()) return;
+    setOcupado(true);
+    setErro(null);
+    setAviso(null);
+    setLinkSessao(null);
+    try {
+      const r = await fetch("/api/admin/agentes/executar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: alvo, texto: ordemTexto.trim() }) });
+      const j = (await r.json().catch(() => ({}))) as { aviso?: string; erro?: string; sessao_url?: string | null; ordemId?: string };
+      if (!r.ok) setErro(j.erro ?? "Não consegui disparar agora.");
+      else {
+        setAviso(j.aviso ?? "Disparado.");
+        setLinkSessao(j.sessao_url ?? null);
+      }
+      if (j.ordemId) {
+        setTexto("");
+        setSugestao(null);
+        if (alvo !== slug) setSlug(alvo); // mostra a ordem na lista de quem vai fazer
+        startTransition(() => router.refresh());
+      }
     } catch {
       setErro("Sem conexão. Tente de novo.");
     } finally {
@@ -555,6 +603,8 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
               setSlug(x.slug);
               setAviso(null);
               setErro(null);
+              setSugestao(null);
+              setLinkSessao(null);
             }}
             className={`flex shrink-0 items-center gap-2 rounded-xl border px-3 py-2 text-left ${x.slug === slug ? "border-[#3D7BFF] bg-[#3D7BFF]/10" : "border-white/10 hover:bg-white/5"}`}
           >
@@ -590,6 +640,14 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
                 ))
               )}
               {ocupado && <p className="text-xs text-[#8C9AC4]">{a.nome} está escrevendo…</p>}
+              {sugestao && (
+                <div className="rounded-xl border border-[#38BDF8]/40 bg-[#38BDF8]/10 p-3 text-sm text-[#DCE3FA]" data-testid="sugestao-executar">
+                  <p>Isso precisa de uma sessão real. Vai para <strong>{sugestao.nome}</strong>.</p>
+                  <button className={`${botaoAzul} mt-2`} disabled={ocupado || !podeExecutar(dados.agentes.find((x) => x.slug === sugestao.slug))} onClick={() => executar(sugestao.slug, sugestao.texto)}>
+                    Executar agora → {sugestao.nome}
+                  </button>
+                </div>
+              )}
             </div>
             <div className="mt-4 space-y-2">
               <textarea className={`${campo} min-h-[80px]`} placeholder={`Escreva para ${a.nome}…`} value={texto} maxLength={4000} onChange={(e) => setTexto(e.target.value)} />
@@ -600,9 +658,27 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
                 <button className={botaoLinha} disabled={ocupado || !texto.trim()} onClick={ordem}>
                   Deixar ordem
                 </button>
+                <button
+                  className={botaoVerde}
+                  disabled={ocupado || !texto.trim() || !podeExecutar(destino)}
+                  title={podeExecutar(destino) ? "Grava a ordem e dispara a rotina real agora" : `${destino?.nome ?? "Este agente"} não tem rotina para disparar`}
+                  onClick={() => destino && executar(destino.slug, texto)}
+                  data-testid="executar-agora"
+                >
+                  Executar agora{destino && destino.slug !== a.slug ? ` → ${destino.nome}` : ""}
+                </button>
                 <span className="self-center text-xs text-[#8C9AC4]">{agora ? avisoOrdem(a, agora).replace(/^O /, "Ordem: o ") : ""}</span>
               </div>
-              {aviso && <p className="rounded-lg bg-[#7FD321]/10 px-3 py-2 text-sm text-[#B5EC7A]">{aviso}</p>}
+              {aviso && (
+                <p className="rounded-lg bg-[#7FD321]/10 px-3 py-2 text-sm text-[#B5EC7A]" data-testid="aviso-ordem">
+                  {aviso}{" "}
+                  {linkSessao && (
+                    <a href={linkSessao} target="_blank" rel="noreferrer" className="font-semibold underline">
+                      Abrir a sessão
+                    </a>
+                  )}
+                </p>
+              )}
               {erro && <p className="rounded-lg bg-[#FF7A6B]/10 px-3 py-2 text-sm text-[#FFB0A6]">{erro}</p>}
             </div>
           </div>
@@ -613,18 +689,28 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
               <p className="mt-2 text-sm text-[#8C9AC4]">Nenhuma ordem ainda.</p>
             ) : (
               <ul className="mt-3 space-y-3">
-                {ordens.map((o) => (
-                  <li key={o.id} className="border-t border-white/5 pt-3 first:border-0 first:pt-0">
+                {ordens.map((o) => {
+                  const estado = estadoDaOrdem(o);
+                  const link = linkDaOrdem(o, dados.rondas);
+                  return (
+                  <li key={o.id} className="border-t border-white/5 pt-3 first:border-0 first:pt-0" data-testid="ordem" data-estado={estado}>
                     <div className="flex flex-wrap items-center gap-2">
-                      <Chip cor={COR_ORDEM[o.status]}>{ROTULO_ORDEM[o.status]}</Chip>
+                      <Chip cor={COR_ESTADO[estado]}>{ROTULO_ESTADO[estado]}</Chip>
                       <span className="text-xs text-[#8C9AC4]" style={mono}>
                         {dataHora(o.criada_em)}
                       </span>
+                      {link && (
+                        <a href={link} target="_blank" rel="noreferrer" className="text-xs font-semibold text-[#38BDF8] hover:underline">
+                          {estado === "concluida" ? "Ver PR / ronda" : "Ver sessão"}
+                        </a>
+                      )}
                     </div>
+                    {estado === "falhou" && o.disparo_erro && <p className="mt-1 text-xs text-[#FFB0A6]">Disparo: {o.disparo_erro}. Fica para a próxima ronda.</p>}
                     <p className="mt-1 whitespace-pre-line text-sm text-[#DCE3FA]">{o.texto}</p>
                     {o.resposta && <p className="mt-1 whitespace-pre-line border-l-2 border-[#7FD321]/50 pl-2 text-sm text-[#AEB9DD]">{o.resposta}</p>}
                   </li>
-                ))}
+                  );
+                })}
               </ul>
             )}
           </div>

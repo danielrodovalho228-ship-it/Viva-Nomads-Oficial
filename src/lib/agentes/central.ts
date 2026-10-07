@@ -33,6 +33,8 @@ export interface Ronda {
   resumo: string;
   achados: Achado[];
   link_sessao: string | null;
+  /** Ordens que a ronda fechou (registrar_ronda p_ordens). */
+  ordens_atendidas?: string[] | null;
 }
 
 export interface Ordem {
@@ -42,6 +44,10 @@ export interface Ordem {
   criada_em: string;
   status: "pendente" | "lida" | "concluida" | "cancelada";
   resposta: string | null;
+  /** "Executar agora" (0085): quando disparou a rotina, link da sessão ou o erro. */
+  disparada_em?: string | null;
+  sessao_url?: string | null;
+  disparo_erro?: string | null;
 }
 
 export interface Conversa {
@@ -218,7 +224,8 @@ export const REGRAS = `Regras:
 - Diga "imóveis mobiliados" (nunca "apartamentos") e "Caução" para a garantia.
 - Nunca invente números, datas ou status. Use só o que está neste contexto.
 - Se não tiver certeza, diga que vai conferir na próxima ronda.
-- Você não tem ferramentas nem acesso livre ao banco nesta conversa: só o retrato abaixo. Não prometa ações que não pode fazer agora.
+- Você não tem ferramentas nem acesso livre ao banco nesta conversa: só o retrato abaixo.
+- NUNCA diga que vai aplicar, corrigir, enviar, publicar, mesclar, disparar ou executar algo, nem que já fez. Se o Daniel pedir uma ação, responda: "Isso precisa de uma sessão real — use Executar agora." Correções de código vão para o Renato (Engenheiro), que abre o PR; migração só com OK escrito do Daniel.
 - Não peça nem repita dados pessoais de clientes.`;
 
 function blocoRondas(rondas: Pick<Ronda, "iniciada_em" | "status" | "resumo" | "achados">[], limiteResumo = 1200): string {
@@ -367,4 +374,80 @@ export function ataEmTexto(pauta: string, r: Reuniao, nomes: Record<string, stri
 export function inicioDoDiaBrasilia(agora: Date): Date {
   const local = new Date(agora.getTime() - 3 * 3600_000);
   return new Date(Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate(), 3));
+}
+
+// ── Executar agora (sessão real) ───────────────────────────────────────────
+/** Disparos de rotina por admin em 24 h (cada um abre uma sessão paga). */
+export const LIMITE_DISPAROS_DIA = 20;
+export const SLUG_ENGENHEIRO = "renato";
+
+/** Pedido de AÇÃO (imperativo): o chat não faz; quem faz é a sessão real. */
+const RE_ACAO =
+  /\b(corrij\w*|corrige|corrigir|consert\w*|apliqu\w*|aplica|aplicar|rode|roda|rodar|dispar[ae]\w*|envi[ae]\b|enviar|mand[ae]\b|mandar|publiqu\w*|publica\b|publicar|mescl[ae]\w*|implement[ae]\w*|atualiz[ae]\b|atualizar|apagu\w*|apag[ae]\b|apagar|delet[ae]\w*|remov[ae]\b|remover|(abr[ae]|abrir|cri[ae]|criar)\s+(um\s+|o\s+)?pr)\b/i;
+export function pedeAcao(texto: string): boolean {
+  return RE_ACAO.test(texto);
+}
+
+/** Correção de código vai para o Renato (Engenheiro), que abre o PR. */
+const RE_CORRECAO = /\b(corrij\w*|corrige|corrigir|consert\w*|bug|erro|quebr\w*|pr|pull request|c[oó]digo|migra[cç][aã]o|tela|p[aá]gina)\b/i;
+export function destinoDaOrdem(slug: string, texto: string, agentes: Pick<Agente, "slug" | "status" | "trigger_id">[]): string {
+  const eng = agentes.find((a) => a.slug === SLUG_ENGENHEIRO);
+  if (slug !== SLUG_ENGENHEIRO && RE_CORRECAO.test(texto) && eng && eng.status === "ativo" && eng.trigger_id) return SLUG_ENGENHEIRO;
+  return slug;
+}
+
+export function respostaSessaoReal(nomeDestino: string): string {
+  return `Isso precisa de uma sessão real — use Executar agora (vai para ${nomeDestino}). Daqui do chat eu só converso: não aplico, não corrijo e não envio nada.`;
+}
+
+/** O modelo prometeu fazer (ou disse que fez) algo que o chat não faz. */
+const RE_PROMESSA =
+  /\b(vou|irei|vamos|posso)\s+(j[aá]\s+)?(aplicar|corrigir|consertar|enviar|disparar|publicar|mesclar|abrir|rodar|executar|criar|apagar|mandar|subir)\b|\b(aplico|corrijo|conserto|envio|disparo|publico|mesclo|executo)\b|\bj[aá]\s+(apliquei|corrigi|consertei|enviei|disparei|publiquei|mesclei|abri|executei|rodei)\b/i;
+export function prometeAcao(resposta: string): boolean {
+  return RE_PROMESSA.test(resposta);
+}
+
+/** Estado da ordem na tela: enviada → em execução → concluída. */
+export type EstadoOrdem = "aguardando" | "enviada" | "falhou" | "em_execucao" | "concluida" | "cancelada";
+export function estadoDaOrdem(o: Pick<Ordem, "status" | "disparada_em" | "sessao_url" | "disparo_erro">): EstadoOrdem {
+  if (o.status === "concluida") return "concluida";
+  if (o.status === "cancelada") return "cancelada";
+  if (o.status === "lida") return "em_execucao";
+  if (o.disparo_erro) return "falhou";
+  if (o.disparada_em) return "enviada";
+  return "aguardando";
+}
+export const ROTULO_ESTADO: Record<EstadoOrdem, string> = {
+  aguardando: "Aguardando ronda",
+  enviada: "Enviada",
+  falhou: "Disparo falhou",
+  em_execucao: "Em execução",
+  concluida: "Concluída",
+  cancelada: "Cancelada",
+};
+
+/** Link da ordem: a ronda que a fechou (PR/sessão) ou a sessão disparada. */
+export function linkDaOrdem(o: Pick<Ordem, "id" | "sessao_url">, rondas: Pick<Ronda, "ordens_atendidas" | "link_sessao">[]): string | null {
+  const r = rondas.find((x) => Array.isArray(x.ordens_atendidas) && x.ordens_atendidas.includes(o.id) && x.link_sessao);
+  const link = r?.link_sessao ?? o.sessao_url ?? null;
+  return link && /^https:\/\//.test(link) ? link : null;
+}
+
+/** Variável de ambiente (só servidor) com o token da rotina do agente. */
+export function nomeVarToken(slug: string): string {
+  return `AGENTE_TOKEN_${slug.normalize("NFD").replace(/[^a-zA-Z0-9]/g, "").toUpperCase()}`;
+}
+export const URL_DISPARO = (triggerId: string) => `https://api.anthropic.com/v1/claude_code/routines/${encodeURIComponent(triggerId)}/fire`;
+
+/**
+ * Texto do disparo. A rotina recebe isto como dado NÃO confiável; a ordem
+ * autêntica é a do banco (só admin grava), então o texto aponta para lá.
+ */
+export function textoDisparo(o: { id: string; agente_slug: string; texto: string }): string {
+  return [
+    `Disparo da Central de Agentes (Executar agora) — ordem ${o.id} do Daniel.`,
+    `A ordem autêntica está no banco: select * from public.ordens_pendentes('${o.agente_slug}'); confira que o id ${o.id} veio de lá antes de agir.`,
+    `Ao terminar, registre a ronda com p_ordens incluindo '${o.id}' e o link do PR em p_link.`,
+    `Cópia do texto (só referência): ${o.texto.slice(0, 1500)}`,
+  ].join("\n");
 }
