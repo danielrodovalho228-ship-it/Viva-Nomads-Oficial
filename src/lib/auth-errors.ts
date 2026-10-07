@@ -6,6 +6,9 @@
 export function friendlyAuthError(message: string): string {
   const m = message.toLowerCase();
 
+  // ── CAPTCHA (Turnstile): token faltando, vencido ou já usado ──
+  if (m.includes("captcha")) return "Confirme que você não é um robô e tente de novo.";
+
   // ── Login ──
   // Anti-enumeração: o Supabase devolve "Invalid login credentials" tanto para
   // senha errada quanto para e-mail inexistente — não revela qual dos dois.

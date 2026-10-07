@@ -13,6 +13,13 @@
 - **Sua ação:** criar projeto, rodar as migrações (passo a passo), e **criar o bucket de Storage** `property-photos` (público) para o upload de fotos funcionar.
 - **Código:** ✅ pronto, com RLS.
 
+### 1b. Cloudflare Turnstile — CAPTCHA do login (grátis)
+- **Onde criar:** dash.cloudflare.com → Turnstile → *Add widget* → domínios `vivanomads.com.br` e `www.vivanomads.com.br`, modo **Managed**.
+- **Chave pública (Site Key)** → Vercel, Production: `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (e redeploy).
+- **Chave secreta (Secret Key)** → Supabase → Authentication → Attack Protection → *Enable CAPTCHA protection* → Turnstile. **Não** vai na Vercel nem no repositório.
+- **Ordem:** 1) chave pública + deploy; 2) só então ligar no Supabase. Ao contrário, o Supabase recusa login sem token.
+- Sem a chave pública o widget não aparece (laboratório, dev e preview seguem iguais).
+
 ### 2. Asaas — pagamentos (Brasil)
 - **Para quê:** assinatura recorrente do proprietário, comissão de fechamento com **split**, PIX/boleto/cartão.
 - **Env:** `ASAAS_API_KEY`, `ASAAS_WEBHOOK_TOKEN`, `ASAAS_ENV` (`sandbox`|`production`)

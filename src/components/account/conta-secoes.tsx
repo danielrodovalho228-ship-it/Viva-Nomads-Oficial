@@ -17,6 +17,8 @@ import { friendlyAuthError, MIN_PASSWORD } from "@/lib/auth-errors";
 import { Switch } from "@/components/ui/switch";
 import { getMeusDados, salvarMeusDados } from "@/lib/data/perfil-actions";
 import { getNotifPrefs, setNotifPrefs } from "@/lib/data/pedidos-actions";
+import { useCaptcha } from "@/components/seguranca/captcha";
+import { MSG_CAPTCHA_PENDENTE, comCaptcha, podeEnviar } from "@/lib/seguranca/captcha";
 
 
 /*
@@ -192,6 +194,7 @@ export function ChangePassword() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
+  const captcha = useCaptcha(); // reautenticação também passa pelo CAPTCHA do Supabase
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -213,6 +216,10 @@ export function ChangePassword() {
       setError("A nova senha precisa ser diferente da atual.");
       return;
     }
+    if (!podeEnviar(captcha.ligado, captcha.token)) {
+      setError(MSG_CAPTCHA_PENDENTE);
+      return;
+    }
     const supabase = createClient();
     setLoading(true);
     try {
@@ -226,6 +233,7 @@ export function ChangePassword() {
         const { error: atualErro } = await supabase.auth.signInWithPassword({
           email: user.email,
           password: current,
+          options: comCaptcha({}, captcha.token),
         });
         if (atualErro) {
           setError("Senha atual incorreta.");
@@ -242,6 +250,7 @@ export function ChangePassword() {
       setError(friendlyAuthError(err instanceof Error ? err.message : ""));
     } finally {
       setLoading(false);
+      captcha.reset();
     }
   }
 
@@ -259,7 +268,8 @@ export function ChangePassword() {
               <Check className="h-4 w-4" /> Senha atualizada com sucesso.
             </p>
           )}
-          <Button type="submit" disabled={loading}>
+          {captcha.widget && <div className="mb-3">{captcha.widget}</div>}
+          <Button type="submit" disabled={loading || !podeEnviar(captcha.ligado, captcha.token)}>
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
             Salvar nova senha
           </Button>
@@ -388,6 +398,7 @@ export function DangerZone() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const captcha = useCaptcha();
 
   function reset() {
     setStep(0);
@@ -397,6 +408,10 @@ export function DangerZone() {
 
   async function confirmDelete() {
     setError(null);
+    if (!podeEnviar(captcha.ligado, captcha.token)) {
+      setError(MSG_CAPTCHA_PENDENTE);
+      return;
+    }
     setLoading(true);
     try {
       const supabase = createClient();
@@ -405,6 +420,7 @@ export function DangerZone() {
         const { error: authError } = await supabase.auth.signInWithPassword({
           email: user?.email ?? "",
           password,
+          options: comCaptcha({}, captcha.token),
         });
         if (authError) {
           setError("Senha incorreta. Tente novamente.");
@@ -429,6 +445,7 @@ export function DangerZone() {
       router.push("/");
     } finally {
       setLoading(false);
+      captcha.reset();
     }
   }
 
@@ -490,6 +507,7 @@ export function DangerZone() {
             inputClassName="text-sm"
           />
           {error && <p className="mt-2 text-sm font-medium text-red-700">{error}</p>}
+          {captcha.widget && <div className="mt-3">{captcha.widget}</div>}
           <div className="mt-3 flex gap-2">
             <Button variant="ghost" size="sm" onClick={reset}>
               Cancelar
@@ -497,7 +515,7 @@ export function DangerZone() {
             <Button
               size="sm"
               className="bg-red-600 text-white hover:bg-red-700"
-              disabled={password.length === 0 || loading}
+              disabled={password.length === 0 || loading || !podeEnviar(captcha.ligado, captcha.token)}
               onClick={confirmDelete}
             >
               {loading && <Loader2 className="h-4 w-4 animate-spin" />}

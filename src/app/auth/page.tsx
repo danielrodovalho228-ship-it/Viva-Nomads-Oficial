@@ -32,6 +32,8 @@ import { safeInternalPath } from "@/lib/safe-redirect";
 import { LOGIN_GOOGLE_ATIVO } from "@/lib/flags";
 import { useIsNative } from "@/lib/use-native";
 import { registrarEvento } from "@/lib/eventos/registrar";
+import { useCaptcha } from "@/components/seguranca/captcha";
+import { MSG_CAPTCHA_PENDENTE, comCaptcha, podeEnviar } from "@/lib/seguranca/captcha";
 
 type Mode = "login" | "signup" | "forgot";
 
@@ -63,6 +65,8 @@ export default function AuthPage() {
   // Login falhou porque NÃO existe conta com este e-mail → oferece cadastro
   // (em vez de "e-mail ou senha incorretos", que faz o usuário resetar senha à toa).
   const [semConta, setSemConta] = useState(false);
+  // CAPTCHA (Turnstile): só aparece com NEXT_PUBLIC_TURNSTILE_SITE_KEY; o token vale uma vez.
+  const captcha = useCaptcha();
 
   // Sessão de 24h expirou (o AuthProvider redireciona com ?expired=1).
   // Link de indicação (?ref=CÓDIGO): abre o cadastro com o código preenchido.
@@ -156,13 +160,17 @@ export default function AuthPage() {
       setNotice("Modo demonstração: e-mail de confirmação não é enviado.");
       return;
     }
+    if (!podeEnviar(captcha.ligado, captcha.token)) {
+      setError(MSG_CAPTCHA_PENDENTE);
+      return;
+    }
     setLoading(true);
     try {
       const { error } = await supabase.auth.resend({
         type: "signup",
         email,
         // O link reenviado volta para o callback do site (igual ao cadastro).
-        options: { emailRedirectTo: `${SITE_URL}/auth/callback` },
+        options: comCaptcha({ emailRedirectTo: `${SITE_URL}/auth/callback` }, captcha.token),
       });
       if (error) throw error;
       setNotice(
@@ -173,6 +181,7 @@ export default function AuthPage() {
       setError(friendlyAuthError(err instanceof Error ? err.message : ""));
     } finally {
       setLoading(false);
+      captcha.reset();
     }
   }
 
@@ -184,13 +193,15 @@ export default function AuthPage() {
       setError("Digite um e-mail válido para receber o link.");
       return;
     }
+    if (!podeEnviar(captcha.ligado, captcha.token)) {
+      setError(MSG_CAPTCHA_PENDENTE);
+      return;
+    }
     const supabase = createClient();
     setLoading(true);
     try {
       if (supabase) {
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${SITE_URL}/auth/reset`,
-        });
+        const { error } = await supabase.auth.resetPasswordForEmail(email, comCaptcha({ redirectTo: `${SITE_URL}/auth/reset` }, captcha.token));
         if (error) throw error;
       }
       setNotice(
@@ -200,6 +211,7 @@ export default function AuthPage() {
       setError(friendlyAuthError(err instanceof Error ? err.message : ""));
     } finally {
       setLoading(false);
+      captcha.reset();
     }
   }
 
@@ -230,6 +242,10 @@ export default function AuthPage() {
       setError(validationError);
       return;
     }
+    if (!podeEnviar(captcha.ligado, captcha.token)) {
+      setError(MSG_CAPTCHA_PENDENTE);
+      return;
+    }
 
     setLoading(true);
     const supabase = createClient();
@@ -240,15 +256,18 @@ export default function AuthPage() {
             supabase.auth.signUp({
               email,
               password,
-              options: {
-                data: {
-                  full_name: name,
-                  role,
-                  person_type: personType,
-                  referred_by: referral || null,
+              options: comCaptcha(
+                {
+                  data: {
+                    full_name: name,
+                    role,
+                    person_type: personType,
+                    referred_by: referral || null,
+                  },
+                  emailRedirectTo: `${SITE_URL}/auth/callback`,
                 },
-                emailRedirectTo: `${SITE_URL}/auth/callback`,
-              },
+                captcha.token
+              ),
             })
           );
           if (error) throw error;
@@ -271,7 +290,7 @@ export default function AuthPage() {
           }
         } else {
           const { data, error } = await withTimeout(
-            supabase.auth.signInWithPassword({ email, password })
+            supabase.auth.signInWithPassword({ email, password, options: comCaptcha({}, captcha.token) })
           );
           if (error) {
             const m = (error.message || "").toLowerCase();
@@ -369,6 +388,7 @@ export default function AuthPage() {
       }
     } finally {
       setLoading(false);
+      captcha.reset();
     }
   }
 
@@ -424,11 +444,12 @@ export default function AuthPage() {
                 <p className="mt-4 rounded-lg bg-sage-100 px-3 py-2 text-sm text-forest">{notice}</p>
               )}
               {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
+              {captcha.widget && <div className="mt-4 flex justify-center">{captcha.widget}</div>}
               <Button
                 variant="outline"
                 className="mt-6 w-full"
                 onClick={resendConfirmation}
-                disabled={loading}
+                disabled={loading || !podeEnviar(captcha.ligado, captcha.token)}
               >
                 {loading && <Loader2 className="h-4 w-4 animate-spin" />}
                 Reenviar e-mail de confirmação
@@ -472,7 +493,8 @@ export default function AuthPage() {
                     <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" /> {notice}
                   </p>
                 )}
-                <Button type="submit" className="w-full" disabled={loading}>
+                {captcha.widget}
+                <Button type="submit" className="w-full" disabled={loading || !podeEnviar(captcha.ligado, captcha.token)}>
                   {loading && <Loader2 className="h-4 w-4 animate-spin" />}
                   Enviar link de recuperação
                 </Button>
@@ -695,10 +717,11 @@ export default function AuthPage() {
                   </div>
                 )}
 
+                {captcha.widget}
                 <Button
                   type="submit"
                   className="w-full"
-                  disabled={loading || (mode === "signup" && !acceptedTerms)}
+                  disabled={loading || (mode === "signup" && !acceptedTerms) || !podeEnviar(captcha.ligado, captcha.token)}
                 >
                   {loading && <Loader2 className="h-4 w-4 animate-spin" />}
                   {loading ? "Aguarde..." : mode === "login" ? "Entrar" : "Criar conta"}
