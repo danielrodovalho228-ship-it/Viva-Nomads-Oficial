@@ -22,6 +22,12 @@ export async function GET(request: Request) {
   const admin = createAdminClient();
   if (!admin) return NextResponse.json({ error: "Serviço indisponível." }, { status: 503 });
 
+  // Avaliações (0089): publica às cegas as que venceram os 14 dias sem a outra parte.
+  await admin.rpc("publicar_avaliacoes").then(
+    () => null,
+    () => null
+  );
+
   await admin.rpc("atendimento_varrer_prazos");
   const umaHora = new Date(Date.now() - 3600_000).toISOString();
   const { data: alertas } = await admin

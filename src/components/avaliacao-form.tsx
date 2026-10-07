@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Star, Loader2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { avaliar } from "@/lib/data/avaliacoes-actions";
-import { validarAvaliacao } from "@/lib/avaliacoes";
+import { LIMITE_COMENTARIO, validarAvaliacao } from "@/lib/avaliacoes";
 import { cn } from "@/lib/utils";
 
 /**
@@ -35,6 +35,7 @@ export function AvaliacaoForm({
   const [aberto, setAberto] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [enviado, setEnviado] = useState(false);
+  const [moderacao, setModeracao] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
   async function enviar() {
@@ -47,7 +48,10 @@ export function AvaliacaoForm({
     setEnviando(true);
     const r = await avaliar({ contratoId, alvoId, papelAutor, rating, comentario });
     setEnviando(false);
-    if (r.ok) setEnviado(true);
+    if (r.ok) {
+      setModeracao(!!r.moderacao);
+      setEnviado(true);
+    }
     else setErro(r.error ?? "Não foi possível avaliar.");
   }
 
@@ -57,7 +61,9 @@ export function AvaliacaoForm({
         <Check className="h-4 w-4" />
         {demo
           ? "Avaliação de exemplo registrada."
-          : "Avaliação enviada — obrigado por construir a reputação da plataforma."}
+          : moderacao
+            ? "Avaliação recebida. Ela passa por uma revisão da equipe antes de aparecer (o comentário tinha contato ou palavra que não publicamos)."
+            : "Avaliação enviada. Ela aparece quando a outra parte também avaliar, ou em até 14 dias depois do fim do contrato."}
       </p>
     );
   }
@@ -102,6 +108,7 @@ export function AvaliacaoForm({
         rows={2}
         value={comentario}
         onChange={(e) => setComentario(e.target.value)}
+        maxLength={LIMITE_COMENTARIO}
         placeholder={placeholder}
         className="mt-3 w-full rounded-xl border border-sage-200 px-3 py-2 text-sm outline-none focus:border-sage"
       />

@@ -2,12 +2,12 @@ import type { Property } from "@/lib/types";
 
 /**
  * Avaliação do imóvel pela FONTE ÚNICA: as avaliações REAIS (`property.reviews`,
- * tabela `property_reviews`). Cartão, página e JSON-LD devem usar isto — nunca os
+ * tabela `avaliacoes`, só as publicadas pelo inquilino — 0089). Cartão, página e JSON-LD devem usar isto — nunca os
  * escalares `rating`/`reviewCount` crus, que em dados de amostra divergiam (12 no
  * cartão/JSON-LD × 2 reais na página).
  *
  * Em listagens (cartões), `listProperties` sincroniza `rating`/`reviewCount` a
- * partir de `property_reviews` (ver attachReviewAggregates); na página de detalhe
+ * partir das mesmas avaliações publicadas (ver attachReviewAggregates); na página de detalhe
  * o array `reviews` vem carregado. Nos dois casos a contagem bate com o que o
  * usuário vê.
  */

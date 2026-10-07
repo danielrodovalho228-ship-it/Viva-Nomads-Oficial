@@ -43,7 +43,8 @@ test("8: validar rating fora de faixa", () => {
   assert.equal(validarAvaliacao(4), null);
 });
 test("9: validar comentário longo", () => {
-  assert.ok(validarAvaliacao(5, "x".repeat(1001)));
+  assert.ok(validarAvaliacao(5, "x".repeat(501)));
+  assert.equal(validarAvaliacao(5, "x".repeat(500)), null);
   assert.equal(validarAvaliacao(5, "ótimo"), null);
 });
 test("10: papel oposto", () => {

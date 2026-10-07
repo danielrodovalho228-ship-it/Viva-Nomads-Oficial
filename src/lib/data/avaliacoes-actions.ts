@@ -1,11 +1,10 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { validarAvaliacao } from "@/lib/avaliacoes";
 import { erroBancoPT } from "@/lib/erros-banco";
 
-type ActionResult = { ok: boolean; demo?: boolean; error?: string };
+type ActionResult = { ok: boolean; demo?: boolean; error?: string; moderacao?: boolean };
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -18,9 +17,12 @@ export interface AvaliacaoInput {
 }
 
 /**
- * Registra a avaliação da OUTRA parte de um contrato ENCERRADO. Grava pelo
- * servidor; a unicidade (contrato, autor) impede duplicar. Best-effort:
- * no-op em demo/sem sessão/ids não-UUID.
+ * Registra a avaliação da OUTRA parte de um contrato ENCERRADO (0089). Grava
+ * com o cliente da SESSÃO: a RLS e o gatilho do banco conferem que quem está
+ * logado é parte do contrato, que o avaliado é a outra parte e que está dentro
+ * de 14 dias do fim. Uma por contrato. Publicação às cegas: aparece quando as
+ * duas partes enviam ou quando vence o prazo. Telefone/e-mail/rede ou ofensa
+ * no comentário → vai para a moderação. Best-effort: no-op em demo/ids não-UUID.
  */
 export async function avaliar(input: AvaliacaoInput): Promise<ActionResult> {
   const err = validarAvaliacao(input.rating, input.comentario);
@@ -35,24 +37,27 @@ export async function avaliar(input: AvaliacaoInput): Promise<ActionResult> {
   if (!UUID_RE.test(input.contratoId) || !UUID_RE.test(input.alvoId))
     return { ok: true, demo: true };
 
-  // Só o servidor grava (0062): o banco confere contrato encerrado, partes
-  // do contrato e autor ≠ alvo. O autor é SEMPRE quem está logado.
-  const admin = createAdminClient();
-  if (!admin) return { ok: false, error: "Avaliações indisponíveis no momento." };
-  const { error } = await admin.from("avaliacoes").insert({
-    contrato_id: input.contratoId,
-    autor_id: user.id,
-    alvo_id: input.alvoId,
-    papel_autor: input.papelAutor,
-    rating: Math.round(input.rating),
-    comentario: input.comentario?.trim() || null,
-  });
+  // O autor é SEMPRE quem está logado (o banco ignora qualquer outro).
+  const { data, error } = await supabase
+    .from("avaliacoes")
+    .insert({
+      contrato_id: input.contratoId,
+      alvo_id: input.alvoId,
+      papel_autor: input.papelAutor,
+      nota_geral: Math.round(input.rating),
+      comentario_publico: input.comentario?.trim() || null,
+      status: "enviada",
+    })
+    .select("status")
+    .single();
   if (error) {
     if (error.code === "23505") return { ok: false, error: "Você já avaliou esta pessoa." };
-    // 23514: regra do banco (contrato não encerrado, não é parte…) — já em pt-BR.
+    // 42501 com RLS: não é parte, contrato não encerrado ou fora dos 14 dias.
+    if (error.code === "42501") return { ok: false, error: "Só quem foi parte do contrato avalia, até 14 dias depois do fim." };
+    // 23514: regra do banco (contrato não encerrado, prazo…) — já em pt-BR.
     return { ok: false, error: erroBancoPT(error, "Não foi possível registrar a avaliação.") };
   }
-  return { ok: true };
+  return { ok: true, moderacao: data?.status === "em_moderacao" };
 }
 
 export interface Reputacao {
@@ -64,8 +69,9 @@ export interface Reputacao {
 export async function getReputacao(userId: string): Promise<Reputacao> {
   const supabase = await createClient();
   if (!supabase || !UUID_RE.test(userId)) return { media: 0, n: 0 };
-  const { data } = await supabase.from("avaliacoes").select("rating").eq("alvo_id", userId);
-  const notas = (data ?? []).map((r) => Number(r.rating));
+  // Só o que já foi PUBLICADO (às cegas) conta na reputação.
+  const { data } = await supabase.from("avaliacoes").select("nota_geral").eq("alvo_id", userId).eq("status", "publicada");
+  const notas = (data ?? []).map((r) => Number(r.nota_geral));
   if (notas.length === 0) return { media: 0, n: 0 };
   const soma = notas.reduce((s, n) => s + n, 0);
   return { media: Math.round((soma / notas.length) * 10) / 10, n: notas.length };

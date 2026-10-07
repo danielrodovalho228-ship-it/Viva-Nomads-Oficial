@@ -56,7 +56,7 @@ test.describe("T23 pacote de segurança (0084) @seguranca", () => {
       const r = await anon.from(tabela).select("property_id").eq("property_id", id).limit(1);
       expect(r.error, `${tabela} quebrou para anon`).toBeNull();
     }
-    expect((await anon.from("reviews").select("id").limit(1)).error, "avaliações quebraram para anon").toBeNull();
+    expect((await anon.from("avaliacoes").select("id, nota_geral, comentario_publico").limit(1)).error, "avaliações quebraram para anon").toBeNull();
   });
 
   test("2: páginas públicas abrem sem login (/buscar, imóvel, /conferir)", async ({ page, request }) => {
