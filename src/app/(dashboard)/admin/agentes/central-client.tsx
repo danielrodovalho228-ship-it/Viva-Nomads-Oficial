@@ -723,7 +723,7 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
                       <Chip cor={COR_ESTADO[estado]}>{ROTULO_ESTADO[estado]}</Chip>
                       {o.origem_slug && (
                         <span className="text-xs font-semibold text-[#FF7A6B]" data-testid="ordem-origem">
-                          {o.retorno_de ? "retorno de" : "repasse de"} {dados.agentes.find((x) => x.slug === o.origem_slug)?.nome ?? o.origem_slug}
+                          {o.retorno_de ? "retorno de" : "encaminhado por"} {dados.agentes.find((x) => x.slug === o.origem_slug)?.nome ?? o.origem_slug}
                           {o.prioridade ? ` · ${o.prioridade}` : ""}
                         </span>
                       )}

@@ -15,7 +15,7 @@ export type Consulta = (typeof CONSULTAS)[number];
 export const ORGANOGRAMA: { assunto: string; slug: string; nome: string }[] = [
   { assunto: "atendimento, chamados, clientes", slug: "viva", nome: "Viva" },
   { assunto: "sistema, segurança, SEO técnico, erros do site", slug: "bruno", nome: "Bruno" },
-  { assunto: "correções e fila (o Otávio repassa ao Renato)", slug: "otavio", nome: "Otávio" },
+  { assunto: "correções e fila (o Otávio encaminha ao Renato)", slug: "otavio", nome: "Otávio" },
   { assunto: "correção de código / abrir PR (execução)", slug: "renato", nome: "Renato" },
   { assunto: "pendências do Daniel", slug: "helena", nome: "Helena" },
   { assunto: "números e relatórios", slug: "carla", nome: "Carla" },

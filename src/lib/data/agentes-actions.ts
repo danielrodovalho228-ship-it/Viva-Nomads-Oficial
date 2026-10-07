@@ -9,7 +9,7 @@ import { PREFIXO_MOACIR } from "@/lib/agentes/gerente";
 import { avisoOrdem, contarP1, type Agente, type Conversa, type Ordem, type Ronda } from "@/lib/agentes/central";
 import { JANELA_EVENTOS_H, montarEventos, type ChamadoEvento, type EventoRede, type FontesRede } from "@/lib/agentes/eventos";
 import { eventosGithub } from "@/lib/agentes/github";
-import { dispararRepassesDaSessao } from "@/lib/agentes/servidor";
+import { dispararEncaminhamentosDaSessao } from "@/lib/agentes/servidor";
 
 /**
  * Central de Agentes — leituras e "Deixar ordem". Tudo com o cliente da sessão:
@@ -128,7 +128,7 @@ export async function contarAchadosP1(): Promise<number> {
 
 /**
  * Rede ao vivo REAL: eventos das últimas 24 h (rondas, ordens, chamados, PRs e
- * deploys). A tela chama a cada 30 s; de carona, dispara os repasses P0/P1
+ * deploys). A tela chama a cada 30 s; de carona, dispara os encaminhamentos P0/P1
  * que ainda não saíram (0087). Só admin (RLS is_admin() nas tabelas).
  */
 export async function eventosDaRede(): Promise<{ eventos: EventoRede[]; lidoEm: string } | null> {
@@ -138,7 +138,7 @@ export async function eventosDaRede(): Promise<{ eventos: EventoRede[]; lidoEm: 
     data: { user },
   } = await supabase.auth.getUser();
   if (!user || !(await ehAdmin(supabase, user.id))) return null;
-  await dispararRepassesDaSessao().catch(() => null);
+  await dispararEncaminhamentosDaSessao().catch(() => null);
   const agora = new Date();
   const desde = new Date(agora.getTime() - JANELA_EVENTOS_H * 3600_000).toISOString();
   const [a, r, o, c, gh] = await Promise.all([

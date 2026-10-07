@@ -1,4 +1,4 @@
--- Viva Nomads — aplicar 0087 (repasse entre agentes). Sem NOTICE, sem DROP. Rollback: supabase/producao/rollback/0087_rollback.sql
+-- Viva Nomads — aplicar 0087 (encaminhamento entre agentes). Sem NOTICE, sem DROP. Rollback: supabase/producao/rollback/0087_rollback.sql
 begin;
 set local lock_timeout = '5s';
 do $$
@@ -11,8 +11,8 @@ begin
       add column retorno_de uuid references public.agentes_ordens(id) on delete set null,
       add column prioridade text check (prioridade is null or prioridade in ('P0','P1','P2','P3'));
   end if;
-  if not exists (select 1 from pg_indexes where schemaname = 'public' and indexname = 'agentes_ordens_repasse') then
-    create index agentes_ordens_repasse on public.agentes_ordens (criada_em desc) where origem_slug is not null;
+  if not exists (select 1 from pg_indexes where schemaname = 'public' and indexname = 'agentes_ordens_encaminhamento') then
+    create index agentes_ordens_encaminhamento on public.agentes_ordens (criada_em desc) where origem_slug is not null;
   end if;
 end;
 $$;
@@ -41,12 +41,12 @@ begin
      where id = any(coalesce(p_ordens,'{}')) and agente_slug = p_slug and status in ('pendente','lida')
     returning id, origem_slug, retorno_de, texto
   loop
-    -- A resposta volta para quem repassou (uma vez; retorno não gera retorno).
+    -- A resposta volta para quem encaminhou (uma vez; retorno não gera retorno).
     if o.origem_slug is not null and o.retorno_de is null and o.origem_slug <> p_slug
        and exists (select 1 from public.agentes g where g.slug = o.origem_slug and g.status = 'ativo') then
       insert into public.agentes_ordens (agente_slug, texto, origem_slug, origem_ronda, retorno_de, criado_por)
       values (o.origem_slug,
-              left(format('Retorno de %s sobre o que você repassou ("%s"): %s%s',
+              left(format('Retorno de %s sobre o que você encaminhou ("%s"): %s%s',
                           coalesce(v_nome, p_slug), left(o.texto, 300),
                           coalesce(nullif(v_resumo, ''), 'sem resumo'),
                           case when p_link is not null then ' ' || p_link else '' end), 4000),
@@ -66,7 +66,7 @@ begin
   loop
     insert into public.agentes_ordens (agente_slug, texto, origem_slug, origem_ronda, prioridade, criado_por)
     values (a.destino,
-            left(format('Repasse de %s (%s): %s%s', coalesce(v_nome, p_slug), coalesce(a.prio, 'sem prioridade'),
+            left(format('Encaminhado por %s (%s): %s%s', coalesce(v_nome, p_slug), coalesce(a.prio, 'sem prioridade'),
                         coalesce(nullif(btrim(a.achado->>'titulo'), ''), nullif(btrim(a.achado->>'detalhe'), ''), 'achado sem título'),
                         case when nullif(btrim(a.achado->>'titulo'), '') is not null and nullif(btrim(a.achado->>'detalhe'), '') is not null
                              then ' — ' || btrim(a.achado->>'detalhe') else '' end), 4000),
@@ -82,8 +82,8 @@ grant execute on function public.registrar_ronda(text,timestamptz,timestamptz,te
 update public.agentes set trigger_id = 'trig_01HrZe3NpeM8ntv4bZtePisD' where slug = 'viva' and trigger_id is null;
 
 insert into supabase_migrations.schema_migrations (version, name, statements, created_by)
-select '20261007000087', '0087_repasse_entre_agentes',
-       array['-- conteúdo em supabase/migrations/0087_repasse_entre_agentes.sql'], 'danielrodovalho228@gmail.com'
+select '20261007000087', '0087_encaminhamento_entre_agentes',
+       array['-- conteúdo em supabase/migrations/0087_encaminhamento_entre_agentes.sql'], 'danielrodovalho228@gmail.com'
  where not exists (select 1 from supabase_migrations.schema_migrations where version = '20261007000087');
 commit;
 

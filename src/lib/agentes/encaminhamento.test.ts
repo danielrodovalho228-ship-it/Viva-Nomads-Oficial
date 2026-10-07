@@ -1,21 +1,21 @@
 /*
-  Repasse entre agentes (0087) e Rede ao vivo REAL.
-  Roda: node --test src/lib/agentes/repasse.test.ts
+  Encaminhamento entre agentes (0087) e Rede ao vivo REAL.
+  Roda: node --test src/lib/agentes/encaminhamento.test.ts
 */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { repasseUrgente, textoDisparo, type Ordem } from "./central.ts";
-import { dispararRepasses, type DepsRepasse } from "./motor.ts";
+import { encaminhamentoUrgente, textoDisparo, type Ordem } from "./central.ts";
+import { dispararEncaminhamentos, type DepsEncaminhamento } from "./motor.ts";
 import { alvoDaRonda, lerDeploys, lerPrs, linhasAcesas, montarEventos, quemPediu, type FontesRede } from "./eventos.ts";
 import { nosDaRede } from "./painel.ts";
 import { PREFIXO_MOACIR } from "./gerente.ts";
 
-type Candidata = Awaited<ReturnType<DepsRepasse["candidatas"]>>[number];
+type Candidata = Awaited<ReturnType<DepsEncaminhamento["candidatas"]>>[number];
 const ordem = (id: string, extra: Partial<Candidata> = {}): Candidata => ({
   id,
   agente_slug: "otavio",
-  texto: `Repasse de Bruno (P1): achado ${id}`,
+  texto: `Encaminhado por Bruno (P1): achado ${id}`,
   status: "pendente",
   origem_slug: "bruno",
   retorno_de: null,
@@ -29,7 +29,7 @@ function deps(candidatas: Candidata[], o: { limite?: number; token?: boolean; re
   const disparos: { url: string; texto: string }[] = [];
   const registros: Record<string, { sessao_url?: string | null; erro?: string }> = {};
   let limite = o.limite ?? 20;
-  const d: DepsRepasse = {
+  const d: DepsEncaminhamento = {
     candidatas: async () => candidatas,
     agentes: async () => [
       { slug: "bruno", nome: "Bruno", status: "ativo", trigger_id: "trig_b" },
@@ -49,18 +49,18 @@ function deps(candidatas: Candidata[], o: { limite?: number; token?: boolean; re
   return { d, disparos, registros };
 }
 
-test("achado P1 repassado ao Otávio: dispara a rotina dele na hora, com a origem no texto", async () => {
+test("achado P1 encaminhado ao Otávio: dispara a rotina dele na hora, com a origem no texto", async () => {
   const { d, disparos, registros } = deps([ordem("o1")]);
-  const r = await dispararRepasses(d);
+  const r = await dispararEncaminhamentos(d);
   assert.deepEqual(r.disparadas, ["o1"]);
   assert.equal(disparos.length, 1);
   assert.match(disparos[0].url, /routines\/trig_o\/fire$/);
-  assert.match(disparos[0].texto, /repasse urgente\) — ordem o1 repassada por Bruno/);
+  assert.match(disparos[0].texto, /encaminhamento urgente\) — ordem o1 encaminhada por Bruno/);
   assert.match(disparos[0].texto, /ordens_pendentes\('otavio'\)/);
   assert.equal(registros.o1.sessao_url, "https://claude.ai/code/session_x");
 });
 
-test("só P0/P1 de repasse disparam: P2, retorno, já disparada, sem origem e não pendente ficam para a ronda", async () => {
+test("só P0/P1 de encaminhamento disparam: P2, retorno, já disparada, sem origem e não pendente ficam para a ronda", async () => {
   const fila = [
     ordem("p2", { prioridade: "P2" }),
     ordem("ret", { retorno_de: "o0" }),
@@ -71,42 +71,42 @@ test("só P0/P1 de repasse disparam: P2, retorno, já disparada, sem origem e n�
     ordem("p0", { prioridade: "p0" }),
   ];
   const { d, disparos } = deps(fila);
-  const r = await dispararRepasses(d);
+  const r = await dispararEncaminhamentos(d);
   assert.deepEqual(r.disparadas, ["p0"]);
   assert.equal(disparos.length, 1);
-  assert.equal(repasseUrgente(ordem("x", { prioridade: "P1" })), true);
-  assert.equal(repasseUrgente(ordem("x", { prioridade: null })), false);
+  assert.equal(encaminhamentoUrgente(ordem("x", { prioridade: "P1" })), true);
+  assert.equal(encaminhamentoUrgente(ordem("x", { prioridade: null })), false);
 });
 
 test("limite diário, sem token, sem rotina e falha: a ordem fica gravada com o motivo, nada some", async () => {
   const a = deps([ordem("a1"), ordem("a2")], { limite: 1 });
-  const ra = await dispararRepasses(a.d);
+  const ra = await dispararEncaminhamentos(a.d);
   assert.deepEqual(ra.disparadas, ["a1"]);
   assert.match(a.registros.a2.erro!, /limite de 20 disparos em 24 h/);
 
   const b = deps([ordem("b1")], { token: false });
-  await dispararRepasses(b.d);
+  await dispararEncaminhamentos(b.d);
   assert.equal(b.registros.b1.erro, "sem token da rotina");
 
   const c = deps([ordem("c1", { agente_slug: "caio" })]);
-  await dispararRepasses(c.d);
+  await dispararEncaminhamentos(c.d);
   assert.equal(c.registros.c1.erro, "sem rotina para disparar");
 
   const e = deps([ordem("e1")], { falhaDisparo: true });
-  const re = await dispararRepasses(e.d);
+  const re = await dispararEncaminhamentos(e.d);
   assert.deepEqual(re.falhas, [{ id: "e1", motivo: "HTTP 500" }]);
 });
 
 test("disparo duplo evitado: ordem já reservada por outra aba/cron não dispara de novo", async () => {
   const { d, disparos } = deps([ordem("r1")], { reservadas: new Set(["r1"]) });
-  const r = await dispararRepasses(d);
+  const r = await dispararEncaminhamentos(d);
   assert.equal(disparos.length, 0);
   assert.deepEqual(r, { disparadas: [], falhas: [] });
 });
 
 test("até 5 por vez", async () => {
   const { d, disparos } = deps(Array.from({ length: 8 }, (_, i) => ordem(`m${i}`)));
-  await dispararRepasses(d);
+  await dispararEncaminhamentos(d);
   assert.equal(disparos.length, 5);
 });
 
@@ -138,13 +138,13 @@ test("ronda com 'para' vira 'Bruno → Otávio: 2 achados (P1, P2)'; ronda velha
   assert.deepEqual([ronda.de, ronda.para], ["bruno", "fila"]);
 });
 
-test("ordens: criada (Daniel/Moacir), lida, concluída, retorno; repasse de achado não duplica", () => {
+test("ordens: criada (Daniel/Moacir), lida, concluída, retorno; encaminhamento de achado não duplica", () => {
   const ev = montarEventos(
     base({
       ordens: [
         { agente_slug: "renato", texto: "corrija X", criada_em: h(3), atualizada_em: h(1), status: "concluida", origem_slug: null, origem_ronda: null, retorno_de: null, prioridade: null, disparada_em: h(3) },
         { agente_slug: "otavio", texto: `${PREFIXO_MOACIR}veja Y`, criada_em: h(2), atualizada_em: h(2), status: "pendente", origem_slug: null, origem_ronda: null, retorno_de: null, prioridade: null, disparada_em: null },
-        { agente_slug: "otavio", texto: "Repasse de Bruno (P1): a", criada_em: h(1), atualizada_em: h(0.5), status: "lida", origem_slug: "bruno", origem_ronda: "r1", retorno_de: null, prioridade: "P1", disparada_em: h(1) },
+        { agente_slug: "otavio", texto: "Encaminhado por Bruno (P1): a", criada_em: h(1), atualizada_em: h(0.5), status: "lida", origem_slug: "bruno", origem_ronda: "r1", retorno_de: null, prioridade: "P1", disparada_em: h(1) },
         { agente_slug: "bruno", texto: "Retorno de Otávio…", criada_em: h(0.2), atualizada_em: h(0.2), status: "pendente", origem_slug: "otavio", origem_ronda: "r2", retorno_de: "o1", prioridade: null, disparada_em: null },
       ],
     }),
@@ -155,8 +155,8 @@ test("ordens: criada (Daniel/Moacir), lida, concluída, retorno; repasse de acha
   assert.ok(textos.includes("Renato → Daniel: ordem concluída"));
   assert.ok(textos.includes("Moacir → Otávio: ordem criada"));
   assert.ok(textos.includes("Otávio leu a ordem de Bruno"));
-  assert.ok(textos.includes("Otávio → Bruno: retorno do que foi repassado"));
-  assert.ok(!textos.some((t) => t.startsWith("Bruno → Otávio: ordem criada")), "repasse de achado já aparece na ronda");
+  assert.ok(textos.includes("Otávio → Bruno: retorno do que foi encaminhado"));
+  assert.ok(!textos.some((t) => t.startsWith("Bruno → Otávio: ordem criada")), "encaminhamento de achado já aparece na ronda");
   assert.equal(quemPediu({ origem_slug: null, texto: `${PREFIXO_MOACIR}x` }), "moacir");
 });
 
@@ -188,7 +188,7 @@ test("chamados, PRs e deploys; tudo do mais novo para o mais antigo", () => {
 
 test("linha só acende onde houve evento: uma por par, com o tipo do mais recente; nós site/github/viva existem", () => {
   const linhas = linhasAcesas([
-    { em: h(1), de: "bruno", para: "otavio", tipo: "repasse", texto: "" },
+    { em: h(1), de: "bruno", para: "otavio", tipo: "encaminhamento", texto: "" },
     { em: h(0.5), de: "otavio", para: "bruno", tipo: "retorno", texto: "" },
     { em: h(2), de: "site", para: "viva", tipo: "chamado", texto: "" },
     { em: h(2), de: "x", para: "x", tipo: "ronda", texto: "" },
@@ -204,12 +204,12 @@ test("linha só acende onde houve evento: uma por par, com o tipo do mais recent
 });
 
 test("migração 0087: só colunas novas + registrar_ronda com o mesmo formato, sem DROP e sem NOTICE", () => {
-  const sql = readFileSync(new URL("../../../supabase/migrations/0087_repasse_entre_agentes.sql", import.meta.url), "utf8");
+  const sql = readFileSync(new URL("../../../supabase/migrations/0087_encaminhamento_entre_agentes.sql", import.meta.url), "utf8");
   const codigo = sql.replace(/--.*$/gm, "");
   assert.doesNotMatch(codigo, /\bdrop\b/i);
   assert.doesNotMatch(codigo, /\bif not exists\b(?![^$]*\$\$)/i, "if not exists fora do DO gera NOTICE");
   assert.match(codigo, /create or replace function public\.registrar_ronda\(\s*p_slug text, p_inicio timestamptz, p_fim timestamptz, p_status text,\s*p_resumo text, p_achados jsonb default '\[\]'::jsonb, p_ordens uuid\[\] default '\{\}', p_link text default null\s*\)/);
-  assert.match(codigo, /g\.status = 'ativo' and g\.slug <> p_slug/, "repasse só para agente ativo e nunca para si mesmo");
+  assert.match(codigo, /g\.status = 'ativo' and g\.slug <> p_slug/, "encaminhamento só para agente ativo e nunca para si mesmo");
   assert.match(codigo, /o\.retorno_de is null/, "retorno não gera outro retorno");
   assert.match(codigo, /limit 10/);
   assert.match(codigo, /grant execute on function public\.registrar_ronda\([^)]*\) to service_role/);

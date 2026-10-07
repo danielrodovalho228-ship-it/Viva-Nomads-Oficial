@@ -7,7 +7,7 @@ import type { Achado, Ordem, Ronda } from "./central.ts";
 import { FLUXOS } from "./painel.ts";
 import { PREFIXO_MOACIR } from "./gerente.ts";
 
-export type TipoEvento = "ronda" | "repasse" | "ordem" | "retorno" | "chamado" | "pr" | "deploy";
+export type TipoEvento = "ronda" | "encaminhamento" | "ordem" | "retorno" | "chamado" | "pr" | "deploy";
 
 export interface EventoRede {
   em: string;
@@ -20,7 +20,7 @@ export interface EventoRede {
 
 export const COR_EVENTO: Record<TipoEvento, string> = {
   ronda: "#38BDF8",
-  repasse: "#FF7A6B",
+  encaminhamento: "#FF7A6B",
   ordem: "#7FD321",
   retorno: "#7FD321",
   chamado: "#FFB547",
@@ -30,7 +30,7 @@ export const COR_EVENTO: Record<TipoEvento, string> = {
 
 export const ROTULO_EVENTO: Record<TipoEvento, string> = {
   ronda: "ronda",
-  repasse: "repasse entre agentes",
+  encaminhamento: "encaminhamento entre agentes",
   ordem: "ordem",
   retorno: "retorno",
   chamado: "chamado",
@@ -121,7 +121,7 @@ export function montarEventos(f: FontesRede, agora: Date): EventoRede[] {
         em: r.iniciada_em,
         de: r.agente_slug,
         para,
-        tipo: "repasse",
+        tipo: "encaminhamento",
         texto: `${nome(r.agente_slug)} → ${nome(para)}: ${plural(lista.length, "achado", "achados")}${prioridadesTexto(lista)}`,
       });
     }
@@ -130,7 +130,7 @@ export function montarEventos(f: FontesRede, agora: Date): EventoRede[] {
   for (const o of f.ordens) {
     const pediu = quemPediu(o);
     const retorno = !!o.retorno_de;
-    // O repasse que nasceu de achado já aparece no evento da ronda.
+    // O encaminhamento que nasceu de achado já aparece no evento da ronda.
     const deAchado = !!o.origem_ronda && !retorno;
     if (!deAchado && dentro(o.criada_em, desde)) {
       ev.push({
@@ -139,7 +139,7 @@ export function montarEventos(f: FontesRede, agora: Date): EventoRede[] {
         para: o.agente_slug,
         tipo: retorno ? "retorno" : "ordem",
         texto: retorno
-          ? `${nome(pediu)} → ${nome(o.agente_slug)}: retorno do que foi repassado`
+          ? `${nome(pediu)} → ${nome(o.agente_slug)}: retorno do que foi encaminhado`
           : `${nome(pediu)} → ${nome(o.agente_slug)}: ordem criada${o.disparada_em ? " (disparo na hora)" : ""}`,
       });
     }
@@ -151,7 +151,7 @@ export function montarEventos(f: FontesRede, agora: Date): EventoRede[] {
         para: concluiu ? pediu : o.agente_slug,
         tipo: retorno ? "retorno" : "ordem",
         texto: concluiu
-          ? `${nome(o.agente_slug)} → ${nome(pediu)}: ${retorno ? "retorno lido e fechado" : o.origem_slug ? "repasse concluído" : "ordem concluída"}`
+          ? `${nome(o.agente_slug)} → ${nome(pediu)}: ${retorno ? "retorno lido e fechado" : o.origem_slug ? "encaminhamento concluído" : "ordem concluída"}`
           : `${nome(o.agente_slug)} leu a ${retorno ? "resposta" : "ordem"} de ${nome(pediu)}`,
       });
     }
