@@ -7,6 +7,7 @@
   Nunca diz que fez o que não fez: as ferramentas devolvem o que aconteceu.
 */
 import { horaBrasilia } from "./retrato.ts";
+import { REGRA_CEO } from "./central.ts";
 
 export const CONSULTAS = ["chamados_abertos", "chamados_resolvidos", "contagens", "rondas_recentes", "ordens_pendentes", "ultimo_deploy", "migracoes"] as const;
 export type Consulta = (typeof CONSULTAS)[number];
@@ -94,6 +95,8 @@ Regras:
 - Use SÓ o que as ferramentas devolveram. Se não conseguiu verificar algo, diga "não consegui verificar X" e o próximo passo.
 - Nunca diga que fez algo que não fez. Só diga "disparei" se executar_agora devolveu sucesso.
 - Nunca aplique migração, publique, envie e-mail ou mensagem: isso é só com o Daniel.
+${REGRA_CEO}
+- Em "O que depende de você:" liste no máximo 3 itens, só do que é do Daniel, cada um com a ação pronta; se não houver, escreva "nada para você agora".
 - Sem dados pessoais (nome completo, e-mail, telefone, CPF, endereço).
 - Português do Brasil; "imóveis mobiliados"; a garantia se chama "Caução".`;
 }

@@ -10,7 +10,11 @@ import {
   URL_DISPARO,
   encaminhamentoUrgente,
   destinoDaOrdem,
+  esperaDanielIndevida,
+  NOTA_CEO,
   pedeAcao,
+  pedeAprovacao,
+  RESPOSTA_APROVACAO,
   prometeAcao,
   respostaSessaoReal,
   textoDisparo,
@@ -102,6 +106,13 @@ export async function responderChat(d: Deps, entrada: unknown): Promise<Resposta
   const agente = todos.find((a) => a.slug === slug);
   if (!agente) return { status: 404, body: { erro: "Agente não encontrado." } };
 
+  // "ok", "tudo aprovado"…: o chat NÃO aprova migração nem merge (vale para todos, Moacir incluído).
+  if (pedeAprovacao(pergunta)) {
+    await d.gravar([{ agente_slug: slug, papel: "daniel", autor_slug: null, texto: pergunta }]);
+    await d.gravar([{ agente_slug: slug, papel: "agente", autor_slug: slug, texto: RESPOSTA_APROVACAO }]);
+    return { status: 200, body: { resposta: RESPOSTA_APROVACAO, aprovacao: false } };
+  }
+
   // Moacir gerente: investiga (banco ao vivo, pergunta aos colegas, dispara quem faz).
   if (slug === SLUG_GERENTE && d.gerente) {
     await d.gravar([{ agente_slug: slug, papel: "daniel", autor_slug: null, texto: pergunta }]);
@@ -111,7 +122,7 @@ export async function responderChat(d: Deps, entrada: unknown): Promise<Resposta
     } catch {
       return { status: 502, body: { erro: FALHA_MSG } };
     }
-    const resposta = out.resposta.slice(0, 8000);
+    const resposta = (esperaDanielIndevida(out.resposta) ? `${out.resposta}\n${NOTA_CEO}` : out.resposta).slice(0, 8000);
     // Cada passo vira uma linha própria (inserts em sequência: ordem de criação = ordem da conversa).
     for (const p of out.trilha) await d.gravar([{ agente_slug: slug, papel: "agente", autor_slug: p.autor, texto: p.texto.slice(0, 8000) }]);
     await d.gravar([{ agente_slug: slug, papel: "agente", autor_slug: slug, texto: resposta }]);
@@ -162,6 +173,8 @@ export async function responderChat(d: Deps, entrada: unknown): Promise<Resposta
   // Rede de segurança: se o modelo prometeu agir, troca pela resposta honesta.
   const prometeu = prometeAcao(resposta);
   if (prometeu) resposta = respostaSessaoReal(destino.nome);
+  // E se jogou no Daniel algo que não é dele, corrige na própria resposta.
+  else if (esperaDanielIndevida(resposta)) resposta = `${resposta}\n${NOTA_CEO}`;
   resposta = resposta.slice(0, 8000);
   await d.gravar([{ agente_slug: slug, papel: "agente", autor_slug: slug, texto: resposta }]);
   return { status: 200, body: prometeu ? { resposta, acao } : { resposta } };
