@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { avisarEquipe, type ChamadoResumo } from "@/lib/atendimento/servidor";
 import { notify } from "@/lib/notifications";
+import { chamadosEsperandoEquipe } from "@/lib/atendimento/escalonamento";
 import { PRAZO_MANUTENCAO_H, type UrgenciaManutencao } from "@/config/atendimento";
 
 /**
@@ -38,6 +39,21 @@ export async function GET(request: Request) {
     await admin.from("chamados").update({ alerta_enviado_em: new Date().toISOString() }).eq("id", c.id);
   }
 
+  // Escalonamento (chamado esperando a EQUIPE, sem resposta humana): 2 h → push e
+  // e-mail ao Daniel; 6 h → de novo, e fica em vermelho na Central e no Moacir. 1× por nível.
+  let escalados = 0;
+  for (const c of await chamadosEsperandoEquipe(admin)) {
+    for (const nivel of [2, 6] as const) {
+      if (c.nivel < nivel) continue;
+      const acao = `escalado_${nivel}h`;
+      const { data: ja } = await admin.from("chamado_eventos").select("id").eq("chamado_id", c.id).eq("acao", acao).limit(1);
+      if (ja && ja.length) continue;
+      await avisarEquipe(c as unknown as ChamadoResumo, nivel === 6 ? `${c.horas} h SEM RESPOSTA da equipe (vermelho na Central)` : `${c.horas} h sem resposta da equipe`);
+      await admin.from("chamado_eventos").insert({ chamado_id: c.id, ator_tipo: "sistema", acao, detalhe: `${c.horas} h sem resposta humana` });
+      escalados++;
+    }
+  }
+
   // Manutenção vencida (prazo do proprietário) — uma vez por ordem.
   let atrasadas = 0;
   const { data: ordens } = await admin
@@ -62,5 +78,5 @@ export async function GET(request: Request) {
       await notify({ event: "manutencao_atrasada", email: dono.email as string, name: (dono.full_name as string) ?? undefined, userId: so.owner_id, pushUrl: "/dashboard/solicitacoes" }).catch(() => null);
     }
   }
-  return NextResponse.json({ ok: true, alertas: alertas?.length ?? 0, manutencaoAtrasada: atrasadas });
+  return NextResponse.json({ ok: true, alertas: alertas?.length ?? 0, escalados, manutencaoAtrasada: atrasadas });
 }

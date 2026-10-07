@@ -1,6 +1,9 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { chamadosEsperandoEquipe } from "@/lib/atendimento/escalonamento";
+import { categoria } from "@/lib/atendimento/classificar";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { PREFIXO_MOACIR } from "@/lib/agentes/gerente";
 import { avisoOrdem, contarP1, type Agente, type Conversa, type Ordem, type Ronda } from "@/lib/agentes/central";
@@ -89,6 +92,26 @@ export async function postarRetornosDoMoacir(): Promise<number> {
     if (!error) n++;
   }
   return n;
+}
+
+export interface ChamadoVermelho {
+  id: string;
+  numero: string;
+  categoria: string;
+  horas: number;
+}
+
+/** Chamados há 6 h ou mais sem resposta de uma pessoa da equipe (topo da Central, em vermelho). */
+export async function chamadosEmVermelho(): Promise<ChamadoVermelho[]> {
+  const supabase = await createClient();
+  if (!supabase) return [];
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user || !(await ehAdmin(supabase, user.id))) return [];
+  const admin = createAdminClient();
+  if (!admin) return [];
+  return (await chamadosEsperandoEquipe(admin)).filter((c) => c.nivel === 6).map((c) => ({ id: c.id, numero: c.numero_publico, categoria: categoria(c.categoria)?.rotulo ?? c.categoria, horas: c.horas }));
 }
 
 /** Achados P1 nas rondas das últimas 24h — badge do item "Agentes" no menu. */

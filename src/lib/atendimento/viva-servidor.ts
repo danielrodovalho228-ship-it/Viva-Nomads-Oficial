@@ -13,7 +13,7 @@ import { contextoChamado, type FerramentaDef } from "@/lib/atendimento/viva-prom
 import { aceitaEsforco, aceitaReserva, cotacaoDolar, custoUsd, modeloViva } from "@/lib/atendimento/viva-custo";
 import { primeiroNome, RESPOSTA_PESSOA, ROTULO_APROVACAO } from "@/lib/atendimento/viva-regras";
 import { podeDevolverParaViva, rotuloFerramenta, sugerirRespostaMotor, transcricaoParaRascunho, type Sugestao } from "@/lib/atendimento/copiloto";
-import { notaSugestao, textoAcolhimento } from "@/lib/atendimento/acolhimento";
+import { motivoParaAprovacao, notaSugestao, textoAcolhimento } from "@/lib/atendimento/acolhimento";
 import { lerResumo, resumoPorRegra, sugestaoPorRegra, SYSTEM_RESUMO, type ResumoChamado } from "@/lib/atendimento/resumo";
 import { categoria as categoriaDef } from "@/lib/atendimento/classificar";
 import {
@@ -472,32 +472,51 @@ export async function acolherNaEquipe(chamadoId: string): Promise<void> {
     if ((jaRespondido ?? 0) > 0) return; // idempotente: só a primeira vez
     const agora = new Date();
     const rotulo = categoriaDef(c.categoria)?.rotulo ?? "atendimento";
-    await admin.from("chamado_mensagens").insert({
-      chamado_id: c.id,
-      autor: "ia",
-      corpo: textoAcolhimento({ numero: c.numero_publico, rotulo, prazo: new Date(c.prazo_primeira_resposta) }),
-    });
-    if (!c.primeira_resposta_em) await admin.from("chamados").update({ primeira_resposta_em: agora.toISOString(), atualizado_em: agora.toISOString() }).eq("id", c.id);
-    await registrarAcaoViva(admin, c, "acolhido", "acolhimento automático; fica com a equipe");
+    const { data: daPessoa } = await admin.from("chamado_mensagens").select("corpo").eq("chamado_id", c.id).eq("autor", "usuario").order("criado_em");
+    const textoPessoa = (daPessoa ?? []).map((m) => m.corpo as string).join("\n");
 
+    // 1) Sugestão: IA (Viva ligada, dentro do teto) ou, no laboratório, só textos oficiais.
     let texto: string | null = null;
     let fontes: string[] = [];
+    let aviso: string | null = null;
     let simulacao = false;
     if (vivaAtiva() && (await consumirLimite("viva:dia", limiteDia(), DIA))) {
       const s = await sugerirRascunho(c.id);
       if (s?.ok && s.texto) {
         texto = s.texto;
         fontes = s.fontes.map((f) => rotuloFerramenta(f.ferramenta));
+        aviso = s.aviso;
       }
     } else if (integracoesSimuladas()) {
-      // Laboratório (sem IA): rascunho só com textos oficiais, marcado como simulado.
-      const { data: pessoa } = await admin.from("chamado_mensagens").select("corpo").eq("chamado_id", c.id).eq("autor", "usuario").order("criado_em").limit(1).maybeSingle();
-      texto = sugestaoPorRegra((pessoa?.corpo as string) ?? "", primeiroNome(c.visitante_nome), !c.usuario_id);
+      texto = sugestaoPorRegra(textoPessoa, primeiroNome(c.visitante_nome), !c.usuario_id);
       simulacao = true;
     }
-    if (texto) {
-      await admin.from("chamado_mensagens").insert({ chamado_id: c.id, autor: "ia", interno: true, simulacao, corpo: notaSugestao(texto, fontes) });
-      await registrarAcaoViva(admin, c, "sugestao_ia", `sugestão para aprovar${fontes.length ? ` · fontes: ${fontes.join(", ")}` : ""}`);
+
+    // 2) Resposta 100% oficial → a Viva responde sozinha (decisão do Daniel, 07/10).
+    //    Dinheiro já pago, reembolso, disputa, jurídico, dado pessoal ou falta de
+    //    informação → acolhimento + sugestão para o Daniel aprovar.
+    const motivo = motivoParaAprovacao(textoPessoa, texto, aviso);
+    const sozinha = !motivo && !!texto;
+    await admin.from("chamado_mensagens").insert({
+      chamado_id: c.id,
+      autor: "ia",
+      corpo: textoAcolhimento({ numero: c.numero_publico, rotulo, prazo: new Date(c.prazo_primeira_resposta), respondidoPelaViva: sozinha }),
+    });
+    const mud: Record<string, unknown> = { atualizado_em: agora.toISOString() };
+    if (!c.primeira_resposta_em) mud.primeira_resposta_em = agora.toISOString();
+    if (sozinha) mud.status = "aguardando_usuario"; // a vez é da pessoa; se ela responder, volta para a equipe
+    await admin.from("chamados").update(mud).eq("id", c.id);
+
+    if (sozinha) {
+      await admin.from("chamado_mensagens").insert({ chamado_id: c.id, autor: "ia", simulacao, corpo: texto!.slice(0, 5000) });
+      await registrarAcaoViva(admin, c, "respondido_viva", `respondido pela Viva (informação oficial)${fontes.length ? ` · fontes: ${fontes.join(", ")}` : ""}`);
+      await avisarUsuario(c as unknown as ChamadoResumo, "chamado_respondido", `<blockquote style="margin:12px 0 0;padding:10px 14px;border-left:3px solid #1c6b3a;color:#334155;">${textoEmail(texto!, 1500)}</blockquote>`);
+    } else {
+      await registrarAcaoViva(admin, c, "acolhido", `acolhimento automático; aguarda o Daniel: ${motivo ?? "sem sugestão"}`);
+      if (texto) {
+        await admin.from("chamado_mensagens").insert({ chamado_id: c.id, autor: "ia", interno: true, simulacao, corpo: notaSugestao(texto, fontes) });
+        await registrarAcaoViva(admin, c, "sugestao_ia", `sugestão para aprovar (${motivo})${fontes.length ? ` · fontes: ${fontes.join(", ")}` : ""}`);
+      }
     }
   } catch (e) {
     console.error("[viva] acolhimento:", e instanceof Error ? e.message : e);

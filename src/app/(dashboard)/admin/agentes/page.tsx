@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { JetBrains_Mono, Plus_Jakarta_Sans, Unbounded } from "next/font/google";
-import { carregarCentral, postarRetornosDoMoacir } from "@/lib/data/agentes-actions";
+import { carregarCentral, chamadosEmVermelho, postarRetornosDoMoacir } from "@/lib/data/agentes-actions";
 import { CentralAgentes } from "./central-client";
 
 export const metadata: Metadata = { title: "Agentes" };
@@ -13,10 +13,10 @@ const unbounded = Unbounded({ variable: "--font-display-agentes", subsets: ["lat
 export default async function AgentesPage() {
   // Execuções que o Moacir disparou e já terminaram viram mensagem na conversa dele.
   await postarRetornosDoMoacir().catch(() => 0);
-  const dados = await carregarCentral();
+  const [dados, vermelhos] = await Promise.all([carregarCentral(), chamadosEmVermelho().catch(() => [])]);
   return (
     <div className={`${jakarta.variable} ${mono.variable} ${unbounded.variable}`}>
-      <CentralAgentes dados={dados} />
+      <CentralAgentes dados={dados} vermelhos={vermelhos} />
     </div>
   );
 }

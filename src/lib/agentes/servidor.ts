@@ -11,6 +11,7 @@ import { executarAgora, type Deps, type DepsExecutar } from "@/lib/agentes/motor
 import { modeloGerenteSimulado, nomeDoOrganograma, PREFIXO_MOACIR, type Consulta, type DepsGerente, type ModeloGerente } from "@/lib/agentes/gerente";
 import { horaBrasilia, retratoEmTexto } from "@/lib/agentes/retrato";
 import { ultimaPorAgente } from "@/lib/agentes/painel";
+import { chamadosEsperandoEquipe } from "@/lib/atendimento/escalonamento";
 import { systemChat } from "@/lib/agentes/central";
 import type { Retrato } from "@/lib/agentes/retrato";
 
@@ -124,10 +125,16 @@ async function consultaAoVivo(c: Consulta, supabase: Sessao): Promise<string> {
       .order("criado_em", { ascending: false })
       .limit(15);
     if (!data?.length) return `Nenhum chamado aberto ${cab}.`;
+    // Esperando a equipe há 2 h+ (sem resposta humana) — 6 h+ é vermelho.
+    const esperando = new Map((await chamadosEsperandoEquipe(admin)).map((x) => [x.numero_publico, x]));
+    const alerta = (n: string) => {
+      const e = esperando.get(n);
+      return e ? ` · ${e.nivel === 6 ? "VERMELHO" : "ATENÇÃO"}: ${e.horas} h sem resposta da equipe` : "";
+    };
     return `Chamados abertos ${cab} — mais novos primeiro:\n${data
       .map(
         (x) =>
-          `${x.numero_publico} · ${x.categoria} · ${String(x.prioridade).toUpperCase()} · ${x.status} · com ${x.responsavel_tipo === "ia" ? "a Viva" : "a equipe"} · aberto ${horaBrasilia(x.criado_em as string)}; prazo 1ª resposta ${horaBrasilia(x.prazo_primeira_resposta as string)}; ${x.primeira_resposta_em ? "já respondido" : "sem resposta ainda"}; SLA ${x.sla_estado}`
+          `${x.numero_publico} · ${x.categoria} · ${String(x.prioridade).toUpperCase()} · ${x.status} · com ${x.responsavel_tipo === "ia" ? "a Viva" : "a equipe"} · aberto ${horaBrasilia(x.criado_em as string)}; prazo 1ª resposta ${horaBrasilia(x.prazo_primeira_resposta as string)}; ${x.primeira_resposta_em ? "já respondido" : "sem resposta ainda"}; SLA ${x.sla_estado}${alerta(x.numero_publico as string)}`
       )
       .join("\n")}`;
   }
