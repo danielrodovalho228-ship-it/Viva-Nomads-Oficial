@@ -1,17 +1,15 @@
 /*
-  Atendimento: prazos com horário humano (relógio injetável) e classificação.
+  Atendimento: prazos internos em horas corridas e classificação.
   Roda: node --test src/lib/atendimento/atendimento.test.ts
 */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  PRAZOS,
   calcularPrazos,
-  dentroDoHorario,
   estadoPrazo,
   mensagemPrazo,
   prazoManutencao,
-  proximaAbertura,
-  somarHorasUteis,
 } from "../../config/atendimento.ts";
 import { avisoEmergencia, classificar, detectarEmergencia, detectarRiscoP1, numeroEmergencia, urgenciaManutencao, AVISO_EMERGENCIA } from "./classificar.ts";
 
@@ -19,44 +17,18 @@ import { avisoEmergencia, classificar, detectarEmergencia, detectarRiscoP1, nume
 const br = (iso: string) => new Date(`${iso}-03:00`);
 const emBR = (d: Date) => new Date(d.getTime() - 3 * 3600_000).toISOString().slice(0, 16).replace("T", " ");
 
-test("horário humano 7h–22h", () => {
-  assert.equal(dentroDoHorario(br("2026-10-06T07:00")), true);
-  assert.equal(dentroDoHorario(br("2026-10-06T21:59")), true);
-  assert.equal(dentroDoHorario(br("2026-10-06T22:00")), false);
-  assert.equal(dentroDoHorario(br("2026-10-06T03:00")), false);
-  assert.equal(emBR(proximaAbertura(br("2026-10-06T23:30"))), "2026-10-07 07:00");
-  assert.equal(emBR(proximaAbertura(br("2026-10-06T05:10"))), "2026-10-06 07:00");
+test("prazos internos em horas corridas: P1 4 h, P2 12 h, P3 e P4 24 h", () => {
+  const de = br("2026-10-06T23:00");
+  const esperado = { p1: ["2026-10-07 03:00", "2026-10-07 23:00"], p2: ["2026-10-07 11:00", "2026-10-08 23:00"], p3: ["2026-10-07 23:00", "2026-10-09 23:00"], p4: ["2026-10-07 23:00", "2026-10-11 23:00"] } as const;
+  for (const [p, [primeira, resolucao]] of Object.entries(esperado)) {
+    const r = calcularPrazos(p as keyof typeof esperado, de);
+    assert.equal(emBR(r.primeiraResposta), primeira, p);
+    assert.equal(emBR(r.resolucao), resolucao, p);
+  }
 });
 
-test("P1 dentro do horário: 1 h; resolução no mesmo dia", () => {
-  const p = calcularPrazos("p1", br("2026-10-06T10:00"));
-  assert.equal(emBR(p.primeiraResposta), "2026-10-06 11:00");
-  assert.equal(emBR(p.resolucao), "2026-10-06 22:00");
-});
-
-test("P1 às 23h: 1ª resposta às 8h do dia seguinte (virada de dia)", () => {
-  const p = calcularPrazos("p1", br("2026-10-06T23:00"));
-  assert.equal(emBR(p.primeiraResposta), "2026-10-07 08:00");
-  assert.equal(emBR(p.resolucao), "2026-10-07 22:00");
-});
-
-test("P1 às 21h30: a hora pula a noite", () => {
-  const p = calcularPrazos("p1", br("2026-10-06T21:30"));
-  assert.equal(emBR(p.primeiraResposta), "2026-10-07 07:30");
-});
-
-test("P2: 4 horas úteis, atravessando a noite", () => {
-  assert.equal(emBR(calcularPrazos("p2", br("2026-10-06T09:00")).primeiraResposta), "2026-10-06 13:00");
-  assert.equal(emBR(calcularPrazos("p2", br("2026-10-06T20:00")).primeiraResposta), "2026-10-07 09:00");
-});
-
-test("P3 = 1 dia útil (15 h de janela); P4 = 3 dias úteis", () => {
-  assert.equal(emBR(calcularPrazos("p3", br("2026-10-06T10:00")).primeiraResposta), "2026-10-07 10:00");
-  assert.equal(emBR(calcularPrazos("p4", br("2026-10-06T10:00")).primeiraResposta), "2026-10-09 10:00");
-});
-
-test("somarHorasUteis aceita frações", () => {
-  assert.equal(emBR(somarHorasUteis(br("2026-10-06T21:45"), 0.5)), "2026-10-07 07:15");
+test("nenhum prazo interno passa da promessa pública de 24 h", () => {
+  for (const p of ["p1", "p2", "p3", "p4"] as const) assert.ok(PRAZOS[p].primeiraResposta <= 24, p);
 });
 
 test("manutenção: horas corridas (4/24/72)", () => {
@@ -74,9 +46,9 @@ test("estado do prazo: ok, em risco (75%), estourado, cumprido", () => {
   assert.equal(estadoPrazo(a, prazo, br("2026-10-06T12:00"), true), "cumprido");
 });
 
-test("mensagem fora do horário diz a partir de que horas", () => {
-  assert.match(mensagemPrazo("p2", br("2026-10-06T23:00")), /a partir das 7h/);
-  assert.match(mensagemPrazo("p2", br("2026-10-06T10:00")), /até 4 horas/);
+test("mensagem ao usuário: sempre 'em até 24 h'; P1 diz que a equipe já foi avisada", () => {
+  for (const p of ["p2", "p3", "p4"] as const) assert.equal(mensagemPrazo(p), "Recebemos. Uma pessoa da equipe responde em até 24 h.");
+  assert.match(mensagemPrazo("p1"), /prioridade máxima.*já foi avisada.*em até 24 h/);
 });
 
 test("emergência: gás, incêndio, violência (com e sem acento)", () => {
@@ -196,5 +168,12 @@ test("FAQ pagamento por fora: sem falar da poupança da caução", () => {
   const g = FAQ.find((p) => p.id === "golpe")!;
   assert.doesNotMatch(g.resposta, /poupança|conta pessoal/);
   assert.match(g.resposta, /^Não pague nada fora do que está no contrato assinado pela plataforma\. A Viva Nomads nunca pede Pix ou depósito\./);
-  assert.match(g.resposta, /até 1 hora \(7h às 22h\)/);
+  assert.match(g.resposta, /prioridade máxima/);
+});
+
+test("promessa pública: Viva 24 h e pessoa em até 24 h — nunca a janela 7h–22h", async () => {
+  const { PROMESSA_ATENDIMENTO } = await import("../../config/atendimento.ts");
+  assert.equal(PROMESSA_ATENDIMENTO, "Assistente Viva 24 h · resposta de uma pessoa em até 24 h");
+  for (const p of FAQ) assert.doesNotMatch(p.resposta, /7h às 22h/, p.id);
+  assert.doesNotMatch(mensagemPrazo("p2"), /Nosso horário de atendimento/);
 });

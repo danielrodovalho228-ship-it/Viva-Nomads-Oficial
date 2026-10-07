@@ -2,8 +2,8 @@ import crypto from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify } from "@/lib/notifications";
 import { textoEmail } from "@/lib/notifications/texto-seguro";
-import { SITE_URL } from "@/lib/site";
-import { PRAZOS, PRAZO_MANUTENCAO_H, prazoManutencao, type Prioridade, type UrgenciaManutencao } from "@/config/atendimento";
+import { SITE_URL, SUPORTE_EMAIL } from "@/lib/site";
+import { PRAZOS, PROMESSA_ATENDIMENTO, PRAZO_MANUTENCAO_H, prazoManutencao, type Prioridade, type UrgenciaManutencao } from "@/config/atendimento";
 import { guardContactInfo } from "@/lib/messages/contact-guard";
 import { urgenciaManutencao } from "@/lib/atendimento/classificar";
 import { situacaoLimite } from "@/lib/limites";
@@ -110,9 +110,10 @@ export async function avisarUsuario(
     phone: evento === "chamado_respondido" ? d.phone : undefined,
     userId: d.userId,
     pushUrl: "/ajuda",
+    doSuporte: true,
     subject: `${assunto} — ${c.numero_publico}`,
     detailsText: `Chamado ${c.numero_publico}: ${linkChamado(c)}`,
-    detailsHtml: `<p style="margin:12px 0 0;color:#334155;">Chamado <strong>${numero}</strong> · ${textoEmail(c.assunto, 140)}</p>${extraHtml}${notas}<p style="margin:16px 0 0;"><a href="${linkChamado(c)}" style="color:#1c6b3a;font-weight:600;">Abrir na Central de Ajuda</a></p>`,
+    detailsHtml: `<p style="margin:12px 0 0;color:#334155;">Chamado <strong>${numero}</strong> · ${textoEmail(c.assunto, 140)}</p>${extraHtml}${notas}<p style="margin:16px 0 0;"><a href="${linkChamado(c)}" style="color:#1c6b3a;font-weight:600;">${c.usuario_id ? "Acompanhar o chamado" : "Abrir a Central de Ajuda"}</a></p><p style="margin:12px 0 0;color:#64748b;font-size:13px;">Dúvidas: ${SUPORTE_EMAIL}. ${PROMESSA_ATENDIMENTO}.</p>`,
   }).catch(() => null);
 }
 

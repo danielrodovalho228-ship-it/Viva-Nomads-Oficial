@@ -17,6 +17,7 @@ export default async function AdminAtendimentoPage({
     | "metricas"
     | "respostas";
   const filtros = {
+    fila: um("fila"),
     prioridade: um("prioridade"),
     tipo: um("tipo"),
     responsavel: um("responsavel"),

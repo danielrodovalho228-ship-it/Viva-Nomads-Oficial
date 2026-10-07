@@ -469,7 +469,7 @@ export async function escalarParaPessoa(chamadoId: string, motivo: string, ator:
       atualizado_em: agora.toISOString(),
     })
     .eq("id", c.id);
-  await admin.from("chamado_mensagens").insert({ chamado_id: c.id, autor: "sistema", corpo: `${RESPOSTA_PESSOA} ${frasePrazo(c.prioridade, agora)}` });
+  await admin.from("chamado_mensagens").insert({ chamado_id: c.id, autor: "sistema", corpo: `${RESPOSTA_PESSOA} ${frasePrazo(c.prioridade)}` });
   await admin.from("chamado_eventos").insert({ chamado_id: c.id, ator_tipo: ator, ator_id: atorId ?? null, acao: ator === "usuario" ? "pediu_humano" : "escalado", para: "humano", detalhe: motivo });
   await avisarEquipe(c, ator === "usuario" ? "a pessoa pediu para falar com alguém" : motivo);
   return true;

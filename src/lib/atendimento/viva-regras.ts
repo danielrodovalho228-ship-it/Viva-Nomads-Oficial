@@ -143,7 +143,7 @@ export const RESPOSTA_CONTATO =
 /** Orientação de golpe: vai na PRIMEIRA mensagem do sistema, com ou sem IA. */
 export const ORIENTACAO_GOLPE = "Não pague nada fora do que está no contrato assinado pela plataforma. A Viva Nomads nunca pede Pix ou depósito.";
 
-export const RESPOSTA_GOLPE = `${ORIENTACAO_GOLPE} Já passei seu caso para uma pessoa da equipe, que responde em até 1 hora (das 7h às 22h).`;
+export const RESPOSTA_GOLPE = `${ORIENTACAO_GOLPE} Já passei seu caso para uma pessoa da equipe, com prioridade máxima.`;
 
 export const RESPOSTA_PESSOA = "Pronto, passei seu chamado para uma pessoa da equipe.";
 
@@ -152,7 +152,7 @@ export const RESPOSTA_APROVACAO =
 
 /** Aviso do sistema na abertura, quando a Viva vai responder. */
 export const AVISO_VIVA =
-  "Recebemos. A Viva, nossa assistente virtual, responde aqui em instantes. Se preferir, é só pedir para falar com uma pessoa da equipe (atendimento humano das 7h às 22h).";
+  "Recebemos. A Viva, nossa assistente virtual, responde aqui em instantes. Se preferir, é só pedir para falar com uma pessoa da equipe (resposta em até 24 h).";
 
 export const RESPOSTA_FALHA = "Vou passar seu chamado para uma pessoa da equipe, que continua daqui.";
 

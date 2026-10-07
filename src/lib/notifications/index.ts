@@ -2,7 +2,7 @@ import { sendEmail, isEmailConfigured } from "./email";
 import { sendWhatsapp, isWhatsappConfigured } from "./whatsapp";
 import { sendPush } from "./push";
 import { brandedNotification, notificationText, emailImage } from "./templates";
-import { SITE_URL } from "@/lib/site";
+import { SITE_URL, SUPORTE_EMAIL } from "@/lib/site";
 import { primeiroNome } from "@/lib/display-name";
 import { textoEmail, textoPlano } from "./texto-seguro";
 
@@ -112,6 +112,8 @@ export async function notify(params: {
   detailsText?: string;
   /** Assunto específico (texto puro; dado do usuário é limpo aqui). */
   subject?: string;
+  /** E-mail sai do suporte (remetente e "responder para"): chamados. */
+  doSuporte?: boolean;
 }): Promise<NotifyResult> {
   const base = TEMPLATES[params.event];
   const tpl = params.subject ? { ...base, subject: textoPlano(params.subject, 120) } : base;
@@ -160,7 +162,13 @@ export async function notify(params: {
         detailsText: params.detailsText,
         cta,
       });
-      const r = await sendEmail({ to: params.email, subject: tpl.subject, html, text });
+      const r = await sendEmail({
+        to: params.email,
+        subject: tpl.subject,
+        html,
+        text,
+        ...(params.doSuporte ? { from: `Viva Nomads Suporte <${SUPORTE_EMAIL}>`, replyTo: SUPORTE_EMAIL } : {}),
+      });
       result.email = r.demo ? "demo" : !r.error;
     } catch {
       result.email = false;

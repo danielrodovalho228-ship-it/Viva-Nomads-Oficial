@@ -126,6 +126,9 @@ async function limparPersonas() {
   for (const u of antigos) {
     // Imóveis antes do usuário: apagar em cascata pelo Auth esbarra no gatilho
     // recalc_listing_quality, que o serviço de Auth não pode executar.
+    // Chamados também: a regra chamados_check (dono OU e-mail de visitante)
+    // impede o "set null" da exclusão — achado P1, correção em migração própria.
+    await admin.from("chamados").delete().eq("usuario_id", u.id);
     const { error: eImoveis } = await admin.from("properties").delete().eq("owner_id", u.id);
     if (eImoveis) throw new Error(`apagar imóveis de ${u.email}: ${eImoveis.message}`);
     const { error: e } = await admin.auth.admin.deleteUser(u.id);

@@ -109,7 +109,7 @@ export const FAQ: Pergunta[] = [
     id: "golpe",
     pergunta: "Pediram para eu pagar por fora (Pix direto). É seguro?",
     resposta:
-      "Não pague nada fora do que está no contrato assinado pela plataforma. A Viva Nomads nunca pede Pix ou depósito. Abra um chamado em \"Segurança, golpe ou pagamento por fora\" — uma pessoa responde em até 1 hora (7h às 22h).",
+      "Não pague nada fora do que está no contrato assinado pela plataforma. A Viva Nomads nunca pede Pix ou depósito. Abra um chamado em \"Segurança, golpe ou pagamento por fora\" — uma pessoa da equipe responde com prioridade máxima.",
     termos: ["golpe", "pix", "por fora", "fraude", "pagamento"],
   },
   {

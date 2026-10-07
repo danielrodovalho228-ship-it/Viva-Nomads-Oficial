@@ -6,6 +6,7 @@ import styles from "./modelo-negocio.module.css";
 import { PLANOS as PLANOS_CONFIG, GESTOR_PRECO, GESTOR_RESUMO, MERCADO, assinaturaAnualGestor, type PlanoId } from "@/config/planos";
 import { custoAnualPorPlano, planoMaisBarato, textoIndisponivel } from "@/lib/comparativo-precos";
 import { GraficoCustoPorImovel } from "@/components/precos/grafico-custo-por-imovel";
+import { SUPORTE_EMAIL } from "@/lib/site";
 
 // ── CONSTANTES (fáceis de editar) ───────────────────────────────────────────
 // Modelo HÍBRIDO: assinatura do plano + comissão que CAI por plano até ZERO no
@@ -374,7 +375,7 @@ export function ModeloNegocio() {
                 </ul>
                 <div className={styles.pwhy}>{pc.why}</div>
                 {pc.contato && GESTOR_PRECO.ligado && (
-                  <a className={styles.pcontato} href="mailto:suporte@vivanomads.com.br?subject=Plano%20Gestor">
+                  <a className={styles.pcontato} href={`mailto:${SUPORTE_EMAIL}?subject=Plano%20Gestor`}>
                     Fale com a gente
                   </a>
                 )}

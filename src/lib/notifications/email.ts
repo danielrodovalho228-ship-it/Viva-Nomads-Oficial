@@ -45,6 +45,10 @@ export async function sendEmail(params: {
   text?: string;
   /** Anexos (ex.: o PDF do recibo). Conteúdo em base64. */
   attachments?: { filename: string; content: string }[];
+  /** Remetente específico (ex.: o suporte nos e-mails de chamado). Padrão: RESEND_FROM. */
+  from?: string;
+  /** Para onde vai a resposta do destinatário. */
+  replyTo?: string;
 }): Promise<EmailResult> {
   const outbox = process.env.EMAIL_TEST_OUTBOX;
   if (outbox && process.env.NODE_ENV !== "production") {
@@ -64,7 +68,8 @@ export async function sendEmail(params: {
       Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
     },
     body: JSON.stringify({
-      from: process.env.RESEND_FROM ?? "Viva Nomads <nao-responder@vivanomads.com.br>",
+      from: params.from ?? process.env.RESEND_FROM ?? "Viva Nomads <nao-responder@vivanomads.com.br>",
+      ...(params.replyTo ? { reply_to: params.replyTo } : {}),
       to: params.to,
       subject: params.subject,
       html: params.html,

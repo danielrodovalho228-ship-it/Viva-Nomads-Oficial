@@ -93,6 +93,8 @@ export interface CategoriaDef {
   prioridade: Prioridade;
   /** Só aparece para quem tem contrato ativo (inquilino). */
   exigeContrato?: boolean;
+  /** Não aparece no formulário: só a triagem automática usa (lib/atendimento/filas). */
+  interna?: boolean;
 }
 
 export const CATEGORIAS: CategoriaDef[] = [
@@ -106,6 +108,10 @@ export const CATEGORIAS: CategoriaDef[] = [
   { key: "seguranca", rotulo: "Segurança, golpe ou pagamento por fora", tipo: "seguranca", prioridade: "p1" },
   { key: "acesso_imovel", rotulo: "Não consigo entrar no imóvel", tipo: "seguranca", prioridade: "p1" },
   { key: "sugestao", rotulo: "Sugestão ou elogio", tipo: "suporte", prioridade: "p4" },
+  // Só a triagem automática (pelo texto) usa estas:
+  { key: "caucao", rotulo: "Caução", tipo: "suporte", prioridade: "p2", interna: true },
+  { key: "imovel", rotulo: "Problema no imóvel", tipo: "suporte", prioridade: "p2", interna: true },
+  { key: "documentos", rotulo: "Documentos do imóvel", tipo: "suporte", prioridade: "p2", interna: true },
 ];
 
 export function categoria(key: string): CategoriaDef | null {

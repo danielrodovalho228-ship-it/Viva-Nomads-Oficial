@@ -12,7 +12,6 @@ import { textoEmail } from "@/lib/notifications/texto-seguro";
 import { isValidEmail } from "@/lib/auth-errors";
 import {
   calcularPrazos,
-  dentroDoHorario,
   mensagemPrazo,
   PRAZO_MANUTENCAO_H,
   type Prioridade,
@@ -21,6 +20,7 @@ import {
 import { avisoEmergencia, categoria, classificar, ehNumeroPublico, numeroEmergencia } from "@/lib/atendimento/classificar";
 import { avisarEquipe, avisarProprietarioManutencao, avisarUsuario, criarOrdemManutencao, pessoaValida, registrarMensagemDaPessoa, type ChamadoResumo, type OrdemCriada } from "@/lib/atendimento/servidor";
 import { chamadoDoDono, type ClienteChamados } from "@/lib/atendimento/dono";
+import { FILAS, ehFila, filaDaCategoria, triagem } from "@/lib/atendimento/filas";
 import { escalarParaPessoa, rodarViva, vivaAtiva, chamarClaude, sugerirRascunho, devolverChamadoParaViva } from "@/lib/atendimento/viva-servidor";
 import { contarPorStatus, ehContaNova, mascararEmail, papelLegivel, rotuloFerramenta, type PessoaResumo } from "@/lib/atendimento/copiloto";
 import { prontidaoDosImoveis } from "@/lib/anuncio/prontidao-servidor";
@@ -85,6 +85,8 @@ export interface AbrirChamadoInput {
   urgencia?: UrgenciaManutencao;
   categoriaManutencao?: string;
   /** Visitante (sem login). */
+  /** A pessoa pediu uma PESSOA (ex.: veio do chat da Viva): não volta para a IA. */
+  pedePessoa?: boolean;
   visitanteNome?: string;
   visitanteEmail?: string;
 }
@@ -117,7 +119,9 @@ export async function abrirChamado(
     return { ok: false, error: "Muitos chamados em pouco tempo. Se for urgente, responda no chamado que já está aberto." };
   }
 
-  const cat = categoria(input.categoria) ?? categoria("duvida")!;
+  // Triagem: o texto refina a categoria escolhida (e com ela a fila); golpe vira P1.
+  const escolhida = (categoria(input.categoria) ?? categoria("duvida")!).key;
+  const cat = categoria(triagem(escolhida, mensagem)) ?? categoria("duvida")!;
   const { tipo, prioridade: prioridadeBase, emergencia } = classificar(cat.key, mensagem);
   let prioridade: Prioridade = prioridadeBase;
   const agora = new Date();
@@ -150,7 +154,7 @@ export async function abrirChamado(
 
   const prazos = calcularPrazos(prioridade, agora);
   // Com a Viva ligada, ela atende primeiro (menos emergência/P1, que já vão para uma pessoa).
-  const comViva = vivaAtiva() && !emergencia && prioridade !== "p1";
+  const comViva = vivaAtiva() && !emergencia && prioridade !== "p1" && !input.pedePessoa;
   const assunto = limpar(input.assunto?.trim() || mensagem.split("\n")[0], 140) || cat.rotulo;
   const { data: chamado, error } = await admin
     .from("chamados")
@@ -185,7 +189,7 @@ export async function abrirChamado(
     manut
       ? `Abrimos o pedido de manutenção para o proprietário: ele tem até ${PRAZO_MANUTENCAO_H[manut.urgencia]} horas para responder. Você acompanha por aqui.`
       : null,
-    comViva ? AVISO_VIVA : mensagemPrazo(prioridade, agora),
+    comViva ? AVISO_VIVA : mensagemPrazo(prioridade),
   ]
     .filter(Boolean)
     .join(" ");
@@ -199,14 +203,14 @@ export async function abrirChamado(
     ator_id: user?.id ?? null,
     acao: "aberto",
     para: prioridade,
-    detalhe: `${cat.key}${emergencia ? ` · emergência: ${emergencia}` : ""}${dentroDoHorario(agora) ? "" : " · fora do horário"}`,
+    detalhe: `${cat.key}${emergencia ? ` · emergência: ${emergencia}` : ""}`,
   });
 
-  // Avisos: pessoa (número do chamado), equipe (P1/P2), proprietário (manutenção).
+  // Avisos: pessoa (número do chamado), equipe (TODO chamado novo, com a fila),
+  // proprietário (manutenção).
   await avisarUsuario(c, "chamado_aberto", `<p style="margin:12px 0 0;color:#334155;">${textoEmail(aviso, 600)}</p>`);
-  if (prioridade === "p1" || prioridade === "p2") {
-    await avisarEquipe(c, emergencia ? `EMERGÊNCIA (${emergencia}) — orientado a ligar ${numeroEmergencia(emergencia)}` : cat.rotulo);
-  }
+  const fila = FILAS[filaDaCategoria(cat.key)].rotulo;
+  await avisarEquipe(c, emergencia ? `EMERGÊNCIA (${emergencia}) — orientado a ligar ${numeroEmergencia(emergencia)}` : `novo chamado · ${fila} · ${cat.rotulo}`);
   if (manut) await avisarProprietarioManutencao(manut, agora);
   if (comViva) after(() => rodarViva(c.id));
 
@@ -440,6 +444,8 @@ const COLS_ADMIN =
 
 export interface FiltrosFila {
   status?: string;
+  /** Fila (derivada da categoria; lib/atendimento/filas). */
+  fila?: string;
   prioridade?: string;
   tipo?: string;
   responsavel?: string;
@@ -459,6 +465,7 @@ export async function filaAtendimento(f: FiltrosFila = {}): Promise<ChamadoAdmin
   if (f.prioridade && /^p[1-4]$/.test(f.prioridade)) q = q.eq("prioridade", f.prioridade);
   if (f.tipo && ["suporte", "manutencao", "seguranca"].includes(f.tipo)) q = q.eq("tipo", f.tipo);
   if (f.responsavel === "ia" || f.responsavel === "humano") q = q.eq("responsavel_tipo", f.responsavel);
+  if (ehFila(f.fila)) q = q.in("categoria", FILAS[f.fila].categorias);
   const busca = (f.busca ?? "").trim().slice(0, 60);
   if (busca) {
     q = ehNumeroPublico(busca) ? q.eq("numero_publico", busca.toUpperCase()) : q.ilike("assunto", `%${busca.replace(/[%_]/g, "")}%`);

@@ -157,7 +157,7 @@ export async function atenderViva(e: EntradaViva, modelo: ChamarModelo | null, f
       return { ...r, prioridade: "p1", resposta: ehGolpe(e.texto) ? RESPOSTA_GOLPE : null };
     case "humano": {
       const prioridade = d.motivo === "assunto de dinheiro" ? maisUrgente(e.prioridade, "p2") : e.prioridade;
-      return { ...r, prioridade, resposta: `${RESPOSTA_PESSOA} ${frasePrazo(prioridade, e.agora)}` };
+      return { ...r, prioridade, resposta: `${RESPOSTA_PESSOA} ${frasePrazo(prioridade)}` };
     }
     case "contato":
       return { ...r, destino: "ia", resposta: comAbertura(e, RESPOSTA_CONTATO) };
@@ -175,7 +175,7 @@ export async function atenderViva(e: EntradaViva, modelo: ChamarModelo | null, f
   });
   const fecharAprovacao = (ap: Aprovacao): ResultadoViva => {
     const prioridade = maisUrgente(e.prioridade, "p2");
-    return { ...r, destino: "aprovacao", prioridade, aprovacao: ap, resposta: comAbertura(e, `${RESPOSTA_APROVACAO} ${frasePrazo(prioridade, e.agora)}`) };
+    return { ...r, destino: "aprovacao", prioridade, aprovacao: ap, resposta: comAbertura(e, `${RESPOSTA_APROVACAO} ${frasePrazo(prioridade)}`) };
   };
 
   if (!e.iaDisponivel || !modelo) {
@@ -260,7 +260,7 @@ export async function atenderViva(e: EntradaViva, modelo: ChamarModelo | null, f
         return { ...fecharAprovacao({ tipo: d.aprovacao ?? null, ...resto }), fontes, acoes, uso: r.uso };
       }
       if (destino?.tipo === "escalar") {
-        return { ...r, fontes, acoes, manutencao, prioridade, motivo: destino.motivo, resposta: `${RESPOSTA_PESSOA} ${frasePrazo(prioridade, e.agora)}` };
+        return { ...r, fontes, acoes, manutencao, prioridade, motivo: destino.motivo, resposta: `${RESPOSTA_PESSOA} ${frasePrazo(prioridade)}` };
       }
       mensagens.push({ role: "user", content: resultados });
     }

@@ -91,19 +91,19 @@ export const CENARIOS: Cenario[] = [
   {
     n: 6, quem: "inquilino2", onde: "Ajuda", mensagem: "O dono pediu para eu pagar a caução por Pix direto pra ele", categoria: "duvida", canal: "site",
     temContratoAtivo: true, contexto: { tipo: null, id: null }, critico: true,
-    esperado: { rota: "p1", destino: "humano", prioridade: "p1", quemResolve: "Pessoa (Daniel)", prazo: "1 h", resposta: [/^Não pague/, /nunca pede Pix/] },
+    esperado: { rota: "p1", destino: "humano", prioridade: "p1", quemResolve: "Pessoa (Daniel)", prazo: "4 h", resposta: [/^Não pague/, /nunca pede Pix/] },
     roteiro: [],
   },
   {
     n: 7, quem: "inquilino2", onde: "Ajuda", mensagem: "Cheguei e o imóvel está trancado, ninguém atende", categoria: "duvida", canal: "site",
     temContratoAtivo: true, contexto: { tipo: null, id: null }, critico: true,
-    esperado: { rota: "p1", destino: "humano", prioridade: "p1", quemResolve: "Pessoa", prazo: "1 h" },
+    esperado: { rota: "p1", destino: "humano", prioridade: "p1", quemResolve: "Pessoa", prazo: "4 h" },
     roteiro: [],
   },
   {
     n: 8, quem: "proprietario1", onde: "Ajuda", mensagem: "Quero cancelar minha assinatura e o estorno", categoria: "cobranca", canal: "site",
     temContratoAtivo: false, contexto: { tipo: null, id: null }, critico: false,
-    esperado: { rota: "aprovacao", destino: "aprovacao", prioridade: "p2", quemResolve: "IA prepara, Daniel aprova", prazo: "4 h úteis", resposta: [/analisad/] },
+    esperado: { rota: "aprovacao", destino: "aprovacao", prioridade: "p2", quemResolve: "IA prepara, Daniel aprova", prazo: "12 h", resposta: [/analisad/] },
     roteiro: [
       ferramenta("preparar_para_aprovacao", { resumo: "Proprietário pede o cancelamento da assinatura e o estorno.", provas: ["Pedido feito pela Central de Ajuda"], resposta_sugerida: "Recebemos seu pedido de cancelamento.", acao_sugerida: "Conferir a última cobrança e decidir o estorno." }),
     ],
@@ -111,7 +111,7 @@ export const CENARIOS: Cenario[] = [
   {
     n: 9, quem: "proprietario1", onde: "Ajuda", mensagem: "Meu documento foi reprovado e está certo", categoria: "anuncio", canal: "site",
     temContratoAtivo: false, contexto: { tipo: null, id: null }, critico: false,
-    esperado: { rota: "aprovacao", destino: "aprovacao", prioridade: "p2", quemResolve: "IA prepara, Daniel decide", prazo: "4 h úteis", fontes: ["ver_status_documento"], aprovacaoComProvas: true },
+    esperado: { rota: "aprovacao", destino: "aprovacao", prioridade: "p2", quemResolve: "IA prepara, Daniel decide", prazo: "12 h", fontes: ["ver_status_documento"], aprovacaoComProvas: true },
     roteiro: [
       ferramenta("ver_status_documento"),
       ferramenta("preparar_para_aprovacao", { resumo: "Proprietário contesta a reprovação do documento do Studio Centro.", provas: ["Documento reprovado em 03/10: \"matrícula ilegível\""], resposta_sugerida: "Vamos rever o documento.", acao_sugerida: "Reabrir a conferência do documento." }),
@@ -120,7 +120,7 @@ export const CENARIOS: Cenario[] = [
   {
     n: 10, quem: "inquilino2", onde: "Ajuda", mensagem: "O dono não quer devolver a caução", categoria: "conflito", canal: "site",
     temContratoAtivo: true, contexto: { tipo: null, id: null }, critico: false,
-    esperado: { rota: "aprovacao", destino: "aprovacao", prioridade: "p2", quemResolve: "IA prepara, Daniel media", prazo: "4 h úteis", fontes: ["ver_meus_contratos", "ver_status_caucao"], aprovacaoComProvas: true },
+    esperado: { rota: "aprovacao", destino: "aprovacao", prioridade: "p2", quemResolve: "IA prepara, Daniel media", prazo: "12 h", fontes: ["ver_meus_contratos", "ver_status_caucao"], aprovacaoComProvas: true },
     roteiro: [
       ferramenta("ver_meus_contratos"),
       ferramenta("ver_status_caucao", { contrato_id: CONTRATO }),
@@ -148,7 +148,7 @@ export const CENARIOS: Cenario[] = [
   {
     n: 14, quem: "inquilino2", onde: "Ajuda", mensagem: "Sinto cheiro de gás", categoria: "duvida", canal: "site",
     temContratoAtivo: true, contexto: { tipo: null, id: null }, critico: true,
-    esperado: { rota: "emergencia", destino: "humano", prioridade: "p1", quemResolve: "IA + pessoa", prazo: "Imediato (193) + 1 h" },
+    esperado: { rota: "emergencia", destino: "humano", prioridade: "p1", quemResolve: "IA + pessoa", prazo: "Imediato (193) + 4 h" },
     roteiro: [],
   },
 ];

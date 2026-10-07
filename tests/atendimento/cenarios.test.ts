@@ -104,12 +104,12 @@ test("Viva desligada: o chamado fica com a equipe e o modelo não é chamado", a
   assert.equal(r.resposta, null);
 });
 
-test("aprovação sem IA ainda vai para a fila (com prazo de 4 horas úteis)", async () => {
+test("aprovação sem IA ainda vai para a fila (com o prazo público de 24 h)", async () => {
   const c = CENARIOS.find((x) => x.n === 8)!;
   const r = await atenderViva(entradaDoCenario(c, false), null, ferramentasDeTeste());
   assert.equal(r.destino, "aprovacao");
   assert.equal(r.prioridade, "p2");
-  assert.match(r.resposta ?? "", /4 horas/);
+  assert.match(r.resposta ?? "", /em até 24 h/);
 });
 
 test("resposta barrada vira 'passar para uma pessoa'", async () => {
