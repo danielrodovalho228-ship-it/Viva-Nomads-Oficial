@@ -55,8 +55,9 @@ test("0089: às cegas — publica quando a outra parte enviou ou quando vencem o
   assert.match(codigo, /contem_ofensa\(new\.comentario_publico\)/);
 });
 
-test("0089 e o rollback não mexem no cartão da Fernanda (o Moacir já o ativou em produção)", () => {
-  assert.doesNotMatch(codigo, /where slug = 'fernanda'/);
-  for (const f of ["../../supabase/producao/aplicar-0089.sql", "../../supabase/producao/rollback/0089_rollback.sql"])
-    assert.doesNotMatch(readFileSync(new URL(f, import.meta.url), "utf8").replace(/--.*$/gm, ""), /fernanda/i);
+test("0089 grava o cartão ATUAL da Fernanda (o que o Moacir ativou) e o rollback não mexe nele", () => {
+  assert.match(codigo, /set cargo = 'Confiança, Cadastro e Reputação',\s*status = 'ativo',\s*rotina_texto = 'Todo dia 05:47 Brasília',\s*trigger_id = 'trig_01DjEJvriUb7DgGXbPZJd4YX'\s*where slug = 'fernanda';/);
+  assert.doesNotMatch(codigo, /'Confiança e Reputação'|Antifraude/);
+  assert.doesNotMatch(readFileSync(new URL("../../supabase/producao/rollback/0089_rollback.sql", import.meta.url), "utf8").replace(/--.*$/gm, ""), /fernanda/i);
+  assert.match(readFileSync(new URL("../../supabase/producao/aplicar-0089.sql", import.meta.url), "utf8"), /trig_01DjEJvriUb7DgGXbPZJd4YX/);
 });

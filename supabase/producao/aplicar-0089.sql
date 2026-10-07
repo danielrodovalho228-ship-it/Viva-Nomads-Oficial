@@ -244,6 +244,15 @@ revoke all on function public.avaliacao_valida() from public, anon, authenticate
 revoke all on function public.avaliacao_apos_envio() from public, anon, authenticated;
 
 
+-- Fernanda: o mesmo cartão que o Moacir gravou em produção em 07/10/2026
+-- (idempotente: lá não muda nada; num banco novo, ela já nasce ativa).
+update public.agentes
+   set cargo = 'Confiança, Cadastro e Reputação',
+       status = 'ativo',
+       rotina_texto = 'Todo dia 05:47 Brasília',
+       trigger_id = 'trig_01DjEJvriUb7DgGXbPZJd4YX'
+ where slug = 'fernanda';
+
 insert into supabase_migrations.schema_migrations (version, name, statements, created_by)
 select '20261007000089', '0089_avaliacoes_fase1',
        array['-- conteúdo em supabase/migrations/0089_avaliacoes_fase1.sql'], 'danielrodovalho228@gmail.com'
