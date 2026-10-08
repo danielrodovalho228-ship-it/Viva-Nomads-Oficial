@@ -109,7 +109,7 @@ test("ligações: admin vê veredito e a autorização; service role só depois 
   assert.equal((acoes.match(/caminhoDoDono\(input\.subleaseDocUrl, user\.id\)/g) ?? []).length, 2);
   const novo = ler("app/(dashboard)/dashboard/imoveis/novo/page.tsx");
   assert.match(novo, /if \(!asDraft && subleaseBlocked\)/);
-  assert.match(novo, /<DocumentoUploader docs=\{subleaseDoc\}/);
+  assert.match(novo, /<DocumentoUploader\s+docs=\{subleaseDoc\}/);
   // O upload do documento passa pelo servidor (tipo real + hash), não direto no bucket.
   assert.match(ler("lib/data/storage.ts"), /fetch\("\/api\/upload\/documento"/);
 });
