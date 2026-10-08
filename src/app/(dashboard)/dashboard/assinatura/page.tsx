@@ -14,6 +14,8 @@ import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { formatBRL, cn } from "@/lib/utils";
 import { SUPORTE_EMAIL } from "@/lib/site";
+import { AVISO_DESCER_PLANO, ficaAcimaDoLimite } from "@/lib/planos/descer-plano";
+import { LIMITE_ANUNCIOS } from "@/config/planos";
 
 type Billing = "PIX" | "BOLETO" | "CREDIT_CARD";
 
@@ -145,6 +147,12 @@ export default function SubscriptionPage() {
         </span>
       </Panel>
 
+      {minha && ficaAcimaDoLimite(minha.anunciosAtivos, limite) && (
+        <div data-testid="aviso-limite-plano-atual" role="status" className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <p>{AVISO_DESCER_PLANO}</p>
+        </div>
+      )}
+
       {minha && !minha.pagamentosAtivos && (
         <div data-testid="pagamentos-em-breve" className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
           <p className="font-semibold">As assinaturas pagas abrem no lançamento.</p>
@@ -244,6 +252,11 @@ export default function SubscriptionPage() {
       {/* Forma de pagamento */}
       {selected && (
         <Panel className="mt-6" title="Forma de pagamento">
+          {minha && ficaAcimaDoLimite(minha.anunciosAtivos, LIMITE_ANUNCIOS[selected as keyof typeof LIMITE_ANUNCIOS]) && (
+            <p data-testid="aviso-descer-plano" role="status" className="mb-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              {AVISO_DESCER_PLANO}
+            </p>
+          )}
           <div className="flex flex-wrap gap-2">
             {BILLING.map((b) => {
               const Icon = b.icon;
