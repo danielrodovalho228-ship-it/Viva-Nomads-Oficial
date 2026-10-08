@@ -8,6 +8,12 @@ import {
   type AccountType,
 } from "@/lib/planos/gestor";
 import { erroBancoPT } from "@/lib/erros-banco";
+import { planoDoProprietario } from "@/lib/data/plano-efetivo";
+import { listingLimit } from "@/lib/plan";
+import { fimGratisFundador } from "@/lib/fundador";
+import { isAsaasConfigured } from "@/lib/payments/asaas";
+import { emProducao } from "@/lib/integracoes";
+import { temDocumento } from "@/lib/data/documento-servidor";
 
 export interface GestorElegibilidade {
   elegivel: boolean;
@@ -107,4 +113,41 @@ export async function definirAccountType(
   });
 
   return { ok: true };
+}
+
+export interface MinhaAssinatura {
+  /** Plano que vale agora (assinatura ativa; Fundador nos 12 meses = Profissional; senão Gratuito). */
+  plano: "free" | "essential" | "pro" | "gestor";
+  fundadorAte: string | null;
+  anunciosAtivos: number;
+  limiteAnuncios: number;
+  /** Cobrança ligada? Em produção, só com a chave do Asaas. */
+  pagamentosAtivos: boolean;
+  /** CPF/CNPJ completo (a cobrança sai nele). */
+  temDocumento: boolean;
+}
+
+/** Situação real da assinatura do proprietário logado (nunca o "Gratuito" fixo). */
+export async function getMinhaAssinatura(): Promise<MinhaAssinatura | null> {
+  const supabase = await createClient();
+  if (!supabase) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const admin = createAdminClient();
+  const [plano, { data: perfil }, { count }, doc] = await Promise.all([
+    planoDoProprietario(supabase, user.id),
+    supabase.from("profiles").select("fundador, fundador_em").eq("id", user.id).maybeSingle(),
+    supabase.from("properties").select("id", { count: "exact", head: true }).eq("owner_id", user.id).eq("status", "active"),
+    admin ? temDocumento(admin, user.id) : Promise.resolve(false),
+  ]);
+  return {
+    plano: plano as MinhaAssinatura["plano"],
+    fundadorAte: fimGratisFundador(perfil?.fundador as boolean | undefined, perfil?.fundador_em as string | undefined),
+    anunciosAtivos: count ?? 0,
+    limiteAnuncios: listingLimit(plano as Parameters<typeof listingLimit>[0]),
+    pagamentosAtivos: isAsaasConfigured() || !emProducao(),
+    temDocumento: doc,
+  };
 }
