@@ -37,6 +37,7 @@ export function DateFieldBR({
   id,
   required,
   className,
+  ariaLabel,
 }: {
   /** Valor em ISO (yyyy-mm-dd) ou "". */
   value: string;
@@ -45,6 +46,7 @@ export function DateFieldBR({
   id?: string;
   required?: boolean;
   className?: string;
+  ariaLabel?: string;
 }) {
   const [texto, setTexto] = useState(isoParaBr(value));
 
@@ -61,6 +63,7 @@ export function DateFieldBR({
       autoComplete="off"
       placeholder="dd/mm/aaaa"
       required={required}
+      aria-label={ariaLabel}
       value={texto}
       onChange={(e) => {
         const m = mascarar(e.target.value);
