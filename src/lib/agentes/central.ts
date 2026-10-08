@@ -4,6 +4,8 @@
   Imports relativos com .ts: este arquivo roda direto no node.
 */
 
+import { blocoPersonaMemoria, type Memoria } from "./persona.ts";
+
 export type Esquadrao = "comando" | "operacoes" | "tecnologia" | "crescimento" | "financas" | "plataforma";
 
 export interface Agente {
@@ -16,6 +18,8 @@ export interface Agente {
   status: "ativo" | "planejado" | "pausado";
   briefing: string;
   ordem: number;
+  /** Perfil e jeito de falar (0092); o Moacir preenche. Ausente até a migração entrar. */
+  persona?: string | null;
 }
 
 export interface Achado {
@@ -288,7 +292,7 @@ export const SEM_RONDAS: Record<string, string> = {
 
 export const REGRA_BOLETIM = `- Você é o gerente: para "como estamos?", "o que rodou?" e parecidos, parta do seu ÚLTIMO BOLETIM (sua ronda mais recente, acima) e complete com o retrato do momento. Diga a hora do boletim. Se ainda não há boletim, diga isso e responda só com o retrato.`;
 
-export function systemChat(a: Agente, rondas: Ronda[], ordens: Ordem[], retrato = ""): string {
+export function systemChat(a: Agente, rondas: Ronda[], ordens: Ordem[], retrato = "", memorias: Memoria[] = []): string {
   const gerente = a.slug === SLUG_GERENTE;
   const rondasTexto = gerente
     ? `Seu último boletim (base para "como estamos?"):\n${blocoRondas(rondas.slice(0, 1), 4000)}${rondas.length > 1 ? `\n\nBoletins anteriores:\n${blocoRondas(rondas.slice(1, 3))}` : ""}`
@@ -303,6 +307,8 @@ ${rondasTexto}
 Ordens do Daniel ainda abertas para você:
 ${blocoOrdens(ordens)}
 ${retrato ? `\n${retrato}\n` : ""}
+${blocoPersonaMemoria(a.persona, memorias)}
+
 ${REGRAS}
 ${REGRA_CEO}${retrato ? `\n${REGRA_RETRATO}` : ""}${gerente ? `\n${REGRA_BOLETIM}` : ""}`;
 }

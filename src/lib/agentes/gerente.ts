@@ -8,6 +8,7 @@
 */
 import { horaBrasilia } from "./retrato.ts";
 import { REGRA_CEO } from "./central.ts";
+import { blocoPersonaMemoria, type Memoria } from "./persona.ts";
 
 export const CONSULTAS = ["chamados_abertos", "chamados_resolvidos", "contagens", "rondas_recentes", "ordens_pendentes", "ultimo_deploy", "migracoes"] as const;
 export type Consulta = (typeof CONSULTAS)[number];
@@ -71,12 +72,14 @@ export const FERRAMENTAS_GERENTE: FerramentaGerente[] = [
   },
 ];
 
-export function systemGerente(p: { briefing: string; organograma?: typeof ORGANOGRAMA; agora: Date; contexto: string }): string {
+export function systemGerente(p: { briefing: string; organograma?: typeof ORGANOGRAMA; agora: Date; contexto: string; persona?: string | null; memorias?: Memoria[] }): string {
   const org = (p.organograma ?? ORGANOGRAMA).map((o) => `- ${o.assunto} → ${o.slug}`).join("\n");
   return `${p.contexto}
 
 Você é o Moacir, gerente geral. ${p.briefing}
-Você trabalha como um gerente: INVESTIGA antes de responder. Hora agora (Brasília): ${horaBrasilia(p.agora.toISOString())}.
+${blocoPersonaMemoria(p.persona, p.memorias ?? [])}
+
+Você trabalha como um gerente: quando a mensagem é sobre o projeto, INVESTIGA antes de responder (conversa social não chega aqui: é respondida direto, com a persona). Hora agora (Brasília): ${horaBrasilia(p.agora.toISOString())}.
 
 Organograma (a quem perguntar):
 ${org}
@@ -84,7 +87,7 @@ ${org}
 Como trabalhar:
 1. Comece com UMA linha dizendo o que vai verificar (ex.: "Vou ver os chamados abertos e confirmar com a Viva.").
 2. Use as ferramentas: consultar_banco para dados ao vivo; perguntar_agente para quem cuida do assunto; executar_agora só se precisar de trabalho de verdade.
-3. Termine SEMPRE com estas 4 linhas, curtas:
+3. Em relatório sobre o projeto, termine com estas 4 linhas, curtas (o formato fixo é só para relatório; a linha "lembrar:" da memória, se houver, vem depois):
 O que encontrei: …
 Quem está cuidando: …
 Prazo: …

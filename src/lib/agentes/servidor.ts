@@ -7,13 +7,14 @@ import { aceitaEsforco, aceitaReserva, modeloViva } from "@/lib/atendimento/viva
 import { CHAVE_LIMITE_ENCAMINHAMENTO, LIMITE_DISPAROS_DIA, inicioDoDiaBrasilia, modeloAgentes, nomeVarToken, SCHEMA_REUNIAO, TIMEOUT_MS, type Agente, type Conversa, type Ordem, type Ronda } from "@/lib/agentes/central";
 import { consumirLimite, DIA } from "@/lib/limites";
 import { integracoesSimuladas, registrarSimulado } from "@/lib/integracoes";
-import { dispararEncaminhamentos, executarAgora, type Deps, type DepsExecutar, type DepsEncaminhamento, type ResultadoEncaminhamento } from "@/lib/agentes/motor";
+import { dispararEncaminhamentos, executarAgora, type DepsMemoria, type Deps, type DepsExecutar, type DepsEncaminhamento, type ResultadoEncaminhamento } from "@/lib/agentes/motor";
 import { modeloGerenteSimulado, nomeDoOrganograma, PREFIXO_MOACIR, type Consulta, type DepsGerente, type ModeloGerente } from "@/lib/agentes/gerente";
 import { horaBrasilia, retratoEmTexto } from "@/lib/agentes/retrato";
 import { ultimaPorAgente } from "@/lib/agentes/painel";
 import { consultasDaArea, numeroMigracao, type Conferencia, type MigracaoAplicada } from "@/lib/agentes/ao-vivo";
 import { chamadosEsperandoEquipe } from "@/lib/atendimento/escalonamento";
 import { systemChat } from "@/lib/agentes/central";
+import { MAX_MEMORIAS_POR_AGENTE, type Memoria } from "@/lib/agentes/persona";
 import type { Retrato } from "@/lib/agentes/retrato";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -77,6 +78,20 @@ export async function depsReais(): Promise<Deps | null> {
     },
     async retrato() {
       return retratoDoMomento();
+    },
+    // 0092: leitura tolerante — antes da migração entrar, devolve vazio e a conversa segue normal.
+    async persona(slug) {
+      const { data, error } = await supabase.from("agentes").select("persona").eq("slug", slug).maybeSingle();
+      return error ? null : ((data as { persona?: string | null } | null)?.persona ?? null);
+    },
+    async memorias(slug, n) {
+      const { data, error } = await supabase.from("agentes_memoria").select("id, agente_slug, fato, criado_em").eq("agente_slug", slug).order("criado_em", { ascending: false }).limit(n);
+      return error ? [] : ((data ?? []) as Memoria[]);
+    },
+    async lembrar(slug, fatos) {
+      const { count } = await supabase.from("agentes_memoria").select("id", { count: "exact", head: true }).eq("agente_slug", slug);
+      if ((count ?? 0) + fatos.length > MAX_MEMORIAS_POR_AGENTE) return;
+      await supabase.from("agentes_memoria").insert(fatos.map((fato) => ({ agente_slug: slug, fato })));
     },
     async gravar(linhas) {
       const { error } = await supabase.from("agentes_conversas").insert(linhas);
@@ -485,4 +500,26 @@ export async function retratoDoMomento(): Promise<Retrato | null> {
   } catch {
     return null;
   }
+}
+
+/** "O que <nome> sabe sobre você": lista e apaga memórias com a sessão do admin (a RLS is_admin() decide). */
+export async function depsMemoria(): Promise<DepsMemoria | null> {
+  const supabase = await createClient();
+  if (!supabase) return null;
+  return {
+    async adminId() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      return user && (await ehAdmin(supabase, user.id)) ? user.id : null;
+    },
+    async listar(slug) {
+      const { data, error } = await supabase.from("agentes_memoria").select("id, agente_slug, fato, criado_em").eq("agente_slug", slug).order("criado_em", { ascending: false }).limit(MAX_MEMORIAS_POR_AGENTE);
+      return error ? [] : ((data ?? []) as Memoria[]);
+    },
+    async apagar(id) {
+      const { data, error } = await supabase.from("agentes_memoria").delete().eq("id", id).select("id");
+      return !error && (data?.length ?? 0) > 0;
+    },
+  };
 }
