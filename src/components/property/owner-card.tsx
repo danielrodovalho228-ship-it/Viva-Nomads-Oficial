@@ -82,10 +82,12 @@ export function OwnerCard({ property }: { property: Property }) {
       </div>
 
       {/* Transparência do operador (sublocação autorizada) */}
-      {property.ownershipType === "subleased" && property.subleaseAuthorized && (
+      {property.ownershipType !== "own" && property.subleaseAuthorized && (
         <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-sage-100 px-3 py-1.5 text-xs font-medium text-forest">
           <Handshake className="h-3.5 w-3.5" />
-          Operado por gestor profissional, com sublocação autorizada pelo proprietário
+          {property.ownershipType === "managed"
+            ? "Administrado por gestor em nome do proprietário"
+            : "Operado por gestor profissional, com sublocação autorizada pelo proprietário"}
         </p>
       )}
     </section>

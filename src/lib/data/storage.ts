@@ -58,33 +58,27 @@ export async function removePropertyPhoto(path: string | null): Promise<void> {
 export const PROPERTY_DOCS_BUCKET = "property-docs";
 
 /**
- * Envia um DOCUMENTO privado (ex.: autorização de sublocação) para o bucket
- * PRIVADO. Diferente da foto: não gera URL pública — devolve o `path` (estável,
- * guardado no imóvel) e uma URL assinada curta só para o preview imediato.
- * Sem Supabase → preview local (demo). Falha de upload → preview local (não
- * trava o fluxo; se a migração 0032 ainda não rodou, cai aqui).
+ * Envia um DOCUMENTO privado (autorização de sublocação, contrato de
+ * administração, procuração) pelo SERVIDOR (/api/upload/documento): confere o
+ * tipo REAL do arquivo, o tamanho e grava na pasta do próprio dono no bucket
+ * PRIVADO. Devolve o `path` (guardado no imóvel) e uma URL assinada curta só
+ * para o preview. Sem Supabase → preview local (demo, não conta como anexado).
+ * Recusa do servidor (tipo/tamanho/limite) → erro com a mensagem, para o
+ * uploader mostrar.
  */
-export async function uploadPropertyDoc(
-  file: File,
-  ownerId?: string
-): Promise<UploadedPhoto> {
+export async function uploadPropertyDoc(file: File): Promise<UploadedPhoto> {
   const supabase = createClient();
   if (!supabase) return { url: URL.createObjectURL(file), path: null, demo: true };
 
-  const ext = file.name.split(".").pop() ?? "pdf";
-  const folder = ownerId ?? "anon";
-  const path = `${folder}/${crypto.randomUUID()}.${ext}`;
+  const fd = new FormData();
+  fd.append("file", file);
+  const res = await fetch("/api/upload/documento", { method: "POST", body: fd });
+  const data = (await res.json().catch(() => ({}))) as { path?: string | null; error?: string };
+  if (!res.ok || !data.path) throw new Error(data.error ?? "Não foi possível enviar o documento agora.");
 
-  const { error } = await supabase.storage
-    .from(PROPERTY_DOCS_BUCKET)
-    .upload(path, file, { cacheControl: "3600", upsert: false });
-  if (error) return { url: URL.createObjectURL(file), path: null, demo: true };
-
-  // Bucket privado: URL assinada de 1h só para a pré-visualização no formulário.
-  const { data: signed } = await supabase.storage
-    .from(PROPERTY_DOCS_BUCKET)
-    .createSignedUrl(path, 3600);
-  return { url: signed?.signedUrl ?? "", path, demo: false };
+  // Bucket privado: URL assinada de 10 min só para a pré-visualização no formulário.
+  const { data: signed } = await supabase.storage.from(PROPERTY_DOCS_BUCKET).createSignedUrl(data.path, 600);
+  return { url: signed?.signedUrl ?? "", path: data.path, demo: false };
 }
 
 /** Remove um documento do bucket privado. */

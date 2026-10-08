@@ -87,8 +87,10 @@ export interface Property {
   tagWorkLocated: boolean; // etiqueta "Bem localizado para trabalho"
   tagCondoApproved: boolean; // etiqueta "Aceito em condomínio"
   // Perfil operador (Atualização 12)
-  ownershipType: "own" | "subleased";
+  ownershipType: "own" | "subleased" | "managed";
   subleaseAuthorized?: boolean;
+  /** Dono: o documento da operação (autorização/procuração) já está anexado (0091). */
+  autorizacaoAnexada?: boolean;
   // Qualidade do anúncio (rodada 11) — derivado da quantidade de fotos
   qualityTier?: "padrao" | "completo" | "premium";
   videoUrl?: string; // walk-through em vídeo — reduz o atrito de alugar sem visita

@@ -1,4 +1,4 @@
--- Viva Nomads — aplicar 0090 (documento da pessoa: CPF/CNPJ). PRECISA APROVAÇÃO DO DANIEL.
+-- Viva Nomads — aplicar 0090 (documento da pessoa: CPF/CNPJ). APLICADA em 08/10/2026 (autorizada pelo Daniel).
 -- Rollback: supabase/producao/rollback/0090_rollback.sql
 -- Só acrescenta (coluna, funções, restrições NOT VALID, índice único) e reforça o
 -- gatilho de campos protegidos. Sem DROP, sem NOTICE. Pode rodar no SQL Editor.
@@ -110,6 +110,11 @@ revoke all on function public.cpf_valido(text) from public, anon;
 revoke all on function public.cnpj_valido(text) from public, anon;
 grant execute on function public.cpf_valido(text) to authenticated, service_role;
 grant execute on function public.cnpj_valido(text) to authenticated, service_role;
+
+insert into supabase_migrations.schema_migrations (version, name, statements, created_by)
+select '20261007000090', '0090_documento_pessoa',
+       array['-- conteúdo em supabase/migrations/0090_documento_pessoa.sql'], 'danielrodovalho228@gmail.com'
+ where not exists (select 1 from supabase_migrations.schema_migrations where version = '20261007000090');
 commit;
 
 -- Conferência (só leitura):

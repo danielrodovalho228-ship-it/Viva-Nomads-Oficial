@@ -10,6 +10,8 @@
                      nunca bloqueiam, nunca entram no "falta" nem baixam a %.
 */
 
+import { exigeAutorizacao, ROTULO_FALTA_AUTORIZACAO } from "./operacao.ts";
+
 export const MIN_FOTOS = 8;
 export const MIN_DESCRICAO = 60;
 
@@ -24,8 +26,10 @@ export interface FatosAnuncio {
   titulo: string;
   preco: number;
   garantiaOk: boolean;
-  /** Sublocação sem autorização não publica. */
+  /** Sublocado/administrado sem a autorização (declaração + documento anexado) não publica. */
   sublocacaoOk: boolean;
+  /** "own" | "subleased" | "managed" — só muda o rótulo do item que falta. */
+  operacao?: string | null;
   documento: StatusDocumento;
   /** null = não se aplica/não verificado aqui (ex.: editor sem consulta do plano). */
   limitePlanoOk: boolean | null;
@@ -96,7 +100,10 @@ export function prontidaoAnuncio(f: FatosAnuncio): Prontidao {
     { key: "garantia", label: OBRIGATORIOS_ROTULOS[7], ok: f.garantiaOk, etapa: 5 },
     { key: "documento", label: OBRIGATORIOS_ROTULOS[8], ok: f.documento === "approved", etapa: 0, detalhe: f.documento === "approved" ? undefined : DOC_DETALHE[f.documento] },
   ];
-  if (!f.sublocacaoOk) obrigatorios.push({ key: "sublocacao", label: "Autorização de sublocação", ok: false, etapa: 0 });
+  if (!f.sublocacaoOk) {
+    const label = f.operacao === "managed" ? ROTULO_FALTA_AUTORIZACAO.managed : ROTULO_FALTA_AUTORIZACAO.subleased;
+    obrigatorios.push({ key: "sublocacao", label, ok: false, etapa: 0 });
+  }
   if (f.limitePlanoOk === false) {
     obrigatorios.push({ key: "limite", label: "Vaga no seu plano", ok: false, etapa: 6, detalhe: "o plano já tem o máximo de anúncios publicados — pause um ou faça upgrade" });
   }
@@ -127,6 +134,8 @@ export interface LinhaAnuncio {
   garantias_aceitas: string[] | null;
   ownership_type: string | null;
   sublease_authorized: boolean | null;
+  /** 0091: o documento da operação está anexado (undefined = banco sem a 0091). */
+  autorizacao_anexada?: boolean | null;
   description: string | null;
   ready_to_live_badge: boolean | null;
   video_url: string | null;
@@ -141,7 +150,9 @@ export function fatosDaLinha(p: LinhaAnuncio, fotos: number, documento: StatusDo
     titulo: p.title ?? "",
     preco: Number(p.monthly_price) || 0,
     garantiaOk: (p.garantias_aceitas ?? []).length > 0,
-    sublocacaoOk: p.ownership_type !== "subleased" || !!p.sublease_authorized,
+    // Sem a 0091 (coluna ausente) vale a regra antiga: só a declaração.
+    sublocacaoOk: !exigeAutorizacao(p.ownership_type) || (!!p.sublease_authorized && p.autorizacao_anexada !== false),
+    operacao: p.ownership_type,
     documento,
     limitePlanoOk,
     descricao: p.description ?? "",

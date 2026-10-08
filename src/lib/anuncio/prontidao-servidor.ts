@@ -19,9 +19,14 @@ const COLUNAS =
 /** Fatos do banco por imóvel (o editor usa como base e sobrepõe o que está sendo editado). */
 export async function fatosDosImoveis(cliente: Cliente, ownerId: string, ids?: string[]): Promise<Map<string, FatosAnuncio>> {
   const mapa = new Map<string, FatosAnuncio>();
-  let q = cliente.from("properties").select(COLUNAS).eq("owner_id", ownerId);
-  if (ids && ids.length) q = q.in("id", ids);
-  const { data: props } = await q;
+  const consulta = (colunas: string) => {
+    let q = cliente.from("properties").select(colunas).eq("owner_id", ownerId);
+    if (ids && ids.length) q = q.in("id", ids);
+    return q;
+  };
+  // 0091 (autorizacao_anexada) pode ainda não estar aplicada: cai nas colunas antigas.
+  let { data: props, error } = await consulta(`${COLUNAS}, autorizacao_anexada`);
+  if (error) ({ data: props } = await consulta(COLUNAS));
   const lista = (props ?? []) as (LinhaAnuncio & { id: string; status: string })[];
   if (lista.length === 0) return mapa;
   const idsLista = lista.map((p) => p.id);

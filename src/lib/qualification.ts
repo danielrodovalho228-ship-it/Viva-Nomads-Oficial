@@ -15,6 +15,8 @@ export interface EligibilityState {
   habitable: boolean;
   isOwnerOrAgent: boolean;
   hasDocument: boolean;
+  /** Nome do titular como está no documento (pré-conferência; opcional). */
+  titularDocumento?: string;
   condoAllows: "" | "yes" | "no" | "unknown"; // "" = ainda não respondido (neutro)
 }
 

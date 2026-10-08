@@ -54,6 +54,7 @@ const PROPERTIES_PUBLICAS = [
   "descricao_gerada_por_ia", "available_from", "furnished", "pets_allowed",
   "smoking_allowed", "children_allowed", "max_guests", "available_until",
   "max_period_days", "checkin_after", "checkout_before",
+  "autorizacao_anexada", // 0091: só o "tem documento", nunca o caminho
 ];
 // Privadas de propósito (fora do grant; só via RPC property_private_details).
 const PROPERTIES_PRIVADAS = [

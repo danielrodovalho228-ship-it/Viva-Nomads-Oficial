@@ -31,7 +31,8 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import { DocConferidaBadge } from "@/components/ui/badge";
 import { PropertyMiniCard } from "@/components/property-mini-card";
 import { PhotoUploader, type PhotoItem } from "@/components/photo-uploader";
-import { uploadPropertyDoc, removePropertyDoc } from "@/lib/data/storage";
+import { DocumentoUploader } from "@/components/documento-uploader";
+import { DOC_AUTORIZACAO, exigeAutorizacao, OPERACOES, operacaoValida, type Operacao } from "@/lib/anuncio/operacao";
 import { MIN_PHOTOS, SUGGESTED_ROOMS, tierFromPhotoCount, TIER_META } from "@/lib/listing";
 import { FAIXAS, GARANTIAS_CADASTRO } from "@/lib/faixas";
 import { PROPERTY_TYPES, AMENITY_GROUPS, propertyTypeLabel, amenityKeysFromLabels } from "@/lib/amenities";
@@ -135,9 +136,11 @@ export default function NewPropertyPage() {
     seguro_fianca: false,
   });
   const [prepFee, setPrepFee] = useState(450);
-  const [ownershipType, setOwnershipType] = useState<"own" | "subleased">("own");
+  const [ownershipType, setOwnershipType] = useState<Operacao>("own");
   const [subleaseAuthorized, setSubleaseAuthorized] = useState(false);
   const [subleaseDoc, setSubleaseDoc] = useState<PhotoItem[]>([]);
+  // Edição: o documento já anexado antes (o caminho do arquivo não vem para a tela).
+  const [docOperacaoAnexado, setDocOperacaoAnexado] = useState(false);
   const [qual, setQual] = useState({ baseBadge: false, tHome: false, tWork: false });
   // Autosave no SERVIDOR (P0): status honesto + id do rascunho + hora do salvamento.
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -160,7 +163,9 @@ export default function NewPropertyPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const router = useRouter();
 
-  const subleaseBlocked = ownershipType === "subleased" && !subleaseAuthorized;
+  // Sublocado/administrado: declaração + documento anexado (arquivo real no bucket privado).
+  const docOperacaoOk = docOperacaoAnexado || subleaseDoc.some((d) => !!d.path && !d.demo);
+  const subleaseBlocked = exigeAutorizacao(ownershipType) && (!subleaseAuthorized || !docOperacaoOk);
   const photosMissing = Math.max(0, MIN_PHOTOS - photos.length);
   const photoBlocked = photos.length < MIN_PHOTOS;
   const fotosMsg = photosMissing === 1 ? "Falta 1 foto" : `Faltam ${photosMissing} fotos`;
@@ -179,6 +184,7 @@ export default function NewPropertyPage() {
     preco: Number(monthlyPrice) || 0,
     garantiaOk,
     sublocacaoOk: !subleaseBlocked,
+    operacao: ownershipType,
     documento: docStatus,
     // O limite do plano é conferido no servidor ao publicar.
     limitePlanoOk: null,
@@ -194,8 +200,11 @@ export default function NewPropertyPage() {
    * seguem livres, e a Revisão continua sendo o portão final da publicação. */
   function validarEtapa(s: number): Record<string, string> {
     const e: Record<string, string> = {};
-    if (s === 0 && ownershipType === "subleased" && !subleaseAuthorized)
-      e.sublocacao = "Confirme a autorização de sublocação para continuar.";
+    if (s === 0 && exigeAutorizacao(ownershipType)) {
+      const doc = DOC_AUTORIZACAO[ownershipType as "subleased" | "managed"];
+      if (!subleaseAuthorized) e.sublocacao = "Marque a declaração para continuar.";
+      else if (!docOperacaoOk) e.sublocacao = `Anexe: ${doc.titulo.toLowerCase()}.`;
+    }
     if (s === 1) {
       if (!street.trim()) e.rua = "Informe o endereço (rua e número).";
       if (!neighborhood.trim()) e.bairro = "Informe o bairro.";
@@ -306,8 +315,13 @@ export default function NewPropertyPage() {
       setPublishError(`Adicione pelo menos ${MIN_PHOTOS} fotos para publicar. Faltam ${photosMissing}.`);
       return;
     }
-    if (subleaseBlocked) {
-      setPublishError("Imóvel operado por sublocação exige a confirmação de autorização do proprietário antes de publicar.");
+    // Rascunho pode ficar sem o documento; publicar, não (o banco também barra — 0091).
+    if (!asDraft && subleaseBlocked) {
+      setPublishError(
+        ownershipType === "managed"
+          ? "Para publicar, anexe o contrato de administração ou a procuração e marque a declaração."
+          : "Para publicar, anexe a autorização escrita do proprietário para sublocar e marque a declaração."
+      );
       return;
     }
     // Duração máxima não pode ser menor que a mínima (evita range invertido).
@@ -445,7 +459,7 @@ export default function NewPropertyPage() {
     if (d.faixas && typeof d.faixas === "object") setFaixas(d.faixas as Record<string, boolean>);
     if (d.garantias && typeof d.garantias === "object") setGarantias(d.garantias as Record<string, boolean>);
     if (typeof d.prepFee === "number") setPrepFee(d.prepFee);
-    if (d.ownershipType === "own" || d.ownershipType === "subleased") setOwnershipType(d.ownershipType);
+    if (operacaoValida(d.ownershipType)) setOwnershipType(d.ownershipType);
     if (typeof d.subleaseAuthorized === "boolean") setSubleaseAuthorized(d.subleaseAuthorized);
     if (Array.isArray(d.photos)) setPhotos(d.photos as PhotoItem[]);
     if (Array.isArray(d.subleaseDoc)) setSubleaseDoc(d.subleaseDoc as PhotoItem[]);
@@ -562,8 +576,9 @@ export default function NewPropertyPage() {
       setDescricaoGeradaPorIa(!!p.descricaoGeradaPorIa);
       setIssuesInvoice(!!p.issuesInvoice);
       setPrepFee(p.prepFee ?? 450);
-      setOwnershipType(p.ownershipType === "subleased" ? "subleased" : "own");
+      setOwnershipType(operacaoValida(p.ownershipType) ? p.ownershipType : "own");
       setSubleaseAuthorized(!!p.subleaseAuthorized);
+      setDocOperacaoAnexado(!!p.autorizacaoAnexada);
       setVideoUrl(p.videoUrl || "");
       setAmenityKeys(
         Object.fromEntries(amenityKeysFromLabels(p.amenities || []).map((k) => [k, true]))
@@ -953,49 +968,55 @@ export default function NewPropertyPage() {
 
             <div className="rounded-xl border border-sage-200 p-4">
               <p className="text-sm font-medium text-ink">Quem opera este imóvel?</p>
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                {([["own", "É meu (próprio)"], ["subleased", "Opero por sublocação"]] as const).map(([v, label]) => (
+              <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3" role="radiogroup" aria-label="Quem opera este imóvel?">
+                {OPERACOES.map(({ valor, rotulo }) => (
                   <button
-                    key={v}
+                    key={valor}
                     type="button"
-                    onClick={() => setOwnershipType(v)}
+                    role="radio"
+                    aria-checked={ownershipType === valor}
+                    onClick={() => setOwnershipType(valor)}
                     className={cn(
                       "rounded-lg border px-3 py-2 text-sm font-medium transition-colors",
-                      ownershipType === v ? "border-forest bg-forest text-white" : "border-sage-200 text-ink hover:border-sage"
+                      ownershipType === valor ? "border-forest bg-forest text-white" : "border-sage-200 text-ink hover:border-sage"
                     )}
                   >
-                    {label}
+                    {rotulo}
                   </button>
                 ))}
               </div>
-              {ownershipType === "subleased" && (
-                <div className="mt-4 space-y-3">
+              {exigeAutorizacao(ownershipType) && (
+                <div className="mt-4 space-y-3" data-testid="documento-operacao">
                   <div className="rounded-lg bg-champagne/10 px-3 py-2 text-xs text-ink">
-                    Para sublocar legalmente é preciso autorização escrita do proprietário (art.
-                    13 da Lei 8.245/91). A declaração abaixo é obrigatória.
+                    {DOC_AUTORIZACAO[ownershipType as "subleased" | "managed"].aviso}
                   </div>
                   <Toggle
                     checked={subleaseAuthorized}
                     onChange={() => setSubleaseAuthorized((v) => !v)}
-                    label="Tenho autorização do proprietário para sublocar este imóvel"
-                    hint="Declaração obrigatória — verificável a qualquer momento."
+                    label={DOC_AUTORIZACAO[ownershipType as "subleased" | "managed"].declaracao}
+                    hint="Declaração obrigatória. A equipe confere o documento antes de publicar."
                   />
-                  <Erro msg={erros.sublocacao} />
                   <div>
                     <span className="mb-1.5 block text-sm font-medium text-ink">
-                      Autorização de sublocação <span className="font-normal text-muted">(opcional)</span>
+                      {DOC_AUTORIZACAO[ownershipType as "subleased" | "managed"].titulo} <span className="font-normal text-muted">(obrigatório para publicar)</span>
                     </span>
-                    <PhotoUploader
-                      photos={subleaseDoc}
-                      onChange={setSubleaseDoc}
-                      uploader={uploadPropertyDoc}
-                      remover={removePropertyDoc}
+                    {docOperacaoAnexado && subleaseDoc.length === 0 && (
+                      <p className="mb-2 text-xs text-forest" data-testid="documento-operacao-anexado">Documento já anexado. Envie outro só se quiser substituir.</p>
+                    )}
+                    <DocumentoUploader
+                      docs={subleaseDoc}
+                      onChange={(d) => {
+                        setSubleaseDoc(d);
+                        if (d.length) setErros(({ sublocacao: _resolvido, ...resto }) => resto);
+                      }}
+                      rotulo="Anexar documento"
                     />
                     <p className="mt-1.5 text-xs text-muted">
-                      Você pode continuar sem enviar agora. Recomendamos anexar a autorização
-                      para evitar problemas futuros.
+                      PDF, JPG ou PNG. Fica em armazenamento privado: só você e a equipe de verificação veem. Você pode
+                      salvar como rascunho e anexar depois, mas sem o documento o anúncio não é publicado.
                     </p>
                   </div>
+                  <Erro msg={erros.sublocacao} />
                 </div>
               )}
             </div>
@@ -1609,7 +1630,8 @@ export default function NewPropertyPage() {
             )}
             {subleaseBlocked && (
               <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                <strong>Publicação bloqueada.</strong> Confirme a autorização de sublocação no passo{" "}
+                <strong>Publicação bloqueada.</strong>{" "}
+                {ownershipType === "managed" ? "Anexe o contrato de administração ou a procuração" : "Anexe a autorização escrita do proprietário"} e marque a declaração no passo{" "}
                 <button type="button" onClick={() => irPara(0)} className="font-medium underline">Tipo e operação</button>.
               </div>
             )}
@@ -1655,7 +1677,7 @@ export default function NewPropertyPage() {
             {publishError && <p className="text-sm text-red-600">{publishError}</p>}
 
             <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-              <Button variant="outline" onClick={() => publish(true)} disabled={publishing || subleaseBlocked}>
+              <Button variant="outline" onClick={() => publish(true)} disabled={publishing}>
                 {editingId ? "Salvar sem publicar" : "Salvar como rascunho"}
               </Button>
               <Button

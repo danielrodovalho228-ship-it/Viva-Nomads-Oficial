@@ -95,6 +95,7 @@ function DocCard({ doc, onDone }: { doc: DocumentoPendente; onDone: () => void }
   }
 
   return (
+    <div data-testid="doc-card" data-imovel={doc.tituloImovel ?? ""}>
     <Panel>
       {/* Cabeçalho: dono + data */}
       <div className="flex items-center gap-3">
@@ -120,7 +121,7 @@ function DocCard({ doc, onDone }: { doc: DocumentoPendente; onDone: () => void }
         <p className="mt-3 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>
-            <strong>Arquivo idêntico já enviado em {doc.duplicado} outro(s) cadastro(s).</strong>{" "}
+            <strong>Arquivo idêntico já enviado por {doc.duplicado} outra(s) conta(s).</strong>{" "}
             Confira se não é reuso indevido de documento antes de aprovar.
           </span>
         </p>
@@ -174,6 +175,15 @@ function DocCard({ doc, onDone }: { doc: DocumentoPendente; onDone: () => void }
                 <dd className="font-medium text-ink">{doc.ownerNomeCompleto ?? doc.ownerNome}</dd>
               </div>
             </div>
+            {doc.titularInformado && (
+              <div className="flex items-start gap-2">
+                <FileText className="mt-0.5 h-4 w-4 shrink-0 text-sage" />
+                <div className="min-w-0">
+                  <dt className="text-xs text-muted">Titular informado pelo dono</dt>
+                  <dd className="font-medium text-ink">{doc.titularInformado}</dd>
+                </div>
+              </div>
+            )}
             <div className="flex items-start gap-2">
               <Home className="mt-0.5 h-4 w-4 shrink-0 text-sage" />
               <div className="min-w-0">
@@ -184,6 +194,39 @@ function DocCard({ doc, onDone }: { doc: DocumentoPendente; onDone: () => void }
               </div>
             </div>
           </dl>
+
+          {doc.preConferencia && (
+            <div
+              data-testid="pre-conferencia"
+              className={cn(
+                "mt-4 rounded-lg border px-3 py-2 text-sm",
+                doc.preConferencia.pareceOk ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-amber-200 bg-amber-50 text-amber-900"
+              )}
+            >
+              <p className="text-xs font-semibold uppercase tracking-wide">Pré-conferência automática</p>
+              <p className="mt-1 font-semibold" data-testid="pre-conferencia-veredito">{doc.preConferencia.veredito}</p>
+              <ul className="mt-1.5 space-y-0.5 text-xs">
+                {doc.preConferencia.itens.map((i) => (
+                  <li key={i.chave}>
+                    {i.estado === "ok" ? "✓" : i.estado === "atencao" ? "!" : "–"} {i.rotulo}: {i.detalhe}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-1.5 text-[11px] opacity-80">Só uma ajuda. Quem aprova ou recusa é você.</p>
+            </div>
+          )}
+          {doc.autorizacaoUrl && (
+            <a
+              href={doc.autorizacaoUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-testid="abrir-autorizacao"
+              className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-forest hover:underline"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              {doc.operacao === "managed" ? "Abrir contrato de administração / procuração" : "Abrir autorização de sublocação"}
+            </a>
+          )}
 
           <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-muted">
             Checklist de conferência
@@ -270,5 +313,6 @@ function DocCard({ doc, onDone }: { doc: DocumentoPendente; onDone: () => void }
         </div>
       )}
     </Panel>
+    </div>
   );
 }
