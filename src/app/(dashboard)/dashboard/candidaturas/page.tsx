@@ -4,6 +4,7 @@ import { FileSignature, MessageSquare } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { ButtonLink } from "@/components/ui/button";
 import { listMinhasCandidaturas } from "@/lib/data/leads-actions";
+import { DocumentosInquilino } from "@/components/documentos-inquilino";
 import type { RotuloCandidatura } from "@/lib/candidaturas/status";
 
 export const metadata: Metadata = {
@@ -75,6 +76,11 @@ export default async function CandidaturasPage() {
                   )}
                 </div>
               </div>
+              {c.situacao.chave === "aceita" && (
+                <div className="mt-4 border-t border-sage-200 pt-4">
+                  <DocumentosInquilino leadId={c.id} modo="inquilino" />
+                </div>
+              )}
             </Panel>
           ))}
         </div>
