@@ -18,6 +18,7 @@ on:
       - "supabase/lab/**"
       - "supabase/migrations/**"
       - "scripts/lab/**"
+      - "tests/e2e/**"
 
 permissions:
   contents: read
@@ -101,6 +102,9 @@ jobs:
           {
             echo "## Laboratório — $(date -u +%Y-%m-%d)"
             grep -E "^\s+[0-9]+ (passed|failed|skipped|flaky)" tests/laboratorio/saida/e2e.txt || true
+            echo
+            echo "### Por spec (passou / falhou)"
+            node scripts/lab/resumo-specs.mjs tests/laboratorio/saida/resultado.json || true
             echo
             echo "Envios simulados (nada saiu para a rede):"
             if [ -f "$LAB_OUTBOX" ]; then cut -d'"' -f4 "$LAB_OUTBOX" | sort | uniq -c; else echo "nenhum"; fi
