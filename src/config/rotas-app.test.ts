@@ -6,7 +6,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { aasa, assetlinks, caminhoDoLink, destinoDaRota, intentFiltersExpo, ROTAS_APP } from "./rotas-app.ts";
+import { aasa, assetlinks, caminhoDoLink, caminhoInterno, destinoDaRota, intentFiltersExpo, ROTAS_APP } from "./rotas-app.ts";
 import { safeInternalPath } from "../lib/safe-redirect.ts";
 import { GET as getApple } from "../app/api/well-known/apple/route.ts";
 import { GET as getAndroid } from "../app/api/well-known/android/route.ts";
@@ -45,17 +45,19 @@ test("telas do app", () => {
   }
 });
 
+test("telas do proprietário que antes caíam no aviso agora ficam no app", () => {
+  for (const p of ["/dashboard/ferramentas", "/dashboard/simulador", "/dashboard/roi-imovel", "/dashboard/assinatura", "/dashboard/fechamento", "/dashboard/fechamento/abc"]) {
+    assert.equal(destinoDaRota(p), "app", p);
+  }
+  assert.equal(destinoDaRota("/dashboard/simuladorx"), "site");
+});
+
 test("telas só do site", () => {
   for (const p of [
     "/admin",
     "/admin/atendimento/1",
     "/admin/financeiro",
-    "/dashboard/fechamento",
-    "/dashboard/assinatura",
-    "/dashboard/simulador",
-    "/dashboard/roi-imovel",
     "/dashboard/viabilidade",
-    "/dashboard/ferramentas",
     "/simulacao",
     "/precos",
     "/",
@@ -118,7 +120,7 @@ test("Expo (app.json): intentFilters com autoVerify, https, host e só as telas 
     const caminho = d.path ?? d.pathPrefix;
     assert.equal(destinoDaRota(d.pathPrefix ? `${caminho}x` : caminho), "app", caminho);
   }
-  for (const fora of ["/admin", "/dashboard/assinatura", "/dashboard/fechamento", "/dashboard/simulador", "/auth/confirm"]) {
+  for (const fora of ["/admin", "/auth/confirm"]) {
     assert.ok(!links.data.some((d) => d.path === fora || (d.pathPrefix && fora.startsWith(d.pathPrefix))), fora);
   }
   assert.deepEqual(esquema.data, [{ scheme: "vivanomads" }]);
@@ -151,4 +153,32 @@ test(".well-known: servido por rewrite (sem redirecionamento)", async () => {
   assert.ok(!redirects.some((r) => r.source.includes(".well-known")));
   const proxy = readFileSync(new URL("../proxy.ts", import.meta.url), "utf8");
   assert.ok(!proxy.includes(".well-known"), "o proxy não intercepta .well-known");
+});
+
+test("fallback do 'Abrir no navegador': só caminho do próprio domínio, nunca outro endereço", () => {
+  assert.equal(caminhoInterno("https://vivanomads.com.br/dashboard/ferramentas?x=1"), "/dashboard/ferramentas?x=1");
+  assert.equal(caminhoInterno("https://www.vivanomads.com.br/admin"), "/admin");
+  assert.equal(caminhoInterno("https://evil.example/dashboard"), "/dashboard");
+  assert.equal(caminhoInterno("lixo"), "/dashboard");
+});
+
+test("nenhum link do menu/painel do proprietário cai no aviso 'Esta parte fica no site'", () => {
+  const arquivos = [
+    "src/components/account/conta-menu.tsx",
+    "src/components/layout/dashboard-shell.tsx",
+    "src/app/(dashboard)/dashboard/ferramentas/page.tsx",
+    "src/components/plan-gate.tsx",
+  ];
+  const aceitos = new Set(["/dashboard/ferramentas", "/dashboard/simulador", "/dashboard/roi-imovel", "/dashboard/assinatura", "/dashboard/fechamento"]);
+  for (const f of arquivos) {
+    let src: string;
+    try {
+      src = readFileSync(new URL(`../../${f}`, import.meta.url), "utf8");
+    } catch {
+      continue;
+    }
+    for (const m of src.matchAll(/href=["'{`]+\s*["'`]?(\/dashboard\/[a-z-]+)/g)) {
+      if (aceitos.has(m[1])) assert.equal(destinoDaRota(m[1]), "app", `${f}: ${m[1]}`);
+    }
+  }
 });

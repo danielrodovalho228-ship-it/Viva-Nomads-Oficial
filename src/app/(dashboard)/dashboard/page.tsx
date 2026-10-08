@@ -399,7 +399,7 @@ function OwnerFunnel({ name, draft }: { name: string; draft?: RascunhoPendente |
       <p className="mt-6 rounded-xl border border-sage-200 bg-white px-4 py-3 text-sm text-muted">
         A plataforma <strong className="text-ink">conecta, verifica, documenta e registra</strong> —
         você fecha direto com o inquilino. Precisa de ajuda para começar?{" "}
-        <Link href="/como-funciona" className="font-medium text-forest hover:underline">
+        <Link href="/como-funciona" className="web-only font-medium text-forest hover:underline">
           Veja como funciona
         </Link>
         .

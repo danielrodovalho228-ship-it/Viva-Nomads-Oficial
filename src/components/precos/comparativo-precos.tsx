@@ -77,7 +77,7 @@ export function ComparativoPrecos({ variante = "completo" }: { variante?: "compl
           </div>
         </div>
         <p className="mt-3 text-sm">
-          <Link href="/precos" className="font-medium text-forest underline">
+          <Link href="/precos" className="web-only font-medium text-forest underline">
             Ver a comparação completa e qual plano compensa
           </Link>
         </p>
@@ -192,7 +192,7 @@ export function LinhaComparativoAnuncio({ aluguel }: { aluguel: number }) {
     <p className="rounded-lg bg-sage-100 px-3 py-2 text-xs text-ink" data-testid="linha-comparativo">
       Num contrato de {MESES_EXEMPLO} meses, você paga <strong>{reaisInteiros(gratis.total)} uma vez</strong> (plano Gratuito). No Airbnb seriam{" "}
       <strong>{reaisInteiros(c.airbnb)}</strong>.{" "}
-      <Link href="/precos" className="font-medium text-forest underline">
+      <Link href="/precos" className="web-only font-medium text-forest underline">
         Ver planos
       </Link>
     </p>
