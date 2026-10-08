@@ -307,6 +307,28 @@ html[data-app] .vn-main {
   padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px)) !important;
 }
 
+/*
+  iPhone: campos com fonte < 16px fazem o Safari dar zoom ao focar e a tela sai do
+  lugar. Em telas pequenas e no app, campos têm 16px (desktop não muda). Sem
+  rolagem lateral no app.
+*/
+@media (max-width: 768px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+html[data-app] input,
+html[data-app] select,
+html[data-app] textarea {
+  font-size: 16px !important;
+}
+html[data-app],
+html[data-app] body {
+  overflow-x: hidden;
+}
+
 /* Botão "Ajuda" fixo: acima da barra inferior do celular; no desktop, no canto. */
 :root {
   --ajuda-bottom: 5.25rem;
