@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { ExternalLink, Smartphone, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { destinoDaRota, DOMINIO_APP } from "@/config/rotas-app";
+import { caminhoInterno, destinoDaRota, DOMINIO_APP } from "@/config/rotas-app";
 import { isMarketingPath } from "@/lib/app-mode";
 
 /**
@@ -22,12 +22,19 @@ function noApp(): boolean {
   return document.documentElement.getAttribute("data-app") === "1";
 }
 
+const ESPERA_APP_MS = 800;
+
 /** Abre a URL no navegador do sistema (nunca dentro do próprio app). */
 async function abrirNoNavegador(url: string): Promise<void> {
   const w = window as Janela;
   // App Expo (iPhone e Android): o app escuta esta mensagem e abre o navegador do sistema.
   if (w.ReactNativeWebView?.postMessage) {
     w.ReactNativeWebView.postMessage(JSON.stringify({ tipo: "abrir-navegador", url }));
+    // O app antigo não escuta a mensagem (sem onMessage): sem resposta em 800 ms, abre na própria tela
+    // para a pessoa nunca ficar presa. A página só descarrega se o navegador do sistema NÃO abriu.
+    window.setTimeout(() => {
+      if (document.visibilityState === "visible") window.location.href = caminhoInterno(url);
+    }, ESPERA_APP_MS);
     return;
   }
   window.open(url, "_blank", "noopener");

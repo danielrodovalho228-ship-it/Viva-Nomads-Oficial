@@ -28,8 +28,8 @@ const exato = (caminho: string): Regra => ({ caminho, abaixo: false });
 const ramo = (caminho: string): Regra => ({ caminho, abaixo: true });
 
 /**
- * Telas do app. Decisão do Daniel: tudo fica no app, MENOS assinatura/planos
- * pagos, fechamento, simuladores e admin (e as páginas de marketing). A lista é
+ * Telas do app. Tudo fica no app, MENOS admin e as páginas de marketing
+ * (ferramentas, simuladores, assinatura e fechamento do proprietário entram no app). A lista é
  * explícita de propósito: uma tela nova só entra no app quando for colocada aqui.
  */
 export const ROTAS_APP: Regra[] = [
@@ -59,6 +59,13 @@ export const ROTAS_APP: Regra[] = [
   ramo("/dashboard/garantias"),
   ramo("/dashboard/comparar"),
   ramo("/dashboard/indicacoes"),
+  // Hotfix 08/10: estas telas do proprietário abrem DENTRO do app (antes caíam no aviso "Esta parte fica no site").
+  // TODO(bc09134e): só o checkout do pagamento sai para o navegador (janela por cima); hoje não há checkout ativo.
+  ramo("/dashboard/ferramentas"),
+  ramo("/dashboard/simulador"),
+  ramo("/dashboard/roi-imovel"),
+  ramo("/dashboard/assinatura"),
+  ramo("/dashboard/fechamento"),
   ramo("/dashboard/conta"), // perfil
   exato("/excluir-conta"), // as lojas exigem excluir a conta DENTRO do app
   exato("/privacidade"),
@@ -129,6 +136,16 @@ export function caminhoDoLink(link: string): string | null {
   // Mesmo critério do redirecionamento seguro: só caminho interno.
   if (!completo.startsWith("/") || completo.startsWith("//") || /[\u0000-\u001F\u007F\\]/.test(completo)) return null;
   return completo;
+}
+
+/** Só o caminho interno (mesmo domínio): evita abrir qualquer outro endereço na WebView. */
+export function caminhoInterno(url: string): string {
+  try {
+    const u = new URL(url);
+    return u.hostname === DOMINIO_APP || u.hostname === `www.${DOMINIO_APP}` ? `${u.pathname}${u.search}${u.hash}` : "/dashboard";
+  } catch {
+    return "/dashboard";
+  }
 }
 
 // ── Arquivos de verificação de domínio ──────────────────────────────────────
