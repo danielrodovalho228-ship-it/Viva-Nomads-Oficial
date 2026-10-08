@@ -287,7 +287,12 @@ function DocCard({ doc, onDone }: { doc: DocumentoPendente; onDone: () => void }
         </div>
       ) : (
         <div className="mt-4 flex flex-wrap items-center justify-end gap-2 border-t border-sage-200 pt-4">
-          {!podeAprovar && (
+          {doc.bloqueioAprovacao && (
+            <span className="mr-auto text-xs font-medium text-amber-700" data-testid="aprovar-bloqueado">
+              {doc.bloqueioAprovacao}
+            </span>
+          )}
+          {!podeAprovar && !doc.bloqueioAprovacao && (
             <span className="mr-auto text-xs text-muted">
               Marque todos os itens do checklist para aprovar.
             </span>
@@ -304,8 +309,8 @@ function DocCard({ doc, onDone }: { doc: DocumentoPendente; onDone: () => void }
           <Button
             variant="primary"
             size="sm"
-            disabled={busy || !podeAprovar}
-            title={podeAprovar ? undefined : "Conclua o checklist de conferência"}
+            disabled={busy || !podeAprovar || !!doc.bloqueioAprovacao}
+            title={doc.bloqueioAprovacao ?? (podeAprovar ? undefined : "Conclua o checklist de conferência")}
             onClick={aprovar}
           >
             <Check className="h-4 w-4" /> {busy ? "Salvando…" : "Aprovar"}

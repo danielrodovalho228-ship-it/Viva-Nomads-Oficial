@@ -12,6 +12,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { lerDocumento } from "@/lib/data/documento-servidor";
 import { preConferir, type PreConferencia } from "@/lib/moderacao/pre-conferencia";
 import { autorizacaoOk, exigeAutorizacao } from "@/lib/anuncio/operacao";
+import { motivoBloqueioAprovacao } from "@/lib/documento-pessoa";
 import { situacaoCnpj, titularPorOcr } from "@/lib/integrations/conferencia-doc";
 
 type ActionResult = { ok: boolean; demo?: boolean; error?: string };
@@ -39,6 +40,8 @@ export interface DocumentoPendente {
   autorizacaoTipo: VisualizacaoDoc;
   /** Nome do titular como o dono digitou. */
   titularInformado: string | null;
+  /** Motivo pelo qual Aprovar fica desabilitado (dono sem CPF/CNPJ válido); null = liberado. */
+  bloqueioAprovacao: string | null;
 }
 
 /**
@@ -119,6 +122,7 @@ export async function listDocumentosPendentes(): Promise<DocumentoPendente[]> {
     let operacao: string | null = null;
     let autorizacaoUrl: string | null = null;
     let autorizacaoPath: string | null = null;
+    let bloqueioAprovacao: string | null = null;
     if (adm) {
       const [docDono, { data: op }] = await Promise.all([
         lerDocumento(adm, ownerId),
@@ -126,6 +130,7 @@ export async function listDocumentosPendentes(): Promise<DocumentoPendente[]> {
           ? adm.from("properties").select("owner_id, ownership_type, sublease_authorized, sublease_doc_url").eq("id", r.property_id as string).maybeSingle() // consistency-ignore: service role, só depois de ehAdmin; o caminho vira link assinado de 10 min para o admin
           : Promise.resolve({ data: null }),
       ]);
+      bloqueioAprovacao = motivoBloqueioAprovacao(docDono);
       operacao = (op?.ownership_type as string | undefined) ?? null;
       if (op && exigeAutorizacao(operacao) && op.sublease_doc_url) {
         autorizacaoPath = op.sublease_doc_url as string;
@@ -163,6 +168,7 @@ export async function listDocumentosPendentes(): Promise<DocumentoPendente[]> {
       autorizacaoUrl,
       autorizacaoTipo: tipoVisualizacaoDoc(autorizacaoPath),
       titularInformado: titular,
+      bloqueioAprovacao,
     });
   }
   return out;
@@ -216,6 +222,12 @@ export async function moderarDocumento(
     .eq("document_status", "pending")
     .maybeSingle();
   if (!alvo?.document_path) return { ok: false, error: "Documento não encontrado na fila (ou sem permissão)." };
+  // Aprovar exige CPF (PF) / CNPJ (PJ) válidos do dono (#39). Lê com o service
+  // role — só depois de confirmado admin acima; o número não sai do servidor.
+  if (aprovado) {
+    const bloqueio = motivoBloqueioAprovacao(await lerDocumento(createAdminClient(), alvo.owner_id as string));
+    if (bloqueio) return { ok: false, error: bloqueio };
+  }
   let upd = supabase
     .from("qualification_checklists")
     .update({

@@ -5,7 +5,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { cnpjValido, cpfValido, documentoCompleto, documentoParaContrato, mascararCnpj, mascararCpf, MSG_DOCUMENTO, validarDocumento } from "./documento-pessoa.ts";
+import { cnpjValido, cpfValido, documentoCompleto, documentoParaContrato, motivoBloqueioAprovacao, mascararCnpj, mascararCpf, MSG_DOCUMENTO, validarDocumento } from "./documento-pessoa.ts";
 
 const ler = (p: string) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
 
@@ -75,4 +75,21 @@ test("o número inteiro não sai do servidor: a tela recebe só a máscara", () 
   assert.match(corpo, /cnpj: mascararCnpj\(p\.cnpj\)/);
   assert.match(corpo, /cpfRepresentante: mascararCpf\(p\.cpf_representante\)/);
   assert.doesNotMatch(ler("components/account/conta-secoes.tsx"), /from "@\/lib\/supabase\/client"[\s\S]*\.select\([^)]*cpf/);
+});
+
+test("admin: Aprovar documento bloqueado sem CPF (PF) ou CNPJ completo (PJ)", () => {
+  assert.match(motivoBloqueioAprovacao(null) ?? "", /CPF válido/);
+  assert.match(motivoBloqueioAprovacao({ person_type: "pf", cpf: "111.111.111-11" }) ?? "", /CPF válido/);
+  assert.match(motivoBloqueioAprovacao({ person_type: "pj", cnpj: "11222333000181", company_name: "", cpf_representante: "52998224725" }) ?? "", /CNPJ/);
+  assert.match(motivoBloqueioAprovacao({ person_type: "pj" }) ?? "", /CNPJ/);
+  assert.equal(motivoBloqueioAprovacao({ person_type: "pf", cpf: "52998224725" }), null);
+  assert.equal(motivoBloqueioAprovacao({ person_type: "pj", cnpj: "11222333000181", company_name: "Viva LTDA", cpf_representante: "52998224725" }), null);
+});
+
+test("admin: moderarDocumento confere o documento do dono ao aprovar; tela desabilita Aprovar", () => {
+  const srv = ler("lib/data/documentos-admin.ts");
+  assert.match(srv, /if \(aprovado\) \{[\s\S]*?motivoBloqueioAprovacao\(await lerDocumento\(createAdminClient\(\), alvo\.owner_id as string\)\)/);
+  const ui = ler("app/(dashboard)/admin/documentos/admin-documentos-client.tsx");
+  assert.match(ui, /doc\.bloqueioAprovacao/);
+  assert.match(ui, /disabled=\{busy \|\| !podeAprovar \|\| !!doc\.bloqueioAprovacao\}/);
 });
