@@ -21,9 +21,8 @@ import {
  *  2. Descer (Profissional → Gratuito, limite 1, com 6 no ar): NADA some e nada
  *     quebra — os 6 continuam publicados, a lista e o editor abrem, e um 7º não
  *     publica (a tela diz que não há vaga).
- * Falha conhecida (marcada, não escondida): depois de descer, nenhuma tela explica
- * que os anúncios acima do limite continuam no ar mas que não dá para publicar
- * novos (achado para o Otávio).
+ * 3. Depois de descer, a tela Assinatura explica que os anúncios acima do limite
+ *    continuam no ar mas que novos não publicam até ficar dentro do limite.
  */
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -99,14 +98,13 @@ test.describe("T35 — Troca de plano com imóvel cadastrado", () => {
     await page.context().close();
   });
 
-  test("FALHA CONHECIDA: depois de descer, a tela deveria explicar o que acontece com os anúncios acima do limite", async ({ browser }) => {
-    test.fail(true, "Falha conhecida: nenhuma tela avisa que os anúncios acima do limite continuam no ar e que novos não publicam.");
+  test("depois de descer, a Assinatura explica o que acontece com os anúncios acima do limite", async ({ browser }) => {
     const page = await entrar(browser, dono.email, senha);
-    await page.goto("/dashboard/imoveis", { waitUntil: "networkidle" });
-    const lista = await page.locator("body").innerText();
     await page.goto("/dashboard/assinatura", { waitUntil: "networkidle" });
-    const assinatura = await page.locator("body").innerText();
-    expect(lista + "\n" + assinatura).toMatch(/acima do limite|além do limite|continuam (no ar|publicados)|seu plano permite/i);
+    await expect(page.getByTestId("aviso-limite-plano-atual")).toContainText(
+      "Seus anúncios acima do limite do novo plano continuam no ar, mas você não poderá publicar novos até ficar dentro do limite."
+    );
+    await page.screenshot({ path: "tests/laboratorio/saida/t35-4-aviso-assinatura.png", fullPage: true });
     await page.context().close();
   });
 });

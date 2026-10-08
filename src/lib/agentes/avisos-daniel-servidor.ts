@@ -19,12 +19,16 @@ export function depsAvisos(admin: Admin, segredo: string): Deps {
     async pendentes() {
       const { data } = await admin
         .from("avisos_daniel")
-        .select("id, origem_ronda, assunto, corpo, prioridade, link")
+        .select("id, origem_ronda, assunto, corpo, prioridade, link, ronda:agentes_rondas(agente_slug)")
         .is("enviado_em", null)
         .lt("tentativas", MAX_TENTATIVAS)
         .order("criado_em", { ascending: true })
         .limit(50);
-      return (data ?? []) as Aviso[];
+      type Linha = Omit<Aviso, "origem_agente"> & { ronda: { agente_slug: string } | { agente_slug: string }[] | null };
+      return ((data ?? []) as unknown as Linha[]).map(({ ronda, ...a }) => ({
+        ...a,
+        origem_agente: (Array.isArray(ronda) ? ronda[0] : ronda)?.agente_slug ?? null,
+      }));
     },
     async emailsHoje() {
       const { count } = await admin

@@ -7,6 +7,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
   LIMITE_EMAILS_DIA,
+  linkAssinadoAprovar,
   linkDecisao,
   linkValido,
   processarAvisos,
@@ -160,10 +161,40 @@ test("primeiro aviso (apresentação) leva o link e nenhum link assinado", async
   assert.doesNotMatch(enviadas[0].html, /aprovar/);
 });
 
+test("link do e-mail não dá 404: até a tela /aprovar existir, aponta para a Central", () => {
+  const agora = new Date("2026-10-08T15:00:00Z");
+  const url = new URL(linkDecisao("11111111-1111-4111-8111-111111111111", agora, "https://vivanomads.com.br", SEGREDO));
+  assert.equal(url.pathname, "/admin/agentes");
+  assert.equal(url.search, "");
+});
+
+test("e-mail de aviso de ronda sem link próprio leva o link da Central", async () => {
+  const { d, enviadas } = deps([aviso(1)]);
+  await processarAvisos(d);
+  assert.match(enviadas[0].html, /href="https:\/\/vivanomads\.com\.br\/admin\/agentes"/);
+  assert.doesNotMatch(enviadas[0].html, /aprovar/);
+});
+
+test("Daniel só recebe e-mail do Moacir: aviso de ronda de outro agente não sai", async () => {
+  const { d, enviadas, erros, marcados } = deps([
+    aviso(1, { origem_agente: "otavio" }),
+    aviso(2, { origem_agente: "moacir" }),
+    aviso(3, { origem_agente: null, origem_ronda: null, link: "https://claude.ai/artifact/abc" }),
+  ]);
+  const r = await processarAvisos(d);
+  assert.equal(r.enviados, 2);
+  assert.equal(enviadas.length, 2);
+  assert.equal(enviadas.some((m) => m.subject.includes("Assunto 1")), false);
+  assert.equal("a1" in marcados, false);
+  assert.equal(erros.length, 1);
+  assert.equal(erros[0].id, "a1");
+  assert.equal(erros[0].contar, true);
+});
+
 test("link de decisão: só abre a tela, assinado, expira em 72 h, adulterado não vale", () => {
   const agora = new Date("2026-10-08T15:00:00Z");
   const ronda = "11111111-1111-4111-8111-111111111111";
-  const url = new URL(linkDecisao(ronda, agora, "https://vivanomads.com.br", SEGREDO));
+  const url = new URL(linkAssinadoAprovar(ronda, agora, "https://vivanomads.com.br", SEGREDO));
   assert.equal(url.pathname, "/admin/agentes/aprovar");
   const e = Number(url.searchParams.get("e"));
   const s = url.searchParams.get("s") ?? "";
