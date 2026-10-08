@@ -34,7 +34,7 @@ import {
 import { retratoEmTexto, type Retrato } from "./retrato.ts";
 import { CONTEXTO_VIVA, SLUG_GERENTE } from "./central.ts";
 import { investigar, systemGerente, type DepsGerente, type ModeloGerente } from "./gerente.ts";
-import { ehConversaSocial, extrairLembrar, respostaSocialSimulada, MAX_MEMORIAS_NO_PROMPT, type Memoria } from "./persona.ts";
+import { personaPermitida, ehConversaSocial, extrairLembrar, respostaSocialSimulada, MAX_MEMORIAS_NO_PROMPT, type Memoria } from "./persona.ts";
 import { blocoAoVivo, conferirPendencias, marcarResolvidos, REGRA_AO_VIVO, respostaSimuladaAgente, type Conferencia } from "./ao-vivo.ts";
 
 export interface Mensagem {
@@ -121,10 +121,11 @@ export async function responderChat(d: Deps, entrada: unknown): Promise<Resposta
   }
 
   // Persona e memória (0092): falha ao ler nunca derruba a conversa.
-  const [persona, memorias] = await Promise.all([
+  const [personaBruta, memorias] = await Promise.all([
     d.persona ? d.persona(slug).catch(() => null) : Promise.resolve(null),
     d.memorias ? d.memorias(slug, MAX_MEMORIAS_NO_PROMPT).catch((): Memoria[] => []) : Promise.resolve([] as Memoria[]),
   ]);
+  const persona = personaPermitida(slug, personaBruta);
   const social = ehConversaSocial(pergunta);
   const guardar = async (fatos: string[]) => {
     if (fatos.length && d.lembrar) await d.lembrar(slug, fatos).catch(() => undefined);

@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { ehConversaSocial, extrairLembrar, fatoSeguro, blocoPersonaMemoria, type Memoria } from "./persona.ts";
+import { personaPermitida, ehConversaSocial, extrairLembrar, fatoSeguro, blocoPersonaMemoria, type Memoria } from "./persona.ts";
 import { apagarMemoria, listarMemorias, responderChat, type Deps, type DepsMemoria } from "./motor.ts";
 import { systemChat, type Agente } from "./central.ts";
 import { systemGerente } from "./gerente.ts";
@@ -178,4 +178,34 @@ test("migração 0092: só admin (RLS), anon/authenticated sem acesso solto, lim
   assert.match(prod, /^commit;/m);
   assert.match(prod, /insert into supabase_migrations\.schema_migrations/);
   assert.match(prod, /'0092_[a-z0-9_]+'/);
+});
+
+test("trava: persona nunca vale para o slug 'viva' (chat, system e atendimento); agentes internos mantêm", async () => {
+  assert.equal(personaPermitida("viva", "Fala como mineiro"), null);
+  assert.equal(personaPermitida(" Viva ", "Fala como mineiro"), null);
+  assert.equal(personaPermitida("", "Fala como mineiro"), null);
+  assert.equal(personaPermitida("moacir", "Fala como mineiro"), "Fala como mineiro");
+  assert.equal(personaPermitida("moacir", "  "), null);
+
+  const viva = ag("viva", "Viva");
+  assert.ok(!systemChat({ ...viva, persona: "PERSONA-SECRETA-XYZ" }, [], [], "", []).includes("PERSONA-SECRETA-XYZ"));
+  assert.ok(systemChat({ ...ag("moacir", "Moacir"), persona: "PERSONA-SECRETA-XYZ" }, [], [], "", []).includes("PERSONA-SECRETA-XYZ"));
+
+  // Mesmo que a leitura do banco devolva texto para a Viva, o prompt do chat não leva persona.
+  const t = montar({ agentes: async () => [ag("viva", "Viva")], persona: async () => "PERSONA-SECRETA-XYZ" });
+  await responderChat(t.d, { slug: "viva", texto: "Bom dia!" });
+  assert.ok(t.systems.length > 0);
+  for (const s of t.systems) assert.ok(!s.includes("PERSONA-SECRETA-XYZ"));
+});
+
+test("atendimento a clientes não usa persona e mantém o rodapé automático", () => {
+  const auto = readFileSync(new URL("../atendimento/autonomo.ts", import.meta.url), "utf8");
+  assert.ok(!/persona/i.test(auto));
+  assert.match(auto, /Resposta automática da Viva/);
+});
+
+test("Central: marca fixa 'agente de IA' na lista, no cabeçalho do chat e na reunião", () => {
+  const src = readFileSync(new URL("../../app/(dashboard)/admin/agentes/central-client.tsx", import.meta.url), "utf8");
+  assert.match(src, /agente de IA/);
+  assert.ok((src.match(/<MarcaIA \/>/g) ?? []).length >= 5);
 });

@@ -10,6 +10,16 @@ export const MAX_FATOS_POR_MENSAGEM = 3;
 /** Teto de fatos guardados por agente: a memória é do Daniel, não um arquivo morto. */
 export const MAX_MEMORIAS_POR_AGENTE = 200;
 
+/** A Viva (atendimento a clientes) nunca tem persona: responde como assistente virtual, com o rodapé automático. */
+export const SLUG_SEM_PERSONA = "viva";
+export const MARCA_AGENTE_IA = "agente de IA";
+
+/** Persona só vale para agentes internos. Para a Viva (ou slug vazio) volta sempre null, mesmo que o banco tenha texto. */
+export function personaPermitida(slug: string, persona: string | null | undefined): string | null {
+  if (!slug || slug.trim().toLowerCase() === SLUG_SEM_PERSONA) return null;
+  return persona?.trim() ? persona : null;
+}
+
 export interface Memoria {
   id: string;
   agente_slug: string;

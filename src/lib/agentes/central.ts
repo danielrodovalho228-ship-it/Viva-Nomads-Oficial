@@ -4,7 +4,7 @@
   Imports relativos com .ts: este arquivo roda direto no node.
 */
 
-import { blocoPersonaMemoria, type Memoria } from "./persona.ts";
+import { blocoPersonaMemoria, personaPermitida, type Memoria } from "./persona.ts";
 
 export type Esquadrao = "comando" | "operacoes" | "tecnologia" | "crescimento" | "financas" | "plataforma";
 
@@ -307,7 +307,7 @@ ${rondasTexto}
 Ordens do Daniel ainda abertas para você:
 ${blocoOrdens(ordens)}
 ${retrato ? `\n${retrato}\n` : ""}
-${blocoPersonaMemoria(a.persona, memorias)}
+${blocoPersonaMemoria(personaPermitida(a.slug, a.persona), memorias)}
 
 ${REGRAS}
 ${REGRA_CEO}${retrato ? `\n${REGRA_RETRATO}` : ""}${gerente ? `\n${REGRA_BOLETIM}` : ""}`;

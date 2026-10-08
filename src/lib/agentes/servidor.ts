@@ -14,7 +14,7 @@ import { ultimaPorAgente } from "@/lib/agentes/painel";
 import { consultasDaArea, numeroMigracao, type Conferencia, type MigracaoAplicada } from "@/lib/agentes/ao-vivo";
 import { chamadosEsperandoEquipe } from "@/lib/atendimento/escalonamento";
 import { systemChat } from "@/lib/agentes/central";
-import { MAX_MEMORIAS_POR_AGENTE, type Memoria } from "@/lib/agentes/persona";
+import { MAX_MEMORIAS_POR_AGENTE, personaPermitida, type Memoria } from "@/lib/agentes/persona";
 import type { Retrato } from "@/lib/agentes/retrato";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -81,8 +81,9 @@ export async function depsReais(): Promise<Deps | null> {
     },
     // 0092: leitura tolerante — antes da migração entrar, devolve vazio e a conversa segue normal.
     async persona(slug) {
+      if (personaPermitida(slug, "x") === null) return null;
       const { data, error } = await supabase.from("agentes").select("persona").eq("slug", slug).maybeSingle();
-      return error ? null : ((data as { persona?: string | null } | null)?.persona ?? null);
+      return error ? null : personaPermitida(slug, (data as { persona?: string | null } | null)?.persona);
     },
     async memorias(slug, n) {
       const { data, error } = await supabase.from("agentes_memoria").select("id, agente_slug, fato, criado_em").eq("agente_slug", slug).order("criado_em", { ascending: false }).limit(n);
