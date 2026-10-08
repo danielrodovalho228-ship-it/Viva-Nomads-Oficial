@@ -107,9 +107,9 @@ export function MyPropertiesClient({ properties: real, prontidao = {} }: { prope
                       {STATUS_META[p.status].label}
                     </span>
                     <span className="inline-flex items-center gap-1 rounded-full border border-sage-200 px-2.5 py-1 text-xs font-medium text-ink">
-                      {p.ownershipType === "subleased" ? (
+                      {p.ownershipType !== "own" ? (
                         <>
-                          <Handshake className="h-3.5 w-3.5 text-sage" /> Operado
+                          <Handshake className="h-3.5 w-3.5 text-sage" /> {p.ownershipType === "managed" ? "Administrado" : "Operado"}
                         </>
                       ) : (
                         <>

@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { taxaDoContrato } from "@/config/planos";
-import { cpfValido, documentoParaContrato, MSG_DOCUMENTO } from "@/lib/documento-pessoa";
+import { documentoParaContrato, MSG_DOCUMENTO } from "@/lib/documento-pessoa";
 import { lerDocumento } from "@/lib/data/documento-servidor";
 
 /**
@@ -65,7 +65,8 @@ export async function carregarFechamento(leadId: unknown): Promise<DadosFechamen
   // Cadastro confiável: contrato e cobrança só com o documento das DUAS partes.
   const docDono = documentoParaContrato(docDonoPerfil);
   if (!docDono) return { status: 409, error: MSG_DOCUMENTO.fecharDono };
-  if (!cpfValido(docInquilino?.cpf)) return { status: 409, error: MSG_DOCUMENTO.fecharInquilino };
+  // Inquilino pessoa jurídica fecha com CNPJ + razão social + CPF do representante.
+  if (!documentoParaContrato(docInquilino)) return { status: 409, error: MSG_DOCUMENTO.fecharInquilino };
 
   return {
     leadId: lead.id as string,

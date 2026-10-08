@@ -63,7 +63,7 @@ test("travas: aceitar candidatura, assinar plano e fechar contrato exigem o docu
   assert.match(ass, /cpfCnpj: documento,/);
   const fech = ler("lib/data/fechamento-servidor.ts");
   assert.match(fech, /if \(!docDono\) return \{ status: 409, error: MSG_DOCUMENTO\.fecharDono \};/);
-  assert.match(fech, /if \(!cpfValido\(docInquilino\?\.cpf\)\) return \{ status: 409, error: MSG_DOCUMENTO\.fecharInquilino \};/);
+  assert.match(fech, /if \(!documentoParaContrato\(docInquilino\)\) return \{ status: 409, error: MSG_DOCUMENTO\.fecharInquilino \};/);
   assert.match(MSG_DOCUMENTO.aceitar, /Conta → Documento/);
 });
 

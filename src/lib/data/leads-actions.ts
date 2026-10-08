@@ -11,7 +11,7 @@ import { formatDocNumber } from "@/lib/documents";
 import type { Property } from "@/lib/types";
 import { erroBancoPT } from "@/lib/erros-banco";
 import { lerDocumento, temDocumento } from "@/lib/data/documento-servidor";
-import { cpfValido, documentoCompleto, MSG_DOCUMENTO } from "@/lib/documento-pessoa";
+import { documentoCompleto, MSG_DOCUMENTO } from "@/lib/documento-pessoa";
 
 interface ActionResult {
   ok: boolean;
@@ -261,7 +261,7 @@ export async function getFechamentoContext(
     if (admin) {
       const [docDono, docInq] = await Promise.all([lerDocumento(admin, user.id), lerDocumento(admin, lead.tenant_id as string)]);
       if (!documentoCompleto(docDono)) documentoPendente = { quem: "dono", mensagem: MSG_DOCUMENTO.fecharDono };
-      else if (!cpfValido(docInq?.cpf)) documentoPendente = { quem: "inquilino", mensagem: MSG_DOCUMENTO.fecharInquilino };
+      else if (!documentoCompleto(docInq)) documentoPendente = { quem: "inquilino", mensagem: MSG_DOCUMENTO.fecharInquilino };
       const { data: t } = await admin
         .from("profiles")
         .select("full_name")

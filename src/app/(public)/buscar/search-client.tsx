@@ -302,7 +302,7 @@ export function SearchClient({ properties }: { properties: Property[] }) {
       if (workLocatedOnly && !p.tagWorkLocated) return false;
       if (invoiceOnly && !p.issuesInvoice) return false;
       if (insuranceOnly && !p.acceptsInsurance) return false;
-      if (operatedOnly && !(p.ownershipType === "subleased" && p.subleaseAuthorized)) return false;
+      if (operatedOnly && !(p.ownershipType !== "own" && p.subleaseAuthorized)) return false;
       return true;
     });
     if (sort === "price-asc") list = [...list].sort((a, b) => a.monthlyPrice - b.monthlyPrice);

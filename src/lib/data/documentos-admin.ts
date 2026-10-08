@@ -8,6 +8,11 @@ import { ehAdmin } from "@/lib/data/admin-guard";
 import { textoEmail } from "@/lib/notifications/texto-seguro";
 import { logModeracao } from "@/lib/data/moderacao-log";
 import { erroBancoPT } from "@/lib/erros-banco";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { lerDocumento } from "@/lib/data/documento-servidor";
+import { preConferir, type PreConferencia } from "@/lib/moderacao/pre-conferencia";
+import { autorizacaoOk, exigeAutorizacao } from "@/lib/anuncio/operacao";
+import { situacaoCnpj, titularPorOcr } from "@/lib/integrations/conferencia-doc";
 
 type ActionResult = { ok: boolean; demo?: boolean; error?: string };
 
@@ -24,7 +29,16 @@ export interface DocumentoPendente {
   criadoEm: string | null;
   docUrl: string | null; // URL assinada curta para o admin abrir (nunca pública)
   docTipo: VisualizacaoDoc; // como exibir inline (imagem | pdf | outro)
-  duplicado: number; // quantos OUTROS cadastros têm o MESMO arquivo (sinal de fraude)
+  duplicado: number; // quantas OUTRAS contas enviaram o MESMO arquivo (sinal de fraude)
+  /** Pré-conferência automática ("Parece OK" / "Atenção: …"). Só ajuda: quem decide é o admin. */
+  preConferencia: PreConferencia | null;
+  /** "own" | "subleased" | "managed" do imóvel ligado. */
+  operacao: string | null;
+  /** Autorização / contrato de administração / procuração (URL assinada curta). */
+  autorizacaoUrl: string | null;
+  autorizacaoTipo: VisualizacaoDoc;
+  /** Nome do titular como o dono digitou. */
+  titularInformado: string | null;
 }
 
 /**
@@ -39,10 +53,17 @@ export async function listDocumentosPendentes(): Promise<DocumentoPendente[]> {
   if (!supabase) return [];
   const { data } = await supabase
     .from("qualification_checklists")
-    .select("id, owner_id, property_id, document_path, document_hash_sha256, created_at")
+    .select("id, owner_id, property_id, document_path, document_hash_sha256, created_at, formulario")
     .eq("document_status", "pending")
     .order("created_at", { ascending: true })
     .limit(200);
+
+  // Pré-conferência lê CPF/CNPJ do dono e o documento da operação (fora do grant
+  // do usuário) com o service role — SÓ depois de confirmar que quem pede é admin.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const adm = user && (await ehAdmin(supabase, user.id)) ? createAdminClient() : null;
 
   // Um item por documento: re-salvar a qualificação repete o documento em
   // outra linha (0072) — mostra só a mais recente de cada (dono, imóvel, arquivo).
@@ -81,7 +102,7 @@ export async function listDocumentosPendentes(): Promise<DocumentoPendente[]> {
         .from("qualification_checklists")
         .select("id", { count: "exact", head: true })
         .eq("document_hash_sha256", r.document_hash_sha256 as string)
-        .neq("id", r.id as string);
+        .neq("owner_id", ownerId); // o próprio dono re-salvando (0072) não é fraude
       duplicado = count ?? 0;
     }
 
@@ -91,6 +112,40 @@ export async function listDocumentosPendentes(): Promise<DocumentoPendente[]> {
         .from(DOCS_BUCKET)
         .createSignedUrl(r.document_path as string, SIGNED_TTL);
       docUrl = signed?.signedUrl ?? null;
+    }
+    // ── Pré-conferência automática (só com o service role, já confirmado admin) ──
+    const titular = ((r.formulario as { elig?: { titularDocumento?: unknown } } | null)?.elig?.titularDocumento ?? null) as string | null;
+    let preConferencia: PreConferencia | null = null;
+    let operacao: string | null = null;
+    let autorizacaoUrl: string | null = null;
+    let autorizacaoPath: string | null = null;
+    if (adm) {
+      const [docDono, { data: op }] = await Promise.all([
+        lerDocumento(adm, ownerId),
+        r.property_id
+          ? adm.from("properties").select("owner_id, ownership_type, sublease_authorized, sublease_doc_url").eq("id", r.property_id as string).maybeSingle() // consistency-ignore: service role, só depois de ehAdmin; o caminho vira link assinado de 10 min para o admin
+          : Promise.resolve({ data: null }),
+      ]);
+      operacao = (op?.ownership_type as string | undefined) ?? null;
+      if (op && exigeAutorizacao(operacao) && op.sublease_doc_url) {
+        autorizacaoPath = op.sublease_doc_url as string;
+        const { data: s } = await adm.storage.from(DOCS_BUCKET).createSignedUrl(autorizacaoPath, SIGNED_TTL);
+        autorizacaoUrl = s?.signedUrl ?? null;
+      }
+      const [cnpj, ocr] = await Promise.all([
+        docDono?.person_type === "pj" && docDono.cnpj ? situacaoCnpj(docDono.cnpj) : Promise.resolve({ valor: null, demo: false }),
+        titularPorOcr(docUrl, titular),
+      ]);
+      preConferencia = preConferir({
+        documentoDono: docDono,
+        nomeConta: nomeCompleto ?? null,
+        titularInformado: titular,
+        duplicado,
+        operacao,
+        autorizacaoAnexada: op ? autorizacaoOk(op) : false,
+        cnpjSituacao: cnpj.valor,
+        ocrTitular: ocr.valor,
+      });
     }
     out.push({
       id: r.id as string,
@@ -103,6 +158,11 @@ export async function listDocumentosPendentes(): Promise<DocumentoPendente[]> {
       docUrl,
       docTipo: tipoVisualizacaoDoc(r.document_path as string | null),
       duplicado,
+      preConferencia,
+      operacao,
+      autorizacaoUrl,
+      autorizacaoTipo: tipoVisualizacaoDoc(autorizacaoPath),
+      titularInformado: titular,
     });
   }
   return out;

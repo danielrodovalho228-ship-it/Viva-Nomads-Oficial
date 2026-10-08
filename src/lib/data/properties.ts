@@ -329,6 +329,10 @@ export async function getPropertyForOwner(id: string): Promise<Property | undefi
       .maybeSingle();
     if (!data) return SAMPLE_PROPERTIES.find((p) => p.id === id);
     const base = rowToProperty(data as unknown as PropertyRow);
+    // 0091: só o "tem documento" (nunca o caminho). Sem a migração, fica indefinido.
+    const { data: aut } = await supabase.from("properties").select("autorizacao_anexada").eq("id", id).eq("owner_id", user.id).maybeSingle();
+    if (aut && typeof (aut as { autorizacao_anexada?: unknown }).autorizacao_anexada === "boolean")
+      base.autorizacaoAnexada = (aut as { autorizacao_anexada: boolean }).autorizacao_anexada;
     return enrichProperty(supabase, base, user.id);
   } catch {
     return undefined;

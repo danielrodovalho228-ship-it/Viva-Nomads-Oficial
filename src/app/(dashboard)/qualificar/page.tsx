@@ -397,6 +397,23 @@ export default function QualificationChecklistPage() {
           </label>
           {docErro && <p className="text-sm text-red-600">{docErro}</p>}
 
+          {/* Pré-conferência: o nome do titular escrito no documento (a equipe compara com a conta). */}
+          <label className="block">
+            <span className="mb-1 block text-sm font-medium text-ink">Nome do titular no documento</span>
+            <input
+              type="text"
+              className="input"
+              maxLength={150}
+              value={elig.titularDocumento ?? ""}
+              onChange={(e) => setElig((s) => ({ ...s, titularDocumento: e.target.value }))}
+              placeholder="Como está escrito na matrícula ou no contrato"
+              autoComplete="off"
+            />
+            <span className="mt-1 block text-xs text-muted">
+              Se o imóvel é de outra pessoa (sublocação ou administração), escreva o nome do proprietário.
+            </span>
+          </label>
+
           {/* Dica de foto legível — JPG/PNG já são aceitos; o que trava a
               conferência é a imagem ruim, não o formato. */}
           <p className="text-xs text-muted">

@@ -1,5 +1,6 @@
 "use server";
 
+import { caminhoDoDono, operacaoValida } from "@/lib/anuncio/operacao";
 import { createClient } from "@/lib/supabase/server";
 import { dentroDoLimite, HORA, DIA as DIA_SEGUNDOS } from "@/lib/limites";
 import { textoEmail, textoPlano } from "@/lib/notifications/texto-seguro";
@@ -54,6 +55,12 @@ import { validarGarantia, type GarantiaContrato } from "@/lib/guarantees";
 type ActionResult = { ok: boolean; demo?: boolean; id?: string; error?: string };
 
 /** Persiste o checklist de qualificação (Fase 4). */
+/** Nome do titular digitado pelo dono (só texto, até 150 caracteres). */
+function limparTitular(v: unknown): string | undefined {
+  const t = String(v ?? "").replace(/[<>]/g, "").replace(/\s+/g, " ").trim().slice(0, 150);
+  return t || undefined;
+}
+
 export async function saveQualification(
   elig: EligibilityState,
   quality: QualityState,
@@ -120,7 +127,7 @@ export async function saveQualification(
   // O estado completo da tela (0072) — para o /qualificar abrir preenchido.
   let { data, error } = await supabase
     .from("qualification_checklists")
-    .insert({ ...linha, formulario: { versao: 1, elig, quality } })
+    .insert({ ...linha, formulario: { versao: 1, elig: { ...elig, titularDocumento: limparTitular(elig.titularDocumento) }, quality } })
     .select("id")
     .single();
   // Sem a 0072 aplicada a coluna não existe: grava sem o formulário.
@@ -217,6 +224,7 @@ export async function carregarQualificacao(
     habitable: form?.elig?.habitable ?? !!data.habitable,
     isOwnerOrAgent: form?.elig?.isOwnerOrAgent ?? !!data.is_owner_or_agent,
     hasDocument: temDocumento,
+    titularDocumento: typeof form?.elig?.titularDocumento === "string" ? form.elig.titularDocumento : undefined,
     condoAllows: (form?.elig?.condoAllows ??
       (condo === "yes" || condo === "no" || condo === "unknown" ? condo : "")) as EligibilityState["condoAllows"],
   };
@@ -285,7 +293,7 @@ export interface PropertyInput {
   tagHomeOffice?: boolean;
   tagWorkLocated?: boolean;
   tagCondoApproved?: boolean;
-  ownershipType?: "own" | "subleased";
+  ownershipType?: "own" | "subleased" | "managed";
   subleaseAuthorized?: boolean;
   subleaseDocUrl?: string;
   utilitiesMode?: "fixed" | "real";
@@ -399,10 +407,11 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
       tag_home_office: input.tagHomeOffice ?? false,
       tag_work_located: input.tagWorkLocated ?? false,
       tag_condo_approved: input.tagCondoApproved ?? false,
-      ownership_type: input.ownershipType ?? "own",
+      ownership_type: operacaoValida(input.ownershipType) ? input.ownershipType : "own",
       sublease_authorized:
         (input.ownershipType ?? "own") === "own" ? true : input.subleaseAuthorized ?? false,
-      sublease_doc_url: input.subleaseDocUrl ?? null,
+      // Só um arquivo da PASTA DO DONO no bucket privado (nunca link externo/preview local).
+      sublease_doc_url: caminhoDoDono(input.subleaseDocUrl, user.id) ? input.subleaseDocUrl! : null,
       utilities_mode: input.utilitiesMode ?? "fixed",
       utilities_estimate: input.utilitiesEstimate ?? 0,
       issues_invoice: input.issuesInvoice ?? false,
@@ -622,13 +631,13 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
       tag_home_office: input.tagHomeOffice ?? false,
       tag_work_located: input.tagWorkLocated ?? false,
       tag_condo_approved: input.tagCondoApproved ?? false,
-      ownership_type: input.ownershipType ?? "own",
+      ownership_type: operacaoValida(input.ownershipType) ? input.ownershipType : "own",
       sublease_authorized:
         (input.ownershipType ?? "own") === "own" ? true : input.subleaseAuthorized ?? false,
-      // Só grava o documento de sublocação quando o dono enviou um nesta edição.
+      // Só grava o documento da operação quando o dono enviou um nesta edição.
       // A edição não recarrega esse campo — mandar null por ausência APAGAVA o
       // documento a cada edição (mesmo padrão do risco do endereço).
-      ...(input.subleaseDocUrl !== undefined ? { sublease_doc_url: input.subleaseDocUrl } : {}),
+      ...(caminhoDoDono(input.subleaseDocUrl, user.id) ? { sublease_doc_url: input.subleaseDocUrl } : {}),
       utilities_mode: input.utilitiesMode ?? "fixed",
       utilities_estimate: input.utilitiesEstimate ?? 0,
       issues_invoice: input.issuesInvoice ?? false,

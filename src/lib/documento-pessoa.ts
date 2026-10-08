@@ -108,5 +108,5 @@ export const MSG_DOCUMENTO = {
   aceitar: "Antes de aceitar uma candidatura, informe seu CPF (ou o CNPJ da empresa) em Conta → Documento. Ele vai no contrato.",
   assinar: "Antes de assinar o plano, informe seu CPF (ou o CNPJ da empresa) em Conta → Documento. Ele vai na cobrança e na nota.",
   fecharDono: "Para fechar o contrato, informe seu CPF (ou o CNPJ da empresa) em Conta → Documento.",
-  fecharInquilino: "O inquilino ainda não informou o CPF. Peça para ele preencher em Conta → Documento; o contrato precisa do documento das duas partes.",
+  fecharInquilino: "O inquilino ainda não informou o CPF (ou o CNPJ da empresa). Peça para ele preencher em Conta → Documento; o contrato precisa do documento das duas partes.",
 } as const;
