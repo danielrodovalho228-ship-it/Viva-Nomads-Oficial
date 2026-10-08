@@ -34,6 +34,7 @@ import {
 import { retratoEmTexto, type Retrato } from "./retrato.ts";
 import { CONTEXTO_VIVA, SLUG_GERENTE } from "./central.ts";
 import { investigar, systemGerente, type DepsGerente, type ModeloGerente } from "./gerente.ts";
+import { ehConversaSocial, extrairLembrar, respostaSocialSimulada, MAX_MEMORIAS_NO_PROMPT, type Memoria } from "./persona.ts";
 import { blocoAoVivo, conferirPendencias, marcarResolvidos, REGRA_AO_VIVO, respostaSimuladaAgente, type Conferencia } from "./ao-vivo.ts";
 
 export interface Mensagem {
@@ -61,6 +62,12 @@ export interface Deps {
   aoVivo?(slug: string): Promise<{ dados: string; conferencia: Conferencia } | null>;
   /** Laboratório (sem IA): resposta montada pelas regras, sem chamar o modelo. */
   chatSimulado?: boolean;
+  /** Persona do agente (0092). null = vazia ou coluna ainda não existe. */
+  persona?(slug: string): Promise<string | null>;
+  /** Últimas memórias do agente (0092), mais recentes primeiro. [] se a tabela ainda não existe. */
+  memorias?(slug: string, n: number): Promise<Memoria[]>;
+  /** Guarda fatos que o Daniel contou. Já chegam filtrados (sem saúde, finanças, documentos, terceiros). */
+  lembrar?(slug: string, fatos: string[]): Promise<void>;
   /** Moacir gerente: modelo com ferramentas + consultas ao vivo. Sem ele, o Moacir conversa como os outros. */
   gerente?: { modelo: ModeloGerente; ferramentas: DepsGerente };
 }
@@ -113,16 +120,29 @@ export async function responderChat(d: Deps, entrada: unknown): Promise<Resposta
     return { status: 200, body: { resposta: RESPOSTA_APROVACAO, aprovacao: false } };
   }
 
-  // Moacir gerente: investiga (banco ao vivo, pergunta aos colegas, dispara quem faz).
-  if (slug === SLUG_GERENTE && d.gerente) {
+  // Persona e memória (0092): falha ao ler nunca derruba a conversa.
+  const [persona, memorias] = await Promise.all([
+    d.persona ? d.persona(slug).catch(() => null) : Promise.resolve(null),
+    d.memorias ? d.memorias(slug, MAX_MEMORIAS_NO_PROMPT).catch((): Memoria[] => []) : Promise.resolve([] as Memoria[]),
+  ]);
+  const social = ehConversaSocial(pergunta);
+  const guardar = async (fatos: string[]) => {
+    if (fatos.length && d.lembrar) await d.lembrar(slug, fatos).catch(() => undefined);
+  };
+
+  // Moacir gerente: só investiga quando a mensagem é sobre o projeto (banco ao vivo, pergunta aos colegas, dispara quem faz).
+  // Conversa social cai no chat comum abaixo, que responde direto com a persona.
+  if (slug === SLUG_GERENTE && d.gerente && !social) {
     await d.gravar([{ agente_slug: slug, papel: "daniel", autor_slug: null, texto: pergunta }]);
     let out: { resposta: string; trilha: { autor: string; texto: string }[] };
     try {
-      out = await investigar(pergunta, systemGerente({ briefing: agente.briefing, agora: new Date(), contexto: CONTEXTO_VIVA }), d.gerente.modelo, d.gerente.ferramentas);
+      out = await investigar(pergunta, systemGerente({ briefing: agente.briefing, agora: new Date(), contexto: CONTEXTO_VIVA, persona, memorias }), d.gerente.modelo, d.gerente.ferramentas);
     } catch {
       return { status: 502, body: { erro: FALHA_MSG } };
     }
-    const resposta = (esperaDanielIndevida(out.resposta) ? `${out.resposta}\n${NOTA_CEO}` : out.resposta).slice(0, 8000);
+    const { texto: semLembrar, fatos } = extrairLembrar(out.resposta);
+    await guardar(fatos);
+    const resposta = (esperaDanielIndevida(semLembrar) ? `${semLembrar}\n${NOTA_CEO}` : semLembrar).slice(0, 8000);
     // Cada passo vira uma linha própria (inserts em sequência: ordem de criação = ordem da conversa).
     for (const p of out.trilha) await d.gravar([{ agente_slug: slug, papel: "agente", autor_slug: p.autor, texto: p.texto.slice(0, 8000) }]);
     await d.gravar([{ agente_slug: slug, papel: "agente", autor_slug: slug, texto: resposta }]);
@@ -141,12 +161,13 @@ export async function responderChat(d: Deps, entrada: unknown): Promise<Resposta
     return { status: 200, body: { resposta: honesta, acao } };
   }
 
+  // Cumprimento não gera relatório: sem retrato nem dados ao vivo no prompt.
   const [rondasBrutas, ordens, hist, retrato, aoVivo] = await Promise.all([
     d.rondas(slug, 3),
     d.ordensAbertas(slug),
     d.historico(slug, 10),
-    d.retrato().catch(() => null),
-    d.aoVivo ? d.aoVivo(slug).catch(() => null) : Promise.resolve(null),
+    social ? Promise.resolve(null) : d.retrato().catch(() => null),
+    d.aoVivo && !social ? d.aoVivo(slug).catch(() => null) : Promise.resolve(null),
   ]);
   // Pendência da ronda que o banco já mostra resolvida vem marcada (o modelo não repete como aberta).
   const rondas = aoVivo ? marcarResolvidos(rondasBrutas, aoVivo.conferencia) : rondasBrutas;
@@ -154,21 +175,28 @@ export async function responderChat(d: Deps, entrada: unknown): Promise<Resposta
   await d.gravar([{ agente_slug: slug, papel: "daniel", autor_slug: null, texto: pergunta }]);
   let resposta: string;
   const agora = new Date();
-  if (d.chatSimulado) {
+  if (d.chatSimulado && social) {
+    resposta = respostaSocialSimulada(agente.nome);
+  } else if (d.chatSimulado) {
     resposta = aoVivo
       ? respostaSimuladaAgente({ nome: agente.nome, ultima: rondasBrutas[0] ?? null, conferencia: aoVivo.conferencia, agora })
       : "Não consegui ler os dados ao vivo agora (laboratório).";
   } else {
     const textoRondas = rondasBrutas.map((r) => `${r.resumo} ${(Array.isArray(r.achados) ? r.achados : []).map((a) => `${a?.titulo ?? ""} ${a?.detalhe ?? ""}`).join(" ")}`).join("\n");
-    const extra = aoVivo
+    const extra = social
+      ? ""
+      : aoVivo
       ? `\n\n${blocoAoVivo(aoVivo.dados, conferirPendencias(`${textoRondas}\n${ordens.map((o) => o.texto).join("\n")}`, aoVivo.conferencia), agora)}\n\n${REGRA_AO_VIVO}`
       : "\n\n- Não consegui ler os dados ao vivo agora: avise que a informação é da sua última ronda e diga a hora dela.";
     try {
-      resposta = (await d.modelo({ system: `${systemChat(agente, rondas, ordens, retratoEmTexto(retrato))}${extra}`, messages: montarMensagens(hist, pergunta), maxTokens: MAX_TOKENS_CHAT, json: false })).trim();
+      resposta = (await d.modelo({ system: `${systemChat({ ...agente, persona }, rondas, ordens, retratoEmTexto(retrato), memorias)}${extra}`, messages: montarMensagens(hist, pergunta), maxTokens: MAX_TOKENS_CHAT, json: false })).trim();
     } catch {
       return { status: 502, body: { erro: FALHA_MSG } };
     }
   }
+  const lembrado = extrairLembrar(resposta);
+  resposta = lembrado.texto;
+  await guardar(lembrado.fatos);
   if (!resposta) resposta = "Não consegui responder agora. Vou conferir na próxima ronda.";
   // Rede de segurança: se o modelo prometeu agir, troca pela resposta honesta.
   const prometeu = prometeAcao(resposta);
@@ -324,4 +352,29 @@ export async function dispararEncaminhamentos(d: DepsEncaminhamento): Promise<Re
     }
   }
   return out;
+}
+
+// ── Memória: "O que <nome> sabe sobre você" (listar e apagar) ───────────────────
+export interface DepsMemoria {
+  adminId(): Promise<string | null>;
+  listar(slug: string): Promise<Memoria[]>;
+  apagar(id: string): Promise<boolean>;
+}
+
+const RE_SLUG = /^[a-z0-9_-]{1,40}$/;
+const RE_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Só admin; o slug é validado antes de ir ao banco. */
+export async function listarMemorias(d: DepsMemoria, slug: unknown): Promise<Resposta> {
+  if (!(await d.adminId())) return { status: 403, body: { erro: "Só admin." } };
+  if (typeof slug !== "string" || !RE_SLUG.test(slug)) return { status: 400, body: { erro: "Agente inválido." } };
+  return { status: 200, body: { memorias: await d.listar(slug) } };
+}
+
+/** Só admin; o id é validado (uuid) e a RLS confere de novo no banco. */
+export async function apagarMemoria(d: DepsMemoria, entrada: unknown): Promise<Resposta> {
+  if (!(await d.adminId())) return { status: 403, body: { erro: "Só admin." } };
+  const { id } = (entrada ?? {}) as { id?: unknown };
+  if (typeof id !== "string" || !RE_UUID.test(id)) return { status: 400, body: { erro: "Item inválido." } };
+  return (await d.apagar(id)) ? { status: 200, body: { ok: true } } : { status: 404, body: { erro: "Não encontrei esse item." } };
 }

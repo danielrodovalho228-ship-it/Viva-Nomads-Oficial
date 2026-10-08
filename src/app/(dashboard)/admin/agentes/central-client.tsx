@@ -708,6 +708,8 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
             </div>
           </div>
 
+          <MemoriaAgente key={a.slug} slug={a.slug} nome={a.nome} />
+
           <div className="rounded-2xl border border-white/10 bg-[#0B1430]/80 p-4">
             <h3 className="text-sm font-bold text-white">Ordens para {a.nome}</h3>
             {ordens.length === 0 ? (
@@ -907,6 +909,65 @@ function Sala({ dados, porSlug }: { dados: DadosCentral; porSlug: Record<string,
           </ul>
         )}
       </div>
+    </div>
+  );
+}
+
+// ── Memória: "O que <nome> sabe sobre você" ──────────────────────────────────
+function MemoriaAgente({ slug, nome }: { slug: string; nome: string }) {
+  const [aberto, setAberto] = useState(false);
+  const [itens, setItens] = useState<{ id: string; fato: string }[] | null>(null);
+  const [erro, setErro] = useState<string | null>(null);
+
+  async function abrir() {
+    const vaiAbrir = !aberto;
+    setAberto(vaiAbrir);
+    if (!vaiAbrir) return;
+    setErro(null);
+    try {
+      const r = await fetch(`/api/admin/agentes/memoria?slug=${encodeURIComponent(slug)}`);
+      const j = (await r.json().catch(() => ({}))) as { memorias?: { id: string; fato: string }[]; erro?: string };
+      if (!r.ok) setErro(j.erro ?? "Não consegui ler agora.");
+      else setItens(j.memorias ?? []);
+    } catch {
+      setErro("Sem conexão. Tente de novo.");
+    }
+  }
+
+  async function apagar(id: string) {
+    setErro(null);
+    try {
+      const r = await fetch("/api/admin/agentes/memoria", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+      if (r.ok) setItens((l) => (l ?? []).filter((x) => x.id !== id));
+      else setErro("Não consegui apagar agora.");
+    } catch {
+      setErro("Sem conexão. Tente de novo.");
+    }
+  }
+
+  return (
+    <div className="rounded-2xl border border-white/10 bg-[#0B1430]/80 p-4">
+      <button className={botaoLinha} onClick={abrir} aria-expanded={aberto} data-testid="memoria-abrir">
+        O que {nome} sabe sobre você
+      </button>
+      {aberto && (
+        <div className="mt-3" data-testid="memoria-lista">
+          {erro && <p className="rounded-lg bg-[#FF7A6B]/10 px-3 py-2 text-sm text-[#FFB0A6]">{erro}</p>}
+          {itens && itens.length === 0 && <p className="text-sm text-[#8C9AC4]">{nome} ainda não guardou nada sobre você.</p>}
+          {itens && itens.length > 0 && (
+            <ul className="space-y-2">
+              {itens.map((m) => (
+                <li key={m.id} className="flex items-start justify-between gap-3 border-t border-white/5 pt-2 first:border-0 first:pt-0">
+                  <span className="text-sm text-[#DCE3FA]">{m.fato}</span>
+                  <button className="shrink-0 text-xs font-semibold text-[#FFB0A6] hover:underline" onClick={() => apagar(m.id)} aria-label={`Apagar: ${m.fato}`}>
+                    Apagar
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
     </div>
   );
 }
