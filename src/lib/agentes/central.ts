@@ -417,8 +417,6 @@ export function inicioDoDiaBrasilia(agora: Date): Date {
 }
 
 // ── Executar agora (sessão real) ───────────────────────────────────────────
-/** Disparos de rotina por admin em 24 h (cada um abre uma sessão paga). */
-export const LIMITE_DISPAROS_DIA = 20;
 /** Despachante (ordem 0f6b35b5): teto por agente em 1 h e teto geral em 24 h, para uma ordem em laço não gastar sessões. */
 export const LIMITE_DISPAROS_HORA_AGENTE = 6;
 export const LIMITE_DISPAROS_DIA_TOTAL = 30;

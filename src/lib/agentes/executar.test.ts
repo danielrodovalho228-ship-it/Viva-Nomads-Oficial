@@ -137,6 +137,11 @@ test("Despachante: Moacir e Despachante nunca são disparados por ordem; limite 
   assert.equal(LIMITE_DISPAROS_DIA_TOTAL, 30);
 });
 
+test("Despachante: o teto antigo de 20/dia por admin não existe mais (só 6/h por agente e 30/dia)", () => {
+  const src = readFileSync(new URL("./central.ts", import.meta.url), "utf8");
+  assert.equal(/\bLIMITE_DISPAROS_DIA\b/.test(src), false);
+});
+
 function fakeChat(resposta: string) {
   const gravadas: string[] = [];
   let chamouModelo = false;
