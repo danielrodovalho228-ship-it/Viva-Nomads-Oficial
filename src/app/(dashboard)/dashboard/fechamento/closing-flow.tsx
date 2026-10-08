@@ -1,5 +1,6 @@
 "use client";
 
+import { DocumentosInquilino } from "@/components/documentos-inquilino";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
@@ -318,6 +319,12 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
               Informar meu documento
             </Link>
           )}
+        </div>
+      )}
+
+      {!demo && ctx.leadId && (
+        <div className="mb-4 rounded-xl border border-sage-200 bg-white p-4">
+          <DocumentosInquilino leadId={ctx.leadId} modo="dono" />
         </div>
       )}
 

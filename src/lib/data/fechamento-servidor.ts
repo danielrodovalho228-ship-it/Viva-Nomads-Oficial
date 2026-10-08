@@ -3,6 +3,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { taxaDoContrato } from "@/config/planos";
 import { documentoParaContrato, MSG_DOCUMENTO } from "@/lib/documento-pessoa";
 import { lerDocumento } from "@/lib/data/documento-servidor";
+import { docsInquilinoCompletos } from "@/lib/data/documentos-inquilino-servidor";
+import { MSG_DOCS_INQUILINO } from "@/lib/documentos-inquilino";
 
 /**
  * A5: os dados de uma cobrança/contrato de fechamento vêm SÓ do banco, a partir
@@ -67,6 +69,8 @@ export async function carregarFechamento(leadId: unknown): Promise<DadosFechamen
   if (!docDono) return { status: 409, error: MSG_DOCUMENTO.fecharDono };
   // Inquilino pessoa jurídica fecha com CNPJ + razão social + CPF do representante.
   if (!documentoParaContrato(docInquilino)) return { status: 409, error: MSG_DOCUMENTO.fecharInquilino };
+  // B2: identidade + renda/vínculo enviados depois do aceite (null = sem a 0093 → não trava).
+  if ((await docsInquilinoCompletos(admin, lead.id as string)) === false) return { status: 409, error: MSG_DOCS_INQUILINO };
 
   return {
     leadId: lead.id as string,
