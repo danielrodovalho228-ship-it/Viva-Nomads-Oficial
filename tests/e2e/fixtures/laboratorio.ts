@@ -4,7 +4,7 @@ import { deflateSync } from "node:zlib";
 import type { Browser, Page } from "@playwright/test";
 
 /**
- * Apoio dos specs do LABORATÓRIO (t34–t37): contas NOVAS por spec (não mexem nas
+ * Apoio dos specs do LABORATÓRIO (t34–t38): contas NOVAS por spec (não mexem nas
  * personas dos outros specs, que rodam em paralelo), imóveis prontos para publicar
  * e fotos geradas aqui mesmo (nenhum crédito gasto, nada baixado da internet).
  * Tudo isto só roda contra o Supabase LOCAL (`INTEGRACOES_SIMULADAS=on`).

@@ -24,7 +24,7 @@ Actions (`.github/workflows/laboratorio.yml`, 01h do Texas).
 5. **Suíte E2E** (Playwright) contra `http://localhost:3123`.
 
    Specs de uso real (contas novas por spec, fotos PNG geradas no próprio teste):
-   t34 vários imóveis por dono e limite do plano, t35 troca de plano com imóvel
+   t38 vários imóveis por dono e limite do plano (o t34 é a jornada do dono, do #321), t35 troca de plano com imóvel
    cadastrado, t36 cadastro de ponta a ponta (CPF → fechamento), t37 simuladores
    e números contra `config/planos.ts`. Defeito que o teste revela NÃO é
    escondido: vira teste de "falha conhecida" (`test.fail`) e achado para o Otávio.
