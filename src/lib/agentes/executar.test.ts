@@ -9,6 +9,8 @@ import {
   destinoDaOrdem,
   estadoDaOrdem,
   linkDaOrdem,
+  LIMITE_DISPAROS_DIA_TOTAL,
+  LIMITE_DISPAROS_HORA_AGENTE,
   nomeVarToken,
   pedeAcao,
   prometeAcao,
@@ -118,6 +120,21 @@ test("Executar agora: só admin, limite de 20, agente sem rotina, sem token e fa
   assert.equal(r2.body.aviso, "Ordem registrada — o Moacir aciona Renato em até 1 hora.");
   assert.doesNotMatch(String(r1.body.erro) + String(r2.body.erro), /próxima ronda/);
   assert.equal(avisoOrdemRegistrada("Bruno"), "Ordem registrada — o Moacir aciona Bruno em até 1 hora.");
+});
+
+test("Despachante: Moacir e Despachante nunca são disparados por ordem; limite recebe o agente", async () => {
+  const visto: string[] = [];
+  const f = fakeExec({ consumirDisparo: async (slug) => (visto.push(slug), true) });
+  const com = [...AGENTES, ag("despachante", "Despachante")].map((a) => (a.slug === "moacir" ? { ...a, trigger_id: "trig_moacir" } : a));
+  const d = { ...f.d, agentes: async () => com };
+  assert.equal((await executarAgora(d, { slug: "moacir", texto: "x" })).status, 409);
+  assert.equal((await executarAgora(d, { slug: "despachante", texto: "x" })).status, 409);
+  assert.deepEqual(f.log, []);
+  assert.deepEqual(visto, []);
+  assert.equal((await executarAgora(d, { slug: "renato", texto: "x" })).status, 200);
+  assert.deepEqual(visto, ["renato"]);
+  assert.equal(LIMITE_DISPAROS_HORA_AGENTE, 6);
+  assert.equal(LIMITE_DISPAROS_DIA_TOTAL, 30);
 });
 
 function fakeChat(resposta: string) {
