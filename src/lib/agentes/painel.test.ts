@@ -3,13 +3,14 @@
 */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import type { Agente, Ronda } from "./central.ts";
+import type { Agente, Conversa, Ronda } from "./central.ts";
 import {
   CAMADAS,
   atencaoDaCamada,
   corDaRonda,
   fluxosDaRede,
   indicadores,
+  mesclarConversas,
   nosDaRede,
   resumoCurto,
   roteiroBriefing,
@@ -105,4 +106,27 @@ test("Raio-X: ponto de atenção vem dos achados P0–P2 reais da área", () => 
   assert.ok(v.includes("Título da home longo"), "achado sem palavra de outra camada fica com quem cuida");
   assert.ok(!v.some((t) => /Migração antiga/.test(t)), "P3 não entra");
   assert.deepEqual(atencaoDaCamada(CAMADAS.find((c) => c.id === "parceiros")!, rondas), []);
+});
+
+const cv = (id: string, papel: Conversa["papel"], texto: string, slug = "bruno"): Conversa => ({ id, agente_slug: slug, papel, autor_slug: null, texto, criado_em: "" });
+
+test("mesclarConversas: otimistas p-/r-/t- não duplicam o que já foi gravado", () => {
+  const salvas = [cv("u1", "daniel", "oi"), cv("u2", "agente", "passo"), cv("u3", "agente", "resposta")];
+  const extra = [cv("p-1", "daniel", "oi"), cv("t-1-0", "agente", "passo"), cv("r-1", "agente", "resposta")];
+  assert.deepEqual(mesclarConversas(salvas, extra).map((c) => c.id), ["u1", "u2", "u3"]);
+});
+
+test("mesclarConversas: mensagem ainda não gravada continua na tela", () => {
+  const out = mesclarConversas([cv("u1", "daniel", "oi")], [cv("p-1", "daniel", "oi"), cv("p-2", "daniel", "nova")]);
+  assert.deepEqual(out.map((c) => c.id), ["u1", "p-2"]);
+});
+
+test("mesclarConversas: pergunta repetida de verdade não some", () => {
+  const out = mesclarConversas([cv("u1", "daniel", "oi")], [cv("p-1", "daniel", "oi"), cv("p-2", "daniel", "oi")]);
+  assert.deepEqual(out.map((c) => c.id), ["u1", "p-2"]);
+});
+
+test("mesclarConversas: mesmo texto em outro agente não é duplicata", () => {
+  const out = mesclarConversas([cv("u1", "daniel", "oi", "bruno")], [cv("p-1", "daniel", "oi", "luana")]);
+  assert.equal(out.length, 2);
 });

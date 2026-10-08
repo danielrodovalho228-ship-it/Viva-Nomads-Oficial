@@ -4,7 +4,7 @@
   camadas do Raio-X. Tudo sai das tabelas reais (agentes, agentes_rondas);
   nada inventado. Imports relativos com .ts: roda direto no node --test.
 */
-import { prioridadesDe, proximaRonda, tempoRelativo, type Achado, type Agente, type Ronda } from "./central.ts";
+import { prioridadesDe, proximaRonda, tempoRelativo, type Achado, type Agente, type Conversa, type Ronda } from "./central.ts";
 
 // ── Última ronda e status ──────────────────────────────────────────────────
 export type CorRonda = "ok" | "alerta" | "falhou" | "sem";
@@ -267,4 +267,28 @@ export function atencaoDaCamada(c: Camada, rondas: Ronda[], max = 4): PontoAtenc
 /** Próxima ronda de um agente ativo (texto), ou null. */
 export function proximaDoAgente(a: Pick<Agente, "status" | "rotina_texto">, agora: Date): string | null {
   return a.status === "ativo" ? proximaRonda(a.rotina_texto, agora) : null;
+}
+
+/**
+ * Mescla as conversas gravadas (vêm do servidor, com id próprio) com as
+ * mensagens otimistas da tela (ids p-/r-/t-, que nunca batem com os gravados).
+ * Depois do router.refresh() a mesma mensagem chega dos dois lados: a otimista
+ * é descartada quando já existe uma gravada igual (agente, papel, texto),
+ * uma gravada para cada otimista, então perguntas repetidas de verdade ficam.
+ */
+export function mesclarConversas(salvas: Conversa[], extra: Conversa[]): Conversa[] {
+  const chave = (c: Conversa) => `${c.agente_slug}|${c.papel}|${c.texto.trim()}`;
+  const ids = new Set(salvas.map((c) => c.id));
+  const disponiveis = new Map<string, number>();
+  for (const c of salvas) disponiveis.set(chave(c), (disponiveis.get(chave(c)) ?? 0) + 1);
+  const novas = extra.filter((c) => {
+    if (ids.has(c.id)) return false;
+    const n = disponiveis.get(chave(c)) ?? 0;
+    if (n > 0) {
+      disponiveis.set(chave(c), n - 1);
+      return false;
+    }
+    return true;
+  });
+  return [...salvas, ...novas];
 }

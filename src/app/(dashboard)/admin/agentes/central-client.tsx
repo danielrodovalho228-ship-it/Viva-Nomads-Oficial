@@ -23,7 +23,7 @@ import {
   type Ronda,
   type StatusAgente,
 } from "@/lib/agentes/central";
-import { COR_RONDA_HEX, achadosDaPrioridade, corDaRonda, indicadores, proximaDoAgente, resumoCurto, rondaRecente, ultimaPorAgente } from "@/lib/agentes/painel";
+import { COR_RONDA_HEX, achadosDaPrioridade, corDaRonda, indicadores, mesclarConversas, proximaDoAgente, resumoCurto, rondaRecente, ultimaPorAgente } from "@/lib/agentes/painel";
 import { deixarOrdem, type ChamadoVermelho, type DadosCentral } from "@/lib/data/agentes-actions";
 import { AvatarAgente } from "@/components/admin/agentes/avatar";
 import { RedeAoVivo } from "@/components/admin/agentes/rede";
@@ -564,8 +564,7 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
   // Correção de código vai para o Renato (Engenheiro), que abre o PR.
   const destino = a ? dados.agentes.find((x) => x.slug === destinoDaOrdem(a.slug, texto, dados.agentes)) ?? a : null;
   const podeExecutar = (x: Agente | null | undefined) => !!x && x.status === "ativo" && !!x.trigger_id;
-  const ids = new Set(dados.conversas.map((c) => c.id));
-  const thread = [...dados.conversas, ...extra.filter((c) => !ids.has(c.id))].filter((c) => c.agente_slug === slug);
+  const thread = mesclarConversas(dados.conversas, extra).filter((c) => c.agente_slug === slug);
   const ordens = dados.ordens.filter((o) => o.agente_slug === slug);
 
   async function perguntar() {
