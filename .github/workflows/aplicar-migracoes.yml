@@ -1,0 +1,52 @@
+# "Merge aplica migração": ao mesclar na main um PR que traz supabase/producao/aplicar-NNNN.sql,
+# esta Action aplica em produção os scripts que ainda não estão registrados no banco.
+# O merge do Daniel é a aprovação. Também roda à mão (Actions → Aplicar migrações → Run),
+# com a opção "simular" para só listar o que aplicaria.
+# Segredo: SUPABASE_DB_URL (Settings → Secrets and variables → Actions). Nunca impresso.
+name: Aplicar migrações em produção
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "supabase/producao/aplicar-*.sql"
+  workflow_dispatch:
+    inputs:
+      simular:
+        description: "Só listar o que seria aplicado (não muda nada)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+# Uma execução por vez; a seguinte espera a anterior terminar (nunca cancela no meio).
+concurrency:
+  group: aplicar-migracoes-producao
+  cancel-in-progress: false
+
+jobs:
+  aplicar:
+    # Forks não têm o segredo e nunca aplicam nada.
+    if: github.repository == 'danielrodovalho228-ship-it/Viva-Nomads-Oficial'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cliente do Postgres
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client >/dev/null
+          psql --version
+
+      - name: Aplicar migrações pendentes
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          SIMULAR: ${{ github.event_name == 'workflow_dispatch' && inputs.simular && '--simular' || '' }}
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "::error::Falta o secret SUPABASE_DB_URL (Settings → Secrets and variables → Actions)."
+            exit 1
+          fi
+          bash scripts/aplicar-migracoes.sh $SIMULAR

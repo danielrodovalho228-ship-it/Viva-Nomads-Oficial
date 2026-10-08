@@ -51,3 +51,23 @@ atrás de flag `NEXT_PUBLIC_<FLAG>`), até decisão explícita de remoção de d
 
 O e2e `e2e/qa-full.mjs` verifica que **nenhum item de menu renderiza fora da casca**
 (todos têm a sidebar). Rode-o antes de mexer no menu ou em rotas do dashboard.
+
+## Migrações: o merge aplica
+
+Toda migração nova `supabase/migrations/NNNN_nome.sql` vem com
+`supabase/producao/aplicar-NNNN.sql` (um arquivo por migração, 4 dígitos) que:
+
+1. está entre `begin;` e `commit;` (erro desfaz tudo — nada pela metade);
+2. é idempotente (rodar duas vezes não muda nada nem gera NOTICE);
+3. se registra em `supabase_migrations.schema_migrations` com o nome `NNNN_nome`
+   (`insert … where not exists`);
+4. tem o rollback em `supabase/producao/rollback/NNNN_rollback.sql` (nunca roda sozinho).
+
+Ao mesclar na `main`, a Action **Aplicar migrações em produção**
+(`.github/workflows/aplicar-migracoes.yml` → `scripts/aplicar-migracoes.sh`) aplica, em ordem,
+os `aplicar-NNNN.sql` ainda não registrados e pula os já aplicados. **O merge do Daniel é a
+aprovação** — por isso o PR com migração diz no título que traz migração e o que ela faz.
+Se um script falhar, a Action para e fica vermelha; nada é desfeito automaticamente.
+A Action roda à mão (Actions → Aplicar migrações em produção → Run workflow), com a opção
+"simular" para só listar o que aplicaria. O log é público: o script nunca imprime a URL do
+banco nem dados (a saída das consultas é descartada; do erro sai só a primeira linha).
