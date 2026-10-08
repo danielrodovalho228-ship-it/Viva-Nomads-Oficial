@@ -24,7 +24,12 @@ export interface Aviso {
   corpo: string;
   prioridade: "P0" | "P1" | "P2" | "P3";
   link: string | null;
+  /** Agente da ronda que originou o aviso (null = aviso manual, sem ronda). */
+  origem_agente?: string | null;
 }
+
+/** Daniel só recebe e-mail do Moacir: aviso de ronda de outro agente nunca sai. */
+export const AGENTE_REMETENTE = "moacir";
 
 export interface Mensagem {
   from: string;
@@ -71,10 +76,18 @@ function assinar(ronda: string, expira: number, segredo: string): string {
   return crypto.createHmac("sha256", chave(segredo)).update(`${ronda}.${expira}`).digest("hex").slice(0, 32);
 }
 
-/** Link da tela de aprovação (exige login admin). NÃO aprova nada sozinho. */
-export function linkDecisao(ronda: string, agora: Date, siteUrl: string, segredo: string): string {
+/** Rota da tela de aprovação. Até o PR 2 criá-la, o link cai na Central (/admin/agentes) para não dar 404. */
+export const TELA_APROVAR_EXISTE = false;
+
+/** Link assinado da tela de aprovação (exige login admin). NÃO aprova nada sozinho. */
+export function linkAssinadoAprovar(ronda: string, agora: Date, siteUrl: string, segredo: string): string {
   const expira = Math.floor(agora.getTime() / 1000) + VALIDADE_LINK_H * 3600;
   return `${siteUrl}/admin/agentes/aprovar?r=${encodeURIComponent(ronda)}&e=${expira}&s=${assinar(ronda, expira, segredo)}`;
+}
+
+/** Link do e-mail: a tela de aprovação quando existir; até lá, a Central. */
+export function linkDecisao(ronda: string, agora: Date, siteUrl: string, segredo: string): string {
+  return TELA_APROVAR_EXISTE ? linkAssinadoAprovar(ronda, agora, siteUrl, segredo) : `${siteUrl}/admin/agentes`;
 }
 
 /** Confere assinatura e prazo. O "uma vez só" fica com a tela de aprovação, que consome o link. */
@@ -130,6 +143,10 @@ export async function processarAvisos(d: Deps): Promise<Resultado> {
   let hoje = await d.emailsHoje();
   const excedentes: Aviso[] = [];
   for (const a of pendentes) {
+    if (a.origem_agente && a.origem_agente !== AGENTE_REMETENTE) {
+      await d.falhou(a.id, `Origem "${a.origem_agente.slice(0, 40)}" não é o Moacir: e-mail não enviado.`, true);
+      continue;
+    }
     if (a.prioridade !== "P0" && hoje >= LIMITE_EMAILS_DIA) {
       excedentes.push(a);
       continue;
