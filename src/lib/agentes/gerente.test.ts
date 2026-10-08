@@ -78,7 +78,7 @@ test("prompt do gerente: organograma, formato das 4 linhas, 'dados de', nunca mi
 
 test("prompt do gerente: decide e age, nunca pergunta nem adia quando há padrão razoável", () => {
   const s = systemGerente({ briefing: "Gerente geral.", agora: new Date("2026-10-08T15:00:00Z"), contexto: "Viva Nomads" });
-  for (const t of ["NUNCA faça pergunta de esclarecimento", "diga em 1 linha o que assumiu", "NUNCA adie para a rotina agendada", "executar_agora JÁ", "Proibido \"não sei de qual X você fala\""]) assert.ok(s.includes(t), t);
+  for (const t of ["NUNCA faça pergunta de esclarecimento", "diga em 1 linha o que assumiu", "NUNCA adie para a rotina agendada", "executar_agora JÁ", "Proibido \"não sei de qual X você fala\"", "NUNCA responda só \"não consigo\"", "o que JÁ fez para resolver"]) assert.ok(s.includes(t), t);
 });
 
 test("sem repetição: tira da resposta o que já está na trilha e o bloco 'O que encontrei' repetido; mantém o resto", () => {
