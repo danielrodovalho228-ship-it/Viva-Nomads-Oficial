@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { depsEncaminhamento } from "@/lib/agentes/servidor";
 import { dispararEncaminhamentos } from "@/lib/agentes/motor";
+import { rodarAvisosDaniel } from "@/lib/agentes/avisos-daniel-servidor";
 import { avisarEquipe, type ChamadoResumo } from "@/lib/atendimento/servidor";
 import { notify } from "@/lib/notifications";
 import { chamadosEsperandoEquipe } from "@/lib/atendimento/escalonamento";
@@ -32,6 +33,9 @@ export async function GET(request: Request) {
 
   // Encaminhamento entre agentes (0087): P0/P1 que ninguém disparou ainda (Central fechada).
   await dispararEncaminhamentos(depsEncaminhamento(admin)).catch(() => null);
+
+  // Avisos do Moacir ao Daniel por e-mail (0094): a cada 15 min, junto com este cron.
+  await rodarAvisosDaniel(admin, segredo).catch(() => null);
 
   await admin.rpc("atendimento_varrer_prazos");
   const umaHora = new Date(Date.now() - 3600_000).toISOString();
