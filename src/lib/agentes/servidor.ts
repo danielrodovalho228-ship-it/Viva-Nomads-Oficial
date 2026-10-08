@@ -282,6 +282,8 @@ function montarGerente(base: Deps, supabase: Sessao, modelo: string): Deps["gere
       if (!d) return { ok: false, texto: "Sem permissão." };
       const r = await executarAgora(d, { slug, texto: `${PREFIXO_MOACIR}${ordem}` });
       const b = r.body as { aviso?: string; erro?: string; sessao_url?: string | null; ordemId?: string };
+      // Ordem gravada sem disparo imediato (sem token / falha): o Moacir aciona na rotina de hora em hora. Não é falha para o chat.
+      if (r.status !== 200 && b.ordemId && b.aviso) return { ok: true, texto: `${b.aviso} (ordem ${b.ordemId})` };
       return r.status === 200
         ? { ok: true, texto: `${b.aviso ?? "Disparado."}${b.sessao_url ? ` Sessão: ${b.sessao_url}` : ""} (ordem ${b.ordemId})` }
         : { ok: false, texto: b.erro ?? "Não consegui disparar." };

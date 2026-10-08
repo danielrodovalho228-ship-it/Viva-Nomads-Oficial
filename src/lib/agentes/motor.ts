@@ -33,7 +33,7 @@ import {
 } from "./central.ts";
 import { retratoEmTexto, type Retrato } from "./retrato.ts";
 import { CONTEXTO_VIVA, SLUG_GERENTE } from "./central.ts";
-import { investigar, systemGerente, type DepsGerente, type ModeloGerente } from "./gerente.ts";
+import { investigar, semRepeticao, systemGerente, type DepsGerente, type ModeloGerente } from "./gerente.ts";
 import { personaPermitida, ehConversaSocial, extrairLembrar, respostaSocialSimulada, MAX_MEMORIAS_NO_PROMPT, type Memoria } from "./persona.ts";
 import { blocoAoVivo, conferirPendencias, marcarResolvidos, REGRA_AO_VIVO, respostaSimuladaAgente, type Conferencia } from "./ao-vivo.ts";
 
@@ -143,7 +143,8 @@ export async function responderChat(d: Deps, entrada: unknown): Promise<Resposta
     }
     const { texto: semLembrar, fatos } = extrairLembrar(out.resposta);
     await guardar(fatos);
-    const resposta = (esperaDanielIndevida(semLembrar) ? `${semLembrar}\n${NOTA_CEO}` : semLembrar).slice(0, 8000);
+    const limpa = semRepeticao(semLembrar, out.trilha);
+    const resposta = (esperaDanielIndevida(limpa) ? `${limpa}\n${NOTA_CEO}` : limpa).slice(0, 8000);
     // Cada passo vira uma linha própria (inserts em sequência: ordem de criação = ordem da conversa).
     for (const p of out.trilha) await d.gravar([{ agente_slug: slug, papel: "agente", autor_slug: p.autor, texto: p.texto.slice(0, 8000) }]);
     await d.gravar([{ agente_slug: slug, papel: "agente", autor_slug: slug, texto: resposta }]);
@@ -252,6 +253,9 @@ export interface DepsExecutar {
   disparar(url: string, token: string, texto: string): Promise<{ sessao_url: string | null }>;
 }
 
+/** Ordem gravada mas sem disparo imediato: a rotina de gestão (de hora em hora) dispara toda ordem com disparo_erro. */
+export const avisoOrdemRegistrada = (nome: string) => `Ordem registrada — o Moacir aciona ${nome} em até 1 hora.`;
+
 /**
  * Grava a ordem e dispara na hora a rotina real do agente. Sem token ou com
  * falha no disparo, a ordem FICA gravada (o agente lê na próxima ronda) e a
@@ -279,7 +283,7 @@ export async function executarAgora(d: DepsExecutar, entrada: unknown): Promise<
     await d.registrarDisparo(ordemId, { erro: "sem token da rotina" });
     return {
       status: 503,
-      body: { ordemId, erro: `Falta o token da rotina do ${agente.nome} no servidor. A ordem ficou gravada: ele lê na próxima ronda (${agente.rotina_texto ?? "sem horário"}).` },
+      body: { ordemId, aviso: avisoOrdemRegistrada(agente.nome), erro: `Falta o token da rotina do ${agente.nome} no servidor.` },
     };
   }
   try {
@@ -289,7 +293,7 @@ export async function executarAgora(d: DepsExecutar, entrada: unknown): Promise<
   } catch (e) {
     const motivo = e instanceof Error ? e.message.slice(0, 200) : "falha";
     await d.registrarDisparo(ordemId, { erro: motivo });
-    return { status: 502, body: { ordemId, erro: `Não consegui disparar o ${agente.nome} (${motivo}). A ordem ficou gravada para a próxima ronda.` } };
+    return { status: 502, body: { ordemId, aviso: avisoOrdemRegistrada(agente.nome), erro: `Não consegui disparar o ${agente.nome} (${motivo}).` } };
   }
 }
 

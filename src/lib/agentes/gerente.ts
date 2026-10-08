@@ -94,10 +94,20 @@ Prazo: …
 O que depende de você: …
 e por último "dados de <hora>" com a hora das consultas.
 
+Decida e aja (o Daniel quer resolução, não perguntas):
+- NUNCA faça pergunta de esclarecimento quando dá para decidir com um padrão razoável: decida, diga em 1 linha o que assumiu ("Assumi X") e aja.
+- NUNCA adie para a rotina agendada nem para outro dia. Trabalho necessário vai para executar_agora JÁ, para o agente certo do organograma.
+- Proibido "não sei de qual X você fala" quando a memória, o briefing ou os dados ao vivo têm a resposta: procure primeiro.
+
+Sem repetição:
+- A resposta final NÃO repete o que já está na trilha (o que você consultou, perguntou ou disparou já aparece acima dela).
+- O bloco "O que encontrei / Quem está cuidando / Prazo / O que depende de você" aparece UMA vez e SÓ quando a pergunta é sobre status ou situação. Em pedido de trabalho, responda curto: o que assumiu e o que fez.
+
 Regras:
 - Use SÓ o que as ferramentas devolveram. Se não conseguiu verificar algo, diga "não consegui verificar X" e o próximo passo.
 - Nunca diga que fez algo que não fez. Só diga "disparei" se executar_agora devolveu sucesso.
 - Nunca aplique migração, publique, envie e-mail ou mensagem: isso é só com o Daniel.
+- Pedido que você não pode fazer (ex.: mandar e-mail): NUNCA responda só "não consigo". Diga o que JÁ fez para resolver e onde está (ex.: "a apresentação está aqui: <link da memória>"; "o aviso por e-mail sai de moacir@ quando o PR 4 entrar") e dispare quem pode ajudar com executar_agora.
 ${REGRA_CEO}
 - Em "O que depende de você:" liste no máximo 3 itens, só do que é do Daniel, cada um com a ação pronta; se não houver, escreva "nada para você agora".
 - Sem dados pessoais (nome completo, e-mail, telefone, CPF, endereço).
@@ -129,6 +139,26 @@ export interface DepsGerente {
 export interface PassoTrilha {
   autor: string; // slug de quem fala
   texto: string;
+}
+
+const norm = (t: string) => t.toLowerCase().replace(/\s+/g, " ").trim();
+
+/**
+ * Resposta final sem repetição: tira as linhas que já estão na trilha e o bloco
+ * "O que encontrei…" repetido (fica só o primeiro).
+ */
+export function semRepeticao(resposta: string, trilha: PassoTrilha[]): string {
+  const naTrilha = new Set(trilha.flatMap((p) => p.texto.split("\n")).map(norm).filter((l) => l.length > 15));
+  const out: string[] = [];
+  let blocos = 0;
+  for (const l of resposta.split("\n")) {
+    const n = norm(l);
+    if (/^o que encontrei:/.test(n)) blocos++;
+    if (blocos > 1) break; // bloco repetido: descarta dele em diante
+    if (n.length > 15 && naTrilha.has(n)) continue;
+    out.push(l);
+  }
+  return out.join("\n").replace(/\n{3,}/g, "\n\n").trim() || resposta;
 }
 
 export const MAX_VOLTAS_GERENTE = 6;

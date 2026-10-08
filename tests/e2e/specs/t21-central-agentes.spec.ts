@@ -153,6 +153,10 @@ test.describe("T21 — Central de Agentes v2", () => {
     await page.locator('aside[aria-label="Agentes"]').getByRole("button", { name: /Moacir/ }).click();
     await page.getByPlaceholder("Escreva para Moacir…").fill("Chegou chamado novo?");
     await page.getByRole("button", { name: "Perguntar" }).click();
+    // A trilha vem recolhida em "ver como apurei": abre antes de conferir os passos.
+    const trilha = page.getByTestId("trilha-gerente").last();
+    await expect(trilha).toBeVisible({ timeout: 20_000 });
+    await trilha.getByText(/ver como apurei/).click();
     const passos = page.getByTestId("passo-gerente");
     await expect(passos.filter({ hasText: "Moacir → Viva:" }).last()).toBeVisible({ timeout: 20_000 });
     await expect(passos.filter({ hasText: /^Viva: Tenho \d+ chamado/ }).last()).toBeVisible();

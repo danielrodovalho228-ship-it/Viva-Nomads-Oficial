@@ -4,7 +4,7 @@
 */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { investigar, modeloGerenteSimulado, nomeDoOrganograma, ORGANOGRAMA, systemGerente, type DepsGerente, type ModeloGerente } from "./gerente.ts";
+import { investigar, semRepeticao, modeloGerenteSimulado, nomeDoOrganograma, ORGANOGRAMA, systemGerente, type DepsGerente, type ModeloGerente } from "./gerente.ts";
 import { responderChat, type Deps } from "./motor.ts";
 import type { Agente } from "./central.ts";
 
@@ -76,6 +76,21 @@ test("prompt do gerente: organograma, formato das 4 linhas, 'dados de', nunca mi
   assert.ok(ORGANOGRAMA.every((o) => o.nome && o.nome[0] === o.nome[0].toUpperCase()));
 });
 
+test("prompt do gerente: decide e age, nunca pergunta nem adia quando há padrão razoável", () => {
+  const s = systemGerente({ briefing: "Gerente geral.", agora: new Date("2026-10-08T15:00:00Z"), contexto: "Viva Nomads" });
+  for (const t of ["NUNCA faça pergunta de esclarecimento", "diga em 1 linha o que assumiu", "NUNCA adie para a rotina agendada", "executar_agora JÁ", "Proibido \"não sei de qual X você fala\"", "NUNCA responda só \"não consigo\"", "o que JÁ fez para resolver"]) assert.ok(s.includes(t), t);
+});
+
+test("sem repetição: tira da resposta o que já está na trilha e o bloco 'O que encontrei' repetido; mantém o resto", () => {
+  const trilha = [{ autor: "viva", texto: "Viva: Tenho 1 chamado aberto: VN-000101 (Caução), com o Daniel." }];
+  const bloco = "O que encontrei: VN-000101.\nQuem está cuidando: Viva.\nPrazo: 08/10.\nO que depende de você: nada para você agora.";
+  const r = semRepeticao(`Viva: Tenho 1 chamado aberto: VN-000101 (Caução), com o Daniel.\n${bloco}\n${bloco}`, trilha);
+  assert.equal(r, bloco);
+  assert.equal((r.match(/O que encontrei:/g) ?? []).length, 1);
+  // caso negativo: resposta sem repetição fica igual
+  assert.equal(semRepeticao("Assumi o texto atual. Disparei o Renato.", trilha), "Assumi o texto atual. Disparei o Renato.");
+});
+
 test("laboratório (sem IA): 'chegou chamado novo?' consulta o banco, pergunta à Viva e responde com o código e o prazo", async () => {
   const { d, chamadas } = fakeDeps();
   const r = await investigar("Chegou chamado novo?", "sys", modeloGerenteSimulado(new Date("2026-10-07T21:40:00Z")), d);
@@ -110,4 +125,25 @@ test("chat: pergunta ao Moacir usa o gerente e grava a trilha na ordem certa; ou
   assert.match(String(r.body.resposta), /O que encontrei: VN-000101/);
   const r2 = await responderChat(d, { slug: "bruno", texto: "como está o build?" });
   assert.equal(r2.body.resposta, "resposta comum");
+});
+
+test("chat: a resposta gravada não repete a trilha nem o bloco final", async () => {
+  const gravadas: string[] = [];
+  const { d: fer } = fakeDeps();
+  const bloco = "O que encontrei: nada novo.\nQuem está cuidando: equipe.\nPrazo: —.\nO que depende de você: nada para você agora.";
+  const d: Deps = {
+    adminId: async () => "a1",
+    perguntasHoje: async () => 0,
+    agentes: async () => [ag("moacir", "Moacir")],
+    rondas: async () => [],
+    ordensAbertas: async () => [],
+    historico: async () => [],
+    retrato: async () => null,
+    gravar: async (l) => void gravadas.push(...l.map((x) => x.texto)),
+    modelo: async () => "x",
+    gerente: { modelo: roteiro(usa("1", "perguntar_agente", { slug: "viva", pergunta: "Algum chamado precisa do Daniel?" }), fim(`${bloco}\n${bloco}`)), ferramentas: fer },
+  };
+  const r = await responderChat(d, { slug: "moacir", texto: "qual a situação dos chamados?" });
+  assert.ok(String(r.body.resposta).startsWith(bloco));
+  assert.equal((String(r.body.resposta).match(/O que encontrei:/g) ?? []).length, 1);
 });
