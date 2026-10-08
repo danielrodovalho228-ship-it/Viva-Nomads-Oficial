@@ -78,11 +78,21 @@ test("só P0/P1 de encaminhamento disparam: P2, retorno, já disparada, sem orig
   assert.equal(encaminhamentoUrgente(ordem("x", { prioridade: null })), false);
 });
 
+test("Moacir e Despachante nunca são disparados por encaminhamento", async () => {
+  const a = deps([ordem("m1", { agente_slug: "moacir" })]);
+  const base = a.d.agentes;
+  a.d.agentes = async () => [...(await base()), { slug: "moacir", nome: "Moacir", status: "ativo", trigger_id: "trig_m" }];
+  const r = await dispararEncaminhamentos(a.d);
+  assert.deepEqual(r.disparadas, []);
+  assert.equal(a.disparos.length, 0);
+  assert.equal(a.registros.m1.erro, "agente não é disparado por ordem");
+});
+
 test("limite diário, sem token, sem rotina e falha: a ordem fica gravada com o motivo, nada some", async () => {
   const a = deps([ordem("a1"), ordem("a2")], { limite: 1 });
   const ra = await dispararEncaminhamentos(a.d);
   assert.deepEqual(ra.disparadas, ["a1"]);
-  assert.match(a.registros.a2.erro!, /limite de 20 disparos em 24 h/);
+  assert.match(a.registros.a2.erro!, /limite de disparos \(6\/h por agente, 30\/dia\)/);
 
   const b = deps([ordem("b1")], { token: false });
   await dispararEncaminhamentos(b.d);

@@ -5,7 +5,9 @@
 */
 import {
   LIMITE_DIA,
-  LIMITE_DISPAROS_DIA,
+  AGENTES_SEM_DISPARO,
+  LIMITE_DISPAROS_DIA_TOTAL,
+  LIMITE_DISPAROS_HORA_AGENTE,
   MAX_ENCAMINHAMENTOS_POR_VEZ,
   URL_DISPARO,
   encaminhamentoUrgente,
@@ -244,8 +246,8 @@ export async function responderReuniao(d: Deps, entrada: unknown): Promise<Respo
 export interface DepsExecutar {
   adminId(): Promise<string | null>;
   agentes(): Promise<Agente[]>;
-  /** Consome 1 do limite de disparos (24 h) do admin; false = estourou ou indisponível. */
-  consumirDisparo(adminId: string): Promise<boolean>;
+  /** Consome 1 dos limites de disparo (6/h por agente, 30/dia no total); false = estourou ou indisponível. */
+  consumirDisparo(slug: string): Promise<boolean>;
   criarOrdem(slug: string, texto: string): Promise<string | null>;
   registrarDisparo(ordemId: string, r: { sessao_url?: string | null; erro?: string }): Promise<void>;
   /** Token da rotina (só servidor); null = não configurado. */
@@ -272,8 +274,11 @@ export async function executarAgora(d: DepsExecutar, entrada: unknown): Promise<
   if (agente.status !== "ativo" || !agente.trigger_id) {
     return { status: 409, body: { erro: `${agente.nome} não tem rotina para disparar. Use "Deixar ordem".` } };
   }
-  if (!(await d.consumirDisparo(adminId))) {
-    return { status: 429, body: { erro: `Limite de ${LIMITE_DISPAROS_DIA} disparos em 24 h atingido. Use "Deixar ordem": o agente lê na próxima ronda.` } };
+  if (AGENTES_SEM_DISPARO.includes(slug)) {
+    return { status: 409, body: { erro: `${agente.nome} não é disparado por ordem. Use "Deixar ordem".` } };
+  }
+  if (!(await d.consumirDisparo(slug))) {
+    return { status: 429, body: { erro: `Limite de disparos atingido (${LIMITE_DISPAROS_HORA_AGENTE} por hora por agente, ${LIMITE_DISPAROS_DIA_TOTAL} por dia). Use "Deixar ordem": o agente lê na próxima ronda.` } };
   }
   const ordemId = await d.criarOrdem(slug, texto);
   if (!ordemId) return { status: 500, body: { erro: "Não consegui gravar a ordem." } };
@@ -304,8 +309,8 @@ export interface DepsEncaminhamento {
   agentes(): Promise<Pick<Agente, "slug" | "nome" | "status" | "trigger_id">[]>;
   /** Marca disparada_em só se ninguém marcou antes (evita disparo duplo). */
   reservar(ordemId: string): Promise<boolean>;
-  /** Consome 1 do limite diário dos disparos automáticos. */
-  consumirDisparo(): Promise<boolean>;
+  /** Consome 1 dos limites de disparo (6/h por agente, 30/dia no total). */
+  consumirDisparo(slug: string): Promise<boolean>;
   registrarDisparo(ordemId: string, r: { sessao_url?: string | null; erro?: string }): Promise<void>;
   token(slug: string): string | null;
   disparar(url: string, token: string, texto: string): Promise<{ sessao_url: string | null }>;
@@ -338,8 +343,12 @@ export async function dispararEncaminhamentos(d: DepsEncaminhamento): Promise<Re
       await falhou("sem rotina para disparar");
       continue;
     }
-    if (!(await d.consumirDisparo())) {
-      await falhou(`limite de ${LIMITE_DISPAROS_DIA} disparos em 24 h`);
+    if (AGENTES_SEM_DISPARO.includes(ag.slug)) {
+      await falhou("agente não é disparado por ordem");
+      continue;
+    }
+    if (!(await d.consumirDisparo(ag.slug))) {
+      await falhou(`limite de disparos (${LIMITE_DISPAROS_HORA_AGENTE}/h por agente, ${LIMITE_DISPAROS_DIA_TOTAL}/dia)`);
       continue;
     }
     const token = d.token(ag.slug);

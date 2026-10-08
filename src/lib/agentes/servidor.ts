@@ -4,8 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { aceitaEsforco, aceitaReserva, modeloViva } from "@/lib/atendimento/viva-custo";
-import { CHAVE_LIMITE_ENCAMINHAMENTO, LIMITE_DISPAROS_DIA, inicioDoDiaBrasilia, modeloAgentes, nomeVarToken, SCHEMA_REUNIAO, TIMEOUT_MS, type Agente, type Conversa, type Ordem, type Ronda } from "@/lib/agentes/central";
-import { consumirLimite, DIA } from "@/lib/limites";
+import { CHAVE_LIMITE_ENCAMINHAMENTO, LIMITE_DISPAROS_DIA_TOTAL, LIMITE_DISPAROS_HORA_AGENTE, inicioDoDiaBrasilia, modeloAgentes, nomeVarToken, SCHEMA_REUNIAO, TIMEOUT_MS, type Agente, type Conversa, type Ordem, type Ronda } from "@/lib/agentes/central";
+import { consumirLimite, DIA, HORA } from "@/lib/limites";
 import { integracoesSimuladas, registrarSimulado } from "@/lib/integracoes";
 import { dispararEncaminhamentos, executarAgora, type DepsMemoria, type Deps, type DepsExecutar, type DepsEncaminhamento, type ResultadoEncaminhamento } from "@/lib/agentes/motor";
 import { modeloGerenteSimulado, nomeDoOrganograma, PREFIXO_MOACIR, type Consulta, type DepsGerente, type ModeloGerente } from "@/lib/agentes/gerente";
@@ -313,6 +313,14 @@ function montarGerente(base: Deps, supabase: Sessao, modelo: string): Deps["gere
  * rotina fica SÓ no servidor, em AGENTE_TOKEN_<SLUG> (ex.: AGENTE_TOKEN_RENATO);
  * nunca vai para o navegador nem para o banco.
  */
+/** Despachante: 6 disparos/h por agente e 30/dia no total (Executar agora + encaminhamentos). Falha fechada. */
+async function consumirDisparoDoAgente(slug: string): Promise<boolean> {
+  return (
+    (await consumirLimite(`agentes-disparo:hora:${slug}`, LIMITE_DISPAROS_HORA_AGENTE, HORA)) &&
+    (await consumirLimite(CHAVE_LIMITE_ENCAMINHAMENTO, LIMITE_DISPAROS_DIA_TOTAL, DIA))
+  );
+}
+
 export async function depsExecutarReais(): Promise<DepsExecutar | null> {
   const supabase = await createClient();
   if (!supabase) return null;
@@ -327,9 +335,7 @@ export async function depsExecutarReais(): Promise<DepsExecutar | null> {
       const { data } = await supabase.from("agentes").select("slug, nome, cargo, esquadrao, rotina_texto, trigger_id, status, briefing, ordem").order("ordem");
       return (data ?? []) as Agente[];
     },
-    async consumirDisparo(adminId) {
-      return consumirLimite(`agentes-executar:${adminId}`, LIMITE_DISPAROS_DIA, DIA);
-    },
+    consumirDisparo: consumirDisparoDoAgente,
     async criarOrdem(slug, texto) {
       const { data, error } = await supabase.from("agentes_ordens").insert({ agente_slug: slug, texto }).select("id").single();
       return error ? null : (data.id as string);
@@ -415,7 +421,7 @@ export function depsEncaminhamento(db: SupabaseClient): DepsEncaminhamento {
         .select("id");
       return (data ?? []).length === 1;
     },
-    consumirDisparo: () => consumirLimite(CHAVE_LIMITE_ENCAMINHAMENTO, LIMITE_DISPAROS_DIA, DIA),
+    consumirDisparo: consumirDisparoDoAgente,
     async registrarDisparo(ordemId, r) {
       await db.from("agentes_ordens").update({ sessao_url: r.sessao_url ?? null, disparo_erro: r.erro ?? null }).eq("id", ordemId);
     },
