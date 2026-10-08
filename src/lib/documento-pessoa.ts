@@ -101,6 +101,14 @@ export function documentoParaContrato(p: PerfilDocumento | null | undefined): st
   return p!.person_type === "pj" ? soDigitos(p!.cnpj) : soDigitos(p!.cpf);
 }
 
+/** Admin aprova documento de imóvel só se o dono tem CPF (PF) ou CNPJ+representante (PJ) válidos. Devolve o motivo do bloqueio, ou null. */
+export function motivoBloqueioAprovacao(p: PerfilDocumento | null | undefined): string | null {
+  if (documentoCompleto(p)) return null;
+  return p?.person_type === "pj"
+    ? "O dono (empresa) ainda não tem CNPJ, razão social e CPF do representante válidos. Peça para preencher em Conta → Documento antes de aprovar."
+    : "O dono ainda não tem CPF válido. Peça para preencher em Conta → Documento antes de aprovar.";
+}
+
 export const LINK_DOCUMENTO = "/dashboard/conta#documento";
 
 /** Mensagens das travas (aceitar candidatura, assinar plano, fechar contrato). */
