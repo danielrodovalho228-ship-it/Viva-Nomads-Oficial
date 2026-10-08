@@ -1,7 +1,10 @@
 name: E2E (Playwright)
 
-# Roda a suíte E2E contra o PREVIEW da Vercel assim que o deploy fica pronto
-# (deployment_status = success), e também sob demanda com uma URL manual.
+# Roda a suíte E2E assim que o deploy fica pronto (deployment_status = success):
+# Production -> https://vivanomads.com.br (domínio próprio, sem proteção da Vercel);
+# Preview -> URL do deploy com o bypass; sem o segredo de bypass o preview é PULADO
+# com aviso (não fica vermelho). Também roda sob demanda com uma URL manual.
+# A decisão está em scripts/ci/e2e-alvo.sh (com teste em src/lib/ci).
 # Segredos (contas de teste) vêm de GitHub Secrets — nunca no yml.
 on:
   deployment_status:
@@ -24,11 +27,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      TESTES_BASE_URL: ${{ github.event.deployment_status.target_url || github.event.inputs.base_url }}
       # Bypass da Deployment Protection da Vercel (preview protegido). Sem ele, a
       # suíte cai na tela de login da Vercel. O config/global-setup só mandam os
       # headers quando esta variável existe.
-      VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+      TEM_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET != '' }}
       TESTES_INQUILINO_EMAIL: ${{ secrets.TESTES_INQUILINO_EMAIL }}
       TESTES_INQUILINO_SENHA: ${{ secrets.TESTES_INQUILINO_SENHA }}
       TESTES_INQUILINO_NOME: ${{ secrets.TESTES_INQUILINO_NOME }}
@@ -50,10 +52,39 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Resolver alvo do E2E
+        id: alvo
+        env:
+          EVENTO: ${{ github.event_name }}
+          AMBIENTE: ${{ github.event.deployment_status.environment }}
+          TARGET_URL: ${{ github.event.deployment_status.target_url }}
+          INPUT_URL: ${{ github.event.inputs.base_url }}
+          TEM_BYPASS: ${{ env.TEM_BYPASS_SECRET }}
+        run: |
+          bash scripts/ci/e2e-alvo.sh | tee -a "$GITHUB_OUTPUT"
+          AVISO=$(bash scripts/ci/e2e-alvo.sh | sed -n 's/^aviso=//p')
+          [ -n "$AVISO" ] && echo "::warning::$AVISO" || true
+
+      - name: Definir ambiente do E2E
+        if: steps.alvo.outputs.rodar == 'true'
+        run: |
+          echo "TESTES_BASE_URL=${{ steps.alvo.outputs.base_url }}" >> "$GITHUB_ENV"
+          if [ "${{ steps.alvo.outputs.bypass }}" = "true" ]; then
+            echo "VERCEL_AUTOMATION_BYPASS_SECRET=${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}" >> "$GITHUB_ENV"
+          fi
+
+      - name: Checar que o alvo responde
+        if: steps.alvo.outputs.rodar == 'true' && steps.alvo.outputs.bypass != 'true'
+        run: |
+          CODE=$(curl -s -o /dev/null -w "%{http_code}" "${{ steps.alvo.outputs.base_url }}/api/health" || echo "000")
+          echo "HTTP /api/health -> ${CODE}"
+          [ "${CODE}" = "200" ] || { echo "::error::Alvo nao respondeu 200."; exit 1; }
+
       # Diagnóstico do bypass ANTES de instalar nada (falha em segundos). Nunca
       # imprime o segredo (só se está vazio e o tamanho). Aborta se o bypass não
       # devolver 200 — assim não se gasta 2 min de instalação para dar "tudo barrado".
       - name: Diagnóstico do bypass da Vercel
+        if: steps.alvo.outputs.rodar == 'true' && steps.alvo.outputs.bypass == 'true'
         run: |
           echo "== Diagnóstico do bypass (sem expor o segredo) =="
           if [ -z "${VERCEL_AUTOMATION_BYPASS_SECRET}" ]; then
@@ -77,25 +108,29 @@ jobs:
           fi
 
       - uses: actions/setup-node@v4
+        if: steps.alvo.outputs.rodar == 'true'
         with:
           node-version: 20
           cache: npm
 
       - name: Instalar dependências
+        if: steps.alvo.outputs.rodar == 'true'
         run: npm ci
 
       - name: Instalar Chromium do Playwright
+        if: steps.alvo.outputs.rodar == 'true'
         run: npx playwright install --with-deps chromium
 
       - name: Semear dados de teste (se houver service role)
-        if: ${{ env.SUPABASE_SERVICE_ROLE_KEY != '' }}
+        if: ${{ steps.alvo.outputs.rodar == 'true' && env.SUPABASE_SERVICE_ROLE_KEY != '' }}
         run: npm run seed:teste
 
       - name: Rodar suíte E2E
+        if: steps.alvo.outputs.rodar == 'true'
         run: npm run testes
 
       - name: Publicar relatório HTML
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.alvo.outputs.rodar == 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
