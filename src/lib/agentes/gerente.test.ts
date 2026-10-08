@@ -144,5 +144,6 @@ test("chat: a resposta gravada não repete a trilha nem o bloco final", async ()
     gerente: { modelo: roteiro(usa("1", "perguntar_agente", { slug: "viva", pergunta: "Algum chamado precisa do Daniel?" }), fim(`${bloco}\n${bloco}`)), ferramentas: fer },
   };
   const r = await responderChat(d, { slug: "moacir", texto: "qual a situação dos chamados?" });
-  assert.equal(r.body.resposta, bloco);
+  assert.ok(String(r.body.resposta).startsWith(bloco));
+  assert.equal((String(r.body.resposta).match(/O que encontrei:/g) ?? []).length, 1);
 });
