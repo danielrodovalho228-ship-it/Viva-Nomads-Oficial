@@ -29,3 +29,8 @@ test("editor: interruptor 'emite Nota Fiscal do aluguel' só com a chave do selo
   assert.ok(i > 0);
   assert.ok(s.lastIndexOf("{SELO_NF_UI && (", i) > s.lastIndexOf("</Labeled>", i), "interruptor fora da chave");
 });
+
+test("/precos: sem card nem promessa de 'Nota fiscal dos serviços' (#23)", () => {
+  const s = ler("app/(public)/precos/page.tsx");
+  assert.doesNotMatch(s, /nota fiscal|\bNF\b|NFSE_ATIVA|Receipt/i);
+});

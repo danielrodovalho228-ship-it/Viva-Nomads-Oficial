@@ -225,7 +225,9 @@ export async function moderarDocumento(
   // Aprovar exige CPF (PF) / CNPJ (PJ) válidos do dono (#39). Lê com o service
   // role — só depois de confirmado admin acima; o número não sai do servidor.
   if (aprovado) {
-    const bloqueio = motivoBloqueioAprovacao(await lerDocumento(createAdminClient(), alvo.owner_id as string));
+    const adm = createAdminClient();
+    if (!adm) return { ok: false, error: "Não foi possível conferir o documento do dono agora." };
+    const bloqueio = motivoBloqueioAprovacao(await lerDocumento(adm, alvo.owner_id as string));
     if (bloqueio) return { ok: false, error: bloqueio };
   }
   let upd = supabase

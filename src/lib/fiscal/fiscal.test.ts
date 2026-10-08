@@ -133,9 +133,9 @@ test("#14 (0083): documento fiscal não se apaga; anulação lógica aparece na 
   }
 });
 
-test("achados do #271: /precos condiciona a NF à NFSE_ATIVA; exemplos sem avaliação inventada e sem 'emite nota fiscal'", () => {
+test("achados do #271/#23: /precos não promete nota fiscal da Viva; exemplos sem avaliação inventada e sem 'emite nota fiscal'", () => {
   const precos = ler("app/(public)/precos/page.tsx");
-  assert.match(precos, /NFSE_ATIVA \? "emitida automaticamente a cada cobrança" : "emitida após a abertura do CNPJ"/);
+  assert.doesNotMatch(precos, /nota fiscal|NFSE_ATIVA|\bNF\b/i);
   const exemplos = ler("lib/properties.ts");
   assert.doesNotMatch(exemplos, /reviews: \[/);
   assert.doesNotMatch(exemplos, /rating: [1-9]|reviewCount: [1-9]/);

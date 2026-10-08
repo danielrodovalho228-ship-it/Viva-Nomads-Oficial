@@ -88,7 +88,7 @@ test("admin: Aprovar documento bloqueado sem CPF (PF) ou CNPJ completo (PJ)", ()
 
 test("admin: moderarDocumento confere o documento do dono ao aprovar; tela desabilita Aprovar", () => {
   const srv = ler("lib/data/documentos-admin.ts");
-  assert.match(srv, /if \(aprovado\) \{[\s\S]*?motivoBloqueioAprovacao\(await lerDocumento\(createAdminClient\(\), alvo\.owner_id as string\)\)/);
+  assert.match(srv, /if \(aprovado\) \{[\s\S]*?motivoBloqueioAprovacao\(await lerDocumento\(adm, alvo\.owner_id as string\)\)/);
   const ui = ler("app/(dashboard)/admin/documentos/admin-documentos-client.tsx");
   assert.match(ui, /doc\.bloqueioAprovacao/);
   assert.match(ui, /disabled=\{busy \|\| !podeAprovar \|\| !!doc\.bloqueioAprovacao\}/);
