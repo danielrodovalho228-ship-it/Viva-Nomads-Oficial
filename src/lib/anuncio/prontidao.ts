@@ -62,6 +62,17 @@ export interface Prontidao {
   pct: number;
 }
 
+/** Rótulo curto do documento na prontidão do editor (o inquilino nunca vê isto). */
+export function rotuloDocumento(status: StatusDocumento, motivo?: string | null): string {
+  if (status === "approved") return "Aprovado";
+  if (status === "pending") return "Em análise";
+  if (status === "rejected") {
+    const m = motivo?.trim();
+    return m ? `Reprovado: ${m}` : "Reprovado";
+  }
+  return "Não enviado";
+}
+
 const DOC_DETALHE: Record<StatusDocumento, string> = {
   none: "ainda não enviado",
   pending: "em análise pela equipe (avisamos por e-mail quando for aprovado)",

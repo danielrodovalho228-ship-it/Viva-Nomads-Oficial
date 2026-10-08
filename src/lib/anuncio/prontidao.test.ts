@@ -108,3 +108,12 @@ test("'100% · Pronto para publicar' em Meus imóveis, Visão geral e editor", (
   const ler = (p: string) => readFileSync(new URL(`../../app/(dashboard)/dashboard/${p}`, import.meta.url), "utf8");
   for (const p of ["imoveis/imoveis-client.tsx", "page.tsx", "imoveis/[id]/editar/editar-client.tsx"]) assert.match(ler(p), /100% · [Pp]ronto para publicar/, p);
 });
+
+test("rótulos do documento na prontidão: Não enviado / Em análise / Aprovado / Reprovado: motivo", async () => {
+  const { rotuloDocumento } = await import("./prontidao.ts");
+  assert.equal(rotuloDocumento("none"), "Não enviado");
+  assert.equal(rotuloDocumento("pending"), "Em análise");
+  assert.equal(rotuloDocumento("approved"), "Aprovado");
+  assert.equal(rotuloDocumento("rejected", "Foto ilegível"), "Reprovado: Foto ilegível");
+  assert.equal(rotuloDocumento("rejected", "  "), "Reprovado");
+});
