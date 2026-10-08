@@ -84,6 +84,15 @@ function useAgora(ms = 30_000): Date | null {
 const hora = (d: Date | null, tz: string) => (d ? d.toLocaleTimeString("pt-BR", { timeZone: tz, hour: "2-digit", minute: "2-digit" }) : "--:--");
 const dataHora = (iso: string) => new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 
+/** Marca fixa: deixa claro que todo agente da Central é uma IA (a persona é só o jeito de falar). */
+function MarcaIA() {
+  return (
+    <span className="inline-flex items-center rounded-full border border-white/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#C5CFEE]" data-testid="marca-ia">
+      agente de IA
+    </span>
+  );
+}
+
 function Chip({ cor, children }: { cor: string; children: React.ReactNode }) {
   return (
     <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2 py-0.5 text-[11px] font-semibold" style={{ borderColor: `${cor}66`, color: cor, background: `${cor}14` }}>
@@ -290,7 +299,7 @@ function CardAgente({
       <AvatarAgente slug={a.slug} nome={a.nome} cor={cor} anel={anel} recente={!!agora && rondaRecente(ultima, agora)} tamanho={grande ? 64 : 52} />
       <div className="min-w-0">
         <h3 className="flex flex-wrap items-center gap-2 text-base font-bold text-white">
-          {a.nome} <Chip cor={COR_STATUS[st]}>{ROTULO_STATUS[st]}</Chip>
+          {a.nome} <MarcaIA /> <Chip cor={COR_STATUS[st]}>{ROTULO_STATUS[st]}</Chip>
         </h3>
         <p className="text-[13px] text-[#8C9AC4]">{a.cargo}</p>
         {st === "no_ar" ? (
@@ -627,7 +636,7 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
           >
             <AvatarAgente slug={x.slug} nome={x.nome} cor={COR_ESQUADRAO[x.esquadrao]} tamanho={32} />
             <span className="min-w-0">
-              <span className="block text-sm font-semibold text-white">{x.nome}</span>
+              <span className="flex items-center gap-1.5 text-sm font-semibold text-white">{x.nome} <MarcaIA /></span>
               <span className="hidden truncate text-[11px] text-[#8C9AC4] lg:block">{x.cargo}</span>
             </span>
           </button>
@@ -640,7 +649,7 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
             <div className="flex items-center gap-3">
               <AvatarAgente slug={a.slug} nome={a.nome} cor={COR_ESQUADRAO[a.esquadrao]} tamanho={44} />
               <div>
-                <p className="font-bold text-white">{a.nome}</p>
+                <p className="flex flex-wrap items-center gap-2 font-bold text-white">{a.nome} <MarcaIA /></p>
                 <p className="text-xs text-[#8C9AC4]">{a.cargo}</p>
               </div>
             </div>
@@ -820,6 +829,7 @@ function Sala({ dados, porSlug }: { dados: DadosCentral; porSlug: Record<string,
               >
                 <AvatarAgente slug={a.slug} nome={a.nome} cor={COR_ESQUADRAO[a.esquadrao]} tamanho={24} />
                 {a.nome}
+                <MarcaIA />
                 {fixo && <span className="text-[10px]">(fecha)</span>}
               </button>
             );
@@ -840,7 +850,7 @@ function Sala({ dados, porSlug }: { dados: DadosCentral; porSlug: Record<string,
               <div key={chave} className="rounded-2xl border border-white/10 bg-[#0B1430]/80 p-4">
                 <div className="flex items-center gap-2">
                   {a && <AvatarAgente slug={a.slug} nome={a.nome} cor={COR_ESQUADRAO[a.esquadrao]} tamanho={32} />}
-                  <b className="text-white">{a?.nome ?? f.slug}</b>
+                  <b className="text-white">{a?.nome ?? f.slug}</b> <MarcaIA />
                   <span className="text-xs text-[#8C9AC4]">{a?.cargo}</span>
                 </div>
                 <p className="mt-2 whitespace-pre-line text-sm text-[#DCE3FA]">{f.texto}</p>
