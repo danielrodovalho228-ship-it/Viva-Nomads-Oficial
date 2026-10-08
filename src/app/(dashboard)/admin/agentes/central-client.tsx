@@ -67,6 +67,20 @@ const ROTULO_RONDA: Record<Ronda["status"], string> = { ok: "OK", alerta: "Alert
 const mono = { fontFamily: "var(--font-mono-agentes), ui-monospace, monospace" };
 const display = { fontFamily: "var(--font-display-agentes), var(--font-jakarta), sans-serif" };
 
+/** Trilha da investigação do gerente ("Moacir → Viva: …", "Viva: …", "Disparei…") vira um bloco recolhido. */
+const ehPasso = (c: Conversa) => c.papel === "agente" && (c.autor_slug !== c.agente_slug || /^(Moacir → |Disparei |Não consegui disparar )/.test(c.texto));
+function agruparTrilha(thread: Conversa[]): { tipo: "trilha" | "msg"; itens: Conversa[] }[] {
+  const out: { tipo: "trilha" | "msg"; itens: Conversa[] }[] = [];
+  for (const c of thread) {
+    const ult = out[out.length - 1];
+    if (ehPasso(c)) {
+      if (ult?.tipo === "trilha") ult.itens.push(c);
+      else out.push({ tipo: "trilha", itens: [c] });
+    } else out.push({ tipo: "msg", itens: [c] });
+  }
+  return out;
+}
+
 function useAgora(ms = 30_000): Date | null {
   const [agora, setAgora] = useState<Date | null>(null);
   useEffect(() => {
@@ -659,19 +673,24 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
                   Nenhuma conversa com {a.nome} ainda. Pergunte algo sobre as rondas, ou deixe uma ordem para a próxima.
                 </p>
               ) : (
-                thread.map((c) => {
-                  // Trilha da investigação do gerente ("Moacir → Viva: …", "Viva: …", "Disparei…").
-                  const passo = c.papel === "agente" && (c.autor_slug !== c.agente_slug || /^(Moacir → |Disparei |Não consegui disparar )/.test(c.texto));
-                  return passo ? (
-                    <div key={c.id} data-testid="passo-gerente" className="ml-3 max-w-[85%] whitespace-pre-line border-l-2 border-[#38BDF8]/50 py-0.5 pl-3 text-xs text-[#AEB9DD]">
-                      {c.texto}
-                    </div>
+                agruparTrilha(thread).map((g) =>
+                  g.tipo === "trilha" ? (
+                    <details key={g.itens[0].id} data-testid="trilha-gerente" className="ml-3 max-w-[85%] text-xs text-[#AEB9DD]">
+                      <summary className="cursor-pointer select-none py-1 text-[#8C9AC4]">ver como apurei ({g.itens.length})</summary>
+                      <div className="space-y-1">
+                        {g.itens.map((c) => (
+                          <div key={c.id} data-testid="passo-gerente" className="whitespace-pre-line border-l-2 border-[#38BDF8]/50 py-0.5 pl-3">
+                            {c.texto}
+                          </div>
+                        ))}
+                      </div>
+                    </details>
                   ) : (
-                    <div key={c.id} className={`max-w-[85%] whitespace-pre-line rounded-2xl px-3 py-2 text-sm ${c.papel === "daniel" ? "ml-auto bg-[#3D7BFF] text-white" : "bg-white/5 text-[#DCE3FA]"}`}>
-                      {c.texto}
+                    <div key={g.itens[0].id} className={`max-w-[85%] whitespace-pre-line rounded-2xl px-3 py-2 text-sm ${g.itens[0].papel === "daniel" ? "ml-auto bg-[#3D7BFF] text-white" : "bg-white/5 text-[#DCE3FA]"}`}>
+                      {g.itens[0].texto}
                     </div>
-                  );
-                })
+                  )
+                )
               )}
               {ocupado && <p className="text-xs text-[#8C9AC4]">{a.slug === "moacir" ? "Moacir está investigando (banco ao vivo e a equipe)…" : `${a.nome} está escrevendo…`}</p>}
               {sugestao && (

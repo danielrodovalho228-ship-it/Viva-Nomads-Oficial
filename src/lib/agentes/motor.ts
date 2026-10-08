@@ -33,7 +33,7 @@ import {
 } from "./central.ts";
 import { retratoEmTexto, type Retrato } from "./retrato.ts";
 import { CONTEXTO_VIVA, SLUG_GERENTE } from "./central.ts";
-import { investigar, systemGerente, type DepsGerente, type ModeloGerente } from "./gerente.ts";
+import { investigar, semRepeticao, systemGerente, type DepsGerente, type ModeloGerente } from "./gerente.ts";
 import { personaPermitida, ehConversaSocial, extrairLembrar, respostaSocialSimulada, MAX_MEMORIAS_NO_PROMPT, type Memoria } from "./persona.ts";
 import { blocoAoVivo, conferirPendencias, marcarResolvidos, REGRA_AO_VIVO, respostaSimuladaAgente, type Conferencia } from "./ao-vivo.ts";
 
@@ -143,7 +143,8 @@ export async function responderChat(d: Deps, entrada: unknown): Promise<Resposta
     }
     const { texto: semLembrar, fatos } = extrairLembrar(out.resposta);
     await guardar(fatos);
-    const resposta = (esperaDanielIndevida(semLembrar) ? `${semLembrar}\n${NOTA_CEO}` : semLembrar).slice(0, 8000);
+    const limpa = semRepeticao(semLembrar, out.trilha);
+    const resposta = (esperaDanielIndevida(limpa) ? `${limpa}\n${NOTA_CEO}` : limpa).slice(0, 8000);
     // Cada passo vira uma linha própria (inserts em sequência: ordem de criação = ordem da conversa).
     for (const p of out.trilha) await d.gravar([{ agente_slug: slug, papel: "agente", autor_slug: p.autor, texto: p.texto.slice(0, 8000) }]);
     await d.gravar([{ agente_slug: slug, papel: "agente", autor_slug: slug, texto: resposta }]);
