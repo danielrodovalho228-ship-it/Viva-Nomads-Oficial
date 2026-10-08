@@ -253,6 +253,9 @@ export interface DepsExecutar {
   disparar(url: string, token: string, texto: string): Promise<{ sessao_url: string | null }>;
 }
 
+/** Ordem gravada mas sem disparo imediato: a rotina de gestão (de hora em hora) dispara toda ordem com disparo_erro. */
+export const avisoOrdemRegistrada = (nome: string) => `Ordem registrada — o Moacir aciona ${nome} em até 1 hora.`;
+
 /**
  * Grava a ordem e dispara na hora a rotina real do agente. Sem token ou com
  * falha no disparo, a ordem FICA gravada (o agente lê na próxima ronda) e a
@@ -280,7 +283,7 @@ export async function executarAgora(d: DepsExecutar, entrada: unknown): Promise<
     await d.registrarDisparo(ordemId, { erro: "sem token da rotina" });
     return {
       status: 503,
-      body: { ordemId, erro: `Falta o token da rotina do ${agente.nome} no servidor. A ordem ficou gravada: ele lê na próxima ronda (${agente.rotina_texto ?? "sem horário"}).` },
+      body: { ordemId, aviso: avisoOrdemRegistrada(agente.nome), erro: `Falta o token da rotina do ${agente.nome} no servidor.` },
     };
   }
   try {
@@ -290,7 +293,7 @@ export async function executarAgora(d: DepsExecutar, entrada: unknown): Promise<
   } catch (e) {
     const motivo = e instanceof Error ? e.message.slice(0, 200) : "falha";
     await d.registrarDisparo(ordemId, { erro: motivo });
-    return { status: 502, body: { ordemId, erro: `Não consegui disparar o ${agente.nome} (${motivo}). A ordem ficou gravada para a próxima ronda.` } };
+    return { status: 502, body: { ordemId, aviso: avisoOrdemRegistrada(agente.nome), erro: `Não consegui disparar o ${agente.nome} (${motivo}).` } };
   }
 }
 

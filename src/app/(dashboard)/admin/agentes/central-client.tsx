@@ -603,7 +603,8 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
     try {
       const r = await fetch("/api/admin/agentes/executar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: alvo, texto: ordemTexto.trim() }) });
       const j = (await r.json().catch(() => ({}))) as { aviso?: string; erro?: string; sessao_url?: string | null; ordemId?: string };
-      if (!r.ok) setErro(j.erro ?? "Não consegui disparar agora.");
+      if (!r.ok && j.ordemId && j.aviso) setAviso(j.aviso); // ordem gravada: o Moacir aciona em até 1 hora
+      else if (!r.ok) setErro(j.erro ?? "Não consegui disparar agora.");
       else {
         setAviso(j.aviso ?? "Disparado.");
         setLinkSessao(j.sessao_url ?? null);
@@ -766,7 +767,7 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
                         </a>
                       )}
                     </div>
-                    {estado === "falhou" && o.disparo_erro && <p className="mt-1 text-xs text-[#FFB0A6]">Disparo: {o.disparo_erro}. Fica para a próxima ronda.</p>}
+                    {estado === "falhou" && o.disparo_erro && <p className="mt-1 text-xs text-[#FFB0A6]">Disparo: {o.disparo_erro}. O Moacir aciona em até 1 hora.</p>}
                     <p className="mt-1 whitespace-pre-line text-sm text-[#DCE3FA]">{o.texto}</p>
                     {o.resposta && <p className="mt-1 whitespace-pre-line border-l-2 border-[#7FD321]/50 pl-2 text-sm text-[#AEB9DD]">{o.resposta}</p>}
                   </li>

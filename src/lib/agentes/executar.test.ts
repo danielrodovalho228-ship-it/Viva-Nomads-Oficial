@@ -16,7 +16,7 @@ import {
   URL_DISPARO,
   type Agente,
 } from "./central.ts";
-import { executarAgora, responderChat, type Deps, type DepsExecutar } from "./motor.ts";
+import { avisoOrdemRegistrada, executarAgora, responderChat, type Deps, type DepsExecutar } from "./motor.ts";
 
 const ag = (slug: string, nome: string, extra: Partial<Agente> = {}): Agente => ({
   slug,
@@ -113,6 +113,11 @@ test("Executar agora: só admin, limite de 20, agente sem rotina, sem token e fa
   assert.equal(r2.status, 502);
   assert.equal(r2.body.ordemId, "o1");
   assert.ok(cai.log.includes("disparo:o1:HTTP 401"));
+  // Sem disparo imediato, a resposta promete o que de fato acontece (rotina de hora em hora), não "próxima ronda".
+  assert.equal(r1.body.aviso, "Ordem registrada — o Moacir aciona Renato em até 1 hora.");
+  assert.equal(r2.body.aviso, "Ordem registrada — o Moacir aciona Renato em até 1 hora.");
+  assert.doesNotMatch(String(r1.body.erro) + String(r2.body.erro), /próxima ronda/);
+  assert.equal(avisoOrdemRegistrada("Bruno"), "Ordem registrada — o Moacir aciona Bruno em até 1 hora.");
 });
 
 function fakeChat(resposta: string) {
