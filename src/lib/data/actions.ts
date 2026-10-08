@@ -1,5 +1,6 @@
 "use server";
 
+import { ligarQualificacaoAoImovel } from "@/lib/data/ligar-qualificacao";
 import { caminhoDoDono, operacaoValida } from "@/lib/anuncio/operacao";
 import { createClient } from "@/lib/supabase/server";
 import { dentroDoLimite, HORA, DIA as DIA_SEGUNDOS } from "@/lib/limites";
@@ -1461,11 +1462,14 @@ export async function saveDraftData(snap: {
       .eq("status", "draft");
     if (error) return { ok: false, error: erroBancoPT(error) };
     await sincronizarFotos(supabase, snap.id, user.id, urlsDoRascunho(snap.data));
+    await ligarQualificacaoAoImovel(supabase, user.id, snap.id);
     return { ok: true, id: snap.id };
   }
   const { data, error } = await supabase.from("properties").insert(fields).select("id").single();
   if (error) return { ok: false, error: erroBancoPT(error) };
   await sincronizarFotos(supabase, data.id as string, user.id, urlsDoRascunho(snap.data));
+  // A qualificação enviada antes do rascunho passa a pertencer a ele (prontidão "Em análise", não "Não enviado").
+  await ligarQualificacaoAoImovel(supabase, user.id, data.id as string);
   return { ok: true, id: data.id };
 }
 

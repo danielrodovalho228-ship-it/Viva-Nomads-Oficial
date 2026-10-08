@@ -23,8 +23,9 @@ import {
   XCircle,
   AlertTriangle,
 } from "lucide-react";
+import { DateFieldBR } from "@/components/ui/date-field-br";
 import { createProperty, updateProperty, loadPropertyForEdit, getMyDocumentStatus, saveDraftData, loadDraftData, getLatestDraft, type DocumentStatus } from "@/lib/data/actions";
-import { prontidaoAnuncio } from "@/lib/anuncio/prontidao";
+import { prontidaoAnuncio, rotuloDocumento } from "@/lib/anuncio/prontidao";
 import { geocodeForSave } from "@/lib/integrations/geocoding";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button, ButtonLink } from "@/components/ui/button";
@@ -1125,12 +1126,13 @@ export default function NewPropertyPage() {
 
             <div className="rounded-xl border border-sage-200 p-4">
               <p className="text-sm font-medium text-ink">Disponibilidade e prazo</p>
-              <div className="mt-3 grid grid-cols-2 gap-3">
+              {/* Campo de texto com máscara dd/mm/aaaa: o campo de data nativo do iOS aparece vazio e com altura diferente. */}
+              <div className="mt-3 grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 [&>*]:min-w-0">
                 <Labeled label="Disponível a partir de">
-                  <input type="date" value={availableFrom} onChange={(e) => setAvailableFrom(e.target.value)} className="input" />
+                  <DateFieldBR value={availableFrom} onChange={setAvailableFrom} ariaLabel="Disponível a partir de" className="input h-11 min-w-0" />
                 </Labeled>
                 <Labeled label="Disponível até (opcional)">
-                  <input type="date" value={availableUntil} onChange={(e) => setAvailableUntil(e.target.value)} className="input" />
+                  <DateFieldBR value={availableUntil} onChange={setAvailableUntil} ariaLabel="Disponível até (opcional)" className="input h-11 min-w-0" />
                 </Labeled>
               </div>
               <div className="mt-3 grid grid-cols-2 gap-3">
@@ -1564,7 +1566,7 @@ export default function NewPropertyPage() {
                                 : "bg-surface-2 text-muted"
                           )}
                         >
-                          {docStatus === "rejected" ? "Recusada" : docStatus === "pending" ? "Em análise" : "Não enviado"}
+                          {rotuloDocumento(docStatus, docReason)}
                         </span>
                       ) : (
                         <button

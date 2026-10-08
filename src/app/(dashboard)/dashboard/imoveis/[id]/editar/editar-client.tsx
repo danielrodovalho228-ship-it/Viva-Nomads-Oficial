@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { DateFieldBR } from "@/components/ui/date-field-br";
 import {
   Camera,
   CalendarRange,
@@ -307,22 +308,11 @@ export function EditarImovelClient({
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="text-sm">
               <span className="mb-1 block font-medium text-ink">Disponível a partir de</span>
-              <input
-                type="date"
-                value={availableFrom}
-                onChange={(e) => setAvailableFrom(e.target.value)}
-                className="w-full rounded-xl border border-sage-200 px-3 py-2.5 outline-none focus:border-sage"
-              />
+              <DateFieldBR value={availableFrom} onChange={setAvailableFrom} ariaLabel="Disponível a partir de" className="h-11 min-w-0 w-full rounded-xl border border-sage-200 px-3 py-2.5 outline-none focus:border-sage" />
             </label>
             <label className="text-sm">
               <span className="mb-1 block font-medium text-ink">Disponível até (opcional)</span>
-              <input
-                type="date"
-                value={availableUntil}
-                min={availableFrom || undefined}
-                onChange={(e) => setAvailableUntil(e.target.value)}
-                className="w-full rounded-xl border border-sage-200 px-3 py-2.5 outline-none focus:border-sage"
-              />
+              <DateFieldBR value={availableUntil} onChange={setAvailableUntil} ariaLabel="Disponível até (opcional)" className="h-11 min-w-0 w-full rounded-xl border border-sage-200 px-3 py-2.5 outline-none focus:border-sage" />
             </label>
           </div>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">

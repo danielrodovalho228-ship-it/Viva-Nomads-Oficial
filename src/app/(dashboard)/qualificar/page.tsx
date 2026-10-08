@@ -871,22 +871,23 @@ function TagBlock({
         </div>
       )}
       <div className="p-4">
-        <div className="flex items-center justify-between gap-2">
-          <span className="flex items-center gap-2 font-medium text-ink">
-            <Icon className="h-5 w-5 text-sage" /> {title}
+        {/* Celular: título numa linha; contador e etiqueta juntos numa segunda linha. */}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <span className="flex min-w-0 items-center gap-2 font-medium text-ink">
+            <Icon className="h-5 w-5 shrink-0 text-sage" /> {title}
+          </span>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 sm:justify-end">
             <span className="text-xs font-normal text-muted">
               {marcados}/{toggleaveis.length} marcados
             </span>
-          </span>
-          {earned ? (
-            <span className="tag-earned-pop shrink-0 rounded-full bg-sage-100 px-2.5 py-1 text-xs font-medium text-forest">
-              Etiqueta conquistada ✓
-            </span>
-          ) : (
-            <span className="shrink-0 text-right text-xs text-muted">
-              Marque todos os itens para ganhar esta etiqueta
-            </span>
-          )}
+            {earned ? (
+              <span className="tag-earned-pop w-fit rounded-full bg-sage-100 px-2.5 py-1 text-xs font-medium text-forest">
+                Etiqueta conquistada ✓
+              </span>
+            ) : (
+              <span className="text-xs text-muted">Marque todos os itens para ganhar esta etiqueta</span>
+            )}
+          </div>
         </div>
         <div className="mt-3 grid gap-2 sm:grid-cols-2">
           {items.map((it) => {
