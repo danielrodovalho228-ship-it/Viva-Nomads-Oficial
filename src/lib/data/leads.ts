@@ -11,7 +11,6 @@ interface LeadRow {
   id: string;
   status: string;
   tenant_id: string;
-  tenant: { full_name: string | null; professional_category: string | null } | null;
   property: { title: string | null } | null;
 }
 
@@ -56,7 +55,6 @@ export async function listLeads(): Promise<Lead[]> {
     .from("leads")
     .select(
       `id, status, tenant_id,
-       tenant:profiles!leads_tenant_id_fkey ( full_name, professional_category ),
        property:properties!leads_property_id_fkey ( title )`
     )
     .eq("owner_id", user.id)
@@ -72,6 +70,16 @@ export async function listLeads(): Promise<Lead[]> {
   const verificacoes = new Map<string, VerificacaoRow>();
   const admin = createAdminClient();
   const tenantIds = [...new Set(rows.map((r) => r.tenant_id))];
+  // Nome e categoria do inquilino: a RLS de profiles só deixa a própria pessoa
+  // (e o admin) ler — o embed voltava vazio e o dono via "Interessado" até
+  // depois do aceite. Lidos pelo servidor SÓ para os inquilinos dos leads deste
+  // dono, e só nome + categoria (nunca e-mail ou telefone). O nome passa por
+  // nomeExibido: primeiro nome antes do aceite, completo depois.
+  const perfis = new Map<string, { full_name: string | null; professional_category: string | null }>();
+  if (admin && tenantIds.length > 0) {
+    const { data: ps } = await admin.from("profiles").select("id, full_name, professional_category").in("id", tenantIds);
+    for (const p of (ps ?? []) as { id: string; full_name: string | null; professional_category: string | null }[]) perfis.set(p.id, p);
+  }
   if (admin && tenantIds.length > 0) {
     const { data: vs } = await admin
       .from("tenant_verifications")
@@ -85,12 +93,13 @@ export async function listLeads(): Promise<Lead[]> {
 
   return rows.map((r) => {
     const v = verificacoes.get(r.tenant_id);
+    const t = perfis.get(r.tenant_id);
     return {
       id: r.id,
       status: r.status,
-      name: nomeExibido(r.tenant?.full_name, r.status),
+      name: nomeExibido(t?.full_name, r.status),
       property: r.property?.title ?? "Imóvel",
-      category: categoriaLabel(r.tenant?.professional_category) || "—",
+      category: categoriaLabel(t?.professional_category) || "—",
       riskCategories: v?.risk_categories ?? ["Verificação pendente"],
       light: v?.traffic_light ?? "yellow",
       verified: !!v?.traffic_light,
