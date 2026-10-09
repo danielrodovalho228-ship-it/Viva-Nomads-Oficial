@@ -425,7 +425,7 @@ export default function AuthPage() {
         {/* Fase 2.3 — imagem lateral serena (vertical), só em >= 1024px. */}
         <BrandImage
           src="/media/auth-lateral.webp"
-          alt="Pessoa relaxando junto à janela em um apartamento mobiliado e tranquilo"
+          alt="Pessoa relaxando junto à janela em um imóvel mobiliado e tranquilo"
           rounded="rounded-none"
           sizes="50vw"
           priority
