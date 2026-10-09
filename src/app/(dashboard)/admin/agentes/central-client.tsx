@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   COR_ESQUADRAO,
@@ -28,6 +29,7 @@ import { COR_RONDA_HEX, achadosDaPrioridade, corDaRonda, indicadores, mesclarCon
 import { deixarOrdem, type ChamadoVermelho, type DadosCentral } from "@/lib/data/agentes-actions";
 import { AvatarAgente } from "@/components/admin/agentes/avatar";
 import { RedeAoVivo } from "@/components/admin/agentes/rede";
+import { AtivarNotificacoes } from "@/components/app/push-app";
 import { ChipPrioridade, RaioX } from "@/components/admin/agentes/raiox";
 import styles from "@/components/admin/agentes/central.module.css";
 
@@ -195,7 +197,7 @@ export function CentralAgentes({ dados, vermelhos = [] }: { dados: DadosCentral;
           ))}
         </div>
       )}
-      <header className="sticky top-0 z-20 border-b border-white/10 bg-[#050A18]/85 px-4 backdrop-blur sm:px-8">
+      <header className="border-b border-white/10 bg-[#050A18]/85 px-4 backdrop-blur sm:px-8 lg:sticky lg:top-0 lg:z-20">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3">
           <div className="flex items-center gap-2.5">
             <span className="grid h-[34px] w-[34px] place-items-center rounded-[10px] bg-gradient-to-br from-[#005DFC] to-[#38BDF8] text-[13px] font-bold text-white shadow-[0_0_24px_rgba(0,93,252,.5)]" style={display}>
@@ -235,6 +237,19 @@ export function CentralAgentes({ dados, vermelhos = [] }: { dados: DadosCentral;
           ))}
         </nav>
       </header>
+
+      {/* Só dentro do app: notificações e atalhos da equipe (no site, escondido por .app-only). */}
+      <div className="app-only border-b border-white/10 px-4 py-3" data-testid="atalhos-app">
+        <div className="flex flex-wrap gap-2">
+          <AtivarNotificacoes className="border-white/20 bg-[#111F47] text-white" />
+          <Link href="/admin/documentos" className="grid min-h-11 place-items-center rounded-xl border border-white/20 px-4 text-sm font-semibold text-white">
+            Documentos
+          </Link>
+          <Link href="/admin/atendimento" className="grid min-h-11 place-items-center rounded-xl border border-white/20 px-4 text-sm font-semibold text-white">
+            Atendimento
+          </Link>
+        </div>
+      </div>
 
       <div className="mx-auto max-w-[1280px] px-4 pb-16 sm:px-8">
         <section className={`grid items-end gap-4 lg:grid-cols-[1.3fr_1fr] lg:gap-6 ${aba === "Equipe" ? "py-7" : "py-4"}`}>

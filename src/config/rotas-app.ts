@@ -28,8 +28,10 @@ const exato = (caminho: string): Regra => ({ caminho, abaixo: false });
 const ramo = (caminho: string): Regra => ({ caminho, abaixo: true });
 
 /**
- * Telas do app. Tudo fica no app, MENOS admin e as páginas de marketing
- * (ferramentas, simuladores, assinatura e fechamento do proprietário entram no app). A lista é
+ * Telas do app. Tudo fica no app, MENOS as páginas de marketing
+ * (ferramentas, simuladores, assinatura e fechamento do proprietário entram no app).
+ * /admin (Central dos agentes, documentos, atendimento) entra no app SÓ como rota:
+ * quem decide o acesso é o servidor (proxy + layout de /admin: não-admin = 404). A lista é
  * explícita de propósito: uma tela nova só entra no app quando for colocada aqui.
  */
 export const ROTAS_APP: Regra[] = [
@@ -67,6 +69,7 @@ export const ROTAS_APP: Regra[] = [
   ramo("/dashboard/assinatura"),
   ramo("/dashboard/fechamento"),
   ramo("/dashboard/conta"), // perfil
+  ramo("/admin"), // Equipe (Central dos agentes): o servidor devolve 404 a quem não é admin
   exato("/excluir-conta"), // as lojas exigem excluir a conta DENTRO do app
   exato("/privacidade"),
   exato("/termos"),

@@ -146,9 +146,11 @@ export async function proxy(request: NextRequest) {
       .eq("id", user.id)
       .single();
     if (profile?.role !== "admin") {
-      const redirectUrl = request.nextUrl.clone();
-      redirectUrl.pathname = "/dashboard";
-      return NextResponse.redirect(redirectUrl);
+      // Não-admin: 404 (a área de admin não revela que existe).
+      const notFoundUrl = request.nextUrl.clone();
+      notFoundUrl.pathname = "/nao-encontrado-admin";
+      notFoundUrl.search = "";
+      return NextResponse.rewrite(notFoundUrl, { status: 404 });
     }
   }
 

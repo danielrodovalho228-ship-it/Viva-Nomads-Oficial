@@ -9,6 +9,7 @@ import {
   Settings,
   FileText,
   UserRound,
+  Bot,
 } from "lucide-react";
 
 /**
@@ -23,7 +24,9 @@ export interface MobileTab {
   /** Exige login — sem sessão, a aba leva a /auth?redirect=<href>. */
   authRequired?: boolean;
   /** Chave de contador (badge). Preenchido pela casca quando houver dado. */
-  badge?: "mensagens" | "interessados";
+  badge?: "mensagens" | "interessados" | "equipe";
+  /** Prefixo que também deixa a aba ativa (ex.: /admin para a aba Equipe). */
+  ativoEm?: string;
 }
 
 /** Modo inquilino — 5 abas. */
@@ -64,6 +67,21 @@ export const OWNER_APP_TABS: MobileTab[] = [
   { href: "/dashboard/conta", label: "Conta", icon: UserRound },
 ];
 
+/** Aba extra só para role admin: Central dos agentes (o servidor ainda confere o papel). */
+export const ADMIN_APP_TAB: MobileTab = {
+  href: "/admin/agentes",
+  label: "Equipe",
+  icon: Bot,
+  badge: "equipe",
+  ativoEm: "/admin",
+};
+
+/** Abas do app por papel; admin ganha "Equipe" ao final. */
+export function abasDoApp(mundo: "tenant" | "owner", ehAdmin: boolean): MobileTab[] {
+  const base = mundo === "owner" ? OWNER_APP_TABS : TENANT_APP_TABS;
+  return ehAdmin ? [...base, ADMIN_APP_TAB] : base;
+}
+
 /** Títulos das telas no cabeçalho curto do app. */
 const TITULOS_APP: [RegExp, string][] = [
   [/^\/dashboard\/?$/, "Painel"],
@@ -92,6 +110,9 @@ const TITULOS_APP: [RegExp, string][] = [
   [/^\/dashboard\/locacoes/, "Minha estadia"],
   [/^\/dashboard\/solicitacoes/, "Chamados"],
   [/^\/dashboard\/orcamentos/, "Orçamentos"],
+  [/^\/admin\/documentos/, "Documentos"],
+  [/^\/admin\/atendimento/, "Atendimento"],
+  [/^\/admin/, "Equipe"],
   [/^\/buscar/, "Buscar"],
   [/^\/imoveis\//, "Anúncio"],
   [/^\/pedidos\/novo/, "Novo pedido de moradia"],
@@ -106,7 +127,7 @@ export function tituloDaTelaApp(pathname: string): string {
 
 /** Abas principais do app (sem botão Voltar no cabeçalho). */
 export function ehAbaRaizApp(pathname: string): boolean {
-  return [...TENANT_APP_TABS, ...OWNER_APP_TABS].some((t) => t.href === pathname);
+  return [...TENANT_APP_TABS, ...OWNER_APP_TABS, ADMIN_APP_TAB].some((t) => t.href === pathname);
 }
 
 /**

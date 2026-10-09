@@ -461,7 +461,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
       {/* Barra inferior do app (ciente do modo); esconde-se no desktop e nas
           telas de fluxo. Verde = inquilino, âmbar = proprietário. */}
-      <MobileTabBar world={mode === "owner" ? "owner" : "tenant"} />
+      <MobileTabBar world={mode === "owner" ? "owner" : "tenant"} badges={{ equipe: docsPendentes + achadosP1 }} />
     </div>
   );
 }
