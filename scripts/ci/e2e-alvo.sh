@@ -6,12 +6,12 @@
 set -eu
 PROD_URL="https://vivanomads.com.br"
 amb=$(printf '%s' "${AMBIENTE:-}" | tr '[:upper:]' '[:lower:]')
-base="" rodar="true" bypass="false" aviso=""
+base="" rodar="true" bypass="false" aviso="" modo="completo"
 if [ "${EVENTO:-}" = "workflow_dispatch" ]; then
   base="${INPUT_URL:-}"
   [ "${TEM_BYPASS:-false}" = "true" ] && bypass="true"
 elif [ "$amb" = "production" ]; then
-  base="$PROD_URL"
+  base="$PROD_URL"; modo="publico"
 elif [ "${TEM_BYPASS:-false}" = "true" ]; then
   base="${TARGET_URL:-}"; bypass="true"
 else
@@ -22,3 +22,6 @@ echo "base_url=$base"
 echo "rodar=$rodar"
 echo "bypass=$bypass"
 echo "aviso=$aviso"
+# producao so roda os specs anonimos: as contas de teste vivem no projeto de TESTE, nao no de producao
+[ "${base%/}" = "$PROD_URL" ] && modo="publico"
+echo "modo=$modo"
