@@ -23,7 +23,7 @@ test.describe("T29 — Chat sem falsas aprovações", () => {
       const resp = page.getByText(/^Aprovação de migração ou merge só vale pelo Claude Code/);
       const n = await resp.count();
       await page.getByPlaceholder(`Escreva para ${nome}…`).fill("Ok, tudo aprovado");
-      await page.getByRole("button", { name: "Perguntar" }).click();
+      await page.getByRole("button", { name: "Enviar" }).click();
       await expect(resp).toHaveCount(n + 1, { timeout: 15_000 });
       await expect(resp.last()).toContainText("rodando o SQL no SQL Editor. Daqui do chat eu não registro nada como aprovado.");
       const { count: depois } = await adm.from("agentes_ordens").select("id", { count: "exact", head: true });

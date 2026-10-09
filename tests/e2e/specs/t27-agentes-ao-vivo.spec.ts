@@ -19,7 +19,7 @@ async function perguntarAoOtavio(page: Page, texto: string) {
   await page.locator('aside[aria-label="Agentes"]').getByRole("button", { name: /Otávio/ }).click();
   const antes = await page.getByText(/^Da minha ronda de /).count();
   await page.getByPlaceholder("Escreva para Otávio…").fill(texto);
-  await page.getByRole("button", { name: "Perguntar" }).click();
+  await page.getByRole("button", { name: "Enviar" }).click();
   await expect(page.getByText(/^Da minha ronda de /)).toHaveCount(antes + 1, { timeout: 20_000 });
   return page.getByText(/^Da minha ronda de /).last();
 }
