@@ -4,7 +4,8 @@ import { sendEmail } from "@/lib/notifications/email";
 import { emProducao } from "@/lib/integracoes";
 import { SITE_URL } from "@/lib/site";
 import { inicioDoDiaBrasilia } from "@/lib/agentes/central";
-import { MAX_TENTATIVAS, processarAvisos, type Aviso, type Deps, type Resultado } from "@/lib/agentes/avisos-daniel";
+import { pushParaAdmins } from "@/lib/notifications/push-admins";
+import { MAX_TENTATIVAS, conteudoPushAviso, processarAvisos, type Aviso, type Deps, type Resultado } from "@/lib/agentes/avisos-daniel";
 
 type Admin = NonNullable<ReturnType<typeof createAdminClient>>;
 
@@ -61,6 +62,9 @@ export function depsAvisos(admin: Admin, segredo: string): Deps {
         .from("avisos_daniel")
         .update({ enviado_em: null, via: null, erro: erro.slice(0, 300), tentativas: (data?.tentativas ?? 0) + (contar ? 1 : 0) })
         .eq("id", id);
+    },
+    async push(a) {
+      await pushParaAdmins(conteudoPushAviso(a));
     },
     async enviar(m) {
       const r = await sendEmail({ to: m.to, subject: m.subject, html: m.html, text: m.text, from: m.from, replyTo: m.replyTo });

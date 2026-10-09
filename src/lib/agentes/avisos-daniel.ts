@@ -52,6 +52,8 @@ export interface Deps {
   /** Desfaz a reserva e anota o erro. `contar` soma uma tentativa. */
   falhou(id: string, erro: string, contar: boolean): Promise<void>;
   enviar(m: Mensagem): Promise<{ ok: boolean; erro?: string }>;
+  /** Push no app dos admins (best-effort: nunca derruba o e-mail). Só evento + link interno. */
+  push?(a: Aviso): Promise<void>;
   agora(): Date;
   siteUrl: string;
   segredo: string;
@@ -152,6 +154,7 @@ export async function processarAvisos(d: Deps): Promise<Resultado> {
       continue;
     }
     if (!(await d.reservar(a.id, "email"))) continue;
+    await d.push?.(a).catch(() => undefined);
     const e = await d.enviar(mensagemAviso(a, para, d));
     if (!e.ok) {
       await d.falhou(a.id, e.erro ?? "Falha no envio.", true);
@@ -164,7 +167,11 @@ export async function processarAvisos(d: Deps): Promise<Resultado> {
   if (excedentes.length) {
     if (horaBrasilia(d.agora()) >= HORA_RESUMO && !(await d.resumoHoje())) {
       const reservados: Aviso[] = [];
-      for (const a of excedentes) if (await d.reservar(a.id, "resumo")) reservados.push(a);
+      for (const a of excedentes) {
+        if (!(await d.reservar(a.id, "resumo"))) continue;
+        reservados.push(a);
+        await d.push?.(a).catch(() => undefined);
+      }
       if (reservados.length) {
         const e = await d.enviar(mensagemResumo(reservados, para, d));
         if (e.ok) r.resumidos = reservados.length;
@@ -175,4 +182,11 @@ export async function processarAvisos(d: Deps): Promise<Resultado> {
     }
   }
   return r;
+}
+
+/** Texto do push do aviso: só evento + prioridade, nunca assunto/corpo (podem citar pessoas). */
+export function conteudoPushAviso(a: Aviso): { title: string; body: string; url: string } {
+  const l = a.link ?? "";
+  const url = l[0] === "/" && l[1] !== "/" && l[1] !== "\\" && !/\s/.test(l) ? l : "/admin/agentes";
+  return { title: `Viva Nomads · aviso ${a.prioridade}`, body: "Novo aviso na Central. Toque para abrir.", url };
 }

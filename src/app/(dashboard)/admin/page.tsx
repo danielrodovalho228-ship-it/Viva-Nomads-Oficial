@@ -1,6 +1,7 @@
 import { hojeBR } from "@/lib/utils";
 import { resolverPeriodo } from "@/lib/admin/visao-geral";
 import { getVisaoGeral, cidadesComAnuncio } from "@/lib/data/admin-visao-geral";
+import { PushTeste } from "@/components/admin/push-teste";
 import { VisaoGeralClient } from "./visao-geral-client";
 
 /**
@@ -38,12 +39,17 @@ export default async function AdminPage({
       }[resultado.motivo];
 
   return (
-    <VisaoGeralClient
-      dados={resultado.ok ? resultado.dados : null}
-      aviso={aviso}
-      periodo={periodo}
-      cidade={cidade}
-      cidades={cidades}
-    />
+    <>
+      <VisaoGeralClient
+        dados={resultado.ok ? resultado.dados : null}
+        aviso={aviso}
+        periodo={periodo}
+        cidade={cidade}
+        cidades={cidades}
+      />
+      <div className="mx-auto mt-6 max-w-5xl px-4 pb-8">
+        <PushTeste />
+      </div>
+    </>
   );
 }
