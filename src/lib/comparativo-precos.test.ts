@@ -101,7 +101,8 @@ test("nenhum outro arquivo tem percentual de comissão fixo", () => {
   const fonte = join(raiz, "config", "planos.ts");
   const violacoes: string[] = [];
   for (const arq of arquivos(raiz)) {
-    if (arq === fonte) continue;
+    // Fontes únicas: planos legados (grandfather) e as faixas da cobrança "Pague quando alugar".
+    if (arq === fonte || arq === join(raiz, "lib", "cobranca", "faixas.ts")) continue;
     readFileSync(arq, "utf8")
       .split("\n")
       .forEach((linha, i) => {
