@@ -1,5 +1,6 @@
 "use server";
 
+import { atualizarRascunhoDoDono } from "@/lib/data/rascunho-dono";
 import { ligarQualificacaoAoImovel } from "@/lib/data/ligar-qualificacao";
 import { caminhoDoDono, operacaoValida } from "@/lib/anuncio/operacao";
 import { createClient } from "@/lib/supabase/server";
@@ -1454,13 +1455,10 @@ export async function saveDraftData(snap: {
   };
 
   if (snap.id) {
-    const { error } = await supabase
-      .from("properties")
-      .update(fields)
-      .eq("id", snap.id)
-      .eq("owner_id", user.id)
-      .eq("status", "draft");
-    if (error) return { ok: false, error: erroBancoPT(error) };
+    const { atualizou, error } = await atualizarRascunhoDoDono(supabase, snap.id, user.id, fields);
+    if (error) return { ok: false, error: erroBancoPT(error as Parameters<typeof erroBancoPT>[0]) };
+    // 0 linhas = rascunho de outro dono (ou já publicado): não liga foto nem qualificação.
+    if (!atualizou) return { ok: true, id: snap.id };
     await sincronizarFotos(supabase, snap.id, user.id, urlsDoRascunho(snap.data));
     await ligarQualificacaoAoImovel(supabase, user.id, snap.id);
     return { ok: true, id: snap.id };
