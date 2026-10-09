@@ -77,6 +77,34 @@ test.describe("T14 — Modo app", () => {
       await esperarModoApp(page);
       await conferirAbas(page, ABAS_INQUILINO);
     });
+
+    test("Equipe: /admin/agentes dá 404 para inquilino e a aba não aparece", async ({ page }) => {
+      test.skip(!hasAccount("inquilino"), "sem conta de teste do inquilino");
+      const resp = await page.goto("/admin/agentes");
+      expect(resp?.status()).toBe(404);
+      await page.goto("/buscar");
+      await expect(barraDoApp(page).getByRole("link", { name: "Equipe" })).toHaveCount(0);
+    });
+  });
+
+  test.describe("admin", () => {
+    test.use({ storageState: hasAccount("admin") ? authFile("admin") : { cookies: [], origins: [] } });
+
+    test("Equipe abre /admin/agentes dentro do app, sem rolagem lateral, com notificações e atalhos", async ({ page }) => {
+      test.skip(!hasAccount("admin"), "sem conta de teste do admin");
+      await page.goto("/dashboard", { waitUntil: "networkidle" });
+      await esperarModoApp(page);
+      await barraDoApp(page).getByRole("link", { name: "Equipe" }).click();
+      await expect(page).toHaveURL(/\/admin\/agentes/);
+      await expect(page.getByTestId("central-agentes")).toBeVisible();
+      await expect(page.getByTestId("atalhos-app").getByRole("button", { name: /Ativar notifica/ })).toBeVisible();
+      await expect(page.getByTestId("atalhos-app").getByRole("link", { name: "Documentos" })).toBeVisible();
+      await expect(page.getByTestId("atalhos-app").getByRole("link", { name: "Atendimento" })).toBeVisible();
+      // Fica dentro do app: nenhum aviso "Esta parte fica no site".
+      await expect(page.getByText("Esta parte fica no site")).toHaveCount(0);
+      const sobra = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+      expect(sobra).toBeLessThanOrEqual(0);
+    });
   });
 
   test.describe("proprietário", () => {

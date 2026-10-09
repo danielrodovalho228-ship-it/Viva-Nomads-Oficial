@@ -52,11 +52,16 @@ test("telas do proprietário que antes caíam no aviso agora ficam no app", () =
   assert.equal(destinoDaRota("/dashboard/simuladorx"), "site");
 });
 
+test("Equipe (admin) abre dentro do app; o acesso é decidido no servidor (404 a não-admin)", () => {
+  for (const p of ["/admin", "/admin/agentes", "/admin/documentos", "/admin/atendimento/1"]) assert.equal(destinoDaRota(p), "app", p);
+  assert.equal(destinoDaRota("/adminx"), "site");
+  assert.match(readFileSync(new URL("../app/(dashboard)/admin/layout.tsx", import.meta.url), "utf8"), /role !== "admin"\) notFound\(\)/);
+  const proxy = readFileSync(new URL("../proxy.ts", import.meta.url), "utf8");
+  assert.match(proxy, /isAdminRoute && user[\s\S]*role !== "admin"[\s\S]*status: 404/);
+});
+
 test("telas só do site", () => {
   for (const p of [
-    "/admin",
-    "/admin/atendimento/1",
-    "/admin/financeiro",
     "/dashboard/viabilidade",
     "/simulacao",
     "/precos",
@@ -101,7 +106,6 @@ test("apple-app-site-association: JSON válido, auth excluída antes, telas do a
   assert.ok(comps.slice(0, primeiraInclusao).every((c) => c.exclude), "exclusões vêm primeiro");
   assert.ok(comps.some((c) => c["/"] === "/auth/confirm/*" && c.exclude));
   for (const r of ROTAS_APP) assert.ok(comps.some((c) => c["/"] === r.caminho && !c.exclude), r.caminho);
-  assert.ok(!comps.some((c) => !c.exclude && c["/"].startsWith("/admin")));
 });
 
 test("assetlinks.json no formato do Google", () => {
@@ -120,7 +124,7 @@ test("Expo (app.json): intentFilters com autoVerify, https, host e só as telas 
     const caminho = d.path ?? d.pathPrefix;
     assert.equal(destinoDaRota(d.pathPrefix ? `${caminho}x` : caminho), "app", caminho);
   }
-  for (const fora of ["/admin", "/auth/confirm"]) {
+  for (const fora of ["/auth/confirm"]) {
     assert.ok(!links.data.some((d) => d.path === fora || (d.pathPrefix && fora.startsWith(d.pathPrefix))), fora);
   }
   assert.deepEqual(esquema.data, [{ scheme: "vivanomads" }]);

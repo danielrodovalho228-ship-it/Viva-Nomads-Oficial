@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/server";
  * aqui no SERVIDOR — se o proxy for contornado, este layout ainda exige sessão +
  * papel admin (lido de `profiles`, fonte confiável). Em modo demonstração
  * (sem Supabase) não há sessão de servidor para checar, então o acesso segue
- * o comportamento de demo; no acesso real, não-admin é redirecionado.
+ * o comportamento de demo; no acesso real, não-admin recebe 404 (a área nem aparece para quem não é da equipe).
  */
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -23,7 +23,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       .select("role")
       .eq("id", user.id)
       .single();
-    if (profile?.role !== "admin") redirect("/dashboard");
+    if (profile?.role !== "admin") notFound();
   }
   return <>{children}</>;
 }

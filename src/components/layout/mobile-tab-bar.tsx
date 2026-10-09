@@ -8,8 +8,7 @@ import {
   isFlowRoute,
   TENANT_TABS,
   OWNER_TABS,
-  TENANT_APP_TABS,
-  OWNER_APP_TABS,
+  abasDoApp,
   type MobileTab,
 } from "@/lib/nav-mobile";
 import { cn } from "@/lib/utils";
@@ -43,7 +42,8 @@ export function MobileTabBar({
   // páginas públicas, ex.: proprietário vendo um anúncio); sem login, inquilino.
   const appWorld: "tenant" | "owner" = user ? (activeMode === "owner" ? "owner" : activeMode === "tenant" ? "tenant" : world) : "tenant";
 
-  function isActive(href: string): boolean {
+  function isActive(href: string, ativoEm?: string): boolean {
+    if (ativoEm && (pathname === ativoEm || pathname.startsWith(ativoEm + "/"))) return true;
     if (pathname === href) return true;
     // Abas "raiz" não acendem em sub-rotas (senão Painel/Início ficariam sempre ativos).
     if (href === "/" || href === "/dashboard") return false;
@@ -61,7 +61,7 @@ export function MobileTabBar({
         <ul className="grid" style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}>
           {tabs.map((tab) => {
             const Icon = tab.icon;
-            const active = isActive(tab.href);
+            const active = isActive(tab.href, tab.ativoEm);
             const href =
               tab.authRequired && !user ? `/auth?redirect=${encodeURIComponent(tab.href)}` : tab.href;
             const count = tab.badge ? badges?.[tab.badge] ?? 0 : 0;
@@ -78,7 +78,7 @@ export function MobileTabBar({
                     {count > 0 && (
                       <span
                         className="absolute -right-2 -top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-champagne px-1 text-[10px] font-bold text-forest"
-                        aria-label={`${count} ${tab.badge === "mensagens" ? "não lidas" : "novos"}`}
+                        aria-label={`${count} ${tab.badge === "mensagens" ? "não lidas" : tab.badge === "equipe" ? "pendentes" : "novos"}`}
                       >
                         {count > 9 ? "9+" : count}
                       </span>
@@ -99,7 +99,7 @@ export function MobileTabBar({
       {/* Site no celular (navegador): barra atual, some no desktop. */}
       {barra(world === "owner" ? OWNER_TABS : TENANT_TABS, world, cn("web-only", native ? "" : "md:hidden"), "Navegação principal")}
       {/* Dentro do app: 5 abas do papel, em qualquer largura (CSS .vn-tabbar). */}
-      {barra(appWorld === "owner" ? OWNER_APP_TABS : TENANT_APP_TABS, appWorld, "vn-tabbar hidden", "Abas do app")}
+      {barra(abasDoApp(appWorld, user?.role === "admin"), appWorld, "vn-tabbar hidden", "Abas do app")}
     </>
   );
 }
