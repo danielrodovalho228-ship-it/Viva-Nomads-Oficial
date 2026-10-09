@@ -127,7 +127,12 @@ jobs:
 
       - name: Rodar suíte E2E
         if: steps.alvo.outputs.rodar == 'true'
-        run: npm run testes
+        run: |
+          if [ "${{ steps.alvo.outputs.modo }}" = "publico" ]; then
+            npm run testes:publico
+          else
+            npm run testes
+          fi
 
       - name: Publicar relatório HTML
         if: ${{ !cancelled() && steps.alvo.outputs.rodar == 'true' }}

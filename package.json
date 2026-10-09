@@ -11,6 +11,7 @@
     "check:consistency": "node scripts/check-consistency.mjs",
     "e2e": "node e2e/all.mjs",
     "testes": "playwright test",
+    "testes:publico": "TESTES_SO_PUBLICO=1 playwright test --project=chromium t1-auth-guards t7-fluxo-publico t10-buscar-url t18-seo-a11y",
     "testes:criticos": "playwright test --grep @criticos",
     "testes:report": "playwright show-report",
     "seed:teste": "node scripts/seed-test-data.mjs",

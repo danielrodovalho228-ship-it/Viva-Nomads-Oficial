@@ -11,6 +11,9 @@ import { authFile, loginAs } from "./fixtures/auth";
  * Roda só no `test` (não no `--list`).
  */
 export default async function globalSetup(config: FullConfig): Promise<void> {
+  // Produção: só specs anônimos (as contas de teste não existem lá) — sem login.
+  if (process.env.TESTES_SO_PUBLICO === "1") return;
+
   const baseURL = (config.projects[0]?.use?.baseURL as string) || "http://localhost:3000";
   const executablePath = process.env.PLAYWRIGHT_CHROMIUM_PATH || undefined;
 

@@ -44,3 +44,13 @@ test("e2e.yml usa o script e não depende do bypass para produção", () => {
   assert.match(y, /scripts\/ci\/e2e-alvo\.sh/);
   assert.doesNotMatch(y, /TESTES_BASE_URL: \$\{\{ github\.event\.deployment_status\.target_url/);
 });
+
+test("produção roda só os specs públicos (sem login da conta de teste)", () => {
+  const r = alvo({ EVENTO: "deployment_status", AMBIENTE: "Production", TARGET_URL: "https://x-abc.vercel.app", TEM_BYPASS: "false" });
+  assert.equal(r.modo, "publico");
+});
+
+test("disparo manual na produção também é público; no preview segue completo", () => {
+  assert.equal(alvo({ EVENTO: "workflow_dispatch", INPUT_URL: "https://vivanomads.com.br", TEM_BYPASS: "false" }).modo, "publico");
+  assert.equal(alvo({ EVENTO: "deployment_status", AMBIENTE: "Preview", TARGET_URL: "https://x-abc.vercel.app", TEM_BYPASS: "true" }).modo, "completo");
+});
