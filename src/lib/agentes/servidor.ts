@@ -394,7 +394,7 @@ export function depsEncaminhamento(db: SupabaseClient): DepsEncaminhamento {
       const desde = new Date(Date.now() - 24 * 3600_000).toISOString();
       const { data, error } = await db
         .from("agentes_ordens")
-        .select("id, agente_slug, texto, status, origem_slug, retorno_de, prioridade, disparada_em, disparo_erro")
+        .select("id, agente_slug, texto, status, origem_slug, retorno_de, prioridade, disparada_em, disparo_erro, criado_por")
         .not("origem_slug", "is", null)
         .is("retorno_de", null)
         .in("prioridade", ["P0", "P1"])

@@ -57,6 +57,8 @@ export interface Ordem {
   origem_ronda?: string | null;
   retorno_de?: string | null;
   prioridade?: string | null;
+  /** Admin que criou a ordem na Central; nulo = ordem criada por agente (ronda), que nunca dispara sozinha. */
+  criado_por?: string | null;
 }
 
 export interface Conversa {
@@ -505,9 +507,15 @@ export const MAX_ENCAMINHAMENTOS_POR_VEZ = 5;
 /** Chave do limite diário dos disparos automáticos (mesmo teto do Executar agora). */
 export const CHAVE_LIMITE_ENCAMINHAMENTO = "agentes-executar:encaminhamento";
 
-/** Ordem que veio de um achado (não de retorno) e merece disparo na hora. */
-export function encaminhamentoUrgente(o: Pick<Ordem, "origem_slug" | "retorno_de" | "prioridade" | "status" | "disparada_em" | "disparo_erro">): boolean {
+/**
+ * Ordem que veio de um achado (não de retorno) e merece disparo na hora.
+ * Regra do Despachante (ordens 0f6b35b5 e 5a885ef5): só dispara ordem criada na
+ * Central com o login do Daniel (criado_por preenchido). Ordem criada por agente
+ * (criado_por nulo) fica na fila para o Moacir priorizar e o Daniel aprovar.
+ */
+export function encaminhamentoUrgente(o: Pick<Ordem, "origem_slug" | "retorno_de" | "prioridade" | "status" | "disparada_em" | "disparo_erro" | "criado_por">): boolean {
   return (
+    !!o.criado_por &&
     !!o.origem_slug &&
     !o.retorno_de &&
     (PRIORIDADES_DISPARO as readonly string[]).includes(String(o.prioridade ?? "").toUpperCase()) &&

@@ -22,6 +22,7 @@ const ordem = (id: string, extra: Partial<Candidata> = {}): Candidata => ({
   prioridade: "P1",
   disparada_em: null,
   disparo_erro: null,
+  criado_por: "admin-1",
   ...extra,
 });
 
@@ -76,6 +77,15 @@ test("só P0/P1 de encaminhamento disparam: P2, retorno, já disparada, sem orig
   assert.equal(disparos.length, 1);
   assert.equal(encaminhamentoUrgente(ordem("x", { prioridade: "P1" })), true);
   assert.equal(encaminhamentoUrgente(ordem("x", { prioridade: null })), false);
+});
+
+test("ordem criada por agente (criado_por nulo) NUNCA dispara sozinha; criada pelo admin dispara", async () => {
+  const { d, disparos } = deps([ordem("ag", { criado_por: null }), ordem("adm", { criado_por: "admin-1" })]);
+  const r = await dispararEncaminhamentos(d);
+  assert.deepEqual(r.disparadas, ["adm"]);
+  assert.equal(disparos.length, 1);
+  assert.equal(encaminhamentoUrgente(ordem("x", { criado_por: null })), false);
+  assert.equal(encaminhamentoUrgente(ordem("x", { criado_por: undefined })), false);
 });
 
 test("Moacir e Despachante nunca são disparados por encaminhamento", async () => {
