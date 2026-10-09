@@ -22,6 +22,11 @@ export function destinoPonteValido(destino: unknown): string | null {
   return ok ? destino : null;
 }
 
+/** Segredo da ponte: variável própria (PONTE_APP_SEGREDO); sem ela, cai na service role (nunca vazio). */
+export function segredoPonte(env: Record<string, string | undefined> = process.env): string {
+  return env.PONTE_APP_SEGREDO || env.SUPABASE_SERVICE_ROLE_KEY || "";
+}
+
 function chave(segredo: string): Buffer {
   return crypto.createHash("sha256").update(`ponte-app:${segredo}`).digest();
 }

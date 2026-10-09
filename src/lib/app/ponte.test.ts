@@ -5,7 +5,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { conferirTokenPonte, destinoPonteValido, emitirTokenPonte, VALIDADE_PONTE_S } from "./ponte.ts";
+import { conferirTokenPonte, destinoPonteValido, emitirTokenPonte, segredoPonte, VALIDADE_PONTE_S } from "./ponte.ts";
 
 const SEGREDO = "segredo-de-teste";
 const AGORA = new Date("2026-10-09T12:00:00Z");
@@ -52,4 +52,20 @@ test("rota: exige login, valida destino, limita taxa e nunca registra o token", 
   assert.match(src, /destinoPonteValido/);
   assert.match(src, /consumirLimite/);
   assert.doesNotMatch(src, /console\.(log|error|warn)/);
+});
+
+test("segredo próprio PONTE_APP_SEGREDO tem prioridade; sem ele cai na service role; nunca inventa", () => {
+  assert.equal(segredoPonte({ PONTE_APP_SEGREDO: "a", SUPABASE_SERVICE_ROLE_KEY: "b" }), "a");
+  assert.equal(segredoPonte({ SUPABASE_SERVICE_ROLE_KEY: "b" }), "b");
+  assert.equal(segredoPonte({}), "");
+});
+
+test("rota de troca: confere token do usuário/destino, consome o nonce uma vez, falha fechada e sem log", () => {
+  const src = readFileSync("src/app/api/app/ponte/entrar/route.ts", "utf8");
+  assert.match(src, /conferirTokenPonte\(token, usuario, destino/);
+  assert.match(src, /consumirLimite\(`ponte-uso:\$\{nonce\}`, 1,/);
+  assert.match(src, /destinoPonteValido/);
+  assert.doesNotMatch(src, /console\.(log|error|warn)/);
+  // o token só é consumido depois de conferido (token inválido não gasta nonce) e antes de abrir sessão
+  assert.ok(src.indexOf("conferirTokenPonte(") < src.indexOf("consumirLimite(") && src.indexOf("consumirLimite(") < src.indexOf("generateLink"));
 });
