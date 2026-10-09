@@ -66,6 +66,12 @@ export const GERACAO_IA_ATIVA = process.env.NEXT_PUBLIC_GERACAO_IA === "on";
 export const LOGIN_GOOGLE_ATIVO = process.env.NEXT_PUBLIC_LOGIN_GOOGLE_ATIVO === "on";
 
 /**
+ * "Continuar com Apple" (exigência da Apple quando há Google no iPhone). OFF por padrão: só liga
+ * com o provedor Apple ativado no Supabase e NEXT_PUBLIC_LOGIN_APPLE_ATIVO="on" (docs/auth/LOGIN-GOOGLE.md).
+ */
+export const LOGIN_APPLE_ATIVO = process.env.NEXT_PUBLIC_LOGIN_APPLE_ATIVO === "on";
+
+/**
  * Pré-lançamento (lançamento oficial em 2027). LIGADO por padrão — o site está
  * em pré-lançamento; desliga com NEXT_PUBLIC_PRE_LANCAMENTO="off" no dia do
  * lançamento. Mostra o aviso nas páginas públicas (e trava a assinatura paga).

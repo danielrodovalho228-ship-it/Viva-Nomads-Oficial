@@ -52,3 +52,16 @@ Leva uns 30 minutos.
 ## 6. Ligar o botão
 Vercel → projeto → Settings → Environment Variables → `NEXT_PUBLIC_LOGIN_GOOGLE_ATIVO = on`
 (Production) → novo deploy. Teste: `/auth` → "Continuar com Google" → volta logado.
+
+## 5. Login Google/Apple dentro do app (ordem 1f65c73d)
+- **Site:** dentro do app, "Continuar com Google/Apple" não navega; pede um `state` a
+  `POST /api/app/login-social` (assinado, 5 min, uso único) e manda `postMessage`
+  `{tipo:"login-social", provedor, url, state}` ao app.
+- **Redirect URLs do Supabase** (Authentication → URL Configuration): além dos acima, incluir
+  `https://vivanomads.com.br/auth/app-callback**` (volta do provedor) e `vivanomads://auth/callback`.
+- **Volta:** `/auth/app-callback` confere o `state` e devolve ao app por
+  `vivanomads://auth/callback?code=...&state=...`. O app entrega o `code` ao WebView, que abre
+  `/auth/callback?code=...` (o verificador PKCE está no WebView; por isso a rota não troca o código).
+- **Apple:** botão escondido atrás de `NEXT_PUBLIC_LOGIN_APPLE_ATIVO=on` (ativar o provedor Apple no Supabase antes).
+- Segredo do `state`: `LOGIN_APP_SEGREDO` (opcional); sem ele usa `PONTE_APP_SEGREDO`, depois a service role.
+- Lado nativo (openAuthSessionAsync + entrega do code) fica com o Moacir no App.tsx.
