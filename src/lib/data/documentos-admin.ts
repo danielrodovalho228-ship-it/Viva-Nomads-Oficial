@@ -12,6 +12,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { lerDocumento } from "@/lib/data/documento-servidor";
 import { preConferir, type PreConferencia } from "@/lib/moderacao/pre-conferencia";
 import { autorizacaoOk, exigeAutorizacao } from "@/lib/anuncio/operacao";
+import { erroConflitoInteresse } from "@/lib/moderacao/conflito-interesse";
 import { motivoBloqueioAprovacao } from "@/lib/documento-pessoa";
 import { situacaoCnpj, titularPorOcr } from "@/lib/integrations/conferencia-doc";
 
@@ -222,6 +223,8 @@ export async function moderarDocumento(
     .eq("document_status", "pending")
     .maybeSingle();
   if (!alvo?.document_path) return { ok: false, error: "Documento não encontrado na fila (ou sem permissão)." };
+  const conflito = erroConflitoInteresse(alvo.owner_id as string, user.id);
+  if (conflito) return { ok: false, error: conflito };
   // Aprovar exige CPF (PF) / CNPJ (PJ) válidos do dono (#39). Lê com o service
   // role — só depois de confirmado admin acima; o número não sai do servidor.
   if (aprovado) {
