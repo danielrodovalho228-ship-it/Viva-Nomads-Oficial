@@ -1,5 +1,6 @@
 "use client";
 
+import { AtivarNotificacoes } from "@/components/app/push-app";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Lock, Bell, Trash2, Check } from "lucide-react";
@@ -471,6 +472,7 @@ export function NotificationsPanel() {
           </div>
         ))}
       </div>
+      <AtivarNotificacoes className="mt-3" />
       {erro && (
         <p role="alert" className="mt-3 text-sm text-red-600">
           {erro}

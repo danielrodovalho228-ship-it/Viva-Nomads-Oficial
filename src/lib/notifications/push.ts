@@ -1,11 +1,14 @@
 import crypto from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { EXPO_LOTE, EXPO_PUSH_URL, emLotes, lerTickets, montarMensagens, separarTokens } from "./expo-push.ts";
 
 /**
- * Envio de push via FCM HTTP v1 — SERVIDOR apenas, best-effort.
+ * Envio de push (Expo Push + FCM HTTP v1) — SERVIDOR apenas, best-effort.
  *
  * Regras (revisão 02/10):
- *  • Credencial só no servidor (`FCM_SERVICE_ACCOUNT_JSON`). Sem ela → no-op, nunca quebra.
+ *  • Tokens "ExponentPushToken[...]" (app Expo) vão ao exp.host e NÃO dependem do FCM;
+ *    `EXPO_ACCESS_TOKEN` é opcional. Tokens antigos seguem pelo FCM (`FCM_SERVICE_ACCOUNT_JSON`);
+ *    sem a credencial do FCM, só eles são ignorados — nunca quebra.
  *  • O conteúdo NUNCA leva contato, sobrenome nem valores — só o evento + o link.
  *  • Nunca atrasa o `notify()`: timeout curto e falha só vira log.
  *  • Token OAuth do Google em cache (~50 min).
@@ -32,7 +35,7 @@ function serviceAccount(): ServiceAccount | null {
 }
 
 export function isPushConfigured(): boolean {
-  return serviceAccount() !== null;
+  return true; // Expo não precisa de credencial (FCM é opcional)
 }
 
 // ── Cache do access token (≈50 min) ──────────────────────────────────────────
@@ -93,57 +96,59 @@ async function getAccessToken(sa: ServiceAccount): Promise<string | null> {
   }
 }
 
-/**
- * Envia um push para todos os aparelhos do usuário. Best-effort e não-bloqueante:
- * o chamador (`notify`) roda isto em paralelo ao e-mail, com timeout próprio.
- * `url` deve ser uma rota interna (validada na origem).
- */
-export async function sendPush(params: {
-  userId?: string;
+type Admin = NonNullable<ReturnType<typeof createAdminClient>>;
+interface Conteudo {
   title: string;
   body: string;
   url?: string;
-}): Promise<{ sent: number } | { demo: true } | { skipped: true }> {
-  const sa = serviceAccount();
-  if (!sa) return { demo: true }; // sem credencial: no-op silencioso
-  if (!params.userId) return { skipped: true };
+}
 
-  const admin = createAdminClient();
-  if (!admin) return { skipped: true };
+/** Lotes de até 100 para o exp.host; ticket DeviceNotRegistered apaga o token. */
+async function enviarExpo(admin: Admin, tokens: string[], c: Conteudo): Promise<number> {
+  let sent = 0;
+  const msgs = montarMensagens(tokens, c);
+  for (const lote of emLotes(msgs, EXPO_LOTE)) {
+    try {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 5000);
+      const headers: Record<string, string> = { "Content-Type": "application/json", Accept: "application/json" };
+      if (process.env.EXPO_ACCESS_TOKEN) headers.Authorization = `Bearer ${process.env.EXPO_ACCESS_TOKEN}`;
+      const res = await fetch(EXPO_PUSH_URL, { method: "POST", headers, body: JSON.stringify(lote), signal: ctrl.signal }).finally(
+        () => clearTimeout(t)
+      );
+      if (!res.ok) {
+        console.error("[push] expo falhou:", res.status);
+        continue;
+      }
+      const r = lerTickets(lote.map((m) => m.to), await res.json().catch(() => null));
+      sent += r.enviados;
+      if (r.mortos.length) await admin.from("push_tokens").delete().in("token", r.mortos);
+    } catch (e) {
+      console.error("[push] expo erro:", (e as Error).message);
+    }
+  }
+  return sent;
+}
 
-  // Tokens do usuário (service role ignora RLS para ler os destinos).
-  const { data: rows, error } = await admin
-    .from("push_tokens")
-    .select("token")
-    .eq("user_id", params.userId);
-  if (error || !rows || rows.length === 0) return { sent: 0 };
-
+async function enviarFcm(admin: Admin, sa: ServiceAccount, tokens: string[], c: Conteudo): Promise<number> {
   const accessToken = await getAccessToken(sa);
-  if (!accessToken) return { sent: 0 };
+  if (!accessToken) return 0;
 
   const endpoint = `https://fcm.googleapis.com/v1/projects/${sa.project_id}/messages:send`;
   const data: Record<string, string> = {};
-  if (params.url) data.url = params.url;
+  if (c.url) data.url = c.url;
 
   let sent = 0;
   await Promise.allSettled(
-    rows.map(async (r: { token: string }) => {
+    tokens.map(async (token) => {
       try {
         const ctrl = new AbortController();
         const t = setTimeout(() => ctrl.abort(), 5000);
         const res = await fetch(endpoint, {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
+          headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
           body: JSON.stringify({
-            message: {
-              token: r.token,
-              notification: { title: params.title, body: params.body },
-              data,
-              android: { priority: "HIGH" },
-            },
+            message: { token, notification: { title: c.title, body: c.body }, data, android: { priority: "HIGH" } },
           }),
           signal: ctrl.signal,
         }).finally(() => clearTimeout(t));
@@ -155,7 +160,7 @@ export async function sendPush(params: {
         // Token morto → apaga da tabela.
         const txt = await res.text().catch(() => "");
         if (res.status === 404 || /UNREGISTERED|NOT_FOUND/i.test(txt)) {
-          await admin.from("push_tokens").delete().eq("token", r.token);
+          await admin.from("push_tokens").delete().eq("token", token);
         } else {
           console.error("[push] envio falhou:", res.status, txt.slice(0, 200));
         }
@@ -164,5 +169,36 @@ export async function sendPush(params: {
       }
     })
   );
-  return { sent };
+  return sent;
+}
+
+/**
+ * Envia um push para todos os aparelhos dos usuários. Best-effort e não-bloqueante:
+ * o chamador (`notify`) roda isto em paralelo ao e-mail, com timeout próprio.
+ * `url` deve ser uma rota interna (validada na origem).
+ */
+export async function sendPushParaUsuarios(
+  userIds: string[],
+  params: Conteudo
+): Promise<{ sent: number } | { skipped: true }> {
+  if (userIds.length === 0) return { skipped: true };
+  const admin = createAdminClient();
+  if (!admin) return { skipped: true };
+
+  // Tokens dos usuários (service role ignora RLS para ler os destinos).
+  const { data: rows, error } = await admin.from("push_tokens").select("token").in("user_id", userIds);
+  if (error || !rows || rows.length === 0) return { sent: 0 };
+
+  const { expo, fcm } = separarTokens(rows.map((r: { token: string }) => r.token));
+  const sa = serviceAccount();
+  const [a, b] = await Promise.all([
+    expo.length ? enviarExpo(admin, expo, params) : 0,
+    fcm.length && sa ? enviarFcm(admin, sa, fcm, params) : 0,
+  ]);
+  return { sent: a + b };
+}
+
+export async function sendPush(params: { userId?: string } & Conteudo): Promise<{ sent: number } | { skipped: true }> {
+  if (!params.userId) return { skipped: true };
+  return sendPushParaUsuarios([params.userId], params);
 }

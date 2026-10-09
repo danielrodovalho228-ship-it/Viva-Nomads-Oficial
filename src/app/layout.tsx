@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/auth-provider";
 import { SITE_URL, SITE_NAME } from "@/lib/site";
+import { PushApp } from "@/components/app/push-app";
 import { AppModeBridge } from "@/components/app/app-mode-bridge";
 import { LinksDoApp } from "@/components/app/links-do-app";
 import { OrigemVisita } from "@/components/app/origem-visita";
@@ -68,6 +69,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-surface text-ink">
         <AuthProvider>
           <AppModeBridge />
+          <PushApp />
           <OrigemVisita />
           <VivaChatFlutuante />
           <LinksDoApp />

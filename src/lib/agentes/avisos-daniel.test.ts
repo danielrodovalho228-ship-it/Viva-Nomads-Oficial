@@ -240,3 +240,36 @@ test("rota do cron exige CRON_SECRET e a chave do e-mail só é lida da variáve
   assert.match(raiz("src/lib/agentes/avisos-daniel-servidor.ts"), /process\.env\.AVISO_DANIEL_EMAIL/);
   assert.match(raiz("vercel.json"), /"\/api\/cron\/avisos-daniel", "schedule": "0 22 \* \* \*"/);
 });
+
+test("conteudoPushAviso: sem assunto/corpo e só caminho interno", async () => {
+  const { conteudoPushAviso } = await import("./avisos-daniel.ts");
+  const base = { id: "1", origem_ronda: null, assunto: "Maria Silva CPF 123", corpo: "dado pessoal", prioridade: "P0" as const };
+  const ok = conteudoPushAviso({ ...base, link: "/admin/agentes?x=1" });
+  assert.equal(ok.url, "/admin/agentes?x=1");
+  assert.ok(!/Maria|CPF|pessoal/.test(ok.title + ok.body));
+  assert.equal(conteudoPushAviso({ ...base, link: "https://evil.com" }).url, "/admin/agentes");
+  assert.equal(conteudoPushAviso({ ...base, link: "//evil.com" }).url, "/admin/agentes");
+  assert.equal(conteudoPushAviso({ ...base, link: null }).url, "/admin/agentes");
+});
+
+test("cada aviso reservado dispara o push; push que falha não derruba o e-mail", async () => {
+  const { d, enviadas } = deps([aviso(1), aviso(2)]);
+  const pushes: string[] = [];
+  d.push = async (a) => {
+    pushes.push(a.id);
+    if (a.id === "a1") throw new Error("expo fora");
+  };
+  const r = await processarAvisos(d);
+  assert.deepEqual(pushes, ["a1", "a2"]);
+  assert.equal(r.enviados, 2);
+  assert.equal(enviadas.length, 2);
+});
+
+test("aviso já reservado por outra execução não gera push duplicado", async () => {
+  const { d } = deps([aviso(1)]);
+  await d.reservar("a1", "email");
+  const pushes: string[] = [];
+  d.push = async (a) => void pushes.push(a.id);
+  await processarAvisos(d);
+  assert.deepEqual(pushes, []);
+});
