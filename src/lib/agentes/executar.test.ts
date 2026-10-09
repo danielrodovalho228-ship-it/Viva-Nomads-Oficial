@@ -8,6 +8,7 @@ import { readFileSync } from "node:fs";
 import {
   destinoDaOrdem,
   estadoDaOrdem,
+  rotuloAcionado,
   linkDaOrdem,
   LIMITE_DISPAROS_DIA_TOTAL,
   LIMITE_DISPAROS_HORA_AGENTE,
@@ -177,4 +178,11 @@ test("chat honesto: promessa do modelo vira a resposta honesta; pergunta normal 
   const r2 = await responderChat(n.d, { slug: "bruno", texto: "como está o build?" });
   assert.equal(r2.body.resposta, "Tudo certo: 2 achados P2.");
   assert.equal(r2.body.acao, undefined);
+});
+
+test("rótulo 'acionado às HH:MM' só com disparo sem erro, em horário de Brasília", () => {
+  assert.equal(rotuloAcionado({ disparada_em: "2026-10-09T15:05:00Z", disparo_erro: null }), "acionado às 12:05");
+  assert.equal(rotuloAcionado({ disparada_em: "2026-10-09T15:05:00Z", disparo_erro: "HTTP 401" }), null);
+  assert.equal(rotuloAcionado({ disparada_em: null, disparo_erro: null }), null);
+  assert.equal(rotuloAcionado({ disparada_em: "lixo", disparo_erro: null }), null);
 });

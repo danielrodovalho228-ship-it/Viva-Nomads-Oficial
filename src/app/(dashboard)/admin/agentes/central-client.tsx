@@ -12,6 +12,7 @@ import {
   destinoDaOrdem,
   duracao,
   estadoDaOrdem,
+  rotuloAcionado,
   linkDaOrdem,
   prioridadesDe,
   statusDoAgente,
@@ -760,6 +761,11 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
                       <span className="text-xs text-[#8C9AC4]" style={mono}>
                         {dataHora(o.criada_em)}
                       </span>
+                      {rotuloAcionado(o) && (
+                        <span className="text-xs text-[#8C9AC4]" data-testid="ordem-acionado">
+                          {rotuloAcionado(o)}
+                        </span>
+                      )}
                       {link && (
                         <a href={link} target="_blank" rel="noreferrer" className="text-xs font-semibold text-[#38BDF8] hover:underline">
                           {estado === "concluida" ? "Ver PR / ronda" : "Ver sessão"}
