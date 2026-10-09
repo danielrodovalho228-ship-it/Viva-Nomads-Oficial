@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 
 function alvo(env: Record<string, string>): Record<string, string> {
   const out = execFileSync("bash", ["scripts/ci/e2e-alvo.sh"], {
-    env: { PATH: process.env.PATH ?? "", ...env },
+    env: { NODE_ENV: "test", PATH: process.env.PATH ?? "", ...env },
     encoding: "utf8",
   });
   return Object.fromEntries(
