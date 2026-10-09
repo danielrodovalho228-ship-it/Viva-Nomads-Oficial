@@ -29,7 +29,7 @@ import type { UserRole } from "@/lib/types";
 import type { PersonType } from "@/lib/tax";
 import { cn } from "@/lib/utils";
 import { safeInternalPath } from "@/lib/safe-redirect";
-import { LOGIN_GOOGLE_ATIVO } from "@/lib/flags";
+import { LOGIN_APPLE_ATIVO, LOGIN_GOOGLE_ATIVO } from "@/lib/flags";
 import { useIsNative } from "@/lib/use-native";
 import { registrarEvento } from "@/lib/eventos/registrar";
 import { useCaptcha } from "@/components/seguranca/captcha";
@@ -42,9 +42,8 @@ export default function AuthPage() {
   const setUser = useAuthStore((s) => s.setUser);
   const startSession = useAuthStore((s) => s.startSession);
   const [mode, setMode] = useState<Mode>("login");
-  // Dentro do app: sem login com Google (o Google bloqueia login em WebView e, no
-  // iPhone, exigiria também "Entrar com a Apple"). Quem entrou com Google no site
-  // cria uma senha pelo "Esqueci minha senha" — mesma conta, mesmo e-mail.
+  // Dentro do app: o login social NÃO roda no WebView (o Google bloqueia); abre no navegador do
+  // sistema via postMessage (handleSocial) e, no iPhone, vem junto com "Continuar com Apple".
   const noApp = useIsNative();
   // Sem papel pré-selecionado: o usuário escolhe conscientemente proprietário
   // OU inquilino no cadastro (evita criar proprietário sem querer).
@@ -139,17 +138,44 @@ export default function AuthPage() {
     ]);
   }
 
-  async function handleGoogle() {
-    if (!LOGIN_GOOGLE_ATIVO) return;
+  /**
+   * Login social. No site: navega para o provedor. No app: pede um `state` ao servidor, monta a URL do
+   * provedor SEM navegar (skipBrowserRedirect) e avisa o app por postMessage; o app abre o navegador do
+   * sistema e devolve ?code por vivanomads://auth/callback (ordem 1f65c73d).
+   */
+  async function handleSocial(provedor: "google" | "apple") {
+    if (provedor === "google" ? !LOGIN_GOOGLE_ATIVO : !LOGIN_APPLE_ATIVO) return;
     const supabase = createClient();
     if (!supabase) {
-      setError("Login com Google requer Supabase configurado.");
+      setError("Login social requer Supabase configurado.");
       return;
     }
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${SITE_URL}/auth/callback` },
-    });
+    if (!noApp) {
+      await supabase.auth.signInWithOAuth({ provider: provedor, options: { redirectTo: `${SITE_URL}/auth/callback` } });
+      return;
+    }
+    try {
+      const resp = await fetch("/api/app/login-social", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ provedor }),
+      });
+      const { state } = (await resp.json()) as { state?: string };
+      if (!resp.ok || !state) throw new Error("state");
+      const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
+        provider: provedor,
+        options: {
+          redirectTo: `${SITE_URL}/auth/app-callback?provedor=${provedor}&state=${encodeURIComponent(state)}`,
+          skipBrowserRedirect: true,
+        },
+      });
+      if (oauthError || !data?.url) throw new Error("oauth");
+      const ponte = (window as unknown as { ReactNativeWebView?: { postMessage: (m: string) => void } }).ReactNativeWebView;
+      if (!ponte) throw new Error("sem-app");
+      ponte.postMessage(JSON.stringify({ tipo: "login-social", provedor, url: data.url, state }));
+    } catch {
+      setError("Não foi possível iniciar o login agora. Entre com e-mail e senha ou tente de novo.");
+    }
   }
 
   /** Reenvia o e-mail de confirmação (Atualização 20.4). */
@@ -654,7 +680,7 @@ export default function AuthPage() {
                     </button>
                   </div>
                 )}
-                {mode === "login" && noApp && (
+                {mode === "login" && noApp && !LOGIN_GOOGLE_ATIVO && (
                   <p className="text-xs text-muted" data-testid="dica-google-app">
                     Entrou com Google no site? Toque em &quot;Esqueci minha senha&quot; para criar uma senha e usar o app.
                   </p>
@@ -729,21 +755,24 @@ export default function AuthPage() {
               </form>
 
               {/* Google só com o provedor ativado no Supabase (flag desligada por padrão). */}
-              {LOGIN_GOOGLE_ATIVO && !noApp && (
+              {(LOGIN_GOOGLE_ATIVO || LOGIN_APPLE_ATIVO) && (
                 <>
                   <div className="my-6 flex items-center gap-3 text-xs text-muted">
                     <span className="h-px flex-1 bg-sage-200" /> ou{" "}
                     <span className="h-px flex-1 bg-sage-200" />
                   </div>
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    type="button"
-                    disabled={loading}
-                    onClick={handleGoogle}
-                  >
-                    <Globe className="h-4 w-4" /> Continuar com Google
-                  </Button>
+                  <div className="space-y-3">
+                    {LOGIN_GOOGLE_ATIVO && (
+                      <Button variant="outline" className="w-full" type="button" disabled={loading} onClick={() => handleSocial("google")}>
+                        <Globe className="h-4 w-4" /> Continuar com Google
+                      </Button>
+                    )}
+                    {LOGIN_APPLE_ATIVO && (
+                      <Button variant="outline" className="w-full" type="button" disabled={loading} onClick={() => handleSocial("apple")}>
+                        <Globe className="h-4 w-4" /> Continuar com Apple
+                      </Button>
+                    )}
+                  </div>
                 </>
               )}
             </>
