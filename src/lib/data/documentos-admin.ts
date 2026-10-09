@@ -1,5 +1,6 @@
 "use server";
 
+import { montarDecisaoDocumento } from "./decisao-documento";
 import { createClient } from "@/lib/supabase/server";
 import { notify } from "@/lib/notifications";
 import { primeiroNome } from "@/lib/display-name";
@@ -235,12 +236,7 @@ export async function moderarDocumento(
   }
   let upd = supabase
     .from("qualification_checklists")
-    .update({
-      document_status: aprovado ? "approved" : "rejected",
-      document_review_reason: aprovado ? null : motivoLimpo,
-      document_reviewed_at: new Date().toISOString(),
-      document_reviewed_by: user.id,
-    })
+    .update(montarDecisaoDocumento(aprovado, motivoLimpo, user.id, new Date()))
     .eq("owner_id", alvo.owner_id as string)
     .eq("document_path", alvo.document_path as string)
     .eq("document_status", "pending") // só modera o que está na fila
