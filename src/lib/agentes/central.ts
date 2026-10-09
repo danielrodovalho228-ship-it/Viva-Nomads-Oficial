@@ -471,6 +471,15 @@ export const ROTULO_ESTADO: Record<EstadoOrdem, string> = {
   cancelada: "Cancelada",
 };
 
+/** "acionado às HH:MM" (horário de Brasília) quando o disparo foi feito sem erro; senão null. */
+export function rotuloAcionado(o: Pick<Ordem, "disparada_em" | "disparo_erro">): string | null {
+  if (!o.disparada_em || o.disparo_erro) return null;
+  const d = new Date(o.disparada_em);
+  if (Number.isNaN(d.getTime())) return null;
+  const hm = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit", hour12: false }).format(d);
+  return `acionado às ${hm}`;
+}
+
 /** Link da ordem: a ronda que a fechou (PR/sessão) ou a sessão disparada. */
 export function linkDaOrdem(o: Pick<Ordem, "id" | "sessao_url">, rondas: Pick<Ronda, "ordens_atendidas" | "link_sessao">[]): string | null {
   const r = rondas.find((x) => Array.isArray(x.ordens_atendidas) && x.ordens_atendidas.includes(o.id) && x.link_sessao);
