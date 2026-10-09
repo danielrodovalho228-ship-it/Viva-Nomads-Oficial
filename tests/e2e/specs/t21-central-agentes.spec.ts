@@ -105,6 +105,7 @@ test.describe("T21 — Central de Agentes v2", () => {
     await abrirAba(page, "Conversar");
     await page.locator('aside[aria-label="Agentes"]').getByRole("button", { name: /Bruno/ }).click();
     await page.getByPlaceholder("Escreva para Bruno…").fill(`corrija o sitemap com URL que dá 404 (${marca})`);
+    await page.getByTestId("menu-chat").click();
     const botao = page.getByTestId("executar-agora");
     await expect(botao).toHaveText("Executar agora → Renato");
     await botao.click();
@@ -117,17 +118,18 @@ test.describe("T21 — Central de Agentes v2", () => {
     await expect(ordem.getByRole("link", { name: "Ver sessão" })).toBeVisible();
   });
 
-  test("Chat honesto: pedido de ação não promete — oferece Executar agora para quem faz", async ({ page }) => {
+  test("Chat tipo WhatsApp: pedido de ação sem urgência vira ordem na fila e o chat diz o que fez", async ({ page }) => {
     await page.goto("/admin/agentes", { waitUntil: "networkidle" });
     await abrirAba(page, "Conversar");
-    // Agentes comuns não fazem nada no mundo pelo chat (o Moacir gerente é o único que investiga e dispara).
     await page.locator('aside[aria-label="Agentes"]').getByRole("button", { name: /Bruno/ }).click();
-    await page.getByPlaceholder("Escreva para Bruno…").fill("corrige o bug do /conferir e aplica a migração");
-    await page.getByRole("button", { name: "Perguntar" }).click();
-    await expect(page.getByText(/precisa de uma sessão real — use Executar agora \(vai para Renato\)/).last()).toBeVisible();
-    const sug = page.getByTestId("sugestao-executar");
-    await expect(sug).toContainText("Renato");
-    await expect(sug.getByRole("button", { name: "Executar agora → Renato" })).toBeEnabled();
+    // Sem os 3 botões antigos: só o campo e o botão redondo de enviar.
+    await expect(page.getByRole("button", { name: "Deixar ordem" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Perguntar" })).toHaveCount(0);
+    const marca = `t21b-${Date.now()}`;
+    await page.getByPlaceholder("Escreva para Bruno…").fill(`corrige o bug do /conferir (${marca})`);
+    await page.getByRole("button", { name: "Enviar" }).click();
+    await expect(page.getByTestId("bolha-agente").filter({ hasText: /Registrei a ordem para Renato/ }).last()).toBeVisible();
+    await expect(page.getByTestId("ordem").filter({ hasText: marca })).toHaveCount(1);
   });
 
   test("Moacir gerente: 'chegou chamado novo?' consulta o banco, pergunta à Viva e responde com código e prazo", async ({ page, browser }) => {
@@ -152,7 +154,7 @@ test.describe("T21 — Central de Agentes v2", () => {
     await abrirAba(page, "Conversar");
     await page.locator('aside[aria-label="Agentes"]').getByRole("button", { name: /Moacir/ }).click();
     await page.getByPlaceholder("Escreva para Moacir…").fill("Chegou chamado novo?");
-    await page.getByRole("button", { name: "Perguntar" }).click();
+    await page.getByRole("button", { name: "Enviar" }).click();
     // A trilha vem recolhida em "ver como apurei": abre antes de conferir os passos.
     const trilha = page.getByTestId("trilha-gerente").last();
     await expect(trilha).toBeVisible({ timeout: 20_000 });

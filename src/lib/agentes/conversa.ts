@@ -1,0 +1,57 @@
+/*
+  Chat dos agentes "igual WhatsApp" — regras puras (sem React, sem rede), para teste.
+  O servidor continua sendo quem responde e quem registra a ordem; aqui só se
+  decide, para o que o servidor devolveu, se vira ordem na fila ou disparo na hora.
+*/
+
+/** Distância (px) do fim a partir da qual a lista conta como "no fim". */
+export const MARGEM_FIM_PX = 48;
+
+export interface MedidasRolagem {
+  scrollTop: number;
+  clientHeight: number;
+  scrollHeight: number;
+}
+
+/** A lista está no fim (ou não rola)? Some o botão "ir para o fim". */
+export function estaNoFim(m: MedidasRolagem, margem = MARGEM_FIM_PX): boolean {
+  return m.scrollHeight - m.scrollTop - m.clientHeight <= margem;
+}
+
+const RE_PRIORIDADE = /\bP([0-3])\b/i;
+const RE_URGENTE = /\b(agora|urgente|urg[eê]ncia|imediat\w*)\b/i;
+
+/** P0..P3 escrita no texto ("P0 corrija…"), ou null. */
+export function prioridadeDoTexto(texto: string): "P0" | "P1" | "P2" | "P3" | null {
+  const m = RE_PRIORIDADE.exec(texto);
+  return m ? (`P${m[1]}` as "P0" | "P1" | "P2" | "P3") : null;
+}
+
+/** P0/P1 ou "agora/urgente": o agente é acionado na hora. */
+export function ehUrgente(texto: string): boolean {
+  const p = prioridadeDoTexto(texto);
+  return p === "P0" || p === "P1" || RE_URGENTE.test(texto);
+}
+
+export type DestinoEnvio = "pergunta" | "ordem" | "executar";
+
+/**
+ * Pergunta (o servidor não pediu ação) = só a resposta do agente.
+ * Pedido de ação urgente = ordem + disparo; os demais = ordem para a próxima ronda.
+ */
+export function decidirEnvio(texto: string, servidorPediuAcao: boolean): DestinoEnvio {
+  if (!servidorPediuAcao) return "pergunta";
+  return ehUrgente(texto) ? "executar" : "ordem";
+}
+
+/** "11:32" no fuso de Brasília; "" se a data for inválida. */
+export function horaCurta(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "America/Sao_Paulo" }).format(d);
+}
+
+/** Resposta do chat dizendo o que foi feito ("Registrei e acionei o Renato às 11:32"). */
+export function textoFeito(nome: string, acionou: boolean, agoraIso: string): string {
+  return acionou ? `Registrei e acionei ${nome} às ${horaCurta(agoraIso)}.` : `Registrei a ordem para ${nome}; vai na próxima ronda.`;
+}

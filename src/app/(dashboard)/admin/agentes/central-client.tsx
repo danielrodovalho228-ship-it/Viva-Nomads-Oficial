@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -25,6 +25,7 @@ import {
   type Ronda,
   type StatusAgente,
 } from "@/lib/agentes/central";
+import { decidirEnvio, estaNoFim, horaCurta, textoFeito } from "@/lib/agentes/conversa";
 import { COR_RONDA_HEX, achadosDaPrioridade, corDaRonda, indicadores, mesclarConversas, proximaDoAgente, resumoCurto, rondaRecente, ultimaPorAgente } from "@/lib/agentes/painel";
 import { deixarOrdem, type ChamadoVermelho, type DadosCentral } from "@/lib/data/agentes-actions";
 import { AvatarAgente } from "@/components/admin/agentes/avatar";
@@ -139,7 +140,6 @@ function Rotulo({ children }: { children: React.ReactNode }) {
 const botao = "rounded-lg px-3 py-2 text-sm font-semibold transition disabled:opacity-50";
 const botaoAzul = `${botao} bg-[#005DFC] text-white hover:bg-[#2C7BFF]`;
 const botaoLinha = `${botao} border border-white/15 text-white hover:bg-white/5`;
-const botaoVerde = `${botao} bg-[#7FD321] text-[#06210A] hover:bg-[#95E23F]`;
 const campoBase = "rounded-lg border border-white/15 bg-[#0B1430] px-3 py-2 text-sm text-white placeholder:text-[#5d6a93] focus:border-[#3D7BFF] focus:outline-none";
 const campo = `w-full ${campoBase}`;
 
@@ -573,8 +573,12 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
   const [aviso, setAviso] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
-  const [sugestao, setSugestao] = useState<{ slug: string; nome: string; texto: string } | null>(null);
   const [linkSessao, setLinkSessao] = useState<string | null>(null);
+  const [menu, setMenu] = useState(false);
+  const [noFim, setNoFim] = useState(true);
+  const [naoLidas, setNaoLidas] = useState(0);
+  const listaRef = useRef<HTMLDivElement>(null);
+  const vistas = useRef({ slug: "", total: 0 });
   const [, startTransition] = useTransition();
   const a = dados.agentes.find((x) => x.slug === slug);
   // Correção de código vai para o Renato (Engenheiro), que abre o PR.
@@ -583,25 +587,88 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
   const thread = mesclarConversas(dados.conversas, extra).filter((c) => c.agente_slug === slug);
   const ordens = dados.ordens.filter((o) => o.agente_slug === slug);
 
-  async function perguntar() {
-    if (!texto.trim() || !a) return;
+  const irParaOFim = useCallback((suave: boolean) => {
+    const el = listaRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: suave ? "smooth" : "auto" });
+    setNaoLidas(0);
+    setNoFim(true);
+  }, []);
+
+  // Abrir a conversa (ou trocar de agente) já posiciona na última mensagem. Mensagem nova:
+  // acompanha se o usuário está no fim ou foi ele quem escreveu; senão conta como não lida.
+  const ultimaDoDaniel = thread[thread.length - 1]?.papel === "daniel";
+  useEffect(() => {
+    const ref = vistas.current;
+    if (ref.slug !== slug) {
+      vistas.current = { slug, total: thread.length };
+      const t = setTimeout(() => irParaOFim(false), 0);
+      return () => clearTimeout(t);
+    }
+    const novas = thread.length - ref.total;
+    vistas.current = { slug, total: thread.length };
+    if (novas <= 0) return;
+    const el = listaRef.current;
+    if (ultimaDoDaniel || (el && estaNoFim(el))) {
+      const t = setTimeout(() => irParaOFim(true), 0);
+      return () => clearTimeout(t);
+    }
+    const t = setTimeout(() => setNaoLidas((n) => n + novas), 0);
+    return () => clearTimeout(t);
+  }, [slug, thread.length, ultimaDoDaniel, irParaOFim]);
+
+  function aoRolar() {
+    const el = listaRef.current;
+    if (!el) return;
+    const fim = estaNoFim(el);
+    setNoFim(fim);
+    if (fim) setNaoLidas(0);
+  }
+
+  async function enviar() {
+    const msg = texto.trim();
+    if (!msg || !a || ocupado) return;
+    const pergunta = msg;
+    setMenu(false);
     setOcupado(true);
     setErro(null);
     setAviso(null);
-    const pergunta = texto.trim();
+    setLinkSessao(null);
     const agoraIso = new Date().toISOString();
     setExtra((e) => [...e, { id: `p-${agoraIso}`, agente_slug: slug, papel: "daniel", autor_slug: null, texto: pergunta, criado_em: agoraIso }]);
     setTexto("");
     try {
       const r = await fetch("/api/admin/agentes/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug, texto: pergunta }) });
       const j = (await r.json().catch(() => ({}))) as { resposta?: string; erro?: string; acao?: { slug: string; nome: string }; trilha?: { autor: string; texto: string }[] };
-      if (!r.ok || !j.resposta) setErro(j.erro ?? "Não consegui falar com o agente agora.");
-      else {
-        const passos = (j.trilha ?? []).map((p, i) => ({ id: `t-${agoraIso}-${i}`, agente_slug: slug, papel: "agente" as const, autor_slug: p.autor, texto: p.texto, criado_em: new Date().toISOString() }));
-        setExtra((e) => [...e, ...passos, { id: `r-${agoraIso}`, agente_slug: slug, papel: "agente", autor_slug: slug, texto: j.resposta!, criado_em: new Date().toISOString() }]);
-        // Pedido de ação: o chat não faz; oferece a sessão real do agente certo.
-        setSugestao(j.acao ? { ...j.acao, texto: pergunta } : null);
+      if (!r.ok || !j.resposta) {
+        setErro(j.erro ?? "Não consegui falar com o agente agora.");
+        return;
       }
+      const passos = (j.trilha ?? []).map((p, i) => ({ id: `t-${agoraIso}-${i}`, agente_slug: slug, papel: "agente" as const, autor_slug: p.autor, texto: p.texto, criado_em: new Date().toISOString() }));
+      const resposta: Conversa = { id: `r-${agoraIso}`, agente_slug: slug, papel: "agente", autor_slug: slug, texto: j.resposta, criado_em: new Date().toISOString() };
+      const rumo = decidirEnvio(pergunta, !!j.acao);
+      if (rumo === "pergunta" || !j.acao) {
+        setExtra((e) => [...e, ...passos, resposta]);
+        return;
+      }
+      // Pedido de ação: o servidor já respondeu; agora vira ordem (e aciona na hora se for P0/P1/"agora").
+      const alvo = j.acao;
+      let feito: string;
+      if (rumo === "executar") {
+        const x = await fetch("/api/admin/agentes/executar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: alvo.slug, texto: pergunta }) });
+        const jx = (await x.json().catch(() => ({}))) as { aviso?: string; erro?: string; sessao_url?: string | null; ordemId?: string };
+        if (x.ok) {
+          feito = textoFeito(alvo.nome, true, new Date().toISOString());
+          setLinkSessao(jx.sessao_url ?? null);
+        } else if (jx.ordemId) feito = jx.aviso ?? `Registrei a ordem para ${alvo.nome}; o Moacir aciona em até 1 hora.`;
+        else feito = jx.erro ?? "Não consegui registrar a ordem agora.";
+      } else {
+        const o = await deixarOrdem(alvo.slug, pergunta);
+        feito = o.ok ? textoFeito(alvo.nome, false, new Date().toISOString()) : (o.erro ?? "Não consegui registrar a ordem agora.");
+      }
+      setExtra((e) => [...e, ...passos, { ...resposta, texto: feito }]);
+      if (alvo.slug !== slug) setSlug(alvo.slug);
+      startTransition(() => router.refresh());
     } catch {
       setErro("Sem conexão. Tente de novo.");
     } finally {
@@ -626,7 +693,6 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
       }
       if (j.ordemId) {
         setTexto("");
-        setSugestao(null);
         if (alvo !== slug) setSlug(alvo); // mostra a ordem na lista de quem vai fazer
         startTransition(() => router.refresh());
       }
@@ -635,18 +701,6 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
     } finally {
       setOcupado(false);
     }
-  }
-
-  async function ordem() {
-    if (!texto.trim() || !a) return;
-    setOcupado(true);
-    setErro(null);
-    const r = await deixarOrdem(slug, texto);
-    setOcupado(false);
-    if (!r.ok) return setErro(r.erro ?? "Não consegui gravar a ordem.");
-    setTexto("");
-    setAviso(r.aviso ?? null);
-    startTransition(() => router.refresh());
   }
 
   return (
@@ -659,8 +713,7 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
               setSlug(x.slug);
               setAviso(null);
               setErro(null);
-              setSugestao(null);
-              setLinkSessao(null);
+                    setLinkSessao(null);
             }}
             className={`flex shrink-0 items-center gap-2 rounded-xl border px-3 py-2 text-left ${x.slug === slug ? "border-[#3D7BFF] bg-[#3D7BFF]/10" : "border-white/10 hover:bg-white/5"}`}
           >
@@ -675,69 +728,107 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
 
       {a && (
         <section className="flex min-w-0 flex-col gap-4">
-          <div className="rounded-2xl border border-white/10 bg-[#0B1430]/80 p-4">
-            <div className="flex items-center gap-3">
+          <div className="flex h-[calc(100dvh-14rem)] min-h-[420px] flex-col rounded-2xl border border-white/10 bg-[#0B1430]/80" data-testid="chat-agente">
+            <div className="flex shrink-0 items-center gap-3 border-b border-white/10 p-3">
               <AvatarAgente slug={a.slug} nome={a.nome} cor={COR_ESQUADRAO[a.esquadrao]} tamanho={44} />
-              <div>
+              <div className="min-w-0 flex-1">
                 <p className="flex flex-wrap items-center gap-2 font-bold text-white">{a.nome} <MarcaIA /></p>
-                <p className="text-xs text-[#8C9AC4]">{a.cargo}</p>
+                <p className="truncate text-xs text-[#8C9AC4]">{a.cargo}</p>
               </div>
-            </div>
-            <div className="mt-4 max-h-[50vh] space-y-3 overflow-y-auto" aria-live="polite">
-              {thread.length === 0 ? (
-                <p className="py-6 text-center text-sm text-[#8C9AC4]">
-                  Nenhuma conversa com {a.nome} ainda. Pergunte algo sobre as rondas, ou deixe uma ordem para a próxima.
-                </p>
-              ) : (
-                agruparTrilha(thread).map((g) =>
-                  g.tipo === "trilha" ? (
-                    <details key={g.itens[0].id} data-testid="trilha-gerente" className="ml-3 max-w-[85%] text-xs text-[#AEB9DD]">
-                      <summary className="cursor-pointer select-none py-1 text-[#8C9AC4]">ver como apurei ({g.itens.length})</summary>
-                      <div className="space-y-1">
-                        {g.itens.map((c) => (
-                          <div key={c.id} data-testid="passo-gerente" className="whitespace-pre-line border-l-2 border-[#38BDF8]/50 py-0.5 pl-3">
-                            {c.texto}
-                          </div>
-                        ))}
-                      </div>
-                    </details>
-                  ) : (
-                    <div key={g.itens[0].id} className={`max-w-[85%] whitespace-pre-line rounded-2xl px-3 py-2 text-sm ${g.itens[0].papel === "daniel" ? "ml-auto bg-[#3D7BFF] text-white" : "bg-white/5 text-[#DCE3FA]"}`}>
-                      {g.itens[0].texto}
-                    </div>
-                  )
-                )
-              )}
-              {ocupado && <p className="text-xs text-[#8C9AC4]">{a.slug === "moacir" ? "Moacir está investigando (banco ao vivo e a equipe)…" : `${a.nome} está escrevendo…`}</p>}
-              {sugestao && (
-                <div className="rounded-xl border border-[#38BDF8]/40 bg-[#38BDF8]/10 p-3 text-sm text-[#DCE3FA]" data-testid="sugestao-executar">
-                  <p>Isso precisa de uma sessão real. Vai para <strong>{sugestao.nome}</strong>.</p>
-                  <button className={`${botaoAzul} mt-2`} disabled={ocupado || !podeExecutar(dados.agentes.find((x) => x.slug === sugestao.slug))} onClick={() => executar(sugestao.slug, sugestao.texto)}>
-                    Executar agora → {sugestao.nome}
-                  </button>
-                </div>
-              )}
-            </div>
-            <div className="mt-4 space-y-2">
-              <textarea className={`${campo} min-h-[80px]`} placeholder={`Escreva para ${a.nome}…`} value={texto} maxLength={4000} onChange={(e) => setTexto(e.target.value)} />
-              <div className="flex flex-wrap gap-2">
-                <button className={botaoAzul} disabled={ocupado || !texto.trim()} onClick={perguntar}>
-                  Perguntar
-                </button>
-                <button className={botaoLinha} disabled={ocupado || !texto.trim()} onClick={ordem}>
-                  Deixar ordem
-                </button>
+              <div className="relative">
                 <button
-                  className={botaoVerde}
-                  disabled={ocupado || !texto.trim() || !podeExecutar(destino)}
-                  title={podeExecutar(destino) ? "Grava a ordem e dispara a rotina real agora" : `${destino?.nome ?? "Este agente"} não tem rotina para disparar`}
-                  onClick={() => destino && executar(destino.slug, texto)}
-                  data-testid="executar-agora"
+                  type="button"
+                  aria-label="Mais opções"
+                  aria-haspopup="menu"
+                  aria-expanded={menu}
+                  onClick={() => setMenu((v) => !v)}
+                  className="flex h-11 w-11 items-center justify-center rounded-full text-xl font-bold leading-none text-white hover:bg-white/10"
+                  data-testid="menu-chat"
                 >
-                  Executar agora{destino && destino.slug !== a.slug ? ` → ${destino.nome}` : ""}
+                  …
                 </button>
-                <span className="self-center text-xs text-[#8C9AC4]">{agora ? avisoOrdem(a, agora).replace(/^O /, "Ordem: o ") : ""}</span>
+                {menu && (
+                  <div role="menu" className="absolute right-0 top-12 z-20 w-64 rounded-xl border border-white/15 bg-[#0B1430] p-1 shadow-xl">
+                    <button
+                      role="menuitem"
+                      className="w-full rounded-lg px-3 py-3 text-left text-sm font-semibold text-[#B5EC7A] hover:bg-white/5 disabled:opacity-50"
+                      disabled={ocupado || !texto.trim() || !podeExecutar(destino)}
+                      title={podeExecutar(destino) ? "Grava a ordem e dispara a rotina real agora" : `${destino?.nome ?? "Este agente"} não tem rotina para disparar`}
+                      onClick={() => {
+                        setMenu(false);
+                        if (destino) void executar(destino.slug, texto);
+                      }}
+                      data-testid="executar-agora"
+                    >
+                      Executar agora{destino && destino.slug !== a.slug ? ` → ${destino.nome}` : ""}
+                    </button>
+                    <p className="px-3 pb-2 text-[11px] text-[#8C9AC4]">Escreva a ordem na caixa de texto e depois toque aqui para acionar na hora.</p>
+                  </div>
+                )}
               </div>
+            </div>
+
+            <div className="relative min-h-0 flex-1">
+              <div ref={listaRef} onScroll={aoRolar} className="h-full space-y-2 overflow-y-auto overscroll-contain px-3 py-3" aria-live="polite" data-testid="lista-mensagens">
+                {thread.length === 0 ? (
+                  <p className="py-6 text-center text-sm text-[#8C9AC4]">
+                    Nenhuma conversa com {a.nome} ainda. Pergunte algo sobre as rondas, ou peça uma correção: vira ordem.
+                  </p>
+                ) : (
+                  agruparTrilha(thread).map((g) =>
+                    g.tipo === "trilha" ? (
+                      <details key={g.itens[0].id} data-testid="trilha-gerente" className="ml-3 max-w-[85%] text-xs text-[#AEB9DD]">
+                        <summary className="cursor-pointer select-none py-1 text-[#8C9AC4]">ver como apurei ({g.itens.length})</summary>
+                        <div className="space-y-1">
+                          {g.itens.map((c) => (
+                            <div key={c.id} data-testid="passo-gerente" className="whitespace-pre-line border-l-2 border-[#38BDF8]/50 py-0.5 pl-3">
+                              {c.texto}
+                            </div>
+                          ))}
+                        </div>
+                      </details>
+                    ) : (
+                      <div
+                        key={g.itens[0].id}
+                        data-testid={g.itens[0].papel === "daniel" ? "bolha-minha" : "bolha-agente"}
+                        className={`max-w-[85%] whitespace-pre-line rounded-2xl px-3 py-2 text-sm ${g.itens[0].papel === "daniel" ? "ml-auto rounded-br-sm bg-[#3D7BFF] text-white" : "rounded-bl-sm bg-white/5 text-[#DCE3FA]"}`}
+                      >
+                        {g.itens[0].texto}
+                        <span className="mt-1 block text-right text-[10px] opacity-70" style={mono}>
+                          {horaCurta(g.itens[0].criado_em)}
+                        </span>
+                      </div>
+                    )
+                  )
+                )}
+                {ocupado && (
+                  <div data-testid="digitando" className="inline-flex items-center gap-1 rounded-2xl rounded-bl-sm bg-white/5 px-3 py-2 text-sm text-[#8C9AC4]" role="status">
+                    <span className="sr-only">{a.nome} está digitando</span>
+                    <span aria-hidden>digitando…</span>
+                  </div>
+                )}
+              </div>
+              {!noFim && (
+                <button
+                  type="button"
+                  onClick={() => irParaOFim(true)}
+                  aria-label="Ir para a última mensagem"
+                  data-testid="ir-para-o-fim"
+                  className="absolute bottom-3 right-3 flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-[#0B1430] text-white shadow-lg hover:bg-[#16224a] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#3D7BFF]"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M12 5v14M5 12l7 7 7-7" />
+                  </svg>
+                  {naoLidas > 0 && (
+                    <span data-testid="nao-lidas" className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#FF7A6B] px-1 text-[11px] font-bold text-white">
+                      {naoLidas > 9 ? "9+" : naoLidas}
+                    </span>
+                  )}
+                </button>
+              )}
+            </div>
+
+            <div className="shrink-0 space-y-2 border-t border-white/10 p-3">
               {aviso && (
                 <p className="rounded-lg bg-[#7FD321]/10 px-3 py-2 text-sm text-[#B5EC7A]" data-testid="aviso-ordem">
                   {aviso}{" "}
@@ -749,6 +840,42 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
                 </p>
               )}
               {erro && <p className="rounded-lg bg-[#FF7A6B]/10 px-3 py-2 text-sm text-[#FFB0A6]">{erro}</p>}
+              <form
+                className="flex items-end gap-2"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  void enviar();
+                }}
+              >
+                <textarea
+                  aria-label={`Mensagem para ${a.nome}`}
+                  rows={1}
+                  className="max-h-32 min-h-11 flex-1 resize-none rounded-3xl border border-white/15 bg-[#0B1430] px-4 py-[10px] text-base text-white placeholder:text-[#5d6a93] focus:border-[#3D7BFF] focus:outline-none"
+                  placeholder={`Escreva para ${a.nome}…`}
+                  value={texto}
+                  maxLength={4000}
+                  onChange={(e) => setTexto(e.target.value)}
+                  onKeyDown={(e) => {
+                    // Enter envia no computador; Shift+Enter quebra a linha; no celular o Enter do teclado segue quebrando linha.
+                    if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing && window.matchMedia("(pointer: fine)").matches) {
+                      e.preventDefault();
+                      void enviar();
+                    }
+                  }}
+                />
+                <button
+                  type="submit"
+                  aria-label="Enviar"
+                  data-testid="enviar"
+                  disabled={ocupado || !texto.trim()}
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#005DFC] text-white hover:bg-[#2C7BFF] disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M12 19V5M5 12l7-7 7 7" />
+                  </svg>
+                </button>
+              </form>
+              <p className="text-[11px] text-[#8C9AC4]">{agora ? avisoOrdem(a, agora).replace(/^O /, "Ordem: o ") : ""}</p>
             </div>
           </div>
 
