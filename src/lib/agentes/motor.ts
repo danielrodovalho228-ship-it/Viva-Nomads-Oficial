@@ -305,7 +305,7 @@ export async function executarAgora(d: DepsExecutar, entrada: unknown): Promise<
 // ── Encaminhamento entre agentes: disparo automático dos P0/P1 ────────────────────
 export interface DepsEncaminhamento {
   /** Ordens de encaminhamento ainda não disparadas (a função filtra de novo). */
-  candidatas(): Promise<Pick<Ordem, "id" | "agente_slug" | "texto" | "status" | "origem_slug" | "retorno_de" | "prioridade" | "disparada_em" | "disparo_erro">[]>;
+  candidatas(): Promise<Pick<Ordem, "id" | "agente_slug" | "texto" | "status" | "origem_slug" | "retorno_de" | "prioridade" | "disparada_em" | "disparo_erro" | "criado_por">[]>;
   agentes(): Promise<Pick<Agente, "slug" | "nome" | "status" | "trigger_id">[]>;
   /** Marca disparada_em só se ninguém marcou antes (evita disparo duplo). */
   reservar(ordemId: string): Promise<boolean>;
