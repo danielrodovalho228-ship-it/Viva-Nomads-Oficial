@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { consumirLimite, HORA } from "@/lib/limites";
-import { destinoPonteValido, emitirTokenPonte } from "@/lib/app/ponte";
+import { destinoPonteValido, emitirTokenPonte, segredoPonte } from "@/lib/app/ponte";
 
 /**
  * Ponte app → navegador (ordem bc09134e, parte 1: EMISSÃO). Só quem está logado pede; o destino é
  * um caminho interno da lista de src/lib/app/ponte.ts; o token vale 60 s e uma vez. A troca do
- * token pela sessão no navegador é a parte 2. Resposta sem detalhes internos; token nunca vai a log.
+ * token pela sessão no navegador é /api/app/ponte/entrar. Resposta sem detalhes internos; token nunca vai a log.
  */
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Muitas tentativas. Tente de novo em instantes." }, { status: 429 });
   }
 
-  const segredo = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+  const segredo = segredoPonte();
   const emitido = emitirTokenPonte(user.id, destino, new Date(), segredo);
   if (!emitido) return NextResponse.json({ error: "Serviço indisponível." }, { status: 503 });
 
