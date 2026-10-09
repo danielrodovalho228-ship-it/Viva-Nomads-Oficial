@@ -270,7 +270,7 @@ export default async function HomePage() {
             <div className="absolute left-0 right-0 top-7 hidden h-px bg-line md:block" />
             <Step n="1" icon={Search} title="Busque" text="Encontre imóveis mobiliados pela cidade, período e orçamento. Filtre por Pronto para Morar." />
             <Step n="2" icon={MessageSquare} title="Converse" text="Fale direto com o proprietário, tire dúvidas e agende a visita pela plataforma." />
-            <Step n="3" icon={FileSignature} title="Assine com segurança" text="Garantia escolhida e contrato de temporada assinado digitalmente, com validade jurídica." />
+            <Step n="3" icon={FileSignature} title="Assine com segurança" text="Garantia locatícia combinada entre proprietário e inquilino (ex.: Caução) e contrato de temporada assinado digitalmente, com validade jurídica." />
           </div>
         </div>
       </section>
