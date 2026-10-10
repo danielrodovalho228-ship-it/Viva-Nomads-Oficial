@@ -46,8 +46,7 @@ import {
   MAX_PARCELAS,
   type FormaPagamentoCaucao,
 } from "@/lib/caucao";
-import { COMMISSION_BY_PLAN } from "@/lib/constants";
-import { pctDeUmAluguel, textoComissao } from "@/config/planos";
+import { textoTaxaPainel, valorTaxa, pctTexto } from "@/lib/cobranca/regra";
 import { registrarContrato } from "@/lib/data/actions";
 import type { FechamentoContexto } from "@/lib/data/leads-actions";
 import { resumoContrato } from "@/lib/contrato-blocos";
@@ -86,7 +85,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   const CAPACIDADE = PROPERTY_FULL.maxGuests ?? 4;
   // Comissão CONGELADA no aceite (não o plano atual) — 1 mês × taxa, UMA vez.
   const COMMISSION_RATE = ctx.comissaoRate;
-  const PLATFORM_COMMISSION = Math.round(PROPERTY.monthlyRent * COMMISSION_RATE);
+  const PLATFORM_COMMISSION = valorTaxa(PROPERTY.monthlyRent, COMMISSION_RATE);
   const tenant = { name: ctx.tenantName, profile: demo ? "Médica · residência" : "Candidatura aceita", foreigner: false };
   const contractNumber = ctx.contractNumber;
   // Data do aceite (DD/MM/AAAA) para exibir "plano Y em DD/MM".
@@ -981,36 +980,26 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
               </div>
             </div>
 
-            {/* Comissão de fechamento: cobrada do proprietário, à parte */}
+            {/* Taxa de serviço: cobrada do proprietário, à parte, mostrada ANTES de aceitar */}
             <div className="rounded-xl border border-champagne/40 bg-champagne/10 p-4 text-sm">
-              <p className="font-title font-bold text-forest">
-                Comissão deste contrato: {textoComissao(COMMISSION_RATE, PROPERTY.monthlyRent)} — plano {ctx.planoNome}
-                {aceiteBR ? ` em ${aceiteBR}` : ""}
+              <p className="font-title font-bold text-forest" data-testid="taxa-servico-painel">
+                {textoTaxaPainel(COMMISSION_RATE, PROPERTY.monthlyRent)}
+                {aceiteBR ? ` (taxa travada em ${aceiteBR})` : ""}
               </p>
               <p className="mt-1 text-xs text-muted">
-                Cobrada de você <strong>uma única vez por contrato</strong>, em uma cobrança à
-                parte, no fechamento. Renovar ou estender blocos <strong>não gera nova
-                comissão</strong>. Todo aluguel, inclusive o 1º, vai do inquilino{" "}
+                Cobrada de você <strong>por contrato fechado</strong>, em uma cobrança à parte, no
+                fechamento. Uma renovação conta como novo contrato, na mesma taxa. O valor mensal,
+                inclusive o do primeiro mês, vai do inquilino{" "}
                 <strong>direto para a sua conta</strong> — a plataforma nunca cobra nem repassa
-                aluguel.
+                esse valor. O inquilino não paga taxa da Viva.
               </p>
               <div className="mt-3 space-y-1">
-                <Row label="Base de cálculo (1 aluguel)" value={formatBRL(PROPERTY.monthlyRent)} />
+                <Row label="Base de cálculo (primeiro mês)" value={formatBRL(PROPERTY.monthlyRent)} />
                 <div className="flex items-center justify-between border-t border-champagne/40 pt-1 font-medium text-forest">
-                  <span>Comissão cobrada de você ({pctDeUmAluguel(COMMISSION_RATE)}, uma vez)</span>
+                  <span>Taxa de serviço ({pctTexto(COMMISSION_RATE)})</span>
                   <span>{formatBRL(PLATFORM_COMMISSION)}</span>
                 </div>
               </div>
-              {/* Incentivo de upgrade (A7). A comissão DESTE contrato está
-                  congelada; o upgrade vale para os PRÓXIMOS aceites. */}
-              <p className="mt-3 border-t border-champagne/40 pt-3 text-xs text-muted">
-                Esta comissão ({textoComissao(COMMISSION_RATE)}, plano {ctx.planoNome}) ficou travada
-                na data do aceite. No plano <strong className="text-ink">Profissional</strong> seria{" "}
-                {textoComissao(COMMISSION_BY_PLAN.pro)} — vale para os próximos aceites.{" "}
-                <Link href="/dashboard/assinatura" className="font-medium text-blue-500 hover:text-blue-700">
-                  Fazer upgrade →
-                </Link>
-              </p>
             </div>
 
             {generated ? (
@@ -1087,7 +1076,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
               <Row label="Seguro patrimonial" value={patrimonial ? "Contratado" : "Não contratado"} />
               <Row label="Contrato" value={generated ? "Enviado para assinatura" : "Pendente"} />
               <Row
-                label={`Comissão (${pctDeUmAluguel(COMMISSION_RATE)}, uma vez)`}
+                label={`Taxa de serviço (${pctTexto(COMMISSION_RATE)})`}
                 value={`${formatBRL(PLATFORM_COMMISSION)} · cobrança à parte, do proprietário`}
               />
             </div>

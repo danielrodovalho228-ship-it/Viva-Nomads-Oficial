@@ -134,6 +134,14 @@ export function pctTexto(taxa: number): string {
   return `${`${Math.round(taxa * 1000) / 10}`.replace(".", ",")}%`;
 }
 
+/** Linha do painel do proprietário, ANTES de aceitar contrato/renovação (ordens 12eea681 e 5faa3903). */
+export function textoTaxaPainel(taxa: number, valorMensal: number): string {
+  const base = `Taxa de serviço: ${pctTexto(taxa)} do primeiro mês`;
+  const valor = valorTaxa(valorMensal, taxa);
+  if (valor <= 0) return base;
+  return `${base} = R$ ${valor.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
 /**
  * Mensagem pública ÚNICA e curta (ordens 12eea681 e 5faa3903, Daniel 10/10). Nas páginas públicas
  * não aparece "aluguel", "comissão" etc. sobre a cobrança; o detalhe ("12% do valor do primeiro
