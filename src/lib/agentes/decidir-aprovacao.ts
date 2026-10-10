@@ -63,8 +63,10 @@ export function numeroDoPr(referencia: string): number | null {
 /** Texto da revisão do Moacir confirma o PR #N no commit `sha` como APROVADO? */
 export function moacirAprovouNoTexto(resumo: string, numero: number, sha: string): boolean {
   const curto = sha.slice(0, 7).toLowerCase();
-  const re = new RegExp(`#${numero}\\b[^#]*?${curto}[^#]*?\\bAPROVADO\\b`, "i");
-  return curto.length === 7 && re.test(resumo);
+  const re = new RegExp(`#${numero}\\b[^#]*?${curto}([^#]*?)\\bAPROVADO\\b`, "i");
+  const m = curto.length === 7 ? re.exec(resumo) : null;
+  // "… AJUSTAR — ainda não APROVADO": a palavra aparece, mas a decisão é contrária.
+  return !!m && !/\b(AJUSTAR|BLOQUEADO|REGRESS[ÃA]O|n[ãa]o|nem|sem)\b/i.test(m[1]);
 }
 
 async function tentarMesclar(a: LinhaAprovacao, deps: DepsDecidir): Promise<ResultadoMescla> {
