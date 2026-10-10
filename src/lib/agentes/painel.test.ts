@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 import type { Agente, Conversa, Ronda } from "./central.ts";
 import {
   CAMADAS,
+  FLUXOS,
   atencaoDaCamada,
   corDaRonda,
   fluxosDaRede,
@@ -129,4 +130,10 @@ test("mesclarConversas: pergunta repetida de verdade não some", () => {
 test("mesclarConversas: mesmo texto em outro agente não é duplicata", () => {
   const out = mesclarConversas([cv("u1", "daniel", "oi", "bruno")], [cv("p-1", "daniel", "oi", "luana")]);
   assert.equal(out.length, 2);
+});
+
+test("rede: Rogério é nó de dono ao lado do Daniel e recebe o relatório do Moacir", () => {
+  const ids = nosDaRede([]).map((n) => n.id);
+  assert.ok(ids.includes("daniel") && ids.includes("rogerio"));
+  assert.ok(FLUXOS.some(([a, b]) => a === "moacir" && b === "rogerio"));
 });
