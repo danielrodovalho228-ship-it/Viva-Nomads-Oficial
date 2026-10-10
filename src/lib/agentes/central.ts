@@ -219,6 +219,53 @@ export function proximaRonda(rotina: string | null, agora: Date): string | null 
   return null;
 }
 
+/** Minuto da ronda de gestão do Moacir (de hora em hora), que aciona as ordens sem disparo imediato. */
+export const MINUTO_RONDA_GESTAO = 37;
+
+/** Próxima ronda real de gestão ("14:37", horário de Brasília). */
+export function proximaRondaGestao(agora: Date): string {
+  const { h, min } = horaLocal(agora, FUSO["Brasília"]);
+  const hora = min < MINUTO_RONDA_GESTAO ? h : (h + 1) % 24;
+  return `${String(hora).padStart(2, "0")}:${MINUTO_RONDA_GESTAO}`;
+}
+
+/** Resposta quando a ordem foi gravada e o disparo imediato não existe (sem token) ou falhou. */
+export function avisoRegistrada(nome: string, agora: Date): string {
+  return `Registrei para ${nome}; o Moacir aciona na ronda das ${proximaRondaGestao(agora)}.`;
+}
+
+/** Janela em que uma ordem igual para o mesmo agente não é criada de novo. */
+export const JANELA_DEDUPE_ORDEM_MS = 2 * 3600_000;
+const PALAVRAS_VAZIAS = new Set(["para", "pela", "pelo", "como", "com", "que", "uma", "dos", "das", "nos", "nas", "por", "mais", "esse", "essa", "isso"]);
+function palavrasDaOrdem(t: string): Set<string> {
+  return new Set(
+    semAcento(t.replace(PREFIXO_ORDEM_CHAT, ""))
+      .split(/[^a-z0-9]+/)
+      .filter((w) => w.length >= 3 && !PALAVRAS_VAZIAS.has(w))
+  );
+}
+/** Prefixo que o Moacir põe nas ordens que cria pelo chat (não conta para a comparação). */
+const PREFIXO_ORDEM_CHAT = /^Pedido do Moacir \(chat da Central\):\s*/;
+
+/**
+ * Existe, entre as ordens recentes do MESMO agente (últimas 2 h), uma sobre o mesmo assunto?
+ * Texto igual/prefixo, ou ≥ 60% das palavras do menor texto em comum. Devolve o id para citar.
+ */
+export function ordemDuplicada(texto: string, recentes: Pick<Ordem, "id" | "texto" | "criada_em">[], agora: Date): string | null {
+  const a = palavrasDaOrdem(texto);
+  if (a.size === 0) return null;
+  for (const o of recentes) {
+    const idade = agora.getTime() - new Date(o.criada_em).getTime();
+    if (!(idade >= 0 && idade <= JANELA_DEDUPE_ORDEM_MS)) continue;
+    const b = palavrasDaOrdem(o.texto);
+    if (b.size === 0) continue;
+    let comuns = 0;
+    for (const w of a) if (b.has(w)) comuns++;
+    if (comuns / Math.min(a.size, b.size) >= 0.6) return o.id;
+  }
+  return null;
+}
+
 export function avisoOrdem(a: Pick<Agente, "nome" | "rotina_texto">, agora: Date): string {
   const p = proximaRonda(a.rotina_texto, agora);
   return `O ${a.nome} lê na próxima ronda (${p ?? a.rotina_texto ?? "sem horário definido"}).`;
@@ -235,7 +282,9 @@ export const REGRAS = `Regras:
 - Responda em português do Brasil, curto e direto.
 - Diga "imóveis mobiliados" (nunca "apartamentos") e "Caução" para a garantia.
 - Nunca invente números, datas ou status. Use só o que está neste contexto.
-- Se não tiver certeza, diga que vai conferir na próxima ronda.
+- Responda SÓ a última pergunta do Daniel; não puxe assunto antigo (ex.: um PR de ontem) a menos que ele pergunte. "Sim", "ok", "pode", "faça" e "traga" respondem à sua última oferta: cumpra essa oferta.
+- Responda com os números do retrato. Se o dado não existe no retrato, diga em 1 frase o que falta (não adie para "a próxima ronda"); o pedido vira UMA ordem no servidor.
+- Escreva texto simples: no máximo **negrito** e listas com "- ". Nada de títulos (#), tabelas ou blocos de código.
 - Você não tem ferramentas nem acesso livre ao banco nesta conversa: só o retrato e os dados ao vivo abaixo.
 - NUNCA diga que vai aplicar, corrigir, enviar, publicar, mesclar, disparar ou executar algo, nem que já fez. Se o Daniel pedir uma ação, responda: "Isso precisa de uma sessão real — use Executar agora." Correções de código vão para o Renato (Engenheiro), que abre o PR; migração só com OK escrito do Daniel no Claude Code.
 - Não peça nem repita dados pessoais de clientes.`;
@@ -246,14 +295,15 @@ export const DECISOES_DO_CEO = "dinheiro, contrato, jurídico e parceiros; publi
 export const REGRA_CEO = `- Só dependem do Daniel: ${DECISOES_DO_CEO}. Para todo o resto, diga QUEM da equipe faz e quando (o Renato corrige código e abre o PR, o Otávio confere a fila, a Helena cuida das pendências) — nunca "aguardando aprovação do Daniel".
 - Este chat NÃO aprova por texto: "ok", "aprovado" ou parecido não aprova migração nem merge. Aprovar é só pelo cartão (Aprovar → Confirmar).`;
 
-/** Mensagem do Daniel que é só uma aprovação ("ok", "tudo aprovado", "pode aplicar"…). */
-const RE_APROVA_EM_QUALQUER_PARTE = /\b(aprovo|autorizo|tudo aprovado|pode aplicar|pode mesclar|pode fazer o merge|ok,? (pode )?aplicar)\b/i;
-const RE_APROVA_NO_INICIO = /^(ok|okay|okk+|sim|aprovad[oa]s?|autorizad[oa]|liberad[oa]|de acordo|fechado|manda ver|pode seguir|pode ir)\b/i;
-export function pedeAprovacao(texto: string): boolean {
+/**
+ * Aprovação por texto (resposta ao cartão): só com verbo explícito E pelo menos um cartão de aprovação pendente.
+ * "sim", "ok", "pode", "faça", "peça", "traga agora" respondem à última oferta do agente: NÃO são aprovação.
+ */
+const RE_APROVA_EXPLICITO = /\b(aprovo|aprovado|aprovada|autorizo|autorizado|tudo aprovado|pode aplicar|pode mesclar|pode fazer o merge)\b/i;
+export function pedeAprovacao(texto: string, cartoesPendentes: number): boolean {
   const t = texto.trim();
-  if (!t || t.includes("?")) return false;
-  if (RE_APROVA_EM_QUALQUER_PARTE.test(t)) return true;
-  return RE_APROVA_NO_INICIO.test(t) && t.length <= 40;
+  if (!t || t.includes("?") || cartoesPendentes <= 0) return false;
+  return RE_APROVA_EXPLICITO.test(t);
 }
 export const RESPOSTA_APROVACAO =
   "Daqui do chat eu não aprovo por texto. A aprovação vale pelos cartões com Aprovar e Recusar (pedem confirmação e login recente).";

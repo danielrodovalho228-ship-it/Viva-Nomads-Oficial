@@ -16,6 +16,8 @@ import {
   NOTA_CEO,
   pedeAcao,
   pedeAprovacao,
+  avisoRegistrada,
+  ordemDuplicada,
   prometeAcao,
   respostaSessaoReal,
   textoDisparo,
@@ -118,8 +120,10 @@ export async function responderChat(d: Deps, entrada: unknown): Promise<Resposta
   if (!agente) return { status: 404, body: { erro: "Agente não encontrado." } };
 
   // "ok", "tudo aprovado"…: o chat NÃO aprova migração nem merge (vale para todos, Moacir incluído).
-  if (pedeAprovacao(pergunta)) {
-    const cartoes = d.aprovacoesPendentes ? await d.aprovacoesPendentes().catch(() => null) : null;
+  // Só conta como aprovação com verbo explícito E cartão pendente; "sim", "ok", "pode" respondem à última oferta do agente.
+  // Sem como ler os cartões (null), responde a recusa segura em vez de deixar o modelo "aprovar".
+  const cartoes = pedeAprovacao(pergunta, 1) ? (d.aprovacoesPendentes ? await d.aprovacoesPendentes().catch(() => null) : null) : undefined;
+  if (cartoes !== undefined && pedeAprovacao(pergunta, cartoes?.length ?? 1)) {
     const resposta = respostaAprovacaoNoChat(cartoes);
     await d.gravar([{ agente_slug: slug, papel: "daniel", autor_slug: null, texto: pergunta }]);
     await d.gravar([{ agente_slug: slug, papel: "agente", autor_slug: slug, texto: resposta }]);
@@ -140,10 +144,12 @@ export async function responderChat(d: Deps, entrada: unknown): Promise<Resposta
   // Moacir gerente: só investiga quando a mensagem é sobre o projeto (banco ao vivo, pergunta aos colegas, dispara quem faz).
   // Conversa social cai no chat comum abaixo, que responde direto com a persona.
   if (slug === SLUG_GERENTE && d.gerente && !social) {
-    await d.gravar([{ agente_slug: slug, papel: "daniel", autor_slug: null, texto: pergunta }]);
     let out: { resposta: string; trilha: { autor: string; texto: string }[] };
+    // O histórico entra ANTES de gravar a pergunta nova: "sim"/"pode" só fazem sentido com a oferta anterior.
+    const anteriores = montarMensagens(await d.historico(slug, 10).catch((): Conversa[] => []), pergunta).slice(0, -1);
+    await d.gravar([{ agente_slug: slug, papel: "daniel", autor_slug: null, texto: pergunta }]);
     try {
-      out = await investigar(pergunta, systemGerente({ briefing: agente.briefing, agora: new Date(), contexto: CONTEXTO_VIVA, persona, memorias }), d.gerente.modelo, d.gerente.ferramentas);
+      out = await investigar(pergunta, systemGerente({ briefing: agente.briefing, agora: new Date(), contexto: CONTEXTO_VIVA, persona, memorias }), d.gerente.modelo, d.gerente.ferramentas, anteriores);
     } catch {
       return { status: 502, body: { erro: FALHA_MSG } };
     }
@@ -253,6 +259,8 @@ export interface DepsExecutar {
   /** Consome 1 dos limites de disparo (6/h por agente, 30/dia no total); false = estourou ou indisponível. */
   consumirDisparo(slug: string): Promise<boolean>;
   criarOrdem(slug: string, texto: string): Promise<string | null>;
+  /** Ordens do agente criadas nas últimas 2 h (dedupe: o chat não cria a mesma ordem duas vezes). Opcional. */
+  ordensRecentes?(slug: string): Promise<Pick<Ordem, "id" | "texto" | "criada_em">[]>;
   registrarDisparo(ordemId: string, r: { sessao_url?: string | null; erro?: string }): Promise<void>;
   /** Token da rotina (só servidor); null = não configurado. */
   token(slug: string): string | null;
@@ -260,7 +268,7 @@ export interface DepsExecutar {
 }
 
 /** Ordem gravada mas sem disparo imediato: a rotina de gestão (de hora em hora) dispara toda ordem com disparo_erro. */
-export const avisoOrdemRegistrada = (nome: string) => `Ordem registrada — o Moacir aciona ${nome} em até 1 hora.`;
+export const avisoOrdemRegistrada = (nome: string, agora: Date = new Date()) => avisoRegistrada(nome, agora);
 
 /**
  * Grava a ordem e dispara na hora a rotina real do agente. Sem token ou com
@@ -280,6 +288,11 @@ export async function executarAgora(d: DepsExecutar, entrada: unknown): Promise<
   }
   if (AGENTES_SEM_DISPARO.includes(slug)) {
     return { status: 409, body: { erro: `${agente.nome} não é disparado por ordem. Use "Deixar ordem".` } };
+  }
+  // Mesmo agente + mesmo assunto em 2 h: não cria outra (nem gasta disparo); cita a que já existe.
+  const repetida = d.ordensRecentes ? ordemDuplicada(texto, await d.ordensRecentes(slug).catch(() => []), new Date()) : null;
+  if (repetida) {
+    return { status: 200, body: { ordemId: repetida, aviso: `Já há uma ordem igual para ${agente.nome} nas últimas 2 h (ordem ${repetida}); não criei outra.` } };
   }
   if (!(await d.consumirDisparo(slug))) {
     return { status: 429, body: { erro: `Limite de disparos atingido (${LIMITE_DISPAROS_HORA_AGENTE} por hora por agente, ${LIMITE_DISPAROS_DIA_TOTAL} por dia). Use "Deixar ordem": o agente lê na próxima ronda.` } };

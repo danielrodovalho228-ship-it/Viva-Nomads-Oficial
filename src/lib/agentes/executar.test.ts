@@ -14,6 +14,8 @@ import {
   LIMITE_DISPAROS_HORA_AGENTE,
   nomeVarToken,
   pedeAcao,
+  ordemDuplicada,
+  proximaRondaGestao,
   prometeAcao,
   textoDisparo,
   URL_DISPARO,
@@ -117,10 +119,11 @@ test("Executar agora: só admin, limite de 20, agente sem rotina, sem token e fa
   assert.equal(r2.body.ordemId, "o1");
   assert.ok(cai.log.includes("disparo:o1:HTTP 401"));
   // Sem disparo imediato, a resposta promete o que de fato acontece (rotina de hora em hora), não "próxima ronda".
-  assert.equal(r1.body.aviso, "Ordem registrada — o Moacir aciona Renato em até 1 hora.");
-  assert.equal(r2.body.aviso, "Ordem registrada — o Moacir aciona Renato em até 1 hora.");
+  assert.match(String(r1.body.aviso), /^Registrei para Renato; o Moacir aciona na ronda das \d{2}:37\.$/);
+  assert.match(String(r2.body.aviso), /^Registrei para Renato; o Moacir aciona na ronda das \d{2}:37\.$/);
+  assert.doesNotMatch(String(r1.body.aviso), /não consegui/i);
   assert.doesNotMatch(String(r1.body.erro) + String(r2.body.erro), /próxima ronda/);
-  assert.equal(avisoOrdemRegistrada("Bruno"), "Ordem registrada — o Moacir aciona Bruno em até 1 hora.");
+  assert.equal(avisoOrdemRegistrada("Bruno", new Date("2026-10-10T20:10:00Z")), "Registrei para Bruno; o Moacir aciona na ronda das 17:37.");
 });
 
 test("Despachante: Moacir e Despachante nunca são disparados por ordem; limite recebe o agente", async () => {
@@ -185,4 +188,25 @@ test("rótulo 'acionado às HH:MM' só com disparo sem erro, em horário de Bras
   assert.equal(rotuloAcionado({ disparada_em: "2026-10-09T15:05:00Z", disparo_erro: "HTTP 401" }), null);
   assert.equal(rotuloAcionado({ disparada_em: null, disparo_erro: null }), null);
   assert.equal(rotuloAcionado({ disparada_em: "lixo", disparo_erro: null }), null);
+});
+
+test("próxima ronda de gestão: antes do :37 é a da mesma hora; depois, a da seguinte (Brasília)", () => {
+  assert.equal(proximaRondaGestao(new Date("2026-10-10T20:10:00Z")), "17:37"); // 17:10 BRT
+  assert.equal(proximaRondaGestao(new Date("2026-10-10T20:37:00Z")), "18:37"); // 17:37 BRT já passou
+  assert.equal(proximaRondaGestao(new Date("2026-10-10T02:50:00Z")), "00:37"); // 23:50 BRT → meia-noite
+});
+
+test("ordens duplicadas: mesmo agente + mesmo assunto em 2 h não cria outra; passadas 2 h ou outro assunto, cria", async () => {
+  const agora = new Date("2026-10-10T20:00:00Z");
+  const base = "Carla: traga o retrato de cadastros novos por dia desde segunda";
+  const recentes = [{ id: "o-antiga", texto: `Pedido do Moacir (chat da Central): ${base}`, criada_em: "2026-10-10T19:30:00Z" }];
+  assert.equal(ordemDuplicada("Carla traga o retrato dos cadastros novos por dia desde segunda", recentes, agora), "o-antiga");
+  assert.equal(ordemDuplicada("Revisar o texto da página de preços", recentes, agora), null);
+  assert.equal(ordemDuplicada(base, [{ ...recentes[0], criada_em: "2026-10-10T17:00:00Z" }], agora), null);
+  const f = fakeExec({ ordensRecentes: async () => [{ id: "o-antiga", texto: base, criada_em: new Date().toISOString() }] });
+  const r = await executarAgora(f.d, { slug: "renato", texto: base });
+  assert.equal(r.status, 200);
+  assert.equal(r.body.ordemId, "o-antiga");
+  assert.match(String(r.body.aviso), /Já há uma ordem igual/);
+  assert.deepEqual(f.log, []); // nada criado, nada disparado
 });

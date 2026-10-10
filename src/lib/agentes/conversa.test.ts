@@ -49,3 +49,15 @@ test("resposta longa do agente: 5 linhas à vista e o resto em 'ver detalhes'", 
   // linhas vazias no fim não criam "detalhes" à toa
   assert.equal(dividirResposta("1\n2\n3\n4\n5\n\n\n").detalhes, "");
 });
+
+test("texto do agente: **negrito** e listas viram blocos; nada de HTML passa", async () => {
+  const { lerTextoSimples } = await import("./conversa.ts");
+  const b = lerTextoSimples("Resumo com **dois cadastros** hoje.\n\n- item **um**\n* item dois\n# Título\n<script>alert(1)</script> **x");
+  assert.deepEqual(b[0], { tipo: "p", trechos: [{ texto: "Resumo com ", negrito: false }, { texto: "dois cadastros", negrito: true }, { texto: " hoje.", negrito: false }] });
+  assert.deepEqual(b[1], { tipo: "li", trechos: [{ texto: "item ", negrito: false }, { texto: "um", negrito: true }] });
+  assert.equal(b[2].tipo, "li");
+  assert.deepEqual(b[3], { tipo: "p", trechos: [{ texto: "Título", negrito: false }] });
+  // O texto perigoso continua texto (o React escapa); asterisco sem par não vira negrito.
+  assert.deepEqual(b[4], { tipo: "p", trechos: [{ texto: "<script>alert(1)</script> **x", negrito: false }] });
+  assert.ok(!b.some((x) => x.trechos.some((t) => t.negrito && t.texto.includes("*"))));
+});

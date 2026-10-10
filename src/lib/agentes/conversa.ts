@@ -84,3 +84,44 @@ export function dividirResposta(texto: string, maxLinhas = LINHAS_RESPOSTA_CURTA
   if (corte >= linhas.length) return { resumo: texto, detalhes: "" };
   return { resumo: linhas.slice(0, corte).join("\n").trimEnd(), detalhes: linhas.slice(corte).join("\n").trim() };
 }
+
+// ── Texto do agente: negrito e listas simples (parser seguro, sem HTML) ──────────
+export interface Trecho {
+  texto: string;
+  negrito: boolean;
+}
+export type BlocoTexto = { tipo: "p" | "li"; trechos: Trecho[] };
+
+/** "a **b** c" → [a, b (negrito), c]. Asteriscos soltos (sem par) ficam como texto. */
+function trechosDe(linha: string): Trecho[] {
+  const out: Trecho[] = [];
+  let resto = linha;
+  for (;;) {
+    const m = /\*\*([^*]+?)\*\*/.exec(resto);
+    if (!m) break;
+    if (m.index > 0) out.push({ texto: resto.slice(0, m.index), negrito: false });
+    out.push({ texto: m[1], negrito: true });
+    resto = resto.slice(m.index + m[0].length);
+  }
+  if (resto) out.push({ texto: resto, negrito: false });
+  return out;
+}
+
+/**
+ * Lê o texto do agente como blocos: parágrafo ("p") e item de lista ("li": "- ", "* " ou "• ").
+ * Títulos "#" perdem o "#"; nada vira HTML — quem desenha usa só elementos React com o texto como filho.
+ */
+export function lerTextoSimples(texto: string): BlocoTexto[] {
+  const blocos: BlocoTexto[] = [];
+  for (const bruta of texto.split("\n")) {
+    const linha = bruta.trim();
+    if (!linha) continue;
+    const item = /^(?:[-*•])\s+(.*)$/.exec(linha);
+    if (item) {
+      blocos.push({ tipo: "li", trechos: trechosDe(item[1]) });
+      continue;
+    }
+    blocos.push({ tipo: "p", trechos: trechosDe(linha.replace(/^#{1,6}\s+/, "")) });
+  }
+  return blocos;
+}

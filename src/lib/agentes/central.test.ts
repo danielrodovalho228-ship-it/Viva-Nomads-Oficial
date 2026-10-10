@@ -245,3 +245,46 @@ test("rotina do boletim do gerente é lida como horário do Texas", () => {
   const agora = new Date("2026-10-07T12:00:00Z"); // 07:00 no Texas
   assert.equal(proximaRonda("Todo dia 08:07 Texas (boletim do gerente)", agora), "hoje 08:07 Texas");
 });
+
+test("retrato: traz cadastros novos por papel/janela, último cadastro, imóveis por status e 7 dias; sem dado pessoal", async () => {
+  const { retratoEmTexto } = await import("./retrato.ts");
+  const base = {
+    em: "2026-10-10T20:00:00Z",
+    cadastros: { proprietarios: 3, inquilinos: 5, admins: 1, total: 9, pareceTeste: 2 },
+    imoveis: { total: 4, publicados: 0 },
+    pedidos: { total: 7, ultimas24h: 1 },
+    leads: { total: 8, ultimas24h: 0 },
+    contratosPorStatus: {},
+    chamadosAbertosPorPrioridade: {},
+    rondas: [],
+    ordensPendentes: [],
+    agentes: [],
+  };
+  const sem = retratoEmTexto(base);
+  assert.doesNotMatch(sem, /Cadastros novos/); // retrato antigo continua funcionando
+  const t = retratoEmTexto({
+    ...base,
+    novos: {
+      proprietarios: { h24: 1, d7: 2, d30: 3, ultimoEm: "2026-10-10T18:00:00Z" },
+      inquilinos: { h24: 0, d7: 1, d30: 5, ultimoEm: null },
+      imoveisPorStatus: { draft: 4 },
+      ultimoImovelEm: "2026-10-09T12:00:00Z",
+      pedidos7d: 3,
+      leads7d: 2,
+    },
+  });
+  assert.match(t, /proprietários 1 \/ 2 \/ 3, último em 10\/10 15:00/);
+  assert.match(t, /inquilinos 0 \/ 1 \/ 5, último em nenhum/);
+  assert.match(t, /Imóveis por status \(draft = rascunho\): draft: 4; último cadastrado em 09\/10 09:00/);
+  assert.match(t, /Em 7 dias: 3 pedidos de moradia e 2 interessados/);
+  assert.doesNotMatch(t, /@|\d{11}/);
+});
+
+test("prompt do chat: responde só a última pergunta, não adia para a ronda, sem markdown pesado", () => {
+  const a: Agente = { slug: "moacir", nome: "Moacir", cargo: "Gerente", esquadrao: "comando", rotina_texto: null, trigger_id: null, status: "ativo", briefing: "B.", ordem: 1 };
+  const s = systemChat(a, [], []);
+  assert.doesNotMatch(s, /vai conferir na próxima ronda/);
+  assert.match(s, /SÓ a última pergunta/);
+  assert.match(s, /UMA ordem/);
+  assert.match(s, /Nada de títulos/);
+});

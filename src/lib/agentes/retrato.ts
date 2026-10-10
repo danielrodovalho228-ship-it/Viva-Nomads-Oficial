@@ -15,9 +15,26 @@ export interface Retrato {
   leads: { total: number; ultimas24h: number };
   contratosPorStatus: Record<string, number>;
   chamadosAbertosPorPrioridade: Record<string, number>;
+  /** Datas e contagens por janela (só números e datas). Ausente em retratos antigos. */
+  novos?: {
+    proprietarios: JanelaCadastro;
+    inquilinos: JanelaCadastro;
+    imoveisPorStatus: Record<string, number>;
+    ultimoImovelEm: string | null;
+    pedidos7d: number;
+    leads7d: number;
+  };
   rondas: { agente: string; status: string; em: string; resumo: string }[];
   ordensPendentes: { agente: string; n: number }[];
   agentes: Pick<Agente, "nome" | "status" | "rotina_texto">[];
+}
+
+export interface JanelaCadastro {
+  h24: number;
+  d7: number;
+  d30: number;
+  /** ISO do cadastro mais recente do papel. */
+  ultimoEm: string | null;
 }
 
 /** Hora no fuso de Brasília: "07/10 08:15". */
@@ -50,9 +67,17 @@ export function retratoEmTexto(r: Retrato | null): string {
     .filter((a) => a.status === "ativo")
     .map((a) => `${a.nome}: ${proximaRonda(a.rotina_texto, agora) ?? a.rotina_texto ?? "sem horário"}`)
     .join("; ");
+  const n = r.novos;
+  const dataDe = (iso: string | null) => (iso ? horaBrasilia(iso) : "nenhum");
+  const novos = n
+    ? `
+- Cadastros novos (24h / 7 dias / 30 dias): proprietários ${n.proprietarios.h24} / ${n.proprietarios.d7} / ${n.proprietarios.d30}, último em ${dataDe(n.proprietarios.ultimoEm)}; inquilinos ${n.inquilinos.h24} / ${n.inquilinos.d7} / ${n.inquilinos.d30}, último em ${dataDe(n.inquilinos.ultimoEm)}.
+- Imóveis por status (draft = rascunho): ${lista(n.imoveisPorStatus)}; último cadastrado em ${dataDe(n.ultimoImovelEm)}.
+- Em 7 dias: ${n.pedidos7d} pedidos de moradia e ${n.leads7d} interessados (leads).`
+    : "";
   return `RETRATO DO MOMENTO (dados de ${quando}, horário de Brasília; só contagens, consultadas agora pelo servidor):
 - Cadastros: ${c.total} (proprietários ${c.proprietarios}, inquilinos ${c.inquilinos}, admins ${c.admins}); destes, ${c.pareceTeste} parecem contas de teste (e-mail de teste/laboratório).
-- Imóveis: ${r.imoveis.total} (publicados ${r.imoveis.publicados}).
+- Imóveis: ${r.imoveis.total} (publicados ${r.imoveis.publicados}).${novos}
 - Pedidos de moradia: ${r.pedidos.total} no total, ${r.pedidos.ultimas24h} nas últimas 24h.
 - Interessados (leads): ${r.leads.total} no total, ${r.leads.ultimas24h} nas últimas 24h.
 - Contratos por status: ${lista(r.contratosPorStatus)}.

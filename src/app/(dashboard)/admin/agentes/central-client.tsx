@@ -25,7 +25,7 @@ import {
   type Ronda,
   type StatusAgente,
 } from "@/lib/agentes/central";
-import { decidirEnvio, dividirResposta, estaNoFim, horaCurta, textoFeito } from "@/lib/agentes/conversa";
+import { decidirEnvio, dividirResposta, estaNoFim, horaCurta, lerTextoSimples, textoFeito } from "@/lib/agentes/conversa";
 import { COR_RONDA_HEX, achadosDaPrioridade, corDaRonda, indicadores, mesclarConversas, proximaDoAgente, resumoCurto, rondaRecente, ultimaPorAgente } from "@/lib/agentes/painel";
 import { deixarOrdem, type ChamadoVermelho, type DadosCentral } from "@/lib/data/agentes-actions";
 import { AvatarAgente } from "@/components/admin/agentes/avatar";
@@ -118,6 +118,27 @@ function Chip({ cor, children }: { cor: string; children: React.ReactNode }) {
       <span className="h-1.5 w-1.5 rounded-full" style={{ background: cor }} />
       {children}
     </span>
+  );
+}
+
+/** Texto do agente: **negrito** e listas "- " como elementos React (nunca HTML do texto). */
+function TextoSimples({ texto }: { texto: string }) {
+  const blocos = lerTextoSimples(texto);
+  const trechos = (b: (typeof blocos)[number]) => b.trechos.map((t, i) => (t.negrito ? <strong key={i}>{t.texto}</strong> : <span key={i}>{t.texto}</span>));
+  return (
+    <>
+      {blocos.map((b, i) =>
+        b.tipo === "li" ? (
+          <p key={i} className="ml-4 -indent-3 before:content-['•_']">
+            {trechos(b)}
+          </p>
+        ) : (
+          <p key={i} className={i > 0 ? "mt-1" : ""}>
+            {trechos(b)}
+          </p>
+        )
+      )}
+    </>
   );
 }
 
@@ -809,11 +830,13 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
                           const { resumo, detalhes } = g.itens[0].papel === "daniel" ? { resumo: g.itens[0].texto, detalhes: "" } : dividirResposta(g.itens[0].texto);
                           return (
                             <>
-                              {resumo}
+                              {g.itens[0].papel === "daniel" ? resumo : <TextoSimples texto={resumo} />}
                               {detalhes && (
                                 <details data-testid="resposta-detalhes" className="mt-1">
                                   <summary className="cursor-pointer select-none text-xs font-semibold text-[#38BDF8]">ver detalhes</summary>
-                                  <div className="mt-1 whitespace-pre-line">{detalhes}</div>
+                                  <div className="mt-1">
+                                    <TextoSimples texto={detalhes} />
+                                  </div>
                                 </details>
                               )}
                             </>

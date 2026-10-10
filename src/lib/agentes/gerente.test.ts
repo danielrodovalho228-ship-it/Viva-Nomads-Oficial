@@ -147,3 +147,37 @@ test("chat: a resposta gravada não repete a trilha nem o bloco final", async ()
   assert.ok(String(r.body.resposta).startsWith(bloco));
   assert.equal((String(r.body.resposta).match(/O que encontrei:/g) ?? []).length, 1);
 });
+
+test("Moacir recebe o histórico: 'Sim peça' chega ao modelo junto com a oferta anterior", async () => {
+  const vistas: { role: string; content: unknown }[][] = [];
+  const d = fakeDeps().d;
+  const gravadas: string[] = [];
+  const dd = {
+    adminId: async () => "a",
+    perguntasHoje: async () => 0,
+    agentes: async () => [{ slug: "moacir", nome: "Moacir", cargo: "G", esquadrao: "comando", rotina_texto: null, trigger_id: null, status: "ativo", briefing: "B", ordem: 1 }],
+    rondas: async () => [],
+    ordensAbertas: async () => [],
+    historico: async () => [
+      { id: "1", agente_slug: "moacir", papel: "daniel", autor_slug: null, texto: "Quantos cadastros hoje?", criado_em: "2026-10-10T19:00:00Z" },
+      { id: "2", agente_slug: "moacir", papel: "agente", autor_slug: "moacir", texto: "Posso pedir à Carla o detalhe por dia. Quer?", criado_em: "2026-10-10T19:00:05Z" },
+    ],
+    retrato: async () => null,
+    gravar: async (l: { texto: string }[]) => void gravadas.push(...l.map((x) => x.texto)),
+    modelo: async () => "",
+    gerente: { modelo: (async ({ messages }) => (vistas.push(messages), fim("Peço agora."))) as ModeloGerente, ferramentas: d },
+  } as unknown as Deps;
+  const r = await responderChat(dd, { slug: "moacir", texto: "Sim peça" });
+  assert.equal(r.status, 200);
+  assert.equal(String(r.body.resposta).includes("não aprovo por texto"), false);
+  assert.deepEqual(vistas[0].map((m) => m.content), ["Quantos cadastros hoje?", "Posso pedir à Carla o detalhe por dia. Quer?", "Sim peça"]);
+  assert.deepEqual(gravadas.slice(0, 1), ["Sim peça"]);
+});
+
+test("sem token: o Moacir registra e diz a hora da ronda; a trilha não diz 'Disparei'", async () => {
+  const { d } = fakeDeps({ executar: async () => ({ ok: true, texto: "Registrei para Renato; o Moacir aciona na ronda das 17:37. (ordem o1)" }) });
+  const r = await investigar("Peça ao Renato", "sys", roteiro(usa("t1", "executar_agora", { slug: "renato", ordem: "corrigir X" }), fim("Registrei para o Renato.")), d);
+  assert.equal(r.trilha.length, 1);
+  assert.doesNotMatch(r.trilha[0].texto, /Disparei|Não consegui/);
+  assert.match(r.trilha[0].texto, /^Registrei para Renato; o Moacir aciona na ronda das 17:37/);
+});
