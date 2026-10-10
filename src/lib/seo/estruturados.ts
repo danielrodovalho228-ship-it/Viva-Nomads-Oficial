@@ -3,7 +3,7 @@
   Só fatos que o site já publica: nada de nota, avaliação ou preço inventado.
 */
 import { FAQ } from "../atendimento/faq.ts";
-import { PLANOS } from "../../config/planos.ts";
+import { TEXTO_REGRA_UNICA } from "../cobranca/regra.ts";
 
 export const ORG = { nome: "Viva Nomads", url: "https://vivanomads.com.br" } as const;
 
@@ -50,33 +50,17 @@ export function faqPage() {
   };
 }
 
-/** Planos de /precos como ofertas (Gestor é sob consulta: sem preço). */
-export function ofertasPlanos(siteUrl: string) {
+/** /precos: a regra única como oferta (anunciar grátis; 12% do primeiro aluguel só quando alugar). */
+export function ofertaRegraUnica(siteUrl: string) {
   return {
     "@context": "https://schema.org",
-    "@type": "ItemList",
-    name: "Planos para proprietários — Viva Nomads",
-    itemListElement: PLANOS.map((p, i) => ({
-      "@type": "ListItem",
-      position: i + 1,
-      item: {
-        "@type": "Offer",
-        name: `Plano ${p.nome}`,
-        description: p.publico,
-        url: `${siteUrl}/precos`,
-        seller: { "@type": "Organization", name: ORG.nome },
-        ...(p.precoMensal !== null
-          ? {
-              priceSpecification: {
-                "@type": "UnitPriceSpecification",
-                price: p.precoMensal,
-                priceCurrency: "BRL",
-                unitText: "MONTH",
-              },
-            }
-          : {}),
-      },
-    })),
+    "@type": "Offer",
+    name: "Anunciar imóvel mobiliado na Viva Nomads",
+    description: TEXTO_REGRA_UNICA,
+    url: `${siteUrl}/precos`,
+    price: 0,
+    priceCurrency: "BRL",
+    seller: { "@type": "Organization", name: ORG.nome },
   };
 }
 

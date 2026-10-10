@@ -290,7 +290,7 @@ export default async function HomePage() {
                 <p className="mt-5 max-w-md text-white/65">
                   Um inquilino por uma temporada inteira traz previsibilidade: agenda estável,
                   custos de consumo organizados no contrato e tudo registrado na plataforma. Você
-                  anuncia de graça e só paga quando fecha.
+                  anuncia de graça e só paga quando alugar: 12% do primeiro aluguel.
                 </p>
               </div>
               <div className="flex flex-col gap-3 md:items-end">
@@ -298,7 +298,7 @@ export default async function HomePage() {
                   Quero anunciar meu imóvel <ArrowRight className="h-4 w-4" />
                 </ButtonLink>
                 <Link href="/precos" className="text-sm text-white/55 transition-colors hover:text-green-300">
-                  Ver planos de assinatura
+                  Ver preços
                 </Link>
               </div>
             </div>

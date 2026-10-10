@@ -35,7 +35,7 @@ export default function TermsPage() {
         <Section title="3. Pagamento do aluguel">
           O pagamento do aluguel é feito <strong>diretamente ao proprietário</strong>. A
           plataforma não intermedeia a transação financeira do aluguel e não é responsável
-          transacional por ela. As cobranças da plataforma referem-se a assinatura e serviços
+          transacional por ela. As cobranças da plataforma referem-se à taxa sobre o primeiro aluguel e a serviços
           opcionais.
         </Section>
 
@@ -63,8 +63,9 @@ export default function TermsPage() {
         </Section>
 
         <Section title="8. Comissão e indicações">
-          A comissão de fechamento é cobrada uma única vez sobre o primeiro mês de aluguel,
-          conforme o plano do proprietário. As recompensas do programa de indicação são
+          A plataforma cobra do proprietário 12% do primeiro aluguel de cada contrato novo e de cada
+          renovação, na assinatura do contrato ou do aditivo. A taxa é a mesma para todos os proprietários, sem
+          mensalidade, e o inquilino não paga taxa da plataforma. (Texto aguardando revisão do Sérgio e da Dra. Beatriz.) As recompensas do programa de indicação são
           liberadas apenas após o evento qualificador real (primeira reserva ou locação).
         </Section>
       </div>

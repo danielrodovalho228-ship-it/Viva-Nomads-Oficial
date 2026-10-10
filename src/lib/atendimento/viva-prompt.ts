@@ -5,26 +5,24 @@
   servidor filtra pelo dono do chamado.
 */
 import { FAQ } from "./faq.ts";
-import { ALUGUEL_EXEMPLO, GESTOR_PRECO, GESTOR_RESUMO, PLANOS, REGRAS_CONTRATO, textoComissao } from "../../config/planos.ts";
+import { REGRAS_CONTRATO } from "../../config/planos.ts";
 import { PRAZO_MANUTENCAO_H, PROMESSA_ATENDIMENTO } from "../../config/atendimento.ts";
 import { SITUACAO_VIVA } from "../../config/situacao-viva.ts";
 
 
-const brl = (n: number) => `R$ ${n.toLocaleString("pt-BR")}`;
+const REGRA_PRECO_TEXTO =
+  "Anunciar é grátis. Você só paga quando alugar: 12% do primeiro aluguel de cada contrato e de cada renovação. Mesma regra para quem tem 1 ou 100 imóveis. Sem mensalidade. O inquilino não paga taxa da plataforma.";
 
 export function fontes(): string {
   const faq = FAQ.map((p) => `- [faq:${p.id}] ${p.pergunta}\n  ${p.resposta}${p.porPerfil?.com_contrato ? `\n  (Para quem tem contrato ativo: ${p.porPerfil.com_contrato})` : ""}`).join("\n");
-  const planos = PLANOS.map(
-    (p) => `- ${p.nome}: ${p.precoMensal === null ? (GESTOR_PRECO.ligado ? `${GESTOR_RESUMO} (${GESTOR_PRECO.imoveisInclusos} imóveis incluídos, ${brl(GESTOR_PRECO.porImovelAdicional)}/mês por imóvel adicional; ativação com a equipe)` : "assinatura sob consulta") : p.precoMensal > 0 ? `${brl(p.precoMensal)}/mês` : "sem mensalidade"}, comissão: ${textoComissao(p.comissao, ALUGUEL_EXEMPLO)} num aluguel de R$ ${ALUGUEL_EXEMPLO.toLocaleString("pt-BR")}, até ${Number.isFinite(p.limiteAnuncios) ? p.limiteAnuncios : "ilimitados"} anúncio(s)`
-  ).join("\n");
   const prazos = `Prazo de uma pessoa da equipe: até 24 h para qualquer caso; casos urgentes (golpe, segurança, emergência) têm prioridade máxima e a equipe é avisada na hora. Não cite prazo menor que 24 h.`;
   return [
     "## Perguntas frequentes (fonte oficial)",
     faq,
     "",
-    "## Planos para proprietários (fonte oficial)",
-    planos,
-    "A comissão é cobrada só do proprietário, uma vez por contrato, sobre 1 aluguel. O inquilino não paga nada à plataforma (R$ 0 de taxa). Ao falar de comissão, diga sempre em reais: \"X% de um aluguel, uma vez (≈ R$ Y)\". Comparação completa com o Airbnb em /precos.",
+    "## Preço para proprietários (fonte oficial, regra única)",
+    REGRA_PRECO_TEXTO,
+    "A taxa é cobrada só do proprietário, sobre o primeiro aluguel de cada contrato novo e de cada renovação. Não existem planos, faixas por volume, descontos nem mensalidade: não cite Gratuito, Essencial, Profissional ou Gestor. Ao falar da taxa, diga sempre em reais: \"12% do primeiro aluguel (≈ R$ 518,40 num aluguel de R$ 4.320)\". Só o admin fixa taxa negociada. Comparação em /precos.",
     "",
     "## Regras do contrato (fonte oficial)",
     `- Locação por temporada (art. 48 da Lei 8.245/91): de ${REGRAS_CONTRATO.prazoMinMeses} a ${REGRAS_CONTRATO.prazoMaxMeses} meses, no máximo ${REGRAS_CONTRATO.prazoMaxDias} dias, em blocos de até ${REGRAS_CONTRATO.maxDiasBloco} dias.`,
