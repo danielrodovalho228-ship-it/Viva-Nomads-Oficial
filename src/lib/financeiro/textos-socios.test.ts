@@ -17,6 +17,7 @@ const ARQUIVOS = [
   "src/lib/financeiro/projecao.ts",
   "src/components/modelo-negocio/modelo-negocio.tsx",
   "src/components/socios/socios.tsx",
+  "src/app/(dashboard)/dashboard/roi-imovel/page.tsx",
 ];
 
 for (const arquivo of ARQUIVOS) {
