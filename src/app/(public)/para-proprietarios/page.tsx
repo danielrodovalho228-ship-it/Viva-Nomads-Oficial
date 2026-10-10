@@ -35,9 +35,9 @@ export default function ForLandlordsPage() {
               condomínio e IPTU que podem ser transferidos ao inquilino conforme o contrato.
             </p>
             <p className="mt-4 text-white/90">
-              <strong>Anuncie de graça.</strong> Pague uma comissão apenas quando fechar —{" "}
+              <strong>Anuncie de graça.</strong> Você só paga quando alugar: 12% do primeiro aluguel de cada contrato e de cada renovação —{" "}
               <Link href="/precos" className="font-medium text-green-300 underline-offset-2 hover:underline">
-                ver planos e comissões
+                ver os preços
               </Link>
               .
             </p>
@@ -46,7 +46,7 @@ export default function ForLandlordsPage() {
                 Anunciar meu imóvel <ArrowRight className="h-4 w-4" />
               </ButtonLink>
               <ButtonLink href="/precos" variant="outline" size="lg" className="border-white/40 text-white hover:bg-white hover:text-forest">
-                Ver planos
+                Ver preços
               </ButtonLink>
             </div>
           </div>

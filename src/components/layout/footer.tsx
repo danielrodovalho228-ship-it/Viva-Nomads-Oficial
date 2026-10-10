@@ -31,7 +31,7 @@ export function Footer() {
           <FooterLink href="/como-funciona">Como funciona</FooterLink>
           <FooterLink href="/para-proprietarios">Para proprietários</FooterLink>
           <FooterLink href="/empresas">Para empresas</FooterLink>
-          <FooterLink href="/precos">Planos</FooterLink>
+          <FooterLink href="/precos">Preços</FooterLink>
           <FooterLink href="/seguranca">Sua segurança</FooterLink>
           <FooterLink href="/ajuda">Central de Ajuda</FooterLink>
         </FooterCol>

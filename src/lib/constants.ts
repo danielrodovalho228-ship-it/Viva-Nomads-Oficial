@@ -39,7 +39,7 @@ export const PUBLIC_NAV = [
   { href: "/pedidos/novo", label: "Publicar pedido" },
   { href: "/como-funciona", label: "Como funciona" },
   { href: "/para-proprietarios", label: "Para proprietários" },
-  { href: "/precos", label: "Planos" },
+  { href: "/precos", label: "Preços" },
 ];
 
 /**
@@ -50,7 +50,7 @@ export const PUBLIC_NAV = [
 export const CITIES = [{ slug: "uberlandia", name: "Uberlândia", state: "MG" }];
 
 /**
- * Planos de assinatura do proprietário — DERIVADOS da fonte única
+ * Condições LEGADAS (quem já estava em plano pago mantém até o fim do ciclo) — DERIVADAS da fonte única
  * `@/config/planos` (C2 do E2E). Mantém os nomes de campo usados pela /precos e
  * pela calculadora; para mudar preço/comissão/benefício, edite config/planos.ts.
  */

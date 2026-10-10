@@ -65,7 +65,7 @@ test("texto oficial: 12%, sem mensalidade, sem plano nem faixa", () => {
 });
 
 // ── Página de preços e tabela "Compare" ──
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
 import { COMPARE_CONTRATO, COMPARE_RODAPE, LINHAS_COMPARE, linhasPublicas } from "../../config/compare-precos.ts";
 
 const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
@@ -98,4 +98,21 @@ test("/precos: sem planos, faixas, mensalidade nem 'renovação grátis'; com a 
   assert.doesNotMatch(page, /PLANS|Essencial|Gestor|plano Profissional|faixas por volume|renovação grátis|vistoria/i);
   const linhas = ler("src/components/precos/comparativo-precos.tsx");
   assert.doesNotMatch(linhas, /Essencial|Profissional|Gestor/);
+});
+
+test("varredura: nada nas páginas públicas, FAQ, llms e navegação fala de plano, faixa, comissão zero ou renovação grátis", () => {
+  const pastas = ["src/app/(public)", "src/components/layout"];
+  const arquivos: string[] = [];
+  const andar = (d: string) => {
+    for (const n of readdirSync(new URL(`../../../${d}`, import.meta.url))) {
+      const rel = `${d}/${n}`;
+      if (statSync(new URL(`../../../${rel}`, import.meta.url)).isDirectory()) andar(rel);
+      else if (/\.tsx?$/.test(n) && !/\.test\./.test(n)) arquivos.push(rel);
+    }
+  };
+  pastas.forEach(andar);
+  arquivos.push("src/lib/atendimento/faq.ts", "src/lib/seo/llms.ts", "src/lib/seo/estruturados.ts", "src/lib/constants.ts");
+  const proibido = /Essencial|plano (Gratuito|Profissional|Gestor)|comiss[aã]o zero|renova[cç][aã]o (gr[aá]tis|n[aã]o paga)|Renovação: você não paga|taxa de extensão|ver planos|Planos de assinatura/i;
+  const achados = arquivos.filter((a) => a !== "src/components/layout/dashboard-shell.tsx" && proibido.test(ler(a)));
+  assert.deepEqual(achados, []);
 });
