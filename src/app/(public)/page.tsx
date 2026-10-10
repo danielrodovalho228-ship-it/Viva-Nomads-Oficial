@@ -290,7 +290,7 @@ export default async function HomePage() {
                 <p className="mt-5 max-w-md text-white/65">
                   Um inquilino por uma temporada inteira traz previsibilidade: agenda estável,
                   custos de consumo organizados no contrato e tudo registrado na plataforma. Você
-                  anuncia de graça. A Viva cobra 12% por contrato fechado. Sem mensalidade.
+                  anuncia de graça. A Viva cobra 12% por contrato fechado. Quanto mais imóveis, menor a taxa (até 4%). Sem mensalidade.
                 </p>
               </div>
               <div className="flex flex-col gap-3 md:items-end">

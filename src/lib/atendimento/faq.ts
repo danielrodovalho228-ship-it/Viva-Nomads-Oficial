@@ -34,7 +34,7 @@ export const FAQ: Pergunta[] = [
   {
     id: "custo-anunciar",
     pergunta: "Quanto custa anunciar?",
-    resposta: `${TEXTO_REGRA_UNICA} Numa reserva de R$ 4.320 por mês, são R$ 518,40 por contrato fechado e R$ 518,40 em cada renovação. Veja a comparação com outras opções em /precos.`,
+    resposta: `${TEXTO_REGRA_UNICA} Faixas por imóveis ativos: 1–2 = 12%, 3–5 = 10%, 6–15 = 8%, 16–30 = 6%; com 31 ou mais, fale com a gente sobre o Plano Gestor. Numa reserva de R$ 4.320 por mês, a taxa de 12% é R$ 518,40 por contrato fechado; cada renovação conta como novo contrato, com a mesma taxa da sua faixa. Veja a comparação com outras opções em /precos.`,
     termos: ["preco", "taxa", "anunciar", "comissao", "mensalidade", "quanto custa", "airbnb", "12"],
   },
   {
@@ -53,7 +53,7 @@ export const FAQ: Pergunta[] = [
   {
     id: "renovar",
     pergunta: "Posso renovar o contrato?",
-    resposta: `Sim, enquanto o total não passar de ${REGRAS_CONTRATO.prazoMaxDias} dias. A renovação é um novo bloco, só vale com o aceite do proprietário e do inquilino, e tem a mesma taxa de 12% por contrato, paga pelo proprietário. Depois de ${REGRAS_CONTRATO.prazoMaxDias} dias, é preciso um novo contrato.`,
+    resposta: `Sim, enquanto o total não passar de ${REGRAS_CONTRATO.prazoMaxDias} dias. A renovação é um novo bloco, só vale com o aceite do proprietário e do inquilino, e conta como novo contrato, com a mesma taxa da faixa do proprietário, paga por ele. Depois de ${REGRAS_CONTRATO.prazoMaxDias} dias, é preciso um novo contrato.`,
     termos: ["renovar", "renovacao", "prorrogar", "estender"],
   },
   {

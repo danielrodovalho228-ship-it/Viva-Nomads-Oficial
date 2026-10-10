@@ -35,7 +35,7 @@ export default function ForLandlordsPage() {
               condomínio e IPTU que podem ser transferidos ao inquilino conforme o contrato.
             </p>
             <p className="mt-4 text-white/90">
-              <strong>Anuncie de graça.</strong> A Viva cobra 12% por contrato fechado. Sem mensalidade —{" "}
+              <strong>Anuncie de graça.</strong> A Viva cobra 12% por contrato fechado. Quanto mais imóveis, menor a taxa (até 4%). Sem mensalidade —{" "}
               <Link href="/precos" className="font-medium text-green-300 underline-offset-2 hover:underline">
                 ver os preços
               </Link>

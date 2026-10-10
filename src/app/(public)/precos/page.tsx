@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Check, Camera, FileSignature, ShieldCheck, UserCheck, Banknote, PiggyBank } from "lucide-react";
-import { TEXTO_REGRA_UNICA, TEXTO_REGRA_CURTO, cobrancaParaAceite } from "@/lib/cobranca/regra";
+import { FAIXAS_COMISSAO_PADRAO, TEXTO_REGRA_UNICA, TEXTO_REGRA_CURTO, pctTexto, valorTaxa } from "@/lib/cobranca/regra";
 import { ComparativoPrecos } from "@/components/precos/comparativo-precos";
 import { ButtonLink } from "@/components/ui/button";
 import { formatBRL, cn } from "@/lib/utils";
@@ -137,13 +137,12 @@ export default function PricingPage() {
 
       <section className="container-page -mt-10 pb-16">
         <div className="mb-10 rounded-3xl border border-champagne bg-white p-6 shadow-xl ring-2 ring-champagne sm:p-8" data-testid="regra-unica">
-          <h2 className="font-title text-2xl font-bold text-ink">Uma regra só, igual para todos</h2>
+          <h2 className="font-title text-2xl font-bold text-ink">Quanto mais imóveis, menor a taxa</h2>
           <p className="mt-3 text-ink">{TEXTO_REGRA_UNICA}</p>
           <ul className="mt-5 space-y-3">
             {[
               "Anunciar é grátis, com quantos imóveis mobiliados você quiser.",
-              "Você só paga quando a reserva é fechada, em cada contrato e em cada renovação.",
-              "Mesma regra para quem tem 1 ou 100 imóveis.",
+              "Você só paga quando a reserva é fechada. Cada renovação conta como um novo contrato, com a mesma taxa da sua faixa.",
               "Sem mensalidade. Quem vem morar não paga taxa da plataforma.",
               "A cobrança é feita ao proprietário; a plataforma não recebe nem retém o valor mensal da reserva.",
             ].map((t) => (
@@ -152,9 +151,29 @@ export default function PricingPage() {
               </li>
             ))}
           </ul>
-          <p className="mt-5 rounded-lg bg-surface-2 px-3 py-2 text-sm text-muted">
-            Exemplo: reserva de R$ 4.320 por mês → {formatBRL(cobrancaParaAceite({ tipo: "novo", aluguelMensal: 4320, assinadoEm: new Date() }).valor)} por
-            contrato fechado e {formatBRL(cobrancaParaAceite({ tipo: "renovacao", aluguelMensal: 4320, assinadoEm: new Date() }).valor)} em cada renovação.
+          <table className="mt-5 w-full text-left text-sm" data-testid="faixas-taxa">
+            <caption className="sr-only">Taxa por número de imóveis ativos</caption>
+            <thead>
+              <tr className="border-b border-champagne text-muted">
+                <th scope="col" className="py-2 pr-3 font-medium">Imóveis ativos</th>
+                <th scope="col" className="py-2 pr-3 font-medium">Taxa por contrato fechado</th>
+                <th scope="col" className="py-2 font-medium">Exemplo (R$ 4.320 por mês)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {FAIXAS_COMISSAO_PADRAO.map((f) => (
+                <tr key={f.minImoveis} className="border-b border-champagne/50 text-ink">
+                  <th scope="row" className="py-2 pr-3 font-medium">
+                    {f.gestor ? `${f.minImoveis}+ · Plano Gestor` : f.maxImoveis === null ? `${f.minImoveis}+` : `${f.minImoveis}–${f.maxImoveis}`}
+                  </th>
+                  <td className="py-2 pr-3">{pctTexto(f.taxa)}</td>
+                  <td className="py-2">{formatBRL(valorTaxa(4320, f.taxa))}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="mt-3 rounded-lg bg-surface-2 px-3 py-2 text-sm text-muted" data-testid="plano-gestor">
+            Com 31 imóveis ou mais, a conversa é direta: fale com a gente sobre o Plano Gestor e fixamos uma condição negociada.
           </p>
           <ButtonLink href="/qualificar" variant="gold" className="mt-6 w-full sm:w-auto">
             Anunciar meu imóvel
