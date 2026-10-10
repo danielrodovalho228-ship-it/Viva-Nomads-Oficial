@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { aceitaEsforco, aceitaReserva, modeloViva } from "@/lib/atendimento/viva-custo";
-import { CHAVE_LIMITE_ENCAMINHAMENTO, LIMITE_DISPAROS_DIA_TOTAL, LIMITE_DISPAROS_HORA_AGENTE, inicioDoDiaBrasilia, modeloAgentes, nomeVarToken, SCHEMA_REUNIAO, TIMEOUT_MS, type Agente, type Conversa, type Ordem, type Ronda } from "@/lib/agentes/central";
+import { CHAVE_LIMITE_ENCAMINHAMENTO, JANELA_DEDUPE_ORDEM_MS, LIMITE_DISPAROS_DIA_TOTAL, LIMITE_DISPAROS_HORA_AGENTE, inicioDoDiaBrasilia, modeloAgentes, nomeVarToken, SCHEMA_REUNIAO, TIMEOUT_MS, type Agente, type Conversa, type Ordem, type Ronda } from "@/lib/agentes/central";
 import { consumirLimite, DIA, HORA } from "@/lib/limites";
 import { integracoesSimuladas, registrarSimulado } from "@/lib/integracoes";
 import { dispararEncaminhamentos, executarAgora, type DepsMemoria, type Deps, type DepsExecutar, type DepsEncaminhamento, type ResultadoEncaminhamento } from "@/lib/agentes/motor";
@@ -342,6 +342,11 @@ export async function depsExecutarReais(): Promise<DepsExecutar | null> {
       const { data, error } = await supabase.from("agentes_ordens").insert({ agente_slug: slug, texto }).select("id").single();
       return error ? null : (data.id as string);
     },
+    async ordensRecentes(slug) {
+      const desde = new Date(Date.now() - JANELA_DEDUPE_ORDEM_MS).toISOString();
+      const { data } = await supabase.from("agentes_ordens").select("id, texto, criada_em").eq("agente_slug", slug).gte("criada_em", desde).neq("status", "cancelada").limit(30);
+      return (data ?? []) as { id: string; texto: string; criada_em: string }[];
+    },
     async registrarDisparo(ordemId, r) {
       // Colunas da 0085. Antes dela, o update falha e a ordem segue como "Aguardando ronda".
       await supabase
@@ -462,8 +467,21 @@ export async function retratoDoMomento(): Promise<Retrato | null> {
     return count ?? 0;
   };
   const cab = { count: "exact" as const, head: true };
+  const h7d = new Date(agora.getTime() - 7 * 24 * 3600_000).toISOString();
+  const h30d = new Date(agora.getTime() - 30 * 24 * 3600_000).toISOString();
+  // Só datas e contagens (sem nome/e-mail): cadastros novos por papel e janela, e o último de cada papel.
+  const novosDoPapel = async (role: string) => {
+    const [d24, d7, d30, ultimo] = await Promise.all([
+      conta(db.from("profiles").select("id", cab).eq("role", role).gte("created_at", h24)),
+      conta(db.from("profiles").select("id", cab).eq("role", role).gte("created_at", h7d)),
+      conta(db.from("profiles").select("id", cab).eq("role", role).gte("created_at", h30d)),
+      db.from("profiles").select("created_at").eq("role", role).order("created_at", { ascending: false }).limit(1),
+    ]);
+    if (ultimo.error) throw new Error("retrato");
+    return { h24: d24, d7, d30, ultimoEm: ((ultimo.data?.[0] as { created_at?: string } | undefined)?.created_at ?? null) as string | null };
+  };
   try {
-    const [owner, tenant, admins, total, pareceTeste, imoveis, publicados, pedidos, pedidos24, leads, leads24, contratos, chamados, rondas, ordens, agentes] =
+    const [owner, tenant, admins, total, pareceTeste, imoveis, publicados, pedidos, pedidos24, leads, leads24, contratos, chamados, rondas, ordens, agentes, novosOwner, novosTenant, imoveisStatus, ultimoImovel, pedidos7, leads7] =
       await Promise.all([
         conta(db.from("profiles").select("id", cab).eq("role", "owner")),
         conta(db.from("profiles").select("id", cab).eq("role", "tenant")),
@@ -481,8 +499,14 @@ export async function retratoDoMomento(): Promise<Retrato | null> {
         db.from("agentes_rondas").select("agente_slug, status, iniciada_em, resumo").order("iniciada_em", { ascending: false }).limit(10),
         db.from("agentes_ordens").select("agente_slug").eq("status", "pendente").limit(1000),
         db.from("agentes").select("slug, nome, status, rotina_texto").order("ordem"),
+        novosDoPapel("owner"),
+        novosDoPapel("tenant"),
+        db.from("properties").select("status").limit(5000),
+        db.from("properties").select("created_at").order("created_at", { ascending: false }).limit(1),
+        conta(db.from("pedidos_moradia").select("id", cab).gte("criado_em", h7d)),
+        conta(db.from("leads").select("id", cab).gte("created_at", h7d)),
       ]);
-    for (const r of [contratos, chamados, rondas, ordens, agentes]) if (r.error) return null;
+    for (const r of [contratos, chamados, rondas, ordens, agentes, imoveisStatus, ultimoImovel]) if (r.error) return null;
     const porCampo = (linhas: Record<string, unknown>[] | null, campo: string) =>
       (linhas ?? []).reduce<Record<string, number>>((acc, l) => {
         const k = String(l[campo] ?? "—");
@@ -505,6 +529,14 @@ export async function retratoDoMomento(): Promise<Retrato | null> {
         em: String(r.iniciada_em),
         resumo: String(r.resumo ?? ""),
       })),
+      novos: {
+        proprietarios: novosOwner,
+        inquilinos: novosTenant,
+        imoveisPorStatus: porCampo(imoveisStatus.data as Record<string, unknown>[], "status"),
+        ultimoImovelEm: ((ultimoImovel.data?.[0] as { created_at?: string } | undefined)?.created_at ?? null) as string | null,
+        pedidos7d: pedidos7,
+        leads7d: leads7,
+      },
       ordensPendentes: Object.entries(pend).map(([slug, n]) => ({ agente: nomes[slug] ?? slug, n })),
       agentes: (agentes.data ?? []).map((a) => ({ nome: a.nome as string, status: a.status as Retrato["agentes"][number]["status"], rotina_texto: (a.rotina_texto as string) ?? null })),
     };
