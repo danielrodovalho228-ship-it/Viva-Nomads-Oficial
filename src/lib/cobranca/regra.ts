@@ -67,6 +67,24 @@ export function ehPlanoGestor(n: number, faixas: readonly FaixaComissao[] = FAIX
   return faixaPorImoveisAtivos(n, faixas).gestor === true;
 }
 
+/**
+ * Taxa média ponderada pelas faixas: `mix[i]` = parte dos contratos fechados por donos da faixa i
+ * (não precisa somar 1; é normalizada). Base das projeções financeiras (/roi e /simulacao).
+ * Mix vazio ou inválido = taxa da primeira faixa (1–2 imóveis).
+ */
+export function taxaMediaPonderada(mix: readonly number[], faixas: readonly FaixaComissao[] = FAIXAS_COMISSAO_PADRAO): number {
+  let soma = 0;
+  let peso = 0;
+  faixas.forEach((f, i) => {
+    const w = mix[i];
+    if (Number.isFinite(w) && w > 0) {
+      soma += f.taxa * w;
+      peso += w;
+    }
+  });
+  return peso > 0 ? soma / peso : faixas[0].taxa;
+}
+
 /** Valor em reais com centavos (4.320 × 12% = 518,40). Entrada inválida = 0. */
 export function valorTaxa(aluguelMensal: number, taxa: number): number {
   if (!Number.isFinite(aluguelMensal) || aluguelMensal <= 0) return 0;
