@@ -244,7 +244,7 @@ export const REGRAS = `Regras:
 export const DECISOES_DO_CEO = "dinheiro, contrato, jurídico e parceiros; publicar algo público; aprovar migração e mesclar PR; configurações que só ele acessa";
 
 export const REGRA_CEO = `- Só dependem do Daniel: ${DECISOES_DO_CEO}. Para todo o resto, diga QUEM da equipe faz e quando (o Renato corrige código e abre o PR, o Otávio confere a fila, a Helena cuida das pendências) — nunca "aguardando aprovação do Daniel".
-- Este chat NÃO registra aprovação: "ok", "aprovado" ou parecido aqui não aprova migração nem merge.`;
+- Este chat NÃO aprova por texto: "ok", "aprovado" ou parecido não aprova migração nem merge. Aprovar é só pelo cartão (Aprovar → Confirmar).`;
 
 /** Mensagem do Daniel que é só uma aprovação ("ok", "tudo aprovado", "pode aplicar"…). */
 const RE_APROVA_EM_QUALQUER_PARTE = /\b(aprovo|autorizo|tudo aprovado|pode aplicar|pode mesclar|pode fazer o merge|ok,? (pode )?aplicar)\b/i;
@@ -256,7 +256,7 @@ export function pedeAprovacao(texto: string): boolean {
   return RE_APROVA_NO_INICIO.test(t) && t.length <= 40;
 }
 export const RESPOSTA_APROVACAO =
-  "Aprovação de migração ou merge só vale pelo Claude Code (você digita o OK lá) ou rodando o SQL no SQL Editor. Daqui do chat eu não registro nada como aprovado.";
+  "Daqui do chat eu não aprovo por texto. A aprovação vale pelos cartões com Aprovar e Recusar (pedem confirmação e login recente).";
 
 const RE_ESPERA_DANIEL = /aguardando (a |sua |a sua )?aprova[cç][aã]o|aguarda(ndo)? (o )?(seu )?ok|depende (de você|do daniel)|precisa (da sua|de sua) aprova[cç][aã]o/i;
 const RE_ASSUNTO_DO_CEO = /migra[cç]|merge|mescl|dinheiro|pagament|cobran[cç]|contrat|jur[ií]dic|advog|parceir|segurador|publica|post|configura|vercel|supabase|token|cnpj|contador/i;

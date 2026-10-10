@@ -29,6 +29,7 @@ import { decidirEnvio, dividirResposta, estaNoFim, horaCurta, textoFeito } from 
 import { COR_RONDA_HEX, achadosDaPrioridade, corDaRonda, indicadores, mesclarConversas, proximaDoAgente, resumoCurto, rondaRecente, ultimaPorAgente } from "@/lib/agentes/painel";
 import { deixarOrdem, type ChamadoVermelho, type DadosCentral } from "@/lib/data/agentes-actions";
 import { AvatarAgente } from "@/components/admin/agentes/avatar";
+import { CartoesAprovacao } from "@/components/admin/agentes/cartoes-aprovacao";
 import { RedeAoVivo } from "@/components/admin/agentes/rede";
 import { AtivarNotificacoes } from "@/components/app/push-app";
 import { ChipPrioridade, RaioX } from "@/components/admin/agentes/raiox";
@@ -842,6 +843,7 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
             </div>
 
             <div className="shrink-0 space-y-2 border-t border-white/10 p-3">
+              {a.slug === "moacir" && <CartoesAprovacao versao={thread.length} />}
               {aviso && (
                 <p className="rounded-lg bg-[#7FD321]/10 px-3 py-2 text-sm text-[#B5EC7A]" data-testid="aviso-ordem">
                   {aviso}{" "}

@@ -5,6 +5,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { DECISOES_DO_CEO, esperaDanielIndevida, NOTA_CEO, pedeAprovacao, REGRA_CEO, RESPOSTA_APROVACAO, systemChat, systemReuniao, type Agente } from "./central.ts";
+import { respostaAprovacaoNoChat, rotuloMescla, type CartaoAprovacao } from "./aprovacoes.ts";
 import { systemGerente } from "./gerente.ts";
 import { responderChat, type Deps } from "./motor.ts";
 
@@ -57,7 +58,42 @@ test("'ok' no chat: resposta fixa, nada aprovado, modelo nem é chamado", async 
   assert.equal(r.body.aprovacao, false);
   assert.equal(f.chamou(), 0);
   assert.deepEqual(f.gravadas.map((g) => g.papel), ["daniel", "agente"]);
-  assert.match(RESPOSTA_APROVACAO, /só vale pelo Claude Code .* ou rodando o SQL no SQL Editor/);
+  assert.match(RESPOSTA_APROVACAO, /não aprovo por texto/);
+  assert.doesNotMatch(RESPOSTA_APROVACAO, /SQL Editor/);
+});
+
+const cartao = (referencia: string): CartaoAprovacao => ({ id: referencia, tipo: "merge_pr", referencia, resumo: "r", risco: "medio", expiraEm: "2026-10-13T00:00:00Z" });
+
+test("'ok' com 1 cartão pendente: pergunta 'Aprovar o PR?' e manda para o botão; nada é aprovado por texto", async () => {
+  const f = fake();
+  f.d.aprovacoesPendentes = async () => [cartao("PR #341")];
+  const r = await responderChat(f.d, { slug: "otavio", texto: "ok" });
+  assert.match(String(r.body.resposta), /^Aprovar PR #341\? Toque em Aprovar no cartão e depois em Confirmar/);
+  assert.equal(r.body.aprovacao, false);
+  assert.equal(f.chamou(), 0);
+});
+
+test("'ok' com vários, nenhum ou falha ao ler os pedidos: nunca aprova", () => {
+  assert.match(respostaAprovacaoNoChat([cartao("PR #1"), cartao("PR #2")]), /Há 2 pedidos.*Escolha o cartão/);
+  assert.match(respostaAprovacaoNoChat([]), /Não há pedido esperando/);
+  assert.match(respostaAprovacaoNoChat(null), /não aprovo por texto/);
+  for (const t of [respostaAprovacaoNoChat([cartao("PR #1")]), respostaAprovacaoNoChat([]), respostaAprovacaoNoChat(null)]) assert.doesNotMatch(t, /aprovado\b|registrei/i);
+});
+
+test("leitura dos pedidos que falha não derruba o chat", async () => {
+  const f = fake();
+  f.d.aprovacoesPendentes = async () => {
+    throw new Error("banco fora");
+  };
+  const r = await responderChat(f.d, { slug: "otavio", texto: "aprovo" });
+  assert.equal(r.status, 200);
+  assert.match(String(r.body.resposta), /não aprovo por texto/);
+});
+
+test("rótulos da mescla cobrem todos os resultados", () => {
+  assert.equal(rotuloMescla("mesclado"), "Aprovado e mesclado.");
+  for (const m of ["aguardando_token", "pr_mudou", "pr_nao_pronto", "sem_revisao_moacir", "falhou"]) assert.match(rotuloMescla(m), /^Aprovado/);
+  assert.equal(rotuloMescla(undefined), "Registrado.");
 });
 
 test("resposta do modelo que espera o Daniel à toa ganha a correção", async () => {
