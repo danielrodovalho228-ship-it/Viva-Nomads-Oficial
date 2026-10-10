@@ -5,6 +5,7 @@ import {
   comissaoExtensao,
   comissaoPrimeiroAluguel,
   taxaExtensao,
+  taxaExtensaoDeConfig,
   compararOpcoes,
   faixaPorImoveisAtivos,
   mensalidadePorImoveis,
@@ -83,4 +84,18 @@ test("assinatura: faixas de mensalidade e carência de 90 dias; flag desligada =
 
 test("comparador: 3,5 contratos/ano × comissão vs 12 mensalidades", () => {
   assert.deepEqual(compararOpcoes(1, 4320), { comissaoAno: 1814.4, assinaturaAno: 1788 });
+});
+
+test("taxa_extensao da config vem em percentual ('6') e vira fração (0.06)", () => {
+  assert.equal(taxaExtensaoDeConfig("6"), 0.06);
+  assert.equal(taxaExtensaoDeConfig(6), 0.06);
+  assert.equal(taxaExtensaoDeConfig("5,5"), 0.055);
+  assert.equal(comissaoExtensao(4320, 0.12, taxaExtensaoDeConfig("6")), 259.2);
+  assert.equal(comissaoExtensao(4320, 0.04, taxaExtensaoDeConfig("6")), 172.8);
+});
+
+test("taxa_extensao inválida cai no padrão de 6%", () => {
+  for (const v of [null, undefined, "", "abc", "-1", "101", Number.NaN]) {
+    assert.equal(taxaExtensaoDeConfig(v), 0.06);
+  }
 });

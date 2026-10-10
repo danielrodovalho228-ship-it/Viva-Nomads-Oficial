@@ -75,6 +75,16 @@ export const TAXA_EXTENSAO_PADRAO = 0.06;
 
 export type TipoCobranca = "novo" | "extensao";
 
+/**
+ * config_cobranca.taxa_extensao guarda o PERCENTUAL ('6'); o código trabalha com fração (0.06).
+ * Converte /100 e cai no padrão se o valor faltar, for inválido ou fora de 0–100.
+ */
+export function taxaExtensaoDeConfig(valor: string | number | null | undefined): number {
+  const n = typeof valor === "number" ? valor : typeof valor === "string" && valor.trim() !== "" ? Number(valor.replace(",", ".")) : Number.NaN;
+  if (!Number.isFinite(n) || n < 0 || n > 100) return TAXA_EXTENSAO_PADRAO;
+  return n / 100;
+}
+
 /** Taxa da extensão: 6% sobre o primeiro aluguel do período estendido, nunca acima da taxa da faixa do dono. */
 export function taxaExtensao(taxaFaixaDono: number, taxaExtensaoConfig: number = TAXA_EXTENSAO_PADRAO): number {
   if (!Number.isFinite(taxaFaixaDono) || taxaFaixaDono < 0) return taxaExtensaoConfig;
