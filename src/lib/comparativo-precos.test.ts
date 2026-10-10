@@ -101,8 +101,8 @@ test("nenhum outro arquivo tem percentual de comissão fixo", () => {
   const fonte = join(raiz, "config", "planos.ts");
   const violacoes: string[] = [];
   for (const arq of arquivos(raiz)) {
-    // Fontes únicas: planos legados (grandfather) e as faixas da cobrança "Pague quando alugar".
-    if (arq === fonte || arq === join(raiz, "lib", "cobranca", "faixas.ts")) continue;
+    // Fontes únicas: planos legados (grandfather), a regra única de 12% e a tabela "Compare" (fonte e data por linha).
+    if (arq === fonte || arq === join(raiz, "lib", "cobranca", "regra.ts") || arq === join(raiz, "config", "compare-precos.ts")) continue;
     readFileSync(arq, "utf8")
       .split("\n")
       .forEach((linha, i) => {
@@ -170,9 +170,9 @@ test("/modelodenegocio e /precos usam o mesmo cálculo e o mesmo gráfico", () =
   assert.match(modelo, /Mais barato para você/);
   assert.match(modelo, /Quantos imóveis você tem\?" value=\{imoveis\} min=\{1\} max=\{30\}/);
   assert.doesNotMatch(modelo, /GESTOR_ASSINATURA_ANUAL_ESTIMADA/);
+  // /precos agora mostra a regra única + "Compare" (config/compare-precos.ts); só o /modelodenegocio legado usa o gráfico.
   const precos = ler("components/precos/comparativo-precos.tsx");
-  assert.match(precos, /custoAnualPorPlano\(imoveis, locacoes \* imoveis, aluguel\)/);
-  assert.match(precos, /<GraficoCustoPorImovel /);
+  assert.doesNotMatch(precos, /custoAnualPorPlano|GraficoCustoPorImovel/);
 });
 
 test("e-mail de suporte do site é o suporte@ (contato@ é só comercial)", async () => {

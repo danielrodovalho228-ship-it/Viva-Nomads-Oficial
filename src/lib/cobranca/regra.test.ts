@@ -63,3 +63,39 @@ test("texto oficial: 12%, sem mensalidade, sem plano nem faixa", () => {
   assert.doesNotMatch(TEXTO_REGRA_UNICA, /plano|faixa|Essencial|Gestor/i);
   assert.equal(pctTexto(0.12), "12%");
 });
+
+// ── Página de preços e tabela "Compare" ──
+import { readFileSync } from "node:fs";
+import { COMPARE_CONTRATO, COMPARE_RODAPE, LINHAS_COMPARE, linhasPublicas } from "../../config/compare-precos.ts";
+
+const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
+
+test("Compare: contrato de 3 × R$ 4.320; Viva ≈ R$ 518; Airbnb ≈ R$ 2.074; Booking ≈ R$ 2.333", () => {
+  assert.equal(COMPARE_CONTRATO, 12960);
+  const v = (id: string) => LINHAS_COMPARE.find((l) => l.id === id)!.valor;
+  assert.equal(v("viva"), 518.4);
+  assert.equal(Math.round(v("airbnb")!), 2074);
+  assert.equal(Math.round(v("booking")!), 2333);
+});
+
+test("Compare: só aparece linha com fonte e data; rodapé obrigatório; sem logos", () => {
+  const pub = linhasPublicas();
+  assert.ok(pub.length >= 2);
+  for (const l of pub) {
+    assert.ok(l.fonte && l.fonte.url.length > 0 && l.conferidoEm, `${l.id} sem fonte/data`);
+    assert.match(l.conferidoEm!, /^\d{4}-\d{2}-\d{2}$/);
+  }
+  // concorrente sem fonte conferida nunca é publicado
+  for (const l of LINHAS_COMPARE) if (!l.fonte) assert.ok(!pub.includes(l));
+  assert.equal(COMPARE_RODAPE, "Valores de referência de out/2026, sujeitos a mudança pelas empresas. Exemplo ilustrativo.");
+  assert.doesNotMatch(ler("src/components/precos/comparativo-precos.tsx"), /<(img|Image)\b/);
+});
+
+test("/precos: sem planos, faixas, mensalidade nem 'renovação grátis'; com a regra única", () => {
+  const page = ler("src/app/(public)/precos/page.tsx");
+  assert.match(page, /TEXTO_REGRA_UNICA/);
+  assert.match(page, /ComparativoPrecos/);
+  assert.doesNotMatch(page, /PLANS|Essencial|Gestor|plano Profissional|faixas por volume|renovação grátis|vistoria/i);
+  const linhas = ler("src/components/precos/comparativo-precos.tsx");
+  assert.doesNotMatch(linhas, /Essencial|Profissional|Gestor/);
+});

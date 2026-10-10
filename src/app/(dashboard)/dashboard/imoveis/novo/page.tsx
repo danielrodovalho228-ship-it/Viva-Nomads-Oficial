@@ -44,7 +44,7 @@ import { GERACAO_IA_ATIVA, SELO_NF_UI } from "@/lib/flags";
 import { PHOTOS } from "@/lib/media";
 import type { Property, Proximity } from "@/lib/types";
 import { cn, formatBRL } from "@/lib/utils";
-import { COMISSAO_POR_PLANO, textoComissao } from "@/config/planos";
+import { TEXTO_REGRA_CURTO } from "@/lib/cobranca/regra";
 import { LinhaComparativoAnuncio } from "@/components/precos/comparativo-precos";
 import { useAuthStore } from "@/lib/store";
 import { draftKey, DRAFT_KEY_LEGADO } from "@/lib/local-keys";
@@ -1420,11 +1420,8 @@ export default function NewPropertyPage() {
               <p className="flex items-start gap-2 rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted">
                 <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-sage" />
                 <span>
-                  <strong className="text-ink">Você recebe o aluguel direto na sua conta.</strong> A
-                  plataforma cobra comissão <strong>só quando fechar</strong>:{" "}
-                  {textoComissao(COMISSAO_POR_PLANO.free, Number(monthlyPrice))} no Gratuito, caindo para{" "}
-                  {formatBRL(Math.round(Number(monthlyPrice) * COMISSAO_POR_PLANO.essential))} no Essencial ou{" "}
-                  {formatBRL(Math.round(Number(monthlyPrice) * COMISSAO_POR_PLANO.pro))} no Profissional.
+                  <strong className="text-ink">Você recebe o aluguel direto na sua conta.</strong> {" "}
+                  {TEXTO_REGRA_CURTO}
                 </span>
               </p>
             )}

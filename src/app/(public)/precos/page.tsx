@@ -1,21 +1,18 @@
 import type { Metadata } from "next";
-import { Check, Percent, Camera, FileSignature, ShieldCheck, UserCheck, ClipboardList, Banknote, PiggyBank } from "lucide-react";
-import { PLANS } from "@/lib/constants";
-import { GESTOR_PRECO, GESTOR_RESUMO, plano as planoPorId, reaisInteiros, textoComissao } from "@/config/planos";
+import { Check, Camera, FileSignature, ShieldCheck, UserCheck, Banknote, PiggyBank } from "lucide-react";
+import { TEXTO_REGRA_UNICA, TEXTO_REGRA_CURTO, cobrancaParaAceite } from "@/lib/cobranca/regra";
 import { ComparativoPrecos } from "@/components/precos/comparativo-precos";
-import { PLANO_FUNDADOR } from "@/lib/flags";
 import { ButtonLink } from "@/components/ui/button";
 import { formatBRL, cn } from "@/lib/utils";
 import { CAUCAO_FRASE } from "@/lib/faixas";
 import { JsonLd } from "@/components/seo/json-ld";
-import { ofertasPlanos } from "@/lib/seo/estruturados";
+import { ofertaRegraUnica } from "@/lib/seo/estruturados";
 import { SITE_URL, SUPORTE_EMAIL } from "@/lib/site";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/precos" },
-  title: "Preços e planos para imóveis mobiliados",
-  description:
-    `Planos para proprietários de imóveis mobiliados: Gratuito, Essencial, Profissional e Gestor (administradoras, a partir de ${reaisInteiros(GESTOR_PRECO.mensalBase)}/mês). Comissão só no fechamento e serviços opcionais.`,
+  title: "Anuncie imóveis mobiliados grátis: 12% só ao alugar",
+  description: TEXTO_REGRA_CURTO + " Para imóveis mobiliados.",
 };
 
 type ServiceTone = "incluido" | "avulso" | "cotacao" | "gratis";
@@ -46,7 +43,6 @@ const TENANT_SERVICES: Service[] = [
 ];
 
 const OWNER_SERVICES: Service[] = [
-  { icon: ClipboardList, title: "Vistoria documentada (entrada e saída)", benefit: "Inspeção imparcial do imóvel, com laudo em PDF, fotos e inventário da mobília. Ideal para quem acompanha o imóvel à distância.", price: "Sob consulta", statusLabel: "Disponível via parceiro", statusTone: "partner", tone: "avulso", cta: "Solicitar vistoria", href: "/dashboard/fechamento", highlight: "Ideal para proprietário à distância" },
   { icon: Camera, title: "Fotografia profissional", benefit: "Sessão de fotos do imóvel para anúncios que convertem mais.", price: "Sob consulta", statusLabel: "Via parceiro", statusTone: "partner", tone: "avulso", cta: "Adicionar ao anúncio", href: "/dashboard/imoveis/novo" },
 ];
 
@@ -101,11 +97,6 @@ function ServiceCard({ s }: { s: Service }) {
         </span>
       </div>
       <h3 className="mt-4 font-title text-lg font-bold text-ink">{s.title}</h3>
-      {included && (
-        <span className="mt-2 inline-flex w-fit items-center rounded-full bg-champagne px-2.5 py-0.5 text-xs font-semibold text-forest">
-          Incluído no plano Profissional
-        </span>
-      )}
       {highlight && (
         <span className="mt-2 inline-flex w-fit items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
           {highlight}
@@ -133,113 +124,45 @@ function ServiceCard({ s }: { s: Service }) {
 export default function PricingPage() {
   return (
     <>
-      <JsonLd dados={ofertasPlanos(SITE_URL)} />
-      {PLANO_FUNDADOR && (
-        <div className="border-b border-champagne/40 bg-champagne/15">
-          <div className="container-page flex flex-wrap items-center justify-center gap-x-2 gap-y-1 py-3 text-center text-sm text-ink">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-forest px-2.5 py-0.5 text-xs font-bold text-white">
-              Piloto Fundador
-            </span>
-            <span>
-              Assinatura <strong>gratuita por 12 meses</strong> para os 20 primeiros proprietários,
-              com todos os recursos do plano <strong>Profissional</strong>. Comissão de fechamento
-              normal ({textoComissao(planoPorId("pro")!.comissao)}). Fundadores mantêm <strong>20% de desconto vitalício</strong> quando a
-              cobrança começar.
-            </span>
-          </div>
-        </div>
-      )}
+      <JsonLd dados={ofertaRegraUnica(SITE_URL)} />
 
       <section className="bg-forest section-y text-center text-white">
         <div className="container-page">
-          <h1 className="font-title text-4xl font-bold md:text-5xl">Anuncie de graça</h1>
+          <h1 className="font-title text-4xl font-bold md:text-5xl">Anunciar é grátis</h1>
           <p className="mx-auto mt-5 max-w-2xl text-lg text-white/80">
-            Você só paga uma comissão <strong className="text-white">quando fechar</strong> — e
-            ela cai conforme seu plano. A assinatura é opcional e vira economia para quem fecha
-            mais. O pagamento do aluguel vai direto ao proprietário.
+            Você só paga quando alugar: <strong className="text-white">12% do primeiro aluguel</strong> de
+            cada contrato e de cada renovação. Mesma regra para todos. O pagamento do aluguel vai direto ao proprietário.
           </p>
         </div>
       </section>
 
       <section className="container-page -mt-10 pb-16">
-        {/* Comparativo no topo: quanto se paga, em reais, contra o Airbnb. */}
-        <div className="mb-10">
-          <ComparativoPrecos />
-        </div>
-        <h2 className="sr-only">Planos para proprietários</h2>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {PLANS.map((plan) => (
-            <div
-              key={plan.id}
-              className={cn(
-                "flex flex-col rounded-3xl border bg-white p-8",
-                plan.featured
-                  ? "border-champagne shadow-xl ring-2 ring-champagne"
-                  : "border-sage-200 shadow-sm"
-              )}
-            >
-              {plan.featured && (
-                <span className="mb-4 inline-flex w-fit items-center rounded-full bg-champagne px-3 py-1 text-xs font-semibold text-forest">
-                  Mais popular
-                </span>
-              )}
-              <h3 className="font-title text-2xl font-bold text-ink">{plan.name}</h3>
-              <p className="mt-1 text-sm text-muted">{plan.tagline}</p>
-              <div className="mt-5 flex items-baseline gap-1">
-                {plan.price === null && GESTOR_PRECO.ligado && <span className="text-sm text-muted">a partir de</span>}
-                <span className="font-title text-4xl font-bold text-forest">
-                  {plan.price === null
-                    ? GESTOR_PRECO.ligado
-                      ? reaisInteiros(GESTOR_PRECO.mensalBase)
-                      : "Sob consulta"
-                    : plan.price === 0
-                      ? "Grátis"
-                      : formatBRL(plan.price)}
-                </span>
-                {(!!plan.price || (plan.price === null && GESTOR_PRECO.ligado)) && <span className="text-muted">/mês</span>}
-              </div>
-
-              <ul className="mt-6 flex-1 space-y-3">
-                {plan.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2.5 text-sm text-ink">
-                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-sage" /> {f}
-                  </li>
-                ))}
-              </ul>
-
-              {/* O que você paga — custo (comissão), separado dos benefícios e
-                  sem check verde, para não disfarçar custo de benefício. */}
-              {plan.cost && (
-                <div className="mt-5 border-t border-sage-200 pt-4">
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted">
-                    O que você paga
-                  </p>
-                  <p className="mt-1.5 flex items-start gap-2.5 rounded-lg bg-surface-2 px-2.5 py-2 text-sm text-muted">
-                    <Percent className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" /> {plan.cost}
-                  </p>
-                </div>
-              )}
-
-              {/* Gestor é plano de ELEGIBILIDADE (regra 1): a barreira vira meta,
-                  nunca porta muda. */}
-              {plan.price === null && (
-                <p className="mt-5 rounded-lg bg-surface-2 px-2.5 py-2 text-xs text-muted">
-                  {GESTOR_PRECO.ligado ? `${GESTOR_RESUMO[0].toUpperCase()}${GESTOR_RESUMO.slice(1)}. ${GESTOR_PRECO.imoveisInclusos} imóveis incluídos; ${reaisInteiros(GESTOR_PRECO.porImovelAdicional)}/mês por imóvel adicional.` : "Para administradoras e carteiras grandes."} Ativação
-                  com nosso time.
-                </p>
-              )}
-
-              <ButtonLink
-                href={plan.price === null ? `mailto:${SUPORTE_EMAIL}?subject=Plano%20Gestor` : "/dashboard/assinatura"}
-                variant={plan.featured ? "gold" : "outline"}
-                className="mt-8 w-full"
-              >
-                {plan.price === null ? "Fale com a gente" : plan.cta}
-              </ButtonLink>
-            </div>
-          ))}
+        <div className="mb-10 rounded-3xl border border-champagne bg-white p-6 shadow-xl ring-2 ring-champagne sm:p-8" data-testid="regra-unica">
+          <h2 className="font-title text-2xl font-bold text-ink">Uma regra só, igual para todos</h2>
+          <p className="mt-3 text-ink">{TEXTO_REGRA_UNICA}</p>
+          <ul className="mt-5 space-y-3">
+            {[
+              "Anunciar é grátis, com quantos imóveis mobiliados você quiser.",
+              "12% do primeiro aluguel de cada contrato novo e de cada renovação.",
+              "Mesma taxa para quem tem 1 ou 100 imóveis. Sem desconto por volume.",
+              "Sem mensalidade. O inquilino não paga taxa da plataforma.",
+              "Cobrada do proprietário na assinatura do contrato ou da renovação; a plataforma não recebe nem retém o aluguel.",
+            ].map((t) => (
+              <li key={t} className="flex items-start gap-2.5 text-sm text-ink">
+                <Check className="mt-0.5 h-4 w-4 shrink-0 text-sage" aria-hidden /> {t}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-5 rounded-lg bg-surface-2 px-3 py-2 text-sm text-muted">
+            Exemplo: aluguel de R$ 4.320 por mês → {formatBRL(cobrancaParaAceite({ tipo: "novo", aluguelMensal: 4320, assinadoEm: new Date() }).valor)} no
+            primeiro aluguel do contrato e {formatBRL(cobrancaParaAceite({ tipo: "renovacao", aluguelMensal: 4320, assinadoEm: new Date() }).valor)} em cada renovação.
+          </p>
+          <ButtonLink href="/qualificar" variant="gold" className="mt-6 w-full sm:w-auto">
+            Anunciar meu imóvel
+          </ButtonLink>
         </div>
 
+        <ComparativoPrecos />
       </section>
 
       {/* Serviços opcionais — reais, com preço e separados por quem contrata */}

@@ -1,16 +1,17 @@
 /*
   /llms.txt e /llms-full.txt — resumo do Viva Nomads para assistentes de IA
   (formato llmstxt.org). Só fatos públicos e fontes oficiais do próprio site
-  (planos, regras do contrato, FAQ). Nenhum imóvel de exemplo.
+  (preço, regras do contrato, FAQ). Nenhum imóvel de exemplo.
 */
 import { FAQ } from "../atendimento/faq.ts";
-import { PLANOS, REGRAS_CONTRATO, textoComissao, ALUGUEL_EXEMPLO } from "../../config/planos.ts";
+import { REGRAS_CONTRATO } from "../../config/planos.ts";
+import { TEXTO_REGRA_UNICA } from "../cobranca/regra.ts";
 
 const PAGINAS: [string, string, string][] = [
   ["Como funciona", "/como-funciona", "o passo a passo para inquilinos e proprietários"],
   ["Buscar imóveis", "/buscar", "imóveis mobiliados disponíveis, com filtros por cidade, preço e período"],
   ["Para proprietários", "/para-proprietarios", "como anunciar e qualificar um imóvel"],
-  ["Planos e preços", "/precos", "planos para proprietários e comparação com o Airbnb"],
+  ["Planos e preços", "/precos", "preço único para proprietários (12% do primeiro aluguel) e comparação"],
   ["Para empresas", "/empresas", "moradia para equipes e profissionais transferidos"],
   ["Sua segurança", "/seguranca", "contrato, Caução, conversa registrada e proteção contra golpe"],
   ["Central de Ajuda", "/ajuda", "perguntas frequentes, chat com a assistente virtual e chamados"],
@@ -37,21 +38,17 @@ export function llmsTxt(siteUrl: string): string {
     ...PAGINAS.map(([nome, path, desc]) => `- [${nome}](${siteUrl}${path})${desc ? `: ${desc}` : ""}`),
     "",
     "## Mais detalhes",
-    `- [Versão completa para IA](${siteUrl}/llms-full.txt): planos, regras do contrato e perguntas frequentes`,
+    `- [Versão completa para IA](${siteUrl}/llms-full.txt): preço, regras do contrato e perguntas frequentes`,
     "",
   ].join("\n");
 }
 
 export function llmsFullTxt(siteUrl: string): string {
-  const planos = PLANOS.map(
-    (p) =>
-      `- ${p.nome} (${p.publico}): ${p.precoMensal === null ? "assinatura sob consulta" : p.precoMensal > 0 ? `R$ ${p.precoMensal}/mês` : "sem mensalidade"}; comissão: ${textoComissao(p.comissao, ALUGUEL_EXEMPLO)} num aluguel de R$ ${ALUGUEL_EXEMPLO.toLocaleString("pt-BR")}; ${p.limiteAnuncios >= 999 ? "anúncios ilimitados" : p.limiteAnuncios === 1 ? "até 1 anúncio ativo" : `até ${p.limiteAnuncios} anúncios ativos`}.`
-  );
   return [
     cabecalho(),
     "",
-    "## Planos para proprietários",
-    ...planos,
+    "## Preços para proprietários",
+    `- ${TEXTO_REGRA_UNICA}`,
     "",
     "## Regras do contrato",
     `- Locação por temporada (art. 48 da Lei 8.245/91): de ${REGRAS_CONTRATO.prazoMinMeses} a ${REGRAS_CONTRATO.prazoMaxMeses} meses, em blocos de até ${REGRAS_CONTRATO.maxDiasBloco} dias.`,

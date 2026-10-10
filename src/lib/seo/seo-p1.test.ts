@@ -1,23 +1,23 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { faqPage, jsonSeguro, listaImoveis, ofertasPlanos, organizacao, paginaCidade, servicoProprietarios } from "./estruturados.ts";
+import { faqPage, jsonSeguro, listaImoveis, ofertaRegraUnica, organizacao, paginaCidade, servicoProprietarios } from "./estruturados.ts";
 import { llmsFullTxt, llmsTxt } from "./llms.ts";
 
 const URL_SITE = "https://vivanomads.com.br";
 const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
 
-test("JSON-LD: Organization/WebSite, FAQPage, ofertas dos planos e lista só de imóveis reais", () => {
+test("JSON-LD: Organization/WebSite, FAQPage, oferta da regra única e lista só de imóveis reais", () => {
   const org = organizacao(URL_SITE);
   assert.deepEqual(org["@graph"].map((g) => g["@type"]), ["Organization", "WebSite"]);
   const faq = faqPage();
   assert.equal(faq["@type"], "FAQPage");
   assert.ok(faq.mainEntity.length >= 10);
-  const ofertas = ofertasPlanos(URL_SITE);
-  const gestor = ofertas.itemListElement.find((i) => i.item.name === "Plano Gestor")!;
-  assert.ok(!("priceSpecification" in gestor.item), "Gestor é sob consulta: sem preço");
-  const essencial = ofertas.itemListElement.find((i) => i.item.name === "Plano Essencial")!.item as { priceSpecification: { price: number; priceCurrency: string } };
-  assert.equal(essencial.priceSpecification.priceCurrency, "BRL");
+  const oferta = ofertaRegraUnica(URL_SITE);
+  assert.equal(oferta.price, 0);
+  assert.equal(oferta.priceCurrency, "BRL");
+  assert.match(oferta.description, /12% do primeiro aluguel/);
+  assert.doesNotMatch(JSON.stringify(oferta), /Essencial|Profissional|Gestor/);
   const lista = listaImoveis(URL_SITE, [{ id: "ube-001", title: "Exemplo" }, { id: "11111111-1111-4111-8111-111111111111", title: "Real" }], (id) => id.startsWith("ube-"));
   assert.equal(lista.numberOfItems, 1);
   assert.equal(lista.itemListElement[0].url, `${URL_SITE}/imoveis/11111111-1111-4111-8111-111111111111`);

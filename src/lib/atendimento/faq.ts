@@ -3,8 +3,8 @@
   regras do produto (config/planos.ts, REGRAS_CONTRATO, CAUCAO_FRASE). A IA do
   PR 2 também responde a partir daqui. Puro (testável com node --test).
 */
-import { ALUGUEL_EXEMPLO, MERCADO, MESES_EXEMPLO, PLANOS, REGRAS_CONTRATO, reaisInteiros } from "../../config/planos.ts";
-import { calcularComparativo } from "../comparativo-precos.ts";
+import { REGRAS_CONTRATO } from "../../config/planos.ts";
+import { TEXTO_REGRA_UNICA } from "../cobranca/regra.ts";
 import { CAUCAO_FRASE } from "../faixas.ts";
 import { OBRIGATORIOS_ROTULOS } from "../anuncio/prontidao.ts";
 
@@ -24,16 +24,6 @@ export type PerfilAjuda = "visitante" | "sem_contrato" | "com_contrato";
 const PRAZOS_MANUTENCAO =
   "O proprietário é avisado na hora e tem prazo para responder: 4 horas em urgências (sem água, sem luz, vazamento), 24 horas nos casos médios e 72 horas nos demais.";
 
-// Custo em reais, no exemplo das telas de preço (mesma conta do comparativo).
-const exemplo = calcularComparativo(ALUGUEL_EXEMPLO, MESES_EXEMPLO);
-const custoPlanos = exemplo.planos
-  .map((p) => {
-    const pl = PLANOS.find((x) => x.id === p.id)!;
-    const mensal = pl.precoMensal ? `${reaisInteiros(pl.precoMensal)}/mês` : "sem mensalidade";
-    return `${pl.nome} (${mensal}): ${reaisInteiros(p.total)}${p.mensalidades ? ` (${reaisInteiros(p.comissao)} de comissão + ${reaisInteiros(p.mensalidades)} de mensalidades)` : " de comissão"}`;
-  })
-  .join("; ");
-
 export const FAQ: Pergunta[] = [
   {
     id: "caucao",
@@ -44,14 +34,14 @@ export const FAQ: Pergunta[] = [
   {
     id: "custo-anunciar",
     pergunta: "Quanto custa anunciar?",
-    resposta: `Anunciar é grátis. Você paga só quando fecha: a comissão é uma porcentagem de um aluguel, cobrada uma vez por contrato, e só o proprietário paga. Num contrato de ${reaisInteiros(ALUGUEL_EXEMPLO)} por ${MESES_EXEMPLO} meses: ${custoPlanos}. No Airbnb, o mesmo contrato custaria ${reaisInteiros(exemplo.airbnb)} (${Math.round(MERCADO.airbnbTaxa * 100)}% de todo o período). Faça a sua conta em /precos.`,
-    termos: ["preco", "plano", "anunciar", "comissao", "mensalidade", "assinatura", "quanto custa", "airbnb"],
+    resposta: `${TEXTO_REGRA_UNICA} Num aluguel de R$ 4.320 por mês, são R$ 518,40 no primeiro aluguel do contrato e R$ 518,40 em cada renovação. Veja a comparação com outras opções em /precos.`,
+    termos: ["preco", "taxa", "anunciar", "comissao", "mensalidade", "quanto custa", "airbnb", "12"],
   },
   {
     id: "inquilino-paga",
     pergunta: "O inquilino paga alguma taxa para a plataforma?",
     resposta:
-      "Não. Buscar, se candidatar, publicar um Pedido de Moradia e conversar não têm custo para o inquilino. A comissão de fechamento é cobrada só do proprietário. O aluguel e a caução são combinados entre as partes e não passam pela plataforma.",
+      "Não. Buscar, se candidatar, publicar um Pedido de Moradia e conversar não têm custo para o inquilino. A taxa de 12% do primeiro aluguel é cobrada só do proprietário. O aluguel e a caução são combinados entre as partes e não passam pela plataforma.",
     termos: ["taxa", "inquilino", "custo", "gratis"],
   },
   {
@@ -63,7 +53,7 @@ export const FAQ: Pergunta[] = [
   {
     id: "renovar",
     pergunta: "Posso renovar o contrato?",
-    resposta: `Sim, enquanto o total não passar de ${REGRAS_CONTRATO.prazoMaxDias} dias. A renovação é um novo bloco e só vale com o aceite do proprietário e do inquilino. Depois de ${REGRAS_CONTRATO.prazoMaxDias} dias, é preciso um novo contrato.`,
+    resposta: `Sim, enquanto o total não passar de ${REGRAS_CONTRATO.prazoMaxDias} dias. A renovação é um novo bloco, só vale com o aceite do proprietário e do inquilino, e tem a mesma taxa de 12% do primeiro aluguel do período, paga pelo proprietário. Depois de ${REGRAS_CONTRATO.prazoMaxDias} dias, é preciso um novo contrato.`,
     termos: ["renovar", "renovacao", "prorrogar", "estender"],
   },
   {
