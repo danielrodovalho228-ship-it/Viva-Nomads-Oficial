@@ -2,7 +2,9 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   assinaturaIsentaComissao,
+  comissaoExtensao,
   comissaoPrimeiroAluguel,
+  taxaExtensao,
   compararOpcoes,
   faixaPorImoveisAtivos,
   mensalidadePorImoveis,
@@ -18,8 +20,17 @@ test("comissão do primeiro aluguel por faixa (4.320)", () => {
   assert.equal(comissaoPrimeiroAluguel(4320, 0.04), 172.8);
 });
 
-test("renovação não paga; entradas inválidas = 0", () => {
-  assert.equal(comissaoPrimeiroAluguel(4320, 0.12, true), 0);
+test("extensão paga 6% do primeiro aluguel do período; dono com taxa menor paga a menor", () => {
+  assert.equal(comissaoExtensao(4320, 0.12), 259.2);
+  assert.equal(comissaoExtensao(4320, 0.06), 259.2);
+  assert.equal(comissaoExtensao(4320, 0.04), 172.8);
+  assert.equal(taxaExtensao(0.1), 0.06);
+  assert.equal(taxaExtensao(0.04), 0.04);
+  assert.equal(taxaExtensao(0.12, 0.05), 0.05);
+  assert.equal(comissaoExtensao(0, 0.12), 0);
+});
+
+test("entradas inválidas = 0", () => {
   assert.equal(comissaoPrimeiroAluguel(-1, 0.12), 0);
   assert.equal(comissaoPrimeiroAluguel(4320, Number.NaN), 0);
 });
@@ -54,6 +65,8 @@ test("override do admin exige motivo e validade; vencido ou sem motivo é ignora
   assert.equal(ok.origem, "admin");
   const vencido = taxaNaAssinatura({ ...base, fixadaPeloAdmin: { taxa: 0.05, motivo: "x", validoAte: new Date("2026-10-01T00:00:00Z") } });
   assert.equal(vencido.taxa, 0.12);
+  const motivoCurto = taxaNaAssinatura({ ...base, fixadaPeloAdmin: { taxa: 0.05, motivo: "x", validoAte: new Date("2026-12-31T00:00:00Z") } });
+  assert.equal(motivoCurto.taxa, 0.12);
   const semMotivo = taxaNaAssinatura({ ...base, fixadaPeloAdmin: { taxa: 0.05, motivo: "  ", validoAte: new Date("2026-12-31T00:00:00Z") } });
   assert.equal(semMotivo.taxa, 0.12);
 });

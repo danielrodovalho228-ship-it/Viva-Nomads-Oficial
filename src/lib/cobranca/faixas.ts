@@ -63,12 +63,28 @@ export function proximaFaixa(
   return { faltam: prox.minImoveis - atuais, taxa: prox.taxa };
 }
 
-/** Comissão em reais com centavos (4.320 × 12% = 518,40). Renovação não paga. */
-export function comissaoPrimeiroAluguel(aluguelMensal: number, taxa: number, renovacao = false): number {
-  if (renovacao) return 0;
+/** Comissão em reais com centavos (4.320 × 12% = 518,40). */
+export function comissaoPrimeiroAluguel(aluguelMensal: number, taxa: number): number {
   if (!Number.isFinite(aluguelMensal) || aluguelMensal <= 0) return 0;
   if (!Number.isFinite(taxa) || taxa <= 0) return 0;
   return Math.round(aluguelMensal * 100 * taxa) / 100;
+}
+
+/** Extensão/renovação do mesmo inquilino no mesmo imóvel (Daniel, 09/10): 6%, valor também em config_cobranca.taxa_extensao. */
+export const TAXA_EXTENSAO_PADRAO = 0.06;
+
+export type TipoCobranca = "novo" | "extensao";
+
+/** Taxa da extensão: 6% sobre o primeiro aluguel do período estendido, nunca acima da taxa da faixa do dono. */
+export function taxaExtensao(taxaFaixaDono: number, taxaExtensaoConfig: number = TAXA_EXTENSAO_PADRAO): number {
+  if (!Number.isFinite(taxaFaixaDono) || taxaFaixaDono < 0) return taxaExtensaoConfig;
+  if (!Number.isFinite(taxaExtensaoConfig) || taxaExtensaoConfig < 0) return taxaFaixaDono;
+  return Math.min(taxaFaixaDono, taxaExtensaoConfig);
+}
+
+/** Comissão da extensão sobre o primeiro aluguel do período estendido (4.320 × 6% = 259,20; dono a 4% paga 172,80). */
+export function comissaoExtensao(aluguelPrimeiroMesDaExtensao: number, taxaFaixaDono: number, taxaExtensaoConfig?: number): number {
+  return comissaoPrimeiroAluguel(aluguelPrimeiroMesDaExtensao, taxaExtensao(taxaFaixaDono, taxaExtensaoConfig));
 }
 
 export interface TaxaFixadaAdmin {
@@ -93,9 +109,9 @@ export interface TaxaAplicada {
   faixaNoFechamento: FaixaComissao;
 }
 
-/** Fixação do admin só vale com motivo, taxa entre 0 e 1 e validade ainda não vencida na assinatura. */
+/** Fixação do admin só vale com motivo de 3+ caracteres (como o check do banco), taxa entre 0 e 1 e validade ainda não vencida na assinatura. */
 export function fixacaoAdminValida(f: TaxaFixadaAdmin | null | undefined, em: Date): f is TaxaFixadaAdmin {
-  return !!f && f.motivo.trim().length > 0 && Number.isFinite(f.taxa) && f.taxa >= 0 && f.taxa <= 1 && f.validoAte.getTime() >= em.getTime();
+  return !!f && f.motivo.trim().length >= 3 && Number.isFinite(f.taxa) && f.taxa >= 0 && f.taxa <= 1 && f.validoAte.getTime() >= em.getTime();
 }
 
 /**
