@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Building2, FileText, BarChart3, MapPin } from "lucide-react";
 import { EmpresasForm } from "./empresas-form";
+import { JsonLd } from "@/components/seo/json-ld";
+import { paginaInstitucional } from "@/lib/seo/estruturados";
+import { SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/empresas" },
@@ -31,6 +34,7 @@ const PILARES = [
 export default function EmpresasPage() {
   return (
     <div className="container-page max-w-3xl py-12 md:py-16">
+      <JsonLd dados={paginaInstitucional(SITE_URL, { caminho: "/empresas", nome: "Para empresas", descricao: "Mobilidade corporativa com locação mobiliada de média duração: imóveis prontos, recibo do aluguel para reembolso e relatórios." })} />
       <span className="inline-flex items-center gap-2 rounded-full bg-sage-100 px-3 py-1 text-xs font-semibold text-forest">
         <Building2 className="h-3.5 w-3.5" /> Para empresas
       </span>

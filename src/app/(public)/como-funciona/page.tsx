@@ -12,6 +12,9 @@ import {
 import { ButtonLink } from "@/components/ui/button";
 import { StepImage } from "@/components/step-image";
 import { CAUCAO_FRASE } from "@/lib/faixas";
+import { JsonLd } from "@/components/seo/json-ld";
+import { paginaInstitucional } from "@/lib/seo/estruturados";
+import { SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/como-funciona" },
@@ -39,6 +42,7 @@ const OWNER_STEPS = [
 export default function HowItWorksPage() {
   return (
     <>
+      <JsonLd dados={paginaInstitucional(SITE_URL, { caminho: "/como-funciona", nome: "Como funciona", descricao: "Entenda como funciona a locação mobiliada por temporada no Viva Nomads — para inquilinos e para proprietários." })} />
       <section className="bg-forest section-y text-white">
         <div className="container-page max-w-3xl">
           <h1 className="font-title text-4xl font-bold md:text-5xl">Como funciona</h1>

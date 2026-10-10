@@ -13,7 +13,7 @@ import { SITE_URL, SUPORTE_EMAIL } from "@/lib/site";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/precos" },
-  title: "Planos",
+  title: "Preços e planos para imóveis mobiliados",
   description:
     `Planos para proprietários de imóveis mobiliados: Gratuito, Essencial, Profissional e Gestor (administradoras, a partir de ${reaisInteiros(GESTOR_PRECO.mensalBase)}/mês). Comissão só no fechamento e serviços opcionais.`,
 };

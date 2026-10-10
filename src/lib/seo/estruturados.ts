@@ -138,6 +138,20 @@ export function servicoProprietarios(siteUrl: string, cidades: { name: string; s
   };
 }
 
+/** Páginas institucionais (#38: /como-funciona, /empresas): WebPage ligada ao site. Só texto fixo, nunca do usuário. */
+export function paginaInstitucional(siteUrl: string, p: { caminho: string; nome: string; descricao: string }) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebPage" as const,
+    "@id": `${siteUrl}${p.caminho}#pagina`,
+    name: p.nome,
+    description: p.descricao,
+    url: `${siteUrl}${p.caminho}`,
+    inLanguage: "pt-BR",
+    isPartOf: { "@type": "WebSite", "@id": `${siteUrl}/#site`, name: ORG.nome, url: siteUrl },
+  };
+}
+
 /** JSON seguro para <script>: escapa <, > e & (título é texto do usuário). */
 export function jsonSeguro(dados: unknown): string {
   return JSON.stringify(dados).replace(/</g, "\\u003c").replace(/>/g, "\\u003e").replace(/&/g, "\\u0026");
