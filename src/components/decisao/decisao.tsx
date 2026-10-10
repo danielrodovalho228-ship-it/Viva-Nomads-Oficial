@@ -16,7 +16,7 @@ const RAZOES = [
   "Protege contra a concorrência “só assinatura”: o plano Gestor com comissão 0% já é a resposta a quem tentar competir por preço.",
 ];
 
-const SOCIOS = ["Daniel", "Rômulo", "Danilo"];
+const SOCIOS = ["Daniel", "Rômulo", "Danilo", "Rogério"];
 
 export function Decisao() {
   return (
@@ -127,7 +127,7 @@ export function Decisao() {
 
         {/* Decisão dos sócios */}
         <div className={styles.decide}>
-          <h3>Para os 3 sócios baterem o martelo</h3>
+          <h3>Para os 4 sócios baterem o martelo</h3>
           <p>Concorda com o modelo híbrido? (marque na reunião ou imprima)</p>
           <div className={styles.sig}>
             {SOCIOS.map((nome) => (

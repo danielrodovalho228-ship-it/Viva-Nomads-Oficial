@@ -129,8 +129,9 @@ export function RedeAoVivo({ agentes, rondas, agora }: { agentes: Agente[]; rond
       const mx = estreito() ? 34 : 56;
       return [mx + px * (W - mx * 2), 30 + py * (H - 64)];
     };
-    const raio = (id: string, doc?: boolean) => (doc ? 14 : id === "daniel" || id === "moacir" ? 21 : estreito() ? 16 : 18);
-    const corNo = (id: string, doc?: boolean) => (doc || id === "daniel" ? NEUTRO : COR_RONDA_HEX[corDaRonda(ultimas[id])]);
+    const dono = (id: string) => id === "daniel" || id === "rogerio";
+    const raio = (id: string, doc?: boolean) => (doc ? 14 : dono(id) || id === "moacir" ? 21 : estreito() ? 16 : 18);
+    const corNo = (id: string, doc?: boolean) => (doc || dono(id) ? NEUTRO : COR_RONDA_HEX[corDaRonda(ultimas[id])]);
 
     function hexagono(x: number, y: number, r: number) {
       ctx!.beginPath();
@@ -219,7 +220,7 @@ export function RedeAoVivo({ agentes, rondas, agora }: { agentes: Agente[]; rond
           ctx!.fill();
         }
         const ag = agoraRef.current;
-        if (!n.doc && n.id !== "daniel" && ag && rondaRecente(ultimas[n.id], ag)) {
+        if (!n.doc && !dono(n.id) && ag && rondaRecente(ultimas[n.id], ag)) {
           const pulso = reduz ? 0 : (Math.sin(agoraMs / 260) + 1) * 3;
           ctx!.strokeStyle = cor;
           ctx!.lineWidth = 2;
@@ -253,7 +254,7 @@ export function RedeAoVivo({ agentes, rondas, agora }: { agentes: Agente[]; rond
             ctx!.fillStyle = cor;
             ctx!.font = "600 10px ui-monospace, monospace";
             ctx!.textAlign = "center";
-            ctx!.fillText(n.id === "daniel" ? "DR" : iniciais(n.rotulo), x, y + 3.5);
+            ctx!.fillText(n.id === "daniel" ? "DR" : n.id === "rogerio" ? "RO" : iniciais(n.rotulo), x, y + 3.5);
           }
           hexagono(x, y, r);
           ctx!.stroke();

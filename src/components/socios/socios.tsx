@@ -1,7 +1,7 @@
 import styles from "./socios.module.css";
 
 interface Partner {
-  variant: "tech" | "fin" | "sales";
+  variant: "tech" | "fin" | "sales" | "owner";
   inicial: string;
   nome: string;
   papel: string;
@@ -47,6 +47,13 @@ const SOCIOS: Partner[] = [
       "Vendas B2B (empresas, RH para moradia corporativa)",
       "Parcerias comerciais locais",
     ],
+  },
+  {
+    variant: "owner",
+    inicial: "R",
+    nome: "Rogério",
+    papel: "Sócio · Dono",
+    itens: ["Aprova e decide junto com o Daniel", "Área de atuação: a definir"],
   },
 ];
 
