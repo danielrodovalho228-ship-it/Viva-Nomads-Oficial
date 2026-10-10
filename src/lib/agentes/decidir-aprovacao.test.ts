@@ -131,3 +131,10 @@ test("revisão do Moacir: precisa citar #N, o commit e APROVADO", () => {
   assert.ok(!moacirAprovouNoTexto(txt, 351, "37cb08b4911f"));
   assert.ok(!moacirAprovouNoTexto("", 350, "3d8f15f9a696"));
 });
+
+test("revisão do Moacir: frase negativa com APROVADO não vale (achado #352)", () => {
+  assert.ok(!moacirAprovouNoTexto("#352 (abc1234) AJUSTAR — ainda não APROVADO", 352, "abc1234ff"));
+  assert.ok(!moacirAprovouNoTexto("#352 (abc1234) BLOQUEADO até ficar APROVADO", 352, "abc1234ff"));
+  assert.ok(!moacirAprovouNoTexto("#352 (abc1234) não está APROVADO", 352, "abc1234ff"));
+  assert.ok(moacirAprovouNoTexto("#352 (abc1234) APROVADO: checks verdes", 352, "abc1234ff"));
+});
