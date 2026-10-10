@@ -55,3 +55,32 @@ export function horaCurta(iso: string): string {
 export function textoFeito(nome: string, acionou: boolean, agoraIso: string): string {
   return acionou ? `Registrei e acionei ${nome} às ${horaCurta(agoraIso)}.` : `Registrei a ordem para ${nome}; vai na próxima ronda.`;
 }
+
+/** Máximo de linhas de uma resposta do agente antes de recolher o resto em "ver detalhes". */
+export const LINHAS_RESPOSTA_CURTA = 5;
+
+export interface RespostaDividida {
+  resumo: string;
+  detalhes: string;
+}
+
+/**
+ * Resposta longa do agente: mostra as primeiras linhas e recolhe o resto.
+ * Linhas vazias não contam; se cabe no limite, não há "detalhes". Só apresentação:
+ * o texto completo continua intacto (resumo + detalhes).
+ */
+export function dividirResposta(texto: string, maxLinhas = LINHAS_RESPOSTA_CURTA): RespostaDividida {
+  const linhas = texto.split("\n");
+  let vistas = 0;
+  let corte = linhas.length;
+  for (let i = 0; i < linhas.length; i++) {
+    if (linhas[i].trim() === "") continue;
+    if (vistas === maxLinhas) {
+      corte = i;
+      break;
+    }
+    vistas++;
+  }
+  if (corte >= linhas.length) return { resumo: texto, detalhes: "" };
+  return { resumo: linhas.slice(0, corte).join("\n").trimEnd(), detalhes: linhas.slice(corte).join("\n").trim() };
+}

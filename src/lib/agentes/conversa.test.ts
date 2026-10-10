@@ -1,7 +1,7 @@
 /* Roda: node --test src/lib/agentes/conversa.test.ts */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { decidirEnvio, ehUrgente, estaNoFim, horaCurta, prioridadeDoTexto, textoFeito } from "./conversa.ts";
+import { decidirEnvio, dividirResposta, ehUrgente, estaNoFim, horaCurta, prioridadeDoTexto, textoFeito } from "./conversa.ts";
 
 test("botão 'ir para o fim': só aparece quando a lista não está no fim", () => {
   assert.equal(estaNoFim({ scrollTop: 0, clientHeight: 400, scrollHeight: 1200 }), false);
@@ -35,4 +35,17 @@ test("hora em Brasília e texto do que foi feito", () => {
   assert.equal(horaCurta("lixo"), "");
   assert.equal(textoFeito("Renato", true, "2026-10-09T14:32:00Z"), "Registrei e acionei Renato às 11:32.");
   assert.match(textoFeito("Renato", false, "2026-10-09T14:32:00Z"), /próxima ronda/);
+});
+
+test("resposta longa do agente: 5 linhas à vista e o resto em 'ver detalhes'", () => {
+  const curta = "a\nb\nc";
+  assert.deepEqual(dividirResposta(curta), { resumo: curta, detalhes: "" });
+  const exata = "1\n2\n3\n4\n5";
+  assert.equal(dividirResposta(exata).detalhes, "");
+  const longa = "1\n2\n\n3\n4\n5\n6\n7";
+  const r = dividirResposta(longa);
+  assert.equal(r.resumo, "1\n2\n\n3\n4\n5");
+  assert.equal(r.detalhes, "6\n7");
+  // linhas vazias no fim não criam "detalhes" à toa
+  assert.equal(dividirResposta("1\n2\n3\n4\n5\n\n\n").detalhes, "");
 });

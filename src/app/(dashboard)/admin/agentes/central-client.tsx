@@ -25,7 +25,7 @@ import {
   type Ronda,
   type StatusAgente,
 } from "@/lib/agentes/central";
-import { decidirEnvio, estaNoFim, horaCurta, textoFeito } from "@/lib/agentes/conversa";
+import { decidirEnvio, dividirResposta, estaNoFim, horaCurta, textoFeito } from "@/lib/agentes/conversa";
 import { COR_RONDA_HEX, achadosDaPrioridade, corDaRonda, indicadores, mesclarConversas, proximaDoAgente, resumoCurto, rondaRecente, ultimaPorAgente } from "@/lib/agentes/painel";
 import { deixarOrdem, type ChamadoVermelho, type DadosCentral } from "@/lib/data/agentes-actions";
 import { AvatarAgente } from "@/components/admin/agentes/avatar";
@@ -793,7 +793,20 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
                         data-testid={g.itens[0].papel === "daniel" ? "bolha-minha" : "bolha-agente"}
                         className={`max-w-[85%] whitespace-pre-line rounded-2xl px-3 py-2 text-sm ${g.itens[0].papel === "daniel" ? "ml-auto rounded-br-sm bg-[#3D7BFF] text-white" : "rounded-bl-sm bg-white/5 text-[#DCE3FA]"}`}
                       >
-                        {g.itens[0].texto}
+                        {(() => {
+                          const { resumo, detalhes } = g.itens[0].papel === "daniel" ? { resumo: g.itens[0].texto, detalhes: "" } : dividirResposta(g.itens[0].texto);
+                          return (
+                            <>
+                              {resumo}
+                              {detalhes && (
+                                <details data-testid="resposta-detalhes" className="mt-1">
+                                  <summary className="cursor-pointer select-none text-xs font-semibold text-[#38BDF8]">ver detalhes</summary>
+                                  <div className="mt-1 whitespace-pre-line">{detalhes}</div>
+                                </details>
+                              )}
+                            </>
+                          );
+                        })()}
                         <span className="mt-1 block text-right text-[10px] opacity-70" style={mono}>
                           {horaCurta(g.itens[0].criado_em)}
                         </span>
