@@ -110,3 +110,17 @@ export const DIFERENCIAIS_VIVA: readonly string[] = [
 export function linhasPublicas(): LinhaCompare[] {
   return LINHAS_COMPARE.filter((l) => l.fonte !== null && l.conferidoEm !== null);
 }
+
+/**
+  Retorno do Airbnb em Uberlândia (ordem bd296d53, item 3): referência para o proprietário comparar sem
+  expectativa inflada. Valores ao mês sobre o valor do imóvel. Não prometer "1–2% ao mês".
+*/
+export const RETORNO_AIRBNB_UBERLANDIA = {
+  brutoMensalPct: 0.6,
+  liquidoMensalMinPct: 0.1,
+  liquidoMensalMaxPct: 0.4,
+  fonte: "Airbtics e GuestFavorites, 2025–26",
+  referencia: COMPARE_REFERENCIA,
+  texto:
+    "Em Uberlândia, o Airbnb rende cerca de 0,6% ao mês bruto e 0,1% a 0,4% ao mês líquido (Airbtics e GuestFavorites, 2025–26). Valores de referência de out/2026.",
+} as const;

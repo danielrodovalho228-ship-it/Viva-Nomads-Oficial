@@ -4,22 +4,19 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Percent, Info, Download } from "lucide-react";
 import { PageTitle } from "@/components/dashboard/primitives";
-import { useAuthStore, DEMO_USER } from "@/lib/store";
-import { plano as getPlano, type PlanoId } from "@/config/planos";
+import { FAIXAS_COMISSAO_PADRAO, faixaPorImoveisAtivos, pctTexto } from "@/lib/cobranca/regra";
+import { COMPARE_RODAPE, RETORNO_AIRBNB_UBERLANDIA, linhasPublicas } from "@/config/compare-precos";
 import { simularROI, type EntradaROI } from "@/lib/simulador";
 import { imprimirSimulacao } from "@/lib/print-simulacao";
 import { formatBRL, numBR } from "@/lib/utils";
 import { MAX_ALUGUEL_MENSAL, MAX_INVESTIMENTO } from "@/lib/campos-valor";
-import { NumInput, ResultCard, SimDisclaimer, SimHero, PlanoPills } from "@/components/simulador/ui";
+import { NumInput, ResultCard, SimDisclaimer, SimHero } from "@/components/simulador/ui";
 
 const INCLUI =
   "Móveis dos quartos e sala, cozinha equipada, eletrodomésticos, cama/colchão, mesa de trabalho, cortinas e utensílios.";
 
 export default function RoiImovelPage() {
-  const user = useAuthStore((s) => s.user);
-  const planoAtivo = ((user ?? DEMO_USER).plan ?? "free") as PlanoId;
-
-  const [planoId, setPlanoId] = useState<PlanoId>(planoAtivo);
+  const [imoveisAtivos, setImoveisAtivos] = useState(1);
   const [investimentoMobiliar, setInvest] = useState(25000);
   const [aluguelVazio, setVazio] = useState(1800);
   const [aluguelMobiliado, setMob] = useState(3000);
@@ -36,13 +33,13 @@ export default function RoiImovelPage() {
     contasMensais,
     reposicaoAnualPct: reposicaoPct / 100,
   };
-  const p = getPlano(planoId);
-  // Gestor: assinatura "sob consulta" (null) — não vira R$ 0 em silêncio.
-  const sobConsulta = p?.assinaturaAnual == null;
+  // Regra única: taxa de serviço por contrato fechado, pela faixa do nº de imóveis ativos. Sem assinatura nesta fase.
+  const faixa = faixaPorImoveisAtivos(imoveisAtivos);
   const res = useMemo(
-    () => simularROI(entrada, p?.comissao ?? 0, p?.assinaturaAnual ?? 0),
-    [investimentoMobiliar, aluguelVazio, aluguelMobiliado, mesesOcupados, contasMensais, reposicaoPct, p?.comissao, p?.assinaturaAnual]
+    () => simularROI(entrada, faixa.taxa, 0),
+    [investimentoMobiliar, aluguelVazio, aluguelMobiliado, mesesOcupados, contasMensais, reposicaoPct, faixa.taxa]
   );
+  const comparativo = linhasPublicas().filter((l) => l.pct !== null);
 
   // Textos dos resultados (prêmio com sinal; payback/ROI sem investimento).
   const premioTexto = `${res.premioMensal >= 0 ? "+ " : "− "}${formatBRL(Math.abs(res.premioMensal))}/mês`;
@@ -99,30 +96,31 @@ export default function RoiImovelPage() {
               <input type="range" min={6} max={12} value={mesesOcupados} onChange={(e) => setMeses(Number(e.target.value))} className="w-full accent-forest" />
             </div>
             <div>
-              <p className="mb-1 text-sm font-medium text-ink">Simular no plano</p>
-              <PlanoPills value={planoId} onChange={(v) => setPlanoId(v as PlanoId)} />
+              <label htmlFor="imoveis-ativos" className="mb-1 block text-sm font-medium text-ink">
+                Imóveis ativos na Viva: <strong className="text-forest">{imoveisAtivos}</strong> · taxa de serviço{" "}
+                <strong className="text-forest">{pctTexto(faixa.taxa)}</strong> do primeiro mês
+              </label>
+              <input
+                id="imoveis-ativos"
+                type="range"
+                min={1}
+                max={FAIXAS_COMISSAO_PADRAO[FAIXAS_COMISSAO_PADRAO.length - 1].minImoveis}
+                value={imoveisAtivos}
+                onChange={(e) => setImoveisAtivos(Number(e.target.value))}
+                className="w-full accent-forest"
+              />
             </div>
           </div>
         </div>
 
         {/* Resultado */}
         <div className="space-y-4">
-          {sobConsulta && (
-            <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-              A assinatura do plano {p?.nome} é <strong>sob consulta</strong> e NÃO está no cálculo — os
-              números abaixo ficam acima do real. Fale com a gente para o valor da sua carteira.
-            </p>
-          )}
           <div className="grid grid-cols-2 gap-4">
             <ResultCard label="Prêmio do mobiliado" value={premioTexto} hint={premioDica} />
             <ResultCard
               label="Ganho líquido adicional / ano"
               value={formatBRL(res.ganhoAdicionalAnual)}
-              hint={
-                sobConsulta
-                  ? "descontando comissão, contas e reposição — SEM a assinatura (sob consulta)"
-                  : "já descontando comissão, assinatura, contas e reposição"
-              }
+              hint="já descontando a taxa de serviço, contas e reposição"
             />
             <ResultCard label="Payback do investimento" value={paybackTexto} hint={paybackDica} />
             <ResultCard label="ROI anual" value={roiTexto} hint={res.roiAnual === null ? "sem investimento para comparar" : undefined} />
@@ -148,7 +146,7 @@ export default function RoiImovelPage() {
             onClick={() =>
               imprimirSimulacao({
                 titulo: "Calculadora de ROI — mobiliar o imóvel",
-                subtitulo: `Plano ${p?.nome ?? "—"}`,
+                subtitulo: `Taxa de serviço ${pctTexto(faixa.taxa)} do primeiro mês`,
                 entradas: [
                   { label: "Investimento para mobiliar", valor: formatBRL(investimentoMobiliar) },
                   { label: "Aluguel vazio (mês)", valor: formatBRL(aluguelVazio) },
@@ -169,6 +167,27 @@ export default function RoiImovelPage() {
           </button>
         </div>
       </div>
+
+      <section aria-labelledby="comparar-canais" className="mt-6 rounded-2xl border border-sage-200 bg-white p-5">
+        <h2 id="comparar-canais" className="font-title text-lg font-bold text-ink">
+          Quanto fica de cada mês em cada canal
+        </h2>
+        <p className="mt-1 text-xs text-muted">Percentual do total pago pelo morador que o canal retém, em média.</p>
+        <ul className="mt-3 space-y-2">
+          {comparativo.map((l) => (
+            <li key={l.id} className="flex items-start justify-between gap-3 text-sm">
+              <span className="text-ink">
+                <strong>{l.nome}</strong> <span className="text-muted">— {l.regra}</span>
+              </span>
+              <span className="shrink-0 font-semibold text-forest">≈ {numBR((l.pct ?? 0) * 100, 1)}%</span>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-3 text-xs text-muted">{RETORNO_AIRBNB_UBERLANDIA.texto}</p>
+        <p className="mt-2 text-[11px] text-muted">
+          Fontes: {comparativo.filter((l) => l.fonte).map((l) => l.fonte?.nome).join("; ")}; {RETORNO_AIRBNB_UBERLANDIA.fonte}. {COMPARE_RODAPE}
+        </p>
+      </section>
 
       <SimDisclaimer />
 
