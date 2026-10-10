@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Check, Camera, FileSignature, ShieldCheck, UserCheck, Banknote, PiggyBank } from "lucide-react";
 import { FAIXAS_COMISSAO_PADRAO, TEXTO_REGRA_UNICA, TEXTO_REGRA_CURTO, pctTexto, valorTaxa } from "@/lib/cobranca/regra";
+import { PlanoGestorForm } from "@/components/precos/plano-gestor-form";
 import { ComparativoPrecos } from "@/components/precos/comparativo-precos";
 import { ButtonLink } from "@/components/ui/button";
 import { formatBRL, cn } from "@/lib/utils";
@@ -175,6 +176,7 @@ export default function PricingPage() {
           <p className="mt-3 rounded-lg bg-surface-2 px-3 py-2 text-sm text-muted" data-testid="plano-gestor">
             Com 31 imóveis ou mais, a conversa é direta: fale com a gente sobre o Plano Gestor e fixamos uma condição negociada.
           </p>
+          <PlanoGestorForm />
           <ButtonLink href="/qualificar" variant="gold" className="mt-6 w-full sm:w-auto">
             Anunciar meu imóvel
           </ButtonLink>
