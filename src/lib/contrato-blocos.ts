@@ -94,10 +94,10 @@ export function planejarBlocos(
 }
 
 /**
- * Comissão do contrato-mãe: 1 (um) mês de aluguel × taxa do plano, UMA vez.
- * Gestor = 0% (rate 0). Cobrada só no fechamento; renovação/extensão não
- * recobra. A taxa (0..1) vem do plano do proprietário — o caller resolve o
- * plano→taxa (via COMMISSION_BY_PLAN); este módulo puro só aplica o cálculo.
+ * Taxa do contrato: 1 (um) mês de aluguel × taxa, sobre o PRIMEIRO aluguel.
+ * Regra única (ordem eaa5adce): 12% no contrato novo e também na renovação,
+ * igual para todos. A taxa (0..1) vem do caller (config/override do admin);
+ * este módulo puro só aplica o cálculo.
  */
 export function comissaoContrato(aluguelMensal: number, rate: number): number {
   return Math.round(Math.max(0, aluguelMensal) * Math.max(0, rate));
