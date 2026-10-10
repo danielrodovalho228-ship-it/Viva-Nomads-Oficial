@@ -16,7 +16,7 @@ test("JSON-LD: Organization/WebSite, FAQPage, oferta da regra única e lista só
   const oferta = ofertaRegraUnica(URL_SITE);
   assert.equal(oferta.price, 0);
   assert.equal(oferta.priceCurrency, "BRL");
-  assert.match(oferta.description, /12% do primeiro aluguel/);
+  assert.match(oferta.description, /12% por contrato fechado/);
   assert.doesNotMatch(JSON.stringify(oferta), /Essencial|Profissional|Gestor/);
   const lista = listaImoveis(URL_SITE, [{ id: "ube-001", title: "Exemplo" }, { id: "11111111-1111-4111-8111-111111111111", title: "Real" }], (id) => id.startsWith("ube-"));
   assert.equal(lista.numberOfItems, 1);

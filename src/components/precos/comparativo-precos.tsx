@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { Scale } from "lucide-react";
-import { COMPARE_ALUGUEL, COMPARE_CONTRATO, COMPARE_MESES, COMPARE_RODAPE, linhasPublicas, type LinhaCompare } from "@/config/compare-precos";
+import { Check, Scale } from "lucide-react";
+import { COMPARE_ALUGUEL, COMPARE_CONTRATO, COMPARE_MESES, COMPARE_RODAPE, DIFERENCIAIS_VIVA, linhasPublicas, type LinhaCompare } from "@/config/compare-precos";
 import { reaisInteiros } from "@/config/planos";
 
 /**
@@ -42,11 +42,11 @@ export function ComparativoPrecos({ variante = "completo" }: { variante?: "compl
           <Scale className="h-5 w-5 text-forest" aria-hidden /> Quanto você paga
         </p>
         <p className="mt-2 text-sm text-muted">
-          Aluguel de {reaisInteiros(COMPARE_ALUGUEL)} por {COMPARE_MESES} meses ({reaisInteiros(COMPARE_CONTRATO)} no contrato):
+          Reserva de {COMPARE_MESES} meses a {reaisInteiros(COMPARE_ALUGUEL)} por mês ({reaisInteiros(COMPARE_CONTRATO)} no contrato):
         </p>
         <div className="mt-3 grid grid-cols-1 gap-3 text-center sm:grid-cols-2">
           <div className="rounded-xl bg-sage-100 p-3">
-            <p className="text-xs text-muted">Viva Nomads (12% do 1º aluguel)</p>
+            <p className="text-xs text-muted">Viva Nomads (12% por contrato)</p>
             <p className="font-title text-2xl font-bold text-forest">{brl(viva.valor ?? 0)}</p>
             <p className="text-xs text-muted">uma vez por contrato</p>
           </div>
@@ -74,7 +74,7 @@ export function ComparativoPrecos({ variante = "completo" }: { variante?: "compl
         <Scale className="h-6 w-6 text-forest" aria-hidden /> Compare
       </h2>
       <p className="mt-1 text-sm text-muted">
-        Contrato de {COMPARE_MESES} meses com aluguel de {reaisInteiros(COMPARE_ALUGUEL)} ({reaisInteiros(COMPARE_CONTRATO)} no total).
+        Reserva de {COMPARE_MESES} meses a {reaisInteiros(COMPARE_ALUGUEL)} por mês ({reaisInteiros(COMPARE_CONTRATO)} no total).
       </p>
       <ul className="mt-5 grid gap-3 md:grid-cols-2">
         {linhas.map((l) => (
@@ -83,6 +83,14 @@ export function ComparativoPrecos({ variante = "completo" }: { variante?: "compl
             {l.valor !== null && <p className="mt-1 font-title text-2xl font-bold text-ink">{brl(l.valor)}</p>}
             <p className="mt-1 text-sm text-muted">{l.regra}</p>
             <p className="mt-2 text-xs text-muted">Fonte: <Fonte l={l} /></p>
+          </li>
+        ))}
+      </ul>
+      <h3 className="mt-8 font-title text-lg font-bold text-ink">O que a Viva entrega além do preço</h3>
+      <ul className="mt-3 grid gap-2 sm:grid-cols-2" data-testid="diferenciais-viva">
+        {DIFERENCIAIS_VIVA.map((d) => (
+          <li key={d} className="flex items-start gap-2 text-sm text-ink">
+            <Check className="mt-0.5 h-4 w-4 shrink-0 text-forest" aria-hidden /> {d}
           </li>
         ))}
       </ul>
@@ -97,7 +105,7 @@ export function LinhaComparativoAnuncio({ aluguel }: { aluguel: number }) {
   const valor = Math.round(aluguel * 12) / 100;
   return (
     <p className="rounded-lg bg-sage-100 px-3 py-2 text-xs text-ink" data-testid="linha-comparativo">
-      Neste aluguel, você paga <strong>{brl(valor)} uma vez</strong> (12% do primeiro aluguel), só quando alugar. Mesma regra para todos.{" "}
+      Neste valor mensal, você paga <strong>{brl(valor)} uma vez</strong> (12% do primeiro mês), só quando a reserva é fechada. Mesma regra para todos.{" "}
       <Link href="/precos" className="web-only font-medium text-forest underline">
         Ver preços
       </Link>

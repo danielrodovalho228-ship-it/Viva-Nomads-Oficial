@@ -11,7 +11,7 @@ import { SITE_URL, SUPORTE_EMAIL } from "@/lib/site";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/precos" },
-  title: "Anuncie imóveis mobiliados grátis: 12% só ao alugar",
+  title: "Anuncie imóveis mobiliados grátis: 12% por contrato fechado",
   description: TEXTO_REGRA_CURTO + " Para imóveis mobiliados.",
 };
 
@@ -53,7 +53,7 @@ const OWNER_SERVICES: Service[] = [
 const TECH_BENEFITS = [
   { icon: FileSignature, title: "Contrato assinado digitalmente", text: "Contrato de locação por temporada com validade jurídica." },
   { icon: UserCheck, title: "Conversa registrada", text: "Toda a negociação fica na plataforma, com o contato protegido até o aceite." },
-  { icon: Banknote, title: "Aluguel direto na conta do proprietário", text: "O pagamento do aluguel vai direto ao proprietário." },
+  { icon: Banknote, title: "Valor mensal direto na conta do proprietário", text: "O pagamento do valor mensal vai direto ao proprietário." },
 ] as const;
 
 const ICON_TONE: Record<ServiceTone, string> = {
@@ -130,8 +130,7 @@ export default function PricingPage() {
         <div className="container-page">
           <h1 className="font-title text-4xl font-bold md:text-5xl">Anunciar é grátis</h1>
           <p className="mx-auto mt-5 max-w-2xl text-lg text-white/80">
-            Você só paga quando alugar: <strong className="text-white">12% do primeiro aluguel</strong> de
-            cada contrato e de cada renovação. Mesma regra para todos. O pagamento do aluguel vai direto ao proprietário.
+            A Viva cobra <strong className="text-white">12% por contrato fechado</strong>. Sem mensalidade.
           </p>
         </div>
       </section>
@@ -143,10 +142,10 @@ export default function PricingPage() {
           <ul className="mt-5 space-y-3">
             {[
               "Anunciar é grátis, com quantos imóveis mobiliados você quiser.",
-              "12% do primeiro aluguel de cada contrato novo e de cada renovação.",
-              "Mesma taxa para quem tem 1 ou 100 imóveis. Sem desconto por volume.",
-              "Sem mensalidade. O inquilino não paga taxa da plataforma.",
-              "Cobrada do proprietário na assinatura do contrato ou da renovação; a plataforma não recebe nem retém o aluguel.",
+              "Você só paga quando a reserva é fechada, em cada contrato e em cada renovação.",
+              "Mesma regra para quem tem 1 ou 100 imóveis.",
+              "Sem mensalidade. Quem vem morar não paga taxa da plataforma.",
+              "A cobrança é feita ao proprietário; a plataforma não recebe nem retém o valor mensal da reserva.",
             ].map((t) => (
               <li key={t} className="flex items-start gap-2.5 text-sm text-ink">
                 <Check className="mt-0.5 h-4 w-4 shrink-0 text-sage" aria-hidden /> {t}
@@ -154,8 +153,8 @@ export default function PricingPage() {
             ))}
           </ul>
           <p className="mt-5 rounded-lg bg-surface-2 px-3 py-2 text-sm text-muted">
-            Exemplo: aluguel de R$ 4.320 por mês → {formatBRL(cobrancaParaAceite({ tipo: "novo", aluguelMensal: 4320, assinadoEm: new Date() }).valor)} no
-            primeiro aluguel do contrato e {formatBRL(cobrancaParaAceite({ tipo: "renovacao", aluguelMensal: 4320, assinadoEm: new Date() }).valor)} em cada renovação.
+            Exemplo: reserva de R$ 4.320 por mês → {formatBRL(cobrancaParaAceite({ tipo: "novo", aluguelMensal: 4320, assinadoEm: new Date() }).valor)} por
+            contrato fechado e {formatBRL(cobrancaParaAceite({ tipo: "renovacao", aluguelMensal: 4320, assinadoEm: new Date() }).valor)} em cada renovação.
           </p>
           <ButtonLink href="/qualificar" variant="gold" className="mt-6 w-full sm:w-auto">
             Anunciar meu imóvel

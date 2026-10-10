@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   TEXTO_REGRA_UNICA,
+  TEXTO_REGRA_CURTO,
   cobrancaParaAceite,
   fixacaoAdminValida,
   pctTexto,
@@ -58,15 +59,15 @@ test("override do admin exige motivo e validade; vencido, sem motivo ou fora de 
 });
 
 test("texto oficial: 12%, sem mensalidade, sem plano nem faixa", () => {
-  assert.match(TEXTO_REGRA_UNICA, /Anunciar é grátis\. Você só paga quando alugar: 12% do primeiro aluguel de cada contrato e de cada renovação\./);
-  assert.match(TEXTO_REGRA_UNICA, /1 ou 100 imóveis\. Sem mensalidade\. O inquilino não paga taxa da plataforma\.$/);
+  assert.equal(TEXTO_REGRA_UNICA, "Anunciar é grátis. A Viva cobra 12% por contrato fechado. Sem mensalidade.");
+  assert.equal(TEXTO_REGRA_CURTO, TEXTO_REGRA_UNICA);
   assert.doesNotMatch(TEXTO_REGRA_UNICA, /plano|faixa|Essencial|Gestor/i);
   assert.equal(pctTexto(0.12), "12%");
 });
 
 // ── Página de preços e tabela "Compare" ──
 import { readFileSync, readdirSync, statSync } from "node:fs";
-import { COMPARE_CONTRATO, COMPARE_RODAPE, LINHAS_COMPARE, linhasPublicas } from "../../config/compare-precos.ts";
+import { COMPARE_CONTRATO, COMPARE_RODAPE, DIFERENCIAIS_VIVA, LINHAS_COMPARE, linhasPublicas } from "../../config/compare-precos.ts";
 
 const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
 
@@ -115,4 +116,26 @@ test("varredura: nada nas páginas públicas, FAQ, llms e navegação fala de pl
   const proibido = /Essencial|plano (Gratuito|Profissional|Gestor)|comiss[aã]o zero|renova[cç][aã]o (gr[aá]tis|n[aã]o paga)|Renovação: você não paga|taxa de extensão|ver planos|Planos de assinatura/i;
   const achados = arquivos.filter((a) => a !== "src/components/layout/dashboard-shell.tsx" && proibido.test(ler(a)));
   assert.deepEqual(achados, []);
+});
+
+test("vocabulário (ordens 12eea681/5faa3903): a cobrança da Viva nas páginas públicas não usa aluguel, comissão, locação, imobiliária, corretagem nem intermediação", () => {
+  const proibido = /aluguel|comiss[aã]o|loca[cç][aã]o|imobili[aá]ria|corretagem|intermedia/i;
+  const textos = [
+    TEXTO_REGRA_UNICA,
+    ler("src/app/(public)/precos/page.tsx").match(/<section className="bg-forest[\s\S]*?<\/section>/)![0],
+    ler("src/app/(public)/precos/page.tsx").match(/data-testid="regra-unica"[\s\S]*?<ButtonLink/)![0],
+    LINHAS_COMPARE.find((l) => l.id === "viva")!.regra,
+    ...DIFERENCIAIS_VIVA,
+  ];
+  for (const t of textos) assert.doesNotMatch(t.replace(/aluguelMensal/g, ""), proibido, t.slice(0, 60));
+  assert.match(ler("src/lib/atendimento/faq.ts"), /12% por contrato fechado/);
+});
+
+test("Compare: mantém a seção e os diferenciais da Viva (só a coluna da Viva, concorrente só com fonte)", () => {
+  assert.equal(DIFERENCIAIS_VIVA.length, 8);
+  assert.ok(DIFERENCIAIS_VIVA.includes("Você só paga quando a reserva é fechada"));
+  assert.ok(DIFERENCIAIS_VIVA.includes("Nenhuma taxa para quem vem morar"));
+  const comp = ler("src/components/precos/comparativo-precos.tsx");
+  assert.match(comp, /DIFERENCIAIS_VIVA/);
+  assert.match(comp, /COMPARE_RODAPE/);
 });

@@ -11,7 +11,7 @@ const PAGINAS: [string, string, string][] = [
   ["Como funciona", "/como-funciona", "o passo a passo para inquilinos e proprietários"],
   ["Buscar imóveis", "/buscar", "imóveis mobiliados disponíveis, com filtros por cidade, preço e período"],
   ["Para proprietários", "/para-proprietarios", "como anunciar e qualificar um imóvel"],
-  ["Planos e preços", "/precos", "preço único para proprietários (12% do primeiro aluguel) e comparação"],
+  ["Planos e preços", "/precos", "preço único para proprietários (12% por contrato fechado) e comparação"],
   ["Para empresas", "/empresas", "moradia para equipes e profissionais transferidos"],
   ["Sua segurança", "/seguranca", "contrato, Caução, conversa registrada e proteção contra golpe"],
   ["Central de Ajuda", "/ajuda", "perguntas frequentes, chat com a assistente virtual e chamados"],

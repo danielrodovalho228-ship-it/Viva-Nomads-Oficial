@@ -34,14 +34,14 @@ export const FAQ: Pergunta[] = [
   {
     id: "custo-anunciar",
     pergunta: "Quanto custa anunciar?",
-    resposta: `${TEXTO_REGRA_UNICA} Num aluguel de R$ 4.320 por mês, são R$ 518,40 no primeiro aluguel do contrato e R$ 518,40 em cada renovação. Veja a comparação com outras opções em /precos.`,
+    resposta: `${TEXTO_REGRA_UNICA} Numa reserva de R$ 4.320 por mês, são R$ 518,40 por contrato fechado e R$ 518,40 em cada renovação. Veja a comparação com outras opções em /precos.`,
     termos: ["preco", "taxa", "anunciar", "comissao", "mensalidade", "quanto custa", "airbnb", "12"],
   },
   {
     id: "inquilino-paga",
     pergunta: "O inquilino paga alguma taxa para a plataforma?",
     resposta:
-      "Não. Buscar, se candidatar, publicar um Pedido de Moradia e conversar não têm custo para o inquilino. A taxa de 12% do primeiro aluguel é cobrada só do proprietário. O aluguel e a caução são combinados entre as partes e não passam pela plataforma.",
+      "Não. Buscar, se candidatar, publicar um Pedido de Moradia e conversar não têm custo para o inquilino. A taxa de 12% por contrato fechado é cobrada só do proprietário. O valor mensal e a caução são combinados entre as partes e não passam pela plataforma.",
     termos: ["taxa", "inquilino", "custo", "gratis"],
   },
   {
@@ -53,7 +53,7 @@ export const FAQ: Pergunta[] = [
   {
     id: "renovar",
     pergunta: "Posso renovar o contrato?",
-    resposta: `Sim, enquanto o total não passar de ${REGRAS_CONTRATO.prazoMaxDias} dias. A renovação é um novo bloco, só vale com o aceite do proprietário e do inquilino, e tem a mesma taxa de 12% do primeiro aluguel do período, paga pelo proprietário. Depois de ${REGRAS_CONTRATO.prazoMaxDias} dias, é preciso um novo contrato.`,
+    resposta: `Sim, enquanto o total não passar de ${REGRAS_CONTRATO.prazoMaxDias} dias. A renovação é um novo bloco, só vale com o aceite do proprietário e do inquilino, e tem a mesma taxa de 12% por contrato, paga pelo proprietário. Depois de ${REGRAS_CONTRATO.prazoMaxDias} dias, é preciso um novo contrato.`,
     termos: ["renovar", "renovacao", "prorrogar", "estender"],
   },
   {

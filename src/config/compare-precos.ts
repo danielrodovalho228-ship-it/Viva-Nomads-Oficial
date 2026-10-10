@@ -31,7 +31,7 @@ export const LINHAS_COMPARE: readonly LinhaCompare[] = [
   {
     id: "viva",
     nome: "Viva Nomads",
-    regra: "12% do primeiro aluguel de cada contrato e de cada renovação, cobrado do proprietário. Sem mensalidade.",
+    regra: "12% por contrato fechado, cobrado do proprietário. Sem mensalidade.",
     valor: valorTaxa(COMPARE_ALUGUEL, TAXA_COMISSAO_PADRAO),
     fonte: { nome: "Página de preços da Viva Nomads", url: "/precos" },
     conferidoEm: "2026-10-10",
@@ -85,6 +85,23 @@ export const LINHAS_COMPARE: readonly LinhaCompare[] = [
     fonte: null,
     conferidoEm: null,
   },
+];
+
+/**
+  Diferenciais da Viva (ordem 5faa3903, item 3). Só a coluna da Viva é publicada: afirmar ✓/✗ de
+  concorrente exige fonte pública conferida, como nas linhas de preço acima. Para liberar a matriz
+  Viva × OLX × ZAP × Airbnb × QuintoAndar, conferir cada célula na fonte oficial e acrescentar a
+  coluna com `fonte` e `conferidoEm`.
+*/
+export const DIFERENCIAIS_VIVA: readonly string[] = [
+  "Você só paga quando a reserva é fechada",
+  "Contrato pronto, assinado na plataforma",
+  "Chat com quem vai morar",
+  "Avaliação dos dois lados",
+  "Profissionais que ficam meses",
+  "Sem contrato de 30 meses",
+  "Sem faxina nem check-in toda semana",
+  "Nenhuma taxa para quem vem morar",
 ];
 
 /** Só o que tem fonte e data conferidas aparece no site. */

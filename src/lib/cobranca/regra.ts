@@ -93,9 +93,11 @@ export function pctTexto(taxa: number): string {
   return `${`${Math.round(taxa * 1000) / 10}`.replace(".", ",")}%`;
 }
 
-/** Texto oficial, igual em todos os lugares (ordem 3914d70c, item 2). */
-export const TEXTO_REGRA_UNICA =
-  "Anunciar é grátis. Você só paga quando alugar: 12% do primeiro aluguel de cada contrato e de cada renovação. Mesma regra para quem tem 1 ou 100 imóveis. Sem mensalidade. O inquilino não paga taxa da plataforma.";
+/**
+ * Mensagem pública ÚNICA e curta (ordens 12eea681 e 5faa3903, Daniel 10/10). Nas páginas públicas
+ * não aparece "aluguel", "comissão" etc. sobre a cobrança; o detalhe ("12% do valor do primeiro
+ * mês") fica só no painel do proprietário, antes de aceitar, e nos termos.
+ */
+export const TEXTO_REGRA_UNICA = "Anunciar é grátis. A Viva cobra 12% por contrato fechado. Sem mensalidade.";
 
-export const TEXTO_REGRA_CURTO =
-  "Anunciar é grátis. Você só paga quando alugar: 12% do primeiro aluguel de cada contrato e de cada renovação. Mesma regra para todos.";
+export const TEXTO_REGRA_CURTO = TEXTO_REGRA_UNICA;
