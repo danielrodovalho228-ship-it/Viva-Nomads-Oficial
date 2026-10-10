@@ -5,7 +5,7 @@
   Como calculamos (o mesmo texto aparece na página):
   • Modelo único: taxa de serviço por contrato fechado (renovação = novo contrato),
     sobre o valor do 1º mês. Receita = contratos/mês × valor médio do 1º mês ×
-    taxa média ponderada pelas faixas. Sem mensalidade nem churn de assinatura.
+    taxa média ponderada pelas faixas. Sem cobrança recorrente nem churn de assinatura.
   • Contratos começam no mês 4 e crescem em linha reta até o teto do cenário.
   • Parceiros (seguros como representante, serviços) só entram quando ligados,
     a partir do mês de início de cada um: contratos × receita do parceiro.
@@ -183,7 +183,7 @@ export interface PorContrato {
   /** Ferramentas + imposto sobre a receita + operador. */
   custoVariavel: number;
   margem: number;
-  /** Contratos/mês para pagar fixo + marketing (sem assinaturas: não há mensalidade): [ano 1, depois]. */
+  /** Contratos/mês para pagar fixo + marketing (sem assinaturas: não há cobrança recorrente): [ano 1, depois]. */
   empate: [number, number];
 }
 

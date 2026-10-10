@@ -153,7 +153,7 @@ export function ModeloFinanceiro({ pagina, leitura = false }: { pagina: "simulac
           <Kpi k="Receita por contrato" v={brl2(unit.receita)} hint={`taxa de serviço média ${brl2(taxaMediaPorContrato())}${parceirosContrato ? ` + parceiros ${brl2(parceirosContrato)} (potencial)` : " · parceiros desligados"}`} />
           <Kpi k="Custo variável por contrato" v={brl2(unit.custoVariavel)} hint={`ferramentas + ${pctImposto} de imposto${operador ? " + operador" : ""}`} />
           <Kpi k="Margem por contrato" v={brl2(unit.margem)} hint="receita − custo variável" />
-          <Kpi k="Contratos/mês para empatar" v={`${Math.ceil(unit.empate[0])} a ${Math.ceil(unit.empate[1])}`} hint="fixo + marketing; sem mensalidade nesta fase" />
+          <Kpi k="Contratos/mês para empatar" v={`${Math.ceil(unit.empate[0])} a ${Math.ceil(unit.empate[1])}`} hint="fixo + marketing; sem cobrança recorrente nesta fase" />
         </div>
 
         {/* Cenários simples: contratos por mês */}
@@ -399,7 +399,7 @@ export function ModeloFinanceiro({ pagina, leitura = false }: { pagina: "simulac
               <li>
                 <strong>Modelo único:</strong> taxa de serviço por contrato fechado (renovação conta como novo contrato), sobre o valor do 1º mês — média de {brl(ALUGUEL_MEDIO)}. Faixas por nº de imóveis do dono:{" "}
                 {FAIXAS_COMISSAO_PADRAO.map((f, i) => `${f.minImoveis}${f.maxImoveis === null ? "+" : f.maxImoveis === f.minImoveis ? "" : `–${f.maxImoveis}`} imóveis ${pctTexto(f.taxa)}${MIX_FAIXAS[i] ? ` (${Math.round(MIX_FAIXAS[i] * 100)}% dos contratos)` : ""}`).join(" · ")}
-                . Taxa média ponderada: <strong>{pctTexto(TAXA_MEDIA)}</strong>. Sem mensalidade nesta fase; assinatura é fase 2 (futuro), para donos com muitos imóveis, e não entra nestas contas.
+                . Taxa média ponderada: <strong>{pctTexto(TAXA_MEDIA)}</strong>. Sem cobrança recorrente nesta fase; assinatura é fase 2 (futuro), para donos com muitos imóveis, e não entra nestas contas.
               </li>
               <li>Contratos começam no mês {MES_PRIMEIRO_CONTRATO} e crescem em linha reta até o teto do cenário.</li>
               <li>

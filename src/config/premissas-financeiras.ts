@@ -22,7 +22,7 @@ export interface Item {
 // ── Receita por contrato ────────────────────────────────────────────────────
 /*
   Modelo único (Daniel, 10/10): taxa de serviço por contrato fechado (renovação = novo contrato), sobre o
-  valor do PRIMEIRO mês. Sem mensalidade nesta fase (assinatura = fase 2, futuro, para donos com muitos
+  valor do PRIMEIRO mês. Sem cobrança recorrente nesta fase (assinatura = fase 2, futuro, para donos com muitos
   imóveis, fora das projeções). Faixas em lib/cobranca/regra.ts (fonte única).
 */
 /** Valor médio do primeiro mês de um contrato (R$) — o mesmo ticket do Compare. */
