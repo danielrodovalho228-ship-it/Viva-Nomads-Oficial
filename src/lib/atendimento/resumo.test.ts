@@ -65,3 +65,12 @@ test("fatos oficiais chegam à Viva (chat, chamados, sugestão e resumo)", () =>
   assert.match(f, /nunca invente/);
   assert.match(SYSTEM_RESUMO, /SEM nome completo, e-mail, telefone, CPF/);
 });
+
+test("preço que a Viva informa é a regra única de 12%, sem planos nem faixas (ordem 3914d70c)", () => {
+  const f = fontes();
+  assert.match(f, /12% do primeiro aluguel de cada contrato e de cada renovação/);
+  assert.match(f, /Sem mensalidade/);
+  assert.doesNotMatch(f, /sem mensalidade, comissão|\/mês|até \d+ anúncio/);
+  assert.doesNotMatch(f, /Essencial: |Profissional: |Gestor: |Gratuito: /);
+  assert.doesNotMatch(f, /\b(10|8|6|4)% de um aluguel/);
+});
