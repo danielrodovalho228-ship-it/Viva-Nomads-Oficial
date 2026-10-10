@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   description:
     "Como excluir sua conta Viva Nomads e todos os seus dados — pelo app ou por este formulário, com confirmação por e-mail.",
   alternates: { canonical: "/excluir-conta" },
+  robots: { index: false, follow: true },
 };
 
 export default function ExcluirContaPage() {

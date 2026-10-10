@@ -46,7 +46,7 @@ export function Footer() {
 
         <FooterCol title="Conta">
           <FooterLink href="/auth">Entrar ou cadastrar</FooterLink>
-          <FooterLink href="/qualificar">Anunciar imóvel</FooterLink>
+          <FooterLink href="/qualificar">Anunciar imóvel (com login)</FooterLink>
           <FooterLink href="/dashboard">Meu painel</FooterLink>
           <FooterLink href="/termos">Termos de Uso</FooterLink>
           <FooterLink href="/privacidade">Privacidade</FooterLink>
