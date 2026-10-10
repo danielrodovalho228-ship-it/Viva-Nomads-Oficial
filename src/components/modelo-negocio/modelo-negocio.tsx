@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import styles from "./modelo-negocio.module.css";
 import { FAIXAS_COMISSAO_PADRAO, ehPlanoGestor, faixaPorImoveisAtivos, pctTexto, valorTaxa } from "@/lib/cobranca/regra";
+import { COMPARE_REFERENCIA, linhasPublicas } from "@/config/compare-precos";
 import { SUPORTE_EMAIL } from "@/lib/site";
 
 // ── REGRA ÚNICA (ordens bd296d53 e 2f80c58a; fonte: src/lib/cobranca/regra.ts) ──────────────
@@ -25,13 +26,12 @@ const CENARIOS: Cenario[] = [
   { nome: "Estúdio econômico", desc: "R$ 1.800 · 3 meses · 3×/ano", valorMes: 1800, meses: 3, contratos: 3 },
 ];
 
-// Quanto cada canal costuma ficar de cada mês, em média (valores de referência out/2026).
-const CANAIS = [
-  { nome: "QuintoAndar", pct: 0.126, nota: "contrato de 30 meses" },
-  { nome: "Imobiliária", pct: 0.13, nota: "contrato de 30 meses" },
-  { nome: "Airbnb", pct: 0.16, nota: "taxa do anfitrião" },
-  { nome: "Booking", pct: 0.18, nota: "taxa do anfitrião" },
-] as const;
+// Quanto cada canal costuma ficar de cada mês, em média: fonte única com fonte e data por linha
+// (config/compare-precos.ts, valores de referência out/2026). Só entra linha com percentual único.
+const CANAIS = linhasPublicas()
+  .filter((l) => ["quintoandar", "imobiliaria", "airbnb", "booking"].includes(l.id) && l.pct !== null)
+  .map((l) => ({ id: l.id, nome: l.nome, pct: l.pct as number }));
+const PCT_AIRBNB = CANAIS.find((c) => c.id === "airbnb")?.pct ?? 0;
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 const pct1 = (n: number) => `${(Math.round(n * 1000) / 10).toLocaleString("pt-BR")}%`;
@@ -153,11 +153,11 @@ export function ModeloNegocio() {
             </div>
             <div className={styles.compare}>
               <span>No Airbnb ficaria</span>
-              <span className={styles.amt}>{brl(calc.reservasAno * (1 - 0.16))}</span>
+              <span className={styles.amt}>{brl(calc.reservasAno * (1 - PCT_AIRBNB))}</span>
             </div>
             <p className={styles.note}>
               Em média a Viva fica com <b>{pct1(calc.pctMedioViva)}</b> de cada mês de uma reserva de {meses} {meses === 1 ? "mês" : "meses"},
-              contra 16% do Airbnb e 18% do Booking.
+              contra {pct1(PCT_AIRBNB)} do Airbnb.
             </p>
             <p className={styles.payback}>
               Cada contrato fechado gera uma taxa de <b>{brl(calc.taxaPorContrato)}</b> (primeiro mês × {pctTexto(calc.taxa)}).
@@ -222,10 +222,10 @@ export function ModeloNegocio() {
             <li>Faixas: <strong>{FAIXAS_COMISSAO_PADRAO.filter((f) => !f.gestor).map((f) => pctTexto(f.taxa)).join(" / ")}</strong> e Plano Gestor a partir de 31 imóveis.</li>
             <li>O inquilino não paga taxa da Viva. A Viva não emite nota fiscal ao inquilino.</li>
             <li>
-              Percentual médio dos canais (valores de referência out/2026): {CANAIS.map((c) => `${c.nome} ${pct1(c.pct)} (${c.nota})`).join("; ")}.
+              Percentual médio dos canais (valores de referência {COMPARE_REFERENCIA}): {CANAIS.map((c) => `${c.nome} ${pct1(c.pct)}`).join("; ")}; fontes e datas na página de preços.
               O percentual da Viva é a taxa dividida pelos meses da reserva.
             </li>
-            <li>O retorno líquido de anfitriões do Airbnb em Uberlândia fica em torno de 0,1–0,4% ao mês (Airbtics/GuestFavorites 2025–26); não prometemos retorno.</li>
+            <li>O retorno líquido de anfitriões do Airbnb em Uberlândia fica abaixo de 1% ao mês (Airbtics/GuestFavorites 2025–26); não prometemos retorno.</li>
           </ul>
           <span className={styles.ill}>Valores ilustrativos — não são projeção contábil.</span>
         </div>
