@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Check, Scale } from "lucide-react";
 import { COMPARE_ALUGUEL, COMPARE_CONTRATO, COMPARE_MESES, COMPARE_RODAPE, DIFERENCIAIS_VIVA, linhasPublicas, type LinhaCompare } from "@/config/compare-precos";
 import { reaisInteiros } from "@/config/planos";
+import { pctTexto } from "@/lib/cobranca/regra";
 
 /**
  * "Compare" — regra única de 12% × o que o mercado cobra. Números só de
@@ -14,6 +15,7 @@ function dataBR(iso: string): string {
 }
 
 const brl = (v: number) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const aprox = (p: number) => `≈ ${pctTexto(p)}`;
 
 function Fonte({ l }: { l: LinhaCompare }) {
   if (!l.fonte || !l.conferidoEm) return null;
@@ -46,15 +48,15 @@ export function ComparativoPrecos({ variante = "completo" }: { variante?: "compl
         </p>
         <div className="mt-3 grid grid-cols-1 gap-3 text-center sm:grid-cols-2">
           <div className="rounded-xl bg-sage-100 p-3">
-            <p className="text-xs text-muted">Viva Nomads (12% por contrato)</p>
-            <p className="font-title text-2xl font-bold text-forest">{brl(viva.valor ?? 0)}</p>
-            <p className="text-xs text-muted">uma vez por contrato</p>
+            <p className="text-xs text-muted">Viva Nomads (reserva de 3 meses)</p>
+            <p className="font-title text-2xl font-bold text-forest">{aprox(viva.pct ?? 0)}</p>
+            <p className="text-xs text-muted">do total, menor com mais imóveis</p>
           </div>
           {airbnb && (
             <div className="rounded-xl bg-surface-2 p-3">
               <p className="text-xs text-muted">Airbnb (taxa sobre o período)</p>
-              <p className="font-title text-2xl font-bold text-ink">{brl(airbnb.valor ?? 0)}</p>
-              <p className="text-xs text-muted">sobre todo o contrato</p>
+              <p className="font-title text-2xl font-bold text-ink">{aprox(airbnb.pct ?? 0)}</p>
+              <p className="text-xs text-muted">do total pago</p>
             </div>
           )}
         </div>
@@ -74,13 +76,13 @@ export function ComparativoPrecos({ variante = "completo" }: { variante?: "compl
         <Scale className="h-6 w-6 text-forest" aria-hidden /> Compare
       </h2>
       <p className="mt-1 text-sm text-muted">
-        Reserva de {COMPARE_MESES} meses a {reaisInteiros(COMPARE_ALUGUEL)} por mês ({reaisInteiros(COMPARE_CONTRATO)} no total).
+        Reserva de {COMPARE_MESES} meses a {reaisInteiros(COMPARE_ALUGUEL)} por mês ({reaisInteiros(COMPARE_CONTRATO)} no total). Os percentuais são sobre o total pago pelo morador, no formato típico de cada empresa.
       </p>
       <ul className="mt-5 grid gap-3 md:grid-cols-2">
         {linhas.map((l) => (
           <li key={l.id} className={l.id === "viva" ? "rounded-2xl border border-forest bg-sage-100 p-4 ring-1 ring-forest" : "rounded-2xl border border-line bg-surface-2 p-4"}>
             <p className="text-sm font-semibold text-ink">{l.nome}</p>
-            {l.valor !== null && <p className="mt-1 font-title text-2xl font-bold text-ink">{brl(l.valor)}</p>}
+            {l.pct !== null && <p className="mt-1 font-title text-2xl font-bold text-ink">{aprox(l.pct)}</p>}
             <p className="mt-1 text-sm text-muted">{l.regra}</p>
             <p className="mt-2 text-xs text-muted">Fonte: <Fonte l={l} /></p>
           </li>
@@ -105,7 +107,7 @@ export function LinhaComparativoAnuncio({ aluguel }: { aluguel: number }) {
   const valor = Math.round(aluguel * 12) / 100;
   return (
     <p className="rounded-lg bg-sage-100 px-3 py-2 text-xs text-ink" data-testid="linha-comparativo">
-      Neste valor mensal, você paga <strong>{brl(valor)} uma vez</strong> (12% do primeiro mês), só quando a reserva é fechada. Mesma regra para todos.{" "}
+      Neste valor mensal, a taxa é de <strong>{brl(valor)} uma vez</strong> (12% do primeiro mês para quem tem 1 ou 2 imóveis; menor com mais imóveis), só quando a reserva é fechada.{" "}
       <Link href="/precos" className="web-only font-medium text-forest underline">
         Ver preços
       </Link>

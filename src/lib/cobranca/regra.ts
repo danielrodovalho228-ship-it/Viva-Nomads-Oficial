@@ -1,27 +1,70 @@
 /*
-  REGRA ÚNICA DE COBRANÇA (decisão final do Daniel, 10/10 — ordens eaa5adce e 3914d70c).
-  12% sobre o PRIMEIRO aluguel de cada contrato novo e de cada renovação/extensão, igual para todos:
-  sem faixas por volume, sem desconto, sem planos, sem mensalidade. O inquilino não paga taxa da Viva.
-  Lógica PURA, sem banco. Os percentuais vêm da tabela de config (taxa_comissao / taxa_renovacao,
-  em %); na falta dela vale o padrão abaixo, que espelha a migração 0099.
-  A plataforma não toca no aluguel nem na caução: a taxa é cobrada à parte, do PROPRIETÁRIO.
+  COBRANÇA POR FAIXAS DE IMÓVEIS ATIVOS (decisão definitiva do Daniel, 10/10 — ordens aa916ba9 e f768b951,
+  que valem sobre eaa5adce, 12eea681 e 5faa3903).
+  A taxa vale POR CONTRATO FECHADO; a RENOVAÇÃO conta como novo contrato, com a mesma taxa da faixa do dono.
+  Base: valor do primeiro mês do contrato/renovação. Sem mensalidade. O inquilino não paga taxa da Viva.
+    1–2 imóveis = 12% · 3–5 = 10% · 6–15 = 8% · 16–30 = 6% · 31+ = "Plano Gestor — fale com a gente":
+  continua em 6% até o admin fixar uma condição negociada (override com motivo e validade).
+  Lógica PURA, sem banco. As faixas vêm da tabela de config (faixas_comissao); na falta dela vale o padrão
+  abaixo, que espelha a migração 0100. A plataforma não toca no aluguel nem na caução: a taxa é cobrada
+  à parte, do PROPRIETÁRIO.
 */
-
-export const TAXA_COMISSAO_PADRAO = 0.12; // config taxa_comissao=12
-export const TAXA_RENOVACAO_PADRAO = 0.12; // config taxa_renovacao=12
 
 export type TipoCobranca = "novo" | "renovacao";
 
-export interface TaxasConfig {
-  taxaComissao?: number; // 0..1
-  taxaRenovacao?: number; // 0..1
+export interface FaixaComissao {
+  minImoveis: number;
+  maxImoveis: number | null; // null = sem teto
+  taxa: number; // 0..1, sobre o valor do primeiro mês
+  /** Faixa "Plano Gestor": taxa automática é a da faixa; condição melhor só por fixação do admin. */
+  gestor?: boolean;
 }
+
+export const FAIXAS_COMISSAO_PADRAO: readonly FaixaComissao[] = [
+  { minImoveis: 1, maxImoveis: 2, taxa: 0.12 },
+  { minImoveis: 3, maxImoveis: 5, taxa: 0.1 },
+  { minImoveis: 6, maxImoveis: 15, taxa: 0.08 },
+  { minImoveis: 16, maxImoveis: 30, taxa: 0.06 },
+  { minImoveis: 31, maxImoveis: null, taxa: 0.06, gestor: true },
+];
+
+export const TAXA_COMISSAO_PADRAO = FAIXAS_COMISSAO_PADRAO[0].taxa; // 1–2 imóveis
+export const DIAS_PARA_NOVA_TAXA_APOS_QUEDA = 30;
+const DIA_MS = 86_400_000;
 
 /** Config guarda inteiros em % ("12"); devolve fração 0..1 ou o padrão se o valor for inválido. */
 export function taxaDeConfig(valor: string | number | null | undefined, padrao: number): number {
   if (valor === null || valor === undefined || valor === "") return padrao;
   const n = Number(valor);
   return Number.isFinite(n) && n >= 0 && n <= 100 ? n / 100 : padrao;
+}
+
+function indiceFaixa(faixas: readonly FaixaComissao[], n: number): number {
+  const q = Number.isFinite(n) ? Math.max(1, Math.floor(n)) : 1;
+  const i = faixas.findIndex((f) => q >= f.minImoveis && (f.maxImoveis === null || q <= f.maxImoveis));
+  return i === -1 ? faixas.length - 1 : i;
+}
+
+/** Faixa pela quantidade de imóveis ATIVOS (publicado e aprovado; rascunho não conta). */
+export function faixaPorImoveisAtivos(n: number, faixas: readonly FaixaComissao[] = FAIXAS_COMISSAO_PADRAO): FaixaComissao {
+  return faixas[indiceFaixa(faixas, n)];
+}
+
+/** Próxima faixa e quantos imóveis faltam ("Ative mais 1 imóvel e sua taxa cai para 10%"). Na faixa Gestor não há próxima. */
+export function proximaFaixa(
+  n: number,
+  faixas: readonly FaixaComissao[] = FAIXAS_COMISSAO_PADRAO,
+): { faltam: number; taxa: number } | null {
+  const i = indiceFaixa(faixas, n);
+  const prox = faixas[i + 1];
+  if (!prox) return null;
+  const atuais = Math.max(1, Math.floor(Number.isFinite(n) ? n : 1));
+  return { faltam: prox.minImoveis - atuais, taxa: prox.taxa };
+}
+
+/** 31+ imóveis: o painel e a página de preços mostram "Falar sobre o Plano Gestor" em vez de taxa menor. */
+export function ehPlanoGestor(n: number, faixas: readonly FaixaComissao[] = FAIXAS_COMISSAO_PADRAO): boolean {
+  return faixaPorImoveisAtivos(n, faixas).gestor === true;
 }
 
 /** Valor em reais com centavos (4.320 × 12% = 518,40). Entrada inválida = 0. */
@@ -51,39 +94,37 @@ export function fixacaoAdminValida(f: TaxaFixadaAdmin | null | undefined, em: Da
 
 export interface TaxaAplicada {
   taxa: number;
-  origem: "regra_unica" | "admin";
+  origem: "admin" | "faixa" | "faixa_com_queda_recente";
   tipo: TipoCobranca;
+  faixaNoFechamento: FaixaComissao;
 }
 
 /**
- * Taxa congelada na assinatura do contrato (tipo "novo") ou do aditivo (tipo "renovacao").
- * Não depende de quantos imóveis o dono tem: 1 ou 100, a taxa é a mesma. Só o admin pode
- * fixar outra taxa, e só com motivo e validade.
+ * Taxa congelada na assinatura do contrato (tipo "novo") ou do aditivo (tipo "renovacao", que conta como
+ * novo contrato: mesma taxa da faixa). Sobe de faixa na hora; ao cair de faixa, a taxa anterior vale por mais
+ * 30 dias. Só o admin pode fixar outra taxa, e só com motivo e validade.
  */
 export function taxaNaAssinatura(e: {
   tipo: TipoCobranca;
+  imoveisAtivos: number;
   assinadoEm: Date;
-  config?: TaxasConfig;
+  faixas?: readonly FaixaComissao[];
+  queda?: { taxaAnterior: number; em: Date } | null;
   fixadaPeloAdmin?: TaxaFixadaAdmin | null;
 }): TaxaAplicada {
+  const faixa = faixaPorImoveisAtivos(e.imoveisAtivos, e.faixas ?? FAIXAS_COMISSAO_PADRAO);
   if (fixacaoAdminValida(e.fixadaPeloAdmin, e.assinadoEm)) {
-    return { taxa: e.fixadaPeloAdmin.taxa, origem: "admin", tipo: e.tipo };
+    return { taxa: e.fixadaPeloAdmin.taxa, origem: "admin", tipo: e.tipo, faixaNoFechamento: faixa };
   }
-  const taxa =
-    e.tipo === "renovacao"
-      ? (e.config?.taxaRenovacao ?? TAXA_RENOVACAO_PADRAO)
-      : (e.config?.taxaComissao ?? TAXA_COMISSAO_PADRAO);
-  return { taxa, origem: "regra_unica", tipo: e.tipo };
+  const q = e.queda;
+  if (q && q.taxaAnterior < faixa.taxa && e.assinadoEm.getTime() < q.em.getTime() + DIAS_PARA_NOVA_TAXA_APOS_QUEDA * DIA_MS) {
+    return { taxa: q.taxaAnterior, origem: "faixa_com_queda_recente", tipo: e.tipo, faixaNoFechamento: faixa };
+  }
+  return { taxa: faixa.taxa, origem: "faixa", tipo: e.tipo, faixaNoFechamento: faixa };
 }
 
 /** Valor exato a mostrar no painel do dono ANTES de aceitar o contrato/renovação. */
-export function cobrancaParaAceite(e: {
-  tipo: TipoCobranca;
-  aluguelMensal: number;
-  assinadoEm: Date;
-  config?: TaxasConfig;
-  fixadaPeloAdmin?: TaxaFixadaAdmin | null;
-}): TaxaAplicada & { valor: number } {
+export function cobrancaParaAceite(e: Parameters<typeof taxaNaAssinatura>[0] & { aluguelMensal: number }): TaxaAplicada & { valor: number } {
   const t = taxaNaAssinatura(e);
   return { ...t, valor: valorTaxa(e.aluguelMensal, t.taxa) };
 }
@@ -98,6 +139,7 @@ export function pctTexto(taxa: number): string {
  * não aparece "aluguel", "comissão" etc. sobre a cobrança; o detalhe ("12% do valor do primeiro
  * mês") fica só no painel do proprietário, antes de aceitar, e nos termos.
  */
-export const TEXTO_REGRA_UNICA = "Anunciar é grátis. A Viva cobra 12% por contrato fechado. Sem mensalidade.";
+export const TEXTO_REGRA_UNICA =
+  "Anunciar é grátis. A Viva cobra 12% por contrato fechado. Quanto mais imóveis, menor a taxa (até 4%). Sem mensalidade.";
 
 export const TEXTO_REGRA_CURTO = TEXTO_REGRA_UNICA;
