@@ -83,7 +83,9 @@ export const COR_FLUXO: Record<TipoFluxo, string> = { achados: "#38BDF8", penden
 
 /** Documentos e pessoas que não são linhas da tabela agentes. */
 const NOS_FIXOS: NoRede[] = [
-  { id: "daniel", rotulo: "Daniel", pos: [0.5, 0.08], posEstreito: [0.5, 0.04] },
+  { id: "daniel", rotulo: "Daniel", pos: [0.43, 0.08], posEstreito: [0.38, 0.04] },
+  // Dono ao lado do Daniel (ordem 2f80c58a). Sem permissão de admin no código: o Moacir promove no banco.
+  { id: "rogerio", rotulo: "Rogério", pos: [0.57, 0.08], posEstreito: [0.62, 0.04] },
   { id: "fila", rotulo: "Fila de correções", doc: true, pos: [0.2, 0.62], posEstreito: [0.2, 0.62] },
   { id: "pendencias", rotulo: "Pendências", doc: true, pos: [0.78, 0.5], posEstreito: [0.8, 0.6] },
   // Rede ao vivo real: chamados chegam do site; PRs e deploys vêm do GitHub.
@@ -125,7 +127,11 @@ export const FLUXOS: [string, string, TipoFluxo][] = [
   ["rafael", "moacir", "relatorio"],
   ["carla", "daniel", "relatorio"],
   ["moacir", "daniel", "relatorio"],
+  ["moacir", "rogerio", "relatorio"],
 ];
+
+/** Donos da Viva (nós de pessoa, não agentes): mesmo estilo, sem cor de ronda nem pulso. */
+export const DONOS_REDE: readonly string[] = ["daniel", "rogerio"];
 
 /** Nós da rede: os fixos + os agentes ATIVOS que existem no banco e têm posição. */
 export function nosDaRede(agentes: Pick<Agente, "slug" | "nome" | "status">[]): NoRede[] {

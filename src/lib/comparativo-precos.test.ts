@@ -162,15 +162,12 @@ test("gráfico 'Custo por imóvel no ano': Airbnb = 16% × aluguel × meses × l
   assert.equal(serieCustoPorImovel(1000, 2, 1).empateEssencialPro, null);
 });
 
-test("/modelodenegocio e /precos usam o mesmo cálculo e o mesmo gráfico", () => {
+test("/modelodenegocio usa a regra única de faixas (sem planos legados); /precos não usa o gráfico por plano", () => {
   const ler = (p: string) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
   const modelo = ler("components/modelo-negocio/modelo-negocio.tsx");
-  assert.match(modelo, /custoAnualPorPlano\(imoveis, locacoes \* imoveis, aluguel\)/);
-  assert.match(modelo, /<GraficoCustoPorImovel /);
-  assert.match(modelo, /Mais barato para você/);
-  assert.match(modelo, /Quantos imóveis você tem\?" value=\{imoveis\} min=\{1\} max=\{30\}/);
-  assert.doesNotMatch(modelo, /GESTOR_ASSINATURA_ANUAL_ESTIMADA/);
-  // /precos agora mostra a regra única + "Compare" (config/compare-precos.ts); só o /modelodenegocio legado usa o gráfico.
+  assert.match(modelo, /faixaPorImoveisAtivos\(imoveis\)/);
+  assert.match(modelo, /FAIXAS_COMISSAO_PADRAO/);
+  assert.doesNotMatch(modelo, /custoAnualPorPlano|GraficoCustoPorImovel|@\/config\/planos/);
   const precos = ler("components/precos/comparativo-precos.tsx");
   assert.doesNotMatch(precos, /custoAnualPorPlano|GraficoCustoPorImovel/);
 });

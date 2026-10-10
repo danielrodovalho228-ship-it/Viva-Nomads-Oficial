@@ -407,18 +407,29 @@ function Equipe({ dados, agora, onConversar }: { dados: DadosCentral; agora: Dat
 
   return (
     <div>
-      <Rotulo>Dono</Rotulo>
-      {/* Não é agente (não está em public.agentes): sem status, rondas nem botões. */}
-      <article className="grid grid-cols-[72px_1fr] items-center gap-4 rounded-xl border border-[#7FD321]/50 bg-gradient-to-b from-[#0D1838] to-[#0D1838]/70 p-4" data-testid="agente-daniel">
-        <AvatarAgente slug="daniel" nome="Daniel Rodovalho" cor="#7FD321" anel="#7FD321" tamanho={72} />
-        <div className="min-w-0">
-          <h3 className="flex flex-wrap items-center gap-2 text-lg font-bold text-white">
-            Daniel Rodovalho <Chip cor="#7FD321">Dono</Chip>
-          </h3>
-          <p className="text-[13px] text-[#8C9AC4]">Fundador · aprova, decide e assina</p>
-          <p className="mt-2 text-[13px] text-[#C3CDEB]">Tudo que muda o site, o banco, publica ou manda mensagem passa por você. Os agentes preparam; você aprova.</p>
-        </div>
-      </article>
+      <Rotulo>Donos</Rotulo>
+      {/* Não são agentes (não estão em public.agentes): sem status, rondas nem botões. */}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <article className="grid grid-cols-[72px_1fr] items-center gap-4 rounded-xl border border-[#7FD321]/50 bg-gradient-to-b from-[#0D1838] to-[#0D1838]/70 p-4" data-testid="agente-daniel">
+          <AvatarAgente slug="daniel" nome="Daniel Rodovalho" cor="#7FD321" anel="#7FD321" tamanho={72} />
+          <div className="min-w-0">
+            <h3 className="flex flex-wrap items-center gap-2 text-lg font-bold text-white">
+              Daniel Rodovalho <Chip cor="#7FD321">Dono</Chip>
+            </h3>
+            <p className="text-[13px] text-[#8C9AC4]">Fundador · aprova, decide e assina</p>
+            <p className="mt-2 text-[13px] text-[#C3CDEB]">Tudo que muda o site, o banco, publica ou manda mensagem passa pelos donos. Os agentes preparam; os donos aprovam.</p>
+          </div>
+        </article>
+        <article className="grid grid-cols-[72px_1fr] items-center gap-4 rounded-xl border border-[#7FD321]/50 bg-gradient-to-b from-[#0D1838] to-[#0D1838]/70 p-4" data-testid="agente-rogerio">
+          <AvatarAgente slug="rogerio" nome="Rogério" cor="#7FD321" anel="#7FD321" tamanho={72} />
+          <div className="min-w-0">
+            <h3 className="flex flex-wrap items-center gap-2 text-lg font-bold text-white">
+              Rogério <Chip cor="#7FD321">Dono</Chip>
+            </h3>
+            <p className="text-[13px] text-[#8C9AC4]">Sócio · aprova e decide junto</p>
+          </div>
+        </article>
+      </div>
 
       <Rotulo>Comando</Rotulo>
       <div className="grid gap-3 lg:grid-cols-2">

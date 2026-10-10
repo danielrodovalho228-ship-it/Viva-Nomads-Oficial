@@ -16,7 +16,7 @@ const RAZOES = [
   "Protege contra a concorrência “só assinatura”: o plano Gestor com comissão 0% já é a resposta a quem tentar competir por preço.",
 ];
 
-const SOCIOS = ["Daniel", "Rômulo", "Danilo"];
+const SOCIOS = ["Daniel", "Rômulo", "Danilo", "Rogério"];
 
 export function Decisao() {
   return (

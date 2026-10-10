@@ -1,7 +1,7 @@
 import styles from "./socios.module.css";
 
 interface Partner {
-  variant: "tech" | "fin" | "sales";
+  variant: "tech" | "fin" | "sales" | "owner";
   inicial: string;
   nome: string;
   papel: string;
@@ -48,6 +48,13 @@ const SOCIOS: Partner[] = [
       "Parcerias comerciais locais",
     ],
   },
+  {
+    variant: "owner",
+    inicial: "RO",
+    nome: "Rogério",
+    papel: "Sócio · Dono",
+    itens: ["Área a definir", "Aprova e decide junto com o Daniel"],
+  },
 ];
 
 const COMPARTILHADAS: { t: string; d: string }[] = [
@@ -66,8 +73,7 @@ export function Socios() {
           Viva<span>Nomads</span> — Quem faz o quê
         </h1>
         <p>
-          Três frentes, três responsáveis. Cada sócio lidera a área que domina, e as decisões grandes
-          são tomadas juntos.
+          Cada sócio lidera a área que domina, e as decisões grandes são tomadas juntos.
         </p>
       </div>
 
