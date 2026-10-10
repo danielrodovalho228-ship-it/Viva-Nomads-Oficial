@@ -59,3 +59,47 @@ export function textoLivreAprova(pendentes: number): "pedir_confirmacao" | "most
 export function valeComoOkDoDaniel(a: Aprovacao, agora: Date): boolean {
   return a.status === "aprovada" && a.expiraEm.getTime() > agora.getTime();
 }
+
+/** O que o chat mostra de um pedido pendente (sem dado pessoal: só texto de trabalho). */
+export interface CartaoAprovacao {
+  id: string;
+  tipo: TipoAprovacao;
+  referencia: string;
+  resumo: string;
+  risco: "baixo" | "medio" | "alto";
+  expiraEm: string;
+}
+
+/**
+ * Resposta do chat a "ok/aprovo" (ordem 41ae4fc5, item 2): texto livre NUNCA aprova.
+ * Com 1 cartão pendente aponta para o botão Aprovar → Confirmar; com vários, pede para escolher o cartão.
+ * `null` = o chat não conseguiu ler os pedidos.
+ */
+export function respostaAprovacaoNoChat(pendentes: CartaoAprovacao[] | null): string {
+  const regra = "Daqui do chat eu não aprovo por texto.";
+  if (pendentes === null) return `${regra} A aprovação vale pelos cartões com Aprovar e Recusar (pedem confirmação e login recente).`;
+  const q = textoLivreAprova(pendentes.length);
+  if (q === "nada_pendente") return `${regra} Não há pedido esperando seu OK agora; quando houver, aparece um cartão com Aprovar e Recusar.`;
+  if (q === "pedir_confirmacao") return `Aprovar ${pendentes[0].referencia}? Toque em Aprovar no cartão e depois em Confirmar. ${regra}`;
+  return `Há ${pendentes.length} pedidos esperando seu OK. ${regra} Escolha o cartão certo e toque em Aprovar.`;
+}
+
+/** Frase para o resultado da mescla depois de aprovar um PR. */
+export function rotuloMescla(m: string | undefined): string {
+  switch (m) {
+    case "mesclado":
+      return "Aprovado e mesclado.";
+    case "aguardando_token":
+      return "Aprovado. Aguardando a mescla (sem token configurado).";
+    case "pr_mudou":
+      return "Aprovado, mas o PR mudou depois do pedido: não mesclei.";
+    case "pr_nao_pronto":
+      return "Aprovado, mas o PR ainda não está pronto (checks, conflito ou fechado): não mesclei.";
+    case "sem_revisao_moacir":
+      return "Aprovado, mas o Moacir ainda não revisou este commit: não mesclei.";
+    case "falhou":
+      return "Aprovado, mas a mescla falhou. Tente pelo GitHub.";
+    default:
+      return "Registrado.";
+  }
+}

@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { moacirAprovouNoTexto, type DepsDecidir, type LinhaAprovacao, type PrParaMesclar } from "@/lib/agentes/decidir-aprovacao";
-import type { StatusAprovacao, TipoAprovacao } from "@/lib/agentes/aprovacoes";
+import type { CartaoAprovacao, StatusAprovacao, TipoAprovacao } from "@/lib/agentes/aprovacoes";
 
 /**
  * Dependências REAIS da decisão de aprovações. A sessão (cookie) decide QUEM é admin;
@@ -80,4 +80,22 @@ export async function depsDecidirReais(): Promise<DepsDecidir> {
     },
     merge: token ? mesclaReal(token, revisoes) : undefined,
   };
+}
+
+/**
+ * Pedidos pendentes e dentro do prazo, para os cartões do chat. Usa a SESSÃO (a RLS "admin lê" decide);
+ * quem não é admin recebe lista vazia, sem erro que revele a tabela.
+ */
+export async function listarPendentesAdmin(sessao: NonNullable<Awaited<ReturnType<typeof createClient>>>): Promise<CartaoAprovacao[]> {
+  const { data } = await sessao
+    .from("aprovacoes")
+    .select("id, tipo, referencia, resumo, risco, expira_em")
+    .eq("status", "pendente")
+    .gt("expira_em", new Date().toISOString())
+    .order("criado_em", { ascending: false })
+    .limit(20);
+  return (data ?? []).map((d) => {
+    const r = d as { id: string; tipo: TipoAprovacao; referencia: string; resumo: string; risco: CartaoAprovacao["risco"]; expira_em: string };
+    return { id: r.id, tipo: r.tipo, referencia: r.referencia, resumo: r.resumo, risco: r.risco, expiraEm: r.expira_em };
+  });
 }

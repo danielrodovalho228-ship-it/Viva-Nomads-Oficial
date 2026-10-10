@@ -14,6 +14,7 @@ import { ultimaPorAgente } from "@/lib/agentes/painel";
 import { consultasDaArea, numeroMigracao, type Conferencia, type MigracaoAplicada } from "@/lib/agentes/ao-vivo";
 import { chamadosEsperandoEquipe } from "@/lib/atendimento/escalonamento";
 import { systemChat } from "@/lib/agentes/central";
+import { listarPendentesAdmin } from "@/lib/agentes/aprovacoes-servidor";
 import { MAX_MEMORIAS_POR_AGENTE, personaPermitida, type Memoria } from "@/lib/agentes/persona";
 import type { Retrato } from "@/lib/agentes/retrato";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -44,6 +45,7 @@ export async function depsReais(): Promise<Deps | null> {
         .gte("criado_em", inicioDoDiaBrasilia(new Date()).toISOString());
       return count ?? 0;
     },
+    aprovacoesPendentes: () => listarPendentesAdmin(supabase),
     async agentes() {
       const { data } = await supabase.from("agentes").select("slug, nome, cargo, esquadrao, rotina_texto, trigger_id, status, briefing, ordem").order("ordem");
       return (data ?? []) as Agente[];

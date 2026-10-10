@@ -16,7 +16,6 @@ import {
   NOTA_CEO,
   pedeAcao,
   pedeAprovacao,
-  RESPOSTA_APROVACAO,
   prometeAcao,
   respostaSessaoReal,
   textoDisparo,
@@ -33,6 +32,7 @@ import {
   type Reuniao,
   type Ronda,
 } from "./central.ts";
+import { respostaAprovacaoNoChat, type CartaoAprovacao } from "./aprovacoes.ts";
 import { retratoEmTexto, type Retrato } from "./retrato.ts";
 import { CONTEXTO_VIVA, SLUG_GERENTE } from "./central.ts";
 import { investigar, semRepeticao, systemGerente, type DepsGerente, type ModeloGerente } from "./gerente.ts";
@@ -62,6 +62,8 @@ export interface Deps {
    * agora sobre migrações e chamados, para conferir a última ronda. null = falhou.
    */
   aoVivo?(slug: string): Promise<{ dados: string; conferencia: Conferencia } | null>;
+  /** Pedidos de aprovação pendentes e dentro do prazo (cartões do chat). Sem ele, o chat só explica a regra. */
+  aprovacoesPendentes?(): Promise<CartaoAprovacao[]>;
   /** Laboratório (sem IA): resposta montada pelas regras, sem chamar o modelo. */
   chatSimulado?: boolean;
   /** Persona do agente (0092). null = vazia ou coluna ainda não existe. */
@@ -117,9 +119,11 @@ export async function responderChat(d: Deps, entrada: unknown): Promise<Resposta
 
   // "ok", "tudo aprovado"…: o chat NÃO aprova migração nem merge (vale para todos, Moacir incluído).
   if (pedeAprovacao(pergunta)) {
+    const cartoes = d.aprovacoesPendentes ? await d.aprovacoesPendentes().catch(() => null) : null;
+    const resposta = respostaAprovacaoNoChat(cartoes);
     await d.gravar([{ agente_slug: slug, papel: "daniel", autor_slug: null, texto: pergunta }]);
-    await d.gravar([{ agente_slug: slug, papel: "agente", autor_slug: slug, texto: RESPOSTA_APROVACAO }]);
-    return { status: 200, body: { resposta: RESPOSTA_APROVACAO, aprovacao: false } };
+    await d.gravar([{ agente_slug: slug, papel: "agente", autor_slug: slug, texto: resposta }]);
+    return { status: 200, body: { resposta, aprovacao: false } };
   }
 
   // Persona e memória (0092): falha ao ler nunca derruba a conversa.
