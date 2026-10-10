@@ -4,22 +4,21 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Printer } from "lucide-react";
 import styles from "./financeiro.module.css";
-import { PLANOS } from "@/config/planos";
+import { FAIXAS_COMISSAO_PADRAO, pctTexto } from "@/lib/cobranca/regra";
 import {
   ALUGUEL_MEDIO,
-  ASSINATURA,
+  MIX_FAIXAS,
+  TAXA_MEDIA,
   CENARIOS,
   CUSTO_FIXO_FAIXA,
   CUSTOS_FIXOS,
   CUSTOS_POR_CONTRATO,
   DOLAR,
-  FUNDADORES,
   IMPOSTO_OPCOES,
   IMPOSTO_SOBRE_RECEITA,
   IMPOSTO_TEXTO,
   INVESTIMENTO_INICIAL,
   MES_PRIMEIRO_CONTRATO,
-  MIX_PLANOS,
   OPERADOR_OPCOES,
   PARCEIROS,
   REFERENCIA,
@@ -31,7 +30,7 @@ import {
   type CenarioId,
   type Item,
 } from "@/config/premissas-financeiras";
-import { CUSTO_FIXO_PADRAO, comissaoMediaPorContrato, parceirosPorContrato, porContrato, projetar, visaoInvestidor, type Projecao } from "@/lib/financeiro/projecao";
+import { CUSTO_FIXO_PADRAO, cenariosContratosMes, parceirosPorContrato, taxaMediaPorContrato, porContrato, projetar, visaoInvestidor, type Projecao } from "@/lib/financeiro/projecao";
 
 /**
  * Modelo financeiro da empresa — /simulacao e /roi (documentos internos dos
@@ -82,6 +81,8 @@ export function ModeloFinanceiro({ pagina, leitura = false }: { pagina: "simulac
   const proj = useMemo(() => projetar(cenario, op), [cenario, op]);
   const todos = useMemo(() => Object.fromEntries(ORDEM.map((id) => [id, projetar(id, op)])) as Record<CenarioId, Projecao>, [op]);
   const unit = useMemo(() => porContrato(op), [op]);
+  const cenariosMes = useMemo(() => cenariosContratosMes(op), [op]);
+  const equilibrioFixo = unit.margem > 0 ? Math.ceil(custoFixo / unit.margem) : null;
   const t = TEXTO[pagina];
 
   return (
@@ -149,10 +150,42 @@ export function ModeloFinanceiro({ pagina, leitura = false }: { pagina: "simulac
 
         {/* Por contrato */}
         <div className={styles.kpibar} data-testid="kpis-contrato">
-          <Kpi k="Receita por contrato" v={brl2(unit.receita)} hint={`comissão média ${brl2(comissaoMediaPorContrato())}${parceirosContrato ? ` + parceiros ${brl2(parceirosContrato)} (potencial)` : " · parceiros desligados"}`} />
+          <Kpi k="Receita por contrato" v={brl2(unit.receita)} hint={`taxa de serviço média ${brl2(taxaMediaPorContrato())}${parceirosContrato ? ` + parceiros ${brl2(parceirosContrato)} (potencial)` : " · parceiros desligados"}`} />
           <Kpi k="Custo variável por contrato" v={brl2(unit.custoVariavel)} hint={`ferramentas + ${pctImposto} de imposto${operador ? " + operador" : ""}`} />
           <Kpi k="Margem por contrato" v={brl2(unit.margem)} hint="receita − custo variável" />
-          <Kpi k="Contratos/mês para empatar" v={`${Math.ceil(unit.empate[0])} a ${Math.ceil(unit.empate[1])}`} hint="fixo + marketing, sem contar assinaturas" />
+          <Kpi k="Contratos/mês para empatar" v={`${Math.ceil(unit.empate[0])} a ${Math.ceil(unit.empate[1])}`} hint="fixo + marketing; sem cobrança recorrente nesta fase" />
+        </div>
+
+        {/* Cenários simples: contratos por mês */}
+        <div className={styles.card} data-testid="cenarios-contratos">
+          <h2>Quanto entra por mês</h2>
+          <p className={styles.cardHelp}>
+            Receita bruta da taxa de serviço = contratos fechados no mês × {brl(ALUGUEL_MEDIO)} (valor médio do 1º mês) × {pctTexto(TAXA_MEDIA)} (taxa média pelas faixas). Resultado = depois de ferramentas, imposto e custo fixo de{" "}
+            {brl(custoFixo)}.
+          </p>
+          <div className={styles.tblWrap}>
+            <table className={styles.tbl}>
+              <thead>
+                <tr>
+                  <th>Contratos/mês</th>
+                  <th>Receita bruta</th>
+                  <th>Resultado do mês</th>
+                </tr>
+              </thead>
+              <tbody>
+                {cenariosMes.map((c) => (
+                  <tr key={c.contratos}>
+                    <td>{c.contratos}</td>
+                    <td>{brl(c.receita)}</td>
+                    <td className={c.resultado >= 0 ? styles.pos : styles.neg}>{brl(c.resultado)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className={styles.cardHelp} data-testid="equilibrio-fixo">
+            Ponto de equilíbrio com o custo fixo atual: <strong>{equilibrioFixo === null ? "—" : `${equilibrioFixo} contratos por mês`}</strong>.
+          </p>
         </div>
 
         {/* Resultado do cenário */}
@@ -364,28 +397,17 @@ export function ModeloFinanceiro({ pagina, leitura = false }: { pagina: "simulac
           <div className={styles.body}>
             <ul>
               <li>
-                Aluguel médio de {brl(ALUGUEL_MEDIO)}. Comissão pelo mix de planos dos donos:{" "}
-                {PLANOS.filter((p) => MIX_PLANOS[p.id] > 0)
-                  .map((p) => `${Math.round(MIX_PLANOS[p.id] * 100)}% ${p.nome} (${Math.round(p.comissao * 100)}%)`)
-                  .join(", ")}{" "}
-                — de config/planos.ts.
-              </li>
-              <li>
-                <strong>Fundadores:</strong> os {FUNDADORES.quantidade} primeiros donos ficam {FUNDADORES.meses} meses no Profissional sem assinatura (comissão de{" "}
-                {Math.round(FUNDADORES.comissao * 100)}%). A parte dos contratos que vem deles = Fundadores nesse período ÷ todos os donos. Depois dos {FUNDADORES.meses} meses, assinam na mesma
-                proporção dos outros.
-              </li>
-              <li>
-                <strong>Assinaturas:</strong> donos novos entram desde o mês 1; a fração do cenário assina (média {brl(ASSINATURA.mediaPagantes)}/mês), com churn de{" "}
-                {Math.round(ASSINATURA.churnMensal * 100)}% ao mês.
+                <strong>Modelo único:</strong> taxa de serviço por contrato fechado (renovação conta como novo contrato), sobre o valor do 1º mês — média de {brl(ALUGUEL_MEDIO)}. Faixas por nº de imóveis do dono:{" "}
+                {FAIXAS_COMISSAO_PADRAO.map((f, i) => `${f.minImoveis}${f.maxImoveis === null ? "+" : f.maxImoveis === f.minImoveis ? "" : `–${f.maxImoveis}`} imóveis ${pctTexto(f.taxa)}${MIX_FAIXAS[i] ? ` (${Math.round(MIX_FAIXAS[i] * 100)}% dos contratos)` : ""}`).join(" · ")}
+                . Taxa média ponderada: <strong>{pctTexto(TAXA_MEDIA)}</strong>. Sem cobrança recorrente nesta fase; assinatura é fase 2 (futuro), para donos com muitos imóveis, e não entra nestas contas.
               </li>
               <li>Contratos começam no mês {MES_PRIMEIRO_CONTRATO} e crescem em linha reta até o teto do cenário.</li>
               <li>
-                <strong>Receita base</strong> = comissão + assinaturas. <strong>Parceiros</strong> só entram quando ligados: contratos do mês × adesão × unidades × valor (seguros: % do prêmio como representante, de{" "}
+                <strong>Receita base</strong> = taxa de serviço por contrato. <strong>Parceiros</strong> só entram quando ligados: contratos do mês × adesão × unidades × valor (seguros: % do prêmio como representante, de{" "}
                 {pct(REPRESENTANTE_SEGUROS.min)} a {pct(REPRESENTANTE_SEGUROS.max)}). {SELO_POTENCIAL}.
               </li>
               <li>
-                <strong>Imposto da Viva:</strong> {pctImposto} sobre toda a receita (assinatura, comissão, parceiros), {IMPOSTO_TEXTO}.
+                <strong>Imposto da Viva:</strong> {pctImposto} sobre toda a receita (taxa de serviço e parceiros), {IMPOSTO_TEXTO}.
               </li>
               <li>
                 <strong>Custo fixo:</strong> {brl(CUSTO_FIXO_PADRAO)}/mês por padrão ({CUSTO_FIXO_FAIXA.texto}).

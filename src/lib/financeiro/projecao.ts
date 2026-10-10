@@ -3,34 +3,28 @@
   as premissas de config/premissas-financeiras.ts. node --test, sem alias "@".
 
   Como calculamos (o mesmo texto aparece na página):
+  • Modelo único: taxa de serviço por contrato fechado (renovação = novo contrato),
+    sobre o valor do 1º mês. Receita = contratos/mês × valor médio do 1º mês ×
+    taxa média ponderada pelas faixas. Sem cobrança recorrente nem churn de assinatura.
   • Contratos começam no mês 4 e crescem em linha reta até o teto do cenário.
-  • Donos novos entram todo mês desde o mês 1. Os 20 primeiros são Fundadores:
-    12 meses no Profissional sem assinatura (comissão do Profissional). A parte
-    dos contratos que vem deles = Fundadores no período de 12 meses ÷ todos os
-    donos. Depois dos 12 meses, assinam na mesma proporção dos outros.
-  • Dos donos novos (não Fundadores), a fração do cenário assina um plano pago
-    (média R$ 55/mês), com churn de 3% ao mês.
-  • Receita BASE = comissão + assinaturas. Parceiros (seguros como
-    representante, serviços) só entram quando ligados, a partir do mês de
-    início de cada um: contratos × receita do parceiro por contrato.
+  • Parceiros (seguros como representante, serviços) só entram quando ligados,
+    a partir do mês de início de cada um: contratos × receita do parceiro.
   • Custo variável por contrato + imposto sobre a receita (6% ou 15,5%); custo fixo
     + marketing por mês; investimento único no mês 0.
 */
 import {
   ALUGUEL_MEDIO,
-  ASSINATURA,
   CENARIOS,
-  COMISSAO,
+  CONTRATOS_MES_CENARIOS,
   CUSTOS_FIXOS,
   CUSTOS_POR_CONTRATO,
-  FUNDADORES,
   HORIZONTE_MESES,
   IMPOSTO_SOBRE_RECEITA,
   INVESTIMENTO_INICIAL,
   MES_PRIMEIRO_CONTRATO,
-  MIX_PLANOS,
   OPERADOR_OPCOES,
   PARCEIROS,
+  TAXA_MEDIA,
   REPRESENTANTE_SEGUROS,
   marketingDoMes,
   receitaParceiroPorContrato,
@@ -54,10 +48,9 @@ export interface Mes {
   m: number;
   contratos: number;
   donos: number;
-  assinantes: number;
-  receitaComissao: number;
-  receitaAssinatura: number;
-  /** Comissão + assinaturas. */
+  /** Taxa de serviço por contrato fechado. */
+  receitaTaxa: number;
+  /** Receita base (= taxa de serviço). */
   receitaBase: number;
   /** Parceiros ligados (potencial). */
   receitaParceiros: number;
@@ -94,15 +87,28 @@ export interface Projecao {
 export const CUSTO_FIXO_PADRAO = CUSTOS_FIXOS.reduce((s, c) => s + c.valor, 0);
 export const CUSTO_FERRAMENTAS_POR_CONTRATO = CUSTOS_POR_CONTRATO.reduce((s, c) => s + c.valor, 0);
 
-/** Comissão média por contrato (R$) pelo mix de planos dos donos comuns. */
-export function comissaoMediaPorContrato(aluguel = ALUGUEL_MEDIO): number {
-  let soma = 0;
-  let peso = 0;
-  for (const [id, w] of Object.entries(MIX_PLANOS) as [keyof typeof COMISSAO, number][]) {
-    soma += w * COMISSAO[id] * aluguel;
-    peso += w;
-  }
-  return peso > 0 ? soma / peso : 0;
+/** Taxa de serviço média por contrato (R$): valor médio do 1º mês × taxa média ponderada pelas faixas. */
+export function taxaMediaPorContrato(aluguel = ALUGUEL_MEDIO): number {
+  return Math.round(aluguel * TAXA_MEDIA * 100) / 100;
+}
+
+/** Receita bruta mensal da taxa de serviço para `contratos` contratos fechados no mês. */
+export function receitaBrutaMensal(contratos: number): number {
+  return contratos * taxaMediaPorContrato();
+}
+
+export interface CenarioContratos {
+  contratos: number;
+  receita: number;
+  /** Resultado do mês com o custo fixo e o custo variável por contrato (sem marketing). */
+  resultado: number;
+}
+
+/** Cenários 10/20/40 contratos por mês: receita bruta e resultado do mês (depois de ferramentas, imposto e custo fixo). */
+export function cenariosContratosMes(op: Opcoes): CenarioContratos[] {
+  const fixo = op.custoFixo ?? CUSTO_FIXO_PADRAO;
+  const u = porContrato(op);
+  return CONTRATOS_MES_CENARIOS.map((n) => ({ contratos: n, receita: n * u.receita, resultado: n * u.margem - fixo }));
 }
 
 /** Contratos fechados no mês m de um cenário. */
@@ -128,14 +134,8 @@ export function parceirosPorContrato(op: Opcoes, m = Infinity): number {
 export function projetar(id: CenarioId, op: Opcoes): Projecao {
   const cen = CENARIOS[id];
   const fixo = op.custoFixo ?? CUSTO_FIXO_PADRAO;
-  const comMix = comissaoMediaPorContrato();
-  const comFundador = FUNDADORES.comissao * ALUGUEL_MEDIO;
-
-  // Entrada dos Fundadores por mês (para saber quando cada leva sai dos 12 meses).
-  const entradaFundadores: number[] = [];
+  const taxaContrato = taxaMediaPorContrato();
   let donos = 0;
-  let fundadoresTotais = 0;
-  let assinantes = 0;
   let caixa = -INVESTIMENTO_INICIAL;
   let piorCaixa = caixa;
   let mesPiorCaixa = 0;
@@ -144,23 +144,10 @@ export function projetar(id: CenarioId, op: Opcoes): Projecao {
   const meses: Mes[] = [];
 
   for (let m = 1; m <= HORIZONTE_MESES; m++) {
-    const novos = cen.donosNovosMes;
-    const fundadoresNovos = Math.min(novos, Math.max(0, FUNDADORES.quantidade - fundadoresTotais));
-    fundadoresTotais += fundadoresNovos;
-    entradaFundadores[m] = fundadoresNovos;
-    donos += novos;
-
-    // Fundadores ainda nos 12 meses e os que saem neste mês (passam a poder assinar).
-    let fundadoresAtivos = 0;
-    for (let e = Math.max(1, m - FUNDADORES.meses + 1); e <= m; e++) fundadoresAtivos += entradaFundadores[e] ?? 0;
-    const fundadoresSaindo = m - FUNDADORES.meses >= 1 ? entradaFundadores[m - FUNDADORES.meses] ?? 0 : 0;
-    assinantes = assinantes * (1 - ASSINATURA.churnMensal) + (novos - fundadoresNovos + fundadoresSaindo) * cen.assinam;
-
+    donos += cen.donosNovosMes;
     const contratos = contratosNoMes(id, m);
-    const fatiaFundadores = donos > 0 ? fundadoresAtivos / donos : 0;
-    const receitaComissao = contratos * (fatiaFundadores * comFundador + (1 - fatiaFundadores) * comMix);
-    const receitaAssinatura = assinantes * ASSINATURA.mediaPagantes;
-    const receitaBase = receitaComissao + receitaAssinatura;
+    const receitaTaxa = contratos * taxaContrato;
+    const receitaBase = receitaTaxa;
     const receitaParceiros = contratos * parceirosPorContrato(op, m);
     const receita = receitaBase + receitaParceiros;
     const custoVariavel = contratos * (CUSTO_FERRAMENTAS_POR_CONTRATO + op.operador) + (op.imposto ?? IMPOSTO_SOBRE_RECEITA) * receita;
@@ -173,7 +160,7 @@ export function projetar(id: CenarioId, op: Opcoes): Projecao {
     }
     if (mesPrimeiroPositivo === null && resultado > 0) mesPrimeiroPositivo = m;
     if (mesPayback === null && caixa >= 0) mesPayback = m;
-    meses.push({ m, contratos, donos, assinantes, receitaComissao, receitaAssinatura, receitaBase, receitaParceiros, receita, custoVariavel, custoFixo: fixo, marketing, resultado, caixa });
+    meses.push({ m, contratos, donos, receitaTaxa, receitaBase, receitaParceiros, receita, custoVariavel, custoFixo: fixo, marketing, resultado, caixa });
   }
 
   const anos: Ano[] = [0, 1, 2].map((a) => {
@@ -191,19 +178,19 @@ export function projetar(id: CenarioId, op: Opcoes): Projecao {
 }
 
 export interface PorContrato {
-  /** Comissão média (mix) + parceiros ligados (todos já iniciados). */
+  /** Taxa média ponderada + parceiros ligados (todos já iniciados). */
   receita: number;
   /** Ferramentas + imposto sobre a receita + operador. */
   custoVariavel: number;
   margem: number;
-  /** Contratos/mês para pagar fixo + marketing (sem contar assinaturas): [ano 1, depois]. */
+  /** Contratos/mês para pagar fixo + marketing (sem assinaturas: não há cobrança recorrente): [ano 1, depois]. */
   empate: [number, number];
 }
 
 /** Conta de UM contrato típico (dono comum; parceiros só se ligados). */
 export function porContrato(op: Opcoes): PorContrato {
   const fixo = op.custoFixo ?? CUSTO_FIXO_PADRAO;
-  const receita = comissaoMediaPorContrato() + parceirosPorContrato(op);
+  const receita = taxaMediaPorContrato() + parceirosPorContrato(op);
   const custoVariavel = CUSTO_FERRAMENTAS_POR_CONTRATO + (op.imposto ?? IMPOSTO_SOBRE_RECEITA) * receita + op.operador;
   const margem = receita - custoVariavel;
   const empate = (mkt: number) => (margem > 0 ? (fixo + mkt) / margem : Infinity);

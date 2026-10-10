@@ -6,7 +6,7 @@
   Referência: out/2026. Dólar: R$ 5,20. Estimativas para decidir, não parecer
   contábil. Puro (sem alias "@"), para rodar no node --test.
 */
-import { MIX_ROI, plano, PLANOS, type PlanoId } from "./planos.ts";
+import { FAIXAS_COMISSAO_PADRAO, taxaMediaPonderada } from "../lib/cobranca/regra.ts";
 
 export const REFERENCIA = "out/2026";
 export const DOLAR = 5.2;
@@ -20,33 +20,32 @@ export interface Item {
 }
 
 // ── Receita por contrato ────────────────────────────────────────────────────
-export const ALUGUEL_MEDIO = 2400;
-
-/** Mix de planos dos donos (o mesmo do /roi antigo; config/planos). */
-export const MIX_PLANOS: Record<PlanoId, number> = MIX_ROI;
-
-/** Comissão de cada plano (12/8/4/0), lida de config/planos.ts. */
-export const COMISSAO: Record<PlanoId, number> = Object.fromEntries(PLANOS.map((p) => [p.id, p.comissao])) as Record<PlanoId, number>;
+/*
+  Modelo único (Daniel, 10/10): taxa de serviço por contrato fechado (renovação = novo contrato), sobre o
+  valor do PRIMEIRO mês. Sem cobrança recorrente nesta fase (assinatura = fase 2, futuro, para donos com muitos
+  imóveis, fora das projeções). Faixas em lib/cobranca/regra.ts (fonte única).
+*/
+/** Valor médio do primeiro mês de um contrato (R$) — o mesmo ticket do Compare. */
+export const ALUGUEL_MEDIO = 4320;
 
 /**
- * Fundadores: os primeiros donos ficam 12 meses no Profissional SEM assinatura
- * (lib/fundador.ts) — pagam a comissão do Profissional e não assinam nesse ano.
+ * Parte dos contratos por faixa de imóveis do dono (mesma ordem de FAIXAS_COMISSAO_PADRAO).
+ * Padrão: todos na 1ª faixa (1–2 imóveis, 12%), o caso típico do piloto.
  */
-export const FUNDADORES = {
-  quantidade: 20,
-  meses: 12,
-  comissao: plano("pro")!.comissao,
-};
+export const MIX_FAIXAS: readonly number[] = [1, 0, 0, 0, 0];
 
-/** Assinatura: % dos donos novos que assinam, valor médio pago e churn. */
-export const ASSINATURA = { mediaPagantes: 55, churnMensal: 0.03 };
+/** Taxa média ponderada pelas faixas (0..1). */
+export const TAXA_MEDIA = taxaMediaPonderada(MIX_FAIXAS, FAIXAS_COMISSAO_PADRAO);
+
+/** Cenários simples de contratos fechados por mês (ordem da vitrine: receita bruta da taxa). */
+export const CONTRATOS_MES_CENARIOS = [10, 20, 40] as const;
 
 // ── Custos variáveis por contrato ───────────────────────────────────────────
 export const CUSTOS_POR_CONTRATO: Item[] = [
   { rotulo: "Identidade do inquilino (documento, prova de vida, rosto)", valor: 2, unidade: "R$/contrato", fonte: "https://didit.me/pricing", obs: "Didit ≈ US$ 0,33; 500 grátis/mês. CAF sob orçamento." },
   { rotulo: "Antifraude / consulta de CPF", valor: 0, unidade: "R$/contrato", obs: "Opcional, só no aceite: ≈ R$ 10 por consulta, sob orçamento." },
-  { rotulo: "Assinatura eletrônica (contrato + termo de vistoria)", valor: 6, unidade: "R$/contrato", fonte: "https://zapsign.co/plans-and-prices", obs: "≈ R$ 3 por documento além dos 50 do plano." },
-  { rotulo: "Cobrança da comissão (Pix + nota + aviso)", valor: 3.5, unidade: "R$/contrato", fonte: "https://www.asaas.com/precos-e-taxas", obs: "Pix R$ 1,99 + nota R$ 0,49 + aviso R$ 0,99." },
+  { rotulo: "Assinatura eletrônica (contrato + termo de entrega)", valor: 6, unidade: "R$/contrato", fonte: "https://zapsign.co/plans-and-prices", obs: "≈ R$ 3 por documento além dos 50 do plano." },
+  { rotulo: "Cobrança da taxa de serviço (Pix + aviso)", valor: 3, unidade: "R$/contrato", fonte: "https://www.asaas.com/precos-e-taxas", obs: "Pix R$ 1,99 + aviso R$ 0,99." },
   { rotulo: "Atendimento da Viva (IA)", valor: 5, unidade: "R$/contrato", fonte: "https://finout.io/blog/anthropic-api-pricing" },
 ];
 /**
@@ -91,20 +90,18 @@ export interface Cenario {
   crescimentoMensal: number;
   teto: number;
   donosNovosMes: number;
-  /** Fração dos donos novos que assinam um plano pago. */
-  assinam: number;
 }
 export const MES_PRIMEIRO_CONTRATO = 4;
 export const HORIZONTE_MESES = 36;
 export const CENARIOS: Record<CenarioId, Cenario> = {
-  pessimista: { id: "pessimista", nome: "Pessimista", contratosIniciais: 1, crescimentoMensal: 0.4, teto: 10, donosNovosMes: 2, assinam: 0.15 },
-  base: { id: "base", nome: "Base", contratosIniciais: 2, crescimentoMensal: 1, teto: 35, donosNovosMes: 5, assinam: 0.25 },
-  otimista: { id: "otimista", nome: "Otimista", contratosIniciais: 3, crescimentoMensal: 2.2, teto: 80, donosNovosMes: 10, assinam: 0.35 },
+  pessimista: { id: "pessimista", nome: "Pessimista", contratosIniciais: 1, crescimentoMensal: 0.4, teto: 10, donosNovosMes: 2 },
+  base: { id: "base", nome: "Base", contratosIniciais: 2, crescimentoMensal: 1, teto: 35, donosNovosMes: 5 },
+  otimista: { id: "otimista", nome: "Otimista", contratosIniciais: 3, crescimentoMensal: 2.2, teto: 80, donosNovosMes: 10 },
 };
 
 // ── Receitas de parceiros (POTENCIAL: todas desligadas por padrão) ─────────
 /*
-  A receita BASE é só comissão + assinaturas. Parceiros entram na mesma conta
+  A receita BASE é só a taxa de serviço por contrato. Parceiros entram na mesma conta
   (com o imposto da Viva) apenas quando ligados na tela. Nenhum tem contrato
   assinado: é potencial, nunca receita garantida.
 
@@ -178,7 +175,7 @@ export const PARCEIROS: Parceiro[] = [
     status: "em estudo",
     detalhe: `EasyCover/Now Seguros: R$ 69 a R$ 118 por mês por imóvel (usamos R$ 69 × ${MESES_MEDIOS_CONTRATO} meses). Contratado pelo proprietário.`,
   },
-  { id: "vistoria", nome: "Vistoria", tipo: "servico", valorUnidade: 25, adesao: 0.2, unidadesPorContrato: 2, mesInicio: 4, status: "sem parceiro", detalhe: "Entrada e saída." },
+  { id: "conferencia", nome: "Conferência de entrada e saída", tipo: "servico", valorUnidade: 25, adesao: 0.2, unidadesPorContrato: 2, mesInicio: 4, status: "sem parceiro", detalhe: "Entrada e saída." },
   { id: "fotografia", nome: "Fotografia", tipo: "servico", valorUnidade: 45, adesao: 0.1, unidadesPorContrato: 1, mesInicio: 4, status: "sem parceiro", detalhe: "Fotos do anúncio." },
   { id: "limpeza", nome: "Limpeza/manutenção", tipo: "servico", valorUnidade: 20, adesao: 0.1, unidadesPorContrato: 1, mesInicio: 6, status: "sem parceiro", detalhe: "Entre locações." },
   { id: "carro", nome: "Carro mensal (Nômade Drive)", tipo: "servico", valorUnidade: 50, adesao: 0.05, unidadesPorContrato: 1, mesInicio: 13, status: "em conversa", detalhe: "Indicação de aluguel mensal de carro." },
