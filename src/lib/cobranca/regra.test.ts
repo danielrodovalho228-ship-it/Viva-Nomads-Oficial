@@ -12,6 +12,7 @@ import {
   proximaFaixa,
   taxaDeConfig,
   taxaNaAssinatura,
+  textoTaxaPainel,
   valorTaxa,
 } from "./regra.ts";
 
@@ -195,4 +196,17 @@ test("Compare: mantém a seção e os diferenciais da Viva (só a coluna da Viva
   const comp = ler("src/components/precos/comparativo-precos.tsx");
   assert.match(comp, /DIFERENCIAIS_VIVA/);
   assert.match(comp, /COMPARE_RODAPE/);
+});
+
+
+test("painel do dono: 'Taxa de serviço: 12% do primeiro mês = R$ 518,40' (sem plano, sem 'aluguel')", () => {
+  const t = textoTaxaPainel(0.12, 4320);
+  assert.equal(t, "Taxa de serviço: 12% do primeiro mês = R$ 518,40");
+  assert.equal(textoTaxaPainel(0.06, 4320), "Taxa de serviço: 6% do primeiro mês = R$ 259,20");
+  assert.doesNotMatch(t, /aluguel|comiss|plano/i);
+});
+
+test("painel do dono: valor mensal inválido não inventa valor", () => {
+  assert.equal(textoTaxaPainel(0.12, 0), "Taxa de serviço: 12% do primeiro mês");
+  assert.equal(textoTaxaPainel(0.12, Number.NaN), "Taxa de serviço: 12% do primeiro mês");
 });
