@@ -68,7 +68,7 @@ test("fatos oficiais chegam à Viva (chat, chamados, sugestão e resumo)", () =>
 
 test("preço que a Viva informa é a regra única de 12%, sem planos nem faixas (ordem 3914d70c)", () => {
   const f = fontes();
-  assert.match(f, /12% do primeiro aluguel de cada contrato e de cada renovação/);
+  assert.match(f, /A Viva cobra 12% por contrato fechado\. Quanto mais imóveis, menor a taxa \(até 4%\)\. Sem mensalidade\./);
   assert.match(f, /Sem mensalidade/);
   assert.doesNotMatch(f, /sem mensalidade, comissão|\/mês|até \d+ anúncio/);
   assert.doesNotMatch(f, /Essencial: |Profissional: |Gestor: |Gratuito: /);

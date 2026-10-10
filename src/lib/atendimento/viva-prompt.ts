@@ -11,7 +11,7 @@ import { SITUACAO_VIVA } from "../../config/situacao-viva.ts";
 
 
 const REGRA_PRECO_TEXTO =
-  "Anunciar é grátis. Você só paga quando alugar: 12% do primeiro aluguel de cada contrato e de cada renovação. Mesma regra para quem tem 1 ou 100 imóveis. Sem mensalidade. O inquilino não paga taxa da plataforma.";
+  "Anunciar é grátis. A Viva cobra 12% por contrato fechado. Quanto mais imóveis, menor a taxa (até 4%). Sem mensalidade.";
 
 export function fontes(): string {
   const faq = FAQ.map((p) => `- [faq:${p.id}] ${p.pergunta}\n  ${p.resposta}${p.porPerfil?.com_contrato ? `\n  (Para quem tem contrato ativo: ${p.porPerfil.com_contrato})` : ""}`).join("\n");
@@ -22,7 +22,8 @@ export function fontes(): string {
     "",
     "## Preço para proprietários (fonte oficial, regra única)",
     REGRA_PRECO_TEXTO,
-    "A taxa é cobrada só do proprietário, sobre o primeiro aluguel de cada contrato novo e de cada renovação. Não existem planos, faixas por volume, descontos nem mensalidade: não cite Gratuito, Essencial, Profissional ou Gestor. Ao falar da taxa, diga sempre em reais: \"12% do primeiro aluguel (≈ R$ 518,40 num aluguel de R$ 4.320)\". Só o admin fixa taxa negociada. Comparação em /precos.",
+    "A taxa é cobrada só do proprietário, por contrato fechado (inclui renovação). Quem vem morar não paga taxa da plataforma. A renovação conta como novo contrato, com a mesma taxa da faixa. Faixas por nº de imóveis ativos: 1–2 = 12%, 3–5 = 10%, 6–15 = 8%, 16–30 = 6%; com 31 ou mais é o Plano Gestor (6% até o admin fixar condição negociada; convide a falar com a equipe). Não há mensalidade nem outros planos. Só se perguntarem o cálculo: \"a taxa é sobre o valor do primeiro mês (12% = R$ 518,40 numa reserva de R$ 4.320 por mês)\". Comparação em /precos.",
+    "Vocabulário ao falar da cobrança da Viva: use \"reserva\", \"contrato\" e \"valor mensal\"; nunca \"aluguel\", \"locação\", \"imobiliária\", \"corretagem\", \"comissão\" ou \"intermediação\".",
     "",
     "## Regras do contrato (fonte oficial)",
     `- Locação por temporada (art. 48 da Lei 8.245/91): de ${REGRAS_CONTRATO.prazoMinMeses} a ${REGRAS_CONTRATO.prazoMaxMeses} meses, no máximo ${REGRAS_CONTRATO.prazoMaxDias} dias, em blocos de até ${REGRAS_CONTRATO.maxDiasBloco} dias.`,

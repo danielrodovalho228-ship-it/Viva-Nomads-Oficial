@@ -50,7 +50,7 @@ export function faqPage() {
   };
 }
 
-/** /precos: a regra única como oferta (anunciar grátis; 12% do primeiro aluguel só quando alugar). */
+/** /precos: a regra única como oferta (anunciar grátis; 12% por contrato fechado). */
 export function ofertaRegraUnica(siteUrl: string) {
   return {
     "@context": "https://schema.org",
