@@ -9,9 +9,13 @@ import { respostaAprovacaoNoChat, rotuloMescla, type CartaoAprovacao } from "./a
 import { systemGerente } from "./gerente.ts";
 import { responderChat, type Deps } from "./motor.ts";
 
-test("aprovação no chat: 'ok', 'tudo aprovado', 'pode aplicar a 0087' são aprovação; perguntas e pedidos não", () => {
-  for (const t of ["ok", "Ok\nTudo aprovado", "OK, aplicar a 0083", "aprovado", "Sim", "pode aplicar", "autorizo o merge", "de acordo", "okk"]) assert.ok(pedeAprovacao(t), t);
-  for (const t of ["ok, e os chamados?", "alguma pendência?", "como estamos", "corrija o sitemap", "Aplica a 0083 e corrige o bug do sitemap", "Ok, me explica melhor o que falta na fila do Otávio antes de amanhã cedo", "sim ou não: a 0083 já foi aplicada?"]) assert.ok(!pedeAprovacao(t), t);
+test("aprovação no chat: só com verbo explícito E cartão pendente; 'sim', 'ok', 'peça', 'traga agora' respondem à oferta", () => {
+  for (const t of ["aprovo o #366", "Ok\nTudo aprovado", "autorizo o merge", "pode aplicar", "pode mesclar o PR"]) assert.ok(pedeAprovacao(t, 1), t);
+  // Sem cartão pendente nada é aprovação, nem com o verbo.
+  for (const t of ["aprovo o #366", "Tudo aprovado", "pode aplicar"]) assert.ok(!pedeAprovacao(t, 0), t);
+  // Regressão do print de 10/10: estas NÃO são aprovação nem com cartão pendente.
+  for (const t of ["Sim peça", "Okay resolva tudo Moacir obrigado", "Traga agora", "sim", "ok", "pode", "faça", "de acordo", "okk"]) assert.ok(!pedeAprovacao(t, 2), t);
+  for (const t of ["ok, e os chamados?", "alguma pendência?", "como estamos", "corrija o sitemap", "sim ou não: a 0083 já foi aplicada?"]) assert.ok(!pedeAprovacao(t, 1), t);
 });
 
 test("rede de segurança: 'aguardando aprovação do Daniel' só é aceito para assunto do CEO", () => {
@@ -64,10 +68,10 @@ test("'ok' no chat: resposta fixa, nada aprovado, modelo nem é chamado", async 
 
 const cartao = (referencia: string): CartaoAprovacao => ({ id: referencia, tipo: "merge_pr", referencia, resumo: "r", risco: "medio", expiraEm: "2026-10-13T00:00:00Z" });
 
-test("'ok' com 1 cartão pendente: pergunta 'Aprovar o PR?' e manda para o botão; nada é aprovado por texto", async () => {
+test("'aprovo' com 1 cartão pendente: pergunta 'Aprovar o PR?' e manda para o botão; nada é aprovado por texto", async () => {
   const f = fake();
   f.d.aprovacoesPendentes = async () => [cartao("PR #341")];
-  const r = await responderChat(f.d, { slug: "otavio", texto: "ok" });
+  const r = await responderChat(f.d, { slug: "otavio", texto: "aprovo o PR #341" });
   assert.match(String(r.body.resposta), /^Aprovar PR #341\? Toque em Aprovar no cartão e depois em Confirmar/);
   assert.equal(r.body.aprovacao, false);
   assert.equal(f.chamou(), 0);
@@ -102,4 +106,23 @@ test("resposta do modelo que espera o Daniel à toa ganha a correção", async (
   assert.ok(String(r.body.resposta).endsWith(NOTA_CEO));
   const ok = fake("A 0087 está aguardando sua aprovação da migração.");
   assert.ok(!String((await responderChat(ok.d, { slug: "otavio", texto: "e a 0087?" })).body.resposta).includes(NOTA_CEO));
+});
+
+test("'Sim peça' / 'Okay resolva tudo' / 'Traga agora' vão ao modelo (resposta à oferta), não à recusa fixa", async () => {
+  for (const texto of ["Sim peça", "Okay resolva tudo Moacir obrigado", "Traga agora"]) {
+    const f = fake("Peço agora ao Renato.");
+    f.d.aprovacoesPendentes = async () => [cartao("PR #341")];
+    const r = await responderChat(f.d, { slug: "otavio", texto });
+    assert.notEqual(r.body.resposta, RESPOSTA_APROVACAO, texto);
+    assert.doesNotMatch(String(r.body.resposta), /não aprovo por texto/, texto);
+    assert.equal(f.chamou(), 1, texto);
+  }
+});
+
+test("'aprovo' sem nenhum cartão pendente não é aprovação: o modelo responde (e a regra do CEO segue no prompt)", async () => {
+  const f = fake("Não há nada pendente.");
+  f.d.aprovacoesPendentes = async () => [];
+  const r = await responderChat(f.d, { slug: "otavio", texto: "aprovo o #366" });
+  assert.equal(r.body.aprovacao, undefined);
+  assert.equal(f.chamou(), 1);
 });

@@ -97,6 +97,8 @@ e por último "dados de <hora>" com a hora das consultas.
 Decida e aja (o Daniel quer resolução, não perguntas):
 - NUNCA faça pergunta de esclarecimento quando dá para decidir com um padrão razoável: decida, diga em 1 linha o que assumiu ("Assumi X") e aja.
 - NUNCA adie para a rotina agendada nem para outro dia. Trabalho necessário vai para executar_agora JÁ, para o agente certo do organograma.
+- Responda SÓ a última pergunta do Daniel; não puxe assunto antigo (ex.: PR de ontem) a menos que ele pergunte. "Sim", "ok", "pode", "faça", "peça", "traga agora" respondem à sua última oferta: cumpra-a.
+- Números da empresa (cadastros por data, imóveis por status, pedidos, leads): use consultar_banco/retrato e responda na hora. Se o dado realmente não existe, diga em 1 frase o que falta e registre UMA ordem (se já há ordem aberta do mesmo assunto, cite-a). Sem markdown além de **negrito** e listas com "- ".
 - Proibido "não sei de qual X você fala" quando a memória, o briefing ou os dados ao vivo têm a resposta: procure primeiro.
 
 Sem repetição:
@@ -165,9 +167,15 @@ export const MAX_VOLTAS_GERENTE = 6;
 /** Prefixo das ordens que o Moacir dispara (o retorno procura por ele). */
 export const PREFIXO_MOACIR = "Pedido do Moacir (chat da Central): ";
 
-export async function investigar(pergunta: string, system: string, modelo: ModeloGerente, d: DepsGerente): Promise<{ resposta: string; trilha: PassoTrilha[] }> {
+export async function investigar(
+  pergunta: string,
+  system: string,
+  modelo: ModeloGerente,
+  d: DepsGerente,
+  anteriores: { role: "user" | "assistant"; content: string }[] = []
+): Promise<{ resposta: string; trilha: PassoTrilha[] }> {
   const trilha: PassoTrilha[] = [];
-  const msgs: { role: "user" | "assistant"; content: string | unknown[] }[] = [{ role: "user", content: pergunta }];
+  const msgs: { role: "user" | "assistant"; content: string | unknown[] }[] = [...anteriores, { role: "user", content: pergunta }];
   for (let volta = 0; volta < MAX_VOLTAS_GERENTE; volta++) {
     const r = await modelo({ system, tools: FERRAMENTAS_GERENTE, messages: msgs });
     const usos = r.content.filter((b) => b.type === "tool_use" && b.id && b.name);
@@ -189,7 +197,8 @@ export async function investigar(pergunta: string, system: string, modelo: Model
           conteudo = a.resposta;
         } else if (u.name === "executar_agora" && typeof inp.slug === "string" && SLUGS.has(inp.slug) && typeof inp.ordem === "string") {
           const e = await d.executar(inp.slug, inp.ordem.slice(0, 1500));
-          trilha.push({ autor: "moacir", texto: `${e.ok ? "Disparei" : "Não consegui disparar"} ${d.nomeDe(inp.slug)}: ${e.texto}` });
+          // "Registrei para X; o Moacir aciona na ronda das HH:37" não é disparo: não diz "Disparei".
+          trilha.push({ autor: "moacir", texto: e.ok && /^Registrei para /.test(e.texto) ? e.texto : `${e.ok ? "Disparei" : "Não consegui disparar"} ${d.nomeDe(inp.slug)}: ${e.texto}` });
           conteudo = e.texto;
         } else {
           conteudo = "Ferramenta ou parâmetro inválido.";
