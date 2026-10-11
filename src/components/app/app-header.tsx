@@ -9,7 +9,7 @@ import { tituloDaTelaApp, ehAbaRaizApp } from "@/lib/nav-mobile";
  * o botão Voltar. Só aparece dentro do app (classe app-only-flex); no site
  * normal não renderiza nada visível.
  */
-export function AppHeader() {
+export function AppHeader({ direita }: { direita?: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const raiz = ehAbaRaizApp(pathname);
@@ -29,9 +29,10 @@ export function AppHeader() {
         </button>
       )}
       {/* <p>, não <h1>: o título principal (h1) é o da própria página. */}
-      <p className={raiz ? "px-3 font-title text-base font-bold text-ink" : "font-title text-base font-bold text-ink"}>
+      <p className={raiz ? "min-w-0 flex-1 truncate px-3 font-title text-base font-bold text-ink" : "min-w-0 flex-1 truncate font-title text-base font-bold text-ink"}>
         {tituloDaTelaApp(pathname)}
       </p>
+      {direita && <div className="flex shrink-0 items-center gap-2 pr-1">{direita}</div>}
     </header>
   );
 }

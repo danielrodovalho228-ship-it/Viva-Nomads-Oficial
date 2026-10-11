@@ -38,7 +38,7 @@ import { countDocumentosPendentes } from "@/lib/data/documentos-admin";
 import { contarAchadosP1 } from "@/lib/data/agentes-actions";
 import { useHasActiveLocacao } from "@/lib/use-active-locacao";
 import { useViewMode, MODE_META, identidadeUsuario } from "@/lib/roles";
-import { ModoBarra } from "@/components/layout/modo-barra";
+import { ModoChip } from "@/components/layout/modo-chip";
 import { MobileTabBar } from "@/components/layout/mobile-tab-bar";
 import { AppHeader } from "@/components/app/app-header";
 import { useDemoMode, DemoToggle, DemoBanner, useDisplayUser } from "@/lib/demo/demo-mode";
@@ -327,6 +327,14 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
   const meta = MODE_META[mode];
 
+  // Chip único de troca de modo (foto + modo), no cabeçalho do site e do app.
+  const chipModo = (
+    <>
+      <DemoToggle />
+      <ModoChip mode={mode} onSwitch={switchTo} nome={nomeSidebar} photoUrl={myPhoto ?? undefined} />
+    </>
+  );
+
   const sidebar = (
     <div className="flex h-full flex-col">
       <div className="flex h-16 shrink-0 items-center overflow-hidden border-b border-white/10 px-4">
@@ -402,24 +410,24 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       <div className="flex min-w-0 flex-1 flex-col lg:overflow-hidden print:overflow-visible">
         {/* Topbar mobile (logo + menu) */}
         {/* Modo app: cabeçalho curto (voltar + título), no lugar do topo do site. */}
-        <AppHeader />
+        <AppHeader direita={chipModo} />
 
-        <div className="web-only flex h-16 items-center justify-between border-b border-sage-200 bg-white px-4 lg:hidden print:hidden">
-          <Logo />
+        <div className="web-only flex h-16 items-center justify-between gap-2 border-b border-sage-200 bg-white px-4 sm:px-8 lg:h-12 lg:justify-end print:hidden">
+          <Logo className="lg:hidden" />
+          <div className="flex items-center gap-2">
+            {chipModo}
           <button
-            className="grid h-10 w-10 place-items-center rounded-lg text-forest"
+            className="grid h-10 w-10 place-items-center rounded-lg text-forest lg:hidden"
             onClick={() => setOpen(true)}
             aria-label="Abrir menu"
           >
             <Menu className="h-6 w-6" />
           </button>
+          </div>
         </div>
 
         {/* Aviso fixo do modo demonstração (só aparece quando ligado). */}
         <DemoBanner />
-
-        {/* Barra de modo (site e app): mostra o modo atual e troca ali mesmo. */}
-        <ModoBarra mode={mode} onSwitch={switchTo} extra={<DemoToggle />} />
 
         <main key={mode} className="mode-transition flex-1 p-5 sm:p-8 lg:overflow-y-auto print:overflow-visible">
           {children}
