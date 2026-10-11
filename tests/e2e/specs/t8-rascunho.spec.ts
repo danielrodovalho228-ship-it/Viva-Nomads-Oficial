@@ -42,8 +42,17 @@ test.describe("T-RASC — Rascunho salva e retoma @criticos", () => {
     // Se um rascunho anterior for detectado, começa outro para partir do zero.
     const comecarOutro = page.getByRole("button", { name: "Começar outro" });
     if (await comecarOutro.isVisible().catch(() => false)) await comecarOutro.click();
-    // Etapa 1 (Tipo) → Continuar → Etapa 2 (Endereço).
-    await page.getByRole("button", { name: "Continuar", exact: true }).click();
+    // "Fotos primeiro" (ordem 04e2fe5e): Fotos → Tipo → Detalhes → Comodidades → Endereço.
+    await page.locator('input[type="file"]').first().setInputFiles("public/images/imoveis/ube/ube-001-sala.webp");
+    await expect(page.getByText(/^1\/40 fotos/)).toBeVisible({ timeout: 20_000 });
+    const continuar = page.getByRole("button", { name: "Continuar", exact: true });
+    await continuar.click(); // → Tipo
+    await continuar.click(); // → Detalhes
+    await page.getByLabel("Banheiros", { exact: true }).fill("1");
+    await page.getByLabel("Área (m²)", { exact: true }).fill("45");
+    await page.getByLabel(/Capacidade máxima/).fill("2");
+    await continuar.click(); // → Comodidades
+    await continuar.click(); // → Endereço
     await page.getByPlaceholder("Rua, número").fill(`Rua ${marca}, 100`);
     await page.locator('input[list="novo-bairros"]').fill(marca);
     return marca;
@@ -94,19 +103,20 @@ test.describe("T-RASC — Rascunho salva e retoma @criticos", () => {
     await expect(page.locator('input[list="novo-bairros"]')).toHaveValue(marca);
   });
 
+  test("T-RASC-5 — o cadastro abre pelas Fotos (fotos primeiro), não pela qualificação", async ({ page }) => {
+    await page.goto("/dashboard/imoveis/novo", { waitUntil: "networkidle" });
+    const comecarOutro = page.getByRole("button", { name: "Começar outro" });
+    if (await comecarOutro.isVisible().catch(() => false)) await comecarOutro.click();
+    await expect(page.getByRole("heading", { name: "Fotos do imóvel" })).toBeVisible();
+    await expect(page.getByText("Conclua a qualificação primeiro")).toHaveCount(0);
+  });
+
   test("T-RASC-4 — retomar não trava etapas já visitadas nem zera a qualificação (bug 13)", async ({ page }) => {
     await novoComEndereco(page);
-    // Percorre até Comodidades pelo "Continuar" (cada etapa valida o mínimo).
-    await page.getByRole("button", { name: "Continuar", exact: true }).click();
-    await page.getByLabel("Banheiros", { exact: true }).fill("1");
-    await page.getByLabel("Área (m²)", { exact: true }).fill("45");
-    await page.getByLabel(/Capacidade máxima/).fill("2");
-    await page.getByRole("button", { name: "Continuar", exact: true }).click();
-    await page.locator('input[type="file"]').first().setInputFiles("public/images/imoveis/ube/ube-001-sala.webp");
-    await expect(page.getByText(/^1\/24 fotos/)).toBeVisible({ timeout: 20_000 });
-    await page.getByRole("button", { name: "Continuar", exact: true }).click();
+    // Já percorreu Fotos → Tipo → Detalhes → Comodidades até o Endereço: vai e volta pelo topo.
+    await page.getByRole("button", { name: /Comodidades/ }).click();
     await expect(page.getByRole("heading", { name: "Comodidades" })).toBeVisible();
-    // Volta ao Endereço pelo topo e deixa salvar: o rascunho fica na etapa 2.
+    // Volta ao Endereço pelo topo e deixa salvar: o rascunho fica na etapa Endereço.
     await page.getByRole("button", { name: /Endereço/ }).click();
     await esperarSalvo(page);
     await page.waitForTimeout(2_500);
