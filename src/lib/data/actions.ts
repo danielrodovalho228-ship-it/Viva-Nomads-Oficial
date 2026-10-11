@@ -26,6 +26,7 @@ import { taxaDoContrato } from "@/config/planos";
 import { validarAceiteIa } from "@/lib/anuncio/termo-ia";
 import { erroBancoPT } from "@/lib/erros-banco";
 import { planoDoProprietario } from "@/lib/data/plano-efetivo";
+import { adminsPorAviso } from "@/lib/notifications/push-admins";
 import { avisarPedidosDoImovel } from "@/lib/data/pedidos-compat";
 import { INTERNET_META } from "@/lib/internet";
 import { getPropertyForOwner } from "@/lib/data/properties";
@@ -150,11 +151,9 @@ export async function saveQualification(
     try {
       // Pelo servidor: a RLS de profiles só mostra o próprio perfil ao dono,
       // então a lista vinha vazia e o aviso nunca saía.
-      const admin = createAdminClient();
-      const { data: admins } = admin
-        ? await admin.from("profiles").select("email, full_name, notif_email").eq("role", "admin")
-        : { data: [] as { email: string | null; full_name: string | null; notif_email: boolean | null }[] };
-      for (const a of admins ?? []) {
+      // Só admins que ligaram "receber alertas" na Conta (ordem 27cfd36a).
+      const admins = await adminsPorAviso<{ email: string | null; full_name: string | null; notif_email: boolean | null }>("operacional", "email, full_name, notif_email");
+      for (const a of admins) {
         if (a.email && a.notif_email !== false) {
           await notify({
             event: "documento_recebido",
