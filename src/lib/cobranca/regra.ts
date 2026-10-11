@@ -166,6 +166,6 @@ export function textoTaxaPainel(taxa: number, valorMensal: number): string {
  * mês") fica só no painel do proprietário, antes de aceitar, e nos termos.
  */
 export const TEXTO_REGRA_UNICA =
-  "Anunciar é grátis. A Viva cobra 12% por contrato fechado. Quanto mais imóveis, menor a taxa (até 4%). Sem mensalidade.";
+  "Anunciar é grátis. A Viva cobra 12% por contrato fechado. Quanto mais imóveis, menor a taxa (até 6%). Sem mensalidade.";
 
 export const TEXTO_REGRA_CURTO = TEXTO_REGRA_UNICA;

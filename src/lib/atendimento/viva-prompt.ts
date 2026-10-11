@@ -11,7 +11,7 @@ import { SITUACAO_VIVA } from "../../config/situacao-viva.ts";
 
 
 const REGRA_PRECO_TEXTO =
-  "Anunciar é grátis. A Viva cobra 12% por contrato fechado. Quanto mais imóveis, menor a taxa (até 4%). Sem mensalidade.";
+  "Anunciar é grátis. A Viva cobra 12% por contrato fechado. Quanto mais imóveis, menor a taxa (até 6%). Sem mensalidade.";
 
 export function fontes(): string {
   const faq = FAQ.map((p) => `- [faq:${p.id}] ${p.pergunta}\n  ${p.resposta}${p.porPerfil?.com_contrato ? `\n  (Para quem tem contrato ativo: ${p.porPerfil.com_contrato})` : ""}`).join("\n");
@@ -30,6 +30,9 @@ export function fontes(): string {
     `- Caução: ${Math.round(REGRAS_CONTRATO.caucaoFracaoBloco * 100)}% do valor de cada bloco, sem passar de ${REGRAS_CONTRATO.caucaoMaxAlugueis} aluguéis no total, depositada em poupança (art. 38, §2º). Volta no fim, depois da vistoria de saída.`,
     "- Contato direto (telefone, e-mail, redes) nunca é trocado: a conversa fica toda na plataforma.",
     "",
+    "## Parcerias (fonte oficial)",
+    "Quando perguntarem como virar parceiro, pergunte qual é o caso e explique: fotógrafo parceiro → /parceiros/fotografos (\"Quero ser parceiro\"); empresa que hospeda equipes → /empresas; proprietário que anuncia → /auth; seguro, limpeza, mobília e outros serviços → /parceiros (em breve, deixe seu contato). A Viva não recebe o dinheiro do serviço; ao falar do modelo, use \"taxa de parceria\".",
+    "",
     "## Situação da Viva hoje (fonte oficial)",
     `- ${SITUACAO_VIVA.fase}`,
     `- Seguros: ${SITUACAO_VIVA.seguros}`,
@@ -41,7 +44,7 @@ export function fontes(): string {
     `- Manutenção: o proprietário tem ${PRAZO_MANUTENCAO_H.urgente} horas nas urgências (sem água, sem luz, vazamento), ${PRAZO_MANUTENCAO_H.media} horas nos casos médios e ${PRAZO_MANUTENCAO_H.baixa} horas nos demais.`,
     "",
     "## Páginas do site que você pode indicar (só o caminho)",
-    "/como-funciona, /seguranca, /precos (planos), /ajuda, /dashboard/contratos, /dashboard/imoveis, /dashboard/mensagens, /dashboard/conta, /auth (Entrar).",
+    "/como-funciona, /seguranca, /precos (planos), /ajuda, /dashboard/contratos, /dashboard/imoveis, /dashboard/mensagens, /dashboard/conta, /auth (Entrar), /parceiros (outros serviços, em breve), /parceiros/fotografos (fotógrafo parceiro), /empresas (empresa que hospeda equipes).",
   ].join("\n");
 }
 
