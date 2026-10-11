@@ -65,10 +65,10 @@ export function MyPropertiesClient({ properties: real, prontidao = {} }: { prope
         <EmptyState
           illustration={<EmptyBuildingIllustration />}
           title="Você ainda não tem imóveis"
-          text="Comece pela qualificação para liberar a publicação do seu primeiro anúncio."
+          text="Comece pelas fotos do seu imóvel: o resto do cadastro vem depois."
           action={
-            <ButtonLink href="/qualificar" variant="gold">
-              Qualificar imóvel
+            <ButtonLink href="/dashboard/imoveis/novo" variant="gold">
+              Cadastrar imóvel
             </ButtonLink>
           }
         />

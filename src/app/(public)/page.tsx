@@ -337,7 +337,7 @@ export default async function HomePage() {
               <p className="mx-auto mt-2 max-w-md text-muted">
                 É proprietário? Anuncie o seu e apareça aqui primeiro.
               </p>
-              <ButtonLink href="/qualificar" variant="gold" className="mt-6">
+              <ButtonLink href="/dashboard/imoveis/novo" variant="gold" className="mt-6">
                 Anunciar meu imóvel
               </ButtonLink>
             </div>

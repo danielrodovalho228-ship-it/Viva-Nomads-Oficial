@@ -268,7 +268,7 @@ export function PedidosProprietarioClient({
                       {RESPOSTA_STATUS_LABEL[jaRespondi.status] ?? jaRespondi.status}
                     </p>
                   ) : !temImovelNaCidade ? (
-                    <Link href="/qualificar">
+                    <Link href="/dashboard/imoveis/novo">
                       <Button variant="ghost" className="w-full">
                         <Plus className="h-4 w-4" /> Cadastrar imóvel em {p.cidade}
                       </Button>

@@ -42,7 +42,7 @@ export default function ForLandlordsPage() {
               .
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <ButtonLink href="/qualificar" variant="gold" size="lg">
+              <ButtonLink href="/dashboard/imoveis/novo" variant="gold" size="lg">
                 Anunciar meu imóvel <ArrowRight className="h-4 w-4" />
               </ButtonLink>
               <ButtonLink href="/precos" variant="outline" size="lg" className="border-white/40 text-white hover:bg-white hover:text-forest">
@@ -115,7 +115,7 @@ export default function ForLandlordsPage() {
                 </li>
               ))}
             </ul>
-            <ButtonLink href="/qualificar" variant="primary" className="mt-8">
+            <ButtonLink href="/dashboard/imoveis/novo" variant="primary" className="mt-8">
               Começar pela qualificação
             </ButtonLink>
           </div>

@@ -734,7 +734,7 @@ export function SearchClient({ properties }: { properties: Property[] }) {
                 </>
               )}
               <Link
-                href="/qualificar"
+                href="/dashboard/imoveis/novo"
                 className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-forest hover:text-blue-700"
               >
                 É proprietário? Anuncie seu imóvel <ArrowRight className="h-4 w-4" />

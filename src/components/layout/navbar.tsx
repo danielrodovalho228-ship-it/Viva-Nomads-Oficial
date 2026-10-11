@@ -62,7 +62,7 @@ export function Navbar() {
               Entrar
             </ButtonLink>
           )}
-          <ButtonLink href={loggedIn ? "/dashboard/imoveis/novo" : "/qualificar"} variant="accent" size="sm">
+          <ButtonLink href="/dashboard/imoveis/novo" variant="accent" size="sm">
             {loggedIn ? "Anunciar imóvel" : "Entrar para anunciar"}
           </ButtonLink>
         </div>
@@ -99,7 +99,7 @@ export function Navbar() {
                   Entrar
                 </ButtonLink>
               )}
-              <ButtonLink href={loggedIn ? "/dashboard/imoveis/novo" : "/qualificar"} variant="accent" onClick={() => setOpen(false)}>
+              <ButtonLink href="/dashboard/imoveis/novo" variant="accent" onClick={() => setOpen(false)}>
                 {loggedIn ? "Anunciar imóvel" : "Entrar para anunciar"}
               </ButtonLink>
             </div>

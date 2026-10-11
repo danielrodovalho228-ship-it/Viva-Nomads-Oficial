@@ -1658,7 +1658,7 @@ export default function NewPropertyPage() {
                 <ClipboardCheck className="mt-0.5 h-4 w-4 shrink-0" />
                 <span>
                   <strong>Falta a qualificação.</strong> Responda o checklist{" "}
-                  <a href="/qualificar" className="font-medium underline">Antes de anunciar</a>{" "}
+                  <a href="/dashboard/imoveis/novo" className="font-medium underline">Antes de anunciar</a>{" "}
                   (leva poucos minutos) para liberar a publicação. Suas fotos e dados ficam salvos no rascunho.
                 </span>
               </div>
@@ -1678,7 +1678,7 @@ export default function NewPropertyPage() {
                 <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-forest" />
                 <span>
                   <strong>Documento do imóvel ainda não enviado.</strong> Envie a matrícula ou o contrato na{" "}
-                  <a href={imovelId ? `/qualificar?imovel=${imovelId}` : "/qualificar"} className="font-medium underline">qualificação</a>
+                  {imovelId ? <a href={`/qualificar?imovel=${imovelId}`} className="font-medium underline">qualificação</a> : "qualificação"}
                   ; a publicação libera depois que a equipe conferir.
                 </span>
               </div>
@@ -1689,7 +1689,7 @@ export default function NewPropertyPage() {
                 <span>
                   <strong>Documentação não aprovada.</strong>
                   {docReason ? ` Motivo: ${docReason}.` : ""} Reenvie o documento na{" "}
-                  <a href={imovelId ? `/qualificar?imovel=${imovelId}` : "/qualificar"} className="font-medium underline">qualificação</a> para liberar a publicação.
+                  {imovelId ? <a href={`/qualificar?imovel=${imovelId}`} className="font-medium underline">qualificação</a> : "qualificação"} para liberar a publicação.
                 </span>
               </div>
             )}

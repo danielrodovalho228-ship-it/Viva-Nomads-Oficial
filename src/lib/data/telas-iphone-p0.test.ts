@@ -18,7 +18,7 @@ test("datas de disponibilidade usam o campo dd/mm/aaaa, não <input type=date> (
 });
 
 test("cartão de etiqueta empilha no celular: título, depois contador + etiqueta", () => {
-  const src = ler("src/app/(dashboard)/qualificar/page.tsx");
+  const src = ler("src/app/(dashboard)/qualificar/qualificar-client.tsx");
   assert.match(src, /flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between/);
   assert.ok(src.indexOf("{title}") < src.indexOf("marcados\n"), "título deve vir antes do contador");
 });
