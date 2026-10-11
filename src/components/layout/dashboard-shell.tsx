@@ -17,8 +17,6 @@ import {
   Wrench,
   Menu,
   LogOut,
-  Building2,
-  User,
   Megaphone,
   Receipt,
   Users,
@@ -40,6 +38,7 @@ import { countDocumentosPendentes } from "@/lib/data/documentos-admin";
 import { contarAchadosP1 } from "@/lib/data/agentes-actions";
 import { useHasActiveLocacao } from "@/lib/use-active-locacao";
 import { useViewMode, MODE_META, identidadeUsuario } from "@/lib/roles";
+import { ModoBarra } from "@/components/layout/modo-barra";
 import { MobileTabBar } from "@/components/layout/mobile-tab-bar";
 import { AppHeader } from "@/components/app/app-header";
 import { useDemoMode, DemoToggle, DemoBanner, useDisplayUser } from "@/lib/demo/demo-mode";
@@ -131,12 +130,6 @@ const ADMIN_NAV: NavItem[] = [
 const NAV_BY_MODE: Record<ViewMode, NavItem[]> = { owner: OWNER_NAV, tenant: TENANT_NAV };
 
 /** Para onde o convite leva ao ativar o segundo papel. */
-/** Ícone de cada mundo no seletor de modo. */
-const MODE_ICON: Record<ViewMode, React.ComponentType<{ className?: string }>> = {
-  owner: Building2,
-  tenant: User,
-};
-
 /** Rotas exclusivas de cada papel (a verificação é compartilhada — adapta por
  *  modo). Acessá-las por URL no modo errado redireciona para a Visão geral. */
 const OWNER_ONLY = [
@@ -425,34 +418,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         {/* Aviso fixo do modo demonstração (só aparece quando ligado). */}
         <DemoBanner />
 
-        {/* Barra de modo: seletor sempre visível (proprietário ⇄ inquilino).
-            Mobile (ADENDO item 2): coluna única compacta — toggle de demo (admin)
-            reduzido em cima, seletor segmentado full-width embaixo. Sem flutuação
-            desalinhada. A partir de sm volta à linha com o rótulo do modo. */}
-        <div className="web-only flex flex-col gap-2 border-b border-sage-200 bg-white px-4 py-2.5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-8 print:hidden">
-          <p className="hidden items-center gap-2 text-sm text-muted sm:flex">
-            Você está no modo
-            <span
-              key={mode}
-              className={cn(
-                "mode-pill inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold",
-                meta.accentBg,
-                meta.accentText
-              )}
-            >
-              <span className={cn("h-1.5 w-1.5 rounded-full", meta.accentDot)} aria-hidden />
-              {meta.label}
-            </span>
-          </p>
-          <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-end">
-            {/* Toggle do modo demonstração — renderiza apenas para o admin.
-                No mobile fica alinhado à direita, acima do seletor. */}
-            <div className="flex justify-end sm:block">
-              <DemoToggle />
-            </div>
-            <ModeSwitcher mode={mode} onSwitch={switchTo} />
-          </div>
-        </div>
+        {/* Barra de modo (site e app): mostra o modo atual e troca ali mesmo. */}
+        <ModoBarra mode={mode} onSwitch={switchTo} extra={<DemoToggle />} />
 
         <main key={mode} className="mode-transition flex-1 p-5 sm:p-8 lg:overflow-y-auto print:overflow-visible">
           {children}
@@ -464,50 +431,6 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       {/* Barra inferior do app (ciente do modo); esconde-se no desktop e nas
           telas de fluxo. Verde = inquilino, âmbar = proprietário. */}
       <MobileTabBar world={mode === "owner" ? "owner" : "tenant"} badges={{ equipe: docsPendentes + achadosP1 }} />
-    </div>
-  );
-}
-
-/**
- * Seletor de modo estilo Airbnb: pílula segmentada com dois mundos
- * (Proprietário ⇄ Inquilino) e um indicador que desliza com animação para o
- * lado ativo. Sempre visível — um clique alterna o mundo.
- */
-function ModeSwitcher({ mode, onSwitch }: { mode: ViewMode; onSwitch: (m: ViewMode) => void }) {
-  const modes: ViewMode[] = ["owner", "tenant"];
-  return (
-    <div
-      role="tablist"
-      aria-label="Alternar entre Proprietário e Inquilino"
-      className="relative grid w-full grid-cols-2 rounded-full border border-sage-200 bg-surface-2 p-1 sm:w-[16.5rem]"
-    >
-      {/* Indicador deslizante (animação estilo Airbnb) */}
-      <span
-        aria-hidden
-        className="pointer-events-none absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-full bg-white shadow-sm ring-1 ring-black/5 transition-transform duration-300 ease-out"
-        style={{ transform: mode === "tenant" ? "translateX(100%)" : "translateX(0)" }}
-      />
-      {modes.map((m) => {
-        const meta = MODE_META[m];
-        const Icon = MODE_ICON[m];
-        const active = mode === m;
-        return (
-          <button
-            key={m}
-            type="button"
-            role="tab"
-            aria-selected={active}
-            onClick={() => !active && onSwitch(m)}
-            className={cn(
-              "relative z-10 inline-flex items-center justify-center gap-1.5 rounded-full py-1.5 text-sm font-semibold transition-colors duration-200",
-              active ? meta.accentText : "text-muted hover:text-ink"
-            )}
-          >
-            <Icon className="h-4 w-4" />
-            {meta.label}
-          </button>
-        );
-      })}
     </div>
   );
 }

@@ -193,6 +193,17 @@ textarea:focus-visible,
   }
 
   /* Pílula de modo: realce breve ao alternar inquilino⇄proprietário */
+  /* Barra de modo: o ícone gira/desliza ao trocar (≤ 600 ms); o aviso entra suave. */
+  .modo-icone {
+    animation: modo-icone 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  @keyframes modo-icone {
+    from { transform: translateX(-10px) rotate(-180deg) scale(0.7); opacity: 0.4; }
+    to { transform: none; opacity: 1; }
+  }
+  .modo-aviso {
+    animation: mode-fade 0.3s ease-out;
+  }
   .mode-pill {
     animation: mode-pill 0.42s cubic-bezier(0.22, 1, 0.36, 1);
   }
