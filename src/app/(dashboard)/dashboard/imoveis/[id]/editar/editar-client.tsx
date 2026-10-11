@@ -26,6 +26,7 @@ import { PhotoUploader, type PhotoItem } from "@/components/photo-uploader";
 import { BlockCalendar } from "@/components/property/block-calendar";
 import { AMENITY_GROUPS, amenityKeysFromLabels } from "@/lib/amenities";
 import { MIN_FOTOS, prontidaoAnuncio, type FatosAnuncio } from "@/lib/anuncio/prontidao";
+import { TERMO_IA_TEXTO, aceiteDoEditor } from "@/lib/anuncio/termo-ia";
 import { updateProperty, type PropertyInput } from "@/lib/data/actions";
 import type { Property } from "@/lib/types";
 import { formatBRL, cn } from "@/lib/utils";
@@ -117,6 +118,7 @@ export function EditarImovelClient({
       }),
     [fatos, property, bathrooms, areaM2, minPeriod, photos, title, monthlyPrice, description]
   );
+  const [aceitouIa, setAceitouIa] = useState(false);
   const [publicadoAgora, setPublicadoAgora] = useState(false);
   const publicado = publicadoAgora || property.status === "active";
 
@@ -151,6 +153,15 @@ export function EditarImovelClient({
       photoUrls: photos.map((p) => p.url).filter((u) => u && !u.startsWith("blob:")),
       videoUrl: property.videoUrl,
       asDraft,
+      descricaoGeradaPorIa: property.descricaoGeradaPorIa,
+      aceiteIa:
+        asDraft === false
+          ? aceiteDoEditor(aceitouIa, {
+              descricaoGeradaPorIa: property.descricaoGeradaPorIa,
+              descricao: description,
+              descricaoOriginal: property.description ?? "",
+            })
+          : undefined,
       parkingSpots: property.parkingSpots,
       condoFee: Number(condoFee) || 0,
       availableFrom: availableFrom || undefined,
@@ -187,7 +198,7 @@ export function EditarImovelClient({
   }
 
   async function publish() {
-    if (!comp.podePublicar) return;
+    if (!comp.podePublicar || !aceitouIa) return;
     setPublishing(true);
     if (await saveSection("publicar", false)) setPublicadoAgora(true);
     setPublishing(false);
@@ -258,7 +269,7 @@ export function EditarImovelClient({
               </Button>
             )}
             {!publicado && (
-              <Button variant="gold" size="sm" onClick={publish} disabled={!comp.podePublicar || publishing}>
+              <Button variant="gold" size="sm" onClick={publish} disabled={!comp.podePublicar || !aceitouIa || publishing}>
                 {publishing ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                 Publicar
               </Button>
@@ -271,6 +282,17 @@ export function EditarImovelClient({
             style={{ width: `${comp.pct}%` }}
           />
         </div>
+        {!publicado && (
+          <label className="mt-3 flex items-start gap-3 rounded-xl border border-sage-200 bg-surface-2 px-4 py-3 text-sm text-ink" data-testid="aceite-ia">
+            <input
+              type="checkbox"
+              checked={aceitouIa}
+              onChange={(e) => setAceitouIa(e.target.checked)}
+              className="mt-0.5 h-5 w-5 shrink-0 accent-forest"
+            />
+            <span>{TERMO_IA_TEXTO}</span>
+          </label>
+        )}
         {erro && <p className="mt-2 text-sm text-red-600">{erro}</p>}
       </div>
 

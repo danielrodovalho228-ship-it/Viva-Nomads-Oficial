@@ -52,3 +52,18 @@ export function camposDaIa(a: {
   }
   return { camposGeradosIa: ["title", "description"], camposEditados: editados };
 }
+
+/**
+ * Aceite enviado pelo editor por seções: só existe com a caixa marcada. O editor não gera texto,
+ * mas o anúncio pode ter nascido com descrição da IA no cadastro: então "description" segue como
+ * gerada por IA (e como editada, se o dono mexeu nela agora).
+ */
+export function aceiteDoEditor(
+  marcado: boolean,
+  anuncio: { descricaoGeradaPorIa?: boolean; descricao?: string; descricaoOriginal?: string } = {},
+): AceiteIa | undefined {
+  if (!marcado) return undefined;
+  if (!anuncio.descricaoGeradaPorIa) return { versao: TERMO_IA_VERSAO, camposGeradosIa: [], camposEditados: [] };
+  const editou = anuncio.descricao !== undefined && anuncio.descricao !== (anuncio.descricaoOriginal ?? "");
+  return { versao: TERMO_IA_VERSAO, camposGeradosIa: ["description"], camposEditados: editou ? ["description"] : [] };
+}
