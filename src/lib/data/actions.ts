@@ -23,6 +23,7 @@ import { buildLeadNotification, LEAD_KIND_MSG, type LeadKind } from "@/lib/leads
 import { amenityRows } from "@/lib/amenities";
 import { fotosDoDono, urlsDoRascunho } from "@/lib/fotos-anuncio";
 import { taxaDoContrato } from "@/config/planos";
+import { validarAceiteIa } from "@/lib/anuncio/termo-ia";
 import { erroBancoPT } from "@/lib/erros-banco";
 import { planoDoProprietario } from "@/lib/data/plano-efetivo";
 import { avisarPedidosDoImovel } from "@/lib/data/pedidos-compat";
@@ -318,6 +319,8 @@ export interface PropertyInput {
    * no painel do dono.
    */
   asDraft?: boolean;
+  /** Aceite do termo de IA (obrigatório ao publicar; validado e gravado no servidor). */
+  aceiteIa?: unknown;
   // ── Enriquecimento (FASE 1/2) — gravados best-effort (requer migrações 0018/0019) ──
   parkingSpots?: number;
   condoFee?: number;
@@ -352,6 +355,27 @@ async function faltaParaPublicar(
   if (!pr) return "Imóvel não encontrado.";
   if (pr.podePublicar) return null;
   return `Ainda falta para publicar: ${pr.faltam.join("; ")}.`;
+}
+
+/**
+ * Publicar exige o termo de IA aceito (ordem 04e2fe5e, item 5): valida a forma e
+ * grava o aceite do PRÓPRIO dono (a RLS confere o dono do imóvel). Devolve o
+ * texto do erro, ou null quando está tudo certo.
+ */
+async function exigirAceiteIa(
+  supabase: NonNullable<Awaited<ReturnType<typeof createClient>>>,
+  propertyId: string,
+  aceiteIa: unknown,
+): Promise<string | null> {
+  const v = validarAceiteIa(aceiteIa);
+  if (!v.ok) return "Marque a confirmação de que você revisou o anúncio para publicar.";
+  const { error } = await supabase.from("anuncio_aceites_ia").insert({
+    property_id: propertyId,
+    versao_termo: v.aceite.versao,
+    campos_gerados_ia: v.aceite.camposGeradosIa,
+    campos_editados: v.aceite.camposEditados,
+  });
+  return error ? "Não foi possível registrar a sua confirmação. Tente novamente." : null;
 }
 
 export async function createProperty(input: PropertyInput): Promise<ActionResult> {
@@ -539,6 +563,8 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
   if (!input.asDraft) {
     const falta = await faltaParaPublicar(supabase, user.id, data.id as string);
     if (falta) return { ok: false, id: data.id, error: `${falta} O anúncio ficou salvo como rascunho.` };
+    const semAceite = await exigirAceiteIa(supabase, data.id as string, input.aceiteIa);
+    if (semAceite) return { ok: false, id: data.id, error: `${semAceite} O anúncio ficou salvo como rascunho.` };
   }
   const { error: stErr } = await supabase
     .from("properties")
@@ -717,6 +743,10 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
   if (input.asDraft === false) {
     const falta = await faltaParaPublicar(supabase, user.id, id);
     if (falta) return { ok: false, id, error: `${falta} Suas alterações foram salvas.` };
+    if (antes?.status !== "active") {
+      const semAceite = await exigirAceiteIa(supabase, id, input.aceiteIa);
+      if (semAceite) return { ok: false, id, error: `${semAceite} Suas alterações foram salvas.` };
+    }
     const { error: pubErr } = await supabase
       .from("properties")
       .update({ status: "active", draft_data: null })
