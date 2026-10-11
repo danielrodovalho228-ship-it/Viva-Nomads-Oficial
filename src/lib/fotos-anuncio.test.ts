@@ -18,9 +18,9 @@ test("só fotos da pasta do próprio dono, sem repetidas nem blob:", () => {
   assert.deepEqual(r, [minha, `${base}${DONO}/d.jpg`]);
 });
 
-test("rascunho com 8 fotos vira 8 URLs; limite de 24", () => {
-  const data = { photos: Array.from({ length: 30 }, (_, i) => ({ id: String(i), url: `${base}${DONO}/${i}.jpg` })) };
-  assert.equal(fotosDoDono(urlsDoRascunho(data), DONO).length, 24);
+test("rascunho com 8 fotos vira 8 URLs; limite de 40", () => {
+  const data = { photos: Array.from({ length: 50 }, (_, i) => ({ id: String(i), url: `${base}${DONO}/${i}.jpg` })) };
+  assert.equal(fotosDoDono(urlsDoRascunho(data), DONO).length, 40);
   assert.equal(fotosDoDono(urlsDoRascunho({ photos: data.photos.slice(0, 8) }), DONO).length, 8);
   assert.deepEqual(urlsDoRascunho(null), []);
   assert.deepEqual(urlsDoRascunho({ photos: "x" }), []);
