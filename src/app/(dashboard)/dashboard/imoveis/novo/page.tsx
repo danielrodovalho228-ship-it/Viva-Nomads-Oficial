@@ -31,6 +31,7 @@ import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { DocConferidaBadge } from "@/components/ui/badge";
 import { PropertyMiniCard } from "@/components/property-mini-card";
+import { GuiaFotos } from "@/components/fotos/guia-fotos";
 import { PhotoUploader, type PhotoItem } from "@/components/photo-uploader";
 import { MAX_FOTOS_POR_ANUNCIO } from "@/lib/fotos/qualidade";
 import { DocumentoUploader } from "@/components/documento-uploader";
@@ -1195,6 +1196,11 @@ export default function NewPropertyPage() {
                 8–11 padrão · 12–19 <strong>Anúncio completo</strong> · 20+ <strong>Anúncio premium</strong> (mais prioridade na busca).
               </p>
             </div>
+
+            <details className="mt-3 rounded-xl border border-sage-200 p-3">
+              <summary className="cursor-pointer text-sm font-medium text-forest underline">Ver dicas de foto</summary>
+              <div className="mt-3"><GuiaFotos comCta={false} /></div>
+            </details>
 
             <p className="mt-3 text-sm">
               <a href={`/parceiros/fotografos${cep ? `?cep=${encodeURIComponent(cep)}` : ""}`} target="_blank" rel="noopener" className="font-medium text-forest underline">
