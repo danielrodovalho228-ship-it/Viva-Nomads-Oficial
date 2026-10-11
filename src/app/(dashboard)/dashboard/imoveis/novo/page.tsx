@@ -52,6 +52,8 @@ import { useAuthStore } from "@/lib/store";
 import { draftKey, DRAFT_KEY_LEGADO } from "@/lib/local-keys";
 import { registrarEvento } from "@/lib/eventos/registrar";
 import { TERMO_IA_TEXTO, TERMO_IA_VERSAO, camposDaIa } from "@/lib/anuncio/termo-ia";
+import { miniaturaBase64 } from "@/lib/fotos/miniatura";
+import { FOTOS_MAX_MINIATURAS, type SugestaoFotos } from "@/lib/ai/fotos-prompt";
 import { etapaLiberada, etapaMaisAvancada, etapaDoRascunho, etapaNaPosicao, posicaoDaEtapa, posMaxDoRascunho, ORDEM_ETAPAS, VERSAO_ORDEM_ETAPAS } from "@/lib/etapas-anuncio";
 
 /** Metadados das 7 etapas do wizard (rodada 15). O índice é o ID estável da etapa; a ordem em que
@@ -92,6 +94,10 @@ export default function NewPropertyPage() {
   }
   const [aiLoading, setAiLoading] = useState(false);
   const [aiWarn, setAiWarn] = useState<string | null>(null);
+  // "Preencher com IA" pelas fotos (ordem 721a139a, parte B): o que a IA sugeriu fica visível até o dono revisar.
+  const [fotosIaLoading, setFotosIaLoading] = useState(false);
+  const [fotosIaWarn, setFotosIaWarn] = useState<string | null>(null);
+  const [sugeridoPelaIa, setSugeridoPelaIa] = useState<string[]>([]);
   // Auditoria: descrição gerada por IA (some ao editar à mão). Persistido.
   const [descricaoGeradaPorIa, setDescricaoGeradaPorIa] = useState(false);
   // Termo de aceite (ordem 04e2fe5e, item 5): obrigatório para publicar; o texto da IA
@@ -819,6 +825,54 @@ export default function NewPropertyPage() {
     }
   }
 
+  // Preenche o cadastro a partir das fotos (rota do servidor; chave só lá). Manda só
+  // miniaturas — sem endereço, contato nem URL. NUNCA sobrescreve o que o dono já
+  // escreveu: só campos vazios (tipo e comodidades somam). O termo de aceite cobre o texto.
+  async function preencherComIa() {
+    setFotosIaWarn(null);
+    setFotosIaLoading(true);
+    try {
+      const passo = Math.max(1, Math.floor(photos.length / FOTOS_MAX_MINIATURAS));
+      const escolhidas = photos.filter((_, i) => i % passo === 0).slice(0, FOTOS_MAX_MINIATURAS);
+      const minis = (await Promise.all(escolhidas.map((p) => miniaturaBase64(p.url)))).filter((m): m is string => !!m);
+      if (minis.length === 0) {
+        setFotosIaWarn("Não consegui ler as fotos agora. Tente de novo.");
+        return;
+      }
+      const res = await fetch("/api/ai/fotos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ miniaturas: minis }),
+      });
+      const data = (await res.json().catch(() => ({}))) as Partial<SugestaoFotos> & { error?: string };
+      if (!res.ok) {
+        setFotosIaWarn(data.error ?? "Não foi possível analisar agora. Tente novamente.");
+        return;
+      }
+      const marcados: string[] = [];
+      if (data.tipo) { setPropertyType(data.tipo); marcados.push("tipo de imóvel"); }
+      if (data.quartos !== undefined && !bedrooms) { setBedrooms(String(data.quartos)); marcados.push("quartos"); }
+      if (data.banheiros !== undefined && !bathrooms) { setBathrooms(String(data.banheiros)); marcados.push("banheiros"); }
+      if (data.comodidades?.length) {
+        setAmenityKeys((a) => ({ ...a, ...Object.fromEntries(data.comodidades!.map((k) => [k, true])) }));
+        marcados.push("comodidades");
+      }
+      if (data.titulo && data.descricao && !title.trim() && !description.trim()) {
+        setTitle(data.titulo);
+        setDescription(data.descricao);
+        setDescricaoGeradaPorIa(true);
+        setTextoIaOriginal({ titulo: data.titulo, descricao: data.descricao });
+        marcados.push("título e descrição");
+      }
+      setSugeridoPelaIa(marcados);
+      if (marcados.length === 0) setFotosIaWarn("A IA não teve certeza de nada nestas fotos. Preencha à mão.");
+    } catch {
+      setFotosIaWarn("Não foi possível analisar agora. Verifique a conexão e tente novamente.");
+    } finally {
+      setFotosIaLoading(false);
+    }
+  }
+
   if (approved === null) return null;
 
   const meta = STEP_META[step];
@@ -1243,6 +1297,28 @@ export default function NewPropertyPage() {
               <PhotoUploader photos={photos} onChange={setPhotos} max={MAX_FOTOS_POR_ANUNCIO} />
               <Erro msg={erros.fotos} />
             </div>
+
+            {GERACAO_IA_ATIVA && photos.length > 0 && (
+              <div className="mt-4 rounded-xl bg-champagne/10 px-4 py-3" data-testid="preencher-com-ia">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm text-forest">Deixe a IA ler as fotos e sugerir o cadastro</span>
+                  <Button size="sm" variant="gold" onClick={preencherComIa} disabled={fotosIaLoading}>
+                    <Sparkles className="h-4 w-4" /> {fotosIaLoading ? "Lendo as fotos..." : "Preencher com IA"}
+                  </Button>
+                </div>
+                {fotosIaWarn && <p className="mt-2 text-xs font-medium text-red-600">{fotosIaWarn}</p>}
+                {sugeridoPelaIa.length > 0 && (
+                  <p className="mt-2 inline-flex items-start gap-1 text-xs font-medium text-forest">
+                    <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span>Sugerido pela IA: {sugeridoPelaIa.join(", ")}. Confira cada campo — tudo é editável.</span>
+                  </p>
+                )}
+                <p className="mt-2 text-xs text-muted">
+                  A IA pode errar. Enviamos só miniaturas das fotos — <strong className="text-ink">sem endereço nem
+                  contato</strong> — e nada é guardado fora do seu anúncio. Você confirma tudo no termo antes de publicar.
+                </p>
+              </div>
+            )}
 
             {/* Privacidade das fotos (item 4 do QA): as fotos sobem re-codificadas,
                 sem metadados — inclusive a localização (GPS) embutida pelo celular. */}
