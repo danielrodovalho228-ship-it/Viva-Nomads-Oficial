@@ -7,6 +7,7 @@ import {
   SOCIOS_COOKIE,
   SOCIOS_UNLOCK_PATH,
 } from "@/lib/socios/access";
+import { COOKIE_ADMIN_ATIVO, sessaoAdminOciosa } from "@/lib/admin/sessao-ociosa";
 import { APP_COOKIE, appHome, isAppUserAgent, isMarketingPath } from "@/lib/app-mode";
 
 /**
@@ -136,6 +137,29 @@ export async function proxy(request: NextRequest) {
     redirectUrl.pathname = "/auth";
     redirectUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(redirectUrl);
+  }
+
+  // Admin parado há mais de 30 min: encerra a sessão e pede login de novo.
+  if (isAdminRoute && user) {
+    const agora = Date.now();
+    if (sessaoAdminOciosa(request.cookies.get(COOKIE_ADMIN_ATIVO)?.value, agora)) {
+      await supabase.auth.signOut();
+      const loginUrl = request.nextUrl.clone();
+      loginUrl.pathname = "/auth";
+      loginUrl.search = "";
+      loginUrl.searchParams.set("redirect", pathname);
+      const resposta = NextResponse.redirect(loginUrl);
+      // signOut escreveu a limpeza dos cookies de sessão em `response`: repassa.
+      response.cookies.getAll().forEach((c) => resposta.cookies.set(c));
+      resposta.cookies.delete(COOKIE_ADMIN_ATIVO);
+      return resposta;
+    }
+    response.cookies.set(COOKIE_ADMIN_ATIVO, String(agora), {
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+      path: "/",
+    });
   }
 
   // Área de admin exige papel admin (fonte confiável: tabela `profiles`).
