@@ -54,7 +54,7 @@ export function MyPropertiesClient({ properties: real, prontidao = {} }: { prope
         action={
           <div className="flex items-center gap-2">
             {demoOn && <DemoBadge />}
-            <ButtonLink href="/qualificar" variant="gold">
+            <ButtonLink href="/dashboard/imoveis/novo" variant="gold">
               <Plus className="h-4 w-4" /> Novo anúncio
             </ButtonLink>
           </div>

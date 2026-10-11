@@ -40,3 +40,16 @@ test("#37: botões que levam a /qualificar dizem que vão entrar antes (visitant
   const foot = ler("components/layout/footer.tsx");
   assert.match(foot, /Anunciar imóvel \(com login\)/);
 });
+
+test("botões de Novo anúncio (logado) abrem direto o cadastro pelas Fotos, não /qualificar", () => {
+  const novo = "/dashboard/imoveis/novo";
+  const lista = ler("app/(dashboard)/dashboard/imoveis/imoveis-client.tsx");
+  assert.match(lista, new RegExp(`href="${novo}"[^>]*>\\s*<Plus[^]*?Novo anúncio`));
+  const painel = ler("app/(dashboard)/dashboard/page.tsx");
+  assert.match(painel, new RegExp(`href="${novo}"[^>]*>\\s*<ClipboardCheck[^]*?Novo anúncio`));
+  assert.match(painel, new RegExp(`href="${novo}"[^>]*>\\s*<ClipboardCheck[^]*?Começar agora`));
+  assert.match(ler("components/dashboard/role-welcome-modal.tsx"), new RegExp(`router\\.push\\("${novo}"\\)`));
+  const nav = ler("components/layout/navbar.tsx");
+  assert.ok(!/href="\/qualificar" variant="accent"/.test(nav));
+  assert.equal((nav.match(/loggedIn \? "\/dashboard\/imoveis\/novo" : "\/qualificar"/g) ?? []).length, 2);
+});

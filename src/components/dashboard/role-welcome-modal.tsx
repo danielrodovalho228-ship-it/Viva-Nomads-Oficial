@@ -46,7 +46,7 @@ export function RoleWelcomeModal() {
     // Conta nova grava o modo no perfil já no primeiro acesso (B1).
     salvarModo(mode).catch(() => {});
     done();
-    if (mode === "owner") router.push("/qualificar");
+    if (mode === "owner") router.push("/dashboard/imoveis/novo");
   }
 
   if (!open) return null;
