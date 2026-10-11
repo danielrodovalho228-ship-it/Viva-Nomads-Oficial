@@ -171,3 +171,25 @@ export function fatosDaLinha(p: LinhaAnuncio, fotos: number, documento: StatusDo
     video: !!p.video_url,
   };
 }
+
+export interface FaixaDocumentoAprovado {
+  titulo: string;
+  /** Rótulos que ainda faltam (sem o documento, que já está aprovado). Vazio = é só publicar. */
+  faltam: string[];
+}
+
+/**
+ * Faixa "Documento aprovado — falta publicar" (#58): aparece só em rascunho cujo
+ * documento já foi aprovado, para o dono não esperar por algo que já aconteceu.
+ * Diz exatamente o que falta (o botão Publicar usa a mesma lista).
+ */
+export function faixaDocumentoAprovado(comp: Prontidao, statusImovel: string): FaixaDocumentoAprovado | null {
+  if (statusImovel !== "draft") return null;
+  const doc = comp.obrigatorios.find((i) => i.key === "documento");
+  if (!doc?.ok) return null;
+  const faltam = comp.obrigatorios.filter((i) => !i.ok).map((i) => (i.detalhe ? `${i.label} (${i.detalhe})` : i.label));
+  return {
+    titulo: faltam.length === 0 ? "Documento aprovado — é só publicar" : "Documento aprovado — falta publicar",
+    faltam,
+  };
+}

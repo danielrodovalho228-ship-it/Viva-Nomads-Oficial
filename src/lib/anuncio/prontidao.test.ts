@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { readFileSync } from "node:fs";
 
-import { fatosDaLinha, MIN_FOTOS, OBRIGATORIOS_ROTULOS, prontidaoAnuncio, type FatosAnuncio, type LinhaAnuncio } from "./prontidao.ts";
+import { faixaDocumentoAprovado, fatosDaLinha, MIN_FOTOS, OBRIGATORIOS_ROTULOS, prontidaoAnuncio, type FatosAnuncio, type LinhaAnuncio } from "./prontidao.ts";
 import { MIN_PHOTOS } from "../listing.ts";
 import { FAQ } from "../atendimento/faq.ts";
 
@@ -116,4 +116,21 @@ test("rótulos do documento na prontidão: Não enviado / Em análise / Aprovado
   assert.equal(rotuloDocumento("approved"), "Aprovado");
   assert.equal(rotuloDocumento("rejected", "Foto ilegível"), "Reprovado: Foto ilegível");
   assert.equal(rotuloDocumento("rejected", "  "), "Reprovado");
+});
+
+
+
+test("#58: rascunho com documento aprovado mostra a faixa e o que falta", () => {
+  const comp = prontidaoAnuncio({ ...completo(), documento: "approved", fotos: 3 });
+  const faixa = faixaDocumentoAprovado(comp, "draft");
+  assert.equal(faixa?.titulo, "Documento aprovado — falta publicar");
+  assert.ok(faixa?.faltam.some((f) => f.includes("fotos")));
+});
+
+test("#58: tudo pronto vira 'é só publicar'; documento não aprovado ou anúncio ativo não mostram faixa", () => {
+  const pronto = prontidaoAnuncio({ ...completo(), documento: "approved" });
+  assert.equal(faixaDocumentoAprovado(pronto, "draft")?.titulo, "Documento aprovado — é só publicar");
+  assert.equal(faixaDocumentoAprovado(pronto, "active"), null);
+  const pendente = prontidaoAnuncio({ ...completo(), documento: "pending" });
+  assert.equal(faixaDocumentoAprovado(pendente, "draft"), null);
 });
