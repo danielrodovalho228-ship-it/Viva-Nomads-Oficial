@@ -117,7 +117,7 @@ test.describe("T14 — Modo app", () => {
       // Outro spec (T2) alterna o modo desta conta em paralelo: garante o modo.
       // O seletor de dois lados da Conta (radio) substituiu o item "Usar como …".
       const usarComoDono = page.getByRole("radio", { name: /Propriet/i, checked: false });
-      await expect(page.getByTestId("modo-barra")).toBeVisible();
+      await expect(page.getByTestId("modo-chip")).toBeVisible();
       if (await usarComoDono.isVisible()) {
         await usarComoDono.click();
         await expect(page).toHaveURL(/\/dashboard\/?$/);

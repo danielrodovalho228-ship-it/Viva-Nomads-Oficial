@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -17,9 +18,11 @@ import {
   Users,
 } from "lucide-react";
 import { useAuthStore, type ViewMode } from "@/lib/store";
-import { useViewMode, MODE_META, identidadeUsuario } from "@/lib/roles";
+import { useViewMode, identidadeUsuario } from "@/lib/roles";
 import { useDisplayUser } from "@/lib/demo/demo-mode";
 import { salvarModo } from "@/lib/salvar-modo";
+import { getMyAvatarUrl } from "@/lib/data/avatar-actions";
+import { Avatar } from "@/components/ui/avatar";
 import { removerPushToken } from "@/lib/data/push-actions";
 import { createClient } from "@/lib/supabase/client";
 import { appHome } from "@/lib/app-mode";
@@ -39,6 +42,20 @@ export function ContaMenu() {
   const user = useDisplayUser();
   const { signOut, setActiveMode } = useAuthStore();
   const { mode } = useViewMode();
+
+  // Foto do próprio usuário (opcional); sem foto, o Avatar mostra as iniciais.
+  const [foto, setFoto] = useState<string | null>(null);
+  useEffect(() => {
+    let vivo = true;
+    getMyAvatarUrl()
+      .then((r) => {
+        if (vivo) setFoto(r.url);
+      })
+      .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, [user?.id]);
 
   async function trocarModo(outro: ViewMode) {
     setActiveMode(outro);
@@ -88,12 +105,17 @@ export function ContaMenu() {
 
   return (
     <div className="mx-auto max-w-xl space-y-4">
-      <div className="rounded-2xl bg-white p-4">
-        <p className="font-title text-lg font-bold text-ink">{identidadeUsuario(user)}</p>
-        <p className="text-sm text-muted">
-          Usando como <strong>{MODE_META[mode].label.toLowerCase()}</strong>
-        </p>
-      </div>
+      {/* Toque na foto leva ao Perfil (trocar/enviar foto). O modo atual aparece no chip do topo e no seletor abaixo. */}
+      <Link
+        href="/dashboard/conta/perfil"
+        data-testid="conta-cartao-usuario"
+        aria-label="Abrir Perfil para trocar a foto"
+        className="flex items-center gap-3 rounded-2xl bg-white p-4"
+      >
+        <Avatar name={identidadeUsuario(user)} size={56} photoUrl={foto ?? undefined} />
+        <p className="min-w-0 flex-1 truncate font-title text-lg font-bold text-ink">{identidadeUsuario(user)}</p>
+        <ChevronRight className="h-4 w-4 text-muted" aria-hidden />
+      </Link>
       {/* Toda conta pode usar os dois papéis: seletor de dois lados. */}
       <SeletorModo mode={mode} onSwitch={trocarModo} />
       {grupos
