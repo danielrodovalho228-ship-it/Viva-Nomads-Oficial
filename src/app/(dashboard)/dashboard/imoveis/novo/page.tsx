@@ -1207,6 +1207,11 @@ export default function NewPropertyPage() {
               </p>
             </div>
 
+            <p className="mt-3 text-sm">
+              <a href={`/parceiros/fotografos${cep ? `?cep=${encodeURIComponent(cep)}` : ""}`} target="_blank" rel="noopener" className="font-medium text-forest underline">
+                Quer ajuda profissional? Veja fotógrafos parceiros na sua cidade
+              </a>
+            </p>
             <div className="mt-3 flex flex-wrap gap-1.5">
               {SUGGESTED_ROOMS.map((r) => (
                 <span key={r} className="rounded-full bg-surface-2 px-2.5 py-1 text-xs text-muted">{r}</span>
