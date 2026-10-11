@@ -19,7 +19,7 @@ test.describe("T2 — Persistência de modo @criticos", () => {
   test.use({ storageState: authFile(CONTA_T2) });
 
   async function trocarPara(page: import("@playwright/test").Page, alvo: RegExp) {
-    await page.getByRole("tab", { name: alvo }).click();
+    await page.getByRole("button", { name: new RegExp("Trocar para " + alvo.source, "i") }).click();
     await expect(page.locator("aside")).toContainText(/Modo:/);
   }
 
@@ -31,7 +31,7 @@ test.describe("T2 — Persistência de modo @criticos", () => {
     await expect(aside).toContainText(/Modo:/);
     const atualEhDono = /Modo:\s*Propriet/i.test(await aside.innerText());
     const alvo = atualEhDono ? /Inquilino/i : /Propriet/i;
-    await page.getByRole("tab", { name: alvo }).click(); // um clique só
+    await page.getByRole("button", { name: new RegExp("Trocar para " + alvo.source, "i") }).click(); // um clique só
     await expect(aside).toContainText(atualEhDono ? /Modo:\s*Inquilino/i : /Modo:\s*Propriet/i);
     // Espera as leituras de perfil em voo terminarem: o modo não pode voltar.
     await page.waitForLoadState("networkidle");
@@ -39,7 +39,7 @@ test.describe("T2 — Persistência de modo @criticos", () => {
     await page.reload({ waitUntil: "networkidle" });
     await expect(aside).toContainText(atualEhDono ? /Modo:\s*Inquilino/i : /Modo:\s*Propriet/i);
     // Volta ao modo original (a conta é compartilhada com outros specs).
-    await page.getByRole("tab", { name: atualEhDono ? /Propriet/i : /Inquilino/i }).click();
+    await page.getByRole("button", { name: atualEhDono ? /Trocar para Propriet/i : /Trocar para Inquilino/i }).click();
     await expect(aside).toContainText(atualEhDono ? /Modo:\s*Propriet/i : /Modo:\s*Inquilino/i);
     await page.waitForLoadState("networkidle");
   });
@@ -87,7 +87,7 @@ test.describe("T2 — Persistência de modo @criticos", () => {
     const segurar = (route: import("@playwright/test").Route) =>
       route.request().method() === "POST" && route.request().headers()["next-action"] ? route.abort() : route.fallback();
     await page.route("**/*", segurar);
-    await page.getByRole("tab", { name: /Inquilino/i }).click();
+    await page.getByRole("button", { name: /Trocar para Inquilino/i }).click();
     await expect(page.locator("aside")).toContainText(/Modo:\s*Inquilino/i);
     await page.unroute("**/*", segurar);
     await page.reload({ waitUntil: "networkidle" });
