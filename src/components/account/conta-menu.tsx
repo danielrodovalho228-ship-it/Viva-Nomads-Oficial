@@ -16,6 +16,7 @@ import {
   Trash2,
   LogOut,
   ChevronRight,
+  Users,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/store";
 import { useViewMode, MODE_META, identidadeUsuario } from "@/lib/roles";
@@ -26,6 +27,7 @@ import { createClient } from "@/lib/supabase/client";
 import { appHome } from "@/lib/app-mode";
 import { PROGRAMA_INDICACAO } from "@/lib/flags";
 import { cn } from "@/lib/utils";
+import { mostraEquipe, ROTA_EQUIPE } from "./conta-equipe";
 
 type Item = { href?: string; onClick?: () => void; label: string; icon: React.ComponentType<{ className?: string }>; tom?: "perigo" };
 
@@ -78,6 +80,7 @@ export function ContaMenu() {
             { href: "/dashboard/ferramentas", label: "Ferramentas", icon: Wrench },
           ]
         : []),
+      ...(mostraEquipe(user?.role) ? [{ href: ROTA_EQUIPE, label: "Equipe e aprovações", icon: Users }] : []),
       ...(PROGRAMA_INDICACAO ? [{ href: "/dashboard/indicacoes", label: "Indicações", icon: Gift }] : []),
     ],
     [
