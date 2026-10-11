@@ -40,6 +40,7 @@ export const PUBLIC_NAV = [
   { href: "/como-funciona", label: "Como funciona" },
   { href: "/para-proprietarios", label: "Para proprietários" },
   { href: "/precos", label: "Preços" },
+  { href: "/parceiros", label: "Parceiros" },
 ];
 
 /**
