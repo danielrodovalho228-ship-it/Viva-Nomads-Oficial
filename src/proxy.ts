@@ -7,7 +7,7 @@ import {
   SOCIOS_COOKIE,
   SOCIOS_UNLOCK_PATH,
 } from "@/lib/socios/access";
-import { COOKIE_ADMIN_ATIVO, sessaoAdminOciosa } from "@/lib/admin/sessao-ociosa";
+import { COOKIE_ADMIN_ATIVO, LIMITE_OCIOSO_ADMIN_MS, sessaoAdminOciosa } from "@/lib/admin/sessao-ociosa";
 import { APP_COOKIE, appHome, isAppUserAgent, isMarketingPath } from "@/lib/app-mode";
 
 /**
@@ -142,8 +142,17 @@ export async function proxy(request: NextRequest) {
   // Admin parado há mais de 30 min: encerra a sessão e pede login de novo.
   if (isAdminRoute && user) {
     const agora = Date.now();
-    if (sessaoAdminOciosa(request.cookies.get(COOKIE_ADMIN_ATIVO)?.value, agora)) {
-      await supabase.auth.signOut();
+    const ultimoLogin = Date.parse(user.last_sign_in_at ?? "") || 0;
+    if (
+      sessaoAdminOciosa(
+        request.cookies.get(COOKIE_ADMIN_ATIVO)?.value,
+        agora,
+        LIMITE_OCIOSO_ADMIN_MS,
+        ultimoLogin,
+      )
+    ) {
+      // scope local: encerra só este navegador, sem derrubar os outros aparelhos.
+      await supabase.auth.signOut({ scope: "local" });
       const loginUrl = request.nextUrl.clone();
       loginUrl.pathname = "/auth";
       loginUrl.search = "";

@@ -11,9 +11,12 @@ export function sessaoAdminOciosa(
   ultimoAcessoMs: string | number | null | undefined,
   agoraMs: number,
   limiteMs: number = LIMITE_OCIOSO_ADMIN_MS,
+  ultimoLoginMs: number = 0,
 ): boolean {
   if (ultimoAcessoMs === null || ultimoAcessoMs === undefined || ultimoAcessoMs === "") return false;
   const ultimo = Number(ultimoAcessoMs);
   if (!Number.isFinite(ultimo) || ultimo <= 0) return false;
+  // Cookie de antes do login atual é de uma sessão anterior: trata como sessão nova.
+  if (Number.isFinite(ultimoLoginMs) && ultimo <= ultimoLoginMs) return false;
   return agoraMs - ultimo > limiteMs;
 }
