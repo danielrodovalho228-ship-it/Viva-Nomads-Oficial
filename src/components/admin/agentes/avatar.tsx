@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { iniciais } from "@/lib/agentes/central";
+import { imagemQuebrada } from "@/lib/agentes/foto";
 import styles from "./central.module.css";
 
 /** Foto do agente em public/agentes/<slug>.webp (256 px). Sem arquivo: hexágono com as iniciais. */
@@ -40,6 +41,11 @@ export function AvatarAgente({
   semFoto?: boolean;
 }) {
   const [falhou, setFalhou] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
+  // O erro de carga pode acontecer antes da hidratação (img renderizada no servidor): onError nunca dispara.
+  useEffect(() => {
+    if (imagemQuebrada(imgRef.current)) setFalhou(true);
+  }, []);
   const foto = !semFoto && !falhou;
   return (
     <span
@@ -50,7 +56,7 @@ export function AvatarAgente({
       {anel && <span className={styles.anel} style={{ background: anel }} />}
       {foto ? (
         // eslint-disable-next-line @next/next/no-img-element -- 256 px local, sem otimização
-        <img src={fotoDoAgente(slug)} alt="" width={tamanho} height={tamanho} loading="lazy" onError={() => setFalhou(true)} className={`${styles.hex} block h-full w-full bg-[#0B1638] object-cover`} />
+        <img ref={imgRef} src={fotoDoAgente(slug)} alt="" width={tamanho} height={tamanho} loading="lazy" onError={() => setFalhou(true)} className={`${styles.hex} block h-full w-full bg-[#0B1638] object-cover`} />
       ) : (
         <span className={`${styles.hex} block h-full w-full bg-[#0B1638]`}>
           <Hex nome={nome} cor={cor} tamanho={tamanho} />
