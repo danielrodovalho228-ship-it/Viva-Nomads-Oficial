@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { guardSocios } from "@/lib/socios/guard";
 import { PaginasInternasNav } from "@/components/apresentacao/paginas-nav";
+import { carregarPendenciasSocios } from "@/lib/socios/pendencias-servidor";
 import { Socios } from "@/components/socios/socios";
 
 // Documento interno (proposta de papéis) — por link direto, não indexar.
@@ -16,7 +17,7 @@ export default async function SociosPage() {
   return (
     <>
       <PaginasInternasNav atual="/socios" />
-      <Socios />
+      <Socios pendencias={await carregarPendenciasSocios()} />
     </>
   );
 }

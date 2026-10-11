@@ -1,4 +1,5 @@
 import styles from "./socios.module.css";
+import type { Pendencia } from "@/lib/socios/pendencias";
 
 interface Partner {
   variant: "tech" | "fin" | "sales" | "owner";
@@ -64,7 +65,7 @@ const COMPARTILHADAS: { t: string; d: string }[] = [
   { t: "A garantia", d: "O ponto mais crítico. Rômulo busca o parceiro de seguro; Daniel implementa; juntos decidem o modelo." },
 ];
 
-export function Socios() {
+export function Socios({ pendencias = [] }: { pendencias?: Pendencia[] }) {
   return (
     <div className={styles.page}>
       <div className={styles.hero}>
@@ -116,6 +117,23 @@ export function Socios() {
               ))}
             </div>
           </div>
+        </section>
+
+        <section className={styles.section} data-testid="pendencias">
+          <div className={styles.kicker}>Pendências</div>
+          <h2 className={styles.h2}>O que espera a aprovação do Daniel</h2>
+          {pendencias.length === 0 ? (
+            <p className={styles.lead}>Nada pendente agora.</p>
+          ) : (
+            <ul className={styles.pend}>
+              {pendencias.map((p) => (
+                <li key={`${p.tipo}-${p.referencia}-${p.resumo}`}>
+                  <strong>{p.tipo} · {p.referencia}</strong> <span>(risco {p.risco})</span>
+                  <div>{p.resumo}</div>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
 
         <section className={styles.section}>
