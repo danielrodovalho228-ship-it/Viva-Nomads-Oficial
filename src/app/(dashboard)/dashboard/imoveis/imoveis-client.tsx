@@ -13,7 +13,7 @@ import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
 import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
 import { DEMO_PROPERTIES, DEMO_PROPERTY_STATS } from "@/lib/demo/seed";
 import type { Property, PropertyStatus } from "@/lib/types";
-import type { Prontidao } from "@/lib/anuncio/prontidao";
+import { faixaDocumentoAprovado, type Prontidao } from "@/lib/anuncio/prontidao";
 import { formatBRL, cn } from "@/lib/utils";
 
 /** Rótulo + tom do status do anúncio (rascunho/ativo/pausado/arquivado). */
@@ -145,6 +145,15 @@ export function MyPropertiesClient({ properties: real, prontidao = {} }: { prope
                   </div>
                   {/* Prontidão (fonte única: lib/anuncio/prontidao). "Falta" só tem
                       obrigatórios; selo/vídeo aparecem à parte, como melhoria. */}
+                  {!demoItem && comp && (() => {
+                    const faixa = faixaDocumentoAprovado(comp, p.status);
+                    return faixa ? (
+                      <p className="mt-3 rounded-lg bg-sage-100 px-3 py-2 text-xs font-medium text-forest" role="status" data-testid="faixa-documento-aprovado">
+                        {faixa.titulo}
+                        {faixa.faltam.length > 0 && `: ${faixa.faltam.join(" · ")}`}
+                      </p>
+                    ) : null;
+                  })()}
                   {!demoItem && comp && p.status !== "active" && (
                     <div className="mt-3" data-testid="prontidao">
                       <div className="flex items-center justify-between text-xs">
