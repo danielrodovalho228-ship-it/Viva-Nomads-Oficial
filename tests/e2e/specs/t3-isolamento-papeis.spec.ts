@@ -47,7 +47,7 @@ test.describe("T3 — Não-admin (proprietário) @criticos", () => {
   test("menu do proprietário: exatamente 10 itens, na ordem", async ({ page }) => {
     await page.goto("/dashboard", { waitUntil: "networkidle" });
     // Garante modo Proprietário.
-    const tab = page.getByRole("tab", { name: /Propriet/i });
+    const tab = page.getByRole("button", { name: /Trocar para Propriet/i });
     if (await tab.isVisible()) await tab.click();
     const labels = (await page.locator("aside nav a").allInnerTexts()).map((t) => t.trim());
     expect(labels).toEqual(OWNER_MENU);
