@@ -3,7 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   orientacao, caixaDeCorte, tamanhoFinal, avisosDaFoto, dHash, distanciaHash,
-  nitidezLaplaciano, luminanciaMedia, paraCinza, fatorExposicao, MAX_FOTOS_POR_ANUNCIO,
+  nitidezLaplaciano, luminanciaMedia, paraCinza, fatorExposicao, fatorAplicado, MAX_FOTOS_POR_ANUNCIO,
   type Analise,
 } from "./qualidade.ts";
 
@@ -95,4 +95,11 @@ test("exposição: clareia escura, escurece estourada, mantém normal, limitada 
 
 test("rolo da câmera: até 40 fotos", () => {
   assert.equal(MAX_FOTOS_POR_ANUNCIO, 40);
+});
+
+test("'usar original' não ajusta exposição, mas o normal ajusta (caminho passa pelo canvas)", () => {
+  assert.equal(fatorAplicado(50, true), 1);
+  assert.equal(fatorAplicado(230, true), 1);
+  assert.equal(fatorAplicado(50), fatorExposicao(50));
+  assert.ok(fatorAplicado(50) > 1);
 });

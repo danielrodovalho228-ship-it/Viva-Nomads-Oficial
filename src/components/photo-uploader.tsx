@@ -120,7 +120,9 @@ export function PhotoUploader({
     if (!original) return;
     setError(null);
     try {
-      const result = await uploader(original, ownerId);
+      // Passa pelo canvas (sem ajuste de exposição) para descartar EXIF/GPS.
+      const t = await tratarFoto(original, { semExposicao: true });
+      const result = await uploader(t.arquivo, ownerId);
       onChange(photos.map((p) => (p.id === item.id ? { ...p, ...result, melhorada: false } : p)));
       setOriginais((o) => Object.fromEntries(Object.entries(o).filter(([k]) => k !== item.id)));
       await remover(item.path);

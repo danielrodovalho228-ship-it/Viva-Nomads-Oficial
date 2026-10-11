@@ -192,3 +192,11 @@ export function fatorExposicao(luminancia: number): number {
   if (luminancia > LUMINANCIA_CLARA - 20) return Math.max(0.8, 175 / luminancia);
   return 1;
 }
+
+/**
+ * Fator de brilho que a re-codificação aplica. Com `semExposicao` ("usar original")
+ * a foto ainda passa pelo canvas (rotação, tamanho, sem EXIF/GPS), mas sem ajuste.
+ */
+export function fatorAplicado(luminancia: number, semExposicao = false): number {
+  return semExposicao ? 1 : fatorExposicao(luminancia);
+}

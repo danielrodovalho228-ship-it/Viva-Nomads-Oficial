@@ -11,7 +11,7 @@
  * Nunca lança: se algo falhar, devolve o original sem análise.
  */
 import {
-  dHash, fatorExposicao, luminanciaMedia, nitidezLaplaciano, paraCinza, tamanhoFinal, type Analise,
+  dHash, fatorAplicado, luminanciaMedia, nitidezLaplaciano, paraCinza, tamanhoFinal, type Analise,
 } from "./qualidade";
 
 export interface FotoTratada {
@@ -42,7 +42,12 @@ function lerPixels(bmp: ImageBitmap, w: number, h: number): Uint8ClampedArray | 
   return ctx.getImageData(0, 0, w, h).data;
 }
 
-export async function tratarFoto(file: File): Promise<FotoTratada> {
+export interface OpcoesTratamento {
+  /** Não ajusta a exposição ("usar original"): mantém rotação/tamanho e descarta EXIF/GPS. */
+  semExposicao?: boolean;
+}
+
+export async function tratarFoto(file: File, opcoes: OpcoesTratamento = {}): Promise<FotoTratada> {
   const falha: FotoTratada = { arquivo: file, original: file, analise: null, melhorada: false };
   if (typeof document === "undefined" || typeof createImageBitmap !== "function") return falha;
   let bmp: ImageBitmap | null = null;
@@ -71,7 +76,7 @@ export async function tratarFoto(file: File): Promise<FotoTratada> {
     canvas.height = fim.altura;
     const ctx = canvas.getContext("2d");
     if (!ctx) return { ...falha, analise };
-    const fator = fatorExposicao(analise.luminancia);
+    const fator = fatorAplicado(analise.luminancia, opcoes.semExposicao);
     const melhorada = fator !== 1;
     if (melhorada) ctx.filter = `brightness(${fator.toFixed(2)})`;
     ctx.imageSmoothingQuality = "high";
