@@ -10,7 +10,7 @@ const ROTULO_RISCO = { baixo: "Risco baixo", medio: "Risco médio", alto: "Risco
  * Cartões de aprovação no chat do Moacir (ordem 41ae4fc5). Aprovar pede um segundo toque (Confirmar);
  * quem decide é o servidor (/api/admin/aprovacoes/[id]), nunca este componente.
  */
-export function CartoesAprovacao({ versao }: { versao: number }) {
+export function CartoesAprovacao({ versao, mostrarVazio = false }: { versao: number; mostrarVazio?: boolean }) {
   const [cartoes, setCartoes] = useState<CartaoAprovacao[]>([]);
   const [confirmando, setConfirmando] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState<string | null>(null);
@@ -54,9 +54,14 @@ export function CartoesAprovacao({ versao }: { versao: number }) {
     }
   }
 
-  if (!cartoes.length && !aviso && !erro) return null;
+  if (!cartoes.length && !aviso && !erro && !mostrarVazio) return null;
   return (
     <section aria-label="Pedidos esperando seu OK" className="space-y-2" data-testid="cartoes-aprovacao">
+      {mostrarVazio && !cartoes.length && !aviso && !erro && (
+        <p className="rounded-xl border border-white/10 bg-[#0B1430] p-3 text-sm text-[#C9D2F0]" data-testid="aprovacoes-vazio">
+          Nada esperando o seu OK agora.
+        </p>
+      )}
       {cartoes.map((c) => (
         <article key={c.id} className="rounded-xl border border-white/15 bg-[#0B1430] p-3 text-sm text-white" data-testid="cartao-aprovacao">
           <p className="font-semibold">{c.referencia}</p>
