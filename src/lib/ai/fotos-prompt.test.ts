@@ -81,3 +81,13 @@ test("tela: botão 'Preencher com IA' no passo Fotos, marcado 'sugerido pela IA'
   assert.match(src, /Sugerido pela IA/);
   assert.match(src, /\/api\/ai\/fotos/);
 });
+
+test("IA das fotos: 7 fotos bloqueia, 8 libera (ordem abc34d72)", async () => {
+  const { iaFotosLiberada, mensagemFaltamFotosIa } = await import("./fotos-prompt.ts");
+  assert.equal(iaFotosLiberada(7), false);
+  assert.equal(iaFotosLiberada(8), true);
+  assert.equal(iaFotosLiberada(0), false);
+  assert.equal(mensagemFaltamFotosIa(6), "Faltam 2 fotos para a IA montar seu anúncio.");
+  assert.equal(mensagemFaltamFotosIa(7), "Falta 1 foto para a IA montar seu anúncio.");
+  assert.equal(mensagemFaltamFotosIa(8), "");
+});

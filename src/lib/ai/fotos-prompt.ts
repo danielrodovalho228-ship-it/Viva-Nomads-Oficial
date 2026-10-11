@@ -5,6 +5,22 @@
 */
 import { PROPERTY_TYPES, AMENITY_LABEL } from "../amenities.ts";
 import { contemContato, limparSaida } from "./anuncio-prompt.ts";
+import { MIN_FOTOS } from "../anuncio/prontidao.ts";
+
+/**
+ * A IA só monta o anúncio com o mínimo de fotos exigido para publicar (ordem abc34d72):
+ * com menos, o resultado sairia pobre e o dono seguiria achando que está pronto.
+ */
+export function iaFotosLiberada(totalFotos: number): boolean {
+  return Number.isFinite(totalFotos) && totalFotos >= MIN_FOTOS;
+}
+
+/** Texto ao dono enquanto faltam fotos; vazio quando a IA já está liberada. */
+export function mensagemFaltamFotosIa(totalFotos: number): string {
+  if (iaFotosLiberada(totalFotos)) return "";
+  const faltam = MIN_FOTOS - Math.max(0, Math.floor(totalFotos) || 0);
+  return `${faltam === 1 ? "Falta 1 foto" : `Faltam ${faltam} fotos`} para a IA montar seu anúncio.`;
+}
 
 export const FOTOS_MAX_MINIATURAS = 6;
 /** Cada miniatura (base64 do JPEG) — ~512 px a qualidade 0,7 pesa bem menos que isto. */

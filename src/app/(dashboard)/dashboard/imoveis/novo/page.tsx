@@ -53,7 +53,7 @@ import { draftKey, DRAFT_KEY_LEGADO } from "@/lib/local-keys";
 import { registrarEvento } from "@/lib/eventos/registrar";
 import { TERMO_IA_TEXTO, TERMO_IA_VERSAO, camposDaIa } from "@/lib/anuncio/termo-ia";
 import { miniaturaBase64 } from "@/lib/fotos/miniatura";
-import { FOTOS_MAX_MINIATURAS, type SugestaoFotos } from "@/lib/ai/fotos-prompt";
+import { FOTOS_MAX_MINIATURAS, iaFotosLiberada, mensagemFaltamFotosIa, type SugestaoFotos } from "@/lib/ai/fotos-prompt";
 import { etapaLiberada, etapaMaisAvancada, etapaDoRascunho, etapaNaPosicao, posicaoDaEtapa, posMaxDoRascunho, ORDEM_ETAPAS, VERSAO_ORDEM_ETAPAS } from "@/lib/etapas-anuncio";
 
 /** Metadados das 7 etapas do wizard (rodada 15). O índice é o ID estável da etapa; a ordem em que
@@ -829,6 +829,10 @@ export default function NewPropertyPage() {
   // miniaturas — sem endereço, contato nem URL. NUNCA sobrescreve o que o dono já
   // escreveu: só campos vazios (tipo e comodidades somam). O termo de aceite cobre o texto.
   async function preencherComIa() {
+    if (!iaFotosLiberada(photos.length)) {
+      setFotosIaWarn(mensagemFaltamFotosIa(photos.length));
+      return;
+    }
     setFotosIaWarn(null);
     setFotosIaLoading(true);
     try {
@@ -1302,10 +1306,13 @@ export default function NewPropertyPage() {
               <div className="mt-4 rounded-xl bg-champagne/10 px-4 py-3" data-testid="preencher-com-ia">
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-sm text-forest">Deixe a IA ler as fotos e sugerir o cadastro</span>
-                  <Button size="sm" variant="gold" onClick={preencherComIa} disabled={fotosIaLoading}>
+                  <Button size="sm" variant="gold" onClick={preencherComIa} disabled={fotosIaLoading || !iaFotosLiberada(photos.length)}>
                     <Sparkles className="h-4 w-4" /> {fotosIaLoading ? "Lendo as fotos..." : "Preencher com IA"}
                   </Button>
                 </div>
+                {!iaFotosLiberada(photos.length) && (
+                  <p className="mt-2 text-xs font-medium text-forest" data-testid="ia-faltam-fotos">{mensagemFaltamFotosIa(photos.length)}</p>
+                )}
                 {fotosIaWarn && <p className="mt-2 text-xs font-medium text-red-600">{fotosIaWarn}</p>}
                 {sugeridoPelaIa.length > 0 && (
                   <p className="mt-2 inline-flex items-start gap-1 text-xs font-medium text-forest">
