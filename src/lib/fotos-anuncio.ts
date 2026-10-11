@@ -2,9 +2,9 @@
  * Fotos do anúncio que podem ir para `property_photos`: só arquivos do bucket
  * público `property-photos` NA PASTA DO PRÓPRIO DONO (o upload grava em
  * `<userId>/<uuid>.<ext>`). Descarta blob: do modo demonstração, URLs de fora e
- * repetidas. Máximo de 24 (o mesmo do editor).
+ * repetidas. Máximo de 40 (o mesmo do editor; rolo da câmera, ordem 04e2fe5e).
  */
-export const MAX_FOTOS_ANUNCIO = 24;
+export const MAX_FOTOS_ANUNCIO = 40;
 
 export function fotosDoDono(urls: readonly unknown[], ownerId: string): string[] {
   const pasta = `/storage/v1/object/public/property-photos/${ownerId}/`;

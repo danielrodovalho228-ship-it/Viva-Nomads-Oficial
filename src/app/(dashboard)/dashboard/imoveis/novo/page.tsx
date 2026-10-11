@@ -32,6 +32,7 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import { DocConferidaBadge } from "@/components/ui/badge";
 import { PropertyMiniCard } from "@/components/property-mini-card";
 import { PhotoUploader, type PhotoItem } from "@/components/photo-uploader";
+import { MAX_FOTOS_POR_ANUNCIO } from "@/lib/fotos/qualidade";
 import { DocumentoUploader } from "@/components/documento-uploader";
 import { DOC_AUTORIZACAO, exigeAutorizacao, OPERACOES, operacaoValida, type Operacao } from "@/lib/anuncio/operacao";
 import { MIN_PHOTOS, SUGGESTED_ROOMS, tierFromPhotoCount, TIER_META } from "@/lib/listing";
@@ -49,9 +50,10 @@ import { LinhaComparativoAnuncio } from "@/components/precos/comparativo-precos"
 import { useAuthStore } from "@/lib/store";
 import { draftKey, DRAFT_KEY_LEGADO } from "@/lib/local-keys";
 import { registrarEvento } from "@/lib/eventos/registrar";
-import { etapaLiberada, etapaMaisAvancada, etapaMaxDoRascunho } from "@/lib/etapas-anuncio";
+import { etapaLiberada, etapaMaisAvancada, etapaDoRascunho, etapaNaPosicao, posicaoDaEtapa, posMaxDoRascunho, ORDEM_ETAPAS, VERSAO_ORDEM_ETAPAS } from "@/lib/etapas-anuncio";
 
-/** Metadados das 7 etapas do wizard (rodada 15). */
+/** Metadados das 7 etapas do wizard (rodada 15). O índice é o ID estável da etapa; a ordem em que
+ * aparecem é ORDEM_ETAPAS ("fotos primeiro", ordem 04e2fe5e). */
 const STEP_META = [
   { label: "Tipo", icon: Home, title: "Tipo e operação", subtitle: "Que imóvel é e quem o opera." },
   { label: "Endereço", icon: MapPin, title: "Endereço", subtitle: "Onde fica o imóvel." },
@@ -67,17 +69,23 @@ export default function NewPropertyPage() {
   // T1: o rascunho local é POR USUÁRIO — nunca abre o de outra conta.
   const userId = useAuthStore((s) => s.user?.id ?? null);
   const [approved, setApproved] = useState<boolean | null>(null);
+  // Qualificação "Antes de anunciar" (ordem 04e2fe5e): deixou de ser a 1ª tela —
+  // abre o cadastro pelas fotos e só BARRA A PUBLICAÇÃO (rascunho sempre pode).
+  // Edição e rascunho retomado já passaram por ela (não pedem de novo).
+  const [qualificado, setQualificado] = useState(true);
   // Estado da verificação do documento (anti-fraude, item 1). Só "approved"
   // libera Publicar. Em demo/preview vem "approved" (não trava).
   const [docStatus, setDocStatus] = useState<DocumentStatus>("approved");
   const [docReason, setDocReason] = useState<string | null>(null);
-  const [step, setStep] = useState(0);
+  // `step` é o ID da etapa (0 Tipo … 6 Revisão); abre pelas fotos.
+  const [step, setStep] = useState<number>(ORDEM_ETAPAS[0]);
+  const pos = posicaoDaEtapa(step);
   // Etapa mais avançada já visitada (bug 13 da L2): guardada no rascunho, para a
-  // retomada deixar pular de novo até onde a pessoa já tinha chegado.
+  // retomada deixar pular de novo até onde a pessoa já tinha chegado. É uma POSIÇÃO na ordem das etapas.
   const [etapaMax, setEtapaMax] = useState(0);
   /** Muda de etapa lembrando a mais avançada já visitada. */
   function irPara(i: number) {
-    setEtapaMax((m) => etapaMaisAvancada(m, step, i));
+    setEtapaMax((m) => etapaMaisAvancada(m, posicaoDaEtapa(step), posicaoDaEtapa(i)));
     setStep(i);
   }
   const [aiLoading, setAiLoading] = useState(false);
@@ -194,7 +202,7 @@ export default function NewPropertyPage() {
     video: !!videoUrl.trim(),
   });
   const completude = prontidao.obrigatorios;
-  const podePublicar = prontidao.podePublicar;
+  const podePublicar = prontidao.podePublicar && qualificado;
 
   /** Campos obrigatórios da etapa atual (chave → mensagem). Vazio = pode avançar.
    * Só barra o AVANÇO ("Continuar"); voltar e pular para etapas já visitadas
@@ -230,13 +238,13 @@ export default function NewPropertyPage() {
   function avancarEtapa() {
     const e = validarEtapa(step);
     setErros(e);
-    if (Object.keys(e).length === 0) irPara(Math.min(LAST, step + 1));
+    if (Object.keys(e).length === 0) irPara(etapaNaPosicao(pos + 1));
   }
 
   /** Volta/pula para trás sempre livre — limpa as mensagens de erro. */
   function voltarEtapa() {
     setErros({});
-    irPara(Math.max(0, step - 1));
+    irPara(etapaNaPosicao(pos - 1));
   }
 
   // Evento anônimo (0067): começou um anúncio novo (edição não conta).
@@ -300,6 +308,10 @@ export default function NewPropertyPage() {
           ? "Documentação não aprovada — reenvie na qualificação para publicar."
           : "Documentação em análise. Você pode salvar como rascunho; a publicação libera após a aprovação."
       );
+      return;
+    }
+    if (!asDraft && !editingId && !qualificado) {
+      setPublishError("Falta a qualificação (checklist \"Antes de anunciar\"). Você pode salvar como rascunho e concluí-la para publicar.");
       return;
     }
     // Publicação exige tudo verde na checklist de completude (item 3). Rascunho
@@ -468,8 +480,8 @@ export default function NewPropertyPage() {
       const q = d.qual as Record<string, unknown>;
       setQual({ baseBadge: !!q.baseBadge, tHome: !!q.tHome, tWork: !!q.tWork });
     }
-    if (typeof d.step === "number") setStep(Math.min(LAST, Math.max(0, Math.round(d.step))));
-    setEtapaMax(etapaMaxDoRascunho(d, LAST));
+    setStep(etapaDoRascunho(d));
+    setEtapaMax(posMaxDoRascunho(d));
   }
 
   // Retomada por `?draft=<id>` — carrega o snapshot do SERVIDOR e restaura tudo
@@ -498,7 +510,8 @@ export default function NewPropertyPage() {
     if (editId || draftParam) return;
     const raw = sessionStorage.getItem("vivanomads-qualification");
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setApproved(raw ? JSON.parse(raw).eligible === true : false);
+    setApproved(true);
+    setQualificado(raw ? JSON.parse(raw).eligible === true : false);
     try {
       if (raw) {
         const q = JSON.parse(raw);
@@ -606,7 +619,7 @@ export default function NewPropertyPage() {
     furnished, petsOk, smokingAllowed, childrenAllowed, issuesInvoice,
     amenityKeys, googlePlaces, manualProximities,
     condoFee, descricaoGeradaPorIa, utilitiesMode, utilitiesEstimate, faixas, garantias, prepFee,
-    ownershipType, subleaseAuthorized, step, etapaMax: Math.max(etapaMax, step),
+    ownershipType, subleaseAuthorized, step, ordemEtapas: VERSAO_ORDEM_ETAPAS, etapaMax: Math.max(etapaMax, pos),
     // Qualificação (selo + etiquetas). Guardada no rascunho para a retomada por
     // `?draft` (que não passa pela sessionStorage) nunca zerar o 6/6 do selo.
     qual,
@@ -723,7 +736,7 @@ export default function NewPropertyPage() {
     draftIdRef.current = null;
     setDraftServerId(null);
     setSaveStatus("idle");
-    setStep(0);
+    setStep(ORDEM_ETAPAS[0]);
     setEtapaMax(0);
     setTitle("");
     setDescription("");
@@ -790,30 +803,6 @@ export default function NewPropertyPage() {
   }
 
   if (approved === null) return null;
-
-  if (!approved) {
-    return (
-      <div className="mx-auto max-w-xl">
-        <PageTitle title="Novo anúncio" />
-        <Panel className="text-center">
-          <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-sage-100">
-            <Lock className="h-7 w-7 text-forest" />
-          </div>
-          <h2 className="mt-4 font-title text-xl font-bold text-ink">
-            Conclua a qualificação primeiro
-          </h2>
-          <p className="mx-auto mt-2 max-w-md text-muted">
-            O cadastro de imóvel só é liberado depois que o checklist de qualificação retorna{" "}
-            <strong>APROVADO PARA PUBLICAR</strong>. É o que garante que o anúncio é locação
-            por temporada regular.
-          </p>
-          <ButtonLink href={imovelId ? `/qualificar?imovel=${imovelId}` : "/qualificar"} variant="gold" className="mt-6">
-            <ClipboardCheck className="h-4 w-4" /> Ir para a qualificação
-          </ButtonLink>
-        </Panel>
-      </div>
-    );
-  }
 
   const meta = STEP_META[step];
   const StepIcon = meta.icon;
@@ -911,35 +900,35 @@ export default function NewPropertyPage() {
       {/* Stepper + barra de progresso */}
       <div className="mb-5">
         <div className="flex items-center gap-1.5 overflow-x-auto pb-2 sm:flex-wrap sm:overflow-visible">
-          {STEP_META.map((s, i) => (
+          {ORDEM_ETAPAS.map((id, i) => (
             <button
-              key={s.label}
+              key={STEP_META[id].label}
               type="button"
               onClick={() => {
-                if (etapaLiberada(i, step, etapaMax)) {
+                if (etapaLiberada(i, pos, etapaMax)) {
                   setErros({});
-                  irPara(i);
+                  irPara(id);
                 }
               }}
-              disabled={!etapaLiberada(i, step, etapaMax)}
+              disabled={!etapaLiberada(i, pos, etapaMax)}
               className={cn(
                 "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors",
-                i === step
+                i === pos
                   ? "bg-forest text-white"
-                  : etapaLiberada(i, step, etapaMax)
+                  : etapaLiberada(i, pos, etapaMax)
                     ? "bg-sage-100 text-forest hover:bg-blue-100"
                     : "bg-surface-2 text-muted"
               )}
             >
-              {i < step ? <Check className="h-3.5 w-3.5" /> : <span>{i + 1}</span>}
-              {s.label}
+              {i < pos ? <Check className="h-3.5 w-3.5" /> : <span>{i + 1}</span>}
+              {STEP_META[id].label}
             </button>
           ))}
         </div>
         <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-surface-2">
           <div
             className="h-full rounded-full bg-forest transition-all"
-            style={{ width: `${((step + 1) / STEP_META.length) * 100}%` }}
+            style={{ width: `${((pos + 1) / STEP_META.length) * 100}%` }}
           />
         </div>
       </div>
@@ -1228,8 +1217,8 @@ export default function NewPropertyPage() {
             )}
 
             <div className="mt-4">
-              {/* Até 24 fotos: permite alcançar o tier "premium" (20+) que a UI promete. */}
-              <PhotoUploader photos={photos} onChange={setPhotos} max={24} />
+              {/* Até 40 fotos do rolo da câmera (o tier "premium" começa em 20). */}
+              <PhotoUploader photos={photos} onChange={setPhotos} max={MAX_FOTOS_POR_ANUNCIO} />
               <Erro msg={erros.fotos} />
             </div>
 
@@ -1642,6 +1631,16 @@ export default function NewPropertyPage() {
 
             {/* Portão da verificação do documento (item 1). Não aparece na edição
                 de um imóvel já existente. */}
+            {!editingId && !qualificado && (
+              <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800" data-testid="aviso-qualificacao">
+                <ClipboardCheck className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>
+                  <strong>Falta a qualificação.</strong> Responda o checklist{" "}
+                  <a href="/qualificar" className="font-medium underline">Antes de anunciar</a>{" "}
+                  (leva poucos minutos) para liberar a publicação. Suas fotos e dados ficam salvos no rascunho.
+                </span>
+              </div>
+            )}
             {!editingId && docStatus === "pending" && (
               <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
                 <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
@@ -1702,9 +1701,9 @@ export default function NewPropertyPage() {
         )}
 
         {/* Navegação */}
-        {step < LAST && (
+        {pos < LAST && (
           <div className="mt-6 flex justify-between">
-            <Button variant="ghost" onClick={voltarEtapa} disabled={step === 0}>
+            <Button variant="ghost" onClick={voltarEtapa} disabled={pos === 0}>
               <ArrowLeft className="h-4 w-4" /> Voltar
             </Button>
             <Button onClick={avancarEtapa}>

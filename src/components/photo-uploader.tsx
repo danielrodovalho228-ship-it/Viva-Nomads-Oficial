@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Upload, X, Loader2, Star } from "lucide-react";
+import { Upload, X, Loader2, Star, AlertTriangle, Undo2 } from "lucide-react";
 import {
   uploadPropertyPhoto,
   removePropertyPhoto,
@@ -9,11 +9,18 @@ import {
 } from "@/lib/data/storage";
 import { validarArquivoFotoImovel } from "@/lib/upload-limits";
 import { useAuthStore } from "@/lib/store";
+import { tratarFoto } from "@/lib/fotos/processar";
+import { avisosDaFoto, MAX_FOTOS_POR_ANUNCIO, type AvisoFoto } from "@/lib/fotos/qualidade";
 import { cn } from "@/lib/utils";
 
 export interface PhotoItem extends UploadedPhoto {
   id: string;
   name: string;
+  /** Hash de aparência (detecta foto repetida) e avisos de qualidade, quando a foto foi tratada. */
+  hash?: string;
+  avisos?: AvisoFoto[];
+  /** A foto passou por ajuste leve de exposição (dá para voltar ao original). */
+  melhorada?: boolean;
 }
 
 /**
@@ -28,18 +35,25 @@ export interface PhotoItem extends UploadedPhoto {
 export function PhotoUploader({
   photos,
   onChange,
-  max = 12,
+  max = MAX_FOTOS_POR_ANUNCIO,
+  tratar = true,
   uploader = uploadPropertyPhoto,
   remover = removePropertyPhoto,
 }: {
   photos: PhotoItem[];
   onChange: (photos: PhotoItem[]) => void;
   max?: number;
+  /** Trata a foto antes de enviar (rotação EXIF, tamanho, exposição, avisos). Desligue para documentos. */
+  tratar?: boolean;
   uploader?: (file: File, ownerId?: string) => Promise<UploadedPhoto>;
   remover?: (path: string | null) => Promise<void>;
 }) {
   const ownerId = useAuthStore((s) => s.user?.id);
   const [uploading, setUploading] = useState(false);
+  // Progresso do envio em lote ("3 de 12").
+  const [progresso, setProgresso] = useState<{ feitas: number; total: number } | null>(null);
+  // Arquivos originais desta sessão, para "usar original".
+  const [originais, setOriginais] = useState<Record<string, File>>({});
   const [error, setError] = useState<string | null>(null);
   // Índice sendo arrastado (reordenar por drag — a 1ª posição é a capa).
   const [dragIndex, setDragIndex] = useState<number | null>(null);
@@ -58,10 +72,15 @@ export function PhotoUploader({
     setError(null);
     const slots = max - photos.length;
     const chosen = Array.from(files).slice(0, slots);
+    const excedeu = files.length > slots;
 
     setUploading(true);
+    setProgresso({ feitas: 0, total: chosen.length });
     try {
       const uploaded: PhotoItem[] = [];
+      const novosOriginais: Record<string, File> = {};
+      const hashes = photos.map((p) => p.hash).filter((h): h is string => !!h);
+      let feitas = 0;
       for (const file of chosen) {
         // Validação de tipo/tamanho no cliente (feedback rápido). O bucket do
         // Supabase revalida no servidor (migration 0040) — o accept do input não
@@ -69,14 +88,44 @@ export function PhotoUploader({
         const invalido = validarArquivoFotoImovel({ type: file.type, size: file.size });
         if (invalido) {
           setError(invalido);
-          continue;
+        } else {
+          const t = tratar ? await tratarFoto(file) : null;
+          const result = await uploader(t?.arquivo ?? file, ownerId);
+          const id = crypto.randomUUID();
+          const item: PhotoItem = { ...result, id, name: file.name };
+          if (t?.analise) {
+            item.hash = t.analise.hash;
+            item.avisos = avisosDaFoto(t.analise, hashes);
+            item.melhorada = t.melhorada;
+            hashes.push(t.analise.hash);
+          }
+          if (t?.melhorada) novosOriginais[id] = t.original;
+          uploaded.push(item);
         }
-        const result = await uploader(file, ownerId);
-        uploaded.push({ ...result, id: crypto.randomUUID(), name: file.name });
+        feitas += 1;
+        setProgresso({ feitas, total: chosen.length });
       }
       onChange([...photos, ...uploaded]);
+      setOriginais((o) => ({ ...o, ...novosOriginais }));
+      if (excedeu) setError(`Limite de ${max} fotos: as que passaram disso não foram enviadas.`);
     } finally {
       setUploading(false);
+      setProgresso(null);
+    }
+  }
+
+  /** Troca a foto melhorada pelo original escolhido (sem ajuste de exposição). */
+  async function usarOriginal(item: PhotoItem) {
+    const original = originais[item.id];
+    if (!original) return;
+    setError(null);
+    try {
+      const result = await uploader(original, ownerId);
+      onChange(photos.map((p) => (p.id === item.id ? { ...p, ...result, melhorada: false } : p)));
+      setOriginais((o) => Object.fromEntries(Object.entries(o).filter(([k]) => k !== item.id)));
+      await remover(item.path);
+    } catch {
+      setError("Não foi possível voltar ao original agora. Tente de novo.");
     }
   }
 
@@ -93,8 +142,8 @@ export function PhotoUploader({
     <div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {photos.map((p, i) => (
+          <div key={p.id} className={cn(i === 0 && "col-span-2")}>
           <div
-            key={p.id}
             draggable
             onDragStart={() => setDragIndex(i)}
             onDragOver={(e) => e.preventDefault()}
@@ -105,7 +154,7 @@ export function PhotoUploader({
             }}
             onDragEnd={() => setDragIndex(null)}
             className={cn(
-              "group relative aspect-square cursor-move overflow-hidden rounded-xl border border-sage-200",
+              "group relative aspect-[4/3] cursor-move overflow-hidden rounded-xl border border-sage-200",
               dragIndex === i && "opacity-50 ring-2 ring-forest"
             )}
           >
@@ -123,7 +172,7 @@ export function PhotoUploader({
               </span>
             )}
 
-            <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+            <div className="absolute right-2 top-2 flex gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
               {i !== 0 && (
                 <button
                   type="button"
@@ -144,12 +193,32 @@ export function PhotoUploader({
               </button>
             </div>
           </div>
+          {(p.avisos?.length || p.melhorada) ? (
+            <div className="mt-1 space-y-1 text-xs">
+              {p.avisos?.map((a) => (
+                <p key={a.codigo} className="flex items-start gap-1 text-amber-800" data-testid={`aviso-foto-${a.codigo}`}>
+                  <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
+                  <span><strong>{a.mensagem}</strong> {a.dica}</span>
+                </p>
+              ))}
+              {p.melhorada && !!originais[p.id] && (
+                <button
+                  type="button"
+                  onClick={() => usarOriginal(p)}
+                  className="inline-flex items-center gap-1 font-medium text-forest underline"
+                >
+                  <Undo2 className="h-3 w-3" /> Clareamos um pouco esta foto. Usar original
+                </button>
+              )}
+            </div>
+          ) : null}
+          </div>
         ))}
 
         {photos.length < max && (
           <label
             className={cn(
-              "flex aspect-square cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-sage-200 text-sage transition-colors hover:border-sage",
+              "flex aspect-[4/3] cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-sage-200 text-sage transition-colors hover:border-sage",
               uploading && "pointer-events-none opacity-60"
             )}
           >
@@ -158,7 +227,7 @@ export function PhotoUploader({
             ) : (
               <Upload className="h-5 w-5" />
             )}
-            <span className="text-xs">{uploading ? "Enviando..." : "Adicionar"}</span>
+            <span className="text-xs">{uploading ? (progresso ? `Enviando ${Math.min(progresso.feitas + 1, progresso.total)} de ${progresso.total}…` : "Enviando...") : "Adicionar"}</span>
             <input
               type="file"
               accept="image/*"
@@ -171,8 +240,8 @@ export function PhotoUploader({
       </div>
 
       <p className="mt-2 text-xs text-muted">
-        {photos.length}/{max} fotos · a primeira é a capa do anúncio. Arraste para reordenar. JPG
-        ou PNG até 8 MB.
+        {photos.length}/{max} fotos · a primeira é a capa do anúncio (corte 4:3). Pode escolher
+        várias de uma vez, na vertical ou na horizontal. Arraste para reordenar. JPG, PNG ou WebP até 8 MB.
       </p>
       {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
     </div>
