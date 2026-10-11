@@ -118,3 +118,10 @@ export const MSG_DOCUMENTO = {
   fecharDono: "Para fechar o contrato, informe seu CPF (ou o CNPJ da empresa) em Conta → Documento.",
   fecharInquilino: "O inquilino ainda não informou o CPF (ou o CNPJ da empresa). Peça para ele preencher em Conta → Documento; o contrato precisa do documento das duas partes.",
 } as const;
+
+/** Mensagem quando o documento já pertence a outra conta (violação de unicidade, 23505). */
+export function msgDocumentoDuplicado(tipo: TipoPessoa): string {
+  return tipo === "pj"
+    ? "Este CNPJ já está cadastrado em outra conta. Se for da sua empresa, fale com o suporte."
+    : "Este CPF já está cadastrado em outra conta. Se for seu, fale com o suporte.";
+}

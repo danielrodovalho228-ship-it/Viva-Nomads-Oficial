@@ -5,7 +5,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { cnpjValido, cpfValido, documentoCompleto, documentoParaContrato, motivoBloqueioAprovacao, mascararCnpj, mascararCpf, MSG_DOCUMENTO, validarDocumento } from "./documento-pessoa.ts";
+import { cnpjValido, cpfValido, documentoCompleto, documentoParaContrato, motivoBloqueioAprovacao, mascararCnpj, mascararCpf, msgDocumentoDuplicado, MSG_DOCUMENTO, validarDocumento } from "./documento-pessoa.ts";
 
 const ler = (p: string) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
 
@@ -92,4 +92,25 @@ test("admin: moderarDocumento confere o documento do dono ao aprovar; tela desab
   const ui = ler("app/(dashboard)/admin/documentos/admin-documentos-client.tsx");
   assert.match(ui, /doc\.bloqueioAprovacao/);
   assert.match(ui, /disabled=\{busy \|\| !podeAprovar \|\| !!doc\.bloqueioAprovacao\}/);
+});
+
+test("documento duplicado: mensagem diz CNPJ para empresa e CPF para pessoa (ordem 0cb385f5)", () => {
+  assert.match(msgDocumentoDuplicado("pj"), /CNPJ já está cadastrado/);
+  assert.match(msgDocumentoDuplicado("pf"), /CPF já está cadastrado/);
+  assert.doesNotMatch(msgDocumentoDuplicado("pj"), /CPF/);
+  assert.match(ler("lib/data/perfil-actions.ts"), /msgDocumentoDuplicado\(tipo\)/);
+});
+
+test("0101: CNPJ único, idempotente, só cria se não houver repetido, com rollback e registro", () => {
+  const m = ler("../supabase/migrations/0101_cnpj_unico.sql");
+  const a = ler("../supabase/producao/aplicar-0101.sql");
+  for (const sql of [m, a]) {
+    assert.match(sql, /create unique index profiles_cnpj_unico on public\.profiles \(cnpj\) where cnpj is not null/);
+    assert.match(sql, /having count\(\*\) > 1/);
+    assert.match(sql, /pg_indexes/);
+    assert.doesNotMatch(sql, /\bdrop\s+(table|column)\b|\bdelete\s+from\s+public/i);
+  }
+  assert.match(a, /^begin;$/m);
+  assert.match(a, /'0101_cnpj_unico'/);
+  assert.match(ler("../supabase/producao/rollback/0101_rollback.sql"), /drop index if exists public\.profiles_cnpj_unico/);
 });

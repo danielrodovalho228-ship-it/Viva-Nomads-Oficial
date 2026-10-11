@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { lerDocumento } from "@/lib/data/documento-servidor";
-import { documentoCompleto, mascararCnpj, mascararCpf, validarDocumento, type DocumentoInput, type TipoPessoa } from "@/lib/documento-pessoa";
+import { documentoCompleto, mascararCnpj, mascararCpf, msgDocumentoDuplicado, validarDocumento, type DocumentoInput, type TipoPessoa } from "@/lib/documento-pessoa";
 import { contemContato } from "@/lib/pedidos/pedidos";
 import { validarNome, normalizarTelefone, validarLinkedin } from "@/lib/conta-validacao";
 import {
@@ -199,7 +199,7 @@ export async function salvarMeuDocumento(input: Omit<DocumentoInput, "tipo">): P
       : { cnpj: v.doc.cnpj, company_name: v.doc.razaoSocial, cpf_representante: v.doc.cpfRepresentante };
   const { error } = await admin.from("profiles").update(update).eq("id", user.id);
   if (error) {
-    if (error.code === "23505") return { ok: false, error: "Este CPF já está cadastrado em outra conta. Se for seu, fale com o suporte." };
+    if (error.code === "23505") return { ok: false, error: msgDocumentoDuplicado(tipo) };
     if (error.code === "23514") return { ok: false, error: tipo === "pf" ? "CPF inválido." : "CNPJ ou CPF do representante inválido." };
     console.error("[salvarMeuDocumento]", error.code, error.message);
     return { ok: false, error: "Não foi possível salvar agora. Tente de novo." };
