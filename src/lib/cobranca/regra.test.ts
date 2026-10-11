@@ -105,10 +105,10 @@ test("override do admin exige motivo e validade; vencido, sem motivo ou fora de 
   }
 });
 
-test("texto oficial: 12%, faixas até 4%, sem mensalidade", () => {
+test("texto oficial: 12%, faixas até 6%, sem mensalidade", () => {
   assert.equal(
     TEXTO_REGRA_UNICA,
-    "Anunciar é grátis. A Viva cobra 12% por contrato fechado. Quanto mais imóveis, menor a taxa (até 4%). Sem mensalidade.",
+    "Anunciar é grátis. A Viva cobra 12% por contrato fechado. Quanto mais imóveis, menor a taxa (até 6%). Sem mensalidade.",
   );
   assert.equal(TEXTO_REGRA_CURTO, TEXTO_REGRA_UNICA);
   assert.doesNotMatch(TEXTO_REGRA_UNICA, /plano|Essencial|Gestor|aluguel|comiss/i);

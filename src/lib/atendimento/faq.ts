@@ -38,6 +38,13 @@ export const FAQ: Pergunta[] = [
     termos: ["preco", "taxa", "anunciar", "comissao", "mensalidade", "quanto custa", "airbnb", "12"],
   },
   {
+    id: "parceiro",
+    pergunta: "Como posso virar parceiro da Viva?",
+    resposta:
+      "Depende do tipo de parceria. Fotógrafo: cadastre-se em /parceiros/fotografos (\"Quero ser parceiro\"). Empresa que hospeda equipes: veja /empresas. Proprietário que quer anunciar imóveis mobiliados: crie a conta em /auth. Seguro, limpeza, mobília e outros serviços: deixe seu contato em /parceiros (em breve). Qual é o seu caso?",
+    termos: ["parceiro", "parceria", "parceiros", "fotografo", "empresa", "servico", "limpeza", "seguro", "mobilia"],
+  },
+  {
     id: "inquilino-paga",
     pergunta: "O inquilino paga alguma taxa para a plataforma?",
     resposta:
