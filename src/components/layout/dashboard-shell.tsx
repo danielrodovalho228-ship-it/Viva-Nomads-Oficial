@@ -121,6 +121,7 @@ const ADMIN_NAV: NavItem[] = [
   { href: "/admin/pedidos", label: "Moderar pedidos", icon: Megaphone },
   { href: "/admin/documentos", label: "Documentos", icon: FileSignature },
   { href: "/admin/fotografos", label: "Fotógrafos", icon: Camera },
+  { href: "/admin/parceiros", label: "Parceiros (interesse)", icon: Camera },
   { href: "/admin/atendimento", label: "Atendimento", icon: LifeBuoy },
   { href: "/admin/financeiro", label: "Financeiro", icon: Wallet },
   { href: "/admin/marketing", label: "Marketing", icon: TrendingUp },
