@@ -115,7 +115,9 @@ test.describe("T14 — Modo app", () => {
       await page.goto("/dashboard/conta", { waitUntil: "networkidle" });
       await esperarModoApp(page);
       // Outro spec (T2) alterna o modo desta conta em paralelo: garante o modo.
-      const usarComoDono = page.getByRole("button", { name: /Usar como propriet/i });
+      // O seletor de dois lados da Conta (radio) substituiu o item "Usar como …".
+      const usarComoDono = page.getByRole("radio", { name: /Propriet/i, checked: false });
+      await expect(page.getByTestId("modo-barra")).toBeVisible();
       if (await usarComoDono.isVisible()) {
         await usarComoDono.click();
         await expect(page).toHaveURL(/\/dashboard\/?$/);

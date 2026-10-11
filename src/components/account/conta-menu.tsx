@@ -7,8 +7,6 @@ import {
   ShieldCheck,
   Bell,
   Lock,
-  Repeat,
-  CreditCard,
   Wrench,
   Gift,
   LifeBuoy,
@@ -18,7 +16,7 @@ import {
   ChevronRight,
   Users,
 } from "lucide-react";
-import { useAuthStore } from "@/lib/store";
+import { useAuthStore, type ViewMode } from "@/lib/store";
 import { useViewMode, MODE_META, identidadeUsuario } from "@/lib/roles";
 import { useDisplayUser } from "@/lib/demo/demo-mode";
 import { salvarModo } from "@/lib/salvar-modo";
@@ -27,6 +25,7 @@ import { createClient } from "@/lib/supabase/client";
 import { appHome } from "@/lib/app-mode";
 import { PROGRAMA_INDICACAO } from "@/lib/flags";
 import { cn } from "@/lib/utils";
+import { SeletorModo } from "./seletor-modo";
 import { mostraEquipe, ROTA_EQUIPE } from "./conta-equipe";
 
 type Item = { href?: string; onClick?: () => void; label: string; icon: React.ComponentType<{ className?: string }>; tom?: "perigo" };
@@ -40,9 +39,8 @@ export function ContaMenu() {
   const user = useDisplayUser();
   const { signOut, setActiveMode } = useAuthStore();
   const { mode } = useViewMode();
-  const outro = mode === "owner" ? "tenant" : "owner";
 
-  async function trocarModo() {
+  async function trocarModo(outro: ViewMode) {
     setActiveMode(outro);
     // Espera gravar a preferência antes de navegar (ver dashboard-shell: 8.3).
     await salvarModo(outro);
@@ -72,14 +70,8 @@ export function ContaMenu() {
       { href: "/dashboard/conta/seguranca", label: "Senha e segurança", icon: Lock },
     ],
     [
-      // Toda conta pode usar os dois papéis (inquilino e proprietário).
-      { onClick: trocarModo, label: `Usar como ${MODE_META[outro].label.toLowerCase()}`, icon: Repeat },
-      ...(mode === "owner"
-        ? [
-            { href: "/dashboard/assinatura", label: "Plano e assinatura", icon: CreditCard },
-            { href: "/dashboard/ferramentas", label: "Ferramentas", icon: Wrench },
-          ]
-        : []),
+      // Sem item de plano: não há mensalidade nesta fase (só taxa por contrato fechado).
+      ...(mode === "owner" ? [{ href: "/dashboard/ferramentas", label: "Ferramentas", icon: Wrench }] : []),
       ...(mostraEquipe(user?.role) ? [{ href: ROTA_EQUIPE, label: "Equipe e aprovações", icon: Users }] : []),
       ...(PROGRAMA_INDICACAO ? [{ href: "/dashboard/indicacoes", label: "Indicações", icon: Gift }] : []),
     ],
@@ -102,6 +94,8 @@ export function ContaMenu() {
           Usando como <strong>{MODE_META[mode].label.toLowerCase()}</strong>
         </p>
       </div>
+      {/* Toda conta pode usar os dois papéis: seletor de dois lados. */}
+      <SeletorModo mode={mode} onSwitch={trocarModo} />
       {grupos
         .filter((g) => g.length > 0)
         .map((g, i) => (

@@ -1,5 +1,4 @@
 import {
-  Home,
   Search,
   Heart,
   MessageSquare,
@@ -29,13 +28,13 @@ export interface MobileTab {
   ativoEm?: string;
 }
 
-/** Modo inquilino — 5 abas. */
+/** Modo inquilino — 5 abas (mesmas do app: Buscar, Favoritos, Candidaturas, Mensagens, Conta). */
 export const TENANT_TABS: MobileTab[] = [
-  { href: "/", label: "Início", icon: Home },
   { href: "/buscar", label: "Buscar", icon: Search },
   { href: "/dashboard/favoritos", label: "Favoritos", icon: Heart, authRequired: true },
+  { href: "/dashboard/candidaturas", label: "Candidaturas", icon: FileText, authRequired: true },
   { href: "/dashboard/mensagens", label: "Mensagens", icon: MessageSquare, authRequired: true, badge: "mensagens" },
-  { href: "/dashboard", label: "Painel", icon: LayoutDashboard, authRequired: true },
+  { href: "/dashboard/conta", label: "Conta", icon: Settings, authRequired: true },
 ];
 
 /** Modo proprietário — 5 abas. */
