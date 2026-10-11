@@ -383,6 +383,40 @@ export async function setNotifPrefs(prefs: {
   return { ok: true };
 }
 
+/**
+ * "Receber alertas da equipe" (documento na fila, chamado, parceiro): só para admin (ordem 27cfd36a).
+ * Devolve null para quem não é admin, então a tela nem mostra o interruptor.
+ */
+export async function getAlertasEquipe(): Promise<boolean | null> {
+  const supabase = await createClient();
+  if (!supabase) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data } = await supabase.from("profiles").select("role, recebe_alertas_operacionais").eq("id", user.id).maybeSingle();
+  if (data?.role !== "admin") return null;
+  return data.recebe_alertas_operacionais === true;
+}
+
+/** Liga/desliga os alertas operacionais do PRÓPRIO admin. A coluna não é editável pelo usuário: grava pelo servidor depois de checar o papel. */
+export async function setAlertasEquipe(ligado: boolean): Promise<ActionResult> {
+  if (typeof ligado !== "boolean") return { ok: false, error: "Valor inválido." };
+  const supabase = await createClient();
+  if (!supabase) return { ok: true, demo: true };
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Entre para alterar preferências." };
+  const { data: eu } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
+  if (eu?.role !== "admin") return { ok: false, error: "Só a equipe pode alterar isto." };
+  const admin = createAdminClient();
+  if (!admin) return { ok: false, error: "Não foi possível salvar agora. Tente de novo." };
+  const { error } = await admin.from("profiles").update({ recebe_alertas_operacionais: ligado }).eq("id", user.id);
+  if (error) return { ok: false, error: erroBancoPT(error) };
+  return { ok: true };
+}
+
 // ── Fluxo do proprietário ────────────────────────────────────────────────────
 
 export interface PropriedadeMinima {

@@ -17,7 +17,7 @@ import { nomeCompletoLimpo } from "@/lib/display-name";
 import { friendlyAuthError, MIN_PASSWORD } from "@/lib/auth-errors";
 import { Switch } from "@/components/ui/switch";
 import { getMeusDados, salvarMeusDados, getMeuDocumento, salvarMeuDocumento, type MeuDocumento } from "@/lib/data/perfil-actions";
-import { getNotifPrefs, setNotifPrefs } from "@/lib/data/pedidos-actions";
+import { getAlertasEquipe, getNotifPrefs, setAlertasEquipe, setNotifPrefs } from "@/lib/data/pedidos-actions";
 import { useCaptcha } from "@/components/seguranca/captcha";
 import { MSG_CAPTCHA_PENDENTE, comCaptcha, podeEnviar } from "@/lib/seguranca/captcha";
 
@@ -404,15 +404,20 @@ export function NotificationsPanel() {
   // Preferências GRAVADAS no perfil (notif_email / notif_whatsapp). Antes os
   // interruptores só mudavam na tela e não correspondiam a nada no banco.
   const [prefs, setPrefs] = useState<{ email: boolean; whatsapp: boolean } | null>(null);
-  const [salvando, setSalvando] = useState<"email" | "whatsapp" | null>(null);
+  const [salvando, setSalvando] = useState<"email" | "whatsapp" | "equipe" | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
+  // null = não é admin (o interruptor nem aparece). Alertas da equipe: ordem 27cfd36a.
+  const [alertasEquipe, setAlertasEquipeUi] = useState<boolean | null>(null);
 
   useEffect(() => {
     let vivo = true;
     getNotifPrefs()
       .then((p) => vivo && setPrefs(p))
       .catch(() => vivo && setPrefs({ email: true, whatsapp: true }));
+    getAlertasEquipe()
+      .then((v) => vivo && setAlertasEquipeUi(v))
+      .catch(() => vivo && setAlertasEquipeUi(null));
     return () => {
       vivo = false;
     };
@@ -430,6 +435,23 @@ export function NotificationsPanel() {
     setSalvando(null);
     if (!r.ok) {
       setPrefs(anterior); // volta o interruptor: não gravou
+      setErro("Não foi possível salvar a preferência. Tente de novo.");
+      return;
+    }
+    setOk(true);
+  }
+
+  async function alternarEquipe() {
+    if (alertasEquipe === null) return;
+    const anterior = alertasEquipe;
+    setAlertasEquipeUi(!anterior);
+    setErro(null);
+    setOk(false);
+    setSalvando("equipe");
+    const r = await setAlertasEquipe(!anterior).catch(() => ({ ok: false as const, error: "Sem conexão." }));
+    setSalvando(null);
+    if (!r.ok) {
+      setAlertasEquipeUi(anterior);
       setErro("Não foi possível salvar a preferência. Tente de novo.");
       return;
     }
@@ -471,6 +493,18 @@ export function NotificationsPanel() {
             />
           </div>
         ))}
+        {alertasEquipe !== null && (
+          <div className="flex w-full items-center justify-between gap-3 rounded-xl border border-sage-200 px-4 py-3 text-left">
+            <span>
+              <span className="flex items-center gap-2 text-sm font-medium text-ink">
+                <Bell className="h-4 w-4 text-sage" /> Receber alertas da equipe
+                {salvando === "equipe" && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted" />}
+              </span>
+              <span className="mt-0.5 block text-xs text-muted">Documento na fila, chamados e parceiros em análise.</span>
+            </span>
+            <Switch checked={alertasEquipe} onChange={alternarEquipe} label="Receber alertas da equipe" disabled={salvando !== null} />
+          </div>
+        )}
       </div>
       <AtivarNotificacoes className="mt-3" />
       {erro && (

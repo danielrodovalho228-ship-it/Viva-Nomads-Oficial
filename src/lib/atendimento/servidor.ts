@@ -8,6 +8,7 @@ import { guardContactInfo } from "@/lib/messages/contact-guard";
 import { urgenciaManutencao } from "@/lib/atendimento/classificar";
 import { situacaoLimite } from "@/lib/limites";
 import { equipeAvisadaDaMensagem, JANELA_AVISO_EQUIPE_S } from "@/lib/atendimento/dono";
+import { adminsPorAviso } from "@/lib/notifications/push-admins";
 
 /**
  * Atendimento — utilidades SÓ DO SERVIDOR: token da nota de 1 a 5 (um clique,
@@ -121,9 +122,10 @@ export async function avisarUsuario(
 export async function avisarEquipe(c: ChamadoResumo, motivo: string, detalhesHtml?: string): Promise<void> {
   const admin = createAdminClient();
   if (!admin) return;
-  const { data: admins } = await admin.from("profiles").select("id, email, full_name, notif_email").eq("role", "admin");
+  // Só admins que ligaram "receber alertas" na Conta (ordem 27cfd36a); admin novo nasce desligado.
+  const admins = await adminsPorAviso<{ email: string | null; full_name: string | null; notif_email: boolean | null }>("operacional", "email, full_name, notif_email");
   const rotulo = PRAZOS[c.prioridade]?.rotulo ?? c.prioridade;
-  for (const a of admins ?? []) {
+  for (const a of admins) {
     await notify({
       event: "chamado_equipe",
       email: a.notif_email === false ? undefined : ((a.email as string) ?? undefined),
