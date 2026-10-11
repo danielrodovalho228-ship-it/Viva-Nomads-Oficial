@@ -4,7 +4,7 @@ import { authFile } from "../fixtures/auth";
 
 /**
  * T29 — O chat da Central NÃO aceita aprovação. "Ok, tudo aprovado" para o
- * Otávio (ou o Moacir) recebe a resposta fixa e nada é gravado como ordem.
+ * Otávio (ou o Moacir) recebe a resposta que manda para os cartões Aprovar/Recusar e nada é gravado como ordem.
  */
 const URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -20,12 +20,14 @@ test.describe("T29 — Chat sem falsas aprovações", () => {
       await page.goto("/admin/agentes", { waitUntil: "networkidle" });
       await page.getByRole("tab", { name: "Conversar" }).click();
       await page.locator('aside[aria-label="Agentes"]').getByRole("button", { name: new RegExp(nome) }).click();
-      const resp = page.getByText(/^Aprovação de migração ou merge só vale pelo Claude Code/);
+      const resp = page.getByText(/Daqui do chat eu não aprovo por texto/);
       const n = await resp.count();
       await page.getByPlaceholder(`Escreva para ${nome}…`).fill("Ok, tudo aprovado");
       await page.getByRole("button", { name: "Enviar" }).click();
       await expect(resp).toHaveCount(n + 1, { timeout: 15_000 });
-      await expect(resp.last()).toContainText("rodando o SQL no SQL Editor. Daqui do chat eu não registro nada como aprovado.");
+      // O texto muda com 0, 1 ou vários cartões pendentes (respostaAprovacaoNoChat), mas a regra é fixa.
+      await expect(resp.last()).toContainText("Daqui do chat eu não aprovo por texto.");
+      await expect(resp.last()).not.toContainText("SQL Editor");
       const { count: depois } = await adm.from("agentes_ordens").select("id", { count: "exact", head: true });
       expect(depois).toBe(antes);
     });
