@@ -94,7 +94,7 @@ function OwnerDashboard({ name }: { name: string }) {
         title={`Olá${name ? `, ${name}` : "!"} 👋`}
         subtitle="Prepare seu imóvel, publique e fale com inquilinos qualificados."
         action={
-          <ButtonLink href="/qualificar" variant="accent">
+          <ButtonLink href="/dashboard/imoveis/novo" variant="accent">
             <ClipboardCheck className="h-4 w-4" /> Novo anúncio
           </ButtonLink>
         }
@@ -360,7 +360,7 @@ function OwnerFunnel({ name, draft }: { name: string; draft?: RascunhoPendente |
         title={`Bem-vindo${name ? `, ${name}` : ""}! 👋`}
         subtitle="Vamos colocar seu primeiro imóvel no ar em 3 passos."
         action={
-          <ButtonLink href="/qualificar" variant="accent">
+          <ButtonLink href="/dashboard/imoveis/novo" variant="accent">
             <ClipboardCheck className="h-4 w-4" /> Começar agora
           </ButtonLink>
         }
