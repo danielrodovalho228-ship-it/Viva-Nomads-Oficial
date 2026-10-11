@@ -192,7 +192,7 @@ export default function RoiImovelPage() {
       <SimDisclaimer />
 
       <div className="mt-4">
-        <Link href="/qualificar" className="inline-flex items-center gap-2 rounded-xl bg-forest px-5 py-3 text-sm font-semibold text-white hover:bg-forest/90">
+        <Link href="/dashboard/imoveis/novo" className="inline-flex items-center gap-2 rounded-xl bg-forest px-5 py-3 text-sm font-semibold text-white hover:bg-forest/90">
           Anunciar meu imóvel
         </Link>
       </div>

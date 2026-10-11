@@ -96,7 +96,7 @@ export default async function CityLandingPage({ params }: Params) {
             <p className="text-muted">
               Ainda não há imóveis publicados em {name}. É proprietário aqui?
             </p>
-            <ButtonLink href="/qualificar" variant="gold" className="mt-4">
+            <ButtonLink href="/dashboard/imoveis/novo" variant="gold" className="mt-4">
               Anuncie seu imóvel em {name}
             </ButtonLink>
           </div>

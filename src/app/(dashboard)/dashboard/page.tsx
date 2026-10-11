@@ -158,7 +158,7 @@ function OwnerDashboard({ name }: { name: string }) {
           {myProperties.length === 0 ? (
             <p className="py-3 text-sm text-muted">
               Você ainda não publicou imóveis.{" "}
-              <Link href="/qualificar" className="font-medium text-forest hover:underline">
+              <Link href="/dashboard/imoveis/novo" className="font-medium text-forest hover:underline">
                 Publicar o primeiro →
               </Link>
             </p>
@@ -326,10 +326,10 @@ function OwnerFunnel({ name, draft }: { name: string; draft?: RascunhoPendente |
   const passos = [
     {
       n: 1,
-      titulo: "Qualifique seu imóvel",
-      texto: "Um checklist rápido confirma que o imóvel está pronto para morar e define o selo.",
-      cta: "Qualificar meu imóvel",
-      href: "/qualificar",
+      titulo: "Comece pelas fotos",
+      texto: "Envie as fotos do imóvel; o restante do cadastro vem em seguida.",
+      cta: "Cadastrar meu imóvel",
+      href: "/dashboard/imoveis/novo",
       ativo: true,
     },
     {
@@ -337,7 +337,7 @@ function OwnerFunnel({ name, draft }: { name: string; draft?: RascunhoPendente |
       titulo: "Publique o anúncio",
       texto: "Fotos, preço e disponibilidade — quanto mais completo, mais candidaturas.",
       cta: "Publicar anúncio",
-      href: "/qualificar",
+      href: "/dashboard/imoveis/novo",
       ativo: false,
     },
     {

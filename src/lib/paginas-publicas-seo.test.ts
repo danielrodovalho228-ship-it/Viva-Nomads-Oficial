@@ -51,5 +51,6 @@ test("botões de Novo anúncio (logado) abrem direto o cadastro pelas Fotos, nã
   assert.match(ler("components/dashboard/role-welcome-modal.tsx"), new RegExp(`router\\.push\\("${novo}"\\)`));
   const nav = ler("components/layout/navbar.tsx");
   assert.ok(!/href="\/qualificar" variant="accent"/.test(nav));
-  assert.equal((nav.match(/loggedIn \? "\/dashboard\/imoveis\/novo" : "\/qualificar"/g) ?? []).length, 2);
+  assert.equal((nav.match(/href="\/dashboard\/imoveis\/novo"/g) ?? []).length, 2);
+  assert.ok(!nav.includes("/qualificar"));
 });

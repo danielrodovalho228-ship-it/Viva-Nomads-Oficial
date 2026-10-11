@@ -177,7 +177,7 @@ export default function PricingPage() {
             Com 31 imóveis ou mais, a conversa é direta: fale com a gente sobre o Plano Gestor e fixamos uma condição negociada.
           </p>
           <PlanoGestorForm />
-          <ButtonLink href="/qualificar" variant="gold" className="mt-6 w-full sm:w-auto">
+          <ButtonLink href="/dashboard/imoveis/novo" variant="gold" className="mt-6 w-full sm:w-auto">
             Anunciar meu imóvel
           </ButtonLink>
         </div>

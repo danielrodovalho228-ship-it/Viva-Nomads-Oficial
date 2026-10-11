@@ -86,7 +86,7 @@ export default function HowItWorksPage() {
           <ButtonLink href="/buscar" variant="primary" size="lg">
             Buscar imóveis
           </ButtonLink>
-          <ButtonLink href="/qualificar" variant="gold" size="lg">
+          <ButtonLink href="/dashboard/imoveis/novo" variant="gold" size="lg">
             Anunciar meu imóvel
           </ButtonLink>
         </div>
