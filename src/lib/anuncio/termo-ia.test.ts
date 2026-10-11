@@ -63,10 +63,25 @@ test("editor: aceiteDoEditor só devolve o aceite com a caixa marcada; texto do 
   assert.deepEqual(a.aceite, { versao: TERMO_IA_VERSAO, camposGeradosIa: [], camposEditados: [] });
 });
 
+test("editor: anúncio que nasceu com descrição da IA mantém 'description' como gerada (e editada se mudou)", () => {
+  const base = { descricaoGeradaPorIa: true, descricao: "texto IA", descricaoOriginal: "texto IA" };
+  assert.deepEqual(aceiteDoEditor(true, base), { versao: TERMO_IA_VERSAO, camposGeradosIa: ["description"], camposEditados: [] });
+  assert.deepEqual(aceiteDoEditor(true, { ...base, descricao: "meu texto" })?.camposEditados, ["description"]);
+  assert.ok(validarAceiteIa(aceiteDoEditor(true, base)).ok);
+  // negativo: sem a origem IA ou sem a caixa, nada de campo gerado
+  assert.deepEqual(aceiteDoEditor(true, { ...base, descricaoGeradaPorIa: false })?.camposGeradosIa, []);
+  assert.equal(aceiteDoEditor(false, base), undefined);
+});
+
+test("o editor repassa a origem IA do imóvel ao salvar (senão o salvamento zera descricao_gerada_por_ia)", () => {
+  const editor = readFileSync(join(process.cwd(), "src/app/(dashboard)/dashboard/imoveis/[id]/editar/editar-client.tsx"), "utf8");
+  assert.match(editor, /descricaoGeradaPorIa: property\.descricaoGeradaPorIa/);
+});
+
 test("o editor por seções mostra a caixa do termo e envia o aceite só ao publicar", () => {
   const editor = readFileSync(join(process.cwd(), "src/app/(dashboard)/dashboard/imoveis/[id]/editar/editar-client.tsx"), "utf8");
   assert.match(editor, /data-testid="aceite-ia"/);
   assert.match(editor, /TERMO_IA_TEXTO/);
-  assert.match(editor, /aceiteIa: asDraft === false \? aceiteDoEditor\(aceitouIa\) : undefined/);
+  assert.match(editor, /asDraft === false\s*\?\s*aceiteDoEditor\(aceitouIa,/);
   assert.match(editor, /aceitouIa/);
 });

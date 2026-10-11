@@ -153,7 +153,15 @@ export function EditarImovelClient({
       photoUrls: photos.map((p) => p.url).filter((u) => u && !u.startsWith("blob:")),
       videoUrl: property.videoUrl,
       asDraft,
-      aceiteIa: asDraft === false ? aceiteDoEditor(aceitouIa) : undefined,
+      descricaoGeradaPorIa: property.descricaoGeradaPorIa,
+      aceiteIa:
+        asDraft === false
+          ? aceiteDoEditor(aceitouIa, {
+              descricaoGeradaPorIa: property.descricaoGeradaPorIa,
+              descricao: description,
+              descricaoOriginal: property.description ?? "",
+            })
+          : undefined,
       parkingSpots: property.parkingSpots,
       condoFee: Number(condoFee) || 0,
       availableFrom: availableFrom || undefined,
