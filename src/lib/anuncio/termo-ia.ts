@@ -52,3 +52,9 @@ export function camposDaIa(a: {
   }
   return { camposGeradosIa: ["title", "description"], camposEditados: editados };
 }
+
+/** Aceite enviado pelo editor por seções: só existe com a caixa marcada; o editor não gera texto por IA. */
+export function aceiteDoEditor(marcado: boolean): AceiteIa | undefined {
+  if (!marcado) return undefined;
+  return { versao: TERMO_IA_VERSAO, ...camposDaIa({ geradoPorIa: false, titulo: "", descricao: "" }) };
+}

@@ -6,7 +6,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { TERMO_IA_VERSAO, TERMO_IA_TEXTO, camposDaIa, validarAceiteIa } from "./termo-ia.ts";
+import { TERMO_IA_VERSAO, TERMO_IA_TEXTO, aceiteDoEditor, camposDaIa, validarAceiteIa } from "./termo-ia.ts";
 
 test("o texto do termo diz que a IA pode errar e que a responsabilidade é do dono", () => {
   assert.match(TERMO_IA_TEXTO, /inteligência artificial pode errar/);
@@ -54,4 +54,19 @@ test("a migração do aceite é idempotente, só com RLS do dono e sem update/de
   assert.match(sql, /create table if not exists public\.anuncio_aceites_ia/);
   assert.match(sql, /enable row level security/);
   assert.doesNotMatch(sql, /grant[^;]*(update|delete)[^;]*to authenticated/i);
+});
+
+test("editor: aceiteDoEditor só devolve o aceite com a caixa marcada; texto do editor não conta como gerado por IA", () => {
+  assert.equal(aceiteDoEditor(false), undefined);
+  const a = validarAceiteIa(aceiteDoEditor(true));
+  assert.ok(a.ok);
+  assert.deepEqual(a.aceite, { versao: TERMO_IA_VERSAO, camposGeradosIa: [], camposEditados: [] });
+});
+
+test("o editor por seções mostra a caixa do termo e envia o aceite só ao publicar", () => {
+  const editor = readFileSync(join(process.cwd(), "src/app/(dashboard)/dashboard/imoveis/[id]/editar/editar-client.tsx"), "utf8");
+  assert.match(editor, /data-testid="aceite-ia"/);
+  assert.match(editor, /TERMO_IA_TEXTO/);
+  assert.match(editor, /aceiteIa: asDraft === false \? aceiteDoEditor\(aceitouIa\) : undefined/);
+  assert.match(editor, /aceitouIa/);
 });
