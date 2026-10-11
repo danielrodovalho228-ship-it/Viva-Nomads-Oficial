@@ -51,6 +51,7 @@ import { LinhaComparativoAnuncio } from "@/components/precos/comparativo-precos"
 import { useAuthStore } from "@/lib/store";
 import { draftKey, DRAFT_KEY_LEGADO } from "@/lib/local-keys";
 import { registrarEvento } from "@/lib/eventos/registrar";
+import { TERMO_IA_TEXTO, TERMO_IA_VERSAO, camposDaIa } from "@/lib/anuncio/termo-ia";
 import { etapaLiberada, etapaMaisAvancada, etapaDoRascunho, etapaNaPosicao, posicaoDaEtapa, posMaxDoRascunho, ORDEM_ETAPAS, VERSAO_ORDEM_ETAPAS } from "@/lib/etapas-anuncio";
 
 /** Metadados das 7 etapas do wizard (rodada 15). O índice é o ID estável da etapa; a ordem em que
@@ -93,6 +94,10 @@ export default function NewPropertyPage() {
   const [aiWarn, setAiWarn] = useState<string | null>(null);
   // Auditoria: descrição gerada por IA (some ao editar à mão). Persistido.
   const [descricaoGeradaPorIa, setDescricaoGeradaPorIa] = useState(false);
+  // Termo de aceite (ordem 04e2fe5e, item 5): obrigatório para publicar; o texto da IA
+  // original fica aqui para saber, ao publicar, o que o dono editou depois.
+  const [aceitouIa, setAceitouIa] = useState(false);
+  const [textoIaOriginal, setTextoIaOriginal] = useState<{ titulo: string; descricao: string } | null>(null);
   const [title, setTitle] = useState("");
   const [propertyType, setPropertyType] = useState("apartamento");
   const [description, setDescription] = useState("");
@@ -203,7 +208,7 @@ export default function NewPropertyPage() {
     video: !!videoUrl.trim(),
   });
   const completude = prontidao.obrigatorios;
-  const podePublicar = prontidao.podePublicar && qualificado;
+  const podePublicar = prontidao.podePublicar && qualificado && aceitouIa;
 
   /** Campos obrigatórios da etapa atual (chave → mensagem). Vazio = pode avançar.
    * Só barra o AVANÇO ("Continuar"); voltar e pular para etapas já visitadas
@@ -345,6 +350,10 @@ export default function NewPropertyPage() {
       setPublishError("A duração máxima não pode ser menor que a mínima. Ajuste os prazos.");
       return;
     }
+    if (!asDraft && !aceitouIa) {
+      setPublishError("Marque a confirmação de que você revisou o anúncio para publicar.");
+      return;
+    }
     setPublishing(true);
     setPublishError(null);
     let q = { score: 0, tHome: false, tWork: false, tCondo: false };
@@ -409,6 +418,12 @@ export default function NewPropertyPage() {
       videoUrl: videoUrl.trim() || undefined,
       // "Salvar rascunho" => draft; "Publicar anúncio" => active (entra na busca).
       asDraft,
+      aceiteIa: asDraft
+        ? undefined
+        : {
+            versao: TERMO_IA_VERSAO,
+            ...camposDaIa({ geradoPorIa: descricaoGeradaPorIa, titulo: title, descricao: description, original: textoIaOriginal ?? undefined }),
+          },
     };
 
     // Edição OU rascunho já persistido no servidor → ATUALIZA a mesma linha
@@ -796,6 +811,7 @@ export default function NewPropertyPage() {
       setTitle(data.titulo);
       setDescription(data.descricao);
       setDescricaoGeradaPorIa(true);
+      setTextoIaOriginal({ titulo: data.titulo, descricao: data.descricao });
     } catch {
       setAiWarn("Não foi possível gerar agora. Verifique a conexão e tente novamente.");
     } finally {
@@ -1683,6 +1699,15 @@ export default function NewPropertyPage() {
                 <span>Documento conferido pela equipe — você já pode publicar.</span>
               </div>
             )}
+            <label className="flex items-start gap-3 rounded-xl border border-sage-200 bg-surface-2 px-4 py-3 text-sm text-ink" data-testid="aceite-ia">
+              <input
+                type="checkbox"
+                checked={aceitouIa}
+                onChange={(e) => setAceitouIa(e.target.checked)}
+                className="mt-0.5 h-5 w-5 shrink-0 accent-forest"
+              />
+              <span>{TERMO_IA_TEXTO}</span>
+            </label>
             {publishError && <p className="text-sm text-red-600">{publishError}</p>}
 
             <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
