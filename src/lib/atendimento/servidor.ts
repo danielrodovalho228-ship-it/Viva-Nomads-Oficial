@@ -9,6 +9,7 @@ import { urgenciaManutencao } from "@/lib/atendimento/classificar";
 import { situacaoLimite } from "@/lib/limites";
 import { equipeAvisadaDaMensagem, JANELA_AVISO_EQUIPE_S } from "@/lib/atendimento/dono";
 import { adminsPorAviso } from "@/lib/notifications/push-admins";
+import { notificacaoLigada } from "@/lib/notifications/preferencias";
 
 /**
  * Atendimento — utilidades SÓ DO SERVIDOR: token da nota de 1 a 5 (um clique,
@@ -223,6 +224,11 @@ export async function criarOrdemManutencao(input: {
     console.error("[atendimento] ordem de manutenção:", error?.message);
     return { ok: false, error: "Não foi possível registrar a manutenção agora. Tente de novo." };
   }
+  // Histórico da ordem (0109): a abertura é a primeira linha. Falha aqui não desfaz a ordem.
+  const { error: eHist } = await admin
+    .from("service_order_eventos")
+    .insert({ service_order_id: so.id, ator_id: input.tenantId, papel: "inquilino", tipo: "aberto", status_para: "aberto" });
+  if (eHist) console.error("[atendimento] histórico da ordem:", eHist.code);
   return { ok: true, ordem: { serviceOrderId: so.id as string, urgencia, ownerId: prop.owner_id, propertyTitle: prop.title ?? "seu imóvel" } };
 }
 
@@ -231,7 +237,7 @@ export async function avisarProprietarioManutencao(ordem: OrdemCriada, agora: Da
   const admin = createAdminClient();
   if (!admin) return;
   const { data: dono } = await admin.from("profiles").select("email, full_name, notif_email").eq("id", ordem.ownerId).maybeSingle();
-  if (!dono?.email || dono.notif_email === false) return;
+  if (!dono?.email || !notificacaoLigada(dono.notif_email as boolean | null)) return;
   await notify({
     event: "manutencao_nova",
     email: dono.email as string,

@@ -463,7 +463,7 @@ export function NotificationsPanel() {
     {
       key: "email",
       label: "Avisos por e-mail",
-      hint: "Novos interessados, mensagens e respostas aos seus pedidos.",
+      hint: "Manutenção, novos interessados, mensagens e respostas aos seus pedidos. Ligado por padrão.",
     },
     {
       key: "whatsapp",

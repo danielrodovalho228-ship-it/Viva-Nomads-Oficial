@@ -40,8 +40,40 @@ export function calcularPrazos(prioridade: Prioridade, agora: Date): { primeiraR
   };
 }
 
+/**
+ * Exemplos de cada prioridade de manutenção — os MESMOS na Central de Ajuda
+ * (lib/atendimento/faq.ts) e no seletor do formulário. Uma fonte só.
+ */
+export const EXEMPLOS_MANUTENCAO: Record<UrgenciaManutencao, string> = {
+  urgente: "sem água, sem luz, vazamento",
+  media: "chuveiro sem aquecer, eletrodoméstico parado, internet instável",
+  baixa: "lâmpada queimada, ajuste em móvel, pequenos reparos",
+};
+
+export const ROTULO_URGENCIA_MANUTENCAO: Record<UrgenciaManutencao, string> = { urgente: "Urgente", media: "Média", baixa: "Baixa" };
+
 export function prazoManutencao(urgencia: UrgenciaManutencao, agora: Date): Date {
   return new Date(agora.getTime() + PRAZO_MANUTENCAO_H[urgencia] * HORA_MS);
+}
+
+/** Data e hora no fuso de Brasília, ex.: "13/10/2026, 14:30". */
+export function dataHoraBrasilia(d: Date): string {
+  return d.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" });
+}
+
+/** "responder até 13/10/2026, 14:30 (horário de Brasília)" — a frase única do prazo do proprietário. */
+export function responderAte(urgencia: UrgenciaManutencao, abertoEm: Date): string {
+  return `responder até ${dataHoraBrasilia(prazoManutencao(urgencia, abertoEm))} (horário de Brasília)`;
+}
+
+/** Frase da Central de Ajuda com prazos e exemplos (lida das constantes acima). */
+export function frasePrazosManutencao(): string {
+  const h = PRAZO_MANUTENCAO_H;
+  const e = EXEMPLOS_MANUTENCAO;
+  return (
+    `O proprietário é avisado na hora e tem prazo para responder: ${h.urgente} horas em urgências (${e.urgente}), ` +
+    `${h.media} horas nos casos médios (${e.media}) e ${h.baixa} horas nos demais (${e.baixa}).`
+  );
 }
 
 /** Frase para o usuário: quando uma pessoa responde. */

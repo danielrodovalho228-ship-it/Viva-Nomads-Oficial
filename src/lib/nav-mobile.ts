@@ -99,6 +99,7 @@ const TITULOS_APP: [RegExp, string][] = [
   [/^\/dashboard\/conta\/perfil/, "Perfil"],
   [/^\/dashboard\/conta\/seguranca/, "Senha e segurança"],
   [/^\/dashboard\/conta\/notificacoes/, "Notificações"],
+  [/^\/dashboard\/notificacoes/, "Notificações"],
   [/^\/dashboard\/conta\/ajuda/, "Ajuda e contato"],
   [/^\/dashboard\/conta\/excluir/, "Excluir conta"],
   [/^\/dashboard\/conta/, "Conta"],

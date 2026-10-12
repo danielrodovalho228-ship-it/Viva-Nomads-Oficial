@@ -4,6 +4,7 @@
   PR 2 também responde a partir daqui. Puro (testável com node --test).
 */
 import { REGRAS_CONTRATO } from "../../config/planos.ts";
+import { frasePrazosManutencao } from "../../config/atendimento.ts";
 import { TEXTO_REGRA_UNICA } from "../cobranca/regra.ts";
 import { CAUCAO_FRASE } from "../faixas.ts";
 import {
@@ -32,8 +33,8 @@ export interface Pergunta {
 /** Quem está lendo a Central de Ajuda. */
 export type PerfilAjuda = "visitante" | "sem_contrato" | "com_contrato";
 
-const PRAZOS_MANUTENCAO =
-  "O proprietário é avisado na hora e tem prazo para responder: 4 horas em urgências (sem água, sem luz, vazamento), 24 horas nos casos médios e 72 horas nos demais.";
+// Prazos e exemplos da manutenção: fonte única em config/atendimento.ts (o seletor do formulário usa os mesmos).
+const PRAZOS_MANUTENCAO = frasePrazosManutencao();
 
 export const FAQ: Pergunta[] = [
   {

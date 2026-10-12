@@ -45,22 +45,26 @@ export const SO_PRIORITY_META: Record<
   baixa: { label: "Baixa", rank: 2, tone: "bg-blue-50 text-blue-700 border-blue-200" },
 };
 
-export const SO_STATUS_FLOW: SOStatus[] = ["aberto", "visto", "em_andamento", "resolvido"];
+/**
+ * Fluxo da ordem (critério 4 do Daniel): Aberta → Em atendimento → Resolvida.
+ * "visto" é estado antigo do banco (enum so_status): lido como "Em atendimento".
+ */
+export const SO_STATUS_FLOW: SOStatus[] = ["aberto", "em_andamento", "resolvido"];
 
 export const SO_STATUS_META: Record<SOStatus, { label: string; tone: string }> = {
-  aberto: { label: "Aberto", tone: "bg-red-50 text-red-700" },
-  visto: { label: "Visto", tone: "bg-amber-50 text-amber-700" },
-  em_andamento: { label: "Em andamento", tone: "bg-blue-50 text-blue-700" },
-  resolvido: { label: "Resolvido", tone: "bg-emerald-50 text-emerald-700" },
+  aberto: { label: "Aberta", tone: "bg-red-50 text-red-700" },
+  visto: { label: "Em atendimento", tone: "bg-blue-50 text-blue-700" },
+  em_andamento: { label: "Em atendimento", tone: "bg-blue-50 text-blue-700" },
+  resolvido: { label: "Resolvida", tone: "bg-emerald-50 text-emerald-700" },
 };
 
 export function categoryLabel(c: SOCategory) {
   return SO_CATEGORIES.find((x) => x.id === c)?.label ?? c;
 }
 
-/** Próximo status no fluxo Aberto → Visto → Em andamento → Resolvido. */
+/** Próximo status no fluxo Aberta → Em atendimento → Resolvida ("visto" antigo conta como em atendimento). */
 export function nextStatus(s: SOStatus): SOStatus | null {
-  const i = SO_STATUS_FLOW.indexOf(s);
+  const i = SO_STATUS_FLOW.indexOf(s === "visto" ? "em_andamento" : s);
   return i < SO_STATUS_FLOW.length - 1 ? SO_STATUS_FLOW[i + 1] : null;
 }
 

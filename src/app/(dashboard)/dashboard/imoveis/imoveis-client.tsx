@@ -1,5 +1,6 @@
 "use client";
 
+import { imovelPublicado } from "@/lib/anuncio/publicados";
 import { useState } from "react";
 import Link from "next/link";
 import { Plus, Bath, BedDouble, Home, Handshake, Trash2 } from "lucide-react";
@@ -154,7 +155,7 @@ export function MyPropertiesClient({ properties: real, prontidao = {} }: { prope
                       </p>
                     ) : null;
                   })()}
-                  {!demoItem && comp && p.status !== "active" && (
+                  {!demoItem && comp && !imovelPublicado(p) && (
                     <div className="mt-3" data-testid="prontidao">
                       <div className="flex items-center justify-between text-xs">
                         <span className="font-medium text-ink">
