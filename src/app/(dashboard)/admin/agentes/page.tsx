@@ -1,14 +1,26 @@
 import type { Metadata } from "next";
-import { JetBrains_Mono, Plus_Jakarta_Sans, Unbounded } from "next/font/google";
+import localFont from "next/font/local";
 import { carregarCentral, chamadosEmVermelho, postarRetornosDoMoacir } from "@/lib/data/agentes-actions";
 import { dispararEncaminhamentosDaSessao } from "@/lib/agentes/servidor";
 import { CentralAgentes } from "./central-client";
 
 export const metadata: Metadata = { title: "Agentes" };
 
-const jakarta = Plus_Jakarta_Sans({ variable: "--font-jakarta", subsets: ["latin"], weight: ["400", "500", "600", "700"], display: "swap" });
-const mono = JetBrains_Mono({ variable: "--font-mono-agentes", subsets: ["latin"], weight: ["400", "500", "600"], display: "swap" });
-const unbounded = Unbounded({ variable: "--font-display-agentes", subsets: ["latin"], weight: ["500", "700"], display: "swap" });
+const jakarta = localFont({ variable: "--font-jakarta", src: [
+    { path: "../../../fonts/plus-jakarta-sans-latin-400-normal.woff2", weight: "400", style: "normal" },
+    { path: "../../../fonts/plus-jakarta-sans-latin-500-normal.woff2", weight: "500", style: "normal" },
+    { path: "../../../fonts/plus-jakarta-sans-latin-600-normal.woff2", weight: "600", style: "normal" },
+    { path: "../../../fonts/plus-jakarta-sans-latin-700-normal.woff2", weight: "700", style: "normal" },
+  ], display: "swap" });
+const mono = localFont({ variable: "--font-mono-agentes", src: [
+    { path: "../../../fonts/jetbrains-mono-latin-400-normal.woff2", weight: "400", style: "normal" },
+    { path: "../../../fonts/jetbrains-mono-latin-500-normal.woff2", weight: "500", style: "normal" },
+    { path: "../../../fonts/jetbrains-mono-latin-600-normal.woff2", weight: "600", style: "normal" },
+  ], display: "swap" });
+const unbounded = localFont({ variable: "--font-display-agentes", src: [
+    { path: "../../../fonts/unbounded-latin-500-normal.woff2", weight: "500", style: "normal" },
+    { path: "../../../fonts/unbounded-latin-700-normal.woff2", weight: "700", style: "normal" },
+  ], display: "swap" });
 
 /** Central de Agentes (admin). O layout de /admin já exige papel admin. */
 export default async function AgentesPage() {
