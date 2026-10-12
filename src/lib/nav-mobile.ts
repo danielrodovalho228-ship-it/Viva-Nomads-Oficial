@@ -24,6 +24,8 @@ export interface MobileTab {
   authRequired?: boolean;
   /** Chave de contador (badge). Preenchido pela casca quando houver dado. */
   badge?: "mensagens" | "interessados" | "equipe";
+  /** Rótulo curto quando a barra tem mais de 5 abas (ex.: admin com "Equipe"), para não encavalar. */
+  curto?: string;
   /** Prefixo que também deixa a aba ativa (ex.: /admin para a aba Equipe). */
   ativoEm?: string;
 }
@@ -61,7 +63,7 @@ export const TENANT_APP_TABS: MobileTab[] = [
 export const OWNER_APP_TABS: MobileTab[] = [
   { href: "/dashboard", label: "Painel", icon: LayoutDashboard },
   { href: "/dashboard/imoveis", label: "Imóveis", icon: Building2 },
-  { href: "/dashboard/leads", label: "Interessados", icon: Users, badge: "interessados" },
+  { href: "/dashboard/leads", label: "Interessados", curto: "Interesse", icon: Users, badge: "interessados" },
   { href: "/dashboard/mensagens", label: "Mensagens", icon: MessageSquare, badge: "mensagens" },
   { href: "/dashboard/conta", label: "Conta", icon: UserRound },
 ];
@@ -111,6 +113,13 @@ const TITULOS_APP: [RegExp, string][] = [
   [/^\/dashboard\/orcamentos/, "Orçamentos"],
   [/^\/admin\/documentos/, "Documentos"],
   [/^\/admin\/atendimento/, "Atendimento"],
+  [/^\/admin\/socios/, "Caixa dos Sócios"],
+  [/^\/admin\/parceiros/, "Parceiros"],
+  [/^\/admin\/fotografos/, "Fotógrafos"],
+  [/^\/admin\/financeiro/, "Financeiro"],
+  [/^\/admin\/marketing/, "Marketing"],
+  [/^\/admin\/pedidos/, "Moderar pedidos"],
+  [/^\/admin\/?$/, "Admin"],
   [/^\/admin/, "Equipe"],
   [/^\/buscar/, "Buscar"],
   [/^\/imoveis\//, "Anúncio"],

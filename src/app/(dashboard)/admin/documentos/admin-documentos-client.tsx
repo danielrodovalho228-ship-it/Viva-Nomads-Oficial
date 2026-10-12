@@ -39,7 +39,7 @@ export function AdminDocumentosClient({ docs }: { docs: DocumentoPendente[] }) {
   }
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div>
       <PageTitle
         title="Documentos em conferência"
         subtitle="Confira a matrícula ou o contrato de gestão antes de liberar a publicação. Conferimos o documento — não atestamos a propriedade."

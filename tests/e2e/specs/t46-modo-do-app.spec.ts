@@ -53,7 +53,8 @@ test.describe("T46 — Modo do app", () => {
     await entrarNoApp(page);
     await page.goto("/dashboard", { waitUntil: "networkidle" });
     await expect(page.locator("html")).toHaveAttribute("data-app", "1");
-    const chip = page.getByTestId("modo-chip");
+    // O chip existe no cabeçalho do app e no do site (um deles escondido por CSS).
+    const chip = page.getByTestId("modo-chip").filter({ visible: true });
     await expect(chip).toHaveAttribute("data-modo", "owner");
     await abas(page, ABAS_PROPRIETARIO);
 
@@ -63,13 +64,13 @@ test.describe("T46 — Modo do app", () => {
     await expect.poll(async () => (await adm().from("profiles").select("preferred_mode").eq("id", ids.id!).single()).data?.preferred_mode, { timeout: 15_000 }).toBe("tenant");
 
     await page.reload({ waitUntil: "networkidle" });
-    await expect(page.getByTestId("modo-chip")).toHaveAttribute("data-modo", "tenant");
+    await expect(page.getByTestId("modo-chip").filter({ visible: true })).toHaveAttribute("data-modo", "tenant");
     await abas(page, ABAS_INQUILINO);
 
-    await page.getByTestId("modo-chip").click();
-    await expect(page.getByTestId("modo-chip")).toHaveAttribute("data-modo", "owner");
+    await page.getByTestId("modo-chip").filter({ visible: true }).click();
+    await expect(page.getByTestId("modo-chip").filter({ visible: true })).toHaveAttribute("data-modo", "owner");
     await page.reload({ waitUntil: "networkidle" });
-    await expect(page.getByTestId("modo-chip")).toHaveAttribute("data-modo", "owner");
+    await expect(page.getByTestId("modo-chip").filter({ visible: true })).toHaveAttribute("data-modo", "owner");
     await abas(page, ABAS_PROPRIETARIO);
   });
 

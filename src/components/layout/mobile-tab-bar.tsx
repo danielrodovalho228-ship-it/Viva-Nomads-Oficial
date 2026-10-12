@@ -70,7 +70,10 @@ export function MobileTabBar({
                 <Link
                   href={href}
                   aria-current={active ? "page" : undefined}
-                  className="relative flex flex-col items-center gap-0.5 py-2 text-[11px] font-medium text-muted"
+                  className={cn(
+                    "relative flex min-w-0 flex-col items-center gap-0.5 py-2 font-medium text-muted",
+                    tabs.length > 5 ? "text-[10px] tracking-tight" : "text-[11px]",
+                  )}
                   style={active ? { color: activeColor } : undefined}
                 >
                   <span className="relative">
@@ -84,7 +87,9 @@ export function MobileTabBar({
                       </span>
                     )}
                   </span>
-                  {tab.label}
+                  <span className="block w-full truncate px-0.5 text-center">
+                    {tabs.length > 5 && tab.curto ? tab.curto : tab.label}
+                  </span>
                 </Link>
               </li>
             );

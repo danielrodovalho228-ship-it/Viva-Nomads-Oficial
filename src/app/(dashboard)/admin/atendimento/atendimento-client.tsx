@@ -239,13 +239,28 @@ function Metricas({ m }: { m: Record<string, unknown> | null }) {
   return (
     <>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {cards.map(([t, v, f]) => (
-          <div key={t} className="rounded-xl border border-line bg-white p-3" title={f}>
-            <p className="text-sm text-muted">{t}</p>
-            <p className="mt-1 font-title text-2xl font-bold text-ink">{v}</p>
-            <p className="mt-1 text-xs text-muted">{f}</p>
-          </div>
-        ))}
+        {cards.map(([t, v, f]) => {
+          // Os dois primeiros cartões abrem a fila correspondente (pedido do sócio: "não consigo acessar os chamados").
+          const destino =
+            t === "Chamados no período" ? "/admin/atendimento?aba=fila&fechados=1" : t === "Abertos agora" ? "/admin/atendimento?aba=fila" : null;
+          const corpo = (
+            <>
+              <p className="text-sm text-muted">{t}</p>
+              <p className="mt-1 font-title text-2xl font-bold text-ink">{v}</p>
+              <p className="mt-1 text-xs text-muted">{f}</p>
+              {destino && <p className="mt-2 text-xs font-semibold text-forest">Ver chamados →</p>}
+            </>
+          );
+          return destino ? (
+            <Link key={t} href={destino} className="block rounded-xl border border-line bg-white p-3 transition-colors hover:border-sage" title={f}>
+              {corpo}
+            </Link>
+          ) : (
+            <div key={t} className="rounded-xl border border-line bg-white p-3" title={f}>
+              {corpo}
+            </div>
+          );
+        })}
       </div>
       <Panel title="Prazos estourados por prioridade" className="mt-6">
         <p className="text-sm text-ink">
