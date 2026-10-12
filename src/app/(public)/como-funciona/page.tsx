@@ -106,8 +106,8 @@ function GarantiasInquilino() {
     <section id="garantias" className="container-page section-y scroll-mt-24">
       <h2 className="font-title text-3xl font-bold text-ink">Garantias da locação</h2>
       <p className="mt-3 max-w-2xl text-muted">
-        Por lei, cada contrato usa <strong>uma</strong> garantia. Você escolhe a que
-        preferir, com a mesma proteção para as duas partes — e nada fica com a plataforma.
+        Por lei, cada contrato usa <strong>uma</strong> garantia. Hoje a garantia é a
+        Caução, com a mesma proteção para as duas partes — e nada fica com a plataforma.
       </p>
       <div className="mt-8 grid gap-6">
         <div className="rounded-2xl border border-sage-200 bg-white p-6">
