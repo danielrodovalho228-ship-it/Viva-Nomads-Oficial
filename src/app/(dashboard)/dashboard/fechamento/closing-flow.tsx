@@ -57,6 +57,7 @@ import {
   CLAUSULAS_PLACEHOLDER,
 } from "@/lib/modelos-contrato";
 import { hojeBR, formatBRL, cn } from "@/lib/utils";
+import { MARCA_MINUTA, MSG_ASSINATURA_INATIVA } from "@/lib/contrato-etapas";
 
 const STEPS = ["Candidatura & verificação", "Garantia", "Serviços", "Patrimonial", "Contrato", "Resumo"];
 
@@ -120,6 +121,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   const [verifying, setVerifying] = useState(false);
   const [cafResult, setCafResult] = useState<CafResult | null>(null);
   const [signUrl, setSignUrl] = useState<string | null>(null);
+  const [erroContrato, setErroContrato] = useState<string | null>(null);
   // Seleção ÚNICA de garantia: guardamos um único id. Selecionar outra substitui
   // a anterior — é impossível ter duas garantias no contrato (Lei 8.245, art. 37).
   // Caução é a opção PADRÃO (obrigatória): nenhum fechamento avança sem garantia,
@@ -217,6 +219,12 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   }
 
   async function generateContract() {
+    setErroContrato(null);
+    // Exemplo de demonstração (admin): sem candidatura real, nada é enviado nem cobrado.
+    if (demo || !ctx.leadId) {
+      setGenerated(true);
+      return;
+    }
     try {
       const res = await fetch("/api/contrato", {
         method: "POST",
@@ -229,7 +237,18 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
           costSplit: split,
         }),
       });
-      const data = await res.json();
+      const data = (await res.json().catch(() => ({}))) as { error?: string; demo?: boolean; signUrl?: string };
+      // F40/F36: só vale como "enviado para assinatura" quando a assinatura digital de verdade
+      // aceitou o documento. Sem ela (503 sem chave, ou resposta simulada) a tela diz a verdade
+      // e NÃO avança, não cobra a taxa e não registra o contrato.
+      if (res.status === 503 || (res.ok && data.demo)) {
+        setErroContrato(MSG_ASSINATURA_INATIVA);
+        return;
+      }
+      if (!res.ok) {
+        setErroContrato(data.error ?? "Não foi possível gerar o contrato. Tente de novo.");
+        return;
+      }
       setSignUrl(data.signUrl ?? null);
       // Gera a cobrança da comissão — do PROPRIETÁRIO, à parte (o aluguel nunca
       // passa pela plataforma).
@@ -239,19 +258,12 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
         // A5: valor, taxa e carteira vêm do banco (pela candidatura aceita).
         body: JSON.stringify({ leadId: ctx.leadId }),
       }).catch(() => {});
-      // Garantia na chave do banco (caução vira à vista/parcelada pela forma).
-      const garantiaKey =
-        guaranteeId === "caucao"
-          ? caucaoForma === "parcelado"
-            ? "caucao_parcelada"
-            : "caucao_avista"
-          : guaranteeId ?? "caucao_avista";
       // Registra o CONTRATO-MÃE + blocos (contrato fracionado v2). A comissão
       // fica no contrato-mãe (1 mês × taxa, UMA vez); cada bloco carrega a
-      // caução (50%). Best-effort: no-op em demo/imóvel-exemplo; persiste no real.
+      // caução (50%). O servidor confere o documento das duas partes (F32).
       const inicioISO = hojeBR();
       // A6: inquilino, imóvel, aluguel e taxa vêm da candidatura aceita (servidor).
-      await registrarContrato({
+      const reg = await registrarContrato({
         leadId: ctx.leadId,
         faixa: FAIXA,
         prazoTotalMeses: prazoMeses,
@@ -262,12 +274,14 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
         caucaoForma: caucaoForma === "parcelado" ? "preauth_cartao" : "avista",
         // Garantia ÚNICA (art. 37): seguro-fiança → blocos sem caução (servidor e banco conferem).
         garantia: garantiaDoContrato(guaranteeId),
-      }).catch(() => {});
-      // `garantiaKey` alimenta o texto do contrato (à vista/parcelada).
-      void garantiaKey;
+      }).catch(() => ({ ok: false, error: "Não foi possível registrar o contrato." }));
+      if (!reg.ok) {
+        setErroContrato(reg.error ?? "Não foi possível registrar o contrato.");
+        return;
+      }
       setGenerated(true);
     } catch {
-      setGenerated(true);
+      setErroContrato("Não foi possível gerar o contrato. Tente de novo.");
     }
   }
 
@@ -1001,10 +1015,18 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
               </div>
             </div>
 
+            {/* Enquanto o parecer jurídico não chega, todo contrato gerado leva esta marca. */}
+            <p
+              className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-2 text-center text-sm font-bold uppercase tracking-wide text-amber-800"
+              data-testid="marca-minuta"
+            >
+              {MARCA_MINUTA}
+            </p>
+
             {generated ? (
               <div className="space-y-2">
                 <div className="flex items-center gap-2 rounded-xl bg-sage-100 px-4 py-3 text-sm text-forest">
-                  <FileCheck2 className="h-5 w-5" /> Contrato enviado para assinatura digital.
+                  <FileCheck2 className="h-5 w-5" /> {demo ? "Exemplo de demonstração — nada foi enviado." : "Contrato enviado para assinatura digital."}
                 </div>
                 {signUrl && (
                   <a
@@ -1025,14 +1047,22 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                         ? `${window.location.origin}/dashboard/fechamento?doc=${contractNumber}`
                         : `https://vivanomads.com.br/doc/${contractNumber}`
                     }
+                    pdfDisponivel={false}
                     summary={`Contrato de locação de 30 a 180 dias — ${tenant.name} · ${PROPERTY.title} · ${formatBRL(PROPERTY.monthlyRent)}/mês`}
                   />
                 </div>
               </div>
             ) : (
-              <Button variant="gold" onClick={generateContract}>
-                <FileSignature className="h-4 w-4" /> Gerar contrato para assinatura
-              </Button>
+              <div className="space-y-2">
+                {erroContrato && (
+                  <p role="alert" className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800" data-testid="erro-contrato">
+                    {erroContrato}
+                  </p>
+                )}
+                <Button variant="gold" onClick={generateContract}>
+                  <FileSignature className="h-4 w-4" /> Gerar contrato para assinatura
+                </Button>
+              </div>
             )}
           </div>
         )}
@@ -1073,7 +1103,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                 }
               />
               <Row label="Seguro patrimonial" value={patrimonial ? "Contratado" : "Não contratado"} />
-              <Row label="Contrato" value={generated ? "Enviado para assinatura" : "Pendente"} />
+              <Row label="Contrato" value={generated ? (demo ? "Exemplo de demonstração" : "Enviado para assinatura") : "Pendente"} />
               <Row
                 label={`Taxa de serviço (${pctTexto(COMMISSION_RATE)})`}
                 value={`${formatBRL(PLATFORM_COMMISSION)} · cobrança à parte, do proprietário`}

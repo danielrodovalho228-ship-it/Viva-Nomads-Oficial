@@ -5,6 +5,7 @@
   Docs: https://docs.zapsign.com.br
 */
 
+import { MARCA_MINUTA } from "@/lib/contrato-etapas";
 import { exigirChaveEmProducao, integracoesSimuladas, registrarSimulado } from "@/lib/integracoes";
 
 const API_BASE = "https://api.zapsign.com.br/api/v1";
@@ -51,7 +52,7 @@ export async function createContract(input: ContractInput): Promise<ContractResu
       Authorization: `Bearer ${process.env.ZAPSIGN_API_TOKEN}`,
     },
     body: JSON.stringify({
-      name: `Contrato de locação por temporada — ${input.propertyTitle}`,
+      name: `${MARCA_MINUTA} — Contrato de locação — ${input.propertyTitle}`,
       // Em produção, usar template com campos dinâmicos:
       // template_id + data com partes, prazo, valor, garantia e rateio.
       signers: [

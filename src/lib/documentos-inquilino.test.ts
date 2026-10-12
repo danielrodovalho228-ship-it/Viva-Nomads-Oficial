@@ -43,7 +43,8 @@ test("ver: inquilino, dono ou admin, só com candidatura aceita; link de 10 min;
 
 test("contrato: fechamento e cobrança exigem os documentos (sem a 0093, não trava)", () => {
   const f = ler("lib/data/fechamento-servidor.ts");
-  assert.match(f, /if \(\(await docsInquilinoCompletos\(admin, lead\.id as string\)\) === false\) return \{ status: 409, error: MSG_DOCS_INQUILINO \};/);
+  assert.match(f, /docsInquilinoCompletos: await docsInquilinoCompletos\(admin, lead\.id as string\)/);
+  assert.match(f, /motivoBloqueioContrato\(/);
   assert.match(ler("lib/data/leads-actions.ts"), /else if \(\(await docsInquilinoCompletos\(admin, lead\.id as string\)\) === false\) documentoPendente = \{ quem: "inquilino", mensagem: MSG_DOCS_INQUILINO \};/);
   assert.match(ler("lib/data/documentos-inquilino-servidor.ts"), /return tipos === null \? null : documentosInquilinoCompletos\(tipos\);/);
   assert.match(ler("app/(dashboard)/dashboard/candidaturas/page.tsx"), /c\.situacao\.chave === "aceita" && \(\s*<div[^>]*>\s*<DocumentosInquilino leadId=\{c\.id\} modo="inquilino" \/>/);

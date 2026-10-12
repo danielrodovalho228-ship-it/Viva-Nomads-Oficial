@@ -14,10 +14,13 @@ export function DocumentShare({
   docNumber,
   shareUrl,
   summary,
+  pdfDisponivel = true,
 }: {
   docNumber: string;
   shareUrl: string;
   summary: string;
+  /** false = o PDF ainda não existe: o botão fica desabilitado, com aviso (F39). */
+  pdfDisponivel?: boolean;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -43,9 +46,14 @@ export function DocumentShare({
 
   return (
     <div className="flex flex-wrap gap-2 print:hidden">
-      <Button variant="primary" size="sm" onClick={downloadPdf}>
+      <Button variant="primary" size="sm" onClick={downloadPdf} disabled={!pdfDisponivel} data-testid="baixar-pdf">
         <Download className="h-4 w-4" /> Baixar PDF
       </Button>
+      {!pdfDisponivel && (
+        <p className="w-full text-xs text-muted" data-testid="aviso-pdf">
+          O PDF do contrato ainda não está disponível: esta é uma minuta de teste, sem validade.
+        </p>
+      )}
       <Button variant="outline" size="sm" onClick={shareWhatsApp}>
         <MessageCircle className="h-4 w-4" /> WhatsApp
       </Button>

@@ -62,8 +62,9 @@ test("travas: aceitar candidatura, assinar plano e fechar contrato exigem o docu
   assert.match(ass, /if \(!documento\) return NextResponse\.json\(\{ error: MSG_DOCUMENTO\.assinar \}, \{ status: 400 \}\);/);
   assert.match(ass, /cpfCnpj: documento,/);
   const fech = ler("lib/data/fechamento-servidor.ts");
-  assert.match(fech, /if \(!docDono\) return \{ status: 409, error: MSG_DOCUMENTO\.fecharDono \};/);
-  assert.match(fech, /if \(!documentoParaContrato\(docInquilino\)\) return \{ status: 409, error: MSG_DOCUMENTO\.fecharInquilino \};/);
+  // F32: as duas conferências vivem em motivoBloqueioContrato (src/lib/contrato-trava.ts, testada à parte).
+  assert.match(fech, /motivoBloqueioContrato\(\{/);
+  assert.match(fech, /if \(bloqueio\) return \{ status: bloqueio\.status, error: bloqueio\.erro \};/);
   assert.match(MSG_DOCUMENTO.aceitar, /Conta → Documento/);
 });
 
