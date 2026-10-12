@@ -52,6 +52,7 @@ export default async function FotografosPage({ searchParams }: { searchParams: P
     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
       <h1 className="font-display text-2xl font-bold text-ink sm:text-3xl">Fotógrafos parceiros</h1>
       <p className="mt-2 text-ink/70">Fotos profissionais do seu imóvel mobiliado, feitas por fotógrafos aprovados pela Viva. As fotos vão direto para o seu anúncio.</p>
+      <p className="mt-2 text-sm font-medium text-ink" data-testid="pedir-gratis">Pedir é grátis: a Viva não cobra nada de você; o fotógrafo paga a taxa de parceria só quando aceita o pedido.</p>
 
       <form method="get" className="mt-6 grid gap-3 rounded-xl border border-sage-200 p-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
         <div>
@@ -102,7 +103,8 @@ export default async function FotografosPage({ searchParams }: { searchParams: P
           )}
         </section>
       )}
-      <p className="mt-8 text-xs text-ink/60">O pagamento do serviço é combinado entre você e o fotógrafo; a Viva não recebe esse dinheiro. Seu contato e o endereço só são liberados depois que o fotógrafo aceitar o pedido.</p>
+      <div className="mt-8"><ButtonLink href="/parceiros" variant="outline" className="w-full min-h-11 sm:w-auto">É fotógrafo? Seja parceiro</ButtonLink></div>
+      <p className="mt-4 text-xs text-ink/60">O pagamento do serviço é combinado entre você e o fotógrafo; a Viva não recebe esse dinheiro. Seu contato e o endereço só são liberados depois que o fotógrafo aceitar o pedido.</p>
     </div>
   );
 }
