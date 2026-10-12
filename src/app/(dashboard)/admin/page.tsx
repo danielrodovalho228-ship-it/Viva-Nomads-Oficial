@@ -3,6 +3,7 @@ import { resolverPeriodo } from "@/lib/admin/visao-geral";
 import { getVisaoGeral, cidadesComAnuncio } from "@/lib/data/admin-visao-geral";
 import { PushTeste } from "@/components/admin/push-teste";
 import { VisaoGeralClient } from "./visao-geral-client";
+import { AtalhosAdmin } from "./atalhos-admin";
 
 /**
  * Visão geral do /admin (PR B): período (7/30/90 dias, ano, personalizado)
@@ -47,7 +48,8 @@ export default async function AdminPage({
         cidade={cidade}
         cidades={cidades}
       />
-      <div className="mx-auto mt-6 max-w-5xl px-4 pb-8">
+      <AtalhosAdmin />
+      <div className="mt-6">
         <PushTeste />
       </div>
     </>

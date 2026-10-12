@@ -333,9 +333,12 @@ html[data-app] select,
 html[data-app] textarea {
   font-size: 16px !important;
 }
+/* overflow-x: clip (e não hidden): com hidden no html E no body, o WebView do Android
+   transforma o body em contêiner de rolagem e a página "trava" (não sobe nem desce).
+   clip corta o excesso lateral sem criar contêiner de rolagem. */
 html[data-app],
 html[data-app] body {
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 /* Botão "Ajuda" fixo: acima da barra inferior do celular; no desktop, no canto. */
