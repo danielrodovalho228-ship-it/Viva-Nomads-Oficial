@@ -8,6 +8,9 @@ import { listaImoveis } from "@/lib/seo/estruturados";
 import { isExemplo } from "@/lib/demo-listing";
 import { SITE_URL } from "@/lib/site";
 
+// F9: dados frescos (revalidatePath nas ações + rede de segurança de 60 s).
+export const revalidate = 60;
+
 export const metadata: Metadata = {
   alternates: { canonical: "/buscar" },
   title: "Buscar imóveis mobiliados mensais",
