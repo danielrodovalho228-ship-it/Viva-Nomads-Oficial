@@ -8,7 +8,7 @@ import {
   Settings,
   FileText,
   UserRound,
-  Bot,
+  ShieldCheck,
 } from "lucide-react";
 
 /**
@@ -68,16 +68,16 @@ export const OWNER_APP_TABS: MobileTab[] = [
   { href: "/dashboard/conta", label: "Conta", icon: UserRound },
 ];
 
-/** Aba extra só para role admin: Central dos agentes (o servidor ainda confere o papel). */
+/** Aba extra só para role admin: painel /admin (o servidor ainda confere o papel). O badge segue sendo o da Equipe. */
 export const ADMIN_APP_TAB: MobileTab = {
-  href: "/admin/agentes",
-  label: "Equipe",
-  icon: Bot,
+  href: "/admin",
+  label: "Admin",
+  icon: ShieldCheck,
   badge: "equipe",
   ativoEm: "/admin",
 };
 
-/** Abas do app por papel; admin ganha "Equipe" ao final. */
+/** Abas do app por papel; admin ganha "Admin" ao final. */
 export function abasDoApp(mundo: "tenant" | "owner", ehAdmin: boolean): MobileTab[] {
   const base = mundo === "owner" ? OWNER_APP_TABS : TENANT_APP_TABS;
   return ehAdmin ? [...base, ADMIN_APP_TAB] : base;
@@ -136,6 +136,11 @@ export function tituloDaTelaApp(pathname: string): string {
 /** Abas principais do app (sem botão Voltar no cabeçalho). */
 export function ehAbaRaizApp(pathname: string): boolean {
   return [...TENANT_APP_TABS, ...OWNER_APP_TABS, ADMIN_APP_TAB].some((t) => t.href === pathname);
+}
+
+/** Telas /admin/* (exceto o painel): o Voltar do app leva sempre ao painel /admin, não ao histórico. */
+export function voltaParaAdmin(pathname: string): boolean {
+  return pathname.startsWith("/admin/");
 }
 
 /**

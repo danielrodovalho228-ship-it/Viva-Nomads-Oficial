@@ -3,6 +3,8 @@
   Só aparece para role admin. Isto é conveniência de tela: quem decide o acesso
   é o servidor (layout de /admin devolve 404 a quem não é admin).
 */
+/** Painel /admin (números e atalhos), acima de "Equipe e aprovações" no menu Conta do app. */
+export const ROTA_ADMIN = "/admin";
 export const ROTA_EQUIPE = "/admin/agentes#aprovacoes";
 
 export function mostraEquipe(role: string | null | undefined): boolean {
