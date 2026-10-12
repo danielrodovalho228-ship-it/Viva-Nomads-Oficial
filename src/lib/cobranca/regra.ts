@@ -152,6 +152,12 @@ export function pctTexto(taxa: number): string {
   return `${`${Math.round(taxa * 1000) / 10}`.replace(".", ",")}%`;
 }
 
+/** Texto público da taxa: Plano Gestor (31+) é "Negociado" — nunca um percentual fixo (decisão do Daniel, 10/10). */
+export const TAXA_NEGOCIADA_TEXTO = "Negociado";
+export function taxaPublicaTexto(f: FaixaComissao): string {
+  return f.gestor ? TAXA_NEGOCIADA_TEXTO : pctTexto(f.taxa);
+}
+
 /** Linha do painel do proprietário, ANTES de aceitar contrato/renovação (ordens 12eea681 e 5faa3903). */
 export function textoTaxaPainel(taxa: number, valorMensal: number): string {
   const base = `Taxa de serviço: ${pctTexto(taxa)} do primeiro mês`;

@@ -210,3 +210,27 @@ test("painel do dono: valor mensal inválido não inventa valor", () => {
   assert.equal(textoTaxaPainel(0.12, 0), "Taxa de serviço: 12% do primeiro mês");
   assert.equal(textoTaxaPainel(0.12, Number.NaN), "Taxa de serviço: 12% do primeiro mês");
 });
+
+test("F6: tabela pública — 31+ (Plano Gestor) é 'Negociado'; as demais faixas mostram o percentual", async () => {
+  const { taxaPublicaTexto } = await import("./regra.ts");
+  assert.deepEqual(
+    FAIXAS_COMISSAO_PADRAO.map(taxaPublicaTexto),
+    ["12%", "10%", "8%", "6%", "Negociado"],
+  );
+});
+
+test("F6: /precos não mostra 6% fixo nem exemplo em reais para o Plano Gestor", async () => {
+  const { readFileSync } = await import("node:fs");
+  const t = readFileSync(new URL("../../app/(public)/precos/page.tsx", import.meta.url), "utf8");
+  assert.match(t, /taxaPublicaTexto\(f\)/);
+  assert.match(t, /f\.gestor \? TAXA_NEGOCIADA_TEXTO/);
+  assert.doesNotMatch(t, /pctTexto\(f\.taxa\)/);
+  assert.match(t, /Falar sobre o Plano Gestor|PlanoGestorForm/);
+});
+
+test("F6: chat da Viva não diz 6% para o Plano Gestor", async () => {
+  const { readFileSync } = await import("node:fs");
+  const t = readFileSync(new URL("../atendimento/viva-prompt.ts", import.meta.url), "utf8");
+  assert.doesNotMatch(t, /Plano Gestor \(6%/);
+  assert.match(t, /Plano Gestor \(condições negociadas/);
+});

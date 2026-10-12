@@ -49,7 +49,7 @@ test("#71: título de /parceiros sem marca repetida (≤ 60 com o sufixo) e fras
   assert.ok(`${titulo} · Viva Nomads`.length <= 60);
   assert.doesNotMatch(titulo, /Viva Nomads/);
   const p = ler("src/app/(public)/precos/page.tsx");
-  assert.match(p, /31 imóveis ou mais\? Fale com a gente sobre o Plano Gestor\./);
+  assert.match(p, /31 imóveis ou mais\? Plano Gestor: condições negociadas, entre em contato\./);
   assert.doesNotMatch(p, /a conversa é direta/);
 });
 
