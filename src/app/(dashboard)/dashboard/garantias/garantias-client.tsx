@@ -69,8 +69,7 @@ export function GarantiasClient({ contratos }: { contratos: ContratoView[] }) {
               <PiggyBank className="mt-0.5 h-4 w-4 shrink-0 text-forest" />
               <span>
                 <strong>50% do bloco</strong> (contrato por blocos de até 90 dias), <strong>devolvível</strong> ao
-                fim da estadia — em conta poupança, até 3 aluguéis (Lei 8.245/91, art. 38, §2º;
-                na locação para temporada, art. 49).
+                fim da estadia — em conta poupança, até 3 aluguéis (Lei 8.245/91, art. 38, §2º).
               </span>
             </li>
             <li className="flex items-start gap-2">

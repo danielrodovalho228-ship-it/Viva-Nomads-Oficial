@@ -19,8 +19,7 @@ export default function TermsPage() {
       <div className="mt-8 space-y-8">
         <Section title="1. O que é o Viva Nomads">
           O Viva Nomads é uma plataforma que conecta proprietários de imóveis mobiliados a
-          inquilinos interessados em locação por temporada de média duração (30 a 180 dias),
-          nos termos do art. 48 da Lei 8.245/91. Não é hospedagem turística nem serviço de
+          inquilinos interessados em locações de média duração (30 a 180 dias). Não é hospedagem turística nem serviço de
           hotelaria.
         </Section>
 
@@ -47,12 +46,12 @@ export default function TermsPage() {
 
         <Section title="5. Garantia locatícia">
           O contrato exige <strong>uma única</strong> garantia (seguro-fiança ou caução), nos
-          termos do art. 37 e 42 da Lei 8.245/91.
+          termos da lei.
         </Section>
 
         <Section title="6. Qualificação do imóvel">
           O proprietário declara, no checklist de qualificação, que o imóvel atende aos
-          requisitos de locação por temporada regular. As informações prestadas são de
+          requisitos para estadias de 30 a 180 dias. As informações prestadas são de
           responsabilidade do proprietário.
         </Section>
 

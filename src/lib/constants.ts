@@ -27,7 +27,7 @@ export const PERSONAS: Persona[] = [
   {
     id: "nomades",
     title: "Nômades digitais e estudantes",
-    text: "Trabalho remoto por temporada, especialização universitária ou intercâmbio profissional em outra cidade.",
+    text: "Trabalho remoto por alguns meses, especialização universitária ou intercâmbio profissional em outra cidade.",
     period: "30–90 dias",
     icon: "Laptop",
   },

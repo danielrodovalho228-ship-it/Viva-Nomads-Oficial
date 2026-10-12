@@ -110,7 +110,7 @@ export function buildDefaultLineItems(p: {
       payer: "tenant",
       editable: true,
       recurring: true,
-      hint: "Valor mensal do aluguel por temporada",
+      hint: "Valor mensal do aluguel",
     },
     {
       key: "consumo",

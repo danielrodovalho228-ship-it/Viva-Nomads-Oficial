@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/como-funciona" },
   title: "Como funciona",
   description:
-    "Entenda como funciona a locação mobiliada por temporada no Viva Nomads — para inquilinos e para proprietários.",
+    "Entenda como funciona a locação de imóveis mobiliados por 30 a 180 dias no Viva Nomads — para inquilinos e para proprietários.",
 };
 
 const IMG = "/images/como-funciona";
@@ -42,7 +42,7 @@ const OWNER_STEPS = [
 export default function HowItWorksPage() {
   return (
     <>
-      <JsonLd dados={paginaInstitucional(SITE_URL, { caminho: "/como-funciona", nome: "Como funciona", descricao: "Entenda como funciona a locação mobiliada por temporada no Viva Nomads — para inquilinos e para proprietários." })} />
+      <JsonLd dados={paginaInstitucional(SITE_URL, { caminho: "/como-funciona", nome: "Como funciona", descricao: "Entenda como funciona a locação de imóveis mobiliados por 30 a 180 dias no Viva Nomads — para inquilinos e para proprietários." })} />
       <section className="bg-forest section-y text-white">
         <div className="container-page max-w-3xl">
           <h1 className="font-title text-4xl font-bold md:text-5xl">Como funciona</h1>
@@ -119,14 +119,14 @@ function GarantiasInquilino() {
             <div>
               <dt className="font-semibold text-ink">Para o inquilino</dt>
               <dd className="text-muted">
-                Depósito <strong>devolvível</strong> ao fim da estadia, nos termos do contrato e
-                da Lei 8.245/91. Sem mensalidade.
+                Depósito <strong>devolvível</strong> ao fim da estadia, nos termos do contrato.
+                Sem mensalidade.
               </dd>
             </div>
             <div>
               <dt className="font-semibold text-ink">Para o proprietário</dt>
               <dd className="text-muted">
-                {CAUCAO_FRASE} Depositada antes da entrada (art. 38 §2º da Lei 8.245/91), cobre
+                {CAUCAO_FRASE} Depositada antes da entrada, cobre
                 danos ou aluguel em aberto conforme o contrato — com tudo documentado.
               </dd>
             </div>
@@ -159,7 +159,7 @@ function DoisCaminhos() {
       </p>
       <div className="mt-6 grid gap-6 md:grid-cols-2">
         <div className="flex flex-col overflow-hidden rounded-2xl border border-sage-200 bg-white">
-          <StepImage src="/images/busca/busca-hero-villa.webp" alt="Imóvel mobiliado disponível para temporada" />
+          <StepImage src="/images/busca/busca-hero-villa.webp" alt="Imóvel mobiliado disponível para estadias de 30 a 180 dias" />
           <div className="flex flex-1 flex-col p-6">
             <h3 className="font-title text-lg font-bold text-ink">Buscar imóveis</h3>
             <p className="mt-2 flex-1 text-sm text-muted">

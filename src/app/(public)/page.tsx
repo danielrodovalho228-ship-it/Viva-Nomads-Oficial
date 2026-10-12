@@ -70,14 +70,14 @@ export default async function HomePage() {
           <div className="lg:col-span-7">
             <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-white/80">
               <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
-              Locação por temporada · 30 a 180 dias
+              Estadias de 30 a 180 dias
             </span>
             <h1 className="mt-6 font-title font-bold display-xl">
               Moradia mobiliada para a sua{" "}
               <span className="text-gradient-brand">nova fase</span>
             </h1>
             <p className="mt-6 max-w-xl text-lg text-white/70">
-              Imóveis mobiliados prontos para morar, por temporada de 30 a 180 dias.
+              Imóveis mobiliados prontos para morar, para estadias de 30 a 180 dias.
               Para quem chega a uma nova fase e quer se sentir em casa desde o primeiro dia.
             </p>
             <div className="mt-9 max-w-2xl">
@@ -85,7 +85,7 @@ export default async function HomePage() {
             </div>
             {/* Trust badges com ícones (1E) */}
             <div className="mt-6 grid grid-cols-3 gap-3 sm:flex sm:flex-wrap sm:items-center sm:gap-x-7">
-              <TrustItem icon={FileSignature} text="Contrato por temporada (art. 48)" />
+              <TrustItem icon={FileSignature} text="Contrato digital de 30 a 180 dias" />
               <TrustItem icon={Sofa} text="Pronto para morar" />
               <TrustItem icon={ShieldCheck} text="Conversa registrada" />
             </div>
@@ -270,7 +270,7 @@ export default async function HomePage() {
             <div className="absolute left-0 right-0 top-7 hidden h-px bg-line md:block" />
             <Step n="1" icon={Search} title="Busque" text="Encontre imóveis mobiliados pela cidade, período e orçamento. Filtre por Pronto para Morar." />
             <Step n="2" icon={MessageSquare} title="Converse" text="Fale direto com o proprietário, tire dúvidas e agende a visita pela plataforma." />
-            <Step n="3" icon={FileSignature} title="Assine com segurança" text="Garantia locatícia combinada entre proprietário e inquilino (ex.: Caução) e contrato de temporada assinado digitalmente, com validade jurídica." />
+            <Step n="3" icon={FileSignature} title="Assine com segurança" text="Garantia locatícia combinada entre proprietário e inquilino (ex.: Caução) e contrato assinado digitalmente, com validade jurídica." />
           </div>
         </div>
       </section>
@@ -288,7 +288,7 @@ export default async function HomePage() {
                   <span className="text-gradient-brand">mais margem líquida</span>.
                 </h2>
                 <p className="mt-5 max-w-md text-white/65">
-                  Um inquilino por uma temporada inteira traz previsibilidade: agenda estável,
+                  Um inquilino por uma estadia inteira traz previsibilidade: agenda estável,
                   custos de consumo organizados no contrato e tudo registrado na plataforma. Você
                   anuncia de graça. A Viva cobra 12% por contrato fechado. Quanto mais imóveis, menor a taxa (até 6%). Sem mensalidade.
                 </p>

@@ -13,7 +13,7 @@ export function Footer() {
         <div className="md:col-span-1">
           <Logo href="/" light />
           <p className="mt-5 max-w-xs text-sm leading-relaxed text-white/60">
-            Locação mobiliada por temporada (30 a 180 dias) para profissionais em transição.
+            Imóveis mobiliados para estadias de 30 a 180 dias, para profissionais em transição.
             Contrato de verdade, conversa registrada e custos organizados.
           </p>
           <p className="mt-4 text-sm text-white/60">
@@ -57,7 +57,7 @@ export function Footer() {
 
       <div className="border-t border-white/10">
         <div className="container-page flex flex-col items-center justify-between gap-2 py-6 text-xs text-white/50 md:flex-row">
-          <p>© {new Date().getFullYear()} Viva Nomads · Locação por temporada (art. 48, Lei 8.245/91)</p>
+          <p>© {new Date().getFullYear()} Viva Nomads · Estadias de 30 a 180 dias</p>
           <p>A plataforma conecta proprietários e inquilinos — não é parte do contrato.</p>
         </div>
       </div>

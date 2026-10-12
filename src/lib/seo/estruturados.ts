@@ -17,7 +17,7 @@ export function organizacao(siteUrl: string) {
         name: ORG.nome,
         url: siteUrl,
         logo: `${siteUrl}/icon-512.png`,
-        description: "Plataforma de locação de imóveis mobiliados por temporada, de 30 a 180 dias, com contrato e conversa registrada na plataforma.",
+        description: "Plataforma de locação de imóveis mobiliados para estadias de 30 a 180 dias, com contrato e conversa registrada na plataforma.",
         areaServed: { "@type": "Country", name: "Brasil" },
       },
       {
@@ -70,7 +70,7 @@ export function listaImoveis(siteUrl: string, imoveis: { id: string; title: stri
   return {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    name: "Imóveis mobiliados para locação por temporada",
+    name: "Imóveis mobiliados para estadias de 30 a 180 dias",
     numberOfItems: reais.length,
     itemListElement: reais.map((p, i) => ({ "@type": "ListItem", position: i + 1, url: `${siteUrl}/imoveis/${p.id}`, name: p.title })),
   };
@@ -95,7 +95,7 @@ export function paginaCidade(
   const lista = {
     "@type": "ItemList",
     "@id": `${url}#imoveis`,
-    name: `Imóveis mobiliados por temporada em ${cidade.name}`,
+    name: `Imóveis mobiliados para estadias de 30 a 180 dias em ${cidade.name}`,
     url,
     about: { "@id": `${url}#cidade` },
     numberOfItems,
@@ -110,10 +110,10 @@ export function servicoProprietarios(siteUrl: string, cidades: { name: string; s
     "@context": "https://schema.org",
     "@type": "Service",
     "@id": `${siteUrl}/para-proprietarios#servico`,
-    name: "Anúncio e gestão de locação por temporada para proprietários",
-    serviceType: "Locação por temporada de imóveis mobiliados (30 a 180 dias)",
+    name: "Anúncio e gestão de estadias de 30 a 180 dias para proprietários",
+    serviceType: "Locação de imóveis mobiliados (30 a 180 dias)",
     description:
-      "Anuncie seu imóvel mobiliado para locação por temporada de 30 a 180 dias, com contrato e conversa registrada na plataforma.",
+      "Anuncie seu imóvel mobiliado para estadias de 30 a 180 dias, com contrato e conversa registrada na plataforma.",
     url: `${siteUrl}/para-proprietarios`,
     provider: { "@type": "Organization", "@id": `${siteUrl}/#organizacao`, name: ORG.nome, url: siteUrl },
     areaServed: cidades.map((c) => ({ "@type": "City", name: `${c.name}, ${c.state}` })),

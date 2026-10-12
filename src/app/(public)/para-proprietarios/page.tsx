@@ -13,9 +13,9 @@ import { CITIES } from "@/lib/constants";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/para-proprietarios" },
-  title: "Para proprietários — locação por temporada com mais margem",
+  title: "Para proprietários — estadias de 1 a 6 meses com mais margem",
   description:
-    "Anuncie seu imóvel mobiliado por temporada de 30 a 180 dias. Menos rotatividade, menos meses parado e custos repassáveis ao inquilino conforme o contrato.",
+    "Anuncie seu imóvel mobiliado para estadias de 30 a 180 dias. Menos rotatividade, menos meses parado e custos repassáveis ao inquilino conforme o contrato.",
 };
 
 export default function ForLandlordsPage() {
@@ -81,8 +81,8 @@ export default function ForLandlordsPage() {
         </div>
         <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           <Benefit icon={Receipt} title="Custos que podem ser transferidos" text="Água, luz, condomínio e IPTU podem ser do inquilino durante a estadia, conforme o contrato." />
-          <Benefit icon={TrendingUp} title="Menos imóvel parado" text="Um inquilino por uma temporada inteira, inclusive nos meses fracos do turismo." />
-          <Benefit icon={FileSignature} title="Contrato com validade jurídica" text="Contrato de locação por temporada gerado e assinado digitalmente, com validade jurídica." />
+          <Benefit icon={TrendingUp} title="Menos imóvel parado" text="Um inquilino por uma estadia inteira, inclusive nos meses fracos do turismo." />
+          <Benefit icon={FileSignature} title="Contrato com validade jurídica" text="Contrato de 30 a 180 dias gerado e assinado digitalmente, com validade jurídica." />
           <Benefit icon={ShieldCheck} title="Caução" text={`Caução documentada, combinada entre proprietário e inquilino. ${CAUCAO_FRASE} Outras modalidades de garantia locatícia: em breve. A plataforma organiza e documenta; não é a garantidora.`} />
         </div>
       </section>
@@ -105,7 +105,7 @@ export default function ForLandlordsPage() {
                 "Checklist de qualificação que ajuda a declarar a regularidade da locação.",
                 "Selo Pronto para Morar para anunciar mais caro.",
                 "Verificação de identidade do inquilino — em breve.",
-                "Contrato de temporada gerado e assinado digitalmente, com validade jurídica.",
+                "Contrato de 30 a 180 dias gerado e assinado digitalmente, com validade jurídica.",
                 "Pagamento mensal direto na sua conta.",
               ].map((item) => (
                 <li key={item} className="flex items-start gap-3">

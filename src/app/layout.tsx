@@ -24,13 +24,13 @@ export const metadata: Metadata = {
   ...(process.env.NEXT_PUBLIC_IOS_APP_ID ? { itunes: { appId: process.env.NEXT_PUBLIC_IOS_APP_ID } } : {}),
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Viva Nomads — Locação mobiliada por temporada, de 30 a 180 dias",
+    default: "Viva Nomads — Imóveis mobiliados para estadias de 30 a 180 dias",
     template: "%s · Viva Nomads",
   },
   description:
-    "Imóveis mobiliados e prontos para morar, por temporada de 30 a 180 dias. Contrato com validade jurídica e conversa registrada na plataforma.",
+    "Imóveis mobiliados e prontos para morar, para estadias de 30 a 180 dias. Contrato com validade jurídica e conversa registrada na plataforma.",
   keywords: [
-    "locação por temporada",
+    "estadias de 30 a 180 dias",
     "imóvel mobiliado mensal",
     "locação mobiliada 30 a 180 dias",
     "imóvel mobiliado pronto para morar",

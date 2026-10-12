@@ -477,7 +477,7 @@ function DocView({ doc, onBack }: { doc: DocumentRecord; onBack: () => void }) {
         <div className="flex items-start justify-between border-b border-sage-200 pb-4">
           <div>
             <p className="font-title text-xl font-bold text-forest">Viva Nomads</p>
-            <p className="text-xs text-muted">Locação por temporada · 30 a 180 dias</p>
+            <p className="text-xs text-muted">Estadia de 30 a 180 dias</p>
           </div>
           <div className="text-right">
             <p className="inline-flex items-center gap-1.5 font-mono text-sm font-bold text-ink">
@@ -494,7 +494,7 @@ function DocView({ doc, onBack }: { doc: DocumentRecord; onBack: () => void }) {
         </div>
 
         <h1 className="mt-4 font-title text-lg font-bold text-ink">
-          {isOrcamento ? "Orçamento de locação por temporada" : "Contrato de locação por temporada"}
+          {isOrcamento ? "Orçamento de locação de 30 a 180 dias" : "Contrato de locação de 30 a 180 dias"}
         </h1>
 
         {property && (
@@ -548,8 +548,7 @@ function DocView({ doc, onBack }: { doc: DocumentRecord; onBack: () => void }) {
         <p className="mt-5 border-t border-sage-200 pt-3 text-[11px] leading-relaxed text-muted">
           A Viva Nomads conecta, verifica, documenta e registra — não é locadora, fiadora,
           garantidora nem executora. Este documento ({doc.docNumber}, v{doc.version}) é um
-          instrumento entre as partes; a plataforma apenas o gera e registra. Locação por
-          temporada nos termos do art. 48 da Lei 8.245/91.
+          instrumento entre as partes; a plataforma apenas o gera e registra. Estadia de 30 a 180 dias.
         </p>
       </div>
 

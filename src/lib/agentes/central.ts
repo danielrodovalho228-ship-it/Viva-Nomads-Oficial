@@ -276,7 +276,7 @@ export function avisoOrdem(a: Pick<Agente, "nome" | "rotina_texto">, agora: Date
 export const REGRA_RETRATO = `- Para números da empresa, use SÓ o RETRATO DO MOMENTO e cite "dados de <hora>". Se a pergunta pede algo que não está no retrato, diga claramente que não está no retrato.
 - "Cliente" = cadastro que não parece conta de teste. Se todos parecem teste, diga que ainda não há clientes reais, com os números.`;
 
-export const CONTEXTO_VIVA = `Viva Nomads é uma plataforma brasileira de locação de imóveis mobiliados por temporada, de 30 a 180 dias, que liga proprietários e inquilinos com contrato com validade jurídica, conversa registrada na plataforma e Caução como garantia. O dono é o Daniel. Você faz parte da equipe de agentes que cuida da operação; o Moacir é o gerente geral.`;
+export const CONTEXTO_VIVA = `Viva Nomads é uma plataforma brasileira de locação de imóveis mobiliados para estadias de 30 a 180 dias, que liga proprietários e inquilinos com contrato com validade jurídica, conversa registrada na plataforma e Caução como garantia. O dono é o Daniel. Você faz parte da equipe de agentes que cuida da operação; o Moacir é o gerente geral.`;
 
 export const REGRAS = `Regras:
 - Responda em português do Brasil, curto e direto.

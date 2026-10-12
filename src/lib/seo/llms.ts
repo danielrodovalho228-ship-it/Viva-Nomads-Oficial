@@ -24,7 +24,7 @@ function cabecalho(): string {
   return [
     "# Viva Nomads",
     "",
-    `> Plataforma brasileira de locação de imóveis mobiliados por temporada, de ${REGRAS_CONTRATO.prazoMinMeses} a ${REGRAS_CONTRATO.prazoMaxMeses} meses (até ${REGRAS_CONTRATO.prazoMaxDias} dias), para profissionais em transição. Contrato com validade jurídica, Caução como garantia e toda a conversa registrada na plataforma. O inquilino não paga taxa à plataforma; o proprietário paga uma comissão única por contrato ou uma assinatura.`,
+    `> Plataforma brasileira de locação de imóveis mobiliados para estadias de ${REGRAS_CONTRATO.prazoMinMeses} a ${REGRAS_CONTRATO.prazoMaxMeses} meses (até ${REGRAS_CONTRATO.prazoMaxDias} dias), para profissionais em transição. Contrato com validade jurídica, Caução como garantia e toda a conversa registrada na plataforma. O inquilino não paga taxa à plataforma; o proprietário paga uma comissão única por contrato ou uma assinatura.`,
     "",
     "Regras que não mudam: o contato direto (telefone, e-mail, redes) não é trocado antes do aceite; a Viva Nomads nunca pede Pix ou depósito fora do contrato da plataforma; não é locadora, fiadora nem intermediária de pagamento.",
   ].join("\n");
@@ -51,7 +51,7 @@ export function llmsFullTxt(siteUrl: string): string {
     `- ${TEXTO_REGRA_UNICA}`,
     "",
     "## Regras do contrato",
-    `- Locação por temporada (art. 48 da Lei 8.245/91): de ${REGRAS_CONTRATO.prazoMinMeses} a ${REGRAS_CONTRATO.prazoMaxMeses} meses, em blocos de até ${REGRAS_CONTRATO.maxDiasBloco} dias.`,
+    `- Estadias de ${REGRAS_CONTRATO.prazoMinMeses} a ${REGRAS_CONTRATO.prazoMaxMeses} meses, em blocos de até ${REGRAS_CONTRATO.maxDiasBloco} dias.`,
     `- Caução: ${Math.round(REGRAS_CONTRATO.caucaoFracaoBloco * 100)}% do valor de cada bloco, até ${REGRAS_CONTRATO.caucaoMaxAlugueis} aluguéis no total; volta no fim, depois da vistoria de saída.`,
     "",
     "## Perguntas frequentes",

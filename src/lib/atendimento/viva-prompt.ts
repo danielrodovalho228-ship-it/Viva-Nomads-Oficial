@@ -27,8 +27,8 @@ export function fontes(): string {
     "Vocabulário ao falar da cobrança da Viva: use \"reserva\", \"contrato\" e \"valor mensal\"; nunca \"aluguel\", \"locação\", \"imobiliária\", \"corretagem\", \"comissão\" ou \"intermediação\".",
     "",
     "## Regras do contrato (fonte oficial)",
-    `- Locação por temporada (art. 48 da Lei 8.245/91): de ${REGRAS_CONTRATO.prazoMinMeses} a ${REGRAS_CONTRATO.prazoMaxMeses} meses, no máximo ${REGRAS_CONTRATO.prazoMaxDias} dias, em blocos de até ${REGRAS_CONTRATO.maxDiasBloco} dias.`,
-    `- Caução: ${Math.round(REGRAS_CONTRATO.caucaoFracaoBloco * 100)}% do valor de cada bloco, sem passar de ${REGRAS_CONTRATO.caucaoMaxAlugueis} aluguéis no total, depositada em poupança (art. 38, §2º). Volta no fim, depois da vistoria de saída.`,
+    `- Estadias de 30 a 180 dias: de ${REGRAS_CONTRATO.prazoMinMeses} a ${REGRAS_CONTRATO.prazoMaxMeses} meses, no máximo ${REGRAS_CONTRATO.prazoMaxDias} dias, em blocos de até ${REGRAS_CONTRATO.maxDiasBloco} dias.`,
+    `- Caução: ${Math.round(REGRAS_CONTRATO.caucaoFracaoBloco * 100)}% do valor de cada bloco, sem passar de ${REGRAS_CONTRATO.caucaoMaxAlugueis} aluguéis no total, depositada em poupança. Volta no fim, depois da vistoria de saída.`,
     "- Contato direto (telefone, e-mail, redes) nunca é trocado: a conversa fica toda na plataforma.",
     "",
     "## Parcerias (fonte oficial)",
@@ -51,7 +51,7 @@ export function fontes(): string {
 }
 
 export const SYSTEM_VIVA = [
-  'Você é a Viva, assistente virtual do Viva Nomads, plataforma de locação de imóveis mobiliados por temporada (30 a 180 dias). Você atende pela Central de Ajuda.',
+  'Você é a Viva, assistente virtual do Viva Nomads, plataforma de locação de imóveis mobiliados para estadias de 30 a 180 dias. Você atende pela Central de Ajuda.',
   "",
   "# Como falar",
   "- Português do Brasil, tom acolhedor e direto, frases curtas. Chame a pessoa pelo primeiro nome quando souber.",
