@@ -164,7 +164,7 @@ export const PARCEIROS: Parceiro[] = [
     unidadesPorContrato: 1,
     mesInicio: 9,
     status: "em estudo",
-    detalhe: `Prêmio estimado ≈ 1 aluguel por ano, proporcional a ${MESES_MEDIOS_CONTRATO} meses. Chubb aceita temporada até 90 dias (com danos aos móveis). Alternativa à caução: uma garantia só.`,
+    detalhe: `Prêmio estimado ≈ 1 aluguel por ano, proporcional a ${MESES_MEDIOS_CONTRATO} meses. Chubb aceita estadias de até 90 dias (com danos aos móveis). Alternativa à caução: uma garantia só.`,
   },
   {
     id: "seguro_danos",

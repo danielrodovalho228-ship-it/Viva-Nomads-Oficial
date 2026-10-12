@@ -864,10 +864,9 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
         {step === 4 && (
           <div className="space-y-5">
             <div>
-              <h2 className="font-title text-lg font-bold text-ink">Contrato de locação por temporada</h2>
+              <h2 className="font-title text-lg font-bold text-ink">Contrato de locação de 30 a 180 dias</h2>
               <p className="mt-1 text-sm text-muted">
-                Gerado e assinado digitalmente (validade jurídica · Lei 14.063/2020), art. 48
-                da Lei 8.245/91.
+                Gerado e assinado digitalmente (validade jurídica · Lei 14.063/2020).
               </p>
             </div>
 
@@ -1026,7 +1025,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                         ? `${window.location.origin}/dashboard/fechamento?doc=${contractNumber}`
                         : `https://vivanomads.com.br/doc/${contractNumber}`
                     }
-                    summary={`Contrato de locação por temporada — ${tenant.name} · ${PROPERTY.title} · ${formatBRL(PROPERTY.monthlyRent)}/mês`}
+                    summary={`Contrato de locação de 30 a 180 dias — ${tenant.name} · ${PROPERTY.title} · ${formatBRL(PROPERTY.monthlyRent)}/mês`}
                   />
                 </div>
               </div>

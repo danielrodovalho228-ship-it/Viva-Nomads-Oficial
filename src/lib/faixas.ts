@@ -19,12 +19,12 @@ export interface FaixaDef {
 export const FAIXAS: FaixaDef[] = [
   {
     key: "temporada",
-    label: "Temporada",
+    label: "Estadia curta",
     min: 30,
     max: 90,
     resumo: "30 a 90 dias",
     aviso:
-      "Locação por temporada (art. 48 da Lei 8.245/91). Ao fim do prazo, proprietário e inquilino combinam a saída ou um novo contrato pela plataforma — não há prorrogação automática.",
+      "Estadia de 30 a 90 dias. Ao fim do prazo, proprietário e inquilino combinam a saída ou um novo contrato pela plataforma — não há prorrogação automática.",
   },
   {
     key: "media_estadia",
@@ -108,7 +108,7 @@ export const GARANTIAS_CADASTRO: GarantiaCadastro[] = [
   {
     key: "caucao_avista",
     label: "Caução (depósito devolvível)",
-    microtext: `${CAUCAO_FRASE} 50% antes da entrada (art. 38, §2º da Lei 8.245/91); o restante conforme o contrato. Devolvida ao inquilino no fim, após a vistoria de saída.`,
+    microtext: `${CAUCAO_FRASE} 50% antes da entrada; o restante conforme o contrato. Devolvida ao inquilino no fim, após a vistoria de saída.`,
   },
   ...(CAUCAO_PARCELADA_UI
     ? [{ key: "caucao_parcelada" as GarantiaKey, label: "Caução parcelada" }]

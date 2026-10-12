@@ -491,7 +491,7 @@ export default function QualificationChecklistPage() {
           {condoBlocked && (
             <p className="mt-3 flex items-start gap-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-              Se a convenção proíbe a locação por temporada, o imóvel não pode ser anunciado.
+              Se a convenção proíbe estadias de 30 a 180 dias, o imóvel não pode ser anunciado.
             </p>
           )}
         </fieldset>

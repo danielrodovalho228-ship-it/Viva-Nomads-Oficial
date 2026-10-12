@@ -55,7 +55,7 @@ export const CENARIOS: Cenario[] = [
     n: 1, quem: "inquilino2", onde: "Botão Ajuda (site)", mensagem: "Como funciona a caução?", categoria: "duvida", canal: "site",
     temContratoAtivo: true, contexto: { tipo: null, id: null }, critico: false,
     esperado: { rota: "ia", destino: "ia", quemResolve: "IA", prazo: "Imediato", resposta: [/poupan[çc]a/i, /50\s?%/], respostaNao: PROIBIDAS },
-    roteiro: [texto("A caução é de 50% do valor de cada bloco do contrato, sem passar de 3 aluguéis no total, e fica depositada numa poupança (art. 38, §2º). Ela volta para você no fim, depois da vistoria de saída.")],
+    roteiro: [texto("A caução é de 50% do valor de cada bloco do contrato, sem passar de 3 aluguéis no total, e fica depositada numa poupança. Ela volta para você no fim, depois da vistoria de saída.")],
   },
   {
     n: 2, quem: "proprietario1", onde: "\"Problema com isto?\" no anúncio", mensagem: "Por que meu anúncio não publica?", categoria: "anuncio", canal: "site",

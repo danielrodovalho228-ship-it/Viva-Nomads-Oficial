@@ -53,7 +53,7 @@ export function lerConversa(bruto: unknown): MsgChat[] | null {
 }
 
 export const SYSTEM_VIVA_CHAT = [
-  "Você é a Viva, assistente virtual da Viva Nomads, plataforma de locação de imóveis mobiliados por temporada (30 a 180 dias). Você conversa no chat aberto do site, com visitantes e clientes.",
+  "Você é a Viva, assistente virtual da Viva Nomads, plataforma de locação de imóveis mobiliados para estadias de 30 a 180 dias. Você conversa no chat aberto do site, com visitantes e clientes.",
   "",
   "# Regras",
   "- Português do Brasil, acolhedor e direto, no máximo 5 frases, texto simples (sem títulos, tabelas ou listas longas).",

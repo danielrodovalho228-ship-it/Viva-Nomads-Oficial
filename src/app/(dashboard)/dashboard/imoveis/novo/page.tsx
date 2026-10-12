@@ -1215,7 +1215,7 @@ export default function NewPropertyPage() {
                                       </select>
                 </Labeled>
               </div>
-              <span className="mt-2 block text-xs text-muted">Locação por temporada: 30 a 180 dias é o usual.</span>
+              <span className="mt-2 block text-xs text-muted">Estadias de 30 a 180 dias são o usual.</span>
             </div>
 
             <div className="rounded-xl border border-sage-200 p-4">
@@ -1237,7 +1237,7 @@ export default function NewPropertyPage() {
 
             <div className="space-y-2">
               <p className="text-sm font-medium text-ink">Regras</p>
-              <Toggle checked={furnished} onChange={() => setFurnished((v) => !v)} label="Mobiliado e equipado" hint="Pré-requisito da locação por temporada Viva Nomads." />
+              <Toggle checked={furnished} onChange={() => setFurnished((v) => !v)} label="Mobiliado e equipado" hint="Pré-requisito das estadias de 30 a 180 dias da Viva Nomads." />
               <Toggle checked={petsOk} onChange={() => setPetsOk((v) => !v)} label="Aceita pets" hint="Amplia o público interessado." />
               <Toggle checked={childrenAllowed} onChange={() => setChildrenAllowed((v) => !v)} label="Aceita crianças" />
               <Toggle checked={smokingAllowed} onChange={() => setSmokingAllowed((v) => !v)} label="Permite fumar" />

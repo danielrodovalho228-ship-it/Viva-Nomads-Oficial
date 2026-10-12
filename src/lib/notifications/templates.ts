@@ -31,7 +31,7 @@ function layout(inner: string, image?: { src: string; alt: string }): string {
       ${heroRow(image)}
       <tr><td style="padding:32px;">${inner}</td></tr>
       <tr><td style="padding:20px 32px;background:#f8fafc;border-top:1px solid #eef2f1;">
-        <p style="margin:0;font-size:12px;line-height:1.6;color:#9ca3af;">Viva Nomads — locação mobiliada por temporada (30 a 180 dias).<br>Se você não solicitou este e-mail, pode ignorá-lo com segurança.</p>
+        <p style="margin:0;font-size:12px;line-height:1.6;color:#9ca3af;">Viva Nomads — imóveis mobiliados para estadias de 30 a 180 dias.<br>Se você não solicitou este e-mail, pode ignorá-lo com segurança.</p>
       </td></tr>
     </table>
   </td></tr></table>
@@ -113,7 +113,7 @@ export function notificationText(o: {
     o.intro,
     o.detailsText ? `\n${o.detailsText}` : "",
     o.cta ? `\n${o.cta.label}: ${o.cta.url}` : "",
-    "\n— Viva Nomads · locação mobiliada por temporada",
+    "\n— Viva Nomads · imóveis mobiliados para estadias de 30 a 180 dias",
   ]
     .filter((l) => l !== "")
     .join("\n");
@@ -264,7 +264,7 @@ export function sampleEmails(): SampleEmail[] {
         button: "Responder pela plataforma",
         url: `${SITE_URL}/dashboard/mensagens`,
         outro: "Exemplo de e-mail transacional do app (Resend). Não expõe contato da outra parte.",
-        image: emailImage("transacional", "Imóvel mobiliado para temporada"),
+        image: emailImage("transacional", "Imóvel mobiliado para estadia"),
       }),
     },
   ];

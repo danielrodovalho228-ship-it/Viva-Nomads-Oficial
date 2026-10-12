@@ -70,7 +70,7 @@ export default async function OG({ params }: { params: Promise<{ id: string }> }
             {p ? `${p.neighborhood}, ${p.city}` : "Imóvel mobiliado"}
           </div>
           <div style={{ color: "white", fontSize: 58, fontWeight: 800, lineHeight: 1.08, marginTop: 10, maxWidth: 1000 }}>
-            {p?.title ?? "Imóvel mobiliado por temporada"}
+            {p?.title ?? "Imóvel mobiliado para estadia de 30 a 180 dias"}
           </div>
         </div>
 

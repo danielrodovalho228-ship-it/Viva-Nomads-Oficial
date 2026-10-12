@@ -72,7 +72,7 @@ export const GUARANTEE_OPTIONS: {
       "Boa opção para estrangeiros sem histórico no Brasil",
     ],
     cons: ["Imobiliza capital na entrada", "Proteção limitada ao valor depositado (art. 38)"],
-    note: "O depósito vai para uma conta poupança (art. 38, §2º da Lei 8.245/91) — nunca para a conta do Viva Nomads.",
+    note: "O depósito vai para uma conta poupança — nunca para a conta do Viva Nomads.",
   },
   {
     id: "titulo_cap",

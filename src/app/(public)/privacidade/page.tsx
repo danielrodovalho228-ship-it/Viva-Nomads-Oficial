@@ -57,7 +57,7 @@ export default function PrivacyPage() {
       <div className="mt-8 space-y-8">
         <Section title="1. Quem somos">
           O Viva Nomads é uma plataforma que conecta proprietários e inquilinos para locação
-          por temporada de média duração. Esta política explica como tratamos os dados
+          de média duração (30 a 180 dias). Esta política explica como tratamos os dados
           pessoais coletados no uso da plataforma.
         </Section>
 

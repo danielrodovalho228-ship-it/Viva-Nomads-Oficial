@@ -40,7 +40,7 @@ interface Service {
  */
 const TENANT_SERVICES: Service[] = [
   { icon: ShieldCheck, title: "Outras modalidades de garantia", benefit: "Outras modalidades de garantia locatícia: em breve. A plataforma não é a garantidora.", price: "Em breve", statusLabel: "Em breve", statusTone: "partner", tone: "cotacao", cta: "Ver opções de garantia", href: "/como-funciona#garantias" },
-  { icon: PiggyBank, title: "Caução (depósito devolvível)", benefit: `${CAUCAO_FRASE} Como manda o art. 38, §2º da Lei 8.245/91; devolvida ao fim da estadia.`, price: "Sem mensalidade", statusLabel: "Disponível", statusTone: "ok", tone: "avulso", cta: "Ver opções de garantia", href: "/como-funciona#garantias" },
+  { icon: PiggyBank, title: "Caução (depósito devolvível)", benefit: `${CAUCAO_FRASE} Devolvida ao fim da estadia.`, price: "Sem mensalidade", statusLabel: "Disponível", statusTone: "ok", tone: "avulso", cta: "Ver opções de garantia", href: "/como-funciona#garantias" },
 ];
 
 const OWNER_SERVICES: Service[] = [
@@ -52,7 +52,7 @@ const OWNER_SERVICES: Service[] = [
  * contrata o fornecedor). Aparecem como BENEFÍCIO, sem nome de fornecedor.
  */
 const TECH_BENEFITS = [
-  { icon: FileSignature, title: "Contrato assinado digitalmente", text: "Contrato de locação por temporada com validade jurídica." },
+  { icon: FileSignature, title: "Contrato assinado digitalmente", text: "Contrato digital de 30 a 180 dias com validade jurídica." },
   { icon: UserCheck, title: "Conversa registrada", text: "Toda a negociação fica na plataforma, com o contato protegido até o aceite." },
   { icon: Banknote, title: "Valor mensal direto na conta do proprietário", text: "O pagamento do valor mensal vai direto ao proprietário." },
 ] as const;

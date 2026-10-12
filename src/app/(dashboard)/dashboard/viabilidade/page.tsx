@@ -40,7 +40,7 @@ function Calc() {
     <>
       <PageTitle
         title="Viabilidade de mobiliar"
-        subtitle="Vale a pena mobiliar este imóvel para temporada? Compare com alugar vazio."
+        subtitle="Vale a pena mobiliar este imóvel para estadias de 30 a 180 dias? Compare com alugar vazio."
       />
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -54,8 +54,8 @@ function Calc() {
               onChange={setEmptyRent}
             />
             <Field
-              label="Aluguel mobiliado (temporada)"
-              hint="Mensal cobrado mobiliado por temporada"
+              label="Aluguel mobiliado (30 a 180 dias)"
+              hint="Mensal cobrado mobiliado para estadias de 30 a 180 dias"
               value={furnishedRent}
               onChange={setFurnishedRent}
             />
@@ -115,7 +115,7 @@ function Calc() {
             </p>
             <p className="mt-2 text-sm text-ink">
               {worthIt
-                ? "Mobiliar para temporada rende mais que alugar vazio, mesmo após custos."
+                ? "Mobiliar para estadias de 30 a 180 dias rende mais que alugar vazio, mesmo após custos."
                 : "Com estas premissas, alugar vazio rende mais. Ajuste preço ou ocupação."}
             </p>
           </div>

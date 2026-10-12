@@ -1,7 +1,7 @@
 # Viva Nomads
 
-Plataforma de **locação de imóveis mobiliados por temporada de média duração (30 a 180 dias)**
-para profissionais em transição. Locação mensal sob o art. 48 da Lei 8.245/91 — não é Airbnb,
+Plataforma de **locação de imóveis mobiliados de média duração (30 a 180 dias)**
+para profissionais em transição. Locação mensal — não é Airbnb,
 não é QuintoAndar.
 
 > Posicionamento: "locação mensal mobiliada para profissionais em transição, aceita em
@@ -91,7 +91,7 @@ para o futuro app. Health-check em `GET /api/health`.
 | `POST /api/assinatura` | Cria assinatura recorrente (Asaas) — PIX/boleto/cartão |
 | `POST /api/webhooks/asaas` | Webhook de confirmação de pagamento |
 | `POST /api/caf/verify` | Verificação de inquilino (CAF) → laudo de semáforo |
-| `POST /api/contrato` | Geração de contrato de temporada (ZapSign) |
+| `POST /api/contrato` | Geração de contrato (ZapSign) |
 | `POST /api/comissao` | Split da comissão de fechamento (Asaas) sobre o 1º mês |
 | `POST /api/subconta` | Cria subconta Asaas do proprietário (walletId p/ split) |
 | `POST /api/nfse` | Emite NFS-e de receita da plataforma (Focus NFe/PlugNotas) |

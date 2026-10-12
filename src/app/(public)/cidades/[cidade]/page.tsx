@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { cidade } = await params;
   const name = cityFromSlug(cidade);
   const title = `Imóveis mobiliados mensais em ${name}`;
-  const description = `Alugue imóveis mobiliados por temporada de 30 a 180 dias em ${name}. Para profissionais em transição: executivos, médicos, famílias e nômades digitais.`;
+  const description = `Alugue imóveis mobiliados para estadias de 30 a 180 dias em ${name}. Para profissionais em transição: executivos, médicos, famílias e nômades digitais.`;
   return {
     title,
     description,
@@ -67,7 +67,7 @@ export default async function CityLandingPage({ params }: Params) {
             Imóveis mobiliados mensais em {name}
           </h1>
           <p className="mt-5 max-w-2xl text-lg text-white/80">
-            Locação por temporada de 30 a 180 dias em {name}, mobiliada e pronta para morar.
+            Estadias de 30 a 180 dias em {name}, mobiliada e pronta para morar.
             Para executivos em transferência, profissionais de saúde, famílias em transição,
             estudantes e nômades digitais — instalados e em casa desde o primeiro dia.
           </p>
@@ -108,12 +108,12 @@ export default async function CityLandingPage({ params }: Params) {
         {/* Texto otimizado para SEO */}
         <div className="prose mt-12 max-w-3xl text-muted">
           <h3 className="font-title text-xl font-bold text-ink">
-            Por que alugar mobiliado por temporada em {name}?
+            Por que alugar mobiliado por 30 a 180 dias em {name}?
           </h3>
           <p className="mt-3 leading-relaxed">
             A locação mensal mobiliada é feita para quem vai morar em {name} por algumas
             semanas ou meses: você entra com tudo pronto e a tranquilidade de um contrato
-            formal de temporada (art. 48 da Lei 8.245/91), aceito em condomínios e com
+            formal de 30 a 180 dias, aceito em condomínios e com
             segurança para inquilino e proprietário. É o meio-termo entre o aluguel
             tradicional e a hospedagem por diária.
           </p>

@@ -9,7 +9,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: SITE_NAME,
     short_name: "VivaNomads",
-    description: "Locação mobiliada por temporada, de 30 a 180 dias.",
+    description: "Imóveis mobiliados para estadias de 30 a 180 dias.",
     start_url: "/",
     display: "standalone",
     background_color: "#ffffff",

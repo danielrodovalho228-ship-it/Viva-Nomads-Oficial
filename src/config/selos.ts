@@ -32,7 +32,7 @@ export const SELOS = {
   },
   aceitoCondominio: {
     nome: "Aceito em condomínio",
-    resumo: "condomínio ciente da locação por temporada",
+    resumo: "condomínio ciente das estadias de 30 a 180 dias",
   },
   documentacaoConferida: {
     nome: "Documentação conferida",

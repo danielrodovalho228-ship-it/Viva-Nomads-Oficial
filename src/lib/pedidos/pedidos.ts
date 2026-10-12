@@ -36,7 +36,7 @@ export const MOTIVOS: MotivoDef[] = [
   { key: "intercambio_pos", label: "Intercâmbio / Pós", descricao: "UFU, residência, especialização", publico: "Intercâmbio / pós-graduação" },
   { key: "reforma_transicao", label: "Reforma / Transição", descricao: "Obras, espera por casa própria", publico: "Reforma / transição" },
   { key: "mudanca_familiar", label: "Mudança familiar", descricao: "Família vindo se estabelecer", publico: "Mudança familiar" },
-  { key: "aposentadoria_lifestyle", label: "Aposentadoria / Lifestyle", descricao: "Sabático, temporada longa", publico: "Aposentadoria / lifestyle" },
+  { key: "aposentadoria_lifestyle", label: "Aposentadoria / Lifestyle", descricao: "Sabático, estadia longa", publico: "Aposentadoria / lifestyle" },
   { key: "viagem_longa", label: "Viagem longa", descricao: "Turismo prolongado, road trip", publico: "Viagem longa" },
   { key: "outro", label: "Outro motivo", descricao: "Descreva na apresentação abaixo", publico: "Outro" },
 ];
