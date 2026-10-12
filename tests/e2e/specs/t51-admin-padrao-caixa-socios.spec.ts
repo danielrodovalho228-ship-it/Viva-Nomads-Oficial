@@ -43,7 +43,7 @@ test.describe("T51 — Admin no padrão + Caixa dos Sócios", () => {
     const msg = `Teste do laboratório ${Date.now()}`;
     await page.getByLabel("Mensagem").fill(msg);
     await page.getByRole("button", { name: "Enviar" }).click();
-    await expect(page.getByRole("status")).toContainText("Enviado");
+    await expect(page.getByRole("status").filter({ hasText: "Enviado" })).toBeVisible();
     await expect(page.locator("main").getByText(msg)).toBeVisible();
     await expect(page.locator("main").getByText("Recebido").first()).toBeVisible();
   });
@@ -51,7 +51,9 @@ test.describe("T51 — Admin no padrão + Caixa dos Sócios", () => {
   test("Caixa dos Sócios: envio vazio mostra erro claro", async ({ page }) => {
     await page.goto("/admin/socios", { waitUntil: "networkidle" });
     await page.getByRole("button", { name: "Enviar" }).click();
-    await expect(page.getByRole("alert")).toContainText("Escreva uma mensagem ou anexe um arquivo");
+    await expect(
+      page.getByRole("alert").filter({ hasText: "Escreva uma mensagem ou anexe um arquivo" }),
+    ).toBeVisible();
   });
 
   test("Atendimento: cartão 'Abertos agora' abre a fila", async ({ page }) => {

@@ -122,6 +122,14 @@
         "t15-admin-real"
       ]
     },
+    "/admin/socios": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t51-admin-padrao-caixa-socios"
+      ]
+    },
     "/ajuda": {
       "personas": [
         "publico"
@@ -1885,6 +1893,34 @@
       "personas": [
         "proprietario",
         "parceiro"
+      ],
+      "specs": []
+    },
+    "src/lib/parceiros/admin-actions.ts#atualizarStatusInteresse": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
+    "src/lib/socios/caixa-actions.ts#enviarParaCaixa": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t51-admin-padrao-caixa-socios"
+      ]
+    },
+    "src/lib/socios/caixa-actions.ts#listarCaixa": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t51-admin-padrao-caixa-socios"
+      ]
+    },
+    "src/lib/socios/caixa-actions.ts#relerArquivo": {
+      "personas": [
+        "admin"
       ],
       "specs": []
     }

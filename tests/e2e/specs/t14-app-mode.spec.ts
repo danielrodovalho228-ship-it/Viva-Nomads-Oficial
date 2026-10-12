@@ -117,7 +117,8 @@ test.describe("T14 — Modo app", () => {
       // Outro spec (T2) alterna o modo desta conta em paralelo: garante o modo.
       // O seletor de dois lados da Conta (radio) substituiu o item "Usar como …".
       const usarComoDono = page.getByRole("radio", { name: /Propriet/i, checked: false });
-      await expect(page.getByTestId("modo-chip")).toBeVisible();
+      // O chip existe no cabeçalho do app e no do site (um deles escondido por CSS).
+      await expect(page.getByTestId("modo-chip").filter({ visible: true })).toBeVisible();
       if (await usarComoDono.isVisible()) {
         await usarComoDono.click();
         await expect(page).toHaveURL(/\/dashboard\/?$/);

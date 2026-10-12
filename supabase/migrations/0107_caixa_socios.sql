@@ -3,27 +3,33 @@
 -- distribui para a equipe e responde ali mesmo.
 -- Segurança: só admin (public.is_admin()) lê, envia e atualiza; anon não tem acesso. Arquivos num bucket PRIVADO
 -- (`caixa-socios`), caminho `<autor>/<arquivo>`, só admin lê/envia. As funções do Moacir rodam como dono (service)
--- e não são executáveis por anon/authenticated. Idempotente.
+-- e não são executáveis por anon/authenticated. Idempotente e sem NOTICE (reaplicar não muda nada).
 
-create table if not exists public.caixa_socios (
-  id uuid primary key default gen_random_uuid(),
-  criado_em timestamptz not null default now(),
-  autor uuid default auth.uid() references public.profiles(id) on delete set null,
-  tipo text not null check (tipo in ('texto','audio','documento','imagem')),
-  texto text check (texto is null or char_length(texto) <= 4000),
-  arquivo_path text check (arquivo_path is null or char_length(arquivo_path) <= 300),
-  arquivo_nome text check (arquivo_nome is null or char_length(arquivo_nome) <= 200),
-  texto_extraido text check (texto_extraido is null or char_length(texto_extraido) <= 20000),
-  extracao_status text not null default 'nao_se_aplica'
-    check (extracao_status in ('nao_se_aplica','pendente','ok','falhou','desligada')),
-  status text not null default 'novo' check (status in ('novo','em_andamento','feito','precisa_daniel')),
-  resposta text check (resposta is null or char_length(resposta) <= 4000),
-  respondido_em timestamptz,
-  ordem_id uuid,
-  constraint caixa_socios_tem_conteudo check (texto is not null or arquivo_path is not null)
-);
-create index if not exists caixa_socios_recentes on public.caixa_socios (criado_em desc);
-create index if not exists caixa_socios_abertos on public.caixa_socios (status) where status in ('novo','em_andamento');
+do $$
+begin
+  if to_regclass('public.caixa_socios') is null then
+    create table public.caixa_socios (
+      id uuid primary key default gen_random_uuid(),
+      criado_em timestamptz not null default now(),
+      autor uuid default auth.uid() references public.profiles(id) on delete set null,
+      tipo text not null check (tipo in ('texto','audio','documento','imagem')),
+      texto text check (texto is null or char_length(texto) <= 4000),
+      arquivo_path text check (arquivo_path is null or char_length(arquivo_path) <= 300),
+      arquivo_nome text check (arquivo_nome is null or char_length(arquivo_nome) <= 200),
+      texto_extraido text check (texto_extraido is null or char_length(texto_extraido) <= 20000),
+      extracao_status text not null default 'nao_se_aplica'
+        check (extracao_status in ('nao_se_aplica','pendente','ok','falhou','desligada')),
+      status text not null default 'novo' check (status in ('novo','em_andamento','feito','precisa_daniel')),
+      resposta text check (resposta is null or char_length(resposta) <= 4000),
+      respondido_em timestamptz,
+      ordem_id uuid,
+      constraint caixa_socios_tem_conteudo check (texto is not null or arquivo_path is not null)
+    );
+    create index caixa_socios_recentes on public.caixa_socios (criado_em desc);
+    create index caixa_socios_abertos on public.caixa_socios (status) where status in ('novo','em_andamento');
+  end if;
+end;
+$$;
 
 alter table public.caixa_socios enable row level security;
 revoke all on public.caixa_socios from public, anon, authenticated;
@@ -56,12 +62,18 @@ values ('caixa-socios', 'caixa-socios', false, 26214400, array[
 ])
 on conflict (id) do update set public = false, file_size_limit = excluded.file_size_limit, allowed_mime_types = excluded.allowed_mime_types;
 
-drop policy if exists "caixa-socios: admin le" on storage.objects;
-create policy "caixa-socios: admin le" on storage.objects for select to authenticated
-  using (bucket_id = 'caixa-socios' and public.is_admin());
-drop policy if exists "caixa-socios: admin envia" on storage.objects;
-create policy "caixa-socios: admin envia" on storage.objects for insert to authenticated
-  with check (bucket_id = 'caixa-socios' and public.is_admin() and (storage.foldername(name))[1] = auth.uid()::text);
+do $$
+begin
+  if not exists (select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='caixa-socios: admin le') then
+    create policy "caixa-socios: admin le" on storage.objects for select to authenticated
+      using (bucket_id = 'caixa-socios' and public.is_admin());
+  end if;
+  if not exists (select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='caixa-socios: admin envia') then
+    create policy "caixa-socios: admin envia" on storage.objects for insert to authenticated
+      with check (bucket_id = 'caixa-socios' and public.is_admin() and (storage.foldername(name))[1] = auth.uid()::text);
+  end if;
+end;
+$$;
 
 -- Moacir: itens a tratar (novos, com a leitura do arquivo já feita ou que falhou/está desligada há mais de 10 min).
 create or replace function public.caixa_socios_pendentes()
