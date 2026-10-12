@@ -56,9 +56,9 @@ export default defineConfig({
     },
     {
       // Modo app (Android/iPhone): tela de celular + o marcador "VivaNomadsApp"
-      // que o app nativo acrescenta ao user-agent. Só o T14 roda aqui.
+      // que o app nativo acrescenta ao user-agent. T14, T39 e T46 rodam aqui.
       name: "app-mobile",
-      testMatch: /t(14-app-mode|39-app-ida-e-volta)\.spec\.ts/,
+      testMatch: /t(14-app-mode|39-app-ida-e-volta|46-modo-do-app)\.spec\.ts/,
       use: {
         ...devices["Pixel 7"],
         viewport: { width: 390, height: 844 },

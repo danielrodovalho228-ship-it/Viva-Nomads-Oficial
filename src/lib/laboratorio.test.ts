@@ -67,7 +67,14 @@ test("seed do laboratório: a limpeza das personas só roda depois da trava de b
 
 test("workflow do laboratório: sem segredos, banco local, modo simulado", () => {
   const wf = raiz(".github/workflows/laboratorio.yml");
-  assert.doesNotMatch(wf, /secrets\./);
+  // Única exceção (ordem 225d0648): o passo final "Registrar no banco" usa SUPABASE_DB_URL para gravar o RESUMO
+  // (contagens e títulos) em lab_execucoes. Nada antes dele (build, site, testes) vê segredo, e ele nunca roda em PR.
+  const [antes, passo] = wf.split("- name: Registrar no banco");
+  assert.ok(passo, "passo Registrar no banco existe");
+  assert.doesNotMatch(antes, /secrets\./);
+  assert.deepEqual([...wf.matchAll(/secrets\.(\w+)/g)].map((m) => m[1]), ["SUPABASE_DB_URL"]);
+  assert.match(passo.split("- name:")[0], /github\.event_name != 'pull_request'/);
+  assert.match(wf, /push:\s+branches: \[main\]/);
   assert.match(wf, /NEXT_PUBLIC_SUPABASE_URL: http:\/\/127\.0\.0\.1:54321/);
   assert.match(wf, /INTEGRACOES_SIMULADAS: "on"/);
   assert.match(wf, /alinhar-producao\.sql/);

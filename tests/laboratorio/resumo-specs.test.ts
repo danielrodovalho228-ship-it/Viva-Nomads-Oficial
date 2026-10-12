@@ -17,7 +17,7 @@ const dados = {
 test("resumoJson: totais, por_spec e só os títulos dos que falharam", () => {
   const r = resumoJson(coletar(dados.suites));
   assert.deepEqual([r.passou, r.falhou, r.pulou, r.instavel], [1, 1, 1, 1]);
-  assert.equal(r.por_spec["t2-b.spec.ts"].conhecida, 1);
+  assert.equal((r.por_spec as Record<string, { conhecida: number }>)["t2-b.spec.ts"].conhecida, 1);
   assert.deepEqual(r.falhas.map((f: { titulo: string }) => f.titulo), ["quebrou", "oscila"]);
 });
 

@@ -29,6 +29,13 @@ Actions (`.github/workflows/laboratorio.yml`, 01h do Texas).
    e números contra `config/planos.ts`. Defeito que o teste revela NÃO é
    escondido: vira teste de "falha conhecida" (`test.fail`) e achado para o Otávio.
 
+   Laboratório autônomo (ordem 225d0648): t41 mensagens e máscara de contato, t42 contato/telefone
+   (nenhum `tel:`/`wa.me` antes do aceite), t43 notificações (push simulado, LAB_OUTBOX), t44 parceiros,
+   t45 regra das 8 fotos (editor, API do dono e banco), t46 modo do app, t47 login social no app,
+   t48 varredura de todo o sitemap e das telas logadas de cada persona a 390 px.
+   A suíte também roda a cada merge na `main`; o resultado de cada execução vira uma linha em
+   `public.lab_execucoes` (só admin lê; migração 0106) — `select * from lab_execucoes order by criada_em desc`.
+
 Resultado: resumo na própria execução do Actions (tabela passou/falhou por spec) e o artefato
 `laboratorio-<id>` com o relatório HTML, prints, vídeos e `resultado.json`.
 
