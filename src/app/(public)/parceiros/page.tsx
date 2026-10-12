@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 };
 
 const CARDS = [
-  { id: "fotografos", titulo: "Fotógrafos", selo: "Aberto", texto: "Perfil com portfólio, pacote e prazo. O contato do dono é liberado no aceite e há avaliação após a entrega.",
+  { id: "fotografos", titulo: "Fotógrafos", selo: "Aberto", texto: "Perfil com portfólio, pacote e prazo. Depois do aceite você vê a identidade do dono, e a conversa segue pela plataforma. Há avaliação após a entrega.",
     links: [{ href: "/parceiros?tipo=fotografo#quero-ser-parceiro", rotulo: "Sou fotógrafo" }, { href: "/parceiros/fotografos", rotulo: "Procuro fotógrafo" }] },
   { id: "empresas", titulo: "Empresas", selo: "Aberto", texto: "Empresas que hospedam equipes em imóveis mobiliados.", links: [{ href: "/empresas", rotulo: "Conhecer" }] },
   { id: "gestores", titulo: "Gestores e administradoras", selo: "Aberto", texto: "Taxa menor por volume (12/10/8/6%) e Plano Gestor para quem tem 31 ou mais imóveis.",
@@ -23,7 +23,7 @@ const CARDS = [
     links: [{ href: "/parceiros?tipo=seguros#quero-ser-parceiro", rotulo: "Deixar contato" }] },
 ];
 
-const PASSOS = ["Cadastre-se", "A Viva confere (CNPJ ou MEI, portfólio, reputação)", "Receba pedidos (contato liberado no aceite)", "Entregue e seja avaliado"];
+const PASSOS = ["Cadastre-se", "A Viva confere (CNPJ ou MEI, portfólio, reputação)", "Receba pedidos (conversa pela plataforma)", "Entregue e seja avaliado"];
 
 const REGRAS = [
   "O pagamento do serviço é entre parceiro e cliente: a Viva não recebe esse dinheiro.",
@@ -46,7 +46,7 @@ export default async function ParceirosPage({ searchParams }: { searchParams: Pr
       <section className="bg-night text-white">
         <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
           <h1 className="font-display text-3xl font-bold sm:text-4xl">Seja parceiro da Viva Nomads</h1>
-          <p className="mt-3 text-white/80">Atenda quem anuncia e quem busca imóveis mobiliados, com contato liberado só depois do aceite.</p>
+          <p className="mt-3 text-white/80">Atenda quem anuncia e quem busca imóveis mobiliados, com conversa só pela plataforma e identidade revelada depois do aceite.</p>
           <div className="mt-6 flex flex-wrap gap-3">
             <a href="#quero-ser-parceiro" className="rounded-xl bg-white px-5 py-3 font-semibold text-night focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">Quero ser parceiro</a>
             <a href="#tipos" className="rounded-xl border border-white/40 px-5 py-3 font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">Ver tipos de parceria</a>
