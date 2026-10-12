@@ -1,0 +1,1892 @@
+{
+  "_doc": "Mapa de cobertura do laboratório. Toda página (src/app/**/page.tsx), rota (route.ts) e Server Action ('use server') precisa de uma entrada; o teste src/lib/lab/cobertura.test.ts falha se surgir uma sem entrada. 'specs' vazio = ainda sem spec (lacuna conhecida, contada no % de cobertura). Atualize rodando: node scripts/lab/gerar-cobertura.mjs",
+  "paginas": {
+    "/": {
+      "personas": [
+        "publico"
+      ],
+      "specs": []
+    },
+    "/acesso-socios": {
+      "personas": [
+        "socio"
+      ],
+      "specs": [
+        "t3-isolamento-papeis"
+      ]
+    },
+    "/admin": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t12-planos",
+        "t14-app-mode",
+        "t15-admin-real",
+        "t19-atendimento-online",
+        "t21-central-agentes",
+        "t23-pacote-seguranca",
+        "t24-atendimento-acolhimento",
+        "t25-chamado-resumo",
+        "t26-encaminhamento-rede",
+        "t27-agentes-ao-vivo",
+        "t29-chat-sem-aprovacao",
+        "t3-isolamento-papeis",
+        "t30-atendimento-autonomo",
+        "t30-chat-ir-para-o-fim",
+        "t32-autorizacao-preconferencia",
+        "t36-cadastro-ponta-a-ponta",
+        "t39-app-ida-e-volta",
+        "t9-documentos"
+      ]
+    },
+    "/admin/agentes": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t14-app-mode",
+        "t21-central-agentes",
+        "t23-pacote-seguranca",
+        "t24-atendimento-acolhimento",
+        "t26-encaminhamento-rede",
+        "t27-agentes-ao-vivo",
+        "t29-chat-sem-aprovacao",
+        "t30-atendimento-autonomo",
+        "t30-chat-ir-para-o-fim",
+        "t39-app-ida-e-volta"
+      ]
+    },
+    "/admin/atendimento": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t19-atendimento-online",
+        "t24-atendimento-acolhimento",
+        "t25-chamado-resumo"
+      ]
+    },
+    "/admin/atendimento/[id]": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t19-atendimento-online",
+        "t24-atendimento-acolhimento",
+        "t25-chamado-resumo"
+      ]
+    },
+    "/admin/documentos": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t15-admin-real",
+        "t32-autorizacao-preconferencia",
+        "t36-cadastro-ponta-a-ponta",
+        "t9-documentos"
+      ]
+    },
+    "/admin/financeiro": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t15-admin-real"
+      ]
+    },
+    "/admin/fotografos": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
+    "/admin/marketing": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
+    "/admin/parceiros": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
+    "/admin/pedidos": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t15-admin-real"
+      ]
+    },
+    "/ajuda": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t19-atendimento-online",
+        "t20-p1-agentes",
+        "t21-central-agentes",
+        "t24-atendimento-acolhimento",
+        "t25-chamado-resumo",
+        "t30-atendimento-autonomo"
+      ]
+    },
+    "/app/boas-vindas": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t14-app-mode",
+        "t16-app-boas-vindas"
+      ]
+    },
+    "/auth": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t1-auth-guards",
+        "t11-travessias",
+        "t12-planos",
+        "t14-app-mode",
+        "t15-admin-real",
+        "t17-conta-salvar",
+        "t18-seo-a11y",
+        "t19-atendimento-online",
+        "t2-persistencia-modo",
+        "t21-central-agentes",
+        "t23-pacote-seguranca",
+        "t24-atendimento-acolhimento",
+        "t25-chamado-resumo",
+        "t26-encaminhamento-rede",
+        "t27-agentes-ao-vivo",
+        "t29-chat-sem-aprovacao",
+        "t3-isolamento-papeis",
+        "t30-atendimento-autonomo",
+        "t31-cadastro-documento",
+        "t32-autorizacao-preconferencia",
+        "t33-documentos-inquilino",
+        "t34-jornada-dono-planos",
+        "t36-cadastro-ponta-a-ponta",
+        "t37-simuladores-e-numeros",
+        "t39-app-ida-e-volta",
+        "t4-fronteira-demo-real",
+        "t40-novo-anuncio-fotos",
+        "t5-pedido-moradia",
+        "t6-dinheiro-numeros",
+        "t8-rascunho",
+        "t9-documentos"
+      ]
+    },
+    "/auth/pronto": {
+      "personas": [
+        "publico"
+      ],
+      "specs": []
+    },
+    "/auth/reset": {
+      "personas": [
+        "publico"
+      ],
+      "specs": []
+    },
+    "/buscar": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t10-buscar-url",
+        "t14-app-mode",
+        "t18-seo-a11y",
+        "t20-p1-agentes",
+        "t23-pacote-seguranca",
+        "t7-fluxo-publico"
+      ]
+    },
+    "/cidades": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t18-seo-a11y",
+        "t20-p1-agentes"
+      ]
+    },
+    "/cidades/[cidade]": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t18-seo-a11y",
+        "t20-p1-agentes"
+      ]
+    },
+    "/como-funciona": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t14-app-mode",
+        "t18-seo-a11y"
+      ]
+    },
+    "/conferir": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t20-p1-agentes",
+        "t21-central-agentes",
+        "t22-pacote-otavio",
+        "t23-pacote-seguranca"
+      ]
+    },
+    "/conferir/[codigo]": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t20-p1-agentes",
+        "t21-central-agentes",
+        "t22-pacote-otavio",
+        "t23-pacote-seguranca"
+      ]
+    },
+    "/dashboard": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": [
+        "t1-auth-guards",
+        "t11-travessias",
+        "t12-planos",
+        "t14-app-mode",
+        "t17-conta-salvar",
+        "t18-seo-a11y",
+        "t2-persistencia-modo",
+        "t3-isolamento-papeis",
+        "t30-atendimento-autonomo",
+        "t31-cadastro-documento",
+        "t32-autorizacao-preconferencia",
+        "t33-documentos-inquilino",
+        "t34-jornada-dono-planos",
+        "t35-troca-de-plano",
+        "t36-cadastro-ponta-a-ponta",
+        "t37-simuladores-e-numeros",
+        "t38-varios-imoveis-por-dono",
+        "t39-app-ida-e-volta",
+        "t4-fronteira-demo-real",
+        "t40-novo-anuncio-fotos",
+        "t6-dinheiro-numeros",
+        "t7-fluxo-publico",
+        "t8-rascunho"
+      ]
+    },
+    "/dashboard/assinatura": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t12-planos",
+        "t34-jornada-dono-planos",
+        "t35-troca-de-plano",
+        "t38-varios-imoveis-por-dono",
+        "t39-app-ida-e-volta"
+      ]
+    },
+    "/dashboard/buscas": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": []
+    },
+    "/dashboard/candidaturas": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t11-travessias",
+        "t33-documentos-inquilino",
+        "t36-cadastro-ponta-a-ponta"
+      ]
+    },
+    "/dashboard/carteira": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": []
+    },
+    "/dashboard/comparar": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": []
+    },
+    "/dashboard/conta": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": [
+        "t14-app-mode",
+        "t17-conta-salvar",
+        "t36-cadastro-ponta-a-ponta"
+      ]
+    },
+    "/dashboard/conta/[secao]": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": [
+        "t14-app-mode",
+        "t17-conta-salvar",
+        "t36-cadastro-ponta-a-ponta"
+      ]
+    },
+    "/dashboard/contratos": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": [
+        "t4-fronteira-demo-real",
+        "t6-dinheiro-numeros"
+      ]
+    },
+    "/dashboard/favoritos": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": []
+    },
+    "/dashboard/fechamento": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t11-travessias",
+        "t31-cadastro-documento",
+        "t33-documentos-inquilino",
+        "t36-cadastro-ponta-a-ponta",
+        "t4-fronteira-demo-real"
+      ]
+    },
+    "/dashboard/ferramentas": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": [
+        "t2-persistencia-modo",
+        "t39-app-ida-e-volta"
+      ]
+    },
+    "/dashboard/garantias": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": []
+    },
+    "/dashboard/imoveis": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t30-atendimento-autonomo",
+        "t32-autorizacao-preconferencia",
+        "t34-jornada-dono-planos",
+        "t35-troca-de-plano",
+        "t36-cadastro-ponta-a-ponta",
+        "t38-varios-imoveis-por-dono",
+        "t40-novo-anuncio-fotos",
+        "t8-rascunho"
+      ]
+    },
+    "/dashboard/imoveis/[id]/editar": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "/dashboard/imoveis/novo": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t30-atendimento-autonomo",
+        "t32-autorizacao-preconferencia",
+        "t8-rascunho"
+      ]
+    },
+    "/dashboard/indicacoes": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": []
+    },
+    "/dashboard/leads": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t11-travessias",
+        "t31-cadastro-documento",
+        "t36-cadastro-ponta-a-ponta"
+      ]
+    },
+    "/dashboard/locacoes": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "/dashboard/mensagens": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": [
+        "t11-travessias"
+      ]
+    },
+    "/dashboard/orcamentos": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": []
+    },
+    "/dashboard/pedidos": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": [
+        "t11-travessias"
+      ]
+    },
+    "/dashboard/pedidos-cidade": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": [
+        "t11-travessias"
+      ]
+    },
+    "/dashboard/reembolsos": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": []
+    },
+    "/dashboard/roi-imovel": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "/dashboard/simulador": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": [
+        "t12-planos",
+        "t37-simuladores-e-numeros"
+      ]
+    },
+    "/dashboard/solicitacoes": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": []
+    },
+    "/dashboard/verificacao": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": [
+        "t4-fronteira-demo-real"
+      ]
+    },
+    "/dashboard/viabilidade": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "/decisao": {
+      "personas": [
+        "socio"
+      ],
+      "specs": [
+        "t3-isolamento-papeis"
+      ]
+    },
+    "/dev/emails": {
+      "personas": [
+        "socio"
+      ],
+      "specs": []
+    },
+    "/empresas": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t18-seo-a11y"
+      ]
+    },
+    "/excluir-conta": {
+      "personas": [
+        "publico"
+      ],
+      "specs": []
+    },
+    "/excluir-conta/confirmar": {
+      "personas": [
+        "publico"
+      ],
+      "specs": []
+    },
+    "/guia-fotos": {
+      "personas": [
+        "publico"
+      ],
+      "specs": []
+    },
+    "/imoveis/[id]": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t11-travessias",
+        "t20-p1-agentes",
+        "t23-pacote-seguranca",
+        "t28-avaliacoes-fase1",
+        "t30-atendimento-autonomo",
+        "t32-autorizacao-preconferencia",
+        "t34-jornada-dono-planos",
+        "t35-troca-de-plano",
+        "t36-cadastro-ponta-a-ponta",
+        "t38-varios-imoveis-por-dono",
+        "t40-novo-anuncio-fotos",
+        "t7-fluxo-publico",
+        "t8-rascunho"
+      ]
+    },
+    "/modelodenegocio": {
+      "personas": [
+        "socio"
+      ],
+      "specs": [
+        "t3-isolamento-papeis"
+      ]
+    },
+    "/para-proprietarios": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t18-seo-a11y",
+        "t20-p1-agentes"
+      ]
+    },
+    "/parceiros": {
+      "personas": [
+        "publico"
+      ],
+      "specs": []
+    },
+    "/parceiros/fotografos": {
+      "personas": [
+        "publico"
+      ],
+      "specs": []
+    },
+    "/pedidos": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": [
+        "t1-auth-guards",
+        "t11-travessias",
+        "t15-admin-real",
+        "t18-seo-a11y",
+        "t5-pedido-moradia"
+      ]
+    },
+    "/pedidos/novo": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t1-auth-guards",
+        "t18-seo-a11y"
+      ]
+    },
+    "/precos": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t14-app-mode",
+        "t18-seo-a11y",
+        "t20-p1-agentes",
+        "t37-simuladores-e-numeros",
+        "t6-dinheiro-numeros"
+      ]
+    },
+    "/privacidade": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t18-seo-a11y"
+      ]
+    },
+    "/qualificar": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": [
+        "t18-seo-a11y",
+        "t40-novo-anuncio-fotos"
+      ]
+    },
+    "/roi": {
+      "personas": [
+        "socio"
+      ],
+      "specs": [
+        "t3-isolamento-papeis"
+      ]
+    },
+    "/seguranca": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t18-seo-a11y"
+      ]
+    },
+    "/simulacao": {
+      "personas": [
+        "socio"
+      ],
+      "specs": [
+        "t3-isolamento-papeis",
+        "t7-fluxo-publico"
+      ]
+    },
+    "/socios": {
+      "personas": [
+        "socio"
+      ],
+      "specs": [
+        "t3-isolamento-papeis"
+      ]
+    },
+    "/termos": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t18-seo-a11y"
+      ]
+    },
+    "/tributario": {
+      "personas": [
+        "socio"
+      ],
+      "specs": []
+    }
+  },
+  "rotas": {
+    "/api/admin/agentes/anexos": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
+    "/api/admin/agentes/chat": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
+    "/api/admin/agentes/executar": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
+    "/api/admin/agentes/memoria": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
+    "/api/admin/agentes/reuniao": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
+    "/api/admin/aprovacoes": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
+    "/api/admin/aprovacoes/[id]": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
+    "/api/ai/anuncio": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": []
+    },
+    "/api/ai/fotos": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": []
+    },
+    "/api/app/login-social": {
+      "personas": [
+        "publico"
+      ],
+      "specs": []
+    },
+    "/api/app/ponte": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t39-app-ida-e-volta"
+      ]
+    },
+    "/api/app/ponte/entrar": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t39-app-ida-e-volta"
+      ]
+    },
+    "/api/assinatura": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": [
+        "t12-planos",
+        "t31-cadastro-documento"
+      ]
+    },
+    "/api/atendimento/avaliar": {
+      "personas": [
+        "publico"
+      ],
+      "specs": []
+    },
+    "/api/atendimento/email": {
+      "personas": [
+        "publico"
+      ],
+      "specs": []
+    },
+    "/api/auth/email-existe": {
+      "personas": [
+        "publico"
+      ],
+      "specs": []
+    },
+    "/api/caf/verify": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": []
+    },
+    "/api/calendario/[id]/[token]": {
+      "personas": [
+        "publico"
+      ],
+      "specs": []
+    },
+    "/api/comissao": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": []
+    },
+    "/api/contrato": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": [
+        "t36-cadastro-ponta-a-ponta"
+      ]
+    },
+    "/api/cron/atendimento": {
+      "personas": [
+        "sistema"
+      ],
+      "specs": []
+    },
+    "/api/cron/avisos-daniel": {
+      "personas": [
+        "sistema"
+      ],
+      "specs": []
+    },
+    "/api/cron/resumo-pedidos": {
+      "personas": [
+        "sistema"
+      ],
+      "specs": []
+    },
+    "/api/documentos/[id]": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": []
+    },
+    "/api/empresas": {
+      "personas": [
+        "publico"
+      ],
+      "specs": []
+    },
+    "/api/evento": {
+      "personas": [
+        "publico"
+      ],
+      "specs": []
+    },
+    "/api/health": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t7-fluxo-publico"
+      ]
+    },
+    "/api/parceiros-interesse": {
+      "personas": [
+        "publico"
+      ],
+      "specs": []
+    },
+    "/api/places/autocomplete": {
+      "personas": [
+        "publico"
+      ],
+      "specs": []
+    },
+    "/api/places/distances": {
+      "personas": [
+        "publico"
+      ],
+      "specs": []
+    },
+    "/api/plano-gestor": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": []
+    },
+    "/api/properties": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": []
+    },
+    "/api/properties/mine": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": []
+    },
+    "/api/test-email": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
+    "/api/test-lead": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
+    "/api/upload/documento": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": []
+    },
+    "/api/upload/inquilino-doc": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": [
+        "t33-documentos-inquilino",
+        "t36-cadastro-ponta-a-ponta"
+      ]
+    },
+    "/api/viva/chat": {
+      "personas": [
+        "publico"
+      ],
+      "specs": []
+    },
+    "/api/webhooks/asaas": {
+      "personas": [
+        "sistema"
+      ],
+      "specs": []
+    },
+    "/api/well-known/android": {
+      "personas": [
+        "publico"
+      ],
+      "specs": []
+    },
+    "/api/well-known/apple": {
+      "personas": [
+        "publico"
+      ],
+      "specs": []
+    },
+    "/auth/app-callback": {
+      "personas": [
+        "publico"
+      ],
+      "specs": []
+    },
+    "/auth/callback": {
+      "personas": [
+        "publico"
+      ],
+      "specs": []
+    },
+    "/auth/confirm": {
+      "personas": [
+        "publico"
+      ],
+      "specs": []
+    },
+    "/llms-full.txt": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t20-p1-agentes"
+      ]
+    },
+    "/llms.txt": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t20-p1-agentes"
+      ]
+    }
+  },
+  "actions": {
+    "src/app/acesso-socios/actions.ts#entrarSocios": {
+      "personas": [
+        "socio"
+      ],
+      "specs": []
+    },
+    "src/lib/data/account-delete.ts#confirmarExclusaoConta": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/account-delete.ts#solicitarExclusaoConta": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/actions.ts#carregarQualificacao": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/actions.ts#countMyDrafts": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/actions.ts#createProperty": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/actions.ts#deleteProperty": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/actions.ts#getLatestDraft": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/actions.ts#getMyDocumentStatus": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/actions.ts#loadDraftData": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/actions.ts#loadPropertyForEdit": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/actions.ts#registrarContrato": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/actions.ts#registrarLocacao": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/actions.ts#renovarBloco": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/actions.ts#requestLead": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/actions.ts#resumoImovelDoDono": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/actions.ts#saveDraftData": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/actions.ts#saveQualification": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/actions.ts#sendMessage": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/actions.ts#toggleFavorite": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/actions.ts#updateProperty": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/actions.ts#varrerCicloBlocos": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/agentes-actions.ts#carregarCentral": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
+    "src/lib/data/agentes-actions.ts#chamadosEmVermelho": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
+    "src/lib/data/agentes-actions.ts#contarAchadosP1": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
+    "src/lib/data/agentes-actions.ts#deixarOrdem": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
+    "src/lib/data/agentes-actions.ts#eventosDaRede": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
+    "src/lib/data/agentes-actions.ts#postarRetornosDoMoacir": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
+    "src/lib/data/atendimento-actions.ts#abrirChamado": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t19-atendimento-online"
+      ]
+    },
+    "src/lib/data/atendimento-actions.ts#alterarChamado": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/atendimento-actions.ts#apagarMacro": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/atendimento-actions.ts#aprovarSugestao": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/atendimento-actions.ts#avaliarRespostaIA": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/atendimento-actions.ts#chamadoAdmin": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/atendimento-actions.ts#chamadoDeOutraConta": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/atendimento-actions.ts#devolverParaViva": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/atendimento-actions.ts#enviarSugestaoEditada": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/atendimento-actions.ts#filaAtendimento": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/atendimento-actions.ts#listarMacros": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/atendimento-actions.ts#marcarResolvido": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/atendimento-actions.ts#metricasAtendimento": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/atendimento-actions.ts#meuChamado": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/atendimento-actions.ts#meusChamados": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/atendimento-actions.ts#meusContratosAtivos": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/atendimento-actions.ts#pedirPessoa": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/atendimento-actions.ts#pedirPessoaPorLink": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/atendimento-actions.ts#quemEAPessoa": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/atendimento-actions.ts#responderComoAdmin": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/atendimento-actions.ts#responderMeuChamado": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/atendimento-actions.ts#resumoDoChamado": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/atendimento-actions.ts#salvarMacro": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/atendimento-actions.ts#sugerirResposta": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/atendimento-actions.ts#testarViva": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/avaliacoes-actions.ts#avaliar": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t28-avaliacoes-fase1"
+      ]
+    },
+    "src/lib/data/avaliacoes-actions.ts#getReputacao": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/avaliacoes-actions.ts#getReputacaoDoImovel": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/avaliacoes-actions.ts#meusContratosAvaliados": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/avatar-actions.ts#clearMyAvatar": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/avatar-actions.ts#getAvatarUrl": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/avatar-actions.ts#getMyAvatarUrl": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/avatar-actions.ts#setMyAvatarPath": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/blocks-actions.ts#addBlock": {
+      "personas": [
+        "proprietario",
+        "inquilino"
+      ],
+      "specs": []
+    },
+    "src/lib/data/blocks-actions.ts#getBlocks": {
+      "personas": [
+        "proprietario",
+        "inquilino"
+      ],
+      "specs": []
+    },
+    "src/lib/data/blocks-actions.ts#removeBlock": {
+      "personas": [
+        "proprietario",
+        "inquilino"
+      ],
+      "specs": []
+    },
+    "src/lib/data/contratos-actions.ts#confirmarPagamento": {
+      "personas": [
+        "proprietario",
+        "inquilino"
+      ],
+      "specs": []
+    },
+    "src/lib/data/contratos-actions.ts#getMeusContratos": {
+      "personas": [
+        "proprietario",
+        "inquilino"
+      ],
+      "specs": []
+    },
+    "src/lib/data/contratos-actions.ts#getMinhasLocacoes": {
+      "personas": [
+        "proprietario",
+        "inquilino"
+      ],
+      "specs": []
+    },
+    "src/lib/data/contratos-actions.ts#marcarPagamentoRecebido": {
+      "personas": [
+        "proprietario",
+        "inquilino"
+      ],
+      "specs": []
+    },
+    "src/lib/data/documentos-actions.ts#documentosDosContratos": {
+      "personas": [
+        "proprietario",
+        "inquilino"
+      ],
+      "specs": []
+    },
+    "src/lib/data/documentos-actions.ts#registrarDevolucaoCaucao": {
+      "personas": [
+        "proprietario",
+        "inquilino"
+      ],
+      "specs": []
+    },
+    "src/lib/data/documentos-actions.ts#responderDevolucaoCaucao": {
+      "personas": [
+        "proprietario",
+        "inquilino"
+      ],
+      "specs": []
+    },
+    "src/lib/data/documentos-admin.ts#countDocumentosPendentes": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
+    "src/lib/data/documentos-admin.ts#listDocumentosPendentes": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
+    "src/lib/data/documentos-admin.ts#moderarDocumento": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
+    "src/lib/data/documentos-inquilino-actions.ts#linkDocInquilino": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/documentos-inquilino-actions.ts#listarDocsInquilino": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/leads-actions.ts#aceitarCandidatura": {
+      "personas": [
+        "proprietario",
+        "inquilino"
+      ],
+      "specs": []
+    },
+    "src/lib/data/leads-actions.ts#getFechamentoContext": {
+      "personas": [
+        "proprietario",
+        "inquilino"
+      ],
+      "specs": []
+    },
+    "src/lib/data/leads-actions.ts#listMinhasCandidaturas": {
+      "personas": [
+        "proprietario",
+        "inquilino"
+      ],
+      "specs": []
+    },
+    "src/lib/data/leads-actions.ts#recusarCandidatura": {
+      "personas": [
+        "proprietario",
+        "inquilino"
+      ],
+      "specs": []
+    },
+    "src/lib/data/marketing-admin.ts#apagarGastoMarketing": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
+    "src/lib/data/marketing-admin.ts#lancarGastoMarketing": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
+    "src/lib/data/marketing-admin.ts#listarGastosMarketing": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
+    "src/lib/data/mode-actions.ts#getPreferredMode": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/mode-actions.ts#resolveInitialMode": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/mode-actions.ts#setPreferredMode": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/pedidos-actions.ts#aceitarResposta": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/pedidos-actions.ts#criarPedido": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/pedidos-actions.ts#getAlertasEquipe": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/pedidos-actions.ts#getMeusPedidos": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/pedidos-actions.ts#getMinhasRespostas": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/pedidos-actions.ts#getNotifPrefs": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/pedidos-actions.ts#getPedidosParaProprietario": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/pedidos-actions.ts#getRespostasRecebidas": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/pedidos-actions.ts#marcarAtendido": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/pedidos-actions.ts#pausarPedido": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/pedidos-actions.ts#recusarResposta": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/pedidos-actions.ts#responderPedido": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/pedidos-actions.ts#setAlertasEquipe": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/pedidos-actions.ts#setNotifPrefs": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/pedidos-admin.ts#adminListPedidos": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
+    "src/lib/data/pedidos-admin.ts#getMetricasPedidosAdmin": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
+    "src/lib/data/pedidos-admin.ts#moderarPedido": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
+    "src/lib/data/pedidos-admin.ts#reativarPedido": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
+    "src/lib/data/perfil-actions.ts#getMeuDocumento": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/perfil-actions.ts#getMeusDados": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/perfil-actions.ts#getMinhaCategoria": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/perfil-actions.ts#salvarMeuDocumento": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/perfil-actions.ts#salvarMeusDados": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/perfil-actions.ts#setMinhaCategoria": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/planos-actions.ts#definirAccountType": {
+      "personas": [
+        "proprietario",
+        "inquilino"
+      ],
+      "specs": []
+    },
+    "src/lib/data/planos-actions.ts#getGestorElegibilidade": {
+      "personas": [
+        "proprietario",
+        "inquilino"
+      ],
+      "specs": []
+    },
+    "src/lib/data/planos-actions.ts#getMinhaAssinatura": {
+      "personas": [
+        "proprietario",
+        "inquilino"
+      ],
+      "specs": []
+    },
+    "src/lib/data/push-actions.ts#enviarPushDeTeste": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/push-actions.ts#registrarPushToken": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/push-actions.ts#removerPushToken": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/reservas-actions.ts#solicitarReserva": {
+      "personas": [
+        "proprietario",
+        "inquilino"
+      ],
+      "specs": []
+    },
+    "src/lib/fotografos/actions.ts#alternarAprovacaoFotografo": {
+      "personas": [
+        "proprietario",
+        "parceiro"
+      ],
+      "specs": []
+    },
+    "src/lib/fotografos/actions.ts#cadastrarFotografo": {
+      "personas": [
+        "proprietario",
+        "parceiro"
+      ],
+      "specs": []
+    },
+    "src/lib/fotografos/actions.ts#criarPedidoFotografo": {
+      "personas": [
+        "proprietario",
+        "parceiro"
+      ],
+      "specs": []
+    },
+    "src/lib/fotografos/actions.ts#salvarTaxaParceria": {
+      "personas": [
+        "proprietario",
+        "parceiro"
+      ],
+      "specs": []
+    }
+  }
+}
