@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, Children, cloneElement, isValidElement } f
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { linkQualificacao } from "@/lib/qualificar-link";
 import {
   Lock,
   ClipboardCheck,
@@ -311,7 +312,7 @@ export default function NewPropertyPage() {
     tagCondoApproved: false,
   } as Property;
 
-  async function publish(asDraft = false) {
+  async function publish(asDraft = false, irParaQualificacao = false) {
     // Publicar exige documento aprovado (anti-fraude, item 1). Rascunho sempre
     // pode. Não vale na edição de imóvel já existente.
     if (!asDraft && !editingId && docStatus !== "approved") {
@@ -452,7 +453,10 @@ export default function NewPropertyPage() {
         if (userId) localStorage.removeItem(draftKey(userId));
       } catch {}
     }
-    router.push("/dashboard/imoveis");
+    // F8: "Antes de anunciar" salva o rascunho e segue ao checklist daquele
+    // imóvel (nunca recarrega o próprio assistente).
+    const destinoQual = irParaQualificacao ? linkQualificacao(res.id ?? targetId) : null;
+    router.push(destinoQual ?? "/dashboard/imoveis");
   }
 
   // Aplica um snapshot de rascunho (localStorage OU servidor) ao formulário.
@@ -1741,7 +1745,11 @@ export default function NewPropertyPage() {
                 <ClipboardCheck className="mt-0.5 h-4 w-4 shrink-0" />
                 <span>
                   <strong>Falta a qualificação.</strong> Responda o checklist{" "}
-                  <a href="/dashboard/imoveis/novo" className="font-medium underline">Antes de anunciar</a>{" "}
+                  {linkQualificacao(imovelId) ? (
+                    <a href={linkQualificacao(imovelId)!} className="font-medium underline" data-testid="link-antes-de-anunciar">Antes de anunciar</a>
+                  ) : (
+                    <button type="button" onClick={() => publish(true, true)} disabled={publishing} className="font-medium underline" data-testid="link-antes-de-anunciar">Antes de anunciar</button>
+                  )}{" "}
                   (leva poucos minutos) para liberar a publicação. Suas fotos e dados ficam salvos no rascunho.
                 </span>
               </div>
