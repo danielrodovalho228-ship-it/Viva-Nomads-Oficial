@@ -12,6 +12,7 @@ import type { LocacaoView } from "@/lib/data/contratos-actions";
 import type { documentosDosContratos } from "@/lib/data/documentos-actions";
 import { ConfirmarPagamentos, DevolucaoCaucaoInquilino, ListaDocumentos } from "@/components/documentos/documentos-contrato";
 import { formatBRL } from "@/lib/utils";
+import { ROTULO_ETAPA } from "@/lib/contrato-etapas";
 
 /** Locações de DEMONSTRAÇÃO (a partir do seed) para o piloto/testes. */
 function buildDemoLocacoes(): LocacaoView[] {
@@ -22,6 +23,7 @@ function buildDemoLocacoes(): LocacaoView[] {
     ownerId: `demo-owner-${i}`,
     aluguelMensal: c.valorMes,
     status: "ativo",
+    etapa: "em_vigencia",
     criadoEm: c.inicio,
     pagamentos: [],
   }));
@@ -68,8 +70,11 @@ export function LocacoesClient({
                     <CircleDollarSign className="h-3.5 w-3.5" /> {formatBRL(l.aluguelMensal)}/mês
                   </p>
                 </div>
-                <span className="rounded-full bg-sage-100 px-2.5 py-1 text-xs font-medium text-forest">
-                  {l.status === "ativo" ? "Ativa" : l.status}
+                <span
+                  className="rounded-full bg-sage-100 px-2.5 py-1 text-xs font-medium text-forest"
+                  data-testid="locacao-etapa"
+                >
+                  {l.status === "ativo" ? ROTULO_ETAPA[l.etapa] : l.status}
                 </span>
               </div>
 

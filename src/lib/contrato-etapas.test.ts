@@ -32,3 +32,22 @@ test("assinado pelas duas + pagamento confirmado: Em vigência", () => {
 test("a marca da minuta é a do parecer pendente", () => {
   assert.equal(MARCA_MINUTA, "MINUTA DE TESTE — sem validade");
 });
+
+test("as telas de contratos e locações usam a etapa, não o rótulo fixo Ativo/Em vigência", async () => {
+  const { readFileSync } = await import("node:fs");
+  const ler = (p: string) => readFileSync(new URL(p, import.meta.url), "utf8");
+  const contratos = ler("../app/(dashboard)/dashboard/contratos/contratos-client.tsx");
+  const locacoes = ler("../app/(dashboard)/dashboard/locacoes/locacoes-client.tsx");
+  assert.match(contratos, /ROTULO_ETAPA\[contrato\.etapa\]/);
+  assert.doesNotMatch(contratos, /\? "Ativo"/);
+  assert.match(contratos, /statusMeta\(bloco\.status, etapa\)/);
+  assert.match(locacoes, /ROTULO_ETAPA\[l\.etapa\]/);
+  assert.doesNotMatch(locacoes, /"Ativa"/);
+});
+
+test("registrarContrato não cria o 1º bloco como vigência sem assinatura: a etapa vem das colunas de assinatura", async () => {
+  const { readFileSync } = await import("node:fs");
+  const acts = readFileSync(new URL("./data/contratos-actions.ts", import.meta.url), "utf8");
+  assert.match(acts, /assinado_proprietario_em/);
+  assert.match(acts, /assinado_inquilino_em/);
+});
