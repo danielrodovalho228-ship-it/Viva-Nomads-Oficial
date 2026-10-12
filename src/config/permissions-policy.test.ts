@@ -14,3 +14,7 @@ test("Permissions-Policy não bloqueia mais microfone/câmera", () => {
   assert.doesNotMatch(linha, /microphone=\(\)/);
   assert.doesNotMatch(linha, /camera=\(\)/);
 });
+
+test("Permissions-Policy nunca libera para terceiros (sem *)", () => {
+  assert.doesNotMatch(linha, /\*/);
+});
