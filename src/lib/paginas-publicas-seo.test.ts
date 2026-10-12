@@ -45,7 +45,7 @@ test("botões de Novo anúncio (logado) abrem direto o cadastro pelas Fotos, nã
   const novo = "/dashboard/imoveis/novo";
   const lista = ler("app/(dashboard)/dashboard/imoveis/imoveis-client.tsx");
   assert.match(lista, new RegExp(`href="${novo}"[^>]*>\\s*<Plus[^]*?Novo anúncio`));
-  const painel = ler("app/(dashboard)/dashboard/page.tsx");
+  const painel = ler("app/(dashboard)/dashboard/visao-geral-client.tsx");
   assert.match(painel, new RegExp(`href="${novo}"[^>]*>\\s*<ClipboardCheck[^]*?Novo anúncio`));
   assert.match(painel, new RegExp(`href="${novo}"[^>]*>\\s*<ClipboardCheck[^]*?Começar agora`));
   assert.match(ler("components/dashboard/role-welcome-modal.tsx"), new RegExp(`router\\.push\\("${novo}"\\)`));

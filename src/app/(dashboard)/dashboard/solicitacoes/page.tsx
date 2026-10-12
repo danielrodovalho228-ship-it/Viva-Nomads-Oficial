@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Plus, Clock, CheckCircle2, Wrench } from "lucide-react";
+import { Plus, Clock, CheckCircle2, Wrench, AlertTriangle } from "lucide-react";
 import { PageTitle, Panel, StatCard, EmptyState } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { ResponsiveOwnerBadge } from "@/components/ui/badge";
@@ -12,21 +12,16 @@ import { useDashDemo, useDisplayUser } from "@/lib/demo/demo-mode";
 import {
   SAMPLE_ORDERS,
   SO_CATEGORIES,
-  SO_PRIORITY_META,
-  SO_STATUS_META,
-  categoryLabel,
-  nextStatus,
   sortByPriority,
   ownerMetrics,
   type ServiceOrder,
   type SOCategory,
   type SOPriority,
 } from "@/lib/service-orders";
-import { cn } from "@/lib/utils";
-import { avancarSolicitacao, minhasSolicitacoes, type ContratoManutencao } from "@/lib/data/manutencao-actions";
+import { minhasSolicitacoes, type ContratoManutencao } from "@/lib/data/manutencao-actions";
 import { abrirChamado } from "@/lib/data/atendimento-actions";
-import { PRAZO_MANUTENCAO_H } from "@/config/atendimento";
-import { MSG_SEM_CONTRATO_MANUTENCAO } from "@/lib/manutencao-solicitacoes";
+import { MSG_SEM_CONTRATO_MANUTENCAO, prazoDaOrdem } from "@/lib/manutencao-solicitacoes";
+import { CartaoOrdem, SeletorPrioridade } from "@/components/manutencao/cartao-ordem";
 
 export default function ServiceOrdersPage() {
   // Modo real: começa sem chamados fictícios; demonstração (build sem Supabase
@@ -105,43 +100,20 @@ function OwnerView({
   const sorted = useMemo(() => sortByPriority(orders), [orders]);
   const metrics = useMemo(() => ownerMetrics(orders), [orders]);
   const openCount = orders.filter((o) => o.status !== "resolvido").length;
-
-  const [erro, setErro] = useState<string | null>(null);
-
-  async function advance(id: string) {
-    if (!demo) {
-      setErro(null);
-      const r = await avancarSolicitacao(id).catch(() => ({ ok: false as const, error: "Sem conexão. Tente de novo." }));
-      if (!r.ok) return setErro(r.error);
-      setOrders(orders.map((o) => (o.id === id ? { ...r.ordem, tenantName: o.tenantName } : o)));
-      return;
-    }
-    setOrders(
-      orders.map((o) => {
-        if (o.id !== id) return o;
-        const ns = nextStatus(o.status);
-        if (!ns) return o;
-        const now = new Date().toISOString();
-        return {
-          ...o,
-          status: ns,
-          firstResponseAt: o.firstResponseAt ?? now,
-          resolvedAt: ns === "resolvido" ? now : o.resolvedAt,
-        };
-      })
-    );
-  }
+  const vencidas = orders.filter((o) => o.status !== "resolvido" && prazoDaOrdem(o, new Date()).estado === "vencido").length;
+  const atualizar = (nova: ServiceOrder) => setOrders(orders.map((o) => (o.id === nova.id ? nova : o)));
 
   return (
     <>
       <PageTitle
         title="Solicitações de manutenção"
-        subtitle="Chamados dos seus imóveis, por prioridade."
+        subtitle="Ordens dos seus imóveis, por prioridade, com o prazo para responder."
         action={metrics.responsive ? <ResponsiveOwnerBadge /> : undefined}
       />
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
+      <div className="mb-6 grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-4">
         <StatCard label="Em aberto" value={openCount} icon={Wrench} />
+        <StatCard label="Fora do prazo" value={vencidas} icon={AlertTriangle} />
         <StatCard
           label="Resposta média"
           value={metrics.respondedCount ? `${metrics.avgFirstResponseH.toFixed(0)}h` : "—"}
@@ -154,62 +126,18 @@ function OwnerView({
         />
       </div>
 
-      {erro && (
-        <p role="alert" className="mb-3 text-sm text-red-600">
-          {erro}
-        </p>
-      )}
       {sorted.length === 0 ? (
         <EmptyState
           icon={Wrench}
           title="Nenhuma solicitação ainda"
-          text="Quando um inquilino abrir um chamado de manutenção em um dos seus imóveis, ele aparece aqui — ordenado por prioridade."
+          text="Quando um inquilino abrir uma ordem de manutenção em um dos seus imóveis, ela aparece aqui — por prioridade e com o prazo para responder."
         />
       ) : (
-      <div className="grid gap-3">
-        {sorted.map((o) => {
-          const ns = nextStatus(o.status);
-          return (
-            <Panel key={o.id}>
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span
-                      className={cn(
-                        "rounded-full border px-2.5 py-1 text-xs font-semibold",
-                        SO_PRIORITY_META[o.priority].tone
-                      )}
-                    >
-                      {SO_PRIORITY_META[o.priority].label}
-                    </span>
-                    <span className="text-sm font-medium text-ink">{categoryLabel(o.category)}</span>
-                    <span className="text-sm text-muted">· {o.property}</span>
-                  </div>
-                  <p className="mt-2 text-sm text-ink">{o.description}</p>
-                  <p className="mt-1 text-xs text-muted">
-                    {o.tenantName} · aberto {timeAgo(o.openedAt)}
-                  </p>
-                </div>
-                <div className="flex flex-col items-end gap-2">
-                  <span
-                    className={cn(
-                      "rounded-full px-2.5 py-1 text-xs font-medium",
-                      SO_STATUS_META[o.status].tone
-                    )}
-                  >
-                    {SO_STATUS_META[o.status].label}
-                  </span>
-                  {ns && (
-                    <Button size="sm" variant="outline" onClick={() => advance(o.id)}>
-                      Marcar como {SO_STATUS_META[ns].label}
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </Panel>
-          );
-        })}
-      </div>
+        <div className="grid gap-3">
+          {sorted.map((o) => (
+            <CartaoOrdem key={o.id} o={o} papel="proprietario" demo={demo} onAtualizada={atualizar} />
+          ))}
+        </div>
       )}
 
       <ServiceOrderNotice className="mt-4" />
@@ -238,7 +166,6 @@ function TenantView({
   const [priority, setPriority] = useState<SOPriority>("media");
   const [description, setDescription] = useState("");
   const [contratoId, setContratoId] = useState("");
-  const [aberta, setAberta] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
@@ -298,6 +225,11 @@ function TenantView({
         }
       />
 
+      <div className="mb-6 grid grid-cols-2 gap-2.5 sm:gap-4">
+        <StatCard label="Em aberto" value={mine.filter((o) => o.status !== "resolvido").length} icon={Wrench} />
+        <StatCard label="Resolvidas" value={mine.filter((o) => o.status === "resolvido").length} icon={CheckCircle2} />
+      </div>
+
       {semContrato && (
         <Panel className="mb-6" data-testid="manutencao-sem-contrato">
           <p className="text-sm text-ink">{MSG_SEM_CONTRATO_MANUTENCAO}</p>
@@ -348,19 +280,8 @@ function TenantView({
                   ))}
                 </select>
               </label>
-              <label className="block">
-                <span className="mb-1.5 block text-sm font-medium text-ink">Prioridade</span>
-                <select
-                  value={priority}
-                  onChange={(e) => setPriority(e.target.value as SOPriority)}
-                  className="w-full rounded-xl border border-sage-200 px-3.5 py-2.5 text-sm outline-none focus:border-sage"
-                >
-                  <option value="baixa">Baixa</option>
-                  <option value="media">Média</option>
-                  <option value="urgente">Urgente</option>
-                </select>
-              </label>
             </div>
+            <SeletorPrioridade valor={priority} onChange={setPriority} />
             <label className="block">
               <span className="mb-1.5 block text-sm font-medium text-ink">Descrição</span>
               <textarea
@@ -385,66 +306,16 @@ function TenantView({
 
       <div className="grid gap-3">
         {mine.length === 0 ? (
-          <Panel className="text-center text-sm text-muted">
-            Você ainda não abriu nenhuma solicitação.
-          </Panel>
+          <Panel className="text-center text-sm text-muted">Você ainda não abriu nenhuma solicitação.</Panel>
         ) : (
-          mine.map((o) => (
-            <Panel key={o.id}>
-              <button
-                type="button"
-                onClick={() => setAberta(aberta === o.id ? null : o.id)}
-                aria-expanded={aberta === o.id}
-                data-testid="solicitacao-cartao"
-                className="flex w-full items-start justify-between gap-3 text-left"
-              >
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-medium text-ink">{categoryLabel(o.category)}</span>
-                    <span
-                      className={cn(
-                        "rounded-full border px-2 py-0.5 text-xs font-medium",
-                        SO_PRIORITY_META[o.priority].tone
-                      )}
-                    >
-                      {SO_PRIORITY_META[o.priority].label}
-                    </span>
-                  </div>
-                  <p className="mt-2 text-sm text-ink">{o.description}</p>
-                  <p className="mt-1 text-xs text-muted">aberto {timeAgo(o.openedAt)}</p>
-                </div>
-                <span
-                  className={cn(
-                    "shrink-0 rounded-full px-2.5 py-1 text-xs font-medium",
-                    SO_STATUS_META[o.status].tone
-                  )}
-                >
-                  {SO_STATUS_META[o.status].label}
-                </span>
-              </button>
-              {aberta === o.id && (
-                <dl className="mt-3 grid gap-1 border-t border-sage-100 pt-3 text-sm text-muted" data-testid="solicitacao-detalhe">
-                  <div>
-                    <dt className="inline font-medium text-ink">Imóvel: </dt>
-                    <dd className="inline">{o.property}</dd>
-                  </div>
-                  <div>
-                    <dt className="inline font-medium text-ink">Status: </dt>
-                    <dd className="inline">{SO_STATUS_META[o.status].label}</dd>
-                  </div>
-                  <div>
-                    <dt className="inline font-medium text-ink">Prazo do proprietário: </dt>
-                    <dd className="inline">{PRAZO_MANUTENCAO_H[o.priority]} h para responder</dd>
-                  </div>
-                  {o.firstResponseAt && (
-                    <div>
-                      <dt className="inline font-medium text-ink">Primeira resposta: </dt>
-                      <dd className="inline">{timeAgo(o.firstResponseAt)}</dd>
-                    </div>
-                  )}
-                </dl>
-              )}
-            </Panel>
+          sortByPriority(mine).map((o) => (
+            <CartaoOrdem
+              key={o.id}
+              o={o}
+              papel="inquilino"
+              demo={demo}
+              onAtualizada={(nova) => setOrders(orders.map((x) => (x.id === nova.id ? nova : x)))}
+            />
           ))
         )}
       </div>
@@ -452,11 +323,4 @@ function TenantView({
       <ServiceOrderNotice className="mt-4" />
     </>
   );
-}
-
-function timeAgo(iso: string) {
-  const h = Math.round((Date.now() - +new Date(iso)) / 3600000);
-  if (h < 1) return "agora";
-  if (h < 24) return `há ${h}h`;
-  return `há ${Math.round(h / 24)}d`;
 }

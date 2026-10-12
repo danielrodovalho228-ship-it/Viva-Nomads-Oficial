@@ -4,7 +4,8 @@
   ao contrato, via abrirChamado); estas funções só traduzem linhas e decidem o
   que pode ser feito, para ficar testável.
 */
-import { SO_STATUS_FLOW, type ServiceOrder, type SOCategory, type SOPriority, type SOStatus } from "./service-orders.ts";
+import { SO_STATUS_META, type ServiceOrder, type SOCategory, type SOPriority, type SOStatus } from "./service-orders.ts";
+import { dataHoraBrasilia, prazoManutencao, responderAte } from "../config/atendimento.ts";
 
 /** Contrato em que a manutenção pode ser pedida (mesma regra do servidor). */
 export const STATUS_CONTRATO_COM_MANUTENCAO = ["ativo", "encerrado_em_acerto"] as const;
@@ -24,6 +25,7 @@ export interface LinhaOrdem {
 
 const CATEGORIAS: SOCategory[] = ["hidraulica", "eletrica", "eletrodomesticos", "estrutura", "internet", "outros"];
 const PRIORIDADES: SOPriority[] = ["baixa", "media", "urgente"];
+const STATUS_CONHECIDOS: SOStatus[] = ["aberto", "visto", "em_andamento", "resolvido"];
 
 export function linhaParaOrdem(l: LinhaOrdem): ServiceOrder {
   return {
@@ -33,23 +35,91 @@ export function linhaParaOrdem(l: LinhaOrdem): ServiceOrder {
     category: CATEGORIAS.includes(l.category as SOCategory) ? (l.category as SOCategory) : "outros",
     priority: PRIORIDADES.includes(l.priority as SOPriority) ? (l.priority as SOPriority) : "media",
     description: l.description,
-    status: SO_STATUS_FLOW.includes(l.status as SOStatus) ? (l.status as SOStatus) : "aberto",
+    status: STATUS_CONHECIDOS.includes(l.status as SOStatus) ? (l.status as SOStatus) : "aberto",
     openedAt: l.opened_at,
     firstResponseAt: l.first_response_at ?? undefined,
     resolvedAt: l.resolved_at ?? undefined,
   };
 }
 
-/** Colunas a gravar ao avançar o status (primeira resposta e resolução carimbadas uma vez). */
-export function camposAoAvancar(atual: SOStatus, firstResponseAt: string | null, agora: Date): Record<string, string> | null {
-  const i = SO_STATUS_FLOW.indexOf(atual);
-  if (i < 0 || i >= SO_STATUS_FLOW.length - 1) return null;
-  const novo = SO_STATUS_FLOW[i + 1];
+/** Lado da ordem: quem abriu (inquilino) ou o dono do imóvel (proprietário). */
+export type PapelOrdem = "inquilino" | "proprietario";
+
+/**
+ * Para onde cada lado pode levar a ordem (critério 4):
+ *  • proprietário: Aberta → Em atendimento; Aberta/Em atendimento → Resolvida;
+ *  • inquilino: marca como Resolvida enquanto não estiver resolvida;
+ *  • resolvida não muda mais.
+ */
+export function proximosStatus(atual: SOStatus, papel: PapelOrdem): SOStatus[] {
+  if (atual === "resolvido") return [];
+  if (papel === "inquilino") return ["resolvido"];
+  return atual === "aberto" ? ["em_andamento", "resolvido"] : ["resolvido"];
+}
+
+/**
+ * Colunas a gravar na transição; null = transição proibida. A primeira ação do
+ * PROPRIETÁRIO carimba a primeira resposta (uma vez); a resolução carimba o fim.
+ */
+export function camposTransicao(
+  atual: SOStatus,
+  novo: SOStatus,
+  papel: PapelOrdem,
+  firstResponseAt: string | null,
+  agora: Date
+): Record<string, string> | null {
+  if (!proximosStatus(atual, papel).includes(novo)) return null;
   const iso = agora.toISOString();
   const campos: Record<string, string> = { status: novo };
-  if (!firstResponseAt) campos.first_response_at = iso;
+  if (papel === "proprietario" && !firstResponseAt) campos.first_response_at = iso;
   if (novo === "resolvido") campos.resolved_at = iso;
   return campos;
+}
+
+export const MENSAGEM_MAX = 2000;
+
+/** Réplica dentro da ordem: texto obrigatório, até 2.000 caracteres. */
+export function validarMensagem(texto: unknown): { ok: true; texto: string } | { ok: false; erro: string } {
+  const t = typeof texto === "string" ? texto.trim() : "";
+  if (!t) return { ok: false, erro: "Escreva a mensagem." };
+  if (t.length > MENSAGEM_MAX) return { ok: false, erro: `A mensagem passou de ${MENSAGEM_MAX} caracteres.` };
+  return { ok: true, texto: t };
+}
+
+/**
+ * Prazo do proprietário na ordem (critério 2): sempre com a data/hora de
+ * Brasília. "respondida" quando já houve a primeira resposta; "vencido" quando
+ * passou do prazo sem resposta; senão "no_prazo".
+ */
+export function prazoDaOrdem(o: Pick<ServiceOrder, "priority" | "openedAt" | "firstResponseAt" | "status">, agora: Date) {
+  const aberto = new Date(o.openedAt);
+  const ate = prazoManutencao(o.priority, aberto);
+  const respondida = !!o.firstResponseAt || o.status === "resolvido";
+  const estado: "respondida" | "vencido" | "no_prazo" = respondida ? "respondida" : agora.getTime() > ate.getTime() ? "vencido" : "no_prazo";
+  const texto = responderAte(o.priority, aberto);
+  return { ate, estado, texto: texto.charAt(0).toUpperCase() + texto.slice(1) };
+}
+
+/** Uma linha do histórico da ordem (service_order_eventos). */
+export interface EventoOrdem {
+  tipo: "aberto" | "status";
+  papel: PapelOrdem | "sistema";
+  statusPara: string | null;
+  criadoEm: string;
+}
+
+const QUEM: Record<EventoOrdem["papel"], string> = { inquilino: "Inquilino", proprietario: "Proprietário", sistema: "Equipe Viva Nomads" };
+
+/** O que aconteceu, sem a data: "Proprietário mudou para Em atendimento". */
+export function descricaoEvento(e: EventoOrdem): string {
+  if (e.tipo === "aberto") return `${QUEM[e.papel]} abriu a ordem`;
+  const rotulo = SO_STATUS_META[(e.statusPara ?? "aberto") as SOStatus]?.label ?? "Atualizada";
+  return `${QUEM[e.papel]} mudou para ${rotulo}`;
+}
+
+/** Linha do histórico, com data/hora de Brasília. */
+export function textoEvento(e: EventoOrdem): string {
+  return `${dataHoraBrasilia(new Date(e.criadoEm))} — ${descricaoEvento(e)}`;
 }
 
 /** Texto do estado vazio do inquilino sem contrato ativo. */

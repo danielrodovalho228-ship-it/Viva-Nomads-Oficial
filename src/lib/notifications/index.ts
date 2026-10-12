@@ -53,7 +53,9 @@ export type NotificationEvent =
   | "chamado_resolvido" // → quem abriu (com a nota de 1 a 5)
   | "chamado_equipe" // P1/P2, aprovação, prazo em risco → admins
   | "manutencao_nova" // inquilino abriu manutenção → proprietário
-  | "manutencao_atrasada"; // prazo da manutenção vencido → proprietário
+  | "manutencao_atrasada" // prazo da manutenção vencido → proprietário
+  | "manutencao_atualizada" // status da ordem mudou → a outra parte
+  | "manutencao_mensagem"; // nova mensagem dentro da ordem → a outra parte
 
 // `img` = chave da imagem de assunto (public/media/email/<img>.jpg).
 const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: string) => string; img: string }> = {
@@ -83,6 +85,8 @@ const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: string)
   chamado_equipe: { subject: "Atendimento: chamado precisa da equipe", body: () => "Um chamado na Central de Ajuda precisa da equipe.", img: "transacional" },
   manutencao_nova: { subject: "Pedido de manutenção no seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, o inquilino abriu um pedido de manutenção no seu imóvel. Responda pela plataforma dentro do prazo.`, img: "transacional" },
   manutencao_atrasada: { subject: "Manutenção sem resposta — prazo vencido", body: (n) => `Olá${n ? " " + n : ""}, o pedido de manutenção do seu inquilino passou do prazo sem resposta. Responda pela plataforma.`, img: "transacional" },
+  manutencao_atualizada: { subject: "Atualização na ordem de manutenção", body: (n) => `Olá${n ? " " + n : ""}, a ordem de manutenção do imóvel mudou de status. Veja o histórico pela plataforma.`, img: "transacional" },
+  manutencao_mensagem: { subject: "Nova mensagem na ordem de manutenção", body: (n) => `Olá${n ? " " + n : ""}, há uma nova mensagem na ordem de manutenção do imóvel. Responda pela plataforma.`, img: "nova-mensagem" },
   documento_recebido: { subject: "Novo documento de imóvel para conferir", body: () => "Um proprietário enviou a documentação do imóvel. Há um item aguardando conferência na fila de moderação.", img: "transacional" },
 };
 

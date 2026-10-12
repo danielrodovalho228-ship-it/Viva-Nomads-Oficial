@@ -7,7 +7,7 @@
 import { blocoParceirosPrompt } from "./parceiros-texto.ts";
 import { FAQ } from "./faq.ts";
 import { REGRAS_CONTRATO } from "../../config/planos.ts";
-import { PRAZO_MANUTENCAO_H, PROMESSA_ATENDIMENTO } from "../../config/atendimento.ts";
+import { PROMESSA_ATENDIMENTO, frasePrazosManutencao } from "../../config/atendimento.ts";
 import { SITUACAO_VIVA } from "../../config/situacao-viva.ts";
 
 
@@ -43,7 +43,7 @@ export function fontes(): string {
     "## Prazos de atendimento (os ÚNICOS que você pode citar)",
     `${PROMESSA_ATENDIMENTO}. Não prometa resposta humana fora destes prazos nem "na hora".`,
     prazos,
-    `- Manutenção: o proprietário tem ${PRAZO_MANUTENCAO_H.urgente} horas nas urgências (sem água, sem luz, vazamento), ${PRAZO_MANUTENCAO_H.media} horas nos casos médios e ${PRAZO_MANUTENCAO_H.baixa} horas nos demais.`,
+    `- Manutenção: ${frasePrazosManutencao()}`,
     "",
     "## Páginas do site que você pode indicar (só o caminho)",
     "/como-funciona, /seguranca, /precos (planos), /ajuda, /dashboard/contratos, /dashboard/imoveis, /dashboard/mensagens, /dashboard/conta, /auth (Entrar), /parceiros (outros serviços, em breve), /parceiros/fotografos (fotógrafo parceiro), /empresas (empresa que hospeda equipes).",

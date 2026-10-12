@@ -83,7 +83,7 @@ export function ContaMenu() {
     [
       { href: "/dashboard/conta/perfil", label: "Perfil", icon: UserRound },
       { href: "/dashboard/verificacao", label: "Verificação", icon: ShieldCheck },
-      { href: "/dashboard/conta/notificacoes", label: "Notificações", icon: Bell },
+      { href: "/dashboard/notificacoes", label: "Notificações", icon: Bell },
       { href: "/dashboard/conta/seguranca", label: "Senha e segurança", icon: Lock },
     ],
     [

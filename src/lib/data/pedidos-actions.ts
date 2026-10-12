@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { notificacaoLigada } from "@/lib/notifications/preferencias";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { consumirLimite, DIA } from "@/lib/limites";
 import { guardContactInfo } from "@/lib/messages/contact-guard";
@@ -359,9 +360,10 @@ export async function getNotifPrefs(): Promise<{ email: boolean; whatsapp: boole
     .select("notif_email, notif_whatsapp")
     .eq("id", user.id)
     .maybeSingle();
+  // Critério 5: sem preferência salva = ligado.
   return {
-    email: data?.notif_email ?? true,
-    whatsapp: data?.notif_whatsapp ?? true,
+    email: notificacaoLigada(data?.notif_email),
+    whatsapp: notificacaoLigada(data?.notif_whatsapp),
   };
 }
 

@@ -106,7 +106,7 @@ test("FAQ 'Por que meu anúncio não publica?' lista exatamente os obrigatórios
 
 test("'100% · Pronto para publicar' em Meus imóveis, Visão geral e editor", () => {
   const ler = (p: string) => readFileSync(new URL(`../../app/(dashboard)/dashboard/${p}`, import.meta.url), "utf8");
-  for (const p of ["imoveis/imoveis-client.tsx", "page.tsx", "imoveis/[id]/editar/editar-client.tsx"]) assert.match(ler(p), /100% · [Pp]ronto para publicar/, p);
+  for (const p of ["imoveis/imoveis-client.tsx", "visao-geral-client.tsx", "imoveis/[id]/editar/editar-client.tsx"]) assert.match(ler(p), /100% · [Pp]ronto para publicar/, p);
 });
 
 test("rótulos do documento na prontidão: Não enviado / Em análise / Aprovado / Reprovado: motivo", async () => {

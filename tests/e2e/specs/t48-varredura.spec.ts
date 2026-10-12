@@ -37,6 +37,7 @@ const TELAS_LOGADAS = [
   "/dashboard/conta",
   "/dashboard/conta/perfil",
   "/dashboard/conta/notificacoes",
+  "/dashboard/notificacoes",
   "/dashboard/conta/seguranca",
   "/dashboard/conta/ajuda",
   "/dashboard/assinatura",

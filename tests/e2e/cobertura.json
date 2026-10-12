@@ -291,6 +291,7 @@
         "t39-app-ida-e-volta",
         "t4-fronteira-demo-real",
         "t40-novo-anuncio-fotos",
+        "t55-manutencao-ciclo",
         "t6-dinheiro-numeros",
         "t7-fluxo-publico",
         "t8-rascunho"
@@ -473,6 +474,17 @@
         "t11-travessias"
       ]
     },
+    "/dashboard/notificacoes": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": [
+        "t48-varredura",
+        "t55-manutencao-ciclo"
+      ]
+    },
     "/dashboard/orcamentos": {
       "personas": [
         "inquilino",
@@ -532,7 +544,9 @@
         "proprietario",
         "admin"
       ],
-      "specs": []
+      "specs": [
+        "t55-manutencao-ciclo"
+      ]
     },
     "/dashboard/verificacao": {
       "personas": [
@@ -990,6 +1004,16 @@
         "admin"
       ],
       "specs": []
+    },
+    "/api/upload/foto": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": [
+        "t54-upload-foto-seguro"
+      ]
     },
     "/api/upload/inquilino-doc": {
       "personas": [
@@ -1616,12 +1640,22 @@
       ],
       "specs": []
     },
-    "src/lib/data/manutencao-actions.ts#avancarSolicitacao": {
+    "src/lib/data/manutencao-actions.ts#avisosRecentes": {
       "personas": [
+        "inquilino",
         "proprietario"
       ],
       "specs": [
-        "t53-conta-documento-solicitacoes"
+        "t55-manutencao-ciclo"
+      ]
+    },
+    "src/lib/data/manutencao-actions.ts#detalheSolicitacao": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t55-manutencao-ciclo"
       ]
     },
     "src/lib/data/manutencao-actions.ts#minhasSolicitacoes": {
@@ -1630,7 +1664,26 @@
         "proprietario"
       ],
       "specs": [
-        "t53-conta-documento-solicitacoes"
+        "t53-conta-documento-solicitacoes",
+        "t55-manutencao-ciclo"
+      ]
+    },
+    "src/lib/data/manutencao-actions.ts#mudarStatusSolicitacao": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t55-manutencao-ciclo"
+      ]
+    },
+    "src/lib/data/manutencao-actions.ts#responderSolicitacao": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t55-manutencao-ciclo"
       ]
     },
     "src/lib/data/marketing-admin.ts#apagarGastoMarketing": {

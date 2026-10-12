@@ -10,6 +10,7 @@
  *  • tudo registrado em pedido_avisos (números do admin).
  */
 import { createAdminClient } from "@/lib/supabase/admin";
+import { notificacaoLigada } from "@/lib/notifications/preferencias";
 import { notify } from "@/lib/notifications";
 import { SITE_URL } from "@/lib/site";
 import { textoEmail, textoPlano } from "@/lib/notifications/texto-seguro";
@@ -141,7 +142,7 @@ async function avisarDono(admin: Admin, pedido: PedidoResumo, par: ParCompat): P
   if (!perfil?.email) {
     canal = "nenhum";
     motivoNaoEnvio = "sem_email";
-  } else if (perfil.notif_email === false) {
+  } else if (!notificacaoLigada(perfil.notif_email as boolean | null)) {
     canal = "nenhum";
     motivoNaoEnvio = "notificacoes_desligadas";
   } else {
