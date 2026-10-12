@@ -13,10 +13,11 @@ function arquivos(dir: string): string[] {
   });
 }
 
-test("/qualificar sem ?imovel= redireciona (servidor) para o cadastro pelas Fotos", () => {
+test("/qualificar sem ?imovel= redireciona (servidor): rascunho → lista, senão cadastro pelas Fotos", () => {
   const page = readFileSync(join(raiz, "app/(dashboard)/qualificar/page.tsx"), "utf8");
   assert.doesNotMatch(page, /"use client"/);
-  assert.match(page, /if \(!id\) redirect\("\/dashboard\/imoveis\/novo"\)/);
+  assert.match(page, /if \(!id\) \{/);
+  assert.match(page, /redirect\(destinoQualificarSemImovel\(temRascunho\)\)/);
   assert.match(page, /searchParams/);
 });
 
