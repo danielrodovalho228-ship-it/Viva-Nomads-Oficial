@@ -1,6 +1,6 @@
 name: Laboratório de testes (noturno)
 
-# Toda noite: sobe um Supabase LOCAL do zero dentro do runner (CLI + Docker),
+# Toda noite e a cada merge na main: sobe um Supabase LOCAL do zero dentro do runner (CLI + Docker),
 # aplica TODAS as migrações + o acerto com produção, cria as personas (Ana,
 # Paulo, Roberta, Gustavo) com uma senha nova, builda o site em modo
 # INTEGRACOES_SIMULADAS (nada sai para a rede) e roda a suíte E2E contra
@@ -9,6 +9,10 @@ on:
   schedule:
     - cron: "0 6 * * *" # 01h no Texas (horário de verão), 03h em Brasília
   workflow_dispatch:
+  # Todo merge na main roda a suíte inteira (além das 03h) e grava o resultado em
+  # public.lab_execucoes (ordem 225d0648).
+  push:
+    branches: [main]
   # Valida o próprio laboratório quando ele muda (o PR não fica vermelho por
   # falhas conhecidas da suíte: elas vão no resumo e no relatório).
   pull_request:
@@ -25,7 +29,8 @@ permissions:
 
 concurrency:
   group: laboratorio
-  cancel-in-progress: true
+  # PR novo cancela o PR velho; push na main nunca é cancelado no meio (o resultado vai para o banco).
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   laboratorio:
@@ -135,6 +140,31 @@ jobs:
             tests/e2e/.artifacts/
             tests/laboratorio/saida/
           retention-days: 14
+
+      - name: Registrar no banco
+        # Uma linha em public.lab_execucoes por execução (nunca em PR). Só contagens e títulos
+        # de testes. O JSON entra como variável do psql (:'resumo'::jsonb) — nada de texto cru
+        # dentro do SQL. A URL do banco vem do secret e nunca é impressa.
+        if: ${{ !cancelled() && github.event_name != 'pull_request' }}
+        continue-on-error: true
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          GATILHO: ${{ github.event_name }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "::warning::Sem o secret SUPABASE_DB_URL: resultado não gravado no banco."
+            exit 0
+          fi
+          RESUMO="$(node scripts/lab/resumo-specs.mjs --json tests/laboratorio/saida/resultado.json)"
+          psql "$SUPABASE_DB_URL" -X -q -v ON_ERROR_STOP=1 \
+            -v sha="$GITHUB_SHA" -v gatilho="$GATILHO" -v run_url="$RUN_URL" -v resumo="$RESUMO" >/dev/null <<'SQL'
+          insert into public.lab_execucoes (commit_sha, gatilho, passou, falhou, pulou, instavel, por_spec, falhas, run_url)
+          select :'sha', :'gatilho',
+                 (j->>'passou')::int, (j->>'falhou')::int, (j->>'pulou')::int, (j->>'instavel')::int,
+                 j->'por_spec', j->'falhas', :'run_url'
+            from (select :'resumo'::jsonb as j) x;
+          SQL
 
       - name: Marcar a execução como falha se algum teste falhou
         if: ${{ steps.e2e.outcome == 'failure' && github.event_name != 'pull_request' }}
