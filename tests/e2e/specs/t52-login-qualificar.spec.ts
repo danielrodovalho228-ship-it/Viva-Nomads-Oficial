@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { authFile, loginAs } from "../fixtures/auth";
+import { authFile } from "../fixtures/auth";
+import { account } from "../fixtures/accounts";
 
 /**
  * T52 — F11/F8 (ordens 45d2bf87 e d521da45): o login devolve ao destino com a query
@@ -20,7 +21,11 @@ test.describe("T52 — Login devolve a /qualificar?imovel=<id>", () => {
       expect(u.pathname).toBe("/auth");
       expect(u.searchParams.get("redirect")).toBe(`/qualificar?imovel=${ID}`);
 
-      await loginAs(page, "proprietario").catch(() => undefined);
+      // Entra NA PRÓPRIA página /auth?redirect=… (o loginAs() abre /auth sem a query e perderia o destino).
+      const acc = account("proprietario");
+      await page.locator('input[name="email"], input[type="email"]').first().fill(acc.email);
+      await page.locator('input[name="password"], input[type="password"]').first().fill(acc.senha);
+      await page.locator("form").getByRole("button", { name: /^entrar$/i }).click();
       await page.waitForURL(/\/qualificar\?imovel=/, { timeout: 20_000 });
       expect(new URL(page.url()).searchParams.get("imovel")).toBe(ID);
     });
