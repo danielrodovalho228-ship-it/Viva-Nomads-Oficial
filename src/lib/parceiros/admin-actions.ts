@@ -1,5 +1,6 @@
 "use server";
 
+import { sessaoAal2 } from "@/lib/data/admin-guard";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { ehUuid } from "@/lib/fotografos/regras";
@@ -18,7 +19,7 @@ export async function atualizarStatusInteresse(id: string, status: string): Prom
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, erro: "Sem permissão." };
   const { data: perfil } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
-  if (perfil?.role !== "admin") return { ok: false, erro: "Sem permissão." };
+  if (perfil?.role !== "admin" || !(await sessaoAal2(supabase))) return { ok: false, erro: "Sem permissão." };
   const { error } = await supabase.from("parceiros_interesse").update({ status }).eq("id", id);
   if (error) return { ok: false, erro: "Não foi possível atualizar." };
   revalidatePath("/admin/parceiros");

@@ -10,6 +10,7 @@ import {
 import { COOKIE_ADMIN_ATIVO, LIMITE_OCIOSO_ADMIN_MS, sessaoAdminOciosa } from "@/lib/admin/sessao-ociosa";
 import { APP_COOKIE, appHome, isAppUserAgent, isMarketingPath } from "@/lib/app-mode";
 import { destinoAposLogin } from "@/lib/destino-login";
+import { decidirPortaoMfa, mfaAdminObrigatoria, urlAtivar2fa, urlVerificarCodigo } from "@/lib/admin/mfa";
 
 /**
  * Papel para a aba inicial do APP: preferência salva, senão o papel de
@@ -100,7 +101,9 @@ export async function proxy(request: NextRequest) {
   // ── DEMAIS ROTAS PRIVADAS (dashboard/admin/pedidos) — exigem Supabase ───────
   if (!supaUrl || !supaKey) return NextResponse.next();
 
-  const response = NextResponse.next({ request });
+  const cabecalhos = new Headers(request.headers);
+  cabecalhos.set("x-vn-destino", destinoAposLogin(pathname, request.nextUrl.search));
+  const response = NextResponse.next({ request: { headers: cabecalhos } });
   const supabase = createServerClient(supaUrl, supaKey, {
     cookies: {
       getAll() {
@@ -186,6 +189,24 @@ export async function proxy(request: NextRequest) {
       notFoundUrl.pathname = "/nao-encontrado-admin";
       notFoundUrl.search = "";
       return NextResponse.rewrite(notFoundUrl, { status: 404 });
+    }
+
+    // Verificação em duas etapas obrigatória (ordem f7817f00): admin precisa de AAL2.
+    // Sem fator → tela de ativação; com fator e sessão só com senha → tela do código.
+    // O destino volta COMPLETO (pathname+search).
+    if (mfaAdminObrigatoria()) {
+      const { data: aal, error: aalErro } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      const portao = aalErro ? "verificar" : decidirPortaoMfa(aal?.currentLevel, aal?.nextLevel);
+      if (portao !== "liberar") {
+        const destino = destinoAposLogin(pathname, request.nextUrl.search);
+        const alvo = request.nextUrl.clone();
+        const [caminho, consulta] = (portao === "verificar" ? urlVerificarCodigo(destino) : urlAtivar2fa(destino)).split("?");
+        alvo.pathname = caminho;
+        alvo.search = consulta ? `?${consulta}` : "";
+        const resposta = NextResponse.redirect(alvo);
+        response.cookies.getAll().forEach((c) => resposta.cookies.set(c));
+        return resposta;
+      }
     }
   }
 

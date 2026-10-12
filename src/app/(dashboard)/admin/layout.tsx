@@ -1,5 +1,7 @@
 import { notFound, redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { decidirPortaoMfa, mfaAdminObrigatoria, urlAtivar2fa, urlVerificarCodigo } from "@/lib/admin/mfa";
 
 /**
  * Guarda server-side da área de admin (defesa em profundidade do C1).
@@ -24,6 +26,16 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       .eq("id", user.id)
       .single();
     if (profile?.role !== "admin") notFound();
+
+    // Verificação em duas etapas (ordem f7817f00): o proxy já barra; aqui de novo no servidor.
+    if (mfaAdminObrigatoria()) {
+      const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      const portao = decidirPortaoMfa(aal?.currentLevel, aal?.nextLevel);
+      if (portao !== "liberar") {
+        const destino = (await headers()).get("x-vn-destino") ?? "/admin";
+        redirect(portao === "verificar" ? urlVerificarCodigo(destino) : urlAtivar2fa(destino));
+      }
+    }
   }
   return <>{children}</>;
 }

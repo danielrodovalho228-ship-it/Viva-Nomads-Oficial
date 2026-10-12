@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { sessaoAal2 } from "@/lib/data/admin-guard";
 import { notificacaoLigada } from "@/lib/notifications/preferencias";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { consumirLimite, DIA } from "@/lib/limites";
@@ -411,7 +412,7 @@ export async function setAlertasEquipe(ligado: boolean): Promise<ActionResult> {
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Entre para alterar preferências." };
   const { data: eu } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
-  if (eu?.role !== "admin") return { ok: false, error: "Só a equipe pode alterar isto." };
+  if (eu?.role !== "admin" || !(await sessaoAal2(supabase))) return { ok: false, error: "Só a equipe pode alterar isto." };
   const admin = createAdminClient();
   if (!admin) return { ok: false, error: "Não foi possível salvar agora. Tente de novo." };
   const { error } = await admin.from("profiles").update({ recebe_alertas_operacionais: ligado }).eq("id", user.id);

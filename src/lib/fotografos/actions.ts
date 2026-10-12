@@ -1,5 +1,6 @@
 "use server";
 
+import { sessaoAal2 } from "@/lib/data/admin-guard";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { consumirLimite } from "@/lib/limites";
@@ -52,7 +53,7 @@ async function exigirAdmin() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
   const { data: perfil } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
-  return perfil?.role === "admin" ? { supabase, userId: user.id } : null;
+  return perfil?.role === "admin" && (await sessaoAal2(supabase)) ? { supabase, userId: user.id } : null;
 }
 
 const inteiro = (v: FormDataEntryValue | null, min: number, max: number) => {

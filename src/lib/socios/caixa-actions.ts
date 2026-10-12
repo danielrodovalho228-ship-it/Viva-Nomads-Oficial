@@ -1,5 +1,6 @@
 "use server";
 
+import { sessaoAal2 } from "@/lib/data/admin-guard";
 import Anthropic from "@anthropic-ai/sdk";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
@@ -36,7 +37,7 @@ async function sessaoAdmin() {
   } = await supabase.auth.getUser();
   if (!user) return null;
   const { data: perfil } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
-  return perfil?.role === "admin" ? { supabase, uid: user.id } : null;
+  return perfil?.role === "admin" && (await sessaoAal2(supabase)) ? { supabase, uid: user.id } : null;
 }
 
 /** Transcreve áudio (OpenAI) ou lê imagem/documento (Anthropic / zip do Office). Nunca lança: devolve status. */
