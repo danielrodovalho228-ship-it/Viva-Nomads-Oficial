@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
+import { JsonLd } from "@/components/seo/json-ld";
+import { trilha } from "@/lib/seo/estruturados";
+import { SITE_URL } from "@/lib/site";
 import { ShieldCheck, AlertTriangle, MessageSquareLock, Wallet, FileSearch } from "lucide-react";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/seguranca" },
   title: "Sua segurança",
   description:
-    "Como o Viva Nomads protege proprietários e inquilinos contra os golpes mais comuns em locação: conversa na plataforma, dinheiro direto ao proprietário e dossiê do inquilino.",
+    "Como a Viva Nomads protege proprietários e inquilinos de golpes na locação: conversa na plataforma, dinheiro direto ao proprietário e dossiê do inquilino.",
 };
 
 const GOLPES = [
@@ -47,6 +50,7 @@ function Faq({ q, children }: { q: string; children: React.ReactNode }) {
 export default function SegurancaPage() {
   return (
     <div className="container-page max-w-3xl py-12 md:py-16">
+      <JsonLd dados={trilha(SITE_URL, [{ nome: "Sua segurança", caminho: "/seguranca" }])} />
       <span className="inline-flex items-center gap-2 rounded-full bg-sage-100 px-3 py-1 text-xs font-semibold text-forest">
         <ShieldCheck className="h-3.5 w-3.5" /> Sua segurança
       </span>

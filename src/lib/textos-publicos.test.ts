@@ -52,3 +52,29 @@ test("#71: título de /parceiros sem marca repetida (≤ 60 com o sufixo) e fras
   assert.match(p, /31 imóveis ou mais\? Fale com a gente sobre o Plano Gestor\./);
   assert.doesNotMatch(p, /a conversa é direta/);
 });
+
+test("#74: /como-funciona sem seguradora parceira nem seguro-fiança; garantia é Caução", () => {
+  const t = ler("src/app/(public)/como-funciona/page.tsx");
+  assert.doesNotMatch(t, /seguradora parceira/i);
+  assert.doesNotMatch(t, /seguro-fian/i);
+  assert.match(t, /Combinada entre proprietário e inquilino\. A Viva não é garantidora\./);
+});
+
+test("#79: /seguranca com description ≤ 155 e BreadcrumbList nas 4 páginas, sem AggregateRating", () => {
+  const desc = /description:\s*"([^"]+)"/.exec(ler("src/app/(public)/seguranca/page.tsx"))?.[1] ?? "";
+  assert.ok(desc.length > 0 && desc.length <= 155, `description tem ${desc.length}`);
+  for (const p of ["parceiros", "parceiros/fotografos", "guia-fotos", "seguranca"]) {
+    const t = ler(`src/app/(public)/${p}/page.tsx`);
+    assert.equal((t.match(/<JsonLd /g) ?? []).length, 1, p);
+    assert.match(t, /trilha\(SITE_URL,/, p);
+    assert.doesNotMatch(t, /AggregateRating/, p);
+  }
+});
+
+test("#79: trilha() gera BreadcrumbList válido", async () => {
+  const { trilha } = await import("./seo/estruturados.ts");
+  const j = trilha("https://x.com.br", [{ nome: "Sua segurança", caminho: "/seguranca" }]);
+  assert.equal(j["@type"], "BreadcrumbList");
+  assert.deepEqual(j.itemListElement.map((i) => [i.position, i.item]), [[1, "https://x.com.br"], [2, "https://x.com.br/seguranca"]]);
+  assert.doesNotMatch(JSON.stringify(j), /AggregateRating/);
+});

@@ -98,9 +98,8 @@ export default function HowItWorksPage() {
 
 /**
  * Garantias da locação com DUPLA perspectiva (inquilino e proprietário) — a
- * garantia protege as duas partes. Fonte única e neutra: enquanto a parceria de
- * seguro-fiança não estiver assinada, o status é honesto ("via parceiro — em
- * estruturação"), no mesmo padrão do hub de Ferramentas. Âncora #garantias.
+ * garantia protege as duas partes. Hoje só a Caução, combinada entre as partes (ordem do
+ * Sérgio, #74). Âncora #garantias.
  */
 function GarantiasInquilino() {
   return (
@@ -110,7 +109,7 @@ function GarantiasInquilino() {
         Por lei, cada contrato usa <strong>uma</strong> garantia. Você escolhe a que
         preferir, com a mesma proteção para as duas partes — e nada fica com a plataforma.
       </p>
-      <div className="mt-8 grid gap-6 md:grid-cols-2">
+      <div className="mt-8 grid gap-6">
         <div className="rounded-2xl border border-sage-200 bg-white p-6">
           <div className="grid h-11 w-11 place-items-center rounded-xl bg-forest text-white">
             <ShieldCheck className="h-5 w-5" />
@@ -134,31 +133,6 @@ function GarantiasInquilino() {
           </dl>
           <span className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-sage-100 px-2.5 py-1 text-xs font-semibold text-forest">
             Disponível
-          </span>
-        </div>
-        <div className="rounded-2xl border border-sage-200 bg-white p-6">
-          <div className="grid h-11 w-11 place-items-center rounded-xl bg-forest text-white">
-            <FileSignature className="h-5 w-5" />
-          </div>
-          <h3 className="mt-4 font-title text-lg font-bold text-ink">Seguro-fiança (sem depósito)</h3>
-          <dl className="mt-3 space-y-2.5 text-sm">
-            <div>
-              <dt className="font-semibold text-ink">Para o inquilino</dt>
-              <dd className="text-muted">
-                Entre <strong>sem imobilizar dinheiro</strong>: mensalidade diluída, sujeita a
-                análise.
-              </dd>
-            </div>
-            <div>
-              <dt className="font-semibold text-ink">Para o proprietário</dt>
-              <dd className="text-muted">
-                A seguradora parceira cobre o aluguel em caso de inadimplência. Via parceiro — em
-                estruturação.
-              </dd>
-            </div>
-          </dl>
-          <span className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">
-            Via parceiro — em estruturação
           </span>
         </div>
       </div>
@@ -280,7 +254,7 @@ function ProtegidoPor() {
       img: "/images/como-funciona/08-feche.webp",
       alt: "Aperto de mãos fechando o contrato de locação",
       title: "Garantia do contrato",
-      text: `${CAUCAO_FRASE} Ou seguro-fiança da seguradora parceira, quando disponível — escolhida no fechamento.`,
+      text: `${CAUCAO_FRASE} Combinada entre proprietário e inquilino. A Viva não é garantidora.`,
     },
     {
       img: "/images/home/home-condominio-tranquilo.webp",
