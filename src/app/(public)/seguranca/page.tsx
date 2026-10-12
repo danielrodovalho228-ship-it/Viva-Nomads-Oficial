@@ -100,19 +100,6 @@ export default function SegurancaPage() {
               aceite, e nunca o contato direto.
             </p>
           </Faq>
-          {/* Resposta pública sobre corretagem/CRECI. TODO(juridico): redação
-              FINAL sai do parecer (item 5 do pacote) — texto interino honesto. */}
-          <Faq q="O Viva Nomads é uma imobiliária? Precisa de CRECI?">
-            <p>
-              O Viva Nomads é uma <strong className="text-ink">plataforma de tecnologia</strong> que
-              conecta proprietários e inquilinos para locação mobiliada de média duração — não é
-              parte do contrato de locação e não presta serviço de corretagem em nome dos usuários.
-            </p>
-            <p className="text-xs">
-              A redação definitiva sobre corretagem/CRECI acompanha o parecer jurídico em andamento e
-              será publicada aqui.
-            </p>
-          </Faq>
         </div>
       </section>
     </div>

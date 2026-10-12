@@ -65,7 +65,7 @@ export default function TermsPage() {
         <Section title="8. Comissão e indicações">
           A plataforma cobra do proprietário 12% do primeiro aluguel de cada contrato novo e de cada
           renovação, na assinatura do contrato ou do aditivo. A taxa é a mesma para todos os proprietários, sem
-          mensalidade, e o inquilino não paga taxa da plataforma. (Texto aguardando revisão do Sérgio e da Dra. Beatriz.) As recompensas do programa de indicação são
+          mensalidade, e o inquilino não paga taxa da plataforma. As recompensas do programa de indicação são
           liberadas apenas após o evento qualificador real (primeira reserva ou locação).
         </Section>
       </div>
