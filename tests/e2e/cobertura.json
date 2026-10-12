@@ -1,0 +1,2251 @@
+{
+  "gerado_por": "scripts/lab/cobertura.mjs",
+  "resumo": {
+    "total": 241,
+    "cobertos": 57,
+    "percentual": 23.7,
+    "por_tipo": {
+      "action": {
+        "total": 121,
+        "cobertos": 2
+      },
+      "api": {
+        "total": 46,
+        "cobertos": 6
+      },
+      "pagina": {
+        "total": 74,
+        "cobertos": 49
+      }
+    }
+  },
+  "itens": [
+    {
+      "tipo": "action",
+      "id": "src/app/acesso-socios/actions.ts#entrarSocios",
+      "arquivo": "src/app/acesso-socios/actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/account-delete.ts#confirmarExclusaoConta",
+      "arquivo": "src/lib/data/account-delete.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/account-delete.ts#solicitarExclusaoConta",
+      "arquivo": "src/lib/data/account-delete.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/actions.ts#carregarQualificacao",
+      "arquivo": "src/lib/data/actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/actions.ts#countMyDrafts",
+      "arquivo": "src/lib/data/actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/actions.ts#createProperty",
+      "arquivo": "src/lib/data/actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/actions.ts#deleteProperty",
+      "arquivo": "src/lib/data/actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/actions.ts#getLatestDraft",
+      "arquivo": "src/lib/data/actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/actions.ts#getMyDocumentStatus",
+      "arquivo": "src/lib/data/actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/actions.ts#loadDraftData",
+      "arquivo": "src/lib/data/actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/actions.ts#loadPropertyForEdit",
+      "arquivo": "src/lib/data/actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/actions.ts#registrarContrato",
+      "arquivo": "src/lib/data/actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/actions.ts#registrarLocacao",
+      "arquivo": "src/lib/data/actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/actions.ts#renovarBloco",
+      "arquivo": "src/lib/data/actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/actions.ts#requestLead",
+      "arquivo": "src/lib/data/actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/actions.ts#resumoImovelDoDono",
+      "arquivo": "src/lib/data/actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/actions.ts#saveDraftData",
+      "arquivo": "src/lib/data/actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/actions.ts#saveQualification",
+      "arquivo": "src/lib/data/actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/actions.ts#sendMessage",
+      "arquivo": "src/lib/data/actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/actions.ts#toggleFavorite",
+      "arquivo": "src/lib/data/actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/actions.ts#updateProperty",
+      "arquivo": "src/lib/data/actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/actions.ts#varrerCicloBlocos",
+      "arquivo": "src/lib/data/actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/agentes-actions.ts#carregarCentral",
+      "arquivo": "src/lib/data/agentes-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/agentes-actions.ts#chamadosEmVermelho",
+      "arquivo": "src/lib/data/agentes-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/agentes-actions.ts#contarAchadosP1",
+      "arquivo": "src/lib/data/agentes-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/agentes-actions.ts#deixarOrdem",
+      "arquivo": "src/lib/data/agentes-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/agentes-actions.ts#eventosDaRede",
+      "arquivo": "src/lib/data/agentes-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/agentes-actions.ts#postarRetornosDoMoacir",
+      "arquivo": "src/lib/data/agentes-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/atendimento-actions.ts#abrirChamado",
+      "arquivo": "src/lib/data/atendimento-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": "t19-atendimento-online.spec.ts"
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/atendimento-actions.ts#alterarChamado",
+      "arquivo": "src/lib/data/atendimento-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/atendimento-actions.ts#apagarMacro",
+      "arquivo": "src/lib/data/atendimento-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/atendimento-actions.ts#aprovarSugestao",
+      "arquivo": "src/lib/data/atendimento-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/atendimento-actions.ts#avaliarRespostaIA",
+      "arquivo": "src/lib/data/atendimento-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/atendimento-actions.ts#chamadoAdmin",
+      "arquivo": "src/lib/data/atendimento-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/atendimento-actions.ts#chamadoDeOutraConta",
+      "arquivo": "src/lib/data/atendimento-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/atendimento-actions.ts#devolverParaViva",
+      "arquivo": "src/lib/data/atendimento-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/atendimento-actions.ts#enviarSugestaoEditada",
+      "arquivo": "src/lib/data/atendimento-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/atendimento-actions.ts#filaAtendimento",
+      "arquivo": "src/lib/data/atendimento-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/atendimento-actions.ts#listarMacros",
+      "arquivo": "src/lib/data/atendimento-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/atendimento-actions.ts#marcarResolvido",
+      "arquivo": "src/lib/data/atendimento-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/atendimento-actions.ts#metricasAtendimento",
+      "arquivo": "src/lib/data/atendimento-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/atendimento-actions.ts#meuChamado",
+      "arquivo": "src/lib/data/atendimento-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/atendimento-actions.ts#meusChamados",
+      "arquivo": "src/lib/data/atendimento-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/atendimento-actions.ts#meusContratosAtivos",
+      "arquivo": "src/lib/data/atendimento-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/atendimento-actions.ts#pedirPessoa",
+      "arquivo": "src/lib/data/atendimento-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/atendimento-actions.ts#pedirPessoaPorLink",
+      "arquivo": "src/lib/data/atendimento-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/atendimento-actions.ts#quemEAPessoa",
+      "arquivo": "src/lib/data/atendimento-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/atendimento-actions.ts#responderComoAdmin",
+      "arquivo": "src/lib/data/atendimento-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/atendimento-actions.ts#responderMeuChamado",
+      "arquivo": "src/lib/data/atendimento-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/atendimento-actions.ts#resumoDoChamado",
+      "arquivo": "src/lib/data/atendimento-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/atendimento-actions.ts#salvarMacro",
+      "arquivo": "src/lib/data/atendimento-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/atendimento-actions.ts#sugerirResposta",
+      "arquivo": "src/lib/data/atendimento-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/atendimento-actions.ts#testarViva",
+      "arquivo": "src/lib/data/atendimento-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/avaliacoes-actions.ts#avaliar",
+      "arquivo": "src/lib/data/avaliacoes-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": "t28-avaliacoes-fase1.spec.ts"
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/avaliacoes-actions.ts#getReputacao",
+      "arquivo": "src/lib/data/avaliacoes-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/avaliacoes-actions.ts#getReputacaoDoImovel",
+      "arquivo": "src/lib/data/avaliacoes-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/avaliacoes-actions.ts#meusContratosAvaliados",
+      "arquivo": "src/lib/data/avaliacoes-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/avatar-actions.ts#clearMyAvatar",
+      "arquivo": "src/lib/data/avatar-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/avatar-actions.ts#getAvatarUrl",
+      "arquivo": "src/lib/data/avatar-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/avatar-actions.ts#getMyAvatarUrl",
+      "arquivo": "src/lib/data/avatar-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/avatar-actions.ts#setMyAvatarPath",
+      "arquivo": "src/lib/data/avatar-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/blocks-actions.ts#addBlock",
+      "arquivo": "src/lib/data/blocks-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/blocks-actions.ts#getBlocks",
+      "arquivo": "src/lib/data/blocks-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/blocks-actions.ts#removeBlock",
+      "arquivo": "src/lib/data/blocks-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/contratos-actions.ts#confirmarPagamento",
+      "arquivo": "src/lib/data/contratos-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/contratos-actions.ts#getMeusContratos",
+      "arquivo": "src/lib/data/contratos-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/contratos-actions.ts#getMinhasLocacoes",
+      "arquivo": "src/lib/data/contratos-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/contratos-actions.ts#marcarPagamentoRecebido",
+      "arquivo": "src/lib/data/contratos-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/documentos-actions.ts#documentosDosContratos",
+      "arquivo": "src/lib/data/documentos-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/documentos-actions.ts#registrarDevolucaoCaucao",
+      "arquivo": "src/lib/data/documentos-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/documentos-actions.ts#responderDevolucaoCaucao",
+      "arquivo": "src/lib/data/documentos-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/documentos-admin.ts#countDocumentosPendentes",
+      "arquivo": "src/lib/data/documentos-admin.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/documentos-admin.ts#listDocumentosPendentes",
+      "arquivo": "src/lib/data/documentos-admin.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/documentos-admin.ts#moderarDocumento",
+      "arquivo": "src/lib/data/documentos-admin.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/documentos-inquilino-actions.ts#linkDocInquilino",
+      "arquivo": "src/lib/data/documentos-inquilino-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/documentos-inquilino-actions.ts#listarDocsInquilino",
+      "arquivo": "src/lib/data/documentos-inquilino-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/leads-actions.ts#aceitarCandidatura",
+      "arquivo": "src/lib/data/leads-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/leads-actions.ts#getFechamentoContext",
+      "arquivo": "src/lib/data/leads-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/leads-actions.ts#listMinhasCandidaturas",
+      "arquivo": "src/lib/data/leads-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/leads-actions.ts#recusarCandidatura",
+      "arquivo": "src/lib/data/leads-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/marketing-admin.ts#apagarGastoMarketing",
+      "arquivo": "src/lib/data/marketing-admin.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/marketing-admin.ts#lancarGastoMarketing",
+      "arquivo": "src/lib/data/marketing-admin.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/marketing-admin.ts#listarGastosMarketing",
+      "arquivo": "src/lib/data/marketing-admin.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/mode-actions.ts#getPreferredMode",
+      "arquivo": "src/lib/data/mode-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/mode-actions.ts#resolveInitialMode",
+      "arquivo": "src/lib/data/mode-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/mode-actions.ts#setPreferredMode",
+      "arquivo": "src/lib/data/mode-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/pedidos-actions.ts#aceitarResposta",
+      "arquivo": "src/lib/data/pedidos-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/pedidos-actions.ts#criarPedido",
+      "arquivo": "src/lib/data/pedidos-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/pedidos-actions.ts#getAlertasEquipe",
+      "arquivo": "src/lib/data/pedidos-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/pedidos-actions.ts#getMeusPedidos",
+      "arquivo": "src/lib/data/pedidos-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/pedidos-actions.ts#getMinhasRespostas",
+      "arquivo": "src/lib/data/pedidos-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/pedidos-actions.ts#getNotifPrefs",
+      "arquivo": "src/lib/data/pedidos-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/pedidos-actions.ts#getPedidosParaProprietario",
+      "arquivo": "src/lib/data/pedidos-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/pedidos-actions.ts#getRespostasRecebidas",
+      "arquivo": "src/lib/data/pedidos-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/pedidos-actions.ts#marcarAtendido",
+      "arquivo": "src/lib/data/pedidos-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/pedidos-actions.ts#pausarPedido",
+      "arquivo": "src/lib/data/pedidos-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/pedidos-actions.ts#recusarResposta",
+      "arquivo": "src/lib/data/pedidos-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/pedidos-actions.ts#responderPedido",
+      "arquivo": "src/lib/data/pedidos-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/pedidos-actions.ts#setAlertasEquipe",
+      "arquivo": "src/lib/data/pedidos-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/pedidos-actions.ts#setNotifPrefs",
+      "arquivo": "src/lib/data/pedidos-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/pedidos-admin.ts#adminListPedidos",
+      "arquivo": "src/lib/data/pedidos-admin.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/pedidos-admin.ts#getMetricasPedidosAdmin",
+      "arquivo": "src/lib/data/pedidos-admin.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/pedidos-admin.ts#moderarPedido",
+      "arquivo": "src/lib/data/pedidos-admin.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/pedidos-admin.ts#reativarPedido",
+      "arquivo": "src/lib/data/pedidos-admin.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/perfil-actions.ts#getMeuDocumento",
+      "arquivo": "src/lib/data/perfil-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/perfil-actions.ts#getMeusDados",
+      "arquivo": "src/lib/data/perfil-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/perfil-actions.ts#getMinhaCategoria",
+      "arquivo": "src/lib/data/perfil-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/perfil-actions.ts#salvarMeuDocumento",
+      "arquivo": "src/lib/data/perfil-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/perfil-actions.ts#salvarMeusDados",
+      "arquivo": "src/lib/data/perfil-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/perfil-actions.ts#setMinhaCategoria",
+      "arquivo": "src/lib/data/perfil-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/planos-actions.ts#definirAccountType",
+      "arquivo": "src/lib/data/planos-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/planos-actions.ts#getGestorElegibilidade",
+      "arquivo": "src/lib/data/planos-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/planos-actions.ts#getMinhaAssinatura",
+      "arquivo": "src/lib/data/planos-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/push-actions.ts#enviarPushDeTeste",
+      "arquivo": "src/lib/data/push-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/push-actions.ts#registrarPushToken",
+      "arquivo": "src/lib/data/push-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/push-actions.ts#removerPushToken",
+      "arquivo": "src/lib/data/push-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/data/reservas-actions.ts#solicitarReserva",
+      "arquivo": "src/lib/data/reservas-actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/fotografos/actions.ts#alternarAprovacaoFotografo",
+      "arquivo": "src/lib/fotografos/actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/fotografos/actions.ts#cadastrarFotografo",
+      "arquivo": "src/lib/fotografos/actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/fotografos/actions.ts#criarPedidoFotografo",
+      "arquivo": "src/lib/fotografos/actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "action",
+      "id": "src/lib/fotografos/actions.ts#salvarTaxaParceria",
+      "arquivo": "src/lib/fotografos/actions.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "api",
+      "id": "/api/admin/agentes/anexos",
+      "arquivo": "src/app/api/admin/agentes/anexos/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "api",
+      "id": "/api/admin/agentes/chat",
+      "arquivo": "src/app/api/admin/agentes/chat/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "api",
+      "id": "/api/admin/agentes/executar",
+      "arquivo": "src/app/api/admin/agentes/executar/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "api",
+      "id": "/api/admin/agentes/memoria",
+      "arquivo": "src/app/api/admin/agentes/memoria/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "api",
+      "id": "/api/admin/agentes/reuniao",
+      "arquivo": "src/app/api/admin/agentes/reuniao/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "api",
+      "id": "/api/admin/aprovacoes",
+      "arquivo": "src/app/api/admin/aprovacoes/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "api",
+      "id": "/api/admin/aprovacoes/[id]",
+      "arquivo": "src/app/api/admin/aprovacoes/[id]/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "api",
+      "id": "/api/ai/anuncio",
+      "arquivo": "src/app/api/ai/anuncio/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "api",
+      "id": "/api/ai/fotos",
+      "arquivo": "src/app/api/ai/fotos/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "api",
+      "id": "/api/app/login-social",
+      "arquivo": "src/app/api/app/login-social/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "api",
+      "id": "/api/app/ponte",
+      "arquivo": "src/app/api/app/ponte/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": "t39-app-ida-e-volta.spec.ts"
+    },
+    {
+      "tipo": "api",
+      "id": "/api/app/ponte/entrar",
+      "arquivo": "src/app/api/app/ponte/entrar/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": "t39-app-ida-e-volta.spec.ts"
+    },
+    {
+      "tipo": "api",
+      "id": "/api/assinatura",
+      "arquivo": "src/app/api/assinatura/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": "t12-planos.spec.ts, t31-cadastro-documento.spec.ts"
+    },
+    {
+      "tipo": "api",
+      "id": "/api/atendimento/avaliar",
+      "arquivo": "src/app/api/atendimento/avaliar/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "api",
+      "id": "/api/atendimento/email",
+      "arquivo": "src/app/api/atendimento/email/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "api",
+      "id": "/api/auth/app-callback",
+      "arquivo": "src/app/auth/app-callback/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "api",
+      "id": "/api/auth/callback",
+      "arquivo": "src/app/auth/callback/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "api",
+      "id": "/api/auth/confirm",
+      "arquivo": "src/app/auth/confirm/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "api",
+      "id": "/api/auth/email-existe",
+      "arquivo": "src/app/api/auth/email-existe/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "api",
+      "id": "/api/caf/verify",
+      "arquivo": "src/app/api/caf/verify/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "api",
+      "id": "/api/calendario/[id]/[token]",
+      "arquivo": "src/app/api/calendario/[id]/[token]/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "api",
+      "id": "/api/comissao",
+      "arquivo": "src/app/api/comissao/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "api",
+      "id": "/api/contrato",
+      "arquivo": "src/app/api/contrato/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": "t36-cadastro-ponta-a-ponta.spec.ts"
+    },
+    {
+      "tipo": "api",
+      "id": "/api/cron/atendimento",
+      "arquivo": "src/app/api/cron/atendimento/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "api",
+      "id": "/api/cron/avisos-daniel",
+      "arquivo": "src/app/api/cron/avisos-daniel/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "api",
+      "id": "/api/cron/resumo-pedidos",
+      "arquivo": "src/app/api/cron/resumo-pedidos/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "api",
+      "id": "/api/documentos/[id]",
+      "arquivo": "src/app/api/documentos/[id]/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "api",
+      "id": "/api/empresas",
+      "arquivo": "src/app/api/empresas/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "api",
+      "id": "/api/evento",
+      "arquivo": "src/app/api/evento/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "api",
+      "id": "/api/health",
+      "arquivo": "src/app/api/health/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": "t7-fluxo-publico.spec.ts"
+    },
+    {
+      "tipo": "api",
+      "id": "/api/llms-full.txt",
+      "arquivo": "src/app/llms-full.txt/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "api",
+      "id": "/api/llms.txt",
+      "arquivo": "src/app/llms.txt/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "api",
+      "id": "/api/parceiros-interesse",
+      "arquivo": "src/app/api/parceiros-interesse/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "api",
+      "id": "/api/places/autocomplete",
+      "arquivo": "src/app/api/places/autocomplete/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "api",
+      "id": "/api/places/distances",
+      "arquivo": "src/app/api/places/distances/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "api",
+      "id": "/api/plano-gestor",
+      "arquivo": "src/app/api/plano-gestor/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "api",
+      "id": "/api/properties",
+      "arquivo": "src/app/api/properties/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "api",
+      "id": "/api/properties/mine",
+      "arquivo": "src/app/api/properties/mine/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "api",
+      "id": "/api/test-email",
+      "arquivo": "src/app/api/test-email/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "api",
+      "id": "/api/test-lead",
+      "arquivo": "src/app/api/test-lead/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "api",
+      "id": "/api/upload/documento",
+      "arquivo": "src/app/api/upload/documento/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "api",
+      "id": "/api/upload/inquilino-doc",
+      "arquivo": "src/app/api/upload/inquilino-doc/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": "t33-documentos-inquilino.spec.ts, t36-cadastro-ponta-a-ponta.spec.ts"
+    },
+    {
+      "tipo": "api",
+      "id": "/api/viva/chat",
+      "arquivo": "src/app/api/viva/chat/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "api",
+      "id": "/api/webhooks/asaas",
+      "arquivo": "src/app/api/webhooks/asaas/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "api",
+      "id": "/api/well-known/android",
+      "arquivo": "src/app/api/well-known/android/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "api",
+      "id": "/api/well-known/apple",
+      "arquivo": "src/app/api/well-known/apple/route.ts",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "pagina",
+      "id": "/",
+      "arquivo": "src/app/(public)/page.tsx",
+      "personas": [
+        "público"
+      ],
+      "spec": "t14-app-mode.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/acesso-socios",
+      "arquivo": "src/app/acesso-socios/page.tsx",
+      "personas": [
+        "sócio"
+      ],
+      "spec": "t3-isolamento-papeis.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/admin",
+      "arquivo": "src/app/(dashboard)/admin/page.tsx",
+      "personas": [
+        "admin"
+      ],
+      "spec": "t12-planos.spec.ts, t14-app-mode.spec.ts, t15-admin-real.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/admin/agentes",
+      "arquivo": "src/app/(dashboard)/admin/agentes/page.tsx",
+      "personas": [
+        "admin"
+      ],
+      "spec": "t14-app-mode.spec.ts, t21-central-agentes.spec.ts, t23-pacote-seguranca.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/admin/atendimento",
+      "arquivo": "src/app/(dashboard)/admin/atendimento/page.tsx",
+      "personas": [
+        "admin"
+      ],
+      "spec": "t19-atendimento-online.spec.ts, t24-atendimento-acolhimento.spec.ts, t25-chamado-resumo.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/admin/atendimento/[id]",
+      "arquivo": "src/app/(dashboard)/admin/atendimento/[id]/page.tsx",
+      "personas": [
+        "admin"
+      ],
+      "spec": "t19-atendimento-online.spec.ts, t24-atendimento-acolhimento.spec.ts, t25-chamado-resumo.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/admin/documentos",
+      "arquivo": "src/app/(dashboard)/admin/documentos/page.tsx",
+      "personas": [
+        "admin"
+      ],
+      "spec": "t15-admin-real.spec.ts, t32-autorizacao-preconferencia.spec.ts, t36-cadastro-ponta-a-ponta.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/admin/financeiro",
+      "arquivo": "src/app/(dashboard)/admin/financeiro/page.tsx",
+      "personas": [
+        "admin"
+      ],
+      "spec": "t15-admin-real.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/admin/fotografos",
+      "arquivo": "src/app/(dashboard)/admin/fotografos/page.tsx",
+      "personas": [
+        "admin"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "pagina",
+      "id": "/admin/marketing",
+      "arquivo": "src/app/(dashboard)/admin/marketing/page.tsx",
+      "personas": [
+        "admin"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "pagina",
+      "id": "/admin/parceiros",
+      "arquivo": "src/app/(dashboard)/admin/parceiros/page.tsx",
+      "personas": [
+        "admin"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "pagina",
+      "id": "/admin/pedidos",
+      "arquivo": "src/app/(dashboard)/admin/pedidos/page.tsx",
+      "personas": [
+        "admin"
+      ],
+      "spec": "t15-admin-real.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/ajuda",
+      "arquivo": "src/app/(public)/ajuda/page.tsx",
+      "personas": [
+        "público"
+      ],
+      "spec": "t19-atendimento-online.spec.ts, t20-p1-agentes.spec.ts, t21-central-agentes.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/app/boas-vindas",
+      "arquivo": "src/app/app/boas-vindas/page.tsx",
+      "personas": [
+        "público"
+      ],
+      "spec": "t14-app-mode.spec.ts, t16-app-boas-vindas.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/auth",
+      "arquivo": "src/app/auth/page.tsx",
+      "personas": [
+        "público"
+      ],
+      "spec": "t1-auth-guards.spec.ts, t11-travessias.spec.ts, t12-planos.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/auth/pronto",
+      "arquivo": "src/app/auth/pronto/page.tsx",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "pagina",
+      "id": "/auth/reset",
+      "arquivo": "src/app/auth/reset/page.tsx",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "pagina",
+      "id": "/buscar",
+      "arquivo": "src/app/(public)/buscar/page.tsx",
+      "personas": [
+        "público"
+      ],
+      "spec": "t10-buscar-url.spec.ts, t14-app-mode.spec.ts, t18-seo-a11y.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/cidades",
+      "arquivo": "src/app/(public)/cidades/page.tsx",
+      "personas": [
+        "público"
+      ],
+      "spec": "t18-seo-a11y.spec.ts, t20-p1-agentes.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/cidades/[cidade]",
+      "arquivo": "src/app/(public)/cidades/[cidade]/page.tsx",
+      "personas": [
+        "público"
+      ],
+      "spec": "t18-seo-a11y.spec.ts, t20-p1-agentes.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/como-funciona",
+      "arquivo": "src/app/(public)/como-funciona/page.tsx",
+      "personas": [
+        "público"
+      ],
+      "spec": "t14-app-mode.spec.ts, t18-seo-a11y.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/conferir",
+      "arquivo": "src/app/(public)/conferir/page.tsx",
+      "personas": [
+        "público"
+      ],
+      "spec": "t20-p1-agentes.spec.ts, t21-central-agentes.spec.ts, t22-pacote-otavio.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/conferir/[codigo]",
+      "arquivo": "src/app/(public)/conferir/[codigo]/page.tsx",
+      "personas": [
+        "público"
+      ],
+      "spec": "t20-p1-agentes.spec.ts, t21-central-agentes.spec.ts, t22-pacote-otavio.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/dashboard",
+      "arquivo": "src/app/(dashboard)/dashboard/page.tsx",
+      "personas": [
+        "inquilino",
+        "proprietário",
+        "parceiro"
+      ],
+      "spec": "t1-auth-guards.spec.ts, t11-travessias.spec.ts, t12-planos.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/dashboard/assinatura",
+      "arquivo": "src/app/(dashboard)/dashboard/assinatura/page.tsx",
+      "personas": [
+        "inquilino",
+        "proprietário",
+        "parceiro"
+      ],
+      "spec": "t12-planos.spec.ts, t34-jornada-dono-planos.spec.ts, t35-troca-de-plano.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/dashboard/buscas",
+      "arquivo": "src/app/(dashboard)/dashboard/buscas/page.tsx",
+      "personas": [
+        "inquilino",
+        "proprietário",
+        "parceiro"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "pagina",
+      "id": "/dashboard/candidaturas",
+      "arquivo": "src/app/(dashboard)/dashboard/candidaturas/page.tsx",
+      "personas": [
+        "inquilino",
+        "proprietário",
+        "parceiro"
+      ],
+      "spec": "t11-travessias.spec.ts, t33-documentos-inquilino.spec.ts, t36-cadastro-ponta-a-ponta.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/dashboard/carteira",
+      "arquivo": "src/app/(dashboard)/dashboard/carteira/page.tsx",
+      "personas": [
+        "inquilino",
+        "proprietário",
+        "parceiro"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "pagina",
+      "id": "/dashboard/comparar",
+      "arquivo": "src/app/(dashboard)/dashboard/comparar/page.tsx",
+      "personas": [
+        "inquilino",
+        "proprietário",
+        "parceiro"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "pagina",
+      "id": "/dashboard/conta",
+      "arquivo": "src/app/(dashboard)/dashboard/conta/page.tsx",
+      "personas": [
+        "inquilino",
+        "proprietário",
+        "parceiro"
+      ],
+      "spec": "t14-app-mode.spec.ts, t17-conta-salvar.spec.ts, t36-cadastro-ponta-a-ponta.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/dashboard/conta/[secao]",
+      "arquivo": "src/app/(dashboard)/dashboard/conta/[secao]/page.tsx",
+      "personas": [
+        "inquilino",
+        "proprietário",
+        "parceiro"
+      ],
+      "spec": "t14-app-mode.spec.ts, t17-conta-salvar.spec.ts, t36-cadastro-ponta-a-ponta.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/dashboard/contratos",
+      "arquivo": "src/app/(dashboard)/dashboard/contratos/page.tsx",
+      "personas": [
+        "inquilino",
+        "proprietário",
+        "parceiro"
+      ],
+      "spec": "t4-fronteira-demo-real.spec.ts, t6-dinheiro-numeros.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/dashboard/favoritos",
+      "arquivo": "src/app/(dashboard)/dashboard/favoritos/page.tsx",
+      "personas": [
+        "inquilino",
+        "proprietário",
+        "parceiro"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "pagina",
+      "id": "/dashboard/fechamento",
+      "arquivo": "src/app/(dashboard)/dashboard/fechamento/page.tsx",
+      "personas": [
+        "inquilino",
+        "proprietário",
+        "parceiro"
+      ],
+      "spec": "t11-travessias.spec.ts, t31-cadastro-documento.spec.ts, t33-documentos-inquilino.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/dashboard/ferramentas",
+      "arquivo": "src/app/(dashboard)/dashboard/ferramentas/page.tsx",
+      "personas": [
+        "inquilino",
+        "proprietário",
+        "parceiro"
+      ],
+      "spec": "t2-persistencia-modo.spec.ts, t39-app-ida-e-volta.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/dashboard/garantias",
+      "arquivo": "src/app/(dashboard)/dashboard/garantias/page.tsx",
+      "personas": [
+        "inquilino",
+        "proprietário",
+        "parceiro"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "pagina",
+      "id": "/dashboard/imoveis",
+      "arquivo": "src/app/(dashboard)/dashboard/imoveis/page.tsx",
+      "personas": [
+        "inquilino",
+        "proprietário",
+        "parceiro"
+      ],
+      "spec": "t30-atendimento-autonomo.spec.ts, t32-autorizacao-preconferencia.spec.ts, t34-jornada-dono-planos.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/dashboard/imoveis/[id]/editar",
+      "arquivo": "src/app/(dashboard)/dashboard/imoveis/[id]/editar/page.tsx",
+      "personas": [
+        "inquilino",
+        "proprietário",
+        "parceiro"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "pagina",
+      "id": "/dashboard/imoveis/novo",
+      "arquivo": "src/app/(dashboard)/dashboard/imoveis/novo/page.tsx",
+      "personas": [
+        "inquilino",
+        "proprietário",
+        "parceiro"
+      ],
+      "spec": "t30-atendimento-autonomo.spec.ts, t32-autorizacao-preconferencia.spec.ts, t8-rascunho.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/dashboard/indicacoes",
+      "arquivo": "src/app/(dashboard)/dashboard/indicacoes/page.tsx",
+      "personas": [
+        "inquilino",
+        "proprietário",
+        "parceiro"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "pagina",
+      "id": "/dashboard/leads",
+      "arquivo": "src/app/(dashboard)/dashboard/leads/page.tsx",
+      "personas": [
+        "inquilino",
+        "proprietário",
+        "parceiro"
+      ],
+      "spec": "t11-travessias.spec.ts, t31-cadastro-documento.spec.ts, t36-cadastro-ponta-a-ponta.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/dashboard/locacoes",
+      "arquivo": "src/app/(dashboard)/dashboard/locacoes/page.tsx",
+      "personas": [
+        "inquilino",
+        "proprietário",
+        "parceiro"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "pagina",
+      "id": "/dashboard/mensagens",
+      "arquivo": "src/app/(dashboard)/dashboard/mensagens/page.tsx",
+      "personas": [
+        "inquilino",
+        "proprietário",
+        "parceiro"
+      ],
+      "spec": "t11-travessias.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/dashboard/orcamentos",
+      "arquivo": "src/app/(dashboard)/dashboard/orcamentos/page.tsx",
+      "personas": [
+        "inquilino",
+        "proprietário",
+        "parceiro"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "pagina",
+      "id": "/dashboard/pedidos",
+      "arquivo": "src/app/(dashboard)/dashboard/pedidos/page.tsx",
+      "personas": [
+        "inquilino",
+        "proprietário",
+        "parceiro"
+      ],
+      "spec": "t11-travessias.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/dashboard/pedidos-cidade",
+      "arquivo": "src/app/(dashboard)/dashboard/pedidos-cidade/page.tsx",
+      "personas": [
+        "inquilino",
+        "proprietário",
+        "parceiro"
+      ],
+      "spec": "t11-travessias.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/dashboard/reembolsos",
+      "arquivo": "src/app/(dashboard)/dashboard/reembolsos/page.tsx",
+      "personas": [
+        "inquilino",
+        "proprietário",
+        "parceiro"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "pagina",
+      "id": "/dashboard/roi-imovel",
+      "arquivo": "src/app/(dashboard)/dashboard/roi-imovel/page.tsx",
+      "personas": [
+        "inquilino",
+        "proprietário",
+        "parceiro"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "pagina",
+      "id": "/dashboard/simulador",
+      "arquivo": "src/app/(dashboard)/dashboard/simulador/page.tsx",
+      "personas": [
+        "inquilino",
+        "proprietário",
+        "parceiro"
+      ],
+      "spec": "t12-planos.spec.ts, t37-simuladores-e-numeros.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/dashboard/solicitacoes",
+      "arquivo": "src/app/(dashboard)/dashboard/solicitacoes/page.tsx",
+      "personas": [
+        "inquilino",
+        "proprietário",
+        "parceiro"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "pagina",
+      "id": "/dashboard/verificacao",
+      "arquivo": "src/app/(dashboard)/dashboard/verificacao/page.tsx",
+      "personas": [
+        "inquilino",
+        "proprietário",
+        "parceiro"
+      ],
+      "spec": "t4-fronteira-demo-real.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/dashboard/viabilidade",
+      "arquivo": "src/app/(dashboard)/dashboard/viabilidade/page.tsx",
+      "personas": [
+        "inquilino",
+        "proprietário",
+        "parceiro"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "pagina",
+      "id": "/decisao",
+      "arquivo": "src/app/decisao/page.tsx",
+      "personas": [
+        "público"
+      ],
+      "spec": "t3-isolamento-papeis.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/dev/emails",
+      "arquivo": "src/app/dev/emails/page.tsx",
+      "personas": [
+        "admin"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "pagina",
+      "id": "/empresas",
+      "arquivo": "src/app/(public)/empresas/page.tsx",
+      "personas": [
+        "público"
+      ],
+      "spec": "t18-seo-a11y.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/excluir-conta",
+      "arquivo": "src/app/(public)/excluir-conta/page.tsx",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "pagina",
+      "id": "/excluir-conta/confirmar",
+      "arquivo": "src/app/(public)/excluir-conta/confirmar/page.tsx",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "pagina",
+      "id": "/guia-fotos",
+      "arquivo": "src/app/(public)/guia-fotos/page.tsx",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "pagina",
+      "id": "/imoveis/[id]",
+      "arquivo": "src/app/(public)/imoveis/[id]/page.tsx",
+      "personas": [
+        "público"
+      ],
+      "spec": "t11-travessias.spec.ts, t20-p1-agentes.spec.ts, t23-pacote-seguranca.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/modelodenegocio",
+      "arquivo": "src/app/modelodenegocio/page.tsx",
+      "personas": [
+        "público"
+      ],
+      "spec": "t3-isolamento-papeis.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/para-proprietarios",
+      "arquivo": "src/app/(public)/para-proprietarios/page.tsx",
+      "personas": [
+        "público"
+      ],
+      "spec": "t18-seo-a11y.spec.ts, t20-p1-agentes.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/parceiros",
+      "arquivo": "src/app/(public)/parceiros/page.tsx",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "pagina",
+      "id": "/parceiros/fotografos",
+      "arquivo": "src/app/(public)/parceiros/fotografos/page.tsx",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    },
+    {
+      "tipo": "pagina",
+      "id": "/pedidos",
+      "arquivo": "src/app/(public)/pedidos/page.tsx",
+      "personas": [
+        "público"
+      ],
+      "spec": "t1-auth-guards.spec.ts, t11-travessias.spec.ts, t15-admin-real.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/pedidos/novo",
+      "arquivo": "src/app/(public)/pedidos/novo/page.tsx",
+      "personas": [
+        "público"
+      ],
+      "spec": "t1-auth-guards.spec.ts, t18-seo-a11y.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/precos",
+      "arquivo": "src/app/(public)/precos/page.tsx",
+      "personas": [
+        "público"
+      ],
+      "spec": "t14-app-mode.spec.ts, t18-seo-a11y.spec.ts, t20-p1-agentes.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/privacidade",
+      "arquivo": "src/app/(public)/privacidade/page.tsx",
+      "personas": [
+        "público"
+      ],
+      "spec": "t18-seo-a11y.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/qualificar",
+      "arquivo": "src/app/(dashboard)/qualificar/page.tsx",
+      "personas": [
+        "inquilino"
+      ],
+      "spec": "t18-seo-a11y.spec.ts, t40-novo-anuncio-fotos.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/roi",
+      "arquivo": "src/app/roi/page.tsx",
+      "personas": [
+        "público"
+      ],
+      "spec": "t3-isolamento-papeis.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/seguranca",
+      "arquivo": "src/app/(public)/seguranca/page.tsx",
+      "personas": [
+        "público"
+      ],
+      "spec": "t18-seo-a11y.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/simulacao",
+      "arquivo": "src/app/simulacao/page.tsx",
+      "personas": [
+        "público"
+      ],
+      "spec": "t3-isolamento-papeis.spec.ts, t7-fluxo-publico.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/socios",
+      "arquivo": "src/app/socios/page.tsx",
+      "personas": [
+        "sócio"
+      ],
+      "spec": "t3-isolamento-papeis.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/termos",
+      "arquivo": "src/app/(public)/termos/page.tsx",
+      "personas": [
+        "público"
+      ],
+      "spec": "t18-seo-a11y.spec.ts"
+    },
+    {
+      "tipo": "pagina",
+      "id": "/tributario",
+      "arquivo": "src/app/tributario/page.tsx",
+      "personas": [
+        "público"
+      ],
+      "spec": null
+    }
+  ]
+}
