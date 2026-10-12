@@ -101,7 +101,6 @@ export default async function ParceirosPage({ searchParams }: { searchParams: Pr
           </dl>
         </section>
 
-        <p className="text-xs text-ink/60">Plataforma em fase de testes. Lançamento oficial em 2027.</p>
       </div>
     </div>
   );

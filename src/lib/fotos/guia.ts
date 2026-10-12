@@ -1,4 +1,5 @@
 /** Conteúdo do guia "Como tirar boas fotos" (ordem bcf0da28). Dados puros, testáveis. */
+import { AVISO_TESTES } from "../aviso-testes.ts";
 
 export const DICAS_FOTO = [
   "Arrume o ambiente e tire objetos pessoais, roupas, louça e lixo.",
@@ -22,6 +23,6 @@ export const PARES_EXEMPLO: readonly ParExemplo[] = [
   { ambiente: "Quarto", ruim: "/guia-fotos/quarto_ruim.webp", bom: "/guia-fotos/quarto_bom.webp" },
 ];
 
-export const RODAPE_GUIA = "Plataforma em fase de testes. Lançamento oficial em 2027.";
+export const RODAPE_GUIA = AVISO_TESTES;
 export const ROTA_GUIA = "/guia-fotos";
 export const ROTA_FOTOGRAFOS = "/parceiros/fotografos";

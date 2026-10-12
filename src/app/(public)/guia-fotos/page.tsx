@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { GuiaFotos } from "@/components/fotos/guia-fotos";
-import { RODAPE_GUIA } from "@/lib/fotos/guia";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/guia-fotos" },
@@ -15,7 +14,6 @@ export default function GuiaFotosPage() {
       <p className="mt-2 mb-6 text-ink/70">Um anúncio bem fotografado se destaca. Veja o que evitar e o que fazer.</p>
       <h2 className="mb-4 font-display text-xl font-bold text-ink">O que evitar e o que fazer, ambiente por ambiente</h2>
       <GuiaFotos />
-      <p className="mt-10 text-xs text-muted">{RODAPE_GUIA}</p>
     </div>
   );
 }

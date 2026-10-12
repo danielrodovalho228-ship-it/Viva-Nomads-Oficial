@@ -24,3 +24,14 @@ test("#68: keywords globais e textos públicos sem 'aluguel' (fora de citações
     assert.doesNotMatch(ler(f), /\balugu?el\b/i, f);
   }
 });
+
+test("#69: aviso de testes único, no layout público, sem cópias nas páginas", async () => {
+  const { AVISO_TESTES } = await import("./aviso-testes.ts");
+  assert.equal(AVISO_TESTES, "Plataforma em fase de testes. Lançamento oficial em 2027.");
+  assert.match(ler("src/app/(public)/layout.tsx"), /<AvisoTestes \/>/);
+  assert.doesNotMatch(ler("src/app/(public)/layout.tsx"), /em pré-lançamento —/);
+  for (const f of ["src/app/(public)/parceiros/page.tsx", "src/app/(public)/guia-fotos/page.tsx", "src/app/(public)/parceiros/fotografos/page.tsx"]) {
+    assert.doesNotMatch(ler(f), /fase de testes/i, f);
+    assert.doesNotMatch(ler(f), /RODAPE_GUIA/, f);
+  }
+});
