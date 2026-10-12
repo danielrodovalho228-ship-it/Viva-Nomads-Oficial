@@ -6,6 +6,17 @@
 import { REGRAS_CONTRATO } from "../../config/planos.ts";
 import { TEXTO_REGRA_UNICA } from "../cobranca/regra.ts";
 import { CAUCAO_FRASE } from "../faixas.ts";
+import {
+  BUSCA_FOTOGRAFOS,
+  CADASTRO_PARCEIRO,
+  CONTATO_NO_ACEITE,
+  CONTRATAR_FOTOGRAFO,
+  EMPRESAS_E_GESTORES,
+  MODOS_CONTA,
+  REGRAS_ENTREGA,
+  TAXA_PARCERIA_TEXTO,
+  TIPOS_PARCEIRO,
+} from "./parceiros-texto.ts";
 import { OBRIGATORIOS_ROTULOS } from "../anuncio/prontidao.ts";
 
 export interface Pergunta {
@@ -43,6 +54,24 @@ export const FAQ: Pergunta[] = [
     resposta:
       "Depende do tipo de parceria. Fotógrafo: cadastre-se em /parceiros/fotografos (\"Quero ser parceiro\"). Empresa que hospeda equipes: veja /empresas. Proprietário que quer anunciar imóveis mobiliados: crie a conta em /auth. Seguro, limpeza, mobília e outros serviços: deixe seu contato em /parceiros (em breve). Qual é o seu caso?",
     termos: ["parceiro", "parceria", "parceiros", "fotografo", "empresa", "servico", "limpeza", "seguro", "mobilia"],
+  },
+  {
+    id: "como-virar-parceiro",
+    pergunta: "Como virar parceiro",
+    resposta: `${TIPOS_PARCEIRO} ${MODOS_CONTA} ${CADASTRO_PARCEIRO} ${EMPRESAS_E_GESTORES}`,
+    termos: ["parceiro", "parceria", "virar parceiro", "modo parceiro", "cadastro", "cnpj", "mei", "empresa", "gestor"],
+  },
+  {
+    id: "taxa-parceria",
+    pergunta: "Taxa de parceria",
+    resposta: `${TAXA_PARCERIA_TEXTO} ${CONTATO_NO_ACEITE} ${REGRAS_ENTREGA}`,
+    termos: ["taxa de parceria", "taxa parceiro", "40", "60", "80", "fotos", "advertencia", "suspensao", "credito", "mensalidade", "dinheiro do servico", "contato", "aceite", "liberado", "entregar"],
+  },
+  {
+    id: "contratar-fotografo",
+    pergunta: "Contratar um fotógrafo para o meu imóvel",
+    resposta: `${CONTRATAR_FOTOGRAFO} ${BUSCA_FOTOGRAFOS}`,
+    termos: ["fotografo", "fotografos", "contratar fotografo", "fotos profissionais", "cep", "ensaio"],
   },
   {
     id: "inquilino-paga",

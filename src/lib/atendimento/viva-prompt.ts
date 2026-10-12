@@ -4,6 +4,7 @@
   contrato e prazos. Os dados da pessoa só chegam pelas ferramentas, que o
   servidor filtra pelo dono do chamado.
 */
+import { blocoParceirosPrompt } from "./parceiros-texto.ts";
 import { FAQ } from "./faq.ts";
 import { REGRAS_CONTRATO } from "../../config/planos.ts";
 import { PRAZO_MANUTENCAO_H, PROMESSA_ATENDIMENTO } from "../../config/atendimento.ts";
@@ -32,6 +33,7 @@ export function fontes(): string {
     "",
     "## Parcerias (fonte oficial)",
     "Quando perguntarem como virar parceiro, pergunte qual é o caso e explique: fotógrafo parceiro → /parceiros/fotografos (\"Quero ser parceiro\"); empresa que hospeda equipes → /empresas; proprietário que anuncia → /auth; seguro, limpeza, mobília e outros serviços → /parceiros (em breve, deixe seu contato). A Viva não recebe o dinheiro do serviço; ao falar do modelo, use \"taxa de parceria\".",
+    blocoParceirosPrompt(),
     "",
     "## Situação da Viva hoje (fonte oficial)",
     `- ${SITUACAO_VIVA.fase}`,
