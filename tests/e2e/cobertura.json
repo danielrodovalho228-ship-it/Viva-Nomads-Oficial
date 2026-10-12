@@ -845,12 +845,6 @@
       ],
       "specs": []
     },
-    "/api/auth/email-existe": {
-      "personas": [
-        "publico"
-      ],
-      "specs": []
-    },
     "/api/caf/verify": {
       "personas": [
         "inquilino",
