@@ -42,6 +42,12 @@ export default function AccountPage() {
             Saber mais
           </ButtonLink>
         </Panel>
+        <Panel title="Segurança" className="mt-6">
+          <p className="text-sm text-muted">Verificação em duas etapas (obrigatória para a equipe) e senha.</p>
+          <ButtonLink href="/dashboard/conta/seguranca" variant="outline" className="mt-5">
+            Abrir segurança
+          </ButtonLink>
+        </Panel>
         {/* Alterar senha (Atualização 20.7) */}
         <ChangePassword />
         {/* Notificações (Atualização 20.7) */}
