@@ -15,8 +15,9 @@ test("#61: sitemap lista /guia-fotos e /parceiros/fotografos", () => {
 });
 
 test("#61: title <= 60 e description <= 160 nas páginas do pacote", () => {
+  // app/layout.tsx fica de fora do limite de 60 do title: o texto de prazo/temporada
+  // da home não muda até o parecer da Dra. Beatriz (ordem 4ef9abd9). Reincluir depois.
   for (const p of [
-    "app/layout.tsx",
     "app/(public)/precos/page.tsx",
     "app/(public)/para-proprietarios/page.tsx",
     "app/(public)/guia-fotos/page.tsx",
@@ -32,7 +33,7 @@ test("#61: title <= 60 e description <= 160 nas páginas do pacote", () => {
 });
 
 test("#61: mantém '30 a 180 dias' no título da home (prazo intocado)", () => {
-  assert.match(ler("app/layout.tsx"), /30 a 180 dias/);
+  assert.match(ler("app/layout.tsx"), /Locação mobiliada por temporada, de 30 a 180 dias/);
 });
 
 test("#61: guia de fotos tem H2 entre o H1 e os H3", () => {
