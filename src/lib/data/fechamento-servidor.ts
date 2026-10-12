@@ -1,10 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { taxaDoContrato } from "@/config/planos";
-import { documentoParaContrato, MSG_DOCUMENTO } from "@/lib/documento-pessoa";
+import { documentoParaContrato } from "@/lib/documento-pessoa";
+import { motivoBloqueioContrato } from "@/lib/contrato-trava";
 import { lerDocumento } from "@/lib/data/documento-servidor";
 import { docsInquilinoCompletos } from "@/lib/data/documentos-inquilino-servidor";
-import { MSG_DOCS_INQUILINO } from "@/lib/documentos-inquilino";
 
 /**
  * A5: os dados de uma cobrança/contrato de fechamento vêm SÓ do banco, a partir
@@ -64,13 +64,15 @@ export async function carregarFechamento(leadId: unknown): Promise<DadosFechamen
 
   // Taxa congelada no aceite; NULL cai para a do plano no aceite (nunca 0).
   const comissaoRate = taxaDoContrato(lead.accepted_commission_rate, lead.accepted_plan);
-  // Cadastro confiável: contrato e cobrança só com o documento das DUAS partes.
+  // Cadastro confiável + F32: documento das DUAS partes e documentos do inquilino
+  // (B2; null = sem a 0093 → não trava). A MESMA trava vale em registrarContrato.
+  const bloqueio = motivoBloqueioContrato({
+    dono: docDonoPerfil,
+    inquilino: docInquilino,
+    docsInquilinoCompletos: await docsInquilinoCompletos(admin, lead.id as string),
+  });
+  if (bloqueio) return { status: bloqueio.status, error: bloqueio.erro };
   const docDono = documentoParaContrato(docDonoPerfil);
-  if (!docDono) return { status: 409, error: MSG_DOCUMENTO.fecharDono };
-  // Inquilino pessoa jurídica fecha com CNPJ + razão social + CPF do representante.
-  if (!documentoParaContrato(docInquilino)) return { status: 409, error: MSG_DOCUMENTO.fecharInquilino };
-  // B2: identidade + renda/vínculo enviados depois do aceite (null = sem a 0093 → não trava).
-  if ((await docsInquilinoCompletos(admin, lead.id as string)) === false) return { status: 409, error: MSG_DOCS_INQUILINO };
 
   return {
     leadId: lead.id as string,
