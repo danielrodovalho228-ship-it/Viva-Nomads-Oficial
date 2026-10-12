@@ -28,8 +28,10 @@ permissions:
   contents: read
 
 concurrency:
-  group: laboratorio
-  # PR novo cancela o PR velho; push na main nunca é cancelado no meio (o resultado vai para o banco).
+  # Um grupo por evento + ref: run de PR só cancela run do MESMO PR; push na main, agendada e manual
+  # nunca são canceladas por PR (o resultado vai para o banco). Ordens e7a697e7/b2978f03/7d89643b.
+  group: laboratorio-${{ github.event_name }}-${{ github.head_ref || github.ref }}
+  # PR novo cancela o PR velho; push na main nunca é cancelado no meio.
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:

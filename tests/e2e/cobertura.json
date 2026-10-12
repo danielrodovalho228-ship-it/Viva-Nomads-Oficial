@@ -985,6 +985,16 @@
       ],
       "specs": []
     },
+    "/api/upload/foto": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": [
+        "t54-upload-foto-seguro"
+      ]
+    },
     "/api/upload/inquilino-doc": {
       "personas": [
         "inquilino",

@@ -80,3 +80,14 @@ test("workflow do laboratório: sem segredos, banco local, modo simulado", () =>
   assert.match(wf, /alinhar-producao\.sql/);
   assert.match(wf, /cron: "0 6 \* \* \*"/);
 });
+
+test("workflow do laboratório: run de PR nunca cancela a run da main", () => {
+  const wf = raiz(".github/workflows/laboratorio.yml");
+  const grupo = wf.match(/^\s+group: (.+)$/m)?.[1] ?? "";
+  // O grupo precisa separar por evento e por ref, senão o PR cai no mesmo grupo da main.
+  assert.match(grupo, /github\.event_name/);
+  assert.match(grupo, /github\.head_ref \|\| github\.ref/);
+  assert.doesNotMatch(grupo, /^laboratorio$/);
+  // Cancelar só vale para pull_request.
+  assert.match(wf, /cancel-in-progress: \$\{\{ github\.event_name == 'pull_request' \}\}/);
+});
