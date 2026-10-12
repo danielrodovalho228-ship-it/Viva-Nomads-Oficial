@@ -112,3 +112,12 @@ test("F5: /seguranca sem a frase cortada sobre corretagem/CRECI (até o parecer)
   assert.doesNotMatch(t, /CRECI/);
   assert.doesNotMatch(t, /parecer jurídico em andamento/);
 });
+
+test("F4: comparativo de preços monta frases com números em uma só string (sem texto colado)", () => {
+  const t = ler("src/components/precos/comparativo-precos.tsx");
+  // texto + {expressão} lado a lado no JSX vira nós separados; o QA leu "de3meses aR$ 4.320por mês"
+  assert.doesNotMatch(t, /Reserva de \{COMPARE_MESES\}/);
+  assert.doesNotMatch(t, /^\s*, conferido em \{/m);
+  assert.match(t, /`Reserva de \$\{COMPARE_MESES\} meses a \$\{reaisInteiros\(COMPARE_ALUGUEL\)\} por mês/);
+  assert.match(t, /`, conferido em \$\{dataBR\(l\.conferidoEm\)\}`/);
+});
