@@ -229,3 +229,48 @@ export async function apagarContas(ids: (string | undefined)[]): Promise<void> {
     await adm().auth.admin.deleteUser(id);
   }
 }
+
+// ── Apoio dos specs t41–t48 (laboratório autônomo, ordem 225d0648) ───────────
+
+/** Conta admin de teste (perfil criado como dono e promovido: `role` é texto no laboratório). */
+export async function criarAdmin(email: string, nome: string, senha: string): Promise<string> {
+  const id = await criarConta({ email, nome, role: "owner" }, senha);
+  const { error } = await adm().from("profiles").update({ role: "admin" }).eq("id", id);
+  if (error) throw error;
+  return id;
+}
+
+/** Candidatura (lead) do inquilino ao imóvel do dono; `aceita` = o que o aceite do dono grava. */
+export async function criarLead(ownerId: string, tenantId: string, propertyId: string, aceita = false): Promise<string> {
+  const { data, error } = await adm()
+    .from("leads")
+    .insert({ owner_id: ownerId, tenant_id: tenantId, property_id: propertyId, status: aceita ? "accepted" : "new" })
+    .select("id")
+    .single();
+  if (error) throw error;
+  return data.id as string;
+}
+
+/** Mensagem gravada direto no banco (o primeiro "oi" da conversa), com o id de conversa do servidor. */
+export async function gravarMensagem(de: string, para: string, propertyId: string, texto: string, conversationId: string): Promise<void> {
+  const { error } = await adm().from("messages").insert({ conversation_id: conversationId, sender_id: de, receiver_id: para, property_id: propertyId, body: texto });
+  if (error) throw error;
+}
+
+/** Linhas do LAB_OUTBOX (o que "teria sido enviado"), já em objetos. Sem arquivo, lista vazia. */
+export async function lerSaida(): Promise<Array<Record<string, unknown>>> {
+  const arquivo = process.env.LAB_OUTBOX;
+  if (!arquivo) return [];
+  const { readFile } = await import("node:fs/promises");
+  const txt = await readFile(arquivo, "utf8").catch(() => "");
+  return txt
+    .split("\n")
+    .filter(Boolean)
+    .map((l) => {
+      try {
+        return JSON.parse(l) as Record<string, unknown>;
+      } catch {
+        return {};
+      }
+    });
+}

@@ -5,12 +5,16 @@
   conhecida e o título de cada teste que falhou. O Moacir lê este resumo.
 
   Uso: node scripts/lab/resumo-specs.mjs tests/laboratorio/saida/resultado.json
+  Com --json imprime {passou,falhou,pulou,instavel,por_spec,falhas} (gravado em
+  public.lab_execucoes pela Action). Só títulos de testes e contagens.
   Sem o arquivo (a suíte nem chegou a rodar): avisa e sai sem erro.
 */
 import { existsSync, readFileSync } from "node:fs";
 import { basename } from "node:path";
 
-const caminho = process.argv[2] ?? "tests/laboratorio/saida/resultado.json";
+const args = process.argv.slice(2);
+const modoJson = args.includes("--json");
+const caminho = args.find((a) => !a.startsWith("--")) ?? "tests/laboratorio/saida/resultado.json";
 
 /** Junta todos os testes de uma árvore de suites: [{ arquivo, titulo, status }]. */
 export function coletar(suites, arquivoPai = "") {
@@ -50,8 +54,26 @@ export function tabela(testes) {
   return out.join("\n");
 }
 
+/** Resumo para o banco: totais, contagem por arquivo e a lista de testes que falharam. */
+export function resumoJson(testes) {
+  const total = { passou: 0, falhou: 0, pulou: 0, instavel: 0 };
+  const por_spec = {};
+  const falhas = [];
+  for (const t of testes) {
+    const l = (por_spec[t.arquivo] ??= { passou: 0, falhou: 0, pulou: 0, instavel: 0, conhecida: 0 });
+    l[t.status]++;
+    if (t.status in total) total[t.status]++;
+    if (t.status === "falhou" || t.status === "instavel") falhas.push({ spec: t.arquivo, titulo: t.titulo, status: t.status });
+  }
+  return { ...total, por_spec, falhas };
+}
+
 if (process.argv[1] && process.argv[1].endsWith("resumo-specs.mjs")) {
-  if (!existsSync(caminho)) {
+  if (modoJson) {
+    // Sem resultado.json a suíte nem rodou: registra 0 testes (a linha mostra o buraco).
+    const dados = existsSync(caminho) ? JSON.parse(readFileSync(caminho, "utf8")) : { suites: [] };
+    console.log(JSON.stringify(resumoJson(coletar(dados.suites))));
+  } else if (!existsSync(caminho)) {
     console.log("Sem resultado.json: a suíte não chegou a rodar (veja os passos anteriores).");
   } else {
     const dados = JSON.parse(readFileSync(caminho, "utf8"));
