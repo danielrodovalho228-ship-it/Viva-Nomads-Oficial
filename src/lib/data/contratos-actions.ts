@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { emitirDoPagamento } from "@/lib/fiscal/emitir";
 import { listMyProperties } from "@/lib/data/properties";
 import { erroBancoPT } from "@/lib/erros-banco";
+import { etapaContrato, type EtapaContrato } from "@/lib/contrato-etapas";
 
 /**
  * Contratos & blocos do PROPRIETÁRIO + registro DECLARATÓRIO de pagamento
@@ -59,6 +60,8 @@ export interface ContratoView {
   comissaoPercent: number; // 0..1 — taxa aplicada (para exibir "X% do 1º aluguel")
   qtdOcupantes: number;
   status: string;
+  /** F33: etapa real (assinatura → 1º pagamento → vigência); só vale com status "ativo". */
+  etapa: EtapaContrato;
   criadoEm: string;
   blocos: BlocoView[];
   pagamentos: PagamentoView[];
@@ -92,6 +95,11 @@ function toPagamento(p: Record<string, unknown>): PagamentoView {
   };
 }
 
+/** 1º pagamento do aluguel declarado pelo proprietário E confirmado pelo inquilino. */
+function primeiroPagamentoConfirmado(pagamentos: PagamentoView[]): boolean {
+  return pagamentos.some((p) => p.tipo === "aluguel" && p.confirmado);
+}
+
 /** Locação do INQUILINO (visão simplificada) para avaliar o proprietário. */
 export interface LocacaoView {
   id: string; // contrato_id
@@ -100,6 +108,7 @@ export interface LocacaoView {
   ownerId: string;
   aluguelMensal: number;
   status: string;
+  etapa: EtapaContrato;
   criadoEm: string;
   /** Pagamentos registrados pelo proprietário (o inquilino confirma → recibo). */
   pagamentos: PagamentoView[];
@@ -119,12 +128,13 @@ export async function getMinhasLocacoes(): Promise<LocacaoView[]> {
 
   const { data } = await supabase
     .from("contratos")
-    .select("id, property_id, aluguel_mensal, status, created_at, properties(title, owner_id), pagamentos_bloco(*)")
+    .select("id, property_id, aluguel_mensal, status, created_at, assinado_proprietario_em, assinado_inquilino_em, properties(title, owner_id), pagamentos_bloco(*)")
     .eq("tenant_id", user.id)
     .order("created_at", { ascending: false });
 
   return ((data ?? []) as Record<string, unknown>[]).map((c) => {
     const prop = (c.properties as { title?: string; owner_id?: string } | null) ?? {};
+    const pagamentos = ((c.pagamentos_bloco as Record<string, unknown>[]) ?? []).map(toPagamento);
     return {
       id: String(c.id),
       propertyId: String(c.property_id),
@@ -132,8 +142,13 @@ export async function getMinhasLocacoes(): Promise<LocacaoView[]> {
       ownerId: String(prop.owner_id ?? ""),
       aluguelMensal: Number(c.aluguel_mensal),
       status: String(c.status ?? "ativo"),
+      etapa: etapaContrato({
+        assinadoProprietarioEm: c.assinado_proprietario_em as string | null,
+        assinadoInquilinoEm: c.assinado_inquilino_em as string | null,
+        primeiroPagamentoConfirmado: primeiroPagamentoConfirmado(pagamentos),
+      }),
       criadoEm: String(c.created_at),
-      pagamentos: ((c.pagamentos_bloco as Record<string, unknown>[]) ?? []).map(toPagamento),
+      pagamentos,
     };
   });
 }
@@ -191,6 +206,11 @@ export async function getMeusContratos(): Promise<ContratoView[]> {
       comissaoPercent: Number(c.comissao_percent ?? 0),
       qtdOcupantes: Number(c.qtd_ocupantes ?? 1),
       status: String(c.status ?? "ativo"),
+      etapa: etapaContrato({
+        assinadoProprietarioEm: c.assinado_proprietario_em as string | null,
+        assinadoInquilinoEm: c.assinado_inquilino_em as string | null,
+        primeiroPagamentoConfirmado: primeiroPagamentoConfirmado(pagamentos),
+      }),
       criadoEm: String(c.created_at),
       blocos,
       pagamentos,

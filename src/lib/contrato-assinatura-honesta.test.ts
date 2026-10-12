@@ -1,0 +1,50 @@
+/*
+  F36/F39/F40 — o fechamento nunca diz "enviado para assinatura" sem enviar, o PDF
+  não fica morto e todo contrato leva a marca de minuta.
+  Roda: node --test src/lib/contrato-assinatura-honesta.test.ts
+*/
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { test } from "node:test";
+
+import { MARCA_MINUTA, MSG_ASSINATURA_INATIVA } from "./contrato-etapas.ts";
+
+const ler = (p: string) => readFileSync(new URL(p, import.meta.url), "utf8");
+const fluxo = ler("../app/(dashboard)/dashboard/fechamento/closing-flow.tsx");
+const gerar = fluxo.slice(fluxo.indexOf("async function generateContract"), fluxo.indexOf("const canAdvance"));
+
+test("mensagens fixas da ordem", () => {
+  assert.equal(MSG_ASSINATURA_INATIVA, "Assinatura digital ainda não ativa — contrato em modo de teste.");
+  assert.equal(MARCA_MINUTA, "MINUTA DE TESTE — sem validade");
+});
+
+test("F40: sem chave (503) ou resposta simulada, não marca como gerado nem cobra a taxa", () => {
+  assert.match(gerar, /res\.status === 503/);
+  assert.match(gerar, /data\.demo/);
+  // o 'return' do modo de teste vem ANTES da cobrança e do registro do contrato
+  assert.ok(gerar.indexOf("MSG_ASSINATURA_INATIVA") < gerar.indexOf('"/api/comissao"'));
+  assert.ok(gerar.indexOf("MSG_ASSINATURA_INATIVA") < gerar.indexOf("registrarContrato("));
+});
+
+test("F40: o catch não avança mais o assistente (antes setGenerated(true) mesmo com erro)", () => {
+  const catchBloco = gerar.slice(gerar.lastIndexOf("} catch"));
+  assert.doesNotMatch(catchBloco, /setGenerated\(true\)/);
+  assert.match(catchBloco, /setErroContrato\(/);
+});
+
+test("F36: o contrato só conta como gerado se o registro no banco deu certo", () => {
+  assert.match(gerar, /if \(!reg\.ok\)/);
+  assert.ok(gerar.indexOf("if (!reg.ok)") < gerar.lastIndexOf("setGenerated(true)"));
+});
+
+test("F39: o botão de PDF do contrato fica desabilitado com aviso", () => {
+  assert.match(fluxo, /pdfDisponivel=\{false\}/);
+  const share = ler("../components/document-share.tsx");
+  assert.match(share, /disabled=\{!pdfDisponivel\}/);
+  assert.match(share, /aviso-pdf/);
+});
+
+test("minuta: marca no topo da etapa do contrato e no nome do documento enviado", () => {
+  assert.match(fluxo, /data-testid="marca-minuta"/);
+  assert.match(ler("./integrations/zapsign.ts"), /\$\{MARCA_MINUTA\}/);
+});

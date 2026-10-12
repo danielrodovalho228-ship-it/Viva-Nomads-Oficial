@@ -25,6 +25,9 @@ import { buildLeadNotification, LEAD_KIND_MSG, type LeadKind } from "@/lib/leads
 import { amenityRows } from "@/lib/amenities";
 import { fotosDoDono, urlsDoRascunho } from "@/lib/fotos-anuncio";
 import { taxaDoContrato } from "@/config/planos";
+import { motivoBloqueioContrato } from "@/lib/contrato-trava";
+import { lerDocumento } from "@/lib/data/documento-servidor";
+import { docsInquilinoCompletos } from "@/lib/data/documentos-inquilino-servidor";
 import { validarAceiteIa } from "@/lib/anuncio/termo-ia";
 import { erroBancoPT } from "@/lib/erros-banco";
 import { planoDoProprietario } from "@/lib/data/plano-efetivo";
@@ -908,6 +911,15 @@ export async function registrarContrato(
 
   const { data: existente } = await admin.from("contratos").select("id").eq("lead_id", lead.id).maybeSingle();
   if (existente) return { ok: true, id: existente.id as string, blocos: 0 };
+
+  // F32: o contrato nasce só com o documento das DUAS partes e os documentos do
+  // inquilino — a trava vale aqui no servidor, não só na tela do fechamento.
+  const bloqueio = motivoBloqueioContrato({
+    dono: await lerDocumento(admin, lead.owner_id as string),
+    inquilino: await lerDocumento(admin, lead.tenant_id as string),
+    docsInquilinoCompletos: await docsInquilinoCompletos(admin, lead.id as string),
+  });
+  if (bloqueio) return { ok: false, error: bloqueio.erro };
 
   const { data: imovel } = await admin
     .from("properties")
