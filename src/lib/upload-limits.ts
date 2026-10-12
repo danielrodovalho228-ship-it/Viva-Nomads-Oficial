@@ -32,6 +32,23 @@ export function tipoRealPorMagicBytes(bytes: Uint8Array): string | null {
   return null;
 }
 
+/**
+ * Tipo REAL de uma FOTO do anúncio pelos magic bytes: só JPEG, PNG e WebP.
+ * SVG, executável (MZ), texto renomeado etc. devolvem null. Usado no servidor
+ * (/api/upload/foto) — a extensão e o Content-Type declarados não valem nada.
+ */
+export function tipoRealFotoPorMagicBytes(bytes: Uint8Array): "image/jpeg" | "image/png" | "image/webp" | null {
+  const t = tipoRealPorMagicBytes(bytes);
+  if (t === "image/jpeg" || t === "image/png") return t;
+  if (
+    bytes.length >= 12 &&
+    bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46 && // "RIFF"
+    bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50 // "WEBP"
+  )
+    return "image/webp";
+  return null;
+}
+
 export const PHOTO_MAX_BYTES = 8 * 1024 * 1024; // 8 MB
 export const PHOTO_MIME = ["image/jpeg", "image/png", "image/webp"] as const;
 

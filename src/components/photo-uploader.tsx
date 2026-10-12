@@ -90,7 +90,16 @@ export function PhotoUploader({
           setError(invalido);
         } else {
           const t = tratar ? await tratarFoto(file) : null;
-          const result = await uploader(t?.arquivo ?? file, ownerId);
+          let result: UploadedPhoto;
+          try {
+            result = await uploader(t?.arquivo ?? file, ownerId);
+          } catch (e) {
+            // Falha real de envio: erro visível, a foto NÃO entra na galeria.
+            setError(e instanceof Error ? e.message : "Não foi possível enviar a foto agora.");
+            feitas += 1;
+            setProgresso({ feitas, total: chosen.length });
+            continue;
+          }
           const id = crypto.randomUUID();
           const item: PhotoItem = { ...result, id, name: file.name };
           if (t?.analise) {
