@@ -1,5 +1,6 @@
 "use server";
 
+import { perfilDonoCompleto, MSG_PERFIL_DONO_INCOMPLETO } from "@/lib/anuncio/perfil-dono";
 import { atualizarRascunhoDoDono } from "@/lib/data/rascunho-dono";
 import { ligarQualificacaoAoImovel } from "@/lib/data/ligar-qualificacao";
 import { caminhoDoDono, operacaoValida } from "@/lib/anuncio/operacao";
@@ -391,6 +392,15 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Não autenticado." };
 
+  // F45: publicar exige perfil de proprietário completo (nome e telefone) — checado
+  // aqui no servidor; a conta pode ser dona e inquilina, então a tela só avisa.
+  if (!input.asDraft) {
+    const { data: perfil } = await supabase.from("profiles").select("full_name, phone").eq("id", user.id).maybeSingle();
+    if (!perfilDonoCompleto(perfil as { full_name: string | null; phone: string | null } | null)) {
+      return { ok: false, error: MSG_PERFIL_DONO_INCOMPLETO };
+    }
+  }
+
   // Portão anti-fraude NO SERVIDOR (item 1): publicar (status active) exige a
   // última qualificação com documento APROVADO. Rascunho passa. Enforcement real
   // — o gate do cliente é só UX. A3: vale sempre que NÃO for rascunho (antes só
@@ -614,6 +624,15 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Não autenticado." };
   if (!UUID_RE.test(id)) return { ok: false, error: "Imóvel inválido para edição." };
+
+  // F45: publicar exige perfil de proprietário completo (nome e telefone) — checado
+  // aqui no servidor; a conta pode ser dona e inquilina, então a tela só avisa.
+  if (input.asDraft === false) {
+    const { data: perfil } = await supabase.from("profiles").select("full_name, phone").eq("id", user.id).maybeSingle();
+    if (!perfilDonoCompleto(perfil as { full_name: string | null; phone: string | null } | null)) {
+      return { ok: false, error: MSG_PERFIL_DONO_INCOMPLETO };
+    }
+  }
 
   // A3: (re)publicar exige o documento APROVADO — o mesmo portão do createProperty
   // (antes a edição publicava sem checar). O banco reforça (0056).
