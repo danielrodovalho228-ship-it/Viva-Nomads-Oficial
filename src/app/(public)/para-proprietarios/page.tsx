@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/para-proprietarios" },
   title: "Para proprietários — locação por temporada com mais margem",
   description:
-    "Anuncie seu imóvel mobiliado para locação por temporada de 30 a 180 dias. Menos rotatividade, menos meses com o imóvel parado e custos que podem ser transferidos ao inquilino conforme o contrato.",
+    "Anuncie seu imóvel mobiliado por temporada de 30 a 180 dias. Menos rotatividade, menos meses parado e custos repassáveis ao inquilino conforme o contrato.",
 };
 
 export default function ForLandlordsPage() {
