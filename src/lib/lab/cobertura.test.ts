@@ -11,6 +11,7 @@ type Gerador = {
   listarActions(): string[];
   diferencas(reais: string[], mapa: Record<string, Entrada>): { faltando: string[]; sobrando: string[] };
   percentual(mapa: Mapa): number;
+  resumoPorTipo(mapa: Mapa): { total: number; cobertos: number; percentual: number; por_tipo: Record<string, { total: number; cobertos: number }> };
 };
 
 const RAIZ = process.cwd();
@@ -67,4 +68,18 @@ test("percentual de cobertura é calculado sobre o mapa", async () => {
   const g = await carregar();
   const pct = g.percentual(mapa);
   assert.ok(pct >= 0 && pct <= 100);
+});
+
+test("resumo por tipo soma páginas, rotas e actions (alimenta lab_execucoes.por_categoria)", async () => {
+  const g = await carregar();
+  const r = g.resumoPorTipo(mapa);
+  assert.deepEqual(Object.keys(r.por_tipo).sort(), ["actions", "paginas", "rotas"]);
+  assert.equal(r.total, Object.values(r.por_tipo).reduce((a, t) => a + t.total, 0));
+  assert.equal(r.cobertos, Object.values(r.por_tipo).reduce((a, t) => a + t.cobertos, 0));
+  assert.equal(r.percentual, g.percentual(mapa));
+});
+
+test("caso negativo: mapa vazio dá 0% sem dividir por zero", async () => {
+  const g = await carregar();
+  assert.equal(g.resumoPorTipo({ paginas: {}, rotas: {}, actions: {} }).percentual, 0);
 });

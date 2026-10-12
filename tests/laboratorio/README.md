@@ -32,7 +32,10 @@ Actions (`.github/workflows/laboratorio.yml`, 01h do Texas).
    Laboratório autônomo (ordem 225d0648): t41 mensagens e máscara de contato, t42 contato/telefone
    (nenhum `tel:`/`wa.me` antes do aceite), t43 notificações (push simulado, LAB_OUTBOX), t44 parceiros,
    t45 regra das 8 fotos (editor, API do dono e banco), t46 modo do app, t47 login social no app,
-   t48 varredura de todo o sitemap e das telas logadas de cada persona a 390 px.
+   t48 varredura de todo o sitemap e das telas logadas de cada persona a 390 px; t49 segurança vista de fora
+   (cabeçalhos, portões, APIs privadas, open redirect, erros) e t50 RLS anon em todas as tabelas (ordem 2567f1af).
+   O mapa `tests/e2e/cobertura.json` (`node scripts/lab/gerar-cobertura.mjs`) imprime o resumo por tipo
+   (`por_tipo`), pronto para `lab_execucoes.por_categoria`.
    A suíte também roda a cada merge na `main`; o resultado de cada execução vira uma linha em
    `public.lab_execucoes` (só admin lê; migração 0106) — `select * from lab_execucoes order by criada_em desc`.
 

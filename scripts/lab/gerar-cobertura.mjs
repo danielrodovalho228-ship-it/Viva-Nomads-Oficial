@@ -93,6 +93,7 @@ if (process.argv[1]?.endsWith("gerar-cobertura.mjs")) {
   writeFileSync(SAIDA, JSON.stringify(mapa, null, 2) + "\n");
   const conta = (g) => { const v = Object.values(g); return `${v.filter((e) => e.specs.length).length}/${v.length}`; };
   console.log("páginas", conta(mapa.paginas), "rotas", conta(mapa.rotas), "actions", conta(mapa.actions));
+  console.log(JSON.stringify(resumoPorTipo(mapa)));
 }
 
 /** Chaves reais sem entrada no mapa (faltando) e entradas do mapa sem item real (sobrando). */
@@ -107,4 +108,18 @@ export function diferencas(reais, mapaGrupo) {
 export function percentual(mapa) {
   const todos = [...Object.values(mapa.paginas), ...Object.values(mapa.rotas), ...Object.values(mapa.actions)];
   return Math.round((todos.filter((e) => e.specs.length > 0).length / todos.length) * 1000) / 10;
+}
+
+/** Resumo por tipo (páginas/rotas/actions) + total, para gravar em lab_execucoes.por_categoria. */
+export function resumoPorTipo(mapa) {
+  const por_tipo = {};
+  let total = 0, cobertos = 0;
+  for (const [tipo, grupo] of [["paginas", mapa.paginas], ["rotas", mapa.rotas], ["actions", mapa.actions]]) {
+    const v = Object.values(grupo);
+    const c = v.filter((e) => e.specs.length > 0).length;
+    por_tipo[tipo] = { total: v.length, cobertos: c };
+    total += v.length;
+    cobertos += c;
+  }
+  return { total, cobertos, percentual: total ? Math.round((cobertos / total) * 1000) / 10 : 0, por_tipo };
 }
