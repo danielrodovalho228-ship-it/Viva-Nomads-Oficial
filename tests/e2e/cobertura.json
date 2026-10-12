@@ -1525,6 +1525,27 @@
       ],
       "specs": []
     },
+    "src/lib/data/conferencia-actions.ts#conferenciasDoContrato": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/conferencia-actions.ts#registrarItemConferencia": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/conferencia-actions.ts#responderConferencia": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
     "src/lib/data/contratos-actions.ts#confirmarPagamento": {
       "personas": [
         "proprietario",
