@@ -4,6 +4,9 @@ import { CITIES } from "@/lib/constants";
 import { listProperties } from "@/lib/data/properties";
 import { isExemplo } from "@/lib/demo-listing";
 
+// F9: lista de imóveis sempre fresca (revalidatePath nas ações + 60 s de rede de segurança).
+export const revalidate = 60;
+
 /** Sitemap dinâmico (vivanomads.com.br) — páginas públicas, cidades e imóveis. */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 

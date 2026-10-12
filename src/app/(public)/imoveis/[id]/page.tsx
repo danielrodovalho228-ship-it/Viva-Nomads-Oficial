@@ -8,6 +8,9 @@ import { formatBRL } from "@/lib/utils";
 import { PropertyJsonLd } from "@/components/seo/property-json-ld";
 import { PropertyDetail } from "./property-detail";
 
+// F9: dados frescos (revalidatePath nas ações + rede de segurança de 60 s).
+export const revalidate = 60;
+
 interface Params {
   params: Promise<{ id: string }>;
 }

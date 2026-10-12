@@ -11,6 +11,9 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { paginaCidade } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
 
+// F9: dados frescos (revalidatePath nas ações + rede de segurança de 60 s).
+export const revalidate = 60;
+
 interface Params {
   params: Promise<{ cidade: string }>;
 }

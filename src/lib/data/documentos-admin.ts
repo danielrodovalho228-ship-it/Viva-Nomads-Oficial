@@ -1,6 +1,8 @@
 "use server";
 
 import { montarDecisaoDocumento } from "./decisao-documento";
+import { revalidatePath } from "next/cache";
+import { revalidarAnuncio } from "@/lib/anuncio/revalidar";
 import { createClient } from "@/lib/supabase/server";
 import { notify } from "@/lib/notifications";
 import { primeiroNome } from "@/lib/display-name";
@@ -246,6 +248,8 @@ export async function moderarDocumento(
   if (error) return { ok: false, error: erroBancoPT(error) };
   const qual = linhas?.[0];
   if (!qual) return { ok: false, error: "Documento não encontrado na fila (ou sem permissão)." };
+  // Documento aprovado/recusado muda o que o público pode ver do anúncio (F9).
+  revalidarAnuncio(alvo.property_id as string | null, revalidatePath);
   await logModeracao(
     supabase,
     user.id,

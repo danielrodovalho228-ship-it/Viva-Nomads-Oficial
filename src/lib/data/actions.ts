@@ -3,6 +3,8 @@
 import { atualizarRascunhoDoDono } from "@/lib/data/rascunho-dono";
 import { ligarQualificacaoAoImovel } from "@/lib/data/ligar-qualificacao";
 import { caminhoDoDono, operacaoValida } from "@/lib/anuncio/operacao";
+import { revalidatePath } from "next/cache";
+import { revalidarAnuncio } from "@/lib/anuncio/revalidar";
 import { createClient } from "@/lib/supabase/server";
 import { dentroDoLimite, HORA, DIA as DIA_SEGUNDOS } from "@/lib/limites";
 import { textoEmail, textoPlano } from "@/lib/notifications/texto-seguro";
@@ -576,6 +578,7 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
       error: "O imóvel foi salvo como rascunho, mas não pôde ser publicado: " + erroBancoPT(stErr),
     };
   }
+  revalidarAnuncio(data.id as string, revalidatePath);
   // Publicado agora: avisa os pedidos ativos que ele atende (dono e inquilino).
   if (!input.asDraft) {
     try {
@@ -676,6 +679,8 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
     .eq("id", id)
     .eq("owner_id", user.id);
   if (error) return { ok: false, error: erroBancoPT(error) };
+  // Editou preço/fotos/dados: a página pública refaz já, mesmo se a publicação abaixo falhar.
+  revalidarAnuncio(id, revalidatePath);
 
   // Enriquecimento (best-effort — requer migrações 0018/0019/0020).
   try {
@@ -753,6 +758,9 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
       .eq("owner_id", user.id);
     if (pubErr) return { ok: false, id, error: erroBancoPT(pubErr) };
   }
+
+  // Página pública do anúncio não pode ficar presa em cache (F9).
+  revalidarAnuncio(id, revalidatePath);
 
   if (input.asDraft === false && antes?.status !== "active") {
     try {
@@ -1433,6 +1441,7 @@ export async function deleteProperty(id: string): Promise<ActionResult> {
   }
   const { error } = await supabase.from("properties").delete().eq("id", id).eq("owner_id", user.id);
   if (error) return { ok: false, error: erroBancoPT(error) };
+  revalidarAnuncio(id, revalidatePath);
   return { ok: true };
 }
 
