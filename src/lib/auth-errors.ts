@@ -32,6 +32,13 @@ export function friendlyAuthError(message: string): string {
     m.includes("invalid format")
   )
     return "Digite um e-mail válido.";
+  // E-mail recusado pelo Supabase (domínio sem MX, domínio bloqueado, endereço inválido).
+  if (
+    m.includes("email_address_invalid") ||
+    m.includes("email domain not allowed") ||
+    (m.includes("email address") && m.includes("invalid"))
+  )
+    return "Não conseguimos usar este e-mail. Confira se está digitado certo ou use outro endereço.";
   // Falha de ENVIO do e-mail de confirmação (SMTP) — a conta costuma ser criada.
   if (isEmailSendError(m))
     return "Conta criada. Não conseguimos enviar o e-mail de confirmação agora; tente reenviar em instantes.";
