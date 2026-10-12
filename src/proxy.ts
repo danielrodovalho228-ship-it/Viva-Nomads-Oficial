@@ -9,6 +9,7 @@ import {
 } from "@/lib/socios/access";
 import { COOKIE_ADMIN_ATIVO, LIMITE_OCIOSO_ADMIN_MS, sessaoAdminOciosa } from "@/lib/admin/sessao-ociosa";
 import { APP_COOKIE, appHome, isAppUserAgent, isMarketingPath } from "@/lib/app-mode";
+import { destinoAposLogin } from "@/lib/destino-login";
 
 /**
  * Papel para a aba inicial do APP: preferência salva, senão o papel de
@@ -135,7 +136,8 @@ export async function proxy(request: NextRequest) {
   if (isProtected && !user) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/auth";
-    redirectUrl.searchParams.set("redirect", pathname);
+    redirectUrl.search = "";
+    redirectUrl.searchParams.set("redirect", destinoAposLogin(pathname, request.nextUrl.search));
     return NextResponse.redirect(redirectUrl);
   }
 
@@ -156,7 +158,7 @@ export async function proxy(request: NextRequest) {
       const loginUrl = request.nextUrl.clone();
       loginUrl.pathname = "/auth";
       loginUrl.search = "";
-      loginUrl.searchParams.set("redirect", pathname);
+      loginUrl.searchParams.set("redirect", destinoAposLogin(pathname, request.nextUrl.search));
       const resposta = NextResponse.redirect(loginUrl);
       // signOut escreveu a limpeza dos cookies de sessão em `response`: repassa.
       response.cookies.getAll().forEach((c) => resposta.cookies.set(c));
