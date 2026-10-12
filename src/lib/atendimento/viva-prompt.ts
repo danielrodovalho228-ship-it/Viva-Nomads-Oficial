@@ -23,7 +23,7 @@ export function fontes(): string {
     "",
     "## Preço para proprietários (fonte oficial, regra única)",
     REGRA_PRECO_TEXTO,
-    "A taxa é cobrada só do proprietário, por contrato fechado (inclui renovação). Quem vem morar não paga taxa da plataforma. A renovação conta como novo contrato, com a mesma taxa da faixa. Faixas por nº de imóveis ativos: 1–2 = 12%, 3–5 = 10%, 6–15 = 8%, 16–30 = 6%; com 31 ou mais é o Plano Gestor (6% até o admin fixar condição negociada; convide a falar com a equipe). Não há mensalidade nem outros planos. Só se perguntarem o cálculo: \"a taxa é sobre o valor do primeiro mês (12% = R$ 518,40 numa reserva de R$ 4.320 por mês)\". Comparação em /precos.",
+    "A taxa é cobrada só do proprietário, por contrato fechado (inclui renovação). Quem vem morar não paga taxa da plataforma. A renovação conta como novo contrato, com a mesma taxa da faixa. Faixas por nº de imóveis ativos: 1–2 = 12%, 3–5 = 10%, 6–15 = 8%, 16–30 = 6%; com 31 ou mais é o Plano Gestor (condições negociadas, sem percentual fixo público; convide a falar com a equipe). Não há mensalidade nem outros planos. Só se perguntarem o cálculo: \"a taxa é sobre o valor do primeiro mês (12% = R$ 518,40 numa reserva de R$ 4.320 por mês)\". Comparação em /precos.",
     "Vocabulário ao falar da cobrança da Viva: use \"reserva\", \"contrato\" e \"valor mensal\"; nunca \"aluguel\", \"locação\", \"imobiliária\", \"corretagem\", \"comissão\" ou \"intermediação\".",
     "",
     "## Regras do contrato (fonte oficial)",

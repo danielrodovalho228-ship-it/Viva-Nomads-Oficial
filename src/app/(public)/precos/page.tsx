@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Check, Camera, FileSignature, ShieldCheck, UserCheck, Banknote, PiggyBank } from "lucide-react";
-import { FAIXAS_COMISSAO_PADRAO, TEXTO_REGRA_UNICA, TEXTO_REGRA_CURTO, pctTexto, valorTaxa } from "@/lib/cobranca/regra";
+import { FAIXAS_COMISSAO_PADRAO, TEXTO_REGRA_UNICA, TEXTO_REGRA_CURTO, TAXA_NEGOCIADA_TEXTO, taxaPublicaTexto, valorTaxa } from "@/lib/cobranca/regra";
 import { PlanoGestorForm } from "@/components/precos/plano-gestor-form";
 import { ComparativoPrecos } from "@/components/precos/comparativo-precos";
 import { ButtonLink } from "@/components/ui/button";
@@ -167,14 +167,14 @@ export default function PricingPage() {
                   <th scope="row" className="py-2 pr-3 font-medium">
                     {f.gestor ? `${f.minImoveis}+ · Plano Gestor` : f.maxImoveis === null ? `${f.minImoveis}+` : `${f.minImoveis}–${f.maxImoveis}`}
                   </th>
-                  <td className="py-2 pr-3">{pctTexto(f.taxa)}</td>
-                  <td className="py-2">{formatBRL(valorTaxa(4320, f.taxa))}</td>
+                  <td className="py-2 pr-3">{taxaPublicaTexto(f)}</td>
+                  <td className="py-2">{f.gestor ? TAXA_NEGOCIADA_TEXTO : formatBRL(valorTaxa(4320, f.taxa))}</td>
                 </tr>
               ))}
             </tbody>
           </table>
           <p className="mt-3 rounded-lg bg-surface-2 px-3 py-2 text-sm text-muted" data-testid="plano-gestor">
-            31 imóveis ou mais? Fale com a gente sobre o Plano Gestor.
+            31 imóveis ou mais? Plano Gestor: condições negociadas, entre em contato.
           </p>
           <PlanoGestorForm />
           <ButtonLink href="/dashboard/imoveis/novo" variant="gold" className="mt-6 w-full sm:w-auto">

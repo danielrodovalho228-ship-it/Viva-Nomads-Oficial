@@ -49,7 +49,7 @@ test("#71: título de /parceiros sem marca repetida (≤ 60 com o sufixo) e fras
   assert.ok(`${titulo} · Viva Nomads`.length <= 60);
   assert.doesNotMatch(titulo, /Viva Nomads/);
   const p = ler("src/app/(public)/precos/page.tsx");
-  assert.match(p, /31 imóveis ou mais\? Fale com a gente sobre o Plano Gestor\./);
+  assert.match(p, /31 imóveis ou mais\? Plano Gestor: condições negociadas, entre em contato\./);
   assert.doesNotMatch(p, /a conversa é direta/);
 });
 
@@ -77,4 +77,47 @@ test("#79: trilha() gera BreadcrumbList válido", async () => {
   assert.equal(j["@type"], "BreadcrumbList");
   assert.deepEqual(j.itemListElement.map((i) => [i.position, i.item]), [[1, "https://x.com.br"], [2, "https://x.com.br/seguranca"]]);
   assert.doesNotMatch(JSON.stringify(j), /AggregateRating/);
+});
+
+/* F5 (QA do Daniel 12/10): nota interna nunca aparece em página pública. */
+import { readdirSync, statSync } from "node:fs";
+
+function paginasPublicas(dir: string): string[] {
+  const base = new URL(`../../${dir}/`, import.meta.url);
+  const out: string[] = [];
+  for (const nome of readdirSync(base)) {
+    const caminho = `${dir}/${nome}`;
+    if (statSync(new URL(`../../${caminho}`, import.meta.url)).isDirectory()) out.push(...paginasPublicas(caminho));
+    else if (nome === "page.tsx") out.push(caminho);
+  }
+  return out;
+}
+
+test("F5: páginas públicas sem nota interna ('aguardando revisão', Dra. Beatriz, Sérgio, TODO, em rascunho)", () => {
+  const paginas = paginasPublicas("src/app/(public)");
+  assert.ok(paginas.length > 10);
+  for (const f of paginas) {
+    // tira comentários (não aparecem na tela) antes de varrer
+    const t = ler(f).replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+    assert.doesNotMatch(t, /aguardando revis[ãa]o/i, f);
+    assert.doesNotMatch(t, /Dra\. Beatriz/, f);
+    assert.doesNotMatch(t, /S[ée]rgio/, f);
+    assert.doesNotMatch(t, /\bTODO\b/, f);
+    assert.doesNotMatch(t, /\bem rascunho\b/i, f);
+  }
+});
+
+test("F5: /seguranca sem a frase cortada sobre corretagem/CRECI (até o parecer)", () => {
+  const t = ler("src/app/(public)/seguranca/page.tsx");
+  assert.doesNotMatch(t, /CRECI/);
+  assert.doesNotMatch(t, /parecer jurídico em andamento/);
+});
+
+test("F4: comparativo de preços monta frases com números em uma só string (sem texto colado)", () => {
+  const t = ler("src/components/precos/comparativo-precos.tsx");
+  // texto + {expressão} lado a lado no JSX vira nós separados; o QA leu "de3meses aR$ 4.320por mês"
+  assert.doesNotMatch(t, /Reserva de \{COMPARE_MESES\}/);
+  assert.doesNotMatch(t, /^\s*, conferido em \{/m);
+  assert.match(t, /`Reserva de \$\{COMPARE_MESES\} meses a \$\{reaisInteiros\(COMPARE_ALUGUEL\)\} por mês/);
+  assert.match(t, /`, conferido em \$\{dataBR\(l\.conferidoEm\)\}`/);
 });

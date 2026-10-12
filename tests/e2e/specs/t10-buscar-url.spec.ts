@@ -56,3 +56,16 @@ test.describe("T10 — Busca compartilhável (URL) @criticos", () => {
     await outra.close();
   });
 });
+
+/** F3 (QA 12/10): o botão flutuante "Fale com a Viva" nunca cobre "Mais filtros". */
+for (const largura of [360, 390, 1280]) {
+  test(`F3 — "Mais filtros" clicável em ${largura}px, sem botão flutuante da Viva`, async ({ browser }) => {
+    const ctx = await browser.newContext({ viewport: { width: largura, height: 800 } });
+    const page = await ctx.newPage();
+    await page.goto("/buscar", { waitUntil: "networkidle" });
+    await expect(page.getByTestId("fale-com-a-viva")).toHaveCount(0);
+    await page.getByRole("button", { name: /Mais filtros/i }).click();
+    await expect(page.getByRole("button", { name: /Menos filtros/i })).toBeVisible();
+    await ctx.close();
+  });
+}

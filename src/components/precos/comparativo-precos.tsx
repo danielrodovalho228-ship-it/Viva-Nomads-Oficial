@@ -27,7 +27,7 @@ function Fonte({ l }: { l: LinhaCompare }) {
       ) : (
         <a href={l.fonte.url} target="_blank" rel="noopener noreferrer" className="underline">{l.fonte.nome}</a>
       )}
-      , conferido em {dataBR(l.conferidoEm)}
+      {`, conferido em ${dataBR(l.conferidoEm)}`}
     </>
   );
 }
@@ -44,7 +44,7 @@ export function ComparativoPrecos({ variante = "completo" }: { variante?: "compl
           <Scale className="h-5 w-5 text-forest" aria-hidden /> Quanto você paga
         </p>
         <p className="mt-2 text-sm text-muted">
-          Reserva de {COMPARE_MESES} meses a {reaisInteiros(COMPARE_ALUGUEL)} por mês ({reaisInteiros(COMPARE_CONTRATO)} no contrato):
+          {`Reserva de ${COMPARE_MESES} meses a ${reaisInteiros(COMPARE_ALUGUEL)} por mês (${reaisInteiros(COMPARE_CONTRATO)} no contrato):`}
         </p>
         <div className="mt-3 grid grid-cols-1 gap-3 text-center sm:grid-cols-2">
           <div className="rounded-xl bg-sage-100 p-3">
@@ -76,7 +76,7 @@ export function ComparativoPrecos({ variante = "completo" }: { variante?: "compl
         <Scale className="h-6 w-6 text-forest" aria-hidden /> Compare
       </h2>
       <p className="mt-1 text-sm text-muted">
-        Reserva de {COMPARE_MESES} meses a {reaisInteiros(COMPARE_ALUGUEL)} por mês ({reaisInteiros(COMPARE_CONTRATO)} no total). Os percentuais são sobre o total pago pelo morador, no formato típico de cada empresa.
+        {`Reserva de ${COMPARE_MESES} meses a ${reaisInteiros(COMPARE_ALUGUEL)} por mês (${reaisInteiros(COMPARE_CONTRATO)} no total).`} Os percentuais são sobre o total pago pelo morador, no formato típico de cada empresa.
       </p>
       <ul className="mt-5 grid gap-3 md:grid-cols-2">
         {linhas.map((l) => (

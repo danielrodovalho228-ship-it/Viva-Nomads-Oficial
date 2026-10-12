@@ -202,7 +202,7 @@ export function ModeloNegocio() {
                 {FAIXAS_COMISSAO_PADRAO.map((f) => (
                   <tr key={f.minImoveis} className={f.minImoveis === faixa.minImoveis ? styles.total : undefined}>
                     <td>{rotuloFaixa(f.minImoveis, f.maxImoveis)}</td>
-                    <td>{f.gestor ? "Plano Gestor · fale com a gente" : pctTexto(f.taxa)}</td>
+                    <td>{f.gestor ? "Negociado · Plano Gestor, entre em contato" : pctTexto(f.taxa)}</td>
                   </tr>
                 ))}
               </tbody>
