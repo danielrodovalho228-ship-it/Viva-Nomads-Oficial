@@ -69,8 +69,10 @@ export const CUSTOS_FIXOS: Item[] = [
   { rotulo: "IA fora dos contratos (textos, testes)", valor: 200, unidade: "R$/mês", obs: "Faixa R$ 100 a 300." },
   { rotulo: "Contador (Simples Nacional, sem funcionários)", valor: 250, unidade: "R$/mês", fonte: "https://contabilidade.com/blog/quanto-custa-a-contabilidade-online-em-2026-guia-de-precos-e-o-que-esta-incluso/", obs: "Faixa R$ 189 a 329." },
   { rotulo: "Apple Developer, domínio, certificado digital, e-mail próprio", valor: 100, unidade: "R$/mês" },
+  { rotulo: "Pró-labore dos sócios", valor: 5000, unidade: "R$/mês", obs: "valor inicial; sobe conforme a receita" },
 ];
-export const CUSTO_FIXO_FAIXA = { min: 989, max: 1450, texto: "R$ 989 a R$ 1.450 conforme o plano dos fornecedores" };
+/** Custo fixo real ≈ R$ 6 mil/mês (ferramentas R$ 989 + pró-labore R$ 5.000). O controle deslizante cobre de só ferramentas até R$ 8 mil. */
+export const CUSTO_FIXO_FAIXA = { min: 989, max: 8000, texto: "≈ R$ 6 mil/mês com pró-labore" };
 
 /** Marketing por mês: nada antes dos contratos, R$ 800 no ano 1, R$ 1.500 depois. */
 export function marketingDoMes(m: number): number {

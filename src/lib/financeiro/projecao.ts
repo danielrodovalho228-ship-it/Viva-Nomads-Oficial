@@ -34,7 +34,7 @@ import {
 export interface Opcoes {
   /** Operador local por contrato (R$ 0 ou R$ 100). */
   operador: number;
-  /** Custo fixo mensal (padrão: soma dos fixos = R$ 989). */
+  /** Custo fixo mensal (padrão: soma dos fixos ≈ R$ 6 mil, com pró-labore). */
   custoFixo?: number;
   /** Imposto da Viva sobre a receita (padrão 6%; 15,5% no anexo V). */
   imposto?: number;
