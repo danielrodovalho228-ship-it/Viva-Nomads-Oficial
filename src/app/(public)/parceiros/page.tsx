@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import { JsonLd } from "@/components/seo/json-ld";
+import { trilha } from "@/lib/seo/estruturados";
+import { SITE_URL } from "@/lib/site";
 import Link from "next/link";
 import { ParceiroForm } from "./parceiro-form";
 
@@ -39,6 +42,7 @@ export default async function ParceirosPage({ searchParams }: { searchParams: Pr
   const { tipo } = await searchParams;
   return (
     <div>
+      <JsonLd dados={trilha(SITE_URL, [{ nome: "Parceiros", caminho: "/parceiros" }])} />
       <section className="bg-night text-white">
         <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
           <h1 className="font-display text-3xl font-bold sm:text-4xl">Seja parceiro da Viva Nomads</h1>

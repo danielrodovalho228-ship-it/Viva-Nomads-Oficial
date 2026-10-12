@@ -136,6 +136,20 @@ export function paginaInstitucional(siteUrl: string, p: { caminho: string; nome:
   };
 }
 
+/** BreadcrumbList (#79): Início › página. Só texto fixo, sem AggregateRating. */
+export function trilha(siteUrl: string, itens: { nome: string; caminho: string }[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList" as const,
+    itemListElement: [{ nome: "Início", caminho: "/" }, ...itens].map((i, k) => ({
+      "@type": "ListItem" as const,
+      position: k + 1,
+      name: i.nome,
+      item: `${siteUrl}${i.caminho === "/" ? "" : i.caminho}`,
+    })),
+  };
+}
+
 /** JSON seguro para <script>: escapa <, > e & (título é texto do usuário). */
 export function jsonSeguro(dados: unknown): string {
   return JSON.stringify(dados).replace(/</g, "\\u003c").replace(/>/g, "\\u003e").replace(/&/g, "\\u0026");

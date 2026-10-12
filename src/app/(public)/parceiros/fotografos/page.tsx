@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import { JsonLd } from "@/components/seo/json-ld";
+import { trilha } from "@/lib/seo/estruturados";
+import { SITE_URL } from "@/lib/site";
 import { Camera, MapPin, Star } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { ButtonLink } from "@/components/ui/button";
@@ -50,6 +53,7 @@ export default async function FotografosPage({ searchParams }: { searchParams: P
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
+      <JsonLd dados={trilha(SITE_URL, [{ nome: "Fotógrafos parceiros", caminho: "/parceiros/fotografos" }])} />
       <h1 className="font-display text-2xl font-bold text-ink sm:text-3xl">Fotógrafos parceiros</h1>
       <p className="mt-2 text-ink/70">Fotos profissionais do seu imóvel mobiliado, feitas por fotógrafos aprovados pela Viva. As fotos vão direto para o seu anúncio.</p>
       <p className="mt-2 text-sm font-medium text-ink" data-testid="pedir-gratis">Pedir é grátis: a Viva não cobra nada de você; o fotógrafo paga a taxa de parceria só quando aceita o pedido.</p>
