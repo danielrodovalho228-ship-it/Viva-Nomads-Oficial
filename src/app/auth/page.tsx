@@ -34,6 +34,7 @@ import { useIsNative } from "@/lib/use-native";
 import { registrarEvento } from "@/lib/eventos/registrar";
 import { useCaptcha } from "@/components/seguranca/captcha";
 import { MSG_CAPTCHA_PENDENTE, comCaptcha, podeEnviar } from "@/lib/seguranca/captcha";
+import { chaveFalhas, exigeCaptchaPorFalhas, lerFalhas, segundosRestantes } from "@/lib/seguranca/tentativas-login";
 
 type Mode = "login" | "signup" | "forgot";
 
@@ -61,9 +62,9 @@ export default function AuthPage() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null); // pós-cadastro / reset enviado
   const [awaitingConfirm, setAwaitingConfirm] = useState(false);
-  // Login falhou porque NÃO existe conta com este e-mail → oferece cadastro
-  // (em vez de "e-mail ou senha incorretos", que faz o usuário resetar senha à toa).
-  const [semConta, setSemConta] = useState(false);
+  // F44: falhas seguidas de login (por e-mail, neste navegador) → atraso progressivo.
+  const [espera, setEspera] = useState(0);
+  const [falhas, setFalhas] = useState(0);
   // CAPTCHA (Turnstile): só aparece com NEXT_PUBLIC_TURNSTILE_SITE_KEY; o token vale uma vez.
   const captcha = useCaptcha();
 
@@ -107,12 +108,50 @@ export default function AuthPage() {
     return safeInternalPath(new URLSearchParams(window.location.search).get("redirect"));
   }
 
+  /** Conta uma falha de login e inicia a espera (F44). Nunca depende de a conta existir. */
+  function registrarFalha() {
+    const chave = chaveFalhas(email);
+    let atual = { falhas: 0, ultima: 0 };
+    try {
+      atual = lerFalhas(window.localStorage.getItem(chave));
+    } catch {
+      /* armazenamento bloqueado: segue sem persistir */
+    }
+    const novo = { falhas: atual.falhas + 1, ultima: Date.now() };
+    try {
+      window.localStorage.setItem(chave, JSON.stringify(novo));
+    } catch {
+      /* idem */
+    }
+    setFalhas(novo.falhas);
+    setEspera(segundosRestantes(novo, Date.now()));
+  }
+
+  // Ao trocar o e-mail, lê as falhas dele; a contagem regressiva libera o botão sozinha.
+  useEffect(() => {
+    if (mode !== "login") return;
+    let e = { falhas: 0, ultima: 0 };
+    try {
+      e = lerFalhas(window.localStorage.getItem(chaveFalhas(email)));
+    } catch {
+      /* sem armazenamento */
+    }
+    // localStorage só existe no cliente: lido aqui, depois da hidratação.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setFalhas(e.falhas);
+    setEspera(segundosRestantes(e, Date.now()));
+  }, [email, mode]);
+  useEffect(() => {
+    if (espera <= 0) return;
+    const t = setTimeout(() => setEspera((v) => Math.max(0, v - 1)), 1000);
+    return () => clearTimeout(t);
+  }, [espera]);
+
   function switchMode(m: Mode) {
     setMode(m);
     setError(null);
     setNotice(null);
     setAwaitingConfirm(false);
-    setSemConta(false);
   }
 
   /**
@@ -261,7 +300,6 @@ export default function AuthPage() {
     e.preventDefault();
     setError(null);
     setNotice(null);
-    setSemConta(false);
 
     const validationError = validate();
     if (validationError) {
@@ -270,6 +308,10 @@ export default function AuthPage() {
     }
     if (!podeEnviar(captcha.ligado, captcha.token)) {
       setError(MSG_CAPTCHA_PENDENTE);
+      return;
+    }
+    if (mode === "login" && espera > 0) {
+      setError(`Muitas tentativas. Aguarde ${espera} s para tentar de novo.`);
       return;
     }
 
@@ -328,34 +370,20 @@ export default function AuthPage() {
               setLoading(false);
               return;
             }
-            // Credenciais inválidas: descobre se é conta INEXISTENTE (pede cadastro)
-            // ou senha incorreta (conta existe). Degrada para o genérico se a
-            // consulta falhar ou estourar o limite.
-            let existe = true;
-            try {
-              // Pelo servidor, com limite por IP (a RPC não é mais pública).
-              const res = await fetch("/api/auth/email-existe", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email }),
-              });
-              const j = (await res.json().catch(() => ({}))) as { existe?: boolean | null };
-              if (j.existe === false) existe = false;
-            } catch {
-              /* sem resposta — mantém comportamento genérico */
-            }
-            if (!existe) {
-              setSemConta(true);
-              setError(null);
-              setLoading(false);
-              return;
-            }
-            throw error; // conta existe → senha incorreta (mensagem padrão)
+            // Credenciais inválidas: SEMPRE a mesma mensagem (F43) — nunca revela
+            // se o e-mail tem conta. Conta a falha para o atraso progressivo (F44).
+            registrarFalha();
+            throw error;
           }
           // Seta o usuário SÍNCRONO a partir da sessão VALIDADA pelo Supabase —
           // não é "fabricar" sessão (o login já passou). Sem isto, o painel
           // dependia do AuthProvider (assíncrono) e o AuthGuard podia quicar de
           // volta para /auth (hidratado && sem usuário) — o login "não entrava".
+          try {
+            window.localStorage.removeItem(chaveFalhas(email));
+          } catch {
+            /* sem armazenamento */
+          }
           const u = data.user;
           if (u) {
             setUser({
@@ -717,6 +745,25 @@ export default function AuthPage() {
 
                 {error && <p className="text-sm text-red-600">{error}</p>}
 
+                {/* Links FIXOS no login (F43): iguais com ou sem conta, nunca dizem se o e-mail existe. */}
+                {mode === "login" && error === friendlyAuthError("invalid login credentials") && (
+                  <p className="text-sm text-muted" data-testid="login-links-fixos">
+                    <button type="button" onClick={() => switchMode("signup")} className="font-medium text-forest hover:text-blue-700">
+                      Criar conta
+                    </button>{" "}
+                    ·{" "}
+                    <button type="button" onClick={() => switchMode("forgot")} className="font-medium text-forest hover:text-blue-700">
+                      Esqueci minha senha
+                    </button>
+                  </p>
+                )}
+                {mode === "login" && exigeCaptchaPorFalhas(falhas) && (
+                  <p className="text-xs text-muted" data-testid="login-aviso-tentativas">
+                    Por segurança, confirme a verificação anti-robô a cada tentativa.
+                    {espera > 0 && ` Aguarde ${espera} s para tentar de novo.`}
+                  </p>
+                )}
+
                 {/* Aviso informativo (ex.: sessão de 24h expirou). */}
                 {notice && (
                   <p className="flex items-start gap-2 rounded-lg bg-sage-100 px-3 py-2 text-sm text-forest">
@@ -724,30 +771,11 @@ export default function AuthPage() {
                   </p>
                 )}
 
-                {/* Não há conta com este e-mail → convida a cadastrar (em vez de
-                    ficar tentando senha/recuperação). */}
-                {semConta && mode === "login" && (
-                  <div className="rounded-xl border border-sage-200 bg-surface-2 p-4 text-sm">
-                    <p className="font-medium text-ink">Ainda não há conta com este e-mail.</p>
-                    <p className="mt-1 text-muted">
-                      Confira se digitou certo — ou crie uma conta agora, é rápido.
-                    </p>
-                    <Button
-                      type="button"
-                      variant="gold"
-                      className="mt-3 w-full"
-                      onClick={() => switchMode("signup")}
-                    >
-                      Criar conta com {email}
-                    </Button>
-                  </div>
-                )}
-
                 {captcha.widget}
                 <Button
                   type="submit"
                   className="w-full"
-                  disabled={loading || (mode === "signup" && !acceptedTerms) || !podeEnviar(captcha.ligado, captcha.token)}
+                  disabled={loading || (mode === "signup" && !acceptedTerms) || (mode === "login" && espera > 0) || !podeEnviar(captcha.ligado, captcha.token)}
                 >
                   {loading && <Loader2 className="h-4 w-4 animate-spin" />}
                   {loading ? "Aguarde..." : mode === "login" ? "Entrar" : "Criar conta"}
