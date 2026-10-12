@@ -1616,6 +1616,23 @@
       ],
       "specs": []
     },
+    "src/lib/data/manutencao-actions.ts#avancarSolicitacao": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t53-conta-documento-solicitacoes"
+      ]
+    },
+    "src/lib/data/manutencao-actions.ts#minhasSolicitacoes": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t53-conta-documento-solicitacoes"
+      ]
+    },
     "src/lib/data/marketing-admin.ts#apagarGastoMarketing": {
       "personas": [
         "admin"
