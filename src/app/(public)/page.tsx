@@ -213,7 +213,7 @@ export default async function HomePage() {
             </h2>
             <p className="mt-5 text-lg text-white/65">
               Contrato digital, custos organizados, conversa registrada na plataforma e o
-              aluguel direto na conta do proprietário. Tempo para morar no seu ritmo.
+              pagamento mensal direto na conta do proprietário. Tempo para morar no seu ritmo.
             </p>
           </div>
 

@@ -26,7 +26,7 @@ export default function ForLandlordsPage() {
         <div className="container-page grid items-center gap-10 md:grid-cols-2">
           <div>
             <h1 className="font-title text-4xl font-bold leading-tight md:text-5xl">
-              Mais <span className="text-green-300">margem</span> que o aluguel de
+              Mais <span className="text-green-300">margem</span> que a locação de
               curta duração
             </h1>
             <p className="mt-5 max-w-lg text-lg text-white/80">
@@ -75,7 +75,7 @@ export default function ForLandlordsPage() {
             Como o modelo de média duração reduz seus custos
           </h2>
           <p className="mt-4 text-lg text-muted">
-            A locação mobiliada de média duração reduz os maiores custos do aluguel de
+            A locação mobiliada de média duração reduz os maiores custos da locação de
             curta duração.
           </p>
         </div>
@@ -83,7 +83,7 @@ export default function ForLandlordsPage() {
           <Benefit icon={Receipt} title="Custos que podem ser transferidos" text="Água, luz, condomínio e IPTU podem ser do inquilino durante a estadia, conforme o contrato." />
           <Benefit icon={TrendingUp} title="Menos imóvel parado" text="Um inquilino por uma temporada inteira, inclusive nos meses fracos do turismo." />
           <Benefit icon={FileSignature} title="Contrato com validade jurídica" text="Contrato de locação por temporada gerado e assinado digitalmente, com validade jurídica." />
-          <Benefit icon={ShieldCheck} title="Caução ou seguro-fiança" text={`A garantia é escolhida no contrato entre você e o inquilino. ${CAUCAO_FRASE} Ou seguro-fiança da seguradora parceira (em estruturação). A plataforma organiza e documenta; não é a garantidora.`} />
+          <Benefit icon={ShieldCheck} title="Caução" text={`Caução documentada, combinada entre proprietário e inquilino. ${CAUCAO_FRASE} Outras modalidades de garantia locatícia: em breve. A plataforma organiza e documenta; não é a garantidora.`} />
         </div>
       </section>
 
@@ -105,9 +105,8 @@ export default function ForLandlordsPage() {
                 "Checklist de qualificação que ajuda a declarar a regularidade da locação.",
                 "Selo Pronto para Morar para anunciar mais caro.",
                 "Verificação de identidade do inquilino — em breve.",
-                "Seguro-fiança via parceiro — em estruturação.",
                 "Contrato de temporada gerado e assinado digitalmente, com validade jurídica.",
-                "Pagamento do aluguel direto na sua conta.",
+                "Pagamento mensal direto na sua conta.",
               ].map((item) => (
                 <li key={item} className="flex items-start gap-3">
                   <Check className="mt-0.5 h-5 w-5 shrink-0 text-sage" />

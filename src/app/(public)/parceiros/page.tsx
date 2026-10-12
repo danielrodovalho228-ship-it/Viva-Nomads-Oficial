@@ -4,7 +4,7 @@ import { ParceiroForm } from "./parceiro-form";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/parceiros" },
-  title: "Seja parceiro da Viva Nomads",
+  title: "Seja parceiro: fotógrafos e gestores",
   description: "Fotógrafos, empresas, gestores e prestadores de serviços para imóveis mobiliados: cadastre seu interesse e seja parceiro da Viva Nomads.",
 };
 
@@ -101,7 +101,6 @@ export default async function ParceirosPage({ searchParams }: { searchParams: Pr
           </dl>
         </section>
 
-        <p className="text-xs text-ink/60">Plataforma em fase de testes. Lançamento oficial em 2027.</p>
       </div>
     </div>
   );
