@@ -88,6 +88,20 @@ export interface PerfilDocumento {
   cpf_representante?: string | null;
 }
 
+/**
+ * Estado inicial da seção "Documento" quando o perfil não tem nada gravado (ex.:
+ * cadastro de inquilino sem person_type) ou a leitura falhou: PF, incompleto —
+ * a seção aparece para todo papel e pede o CPF, nunca some em silêncio (F26).
+ */
+export const DOCUMENTO_VAZIO_PF = {
+  tipo: "pf" as TipoPessoa,
+  completo: false,
+  cpf: null,
+  cnpj: null,
+  razaoSocial: null,
+  cpfRepresentante: null,
+};
+
 /** O perfil já tem o documento completo para assinar contrato e ser cobrado? */
 export function documentoCompleto(p: PerfilDocumento | null | undefined): boolean {
   if (!p) return false;
