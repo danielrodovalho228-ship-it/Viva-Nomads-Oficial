@@ -83,7 +83,7 @@ export default function ForLandlordsPage() {
           <Benefit icon={Receipt} title="Custos que podem ser transferidos" text="Água, luz, condomínio e IPTU podem ser do inquilino durante a estadia, conforme o contrato." />
           <Benefit icon={TrendingUp} title="Menos imóvel parado" text="Um inquilino por uma temporada inteira, inclusive nos meses fracos do turismo." />
           <Benefit icon={FileSignature} title="Contrato com validade jurídica" text="Contrato de locação por temporada gerado e assinado digitalmente, com validade jurídica." />
-          <Benefit icon={ShieldCheck} title="Caução ou seguro-fiança" text={`A garantia é escolhida no contrato entre você e o inquilino. ${CAUCAO_FRASE} Ou seguro-fiança da seguradora parceira (em estruturação). A plataforma organiza e documenta; não é a garantidora.`} />
+          <Benefit icon={ShieldCheck} title="Caução" text={`Caução documentada, combinada entre proprietário e inquilino. ${CAUCAO_FRASE} Outras modalidades de garantia locatícia: em breve. A plataforma organiza e documenta; não é a garantidora.`} />
         </div>
       </section>
 
@@ -105,7 +105,6 @@ export default function ForLandlordsPage() {
                 "Checklist de qualificação que ajuda a declarar a regularidade da locação.",
                 "Selo Pronto para Morar para anunciar mais caro.",
                 "Verificação de identidade do inquilino — em breve.",
-                "Seguro-fiança via parceiro — em estruturação.",
                 "Contrato de temporada gerado e assinado digitalmente, com validade jurídica.",
                 "Pagamento do aluguel direto na sua conta.",
               ].map((item) => (

@@ -36,10 +36,10 @@ interface Service {
  * parceiro) e separados por QUEM contrata. O botão não cobra aqui: leva ao
  * momento certo (reserva/contrato para o inquilino; anúncio para o
  * proprietário). A plataforma intermedia e documenta; nunca é a garantidora.
- * Caução e seguro-fiança são alternativas: por lei, só uma por contrato.
+ * Por lei, só uma garantia por contrato.
  */
 const TENANT_SERVICES: Service[] = [
-  { icon: ShieldCheck, title: "Seguro-fiança (sem depósito)", benefit: "Entre sem deixar dinheiro preso: uma taxa mensal diluída garante o aluguel, sem depósito de entrada. Contratada com parceiro, sujeita a análise.", price: "Orçamento sob análise", statusLabel: "Via parceiro — em estruturação", statusTone: "partner", tone: "cotacao", cta: "Ver opções de garantia", href: "/como-funciona#garantias", highlight: "Sem depósito · parceiro em estruturação" },
+  { icon: ShieldCheck, title: "Outras modalidades de garantia", benefit: "Outras modalidades de garantia locatícia: em breve. A plataforma não é a garantidora.", price: "Em breve", statusLabel: "Em breve", statusTone: "partner", tone: "cotacao", cta: "Ver opções de garantia", href: "/como-funciona#garantias" },
   { icon: PiggyBank, title: "Caução (depósito devolvível)", benefit: `${CAUCAO_FRASE} Como manda o art. 38, §2º da Lei 8.245/91; devolvida ao fim da estadia.`, price: "Sem mensalidade", statusLabel: "Disponível", statusTone: "ok", tone: "avulso", cta: "Ver opções de garantia", href: "/como-funciona#garantias" },
 ];
 
@@ -196,9 +196,9 @@ export default function PricingPage() {
               certo do fluxo; aqui é só transparência.
             </p>
             <p className="mx-auto mt-3 max-w-xl rounded-lg bg-white px-3 py-2 text-sm text-muted">
-              <strong className="text-ink">Garantia, do seu jeito:</strong> escolha entre taxa
-              mensal sem depósito (seguro-fiança) ou caução devolvível. Por lei, só uma
-              garantia por contrato. A plataforma organiza e documenta; não é a garantidora.
+              <strong className="text-ink">Garantia:</strong> caução documentada, combinada entre
+              proprietário e inquilino. Outras modalidades de garantia locatícia: em breve.
+              A plataforma organiza e documenta; não é a garantidora.
             </p>
           </div>
 
