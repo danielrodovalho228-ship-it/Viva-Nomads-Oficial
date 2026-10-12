@@ -35,3 +35,20 @@ test("#69: aviso de testes único, no layout público, sem cópias nas páginas"
     assert.doesNotMatch(ler(f), /RODAPE_GUIA/, f);
   }
 });
+
+test("#70: /parceiros/fotografos tem 'pedir é grátis' e botão para /parceiros", () => {
+  const t = ler("src/app/(public)/parceiros/fotografos/page.tsx");
+  assert.match(t, /Pedir é grátis: a Viva não cobra nada de você; o fotógrafo paga a taxa de parceria só quando aceita o pedido\./);
+  assert.match(t, /href="\/parceiros"[^>]*>É fotógrafo\? Seja parceiro</);
+});
+
+test("#71: título de /parceiros sem marca repetida (≤ 60 com o sufixo) e frase do Plano Gestor", () => {
+  const t = ler("src/app/(public)/parceiros/page.tsx");
+  const titulo = /title: "([^"]+)"/.exec(t)?.[1] ?? "";
+  assert.equal(titulo, "Seja parceiro: fotógrafos e gestores");
+  assert.ok(`${titulo} · Viva Nomads`.length <= 60);
+  assert.doesNotMatch(titulo, /Viva Nomads/);
+  const p = ler("src/app/(public)/precos/page.tsx");
+  assert.match(p, /31 imóveis ou mais\? Fale com a gente sobre o Plano Gestor\./);
+  assert.doesNotMatch(p, /a conversa é direta/);
+});

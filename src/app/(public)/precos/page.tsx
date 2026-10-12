@@ -174,7 +174,7 @@ export default function PricingPage() {
             </tbody>
           </table>
           <p className="mt-3 rounded-lg bg-surface-2 px-3 py-2 text-sm text-muted" data-testid="plano-gestor">
-            Com 31 imóveis ou mais, a conversa é direta: fale com a gente sobre o Plano Gestor e fixamos uma condição negociada.
+            31 imóveis ou mais? Fale com a gente sobre o Plano Gestor.
           </p>
           <PlanoGestorForm />
           <ButtonLink href="/dashboard/imoveis/novo" variant="gold" className="mt-6 w-full sm:w-auto">

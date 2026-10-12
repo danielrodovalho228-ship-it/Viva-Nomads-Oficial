@@ -4,7 +4,7 @@ import { ParceiroForm } from "./parceiro-form";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/parceiros" },
-  title: "Seja parceiro da Viva Nomads",
+  title: "Seja parceiro: fotógrafos e gestores",
   description: "Fotógrafos, empresas, gestores e prestadores de serviços para imóveis mobiliados: cadastre seu interesse e seja parceiro da Viva Nomads.",
 };
 
