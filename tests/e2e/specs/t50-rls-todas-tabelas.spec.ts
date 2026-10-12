@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { NO_LABORATORIO, URL_SUPABASE, CHAVE_ANON } from "../fixtures/laboratorio";
 
 /**
- * T42 — RLS de TODAS as tabelas public com a chave anon (a chave é pública: é o que
+ * T50 — RLS de TODAS as tabelas public com a chave anon (a chave é pública: é o que
  * qualquer visitante tem). Só roda no laboratório (banco local semeado).
  * A lista de tabelas vem das migrações, então tabela nova entra sozinha no teste.
  *
@@ -29,7 +29,7 @@ function tabelasDasMigracoes(): string[] {
   return [...nomes].sort();
 }
 
-test.describe("T42 RLS anon em todas as tabelas @seguranca", () => {
+test.describe("T50 RLS anon em todas as tabelas @seguranca", () => {
   test.skip(!NO_LABORATORIO || !CHAVE_ANON, "Só no laboratório (Supabase local + chave anon).");
 
   const tabelas = tabelasDasMigracoes();

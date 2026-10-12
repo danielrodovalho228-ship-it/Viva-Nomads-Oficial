@@ -1,13 +1,13 @@
 import { test, expect } from "@playwright/test";
 
 /**
- * T41 — Segurança vista de FORA (sem login, sem env): cabeçalhos, portões,
+* T49 — Segurança vista de FORA (sem login, sem env): cabeçalhos, portões,
  * APIs privadas, open redirect e vazamento de detalhes em erro.
  * Ordem 2567f1af (LAB 1/2, parte C). Não grava nada: só GET/POST recusados.
  */
 const PAGINAS_PUBLICAS = ["/", "/buscar", "/precos", "/como-funciona", "/auth"];
 
-test.describe("T41 cabeçalhos de segurança @seguranca", () => {
+test.describe("T49 cabeçalhos de segurança @seguranca", () => {
   for (const rota of PAGINAS_PUBLICAS) {
     test(`${rota}: HSTS, nosniff, frame, referrer e CSP`, async ({ request }) => {
       const r = await request.get(rota);
@@ -34,7 +34,7 @@ test.describe("T41 cabeçalhos de segurança @seguranca", () => {
   });
 });
 
-test.describe("T41 portões sem login @seguranca", () => {
+test.describe("T49 portões sem login @seguranca", () => {
   const PRIVADAS = [
     "/dashboard",
     "/dashboard/imoveis",
@@ -66,7 +66,7 @@ test.describe("T41 portões sem login @seguranca", () => {
   }
 });
 
-test.describe("T41 APIs privadas sem login @seguranca", () => {
+test.describe("T49 APIs privadas sem login @seguranca", () => {
   const NEGADAS_POST = [
     "/api/admin/aprovacoes",
     "/api/admin/agentes/chat",
@@ -116,7 +116,7 @@ test.describe("T41 APIs privadas sem login @seguranca", () => {
   });
 });
 
-test.describe("T41 open redirect @seguranca", () => {
+test.describe("T49 open redirect @seguranca", () => {
   const MALICIOSOS = ["https://evil.example", "//evil.example", "/\\evil.example", "javascript:alert(1)", "/%09/evil.example"];
   for (const alvo of MALICIOSOS) {
     test(`/auth/callback?next=${alvo} não sai do site`, async ({ request, baseURL }) => {
@@ -131,7 +131,7 @@ test.describe("T41 open redirect @seguranca", () => {
   }
 });
 
-test.describe("T41 erros sem detalhe interno @seguranca", () => {
+test.describe("T49 erros sem detalhe interno @seguranca", () => {
   const VAZAMENTOS = /(stack|at \S+ \(|node_modules|supabase\.co|postgres|SQLSTATE|relation ".*" does not exist|service_role|\.next\/)/i;
 
   test("404 não mostra stack nem host", async ({ request }) => {
