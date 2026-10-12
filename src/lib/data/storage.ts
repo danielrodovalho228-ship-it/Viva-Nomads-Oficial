@@ -12,13 +12,13 @@ export interface UploadedPhoto {
 }
 
 /**
- * Envia uma foto de imóvel para o Supabase Storage e devolve a URL pública.
- * Sem Supabase configurado, gera um preview local (modo demonstração).
+ * Envia uma foto de imóvel pelo SERVIDOR (/api/upload/foto), que confere o tipo
+ * REAL do arquivo (JPEG/PNG/WebP — nunca SVG/executável/texto) e exige dono
+ * logado. Sem Supabase configurado, gera um preview local (modo demonstração).
+ * Em modo real, qualquer falha LANÇA erro com a mensagem — nunca vira preview
+ * local contando como foto.
  */
-export async function uploadPropertyPhoto(
-  file: File,
-  ownerId?: string
-): Promise<UploadedPhoto> {
+export async function uploadPropertyPhoto(file: File, ownerId?: string): Promise<UploadedPhoto> {
   const supabase = createClient();
 
   // Remove o EXIF (inclusive GPS/endereço) ANTES de qualquer coisa — vale também
@@ -28,22 +28,14 @@ export async function uploadPropertyPhoto(
   if (!supabase) {
     return { url: URL.createObjectURL(safe), path: null, demo: true };
   }
+  if (!ownerId) throw new Error("Entre na sua conta para enviar fotos.");
 
-  const ext = safe.name.split(".").pop() ?? "jpg";
-  const folder = ownerId ?? "anon";
-  const path = `${folder}/${crypto.randomUUID()}.${ext}`;
-
-  const { error } = await supabase.storage
-    .from(PROPERTY_PHOTOS_BUCKET)
-    .upload(path, safe, { cacheControl: "3600", upsert: false });
-
-  if (error) {
-    // Falha de upload: cai para preview local para não travar o fluxo.
-    return { url: URL.createObjectURL(file), path: null, demo: true };
-  }
-
-  const { data } = supabase.storage.from(PROPERTY_PHOTOS_BUCKET).getPublicUrl(path);
-  return { url: data.publicUrl, path, demo: false };
+  const fd = new FormData();
+  fd.append("file", safe);
+  const res = await fetch("/api/upload/foto", { method: "POST", body: fd });
+  const data = (await res.json().catch(() => ({}))) as { path?: string; url?: string; error?: string };
+  if (!res.ok || !data.path || !data.url) throw new Error(data.error ?? "Não foi possível enviar a foto agora.");
+  return { url: data.url, path: data.path, demo: false };
 }
 
 /** Remove uma foto do Storage (quando não é preview local). */
