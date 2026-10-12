@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
-import { tituloDaTelaApp, ehAbaRaizApp } from "@/lib/nav-mobile";
+import { tituloDaTelaApp, ehAbaRaizApp, voltaParaAdmin } from "@/lib/nav-mobile";
 
 /**
  * Cabeçalho curto do MODO APP: título da tela e, fora das abas principais,
@@ -21,7 +21,7 @@ export function AppHeader({ direita }: { direita?: React.ReactNode }) {
       {!raiz && (
         <button
           type="button"
-          onClick={() => router.back()}
+          onClick={() => (voltaParaAdmin(pathname) ? router.push("/admin") : router.back())}
           aria-label="Voltar"
           className="grid h-10 w-10 place-items-center rounded-lg text-forest"
         >

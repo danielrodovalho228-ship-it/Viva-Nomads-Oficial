@@ -29,7 +29,7 @@ import { appHome } from "@/lib/app-mode";
 import { PROGRAMA_INDICACAO } from "@/lib/flags";
 import { cn } from "@/lib/utils";
 import { SeletorModo } from "./seletor-modo";
-import { mostraEquipe, ROTA_EQUIPE } from "./conta-equipe";
+import { mostraEquipe, ROTA_ADMIN, ROTA_EQUIPE } from "./conta-equipe";
 
 type Item = { href?: string; onClick?: () => void; label: string; icon: React.ComponentType<{ className?: string }>; tom?: "perigo" };
 
@@ -89,7 +89,12 @@ export function ContaMenu() {
     [
       // Sem item de plano: não há mensalidade nesta fase (só taxa por contrato fechado).
       ...(mode === "owner" ? [{ href: "/dashboard/ferramentas", label: "Ferramentas", icon: Wrench }] : []),
-      ...(mostraEquipe(user?.role) ? [{ href: ROTA_EQUIPE, label: "Equipe e aprovações", icon: Users }] : []),
+      ...(mostraEquipe(user?.role)
+        ? [
+            { href: ROTA_ADMIN, label: "Painel Admin", icon: ShieldCheck },
+            { href: ROTA_EQUIPE, label: "Equipe e aprovações", icon: Users },
+          ]
+        : []),
       ...(PROGRAMA_INDICACAO ? [{ href: "/dashboard/indicacoes", label: "Indicações", icon: Gift }] : []),
     ],
     [

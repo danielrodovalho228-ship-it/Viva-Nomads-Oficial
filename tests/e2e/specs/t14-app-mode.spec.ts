@@ -78,24 +78,38 @@ test.describe("T14 — Modo app", () => {
       await conferirAbas(page, ABAS_INQUILINO);
     });
 
-    test("Equipe: /admin/agentes dá 404 para inquilino e a aba não aparece", async ({ page }) => {
+    test("Admin: /admin/agentes dá 404 para inquilino e a aba não aparece", async ({ page }) => {
       test.skip(!hasAccount("inquilino"), "sem conta de teste do inquilino");
       const resp = await page.goto("/admin/agentes");
       expect(resp?.status()).toBe(404);
       await page.goto("/buscar");
-      await expect(barraDoApp(page).getByRole("link", { name: "Equipe" })).toHaveCount(0);
+      await expect(barraDoApp(page).getByRole("link", { name: "Admin", exact: true })).toHaveCount(0);
     });
   });
 
   test.describe("admin", () => {
     test.use({ storageState: hasAccount("admin") ? authFile("admin") : { cookies: [], origins: [] } });
 
+    test("Admin a 390 px: toca Admin → painel → Caixa dos Sócios → Voltar ao painel", async ({ page }) => {
+      test.skip(!hasAccount("admin"), "sem conta de teste do admin");
+      await page.goto("/dashboard", { waitUntil: "networkidle" });
+      await esperarModoApp(page);
+      await barraDoApp(page).getByRole("link", { name: "Admin", exact: true }).click();
+      await expect(page).toHaveURL(/\/admin\/?$/);
+      await page.getByRole("link", { name: /Caixa dos Sócios/ }).first().click();
+      await expect(page).toHaveURL(/\/admin\/socios/);
+      await page.getByRole("button", { name: "Voltar" }).click();
+      await expect(page).toHaveURL(/\/admin\/?$/);
+      await expect(page.getByTestId("admin-outras-areas").getByRole("link", { name: "Documentos" })).toBeVisible();
+      const sobra = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+      expect(sobra).toBeLessThanOrEqual(0);
+    });
+
     test("Equipe abre /admin/agentes dentro do app, sem rolagem lateral, com notificações e atalhos", async ({ page }) => {
       test.skip(!hasAccount("admin"), "sem conta de teste do admin");
       await page.goto("/dashboard", { waitUntil: "networkidle" });
       await esperarModoApp(page);
-      await barraDoApp(page).getByRole("link", { name: "Equipe" }).click();
-      await expect(page).toHaveURL(/\/admin\/agentes/);
+      await page.goto("/admin/agentes", { waitUntil: "networkidle" });
       await expect(page.getByTestId("central-agentes")).toBeVisible();
       await expect(page.getByTestId("atalhos-app").getByRole("button", { name: /Ativar notifica/ })).toBeVisible();
       await expect(page.getByTestId("atalhos-app").getByRole("link", { name: "Documentos" })).toBeVisible();

@@ -1,4 +1,5 @@
-import { Bot, Camera, Handshake, Inbox } from "lucide-react";
+import Link from "next/link";
+import { Bot, Camera, FileSignature, Handshake, Inbox, LifeBuoy, Megaphone, TrendingUp, Wallet } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Panel, StatCard } from "@/components/dashboard/primitives";
 
@@ -6,6 +7,15 @@ import { Panel, StatCard } from "@/components/dashboard/primitives";
  * Áreas novas do admin na Visão geral (Caixa dos Sócios, Parceiros, Fotógrafos, Equipe), com números ao vivo.
  * Cada contagem falha sozinha (mostra "—") sem derrubar a página. O layout de /admin exige admin; a RLS confere.
  */
+/** Áreas do menu do admin sem número ao vivo aqui: cartões tocáveis (44 px+) para o celular/app. */
+const OUTRAS_AREAS = [
+  { href: "/admin/pedidos", label: "Moderar pedidos", icon: Megaphone },
+  { href: "/admin/documentos", label: "Documentos", icon: FileSignature },
+  { href: "/admin/atendimento", label: "Atendimento", icon: LifeBuoy },
+  { href: "/admin/financeiro", label: "Financeiro", icon: Wallet },
+  { href: "/admin/marketing", label: "Marketing", icon: TrendingUp },
+];
+
 export async function AtalhosAdmin() {
   const supabase = await createClient();
   if (!supabase) return null;
@@ -31,6 +41,16 @@ export async function AtalhosAdmin() {
         <StatCard label="Fotógrafos em análise" value={fotografos} icon={Camera} href="/admin/fotografos" />
         <StatCard label="Equipe — ordens abertas" value={ordens} icon={Bot} href="/admin/agentes" />
       </div>
+      <ul data-testid="admin-outras-areas" className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5">
+        {OUTRAS_AREAS.map(({ href, label, icon: Icon }) => (
+          <li key={href}>
+            <Link href={href} className="flex min-h-11 items-center gap-2 rounded-2xl border border-sage-200 bg-white px-3 text-sm font-medium text-forest hover:border-sage">
+              <Icon className="h-4 w-4 shrink-0 text-sage" />
+              {label}
+            </Link>
+          </li>
+        ))}
+      </ul>
     </Panel>
   );
 }

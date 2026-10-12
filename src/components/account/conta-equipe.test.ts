@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mostraEquipe, ROTA_EQUIPE } from "./conta-equipe.ts";
+import { mostraEquipe, ROTA_ADMIN, ROTA_EQUIPE } from "./conta-equipe.ts";
 
 test("admin vê Equipe e aprovações", () => {
   assert.equal(mostraEquipe("admin"), true);
@@ -14,4 +14,13 @@ test("a rota é a área de aprovações da Central, coberta por ROTAS_APP", asyn
   assert.equal(ROTA_EQUIPE, "/admin/agentes#aprovacoes");
   const { destinoDaRota } = await import("../../config/rotas-app.ts");
   assert.equal(destinoDaRota("/admin/agentes"), "app");
+});
+
+test("Conta: Painel Admin (/admin) vem acima de Equipe e aprovações e só para admin", async () => {
+  assert.equal(ROTA_ADMIN, "/admin");
+  const { readFileSync } = await import("node:fs");
+  const f = readFileSync(new URL("./conta-menu.tsx", import.meta.url), "utf8");
+  assert.ok(f.indexOf('label: "Painel Admin"') > 0);
+  assert.ok(f.indexOf('label: "Painel Admin"') < f.indexOf('label: "Equipe e aprovações"'));
+  assert.match(f, /mostraEquipe\(user\?\.role\)\s*\?/);
 });
