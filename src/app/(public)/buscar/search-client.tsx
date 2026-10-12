@@ -778,6 +778,14 @@ export function SearchClient({ properties }: { properties: Property[] }) {
               </Link>
             </div>
           )}
+
+          {/* O botão flutuante "Fale com a Viva" não aparece aqui (cobria "Mais filtros"). */}
+          <p className="mt-6 text-center text-sm text-muted" data-testid="buscar-ajuda">
+            Precisa de ajuda?{" "}
+            <Link href="/ajuda" className="font-semibold text-forest underline underline-offset-2">
+              Fale com a Viva
+            </Link>
+          </p>
         </div>
 
         {/* Mapa interativo — oculto por padrão (MAPA_ON) até os tiles carregarem. */}
