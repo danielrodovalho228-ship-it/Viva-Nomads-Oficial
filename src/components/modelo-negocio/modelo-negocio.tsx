@@ -214,6 +214,21 @@ export function ModeloNegocio() {
           </p>
         </div>
 
+        {/* Virada de chave nos condomínios (ordem da1f9b50): é META, nunca promessa */}
+        <div className={styles.card} data-testid="virada-condominios">
+          <h2>Virada de chave nos condomínios</h2>
+          <p>
+            Muitos condomínios fecharam a porta para o Airbnb, e o STJ deve definir uma regra nacional (julgamento em andamento).
+          </p>
+          <p>
+            A Viva é diferente: estadias de meses, sem entra e sai, identidade verificada e proteção antifraude.
+          </p>
+          <p>
+            <strong>Nossa meta:</strong> trabalhar para que a Viva seja aceita em condomínios que hoje fecharam a porta para o Airbnb.
+          </p>
+          <span className={styles.ill}>É uma meta, não uma promessa: cada condomínio decide pela sua convenção.</span>
+        </div>
+
         {/* Premissas */}
         <div className={`${styles.card} ${styles.premissas}`}>
           <h2>Premissas</h2>
@@ -231,7 +246,7 @@ export function ModeloNegocio() {
         </div>
 
         <footer className={styles.footer}>
-          Viva Nomads · simulador do modelo de negócio. Plataforma em fase de testes. Lançamento oficial em 2027.
+          Viva Nomads · simulador do modelo de negócio. Projeções ilustrativas, não são promessa de retorno. Plataforma em fase de testes. Lançamento oficial em 2027.
         </footer>
       </div>
     </div>

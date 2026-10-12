@@ -62,3 +62,29 @@ test("/socios, decisão e rede: Rogério como sócio/dono, sem remover ninguém"
   // Ninguém ganha admin por e-mail fixo no código: o Moacir promove no banco.
   for (const f of [socios, painel, central]) assert.ok(!/rogerio@/i.test(f));
 });
+
+// Ordem da1f9b50: custo fixo real ≈ R$ 6 mil (pró-labore), "equipes jurídicas", condomínios como meta.
+test("textos dos sócios: sem 'advogada', sem custo fixo antigo (R$ 989 a R$ 1.450 / menos de R$ 1.500)", () => {
+  for (const arquivo of ARQUIVOS) {
+    const texto = readFileSync(new URL(`../../../${arquivo}`, import.meta.url), "utf8");
+    assert.ok(!/advogada/i.test(texto), `${arquivo} cita "advogada"`);
+    assert.ok(!/R\$ ?989 a R\$ ?1\.450|menos de R\$ ?1\.500/.test(texto), `${arquivo} cita o custo fixo antigo`);
+  }
+});
+
+test("/modelodenegocio: seção 'Virada de chave nos condomínios' é meta, nunca promessa", () => {
+  const texto = readFileSync(new URL("../../../src/components/modelo-negocio/modelo-negocio.tsx", import.meta.url), "utf8");
+  assert.ok(texto.includes("Virada de chave nos condomínios"));
+  assert.ok(texto.includes("STJ"));
+  assert.ok(texto.includes("é uma meta, não uma promessa") || texto.includes("É uma meta, não uma promessa"));
+  assert.ok(!/aceit[oa]s? onde o Airbnb n[ãa]o/i.test(texto), "nunca 'aceito onde o Airbnb não é'");
+  assert.ok(texto.includes("Projeções ilustrativas, não são promessa de retorno."));
+  assert.ok(texto.includes("Plataforma em fase de testes. Lançamento oficial em 2027."));
+});
+
+test("custo fixo padrão ≈ R$ 6 mil com pró-labore dos sócios", async () => {
+  const { CUSTOS_FIXOS, CUSTO_FIXO_FAIXA } = await import("../../config/premissas-financeiras.ts");
+  const total = CUSTOS_FIXOS.reduce((s, c) => s + c.valor, 0);
+  assert.ok(total >= 5900 && total <= 6100, `total ${total}`);
+  assert.equal(CUSTO_FIXO_FAIXA.texto, "≈ R$ 6 mil/mês com pró-labore");
+});
