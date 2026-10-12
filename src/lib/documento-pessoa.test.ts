@@ -115,3 +115,22 @@ test("0101: CNPJ único, idempotente, só cria se não houver repetido, com roll
   assert.match(a, /'0101_cnpj_unico'/);
   assert.match(ler("../supabase/producao/rollback/0101_rollback.sql"), /drop index if exists public\.profiles_cnpj_unico/);
 });
+
+test("F26: a seção Documento aparece para todo papel logado — nunca some em silêncio (ordem dd8422ce)", async () => {
+  const { DOCUMENTO_VAZIO_PF, documentoCompleto: completo } = await import("./documento-pessoa.ts");
+  // Sem person_type gravado (cadastro de inquilino) vale PF, sem CPF = incompleto.
+  assert.equal(DOCUMENTO_VAZIO_PF.tipo, "pf");
+  assert.equal(DOCUMENTO_VAZIO_PF.completo, false);
+  assert.equal(completo({ person_type: null }), false);
+  assert.equal(completo({ person_type: null, cpf: "52998224725" }), true);
+  const acoes = ler("lib/data/perfil-actions.ts");
+  const i = acoes.indexOf("export async function getMeuDocumento");
+  const corpo = acoes.slice(i, acoes.indexOf("\n}\n", i));
+  // perfil sem linha/erro de leitura => formulário PF padrão, não null
+  assert.match(corpo, /if \(!p\) return \{ \.\.\.DOCUMENTO_VAZIO_PF \};/);
+  // a tela não esconde a seção quando a leitura falha
+  const ui = ler("components/account/conta-secoes.tsx");
+  assert.match(ui, /\.catch\(\(\) => vivo && setDoc\(\{ \.\.\.DOCUMENTO_VAZIO_PF \}\)\)/);
+  // Conta fora do padrão de tela: sem mx-auto max-w-5xl
+  assert.doesNotMatch(ler("app/(dashboard)/dashboard/conta/page.tsx"), /mx-auto max-w-5xl/);
+});

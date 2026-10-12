@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { lerDocumento } from "@/lib/data/documento-servidor";
-import { documentoCompleto, mascararCnpj, mascararCpf, msgDocumentoDuplicado, validarDocumento, type DocumentoInput, type TipoPessoa } from "@/lib/documento-pessoa";
+import { DOCUMENTO_VAZIO_PF, documentoCompleto, mascararCnpj, mascararCpf, msgDocumentoDuplicado, validarDocumento, type DocumentoInput, type TipoPessoa } from "@/lib/documento-pessoa";
 import { contemContato } from "@/lib/pedidos/pedidos";
 import { validarNome, normalizarTelefone, validarLinkedin } from "@/lib/conta-validacao";
 import {
@@ -162,7 +162,7 @@ export async function getMeuDocumento(): Promise<MeuDocumento | null> {
   } = await supabase.auth.getUser();
   if (!user) return null;
   const p = await lerDocumento(admin, user.id);
-  if (!p) return null;
+  if (!p) return { ...DOCUMENTO_VAZIO_PF };
   return {
     tipo: p.person_type === "pj" ? "pj" : "pf",
     completo: documentoCompleto(p),

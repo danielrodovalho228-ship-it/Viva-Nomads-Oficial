@@ -17,6 +17,7 @@ import { nomeCompletoLimpo } from "@/lib/display-name";
 import { friendlyAuthError, MIN_PASSWORD } from "@/lib/auth-errors";
 import { Switch } from "@/components/ui/switch";
 import { getMeusDados, salvarMeusDados, getMeuDocumento, salvarMeuDocumento, type MeuDocumento } from "@/lib/data/perfil-actions";
+import { DOCUMENTO_VAZIO_PF } from "@/lib/documento-pessoa";
 import { getAlertasEquipe, getNotifPrefs, setAlertasEquipe, setNotifPrefs } from "@/lib/data/pedidos-actions";
 import { useCaptcha } from "@/components/seguranca/captcha";
 import { MSG_CAPTCHA_PENDENTE, comCaptcha, podeEnviar } from "@/lib/seguranca/captcha";
@@ -154,7 +155,7 @@ export function DocumentoPessoa() {
     let vivo = true;
     getMeuDocumento()
       .then((d) => vivo && setDoc(d))
-      .catch(() => vivo && setDoc(null));
+      .catch(() => vivo && setDoc({ ...DOCUMENTO_VAZIO_PF }));
     return () => {
       vivo = false;
     };
