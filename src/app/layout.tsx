@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   keywords: [
     "locação por temporada",
     "imóvel mobiliado mensal",
-    "aluguel 30 dias",
+    "locação mobiliada 30 a 180 dias",
     "imóvel mobiliado pronto para morar",
     "Viva Nomads",
   ],

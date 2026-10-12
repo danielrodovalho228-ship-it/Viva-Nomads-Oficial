@@ -15,3 +15,12 @@ test("#67: /precos e /para-proprietarios não prometem seguro-fiança nem 'garan
     assert.match(t, /Outras modalidades de garantia locatícia: em breve/, f);
   }
 });
+
+test("#68: keywords globais e textos públicos sem 'aluguel' (fora de citações legais)", () => {
+  const layout = ler("src/app/layout.tsx");
+  assert.doesNotMatch(layout, /aluguel 30 dias/i);
+  assert.match(layout, /locação mobiliada 30 a 180 dias/);
+  for (const f of ["src/app/(public)/page.tsx", "src/app/(public)/para-proprietarios/page.tsx", "src/app/(public)/precos/page.tsx"]) {
+    assert.doesNotMatch(ler(f), /\balugu?el\b/i, f);
+  }
+});

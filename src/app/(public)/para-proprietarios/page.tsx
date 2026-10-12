@@ -26,7 +26,7 @@ export default function ForLandlordsPage() {
         <div className="container-page grid items-center gap-10 md:grid-cols-2">
           <div>
             <h1 className="font-title text-4xl font-bold leading-tight md:text-5xl">
-              Mais <span className="text-green-300">margem</span> que o aluguel de
+              Mais <span className="text-green-300">margem</span> que a locação de
               curta duração
             </h1>
             <p className="mt-5 max-w-lg text-lg text-white/80">
@@ -75,7 +75,7 @@ export default function ForLandlordsPage() {
             Como o modelo de média duração reduz seus custos
           </h2>
           <p className="mt-4 text-lg text-muted">
-            A locação mobiliada de média duração reduz os maiores custos do aluguel de
+            A locação mobiliada de média duração reduz os maiores custos da locação de
             curta duração.
           </p>
         </div>
@@ -106,7 +106,7 @@ export default function ForLandlordsPage() {
                 "Selo Pronto para Morar para anunciar mais caro.",
                 "Verificação de identidade do inquilino — em breve.",
                 "Contrato de temporada gerado e assinado digitalmente, com validade jurídica.",
-                "Pagamento do aluguel direto na sua conta.",
+                "Pagamento mensal direto na sua conta.",
               ].map((item) => (
                 <li key={item} className="flex items-start gap-3">
                   <Check className="mt-0.5 h-5 w-5 shrink-0 text-sage" />
