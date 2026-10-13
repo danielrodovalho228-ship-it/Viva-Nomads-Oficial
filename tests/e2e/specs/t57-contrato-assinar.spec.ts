@@ -14,6 +14,11 @@ test.describe("T57 — Contrato: ver e assinar", () => {
     expect(r?.status()).toBe(404);
     const r2 = await page.goto("/dashboard/locacoes/nao-e-uuid", { waitUntil: "networkidle" });
     expect(r2?.status()).toBe(404);
+    // Rota do proprietário (ordem f375fdc1): mesma regra.
+    const r3 = await page.goto("/dashboard/contratos/00000000-0000-4000-8000-000000000000", { waitUntil: "networkidle" });
+    expect(r3?.status()).toBe(404);
+    const r4 = await page.goto("/dashboard/contratos/nao-e-uuid", { waitUntil: "networkidle" });
+    expect(r4?.status()).toBe(404);
   });
 
   test("Minhas locações: título e botão abrem o detalhe; assinar exige 'Li e concordo' e senha", async ({ page }) => {
@@ -31,5 +36,19 @@ test.describe("T57 — Contrato: ver e assinar", () => {
       await page.getByTestId("assinar-aceite").check();
       await expect(page.getByTestId("assinar-enviar")).toBeDisabled(); // falta a senha
     }
+  });
+});
+
+test.describe("T57 — Contrato: proprietário abre e assina (ordem f375fdc1)", () => {
+  test.use({ storageState: authFile("proprietario") });
+
+  test("'Ver e assinar contrato' abre /dashboard/contratos/<id> com o resumo e o aviso", async ({ page }) => {
+    await page.goto("/dashboard/contratos", { waitUntil: "networkidle" });
+    const link = page.getByTestId("contrato-ver-assinar").first();
+    test.skip((await link.count()) === 0, "conta de teste sem contrato semeado");
+    await link.click();
+    await expect(page).toHaveURL(/\/dashboard\/contratos\/[0-9a-f-]{36}$/);
+    await expect(page.getByTestId("contrato-resumo")).toBeVisible();
+    await expect(page.getByTestId("contrato-aviso-assinatura")).toBeVisible();
   });
 });

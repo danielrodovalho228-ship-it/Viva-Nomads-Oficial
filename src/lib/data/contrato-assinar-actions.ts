@@ -146,7 +146,8 @@ export async function assinarContrato(input: {
         event: "contract_status",
         email: pessoa?.user?.email ?? undefined,
         userId: outroId,
-        pushUrl: `/dashboard/locacoes/${c.id}`,
+        // Quem recebe é a outra parte: o dono abre em Contratos, o inquilino em Minhas locações.
+        pushUrl: visao.papel === "inquilino" ? `/dashboard/contratos/${c.id}` : `/dashboard/locacoes/${c.id}`,
         subject: assuntoAvisoOutraParte(outraJaAssinou),
       });
     } catch {

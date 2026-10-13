@@ -25,7 +25,8 @@ test("telas: título e botão levam ao detalhe nos dois painéis; Avaliar só co
   assert.match(locacoes, /\/dashboard\/locacoes\/\$\{l\.id\}/);
   assert.match(locacoes, /Ver e assinar contrato/);
   assert.match(locacoes, /\(l\.podeAvaliar \|\| demoOn\) &&/);
-  assert.match(contratos, /\/dashboard\/locacoes\/\$\{contrato\.id\}/);
+  assert.match(contratos, /\/dashboard\/contratos\/\$\{contrato\.id\}/); // dono: rota própria (ordem f375fdc1)
+  assert.match(acao, /\/dashboard\/contratos\/\$\{c\.id\}/); // aviso ao dono abre a tela do dono
 });
 
 test("migração 0111: RLS ligado, sem escrita pelo navegador, uma assinatura por papel", () => {

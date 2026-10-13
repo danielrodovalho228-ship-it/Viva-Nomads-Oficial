@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { rotaDetalheContrato } from "@/lib/contrato-rota";
 import { createServerClient } from "@supabase/ssr";
 import {
   isInternalPath,
@@ -207,6 +208,23 @@ export async function proxy(request: NextRequest) {
         response.cookies.getAll().forEach((c) => resposta.cookies.set(c));
         return resposta;
       }
+    }
+  }
+
+  // Detalhe do contrato (dono e inquilino): id inexistente ou de outra pessoa = 404 DE VERDADE.
+  // Na página o notFound() sairia 200 (o loading.tsx do painel faz streaming). A leitura vai pelo RLS.
+  const rotaContrato = user ? rotaDetalheContrato(pathname) : null;
+  if (rotaContrato) {
+    let existe = false;
+    if (rotaContrato.tipo === "id") {
+      const { data } = await supabase.from("contratos").select("id").eq("id", rotaContrato.id).maybeSingle();
+      existe = !!data;
+    }
+    if (!existe) {
+      const naoEncontrado = request.nextUrl.clone();
+      naoEncontrado.pathname = "/nao-encontrado-admin";
+      naoEncontrado.search = "";
+      return NextResponse.rewrite(naoEncontrado, { status: 404 });
     }
   }
 

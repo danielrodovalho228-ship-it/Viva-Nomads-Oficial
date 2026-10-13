@@ -247,7 +247,7 @@ function ContratoCard({
 
       {!demo && (
         <Link
-          href={`/dashboard/locacoes/${contrato.id}`}
+          href={`/dashboard/contratos/${contrato.id}`}
           className="mt-3 inline-block text-sm font-medium text-forest underline"
           data-testid="contrato-ver-assinar"
         >
