@@ -41,8 +41,8 @@ test("limite de tentativas e mensagens sem detalhe interno", () => {
   assert.equal(tentativasRestantes(5), 0);
   assert.equal(tentativasRestantes(99), 0);
   assert.match(mensagemErroMfa("Invalid TOTP code entered"), /Código não confere/);
-  assert.match(mensagemErroMfa("Invalid TOTP code entered", "ativar"), /entrada nova \(QR desta tela\).*horário do celular está automático/);
-  assert.match(mensagemErroMfa("mfa_verification_failed", "ativar"), /entrada nova/);
+  assert.match(mensagemErroMfa("Invalid TOTP code entered", "ativar"), /entrada mais nova do app.*QR/);
+  assert.match(mensagemErroMfa("mfa_verification_failed", "ativar"), /entrada mais nova/);
   assert.match(mensagemErroMfa("algo estranho"), /incorreto ou vencido/);
   assert.match(mensagemErroMfa("over_request_rate_limit"), /Muitas tentativas/);
   assert.doesNotMatch(mensagemErroMfa("secret=ABC"), /ABC/);

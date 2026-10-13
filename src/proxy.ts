@@ -11,7 +11,7 @@ import {
 import { COOKIE_ADMIN_ATIVO, LIMITE_OCIOSO_ADMIN_MS, sessaoAdminOciosa } from "@/lib/admin/sessao-ociosa";
 import { APP_COOKIE, appHome, isAppUserAgent, isMarketingPath } from "@/lib/app-mode";
 import { destinoAposLogin } from "@/lib/destino-login";
-import { decidirPortaoMfa, mfaAdminObrigatoria, urlAtivar2fa, urlVerificarCodigo } from "@/lib/admin/mfa";
+import { decidirPortaoMfa, mfaAdminObrigatoria, rotaLivreDeAal2, urlAtivar2fa, urlVerificarCodigo } from "@/lib/admin/mfa";
 
 /**
  * Papel para a aba inicial do APP: preferência salva, senão o papel de
@@ -195,7 +195,7 @@ export async function proxy(request: NextRequest) {
     // Verificação em duas etapas obrigatória (ordem f7817f00): admin precisa de AAL2.
     // Sem fator → tela de ativação; com fator e sessão só com senha → tela do código.
     // O destino volta COMPLETO (pathname+search).
-    if (mfaAdminObrigatoria()) {
+    if (mfaAdminObrigatoria() && !rotaLivreDeAal2(pathname)) {
       const { data: aal, error: aalErro } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
       const portao = aalErro ? "verificar" : decidirPortaoMfa(aal?.currentLevel, aal?.nextLevel);
       if (portao !== "liberar") {
