@@ -5,7 +5,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { ehSensivel, notaSugestao, quemAtende, respostaDaSugestao, textoAcolhimento } from "./acolhimento.ts";
+import { ehSensivel, notaSugestao, podeMarcarResolvido, quemAtende, respostaDaSugestao, statusAposRespostaDaViva, textoAcolhimento } from "./acolhimento.ts";
 import { validarResposta } from "./viva-regras.ts";
 
 const ler = (p: string) => readFileSync(new URL(`../../${p}`, import.meta.url), "utf8");
@@ -53,4 +53,23 @@ test("ligações: site e e-mail usam a mesma regra; aprovar pega o texto do banc
   const serv = ler("lib/atendimento/viva-servidor.ts");
   assert.match(serv, /if \(momento === "abertura" && publicas\.some\(\(m\) => m\.autor === "ia" \|\| m\.autor === "admin"\)\) return; \/\/ idempotente/);
   assert.match(serv, /vivaAtiva\(\) && \(await consumirLimite\("viva:dia", limiteDia\(\), DIA\)\)/);
+});
+
+test("F22: a resposta da Viva não muda o status — chamado nasce e segue 'Aberto'; 'Aguardando você' é só de pessoa", () => {
+  assert.equal(statusAposRespostaDaViva("aberto"), "aberto");
+  assert.equal(statusAposRespostaDaViva("em_andamento"), "em_andamento");
+  assert.equal(statusAposRespostaDaViva("aguardando_usuario"), "aberto"); // nunca devolve "Aguardando você"
+  assert.equal(statusAposRespostaDaViva(null), "aberto");
+  const fonte = ler("lib/atendimento/viva-servidor.ts");
+  assert.doesNotMatch(fonte, /status\s*=\s*"aguardando_usuario"/, "a Viva não grava 'aguardando_usuario'");
+  assert.doesNotMatch(fonte, /: "aguardando_usuario"/);
+  // quem pede algo ao usuário é a equipe (atendimento-actions) e continua gravando
+  assert.match(ler("lib/data/atendimento-actions.ts"), /status: "aguardando_usuario"/);
+});
+
+test("F22: 'Sim, resolveu' continua valendo quando só a Viva respondeu", () => {
+  assert.ok(podeMarcarResolvido("aberto", "ia"));
+  assert.ok(podeMarcarResolvido("aguardando_usuario", "humano"));
+  assert.ok(!podeMarcarResolvido("aberto", "humano"));
+  assert.ok(!podeMarcarResolvido("resolvido", "ia"));
 });

@@ -13,7 +13,7 @@ import { contextoChamado, type FerramentaDef } from "@/lib/atendimento/viva-prom
 import { aceitaEsforco, aceitaReserva, cotacaoDolar, custoUsd, modeloViva } from "@/lib/atendimento/viva-custo";
 import { primeiroNome, RESPOSTA_PESSOA, ROTULO_APROVACAO } from "@/lib/atendimento/viva-regras";
 import { podeDevolverParaViva, rotuloFerramenta, sugerirRespostaMotor, transcricaoParaRascunho, type Sugestao } from "@/lib/atendimento/copiloto";
-import { motivoParaAprovacao, notaSugestao, textoAcolhimento } from "@/lib/atendimento/acolhimento";
+import { motivoParaAprovacao, notaSugestao, statusAposRespostaDaViva, textoAcolhimento } from "@/lib/atendimento/acolhimento";
 import { lerResumo, notaResumo, resumoPorRegra, sugestaoPorRegra, SYSTEM_RESUMO, type ResumoChamado } from "@/lib/atendimento/resumo";
 import { htmlAvisoEquipe, pedePessoaNoTexto, prioridadeAcima, relataErroTecnico, RODAPE_AUTOMATICO, textoOrdemErro, urlDoErro } from "@/lib/atendimento/autonomo";
 import { JANELA_AVISO_EQUIPE_S } from "@/lib/atendimento/dono";
@@ -339,7 +339,7 @@ async function aplicar(admin: Admin, c: ChamadoViva, r: ResultadoViva, agora: Da
 
   const mudancas: Record<string, unknown> = { prioridade, atualizado_em: agora.toISOString() };
   if (r.destino === "ia") {
-    mudancas.status = "aguardando_usuario";
+    mudancas.status = statusAposRespostaDaViva(c.status);
     mudancas.responsavel_tipo = "ia";
     mudancas.sla_estado = "ok";
     if (!c.primeira_resposta_em) mudancas.primeira_resposta_em = agora.toISOString();
@@ -549,7 +549,7 @@ export async function responderNaEquipe(chamadoId: string, momento: "abertura" |
     }
     const mud: Record<string, unknown> = { atualizado_em: agora.toISOString() };
     if (!c.primeira_resposta_em) mud.primeira_resposta_em = agora.toISOString();
-    if (sozinha) mud.status = "aguardando_usuario"; // a vez é da pessoa; se ela responder, volta para a equipe
+    if (sozinha) mud.status = statusAposRespostaDaViva(c.status); // a Viva responder não muda o status: segue "Aberto" (F22)
     await admin.from("chamados").update(mud).eq("id", c.id);
 
     if (sozinha) {
@@ -707,7 +707,7 @@ export async function devolverChamadoParaViva(chamadoId: string, adminId: string
   const respondeAgora = ultimaPessoa >= 0 && !autores.slice(ultimaPessoa + 1).some((a) => a === "ia" || a === "admin");
   await admin
     .from("chamados")
-    .update({ responsavel_tipo: "ia", status: respondeAgora ? "em_andamento" : "aguardando_usuario", sla_estado: "ok", atualizado_em: new Date().toISOString() })
+    .update({ responsavel_tipo: "ia", status: respondeAgora ? "em_andamento" : statusAposRespostaDaViva(c.status), sla_estado: "ok", atualizado_em: new Date().toISOString() })
     .eq("id", c.id);
   await admin.from("chamado_eventos").insert({ chamado_id: c.id, ator_tipo: "admin", ator_id: adminId, acao: "devolvido_ia", de: "humano", para: "ia", detalhe: respondeAgora ? "a Viva responde agora" : "a Viva responde na próxima mensagem" });
   return { ok: true, respondeAgora };
