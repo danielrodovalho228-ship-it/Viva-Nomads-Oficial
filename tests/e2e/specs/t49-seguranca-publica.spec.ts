@@ -67,23 +67,36 @@ test.describe("T49 portões sem login @seguranca", () => {
 });
 
 test.describe("T49 APIs privadas sem login @seguranca", () => {
-  const NEGADAS_POST = [
-    "/api/admin/aprovacoes",
-    "/api/admin/agentes/chat",
-    "/api/admin/agentes/executar",
-    "/api/admin/agentes/memoria",
-    "/api/admin/agentes/reuniao",
-    "/api/upload/documento",
-    "/api/upload/inquilino-doc",
-    "/api/ai/anuncio",
-    "/api/caf/verify",
-    "/api/assinatura",
-    "/api/contrato",
-    "/api/comissao",
+  // "Negado" = nada executa: 401/403 (sem sessão), 405 (a rota nem tem POST) ou 503
+  // (integração/segredo ausente no laboratório, ANTES de qualquer ação). Nunca 2xx.
+  // ID válido nas rotas de fechamento, para exercitar o portão de sessão (com `{}` a
+  // validação do id responde 400 antes de olhar a sessão e o teste não provaria nada).
+  const LEAD_FALSO = "00000000-0000-4000-8000-000000000000";
+  const NEGADAS_POST: Array<{ rota: string; corpo?: object; aceitos: number[] }> = [
+    { rota: "/api/admin/aprovacoes", aceitos: [401, 403, 405] },
+    { rota: "/api/admin/agentes/chat", aceitos: [401, 403] },
+    { rota: "/api/admin/agentes/executar", aceitos: [401, 403] },
+    { rota: "/api/admin/agentes/memoria", aceitos: [401, 403, 405] },
+    { rota: "/api/admin/agentes/reuniao", aceitos: [401, 403] },
+    { rota: "/api/upload/documento", aceitos: [401, 403] },
+    { rota: "/api/upload/inquilino-doc", aceitos: [401, 403] },
+    { rota: "/api/ai/anuncio", aceitos: [401, 403, 503] },
+    { rota: "/api/caf/verify", aceitos: [401, 403] },
+    { rota: "/api/assinatura", aceitos: [401, 403] },
+    { rota: "/api/contrato", corpo: { leadId: LEAD_FALSO }, aceitos: [401, 403] },
+    { rota: "/api/comissao", corpo: { leadId: LEAD_FALSO }, aceitos: [401, 403] },
   ];
-  for (const rota of NEGADAS_POST) {
+  for (const { rota, corpo, aceitos } of NEGADAS_POST) {
     test(`POST ${rota} é negado`, async ({ request }) => {
-      const r = await request.post(rota, { data: {} });
+      const r = await request.post(rota, { data: corpo ?? {} });
+      expect(aceitos, `${rota} → ${r.status()}`).toContain(r.status());
+    });
+  }
+
+  // As rotas de admin que só têm GET/DELETE: o método que existe também recusa visitante.
+  for (const rota of ["/api/admin/aprovacoes", "/api/admin/agentes/memoria"]) {
+    test(`GET ${rota} sem login é negado`, async ({ request }) => {
+      const r = await request.get(rota);
       expect([401, 403], `${rota} → ${r.status()}`).toContain(r.status());
     });
   }
@@ -109,10 +122,12 @@ test.describe("T49 APIs privadas sem login @seguranca", () => {
   test("cron e webhook sem segredo não executam", async ({ request }) => {
     for (const rota of ["/api/cron/atendimento", "/api/cron/avisos-daniel", "/api/cron/resumo-pedidos"]) {
       const r = await request.get(rota);
-      expect([401, 403, 405], `${rota} → ${r.status()}`).toContain(r.status());
+      // 503 = CRON_SECRET ausente no laboratório: recusa antes de rodar qualquer coisa.
+      expect([401, 403, 405, 503], `${rota} → ${r.status()}`).toContain(r.status());
     }
     const w = await request.post("/api/webhooks/asaas", { data: { event: "PAYMENT_RECEIVED" } });
-    expect([401, 403], `webhook asaas → ${w.status()}`).toContain(w.status());
+    // 503 = integração sem token no laboratório; 401 = token errado. Nunca processa.
+    expect([401, 403, 503], `webhook asaas → ${w.status()}`).toContain(w.status());
   });
 });
 
