@@ -42,11 +42,32 @@ export function codigoTotpValido(bruto: string): string | null {
   return /^\d{6}$/.test(limpo) ? limpo : null;
 }
 
-export function mensagemErroMfa(mensagem: string | undefined): string {
+export const MSG_CODIGO_NAO_CONFERE_NOVO =
+  "Código não confere. Use o código da entrada nova (QR desta tela) e confira se o horário do celular está automático.";
+export const MSG_CODIGO_NAO_CONFERE =
+  "Código não confere. Use o código mais recente do app e confira se o horário do celular está automático.";
+export const MSG_CONFIRME_CODIGO_SENHA = "Confirme o código do seu autenticador para alterar a senha.";
+
+/** `contexto`: "ativar" = QR recém-lido nesta tela; "entrar" = código de um fator já ativo. */
+export function mensagemErroMfa(mensagem: string | undefined, contexto: "ativar" | "entrar" = "entrar"): string {
   const m = (mensagem ?? "").toLowerCase();
   if (m.includes("rate") || m.includes("too many")) return "Muitas tentativas. Espere um minuto e tente de novo.";
   if (m.includes("enroll") && m.includes("disabled")) return "A verificação em duas etapas ainda não foi ligada no sistema. Avise o Daniel.";
+  if (m.includes("totp") || m.includes("mfa_verification_failed") || m.includes("verification failed")) {
+    return contexto === "ativar" ? MSG_CODIGO_NAO_CONFERE_NOVO : MSG_CODIGO_NAO_CONFERE;
+  }
   return "Código incorreto ou vencido. Confira o app autenticador e tente de novo.";
+}
+
+/** Sessão aal1 com fator verificado (nextLevel aal2): operações sensíveis (senha, e-mail) exigem o código antes. */
+export function precisaCodigoParaOperacaoSensivel(currentLevel: string | null | undefined, nextLevel: string | null | undefined): boolean {
+  return currentLevel !== "aal2" && nextLevel === "aal2";
+}
+
+/** O Supabase recusa updateUser em aal1 com 401 insufficient_aal / "AAL2 session is required". */
+export function ehErroAalInsuficiente(mensagem: string | undefined): boolean {
+  const m = (mensagem ?? "").toLowerCase();
+  return m.includes("insufficient_aal") || m.includes("aal2 session is required");
 }
 
 /** Tentativas restantes neste navegador (limite no código; o Supabase também limita). */

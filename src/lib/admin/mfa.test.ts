@@ -6,6 +6,8 @@ import {
   decidirPortaoMfa,
   mensagemErroMfa,
   mfaAdminObrigatoria,
+  precisaCodigoParaOperacaoSensivel,
+  ehErroAalInsuficiente,
   tentativasRestantes,
   urlAtivar2fa,
   urlVerificarCodigo,
@@ -38,7 +40,10 @@ test("limite de tentativas e mensagens sem detalhe interno", () => {
   assert.equal(tentativasRestantes(0), 5);
   assert.equal(tentativasRestantes(5), 0);
   assert.equal(tentativasRestantes(99), 0);
-  assert.match(mensagemErroMfa("Invalid TOTP code entered"), /incorreto ou vencido/);
+  assert.match(mensagemErroMfa("Invalid TOTP code entered"), /Código não confere/);
+  assert.match(mensagemErroMfa("Invalid TOTP code entered", "ativar"), /entrada nova \(QR desta tela\).*horário do celular está automático/);
+  assert.match(mensagemErroMfa("mfa_verification_failed", "ativar"), /entrada nova/);
+  assert.match(mensagemErroMfa("algo estranho"), /incorreto ou vencido/);
   assert.match(mensagemErroMfa("over_request_rate_limit"), /Muitas tentativas/);
   assert.doesNotMatch(mensagemErroMfa("secret=ABC"), /ABC/);
 });
@@ -78,4 +83,18 @@ test("proxy e layout do admin aplicam o portão AAL2; server actions do admin us
   for (const f of ["../socios/caixa-actions.ts", "../parceiros/admin-actions.ts", "../fotografos/actions.ts", "../data/pedidos-actions.ts"]) {
     assert.match(readFileSync(new URL(f, import.meta.url), "utf8"), /sessaoAal2/, f);
   }
+});
+
+test("operação sensível: aal1 com fator verificado pede o código; aal2 e sem fator não pedem", () => {
+  assert.equal(precisaCodigoParaOperacaoSensivel("aal1", "aal2"), true);
+  assert.equal(precisaCodigoParaOperacaoSensivel("aal2", "aal2"), false);
+  assert.equal(precisaCodigoParaOperacaoSensivel("aal1", "aal1"), false);
+  assert.equal(precisaCodigoParaOperacaoSensivel(undefined, undefined), false);
+});
+
+test("erro insufficient_aal do Supabase é reconhecido", () => {
+  assert.equal(ehErroAalInsuficiente("AAL2 session is required to update email or password when MFA is enabled."), true);
+  assert.equal(ehErroAalInsuficiente("insufficient_aal"), true);
+  assert.equal(ehErroAalInsuficiente("Invalid login credentials"), false);
+  assert.equal(ehErroAalInsuficiente(undefined), false);
 });

@@ -18,3 +18,9 @@ test("mensagens antigas continuam iguais", () => {
   assert.equal(friendlyAuthError("Unable to validate email address: invalid format"), "Digite um e-mail válido.");
   assert.equal(friendlyAuthError("algo inesperado raro"), "Não foi possível concluir. Tente novamente.");
 });
+
+test("insufficient_aal (2FA ativo, sessão só com senha) pede o código, nunca o genérico", () => {
+  const msg = "AAL2 session is required to update email or password when MFA is enabled.";
+  assert.equal(friendlyAuthError(msg), "Confirme o código do seu autenticador para alterar a senha.");
+  assert.equal(friendlyAuthError("insufficient_aal"), "Confirme o código do seu autenticador para alterar a senha.");
+});

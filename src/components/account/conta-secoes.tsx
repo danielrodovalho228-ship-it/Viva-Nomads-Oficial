@@ -15,6 +15,7 @@ import { CategoriaProfissional } from "@/components/account/categoria-profission
 import { createClient } from "@/lib/supabase/client";
 import { nomeCompletoLimpo } from "@/lib/display-name";
 import { friendlyAuthError, MIN_PASSWORD } from "@/lib/auth-errors";
+import { elevarParaAal2 } from "@/lib/seguranca/elevar-aal2";
 import { Switch } from "@/components/ui/switch";
 import { getMeusDados, salvarMeusDados, getMeuDocumento, salvarMeuDocumento, type MeuDocumento } from "@/lib/data/perfil-actions";
 import { DOCUMENTO_VAZIO_PF } from "@/lib/documento-pessoa";
@@ -291,6 +292,8 @@ export function ChangePassword() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
+  const [pedirCodigo, setPedirCodigo] = useState(false); // 2FA ativo e sessão só com senha
+  const [codigo, setCodigo] = useState("");
   const captcha = useCaptcha(); // reautenticação também passa pelo CAPTCHA do Supabase
 
   async function submit(e: React.FormEvent) {
@@ -336,10 +339,19 @@ export function ChangePassword() {
           setError("Senha atual incorreta.");
           return;
         }
+        // 2FA ativo + sessão aal1: o Supabase recusa a troca (401 insufficient_aal). Pede o código aqui mesmo.
+        const elevacao = await elevarParaAal2(supabase, codigo);
+        if (!elevacao.ok) {
+          setPedirCodigo(elevacao.pedirCodigo);
+          setError(elevacao.erro);
+          return;
+        }
         const { error } = await supabase.auth.updateUser({ password: next });
         if (error) throw error;
       }
       setOk(true);
+      setPedirCodigo(false);
+      setCodigo("");
       setCurrent("");
       setNext("");
       setConfirm("");
@@ -358,6 +370,20 @@ export function ChangePassword() {
         <span className="hidden sm:block" />
         <PwdField label="Nova senha" value={next} onChange={setNext} />
         <PwdField label="Confirmar nova senha" value={confirm} onChange={setConfirm} />
+        {pedirCodigo && (
+          <label className="block sm:col-span-2">
+            <span className="mb-1.5 block text-sm font-medium text-ink">Código de 6 dígitos do app autenticador</span>
+            <input
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={7}
+              value={codigo}
+              onChange={(e) => setCodigo(e.target.value.replace(/[^\d\s]/g, ""))}
+              placeholder="000000"
+              className="h-11 w-full rounded-xl border border-sage-200 bg-white px-3.5 text-sm tracking-[0.3em] focus:border-sage focus:outline-none sm:max-w-xs"
+            />
+          </label>
+        )}
         <div className="sm:col-span-2">
           {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
           {ok && (
