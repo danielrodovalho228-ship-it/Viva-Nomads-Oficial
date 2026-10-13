@@ -6,7 +6,7 @@ import { agoraBRTexto } from "@/lib/atendimento/data-br";
 import { notify } from "@/lib/notifications";
 import { textoEmail } from "@/lib/notifications/texto-seguro";
 import { SITE_URL } from "@/lib/site";
-import { calcularPrazos, frasePrazo, type Prioridade, type UrgenciaManutencao } from "@/config/atendimento";
+import { calcularPrazos, frasePrazo, prazoPrometido, type Prioridade, type UrgenciaManutencao } from "@/config/atendimento";
 import { prontidaoDosImoveis } from "@/lib/anuncio/prontidao-servidor";
 import { atenderViva, maisUrgente, type ChamarModelo, type Ferramentas, type ResultadoViva } from "@/lib/atendimento/viva-motor";
 import { contextoChamado, type FerramentaDef } from "@/lib/atendimento/viva-prompt";
@@ -472,10 +472,10 @@ export async function rodarViva(chamadoId: string): Promise<void> {
 export async function responderNaEquipe(chamadoId: string, momento: "abertura" | "mensagem" = "abertura"): Promise<void> {
   const admin = createAdminClient();
   if (!admin) return;
-  let c: (ChamadoViva & { prazo_primeira_resposta: string }) | null = null;
+  let c: (ChamadoViva & { criado_em: string }) | null = null;
   try {
-    const { data } = await admin.from("chamados").select(`${CAMPOS}, prazo_primeira_resposta`).eq("id", chamadoId).maybeSingle();
-    c = data as (ChamadoViva & { prazo_primeira_resposta: string }) | null;
+    const { data } = await admin.from("chamados").select(`${CAMPOS}, criado_em`).eq("id", chamadoId).maybeSingle();
+    c = data as (ChamadoViva & { criado_em: string }) | null;
     if (!c || c.responsavel_tipo !== "humano" || ["resolvido", "encerrado"].includes(c.status)) return;
     const { data: todas } = await admin.from("chamado_mensagens").select("autor, corpo, interno").eq("chamado_id", c.id).order("criado_em", { ascending: true });
     const publicas = ((todas ?? []) as { autor: string; corpo: string; interno: boolean }[]).filter((m) => !m.interno);
@@ -544,7 +544,7 @@ export async function responderNaEquipe(chamadoId: string, momento: "abertura" |
       await admin.from("chamado_mensagens").insert({
         chamado_id: c.id,
         autor: "ia",
-        corpo: textoAcolhimento({ numero: c.numero_publico, rotulo, prazo: new Date(c.prazo_primeira_resposta), respondidoPelaViva: sozinha }),
+        corpo: textoAcolhimento({ numero: c.numero_publico, rotulo, prazo: prazoPrometido(new Date(c.criado_em)), respondidoPelaViva: sozinha }),
       });
     }
     const mud: Record<string, unknown> = { atualizado_em: agora.toISOString() };
