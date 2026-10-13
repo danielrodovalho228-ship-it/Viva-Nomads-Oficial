@@ -9,6 +9,10 @@ export function friendlyAuthError(message: string): string {
   // ── CAPTCHA (Turnstile): token faltando, vencido ou já usado ──
   if (m.includes("captcha")) return "Confirme que você não é um robô e tente de novo.";
 
+  // ── 2FA ativo, sessão ainda só com senha (aal1): updateUser de senha/e-mail exige o código ──
+  if (m.includes("insufficient_aal") || m.includes("aal2 session is required"))
+    return "Confirme o código do seu autenticador para alterar a senha.";
+
   // ── Login ──
   // Anti-enumeração: o Supabase devolve "Invalid login credentials" tanto para
   // senha errada quanto para e-mail inexistente — não revela qual dos dois.

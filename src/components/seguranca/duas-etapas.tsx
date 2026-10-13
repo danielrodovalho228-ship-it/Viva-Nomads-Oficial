@@ -7,6 +7,7 @@ import { Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { codigoTotpValido, mensagemErroMfa, tentativasRestantes } from "@/lib/admin/mfa";
+import { gravarPendente, lerPendente, limparPendente } from "@/lib/seguranca/fator-pendente";
 import { safeInternalPath } from "@/lib/safe-redirect";
 
 const CHAVE_FALHAS = "vn:2fa-falhas";
@@ -23,6 +24,14 @@ function gravarFalhas(n: number) {
     sessionStorage.setItem(CHAVE_FALHAS, String(n));
   } catch {
     /* sem armazenamento: o limite do Supabase continua valendo */
+  }
+}
+
+function guardaDaAba(): Storage | null {
+  try {
+    return sessionStorage;
+  } catch {
+    return null;
   }
 }
 
@@ -47,7 +56,7 @@ function CampoCodigo({ valor, onChange, id }: { valor: string; onChange: (v: str
 }
 
 /** Confere o código num fator, com limite de tentativas neste navegador. */
-async function conferir(factorId: string, bruto: string): Promise<{ ok: true } | { ok: false; erro: string }> {
+async function conferir(factorId: string, bruto: string, contexto: "ativar" | "entrar" = "entrar"): Promise<{ ok: true } | { ok: false; erro: string }> {
   const codigo = codigoTotpValido(bruto);
   if (!codigo) return { ok: false, erro: "Digite os 6 números que aparecem no app." };
   if (tentativasRestantes(lerFalhas()) === 0) {
@@ -58,7 +67,7 @@ async function conferir(factorId: string, bruto: string): Promise<{ ok: true } |
   const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId, code: codigo });
   if (error) {
     gravarFalhas(lerFalhas() + 1);
-    return { ok: false, erro: mensagemErroMfa(error.message) };
+    return { ok: false, erro: mensagemErroMfa(error.message, contexto) };
   }
   gravarFalhas(0);
   return { ok: true };
@@ -132,7 +141,7 @@ export function DuasEtapasPanel({ obrigatorio, destino }: { obrigatorio: boolean
   const [erro, setErro] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
   const [sucesso, setSucesso] = useState<string | null>(null);
-  const [removendo, setRemovendo] = useState(false);
+  const [removendo, setRemovendo] = useState<null | "confirmar" | "codigo">(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -140,19 +149,26 @@ export function DuasEtapasPanel({ obrigatorio, destino }: { obrigatorio: boolean
       queueMicrotask(() => setEstado({ tipo: "sem-fator" }));
       return;
     }
+    // Só LÊ: nunca cria nem apaga fator no carregamento (o QR não pode mudar a cada abertura).
     void supabase.auth.mfa.listFactors().then(({ data }) => {
       const ativo = data?.totp?.[0];
-      setEstado(ativo ? { tipo: "ativo", factorId: ativo.id } : { tipo: "sem-fator" });
+      if (ativo) return setEstado({ tipo: "ativo", factorId: ativo.id });
+      const naoVerificados = (data?.all ?? []).filter((f) => f.factor_type === "totp" && f.status === "unverified").map((f) => f.id);
+      const pendente = lerPendente(guardaDaAba(), naoVerificados);
+      if (pendente) setEstado({ tipo: "configurando", ...pendente });
+      else setEstado({ tipo: "sem-fator" });
     });
   }, []);
 
+  /** Só roda a pedido da pessoa (botão): "Ativar" ou "Gerar novo QR". */
   async function comecar() {
     setErro(null);
     setSucesso(null);
     setOcupado(true);
     const supabase = createClient();
     if (!supabase) return setOcupado(false);
-    // Fatores antigos não concluídos atrapalham um novo cadastro: limpa antes.
+    // Fator antigo não concluído atrapalha um novo cadastro: limpa antes (e esquece o QR guardado).
+    limparPendente(guardaDaAba());
     const { data: lista } = await supabase.auth.mfa.listFactors();
     for (const f of lista?.all ?? []) {
       if (f.factor_type === "totp" && f.status === "unverified") await supabase.auth.mfa.unenroll({ factorId: f.id });
@@ -160,7 +176,10 @@ export function DuasEtapasPanel({ obrigatorio, destino }: { obrigatorio: boolean
     const { data, error } = await supabase.auth.mfa.enroll({ factorType: "totp", friendlyName: `Viva Nomads ${new Date().toISOString().slice(0, 10)}` });
     setOcupado(false);
     if (error || !data) return setErro(mensagemErroMfa(error?.message ?? "enroll disabled"));
-    setEstado({ tipo: "configurando", factorId: data.id, qr: data.totp.qr_code, segredo: data.totp.secret });
+    const novo = { factorId: data.id, qr: data.totp.qr_code, segredo: data.totp.secret };
+    gravarPendente(guardaDaAba(), novo);
+    setCodigo("");
+    setEstado({ tipo: "configurando", ...novo });
   }
 
   async function ativar(e: React.FormEvent) {
@@ -168,9 +187,10 @@ export function DuasEtapasPanel({ obrigatorio, destino }: { obrigatorio: boolean
     if (estado.tipo !== "configurando") return;
     setErro(null);
     setOcupado(true);
-    const r = await conferir(estado.factorId, codigo);
+    const r = await conferir(estado.factorId, codigo, "ativar");
     setOcupado(false);
     if (!r.ok) return setErro(r.erro);
+    limparPendente(guardaDaAba());
     setCodigo("");
     setSucesso("Verificação em duas etapas ativada. A partir de agora o admin pede o código a cada login.");
     setEstado({ tipo: "ativo", factorId: estado.factorId });
@@ -192,7 +212,9 @@ export function DuasEtapasPanel({ obrigatorio, destino }: { obrigatorio: boolean
     setOcupado(false);
     if (error) return setErro("Não foi possível remover agora. Tente de novo.");
     setCodigo("");
-    setRemovendo(false);
+    setRemovendo(null);
+    limparPendente(guardaDaAba());
+    // Não cria fator novo sozinho: a pessoa decide se quer ativar de novo.
     setSucesso("Verificação em duas etapas removida.");
     setEstado({ tipo: "sem-fator" });
   }
@@ -224,15 +246,22 @@ export function DuasEtapasPanel({ obrigatorio, destino }: { obrigatorio: boolean
             <li>Leia o QR code abaixo (ou digite a chave manual).</li>
             <li>Digite o código de 6 números que o app mostrar.</li>
           </ol>
+          <p role="note" className="rounded-xl bg-amber-50 p-3 text-sm font-medium text-amber-900">
+            Apague a entrada antiga da Viva Nomads no seu app autenticador e escaneie este QR novo.
+          </p>
           {/* eslint-disable-next-line @next/next/no-img-element -- SVG em data URL gerado pelo Supabase */}
           <img src={estado.qr} alt="QR code para o app autenticador" className="h-44 w-44 rounded-xl border border-sage-200 bg-white p-2" />
           <p className="text-sm text-muted">
             Chave manual: <code className="break-all rounded bg-sage-50 px-1.5 py-0.5 text-ink">{estado.segredo}</code>
           </p>
           <CampoCodigo id="codigo-ativar" valor={codigo} onChange={setCodigo} />
-          <Button type="submit" disabled={ocupado}>
-            {ocupado && <Loader2 className="h-4 w-4 animate-spin" />} Confirmar código e ativar
-          </Button>
+          <p className="text-xs text-muted">Se o código não confere, veja se o horário do celular está no automático.</p>
+          <div className="flex flex-wrap gap-2">
+            <Button type="submit" disabled={ocupado}>
+              {ocupado && <Loader2 className="h-4 w-4 animate-spin" />} Confirmar código e ativar
+            </Button>
+            <Button type="button" variant="ghost" onClick={comecar} disabled={ocupado}>Gerar novo QR</Button>
+          </div>
         </form>
       )}
       {estado.tipo === "ativo" && (
@@ -242,7 +271,15 @@ export function DuasEtapasPanel({ obrigatorio, destino }: { obrigatorio: boolean
             <a href={safeInternalPath(destino, "/admin")} className="inline-block text-sm font-medium text-forest underline">Continuar para o destino</a>
           )}
           {!removendo ? (
-            <Button variant="outline" onClick={() => { setRemovendo(true); setSucesso(null); }}>Remover verificação</Button>
+            <Button variant="outline" onClick={() => { setRemovendo("confirmar"); setSucesso(null); setErro(null); }}>Remover verificação</Button>
+          ) : removendo === "confirmar" ? (
+            <div role="alertdialog" aria-label="Confirmar remoção" className="space-y-3 rounded-xl bg-amber-50 p-3">
+              <p className="text-sm text-amber-900">Isso desliga a verificação em duas etapas. Continuar?</p>
+              <div className="flex flex-wrap gap-2">
+                <Button type="button" variant="outline" onClick={() => setRemovendo("codigo")}>Continuar</Button>
+                <Button type="button" variant="ghost" onClick={() => setRemovendo(null)}>Cancelar</Button>
+              </div>
+            </div>
           ) : (
             <form onSubmit={remover} className="space-y-3">
               <p className="text-sm text-muted">Para remover, digite o código atual do app.</p>
@@ -251,7 +288,7 @@ export function DuasEtapasPanel({ obrigatorio, destino }: { obrigatorio: boolean
                 <Button type="submit" variant="outline" disabled={ocupado}>
                   {ocupado && <Loader2 className="h-4 w-4 animate-spin" />} Confirmar remoção
                 </Button>
-                <Button type="button" variant="ghost" onClick={() => { setRemovendo(false); setCodigo(""); setErro(null); }}>Cancelar</Button>
+                <Button type="button" variant="ghost" onClick={() => { setRemovendo(null); setCodigo(""); setErro(null); }}>Cancelar</Button>
               </div>
             </form>
           )}

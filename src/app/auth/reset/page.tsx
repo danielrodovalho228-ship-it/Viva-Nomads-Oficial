@@ -9,6 +9,7 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import { PasswordInput } from "@/components/ui/password-input";
 import { createClient } from "@/lib/supabase/client";
 import { friendlyAuthError, MIN_PASSWORD } from "@/lib/auth-errors";
+import { elevarParaAal2 } from "@/lib/seguranca/elevar-aal2";
 import { useCelularNoNavegador, VoltarParaApp } from "@/components/app/voltar-para-app";
 
 type Phase = "checking" | "ready" | "invalid" | "done";
@@ -26,6 +27,8 @@ export default function ResetPasswordPage() {
   const [phase, setPhase] = useState<Phase>("checking");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [codigo, setCodigo] = useState("");
+  const [pedirCodigo, setPedirCodigo] = useState(false); // 2FA ativo: troca de senha exige o código
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const celular = useCelularNoNavegador();
@@ -111,6 +114,12 @@ export default function ResetPasswordPage() {
     setLoading(true);
     try {
       if (supabase) {
+        const elevacao = await elevarParaAal2(supabase, codigo);
+        if (!elevacao.ok) {
+          setPedirCodigo(elevacao.pedirCodigo);
+          setError(elevacao.erro);
+          return;
+        }
         const { error } = await supabase.auth.updateUser({ password });
         if (error) throw error;
       }
@@ -198,6 +207,18 @@ export default function ResetPasswordPage() {
                 className="rounded-xl border border-sage-200 bg-white px-4 py-3 focus-within:border-sage"
                 inputClassName="text-sm"
               />
+              {pedirCodigo && (
+                <input
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  maxLength={7}
+                  aria-label="Código de 6 dígitos do app autenticador"
+                  placeholder="Código do autenticador (6 dígitos)"
+                  value={codigo}
+                  onChange={(e) => setCodigo(e.target.value.replace(/[^\d\s]/g, ""))}
+                  className="w-full rounded-xl border border-sage-200 bg-white px-4 py-3 text-sm focus:border-sage focus:outline-none"
+                />
+              )}
               {error && <p className="text-sm text-red-600">{error}</p>}
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading && <Loader2 className="h-4 w-4 animate-spin" />}
