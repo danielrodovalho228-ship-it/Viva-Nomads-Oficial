@@ -274,3 +274,34 @@ export async function lerSaida(): Promise<Array<Record<string, unknown>>> {
       }
     });
 }
+
+/**
+ * Põe um contrato `ativo` em VIGÊNCIA de verdade (regra única de contrato-etapas):
+ * as duas assinaturas e o 1º aluguel confirmado pelo inquilino. Sem isso, "ativo"
+ * no banco ainda é "Aguardando assinatura" e a manutenção é recusada (F27).
+ */
+export async function tornarContratoVigente(contratoId: string, donoId: string, aluguel = 3200): Promise<void> {
+  const agora = new Date().toISOString();
+  const { error: e1 } = await adm().from("contratos").update({ assinado_proprietario_em: agora, assinado_inquilino_em: agora }).eq("id", contratoId);
+  if (e1) throw e1;
+  const hoje = new Date();
+  const fim = new Date(hoje.getTime() + 59 * 86_400_000);
+  const dia = (d: Date) => d.toISOString().slice(0, 10);
+  const { data: bloco, error: e2 } = await adm()
+    .from("contrato_blocos")
+    .insert({ contrato_id: contratoId, numero_bloco: 1, inicio: dia(hoje), fim: dia(fim), meses: 2, valor: aluguel * 2, caucao: aluguel, status: "ativo" })
+    .select("id")
+    .single();
+  if (e2) throw e2;
+  const { error: e3 } = await adm().from("pagamentos_bloco").insert({
+    bloco_id: bloco.id,
+    contrato_id: contratoId,
+    tipo: "aluguel",
+    valor: aluguel,
+    data_pagamento: dia(hoje),
+    marcado_por: donoId,
+    confirmado_pelo_inquilino: true,
+    confirmado_em: agora,
+  });
+  if (e3) throw e3;
+}

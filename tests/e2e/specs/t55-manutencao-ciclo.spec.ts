@@ -9,12 +9,13 @@ import {
   lerSaida,
   novaSenha,
   novoSufixo,
+  tornarContratoVigente,
 } from "../fixtures/laboratorio";
 
 /**
  * T55 — ORDEM DE MANUTENÇÃO, ciclo completo (ordens b9e73a4b e 48f96269,
  * critérios de aceite do Daniel). Contas NOVAS: dono com imóvel publicado e
- * inquilino com contrato ATIVO nele.
+ * inquilino com contrato EM VIGÊNCIA (2 assinaturas + 1º aluguel confirmado) nele.
  *  1. Inquilino abre: seletor com os exemplos do FAQ e o prazo; a ordem aparece
  *     com "Responder até <data/hora> (horário de Brasília)".
  *  2. Proprietário vê a MESMA ordem com o prazo, inicia o atendimento e responde.
@@ -67,6 +68,8 @@ test.describe("T55 — Ordem de manutenção: prazo, dois lados, histórico e r�
       .single();
     if (error) throw error;
     ids.contrato = data.id as string;
+    // Fixture honesta (ordem a9e5f59c): contrato EM VIGÊNCIA, sem afrouxar a regra do #436.
+    await tornarContratoVigente(ids.contrato, ids.dono);
   });
 
   test.afterAll(async () => {
