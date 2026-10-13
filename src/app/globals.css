@@ -350,3 +350,9 @@ html[data-app] body {
     --ajuda-bottom: 1.5rem;
   }
 }
+/* F49: folga no fim da página no celular (site) para o botão redondo da Viva nunca tampar o último botão/campo. */
+@media (max-width: 767px) {
+  html:not([data-app]) body {
+    padding-bottom: 4.5rem;
+  }
+}

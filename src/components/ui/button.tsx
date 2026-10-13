@@ -37,7 +37,7 @@ export function Button({
   className,
   ...props
 }: CommonProps & React.ButtonHTMLAttributes<HTMLButtonElement>) {
-  return <button className={cn(base, variants[variant], sizes[size], className)} {...props} />;
+  return <button className={cn(base, variants[variant], sizes[size], className)} data-cta={variant === "ghost" ? undefined : ""} {...props} />;
 }
 
 export function ButtonLink({
@@ -48,6 +48,6 @@ export function ButtonLink({
   ...props
 }: CommonProps & { href: string } & React.AnchorHTMLAttributes<HTMLAnchorElement>) {
   return (
-    <Link href={href} className={cn(base, variants[variant], sizes[size], className)} {...props} />
+    <Link href={href} className={cn(base, variants[variant], sizes[size], className)} data-cta={variant === "ghost" ? undefined : ""} {...props} />
   );
 }
