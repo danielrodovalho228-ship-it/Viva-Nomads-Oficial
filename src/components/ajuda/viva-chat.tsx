@@ -10,6 +10,7 @@ import { abrirChamado } from "@/lib/data/atendimento-actions";
 import { SAUDACAO_CHAT, transcricaoChat, type MsgChat } from "@/lib/atendimento/viva-chat-texto";
 import { PROMESSA_ATENDIMENTO } from "@/config/atendimento";
 import { SUPORTE_EMAIL } from "@/lib/site";
+import { ehCampoDeFormulario, FAIXA_CTA_PX, flutuanteVisivel } from "@/lib/atendimento/flutuante-visivel";
 
 /**
  * Chat da Viva (assistente virtual) — botão flutuante "Fale com a Viva" em todas
@@ -43,11 +44,71 @@ function guardar(m: MsgChat[]) {
 export function VivaChatFlutuante() {
   const pathname = usePathname() ?? "/";
   const [aberto, setAberto] = useState(false);
-  if (ESCONDER.some((p) => pathname === p || pathname.startsWith(p + "/"))) return null;
+  const [campoEmFoco, setCampoEmFoco] = useState(false);
+  const [ctaNaFaixa, setCtaNaFaixa] = useState(false);
+  const raiz = useRef<HTMLDivElement>(null);
+  const escondido = ESCONDER.some((p) => pathname === p || pathname.startsWith(p + "/"));
+
+  // F49: no celular o botão sai da frente de campos em foco e de botões principais (CTA) na faixa de baixo.
+  useEffect(() => {
+    if (escondido) return;
+    const fora = (el: EventTarget | null) => !(el instanceof Element) || !raiz.current?.contains(el);
+    const aoFocar = (e: FocusEvent) => {
+      const el = e.target;
+      if (el instanceof HTMLElement && fora(el)) setCampoEmFoco(ehCampoDeFormulario(el.tagName, (el as HTMLInputElement).type));
+    };
+    const aoSair = () => setCampoEmFoco(false);
+    document.addEventListener("focusin", aoFocar);
+    document.addEventListener("focusout", aoSair);
+
+    const naFaixa = new Set<Element>();
+    let io: IntersectionObserver | null = null;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const observados = new WeakSet<Element>();
+    function varrer() {
+      if (typeof IntersectionObserver === "undefined") return;
+      io ??= new IntersectionObserver(
+        (entradas) => {
+          for (const en of entradas) {
+            if (en.isIntersecting) naFaixa.add(en.target);
+            else naFaixa.delete(en.target);
+          }
+          setCtaNaFaixa(naFaixa.size > 0);
+        },
+        // só a faixa de baixo da tela (onde o botão flutua) conta
+        { rootMargin: `${-(window.innerHeight - FAIXA_CTA_PX)}px 0px 0px 0px` },
+      );
+      document.querySelectorAll("[data-cta], button[type=submit]").forEach((el) => {
+        if (observados.has(el) || raiz.current?.contains(el)) return;
+        observados.add(el);
+        io!.observe(el);
+      });
+    }
+    varrer();
+    const mo = new MutationObserver(() => {
+      clearTimeout(timer);
+      timer = setTimeout(varrer, 200);
+    });
+    mo.observe(document.body, { childList: true, subtree: true });
+    return () => {
+      document.removeEventListener("focusin", aoFocar);
+      document.removeEventListener("focusout", aoSair);
+      mo.disconnect();
+      io?.disconnect();
+      clearTimeout(timer);
+      setCampoEmFoco(false);
+      setCtaNaFaixa(false);
+    };
+  }, [pathname, escondido]);
+
+  if (escondido) return null;
+  const visivel = flutuanteVisivel({ chatAberto: aberto, campoEmFoco, ctaNaFaixa });
   return (
     <div
-      className="web-only fixed right-4 z-40 flex flex-col items-end gap-3 print:hidden md:right-6"
+      ref={raiz}
+      className={cn("web-only fixed right-4 z-40 flex flex-col items-end gap-3 print:hidden md:right-6", !visivel && "max-md:hidden")}
       style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + var(--ajuda-bottom, 1.5rem))" }}
+      data-testid="fale-com-a-viva-raiz"
     >
       {aberto && (
         <div className="w-[min(380px,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-sage-200 bg-white shadow-2xl" role="dialog" aria-label="Chat com a Viva">
@@ -58,11 +119,12 @@ export function VivaChatFlutuante() {
         type="button"
         onClick={() => setAberto((v) => !v)}
         aria-expanded={aberto}
-        className="inline-flex items-center gap-2 rounded-full bg-forest px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition-colors hover:bg-forest/90"
+        aria-label={aberto ? "Fechar o chat" : "Fale com a Viva"}
+        className="inline-flex h-12 w-12 items-center justify-center gap-2 rounded-full bg-forest text-sm font-semibold text-white shadow-lg transition-colors hover:bg-forest/90 md:h-auto md:w-auto md:px-4 md:py-2.5"
         data-testid="fale-com-a-viva"
       >
-        {aberto ? <X className="h-4 w-4" /> : <MessageCircle className="h-4 w-4" />}
-        {aberto ? "Fechar" : "Fale com a Viva"}
+        {aberto ? <X className="h-5 w-5 md:h-4 md:w-4" /> : <MessageCircle className="h-5 w-5 md:h-4 md:w-4" />}
+        <span className="hidden md:inline">{aberto ? "Fechar" : "Fale com a Viva"}</span>
       </button>
     </div>
   );
