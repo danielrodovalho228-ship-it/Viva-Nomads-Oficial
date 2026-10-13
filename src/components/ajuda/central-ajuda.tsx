@@ -10,6 +10,7 @@ import { FAQ, buscarFaq, respostaPara, type PerfilAjuda } from "@/lib/atendiment
 import { avisoEmergencia, CATEGORIAS, detectarEmergencia } from "@/lib/atendimento/classificar";
 import { PROMESSA_ATENDIMENTO } from "@/config/atendimento";
 import { podeMarcarResolvido } from "@/lib/atendimento/acolhimento";
+import { emailMascaradoDaConta } from "@/lib/atendimento/identificacao-chamado";
 import {
   abrirChamado,
   chamadoDeOutraConta,
@@ -123,6 +124,7 @@ export function CentralAjuda({ canal }: { canal: "site" | "app" }) {
           canal={canal}
           contexto={contexto}
           logado={!!user}
+          emailConta={user?.email ?? null}
           contratos={contratos}
           onCancelar={() => {
             setContexto(null);
@@ -243,6 +245,7 @@ function NovoChamado({
   canal,
   contexto,
   logado,
+  emailConta,
   contratos,
   onCancelar,
   onAberto,
@@ -250,6 +253,7 @@ function NovoChamado({
   canal: "site" | "app";
   contexto: { tipo: string; id: string } | null;
   logado: boolean;
+  emailConta?: string | null;
   contratos: { id: string; titulo: string }[];
   onCancelar: () => void;
   onAberto: (numero: string) => void;
@@ -266,6 +270,7 @@ function NovoChamado({
 
   const categorias = CATEGORIAS.filter((c) => !c.interna && (!c.exigeContrato || contratos.length > 0));
   const manutencao = cat === "manutencao";
+  const emailMascarado = emailMascaradoDaConta(emailConta);
 
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
@@ -367,16 +372,22 @@ function NovoChamado({
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block text-sm">
               <span className="mb-1 block font-medium text-ink">Seu nome</span>
-              <input value={nome} onChange={(e) => setNome(e.target.value)} maxLength={60} className={campo} />
+              <input required minLength={2} value={nome} onChange={(e) => setNome(e.target.value)} maxLength={60} autoComplete="name" className={campo} />
             </label>
             <label className="block text-sm">
               <span className="mb-1 block font-medium text-ink">Seu e-mail (para a resposta)</span>
               <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className={campo} />
             </label>
-            <p className="text-xs text-muted sm:col-span-2">
-              Tem conta? <Link href="/auth?redirect=/ajuda" className="font-medium text-forest underline">Entre</Link> para acompanhar o chamado aqui.
+            <p data-testid="chamado-aviso-dados" className="text-xs text-muted sm:col-span-2">
+              Usamos esses dados só para responder este chamado. Tem conta? <Link href="/auth?redirect=/ajuda" className="font-medium text-forest underline">Entre</Link> para acompanhar o chamado aqui.
             </p>
           </div>
+        )}
+        {logado && emailMascarado && (
+          <p data-testid="chamado-email-conta" className="text-sm text-muted">
+            Vamos responder no e-mail da sua conta: <strong className="text-ink">{emailMascarado}</strong>.{" "}
+            <Link href="/dashboard/conta" className="font-medium text-forest underline">Alterar em Conta</Link>
+          </p>
         )}
       </div>
 

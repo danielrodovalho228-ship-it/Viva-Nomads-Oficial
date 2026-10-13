@@ -9,7 +9,7 @@ import { ehAdmin } from "@/lib/data/admin-guard";
 import { situacaoLimite, HORA } from "@/lib/limites";
 import { guardContactInfo } from "@/lib/messages/contact-guard";
 import { textoEmail } from "@/lib/notifications/texto-seguro";
-import { isValidEmail } from "@/lib/auth-errors";
+import { validarVisitante } from "@/lib/atendimento/identificacao-chamado";
 import {
   calcularPrazos,
   mensagemPrazo,
@@ -115,9 +115,10 @@ export async function abrirChamado(
   let visitanteEmail: string | null = null;
   let visitanteNome: string | null = null;
   if (!user) {
-    visitanteEmail = (input.visitanteEmail ?? "").trim().toLowerCase().slice(0, 254);
-    visitanteNome = (input.visitanteNome ?? "").trim().slice(0, 60) || null;
-    if (!isValidEmail(visitanteEmail)) return { ok: false, error: "Informe um e-mail válido para receber a resposta." };
+    const v = validarVisitante({ nome: input.visitanteNome, email: input.visitanteEmail });
+    if (!v.ok) return { ok: false, error: v.error };
+    visitanteEmail = v.email;
+    visitanteNome = v.nome;
   }
 
   // Limite: 8 chamados por hora por pessoa (ou por IP, para visitante).

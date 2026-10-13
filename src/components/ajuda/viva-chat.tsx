@@ -321,7 +321,7 @@ function FormPessoa({ logado, msgs, onCancelar }: { logado: boolean; msgs: MsgCh
       <p className="text-xs text-muted">Abrimos um chamado com esta conversa. Uma pessoa responde em até 24 h.</p>
       {!logado && (
         <>
-          <input className={campo} placeholder="Seu nome" value={nome} maxLength={60} onChange={(e) => setNome(e.target.value)} aria-label="Seu nome" />
+          <input required minLength={2} className={campo} placeholder="Seu nome" value={nome} maxLength={60} onChange={(e) => setNome(e.target.value)} aria-label="Seu nome" />
           <input className={campo} type="email" placeholder="Seu e-mail (a resposta chega por lá)" value={email} onChange={(e) => setEmail(e.target.value)} aria-label="Seu e-mail" />
         </>
       )}
