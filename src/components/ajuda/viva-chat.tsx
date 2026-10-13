@@ -17,8 +17,9 @@ import { SUPORTE_EMAIL } from "@/lib/site";
  * logado. Sem dados de conta: quando não resolve, "Falar com uma pessoa" abre um
  * chamado com a conversa anexada. No app ele some (a Ajuda fica em Perfil).
  */
+// "/dashboard/conta/seguranca": cobria "Nova senha"/"Salvar nova senha" e os botões do 2FA a 390 px (t58).
 // "/buscar": o botão flutuante cobria "Mais filtros" em 360/390 px; lá a ajuda é um link na página.
-export const ESCONDER = ["/ajuda", "/buscar", "/admin", "/auth", "/dashboard/conta/ajuda", "/dashboard/imoveis/novo", "/dashboard/fechamento"];
+export const ESCONDER = ["/ajuda", "/buscar", "/admin", "/auth", "/dashboard/conta/ajuda", "/dashboard/imoveis/novo", "/dashboard/fechamento", "/dashboard/conta/seguranca"];
 const CHAVE = "vivanomads-viva-chat";
 
 function carregar(): MsgChat[] {
