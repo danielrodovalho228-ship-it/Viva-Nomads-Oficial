@@ -41,6 +41,8 @@ const nextConfig: NextConfig = {
       // Links antigos para /simulador e a página estática apontam para ela.
       { source: "/simulador", destination: "/simulacao", permanent: true },
       { source: "/simulador.html", destination: "/simulacao", permanent: true },
+      // /contato não existe: o canal único é a Central de Ajuda (F25). 308, só /ajuda no sitemap.
+      { source: "/contato", destination: "/ajuda", permanent: true },
     ];
   },
   async rewrites() {
