@@ -24,3 +24,15 @@ test("insufficient_aal (2FA ativo, sessão só com senha) pede o código, nunca 
   assert.equal(friendlyAuthError(msg), "Confirme o código do seu autenticador para alterar a senha.");
   assert.equal(friendlyAuthError("insufficient_aal"), "Confirme o código do seu autenticador para alterar a senha.");
 });
+
+test("F2: erro 500 do provedor de e-mail no cadastro vira a mensagem do e-mail, nunca o genérico", () => {
+  for (const raw of [
+    "gomail: could not send email 1: 550 Invalid `to` field",
+    "Error sending confirmation email: 550 Invalid `to` field",
+    "unexpected_failure",
+  ]) {
+    assert.equal(friendlyAuthError(raw, "cadastro"), MSG, raw);
+  }
+  // caso negativo: no login, "unexpected_failure" sozinho não vira mensagem de e-mail
+  assert.notEqual(friendlyAuthError("unexpected_failure", "login"), MSG);
+});

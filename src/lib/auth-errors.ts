@@ -3,7 +3,7 @@
  * Mapeia pela mensagem/código REAL do Supabase. Login mantém anti-enumeração:
  * senha errada e usuário inexistente caem na MESMA mensagem neutra.
  */
-export function friendlyAuthError(message: string): string {
+export function friendlyAuthError(message: string, contexto: "login" | "cadastro" = "login"): string {
   const m = message.toLowerCase();
 
   // ── CAPTCHA (Turnstile): token faltando, vencido ou já usado ──
@@ -41,6 +41,15 @@ export function friendlyAuthError(message: string): string {
     m.includes("email_address_invalid") ||
     m.includes("email domain not allowed") ||
     (m.includes("email address") && m.includes("invalid"))
+  )
+    return "Não conseguimos usar este e-mail. Confira se está digitado certo ou use outro endereço.";
+  // Provedor de e-mail recusou o destinatário (550 / "could not send"): o Supabase responde 500
+  // unexpected_failure. É problema do ENDEREÇO, nunca o genérico (F2, ordem d90cbe91).
+  if (
+    m.includes("could not send") ||
+    m.includes("invalid `to` field") ||
+    /\b550\b/.test(m) ||
+    (contexto === "cadastro" && m.includes("unexpected_failure"))
   )
     return "Não conseguimos usar este e-mail. Confira se está digitado certo ou use outro endereço.";
   // Falha de ENVIO do e-mail de confirmação (SMTP) — a conta costuma ser criada.

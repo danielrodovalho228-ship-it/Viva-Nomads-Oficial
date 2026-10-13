@@ -24,6 +24,7 @@ import { useAuthStore } from "@/lib/store";
 import { resetPropertiesCache } from "@/lib/use-properties";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { SITE_URL } from "@/lib/site";
+import { MSG_EMAIL_INUTILIZAVEL } from "@/lib/email-dominio";
 import { friendlyAuthError, isEmailSendError, isValidEmail, MIN_PASSWORD } from "@/lib/auth-errors";
 import type { UserRole } from "@/lib/types";
 import type { PersonType } from "@/lib/tax";
@@ -320,6 +321,19 @@ export default function AuthPage() {
     try {
       if (supabase) {
         if (mode === "signup") {
+          // F2: domínio reservado/sem MX é barrado no servidor, antes do signUp.
+          const ver = await fetch("/api/auth/validar-email", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email }),
+          })
+            .then((r) => r.json() as Promise<{ ok?: boolean; error?: string }>)
+            .catch(() => ({ ok: true }) as { ok?: boolean; error?: string });
+          if (ver.ok === false) {
+            setError(ver.error || MSG_EMAIL_INUTILIZAVEL);
+            setLoading(false);
+            return;
+          }
           const { data, error } = await withTimeout(
             supabase.auth.signUp({
               email,
@@ -438,7 +452,7 @@ export default function AuthPage() {
         );
         setAwaitingConfirm(true);
       } else {
-        setError(friendlyAuthError(msg));
+        setError(friendlyAuthError(msg, mode === "signup" ? "cadastro" : "login"));
       }
     } finally {
       setLoading(false);
