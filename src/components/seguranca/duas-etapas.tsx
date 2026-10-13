@@ -10,6 +10,8 @@ import { codigoTotpValido, mensagemErroMfa, tentativasRestantes } from "@/lib/ad
 import { gravarPendente, lerPendente, limparPendente } from "@/lib/seguranca/fator-pendente";
 import { safeInternalPath } from "@/lib/safe-redirect";
 import { agruparChave, urlOtpauth } from "@/lib/seguranca/chave-totp";
+import { contarCodigosRecuperacao, gerarCodigosRecuperacao, usarCodigoRecuperacao } from "@/lib/seguranca/recuperacao-actions";
+import { CodigosGerados, CodigosRecuperacaoBloco } from "@/components/seguranca/codigos-recuperacao";
 
 const CHAVE_FALHAS = "vn:2fa-falhas";
 
@@ -82,6 +84,7 @@ export function VerificarCodigoForm({ destino }: { destino: string }) {
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [carregando, setCarregando] = useState(true);
+  const [modoRecuperacao, setModoRecuperacao] = useState(false);
   const alvo = safeInternalPath(destino, "/admin");
 
   useEffect(() => {
@@ -111,6 +114,41 @@ export function VerificarCodigoForm({ destino }: { destino: string }) {
     router.refresh();
   }
 
+  async function enviarRecuperacao(e: React.FormEvent) {
+    e.preventDefault();
+    setErro(null);
+    setEnviando(true);
+    const r = await usarCodigoRecuperacao(codigo, alvo);
+    setEnviando(false);
+    if (!r.ok) return setErro(r.error);
+    // O servidor desligou o app antigo: segue para cadastrar um novo (e receber códigos novos).
+    window.location.assign(r.proximo);
+  }
+
+  if (modoRecuperacao) {
+    return (
+      <form onSubmit={enviarRecuperacao} className="mt-6 space-y-4 text-left">
+        <label htmlFor="codigo-recuperacao" className="mb-1 block text-sm font-medium text-ink">Código de recuperação (10 letras e números)</label>
+        <input
+          id="codigo-recuperacao"
+          autoComplete="off"
+          autoCapitalize="characters"
+          maxLength={12}
+          value={codigo}
+          onChange={(e) => setCodigo(e.target.value)}
+          className="h-12 w-full rounded-xl border border-sage-300 bg-white px-4 text-center text-lg uppercase tracking-widest text-ink focus:border-forest focus:outline-none"
+          placeholder="XXXXX-XXXXX"
+        />
+        <p className="text-xs text-muted">Cada código vale uma vez. Ao usar, a verificação do app é desligada e você cadastra o app de novo.</p>
+        {erro && <p role="alert" className="text-sm text-red-600">{erro}</p>}
+        <Button type="submit" className="w-full" disabled={enviando}>
+          {enviando ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />} Usar código de recuperação
+        </Button>
+        <button type="button" className="min-h-11 text-sm text-forest underline" onClick={() => { setModoRecuperacao(false); setCodigo(""); setErro(null); }}>Voltar ao código do app</button>
+      </form>
+    );
+  }
+
   return (
     <form onSubmit={enviar} className="mt-6 space-y-4 text-left">
       {carregando ? (
@@ -123,6 +161,10 @@ export function VerificarCodigoForm({ destino }: { destino: string }) {
             {enviando ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
             Confirmar e entrar
           </Button>
+          <div className="flex flex-col items-start gap-1 text-sm">
+            <button type="button" className="min-h-11 text-forest underline" onClick={() => { setModoRecuperacao(true); setCodigo(""); setErro(null); }}>Usar código de recuperação</button>
+            <a href="/admin/2fa/refazer" className="inline-flex min-h-11 items-center text-forest underline">Perdi o acesso ao app (refazer)</a>
+          </div>
         </>
       )}
     </form>
@@ -144,6 +186,13 @@ export function DuasEtapasPanel({ obrigatorio, destino }: { obrigatorio: boolean
   const [sucesso, setSucesso] = useState<string | null>(null);
   const [removendo, setRemovendo] = useState<null | "confirmar" | "codigo">(null);
   const [copiado, setCopiado] = useState(false);
+  const [codigosNovos, setCodigosNovos] = useState<string[] | null>(null);
+  const [restantes, setRestantes] = useState<number | null>(null);
+
+  async function atualizarRestantes() {
+    const r = await contarCodigosRecuperacao();
+    if (r.ok) setRestantes(r.restantes);
+  }
 
   async function copiarChave(segredo: string) {
     try {
@@ -164,7 +213,10 @@ export function DuasEtapasPanel({ obrigatorio, destino }: { obrigatorio: boolean
     // Só LÊ: nunca cria nem apaga fator no carregamento (o QR não pode mudar a cada abertura).
     void supabase.auth.mfa.listFactors().then(({ data }) => {
       const ativo = data?.totp?.[0];
-      if (ativo) return setEstado({ tipo: "ativo", factorId: ativo.id });
+      if (ativo) {
+        void atualizarRestantes();
+        return setEstado({ tipo: "ativo", factorId: ativo.id });
+      }
       const naoVerificados = (data?.all ?? []).filter((f) => f.factor_type === "totp" && f.status === "unverified").map((f) => f.id);
       const pendente = lerPendente(guardaDaAba(), naoVerificados);
       if (pendente) setEstado({ tipo: "configurando", ...pendente });
@@ -206,6 +258,14 @@ export function DuasEtapasPanel({ obrigatorio, destino }: { obrigatorio: boolean
     setCodigo("");
     setSucesso("Verificação em duas etapas ativada. A partir de agora o admin pede o código a cada login.");
     setEstado({ tipo: "ativo", factorId: estado.factorId });
+    // Ao ativar, já entrega os 10 códigos de recuperação (mostrados uma vez).
+    const g = await gerarCodigosRecuperacao();
+    if (g.ok) {
+      setCodigosNovos(g.codigos);
+      setRestantes(g.codigos.length);
+    } else {
+      void atualizarRestantes();
+    }
   }
 
   async function remover(e: React.FormEvent) {
@@ -294,6 +354,8 @@ export function DuasEtapasPanel({ obrigatorio, destino }: { obrigatorio: boolean
           {sucesso && obrigatorio && (
             <a href={safeInternalPath(destino, "/admin")} className="inline-flex min-h-11 items-center text-sm font-medium text-forest underline">Continuar para o destino</a>
           )}
+          {codigosNovos && <CodigosGerados codigos={codigosNovos} onFechar={() => setCodigosNovos(null)} />}
+          <CodigosRecuperacaoBloco restantes={restantes} onNovos={(c) => { setCodigosNovos(c); setRestantes(c.length); }} />
           {!removendo ? (
             <Button variant="outline" className="min-h-11" onClick={() => { setRemovendo("confirmar"); setSucesso(null); setErro(null); }}>Remover verificação</Button>
           ) : removendo === "confirmar" ? (

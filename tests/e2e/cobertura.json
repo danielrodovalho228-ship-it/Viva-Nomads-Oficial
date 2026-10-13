@@ -40,6 +40,12 @@
         "t9-documentos"
       ]
     },
+    "/admin/2fa/refazer": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
     "/admin/agentes": {
       "personas": [
         "admin"
@@ -2038,6 +2044,47 @@
         "admin"
       ],
       "specs": []
+    },
+    "src/lib/seguranca/recuperacao-actions.ts#confirmarRefazer": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/seguranca/recuperacao-actions.ts#contarCodigosRecuperacao": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t61-2fa-codigos-recuperacao"
+      ]
+    },
+    "src/lib/seguranca/recuperacao-actions.ts#gerarCodigosRecuperacao": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t61-2fa-codigos-recuperacao"
+      ]
+    },
+    "src/lib/seguranca/recuperacao-actions.ts#pedirCodigoRefazer": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/seguranca/recuperacao-actions.ts#usarCodigoRecuperacao": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t61-2fa-codigos-recuperacao"
+      ]
     },
     "src/lib/socios/caixa-actions.ts#enviarParaCaixa": {
       "personas": [

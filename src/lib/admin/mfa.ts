@@ -7,7 +7,16 @@ import { safeInternalPath } from "../safe-redirect.ts";
 
 export const CAMINHO_ATIVAR_2FA = "/dashboard/conta/seguranca";
 export const CAMINHO_VERIFICAR_2FA = "/auth/verificar-codigo";
+export const CAMINHO_REFAZER_2FA = "/admin/2fa/refazer";
 export const TENTATIVAS_MAX_2FA = 5;
+
+/**
+ * Única rota de /admin aberta a admin em aal1: quem perdeu o app autenticador refaz o 2FA
+ * (senha recente + código por e-mail, tudo conferido no servidor). O papel admin continua exigido.
+ */
+export function rotaLivreDeAal2(pathname: string): boolean {
+  return pathname === CAMINHO_REFAZER_2FA || pathname === `${CAMINHO_REFAZER_2FA}/`;
+}
 
 export type PortaoMfa = "liberar" | "ativar" | "verificar";
 
@@ -43,9 +52,9 @@ export function codigoTotpValido(bruto: string): string | null {
 }
 
 export const MSG_CODIGO_NAO_CONFERE_NOVO =
-  "Código não confere. Use o código da entrada nova (QR desta tela) e confira se o horário do celular está automático.";
+  "Código não confere — confira se o relógio do celular está no automático e se está usando a entrada mais nova do app (a deste QR).";
 export const MSG_CODIGO_NAO_CONFERE =
-  "Código não confere. Use o código mais recente do app e confira se o horário do celular está automático.";
+  "Código não confere — confira se o relógio do celular está no automático e se está usando a entrada mais nova do app.";
 export const MSG_CONFIRME_CODIGO_SENHA = "Confirme o código do seu autenticador para alterar a senha.";
 
 /** `contexto`: "ativar" = QR recém-lido nesta tela; "entrar" = código de um fator já ativo. */

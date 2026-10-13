@@ -41,7 +41,7 @@ test("código errado: não libera e orienta sobre o horário do celular", async 
   const { c } = cliente(["aal1", "aal2"], { error: { message: "Invalid TOTP code entered" } });
   const r = await elevarParaAal2(c, "000000");
   assert.equal(r.ok, false);
-  if (!r.ok) assert.match(r.erro, /horário do celular está automático/);
+  if (!r.ok) assert.match(r.erro, /relógio do celular está no automático/);
 });
 
 test("código com formato inválido não chega ao Supabase", async () => {
