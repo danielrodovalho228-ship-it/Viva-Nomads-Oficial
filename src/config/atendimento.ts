@@ -17,6 +17,17 @@ export const PROMESSA_ATENDIMENTO = "Assistente Viva 24 h · resposta de uma pes
 
 const HORA_MS = 3_600_000;
 
+/** Horas da promessa pública a uma pessoa (a mesma frase de PROMESSA_ATENDIMENTO). */
+export const PROMESSA_HUMANA_H = 24;
+
+/**
+ * Prazo que o CLIENTE vê: abertura + 24 h (F23). Os prazos internos por prioridade
+ * (PRAZOS) são meta da equipe e nunca aparecem para quem abriu o chamado.
+ */
+export function prazoPrometido(criadoEm: Date): Date {
+  return new Date(criadoEm.getTime() + PROMESSA_HUMANA_H * HORA_MS);
+}
+
 /**
  * Prazos INTERNOS por prioridade (meta da equipe), em horas corridas — a
  * promessa pública é uma só (PROMESSA_ATENDIMENTO). P1 avisa o Daniel na hora.

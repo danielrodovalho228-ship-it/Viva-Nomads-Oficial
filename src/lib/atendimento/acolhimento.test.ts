@@ -5,6 +5,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { prazoPrometido } from "../../config/atendimento.ts";
 import { ehSensivel, notaSugestao, podeMarcarResolvido, quemAtende, respostaDaSugestao, statusAposRespostaDaViva, textoAcolhimento } from "./acolhimento.ts";
 import { validarResposta } from "./viva-regras.ts";
 
@@ -72,4 +73,20 @@ test("F22: 'Sim, resolveu' continua valendo quando só a Viva respondeu", () => 
   assert.ok(podeMarcarResolvido("aguardando_usuario", "humano"));
   assert.ok(!podeMarcarResolvido("aberto", "humano"));
   assert.ok(!podeMarcarResolvido("resolvido", "ia"));
+});
+
+test("F23: o cliente vê só a promessa pública (abertura + 24 h, Brasília), não o prazo interno de 12 h", () => {
+  const criado = new Date("2026-10-12T23:39:00Z"); // 20:39 em Brasília
+  const prazo = prazoPrometido(criado);
+  assert.equal(prazo.toISOString(), "2026-10-13T23:39:00.000Z");
+  const t = textoAcolhimento({ numero: "VN-000105", rotulo: "Conta", prazo });
+  assert.match(t, /até 13\/10 às 20:39 \(horário de Brasília\)/);
+  assert.doesNotMatch(t, /até 13\/10 às 08:39/); // p2 interno = 12 h
+});
+
+test("F25: /contato redireciona (permanente) para /ajuda e não está no sitemap", () => {
+  const cfg = readFileSync(new URL("../../../next.config.ts", import.meta.url), "utf8");
+  assert.match(cfg, /source: "\/contato", destination: "\/ajuda", permanent: true/);
+  const sm = readFileSync(new URL("../../app/sitemap.ts", import.meta.url), "utf8");
+  assert.doesNotMatch(sm, /"\/contato"/);
 });
