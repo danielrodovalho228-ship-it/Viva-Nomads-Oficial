@@ -390,6 +390,14 @@
         "t6-dinheiro-numeros"
       ]
     },
+    "/dashboard/contratos/[id]": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t57-contrato-assinar"
+      ]
+    },
     "/dashboard/favoritos": {
       "personas": [
         "inquilino"
