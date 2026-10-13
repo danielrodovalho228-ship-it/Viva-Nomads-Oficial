@@ -16,6 +16,9 @@ import { NO_LABORATORIO, URL_SUPABASE, CHAVE_ANON } from "../fixtures/laboratori
 const LEITURA_PUBLICA = new Set([
   // vitrine pública: imóveis publicados, cidades, avaliações públicas, planos
   "properties", "property_photos", "cities", "reviews", "plans", "planos",
+  // tabelas de preço e catálogo: leitura pública de propósito (/precos, simuladores).
+  // Só SELECT: escrita anônima continua barrada pelas três checagens abaixo.
+  "faixas_comissao", "faixas_assinatura", "garantias", "servicos_adicionais",
 ]);
 
 function tabelasDasMigracoes(): string[] {
