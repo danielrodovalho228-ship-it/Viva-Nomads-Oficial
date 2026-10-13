@@ -480,6 +480,16 @@
       ],
       "specs": []
     },
+    "/dashboard/locacoes/[id]": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t48-varredura",
+        "t57-contrato-assinar"
+      ]
+    },
     "/dashboard/mensagens": {
       "personas": [
         "inquilino",
@@ -1561,6 +1571,24 @@
         "proprietario"
       ],
       "specs": []
+    },
+    "src/lib/data/contrato-assinar-actions.ts#assinarContrato": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t57-contrato-assinar"
+      ]
+    },
+    "src/lib/data/contrato-assinar-actions.ts#getContratoParaAssinar": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t57-contrato-assinar"
+      ]
     },
     "src/lib/data/contratos-actions.ts#confirmarPagamento": {
       "personas": [

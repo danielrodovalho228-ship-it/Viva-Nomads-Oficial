@@ -25,6 +25,7 @@ function buildDemoLocacoes(): LocacaoView[] {
     status: "ativo",
     etapa: "em_vigencia",
     criadoEm: c.inicio,
+    podeAvaliar: false,
     pagamentos: [],
   }));
 }
@@ -65,7 +66,15 @@ export function LocacoesClient({
             <Panel key={l.id} className="p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <h2 className="font-title text-lg font-bold text-ink">{l.propertyTitle}</h2>
+                  <h2 className="font-title text-lg font-bold text-ink">
+                    {demoOn ? (
+                      l.propertyTitle
+                    ) : (
+                      <Link href={`/dashboard/locacoes/${l.id}`} className="hover:underline" data-testid="locacao-titulo">
+                        {l.propertyTitle}
+                      </Link>
+                    )}
+                  </h2>
                   <p className="mt-1 inline-flex items-center gap-1 text-xs text-muted">
                     <CircleDollarSign className="h-3.5 w-3.5" /> {formatBRL(l.aluguelMensal)}/mês
                   </p>
@@ -87,7 +96,16 @@ export function LocacoesClient({
                 </>
               )}
 
-              {/* Inquilino avalia o proprietário. */}
+              {!demoOn && (
+                <Link href={`/dashboard/locacoes/${l.id}`} className="mt-4 inline-block" data-testid="locacao-ver-contrato">
+                  <Button variant={l.etapa === "aguardando_assinatura" ? "gold" : "outline"}>
+                    {l.etapa === "aguardando_assinatura" && l.status === "ativo" ? "Ver e assinar contrato" : "Ver contrato"}
+                  </Button>
+                </Link>
+              )}
+
+              {/* Inquilino avalia o proprietário — só na janela de avaliação (fim da estadia). */}
+              {(l.podeAvaliar || demoOn) && (
               <AvaliacaoForm
                 contratoId={l.id}
                 alvoId={l.ownerId}
@@ -97,6 +115,7 @@ export function LocacoesClient({
                 placeholder="Comentário (opcional) — comunicação, o imóvel como anunciado, suporte…"
                 demo={demoOn}
               />
+              )}
             </Panel>
           ))}
         </div>
