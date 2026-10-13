@@ -1030,6 +1030,9 @@ export default function NewPropertyPage() {
         </div>
       </div>
 
+      {/* Computador: etapa à esquerda, resumo e dicas à direita; celular: uma coluna. */}
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start" data-testid="novo-duas-colunas">
+      <div className="min-w-0">
       <Panel>
         {/* Cabeçalho da etapa */}
         <div className="mb-5 flex items-start gap-3">
@@ -1856,6 +1859,33 @@ export default function NewPropertyPage() {
       <p className="mt-4 text-center text-sm text-muted">
         <Link href="/dashboard/imoveis" className="hover:text-forest">Cancelar e voltar</Link>
       </p>
+      </div>
+
+      <aside className="space-y-4 lg:sticky lg:top-4" data-testid="novo-resumo" aria-label="Resumo e dicas">
+        <Panel>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">Seu progresso</p>
+          <p className="mt-1 font-title text-2xl font-bold text-forest">
+            Etapa {pos + 1} de {ORDEM_ETAPAS.length}
+          </p>
+          <ol className="mt-3 space-y-1.5 text-sm">
+            {ORDEM_ETAPAS.map((id, i) => (
+              <li key={STEP_META[id].label} className={cn("flex items-center gap-2", i === pos ? "font-semibold text-forest" : i < pos ? "text-ink" : "text-muted")}>
+                {i < pos ? <Check className="h-4 w-4 shrink-0 text-forest" /> : <span className="grid h-4 w-4 shrink-0 place-items-center text-xs">{i + 1}</span>}
+                {STEP_META[id].label}
+              </li>
+            ))}
+          </ol>
+        </Panel>
+        <Panel>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">Dicas</p>
+          <ul className="mt-2 list-disc space-y-1.5 pl-4 text-sm text-ink">
+            <li>Suas respostas ficam salvas no rascunho: você pode sair e voltar.</li>
+            <li>Fotos claras, de dia e na horizontal, atraem mais pedidos.</li>
+            <li>A publicação libera depois que a equipe conferir o documento do imóvel.</li>
+          </ul>
+        </Panel>
+      </aside>
+      </div>
 
       <style>{`.input{width:100%;border-radius:0.75rem;border:1px solid var(--color-sage-200);background:#fff;padding:0.625rem 0.875rem;font-size:0.875rem;outline:none}.input:focus{border-color:var(--color-sage)}`}</style>
     </div>
