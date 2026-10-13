@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, ShieldCheck, ShieldAlert } from "lucide-react";
+import { Check, Copy, Loader2, ShieldCheck, ShieldAlert, Smartphone } from "lucide-react";
 import { Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { codigoTotpValido, mensagemErroMfa, tentativasRestantes } from "@/lib/admin/mfa";
 import { gravarPendente, lerPendente, limparPendente } from "@/lib/seguranca/fator-pendente";
 import { safeInternalPath } from "@/lib/safe-redirect";
+import { agruparChave, urlOtpauth } from "@/lib/seguranca/chave-totp";
 
 const CHAVE_FALHAS = "vn:2fa-falhas";
 
@@ -142,6 +143,17 @@ export function DuasEtapasPanel({ obrigatorio, destino }: { obrigatorio: boolean
   const [ocupado, setOcupado] = useState(false);
   const [sucesso, setSucesso] = useState<string | null>(null);
   const [removendo, setRemovendo] = useState<null | "confirmar" | "codigo">(null);
+  const [copiado, setCopiado] = useState(false);
+
+  async function copiarChave(segredo: string) {
+    try {
+      await navigator.clipboard.writeText(segredo.replace(/\s+/g, ""));
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2500);
+    } catch {
+      setErro("Não deu para copiar automaticamente. Selecione a chave e copie manualmente.");
+    }
+  }
 
   useEffect(() => {
     const supabase = createClient();
@@ -243,17 +255,29 @@ export function DuasEtapasPanel({ obrigatorio, destino }: { obrigatorio: boolean
         <form onSubmit={ativar} className="space-y-4">
           <ol className="list-decimal space-y-1 pl-5 text-sm text-muted">
             <li>Abra o app autenticador e escolha “adicionar conta”.</li>
-            <li>Leia o QR code abaixo (ou digite a chave manual).</li>
+            <li>No computador, leia o QR code. No próprio celular, copie a chave ou toque em “Abrir no app autenticador”.</li>
             <li>Digite o código de 6 números que o app mostrar.</li>
           </ol>
           <p role="note" className="rounded-xl bg-amber-50 p-3 text-sm font-medium text-amber-900">
             Apague a entrada antiga da Viva Nomads no seu app autenticador e escaneie este QR novo.
           </p>
+          <div className="space-y-3 rounded-xl border border-sage-200 bg-sage-50 p-3">
+            <p className="text-sm font-medium text-ink">Chave do autenticador</p>
+            <code data-testid="chave-2fa" className="block break-all rounded bg-white px-3 py-2 text-base tracking-wider text-ink">{agruparChave(estado.segredo)}</code>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Button type="button" variant="outline" className="min-h-11 w-full sm:w-auto" onClick={() => copiarChave(estado.segredo)}>
+                {copiado ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />} {copiado ? "Copiado!" : "Copiar código"}
+              </Button>
+              {urlOtpauth(estado.segredo) && (
+                <a href={urlOtpauth(estado.segredo) ?? undefined} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-sage-300 bg-white px-4 text-sm font-medium text-forest sm:w-auto">
+                  <Smartphone className="h-4 w-4" /> Abrir no app autenticador
+                </a>
+              )}
+            </div>
+          </div>
+          <p className="text-sm text-muted">Está no computador? Leia o QR code:</p>
           {/* eslint-disable-next-line @next/next/no-img-element -- SVG em data URL gerado pelo Supabase */}
           <img src={estado.qr} alt="QR code para o app autenticador" className="h-44 w-44 rounded-xl border border-sage-200 bg-white p-2" />
-          <p className="text-sm text-muted">
-            Chave manual: <code className="break-all rounded bg-sage-50 px-1.5 py-0.5 text-ink">{estado.segredo}</code>
-          </p>
           <CampoCodigo id="codigo-ativar" valor={codigo} onChange={setCodigo} />
           <p className="text-xs text-muted">Se o código não confere, veja se o horário do celular está no automático.</p>
           <div className="flex flex-wrap gap-2">
@@ -265,13 +289,13 @@ export function DuasEtapasPanel({ obrigatorio, destino }: { obrigatorio: boolean
         </form>
       )}
       {estado.tipo === "ativo" && (
-        <div className="space-y-4">
+        <div className="flex flex-col gap-3">
           <p className="flex items-center gap-2 text-sm text-forest"><ShieldCheck className="h-4 w-4" /> Ativada neste usuário.</p>
           {sucesso && obrigatorio && (
-            <a href={safeInternalPath(destino, "/admin")} className="inline-block text-sm font-medium text-forest underline">Continuar para o destino</a>
+            <a href={safeInternalPath(destino, "/admin")} className="inline-flex min-h-11 items-center text-sm font-medium text-forest underline">Continuar para o destino</a>
           )}
           {!removendo ? (
-            <Button variant="outline" onClick={() => { setRemovendo("confirmar"); setSucesso(null); setErro(null); }}>Remover verificação</Button>
+            <Button variant="outline" className="min-h-11" onClick={() => { setRemovendo("confirmar"); setSucesso(null); setErro(null); }}>Remover verificação</Button>
           ) : removendo === "confirmar" ? (
             <div role="alertdialog" aria-label="Confirmar remoção" className="space-y-3 rounded-xl bg-amber-50 p-3">
               <p className="text-sm text-amber-900">Isso desliga a verificação em duas etapas. Continuar?</p>
