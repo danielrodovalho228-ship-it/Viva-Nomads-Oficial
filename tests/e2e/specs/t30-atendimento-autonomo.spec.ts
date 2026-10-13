@@ -63,7 +63,7 @@ test.describe("T30 — Atendimento autônomo", () => {
     const r1 = (await publicasIA(id)).find((m) => m.corpo.includes(RODAPE))!;
     expect(r1.corpo).toContain("Caução");
     const { data: c1 } = await adm().from("chamados").select("status, prioridade, primeira_resposta_em").eq("id", id).single();
-    expect(c1).toMatchObject({ status: "aguardando_usuario", prioridade: "p2" });
+    expect(c1).toMatchObject({ status: "aberto", prioridade: "p2" }); // resposta da Viva não vira "Aguardando você" (F22);
     expect(c1!.primeira_resposta_em).toBeTruthy();
     await expect(page.locator("body")).toContainText(RODAPE, { timeout: 15_000 });
 
