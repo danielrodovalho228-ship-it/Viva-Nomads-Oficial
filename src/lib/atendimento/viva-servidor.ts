@@ -18,6 +18,7 @@ import { lerResumo, notaResumo, resumoPorRegra, sugestaoPorRegra, SYSTEM_RESUMO,
 import { htmlAvisoEquipe, pedePessoaNoTexto, prioridadeAcima, relataErroTecnico, RODAPE_AUTOMATICO, textoOrdemErro, urlDoErro } from "@/lib/atendimento/autonomo";
 import { JANELA_AVISO_EQUIPE_S } from "@/lib/atendimento/dono";
 import { categoria as categoriaDef } from "@/lib/atendimento/classificar";
+import { COLUNAS_VIGENCIA, contratoPermiteManutencao } from "@/lib/manutencao-solicitacoes";
 import {
   avisarEquipe,
   avisarProprietarioManutencao,
@@ -412,13 +413,13 @@ export async function rodarViva(chamadoId: string): Promise<void> {
     let papel: string | null = null;
     let temContratoAtivo = false;
     if (c.usuario_id) {
-      const [{ data: perfil }, { count }] = await Promise.all([
+      const [{ data: perfil }, { data: contratos }] = await Promise.all([
         admin.from("profiles").select("full_name, role").eq("id", c.usuario_id).maybeSingle(),
-        admin.from("contratos").select("id", { count: "exact", head: true }).eq("tenant_id", c.usuario_id).in("status", ["ativo", "encerrado_em_acerto"]),
+        admin.from("contratos").select(COLUNAS_VIGENCIA).eq("tenant_id", c.usuario_id).in("status", ["ativo", "encerrado_em_acerto"]).limit(20),
       ]);
       nome = primeiroNome(perfil?.full_name as string | null);
       papel = ({ owner: "proprietário", tenant: "inquilino", admin: "equipe" } as Record<string, string>)[perfil?.role as string] ?? null;
-      temContratoAtivo = (count ?? 0) > 0;
+      temContratoAtivo = (contratos ?? []).some((ct) => contratoPermiteManutencao(ct));
     }
 
     const r = await atenderViva(
@@ -664,13 +665,13 @@ export async function sugerirRascunho(chamadoId: string): Promise<Sugestao | nul
   let papel: string | null = null;
   let temContratoAtivo = false;
   if (c.usuario_id) {
-    const [{ data: perfil }, { count }] = await Promise.all([
+    const [{ data: perfil }, { data: contratos }] = await Promise.all([
       admin.from("profiles").select("full_name, role").eq("id", c.usuario_id).maybeSingle(),
-      admin.from("contratos").select("id", { count: "exact", head: true }).eq("tenant_id", c.usuario_id).in("status", ["ativo", "encerrado_em_acerto"]),
+      admin.from("contratos").select(COLUNAS_VIGENCIA).eq("tenant_id", c.usuario_id).in("status", ["ativo", "encerrado_em_acerto"]).limit(20),
     ]);
     nome = primeiroNome(perfil?.full_name as string | null);
     papel = ({ owner: "proprietário", tenant: "inquilino", admin: "equipe" } as Record<string, string>)[perfil?.role as string] ?? null;
-    temContratoAtivo = (count ?? 0) > 0;
+    temContratoAtivo = (contratos ?? []).some((ct) => contratoPermiteManutencao(ct));
   }
   const contexto = contextoChamado({
     numero: c.numero_publico,

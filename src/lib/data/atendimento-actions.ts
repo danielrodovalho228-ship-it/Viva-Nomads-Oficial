@@ -28,6 +28,7 @@ import { primeiroNome } from "@/lib/atendimento/viva-regras";
 import { notaResumo, resumoDaNota, sugestaoPorRegra, type ResumoChamado } from "@/lib/atendimento/resumo";
 import { integracoesSimuladas } from "@/lib/integracoes";
 import { quemAtende, respostaDaSugestao } from "@/lib/atendimento/acolhimento";
+import { COLUNAS_VIGENCIA, contratoPermiteManutencao } from "@/lib/manutencao-solicitacoes";
 import { contarPorStatus, ehContaNova, mascararEmail, papelLegivel, rotuloFerramenta, type PessoaResumo } from "@/lib/atendimento/copiloto";
 import { prontidaoDosImoveis } from "@/lib/anuncio/prontidao-servidor";
 import { atenderViva } from "@/lib/atendimento/viva-motor";
@@ -420,11 +421,11 @@ export async function meusContratosAtivos(): Promise<{ id: string; titulo: strin
   if (!user) return [];
   const { data } = await supabase
     .from("contratos")
-    .select("id, status, properties(title)")
+    .select(`id, ${COLUNAS_VIGENCIA}, properties(title)`)
     .eq("tenant_id", user.id)
     .in("status", ["ativo", "encerrado_em_acerto"])
     .limit(20);
-  return (data ?? []).map((c) => ({
+  return (data ?? []).filter((c) => contratoPermiteManutencao(c)).map((c) => ({
     id: c.id as string,
     titulo: ((c.properties as { title?: string } | null)?.title as string) ?? "Imóvel",
   }));

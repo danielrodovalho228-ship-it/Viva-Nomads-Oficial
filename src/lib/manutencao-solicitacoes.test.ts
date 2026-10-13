@@ -9,6 +9,7 @@ import assert from "node:assert/strict";
 import { readFileSync, existsSync } from "node:fs";
 import {
   camposTransicao,
+  contratoPermiteManutencao,
   linhaParaOrdem,
   MSG_SEM_CONTRATO_MANUTENCAO,
   prazoDaOrdem,
@@ -44,7 +45,7 @@ test("critério 1: manutenção só com contrato/imóvel ativo do inquilino (des
   // O servidor confere o contrato: é do inquilino e está ativo (o RLS "inquilino abre chamado", F1, também).
   const srv = ler("lib/atendimento/servidor.ts");
   const criar = srv.slice(srv.indexOf("export async function criarOrdemManutencao"));
-  assert.match(criar, /ct\.tenant_id !== input\.tenantId \|\| !\["ativo", "encerrado_em_acerto"\]\.includes/);
+  assert.match(criar, /ct\.tenant_id !== input\.tenantId \|\| !contratoPermiteManutencao\(ct/);
 });
 
 test("critério 2: prazo por prioridade (4/24/72 h) com 'responder até' em data/hora de Brasília", () => {
@@ -198,4 +199,30 @@ test("textos: imóveis mobiliados, Caução; nunca 'vistoria' nas telas novas", 
   ]) {
     assert.doesNotMatch(ler(f), /vistoria/i, f);
   }
+});
+
+test("F27 (a8905671): 'ativo' no banco não basta — só contrato Em vigência (ou em acerto) aceita manutenção", () => {
+  const ass = { assinado_proprietario_em: "2026-10-01T10:00:00Z", assinado_inquilino_em: "2026-10-02T10:00:00Z" };
+  const pago = [{ tipo: "aluguel", confirmado_pelo_inquilino: true }];
+  // Aguardando assinatura (o caso do QA): status ativo, sem assinaturas.
+  assert.equal(contratoPermiteManutencao({ status: "ativo", pagamentos_bloco: [] }), false);
+  assert.equal(contratoPermiteManutencao({ status: "ativo", assinado_proprietario_em: ass.assinado_proprietario_em, pagamentos_bloco: pago }), false);
+  // Assinado, mas sem o 1º pagamento confirmado: aguardando pagamento.
+  assert.equal(contratoPermiteManutencao({ status: "ativo", ...ass, pagamentos_bloco: [{ tipo: "aluguel", confirmado_pelo_inquilino: false }] }), false);
+  assert.equal(contratoPermiteManutencao({ status: "ativo", ...ass, pagamentos_bloco: [{ tipo: "caucao", confirmado_pelo_inquilino: true }] }), false);
+  // Em vigência e em acerto de saída: pode.
+  assert.equal(contratoPermiteManutencao({ status: "ativo", ...ass, pagamentos_bloco: pago }), true);
+  assert.equal(contratoPermiteManutencao({ status: "encerrado_em_acerto" }), true);
+  // Outros status: não.
+  for (const status of ["cancelado", "concluido", "encerrado_sem_renovacao", null]) assert.equal(contratoPermiteManutencao({ status, ...ass, pagamentos_bloco: pago }), false);
+});
+
+test("F27: servidor, formulário, Viva e Central usam a MESMA regra (contratoPermiteManutencao)", () => {
+  for (const f of ["lib/atendimento/servidor.ts", "lib/data/manutencao-actions.ts", "lib/data/atendimento-actions.ts", "lib/atendimento/viva-servidor.ts"]) {
+    assert.match(ler(f), /contratoPermiteManutencao/, f);
+  }
+  const srv = ler("lib/atendimento/servidor.ts");
+  const criar = srv.slice(srv.indexOf("export async function criarOrdemManutencao"), srv.indexOf("export async function avisarProprietarioManutencao"));
+  assert.doesNotMatch(criar, /includes\(ct\.status/); // o status sozinho não decide mais
+  assert.match(criar, /contratoPermiteManutencao\(c as ContratoParaManutencao\)/); // nem na escolha do contrato único
 });
