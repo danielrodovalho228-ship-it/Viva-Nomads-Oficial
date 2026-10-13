@@ -50,6 +50,8 @@ export interface OpcoesTratamento {
 export async function tratarFoto(file: File, opcoes: OpcoesTratamento = {}): Promise<FotoTratada> {
   const falha: FotoTratada = { arquivo: file, original: file, analise: null, melhorada: false };
   if (typeof document === "undefined" || typeof createImageBitmap !== "function") return falha;
+  // Nunca rasteriza SVG (nem outro formato fora da lista): devolve o arquivo como veio.
+  if (!/^image\/(jpeg|png|webp)$/.test(file.type)) return falha;
   let bmp: ImageBitmap | null = null;
   try {
     bmp = await abrir(file);
