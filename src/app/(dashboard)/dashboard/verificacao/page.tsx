@@ -91,7 +91,7 @@ export default function VerificationPage() {
   const C = VERIFY_COPY[perfilCopy];
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="w-full">
       <PageTitle title={C.title} subtitle={C.subtitle} />
       {demo ? <DemoFlow copy={C} mode={mode} /> : <RealNaoVerificado copy={C} perfil={perfilCopy} />}
     </div>

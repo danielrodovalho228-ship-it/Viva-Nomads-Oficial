@@ -273,12 +273,12 @@ export function CentralAgentes({ dados, vermelhos = [] }: { dados: DadosCentral;
         </div>
       </div>
 
-      <section id="aprovacoes" aria-label="Aprovações" className="mx-auto max-w-[1280px] scroll-mt-24 px-4 pt-4 sm:px-8" data-testid="secao-aprovacoes">
+      <section id="aprovacoes" aria-label="Aprovações" className="scroll-mt-24 px-4 pt-4 sm:px-8" data-testid="secao-aprovacoes">
         <h2 className="mb-2 text-sm font-bold uppercase tracking-[.12em] text-[#8C9AC4]">Aprovações</h2>
         <CartoesAprovacao versao={0} mostrarVazio />
       </section>
 
-      <div className="mx-auto max-w-[1280px] px-4 pb-16 sm:px-8">
+      <div className="px-4 pb-16 sm:px-8">
         <section className={`grid items-end gap-4 lg:grid-cols-[1.3fr_1fr] lg:gap-6 ${aba === "Equipe" ? "py-7" : "py-4"}`}>
           <div className={aba === "Equipe" ? "" : "hidden lg:block"}>
             <p className="text-[clamp(24px,3.6vw,36px)] font-bold leading-tight tracking-tight text-white" style={display}>
@@ -491,7 +491,7 @@ function Equipe({ dados, agora, onConversar }: { dados: DadosCentral; agora: Dat
 function Diario({ dados, porSlug, agora }: { dados: DadosCentral; porSlug: Record<string, Agente>; agora: Date | null }) {
   const ultimas = useMemo(() => Object.values(ultimaPorAgente(dados.rondas)).sort((x, y) => new Date(y.iniciada_em).getTime() - new Date(x.iniciada_em).getTime()), [dados.rondas]);
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="w-full">
       <Rotulo>Última ronda de cada agente</Rotulo>
       {ultimas.length === 0 ? (
         <Vazio titulo="Nenhuma ronda registrada ainda" texto="Quando os agentes chamarem registrar_ronda no fim de cada ronda, a última de cada um aparece aqui." />
@@ -1029,7 +1029,7 @@ function Sala({ dados, porSlug }: { dados: DadosCentral; porSlug: Record<string,
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4">
+    <div className="w-full space-y-4">
       <div className="space-y-3 rounded-2xl border border-white/10 bg-[#0B1430]/80 p-4">
         <label className="block text-sm font-bold text-white" htmlFor="pauta">
           Pauta

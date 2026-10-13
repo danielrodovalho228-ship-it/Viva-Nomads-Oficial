@@ -239,7 +239,7 @@ export default function QualificationChecklistPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="w-full">
       {/* Banner de topo (item 4): foto de interior SOB o gradiente da marca (lado
           esquerdo mais escuro), texto branco. Altura contida (~180px). */}
       <header

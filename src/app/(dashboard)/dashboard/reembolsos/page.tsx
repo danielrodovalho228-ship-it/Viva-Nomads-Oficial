@@ -56,7 +56,7 @@ export default function ReembolsosPage() {
 
 function ReembolsoReal() {
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="w-full">
       <PageTitle
         title="Reembolso da caução"
         subtitle="O cálculo do reembolso abre quando uma locação é encerrada."
