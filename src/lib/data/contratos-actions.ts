@@ -7,6 +7,7 @@ import { emitirDoPagamento } from "@/lib/fiscal/emitir";
 import { listMyProperties } from "@/lib/data/properties";
 import { erroBancoPT } from "@/lib/erros-banco";
 import { etapaContrato, type EtapaContrato } from "@/lib/contrato-etapas";
+import { podeAvaliarLocacao } from "@/lib/contrato-assinar";
 
 /**
  * Contratos & blocos do PROPRIETÁRIO + registro DECLARATÓRIO de pagamento
@@ -110,6 +111,8 @@ export interface LocacaoView {
   status: string;
   etapa: EtapaContrato;
   criadoEm: string;
+  /** Janela de avaliação aberta (contrato encerrado há até 14 dias). Nunca em contrato aguardando assinatura. */
+  podeAvaliar: boolean;
   /** Pagamentos registrados pelo proprietário (o inquilino confirma → recibo). */
   pagamentos: PagamentoView[];
 }
@@ -128,7 +131,7 @@ export async function getMinhasLocacoes(): Promise<LocacaoView[]> {
 
   const { data } = await supabase
     .from("contratos")
-    .select("id, property_id, aluguel_mensal, status, created_at, assinado_proprietario_em, assinado_inquilino_em, properties(title, owner_id), pagamentos_bloco(*)")
+    .select("id, property_id, aluguel_mensal, status, created_at, encerrado_em, assinado_proprietario_em, assinado_inquilino_em, properties(title, owner_id), pagamentos_bloco(*)")
     .eq("tenant_id", user.id)
     .order("created_at", { ascending: false });
 
@@ -148,6 +151,7 @@ export async function getMinhasLocacoes(): Promise<LocacaoView[]> {
         primeiroPagamentoConfirmado: primeiroPagamentoConfirmado(pagamentos),
       }),
       criadoEm: String(c.created_at),
+      podeAvaliar: podeAvaliarLocacao(String(c.status ?? "ativo"), (c.encerrado_em as string | null) ?? null),
       pagamentos,
     };
   });

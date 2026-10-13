@@ -245,6 +245,16 @@ function ContratoCard({
         </span>
       </div>
 
+      {!demo && (
+        <Link
+          href={`/dashboard/locacoes/${contrato.id}`}
+          className="mt-3 inline-block text-sm font-medium text-forest underline"
+          data-testid="contrato-ver-assinar"
+        >
+          {contrato.status === "ativo" && contrato.etapa === "aguardando_assinatura" ? "Ver e assinar contrato" : "Ver contrato"}
+        </Link>
+      )}
+
       {/* Comissão única (contrato-mãe) — % do 1º aluguel, NUNCA "1 mês de aluguel". */}
       <p className="mt-3 rounded-lg bg-champagne/10 px-3 py-2 text-xs text-forest">
         Comissão do contrato: <strong>{formatBRL(contrato.comissaoValor)}</strong>

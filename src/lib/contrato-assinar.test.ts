@@ -1,0 +1,56 @@
+/*
+  F40 — assinatura na plataforma: papéis, resumo/hash, quem pode assinar, aviso por parte e janela de avaliação.
+  Roda: node --test src/lib/contrato-assinar.test.ts
+*/
+import assert from "node:assert/strict";
+import { test } from "node:test";
+import {
+  avisoAssinatura,
+  hashResumo,
+  motivoNaoPodeAssinar,
+  papelNoContrato,
+  podeAvaliarLocacao,
+  resumoContrato,
+} from "./contrato-assinar.ts";
+
+const dados = { contratoId: "c1", imovel: "Studio Centro", aluguelMensal: 2500, prazoDias: 90, ocupantes: 1, criadoEm: "2026-10-13" };
+
+test("papel: inquilino, proprietário e quem não é parte", () => {
+  assert.equal(papelNoContrato("t", "t", "o"), "inquilino");
+  assert.equal(papelNoContrato("o", "t", "o"), "proprietario");
+  assert.equal(papelNoContrato("x", "t", "o"), null);
+});
+
+test("resumo leva a marca de minuta e o hash muda se qualquer valor mudar", () => {
+  const r = resumoContrato(dados);
+  assert.equal(r[0], "MINUTA DE TESTE — sem validade");
+  assert.match(hashResumo(r), /^[0-9a-f]{64}$/);
+  assert.equal(hashResumo(r), hashResumo(resumoContrato(dados)));
+  assert.notEqual(hashResumo(r), hashResumo(resumoContrato({ ...dados, aluguelMensal: 2600 })));
+});
+
+test("assinar: caso positivo e os negativos (não é parte, não ativo, já assinou, sem aceite)", () => {
+  const ok = { status: "ativo", papel: "inquilino" as const, assinadoEm: null, aceite: true };
+  assert.equal(motivoNaoPodeAssinar(ok), null);
+  assert.match(motivoNaoPodeAssinar({ ...ok, papel: null })!, /não é parte/);
+  assert.match(motivoNaoPodeAssinar({ ...ok, status: "cancelado" })!, /não está mais aguardando/);
+  assert.match(motivoNaoPodeAssinar({ ...ok, assinadoEm: "2026-10-13" })!, /já assinou/);
+  assert.match(motivoNaoPodeAssinar({ ...ok, aceite: false })!, /Li e concordo/);
+});
+
+test("aviso: cada parte vê 'você já assinou / falta o outro'", () => {
+  const t = "2026-10-13";
+  assert.equal(avisoAssinatura("inquilino", { proprietario: null, inquilino: t }), "Você já assinou — falta o outro assinar.");
+  assert.equal(avisoAssinatura("proprietario", { proprietario: null, inquilino: t }), "O outro já assinou — falta você assinar.");
+  assert.equal(avisoAssinatura("inquilino", { proprietario: t, inquilino: t }), "As duas partes assinaram.");
+  assert.equal(avisoAssinatura("inquilino", { proprietario: null, inquilino: null }), "Nenhuma assinatura ainda.");
+});
+
+test("avaliar: nunca em contrato ativo/aguardando assinatura; só até 14 dias depois do fim", () => {
+  const agora = new Date("2026-10-20T12:00:00Z");
+  assert.equal(podeAvaliarLocacao("ativo", null, agora), false);
+  assert.equal(podeAvaliarLocacao("ativo", "2026-10-19T00:00:00Z", agora), false);
+  assert.equal(podeAvaliarLocacao("concluido", "2026-10-15T00:00:00Z", agora), true);
+  assert.equal(podeAvaliarLocacao("concluido", "2026-09-01T00:00:00Z", agora), false);
+  assert.equal(podeAvaliarLocacao("concluido", null, agora), false);
+});
