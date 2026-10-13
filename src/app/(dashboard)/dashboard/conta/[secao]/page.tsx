@@ -19,7 +19,7 @@ export default function ContaSecaoPage({ params }: { params: Promise<{ secao: st
   switch (secao) {
     case "perfil":
       return (
-        <div className="mx-auto max-w-xl">
+        <div className="w-full">
           <DadosPessoais />
           <DocumentoPessoa />
           <AvatarUploader />
@@ -28,13 +28,13 @@ export default function ContaSecaoPage({ params }: { params: Promise<{ secao: st
       );
     case "seguranca":
       return (
-        <div className="mx-auto max-w-xl">
+        <div className="w-full">
           <ChangePassword />
         </div>
       );
     case "notificacoes":
       return (
-        <div className="mx-auto max-w-xl">
+        <div className="w-full">
           <NotificationsPanel />
         </div>
       );
@@ -43,7 +43,7 @@ export default function ContaSecaoPage({ params }: { params: Promise<{ secao: st
       return <CentralAjuda canal="app" />;
     case "excluir":
       return (
-        <div className="mx-auto max-w-xl">
+        <div className="w-full">
           <DangerZone />
         </div>
       );

@@ -900,7 +900,7 @@ export default function NewPropertyPage() {
   const StepIcon = meta.icon;
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="w-full">
       <PageTitle
         title={editingId ? "Editar anúncio" : "Anuncie seu imóvel"}
         subtitle={

@@ -272,7 +272,7 @@ function NewBudget({
   }
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="w-full">
       <PageTitle title="Novo orçamento" subtitle="Imóvel → interessado → valores" />
 
       {/* Card do imóvel no topo (Atualização 16) */}
@@ -460,7 +460,7 @@ function DocView({ doc, onBack }: { doc: DocumentRecord; onBack: () => void }) {
   const accepted = doc.status === "aceito";
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="w-full">
       <div className="mb-4 flex items-center justify-between print:hidden">
         <Button variant="ghost" size="sm" onClick={onBack}>
           <ArrowLeft className="h-4 w-4" /> Voltar
