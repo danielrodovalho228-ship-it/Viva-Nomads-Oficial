@@ -86,6 +86,20 @@ export function nivelEscalonamento(c: { status: string; responsavel_tipo: string
   return h >= ESCALONAMENTO_H.vermelho ? 6 : h >= ESCALONAMENTO_H.aviso ? 2 : 0;
 }
 
+/**
+ * Status do chamado depois que a VIVA responde (decisão do Daniel, 13/10 — F22).
+ * A resposta automática NÃO muda o status: o chamado nasce e fica "Aberto".
+ * "Aguardando você" só vem de uma resposta de PESSOA da equipe que peça algo (atendimento-actions).
+ */
+export function statusAposRespostaDaViva(atual: string | null | undefined): string {
+  return !atual || atual === "aguardando_usuario" ? "aberto" : atual;
+}
+
+/** "Sim, resolveu": vale quando a vez é da pessoa, ou quando só a Viva respondeu (chamado segue "Aberto"). */
+export function podeMarcarResolvido(status: string, responsavelTipo: string | null | undefined): boolean {
+  return status === "aguardando_usuario" || (status === "aberto" && responsavelTipo === "ia");
+}
+
 /** Nota interna com a sugestão — mesmo formato que "Usar como resposta" já lê. */
 export const CABECALHO_SUGESTAO = "Sugestão da Viva para aprovar (Aprovar e enviar = vai para a pessoa como resposta da equipe).";
 export function notaSugestao(texto: string, fontes: string[]): string {

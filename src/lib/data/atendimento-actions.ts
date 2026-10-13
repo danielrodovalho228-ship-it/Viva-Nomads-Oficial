@@ -27,7 +27,7 @@ import { notaSugestao } from "@/lib/atendimento/acolhimento";
 import { primeiroNome } from "@/lib/atendimento/viva-regras";
 import { notaResumo, resumoDaNota, sugestaoPorRegra, type ResumoChamado } from "@/lib/atendimento/resumo";
 import { integracoesSimuladas } from "@/lib/integracoes";
-import { quemAtende, respostaDaSugestao } from "@/lib/atendimento/acolhimento";
+import { podeMarcarResolvido, quemAtende, respostaDaSugestao } from "@/lib/atendimento/acolhimento";
 import { COLUNAS_VIGENCIA, contratoPermiteManutencao } from "@/lib/manutencao-solicitacoes";
 import { contarPorStatus, ehContaNova, mascararEmail, papelLegivel, rotuloFerramenta, type PessoaResumo } from "@/lib/atendimento/copiloto";
 import { prontidaoDosImoveis } from "@/lib/anuncio/prontidao-servidor";
@@ -396,17 +396,17 @@ export async function marcarResolvido(chamadoId: string): Promise<Res> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Entre na sua conta." };
-  const c = await chamadoDoDono<ChamadoResumo & { status: string }>(
+  const c = await chamadoDoDono<ChamadoResumo & { status: string; responsavel_tipo?: string }>(
     supabase as unknown as ClienteChamados,
     user.id,
     { id: chamadoId },
-    "id, numero_publico, assunto, prioridade, status, visitante_email, visitante_nome"
+    "id, numero_publico, assunto, prioridade, status, responsavel_tipo, visitante_email, visitante_nome"
   );
-  if (!c || c.status !== "aguardando_usuario") return { ok: false, error: "Este chamado não está aguardando você." };
+  if (!c || !podeMarcarResolvido(c.status, c.responsavel_tipo)) return { ok: false, error: "Este chamado não está aguardando você." };
   const agora = new Date().toISOString();
   await admin.from("chamados").update({ status: "resolvido", resolvido_em: agora, atualizado_em: agora }).eq("id", c.id);
   await admin.rpc("atendimento_varrer_prazos");
-  await admin.from("chamado_eventos").insert({ chamado_id: c.id, ator_tipo: "usuario", ator_id: user.id, acao: "status", de: "aguardando_usuario", para: "resolvido", detalhe: "a pessoa marcou como resolvido" });
+  await admin.from("chamado_eventos").insert({ chamado_id: c.id, ator_tipo: "usuario", ator_id: user.id, acao: "status", de: c.status, para: "resolvido", detalhe: "a pessoa marcou como resolvido" });
   await avisarUsuario(c as ChamadoResumo, "chamado_resolvido");
   return { ok: true };
 }

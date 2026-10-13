@@ -9,6 +9,7 @@ import { useAuthStore } from "@/lib/store";
 import { FAQ, buscarFaq, respostaPara, type PerfilAjuda } from "@/lib/atendimento/faq";
 import { avisoEmergencia, CATEGORIAS, detectarEmergencia } from "@/lib/atendimento/classificar";
 import { PROMESSA_ATENDIMENTO } from "@/config/atendimento";
+import { podeMarcarResolvido } from "@/lib/atendimento/acolhimento";
 import {
   abrirChamado,
   chamadoDeOutraConta,
@@ -549,7 +550,7 @@ function DetalheChamado({ numero, onVoltar }: { numero: string; onVoltar: () => 
                     ) : (
                       <span className="text-xs text-muted">Uma pessoa da equipe está cuidando do seu chamado.</span>
                     )}
-                    {comViva && m.id === idUltimaViva && dados.chamado.status === "aguardando_usuario" && (
+                    {comViva && m.id === idUltimaViva && podeMarcarResolvido(dados.chamado.status, dados.chamado.responsavel_tipo) && (
                       <button
                         type="button"
                         disabled={enviando}
