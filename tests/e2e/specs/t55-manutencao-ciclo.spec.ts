@@ -62,11 +62,33 @@ test.describe("T55 — Ordem de manutenção: prazo, dois lados, histórico e r�
         qtd_ocupantes: 1,
         status: "ativo",
         garantia: "caucao",
+        // Em vigência (regra da F27, #436): as duas assinaturas + 1º aluguel confirmado. Não afrouxar a regra.
+        assinado_proprietario_em: new Date().toISOString(),
+        assinado_inquilino_em: new Date().toISOString(),
       })
       .select("id")
       .single();
     if (error) throw error;
     ids.contrato = data.id as string;
+    const hoje = new Date();
+    const dia = (d: Date) => d.toISOString().slice(0, 10);
+    const { data: bloco, error: eBloco } = await adm()
+      .from("contrato_blocos")
+      .insert({ contrato_id: ids.contrato, numero_bloco: 1, inicio: dia(hoje), fim: dia(new Date(hoje.getTime() + 60 * 86_400_000)), meses: 2, valor: 6400, caucao: 3200, status: "ativo" })
+      .select("id")
+      .single();
+    if (eBloco) throw eBloco;
+    const { error: ePag } = await adm().from("pagamentos_bloco").insert({
+      bloco_id: bloco.id,
+      contrato_id: ids.contrato,
+      tipo: "aluguel",
+      valor: 3200,
+      data_pagamento: dia(hoje),
+      marcado_por: ids.dono,
+      confirmado_pelo_inquilino: true,
+      confirmado_em: hoje.toISOString(),
+    });
+    if (ePag) throw ePag;
   });
 
   test.afterAll(async () => {

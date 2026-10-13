@@ -350,9 +350,9 @@ html[data-app] body {
     --ajuda-bottom: 1.5rem;
   }
 }
-/* F49: folga no fim da página no celular (site) para o botão redondo da Viva nunca tampar o último botão/campo. */
+/* F49: folga no fim da página no celular (site), só onde o botão existe (t16: telas de 100dvh como /app/boas-vindas não rolam) para o botão redondo da Viva nunca tampar o último botão/campo. */
 @media (max-width: 767px) {
-  html:not([data-app]) body {
+  html:not([data-app]) body:has([data-testid="fale-com-a-viva-raiz"]) {
     padding-bottom: 4.5rem;
   }
 }
