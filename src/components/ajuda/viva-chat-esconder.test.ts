@@ -29,9 +29,10 @@ test("F49: no celular o flutuante é redondo (48 px, só ícone), some com campo
   assert.match(src, /h-12 w-12/);
   assert.match(src, /hidden md:inline/);
   assert.match(src, /max-md:hidden/);
-  assert.match(src, /IntersectionObserver/);
+  assert.match(src, /cruzaCantoDoFlutuante/);
+  assert.doesNotMatch(src, /IntersectionObserver/);
   assert.match(src, /focusin/);
-  assert.match(ler("app/globals.css"), /html:not\(\[data-app\]\) body\s*\{\s*padding-bottom: 4\.5rem/);
+  assert.match(ler("app/globals.css"), /html:not\(\[data-app\]\) body:has\(\[data-testid="fale-com-a-viva-raiz"\]\)\s*\{\s*padding-bottom: 4\.5rem/);
   // CTA marcado no botão compartilhado (ghost não conta)
   assert.match(ler("components/ui/button.tsx"), /data-cta=/);
 });

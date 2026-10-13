@@ -10,7 +10,7 @@ import { abrirChamado } from "@/lib/data/atendimento-actions";
 import { SAUDACAO_CHAT, transcricaoChat, type MsgChat } from "@/lib/atendimento/viva-chat-texto";
 import { PROMESSA_ATENDIMENTO } from "@/config/atendimento";
 import { SUPORTE_EMAIL } from "@/lib/site";
-import { ehCampoDeFormulario, FAIXA_CTA_PX, flutuanteVisivel } from "@/lib/atendimento/flutuante-visivel";
+import { cruzaCantoDoFlutuante, ehCampoDeFormulario, flutuanteVisivel } from "@/lib/atendimento/flutuante-visivel";
 
 /**
  * Chat da Viva (assistente virtual) — botão flutuante "Fale com a Viva" em todas
@@ -61,41 +61,34 @@ export function VivaChatFlutuante() {
     document.addEventListener("focusin", aoFocar);
     document.addEventListener("focusout", aoSair);
 
-    const naFaixa = new Set<Element>();
-    let io: IntersectionObserver | null = null;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const observados = new WeakSet<Element>();
-    function varrer() {
-      if (typeof IntersectionObserver === "undefined") return;
-      io ??= new IntersectionObserver(
-        (entradas) => {
-          for (const en of entradas) {
-            if (en.isIntersecting) naFaixa.add(en.target);
-            else naFaixa.delete(en.target);
-          }
-          setCtaNaFaixa(naFaixa.size > 0);
-        },
-        // só a faixa de baixo da tela (onde o botão flutua) conta
-        { rootMargin: `${-(window.innerHeight - FAIXA_CTA_PX)}px 0px 0px 0px` },
-      );
-      document.querySelectorAll("[data-cta], button[type=submit]").forEach((el) => {
-        if (observados.has(el) || raiz.current?.contains(el)) return;
-        observados.add(el);
-        io!.observe(el);
-      });
+    let quadro = 0;
+    function medir() {
+      quadro = 0;
+      let cruza = false;
+      for (const el of document.querySelectorAll("[data-cta], button[type=submit]")) {
+        if (raiz.current?.contains(el)) continue;
+        if (cruzaCantoDoFlutuante(el.getBoundingClientRect(), window.innerWidth, window.innerHeight)) {
+          cruza = true;
+          break;
+        }
+      }
+      setCtaNaFaixa(cruza);
     }
-    varrer();
-    const mo = new MutationObserver(() => {
-      clearTimeout(timer);
-      timer = setTimeout(varrer, 200);
-    });
+    const agendar = () => {
+      if (!quadro) quadro = requestAnimationFrame(medir);
+    };
+    agendar();
+    const mo = new MutationObserver(agendar);
     mo.observe(document.body, { childList: true, subtree: true });
+    window.addEventListener("scroll", agendar, { passive: true });
+    window.addEventListener("resize", agendar);
     return () => {
       document.removeEventListener("focusin", aoFocar);
       document.removeEventListener("focusout", aoSair);
+      window.removeEventListener("scroll", agendar);
+      window.removeEventListener("resize", agendar);
       mo.disconnect();
-      io?.disconnect();
-      clearTimeout(timer);
+      if (quadro) cancelAnimationFrame(quadro);
       setCampoEmFoco(false);
       setCtaNaFaixa(false);
     };
