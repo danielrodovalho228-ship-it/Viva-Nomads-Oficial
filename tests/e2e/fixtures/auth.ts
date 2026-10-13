@@ -1,6 +1,7 @@
 import path from "node:path";
 import type { Page } from "@playwright/test";
 import { account, type Role } from "./accounts";
+import { gerarCodigoTotp } from "./totp";
 
 // Ancorado na raiz do repo (a suíte roda a partir dela) — evita import.meta,
 // que quebra sob o transpile CJS do Playwright.
@@ -31,4 +32,21 @@ export async function loginAs(page: Page, role: Role): Promise<void> {
   // ele abre em todo teste e bloqueia os cliques. O próprio modal grava esta
   // marca quando a pessoa escolhe.
   await page.evaluate(() => localStorage.setItem("vivanomads-role-asked", "1"));
+  if (role === "admin") await elevarAdminParaAal2(page);
+}
+
+/**
+ * Admin exige verificação em duas etapas (AAL2, ordem f7817f00): sem o código a
+ * sessão cai em /auth/verificar-codigo e o lab "fica cego" no /admin. Com
+ * TESTES_ADMIN_TOTP_SEGREDO (fator TOTP já ativado na conta de teste) digita o
+ * código gerado e grava a sessão já elevada. Sem o segredo, não faz nada.
+ */
+async function elevarAdminParaAal2(page: Page): Promise<void> {
+  const segredo = process.env.TESTES_ADMIN_TOTP_SEGREDO;
+  if (!segredo) return;
+  await page.goto("/admin", { waitUntil: "networkidle" });
+  if (!/\/auth\/verificar-codigo/.test(page.url())) return; // já em AAL2
+  await page.locator("#codigo-2fa").fill(gerarCodigoTotp(segredo));
+  await page.getByRole("button", { name: /confirmar e entrar/i }).click();
+  await page.waitForURL(/\/admin(?!.*verificar)/, { timeout: 20_000 });
 }

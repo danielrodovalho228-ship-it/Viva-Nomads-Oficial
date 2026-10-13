@@ -44,6 +44,8 @@ jobs:
       TESTES_ADMIN_EMAIL: ${{ secrets.TESTES_ADMIN_EMAIL }}
       TESTES_ADMIN_SENHA: ${{ secrets.TESTES_ADMIN_SENHA }}
       TESTES_ADMIN_NOME: ${{ secrets.TESTES_ADMIN_NOME }}
+      # Segredo TOTP (base32) do fator 2FA da conta admin de teste: sem ele o lab não passa do AAL1 no /admin.
+      TESTES_ADMIN_TOTP_SEGREDO: ${{ secrets.TESTES_ADMIN_TOTP_SEGREDO }}
       # Seed (service role do projeto de TESTE) — habilita T-TRAV-B/C (pedido +
       # imóvel publicado). Se o segredo não existir, o passo de seed é pulado e
       # os testes dependentes se pulam sozinhos (resilientes).
