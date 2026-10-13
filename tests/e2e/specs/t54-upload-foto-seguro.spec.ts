@@ -27,5 +27,17 @@ test.describe("T54 — Upload de foto seguro", () => {
       const txt = await post(request, "x.png", "image/png", Buffer.from("só texto"));
       expect(txt.status()).toBe(415);
     });
+
+    test("F47 na tela: SVG é recusado com mensagem visível e o contador não sobe", async ({ page }) => {
+      await page.goto("/dashboard/imoveis/novo", { waitUntil: "networkidle" });
+      await expect(page.getByRole("heading", { name: "Fotos do imóvel" })).toBeVisible();
+      await page.locator('input[type="file"]').first().setInputFiles({
+        name: "x.svg",
+        mimeType: "image/svg+xml",
+        buffer: Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>'),
+      });
+      await expect(page.getByText("Envie fotos em JPG, PNG ou WebP.")).toBeVisible();
+      await expect(page.getByText(/\b1\/8\b/)).toHaveCount(0);
+    });
   });
 });

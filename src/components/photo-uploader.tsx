@@ -85,7 +85,7 @@ export function PhotoUploader({
         // Validação de tipo/tamanho no cliente (feedback rápido). O bucket do
         // Supabase revalida no servidor (migration 0040) — o accept do input não
         // é a trava real.
-        const invalido = validarArquivoFotoImovel({ type: file.type, size: file.size });
+        const invalido = validarArquivoFotoImovel({ type: file.type, size: file.size, name: file.name });
         if (invalido) {
           setError(invalido);
         } else {
@@ -241,7 +241,7 @@ export function PhotoUploader({
             <span className="text-xs">{uploading ? (progresso ? `Enviando ${Math.min(progresso.feitas + 1, progresso.total)} de ${progresso.total}…` : "Enviando...") : "Adicionar"}</span>
             <input
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/png,image/webp"
               multiple
               className="hidden"
               onChange={(e) => handleFiles(e.target.files)}

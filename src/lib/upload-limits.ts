@@ -52,6 +52,7 @@ export function tipoRealFotoPorMagicBytes(bytes: Uint8Array): "image/jpeg" | "im
 export const PHOTO_MAX_BYTES = 8 * 1024 * 1024; // 8 MB
 export const PHOTO_MIME = ["image/jpeg", "image/png", "image/webp"] as const;
 
+const MSG_FOTO_FORMATO = "Envie fotos em JPG, PNG ou WebP.";
 const mb = (bytes: number) => `${Math.round(bytes / 1024 / 1024)} MB`;
 
 /** Valida um DOCUMENTO do imóvel (matrícula/contrato). Devolve erro ou null. */
@@ -62,9 +63,10 @@ export function validarArquivoDoc(f: { type: string; size: number }): string | n
   return null;
 }
 
-/** Valida uma FOTO do anúncio. Devolve erro ou null. */
-export function validarArquivoFotoImovel(f: { type: string; size: number }): string | null {
-  if (!f.type.startsWith("image/")) return "Apenas imagens são aceitas.";
+/** Valida uma FOTO do anúncio (tipo declarado E extensão do nome). Devolve erro ou null. */
+export function validarArquivoFotoImovel(f: { type: string; size: number; name?: string }): string | null {
+  if (!PHOTO_MIME.includes(f.type as (typeof PHOTO_MIME)[number])) return MSG_FOTO_FORMATO;
+  if (f.name !== undefined && !/\.(jpe?g|png|webp)$/i.test(f.name)) return MSG_FOTO_FORMATO;
   if (f.size > PHOTO_MAX_BYTES) return `Cada foto deve ter no máximo ${mb(PHOTO_MAX_BYTES)}.`;
   return null;
 }
