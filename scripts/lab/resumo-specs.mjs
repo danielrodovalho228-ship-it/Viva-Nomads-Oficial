@@ -6,7 +6,7 @@
 
   Uso: node scripts/lab/resumo-specs.mjs tests/laboratorio/saida/resultado.json
   Com --json imprime {passou,falhou,pulou,instavel,por_spec,falhas} (gravado em
-  public.lab_execucoes pela Action). Só títulos de testes e contagens.
+  public.lab_execucoes pela Action). Só títulos de testes, contagens e os primeiros 300 caracteres do erro (segredos mascarados).
   Sem o arquivo (a suíte nem chegou a rodar): avisa e sai sem erro.
 */
 import { existsSync, readFileSync } from "node:fs";
@@ -15,6 +15,17 @@ import { basename } from "node:path";
 const args = process.argv.slice(2);
 const modoJson = args.includes("--json");
 const caminho = args.find((a) => !a.startsWith("--")) ?? "tests/laboratorio/saida/resultado.json";
+
+/**
+ * Primeiros 300 caracteres da mensagem de erro da última tentativa, para diagnosticar sem abrir o GitHub.
+ * Sem códigos de cor do terminal e sem sequências longas de letras/números (segredos TOTP, tokens): vão mascaradas.
+ */
+export function trechoDoErro(results) {
+  const r = (results ?? []).at(-1);
+  const bruto = String(r?.error?.message ?? r?.errors?.[0]?.message ?? "");
+  const limpo = bruto.replace(/\u001b\[[0-9;]*m/g, "").replace(/[A-Za-z0-9_\-]{24,}/g, "***").replace(/\s+/g, " ").trim();
+  return limpo.slice(0, 300);
+}
 
 /** Junta todos os testes de uma árvore de suites: [{ arquivo, titulo, status }]. */
 export function coletar(suites, arquivoPai = "") {
@@ -26,7 +37,9 @@ export function coletar(suites, arquivoPai = "") {
         // "expected" com falha esperada (test.fail) = falha conhecida; "unexpected" = falhou; "skipped" = pulou.
         const falhaConhecida = t.expectedStatus === "failed" && t.status === "expected";
         const status = falhaConhecida ? "conhecida" : t.status === "expected" ? "passou" : t.status === "skipped" ? "pulou" : t.status === "flaky" ? "instavel" : "falhou";
-        saida.push({ arquivo: basename(spec.file ?? arquivo), titulo: spec.title, status });
+        const item = { arquivo: basename(spec.file ?? arquivo), titulo: spec.title, status };
+        if (status === "falhou" || status === "instavel") item.erro = trechoDoErro(t.results);
+        saida.push(item);
       }
     }
     saida.push(...coletar(s.suites, arquivo));
@@ -39,7 +52,7 @@ export function tabela(testes) {
   for (const t of testes) {
     const l = porArquivo.get(t.arquivo) ?? { passou: 0, falhou: 0, pulou: 0, conhecida: 0, instavel: 0, falhas: [] };
     l[t.status]++;
-    if (t.status === "falhou" || t.status === "instavel") l.falhas.push(t.titulo);
+    if (t.status === "falhou" || t.status === "instavel") l.falhas.push(t.erro ? `${t.titulo} — ${t.erro}` : t.titulo);
     porArquivo.set(t.arquivo, l);
   }
   const ordem = (a) => Number((a.match(/^t(\d+)/) ?? [])[1] ?? 999);
@@ -63,7 +76,7 @@ export function resumoJson(testes) {
     const l = (por_spec[t.arquivo] ??= { passou: 0, falhou: 0, pulou: 0, instavel: 0, conhecida: 0 });
     l[t.status]++;
     if (t.status in total) total[t.status]++;
-    if (t.status === "falhou" || t.status === "instavel") falhas.push({ spec: t.arquivo, titulo: t.titulo, status: t.status });
+    if (t.status === "falhou" || t.status === "instavel") falhas.push({ spec: t.arquivo, titulo: t.titulo, status: t.status, erro: t.erro ?? "" });
   }
   return { ...total, por_spec, falhas };
 }
