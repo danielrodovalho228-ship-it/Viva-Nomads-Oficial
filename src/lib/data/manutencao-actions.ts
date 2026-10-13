@@ -8,6 +8,8 @@ import {
   descricaoEvento,
   linhaParaOrdem,
   proximosStatus,
+  COLUNAS_VIGENCIA,
+  contratoPermiteManutencao,
   STATUS_CONTRATO_COM_MANUTENCAO,
   validarMensagem,
   type EventoOrdem,
@@ -74,11 +76,11 @@ export async function minhasSolicitacoes(): Promise<MinhasSolicitacoes | null> {
   if (admin) {
     const { data: cts } = await admin
       .from("contratos")
-      .select("id, properties(title)")
+      .select(`id, ${COLUNAS_VIGENCIA}, properties(title)`)
       .eq("tenant_id", user.id)
       .in("status", [...STATUS_CONTRATO_COM_MANUTENCAO])
       .limit(20);
-    contratos = (cts ?? []).map((c) => ({ id: c.id as string, titulo: (c.properties as unknown as { title?: string } | null)?.title?.trim() || "Meu imóvel" }));
+    contratos = (cts ?? []).filter((c) => contratoPermiteManutencao(c)).map((c) => ({ id: c.id as string, titulo: (c.properties as unknown as { title?: string } | null)?.title?.trim() || "Meu imóvel" }));
   }
   return { comoInquilino, comoDono, contratos };
 }

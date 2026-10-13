@@ -10,6 +10,7 @@ import { situacaoLimite } from "@/lib/limites";
 import { equipeAvisadaDaMensagem, JANELA_AVISO_EQUIPE_S } from "@/lib/atendimento/dono";
 import { adminsPorAviso } from "@/lib/notifications/push-admins";
 import { notificacaoLigada } from "@/lib/notifications/preferencias";
+import { COLUNAS_VIGENCIA, contratoPermiteManutencao, type ContratoParaManutencao } from "@/lib/manutencao-solicitacoes";
 
 /**
  * Atendimento — utilidades SÓ DO SERVIDOR: token da nota de 1 a 5 (um clique,
@@ -189,7 +190,8 @@ export async function criarOrdemManutencao(input: {
   if (!admin) return { ok: false, error: "Indisponível no momento." };
   let contratoId = input.contratoId;
   if (!contratoId) {
-    const { data: ativos } = await admin.from("contratos").select("id").eq("tenant_id", input.tenantId).in("status", ["ativo", "encerrado_em_acerto"]).limit(2);
+    const { data: candidatos } = await admin.from("contratos").select(`id, ${COLUNAS_VIGENCIA}`).eq("tenant_id", input.tenantId).in("status", ["ativo", "encerrado_em_acerto"]).limit(20);
+    const ativos = (candidatos ?? []).filter((c) => contratoPermiteManutencao(c as ContratoParaManutencao));
     if (!ativos || ativos.length === 0) return { ok: false, error: "Manutenção só pode ser pedida no contrato ativo do seu imóvel." };
     if (ativos.length > 1) return { ok: false, error: "Há mais de um contrato ativo: diga em qual imóvel é o problema." };
     contratoId = ativos[0].id as string;
@@ -197,11 +199,11 @@ export async function criarOrdemManutencao(input: {
   if (!UUID_RE.test(contratoId)) return { ok: false, error: "Escolha o contrato do imóvel." };
   const { data: ct } = await admin
     .from("contratos")
-    .select("id, tenant_id, status, property_id, properties(owner_id, title)")
+    .select(`id, tenant_id, property_id, ${COLUNAS_VIGENCIA}, properties(owner_id, title)`)
     .eq("id", contratoId)
     .maybeSingle();
   const prop = ct?.properties as { owner_id?: string; title?: string } | null;
-  if (!ct || ct.tenant_id !== input.tenantId || !["ativo", "encerrado_em_acerto"].includes(ct.status as string) || !prop?.owner_id) {
+  if (!ct || ct.tenant_id !== input.tenantId || !contratoPermiteManutencao(ct as ContratoParaManutencao) || !prop?.owner_id) {
     return { ok: false, error: "Manutenção só pode ser pedida no contrato ativo do seu imóvel." };
   }
   const urgencia = urgenciaManutencao(input.mensagem, input.urgencia);
