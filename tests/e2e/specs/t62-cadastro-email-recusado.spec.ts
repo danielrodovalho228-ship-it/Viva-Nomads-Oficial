@@ -4,7 +4,7 @@ import { test, expect } from "@playwright/test";
 test.describe("Cadastro — e-mail recusado (F2)", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
 
-  test("@example.com é barrado no servidor antes do signUp (a tela só chama o Supabase depois deste "ok")", async ({ page }) => {
+  test("@example.com é barrado no servidor antes do signUp", async ({ page }) => {
     const r = await page.request.post("/api/auth/validar-email", { data: { email: "qa@example.com" } });
     const j = await r.json();
     expect(j.ok).toBe(false);
