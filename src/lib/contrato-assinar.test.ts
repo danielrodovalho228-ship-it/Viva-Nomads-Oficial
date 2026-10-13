@@ -5,6 +5,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  assuntoAvisoOutraParte,
   avisoAssinatura,
   hashResumo,
   motivoNaoPodeAssinar,
@@ -53,4 +54,10 @@ test("avaliar: nunca em contrato ativo/aguardando assinatura; só até 14 dias d
   assert.equal(podeAvaliarLocacao("concluido", "2026-10-15T00:00:00Z", agora), true);
   assert.equal(podeAvaliarLocacao("concluido", "2026-09-01T00:00:00Z", agora), false);
   assert.equal(podeAvaliarLocacao("concluido", null, agora), false);
+});
+
+test("aviso à outra parte: pede a assinatura que falta, ou diz que o contrato está completo", () => {
+  assert.equal(assuntoAvisoOutraParte(false), "O outro lado assinou o contrato — falta a sua assinatura");
+  assert.equal(assuntoAvisoOutraParte(true), "As duas partes assinaram o contrato");
+  assert.doesNotMatch(assuntoAvisoOutraParte(true), /falta/);
 });

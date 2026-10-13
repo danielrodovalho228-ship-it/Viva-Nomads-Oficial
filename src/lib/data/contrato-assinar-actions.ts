@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify } from "@/lib/notifications";
 import {
+  assuntoAvisoOutraParte,
   avisoAssinatura,
   hashResumo,
   motivoNaoPodeAssinar,
@@ -136,6 +137,7 @@ export async function assinarContrato(input: {
   if (errCol) return { ok: false, error: "Não foi possível registrar a assinatura. Tente de novo." };
 
   // Avisa a outra parte (notificação + e-mail), depois da resposta.
+  const outraJaAssinou = !!(visao.papel === "inquilino" ? c.assinado_proprietario_em : c.assinado_inquilino_em);
   const outroId = visao.papel === "inquilino" ? String(c.properties?.owner_id ?? "") : c.tenant_id;
   after(async () => {
     try {
@@ -145,7 +147,7 @@ export async function assinarContrato(input: {
         email: pessoa?.user?.email ?? undefined,
         userId: outroId,
         pushUrl: `/dashboard/locacoes/${c.id}`,
-        subject: "O outro lado assinou o contrato — falta a sua assinatura",
+        subject: assuntoAvisoOutraParte(outraJaAssinou),
       });
     } catch {
       /* aviso é best-effort: a assinatura já está gravada */

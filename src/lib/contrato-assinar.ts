@@ -64,6 +64,13 @@ export function avisoAssinatura(papel: PapelContrato, a: { proprietario: string 
   return "Nenhuma assinatura ainda.";
 }
 
+/** Assunto do aviso à OUTRA parte depois que alguém assina: se ela já tinha assinado, o contrato está completo. */
+export function assuntoAvisoOutraParte(outraJaAssinou: boolean): string {
+  return outraJaAssinou
+    ? "As duas partes assinaram o contrato"
+    : "O outro lado assinou o contrato — falta a sua assinatura";
+}
+
 /** Mesma janela do servidor (migração 0089): contrato encerrado e até 14 dias depois. Nunca em contrato ativo. */
 export function podeAvaliarLocacao(status: string, encerradoEm: string | null, agora = new Date()): boolean {
   if (!["concluido", "encerrado_sem_renovacao", "encerrado_em_acerto"].includes(status)) return false;
