@@ -899,6 +899,14 @@
       ],
       "specs": []
     },
+    "/api/auth/validar-email": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t62-cadastro-email-recusado"
+      ]
+    },
     "/api/caf/verify": {
       "personas": [
         "inquilino",
