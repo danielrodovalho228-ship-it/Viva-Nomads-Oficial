@@ -12,8 +12,8 @@
     • GITHUB_ENV (quando existir): TESTES_* para a suíte E2E existente;
     • tests/laboratorio/saida/contas.json: só papéis e e-mails (sem senha).
 
-  Contrato: Paulo Essencial × Ana Souza no imóvel 1 (60 dias, comissão 8% do
-  1º aluguel), para as telas de contrato terem dado REAL (sem modo demo).
+  Contrato: Paulo Essencial × Ana Souza no imóvel 1 (60 dias, comissão 8% sobre o
+  valor total do contrato = aluguel × 2 meses), para as telas de contrato terem dado REAL (sem modo demo).
 
   Rodar de novo no mesmo banco: as personas do laboratório (só e-mails
   @lab.vivanomads.test) são apagadas antes — a trava abaixo garante que isso só
@@ -156,7 +156,7 @@ async function criarContrato(propertyId, tenantId) {
       aluguel_mensal: aluguel,
       tamanho_bloco_meses: 2,
       comissao_percent: pct,
-      comissao_valor: aluguel * pct,
+      comissao_valor: aluguel * 2 * pct, // valor total (2 meses) × taxa
       qtd_ocupantes: 1,
       status: "ativo",
       garantia: "caucao",

@@ -1,6 +1,6 @@
 /**
- * Fórmulas dos simuladores do PROPRIETÁRIO (fonte única, PURA e testável — sem
- * imports de valor, só `import type`, que é apagado em runtime). Uma fonte de
+ * Fórmulas dos simuladores do PROPRIETÁRIO (fonte única, PURA e testável — o
+ * único import de valor é a fórmula da comissão, também pura). Uma fonte de
  * cálculo, várias telas: /dashboard/simulador (rentabilidade) e
  * /dashboard/roi-imovel (ROI de mobiliar). As telas injetam comissão/assinatura
  * vindas de config/planos.ts (fonte única dos planos).
@@ -9,6 +9,15 @@
  * rentabilidade. A plataforma nunca movimenta o aluguel.
  */
 import type { PlanoId } from "@/config/planos";
+import { valorComissao } from "./comissao.ts";
+
+/**
+ * Comissão no ano: cada contrato paga a taxa sobre o SEU valor total (valor mensal × prazo médio) —
+ * ordens b3c9d76e/c54366b0. Equivale a taxa × valor mensal × meses ocupados.
+ */
+function comissaoNoAno(aluguel: number, prazoMedioMeses: number, contratos: number, pct: number): number {
+  return Math.round(contratos * valorComissao(aluguel, Math.max(1, prazoMedioMeses), Math.max(0, pct)));
+}
 
 /** Descrição mínima de um plano para o comparador (injetada pela tela). */
 export interface PlanoCalc {
@@ -56,7 +65,7 @@ export function simularRentabilidade(
 
   const receitaBrutaAnual = aluguel * meses;
   const custosAnuais = n(e.condoIptu) * 12 + n(e.contas) * meses;
-  const comissaoAnual = Math.round(contratos * Math.max(0, comissaoPct) * aluguel);
+  const comissaoAnual = comissaoNoAno(aluguel, e.prazoMedioMeses, contratos, comissaoPct);
   const assin = n(assinaturaAno);
   const receitaLiquidaAnual = Math.round(receitaBrutaAnual - custosAnuais - comissaoAnual - assin);
 
@@ -91,7 +100,7 @@ export function compararPlanos(e: EntradaRentabilidade, planos: PlanoCalc[]): Li
   const custos = n(e.condoIptu) * 12 + n(e.contas) * meses;
 
   return planos.map((p) => {
-    const comissaoAnual = Math.round(contratos * Math.max(0, p.comissao) * aluguel);
+    const comissaoAnual = comissaoNoAno(aluguel, e.prazoMedioMeses, contratos, p.comissao);
     const assin = p.assinaturaAnual ?? 0;
     const totalViva = comissaoAnual + assin;
     return {
@@ -181,7 +190,7 @@ export function simularROI(e: EntradaROI, comissaoPct: number, assinaturaAno: nu
   const reposicaoAnual = invest * Math.max(0, e.reposicaoAnualPct ?? 0);
   const custosMobiliadoAnual = Math.round(contasAnual + reposicaoAnual);
 
-  const comissaoAnualMob = contratos * Math.max(0, comissaoPct) * mob;
+  const comissaoAnualMob = comissaoNoAno(mob, e.prazoMedioMeses, contratos, comissaoPct);
   const netMobiliadoAnual = Math.round(mob * meses - comissaoAnualMob - n(assinaturaAno) - custosMobiliadoAnual);
   const netVazioAnual = Math.round(vazio * 12);
   const ganhoAdicionalAnual = netMobiliadoAnual - netVazioAnual;

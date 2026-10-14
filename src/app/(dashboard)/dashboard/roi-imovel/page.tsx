@@ -98,7 +98,7 @@ export default function RoiImovelPage() {
             <div>
               <label htmlFor="imoveis-ativos" className="mb-1 block text-sm font-medium text-ink">
                 Imóveis ativos na Viva: <strong className="text-forest">{imoveisAtivos}</strong> · taxa de serviço{" "}
-                <strong className="text-forest">{pctTexto(faixa.taxa)}</strong> do primeiro mês
+                <strong className="text-forest">{pctTexto(faixa.taxa)}</strong> do valor total do contrato
               </label>
               <input
                 id="imoveis-ativos"
@@ -146,7 +146,7 @@ export default function RoiImovelPage() {
             onClick={() =>
               imprimirSimulacao({
                 titulo: "Calculadora de ROI — mobiliar o imóvel",
-                subtitulo: `Taxa de serviço ${pctTexto(faixa.taxa)} do primeiro mês`,
+                subtitulo: `Taxa de serviço ${pctTexto(faixa.taxa)} do valor total do contrato`,
                 entradas: [
                   { label: "Investimento para mobiliar", valor: formatBRL(investimentoMobiliar) },
                   { label: "Aluguel vazio (mês)", valor: formatBRL(aluguelVazio) },

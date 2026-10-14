@@ -21,12 +21,16 @@ export interface Item {
 
 // ── Receita por contrato ────────────────────────────────────────────────────
 /*
-  Modelo único (Daniel, 10/10): taxa de serviço por contrato fechado (renovação = novo contrato), sobre o
-  valor do PRIMEIRO mês. Sem cobrança recorrente nesta fase (assinatura = fase 2, futuro, para donos com muitos
+  Modelo único (Daniel, 10/10; base corrigida pelas ordens b3c9d76e/c54366b0, 14/10): taxa de serviço por
+  contrato fechado (renovação cobrada à parte, sobre o período renovado), sobre o VALOR TOTAL do contrato =
+  valor mensal × meses. Sem cobrança recorrente nesta fase (assinatura = fase 2, futuro, para donos com muitos
   imóveis, fora das projeções). Faixas em lib/cobranca/regra.ts (fonte única).
 */
-/** Valor médio do primeiro mês de um contrato (R$) — o mesmo ticket do Compare. */
+/** Valor mensal médio de um contrato (R$) — o mesmo ticket do Compare. */
 export const ALUGUEL_MEDIO = 4320;
+
+/** Prazo médio de um contrato (meses) — o mesmo do Compare (3 meses). Base da comissão = valor mensal × prazo. */
+export const PRAZO_MEDIO_MESES = 3;
 
 /**
  * Parte dos contratos por faixa de imóveis do dono (mesma ordem de FAIXAS_COMISSAO_PADRAO).

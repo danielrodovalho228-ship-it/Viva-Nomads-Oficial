@@ -5,14 +5,14 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { CUSTO_FERRAMENTAS_POR_CONTRATO, CUSTO_FIXO_PADRAO, cenariosContratosMes, parceirosPorContrato, porContrato, projetar, receitaBrutaMensal, taxaMediaPorContrato, visaoInvestidor } from "./projecao.ts";
-import { ALUGUEL_MEDIO, CONTRATOS_MES_CENARIOS, CUSTOS_FIXOS, CUSTO_FIXO_FAIXA, IMPOSTO_OPCOES, IMPOSTO_SOBRE_RECEITA, MIX_FAIXAS, PARCEIROS, REFERENCIA, REPRESENTANTE_SEGUROS, SELO_POTENCIAL, TAXA_MEDIA } from "../../config/premissas-financeiras.ts";
+import { ALUGUEL_MEDIO, PRAZO_MEDIO_MESES, CONTRATOS_MES_CENARIOS, CUSTOS_FIXOS, CUSTO_FIXO_FAIXA, IMPOSTO_OPCOES, IMPOSTO_SOBRE_RECEITA, MIX_FAIXAS, PARCEIROS, REFERENCIA, REPRESENTANTE_SEGUROS, SELO_POTENCIAL, TAXA_MEDIA } from "../../config/premissas-financeiras.ts";
 import { FAIXAS_COMISSAO_PADRAO, taxaMediaPonderada, comissaoSobreContrato } from "../cobranca/regra.ts";
 
 /** |real − esperado| ≤ 2% do esperado. */
 const perto = (real: number, esperado: number, msg: string) =>
   assert.ok(Math.abs(real - esperado) <= Math.abs(esperado) * 0.02, `${msg}: ${real.toFixed(0)} ≠ ${esperado} (±2%)`);
 
-test("números da regra única sobre R$ 4.320: 518,40 / 432,00 / 345,60 / 259,20 (ordem bd296d53)", () => {
+test("taxa por faixa sobre R$ 4.320 × 1 mês: 518,40 / 432,00 / 345,60 / 259,20 (ordem bd296d53; base = valor total)", () => {
   assert.equal(ALUGUEL_MEDIO, 4320);
   assert.deepEqual(FAIXAS_COMISSAO_PADRAO.slice(0, 4).map((f) => comissaoSobreContrato(4320, 1, f.taxa)), [518.4, 432, 345.6, 259.2]);
   assert.equal(comissaoSobreContrato(4320, 1, FAIXAS_COMISSAO_PADRAO[4].taxa), 259.2); // Plano Gestor: 6% até negociar
@@ -21,26 +21,27 @@ test("números da regra única sobre R$ 4.320: 518,40 / 432,00 / 345,60 / 259,20
 test("taxa média ponderada pelas faixas: padrão = 12%; mix misto pondera; mix vazio cai na 1ª faixa", () => {
   assert.deepEqual([...MIX_FAIXAS], [1, 0, 0, 0, 0]);
   assert.equal(TAXA_MEDIA, 0.12);
-  assert.equal(taxaMediaPorContrato(), 518.4);
+  assert.equal(PRAZO_MEDIO_MESES, 3);
+  assert.equal(taxaMediaPorContrato(), 1555.2); // 12% × (R$ 4.320 × 3 meses = R$ 12.960) — ordem c54366b0
   assert.ok(Math.abs(taxaMediaPonderada([1, 0, 1, 0, 0]) - 0.1) < 1e-9); // metade a 12%, metade a 8%
   assert.equal(taxaMediaPonderada([]), 0.12);
   assert.equal(taxaMediaPonderada([0, 0, 0, 0, 0]), 0.12);
   assert.equal(taxaMediaPonderada([Number.NaN, -1, 0, 0, 3]), 0.06);
 });
 
-test("cenários 10/20/40 contratos por mês: ≈ R$ 5,2 mil / 10,4 mil / 20,7 mil de receita bruta", () => {
+test("cenários 10/20/40 contratos por mês: ≈ R$ 15,6 mil / 31,1 mil / 62,2 mil de receita bruta", () => {
   assert.deepEqual([...CONTRATOS_MES_CENARIOS], [10, 20, 40]);
   const c = cenariosContratosMes({ operador: 0 });
-  assert.deepEqual(c.map((x) => x.receita), [5184, 10368, 20736]);
-  assert.equal(receitaBrutaMensal(10), 5184);
+  assert.deepEqual(c.map((x) => x.receita), [15552, 31104, 62208]);
+  assert.equal(receitaBrutaMensal(10), 15552);
   const margem = porContrato({ operador: 0 }).margem;
   for (const x of c) assert.ok(Math.abs(x.resultado - (x.contratos * margem - CUSTO_FIXO_PADRAO)) < 0.01);
 });
 
-test("ponto de equilíbrio com o custo fixo atual (≈ R$ 6 mil com pró-labore): 13 contratos por mês, só custo fixo", () => {
+test("ponto de equilíbrio com o custo fixo atual (≈ R$ 6 mil com pró-labore): 5 contratos por mês, só custo fixo", () => {
   const margem = porContrato({ operador: 0 }).margem;
   const n = Math.ceil(CUSTO_FIXO_PADRAO / margem);
-  assert.equal(n, 13);
+  assert.equal(n, 5);
   assert.ok(n * margem >= CUSTO_FIXO_PADRAO && (n - 1) * margem < CUSTO_FIXO_PADRAO);
 });
 
@@ -50,36 +51,36 @@ test("sem assinatura nem churn: a receita base é só a taxa de serviço dos con
   assert.equal(p.anos[1].contratos, 198);
   assert.equal(p.anos[2].contratos, 342);
   for (const m of p.meses) {
-    assert.equal(Math.round(m.receitaBase * 100), Math.round(m.contratos * 518.4 * 100));
+    assert.equal(Math.round(m.receitaBase * 100), Math.round(m.contratos * 1555.2 * 100));
     assert.ok(!("receitaAssinatura" in m) && !("assinantes" in m));
   }
-  perto(p.anos[0].receita, 27994, "receita ano 1");
-  perto(p.piorCaixa, -76429, "pior caixa");
-  assert.equal(p.mesPrimeiroPositivo, 18);
-  assert.equal(p.mesPayback, 36);
+  perto(p.anos[0].receita, 83981, "receita ano 1");
+  perto(p.piorCaixa, -41321, "pior caixa");
+  assert.equal(p.mesPrimeiroPositivo, 7);
+  assert.equal(p.mesPayback, 14);
 });
 
-test("cenário Base com operador de R$ 100 por contrato: pior caixa ≈ −R$ 92 mil e sem payback em 36 meses (com pró-labore)", () => {
+test("cenário Base com operador de R$ 100 por contrato: pior caixa ≈ −R$ 42 mil e payback no mês 15 (com pró-labore)", () => {
   const p = projetar("base", { operador: 100 });
-  perto(p.piorCaixa, -92357, "pior caixa com operador");
-  assert.equal(p.mesPayback, null);
+  perto(p.piorCaixa, -42281, "pior caixa com operador");
+  assert.equal(p.mesPayback, 15);
 });
 
-test("por contrato: receita = R$ 518,40; margem ≈ R$ 471 e empate de 15 a 16 contratos/mês (19 a 21 com operador)", () => {
+test("por contrato: receita = R$ 1.555,20; margem ≈ R$ 1.446 e empate de 5 a 6 contratos/mês (6 com operador)", () => {
   const sem = porContrato({ operador: 0 });
-  assert.equal(Math.round(sem.receita * 100) / 100, 518.4);
-  assert.equal(Math.round(sem.margem), 471);
-  assert.deepEqual(sem.empate.map((x) => Math.ceil(x)), [15, 16]);
-  assert.deepEqual(porContrato({ operador: 100 }).empate.map((x) => Math.ceil(x)), [19, 21]);
+  assert.equal(Math.round(sem.receita * 100) / 100, 1555.2);
+  assert.equal(Math.round(sem.margem), 1446);
+  assert.deepEqual(sem.empate.map((x) => Math.ceil(x)), [5, 6]);
+  assert.deepEqual(porContrato({ operador: 100 }).empate.map((x) => Math.ceil(x)), [6, 6]);
 });
 
-test("cenários ordenados: otimista se paga antes do base; o pessimista não se paga em 36 meses", () => {
+test("cenários ordenados: otimista se paga antes do base, e o base antes do pessimista", () => {
   const pes = projetar("pessimista", { operador: 0 });
   const base = projetar("base", { operador: 0 });
   const oti = projetar("otimista", { operador: 0 });
-  assert.equal(oti.mesPayback, 20);
-  assert.equal(base.mesPayback, 36);
-  assert.equal(pes.mesPayback, null);
+  assert.equal(oti.mesPayback, 10);
+  assert.equal(base.mesPayback, 14);
+  assert.equal(pes.mesPayback, 29);
   assert.ok(oti.piorCaixa > base.piorCaixa && base.piorCaixa > pes.piorCaixa);
 });
 
@@ -116,8 +117,8 @@ test("parceiros: todos ligados no Base ≈ R$ 38,87 por contrato antes do impost
   const m = p.meses[20]; // mês 21: todos já começaram
   assert.equal(Math.round(m.receitaParceiros * 100) / 100, Math.round(m.contratos * 38.87 * 100) / 100);
   perto(p.anos[2].receitaParceiros, 13294, "parceiros ano 3");
-  perto(p.piorCaixa, -72705, "pior caixa com parceiros");
-  assert.equal(p.mesPayback, 34);
+  perto(p.piorCaixa, -41187, "pior caixa com parceiros");
+  assert.equal(p.mesPayback, 14);
 });
 
 test("parceiro com início no mês 13 não soma nada no ano 1", () => {
@@ -152,13 +153,13 @@ test("custo fixo editável muda o resultado (faixa alta piora o caixa)", () => {
   assert.ok(alto.piorCaixa < projetar("base", { operador: 0 }).piorCaixa);
 });
 
-test("imposto da Viva: padrão 6%; anexo V (15,5%) → margem ≈ R$ 422 e empate de 17 a 18 contratos/mês (22 a 24 com operador)", () => {
+test("imposto da Viva: padrão 6%; anexo V (15,5%) → margem ≈ R$ 1.298 e empate de 6 contratos/mês (6 a 7 com operador)", () => {
   assert.deepEqual([...IMPOSTO_OPCOES], [0.06, 0.155]);
   assert.equal(IMPOSTO_SOBRE_RECEITA, 0.06);
   const v = porContrato({ operador: 0, imposto: 0.155 });
-  assert.equal(Math.round(v.margem), 422);
-  assert.deepEqual(v.empate.map((x) => Math.ceil(x)), [17, 18]);
-  assert.deepEqual(porContrato({ operador: 100, imposto: 0.155 }).empate.map((x) => Math.ceil(x)), [22, 24]);
+  assert.equal(Math.round(v.margem), 1298);
+  assert.deepEqual(v.empate.map((x) => Math.ceil(x)), [6, 6]);
+  assert.deepEqual(porContrato({ operador: 100, imposto: 0.155 }).empate.map((x) => Math.ceil(x)), [6, 7]);
   assert.equal(porContrato({ operador: 0 }).margem, porContrato({ operador: 0, imposto: 0.06 }).margem);
   assert.ok(projetar("base", { operador: 0, imposto: 0.155 }).piorCaixa < projetar("base", { operador: 0 }).piorCaixa);
 });

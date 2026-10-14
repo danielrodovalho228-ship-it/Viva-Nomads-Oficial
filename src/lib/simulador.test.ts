@@ -26,7 +26,7 @@ test("contratosPorAno = meses / prazo (limitado a 12 meses)", () => {
   assert.equal(contratosPorAno(10, 0), 10); // prazo mínimo 1
 });
 
-test("rentabilidade: comissão = % × 1º aluguel × contratos/ano (Profissional 8%)", () => {
+test("rentabilidade: comissão = % × valor total de cada contrato (aluguel × prazo) × contratos/ano (Profissional 8%) — ordem c54366b0", () => {
   const r = simularRentabilidade(
     { aluguelMensal: 3000, condoIptu: 500, contas: 350, mesesOcupados: 10, prazoMedioMeses: 4 },
     0.08,
@@ -34,9 +34,9 @@ test("rentabilidade: comissão = % × 1º aluguel × contratos/ano (Profissional
   );
   assert.equal(r.receitaBrutaAnual, 30000); // 3000 × 10
   assert.equal(r.custosAnuais, 500 * 12 + 350 * 10); // 9500
-  assert.equal(r.comissaoAnual, Math.round(2.5 * 0.08 * 3000)); // 600
+  assert.equal(r.comissaoAnual, Math.round(2.5 * 0.08 * 3000 * 4)); // 2,5 contratos × 8% × R$ 12.000 = 2.400
   assert.equal(r.assinaturaAnual, 1548);
-  assert.equal(r.receitaLiquidaAnual, 30000 - 9500 - 600 - 1548);
+  assert.equal(r.receitaLiquidaAnual, 30000 - 9500 - 2400 - 1548);
   assert.equal(r.mediaMensal, Math.round(r.receitaLiquidaAnual / 12));
 });
 
@@ -105,14 +105,14 @@ test("ROI: prêmio, payback e roi anual coerentes", () => {
   );
   assert.equal(r.premioMensal, 1200);
   assert.ok(Math.abs(r.premioPct - 1200 / 1800) < 1e-9);
-  // netMobiliado = 3000×10 − (2.5×0.08×3000=600) − 1548 = 27852
-  assert.equal(r.netMobiliadoAnual, 27852);
+  // netMobiliado = 3000×10 − (2,5 × 8% × 3000 × 4 meses = 2.400) − 1548 = 26052
+  assert.equal(r.netMobiliadoAnual, 26052);
   assert.equal(r.netVazioAnual, 1800 * 12); // 21600
-  assert.equal(r.ganhoAdicionalAnual, 27852 - 21600); // 6252
-  assert.equal(r.paybackMeses, Math.ceil(25000 / (6252 / 12)));
+  assert.equal(r.ganhoAdicionalAnual, 26052 - 21600); // 4452
+  assert.equal(r.paybackMeses, Math.ceil(25000 / (4452 / 12)));
   assert.ok((r.roiAnual ?? 0) > 0);
   assert.equal(r.acumulado.length, 3);
-  assert.equal(r.acumulado[0].mobiliado, 27852 - 25000); // ano 1 desconta investimento
+  assert.equal(r.acumulado[0].mobiliado, 26052 - 25000); // ano 1 desconta investimento
 });
 
 test("ROI: sem ganho adicional → payback null", () => {

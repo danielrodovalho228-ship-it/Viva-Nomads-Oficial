@@ -28,17 +28,19 @@ test.describe("T37 — Números do código (fonte única)", () => {
     expect(PLANOS.map((p) => p.assinaturaAnual)).toEqual([0, 588, 1548, null]);
   });
 
-  test("comissão sempre em reais sobre UM aluguel, uma vez (nunca aluguel cheio)", () => {
+  test("comissão em reais sobre o VALOR TOTAL do contrato (aluguel × meses), uma vez — ordens b3c9d76e/c54366b0", () => {
     for (const aluguel of [1800, 2400, 3200, 7500]) {
       for (const p of PLANOS) {
         const r = resumoContrato(4, aluguel, p.comissao);
-        expect(r.comissaoValor).toBe(Math.round(aluguel * p.comissao));
-        expect(r.comissaoValor).toBeLessThanOrEqual(Math.round(aluguel * 0.12));
+        expect(r.comissaoValor).toBe(Math.round(aluguel * 4 * p.comissao * 100) / 100);
+        expect(r.comissaoValor).toBeLessThanOrEqual(aluguel * 4 * 0.12 + 0.01);
       }
     }
-    // Exemplo da tela: R$ 2.400 → R$ 288 / 192 / 96 / 0.
-    expect(PLANOS.map((p) => resumoContrato(4, 2400, p.comissao).comissaoValor)).toEqual([288, 192, 96, 0]);
-    expect(textoComissao(0.12, 2400)).toContain("12% de um aluguel");
+    // Exemplo da tela: R$ 2.400 × 4 meses = R$ 9.600 → R$ 1.152 / 768 / 384 / 0.
+    expect(PLANOS.map((p) => resumoContrato(4, 2400, p.comissao).comissaoValor)).toEqual([1152, 768, 384, 0]);
+    // Os 3 exemplos da ordem c54366b0.
+    expect([1, 3, 6].map((m) => resumoContrato(m, 3000, 0.12).comissaoValor)).toEqual([360, 1080, 2160]);
+    expect(textoComissao(0.12, 2400, 4)).toContain("12% do valor total do contrato");
     expect(textoComissao(0)).toContain("Comissão zero");
   });
 
@@ -92,8 +94,8 @@ test.describe("T37 — Simulador do painel (proprietário)", () => {
       await expect(cartao).toContainText(limpo(textoComissao(p.comissao)));
       await expect(cartao).toContainText(limpo(`− ${formatBRL(esperado.comissaoAnual)}`));
     }
-    // Valores de referência: Gratuito 12% de 3.000 × 2,5 contratos = R$ 900; Gestor = R$ 0.
-    expect(simularRentabilidade(entrada, 0.12, 0).comissaoAnual).toBe(900);
+    // Valores de referência: Gratuito 12% de (3.000 × 4 meses) × 2,5 contratos = R$ 3.600; Gestor = R$ 0.
+    expect(simularRentabilidade(entrada, 0.12, 0).comissaoAnual).toBe(3600);
     expect(simularRentabilidade(entrada, 0, 0).comissaoAnual).toBe(0);
     await page.screenshot({ path: "tests/laboratorio/saida/t37-2-simulador.png", fullPage: true });
   });

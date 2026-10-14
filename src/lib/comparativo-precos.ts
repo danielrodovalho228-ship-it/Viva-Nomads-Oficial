@@ -3,11 +3,12 @@
   Tudo vem de config/planos.ts (planos e referências de mercado).
 */
 import { GESTOR_PRECO, MERCADO, PLANOS, assinaturaAnualGestor, type PlanoId } from "../config/planos.ts";
+import { valorComissao, valorTotalContrato } from "./comissao.ts";
 
 export interface LinhaPlano {
   id: PlanoId;
   nome: string;
-  /** Comissão: % de UM aluguel, uma vez por contrato. */
+  /** Comissão: % do valor total do contrato (aluguel × meses), uma vez por contrato. */
   comissao: number;
   /** Mensalidades do período (meses × preço). */
   mensalidades: number;
@@ -33,7 +34,7 @@ export function calcularComparativo(aluguel: number, meses: number): Comparativo
   const m = Math.max(1, Math.round(Number(meses) || 1));
   const valorContrato = a * m;
   const planos = PLANOS.filter((p) => p.precoMensal !== null).map((p) => {
-    const comissao = dinheiro(a * p.comissao);
+    const comissao = dinheiro(valorComissao(a, m, p.comissao));
     const mensalidades = dinheiro((p.precoMensal ?? 0) * m);
     const total = dinheiro(comissao + mensalidades);
     return { id: p.id, nome: p.nome, comissao, mensalidades, total, pctDoContrato: valorContrato ? total / valorContrato : 0 };
@@ -75,12 +76,12 @@ export function textoIndisponivel(c: Pick<CustoAnual, "limite" | "minimo">, imov
 
 /**
  * Qual plano compensa num ano: `imoveis` anunciados e `contratosAno` fechados
- * no total, com aluguel médio `aluguel`. Custo = assinatura anual + comissões
- * (uma por contrato, sobre 1 aluguel). Com locações por imóvel:
+ * no total, com aluguel médio `aluguel` e prazo médio `meses`. Custo = assinatura anual +
+ * comissões (uma por contrato, sobre o valor total do contrato — ordens b3c9d76e/c54366b0). Com locações por imóvel:
  * contratosAno = locações × imóveis. Plano fora da faixa (limite de anúncios
  * ou mínimo do Gestor) não serve.
  */
-export function custoAnualPorPlano(imoveis: number, contratosAno: number, aluguel: number): CustoAnual[] {
+export function custoAnualPorPlano(imoveis: number, contratosAno: number, aluguel: number, meses: number): CustoAnual[] {
   const n = Math.max(1, Math.round(Number(imoveis) || 1));
   const c = Math.max(0, Math.round(Number(contratosAno) || 0));
   const a = Math.max(0, Number(aluguel) || 0);
@@ -91,7 +92,7 @@ export function custoAnualPorPlano(imoveis: number, contratosAno: number, alugue
     if (!base.disponivel) return { ...base, total: null, sobConsulta: false };
     const assinatura = gestor ? (GESTOR_PRECO.ligado ? assinaturaAnualGestor(n) : null) : (p.precoMensal ?? 0) * 12;
     if (assinatura === null) return { ...base, total: null, sobConsulta: true };
-    return { ...base, total: dinheiro(c * a * p.comissao + assinatura), sobConsulta: false };
+    return { ...base, total: dinheiro(c * valorComissao(a, meses, p.comissao) + assinatura), sobConsulta: false };
   });
 }
 
@@ -99,8 +100,8 @@ export function custoAnualPorPlano(imoveis: number, contratosAno: number, alugue
  * O plano mais barato do cenário. Empate: fica o plano mais simples (o
  * primeiro da tabela). Nenhum plano com preço → "gestor" (sob consulta).
  */
-export function planoMaisBarato(imoveis: number, contratosAno: number, aluguel: number): PlanoId {
-  const opcoes = custoAnualPorPlano(imoveis, contratosAno, aluguel).filter((x) => x.disponivel && x.total !== null) as (CustoAnual & { total: number })[];
+export function planoMaisBarato(imoveis: number, contratosAno: number, aluguel: number, meses: number): PlanoId {
+  const opcoes = custoAnualPorPlano(imoveis, contratosAno, aluguel, meses).filter((x) => x.disponivel && x.total !== null) as (CustoAnual & { total: number })[];
   if (opcoes.length === 0) return "gestor";
   return opcoes.reduce((a, b) => (b.total < a.total ? b : a)).id;
 }
@@ -133,13 +134,14 @@ export function serieCustoPorImovel(aluguel: number, meses: number, locacoes: nu
   const l = Math.max(0, Math.round(Number(locacoes) || 0));
   const planos = PLANOS.map((p) => ({ id: p.id, nome: p.nome, pontos: [] as PontoCusto[] }));
   for (let n = 1; n <= ate; n++) {
-    for (const c of custoAnualPorPlano(n, l * n, aluguel)) {
+    for (const c of custoAnualPorPlano(n, l * n, aluguel, meses)) {
       if (c.disponivel && c.total !== null) planos.find((x) => x.id === c.id)!.pontos.push({ imoveis: n, porImovel: dinheiro(c.total / n) });
     }
   }
   const ess = PLANOS.find((p) => p.id === "essential")!;
   const pro = PLANOS.find((p) => p.id === "pro")!;
-  const porImovelComissao = (ess.comissao - pro.comissao) * Math.max(0, aluguel) * l;
+  // Comissão sobre o valor total do contrato (aluguel × meses).
+  const porImovelComissao = (ess.comissao - pro.comissao) * valorTotalContrato(Math.max(0, aluguel), meses) * l;
   const empate = porImovelComissao > 0 ? ((pro.precoMensal ?? 0) * 12 - (ess.precoMensal ?? 0) * 12) / porImovelComissao : Infinity;
   return {
     ate,

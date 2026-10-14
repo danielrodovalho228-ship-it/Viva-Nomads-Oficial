@@ -92,8 +92,8 @@ dinheiro).
 - Na etapa de contrato, mostre a **comissão de fechamento**.
 
 **Falas-chave (decore):**
-- "A **comissão é uma só** — 1 mês de aluguel, **uma vez** por contrato. Renovar
-  blocos **não** recobra. É por relação fechada, não por prazo."
+- "A **comissão** é a taxa da faixa sobre o **valor total do contrato** (valor mensal × meses),
+  cobrada **uma vez** no fechamento. Ex.: R$ 3.000 × 3 meses = R$ 9.000 → 12% = R$ 1.080."
 - "A caução vai para **conta vinculada** ou **emissor do cartão** — **nunca** para
   a plataforma. A gente calcula, conecta e documenta. **Nunca** retém dinheiro."
 

@@ -568,7 +568,9 @@
       "personas": [
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t68-comissao-valor-total"
+      ]
     },
     "/dashboard/simulador": {
       "personas": [
@@ -578,7 +580,8 @@
       ],
       "specs": [
         "t12-planos",
-        "t37-simuladores-e-numeros"
+        "t37-simuladores-e-numeros",
+        "t68-comissao-valor-total"
       ]
     },
     "/dashboard/solicitacoes": {
@@ -681,7 +684,8 @@
       ],
       "specs": [
         "t18-seo-a11y",
-        "t20-p1-agentes"
+        "t20-p1-agentes",
+        "t68-comissao-valor-total"
       ]
     },
     "/parceiros": {
@@ -728,7 +732,8 @@
         "t18-seo-a11y",
         "t20-p1-agentes",
         "t37-simuladores-e-numeros",
-        "t6-dinheiro-numeros"
+        "t6-dinheiro-numeros",
+        "t68-comissao-valor-total"
       ]
     },
     "/privacidade": {
@@ -788,7 +793,8 @@
         "publico"
       ],
       "specs": [
-        "t18-seo-a11y"
+        "t18-seo-a11y",
+        "t68-comissao-valor-total"
       ]
     },
     "/tributario": {

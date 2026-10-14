@@ -306,11 +306,16 @@ test("b3c9d76e: Termos e Privacidade trazem o texto exato aprovado (cláusula 8,
   assert.match(ler("src/app/(public)/privacidade/page.tsx"), /Cobrança da comissão sobre o valor total de cada contrato e de cada renovação, do proprietário \(cobrança à parte\); os valores mensais são pagos pelo inquilino direto ao proprietário, fora da plataforma/);
 });
 
-test("b3c9d76e: /api/comissao recebe o prazo, valida no servidor e a cobrança usa a fórmula única", () => {
+test("b3c9d76e + c54366b0: /api/comissao lê aluguel, meses e taxa do CONTRATO registrado (nunca prazo do navegador) e usa a fórmula única", () => {
   const rota = ler("src/app/api/comissao/route.ts");
-  assert.match(rota, /PRAZO_MIN_MESES/);
-  assert.match(rota, /status: 400/);
-  assert.match(rota, /meses,/);
+  assert.match(rota, /comissaoDoContrato\(f\.leadId\)/);
+  assert.match(rota, /meses: contrato\.meses/);
+  assert.match(rota, /commissionRate: contrato\.taxa/);
+  assert.match(rota, /status: 409/);
+  assert.doesNotMatch(rota, /termMonths/);
+  const fluxo = ler("src/app/(dashboard)/dashboard/fechamento/closing-flow.tsx");
+  assert.ok(fluxo.indexOf("await registrarContrato(") < fluxo.indexOf('await fetch("/api/comissao"'), "registra o contrato antes de cobrar");
+  assert.match(fluxo, /body: JSON\.stringify\(\{ leadId: ctx\.leadId \}\)/);
   assert.match(ler("src/lib/payments/asaas.ts"), /valorComissao\(params\.aluguelMensal, params\.meses, params\.commissionRate\)/);
   assert.match(ler("src/lib/comissao.ts"), /comissaoSobreContrato/);
   assert.match(ler("src/lib/contrato-blocos.ts"), /comissaoContrato\(aluguel, total, rate\)/);

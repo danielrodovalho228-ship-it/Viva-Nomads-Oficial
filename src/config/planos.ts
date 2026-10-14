@@ -5,9 +5,9 @@
   consomem SÓ deste arquivo.
 
   Modelo híbrido com comissão DECRESCENTE (uma única vez por contrato-mãe,
-  sobre 1 aluguel): Gratuito → Essencial → Profissional → Gestor (zero no topo;
+  sobre o valor total do contrato): Gratuito → Essencial → Profissional → Gestor (zero no topo;
   a receita do Gestor é só a assinatura sob consulta). Os percentuais vivem SÓ
-  aqui; nas telas, sempre em reais ("12% de um aluguel, uma vez (≈ R$ X)").
+  aqui; nas telas, sempre em reais ("12% do valor total do contrato, uma vez (≈ R$ X)").
   Tabela atual: decisão do Daniel, out/2026.
 */
 
@@ -101,17 +101,18 @@ const PLANOS_BASE: Plano[] = [
   },
 ];
 
-/** Texto da comissão, sempre em reais: "12% de um aluguel, uma vez (≈ R$ 288)". */
-export function textoComissao(comissao: number, aluguel?: number): string {
+/** Texto da comissão, sempre em reais: "12% do valor total do contrato, uma vez por contrato (≈ R$ 1.152)". */
+export function textoComissao(comissao: number, aluguel?: number, meses?: number): string {
   if (comissao === 0) return "Comissão zero: você paga só a assinatura";
   const pct = `${Math.round(comissao * 1000) / 10}`.replace(".", ",");
-  const valor = aluguel && aluguel > 0 ? ` (≈ ${reaisInteiros(aluguel * comissao)})` : "";
-  return `${pct}% de um aluguel, uma vez por contrato${valor}`;
+  // Comissão sobre o VALOR TOTAL do contrato (aluguel × meses) — ordens b3c9d76e/c54366b0.
+  const valor = aluguel && aluguel > 0 && meses && meses >= 1 ? ` (≈ ${reaisInteiros(aluguel * Math.floor(meses) * comissao)})` : "";
+  return `${pct}% do valor total do contrato, uma vez por contrato${valor}`;
 }
 
-/** Forma curta para tabelas e rótulos com o valor em R$ ao lado: "12% de 1 aluguel". */
-export function pctDeUmAluguel(comissao: number): string {
-  return comissao === 0 ? "zero" : `${`${Math.round(comissao * 1000) / 10}`.replace(".", ",")}% de 1 aluguel`;
+/** Forma curta para tabelas e rótulos com o valor em R$ ao lado: "12% do valor total". */
+export function pctDoValorTotal(comissao: number): string {
+  return comissao === 0 ? "zero" : `${`${Math.round(comissao * 1000) / 10}`.replace(".", ",")}% do valor total`;
 }
 
 /** R$ sem centavos, pt-BR (puro; sem depender de utils). */
@@ -125,7 +126,10 @@ export const MESES_EXEMPLO = 4;
 
 export const PLANOS: Plano[] = PLANOS_BASE.map((p) => ({
   ...p,
-  custoLabel: p.custoLabel || textoComissao(p.comissao, ALUGUEL_EXEMPLO) + (p.comissao ? ` no exemplo de ${reaisInteiros(ALUGUEL_EXEMPLO)}` : ""),
+  custoLabel:
+    p.custoLabel ||
+    textoComissao(p.comissao, ALUGUEL_EXEMPLO, MESES_EXEMPLO) +
+      (p.comissao ? ` no exemplo de ${reaisInteiros(ALUGUEL_EXEMPLO)} × ${MESES_EXEMPLO} meses` : ""),
 }));
 
 /**
