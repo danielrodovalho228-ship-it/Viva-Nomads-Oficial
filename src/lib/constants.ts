@@ -39,6 +39,7 @@ export const PUBLIC_NAV = [
   { href: "/pedidos/novo", label: "Publicar pedido" },
   { href: "/como-funciona", label: "Como funciona" },
   { href: "/para-proprietarios", label: "Para proprietários" },
+  { href: "/empresas", label: "Para empresas" },
   { href: "/precos", label: "Preços" },
   { href: "/parceiros", label: "Parceiros" },
 ];
