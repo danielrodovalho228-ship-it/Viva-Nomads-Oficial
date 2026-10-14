@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify } from "@/lib/notifications";
+import { sendEmail } from "@/lib/notifications/email";
 import {
   assuntoAvisoOutraParte,
   avisoAssinatura,
@@ -15,6 +16,15 @@ import {
   type PapelContrato,
 } from "@/lib/contrato-assinar";
 import { montarLinhaDoTempo, type EtapaEstadia } from "@/lib/estadia-linha-tempo";
+import {
+  MSG_CODIGO_BLOQUEADO,
+  VALIDADE_CODIGO_ASSINATURA_MS,
+  conferirCodigo,
+  gerarCodigoAssinatura,
+  hashCodigoAssinatura,
+  podeReenviar,
+  type LinhaCodigo,
+} from "@/lib/contrato-codigo";
 
 /*
   Assinatura eletrônica na plataforma (ordem 0fd301f0, F40). A leitura passa pelo RLS (as duas partes);
@@ -104,9 +114,62 @@ export async function getContratoParaAssinar(contratoId: string): Promise<Contra
   return data ? montar(data as unknown as LinhaContrato, user.id) : null;
 }
 
+/** Envia ao e-mail da conta um código de 6 dígitos, de uso único, que vale 15 minutos (conferido no servidor). */
+export async function pedirCodigoAssinatura(contratoId: string): Promise<{ ok: boolean; error?: string }> {
+  if (!UUID_RE.test(String(contratoId))) return { ok: false, error: "Contrato inválido." };
+  const supabase = await createClient();
+  const admin = createAdminClient();
+  if (!supabase || !admin) return { ok: false, error: "Serviço indisponível." };
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user?.email) return { ok: false, error: "Entre para assinar." };
+  const { data } = await admin.from("contratos").select(COLUNAS).eq("id", contratoId).maybeSingle();
+  const c = data as unknown as LinhaContrato | null;
+  const visao = c ? montar(c, user.id) : null;
+  if (!c || !visao) return { ok: false, error: "Contrato não encontrado." };
+  if (c.status !== "ativo") return { ok: false, error: "Este contrato não está mais aguardando assinatura." };
+  if (visao.euAssinei) return { ok: false, error: "Você já assinou este contrato." };
+
+  const agora = Date.now();
+  const { data: atual } = await admin
+    .from("contrato_assinatura_codigos")
+    .select("enviado_em")
+    .eq("contrato_id", c.id)
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (!podeReenviar(atual as { enviado_em: string } | null, agora)) {
+    return { ok: false, error: "Espere 1 minuto para pedir outro código." };
+  }
+  const codigo = gerarCodigoAssinatura();
+  const { error: errGrava } = await admin.from("contrato_assinatura_codigos").upsert(
+    {
+      contrato_id: c.id,
+      user_id: user.id,
+      codigo_hash: hashCodigoAssinatura(user.id, c.id, codigo),
+      expira_em: new Date(agora + VALIDADE_CODIGO_ASSINATURA_MS).toISOString(),
+      falhas: 0,
+      usado_em: null,
+      enviado_em: new Date(agora).toISOString(),
+    },
+    { onConflict: "contrato_id,user_id" },
+  );
+  if (errGrava) return { ok: false, error: "Não foi possível gerar o código. Tente de novo." };
+  const r = await sendEmail({
+    to: user.email,
+    subject: "Seu código para assinar o contrato",
+    text: `Seu código para assinar o contrato de "${visao.imovel}": ${codigo}\nVale por 15 minutos e só pode ser usado uma vez. Se não foi você, ignore este e-mail e troque a senha.`,
+    html: `<p>Seu código para assinar o contrato de <strong>${visao.imovel.replace(/[<>&]/g, "")}</strong>: <strong style="font-size:20px;letter-spacing:4px">${codigo}</strong></p><p>Vale por 15 minutos e só pode ser usado uma vez. Se não foi você, ignore este e-mail e troque a senha.</p>`,
+  });
+  if (r.error) return { ok: false, error: "Não foi possível enviar o e-mail agora. Tente de novo." };
+  return { ok: true };
+}
+
 export async function assinarContrato(input: {
   contratoId: string;
   aceite: boolean;
+  /** 6 dígitos recebidos por e-mail (pedirCodigoAssinatura). */
+  codigo?: string;
 }): Promise<{ ok: boolean; error?: string }> {
   if (!UUID_RE.test(String(input.contratoId))) return { ok: false, error: "Contrato inválido." };
   const supabase = await createClient();
@@ -130,6 +193,37 @@ export async function assinarContrato(input: {
     aceite: input.aceite === true,
   });
   if (motivo) return { ok: false, error: motivo };
+
+  // Confirmação de identidade NO SERVIDOR: código de e-mail de uso único, com validade e limite de falhas.
+  const { data: linhaCodigo } = await admin
+    .from("contrato_assinatura_codigos")
+    .select("codigo_hash, expira_em, falhas, usado_em, enviado_em")
+    .eq("contrato_id", c.id)
+    .eq("user_id", user.id)
+    .maybeSingle();
+  const lc = (linhaCodigo as LinhaCodigo | null) ?? null;
+  const conf = conferirCodigo(lc, input.codigo, user.id, c.id, Date.now());
+  if (!conf.ok) {
+    if (conf.contarFalha && lc) {
+      await admin
+        .from("contrato_assinatura_codigos")
+        .update({ falhas: lc.falhas + 1 })
+        .eq("contrato_id", c.id)
+        .eq("user_id", user.id)
+        .is("usado_em", null);
+    }
+    return { ok: false, error: conf.erro };
+  }
+  // Consome o código antes de gravar: só uma assinatura por código, mesmo com dois cliques ao mesmo tempo.
+  const { data: consumido } = await admin
+    .from("contrato_assinatura_codigos")
+    .update({ usado_em: new Date().toISOString() })
+    .eq("contrato_id", c.id)
+    .eq("user_id", user.id)
+    .eq("codigo_hash", lc!.codigo_hash)
+    .is("usado_em", null)
+    .select("contrato_id");
+  if (!consumido?.length) return { ok: false, error: MSG_CODIGO_BLOQUEADO };
 
   const h = await headers();
   const ip = (h.get("x-forwarded-for") ?? "").split(",")[0]?.trim().slice(0, 64) || null;
