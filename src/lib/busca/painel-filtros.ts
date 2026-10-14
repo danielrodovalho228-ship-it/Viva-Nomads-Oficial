@@ -1,0 +1,75 @@
+/*
+  Painel de filtros do celular (ordem 314f764e) — PURO. O painel edita um
+  RASCUNHO; "Mostrar N imóveis" conta com o rascunho e só ao aplicar a lista
+  muda. Uma regra só para a contagem e para a lista (os mesmos campos que a
+  /buscar já filtra e lê da URL).
+*/
+export interface FiltrosPainel {
+  maxPrice: number; // 0 = qualquer
+  minBedrooms: number; // 0 = qualquer
+  petsOnly: boolean;
+  homeOfficeOnly: boolean;
+  readyToLiveOnly: boolean;
+}
+
+export const FILTROS_PAINEL_VAZIOS: FiltrosPainel = {
+  maxPrice: 0,
+  minBedrooms: 0,
+  petsOnly: false,
+  homeOfficeOnly: false,
+  readyToLiveOnly: false,
+};
+
+export const OPCOES_PRECO: { valor: number; rotulo: string }[] = [
+  { valor: 0, rotulo: "Qualquer" },
+  { valor: 2500, rotulo: "Até R$ 2.500" },
+  { valor: 3500, rotulo: "Até R$ 3.500" },
+  { valor: 5000, rotulo: "Até R$ 5.000" },
+];
+
+export const OPCOES_QUARTOS: { valor: number; rotulo: string }[] = [
+  { valor: 0, rotulo: "Qualquer" },
+  { valor: 1, rotulo: "1+" },
+  { valor: 2, rotulo: "2+" },
+  { valor: 3, rotulo: "3+" },
+];
+
+type ImovelFiltravel = {
+  monthlyPrice: number;
+  bedrooms: number;
+  petsAllowed?: boolean;
+  tagHomeOffice: boolean;
+  readyToLiveBadge?: boolean;
+};
+
+/** O imóvel passa nos filtros do painel? */
+export function passaNoPainel(p: ImovelFiltravel, f: FiltrosPainel): boolean {
+  if (f.maxPrice && p.monthlyPrice > f.maxPrice) return false;
+  if (f.minBedrooms && p.bedrooms < f.minBedrooms) return false;
+  if (f.petsOnly && !p.petsAllowed) return false;
+  if (f.homeOfficeOnly && !p.tagHomeOffice) return false;
+  if (f.readyToLiveOnly && !p.readyToLiveBadge) return false;
+  return true;
+}
+
+/** Quantos filtros do painel estão ligados (o número no botão "Filtros"). */
+export function contarFiltrosPainel(f: FiltrosPainel): number {
+  return (f.maxPrice ? 1 : 0) + (f.minBedrooms ? 1 : 0) + [f.petsOnly, f.homeOfficeOnly, f.readyToLiveOnly].filter(Boolean).length;
+}
+
+/** Texto do botão de aplicar: "Mostrar 1 imóvel" / "Mostrar 12 imóveis" / "Nenhum imóvel com esses filtros". */
+export function rotuloMostrar(n: number): string {
+  if (n === 0) return "Nenhum imóvel com esses filtros";
+  return `Mostrar ${n} ${n === 1 ? "imóvel" : "imóveis"}`;
+}
+
+/** Resumo curto da busca no topo do celular: "Até R$ 3.500 · 2+ quartos · Aceita pets". */
+export function resumoFiltros(f: FiltrosPainel): string {
+  const partes: string[] = [];
+  if (f.maxPrice) partes.push(OPCOES_PRECO.find((o) => o.valor === f.maxPrice)?.rotulo ?? `Até R$ ${f.maxPrice}`);
+  if (f.minBedrooms) partes.push(`${f.minBedrooms}+ ${f.minBedrooms === 1 ? "quarto" : "quartos"}`);
+  if (f.petsOnly) partes.push("Aceita pets");
+  if (f.homeOfficeOnly) partes.push("Trabalhar de casa");
+  if (f.readyToLiveOnly) partes.push("Pronto para Morar");
+  return partes.length ? partes.join(" · ") : "Qualquer preço · todos os imóveis";
+}
