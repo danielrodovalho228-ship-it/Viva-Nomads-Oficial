@@ -60,6 +60,7 @@ import {
   PRAZO_MAX_DIAS,
   type BlocoComDatas,
 } from "@/lib/contrato-blocos";
+import { normalizarRegrasPets } from "@/lib/anuncio/pets-regras";
 import { validarGarantia, type GarantiaContrato } from "@/lib/guarantees";
 
 type ActionResult = { ok: boolean; demo?: boolean; id?: string; error?: string };
@@ -335,6 +336,8 @@ export interface PropertyInput {
   maxPeriodDays?: number;
   furnished?: boolean;
   petsAllowed?: boolean;
+  /** Regras de pets do proprietário (validadas no servidor; requer migração 0119). */
+  petsRegras?: unknown;
   smokingAllowed?: boolean;
   childrenAllowed?: boolean;
   maxGuests?: number;
@@ -731,6 +734,14 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
       .eq("owner_id", user.id);
   } catch {
     /* migração ausente — segue sem os campos extras */
+  }
+
+  // Regras de pets (0119): validadas aqui; só vale com "aceita pets" marcado.
+  try {
+    const regras = input.petsAllowed ? normalizarRegrasPets(input.petsRegras) : null;
+    await supabase.from("properties").update({ pets_regras: regras }).eq("id", id).eq("owner_id", user.id);
+  } catch {
+    /* migração 0119 ausente — segue com o aceite geral */
   }
 
   // Re-sincroniza tabelas filhas: apaga as atuais e regrava as do formulário.

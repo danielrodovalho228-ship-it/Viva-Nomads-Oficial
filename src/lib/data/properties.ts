@@ -5,6 +5,7 @@ import type { Property, AmenityGroup } from "@/lib/types";
 import { SAMPLE_PROPERTIES } from "@/lib/properties";
 import { signAvatarPath } from "@/lib/data/avatar-url";
 import { semAnunciosDeTeste } from "@/lib/data/anuncio-teste";
+import { normalizarRegrasPets } from "@/lib/anuncio/pets-regras";
 
 /**
  * Colunas SEGURAS de `properties` para leitura (público e dono). NUNCA inclui
@@ -189,13 +190,15 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     }
   };
 
-  const [photos, amenities, workspaces, proximities, reviews, owner] = await Promise.all([
+  const [photos, amenities, workspaces, proximities, reviews, owner, petsLinha] = await Promise.all([
     safe(supabase.from("property_photos").select("url, sort_order").eq("property_id", base.id).order("sort_order")),
     safe(supabase.from("property_amenities").select("category, label, sort_order").eq("property_id", base.id).order("sort_order")),
     safe(supabase.from("property_workspaces").select("name, type, distance_m").eq("property_id", base.id)),
     safe(supabase.from("property_proximities").select("category, name, note, sort_order").eq("property_id", base.id).order("sort_order")),
     safe(supabase.from("avaliacoes").select("nota_geral, comentario_publico, publicada_em").eq("imovel_id", base.id).eq("papel_autor", "inquilino").eq("status", "publicada").order("publicada_em", { ascending: false })),
     ownerId ? safe(supabase.from("profiles").select("full_name, avatar_url, created_at, response_rate, is_verified").eq("id", ownerId).maybeSingle()) : Promise.resolve(null),
+    // Regras de pets (0119): coluna à parte para a página não quebrar se a migração atrasar.
+    safe(supabase.from("properties").select("pets_regras").eq("id", base.id).maybeSingle()),
   ]);
 
   // Comodidades agrupadas por categoria (na ordem de cadastro).
@@ -237,6 +240,7 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
       comment: r.comentario_publico ?? "",
       date: r.publicada_em ?? undefined,
     })),
+    petsRegras: normalizarRegrasPets((petsLinha as { pets_regras?: unknown } | null)?.pets_regras) ?? undefined,
     ownerName: ownerRow?.full_name ?? base.ownerName,
     ownerId: ownerId ?? base.ownerId,
     owner: ownerRow
