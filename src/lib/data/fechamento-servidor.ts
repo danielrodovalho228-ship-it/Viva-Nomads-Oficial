@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { taxaDoContrato } from "@/config/planos";
+import { DIAS_POR_MES } from "@/lib/contrato-blocos";
 import { documentoParaContrato } from "@/lib/documento-pessoa";
 import { motivoBloqueioContrato } from "@/lib/contrato-trava";
 import { lerDocumento } from "@/lib/data/documento-servidor";
@@ -110,4 +111,32 @@ export async function concluirFechamento(leadId: string, tipo: "comissao" | "con
     return;
   }
   await admin.from("cobrancas_fechamento").update({ externo_id: externoId }).eq("lead_id", leadId).eq("tipo", tipo);
+}
+
+/** Dados da comissão tirados do CONTRATO registrado (snapshot congelado no fechamento). */
+export interface ComissaoDoContrato {
+  aluguelMensal: number;
+  meses: number;
+  taxa: number;
+}
+
+/**
+ * A comissão incide sobre o VALOR TOTAL do contrato (ordens b3c9d76e e c54366b0). Por isso aluguel, meses
+ * e taxa vêm do contrato JÁ REGISTRADO desta candidatura — o mesmo dado de contratos.comissao_valor —,
+ * nunca de um prazo enviado pelo navegador (que poderia mandar 1 mês e pagar menos). Sem contrato = null.
+ */
+export async function comissaoDoContrato(leadId: string): Promise<ComissaoDoContrato | null> {
+  const admin = createAdminClient();
+  if (!admin) return null;
+  const { data } = await admin
+    .from("contratos")
+    .select("aluguel_mensal, prazo_total_dias, comissao_percent")
+    .eq("lead_id", leadId)
+    .maybeSingle();
+  if (!data) return null;
+  return {
+    aluguelMensal: Number(data.aluguel_mensal),
+    meses: Math.round(Number(data.prazo_total_dias) / DIAS_POR_MES),
+    taxa: Number(data.comissao_percent),
+  };
 }

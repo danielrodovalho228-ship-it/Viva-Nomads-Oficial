@@ -48,6 +48,8 @@ export interface Financeiro {
   comissaoGerada: Num;
   comissaoAReceber: Num;
   aluguelContratado: Num;
+  /** Valor total dos contratos (aluguel × meses) = comissão ÷ percentual — base da comissão. */
+  valorTotalContratado: Num;
   takeRate: Num;
   gastoMarketing: Num;
   mesesMarketing: string[];
@@ -112,6 +114,11 @@ export function calcularFinanceiro(d: Bruto): Financeiro {
     .filter((c) => c.status !== "pago")
     .reduce((s, c) => s + (c.comissao ?? 0), 0);
   const aluguelContratado = comissoes.reduce((s, c) => s + (c.aluguel ?? 0), 0);
+  // Comissão = taxa × valor total do contrato → valor total = comissão ÷ taxa (exato, sem precisar do prazo).
+  // Contrato com taxa 0 fica fora (o valor total não sai da comissão).
+  const comTaxa = comissoes.filter((c) => (c.percentual ?? 0) > 0 && c.comissao !== null);
+  const valorTotalContratado = comTaxa.reduce((s, c) => s + (c.comissao ?? 0) / (c.percentual as number), 0);
+  const comissaoComTaxa = comTaxa.reduce((s, c) => s + (c.comissao ?? 0), 0);
 
   const recebidoAssinatura = recebido ? num(recebido.assinatura) : null;
   const recebidoComissao = recebido ? num(recebido.comissao) : null;
@@ -154,7 +161,8 @@ export function calcularFinanceiro(d: Bruto): Financeiro {
     comissaoGerada: comissoes.length ? comissaoGerada : 0,
     comissaoAReceber: comissoes.length ? comissaoAReceber : 0,
     aluguelContratado: comissoes.length ? aluguelContratado : 0,
-    takeRate: razao(comissaoGerada, aluguelContratado),
+    valorTotalContratado: comTaxa.length ? Math.round(valorTotalContratado * 100) / 100 : 0,
+    takeRate: razao(comissaoComTaxa, valorTotalContratado),
     gastoMarketing,
     mesesMarketing: Array.isArray(mk?.meses) ? (mk!.meses as string[]) : [],
     novosProprietarios,
@@ -204,6 +212,7 @@ export function csvFinanceiro(f: Financeiro, inicio: string, fim: string, cidade
     ["Comissão gerada", f.comissaoGerada],
     ["Comissão a receber", f.comissaoAReceber],
     ["Aluguel contratado (entre as partes; não passa pela plataforma)", f.aluguelContratado],
+    ["Valor total dos contratos (base da comissão)", f.valorTotalContratado],
     ["Take rate", f.takeRate],
     ["Gasto de marketing", f.gastoMarketing],
     ["CAC (proprietário)", f.cac],
