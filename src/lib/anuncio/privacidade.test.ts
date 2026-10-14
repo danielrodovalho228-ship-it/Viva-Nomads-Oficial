@@ -95,3 +95,22 @@ test("texto da declaração e ligações no código (anúncio público, editores
   const acoes = le("lib/data/actions.ts");
   assert.ok(acoes.indexOf("await gravarPrivacidade(supabase, user.id, data.id") < acoes.indexOf("faltaParaPublicar(supabase, user.id, data.id"));
 });
+
+test("lembrete de senha nova: só ao inquilino, com fechadura com senha, contrato em andamento e assinado pelas duas partes", async () => {
+  const { mostrarLembreteSenha } = await import("./privacidade.ts");
+  const ok = { papel: "inquilino", tipoAcesso: "fechadura_senha", status: "ativo", assinadoPelasDuasPartes: true } as const;
+  assert.equal(mostrarLembreteSenha(ok), true);
+  assert.equal(mostrarLembreteSenha({ ...ok, papel: "proprietario" }), false);
+  assert.equal(mostrarLembreteSenha({ ...ok, tipoAcesso: "chave" }), false);
+  assert.equal(mostrarLembreteSenha({ ...ok, tipoAcesso: null }), false);
+  assert.equal(mostrarLembreteSenha({ ...ok, status: "concluido" }), false);
+  assert.equal(mostrarLembreteSenha({ ...ok, assinadoPelasDuasPartes: false }), false);
+});
+
+test("o detalhe do contrato mostra o lembrete (ordem f92bc582, item 3)", () => {
+  const le = (p: string) => readFileSync(new URL(`../../${p}`, import.meta.url), "utf8");
+  const d = le("components/contrato/contrato-detalhe.tsx");
+  assert.match(d, /mostrarLembreteSenha\(/);
+  assert.match(d, /data-testid="lembrete-senha-entrada"/);
+  assert.match(d, /LEMBRETE_SENHA_ENTRADA/);
+});
