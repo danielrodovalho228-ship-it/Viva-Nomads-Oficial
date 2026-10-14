@@ -46,10 +46,3 @@ export function resumoDaBusca(qs: string): string {
   if (sp.get("homeoffice") === "1") partes.push("trabalhar de casa");
   return partes.join(" · ").slice(0, 200);
 }
-
-/** "15 imóveis em Uberlândia" / "1 imóvel" — contagem do topo da busca. */
-export function contagemDaBusca(n: number, cidade?: string): string {
-  const base = `${n} ${n === 1 ? "imóvel" : "imóveis"}`;
-  const c = cidade?.trim();
-  return c ? `${base} em ${c}` : base;
-}
