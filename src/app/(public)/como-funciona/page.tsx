@@ -47,7 +47,7 @@ export default function HowItWorksPage() {
       <JsonLd dados={paginaInstitucional(SITE_URL, { caminho: "/como-funciona", nome: "Como funciona", descricao: "Entenda como funciona a locação de imóveis mobiliados por 30 a 180 dias no Viva Nomads — para inquilinos e para proprietários." })} />
       <BannerTopo
         foto={PHOTOS.heroProfessional}
-        alt="Pessoa chegando com a mala a um apartamento mobiliado"
+        alt="Pessoa chegando com a mala a um imóvel mobiliado"
         eyebrow="Passo a passo"
         titulo="Como funciona"
         subtitulo={

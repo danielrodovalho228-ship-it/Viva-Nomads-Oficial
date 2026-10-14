@@ -44,7 +44,7 @@ export default function PricingPage() {
 
       <BannerTopo
         foto={PHOTOS.ownerKeys}
-        alt="Proprietário entregando as chaves de um apartamento mobiliado"
+        alt="Proprietário entregando as chaves de um imóvel mobiliado"
         eyebrow="Preços"
         titulo="Anunciar é grátis"
         alinhamento="centro"

@@ -69,7 +69,7 @@ export default function EmpresasPage() {
       <JsonLd dados={paginaInstitucional(SITE_URL, { caminho: "/empresas", nome: "Para empresas", descricao: "Mobilidade corporativa com locação mobiliada de média duração: imóveis prontos, recibo mensal da estadia para reembolso e relatórios." })} />
       <BannerTopo
         foto={PHOTOS.personas.executivos}
-        alt="Profissional chegando a um apartamento mobiliado com a mala"
+        alt="Profissional chegando a um imóvel mobiliado com a mala"
         eyebrow="Para empresas"
         titulo="Moradia de média duração para o seu time"
         subtitulo={
@@ -135,7 +135,7 @@ export default function EmpresasPage() {
       {/* Benefícios + foto. */}
       <section className="container-page section-y">
         <div className="grid items-center gap-10 md:grid-cols-2">
-          <BrandImage src={PHOTOS.homeOffice} alt="Espaço de trabalho em casa num apartamento mobiliado" sizes="(max-width: 768px) 100vw, 50vw" className="aspect-[4/3] w-full rounded-3xl" />
+          <BrandImage src={PHOTOS.homeOffice} alt="Espaço de trabalho em casa num imóvel mobiliado" sizes="(max-width: 768px) 100vw, 50vw" className="aspect-[4/3] w-full rounded-3xl" />
           <div>
             <h2 className="font-title text-3xl font-bold text-ink">O que a empresa ganha</h2>
             <ul className="mt-6 space-y-3">
