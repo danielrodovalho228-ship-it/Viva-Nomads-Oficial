@@ -2064,7 +2064,7 @@
         "proprietario"
       ],
       "specs": [
-        "t71-pets-ficha"
+        "t73-pets-ficha"
       ]
     },
     "src/lib/data/pets-ficha-actions.ts#removerPet": {
@@ -2073,7 +2073,7 @@
         "proprietario"
       ],
       "specs": [
-        "t71-pets-ficha"
+        "t73-pets-ficha"
       ]
     },
     "src/lib/data/pets-ficha-actions.ts#salvarPet": {
@@ -2082,7 +2082,7 @@
         "proprietario"
       ],
       "specs": [
-        "t71-pets-ficha"
+        "t73-pets-ficha"
       ]
     },
     "src/lib/data/planos-actions.ts#definirAccountType": {
