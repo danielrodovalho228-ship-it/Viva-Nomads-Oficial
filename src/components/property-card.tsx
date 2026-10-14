@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bath, BedDouble, Ruler, Star, PlayCircle, Users } from "lucide-react";
+import { Bath, BedDouble, PawPrint, Ruler, Star, PlayCircle, Users } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { formatBRL, numBR } from "@/lib/utils";
 import { calcularTudoIncluido } from "@/lib/precos";
@@ -116,6 +116,12 @@ export function PropertyCard({
           {property.maxGuests != null && property.maxGuests > 0 && (
             <span className="inline-flex items-center gap-1">
               <Users className="h-4 w-4" /> até {property.maxGuests}
+            </span>
+          )}
+          {property.petsAllowed && (
+            <span className="inline-flex items-center gap-1" title="Aceita pet">
+              <PawPrint className="h-4 w-4" aria-hidden="true" />
+              <span className="sr-only">Aceita pet</span>
             </span>
           )}
         </div>
