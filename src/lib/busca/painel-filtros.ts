@@ -4,6 +4,7 @@
   muda. Uma regra só para a contagem e para a lista (os mesmos campos que a
   /buscar já filtra e lê da URL).
 */
+import { ROTULO_COMODIDADE, passaComodidades, type ComodidadeFiltro } from "./filtro-comodidades.ts";
 import { aceitaPorte, type PortePet, type RegrasPets } from "../anuncio/pets-regras.ts";
 
 export interface FiltrosPainel {
@@ -14,6 +15,8 @@ export interface FiltrosPainel {
   petPorte: PortePet | "";
   homeOfficeOnly: boolean;
   readyToLiveOnly: boolean;
+  /** Wi-Fi, cozinha, garagem, máquina de lavar (ordem 583d2e71): precisa ter todas. */
+  comodidades: ComodidadeFiltro[];
 }
 
 export const FILTROS_PAINEL_VAZIOS: FiltrosPainel = {
@@ -23,6 +26,7 @@ export const FILTROS_PAINEL_VAZIOS: FiltrosPainel = {
   petPorte: "",
   homeOfficeOnly: false,
   readyToLiveOnly: false,
+  comodidades: [],
 };
 
 export const ROTULO_PORTE_CURTO: Record<PortePet, string> = { P: "pequeno", M: "médio", G: "grande" };
@@ -54,6 +58,9 @@ type ImovelFiltravel = {
   petsRegras?: RegrasPets | null;
   tagHomeOffice: boolean;
   readyToLiveBadge?: boolean;
+  amenities?: string[];
+  comodidadesFiltro?: string[];
+  parkingSpots?: number;
 };
 
 /** O imóvel passa nos filtros do painel? */
@@ -64,12 +71,13 @@ export function passaNoPainel(p: ImovelFiltravel, f: FiltrosPainel): boolean {
   if (f.petsOnly && f.petPorte && !aceitaPorte(p.petsAllowed, p.petsRegras, f.petPorte)) return false;
   if (f.homeOfficeOnly && !p.tagHomeOffice) return false;
   if (f.readyToLiveOnly && !p.readyToLiveBadge) return false;
+  if (!passaComodidades(p, f.comodidades)) return false;
   return true;
 }
 
 /** Quantos filtros do painel estão ligados (o número no botão "Filtros"). */
 export function contarFiltrosPainel(f: FiltrosPainel): number {
-  return (f.maxPrice ? 1 : 0) + (f.minBedrooms ? 1 : 0) + [f.petsOnly, f.homeOfficeOnly, f.readyToLiveOnly].filter(Boolean).length;
+  return (f.maxPrice ? 1 : 0) + (f.minBedrooms ? 1 : 0) + [f.petsOnly, f.homeOfficeOnly, f.readyToLiveOnly].filter(Boolean).length + f.comodidades.length;
 }
 
 /** Texto do botão de aplicar: "Mostrar 1 imóvel" / "Mostrar 12 imóveis" / "Nenhum imóvel com esses filtros". */
@@ -87,5 +95,6 @@ export function resumoFiltros(f: FiltrosPainel): string {
   if (f.petsOnly && f.petPorte) partes.push(`pet ${ROTULO_PORTE_CURTO[f.petPorte]}`);
   if (f.homeOfficeOnly) partes.push("Trabalhar de casa");
   if (f.readyToLiveOnly) partes.push("Pronto para Morar");
+  for (const c of f.comodidades) partes.push(ROTULO_COMODIDADE[c]);
   return partes.length ? partes.join(" · ") : "Qualquer preço · todos os imóveis";
 }

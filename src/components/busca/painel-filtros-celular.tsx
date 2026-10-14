@@ -11,6 +11,7 @@ import {
   rotuloMostrar,
   type FiltrosPainel,
 } from "@/lib/busca/painel-filtros";
+import { COMODIDADES_FILTRO } from "@/lib/busca/filtro-comodidades";
 import { buttonClasses } from "@/components/ui/button";
 
 /**
@@ -86,6 +87,22 @@ export function PainelFiltrosCelular({
               <Marcar rotulo="Aceita pets" dica="Cachorro, gato e outros, conforme as regras do imóvel" ligado={rascunho.petsOnly} onChange={(v) => muda("petsOnly", v)} />
               <Marcar rotulo="Para trabalhar de casa" dica="Home office com mesa, cadeira e internet boa" ligado={rascunho.homeOfficeOnly} onChange={(v) => muda("homeOfficeOnly", v)} />
               <Marcar rotulo="Pronto para Morar" dica="Selo do imóvel equipado para entrar com a mala" ligado={rascunho.readyToLiveOnly} onChange={(v) => muda("readyToLiveOnly", v)} />
+            </div>
+          </fieldset>
+          <fieldset data-testid="painel-comodidades">
+            <legend className="mb-2 text-sm font-semibold text-ink">Comodidades</legend>
+            <div className="divide-y divide-line rounded-2xl border border-line">
+              {COMODIDADES_FILTRO.map((c) => (
+                <Marcar
+                  key={c.chave}
+                  rotulo={c.rotulo}
+                  dica={c.dica}
+                  ligado={rascunho.comodidades.includes(c.chave)}
+                  onChange={(v) =>
+                    muda("comodidades", v ? [...rascunho.comodidades, c.chave] : rascunho.comodidades.filter((x) => x !== c.chave))
+                  }
+                />
+              ))}
             </div>
           </fieldset>
           {rascunho.petsOnly && (

@@ -6,6 +6,7 @@ import { SAMPLE_PROPERTIES } from "@/lib/properties";
 import { signAvatarPath } from "@/lib/data/avatar-url";
 import { semAnunciosDeTeste } from "@/lib/data/anuncio-teste";
 import { comCoordenadaAproximada } from "@/lib/data/coordenada-aproximada";
+import { ROTULOS_FILTRAVEIS, chavesFiltroDe } from "@/lib/busca/filtro-comodidades";
 import { normalizarRegrasPets } from "@/lib/anuncio/pets-regras";
 import { privacidadeDaLinha, type PrivacidadeLinha } from "@/lib/anuncio/privacidade";
 
@@ -282,6 +283,7 @@ export async function listProperties(): Promise<Property[]> {
     const mapped = semAnunciosDeTeste((data as unknown as PropertyRow[]).map(rowToProperty).map(comCoordenadaAproximada)); // anúncio de teste do QA nunca aparece ao visitante
     await attachCoverPhotos(supabase, mapped); // capa real para os cards (best-effort)
     await attachReviewAggregates(supabase, mapped); // nota/contagem REAL (fonte única)
+    await attachComodidadesFiltro(supabase, mapped); // Wi-Fi/cozinha/garagem/lavar, para os filtros da busca (best-effort)
     await attachPetsRegras(supabase, mapped); // porte máximo de pet, para o filtro da busca (0119; best-effort)
     return withDemos(mapped);
   } catch (e) {
@@ -383,6 +385,25 @@ async function attachCoverPhotos(supabase: SupabaseLike, list: Property[]): Prom
  * Best-effort: tabela ausente/consulta falha → mantém os escalares como vieram.
  */
 /** Regras de pets (porte máximo) dos anúncios da lista, para o filtro da busca. Best-effort: coluna ausente → sem regras. */
+/** Uma consulta só para a lista inteira, limitada aos 4 rótulos filtráveis (≤ 4 linhas por imóvel). */
+async function attachComodidadesFiltro(supabase: SupabaseLike, list: Property[]): Promise<void> {
+  if (list.length === 0) return;
+  try {
+    const { data } = await supabase
+      .from("property_amenities")
+      .select("property_id, label")
+      .in("property_id", list.map((p) => p.id))
+      .in("label", ROTULOS_FILTRAVEIS);
+    const rotulos = new Map<string, string[]>();
+    for (const r of (data as { property_id: string; label: string }[] | null) ?? []) {
+      rotulos.set(r.property_id, [...(rotulos.get(r.property_id) ?? []), r.label]);
+    }
+    for (const p of list) p.comodidadesFiltro = chavesFiltroDe(rotulos.get(p.id) ?? []);
+  } catch {
+    /* sem a tabela, o filtro só enxerga o que o imóvel já traz */
+  }
+}
+
 async function attachPetsRegras(supabase: SupabaseLike, list: Property[]): Promise<void> {
   const comPet = list.filter((p) => p.petsAllowed);
   if (comPet.length === 0) return;

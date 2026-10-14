@@ -24,6 +24,7 @@ import { chaveCidade } from "@/lib/cidades";
 import { FAIXAS, GARANTIAS_FAIXA, GARANTIAS_PUBLICAS, CAUCAO_PARCELADA_UI } from "@/lib/faixas";
 import { SELO_NF_UI } from "@/lib/flags";
 import { PainelFiltrosCelular } from "@/components/busca/painel-filtros-celular";
+import { COMODIDADES_FILTRO, ROTULO_COMODIDADE, comodidadesDaUrl, type ComodidadeFiltro } from "@/lib/busca/filtro-comodidades";
 import { OPCOES_PORTE_PET, ROTULO_PORTE_CURTO, contarFiltrosPainel, passaNoPainel, resumoFiltros, type FiltrosPainel } from "@/lib/busca/painel-filtros";
 import { contagemDaBusca } from "@/lib/busca/buscas-salvas";
 import { SalvarBusca } from "@/components/busca/salvar-busca";
@@ -93,6 +94,7 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
   const [furnishedOnly, setFurnishedOnly] = useState(false);
   const [readyToLiveOnly, setReadyToLiveOnly] = useState(false);
   const [homeOfficeOnly, setHomeOfficeOnly] = useState(false);
+  const [comodidades, setComodidades] = useState<ComodidadeFiltro[]>([]); // Wi-Fi, cozinha, garagem, lavar (ordem 583d2e71)
   const [workLocatedOnly, setWorkLocatedOnly] = useState(false);
   const [invoiceOnly, setInvoiceOnly] = useState(false);
   const [insuranceOnly, setInsuranceOnly] = useState(false);
@@ -202,6 +204,7 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
     if (SELO_NF_UI && on("nota")) setInvoiceOnly(true);
     if (on("seguro")) setInsuranceOnly(true);
     if (on("gestor")) setOperatedOnly(true);
+    setComodidades(comodidadesDaUrl(sp.get("comod")));
   }, []);
 
   // Restaura no mount (link compartilhado / reload) e re-aplica a cada
@@ -262,6 +265,7 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
     put("nota", invoiceOnly, "1");
     put("seguro", insuranceOnly, "1");
     put("gestor", operatedOnly, "1");
+    put("comod", comodidades.length > 0, comodidades.join(","));
     const qs = params.toString();
     window.history.replaceState(
       null,
@@ -271,7 +275,7 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
   }, [
     locationQuery, geoCenter, radiusKm, maxPrice, minBedrooms, adults, children, maxPeriod, sort,
     typeFilter, faixa, dataEntrada, garantia, petsOnly, petPorte, furnishedOnly,
-    readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly,
+    readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly, comodidades,
   ]);
 
   // Evento anônimo "busca" (0067): 1 por local pesquisado, depois que a pessoa
@@ -312,14 +316,15 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
     setInvoiceOnly(false);
     setInsuranceOnly(false);
     setOperatedOnly(false);
+    setComodidades([]);
     setSort("relevance");
   }
 
   // Filtros do painel do celular (preço, quartos, pets, home office, selo): a
   // MESMA regra para a lista e para a contagem "Mostrar N imóveis" do painel.
   const filtrosPainel: FiltrosPainel = useMemo(
-    () => ({ maxPrice, minBedrooms, petsOnly, petPorte, homeOfficeOnly, readyToLiveOnly }),
-    [maxPrice, minBedrooms, petsOnly, petPorte, homeOfficeOnly, readyToLiveOnly]
+    () => ({ maxPrice, minBedrooms, petsOnly, petPorte, homeOfficeOnly, readyToLiveOnly, comodidades }),
+    [maxPrice, minBedrooms, petsOnly, petPorte, homeOfficeOnly, readyToLiveOnly, comodidades]
   );
 
   const { base, dist } = useMemo(() => {
@@ -391,14 +396,16 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
     (garantia ? 1 : 0) +
     [petsOnly, furnishedOnly, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly].filter(
       Boolean
-    ).length;
+    ).length +
+    comodidades.length;
 
   // Filtros que vivem no painel "Mais filtros" (para o contador do botão).
   const secundariosAtivos =
     (typeFilter ? 1 : 0) +
     (garantia ? 1 : 0) +
     (minBedrooms ? 1 : 0) +
-    [homeOfficeOnly, petsOnly, invoiceOnly, insuranceOnly, operatedOnly].filter(Boolean).length;
+    [homeOfficeOnly, petsOnly, invoiceOnly, insuranceOnly, operatedOnly].filter(Boolean).length +
+    comodidades.length;
 
   // Link do Pedido de Moradia com os parâmetros da busca já preenchidos (Fase 4).
   const pedidoHref = useMemo(() => {
@@ -430,6 +437,7 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
     setInvoiceOnly(false);
     setInsuranceOnly(false);
     setOperatedOnly(false);
+    setComodidades([]);
     setFurnishedOnly(false);
   }
 
@@ -437,7 +445,7 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
   // Muda sempre que um filtro muda: o "Salvar busca" reconsulta se a busca atual já está salva.
   const versaoBusca = [
     locationQuery, geoCenter?.lat, geoCenter?.lng, radiusKm, maxPrice, minBedrooms, adults, children, maxPeriod, sort, typeFilter,
-    faixa, dataEntrada, garantia, petsOnly, petPorte, furnishedOnly, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly,
+    faixa, dataEntrada, garantia, petsOnly, petPorte, furnishedOnly, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly, comodidades.join(","),
   ].join("|");
   function aplicarPainel(f: FiltrosPainel) {
     setMaxPrice(f.maxPrice);
@@ -446,6 +454,7 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
     setPetPorte(f.petsOnly ? f.petPorte : "");
     setHomeOfficeOnly(f.homeOfficeOnly);
     setReadyToLiveOnly(f.readyToLiveOnly);
+    setComodidades(f.comodidades);
     setPainelAberto(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -770,6 +779,15 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
               <Chip on={operatedOnly} onClick={() => setOperatedOnly((v) => !v)}>
                 🤝 Gestor profissional
               </Chip>
+              {COMODIDADES_FILTRO.map((c) => (
+                <Chip
+                  key={c.chave}
+                  on={comodidades.includes(c.chave)}
+                  onClick={() => setComodidades((l) => (l.includes(c.chave) ? l.filter((x) => x !== c.chave) : [...l, c.chave]))}
+                >
+                  {c.rotulo}
+                </Chip>
+              ))}
             </div>
           )}
         </div>
@@ -827,6 +845,9 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
             {operatedOnly && (
               <ActiveChip label="Gestor profissional" onClear={() => setOperatedOnly(false)} />
             )}
+            {comodidades.map((c) => (
+              <ActiveChip key={c} label={ROTULO_COMODIDADE[c]} onClear={() => setComodidades((l) => l.filter((x) => x !== c))} />
+            ))}
             <button
               type="button"
               onClick={clearFilters}
