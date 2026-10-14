@@ -73,7 +73,7 @@ test("botões não recolorem o primário por className (só ações de excluir p
 test("header: logo não encolhe e tem distância fixa dos links; links e ações não quebram", () => {
   const nav = ler("components/layout/navbar.tsx");
   assert.match(nav, /<Logo className="shrink-0" \/>/);
-  assert.match(nav, /<nav className="container-page flex h-18 items-center gap-10/);
+  assert.match(nav, /<nav className="flex h-18 w-full items-center gap-10 px-5/);
   assert.match(nav, /data-testid="nav-acoes" className="hidden shrink-0/);
   assert.match(nav, /whitespace-nowrap text-sm font-medium/);
 });
