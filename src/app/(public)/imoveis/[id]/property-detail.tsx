@@ -338,7 +338,7 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
 
       <div className="mt-6 grid gap-8 lg:grid-cols-3">
         {/* Conteúdo (seções roláveis) */}
-        <div className="space-y-10 lg:col-span-2">
+        <div className="min-w-0 space-y-10 lg:col-span-2">
           {/* Cabeçalho */}
           <header>
             <div className="flex items-center justify-between gap-2">
