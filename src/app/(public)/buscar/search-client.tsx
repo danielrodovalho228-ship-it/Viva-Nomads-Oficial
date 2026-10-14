@@ -26,6 +26,7 @@ import { SELO_NF_UI } from "@/lib/flags";
 import { PainelFiltrosCelular } from "@/components/busca/painel-filtros-celular";
 import { OPCOES_PORTE_PET, ROTULO_PORTE_CURTO, contarFiltrosPainel, passaNoPainel, resumoFiltros, type FiltrosPainel } from "@/lib/busca/painel-filtros";
 import { TituloBuscaContexto } from "@/components/busca/titulo-busca";
+import { buttonClasses } from "@/components/ui/button";
 import { SalvarBusca } from "@/components/busca/salvar-busca";
 
 // Filtro de garantia exibido na busca pública: caução unificada + seguro-fiança
@@ -713,7 +714,7 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
             type="button"
             onClick={() => setPainelFiltros(false)}
             data-testid="fechar-painel-filtros"
-            className="hidden h-9 shrink-0 items-center whitespace-nowrap rounded-full bg-forest px-4 text-sm font-semibold text-white hover:bg-blue-700 lg:inline-flex"
+            className={buttonClasses({ size: "sm", className: "hidden shrink-0 whitespace-nowrap lg:inline-flex" })}
           >
             Ver {results.length} {results.length === 1 ? "imóvel" : "imóveis"}
           </button>
