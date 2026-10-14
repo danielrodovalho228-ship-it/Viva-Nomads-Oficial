@@ -250,14 +250,6 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
         return;
       }
       setSignUrl(data.signUrl ?? null);
-      // Gera a cobrança da comissão — do PROPRIETÁRIO, à parte (o aluguel nunca
-      // passa pela plataforma).
-      await fetch("/api/comissao", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        // A5: valor, taxa e carteira vêm do banco (pela candidatura aceita).
-        body: JSON.stringify({ leadId: ctx.leadId, termMonths: prazoMeses }),
-      }).catch(() => {});
       // Registra o CONTRATO-MÃE + blocos (contrato fracionado v2). A comissão
       // fica no contrato-mãe (taxa × valor total, UMA vez); cada bloco carrega a
       // caução (50%). O servidor confere o documento das duas partes (F32).
@@ -279,6 +271,15 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
         setErroContrato(reg.error ?? "Não foi possível registrar o contrato.");
         return;
       }
+      // Depois do contrato registrado: a cobrança lê aluguel, meses e taxa do CONTRATO (ordem c54366b0).
+      // Gera a cobrança da comissão — do PROPRIETÁRIO, à parte (o aluguel nunca
+      // passa pela plataforma).
+      await fetch("/api/comissao", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        // A5: valor, taxa e carteira vêm do banco (pela candidatura aceita).
+        body: JSON.stringify({ leadId: ctx.leadId }),
+      }).catch(() => {});
       setGenerated(true);
     } catch {
       setErroContrato("Não foi possível gerar o contrato. Tente de novo.");
