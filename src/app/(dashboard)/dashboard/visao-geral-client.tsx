@@ -23,7 +23,7 @@ import { DashboardBanner } from "@/components/dashboard/banner";
 import { PropertyRow } from "@/components/dashboard/property-row";
 import { TenantOnboarding } from "@/components/dashboard/tenant-onboarding";
 import { RoleWelcomeModal } from "@/components/dashboard/role-welcome-modal";
-import { ButtonLink } from "@/components/ui/button";
+import { ButtonLink, buttonClasses } from "@/components/ui/button";
 import { useProperties } from "@/lib/use-properties";
 import { imoveisPublicados } from "@/lib/anuncio/publicados";
 import type { Property } from "@/lib/types";
@@ -316,7 +316,7 @@ function DraftPendingCard({
       </div>
       <Link
         href={`/dashboard/imoveis/novo?draft=${draft.id}`}
-        className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full bg-forest px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-forest/90"
+        className={buttonClasses({ size: "sm" })}
       >
         {draft.pronto ? "Revisar e publicar" : "Continuar edição"} <ArrowRight className="h-4 w-4" />
       </Link>

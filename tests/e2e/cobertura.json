@@ -6,7 +6,8 @@
         "publico"
       ],
       "specs": [
-        "t66-home-busca-principal"
+        "t66-home-busca-principal",
+        "t69-botoes-header"
       ]
     },
     "/acesso-socios": {
@@ -195,7 +196,8 @@
         "t5-pedido-moradia",
         "t6-dinheiro-numeros",
         "t8-rascunho",
-        "t9-documentos"
+        "t9-documentos",
+        "t69-botoes-header"
       ]
     },
     "/auth/pronto": {
@@ -227,7 +229,8 @@
         "t20-p1-agentes",
         "t23-pacote-seguranca",
         "t67-busca-celular",
-        "t7-fluxo-publico"
+        "t7-fluxo-publico",
+        "t69-botoes-header"
       ]
     },
     "/cidades": {
@@ -254,7 +257,8 @@
       ],
       "specs": [
         "t14-app-mode",
-        "t18-seo-a11y"
+        "t18-seo-a11y",
+        "t69-botoes-header"
       ]
     },
     "/conferir": {
@@ -626,7 +630,8 @@
         "publico"
       ],
       "specs": [
-        "t18-seo-a11y"
+        "t18-seo-a11y",
+        "t69-botoes-header"
       ]
     },
     "/excluir-conta": {
@@ -681,14 +686,17 @@
       ],
       "specs": [
         "t18-seo-a11y",
-        "t20-p1-agentes"
+        "t20-p1-agentes",
+        "t69-botoes-header"
       ]
     },
     "/parceiros": {
       "personas": [
         "publico"
       ],
-      "specs": []
+      "specs": [
+        "t69-botoes-header"
+      ]
     },
     "/parceiros/fotografos": {
       "personas": [
@@ -716,7 +724,8 @@
       ],
       "specs": [
         "t1-auth-guards",
-        "t18-seo-a11y"
+        "t18-seo-a11y",
+        "t69-botoes-header"
       ]
     },
     "/precos": {
@@ -728,7 +737,8 @@
         "t18-seo-a11y",
         "t20-p1-agentes",
         "t37-simuladores-e-numeros",
-        "t6-dinheiro-numeros"
+        "t6-dinheiro-numeros",
+        "t69-botoes-header"
       ]
     },
     "/privacidade": {

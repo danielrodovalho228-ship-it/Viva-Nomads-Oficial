@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { PlayCircle, X } from "lucide-react";
+import { buttonClasses } from "@/components/ui/button";
 
 /**
  * Converte uma URL de vídeo (YouTube, Vimeo ou arquivo direto) para o formato
@@ -54,7 +55,7 @@ export function VideoWalkthrough({ url, title }: { url: string; title: string })
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-2 rounded-full bg-night px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-night/90"
+        className={buttonClasses({ size: "sm" })}
       >
         <PlayCircle className="h-4 w-4" /> Ver vídeo do imóvel
       </button>

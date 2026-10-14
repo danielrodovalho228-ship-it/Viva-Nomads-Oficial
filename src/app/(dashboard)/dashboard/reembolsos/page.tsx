@@ -222,14 +222,14 @@ function ReembolsoPreview() {
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               <Button variant="outline" onClick={notificarERegistrarPrazo}>
-                <BellRing className="h-4 w-4" /> Notificar partes e registrar prazo
+                <BellRing className="h-4 w-4" /> Notificar as partes
               </Button>
               <Button
                 variant="gold"
                 onClick={gerarComprovante}
                 disabled={!prazoLimite || status === "registrado"}
               >
-                <FileCheck2 className="h-4 w-4" /> Gerar comprovante de reembolso (exemplo)
+                <FileCheck2 className="h-4 w-4" /> Gerar comprovante (exemplo)
               </Button>
             </div>
             {prazoLimite && (

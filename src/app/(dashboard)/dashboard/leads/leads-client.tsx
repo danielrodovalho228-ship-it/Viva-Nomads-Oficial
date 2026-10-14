@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { Lock, Users, X, Check, Send, ArrowDownWideNarrow, MessageSquare } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
-import { ButtonLink } from "@/components/ui/button";
+import { ButtonLink, buttonClasses } from "@/components/ui/button";
 import { OwnerDecisionNotice } from "@/components/legal-notice";
 import { leadScore, leadSummary, type Lead, type Light } from "@/lib/data/lead-types";
 import { aceitarCandidatura, recusarCandidatura } from "@/lib/data/leads-actions";
@@ -159,7 +159,7 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
                         <button
                           onClick={() => aprovar(l.id)}
                           disabled={pending}
-                          className="inline-flex items-center gap-2 rounded-full bg-forest px-4 py-2 text-sm font-medium text-white hover:bg-forest-700 disabled:opacity-50"
+                          className={buttonClasses({ size: "sm" })}
                         >
                           <Check className="h-4 w-4" /> Aprovar e responder
                         </button>

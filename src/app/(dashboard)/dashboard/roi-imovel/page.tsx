@@ -11,6 +11,7 @@ import { imprimirSimulacao } from "@/lib/print-simulacao";
 import { formatBRL, numBR } from "@/lib/utils";
 import { MAX_ALUGUEL_MENSAL, MAX_INVESTIMENTO } from "@/lib/campos-valor";
 import { NumInput, ResultCard, SimDisclaimer, SimHero } from "@/components/simulador/ui";
+import { buttonClasses } from "@/components/ui/button";
 
 const INCLUI =
   "Móveis dos quartos e sala, cozinha equipada, eletrodomésticos, cama/colchão, mesa de trabalho, cortinas e utensílios.";
@@ -192,7 +193,7 @@ export default function RoiImovelPage() {
       <SimDisclaimer />
 
       <div className="mt-4">
-        <Link href="/dashboard/imoveis/novo" className="inline-flex items-center gap-2 rounded-xl bg-forest px-5 py-3 text-sm font-semibold text-white hover:bg-forest/90">
+        <Link href="/dashboard/imoveis/novo" className={buttonClasses({ size: "md" })}>
           Anunciar meu imóvel
         </Link>
       </div>

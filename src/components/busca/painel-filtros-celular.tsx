@@ -10,6 +10,7 @@ import {
   rotuloMostrar,
   type FiltrosPainel,
 } from "@/lib/busca/painel-filtros";
+import { buttonClasses } from "@/components/ui/button";
 
 /**
  * Painel de filtros do celular (ordem 314f764e, print 03): sobe de baixo,
@@ -101,7 +102,7 @@ export function PainelFiltrosCelular({
             onClick={() => onAplicar(rascunho)}
             disabled={n === 0}
             data-testid="aplicar-filtros"
-            className="h-12 rounded-xl bg-forest px-4 text-sm font-bold text-white transition-colors hover:bg-forest/90 disabled:cursor-not-allowed disabled:bg-sage-200 disabled:text-muted"
+            className={buttonClasses({ className: "px-4 sm:px-4" })}
           >
             {rotuloMostrar(n)}
           </button>

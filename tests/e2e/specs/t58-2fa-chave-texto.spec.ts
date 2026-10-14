@@ -15,7 +15,7 @@ async function removerFator(page: Page, segredo: string) {
     await page.waitForFunction((c) => Math.floor(Date.now() / 30000) > c, contador, { timeout: 35000 });
     await page.locator("#codigo-remover").fill(gerarCodigoTotp(segredo));
     await page.getByRole("button", { name: "Confirmar remoção" }).click();
-    await page.getByRole("button", { name: /Ativar verificação em duas etapas/ }).waitFor({ timeout: 10000 });
+    await page.getByRole("button", { name: /Ativar duas etapas/ }).waitFor({ timeout: 10000 });
   } catch {
     /* limpeza best-effort: o erro do teste original é o que importa */
   }
@@ -35,7 +35,7 @@ for (const largura of [360, 390]) {
 
     test("mostra a chave, copia e oferece o link do app antes do QR", async ({ page }) => {
       await page.goto("/dashboard/conta/seguranca");
-      await page.getByRole("button", { name: /Ativar verificação em duas etapas/ }).click();
+      await page.getByRole("button", { name: /Ativar duas etapas/ }).click();
 
       test.setTimeout(90000);
       const chave = page.getByTestId("chave-2fa");
@@ -92,7 +92,7 @@ for (const largura of [360, 390]) {
         await page.waitForFunction((c) => Math.floor(Date.now() / 30000) > c, contador, { timeout: 35000 });
         await page.locator("#codigo-remover").fill(gerarCodigoTotp(segredo));
         await page.getByRole("button", { name: "Confirmar remoção" }).click();
-        await expect(page.getByRole("button", { name: /Ativar verificação em duas etapas/ })).toBeVisible();
+        await expect(page.getByRole("button", { name: /Ativar duas etapas/ })).toBeVisible();
       } finally {
         // Limpeza garantida: mesmo se o teste falhar no meio, remove o fator para a conta não ficar com 2FA.
         await removerFator(page, segredo);

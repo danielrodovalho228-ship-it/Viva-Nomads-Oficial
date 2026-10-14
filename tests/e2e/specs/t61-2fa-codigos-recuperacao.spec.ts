@@ -16,7 +16,7 @@ test.describe("T61 — 2FA códigos de recuperação (390px)", () => {
   test("ativar entrega 10 códigos; novos invalidam os antigos; código vale uma vez", async ({ page, browser }) => {
     test.setTimeout(120000);
     await page.goto("/dashboard/conta/seguranca");
-    await page.getByRole("button", { name: /Ativar verificação em duas etapas/ }).click();
+    await page.getByRole("button", { name: /Ativar duas etapas/ }).click();
     const segredo = ((await page.getByTestId("chave-2fa").textContent()) ?? "").replace(/\s/g, "");
     await page.locator("#codigo-ativar").fill(gerarCodigoTotp(segredo));
     await page.getByRole("button", { name: "Confirmar código e ativar" }).click();
@@ -53,11 +53,11 @@ test.describe("T61 — 2FA códigos de recuperação (390px)", () => {
       await p2.locator("#codigo-recuperacao").fill(novos[0]);
       await p2.getByRole("button", { name: "Usar código de recuperação" }).click();
       await p2.waitForURL(/\/dashboard\/conta\/seguranca\?obrigatorio=admin/);
-      await expect(p2.getByRole("button", { name: /Ativar verificação em duas etapas/ })).toBeVisible();
+      await expect(p2.getByRole("button", { name: /Ativar duas etapas/ })).toBeVisible();
 
       // O mesmo código não funciona de novo (e já não há app para elevar a sessão).
       await p2.goto("/auth/verificar-codigo?redirect=%2Fdashboard");
-      await expect(p2.getByRole("button", { name: /Ativar verificação em duas etapas/ })).toBeVisible({ timeout: 15000 });
+      await expect(p2.getByRole("button", { name: /Ativar duas etapas/ })).toBeVisible({ timeout: 15000 });
     } finally {
       await ctx.close();
     }
@@ -65,7 +65,7 @@ test.describe("T61 — 2FA códigos de recuperação (390px)", () => {
 
   test("mensagem de erro do código do app orienta sobre relógio e entrada nova", async ({ page }) => {
     await page.goto("/dashboard/conta/seguranca");
-    const ativar = page.getByRole("button", { name: /Ativar verificação em duas etapas/ });
+    const ativar = page.getByRole("button", { name: /Ativar duas etapas/ });
     test.skip(!(await ativar.isVisible({ timeout: 8000 }).catch(() => false)), "conta já com 2FA");
     await ativar.click();
     await page.locator("#codigo-ativar").fill("000000");

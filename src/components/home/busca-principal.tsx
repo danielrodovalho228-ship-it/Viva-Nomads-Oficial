@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import { CityAutocomplete } from "@/components/city-autocomplete";
+import { buttonClasses } from "@/components/ui/button";
 
 /**
  * Busca principal da home (ordem bab1b2aa): UM campo só — "Para onde você vai?".
@@ -43,7 +44,7 @@ export function BuscaPrincipal() {
         <button
           type="submit"
           aria-label="Buscar imóveis"
-          className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-green-500 px-4 text-sm font-bold text-night transition-colors hover:bg-green-300 sm:px-6"
+          className={buttonClasses({ className: "px-4" })}
         >
           <Search className="h-5 w-5" aria-hidden />
           <span className="hidden sm:inline">Buscar</span>

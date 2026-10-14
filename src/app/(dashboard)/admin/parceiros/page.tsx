@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { PageTitle, Panel, StatCard, EmptyState } from "@/components/dashboard/primitives";
 import { TIPOS_PARCEIRO } from "@/lib/parceiros/interesse";
 import { StatusInteresse } from "./status-interesse";
+import { buttonClasses } from "@/components/ui/button";
 
 export const metadata = { title: "Parceiros — Admin" };
 
@@ -72,7 +73,7 @@ export default async function AdminParceirosPage({
         title="Parceiros"
         subtitle="Interessados, fotógrafos e pedidos da rede de parceiros."
         action={
-          <Link href="/admin/fotografos" className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-forest px-4 text-sm font-semibold text-white">
+          <Link href="/admin/fotografos" className={buttonClasses({ size: "sm" })}>
             <Camera className="h-4 w-4" /> Fotógrafos
           </Link>
         }

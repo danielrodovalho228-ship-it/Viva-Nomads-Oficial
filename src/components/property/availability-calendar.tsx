@@ -17,6 +17,7 @@ import { solicitarReserva } from "@/lib/data/reservas-actions";
 import { getBlocks } from "@/lib/data/blocks-actions";
 import { useAuthStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import { buttonClasses } from "@/components/ui/button";
 
 const MESES = [
   "janeiro", "fevereiro", "março", "abril", "maio", "junho",
@@ -286,7 +287,7 @@ export function AvailabilityCalendar({ property }: { property: Property }) {
               {!user ? (
                 <Link
                   href={`/auth?redirect=/imoveis/${property.id}`}
-                  className="inline-flex items-center gap-2 rounded-xl bg-forest px-4 py-2.5 text-sm font-semibold text-white hover:bg-forest/90"
+                  className={buttonClasses({ size: "sm" })}
                 >
                   Entrar para enviar as datas
                 </Link>

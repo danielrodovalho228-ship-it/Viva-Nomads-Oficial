@@ -1,14 +1,68 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Menu, X, LayoutDashboard } from "lucide-react";
+import { Menu, X, LayoutDashboard, ChevronDown } from "lucide-react";
 import { PUBLIC_NAV } from "@/lib/constants";
 import { Logo } from "@/components/ui/logo";
 import { ButtonLink } from "@/components/ui/button";
 import { useAuthStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
+const PRINCIPAIS = PUBLIC_NAV.filter((i) => !i.mais);
+const MAIS = PUBLIC_NAV.filter((i) => i.mais);
+
+/** Menu "Mais" do desktop: fecha ao clicar fora, com Esc e ao escolher um link. */
+function MenuMais() {
+  const [aberto, setAberto] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!aberto) return;
+    const fora = (e: MouseEvent) => {
+      if (!ref.current?.contains(e.target as Node)) setAberto(false);
+    };
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && setAberto(false);
+    document.addEventListener("mousedown", fora);
+    document.addEventListener("keydown", esc);
+    return () => {
+      document.removeEventListener("mousedown", fora);
+      document.removeEventListener("keydown", esc);
+    };
+  }, [aberto]);
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setAberto((v) => !v)}
+        aria-expanded={aberto}
+        aria-haspopup="true"
+        className="inline-flex items-center gap-1 whitespace-nowrap rounded-md text-sm font-medium text-ink/75 transition-colors hover:text-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+      >
+        Mais <ChevronDown className={cn("h-4 w-4 transition-transform", aberto && "rotate-180")} aria-hidden />
+      </button>
+      {aberto && (
+        <div className="absolute left-1/2 top-full z-50 mt-3 w-52 -translate-x-1/2 rounded-xl border border-line bg-white p-1.5 shadow-lg">
+          {MAIS.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={() => setAberto(false)}
+              className="block whitespace-nowrap rounded-lg px-3 py-2.5 text-sm font-medium text-ink hover:bg-blue-50"
+            >
+              {item.label}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Cabeçalho público (ordem c67e818f): o logo nunca encosta nos links (gap fixo
+ * e `shrink-0`) e os botões nunca quebram. Os links completos só aparecem a
+ * partir de 1280 px (xl), onde cabem com folga; abaixo disso, menu hambúrguer.
+ */
 export function Navbar() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -37,22 +91,23 @@ export function Navbar() {
           : "border-transparent bg-white"
       )}
     >
-      <nav className="container-page flex h-18 items-center justify-between py-3">
-        <Logo />
+      <nav className="container-page flex h-18 items-center gap-10 py-3">
+        <Logo className="shrink-0" />
 
-        <div className="hidden items-center gap-8 lg:flex">
-          {PUBLIC_NAV.map((item) => (
+        <div data-testid="nav-links" className="hidden min-w-0 flex-1 items-center gap-6 xl:flex">
+          {PRINCIPAIS.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="text-sm font-medium text-ink/75 transition-colors hover:text-blue-500"
+              className="whitespace-nowrap text-sm font-medium text-ink/75 transition-colors hover:text-blue-500"
             >
               {item.label}
             </Link>
           ))}
+          {MAIS.length > 0 && <MenuMais />}
         </div>
 
-        <div className="hidden items-center gap-2 lg:flex">
+        <div data-testid="nav-acoes" className="hidden shrink-0 items-center gap-2 xl:flex">
           {loggedIn ? (
             <ButtonLink href="/dashboard" variant="ghost" size="sm">
               <LayoutDashboard className="h-4 w-4" /> Meu painel
@@ -62,13 +117,13 @@ export function Navbar() {
               Entrar
             </ButtonLink>
           )}
-          <ButtonLink href="/dashboard/imoveis/novo" variant="accent" size="sm">
+          <ButtonLink href="/dashboard/imoveis/novo" variant="primary" size="sm">
             {loggedIn ? "Anunciar imóvel" : "Entrar para anunciar"}
           </ButtonLink>
         </div>
 
         <button
-          className="grid h-10 w-10 place-items-center rounded-lg text-ink lg:hidden"
+          className="ml-auto grid h-10 w-10 shrink-0 place-items-center rounded-lg text-ink xl:hidden"
           onClick={() => setOpen((v) => !v)}
           aria-label={open ? "Fechar menu" : "Abrir menu"}
         >
@@ -77,7 +132,7 @@ export function Navbar() {
       </nav>
 
       {open && (
-        <div className="border-t border-line bg-white lg:hidden">
+        <div className="border-t border-line bg-white xl:hidden">
           <div className="container-page flex flex-col gap-1 py-4">
             {PUBLIC_NAV.map((item) => (
               <Link
@@ -91,15 +146,15 @@ export function Navbar() {
             ))}
             <div className="mt-2 flex flex-col gap-2">
               {loggedIn ? (
-                <ButtonLink href="/dashboard" variant="outline" onClick={() => setOpen(false)}>
+                <ButtonLink href="/dashboard" variant="secondary" onClick={() => setOpen(false)}>
                   <LayoutDashboard className="h-4 w-4" /> Meu painel
                 </ButtonLink>
               ) : (
-                <ButtonLink href="/auth" variant="outline" onClick={() => setOpen(false)}>
+                <ButtonLink href="/auth" variant="secondary" onClick={() => setOpen(false)}>
                   Entrar
                 </ButtonLink>
               )}
-              <ButtonLink href="/dashboard/imoveis/novo" variant="accent" onClick={() => setOpen(false)}>
+              <ButtonLink href="/dashboard/imoveis/novo" variant="primary" onClick={() => setOpen(false)}>
                 {loggedIn ? "Anunciar imóvel" : "Entrar para anunciar"}
               </ButtonLink>
             </div>

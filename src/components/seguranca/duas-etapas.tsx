@@ -307,7 +307,7 @@ export function DuasEtapasPanel({ obrigatorio, destino }: { obrigatorio: boolean
             Além da senha, você digita um código de 6 números do app autenticador (Google Authenticator, Authy…). Protege a conta mesmo se a senha vazar.
           </p>
           <Button onClick={comecar} disabled={ocupado}>
-            {ocupado ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />} Ativar verificação em duas etapas
+            {ocupado ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />} Ativar duas etapas
           </Button>
         </div>
       )}
