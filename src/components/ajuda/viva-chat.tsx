@@ -10,7 +10,7 @@ import { abrirChamado } from "@/lib/data/atendimento-actions";
 import { SAUDACAO_CHAT, transcricaoChat, type MsgChat } from "@/lib/atendimento/viva-chat-texto";
 import { PROMESSA_ATENDIMENTO } from "@/config/atendimento";
 import { SUPORTE_EMAIL } from "@/lib/site";
-import { cruzaCantoDoFlutuante, ehCampoDeFormulario, flutuanteVisivel } from "@/lib/atendimento/flutuante-visivel";
+import { ehCampoDeFormulario, elevacaoDoFlutuante, flutuanteVisivel } from "@/lib/atendimento/flutuante-visivel";
 import { buttonClasses } from "@/components/ui/button";
 
 /**
@@ -19,9 +19,10 @@ import { buttonClasses } from "@/components/ui/button";
  * logado. Sem dados de conta: quando não resolve, "Falar com uma pessoa" abre um
  * chamado com a conversa anexada. No app ele some (a Ajuda fica em Perfil).
  */
+// Fica fora só onde a própria tela já é a ajuda (/ajuda) ou é um fluxo de formulário
+// (login, anúncio, fechamento, segurança — t58) e no admin.
 // "/dashboard/conta/seguranca": cobria "Nova senha"/"Salvar nova senha" e os botões do 2FA a 390 px (t58).
-// "/buscar": o botão flutuante cobria "Mais filtros" em 360/390 px; lá a ajuda é um link na página.
-export const ESCONDER = ["/ajuda", "/buscar", "/admin", "/auth", "/dashboard/conta/ajuda", "/dashboard/imoveis/novo", "/dashboard/fechamento", "/dashboard/conta/seguranca"];
+export const ESCONDER = ["/ajuda", "/admin", "/auth", "/dashboard/conta/ajuda", "/dashboard/imoveis/novo", "/dashboard/fechamento", "/dashboard/conta/seguranca"];
 const CHAVE = "vivanomads-viva-chat";
 
 function carregar(): MsgChat[] {
@@ -46,11 +47,15 @@ export function VivaChatFlutuante() {
   const pathname = usePathname() ?? "/";
   const [aberto, setAberto] = useState(false);
   const [campoEmFoco, setCampoEmFoco] = useState(false);
-  const [ctaNaFaixa, setCtaNaFaixa] = useState(false);
+  const [sobe, setSobe] = useState(0); // px acima do repouso para não tampar um controle
   const raiz = useRef<HTMLDivElement>(null);
+  const botao = useRef<HTMLButtonElement>(null);
+  const sobeRef = useRef(0);
   const escondido = ESCONDER.some((p) => pathname === p || pathname.startsWith(p + "/"));
 
-  // F49: no celular o botão sai da frente de campos em foco e de botões principais (CTA) na faixa de baixo.
+  // F49 + ordem 4f8d17c6: o botão é sempre visível e no mesmo formato. Some só
+  // enquanto a pessoa digita num campo (celular); quando um botão principal ou
+  // campo passa por baixo dele, ele SOBE o necessário e depois volta.
   useEffect(() => {
     if (escondido) return;
     const fora = (el: EventTarget | null) => !(el instanceof Element) || !raiz.current?.contains(el);
@@ -65,15 +70,21 @@ export function VivaChatFlutuante() {
     let quadro = 0;
     function medir() {
       quadro = 0;
-      let cruza = false;
-      for (const el of document.querySelectorAll("[data-cta], button[type=submit]")) {
+      const b = botao.current?.getBoundingClientRect();
+      if (!b) return;
+      // Posição de repouso = a atual descontando o quanto ele já subiu.
+      const s = sobeRef.current;
+      const repouso = { left: b.left, right: b.right, top: b.top + s, bottom: b.bottom + s };
+      const controles: DOMRect[] = [];
+      for (const el of document.querySelectorAll("[data-cta], button[type=submit], input:not([type=hidden]), textarea, select")) {
         if (raiz.current?.contains(el)) continue;
-        if (cruzaCantoDoFlutuante(el.getBoundingClientRect(), window.innerWidth, window.innerHeight)) {
-          cruza = true;
-          break;
-        }
+        controles.push(el.getBoundingClientRect());
       }
-      setCtaNaFaixa(cruza);
+      const novo = elevacaoDoFlutuante(repouso, controles, Math.round(window.innerHeight * 0.6));
+      if (novo !== sobeRef.current) {
+        sobeRef.current = novo;
+        setSobe(novo);
+      }
     }
     const agendar = () => {
       if (!quadro) quadro = requestAnimationFrame(medir);
@@ -91,17 +102,19 @@ export function VivaChatFlutuante() {
       mo.disconnect();
       if (quadro) cancelAnimationFrame(quadro);
       setCampoEmFoco(false);
-      setCtaNaFaixa(false);
+      sobeRef.current = 0;
+      setSobe(0);
     };
   }, [pathname, escondido]);
 
   if (escondido) return null;
-  const visivel = flutuanteVisivel({ chatAberto: aberto, campoEmFoco, ctaNaFaixa });
+  const visivel = flutuanteVisivel({ chatAberto: aberto, campoEmFoco });
   return (
     <div
       ref={raiz}
-      className={cn("web-only fixed right-4 z-40 flex flex-col items-end gap-3 print:hidden md:right-6", !visivel && "max-md:hidden")}
-      style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + var(--ajuda-bottom, 1.5rem))" }}
+      className={cn("web-only fixed right-4 z-40 flex flex-col items-end gap-3 transition-[bottom] duration-150 print:hidden md:right-6", !visivel && "max-md:hidden")}
+      style={{ bottom: `calc(env(safe-area-inset-bottom, 0px) + var(--ajuda-bottom, 1.5rem) + ${aberto ? 0 : sobe}px)` }}
+      data-sobe={sobe}
       data-testid="fale-com-a-viva-raiz"
     >
       {aberto && (
@@ -109,16 +122,19 @@ export function VivaChatFlutuante() {
           <PainelChat onFechar={() => setAberto(false)} altura="h-[min(520px,calc(100dvh-9rem))]" />
         </div>
       )}
+      {/* Mesmo botão primário do site (tokens do <Button>), igual em todas as
+          páginas e larguras: ícone + texto. */}
       <button
+        ref={botao}
         type="button"
         onClick={() => setAberto((v) => !v)}
         aria-expanded={aberto}
         aria-label={aberto ? "Fechar o chat" : "Fale com a Viva"}
-        className="inline-flex h-12 w-12 items-center justify-center gap-2 rounded-full bg-forest text-sm font-semibold text-white shadow-lg transition-colors hover:bg-forest/90 md:h-auto md:w-auto md:px-4 md:py-2.5"
+        className={buttonClasses()}
         data-testid="fale-com-a-viva"
       >
-        {aberto ? <X className="h-5 w-5 md:h-4 md:w-4" /> : <MessageCircle className="h-5 w-5 md:h-4 md:w-4" />}
-        <span className="hidden md:inline">{aberto ? "Fechar" : "Fale com a Viva"}</span>
+        {aberto ? <X className="h-4 w-4" /> : <MessageCircle className="h-4 w-4" />}
+        {aberto ? "Fechar" : "Fale com a Viva"}
       </button>
     </div>
   );
