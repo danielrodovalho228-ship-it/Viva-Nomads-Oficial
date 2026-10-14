@@ -13,6 +13,8 @@ test.describe("T78 — Filtros de estadia longa", () => {
     await page.goto("/buscar", { waitUntil: "domcontentloaded" });
     const total = async () => await page.locator('a[href^="/imoveis/"]').count();
     const antes = await total();
+    // Computador (ordem eac7e3a1): os filtros abrem pela busca compacta do cabeçalho.
+    await page.getByTestId("busca-compacta").click();
     await page.getByRole("button", { name: /Mais filtros/ }).first().click();
     await page.getByRole("button", { name: "Máquina de lavar", exact: true }).click();
     await expect(page).toHaveURL(/comod=lavar/);
