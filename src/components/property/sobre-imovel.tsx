@@ -13,7 +13,7 @@ export function SobreImovel({ descricao }: { descricao: string }) {
       <h2 id="sobre-title" className="font-title text-2xl font-bold text-ink">
         Sobre o imóvel
       </h2>
-      <p className={`mt-3 whitespace-pre-line leading-relaxed text-ink/90 ${longo ? "line-clamp-5" : ""}`}>{descricao}</p>
+      <p className={`mt-3 whitespace-pre-line break-words leading-relaxed text-ink/90 ${longo ? "line-clamp-5" : ""}`}>{descricao}</p>
       {longo && (
         <>
           <button
@@ -24,7 +24,7 @@ export function SobreImovel({ descricao }: { descricao: string }) {
             Mostrar mais
           </button>
           <BottomSheet open={aberto} onClose={() => setAberto(false)} title="Sobre o imóvel">
-            <p className="whitespace-pre-line leading-relaxed text-ink/90">{descricao}</p>
+            <p className="whitespace-pre-line break-words leading-relaxed text-ink/90">{descricao}</p>
           </BottomSheet>
         </>
       )}

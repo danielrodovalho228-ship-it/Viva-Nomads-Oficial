@@ -25,6 +25,8 @@ for (const largura of [390, 1280]) {
       await page.goto("/imoveis/ube-001", { waitUntil: "networkidle" });
       const sobre = page.getByTestId("sobre-imovel");
       await expect(sobre).toBeVisible();
+      // A coluna principal (grid) precisa de min-w-0: sem isso o carrossel de fotos alarga a página.
+      expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(false);
       const mais = sobre.getByRole("button", { name: "Mostrar mais" });
       if (await mais.count()) {
         await mais.click();
