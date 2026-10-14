@@ -68,3 +68,42 @@ export function validarItem(i: { comodo: string; descricao: string; fotoPath: st
   if (i.fotoPath !== null && (!CAMINHO_FOTO.test(i.fotoPath) || i.fotoPath.includes(".."))) return { ok: false, erro: "Foto inválida." };
   return { ok: true };
 }
+
+/* ---- Laudo independente e foto por cômodo (ordem d3c60126) ---- */
+
+export const LAUDO_MAX_BYTES = 15 * 1024 * 1024; // 15 MB
+export const FOTO_CONFERENCIA_MAX_BYTES = 8 * 1024 * 1024; // 8 MB
+
+export type ArquivoValidado = { ok: true; tipo: string; ext: string } | { ok: false; erro: string };
+
+const ehPdf = (b: Uint8Array) => b.length >= 4 && b[0] === 0x25 && b[1] === 0x50 && b[2] === 0x44 && b[3] === 0x46; // "%PDF"
+
+/** Tipo REAL da foto pelos primeiros bytes (a extensão e o Content-Type declarados não valem). */
+function tipoFoto(b: Uint8Array): { tipo: string; ext: string } | null {
+  if (b.length >= 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return { tipo: "image/jpeg", ext: "jpg" };
+  if (b.length >= 8 && b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47 && b[4] === 0x0d && b[5] === 0x0a && b[6] === 0x1a && b[7] === 0x0a) return { tipo: "image/png", ext: "png" };
+  if (b.length >= 12 && b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 && b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50) return { tipo: "image/webp", ext: "webp" };
+  return null;
+}
+
+/** Laudo de parceiro independente: PDF de verdade, até 15 MB. */
+export function validarLaudo(a: { bytes: Uint8Array; tamanho: number }): ArquivoValidado {
+  if (a.tamanho <= 0) return { ok: false, erro: "Arquivo vazio." };
+  if (a.tamanho > LAUDO_MAX_BYTES) return { ok: false, erro: "O laudo deve ter até 15 MB." };
+  if (!ehPdf(a.bytes)) return { ok: false, erro: "Envie o laudo em PDF." };
+  return { ok: true, tipo: "application/pdf", ext: "pdf" };
+}
+
+/** Foto do cômodo: JPG, PNG ou WebP, até 8 MB. */
+export function validarFotoConferencia(a: { bytes: Uint8Array; tamanho: number }): ArquivoValidado {
+  if (a.tamanho <= 0) return { ok: false, erro: "Arquivo vazio." };
+  if (a.tamanho > FOTO_CONFERENCIA_MAX_BYTES) return { ok: false, erro: "A foto deve ter até 8 MB." };
+  const t = tipoFoto(a.bytes);
+  if (!t) return { ok: false, erro: "Envie a foto em JPG, PNG ou WebP." };
+  return { ok: true, ...t };
+}
+
+/** Quando existe laudo independente, ele prevalece sobre as fotos das partes. */
+export function fonteDaConferencia(temLaudo: boolean): "fotos" | "laudo_independente" {
+  return temLaudo ? "laudo_independente" : "fotos";
+}

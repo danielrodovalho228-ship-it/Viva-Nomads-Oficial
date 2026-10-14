@@ -1573,7 +1573,21 @@
       ],
       "specs": []
     },
+    "src/lib/data/conferencia-actions.ts#anexarLaudoConferencia": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
     "src/lib/data/conferencia-actions.ts#conferenciasDoContrato": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/conferencia-actions.ts#enviarFotoConferencia": {
       "personas": [
         "inquilino",
         "proprietario"
