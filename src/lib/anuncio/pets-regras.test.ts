@@ -49,3 +49,15 @@ test("compatibilidade: porte, espécie, quantidade e imóvel sem pet", () => {
   assert.equal(compatibilidadePets(true, null, [{ especie: "gato", porte: "G" }]).ok, true);
   assert.equal(compatibilidadePets(false, null, []).ok, true);
 });
+
+test("ligações: servidor valida ao gravar, anúncio mostra, migração é idempotente", async () => {
+  const { readFileSync } = await import("node:fs");
+  const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
+  assert.match(ler("src/lib/data/actions.ts"), /normalizarRegrasPets\(input\.petsRegras\)/);
+  assert.match(ler("src/components/property/stay-rules.tsx"), /linhasRegrasPets\(property\.petsRegras\)/);
+  const sql = ler("supabase/producao/aplicar-0119.sql");
+  assert.match(sql, /add column if not exists pets_regras/);
+  assert.match(sql, /^begin;/m);
+  assert.match(sql, /commit;\s*$/);
+  assert.match(sql, /0119_pets_regras/);
+});

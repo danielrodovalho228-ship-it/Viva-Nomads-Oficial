@@ -52,7 +52,6 @@ export function normalizarRegrasPets(raw: unknown): RegrasPets | null {
   if (!Number.isFinite(reforcoBruto) || reforcoBruto < 0 || reforcoBruto > MAX_REFORCO_CAUCAO) return null;
   const texto =
     typeof r.regrasCondominio === "string"
-      ? // eslint-disable-next-line no-control-regex
         r.regrasCondominio.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim()
       : "";
   if (texto.length > MAX_TEXTO_CONDOMINIO) return null;
