@@ -1,5 +1,6 @@
 "use client";
 
+import { PetsFicha } from "@/components/account/pets-ficha";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { ButtonLink } from "@/components/ui/button";
 import { AvatarUploader } from "@/components/account/avatar-uploader";
@@ -29,6 +30,7 @@ export default function AccountPage() {
         <PageTitle title="Conta" subtitle="Seus dados pessoais e preferências." />
         <DadosPessoais />
         <DocumentoPessoa />
+        <PetsFicha />
         {/* Foto de perfil (Fase 2) — opcional; visibilidade decidida no servidor. */}
         <AvatarUploader />
         <PerfilDoModo />

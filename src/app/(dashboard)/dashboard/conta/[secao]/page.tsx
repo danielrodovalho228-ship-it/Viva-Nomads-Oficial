@@ -1,5 +1,6 @@
 "use client";
 
+import { PetsFicha } from "@/components/account/pets-ficha";
 import { use } from "react";
 import { notFound } from "next/navigation";
 import { AvatarUploader } from "@/components/account/avatar-uploader";
@@ -22,6 +23,7 @@ export default function ContaSecaoPage({ params }: { params: Promise<{ secao: st
         <div className="w-full">
           <DadosPessoais />
           <DocumentoPessoa />
+          <PetsFicha />
           <AvatarUploader />
           <PerfilDoModo />
         </div>
