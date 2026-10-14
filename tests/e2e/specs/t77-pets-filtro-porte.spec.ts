@@ -27,9 +27,11 @@ test.describe("T77 — Filtro de pet com porte", () => {
 
   test("1280 px: chip 'Aceita pet' abre o seletor de porte e a lista só diminui", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
-    await page.goto("/buscar", { waitUntil: "networkidle" });
+    await page.goto("/buscar", { waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("filtro-porte-pet")).toHaveCount(0);
-    await page.getByRole("button", { name: /Aceita pet/ }).first().click();
+    // Desde a busca compacta (#488) o chip "Aceita pet" mora no painel "Mais filtros".
+    await page.getByRole("button", { name: /Mais filtros/ }).first().click();
+    await page.getByTestId("mais-filtros-painel").getByRole("button", { name: /Aceita pet/ }).click();
     await expect(page.getByTestId("filtro-porte-pet")).toBeVisible();
     await expect(page).toHaveURL(/pet=1/);
   });
