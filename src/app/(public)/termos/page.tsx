@@ -12,7 +12,7 @@ export default function TermsPage() {
   return (
     <div className="container-page max-w-3xl py-12 md:py-16">
       <h1 className="font-title text-4xl font-bold text-ink">Termos de Uso</h1>
-      <p className="mt-3 text-muted">Última atualização: junho de 2026</p>
+      <p className="mt-3 text-muted">Última atualização: outubro de 2026</p>
 
       <PlatformLegalNotice className="mt-8" />
 
@@ -34,8 +34,7 @@ export default function TermsPage() {
         <Section title="3. Pagamento do aluguel">
           O pagamento do aluguel é feito <strong>diretamente ao proprietário</strong>. A
           plataforma não intermedeia a transação financeira do aluguel e não é responsável
-          transacional por ela. As cobranças da plataforma referem-se à taxa sobre o primeiro aluguel e a serviços
-          opcionais.
+          transacional por ela. As cobranças da plataforma referem-se à comissão sobre o valor total de cada contrato e de cada renovação, e a serviços opcionais.
         </Section>
 
         <Section title="4. Verificação de inquilinos (em breve)">
@@ -62,9 +61,7 @@ export default function TermsPage() {
         </Section>
 
         <Section title="8. Comissão e indicações">
-          A plataforma cobra do proprietário 12% do primeiro aluguel de cada contrato novo e de cada
-          renovação, na assinatura do contrato ou do aditivo. A taxa é a mesma para todos os proprietários, sem
-          mensalidade, e o inquilino não paga taxa da plataforma. As recompensas do programa de indicação são
+          A plataforma cobra do proprietário uma comissão única sobre o valor total de cada contrato de locação fechado pela plataforma (valor mensal × número de meses contratados). Cada renovação ou prorrogação é um novo fechamento e também gera comissão sobre o valor total do período renovado. A comissão é cobrada na assinatura do contrato ou do aditivo. O percentual segue a faixa do proprietário, pelo número de imóveis ativos na data do fechamento: 1 a 2 imóveis, 12%; 3 a 5, 10%; 6 a 15, 8%; 16 a 30, 6%; 31 ou mais, condição negociada (Plano Gestor). Não há mensalidade, e o inquilino não paga taxa da plataforma. Exemplo: contrato de 3 meses a R$ 3.000 por mês, na faixa de 12%: valor total R$ 9.000; comissão R$ 1.080. As recompensas do programa de indicação são
           liberadas apenas após o evento qualificador real (primeira reserva ou locação).
         </Section>
       </div>

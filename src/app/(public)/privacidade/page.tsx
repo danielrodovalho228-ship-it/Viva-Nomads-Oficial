@@ -33,7 +33,7 @@ const SUBPROCESSORS = [
   {
     name: "Asaas",
     purpose:
-      "Cobrança da taxa de 12% do primeiro aluguel de cada contrato e de cada renovação, do proprietário (cobrança à parte); todos os aluguéis, inclusive o 1º, são pagos pelo inquilino direto ao proprietário, fora da plataforma",
+      "Cobrança da comissão sobre o valor total de cada contrato e de cada renovação, do proprietário (cobrança à parte); os valores mensais são pagos pelo inquilino direto ao proprietário, fora da plataforma",
     data: "Nome, CPF/CNPJ, dados de contato e dados da transação",
   },
   {

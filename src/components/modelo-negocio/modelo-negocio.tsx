@@ -3,19 +3,19 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import styles from "./modelo-negocio.module.css";
-import { FAIXAS_COMISSAO_PADRAO, ehPlanoGestor, faixaPorImoveisAtivos, pctTexto, valorTaxa } from "@/lib/cobranca/regra";
+import { FAIXAS_COMISSAO_PADRAO, ehPlanoGestor, faixaPorImoveisAtivos, pctTexto, comissaoSobreContrato as taxaSobreContrato } from "@/lib/cobranca/regra";
 import { COMPARE_REFERENCIA, linhasPublicas } from "@/config/compare-precos";
 import { SUPORTE_EMAIL } from "@/lib/site";
 
 // ── REGRA ÚNICA (ordens bd296d53 e 2f80c58a; fonte: src/lib/cobranca/regra.ts) ──────────────
-// Taxa de serviço por contrato fechado, sobre o valor do 1º mês. Renovação = novo contrato.
+// Taxa de serviço por contrato fechado, sobre o valor TOTAL do contrato (valor mensal × meses). Cada renovação é cobrada à parte.
 // O percentual depende de quantos imóveis ativos o dono tem. Sem cobrança mensal fixa nesta fase
 // (assinatura = fase 2, futuro). A Viva não toca no dinheiro da reserva nem da Caução.
 
 interface Cenario {
   nome: string;
   desc: string;
-  valorMes: number; // valor do 1º mês do contrato
+  valorMes: number; // valor mensal do contrato
   meses: number; // duração de cada contrato
   contratos: number; // contratos fechados no ano, por imóvel
 }
@@ -57,7 +57,7 @@ export function ModeloNegocio() {
   const calc = useMemo(() => {
     const taxa = faixa.taxa;
     const totalContratos = contratos * imoveis;
-    const taxaPorContrato = valorTaxa(valorMes, taxa);
+    const taxaPorContrato = taxaSobreContrato(valorMes, meses, taxa);
     const taxaAno = taxaPorContrato * totalContratos;
     const reservasAno = valorMes * meses * totalContratos;
     const donoViva = reservasAno - taxaAno;
@@ -83,7 +83,7 @@ export function ModeloNegocio() {
   // Quanto a Viva fatura por faixa neste cenário (cada faixa usa a mesma carteira).
   const receitaPorFaixa = FAIXAS_COMISSAO_PADRAO.map((f) => ({
     label: f.maxImoveis === null ? "31+" : f.minImoveis === f.maxImoveis ? `${f.minImoveis}` : `${f.minImoveis}–${f.maxImoveis}`,
-    value: valorTaxa(valorMes, f.taxa) * contratos * f.minImoveis,
+    value: taxaSobreContrato(valorMes, meses, f.taxa) * contratos * f.minImoveis,
   }));
 
   return (
@@ -100,7 +100,7 @@ export function ModeloNegocio() {
           <h1 className={styles.h1}>Quanto sobra no bolso?</h1>
           <p className={styles.sub}>
             Uma regra só: <strong>taxa de serviço de {pctTexto(FAIXAS_COMISSAO_PADRAO[0].taxa)} por contrato fechado</strong>, sobre o
-            primeiro mês. Quanto mais imóveis ativos, menor a taxa. Simule quanto o proprietário leva no ano e quanto a plataforma fatura.
+            valor total do contrato (valor mensal × meses). Quanto mais imóveis ativos, menor a taxa. Simule quanto o proprietário leva no ano e quanto a plataforma fatura.
           </p>
         </header>
 
@@ -131,7 +131,7 @@ export function ModeloNegocio() {
         {/* Controles */}
         <div className={styles.card}>
           <h2>Ajuste os números</h2>
-          <Slider label="Valor do 1º mês" value={valorMes} min={1000} max={10000} step={100} display={brl(valorMes)}
+          <Slider label="Valor por mês" value={valorMes} min={1000} max={10000} step={100} display={brl(valorMes)}
             onChange={(v) => { setValorMes(v); setCenarioAtivo(null); }} />
           <Slider label="Duração de cada reserva" value={meses} min={1} max={6} step={1}
             display={`${meses} ${meses === 1 ? "mês" : "meses"}`}
@@ -160,7 +160,7 @@ export function ModeloNegocio() {
               contra {pct1(PCT_AIRBNB)} do Airbnb.
             </p>
             <p className={styles.payback}>
-              Cada contrato fechado gera uma taxa de <b>{brl(calc.taxaPorContrato)}</b> (primeiro mês × {pctTexto(calc.taxa)}).
+              Cada contrato fechado gera uma taxa de <b>{brl(calc.taxaPorContrato)}</b> (valor total do contrato × {pctTexto(calc.taxa)}).
             </p>
           </div>
 
@@ -173,7 +173,7 @@ export function ModeloNegocio() {
               <span className={styles.amt}>{brl(calc.taxaPorContrato)}</span>
             </div>
             <p className={styles.note}>
-              Receita da plataforma = contratos × valor do 1º mês × taxa da faixa. Sem assinatura nesta fase.
+              Receita da plataforma = contratos × valor total do contrato (valor mensal × meses) × taxa da faixa. Sem assinatura nesta fase.
             </p>
           </div>
         </div>
@@ -233,7 +233,7 @@ export function ModeloNegocio() {
         <div className={`${styles.card} ${styles.premissas}`}>
           <h2>Premissas</h2>
           <ul>
-            <li>Taxa de serviço <strong>uma vez por contrato fechado</strong>, sobre o valor do 1º mês; renovação = novo contrato, com a taxa da faixa do dono.</li>
+            <li>Taxa de serviço <strong>uma vez por contrato fechado</strong>, sobre o valor total do contrato (valor mensal × meses); cada renovação é cobrada à parte, sobre o valor do período renovado, com a taxa da faixa do dono.</li>
             <li>Faixas: <strong>{FAIXAS_COMISSAO_PADRAO.filter((f) => !f.gestor).map((f) => pctTexto(f.taxa)).join(" / ")}</strong> e Plano Gestor a partir de 31 imóveis.</li>
             <li>O inquilino não paga taxa da Viva. A Viva não emite nota fiscal ao inquilino.</li>
             <li>

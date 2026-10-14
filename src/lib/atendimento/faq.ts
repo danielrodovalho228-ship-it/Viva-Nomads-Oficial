@@ -46,7 +46,7 @@ export const FAQ: Pergunta[] = [
   {
     id: "custo-anunciar",
     pergunta: "Quanto custa anunciar?",
-    resposta: `${TEXTO_REGRA_UNICA} Faixas por imóveis ativos: 1–2 = 12%, 3–5 = 10%, 6–15 = 8%, 16–30 = 6%; com 31 ou mais, fale com a gente sobre o Plano Gestor. Numa reserva de R$ 4.320 por mês, a taxa de 12% é R$ 518,40 por contrato fechado; cada renovação conta como novo contrato, com a mesma taxa da sua faixa. Veja a comparação com outras opções em /precos.`,
+    resposta: `${TEXTO_REGRA_UNICA} Faixas por imóveis ativos: 1–2 = 12%, 3–5 = 10%, 6–15 = 8%, 16–30 = 6%; com 31 ou mais, fale com a gente sobre o Plano Gestor. Exemplo: contrato de 3 meses a R$ 3.000 por mês, na faixa de 12%: valor total R$ 9.000, taxa R$ 1.080. A taxa é cobrada uma vez em cada contrato e em cada renovação, sobre o valor total do período contratado. Veja a comparação com outras opções em /precos.`,
     termos: ["preco", "taxa", "anunciar", "comissao", "mensalidade", "quanto custa", "airbnb", "12"],
   },
   {
@@ -78,7 +78,7 @@ export const FAQ: Pergunta[] = [
     id: "inquilino-paga",
     pergunta: "O inquilino paga alguma taxa para a plataforma?",
     resposta:
-      "Não. Buscar, se candidatar, publicar um Pedido de Moradia e conversar não têm custo para o inquilino. A taxa de 12% por contrato fechado é cobrada só do proprietário. O valor mensal e a caução são combinados entre as partes e não passam pela plataforma.",
+      "Não. Buscar, se candidatar, publicar um Pedido de Moradia e conversar não têm custo para o inquilino. A taxa de 12% sobre o valor total do contrato fechado é cobrada só do proprietário. O valor mensal e a caução são combinados entre as partes e não passam pela plataforma.",
     termos: ["taxa", "inquilino", "custo", "gratis"],
   },
   {
@@ -90,7 +90,7 @@ export const FAQ: Pergunta[] = [
   {
     id: "renovar",
     pergunta: "Posso renovar o contrato?",
-    resposta: `Sim, enquanto o total não passar de ${REGRAS_CONTRATO.prazoMaxDias} dias. A renovação é um novo bloco, só vale com o aceite do proprietário e do inquilino, e conta como novo contrato, com a mesma taxa da faixa do proprietário, paga por ele. Depois de ${REGRAS_CONTRATO.prazoMaxDias} dias, é preciso um novo contrato.`,
+    resposta: `Sim, enquanto o total não passar de ${REGRAS_CONTRATO.prazoMaxDias} dias. A renovação é um novo bloco, só vale com o aceite do proprietário e do inquilino, e é cobrada à parte do proprietário: a taxa da faixa dele sobre o valor total do período renovado (cada período é cobrado uma só vez). Depois de ${REGRAS_CONTRATO.prazoMaxDias} dias, é preciso um novo contrato.`,
     termos: ["renovar", "renovacao", "prorrogar", "estender"],
   },
   {

@@ -33,8 +33,8 @@ export const LINHAS_COMPARE: readonly LinhaCompare[] = [
   {
     id: "viva",
     nome: "Viva Nomads",
-    regra: "12% de um mês por contrato fechado (≈ 4% numa reserva de 3 meses; menor com mais imóveis), cobrado do proprietário. Sem mensalidade.",
-    pct: Math.round((TAXA_COMISSAO_PADRAO / COMPARE_MESES) * 1000) / 1000,
+    regra: "12% sobre o valor total do contrato fechado (menor com mais imóveis), cobrado do proprietário. Sem mensalidade.",
+    pct: Math.round(TAXA_COMISSAO_PADRAO * 1000) / 1000,
     fonte: { nome: "Página de preços da Viva Nomads", url: "/precos" },
     conferidoEm: "2026-10-10",
   },
