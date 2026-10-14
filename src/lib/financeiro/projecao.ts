@@ -4,14 +4,15 @@
 
   Como calculamos (o mesmo texto aparece na página):
   • Modelo único: taxa de serviço por contrato fechado (renovação = novo contrato),
-    sobre o valor do 1º mês. Receita = contratos/mês × valor médio do 1º mês ×
-    taxa média ponderada pelas faixas. Sem cobrança recorrente nem churn de assinatura.
+    sobre o valor TOTAL do contrato (ordem do Daniel, 14/10). Receita = contratos/mês × aluguel médio ×
+    meses médios do contrato × taxa média ponderada pelas faixas. Sem cobrança recorrente nem churn de assinatura.
   • Contratos começam no mês 4 e crescem em linha reta até o teto do cenário.
   • Parceiros (seguros como representante, serviços) só entram quando ligados,
     a partir do mês de início de cada um: contratos × receita do parceiro.
   • Custo variável por contrato + imposto sobre a receita (6% ou 15,5%); custo fixo
     + marketing por mês; investimento único no mês 0.
 */
+import { comissaoSobreContrato } from "../cobranca/regra.ts";
 import {
   ALUGUEL_MEDIO,
   CENARIOS,
@@ -24,6 +25,7 @@ import {
   MES_PRIMEIRO_CONTRATO,
   OPERADOR_OPCOES,
   PARCEIROS,
+  MESES_MEDIOS_CONTRATO,
   TAXA_MEDIA,
   REPRESENTANTE_SEGUROS,
   marketingDoMes,
@@ -87,9 +89,9 @@ export interface Projecao {
 export const CUSTO_FIXO_PADRAO = CUSTOS_FIXOS.reduce((s, c) => s + c.valor, 0);
 export const CUSTO_FERRAMENTAS_POR_CONTRATO = CUSTOS_POR_CONTRATO.reduce((s, c) => s + c.valor, 0);
 
-/** Taxa de serviço média por contrato (R$): valor médio do 1º mês × taxa média ponderada pelas faixas. */
-export function taxaMediaPorContrato(aluguel = ALUGUEL_MEDIO): number {
-  return Math.round(aluguel * TAXA_MEDIA * 100) / 100;
+/** Taxa de serviço média por contrato (R$): aluguel médio × meses do contrato × taxa média ponderada pelas faixas. */
+export function taxaMediaPorContrato(aluguel = ALUGUEL_MEDIO, meses = MESES_MEDIOS_CONTRATO): number {
+  return comissaoSobreContrato(aluguel, meses, TAXA_MEDIA);
 }
 
 /** Receita bruta mensal da taxa de serviço para `contratos` contratos fechados no mês. */
