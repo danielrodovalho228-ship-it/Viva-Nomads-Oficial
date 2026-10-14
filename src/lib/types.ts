@@ -98,6 +98,8 @@ export interface Property {
   videoUrl?: string; // walk-through em vídeo — reduz o atrito de alugar sem visita
   photos: string[]; // placeholders por enquanto
   amenities: string[];
+  /** Chaves de filtro da busca (wifi/cozinha/garagem/lavar) — lista pública carrega só estas (ordem 583d2e71). */
+  comodidadesFiltro?: string[];
   workFeatures: string[];
   internetTier?: InternetTier; // qualidade da internet por categoria de uso (rodada 20)
   nearbyWorkspaces: Workspace[];
