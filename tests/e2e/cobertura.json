@@ -1614,6 +1614,15 @@
         "t57-contrato-assinar"
       ]
     },
+    "src/lib/data/contrato-assinar-actions.ts#pedirCodigoAssinatura": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t57-contrato-assinar"
+      ]
+    },
     "src/lib/data/contratos-actions.ts#confirmarPagamento": {
       "personas": [
         "proprietario",
