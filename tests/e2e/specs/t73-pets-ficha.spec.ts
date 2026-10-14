@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
- * T71 — Ficha do pet do morador (ordem 022afabb, item 1, parte 1): cadastra pela Conta,
+ * T73 — Ficha do pet do morador (ordem 022afabb, item 1, parte 1): cadastra pela Conta,
  * a ficha chega ao banco só para a própria pessoa, o limite é 3 e dá para remover.
  */
 const senha = novaSenha();
@@ -11,7 +11,7 @@ const inquilino = { email: `inq.pet.${sufixo}@lab.vivanomads.test`, nome: "Paula
 const outro = { email: `outro.pet.${sufixo}@lab.vivanomads.test`, nome: "Otto Alheio", role: "tenant" as const };
 const ids: { inquilino?: string; outro?: string } = {};
 
-test.describe("T71 — Ficha do pet na Conta", () => {
+test.describe("T73 — Ficha do pet na Conta", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial" });
 
