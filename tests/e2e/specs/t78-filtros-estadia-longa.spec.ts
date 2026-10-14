@@ -10,7 +10,7 @@ test.describe("T78 — Filtros de estadia longa", () => {
 
   test("1280 px: dois filtros combinados vão para a URL e a lista nunca aumenta", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
-    await page.goto("/buscar", { waitUntil: "networkidle" });
+    await page.goto("/buscar", { waitUntil: "domcontentloaded" });
     const total = async () => await page.locator('a[href^="/imoveis/"]').count();
     const antes = await total();
     await page.getByRole("button", { name: /Mais filtros/ }).first().click();
