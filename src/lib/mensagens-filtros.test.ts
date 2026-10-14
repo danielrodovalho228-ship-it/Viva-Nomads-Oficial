@@ -5,7 +5,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { FILTROS, papelDaConversa, filtrarConversas, contarPorFiltro, formatarPeriodo } from "./mensagens-filtros.ts";
+import { FILTROS, type PapelConversa, papelDaConversa, filtrarConversas, contarPorFiltro, formatarPeriodo } from "./mensagens-filtros.ts";
 
 const U = "user-1";
 
@@ -33,7 +33,7 @@ test("filtra por chip e Todas devolve tudo", () => {
 });
 
 test("conversa sem papel conhecido aparece só em Todas", () => {
-  const lista = [{ id: "x" }];
+  const lista: { id: string; papel?: PapelConversa }[] = [{ id: "x" }];
   assert.equal(filtrarConversas(lista, "todas").length, 1);
   assert.equal(filtrarConversas(lista, "inquilino").length, 0);
 });
@@ -41,4 +41,16 @@ test("conversa sem papel conhecido aparece só em Todas", () => {
 test("período legível, ou vazio quando não há contrato", () => {
   assert.equal(formatarPeriodo("2026-11-01", "2027-01-30"), "01 nov – 30 jan");
   assert.equal(formatarPeriodo(null, null), "");
+});
+
+import { readFileSync } from "node:fs";
+
+test("ligação: a lista de conversas traz papel, foto e período e a tela tem os chips", () => {
+  const dados = readFileSync(new URL("./data/messages.ts", import.meta.url), "utf8");
+  assert.match(dados, /papelDaConversa/);
+  assert.match(dados, /property_photos/);
+  assert.match(dados, /contrato_blocos/);
+  const tela = readFileSync(new URL("../app/(dashboard)/dashboard/mensagens/messages-client.tsx", import.meta.url), "utf8");
+  assert.match(tela, /mensagens-filtro-/);
+  assert.match(tela, /filtrarConversas/);
 });

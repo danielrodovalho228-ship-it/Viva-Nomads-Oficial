@@ -11,6 +11,7 @@ import type { Conversation } from "@/lib/data/messages";
 import { guardContactInfo, GUARD_NOTICE } from "@/lib/messages/contact-guard";
 import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
 import { DEMO_CONVERSATIONS } from "@/lib/demo/seed";
+import { FILTROS, contarPorFiltro, filtrarConversas, type Filtro } from "@/lib/mensagens-filtros";
 import { cn } from "@/lib/utils";
 
 /**
@@ -32,6 +33,7 @@ function MessagesInner({ initial, demo }: { initial: Conversation[]; demo: boole
   const [conversations, setConversations] = useState<Conversation[]>(initial);
   const [activeId, setActiveId] = useState<string>(initial[0]?.id ?? "");
   const [draft, setDraft] = useState("");
+  const [filtro, setFiltro] = useState<Filtro>("todas");
   // Fotos das conversas (map conversationId → URL). O SERVIDOR decide: foto do
   // proprietário é pública; foto do inquilino só vem se a relação foi aceita.
   // Sem direito / demo → null → o Avatar cai para iniciais. Nunca em demo.
@@ -61,7 +63,10 @@ function MessagesInner({ initial, demo }: { initial: Conversation[]; demo: boole
   // No mobile, alterna entre lista e conversa (master-detail). No desktop, ambos.
   const [mobileView, setMobileView] = useState<"list" | "chat">("list");
 
-  const active = conversations.find((c) => c.id === activeId) ?? conversations[0];
+  const contagem = contarPorFiltro(conversations);
+  const visiveis = filtrarConversas(conversations, filtro);
+  // A conversa aberta acompanha o chip: se ela saiu do filtro, abre a primeira que sobrou.
+  const active = visiveis.find((c) => c.id === activeId) ?? visiveis[0] ?? conversations[0];
 
   function openConversation(id: string) {
     setActiveId(id);
@@ -114,6 +119,27 @@ function MessagesInner({ initial, demo }: { initial: Conversation[]; demo: boole
   return (
     <>
       <PageTitle title="Mensagens" action={demo ? <DemoBadge /> : undefined} />
+      <div role="group" aria-label="Filtrar conversas" className="mb-3 flex gap-2 overflow-x-auto pb-1">
+        {FILTROS.map((f) => (
+          <button
+            key={f.id}
+            type="button"
+            data-testid={`mensagens-filtro-${f.id}`}
+            aria-pressed={filtro === f.id}
+            onClick={() => {
+              setFiltro(f.id);
+              setMobileView("list");
+            }}
+            className={cn(
+              "inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border px-4 text-sm font-medium transition-colors",
+              filtro === f.id ? "border-forest bg-forest text-white" : "border-sage-200 bg-white text-ink hover:bg-surface-2"
+            )}
+          >
+            {f.rotulo}
+            <span className={cn("text-xs", filtro === f.id ? "text-white/80" : "text-muted")}>{contagem[f.id]}</span>
+          </button>
+        ))}
+      </div>
       <div className="grid h-[75vh] overflow-hidden rounded-2xl border border-sage-200 bg-white md:h-[70vh] md:grid-cols-3">
         {/* Lista — no mobile some quando uma conversa está aberta */}
         <aside
@@ -122,21 +148,33 @@ function MessagesInner({ initial, demo }: { initial: Conversation[]; demo: boole
             mobileView === "chat" && "hidden"
           )}
         >
-          {conversations.map((c) => (
+          {visiveis.length === 0 && (
+            <p data-testid="mensagens-filtro-vazio" className="p-6 text-center text-sm text-muted">
+              Nenhuma conversa neste filtro.
+            </p>
+          )}
+          {visiveis.map((c) => (
             <button
               key={c.id}
+              data-testid="mensagens-conversa"
               onClick={() => openConversation(c.id)}
               className={cn(
                 "flex w-full items-center gap-3 border-b border-sage-200 px-4 py-3 text-left transition-colors",
                 active.id === c.id ? "bg-blue-50 md:bg-blue-50" : "hover:bg-surface-2"
               )}
             >
-              <Avatar name={c.name} size={40} photoUrl={avatars[c.id] ?? undefined} />
+              {c.foto ? (
+                // Foto do imóvel (capa); a pessoa fica no nome ao lado.
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={c.foto} alt="" loading="lazy" className="h-12 w-12 shrink-0 rounded-lg object-cover" />
+              ) : (
+                <Avatar name={c.name} size={48} photoUrl={avatars[c.id] ?? undefined} />
+              )}
               <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                <span className="flex w-full items-center justify-between gap-2">
-                  <span className="truncate font-medium text-ink">{c.name}</span>
-                  <span className="shrink-0 text-xs text-muted">{c.property}</span>
-                </span>
+                <span className="truncate font-medium text-ink">{c.name}</span>
+                {(c.property || c.periodo) && (
+                  <span className="truncate text-xs text-muted">{[c.property, c.periodo].filter(Boolean).join(" · ")}</span>
+                )}
                 <span className="line-clamp-1 text-sm text-muted">{c.preview}</span>
               </span>
             </button>
