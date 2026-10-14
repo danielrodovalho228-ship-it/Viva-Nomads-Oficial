@@ -412,7 +412,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                   risco contextual. Cobre estrangeiros (CRNM/RNE).
                 </p>
                 <Button variant="gold" className="mt-4" onClick={runVerification} disabled={verifying}>
-                  {verifying ? "Verificando..." : "Iniciar verificação de identidade"}
+                  {verifying ? "Verificando..." : "Verificar identidade"}
                 </Button>
               </div>
             ) : verifStatus === "ok" && cafResult ? (

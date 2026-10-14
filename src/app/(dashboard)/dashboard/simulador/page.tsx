@@ -19,6 +19,7 @@ import { PLANO_FUNDADOR } from "@/lib/flags";
 import { formatBRL, numBR } from "@/lib/utils";
 import { NumInput, ResultCard, SimDisclaimer, SimHero, PlanoPills } from "@/components/simulador/ui";
 import { MAX_ALUGUEL_MENSAL } from "@/lib/campos-valor";
+import { buttonClasses } from "@/components/ui/button";
 
 const PRAZOS = [2, 3, 4, 6];
 const PLANOS_CALC: PlanoCalc[] = PLANOS.map((p) => ({
@@ -229,7 +230,7 @@ export default function SimuladorPage() {
       <SimDisclaimer />
 
       <div className="mt-4">
-        <Link href="/dashboard/imoveis/novo" className="inline-flex items-center gap-2 rounded-xl bg-forest px-5 py-3 text-sm font-semibold text-white hover:bg-forest/90">
+        <Link href="/dashboard/imoveis/novo" className={buttonClasses({ size: "md" })}>
           Anunciar meu imóvel
         </Link>
       </div>

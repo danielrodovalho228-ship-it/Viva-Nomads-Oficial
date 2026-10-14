@@ -4,7 +4,7 @@ import { trilha } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
 import { Camera, MapPin, Star } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { ButtonLink } from "@/components/ui/button";
+import { ButtonLink, buttonClasses } from "@/components/ui/button";
 import { formatBRL } from "@/lib/utils";
 import { cidadeDoCep, filtrarPorCidade, formatarCep, MAX_DIAS_ANTECEDENCIA, normalizarCep, portfolioSeguro, type FotografoPublico } from "@/lib/fotografos/regras";
 import { PedidoForm } from "./pedido-form";
@@ -67,7 +67,7 @@ export default async function FotografosPage({ searchParams }: { searchParams: P
           <label htmlFor="cidade" className="block text-sm font-medium text-ink">ou cidade</label>
           <input id="cidade" name="cidade" defaultValue={cidade} placeholder="Uberlândia" className="mt-1 w-full rounded-lg border border-sage-200 px-3 py-2 text-base" />
         </div>
-        <button type="submit" className="rounded-lg bg-night px-5 py-2.5 text-base font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">Buscar</button>
+        <button type="submit" className={buttonClasses({ size: "md" })}>Buscar</button>
       </form>
 
       {buscou && !cidade && <p className="mt-6 text-ink/70">Não encontramos esse CEP. Confira os números ou digite a cidade.</p>}

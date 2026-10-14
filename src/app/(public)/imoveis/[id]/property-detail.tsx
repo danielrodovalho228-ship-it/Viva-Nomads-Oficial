@@ -23,7 +23,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import type { Property } from "@/lib/types";
-import { Button } from "@/components/ui/button";
+import { Button, buttonClasses } from "@/components/ui/button";
 import { ShareButton } from "@/components/share-button";
 import { PropertyTags, InvoiceBadge, InsuranceBadge } from "@/components/ui/badge";
 import { SELO_NF_UI } from "@/lib/flags";
@@ -133,7 +133,7 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
       </div>
       <Link
         href="/dashboard/mensagens"
-        className="inline-flex items-center justify-center gap-1.5 rounded-full bg-forest px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-forest/90"
+        className={buttonClasses({ size: "sm" })}
       >
         <MessageSquare className="h-4 w-4" /> Acompanhar em Mensagens
       </Link>

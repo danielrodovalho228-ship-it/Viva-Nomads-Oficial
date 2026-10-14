@@ -11,6 +11,7 @@ import { SAUDACAO_CHAT, transcricaoChat, type MsgChat } from "@/lib/atendimento/
 import { PROMESSA_ATENDIMENTO } from "@/config/atendimento";
 import { SUPORTE_EMAIL } from "@/lib/site";
 import { cruzaCantoDoFlutuante, ehCampoDeFormulario, flutuanteVisivel } from "@/lib/atendimento/flutuante-visivel";
+import { buttonClasses } from "@/components/ui/button";
 
 /**
  * Chat da Viva (assistente virtual) — botão flutuante "Fale com a Viva" em todas
@@ -328,7 +329,7 @@ function FormPessoa({ logado, msgs, onCancelar }: { logado: boolean; msgs: MsgCh
       <textarea className={cn(campo, "min-h-[60px]")} placeholder={msgs.length ? "Quer acrescentar algo? (opcional)" : "O que você precisa?"} value={pedido} maxLength={600} onChange={(e) => setPedido(e.target.value)} aria-label="Pedido para a equipe" />
       {erro && <p className="text-xs text-red-600">{erro}</p>}
       <div className="flex gap-2">
-        <button type="button" onClick={abrir} disabled={enviando} className="rounded-lg bg-forest px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50">
+        <button type="button" onClick={abrir} disabled={enviando} className={buttonClasses({ size: "sm" })}>
           {enviando ? "Abrindo…" : "Abrir chamado"}
         </button>
         <button type="button" onClick={onCancelar} className="rounded-lg px-3 py-1.5 text-sm text-muted hover:text-ink">

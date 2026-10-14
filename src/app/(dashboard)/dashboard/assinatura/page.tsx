@@ -11,7 +11,7 @@ import { LINK_DOCUMENTO } from "@/lib/documento-pessoa";
 import { dataBR } from "@/lib/utils";
 import { GESTOR_MIN_IMOVEIS_VALIDADOS } from "@/lib/planos/gestor";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
-import { Button } from "@/components/ui/button";
+import { Button, buttonClasses } from "@/components/ui/button";
 import { formatBRL, cn } from "@/lib/utils";
 import { SUPORTE_EMAIL } from "@/lib/site";
 import { AVISO_DESCER_PLANO, ficaAcimaDoLimite } from "@/lib/planos/descer-plano";
@@ -354,7 +354,7 @@ function PaymentResult({ result, billing }: { result: SubResult; billing: Billin
           href={result.invoiceUrl ?? "#"}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-4 inline-flex items-center gap-2 rounded-full bg-forest px-4 py-2 text-sm font-medium text-white"
+          className={buttonClasses({ size: "sm", className: "mt-4" })}
         >
           {billing === "BOLETO" ? "Abrir boleto" : "Pagar com cartão"}
         </a>

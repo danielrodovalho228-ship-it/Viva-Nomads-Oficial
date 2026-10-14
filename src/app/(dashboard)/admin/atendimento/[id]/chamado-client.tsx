@@ -288,7 +288,7 @@ export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; 
                   }
                 }}
               >
-                <Send className="h-4 w-4" /> {interno ? "Salvar nota" : base && editada ? "Enviar resposta editada (e-mail à pessoa)" : "Enviar resposta (e-mail à pessoa)"}
+                <Send className="h-4 w-4" /> {interno ? "Salvar nota" : base && editada ? "Enviar resposta editada" : "Enviar resposta (e-mail à pessoa)"}
               </Button>
             </Panel>
           )}

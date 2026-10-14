@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Plus, Check, X, Pause, Play, MessageSquare, Home } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
-import { Button } from "@/components/ui/button";
+import { Button, buttonClasses } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { formatBRL, cn, dataBR } from "@/lib/utils";
 import {
@@ -154,7 +154,7 @@ export function PedidosClient({
                         orcamento: String(Math.round(p.orcamento_mensal)),
                         adultos: String(p.qtd_ocupantes),
                       }).toString()}`}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-forest px-4 py-2 text-sm font-medium text-white hover:bg-forest-700"
+                      className={buttonClasses({ size: "sm" })}
                     >
                       <Play className="h-4 w-4" /> Renovar pedido
                     </Link>

@@ -33,16 +33,19 @@ export const PERSONAS: Persona[] = [
   },
 ];
 
-/** Navegação pública. */
+/**
+ * Navegação pública. `mais`: no desktop fica no menu "Mais" do cabeçalho (os 7
+ * links lado a lado não cabem com o logo e os botões); no menu mobile, todos.
+ */
 export const PUBLIC_NAV = [
   { href: "/buscar", label: "Buscar imóveis" },
   { href: "/pedidos/novo", label: "Publicar pedido" },
-  { href: "/como-funciona", label: "Como funciona" },
+  { href: "/como-funciona", label: "Como funciona", mais: true },
   { href: "/para-proprietarios", label: "Para proprietários" },
   { href: "/empresas", label: "Para empresas" },
   { href: "/precos", label: "Preços" },
-  { href: "/parceiros", label: "Parceiros" },
-];
+  { href: "/parceiros", label: "Parceiros", mais: true },
+] as { href: string; label: string; mais?: true }[];
 
 /**
  * Cidades atendidas (com inventário) — usadas no footer e no sitemap.

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Check } from "lucide-react";
 import { TIPOS_PARCEIRO } from "@/lib/parceiros/interesse";
+import { buttonClasses } from "@/components/ui/button";
 
 const UFS = "AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO".split(" ");
 const campo = "mt-1 w-full rounded-xl border border-sage-200 px-3.5 py-2.5 text-base outline-none focus:border-sage";
@@ -92,7 +93,7 @@ export function ParceiroForm({ tipoInicial }: { tipoInicial: string }) {
         <span>Aceito que a Viva Nomads entre em contato comigo sobre a parceria.</span>
       </label>
       {erro && <p role="alert" className="text-sm text-red-600">{erro}</p>}
-      <button type="submit" disabled={enviando} className="rounded-xl bg-night px-5 py-3 text-base font-semibold text-white disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">
+      <button type="submit" disabled={enviando} className={buttonClasses({ size: "md" })}>
         {enviando ? "Enviando…" : "Quero ser parceiro"}
       </button>
     </form>

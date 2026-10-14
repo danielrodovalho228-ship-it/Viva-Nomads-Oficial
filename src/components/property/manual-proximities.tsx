@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Plus, X } from "lucide-react";
 import type { Proximity, ProximityCategory } from "@/lib/types";
+import { buttonClasses } from "@/components/ui/button";
 
 const CATS: { value: ProximityCategory; label: string }[] = [
   { value: "saude", label: "Saúde" },
@@ -67,7 +68,7 @@ export function ManualProximities({
           type="button"
           onClick={add}
           disabled={!name.trim()}
-          className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-forest px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-forest-700 disabled:opacity-50"
+          className={buttonClasses({ size: "sm" })}
         >
           <Plus className="h-4 w-4" /> Adicionar
         </button>
