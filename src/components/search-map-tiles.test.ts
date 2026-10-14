@@ -13,8 +13,8 @@ const src = readFileSync(new URL("./search-map.tsx", import.meta.url), "utf8");
 
 test("tiles da CARTO Voyager com a chave lida de NEXT_PUBLIC_CARTO_API_KEY", () => {
   assert.match(src, /const CARTO_KEY = process\.env\.NEXT_PUBLIC_CARTO_API_KEY;/);
-  assert.match(src, /https:\/\/basemaps\.cartocdn\.com\/rastertiles\/voyager\/\{z\}\/\{x\}\/\{y\}\.png\$\{CARTO_KEY \? `\?key=\$\{encodeURIComponent\(CARTO_KEY\)\}` : ""\}/);
-  assert.match(src, /L\.tileLayer\(TILES_CARTO,/);
+  assert.match(src, /const TILES_CARTO = CARTO_KEY \? `https:\/\/basemaps\.cartocdn\.com\/rastertiles\/voyager\/\{z\}\/\{x\}\/\{y\}\.png\?key=\$\{encodeURIComponent\(CARTO_KEY\)\}` : null;/);
+  assert.match(src, /if \(TILES_CARTO\) \{\s*L\.tileLayer\(TILES_CARTO,/);
   assert.doesNotMatch(src, /light_all|tile\.openstreetmap\.org/);
 });
 
@@ -34,4 +34,12 @@ test("a chave da CARTO não está escrita em nenhum arquivo do código", () => {
 
 test("atribuição OpenStreetMap + CARTO visível no mapa", () => {
   assert.match(src, /OpenStreetMap<\/a> &copy; <a href="https:\/\/carto\.com\/attributions">CARTO<\/a>/);
+});
+
+test("64005753: sem chave nenhum tile da CARTO é pedido (nunca a URL sem ?key=)", () => {
+  // Toda URL de tile da CARTO no código carrega ?key=; sem chave, o mapa-base fica desligado.
+  for (const m of src.matchAll(/basemaps\.cartocdn\.com[^`'"]*/g)) assert.match(m[0], /\?key=/, m[0]);
+  assert.match(src, /data-mapa-base=\{TILES_CARTO \? "carto" : "sem-chave"\}/);
+  // nenhuma condição de sessão/login no caminho do mapa (mesmo código para visitante e logado)
+  assert.doesNotMatch(src, /useAuthStore|getSession|auth\.getUser/);
 });
