@@ -1,5 +1,6 @@
 "use client";
 
+import { AvisoPetCandidatura } from "@/components/property/aviso-pet-candidatura";
 import { ProblemaComIsto } from "@/components/ajuda/problema-com-isto";
 import { numBR } from "@/lib/utils";
 import Link from "next/link";
@@ -173,6 +174,7 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
     confirmacaoCandidatura
   ) : (
     <div className="flex flex-col gap-2">
+      <AvisoPetCandidatura petsAllowed={property.petsAllowed} regras={property.petsRegras} />
       <Button
         variant="gold"
         size="lg"

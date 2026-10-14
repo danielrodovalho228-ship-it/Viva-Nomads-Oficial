@@ -2064,7 +2064,8 @@
         "proprietario"
       ],
       "specs": [
-        "t73-pets-ficha"
+        "t73-pets-ficha",
+        "t74-pets-candidatura"
       ]
     },
     "src/lib/data/pets-ficha-actions.ts#removerPet": {
