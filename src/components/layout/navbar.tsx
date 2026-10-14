@@ -2,11 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Menu, X, LayoutDashboard, ChevronDown } from "lucide-react";
+import { Menu, X, ChevronDown } from "lucide-react";
 import { PUBLIC_NAV } from "@/lib/constants";
 import { Logo } from "@/components/ui/logo";
 import { ButtonLink } from "@/components/ui/button";
 import { useAuthStore } from "@/lib/store";
+import { Avatar } from "@/components/ui/avatar";
+import { getMyAvatarUrl } from "@/lib/data/avatar-actions";
+import { identidadeUsuario } from "@/lib/roles";
 import { cn } from "@/lib/utils";
 
 const PRINCIPAIS = PUBLIC_NAV.filter((i) => !i.mais);
@@ -59,9 +62,31 @@ function MenuMais() {
 }
 
 /**
- * Cabeçalho público (ordem c67e818f): o logo nunca encosta nos links (gap fixo
- * e `shrink-0`) e os botões nunca quebram. Os links completos só aparecem a
- * partir de 1280 px (xl), onde cabem com folga; abaixo disso, menu hambúrguer.
+ * "Meu painel" com a foto (ou as iniciais) de quem está logado, como o "My
+ * Dashboard" do Furnished Finder (ordem 0ee6d5f6). Sem foto, o Avatar mostra as iniciais.
+ */
+function MeuPainel({ nome, foto, onClick, className }: { nome: string; foto: string | null; onClick?: () => void; className?: string }) {
+  return (
+    <Link
+      href="/dashboard"
+      onClick={onClick}
+      data-testid="nav-meu-painel"
+      className={cn(
+        "inline-flex h-10 shrink-0 items-center gap-2.5 whitespace-nowrap rounded-lg pl-1.5 pr-3.5 text-sm font-semibold text-blue-500 transition-colors hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500",
+        className
+      )}
+    >
+      <Avatar name={nome} size={30} photoUrl={foto ?? undefined} />
+      Meu painel
+    </Link>
+  );
+}
+
+/**
+ * Cabeçalho público (ordens c67e818f e 0ee6d5f6): largura total, com o logo
+ * perto da borda esquerda e mais respiro entre logo, links e ações. O logo nunca
+ * encosta nos links (gap fixo e `shrink-0`) e os botões nunca quebram. Os links
+ * completos aparecem a partir de 1280 px (xl); abaixo disso, menu hambúrguer.
  */
 export function Navbar() {
   const [open, setOpen] = useState(false);
@@ -74,6 +99,23 @@ export function Navbar() {
   const loggedIn = mounted && !!user;
 
   useEffect(() => setMounted(true), []);
+
+  // Foto do próprio usuário (opcional) para o "Meu painel".
+  const [foto, setFoto] = useState<string | null>(null);
+  const userId = user?.id;
+  useEffect(() => {
+    if (!mounted || !userId) return;
+    let vivo = true;
+    getMyAvatarUrl()
+      .then((r) => {
+        if (vivo) setFoto(r.url);
+      })
+      .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, [mounted, userId]);
+  const nome = identidadeUsuario(user);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -91,10 +133,10 @@ export function Navbar() {
           : "border-transparent bg-white"
       )}
     >
-      <nav className="container-page flex h-18 items-center gap-10 py-3">
+      <nav className="flex h-18 w-full items-center gap-10 px-5 py-3 sm:px-8 xl:px-10 2xl:gap-14 2xl:px-12">
         <Logo className="shrink-0" />
 
-        <div data-testid="nav-links" className="hidden min-w-0 flex-1 items-center gap-6 xl:flex">
+        <div data-testid="nav-links" className="hidden min-w-0 flex-1 items-center gap-6 xl:flex 2xl:gap-8">
           {PRINCIPAIS.map((item) => (
             <Link
               key={item.href}
@@ -107,11 +149,9 @@ export function Navbar() {
           {MAIS.length > 0 && <MenuMais />}
         </div>
 
-        <div data-testid="nav-acoes" className="hidden shrink-0 items-center gap-2 xl:flex">
+        <div data-testid="nav-acoes" className="hidden shrink-0 items-center gap-3 xl:flex 2xl:gap-4">
           {loggedIn ? (
-            <ButtonLink href="/dashboard" variant="ghost" size="sm">
-              <LayoutDashboard className="h-4 w-4" /> Meu painel
-            </ButtonLink>
+            <MeuPainel nome={nome} foto={foto} />
           ) : (
             <ButtonLink href="/auth" variant="ghost" size="sm">
               Entrar
@@ -133,7 +173,7 @@ export function Navbar() {
 
       {open && (
         <div className="border-t border-line bg-white xl:hidden">
-          <div className="container-page flex flex-col gap-1 py-4">
+          <div className="flex flex-col gap-1 px-5 py-4 sm:px-8">
             {PUBLIC_NAV.map((item) => (
               <Link
                 key={item.href}
@@ -146,9 +186,7 @@ export function Navbar() {
             ))}
             <div className="mt-2 flex flex-col gap-2">
               {loggedIn ? (
-                <ButtonLink href="/dashboard" variant="secondary" onClick={() => setOpen(false)}>
-                  <LayoutDashboard className="h-4 w-4" /> Meu painel
-                </ButtonLink>
+                <MeuPainel nome={nome} foto={foto} onClick={() => setOpen(false)} className="h-12 justify-center border border-blue-500" />
               ) : (
                 <ButtonLink href="/auth" variant="secondary" onClick={() => setOpen(false)}>
                   Entrar

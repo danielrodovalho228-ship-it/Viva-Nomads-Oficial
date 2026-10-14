@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { authFile } from "../fixtures/auth";
 
 /**
  * T69 — ordem c67e818f: header e botões.
@@ -142,5 +143,26 @@ test.describe("T69 — header e botões padronizados", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/para-proprietarios", { waitUntil: "networkidle" });
     await page.screenshot({ path: "tests/laboratorio/saida/t69-proprietarios-390.png" });
+  });
+
+  test.describe("0ee6d5f6 — header logado: 'Meu painel' com avatar, logo à esquerda e respiro", () => {
+    test.use({ storageState: authFile("proprietario") });
+    for (const largura of [1280, 1440, 1920]) {
+      test(`logado a ${largura}px`, async ({ page }) => {
+        await page.setViewportSize({ width: largura, height: 900 });
+        await page.goto("/", { waitUntil: "networkidle" });
+        const painel = page.locator("header").getByTestId("nav-meu-painel");
+        await expect(painel).toBeVisible({ timeout: 15_000 });
+        await expect(painel).toContainText("Meu painel");
+        await expect(painel.locator("img, span[aria-hidden]").first(), "avatar (foto ou iniciais)").toBeVisible();
+        const m = await medirHeader(page);
+        expect(m.logoDir - 0, "logo perto da borda esquerda").toBeLessThanOrEqual(260);
+        expect(m.primeiroEsq! - m.logoDir, "folga logo → links").toBeGreaterThanOrEqual(36);
+        expect(m.acoesEsq! - m.ultimoDir!, "folga links → ações").toBeGreaterThanOrEqual(24);
+        expect(m.acoesDir!).toBeLessThanOrEqual(largura - 30);
+        expect(m.rolagem).toBeLessThanOrEqual(1);
+        if (largura === 1440) await page.locator("header").first().screenshot({ path: "tests/laboratorio/saida/t69-header-logado-1440.png" });
+      });
+    }
   });
 });

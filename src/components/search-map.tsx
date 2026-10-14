@@ -63,7 +63,7 @@ function circlePolygon(
  * (rodada 11; comportamento do Furnished Finder, ordem ca0e7dad): passar o
  * mouse no pin SÓ destaca o pin (e o card da lista); clicar abre o card do
  * imóvel ancorado no mapa, sem sair da página. Com NEXT_PUBLIC_MAPBOX_TOKEN renderiza o Mapbox GL; sem o
- * token, Leaflet com o mapa-base da CARTO (ordem ca0e7dad: mapa real sempre).
+ * token, Leaflet com o mapa-base Voyager da CARTO (ordem ca0e7dad: mapa real sempre).
  */
 interface SearchMapProps {
   properties: Property[];
@@ -309,14 +309,22 @@ function SearchMapbox({
 }
 
 /* ------------------------------------------------------------------ */
-/* Leaflet + CARTO (sem token — mapa real, sem chave)                   */
+/* Leaflet + CARTO Voyager (mapa real; chave gratuita da CARTO)         */
 /* ------------------------------------------------------------------ */
 
 /**
+ * Ordem 0ee6d5f6: a CARTO passou a exigir chave (gratuita) — sem ela, cada tile
+ * vem carimbado com "API KEY REQUIRED". A chave fica na variável de ambiente
+ * NEXT_PUBLIC_CARTO_API_KEY (Vercel), nunca no código. O teste
+ * `search-map-tiles.test.ts` garante isso.
+ */
+const CARTO_KEY = process.env.NEXT_PUBLIC_CARTO_API_KEY;
+const TILES_CARTO = `https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png${CARTO_KEY ? `?key=${encodeURIComponent(CARTO_KEY)}` : ""}`;
+
+/**
  * Sem NEXT_PUBLIC_MAPBOX_TOKEN, o mapa da busca usa Leaflet com o mapa-base
- * claro da CARTO (dados do OpenStreetMap): gratuito, sem chave, só pede a
- * atribuição no canto. Pins de preço em HTML (mesma marca do Mapbox), realce
- * em sincronia com a lista e clique abrindo o imóvel.
+ * Voyager da CARTO. Pins de preço em HTML (mesma marca do Mapbox), realce em
+ * sincronia com a lista e clique abrindo o card do imóvel.
  */
 /**
  * Enquadra todos os pins (+ endereço buscado). Chamado ao trocar os resultados e
@@ -366,8 +374,7 @@ function SearchMapLeaflet({ properties, activeId, onHover, selectedId = null, on
     if (!containerRef.current) return;
     const map = L.map(containerRef.current, { zoomControl: false, scrollWheelZoom: true }).setView([-18.911, -48.262], 12);
     L.control.zoom({ position: "topright" }).addTo(map);
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
-      subdomains: "abcd",
+    L.tileLayer(TILES_CARTO, {
       maxZoom: 19,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
     }).addTo(map);
