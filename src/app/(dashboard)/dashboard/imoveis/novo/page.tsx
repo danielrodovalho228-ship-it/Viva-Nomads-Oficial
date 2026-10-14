@@ -35,6 +35,8 @@ import { PropertyMiniCard } from "@/components/property-mini-card";
 import { GuiaFotos } from "@/components/fotos/guia-fotos";
 import { PhotoUploader, type PhotoItem } from "@/components/photo-uploader";
 import { MAX_FOTOS_POR_ANUNCIO } from "@/lib/fotos/qualidade";
+import { PrivacidadeCampos } from "@/components/anuncio/privacidade-campos";
+import { PRIVACIDADE_VAZIA, type Privacidade } from "@/lib/anuncio/privacidade";
 import { DocumentoUploader } from "@/components/documento-uploader";
 import { DOC_AUTORIZACAO, exigeAutorizacao, OPERACOES, operacaoValida, type Operacao } from "@/lib/anuncio/operacao";
 import { MIN_PHOTOS, SUGGESTED_ROOMS, tierFromPhotoCount, TIER_META } from "@/lib/listing";
@@ -135,6 +137,7 @@ export default function NewPropertyPage() {
   const [availableUntil, setAvailableUntil] = useState("");
   const [furnished, setFurnished] = useState(true);
   const [petsOk, setPetsOk] = useState(false);
+  const [privacidade, setPrivacidade] = useState<Privacidade>(PRIVACIDADE_VAZIA);
   const [smokingAllowed, setSmokingAllowed] = useState(false);
   const [childrenAllowed, setChildrenAllowed] = useState(true);
   // Comodidades selecionadas (chaves do catálogo único).
@@ -220,6 +223,7 @@ export default function NewPropertyPage() {
     preco: Number(monthlyPrice) || 0,
     garantiaOk,
     sublocacaoOk: !subleaseBlocked,
+    privacidadeOk: privacidade.semCamerasInterior,
     operacao: ownershipType,
     documento: docStatus,
     // O limite do plano é conferido no servidor ao publicar.
@@ -443,6 +447,10 @@ export default function NewPropertyPage() {
       maxPeriodDays: Number(maxPeriod) || undefined,
       furnished,
       petsAllowed: petsOk,
+      semCamerasInterior: privacidade.semCamerasInterior,
+      camerasExternas: privacidade.camerasExternas,
+      tipoAcesso: privacidade.tipoAcesso,
+      senhaTrocadaEstadia: privacidade.senhaTrocadaEstadia,
       smokingAllowed,
       childrenAllowed,
       amenityKeys: Object.keys(amenityKeys).filter((k) => amenityKeys[k]),
@@ -517,6 +525,7 @@ export default function NewPropertyPage() {
     if (s(d.videoUrl)) setVideoUrl(d.videoUrl as string);
     if (typeof d.furnished === "boolean") setFurnished(d.furnished);
     if (typeof d.petsOk === "boolean") setPetsOk(d.petsOk);
+    if (d.privacidade && typeof d.privacidade === "object") setPrivacidade({ ...PRIVACIDADE_VAZIA, ...(d.privacidade as Partial<Privacidade>) });
     if (typeof d.smokingAllowed === "boolean") setSmokingAllowed(d.smokingAllowed);
     if (typeof d.childrenAllowed === "boolean") setChildrenAllowed(d.childrenAllowed);
     if (typeof d.issuesInvoice === "boolean") setIssuesInvoice(d.issuesInvoice);
@@ -641,6 +650,7 @@ export default function NewPropertyPage() {
       setPetsOk(p.petsAllowed ?? false);
       setSmokingAllowed(p.smokingAllowed ?? false);
       setChildrenAllowed(p.childrenAllowed ?? true);
+      if (p.privacidade) setPrivacidade(p.privacidade);
       setUtilitiesMode(p.utilitiesMode === "real" ? "real" : "fixed");
       setUtilitiesEstimate(p.utilitiesEstimate ?? 200);
       setCondoFee(p.condoFee ? String(p.condoFee) : "");
@@ -673,7 +683,7 @@ export default function NewPropertyPage() {
     title, propertyType, description, bedrooms, bathrooms, areaM2, parkingSpots, maxGuests,
     minPeriod, maxPeriod, availableFrom, availableUntil, monthlyPrice,
     street, neighborhood, city, cep, videoUrl,
-    furnished, petsOk, smokingAllowed, childrenAllowed, issuesInvoice,
+    privacidade, furnished, petsOk, smokingAllowed, childrenAllowed, issuesInvoice,
     amenityKeys, googlePlaces, manualProximities,
     condoFee, descricaoGeradaPorIa, utilitiesMode, utilitiesEstimate, faixas, garantias, prepFee,
     ownershipType, subleaseAuthorized, step, ordemEtapas: VERSAO_ORDEM_ETAPAS, etapaMax: Math.max(etapaMax, pos),
@@ -1285,6 +1295,7 @@ export default function NewPropertyPage() {
               <Toggle checked={childrenAllowed} onChange={() => setChildrenAllowed((v) => !v)} label="Aceita crianças" />
               <Toggle checked={smokingAllowed} onChange={() => setSmokingAllowed((v) => !v)} label="Permite fumar" />
             </div>
+            <PrivacidadeCampos valor={privacidade} onChange={setPrivacidade} />
           </div>
         )}
 

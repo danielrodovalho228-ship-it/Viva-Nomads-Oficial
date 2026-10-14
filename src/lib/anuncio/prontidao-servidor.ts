@@ -25,7 +25,9 @@ export async function fatosDosImoveis(cliente: Cliente, ownerId: string, ids?: s
     return q;
   };
   // 0091 (autorizacao_anexada) pode ainda não estar aplicada: cai nas colunas antigas.
-  let { data: props, error } = await consulta(`${COLUNAS}, autorizacao_anexada`);
+  // 0116 (sem_cameras_interior) idem: cai para as colunas sem ela (a declaração não barra).
+  let { data: props, error } = await consulta(`${COLUNAS}, autorizacao_anexada, sem_cameras_interior`);
+  if (error) ({ data: props, error } = await consulta(`${COLUNAS}, autorizacao_anexada`));
   if (error) ({ data: props } = await consulta(COLUNAS));
   const lista = (props ?? []) as (LinhaAnuncio & { id: string; status: string })[];
   if (lista.length === 0) return mapa;

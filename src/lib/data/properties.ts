@@ -6,6 +6,7 @@ import { SAMPLE_PROPERTIES } from "@/lib/properties";
 import { signAvatarPath } from "@/lib/data/avatar-url";
 import { semAnunciosDeTeste } from "@/lib/data/anuncio-teste";
 import { normalizarRegrasPets } from "@/lib/anuncio/pets-regras";
+import { privacidadeDaLinha, type PrivacidadeLinha } from "@/lib/anuncio/privacidade";
 
 /**
  * Colunas SEGURAS de `properties` para leitura (público e dono). NUNCA inclui
@@ -190,7 +191,7 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     }
   };
 
-  const [photos, amenities, workspaces, proximities, reviews, owner, petsLinha] = await Promise.all([
+  const [photos, amenities, workspaces, proximities, reviews, owner, petsLinha, priv] = await Promise.all([
     safe(supabase.from("property_photos").select("url, sort_order").eq("property_id", base.id).order("sort_order")),
     safe(supabase.from("property_amenities").select("category, label, sort_order").eq("property_id", base.id).order("sort_order")),
     safe(supabase.from("property_workspaces").select("name, type, distance_m").eq("property_id", base.id)),
@@ -199,7 +200,10 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     ownerId ? safe(supabase.from("profiles").select("full_name, avatar_url, created_at, response_rate, is_verified").eq("id", ownerId).maybeSingle()) : Promise.resolve(null),
     // Regras de pets (0119): coluna à parte para a página não quebrar se a migração atrasar.
     safe(supabase.from("properties").select("pets_regras").eq("id", base.id).maybeSingle()),
+    // 0116: leitura à parte — sem a migração a consulta falha e o anúncio abre igual.
+    safe(supabase.from("properties").select("sem_cameras_interior, cameras_externas, tipo_acesso, senha_trocada_estadia").eq("id", base.id).maybeSingle()),
   ]);
+  const privacidade = privacidadeDaLinha(priv as PrivacidadeLinha | null);
 
   // Comodidades agrupadas por categoria (na ordem de cadastro).
   const groupsMap = new Map<string, string[]>();
@@ -241,6 +245,7 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
       date: r.publicada_em ?? undefined,
     })),
     petsRegras: normalizarRegrasPets((petsLinha as { pets_regras?: unknown } | null)?.pets_regras) ?? undefined,
+    privacidade,
     ownerName: ownerRow?.full_name ?? base.ownerName,
     ownerId: ownerId ?? base.ownerId,
     owner: ownerRow
