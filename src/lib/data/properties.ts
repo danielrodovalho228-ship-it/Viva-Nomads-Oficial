@@ -5,6 +5,7 @@ import type { Property, AmenityGroup } from "@/lib/types";
 import { SAMPLE_PROPERTIES } from "@/lib/properties";
 import { signAvatarPath } from "@/lib/data/avatar-url";
 import { semAnunciosDeTeste } from "@/lib/data/anuncio-teste";
+import { comCoordenadaAproximada } from "@/lib/data/coordenada-aproximada";
 import { normalizarRegrasPets } from "@/lib/anuncio/pets-regras";
 import { privacidadeDaLinha, type PrivacidadeLinha } from "@/lib/anuncio/privacidade";
 
@@ -278,7 +279,7 @@ export async function listProperties(): Promise<Property[]> {
     if (error) console.error("[listProperties] Supabase error:", error.code, error.message);
     // Imóveis reais + anúncios demo (enquanto o flag estiver ligado), sem 500.
     if (error || !data) return withDemos([]);
-    const mapped = semAnunciosDeTeste((data as unknown as PropertyRow[]).map(rowToProperty)); // anúncio de teste do QA nunca aparece ao visitante
+    const mapped = semAnunciosDeTeste((data as unknown as PropertyRow[]).map(rowToProperty).map(comCoordenadaAproximada)); // anúncio de teste do QA nunca aparece ao visitante
     await attachCoverPhotos(supabase, mapped); // capa real para os cards (best-effort)
     await attachReviewAggregates(supabase, mapped); // nota/contagem REAL (fonte única)
     return withDemos(mapped);

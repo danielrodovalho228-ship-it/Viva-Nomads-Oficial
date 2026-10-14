@@ -27,5 +27,5 @@ test("semAnunciosDeTeste tira só os de teste e mantém a ordem", () => {
 
 test("listProperties usa o filtro", () => {
   const src = readFileSync(new URL("./properties.ts", import.meta.url), "utf8");
-  assert.match(src, /semAnunciosDeTeste\(\(data as unknown as PropertyRow\[\]\)\.map\(rowToProperty\)\)/);
+  assert.match(src, /semAnunciosDeTeste\(\(data as unknown as PropertyRow\[\]\)\.map\(rowToProperty\)\.map\(comCoordenadaAproximada\)\)/);
 });
