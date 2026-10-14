@@ -45,8 +45,8 @@ test.describe("T70 — busca split-screen no computador", () => {
     expect(pctMapa).toBeLessThanOrEqual(0.45);
     expect(Math.round(mapa!.x + mapa!.width), "mapa encosta na borda direita").toBe(1440);
 
-    const barra = await page.getByTestId("filtros-barra").boundingBox();
-    expect(barra!.height, "faixa de filtros em uma linha").toBeLessThanOrEqual(64);
+    const caixa = await page.getByTestId("filtros-caixa").boundingBox();
+    expect(caixa!.height, "barra de filtros em uma linha").toBeLessThanOrEqual(64);
 
     const cards = page.getByTestId("card-resultado");
     expect(await cards.count()).toBeGreaterThanOrEqual(3);
@@ -61,7 +61,7 @@ test.describe("T70 — busca split-screen no computador", () => {
     const depois = await page.getByTestId("busca-mapa").boundingBox();
     expect(Math.round(barraDepois!.y), "faixa de filtros fixa sob o cabeçalho").toBe(72);
     expect(Math.abs(depois!.y - (barraDepois!.y + barraDepois!.height)), "mapa fixo logo abaixo da faixa").toBeLessThanOrEqual(2);
-    expect(depois!.height).toBeGreaterThanOrEqual(900 - 140);
+    expect(depois!.height, "mapa na altura visível (tela − cabeçalho − faixa de filtros)").toBeGreaterThanOrEqual(900 - 160);
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
     await page.mouse.wheel(0, -3000);
     await page.waitForTimeout(300);
@@ -131,8 +131,8 @@ test.describe("T70 — busca split-screen no computador", () => {
     for (const largura of [1024, 1280]) {
       await abrir(page, largura);
       await expect(page.getByTestId("busca-mapa")).toBeVisible();
-      const barra = await page.getByTestId("filtros-barra").boundingBox();
-      expect(barra!.height, `filtros em uma linha a ${largura}px`).toBeLessThanOrEqual(64);
+      const caixa = await page.getByTestId("filtros-caixa").boundingBox();
+      expect(caixa!.height, `filtros em uma linha a ${largura}px`).toBeLessThanOrEqual(64);
       expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
     }
   });

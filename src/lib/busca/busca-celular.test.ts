@@ -57,10 +57,10 @@ test("busca usa UMA regra para a lista e para a contagem do painel", () => {
   assert.doesNotMatch(s, /if \(petsOnly && !p\.petsAllowed\) return false/);
   assert.doesNotMatch(s, /if \(maxPrice && p\.monthlyPrice > maxPrice\) return false/);
   // Celular: topo com busca + botão de filtros; filtros antigos só do tablet para cima.
-  assert.match(s, /className="sm:hidden" data-testid="busca-celular"/);
+  assert.match(s, /className="container-page mt-4 sm:hidden" data-testid="busca-celular"/);
   assert.match(s, /data-testid="abrir-filtros"/);
   assert.match(s, /placeholder="Cidade, bairro ou endereço"/);
-  assert.match(s, /hidden rounded-2xl border border-sage-200 bg-white p-4 sm:block/);
+  assert.match(s, /className="container-page hidden sm:block lg:sticky/);
 });
 
 test("painel: rascunho só vale ao aplicar; diálogo acessível; Esc fecha", () => {

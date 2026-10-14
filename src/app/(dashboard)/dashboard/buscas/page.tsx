@@ -3,15 +3,18 @@ import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives"
 import { ButtonLink } from "@/components/ui/button";
 import { FavoritosTabs } from "@/components/dashboard/favoritos-tabs";
 import { isSupabaseConfigured } from "@/lib/env";
+import { listarBuscasSalvas } from "@/lib/data/buscas-salvas-actions";
+import { ListaBuscasSalvas } from "@/components/busca/lista-buscas-salvas";
 
 const SAMPLE_SAVED = [
   { query: "Uberlândia · até R$ 3.500 · 2 quartos · Pronto para Morar", count: 4 },
   { query: "Centro · Studio · aceita 30 dias", count: 2 },
 ];
 
-export default function SavedSearchesPage() {
-  // Modo real: sem buscas fictícias; demo: mostra exemplos.
-  const saved = isSupabaseConfigured() ? [] : SAMPLE_SAVED;
+export default async function SavedSearchesPage() {
+  // Modo real: as buscas salvas no coração da /buscar (0122); demo: mostra exemplos.
+  const reais = isSupabaseConfigured() ? await listarBuscasSalvas() : null;
+  const vazio = reais ? reais.length === 0 : SAMPLE_SAVED.length === 0;
 
   return (
     <>
@@ -25,20 +28,22 @@ export default function SavedSearchesPage() {
           </ButtonLink>
         }
       />
-      {saved.length === 0 ? (
+      {vazio ? (
         <EmptyState
           icon={Search}
           title="Nenhuma busca salva ainda"
-          text="Faça uma busca e salve os filtros para receber um aviso quando um novo imóvel combinar com o que você procura."
+          text="Na busca, toque em “Salvar busca” (o coração ao lado da contagem) para guardar os filtros e voltar a eles depois."
           action={
             <ButtonLink href="/buscar" variant="gold">
               <Search className="h-4 w-4" /> Buscar imóveis
             </ButtonLink>
           }
         />
+      ) : reais ? (
+        <ListaBuscasSalvas inicial={reais} />
       ) : (
         <div className="grid gap-4">
-          {saved.map((s) => (
+          {SAMPLE_SAVED.map((s) => (
             <Panel key={s.query} className="flex items-center justify-between gap-4">
               <div>
                 <p className="font-medium text-ink">{s.query}</p>

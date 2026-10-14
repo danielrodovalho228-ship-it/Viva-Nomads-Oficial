@@ -24,6 +24,8 @@ import { FAIXAS, GARANTIAS_FAIXA, GARANTIAS_PUBLICAS, CAUCAO_PARCELADA_UI } from
 import { SELO_NF_UI } from "@/lib/flags";
 import { PainelFiltrosCelular } from "@/components/busca/painel-filtros-celular";
 import { contarFiltrosPainel, passaNoPainel, resumoFiltros, type FiltrosPainel } from "@/lib/busca/painel-filtros";
+import { contagemDaBusca } from "@/lib/busca/buscas-salvas";
+import { SalvarBusca } from "@/components/busca/salvar-busca";
 
 // Filtro de garantia exibido na busca pública: caução unificada + seguro-fiança
 // (a modalidade parcelada fica fora da UI até o parecer — B1). Religa com a flag.
@@ -69,7 +71,7 @@ function aceitaGarantia(p: Property, g: string): boolean {
   return arr.includes(g); // caucao_avista | caucao_parcelada | titulo
 }
 
-export function SearchClient({ properties }: { properties: Property[] }) {
+export function SearchClient({ properties, topo }: { properties: Property[]; /** Título (e banner do tablet) vindo da página. */ topo?: React.ReactNode }) {
   const [locationQuery, setLocationQuery] = useState("");
   // Coordenadas de um endereço escolhido no autocomplete (filtra por raio).
   const [geoCenter, setGeoCenter] = useState<{ lat: number; lng: number } | null>(null);
@@ -391,6 +393,11 @@ export function SearchClient({ properties }: { properties: Property[] }) {
   }
 
   const nPainel = contarFiltrosPainel(filtrosPainel);
+  // Muda sempre que um filtro muda: o "Salvar busca" reconsulta se a busca atual já está salva.
+  const versaoBusca = [
+    locationQuery, geoCenter?.lat, geoCenter?.lng, radiusKm, maxPrice, minBedrooms, adults, children, maxPeriod, sort, typeFilter,
+    faixa, dataEntrada, garantia, petsOnly, furnishedOnly, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly,
+  ].join("|");
   function aplicarPainel(f: FiltrosPainel) {
     setMaxPrice(f.maxPrice);
     setMinBedrooms(f.minBedrooms);
@@ -402,11 +409,15 @@ export function SearchClient({ properties }: { properties: Property[] }) {
   }
 
   return (
-    // Computador (lg+, ordem ca0e7dad): largura total, faixa de filtros compacta e
-    // fixa no topo, lista (~58%, 3 cards por linha) + mapa fixo (~42%) na altura da tela.
-    <div className="container-page py-4 sm:py-6 lg:max-w-none lg:px-6 lg:py-0" data-testid="busca">
+    // Computador (lg+, ordens ca0e7dad e d15ef6bf): largura total; no topo a barra de
+    // filtros centralizada e em destaque (fixa sob o cabeçalho), depois o título, a
+    // contagem "N imóveis em <cidade>" com "Salvar busca", e a lista (~58%, 3 cards
+    // por linha) + mapa fixo (~42%). A ordem visual no computador vem de `lg:order-*`.
+    <div className="flex flex-col py-4 sm:py-6 lg:px-6 lg:py-0" data-testid="busca">
+      {topo && <div className="-mt-4 sm:-mt-6 lg:order-2 lg:mt-0">{topo}</div>}
+
       {/* ── CELULAR (ordem 314f764e): busca + botão de filtros + total ── */}
-      <div className="sm:hidden" data-testid="busca-celular">
+      <div className="container-page mt-4 sm:hidden" data-testid="busca-celular">
         <div className="flex items-center gap-2 rounded-2xl border border-line bg-white p-2 shadow-[0_8px_24px_-16px_rgba(11,42,102,0.35)]">
           <div className="min-w-0 flex-1">
             <LocationSearch
@@ -441,11 +452,14 @@ export function SearchClient({ properties }: { properties: Property[] }) {
             )}
           </button>
         </div>
-        <div className="mt-3 flex items-center justify-between gap-3">
-          <p className="text-sm font-semibold text-ink" data-testid="total-celular">
-            {results.length} {results.length === 1 ? "imóvel" : "imóveis"}
-            {locationQuery.trim() && <span className="font-normal text-muted"> em {locationQuery.trim()}</span>}
-          </p>
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+          <div className="flex min-w-0 items-center gap-1">
+            <p className="truncate text-sm font-semibold text-ink" data-testid="total-celular">
+              {results.length} {results.length === 1 ? "imóvel" : "imóveis"}
+              {locationQuery.trim() && <span className="font-normal text-muted"> em {locationQuery.trim()}</span>}
+            </p>
+            <SalvarBusca versao={versaoBusca} />
+          </div>
           <Select
             label="Ordenar resultados"
             value={sort}
@@ -468,11 +482,16 @@ export function SearchClient({ properties }: { properties: Property[] }) {
         />
       )}
 
-      {/* Filtros do tablet (caixa) e do computador (faixa única e compacta, fixa
-          sob o cabeçalho — lg+). Os mesmos controles nos dois. */}
+      {/* Filtros do tablet (caixa) e do computador: no computador, uma faixa fixa sob o
+          cabeçalho com a barra CENTRALIZADA e em destaque (estilo Airbnb/Furnished
+          Finder). Os mesmos controles nos dois. */}
       <div
         data-testid="filtros-barra"
-        className="hidden rounded-2xl border border-sage-200 bg-white p-4 sm:block lg:sticky lg:top-18 lg:z-30 lg:-mx-6 lg:rounded-none lg:border-x-0 lg:border-t-0 lg:px-6 lg:py-2.5"
+        className="container-page hidden sm:block lg:sticky lg:top-18 lg:z-30 lg:order-1 lg:-mx-6 lg:flex lg:h-20 lg:w-auto lg:max-w-none lg:items-center lg:justify-center lg:border-b lg:border-line lg:bg-white lg:px-6"
+      >
+      <div
+        data-testid="filtros-caixa"
+        className="rounded-2xl border border-sage-200 bg-white p-4 lg:relative lg:max-w-full lg:rounded-full lg:border-line lg:px-2.5 lg:py-2 lg:shadow-[0_10px_30px_-14px_rgba(10,10,10,0.35)]"
       >
         <div className="flex items-center justify-between gap-3 lg:hidden">
           <button
@@ -628,7 +647,7 @@ export function SearchClient({ properties }: { properties: Property[] }) {
           {drawerOpen && (
             <div
               data-testid="mais-filtros-painel"
-              className="contents lg:absolute lg:right-6 lg:top-full lg:z-40 lg:mt-2 lg:flex lg:w-[32rem] lg:flex-wrap lg:gap-2 lg:rounded-2xl lg:border lg:border-sage-200 lg:bg-white lg:p-4 lg:shadow-xl"
+              className="contents lg:absolute lg:right-0 lg:top-full lg:z-40 lg:mt-2 lg:flex lg:w-[32rem] lg:flex-wrap lg:gap-2 lg:rounded-2xl lg:border lg:border-sage-200 lg:bg-white lg:p-4 lg:shadow-xl"
             >
               <Select
                 label="Tipo de imóvel"
@@ -738,17 +757,21 @@ export function SearchClient({ properties }: { properties: Property[] }) {
         )}
       </div>
 
-      <div className="mt-4 lg:mt-0 lg:flex lg:items-start lg:gap-6">
-        <div data-testid="busca-lista" className="min-w-0 lg:w-[58%] lg:py-5">
-          <div className="mb-4 hidden items-center justify-between gap-3 sm:flex">
-            <p className="text-sm text-muted">
-              <span className="font-medium text-ink" data-testid="total-resultados">
-                {results.length} {results.length === 1 ? "imóvel" : "imóveis"}
-              </span>
-              {locationQuery.trim() && ` em ${locationQuery.trim()}`}
-              {dataEntrada && ` · entrada a partir de ${formatDatePtBR(dataEntrada)}`}
-              <span> · R$ 0 de taxa para você</span>
-            </p>
+      </div>
+
+      {/* Contagem estilo Airbnb ("15 imóveis em Uberlândia") + Salvar busca, logo
+          abaixo do título (tablet e computador). */}
+      <div className="container-page mt-4 hidden flex-wrap items-center justify-between gap-3 sm:flex lg:order-3 lg:mt-0 lg:max-w-none lg:px-0 lg:pb-1">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+          <p className="text-base text-ink">
+            <span className="font-semibold" data-testid="total-resultados">
+              {contagemDaBusca(results.length, locationQuery)}
+            </span>
+            {dataEntrada && <span className="text-muted"> · entrada a partir de {formatDatePtBR(dataEntrada)}</span>}
+            <span className="text-muted"> · R$ 0 de taxa para você</span>
+          </p>
+          <SalvarBusca versao={versaoBusca} />
+        </div>
             <div className="hidden shrink-0 items-center gap-3 lg:flex">
               {activeCount > 0 && (
                 <button
@@ -771,7 +794,10 @@ export function SearchClient({ properties }: { properties: Property[] }) {
                 ]}
               />
             </div>
-          </div>
+      </div>
+
+      <div className="container-page mt-4 lg:order-4 lg:mt-0 lg:flex lg:max-w-none lg:items-start lg:gap-6 lg:px-0">
+        <div data-testid="busca-lista" className="min-w-0 lg:w-[58%] lg:py-5">
           {results.length === 0 ? (
             <div className="flex flex-col items-center rounded-2xl border border-dashed border-line p-12 text-center">
               <EmptySearchIllustration />
@@ -879,7 +905,7 @@ export function SearchClient({ properties }: { properties: Property[] }) {
             encosta na borda direita da tela. */}
         <div
           data-testid="busca-mapa"
-          className="hidden lg:sticky lg:top-[8.25rem] lg:-mr-6 lg:block lg:h-[calc(100vh-8.25rem)] lg:w-[42%] lg:shrink-0"
+          className="hidden lg:sticky lg:top-[9.5rem] lg:-mr-6 lg:block lg:h-[calc(100vh-9.5rem)] lg:w-[42%] lg:shrink-0"
         >
           {comMapa && (
             <SearchMap
