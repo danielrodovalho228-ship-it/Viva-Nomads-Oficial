@@ -77,6 +77,16 @@ export function linhasPrivacidadePublica(p: Partial<Privacidade> | null | undefi
 export const LEMBRETE_SENHA_ENTRADA =
   "Confirme que recebeu uma senha nova. Se não, peça a troca pelo chat.";
 
+/** Só o inquilino, com fechadura com senha, no contrato em andamento e já assinado pelas duas partes. */
+export function mostrarLembreteSenha(i: {
+  papel: string;
+  tipoAcesso: string | null | undefined;
+  status: string;
+  assinadoPelasDuasPartes: boolean;
+}): boolean {
+  return i.papel === "inquilino" && i.tipoAcesso === "fechadura_senha" && i.status === "ativo" && i.assinadoPelasDuasPartes;
+}
+
 export interface PrivacidadeLinha {
   sem_cameras_interior?: boolean | null;
   cameras_externas?: string | null;

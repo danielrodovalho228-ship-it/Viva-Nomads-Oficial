@@ -116,7 +116,7 @@ const BASE_PUBLICA = "/storage/v1/object/public/property-photos";
 export async function criarImovelPronto(
   ownerId: string,
   titulo: string,
-  opts: { ativo?: boolean; preco?: number; /** documento ainda NA FILA do admin (titular = este nome) em vez de aprovado */ documentoPendente?: string } = {}
+  opts: { ativo?: boolean; preco?: number; /** ordem f92bc582: sem a declaração "sem câmeras dentro" o anúncio não publica (padrão do laboratório: declarada) */ semDeclaracaoCameras?: boolean; /** documento ainda NA FILA do admin (titular = este nome) em vez de aprovado */ documentoPendente?: string } = {}
 ): Promise<string> {
   const { data, error } = await adm()
     .from("properties")
@@ -137,6 +137,7 @@ export async function criarImovelPronto(
       monthly_price: opts.preco ?? 3200,
       garantias_aceitas: ["caucao"],
       status: "draft",
+      sem_cameras_interior: !opts.semDeclaracaoCameras,
     })
     .select("id")
     .single();

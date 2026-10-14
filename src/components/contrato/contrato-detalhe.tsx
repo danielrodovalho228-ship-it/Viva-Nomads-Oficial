@@ -5,6 +5,8 @@ import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { getContratoParaAssinar } from "@/lib/data/contrato-assinar-actions";
 import { ROTULO_ETAPA, etapaContrato } from "@/lib/contrato-etapas";
 import { conferenciasDoContrato } from "@/lib/data/conferencia-actions";
+import { tipoAcessoDoContrato } from "@/lib/data/contrato-acesso";
+import { LEMBRETE_SENHA_ENTRADA, mostrarLembreteSenha } from "@/lib/anuncio/privacidade";
 import { AssinarContrato } from "./assinar-contrato";
 import { LinhaDoTempoEstadia } from "./linha-do-tempo-estadia";
 import { ConferenciaContrato } from "./conferencia-contrato";
@@ -33,6 +35,15 @@ export async function ContratoDetalhe({
   // Conferência de entrada e de saída: só com contrato em andamento ou encerrado e assinado pelas duas partes.
   const mostraConferencia = ["ativo", "concluido", "encerrado_sem_renovacao"].includes(c.status) && !!c.assinadoProprietarioEm && !!c.assinadoInquilinoEm;
   const conferencia = mostraConferencia ? await conferenciasDoContrato(c.id) : null;
+  const lembreteSenha =
+    c.papel === "inquilino" && c.status === "ativo" && mostraConferencia
+      ? mostrarLembreteSenha({
+          papel: c.papel,
+          tipoAcesso: await tipoAcessoDoContrato(c.id),
+          status: c.status,
+          assinadoPelasDuasPartes: !!c.assinadoProprietarioEm && !!c.assinadoInquilinoEm,
+        })
+      : false;
   return (
     <>
       <Link href={voltarHref} className="mb-3 inline-flex items-center gap-1 text-sm text-muted hover:text-ink">
@@ -51,6 +62,12 @@ export async function ContratoDetalhe({
         </p>
         {!c.euAssinei && c.status === "ativo" && <AssinarContrato contratoId={c.id} />}
       </Panel>
+      {lembreteSenha && (
+        <Panel className="mt-5 p-5" data-testid="lembrete-senha-entrada">
+          <h2 className="font-title text-base font-bold text-ink">Antes de entrar</h2>
+          <p className="mt-1 text-sm text-ink">{LEMBRETE_SENHA_ENTRADA}</p>
+        </Panel>
+      )}
       <LinhaDoTempoEstadia etapas={c.linhaDoTempo} />
       {conferencia && (
         <Panel className="mt-5 p-5">
