@@ -26,7 +26,8 @@ import { SELO_NF_UI } from "@/lib/flags";
 import { PainelFiltrosCelular } from "@/components/busca/painel-filtros-celular";
 import { COMODIDADES_FILTRO, ROTULO_COMODIDADE, comodidadesDaUrl, type ComodidadeFiltro } from "@/lib/busca/filtro-comodidades";
 import { OPCOES_PORTE_PET, ROTULO_PORTE_CURTO, contarFiltrosPainel, passaNoPainel, resumoFiltros, type FiltrosPainel } from "@/lib/busca/painel-filtros";
-import { contagemDaBusca } from "@/lib/busca/buscas-salvas";
+import { TituloBuscaContexto } from "@/components/busca/titulo-busca";
+import { buttonClasses } from "@/components/ui/button";
 import { SalvarBusca } from "@/components/busca/salvar-busca";
 
 // Filtro de garantia exibido na busca pública: caução unificada + seguro-fiança
@@ -459,11 +460,18 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  // h1 dinâmico (ordem 6a98c68e): local + contagem + filtros, nos dois layouts.
+  const tituloBusca = useMemo(
+    () => ({ n: results.length, local: locationQuery, pronto: readyToLiveOnly, pet: petsOnly }),
+    [results.length, locationQuery, readyToLiveOnly, petsOnly]
+  );
+
   return (
     // Computador (lg+, ordens ca0e7dad e d15ef6bf): largura total; no topo a barra de
     // filtros centralizada e em destaque (fixa sob o cabeçalho), depois o título, a
     // contagem "N imóveis em <cidade>" com "Salvar busca", e a lista (~58%, 3 cards
     // por linha) + mapa fixo (~42%). A ordem visual no computador vem de `lg:order-*`.
+    <TituloBuscaContexto.Provider value={tituloBusca}>
     <div className="flex flex-col py-4 sm:py-6 lg:px-6 lg:py-0" data-testid="busca">
       {topo && <div className="-mt-4 sm:-mt-6 lg:order-2 lg:mt-0">{topo}</div>}
       {slotHeader &&
@@ -517,10 +525,6 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
         </div>
         <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
           <div className="flex min-w-0 items-center gap-1">
-            <p className="truncate text-sm font-semibold text-ink" data-testid="total-celular">
-              {results.length} {results.length === 1 ? "imóvel" : "imóveis"}
-              {locationQuery.trim() && <span className="font-normal text-muted"> em {locationQuery.trim()}</span>}
-            </p>
             <SalvarBusca versao={versaoBusca} />
           </div>
           <Select
@@ -719,7 +723,7 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
             type="button"
             onClick={() => setPainelFiltros(false)}
             data-testid="fechar-painel-filtros"
-            className="hidden h-9 shrink-0 items-center whitespace-nowrap rounded-full bg-forest px-4 text-sm font-semibold text-white hover:bg-blue-700 lg:inline-flex"
+            className={buttonClasses({ size: "sm", className: "hidden shrink-0 whitespace-nowrap lg:inline-flex" })}
           >
             Ver {results.length} {results.length === 1 ? "imóvel" : "imóveis"}
           </button>
@@ -865,12 +869,10 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
           abaixo do título (tablet e computador). */}
       <div className="container-page mt-4 hidden flex-wrap items-center justify-between gap-3 sm:flex lg:order-3 lg:mt-0 lg:max-w-none lg:px-0 lg:pb-1">
         <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-          <p className="text-base text-ink">
-            <span className="font-semibold" data-testid="total-resultados">
-              {contagemDaBusca(results.length, locationQuery)}
-            </span>
-            {dataEntrada && <span className="text-muted"> · entrada a partir de {formatDatePtBR(dataEntrada)}</span>}
-            <span className="text-muted"> · R$ 0 de taxa para você</span>
+          {/* A contagem e o local estão no título (ordem 6a98c68e); aqui só o complemento. */}
+          <p className="text-base text-muted" data-testid="complemento-busca">
+            {dataEntrada && <>Entrada a partir de {formatDatePtBR(dataEntrada)} · </>}
+            R$ 0 de taxa para você
           </p>
           <SalvarBusca versao={versaoBusca} />
         </div>
@@ -1024,6 +1026,7 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
         </div>
       </div>
     </div>
+    </TituloBuscaContexto.Provider>
   );
 }
 

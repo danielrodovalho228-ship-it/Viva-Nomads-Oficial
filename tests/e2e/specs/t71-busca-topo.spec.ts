@@ -38,7 +38,8 @@ test.describe("T71 — topo da /buscar", () => {
 
     // Sem espaço branco morto: o título vem logo abaixo do cabeçalho.
     const h1 = page.getByRole("heading", { level: 1 });
-    await expect(h1).toHaveText("Imóveis mobiliados para sua estadia");
+    // Ordem 6a98c68e: o título acompanha a busca (local + contagem).
+    await expect(h1).toHaveText(/^\d+ imóve(l|is) mobiliados? em Uberlândia$/);
     const h1Box = (await h1.boundingBox())!;
     expect(h1Box.y - (hBox.y + hBox.height), "título colado ao cabeçalho").toBeLessThanOrEqual(40);
 
@@ -53,13 +54,13 @@ test.describe("T71 — topo da /buscar", () => {
     await page.getByTestId("fechar-painel-filtros").click();
     await expect(page.getByTestId("filtros-caixa")).toBeHidden();
 
-    const total = page.getByTestId("total-resultados");
-    await expect(total).toHaveText(/^\d+ imóve(l|is) em Uberlândia$/);
+    const total = page.getByTestId("complemento-busca");
+    await expect(total).toContainText("R$ 0 de taxa para você");
     const salvar = page.getByTestId("salvar-busca").filter({ visible: true });
     await expect(salvar).toHaveText(/Salvar busca/);
     const tBox = (await total.boundingBox())!;
     const sBox = (await salvar.boundingBox())!;
-    expect(Math.abs(sBox.y + sBox.height / 2 - (tBox.y + tBox.height / 2)), "Salvar busca ao lado da contagem").toBeLessThanOrEqual(12);
+    expect(Math.abs(sBox.y + sBox.height / 2 - (tBox.y + tBox.height / 2)), "Salvar busca na linha abaixo do título").toBeLessThanOrEqual(12);
     expect(tBox.y).toBeGreaterThan(h1Box.y);
     expect(await semRolagem(page)).toBeLessThanOrEqual(1);
     await page.screenshot({ path: "tests/laboratorio/saida/t71-topo-1440.png" });
@@ -103,7 +104,7 @@ test.describe("T71 — topo da /buscar", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/buscar?local=Uberl%C3%A2ndia", { waitUntil: "networkidle" });
     await expect(page.getByTestId("busca-celular")).toBeVisible();
-    await expect(page.getByTestId("total-celular")).toContainText("em Uberlândia");
+    await expect(page.getByTestId("titulo-busca")).toContainText("em Uberlândia");
     await expect(page.getByTestId("salvar-busca").filter({ visible: true })).toBeVisible();
     expect(await semRolagem(page)).toBeLessThanOrEqual(1);
     await page.screenshot({ path: "tests/laboratorio/saida/t71-topo-390.png" });
@@ -135,4 +136,46 @@ test.describe("T71 — topo da /buscar", () => {
       expect(unicos("ih"), "altura da foto").toBe(1);
     });
   }
+
+  const contar = async (page: Page) => Number((await page.getByTestId("titulo-busca").innerText()).match(/^\d+/)?.[0] ?? 0);
+
+  test("8. computador: título acompanha a cidade e os filtros em tempo real (ordem 6a98c68e)", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/buscar", { waitUntil: "networkidle" });
+    const titulo = page.getByTestId("titulo-busca");
+    await expect(titulo).toHaveText(/^\d+ imóve(l|is) mobiliados? para locação mensal$/);
+    const todos = await contar(page);
+
+    await page.goto("/buscar?local=Uberl%C3%A2ndia", { waitUntil: "networkidle" });
+    await expect(titulo).toHaveText(/ em Uberlândia$/);
+    const naCidade = await contar(page);
+    expect(naCidade).toBeLessThanOrEqual(todos);
+
+    await page.getByTestId("busca-compacta").click();
+    await page.getByTestId("filtros-caixa").getByRole("button", { name: /Pronto para Morar/i }).click();
+    await expect(titulo).toHaveText(/^(\d+|Nenhum) imóve(l|is) Pronto para Morar em Uberlândia$/);
+    expect(await contar(page)).toBeLessThanOrEqual(naCidade);
+    await page.screenshot({ path: "tests/laboratorio/saida/t71-titulo-1440.png" });
+  });
+
+  test("9. celular: título acompanha a cidade digitada e os filtros (ordem 6a98c68e)", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/buscar", { waitUntil: "networkidle" });
+    const titulo = page.getByTestId("titulo-busca");
+    await expect(titulo).toBeVisible();
+    await expect(titulo).toHaveText(/para locação mensal$/);
+
+    await page.getByTestId("busca-celular").getByPlaceholder("Cidade, bairro ou endereço").fill("Uberlândia");
+    await expect(titulo).toHaveText(/^\d+ imóve(l|is) mobiliados? em Uberlândia$/);
+    const naCidade = await contar(page);
+
+    await page.getByTestId("abrir-filtros").click();
+    const painel = page.getByRole("dialog", { name: "Filtros" });
+    await painel.getByText("Aceita pets", { exact: true }).click();
+    await painel.getByTestId("aplicar-filtros").click();
+    await expect(titulo).toHaveText(/em Uberlândia que aceita(m)? pets$/);
+    expect(await contar(page)).toBeLessThanOrEqual(naCidade);
+    expect(await semRolagem(page)).toBeLessThanOrEqual(1);
+    await page.screenshot({ path: "tests/laboratorio/saida/t71-titulo-390.png" });
+  });
 });

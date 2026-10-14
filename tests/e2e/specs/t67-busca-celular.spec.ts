@@ -18,7 +18,7 @@ test.describe("T67 — Busca no celular", () => {
       const topo = page.getByTestId("busca-celular");
       await expect(topo).toBeVisible();
       await expect(topo.getByRole("button", { name: /^Filtros/ })).toBeVisible();
-      await expect(page.getByTestId("total-celular")).toContainText(/\d+ imóve(l|is)/);
+      await expect(page.getByTestId("titulo-busca")).toContainText(/\d+ imóve(l|is)/);
       const sobra = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       expect(sobra).toBeLessThanOrEqual(1);
       await page.screenshot({ path: `tests/laboratorio/saida/t67-busca-${largura}.png` });
@@ -28,7 +28,7 @@ test.describe("T67 — Busca no celular", () => {
   test("390 px: painel de filtros conta antes de aplicar e volta à lista filtrada", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/buscar", { waitUntil: "networkidle" });
-    const totalAntes = Number((await page.getByTestId("total-celular").innerText()).match(/\d+/)?.[0]);
+    const totalAntes = Number((await page.getByTestId("titulo-busca").innerText()).match(/\d+/)?.[0]);
 
     await page.getByTestId("abrir-filtros").click();
     const painel = page.getByRole("dialog", { name: "Filtros" });
@@ -46,7 +46,7 @@ test.describe("T67 — Busca no celular", () => {
     await painel.getByTestId("aplicar-filtros").click();
 
     await expect(painel).toHaveCount(0);
-    await expect(page.getByTestId("total-celular")).toContainText(`${n} ${n === 1 ? "imóvel" : "imóveis"}`);
+    await expect(page.getByTestId("titulo-busca")).toContainText(`${n} ${n === 1 ? "imóvel" : "imóveis"}`);
     await expect(page.getByTestId("abrir-filtros")).toHaveAccessibleName("Filtros (2 ativos)");
     await expect(page.getByTestId("resumo-filtros")).toHaveText("Até R$ 5.000 · 2+ quartos");
     await expect(page).toHaveURL(/quartos=2/);
