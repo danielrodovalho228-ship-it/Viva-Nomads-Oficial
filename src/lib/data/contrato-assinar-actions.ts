@@ -16,6 +16,7 @@ import {
   type PapelContrato,
 } from "@/lib/contrato-assinar";
 import { montarLinhaDoTempo, type EtapaEstadia } from "@/lib/estadia-linha-tempo";
+import { normalizarRegrasPets } from "@/lib/anuncio/pets-regras";
 import {
   MSG_CODIGO_BLOQUEADO,
   VALIDADE_CODIGO_ASSINATURA_MS,
@@ -58,12 +59,12 @@ interface LinhaContrato {
   created_at: string;
   assinado_proprietario_em: string | null;
   assinado_inquilino_em: string | null;
-  properties: { title?: string; owner_id?: string; checkin_after?: string | null; checkout_before?: string | null } | null;
+  properties: { title?: string; owner_id?: string; checkin_after?: string | null; checkout_before?: string | null; pets_regras?: unknown } | null;
   contrato_blocos?: { inicio: string; fim: string }[] | null;
 }
 
 const COLUNAS =
-  "id, tenant_id, status, aluguel_mensal, prazo_total_dias, qtd_ocupantes, created_at, assinado_proprietario_em, assinado_inquilino_em, properties(title, owner_id, checkin_after, checkout_before), contrato_blocos(inicio, fim)";
+  "id, tenant_id, status, aluguel_mensal, prazo_total_dias, qtd_ocupantes, created_at, assinado_proprietario_em, assinado_inquilino_em, properties(title, owner_id, checkin_after, checkout_before, pets_regras), contrato_blocos(inicio, fim)";
 
 function montar(c: LinhaContrato, userId: string): ContratoParaAssinar | null {
   const ownerId = String(c.properties?.owner_id ?? "");
@@ -77,6 +78,7 @@ function montar(c: LinhaContrato, userId: string): ContratoParaAssinar | null {
     prazoDias: Number(c.prazo_total_dias),
     ocupantes: Number(c.qtd_ocupantes),
     criadoEm: c.created_at.slice(0, 10),
+    petsRegras: normalizarRegrasPets(c.properties?.pets_regras),
   });
   const datas = (c.contrato_blocos ?? []).filter((b) => b?.inicio && b?.fim);
   const inicio = datas.map((b) => b.inicio).sort()[0] ?? null;

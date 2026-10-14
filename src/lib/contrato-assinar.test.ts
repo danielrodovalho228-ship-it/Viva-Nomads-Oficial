@@ -61,3 +61,15 @@ test("aviso à outra parte: pede a assinatura que falta, ou diz que o contrato e
   assert.equal(assuntoAvisoOutraParte(true), "As duas partes assinaram o contrato");
   assert.doesNotMatch(assuntoAvisoOutraParte(true), /falta/);
 });
+
+test("resumo traz a cláusula de pets só quando o anúncio tem regras (ordem 022afabb, item 5)", () => {
+  const sem = resumoContrato(dados);
+  assert.ok(!sem.some((l) => l.startsWith("Pets")));
+  const regras = { especies: ["cao" as const, "gato" as const], porteMax: "M" as const, qtdMax: 2, reforcoCaucao: 500, regrasCondominio: "" };
+  const com = resumoContrato({ ...dados, petsRegras: regras });
+  const linha = com.find((l) => l.startsWith("Pets"))!;
+  assert.match(linha, /cão e gato/);
+  assert.match(linha, /Reforço de Caução/);
+  assert.notEqual(hashResumo(sem), hashResumo(com));
+  assert.ok(!/vistoria/i.test(linha));
+});

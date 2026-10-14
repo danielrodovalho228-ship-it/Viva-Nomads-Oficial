@@ -5,6 +5,7 @@
 */
 import { createHash } from "node:crypto";
 import { MARCA_MINUTA } from "./contrato-etapas.ts";
+import { linhasRegrasPets, type RegrasPets } from "./anuncio/pets-regras.ts";
 
 export type PapelContrato = "proprietario" | "inquilino";
 
@@ -21,6 +22,8 @@ export interface DadosResumo {
   prazoDias: number;
   ocupantes: number;
   criadoEm: string;
+  /** Regras de pets do anúncio (ordem 022afabb item 5): entram no resumo, não no texto do modelo. */
+  petsRegras?: RegrasPets | null;
 }
 
 /** Linhas do resumo mostradas na tela e usadas no hash (mesma fonte: o que a pessoa lê é o que ela assina). */
@@ -33,6 +36,7 @@ export function resumoContrato(d: DadosResumo): string[] {
     `Valor mensal: ${valor}`,
     `Prazo total: ${d.prazoDias} dias`,
     `Ocupantes: ${d.ocupantes}`,
+    ...(d.petsRegras ? [`Pets — ${linhasRegrasPets(d.petsRegras).join("; ")}`] : []),
     `Registrado em: ${d.criadoEm}`,
   ];
 }
