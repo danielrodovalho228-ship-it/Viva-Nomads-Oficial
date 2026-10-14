@@ -1,0 +1,77 @@
+import { test, expect } from "@playwright/test";
+import type { Page } from "@playwright/test";
+import { authFile } from "../fixtures/auth";
+
+/**
+ * T63 — ordem bbced3fa (parte 2): a área logada usa a largura cheia, igual à Visão geral.
+ * (1) a 1280 e 1920 px o conteúdo de cada rota tem a mesma largura da Visão geral (±24 px);
+ * (2) a 360 e 390 px nenhuma rota rola para o lado;
+ * (3) "Anunciar" (novo) tem 2 colunas no computador (etapa + resumo) e 1 no celular.
+ */
+const ROTAS = [
+  "/dashboard",
+  "/dashboard/imoveis",
+  "/dashboard/imoveis/novo",
+  "/dashboard/mensagens",
+  "/dashboard/locacoes",
+  "/dashboard/contratos",
+  "/dashboard/carteira",
+  "/dashboard/conta",
+  "/dashboard/notificacoes",
+  "/dashboard/solicitacoes",
+];
+
+test.use({ storageState: authFile("proprietario") });
+
+/** Largura do maior bloco direto dentro do <main> (o conteúdo da página). */
+async function larguraConteudo(page: Page): Promise<number> {
+  return page.evaluate(() => {
+    const main = document.querySelector("main");
+    if (!main) return 0;
+    return Math.round(Math.max(0, ...Array.from(main.children).map((c) => c.getBoundingClientRect().width)));
+  });
+}
+
+for (const largura of [1280, 1920]) {
+  test(`T63 — conteúdo em largura cheia a ${largura}px (±24 px da Visão geral)`, async ({ page }) => {
+    await page.setViewportSize({ width: largura, height: 900 });
+    await page.goto("/dashboard", { waitUntil: "networkidle" });
+    const referencia = await larguraConteudo(page);
+    expect(referencia).toBeGreaterThan(largura * 0.6);
+    for (const rota of ROTAS.slice(1)) {
+      await page.goto(rota, { waitUntil: "networkidle" });
+      const w = await larguraConteudo(page);
+      expect(Math.abs(w - referencia), `${rota}: ${w}px contra ${referencia}px da Visão geral`).toBeLessThanOrEqual(24);
+    }
+  });
+}
+
+for (const largura of [360, 390]) {
+  test(`T63 — sem rolagem lateral a ${largura}px nas ${ROTAS.length} rotas`, async ({ page }) => {
+    await page.setViewportSize({ width: largura, height: 800 });
+    for (const rota of ROTAS) {
+      await page.goto(rota, { waitUntil: "networkidle" });
+      const sobra = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+      expect(sobra, `${rota} rola ${sobra}px para o lado`).toBeLessThanOrEqual(1);
+    }
+  });
+}
+
+test("T63 — novo anúncio: etapa à esquerda e resumo à direita a 1280px; uma coluna a 390px", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto("/dashboard/imoveis/novo", { waitUntil: "networkidle" });
+  const resumo = page.getByTestId("novo-resumo");
+  await expect(resumo).toBeVisible();
+  const grade = page.getByTestId("novo-duas-colunas");
+  const g = (await grade.boundingBox())!;
+  const r = (await resumo.boundingBox())!;
+  expect(r.x).toBeGreaterThan(g.x + g.width * 0.6); // resumo na coluna da direita
+  const etapa = (await grade.locator("> div").first().boundingBox())!;
+  expect(etapa.x + etapa.width).toBeLessThanOrEqual(r.x); // lado a lado, sem sobrepor
+  await page.setViewportSize({ width: 390, height: 800 });
+  await page.waitForTimeout(300);
+  const g2 = (await grade.boundingBox())!;
+  const r2 = (await resumo.boundingBox())!;
+  expect(r2.y).toBeGreaterThan(g2.y + 100); // empilhado embaixo da etapa
+  expect(Math.abs(r2.x - g2.x)).toBeLessThanOrEqual(2);
+});
