@@ -123,7 +123,7 @@ export interface DecisaoRota {
  */
 export function rotear(texto: string, opcoes: { categoria?: string; temContratoAtivo?: boolean; respostasIA?: number } = {}): DecisaoRota {
   if (detectarEmergencia(texto)) return { rota: "emergencia", motivo: "emergência (193/190)" };
-  if (detectarRiscoP1(texto) || opcoes.categoria === "seguranca" || opcoes.categoria === "acesso_imovel") {
+  if (detectarRiscoP1(texto) || opcoes.categoria === "seguranca" || opcoes.categoria === "acesso_imovel" || opcoes.categoria === "camera") {
     return { rota: "p1", motivo: ehGolpe(texto) ? "golpe ou pagamento por fora" : "risco imediato (P1)" };
   }
   if (pedeHumano(texto)) return { rota: "humano", motivo: "pediu para falar com uma pessoa" };

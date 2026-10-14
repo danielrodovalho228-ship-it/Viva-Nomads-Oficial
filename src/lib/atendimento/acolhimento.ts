@@ -19,6 +19,7 @@ export const CATEGORIAS_SENSIVEIS = new Set([
   "documentos",
   "seguranca",
   "acesso_imovel",
+  "camera",
   "manutencao",
 ]);
 
