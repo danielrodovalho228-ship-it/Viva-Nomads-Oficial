@@ -179,3 +179,60 @@ test.describe("T71 — topo da /buscar", () => {
     await page.screenshot({ path: "tests/laboratorio/saida/t71-titulo-390.png" });
   });
 });
+
+/** O elemento está na frente de tudo no próprio centro (nada por cima). */
+const naFrente = (loc: import("@playwright/test").Locator) =>
+  loc.evaluate((el) => {
+    const r = el.getBoundingClientRect();
+    const topo = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+    return !!topo && (topo === el || el.contains(topo));
+  });
+
+test.describe("T71 — Limpar filtros com o painel aberto (ordem 65116a07)", () => {
+  test("computador: painel aberto não cobre 'Limpar filtros'; os dois botões limpam", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/buscar?local=Uberl%C3%A2ndia&pronto=1", { waitUntil: "networkidle" });
+    await page.getByTestId("busca-compacta").click();
+    await expect(page.getByTestId("filtros-caixa")).toBeVisible();
+
+    const daLinha = page.getByTestId("limpar-filtros");
+    await expect(daLinha).toHaveText("Limpar filtros (1)");
+    await expect(daLinha).toBeVisible();
+    expect(await naFrente(daLinha), "Limpar da linha da contagem por cima do painel").toBe(true);
+    const doPainel = page.getByTestId("limpar-filtros-painel");
+    await expect(doPainel).toBeVisible();
+    expect(await naFrente(doPainel)).toBe(true);
+    await page.screenshot({ path: "tests/laboratorio/saida/t71-limpar-painel-1440.png" });
+
+    await daLinha.click();
+    await expect(page).not.toHaveURL(/pronto=1/);
+    await expect(daLinha).toHaveCount(0);
+
+    // Rolado: o painel continua preso sob o cabeçalho, com o Limpar dele à vista.
+    if (!(await page.getByTestId("filtros-caixa").isVisible())) await page.getByTestId("busca-compacta").click();
+    await page.getByTestId("filtros-caixa").getByRole("button", { name: /Pronto para Morar/i }).click();
+    await page.mouse.wheel(0, 1200);
+    await page.waitForTimeout(300);
+    await expect(doPainel).toBeVisible();
+    expect(await naFrente(doPainel), "Limpar do painel com a página rolada").toBe(true);
+    await doPainel.click();
+    await expect(page).not.toHaveURL(/pronto=1/);
+    await expect(page.getByTestId("filtros-caixa"), "Limpar do painel não fecha o painel").toBeVisible();
+  });
+
+  test("celular: painel de filtros aberto mostra 'Limpar' clicável por cima de tudo", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/buscar?pet=1", { waitUntil: "networkidle" });
+    await page.getByTestId("abrir-filtros").click();
+    const painel = page.getByRole("dialog", { name: "Filtros" });
+    await expect(painel).toBeVisible();
+    const limpar = painel.getByRole("button", { name: "Limpar", exact: true });
+    await expect(limpar).toBeVisible();
+    expect(await naFrente(limpar), "Limpar do painel do celular por cima do botão da Viva e da barra de abas").toBe(true);
+    await page.screenshot({ path: "tests/laboratorio/saida/t71-limpar-painel-390.png" });
+    await limpar.click();
+    await painel.getByTestId("aplicar-filtros").click();
+    await expect(page).not.toHaveURL(/pet=1/);
+    await expect(page.getByTestId("abrir-filtros")).toHaveAccessibleName("Filtros");
+  });
+});

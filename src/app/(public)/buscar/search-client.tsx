@@ -129,15 +129,18 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
     window.addEventListener("resize", medir);
     const fora = (e: MouseEvent) => {
       const alvo = e.target as Node;
-      if (painelRef.current?.contains(alvo) || slotHeader?.contains(alvo)) return;
+      // Alvo que saiu do DOM no próprio clique (ex.: o Limpar do painel some ao zerar) não conta como "fora".
+      if (!alvo.isConnected || painelRef.current?.contains(alvo) || slotHeader?.contains(alvo)) return;
       // Popovers dos filtros (hóspedes, endereço) moram dentro do painel; o resto fecha.
       setPainelFiltros(false);
     };
     const esc = (e: KeyboardEvent) => e.key === "Escape" && setPainelFiltros(false);
-    document.addEventListener("mousedown", fora);
+    // "click" (não "mousedown"): o botão clicado fora (ex.: Limpar filtros) age antes do
+    // painel fechar — fechar no mousedown mudava o layout e o clique caía em outro lugar.
+    document.addEventListener("click", fora);
     document.addEventListener("keydown", esc);
     return () => {
-      document.removeEventListener("mousedown", fora);
+      document.removeEventListener("click", fora);
       document.removeEventListener("keydown", esc);
       window.removeEventListener("scroll", medir);
       window.removeEventListener("resize", medir);
@@ -549,9 +552,10 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
         />
       )}
 
-      {/* Filtros do tablet (caixa) e do computador: no computador, uma faixa fixa sob o
-          cabeçalho com a barra CENTRALIZADA e em destaque (estilo Airbnb/Furnished
-          Finder). Os mesmos controles nos dois. */}
+      {/* Filtros do tablet (caixa) e do computador: no computador, aberto pela busca
+          compacta do cabeçalho, uma faixa presa sob o cabeçalho com a barra CENTRALIZADA.
+          Ordem 65116a07: a faixa ocupa espaço (sticky, não fixed) — empurra o título e a
+          linha com "Limpar filtros" em vez de cobri-los. Os mesmos controles nos dois. */}
       <div
         ref={painelRef}
         data-testid="filtros-barra"
@@ -560,7 +564,7 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
         className={cn(
           "container-page hidden sm:block lg:order-1",
           painelFiltros
-            ? "lg:fixed lg:inset-x-0 lg:top-(--topo-painel) lg:z-40 lg:flex lg:max-w-none lg:justify-center lg:border-b lg:border-line lg:bg-white lg:px-6 lg:py-4 lg:shadow-[0_18px_30px_-20px_rgba(10,10,10,0.35)]"
+            ? "lg:sticky lg:top-(--topo-painel) lg:z-30 lg:-mx-6 lg:flex lg:w-auto lg:max-w-none lg:justify-center lg:border-b lg:border-line lg:bg-white lg:px-6 lg:py-4 lg:shadow-[0_18px_30px_-20px_rgba(10,10,10,0.35)]"
             : "lg:hidden"
         )}
       >
@@ -719,6 +723,18 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
               da marca, não filtro). 'Bem localizado' removido: subjetivo, não
               filtra nada objetivo. Dados no banco preservados. */}
 
+          {/* Ordem 65116a07: com o painel aberto, "Limpar filtros" fica dentro dele
+              (sempre visível e clicável, mesmo com a página rolada). */}
+          {activeCount > 0 && (
+            <button
+              type="button"
+              onClick={clearFilters}
+              data-testid="limpar-filtros-painel"
+              className="hidden h-9 shrink-0 items-center whitespace-nowrap rounded-full px-3 text-sm font-medium text-forest underline underline-offset-2 hover:bg-surface-2 lg:inline-flex"
+            >
+              Limpar filtros ({activeCount})
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setPainelFiltros(false)}
@@ -881,6 +897,7 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
                 <button
                   type="button"
                   onClick={clearFilters}
+                  data-testid="limpar-filtros"
                   className="whitespace-nowrap text-sm font-medium text-forest underline hover:text-blue-700"
                 >
                   Limpar filtros ({activeCount})
