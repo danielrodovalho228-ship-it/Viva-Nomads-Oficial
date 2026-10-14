@@ -231,7 +231,8 @@
         "t67-busca-celular",
         "t7-fluxo-publico",
         "t69-botoes-header",
-        "t70-busca-split"
+        "t70-busca-split",
+        "t71-busca-topo"
       ]
     },
     "/cidades": {
@@ -333,7 +334,9 @@
       "personas": [
         "inquilino"
       ],
-      "specs": []
+      "specs": [
+        "t71-busca-topo"
+      ]
     },
     "/dashboard/candidaturas": {
       "personas": [
@@ -1592,6 +1595,42 @@
         "inquilino"
       ],
       "specs": []
+    },
+    "src/lib/data/buscas-salvas-actions.ts#alternarBuscaSalva": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t71-busca-topo"
+      ]
+    },
+    "src/lib/data/buscas-salvas-actions.ts#apagarBuscaSalva": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t71-busca-topo"
+      ]
+    },
+    "src/lib/data/buscas-salvas-actions.ts#buscaEstaSalva": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t71-busca-topo"
+      ]
+    },
+    "src/lib/data/buscas-salvas-actions.ts#listarBuscasSalvas": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t71-busca-topo"
+      ]
     },
     "src/lib/data/conferencia-actions.ts#anexarLaudoConferencia": {
       "personas": [

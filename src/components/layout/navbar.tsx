@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Menu, X, ChevronDown } from "lucide-react";
 import { PUBLIC_NAV } from "@/lib/constants";
 import { Logo } from "@/components/ui/logo";
@@ -91,6 +92,9 @@ function MeuPainel({ nome, foto, onClick, className }: { nome: string; foto: str
 export function Navbar() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  // Ordem d15ef6bf: na /buscar o topo fica limpo (só logo + ações); a barra de
+  // filtros da própria busca ocupa o centro, como no Airbnb/Furnished Finder.
+  const naBusca = (usePathname() ?? "").startsWith("/buscar");
   // Reconhece a sessão: sem isto o cabeçalho mostrava "Entrar" mesmo logado.
   // `mounted` evita mismatch de hidratação (o servidor sempre renderiza o estado
   // deslogado; o cliente corrige após reidratar o store).
@@ -136,7 +140,8 @@ export function Navbar() {
       <nav className="flex h-18 w-full items-center gap-10 px-5 py-3 sm:px-8 xl:px-10 2xl:gap-14 2xl:px-12">
         <Logo className="shrink-0" />
 
-        <div data-testid="nav-links" className="hidden min-w-0 flex-1 items-center gap-6 xl:flex 2xl:gap-8">
+        {naBusca && <div className="hidden flex-1 xl:block" aria-hidden />}
+        <div data-testid="nav-links" className={cn("hidden min-w-0 flex-1 items-center gap-6 xl:flex 2xl:gap-8", naBusca && "xl:hidden")}>
           {PRINCIPAIS.map((item) => (
             <Link
               key={item.href}
@@ -149,7 +154,7 @@ export function Navbar() {
           {MAIS.length > 0 && <MenuMais />}
         </div>
 
-        <div data-testid="nav-acoes" className="hidden shrink-0 items-center gap-3 xl:flex 2xl:gap-4">
+        <div data-testid="nav-acoes" className={cn("hidden shrink-0 items-center gap-3 xl:flex 2xl:gap-4", naBusca && "ml-auto lg:flex")}>
           {loggedIn ? (
             <MeuPainel nome={nome} foto={foto} />
           ) : (
@@ -163,7 +168,7 @@ export function Navbar() {
         </div>
 
         <button
-          className="ml-auto grid h-10 w-10 shrink-0 place-items-center rounded-lg text-ink xl:hidden"
+          className={cn("ml-auto grid h-10 w-10 shrink-0 place-items-center rounded-lg text-ink xl:hidden", naBusca && "lg:hidden")}
           onClick={() => setOpen((v) => !v)}
           aria-label={open ? "Fechar menu" : "Abrir menu"}
         >
