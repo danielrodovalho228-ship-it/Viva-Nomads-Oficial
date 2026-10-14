@@ -3,7 +3,7 @@ import type { Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 
 /**
- * T63 — ordem bbced3fa (parte 2): a área logada usa a largura cheia, igual à Visão geral.
+ * T64 — ordem bbced3fa (parte 2): a área logada usa a largura cheia, igual à Visão geral.
  * (1) a 1280 e 1920 px o conteúdo de cada rota tem a mesma largura da Visão geral (±24 px);
  * (2) a 360 e 390 px nenhuma rota rola para o lado;
  * (3) "Anunciar" (novo) tem 2 colunas no computador (etapa + resumo) e 1 no celular.
@@ -33,7 +33,7 @@ async function larguraConteudo(page: Page): Promise<number> {
 }
 
 for (const largura of [1280, 1920]) {
-  test(`T63 — conteúdo em largura cheia a ${largura}px (±24 px da Visão geral)`, async ({ page }) => {
+  test(`T64 — conteúdo em largura cheia a ${largura}px (±24 px da Visão geral)`, async ({ page }) => {
     await page.setViewportSize({ width: largura, height: 900 });
     await page.goto("/dashboard", { waitUntil: "networkidle" });
     const referencia = await larguraConteudo(page);
@@ -47,7 +47,7 @@ for (const largura of [1280, 1920]) {
 }
 
 for (const largura of [360, 390]) {
-  test(`T63 — sem rolagem lateral a ${largura}px nas ${ROTAS.length} rotas`, async ({ page }) => {
+  test(`T64 — sem rolagem lateral a ${largura}px nas ${ROTAS.length} rotas`, async ({ page }) => {
     await page.setViewportSize({ width: largura, height: 800 });
     for (const rota of ROTAS) {
       await page.goto(rota, { waitUntil: "networkidle" });
@@ -57,7 +57,7 @@ for (const largura of [360, 390]) {
   });
 }
 
-test("T63 — novo anúncio: etapa à esquerda e resumo à direita a 1280px; uma coluna a 390px", async ({ page }) => {
+test("T64 — novo anúncio: etapa à esquerda e resumo à direita a 1280px; uma coluna a 390px", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto("/dashboard/imoveis/novo", { waitUntil: "networkidle" });
   const resumo = page.getByTestId("novo-resumo");
