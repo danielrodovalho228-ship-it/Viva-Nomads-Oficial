@@ -6,7 +6,7 @@
   especialização (trabalhar de casa, bem localizado p/ trabalho, aceito em condomínio).
 */
 
-import { type InternetTier, internetWorksForRemote } from "./internet";
+import { type InternetTier, internetWorksForRemote } from "./internet.ts";
 
 export interface EligibilityState {
   furnished: boolean;

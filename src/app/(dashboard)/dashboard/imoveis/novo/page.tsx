@@ -25,7 +25,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { DateFieldBR } from "@/components/ui/date-field-br";
-import { createProperty, updateProperty, loadPropertyForEdit, getMyDocumentStatus, saveDraftData, loadDraftData, getLatestDraft, type DocumentStatus } from "@/lib/data/actions";
+import { createProperty, updateProperty, loadPropertyForEdit, getMyDocumentStatus, carregarQualificacao, saveDraftData, loadDraftData, getLatestDraft, type DocumentStatus } from "@/lib/data/actions";
 import { prontidaoAnuncio, rotuloDocumento } from "@/lib/anuncio/prontidao";
 import { geocodeForSave } from "@/lib/integrations/geocoding";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
@@ -50,6 +50,7 @@ import { cn, formatBRL } from "@/lib/utils";
 import { TEXTO_REGRA_CURTO } from "@/lib/cobranca/regra";
 import { LinhaComparativoAnuncio } from "@/components/precos/comparativo-precos";
 import { useAuthStore } from "@/lib/store";
+import { qualificadoDoServidor } from "@/lib/anuncio/qualificacao-rascunho";
 import { setPreferredMode } from "@/lib/data/mode-actions";
 import { draftKey, DRAFT_KEY_LEGADO } from "@/lib/local-keys";
 import { registrarEvento } from "@/lib/eventos/registrar";
@@ -297,6 +298,23 @@ export default function NewPropertyPage() {
       alive = false;
     };
   }, [imovelId]);
+
+  // F8: rascunho retomado (?draft=) lê a qualificação DESTE imóvel no servidor;
+  // sem ela (ou não elegível), o aviso "Antes de anunciar" aparece e publicar é barrado.
+  useEffect(() => {
+    if (!draftParam || editId) return;
+    let alive = true;
+    carregarQualificacao(draftParam)
+      .then((q) => {
+        if (alive) setQualificado(qualificadoDoServidor(q));
+      })
+      .catch(() => {
+        if (alive) setQualificado(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [draftParam, editId]);
 
   // Barra de qualidade do anúncio: fotos + descrição + recursos (rodada 11).
   const quality = Math.min(
