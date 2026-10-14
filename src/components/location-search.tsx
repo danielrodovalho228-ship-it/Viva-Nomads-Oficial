@@ -18,6 +18,8 @@ interface Props {
   /** Endereço escolhido no dropdown — traz coordenadas para filtrar por raio. */
   onSelect: (s: GeoSuggestion) => void;
   datalistId?: string;
+  /** Texto de exemplo do campo (o celular usa "Cidade, bairro ou endereço"). */
+  placeholder?: string;
 }
 
 /**
@@ -29,6 +31,7 @@ export function LocationSearch({
   value,
   onChange,
   onSelect,
+  placeholder,
 }: Props) {
   if (!geocodingEnabled) {
     // Sem Mapbox: autocomplete próprio das cidades/bairros atendidos (funciona
@@ -37,14 +40,15 @@ export function LocationSearch({
       <CityAutocomplete
         value={value}
         onChange={onChange}
+        placeholder={placeholder}
         pillClassName="flex items-center gap-2 rounded-full border border-sage-200 bg-white px-3.5 py-2"
       />
     );
   }
-  return <LocationGeocoder value={value} onChange={onChange} onSelect={onSelect} />;
+  return <LocationGeocoder value={value} onChange={onChange} onSelect={onSelect} placeholder={placeholder} />;
 }
 
-function LocationGeocoder({ value, onChange, onSelect }: Props) {
+function LocationGeocoder({ value, onChange, onSelect, placeholder = "Endereço, bairro ou cidade" }: Props) {
   const [open, setOpen] = useState(false);
   const [suggestions, setSuggestions] = useState<GeoSuggestion[]>([]);
   const [loading, setLoading] = useState(false);
@@ -138,7 +142,7 @@ function LocationGeocoder({ value, onChange, onSelect }: Props) {
           onChange={(e) => onChange(e.target.value)}
           onFocus={() => suggestions.length > 0 && setOpen(true)}
           onKeyDown={onKeyDown}
-          placeholder="Endereço, bairro ou cidade"
+          placeholder={placeholder}
           autoComplete="off"
           className="w-48 bg-transparent text-sm text-ink outline-none placeholder:text-muted"
         />

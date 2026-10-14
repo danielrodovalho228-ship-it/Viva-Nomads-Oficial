@@ -24,6 +24,8 @@ import { registrarEvento } from "@/lib/eventos/registrar";
 import { chaveCidade } from "@/lib/cidades";
 import { FAIXAS, GARANTIAS_FAIXA, GARANTIAS_PUBLICAS, CAUCAO_PARCELADA_UI } from "@/lib/faixas";
 import { SELO_NF_UI } from "@/lib/flags";
+import { PainelFiltrosCelular } from "@/components/busca/painel-filtros-celular";
+import { contarFiltrosPainel, passaNoPainel, resumoFiltros, type FiltrosPainel } from "@/lib/busca/painel-filtros";
 
 // Filtro de garantia exibido na busca pública: caução unificada + seguro-fiança
 // (a modalidade parcelada fica fora da UI até o parecer — B1). Religa com a flag.
@@ -99,7 +101,8 @@ export function SearchClient({ properties }: { properties: Property[] }) {
   const [invoiceOnly, setInvoiceOnly] = useState(false);
   const [insuranceOnly, setInsuranceOnly] = useState(false);
   const [operatedOnly, setOperatedOnly] = useState(false);
-  const [filtersOpen, setFiltersOpen] = useState(false); // acordeão de filtros no mobile
+  const [filtersOpen, setFiltersOpen] = useState(false); // acordeão de filtros (legado, sm+)
+  const [painelAberto, setPainelAberto] = useState(false); // painel de filtros do celular (ordem 314f764e)
   const [drawerOpen, setDrawerOpen] = useState(false); // painel "Mais filtros" (Fase 2)
   const [activeId, setActiveId] = useState<string | null>(null); // sincronia lista↔mapa
   const [mobileTab, setMobileTab] = useState<"list" | "map">("list");
@@ -268,7 +271,14 @@ export function SearchClient({ properties }: { properties: Property[] }) {
     setSort("relevance");
   }
 
-  const results = useMemo(() => {
+  // Filtros do painel do celular (preço, quartos, pets, home office, selo): a
+  // MESMA regra para a lista e para a contagem "Mostrar N imóveis" do painel.
+  const filtrosPainel: FiltrosPainel = useMemo(
+    () => ({ maxPrice, minBedrooms, petsOnly, homeOfficeOnly, readyToLiveOnly }),
+    [maxPrice, minBedrooms, petsOnly, homeOfficeOnly, readyToLiveOnly]
+  );
+
+  const { base, dist } = useMemo(() => {
     const loc = locationQuery.trim().toLowerCase();
     // Distância calculada UMA vez por imóvel quando há endereço — reusada no
     // filtro por raio e na ordenação por proximidade (evita recomputar o
@@ -278,15 +288,13 @@ export function SearchClient({ properties }: { properties: Property[] }) {
           properties.map((p) => [p.id, distanceKm(geoCenter.lat, geoCenter.lng, p.lat, p.lng)])
         )
       : null;
-    let list = properties.filter((p) => {
+    const list = properties.filter((p) => {
       // Com endereço geocodificado, filtra por raio; senão, por nome (bairro/cidade).
       if (dist) {
         if (dist.get(p.id)! > radiusKm) return false;
       } else if (loc && !`${p.neighborhood} ${p.city}`.toLowerCase().includes(loc)) {
         return false;
       }
-      if (maxPrice && p.monthlyPrice > maxPrice) return false;
-      if (minBedrooms && p.bedrooms < minBedrooms) return false;
       // Hóspedes: só exclui quando a capacidade É conhecida e menor que o total
       // (imóveis sem capacidade cadastrada continuam aparecendo — não some estoque).
       if (p.maxGuests != null && p.maxGuests < adults + children) return false;
@@ -295,16 +303,20 @@ export function SearchClient({ properties }: { properties: Property[] }) {
       if (faixa && !(p.faixasAceitas ?? []).includes(faixa)) return false;
       if (dataEntrada && p.availableFrom && p.availableFrom > dataEntrada) return false;
       if (garantia && !aceitaGarantia(p, garantia)) return false;
-      if (petsOnly && !p.petsAllowed) return false;
       if (furnishedOnly && !p.furnished) return false;
-      if (readyToLiveOnly && !p.readyToLiveBadge) return false;
-      if (homeOfficeOnly && !p.tagHomeOffice) return false;
       if (workLocatedOnly && !p.tagWorkLocated) return false;
       if (invoiceOnly && !p.issuesInvoice) return false;
       if (insuranceOnly && !p.acceptsInsurance) return false;
       if (operatedOnly && !(p.ownershipType !== "own" && p.subleaseAuthorized)) return false;
       return true;
     });
+    return { base: list, dist };
+  }, [properties, locationQuery, geoCenter, radiusKm, adults, children, maxPeriod, typeFilter, faixa, dataEntrada, garantia, furnishedOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly]);
+
+  const contarComPainel = useCallback((f: FiltrosPainel) => base.filter((p) => passaNoPainel(p, f)).length, [base]);
+
+  const results = useMemo(() => {
+    let list = base.filter((p) => passaNoPainel(p, filtrosPainel));
     if (sort === "price-asc") list = [...list].sort((a, b) => a.monthlyPrice - b.monthlyPrice);
     else if (sort === "price-desc") list = [...list].sort((a, b) => b.monthlyPrice - a.monthlyPrice);
     // Adicionados recentemente: mais novos (data de cadastro) primeiro.
@@ -322,7 +334,7 @@ export function SearchClient({ properties }: { properties: Property[] }) {
           searchPriority(tierFromPhotoCount(a.photos.length))
       );
     return list;
-  }, [properties, locationQuery, geoCenter, radiusKm, maxPrice, minBedrooms, adults, children, maxPeriod, typeFilter, faixa, dataEntrada, garantia, petsOnly, furnishedOnly, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly, sort]);
+  }, [base, dist, filtrosPainel, sort]);
 
   const activeCount =
     (maxPrice ? 1 : 0) +
@@ -377,10 +389,84 @@ export function SearchClient({ properties }: { properties: Property[] }) {
     setFurnishedOnly(false);
   }
 
+  const nPainel = contarFiltrosPainel(filtrosPainel);
+  function aplicarPainel(f: FiltrosPainel) {
+    setMaxPrice(f.maxPrice);
+    setMinBedrooms(f.minBedrooms);
+    setPetsOnly(f.petsOnly);
+    setHomeOfficeOnly(f.homeOfficeOnly);
+    setReadyToLiveOnly(f.readyToLiveOnly);
+    setPainelAberto(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   return (
-    <div className="container-page py-6">
-      {/* Filtros (acordeão no mobile, sempre abertos no sm+) */}
-      <div className="rounded-2xl border border-sage-200 bg-white p-4">
+    <div className="container-page py-4 sm:py-6">
+      {/* ── CELULAR (ordem 314f764e): busca + botão de filtros + total ── */}
+      <div className="sm:hidden" data-testid="busca-celular">
+        <div className="flex items-center gap-2 rounded-2xl border border-line bg-white p-2 shadow-[0_8px_24px_-16px_rgba(11,42,102,0.35)]">
+          <div className="min-w-0 flex-1">
+            <LocationSearch
+              placeholder="Cidade, bairro ou endereço"
+              value={locationQuery}
+              onChange={(text) => {
+                setLocationQuery(text);
+                setGeoCenter(null);
+              }}
+              onSelect={(s: GeoSuggestion) => {
+                setLocationQuery(s.label);
+                setGeoCenter({ lat: s.lat, lng: s.lng });
+              }}
+            />
+            <p className="truncate px-3.5 pt-1 text-xs text-muted" data-testid="resumo-filtros">
+              {resumoFiltros(filtrosPainel)}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setPainelAberto(true)}
+            aria-label={nPainel ? `Filtros (${nPainel} ativos)` : "Filtros"}
+            aria-haspopup="dialog"
+            data-testid="abrir-filtros"
+            className="relative grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-line text-forest transition-colors hover:border-forest"
+          >
+            <SlidersHorizontal className="h-5 w-5" />
+            {nPainel > 0 && (
+              <span className="absolute -right-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-forest px-1 text-[11px] font-bold text-white">
+                {nPainel}
+              </span>
+            )}
+          </button>
+        </div>
+        <div className="mt-3 flex items-center justify-between gap-3">
+          <p className="text-sm font-semibold text-ink" data-testid="total-celular">
+            {results.length} {results.length === 1 ? "imóvel" : "imóveis"}
+            {locationQuery.trim() && <span className="font-normal text-muted"> em {locationQuery.trim()}</span>}
+          </p>
+          <Select
+            label="Ordenar resultados"
+            value={sort}
+            onChange={(v) => setSort(v as typeof sort)}
+            options={[
+              ["relevance", "Relevância"],
+              ["recent", "Mais recentes"],
+              ["price-asc", "Menor preço"],
+              ["price-desc", "Maior preço"],
+            ]}
+          />
+        </div>
+      </div>
+      {painelAberto && (
+        <PainelFiltrosCelular
+          inicial={filtrosPainel}
+          contar={contarComPainel}
+          onAplicar={aplicarPainel}
+          onFechar={() => setPainelAberto(false)}
+        />
+      )}
+
+      {/* Filtros do computador (tablet e acima) */}
+      <div className="hidden rounded-2xl border border-sage-200 bg-white p-4 sm:block">
         <div className="flex items-center justify-between gap-3">
           <button
             type="button"
@@ -645,8 +731,8 @@ export function SearchClient({ properties }: { properties: Property[] }) {
         )}
       </div>
 
-      <div className="mt-4 flex items-center justify-between gap-3">
-        <p className="text-sm text-muted">
+      <div className={cn("mt-4 items-center justify-between gap-3", MAPA_ON ? "flex" : "hidden sm:flex")}>
+        <p className="hidden text-sm text-muted sm:block">
           <span className="font-medium text-ink">
             {results.length} {results.length === 1 ? "imóvel" : "imóveis"}
           </span>
@@ -741,7 +827,7 @@ export function SearchClient({ properties }: { properties: Property[] }) {
               </Link>
             </div>
           ) : (
-            <div className={cn("grid gap-6 sm:grid-cols-2", !MAPA_ON && "lg:grid-cols-3")}>
+            <div className={cn("grid gap-4 sm:grid-cols-2 sm:gap-6", !MAPA_ON && "lg:grid-cols-3")}>
               {/* h2 (invisível) entre o h1 do topo e os h3 dos cards — sem pular nível. */}
               <h2 className="sr-only">Imóveis encontrados</h2>
               {results.map((p) => (
