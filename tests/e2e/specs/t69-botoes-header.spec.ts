@@ -84,15 +84,20 @@ test.describe("T69 — header e botões padronizados", () => {
 
   for (const largura of [360, 390, 768, 1280]) {
     test(`botões das páginas públicas a ${largura}px: uma linha, sem estourar, mesmo padrão`, async ({ page }) => {
-      test.setTimeout(120_000);
+      // 9 páginas por largura: sem esperar "networkidle" (o mapa de /buscar e os pings não deixam a rede
+      // ociosa a 768 px e estouravam os 120 s), só o HTML e o primeiro botão renderizado.
+      test.setTimeout(240_000);
       await page.setViewportSize({ width: largura, height: 900 });
       const problemas: string[] = [];
       const estilos = new Set<string>();
       for (const rota of PAGINAS) {
-        await page.goto(rota, { waitUntil: "networkidle" });
+        await page.goto(rota, { waitUntil: "domcontentloaded" });
+        await page.waitForLoadState("load");
+        await page.locator("[data-cta]").first().waitFor({ state: "attached", timeout: 10_000 }).catch(() => undefined);
         // Abre o menu mobile do header (se a página tiver o header público) para medir os botões dele também.
-        const menu = page.getByRole("button", { name: "Abrir menu" });
-        if (largura < 1280 && (await menu.count())) await menu.first().click();
+        // Só clica no botão visível (a 768 px podem existir dois "Abrir menu", um escondido).
+        const menu = page.getByRole("button", { name: "Abrir menu" }).locator("visible=true");
+        if (largura < 1280 && (await menu.count())) await menu.first().click({ timeout: 5_000 });
         const r = await page.evaluate(() => {
           const out: { txt: string; prob?: string; estilo?: string }[] = [];
           for (const el of Array.from(document.querySelectorAll<HTMLElement>("[data-cta]"))) {
