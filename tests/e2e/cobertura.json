@@ -230,7 +230,8 @@
         "t23-pacote-seguranca",
         "t67-busca-celular",
         "t7-fluxo-publico",
-        "t69-botoes-header"
+        "t69-botoes-header",
+        "t70-busca-split"
       ]
     },
     "/cidades": {

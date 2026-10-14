@@ -1,21 +1,16 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { MapPin } from "lucide-react";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import type { Property } from "@/lib/types";
 import { formatBRL, cn } from "@/lib/utils";
-import { BrandImage } from "@/components/brand-image";
-import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
-import { ReadyToLiveBadge } from "@/components/ui/badge";
+import { CardPinMapa } from "@/components/busca/card-pin-mapa";
 
 const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-
-const isPhoto = (s?: string) =>
-  typeof s === "string" && (/^https?:\/\//.test(s) || s.startsWith("/"));
 
 const esc = (s: string) =>
   s.replace(
@@ -30,7 +25,7 @@ const pinClass = (active: boolean) =>
     PIN_BASE,
     active
       ? "z-20 scale-110 bg-night text-white ring-2 ring-champagne"
-      : "z-10 bg-forest text-white"
+      : "z-10 bg-white text-ink ring-1 ring-line hover:scale-105"
   );
 
 // Cor primária de marca (forest) para o traçado do raio.
@@ -65,14 +60,18 @@ function circlePolygon(
 
 /**
  * Mapa de resultados com pins de preço interativos e sincronia lista↔mapa
- * (rodada 11). Com NEXT_PUBLIC_MAPBOX_TOKEN renderiza o Mapbox GL real; sem o
- * token, cai para um placeholder de marca (pins posicionados por lat/lng
- * normalizada) — a app continua funcional em modo demonstração.
+ * (rodada 11; comportamento do Furnished Finder, ordem ca0e7dad): passar o
+ * mouse no pin SÓ destaca o pin (e o card da lista); clicar abre o card do
+ * imóvel ancorado no mapa, sem sair da página. Com NEXT_PUBLIC_MAPBOX_TOKEN renderiza o Mapbox GL; sem o
+ * token, Leaflet com o mapa-base da CARTO (ordem ca0e7dad: mapa real sempre).
  */
 interface SearchMapProps {
   properties: Property[];
   activeId: string | null;
   onHover: (id: string | null) => void;
+  /** Imóvel com o card aberto no mapa (clique no pin). */
+  selectedId?: string | null;
+  onSelect?: (id: string | null) => void;
   /** Endereço buscado (geocoding) — centro do raio, recebe um marcador próprio. */
   focus?: { lat: number; lng: number } | null;
   /** Raio (km) desenhado ao redor do endereço buscado. */
@@ -81,7 +80,7 @@ interface SearchMapProps {
 }
 
 export function SearchMap(props: SearchMapProps) {
-  if (!TOKEN) return <SearchMapPlaceholder {...props} />;
+  if (!TOKEN) return <SearchMapLeaflet {...props} />;
   return <SearchMapbox {...props} />;
 }
 
@@ -93,11 +92,14 @@ function SearchMapbox({
   properties,
   activeId,
   onHover,
+  selectedId = null,
+  onSelect,
   focus,
   radiusKm = 10,
   className,
 }: SearchMapProps) {
-  const router = useRouter();
+  const [popupEl] = useState(() => (typeof document === "undefined" ? null : document.createElement("div")));
+  const onSelectRef = useRef(onSelect);
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<Map<string, { marker: mapboxgl.Marker; el: HTMLElement }>>(
@@ -110,12 +112,11 @@ function SearchMapbox({
   // precisarem recriar o mapa a cada render.
   const onHoverRef = useRef(onHover);
   const propsRef = useRef(properties);
-  const routerRef = useRef(router);
   const focusRef = useRef(focus);
   useEffect(() => {
     onHoverRef.current = onHover;
+    onSelectRef.current = onSelect;
     propsRef.current = properties;
-    routerRef.current = router;
     focusRef.current = focus;
   });
 
@@ -158,11 +159,16 @@ function SearchMapbox({
 
     list.forEach((p) => {
       const el = document.createElement("div");
-      el.className = pinClass(p.id === activeId);
+      el.className = pinClass(p.id === activeId || p.id === selectedId);
+      el.dataset.testid = "pin-mapa";
+      el.dataset.id = p.id;
       el.textContent = formatBRL(p.monthlyPrice);
       el.addEventListener("mouseenter", () => onHoverRef.current(p.id));
       el.addEventListener("mouseleave", () => onHoverRef.current(null));
-      el.addEventListener("click", () => routerRef.current.push(`/imoveis/${p.id}`));
+      el.addEventListener("click", (e) => {
+        e.stopPropagation();
+        onSelectRef.current?.(p.id);
+      });
       const marker = new mapboxgl.Marker({ element: el })
         .setLngLat([p.lng, p.lat])
         .addTo(map);
@@ -261,215 +267,217 @@ function SearchMapbox({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusKey]);
 
-  // Realce do pin ativo + mini-card (popup) sincronizados com a lista.
+  // Clicar no mapa (fora de um pin) fecha o card.
   useEffect(() => {
     const map = mapRef.current;
-    markersRef.current.forEach(({ el }, id) => {
-      el.className = pinClass(id === activeId);
-    });
+    if (!map) return;
+    const fechar = () => onSelectRef.current?.(null);
+    map.on("click", fechar);
+    return () => {
+      map.off("click", fechar);
+    };
+  }, []);
 
+  // Realce do pin (hover ou aberto) — hover NÃO abre nada, só muda a cor.
+  useEffect(() => {
+    markersRef.current.forEach(({ el }, id) => {
+      el.className = pinClass(id === activeId || id === selectedId);
+    });
+  }, [activeId, selectedId, sig]);
+
+  // Card do imóvel ancorado no pin clicado.
+  useEffect(() => {
+    const map = mapRef.current;
     popupRef.current?.remove();
     popupRef.current = null;
-    if (!map || !activeId) return;
-    const p = propsRef.current.find((x) => x.id === activeId);
-    if (!p) return;
-
-    popupRef.current = new mapboxgl.Popup({
-      closeButton: false,
-      closeOnClick: false,
-      offset: 18,
-      maxWidth: "200px",
-    })
+    const p = selectedId ? propsRef.current.find((x) => x.id === selectedId) : null;
+    if (!map || !p || !popupEl) return;
+    popupRef.current = new mapboxgl.Popup({ closeButton: false, closeOnClick: false, offset: 18, maxWidth: "none", className: "vn-popup" })
       .setLngLat([p.lng, p.lat])
-      .setHTML(
-        `<div class="w-44">
-           <p class="line-clamp-1 text-sm font-semibold text-ink">${esc(p.title)}</p>
-           <p class="text-xs text-muted">${esc(p.neighborhood)} · ${formatBRL(
-             p.monthlyPrice
-           )}/mês</p>
-         </div>`
-      )
+      .setDOMContent(popupEl)
       .addTo(map);
-  }, [activeId, sig]);
+  }, [selectedId, sig, popupEl]);
+
+  const aberto = selectedId ? properties.find((x) => x.id === selectedId) : null;
 
   return (
-    <div
-      ref={containerRef}
-      className={cn("overflow-hidden rounded-2xl border border-line", className)}
-    />
+    <>
+      <div ref={containerRef} data-testid="mapa-busca" className={cn("overflow-hidden rounded-2xl border border-line", className)} />
+      {aberto && popupEl && createPortal(<CardPinMapa property={aberto} onFechar={() => onSelect?.(null)} />, popupEl)}
+    </>
   );
 }
 
 /* ------------------------------------------------------------------ */
-/* Placeholder de marca (sem token — modo demonstração)                */
+/* Leaflet + CARTO (sem token — mapa real, sem chave)                   */
 /* ------------------------------------------------------------------ */
 
-function SearchMapPlaceholder({
-  properties,
-  activeId,
-  onHover,
-  focus,
-  radiusKm = 10,
-  className,
-}: SearchMapProps) {
-  if (properties.length === 0) {
-    // Sem imóveis no resultado. Se há um endereço buscado (ex.: link
-    // compartilhado com raio que não cobre nenhum imóvel), ainda mostramos o
-    // centro e o raio centralizados — sem imóveis não há escala de referência,
-    // então o círculo usa um tamanho fixo só como indicação visual.
-    return (
-      <div
-        className={cn(
-          "relative grid place-items-center overflow-hidden rounded-2xl border border-line bg-surface-2 text-blue-200",
-          className
-        )}
-      >
-        {focus ? (
-          <>
-            <div
-              style={{
-                width: "55%",
-                aspectRatio: "1 / 1",
-                borderColor: RADIUS_COLOR,
-                backgroundColor: `${RADIUS_COLOR}14`,
-              }}
-              className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed"
-              aria-hidden
-            />
-            <div
-              className="relative z-10 grid h-7 w-7 place-items-center rounded-full border-2 border-white bg-night text-white shadow-lg ring-2 ring-champagne"
-              aria-label="Endereço buscado"
-            >
-              <MapPin className="h-4 w-4" />
-            </div>
-          </>
-        ) : (
-          <MapPin className="h-10 w-10" />
-        )}
-      </div>
-    );
-  }
+/**
+ * Sem NEXT_PUBLIC_MAPBOX_TOKEN, o mapa da busca usa Leaflet com o mapa-base
+ * claro da CARTO (dados do OpenStreetMap): gratuito, sem chave, só pede a
+ * atribuição no canto. Pins de preço em HTML (mesma marca do Mapbox), realce
+ * em sincronia com a lista e clique abrindo o imóvel.
+ */
+/**
+ * Enquadra todos os pins (+ endereço buscado). Chamado ao trocar os resultados e
+ * quando o painel ganha tamanho (o mapa nasce antes do layout assentar).
+ */
+function enquadrarMapa(map: L.Map, list: Property[], focus?: { lat: number; lng: number } | null) {
+  map.invalidateSize();
+  const pts: L.LatLngExpression[] = list.map((p) => [p.lat, p.lng]);
+  if (focus) pts.push([focus.lat, focus.lng]);
+  if (pts.length === 1) map.setView(pts[0], 14);
+  else if (pts.length > 1) map.fitBounds(L.latLngBounds(pts), { padding: [48, 48], maxZoom: 14 });
+}
 
-  const lats = properties.map((p) => p.lat).concat(focus ? [focus.lat] : []);
-  const lngs = properties.map((p) => p.lng).concat(focus ? [focus.lng] : []);
-  const minLat = Math.min(...lats), maxLat = Math.max(...lats);
-  const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
-  const spanLat = maxLat - minLat || 1;
-  const spanLng = maxLng - minLng || 1;
-  // Padding interno (10%–90%) para os pins não colarem na borda.
-  const posX = (lng: number) => 10 + ((lng - minLng) / spanLng) * 80;
-  const posY = (lat: number) => 90 - ((lat - minLat) / spanLat) * 80; // lat maior = mais ao norte (topo)
+function SearchMapLeaflet({ properties, activeId, onHover, selectedId = null, onSelect, focus, radiusKm = 10, className }: SearchMapProps) {
+  const [popupEl] = useState(() => {
+    if (typeof document === "undefined") return null;
+    const el = document.createElement("div");
+    L.DomEvent.disableClickPropagation(el);
+    return el;
+  });
+  const popupRef = useRef<L.Popup | null>(null);
+  const onSelectRef = useRef(onSelect);
+  const selRef = useRef(selectedId);
+  const focusRef = useRef(focus);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<L.Map | null>(null);
+  const markersRef = useRef<Map<string, { marker: L.Marker; el: HTMLElement }>>(new Map());
+  const focusLayerRef = useRef<L.LayerGroup | null>(null);
 
-  const activeProp = properties.find((p) => p.id === activeId) ?? null;
+  const onHoverRef = useRef(onHover);
+  const propsRef = useRef(properties);
+  const activeRef = useRef(activeId);
+  useEffect(() => {
+    onHoverRef.current = onHover;
+    onSelectRef.current = onSelect;
+    propsRef.current = properties;
+    activeRef.current = activeId;
+    selRef.current = selectedId;
+    focusRef.current = focus;
+  });
 
-  // Diâmetro do raio em % do quadro (projeção linear → vira elipse, como o mapa
-  // real distorce longe do equador). km → graus → fração do span exibido.
-  const degLat = kmToDegLat(radiusKm);
-  const degLng = kmToDegLng(radiusKm, focus?.lat ?? 0);
-  const radiusW = focus ? (2 * degLng / spanLng) * 80 : 0;
-  const radiusH = focus ? (2 * degLat / spanLat) * 80 : 0;
+  const sig = properties.map((p) => p.id).join("|");
+  const focusKey = focus ? `${focus.lat},${focus.lng},${radiusKm}` : "";
+
+  // Inicializa o mapa uma vez; acompanha o tamanho do contêiner (painel fixo).
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const map = L.map(containerRef.current, { zoomControl: false, scrollWheelZoom: true }).setView([-18.911, -48.262], 12);
+    L.control.zoom({ position: "topright" }).addTo(map);
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+      subdomains: "abcd",
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    }).addTo(map);
+    map.on("click", () => onSelectRef.current?.(null));
+    mapRef.current = map;
+    // Ao ganhar tamanho pela 1ª vez, enquadra; depois só ajusta o tamanho.
+    let enquadrado = false;
+    const ro = new ResizeObserver(([e]) => {
+      if (!e || e.contentRect.height < 10) return;
+      if (!enquadrado) {
+        enquadrado = true;
+        enquadrarMapa(map, propsRef.current, focusRef.current);
+      } else map.invalidateSize();
+    });
+    ro.observe(containerRef.current);
+    const markers = markersRef.current;
+    return () => {
+      ro.disconnect();
+      map.remove();
+      mapRef.current = null;
+      markers.clear();
+    };
+  }, []);
+
+  // (Re)cria os pins quando o conjunto de resultados muda e enquadra tudo.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    markersRef.current.forEach(({ marker }) => marker.remove());
+    markersRef.current.clear();
+    const list = propsRef.current;
+    list.forEach((p) => {
+      const icon = L.divIcon({
+        className: "",
+        iconSize: [0, 0],
+        html: `<div data-testid="pin-mapa" data-id="${esc(p.id)}" class="${pinClass(p.id === activeRef.current || p.id === selRef.current)} absolute left-0 top-0 -translate-x-1/2 -translate-y-1/2">${esc(formatBRL(p.monthlyPrice))}</div>`,
+      });
+      const marker = L.marker([p.lat, p.lng], { icon, title: p.title, riseOnHover: true }).addTo(map);
+      const el = marker.getElement()!.firstElementChild as HTMLElement;
+      el.addEventListener("mouseenter", () => onHoverRef.current(p.id));
+      el.addEventListener("mouseleave", () => onHoverRef.current(null));
+      marker.on("click", () => onSelectRef.current?.(p.id));
+      markersRef.current.set(p.id, { marker, el });
+    });
+    enquadrarMapa(map, list, focusRef.current);
+  }, [sig, focusKey]);
+
+  // Centro do endereço buscado + círculo do raio.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    focusLayerRef.current?.remove();
+    focusLayerRef.current = null;
+    if (!focus) return;
+    const g = L.layerGroup().addTo(map);
+    L.circle([focus.lat, focus.lng], {
+      radius: radiusKm * 1000,
+      color: RADIUS_COLOR,
+      weight: 1.5,
+      opacity: 0.5,
+      dashArray: "4 4",
+      fillColor: RADIUS_COLOR,
+      fillOpacity: 0.08,
+    }).addTo(g);
+    L.marker([focus.lat, focus.lng], {
+      interactive: false,
+      icon: L.divIcon({
+        className: "",
+        iconSize: [0, 0],
+        html: '<div aria-label="Endereço buscado" class="absolute left-0 top-0 h-7 w-7 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-night shadow-lg ring-2 ring-champagne"></div>',
+      }),
+    }).addTo(g);
+    focusLayerRef.current = g;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusKey]);
+
+  // Realce do pin (hover no card ou no pin, ou card aberto): só muda a cor e
+  // traz o pin para a frente — hover não abre nada.
+  useEffect(() => {
+    markersRef.current.forEach(({ marker, el }, id) => {
+      const on = id === activeId || id === selectedId;
+      el.className = `${pinClass(on)} absolute left-0 top-0 -translate-x-1/2 -translate-y-1/2`;
+      el.dataset.ativo = on ? "1" : "0";
+      marker.setZIndexOffset(on ? 1000 : 0);
+    });
+  }, [activeId, selectedId, sig]);
+
+  // Card do imóvel ancorado no pin clicado (popup do Leaflet com o card React).
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !popupEl) return;
+    const p = selectedId ? propsRef.current.find((x) => x.id === selectedId) : null;
+    if (!p) {
+      popupRef.current?.remove();
+      popupRef.current = null;
+      return;
+    }
+    popupRef.current?.remove();
+    popupRef.current = L.popup({ closeButton: false, autoClose: false, closeOnClick: false, offset: [0, -12], className: "vn-popup", maxWidth: 280, minWidth: 256 })
+      .setLatLng([p.lat, p.lng])
+      .setContent(popupEl)
+      .openOn(map);
+  }, [selectedId, sig, popupEl]);
+
+  const aberto = selectedId ? properties.find((x) => x.id === selectedId) : null;
 
   return (
-    <div
-      className={cn(
-        "relative overflow-hidden rounded-2xl border border-line bg-surface-2",
-        className
-      )}
-    >
-      {/* Grade sutil de marca */}
-      <div
-        className="absolute inset-0 opacity-60"
-        style={{
-          backgroundImage:
-            "linear-gradient(#e2e7ee 1px, transparent 1px), linear-gradient(90deg, #e2e7ee 1px, transparent 1px)",
-          backgroundSize: "40px 40px",
-        }}
-      />
-
-      {/* Círculo de raio ao redor do endereço buscado */}
-      {focus && (
-        <div
-          style={{
-            left: `${posX(focus.lng)}%`,
-            top: `${posY(focus.lat)}%`,
-            width: `${radiusW}%`,
-            height: `${radiusH}%`,
-            borderColor: RADIUS_COLOR,
-            backgroundColor: `${RADIUS_COLOR}14`, // ~8% de opacidade
-          }}
-          className="pointer-events-none absolute z-[1] -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed"
-          aria-hidden
-        />
-      )}
-
-      {/* Centro do endereço buscado (geocoding) */}
-      {focus && (
-        <div
-          style={{ left: `${posX(focus.lng)}%`, top: `${posY(focus.lat)}%` }}
-          className="absolute z-30 grid h-7 w-7 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border-2 border-white bg-night text-white shadow-lg ring-2 ring-champagne"
-          aria-label="Endereço buscado"
-        >
-          <MapPin className="h-4 w-4" />
-        </div>
-      )}
-
-      {properties.map((p) => {
-        const active = p.id === activeId;
-        return (
-          <Link
-            key={p.id}
-            href={`/imoveis/${p.id}`}
-            onMouseEnter={() => onHover(p.id)}
-            onMouseLeave={() => onHover(null)}
-            style={{ left: `${posX(p.lng)}%`, top: `${posY(p.lat)}%` }}
-            className={cn(
-              "absolute -translate-x-1/2 -translate-y-1/2 rounded-full px-2.5 py-1 text-xs font-bold shadow transition-all",
-              active
-                ? "z-20 scale-110 bg-night text-white ring-2 ring-champagne"
-                : "z-10 bg-forest text-white hover:scale-105"
-            )}
-          >
-            {formatBRL(p.monthlyPrice)}
-          </Link>
-        );
-      })}
-
-      {/* Mini-card do imóvel em destaque (hover) */}
-      {activeProp && (
-        <div
-          style={{
-            left: `${Math.min(72, Math.max(2, posX(activeProp.lng) - 14))}%`,
-            top: `${Math.min(60, Math.max(2, posY(activeProp.lat) + 6))}%`,
-          }}
-          className="pointer-events-none absolute z-30 w-48 overflow-hidden rounded-xl border border-line bg-white shadow-xl"
-        >
-          <div className="relative aspect-[16/10]">
-            {isPhoto(activeProp.photos[0]) ? (
-              <BrandImage
-                src={activeProp.photos[0]}
-                alt={activeProp.title}
-                rounded="rounded-none"
-                treat={false}
-                sizes="200px"
-                className="h-full w-full"
-              />
-            ) : (
-              <PhotoPlaceholder label={activeProp.photos[0]} className="h-full w-full" />
-            )}
-            {activeProp.readyToLiveBadge && (
-              <div className="absolute left-2 top-2">
-                <ReadyToLiveBadge size="sm" />
-              </div>
-            )}
-          </div>
-          <div className="p-2.5">
-            <p className="line-clamp-1 text-sm font-semibold text-ink">{activeProp.title}</p>
-            <p className="text-xs text-muted">
-              {activeProp.neighborhood} · {formatBRL(activeProp.monthlyPrice)}/mês
-            </p>
-          </div>
-        </div>
-      )}
-    </div>
+    <>
+      <div ref={containerRef} data-testid="mapa-busca" className={cn("z-0 overflow-hidden bg-surface-2", className)} />
+      {aberto && popupEl && createPortal(<CardPinMapa property={aberto} onFechar={() => onSelect?.(null)} />, popupEl)}
+    </>
   );
 }

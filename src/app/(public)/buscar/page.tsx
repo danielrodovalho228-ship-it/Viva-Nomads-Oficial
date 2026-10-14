@@ -33,7 +33,8 @@ export default async function SearchPage({
       {/* Topo da busca. Celular (ordem 314f764e): só o título, curto — a busca e os
           filtros vêm logo abaixo. Tablet/computador: banner com foto. Um h1 só. */}
       <div className="relative">
-        <div className="hidden sm:block">
+        {/* Computador (lg+): sem banner — a tela dividida começa logo abaixo do título. */}
+        <div className="hidden sm:block lg:hidden">
           <BrandImage
             src={PHOTOS.buscaHero}
             alt="Casa mobiliada com piscina e área de lazer ao anoitecer"
@@ -46,9 +47,9 @@ export default async function SearchPage({
           {/* Overlay em gradiente para o texto branco ficar sempre legível */}
           <div className="absolute inset-0 bg-gradient-to-r from-night/85 via-night/60 to-night/25" />
         </div>
-        <div className="container-page pt-4 sm:absolute sm:inset-0 sm:flex sm:flex-col sm:justify-center sm:pt-0 sm:text-white">
-          <h1 className="font-title text-xl font-bold text-ink sm:text-4xl sm:text-white">{h1}</h1>
-          <p className="mt-1 hidden max-w-xl text-white/85 sm:block">
+        <div className="container-page pt-4 sm:absolute sm:inset-0 sm:flex sm:flex-col sm:justify-center sm:pt-0 sm:text-white lg:static lg:max-w-none lg:px-6 lg:pb-3 lg:pt-4 lg:text-ink">
+          <h1 className="font-title text-xl font-bold text-ink sm:text-4xl sm:text-white lg:text-2xl lg:text-ink">{h1}</h1>
+          <p className="mt-1 hidden max-w-xl text-white/85 sm:block lg:hidden">
             Locação mensal de 30 a 180 dias. Filtre por período, preço e o selo Pronto para
             Morar.
           </p>
