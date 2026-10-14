@@ -10,6 +10,9 @@ import { adm } from "../fixtures/laboratorio";
  *  4. Visitante que toca em Salvar busca vai para o login e volta para a busca.
  *  5. Logado: salva, aparece em Buscas salvas, e o coração remove.
  *  6. Celular e 1024 px adaptam sem rolagem lateral.
+ *  Ordem eac7e3a1: a busca vai para a MESMA linha do cabeçalho (busca compacta,
+ *  estilo Airbnb); os filtros completos abrem num painel logo abaixo; sem faixa
+ *  branca entre o cabeçalho e o conteúdo; cards da grade todos do mesmo tamanho.
  */
 const semRolagem = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 
@@ -22,14 +25,33 @@ test.describe("T71 — topo da /buscar", () => {
     await expect(header.getByRole("link", { name: "Para empresas" })).toBeHidden();
     await expect(header.getByRole("link", { name: "Entrar para anunciar" })).toBeVisible();
 
-    const caixa = (await page.getByTestId("filtros-caixa").boundingBox())!;
-    expect(Math.abs(caixa.x + caixa.width / 2 - 720), "barra centralizada").toBeLessThanOrEqual(24);
-    expect(caixa.height, "barra numa linha").toBeLessThanOrEqual(64);
+    // Busca compacta na mesma linha do logo e das ações.
+    const compacta = header.getByTestId("busca-compacta");
+    await expect(compacta).toBeVisible();
+    await expect(compacta).toContainText("Uberlândia");
+    const hBox = (await header.boundingBox())!;
+    const cBox = (await compacta.boundingBox())!;
+    expect(cBox.y).toBeGreaterThanOrEqual(hBox.y);
+    expect(cBox.y + cBox.height).toBeLessThanOrEqual(hBox.y + hBox.height);
+    expect(Math.abs(cBox.x + cBox.width / 2 - 720), "busca compacta centralizada").toBeLessThanOrEqual(48);
+    await expect(page.getByTestId("filtros-caixa")).toBeHidden();
 
+    // Sem espaço branco morto: o título vem logo abaixo do cabeçalho.
     const h1 = page.getByRole("heading", { level: 1 });
     await expect(h1).toHaveText("Imóveis mobiliados para sua estadia");
     const h1Box = (await h1.boundingBox())!;
-    expect(h1Box.y, "título abaixo da barra").toBeGreaterThan(caixa.y + caixa.height);
+    expect(h1Box.y - (hBox.y + hBox.height), "título colado ao cabeçalho").toBeLessThanOrEqual(40);
+
+    // Clicar abre os filtros completos, centralizados, logo abaixo do cabeçalho.
+    await compacta.click();
+    await expect(compacta).toHaveAttribute("aria-expanded", "true");
+    const caixa = (await page.getByTestId("filtros-caixa").boundingBox())!;
+    expect(Math.abs(caixa.x + caixa.width / 2 - 720), "barra centralizada").toBeLessThanOrEqual(24);
+    expect(caixa.height, "barra numa linha").toBeLessThanOrEqual(64);
+    expect(caixa.y, "painel abaixo do cabeçalho").toBeGreaterThanOrEqual(hBox.y + hBox.height);
+    await page.screenshot({ path: "tests/laboratorio/saida/t71-filtros-abertos-1440.png" });
+    await page.getByTestId("fechar-painel-filtros").click();
+    await expect(page.getByTestId("filtros-caixa")).toBeHidden();
 
     const total = page.getByTestId("total-resultados");
     await expect(total).toHaveText(/^\d+ imóve(l|is) em Uberlândia$/);
@@ -92,4 +114,25 @@ test.describe("T71 — topo da /buscar", () => {
     await expect(page.getByRole("button", { name: "Abrir menu" })).toBeHidden();
     expect(await semRolagem(page)).toBeLessThanOrEqual(1);
   });
+
+  for (const [largura, altura] of [[1440, 900], [1280, 800], [1024, 800], [390, 844]] as const) {
+    test(`7. cards da grade todos do mesmo tamanho a ${largura}px`, async ({ page }) => {
+      await page.setViewportSize({ width: largura, height: altura });
+      await page.goto("/buscar", { waitUntil: "networkidle" });
+      const cards = page.getByTestId("card-resultado");
+      expect(await cards.count()).toBeGreaterThanOrEqual(3);
+      const caixas = await cards.evaluateAll((els) =>
+        els.slice(0, 12).map((el) => {
+          const r = el.getBoundingClientRect();
+          const img = el.querySelector("img")?.getBoundingClientRect();
+          return { w: Math.round(r.width), h: Math.round(r.height), iw: Math.round(img?.width ?? 0), ih: Math.round(img?.height ?? 0) };
+        })
+      );
+      const unicos = (k: "w" | "h" | "iw" | "ih") => new Set(caixas.map((c) => c[k])).size;
+      expect(unicos("w"), `larguras ${JSON.stringify(caixas)}`).toBe(1);
+      expect(unicos("h"), `alturas ${JSON.stringify(caixas)}`).toBe(1);
+      expect(unicos("iw"), "largura da foto").toBe(1);
+      expect(unicos("ih"), "altura da foto").toBe(1);
+    });
+  }
 });

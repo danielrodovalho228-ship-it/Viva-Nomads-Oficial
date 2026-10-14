@@ -140,7 +140,9 @@ export function Navbar() {
       <nav className="flex h-18 w-full items-center gap-10 px-5 py-3 sm:px-8 xl:px-10 2xl:gap-14 2xl:px-12">
         <Logo className="shrink-0" />
 
-        {naBusca && <div className="hidden flex-1 xl:block" aria-hidden />}
+        {/* Ordem eac7e3a1: na /buscar, a busca compacta (estilo Airbnb) entra AQUI, na mesma
+            linha do logo e dos botões — a página da busca a coloca neste espaço. */}
+        {naBusca && <div id="slot-busca-header" data-testid="slot-busca-header" className="hidden min-w-0 flex-1 justify-center lg:flex" />}
         <div data-testid="nav-links" className={cn("hidden min-w-0 flex-1 items-center gap-6 xl:flex 2xl:gap-8", naBusca && "xl:hidden")}>
           {PRINCIPAIS.map((item) => (
             <Link

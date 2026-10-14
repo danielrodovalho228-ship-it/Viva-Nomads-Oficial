@@ -1,4 +1,10 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
+
+/** Computador (ordem eac7e3a1): os filtros abrem pela busca compacta do cabeçalho. */
+async function abrirFiltros(page: Page) {
+  const compacta = page.getByTestId("busca-compacta");
+  if (await compacta.isVisible()) await compacta.click();
+}
 
 /**
  * T10 — BUSCA COMPARTILHÁVEL (G1) @criticos
@@ -19,6 +25,7 @@ test.describe("T10 — Busca compartilhável (URL) @criticos", () => {
     // Sem filtro, a URL não traz `pronto`.
     expect(page.url()).not.toMatch(/pronto=1/);
 
+    await abrirFiltros(page);
     await page.getByRole("button", { name: /Pronto para Morar/i }).first().click();
 
     // O efeito de sync usa replaceState — espera o endereço refletir o filtro.
@@ -43,6 +50,7 @@ test.describe("T10 — Busca compartilhável (URL) @criticos", () => {
     context,
   }) => {
     await page.goto("/buscar", { waitUntil: "networkidle" });
+    await abrirFiltros(page);
     await page.getByRole("button", { name: /Pronto para Morar/i }).first().click();
     await expect(async () => {
       expect(page.url()).toMatch(/pronto=1/);
@@ -78,6 +86,7 @@ test(`F3 — "Mais filtros" clicável em 1280px, com o botão flutuante da Viva 
   const page = await ctx.newPage();
   await page.goto("/buscar", { waitUntil: "networkidle" });
   await expect(page.getByTestId("fale-com-a-viva")).toBeVisible();
+  await page.getByTestId("busca-compacta").click(); // ordem eac7e3a1: filtros abrem pelo cabeçalho
   await page.getByRole("button", { name: /Mais filtros/i }).click();
   await expect(page.getByRole("button", { name: /Menos filtros/i })).toBeVisible();
   await ctx.close();
