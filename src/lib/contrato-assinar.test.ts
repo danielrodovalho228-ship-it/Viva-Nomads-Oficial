@@ -12,6 +12,7 @@ import {
   papelNoContrato,
   podeAvaliarLocacao,
   resumoContrato,
+  petsRegrasDoResumo,
 } from "./contrato-assinar.ts";
 
 const dados = { contratoId: "c1", imovel: "Studio Centro", aluguelMensal: 2500, prazoDias: 90, ocupantes: 1, criadoEm: "2026-10-13" };
@@ -60,4 +61,34 @@ test("aviso à outra parte: pede a assinatura que falta, ou diz que o contrato e
   assert.equal(assuntoAvisoOutraParte(false), "O outro lado assinou o contrato — falta a sua assinatura");
   assert.equal(assuntoAvisoOutraParte(true), "As duas partes assinaram o contrato");
   assert.doesNotMatch(assuntoAvisoOutraParte(true), /falta/);
+});
+
+test("resumo traz a cláusula de pets só quando o anúncio tem regras (ordem 022afabb, item 5)", () => {
+  const sem = resumoContrato(dados);
+  assert.ok(!sem.some((l) => l.startsWith("Pets")));
+  const regras = { especies: ["cao" as const, "gato" as const], porteMax: "M" as const, qtdMax: 2, reforcoCaucao: 500, regrasCondominio: "" };
+  const com = resumoContrato({ ...dados, petsRegras: regras });
+  const linha = com.find((l) => l.startsWith("Pets"))!;
+  assert.match(linha, /cão e gato/);
+  assert.match(linha, /Reforço de Caução/);
+  assert.notEqual(hashResumo(sem), hashResumo(com));
+  assert.ok(!/vistoria/i.test(linha));
+});
+
+test("dono assina, o anúncio muda as regras de pets e o inquilino assina o mesmo hash (achado do Moacir, PR #486)", () => {
+  const antes = { especies: ["cao"], porteMax: "M", qtdMax: 1, reforcoCaucao: 0, regrasCondominio: "" };
+  const depois = { especies: ["cao", "gato"], porteMax: "G", qtdMax: 3, reforcoCaucao: 900, regrasCondominio: "" };
+  // 1ª assinatura (ninguém assinou): vale o anúncio; o servidor congela essas regras no contrato.
+  const hashDono = hashResumo(
+    resumoContrato({ ...dados, petsRegras: petsRegrasDoResumo({ algumaAssinatura: false, vivas: antes, congeladas: null }) }),
+  );
+  // 2ª assinatura: o dono já mudou o anúncio, mas vale o congelado.
+  const hashInquilino = hashResumo(
+    resumoContrato({ ...dados, petsRegras: petsRegrasDoResumo({ algumaAssinatura: true, vivas: depois, congeladas: antes }) }),
+  );
+  assert.equal(hashInquilino, hashDono);
+  // Contrato já assinado antes do congelamento existir: sem a linha, como quando foi assinado.
+  assert.equal(petsRegrasDoResumo({ algumaAssinatura: true, vivas: depois, congeladas: null }), null);
+  // Congelado vazio ({}): anúncio sem regras na 1ª assinatura continua sem a linha.
+  assert.equal(petsRegrasDoResumo({ algumaAssinatura: true, vivas: depois, congeladas: {} }), null);
 });
