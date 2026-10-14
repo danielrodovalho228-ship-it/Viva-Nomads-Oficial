@@ -24,7 +24,7 @@ import { chaveCidade } from "@/lib/cidades";
 import { FAIXAS, GARANTIAS_FAIXA, GARANTIAS_PUBLICAS, CAUCAO_PARCELADA_UI } from "@/lib/faixas";
 import { SELO_NF_UI } from "@/lib/flags";
 import { PainelFiltrosCelular } from "@/components/busca/painel-filtros-celular";
-import { contarFiltrosPainel, passaNoPainel, resumoFiltros, type FiltrosPainel } from "@/lib/busca/painel-filtros";
+import { OPCOES_PORTE_PET, ROTULO_PORTE_CURTO, contarFiltrosPainel, passaNoPainel, resumoFiltros, type FiltrosPainel } from "@/lib/busca/painel-filtros";
 import { contagemDaBusca } from "@/lib/busca/buscas-salvas";
 import { SalvarBusca } from "@/components/busca/salvar-busca";
 
@@ -89,6 +89,7 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
   const [dataEntrada, setDataEntrada] = useState(""); // disponível até esta data de entrada
   const [garantia, setGarantia] = useState(""); // "" | caucao_avista | caucao_parcelada | titulo | seguro_fianca
   const [petsOnly, setPetsOnly] = useState(false);
+  const [petPorte, setPetPorte] = useState<FiltrosPainel["petPorte"]>("");
   const [furnishedOnly, setFurnishedOnly] = useState(false);
   const [readyToLiveOnly, setReadyToLiveOnly] = useState(false);
   const [homeOfficeOnly, setHomeOfficeOnly] = useState(false);
@@ -191,6 +192,8 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
     if (gar && GARANTIAS_FILTRO.some((g) => g.key === gar)) setGarantia(gar);
     const on = (k: string) => sp.get(k) === "1";
     if (on("pet")) setPetsOnly(true);
+    const porte = sp.get("porte");
+    if (on("pet") && (porte === "P" || porte === "M" || porte === "G")) setPetPorte(porte);
     if (on("mobiliado")) setFurnishedOnly(true);
     if (on("pronto")) setReadyToLiveOnly(true);
     if (on("homeoffice")) setHomeOfficeOnly(true);
@@ -251,6 +254,7 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
     put("garantia", !!garantia, garantia);
     put("ordem", sort !== "relevance", sort);
     put("pet", petsOnly, "1");
+    put("porte", petsOnly && !!petPorte, petPorte);
     put("mobiliado", furnishedOnly, "1");
     put("pronto", readyToLiveOnly, "1");
     put("homeoffice", homeOfficeOnly, "1");
@@ -266,7 +270,7 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
     );
   }, [
     locationQuery, geoCenter, radiusKm, maxPrice, minBedrooms, adults, children, maxPeriod, sort,
-    typeFilter, faixa, dataEntrada, garantia, petsOnly, furnishedOnly,
+    typeFilter, faixa, dataEntrada, garantia, petsOnly, petPorte, furnishedOnly,
     readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly,
   ]);
 
@@ -300,7 +304,7 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
     setFaixa("");
     setDataEntrada("");
     setGarantia("");
-    setPetsOnly(false);
+    setPetsOnly(false); setPetPorte("");
     setFurnishedOnly(false);
     setReadyToLiveOnly(false);
     setHomeOfficeOnly(false);
@@ -314,8 +318,8 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
   // Filtros do painel do celular (preço, quartos, pets, home office, selo): a
   // MESMA regra para a lista e para a contagem "Mostrar N imóveis" do painel.
   const filtrosPainel: FiltrosPainel = useMemo(
-    () => ({ maxPrice, minBedrooms, petsOnly, homeOfficeOnly, readyToLiveOnly }),
-    [maxPrice, minBedrooms, petsOnly, homeOfficeOnly, readyToLiveOnly]
+    () => ({ maxPrice, minBedrooms, petsOnly, petPorte, homeOfficeOnly, readyToLiveOnly }),
+    [maxPrice, minBedrooms, petsOnly, petPorte, homeOfficeOnly, readyToLiveOnly]
   );
 
   const { base, dist } = useMemo(() => {
@@ -419,7 +423,7 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
     setTypeFilter("");
     setGarantia("");
     setFaixa("");
-    setPetsOnly(false);
+    setPetsOnly(false); setPetPorte("");
     setReadyToLiveOnly(false);
     setHomeOfficeOnly(false);
     setWorkLocatedOnly(false);
@@ -433,12 +437,13 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
   // Muda sempre que um filtro muda: o "Salvar busca" reconsulta se a busca atual já está salva.
   const versaoBusca = [
     locationQuery, geoCenter?.lat, geoCenter?.lng, radiusKm, maxPrice, minBedrooms, adults, children, maxPeriod, sort, typeFilter,
-    faixa, dataEntrada, garantia, petsOnly, furnishedOnly, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly,
+    faixa, dataEntrada, garantia, petsOnly, petPorte, furnishedOnly, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly,
   ].join("|");
   function aplicarPainel(f: FiltrosPainel) {
     setMaxPrice(f.maxPrice);
     setMinBedrooms(f.minBedrooms);
     setPetsOnly(f.petsOnly);
+    setPetPorte(f.petsOnly ? f.petPorte : "");
     setHomeOfficeOnly(f.homeOfficeOnly);
     setReadyToLiveOnly(f.readyToLiveOnly);
     setPainelAberto(false);
@@ -741,9 +746,19 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
               <Chip on={homeOfficeOnly} onClick={() => setHomeOfficeOnly((v) => !v)}>
                 💻 Para trabalhar de casa
               </Chip>
-              <Chip on={petsOnly} onClick={() => setPetsOnly((v) => !v)}>
+              <Chip on={petsOnly} onClick={() => { setPetsOnly((v) => !v); setPetPorte(""); }}>
                 🐾 Aceita pet
               </Chip>
+              {petsOnly && (
+                <div data-testid="filtro-porte-pet" className="contents">
+                  <Select
+                    label="Porte do pet"
+                    value={petPorte}
+                    onChange={(v) => setPetPorte(v === "P" || v === "M" || v === "G" ? v : "")}
+                    options={OPCOES_PORTE_PET.map((o) => [o.valor, o.rotulo === "Qualquer porte" ? "Porte do pet" : o.rotulo] as [string, string])}
+                  />
+                </div>
+              )}
               {SELO_NF_UI && (
                 <Chip on={invoiceOnly} onClick={() => setInvoiceOnly((v) => !v)}>
                   📄 Com Nota Fiscal
@@ -804,7 +819,7 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
             {homeOfficeOnly && (
               <ActiveChip label="Trabalhar de casa" onClear={() => setHomeOfficeOnly(false)} />
             )}
-            {petsOnly && <ActiveChip label="Aceita pet" onClear={() => setPetsOnly(false)} />}
+            {petsOnly && <ActiveChip label={petPorte ? `Aceita pet ${ROTULO_PORTE_CURTO[petPorte]}` : "Aceita pet"} onClear={() => { setPetsOnly(false); setPetPorte(""); }} />}
             {SELO_NF_UI && invoiceOnly && <ActiveChip label="Nota Fiscal" onClear={() => setInvoiceOnly(false)} />}
             {insuranceOnly && (
               <ActiveChip label="Seguro-Fiança" onClear={() => setInsuranceOnly(false)} />

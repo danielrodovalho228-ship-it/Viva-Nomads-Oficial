@@ -41,7 +41,7 @@ test("painel: preço, quartos, pets, home office e selo filtram como a lista", (
 
 test("painel: contador do botão, texto de aplicar e resumo do topo", () => {
   assert.equal(contarFiltrosPainel(FILTROS_PAINEL_VAZIOS), 0);
-  assert.equal(contarFiltrosPainel({ maxPrice: 2500, minBedrooms: 2, petsOnly: true, homeOfficeOnly: false, readyToLiveOnly: true }), 4);
+  assert.equal(contarFiltrosPainel({ maxPrice: 2500, minBedrooms: 2, petsOnly: true, petPorte: "", homeOfficeOnly: false, readyToLiveOnly: true }), 4);
   assert.equal(rotuloMostrar(0), "Nenhum imóvel com esses filtros");
   assert.equal(rotuloMostrar(1), "Mostrar 1 imóvel");
   assert.equal(rotuloMostrar(12), "Mostrar 12 imóveis");

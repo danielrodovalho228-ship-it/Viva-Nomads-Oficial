@@ -282,6 +282,7 @@ export async function listProperties(): Promise<Property[]> {
     const mapped = semAnunciosDeTeste((data as unknown as PropertyRow[]).map(rowToProperty).map(comCoordenadaAproximada)); // anúncio de teste do QA nunca aparece ao visitante
     await attachCoverPhotos(supabase, mapped); // capa real para os cards (best-effort)
     await attachReviewAggregates(supabase, mapped); // nota/contagem REAL (fonte única)
+    await attachPetsRegras(supabase, mapped); // porte máximo de pet, para o filtro da busca (0119; best-effort)
     return withDemos(mapped);
   } catch (e) {
     // Falha de rede/consulta → só os demos (ou vazio, se desligados), nunca 500.
@@ -381,6 +382,19 @@ async function attachCoverPhotos(supabase: SupabaseLike, list: Property[]): Prom
  * card nunca mostra uma contagem diferente da que o usuário vê no anúncio.
  * Best-effort: tabela ausente/consulta falha → mantém os escalares como vieram.
  */
+/** Regras de pets (porte máximo) dos anúncios da lista, para o filtro da busca. Best-effort: coluna ausente → sem regras. */
+async function attachPetsRegras(supabase: SupabaseLike, list: Property[]): Promise<void> {
+  const comPet = list.filter((p) => p.petsAllowed);
+  if (comPet.length === 0) return;
+  try {
+    const { data } = await supabase.from("properties").select("id, pets_regras").in("id", comPet.map((p) => p.id));
+    const porId = new Map(((data as { id: string; pets_regras: unknown }[] | null) ?? []).map((r) => [r.id, r.pets_regras]));
+    for (const p of comPet) p.petsRegras = normalizarRegrasPets(porId.get(p.id)) ?? undefined;
+  } catch {
+    /* sem a coluna, vale o aceite geral */
+  }
+}
+
 async function attachReviewAggregates(supabase: SupabaseLike, list: Property[]): Promise<void> {
   if (list.length === 0) return;
   try {

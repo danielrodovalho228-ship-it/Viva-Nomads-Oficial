@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   FILTROS_PAINEL_VAZIOS,
+  OPCOES_PORTE_PET,
   OPCOES_PRECO,
   OPCOES_QUARTOS,
   rotuloMostrar,
@@ -87,6 +88,17 @@ export function PainelFiltrosCelular({
               <Marcar rotulo="Pronto para Morar" dica="Selo do imóvel equipado para entrar com a mala" ligado={rascunho.readyToLiveOnly} onChange={(v) => muda("readyToLiveOnly", v)} />
             </div>
           </fieldset>
+          {rascunho.petsOnly && (
+            <div data-testid="painel-porte-pet">
+              <Grupo titulo="Porte do pet">
+                {OPCOES_PORTE_PET.map((o) => (
+                  <Opcao key={o.valor || "qualquer"} nome="porte-pet" ativo={rascunho.petPorte === o.valor} onClick={() => muda("petPorte", o.valor)}>
+                    {o.rotulo}
+                  </Opcao>
+                ))}
+              </Grupo>
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-[auto_1fr] gap-3 border-t border-line px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
