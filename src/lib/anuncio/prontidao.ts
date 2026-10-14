@@ -10,6 +10,7 @@
                      nunca bloqueiam, nunca entram no "falta" nem baixam a %.
 */
 
+import { declaracaoCamerasFeita } from "./privacidade.ts";
 import { exigeAutorizacao, ROTULO_FALTA_AUTORIZACAO } from "./operacao.ts";
 
 export const MIN_FOTOS = 8;
@@ -28,6 +29,8 @@ export interface FatosAnuncio {
   garantiaOk: boolean;
   /** Sublocado/administrado sem a autorização (declaração + documento anexado) não publica. */
   sublocacaoOk: boolean;
+  /** Declaração "sem câmeras/dispositivos de gravação dentro do imóvel" feita (ordem f92bc582). */
+  privacidadeOk: boolean;
   /** "own" | "subleased" | "managed" — só muda o rótulo do item que falta. */
   operacao?: string | null;
   documento: StatusDocumento;
@@ -80,6 +83,9 @@ const DOC_DETALHE: Record<StatusDocumento, string> = {
   rejected: "reprovado — envie de novo",
 };
 
+/** Item condicional (como a autorização): só aparece quando a declaração falta. */
+export const ROTULO_FALTA_PRIVACIDADE = "Declaração de privacidade (sem câmeras dentro do imóvel)";
+
 /** Rótulos dos obrigatórios, na ordem (o FAQ e a Viva usam esta lista). */
 export const OBRIGATORIOS_ROTULOS = [
   "Endereço preenchido",
@@ -115,6 +121,9 @@ export function prontidaoAnuncio(f: FatosAnuncio): Prontidao {
     const label = f.operacao === "managed" ? ROTULO_FALTA_AUTORIZACAO.managed : ROTULO_FALTA_AUTORIZACAO.subleased;
     obrigatorios.push({ key: "sublocacao", label, ok: false, etapa: 0 });
   }
+  if (!f.privacidadeOk) {
+    obrigatorios.push({ key: "privacidade", label: ROTULO_FALTA_PRIVACIDADE, ok: false, etapa: 2 });
+  }
   if (f.limitePlanoOk === false) {
     obrigatorios.push({ key: "limite", label: "Vaga no seu plano", ok: false, etapa: 6, detalhe: "o plano já tem o máximo de anúncios publicados — pause um ou faça upgrade" });
   }
@@ -147,6 +156,8 @@ export interface LinhaAnuncio {
   sublease_authorized: boolean | null;
   /** 0091: o documento da operação está anexado (undefined = banco sem a 0091). */
   autorizacao_anexada?: boolean | null;
+  /** 0116: declaração de privacidade (undefined = banco sem a 0116 → não barra). */
+  sem_cameras_interior?: boolean | null;
   description: string | null;
   ready_to_live_badge: boolean | null;
   video_url: string | null;
@@ -163,6 +174,7 @@ export function fatosDaLinha(p: LinhaAnuncio, fotos: number, documento: StatusDo
     garantiaOk: (p.garantias_aceitas ?? []).length > 0,
     // Sem a 0091 (coluna ausente) vale a regra antiga: só a declaração.
     sublocacaoOk: !exigeAutorizacao(p.ownership_type) || (!!p.sublease_authorized && p.autorizacao_anexada !== false),
+    privacidadeOk: p.sem_cameras_interior === undefined ? true : declaracaoCamerasFeita(p.sem_cameras_interior),
     operacao: p.ownership_type,
     documento,
     limitePlanoOk,

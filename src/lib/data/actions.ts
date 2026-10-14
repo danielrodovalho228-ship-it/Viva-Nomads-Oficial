@@ -36,6 +36,7 @@ import { adminsPorAviso } from "@/lib/notifications/push-admins";
 import { avisarPedidosDoImovel } from "@/lib/data/pedidos-compat";
 import { INTERNET_META } from "@/lib/internet";
 import { getPropertyForOwner } from "@/lib/data/properties";
+import { colunasPrivacidade, type TipoAcesso } from "@/lib/anuncio/privacidade";
 import { prontidaoDoImovel } from "@/lib/anuncio/prontidao-servidor";
 import type { Prontidao } from "@/lib/anuncio/prontidao";
 import { guardContactInfo } from "@/lib/messages/contact-guard";
@@ -305,6 +306,11 @@ export interface PropertyInput {
   ownershipType?: "own" | "subleased" | "managed";
   subleaseAuthorized?: boolean;
   subleaseDocUrl?: string;
+  /** Privacidade e acesso (ordem f92bc582). Ausente = não mexe no que já está gravado. */
+  semCamerasInterior?: boolean;
+  camerasExternas?: string;
+  tipoAcesso?: string | null;
+  senhaTrocadaEstadia?: boolean;
   utilitiesMode?: "fixed" | "real";
   utilitiesEstimate?: number;
   issuesInvoice?: boolean;
@@ -347,6 +353,37 @@ export interface PropertyInput {
   googlePlaces?: { placeId: string; categoria: string; rotulo?: string }[];
   /** Proximidades manuais (nome + distância digitados). */
   proximities?: { category: string; name: string; note?: string }[];
+}
+
+/**
+ * Grava a declaração de privacidade/acesso (0116) em UPDATE à parte, como os
+ * demais campos extras: sem a migração o erro é só logado (e a prontidão não
+ * barra, pois a coluna não existe). Valida a forma no servidor.
+ */
+async function gravarPrivacidade(
+  supabase: NonNullable<Awaited<ReturnType<typeof createClient>>>,
+  ownerId: string,
+  id: string,
+  input: PropertyInput
+): Promise<void> {
+  if (input.semCamerasInterior === undefined) return;
+  try {
+    const { error } = await supabase
+      .from("properties")
+      .update(
+        colunasPrivacidade({
+          semCamerasInterior: input.semCamerasInterior,
+          camerasExternas: input.camerasExternas,
+          tipoAcesso: input.tipoAcesso as TipoAcesso | null | undefined,
+          senhaTrocadaEstadia: input.senhaTrocadaEstadia,
+        })
+      )
+      .eq("id", id)
+      .eq("owner_id", ownerId);
+    if (error) console.error("[gravarPrivacidade]", error.code, error.message);
+  } catch (e) {
+    console.error("[gravarPrivacidade] erro:", e);
+  }
 }
 
 /**
@@ -496,6 +533,7 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
   } catch {
     /* migração 0018/0019/0020 ausente — segue sem os campos extras */
   }
+  await gravarPrivacidade(supabase, user.id, data.id as string, input);
 
   // Comodidades por categoria (catálogo único). Best-effort.
   if (input.amenityKeys && input.amenityKeys.length > 0) {
@@ -735,6 +773,7 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
   } catch {
     /* migração ausente — segue sem os campos extras */
   }
+  await gravarPrivacidade(supabase, user.id, id, input);
 
   // Regras de pets (0119): validadas aqui; só vale com "aceita pets" marcado.
   try {
