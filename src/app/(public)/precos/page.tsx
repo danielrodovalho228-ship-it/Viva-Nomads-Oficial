@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
-import { Check, Camera, FileSignature, ShieldCheck, UserCheck, Banknote, PiggyBank } from "lucide-react";
+import { Check, Camera, FileSignature, ShieldCheck, UserCheck, Banknote, PiggyBank, ArrowRight, Megaphone, TrendingDown, Users } from "lucide-react";
+import { BannerTopo } from "@/components/institucional/banner-topo";
+import { BrandImage } from "@/components/brand-image";
+import { PHOTOS } from "@/lib/media";
 import { FAIXAS_COMISSAO_PADRAO, TEXTO_REGRA_UNICA, TEXTO_REGRA_CURTO, TAXA_NEGOCIADA_TEXTO, taxaPublicaTexto, comissaoSobreContrato, TEXTO_RENOVACAO_COMISSAO } from "@/lib/cobranca/regra";
 import { PlanoGestorForm } from "@/components/precos/plano-gestor-form";
 import { ComparativoPrecos } from "@/components/precos/comparativo-precos";
@@ -16,127 +19,68 @@ export const metadata: Metadata = {
   description: TEXTO_REGRA_CURTO + " Para imóveis mobiliados.",
 };
 
-type ServiceTone = "incluido" | "avulso" | "cotacao" | "gratis";
-
-interface Service {
-  icon: React.ComponentType<{ className?: string }>;
-  title: string;
-  benefit: string;
-  price: string;
-  statusLabel: string;
-  statusTone: "ok" | "partner";
-  tone: ServiceTone;
-  cta: string;
-  href: string;
-  highlight?: string;
-}
-
 /**
- * Serviços OPCIONAIS reais — cada um com STATUS honesto (Disponível / Via
- * parceiro) e separados por QUEM contrata. O botão não cobra aqui: leva ao
- * momento certo (reserva/contrato para o inquilino; anúncio para o
- * proprietário). A plataforma intermedia e documenta; nunca é a garantidora.
- * Por lei, só uma garantia por contrato.
+ * Serviços opcionais (ordem 5a4b9146: simplificados) — só o que existe, com
+ * status honesto, numa faixa compacta. A plataforma organiza e documenta; nunca
+ * é a garantidora. Por lei, só uma garantia por contrato.
  */
-const TENANT_SERVICES: Service[] = [
-  { icon: ShieldCheck, title: "Outras modalidades de garantia", benefit: "Outras modalidades de garantia locatícia: em breve. A plataforma não é a garantidora.", price: "Em breve", statusLabel: "Em breve", statusTone: "partner", tone: "cotacao", cta: "Ver opções de garantia", href: "/como-funciona#garantias" },
-  { icon: PiggyBank, title: "Caução (depósito devolvível)", benefit: `${CAUCAO_FRASE} Devolvida ao fim da estadia.`, price: "Sem mensalidade", statusLabel: "Disponível", statusTone: "ok", tone: "avulso", cta: "Ver opções de garantia", href: "/como-funciona#garantias" },
-];
-
-const OWNER_SERVICES: Service[] = [
-  { icon: Camera, title: "Fotografia profissional", benefit: "Sessão de fotos do imóvel para anúncios que convertem mais.", price: "Sob consulta", statusLabel: "Via parceiro", statusTone: "partner", tone: "avulso", cta: "Adicionar ao anúncio", href: "/dashboard/imoveis/novo" },
-];
-
-/**
- * Tecnologia & segurança — recursos que já vêm por baixo (o cliente nunca
- * contrata o fornecedor). Aparecem como BENEFÍCIO, sem nome de fornecedor.
- */
-const TECH_BENEFITS = [
-  { icon: FileSignature, title: "Contrato assinado digitalmente", text: "Contrato digital de 30 a 180 dias com validade jurídica." },
-  { icon: UserCheck, title: "Conversa registrada", text: "Toda a negociação fica na plataforma, com o contato protegido até o aceite." },
-  { icon: Banknote, title: "Valor mensal direto na conta do proprietário", text: "O pagamento do valor mensal vai direto ao proprietário." },
+const OPCIONAIS = [
+  { icon: PiggyBank, titulo: "Caução", texto: `${CAUCAO_FRASE} Devolvida ao fim da estadia.`, status: "Disponível", ok: true, href: "/como-funciona#garantias" },
+  { icon: ShieldCheck, titulo: "Outras garantias", texto: "Outras modalidades de garantia locatícia: em breve. A plataforma não é a garantidora.", status: "Em breve", ok: false, href: "/como-funciona#garantias" },
+  { icon: Camera, titulo: "Fotografia profissional", texto: "Sessão de fotos do imóvel com parceiro, sob consulta.", status: "Via parceiro", ok: false, href: "/parceiros/fotografos" },
 ] as const;
 
-const ICON_TONE: Record<ServiceTone, string> = {
-  incluido: "bg-champagne/15 text-champagne-600",
-  cotacao: "bg-sage-100 text-forest",
-  avulso: "bg-sage-100 text-forest",
-  gratis: "bg-blue-50 text-blue-500",
-};
-
-const STATUS_TONE = {
-  ok: "bg-green-50 text-green-900",
-  partner: "bg-amber-50 text-amber-700",
-} as const;
-
-function ServiceCard({ s }: { s: Service }) {
-  const Icon = s.icon;
-  const included = s.tone === "incluido";
-  const highlight = s.highlight ?? null;
-  return (
-    <div
-      className={cn(
-        "flex h-full flex-col rounded-2xl border bg-white p-6 transition-all hover:-translate-y-0.5 hover:shadow-md",
-        included
-          ? "border-champagne ring-1 ring-champagne/40"
-          : highlight
-            ? "border-blue-200 ring-1 ring-blue-100"
-            : "border-sage-200"
-      )}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className={cn("grid h-12 w-12 place-items-center rounded-xl", ICON_TONE[s.tone])}>
-          <Icon className="h-6 w-6" aria-hidden />
-        </div>
-        <span
-          className={cn(
-            "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold",
-            STATUS_TONE[s.statusTone]
-          )}
-        >
-          {s.statusLabel}
-        </span>
-      </div>
-      <h3 className="mt-4 font-title text-lg font-bold text-ink">{s.title}</h3>
-      {highlight && (
-        <span className="mt-2 inline-flex w-fit items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
-          {highlight}
-        </span>
-      )}
-      <p className="mt-2 flex-1 text-sm text-muted">{s.benefit}</p>
-      <div className="mt-5 flex items-center justify-between gap-3">
-        <span className={cn("text-sm font-semibold", included ? "text-champagne-600" : "text-ink")}>
-          {s.price}
-        </span>
-        {included ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-champagne px-3 py-1.5 text-sm font-medium text-champagne-600">
-            <Check className="h-4 w-4" aria-hidden /> Incluído
-          </span>
-        ) : (
-          <ButtonLink href={s.href} variant={s.tone === "gratis" ? "outline" : "primary"} size="sm">
-            {s.cta}
-          </ButtonLink>
-        )}
-      </div>
-    </div>
-  );
-}
+/** Já vem em toda locação — sem contratar nada à parte (antes era a seção "Tecnologia & segurança"). */
+const INCLUIDO = [
+  { icon: FileSignature, titulo: "Contrato assinado digitalmente", texto: "De 30 a 180 dias, com validade jurídica." },
+  { icon: UserCheck, titulo: "Conversa registrada", texto: "Negociação na plataforma, com o contato protegido até o aceite." },
+  { icon: Banknote, titulo: "Valor mensal direto ao proprietário", texto: "A plataforma não recebe nem retém o valor mensal." },
+] as const;
 
 export default function PricingPage() {
   return (
     <>
       <JsonLd dados={ofertaRegraUnica(SITE_URL)} />
 
-      <section className="bg-forest section-y text-center text-white">
-        <div className="container-page">
-          <h1 className="font-title text-4xl font-bold md:text-5xl">Anunciar é grátis</h1>
-          <p className="mx-auto mt-5 max-w-2xl text-lg text-white/80">
+      <BannerTopo
+        foto={PHOTOS.ownerKeys}
+        alt="Proprietário entregando as chaves de um apartamento mobiliado"
+        eyebrow="Preços"
+        titulo="Anunciar é grátis"
+        alinhamento="centro"
+        subtitulo={
+          <p>
             A Viva cobra <strong className="text-white">12% sobre o valor total do contrato fechado</strong>. Sem mensalidade.
           </p>
+        }
+      >
+        <ButtonLink href="/dashboard/imoveis/novo" variant="inverse" size="lg">
+          Anunciar meu imóvel <ArrowRight className="h-4 w-4" />
+        </ButtonLink>
+      </BannerTopo>
+
+      {/* Os três números que importam, logo abaixo do banner. */}
+      <section className="container-page relative z-10 -mt-10">
+        <div className="grid gap-4 sm:grid-cols-3" data-testid="precos-destaques">
+          {[
+            { Icon: Megaphone, n: "R$ 0", t: "para anunciar, quantos imóveis quiser" },
+            { Icon: TrendingDown, n: "12% → 6%", t: "quanto mais imóveis, menor a taxa" },
+            { Icon: Users, n: "R$ 0", t: "de taxa para quem vem morar" },
+          ].map(({ Icon, n, t }) => (
+            <div key={t} className="flex items-center gap-4 rounded-2xl border border-line bg-white p-5 shadow-lg">
+              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-sage-100 text-forest">
+                <Icon className="h-6 w-6" aria-hidden />
+              </span>
+              <div>
+                <p className="font-title text-2xl font-bold text-ink">{n}</p>
+                <p className="text-sm text-muted">{t}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
-      <section className="container-page -mt-10 pb-16">
+      <section className="container-page pb-16 pt-10">
         <div className="mb-10 rounded-3xl border border-champagne bg-white p-6 shadow-xl ring-2 ring-champagne sm:p-8" data-testid="regra-unica">
           <h2 className="font-title text-2xl font-bold text-ink">Quanto mais imóveis, menor a taxa</h2>
           <p className="mt-3 text-ink">{TEXTO_REGRA_UNICA}</p>
@@ -185,70 +129,65 @@ export default function PricingPage() {
         <ComparativoPrecos />
       </section>
 
-      {/* Serviços opcionais — reais, com preço e separados por quem contrata */}
-      <section className="bg-surface-2 section-y">
+      {/* Incluído em toda locação (antes "Tecnologia & segurança"). */}
+      <section className="bg-surface-2 section-y" data-testid="precos-incluido">
         <div className="container-page">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="font-title text-3xl font-bold text-ink">Serviços opcionais</h2>
-            <p className="mt-4 text-muted">
-              Reforce o anúncio e organize a negociação. Cada serviço mostra o preço e o status —
-              o que já funciona e o que depende de parceiro. A contratação acontece no momento
-              certo do fluxo; aqui é só transparência.
-            </p>
-            <p className="mx-auto mt-3 max-w-xl rounded-lg bg-white px-3 py-2 text-sm text-muted">
-              <strong className="text-ink">Garantia:</strong> caução documentada, combinada entre
-              proprietário e inquilino. Outras modalidades de garantia locatícia: em breve.
-              A plataforma organiza e documenta; não é a garantidora.
-            </p>
-          </div>
-
-          <div className="mt-10">
-            <h3 className="font-title text-sm font-bold uppercase tracking-wide text-muted">
-              Para o inquilino
-            </h3>
-            <div className="mt-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {TENANT_SERVICES.map((s) => (
-                <ServiceCard key={s.title} s={s} />
-              ))}
-            </div>
-          </div>
-
-          <div className="mt-10">
-            <h3 className="font-title text-sm font-bold uppercase tracking-wide text-muted">
-              Para o proprietário
-            </h3>
-            <div className="mt-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {OWNER_SERVICES.map((s) => (
-                <ServiceCard key={s.title} s={s} />
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Tecnologia & segurança — vêm por baixo, sem nome de fornecedor */}
-      <section className="section-y">
-        <div className="container-page">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="font-title text-2xl font-bold text-ink">Tecnologia &amp; segurança</h2>
-            <p className="mt-3 text-muted">
-              Recursos que já acompanham toda locação — você não contrata nada à parte.
-            </p>
-          </div>
-          <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {TECH_BENEFITS.map((b) => {
+          <h2 className="text-center font-title text-3xl font-bold text-ink">Incluído em toda locação</h2>
+          <div className="mt-8 grid gap-5 md:grid-cols-3">
+            {INCLUIDO.map((b) => {
               const Icon = b.icon;
               return (
-                <div key={b.title} className="rounded-2xl border border-sage-200 bg-white p-5">
-                  <div className="grid h-11 w-11 place-items-center rounded-xl bg-sage-100 text-forest">
+                <div key={b.titulo} className="flex gap-4 rounded-2xl border border-line bg-white p-5">
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-sage-100 text-forest">
                     <Icon className="h-5 w-5" aria-hidden />
+                  </span>
+                  <div>
+                    <h3 className="font-title text-base font-bold text-ink">{b.titulo}</h3>
+                    <p className="mt-1 text-sm text-muted">{b.texto}</p>
                   </div>
-                  <h3 className="mt-3 font-title text-base font-bold text-ink">{b.title}</h3>
-                  <p className="mt-1.5 text-sm text-muted">{b.text}</p>
                 </div>
               );
             })}
           </div>
+        </div>
+      </section>
+
+      {/* Serviços opcionais — simplificados: uma faixa compacta, status honesto. */}
+      <section className="container-page section-y" data-testid="precos-opcionais">
+        <div className="mx-auto max-w-2xl text-center">
+          <h2 className="font-title text-2xl font-bold text-ink">Se você precisar</h2>
+          <p className="mt-2 text-muted">Opcionais, contratados no momento certo do fluxo. Garantia: uma por contrato, combinada entre proprietário e inquilino.</p>
+        </div>
+        <ul className="mx-auto mt-8 grid max-w-5xl gap-4 md:grid-cols-3">
+          {OPCIONAIS.map((o) => {
+            const Icon = o.icon;
+            return (
+              <li key={o.titulo}>
+                <a href={o.href} className="flex h-full flex-col rounded-2xl border border-line bg-white p-5 transition hover:border-forest hover:shadow-md">
+                  <div className="flex items-center justify-between gap-3">
+                    <Icon className="h-5 w-5 text-forest" aria-hidden />
+                    <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-semibold", o.ok ? "bg-green-50 text-green-900" : "bg-amber-50 text-amber-700")}>{o.status}</span>
+                  </div>
+                  <h3 className="mt-3 font-title text-base font-bold text-ink">{o.titulo}</h3>
+                  <p className="mt-1 text-sm text-muted">{o.texto}</p>
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+
+      {/* Chamada final com foto. */}
+      <section className="container-page pb-16">
+        <div className="grid items-center gap-8 overflow-hidden rounded-3xl bg-forest text-white md:grid-cols-2">
+          <div className="p-8 md:p-12">
+            <h2 className="font-title text-3xl font-bold">Seu imóvel mobiliado, ocupado por meses</h2>
+            <p className="mt-3 text-white/80">Anuncie de graça e pague só quando o contrato for fechado.</p>
+            <ButtonLink href="/dashboard/imoveis/novo" variant="inverse" size="lg" className="mt-6">
+              Anunciar meu imóvel <ArrowRight className="h-4 w-4" />
+            </ButtonLink>
+          </div>
+          <BrandImage src={PHOTOS.condominio} alt="Sala de estar mobiliada e iluminada" rounded="rounded-none" sizes="(max-width: 768px) 100vw, 50vw" className="h-64 w-full md:h-full md:min-h-[18rem]" />
         </div>
       </section>
     </>

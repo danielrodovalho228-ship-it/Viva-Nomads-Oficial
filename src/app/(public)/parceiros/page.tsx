@@ -3,12 +3,24 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { trilha } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
 import Link from "next/link";
+import { Camera, Building2, KeyRound, Wrench, ShieldCheck, ArrowRight, Check } from "lucide-react";
+import { BannerTopo } from "@/components/institucional/banner-topo";
+import { BrandImage } from "@/components/brand-image";
+import { ButtonLink } from "@/components/ui/button";
 import { ParceiroForm } from "./parceiro-form";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/parceiros" },
   title: "Seja parceiro: fotógrafos e gestores",
   description: "Fotógrafos, empresas, gestores e prestadores de serviços para imóveis mobiliados: cadastre seu interesse e seja parceiro da Viva Nomads.",
+};
+
+const ICONE: Record<string, React.ComponentType<{ className?: string }>> = {
+  fotografos: Camera,
+  empresas: Building2,
+  gestores: KeyRound,
+  servicos: Wrench,
+  seguros: ShieldCheck,
 };
 
 const CARDS = [
@@ -23,7 +35,12 @@ const CARDS = [
     links: [{ href: "/parceiros?tipo=seguros#quero-ser-parceiro", rotulo: "Deixar contato" }] },
 ];
 
-const PASSOS = ["Cadastre-se", "A Viva confere (CNPJ ou MEI, portfólio, reputação)", "Receba pedidos (conversa pela plataforma)", "Entregue e seja avaliado"];
+const PASSOS = [
+  { t: "Cadastre-se", d: "Conte o que você faz e onde atende. Leva poucos minutos.", foto: "/images/como-funciona/01-busque.webp", alt: "Pessoa preenchendo o cadastro no notebook" },
+  { t: "A Viva confere", d: "CNPJ ou MEI, portfólio e reputação, antes de aparecer no site.", foto: "/images/como-funciona/03-verifique.webp", alt: "Conferência de documentos no computador" },
+  { t: "Receba pedidos", d: "Quem anuncia ou busca imóveis mobiliados chama você; a conversa é pela plataforma.", foto: "/images/como-funciona/02-converse.webp", alt: "Conversa pelo celular" },
+  { t: "Entregue e seja avaliado", d: "Depois da entrega, o cliente avalia — boas avaliações trazem mais pedidos.", foto: "/images/como-funciona/06-selo.webp", alt: "Selo de qualidade em destaque" },
+];
 
 const REGRAS = [
   "O pagamento do serviço é entre parceiro e cliente: a Viva não recebe esse dinheiro.",
@@ -43,69 +60,105 @@ export default async function ParceirosPage({ searchParams }: { searchParams: Pr
   return (
     <div>
       <JsonLd dados={trilha(SITE_URL, [{ nome: "Parceiros", caminho: "/parceiros" }])} />
-      <section className="bg-night text-white">
-        <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-          <h1 className="font-display text-3xl font-bold sm:text-4xl">Seja parceiro da Viva Nomads</h1>
-          <p className="mt-3 text-white/80">Atenda quem anuncia e quem busca imóveis mobiliados, com conversa só pela plataforma e identidade revelada depois do aceite.</p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <a href="#quero-ser-parceiro" className="rounded-xl bg-white px-5 py-3 font-semibold text-night focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">Quero ser parceiro</a>
-            <a href="#tipos" className="rounded-xl border border-white/40 px-5 py-3 font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">Ver tipos de parceria</a>
-          </div>
-          <dl className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div><dt className="text-sm text-white/70">Brasil</dt><dd className="text-sm">Busca por CEP ou cidade em qualquer região</dd></div>
-            <div><dt className="text-sm text-white/70">30–180 dias</dt><dd className="text-sm">de estadia</dd></div>
-            <div><dt className="text-sm text-white/70">2027</dt><dd className="text-sm">lançamento oficial</dd></div>
-          </dl>
-        </div>
+      <BannerTopo
+        foto="/images/como-funciona/07-anuncie.webp"
+        alt="Fotógrafo registrando uma sala mobiliada"
+        eyebrow="Parceiros"
+        titulo="Seja parceiro da Viva Nomads"
+        subtitulo={<p>Atenda quem anuncia e quem busca imóveis mobiliados, com conversa só pela plataforma e identidade revelada depois do aceite.</p>}
+      >
+        <ButtonLink href="#quero-ser-parceiro" variant="inverse" size="lg">
+          Quero ser parceiro <ArrowRight className="h-4 w-4" />
+        </ButtonLink>
+        <ButtonLink href="#tipos" variant="inverseSecondary" size="lg">
+          Ver tipos de parceria
+        </ButtonLink>
+      </BannerTopo>
+
+      {/* Números rápidos. */}
+      <section className="container-page relative z-10 -mt-10">
+        <dl className="grid gap-4 rounded-2xl border border-line bg-white p-6 shadow-lg sm:grid-cols-3">
+          <div><dt className="font-title text-2xl font-bold text-ink">Brasil</dt><dd className="text-sm text-muted">Busca por CEP ou cidade em qualquer região</dd></div>
+          <div><dt className="font-title text-2xl font-bold text-ink">30–180 dias</dt><dd className="text-sm text-muted">de estadia em imóveis mobiliados</dd></div>
+          <div><dt className="font-title text-2xl font-bold text-ink">R$ 0</dt><dd className="text-sm text-muted">para se cadastrar, sem mensalidade</dd></div>
+        </dl>
       </section>
 
-      <div className="mx-auto max-w-3xl space-y-12 px-4 py-10 sm:px-6">
-        <section id="tipos" aria-labelledby="h-tipos">
-          <h2 id="h-tipos" className="font-display text-2xl font-bold text-ink">Tipos de parceria</h2>
-          <ul className="mt-4 space-y-4">
-            {CARDS.map((c) => (
-              <li key={c.id} className="rounded-xl border border-sage-200 p-4">
+      <section id="tipos" aria-labelledby="h-tipos" className="container-page section-y scroll-mt-24">
+        <h2 id="h-tipos" className="text-center font-title text-3xl font-bold text-ink md:text-4xl">Tipos de parceria</h2>
+        <ul className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {CARDS.map((c) => {
+            const Icon = ICONE[c.id] ?? Building2;
+            return (
+              <li key={c.id} className="flex flex-col rounded-2xl border border-line bg-white p-6 shadow-sm">
                 <div className="flex items-center justify-between gap-3">
-                  <h3 className="font-semibold text-ink">{c.titulo}</h3>
+                  <span className="grid h-11 w-11 place-items-center rounded-xl bg-sage-100 text-forest">
+                    <Icon className="h-5 w-5" aria-hidden />
+                  </span>
                   <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${c.selo === "Aberto" ? "bg-sage-100 text-forest" : "bg-night/10 text-ink"}`}>{c.selo}</span>
                 </div>
-                <p className="mt-2 text-sm text-ink/75">{c.texto}</p>
-                <div className="mt-3 flex flex-wrap gap-4 text-sm font-semibold">
-                  {c.links.map((l) => <Link key={l.href} href={l.href} className="underline underline-offset-2">{l.rotulo}</Link>)}
+                <h3 className="mt-4 font-title text-lg font-bold text-ink">{c.titulo}</h3>
+                <p className="mt-2 flex-1 text-sm leading-relaxed text-muted">{c.texto}</p>
+                <div className="mt-4 flex flex-wrap gap-4 text-sm font-semibold text-forest">
+                  {c.links.map((l) => <Link key={l.href} href={l.href} className="underline underline-offset-2 hover:text-blue-700">{l.rotulo}</Link>)}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+
+      {/* Fluxo do processo com imagens (como as páginas de processo do Furnished Finder). */}
+      <section aria-labelledby="h-como" className="bg-surface-2 section-y" data-testid="parceiros-fluxo">
+        <div className="container-page">
+          <h2 id="h-como" className="text-center font-title text-3xl font-bold text-ink md:text-4xl">Como funciona</h2>
+          <ol className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {PASSOS.map((p, i) => (
+              <li key={p.t} className="overflow-hidden rounded-2xl border border-line bg-white shadow-sm">
+                <BrandImage src={p.foto} alt={p.alt} rounded="rounded-none" sizes="(max-width: 640px) 100vw, 25vw" className="aspect-[16/10] w-full" />
+                <div className="p-5">
+                  <span className="grid h-8 w-8 place-items-center rounded-full bg-forest text-sm font-bold text-white" aria-hidden>{i + 1}</span>
+                  <h3 className="mt-3 font-title text-base font-bold text-ink">{p.t}</h3>
+                  <p className="mt-1.5 text-sm leading-relaxed text-muted">{p.d}</p>
                 </div>
               </li>
             ))}
-          </ul>
-        </section>
-
-        <section aria-labelledby="h-como">
-          <h2 id="h-como" className="font-display text-2xl font-bold text-ink">Como funciona</h2>
-          <ol className="mt-4 space-y-2">
-            {PASSOS.map((p, i) => (
-              <li key={p} className="flex gap-3 text-ink"><span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-night text-sm font-bold text-white" aria-hidden>{i + 1}</span><span className="pt-0.5">{p}</span></li>
-            ))}
           </ol>
-        </section>
+        </div>
+      </section>
 
-        <section aria-labelledby="h-regras">
-          <h2 id="h-regras" className="font-display text-2xl font-bold text-ink">Regras claras</h2>
-          <ul className="mt-4 list-disc space-y-2 pl-5 text-ink/80">{REGRAS.map((r) => <li key={r}>{r}</li>)}</ul>
-        </section>
+      <section aria-labelledby="h-regras" className="container-page section-y">
+        <div className="grid items-center gap-10 md:grid-cols-2">
+          <BrandImage src="/images/como-funciona/05-qualifique.webp" alt="Sala mobiliada pronta para receber hóspedes" sizes="(max-width: 768px) 100vw, 50vw" className="aspect-[4/3] w-full rounded-3xl" />
+          <div>
+            <h2 id="h-regras" className="font-title text-3xl font-bold text-ink">Regras claras</h2>
+            <ul className="mt-6 space-y-3">
+              {REGRAS.map((r) => (
+                <li key={r} className="flex gap-3 text-ink">
+                  <Check className="mt-0.5 h-5 w-5 shrink-0 text-forest" aria-hidden />
+                  <span>{r}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
 
-        <section id="quero-ser-parceiro" aria-labelledby="h-form" className="scroll-mt-24">
-          <h2 id="h-form" className="font-display text-2xl font-bold text-ink">Quero ser parceiro</h2>
-          <p className="mb-4 mt-2 text-ink/70">Deixe seu contato e a equipe responde.</p>
-          <ParceiroForm tipoInicial={tipo ?? ""} />
-        </section>
-
-        <section aria-labelledby="h-duvidas">
-          <h2 id="h-duvidas" className="font-display text-2xl font-bold text-ink">Dúvidas</h2>
-          <dl className="mt-4 space-y-4">
-            {DUVIDAS.map((d) => (<div key={d.p}><dt className="font-semibold text-ink">{d.p}</dt><dd className="mt-1 text-ink/75">{d.r}</dd></div>))}
-          </dl>
-        </section>
-
-      </div>
+      <section id="quero-ser-parceiro" aria-labelledby="h-form" className="bg-surface-2 section-y scroll-mt-24">
+        <div className="container-page grid gap-10 md:grid-cols-5">
+          <div className="md:col-span-2">
+            <h2 id="h-form" className="font-title text-3xl font-bold text-ink">Quero ser parceiro</h2>
+            <p className="mt-3 text-muted">Deixe seu contato e a equipe responde. É grátis; a taxa de parceria só existe quando você aceita um pedido.</p>
+            <dl className="mt-8 space-y-5" aria-labelledby="h-duvidas">
+              <h3 id="h-duvidas" className="font-title text-lg font-bold text-ink">Dúvidas</h3>
+              {DUVIDAS.map((d) => (<div key={d.p}><dt className="font-semibold text-ink">{d.p}</dt><dd className="mt-1 text-sm text-muted">{d.r}</dd></div>))}
+            </dl>
+          </div>
+          <div className="rounded-2xl border border-line bg-white p-6 shadow-sm md:col-span-3">
+            <ParceiroForm tipoInicial={tipo ?? ""} />
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

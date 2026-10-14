@@ -217,7 +217,7 @@ test("vocabulário (ordens 12eea681/5faa3903): a cobrança da Viva nas páginas 
   const proibido = /aluguel|loca[cç][aã]o|imobili[aá]ria|corretagem|intermedia/i;
   const textos = [
     TEXTO_REGRA_UNICA,
-    ler("src/app/(public)/precos/page.tsx").match(/<section className="bg-forest[\s\S]*?<\/section>/)![0],
+    ler("src/app/(public)/precos/page.tsx").match(/<BannerTopo[\s\S]*?<\/BannerTopo>/)![0],
     ler("src/app/(public)/precos/page.tsx").match(/data-testid="regra-unica"[\s\S]*?<ButtonLink/)![0],
     LINHAS_COMPARE.find((l) => l.id === "viva")!.regra,
     ...DIFERENCIAIS_VIVA,

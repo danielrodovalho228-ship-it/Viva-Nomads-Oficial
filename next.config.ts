@@ -43,6 +43,11 @@ const nextConfig: NextConfig = {
       { source: "/simulador.html", destination: "/simulacao", permanent: true },
       // /contato não existe: o canal único é a Central de Ajuda (F25). 308, só /ajuda no sitemap.
       { source: "/contato", destination: "/ajuda", permanent: true },
+      // Ordem 5a4b9146: endereços "naturais" dos itens do menu que davam 404.
+      { source: "/para-empresas", destination: "/empresas", permanent: true },
+      { source: "/publicar-pedido", destination: "/pedidos/novo", permanent: true },
+      { source: "/pedido", destination: "/pedidos/novo", permanent: true },
+      { source: "/proprietarios", destination: "/para-proprietarios", permanent: true },
     ];
   },
   async rewrites() {
