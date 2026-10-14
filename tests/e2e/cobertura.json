@@ -5,7 +5,9 @@
       "personas": [
         "publico"
       ],
-      "specs": []
+      "specs": [
+        "t66-home-busca-principal"
+      ]
     },
     "/acesso-socios": {
       "personas": [

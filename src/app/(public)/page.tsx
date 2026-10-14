@@ -23,10 +23,11 @@ import { SELOS } from "@/config/selos";
 import { PHOTOS } from "@/lib/media";
 import { listProperties } from "@/lib/data/properties";
 import { ButtonLink } from "@/components/ui/button";
-import { ReadyToLiveBadge, SpecTag, Eyebrow } from "@/components/ui/badge";
+import { SpecTag, Eyebrow } from "@/components/ui/badge";
 import { BrandImage } from "@/components/brand-image";
 import { PropertyCard } from "@/components/property-card";
-import { HeroSearch } from "@/components/hero-search";
+import { BuscaPrincipal } from "@/components/home/busca-principal";
+import { AtalhosCategoria } from "@/components/home/atalhos-categoria";
 import { HeroVideoBg } from "@/components/hero-video-bg";
 import { JsonLd } from "@/components/seo/json-ld";
 import { organizacao } from "@/lib/seo/estruturados";
@@ -59,55 +60,32 @@ export default async function HomePage() {
   return (
     <>
       <JsonLd dados={organizacao(SITE_URL)} />
-      {/* ───────── HERO (preto, gradiente azul→verde) ───────── */}
-      <section className="relative overflow-hidden bg-night text-white">
-        {/* Fundo de vídeo (Fase 1) — poster = LCP; vídeo só em desktop sem reduced-motion. */}
+      {/* ───────── HERO (ordem bab1b2aa): foto em largura cheia + UMA busca ───────── */}
+      <section className="relative overflow-hidden bg-night text-white" data-testid="hero-home">
+        {/* Fundo: poster = LCP; vídeo só em desktop sem reduced-motion. */}
         <HeroVideoBg />
-        <div className="pointer-events-none absolute -right-40 -top-40 h-[34rem] w-[34rem] rounded-full bg-gradient-brand opacity-25 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-40 -left-40 h-[28rem] w-[28rem] rounded-full bg-blue-700 opacity-25 blur-3xl" />
-
-        <div className="container-page relative z-10 grid items-center gap-8 pb-8 pt-8 lg:grid-cols-12 lg:gap-10 lg:pb-4 lg:pt-12">
-          <div className="lg:col-span-7">
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-white/80">
-              <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
-              Estadias de 30 a 180 dias
-            </span>
-            <h1 className="mt-6 font-title font-bold display-xl">
-              Moradia mobiliada para a sua{" "}
-              <span className="text-gradient-brand">nova fase</span>
-            </h1>
-            <p className="mt-6 max-w-xl text-lg text-white/70">
-              Imóveis mobiliados prontos para morar, para estadias de 30 a 180 dias.
-              Para quem chega a uma nova fase e quer se sentir em casa desde o primeiro dia.
-            </p>
-            <div className="mt-9 max-w-2xl">
-              <HeroSearch />
-            </div>
-            {/* Trust badges com ícones (1E) */}
-            <div className="mt-6 grid grid-cols-3 gap-3 sm:flex sm:flex-wrap sm:items-center sm:gap-x-7">
-              <TrustItem icon={FileSignature} text="Contrato digital de 30 a 180 dias" />
-              <TrustItem icon={Sofa} text="Pronto para morar" />
-              <TrustItem icon={ShieldCheck} text="Conversa registrada" />
-            </div>
+        <div className="container-page relative z-10 flex min-h-[26rem] flex-col items-center justify-center py-12 text-center sm:min-h-[28rem] lg:min-h-[30rem]">
+          <h1 className="max-w-3xl font-title text-3xl font-bold leading-tight sm:text-5xl">
+            Imóveis mobiliados para morar por meses
+          </h1>
+          <p className="mt-3 text-base font-medium text-white/85 sm:text-lg">
+            Estadias de 30 a 180 dias · sem taxa para o inquilino
+          </p>
+          <div className="mt-8 w-full max-w-xl">
+            <BuscaPrincipal />
           </div>
+        </div>
+      </section>
 
-          <div className="lg:col-span-5">
-            <div className="relative">
-              <BrandImage
-                src={PHOTOS.heroProfessional}
-                alt="Profissional instalado e trabalhando no imóvel"
-                priority
-                sizes="(max-width: 1024px) 100vw, 40vw"
-                className="aspect-[4/5] w-full rounded-3xl ring-1 ring-white/10"
-              />
-              <div className="absolute -bottom-5 -left-5 hidden rounded-2xl bg-white p-4 shadow-xl sm:block">
-                <ReadyToLiveBadge />
-                <p className="mt-2 max-w-[12rem] text-xs text-muted">
-                  Home office, internet boa para o trabalho e coworkings na região.
-                </p>
-              </div>
-            </div>
-          </div>
+      {/* ───────── ATALHOS POR CATEGORIA ───────── */}
+      <AtalhosCategoria />
+
+      {/* ───────── CONFIANÇA (o que vem com toda estadia) ───────── */}
+      <section className="border-y border-line bg-white">
+        <div className="container-page grid grid-cols-3 gap-3 py-6 sm:flex sm:flex-wrap sm:items-center sm:justify-center sm:gap-x-10">
+          <TrustItem icon={FileSignature} text="Contrato digital de 30 a 180 dias" />
+          <TrustItem icon={Sofa} text="Pronto para morar" />
+          <TrustItem icon={ShieldCheck} text="Conversa registrada" />
         </div>
       </section>
 
@@ -403,8 +381,8 @@ function TrustItem({
   text: string;
 }) {
   return (
-    <span className="flex flex-col items-center gap-1.5 text-center text-xs text-white/75 sm:flex-row sm:gap-2 sm:text-sm">
-      <Icon className="h-6 w-6 text-green-300 sm:h-4 sm:w-4" />
+    <span className="flex flex-col items-center gap-1.5 text-center text-xs text-ink sm:flex-row sm:gap-2 sm:text-sm">
+      <Icon className="h-6 w-6 text-forest sm:h-4 sm:w-4" />
       <span className="leading-tight">{text}</span>
     </span>
   );
