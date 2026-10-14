@@ -142,7 +142,7 @@ test.describe("T21 — Central de Agentes v2", () => {
     await bloco.getByRole("button", { name: /Falar com uma pessoa/i }).click();
     const form = p.getByTestId("form-pessoa");
     await form.getByLabel("Seu nome").fill("Visitante T21");
-    await form.getByLabel("Seu e-mail").fill(`t21.${Date.now()}@lab.vivanomads.test`);
+    await form.getByLabel("Seu e-mail").fill(`t21.${Date.now()}@lab.vivanomads.com.br`);
     await form.getByLabel("Pedido para a equipe").fill("Quero saber como funciona a Caução antes de anunciar.");
     await form.getByRole("button", { name: "Abrir chamado" }).click();
     const ok = p.getByTestId("chamado-aberto-chat");

@@ -58,7 +58,7 @@ test.describe("T24 — Acolhimento e resposta sugerida", () => {
 
   test("reembolso de Caução: acolhimento + sugestão para o Daniel aprovar (dinheiro já pago)", async ({ browser }) => {
     const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
-    const numero = await abrirPeloFormulario(await ctx.newPage(), "Contrato ou caução", `Minha caução ainda não foi devolvida depois da saída do imóvel. (${Date.now()})`, `t24.${Date.now()}@lab.vivanomads.test`);
+    const numero = await abrirPeloFormulario(await ctx.newPage(), "Contrato ou caução", `Minha caução ainda não foi devolvida depois da saída do imóvel. (${Date.now()})`, `t24.${Date.now()}@lab.vivanomads.com.br`);
     await ctx.close();
     // acolhimento (público) + resumo e ações + sugestão (internos)
     await expect.poll(async () => (await mensagens(numero)).ms.filter((m) => m.autor === "ia").length, { timeout: 20_000 }).toBe(3);
@@ -80,7 +80,7 @@ test.describe("T24 — Acolhimento e resposta sugerida", () => {
 
   test("dúvida com resposta oficial (anúncio / Caução simples): a Viva responde SOZINHA e avisa por e-mail", async ({ browser }) => {
     for (const pedido of ["Meu anúncio não publica, aparece um aviso de documento pendente.", "Sou proprietário e quero entender como funciona o Caução. Vocês oferecem seguro?"]) {
-      const email = `t24.sozinha.${Date.now()}@lab.vivanomads.test`;
+      const email = `t24.sozinha.${Date.now()}@lab.vivanomads.com.br`;
       const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
       const assunto = pedido.includes("anúncio") ? "Meu anúncio não publica" : "Contrato ou caução";
       const numero = await abrirPeloFormulario(await ctx.newPage(), assunto, `${pedido} (${Date.now()})`, email);
@@ -105,7 +105,7 @@ test.describe("T24 — Acolhimento e resposta sugerida", () => {
     const seis = new Date(Date.now() - 7 * 3_600_000).toISOString();
     const { data: novo } = await adm()
       .from("chamados")
-      .insert({ visitante_email: "t24.vermelho@lab.vivanomads.test", tipo: "suporte", categoria: "contrato", prioridade: "p2", canal: "site", assunto: "teste T24 vermelho", responsavel_tipo: "humano", prazo_primeira_resposta: seis, prazo_resolucao: seis, criado_em: seis })
+      .insert({ visitante_email: "t24.vermelho@lab.vivanomads.com.br", tipo: "suporte", categoria: "contrato", prioridade: "p2", canal: "site", assunto: "teste T24 vermelho", responsavel_tipo: "humano", prazo_primeira_resposta: seis, prazo_resolucao: seis, criado_em: seis })
       .select("id, numero_publico")
       .single();
     const ctx = await browser.newContext({ storageState: authFile("admin") });
@@ -119,7 +119,7 @@ test.describe("T24 — Acolhimento e resposta sugerida", () => {
   });
 
   test("'Falar com uma pessoa' com dúvida oficial: NUNCA resposta da IA, prioridade sobe e o e-mail ao Daniel leva a sugestão", async ({ browser }) => {
-    const email = `t24.pessoa.${Date.now()}@lab.vivanomads.test`;
+    const email = `t24.pessoa.${Date.now()}@lab.vivanomads.com.br`;
     const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const numero = await abrirComoVisitante(await ctx.newPage(), `Sou proprietário e quero entender como funciona o Caução. (${Date.now()})`, email);
     await ctx.close();
@@ -144,7 +144,7 @@ test.describe("T24 — Acolhimento e resposta sugerida", () => {
   });
 
   test("admin aprova a sugestão com 1 clique: vira resposta da equipe e sai o e-mail", async ({ browser }) => {
-    const email = `t24.aprova.${Date.now()}@lab.vivanomads.test`;
+    const email = `t24.aprova.${Date.now()}@lab.vivanomads.com.br`;
     const vis = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const numero = await abrirComoVisitante(await vis.newPage(), `A devolução da caução está atrasada (${Date.now()})`, email);
     await vis.close();
