@@ -161,6 +161,13 @@ export function ContratosClient({
         <span>{REGRA_PAGAMENTO}</span>
       </div>
 
+      {/* Âncora do menu "Conferência de entrada" (ordem 9f3085d8): a conferência é por
+          contrato — abra o contrato para registrar a entrada e a saída. */}
+      <p id="conferencia" className="mb-6 scroll-mt-24 text-sm text-muted">
+        <strong className="font-semibold text-ink">Conferência de entrada e saída:</strong> abra o contrato
+        abaixo para registrar o estado do imóvel na entrada e na saída do morador.
+      </p>
+
       {contratos.length === 0 ? (
         <EmptyState
           illustration={<Image src="/media/empty-contratos.webp" alt="" width={176} height={176} className="h-44 w-44" />}

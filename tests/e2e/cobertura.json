@@ -1874,6 +1874,15 @@
       ],
       "specs": []
     },
+    "src/lib/data/menu-actions.ts#temImovelAnunciado": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t79-menu-cascata"
+      ]
+    },
     "src/lib/data/mode-actions.ts#getPreferredMode": {
       "personas": [
         "inquilino",

@@ -3,32 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  LayoutDashboard,
-  Camera,
-  Home,
-  MessageSquare,
-  CreditCard,
-  Settings,
-  Heart,
-  ShieldCheck,
-  FileSignature,
-  BadgeCheck,
-  Wrench,
-  Menu,
-  LogOut,
-  Megaphone,
-  Receipt,
-  Users,
-  Search,
-  FileText,
-  TrendingUp,
-  Wallet,
-  LifeBuoy,
-  Bot,
-  Handshake,
-  Inbox,
-} from "lucide-react";
+import { Menu, LogOut, Plus } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { Avatar } from "@/components/ui/avatar";
 import { useAuthStore, type SessionUser, type ViewMode } from "@/lib/store";
@@ -44,18 +19,9 @@ import { ModoChip } from "@/components/layout/modo-chip";
 import { MobileTabBar } from "@/components/layout/mobile-tab-bar";
 import { AppHeader } from "@/components/app/app-header";
 import { useDemoMode, DemoToggle, DemoBanner, useDisplayUser } from "@/lib/demo/demo-mode";
-import { PROGRAMA_INDICACAO } from "@/lib/flags";
-import { cn } from "@/lib/utils";
-
-interface NavItem {
-  href: string;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  /** Plano mínimo para exibir o item (operador / Gestor). */
-  minPlan?: "gestor";
-  /** Contador dinâmico (ex.: documentos aguardando conferência no nav admin). */
-  badgeCount?: number;
-}
+import { MenuCascata } from "@/components/layout/menu-cascata";
+import { ANUNCIAR, menuDoPainel } from "@/config/menu-painel";
+import { temImovelAnunciado } from "@/lib/data/menu-actions";
 
 /**
  * REGRA PERMANENTE (0.5) — integridade da casca do dashboard:
@@ -66,72 +32,9 @@ interface NavItem {
  *  3. Rota de menu cuja tela ainda não existe usa <EmConstrucao/> dentro do
  *     layout — nunca 404, página em branco ou rota pública.
  *  O e2e `qa-full.mjs` verifica que nenhum item de menu renderiza fora da casca.
+ *
+ * O menu em si (cascata, conta única — ordem 9f3085d8) mora em config/menu-painel.ts.
  */
-/**
- * Menu do PROPRIETÁRIO — EXATAMENTE 9 itens (decisão de produto). O que saiu não
- * foi apagado: as rotas continuam vivas no código, só sem link no menu.
- *  - Qualificar imóvel → CTA dentro de Meus imóveis e da Visão geral.
- *  - Viabilidade, Orçamentos, Solicitações → cards do hub Ferramentas (fonte única).
- *  - Leads → some do menu (conceito do proprietário é Pedidos de moradia; ver relatório).
- *  - Carteira, Reembolsos → fora do menu (vocabulário que conflita com a regra de ouro).
- *  - Indicações → atrás da flag PROGRAMA_INDICACAO até o programa existir.
- */
-const OWNER_NAV: NavItem[] = [
-  { href: "/dashboard", label: "Visão geral", icon: LayoutDashboard },
-  { href: "/dashboard/imoveis", label: "Meus imóveis", icon: Home },
-  // Candidaturas recebidas — a tela existia, mas tinha saído do menu (achado do teste).
-  { href: "/dashboard/leads", label: "Interessados", icon: Users },
-  { href: "/dashboard/pedidos-cidade", label: "Pedidos de moradia", icon: Megaphone },
-  { href: "/dashboard/mensagens", label: "Mensagens", icon: MessageSquare },
-  { href: "/dashboard/fechamento", label: "Fechamento", icon: FileSignature },
-  { href: "/dashboard/contratos", label: "Contratos & blocos", icon: Receipt },
-  { href: "/dashboard/ferramentas", label: "Ferramentas", icon: Wrench },
-  { href: "/dashboard/assinatura", label: "Assinatura", icon: CreditCard },
-  { href: "/dashboard/conta", label: "Conta", icon: Settings },
-];
-
-/**
- * Menu do INQUILINO — EXATAMENTE 7 itens (mesma regra do proprietário). O que
- * saiu não foi apagado: as rotas seguem vivas, só sem link fixo no menu.
- *  - Comparar + Buscas salvas → abas dentro de "Favoritos & comparações"
- *    (+ atalho de Buscas salvas na Visão geral).
- *  - Solicitações → contextual: só entra no menu quando há locação ATIVA
- *    (antes disso, o card vive dentro de Minhas locações).
- *  - Indicações → atrás da flag PROGRAMA_INDICACAO até o programa existir.
- */
-const TENANT_NAV: NavItem[] = [
-  { href: "/dashboard", label: "Visão geral", icon: LayoutDashboard },
-  { href: "/buscar", label: "Buscar imóveis", icon: Search },
-  { href: "/dashboard/candidaturas", label: "Candidaturas", icon: FileText },
-  { href: "/dashboard/pedidos", label: "Meus pedidos", icon: Megaphone },
-  { href: "/dashboard/favoritos", label: "Favoritos & comparações", icon: Heart },
-  { href: "/dashboard/locacoes", label: "Minhas locações", icon: Receipt },
-  { href: "/dashboard/mensagens", label: "Mensagens", icon: MessageSquare },
-  { href: "/dashboard/verificacao", label: "Verificação", icon: BadgeCheck },
-  { href: "/dashboard/conta", label: "Conta", icon: Settings },
-];
-
-/** Item contextual do inquilino: entra só quando há locação ativa. */
-const TENANT_SOLICITACOES: NavItem = {
-  href: "/dashboard/solicitacoes",
-  label: "Solicitações",
-  icon: Wrench,
-};
-
-const ADMIN_NAV: NavItem[] = [
-  { href: "/admin", label: "Admin", icon: ShieldCheck },
-  { href: "/admin/pedidos", label: "Moderar pedidos", icon: Megaphone },
-  { href: "/admin/documentos", label: "Documentos", icon: FileSignature },
-  { href: "/admin/socios", label: "Caixa dos Sócios", icon: Inbox },
-  { href: "/admin/parceiros", label: "Parceiros", icon: Handshake },
-  { href: "/admin/fotografos", label: "Fotógrafos", icon: Camera },
-  { href: "/admin/atendimento", label: "Atendimento", icon: LifeBuoy },
-  { href: "/admin/financeiro", label: "Financeiro", icon: Wallet },
-  { href: "/admin/marketing", label: "Marketing", icon: TrendingUp },
-  { href: "/admin/agentes", label: "Agentes", icon: Bot },
-];
-
-const NAV_BY_MODE: Record<ViewMode, NavItem[]> = { owner: OWNER_NAV, tenant: TENANT_NAV };
 
 /** Para onde o convite leva ao ativar o segundo papel. */
 /** Rotas exclusivas de cada papel (a verificação é compartilhada — adapta por
@@ -223,28 +126,25 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     };
   }, [display.role, pathname]);
 
-  // Inquilino: "Solicitações" entra no menu só quando há locação ativa.
-  const hasActiveLoc = useHasActiveLocacao(mode === "tenant");
-
-  let nav = NAV_BY_MODE[mode];
-  // Admin vê o grupo Admin em QUALQUER modo (antes sumia no modo inquilino).
-  if (display.role === "admin")
-    nav = [...nav, ...ADMIN_NAV].map((item) =>
-      item.href === "/admin/documentos" && docsPendentes > 0
-        ? { ...item, badgeCount: docsPendentes }
-        : item.href === "/admin/agentes" && achadosP1 > 0
-          ? { ...item, badgeCount: achadosP1 }
-          : item
-    );
-  if (mode === "tenant" && hasActiveLoc) {
-    // Insere logo após "Minhas locações" (mantém o teto de 7 + 1 contextual).
-    const i = nav.findIndex((n) => n.href === "/dashboard/locacoes");
-    nav = i >= 0 ? [...nav.slice(0, i + 1), TENANT_SOLICITACOES, ...nav.slice(i + 1)] : nav;
-  }
-  // Itens de operador só aparecem no plano Gestor.
-  nav = nav.filter((item) => !item.minPlan || plan === item.minPlan);
-  // Indicações só aparece quando o programa existir (flag). Rota fica viva.
-  nav = nav.filter((item) => item.href !== "/dashboard/indicacoes" || PROGRAMA_INDICACAO);
+  // Menu em cascata, conta única (ordem 9f3085d8): as seções de dono aparecem para
+  // quem já anunciou; "Solicitações" só com estadia ativa; Administração só para admin.
+  const estadiaAtiva = useHasActiveLocacao(true);
+  const [temImovel, setTemImovel] = useState(false);
+  const naAreaDeImoveis = pathname.startsWith("/dashboard/imoveis");
+  useEffect(() => {
+    let alive = true;
+    temImovelAnunciado()
+      .then((t) => {
+        if (alive) setTemImovel(t);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+    // Reavalia ao sair do cadastro de imóvel (o primeiro anúncio revela as seções de dono).
+  }, [displayUser?.id, naAreaDeImoveis]);
+  const menu = menuDoPainel({ temImovel, admin: display.role === "admin", estadiaAtiva, plano: plan });
+  const badges = { "admin-documentos": docsPendentes, "admin-agentes": achadosP1 };
 
   // Guarda de rota por papel (B1). Ao abrir por URL/deep-link uma tela exclusiva
   // do OUTRO modo, a regra deixou de ser "sempre redireciona": se a conta TEM o
@@ -325,8 +225,28 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     // (evita ficar numa rota do outro papel após a troca).
     // Sair de rota exclusiva ao trocar de modo é tratado pelo guard (que detecta
     // a troca de modo e redireciona), evitando o "2 cliques para pegar".
-    const allowed = NAV_BY_MODE[next].some((item) => item.href === pathname);
-    if (!allowed) router.push("/dashboard");
+    const exclusiva = (next === "owner" ? TENANT_ONLY : OWNER_ONLY).some((p) => pathname === p || pathname.startsWith(p + "/"));
+    if (exclusiva) router.push("/dashboard");
+  }
+
+  /**
+   * Conta única, ainda sobre os dois modos (o Renato A remove o modo depois): o menu
+   * mostra tudo junto, então ao abrir uma tela de dono/morador a casca acerta o modo.
+   * Conta que já tem o papel: o próprio guarda troca o modo (link normal). Conta sem o
+   * papel (ex.: quem nunca anunciou tocando em "Anunciar meu imóvel"): troca aqui antes.
+   */
+  async function aoNavegar(href: string, e: React.MouseEvent) {
+    setOpen(false);
+    const rota = href.split("#")[0];
+    const de = (lista: string[]) => lista.some((p) => rota === p || rota.startsWith(p + "/"));
+    const alvo: ViewMode | null = de(OWNER_ONLY) ? "owner" : de(TENANT_ONLY) ? "tenant" : null;
+    if (!alvo || alvo === mode) return;
+    const temPapel = alvo === "owner" ? isOwner : isTenant;
+    if (temPapel) return;
+    e.preventDefault();
+    setActiveMode(alvo);
+    await salvarModo(alvo).catch(() => {});
+    router.push(href);
   }
 
   const meta = MODE_META[mode];
@@ -344,35 +264,21 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       <div className="flex h-16 shrink-0 items-center overflow-hidden border-b border-white/10 px-4">
         <Logo light className="max-w-full" />
       </div>
-      <nav key={mode} className="mode-transition flex-1 space-y-1 overflow-y-auto p-3">
-        {nav.map((item) => {
-          const active = pathname === item.href;
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => setOpen(false)}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                active
-                  ? "bg-champagne text-forest"
-                  : "text-white/80 hover:bg-white/10 hover:text-white"
-              )}
-            >
-              <Icon className="h-4.5 w-4.5" />
-              <span className="flex-1">{item.label}</span>
-              {item.badgeCount ? (
-                <span
-                  className="grid h-5 min-w-5 place-items-center rounded-full bg-champagne px-1.5 text-[11px] font-bold text-forest"
-                  aria-label={`${item.badgeCount} aguardando`}
-                >
-                  {item.badgeCount > 99 ? "99+" : item.badgeCount}
-                </span>
-              ) : null}
-            </Link>
-          );
-        })}
+      <nav aria-label="Menu do painel" className="flex-1 overflow-y-auto p-3">
+        {/* Quem ainda não anunciou: entrada direta para anunciar (as seções de dono
+            aparecem no menu depois do primeiro anúncio). */}
+        {!temImovel && display.role !== "admin" && (
+          <Link
+            href={ANUNCIAR.href!}
+            onClick={(e) => aoNavegar(ANUNCIAR.href!, e)}
+            data-testid="menu-anunciar"
+            className="mb-3 flex items-center justify-center gap-2 rounded-lg bg-champagne px-3 py-2.5 text-sm font-semibold text-forest transition-colors hover:bg-white"
+          >
+            <Plus className="h-4 w-4" />
+            {ANUNCIAR.rotulo}
+          </Link>
+        )}
+        <MenuCascata itens={menu} pathname={pathname} badges={badges} aoNavegar={aoNavegar} />
       </nav>
       <div className="border-t border-white/10 p-3">
         <div className="flex items-center gap-3 px-3 py-2">

@@ -45,9 +45,10 @@ test("Voltar nas telas /admin/* leva ao painel /admin; o painel e o resto não",
 });
 
 test("painel /admin lista todos os itens do menu do admin como atalhos", () => {
-  const shell = readFileSync(new URL("../components/layout/dashboard-shell.tsx", import.meta.url), "utf8");
+  // Menu em cascata (ordem 9f3085d8): o grupo Administração mora em config/menu-painel.ts.
+  const config = readFileSync(new URL("../config/menu-painel.ts", import.meta.url), "utf8");
   const atalhos = readFileSync(new URL("../app/(dashboard)/admin/atalhos-admin.tsx", import.meta.url), "utf8");
-  const menu = [...shell.slice(shell.indexOf("const ADMIN_NAV")).split("];")[0].matchAll(/href: "(\/admin[^"]*)"/g)].map((m) => m[1]);
+  const menu = [...config.matchAll(/href: "(\/admin[^"]*)"/g)].map((m) => m[1]);
   assert.ok(menu.length >= 10);
   for (const h of menu.filter((x) => x !== "/admin")) assert.ok(atalhos.includes(`href="${h}"`) || atalhos.includes(`href: "${h}"`), h);
   assert.match(atalhos, /min-h-11/);
