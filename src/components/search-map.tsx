@@ -319,7 +319,12 @@ function SearchMapbox({
  * `search-map-tiles.test.ts` garante isso.
  */
 const CARTO_KEY = process.env.NEXT_PUBLIC_CARTO_API_KEY;
-const TILES_CARTO = `https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png${CARTO_KEY ? `?key=${encodeURIComponent(CARTO_KEY)}` : ""}`;
+/**
+ * Ordem 64005753: SEM chave, nenhum tile da CARTO é pedido (pedir sem chave é o
+ * que traz o carimbo "API KEY REQUIRED"). O mapa fica com o fundo neutro e os
+ * pins continuam funcionando — nunca há marca d'água para ninguém (logado ou não).
+ */
+const TILES_CARTO = CARTO_KEY ? `https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?key=${encodeURIComponent(CARTO_KEY)}` : null;
 
 /**
  * Sem NEXT_PUBLIC_MAPBOX_TOKEN, o mapa da busca usa Leaflet com o mapa-base
@@ -374,10 +379,14 @@ function SearchMapLeaflet({ properties, activeId, onHover, selectedId = null, on
     if (!containerRef.current) return;
     const map = L.map(containerRef.current, { zoomControl: false, scrollWheelZoom: true }).setView([-18.911, -48.262], 12);
     L.control.zoom({ position: "topright" }).addTo(map);
-    L.tileLayer(TILES_CARTO, {
-      maxZoom: 19,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-    }).addTo(map);
+    if (TILES_CARTO) {
+      L.tileLayer(TILES_CARTO, {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      }).addTo(map);
+    } else {
+      console.error("[mapa] NEXT_PUBLIC_CARTO_API_KEY ausente neste build: mapa-base desligado (sem marca d'água).");
+    }
     map.on("click", () => onSelectRef.current?.(null));
     mapRef.current = map;
     // Ao ganhar tamanho pela 1ª vez, enquadra; depois só ajusta o tamanho.
@@ -483,7 +492,7 @@ function SearchMapLeaflet({ properties, activeId, onHover, selectedId = null, on
 
   return (
     <>
-      <div ref={containerRef} data-testid="mapa-busca" className={cn("z-0 overflow-hidden bg-surface-2", className)} />
+      <div ref={containerRef} data-testid="mapa-busca" data-mapa-base={TILES_CARTO ? "carto" : "sem-chave"} className={cn("z-0 overflow-hidden bg-surface-2", className)} />
       {aberto && popupEl && createPortal(<CardPinMapa property={aberto} onFechar={() => onSelect?.(null)} />, popupEl)}
     </>
   );
