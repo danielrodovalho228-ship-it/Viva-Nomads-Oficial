@@ -25,6 +25,8 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import { PhotoUploader, type PhotoItem } from "@/components/photo-uploader";
 import { BlockCalendar } from "@/components/property/block-calendar";
 import { AMENITY_GROUPS, amenityKeysFromLabels } from "@/lib/amenities";
+import { PrivacidadeCampos } from "@/components/anuncio/privacidade-campos";
+import { PRIVACIDADE_VAZIA, type Privacidade } from "@/lib/anuncio/privacidade";
 import { MIN_FOTOS, prontidaoAnuncio, type FatosAnuncio } from "@/lib/anuncio/prontidao";
 import { TERMO_IA_TEXTO, aceiteDoEditor } from "@/lib/anuncio/termo-ia";
 import { updateProperty, type PropertyInput } from "@/lib/data/actions";
@@ -81,6 +83,7 @@ export function EditarImovelClient({
   const [amenityKeys, setAmenityKeys] = useState<Record<string, boolean>>(
     Object.fromEntries(amenityKeysFromLabels(property.amenities ?? []).map((k) => [k, true]))
   );
+  const [privacidade, setPrivacidade] = useState<Privacidade>(property.privacidade ?? PRIVACIDADE_VAZIA);
   const [petsAllowed, setPetsAllowed] = useState(property.petsAllowed ?? false);
   const [smokingAllowed, setSmokingAllowed] = useState(property.smokingAllowed ?? false);
   const [childrenAllowed, setChildrenAllowed] = useState(property.childrenAllowed ?? true);
@@ -110,13 +113,15 @@ export function EditarImovelClient({
         preco: Number(monthlyPrice) || 0,
         garantiaOk: fatos?.garantiaOk ?? (property.garantiasAceitas ?? []).length > 0,
         sublocacaoOk: fatos?.sublocacaoOk ?? true,
+        // Sem a coluna (property.privacidade indefinida) a declaração não barra.
+        privacidadeOk: property.privacidade === undefined ? true : privacidade.semCamerasInterior,
         documento: fatos?.documento ?? "approved",
         limitePlanoOk: fatos?.limitePlanoOk ?? null,
         descricao: description,
         selo: fatos?.selo ?? !!property.readyToLiveBadge,
         video: fatos?.video ?? !!property.videoUrl,
       }),
-    [fatos, property, bathrooms, areaM2, minPeriod, photos, title, monthlyPrice, description]
+    [fatos, property, privacidade, bathrooms, areaM2, minPeriod, photos, title, monthlyPrice, description]
   );
   const [aceitouIa, setAceitouIa] = useState(false);
   const [publicadoAgora, setPublicadoAgora] = useState(false);
@@ -171,6 +176,15 @@ export function EditarImovelClient({
       petsAllowed,
       smokingAllowed,
       childrenAllowed,
+      // Só manda quando a coluna existe (property.privacidade definida): senão não grava nada.
+      ...(property.privacidade
+        ? {
+            semCamerasInterior: privacidade.semCamerasInterior,
+            camerasExternas: privacidade.camerasExternas,
+            tipoAcesso: privacidade.tipoAcesso,
+            senhaTrocadaEstadia: privacidade.senhaTrocadaEstadia,
+          }
+        : {}),
       maxGuests: Number(maxGuests) || undefined,
       amenityKeys: Object.keys(amenityKeys).filter((k) => amenityKeys[k]),
       googlePlaces: property.googlePlaces ?? [],
@@ -490,6 +504,11 @@ export function EditarImovelClient({
               onChange={setChildrenAllowed}
             />
           </div>
+          {property.privacidade && (
+            <div className="mt-5">
+              <PrivacidadeCampos valor={privacidade} onChange={setPrivacidade} />
+            </div>
+          )}
         </Section>
 
         {/* Detalhes & preço */}

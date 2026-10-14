@@ -39,6 +39,7 @@ import { LocationNearby } from "@/components/property/location-nearby";
 import { GoogleProximities } from "@/components/property/google-proximities";
 import { StayRules } from "@/components/property/stay-rules";
 import { AvailabilityCalendar } from "@/components/property/availability-calendar";
+import { PrivacidadeAcesso } from "@/components/property/privacidade-acesso";
 import { OwnerCard } from "@/components/property/owner-card";
 import { Reviews } from "@/components/property/reviews";
 import { isExemplo, EXEMPLO_SEM_CONTATO } from "@/lib/demo-listing";
@@ -424,6 +425,7 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
           <LocationNearby property={property} />
           <GoogleProximities property={property} />
           <StayRules property={property} />
+          <PrivacidadeAcesso privacidade={property.privacidade} />
           <OwnerCard property={property} />
           <Reviews property={property} />
         </div>
