@@ -33,7 +33,6 @@ export type FalhaFechamento = { status: number; error: string };
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function carregarFechamento(leadId: unknown): Promise<DadosFechamento | FalhaFechamento> {
-  if (typeof leadId !== "string" || !UUID_RE.test(leadId)) return { status: 400, error: "Candidatura inválida." };
   const supabase = await createClient();
   const admin = createAdminClient();
   if (!supabase || !admin) return { status: 503, error: "Serviço indisponível." };
@@ -41,6 +40,8 @@ export async function carregarFechamento(leadId: unknown): Promise<DadosFechamen
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { status: 401, error: "Não autenticado." };
+  // Sessão ANTES de validar o corpo: visitante sem login recebe 401, nunca 400 (t49).
+  if (typeof leadId !== "string" || !UUID_RE.test(leadId)) return { status: 400, error: "Candidatura inválida." };
 
   // Candidatura ACEITA em que o usuário logado é o DONO (sessão + RLS "leads das partes").
   const { data: lead } = await supabase
