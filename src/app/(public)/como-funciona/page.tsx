@@ -9,6 +9,8 @@ import {
   ClipboardCheck,
   Award,
 } from "lucide-react";
+import { PHOTOS } from "@/lib/media";
+import { BannerTopo } from "@/components/institucional/banner-topo";
 import { ButtonLink } from "@/components/ui/button";
 import { StepImage } from "@/components/step-image";
 import { CAUCAO_FRASE } from "@/lib/faixas";
@@ -43,10 +45,13 @@ export default function HowItWorksPage() {
   return (
     <>
       <JsonLd dados={paginaInstitucional(SITE_URL, { caminho: "/como-funciona", nome: "Como funciona", descricao: "Entenda como funciona a locação de imóveis mobiliados por 30 a 180 dias no Viva Nomads — para inquilinos e para proprietários." })} />
-      <section className="bg-forest section-y text-white">
-        <div className="container-page max-w-3xl">
-          <h1 className="font-title text-4xl font-bold md:text-5xl">Como funciona</h1>
-          <p className="mt-5 text-lg text-white/80">
+      <BannerTopo
+        foto={PHOTOS.heroProfessional}
+        alt="Pessoa chegando com a mala a um apartamento mobiliado"
+        eyebrow="Passo a passo"
+        titulo="Como funciona"
+        subtitulo={
+          <p>
             Do anúncio ao contrato, com registro e segurança em cada passo — para{" "}
             <a href="#para-inquilinos" className="font-semibold text-white underline decoration-white/40 underline-offset-4 hover:decoration-white">
               inquilino
@@ -56,8 +61,8 @@ export default function HowItWorksPage() {
               proprietário
             </a>.
           </p>
-        </div>
-      </section>
+        }
+      />
 
       {/* Sub-navegação ancorada — atalhos para as três partes da história. */}
       <SubNav />
@@ -86,7 +91,7 @@ export default function HowItWorksPage() {
           <ButtonLink href="/buscar" variant="primary" size="lg">
             Buscar imóveis
           </ButtonLink>
-          <ButtonLink href="/dashboard/imoveis/novo" variant="gold" size="lg">
+          <ButtonLink href="/dashboard/imoveis/novo" variant="secondary" size="lg">
             Anunciar meu imóvel
           </ButtonLink>
         </div>

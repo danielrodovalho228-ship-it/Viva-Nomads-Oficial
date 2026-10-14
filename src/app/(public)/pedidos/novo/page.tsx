@@ -51,6 +51,10 @@ const CHECKLIST = [
   { icon: Clock, t: "Sem custo e sem spam", d: "Contato só pela plataforma." },
 ];
 
+/** Um só estilo para todos os campos do formulário (ordem 5a4b9146: caixas iguais). */
+const CAMPO =
+  "h-12 w-full rounded-xl border border-line bg-white px-3.5 text-sm text-ink outline-none transition focus:border-forest focus:ring-2 focus:ring-forest/15";
+
 const PASSOS = [
   "Publique o que precisa",
   "Receba respostas com imóveis reais",
@@ -68,6 +72,8 @@ export default function NovoPedidoPage() {
 function NovoPedidoSplit() {
   return (
     <div className="lg:grid lg:grid-cols-[44%_56%]">
+      {/* A coluna inteira fica verde (o painel é fixo ao rolar e o formulário pode ser mais alto que a tela). */}
+      <div className="lg:bg-forest">
       {/* LADO ESQUERDO — imagem + overlay da marca + proposta de valor.
           No desktop fica fixo ao rolar; no mobile vira um hero compacto. */}
       <aside className="relative flex min-h-[14rem] items-end overflow-hidden bg-forest text-white lg:sticky lg:top-[4.5rem] lg:h-[calc(100vh-4.5rem)] lg:min-h-0 lg:items-center">
@@ -105,6 +111,7 @@ function NovoPedidoSplit() {
           </div>
         </div>
       </aside>
+      </div>
 
       {/* LADO DIREITO — card branco "flutua" sobre off-white; no desktop a coluna
           tem a altura da imagem e centraliza o card na vertical (sem vão branco). */}
@@ -291,8 +298,9 @@ function PedidoForm() {
   }
 
   return (
-    <div className="rounded-2xl border border-line bg-white p-6 shadow-lg sm:p-7">
-      <h2 className="font-title text-xl font-bold text-ink">Publique seu pedido</h2>
+    <div className="rounded-2xl border border-line bg-white p-6 shadow-lg sm:p-8">
+      <h2 className="font-title text-2xl font-bold text-ink">Publique seu pedido</h2>
+      <p className="mt-1 text-sm text-muted">Leva 2 minutos. Os proprietários da cidade respondem pela plataforma.</p>
 
       {!user && (
         <p className="mt-3 flex items-start gap-2 rounded-xl border border-champagne/50 bg-champagne/10 px-3.5 py-2.5 text-sm text-ink">
@@ -315,7 +323,7 @@ function PedidoForm() {
               placeholder={uf ? "Comece a digitar a cidade" : "Escolha a UF primeiro"}
               list="cidades-uf"
               autoComplete="off"
-              className="w-full rounded-xl border border-line px-3.5 py-2.5 text-sm outline-none focus:border-sage"
+              className={CAMPO}
             />
             <datalist id="cidades-uf">
               {(MUNICIPIOS[uf] ?? []).map((c) => (
@@ -329,7 +337,7 @@ function PedidoForm() {
               required
               value={uf}
               onChange={(e) => setUf(e.target.value)}
-              className="w-full rounded-xl border border-line px-3.5 py-2.5 text-sm outline-none focus:border-sage"
+              className={CAMPO}
             >
               <option value="">UF</option>
               {UFS.map((u) => (
@@ -348,7 +356,7 @@ function PedidoForm() {
               required
               value={dataInicio}
               onChange={setDataInicio}
-              className="w-full rounded-xl border border-line px-3.5 py-2.5 text-sm outline-none focus:border-sage"
+              className={CAMPO}
             />
           </label>
           <label>
@@ -356,7 +364,7 @@ function PedidoForm() {
             <select
               value={prazoMeses}
               onChange={(e) => setPrazoMeses(Number(e.target.value))}
-              className="w-full rounded-xl border border-line px-3.5 py-2.5 text-sm outline-none focus:border-sage"
+              className={CAMPO}
             >
               {Array.from({ length: PRAZO_MAX_MESES }, (_, i) => i + 1).map((m) => (
                 <option key={m} value={m}>
@@ -372,19 +380,19 @@ function PedidoForm() {
               min={1}
               value={ocupantes}
               onChange={(e) => setOcupantes(Math.max(1, Math.round(Number(e.target.value) || 1)))}
-              className="w-full rounded-xl border border-line px-3.5 py-2.5 text-sm outline-none focus:border-sage"
+              className={CAMPO}
             />
           </label>
         </div>
 
         {/* Só imóveis que aceitam entram como compatíveis. */}
-        <fieldset className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink">
+        <fieldset className="grid gap-3 text-sm text-ink sm:grid-cols-2">
           <legend className="sr-only">Pet e crianças</legend>
-          <label className="inline-flex items-center gap-2">
+          <label className="flex h-12 cursor-pointer items-center gap-2.5 rounded-xl border border-line bg-white px-3.5 has-[:checked]:border-forest has-[:checked]:bg-sage-100">
             <input type="checkbox" checked={pets} onChange={(e) => setPets(e.target.checked)} className="h-4 w-4 accent-forest" />
             Vou com pet
           </label>
-          <label className="inline-flex items-center gap-2">
+          <label className="flex h-12 cursor-pointer items-center gap-2.5 rounded-xl border border-line bg-white px-3.5 has-[:checked]:border-forest has-[:checked]:bg-sage-100">
             <input type="checkbox" checked={criancas} onChange={(e) => setCriancas(e.target.checked)} className="h-4 w-4 accent-forest" />
             Vou com crianças
           </label>
@@ -399,7 +407,7 @@ function PedidoForm() {
               value={orcamento}
               onChange={(e) => setOrcamento(e.target.value.replace(/\D/g, ""))}
               placeholder="3500"
-              className="w-full rounded-xl border border-line px-3.5 py-2.5 text-sm outline-none focus:border-sage"
+              className={CAMPO}
             />
           </label>
           <div>
@@ -415,7 +423,7 @@ function PedidoForm() {
             value={apresentacao}
             onChange={(e) => setApresentacao(e.target.value)}
             placeholder="Conte um pouco do seu perfil e do que procura. Não inclua telefone, e-mail ou apps de mensagem."
-            className={`w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none focus:border-sage ${
+            className={`w-full rounded-xl border bg-white px-3.5 py-3 text-sm text-ink outline-none transition focus:border-forest focus:ring-2 focus:ring-forest/15 ${
               contatoNoTexto ? "border-red-300" : "border-line"
             }`}
           />
@@ -504,7 +512,7 @@ function MotivoSelect({ value, onChange }: { value: string; onChange: (v: string
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className={`flex w-full items-center justify-between gap-2 rounded-xl border bg-white px-3.5 py-2.5 text-left text-sm outline-none ${
+        className={`flex h-12 w-full items-center justify-between gap-2 rounded-xl border bg-white px-3.5 text-left text-sm outline-none transition focus:border-forest focus:ring-2 focus:ring-forest/15 ${
           open ? "border-sage" : "border-line"
         }`}
       >

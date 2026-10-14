@@ -260,7 +260,8 @@
       "specs": [
         "t14-app-mode",
         "t18-seo-a11y",
-        "t69-botoes-header"
+        "t69-botoes-header",
+        "t72-paginas-institucionais"
       ]
     },
     "/conferir": {
@@ -638,7 +639,8 @@
       ],
       "specs": [
         "t18-seo-a11y",
-        "t69-botoes-header"
+        "t69-botoes-header",
+        "t72-paginas-institucionais"
       ]
     },
     "/excluir-conta": {
@@ -695,7 +697,8 @@
         "t18-seo-a11y",
         "t20-p1-agentes",
         "t68-comissao-valor-total",
-        "t69-botoes-header"
+        "t69-botoes-header",
+        "t72-paginas-institucionais"
       ]
     },
     "/parceiros": {
@@ -703,7 +706,8 @@
         "publico"
       ],
       "specs": [
-        "t69-botoes-header"
+        "t69-botoes-header",
+        "t72-paginas-institucionais"
       ]
     },
     "/parceiros/fotografos": {
@@ -733,7 +737,8 @@
       "specs": [
         "t1-auth-guards",
         "t18-seo-a11y",
-        "t69-botoes-header"
+        "t69-botoes-header",
+        "t72-paginas-institucionais"
       ]
     },
     "/precos": {
@@ -747,7 +752,8 @@
         "t37-simuladores-e-numeros",
         "t6-dinheiro-numeros",
         "t68-comissao-valor-total",
-        "t69-botoes-header"
+        "t69-botoes-header",
+        "t72-paginas-institucionais"
       ]
     },
     "/privacidade": {

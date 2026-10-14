@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
-import { Building2, FileText, BarChart3, MapPin } from "lucide-react";
+import { Building2, FileText, BarChart3, MapPin, ArrowRight, ShieldCheck, Home, MessageSquare, Check } from "lucide-react";
+import { ButtonLink } from "@/components/ui/button";
+import { BrandImage } from "@/components/brand-image";
+import { BannerTopo } from "@/components/institucional/banner-topo";
+import { PHOTOS } from "@/lib/media";
 import { EmpresasForm } from "./empresas-form";
 import { JsonLd } from "@/components/seo/json-ld";
 import { paginaInstitucional } from "@/lib/seo/estruturados";
@@ -19,9 +23,19 @@ export const metadata: Metadata = {
 };
 
 const PASSOS = [
-  { titulo: "Conte a necessidade", texto: "Cidade, período (30 a 180 dias) e quantas pessoas. Respondemos com opções de imóveis mobiliados." },
-  { titulo: "Escolha o imóvel", texto: "A pessoa do time ou o RH conversa com o proprietário pela plataforma e envia a candidatura." },
-  { titulo: "Contrato e recibo", texto: "Contrato digital assinado pelas partes; todo mês a empresa recebe o recibo da estadia para o reembolso." },
+  { titulo: "Conte a necessidade", texto: "Cidade, período (30 a 180 dias) e quantas pessoas. Respondemos com opções de imóveis mobiliados.", foto: "/images/como-funciona/01-busque.webp", alt: "Pessoa buscando imóveis mobiliados no notebook" },
+  { titulo: "Escolha o imóvel", texto: "A pessoa do time ou o RH conversa com o proprietário pela plataforma e envia a candidatura.", foto: "/images/como-funciona/02-converse.webp", alt: "Conversa entre inquilino e proprietário pelo celular" },
+  { titulo: "Contrato e recibo", texto: "Contrato digital assinado pelas partes; todo mês a empresa recebe o recibo da estadia para o reembolso.", foto: "/images/como-funciona/04-assine.webp", alt: "Assinatura digital do contrato no celular" },
+];
+
+/** O que a empresa ganha (benefícios concretos — sem depoimentos inventados no pré-lançamento). */
+const BENEFICIOS = [
+  "Imóveis mobiliados e prontos para morar: a pessoa chega e começa a trabalhar.",
+  "Estadias de 30 a 180 dias, no tempo do projeto — sem diária de hotel.",
+  "Contrato formal e assinatura digital, com tudo registrado na plataforma.",
+  "Recibo mensal da estadia para o reembolso, todo mês.",
+  "Nenhuma taxa para quem se hospeda: a Viva Nomads não cobra o inquilino.",
+  "Garantia combinada com o proprietário (ex.: Caução) e conversa direta pela plataforma.",
 ];
 
 const FAQ_EMPRESAS = [
@@ -51,68 +65,131 @@ const PILARES = [
 
 export default function EmpresasPage() {
   return (
-    <div className="container-page max-w-3xl py-12 md:py-16">
+    <>
       <JsonLd dados={paginaInstitucional(SITE_URL, { caminho: "/empresas", nome: "Para empresas", descricao: "Mobilidade corporativa com locação mobiliada de média duração: imóveis prontos, recibo mensal da estadia para reembolso e relatórios." })} />
-      <span className="inline-flex items-center gap-2 rounded-full bg-sage-100 px-3 py-1 text-xs font-semibold text-forest">
-        <Building2 className="h-3.5 w-3.5" /> Para empresas
-      </span>
-      <h1 className="mt-4 font-title text-4xl font-bold text-ink">
-        Moradia de média duração para o seu time
-      </h1>
-      <p className="mt-4 text-lg text-muted">
-        Locação mobiliada de 30 a 180 dias para mobilidade corporativa — imóveis prontos, contrato
-        formal e a negociação toda pela plataforma. O pagamento vai direto ao proprietário; a
-        plataforma nunca toca no dinheiro.
-      </p>
+      <BannerTopo
+        foto={PHOTOS.personas.executivos}
+        alt="Profissional chegando a um apartamento mobiliado com a mala"
+        eyebrow="Para empresas"
+        titulo="Moradia de média duração para o seu time"
+        subtitulo={
+          <p>
+            Imóveis mobiliados de 30 a 180 dias para mobilidade corporativa — prontos para morar, com
+            contrato formal e a negociação toda pela plataforma. O pagamento vai direto ao proprietário; a
+            plataforma nunca toca no dinheiro.
+          </p>
+        }
+      >
+        <ButtonLink href="#fale-com-a-gente" variant="inverse" size="lg">
+          Falar com a equipe <ArrowRight className="h-4 w-4" />
+        </ButtonLink>
+        <ButtonLink href="/buscar" variant="inverseSecondary" size="lg">
+          Ver imóveis mobiliados
+        </ButtonLink>
+      </BannerTopo>
 
-      <div className="mt-10 grid gap-5 sm:grid-cols-3">
-        {PILARES.map((p) => {
-          const Icon = p.icon;
-          return (
-            <div key={p.titulo} className="rounded-2xl border border-sage-200 bg-white p-5">
-              <Icon className="h-5 w-5 text-forest" />
-              <h2 className="mt-3 font-title text-base font-bold text-ink">{p.titulo}</h2>
-              <p className="mt-1.5 text-sm text-muted">{p.texto}</p>
+      {/* Proposta de valor: 3 pilares. */}
+      <section className="container-page section-y">
+        <div className="mx-auto max-w-2xl text-center">
+          <span className="inline-flex items-center gap-2 rounded-full bg-sage-100 px-3 py-1 text-xs font-semibold text-forest">
+            <Building2 className="h-3.5 w-3.5" /> Mobilidade corporativa
+          </span>
+          <h2 className="mt-4 font-title text-3xl font-bold text-ink md:text-4xl">Um lugar para morar, não um quarto de hotel</h2>
+          <p className="mt-3 text-muted">Para times em projeto, realocação ou período de experiência em outra cidade.</p>
+        </div>
+        <div className="mt-10 grid gap-5 md:grid-cols-3">
+          {PILARES.map((p) => {
+            const Icon = p.icon;
+            return (
+              <div key={p.titulo} className="rounded-2xl border border-line bg-white p-6 shadow-sm">
+                <span className="grid h-11 w-11 place-items-center rounded-xl bg-sage-100 text-forest">
+                  <Icon className="h-5 w-5" />
+                </span>
+                <h3 className="mt-4 font-title text-lg font-bold text-ink">{p.titulo}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted">{p.texto}</p>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Fluxo do processo com imagens (estilo das páginas de processo do Furnished Finder). */}
+      <section className="bg-surface-2 section-y" data-testid="empresas-como-funciona">
+        <div className="container-page">
+          <h2 className="text-center font-title text-3xl font-bold text-ink md:text-4xl">Como funciona para a empresa</h2>
+          <ol className="mt-10 grid gap-6 md:grid-cols-3">
+            {PASSOS.map((p, i) => (
+              <li key={p.titulo} className="overflow-hidden rounded-2xl border border-line bg-white shadow-sm">
+                <BrandImage src={p.foto} alt={p.alt} rounded="rounded-none" sizes="(max-width: 768px) 100vw, 33vw" className="aspect-[16/10] w-full" />
+                <div className="p-6">
+                  <span className="grid h-8 w-8 place-items-center rounded-full bg-forest text-sm font-bold text-white">{i + 1}</span>
+                  <h3 className="mt-3 font-title text-lg font-bold text-ink">{p.titulo}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted">{p.texto}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      {/* Benefícios + foto. */}
+      <section className="container-page section-y">
+        <div className="grid items-center gap-10 md:grid-cols-2">
+          <BrandImage src={PHOTOS.homeOffice} alt="Espaço de trabalho em casa num apartamento mobiliado" sizes="(max-width: 768px) 100vw, 50vw" className="aspect-[4/3] w-full rounded-3xl" />
+          <div>
+            <h2 className="font-title text-3xl font-bold text-ink">O que a empresa ganha</h2>
+            <ul className="mt-6 space-y-3">
+              {BENEFICIOS.map((b) => (
+                <li key={b} className="flex gap-3 text-ink">
+                  <Check className="mt-0.5 h-5 w-5 shrink-0 text-forest" aria-hidden />
+                  <span>{b}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-6 grid grid-cols-3 gap-3 text-center">
+              {[
+                { Icon: Home, t: "Imóveis mobiliados" },
+                { Icon: ShieldCheck, t: "Contrato formal" },
+                { Icon: MessageSquare, t: "Tudo pela plataforma" },
+              ].map(({ Icon, t }) => (
+                <div key={t} className="rounded-xl bg-surface-2 p-3">
+                  <Icon className="mx-auto h-5 w-5 text-forest" aria-hidden />
+                  <p className="mt-1.5 text-xs font-medium text-ink">{t}</p>
+                </div>
+              ))}
             </div>
-          );
-        })}
-      </div>
-
-      <section className="mt-12" data-testid="empresas-como-funciona">
-        <h2 className="font-title text-2xl font-bold text-ink">Como funciona para a empresa</h2>
-        <ol className="mt-5 grid gap-4 sm:grid-cols-3">
-          {PASSOS.map((p, i) => (
-            <li key={p.titulo} className="rounded-2xl border border-sage-200 bg-white p-5">
-              <span className="text-xs font-semibold text-forest">Passo {i + 1}</span>
-              <h3 className="mt-1 font-title text-base font-bold text-ink">{p.titulo}</h3>
-              <p className="mt-1.5 text-sm text-muted">{p.texto}</p>
-            </li>
-          ))}
-        </ol>
-      </section>
-
-      <section className="mt-12" data-testid="empresas-faq">
-        <h2 className="font-title text-2xl font-bold text-ink">Perguntas rápidas</h2>
-        <div className="mt-4 space-y-3">
-          {FAQ_EMPRESAS.map((f) => (
-            <details key={f.p} className="rounded-xl border border-sage-200 bg-white p-4">
-              <summary className="cursor-pointer font-semibold text-ink">{f.p}</summary>
-              <p className="mt-2 text-sm text-muted">{f.r}</p>
-            </details>
-          ))}
+          </div>
         </div>
       </section>
 
-      <section className="mt-12">
-        <h2 className="font-title text-2xl font-bold text-ink">Fale com a gente</h2>
-        <p className="mt-2 text-muted">
-          Conte seu volume e sua necessidade — retornamos com o que dá para fazer hoje. Sem promessa
-          de recurso que ainda não existe.
-        </p>
-        <div className="mt-5">
-          <EmpresasForm />
+      <section className="bg-surface-2 section-y" data-testid="empresas-faq">
+        <div className="container-page max-w-3xl">
+          <h2 className="font-title text-3xl font-bold text-ink">Perguntas rápidas</h2>
+          <div className="mt-6 space-y-3">
+            {FAQ_EMPRESAS.map((f) => (
+              <details key={f.p} className="rounded-xl border border-line bg-white p-5">
+                <summary className="cursor-pointer font-semibold text-ink">{f.p}</summary>
+                <p className="mt-2 text-sm text-muted">{f.r}</p>
+              </details>
+            ))}
+          </div>
         </div>
       </section>
-    </div>
+
+      <section id="fale-com-a-gente" className="container-page section-y scroll-mt-24">
+        <div className="mx-auto grid max-w-5xl gap-10 md:grid-cols-5">
+          <div className="md:col-span-2">
+            <h2 className="font-title text-3xl font-bold text-ink">Fale com a gente</h2>
+            <p className="mt-3 text-muted">
+              Conte seu volume e sua necessidade — retornamos com o que dá para fazer hoje. Sem promessa
+              de recurso que ainda não existe.
+            </p>
+          </div>
+          <div className="rounded-2xl border border-line bg-white p-6 shadow-sm md:col-span-3">
+            <EmpresasForm />
+          </div>
+        </div>
+      </section>
+    </>
   );
 }

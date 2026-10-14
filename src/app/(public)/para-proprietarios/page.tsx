@@ -3,6 +3,7 @@ import Link from "next/link";
 import { TrendingUp, FileSignature, Receipt, ShieldCheck, Check, ArrowRight } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { BrandImage } from "@/components/brand-image";
+import { BannerTopo } from "@/components/institucional/banner-topo";
 import { PHOTOS } from "@/lib/media";
 import { CAUCAO_FRASE } from "@/lib/faixas";
 import { ComparativoPrecos } from "@/components/precos/comparativo-precos";
@@ -22,49 +23,67 @@ export default function ForLandlordsPage() {
   return (
     <>
       <JsonLd dados={servicoProprietarios(SITE_URL, CITIES)} />
-      <section className="bg-forest section-y text-white">
-        <div className="container-page grid items-center gap-10 md:grid-cols-2">
-          <div>
-            <h1 className="font-title text-4xl font-bold leading-tight md:text-5xl">
-              Mais <span className="text-green-300">margem</span> que a locação de
-              curta duração
-            </h1>
-            <p className="mt-5 max-w-lg text-lg text-white/80">
+      <BannerTopo
+        foto="/media/hero-proprietarios.webp"
+        alt="Proprietária segurando as chaves em uma sala mobiliada e iluminada"
+        eyebrow="Para proprietários"
+        titulo={
+          <>
+            Mais <span className="text-green-300">margem</span> que a locação de curta duração
+          </>
+        }
+        subtitulo={
+          <>
+            <p>
               Locação mobiliada de média duração (30 a 180 dias), com contrato formal e a
               negociação registrada na plataforma. Menos entra-e-sai, menos meses com o imóvel parado e com água, luz,
               condomínio e IPTU que podem ser transferidos ao inquilino conforme o contrato.
             </p>
-            <p className="mt-4 text-white/90">
+            <p className="mt-4 text-base text-white/90">
               <strong>Anuncie de graça.</strong> A Viva cobra 12% sobre o valor total do contrato fechado. Quanto mais imóveis, menor a taxa (de 12% a 6%; acima de 30 imóveis, condições negociadas). Sem mensalidade —{" "}
               <Link href="/precos" className="font-medium text-green-300 underline-offset-2 hover:underline">
                 ver os preços
               </Link>
               .
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <ButtonLink href="/dashboard/imoveis/novo" variant="inverse" size="lg">
-                Anunciar meu imóvel <ArrowRight className="h-4 w-4" />
-              </ButtonLink>
-              <ButtonLink href="/precos" variant="inverseSecondary" size="lg">
-                Ver preços
-              </ButtonLink>
-            </div>
-          </div>
-          {/* Fase 2.1 — destaque do topo. */}
-          <BrandImage
-            src="/media/hero-proprietarios.webp"
-            alt="Proprietária segurando as chaves em uma sala mobiliada e iluminada"
-            sizes="(max-width: 768px) 100vw, 50vw"
-            priority
-            className="aspect-video w-full rounded-3xl"
-          />
-        </div>
-      </section>
+          </>
+        }
+      >
+        <ButtonLink href="/dashboard/imoveis/novo" variant="inverse" size="lg">
+          Anunciar meu imóvel <ArrowRight className="h-4 w-4" />
+        </ButtonLink>
+        <ButtonLink href="/precos" variant="inverseSecondary" size="lg">
+          Ver preços
+        </ButtonLink>
+      </BannerTopo>
 
       {/* Quanto custa, em reais, contra o Airbnb (versão curta; a completa fica em /precos). */}
       <section className="container-page pt-12">
         <div className="mx-auto max-w-2xl">
           <ComparativoPrecos variante="curto" />
+        </div>
+      </section>
+
+      {/* Como funciona para o proprietário — fluxo com imagens. */}
+      <section className="bg-surface-2 section-y mt-12" data-testid="proprietarios-fluxo">
+        <div className="container-page">
+          <h2 className="text-center font-title text-3xl font-bold text-ink md:text-4xl">Do anúncio às chaves, em 3 passos</h2>
+          <ol className="mt-10 grid gap-6 md:grid-cols-3">
+            {[
+              { foto: "/images/como-funciona/07-anuncie.webp", alt: "Proprietário fotografando a sala para o anúncio", t: "Anuncie de graça", d: "Fotos, valor e regras da casa. A qualificação ajuda a ganhar o selo Pronto para Morar." },
+              { foto: "/images/como-funciona/02-converse.webp", alt: "Conversa com o inquilino pelo celular", t: "Converse e escolha", d: "Os interessados falam com você pela plataforma; o contato fica protegido até o aceite." },
+              { foto: "/images/como-funciona/08-feche.webp", alt: "Entrega das chaves ao inquilino", t: "Feche com contrato", d: "Contrato digital de 30 a 180 dias, caução combinada e o valor mensal direto na sua conta." },
+            ].map((p, i) => (
+              <li key={p.t} className="overflow-hidden rounded-2xl border border-line bg-white shadow-sm">
+                <BrandImage src={p.foto} alt={p.alt} rounded="rounded-none" sizes="(max-width: 768px) 100vw, 33vw" className="aspect-[16/10] w-full" />
+                <div className="p-6">
+                  <span className="grid h-8 w-8 place-items-center rounded-full bg-forest text-sm font-bold text-white">{i + 1}</span>
+                  <h3 className="mt-3 font-title text-lg font-bold text-ink">{p.t}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted">{p.d}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
         </div>
       </section>
 
