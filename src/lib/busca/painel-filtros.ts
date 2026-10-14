@@ -4,10 +4,14 @@
   muda. Uma regra só para a contagem e para a lista (os mesmos campos que a
   /buscar já filtra e lê da URL).
 */
+import { aceitaPorte, type PortePet, type RegrasPets } from "../anuncio/pets-regras.ts";
+
 export interface FiltrosPainel {
   maxPrice: number; // 0 = qualquer
   minBedrooms: number; // 0 = qualquer
   petsOnly: boolean;
+  /** Porte do pet ("" = qualquer); só vale com "Aceita pets" ligado. */
+  petPorte: PortePet | "";
   homeOfficeOnly: boolean;
   readyToLiveOnly: boolean;
 }
@@ -16,9 +20,18 @@ export const FILTROS_PAINEL_VAZIOS: FiltrosPainel = {
   maxPrice: 0,
   minBedrooms: 0,
   petsOnly: false,
+  petPorte: "",
   homeOfficeOnly: false,
   readyToLiveOnly: false,
 };
+
+export const ROTULO_PORTE_CURTO: Record<PortePet, string> = { P: "pequeno", M: "médio", G: "grande" };
+export const OPCOES_PORTE_PET: { valor: PortePet | ""; rotulo: string }[] = [
+  { valor: "", rotulo: "Qualquer porte" },
+  { valor: "P", rotulo: "Pequeno (até 10 kg)" },
+  { valor: "M", rotulo: "Médio (até 25 kg)" },
+  { valor: "G", rotulo: "Grande (acima de 25 kg)" },
+];
 
 export const OPCOES_PRECO: { valor: number; rotulo: string }[] = [
   { valor: 0, rotulo: "Qualquer" },
@@ -38,6 +51,7 @@ type ImovelFiltravel = {
   monthlyPrice: number;
   bedrooms: number;
   petsAllowed?: boolean;
+  petsRegras?: RegrasPets | null;
   tagHomeOffice: boolean;
   readyToLiveBadge?: boolean;
 };
@@ -47,6 +61,7 @@ export function passaNoPainel(p: ImovelFiltravel, f: FiltrosPainel): boolean {
   if (f.maxPrice && p.monthlyPrice > f.maxPrice) return false;
   if (f.minBedrooms && p.bedrooms < f.minBedrooms) return false;
   if (f.petsOnly && !p.petsAllowed) return false;
+  if (f.petsOnly && f.petPorte && !aceitaPorte(p.petsAllowed, p.petsRegras, f.petPorte)) return false;
   if (f.homeOfficeOnly && !p.tagHomeOffice) return false;
   if (f.readyToLiveOnly && !p.readyToLiveBadge) return false;
   return true;
@@ -69,6 +84,7 @@ export function resumoFiltros(f: FiltrosPainel): string {
   if (f.maxPrice) partes.push(OPCOES_PRECO.find((o) => o.valor === f.maxPrice)?.rotulo ?? `Até R$ ${f.maxPrice}`);
   if (f.minBedrooms) partes.push(`${f.minBedrooms}+ ${f.minBedrooms === 1 ? "quarto" : "quartos"}`);
   if (f.petsOnly) partes.push("Aceita pets");
+  if (f.petsOnly && f.petPorte) partes.push(`pet ${ROTULO_PORTE_CURTO[f.petPorte]}`);
   if (f.homeOfficeOnly) partes.push("Trabalhar de casa");
   if (f.readyToLiveOnly) partes.push("Pronto para Morar");
   return partes.length ? partes.join(" · ") : "Qualquer preço · todos os imóveis";

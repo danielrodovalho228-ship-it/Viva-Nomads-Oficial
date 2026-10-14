@@ -102,3 +102,13 @@ export function compatibilidadePets(
   }
   return { ok: motivos.length === 0, motivos: [...new Set(motivos)] };
 }
+
+/**
+ * Filtro da busca: o imóvel aceita um pet deste porte? Sem regras detalhadas
+ * (só "aceita pets") vale o aceite geral, como em compatibilidadePets.
+ */
+export function aceitaPorte(petsAllowed: boolean | undefined, regras: RegrasPets | null | undefined, porte: PortePet): boolean {
+  if (!petsAllowed) return false;
+  if (!regras) return true;
+  return ORDEM_PORTE[porte] <= ORDEM_PORTE[regras.porteMax];
+}
