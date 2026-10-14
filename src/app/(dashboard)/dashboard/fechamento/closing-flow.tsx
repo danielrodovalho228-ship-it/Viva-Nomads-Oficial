@@ -46,7 +46,7 @@ import {
   MAX_PARCELAS,
   type FormaPagamentoCaucao,
 } from "@/lib/caucao";
-import { textoTaxaPainel, valorTaxa, pctTexto } from "@/lib/cobranca/regra";
+import { textoTaxaPainel, pctTexto } from "@/lib/cobranca/regra";
 import { registrarContrato } from "@/lib/data/actions";
 import type { FechamentoContexto } from "@/lib/data/leads-actions";
 import { resumoContrato } from "@/lib/contrato-blocos";
@@ -84,9 +84,8 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   const PROPERTY_FULL = ctx.property;
   const PROPERTY = { title: PROPERTY_FULL.title, monthlyRent: PROPERTY_FULL.monthlyPrice };
   const CAPACIDADE = PROPERTY_FULL.maxGuests ?? 4;
-  // Comissão CONGELADA no aceite (não o plano atual) — 1 mês × taxa, UMA vez.
+  // Comissão CONGELADA no aceite (não o plano atual) — taxa × valor total do contrato (aluguel × meses).
   const COMMISSION_RATE = ctx.comissaoRate;
-  const PLATFORM_COMMISSION = valorTaxa(PROPERTY.monthlyRent, COMMISSION_RATE);
   const tenant = { name: ctx.tenantName, profile: demo ? "Médica · residência" : "Candidatura aceita", foreigner: false };
   const contractNumber = ctx.contractNumber;
   // Data do aceite (DD/MM/AAAA) para exibir "plano Y em DD/MM".
@@ -116,6 +115,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
     [prazoMeses]
   );
   const VALOR_ESTADIA = resumo.valorTotalPeriodo;
+  const PLATFORM_COMMISSION = resumo.comissaoValor;
   const CAUCAO_50 = resumo.caucaoTotal; // total do período (soma dos blocos)
   const [verified, setVerified] = useState(false);
   const [verifying, setVerifying] = useState(false);
@@ -256,10 +256,10 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
         method: "POST",
         headers: { "Content-Type": "application/json" },
         // A5: valor, taxa e carteira vêm do banco (pela candidatura aceita).
-        body: JSON.stringify({ leadId: ctx.leadId }),
+        body: JSON.stringify({ leadId: ctx.leadId, termMonths: prazoMeses }),
       }).catch(() => {});
       // Registra o CONTRATO-MÃE + blocos (contrato fracionado v2). A comissão
-      // fica no contrato-mãe (1 mês × taxa, UMA vez); cada bloco carrega a
+      // fica no contrato-mãe (taxa × valor total, UMA vez); cada bloco carrega a
       // caução (50%). O servidor confere o documento das duas partes (F32).
       const inicioISO = hojeBR();
       // A6: inquilino, imóvel, aluguel e taxa vêm da candidatura aceita (servidor).
@@ -996,18 +996,19 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
             {/* Taxa de serviço: cobrada do proprietário, à parte, mostrada ANTES de aceitar */}
             <div className="rounded-xl border border-champagne/40 bg-champagne/10 p-4 text-sm">
               <p className="font-title font-bold text-forest" data-testid="taxa-servico-painel">
-                {textoTaxaPainel(COMMISSION_RATE, PROPERTY.monthlyRent)}
+                {textoTaxaPainel(COMMISSION_RATE, PROPERTY.monthlyRent, prazoMeses)}
                 {aceiteBR ? ` (taxa travada em ${aceiteBR})` : ""}
               </p>
               <p className="mt-1 text-xs text-muted">
-                Cobrada de você <strong>por contrato fechado</strong>, em uma cobrança à parte, no
-                fechamento. Uma renovação conta como novo contrato, na mesma taxa. O valor mensal,
-                inclusive o do primeiro mês, vai do inquilino{" "}
+                Cobrada de você <strong>sobre o valor total do contrato</strong> (aluguel × meses), em
+                uma cobrança à parte, no fechamento. A comissão é cobrada uma vez em cada contrato e em
+                cada renovação, sobre o valor total do período contratado. O valor mensal, de todos os
+                meses, vai do inquilino{" "}
                 <strong>direto para a sua conta</strong> — a plataforma nunca cobra nem repassa
                 esse valor. O inquilino não paga taxa da Viva.
               </p>
               <div className="mt-3 space-y-1">
-                <Row label="Base de cálculo (primeiro mês)" value={formatBRL(PROPERTY.monthlyRent)} />
+                <Row label={`Base de cálculo (${formatBRL(PROPERTY.monthlyRent)} × ${prazoMeses} ${prazoMeses === 1 ? "mês" : "meses"})`} value={formatBRL(resumo.valorTotalPeriodo)} />
                 <div className="flex items-center justify-between border-t border-champagne/40 pt-1 font-medium text-forest">
                   <span>Taxa de serviço ({pctTexto(COMMISSION_RATE)})</span>
                   <span>{formatBRL(PLATFORM_COMMISSION)}</span>

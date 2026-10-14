@@ -905,8 +905,8 @@ export interface ContratoInput {
 const FAIXAS_CONTRATO = new Set(["temporada", "media_estadia", "longa"]);
 
 /**
- * Registra o CONTRATO-MÃE + seus BLOCOS no fechamento. A comissão (1 mês × taxa
- * do plano, UMA vez) fica no contrato-mãe — renovar/estender blocos não recobra.
+ * Registra o CONTRATO-MÃE + seus BLOCOS no fechamento. A comissão (taxa congelada ×
+ * valor total do contrato = aluguel × meses, UMA vez) fica no contrato-mãe; a renovação é outro fechamento.
  * Cada bloco carrega a caução (50% do valor do bloco); a plataforma só calcula e
  * documenta, NUNCA captura o dinheiro (regra de ouro).
  *
@@ -1030,7 +1030,7 @@ export async function registrarContrato(
  *  • não havendo, propõe um novo bloco — se couber no teto de 180 dias — já
  *    com o aceite de quem propôs, e avisa a outra parte.
  * Caução do bloco limitada para a soma do contrato não passar de 3 aluguéis
- * (art. 38 §2º). Não gera nova comissão. O banco confere tudo de novo (0063).
+ * (art. 38 §2º). A cobrança da renovação é um fechamento à parte (ordem b3c9d76e). O banco confere tudo de novo (0063).
  */
 export async function renovarBloco(
   contratoId: string

@@ -2,7 +2,9 @@ import Link from "next/link";
 import { Check, Scale } from "lucide-react";
 import { COMPARE_ALUGUEL, COMPARE_CONTRATO, COMPARE_MESES, COMPARE_RODAPE, DIFERENCIAIS_VIVA, linhasPublicas, type LinhaCompare } from "@/config/compare-precos";
 import { reaisInteiros } from "@/config/planos";
-import { pctTexto } from "@/lib/cobranca/regra";
+import { TAXA_COMISSAO_PADRAO, comissaoSobreContrato, pctTexto } from "@/lib/cobranca/regra";
+
+const MESES_EXEMPLO = COMPARE_MESES;
 
 /**
  * "Compare" — regra única de 12% × o que o mercado cobra. Números só de
@@ -104,10 +106,10 @@ export function ComparativoPrecos({ variante = "completo" }: { variante?: "compl
 /** Linha da etapa de preço do Anunciar: "Você paga R$ X uma vez." */
 export function LinhaComparativoAnuncio({ aluguel }: { aluguel: number }) {
   if (!(aluguel > 0)) return null;
-  const valor = Math.round(aluguel * 12) / 100;
+  const valor = comissaoSobreContrato(aluguel, MESES_EXEMPLO, TAXA_COMISSAO_PADRAO);
   return (
     <p className="rounded-lg bg-sage-100 px-3 py-2 text-xs text-ink" data-testid="linha-comparativo">
-      Neste valor mensal, a taxa é de <strong>{brl(valor)} uma vez</strong> (12% do primeiro mês para quem tem 1 ou 2 imóveis; menor com mais imóveis), só quando a reserva é fechada.{" "}
+      Num contrato de {MESES_EXEMPLO} meses neste valor mensal, a taxa é de <strong>{brl(valor)} uma vez</strong> (12% sobre o valor total do contrato para quem tem 1 ou 2 imóveis; menor com mais imóveis), só quando a reserva é fechada.{" "}
       <Link href="/precos" className="web-only font-medium text-forest underline">
         Ver preços
       </Link>

@@ -1,7 +1,7 @@
-/** Comissão de fechamento = 1 aluguel × taxa, em reais inteiros. Cobrada do
- *  PROPRIETÁRIO, à parte — o aluguel nunca passa pela plataforma. */
-export function valorComissao(aluguelMensal: number, taxa: number): number {
-  if (!Number.isFinite(aluguelMensal) || aluguelMensal <= 0) return 0;
-  if (!Number.isFinite(taxa) || taxa <= 0) return 0;
-  return Math.round(aluguelMensal * taxa);
+import { comissaoSobreContrato } from "./cobranca/regra.ts";
+
+/** Comissão de fechamento = valor total do contrato (aluguel × meses) × taxa da faixa. Cobrada do
+ *  PROPRIETÁRIO, à parte — o aluguel nunca passa pela plataforma. Fórmula única em cobranca/regra.ts. */
+export function valorComissao(aluguelMensal: number, meses: number, taxa: number): number {
+  return comissaoSobreContrato(aluguelMensal, meses, taxa);
 }

@@ -58,18 +58,19 @@ test("bloco nunca maior que o prazo total", () => {
   assert.equal(b[0].meses, 1);
 });
 
-test("comissão do contrato-mãe: 1 mês × taxa, uma vez", () => {
-  assert.equal(comissaoContrato(3000, 0.1), 300); // Essencial 10%
-  assert.equal(comissaoContrato(3000, 0.08), 240); // Profissional 8%
-  assert.equal(comissaoContrato(3000, 0.12), 360); // Gratuito 12%
-  assert.equal(comissaoContrato(3000, 0), 0); // Gestor 0%
+test("comissão do contrato-mãe: taxa × valor total (aluguel × meses), uma vez", () => {
+  assert.equal(comissaoContrato(3000, 1, 0.1), 300);
+  assert.equal(comissaoContrato(3000, 3, 0.12), 1080);
+  assert.equal(comissaoContrato(3000, 6, 0.12), 2160);
+  assert.equal(comissaoContrato(3000, 6, 0.08), 1440);
+  assert.equal(comissaoContrato(3000, 6, 0), 0);
 });
 
 test("resumo do contrato: totais e comissão única", () => {
   const r = resumoContrato(6, 3000, 0.1, 2);
   assert.equal(r.valorTotalPeriodo, 18000); // 3000 × 6
   assert.equal(r.caucaoTotal, 9000); // 3 blocos × 3000
-  assert.equal(r.comissaoValor, 300); // 1 mês × 10%, UMA vez (não por bloco)
+  assert.equal(r.comissaoValor, 1800); // 6 meses × 3000 × 10%, UMA vez (não por bloco)
   assert.equal(r.desembolsoPrimeiroBloco, 9000); // 6000 aluguel + 3000 caução
   assert.equal(r.blocos.length, 3);
 });
@@ -83,7 +84,7 @@ test("T-TRAV-D: fechamento de 4 meses @3200 → 2 blocos, total R$12.800, cauç�
     assert.equal(bloco.valor, 6400); // 3200 × 2
     assert.equal(bloco.caucao, 3200); // 50% do bloco (metade de 6400)
   }
-  assert.equal(r.comissaoValor, 320); // 1 mês × 10%, UMA vez no contrato (não por bloco)
+  assert.equal(r.comissaoValor, 1280); // 4 meses × 3200 × 10%, UMA vez no contrato (não por bloco)
   assert.equal(r.desembolsoPrimeiroBloco, 9600); // 6400 aluguel + 3200 caução
 });
 

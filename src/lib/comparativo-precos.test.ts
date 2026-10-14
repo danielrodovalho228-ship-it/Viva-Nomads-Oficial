@@ -102,6 +102,8 @@ test("nenhum outro arquivo tem percentual de comissão fixo", () => {
   const violacoes: string[] = [];
   for (const arq of arquivos(raiz)) {
     // Fontes únicas: planos legados (grandfather), a regra única de 12% e a tabela "Compare" (fonte e data por linha).
+    // Termos de Uso: texto jurídico EXATO aprovado pelo Daniel (ordem 58ae392e, 14/10), com as faixas e o exemplo.
+    if (arq === join(raiz, "app", "(public)", "termos", "page.tsx")) continue;
     if (arq === fonte || arq === join(raiz, "lib", "cobranca", "regra.ts") || arq === join(raiz, "config", "compare-precos.ts")) continue;
     readFileSync(arq, "utf8")
       .split("\n")

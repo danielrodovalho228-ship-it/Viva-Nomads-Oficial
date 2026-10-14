@@ -6,7 +6,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { CUSTO_FERRAMENTAS_POR_CONTRATO, CUSTO_FIXO_PADRAO, cenariosContratosMes, parceirosPorContrato, porContrato, projetar, receitaBrutaMensal, taxaMediaPorContrato, visaoInvestidor } from "./projecao.ts";
 import { ALUGUEL_MEDIO, CONTRATOS_MES_CENARIOS, CUSTOS_FIXOS, CUSTO_FIXO_FAIXA, IMPOSTO_OPCOES, IMPOSTO_SOBRE_RECEITA, MIX_FAIXAS, PARCEIROS, REFERENCIA, REPRESENTANTE_SEGUROS, SELO_POTENCIAL, TAXA_MEDIA } from "../../config/premissas-financeiras.ts";
-import { FAIXAS_COMISSAO_PADRAO, taxaMediaPonderada, valorTaxa } from "../cobranca/regra.ts";
+import { FAIXAS_COMISSAO_PADRAO, taxaMediaPonderada, comissaoSobreContrato } from "../cobranca/regra.ts";
 
 /** |real − esperado| ≤ 2% do esperado. */
 const perto = (real: number, esperado: number, msg: string) =>
@@ -14,8 +14,8 @@ const perto = (real: number, esperado: number, msg: string) =>
 
 test("números da regra única sobre R$ 4.320: 518,40 / 432,00 / 345,60 / 259,20 (ordem bd296d53)", () => {
   assert.equal(ALUGUEL_MEDIO, 4320);
-  assert.deepEqual(FAIXAS_COMISSAO_PADRAO.slice(0, 4).map((f) => valorTaxa(4320, f.taxa)), [518.4, 432, 345.6, 259.2]);
-  assert.equal(valorTaxa(4320, FAIXAS_COMISSAO_PADRAO[4].taxa), 259.2); // Plano Gestor: 6% até negociar
+  assert.deepEqual(FAIXAS_COMISSAO_PADRAO.slice(0, 4).map((f) => comissaoSobreContrato(4320, 1, f.taxa)), [518.4, 432, 345.6, 259.2]);
+  assert.equal(comissaoSobreContrato(4320, 1, FAIXAS_COMISSAO_PADRAO[4].taxa), 259.2); // Plano Gestor: 6% até negociar
 });
 
 test("taxa média ponderada pelas faixas: padrão = 12%; mix misto pondera; mix vazio cai na 1ª faixa", () => {
