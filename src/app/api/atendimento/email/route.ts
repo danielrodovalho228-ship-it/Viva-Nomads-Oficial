@@ -30,6 +30,12 @@ function igual(a: string, b: string): boolean {
   return crypto.timingSafeEqual(x, y);
 }
 
+/** O banco exige nome de 2 a 60 letras no chamado de visitante (0120): sem nome no "From", usa o começo do e-mail. */
+function nomeDoRemetente(r: { email: string; nome: string | null }): string {
+  const nome = (r.nome ?? r.email.split("@")[0]).trim().slice(0, 60);
+  return nome.length >= 2 ? nome : "Contato";
+}
+
 function enderecoDe(from: string): { email: string; nome: string | null } | null {
   const m = from.match(/^\s*(?:"?([^"<]*)"?\s*)?<?([^<>\s]+@[^<>\s]+)>?\s*$/);
   if (!m) return null;
@@ -100,7 +106,7 @@ export async function POST(request: Request) {
     .insert({
       usuario_id: usuarioId,
       visitante_email: usuarioId ? null : remetente.email,
-      visitante_nome: usuarioId ? null : remetente.nome,
+      visitante_nome: usuarioId ? null : nomeDoRemetente(remetente),
       tipo: tipo === "manutencao" ? "suporte" : tipo,
       categoria: catKey,
       prioridade,
