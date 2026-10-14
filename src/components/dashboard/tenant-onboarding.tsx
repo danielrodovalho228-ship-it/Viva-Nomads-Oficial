@@ -82,7 +82,7 @@ export function TenantOnboarding({ name }: { name: string }) {
     <DashboardBanner
       className="mb-6"
       image={PHOTOS.dashTenant}
-      alt="Canto aconchegante de apartamento mobiliado com luz da manhã"
+      alt="Canto aconchegante de imóvel mobiliado com luz da manhã"
       title={`Olá${name ? `, ${name}` : "!"} 👋`}
       subtitle="Encontre o imóvel certo para a sua próxima fase."
       action={

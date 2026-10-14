@@ -111,7 +111,7 @@ export default function ForLandlordsPage() {
         <div className="container-page grid items-center gap-12 md:grid-cols-2">
           <BrandImage
             src={PHOTOS.dashOwner}
-            alt="Sala de apartamento mobiliado preparada para anúncio"
+            alt="Sala de imóvel mobiliado preparada para anúncio"
             sizes="(max-width: 768px) 100vw, 50vw"
             className="aspect-square w-full rounded-3xl"
           />

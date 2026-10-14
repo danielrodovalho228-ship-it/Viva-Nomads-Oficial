@@ -16,3 +16,16 @@ test("home passo 3: garantia combinada entre as partes, sem 'Garantia escolhida'
   assert.doesNotMatch(s, /Garantia escolhida/);
   assert.match(s, /Garantia locatícia combinada entre proprietário e inquilino \(ex\.: Caução\)/);
 });
+
+test("textos alternativos das páginas públicas e do onboarding: 'imóvel mobiliado', nunca 'apartamento' (ordem 809fcade)", () => {
+  for (const arq of [
+    "app/(public)/como-funciona/page.tsx",
+    "app/(public)/empresas/page.tsx",
+    "app/(public)/precos/page.tsx",
+    "app/(public)/para-proprietarios/page.tsx",
+    "components/dashboard/tenant-onboarding.tsx",
+  ]) {
+    assert.doesNotMatch(ler(arq), /apartamentos? mobiliados?/i, arq);
+  }
+  assert.match(ler("app/(public)/empresas/page.tsx"), /a um imóvel mobiliado com a mala/);
+});
