@@ -25,6 +25,7 @@ import { createClient } from "@supabase/supabase-js";
 import { deflateSync } from "node:zlib";
 import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { randomBytes } from "node:crypto";
+import { ativarTotp } from "./totp.mjs";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const chave = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -298,6 +299,17 @@ async function main() {
   await admin.from("agentes").update({ status: "ativo", rotina_texto: "No site, 24 h (chat da /ajuda)", trigger_id: null }).eq("slug", "viva");
   console.log("✓ rondas de teste da Central de Agentes");
 
+  // 2FA da admin de teste (portão AAL2 do /admin, #422): cria e verifica o fator TOTP e guarda o
+  // segredo para a suíte E2E (TESTES_ADMIN_TOTP_SEGREDO). Sem a chave anon (uso local avulso), pula.
+  let segredoTotpAdmin = "";
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
+  if (anon) {
+    const roberta = PERSONAS.find((p) => p.chave === "ADMIN");
+    const cliente = createClient(url, anon, { auth: { persistSession: false, autoRefreshToken: false } });
+    segredoTotpAdmin = await ativarTotp(cliente, roberta.email, senha);
+    console.log("✓ 2FA (TOTP) da admin de teste ativado");
+  }
+
   // Saídas: env para a suíte E2E (sem imprimir a senha) + lista de contas sem senha.
   const ge = process.env.GITHUB_ENV;
   if (ge) {
@@ -305,6 +317,10 @@ async function main() {
       appendFileSync(ge, `TESTES_${p.chave}_EMAIL=${p.email}\nTESTES_${p.chave}_SENHA=${senha}\nTESTES_${p.chave}_NOME=${p.nome}\n`);
     }
     appendFileSync(ge, `TESTES_CONFERIR_CODIGO=${codigoConferir}\n`);
+    if (segredoTotpAdmin) {
+      console.log(`::add-mask::${segredoTotpAdmin}`);
+      appendFileSync(ge, `TESTES_ADMIN_TOTP_SEGREDO=${segredoTotpAdmin}\n`);
+    }
   }
   mkdirSync("tests/laboratorio/saida", { recursive: true });
   writeFileSync("tests/laboratorio/saida/contas.json", JSON.stringify(PERSONAS.map(({ chave, email, nome, role }) => ({ chave, email, nome, role })), null, 2));
