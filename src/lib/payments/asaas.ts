@@ -118,7 +118,7 @@ export async function createSubscription(params: {
 export interface CommissionResult {
   demo: boolean;
   chargeId: string;
-  /** Base de cálculo: 1 mês de aluguel (NÃO é cobrado — só serve de base). */
+  /** Aluguel mensal; a base da comissão é ele × meses do contrato (o aluguel NÃO é cobrado). */
   baseAluguel: number;
   commissionRate: number; // taxa congelada no aceite
   /** Valor cobrado do PROPRIETÁRIO. */
@@ -135,12 +135,14 @@ export interface CommissionResult {
  */
 export async function createCommissionCharge(params: {
   aluguelMensal: number;
+  /** Meses contratados (contrato ou renovação): a comissão é taxa × aluguel × meses. */
+  meses: number;
   commissionRate: number;
   ownerName: string;
   ownerEmail: string;
   ownerCpfCnpj?: string;
 }): Promise<CommissionResult> {
-  const platformCommission = valorComissao(params.aluguelMensal, params.commissionRate);
+  const platformCommission = valorComissao(params.aluguelMensal, params.meses, params.commissionRate);
 
   if (!isAsaasConfigured()) {
     exigirChaveEmProducao("Asaas");
@@ -183,7 +185,7 @@ export async function createCommissionCharge(params: {
       billingType: "PIX",
       value: platformCommission,
       dueDate: new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10),
-      description: `Viva Nomads — comissão de fechamento (${Math.round(params.commissionRate * 100)}% sobre 1 aluguel)`,
+      description: `Viva Nomads — comissão de fechamento (${Math.round(params.commissionRate * 100)}% sobre o valor total do contrato)`,
     }),
   });
 

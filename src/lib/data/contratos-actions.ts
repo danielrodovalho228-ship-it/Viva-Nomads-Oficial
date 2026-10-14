@@ -57,8 +57,8 @@ export interface ContratoView {
   aluguelMensal: number;
   prazoTotalDias: number;
   tamanhoBlocoMeses: number;
-  comissaoValor: number; // % × 1º aluguel, UMA vez (snapshot do plano no fechamento)
-  comissaoPercent: number; // 0..1 — taxa aplicada (para exibir "X% do 1º aluguel")
+  comissaoValor: number; // taxa × valor total (aluguel × meses), UMA vez (snapshot no fechamento)
+  comissaoPercent: number; // 0..1 — taxa aplicada (para exibir "X% do valor total")
   qtdOcupantes: number;
   status: string;
   /** F33: etapa real (assinatura → 1º pagamento → vigência); só vale com status "ativo". */

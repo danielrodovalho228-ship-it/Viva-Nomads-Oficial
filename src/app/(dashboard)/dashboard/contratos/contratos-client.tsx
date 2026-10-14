@@ -121,9 +121,8 @@ function buildDemoContratos(hojeISO: string): ContratoView[] {
       aluguelMensal: c.valorMes,
       prazoTotalDias: prazoMeses * DIAS_POR_MES,
       tamanhoBlocoMeses: 2,
-      // Comissão = % × 1º aluguel, UMA vez (regra correta). Exemplo demo usa a
-      // trilha do Profissional (8%) — NUNCA "1 mês de aluguel cheio".
-      comissaoValor: comissaoContrato(c.valorMes, DEMO_COMISSAO_PCT),
+      // Comissão = taxa × valor total do contrato (aluguel × meses), UMA vez.
+      comissaoValor: comissaoContrato(c.valorMes, prazoMeses, DEMO_COMISSAO_PCT),
       comissaoPercent: DEMO_COMISSAO_PCT,
       qtdOcupantes: 1 + (ci % 3),
       status: "ativo",
@@ -255,14 +254,14 @@ function ContratoCard({
         </Link>
       )}
 
-      {/* Comissão única (contrato-mãe) — % do 1º aluguel, NUNCA "1 mês de aluguel". */}
+      {/* Comissão única (contrato-mãe) — % do valor total do contrato (aluguel × meses). */}
       <p className="mt-3 rounded-lg bg-champagne/10 px-3 py-2 text-xs text-forest">
         Comissão do contrato: <strong>{formatBRL(contrato.comissaoValor)}</strong>
         {contrato.comissaoPercent > 0 && (
-          <> ({Math.round(contrato.comissaoPercent * 100)}% do 1º aluguel)</>
+          <> ({Math.round(contrato.comissaoPercent * 100)}% do valor total)</>
         )}{" "}
-        — cobrada <strong>uma única vez</strong>. Renovar ou estender blocos não gera nova
-        comissão; os aluguéis vão direto a você.
+        — cobrada <strong>uma vez em cada contrato e em cada renovação</strong>, sobre o valor total do
+        período contratado; os aluguéis vão direto a você.
       </p>
 
       {/* Timeline dos blocos */}

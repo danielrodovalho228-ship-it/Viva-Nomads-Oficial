@@ -7,8 +7,9 @@
   Definições inegociáveis (v2 do prompt — base do produto):
   • CONTRATO-MÃE = o prazo total pretendido que o inquilino declara no
     fechamento (ex.: 6 meses). A COMISSÃO incide UMA ÚNICA VEZ por contrato-mãe,
-    no fechamento, sobre 1 (um) mês de aluguel. Renovar ou estender blocos NÃO
-    gera nova comissão — a comissão é por relação fechada, não por prazo.
+    no fechamento, sobre o VALOR TOTAL (aluguel × meses; ordem b3c9d76e, 14/10).
+    Cada renovação/prorrogação é cobrada à parte, sobre o valor total do período
+    renovado — nunca duas vezes o mesmo período.
   • Nenhum BLOCO pode exceder 90 dias (art. 48, Lei 8.245/91).
   • Caução do bloco = 50% do valor do bloco (aluguel × meses do bloco).
 
@@ -18,6 +19,7 @@
 */
 
 import { REGRAS_CONTRATO } from "../config/planos.ts";
+import { comissaoSobreContrato } from "./cobranca/regra.ts";
 
 /** Fração da caução por bloco (50%) — de REGRAS_CONTRATO (fonte única). */
 export const PERC_CAUCAO_BLOCO = REGRAS_CONTRATO.caucaoFracaoBloco;
@@ -94,13 +96,12 @@ export function planejarBlocos(
 }
 
 /**
- * Taxa do contrato: 1 (um) mês de aluguel × taxa, sobre o PRIMEIRO aluguel.
- * Regra única (ordem eaa5adce): 12% no contrato novo e também na renovação,
- * igual para todos. A taxa (0..1) vem do caller (config/override do admin);
- * este módulo puro só aplica o cálculo.
+ * Comissão do contrato: taxa da faixa × VALOR TOTAL (aluguel × meses contratados), UMA vez no fechamento
+ * (ordem b3c9d76e). Cada renovação é um novo fechamento, cobrado à parte sobre o período renovado.
+ * A taxa (0..1) vem do caller (congelada no aceite); a fórmula é a única de cobranca/regra.ts.
  */
-export function comissaoContrato(aluguelMensal: number, rate: number): number {
-  return Math.round(Math.max(0, aluguelMensal) * Math.max(0, rate));
+export function comissaoContrato(aluguelMensal: number, meses: number, rate: number): number {
+  return comissaoSobreContrato(aluguelMensal, meses, rate);
 }
 
 export interface ResumoContrato {
@@ -111,7 +112,7 @@ export interface ResumoContrato {
   valorTotalPeriodo: number; // aluguel × prazo total
   caucaoTotal: number; // soma das cauções dos blocos
   comissaoPercent: number; // taxa do plano (0..1)
-  comissaoValor: number; // 1 mês × taxa, UMA vez
+  comissaoValor: number; // valor total (aluguel × meses) × taxa, UMA vez por contrato/renovação
   desembolsoPrimeiroBloco: number; // o que o inquilino paga para entrar
 }
 
@@ -138,7 +139,7 @@ export function resumoContrato(
     valorTotalPeriodo: aluguel * total,
     caucaoTotal: blocos.reduce((s, b) => s + b.caucao, 0),
     comissaoPercent: rate,
-    comissaoValor: comissaoContrato(aluguel, rate),
+    comissaoValor: comissaoContrato(aluguel, total, rate),
     desembolsoPrimeiroBloco: blocos[0]?.desembolso ?? 0,
   };
 }

@@ -21,9 +21,11 @@ test("taxa congelada válida vale (inclusive 0 do Gestor gravado de verdade)", (
   assert.equal(taxaDoContrato(0.5, "essential"), COMISSAO_POR_PLANO.essential); // inventada
 });
 
-test("comissão = 1 aluguel × taxa, cobrada do proprietário (nunca o aluguel)", () => {
-  assert.equal(valorComissao(3000, 0.12), 360);
-  assert.equal(valorComissao(2900, 0.1), 290);
-  assert.equal(valorComissao(3000, 0), 0);
-  assert.equal(valorComissao(0, 0.12), 0);
+test("comissão = aluguel × meses × taxa, cobrada do proprietário (nunca o aluguel)", () => {
+  assert.equal(valorComissao(3000, 1, 0.12), 360);
+  assert.equal(valorComissao(3000, 3, 0.12), 1080);
+  assert.equal(valorComissao(3000, 6, 0.12), 2160);
+  assert.equal(valorComissao(2900, 1, 0.1), 290);
+  assert.equal(valorComissao(3000, 3, 0), 0);
+  assert.equal(valorComissao(0, 3, 0.12), 0);
 });
