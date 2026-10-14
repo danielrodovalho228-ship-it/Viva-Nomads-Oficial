@@ -291,6 +291,10 @@ test("b3c9d76e: texto público e das telas não diz que a comissão é só do 1�
     "src/app/(dashboard)/dashboard/contratos/contratos-client.tsx",
     "src/lib/payments/asaas.ts",
     "src/app/api/comissao/route.ts",
+    "src/config/planos.ts",
+    "src/config/premissas-financeiras.ts",
+    "src/app/(dashboard)/dashboard/simulador/page.tsx",
+    "src/app/(dashboard)/dashboard/roi-imovel/page.tsx",
   ];
   const velho = /primeiro (m[êe]s|aluguel)|1º (m[êe]s|aluguel)|de 1 aluguel|de um aluguel|sobre 1 aluguel|1 m[êe]s × taxa/i;
   for (const a of arquivos) assert.doesNotMatch(ler(a), velho, a);

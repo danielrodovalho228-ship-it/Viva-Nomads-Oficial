@@ -4,10 +4,10 @@
   /modelodenegocio, /simulacao, /roi, a calculadora e os badges de plano
   consomem SÓ deste arquivo.
 
-  Modelo híbrido com comissão DECRESCENTE (uma única vez por contrato-mãe,
-  sobre 1 aluguel): Gratuito → Essencial → Profissional → Gestor (zero no topo;
-  a receita do Gestor é só a assinatura sob consulta). Os percentuais vivem SÓ
-  aqui; nas telas, sempre em reais ("12% de um aluguel, uma vez (≈ R$ X)").
+  HISTÓRICO (modelo antigo de planos com mensalidade, NÃO é o vigente — ordem 5df28a7b):
+  Gratuito → Essencial → Profissional → Gestor. A cobrança vigente é só comissão, pelas faixas de
+  src/lib/cobranca/regra.ts, sobre o valor total de cada contrato e de cada renovação.
+  Nas telas, sempre em reais ("12% do valor total do contrato (≈ R$ X por mês de aluguel)").
   Tabela atual: decisão do Daniel, out/2026.
 */
 
@@ -101,17 +101,17 @@ const PLANOS_BASE: Plano[] = [
   },
 ];
 
-/** Texto da comissão, sempre em reais: "12% de um aluguel, uma vez (≈ R$ 288)". */
+/** Texto da comissão, sempre em reais: "12% do valor total do contrato (≈ R$ 288 por mês de aluguel)". */
 export function textoComissao(comissao: number, aluguel?: number): string {
   if (comissao === 0) return "Comissão zero: você paga só a assinatura";
   const pct = `${Math.round(comissao * 1000) / 10}`.replace(".", ",");
-  const valor = aluguel && aluguel > 0 ? ` (≈ ${reaisInteiros(aluguel * comissao)})` : "";
-  return `${pct}% de um aluguel, uma vez por contrato${valor}`;
+  const valor = aluguel && aluguel > 0 ? ` (≈ ${reaisInteiros(aluguel * comissao)} por mês de aluguel)` : "";
+  return `${pct}% do valor total do contrato${valor}`;
 }
 
-/** Forma curta para tabelas e rótulos com o valor em R$ ao lado: "12% de 1 aluguel". */
-export function pctDeUmAluguel(comissao: number): string {
-  return comissao === 0 ? "zero" : `${`${Math.round(comissao * 1000) / 10}`.replace(".", ",")}% de 1 aluguel`;
+/** Forma curta para tabelas e rótulos com o valor em R$ ao lado: "12% do valor total". */
+export function pctDoValorTotal(comissao: number): string {
+  return comissao === 0 ? "zero" : `${`${Math.round(comissao * 1000) / 10}`.replace(".", ",")}% do valor total`;
 }
 
 /** R$ sem centavos, pt-BR (puro; sem depender de utils). */
@@ -136,7 +136,7 @@ export const MERCADO = {
   /** Airbnb: taxa única de 16% para anfitriões no Brasil (central de ajuda do Airbnb, out/2026). */
   airbnbTaxa: 0.16,
   airbnbFonte: "Airbnb: taxa única de 16% para anfitriões no Brasil (central de ajuda do Airbnb, out/2026).",
-  /** Imobiliária tradicional (média de mercado): 1º aluguel + 8% de administração ao mês. */
+  /** Imobiliária tradicional (média de mercado): um aluguel inteiro de intermediação + 8% de administração ao mês. */
   imobiliariaAdmMensal: 0.08,
   imobiliariaPrimeiroAluguel: 1,
   dataReferencia: "out/2026",

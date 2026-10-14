@@ -72,10 +72,10 @@ test("Profissional não vende o contrato digital como exclusivo (acompanha toda 
 });
 
 test("texto da comissão sempre em reais", () => {
-  assert.equal(textoComissao(0.12, 2400), "12% de um aluguel, uma vez por contrato (≈ R$ 288)");
-  assert.equal(textoComissao(0.04), "4% de um aluguel, uma vez por contrato");
+  assert.equal(textoComissao(0.12, 2400), "12% do valor total do contrato (≈ R$ 288 por mês de aluguel)");
+  assert.equal(textoComissao(0.04), "4% do valor total do contrato");
   assert.match(textoComissao(0), /zero/i);
-  for (const p of PLANOS) if (p.comissao > 0) assert.match(p.custoLabel, /de um aluguel, uma vez por contrato \(≈ R\$ \d/);
+  for (const p of PLANOS) if (p.comissao > 0) assert.match(p.custoLabel, /do valor total do contrato \(≈ R\$ \d/);
 });
 
 test("comissão congelada no aceite: aceites antigos NÃO mudam com a tabela nova", () => {

@@ -38,7 +38,7 @@ test.describe("T37 — Números do código (fonte única)", () => {
     }
     // Exemplo da tela: R$ 2.400 → R$ 288 / 192 / 96 / 0.
     expect(PLANOS.map((p) => resumoContrato(4, 2400, p.comissao).comissaoValor)).toEqual([288, 192, 96, 0]);
-    expect(textoComissao(0.12, 2400)).toContain("12% de um aluguel");
+    expect(textoComissao(0.12, 2400)).toContain("12% do valor total do contrato");
     expect(textoComissao(0)).toContain("Comissão zero");
   });
 
