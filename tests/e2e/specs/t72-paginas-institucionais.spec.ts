@@ -76,12 +76,18 @@ test.describe("T72 — páginas institucionais", () => {
   });
 
   test("5. comparações com outras plataformas intactas", async ({ page }) => {
-    // /para-proprietarios: versão curta do comparativo (Viva × Airbnb).
+    // Regra permanente do Daniel (ordem c6b62141): Viva × Airbnb × QuintoAndar sempre visíveis.
     await page.goto("/para-proprietarios", { waitUntil: "networkidle" });
-    await expect(page.getByText("Quanto você paga").first()).toBeVisible();
-    await expect(page.getByText(/Airbnb \(taxa sobre o período\)/).first()).toBeVisible();
-    // /precos: comparativo completo com os diferenciais da Viva.
-    await page.goto("/precos", { waitUntil: "networkidle" });
+    const curto = page.getByTestId("comparativo-curto");
+    await expect(curto).toContainText("Viva Nomads");
+    await expect(curto).toContainText("Airbnb");
+    await expect(curto).toContainText("QuintoAndar");
+    await page.goto("/precos#compare", { waitUntil: "networkidle" });
+    const linhas = page.getByTestId("comparativo-linhas");
+    await expect(linhas).toContainText("Viva Nomads");
+    await expect(linhas).toContainText("Airbnb");
+    await expect(linhas).toContainText("QuintoAndar");
+    await expect(linhas).toContainText("confira o vigente no QuintoAndar");
     await expect(page.getByTestId("diferenciais-viva").first()).toBeVisible();
     await expect(page.getByTestId("regra-unica")).toBeVisible();
     await expect(page.getByTestId("faixas-taxa")).toBeVisible();

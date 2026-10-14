@@ -38,6 +38,7 @@ export function ComparativoPrecos({ variante = "completo" }: { variante?: "compl
   const linhas = linhasPublicas();
   const viva = linhas.find((l) => l.id === "viva")!;
   const airbnb = linhas.find((l) => l.id === "airbnb");
+  const quintoandar = linhas.find((l) => l.id === "quintoandar");
 
   if (variante === "curto") {
     return (
@@ -48,7 +49,7 @@ export function ComparativoPrecos({ variante = "completo" }: { variante?: "compl
         <p className="mt-2 text-sm text-muted">
           {`Reserva de ${COMPARE_MESES} meses a ${reaisInteiros(COMPARE_ALUGUEL)} por mês (${reaisInteiros(COMPARE_CONTRATO)} no contrato):`}
         </p>
-        <div className="mt-3 grid grid-cols-1 gap-3 text-center sm:grid-cols-2">
+        <div className="mt-3 grid grid-cols-1 gap-3 text-center sm:grid-cols-3" data-testid="comparativo-curto">
           <div className="rounded-xl bg-sage-100 p-3">
             <p className="text-xs text-muted">Viva Nomads (reserva de 3 meses)</p>
             <p className="font-title text-2xl font-bold text-forest">{aprox(viva.pct ?? 0)}</p>
@@ -59,6 +60,13 @@ export function ComparativoPrecos({ variante = "completo" }: { variante?: "compl
               <p className="text-xs text-muted">Airbnb (taxa sobre o período)</p>
               <p className="font-title text-2xl font-bold text-ink">{aprox(airbnb.pct ?? 0)}</p>
               <p className="text-xs text-muted">do total pago</p>
+            </div>
+          )}
+          {quintoandar && (
+            <div className="rounded-xl bg-surface-2 p-3">
+              <p className="text-xs text-muted">QuintoAndar (contrato de 30 meses)</p>
+              <p className="font-title text-2xl font-bold text-ink">{aprox(quintoandar.pct ?? 0)}</p>
+              <p className="text-xs text-muted">do total pago, referência</p>
             </div>
           )}
         </div>
@@ -80,13 +88,14 @@ export function ComparativoPrecos({ variante = "completo" }: { variante?: "compl
       <p className="mt-1 text-sm text-muted">
         {`Reserva de ${COMPARE_MESES} meses a ${reaisInteiros(COMPARE_ALUGUEL)} por mês (${reaisInteiros(COMPARE_CONTRATO)} no total).`} Os percentuais são sobre o total pago pelo morador, no formato típico de cada empresa.
       </p>
-      <ul className="mt-5 grid gap-3 md:grid-cols-2">
+      <ul className="mt-5 grid gap-3 md:grid-cols-3" data-testid="comparativo-linhas">
         {linhas.map((l) => (
           <li key={l.id} className={l.id === "viva" ? "rounded-2xl border border-forest bg-sage-100 p-4 ring-1 ring-forest" : "rounded-2xl border border-line bg-surface-2 p-4"}>
             <p className="text-sm font-semibold text-ink">{l.nome}</p>
             {l.pct !== null && <p className="mt-1 font-title text-2xl font-bold text-ink">{aprox(l.pct)}</p>}
             <p className="mt-1 text-sm text-muted">{l.regra}</p>
             <p className="mt-2 text-xs text-muted">Fonte: <Fonte l={l} /></p>
+            {l.nota && <p className="mt-1 text-xs italic text-muted">{l.nota}</p>}
           </li>
         ))}
       </ul>
