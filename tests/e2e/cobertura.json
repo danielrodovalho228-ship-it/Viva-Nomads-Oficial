@@ -2013,6 +2013,33 @@
       ],
       "specs": []
     },
+    "src/lib/data/pets-ficha-actions.ts#meusPets": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t71-pets-ficha"
+      ]
+    },
+    "src/lib/data/pets-ficha-actions.ts#removerPet": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t71-pets-ficha"
+      ]
+    },
+    "src/lib/data/pets-ficha-actions.ts#salvarPet": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t71-pets-ficha"
+      ]
+    },
     "src/lib/data/planos-actions.ts#definirAccountType": {
       "personas": [
         "proprietario",
