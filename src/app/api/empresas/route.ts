@@ -2,29 +2,23 @@ import { NextResponse } from "next/server";
 import { sendEmail } from "@/lib/notifications/email";
 import { consumirLimite, ipHash, HORA } from "@/lib/limites";
 import { SUPORTE_EMAIL } from "@/lib/site";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { pushParaCeo } from "@/lib/notifications/push-admins";
+import { validarLead, gravarLead } from "@/lib/empresas-lead";
 
 export const dynamic = "force-dynamic";
 
-/** Lead B2B (mobilidade corporativa) → e-mail ao admin. Sem prometer feature. */
+/** Lead B2B (mobilidade corporativa) → grava no banco, avisa o Daniel e manda e-mail. Sem prometer feature. */
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
-  const { nome, empresa, email, volumeAno, mensagem } = body as {
-    nome?: string;
-    empresa?: string;
-    email?: string;
-    volumeAno?: string;
-    mensagem?: string;
-  };
-
-  const n = (nome ?? "").trim();
-  const e = (empresa ?? "").trim();
-  const mail = (email ?? "").trim();
-  if (!n || !e || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) {
+  const lead = validarLead(body);
+  if (!lead) {
     return NextResponse.json(
       { error: "Preencha nome, empresa e um e-mail válido." },
       { status: 400 }
     );
   }
+  const { nome: n, empresa: e, email: mail } = lead;
 
   // Endereço da EMPRESA (nunca um e-mail pessoal de fallback).
   // Anti-spam: 5 envios por hora por IP (cada envio é um e-mail).
@@ -35,6 +29,12 @@ export async function POST(request: Request) {
     );
   }
 
+  // Guarda o contato no banco (só admin lê) e avisa só o Daniel; ambos best-effort: o e-mail abaixo segue.
+  const gravou = await gravarLead(createAdminClient(), lead);
+  if (gravou) {
+    await pushParaCeo({ title: "Novo contato de empresa", body: `${e} quer falar com a Viva.`, url: "/admin" }).catch(() => 0);
+  }
+
   const to = process.env.EMPRESAS_LEAD_EMAIL ?? SUPORTE_EMAIL;
 
   const esc = (s: string) =>
@@ -43,8 +43,8 @@ export async function POST(request: Request) {
     ["Nome", n],
     ["Empresa", e],
     ["E-mail", mail],
-    ["Volume/ano", (volumeAno ?? "").trim() || "—"],
-    ["Mensagem", (mensagem ?? "").trim().slice(0, 2000) || "—"],
+    ["Volume/ano", lead.volume_ano ?? "—"],
+    ["Mensagem", lead.mensagem ?? "—"],
   ];
 
   const r = await sendEmail({
@@ -57,5 +57,5 @@ export async function POST(request: Request) {
   });
 
   // Sem e-mail configurado (demo/preview), não falha o fluxo: confirma o recebido.
-  return NextResponse.json({ ok: true, delivered: !r.demo });
+  return NextResponse.json({ ok: true, delivered: !r.demo, saved: gravou });
 }
