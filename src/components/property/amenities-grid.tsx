@@ -1,5 +1,10 @@
+"use client";
+
+import { useState } from "react";
 import { Briefcase, UtensilsCrossed, Sofa, Building2, ShieldCheck, Check } from "lucide-react";
-import type { AmenityCategory, AmenityGroup, Property } from "@/lib/types";
+import type { AmenityCategory, Property } from "@/lib/types";
+import { BottomSheet } from "@/components/ui/bottom-sheet";
+import { agruparComodidades, comodidadesPrincipais } from "@/lib/anuncio/comodidades";
 
 const CATEGORY_META: Record<AmenityCategory, { label: string; icon: React.ComponentType<{ className?: string }> }> = {
   trabalho: { label: "Trabalho", icon: Briefcase },
@@ -9,61 +14,62 @@ const CATEGORY_META: Record<AmenityCategory, { label: string; icon: React.Compon
   seguranca: { label: "Segurança", icon: ShieldCheck },
 };
 
-const CATEGORY_ORDER: AmenityCategory[] = ["trabalho", "cozinha", "conforto", "edificio", "seguranca"];
-
 /**
- * Comodidades agrupadas por categoria, com ícones. Se o imóvel ainda não tem
- * categorização (`amenityGroups`), cai para a lista plana `amenities`. Se não há
- * comodidade nenhuma, a seção inteira some (o componente devolve null).
+ * Comodidades: as 5 principais na página e "Ver todas as N comodidades", que abre a lista
+ * completa agrupada por categoria. Sem comodidade nenhuma, a seção inteira some.
  */
 export function AmenitiesGrid({ property }: { property: Property }) {
-  const groups = resolveGroups(property);
-  if (groups.length === 0) return null;
+  const [aberto, setAberto] = useState(false);
+  const agrupadas = agruparComodidades(property);
+  if (agrupadas.total === 0) return null;
+  const principais = comodidadesPrincipais(agrupadas);
 
   return (
-    <section aria-labelledby="comodidades-title">
+    <section aria-labelledby="comodidades-title" data-testid="comodidades">
       <h2 id="comodidades-title" className="font-title text-2xl font-bold text-ink">
         Comodidades
       </h2>
-      <div className="mt-5 grid gap-6 sm:grid-cols-2">
-        {groups.map((g) => {
-          const meta = CATEGORY_META[g.category];
-          const Icon = meta?.icon ?? Check;
-          return (
-            <div key={g.category}>
-              <h3 className="flex items-center gap-2 text-sm font-bold text-forest">
-                <Icon className="h-4 w-4 text-sage" /> {meta?.label ?? g.category}
-              </h3>
-              <ul className="mt-2 grid gap-2">
-                {g.items.map((item) => (
-                  <li key={item} className="flex items-center gap-2 text-sm text-ink">
-                    <Check className="h-4 w-4 shrink-0 text-sage" /> {item}
-                  </li>
-                ))}
-              </ul>
+      <ul className="mt-5 grid gap-2 sm:grid-cols-2">
+        {principais.map((item) => (
+          <li key={item} className="flex items-center gap-2 text-sm text-ink">
+            <Check className="h-4 w-4 shrink-0 text-sage" aria-hidden /> {item}
+          </li>
+        ))}
+      </ul>
+      {agrupadas.precisaVerTodas && (
+        <>
+          <button
+            type="button"
+            onClick={() => setAberto(true)}
+            data-testid="comodidades-ver-todas"
+            className="mt-4 inline-flex min-h-11 items-center rounded-xl border border-forest px-4 text-sm font-semibold text-forest"
+          >
+            Ver todas as {agrupadas.total} comodidades
+          </button>
+          <BottomSheet open={aberto} onClose={() => setAberto(false)} title="Comodidades">
+            <div className="grid gap-6" data-testid="comodidades-lista-completa">
+              {agrupadas.grupos.map((g) => {
+                const meta = CATEGORY_META[g.category];
+                const Icon = meta?.icon ?? Check;
+                return (
+                  <div key={g.category}>
+                    <h3 className="flex items-center gap-2 text-sm font-bold text-forest">
+                      <Icon className="h-4 w-4 text-sage" aria-hidden /> {meta?.label ?? g.category}
+                    </h3>
+                    <ul className="mt-2 grid gap-2">
+                      {g.items.map((item) => (
+                        <li key={item} className="flex items-center gap-2 text-sm text-ink">
+                          <Check className="h-4 w-4 shrink-0 text-sage" aria-hidden /> {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })}
             </div>
-          );
-        })}
-      </div>
+          </BottomSheet>
+        </>
+      )}
     </section>
   );
-}
-
-function resolveGroups(property: Property): AmenityGroup[] {
-  if (property.amenityGroups && property.amenityGroups.length > 0) {
-    // Ordena pelas categorias conhecidas; categorias desconhecidas vão ao fim.
-    return [...property.amenityGroups].sort(
-      (a, b) => catRank(a.category) - catRank(b.category)
-    );
-  }
-  // Fallback: lista plana vira um único grupo "Comodidades".
-  if (property.amenities.length > 0) {
-    return [{ category: "conforto", items: property.amenities }];
-  }
-  return [];
-}
-
-function catRank(c: AmenityCategory): number {
-  const i = CATEGORY_ORDER.indexOf(c);
-  return i === -1 ? 99 : i;
 }
