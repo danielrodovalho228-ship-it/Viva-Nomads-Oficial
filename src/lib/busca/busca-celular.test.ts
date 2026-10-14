@@ -60,7 +60,10 @@ test("busca usa UMA regra para a lista e para a contagem do painel", () => {
   assert.match(s, /className="container-page mt-4 sm:hidden" data-testid="busca-celular"/);
   assert.match(s, /data-testid="abrir-filtros"/);
   assert.match(s, /placeholder="Cidade, bairro ou endereço"/);
-  assert.match(s, /className="container-page hidden sm:block lg:sticky/);
+  assert.match(s, /"container-page hidden sm:block lg:order-1"/);
+  // Computador (ordem eac7e3a1): busca compacta no cabeçalho abre o painel de filtros.
+  assert.match(s, /createPortal\(\s*<BuscaCompacta/);
+  assert.match(s, /data-testid="busca-compacta"/);
 });
 
 test("painel: rascunho só vale ao aplicar; diálogo acessível; Esc fecha", () => {

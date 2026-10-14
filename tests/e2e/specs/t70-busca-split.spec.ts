@@ -45,8 +45,12 @@ test.describe("T70 — busca split-screen no computador", () => {
     expect(pctMapa).toBeLessThanOrEqual(0.45);
     expect(Math.round(mapa!.x + mapa!.width), "mapa encosta na borda direita").toBe(1440);
 
+    // Ordem eac7e3a1: filtros completos abrem pela busca compacta do cabeçalho.
+    await page.getByTestId("busca-compacta").click();
     const caixa = await page.getByTestId("filtros-caixa").boundingBox();
     expect(caixa!.height, "barra de filtros em uma linha").toBeLessThanOrEqual(64);
+    await page.keyboard.press("Escape");
+    await expect(page.getByTestId("filtros-caixa")).toBeHidden();
 
     const cards = page.getByTestId("card-resultado");
     expect(await cards.count()).toBeGreaterThanOrEqual(3);
@@ -57,11 +61,9 @@ test.describe("T70 — busca split-screen no computador", () => {
 
     await page.mouse.wheel(0, 1500);
     await page.waitForTimeout(400);
-    const barraDepois = await page.getByTestId("filtros-barra").boundingBox();
     const depois = await page.getByTestId("busca-mapa").boundingBox();
-    expect(Math.round(barraDepois!.y), "faixa de filtros fixa sob o cabeçalho").toBe(72);
-    expect(Math.abs(depois!.y - (barraDepois!.y + barraDepois!.height)), "mapa fixo logo abaixo da faixa").toBeLessThanOrEqual(2);
-    expect(depois!.height, "mapa na altura visível (tela − cabeçalho − faixa de filtros)").toBeGreaterThanOrEqual(900 - 160);
+    expect(Math.round(depois!.y), "mapa fixo logo abaixo do cabeçalho (sem faixa)").toBe(72);
+    expect(depois!.height, "mapa na altura visível (tela − cabeçalho)").toBeGreaterThanOrEqual(900 - 80);
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
     await page.mouse.wheel(0, -3000);
     await page.waitForTimeout(300);
@@ -131,6 +133,8 @@ test.describe("T70 — busca split-screen no computador", () => {
     for (const largura of [1024, 1280]) {
       await abrir(page, largura);
       await expect(page.getByTestId("busca-mapa")).toBeVisible();
+      await expect(page.getByTestId("busca-compacta")).toBeVisible();
+      await page.getByTestId("busca-compacta").click();
       const caixa = await page.getByTestId("filtros-caixa").boundingBox();
       expect(caixa!.height, `filtros em uma linha a ${largura}px`).toBeLessThanOrEqual(64);
       expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);

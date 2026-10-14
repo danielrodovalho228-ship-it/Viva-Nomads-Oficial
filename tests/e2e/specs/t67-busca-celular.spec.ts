@@ -87,6 +87,8 @@ test.describe("T67 — Busca no celular", () => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/buscar", { waitUntil: "networkidle" });
     await expect(page.getByTestId("busca-celular")).toBeHidden();
+    // Ordem eac7e3a1: no computador os filtros abrem pela busca compacta do cabeçalho.
+    await page.getByTestId("busca-compacta").click();
     await expect(page.getByRole("combobox", { name: "Preço máximo" })).toBeVisible();
   });
 });

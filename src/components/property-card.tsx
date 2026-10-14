@@ -34,7 +34,7 @@ export function PropertyCard({
   return (
     <Link
       href={`/imoveis/${property.id}`}
-      className="group flex flex-col overflow-hidden rounded-2xl border border-line bg-white transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-[0_20px_40px_-24px_rgba(11,42,102,0.45)]"
+      className="group flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-white transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-[0_20px_40px_-24px_rgba(11,42,102,0.45)]"
     >
       <div className="relative aspect-[4/3] overflow-hidden">
         {hasRealPhoto ? (
@@ -97,7 +97,8 @@ export function PropertyCard({
           )}
         </div>
 
-        <h3 className="line-clamp-2 font-title text-[1.05rem] font-bold leading-snug text-ink transition-colors group-hover:text-blue-500">
+        {/* Título sempre com o espaço de 2 linhas (cards do mesmo tamanho — ordem eac7e3a1). */}
+        <h3 className="line-clamp-2 min-h-[2.75em] font-title text-[1.05rem] font-bold leading-snug text-ink transition-colors group-hover:text-blue-500">
           {property.title}
         </h3>
 

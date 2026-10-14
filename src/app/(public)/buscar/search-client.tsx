@@ -3,7 +3,8 @@
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { SlidersHorizontal, ChevronDown, MapPin, ArrowRight, Users } from "lucide-react";
+import { createPortal } from "react-dom";
+import { SlidersHorizontal, ChevronDown, MapPin, ArrowRight, Users, Search } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { PropertyCard } from "@/components/property-card";
 // O mapa (Mapbox com chave; senão Leaflet + CARTO) só carrega no navegador e
@@ -102,6 +103,42 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
   const [selecionadoId, setSelecionadoId] = useState<string | null>(null); // pin clicado: card aberto no mapa
   // Mapa só a partir de 1024 px (lg): no celular/tablet nem carrega o componente.
   const [comMapa, setComMapa] = useState(false);
+  // Ordem eac7e3a1 (computador): a busca compacta fica no cabeçalho; os filtros abrem num painel logo abaixo.
+  const [slotHeader, setSlotHeader] = useState<HTMLElement | null>(null);
+  const [painelFiltros, setPainelFiltros] = useState(false);
+  // Borda de baixo do cabeçalho: o aviso de testes acima dele some ao rolar.
+  const [topoPainel, setTopoPainel] = useState(72);
+  const painelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    // O slot é do cabeçalho (fora desta árvore): só existe no DOM depois de montar.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSlotHeader(document.getElementById("slot-busca-header"));
+  }, []);
+  useEffect(() => {
+    if (!painelFiltros) return;
+    const medir = () => {
+      const fim = slotHeader?.closest("header")?.getBoundingClientRect().bottom;
+      if (fim !== undefined) setTopoPainel(Math.max(0, Math.round(fim)));
+    };
+    medir();
+    window.addEventListener("scroll", medir, { passive: true });
+    window.addEventListener("resize", medir);
+    const fora = (e: MouseEvent) => {
+      const alvo = e.target as Node;
+      if (painelRef.current?.contains(alvo) || slotHeader?.contains(alvo)) return;
+      // Popovers dos filtros (hóspedes, endereço) moram dentro do painel; o resto fecha.
+      setPainelFiltros(false);
+    };
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && setPainelFiltros(false);
+    document.addEventListener("mousedown", fora);
+    document.addEventListener("keydown", esc);
+    return () => {
+      document.removeEventListener("mousedown", fora);
+      document.removeEventListener("keydown", esc);
+      window.removeEventListener("scroll", medir);
+      window.removeEventListener("resize", medir);
+    };
+  }, [painelFiltros, slotHeader]);
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 1024px)");
     const aplicar = () => setComMapa(mq.matches);
@@ -415,6 +452,18 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
     // por linha) + mapa fixo (~42%). A ordem visual no computador vem de `lg:order-*`.
     <div className="flex flex-col py-4 sm:py-6 lg:px-6 lg:py-0" data-testid="busca">
       {topo && <div className="-mt-4 sm:-mt-6 lg:order-2 lg:mt-0">{topo}</div>}
+      {slotHeader &&
+        createPortal(
+          <BuscaCompacta
+            local={locationQuery.trim()}
+            periodo={PERIODO_LABEL[maxPeriod] ?? (dataEntrada ? `Entrada ${formatDatePtBR(dataEntrada)}` : "")}
+            hospedes={adults + children}
+            nFiltros={activeCount}
+            aberto={painelFiltros}
+            onAlternar={() => setPainelFiltros((v) => !v)}
+          />,
+          slotHeader
+        )}
 
       {/* ── CELULAR (ordem 314f764e): busca + botão de filtros + total ── */}
       <div className="container-page mt-4 sm:hidden" data-testid="busca-celular">
@@ -486,8 +535,16 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
           cabeçalho com a barra CENTRALIZADA e em destaque (estilo Airbnb/Furnished
           Finder). Os mesmos controles nos dois. */}
       <div
+        ref={painelRef}
         data-testid="filtros-barra"
-        className="container-page hidden sm:block lg:sticky lg:top-18 lg:z-30 lg:order-1 lg:-mx-6 lg:flex lg:h-20 lg:w-auto lg:max-w-none lg:items-center lg:justify-center lg:border-b lg:border-line lg:bg-white lg:px-6"
+        data-aberto={painelFiltros ? "1" : "0"}
+        style={painelFiltros ? ({ "--topo-painel": `${topoPainel}px` } as React.CSSProperties) : undefined}
+        className={cn(
+          "container-page hidden sm:block lg:order-1",
+          painelFiltros
+            ? "lg:fixed lg:inset-x-0 lg:top-(--topo-painel) lg:z-40 lg:flex lg:max-w-none lg:justify-center lg:border-b lg:border-line lg:bg-white lg:px-6 lg:py-4 lg:shadow-[0_18px_30px_-20px_rgba(10,10,10,0.35)]"
+            : "lg:hidden"
+        )}
       >
       <div
         data-testid="filtros-caixa"
@@ -643,6 +700,15 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
           {/* 'Mobiliado' removido: todo imóvel da plataforma é mobiliado (promessa
               da marca, não filtro). 'Bem localizado' removido: subjetivo, não
               filtra nada objetivo. Dados no banco preservados. */}
+
+          <button
+            type="button"
+            onClick={() => setPainelFiltros(false)}
+            data-testid="fechar-painel-filtros"
+            className="hidden h-9 shrink-0 items-center whitespace-nowrap rounded-full bg-forest px-4 text-sm font-semibold text-white hover:bg-blue-700 lg:inline-flex"
+          >
+            Ver {results.length} {results.length === 1 ? "imóvel" : "imóveis"}
+          </button>
 
           {drawerOpen && (
             <div
@@ -851,7 +917,7 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
               </Link>
             </div>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 sm:gap-6 lg:gap-4 xl:grid-cols-3">
+            <div className="grid auto-rows-fr gap-4 sm:grid-cols-2 sm:gap-6 lg:gap-4 xl:grid-cols-3" data-testid="grade-resultados">
               {/* h2 (invisível) entre o h1 do topo e os h3 dos cards — sem pular nível. */}
               <h2 className="sr-only">Imóveis encontrados</h2>
               {results.map((p) => (
@@ -863,7 +929,7 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
                   onMouseEnter={() => setActiveId(p.id)}
                   onMouseLeave={() => setActiveId(null)}
                   className={cn(
-                    "rounded-2xl transition-all",
+                    "h-full rounded-2xl transition-all",
                     (activeId === p.id || selecionadoId === p.id) && "ring-2 ring-forest ring-offset-2"
                   )}
                 >
@@ -905,7 +971,7 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
             encosta na borda direita da tela. */}
         <div
           data-testid="busca-mapa"
-          className="hidden lg:sticky lg:top-[9.5rem] lg:-mr-6 lg:block lg:h-[calc(100vh-9.5rem)] lg:w-[42%] lg:shrink-0"
+          className="hidden lg:sticky lg:top-18 lg:-mr-6 lg:block lg:h-[calc(100vh-4.5rem)] lg:w-[42%] lg:shrink-0"
         >
           {comMapa && (
             <SearchMap
@@ -1101,5 +1167,62 @@ function Stepper({
         </button>
       </div>
     </div>
+  );
+}
+
+/**
+ * Busca compacta no cabeçalho (ordem eac7e3a1, estilo Airbnb): resumo da busca
+ * numa pílula na mesma linha do logo; clicar abre o painel completo de filtros
+ * logo abaixo do cabeçalho. Sem faixa extra entre o cabeçalho e o conteúdo.
+ */
+function BuscaCompacta({
+  local,
+  periodo,
+  hospedes,
+  nFiltros,
+  aberto,
+  onAlternar,
+}: {
+  local: string;
+  periodo: string;
+  hospedes: number;
+  nFiltros: number;
+  aberto: boolean;
+  onAlternar: () => void;
+}) {
+  const partes = [
+    { rotulo: local || "Qualquer cidade", forte: true },
+    { rotulo: periodo || "Qualquer período", forte: false },
+    { rotulo: hospedes > 1 ? `${hospedes} hóspedes` : "Hóspedes", forte: false },
+  ];
+  return (
+    <button
+      type="button"
+      onClick={onAlternar}
+      aria-expanded={aberto}
+      aria-label={aberto ? "Fechar filtros da busca" : "Abrir filtros da busca"}
+      data-testid="busca-compacta"
+      className={cn(
+        "flex h-12 min-w-0 max-w-full items-center rounded-full border bg-white pl-5 pr-1.5 text-sm text-ink shadow-[0_6px_20px_-10px_rgba(10,10,10,0.35)] transition hover:shadow-[0_8px_24px_-10px_rgba(10,10,10,0.45)]",
+        aberto ? "border-forest ring-2 ring-forest/15" : "border-line"
+      )}
+    >
+      {partes.map((p, i) => (
+        <span key={i} className={cn("flex min-w-0 items-center", i > 0 && "border-l border-line pl-4", i < partes.length - 1 && "pr-4")}>
+          <span className={cn("truncate whitespace-nowrap", p.forte ? "max-w-[11rem] font-semibold" : "text-muted")}>{p.rotulo}</span>
+        </span>
+      ))}
+      <span className="flex items-center gap-2 border-l border-line pl-4">
+        <span className="inline-flex items-center gap-1.5 whitespace-nowrap font-medium text-forest">
+          <SlidersHorizontal className="h-4 w-4" aria-hidden /> Filtros
+          {nFiltros > 0 && (
+            <span className="grid h-5 min-w-5 place-items-center rounded-full bg-forest px-1.5 text-xs font-semibold text-white">{nFiltros}</span>
+          )}
+        </span>
+        <span className="grid h-9 w-9 place-items-center rounded-full bg-forest text-white" aria-hidden>
+          <Search className="h-4 w-4" />
+        </span>
+      </span>
+    </button>
   );
 }
