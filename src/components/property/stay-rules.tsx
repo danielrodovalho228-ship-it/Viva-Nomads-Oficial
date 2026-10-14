@@ -48,7 +48,7 @@ export function StayRules({ property }: { property: Property }) {
     rows.push({ icon: LogOut, label: "Check-out", value: `Até às ${property.checkoutBefore}` });
 
   return (
-    <section aria-labelledby="regras-title">
+    <section id="regras-da-estadia" aria-labelledby="regras-title">
       <h2 id="regras-title" className="font-title text-2xl font-bold text-ink">
         Regras da estadia
       </h2>

@@ -38,6 +38,9 @@ import { WorkspaceSection } from "@/components/property/workspace-section";
 import { LocationNearby } from "@/components/property/location-nearby";
 import { GoogleProximities } from "@/components/property/google-proximities";
 import { StayRules } from "@/components/property/stay-rules";
+import { DestaquesImovel } from "@/components/property/destaques-imovel";
+import { SobreImovel } from "@/components/property/sobre-imovel";
+import { BomSaber } from "@/components/property/bom-saber";
 import { AvailabilityCalendar } from "@/components/property/availability-calendar";
 import { PrivacidadeAcesso } from "@/components/property/privacidade-acesso";
 import { OwnerCard } from "@/components/property/owner-card";
@@ -368,6 +371,10 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
               <PropertyTags property={property} />
             </div>
 
+            <div className="mt-4">
+              <DestaquesImovel property={property} />
+            </div>
+
             {/* Specs com ícones */}
             <div className="mt-4 flex flex-wrap gap-5 text-sm text-muted">
               <span className="inline-flex items-center gap-1.5">
@@ -409,21 +416,15 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
             </section>
           )}
 
-          {/* Sobre o imóvel */}
-          {property.description && (
-            <section aria-labelledby="sobre-title">
-              <h2 id="sobre-title" className="font-title text-2xl font-bold text-ink">
-                Sobre o imóvel
-              </h2>
-              <p className="mt-3 leading-relaxed text-ink/90">{property.description}</p>
-            </section>
-          )}
+          {/* Sobre o imóvel (~5 linhas + "Mostrar mais") */}
+          {property.description && <SobreImovel descricao={property.description} />}
 
           <AmenitiesGrid property={property} />
           <WorkspaceSection property={property} />
           <AvailabilityCalendar property={property} />
           <LocationNearby property={property} />
           <GoogleProximities property={property} />
+          <BomSaber property={property} />
           <StayRules property={property} />
           <PrivacidadeAcesso privacidade={property.privacidade} />
           <OwnerCard property={property} />
