@@ -33,6 +33,8 @@ import { VideoWalkthrough } from "@/components/video-walkthrough";
 import { requestLead } from "@/lib/data/actions";
 import type { LeadKind } from "@/lib/leads";
 import { PriceCard } from "@/components/property/price-card";
+import { BarraFixaCelular } from "@/components/property/barra-fixa-celular";
+import { barraFixaImovel } from "@/lib/barra-fixa-imovel";
 import { AmenitiesGrid } from "@/components/property/amenities-grid";
 import { WorkspaceSection } from "@/components/property/workspace-section";
 import { LocationNearby } from "@/components/property/location-nearby";
@@ -301,8 +303,13 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
   );
 
   return (
-    <div className="container-page py-8">
+    <div className="container-page py-8 pb-40 lg:pb-8">
       {composer}
+      <BarraFixaCelular
+        barra={barraFixaImovel({ monthlyPrice: property.monthlyPrice, exemplo, candidatouSe })}
+        pending={pending !== null}
+        onCandidatar={() => handleLead("candidatura")}
+      />
       {/* Breadcrumb (navegação + SEO) */}
       <nav
         aria-label="Trilha de navegação"

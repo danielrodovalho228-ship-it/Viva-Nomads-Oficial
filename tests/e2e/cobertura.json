@@ -667,6 +667,7 @@
       ],
       "specs": [
         "t11-travessias",
+        "t75-barra-fixa-imovel",
         "t20-p1-agentes",
         "t23-pacote-seguranca",
         "t28-avaliacoes-fase1",
