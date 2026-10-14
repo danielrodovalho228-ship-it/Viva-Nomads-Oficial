@@ -275,9 +275,5 @@ select 'H3. checklists sem imóvel (precisam reenviar / ligar ao próximo anúnc
 from public.qualification_checklists where property_id is null;
 
 
--- ████ D — LIMPEZA (só depois de alguns dias sem problema) ███████████████████
--- A tabela abaixo guarda o draft_data (com a rua) que a 0052/0053 tiraram dos
--- anúncios ativos, só para o rollback. Quando não precisar mais de rollback:
---   drop table if exists public._backup_p0_draft_data;
-select 'D. backup do draft_data' as checagem, migracao, count(*) as linhas
-from public._backup_p0_draft_data group by migracao;
+-- ████ D — LIMPEZA ███████████████████████████████████████████████████████
+-- A tabela de backup do draft_data (0052/0053) foi apagada na 0120.
