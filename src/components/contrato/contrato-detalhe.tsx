@@ -5,6 +5,7 @@ import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { getContratoParaAssinar } from "@/lib/data/contrato-assinar-actions";
 import { ROTULO_ETAPA, etapaContrato } from "@/lib/contrato-etapas";
 import { AssinarContrato } from "./assinar-contrato";
+import { LinhaDoTempoEstadia } from "./linha-do-tempo-estadia";
 
 /**
  * Detalhe do contrato para as DUAS partes (ordens 0fd301f0 e f375fdc1): o inquilino chega por
@@ -45,6 +46,7 @@ export async function ContratoDetalhe({
         </p>
         {!c.euAssinei && c.status === "ativo" && <AssinarContrato contratoId={c.id} />}
       </Panel>
+      <LinhaDoTempoEstadia etapas={c.linhaDoTempo} />
     </>
   );
 }

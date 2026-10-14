@@ -14,6 +14,7 @@ import {
   resumoContrato,
   type PapelContrato,
 } from "@/lib/contrato-assinar";
+import { montarLinhaDoTempo, type EtapaEstadia } from "@/lib/estadia-linha-tempo";
 
 /*
   Assinatura eletrônica na plataforma (ordem 0fd301f0, F40). A leitura passa pelo RLS (as duas partes);
@@ -33,6 +34,8 @@ export interface ContratoParaAssinar {
   assinadoInquilinoEm: string | null;
   aviso: string;
   euAssinei: boolean;
+  /** Entrada, conferência e saída com dia e horário (vazio se o contrato ainda não tem blocos). */
+  linhaDoTempo: EtapaEstadia[];
 }
 
 interface LinhaContrato {
@@ -45,11 +48,12 @@ interface LinhaContrato {
   created_at: string;
   assinado_proprietario_em: string | null;
   assinado_inquilino_em: string | null;
-  properties: { title?: string; owner_id?: string } | null;
+  properties: { title?: string; owner_id?: string; checkin_after?: string | null; checkout_before?: string | null } | null;
+  contrato_blocos?: { inicio: string; fim: string }[] | null;
 }
 
 const COLUNAS =
-  "id, tenant_id, status, aluguel_mensal, prazo_total_dias, qtd_ocupantes, created_at, assinado_proprietario_em, assinado_inquilino_em, properties(title, owner_id)";
+  "id, tenant_id, status, aluguel_mensal, prazo_total_dias, qtd_ocupantes, created_at, assinado_proprietario_em, assinado_inquilino_em, properties(title, owner_id, checkin_after, checkout_before), contrato_blocos(inicio, fim)";
 
 function montar(c: LinhaContrato, userId: string): ContratoParaAssinar | null {
   const ownerId = String(c.properties?.owner_id ?? "");
@@ -64,6 +68,9 @@ function montar(c: LinhaContrato, userId: string): ContratoParaAssinar | null {
     ocupantes: Number(c.qtd_ocupantes),
     criadoEm: c.created_at.slice(0, 10),
   });
+  const datas = (c.contrato_blocos ?? []).filter((b) => b?.inicio && b?.fim);
+  const inicio = datas.map((b) => b.inicio).sort()[0] ?? null;
+  const fim = datas.map((b) => b.fim).sort().at(-1) ?? null;
   const a = { proprietario: c.assinado_proprietario_em, inquilino: c.assinado_inquilino_em };
   return {
     id: c.id,
@@ -75,6 +82,12 @@ function montar(c: LinhaContrato, userId: string): ContratoParaAssinar | null {
     assinadoInquilinoEm: a.inquilino,
     aviso: avisoAssinatura(papel, a),
     euAssinei: !!(papel === "inquilino" ? a.inquilino : a.proprietario),
+    linhaDoTempo: montarLinhaDoTempo({
+      inicio,
+      fim,
+      checkinAfter: c.properties?.checkin_after ?? null,
+      checkoutBefore: c.properties?.checkout_before ?? null,
+    }),
   };
 }
 

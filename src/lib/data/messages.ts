@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { papelDaConversa, formatarPeriodo, type PapelConversa } from "@/lib/mensagens-filtros";
 
 export interface ChatMessage {
   id: string;
@@ -13,6 +14,11 @@ export interface Conversation {
   preview: string;
   otherId?: string;
   propertyId?: string;
+  /** Chips da caixa (UX6-b): como inquilino, como proprietário ou suporte. */
+  papel?: PapelConversa;
+  /** Foto de capa do imóvel e período da estadia (quando há contrato). */
+  foto?: string;
+  periodo?: string;
   messages: ChatMessage[];
 }
 
@@ -46,7 +52,7 @@ interface MsgRow {
   property_id: string | null;
   body: string;
   created_at: string;
-  property: { title: string | null } | null;
+  property: { title: string | null; owner_id: string | null } | null;
 }
 
 /**
@@ -67,7 +73,7 @@ export async function listConversations(): Promise<Conversation[]> {
     .from("messages")
     .select(
       `id, conversation_id, sender_id, receiver_id, property_id, body, created_at,
-       property:properties!messages_property_id_fkey ( title )`
+       property:properties!messages_property_id_fkey ( title, owner_id )`
     )
     .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
     .order("created_at", { ascending: true });
@@ -86,6 +92,7 @@ export async function listConversations(): Promise<Conversation[]> {
         preview: "",
         otherId,
         propertyId: m.property_id ?? undefined,
+        papel: papelDaConversa({ propertyId: m.property_id ?? undefined, donoDoImovelId: m.property?.owner_id ?? undefined }, user.id),
         messages: [],
       });
     }
@@ -107,5 +114,37 @@ export async function listConversations(): Promise<Conversation[]> {
       conv.name = nome || "Conversa";
     }
   }
+  await enriquecer(supabase, [...byConv.values()]);
   return [...byConv.values()];
+}
+
+type Supa = NonNullable<Awaited<ReturnType<typeof createClient>>>;
+
+/** Foto de capa e período da estadia por imóvel. Best-effort: se falhar, a conversa fica sem eles. */
+async function enriquecer(supabase: Supa, conversas: Conversation[]) {
+  const ids = [...new Set(conversas.map((c) => c.propertyId).filter(Boolean))] as string[];
+  if (ids.length === 0) return;
+  try {
+    const [{ data: fotos }, { data: contratos }] = await Promise.all([
+      supabase.from("property_photos").select("property_id, url, sort_order").in("property_id", ids).order("sort_order"),
+      supabase.from("contratos").select("property_id, contrato_blocos(inicio, fim)").in("property_id", ids),
+    ]);
+    const capa = new Map<string, string>();
+    for (const f of (fotos ?? []) as { property_id: string; url: string }[]) {
+      if (!capa.has(f.property_id)) capa.set(f.property_id, f.url);
+    }
+    const periodo = new Map<string, string>();
+    for (const ct of (contratos ?? []) as unknown as { property_id: string; contrato_blocos: { inicio: string; fim: string }[] | null }[]) {
+      const bl = ct.contrato_blocos ?? [];
+      if (bl.length === 0 || periodo.has(ct.property_id)) continue;
+      periodo.set(ct.property_id, formatarPeriodo(bl.map((b) => b.inicio).sort()[0], bl.map((b) => b.fim).sort().at(-1)));
+    }
+    for (const c of conversas) {
+      if (!c.propertyId) continue;
+      c.foto = capa.get(c.propertyId);
+      c.periodo = periodo.get(c.propertyId) || undefined;
+    }
+  } catch {
+    /* sem foto/período: a conversa continua utilizável */
+  }
 }
