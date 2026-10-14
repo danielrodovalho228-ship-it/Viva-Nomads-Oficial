@@ -89,7 +89,6 @@ export function PropertyJsonLd({ property }: { property: Property }) {
       addressCountry: "BR",
       ...(property.neighborhood ? { areaServed: property.neighborhood } : {}),
     },
-    geo: { "@type": "GeoCoordinates", latitude: property.lat, longitude: property.lng },
     additionalProperty: [
       { "@type": "PropertyValue", name: "Quartos", value: property.bedrooms },
       { "@type": "PropertyValue", name: "Banheiros", value: property.bathrooms },

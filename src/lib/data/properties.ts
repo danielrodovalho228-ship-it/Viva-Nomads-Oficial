@@ -311,7 +311,8 @@ export async function getProperty(id: string): Promise<Property | undefined> {
     if (error) console.error("[getProperty] Supabase error:", error.code, error.message);
     // Sem linha no banco: cai para o anúncio demo de mesmo id (se habilitado).
     if (!data) return showDemoProperties() ? SAMPLE_PROPERTIES.find((p) => p.id === id) : undefined;
-    const base = rowToProperty(data as unknown as PropertyRow);
+    // Página pública: coordenada aproximada no servidor (a exata só no painel do dono).
+    const base = comCoordenadaAproximada(rowToProperty(data as unknown as PropertyRow));
     return enrichProperty(supabase, base, (data as { owner_id?: string }).owner_id ?? null);
   } catch {
     return showDemoProperties() ? SAMPLE_PROPERTIES.find((p) => p.id === id) : undefined;

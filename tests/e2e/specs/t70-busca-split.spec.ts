@@ -136,4 +136,24 @@ test.describe("T70 — busca split-screen no computador", () => {
       expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
     }
   });
+  test("6. privacidade: payload da busca, HTML do anúncio e JSON-LD sem coordenada com mais de 3 casas (ordens 7193d35a, 00552cd1)", async ({ page, request }) => {
+    // lat/lng (ou latitude/longitude) com 4+ casas decimais = coordenada exata vazando.
+    const exata = /["\\]*(?:lat|lng|latitude|longitude)["\\]*\s*[:=]\s*-?\d+\.\d{4,}/i;
+    const api = await request.get("/api/properties");
+    expect(api.ok()).toBeTruthy();
+    const corpoApi = await api.text();
+    expect(corpoApi, "payload /api/properties").not.toMatch(exata);
+
+    const busca = await request.get("/buscar");
+    expect(await busca.text(), "HTML da /buscar").not.toMatch(exata);
+
+    await abrir(page, 1440);
+    const id = await page.getByTestId("card-resultado").first().getAttribute("data-id");
+    expect(id).toBeTruthy();
+    const anuncio = await request.get(`/imoveis/${id}`);
+    expect(anuncio.ok()).toBeTruthy();
+    const html = await anuncio.text();
+    expect(html, "HTML do anúncio").not.toMatch(exata);
+    expect(html, "JSON-LD sem geo exato").not.toContain("GeoCoordinates");
+  });
 });
