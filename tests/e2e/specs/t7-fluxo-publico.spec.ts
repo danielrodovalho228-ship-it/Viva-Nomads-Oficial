@@ -19,8 +19,8 @@ test.describe("T7 — Fluxo público", () => {
   test("/buscar com filtro na URL mostra chip ativo e 'Limpar filtros'", async ({ page }) => {
     // `pronto=1` liga o filtro "Pronto para Morar" → vira chip removível ativo.
     await page.goto("/buscar?pronto=1&orcamento=3500", { waitUntil: "networkidle" });
-    await expect(page.getByText(/Limpar filtros/i).first()).toBeVisible();
-    await expect(page.getByText(/Pronto para Morar/i).first()).toBeVisible();
+    await expect(page.getByText(/Limpar filtros/i).filter({ visible: true }).first()).toBeVisible();
+    await expect(page.getByText(/Pronto para Morar/i).filter({ visible: true }).first()).toBeVisible();
   });
 
   test("página de imóvel exibe preço e (quando houver) selo Pronto para Morar", async ({ page }) => {

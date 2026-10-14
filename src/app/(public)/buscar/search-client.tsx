@@ -6,15 +6,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SlidersHorizontal, ChevronDown, MapPin, ArrowRight, Users } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { PropertyCard } from "@/components/property-card";
-// Mapbox (~200 KB) só é carregado quando o mapa é realmente exibido (flag
-// NEXT_PUBLIC_MAPA_BUSCA=on). Sem isto, o mapbox-gl pesava no bundle da busca
-// mesmo com o mapa desligado. `ssr: false` — é componente 100% de navegador.
+// O mapa (Mapbox com chave; senão Leaflet + CARTO) só carrega no navegador e
+// só no computador (ordem ca0e7dad: no celular a busca segue sem mapa).
 const SearchMap = dynamic(
   () => import("@/components/search-map").then((m) => m.SearchMap),
   { ssr: false }
 );
 import { EmptySearchIllustration } from "@/components/illustrations";
-import { Map as MapIcon, List as ListIcon } from "lucide-react";
 import { cn, distanceKm, formatBRL } from "@/lib/utils";
 import { tierFromPhotoCount, searchPriority } from "@/lib/listing";
 import { LocationSearch } from "@/components/location-search";
@@ -43,12 +41,6 @@ function typeValue(pt: string): string {
   );
   return m?.value ?? low;
 }
-
-/** Uma propriedade aceita a garantia escolhida no filtro? */
-// Mapa OCULTO por padrão até os tiles funcionarem de verdade (falta o token
-// NEXT_PUBLIC_MAPBOX_TOKEN). Ligue com NEXT_PUBLIC_MAPA_BUSCA=on quando o mapa
-// estiver funcional (Fase 5). Oculto = grade de resultados em largura total.
-const MAPA_ON = process.env.NEXT_PUBLIC_MAPA_BUSCA === "on";
 
 // CTA do Pedido de Moradia no zero-resultado. Ligado por padrão (a rota
 // /pedidos/novo já existe); desligue com NEXT_PUBLIC_PEDIDO_MORADIA=off.
@@ -104,8 +96,17 @@ export function SearchClient({ properties }: { properties: Property[] }) {
   const [filtersOpen, setFiltersOpen] = useState(false); // acordeão de filtros (legado, sm+)
   const [painelAberto, setPainelAberto] = useState(false); // painel de filtros do celular (ordem 314f764e)
   const [drawerOpen, setDrawerOpen] = useState(false); // painel "Mais filtros" (Fase 2)
-  const [activeId, setActiveId] = useState<string | null>(null); // sincronia lista↔mapa
-  const [mobileTab, setMobileTab] = useState<"list" | "map">("list");
+  const [activeId, setActiveId] = useState<string | null>(null); // hover: card ↔ pin (só destaque)
+  const [selecionadoId, setSelecionadoId] = useState<string | null>(null); // pin clicado: card aberto no mapa
+  // Mapa só a partir de 1024 px (lg): no celular/tablet nem carrega o componente.
+  const [comMapa, setComMapa] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const aplicar = () => setComMapa(mq.matches);
+    aplicar();
+    mq.addEventListener("change", aplicar);
+    return () => mq.removeEventListener("change", aplicar);
+  }, []);
   const [sort, setSort] = useState<"relevance" | "recent" | "price-asc" | "price-desc">("relevance");
 
   // Pula a 1ª execução do efeito de sync (no mount, com estado ainda vazio):
@@ -401,7 +402,9 @@ export function SearchClient({ properties }: { properties: Property[] }) {
   }
 
   return (
-    <div className="container-page py-4 sm:py-6">
+    // Computador (lg+, ordem ca0e7dad): largura total, faixa de filtros compacta e
+    // fixa no topo, lista (~58%, 3 cards por linha) + mapa fixo (~42%) na altura da tela.
+    <div className="container-page py-4 sm:py-6 lg:max-w-none lg:px-6 lg:py-0" data-testid="busca">
       {/* ── CELULAR (ordem 314f764e): busca + botão de filtros + total ── */}
       <div className="sm:hidden" data-testid="busca-celular">
         <div className="flex items-center gap-2 rounded-2xl border border-line bg-white p-2 shadow-[0_8px_24px_-16px_rgba(11,42,102,0.35)]">
@@ -465,9 +468,13 @@ export function SearchClient({ properties }: { properties: Property[] }) {
         />
       )}
 
-      {/* Filtros do computador (tablet e acima) */}
-      <div className="hidden rounded-2xl border border-sage-200 bg-white p-4 sm:block">
-        <div className="flex items-center justify-between gap-3">
+      {/* Filtros do tablet (caixa) e do computador (faixa única e compacta, fixa
+          sob o cabeçalho — lg+). Os mesmos controles nos dois. */}
+      <div
+        data-testid="filtros-barra"
+        className="hidden rounded-2xl border border-sage-200 bg-white p-4 sm:block lg:sticky lg:top-18 lg:z-30 lg:-mx-6 lg:rounded-none lg:border-x-0 lg:border-t-0 lg:px-6 lg:py-2.5"
+      >
+        <div className="flex items-center justify-between gap-3 lg:hidden">
           <button
             type="button"
             onClick={() => setFiltersOpen((v) => !v)}
@@ -502,7 +509,7 @@ export function SearchClient({ properties }: { properties: Property[] }) {
 
         <div
           className={cn(
-            "mt-3 flex-wrap items-center gap-2.5 sm:flex",
+            "mt-3 flex-wrap items-center gap-2.5 sm:flex lg:mt-0 lg:flex-nowrap lg:gap-2",
             filtersOpen ? "flex" : "hidden"
           )}
         >
@@ -548,27 +555,10 @@ export function SearchClient({ properties }: { properties: Property[] }) {
               </button>
             </div>
           )}
-          {/* Secundários (Tipo/Garantia) — só no "Mais filtros". */}
-          {drawerOpen && (
-            <Select
-              label="Tipo de imóvel"
-              value={typeFilter}
-              onChange={setTypeFilter}
-              options={[["", "Tipo de imóvel"], ...PROPERTY_TYPES.map((t) => [t.value, t.label] as [string, string])]}
-            />
-          )}
-          {/* 'Faixa de prazo' fundida em 'Período da estadia' (abaixo) — um único
-              controle de período, no benchmark do Furnished Finder. */}
-          {drawerOpen && (
-            <Select
-              label="Garantia aceita"
-              value={garantia}
-              onChange={setGarantia}
-              options={[["", "Garantia aceita"], ...GARANTIAS_FILTRO.map((g) => [g.key, g.label] as [string, string])]}
-            />
-          )}
-          <label className="inline-flex items-center gap-2 rounded-full border border-sage-200 bg-white px-4 py-2 text-sm text-ink">
-            <span className="text-muted">Entrada a partir de</span>
+          <label className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-sage-200 bg-white px-4 py-2 text-sm text-ink lg:px-3 xl:px-4">
+            <span className="text-muted lg:hidden xl:inline">
+              Entrada<span className="lg:hidden"> a partir de</span>
+            </span>
             <input
               type="date"
               lang="pt-BR"
@@ -589,19 +579,6 @@ export function SearchClient({ properties }: { properties: Property[] }) {
               ["5000", "Até R$ 5.000"],
             ]}
           />
-          {drawerOpen && (
-            <Select
-              label="Quartos (mínimo)"
-              value={String(minBedrooms)}
-              onChange={(v) => setMinBedrooms(Number(v))}
-              options={[
-                ["0", "Quartos"],
-                ["1", "1+ quarto"],
-                ["2", "2+ quartos"],
-                ["3", "3+ quartos"],
-              ]}
-            />
-          )}
           <GuestsPicker
             adults={adults}
             childrenCount={children}
@@ -621,19 +598,22 @@ export function SearchClient({ properties }: { properties: Property[] }) {
           />
 
           {/* Selo proprietário — único elemento de marca na barra primária. */}
-          <Chip on={readyToLiveOnly} onClick={() => setReadyToLiveOnly((v) => !v)} accent="gold">
-            🏅 Pronto para Morar
+          <Chip on={readyToLiveOnly} onClick={() => setReadyToLiveOnly((v) => !v)} accent="gold" rotulo="Pronto para Morar">
+            🏅 Pronto<span className="lg:hidden xl:inline"> para Morar</span>
           </Chip>
 
-          {/* Botão que abre/fecha os filtros secundários (2 níveis — Fase 2). */}
+          {/* Botão que abre/fecha os filtros secundários (2 níveis — Fase 2). No
+              tablet abrem na própria caixa; no computador, num painel abaixo da faixa. */}
           <button
             type="button"
             onClick={() => setDrawerOpen((v) => !v)}
             aria-expanded={drawerOpen}
-            className="inline-flex items-center gap-1.5 rounded-full border border-sage-200 bg-white px-4 py-2 text-sm font-medium text-forest hover:border-sage"
+            aria-label={drawerOpen ? "Menos filtros" : "Mais filtros"}
+            className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-sage-200 bg-white px-4 py-2 text-sm font-medium text-forest hover:border-sage lg:px-3 xl:px-4"
           >
             <SlidersHorizontal className="h-4 w-4" />
-            {drawerOpen ? "Menos filtros" : "Mais filtros"}
+            <span className="lg:hidden xl:inline">{drawerOpen ? "Menos filtros" : "Mais filtros"}</span>
+            <span className="hidden lg:inline xl:hidden">Filtros</span>
             {secundariosAtivos > 0 && (
               <span className="grid h-5 min-w-5 place-items-center rounded-full bg-forest px-1.5 text-xs font-semibold text-white">
                 {secundariosAtivos}
@@ -644,8 +624,35 @@ export function SearchClient({ properties }: { properties: Property[] }) {
           {/* 'Mobiliado' removido: todo imóvel da plataforma é mobiliado (promessa
               da marca, não filtro). 'Bem localizado' removido: subjetivo, não
               filtra nada objetivo. Dados no banco preservados. */}
+
           {drawerOpen && (
-            <>
+            <div
+              data-testid="mais-filtros-painel"
+              className="contents lg:absolute lg:right-6 lg:top-full lg:z-40 lg:mt-2 lg:flex lg:w-[32rem] lg:flex-wrap lg:gap-2 lg:rounded-2xl lg:border lg:border-sage-200 lg:bg-white lg:p-4 lg:shadow-xl"
+            >
+              <Select
+                label="Tipo de imóvel"
+                value={typeFilter}
+                onChange={setTypeFilter}
+                options={[["", "Tipo de imóvel"], ...PROPERTY_TYPES.map((t) => [t.value, t.label] as [string, string])]}
+              />
+              <Select
+                label="Garantia aceita"
+                value={garantia}
+                onChange={setGarantia}
+                options={[["", "Garantia aceita"], ...GARANTIAS_FILTRO.map((g) => [g.key, g.label] as [string, string])]}
+              />
+              <Select
+                label="Quartos (mínimo)"
+                value={String(minBedrooms)}
+                onChange={(v) => setMinBedrooms(Number(v))}
+                options={[
+                  ["0", "Quartos"],
+                  ["1", "1+ quarto"],
+                  ["2", "2+ quartos"],
+                  ["3", "3+ quartos"],
+                ]}
+              />
               <Chip on={homeOfficeOnly} onClick={() => setHomeOfficeOnly((v) => !v)}>
                 💻 Para trabalhar de casa
               </Chip>
@@ -663,13 +670,13 @@ export function SearchClient({ properties }: { properties: Property[] }) {
               <Chip on={operatedOnly} onClick={() => setOperatedOnly((v) => !v)}>
                 🤝 Gestor profissional
               </Chip>
-            </>
+            </div>
           )}
         </div>
 
         {/* Filtros ativos (chips removíveis) + Limpar filtros (Fase 2). */}
         {activeCount > 0 && (
-          <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-line pt-3">
+          <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-line pt-3 lg:hidden">
             {maxPrice > 0 && (
               <ActiveChip label={`Até ${formatBRL(maxPrice)}`} onClear={() => setMaxPrice(0)} />
             )}
@@ -731,49 +738,40 @@ export function SearchClient({ properties }: { properties: Property[] }) {
         )}
       </div>
 
-      <div className={cn("mt-4 items-center justify-between gap-3", MAPA_ON ? "flex" : "hidden sm:flex")}>
-        <p className="hidden text-sm text-muted sm:block">
-          <span className="font-medium text-ink">
-            {results.length} {results.length === 1 ? "imóvel" : "imóveis"}
-          </span>
-          {locationQuery.trim() && ` em ${locationQuery.trim()}`}
-          {dataEntrada && ` · entrada a partir de ${formatDatePtBR(dataEntrada)}`}
-          <span> · R$ 0 de taxa para você</span>
-        </p>
-        {/* Abas Lista/Mapa no mobile — só quando o mapa está ligado. */}
-        {MAPA_ON && (
-          <div className="flex rounded-full bg-surface-2 p-0.5 lg:hidden">
-            <button
-              onClick={() => setMobileTab("list")}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium",
-                mobileTab === "list" ? "bg-forest text-white" : "text-muted"
+      <div className="mt-4 lg:mt-0 lg:flex lg:items-start lg:gap-6">
+        <div data-testid="busca-lista" className="min-w-0 lg:w-[58%] lg:py-5">
+          <div className="mb-4 hidden items-center justify-between gap-3 sm:flex">
+            <p className="text-sm text-muted">
+              <span className="font-medium text-ink" data-testid="total-resultados">
+                {results.length} {results.length === 1 ? "imóvel" : "imóveis"}
+              </span>
+              {locationQuery.trim() && ` em ${locationQuery.trim()}`}
+              {dataEntrada && ` · entrada a partir de ${formatDatePtBR(dataEntrada)}`}
+              <span> · R$ 0 de taxa para você</span>
+            </p>
+            <div className="hidden shrink-0 items-center gap-3 lg:flex">
+              {activeCount > 0 && (
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="whitespace-nowrap text-sm font-medium text-forest underline hover:text-blue-700"
+                >
+                  Limpar filtros ({activeCount})
+                </button>
               )}
-            >
-              <ListIcon className="h-4 w-4" /> Lista
-            </button>
-            <button
-              onClick={() => setMobileTab("map")}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium",
-                mobileTab === "map" ? "bg-forest text-white" : "text-muted"
-              )}
-            >
-              <MapIcon className="h-4 w-4" /> Mapa
-            </button>
+              <Select
+                label="Ordenar resultados"
+                value={sort}
+                onChange={(v) => setSort(v as typeof sort)}
+                options={[
+                  ["relevance", "Relevância"],
+                  ["recent", "Mais recentes"],
+                  ["price-asc", "Menor preço"],
+                  ["price-desc", "Maior preço"],
+                ]}
+              />
+            </div>
           </div>
-        )}
-      </div>
-
-      {/* Com mapa: Lista (60%) + Mapa (40%). Sem mapa (padrão): grade em largura
-          total, 3 colunas no desktop. */}
-      <div className={cn("mt-4 grid gap-6", MAPA_ON && "lg:grid-cols-5")}>
-        <div
-          className={cn(
-            MAPA_ON && "lg:col-span-3",
-            MAPA_ON && mobileTab === "map" && "hidden lg:block"
-          )}
-        >
           {results.length === 0 ? (
             <div className="flex flex-col items-center rounded-2xl border border-dashed border-line p-12 text-center">
               <EmptySearchIllustration />
@@ -827,17 +825,20 @@ export function SearchClient({ properties }: { properties: Property[] }) {
               </Link>
             </div>
           ) : (
-            <div className={cn("grid gap-4 sm:grid-cols-2 sm:gap-6", !MAPA_ON && "lg:grid-cols-3")}>
+            <div className="grid gap-4 sm:grid-cols-2 sm:gap-6 lg:gap-4 xl:grid-cols-3">
               {/* h2 (invisível) entre o h1 do topo e os h3 dos cards — sem pular nível. */}
               <h2 className="sr-only">Imóveis encontrados</h2>
               {results.map((p) => (
                 <div
                   key={p.id}
+                  data-testid="card-resultado"
+                  data-id={p.id}
+                  data-destaque={activeId === p.id || selecionadoId === p.id ? "1" : "0"}
                   onMouseEnter={() => setActiveId(p.id)}
                   onMouseLeave={() => setActiveId(null)}
                   className={cn(
                     "rounded-2xl transition-all",
-                    activeId === p.id && "ring-2 ring-champagne ring-offset-2"
+                    (activeId === p.id || selecionadoId === p.id) && "ring-2 ring-forest ring-offset-2"
                   )}
                 >
                   <PropertyCard
@@ -874,21 +875,25 @@ export function SearchClient({ properties }: { properties: Property[] }) {
           </p>
         </div>
 
-        {/* Mapa interativo — oculto por padrão (MAPA_ON) até os tiles carregarem. */}
-        {MAPA_ON && (
-          <div className={cn("lg:col-span-2 lg:block", mobileTab === "list" && "hidden lg:block")}>
-            <div className="lg:sticky lg:top-20">
-              <SearchMap
-                properties={results}
-                activeId={activeId}
-                onHover={setActiveId}
-                focus={geoCenter}
-                radiusKm={radiusKm}
-                className="h-[420px] w-full lg:h-[600px]"
-              />
-            </div>
-          </div>
-        )}
+        {/* Mapa (só lg+): fixo sob a faixa de filtros, ocupa a altura visível e
+            encosta na borda direita da tela. */}
+        <div
+          data-testid="busca-mapa"
+          className="hidden lg:sticky lg:top-[8.25rem] lg:-mr-6 lg:block lg:h-[calc(100vh-8.25rem)] lg:w-[42%] lg:shrink-0"
+        >
+          {comMapa && (
+            <SearchMap
+              properties={results}
+              activeId={activeId}
+              onHover={setActiveId}
+              selectedId={selecionadoId}
+              onSelect={setSelecionadoId}
+              focus={geoCenter}
+              radiusKm={radiusKm}
+              className="h-full w-full rounded-none border-0 border-l border-line"
+            />
+          )}
+        </div>
       </div>
     </div>
   );
@@ -915,18 +920,23 @@ function Chip({
   on,
   onClick,
   accent,
+  rotulo,
   children,
 }: {
   on: boolean;
   onClick: () => void;
   accent?: "gold";
+  /** Nome acessível quando o texto visível é encurtado (faixa do computador). */
+  rotulo?: string;
   children: React.ReactNode;
 }) {
   return (
     <button
       onClick={onClick}
+      aria-label={rotulo}
+      aria-pressed={on}
       className={cn(
-        "rounded-full border px-4 py-2 text-sm font-medium transition-colors",
+        "shrink-0 whitespace-nowrap rounded-full border px-4 py-2 text-sm font-medium transition-colors lg:px-3 xl:px-4",
         on
           ? accent === "gold"
             ? "border-champagne bg-champagne text-night"
@@ -955,7 +965,7 @@ function Select({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       aria-label={label}
-      className="rounded-full border border-sage-200 bg-white px-4 py-2 text-sm text-ink outline-none focus:border-sage"
+      className="min-w-0 rounded-full border border-sage-200 bg-white px-4 py-2 text-sm text-ink outline-none focus:border-sage lg:px-3 xl:px-4"
     >
       {options.map(([v, label]) => (
         <option key={v} value={v}>
@@ -993,7 +1003,7 @@ function GuestsPicker({
         aria-expanded={open}
         aria-label="Hóspedes"
         className={cn(
-          "inline-flex items-center gap-2 rounded-full border bg-white px-4 py-2 text-sm outline-none",
+          "inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border bg-white px-4 py-2 text-sm outline-none lg:px-3 xl:px-4",
           ativo ? "border-sage text-forest" : "border-sage-200 text-ink focus:border-sage"
         )}
       >

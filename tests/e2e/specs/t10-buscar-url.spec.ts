@@ -27,13 +27,13 @@ test.describe("T10 — Busca compartilhável (URL) @criticos", () => {
     }).toPass({ timeout: 5_000 });
 
     // E vira chip ativo removível + "Limpar filtros".
-    await expect(page.getByText(/Limpar filtros/i).first()).toBeVisible();
+    await expect(page.getByText(/Limpar filtros/i).filter({ visible: true }).first()).toBeVisible();
   });
 
   test("abrir URL com filtro aplica e mostra chip ativo", async ({ page }) => {
     await page.goto("/buscar?pronto=1&preco=3500", { waitUntil: "networkidle" });
-    await expect(page.getByText(/Limpar filtros/i).first()).toBeVisible();
-    await expect(page.getByText(/Pronto para Morar/i).first()).toBeVisible();
+    await expect(page.getByText(/Limpar filtros/i).filter({ visible: true }).first()).toBeVisible();
+    await expect(page.getByText(/Pronto para Morar/i).filter({ visible: true }).first()).toBeVisible();
     // O parâmetro do preço continua na URL (não foi apagado pelo sync no mount).
     expect(page.url()).toMatch(/preco=3500/);
   });
@@ -51,8 +51,8 @@ test.describe("T10 — Busca compartilhável (URL) @criticos", () => {
     const shared = page.url();
     const outra = await context.newPage();
     await outra.goto(shared, { waitUntil: "networkidle" });
-    await expect(outra.getByText(/Pronto para Morar/i).first()).toBeVisible();
-    await expect(outra.getByText(/Limpar filtros/i).first()).toBeVisible();
+    await expect(outra.getByText(/Pronto para Morar/i).filter({ visible: true }).first()).toBeVisible();
+    await expect(outra.getByText(/Limpar filtros/i).filter({ visible: true }).first()).toBeVisible();
     await outra.close();
   });
 });

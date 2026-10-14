@@ -356,3 +356,21 @@ html[data-app] body {
     padding-bottom: 4.5rem;
   }
 }
+
+/* Card do imóvel ancorado no pin do mapa da busca (ordem ca0e7dad): sem a
+   moldura padrão do Leaflet/Mapbox — o card já tem cantos e sombra. */
+.vn-popup .leaflet-popup-content-wrapper,
+.vn-popup.mapboxgl-popup .mapboxgl-popup-content {
+  padding: 0;
+  border-radius: 1rem;
+  background: transparent;
+  box-shadow: none;
+}
+.vn-popup .leaflet-popup-content {
+  margin: 0;
+  width: auto !important;
+  line-height: inherit;
+}
+.vn-popup .leaflet-popup-tip-container {
+  display: none;
+}

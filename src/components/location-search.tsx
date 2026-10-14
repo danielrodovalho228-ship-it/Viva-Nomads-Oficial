@@ -144,7 +144,7 @@ function LocationGeocoder({ value, onChange, onSelect, placeholder = "Endereço,
           onKeyDown={onKeyDown}
           placeholder={placeholder}
           autoComplete="off"
-          className="w-48 bg-transparent text-sm text-ink outline-none placeholder:text-muted"
+          className="w-48 bg-transparent text-sm text-ink outline-none placeholder:text-muted lg:w-32 xl:w-48"
         />
       </div>
 
