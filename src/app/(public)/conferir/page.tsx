@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
 import { CODIGO_RE } from "@/lib/fiscal/documento";
+import { buttonClasses } from "@/components/ui/button";
 
 export const metadata: Metadata = {
   title: "Conferir documento",
@@ -47,7 +48,7 @@ export default async function ConferirInicio({ searchParams }: { searchParams: P
               Código inválido. Confira os 32 caracteres impressos no documento.
             </p>
           )}
-          <button type="submit" className="rounded-xl bg-forest px-4 py-2.5 text-sm font-semibold text-white hover:bg-forest/90">
+          <button type="submit" className={buttonClasses({ size: "md" })}>
             Conferir
           </button>
         </form>

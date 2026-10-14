@@ -206,7 +206,7 @@ function DuranteDepois() {
       img: "/images/home/home-hero-chegada.webp",
       alt: "Hóspede chegando com a bagagem para mais um período de estadia",
       title: "Renovação",
-      text: "A estadia se renova em blocos, sem nova comissão a cada período.",
+      text: "A estadia se renova em blocos, com aceite das duas partes. A comissão do proprietário é cobrada uma vez em cada contrato e em cada renovação, sobre o valor total do período.",
     },
     {
       img: "/images/home/home-proprietarios-chaves.webp",

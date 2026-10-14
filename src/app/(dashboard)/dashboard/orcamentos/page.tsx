@@ -13,7 +13,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
-import { Button } from "@/components/ui/button";
+import { Button, buttonClasses } from "@/components/ui/button";
 import { PropertyMiniCard } from "@/components/property-mini-card";
 import { DocumentShare } from "@/components/document-share";
 import { PlatformLegalNotice } from "@/components/legal-notice";
@@ -256,7 +256,7 @@ function NewBudget({
               <div className="flex flex-wrap justify-center gap-3">
                 <Link
                   href="/dashboard/imoveis/novo"
-                  className="inline-flex items-center rounded-full bg-forest px-5 py-2.5 text-sm font-medium text-white hover:bg-forest-700"
+                  className={buttonClasses({ size: "md" })}
                 >
                   Cadastrar imóvel
                 </Link>
@@ -558,7 +558,7 @@ function DocView({ doc, onBack }: { doc: DocumentRecord; onBack: () => void }) {
           {accepted ? (
             <Link href="/dashboard/fechamento">
               <Button variant="gold" className="w-full">
-                <CheckCircle2 className="h-4 w-4" /> Orçamento aceito — gerar fechamento
+                <CheckCircle2 className="h-4 w-4" /> Gerar fechamento
               </Button>
             </Link>
           ) : (

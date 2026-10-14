@@ -7,7 +7,7 @@ import { imprimirSimulacao } from "@/lib/print-simulacao";
 import { PageTitle } from "@/components/dashboard/primitives";
 import { useAuthStore, DEMO_USER } from "@/lib/store";
 import { useProperties } from "@/lib/use-properties";
-import { PLANOS, plano as getPlano, pctDeUmAluguel, textoComissao, type PlanoId } from "@/config/planos";
+import { PLANOS, plano as getPlano, pctDoValorTotal, textoComissao, type PlanoId } from "@/config/planos";
 import {
   simularRentabilidade,
   compararPlanos,
@@ -19,6 +19,7 @@ import { PLANO_FUNDADOR } from "@/lib/flags";
 import { formatBRL, numBR } from "@/lib/utils";
 import { NumInput, ResultCard, SimDisclaimer, SimHero, PlanoPills } from "@/components/simulador/ui";
 import { MAX_ALUGUEL_MENSAL } from "@/lib/campos-valor";
+import { buttonClasses } from "@/components/ui/button";
 
 const PRAZOS = [2, 3, 4, 6];
 const PLANOS_CALC: PlanoCalc[] = PLANOS.map((p) => ({
@@ -127,7 +128,7 @@ export default function SimuladorPage() {
           <div className="grid grid-cols-2 gap-4">
             <ResultCard label="Receita bruta / ano" value={formatBRL(res.receitaBrutaAnual)} />
             <ResultCard label="Custos / ano" value={`− ${formatBRL(res.custosAnuais)}`} />
-            <ResultCard label={`Comissão Viva (${textoComissao(p?.comissao ?? 0)})`} value={`− ${formatBRL(res.comissaoAnual)}`} hint={`${numBR(res.contratosPorAno, 1)} contrato(s)/ano · % do 1º aluguel`} />
+            <ResultCard label={`Comissão Viva (${textoComissao(p?.comissao ?? 0)})`} value={`− ${formatBRL(res.comissaoAnual)}`} hint={`${numBR(res.contratosPorAno, 1)} contrato(s)/ano · % do valor total do contrato`} />
             <ResultCard label="Assinatura / ano" value={sobConsulta ? "Sob consulta" : res.assinaturaAnual > 0 ? `− ${formatBRL(res.assinaturaAnual)}` : "Grátis"} />
           </div>
           <div className="rounded-2xl border border-forest bg-forest p-5 text-white">
@@ -157,7 +158,7 @@ export default function SimuladorPage() {
                 resultados: [
                   { label: "Receita bruta / ano", valor: formatBRL(res.receitaBrutaAnual) },
                   { label: "Custos / ano", valor: `− ${formatBRL(res.custosAnuais)}` },
-                  { label: `Comissão Viva (${pctDeUmAluguel(p?.comissao ?? 0)} por contrato)`, valor: `− ${formatBRL(res.comissaoAnual)}` },
+                  { label: `Comissão Viva (${pctDoValorTotal(p?.comissao ?? 0)} por contrato)`, valor: `− ${formatBRL(res.comissaoAnual)}` },
                   { label: "Assinatura / ano", valor: sobConsulta ? "Sob consulta" : res.assinaturaAnual > 0 ? `− ${formatBRL(res.assinaturaAnual)}` : "Grátis" },
                   { label: "Receita líquida / ano", valor: formatBRL(res.receitaLiquidaAnual) },
                   { label: "Média mensal no bolso", valor: `${formatBRL(res.mediaMensal)}/mês` },
@@ -214,7 +215,7 @@ export default function SimuladorPage() {
               {comparador.map((l) => (
                 <tr key={l.planoId} className={`border-b border-sage-100 ${l.planoId === planoId ? "bg-sage-50" : ""}`}>
                   <td className="py-2.5 pr-4 font-medium text-ink">{l.nome}</td>
-                  <td className="py-2.5 pr-4 text-ink">{pctDeUmAluguel(l.comissaoPct)} por contrato</td>
+                  <td className="py-2.5 pr-4 text-ink">{pctDoValorTotal(l.comissaoPct)} por contrato</td>
                   <td className="py-2.5 pr-4 text-ink">{l.sobConsulta ? "Sob consulta" : l.assinaturaAnual === 0 ? "Grátis" : formatBRL(l.assinaturaAnual)}</td>
                   {/* Assinatura "sob consulta" não é R$ 0: sem o valor, o total fica em aberto. */}
                   <td className="py-2.5 pr-4 text-ink">{l.sobConsulta ? "—" : formatBRL(l.totalVivaAnual)}</td>
@@ -229,7 +230,7 @@ export default function SimuladorPage() {
       <SimDisclaimer />
 
       <div className="mt-4">
-        <Link href="/dashboard/imoveis/novo" className="inline-flex items-center gap-2 rounded-xl bg-forest px-5 py-3 text-sm font-semibold text-white hover:bg-forest/90">
+        <Link href="/dashboard/imoveis/novo" className={buttonClasses({ size: "md" })}>
           Anunciar meu imóvel
         </Link>
       </div>

@@ -45,6 +45,14 @@ export function contratosPorAno(mesesOcupados: number, prazoMedioMeses: number):
   return meses / prazo;
 }
 
+/**
+ * Comissão do ano: a taxa incide sobre o valor TOTAL de cada contrato (aluguel × meses do contrato — ordem do
+ * Daniel, 14/10), e não só sobre o 1º aluguel. Contratos/ano × prazo = meses ocupados (prazo mínimo de 1 mês).
+ */
+export function comissaoAnualSobreTotal(contratos: number, prazoMedioMeses: number, taxa: number, aluguel: number): number {
+  return contratos * Math.max(1, prazoMedioMeses) * Math.max(0, taxa) * aluguel;
+}
+
 export function simularRentabilidade(
   e: EntradaRentabilidade,
   comissaoPct: number,
@@ -56,7 +64,7 @@ export function simularRentabilidade(
 
   const receitaBrutaAnual = aluguel * meses;
   const custosAnuais = n(e.condoIptu) * 12 + n(e.contas) * meses;
-  const comissaoAnual = Math.round(contratos * Math.max(0, comissaoPct) * aluguel);
+  const comissaoAnual = Math.round(comissaoAnualSobreTotal(contratos, e.prazoMedioMeses, comissaoPct, aluguel));
   const assin = n(assinaturaAno);
   const receitaLiquidaAnual = Math.round(receitaBrutaAnual - custosAnuais - comissaoAnual - assin);
 
@@ -91,7 +99,7 @@ export function compararPlanos(e: EntradaRentabilidade, planos: PlanoCalc[]): Li
   const custos = n(e.condoIptu) * 12 + n(e.contas) * meses;
 
   return planos.map((p) => {
-    const comissaoAnual = Math.round(contratos * Math.max(0, p.comissao) * aluguel);
+    const comissaoAnual = Math.round(comissaoAnualSobreTotal(contratos, e.prazoMedioMeses, p.comissao, aluguel));
     const assin = p.assinaturaAnual ?? 0;
     const totalViva = comissaoAnual + assin;
     return {
@@ -181,7 +189,7 @@ export function simularROI(e: EntradaROI, comissaoPct: number, assinaturaAno: nu
   const reposicaoAnual = invest * Math.max(0, e.reposicaoAnualPct ?? 0);
   const custosMobiliadoAnual = Math.round(contasAnual + reposicaoAnual);
 
-  const comissaoAnualMob = contratos * Math.max(0, comissaoPct) * mob;
+  const comissaoAnualMob = comissaoAnualSobreTotal(contratos, e.prazoMedioMeses, comissaoPct, mob);
   const netMobiliadoAnual = Math.round(mob * meses - comissaoAnualMob - n(assinaturaAno) - custosMobiliadoAnual);
   const netVazioAnual = Math.round(vazio * 12);
   const ganhoAdicionalAnual = netMobiliadoAnual - netVazioAnual;

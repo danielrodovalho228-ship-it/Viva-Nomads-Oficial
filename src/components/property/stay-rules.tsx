@@ -9,6 +9,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import type { Property } from "@/lib/types";
+import { linhasRegrasPets } from "@/lib/anuncio/pets-regras";
 
 /**
  * Regras da estadia: duração, mobília, animais, fumante, hóspedes, check-in/out
@@ -27,7 +28,16 @@ export function StayRules({ property }: { property: Property }) {
   if (property.furnished !== undefined)
     rows.push({ icon: Sofa, label: "Mobília", value: property.furnished ? "Mobiliado e equipado" : "Sem mobília" });
   if (property.petsAllowed !== undefined)
-    rows.push({ icon: PawPrint, label: "Animais", value: property.petsAllowed ? "Aceita animais" : "Não aceita animais" });
+    rows.push({
+      icon: PawPrint,
+      label: "Animais",
+      value:
+        property.petsAllowed && property.petsRegras
+          ? linhasRegrasPets(property.petsRegras).join(" · ")
+          : property.petsAllowed
+            ? "Aceita animais"
+            : "Não aceita animais",
+    });
   if (property.smokingAllowed !== undefined)
     rows.push({ icon: Cigarette, label: "Fumante", value: property.smokingAllowed ? "Permitido fumar" : "Não é permitido fumar" });
   if (property.maxGuests !== undefined)

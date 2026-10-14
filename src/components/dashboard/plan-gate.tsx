@@ -27,7 +27,7 @@ export function PlanGate({
   const minLabel = PLAN_LABEL[min];
 
   return (
-    <div className="mx-auto max-w-xl">
+    <div>
       <PageTitle title={title} />
       <Panel className="text-center">
         <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-sage-100">

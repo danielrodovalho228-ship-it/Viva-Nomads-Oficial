@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { KeyRound, Home } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
+import { buttonClasses } from "@/components/ui/button";
 
 export const metadata: Metadata = {
   title: "Boas-vindas",
@@ -49,7 +50,7 @@ export default function BoasVindasPage() {
         <div className="mt-4 space-y-3 [@media(max-height:700px)]:space-y-2">
           <Link
             href="/auth?papel=tenant&cadastro=1"
-            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-forest px-5 py-3.5 text-base font-semibold text-white [@media(max-height:700px)]:py-3"
+            className={buttonClasses({ size: "lg", className: "w-full" })}
           >
             <KeyRound className="h-5 w-5" /> Quero alugar
           </Link>

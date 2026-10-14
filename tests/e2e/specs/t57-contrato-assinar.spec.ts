@@ -21,7 +21,7 @@ test.describe("T57 — Contrato: ver e assinar", () => {
     expect(r4?.status()).toBe(404);
   });
 
-  test("Minhas locações: título e botão abrem o detalhe; assinar exige 'Li e concordo' e senha", async ({ page }) => {
+  test("Minhas locações: título e botão abrem o detalhe; assinar exige 'Li e concordo' e o código de e-mail", async ({ page }) => {
     await page.goto("/dashboard/locacoes", { waitUntil: "networkidle" });
     const titulo = page.getByTestId("locacao-titulo").first();
     test.skip((await titulo.count()) === 0, "conta de teste sem contrato semeado");
@@ -34,7 +34,9 @@ test.describe("T57 — Contrato: ver e assinar", () => {
     if (await form.count()) {
       await expect(page.getByTestId("assinar-enviar")).toBeDisabled();
       await page.getByTestId("assinar-aceite").check();
-      await expect(page.getByTestId("assinar-enviar")).toBeDisabled(); // falta a senha
+      await expect(page.getByTestId("assinar-enviar")).toBeDisabled(); // falta o código de 6 dígitos
+      await page.getByTestId("assinar-codigo").fill("123456");
+      await expect(page.getByTestId("assinar-enviar")).toBeEnabled(); // o servidor recusa código que não foi pedido
     }
   });
 });

@@ -5,7 +5,7 @@
   uma pessoa" e o chat vira chamado, com a conversa anexada.
   O servidor entra por `DepsChat` (testes rodam sem rede).
 */
-import { avisoEmergencia, detectarEmergencia } from "./classificar.ts";
+import { avisoEmergencia, detectarEmergencia, ehCameraEscondida, ORIENTACAO_CAMERA } from "./classificar.ts";
 import { ORIENTACAO_GOLPE, ehGolpe } from "./viva-regras.ts";
 import { fontes } from "./viva-prompt.ts";
 import { PROMESSA_ATENDIMENTO } from "../../config/atendimento.ts";
@@ -91,6 +91,7 @@ export async function responderChatViva(d: DepsChat, entrada: unknown): Promise<
   // Emergência e golpe: resposta fixa, sem IA, e o caminho para uma pessoa.
   const emergencia = detectarEmergencia(ultima);
   if (emergencia) return { status: 200, body: { resposta: `${avisoEmergencia(emergencia)} Depois, se precisar, toque em "Falar com uma pessoa".`, sugerePessoa: true, prioridade: "p1" } };
+  if (ehCameraEscondida(ultima)) return { status: 200, body: { resposta: `${ORIENTACAO_CAMERA} Toque em "Falar com uma pessoa" se quiser abrir o chamado.`, sugerePessoa: true, prioridade: "p1" } };
   if (ehGolpe(ultima)) return { status: 200, body: { resposta: `${ORIENTACAO_GOLPE} Toque em "Falar com uma pessoa": seu caso vira prioridade máxima.`, sugerePessoa: true, prioridade: "p1" } };
 
   if (msgs.filter((m) => m.role === "user").length > CHAT_LIMITES.porConversa) {

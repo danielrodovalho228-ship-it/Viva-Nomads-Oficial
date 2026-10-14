@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Loader2, CheckCircle2, AlertTriangle, Trash2 } from "lucide-react";
 import { confirmarExclusaoConta } from "@/lib/data/account-delete";
+import { buttonClasses } from "@/components/ui/button";
 
 type Fase = "pronto" | "sem-token" | "apagando" | "ok" | "bloqueado" | "erro";
 
@@ -68,7 +69,7 @@ export default function ConfirmarExclusaoPage() {
               ? "Seus dados pessoais (nome, e-mail, telefone e foto) foram removidos e o acesso foi encerrado. Registros de contratos são mantidos sem identificação pelo prazo exigido por lei."
               : "Sua conta e seus dados foram apagados. Sentiremos sua falta — você é bem-vindo de volta quando quiser."}
           </p>
-          <Link href="/" className="mt-6 inline-flex rounded-xl bg-forest px-4 py-2.5 text-sm font-semibold text-white">
+          <Link href="/" className={buttonClasses({ size: "md", className: "mt-6" })}>
             Voltar ao início
           </Link>
         </div>

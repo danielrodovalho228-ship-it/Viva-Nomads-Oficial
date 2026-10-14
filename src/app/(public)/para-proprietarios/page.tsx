@@ -35,17 +35,17 @@ export default function ForLandlordsPage() {
               condomínio e IPTU que podem ser transferidos ao inquilino conforme o contrato.
             </p>
             <p className="mt-4 text-white/90">
-              <strong>Anuncie de graça.</strong> A Viva cobra 12% por contrato fechado. Quanto mais imóveis, menor a taxa (de 12% a 6%; acima de 30 imóveis, condições negociadas). Sem mensalidade —{" "}
+              <strong>Anuncie de graça.</strong> A Viva cobra 12% sobre o valor total do contrato fechado. Quanto mais imóveis, menor a taxa (de 12% a 6%; acima de 30 imóveis, condições negociadas). Sem mensalidade —{" "}
               <Link href="/precos" className="font-medium text-green-300 underline-offset-2 hover:underline">
                 ver os preços
               </Link>
               .
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <ButtonLink href="/dashboard/imoveis/novo" variant="gold" size="lg">
+              <ButtonLink href="/dashboard/imoveis/novo" variant="inverse" size="lg">
                 Anunciar meu imóvel <ArrowRight className="h-4 w-4" />
               </ButtonLink>
-              <ButtonLink href="/precos" variant="outline" size="lg" className="border-white/40 text-white hover:bg-white hover:text-forest">
+              <ButtonLink href="/precos" variant="inverseSecondary" size="lg">
                 Ver preços
               </ButtonLink>
             </div>

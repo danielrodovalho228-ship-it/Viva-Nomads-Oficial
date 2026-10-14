@@ -109,6 +109,8 @@ export interface Property {
   availableFrom?: string; // ISO — "disponível a partir de"
   furnished?: boolean; // mobiliado
   petsAllowed?: boolean;
+  /** Regras detalhadas de pets (espécies, porte, quantidade, reforço de Caução). */
+  petsRegras?: import("@/lib/anuncio/pets-regras").RegrasPets;
   smokingAllowed?: boolean;
   childrenAllowed?: boolean;
   maxGuests?: number;

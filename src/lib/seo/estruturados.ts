@@ -50,7 +50,7 @@ export function faqPage() {
   };
 }
 
-/** /precos: a regra única como oferta (anunciar grátis; 12% por contrato fechado). */
+/** /precos: a regra única como oferta (anunciar grátis; 12% sobre o valor total do contrato fechado). */
 export function ofertaRegraUnica(siteUrl: string) {
   return {
     "@context": "https://schema.org",

@@ -226,3 +226,15 @@ test("F27: servidor, formulário, Viva e Central usam a MESMA regra (contratoPer
   assert.doesNotMatch(criar, /includes\(ct\.status/); // o status sozinho não decide mais
   assert.match(criar, /contratoPermiteManutencao\(c as ContratoParaManutencao\)/); // nem na escolha do contrato único
 });
+
+test("F27 parte 2: a ordem nasce vinculada ao contrato (contrato_id, migração 0118) com backfill seguro e rollback", () => {
+  assert.match(ler("lib/atendimento/servidor.ts"), /contrato_id: ct\.id/);
+  const mig = raiz("supabase/migrations/0118_service_orders_contrato.sql");
+  assert.match(mig, /add column if not exists contrato_id uuid references public\.contratos/);
+  assert.match(mig, /having count\(\*\) = 1/);
+  const prod = raiz("supabase/producao/aplicar-0118.sql");
+  assert.match(prod, /^begin;/m);
+  assert.match(prod, /commit;\s*$/);
+  assert.match(prod, /0118_service_orders_contrato/);
+  assert.match(raiz("supabase/producao/rollback/0118_rollback.sql"), /drop column if exists contrato_id/);
+});

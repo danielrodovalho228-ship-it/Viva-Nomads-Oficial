@@ -60,6 +60,7 @@ import {
   PRAZO_MAX_DIAS,
   type BlocoComDatas,
 } from "@/lib/contrato-blocos";
+import { normalizarRegrasPets } from "@/lib/anuncio/pets-regras";
 import { validarGarantia, type GarantiaContrato } from "@/lib/guarantees";
 
 type ActionResult = { ok: boolean; demo?: boolean; id?: string; error?: string };
@@ -335,6 +336,8 @@ export interface PropertyInput {
   maxPeriodDays?: number;
   furnished?: boolean;
   petsAllowed?: boolean;
+  /** Regras de pets do proprietário (validadas no servidor; requer migração 0119). */
+  petsRegras?: unknown;
   smokingAllowed?: boolean;
   childrenAllowed?: boolean;
   maxGuests?: number;
@@ -733,6 +736,14 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
     /* migração ausente — segue sem os campos extras */
   }
 
+  // Regras de pets (0119): validadas aqui; só vale com "aceita pets" marcado.
+  try {
+    const regras = input.petsAllowed ? normalizarRegrasPets(input.petsRegras) : null;
+    await supabase.from("properties").update({ pets_regras: regras }).eq("id", id).eq("owner_id", user.id);
+  } catch {
+    /* migração 0119 ausente — segue com o aceite geral */
+  }
+
   // Re-sincroniza tabelas filhas: apaga as atuais e regrava as do formulário.
   const resync = async (table: string, rows: Record<string, unknown>[]) => {
     try {
@@ -894,8 +905,8 @@ export interface ContratoInput {
 const FAIXAS_CONTRATO = new Set(["temporada", "media_estadia", "longa"]);
 
 /**
- * Registra o CONTRATO-MÃE + seus BLOCOS no fechamento. A comissão (1 mês × taxa
- * do plano, UMA vez) fica no contrato-mãe — renovar/estender blocos não recobra.
+ * Registra o CONTRATO-MÃE + seus BLOCOS no fechamento. A comissão (taxa congelada ×
+ * valor total do contrato = aluguel × meses, UMA vez) fica no contrato-mãe; a renovação é outro fechamento.
  * Cada bloco carrega a caução (50% do valor do bloco); a plataforma só calcula e
  * documenta, NUNCA captura o dinheiro (regra de ouro).
  *
@@ -1019,7 +1030,7 @@ export async function registrarContrato(
  *  • não havendo, propõe um novo bloco — se couber no teto de 180 dias — já
  *    com o aceite de quem propôs, e avisa a outra parte.
  * Caução do bloco limitada para a soma do contrato não passar de 3 aluguéis
- * (art. 38 §2º). Não gera nova comissão. O banco confere tudo de novo (0063).
+ * (art. 38 §2º). A cobrança da renovação é um fechamento à parte (ordem b3c9d76e). O banco confere tudo de novo (0063).
  */
 export async function renovarBloco(
   contratoId: string

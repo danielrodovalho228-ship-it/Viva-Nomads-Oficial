@@ -158,7 +158,6 @@ with e(m, k, t, c) as (values
   ('0049','C','profiles','anonymized_at'),
   ('0049','F','anonimizar_conta',''),
   ('0050','F','delete_user_account',''),
-  ('0052','T','_backup_p0_draft_data',''),
   ('0052','F','handle_new_user',''),
   ('0052','F','profiles_bloqueia_confianca',''),
   ('0052','F','tem_relacao_pedido_com',''),

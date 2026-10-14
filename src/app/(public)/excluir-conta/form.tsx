@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Mail, Loader2, CheckCircle2 } from "lucide-react";
 import { solicitarExclusaoConta } from "@/lib/data/account-delete";
 import { isValidEmail } from "@/lib/auth-errors";
+import { buttonClasses } from "@/components/ui/button";
 
 export function ExcluirContaForm() {
   const [email, setEmail] = useState("");
@@ -63,7 +64,7 @@ export function ExcluirContaForm() {
       <button
         type="submit"
         disabled={loading}
-        className="inline-flex items-center gap-2 rounded-xl bg-forest px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+        className={buttonClasses({ size: "md" })}
       >
         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
         Enviar link de exclusão

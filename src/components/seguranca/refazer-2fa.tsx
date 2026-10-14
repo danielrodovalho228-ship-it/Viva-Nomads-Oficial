@@ -59,7 +59,7 @@ export function RefazerDuasEtapasForm({ email }: { email: string }) {
         {captcha.widget && <div className="flex justify-center">{captcha.widget}</div>}
         {erro && <p role="alert" className="text-sm text-red-600">{erro}</p>}
         <Button type="submit" className="w-full" disabled={ocupado || !senha}>
-          {ocupado && <Loader2 className="h-4 w-4 animate-spin" />} Confirmar senha e enviar código por e-mail
+          {ocupado && <Loader2 className="h-4 w-4 animate-spin" />} Enviar código por e-mail
         </Button>
       </form>
     );

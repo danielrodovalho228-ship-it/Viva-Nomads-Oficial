@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Check, Camera, FileSignature, ShieldCheck, UserCheck, Banknote, PiggyBank } from "lucide-react";
-import { FAIXAS_COMISSAO_PADRAO, TEXTO_REGRA_UNICA, TEXTO_REGRA_CURTO, TAXA_NEGOCIADA_TEXTO, taxaPublicaTexto, valorTaxa } from "@/lib/cobranca/regra";
+import { FAIXAS_COMISSAO_PADRAO, TEXTO_REGRA_UNICA, TEXTO_REGRA_CURTO, TAXA_NEGOCIADA_TEXTO, taxaPublicaTexto, comissaoSobreContrato, TEXTO_RENOVACAO_COMISSAO } from "@/lib/cobranca/regra";
 import { PlanoGestorForm } from "@/components/precos/plano-gestor-form";
 import { ComparativoPrecos } from "@/components/precos/comparativo-precos";
 import { ButtonLink } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import { SITE_URL, SUPORTE_EMAIL } from "@/lib/site";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/precos" },
-  title: "Anuncie imóveis mobiliados grátis: 12% por contrato fechado",
+  title: "Anuncie imóveis mobiliados: 12% do valor total do contrato",
   description: TEXTO_REGRA_CURTO + " Para imóveis mobiliados.",
 };
 
@@ -131,7 +131,7 @@ export default function PricingPage() {
         <div className="container-page">
           <h1 className="font-title text-4xl font-bold md:text-5xl">Anunciar é grátis</h1>
           <p className="mx-auto mt-5 max-w-2xl text-lg text-white/80">
-            A Viva cobra <strong className="text-white">12% por contrato fechado</strong>. Sem mensalidade.
+            A Viva cobra <strong className="text-white">12% sobre o valor total do contrato fechado</strong>. Sem mensalidade.
           </p>
         </div>
       </section>
@@ -143,7 +143,7 @@ export default function PricingPage() {
           <ul className="mt-5 space-y-3">
             {[
               "Anunciar é grátis, com quantos imóveis mobiliados você quiser.",
-              "Você só paga quando a reserva é fechada. Cada renovação conta como um novo contrato, com a mesma taxa da sua faixa.",
+              "Você só paga quando a reserva é fechada, sobre o valor total do contrato (valor mensal × meses). " + TEXTO_RENOVACAO_COMISSAO,
               "Sem mensalidade. Quem vem morar não paga taxa da plataforma.",
               "A cobrança é feita ao proprietário; a plataforma não recebe nem retém o valor mensal da reserva.",
             ].map((t) => (
@@ -157,8 +157,8 @@ export default function PricingPage() {
             <thead>
               <tr className="border-b border-champagne text-muted">
                 <th scope="col" className="py-2 pr-3 font-medium">Imóveis ativos</th>
-                <th scope="col" className="py-2 pr-3 font-medium">Taxa por contrato fechado</th>
-                <th scope="col" className="py-2 font-medium">Exemplo (R$ 4.320 por mês)</th>
+                <th scope="col" className="py-2 pr-3 font-medium">Taxa sobre o valor total do contrato</th>
+                <th scope="col" className="py-2 font-medium">Exemplo: 3 meses a R$ 3.000 por mês (total R$ 9.000)</th>
               </tr>
             </thead>
             <tbody>
@@ -168,7 +168,7 @@ export default function PricingPage() {
                     {f.gestor ? `${f.minImoveis}+ · Plano Gestor` : f.maxImoveis === null ? `${f.minImoveis}+` : `${f.minImoveis}–${f.maxImoveis}`}
                   </th>
                   <td className="py-2 pr-3">{taxaPublicaTexto(f)}</td>
-                  <td className="py-2">{f.gestor ? TAXA_NEGOCIADA_TEXTO : formatBRL(valorTaxa(4320, f.taxa))}</td>
+                  <td className="py-2">{f.gestor ? TAXA_NEGOCIADA_TEXTO : formatBRL(comissaoSobreContrato(3000, 3, f.taxa))}</td>
                 </tr>
               ))}
             </tbody>

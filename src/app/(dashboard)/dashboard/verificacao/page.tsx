@@ -185,7 +185,7 @@ function RealNaoVerificado({ copy, perfil }: { copy: VerifyCopy; perfil: "tenant
               com a verificação marcada como pendente.
             </p>
             <ButtonLink href="/buscar" variant="gold" className="mt-3">
-              <Search className="h-4 w-4" /> Explorar imóveis e me candidatar
+              <Search className="h-4 w-4" /> Explorar imóveis
             </ButtonLink>
           </div>
         )}

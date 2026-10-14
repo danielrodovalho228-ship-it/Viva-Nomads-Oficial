@@ -4,56 +4,45 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { createClient } from "@/lib/supabase/client";
-import { useCaptcha } from "@/components/seguranca/captcha";
-import { MSG_CAPTCHA_PENDENTE, comCaptcha, podeEnviar } from "@/lib/seguranca/captcha";
-import { assinarContrato } from "@/lib/data/contrato-assinar-actions";
+import { assinarContrato, pedirCodigoAssinatura } from "@/lib/data/contrato-assinar-actions";
 
-/** “Li e concordo” + confirmação pela senha da conta (a mesma checagem da troca de senha) → assina. */
+/** “Li e concordo” + código de 6 dígitos enviado ao e-mail da conta (conferido no servidor) → assina. */
 export function AssinarContrato({ contratoId }: { contratoId: string }) {
   const router = useRouter();
-  const captcha = useCaptcha();
   const [aceite, setAceite] = useState(false);
-  const [senha, setSenha] = useState("");
+  const [codigo, setCodigo] = useState("");
+  const [enviado, setEnviado] = useState(false);
+  const [pedindo, setPedindo] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+
+  async function pedir() {
+    setErro(null);
+    setPedindo(true);
+    try {
+      const r = await pedirCodigoAssinatura(contratoId);
+      if (!r.ok) {
+        setErro(r.error ?? "Não foi possível enviar o código.");
+        return;
+      }
+      setEnviado(true);
+    } finally {
+      setPedindo(false);
+    }
+  }
 
   async function assinar(e: React.FormEvent) {
     e.preventDefault();
     setErro(null);
-    if (!podeEnviar(captcha.ligado, captcha.token)) {
-      setErro(MSG_CAPTCHA_PENDENTE);
-      return;
-    }
     setEnviando(true);
     try {
-      const supabase = createClient();
-      if (supabase) {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (!user?.email) {
-          setErro("Sessão expirada. Entre de novo.");
-          return;
-        }
-        const { error } = await supabase.auth.signInWithPassword({
-          email: user.email,
-          password: senha,
-          options: comCaptcha({}, captcha.token),
-        });
-        if (error) {
-          setErro("Senha incorreta.");
-          return;
-        }
-      }
-      const r = await assinarContrato({ contratoId, aceite });
+      const r = await assinarContrato({ contratoId, aceite, codigo });
       if (!r.ok) {
         setErro(r.error ?? "Não foi possível assinar.");
         return;
       }
       router.refresh();
     } finally {
-      captcha.reset();
       setEnviando(false);
     }
   }
@@ -71,25 +60,31 @@ export function AssinarContrato({ contratoId }: { contratoId: string }) {
         Li e concordo com o contrato acima.
       </label>
       <div>
-        <label htmlFor="assinar-senha" className="block text-sm font-medium text-ink">
-          Sua senha, para confirmar
+        <p className="text-sm font-medium text-ink">Confirme que é você</p>
+        <Button type="button" variant="outline" onClick={pedir} disabled={pedindo} className="mt-1" data-testid="assinar-pedir-codigo">
+          {pedindo ? <Loader2 className="h-4 w-4 animate-spin" /> : enviado ? "Enviar outro código" : "Enviar código por e-mail"}
+        </Button>
+        {enviado && <p className="mt-1 text-xs text-muted">Enviamos 6 números para o e-mail da sua conta. Valem por 15 minutos.</p>}
+        <label htmlFor="assinar-codigo" className="mt-3 block text-sm font-medium text-ink">
+          Código recebido por e-mail
         </label>
         <input
-          id="assinar-senha"
-          type="password"
-          autoComplete="current-password"
-          value={senha}
-          onChange={(e) => setSenha(e.target.value)}
-          className="mt-1 w-full max-w-sm rounded-xl border border-line bg-white px-3 py-2.5 text-base"
+          id="assinar-codigo"
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          maxLength={6}
+          value={codigo}
+          onChange={(e) => setCodigo(e.target.value.replace(/\D/g, ""))}
+          className="mt-1 w-full max-w-[12rem] rounded-xl border border-line bg-white px-3 py-2.5 text-base tracking-widest"
+          data-testid="assinar-codigo"
         />
       </div>
-      {captcha.widget && <div>{captcha.widget}</div>}
       {erro && (
         <p role="alert" className="text-sm text-red-700">
           {erro}
         </p>
       )}
-      <Button type="submit" variant="gold" disabled={!aceite || senha.length === 0 || enviando} data-testid="assinar-enviar">
+      <Button type="submit" variant="gold" disabled={!aceite || codigo.length !== 6 || enviando} data-testid="assinar-enviar">
         {enviando ? <Loader2 className="h-4 w-4 animate-spin" /> : "Assinar contrato"}
       </Button>
     </form>

@@ -160,7 +160,7 @@ export function ModeloFinanceiro({ pagina, leitura = false }: { pagina: "simulac
         <div className={styles.card} data-testid="cenarios-contratos">
           <h2>Quanto entra por mês</h2>
           <p className={styles.cardHelp}>
-            Receita bruta da taxa de serviço = contratos fechados no mês × {brl(ALUGUEL_MEDIO)} (valor médio do 1º mês) × {pctTexto(TAXA_MEDIA)} (taxa média pelas faixas). Resultado = depois de ferramentas, imposto e custo fixo de{" "}
+            Receita bruta da taxa de serviço = contratos fechados no mês × {brl(ALUGUEL_MEDIO)} (aluguel médio) × {MESES_MEDIOS_CONTRATO} meses (duração média do contrato) × {pctTexto(TAXA_MEDIA)} (taxa média pelas faixas). Resultado = depois de ferramentas, imposto e custo fixo de{" "}
             {brl(custoFixo)}.
           </p>
           <div className={styles.tblWrap}>
@@ -397,7 +397,7 @@ export function ModeloFinanceiro({ pagina, leitura = false }: { pagina: "simulac
           <div className={styles.body}>
             <ul>
               <li>
-                <strong>Modelo único:</strong> taxa de serviço por contrato fechado (renovação conta como novo contrato), sobre o valor do 1º mês — média de {brl(ALUGUEL_MEDIO)}. Faixas por nº de imóveis do dono:{" "}
+                <strong>Modelo único:</strong> taxa de serviço por contrato fechado (renovação conta como novo contrato), sobre o valor total do contrato (aluguel médio de {brl(ALUGUEL_MEDIO)} × {MESES_MEDIOS_CONTRATO} meses). Faixas por nº de imóveis do dono:{" "}
                 {FAIXAS_COMISSAO_PADRAO.map((f, i) => `${f.minImoveis}${f.maxImoveis === null ? "+" : f.maxImoveis === f.minImoveis ? "" : `–${f.maxImoveis}`} imóveis ${pctTexto(f.taxa)}${MIX_FAIXAS[i] ? ` (${Math.round(MIX_FAIXAS[i] * 100)}% dos contratos)` : ""}`).join(" · ")}
                 . Taxa média ponderada: <strong>{pctTexto(TAXA_MEDIA)}</strong>. Sem cobrança recorrente nesta fase; assinatura é fase 2 (futuro), para donos com muitos imóveis, e não entra nestas contas.
               </li>

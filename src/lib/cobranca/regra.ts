@@ -1,8 +1,9 @@
 /*
   COBRANÇA POR FAIXAS DE IMÓVEIS ATIVOS (decisão definitiva do Daniel, 10/10 — ordens aa916ba9 e f768b951,
   que valem sobre eaa5adce, 12eea681 e 5faa3903).
-  A taxa vale POR CONTRATO FECHADO; a RENOVAÇÃO conta como novo contrato, com a mesma taxa da faixa do dono.
-  Base: valor do primeiro mês do contrato/renovação. Sem mensalidade. O inquilino não paga taxa da Viva.
+  A taxa vale sobre o VALOR TOTAL de cada contrato fechado (aluguel mensal × meses contratados — ordem do
+  Daniel, 14/10). Cada renovação/prorrogação é cobrada à parte, sobre o valor total do período renovado, com a
+  taxa da faixa do dono no momento do fechamento. Sem mensalidade. O inquilino não paga taxa da Viva.
     1–2 imóveis = 12% · 3–5 = 10% · 6–15 = 8% · 16–30 = 6% · 31+ = "Plano Gestor — fale com a gente":
   continua em 6% até o admin fixar uma condição negociada (override com motivo e validade).
   Lógica PURA, sem banco. As faixas vêm da tabela de config (faixas_comissao); na falta dela vale o padrão
@@ -15,7 +16,7 @@ export type TipoCobranca = "novo" | "renovacao";
 export interface FaixaComissao {
   minImoveis: number;
   maxImoveis: number | null; // null = sem teto
-  taxa: number; // 0..1, sobre o valor do primeiro mês
+  taxa: number; // 0..1, sobre o valor total do contrato (aluguel × meses)
   /** Faixa "Plano Gestor": taxa automática é a da faixa; condição melhor só por fixação do admin. */
   gestor?: boolean;
 }
@@ -85,11 +86,16 @@ export function taxaMediaPonderada(mix: readonly number[], faixas: readonly Faix
   return peso > 0 ? soma / peso : faixas[0].taxa;
 }
 
-/** Valor em reais com centavos (4.320 × 12% = 518,40). Entrada inválida = 0. */
-export function valorTaxa(aluguelMensal: number, taxa: number): number {
+/**
+ * ÚNICA fórmula da comissão (ordem do Daniel, 14/10): valor_total = aluguel mensal × meses contratados;
+ * comissão = valor_total × taxa da faixa. Vale para o contrato e para cada renovação (período renovado).
+ * Reais com centavos (3.000 × 3 × 12% = 1.080). Entrada inválida (aluguel, meses ou taxa) = 0.
+ */
+export function comissaoSobreContrato(aluguelMensal: number, meses: number, taxa: number): number {
   if (!Number.isFinite(aluguelMensal) || aluguelMensal <= 0) return 0;
+  if (!Number.isFinite(meses) || meses < 1) return 0;
   if (!Number.isFinite(taxa) || taxa <= 0) return 0;
-  return Math.round(aluguelMensal * 100 * taxa) / 100;
+  return Math.round(aluguelMensal * Math.floor(meses) * 100 * taxa) / 100;
 }
 
 export interface TaxaFixadaAdmin {
@@ -142,9 +148,11 @@ export function taxaNaAssinatura(e: {
 }
 
 /** Valor exato a mostrar no painel do dono ANTES de aceitar o contrato/renovação. */
-export function cobrancaParaAceite(e: Parameters<typeof taxaNaAssinatura>[0] & { aluguelMensal: number }): TaxaAplicada & { valor: number } {
+export function cobrancaParaAceite(
+  e: Parameters<typeof taxaNaAssinatura>[0] & { aluguelMensal: number; meses: number },
+): TaxaAplicada & { valor: number } {
   const t = taxaNaAssinatura(e);
-  return { ...t, valor: valorTaxa(e.aluguelMensal, t.taxa) };
+  return { ...t, valor: comissaoSobreContrato(e.aluguelMensal, e.meses, t.taxa) };
 }
 
 /** "12%" / "7,5%" */
@@ -158,20 +166,33 @@ export function taxaPublicaTexto(f: FaixaComissao): string {
   return f.gestor ? TAXA_NEGOCIADA_TEXTO : pctTexto(f.taxa);
 }
 
-/** Linha do painel do proprietário, ANTES de aceitar contrato/renovação (ordens 12eea681 e 5faa3903). */
-export function textoTaxaPainel(taxa: number, valorMensal: number): string {
-  const base = `Taxa de serviço: ${pctTexto(taxa)} do primeiro mês`;
-  const valor = valorTaxa(valorMensal, taxa);
+/** Linha do painel do proprietário, ANTES de aceitar contrato/renovação (ordens 12eea681, 5faa3903 e b3c9d76e). */
+export function textoTaxaPainel(taxa: number, valorMensal: number, meses: number): string {
+  const base = `Taxa de serviço: ${pctTexto(taxa)} do valor total do contrato`;
+  const valor = comissaoSobreContrato(valorMensal, meses, taxa);
   if (valor <= 0) return base;
   return `${base} = R$ ${valor.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 /**
- * Mensagem pública ÚNICA e curta (ordens 12eea681 e 5faa3903, Daniel 10/10). Nas páginas públicas
- * não aparece "aluguel", "comissão" etc. sobre a cobrança; o detalhe ("12% do valor do primeiro
- * mês") fica só no painel do proprietário, antes de aceitar, e nos termos.
+ * Mensagem pública ÚNICA e curta (ordem b3c9d76e do Daniel, 14/10): a comissão é sobre o valor TOTAL do
+ * contrato fechado (aluguel × meses), em cada contrato e em cada renovação.
  */
 export const TEXTO_REGRA_UNICA =
-  "Anunciar é grátis. A Viva cobra 12% por contrato fechado. Quanto mais imóveis, menor a taxa (até 6%). Sem mensalidade.";
+  "Anunciar é grátis. A Viva cobra 12% sobre o valor total do contrato fechado. Quanto mais imóveis, menor a taxa (até 6%). Sem mensalidade.";
 
 export const TEXTO_REGRA_CURTO = TEXTO_REGRA_UNICA;
+
+/** Frase padrão (ordem b3c9d76e), com a taxa da faixa. */
+export function fraseComissaoUnica(taxaTexto: string): string {
+  return `A VivaNomads cobra uma comissão única de ${taxaTexto} sobre o valor total do contrato de locação fechado pela plataforma.`;
+}
+
+/** Para cartões: "12% sobre o valor total do contrato fechado." */
+export function comissaoCurta(taxaTexto: string): string {
+  return `${taxaTexto} sobre o valor total do contrato fechado.`;
+}
+
+/** Renovação/prorrogação (decisão do Daniel, 14/10): cobrada à parte, sobre o valor total do período renovado. */
+export const TEXTO_RENOVACAO_COMISSAO =
+  "A comissão é cobrada uma vez em cada contrato e em cada renovação, sobre o valor total do período contratado.";

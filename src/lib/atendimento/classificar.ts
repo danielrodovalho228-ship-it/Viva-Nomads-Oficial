@@ -71,6 +71,19 @@ export function avisoEmergencia(tipo: Emergencia | null): string {
   return tipo ? ORIENTACAO[tipo] : AVISO_EMERGENCIA;
 }
 
+/** Câmera/microfone/dispositivo de gravação dentro do imóvel (ordem f92bc582, item 4). */
+const CAMERA_ESCONDIDA: RegExp[] = [
+  /\b(camera|cameras|microfone|microfones|baba eletronica)\b.{0,40}\b(escondid|oculta|disfarcad|no quarto|no banheiro|dentro do imovel|detector de fumaca|relogio|tomada)/,
+  /\b(escondid[oa]s?|oculta|disfarcad[oa]s?)\b.{0,30}\b(camera|microfone|gravador|dispositivo de gravacao)/,
+  /\b(estou sendo|fui|esta me|estao me) (filmad|gravad|espionad|observad)/,
+  /\bdispositivo de gravacao\b/,
+];
+
+export function ehCameraEscondida(texto: string): boolean {
+  const t = normalizar(texto);
+  return CAMERA_ESCONDIDA.some((re) => re.test(t));
+}
+
 const RISCO_P1: RegExp[] = [
   /\b(golpe|golpista|fraude|estelionat)/,
   /\b(pix|transferencia|deposito|pagar|pagamento)\b.{0,40}\b(direto|por fora|pra ele|para ele|pra ela|para ela|fora da plataforma)\b/,
@@ -78,7 +91,16 @@ const RISCO_P1: RegExp[] = [
   /\b(trancad[oa]|nao consigo entrar|sem acesso ao imovel|ninguem atende|nao abre a porta|chave nao)\b/,
   /\b(discrimina|racis|homofob|assedi)/,
   /\b(link falso|link suspeito|site falso)\b/,
+  ...CAMERA_ESCONDIDA,
 ];
+
+/**
+ * Orientação fixa para quem achou câmera/dispositivo de gravação no imóvel. Sem prometer
+ * reembolso (texto final com o Sérgio) e sem a palavra proibida "vistoria".
+ */
+export const ORIENTACAO_CAMERA =
+  "Sentimos muito. Não mexa no aparelho: fotografe onde ele está, sem desligar nem remover. " +
+  "Se quiser, procure a polícia (190). A equipe da Viva já foi avisada com prioridade máxima e ajuda você a sair do imóvel com segurança.";
 
 /** Sinais que fazem o chamado subir para P1 (pessoa na hora). */
 export function detectarRiscoP1(texto: string): boolean {
@@ -107,6 +129,7 @@ export const CATEGORIAS: CategoriaDef[] = [
   { key: "manutencao", rotulo: "Manutenção no imóvel", tipo: "manutencao", prioridade: "p3", exigeContrato: true },
   { key: "seguranca", rotulo: "Segurança, golpe ou pagamento por fora", tipo: "seguranca", prioridade: "p1" },
   { key: "acesso_imovel", rotulo: "Não consigo entrar no imóvel", tipo: "seguranca", prioridade: "p1" },
+  { key: "camera", rotulo: "Encontrei câmera ou dispositivo de gravação", tipo: "seguranca", prioridade: "p1" },
   { key: "sugestao", rotulo: "Sugestão ou elogio", tipo: "suporte", prioridade: "p4" },
   // Só a triagem automática (pelo texto) usa estas:
   { key: "caucao", rotulo: "Caução", tipo: "suporte", prioridade: "p2", interna: true },

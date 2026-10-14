@@ -211,7 +211,8 @@ export async function criarOrdemManutencao(input: {
   const { data: so, error } = await admin
     .from("service_orders")
     .insert({
-      contract_id: null,
+      contract_id: null, // aponta para a tabela antiga "contracts"; o vínculo real é contrato_id (0118)
+      contrato_id: ct.id as string,
       property_id: ct.property_id,
       tenant_id: input.tenantId,
       owner_id: prop.owner_id,

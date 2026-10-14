@@ -3,8 +3,8 @@ import { authFile } from "../fixtures/auth";
 
 /**
  * T6 — DINHEIRO E NÚMEROS — regressão da comissão percentual.
- * A comissão de fechamento é % do 1º aluguel (ex.: 8%), UMA vez — nunca o
- * aluguel cheio, nunca "1 mês de aluguel".
+ * A comissão de fechamento é % do VALOR TOTAL do contrato (aluguel × meses; ordem
+ * b3c9d76e), UMA vez por contrato e por renovação — nunca o aluguel cheio, nunca "1 mês de aluguel".
  */
 test.describe("T6 — Comissão (contrato real do proprietário)", () => {
   test.use({ storageState: authFile("proprietario") });
@@ -16,7 +16,8 @@ test.describe("T6 — Comissão (contrato real do proprietário)", () => {
     // No laboratório o contrato existe sempre (seed): lá, faltar é falha, não pulo.
     const noLaboratorio = process.env.INTEGRACOES_SIMULADAS === "on";
     test.skip(!noLaboratorio && !/Comissão do contrato/i.test(corpo), "Esta conta não tem contrato neste ambiente");
-    expect(corpo).toMatch(/\d+%\s*do 1º aluguel/); // percentual sobre o 1º aluguel
+    expect(corpo).toMatch(/\d+%\s*do valor total/); // percentual sobre o valor total do contrato
+    expect(corpo).not.toMatch(/do 1º aluguel/i);
     expect(corpo).not.toMatch(/1 m[êe]s de aluguel/i);
     expect(corpo).not.toMatch(/comiss[ãa]o.*aluguel cheio/i);
   });

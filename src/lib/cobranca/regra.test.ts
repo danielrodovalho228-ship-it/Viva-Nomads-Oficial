@@ -13,14 +13,56 @@ import {
   taxaDeConfig,
   taxaNaAssinatura,
   textoTaxaPainel,
-  valorTaxa,
+  comissaoSobreContrato,
+  fraseComissaoUnica,
+  comissaoCurta,
 } from "./regra.ts";
 
 const em = new Date("2026-10-10T12:00:00Z");
 const valor = (imoveisAtivos: number, tipo: "novo" | "renovacao" = "novo") =>
-  cobrancaParaAceite({ tipo, imoveisAtivos, aluguelMensal: 4320, assinadoEm: em }).valor;
+  cobrancaParaAceite({ tipo, imoveisAtivos, aluguelMensal: 4320, meses: 1, assinadoEm: em }).valor;
 
-test("4.320 por faixa: 518,40 (12%), 432,00 (10%), 345,60 (8%), 259,20 (6%)", () => {
+// Ordem b3c9d76e (14/10): a taxa incide sobre o VALOR TOTAL (aluguel × meses), não sobre o 1º mês.
+test("ACEITE b3c9d76e (faixa 12%, R$ 3.000/mês): 1 mês = R$ 360; 3 meses = R$ 1.080; 6 meses = R$ 2.160", () => {
+  assert.equal(comissaoSobreContrato(3000, 1, 0.12), 360);
+  assert.equal(comissaoSobreContrato(3000, 3, 0.12), 1080);
+  assert.equal(comissaoSobreContrato(3000, 6, 0.12), 2160);
+  // contrato de 6 meses NÃO paga o mesmo que o de 1 mês
+  assert.notEqual(comissaoSobreContrato(3000, 6, 0.12), comissaoSobreContrato(3000, 1, 0.12));
+});
+
+test("renovação decidida (14/10): 1 mês R$ 360 + renovação de 2 meses R$ 720 + de 3 meses R$ 1.080 = R$ 2.160 nos 6 meses", () => {
+  const partes = [1, 2, 3].map((m) => comissaoSobreContrato(3000, m, 0.12));
+  assert.deepEqual(partes, [360, 720, 1080]);
+  assert.equal(partes.reduce((a, b) => a + b, 0), 2160); // = contrato único de 6 meses; nunca cobra o mesmo período duas vezes
+});
+
+test("cobrancaParaAceite usa a fórmula única: 3 meses na faixa 12% = R$ 1.080; faixa 10% = R$ 900", () => {
+  const c = (imoveisAtivos: number, meses: number) =>
+    cobrancaParaAceite({ tipo: "novo", imoveisAtivos, aluguelMensal: 3000, meses, assinadoEm: em }).valor;
+  assert.equal(c(1, 3), 1080);
+  assert.equal(c(4, 3), 900);
+  assert.equal(c(1, 0), 0); // sem meses = sem cobrança
+});
+
+test("comissaoSobreContrato: entradas inválidas = 0", () => {
+  assert.equal(comissaoSobreContrato(-1, 3, 0.12), 0);
+  assert.equal(comissaoSobreContrato(0, 3, 0.12), 0);
+  assert.equal(comissaoSobreContrato(3000, 0, 0.12), 0);
+  assert.equal(comissaoSobreContrato(3000, Number.NaN, 0.12), 0);
+  assert.equal(comissaoSobreContrato(3000, 3, Number.NaN), 0);
+  assert.equal(comissaoSobreContrato(3000, 3, 0), 0);
+});
+
+test("textos padrão da comissão (frase padrão e curta)", () => {
+  assert.equal(
+    fraseComissaoUnica("12%"),
+    "A VivaNomads cobra uma comissão única de 12% sobre o valor total do contrato de locação fechado pela plataforma.",
+  );
+  assert.equal(comissaoCurta("12%"), "12% sobre o valor total do contrato fechado.");
+});
+
+test("4.320 (1 mês) por faixa: 518,40 (12%), 432,00 (10%), 345,60 (8%), 259,20 (6%)", () => {
   assert.deepEqual([1, 2].map((n) => valor(n)), [518.4, 518.4]);
   assert.deepEqual([3, 5].map((n) => valor(n)), [432, 432]);
   assert.deepEqual([6, 15].map((n) => valor(n)), [345.6, 345.6]);
@@ -41,6 +83,7 @@ test("31+ imóveis (Plano Gestor): dono com 40 imóveis sem override paga 6%; co
     tipo: "novo",
     imoveisAtivos: 40,
     aluguelMensal: 4320,
+    meses: 1,
     assinadoEm: em,
     fixadaPeloAdmin: { taxa: 0.04, motivo: "negociação Plano Gestor", validoAte: ate },
   });
@@ -82,13 +125,6 @@ test("config (em %) manda; inválida cai no padrão", () => {
   for (const ruim of [null, undefined, "", "abc", "-1", "101"]) assert.equal(taxaDeConfig(ruim, 0.12), 0.12);
 });
 
-test("valorTaxa: entradas inválidas = 0", () => {
-  assert.equal(valorTaxa(-1, 0.12), 0);
-  assert.equal(valorTaxa(0, 0.12), 0);
-  assert.equal(valorTaxa(4320, Number.NaN), 0);
-  assert.equal(valorTaxa(Number.NaN, 0.12), 0);
-});
-
 test("override do admin exige motivo e validade; vencido, sem motivo ou fora de 0..1 é ignorado", () => {
   const ate = new Date("2026-12-31T00:00:00Z");
   const ok = taxaNaAssinatura({ tipo: "novo", imoveisAtivos: 1, assinadoEm: em, fixadaPeloAdmin: { taxa: 0.05, motivo: "negociação", validoAte: ate } });
@@ -108,7 +144,7 @@ test("override do admin exige motivo e validade; vencido, sem motivo ou fora de 
 test("texto oficial: 12%, faixas até 6%, sem mensalidade", () => {
   assert.equal(
     TEXTO_REGRA_UNICA,
-    "Anunciar é grátis. A Viva cobra 12% por contrato fechado. Quanto mais imóveis, menor a taxa (até 6%). Sem mensalidade.",
+    "Anunciar é grátis. A Viva cobra 12% sobre o valor total do contrato fechado. Quanto mais imóveis, menor a taxa (até 6%). Sem mensalidade.",
   );
   assert.equal(TEXTO_REGRA_CURTO, TEXTO_REGRA_UNICA);
   assert.doesNotMatch(TEXTO_REGRA_UNICA, /plano|Essencial|Gestor|aluguel|comiss/i);
@@ -121,17 +157,17 @@ import { COMPARE_CONTRATO, COMPARE_RODAPE, DIFERENCIAIS_VIVA, LINHAS_COMPARE, li
 
 const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
 
-test("Compare em % do total pago: Viva ≈ 4%, QuintoAndar ≈ 12,6%, imobiliária ≈ 13%, Airbnb 16%, Booking 18%", () => {
+test("Compare em % do total pago: Viva 12%, QuintoAndar ≈ 12,6%, imobiliária ≈ 13%, Airbnb 16%, Booking 18%", () => {
   assert.equal(COMPARE_CONTRATO, 12960);
   const v = (id: string) => LINHAS_COMPARE.find((l) => l.id === id)!.pct;
-  assert.equal(v("viva"), 0.04);
+  assert.equal(v("viva"), 0.12);
   assert.equal(v("quintoandar"), 0.126);
   assert.equal(Math.round(v("imobiliaria")! * 100), 13);
   assert.equal(v("airbnb"), 0.16);
   assert.equal(v("booking"), 0.18);
   assert.equal(v("olx"), null);
   assert.equal(v("zap-vivareal"), null);
-  assert.match(LINHAS_COMPARE.find((l) => l.id === "viva")!.regra, /≈ 4% numa reserva de 3 meses; menor com mais imóveis/);
+  assert.match(LINHAS_COMPARE.find((l) => l.id === "viva")!.regra, /12% sobre o valor total do contrato fechado \(menor com mais imóveis\)/);
 });
 
 test("Compare: só aparece linha com fonte e data; rodapé obrigatório; sem logos", () => {
@@ -176,8 +212,9 @@ test("varredura: nada nas páginas públicas, FAQ, llms e navegação fala dos p
   assert.deepEqual(achados, []);
 });
 
-test("vocabulário (ordens 12eea681/5faa3903): a cobrança da Viva nas páginas públicas não usa aluguel, comissão, locação, imobiliária, corretagem nem intermediação", () => {
-  const proibido = /aluguel|comiss[aã]o|loca[cç][aã]o|imobili[aá]ria|corretagem|intermedia/i;
+test("vocabulário (ordens 12eea681/5faa3903): a cobrança da Viva nas páginas públicas não usa aluguel, locação, imobiliária, corretagem nem intermediação", () => {
+  // Ordem b3c9d76e (14/10): a frase aprovada da renovação usa "comissão"; "aluguel", "locação" etc. seguem proibidos.
+  const proibido = /aluguel|loca[cç][aã]o|imobili[aá]ria|corretagem|intermedia/i;
   const textos = [
     TEXTO_REGRA_UNICA,
     ler("src/app/(public)/precos/page.tsx").match(/<section className="bg-forest[\s\S]*?<\/section>/)![0],
@@ -186,7 +223,7 @@ test("vocabulário (ordens 12eea681/5faa3903): a cobrança da Viva nas páginas 
     ...DIFERENCIAIS_VIVA,
   ];
   for (const t of textos) assert.doesNotMatch(t.replace(/aluguelMensal|FAIXAS_COMISSAO_PADRAO/g, ""), proibido, t.slice(0, 60));
-  assert.match(ler("src/lib/atendimento/faq.ts"), /12% por contrato fechado/);
+  assert.match(ler("src/lib/atendimento/faq.ts"), /12% sobre o valor total do contrato fechado/);
 });
 
 test("Compare: mantém a seção e os diferenciais da Viva (só a coluna da Viva, concorrente só com fonte)", () => {
@@ -199,16 +236,17 @@ test("Compare: mantém a seção e os diferenciais da Viva (só a coluna da Viva
 });
 
 
-test("painel do dono: 'Taxa de serviço: 12% do primeiro mês = R$ 518,40' (sem plano, sem 'aluguel')", () => {
-  const t = textoTaxaPainel(0.12, 4320);
-  assert.equal(t, "Taxa de serviço: 12% do primeiro mês = R$ 518,40");
-  assert.equal(textoTaxaPainel(0.06, 4320), "Taxa de serviço: 6% do primeiro mês = R$ 259,20");
-  assert.doesNotMatch(t, /aluguel|comiss|plano/i);
+test("painel do dono: 'Taxa de serviço: 12% do valor total do contrato = R$ 1.080,00' (3 meses a R$ 3.000)", () => {
+  const t = textoTaxaPainel(0.12, 3000, 3);
+  assert.equal(t, "Taxa de serviço: 12% do valor total do contrato = R$ 1.080,00");
+  assert.equal(textoTaxaPainel(0.06, 4320, 1), "Taxa de serviço: 6% do valor total do contrato = R$ 259,20");
+  assert.doesNotMatch(t, /primeiro|plano/i);
 });
 
-test("painel do dono: valor mensal inválido não inventa valor", () => {
-  assert.equal(textoTaxaPainel(0.12, 0), "Taxa de serviço: 12% do primeiro mês");
-  assert.equal(textoTaxaPainel(0.12, Number.NaN), "Taxa de serviço: 12% do primeiro mês");
+test("painel do dono: valor mensal ou prazo inválido não inventa valor", () => {
+  assert.equal(textoTaxaPainel(0.12, 0, 3), "Taxa de serviço: 12% do valor total do contrato");
+  assert.equal(textoTaxaPainel(0.12, Number.NaN, 3), "Taxa de serviço: 12% do valor total do contrato");
+  assert.equal(textoTaxaPainel(0.12, 3000, 0), "Taxa de serviço: 12% do valor total do contrato");
 });
 
 test("F6: tabela pública — 31+ (Plano Gestor) é 'Negociado'; as demais faixas mostram o percentual", async () => {
@@ -233,4 +271,56 @@ test("F6: chat da Viva não diz 6% para o Plano Gestor", async () => {
   const t = readFileSync(new URL("../atendimento/viva-prompt.ts", import.meta.url), "utf8");
   assert.doesNotMatch(t, /Plano Gestor \(6%/);
   assert.match(t, /Plano Gestor \(condições negociadas/);
+});
+
+test("b3c9d76e: texto público e das telas não diz que a comissão é só do 1º mês/aluguel (guarda de varredura)", () => {
+  const arquivos = [
+    "src/lib/cobranca/regra.ts",
+    "src/lib/comissao.ts",
+    "src/lib/contrato-blocos.ts",
+    "src/lib/atendimento/faq.ts",
+    "src/lib/atendimento/viva-prompt.ts",
+    "src/lib/seo/llms.ts",
+    "src/config/compare-precos.ts",
+    "src/components/precos/comparativo-precos.tsx",
+    "src/app/(public)/precos/page.tsx",
+    "src/app/(public)/termos/page.tsx",
+    "src/app/(public)/privacidade/page.tsx",
+    "src/app/(public)/como-funciona/page.tsx",
+    "src/app/(dashboard)/dashboard/fechamento/closing-flow.tsx",
+    "src/app/(dashboard)/dashboard/contratos/contratos-client.tsx",
+    "src/lib/payments/asaas.ts",
+    "src/app/api/comissao/route.ts",
+    "src/config/planos.ts",
+    "src/config/premissas-financeiras.ts",
+    "src/app/(dashboard)/dashboard/simulador/page.tsx",
+    "src/app/(dashboard)/dashboard/roi-imovel/page.tsx",
+  ];
+  const velho = /primeiro (m[êe]s|aluguel)|1º (m[êe]s|aluguel)|de 1 aluguel|de um aluguel|sobre 1 aluguel|1 m[êe]s × taxa/i;
+  for (const a of arquivos) assert.doesNotMatch(ler(a), velho, a);
+});
+
+test("b3c9d76e: Termos e Privacidade trazem o texto exato aprovado (cláusula 8, seção 3 e Asaas)", () => {
+  const termos = ler("src/app/(public)/termos/page.tsx");
+  assert.match(termos, /As cobranças da plataforma referem-se à comissão sobre o valor total de cada contrato e de cada renovação, e a serviços opcionais\./);
+  assert.match(termos, /uma comissão única sobre o valor total de cada contrato de locação fechado pela plataforma \(valor mensal × número de meses contratados\)/);
+  assert.match(termos, /1 a 2 imóveis, 12%; 3 a 5, 10%; 6 a 15, 8%; 16 a 30, 6%; 31 ou mais, condição negociada \(Plano Gestor\)/);
+  assert.match(termos, /valor total R\$ 9\.000; comissão R\$ 1\.080\./);
+  assert.doesNotMatch(termos, /a taxa é a mesma para todos/i);
+  assert.match(ler("src/app/(public)/privacidade/page.tsx"), /Cobrança da comissão sobre o valor total de cada contrato e de cada renovação, do proprietário \(cobrança à parte\); os valores mensais são pagos pelo inquilino direto ao proprietário, fora da plataforma/);
+});
+
+test("b3c9d76e + c54366b0: /api/comissao lê aluguel, meses e taxa do CONTRATO registrado (nunca prazo do navegador) e usa a fórmula única", () => {
+  const rota = ler("src/app/api/comissao/route.ts");
+  assert.match(rota, /comissaoDoContrato\(f\.leadId\)/);
+  assert.match(rota, /meses: contrato\.meses/);
+  assert.match(rota, /commissionRate: contrato\.taxa/);
+  assert.match(rota, /status: 409/);
+  assert.doesNotMatch(rota, /termMonths/);
+  const fluxo = ler("src/app/(dashboard)/dashboard/fechamento/closing-flow.tsx");
+  assert.ok(fluxo.indexOf("await registrarContrato(") < fluxo.indexOf('await fetch("/api/comissao"'), "registra o contrato antes de cobrar");
+  assert.match(fluxo, /body: JSON\.stringify\(\{ leadId: ctx\.leadId \}\)/);
+  assert.match(ler("src/lib/payments/asaas.ts"), /valorComissao\(params\.aluguelMensal, params\.meses, params\.commissionRate\)/);
+  assert.match(ler("src/lib/comissao.ts"), /comissaoSobreContrato/);
+  assert.match(ler("src/lib/contrato-blocos.ts"), /comissaoContrato\(aluguel, total, rate\)/);
 });

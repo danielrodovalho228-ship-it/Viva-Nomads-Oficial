@@ -57,15 +57,27 @@ test.describe("T10 — Busca compartilhável (URL) @criticos", () => {
   });
 });
 
-/** F3 (QA 12/10): o botão flutuante "Fale com a Viva" nunca cobre "Mais filtros". */
-for (const largura of [360, 390, 1280]) {
-  test(`F3 — "Mais filtros" clicável em ${largura}px, sem botão flutuante da Viva`, async ({ browser }) => {
+/**
+ * F3 (QA 12/10): o botão flutuante "Fale com a Viva" nunca cobre os filtros.
+ * Celular (ordem 314f764e): o botão "Filtros" do topo abre o painel. Computador: "Mais filtros".
+ */
+for (const largura of [360, 390]) {
+  test(`F3 — "Filtros" clicável em ${largura}px, sem botão flutuante da Viva`, async ({ browser }) => {
     const ctx = await browser.newContext({ viewport: { width: largura, height: 800 } });
     const page = await ctx.newPage();
     await page.goto("/buscar", { waitUntil: "networkidle" });
     await expect(page.getByTestId("fale-com-a-viva")).toHaveCount(0);
-    await page.getByRole("button", { name: /Mais filtros/i }).click();
-    await expect(page.getByRole("button", { name: /Menos filtros/i })).toBeVisible();
+    await page.getByTestId("abrir-filtros").click();
+    await expect(page.getByRole("dialog", { name: "Filtros" })).toBeVisible();
     await ctx.close();
   });
 }
+test(`F3 — "Mais filtros" clicável em 1280px, sem botão flutuante da Viva`, async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+  const page = await ctx.newPage();
+  await page.goto("/buscar", { waitUntil: "networkidle" });
+  await expect(page.getByTestId("fale-com-a-viva")).toHaveCount(0);
+  await page.getByRole("button", { name: /Mais filtros/i }).click();
+  await expect(page.getByRole("button", { name: /Menos filtros/i })).toBeVisible();
+  await ctx.close();
+});

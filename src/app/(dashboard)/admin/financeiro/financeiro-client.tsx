@@ -112,7 +112,12 @@ export function FinanceiroClient({
               nota="valor contratado entre as partes (não passa pela plataforma)"
               formula="Soma do aluguel mensal dos contratos do período. É acertado entre proprietário e inquilino; a plataforma não recebe esse valor."
             />
-            <Cartao rotulo="Take rate" valor={fmtPct(f.takeRate)} formula="Comissão gerada ÷ aluguel mensal contratado, nos contratos do período. Sem contrato: —." />
+            <Cartao
+              rotulo="Valor total dos contratos"
+              valor={reais(f.valorTotalContratado)}
+              formula="Soma do valor total dos contratos do período (valor mensal × meses) — a base da comissão. Não passa pela plataforma."
+            />
+            <Cartao rotulo="Take rate" valor={fmtPct(f.takeRate)} formula="Comissão gerada ÷ valor total dos contratos do período. Sem contrato: —." />
           </Grade>
           <TabelaComissoes linhas={f.comissoes} />
         </Panel>

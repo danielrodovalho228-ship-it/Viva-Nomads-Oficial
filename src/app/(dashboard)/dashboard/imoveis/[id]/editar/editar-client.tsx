@@ -1,5 +1,6 @@
 "use client";
 
+import { PetsRegrasCampos, formDeRegras, type RegrasPetsForm } from "@/components/anuncio/pets-regras-campos";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { DateFieldBR } from "@/components/ui/date-field-br";
@@ -82,6 +83,7 @@ export function EditarImovelClient({
     Object.fromEntries(amenityKeysFromLabels(property.amenities ?? []).map((k) => [k, true]))
   );
   const [petsAllowed, setPetsAllowed] = useState(property.petsAllowed ?? false);
+  const [petsRegras, setPetsRegras] = useState<RegrasPetsForm>(formDeRegras(property.petsRegras));
   const [smokingAllowed, setSmokingAllowed] = useState(property.smokingAllowed ?? false);
   const [childrenAllowed, setChildrenAllowed] = useState(property.childrenAllowed ?? true);
   const [bedrooms, setBedrooms] = useState(String(property.bedrooms || ""));
@@ -169,6 +171,7 @@ export function EditarImovelClient({
       maxPeriodDays: Number(maxPeriod) || undefined,
       furnished: property.furnished,
       petsAllowed,
+      petsRegras: petsAllowed ? petsRegras : undefined,
       smokingAllowed,
       childrenAllowed,
       maxGuests: Number(maxGuests) || undefined,
@@ -490,6 +493,7 @@ export function EditarImovelClient({
               onChange={setChildrenAllowed}
             />
           </div>
+          {petsAllowed && <PetsRegrasCampos value={petsRegras} onChange={setPetsRegras} />}
         </Section>
 
         {/* Detalhes & preço */}

@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { Bath, BedDouble, Ruler, Star, PlayCircle, Users } from "lucide-react";
+import { Bath, BedDouble, PawPrint, Ruler, Star, PlayCircle, Users } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { formatBRL, numBR } from "@/lib/utils";
 import { calcularTudoIncluido } from "@/lib/precos";
 import { tierFromPhotoCount } from "@/lib/listing";
 import { SELO_NF_UI } from "@/lib/flags";
 import { isExemplo } from "@/lib/demo-listing";
+import { disponivelAPartirDe } from "@/lib/busca/disponibilidade";
 import { ReadyToLiveBadge, PropertyTags, InvoiceBadge, InsuranceBadge } from "@/components/ui/badge";
 import { BrandImage } from "@/components/brand-image";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
@@ -28,6 +29,7 @@ export function PropertyCard({
   // mesmo número da página do imóvel. Total do período = mensal × meses.
   const inc = calcularTudoIncluido(property);
   const totalPeriodo = periodMonths && periodMonths > 0 ? inc.total * periodMonths : null;
+  const disponivel = disponivelAPartirDe(property.availableFrom);
 
   return (
     <Link
@@ -104,11 +106,11 @@ export function PropertyCard({
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
           {/* Tipo saiu da foto e virou metadado (Fase 3). */}
           <span className="font-medium text-ink">{property.propertyType}</span>
-          <span className="inline-flex items-center gap-1">
-            <BedDouble className="h-4 w-4" /> {property.bedrooms}
+          <span className="inline-flex items-center gap-1" data-testid="card-quartos">
+            <BedDouble className="h-4 w-4" aria-hidden /> {property.bedrooms} {property.bedrooms === 1 ? "quarto" : "quartos"}
           </span>
           <span className="inline-flex items-center gap-1">
-            <Bath className="h-4 w-4" /> {property.bathrooms}
+            <Bath className="h-4 w-4" aria-hidden /> {property.bathrooms} {property.bathrooms === 1 ? "banheiro" : "banheiros"}
           </span>
           <span className="inline-flex items-center gap-1">
             <Ruler className="h-4 w-4" /> {property.areaM2} m²
@@ -116,6 +118,12 @@ export function PropertyCard({
           {property.maxGuests != null && property.maxGuests > 0 && (
             <span className="inline-flex items-center gap-1">
               <Users className="h-4 w-4" /> até {property.maxGuests}
+            </span>
+          )}
+          {property.petsAllowed && (
+            <span className="inline-flex items-center gap-1" title="Aceita pet">
+              <PawPrint className="h-4 w-4" aria-hidden="true" />
+              <span className="sr-only">Aceita pet</span>
             </span>
           )}
         </div>
@@ -127,6 +135,8 @@ export function PropertyCard({
             {!exemplo && property.acceptsInsurance && <InsuranceBadge />}
           </div>
         )}
+
+        {disponivel && <p className="text-xs font-medium text-forest">Disponível a partir de {disponivel}</p>}
 
         <div className="mt-auto border-t border-line pt-3">
           <div className="flex items-end justify-between">

@@ -6,6 +6,7 @@ import { getContratoParaAssinar } from "@/lib/data/contrato-assinar-actions";
 import { ROTULO_ETAPA, etapaContrato } from "@/lib/contrato-etapas";
 import { conferenciasDoContrato } from "@/lib/data/conferencia-actions";
 import { AssinarContrato } from "./assinar-contrato";
+import { LinhaDoTempoEstadia } from "./linha-do-tempo-estadia";
 import { ConferenciaContrato } from "./conferencia-contrato";
 
 /**
@@ -50,6 +51,7 @@ export async function ContratoDetalhe({
         </p>
         {!c.euAssinei && c.status === "ativo" && <AssinarContrato contratoId={c.id} />}
       </Panel>
+      <LinhaDoTempoEstadia etapas={c.linhaDoTempo} />
       {conferencia && (
         <Panel className="mt-5 p-5">
           <h2 className="font-title text-base font-bold text-ink">Conferência de entrada e saída</h2>

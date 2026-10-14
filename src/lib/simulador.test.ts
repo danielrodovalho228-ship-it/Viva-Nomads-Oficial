@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  comissaoAnualSobreTotal,
   contratosPorAno,
   simularRentabilidade,
   compararPlanos,
@@ -26,7 +27,7 @@ test("contratosPorAno = meses / prazo (limitado a 12 meses)", () => {
   assert.equal(contratosPorAno(10, 0), 10); // prazo mínimo 1
 });
 
-test("rentabilidade: comissão = % × 1º aluguel × contratos/ano (Profissional 8%)", () => {
+test("rentabilidade: comissão = % × valor TOTAL dos contratos do ano (Profissional 8%)", () => {
   const r = simularRentabilidade(
     { aluguelMensal: 3000, condoIptu: 500, contas: 350, mesesOcupados: 10, prazoMedioMeses: 4 },
     0.08,
@@ -34,9 +35,9 @@ test("rentabilidade: comissão = % × 1º aluguel × contratos/ano (Profissional
   );
   assert.equal(r.receitaBrutaAnual, 30000); // 3000 × 10
   assert.equal(r.custosAnuais, 500 * 12 + 350 * 10); // 9500
-  assert.equal(r.comissaoAnual, Math.round(2.5 * 0.08 * 3000)); // 600
+  assert.equal(r.comissaoAnual, Math.round(2.5 * 4 * 0.08 * 3000)); // 2.400: 8% sobre 10 meses de aluguel, não só o 1º mês
   assert.equal(r.assinaturaAnual, 1548);
-  assert.equal(r.receitaLiquidaAnual, 30000 - 9500 - 600 - 1548);
+  assert.equal(r.receitaLiquidaAnual, 30000 - 9500 - 2400 - 1548);
   assert.equal(r.mediaMensal, Math.round(r.receitaLiquidaAnual / 12));
 });
 
@@ -105,14 +106,14 @@ test("ROI: prêmio, payback e roi anual coerentes", () => {
   );
   assert.equal(r.premioMensal, 1200);
   assert.ok(Math.abs(r.premioPct - 1200 / 1800) < 1e-9);
-  // netMobiliado = 3000×10 − (2.5×0.08×3000=600) − 1548 = 27852
-  assert.equal(r.netMobiliadoAnual, 27852);
+  // netMobiliado = 3000×10 − (8% × 3000 × 10 meses = 2400) − 1548 = 26052
+  assert.equal(r.netMobiliadoAnual, 26052);
   assert.equal(r.netVazioAnual, 1800 * 12); // 21600
-  assert.equal(r.ganhoAdicionalAnual, 27852 - 21600); // 6252
-  assert.equal(r.paybackMeses, Math.ceil(25000 / (6252 / 12)));
+  assert.equal(r.ganhoAdicionalAnual, 26052 - 21600); // 4452
+  assert.equal(r.paybackMeses, Math.ceil(25000 / (4452 / 12)));
   assert.ok((r.roiAnual ?? 0) > 0);
   assert.equal(r.acumulado.length, 3);
-  assert.equal(r.acumulado[0].mobiliado, 27852 - 25000); // ano 1 desconta investimento
+  assert.equal(r.acumulado[0].mobiliado, 26052 - 25000); // ano 1 desconta investimento
 });
 
 test("ROI: sem ganho adicional → payback null", () => {
@@ -154,4 +155,15 @@ test("ROI: contas incluídas e reposição da mobília entram como custo do mobi
   // 400 × 10 meses + 10% de 25.000 = 6.500 a menos por ano
   assert.equal(com.custosMobiliadoAnual, 6500);
   assert.equal(sem.netMobiliadoAnual - com.netMobiliadoAnual, 6500);
+});
+
+test("comissão sobre o valor total (ordem 5df28a7b): R$ 3.000 a 12% = 360 / 720 / 1.080 por contrato de 1 / 2 / 3 meses; prazo adulterado não zera", () => {
+  for (const [prazo, esperado] of [[1, 360], [2, 720], [3, 1080]] as const) {
+    assert.equal(comissaoAnualSobreTotal(1, prazo, 0.12, 3000), esperado);
+  }
+  assert.equal(comissaoAnualSobreTotal(1, 0, 0.12, 3000), 360); // prazo mínimo 1
+  assert.equal(comissaoAnualSobreTotal(1, 3, -1, 3000), 0); // taxa negativa não vira crédito
+  // 12 meses ocupados em contratos de 3 meses = 4 contratos × R$ 1.080
+  const r = simularRentabilidade({ aluguelMensal: 3000, condoIptu: 0, contas: 0, mesesOcupados: 12, prazoMedioMeses: 3 }, 0.12, 0);
+  assert.equal(r.comissaoAnual, 4320);
 });
