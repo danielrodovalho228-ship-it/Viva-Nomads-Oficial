@@ -5,22 +5,25 @@ import { authFile } from "../fixtures/auth";
  * T3 — ISOLAMENTO DE PAPÉIS E PÁGINAS INTERNAS (@criticos).
  * Não-admin não vê nem alcança área de admin; páginas internas (deck dos sócios)
  * ficam atrás do código dos sócios (porta única, SEM exceção para admin) +
- * noindex. Menu do proprietário = exatamente 10 itens, na ordem, cada um
- * abrindo DENTRO da casca.
+ * noindex. Menu do proprietário (cascata, conta única — ordem 9f3085d8): os grupos
+ * na ordem, e cada item, com todos os grupos abertos, abrindo DENTRO da casca.
  */
 
 const OWNER_MENU = [
   "Visão geral",
-  "Meus imóveis",
-  "Interessados",
-  "Pedidos de moradia",
+  "Minha moradia",
   "Mensagens",
-  "Fechamento",
-  "Contratos & blocos",
+  "Meus imóveis",
+  "Contratos e garantias",
   "Ferramentas",
-  "Assinatura",
-  "Conta",
+  "Minha conta",
 ];
+
+/** Abre todos os grupos do menu em cascata (inclusive subgrupos). */
+async function abrirTudo(page: import("@playwright/test").Page) {
+  const fechados = page.locator('aside nav button[aria-expanded="false"]');
+  for (let i = 0; i < 20 && (await fechados.count()) > 0; i++) await fechados.first().click();
+}
 
 const PAGINAS_INTERNAS = ["/simulacao", "/roi", "/socios", "/decisao", "/modelodenegocio"];
 
@@ -44,21 +47,22 @@ test.describe("T3 — Não-admin (proprietário) @criticos", () => {
     }
   });
 
-  test("menu do proprietário: exatamente 10 itens, na ordem", async ({ page }) => {
+  test("menu do proprietário: grupos da cascata, na ordem", async ({ page }) => {
     await page.goto("/dashboard", { waitUntil: "networkidle" });
-    // Garante modo Proprietário.
-    const tab = page.getByRole("button", { name: /Trocar para Propriet/i });
-    if (await tab.isVisible()) await tab.click();
-    const labels = (await page.locator("aside nav a").allInnerTexts()).map((t) => t.trim());
-    expect(labels).toEqual(OWNER_MENU);
+    const grupos = page.locator('aside nav [data-testid="menu-cascata"] > li > :is(a, button)');
+    await expect.poll(async () => (await grupos.allInnerTexts()).map((t) => t.trim())).toEqual(OWNER_MENU);
   });
 
   test("cada item do menu abre dentro da casca (sidebar presente)", async ({ page }) => {
+    test.setTimeout(240_000); // ~25 telas no menu em cascata
     await page.goto("/dashboard", { waitUntil: "networkidle" });
+    await abrirTudo(page);
     const hrefs = await page.locator("aside nav a").evaluateAll((as) =>
       as.map((a) => (a as HTMLAnchorElement).getAttribute("href")!).filter(Boolean)
     );
-    for (const href of hrefs) {
+    expect(hrefs.length).toBeGreaterThan(15);
+    // A busca é a página pública (fora da casca, de propósito); âncoras viram a própria tela.
+    for (const href of [...new Set(hrefs.map((h) => h.split("#")[0]))].filter((h) => h !== "/buscar")) {
       await page.goto(href, { waitUntil: "networkidle" });
       await expect(page.locator("aside nav"), `casca ausente em ${href}`).toBeVisible();
     }
