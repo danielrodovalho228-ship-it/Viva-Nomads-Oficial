@@ -54,7 +54,7 @@ export function HeroVideoBg() {
         </video>
       )}
       {/* Camada escura por cima (legibilidade do texto). */}
-      <div className="absolute inset-0 bg-night/70" />
+      <div className="absolute inset-0 bg-night/60" />
     </div>
   );
 }

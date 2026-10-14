@@ -15,11 +15,16 @@ export function CityAutocomplete({
   onChange,
   placeholder = "Cidade ou bairro",
   pillClassName = "flex items-center gap-2 rounded-xl bg-surface-2 px-3.5 py-3",
+  inputId,
+  inputClassName = "w-full bg-transparent text-sm text-ink outline-none placeholder:text-muted",
 }: {
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
   pillClassName?: string;
+  /** Com `id`, o campo é nomeado por um <label htmlFor> visível (em vez do aria-label). */
+  inputId?: string;
+  inputClassName?: string;
 }) {
   const [open, setOpen] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
@@ -46,10 +51,11 @@ export function CityAutocomplete({
             setOpen(true);
           }}
           onFocus={() => setOpen(true)}
+          id={inputId}
           placeholder={placeholder}
-          aria-label={placeholder}
+          aria-label={inputId ? undefined : placeholder}
           autoComplete="off"
-          className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-muted"
+          className={inputClassName}
         />
       </div>
       {open && matches.length > 0 && (
