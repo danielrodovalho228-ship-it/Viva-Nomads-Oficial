@@ -41,7 +41,7 @@ test.describe("T19 — Visitante @criticos", () => {
     await chat.getByRole("button", { name: "Enviar" }).click();
     // Com ou sem IA, sempre há resposta e o caminho para uma pessoa.
     await expect(chat.locator("div.bg-white.shadow-sm").nth(1)).toBeVisible({ timeout: 30_000 });
-    const numero = await abrirChamadoPeloChat(page, { nome: "Visitante Teste", email: "visitante.chat@lab.vivanomads.test" });
+    const numero = await abrirChamadoPeloChat(page, { nome: "Visitante Teste", email: "visitante.chat@lab.vivanomads.com.br" });
     await expect(page.getByTestId("chamado-aberto-chat")).toContainText(/confirmação para o seu e-mail/);
     if (LAB_OUTBOX && fs.existsSync(LAB_OUTBOX)) {
       const linhas = fs.readFileSync(LAB_OUTBOX, "utf8");
@@ -55,7 +55,7 @@ test.describe("T19 — Visitante @criticos", () => {
     await bloco.getByLabel("Sua mensagem para a Viva").fill("O dono pediu pra eu pagar o Pix por fora, direto pra ele");
     await bloco.getByRole("button", { name: "Enviar" }).click();
     await expect(bloco).toContainText(/nunca pede Pix/, { timeout: 15_000 });
-    const numero = await abrirChamadoPeloChat(page, { nome: "Visitante Pix", email: "visitante.pix@lab.vivanomads.test" });
+    const numero = await abrirChamadoPeloChat(page, { nome: "Visitante Pix", email: "visitante.pix@lab.vivanomads.com.br" });
 
     const ctx = await browser.newContext({ storageState: authFile("admin") });
     const adm = await ctx.newPage();
