@@ -5,7 +5,9 @@ import { authFile } from "../fixtures/auth";
 /**
  * T59 — F49: o botão flutuante "Fale com a Viva" nunca tampa botão/campo (360/390 px).
  * Para cada botão principal visível (data-cta / submit) e cada campo, o elemento que recebe o
- * clique no centro é o próprio controle (elementFromPoint), e o flutuante é redondo (48 px).
+ * clique no centro é o próprio controle (elementFromPoint).
+ * Ordem 4f8d17c6: o flutuante é o botão primário do site (ícone + texto, 48 px de altura,
+ * cantos de 8 px), igual em todas as páginas; não some ao rolar — sobe para não tampar.
  */
 async function nadaTampa(page: Page) {
   const tampados = await page.evaluate(() => {
@@ -39,13 +41,22 @@ for (const largura of [360, 390]) {
       const flut = page.getByTestId("fale-com-a-viva");
       await expect(flut).toBeVisible();
       const caixa = await flut.boundingBox();
-      expect(Math.round(caixa!.width)).toBe(48);
+      expect(Math.round(caixa!.height)).toBe(48);
+      await expect(flut).toHaveText("Fale com a Viva");
       await nadaTampa(page);
       await rolarAteOFim(page);
+      await expect(flut, "não some ao rolar").toBeVisible();
       await nadaTampa(page);
-      for (const rota of ["/ajuda", "/buscar"]) {
-        await page.goto(rota, { waitUntil: "networkidle" });
-        await expect(page.getByTestId("fale-com-a-viva-raiz")).toHaveCount(0);
+      await page.goto("/ajuda", { waitUntil: "networkidle" });
+      await expect(page.getByTestId("fale-com-a-viva-raiz")).toHaveCount(0);
+      await nadaTampa(page);
+      await page.goto("/buscar", { waitUntil: "networkidle" });
+      await expect(flut).toBeVisible();
+      await nadaTampa(page);
+      for (const y of [600, 1400, 2600]) {
+        await page.evaluate((yy) => window.scrollTo(0, yy), y);
+        await page.waitForTimeout(300);
+        await expect(flut, `visível na /buscar após rolar ${y}px`).toBeVisible();
         await nadaTampa(page);
       }
     });
@@ -73,3 +84,26 @@ for (const largura of [360, 390]) {
     });
   });
 }
+
+/** Ordem 4f8d17c6: mesmo formato e mesmos tokens do botão primário em todas as páginas e larguras. */
+test("4f8d17c6 — flutuante idêntico em /, /buscar, /precos e /como-funciona a 390, 768 e 1280 px", async ({ page }) => {
+  const estilos = new Set<string>();
+  for (const largura of [390, 768, 1280]) {
+    await page.setViewportSize({ width: largura, height: 800 });
+    for (const rota of ["/", "/buscar", "/precos", "/como-funciona"]) {
+      await page.goto(rota, { waitUntil: "networkidle" });
+      const flut = page.getByTestId("fale-com-a-viva");
+      await expect(flut, `${rota} a ${largura}px`).toBeVisible();
+      await expect(flut).toHaveText("Fale com a Viva");
+      estilos.add(
+        await flut.evaluate((el) => {
+          const cs = getComputedStyle(el);
+          return [cs.backgroundColor, cs.color, cs.borderTopLeftRadius, cs.fontWeight, cs.height, cs.boxShadow].join("|");
+        })
+      );
+    }
+  }
+  expect([...estilos], "um formato só").toHaveLength(1);
+  const [bg, cor, raio, peso, altura] = [...estilos][0].split("|");
+  expect([bg, cor, raio, peso, altura]).toEqual(["rgb(28, 107, 58)", "rgb(255, 255, 255)", "8px", "600", "48px"]);
+});

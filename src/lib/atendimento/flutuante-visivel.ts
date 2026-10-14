@@ -1,27 +1,36 @@
 /**
- * Quando o botão flutuante "Fale com a Viva" deve sair da frente no celular (F49):
- * enquanto um campo de formulário está em foco ou quando um botão principal (CTA)
- * cruza a área dele no canto da tela. Com o chat aberto ele nunca some.
+ * Botão flutuante "Fale com a Viva" (F49 + ordem 4f8d17c6): o mesmo formato e
+ * sempre visível em todas as páginas. Em vez de SUMIR quando um botão principal
+ * ou campo passa por baixo dele, ele SOBE só o necessário para não tampar e
+ * volta ao lugar depois. Some apenas enquanto a pessoa digita num campo (o
+ * teclado do celular sobe) e volta ao sair do campo; com o chat aberto, nunca.
  */
 
-/** Quadrado do botão redondo no celular: 48 px, a 16 px da direita e 24 px de baixo (+ folga de 8 px). */
-const LADO_BOTAO_PX = 48;
-const FOLGA_PX = 8;
+export type Caixa = { left: number; top: number; right: number; bottom: number };
 
-type Caixa = { left: number; top: number; right: number; bottom: number };
+/** Folga mínima entre o botão flutuante e um controle da página. */
+export const FOLGA_PX = 8;
+
+const temTamanho = (r: Caixa) => r.right > r.left && r.bottom > r.top;
 
 /**
- * O controle (botão principal/submit) cruza a área do botão flutuante, que fica fixa no canto
- * inferior direito da janela? Só então ele precisa sair da frente; CTA em outro ponto da faixa
- * de baixo não atrapalha (t59: a home carrega com o botão visível).
+ * Quantos px o botão precisa subir (a partir da posição de repouso `botao`) para
+ * não tampar nenhum dos `controles`. Sobe em degraus até ficar livre (um controle
+ * acima do outro), limitado a `limite` px.
  */
-export function cruzaCantoDoFlutuante(r: Caixa, larguraJanela: number, alturaJanela: number): boolean {
-  if (r.right <= r.left || r.bottom <= r.top) return false;
-  const direita = larguraJanela - 16 + FOLGA_PX;
-  const baixo = alturaJanela - 24 + FOLGA_PX;
-  const esquerda = direita - LADO_BOTAO_PX - 2 * FOLGA_PX;
-  const topo = baixo - LADO_BOTAO_PX - 2 * FOLGA_PX;
-  return r.left < direita && r.right > esquerda && r.top < baixo && r.bottom > topo;
+export function elevacaoDoFlutuante(botao: Caixa, controles: Caixa[], limite: number): number {
+  if (!temTamanho(botao)) return 0;
+  const alvos = controles.filter(temTamanho);
+  let sobe = 0;
+  for (let i = 0; i < 12; i++) {
+    const topo = botao.top - sobe - FOLGA_PX;
+    const baixo = botao.bottom - sobe + FOLGA_PX;
+    const batem = alvos.filter((r) => r.left < botao.right + FOLGA_PX && r.right > botao.left - FOLGA_PX && r.top < baixo && r.bottom > topo);
+    if (batem.length === 0) break;
+    sobe = Math.max(sobe, ...batem.map((r) => botao.bottom - r.top + FOLGA_PX));
+    if (sobe >= limite) return limite;
+  }
+  return Math.round(sobe);
 }
 
 const TIPOS_SEM_TECLADO = new Set(["button", "submit", "reset", "checkbox", "radio", "range", "file", "image", "color"]);
@@ -34,6 +43,6 @@ export function ehCampoDeFormulario(tag: string | undefined, tipo?: string | nul
   return false;
 }
 
-export function flutuanteVisivel(estado: { chatAberto: boolean; campoEmFoco: boolean; ctaNaFaixa: boolean }): boolean {
-  return estado.chatAberto || !(estado.campoEmFoco || estado.ctaNaFaixa);
+export function flutuanteVisivel(estado: { chatAberto: boolean; campoEmFoco: boolean }): boolean {
+  return estado.chatAberto || !estado.campoEmFoco;
 }

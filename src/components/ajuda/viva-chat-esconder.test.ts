@@ -4,10 +4,10 @@ import { readFileSync } from "node:fs";
 
 const ler = (p: string) => readFileSync(new URL(`../../${p}`, import.meta.url), "utf8");
 
-test("F3: o botão flutuante da Viva não aparece em /buscar (cobria 'Mais filtros')", () => {
+test("4f8d17c6: o botão flutuante da Viva aparece também na /buscar (mesmo comportamento em todas as páginas)", () => {
   const src = ler("components/ajuda/viva-chat.tsx");
   const linha = src.split("\n").find((l) => l.includes("const ESCONDER")) ?? "";
-  assert.match(linha, /"\/buscar"/);
+  assert.doesNotMatch(linha, /"\/buscar"/);
 });
 
 test("F3: /buscar mantém a ajuda como link na página", () => {
@@ -24,15 +24,17 @@ test("t58: o botão flutuante some em Conta → Segurança (cobria 'Nova senha' 
   assert.doesNotMatch(linha, /"\/dashboard\/conta"[,\]]/);
 });
 
-test("F49: no celular o flutuante é redondo (48 px, só ícone), some com campo em foco/CTA e a página ganha folga", () => {
+test("4f8d17c6: o flutuante é o botão primário do site (mesmos tokens), ícone + texto em qualquer largura; sobe em vez de sumir", () => {
   const src = ler("components/ajuda/viva-chat.tsx");
-  assert.match(src, /h-12 w-12/);
-  assert.match(src, /hidden md:inline/);
-  assert.match(src, /max-md:hidden/);
-  assert.match(src, /cruzaCantoDoFlutuante/);
-  assert.doesNotMatch(src, /IntersectionObserver/);
+  assert.match(src, /className=\{buttonClasses\(\)\}/);
+  assert.doesNotMatch(src, /h-12 w-12/);
+  assert.doesNotMatch(src, /rounded-full bg-forest/);
+  assert.doesNotMatch(src, /hidden md:inline/);
+  assert.match(src, /elevacaoDoFlutuante/);
+  assert.doesNotMatch(src, /cruzaCantoDoFlutuante/);
+  // some só com campo em foco (teclado do celular)
   assert.match(src, /focusin/);
+  assert.match(src, /max-md:hidden/);
   assert.match(ler("app/globals.css"), /html:not\(\[data-app\]\) body:has\(\[data-testid="fale-com-a-viva-raiz"\]\)\s*\{\s*padding-bottom: 4\.5rem/);
-  // CTA marcado no botão compartilhado (ghost não conta)
   assert.match(ler("components/ui/button.tsx"), /data-cta=/);
 });
