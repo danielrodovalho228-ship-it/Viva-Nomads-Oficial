@@ -83,9 +83,64 @@ test("migração 0110: tabelas, RLS só leitura para as partes e imutabilidade n
 test("ações do servidor: só as partes do contrato agem, foto só da própria pasta, sem 'vistoria'", () => {
   const src = readFileSync("src/lib/data/conferencia-actions.ts", "utf8");
   assert.match(src, /^"use server";/);
-  assert.equal((src.match(/await parteDoContrato\(/g) ?? []).length, 2);
+  assert.equal((src.match(/await parteDoContrato\(/g) ?? []).length, 5);
   assert.match(src, /tenant_id === user\.id \? "inquilino" : donoId === user\.id \? "proprietario" : null/);
   assert.match(src, /startsWith\(`\$\{ctx\.uid\}\/`\)/);
   assert.match(src, /consumirLimite\(/);
   assert.doesNotMatch(src + readFileSync("src/lib/conferencia.ts", "utf8"), /vistoria/i);
+});
+
+// ---- Parte 2: laudo independente e foto por cômodo (ordem d3c60126) ----
+import { LAUDO_MAX_BYTES, FOTO_CONFERENCIA_MAX_BYTES, validarLaudo, validarFotoConferencia, fonteDaConferencia } from "./conferencia.ts";
+
+const PDF = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31]);
+const JPG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0]);
+const EXE = new Uint8Array([0x4d, 0x5a, 0x90, 0x00]);
+
+test("laudo independente: só PDF de verdade, até 15 MB, não vazio", () => {
+  assert.equal(LAUDO_MAX_BYTES, 15 * 1024 * 1024);
+  assert.deepEqual(validarLaudo({ bytes: PDF, tamanho: 200_000 }), { ok: true, tipo: "application/pdf", ext: "pdf" });
+  assert.equal(validarLaudo({ bytes: EXE, tamanho: 200_000 }).ok, false); // "laudo.pdf" que é executável
+  assert.equal(validarLaudo({ bytes: JPG, tamanho: 200_000 }).ok, false); // laudo é PDF
+  assert.equal(validarLaudo({ bytes: PDF, tamanho: LAUDO_MAX_BYTES + 1 }).ok, false);
+  assert.equal(validarLaudo({ bytes: PDF, tamanho: 0 }).ok, false);
+});
+
+test("foto do cômodo: JPG/PNG/WebP até 8 MB; PDF e executável recusados", () => {
+  assert.equal(FOTO_CONFERENCIA_MAX_BYTES, 8 * 1024 * 1024);
+  assert.equal(validarFotoConferencia({ bytes: JPG, tamanho: 1000 }).ok, true);
+  assert.equal(validarFotoConferencia({ bytes: PDF, tamanho: 1000 }).ok, false);
+  assert.equal(validarFotoConferencia({ bytes: EXE, tamanho: 1000 }).ok, false);
+  assert.equal(validarFotoConferencia({ bytes: JPG, tamanho: FOTO_CONFERENCIA_MAX_BYTES + 1 }).ok, false);
+});
+
+test("laudo independente prevalece sobre as fotos quando existe", () => {
+  assert.equal(fonteDaConferencia(false), "fotos");
+  assert.equal(fonteDaConferencia(true), "laudo_independente");
+});
+
+test("migração 0117: laudo em tabela com RLS, imutável, bucket privado; produção idempotente com rollback", () => {
+  const sql = readFileSync("supabase/migrations/0117_conferencia_laudo.sql", "utf8");
+  assert.match(sql, /public\.conferencia_laudos/);
+  assert.match(sql, /alter table public\.conferencia_laudos enable row level security/);
+  assert.match(sql, /'conferencia', 'conferencia', false/);
+  assert.match(sql, /conferencia_laudos_imutavel/);
+  const prod = readFileSync("supabase/producao/aplicar-0117.sql", "utf8");
+  assert.match(prod, /^begin;/m);
+  assert.match(prod, /commit;/);
+  assert.match(prod, /schema_migrations/);
+  assert.match(prod, /0117_conferencia_laudo/);
+  assert.match(readFileSync("supabase/producao/rollback/0117_rollback.sql", "utf8"), /drop table if exists public\.conferencia_laudos/);
+});
+
+test("ações: arquivos validados no servidor e nunca a palavra 'vistoria' em texto de tela", () => {
+  const acoes = readFileSync("src/lib/data/conferencia-actions.ts", "utf8");
+  assert.match(acoes, /validarLaudo\b/);
+  assert.match(acoes, /validarFotoConferencia\b/);
+  assert.match(acoes, /export async function anexarLaudoConferencia/);
+  assert.match(acoes, /export async function enviarFotoConferencia/);
+  const tela = readFileSync("src/components/contrato/conferencia-contrato.tsx", "utf8");
+  assert.doesNotMatch(tela, /vistoria/i);
+  assert.match(tela, /laudo independente/i);
+  assert.match(readFileSync("src/components/contrato/contrato-detalhe.tsx", "utf8"), /ConferenciaContrato/);
 });
