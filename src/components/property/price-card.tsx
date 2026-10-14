@@ -37,7 +37,7 @@ export function PriceCard({ property, actions }: { property: Property; actions: 
   const availableFrom = disponivelFuturo(property.availableFrom);
 
   return (
-    <div className="sticky top-20 rounded-2xl border border-sage-200 bg-white p-6 shadow-sm">
+    <div id="cartao-preco" className="sticky top-20 scroll-mt-24 rounded-2xl border border-sage-200 bg-white p-6 shadow-sm">
       <div className="flex items-baseline gap-1">
         <span className="font-title text-3xl font-bold text-forest">
           {formatBRL(property.monthlyPrice)}
