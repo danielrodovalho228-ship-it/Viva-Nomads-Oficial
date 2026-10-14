@@ -2,7 +2,8 @@
   Seção "Compare" da página de preços (ordens 3914d70c e aa916ba9, item 6). Base JUSTA: percentual do
   total pago pelo morador, no formato típico de cada empresa (não valores em R$ de 3 meses). Reserva de
   exemplo: 3 meses de R$ 4.320 = R$ 12.960 (usada só no exemplo da Viva). Cada número de concorrente carrega FONTE e DATA;
-  linha sem fonte conferida (`fonte === null`) NÃO é exibida ao público — texto
+  linha sem fonte conferida (`fonte === null`) NÃO é exibida ao público (exceto pela regra permanente
+  do Daniel, ordem c6b62141: Viva × Airbnb × QuintoAndar sempre visíveis — QuintoAndar com fonte e nota) — texto
   objetivo e verificável, nunca número "de ouvir falar". Sem logos de terceiros (só nomes).
   Para liberar uma linha: conferir na fonte oficial, preencher `fonte` e `conferidoEm`.
 */
@@ -24,6 +25,8 @@ export interface LinhaCompare {
   /** Fonte pública conferida (nome + endereço). null = ainda não conferida → linha oculta. */
   fonte: { nome: string; url: string } | null;
   conferidoEm: string | null; // "AAAA-MM-DD"
+  /** Ressalva exibida junto da linha (ex.: percentual de referência a conferir na empresa). */
+  nota?: string;
 }
 
 /** Contrato de 30 meses: 1 mês de entrada + `mensal` ao mês, dividido pelos 30 meses (QuintoAndar, imobiliária). */
@@ -60,8 +63,12 @@ export const LINHAS_COMPARE: readonly LinhaCompare[] = [
     nome: "QuintoAndar",
     regra: "Contrato de 30 meses: 1 mês de entrada + 9,3% ao mês (mínimo de R$ 160).",
     pct: pctContrato30(0.093),
-    fonte: null,
-    conferidoEm: null,
+    // Ordem c6b62141 (Daniel): a comparação Viva × Airbnb × QuintoAndar fica SEMPRE na página.
+    // O guia oficial confirma o modelo (mês de entrada + taxa mensal de administração); o percentual é
+    // referência informada pela equipe — a nota abaixo diz isso ao público.
+    fonte: { nome: "Guia oficial do QuintoAndar para anunciar", url: "https://www.quintoandar.com.br/guias/?p=2280099" },
+    conferidoEm: "2026-10-14",
+    nota: "Modelo de cobrança conforme o guia oficial; percentual de referência informado pela equipe — confira o vigente no QuintoAndar.",
   },
   {
     id: "imobiliaria",

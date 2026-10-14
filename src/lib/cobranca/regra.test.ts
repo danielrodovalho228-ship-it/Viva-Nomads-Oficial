@@ -179,6 +179,11 @@ test("Compare: só aparece linha com fonte e data; rodapé obrigatório; sem log
   }
   // concorrente sem fonte conferida nunca é publicado
   for (const l of LINHAS_COMPARE) if (!l.fonte) assert.ok(!pub.includes(l));
+  // Regra permanente do Daniel (ordem c6b62141): Viva × Airbnb × QuintoAndar sempre na comparação.
+  assert.deepEqual(pub.map((l) => l.id).filter((id) => ["viva", "airbnb", "quintoandar"].includes(id)), ["viva", "airbnb", "quintoandar"]);
+  assert.match(LINHAS_COMPARE.find((l) => l.id === "quintoandar")!.nota ?? "", /confira o vigente/);
+  const comp = ler("src/components/precos/comparativo-precos.tsx");
+  assert.match(comp, /QuintoAndar \(contrato de 30 meses\)/);
   assert.equal(COMPARE_RODAPE, "Valores de referência de out/2026, sujeitos a mudança pelas empresas. Cálculo ilustrativo.");
   assert.doesNotMatch(ler("src/components/precos/comparativo-precos.tsx"), /<(img|Image)\b/);
 });
