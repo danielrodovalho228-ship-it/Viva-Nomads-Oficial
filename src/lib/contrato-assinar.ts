@@ -5,7 +5,7 @@
 */
 import { createHash } from "node:crypto";
 import { MARCA_MINUTA } from "./contrato-etapas.ts";
-import { linhasRegrasPets, type RegrasPets } from "./anuncio/pets-regras.ts";
+import { linhasRegrasPets, normalizarRegrasPets, type RegrasPets } from "./anuncio/pets-regras.ts";
 
 export type PapelContrato = "proprietario" | "inquilino";
 
@@ -39,6 +39,20 @@ export function resumoContrato(d: DadosResumo): string[] {
     ...(d.petsRegras ? [`Pets — ${linhasRegrasPets(d.petsRegras).join("; ")}`] : []),
     `Registrado em: ${d.criadoEm}`,
   ];
+}
+
+/**
+ * Regras de pets que entram no resumo. Antes de qualquer assinatura valem as do anúncio (ao vivo);
+ * a partir da primeira assinatura valem só as congeladas no contrato, para as duas partes assinarem o
+ * mesmo texto/hash mesmo que o dono mude o anúncio depois. Contrato já assinado sem congelamento
+ * (anterior a esta regra) fica sem a linha, como era quando assinou.
+ */
+export function petsRegrasDoResumo(d: {
+  algumaAssinatura: boolean;
+  vivas: unknown;
+  congeladas: unknown;
+}): RegrasPets | null {
+  return normalizarRegrasPets(d.algumaAssinatura ? d.congeladas : d.vivas);
 }
 
 export function hashResumo(linhas: string[]): string {

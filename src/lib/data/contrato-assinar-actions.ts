@@ -10,13 +10,13 @@ import {
   assuntoAvisoOutraParte,
   avisoAssinatura,
   hashResumo,
+  petsRegrasDoResumo,
   motivoNaoPodeAssinar,
   papelNoContrato,
   resumoContrato,
   type PapelContrato,
 } from "@/lib/contrato-assinar";
 import { montarLinhaDoTempo, type EtapaEstadia } from "@/lib/estadia-linha-tempo";
-import { normalizarRegrasPets } from "@/lib/anuncio/pets-regras";
 import {
   MSG_CODIGO_BLOQUEADO,
   VALIDADE_CODIGO_ASSINATURA_MS,
@@ -60,11 +60,12 @@ interface LinhaContrato {
   assinado_proprietario_em: string | null;
   assinado_inquilino_em: string | null;
   properties: { title?: string; owner_id?: string; checkin_after?: string | null; checkout_before?: string | null; pets_regras?: unknown } | null;
+  pets_regras_congeladas?: unknown;
   contrato_blocos?: { inicio: string; fim: string }[] | null;
 }
 
 const COLUNAS =
-  "id, tenant_id, status, aluguel_mensal, prazo_total_dias, qtd_ocupantes, created_at, assinado_proprietario_em, assinado_inquilino_em, properties(title, owner_id, checkin_after, checkout_before, pets_regras), contrato_blocos(inicio, fim)";
+  "id, tenant_id, status, aluguel_mensal, prazo_total_dias, qtd_ocupantes, created_at, assinado_proprietario_em, assinado_inquilino_em, pets_regras_congeladas, properties(title, owner_id, checkin_after, checkout_before, pets_regras), contrato_blocos(inicio, fim)";
 
 function montar(c: LinhaContrato, userId: string): ContratoParaAssinar | null {
   const ownerId = String(c.properties?.owner_id ?? "");
@@ -78,7 +79,11 @@ function montar(c: LinhaContrato, userId: string): ContratoParaAssinar | null {
     prazoDias: Number(c.prazo_total_dias),
     ocupantes: Number(c.qtd_ocupantes),
     criadoEm: c.created_at.slice(0, 10),
-    petsRegras: normalizarRegrasPets(c.properties?.pets_regras),
+    petsRegras: petsRegrasDoResumo({
+      algumaAssinatura: !!(c.assinado_proprietario_em || c.assinado_inquilino_em),
+      vivas: c.properties?.pets_regras,
+      congeladas: c.pets_regras_congeladas,
+    }),
   });
   const datas = (c.contrato_blocos ?? []).filter((b) => b?.inicio && b?.fim);
   const inicio = datas.map((b) => b.inicio).sort()[0] ?? null;
@@ -182,8 +187,19 @@ export async function assinarContrato(input: {
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Entre para assinar." };
 
-  const { data } = await admin.from("contratos").select(COLUNAS).eq("id", input.contratoId).maybeSingle();
-  const c = data as unknown as LinhaContrato | null;
+  let { data } = await admin.from("contratos").select(COLUNAS).eq("id", input.contratoId).maybeSingle();
+  let c = data as unknown as LinhaContrato | null;
+  // Primeira assinatura: congela as regras de pets do anúncio no contrato (uma vez só), para a outra parte
+  // assinar o mesmo resumo/hash mesmo que o dono mude o anúncio depois.
+  if (c && !c.assinado_proprietario_em && !c.assinado_inquilino_em && c.pets_regras_congeladas == null) {
+    await admin
+      .from("contratos")
+      .update({ pets_regras_congeladas: c.properties?.pets_regras ?? {} })
+      .eq("id", c.id)
+      .is("pets_regras_congeladas", null);
+    ({ data } = await admin.from("contratos").select(COLUNAS).eq("id", input.contratoId).maybeSingle());
+    c = data as unknown as LinhaContrato | null;
+  }
   const visao = c ? montar(c, user.id) : null;
   if (!c || !visao) return { ok: false, error: "Contrato não encontrado." };
 
