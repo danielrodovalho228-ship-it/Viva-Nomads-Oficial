@@ -13,6 +13,9 @@ import { liberarLimiteChamados } from "../fixtures/laboratorio";
  */
 const LAB_OUTBOX = process.env.LAB_OUTBOX;
 const noLaboratorio = process.env.INTEGRACOES_SIMULADAS === "on";
+
+/** O e-mail à equipe sai DEPOIS da nota interna que os polls esperam: lê o arquivo de saída com repetição (sem corrida). */
+const lerSaida = () => (LAB_OUTBOX && fs.existsSync(LAB_OUTBOX) ? fs.readFileSync(LAB_OUTBOX, "utf8") : "");
 const URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -99,7 +102,7 @@ test.describe("T24 — Acolhimento e resposta sugerida", () => {
       expect(c!.responsavel_tipo).toBe("humano");
       const { data: ev } = await adm().from("chamado_eventos").select("acao").eq("chamado_id", c!.id).eq("acao", "respondido_viva");
       expect(ev).toHaveLength(1);
-      if (LAB_OUTBOX && fs.existsSync(LAB_OUTBOX)) expect(fs.readFileSync(LAB_OUTBOX, "utf8")).toContain(`Seu chamado foi respondido — ${numero}`);
+      if (LAB_OUTBOX && fs.existsSync(LAB_OUTBOX)) await expect.poll(lerSaida, { timeout: 20_000 }).toContain(`Seu chamado foi respondido — ${numero}`);
     }
   });
 
@@ -136,8 +139,9 @@ test.describe("T24 — Acolhimento e resposta sugerida", () => {
     expect(ev!.map((e) => e.acao).sort()).toEqual(["acolhido", "pediu_humano"]);
     expect(ev!.find((e) => e.acao === "acolhido")!.detalhe).toContain("pediu para falar com uma pessoa");
     if (LAB_OUTBOX && fs.existsSync(LAB_OUTBOX)) {
-      const aviso = fs.readFileSync(LAB_OUTBOX, "utf8").split("\n").find((l) => l.includes(`— ${numero}: novo chamado`));
-      expect(aviso, "e-mail ao Daniel").toBeTruthy();
+      const achar = () => lerSaida().split("\n").find((l) => l.includes(`— ${numero}: novo chamado`));
+      await expect.poll(achar, { message: "e-mail ao Daniel", timeout: 20_000 }).toBeTruthy();
+      const aviso = achar();
       expect(aviso).toContain("pediu uma pessoa");
       expect(aviso).toContain("Resposta sugerida pela Viva");
       expect(aviso).toContain("Aprovar e enviar no admin");
@@ -168,10 +172,10 @@ test.describe("T24 — Acolhimento e resposta sugerida", () => {
     const { data: depois } = await adm().from("chamados").select("status").eq("id", c!.id).single();
     expect(depois!.status, "resposta de pessoa da equipe → Aguardando você (F22)").toBe("aguardando_usuario");
     if (LAB_OUTBOX && fs.existsSync(LAB_OUTBOX)) {
-      const linhas = fs.readFileSync(LAB_OUTBOX, "utf8");
+      await expect.poll(lerSaida, { message: "aviso à equipe", timeout: 20_000 }).toContain(`— ${numero}: novo chamado`);
+      const linhas = lerSaida();
       expect(linhas).toContain(`Recebemos seu chamado — ${numero}`);
       expect(linhas).toContain(`Seu chamado foi respondido — ${numero}`);
-      expect(linhas, "aviso à equipe").toContain(`— ${numero}: novo chamado`);
     }
   });
 });
