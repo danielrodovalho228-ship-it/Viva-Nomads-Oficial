@@ -228,7 +228,19 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     items,
   }));
 
-  const ownerRow = owner as { full_name: string | null; avatar_url: string | null; created_at: string | null; response_rate: number | null; is_verified: boolean | null } | null;
+  type LinhaDono = { full_name: string | null; avatar_url: string | null; created_at: string | null; response_rate: number | null; is_verified: boolean | null };
+  let ownerRow = owner as LinhaDono | null;
+  // Visitante (RLS de profiles só libera o próprio perfil): perfil PÚBLICO do dono pela
+  // função da 0129 — só primeiro nome, foto, desde, taxa de resposta e verificado, e só de
+  // anúncio ativo (ordem d943f893). Sem a migração, a chamada falha e o bloco não aparece.
+  if (!ownerRow && ownerId) {
+    const pub = (await safe(supabase.rpc("perfil_publico_dono", { p_imovel: base.id }))) as
+      | { nome: string | null; avatar_url: string | null; desde: string | null; taxa_resposta: number | null; verificado: boolean | null }[]
+      | null;
+    const d = pub?.[0];
+    if (d?.nome)
+      ownerRow = { full_name: d.nome, avatar_url: d.avatar_url, created_at: d.desde, response_rate: d.taxa_resposta, is_verified: d.verificado };
+  }
 
   // Foto do proprietário é PÚBLICA (podeVerAvatar owner = true). O bucket é
   // privado, então assinamos o caminho no servidor (admin) — null vira iniciais.

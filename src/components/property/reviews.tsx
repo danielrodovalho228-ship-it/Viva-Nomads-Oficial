@@ -1,4 +1,4 @@
-import { Star } from "lucide-react";
+import { Star, MessageSquareQuote } from "lucide-react";
 import { numBR } from "@/lib/utils";
 import type { Property, Review } from "@/lib/types";
 
@@ -12,12 +12,32 @@ function reviewDate(iso?: string): string | null {
 }
 
 /**
- * Avaliações reais dos inquilinos. Some por completo se o imóvel ainda não tem
- * avaliações (não inventa conteúdo).
+ * Avaliações reais dos inquilinos. Sem avaliações ainda: estado vazio honesto e
+ * convidativo (ordem d943f893) — nada inventado; só avalia quem morou no imóvel.
  */
 export function Reviews({ property }: { property: Property }) {
   const reviews: Review[] = property.reviews ?? [];
-  if (reviews.length === 0) return null;
+  if (reviews.length === 0)
+    return (
+      <section aria-labelledby="avaliacoes-title">
+        <h2 id="avaliacoes-title" className="font-title text-2xl font-bold text-ink">
+          Avaliações
+        </h2>
+        <div data-testid="avaliacoes-vazio" className="mt-5 flex flex-col items-center rounded-2xl border border-dashed border-sage-200 px-6 py-8 text-center">
+          <MessageSquareQuote className="h-8 w-8 text-sage" aria-hidden />
+          <p className="mt-3 font-title text-lg font-bold text-ink">Este imóvel ainda não tem avaliações</p>
+          <p className="mt-1 max-w-sm text-sm text-muted">
+            Só quem morou aqui pode avaliar — a avaliação é liberada ao fim da estadia, e as duas partes avaliam às
+            cegas.
+          </p>
+          <div className="mt-3 flex gap-1" aria-hidden>
+            {[0, 1, 2, 3, 4].map((i) => (
+              <Star key={i} className="h-5 w-5 text-sage-200" />
+            ))}
+          </div>
+        </div>
+      </section>
+    );
 
   const avg = property.rating > 0 ? property.rating : avgOf(reviews);
 
