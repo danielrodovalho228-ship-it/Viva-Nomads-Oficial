@@ -1311,7 +1311,9 @@
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t94-valor-pet"
+      ]
     },
     "src/lib/data/actions.ts#varrerCicloBlocos": {
       "personas": [

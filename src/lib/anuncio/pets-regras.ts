@@ -18,7 +18,6 @@ export const ROTULO_PORTE: Record<PortePet, string> = {
 const ORDEM_PORTE: Record<PortePet, number> = { P: 1, M: 2, G: 3 };
 
 export const MAX_PETS = 3;
-export const MAX_REFORCO_CAUCAO = 100000;
 export const MAX_TEXTO_CONDOMINIO = 200;
 export const MAX_VALOR_PET = 100000;
 
@@ -46,7 +45,7 @@ export interface RegrasPets {
   especies: EspeciePet[];
   porteMax: PortePet;
   qtdMax: number;
-  /** Reforço de Caução por causa do pet, em R$ (0 = não exige). */
+  /** Legado: sempre 0 ao gravar; o valor antigo migra para valorPet (Caução pet). */
   reforcoCaucao: number;
   /** Regra do condomínio sobre pets, texto curto. */
   regrasCondominio: string;
@@ -73,7 +72,7 @@ export function normalizarRegrasPets(raw: unknown): RegrasPets | null {
   const qtd = Number(r.qtdMax);
   if (!Number.isInteger(qtd) || qtd < 1 || qtd > MAX_PETS) return null;
   const reforcoBruto = r.reforcoCaucao == null || r.reforcoCaucao === "" ? 0 : Number(r.reforcoCaucao);
-  if (!Number.isFinite(reforcoBruto) || reforcoBruto < 0 || reforcoBruto > MAX_REFORCO_CAUCAO) return null;
+  if (!Number.isFinite(reforcoBruto) || reforcoBruto < 0 || reforcoBruto > MAX_VALOR_PET) return null;
   const texto =
     typeof r.regrasCondominio === "string"
       ? r.regrasCondominio.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim()
@@ -81,17 +80,19 @@ export function normalizarRegrasPets(raw: unknown): RegrasPets | null {
   if (texto.length > MAX_TEXTO_CONDOMINIO) return null;
   const valorBruto = r.valorPet == null || r.valorPet === "" ? 0 : Number(r.valorPet);
   if (!Number.isFinite(valorBruto) || valorBruto < 0 || valorBruto > MAX_VALOR_PET) return null;
-  const valorPet = Math.round(valorBruto * 100) / 100;
   const tipo = TIPOS_VALOR_PET.find((t) => t === r.valorPetTipo);
-  if (valorPet > 0 && r.valorPetTipo != null && !tipo) return null;
+  if (valorBruto > 0 && r.valorPetTipo != null && !tipo) return null;
+  // Campo único: regras antigas só com "reforço de Caução" viram Caução pet.
+  const legado = valorBruto === 0 && reforcoBruto > 0;
+  const valorPet = Math.round((legado ? reforcoBruto : valorBruto) * 100) / 100;
   return {
     especies,
     porteMax,
     qtdMax: qtd,
-    reforcoCaucao: Math.round(reforcoBruto * 100) / 100,
+    reforcoCaucao: 0,
     regrasCondominio: texto,
     valorPet,
-    ...(valorPet > 0 ? { valorPetTipo: tipo ?? "reembolsavel" } : {}),
+    ...(valorPet > 0 ? { valorPetTipo: legado ? "reembolsavel" : (tipo ?? "reembolsavel") } : {}),
   };
 }
 
@@ -104,8 +105,6 @@ export function linhasRegrasPets(r: RegrasPets): string[] {
     `Porte máximo: ${ROTULO_PORTE[r.porteMax]}`,
     `Até ${r.qtdMax} ${r.qtdMax === 1 ? "animal" : "animais"}`,
   ];
-  if (r.reforcoCaucao > 0)
-    linhas.push(`Reforço de Caução por pet: R$ ${r.reforcoCaucao.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
   const valorPet = textoValorPet(r);
   if (valorPet) linhas.push(valorPet);
   if (r.regrasCondominio) linhas.push(`Condomínio: ${r.regrasCondominio}`);
