@@ -101,7 +101,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   const [prazoMeses, setPrazoMeses] = useState(DEFAULT_MESES);
   // F37: data de início da estadia (obrigatória, hoje ou futura); os blocos partem dela.
   const hoje = hojeBR();
-  const [inicioISO, setInicioISO] = useState(hoje);
+  const [inicioISO, setInicioISO] = useState(ctx.inicioSugerido ?? hoje);
   const inicioValido = validarInicioEstadia(inicioISO, hoje);
   // Derivações do prazo (dinâmicas). Nomes espelham os antigos p/ o JSX seguir.
   const STAY_MESES = prazoMeses;
