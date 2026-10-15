@@ -192,13 +192,14 @@ function cpfLab(n) {
   return base.join("");
 }
 
+// A admin do lab liga os alertas operacionais (padrão da coluna é false): sem isso avisarEquipe não manda o e-mail do chamado (t24/t30).
 async function garantirUsuario(p) {
   const { data, error } = await admin.auth.admin.createUser({ email: p.email, password: senha, email_confirm: true, user_metadata: { full_name: p.nome } });
   if (error) throw new Error(`${p.email}: ${error.message}`);
   const id = data.user.id;
   const { error: e2 } = await admin
     .from("profiles")
-    .upsert({ id, email: p.email, full_name: p.nome, role: p.role, cpf: cpfLab(PERSONAS.indexOf(p) + 1), ...(p.gestor ? { account_type: "gestor" } : {}) }, { onConflict: "id" });
+    .upsert({ id, email: p.email, full_name: p.nome, role: p.role, cpf: cpfLab(PERSONAS.indexOf(p) + 1), ...(p.gestor ? { account_type: "gestor" } : {}), ...(p.role === "admin" ? { recebe_alertas_operacionais: true } : {}) }, { onConflict: "id" });
   if (e2) throw new Error(`perfil ${p.email}: ${e2.message}`);
   if (p.plano) {
     const { error: e3 } = await admin.from("subscriptions").insert({ owner_id: id, plan: p.plano, status: "active", gateway: "asaas" });

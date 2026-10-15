@@ -91,3 +91,10 @@ test("workflow do laboratório: run de PR nunca cancela a run da main", () => {
   // Cancelar só vale para pull_request.
   assert.match(wf, /cancel-in-progress: \$\{\{ github\.event_name == 'pull_request' \}\}/);
 });
+
+test("seed do laboratório liga os alertas operacionais da admin (senão o e-mail do chamado à equipe não sai — t24/t30)", () => {
+  const seed = raiz("scripts/lab/seed-lab.mjs");
+  assert.match(seed, /p\.role === "admin" \? \{ recebe_alertas_operacionais: true \}/);
+  // avisarEquipe só escreve para quem tem a marca ligada
+  assert.match(raiz("src/lib/notifications/destinatarios-admin.ts"), /recebe_alertas_operacionais === true/);
+});
