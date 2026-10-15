@@ -105,7 +105,7 @@ test.describe("T24 — Acolhimento e resposta sugerida", () => {
     const seis = new Date(Date.now() - 7 * 3_600_000).toISOString();
     const { data: novo } = await adm()
       .from("chamados")
-      .insert({ visitante_email: "t24.vermelho@lab.vivanomads.com.br", tipo: "suporte", categoria: "contrato", prioridade: "p2", canal: "site", assunto: "teste T24 vermelho", responsavel_tipo: "humano", prazo_primeira_resposta: seis, prazo_resolucao: seis, criado_em: seis })
+      .insert({ visitante_nome: "Visitante T24", visitante_email: "t24.vermelho@lab.vivanomads.com.br", tipo: "suporte", categoria: "contrato", prioridade: "p2", canal: "site", assunto: "teste T24 vermelho", responsavel_tipo: "humano", prazo_primeira_resposta: seis, prazo_resolucao: seis, criado_em: seis })
       .select("id, numero_publico")
       .single();
     const ctx = await browser.newContext({ storageState: authFile("admin") });
