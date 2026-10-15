@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useViewMode, primeiroNomeExibicao } from "@/lib/roles";
 import { getLatestDraft } from "@/lib/data/actions";
+import { checklistAnuncio, type ChecklistAnuncio } from "@/lib/anuncio/prontidao";
 import { StatCard, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { DashboardBanner } from "@/components/dashboard/banner";
 import { PropertyRow } from "@/components/dashboard/property-row";
@@ -70,7 +71,7 @@ function OwnerDashboard({ name, imoveisDono }: { name: string; imoveisDono: Prop
     getLatestDraft()
       .then((d) => {
         // Prontidão da fonte única (a mesma de Meus imóveis e do Publicar).
-        if (alive && d) setDraft({ id: d.id, pct: d.prontidao?.pct ?? 0, pronto: !!d.prontidao?.podePublicar, faltam: d.prontidao?.faltam ?? [] });
+        if (alive && d) setDraft({ id: d.id, pct: d.prontidao?.pct ?? 0, pronto: !!d.prontidao?.podePublicar, faltam: d.prontidao?.faltam ?? [], checklist: d.prontidao ? checklistAnuncio(d.prontidao, d.id) : null });
       })
       .catch(() => {});
     return () => {
@@ -284,7 +285,7 @@ function TenantDashboard({ name }: { name: string }) {
  */
 /** Card de pendência "Anúncio em andamento" (P0) — atalho para retomar o
  * rascunho de onde parou, com o % completo honesto. */
-type RascunhoPendente = { id: string; pct: number; pronto: boolean; faltam: string[] };
+type RascunhoPendente = { id: string; pct: number; pronto: boolean; faltam: string[]; checklist?: ChecklistAnuncio | null };
 
 function DraftPendingCard({
   draft,
@@ -305,20 +306,47 @@ function DraftPendingCard({
           <p className="font-title text-sm font-bold text-ink">
             {draft.pronto ? "Anúncio 100% · pronto para publicar" : `Anúncio em andamento${draft.pct > 0 ? ` — ${draft.pct}% completo` : ""}`}
           </p>
-          <p className="text-xs text-muted" data-testid="prontidao-visao-geral">
-            {draft.pronto
-              ? "Tudo o que é obrigatório está feito. Abra e toque em Publicar."
-              : draft.faltam.length
-                ? `Falta para publicar: ${draft.faltam.join(" · ")}`
-                : "Continue de onde parou. Seu rascunho está salvo."}
-          </p>
+          {draft.pronto || !draft.checklist ? (
+            <p className="text-xs text-muted" data-testid="prontidao-visao-geral">
+              {draft.pronto
+                ? "Tudo o que é obrigatório está feito. Abra e toque em Publicar."
+                : draft.faltam.length
+                  ? `Falta para publicar: ${draft.faltam.join(" · ")}`
+                  : "Continue de onde parou. Seu rascunho está salvo."}
+            </p>
+          ) : (
+            <ul className="mt-2 grid gap-1 sm:grid-cols-2" data-testid="prontidao-visao-geral">
+              {draft.checklist.itens.map((i) => (
+                <li key={i.key} data-testid={`checklist-${i.key}`} data-ok={i.ok ? "1" : "0"} className="text-xs">
+                  {i.href ? (
+                    <Link
+                      href={i.href}
+                      className={`flex min-h-[44px] items-center gap-2 rounded-lg px-1 text-ink hover:bg-champagne/30 ${draft.checklist?.proximo?.key === i.key ? "font-bold" : ""}`}
+                    >
+                      <span aria-hidden className="text-muted">○</span>
+                      <span>
+                        {i.label}
+                        {i.detalhe ? <span className="text-muted"> ({i.detalhe})</span> : null}
+                      </span>
+                      <ArrowRight className="ml-auto h-3.5 w-3.5 shrink-0 text-forest" aria-hidden />
+                    </Link>
+                  ) : (
+                    <span className="flex min-h-[28px] items-center gap-2 px-1 text-muted">
+                      <span aria-hidden className="text-forest">✓</span>
+                      <span>{i.label}</span>
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
       <Link
-        href={`/dashboard/imoveis/novo?draft=${draft.id}`}
+        href={!draft.pronto && draft.checklist?.proximo?.href ? draft.checklist.proximo.href : `/dashboard/imoveis/novo?draft=${draft.id}`}
         className={buttonClasses({ size: "sm" })}
       >
-        {draft.pronto ? "Revisar e publicar" : "Continuar edição"} <ArrowRight className="h-4 w-4" />
+        {draft.pronto ? "Revisar e publicar" : draft.checklist?.proximo ? "Próximo passo" : "Continuar edição"} <ArrowRight className="h-4 w-4" />
       </Link>
     </div>
   );

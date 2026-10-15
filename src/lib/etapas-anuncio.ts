@@ -66,3 +66,10 @@ export function posMaxDoRascunho(d: { step?: unknown; etapaMax?: unknown; ordemE
   for (let id = 0; id <= n(d.etapaMax); id++) maior = Math.max(maior, posicaoDaEtapa(id));
   return maior;
 }
+
+/** Etapa (ID 0..6) pedida na URL (`?etapa=`); qualquer outra coisa vira null. */
+export function etapaDaUrl(v: string | null): number | null {
+  if (v === null || !/^\d$/.test(v)) return null;
+  const n = Number(v);
+  return (ORDEM_ETAPAS as readonly number[]).includes(n) ? n : null;
+}

@@ -58,7 +58,7 @@ import { registrarEvento } from "@/lib/eventos/registrar";
 import { TERMO_IA_TEXTO, TERMO_IA_VERSAO, camposDaIa } from "@/lib/anuncio/termo-ia";
 import { miniaturaBase64 } from "@/lib/fotos/miniatura";
 import { FOTOS_MAX_MINIATURAS, iaFotosLiberada, mensagemFaltamFotosIa, type SugestaoFotos } from "@/lib/ai/fotos-prompt";
-import { etapaLiberada, etapaMaisAvancada, etapaDoRascunho, etapaNaPosicao, posicaoDaEtapa, posMaxDoRascunho, ORDEM_ETAPAS, VERSAO_ORDEM_ETAPAS } from "@/lib/etapas-anuncio";
+import { etapaDaUrl, etapaLiberada, etapaMaisAvancada, etapaDoRascunho, etapaNaPosicao, posicaoDaEtapa, posMaxDoRascunho, ORDEM_ETAPAS, VERSAO_ORDEM_ETAPAS } from "@/lib/etapas-anuncio";
 
 /** Metadados das 7 etapas do wizard (rodada 15). O índice é o ID estável da etapa; a ordem em que
  * aparecem é ORDEM_ETAPAS ("fotos primeiro", ordem 04e2fe5e). */
@@ -551,6 +551,12 @@ export default function NewPropertyPage() {
       setDraftServerId(draftParam);
       setApproved(true);
       if (d && typeof d === "object") aplicarDraft(d as Record<string, unknown>);
+      // ?etapa=N (checklist da Visão geral): abre direto na etapa da pendência.
+      const alvo = etapaDaUrl(searchParams.get("etapa"));
+      if (alvo !== null) {
+        setStep(alvo);
+        setEtapaMax((m) => Math.max(m, posicaoDaEtapa(alvo)));
+      }
     })();
     return () => {
       alive = false;

@@ -205,3 +205,37 @@ export function faixaDocumentoAprovado(comp: Prontidao, statusImovel: string): F
     faltam,
   };
 }
+
+export interface ItemChecklist {
+  key: string;
+  label: string;
+  ok: boolean;
+  detalhe?: string;
+  /** Onde resolver (null quando já está feito). */
+  href: string | null;
+}
+
+export interface ChecklistAnuncio {
+  itens: ItemChecklist[];
+  /** Primeira pendência (o "próximo passo" em destaque); null = é só publicar. */
+  proximo: ItemChecklist | null;
+}
+
+/**
+ * Checklist do card "Anúncio em andamento" (ordem de8761b0, item 1): ✓ feito /
+ * ○ falta, cada pendência com o link que leva ao campo certo. Mesma fonte de
+ * prontidão do editor, então a lista nunca diverge do botão Publicar. PURO.
+ */
+export function checklistAnuncio(p: Prontidao, draftId: string): ChecklistAnuncio {
+  const id = encodeURIComponent(draftId);
+  const itens = p.obrigatorios.map((i): ItemChecklist => {
+    let href: string | null = null;
+    if (!i.ok) {
+      if (i.key === "documento") href = "/dashboard/conta#documento";
+      else if (i.key === "limite") href = "/dashboard/assinatura";
+      else href = `/dashboard/imoveis/novo?draft=${id}&etapa=${i.etapa}`;
+    }
+    return { key: i.key, label: i.label, ok: i.ok, detalhe: i.detalhe, href };
+  });
+  return { itens, proximo: itens.find((i) => !i.ok) ?? null };
+}

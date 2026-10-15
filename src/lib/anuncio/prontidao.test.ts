@@ -134,3 +134,38 @@ test("#58: tudo pronto vira 'é só publicar'; documento não aprovado ou anúnc
   const pendente = prontidaoAnuncio({ ...completo(), documento: "pending" });
   assert.equal(faixaDocumentoAprovado(pendente, "draft"), null);
 });
+
+/* ── Checklist do "Anúncio em andamento" (ordem de8761b0, item 1) ── */
+import { checklistAnuncio } from "./prontidao.ts";
+import { etapaDaUrl } from "../etapas-anuncio.ts";
+
+test("checklist: cada pendência vira ○ com link para a etapa certa do rascunho; o 1º é o próximo passo", () => {
+  const f = { ...completo(), fotos: 3, descricao: "curta", documento: "none" as const };
+  const c = checklistAnuncio(prontidaoAnuncio(f), "abc-123");
+  const fotos = c.itens.find((i) => i.key === "fotos");
+  assert.equal(fotos?.ok, false);
+  assert.equal(fotos?.href, "/dashboard/imoveis/novo?draft=abc-123&etapa=3");
+  assert.equal(c.itens.find((i) => i.key === "descricao")?.href, "/dashboard/imoveis/novo?draft=abc-123&etapa=5");
+  assert.equal(c.itens.find((i) => i.key === "documento")?.href, "/dashboard/conta#documento");
+  assert.equal(c.proximo?.key, "fotos");
+  // os já feitos aparecem ✓ e sem link
+  const endereco = c.itens.find((i) => i.key === "endereco");
+  assert.equal(endereco?.ok, true);
+  assert.equal(endereco?.href, null);
+  assert.equal(c.itens.length, prontidaoAnuncio(f).obrigatorios.length);
+});
+
+test("checklist: tudo feito → sem próximo passo; vaga no plano leva à assinatura", () => {
+  assert.equal(checklistAnuncio(prontidaoAnuncio(completo()), "x").proximo, null);
+  const c = checklistAnuncio(prontidaoAnuncio({ ...completo(), limitePlanoOk: false }), "x");
+  assert.equal(c.itens.find((i) => i.key === "limite")?.href, "/dashboard/assinatura");
+});
+
+test("etapaDaUrl: só aceita id de etapa válido (0..6); lixo vira null", () => {
+  assert.equal(etapaDaUrl("3"), 3);
+  assert.equal(etapaDaUrl("0"), 0);
+  assert.equal(etapaDaUrl("9"), null);
+  assert.equal(etapaDaUrl("abc"), null);
+  assert.equal(etapaDaUrl(null), null);
+  assert.equal(etapaDaUrl("-1"), null);
+});
