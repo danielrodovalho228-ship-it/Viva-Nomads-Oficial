@@ -1668,35 +1668,45 @@
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t85-conferencia-entrada-saida"
+      ]
     },
     "src/lib/data/conferencia-actions.ts#conferenciasDoContrato": {
       "personas": [
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t85-conferencia-entrada-saida"
+      ]
     },
     "src/lib/data/conferencia-actions.ts#enviarFotoConferencia": {
       "personas": [
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t85-conferencia-entrada-saida"
+      ]
     },
     "src/lib/data/conferencia-actions.ts#registrarItemConferencia": {
       "personas": [
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t85-conferencia-entrada-saida"
+      ]
     },
     "src/lib/data/conferencia-actions.ts#responderConferencia": {
       "personas": [
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t85-conferencia-entrada-saida"
+      ]
     },
     "src/lib/data/contrato-assinar-actions.ts#assinarContrato": {
       "personas": [
