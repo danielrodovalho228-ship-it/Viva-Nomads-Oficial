@@ -68,6 +68,10 @@ export interface Property {
   areaM2: number;
   minPeriodDays: number;
   monthlyPrice: number;
+  /** Equivalente mensal que o dono informou ter no Airbnb (opcional; 0130). Só o dono lê de volta no editor. */
+  airbnbMonthlyPrice?: number;
+  /** Selo "Preço justo": aluguel abaixo do Airbnb informado (coluna gerada da 0130). */
+  precoJusto?: boolean;
   // Despesas de consumo (Atualização 6)
   utilitiesMode: UtilitiesMode;
   utilitiesEstimate: number; // R$/mês (regime fixo)

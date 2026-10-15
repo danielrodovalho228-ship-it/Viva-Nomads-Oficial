@@ -8,7 +8,8 @@
       "specs": [
         "t66-home-busca-principal",
         "t69-botoes-header",
-        "t90-orcamento-velocidade"
+        "t90-orcamento-velocidade",
+        "t96-antigolpe-atalhos"
       ]
     },
     "/acesso-socios": {
@@ -147,6 +148,14 @@
       ],
       "specs": [
         "t51-admin-padrao-caixa-socios"
+      ]
+    },
+    "/admin/usuarios": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t101-admin-usuarios"
       ]
     },
     "/ajuda": {
@@ -688,6 +697,22 @@
       ],
       "specs": []
     },
+    "/guias": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t105-guias"
+      ]
+    },
+    "/guias/[slug]": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t105-guias"
+      ]
+    },
     "/imoveis/[id]": {
       "personas": [
         "publico"
@@ -766,7 +791,8 @@
         "t1-auth-guards",
         "t18-seo-a11y",
         "t69-botoes-header",
-        "t72-paginas-institucionais"
+        "t72-paginas-institucionais",
+        "t96-antigolpe-atalhos"
       ]
     },
     "/precos": {
@@ -2277,6 +2303,16 @@
         "admin"
       ],
       "specs": []
+    },
+    "src/lib/preco-justo-actions.ts#taxaDoMeuNovoAnuncio": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t102-preco-sugerido",
+        "t103-selo-preco-justo"
+      ]
     },
     "src/lib/seguranca/recuperacao-actions.ts#confirmarRefazer": {
       "personas": [

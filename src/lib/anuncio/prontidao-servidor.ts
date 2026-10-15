@@ -49,7 +49,7 @@ export async function fatosDosImoveis(cliente: Cliente, ownerId: string, ids?: s
   for (const p of lista) {
     // Um anúncio já publicado não ocupa vaga nova; os demais precisam de uma.
     const limiteOk = p.status === "active" ? true : (ativos ?? 0) < limite;
-    mapa.set(p.id, fatosDaLinha(p, fotosPor.get(p.id) ?? 0, docPor.get(p.id) ?? "none", limiteOk));
+    mapa.set(p.id, fatosDaLinha(p, fotosPor.get(p.id) ?? 0, docPor.get(p.id) ?? "none", limiteOk, limite));
   }
   return mapa;
 }

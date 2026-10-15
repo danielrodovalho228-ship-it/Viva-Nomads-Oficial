@@ -36,6 +36,7 @@ import { adminsPorAviso } from "@/lib/notifications/push-admins";
 import { avisarPedidosDoImovel } from "@/lib/data/pedidos-compat";
 import { INTERNET_META } from "@/lib/internet";
 import { getPropertyForOwner } from "@/lib/data/properties";
+import { colunaAirbnb } from "@/lib/preco-justo";
 import { colunasPrivacidade, type TipoAcesso } from "@/lib/anuncio/privacidade";
 import { prontidaoDoImovel, fatosDosImoveis } from "@/lib/anuncio/prontidao-servidor";
 import { prontidaoAnuncio } from "@/lib/anuncio/prontidao";
@@ -302,6 +303,8 @@ export interface PropertyInput {
   areaM2: number;
   minPeriodDays: number;
   monthlyPrice: number;
+  /** Preço mensal equivalente no Airbnb (opcional) — base do selo "Preço justo" (0130). */
+  airbnbMonthlyPrice?: number;
   readyToLiveScore: number;
   tagHomeOffice?: boolean;
   tagWorkLocated?: boolean;
@@ -482,6 +485,7 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
       area_m2: input.areaM2,
       min_period_days: input.minPeriodDays,
       monthly_price: input.monthlyPrice,
+      ...colunaAirbnb(input.airbnbMonthlyPrice),
       // Nasce rascunho: a qualificação é ligada logo abaixo e só então o
       // imóvel é publicado (o banco confere o documento DESTE imóvel — 0060).
       status: "draft",
@@ -722,6 +726,7 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
       area_m2: input.areaM2,
       min_period_days: input.minPeriodDays,
       monthly_price: input.monthlyPrice,
+      ...colunaAirbnb(input.airbnbMonthlyPrice),
       ready_to_live_score: input.readyToLiveScore,
       ready_to_live_badge: input.readyToLiveScore >= 70,
       tag_home_office: input.tagHomeOffice ?? false,

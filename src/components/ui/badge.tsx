@@ -1,7 +1,23 @@
 import * as React from "react";
-import { Award, FileText, ShieldCheck, Zap, Laptop, MapPin, Building2 } from "lucide-react";
+import { Award, BadgePercent, FileText, ShieldCheck, Zap, Laptop, MapPin, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SELOS } from "@/config/selos";
+
+/** Selo "Preço justo" (ordem 4c74ac38): aluguel abaixo do equivalente no Airbnb informado pelo dono. Critério em /como-funciona#preco-justo. */
+export function PrecoJustoBadge({ className }: { className?: string }) {
+  return (
+    <span
+      data-testid="selo-preco-justo"
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full border border-sage-200 bg-white px-2.5 py-1 text-xs font-semibold text-forest",
+        className
+      )}
+    >
+      <BadgePercent className="h-3.5 w-3.5" aria-hidden />
+      Preço justo
+    </span>
+  );
+}
 
 /** Selo "Proprietário Responsivo" (Bloco C) — responde/resolve rápido. */
 export function ResponsiveOwnerBadge({ className }: { className?: string }) {

@@ -3,6 +3,7 @@ import { SITE_URL } from "@/lib/site";
 import { CITIES } from "@/lib/constants";
 import { listProperties } from "@/lib/data/properties";
 import { isExemplo } from "@/lib/demo-listing";
+import { GUIAS } from "@/lib/guias/guias";
 
 // F9: lista de imóveis sempre fresca (revalidatePath nas ações + 60 s de rede de segurança).
 export const revalidate = 60;
@@ -24,6 +25,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/precos",
     "/seguranca",
     "/ajuda",
+    "/guias",
+    ...GUIAS.map((g) => `/guias/${g.slug}`),
     "/termos",
     "/privacidade",
   ].map((path) => ({
