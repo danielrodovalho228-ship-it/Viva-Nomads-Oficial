@@ -327,7 +327,8 @@
         "t55-manutencao-ciclo",
         "t6-dinheiro-numeros",
         "t7-fluxo-publico",
-        "t8-rascunho"
+        "t8-rascunho",
+        "t98-score-anuncio"
       ]
     },
     "/dashboard/assinatura": {
