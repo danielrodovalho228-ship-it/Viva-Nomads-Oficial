@@ -64,7 +64,8 @@ test("e-mails de conta do Supabase: 6 modelos, assunto do código, código grand
   for (const t of ts) {
     assert.doesNotMatch(t.html, PROIBIDAS, t.arquivo);
     assert.ok(t.html.includes("Central de Ajuda") && t.html.includes(">Entrar<"), t.arquivo);
-    if (t.arquivo !== "codigo-de-acesso.html" && t.arquivo !== "reautenticacao.html") assert.match(t.html, /\{\{ \.ConfirmationURL \}\}/, t.arquivo);
+    if (t.arquivo !== "codigo-de-acesso.html" && t.arquivo !== "reautenticacao.html") assert.match(t.html, /\{\{ \.SiteURL \}\}\/auth\/confirm\?token_hash=\{\{ \.TokenHash \}\}&type=(signup|recovery|email_change|invite)&next=\//, t.arquivo);
+    assert.doesNotMatch(t.html, /ConfirmationURL/, `${t.arquivo}: use token_hash (correção #182)`);
     const emDisco = readFileSync(new URL(`../../../supabase/templates/${t.arquivo}`, import.meta.url), "utf8");
     assert.equal(emDisco, t.html + "\n", `${t.arquivo} desatualizado: rode npm run templates:supabase`);
   }
