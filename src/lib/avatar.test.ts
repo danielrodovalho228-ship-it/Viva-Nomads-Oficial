@@ -178,3 +178,9 @@ test("render: cada cenário produz iniciais + cor determinística estável", () 
     assert.ok((AVATAR_PALETTE as readonly string[]).includes(corAvatar(nome)));
   }
 });
+
+test("iniciais ignora parênteses e símbolos: 'Proprietário (exemplo)' → 'P' (#110)", () => {
+  assert.equal(iniciais("Proprietário (exemplo)"), "P");
+  assert.equal(iniciais("Maria (teste) Silva"), "MS");
+  assert.equal(iniciais("(exemplo)"), "?");
+});

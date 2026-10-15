@@ -77,3 +77,8 @@ test("header: logo não encolhe e tem distância fixa dos links; links e ações
   assert.match(nav, /data-testid="nav-acoes" className=\{cn\("hidden shrink-0/);
   assert.match(nav, /whitespace-nowrap text-sm font-medium/);
 });
+
+test("painel do dono não diz 'apartamento mobiliado' (#128)", () => {
+  const f = readFileSync("src/app/(dashboard)/dashboard/visao-geral-client.tsx", "utf8");
+  assert.doesNotMatch(f, /apartamento mobiliado/i);
+});

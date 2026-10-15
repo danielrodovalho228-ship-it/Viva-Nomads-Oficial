@@ -20,6 +20,27 @@ const ORDEM_PORTE: Record<PortePet, number> = { P: 1, M: 2, G: 3 };
 export const MAX_PETS = 3;
 export const MAX_REFORCO_CAUCAO = 100000;
 export const MAX_TEXTO_CONDOMINIO = 200;
+export const MAX_VALOR_PET = 100000;
+
+/** Valor pet: Caução pet (devolvida no fim) ou Taxa pet (não reembolsável). */
+export const TIPOS_VALOR_PET = ["reembolsavel", "nao_reembolsavel"] as const;
+export type TipoValorPet = (typeof TIPOS_VALOR_PET)[number];
+export const ROTULO_TIPO_VALOR_PET: Record<TipoValorPet, string> = {
+  reembolsavel: "Reembolsável (Caução pet)",
+  nao_reembolsavel: "Não reembolsável (Taxa pet)",
+};
+
+function brl(v: number): string {
+  return v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+/** Texto do valor pet para anúncio e resumo; null quando não há valor. */
+export function textoValorPet(r: Pick<RegrasPets, "valorPet" | "valorPetTipo"> | null | undefined): string | null {
+  if (!r || !r.valorPet || r.valorPet <= 0) return null;
+  return r.valorPetTipo === "nao_reembolsavel"
+    ? `Taxa pet R$ ${brl(r.valorPet)} — não reembolsável`
+    : `Caução pet R$ ${brl(r.valorPet)} — devolvida no fim`;
+}
 
 export interface RegrasPets {
   especies: EspeciePet[];
@@ -29,6 +50,9 @@ export interface RegrasPets {
   reforcoCaucao: number;
   /** Regra do condomínio sobre pets, texto curto. */
   regrasCondominio: string;
+  /** Valor pet opcional, em R$ (0/ausente = não cobra). */
+  valorPet?: number;
+  valorPetTipo?: TipoValorPet;
 }
 
 export interface FichaPetResumo {
@@ -55,12 +79,19 @@ export function normalizarRegrasPets(raw: unknown): RegrasPets | null {
       ? r.regrasCondominio.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim()
       : "";
   if (texto.length > MAX_TEXTO_CONDOMINIO) return null;
+  const valorBruto = r.valorPet == null || r.valorPet === "" ? 0 : Number(r.valorPet);
+  if (!Number.isFinite(valorBruto) || valorBruto < 0 || valorBruto > MAX_VALOR_PET) return null;
+  const valorPet = Math.round(valorBruto * 100) / 100;
+  const tipo = TIPOS_VALOR_PET.find((t) => t === r.valorPetTipo);
+  if (valorPet > 0 && r.valorPetTipo != null && !tipo) return null;
   return {
     especies,
     porteMax,
     qtdMax: qtd,
     reforcoCaucao: Math.round(reforcoBruto * 100) / 100,
     regrasCondominio: texto,
+    valorPet,
+    ...(valorPet > 0 ? { valorPetTipo: tipo ?? "reembolsavel" } : {}),
   };
 }
 
@@ -75,6 +106,8 @@ export function linhasRegrasPets(r: RegrasPets): string[] {
   ];
   if (r.reforcoCaucao > 0)
     linhas.push(`Reforço de Caução por pet: R$ ${r.reforcoCaucao.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+  const valorPet = textoValorPet(r);
+  if (valorPet) linhas.push(valorPet);
   if (r.regrasCondominio) linhas.push(`Condomínio: ${r.regrasCondominio}`);
   return linhas;
 }

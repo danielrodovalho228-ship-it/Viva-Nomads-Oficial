@@ -40,7 +40,7 @@ export function PlanGate({
           Esta ferramenta faz parte do plano <strong>{minLabel}</strong>, voltado a
           administradoras e operadores de carteira. Faça upgrade para liberar.
         </p>
-        <ButtonLink href="/dashboard/assinatura" variant="gold" className="mt-6">
+        <ButtonLink href="/precos" variant="gold" className="mt-6">
           Ver planos
         </ButtonLink>
       </Panel>

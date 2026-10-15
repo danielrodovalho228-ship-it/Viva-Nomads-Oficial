@@ -132,11 +132,11 @@ function ReembolsoPreview() {
             </div>
           </Panel>
 
-          {/* a) Comparação com a entrada (o ciclo de vistorias com fotos está por vir) */}
+          {/* a) Comparação com a entrada (a conferência com fotos está por vir) */}
           <Panel title="1. Compare com o estado de entrada">
             <p className="text-sm text-muted">
               Compare o estado do imóvel com o registrado no início da locação — é o que
-              fundamenta eventuais descontos. O ciclo de vistorias com fotos e itens está{" "}
+              fundamenta eventuais descontos. A conferência de entrada e saída com fotos e itens está{" "}
               <strong className="text-ink">em estruturação</strong>; por ora, anexe as evidências
               em cada desconto abaixo.
             </p>

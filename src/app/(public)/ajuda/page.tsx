@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { CentralAjuda } from "@/components/ajuda/central-ajuda";
 import { VivaChatBloco } from "@/components/ajuda/viva-chat";
 import { PROMESSA_ATENDIMENTO } from "@/config/atendimento";
+import Link from "next/link";
 import { SUPORTE_EMAIL } from "@/lib/site";
 import { JsonLd } from "@/components/seo/json-ld";
 import { faqPage } from "@/lib/seo/estruturados";
@@ -29,6 +30,10 @@ export default function AjudaPage() {
       <div className="mt-8">
         <CentralAjuda canal="site" />
       </div>
+      <p className="mt-8 text-sm text-muted">
+        Prefere ler com calma? Veja os{" "}
+        <Link href="/guias" className="font-semibold text-forest underline">Guias da Viva</Link>.
+      </p>
       <JsonLd dados={faqPage()} />
     </div>
   );

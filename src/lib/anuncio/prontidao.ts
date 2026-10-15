@@ -36,6 +36,8 @@ export interface FatosAnuncio {
   documento: StatusDocumento;
   /** null = não se aplica/não verificado aqui (ex.: editor sem consulta do plano). */
   limitePlanoOk: boolean | null;
+  /** Quantos anúncios o plano permite no ar (para o texto da vaga); ausente = texto genérico. */
+  limiteAnuncios?: number | null;
   /** Obrigatória: mínimo de MIN_DESCRICAO caracteres. */
   descricao: string;
   // Opcionais
@@ -99,6 +101,12 @@ export const OBRIGATORIOS_ROTULOS = [
   "Documento do imóvel aprovado",
 ] as const;
 
+export function textoVagaNoPlano(limite?: number | null): string {
+  const n = typeof limite === "number" && limite > 0 && Number.isFinite(limite) ? limite : null;
+  const quanto = n === null ? "O seu plano já tem o máximo de anúncios no ar" : `Seu plano permite ${n} ${n === 1 ? "anúncio" : "anúncios"} no ar`;
+  return `${quanto}. Para publicar este, pause outro ou mude de plano`;
+}
+
 export function prontidaoAnuncio(f: FatosAnuncio): Prontidao {
   const obrigatorios: ItemProntidao[] = [
     { key: "endereco", label: OBRIGATORIOS_ROTULOS[0], ok: f.enderecoOk, etapa: 1 },
@@ -124,8 +132,9 @@ export function prontidaoAnuncio(f: FatosAnuncio): Prontidao {
   if (!f.privacidadeOk) {
     obrigatorios.push({ key: "privacidade", label: ROTULO_FALTA_PRIVACIDADE, ok: false, etapa: 2 });
   }
-  if (f.limitePlanoOk === false) {
-    obrigatorios.push({ key: "limite", label: "Vaga no seu plano", ok: false, etapa: 6, detalhe: "o plano já tem o máximo de anúncios publicados — pause um ou faça upgrade" });
+  // A vaga só aparece quando é o único bloqueio que resta (ordem de8761b0, item 2).
+  if (f.limitePlanoOk === false && obrigatorios.every((i) => i.ok)) {
+    obrigatorios.push({ key: "limite", label: "Vaga no seu plano", ok: false, etapa: 6, detalhe: textoVagaNoPlano(f.limiteAnuncios) });
   }
   const opcionais: ItemProntidao[] = [
     { key: "selo", label: "Selo Pronto para Morar", ok: f.selo, etapa: 0 },
@@ -140,6 +149,45 @@ export function prontidaoAnuncio(f: FatosAnuncio): Prontidao {
     melhorar: opcionais.filter((i) => !i.ok).map((i) => i.label),
     pct: Math.round((cumpridos / obrigatorios.length) * 100),
   };
+}
+
+export interface ItemChecklist {
+  key: string;
+  label: string;
+  ok: boolean;
+  detalhe?: string;
+  /** Leva ao campo certo (etapa do editor do rascunho, ou à página do plano). */
+  href: string;
+  /** Botões extras do item (vaga no plano: pausar outro anúncio ou mudar de plano). */
+  acoes?: { label: string; href: string }[];
+}
+
+export interface ChecklistAnuncio {
+  itens: ItemChecklist[];
+  /** Primeiro item que falta, em destaque ("próximo passo"); null = tudo feito. */
+  proximo: ItemChecklist | null;
+}
+
+/**
+ * Checklist clicável do "Anúncio em andamento" (ordem de8761b0, item 1): cada
+ * obrigatório vira ✓ feito / ○ falta com link direto para a etapa do editor.
+ * O documento é aprovado pela equipe (não se resolve numa etapa): leva à Revisão,
+ * onde o estado da moderação aparece. A vaga no plano leva à página do plano.
+ */
+export function checklistAnuncio(p: Prontidao, draftId: string): ChecklistAnuncio {
+  const id = encodeURIComponent(draftId);
+  const itens = p.obrigatorios.map((i): ItemChecklist => {
+    const etapa = i.key === "documento" ? 6 : i.etapa;
+    return {
+      key: i.key,
+      label: i.label,
+      ok: i.ok,
+      detalhe: i.detalhe,
+      href: i.key === "limite" ? "/precos" : `/dashboard/imoveis/novo?draft=${id}&etapa=${etapa}`,
+      acoes: i.key === "limite" ? [{ label: "Pausar outro anúncio", href: "/dashboard/imoveis" }, { label: "Mudar de plano", href: "/precos" }] : undefined,
+    };
+  });
+  return { itens, proximo: itens.find((i) => !i.ok) ?? null };
 }
 
 /** Linha do banco (properties + fotos + documento) → fatos. */
@@ -163,7 +211,7 @@ export interface LinhaAnuncio {
   video_url: string | null;
 }
 
-export function fatosDaLinha(p: LinhaAnuncio, fotos: number, documento: StatusDocumento, limitePlanoOk: boolean | null): FatosAnuncio {
+export function fatosDaLinha(p: LinhaAnuncio, fotos: number, documento: StatusDocumento, limitePlanoOk: boolean | null, limiteAnuncios?: number | null): FatosAnuncio {
   return {
     enderecoOk: !!(p.address?.trim() && p.city?.trim()),
     detalhesOk: (Number(p.bathrooms) || 0) >= 1 && (Number(p.area_m2) || 0) > 0,
@@ -178,6 +226,7 @@ export function fatosDaLinha(p: LinhaAnuncio, fotos: number, documento: StatusDo
     operacao: p.ownership_type,
     documento,
     limitePlanoOk,
+    limiteAnuncios,
     descricao: p.description ?? "",
     selo: !!p.ready_to_live_badge,
     video: !!p.video_url,

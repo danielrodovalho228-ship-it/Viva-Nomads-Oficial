@@ -66,3 +66,9 @@ export function posMaxDoRascunho(d: { step?: unknown; etapaMax?: unknown; ordemE
   for (let id = 0; id <= n(d.etapaMax); id++) maior = Math.max(maior, posicaoDaEtapa(id));
   return maior;
 }
+
+/** Etapa (ID) pedida em `?etapa=` (link do checklist da Visão geral); inválida = null. */
+export function etapaDaUrl(v: string | null | undefined): number | null {
+  if (typeof v !== "string" || !/^[0-6]$/.test(v)) return null;
+  return Number(v);
+}

@@ -11,7 +11,7 @@ import {
 import { COOKIE_ADMIN_ATIVO, LIMITE_OCIOSO_ADMIN_MS, sessaoAdminOciosa } from "@/lib/admin/sessao-ociosa";
 import { APP_COOKIE, appHome, isAppUserAgent, isMarketingPath } from "@/lib/app-mode";
 import { destinoAposLogin } from "@/lib/destino-login";
-import { requisicaoPrefetch, temCookieSessao } from "@/lib/login-celular";
+import { precisaVerificarUsuario, requisicaoPrefetch, temCookieSessao } from "@/lib/login-celular";
 import { decidirPortaoMfa, mfaAdminObrigatoria, rotaLivreDeAal2, urlAtivar2fa, urlVerificarCodigo } from "@/lib/admin/mfa";
 
 /**
@@ -22,6 +22,8 @@ async function papelDoApp(request: NextRequest): Promise<"owner" | "tenant" | nu
   const supaUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supaKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!supaUrl || !supaKey) return "tenant";
+  // Sem cookie de sessão não há usuário: dispensa a ida ao servidor de autenticação (ordem 0f66a754).
+  if (!precisaVerificarUsuario(request.cookies.getAll())) return null;
   const supabase = createServerClient(supaUrl, supaKey, {
     cookies: { getAll: () => request.cookies.getAll(), setAll: () => {} },
   });
@@ -134,7 +136,7 @@ export async function proxy(request: NextRequest) {
 
   const {
     data: { user },
-  } = prefetch && !temCookieSessao(request.cookies.getAll())
+  } = !precisaVerificarUsuario(request.cookies.getAll())
     ? { data: { user: null } }
     : await supabase.auth.getUser();
 
