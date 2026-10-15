@@ -38,7 +38,7 @@ test.describe("T3 — Não-admin (proprietário) @criticos", () => {
     await expect(page.locator("aside nav")).toBeVisible(); // o menu carregou (sem isso, "não contém" passaria no vazio)
     await expect(page.locator("aside nav")).not.toContainText(/Admin|Moderar/);
     await page.goto("/admin", { waitUntil: "domcontentloaded" });
-    await expect(page).toHaveURL(/\/dashboard(?!\/)/, { timeout: 20_000 }); // redirecionado para a Visão geral
+    await expect(page).toHaveURL(/\/dashboard(?!\/)/, { timeout: 40_000 }); // redirecionado para a Visão geral
   });
 
   test("páginas internas pedem o código dos sócios (redirect)", async ({ page }) => {

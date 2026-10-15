@@ -44,6 +44,12 @@ export function Reviews({ property }: { property: Property }) {
               </div>
               {date && <p className="text-xs text-muted">{date}</p>}
               <p className="mt-1.5 text-sm text-muted">{r.comment}</p>
+              {r.reply && (
+                <div className="mt-3 rounded-xl bg-sage-50 p-3" data-testid="avaliacao-resposta">
+                  <p className="text-xs font-semibold text-forest">Resposta do proprietário</p>
+                  <p className="mt-1 text-sm text-ink">{r.reply}</p>
+                </div>
+              )}
             </div>
           );
         })}

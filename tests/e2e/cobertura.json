@@ -88,6 +88,15 @@
         "t25-chamado-resumo"
       ]
     },
+    "/admin/avaliacoes": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t91-avaliacao-resposta",
+        "t93-avaliacao-tela"
+      ]
+    },
     "/admin/documentos": {
       "personas": [
         "admin"
@@ -319,7 +328,8 @@
         "t55-manutencao-ciclo",
         "t6-dinheiro-numeros",
         "t7-fluxo-publico",
-        "t8-rascunho"
+        "t8-rascunho",
+        "t98-score-anuncio"
       ]
     },
     "/dashboard/assinatura": {
@@ -332,6 +342,16 @@
         "t35-troca-de-plano",
         "t38-varios-imoveis-por-dono",
         "t39-app-ida-e-volta"
+      ]
+    },
+    "/dashboard/avaliacoes": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t91-avaliacao-resposta",
+        "t93-avaliacao-tela"
       ]
     },
     "/dashboard/buscas": {
@@ -358,7 +378,9 @@
         "proprietario",
         "admin"
       ],
-      "specs": []
+      "specs": [
+        "t97-plangate-precos"
+      ]
     },
     "/dashboard/comparar": {
       "personas": [
@@ -621,7 +643,9 @@
       "personas": [
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t97-plangate-precos"
+      ]
     },
     "/decisao": {
       "personas": [
@@ -1565,6 +1589,34 @@
         "proprietario"
       ],
       "specs": []
+    },
+    "src/lib/data/avaliacoes-resposta-actions.ts#decidirRevisaoAvaliacao": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t93-avaliacao-tela"
+      ]
+    },
+    "src/lib/data/avaliacoes-resposta-actions.ts#pedirRevisaoAvaliacao": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t91-avaliacao-resposta",
+        "t93-avaliacao-tela"
+      ]
+    },
+    "src/lib/data/avaliacoes-resposta-actions.ts#responderAvaliacao": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t91-avaliacao-resposta",
+        "t93-avaliacao-tela"
+      ]
     },
     "src/lib/data/avatar-actions.ts#clearMyAvatar": {
       "personas": [
