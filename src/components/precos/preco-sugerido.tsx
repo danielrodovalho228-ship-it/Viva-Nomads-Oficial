@@ -13,7 +13,7 @@ const brl = (v: number) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigi
  * "Quanto você recebe" (ordem 4c74ac38, item 1): o dono informa quanto cobraria no Airbnb por 2 meses e vê
  * o que recebe lá e na Viva. Só recomendação — nunca obrigatório.
  */
-export function PrecoSugerido({ aluguel, onUsar }: { aluguel: number; onUsar: (valor: number) => void }) {
+export function PrecoSugerido({ aluguel, onUsar, onAirbnbMensal }: { aluguel: number; onUsar: (valor: number) => void; onAirbnbMensal?: (mensal: number) => void }) {
   const [airbnb, setAirbnb] = useState("");
   const total = Number(airbnb) || 0;
   const [taxa, setTaxa] = useState(TAXA_COMISSAO_PADRAO);
@@ -34,7 +34,7 @@ export function PrecoSugerido({ aluguel, onUsar }: { aluguel: number; onUsar: (v
         <div className="mt-3 space-y-2">
           <label className="block text-sm text-ink">
             Quanto você cobraria no Airbnb por {MESES} meses (R$)
-            <input type="number" min={0} value={airbnb} onChange={(e) => setAirbnb(e.target.value)} className="input mt-1" placeholder="10300" />
+            <input type="number" min={0} value={airbnb} onChange={(e) => { setAirbnb(e.target.value); onAirbnbMensal?.((Number(e.target.value) || 0) / MESES); }} className="input mt-1" placeholder="10300" />
           </label>
           {sugerido !== null && (
             <>
@@ -43,7 +43,7 @@ export function PrecoSugerido({ aluguel, onUsar }: { aluguel: number; onUsar: (v
                 <div className="flex justify-between"><dt>Na Viva, a {brl(sugerido)}/mês, você recebe</dt><dd data-testid="recebe-viva">{brl(recebeViva(sugerido, MESES, taxa))}</dd></div>
               </dl>
               <p className="text-xs text-muted">
-                Taxa de {pctTexto(taxa)} (a da sua faixa de imóveis) sobre o valor total do contrato, só no fechamento.
+                Guardamos esse valor (por mês) só para o selo “Preço justo”, quando o seu aluguel ficar abaixo dele. Taxa de {pctTexto(taxa)} (a da sua faixa de imóveis) sobre o valor total do contrato, só no fechamento.
                 {economiaDoMorador(total, sugerido, MESES).reais > 0 && " O morador paga menos que no Airbnb."} É só uma sugestão: o valor é seu.
               </p>
               <Button type="button" size="sm" onClick={() => onUsar(sugerido)} disabled={aluguel === sugerido}>

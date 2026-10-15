@@ -4,7 +4,7 @@
 */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { precoSugerido, recebeAirbnb, recebeViva, economiaDoMorador, taxaDoNovoAnuncio } from "./preco-justo.ts";
+import { precoSugerido, recebeAirbnb, recebeViva, economiaDoMorador, taxaDoNovoAnuncio, temSeloPrecoJusto, prioridadeNaBusca, colunaAirbnb } from "./preco-justo.ts";
 
 test("Airbnb: R$ 10.300 por 2 meses → dono recebe R$ 8.652 (taxa de 16%)", () => {
   assert.equal(recebeAirbnb(10300), 8652);
@@ -56,4 +56,34 @@ test("taxaDoNovoAnuncio: faixa pelos ativos já contando o anúncio novo", () =>
   assert.equal(taxaDoNovoAnuncio(15), 0.06);
   assert.equal(taxaDoNovoAnuncio(NaN), 0.12);
   assert.equal(taxaDoNovoAnuncio(-3), 0.12);
+});
+
+test("selo Preço justo: só quando o aluguel fica abaixo do Airbnb informado", () => {
+  assert.equal(temSeloPrecoJusto(4602, 5150), true);
+  assert.equal(temSeloPrecoJusto(5150, 5150), false); // igual não ganha selo
+  assert.equal(temSeloPrecoJusto(6000, 5150), false);
+});
+
+test("selo Preço justo: campo opcional ou inválido nunca gera selo", () => {
+  assert.equal(temSeloPrecoJusto(4602, null), false);
+  assert.equal(temSeloPrecoJusto(4602, undefined), false);
+  assert.equal(temSeloPrecoJusto(4602, 0), false);
+  assert.equal(temSeloPrecoJusto(4602, -1), false);
+  assert.equal(temSeloPrecoJusto(4602, Number.NaN), false);
+  assert.equal(temSeloPrecoJusto(0, 5000), false);
+});
+
+test("impulso na busca: desempata dentro do mesmo degrau, nunca passa o degrau de cima", () => {
+  assert.ok(prioridadeNaBusca(1, true) > prioridadeNaBusca(1, false));
+  assert.ok(prioridadeNaBusca(1, true) < prioridadeNaBusca(2, false));
+  assert.equal(prioridadeNaBusca(2, undefined), 2);
+});
+
+test("colunaAirbnb: undefined não mexe; inválido limpa; válido arredonda em centavos", () => {
+  assert.deepEqual(colunaAirbnb(undefined), {});
+  assert.deepEqual(colunaAirbnb(0), { airbnb_monthly_price: null });
+  assert.deepEqual(colunaAirbnb(-5), { airbnb_monthly_price: null });
+  assert.deepEqual(colunaAirbnb(Number.NaN), { airbnb_monthly_price: null });
+  assert.deepEqual(colunaAirbnb(5_000_000), { airbnb_monthly_price: null });
+  assert.deepEqual(colunaAirbnb(5150.456), { airbnb_monthly_price: 5150.46 });
 });

@@ -26,7 +26,7 @@ import {
 import type { Property } from "@/lib/types";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { ShareButton } from "@/components/share-button";
-import { PropertyTags, InvoiceBadge, InsuranceBadge } from "@/components/ui/badge";
+import { PropertyTags, InvoiceBadge, InsuranceBadge, PrecoJustoBadge } from "@/components/ui/badge";
 import { SELO_NF_UI } from "@/lib/flags";
 import { PropertyCard } from "@/components/property-card";
 import { PropertyGallery } from "@/components/property-gallery";
@@ -387,6 +387,7 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
               )}
               {SELO_NF_UI && property.issuesInvoice && <InvoiceBadge />}
               {property.acceptsInsurance && <InsuranceBadge />}
+              {property.precoJusto && <PrecoJustoBadge />}
             </div>
 
             <div className="mt-3">

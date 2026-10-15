@@ -7,7 +7,7 @@ import { tierFromPhotoCount } from "@/lib/listing";
 import { SELO_NF_UI } from "@/lib/flags";
 import { isExemplo } from "@/lib/demo-listing";
 import { disponivelAPartirDe } from "@/lib/busca/disponibilidade";
-import { ReadyToLiveBadge, PropertyTags, InvoiceBadge, InsuranceBadge } from "@/components/ui/badge";
+import { ReadyToLiveBadge, PrecoJustoBadge, PropertyTags, InvoiceBadge, InsuranceBadge } from "@/components/ui/badge";
 import { BrandImage } from "@/components/brand-image";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
 import { FavoriteButton } from "@/components/favorite-button";
@@ -56,6 +56,7 @@ export function PropertyCard({
             </span>
           )}
           {property.readyToLiveBadge && <ReadyToLiveBadge size="sm" />}
+          {property.precoJusto && <PrecoJustoBadge />}
           {property.videoUrl && (
             <span className="inline-flex items-center gap-1 rounded-full bg-night/85 px-2 py-0.5 text-xs font-semibold text-white">
               <PlayCircle className="h-3.5 w-3.5" /> Vídeo

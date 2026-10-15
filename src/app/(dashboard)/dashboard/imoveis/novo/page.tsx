@@ -135,6 +135,7 @@ export default function NewPropertyPage() {
   // Proximidades manuais (nome + distância digitados) — sem depender do Google.
   const [manualProximities, setManualProximities] = useState<Proximity[]>([]);
   const [monthlyPrice, setMonthlyPrice] = useState("");
+  const [airbnbMensal, setAirbnbMensal] = useState(""); // preço mensal equivalente no Airbnb (opcional; selo Preço justo)
   // Condomínio (R$/mês) — entra no "tudo incluído" do inquilino (fonte única
   // lib/precos). Separado das contas de consumo.
   const [condoFee, setCondoFee] = useState("");
@@ -410,6 +411,7 @@ export default function NewPropertyPage() {
       areaM2: Number(areaM2) || 0,
       minPeriodDays: Number(minPeriod) || 30,
       monthlyPrice: Number(monthlyPrice) || 0,
+      airbnbMonthlyPrice: Number(airbnbMensal) || 0,
       readyToLiveScore: q.score,
       tagHomeOffice: q.tHome,
       tagWorkLocated: q.tWork,
@@ -506,6 +508,7 @@ export default function NewPropertyPage() {
     if (s(d.availableFrom)) setAvailableFrom(d.availableFrom as string);
     if (s(d.availableUntil)) setAvailableUntil(d.availableUntil as string);
     if (s(d.monthlyPrice)) setMonthlyPrice(d.monthlyPrice as string);
+    if (s(d.airbnbMensal)) setAirbnbMensal(d.airbnbMensal as string);
     if (s(d.condoFee)) setCondoFee(d.condoFee as string);
     if (typeof d.descricaoGeradaPorIa === "boolean") setDescricaoGeradaPorIa(d.descricaoGeradaPorIa);
     if (s(d.street)) setStreet(d.street as string);
@@ -638,6 +641,7 @@ export default function NewPropertyPage() {
       setAvailableFrom(p.availableFrom ? p.availableFrom.slice(0, 10) : "");
       setAvailableUntil(p.availableUntil ? p.availableUntil.slice(0, 10) : "");
       setMonthlyPrice(p.monthlyPrice ? String(p.monthlyPrice) : "");
+      setAirbnbMensal(p.airbnbMonthlyPrice ? String(p.airbnbMonthlyPrice) : "");
       setNeighborhood(p.neighborhood || "");
       setCity(p.city || "Uberlândia");
       setFurnished(p.furnished ?? true);
@@ -675,7 +679,7 @@ export default function NewPropertyPage() {
   // cabem com segurança no armazenamento local — por isso o aviso na tela.
   const draftJson = JSON.stringify({
     title, propertyType, description, bedrooms, bathrooms, areaM2, parkingSpots, maxGuests,
-    minPeriod, maxPeriod, availableFrom, availableUntil, monthlyPrice,
+    minPeriod, maxPeriod, availableFrom, availableUntil, monthlyPrice, airbnbMensal,
     street, neighborhood, city, cep, videoUrl,
     privacidade, furnished, petsOk, smokingAllowed, childrenAllowed, issuesInvoice,
     amenityKeys, googlePlaces, manualProximities,
@@ -1569,7 +1573,7 @@ export default function NewPropertyPage() {
               </p>
             )}
             <LinhaComparativoAnuncio aluguel={Number(monthlyPrice)} />
-            <PrecoSugerido aluguel={Number(monthlyPrice) || 0} onUsar={(v) => setMonthlyPrice(String(v))} />
+            <PrecoSugerido aluguel={Number(monthlyPrice) || 0} onUsar={(v) => setMonthlyPrice(String(v))} onAirbnbMensal={(v) => setAirbnbMensal(v ? String(v) : "")} />
 
             <div className="rounded-xl border border-sage-200 p-4">
               <p className="text-sm font-medium text-ink">Despesas de consumo (água, luz, gás)</p>
