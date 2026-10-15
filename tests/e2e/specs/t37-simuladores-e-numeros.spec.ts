@@ -60,17 +60,16 @@ test.describe("T37 — Números do código (fonte única)", () => {
 test.describe("T37 — /precos (visitante)", () => {
   test.use({ storageState: { cookies: [], origins: [] }, viewport: { width: 390, height: 844 } });
 
-  test("cada cartão mostra preço, benefícios e o custo do plano; marca e regras de texto", async ({ page }) => {
+  test("a regra única mostra a taxa por faixa e o exemplo em reais; marca e regras de texto", async ({ page }) => {
     await page.goto("/precos", { waitUntil: "networkidle" });
-    for (const p of PLANOS) {
-      const cartao = page.locator("div.rounded-3xl").filter({ has: page.getByRole("heading", { name: p.nome, exact: true }) });
-      await expect(cartao).toHaveCount(1);
-      const texto = limpo(await cartao.innerText());
-      if (p.precoMensal === 0) expect(texto).toContain("Grátis");
-      if (p.precoMensal) expect(texto).toContain(limpo(formatBRL(p.precoMensal)));
-      for (const b of p.beneficios) expect(texto).toContain(limpo(b));
-      expect(texto).toContain(limpo(p.custoLabel));
-    }
+    const regra = page.getByTestId("regra-unica");
+    await expect(regra).toHaveCount(1);
+    const texto = limpo(await regra.innerText());
+    expect(texto).toContain("Sem mensalidade");
+    const faixas = page.getByTestId("faixas-taxa").locator("tbody tr");
+    await expect(faixas).toHaveCount(5);
+    // Exemplo da tela: 3 meses a R$ 3.000 (total R$ 9.000) na faixa de 1–2 imóveis = 12% = R$ 1.080.
+    expect(limpo(await faixas.first().innerText())).toContain(limpo(formatBRL(1080)));
     const corpo = limpo(await page.locator("body").innerText());
     expect(corpo).toMatch(/Caução/);
     expect(corpo).not.toMatch(/apartamentos mobiliados/i);
