@@ -38,3 +38,12 @@ test("4f8d17c6: o flutuante é o botão primário do site (mesmos tokens), ícon
   assert.match(ler("app/globals.css"), /html:not\(\[data-app\]\) body:has\(\[data-testid="fale-com-a-viva-raiz"\]\)\s*\{\s*padding-bottom: 4\.5rem/);
   assert.match(ler("components/ui/button.tsx"), /data-cta=/);
 });
+
+test("t16: o botão flutuante some nas boas-vindas do app (tela de 100dvh: cobria 'Quero anunciar' e fazia a tela rolar)", () => {
+  const src = ler("components/ajuda/viva-chat.tsx");
+  const linha = src.split("\n").find((l) => l.includes("const ESCONDER")) ?? "";
+  assert.match(linha, /"\/app\/boas-vindas"/);
+  // caso negativo: as demais telas do site continuam com o botão
+  assert.doesNotMatch(linha, /"\/app"[,\]]/);
+  assert.doesNotMatch(linha, /"\/"[,\]]/);
+});
