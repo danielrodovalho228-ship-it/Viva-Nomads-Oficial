@@ -86,6 +86,12 @@
         "t25-chamado-resumo"
       ]
     },
+    "/admin/avaliacoes": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
     "/admin/documentos": {
       "personas": [
         "admin"
@@ -1554,6 +1560,26 @@
       "specs": []
     },
     "src/lib/data/avaliacoes-actions.ts#meusContratosAvaliados": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/avaliacoes-resposta-actions.ts#decidirRevisaoAvaliacao": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
+    "src/lib/data/avaliacoes-resposta-actions.ts#pedirRevisaoAvaliacao": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/avaliacoes-resposta-actions.ts#responderAvaliacao": {
       "personas": [
         "inquilino",
         "proprietario"
