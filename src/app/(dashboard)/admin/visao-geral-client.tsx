@@ -20,6 +20,7 @@ import {
   Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { hrefUsuarios } from "@/lib/admin/usuarios-lista";
 import {
   BLOCOS,
   PRECISA,
@@ -83,13 +84,13 @@ export function VisaoGeralClient({
       <section aria-label="Agora" className="mb-6">
         <h2 className="mb-3 font-title text-lg font-bold text-ink">Agora</h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
-          <StatCard label="Usuários" value={fmtInteiro(num(agora.usuarios))} icon={Users} />
+          <StatCard label="Usuários" value={fmtInteiro(num(agora.usuarios))} icon={Users} href={hrefUsuarios({})} />
           <StatCard label="Imóveis ativos" value={fmtInteiro(num(agora.imoveis_ativos))} icon={Home} />
           <StatCard label="Rascunhos" value={fmtInteiro(num(agora.rascunhos))} icon={Home} />
           <StatCard label="Donos com anúncio" value={fmtInteiro(num(agora.proprietarios_com_anuncio))} icon={Building2} />
           <StatCard label="Pedidos ativos" value={fmtInteiro(num(agora.pedidos_ativos))} icon={Megaphone} href="/admin/pedidos" />
           <StatCard label="MRR" value={fmtReais(receita.valor)} icon={CreditCard} />
-          <StatCard label="Fundadores" value={fmtInteiro(num(agora.fundadores))} icon={Star} />
+          <StatCard label="Fundadores" value={fmtInteiro(num(agora.fundadores))} icon={Star} href={hrefUsuarios({ fundador: true })} />
         </div>
         <p className="mt-2 text-xs text-muted">
           MRR = assinaturas ativas × preço mensal do plano ({fmtInteiro(receita.ativas)} ativas

@@ -14,14 +14,15 @@ test.describe("T4 — Conta real, demo desligado @criticos", () => {
   test.use({ storageState: authFile("proprietario") });
 
   test("Fechamento não expõe persona/contrato fictício", async ({ page }) => {
-    await page.goto("/dashboard/fechamento", { waitUntil: "networkidle" });
+    await page.goto("/dashboard/fechamento", { waitUntil: "domcontentloaded" });
+    await expect(page.locator("aside nav")).toBeVisible(); // a tela carregou (sem isso, "não contém" passaria no vazio)
     await expect(page.locator("body")).not.toContainText(PERSONAS_DEMO);
   });
 
   test("saudação/sidebar exibem o nome REAL da conta", async ({ page }) => {
     const nome = account("proprietario").nome;
     test.skip(!nome, "Defina TESTES_PROPRIETARIO_NOME para conferir o nome real.");
-    await page.goto("/dashboard", { waitUntil: "networkidle" });
+    await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
     const primeiro = nome.split(" ")[0];
     await expect(page.locator("body")).toContainText(primeiro);
     await expect(page.locator("aside")).toContainText(primeiro);
@@ -30,7 +31,7 @@ test.describe("T4 — Conta real, demo desligado @criticos", () => {
   });
 
   test("verificação mostra 'Não verificado' — sem selo automático", async ({ page }) => {
-    await page.goto("/dashboard/verificacao", { waitUntil: "networkidle" });
+    await page.goto("/dashboard/verificacao", { waitUntil: "domcontentloaded" });
     await expect(page.locator("body")).toContainText(/Não verificado/i);
     await expect(page.locator("body")).not.toContainText(/Verificação de demonstração/i);
   });
@@ -50,14 +51,14 @@ test.describe("T4 — Conta admin e o ?demo=1 @criticos", () => {
 
   test("sem a flag do ambiente, ?demo=1 é ignorado: nada fictício, nenhum aviso", async ({ page }) => {
     test.skip(DEMO_LIGADO_NO_AMBIENTE, "Ambiente com modo demonstração ligado");
-    await page.goto("/dashboard/contratos?demo=1", { waitUntil: "networkidle" });
+    await page.goto("/dashboard/contratos?demo=1", { waitUntil: "domcontentloaded" });
     await expect(page.locator("body")).not.toContainText(PERSONAS_DEMO);
     await expect(page.locator("body")).not.toContainText(/Modo demonstração · dados fictícios/i);
   });
 
   test("com a flag, os exemplos aparecem COM o aviso de demonstração", async ({ page }) => {
     test.skip(!DEMO_LIGADO_NO_AMBIENTE, "Modo demonstração desligado neste ambiente (NEXT_PUBLIC_MODO_DEMO_PAINEL)");
-    await page.goto("/dashboard/contratos?demo=1", { waitUntil: "networkidle" });
+    await page.goto("/dashboard/contratos?demo=1", { waitUntil: "domcontentloaded" });
     await expect(page.locator("body")).toContainText(/dados fictícios|Modo demonstração/i);
     await expect(page.locator("body")).toContainText(PERSONAS_DEMO);
   });

@@ -4,6 +4,7 @@ import { COMISSAO_POR_PLANO, LIMITE_ANUNCIOS, PLANOS, REGRAS_CONTRATO, textoComi
 import { resumoContrato } from "../../../src/lib/contrato-blocos";
 import { simularRentabilidade } from "../../../src/lib/simulador";
 import { formatBRL } from "../../../src/lib/utils";
+import { FAIXAS_COMISSAO_PADRAO, comissaoSobreContrato, taxaPublicaTexto } from "../../../src/lib/cobranca/regra";
 
 /**
  * T37 — SIMULADORES E NÚMEROS (laboratório e preview). Tudo o que a tela mostra
@@ -11,8 +12,8 @@ import { formatBRL } from "../../../src/lib/utils";
  *  1. Comissão 12 / 8 / 4 / 0 % por plano (Gratuito, Essencial, Profissional, Gestor).
  *  2. Limite de anúncios 1 / 5 / 20 / ilimitado e preços R$ 0 / 49 / 129.
  *  3. Caução: 50% de cada bloco, soma limitada a 3 aluguéis (cálculo puro).
- *  4. /precos: cada cartão mostra preço, benefícios e o "O que você paga" do plano;
- *     a marca ("imóveis mobiliados", "Caução") e a Viva sem tocar em dinheiro.
+ *  4. /precos: tabela de faixas (12 / 10 / 8 / 6% do valor total do contrato, Plano Gestor 31+),
+ *     sem mensalidade; a marca ("imóveis mobiliados", "Caução") e a Viva sem tocar em dinheiro.
  *  5. Simulador do painel: a comissão anual de cada plano é a do cálculo da config.
  */
 const limpo = (t: string) => t.replace(/ /g, " ").replace(/\s+/g, " ");
@@ -60,19 +61,25 @@ test.describe("T37 — Números do código (fonte única)", () => {
 test.describe("T37 — /precos (visitante)", () => {
   test.use({ storageState: { cookies: [], origins: [] }, viewport: { width: 390, height: 844 } });
 
-  test("cada cartão mostra preço, benefícios e o custo do plano; marca e regras de texto", async ({ page }) => {
+  // Regra vigente (ordens 75553f0a / 5df28a7b): sem cartões de plano com mensalidade; uma tabela de faixas
+  // 12 / 10 / 8 / 6% sobre o valor TOTAL do contrato e o Plano Gestor a partir de 31 imóveis.
+  test("a tabela de faixas mostra a taxa e o exemplo em reais de cada faixa; sem mensalidade", async ({ page }) => {
     await page.goto("/precos", { waitUntil: "networkidle" });
-    for (const p of PLANOS) {
-      const cartao = page.locator("div.rounded-3xl").filter({ has: page.getByRole("heading", { name: p.nome, exact: true }) });
-      await expect(cartao).toHaveCount(1);
-      const texto = limpo(await cartao.innerText());
-      if (p.precoMensal === 0) expect(texto).toContain("Grátis");
-      if (p.precoMensal) expect(texto).toContain(limpo(formatBRL(p.precoMensal)));
-      for (const b of p.beneficios) expect(texto).toContain(limpo(b));
-      expect(texto).toContain(limpo(p.custoLabel));
+    const tabela = page.getByTestId("faixas-taxa");
+    await expect(tabela).toBeVisible();
+    const linhas = tabela.locator("tbody tr");
+    await expect(linhas).toHaveCount(FAIXAS_COMISSAO_PADRAO.length);
+    for (const [i, f] of FAIXAS_COMISSAO_PADRAO.entries()) {
+      const texto = limpo(await linhas.nth(i).innerText());
+      expect(texto).toContain(limpo(taxaPublicaTexto(f)));
+      if (f.gestor) expect(texto).toContain("Plano Gestor");
+      else expect(texto).toContain(limpo(formatBRL(comissaoSobreContrato(3000, 3, f.taxa))));
     }
+    await expect(page.getByTestId("plano-gestor")).toContainText("31 imóveis ou mais");
     const corpo = limpo(await page.locator("body").innerText());
+    expect(corpo).toContain("Sem mensalidade");
     expect(corpo).toMatch(/Caução/);
+    expect(corpo).not.toMatch(/Grátis\s+R\$\s*0|Assinar Essencial|Assinar Profissional/);
     expect(corpo).not.toMatch(/apartamentos mobiliados/i);
     expect(corpo).not.toMatch(/aceito onde o Airbnb não é/i);
     await page.screenshot({ path: "tests/laboratorio/saida/t37-1-precos.png", fullPage: true });

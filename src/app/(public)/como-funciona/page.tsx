@@ -80,6 +80,8 @@ export default function HowItWorksPage() {
         <DuranteDepois />
       </div>
 
+      <PrecoJusto />
+
       <Steps id="para-proprietarios" title="Para proprietários" steps={OWNER_STEPS} tone="owner" badge="Para proprietários" />
       {/* Reforço de segurança do proprietário (sem vistoria/dossiê — pós-QA). */}
       <ProtegidoPor />
@@ -144,6 +146,21 @@ function GarantiasInquilino() {
       <p className="mt-4 text-xs text-muted">
         A Viva Nomads conecta e documenta — não é fiadora, seguradora nem retém
         valores. A garantia é combinada no fechamento, conforme o que o imóvel aceita.
+      </p>
+    </section>
+  );
+}
+
+/** Critério do selo "Preço justo" (ordem 4c74ac38, item 2) — âncora #preco-justo. */
+function PrecoJusto() {
+  return (
+    <section id="preco-justo" className="container-page section-y scroll-mt-24">
+      <h2 className="font-title text-2xl font-bold text-ink">Selo “Preço justo”</h2>
+      <p className="mt-3 max-w-3xl text-ink">
+        O selo aparece quando o valor mensal do imóvel na Viva fica abaixo do equivalente mensal que o próprio
+        proprietário informou ter no Airbnb. Esse campo é opcional e declarado por quem anuncia; a Viva não
+        confere o valor em outro site. Quem tem o selo ganha só um pequeno impulso na ordem da busca, e nunca
+        passa na frente de um anúncio de qualidade maior. Imóvel sem o campo preenchido aparece normalmente.
       </p>
     </section>
   );

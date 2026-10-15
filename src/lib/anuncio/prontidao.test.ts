@@ -154,6 +154,18 @@ test("checklist: tudo feito → sem próximo passo; vaga no plano leva à págin
   assert.equal(lim.proximo?.href, "/precos");
 });
 
+test("vaga no plano: texto curto com o número, 2 botões, e só aparece se for o único bloqueio", () => {
+  const um = prontidaoAnuncio({ ...completo(), limitePlanoOk: false, limiteAnuncios: 1 });
+  assert.equal(um.obrigatorios.find((i) => i.key === "limite")?.detalhe, "Seu plano permite 1 anúncio no ar. Para publicar este, pause outro ou mude de plano");
+  assert.match(prontidaoAnuncio({ ...completo(), limitePlanoOk: false, limiteAnuncios: 3 }).faltam[0], /permite 3 anúncios no ar/);
+  const acoes = checklistAnuncio(um, "x").proximo?.acoes;
+  assert.deepEqual(acoes?.map((a) => a.href), ["/dashboard/imoveis", "/precos"]);
+  // Com outra pendência (fotos), a vaga ainda não é mostrada.
+  const outro = prontidaoAnuncio({ ...completo(), fotos: 0, limitePlanoOk: false, limiteAnuncios: 1 });
+  assert.equal(outro.obrigatorios.some((i) => i.key === "limite"), false);
+  assert.equal(outro.faltam.length, 1);
+});
+
 test("checklist: o id do rascunho vai codificado na URL", () => {
   const c = checklistAnuncio(prontidaoAnuncio({ ...completo(), fotos: 0 }), "a&b=1");
   assert.ok(c.proximo?.href.includes("draft=a%26b%3D1"));
