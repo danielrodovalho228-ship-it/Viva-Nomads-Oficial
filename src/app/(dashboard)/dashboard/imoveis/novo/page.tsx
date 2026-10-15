@@ -51,6 +51,7 @@ import type { Property, Proximity } from "@/lib/types";
 import { cn, formatBRL } from "@/lib/utils";
 import { TEXTO_REGRA_CURTO } from "@/lib/cobranca/regra";
 import { LinhaComparativoAnuncio } from "@/components/precos/comparativo-precos";
+import { PrecoSugerido } from "@/components/precos/preco-sugerido";
 import { useAuthStore } from "@/lib/store";
 import { qualificadoDoServidor } from "@/lib/anuncio/qualificacao-rascunho";
 import { draftKey, DRAFT_KEY_LEGADO } from "@/lib/local-keys";
@@ -1568,6 +1569,7 @@ export default function NewPropertyPage() {
               </p>
             )}
             <LinhaComparativoAnuncio aluguel={Number(monthlyPrice)} />
+            <PrecoSugerido aluguel={Number(monthlyPrice) || 0} onUsar={(v) => setMonthlyPrice(String(v))} />
 
             <div className="rounded-xl border border-sage-200 p-4">
               <p className="text-sm font-medium text-ink">Despesas de consumo (água, luz, gás)</p>
