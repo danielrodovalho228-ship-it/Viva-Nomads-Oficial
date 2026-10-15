@@ -32,4 +32,32 @@ test.describe("T101 — Admin: lista de usuários", () => {
     expect(r?.status()).toBeLessThan(400);
     await expect(page.getByRole("heading", { level: 1, name: "Usuários" })).toBeVisible();
   });
+
+  // Moacir (#584): o total da lista tem de bater com o número do cartão que a abre.
+  for (const [rotulo, rota] of [
+    ["Usuários", "/admin/usuarios"],
+    ["Fundadores", "/admin/usuarios?fundador=1"],
+  ] as const) {
+    test(`total da lista = número do cartão ${rotulo}`, async ({ page }) => {
+      await page.goto("/admin", { waitUntil: "domcontentloaded" });
+      const cartao = page.locator(`main a[href="${rota}"]`).first();
+      await expect(cartao).toBeVisible();
+      const doCartao = Number(((await cartao.innerText()).match(/\d[\d.]*/g) ?? []).pop()?.replace(/\./g, ""));
+      await page.goto(rota, { waitUntil: "domcontentloaded" });
+      const titulo = await page.getByTestId("admin-usuarios-lista").getByRole("heading").first().innerText();
+      expect(Number(titulo.match(/\(([\d.]+)\)/)?.[1].replace(/\./g, ""))).toBe(doCartao);
+    });
+  }
+
+  test("busca por nome e filtro de cadastro respondem sem erro e mostram a coluna Cadastro completo", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    const r = await page.goto("/admin/usuarios?cadastro=incompleto&q=a", { waitUntil: "domcontentloaded" });
+    expect(r?.status()).toBeLessThan(400);
+    await expect(page.getByRole("search")).toBeVisible();
+    await expect(page.getByTestId("admin-usuarios-lista")).toBeVisible();
+    await page.goto("/admin/usuarios", { waitUntil: "domcontentloaded" });
+    if ((await page.locator("[data-usuario]").count()) > 0) {
+      await expect(page.getByRole("columnheader", { name: "Cadastro completo" })).toBeVisible();
+    }
+  });
 });
