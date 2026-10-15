@@ -2284,7 +2284,8 @@
         "proprietario"
       ],
       "specs": [
-        "t98-preco-sugerido"
+        "t102-preco-sugerido",
+        "t103-selo-preco-justo"
       ]
     },
     "src/lib/seguranca/recuperacao-actions.ts#confirmarRefazer": {

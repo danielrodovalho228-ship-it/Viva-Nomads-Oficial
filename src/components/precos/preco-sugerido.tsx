@@ -43,7 +43,7 @@ export function PrecoSugerido({ aluguel, onUsar, onAirbnbMensal }: { aluguel: nu
                 <div className="flex justify-between"><dt>Na Viva, a {brl(sugerido)}/mês, você recebe</dt><dd data-testid="recebe-viva">{brl(recebeViva(sugerido, MESES, taxa))}</dd></div>
               </dl>
               <p className="text-xs text-muted">
-                Guardamos esse valor (por mês) só para o selo “Preço justo”, quando o seu aluguel ficar abaixo dele. Taxa de {pctTexto(taxa)} (a da sua faixa de imóveis) sobre o valor total do contrato, só no fechamento.
+                Guardamos esse valor (por mês) só para o selo “Preço justo”, quando o seu valor mensal ficar abaixo dele. Taxa de {pctTexto(taxa)} (a da sua faixa de imóveis) sobre o valor total do contrato, só no fechamento.
                 {economiaDoMorador(total, sugerido, MESES).reais > 0 && " O morador paga menos que no Airbnb."} É só uma sugestão: o valor é seu.
               </p>
               <Button type="button" size="sm" onClick={() => onUsar(sugerido)} disabled={aluguel === sugerido}>

@@ -2,12 +2,12 @@ import { test, expect } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 
 /**
- * T98 — Preço justo (ordem 4c74ac38, item 1): no passo de preço do cadastro, "Comparar com o Airbnb" mostra
- * o que o dono recebe lá e na Viva e o botão "Usar preço sugerido" preenche o aluguel. 390 px.
+ * T102 — Preço justo (ordem 4c74ac38, item 1): no passo de preço do cadastro, "Comparar com o Airbnb" mostra
+ * o que o dono recebe lá e na Viva e o botão "Usar preço sugerido" preenche o valor mensal. 390 px.
  * Taxa = a da faixa do dono; a conta de teste tem poucos imóveis ativos (faixa de 12%): R$ 10.300 em 2 meses
  * no Airbnb (taxa 16%) → recebe R$ 8.652; preço sugerido R$ 4.916/mês.
  */
-test.describe("T98 — Preço sugerido no cadastro", () => {
+test.describe("T102 — Preço sugerido no cadastro", () => {
   test.use({ storageState: authFile("proprietario"), viewport: { width: 390, height: 844 } });
 
   test("compara com o Airbnb e usa o preço sugerido", async ({ page }) => {
@@ -32,6 +32,6 @@ test.describe("T98 — Preço sugerido no cadastro", () => {
     await expect(page.locator('input[placeholder="3200"]')).toHaveValue("4916");
     const larguraDoc = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(larguraDoc).toBeLessThanOrEqual(0); // 390 px sem rolagem lateral
-    await page.screenshot({ path: "tests/laboratorio/saida/t98-preco-sugerido.png", fullPage: true });
+    await page.screenshot({ path: "tests/laboratorio/saida/t102-preco-sugerido.png", fullPage: true });
   });
 });
