@@ -71,9 +71,15 @@ test.describe("T-RASC — Rascunho salva e retoma @criticos", () => {
   }
 
   async function esperarSalvo(page: Page) {
-    // Debounce de 2s; o indicador passa por "Salvando…" e chega em "Salvo".
+    // Debounce de 2s: um "Salvo" antigo (do autosave anterior) ainda pode estar na tela logo depois da última
+    // digitação. Passa o debounce, e só então exige "Salvo" sem "Salvando…" — senão sai da página com o servidor sem o endereço.
+    await page.waitForTimeout(2_500);
+    await expect(page.getByText("Salvando…")).toHaveCount(0, { timeout: 12_000 });
     await expect(page.getByText(/Salvo/).first()).toBeVisible({ timeout: 12_000 });
   }
+
+  /** Link que retoma o rascunho de onde parou (o botão principal agora leva ao próximo passo do checklist). */
+  const retomar = (page: Page) => page.getByTestId("retomar-rascunho");
 
   test("T-RASC-1 — autosave mostra 'Salvando…' → 'Salvo' e reload mantém", async ({ page }) => {
     const marca = await novoComEndereco(page);
@@ -90,7 +96,7 @@ test.describe("T-RASC — Rascunho salva e retoma @criticos", () => {
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
     const card = page.getByText(/Anúncio em andamento/i);
     await expect(card).toBeVisible({ timeout: 10_000 });
-    await page.getByRole("link", { name: /Continuar edição/i }).click();
+    await retomar(page).click();
     await expect(page).toHaveURL(/\/dashboard\/imoveis\/novo\?draft=/);
     // Restaurou do SERVIDOR (não do localStorage desta aba): bairro de volta.
     await expect(page.locator('input[list="novo-bairros"]')).toHaveValue(marca);
@@ -158,7 +164,7 @@ test.describe("T-RASC — Rascunho salva e retoma @criticos", () => {
     await esperarSalvo(page);
     // Retoma pela Visão geral: abre no Endereço, e Comodidades segue clicável.
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
-    await page.getByRole("link", { name: /Continuar edição/i }).click();
+    await retomar(page).click();
     await expect(page).toHaveURL(/\?draft=/);
     await expect(page.getByPlaceholder("Rua, número")).toBeVisible();
     const comodidades = page.getByRole("button", { name: /Comodidades/i });
