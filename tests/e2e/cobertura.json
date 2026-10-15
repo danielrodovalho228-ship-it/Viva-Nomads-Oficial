@@ -697,6 +697,22 @@
       ],
       "specs": []
     },
+    "/guias": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t105-guias"
+      ]
+    },
+    "/guias/[slug]": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t105-guias"
+      ]
+    },
     "/imoveis/[id]": {
       "personas": [
         "publico"
@@ -2287,6 +2303,16 @@
         "admin"
       ],
       "specs": []
+    },
+    "src/lib/preco-justo-actions.ts#taxaDoMeuNovoAnuncio": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t102-preco-sugerido",
+        "t103-selo-preco-justo"
+      ]
     },
     "src/lib/seguranca/recuperacao-actions.ts#confirmarRefazer": {
       "personas": [
