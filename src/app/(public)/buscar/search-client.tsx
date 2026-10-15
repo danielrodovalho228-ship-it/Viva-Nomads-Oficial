@@ -7,6 +7,8 @@ import { createPortal } from "react-dom";
 import { SlidersHorizontal, ChevronDown, MapPin, ArrowRight, Users, Search } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { PropertyCard } from "@/components/property-card";
+import { BarraComparar } from "@/components/busca/barra-comparar";
+import { alternarSelecao } from "@/lib/busca/comparar";
 // O mapa (Mapbox com chave; senão Leaflet + CARTO) só carrega no navegador e
 // só no computador (ordem ca0e7dad: no celular a busca segue sem mapa).
 const SearchMap = dynamic(
@@ -105,6 +107,8 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
   const [painelAberto, setPainelAberto] = useState(false); // painel de filtros do celular (ordem 314f764e)
   const [drawerOpen, setDrawerOpen] = useState(false); // painel "Mais filtros" (Fase 2)
   const [activeId, setActiveId] = useState<string | null>(null); // hover: card ↔ pin (só destaque)
+  const [comparar, setComparar] = useState<string[]>([]); // ordem fdd61de0: até 3 imóveis marcados
+  const [avisoComparar, setAvisoComparar] = useState<string | null>(null);
   const [selecionadoId, setSelecionadoId] = useState<string | null>(null); // pin clicado: card aberto no mapa
   // Mapa só a partir de 1024 px (lg): no celular/tablet nem carrega o componente.
   const [comMapa, setComMapa] = useState(false);
@@ -985,14 +989,30 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
                   onMouseEnter={() => setActiveId(p.id)}
                   onMouseLeave={() => setActiveId(null)}
                   className={cn(
-                    "h-full rounded-2xl transition-all",
+                    "flex h-full flex-col rounded-2xl transition-all",
                     (activeId === p.id || selecionadoId === p.id) && "ring-2 ring-forest ring-offset-2"
                   )}
                 >
-                  <PropertyCard
-                    property={p}
-                    periodMonths={maxPeriod > 0 ? Math.round(maxPeriod / 30) : undefined}
-                  />
+                  <div className="min-h-0 flex-1">
+                    <PropertyCard
+                      property={p}
+                      periodMonths={maxPeriod > 0 ? Math.round(maxPeriod / 30) : undefined}
+                    />
+                  </div>
+                  <label className="mt-1.5 flex cursor-pointer items-center gap-2 px-1 py-1 text-sm text-ink">
+                    <input
+                      type="checkbox"
+                      className="h-5 w-5 accent-forest"
+                      data-testid="marcar-comparar"
+                      checked={comparar.includes(p.id)}
+                      onChange={() => {
+                        const r = alternarSelecao(comparar, p.id);
+                        setComparar(r.ids);
+                        setAvisoComparar(r.aviso);
+                      }}
+                    />
+                    Comparar
+                  </label>
                 </div>
               ))}
             </div>
@@ -1013,6 +1033,8 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
               </Link>
             </div>
           )}
+
+          <BarraComparar ids={comparar} aviso={avisoComparar} onLimpar={() => { setComparar([]); setAvisoComparar(null); }} />
 
           {/* O botão flutuante "Fale com a Viva" não aparece aqui (cobria "Mais filtros"). */}
           <p className="mt-6 text-center text-sm text-muted" data-testid="buscar-ajuda">
