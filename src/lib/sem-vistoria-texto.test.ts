@@ -13,6 +13,7 @@ const ARQUIVOS = [
   "src/lib/atendimento/viva-cenarios.ts",
   "src/lib/seo/llms.ts",
   "src/lib/faixas.ts",
+  "src/lib/atendimento/resumo.ts",
   "src/components/documentos/documentos-contrato.tsx",
   "src/app/(dashboard)/dashboard/reembolsos/page.tsx",
   "src/app/(dashboard)/dashboard/garantias/garantias-client.tsx",
