@@ -9,6 +9,7 @@ import { tipoAcessoDoContrato } from "@/lib/data/contrato-acesso";
 import { DICAS_CONFERENCIA_CAMERAS, ITEM_CONFERENCIA_CAMERAS, LEMBRETE_SENHA_ENTRADA, mostrarChecklistCameras, mostrarLembreteSenha } from "@/lib/anuncio/privacidade";
 import { instrucoesDoContrato } from "@/lib/data/checkin-actions";
 import { podeEditarInstrucoes, podeNaoConsegui } from "@/lib/checkin";
+import { dataBR } from "@/lib/utils";
 import { AssinarContrato } from "./assinar-contrato";
 import { CheckinContrato } from "./checkin-contrato";
 import { LinhaDoTempoEstadia } from "./linha-do-tempo-estadia";
@@ -66,6 +67,11 @@ export async function ContratoDetalhe({
             </li>
           ))}
         </ul>
+        {c.inicioEstadia && (
+          <p className="mt-3 text-sm font-medium text-ink" data-testid="contrato-inicio-estadia">
+            Início da estadia: {dataBR(c.inicioEstadia)}
+          </p>
+        )}
         <p className="mt-4 text-sm text-muted [overflow-wrap:anywhere]" data-testid="contrato-aviso-assinatura">
           {c.aviso}
         </p>

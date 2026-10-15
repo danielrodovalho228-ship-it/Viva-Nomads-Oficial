@@ -3,7 +3,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { account, hasAccount, type Role } from "../fixtures/accounts";
 
 /**
- * T91 — RESPOSTA PÚBLICA e PEDIDO DE REVISÃO de avaliação (0128, ordem 404cd213 item 4). Direto no PostgREST:
+ * T91 — RESPOSTA PÚBLICA e PEDIDO DE REVISÃO de avaliação (0129, ordem 404cd213 item 4). Direto no PostgREST:
  *  - quem NÃO é o avaliado não responde (42501);
  *  - o avaliado responde UMA vez; contato no texto é recusado;
  *  - anônimo lê a resposta, mas nunca o autor_id;

@@ -1,8 +1,5 @@
--- Rollback da 0128: remove resposta pública e pedidos de revisão de avaliação (os dados dessas duas tabelas se perdem).
+-- Desfaz a 0128: remove a data de entrada desejada (só sugestão; nada depende dela para gravar contrato).
 begin;
-drop table if exists public.avaliacao_contestacoes;
-drop table if exists public.avaliacao_respostas;
-drop function if exists public.avaliacao_resposta_valida();
-drop function if exists public.avaliacao_contestacao_valida();
+alter table public.leads drop column if exists inicio_desejado;
 delete from supabase_migrations.schema_migrations where version = '20261015000128';
 commit;
