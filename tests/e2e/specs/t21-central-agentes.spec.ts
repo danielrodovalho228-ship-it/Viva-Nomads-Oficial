@@ -164,7 +164,8 @@ test.describe("T21 — Central de Agentes v2", () => {
     const passos = page.getByTestId("passo-gerente");
     await expect(passos.filter({ hasText: "Moacir → Viva:" }).last()).toBeVisible({ timeout: 20_000 });
     await expect(passos.filter({ hasText: /^Viva: Tenho \d+ chamado/ }).last()).toBeVisible();
-    const resposta = page.getByText(/^O que encontrei: /).last();
+    // Cada linha da resposta é um <p> dentro da bolha: confere a bolha inteira, não só a 1ª linha.
+    const resposta = page.getByTestId("bolha-agente").filter({ hasText: /O que encontrei: / }).last();
     await expect(resposta).toContainText(numero);
     await expect(resposta).toContainText(/Prazo: \d{2}\/\d{2} \d{2}:\d{2}/);
     await expect(resposta).toContainText(/dados de \d{2}\/\d{2} \d{2}:\d{2}/);
