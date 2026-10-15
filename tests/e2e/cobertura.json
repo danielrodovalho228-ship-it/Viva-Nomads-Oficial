@@ -2282,7 +2282,9 @@
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t98-preco-sugerido"
+      ]
     },
     "src/lib/seguranca/recuperacao-actions.ts#confirmarRefazer": {
       "personas": [
