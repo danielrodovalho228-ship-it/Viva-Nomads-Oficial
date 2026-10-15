@@ -44,6 +44,27 @@ test.describe("T100 — Comparar imóveis", () => {
     await page.screenshot({ path: "tests/laboratorio/saida/t100-comparar-390.png", fullPage: true });
   });
 
+  test("a 1280 px a tabela cabe inteira, sem rolagem lateral", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto("/buscar", { waitUntil: "domcontentloaded" });
+    const marcas = page.getByTestId("marcar-comparar");
+    await expect(marcas.first()).toBeVisible();
+    test.skip((await marcas.count()) < 2, "menos de 2 imóveis na busca do ambiente");
+    await marcas.nth(0).check();
+    await marcas.nth(1).check();
+    await page.getByTestId("comparar-abrir").click();
+    const tabela = page.getByTestId("comparar-tabela");
+    await expect(tabela).toBeVisible();
+    await expect(page.getByTestId("comparar-coluna")).toHaveCount(2);
+    const { pagina, tab } = await page.evaluate(() => {
+      const el = document.querySelector('[data-testid="comparar-tabela"]') as HTMLElement;
+      return { pagina: document.documentElement.scrollWidth - window.innerWidth, tab: el.scrollWidth - el.clientWidth };
+    });
+    expect(pagina).toBeLessThanOrEqual(0);
+    expect(tab).toBeLessThanOrEqual(1); // desktop: nada escondido dentro da tabela
+    await page.screenshot({ path: "tests/laboratorio/saida/t100-comparar-1280.png", fullPage: true });
+  });
+
   test("sem seleção válida mostra orientação, nunca quebra", async ({ page }) => {
     await page.goto("/comparar?comparar=lixo,<script>", { waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("comparar-vazio")).toContainText("Escolha de 2 a 3 imóveis");
