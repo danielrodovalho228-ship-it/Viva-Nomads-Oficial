@@ -26,3 +26,8 @@ export function validarInicioEstadia(inicioISO: unknown, hoje: string): InicioVa
   }
   return { ok: true };
 }
+
+/** Data que o Fechamento mostra de início: a que o inquilino indicou na candidatura, se ainda vale; senão hoje. */
+export function inicioSugerido(desejada: unknown, hoje: string): string {
+  return validarInicioEstadia(desejada, hoje).ok ? (desejada as string).trim() : hoje;
+}
