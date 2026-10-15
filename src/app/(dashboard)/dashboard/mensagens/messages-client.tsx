@@ -223,7 +223,7 @@ function MessagesInner({ initial, demo }: { initial: Conversation[]; demo: boole
                 >
                   {m.text}
                 </span>
-                {m.from !== "me" && pareceDadoBancario(m.text) && (
+                {m.from !== "me" && !active.contratoFechado && pareceDadoBancario(m.text) && (
                   <span data-testid="alerta-antigolpe-mensagem" role="alert" className="max-w-[75%] rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs text-amber-900">
                     {AVISO_ANTIGOLPE_ALERTA}{" "}
                     <Link href="/seguranca" className="font-semibold underline">Ver dicas</Link>

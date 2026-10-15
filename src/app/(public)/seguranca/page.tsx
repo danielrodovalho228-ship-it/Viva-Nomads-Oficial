@@ -84,8 +84,8 @@ export default function SegurancaPage() {
           <Faq q="Como o Viva Nomads protege meu dinheiro?">
             <p>
               A plataforma <strong className="text-ink">nunca movimenta o valor mensal</strong>: ele vai
-              direto do inquilino para a conta do proprietário. A taxa da Viva é cobrada do
-              proprietário sobre o valor total de cada contrato, transparente no fechamento.
+              direto do inquilino para a conta do proprietário. A taxa Viva é uma taxa única por
+              contrato, transparente no fechamento.
             </p>
           </Faq>
           <Faq q="Por que a conversa fica na plataforma?">

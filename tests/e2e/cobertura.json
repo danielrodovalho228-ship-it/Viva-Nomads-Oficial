@@ -8,7 +8,8 @@
       "specs": [
         "t66-home-busca-principal",
         "t69-botoes-header",
-        "t91-antigolpe-atalhos"
+        "t90-orcamento-velocidade",
+        "t93-antigolpe-atalhos"
       ]
     },
     "/acesso-socios": {
@@ -230,10 +231,11 @@
         "t20-p1-agentes",
         "t23-pacote-seguranca",
         "t67-busca-celular",
-        "t7-fluxo-publico",
         "t69-botoes-header",
+        "t7-fluxo-publico",
         "t70-busca-split",
-        "t71-busca-topo"
+        "t71-busca-topo",
+        "t90-orcamento-velocidade"
       ]
     },
     "/cidades": {
@@ -756,7 +758,8 @@
         "t6-dinheiro-numeros",
         "t68-comissao-valor-total",
         "t69-botoes-header",
-        "t72-paginas-institucionais"
+        "t72-paginas-institucionais",
+        "t90-orcamento-velocidade"
       ]
     },
     "/privacidade": {

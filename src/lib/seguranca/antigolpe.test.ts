@@ -14,6 +14,11 @@ test("#19cfa5b1: detecta PIX, transferência, depósito, sinal e dados bancário
   ]) assert.equal(pareceDadoBancario(t), true, t);
 });
 
+test("#19cfa5b1: 'sinal' só alerta com sentido de pagamento (não pega sinal de internet)", () => {
+  for (const t of ["O sinal de internet é bom?", "Tem sinal de celular aí?", "Sem sinal no quarto"]) assert.equal(pareceDadoBancario(t), false, t);
+  for (const t of ["Preciso de um sinal de R$ 300", "Pague o sinal hoje"]) assert.equal(pareceDadoBancario(t), true, t);
+});
+
 test("#19cfa5b1: conversa normal não dispara o alerta", () => {
   for (const t of ["Oi! O imóvel ainda está disponível?", "Posso visitar sábado às 10h?", "Aceita um gato pequeno?", ""])
     assert.equal(pareceDadoBancario(t), false, t);
@@ -34,5 +39,6 @@ test("#19cfa5b1: aviso aparece nos 3 lugares (anúncio, pedido de moradia, Mensa
   const msgs = ler("app/(dashboard)/dashboard/mensagens/messages-client.tsx");
   assert.match(msgs, /<AvisoAntigolpe/);
   assert.match(msgs, /pareceDadoBancario\(m\.text\)/);
+  assert.match(msgs, /!active\.contratoFechado/);
   assert.match(ler("components/seguranca/aviso-antigolpe.tsx"), /href="\/seguranca"/);
 });

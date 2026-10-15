@@ -19,6 +19,8 @@ export interface Conversation {
   /** Foto de capa do imóvel e período da estadia (quando há contrato). */
   foto?: string;
   periodo?: string;
+  /** Já existe contrato fechado para este imóvel (o alerta antigolpe só vale antes disso). */
+  contratoFechado?: boolean;
   messages: ChatMessage[];
 }
 
@@ -134,7 +136,9 @@ async function enriquecer(supabase: Supa, conversas: Conversation[]) {
       if (!capa.has(f.property_id)) capa.set(f.property_id, f.url);
     }
     const periodo = new Map<string, string>();
+    const comContrato = new Set<string>();
     for (const ct of (contratos ?? []) as unknown as { property_id: string; contrato_blocos: { inicio: string; fim: string }[] | null }[]) {
+      comContrato.add(ct.property_id);
       const bl = ct.contrato_blocos ?? [];
       if (bl.length === 0 || periodo.has(ct.property_id)) continue;
       periodo.set(ct.property_id, formatarPeriodo(bl.map((b) => b.inicio).sort()[0], bl.map((b) => b.fim).sort().at(-1)));
@@ -143,6 +147,7 @@ async function enriquecer(supabase: Supa, conversas: Conversation[]) {
       if (!c.propertyId) continue;
       c.foto = capa.get(c.propertyId);
       c.periodo = periodo.get(c.propertyId) || undefined;
+      c.contratoFechado = comContrato.has(c.propertyId);
     }
   } catch {
     /* sem foto/período: a conversa continua utilizável */

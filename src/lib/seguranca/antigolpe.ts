@@ -18,7 +18,9 @@ const PADROES_PAGAMENTO: RegExp[] = [
   /\btransfer[êe]ncia\b/i,
   /\bdep[óo]sito\b/i,
   /\biban\b/i,
-  /\bsinal\b/i,
+  /\b(?:pagar|pague|pagamento|pedir|pede|exigir|adiantar)\s+(?:de\s+|do\s+|um\s+|o\s+)?sinal\b/i,
+  /\bsinal\s+(?:de\s+)?(?:r\$|\d)/i,
+  /\bsinal\s+(?:antes|para\s+(?:garantir|reservar|segurar))\b/i,
 ];
 
 /** O texto parece pedir PIX/depósito/dados bancários? */

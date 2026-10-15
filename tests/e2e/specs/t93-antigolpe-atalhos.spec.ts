@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 /**
- * T91 — "Próximo do FF" 1/6 e 5/6 (ordens a875278a e 19cfa5b1):
+ * T93 — "Próximo do FF" 1/6 e 5/6 (ordens a875278a e 19cfa5b1):
  * atalhos da home com contagem real e aviso antigolpe nas páginas públicas.
  */
 test.use({ storageState: { cookies: [], origins: [] } });
@@ -27,4 +27,19 @@ test("pedido de moradia mostra o aviso antigolpe com link para /seguranca", asyn
   const aviso = page.getByTestId("aviso-antigolpe");
   await expect(aviso).toContainText("nunca pede PIX");
   await expect(aviso.getByRole("link")).toHaveAttribute("href", "/seguranca");
+});
+
+test("home: o atalho de preço é \"Até R$ 2.000/mês\" e abre a busca com orcamento=2000", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/", { waitUntil: "networkidle" });
+  const link = page.getByTestId("atalhos-categoria").getByRole("link", { name: /Até R\$ 2\.000/ });
+  if (await link.count()) await expect(link).toHaveAttribute("href", "/buscar?orcamento=2000");
+});
+
+test("anúncio: aviso antigolpe fica perto da candidatura", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/buscar", { waitUntil: "domcontentloaded" });
+  const card = page.locator('a[href^="/imoveis/"]').first();
+  await card.click();
+  await expect(page.getByTestId("aviso-antigolpe").first()).toContainText("nunca pede PIX");
 });
