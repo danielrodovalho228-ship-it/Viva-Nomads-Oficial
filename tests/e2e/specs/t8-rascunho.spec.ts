@@ -88,11 +88,14 @@ test.describe("T-RASC — Rascunho salva e retoma @criticos", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await novoComEndereco(page);
     await esperarSalvo(page);
-    await page.goto("/dashboard", { waitUntil: "networkidle" });
+    // O "Salvo" pode ser do autosave das fotos, anterior ao endereço (debounce de 2 s):
+    // recarrega a Visão geral até o servidor refletir o endereço, em vez de sair cedo.
     const lista = page.getByTestId("anuncio-checklist");
-    await expect(lista).toBeVisible({ timeout: 10_000 });
+    await expect(async () => {
+      await page.goto("/dashboard", { waitUntil: "networkidle" });
+      await expect(lista.getByTestId("check-feito").filter({ hasText: "Endereço preenchido" })).toBeVisible({ timeout: 3_000 });
+    }).toPass({ timeout: 40_000, intervals: [2_000, 3_000] });
     // Endereço já preenchido = feito; fotos (só 1 de 8) = falta e é clicável.
-    await expect(lista.getByTestId("check-feito").filter({ hasText: "Endereço preenchido" })).toBeVisible();
     await expect(lista.getByTestId("check-falta").filter({ hasText: "Endereço preenchido" })).toHaveCount(0);
     // Sem rolagem lateral a 390 px.
     const estouro = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
