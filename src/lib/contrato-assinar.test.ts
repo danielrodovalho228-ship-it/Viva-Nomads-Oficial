@@ -92,3 +92,14 @@ test("dono assina, o anúncio muda as regras de pets e o inquilino assina o mesm
   // Congelado vazio ({}): anúncio sem regras na 1ª assinatura continua sem a linha.
   assert.equal(petsRegrasDoResumo({ algumaAssinatura: true, vivas: depois, congeladas: {} }), null);
 });
+
+test("resumo mostra a data de início da estadia escolhida no Fechamento (F37) e o hash acompanha", () => {
+  const sem = resumoContrato(dados);
+  assert.ok(!sem.some((l) => l.startsWith("Início da estadia")));
+  const com = resumoContrato({ ...dados, inicioEstadia: "2026-11-03" });
+  assert.ok(com.includes("Início da estadia: 03/11/2026"));
+  assert.notEqual(hashResumo(sem), hashResumo(com));
+  assert.notEqual(hashResumo(com), hashResumo(resumoContrato({ ...dados, inicioEstadia: "2026-11-04" })));
+  // Data inválida não vira lixo no resumo assinado.
+  assert.ok(!resumoContrato({ ...dados, inicioEstadia: "03/11/2026" }).some((l) => l.startsWith("Início da estadia")));
+});
