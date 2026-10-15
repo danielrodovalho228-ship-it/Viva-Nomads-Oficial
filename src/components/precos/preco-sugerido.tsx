@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { TAXA_COMISSAO_PADRAO, pctTexto } from "@/lib/cobranca/regra";
+import { taxaDoMeuNovoAnuncio } from "@/lib/preco-justo-actions";
 import { economiaDoMorador, precoSugerido, recebeAirbnb, recebeViva } from "@/lib/preco-justo";
 
 const MESES = 2;
@@ -15,8 +16,14 @@ const brl = (v: number) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigi
 export function PrecoSugerido({ aluguel, onUsar }: { aluguel: number; onUsar: (valor: number) => void }) {
   const [airbnb, setAirbnb] = useState("");
   const total = Number(airbnb) || 0;
-  const sugerido = precoSugerido(total, MESES, TAXA_COMISSAO_PADRAO);
+  const [taxa, setTaxa] = useState(TAXA_COMISSAO_PADRAO);
   const [aberto, setAberto] = useState(false);
+  useEffect(() => {
+    let vivo = true;
+    taxaDoMeuNovoAnuncio().then((t) => vivo && setTaxa(t)).catch(() => {});
+    return () => { vivo = false; };
+  }, []);
+  const sugerido = precoSugerido(total, MESES, taxa);
 
   return (
     <div className="rounded-xl border border-sage-200 p-4" data-testid="preco-sugerido">
@@ -33,10 +40,10 @@ export function PrecoSugerido({ aluguel, onUsar }: { aluguel: number; onUsar: (v
             <>
               <dl className="space-y-0.5 text-sm">
                 <div className="flex justify-between"><dt>No Airbnb você recebe</dt><dd data-testid="recebe-airbnb">{brl(recebeAirbnb(total))}</dd></div>
-                <div className="flex justify-between"><dt>Na Viva, a {brl(sugerido)}/mês, você recebe</dt><dd data-testid="recebe-viva">{brl(recebeViva(sugerido, MESES, TAXA_COMISSAO_PADRAO))}</dd></div>
+                <div className="flex justify-between"><dt>Na Viva, a {brl(sugerido)}/mês, você recebe</dt><dd data-testid="recebe-viva">{brl(recebeViva(sugerido, MESES, taxa))}</dd></div>
               </dl>
               <p className="text-xs text-muted">
-                Taxa de {pctTexto(TAXA_COMISSAO_PADRAO)} sobre o valor total do contrato (1 ou 2 imóveis), só no fechamento.
+                Taxa de {pctTexto(taxa)} (a da sua faixa de imóveis) sobre o valor total do contrato, só no fechamento.
                 {economiaDoMorador(total, sugerido, MESES).reais > 0 && " O morador paga menos que no Airbnb."} É só uma sugestão: o valor é seu.
               </p>
               <Button type="button" size="sm" onClick={() => onUsar(sugerido)} disabled={aluguel === sugerido}>

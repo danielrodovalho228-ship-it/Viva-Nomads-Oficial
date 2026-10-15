@@ -4,7 +4,7 @@
 */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { precoSugerido, recebeAirbnb, recebeViva, economiaDoMorador } from "./preco-justo.ts";
+import { precoSugerido, recebeAirbnb, recebeViva, economiaDoMorador, taxaDoNovoAnuncio } from "./preco-justo.ts";
 
 test("Airbnb: R$ 10.300 por 2 meses → dono recebe R$ 8.652 (taxa de 16%)", () => {
   assert.equal(recebeAirbnb(10300), 8652);
@@ -46,4 +46,14 @@ test("o passo de preço do cadastro mostra o PrecoSugerido (opcional) e o botão
   const comp = readFileSync("src/components/precos/preco-sugerido.tsx", "utf8");
   assert.match(comp, /Usar preço sugerido/);
   assert.doesNotMatch(comp, /\b(comissão|corretagem)\b/i);
+});
+
+test("taxaDoNovoAnuncio: faixa pelos ativos já contando o anúncio novo", () => {
+  assert.equal(taxaDoNovoAnuncio(0), 0.12);
+  assert.equal(taxaDoNovoAnuncio(1), 0.12); // 2º imóvel ainda na faixa 1–2
+  assert.equal(taxaDoNovoAnuncio(2), 0.1); // 3º imóvel entra na faixa 3–5
+  assert.equal(taxaDoNovoAnuncio(5), 0.08);
+  assert.equal(taxaDoNovoAnuncio(15), 0.06);
+  assert.equal(taxaDoNovoAnuncio(NaN), 0.12);
+  assert.equal(taxaDoNovoAnuncio(-3), 0.12);
 });

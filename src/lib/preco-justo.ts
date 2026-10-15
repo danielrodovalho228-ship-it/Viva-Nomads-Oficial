@@ -4,7 +4,7 @@
   TOTAL do contrato (aluguel mensal × meses — comissaoSobreContrato, ordem do Daniel de 14/10).
 */
 import { MERCADO } from "../config/planos.ts";
-import { comissaoSobreContrato } from "./cobranca/regra.ts";
+import { comissaoSobreContrato, faixaPorImoveisAtivos } from "./cobranca/regra.ts";
 
 const centavos = (v: number) => Math.round(v * 100) / 100;
 const positivo = (n: number) => Number.isFinite(n) && n > 0;
@@ -39,4 +39,13 @@ export function economiaDoMorador(totalAirbnb: number, aluguelMensal: number, me
   if (!positivo(totalAirbnb) || !positivo(aluguelMensal) || !positivo(meses)) return { reais: 0, pct: 0 };
   const reais = centavos(totalAirbnb - aluguelMensal * Math.floor(meses));
   return { reais, pct: reais / totalAirbnb };
+}
+
+/**
+ * Taxa que o dono pagaria ao fechar este anúncio: a da faixa pelos imóveis ativos DELE já contando o que
+ * está cadastrando (ativos + 1). Entrada inválida cai na faixa de 1–2 imóveis.
+ */
+export function taxaDoNovoAnuncio(imoveisAtivos: number): number {
+  const n = Number.isFinite(imoveisAtivos) && imoveisAtivos > 0 ? Math.floor(imoveisAtivos) : 0;
+  return faixaPorImoveisAtivos(n + 1).taxa;
 }
