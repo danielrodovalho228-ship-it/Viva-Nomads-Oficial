@@ -6,7 +6,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { ATRIBUTOS_EMAIL, limparEmail, requisicaoPrefetch, temCookieSessao } from "./login-celular.ts";
+import { ATRIBUTOS_EMAIL, limparEmail, precisaVerificarUsuario, requisicaoPrefetch, temCookieSessao } from "./login-celular.ts";
 
 test("e-mail: iPhone não capitaliza nem autocorrige", () => {
   assert.equal(ATRIBUTOS_EMAIL.autoCapitalize, "none");
@@ -34,4 +34,10 @@ test("temCookieSessao: só com cookie de sessão do Supabase", () => {
   assert.equal(temCookieSessao([{ name: "sb-abc-auth-token.0" }, { name: "x" }]), true);
   assert.equal(temCookieSessao([{ name: "vn_app" }, { name: "sb-abc-code-verifier" }]), false);
   assert.equal(temCookieSessao([]), false);
+});
+
+test("precisaVerificarUsuario: visitante sem sessão não consulta o servidor de autenticação", () => {
+  assert.equal(precisaVerificarUsuario([]), false);
+  assert.equal(precisaVerificarUsuario([{ name: "vn_app" }]), false);
+  assert.equal(precisaVerificarUsuario([{ name: "sb-abc-auth-token.0" }]), true);
 });
