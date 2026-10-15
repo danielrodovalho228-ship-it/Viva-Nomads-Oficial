@@ -110,7 +110,8 @@ test.describe("T36 — Cadastro completo, do CPF ao fechamento", () => {
     // 5) Inquilina se candidata pela página pública do imóvel.
     const inq = await entrar(browser, inquilina.email, senha);
     await inq.goto(`/imoveis/${ids.imovel}`, { waitUntil: "networkidle" });
-    await inq.getByRole("button", { name: /Candidatar-se/ }).click();
+    // A 390 px há dois "Candidatar-se" (cartão e barra fixa, Clareza UX1): a inquilina toca o da barra.
+    await inq.getByTestId("barra-fixa-imovel").getByRole("button", { name: /Candidatar-se/ }).click();
     await expect(inq.getByText("Candidatura enviada")).toBeVisible({ timeout: 20_000 });
     await inq.screenshot({ path: "tests/laboratorio/saida/t36-3-candidatura-enviada.png", fullPage: true });
     await inq.context().close();
