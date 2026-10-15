@@ -414,7 +414,8 @@
       "specs": [
         "t14-app-mode",
         "t17-conta-salvar",
-        "t36-cadastro-ponta-a-ponta"
+        "t36-cadastro-ponta-a-ponta",
+        "t92-documento-secao"
       ]
     },
     "/dashboard/conta/[secao]": {
@@ -426,7 +427,8 @@
       "specs": [
         "t14-app-mode",
         "t17-conta-salvar",
-        "t36-cadastro-ponta-a-ponta"
+        "t36-cadastro-ponta-a-ponta",
+        "t92-documento-secao"
       ]
     },
     "/dashboard/conta/seguranca": {
