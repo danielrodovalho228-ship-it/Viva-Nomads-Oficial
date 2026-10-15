@@ -52,9 +52,10 @@ test.describe("T12 — Escada de planos @criticos", () => {
       const aluguel = page.getByLabel(/Aluguel mensal pretendido/i);
       const mesesSlider = page.locator('input[type="range"]').first();
 
-      // Cenário BAIXO volume/valor: aluguel modesto, prazo longo (poucos
-      // contratos/ano) → o Gratuito tende a ser o melhor (assinatura não se paga).
-      await aluguel.fill("3000");
+      // Cenário BAIXO volume/valor: R$ 2.000 × 6 meses = R$ 12.000/ano. Abaixo de
+      // ~R$ 14.700/ano a assinatura do Essencial (R$ 588) não se paga com 4 pontos
+      // de taxa a menos: o Gratuito é o melhor (taxas reais 12/8/4% em config/planos).
+      await aluguel.fill("2000");
       await mesesSlider.fill("6");
       await page.getByRole("button", { name: /^6 meses$/ }).click();
       await page.waitForTimeout(400);
