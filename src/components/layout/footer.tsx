@@ -35,6 +35,7 @@ export function Footer() {
           <FooterLink href="/precos">Preços</FooterLink>
           <FooterLink href="/seguranca">Sua segurança</FooterLink>
           <FooterLink href="/ajuda">Central de Ajuda</FooterLink>
+          <FooterLink href="/guias">Guias</FooterLink>
         </FooterCol>
 
         <FooterCol title="Cidades">

@@ -15,7 +15,7 @@ import { SITE_URL, SUPORTE_EMAIL } from "@/lib/site";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/precos" },
-  title: "Anuncie imóveis mobiliados: 12% do valor total do contrato",
+  title: "Anuncie imóveis mobiliados: 12% por contrato",
   description: TEXTO_REGRA_CURTO + " Para imóveis mobiliados.",
 };
 
