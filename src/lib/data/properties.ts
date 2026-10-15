@@ -322,6 +322,7 @@ export async function listProperties(): Promise<Property[]> {
     await attachCoverPhotos(supabase, mapped); // capa real para os cards (best-effort)
     await attachReviewAggregates(supabase, mapped); // nota/contagem REAL (fonte única)
     await attachComodidadesFiltro(supabase, mapped); // Wi-Fi/cozinha/garagem/lavar, para os filtros da busca (best-effort)
+    await attachPrecoJusto(supabase, mapped); // selo Preço justo (0130; best-effort)
     await attachPetsRegras(supabase, mapped); // porte máximo de pet, para o filtro da busca (0119; best-effort)
     return withDemos(mapped);
   } catch (e) {
@@ -354,6 +355,7 @@ export async function getProperty(id: string): Promise<Property | undefined> {
     if (!data) return showDemoProperties() ? SAMPLE_PROPERTIES.find((p) => p.id === id) : undefined;
     // Página pública: coordenada aproximada no servidor (a exata só no painel do dono).
     const base = comCoordenadaAproximada(rowToProperty(data as unknown as PropertyRow));
+    await attachPrecoJusto(supabase, [base]);
     return enrichProperty(supabase, base, (data as { owner_id?: string }).owner_id ?? null);
   } catch {
     return showDemoProperties() ? SAMPLE_PROPERTIES.find((p) => p.id === id) : undefined;
@@ -386,6 +388,7 @@ export async function getPropertyForOwner(id: string): Promise<Property | undefi
     const { data: aut } = await supabase.from("properties").select("autorizacao_anexada").eq("id", id).eq("owner_id", user.id).maybeSingle();
     if (aut && typeof (aut as { autorizacao_anexada?: unknown }).autorizacao_anexada === "boolean")
       base.autorizacaoAnexada = (aut as { autorizacao_anexada: boolean }).autorizacao_anexada;
+    await attachPrecoJusto(supabase, [base]);
     return enrichProperty(supabase, base, user.id);
   } catch {
     return undefined;
@@ -439,6 +442,29 @@ async function attachComodidadesFiltro(supabase: SupabaseLike, list: Property[])
     for (const p of list) p.comodidadesFiltro = chavesFiltroDe(rotulos.get(p.id) ?? []);
   } catch {
     /* sem a tabela, o filtro só enxerga o que o imóvel já traz */
+  }
+}
+
+/** Selo "Preço justo" (0130): coluna calculada no banco; sem a migração, ninguém ganha selo. Best-effort. */
+async function attachPrecoJusto(supabase: SupabaseLike, list: Property[]): Promise<void> {
+  const reais = list.filter((p) => !isExemplo(p.id));
+  if (reais.length === 0) return;
+  try {
+    const { data, error } = await supabase
+      .from("properties")
+      .select("id, preco_justo, airbnb_monthly_price")
+      .in("id", reais.map((p) => p.id));
+    if (error) return;
+    const porId = new Map(
+      ((data as { id: string; preco_justo: boolean | null; airbnb_monthly_price: number | null }[] | null) ?? []).map((r) => [r.id, r]),
+    );
+    for (const p of reais) {
+      const r = porId.get(p.id);
+      p.precoJusto = r?.preco_justo === true;
+      if (r?.airbnb_monthly_price) p.airbnbMonthlyPrice = Number(r.airbnb_monthly_price);
+    }
+  } catch {
+    /* sem a coluna, sem selo */
   }
 }
 

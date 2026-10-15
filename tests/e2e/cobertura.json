@@ -2280,6 +2280,16 @@
       ],
       "specs": []
     },
+    "src/lib/preco-justo-actions.ts#taxaDoMeuNovoAnuncio": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t102-preco-sugerido",
+        "t103-selo-preco-justo"
+      ]
+    },
     "src/lib/seguranca/recuperacao-actions.ts#confirmarRefazer": {
       "personas": [
         "inquilino",
