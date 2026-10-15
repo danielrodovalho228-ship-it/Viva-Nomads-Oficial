@@ -9,6 +9,7 @@ import { useViewMode } from "@/lib/roles";
 import { useDisplayUser } from "@/lib/demo/demo-mode";
 import { Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { PasswordInput } from "@/components/ui/password-input";
 import { TaxSimulator } from "@/components/tax-simulator";
 import { CategoriaProfissional } from "@/components/account/categoria-profissional";
@@ -18,7 +19,6 @@ import { friendlyAuthError, MIN_PASSWORD } from "@/lib/auth-errors";
 import { elevarParaAal2 } from "@/lib/seguranca/elevar-aal2";
 import { Switch } from "@/components/ui/switch";
 import { getMeusDados, salvarMeusDados, getMeuDocumento, salvarMeuDocumento, type MeuDocumento } from "@/lib/data/perfil-actions";
-import { DOCUMENTO_VAZIO_PF } from "@/lib/documento-pessoa";
 import { getAlertasEquipe, getNotifPrefs, setAlertasEquipe, setNotifPrefs } from "@/lib/data/pedidos-actions";
 import { useCaptcha } from "@/components/seguranca/captcha";
 import { MSG_CAPTCHA_PENDENTE, comCaptcha, podeEnviar } from "@/lib/seguranca/captcha";
@@ -152,15 +152,27 @@ export function DocumentoPessoa() {
   const [erro, setErro] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
 
+  const [falhou, setFalhou] = useState(false);
+  const [tentativa, setTentativa] = useState(0);
+
   useEffect(() => {
     let vivo = true;
     getMeuDocumento()
-      .then((d) => vivo && setDoc(d))
-      .catch(() => vivo && setDoc({ ...DOCUMENTO_VAZIO_PF }));
+      .then((d) => {
+        if (!vivo) return;
+        // null = sessão ainda não resolvida: nunca esconde a seção, oferece tentar de novo.
+        setFalhou(d === null);
+        setDoc(d);
+      })
+      .catch(() => {
+        if (!vivo) return;
+        setFalhou(true);
+        setDoc(null);
+      });
     return () => {
       vivo = false;
     };
-  }, []);
+  }, [tentativa]);
 
   async function salvar(e: React.FormEvent) {
     e.preventDefault();
@@ -177,10 +189,41 @@ export function DocumentoPessoa() {
     setOk(true);
   }
 
-  if (doc === undefined || doc === null) return null; // carregando ou demonstração
+  if (doc === undefined || doc === null) {
+    // Nunca some da tela: esqueleto enquanto carrega; mensagem + "Tentar de novo" se falhar.
+    return (
+      <section id="documento" className="scroll-mt-24" data-testid="documento-secao">
+        <Panel title="Documento (CPF)" className="mt-6">
+          {doc === undefined ? (
+            <div role="status" aria-label="Carregando documento" data-testid="documento-carregando" className="space-y-3">
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-11 w-full sm:w-1/2" />
+            </div>
+          ) : (
+            <div data-testid="documento-erro">
+              <p role="alert" className="text-sm text-muted">
+                {falhou ? "Não conseguimos carregar seu documento agora." : "Seu documento ainda não carregou."}
+              </p>
+              <div className="mt-4">
+                <Button
+                  type="button"
+                  onClick={() => {
+                    setDoc(undefined);
+                    setTentativa((n) => n + 1);
+                  }}
+                >
+                  Tentar de novo
+                </Button>
+              </div>
+            </div>
+          )}
+        </Panel>
+      </section>
+    );
+  }
   const pj = doc.tipo === "pj";
   return (
-    <section id="documento" className="scroll-mt-24">
+    <section id="documento" className="scroll-mt-24" data-testid="documento-secao">
       <Panel title={pj ? "Documento da empresa (CNPJ)" : "Documento (CPF)"} className="mt-6">
         <p className="text-sm text-muted">
           Vai no contrato, na cobrança e na nota fiscal. Fica guardado com segurança: só você e a equipe da Viva Nomads
