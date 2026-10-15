@@ -111,7 +111,7 @@ export function normalizarRegrasPets(raw: unknown): RegrasPets | null {
 }
 
 /** Linhas curtas para a página do anúncio ("Aceita: cão e gato", ...). */
-export function linhasRegrasPets(r: RegrasPets): string[] {
+export function linhasRegrasPets(r: RegrasPets, opcoes: { semValorPet?: boolean } = {}): string[] {
   const nomes = r.especies.map((e) => ROTULO_ESPECIE[e]);
   const lista = nomes.length > 1 ? `${nomes.slice(0, -1).join(", ")} e ${nomes[nomes.length - 1]}` : nomes[0];
   const linhas = [
@@ -119,7 +119,7 @@ export function linhasRegrasPets(r: RegrasPets): string[] {
     `Porte máximo: ${ROTULO_PORTE[r.porteMax]}`,
     `Até ${r.qtdMax} ${r.qtdMax === 1 ? "animal" : "animais"}`,
   ];
-  const valorPet = textoValorPet(r);
+  const valorPet = opcoes.semValorPet ? null : textoValorPet(r);
   if (valorPet) linhas.push(valorPet);
   if (r.regrasCondominio) linhas.push(`Condomínio: ${r.regrasCondominio}`);
   return linhas;
@@ -157,4 +157,11 @@ export function aceitaPorte(petsAllowed: boolean | undefined, regras: RegrasPets
   if (!petsAllowed) return false;
   if (!regras) return true;
   return ORDEM_PORTE[porte] <= ORDEM_PORTE[regras.porteMax];
+}
+
+/** Quantos pets a candidatura levava quando as regras foram congeladas no contrato (0 se não consta). */
+export function qtdPetsCongelada(raw: unknown): number {
+  if (!raw || typeof raw !== "object") return 0;
+  const n = Number((raw as Record<string, unknown>).qtdPetsCandidatura);
+  return Number.isInteger(n) && n >= 1 && n <= MAX_PETS ? n : 0;
 }
