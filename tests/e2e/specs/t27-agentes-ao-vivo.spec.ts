@@ -33,7 +33,7 @@ test.describe("T27 — Agentes com dados ao vivo", () => {
     const prazo = new Date(Date.now() + 24 * 3_600_000).toISOString();
     const { data: ch, error: e1 } = await db
       .from("chamados")
-      .insert({ visitante_email: "t27@lab.vivanomads.test", tipo: "suporte", categoria: "contrato", prioridade: "p2", canal: "site", assunto: "teste T27", responsavel_tipo: "humano", prazo_primeira_resposta: prazo, prazo_resolucao: prazo })
+      .insert({ visitante_nome: "Visitante T27", visitante_email: "t27@lab.vivanomads.test", tipo: "suporte", categoria: "contrato", prioridade: "p2", canal: "site", assunto: "teste T27", responsavel_tipo: "humano", prazo_primeira_resposta: prazo, prazo_resolucao: prazo })
       .select("id, numero_publico")
       .single();
     expect(e1).toBeNull();
