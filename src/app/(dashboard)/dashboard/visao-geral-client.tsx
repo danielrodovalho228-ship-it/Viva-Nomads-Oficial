@@ -28,6 +28,7 @@ import { RoleWelcomeModal } from "@/components/dashboard/role-welcome-modal";
 import { ButtonLink, buttonClasses } from "@/components/ui/button";
 import { useProperties } from "@/lib/use-properties";
 import { checklistAnuncio, type ChecklistAnuncio } from "@/lib/anuncio/prontidao";
+import type { ScoreAnuncio } from "@/lib/anuncio/score";
 import { imoveisPublicados } from "@/lib/anuncio/publicados";
 import type { Property } from "@/lib/types";
 import { useDashDemo, DemoBadge, useDisplayUser } from "@/lib/demo/demo-mode";
@@ -79,6 +80,7 @@ function OwnerDashboard({ name, imoveisDono }: { name: string; imoveisDono: Prop
           pronto: !!d.prontidao?.podePublicar,
           faltam: d.prontidao?.faltam ?? [],
           checklist: d.prontidao ? checklistAnuncio(d.prontidao, d.id) : null,
+          score: d.score,
         });
       })
       .catch(() => {});
@@ -293,7 +295,7 @@ function TenantDashboard({ name }: { name: string }) {
  */
 /** Card de pendência "Anúncio em andamento" (P0) — atalho para retomar o
  * rascunho de onde parou, com o % completo honesto. */
-type RascunhoPendente = { id: string; pct: number; pronto: boolean; faltam: string[]; checklist: ChecklistAnuncio | null };
+type RascunhoPendente = { id: string; pct: number; pronto: boolean; faltam: string[]; checklist: ChecklistAnuncio | null; score?: ScoreAnuncio | null };
 
 function DraftPendingCard({
   draft,
@@ -332,6 +334,34 @@ function DraftPendingCard({
           {draft.pronto ? "Revisar e publicar" : check?.proximo ? "Fazer o próximo passo" : "Continuar edição"} <ArrowRight className="h-4 w-4" />
         </Link>
       </div>
+      {draft.score && (
+        <div className="mt-3" data-testid="anuncio-score">
+          <div className="flex items-baseline justify-between gap-2 text-sm">
+            <span className="font-medium text-ink">Qualidade do anúncio</span>
+            <span className="font-title font-bold text-forest" data-testid="anuncio-score-valor">{draft.score.score}%</span>
+          </div>
+          <div className="mt-1 h-2 overflow-hidden rounded-full bg-champagne/40" role="progressbar" aria-valuenow={draft.score.score} aria-valuemin={0} aria-valuemax={100} aria-label="Qualidade do anúncio">
+            <div className="h-full rounded-full bg-forest" style={{ width: `${draft.score.score}%` }} />
+          </div>
+          {draft.score.dicas.length > 0 && (
+            <ul className="mt-2 grid gap-1.5 sm:grid-cols-2" data-testid="anuncio-score-dicas">
+              {draft.score.dicas.slice(0, 4).map((d) => (
+                <li key={d.key}>
+                  <Link
+                    href={`/dashboard/imoveis/novo?draft=${encodeURIComponent(draft.id)}&etapa=${d.etapa}`}
+                    data-testid="score-dica"
+                    className="flex min-h-11 items-center gap-2 rounded-xl border border-transparent px-2 text-sm font-medium text-forest hover:bg-champagne/30"
+                  >
+                    <span className="min-w-0">{d.label}</span>
+                    <span className="ml-auto shrink-0 text-xs text-muted">+{d.pontos}</span>
+                    <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
       {check && (
         <ul className="mt-3 grid gap-1.5 sm:grid-cols-2" data-testid="anuncio-checklist">
           {check.itens.map((i) => (
