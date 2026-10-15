@@ -1639,6 +1639,24 @@
         "t71-busca-topo"
       ]
     },
+    "src/lib/data/checkin-actions.ts#instrucoesDoContrato": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t83-checkin-garantido"
+      ]
+    },
+    "src/lib/data/checkin-actions.ts#salvarInstrucoesEntrada": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t83-checkin-garantido"
+      ]
+    },
     "src/lib/data/conferencia-actions.ts#anexarLaudoConferencia": {
       "personas": [
         "inquilino",

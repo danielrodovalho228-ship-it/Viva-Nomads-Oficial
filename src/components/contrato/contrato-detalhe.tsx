@@ -7,7 +7,10 @@ import { ROTULO_ETAPA, etapaContrato } from "@/lib/contrato-etapas";
 import { conferenciasDoContrato } from "@/lib/data/conferencia-actions";
 import { tipoAcessoDoContrato } from "@/lib/data/contrato-acesso";
 import { DICAS_CONFERENCIA_CAMERAS, ITEM_CONFERENCIA_CAMERAS, LEMBRETE_SENHA_ENTRADA, mostrarChecklistCameras, mostrarLembreteSenha } from "@/lib/anuncio/privacidade";
+import { instrucoesDoContrato } from "@/lib/data/checkin-actions";
+import { podeEditarInstrucoes, podeNaoConsegui } from "@/lib/checkin";
 import { AssinarContrato } from "./assinar-contrato";
+import { CheckinContrato } from "./checkin-contrato";
 import { LinhaDoTempoEstadia } from "./linha-do-tempo-estadia";
 import { ConferenciaContrato } from "./conferencia-contrato";
 
@@ -44,6 +47,9 @@ export async function ContratoDetalhe({
           assinadoPelasDuasPartes: !!c.assinadoProprietarioEm && !!c.assinadoInquilinoEm,
         })
       : false;
+  // Check-in garantido: instruções de entrada (dono preenche; inquilino vê após as duas assinaturas) e "Não consegui entrar".
+  const dadosCheckin = { status: c.status, papel: c.papel, assinadoProprietarioEm: c.assinadoProprietarioEm, assinadoInquilinoEm: c.assinadoInquilinoEm };
+  const checkin = c.status === "ativo" ? await instrucoesDoContrato(c.id) : null;
   return (
     <>
       <Link href={voltarHref} className="mb-3 inline-flex items-center gap-1 text-sm text-muted hover:text-ink">
@@ -66,6 +72,14 @@ export async function ContratoDetalhe({
         <Panel className="mt-5 p-5" data-testid="lembrete-senha-entrada">
           <h2 className="font-title text-base font-bold text-ink">Antes de entrar</h2>
           <p className="mt-1 text-sm text-ink">{LEMBRETE_SENHA_ENTRADA}</p>
+        </Panel>
+      )}
+      {checkin && (
+        <Panel className="mt-5 p-5" data-testid="checkin-painel">
+          <h2 className="font-title text-base font-bold text-ink">Check-in: instruções de entrada</h2>
+          <div className="mt-3">
+            <CheckinContrato contratoId={c.id} info={checkin} podeEditar={podeEditarInstrucoes(dadosCheckin)} podeNaoConsegui={podeNaoConsegui(dadosCheckin)} />
+          </div>
         </Panel>
       )}
       <LinhaDoTempoEstadia etapas={c.linhaDoTempo} />
