@@ -18,6 +18,14 @@ export const NO_LABORATORIO = process.env.INTEGRACOES_SIMULADAS === "on" && !!UR
 
 export const adm = (): SupabaseClient => createClient(URL_SUPABASE!, CHAVE_SERVICO!, { auth: { persistSession: false } });
 
+/**
+ * Zera o limite de chamados (8 por hora por IP de visitante). No laboratório todos os visitantes saem do mesmo IP
+ * e vários specs abrem chamado pelo chat: sem isto, os últimos recebem "Muitos chamados em pouco tempo".
+ */
+export async function liberarLimiteChamados(): Promise<void> {
+  await adm().from("limites_uso").delete().like("chave", "chamado:%");
+}
+
 export const novaSenha = (): string => randomBytes(12).toString("hex");
 export const novoSufixo = (): string => randomBytes(3).toString("hex");
 

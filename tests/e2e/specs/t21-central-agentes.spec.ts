@@ -1,6 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import { authFile } from "../fixtures/auth";
+import { liberarLimiteChamados } from "../fixtures/laboratorio";
 
 /**
  * T21 — CENTRAL DE AGENTES v2 (/admin/agentes no visual do QG). Os dados vêm
@@ -134,6 +135,7 @@ test.describe("T21 — Central de Agentes v2", () => {
 
   test("Moacir gerente: 'chegou chamado novo?' consulta o banco, pergunta à Viva e responde com código e prazo", async ({ page, browser }) => {
     test.skip(process.env.INTEGRACOES_SIMULADAS !== "on", "Abre chamado de verdade: só no laboratório.");
+    await liberarLimiteChamados();
     // Um chamado novo de visitante (como chega de verdade, pelo chat da /ajuda).
     const vis = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const p = await vis.newPage();

@@ -2,6 +2,7 @@ import fs from "node:fs";
 import { test, expect, type Page } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import { authFile } from "../fixtures/auth";
+import { liberarLimiteChamados } from "../fixtures/laboratorio";
 
 /**
  * T24 — PRIMEIRA RESPOSTA NA HORA (laboratório).
@@ -48,6 +49,7 @@ async function abrirPeloFormulario(page: Page, assunto: string, pedido: string, 
 test.describe("T24 — Acolhimento e resposta sugerida", () => {
   test.skip(!noLaboratorio || !URL || !SERVICE, "Só no laboratório (banco local + service role).");
   test.describe.configure({ mode: "default" });
+  test.beforeEach(liberarLimiteChamados);
   const adm = () => createClient(URL!, SERVICE!, { auth: { persistSession: false } });
 
   async function mensagens(numero: string) {
