@@ -51,6 +51,12 @@ test.describe("T88 — Página do imóvel completa", () => {
     expect(Math.round(caixaNav.y), "abas presas logo abaixo do cabeçalho").toBeLessThanOrEqual(80);
     await page.screenshot({ path: "tests/laboratorio/saida/t88-avaliacoes-1440.png" });
 
+    // Cartão de preço lateral não fica por baixo das abas. Medido enquanto a coluna
+    // ainda está na tela: ao rolar para além da grade (Localização), o cartão sai junto
+    // com ela e y negativo é esperado, não é defeito.
+    const cartao = (await page.locator("#cartao-preco").boundingBox())!;
+    expect(cartao.y).toBeGreaterThanOrEqual(caixaNav.y + caixaNav.height - 1);
+
     // Rolar até a localização muda a aba ativa sozinho.
     await page.locator("#localizacao").evaluate((el) => el.scrollIntoView({ block: "start" }));
     await expect(nav.getByRole("link", { name: "Localização" })).toHaveAttribute("aria-current", "true");
@@ -64,9 +70,6 @@ test.describe("T88 — Página do imóvel completa", () => {
     await page.keyboard.press("Escape");
     await expect(mapa).toHaveCount(0);
 
-    // Cartão de preço lateral não fica por baixo das abas.
-    const cartao = (await page.locator("#cartao-preco").boundingBox())!;
-    expect(cartao.y).toBeGreaterThanOrEqual(caixaNav.y + caixaNav.height - 1);
     expect(await semRolagem(page)).toBeLessThanOrEqual(1);
   });
 
