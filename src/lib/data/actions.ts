@@ -1257,7 +1257,9 @@ export async function requestLead(
   // e-mail oficial (dava para enviar um título com link de golpe).
   _tituloDoCliente: string,
   kind: LeadKind,
-  note?: string
+  note?: string,
+  // F37: data de entrada que o inquilino quer (opcional). Só a candidatura guarda; o servidor valida.
+  inicioDesejado?: string
 ): Promise<ActionResult & { needsAuth?: boolean; selfOwned?: boolean; exemplo?: boolean }> {
   // T9: anúncio de EXEMPLO não tem dono — nada de candidatura, contato nem e-mail
   // (antes ia o nome do inquilino para um e-mail pessoal de fallback).
@@ -1358,7 +1360,15 @@ export async function requestLead(
     if (!existing) {
       const { error: leadErr } = await supabase
         .from("leads")
-        .insert({ property_id: propertyId, owner_id: ownerId, tenant_id: user.id, status: "new" });
+        .insert({
+          property_id: propertyId,
+          owner_id: ownerId,
+          tenant_id: user.id,
+          status: "new",
+          ...(kind === "candidatura" && validarInicioEstadia(inicioDesejado, hojeBR()).ok
+            ? { inicio_desejado: inicioDesejado!.trim() }
+            : {}),
+        });
       // 23505 = duplicado (corrida): não é erro real. Demais erros: registra.
       if (leadErr && leadErr.code !== "23505") {
         console.error("[requestLead] falha ao gravar lead:", leadErr.message);

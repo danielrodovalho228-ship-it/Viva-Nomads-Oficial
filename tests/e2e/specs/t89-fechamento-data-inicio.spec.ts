@@ -51,6 +51,23 @@ test.describe("T89 — data de início no Fechamento", () => {
     await pagina.context().close();
   });
 
+  test("a data que o inquilino pôs na candidatura já vem preenchida; data que já passou volta para hoje", async ({ browser }) => {
+    test.setTimeout(120_000);
+    const hoje = hojeBR();
+    const desejada = addDiasISO(hoje, 12);
+    const { error } = await adm().from("leads").update({ inicio_desejado: desejada }).eq("id", ids.lead!);
+    expect(error).toBeNull();
+    const pagina = await entrar(browser, dono.email, senha);
+    await pagina.goto(`/dashboard/fechamento?c=${ids.lead}`, { waitUntil: "networkidle" });
+    await expect(pagina.getByTestId("inicio-estadia")).toHaveValue(desejada, { timeout: 15_000 });
+
+    // Data guardada que já passou não vira data inválida no Fechamento: abre em hoje.
+    await adm().from("leads").update({ inicio_desejado: addDiasISO(hoje, -5) }).eq("id", ids.lead!);
+    await pagina.goto(`/dashboard/fechamento?c=${ids.lead}`, { waitUntil: "networkidle" });
+    await expect(pagina.getByTestId("inicio-estadia")).toHaveValue(hoje, { timeout: 15_000 });
+    await pagina.context().close();
+  });
+
   test("contrato com início futuro: o bloco 1 e o resumo do inquilino mostram a data escolhida", async ({ browser }) => {
     test.setTimeout(120_000);
     const futura = addDiasISO(hojeBR(), 20);

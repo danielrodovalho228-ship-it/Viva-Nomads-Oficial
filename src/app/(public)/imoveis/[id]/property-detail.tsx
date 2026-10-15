@@ -2,7 +2,7 @@
 
 import { AvisoPetCandidatura } from "@/components/property/aviso-pet-candidatura";
 import { ProblemaComIsto } from "@/components/ajuda/problema-com-isto";
-import { numBR } from "@/lib/utils";
+import { numBR, hojeBR } from "@/lib/utils";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -62,6 +62,8 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
   const [selfNote, setSelfNote] = useState(false);
   const [leadErro, setLeadErro] = useState<string | null>(null);
   const [candidatouSe, setCandidatouSe] = useState(false);
+  // F37: quando a pessoa quer entrar (opcional); o Fechamento do dono abre com essa data.
+  const [inicioDesejado, setInicioDesejado] = useState("");
   // Composer de dúvida/visita: o inquilino escreve a mensagem de verdade.
   const [composeKind, setComposeKind] = useState<"duvida" | "visita" | null>(null);
   const [composeText, setComposeText] = useState("");
@@ -88,7 +90,7 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
     if (kind === "candidatura") registrarEvento("iniciar_candidatura", { imovelId: property.id, cidade: property.city });
     setPending(kind);
     setLeadErro(null);
-    const r = await requestLead(property.id, property.title, kind, note).catch(() => null);
+    const r = await requestLead(property.id, property.title, kind, note, kind === "candidatura" && inicioDesejado ? inicioDesejado : undefined).catch(() => null);
     setPending(null);
     if (r?.needsAuth) {
       // Sem sessão: leva ao login e volta para este anúncio depois de entrar.
@@ -180,6 +182,17 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
   ) : (
     <div className="flex flex-col gap-2">
       <AvisoPetCandidatura petsAllowed={property.petsAllowed} regras={property.petsRegras} />
+      <label className="flex flex-col gap-1 text-xs font-medium text-ink">
+        Quando quer entrar? (opcional)
+        <input
+          type="date"
+          data-testid="candidatura-inicio"
+          min={hojeBR()}
+          value={inicioDesejado}
+          onChange={(e) => setInicioDesejado(e.target.value)}
+          className="h-11 w-full rounded-xl border border-line bg-white px-3 text-base text-ink"
+        />
+      </label>
       <Button
         variant="gold"
         size="lg"
