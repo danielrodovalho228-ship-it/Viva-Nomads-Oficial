@@ -12,6 +12,7 @@ import { paginaCidade } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
 import { calcularPrecosMedios, rotuloQuartos } from "@/lib/preco-medio";
 import { polosDaCidade } from "@/lib/polos";
+import { faqPageCidade, perguntasCidade } from "@/lib/seo/anuncio-cidade";
 
 // F9: dados frescos (revalidatePath nas ações + rede de segurança de 60 s).
 export const revalidate = 60;
@@ -59,6 +60,7 @@ export default async function CityLandingPage({ params }: Params) {
   return (
     <>
       {infoCidade && <JsonLd dados={paginaCidade(SITE_URL, infoCidade, properties, (id) => isExemplo(id))} />}
+      {infoCidade && <JsonLd dados={faqPageCidade(name)} />}
       <section className="bg-forest section-y text-white">
         <div className="container-page">
           <nav className="text-sm text-white/60">
@@ -170,6 +172,19 @@ export default async function CityLandingPage({ params }: Params) {
             e <strong className="text-forest">{SELOS.bemLocalizado.nome}</strong> ({SELOS.bemLocalizado.resumo})
             ajudam quem trabalha remoto ou está em projeto temporário na cidade.
           </p>
+        </div>
+
+
+        <div className="mt-10 max-w-3xl" data-testid="faq-cidade">
+          <h3 className="font-title text-xl font-bold text-ink">Perguntas frequentes sobre {name}</h3>
+          <dl className="mt-3 space-y-4">
+            {perguntasCidade(name).map((q) => (
+              <div key={q.pergunta}>
+                <dt className="font-semibold text-ink">{q.pergunta}</dt>
+                <dd className="mt-1 text-muted">{q.resposta}</dd>
+              </div>
+            ))}
+          </dl>
         </div>
       </section>
     </>
