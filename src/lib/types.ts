@@ -39,6 +39,8 @@ export interface Review {
   rating: number; // 0–5
   comment: string;
   date?: string; // ISO
+  /** Resposta pública do proprietário (0128), se houver. */
+  reply?: string;
 }
 
 /** Perfil público do proprietário (bloco de confiança). */
