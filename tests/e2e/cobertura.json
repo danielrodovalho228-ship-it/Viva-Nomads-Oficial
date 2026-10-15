@@ -275,6 +275,15 @@
         "t72-paginas-institucionais"
       ]
     },
+    "/comparar": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t100-comparar-imoveis",
+        "t48-varredura"
+      ]
+    },
     "/conferir": {
       "personas": [
         "publico"
