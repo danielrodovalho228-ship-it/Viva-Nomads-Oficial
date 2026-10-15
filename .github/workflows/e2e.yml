@@ -121,7 +121,7 @@ jobs:
 
       - name: Instalar Chromium do Playwright
         if: steps.alvo.outputs.rodar == 'true'
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium webkit
 
       - name: Semear dados de teste (se houver service role)
         if: ${{ steps.alvo.outputs.rodar == 'true' && env.SUPABASE_SERVICE_ROLE_KEY != '' }}

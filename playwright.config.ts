@@ -55,6 +55,12 @@ export default defineConfig({
       },
     },
     {
+      // Ordem c27c7ae6: login no Safari do iPhone (WebKit). Só o t80 roda aqui.
+      name: "webkit-iphone",
+      testMatch: /t80-login-celular\.spec\.ts/,
+      use: { ...devices["iPhone 13"] },
+    },
+    {
       // Modo app (Android/iPhone): tela de celular + o marcador "VivaNomadsApp"
       // que o app nativo acrescenta ao user-agent. T14, T39 e T46 rodam aqui.
       name: "app-mobile",
