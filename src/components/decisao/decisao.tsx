@@ -1,4 +1,9 @@
 import styles from "./decisao.module.css";
+import { comparativoRegraComissao } from "@/lib/financeiro/projecao";
+import { ALUGUEL_MEDIO, TAXA_MEDIA } from "@/config/premissas-financeiras";
+import { pctTexto } from "@/lib/cobranca/regra";
+
+const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 const COMPARACAO: { crit: string; trad: string; hib: string }[] = [
   { crit: "Como cobra", trad: "% do aluguel todo mês, para sempre", hib: "Assinatura + comissão uma vez, só no fechamento" },
@@ -18,7 +23,8 @@ const RAZOES = [
 
 const SOCIOS = ["Daniel", "Rômulo", "Danilo", "Rogério"];
 
-export function Decisao() {
+export function Decisao({ meses }: { meses: number }) {
+  const cmp = comparativoRegraComissao(meses);
   return (
     <div className={styles.page}>
       <div className={styles.hero}>
@@ -97,6 +103,45 @@ export function Decisao() {
                     <td className={styles.hi}>{r.hib}</td>
                   </tr>
                 ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {/* Regra antiga × regra nova da taxa */}
+        <section className={styles.section} id="regra-da-taxa">
+          <div className={styles.kicker}>Taxa por contrato</div>
+          <h2 className={styles.h2}>Regra antiga (1º mês) × regra nova (valor total)</h2>
+          <p>
+            Aluguel médio de {brl(ALUGUEL_MEDIO)} e taxa de {pctTexto(TAXA_MEDIA)} (faixa de 1 a 2 imóveis). A regra vigente cobra a taxa sobre o
+            valor total do contrato (aluguel × meses); a antiga cobrava só sobre o 1º mês e está aqui apenas para comparar.
+          </p>
+          <form method="get" action="/decisao#regra-da-taxa" className="my-3 flex flex-wrap items-center gap-2">
+            <label htmlFor="meses">Duração média do contrato (meses)</label>
+            <input id="meses" name="meses" type="number" inputMode="numeric" min={1} max={12} step={1} defaultValue={cmp.meses} className="w-20 rounded border px-2 py-1" />
+            <button type="submit" className="rounded border px-3 py-1 font-semibold">Recalcular</button>
+          </form>
+          <div className={styles.tableWrap}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>Regra</th>
+                  <th>Taxa por contrato</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className={styles.crit}>Antiga (histórica): só o 1º mês</td>
+                  <td>{brl(cmp.regraAntiga)}</td>
+                </tr>
+                <tr>
+                  <td className={styles.crit}>Nova (vigente): valor total de {cmp.meses} {cmp.meses === 1 ? "mês" : "meses"}</td>
+                  <td className={styles.hi}>{brl(cmp.regraNova)}</td>
+                </tr>
+                <tr>
+                  <td className={styles.crit}>Diferença por contrato</td>
+                  <td>{brl(cmp.diferenca)}</td>
+                </tr>
               </tbody>
             </table>
           </div>

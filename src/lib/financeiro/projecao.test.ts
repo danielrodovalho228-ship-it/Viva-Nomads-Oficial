@@ -4,7 +4,7 @@
 */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { CUSTO_FERRAMENTAS_POR_CONTRATO, CUSTO_FIXO_PADRAO, cenariosContratosMes, parceirosPorContrato, porContrato, projetar, receitaBrutaMensal, taxaMediaPorContrato, visaoInvestidor } from "./projecao.ts";
+import { comparativoRegraComissao, mesesContratoValidos, CUSTO_FERRAMENTAS_POR_CONTRATO, CUSTO_FIXO_PADRAO, cenariosContratosMes, parceirosPorContrato, porContrato, projetar, receitaBrutaMensal, taxaMediaPorContrato, visaoInvestidor } from "./projecao.ts";
 import { ALUGUEL_MEDIO, MESES_MEDIOS_CONTRATO, CONTRATOS_MES_CENARIOS, CUSTOS_FIXOS, CUSTO_FIXO_FAIXA, IMPOSTO_OPCOES, IMPOSTO_SOBRE_RECEITA, MIX_FAIXAS, PARCEIROS, REFERENCIA, REPRESENTANTE_SEGUROS, SELO_POTENCIAL, TAXA_MEDIA } from "../../config/premissas-financeiras.ts";
 import { FAIXAS_COMISSAO_PADRAO, taxaMediaPonderada, comissaoSobreContrato } from "../cobranca/regra.ts";
 
@@ -172,4 +172,28 @@ test("imposto da Viva: padrão 6%; anexo V (15,5%) → margem ≈ R$ 1.298 e emp
   assert.deepEqual(porContrato({ operador: 100, imposto: 0.155 }).empate.map((x) => Math.ceil(x)), [6, 7]);
   assert.equal(porContrato({ operador: 0 }).margem, porContrato({ operador: 0, imposto: 0.06 }).margem);
   assert.ok(projetar("base", { operador: 0, imposto: 0.155 }).piorCaixa < projetar("base", { operador: 0 }).piorCaixa);
+});
+
+test("duração média do contrato editável (ordem 5df28a7b): entra na receita; valor inválido volta ao padrão", () => {
+  assert.equal(mesesContratoValidos("2"), 2);
+  assert.equal(mesesContratoValidos("abc"), MESES_MEDIOS_CONTRATO);
+  assert.equal(mesesContratoValidos("0"), MESES_MEDIOS_CONTRATO);
+  assert.equal(mesesContratoValidos("13"), MESES_MEDIOS_CONTRATO);
+  assert.equal(mesesContratoValidos("1.5"), MESES_MEDIOS_CONTRATO);
+  assert.equal(mesesContratoValidos(undefined), MESES_MEDIOS_CONTRATO);
+  const base = { operador: 0 };
+  const r1 = porContrato({ ...base, mesesContrato: 1 }).receita;
+  const r3 = porContrato({ ...base, mesesContrato: 3 }).receita;
+  assert.ok(Math.abs(r3 - 3 * r1) < 0.01);
+  assert.equal(porContrato(base).receita, r3); // padrão = 3 meses
+  const a1 = projetar("base", { ...base, mesesContrato: 1 }).anos[0].receitaBase;
+  const a3 = projetar("base", { ...base, mesesContrato: 3 }).anos[0].receitaBase;
+  assert.ok(a3 > a1 && Math.abs(a3 - 3 * a1) < 1);
+});
+
+test("regra antiga (1º mês) × nova (valor total) lado a lado", () => {
+  const c = comparativoRegraComissao(3, 3000, 0.12);
+  assert.deepEqual(c, { meses: 3, regraAntiga: 360, regraNova: 1080, diferenca: 720 });
+  assert.equal(comparativoRegraComissao(1, 3000, 0.12).diferenca, 0); // 1 mês: as regras coincidem
+  assert.equal(comparativoRegraComissao(99, 3000, 0.12).meses, MESES_MEDIOS_CONTRATO); // inválido → padrão
 });
