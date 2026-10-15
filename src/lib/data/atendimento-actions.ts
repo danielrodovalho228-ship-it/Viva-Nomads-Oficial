@@ -148,13 +148,25 @@ export async function abrirChamado(
   // Manutenção: cria a ordem para o proprietário (inquilino com contrato ativo).
   let serviceOrderId: string | null = null;
   let manut: OrdemCriada | null = null;
-  if (tipo === "manutencao") {
+  // "Não consegui entrar" (check-in garantido, ordem 404cd213 item 2): com contrato informado, também abre a
+  // ordem URGENTE (prazo de 4 h do proprietário). Sem contrato válido, o chamado segue sem ordem.
+  const contratoAcesso = input.contratoId ?? (contextoTipo === "contrato" ? contextoId : null);
+  const abreOrdem = tipo === "manutencao" || (cat.key === "acesso_imovel" && !!user && !!contratoAcesso);
+  if (abreOrdem) {
     if (!user) return { ok: false, error: "Entre na sua conta para pedir manutenção." };
     const contratoId = input.contratoId ?? (contextoTipo === "contrato" ? contextoId : null);
     if (!contratoId) return { ok: false, error: "Escolha o contrato do imóvel." };
-    const r = await criarOrdemManutencao({ tenantId: user.id, contratoId, mensagem, urgencia: input.urgencia, categoria: input.categoriaManutencao });
-    if (!r.ok) return { ok: false, error: r.error };
-    manut = r.ordem;
+    const r = await criarOrdemManutencao({
+      tenantId: user.id,
+      contratoId,
+      mensagem,
+      urgencia: cat.key === "acesso_imovel" ? "urgente" : input.urgencia,
+      categoria: input.categoriaManutencao,
+    });
+    if (!r.ok && cat.key !== "acesso_imovel") return { ok: false, error: r.error };
+    if (r.ok) manut = r.ordem;
+  }
+  if (manut) {
     serviceOrderId = manut.serviceOrderId;
     contextoTipo = "manutencao";
     contextoId = serviceOrderId;
