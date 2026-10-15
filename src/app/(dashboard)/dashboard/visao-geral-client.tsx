@@ -92,7 +92,7 @@ function OwnerDashboard({ name, imoveisDono }: { name: string; imoveisDono: Prop
       <DashboardBanner
         className="mb-6"
         image={PHOTOS.dashOwner}
-        alt="Sala de apartamento mobiliado preparada para anúncio"
+        alt="Sala de imóvel mobiliado preparada para anúncio"
         title={`Olá${name ? `, ${name}` : "!"} 👋`}
         subtitle="Prepare seu imóvel, publique e fale com inquilinos qualificados."
         action={
@@ -358,7 +358,7 @@ function OwnerFunnel({ name, draft }: { name: string; draft?: RascunhoPendente |
       <DashboardBanner
         className="mb-6"
         image={PHOTOS.dashOwner}
-        alt="Sala de apartamento mobiliado preparada para anúncio"
+        alt="Sala de imóvel mobiliado preparada para anúncio"
         title={`Bem-vindo${name ? `, ${name}` : ""}! 👋`}
         subtitle="Vamos colocar seu primeiro imóvel no ar em 3 passos."
         action={
