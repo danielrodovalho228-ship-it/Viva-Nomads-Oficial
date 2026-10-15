@@ -51,3 +51,13 @@ test("F37: o bloco 1 começa na data escolhida e a data aparece no cartão do co
   const leitura = readFileSync(new URL("./data/contrato-assinar-actions.ts", import.meta.url), "utf8");
   assert.match(leitura, /inicioEstadia: inicio,/);
 });
+
+test("data sugerida no Fechamento: usa a da candidatura se ainda vale, senão hoje", async () => {
+  const { inicioSugerido } = await import("./inicio-estadia.ts");
+  assert.equal(inicioSugerido("2026-11-03", HOJE), "2026-11-03");
+  assert.equal(inicioSugerido("2026-10-15", HOJE), "2026-10-15");
+  // Já passou, vazia, torta ou longe demais: cai em hoje (nunca preenche data inválida).
+  for (const v of ["2026-10-01", "", null, undefined, "03/11/2026", "2030-01-01"]) {
+    assert.equal(inicioSugerido(v, HOJE), HOJE, String(v));
+  }
+});
