@@ -543,6 +543,7 @@ export default function NewPropertyPage() {
     setEtapaMax(posMaxDoRascunho(d));
   }
 
+  const draftIdRef = useRef<string | null>(null);
   // Retomada por `?draft=<id>` — carrega o snapshot do SERVIDOR e restaura tudo
   // (campos + etapa). É o "Continuar editando" de um rascunho de Meus imóveis.
   useEffect(() => {
@@ -697,7 +698,6 @@ export default function NewPropertyPage() {
   // Autosave REAL no servidor (P0). draftIdRef guarda o id de forma síncrona (o
   // 1º save insere e fixa o id; os seguintes ATUALIZAM — sem rascunhos
   // duplicados). localStorage segue como cinto secundário.
-  const draftIdRef = useRef<string | null>(null);
   useEffect(() => {
     // Não autossalva em modo edição (?id — imóvel existente, não é rascunho novo).
     if (approved !== true || editId) return;
@@ -713,6 +713,9 @@ export default function NewPropertyPage() {
     if (vazio) return;
 
     let on = true;
+    // Marca "Salvando…" já ao detectar a alteração (antes do debounce): é a
+    // sincronização com o autosave, por isso o setState dentro do effect.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSaveStatus("saving");
     const t = setTimeout(async () => {
       if (!on) return;
@@ -756,7 +759,9 @@ export default function NewPropertyPage() {
   // ("Salvando…") ou após falha de rede ("não salvo"). Ref para não reassinar o
   // listener a cada tecla. Edição (?id) não é rascunho — sem guarda.
   const unsavedRef = useRef(false);
-  unsavedRef.current = !editId && (saveStatus === "saving" || saveStatus === "error");
+  useEffect(() => {
+    unsavedRef.current = !editId && (saveStatus === "saving" || saveStatus === "error");
+  }, [editId, saveStatus]);
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
       if (!unsavedRef.current) return;
