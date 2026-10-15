@@ -7,7 +7,8 @@
       ],
       "specs": [
         "t66-home-busca-principal",
-        "t69-botoes-header"
+        "t69-botoes-header",
+        "t91-antigolpe-atalhos"
       ]
     },
     "/acesso-socios": {
@@ -739,7 +740,8 @@
         "t1-auth-guards",
         "t18-seo-a11y",
         "t69-botoes-header",
-        "t72-paginas-institucionais"
+        "t72-paginas-institucionais",
+        "t91-antigolpe-atalhos"
       ]
     },
     "/precos": {
