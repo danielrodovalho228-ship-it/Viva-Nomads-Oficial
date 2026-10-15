@@ -26,3 +26,9 @@ test("sem preço válido a barra não aparece (não inventa número)", () => {
   assert.equal(barraFixaImovel({ monthlyPrice: 0, exemplo: false, candidatouSe: false }).visivel, false);
   assert.equal(barraFixaImovel({ monthlyPrice: Number.NaN, exemplo: false, candidatouSe: false }).visivel, false);
 });
+
+test("barra mostra o status de disponibilidade (ordem d943f893)", () => {
+  const b = barraFixaImovel({ monthlyPrice: 3200, exemplo: false, candidatouSe: false, availableFrom: "2026-12-05", hoje: "2026-10-15" });
+  assert.equal(b.status, "Disponível a partir de 05/12");
+  assert.equal(barraFixaImovel({ monthlyPrice: 3200, exemplo: false, candidatouSe: false, hoje: "2026-10-15" }).status, "Disponível agora");
+});

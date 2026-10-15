@@ -57,7 +57,13 @@ export function podeVerAvatar(ctx: CtxVisibilidade): boolean {
 
 /** Iniciais determinísticas (até 2) a partir do nome. */
 export function iniciais(nome: string): string {
-  const parts = (nome || "").trim().split(/\s+/).filter(Boolean);
+  // Ignora o que está entre parênteses ("Proprietário (exemplo)" → "P") e
+  // palavras que não começam com letra, para o avatar nunca mostrar "P(".
+  const parts = (nome || "")
+    .replace(/\([^)]*\)?/g, " ")
+    .trim()
+    .split(/\s+/)
+    .filter((w) => /^\p{L}/u.test(w));
   if (parts.length === 0) return "?";
   const first = parts[0].charAt(0);
   const last = parts.length > 1 ? parts[parts.length - 1].charAt(0) : "";

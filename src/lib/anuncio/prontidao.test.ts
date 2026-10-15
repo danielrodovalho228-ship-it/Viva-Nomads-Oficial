@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { readFileSync } from "node:fs";
 
-import { faixaDocumentoAprovado, fatosDaLinha, MIN_FOTOS, OBRIGATORIOS_ROTULOS, prontidaoAnuncio, type FatosAnuncio, type LinhaAnuncio } from "./prontidao.ts";
+import { checklistAnuncio, faixaDocumentoAprovado, fatosDaLinha, MIN_FOTOS, OBRIGATORIOS_ROTULOS, prontidaoAnuncio, type FatosAnuncio, type LinhaAnuncio } from "./prontidao.ts";
 import { MIN_PHOTOS } from "../listing.ts";
 import { FAQ } from "../atendimento/faq.ts";
 
@@ -133,4 +133,40 @@ test("#58: tudo pronto vira 'é só publicar'; documento não aprovado ou anúnc
   assert.equal(faixaDocumentoAprovado(pronto, "active"), null);
   const pendente = prontidaoAnuncio({ ...completo(), documento: "pending" });
   assert.equal(faixaDocumentoAprovado(pendente, "draft"), null);
+});
+
+test("checklist do anúncio em andamento: ✓/○, cada pendência leva à etapa certa e o próximo passo vem em destaque", () => {
+  const p = prontidaoAnuncio({ ...completo(), fotos: 3, documento: "pending", descricao: "curta" });
+  const c = checklistAnuncio(p, "abc-123");
+  assert.equal(c.itens.length, p.obrigatorios.length);
+  assert.equal(c.itens.filter((i) => !i.ok).length, p.faltam.length);
+  assert.equal(c.proximo?.key, "fotos");
+  assert.equal(c.proximo?.href, "/dashboard/imoveis/novo?draft=abc-123&etapa=3");
+  assert.equal(c.itens.find((i) => i.key === "descricao")?.href, "/dashboard/imoveis/novo?draft=abc-123&etapa=5");
+  // documento não é etapa do editor: leva à Revisão (6), onde aparece o estado da moderação.
+  assert.equal(c.itens.find((i) => i.key === "documento")?.href, "/dashboard/imoveis/novo?draft=abc-123&etapa=6");
+  assert.equal(c.itens.find((i) => i.key === "endereco")?.ok, true);
+});
+
+test("checklist: tudo feito → sem próximo passo; vaga no plano leva à página do plano", () => {
+  assert.equal(checklistAnuncio(prontidaoAnuncio(completo()), "x").proximo, null);
+  const lim = checklistAnuncio(prontidaoAnuncio({ ...completo(), limitePlanoOk: false }), "x");
+  assert.equal(lim.proximo?.href, "/precos");
+});
+
+test("vaga no plano: texto curto com o número, 2 botões, e só aparece se for o único bloqueio", () => {
+  const um = prontidaoAnuncio({ ...completo(), limitePlanoOk: false, limiteAnuncios: 1 });
+  assert.equal(um.obrigatorios.find((i) => i.key === "limite")?.detalhe, "Seu plano permite 1 anúncio no ar. Para publicar este, pause outro ou mude de plano");
+  assert.match(prontidaoAnuncio({ ...completo(), limitePlanoOk: false, limiteAnuncios: 3 }).faltam[0], /permite 3 anúncios no ar/);
+  const acoes = checklistAnuncio(um, "x").proximo?.acoes;
+  assert.deepEqual(acoes?.map((a) => a.href), ["/dashboard/imoveis", "/precos"]);
+  // Com outra pendência (fotos), a vaga ainda não é mostrada.
+  const outro = prontidaoAnuncio({ ...completo(), fotos: 0, limitePlanoOk: false, limiteAnuncios: 1 });
+  assert.equal(outro.obrigatorios.some((i) => i.key === "limite"), false);
+  assert.equal(outro.faltam.length, 1);
+});
+
+test("checklist: o id do rascunho vai codificado na URL", () => {
+  const c = checklistAnuncio(prontidaoAnuncio({ ...completo(), fotos: 0 }), "a&b=1");
+  assert.ok(c.proximo?.href.includes("draft=a%26b%3D1"));
 });

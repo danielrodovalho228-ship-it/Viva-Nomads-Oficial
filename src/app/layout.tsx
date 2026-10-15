@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   ...(process.env.NEXT_PUBLIC_IOS_APP_ID ? { itunes: { appId: process.env.NEXT_PUBLIC_IOS_APP_ID } } : {}),
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Viva Nomads — Imóveis mobiliados para estadias de 30 a 180 dias",
+    default: "Imóveis mobiliados de 30 a 180 dias · Viva Nomads",
     template: "%s · Viva Nomads",
   },
   description:

@@ -7,7 +7,9 @@
       ],
       "specs": [
         "t66-home-busca-principal",
-        "t69-botoes-header"
+        "t69-botoes-header",
+        "t90-orcamento-velocidade",
+        "t96-antigolpe-atalhos"
       ]
     },
     "/acesso-socios": {
@@ -86,6 +88,15 @@
         "t25-chamado-resumo"
       ]
     },
+    "/admin/avaliacoes": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t91-avaliacao-resposta",
+        "t93-avaliacao-tela"
+      ]
+    },
     "/admin/documentos": {
       "personas": [
         "admin"
@@ -137,6 +148,14 @@
       ],
       "specs": [
         "t51-admin-padrao-caixa-socios"
+      ]
+    },
+    "/admin/usuarios": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t101-admin-usuarios"
       ]
     },
     "/ajuda": {
@@ -229,10 +248,11 @@
         "t20-p1-agentes",
         "t23-pacote-seguranca",
         "t67-busca-celular",
-        "t7-fluxo-publico",
         "t69-botoes-header",
+        "t7-fluxo-publico",
         "t70-busca-split",
-        "t71-busca-topo"
+        "t71-busca-topo",
+        "t90-orcamento-velocidade"
       ]
     },
     "/cidades": {
@@ -316,7 +336,8 @@
         "t55-manutencao-ciclo",
         "t6-dinheiro-numeros",
         "t7-fluxo-publico",
-        "t8-rascunho"
+        "t8-rascunho",
+        "t98-score-anuncio"
       ]
     },
     "/dashboard/assinatura": {
@@ -329,6 +350,16 @@
         "t35-troca-de-plano",
         "t38-varios-imoveis-por-dono",
         "t39-app-ida-e-volta"
+      ]
+    },
+    "/dashboard/avaliacoes": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t91-avaliacao-resposta",
+        "t93-avaliacao-tela"
       ]
     },
     "/dashboard/buscas": {
@@ -355,7 +386,9 @@
         "proprietario",
         "admin"
       ],
-      "specs": []
+      "specs": [
+        "t97-plangate-precos"
+      ]
     },
     "/dashboard/comparar": {
       "personas": [
@@ -431,7 +464,8 @@
         "t31-cadastro-documento",
         "t33-documentos-inquilino",
         "t36-cadastro-ponta-a-ponta",
-        "t4-fronteira-demo-real"
+        "t4-fronteira-demo-real",
+        "t89-fechamento-data-inicio"
       ]
     },
     "/dashboard/ferramentas": {
@@ -617,7 +651,9 @@
       "personas": [
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t97-plangate-precos"
+      ]
     },
     "/decisao": {
       "personas": [
@@ -660,6 +696,22 @@
         "publico"
       ],
       "specs": []
+    },
+    "/guias": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t105-guias"
+      ]
+    },
+    "/guias/[slug]": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t105-guias"
+      ]
     },
     "/imoveis/[id]": {
       "personas": [
@@ -739,7 +791,8 @@
         "t1-auth-guards",
         "t18-seo-a11y",
         "t69-botoes-header",
-        "t72-paginas-institucionais"
+        "t72-paginas-institucionais",
+        "t96-antigolpe-atalhos"
       ]
     },
     "/precos": {
@@ -754,7 +807,8 @@
         "t6-dinheiro-numeros",
         "t68-comissao-valor-total",
         "t69-botoes-header",
-        "t72-paginas-institucionais"
+        "t72-paginas-institucionais",
+        "t90-orcamento-velocidade"
       ]
     },
     "/privacidade": {
@@ -1560,6 +1614,34 @@
       ],
       "specs": []
     },
+    "src/lib/data/avaliacoes-resposta-actions.ts#decidirRevisaoAvaliacao": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t93-avaliacao-tela"
+      ]
+    },
+    "src/lib/data/avaliacoes-resposta-actions.ts#pedirRevisaoAvaliacao": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t91-avaliacao-resposta",
+        "t93-avaliacao-tela"
+      ]
+    },
+    "src/lib/data/avaliacoes-resposta-actions.ts#responderAvaliacao": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t91-avaliacao-resposta",
+        "t93-avaliacao-tela"
+      ]
+    },
     "src/lib/data/avatar-actions.ts#clearMyAvatar": {
       "personas": [
         "inquilino",
@@ -1668,35 +1750,45 @@
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t85-conferencia-entrada-saida"
+      ]
     },
     "src/lib/data/conferencia-actions.ts#conferenciasDoContrato": {
       "personas": [
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t85-conferencia-entrada-saida"
+      ]
     },
     "src/lib/data/conferencia-actions.ts#enviarFotoConferencia": {
       "personas": [
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t85-conferencia-entrada-saida"
+      ]
     },
     "src/lib/data/conferencia-actions.ts#registrarItemConferencia": {
       "personas": [
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t85-conferencia-entrada-saida"
+      ]
     },
     "src/lib/data/conferencia-actions.ts#responderConferencia": {
       "personas": [
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t85-conferencia-entrada-saida"
+      ]
     },
     "src/lib/data/contrato-assinar-actions.ts#assinarContrato": {
       "personas": [
@@ -1752,6 +1844,15 @@
         "inquilino"
       ],
       "specs": []
+    },
+    "src/lib/data/denuncia-conversa-actions.ts#denunciarConversa": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t87-denunciar-mensagem"
+      ]
     },
     "src/lib/data/documentos-actions.ts#documentosDosContratos": {
       "personas": [
@@ -2202,6 +2303,16 @@
         "admin"
       ],
       "specs": []
+    },
+    "src/lib/preco-justo-actions.ts#taxaDoMeuNovoAnuncio": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t102-preco-sugerido",
+        "t103-selo-preco-justo"
+      ]
     },
     "src/lib/seguranca/recuperacao-actions.ts#confirmarRefazer": {
       "personas": [

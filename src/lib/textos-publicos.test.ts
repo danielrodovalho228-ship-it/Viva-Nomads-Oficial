@@ -121,3 +121,10 @@ test("F4: comparativo de preços monta frases com números em uma só string (se
   assert.match(t, /`Reserva de \$\{COMPARE_MESES\} meses a \$\{reaisInteiros\(COMPARE_ALUGUEL\)\} por mês/);
   assert.match(t, /`, conferido em \$\{dataBR\(l\.conferidoEm\)\}`/);
 });
+
+test("#seguranca: /seguranca sem 'aluguel' nem 'comissão' em texto público (achado do Moacir, P3)", () => {
+  const t = ler("src/app/(public)/seguranca/page.tsx");
+  assert.doesNotMatch(t, /\balugu?el\b/i);
+  assert.doesNotMatch(t, /comiss[ãa]o/i);
+  assert.match(t, /nunca movimenta o valor mensal/);
+});
