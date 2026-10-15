@@ -51,6 +51,7 @@ import type { Property, Proximity } from "@/lib/types";
 import { cn, formatBRL } from "@/lib/utils";
 import { TEXTO_REGRA_CURTO } from "@/lib/cobranca/regra";
 import { LinhaComparativoAnuncio } from "@/components/precos/comparativo-precos";
+import { PrecoSugerido } from "@/components/precos/preco-sugerido";
 import { useAuthStore } from "@/lib/store";
 import { qualificadoDoServidor } from "@/lib/anuncio/qualificacao-rascunho";
 import { draftKey, DRAFT_KEY_LEGADO } from "@/lib/local-keys";
@@ -58,7 +59,7 @@ import { registrarEvento } from "@/lib/eventos/registrar";
 import { TERMO_IA_TEXTO, TERMO_IA_VERSAO, camposDaIa } from "@/lib/anuncio/termo-ia";
 import { miniaturaBase64 } from "@/lib/fotos/miniatura";
 import { FOTOS_MAX_MINIATURAS, iaFotosLiberada, mensagemFaltamFotosIa, type SugestaoFotos } from "@/lib/ai/fotos-prompt";
-import { etapaLiberada, etapaMaisAvancada, etapaDoRascunho, etapaNaPosicao, posicaoDaEtapa, posMaxDoRascunho, ORDEM_ETAPAS, VERSAO_ORDEM_ETAPAS } from "@/lib/etapas-anuncio";
+import { etapaDaUrl, etapaLiberada, etapaMaisAvancada, etapaDoRascunho, etapaNaPosicao, posicaoDaEtapa, posMaxDoRascunho, ORDEM_ETAPAS, VERSAO_ORDEM_ETAPAS } from "@/lib/etapas-anuncio";
 
 /** Metadados das 7 etapas do wizard (rodada 15). O índice é o ID estável da etapa; a ordem em que
  * aparecem é ORDEM_ETAPAS ("fotos primeiro", ordem 04e2fe5e). */
@@ -134,6 +135,7 @@ export default function NewPropertyPage() {
   // Proximidades manuais (nome + distância digitados) — sem depender do Google.
   const [manualProximities, setManualProximities] = useState<Proximity[]>([]);
   const [monthlyPrice, setMonthlyPrice] = useState("");
+  const [airbnbMensal, setAirbnbMensal] = useState(""); // preço mensal equivalente no Airbnb (opcional; selo Preço justo)
   // Condomínio (R$/mês) — entra no "tudo incluído" do inquilino (fonte única
   // lib/precos). Separado das contas de consumo.
   const [condoFee, setCondoFee] = useState("");
@@ -186,6 +188,8 @@ export default function NewPropertyPage() {
   const editId = searchParams.get("id");
   // Retomada de rascunho do servidor: `?draft=<id>`.
   const draftParam = searchParams.get("draft");
+  // ?etapa=N (link do checklist "Anúncio em andamento"): abre direto no campo que falta.
+  const etapaParam = etapaDaUrl(searchParams.get("etapa"));
   const [editingId, setEditingId] = useState<string | null>(null);
   const router = useRouter();
 
@@ -407,6 +411,7 @@ export default function NewPropertyPage() {
       areaM2: Number(areaM2) || 0,
       minPeriodDays: Number(minPeriod) || 30,
       monthlyPrice: Number(monthlyPrice) || 0,
+      airbnbMonthlyPrice: Number(airbnbMensal) || 0,
       readyToLiveScore: q.score,
       tagHomeOffice: q.tHome,
       tagWorkLocated: q.tWork,
@@ -503,6 +508,7 @@ export default function NewPropertyPage() {
     if (s(d.availableFrom)) setAvailableFrom(d.availableFrom as string);
     if (s(d.availableUntil)) setAvailableUntil(d.availableUntil as string);
     if (s(d.monthlyPrice)) setMonthlyPrice(d.monthlyPrice as string);
+    if (s(d.airbnbMensal)) setAirbnbMensal(d.airbnbMensal as string);
     if (s(d.condoFee)) setCondoFee(d.condoFee as string);
     if (typeof d.descricaoGeradaPorIa === "boolean") setDescricaoGeradaPorIa(d.descricaoGeradaPorIa);
     if (s(d.street)) setStreet(d.street as string);
@@ -551,6 +557,10 @@ export default function NewPropertyPage() {
       setDraftServerId(draftParam);
       setApproved(true);
       if (d && typeof d === "object") aplicarDraft(d as Record<string, unknown>);
+      if (etapaParam !== null) {
+        setStep(etapaParam);
+        setEtapaMax((m) => Math.max(m, posicaoDaEtapa(etapaParam)));
+      }
     })();
     return () => {
       alive = false;
@@ -631,6 +641,7 @@ export default function NewPropertyPage() {
       setAvailableFrom(p.availableFrom ? p.availableFrom.slice(0, 10) : "");
       setAvailableUntil(p.availableUntil ? p.availableUntil.slice(0, 10) : "");
       setMonthlyPrice(p.monthlyPrice ? String(p.monthlyPrice) : "");
+      setAirbnbMensal(p.airbnbMonthlyPrice ? String(p.airbnbMonthlyPrice) : "");
       setNeighborhood(p.neighborhood || "");
       setCity(p.city || "Uberlândia");
       setFurnished(p.furnished ?? true);
@@ -668,7 +679,7 @@ export default function NewPropertyPage() {
   // cabem com segurança no armazenamento local — por isso o aviso na tela.
   const draftJson = JSON.stringify({
     title, propertyType, description, bedrooms, bathrooms, areaM2, parkingSpots, maxGuests,
-    minPeriod, maxPeriod, availableFrom, availableUntil, monthlyPrice,
+    minPeriod, maxPeriod, availableFrom, availableUntil, monthlyPrice, airbnbMensal,
     street, neighborhood, city, cep, videoUrl,
     privacidade, furnished, petsOk, smokingAllowed, childrenAllowed, issuesInvoice,
     amenityKeys, googlePlaces, manualProximities,
@@ -1562,6 +1573,7 @@ export default function NewPropertyPage() {
               </p>
             )}
             <LinhaComparativoAnuncio aluguel={Number(monthlyPrice)} />
+            <PrecoSugerido aluguel={Number(monthlyPrice) || 0} onUsar={(v) => setMonthlyPrice(String(v))} onAirbnbMensal={(v) => setAirbnbMensal(v ? String(v) : "")} />
 
             <div className="rounded-xl border border-sage-200 p-4">
               <p className="text-sm font-medium text-ink">Despesas de consumo (água, luz, gás)</p>

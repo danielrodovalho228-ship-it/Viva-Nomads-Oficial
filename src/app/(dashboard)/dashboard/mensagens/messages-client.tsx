@@ -4,6 +4,10 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Send, ArrowLeft } from "lucide-react";
 import { PageTitle } from "@/components/dashboard/primitives";
+import Link from "next/link";
+import { AvisoAntigolpe } from "@/components/seguranca/aviso-antigolpe";
+import { AVISO_ANTIGOLPE_ALERTA, pareceDadoBancario } from "@/lib/seguranca/antigolpe";
+import { DenunciarConversa } from "@/components/mensagens/denunciar-conversa";
 import { Avatar } from "@/components/ui/avatar";
 import { sendMessage } from "@/lib/data/actions";
 import { getAvatarUrl } from "@/lib/data/avatar-actions";
@@ -119,6 +123,7 @@ function MessagesInner({ initial, demo }: { initial: Conversation[]; demo: boole
   return (
     <>
       <PageTitle title="Mensagens" action={demo ? <DemoBadge /> : undefined} />
+      <AvisoAntigolpe className="mb-3" />
       <div role="group" aria-label="Filtrar conversas" className="mb-3 flex gap-2 overflow-x-auto pb-1">
         {FILTROS.map((f) => (
           <button
@@ -207,7 +212,7 @@ function MessagesInner({ initial, demo }: { initial: Conversation[]; demo: boole
           </header>
           <div className="flex-1 space-y-3 overflow-y-auto bg-surface-2 p-5">
             {active.messages.map((m) => (
-              <div key={m.id} className={cn("flex", m.from === "me" ? "justify-end" : "justify-start")}>
+              <div key={m.id} className={cn("flex flex-col gap-1", m.from === "me" ? "items-end" : "items-start")}>
                 <span
                   className={cn(
                     "max-w-[75%] rounded-2xl px-4 py-2 text-sm",
@@ -218,6 +223,12 @@ function MessagesInner({ initial, demo }: { initial: Conversation[]; demo: boole
                 >
                   {m.text}
                 </span>
+                {m.from !== "me" && !active.contratoFechado && pareceDadoBancario(m.text) && (
+                  <span data-testid="alerta-antigolpe-mensagem" role="alert" className="max-w-[75%] rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs text-amber-900">
+                    {AVISO_ANTIGOLPE_ALERTA}{" "}
+                    <Link href="/seguranca" className="font-semibold underline">Ver dicas</Link>
+                  </span>
+                )}
               </div>
             ))}
           </div>
@@ -226,6 +237,8 @@ function MessagesInner({ initial, demo }: { initial: Conversation[]; demo: boole
               {GUARD_NOTICE}
             </p>
           )}
+          {/* Conversa com imóvel = entre pessoas; "Suporte" é a equipe, não há o que denunciar. */}
+          {active.papel !== "suporte" && <DenunciarConversa key={active.id} conversationId={active.id} demo={demo} />}
           <form onSubmit={submit} className="flex items-center gap-2 border-t border-sage-200 p-3">
             <input
               value={draft}
