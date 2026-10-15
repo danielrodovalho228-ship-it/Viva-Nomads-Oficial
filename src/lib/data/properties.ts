@@ -198,7 +198,7 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     safe(supabase.from("property_amenities").select("category, label, sort_order").eq("property_id", base.id).order("sort_order")),
     safe(supabase.from("property_workspaces").select("name, type, distance_m").eq("property_id", base.id)),
     safe(supabase.from("property_proximities").select("category, name, note, sort_order").eq("property_id", base.id).order("sort_order")),
-    safe(supabase.from("avaliacoes").select("nota_geral, comentario_publico, publicada_em").eq("imovel_id", base.id).eq("papel_autor", "inquilino").eq("status", "publicada").order("publicada_em", { ascending: false })),
+    safe(supabase.from("avaliacoes").select("id, nota_geral, comentario_publico, publicada_em").eq("imovel_id", base.id).eq("papel_autor", "inquilino").eq("status", "publicada").order("publicada_em", { ascending: false })),
     ownerId ? safe(supabase.from("profiles").select("full_name, avatar_url, created_at, response_rate, is_verified").eq("id", ownerId).maybeSingle()) : Promise.resolve(null),
     // Regras de pets (0119): coluna à parte para a página não quebrar se a migração atrasar.
     safe(supabase.from("properties").select("pets_regras").eq("id", base.id).maybeSingle()),
@@ -206,6 +206,16 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     safe(supabase.from("properties").select("sem_cameras_interior, cameras_externas, tipo_acesso, senha_trocada_estadia").eq("id", base.id).maybeSingle()),
   ]);
   const privacidade = privacidadeDaLinha(priv as PrivacidadeLinha | null);
+
+  // Resposta pública do proprietário (0128): leitura à parte — sem a migração o anúncio abre igual.
+  const idsAvaliacoes = ((reviews as { id: string }[] | null) ?? []).map((r) => r.id);
+  const respostas =
+    idsAvaliacoes.length > 0
+      ? await safe(supabase.from("avaliacao_respostas").select("avaliacao_id, texto").in("avaliacao_id", idsAvaliacoes))
+      : null;
+  const respostasPorAvaliacao = new Map(
+    ((respostas as { avaliacao_id: string; texto: string }[] | null) ?? []).map((r) => [r.avaliacao_id, r.texto]),
+  );
 
   // Comodidades agrupadas por categoria (na ordem de cadastro).
   const groupsMap = new Map<string, string[]>();
@@ -252,11 +262,12 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
       note: p.note ?? undefined,
     })),
     // Avaliação real de quem morou (0089): sem nome digitado — "Inquilino verificado".
-    reviews: ((reviews as { nota_geral: number; comentario_publico: string | null; publicada_em: string | null }[] | null) ?? []).map((r) => ({
+    reviews: ((reviews as { id: string; nota_geral: number; comentario_publico: string | null; publicada_em: string | null }[] | null) ?? []).map((r) => ({
       author: "Inquilino verificado",
       rating: Number(r.nota_geral),
       comment: r.comentario_publico ?? "",
       date: r.publicada_em ?? undefined,
+      reply: respostasPorAvaliacao.get(r.id),
     })),
     petsRegras: normalizarRegrasPets((petsLinha as { pets_regras?: unknown } | null)?.pets_regras) ?? undefined,
     privacidade,

@@ -23,4 +23,4 @@ $$;
 
 revoke all on function public.perfil_publico_dono(uuid) from public;
 grant execute on function public.perfil_publico_dono(uuid) to anon, authenticated;
-comment on function public.perfil_publico_dono(uuid) is 'Perfil público do dono de um anúncio ATIVO: só primeiro nome, foto, desde, taxa de resposta e verificado (0129).';
+comment on function public.perfil_publico_dono(uuid) is 'Perfil público do dono de um anúncio ATIVO: só primeiro nome, foto, desde, taxa de resposta e verificado (0131).';
