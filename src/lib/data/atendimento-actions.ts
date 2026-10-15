@@ -17,8 +17,8 @@ import {
   type Prioridade,
   type UrgenciaManutencao,
 } from "@/config/atendimento";
-import { avisoEmergencia, categoria, classificar, ehNumeroPublico, numeroEmergencia } from "@/lib/atendimento/classificar";
-import { avisarEquipe, avisarProprietarioManutencao, avisarUsuario, criarOrdemManutencao, pessoaValida, registrarMensagemDaPessoa, type ChamadoResumo, type OrdemCriada } from "@/lib/atendimento/servidor";
+import { avisoEmergencia, categoria, ORIENTACAO_CAMERA, classificar, ehNumeroPublico, numeroEmergencia } from "@/lib/atendimento/classificar";
+import { avisarEquipe, avisarProprietarioManutencao, avisarUsuario, criarOrdemManutencao, pausarAnuncioPorCamera, pessoaValida, registrarMensagemDaPessoa, type ChamadoResumo, type OrdemCriada } from "@/lib/atendimento/servidor";
 import { chamadoDoDono, type ClienteChamados } from "@/lib/atendimento/dono";
 import { FILAS, ehFila, filaDaCategoria, triagem } from "@/lib/atendimento/filas";
 import { prioridadeAcima } from "@/lib/atendimento/autonomo";
@@ -34,6 +34,7 @@ import { prontidaoDosImoveis } from "@/lib/anuncio/prontidao-servidor";
 import { atenderViva } from "@/lib/atendimento/viva-motor";
 import { CENARIOS, entradaDoCenario, falhasDoCenario, ferramentasDeTeste } from "@/lib/atendimento/viva-cenarios";
 import { cotacaoDolar, custoUsd, modeloViva, PRECOS_USD } from "@/lib/atendimento/viva-custo";
+import { AVISO_ANUNCIO_PAUSADO } from "@/lib/atendimento/camera-anuncio";
 import { AVISO_VIVA, ehGolpe, ORIENTACAO_GOLPE } from "@/lib/atendimento/viva-regras";
 
 /**
@@ -195,9 +196,15 @@ export async function abrirChamado(
   }
   const c = chamado as ChamadoResumo;
 
+  // Câmera escondida: o anúncio sai da busca até a equipe decidir (só o inquilino do contrato).
+  const contratoCamera = input.contratoId ?? (contextoTipo === "contrato" ? contextoId : null);
+  const anuncioPausado = cat.key === "camera" ? await pausarAnuncioPorCamera(c.id, user?.id ?? null, contratoCamera) : false;
+
   // Mensagem da pessoa + resposta automática (emergência primeiro; prazo).
   const aviso = [
     emergencia ? avisoEmergencia(emergencia) : null,
+    cat.key === "camera" ? ORIENTACAO_CAMERA : null,
+    anuncioPausado ? AVISO_ANUNCIO_PAUSADO : null,
     ehGolpe(mensagem) ? ORIENTACAO_GOLPE : null,
     manut
       ? `Abrimos o pedido de manutenção para o proprietário: ele tem até ${PRAZO_MANUTENCAO_H[manut.urgencia]} horas para responder. Você acompanha por aqui.`

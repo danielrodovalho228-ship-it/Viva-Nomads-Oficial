@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify } from "@/lib/notifications";
+import { anuncioParaPausarPorCamera, type ContratoParaCamera } from "@/lib/atendimento/camera-anuncio";
 import { textoEmail } from "@/lib/notifications/texto-seguro";
 import { SITE_URL, SUPORTE_EMAIL } from "@/lib/site";
 import { PRAZOS, PROMESSA_ATENDIMENTO, PRAZO_MANUTENCAO_H, prazoManutencao, type Prioridade, type UrgenciaManutencao } from "@/config/atendimento";
@@ -250,4 +251,21 @@ export async function avisarProprietarioManutencao(ordem: OrdemCriada, agora: Da
     subject: `${lembrete ? "Lembrete: " : ""}Manutenção ${ordem.urgencia === "urgente" ? "URGENTE " : ""}no imóvel — responda em até ${PRAZO_MANUTENCAO_H[ordem.urgencia]} h`,
     detailsHtml: `<p style="margin:12px 0 0;color:#334155;">Imóvel: <strong>${textoEmail(ordem.propertyTitle, 120)}</strong><br/>Prazo para responder: até ${prazoManutencao(ordem.urgencia, agora).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" })}.</p>`,
   }).catch(() => null);
+}
+
+/**
+ * Câmera escondida: tira o anúncio da busca (status "paused") e deixa o rastro no chamado.
+ * Só o inquilino do contrato aciona; anúncio que não está ativo não muda. Devolve se pausou.
+ */
+export async function pausarAnuncioPorCamera(chamadoId: string, usuarioId: string | null, contratoId: string | null): Promise<boolean> {
+  if (!usuarioId || !contratoId) return false;
+  const admin = createAdminClient();
+  if (!admin) return false;
+  const { data: ct } = await admin.from("contratos").select("tenant_id, property_id").eq("id", contratoId).maybeSingle();
+  const propId = anuncioParaPausarPorCamera("camera", usuarioId, (ct as ContratoParaCamera | null) ?? null);
+  if (!propId) return false;
+  const { data: pausado } = await admin.from("properties").update({ status: "paused" }).eq("id", propId).eq("status", "active").select("id");
+  if (!pausado?.length) return false;
+  await admin.from("chamado_eventos").insert({ chamado_id: chamadoId, ator_tipo: "sistema", acao: "anuncio_pausado", detalhe: "câmera/dispositivo de gravação: anúncio fora da busca até a equipe decidir" });
+  return true;
 }

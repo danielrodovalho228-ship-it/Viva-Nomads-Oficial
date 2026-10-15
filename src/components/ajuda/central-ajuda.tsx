@@ -270,6 +270,7 @@ function NovoChamado({
 
   const categorias = CATEGORIAS.filter((c) => !c.interna && (!c.exigeContrato || contratos.length > 0));
   const manutencao = cat === "manutencao";
+  const camera = cat === "camera";
   const emailMascarado = emailMascaradoDaConta(emailConta);
 
   async function enviar(e: React.FormEvent) {
@@ -282,7 +283,7 @@ function NovoChamado({
       canal,
       contextoTipo: (contexto?.tipo as "pedido" | "contrato" | "anuncio" | undefined) ?? null,
       contextoId: contexto?.id ?? null,
-      contratoId: manutencao ? contratoId || null : null,
+      contratoId: manutencao || camera ? contratoId || null : null,
       urgencia: manutencao ? urgencia : undefined,
       categoriaManutencao: manutencao ? catManut : undefined,
       visitanteNome: logado ? undefined : nome,
@@ -318,6 +319,20 @@ function NovoChamado({
             ))}
           </select>
         </label>
+
+        {camera && contratos.length > 0 && (
+          <label className="block text-sm" data-testid="camera-contrato">
+            <span className="mb-1 block font-medium text-ink">Em qual imóvel você está? (o anúncio sai da busca até a equipe analisar)</span>
+            <select value={contratoId} onChange={(e) => setContratoId(e.target.value)} className={campo}>
+              <option value="">Não informar agora</option>
+              {contratos.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.titulo}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
 
         {manutencao && (
           <div className="grid gap-4 sm:grid-cols-3">
