@@ -35,8 +35,10 @@ test.describe("T12 — Escada de planos @criticos", () => {
       const mesesSlider = page.locator('input[type="range"]').first();
 
       // Cenário BAIXO volume/valor: aluguel modesto, prazo longo (poucos
-      // contratos/ano) → o Gratuito tende a ser o melhor (assinatura não se paga).
-      await aluguel.fill("3000");
+      // contratos/ano) → o Gratuito é o melhor (assinatura não se paga). Com a
+      // comissão sobre o valor TOTAL do contrato e as faixas atuais (Essencial
+      // 8%, Pro 4%), 3.000 × 6 meses já recomenda o Essencial: o limite é ~R$ 1.500.
+      await aluguel.fill("1500");
       await mesesSlider.fill("6");
       await page.getByRole("button", { name: /^6 meses$/ }).click();
       await page.waitForTimeout(400);
