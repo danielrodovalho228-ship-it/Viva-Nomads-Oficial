@@ -24,3 +24,11 @@ test("detalhe do contrato: linhas do resumo e o aviso quebram texto sem espaço 
   assert.match(src, /data-testid="contrato-aviso-assinatura"/);
   assert.match(src, /className="[^"]*\[overflow-wrap:anywhere\][^"]*" data-testid="contrato-aviso-assinatura"/);
 });
+
+test("specs que abrem chamado de visitante pelo chat liberam o limite de 8/h por IP antes (lab ca2dd04, t24/t21)", () => {
+  const t24 = readFileSync(`${SPECS}/t24-atendimento-acolhimento.spec.ts`, "utf8");
+  const t21 = readFileSync(`${SPECS}/t21-central-agentes.spec.ts`, "utf8");
+  assert.match(t24, /test\.beforeEach\(liberarLimiteChamados\)/);
+  assert.match(t21, /await liberarLimiteChamados\(\);/);
+  assert.match(readFileSync("tests/e2e/fixtures/laboratorio.ts", "utf8"), /delete\(\)\.like\("chave", "chamado:%"\)/);
+});
