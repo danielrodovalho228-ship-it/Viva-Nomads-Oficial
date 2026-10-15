@@ -10,6 +10,8 @@ import { ButtonLink } from "@/components/ui/button";
 import { JsonLd } from "@/components/seo/json-ld";
 import { paginaCidade } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
+import { faqPageCidade, perguntasCidade, valorMedioPorMes } from "@/lib/seo/anuncio-cidade";
+import { formatBRL } from "@/lib/utils";
 
 // F9: dados frescos (revalidatePath nas ações + rede de segurança de 60 s).
 export const revalidate = 60;
@@ -51,10 +53,12 @@ export default async function CityLandingPage({ params }: Params) {
   const name = cityFromSlug(cidade);
   const properties = await listPropertiesByCity(name);
   const infoCidade = CITIES.find((c) => c.slug === cidade);
+  const valorMedio = valorMedioPorMes(properties, (id) => isExemplo(id));
 
   return (
     <>
       {infoCidade && <JsonLd dados={paginaCidade(SITE_URL, infoCidade, properties, (id) => isExemplo(id))} />}
+      {infoCidade && <JsonLd dados={faqPageCidade(name)} />}
       <section className="bg-forest section-y text-white">
         <div className="container-page">
           <nav className="text-sm text-white/60">
@@ -125,6 +129,30 @@ export default async function CityLandingPage({ params }: Params) {
             e <strong className="text-forest">{SELOS.bemLocalizado.nome}</strong> ({SELOS.bemLocalizado.resumo})
             ajudam quem trabalha remoto ou está em projeto temporário na cidade.
           </p>
+        </div>
+
+        <div className="mt-10 max-w-3xl rounded-2xl border border-sage-200 p-5" data-testid="valor-medio-cidade">
+          <h3 className="font-title text-xl font-bold text-ink">Valor médio por mês em {name}</h3>
+          {valorMedio ? (
+            <p className="mt-2 text-muted">
+              <strong className="text-forest">{formatBRL(valorMedio.media)}</strong> por mês, média de{" "}
+              {valorMedio.anuncios} anúncios publicados.
+            </p>
+          ) : (
+            <p className="mt-2 text-muted">Dados insuficientes: só mostramos a média com pelo menos 3 anúncios publicados.</p>
+          )}
+        </div>
+
+        <div className="mt-10 max-w-3xl" data-testid="faq-cidade">
+          <h3 className="font-title text-xl font-bold text-ink">Perguntas frequentes sobre {name}</h3>
+          <dl className="mt-3 space-y-4">
+            {perguntasCidade(name).map((q) => (
+              <div key={q.pergunta}>
+                <dt className="font-semibold text-ink">{q.pergunta}</dt>
+                <dd className="mt-1 text-muted">{q.resposta}</dd>
+              </div>
+            ))}
+          </dl>
         </div>
       </section>
     </>
