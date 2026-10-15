@@ -152,6 +152,7 @@ export function menuDoPainel(ctx: ContextoMenu): ItemMenu[] {
     icone: "conta",
     filhos: [
       { id: "conta-dados", rotulo: "Perfil e dados", icone: "conta", href: "/dashboard/conta" },
+      { id: "avaliacoes", rotulo: "Avaliações recebidas", icone: "conta", href: "/dashboard/avaliacoes" },
       { id: "verificacao", rotulo: "Verificação", icone: "verificacao", href: "/dashboard/verificacao" },
       ...(ctx.temImovel
         ? [{ id: "assinatura", rotulo: "Plano e assinatura", icone: "assinatura" as const, href: "/dashboard/assinatura" }]
