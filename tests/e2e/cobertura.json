@@ -1880,7 +1880,7 @@
         "proprietario"
       ],
       "specs": [
-        "t79-menu-cascata"
+        "t81-menu-cascata"
       ]
     },
     "src/lib/data/mode-actions.ts#getPreferredMode": {

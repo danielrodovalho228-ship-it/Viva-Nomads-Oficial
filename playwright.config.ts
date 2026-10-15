@@ -55,9 +55,9 @@ export default defineConfig({
       },
     },
     {
-      // Ordem c27c7ae6: login no Safari do iPhone (WebKit). Só o t80 roda aqui.
+      // Ordem c27c7ae6: login no Safari do iPhone (WebKit). Só o t82 roda aqui.
       name: "webkit-iphone",
-      testMatch: /t80-login-celular\.spec\.ts/,
+      testMatch: /t82-login-celular\.spec\.ts/,
       use: { ...devices["iPhone 13"] },
     },
     {
