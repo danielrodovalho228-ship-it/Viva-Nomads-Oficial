@@ -34,6 +34,7 @@ import { VideoWalkthrough } from "@/components/video-walkthrough";
 import { requestLead } from "@/lib/data/actions";
 import type { LeadKind } from "@/lib/leads";
 import { PriceCard } from "@/components/property/price-card";
+import { AvisoAntigolpe } from "@/components/seguranca/aviso-antigolpe";
 import { BarraFixaCelular } from "@/components/property/barra-fixa-celular";
 import { barraFixaImovel } from "@/lib/barra-fixa-imovel";
 import { AmenitiesGrid } from "@/components/property/amenities-grid";
@@ -180,6 +181,7 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
   ) : (
     <div className="flex flex-col gap-2">
       <AvisoPetCandidatura petsAllowed={property.petsAllowed} regras={property.petsRegras} />
+      <AvisoAntigolpe />
       <Button
         variant="gold"
         size="lg"
