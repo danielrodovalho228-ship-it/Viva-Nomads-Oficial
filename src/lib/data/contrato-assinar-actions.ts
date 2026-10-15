@@ -47,6 +47,8 @@ export interface ContratoParaAssinar {
   assinadoInquilinoEm: string | null;
   aviso: string;
   euAssinei: boolean;
+  /** F37: data de início da estadia (1º bloco), AAAA-MM-DD; fora do resumo assinado para não mudar o hash. */
+  inicioEstadia: string | null;
   /** Entrada, conferência e saída com dia e horário (vazio se o contrato ainda não tem blocos). */
   linhaDoTempo: EtapaEstadia[];
 }
@@ -102,6 +104,7 @@ function montar(c: LinhaContrato, userId: string): ContratoParaAssinar | null {
     assinadoInquilinoEm: a.inquilino,
     aviso: avisoAssinatura(papel, a),
     euAssinei: !!(papel === "inquilino" ? a.inquilino : a.proprietario),
+    inicioEstadia: inicio,
     linhaDoTempo: montarLinhaDoTempo({
       inicio,
       fim,

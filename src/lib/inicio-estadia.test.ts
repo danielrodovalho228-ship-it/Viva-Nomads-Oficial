@@ -37,3 +37,27 @@ test("F37: servidor e tela usam a mesma validação e os blocos não nascem mais
   assert.doesNotMatch(tela, /const inicioISO = hojeBR\(\)/);
   assert.match(tela, /Início da estadia/);
 });
+
+test("F37: o bloco 1 começa na data escolhida e a data aparece no cartão do contrato", async () => {
+  const { encadearDatas } = await import("./contrato-blocos.ts");
+  const blocos = encadearDatas("2026-11-20", [{ numero: 1, meses: 3, valor: 9000, caucao: 3000 }] as never);
+  assert.equal(blocos[0].inicio, "2026-11-20");
+  const { readFileSync } = await import("node:fs");
+  const cartao = readFileSync(new URL("../app/(dashboard)/dashboard/contratos/contratos-client.tsx", import.meta.url), "utf8");
+  assert.match(cartao, /data-testid="contrato-inicio"/);
+  assert.match(cartao, /Início da estadia: \{formatDate\(contrato\.blocos\[0\]\.inicio\)\}/);
+  const detalhe = readFileSync(new URL("../components/contrato/contrato-detalhe.tsx", import.meta.url), "utf8");
+  assert.match(detalhe, /data-testid="contrato-inicio-estadia"/);
+  const leitura = readFileSync(new URL("./data/contrato-assinar-actions.ts", import.meta.url), "utf8");
+  assert.match(leitura, /inicioEstadia: inicio,/);
+});
+
+test("data sugerida no Fechamento: usa a da candidatura se ainda vale, senão hoje", async () => {
+  const { inicioSugerido } = await import("./inicio-estadia.ts");
+  assert.equal(inicioSugerido("2026-11-03", HOJE), "2026-11-03");
+  assert.equal(inicioSugerido("2026-10-15", HOJE), "2026-10-15");
+  // Já passou, vazia, torta ou longe demais: cai em hoje (nunca preenche data inválida).
+  for (const v of ["2026-10-01", "", null, undefined, "03/11/2026", "2030-01-01"]) {
+    assert.equal(inicioSugerido(v, HOJE), HOJE, String(v));
+  }
+});

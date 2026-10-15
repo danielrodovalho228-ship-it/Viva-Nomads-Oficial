@@ -71,4 +71,48 @@ test.describe("T89 — data de início no Fechamento", () => {
     expect(await pagina.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     await pagina.context().close();
   });
+
+  test("a data que o inquilino pôs na candidatura já vem preenchida; data que já passou volta para hoje", async ({ browser }) => {
+    test.setTimeout(120_000);
+    const hoje = hojeBR();
+    const desejada = addDiasISO(hoje, 12);
+    const { error } = await adm().from("leads").update({ inicio_desejado: desejada }).eq("id", ids.lead!);
+    expect(error).toBeNull();
+    const pagina = await entrar(browser, dono.email, senha);
+    await pagina.goto(`/dashboard/fechamento?c=${ids.lead}`, { waitUntil: "networkidle" });
+    await expect(pagina.getByTestId("inicio-estadia")).toHaveValue(desejada, { timeout: 15_000 });
+
+    // Data guardada que já passou não vira data inválida no Fechamento: abre em hoje.
+    await adm().from("leads").update({ inicio_desejado: addDiasISO(hoje, -5) }).eq("id", ids.lead!);
+    await pagina.goto(`/dashboard/fechamento?c=${ids.lead}`, { waitUntil: "networkidle" });
+    await expect(pagina.getByTestId("inicio-estadia")).toHaveValue(hoje, { timeout: 15_000 });
+    await pagina.context().close();
+  });
+
+  test("contrato com início futuro: o bloco 1 e o resumo do inquilino mostram a data escolhida", async ({ browser }) => {
+    test.setTimeout(120_000);
+    const futura = addDiasISO(hojeBR(), 20);
+    const fim = addDiasISO(futura, 89);
+    const { data: contrato, error } = await adm()
+      .from("contratos")
+      .insert({
+        lead_id: ids.lead, property_id: ids.imovel, tenant_id: ids.inq, owner_plan: "essential", faixa: "media_estadia",
+        prazo_total_dias: 90, aluguel_mensal: 3000, tamanho_bloco_meses: 3, comissao_percent: 0.12, comissao_valor: 1080,
+        qtd_ocupantes: 1,
+      })
+      .select("id")
+      .single();
+    expect(error).toBeNull();
+    const { error: e2 } = await adm()
+      .from("contrato_blocos")
+      .insert({ contrato_id: contrato!.id, numero_bloco: 1, inicio: futura, fim, meses: 3, valor: 9000, caucao: 4500, status: "agendado" });
+    expect(e2).toBeNull();
+
+    const [d, m, a] = [futura.slice(8, 10), futura.slice(5, 7), futura.slice(0, 4)];
+    const pagina = await entrar(browser, inq.email, senha);
+    await pagina.goto(`/dashboard/locacoes/${contrato!.id}`, { waitUntil: "domcontentloaded" });
+    await expect(pagina.getByTestId("contrato-inicio-estadia")).toContainText(`${d}/${m}/${a}`, { timeout: 15_000 });
+    expect(await pagina.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await pagina.context().close();
+  });
 });

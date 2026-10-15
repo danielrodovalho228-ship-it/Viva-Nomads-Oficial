@@ -14,7 +14,8 @@ import { CITIES } from "@/lib/constants";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/para-proprietarios" },
-  title: "Para proprietários — estadias de 1 a 6 meses com mais margem",
+  title: "Para proprietários: estadias de 1 a 6 meses",
+  openGraph: { type: "website", locale: "pt_BR", siteName: "Viva Nomads", url: "/para-proprietarios" },
   description:
     "Anuncie seu imóvel mobiliado para estadias de 30 a 180 dias. Menos rotatividade, menos meses parado e custos repassáveis ao inquilino conforme o contrato.",
 };
