@@ -35,3 +35,19 @@ test("ações: validam entrada no servidor; decisão só do admin com AAL2", () 
   assert.match(acoes, /ehAdmin\(supabase, user\.id\)/);
   assert.match(acoes, /Sem permissão/);
 });
+
+test("0128: anônimo lê a resposta sem autor_id (grant por coluna) nas duas cópias da migração", () => {
+  for (const sql of [mig, ler("supabase/producao/aplicar-0128.sql")]) {
+    assert.match(sql, /grant select \(avaliacao_id, texto, criada_em\) on public\.avaliacao_respostas to anon, authenticated/);
+    assert.doesNotMatch(sql, /grant select on public\.avaliacao_respostas/);
+  }
+});
+
+test("tela do avaliado e anúncio: botões Responder/Pedir revisão chamam as ações e a resposta aparece no anúncio", () => {
+  const acoesUi = ler("src/app/(dashboard)/dashboard/avaliacoes/acoes.tsx");
+  assert.match(acoesUi, /responderAvaliacao\(avaliacaoId, texto\)/);
+  assert.match(acoesUi, /pedirRevisaoAvaliacao\(avaliacaoId, motivo, texto\)/);
+  assert.match(ler("src/components/property/reviews.tsx"), /Resposta do proprietário/);
+  assert.match(ler("src/lib/data/properties.ts"), /from\("avaliacao_respostas"\)/);
+  assert.match(ler("src/config/menu-painel.ts"), /\/dashboard\/avaliacoes/);
+});

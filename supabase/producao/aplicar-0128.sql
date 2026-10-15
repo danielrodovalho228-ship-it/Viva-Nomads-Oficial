@@ -92,7 +92,8 @@ create trigger avaliacao_contestacao_valida before insert or update on public.av
 alter table public.avaliacao_respostas enable row level security;
 alter table public.avaliacao_contestacoes enable row level security;
 revoke all on public.avaliacao_respostas, public.avaliacao_contestacoes from anon, authenticated;
-grant select on public.avaliacao_respostas to anon, authenticated;
+-- Sem autor_id: o anônimo lê só o texto e a data (a autoria é sempre o avaliado, já público no anúncio).
+grant select (avaliacao_id, texto, criada_em) on public.avaliacao_respostas to anon, authenticated;
 grant insert (avaliacao_id, texto) on public.avaliacao_respostas to authenticated;
 grant insert (avaliacao_id, motivo, detalhe) on public.avaliacao_contestacoes to authenticated;
 grant select on public.avaliacao_contestacoes to authenticated;

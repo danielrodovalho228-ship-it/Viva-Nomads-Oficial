@@ -91,7 +91,9 @@
       "personas": [
         "admin"
       ],
-      "specs": []
+      "specs": [
+        "t91-avaliacao-resposta"
+      ]
     },
     "/admin/documentos": {
       "personas": [
@@ -337,6 +339,15 @@
         "t35-troca-de-plano",
         "t38-varios-imoveis-por-dono",
         "t39-app-ida-e-volta"
+      ]
+    },
+    "/dashboard/avaliacoes": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t91-avaliacao-resposta"
       ]
     },
     "/dashboard/buscas": {
@@ -1580,14 +1591,18 @@
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t91-avaliacao-resposta"
+      ]
     },
     "src/lib/data/avaliacoes-resposta-actions.ts#responderAvaliacao": {
       "personas": [
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t91-avaliacao-resposta"
+      ]
     },
     "src/lib/data/avatar-actions.ts#clearMyAvatar": {
       "personas": [
