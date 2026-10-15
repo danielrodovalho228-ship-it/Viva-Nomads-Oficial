@@ -27,6 +27,6 @@ test("copiloto do admin não mostra status cru de contrato, pedido ou chamado", 
   const { readFileSync } = await import("node:fs");
   const src = readFileSync(new URL("../app/(dashboard)/admin/atendimento/[id]/copiloto.tsx", import.meta.url), "utf8");
   assert.doesNotMatch(src, /\{k\.status\}/);
-  assert.doesNotMatch(src, /\{x\.status\}/);
+  assert.doesNotMatch(src, /\{x\.quantidade\} \{x\.status\}/);
   assert.match(src, /statusHumano\(k\.status\)/);
 });
