@@ -52,7 +52,7 @@ export function llmsFullTxt(siteUrl: string): string {
     "",
     "## Regras do contrato",
     `- Estadias de ${REGRAS_CONTRATO.prazoMinMeses} a ${REGRAS_CONTRATO.prazoMaxMeses} meses, em blocos de até ${REGRAS_CONTRATO.maxDiasBloco} dias.`,
-    `- Caução: ${Math.round(REGRAS_CONTRATO.caucaoFracaoBloco * 100)}% do valor de cada bloco, até ${REGRAS_CONTRATO.caucaoMaxAlugueis} aluguéis no total; volta no fim, depois da vistoria de saída.`,
+    `- Caução: ${Math.round(REGRAS_CONTRATO.caucaoFracaoBloco * 100)}% do valor de cada bloco, até ${REGRAS_CONTRATO.caucaoMaxAlugueis} aluguéis no total; volta no fim, depois da conferência de saída.`,
     "",
     "## Perguntas frequentes",
     ...FAQ.flatMap((p) => [`### ${p.pergunta}`, p.resposta, ""]),

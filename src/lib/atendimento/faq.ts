@@ -40,7 +40,7 @@ export const FAQ: Pergunta[] = [
   {
     id: "caucao",
     pergunta: "Como funciona a caução?",
-    resposta: `${CAUCAO_FRASE} Em cada bloco do contrato, a caução é de ${Math.round(REGRAS_CONTRATO.caucaoFracaoBloco * 100)}% do valor do bloco, sem passar de ${REGRAS_CONTRATO.caucaoMaxAlugueis} aluguéis no total. Ela volta para o inquilino no fim, depois da vistoria de saída.`,
+    resposta: `${CAUCAO_FRASE} Em cada bloco do contrato, a caução é de ${Math.round(REGRAS_CONTRATO.caucaoFracaoBloco * 100)}% do valor do bloco, sem passar de ${REGRAS_CONTRATO.caucaoMaxAlugueis} aluguéis no total. Ela volta para o inquilino no fim, depois da conferência de saída.`,
     termos: ["caucao", "deposito", "garantia", "poupanca", "devolucao"],
   },
   {
