@@ -151,7 +151,7 @@ test("checklist do anúncio em andamento: ✓/○, cada pendência leva à etapa
 test("checklist: tudo feito → sem próximo passo; vaga no plano leva à página do plano", () => {
   assert.equal(checklistAnuncio(prontidaoAnuncio(completo()), "x").proximo, null);
   const lim = checklistAnuncio(prontidaoAnuncio({ ...completo(), limitePlanoOk: false }), "x");
-  assert.equal(lim.proximo?.href, "/dashboard/assinatura");
+  assert.equal(lim.proximo?.href, "/precos");
 });
 
 test("checklist: o id do rascunho vai codificado na URL", () => {

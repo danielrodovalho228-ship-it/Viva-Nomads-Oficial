@@ -172,7 +172,7 @@ export function checklistAnuncio(p: Prontidao, draftId: string): ChecklistAnunci
       label: i.label,
       ok: i.ok,
       detalhe: i.detalhe,
-      href: i.key === "limite" ? "/dashboard/assinatura" : `/dashboard/imoveis/novo?draft=${id}&etapa=${etapa}`,
+      href: i.key === "limite" ? "/precos" : `/dashboard/imoveis/novo?draft=${id}&etapa=${etapa}`,
     };
   });
   return { itens, proximo: itens.find((i) => !i.ok) ?? null };
