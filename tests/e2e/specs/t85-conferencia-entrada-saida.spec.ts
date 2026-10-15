@@ -41,7 +41,7 @@ async function semRolagemLateral(page: Page, largura: number) {
 
 async function adicionarItem(page: Page, tipo: "entrada" | "saida", comodo: string, descricao: string, comFoto: boolean) {
   const form = page.getByTestId(`conferencia-${tipo}-form`);
-  await form.getByLabel("Cômodo").fill(comodo);
+  await form.getByLabel("Cômodo", { exact: true }).fill(comodo);
   await form.getByLabel("Itens e estado do cômodo").fill(descricao);
   if (comFoto) await form.getByLabel("Foto do cômodo").setInputFiles({ name: "comodo.png", mimeType: "image/png", buffer: pngDeTeste(3) });
   await form.getByRole("button", { name: "Adicionar item" }).click();
