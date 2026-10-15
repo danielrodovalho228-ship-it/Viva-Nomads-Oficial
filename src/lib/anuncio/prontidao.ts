@@ -142,6 +142,42 @@ export function prontidaoAnuncio(f: FatosAnuncio): Prontidao {
   };
 }
 
+export interface ItemChecklist {
+  key: string;
+  label: string;
+  ok: boolean;
+  detalhe?: string;
+  /** Leva ao campo certo (etapa do editor do rascunho, ou à página do plano). */
+  href: string;
+}
+
+export interface ChecklistAnuncio {
+  itens: ItemChecklist[];
+  /** Primeiro item que falta, em destaque ("próximo passo"); null = tudo feito. */
+  proximo: ItemChecklist | null;
+}
+
+/**
+ * Checklist clicável do "Anúncio em andamento" (ordem de8761b0, item 1): cada
+ * obrigatório vira ✓ feito / ○ falta com link direto para a etapa do editor.
+ * O documento é aprovado pela equipe (não se resolve numa etapa): leva à Revisão,
+ * onde o estado da moderação aparece. A vaga no plano leva à página do plano.
+ */
+export function checklistAnuncio(p: Prontidao, draftId: string): ChecklistAnuncio {
+  const id = encodeURIComponent(draftId);
+  const itens = p.obrigatorios.map((i): ItemChecklist => {
+    const etapa = i.key === "documento" ? 6 : i.etapa;
+    return {
+      key: i.key,
+      label: i.label,
+      ok: i.ok,
+      detalhe: i.detalhe,
+      href: i.key === "limite" ? "/dashboard/assinatura" : `/dashboard/imoveis/novo?draft=${id}&etapa=${etapa}`,
+    };
+  });
+  return { itens, proximo: itens.find((i) => !i.ok) ?? null };
+}
+
 /** Linha do banco (properties + fotos + documento) → fatos. */
 export interface LinhaAnuncio {
   title: string | null;

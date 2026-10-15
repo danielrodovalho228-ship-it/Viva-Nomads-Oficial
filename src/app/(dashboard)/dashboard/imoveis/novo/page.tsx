@@ -58,7 +58,7 @@ import { registrarEvento } from "@/lib/eventos/registrar";
 import { TERMO_IA_TEXTO, TERMO_IA_VERSAO, camposDaIa } from "@/lib/anuncio/termo-ia";
 import { miniaturaBase64 } from "@/lib/fotos/miniatura";
 import { FOTOS_MAX_MINIATURAS, iaFotosLiberada, mensagemFaltamFotosIa, type SugestaoFotos } from "@/lib/ai/fotos-prompt";
-import { etapaLiberada, etapaMaisAvancada, etapaDoRascunho, etapaNaPosicao, posicaoDaEtapa, posMaxDoRascunho, ORDEM_ETAPAS, VERSAO_ORDEM_ETAPAS } from "@/lib/etapas-anuncio";
+import { etapaDaUrl, etapaLiberada, etapaMaisAvancada, etapaDoRascunho, etapaNaPosicao, posicaoDaEtapa, posMaxDoRascunho, ORDEM_ETAPAS, VERSAO_ORDEM_ETAPAS } from "@/lib/etapas-anuncio";
 
 /** Metadados das 7 etapas do wizard (rodada 15). O índice é o ID estável da etapa; a ordem em que
  * aparecem é ORDEM_ETAPAS ("fotos primeiro", ordem 04e2fe5e). */
@@ -186,6 +186,8 @@ export default function NewPropertyPage() {
   const editId = searchParams.get("id");
   // Retomada de rascunho do servidor: `?draft=<id>`.
   const draftParam = searchParams.get("draft");
+  // ?etapa=N (link do checklist "Anúncio em andamento"): abre direto no campo que falta.
+  const etapaParam = etapaDaUrl(searchParams.get("etapa"));
   const [editingId, setEditingId] = useState<string | null>(null);
   const router = useRouter();
 
@@ -551,6 +553,10 @@ export default function NewPropertyPage() {
       setDraftServerId(draftParam);
       setApproved(true);
       if (d && typeof d === "object") aplicarDraft(d as Record<string, unknown>);
+      if (etapaParam !== null) {
+        setStep(etapaParam);
+        setEtapaMax((m) => Math.max(m, posicaoDaEtapa(etapaParam)));
+      }
     })();
     return () => {
       alive = false;

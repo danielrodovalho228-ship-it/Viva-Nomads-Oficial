@@ -55,3 +55,10 @@ test("rascunho novo guarda a posição direto", () => {
   assert.equal(posMaxDoRascunho({ step: 3, etapaMax: 2, ordemEtapas: VERSAO_ORDEM_ETAPAS }), 2);
   assert.equal(posMaxDoRascunho({ step: 6, etapaMax: 1, ordemEtapas: VERSAO_ORDEM_ETAPAS }), 6);
 });
+
+test("etapaDaUrl: só aceita 0..6; qualquer outra coisa vira null", async () => {
+  const { etapaDaUrl } = await import("./etapas-anuncio.ts");
+  assert.equal(etapaDaUrl("3"), 3);
+  assert.equal(etapaDaUrl("0"), 0);
+  for (const v of ["7", "-1", "3.5", "abc", "", null, undefined, "03"]) assert.equal(etapaDaUrl(v), null);
+});

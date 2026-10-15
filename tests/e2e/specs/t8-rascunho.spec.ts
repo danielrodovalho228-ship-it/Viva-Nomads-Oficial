@@ -84,6 +84,27 @@ test.describe("T-RASC — Rascunho salva e retoma @criticos", () => {
     await expect(page.locator('input[list="novo-bairros"]')).toHaveValue(marca);
   });
 
+  test("T-RASC-6 — 'Anúncio em andamento' é um checklist: ✓ feito / ○ falta, cada item abre o campo certo (ordem de8761b0, item 1)", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await novoComEndereco(page);
+    await esperarSalvo(page);
+    await page.goto("/dashboard", { waitUntil: "networkidle" });
+    const lista = page.getByTestId("anuncio-checklist");
+    await expect(lista).toBeVisible({ timeout: 10_000 });
+    // Endereço já preenchido = feito; fotos (só 1 de 8) = falta e é clicável.
+    await expect(lista.getByTestId("check-feito").filter({ hasText: "Endereço preenchido" })).toBeVisible();
+    await expect(lista.getByTestId("check-falta").filter({ hasText: "Endereço preenchido" })).toHaveCount(0);
+    // Sem rolagem lateral a 390 px.
+    const estouro = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
+    expect(estouro).toBe(false);
+    // O próximo passo vem em destaque no resumo e no botão.
+    await expect(page.getByTestId("prontidao-visao-geral")).toContainText(/Próximo passo:/);
+    // Clicar no item que falta abre o editor JÁ na etapa certa (Fotos).
+    await lista.getByTestId("check-falta").filter({ hasText: "Pelo menos 8 fotos" }).click();
+    await expect(page).toHaveURL(/\/dashboard\/imoveis\/novo\?draft=.*&etapa=3/);
+    await expect(page.getByRole("heading", { name: "Fotos do imóvel" })).toBeVisible({ timeout: 15_000 });
+  });
+
   test("T-RASC-3 — 'Novo anúncio' detecta rascunho e 'Começar outro' limpa", async ({ page }) => {
     const marca = await novoComEndereco(page);
     await esperarSalvo(page);
