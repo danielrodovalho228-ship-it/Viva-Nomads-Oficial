@@ -341,6 +341,23 @@ function DraftPendingCard({
                   <Check className="h-4 w-4 shrink-0 text-forest" aria-hidden /> <span>{i.label}</span>
                   <span className="sr-only"> — feito</span>
                 </span>
+              ) : i.acoes ? (
+                <div className="rounded-xl border border-forest bg-champagne/30 p-2" data-testid="check-vaga">
+                  <span className="flex items-start gap-2 text-sm font-medium text-forest">
+                    <Circle className="mt-0.5 h-4 w-4 shrink-0 text-muted" aria-hidden />
+                    <span className="min-w-0">
+                      {i.label}
+                      {i.detalhe && <span className="block text-xs font-normal text-muted">{i.detalhe}</span>}
+                    </span>
+                  </span>
+                  <span className="mt-2 flex flex-wrap gap-2">
+                    {i.acoes.map((a) => (
+                      <Link key={a.href} href={a.href} className={buttonClasses({ size: "sm", variant: "outline" })}>
+                        {a.label}
+                      </Link>
+                    ))}
+                  </span>
+                </div>
               ) : (
                 <Link
                   href={i.href}

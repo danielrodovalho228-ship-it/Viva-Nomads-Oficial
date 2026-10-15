@@ -66,7 +66,7 @@ test.describe("T38 — Vários imóveis por dono", () => {
     await page.goto(`/dashboard/imoveis/${ids.imoveis[1]}/editar`, { waitUntil: "networkidle" });
     await expect(page.getByTestId("prontidao")).toContainText("Anúncio", { timeout: 15_000 });
     await expect(page.getByText(/Vaga no seu plano/).first()).toBeVisible();
-    await expect(page.getByText(/o plano já tem o máximo de anúncios publicados — pause um ou faça upgrade/).first()).toBeVisible();
+    await expect(page.getByText(/Seu plano permite 1 anúncio no ar\. Para publicar este, pause outro ou mude de plano/).first()).toBeVisible();
     await expect(page.getByRole("button", { name: "Publicar", exact: true })).toBeDisabled();
     await page.screenshot({ path: "tests/laboratorio/saida/t38-1-gratuito-sem-vaga.png", fullPage: true });
     expect(await statusDoImovel(ids.imoveis[1])).toBe("draft");
