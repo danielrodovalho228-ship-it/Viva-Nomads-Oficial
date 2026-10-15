@@ -160,10 +160,10 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
       )}
 
       {parte && !travada && (
-        <form onSubmit={adicionar} className="mt-4 grid gap-2" data-testid={`conferencia-${tipo}-form`}>
+        <form onSubmit={adicionar} className="mt-4 grid grid-cols-1 gap-2" data-testid={`conferencia-${tipo}-form`}>
           <input value={comodo} onChange={(e) => setComodo(e.target.value)} maxLength={60} placeholder="Cômodo (ex.: Sala)" aria-label="Cômodo" className="h-11 rounded-lg border border-line px-3 text-sm" />
           <textarea value={descricao} onChange={(e) => setDescricao(e.target.value)} maxLength={300} rows={2} placeholder="Itens e estado do cômodo" aria-label="Itens e estado do cômodo" className="rounded-lg border border-line p-3 text-sm" />
-          <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => setFoto(e.target.files?.[0] ?? null)} aria-label="Foto do cômodo" className="text-sm" />
+          <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => setFoto(e.target.files?.[0] ?? null)} aria-label="Foto do cômodo" className="block w-full min-w-0 max-w-full text-sm" />
           <Button type="submit" variant="outline" disabled={ocupado || !comodo.trim() || !descricao.trim()}>
             {ocupado && <Loader2 className="h-4 w-4 animate-spin" />} Adicionar item
           </Button>
@@ -173,7 +173,7 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
       {parte && !conf?.laudo && (
         <label className="mt-3 block text-sm text-muted">
           Anexar laudo independente (PDF, até 15 MB)
-          <input type="file" accept="application/pdf" disabled={ocupado} onChange={(e) => anexarLaudo(e.target.files?.[0])} className="mt-1 block text-sm" data-testid={`conferencia-${tipo}-laudo-input`} />
+          <input type="file" accept="application/pdf" disabled={ocupado} onChange={(e) => anexarLaudo(e.target.files?.[0])} className="mt-1 block w-full min-w-0 max-w-full text-sm" data-testid={`conferencia-${tipo}-laudo-input`} />
         </label>
       )}
 
