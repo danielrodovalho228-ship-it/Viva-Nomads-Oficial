@@ -13,6 +13,8 @@ import {
   ClipboardCheck,
   ArrowRight,
   PencilLine,
+  Check,
+  Circle,
   FileSignature,
   Wallet,
 } from "lucide-react";
@@ -25,6 +27,7 @@ import { TenantOnboarding } from "@/components/dashboard/tenant-onboarding";
 import { RoleWelcomeModal } from "@/components/dashboard/role-welcome-modal";
 import { ButtonLink, buttonClasses } from "@/components/ui/button";
 import { useProperties } from "@/lib/use-properties";
+import { checklistAnuncio, type ChecklistAnuncio } from "@/lib/anuncio/prontidao";
 import { imoveisPublicados } from "@/lib/anuncio/publicados";
 import type { Property } from "@/lib/types";
 import { useDashDemo, DemoBadge, useDisplayUser } from "@/lib/demo/demo-mode";
@@ -70,7 +73,13 @@ function OwnerDashboard({ name, imoveisDono }: { name: string; imoveisDono: Prop
     getLatestDraft()
       .then((d) => {
         // Prontidão da fonte única (a mesma de Meus imóveis e do Publicar).
-        if (alive && d) setDraft({ id: d.id, pct: d.prontidao?.pct ?? 0, pronto: !!d.prontidao?.podePublicar, faltam: d.prontidao?.faltam ?? [] });
+        if (alive && d) setDraft({
+          id: d.id,
+          pct: d.prontidao?.pct ?? 0,
+          pronto: !!d.prontidao?.podePublicar,
+          faltam: d.prontidao?.faltam ?? [],
+          checklist: d.prontidao ? checklistAnuncio(d.prontidao, d.id) : null,
+        });
       })
       .catch(() => {});
     return () => {
@@ -284,7 +293,7 @@ function TenantDashboard({ name }: { name: string }) {
  */
 /** Card de pendência "Anúncio em andamento" (P0) — atalho para retomar o
  * rascunho de onde parou, com o % completo honesto. */
-type RascunhoPendente = { id: string; pct: number; pronto: boolean; faltam: string[] };
+type RascunhoPendente = { id: string; pct: number; pronto: boolean; faltam: string[]; checklist: ChecklistAnuncio | null };
 
 function DraftPendingCard({
   draft,
@@ -293,33 +302,63 @@ function DraftPendingCard({
   draft: RascunhoPendente;
   className?: string;
 }) {
+  const check = !draft.pronto ? draft.checklist : null;
   return (
-    <div
-      className={`flex flex-col gap-3 rounded-2xl border border-champagne bg-champagne/10 p-4 sm:flex-row sm:items-center sm:justify-between ${className ?? ""}`}
-    >
-      <div className="flex items-start gap-3">
-        <span className="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-full bg-champagne/40 text-forest">
-          <PencilLine className="h-5 w-5" />
-        </span>
-        <div className="min-w-0">
-          <p className="font-title text-sm font-bold text-ink">
-            {draft.pronto ? "Anúncio 100% · pronto para publicar" : `Anúncio em andamento${draft.pct > 0 ? ` — ${draft.pct}% completo` : ""}`}
-          </p>
-          <p className="text-xs text-muted" data-testid="prontidao-visao-geral">
-            {draft.pronto
-              ? "Tudo o que é obrigatório está feito. Abra e toque em Publicar."
-              : draft.faltam.length
-                ? `Falta para publicar: ${draft.faltam.join(" · ")}`
-                : "Continue de onde parou. Seu rascunho está salvo."}
-          </p>
+    <div className={`rounded-2xl border border-champagne bg-champagne/10 p-4 ${className ?? ""}`} data-testid="anuncio-andamento">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3">
+          <span className="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-full bg-champagne/40 text-forest">
+            <PencilLine className="h-5 w-5" />
+          </span>
+          <div className="min-w-0">
+            <p className="font-title text-sm font-bold text-ink">
+              {draft.pronto ? "Anúncio 100% · pronto para publicar" : `Anúncio em andamento${draft.pct > 0 ? ` — ${draft.pct}% completo` : ""}`}
+            </p>
+            <p className="text-xs text-muted" data-testid="prontidao-visao-geral">
+              {draft.pronto
+                ? "Tudo o que é obrigatório está feito. Abra e toque em Publicar."
+                : check?.proximo
+                  ? `Próximo passo: ${check.proximo.label}`
+                  : draft.faltam.length
+                    ? `Falta para publicar: ${draft.faltam.join(" · ")}`
+                    : "Continue de onde parou. Seu rascunho está salvo."}
+            </p>
+          </div>
         </div>
+        <Link
+          href={check?.proximo?.href ?? `/dashboard/imoveis/novo?draft=${draft.id}`}
+          className={buttonClasses({ size: "sm" })}
+        >
+          {draft.pronto ? "Revisar e publicar" : check?.proximo ? "Fazer o próximo passo" : "Continuar edição"} <ArrowRight className="h-4 w-4" />
+        </Link>
       </div>
-      <Link
-        href={`/dashboard/imoveis/novo?draft=${draft.id}`}
-        className={buttonClasses({ size: "sm" })}
-      >
-        {draft.pronto ? "Revisar e publicar" : "Continuar edição"} <ArrowRight className="h-4 w-4" />
-      </Link>
+      {check && (
+        <ul className="mt-3 grid gap-1.5 sm:grid-cols-2" data-testid="anuncio-checklist">
+          {check.itens.map((i) => (
+            <li key={i.key}>
+              {i.ok ? (
+                <span className="flex min-h-11 items-center gap-2 rounded-xl px-2 text-sm text-ink" data-testid="check-feito">
+                  <Check className="h-4 w-4 shrink-0 text-forest" aria-hidden /> <span>{i.label}</span>
+                  <span className="sr-only"> — feito</span>
+                </span>
+              ) : (
+                <Link
+                  href={i.href}
+                  data-testid="check-falta"
+                  className={`flex min-h-11 items-center gap-2 rounded-xl border px-2 text-sm font-medium text-forest hover:bg-champagne/30 ${i.key === check.proximo?.key ? "border-forest bg-champagne/30" : "border-transparent"}`}
+                >
+                  <Circle className="h-4 w-4 shrink-0 text-muted" aria-hidden />
+                  <span className="min-w-0">
+                    {i.label}
+                    {i.detalhe && <span className="block text-xs font-normal text-muted">{i.detalhe}</span>}
+                  </span>
+                  <ArrowRight className="ml-auto h-4 w-4 shrink-0" aria-hidden />
+                </Link>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
