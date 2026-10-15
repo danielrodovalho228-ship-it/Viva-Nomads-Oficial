@@ -53,7 +53,6 @@ import { TEXTO_REGRA_CURTO } from "@/lib/cobranca/regra";
 import { LinhaComparativoAnuncio } from "@/components/precos/comparativo-precos";
 import { useAuthStore } from "@/lib/store";
 import { qualificadoDoServidor } from "@/lib/anuncio/qualificacao-rascunho";
-import { setPreferredMode } from "@/lib/data/mode-actions";
 import { draftKey, DRAFT_KEY_LEGADO } from "@/lib/local-keys";
 import { registrarEvento } from "@/lib/eventos/registrar";
 import { TERMO_IA_TEXTO, TERMO_IA_VERSAO, camposDaIa } from "@/lib/anuncio/termo-ia";
@@ -77,18 +76,6 @@ const LAST = STEP_META.length - 1;
 export default function NewPropertyPage() {
   // T1: o rascunho local é POR USUÁRIO — nunca abre o de outra conta.
   const userId = useAuthStore((s) => s.user?.id ?? null);
-  // F45: a mesma conta pode ser dona e inquilina. Abrir o assistente troca para o modo
-  // Proprietário e avisa; publicar continua exigindo perfil completo (checado no servidor).
-  const activeMode = useAuthStore((s) => s.activeMode);
-  const setActiveMode = useAuthStore((s) => s.setActiveMode);
-  const [modoAoAbrir] = useState(activeMode);
-  const avisoModo = modoAoAbrir === "tenant";
-  useEffect(() => {
-    if (userId && activeMode === "tenant") {
-      setActiveMode("owner");
-      setPreferredMode("owner").catch(() => {});
-    }
-  }, [userId, activeMode, setActiveMode]);
   const [approved, setApproved] = useState<boolean | null>(null);
   // Qualificação "Antes de anunciar" (ordem 04e2fe5e): deixou de ser a 1ª tela —
   // abre o cadastro pelas fotos e só BARRA A PUBLICAÇÃO (rascunho sempre pode).
@@ -951,11 +938,7 @@ export default function NewPropertyPage() {
               {saveStatus === "saved" ? (
                 <>
                   <Check className="h-3.5 w-3.5" />
-      {avisoModo && (
-        <p role="status" data-testid="aviso-modo-proprietario" className="mt-3 rounded-lg bg-sage-100 px-3 py-2 text-sm text-forest">
-          Você passou para o modo Proprietário para anunciar. Para publicar, seu perfil precisa ter nome e telefone.
-        </p>
-      )} Salvo{savedAt ? ` às ${savedAt}` : ""}
+ Salvo{savedAt ? ` às ${savedAt}` : ""}
                 </>
               ) : saveStatus === "error" ? (
                 <>

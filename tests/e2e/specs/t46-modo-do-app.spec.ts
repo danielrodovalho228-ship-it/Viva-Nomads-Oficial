@@ -13,7 +13,6 @@ const sufixo = novoSufixo();
 const conta = { email: `dono.modo.${sufixo}@lab.vivanomads.test`, nome: "Moa Modo App", role: "owner" as const };
 const ids: { id?: string } = {};
 
-const ABAS_INQUILINO = ["Buscar", "Favoritos", "Candidaturas", "Mensagens", "Conta"];
 const ABAS_PROPRIETARIO = ["Painel", "Imóveis", "Interessados", "Mensagens", "Conta"];
 
 async function abas(page: Page, nomes: string[]) {
@@ -48,29 +47,14 @@ test.describe("T46 — Modo do app", () => {
     if (ids.id) await apagarContas([ids.id]);
   });
 
-  test("chip no topo troca o modo, a barra de abas acompanha e a escolha persiste", async ({ page }) => {
+  test("conta única: sem seletor de modo no topo e o menu de abas continua inteiro", async ({ page }) => {
     test.setTimeout(120_000);
     await entrarNoApp(page);
     await page.goto("/dashboard", { waitUntil: "networkidle" });
     await expect(page.locator("html")).toHaveAttribute("data-app", "1");
-    // O chip existe no cabeçalho do app e no do site (um deles escondido por CSS).
-    const chip = page.getByTestId("modo-chip").filter({ visible: true });
-    await expect(chip).toHaveAttribute("data-modo", "owner");
-    await abas(page, ABAS_PROPRIETARIO);
-
-    await chip.click();
-    await expect(chip).toHaveAttribute("data-modo", "tenant");
-    await abas(page, ABAS_INQUILINO);
-    await expect.poll(async () => (await adm().from("profiles").select("preferred_mode").eq("id", ids.id!).single()).data?.preferred_mode, { timeout: 15_000 }).toBe("tenant");
-
-    await page.reload({ waitUntil: "networkidle" });
-    await expect(page.getByTestId("modo-chip").filter({ visible: true })).toHaveAttribute("data-modo", "tenant");
-    await abas(page, ABAS_INQUILINO);
-
-    await page.getByTestId("modo-chip").filter({ visible: true }).click();
-    await expect(page.getByTestId("modo-chip").filter({ visible: true })).toHaveAttribute("data-modo", "owner");
-    await page.reload({ waitUntil: "networkidle" });
-    await expect(page.getByTestId("modo-chip").filter({ visible: true })).toHaveAttribute("data-modo", "owner");
+    // Ordem a8c05cd0: não existe mais o chip Inquilino/Proprietário.
+    await expect(page.getByTestId("modo-chip")).toHaveCount(0);
+    await expect(page.getByText(/inquilino/i).first()).toHaveCount(0);
     await abas(page, ABAS_PROPRIETARIO);
   });
 

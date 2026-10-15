@@ -14,8 +14,7 @@ import { removerPushToken } from "@/lib/data/push-actions";
 import { countDocumentosPendentes } from "@/lib/data/documentos-admin";
 import { contarAchadosP1 } from "@/lib/data/agentes-actions";
 import { useHasActiveLocacao } from "@/lib/use-active-locacao";
-import { useViewMode, MODE_META, identidadeUsuario } from "@/lib/roles";
-import { ModoChip } from "@/components/layout/modo-chip";
+import { useViewMode, identidadeUsuario } from "@/lib/roles";
 import { MobileTabBar } from "@/components/layout/mobile-tab-bar";
 import { AppHeader } from "@/components/app/app-header";
 import { useDemoMode, DemoToggle, DemoBanner, useDisplayUser } from "@/lib/demo/demo-mode";
@@ -213,22 +212,6 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     router.push("/");
   }
 
-  async function switchTo(next: ViewMode) {
-    setActiveMode(next);
-    setOpen(false);
-    // Grava a escolha no perfil (B1): refresh/nova aba/outro dispositivo mantêm.
-    // ESPERA a gravação antes de navegar: sem isso, se o painel recarregava antes
-    // de o servidor gravar, ele devolvia a preferência ANTIGA e desfazia a troca
-    // (achado 8.3 — "trocar para Proprietário não funcionou").
-    await salvarModo(next);
-    // Se a tela atual não existe no novo modo, volta para a Visão geral
-    // (evita ficar numa rota do outro papel após a troca).
-    // Sair de rota exclusiva ao trocar de modo é tratado pelo guard (que detecta
-    // a troca de modo e redireciona), evitando o "2 cliques para pegar".
-    const exclusiva = (next === "owner" ? TENANT_ONLY : OWNER_ONLY).some((p) => pathname === p || pathname.startsWith(p + "/"));
-    if (exclusiva) router.push("/dashboard");
-  }
-
   /**
    * Conta única, ainda sobre os dois modos (o Renato A remove o modo depois): o menu
    * mostra tudo junto, então ao abrir uma tela de dono/morador a casca acerta o modo.
@@ -249,15 +232,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     router.push(href);
   }
 
-  const meta = MODE_META[mode];
-
-  // Chip único de troca de modo (foto + modo), no cabeçalho do site e do app.
-  const chipModo = (
-    <>
-      <DemoToggle />
-      <ModoChip mode={mode} onSwitch={switchTo} nome={nomeSidebar} photoUrl={myPhoto ?? undefined} />
-    </>
-  );
+  // Conta única (ordem a8c05cd0): sem seletor Inquilino/Proprietário no cabeçalho.
+  const chipModo = <DemoToggle />;
 
   const sidebar = (
     <div className="flex h-full flex-col">
@@ -286,8 +262,6 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           <div className="min-w-0 text-xs">
             {/* Item 4: nunca o e-mail cru — nome do perfil ou rótulo neutro. */}
             <p className="truncate font-medium text-white">{nomeSidebar}</p>
-            {/* B7: o rodapé reflete o MODO ATUAL (não o papel de cadastro). */}
-            <p className="text-white/60">Modo: {meta.label}</p>
           </div>
         </div>
         <button
