@@ -433,7 +433,8 @@
         "t31-cadastro-documento",
         "t33-documentos-inquilino",
         "t36-cadastro-ponta-a-ponta",
-        "t4-fronteira-demo-real"
+        "t4-fronteira-demo-real",
+        "t89-fechamento-data-inicio"
       ]
     },
     "/dashboard/ferramentas": {
