@@ -69,3 +69,42 @@ test("P1 dos agentes: /conferir, cidade indexável, sitemap honesto, /anunciar 3
   assert.match(ler("next.config.ts"), /source: "\/anunciar", destination: "\/para-proprietarios", statusCode: 301/);
   assert.doesNotMatch(ler("src/components/legal-notice.tsx") + ler("src/components/property/price-card.tsx"), /Garantia de correspondência|MatchGuaranteeNotice/);
 });
+
+test("#9f68d9d3: robots libera bots de IA nas páginas públicas e mantém as áreas privadas bloqueadas", async () => {
+  const { BOTS_DE_IA, AREAS_PRIVADAS } = await import("./robots-regras.ts");
+  const src = ler("src/app/robots.ts");
+  assert.match(src, /userAgent: BOTS_DE_IA, allow: "\/", disallow: AREAS_PRIVADAS/);
+  assert.match(src, /userAgent: "\*", allow: "\/", disallow: AREAS_PRIVADAS/);
+  const regras = [{ userAgent: BOTS_DE_IA, allow: "/", disallow: AREAS_PRIVADAS }, { userAgent: "*", allow: "/", disallow: AREAS_PRIVADAS }];
+  for (const bot of ["GPTBot", "OAI-SearchBot", "ChatGPT-User", "ClaudeBot", "PerplexityBot", "Google-Extended"]) {
+    const regra = regras.find((x) => [x.userAgent].flat().includes(bot));
+    assert.ok(regra, `${bot} sem regra própria`);
+    assert.equal(regra.allow, "/");
+    for (const area of ["/dashboard", "/admin", "/api"]) assert.ok((regra.disallow as string[]).includes(area), `${bot} deve ficar fora de ${area}`);
+  }
+  assert.equal(BOTS_DE_IA.length, 6);
+  assert.ok(AREAS_PRIVADAS.includes("/admin"));
+  assert.ok(regras.some((x) => x.userAgent === "*"));
+});
+
+test("#bd33852c (#114): llms sem 'comissão'/'assinatura'/'vistoria', com o aviso de fase de testes", () => {
+  for (const t of [llmsTxt(URL_SITE), llmsFullTxt(URL_SITE)]) {
+    assert.doesNotMatch(t, /comiss|assinatura|vistoria/i);
+    assert.match(t, /Plataforma em fase de testes\. Lançamento oficial em 2027\./);
+    assert.match(t, /12%/);
+  }
+});
+
+test("#93089e14 (#36/#61/#113): títulos <= 60 com o sufixo da marca e og:url da própria página", () => {
+  const sufixo = " · Viva Nomads";
+  const home = ler("src/app/layout.tsx").match(/default:\s*"([^"]+)"/)![1];
+  assert.ok(home.length <= 60, `home com ${home.length}`);
+  assert.match(home, /imóveis mobiliados/i);
+  assert.match(home, /30 a 180 dias/);
+  for (const [arq, og] of [["src/app/(public)/precos/page.tsx", null], ["src/app/(public)/para-proprietarios/page.tsx", "/para-proprietarios"]] as const) {
+    const src = ler(arq);
+    const t = src.match(/title:\s*"([^"]+)"/)![1];
+    assert.ok((t + sufixo).length <= 60, `${arq}: ${(t + sufixo).length} caracteres com o sufixo`);
+    if (og) assert.match(src, new RegExp(`openGraph:\\s*\\{[^}]*url:\\s*"${og}"`));
+  }
+});
