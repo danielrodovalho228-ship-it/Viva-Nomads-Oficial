@@ -45,6 +45,7 @@ import { conversationId as idConversa } from "@/lib/messages/conversation-id";
 import { SITE_URL } from "@/lib/site";
 import type { Property } from "@/lib/types";
 import { hojeBR, dataBR } from "@/lib/utils";
+import { validarInicioEstadia } from "@/lib/inicio-estadia";
 import {
   resumoContrato,
   encadearDatas,
@@ -1006,7 +1007,9 @@ export async function registrarContrato(
   if (!FAIXAS_CONTRATO.has(input.faixa)) return { ok: false, error: "Faixa de prazo inválida." };
   const ocupantes = Math.round(Number(input.qtdOcupantes));
   if (!(ocupantes >= 1 && ocupantes <= 20)) return { ok: false, error: "Número de ocupantes inválido." };
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.inicioISO)) return { ok: false, error: "Data de início inválida." };
+  // F37: data de início obrigatória, hoje ou futura (os blocos e os prazos partem dela).
+  const inicio = validarInicioEstadia(input.inicioISO, hojeBR());
+  if (!inicio.ok) return { ok: false, error: inicio.error };
 
   const plano = (lead.accepted_plan as string) ?? "free";
   // NULL cai para a taxa do plano no aceite (antes Number(null) = 0 = Gestor).
