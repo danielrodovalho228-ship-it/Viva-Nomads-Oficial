@@ -54,7 +54,9 @@ test.describe("T46 — Modo do app", () => {
     await expect(page.locator("html")).toHaveAttribute("data-app", "1");
     // Ordem a8c05cd0: não existe mais o chip Inquilino/Proprietário.
     await expect(page.getByTestId("modo-chip")).toHaveCount(0);
-    await expect(page.getByText(/inquilino/i).first()).toHaveCount(0);
+    // O texto do painel cita "inquilinos" de propósito; o que saiu é o SELETOR de modo.
+    await expect(page.getByRole("button", { name: /^Trocar para /i })).toHaveCount(0);
+    await expect(page.getByText(/^Modo:/)).toHaveCount(0);
     await abas(page, ABAS_PROPRIETARIO);
   });
 
