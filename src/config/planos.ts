@@ -146,7 +146,7 @@ export const MERCADO = {
  * Todas as taxas que JÁ foram oferecidas (inclui as antigas). Uma taxa
  * congelada no aceite continua valendo mesmo depois de a tabela mudar.
  */
-export const TAXAS_HISTORICAS: readonly number[] = [0.12, 0.1, 0.08, 0.04, 0];
+export const TAXAS_HISTORICAS: readonly number[] = [0.12, 0.1, 0.08, 0.06, 0.04, 0];
 
 const BY_ID: Record<string, Plano> = Object.fromEntries(PLANOS.map((p) => [p.id, p]));
 
