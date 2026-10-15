@@ -15,6 +15,7 @@ const PAGINAS: [string, string, string][] = [
   ["Para empresas", "/empresas", "moradia para equipes e profissionais transferidos"],
   ["Sua segurança", "/seguranca", "contrato, Caução, conversa registrada e proteção contra golpe"],
   ["Central de Ajuda", "/ajuda", "perguntas frequentes, chat com a assistente virtual e chamados"],
+  ["Guias", "/guias", "guias sobre preço da estadia, Caução, conferência de entrada, bairro e documentos"],
   ["Conferir documento", "/conferir", "confere se um recibo emitido pela plataforma é verdadeiro"],
   ["Termos de Uso", "/termos", ""],
   ["Privacidade", "/privacidade", ""],
