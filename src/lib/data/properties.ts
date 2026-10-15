@@ -3,12 +3,30 @@ import { isExemplo } from "@/lib/demo-listing";
 import { createPublicClient } from "@/lib/supabase/public";
 import type { Property, AmenityGroup } from "@/lib/types";
 import { SAMPLE_PROPERTIES } from "@/lib/properties";
+import { primeiroPerfilPublico, type PerfilPublicoDono } from "@/lib/data/perfil-publico-dono";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { signAvatarPath } from "@/lib/data/avatar-url";
 import { semAnunciosDeTeste } from "@/lib/data/anuncio-teste";
 import { comCoordenadaAproximada } from "@/lib/data/coordenada-aproximada";
 import { ROTULOS_FILTRAVEIS, chavesFiltroDe } from "@/lib/busca/filtro-comodidades";
 import { normalizarRegrasPets } from "@/lib/anuncio/pets-regras";
 import { privacidadeDaLinha, type PrivacidadeLinha } from "@/lib/anuncio/privacidade";
+
+/**
+ * Perfil PÚBLICO do dono de um anúncio ativo. SERVER-ONLY: a função é SECURITY DEFINER e,
+ * desde a 0133, só o service_role executa (anon/authenticated não chamam direto no banco).
+ * Sem chave de serviço (local/sandbox) ou com erro, devolve null e o bloco não aparece.
+ */
+async function buscarPerfilPublicoDono(imovelId: string): Promise<PerfilPublicoDono | null> {
+  const admin = createAdminClient();
+  if (!admin) return null;
+  try {
+    const { data } = await admin.rpc("perfil_publico_dono", { p_imovel: imovelId });
+    return primeiroPerfilPublico(data as PerfilPublicoDono[] | null);
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Colunas SEGURAS de `properties` para leitura (público e dono). NUNCA inclui
@@ -231,14 +249,11 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
   type LinhaDono = { full_name: string | null; avatar_url: string | null; created_at: string | null; response_rate: number | null; is_verified: boolean | null };
   let ownerRow = owner as LinhaDono | null;
   // Visitante (RLS de profiles só libera o próprio perfil): perfil PÚBLICO do dono pela
-  // função da 0129 — só primeiro nome, foto, desde, taxa de resposta e verificado, e só de
+  // função da 0131 (chamada no servidor com service_role, 0133) — só primeiro nome, foto, desde, taxa de resposta e verificado, e só de
   // anúncio ativo (ordem d943f893). Sem a migração, a chamada falha e o bloco não aparece.
   if (!ownerRow && ownerId) {
-    const pub = (await safe(supabase.rpc("perfil_publico_dono", { p_imovel: base.id }))) as
-      | { nome: string | null; avatar_url: string | null; desde: string | null; taxa_resposta: number | null; verificado: boolean | null }[]
-      | null;
-    const d = pub?.[0];
-    if (d?.nome)
+    const d = await buscarPerfilPublicoDono(base.id);
+    if (d)
       ownerRow = { full_name: d.nome, avatar_url: d.avatar_url, created_at: d.desde, response_rate: d.taxa_resposta, is_verified: d.verificado };
   }
 
