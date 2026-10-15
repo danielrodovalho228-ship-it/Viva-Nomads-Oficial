@@ -85,9 +85,20 @@ test.describe("T30 — Atendimento autônomo", () => {
     expect(c2!.prioridade).toBe("p2");
     expect((await mensagens(id)).some((m) => m.autor === "sistema" && m.corpo.startsWith("Pronto, passei seu chamado para uma pessoa da equipe."))).toBe(true);
     if (LAB_OUTBOX && fs.existsSync(LAB_OUTBOX)) {
-      const linhas = fs.readFileSync(LAB_OUTBOX, "utf8").split("\n");
-      expect(linhas.some((l) => l.includes(`— ${numero}: a pessoa pediu para falar com alguém`) && l.includes("Aprovar e enviar no admin"))).toBe(true);
-      expect(linhas.some((l) => l.includes(`— ${numero}: novo chamado`) && l.includes("A Viva já respondeu (informação oficial)"))).toBe(true);
+      // O e-mail ao Daniel sai DEPOIS da nota interna que o poll acima espera: lê o arquivo com repetição (sem corrida).
+      const linhasDoChamado = () => fs.readFileSync(LAB_OUTBOX, "utf8").split("\n").filter((l) => l.includes(`— ${numero}:`));
+      await expect
+        .poll(() => linhasDoChamado().some((l) => l.includes(`— ${numero}: a pessoa pediu para falar com alguém`) && l.includes("Aprovar e enviar no admin")), {
+          message: "e-mail 'pediu pessoa' com a sugestão para aprovar",
+          timeout: 20_000,
+        })
+        .toBe(true);
+      await expect
+        .poll(() => linhasDoChamado().some((l) => l.includes(`— ${numero}: novo chamado`) && l.includes("A Viva já respondeu (informação oficial)")), {
+          message: "e-mail de abertura com 'A Viva já respondeu'",
+          timeout: 20_000,
+        })
+        .toBe(true);
     }
     await ctx.close();
   });
