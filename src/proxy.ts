@@ -22,6 +22,8 @@ async function papelDoApp(request: NextRequest): Promise<"owner" | "tenant" | nu
   const supaUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supaKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!supaUrl || !supaKey) return "tenant";
+  // Sem cookie de sessão não há usuário: dispensa a ida ao servidor de autenticação (ordem 0f66a754).
+  if (!precisaVerificarUsuario(request.cookies.getAll())) return null;
   const supabase = createServerClient(supaUrl, supaKey, {
     cookies: { getAll: () => request.cookies.getAll(), setAll: () => {} },
   });

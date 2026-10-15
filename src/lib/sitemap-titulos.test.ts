@@ -33,7 +33,7 @@ test("#61: title <= 60 e description <= 160 nas páginas do pacote", () => {
 });
 
 test("#61: mantém '30 a 180 dias' no título da home (prazo intocado)", () => {
-  assert.match(ler("app/layout.tsx"), /Imóveis mobiliados para estadias de 30 a 180 dias/);
+  assert.match(ler("app/layout.tsx"), /Imóveis mobiliados de 30 a 180 dias/);
 });
 
 test("#61: guia de fotos tem H2 entre o H1 e os H3", () => {

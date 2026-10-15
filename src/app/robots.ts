@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/site";
+import { AREAS_PRIVADAS, BOTS_DE_IA } from "@/lib/seo/robots-regras";
 
 /**
  * robots.txt — LIBERA todo o site público e bloqueia SÓ as áreas privadas /
@@ -10,24 +11,13 @@ import { SITE_URL } from "@/lib/site";
  */
 export default function robots(): MetadataRoute.Robots {
   return {
-    rules: {
-      userAgent: "*",
-      allow: "/",
-      disallow: [
-        "/dashboard",
-        "/admin",
-        "/auth",
-        "/api",
-        "/simulacao",
-        "/roi",
-        "/modelodenegocio",
-        "/socios",
-        "/decisao",
-        "/tributario",
-        "/acesso-socios",
-        "/dev",
-      ],
-    },
+    rules: [
+      // Buscadores de IA liberados de forma explícita (ordem 9f68d9d3). Um grupo
+      // próprio repete o bloqueio das áreas privadas: nos robots.txt, o bot que
+      // tem grupo nomeado ignora o grupo "*".
+      { userAgent: BOTS_DE_IA, allow: "/", disallow: AREAS_PRIVADAS },
+      { userAgent: "*", allow: "/", disallow: AREAS_PRIVADAS },
+    ],
     sitemap: `${SITE_URL}/sitemap.xml`,
     host: SITE_URL,
   };

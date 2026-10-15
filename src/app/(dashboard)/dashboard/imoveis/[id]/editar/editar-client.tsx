@@ -119,6 +119,7 @@ export function EditarImovelClient({
         privacidadeOk: property.privacidade === undefined ? true : privacidade.semCamerasInterior,
         documento: fatos?.documento ?? "approved",
         limitePlanoOk: fatos?.limitePlanoOk ?? null,
+        limiteAnuncios: fatos?.limiteAnuncios,
         descricao: description,
         selo: fatos?.selo ?? !!property.readyToLiveBadge,
         video: fatos?.video ?? !!property.videoUrl,
