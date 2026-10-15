@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { contratoAssinadoEntrePartes, type ContratoParaAlerta } from "@/lib/seguranca/antigolpe";
 import { papelDaConversa, formatarPeriodo, type PapelConversa } from "@/lib/mensagens-filtros";
 
 export interface ChatMessage {
@@ -19,7 +20,7 @@ export interface Conversation {
   /** Foto de capa do imóvel e período da estadia (quando há contrato). */
   foto?: string;
   periodo?: string;
-  /** Já existe contrato fechado para este imóvel (o alerta antigolpe só vale antes disso). */
+  /** Contrato ASSINADO pelas duas partes desta conversa (o alerta antigolpe só vale antes disso). */
   contratoFechado?: boolean;
   messages: ChatMessage[];
 }
@@ -116,29 +117,28 @@ export async function listConversations(): Promise<Conversation[]> {
       conv.name = nome || "Conversa";
     }
   }
-  await enriquecer(supabase, [...byConv.values()]);
+  await enriquecer(supabase, [...byConv.values()], user.id);
   return [...byConv.values()];
 }
 
 type Supa = NonNullable<Awaited<ReturnType<typeof createClient>>>;
 
 /** Foto de capa e período da estadia por imóvel. Best-effort: se falhar, a conversa fica sem eles. */
-async function enriquecer(supabase: Supa, conversas: Conversation[]) {
+async function enriquecer(supabase: Supa, conversas: Conversation[], eu: string) {
   const ids = [...new Set(conversas.map((c) => c.propertyId).filter(Boolean))] as string[];
   if (ids.length === 0) return;
   try {
     const [{ data: fotos }, { data: contratos }] = await Promise.all([
       supabase.from("property_photos").select("property_id, url, sort_order").in("property_id", ids).order("sort_order"),
-      supabase.from("contratos").select("property_id, contrato_blocos(inicio, fim)").in("property_id", ids),
+      supabase.from("contratos").select("property_id, tenant_id, assinado_proprietario_em, assinado_inquilino_em, contrato_blocos(inicio, fim)").in("property_id", ids),
     ]);
     const capa = new Map<string, string>();
     for (const f of (fotos ?? []) as { property_id: string; url: string }[]) {
       if (!capa.has(f.property_id)) capa.set(f.property_id, f.url);
     }
     const periodo = new Map<string, string>();
-    const comContrato = new Set<string>();
-    for (const ct of (contratos ?? []) as unknown as { property_id: string; contrato_blocos: { inicio: string; fim: string }[] | null }[]) {
-      comContrato.add(ct.property_id);
+    const lista = (contratos ?? []) as unknown as (ContratoParaAlerta & { contrato_blocos: { inicio: string; fim: string }[] | null })[];
+    for (const ct of lista) {
       const bl = ct.contrato_blocos ?? [];
       if (bl.length === 0 || periodo.has(ct.property_id)) continue;
       periodo.set(ct.property_id, formatarPeriodo(bl.map((b) => b.inicio).sort()[0], bl.map((b) => b.fim).sort().at(-1)));
@@ -147,7 +147,7 @@ async function enriquecer(supabase: Supa, conversas: Conversation[]) {
       if (!c.propertyId) continue;
       c.foto = capa.get(c.propertyId);
       c.periodo = periodo.get(c.propertyId) || undefined;
-      c.contratoFechado = comContrato.has(c.propertyId);
+      c.contratoFechado = contratoAssinadoEntrePartes(lista, { propertyId: c.propertyId, eu, outroId: c.otherId });
     }
   } catch {
     /* sem foto/período: a conversa continua utilizável */

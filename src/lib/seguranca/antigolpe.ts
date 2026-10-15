@@ -28,3 +28,29 @@ export function pareceDadoBancario(texto: string): boolean {
   const t = texto ?? "";
   return PADROES_PAGAMENTO.some((re) => re.test(t));
 }
+
+export interface ContratoParaAlerta {
+  property_id: string;
+  tenant_id: string;
+  assinado_proprietario_em: string | null;
+  assinado_inquilino_em: string | null;
+}
+
+/**
+ * O alerta de PIX só some quando existe contrato ASSINADO pelas duas partes
+ * (proprietário e inquilino) sobre o imóvel da conversa e o inquilino do contrato
+ * é uma das duas pessoas da conversa. Contrato de outra pessoa ou só rascunho não conta.
+ */
+export function contratoAssinadoEntrePartes(
+  contratos: ContratoParaAlerta[],
+  conversa: { propertyId?: string; eu: string; outroId?: string }
+): boolean {
+  if (!conversa.propertyId || !conversa.outroId) return false;
+  return contratos.some(
+    (c) =>
+      c.property_id === conversa.propertyId &&
+      !!c.assinado_proprietario_em &&
+      !!c.assinado_inquilino_em &&
+      (c.tenant_id === conversa.eu || c.tenant_id === conversa.outroId)
+  );
+}

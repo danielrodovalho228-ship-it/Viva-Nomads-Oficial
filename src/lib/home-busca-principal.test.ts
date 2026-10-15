@@ -49,8 +49,7 @@ test("atalhos por categoria usam filtros que a /buscar realmente lê da URL", as
     const u = new URL(a.href, "https://x");
     assert.equal(u.pathname, "/buscar");
     for (const k of u.searchParams.keys()) assert.match(busca, lidos[k] ?? /^$/, `${a.rotulo}: /buscar lê "${k}"`);
-    assert.ok(existsSync(new URL(`../../public${a.foto}`, import.meta.url)), `${a.rotulo}: foto existe`);
-    assert.ok(a.alt.length > 5);
+    assert.ok(a.icone.length > 2, `${a.rotulo}: ícone lucide definido`);
   }
   // Valores aceitos pela /buscar (a busca ignora outros).
   assert.match(busca, /\[2500, 3500, 5000\]\.includes\(orc\)/);

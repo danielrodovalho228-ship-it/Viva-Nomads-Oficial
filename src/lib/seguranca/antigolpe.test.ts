@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { AVISO_ANTIGOLPE_ALERTA, AVISO_ANTIGOLPE_TEXTO, pareceDadoBancario } from "./antigolpe.ts";
+import { AVISO_ANTIGOLPE_ALERTA, AVISO_ANTIGOLPE_TEXTO, contratoAssinadoEntrePartes, pareceDadoBancario } from "./antigolpe.ts";
 
 test("#19cfa5b1: detecta PIX, transferência, depósito, sinal e dados bancários", () => {
   for (const t of [
@@ -41,4 +41,16 @@ test("#19cfa5b1: aviso aparece nos 3 lugares (anúncio, pedido de moradia, Mensa
   assert.match(msgs, /pareceDadoBancario\(m\.text\)/);
   assert.match(msgs, /!active\.contratoFechado/);
   assert.match(ler("components/seguranca/aviso-antigolpe.tsx"), /href="\/seguranca"/);
+});
+
+test("#19cfa5b1: alerta de PIX só some com contrato assinado pelas duas partes da conversa", () => {
+  const base = { property_id: "p1", tenant_id: "inq", assinado_proprietario_em: "2026-10-01", assinado_inquilino_em: "2026-10-02" };
+  const conv = { propertyId: "p1", eu: "dono", outroId: "inq" };
+  assert.equal(contratoAssinadoEntrePartes([base], conv), true);
+  assert.equal(contratoAssinadoEntrePartes([], conv), false);
+  assert.equal(contratoAssinadoEntrePartes([{ ...base, assinado_inquilino_em: null }], conv), false, "só o dono assinou");
+  assert.equal(contratoAssinadoEntrePartes([{ ...base, assinado_proprietario_em: null }], conv), false, "só o inquilino assinou");
+  assert.equal(contratoAssinadoEntrePartes([{ ...base, tenant_id: "outro" }], conv), false, "contrato de outra pessoa");
+  assert.equal(contratoAssinadoEntrePartes([{ ...base, property_id: "p2" }], conv), false, "outro imóvel");
+  assert.equal(contratoAssinadoEntrePartes([base], { ...conv, propertyId: undefined }), false);
 });
