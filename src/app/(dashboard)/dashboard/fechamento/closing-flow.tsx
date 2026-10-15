@@ -58,6 +58,7 @@ import {
 } from "@/lib/modelos-contrato";
 import { hojeBR, formatBRL, cn } from "@/lib/utils";
 import { MARCA_MINUTA, MSG_ASSINATURA_INATIVA } from "@/lib/contrato-etapas";
+import { LINK_DOCUMENTO } from "@/lib/documento-pessoa";
 
 const STEPS = ["Candidatura & verificação", "Garantia", "Serviços", "Patrimonial", "Contrato", "Resumo"];
 
@@ -329,7 +330,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
           <p className="font-semibold">Falta um documento para gerar o contrato</p>
           <p className="mt-1">{ctx.documentoPendente.mensagem}</p>
           {ctx.documentoPendente.quem === "dono" && (
-            <Link href="/dashboard/conta#documento" className="mt-2 inline-block font-semibold text-forest underline">
+            <Link href={LINK_DOCUMENTO} className="mt-2 inline-block font-semibold text-forest underline">
               Informar meu documento
             </Link>
           )}
