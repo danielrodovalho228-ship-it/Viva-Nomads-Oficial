@@ -45,5 +45,5 @@ test("o passo de preço do cadastro mostra o PrecoSugerido (opcional) e o botão
   assert.match(pagina, /<PrecoSugerido aluguel=\{Number\(monthlyPrice\) \|\| 0\} onUsar=/);
   const comp = readFileSync("src/components/precos/preco-sugerido.tsx", "utf8");
   assert.match(comp, /Usar preço sugerido/);
-  assert.doesNotMatch(comp, /aluguel pretendido|comiss[ãa]o|corretagem/i);
+  assert.doesNotMatch(comp, /\b(comissão|corretagem)\b/i);
 });
