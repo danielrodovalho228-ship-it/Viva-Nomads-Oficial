@@ -721,6 +721,10 @@ export default function NewPropertyPage() {
         title,
         city,
         monthlyPrice: Number(monthlyPrice) || 0,
+        neighborhood,
+        bathrooms: Number(bathrooms) || 0,
+        areaM2: Number(areaM2) || 0,
+        description,
         data: JSON.parse(draftJson),
       });
       if (!on) return;

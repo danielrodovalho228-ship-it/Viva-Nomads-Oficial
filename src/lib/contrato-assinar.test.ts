@@ -14,6 +14,7 @@ import {
   resumoContrato,
   petsRegrasDoResumo,
 } from "./contrato-assinar.ts";
+import { qtdPetsCongelada, type RegrasPets } from "./anuncio/pets-regras.ts";
 
 const dados = { contratoId: "c1", imovel: "Studio Centro", aluguelMensal: 2500, prazoDias: 90, ocupantes: 1, criadoEm: "2026-10-13" };
 
@@ -66,11 +67,11 @@ test("aviso à outra parte: pede a assinatura que falta, ou diz que o contrato e
 test("resumo traz a cláusula de pets só quando o anúncio tem regras (ordem 022afabb, item 5)", () => {
   const sem = resumoContrato(dados);
   assert.ok(!sem.some((l) => l.startsWith("Pets")));
-  const regras = { especies: ["cao" as const, "gato" as const], porteMax: "M" as const, qtdMax: 2, reforcoCaucao: 500, regrasCondominio: "" };
+  const regras = { especies: ["cao" as const, "gato" as const], porteMax: "M" as const, qtdMax: 2, reforcoCaucao: 0, valorPet: 500, valorPetTipo: "reembolsavel" as const, regrasCondominio: "" };
   const com = resumoContrato({ ...dados, petsRegras: regras });
   const linha = com.find((l) => l.startsWith("Pets"))!;
   assert.match(linha, /cão e gato/);
-  assert.match(linha, /Reforço de Caução/);
+  assert.doesNotMatch(linha, /Caução pet|Taxa pet/, "o valor pet vai em linha própria, não dentro de 'Pets —'");
   assert.notEqual(hashResumo(sem), hashResumo(com));
   assert.ok(!/vistoria/i.test(linha));
 });
@@ -102,4 +103,31 @@ test("resumo mostra a data de início da estadia escolhida no Fechamento (F37) e
   assert.notEqual(hashResumo(com), hashResumo(resumoContrato({ ...dados, inicioEstadia: "2026-11-04" })));
   // Data inválida não vira lixo no resumo assinado.
   assert.ok(!resumoContrato({ ...dados, inicioEstadia: "03/11/2026" }).some((l) => l.startsWith("Início da estadia")));
+});
+
+test("valor pet no resumo: linha própria, só com pet na candidatura (ordem 0a746da1, parte 3b)", () => {
+  const base = { especies: ["cao" as const], porteMax: "M" as const, qtdMax: 2, reforcoCaucao: 0, regrasCondominio: "" };
+  const reemb = { ...base, valorPet: 500, valorPetTipo: "reembolsavel" as const };
+  const taxa = { ...base, valorPet: 300, valorPetTipo: "nao_reembolsavel" as const };
+  const linhaValor = (r: RegrasPets, qtd?: number) =>
+    resumoContrato({ ...dados, petsRegras: r, qtdPetsCandidatura: qtd }).find((l) => l.startsWith("Valor pet"));
+  assert.equal(linhaValor(reemb, 1), "Valor pet: Caução pet R$ 500,00 — devolvida no fim");
+  assert.equal(linhaValor(taxa, 2), "Valor pet: Taxa pet R$ 300,00 — não reembolsável");
+  // Negativos: candidatura sem pet, sem valor no anúncio ou sem regras → nenhuma linha.
+  assert.equal(linhaValor(reemb, 0), undefined);
+  assert.equal(linhaValor(reemb, undefined), undefined);
+  assert.equal(linhaValor(base, 1), undefined);
+  assert.ok(!resumoContrato({ ...dados, qtdPetsCandidatura: 1 }).some((l) => l.startsWith("Valor pet")));
+  // A linha muda o hash (as duas partes assinam o que leram).
+  assert.notEqual(
+    hashResumo(resumoContrato({ ...dados, petsRegras: reemb, qtdPetsCandidatura: 1 })),
+    hashResumo(resumoContrato({ ...dados, petsRegras: reemb, qtdPetsCandidatura: 0 })),
+  );
+});
+
+test("pets congelados no contrato: lê a quantidade só se válida", () => {
+  assert.equal(qtdPetsCongelada({ qtdPetsCandidatura: 2 }), 2);
+  for (const ruim of [null, {}, { qtdPetsCandidatura: 0 }, { qtdPetsCandidatura: 9 }, { qtdPetsCandidatura: "x" }, "a"]) {
+    assert.equal(qtdPetsCongelada(ruim), 0);
+  }
 });

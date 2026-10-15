@@ -5,7 +5,7 @@
 */
 import { createHash } from "node:crypto";
 import { MARCA_MINUTA } from "./contrato-etapas.ts";
-import { linhasRegrasPets, normalizarRegrasPets, type RegrasPets } from "./anuncio/pets-regras.ts";
+import { linhasRegrasPets, linhaValorPetCandidatura, normalizarRegrasPets, type RegrasPets } from "./anuncio/pets-regras.ts";
 
 export type PapelContrato = "proprietario" | "inquilino";
 
@@ -26,6 +26,8 @@ export interface DadosResumo {
   inicioEstadia?: string | null;
   /** Regras de pets do anúncio (ordem 022afabb item 5): entram no resumo, não no texto do modelo. */
   petsRegras?: RegrasPets | null;
+  /** Pets da ficha do inquilino na candidatura: sem pet, a linha "Valor pet" não aparece. */
+  qtdPetsCandidatura?: number;
 }
 
 /** Linhas do resumo mostradas na tela e usadas no hash (mesma fonte: o que a pessoa lê é o que ela assina). */
@@ -37,6 +39,7 @@ function dataDoResumo(iso: string): string | null {
 export function resumoContrato(d: DadosResumo): string[] {
   const inicio = d.inicioEstadia ? dataDoResumo(d.inicioEstadia) : null;
   const valor = d.aluguelMensal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  const valorPet = linhaValorPetCandidatura(!!d.petsRegras, d.petsRegras, d.qtdPetsCandidatura ?? 0);
   return [
     MARCA_MINUTA,
     `Contrato ${d.contratoId}`,
@@ -45,7 +48,8 @@ export function resumoContrato(d: DadosResumo): string[] {
     ...(inicio ? [`Início da estadia: ${inicio}`] : []),
     `Prazo total: ${d.prazoDias} dias`,
     `Ocupantes: ${d.ocupantes}`,
-    ...(d.petsRegras ? [`Pets — ${linhasRegrasPets(d.petsRegras).join("; ")}`] : []),
+    ...(d.petsRegras ? [`Pets — ${linhasRegrasPets(d.petsRegras, { semValorPet: true }).join("; ")}`] : []),
+    ...(valorPet ? [valorPet] : []),
     `Registrado em: ${d.criadoEm}`,
   ];
 }

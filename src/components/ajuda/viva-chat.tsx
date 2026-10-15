@@ -22,7 +22,8 @@ import { buttonClasses } from "@/components/ui/button";
 // Fica fora só onde a própria tela já é a ajuda (/ajuda) ou é um fluxo de formulário
 // (login, anúncio, fechamento, segurança — t58) e no admin.
 // "/dashboard/conta/seguranca": cobria "Nova senha"/"Salvar nova senha" e os botões do 2FA a 390 px (t58).
-export const ESCONDER = ["/ajuda", "/admin", "/auth", "/dashboard/conta/ajuda", "/dashboard/imoveis/novo", "/dashboard/fechamento", "/dashboard/conta/seguranca"];
+// "/app/boas-vindas": tela de 100dvh do app; o botão cobria "Quero anunciar" e o respiro do fim da página a fazia rolar (t16).
+export const ESCONDER = ["/ajuda", "/admin", "/auth", "/dashboard/conta/ajuda", "/dashboard/imoveis/novo", "/dashboard/fechamento", "/dashboard/conta/seguranca", "/app/boas-vindas"];
 const CHAVE = "vivanomads-viva-chat";
 
 function carregar(): MsgChat[] {

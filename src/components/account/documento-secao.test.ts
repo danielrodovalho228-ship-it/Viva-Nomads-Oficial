@@ -27,3 +27,11 @@ test("âncora #documento presente em todos os estados", () => {
 test("falha de rede não vira CPF vazio digitável (não finge que carregou)", () => {
   assert.doesNotMatch(bloco, /DOCUMENTO_VAZIO_PF/);
 });
+
+test("link do Documento leva à subtela Perfil (vale no app e no site) e todo uso passa por LINK_DOCUMENTO", () => {
+  const lib = readFileSync(new URL("../../lib/documento-pessoa.ts", import.meta.url), "utf8");
+  assert.match(lib, /LINK_DOCUMENTO = "\/dashboard\/conta\/perfil#documento"/);
+  const fechamento = readFileSync(new URL("../../app/(dashboard)/dashboard/fechamento/closing-flow.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(fechamento, /href="\/dashboard\/conta#documento"/);
+  assert.match(fechamento, /href=\{LINK_DOCUMENTO\}/);
+});

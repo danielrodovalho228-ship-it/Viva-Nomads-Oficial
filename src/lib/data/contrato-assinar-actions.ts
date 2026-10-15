@@ -16,6 +16,7 @@ import {
   resumoContrato,
   type PapelContrato,
 } from "@/lib/contrato-assinar";
+import { qtdPetsCongelada } from "@/lib/anuncio/pets-regras";
 import { motivoFaltamInstrucoes } from "@/lib/checkin";
 import { instrucoesPreenchidas } from "@/lib/checkin-servidor";
 import { montarLinhaDoTempo, type EtapaEstadia } from "@/lib/estadia-linha-tempo";
@@ -65,11 +66,29 @@ interface LinhaContrato {
   assinado_inquilino_em: string | null;
   properties: { title?: string; owner_id?: string; checkin_after?: string | null; checkout_before?: string | null; pets_regras?: unknown } | null;
   pets_regras_congeladas?: unknown;
+  /** Pets do inquilino agora (só vale antes da 1ª assinatura; depois vale o congelado). */
+  qtd_pets_vivos?: number;
   contrato_blocos?: { inicio: string; fim: string }[] | null;
 }
 
 const COLUNAS =
   "id, tenant_id, status, aluguel_mensal, prazo_total_dias, qtd_ocupantes, created_at, assinado_proprietario_em, assinado_inquilino_em, pets_regras_congeladas, properties(title, owner_id, checkin_after, checkout_before, pets_regras), contrato_blocos(inicio, fim)";
+
+function objetoOuVazio(v: unknown): Record<string, unknown> {
+  return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
+}
+
+async function contarPetsDoInquilino(tenantId: string): Promise<number> {
+  const admin = createAdminClient();
+  if (!admin) return 0;
+  const { count } = await admin.from("pets_inquilino").select("id", { count: "exact", head: true }).eq("user_id", tenantId);
+  return count ?? 0;
+}
+
+/** Depois da 1ª assinatura vale o número congelado; antes, o da ficha do inquilino agora. */
+async function completarPets(c: LinhaContrato): Promise<void> {
+  if (!c.assinado_proprietario_em && !c.assinado_inquilino_em) c.qtd_pets_vivos = await contarPetsDoInquilino(c.tenant_id);
+}
 
 function montar(c: LinhaContrato, userId: string): ContratoParaAssinar | null {
   const ownerId = String(c.properties?.owner_id ?? "");
@@ -92,6 +111,8 @@ function montar(c: LinhaContrato, userId: string): ContratoParaAssinar | null {
       vivas: c.properties?.pets_regras,
       congeladas: c.pets_regras_congeladas,
     }),
+    qtdPetsCandidatura:
+      c.assinado_proprietario_em || c.assinado_inquilino_em ? qtdPetsCongelada(c.pets_regras_congeladas) : (c.qtd_pets_vivos ?? 0),
   });
   const a = { proprietario: c.assinado_proprietario_em, inquilino: c.assinado_inquilino_em };
   return {
@@ -124,7 +145,11 @@ export async function getContratoParaAssinar(contratoId: string): Promise<Contra
   } = await supabase.auth.getUser();
   if (!user) return null;
   const { data } = await supabase.from("contratos").select(COLUNAS).eq("id", contratoId).maybeSingle();
-  return data ? montar(data as unknown as LinhaContrato, user.id) : null;
+  if (!data) return null;
+  // O RLS acima já provou que a pessoa é parte; o dono não lê a ficha do inquilino, então a contagem vem do servidor.
+  const linha = data as unknown as LinhaContrato;
+  await completarPets(linha);
+  return montar(linha, user.id);
 }
 
 /** Envia ao e-mail da conta um código de 6 dígitos, de uso único, que vale 15 minutos (conferido no servidor). */
@@ -139,6 +164,7 @@ export async function pedirCodigoAssinatura(contratoId: string): Promise<{ ok: b
   if (!user?.email) return { ok: false, error: "Entre para assinar." };
   const { data } = await admin.from("contratos").select(COLUNAS).eq("id", contratoId).maybeSingle();
   const c = data as unknown as LinhaContrato | null;
+  if (c) await completarPets(c);
   const visao = c ? montar(c, user.id) : null;
   if (!c || !visao) return { ok: false, error: "Contrato não encontrado." };
   if (c.status !== "ativo") return { ok: false, error: "Este contrato não está mais aguardando assinatura." };
@@ -202,12 +228,15 @@ export async function assinarContrato(input: {
   if (c && !c.assinado_proprietario_em && !c.assinado_inquilino_em && c.pets_regras_congeladas == null) {
     await admin
       .from("contratos")
-      .update({ pets_regras_congeladas: c.properties?.pets_regras ?? {} })
+      .update({
+        pets_regras_congeladas: { ...(objetoOuVazio(c.properties?.pets_regras)), qtdPetsCandidatura: await contarPetsDoInquilino(c.tenant_id) },
+      })
       .eq("id", c.id)
       .is("pets_regras_congeladas", null);
     ({ data } = await admin.from("contratos").select(COLUNAS).eq("id", input.contratoId).maybeSingle());
     c = data as unknown as LinhaContrato | null;
   }
+  if (c) await completarPets(c);
   const visao = c ? montar(c, user.id) : null;
   if (!c || !visao) return { ok: false, error: "Contrato não encontrado." };
 

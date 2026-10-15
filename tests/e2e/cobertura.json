@@ -284,6 +284,15 @@
         "t72-paginas-institucionais"
       ]
     },
+    "/comparar": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t100-comparar-imoveis",
+        "t48-varredura"
+      ]
+    },
     "/conferir": {
       "personas": [
         "publico"
@@ -405,7 +414,8 @@
       "specs": [
         "t14-app-mode",
         "t17-conta-salvar",
-        "t36-cadastro-ponta-a-ponta"
+        "t36-cadastro-ponta-a-ponta",
+        "t92-documento-secao"
       ]
     },
     "/dashboard/conta/[secao]": {
@@ -417,7 +427,8 @@
       "specs": [
         "t14-app-mode",
         "t17-conta-salvar",
-        "t36-cadastro-ponta-a-ponta"
+        "t36-cadastro-ponta-a-ponta",
+        "t92-documento-secao"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -1362,7 +1373,9 @@
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t94-valor-pet"
+      ]
     },
     "src/lib/data/actions.ts#varrerCicloBlocos": {
       "personas": [

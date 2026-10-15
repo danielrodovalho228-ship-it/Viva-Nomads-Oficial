@@ -327,12 +327,23 @@ function DraftPendingCard({
             </p>
           </div>
         </div>
-        <Link
-          href={check?.proximo?.href ?? `/dashboard/imoveis/novo?draft=${draft.id}`}
-          className={buttonClasses({ size: "sm" })}
-        >
-          {draft.pronto ? "Revisar e publicar" : check?.proximo ? "Fazer o próximo passo" : "Continuar edição"} <ArrowRight className="h-4 w-4" />
-        </Link>
+        <div className="flex flex-col gap-1 sm:items-end">
+          <Link
+            href={check?.proximo?.href ?? `/dashboard/imoveis/novo?draft=${draft.id}`}
+            className={buttonClasses({ size: "sm" })}
+          >
+            {draft.pronto ? "Revisar e publicar" : check?.proximo ? "Fazer o próximo passo" : "Continuar edição"} <ArrowRight className="h-4 w-4" />
+          </Link>
+          {check?.proximo && (
+            <Link
+              href={`/dashboard/imoveis/novo?draft=${encodeURIComponent(draft.id)}`}
+              data-testid="retomar-rascunho"
+              className="inline-flex min-h-11 items-center justify-center text-sm font-medium text-forest underline-offset-2 hover:underline"
+            >
+              Continuar de onde parou
+            </Link>
+          )}
+        </div>
       </div>
       {draft.score && (
         <div className="mt-3" data-testid="anuncio-score">
