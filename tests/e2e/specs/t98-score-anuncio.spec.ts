@@ -40,5 +40,19 @@ test.describe("T98 — Score de qualidade do anúncio", () => {
     await expect(dicas.first()).toBeVisible();
     await dicas.first().click();
     await expect(page).toHaveURL(/\/dashboard\/imoveis\/novo\?draft=.*&etapa=\d/);
+
+    // Editar um campo faz o score subir (ordem 0f9b9d58): descrição com 40+ palavras = +6 pontos.
+    await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+    const antes = Number((await page.getByTestId("anuncio-score-valor").innerText()).replace("%", ""));
+    await page.getByTestId("score-dica").filter({ hasText: /Descrição com pelo menos/ }).click();
+    await expect(page).toHaveURL(/\/dashboard\/imoveis\/novo\?draft=.*&etapa=5/);
+    const descricao = Array.from({ length: 45 }, (_, i) => `palavra${i}`).join(" ");
+    await page.getByPlaceholder("Descreva o imóvel...").fill(descricao);
+    await expect(page.getByText(/Salvo/).first()).toBeVisible({ timeout: 20_000 });
+    await expect(async () => {
+      await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+      const depois = Number((await page.getByTestId("anuncio-score-valor").innerText({ timeout: 4_000 })).replace("%", ""));
+      expect(depois).toBeGreaterThan(antes);
+    }).toPass({ timeout: 40_000, intervals: [2_000, 3_000] });
   });
 });
