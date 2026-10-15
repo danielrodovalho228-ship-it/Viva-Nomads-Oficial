@@ -9,17 +9,26 @@ import { authFile } from "../fixtures/auth";
 test.describe("T57 — Contrato: ver e assinar", () => {
   test.use({ storageState: authFile("inquilino") });
 
-  test("contrato que não existe ou que não é meu dá 404 (nada vaza)", async ({ page }) => {
-    const r = await page.goto("/dashboard/locacoes/00000000-0000-4000-8000-000000000000", { waitUntil: "networkidle" });
-    expect(r?.status()).toBe(404);
-    const r2 = await page.goto("/dashboard/locacoes/nao-e-uuid", { waitUntil: "networkidle" });
-    expect(r2?.status()).toBe(404);
+  // Um teste por rota, sem esperar "networkidle" (o painel mantém conexões abertas e o conjunto de 4 idas
+  // estourava os 45 s do teste). O status 404 vem na resposta; se o painel já tiver enviado o esqueleto de
+  // carregamento, a prova é a tela "Página não encontrada" sem nenhum dado de contrato.
+  const rotasSemAcesso = [
+    ["locações: uuid que não existe", "/dashboard/locacoes/00000000-0000-4000-8000-000000000000"],
+    ["locações: id que não é uuid", "/dashboard/locacoes/nao-e-uuid"],
     // Rota do proprietário (ordem f375fdc1): mesma regra.
-    const r3 = await page.goto("/dashboard/contratos/00000000-0000-4000-8000-000000000000", { waitUntil: "networkidle" });
-    expect(r3?.status()).toBe(404);
-    const r4 = await page.goto("/dashboard/contratos/nao-e-uuid", { waitUntil: "networkidle" });
-    expect(r4?.status()).toBe(404);
-  });
+    ["contratos: uuid que não existe", "/dashboard/contratos/00000000-0000-4000-8000-000000000000"],
+    ["contratos: id que não é uuid", "/dashboard/contratos/nao-e-uuid"],
+  ] as const;
+  for (const [nome, rota] of rotasSemAcesso) {
+    test(`contrato que não existe ou que não é meu dá 404 e nada vaza — ${nome}`, async ({ page }) => {
+      const r = await page.goto(rota, { waitUntil: "domcontentloaded" });
+      if (r?.status() !== 404) {
+        await expect(page.getByRole("heading", { name: "Página não encontrada" })).toBeVisible();
+      }
+      await expect(page.getByTestId("contrato-resumo")).toHaveCount(0);
+      await expect(page.getByTestId("form-assinar")).toHaveCount(0);
+    });
+  }
 
   test("Minhas locações: título e botão abrem o detalhe; assinar exige 'Li e concordo' e o código de e-mail", async ({ page }) => {
     await page.goto("/dashboard/locacoes", { waitUntil: "networkidle" });
