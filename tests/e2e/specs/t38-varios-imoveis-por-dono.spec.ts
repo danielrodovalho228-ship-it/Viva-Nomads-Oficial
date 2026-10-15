@@ -71,6 +71,14 @@ test.describe("T38 — Vários imóveis por dono", () => {
     await page.screenshot({ path: "tests/laboratorio/saida/t38-1-gratuito-sem-vaga.png", fullPage: true });
     expect(await statusDoImovel(ids.imoveis[1])).toBe("draft");
     expect(await contarAtivos(ids.dono!)).toBe(1);
+
+    // Painel (390 px): o aviso "Vaga no seu plano" vem com os 2 botões.
+    await page.goto("/dashboard", { waitUntil: "networkidle" });
+    const vaga = page.getByTestId("check-vaga").first();
+    await expect(vaga).toContainText("Seu plano permite 1 anúncio no ar", { timeout: 20_000 });
+    await expect(vaga.getByRole("link", { name: "Pausar outro anúncio" })).toHaveAttribute("href", "/dashboard/imoveis");
+    await expect(vaga.getByRole("link", { name: "Mudar de plano" })).toHaveAttribute("href", "/precos");
+    await page.screenshot({ path: "tests/laboratorio/saida/t38-1b-painel-vaga-390.png", fullPage: true });
     await page.context().close();
   });
 
