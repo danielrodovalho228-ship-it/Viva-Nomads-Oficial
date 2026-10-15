@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { normalizarRegrasPets, linhasRegrasPets, compatibilidadePets, textoValorPet } from "./pets-regras.ts";
+import { normalizarRegrasPets, linhasRegrasPets, compatibilidadePets, textoValorPet, linhaValorPetCandidatura } from "./pets-regras.ts";
 
 const boa = { especies: ["cao", "gato"], porteMax: "M", qtdMax: 2, reforcoCaucao: 500, regrasCondominio: "Só no elevador de serviço" };
 
@@ -101,4 +101,17 @@ test("imóvel que não aceita pet não grava valor pet; só o dono grava", async
   const src = readFileSync(new URL("../../../src/lib/data/actions.ts", import.meta.url), "utf8");
   assert.match(src, /input\.petsAllowed \? normalizarRegrasPets\(input\.petsRegras\) : null/);
   assert.match(src, /update\(\{ pets_regras: regras \}\)\.eq\("id", id\)\.eq\("owner_id", user\.id\)/);
+});
+
+test("candidatura: valor pet em linha própria, só com pet na ficha e imóvel que aceita (ordem 0a746da1, parte 3)", () => {
+  const regras = normalizarRegrasPets({ ...boa, reforcoCaucao: 0, valorPet: 300, valorPetTipo: "nao_reembolsavel" });
+  assert.equal(linhaValorPetCandidatura(true, regras, 1), "Valor pet: Taxa pet R$ 300,00 — não reembolsável");
+  const caucao = normalizarRegrasPets({ ...boa, reforcoCaucao: 0, valorPet: 450, valorPetTipo: "reembolsavel" });
+  assert.equal(linhaValorPetCandidatura(true, caucao, 2), "Valor pet: Caução pet R$ 450,00 — devolvida no fim");
+  // negativos: sem pet na candidatura, imóvel sem pet, sem valor, sem regras
+  assert.equal(linhaValorPetCandidatura(true, regras, 0), null);
+  assert.equal(linhaValorPetCandidatura(false, regras, 1), null);
+  assert.equal(linhaValorPetCandidatura(undefined, regras, 1), null);
+  assert.equal(linhaValorPetCandidatura(true, normalizarRegrasPets({ ...boa, reforcoCaucao: 0 }), 1), null);
+  assert.equal(linhaValorPetCandidatura(true, null, 1), null);
 });

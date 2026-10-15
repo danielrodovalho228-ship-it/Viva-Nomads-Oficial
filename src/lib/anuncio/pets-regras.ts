@@ -41,6 +41,20 @@ export function textoValorPet(r: Pick<RegrasPets, "valorPet" | "valorPetTipo"> |
     : `Caução pet R$ ${brl(r.valorPet)} — devolvida no fim`;
 }
 
+/**
+ * Linha do resumo da candidatura: o valor pet do imóvel, separado, só quando a candidatura leva pet
+ * (ficha do inquilino) e o imóvel aceita pet. Sem valor, sem regras ou sem pet: null.
+ */
+export function linhaValorPetCandidatura(
+  petsAllowed: boolean | undefined,
+  regras: Pick<RegrasPets, "valorPet" | "valorPetTipo"> | null | undefined,
+  qtdPetsNaCandidatura: number
+): string | null {
+  if (!petsAllowed || qtdPetsNaCandidatura < 1) return null;
+  const texto = textoValorPet(regras);
+  return texto ? `Valor pet: ${texto}` : null;
+}
+
 export interface RegrasPets {
   especies: EspeciePet[];
   porteMax: PortePet;

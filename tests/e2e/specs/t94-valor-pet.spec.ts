@@ -9,7 +9,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
 const senha = novaSenha();
 const sufixo = novoSufixo();
 const dono = { email: `dono.pet94.${sufixo}@lab.vivanomads.test`, nome: "Dora Dona", role: "owner" as const };
-const ids: { dono?: string; taxa?: string; caucao?: string; semValor?: string; semPet?: string } = {};
+const inquilino = { email: `inq.pet94.${sufixo}@lab.vivanomads.test`, nome: "Iago Inquilino", role: "tenant" as const };
+const ids: { inquilino?: string; dono?: string; taxa?: string; caucao?: string; semValor?: string; semPet?: string } = {};
 const regras = (extra: Record<string, unknown>) => ({
   especies: ["cao", "gato"], porteMax: "M", qtdMax: 2, valorPet: 0, valorPetTipo: "reembolsavel", regrasCondominio: "", ...extra,
 });
@@ -20,6 +21,11 @@ test.describe("T94 — Valor pet no anúncio", () => {
 
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
+    ids.inquilino = await criarConta(inquilino, senha);
+    const { error: ePet } = await adm()
+      .from("pets_inquilino")
+      .insert({ user_id: ids.inquilino, nome: "Rex", especie: "cao", porte: "M", idade_anos: 3, castrado: true, vacinas_em_dia: true });
+    expect(ePet).toBeNull();
     const criar = async (titulo: string, petsAllowed: boolean, r: Record<string, unknown> | null) => {
       const id = await criarImovelPronto(ids.dono!, `${titulo} ${sufixo}`, { ativo: true });
       const { error } = await adm().from("properties").update({ pets_allowed: petsAllowed, pets_regras: r }).eq("id", id);
@@ -32,7 +38,7 @@ test.describe("T94 — Valor pet no anúncio", () => {
     ids.semPet = await criar("Studio Sem Pet", false, null);
   });
   test.afterAll(async () => {
-    await apagarContas([ids.dono]);
+    await apagarContas([ids.dono, ids.inquilino]);
   });
 
   test("1. Taxa pet: anúncio diz que não é reembolsável", async ({ page }) => {
@@ -66,6 +72,17 @@ test.describe("T94 — Valor pet no anúncio", () => {
     await expect(page.getByText(/Reforço de Caução/)).toHaveCount(0);
     const largura = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(largura).toBeLessThanOrEqual(0);
+    await page.context().close();
+  });
+
+  test("5. candidatura com pet na ficha: o resumo traz o valor pet em linha própria; imóvel sem valor, não", async ({ browser }) => {
+    test.setTimeout(90_000);
+    const page = await entrar(browser, inquilino.email, senha);
+    await page.goto(`/imoveis/${ids.taxa}`, { waitUntil: "networkidle" });
+    await expect(page.getByTestId("pet-candidatura-valor").first()).toHaveText("Valor pet: Taxa pet R$ 300,00 — não reembolsável", { timeout: 20_000 });
+    await page.goto(`/imoveis/${ids.semValor}`, { waitUntil: "networkidle" });
+    await expect(page.getByTestId("pet-candidatura-ok").first()).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByTestId("pet-candidatura-valor")).toHaveCount(0);
     await page.context().close();
   });
 });
