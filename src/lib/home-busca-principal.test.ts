@@ -25,7 +25,7 @@ test("hero: uma busca só, rotulada 'Para onde você vai?', que leva à /buscar?
 
 test("hero em largura cheia: foto de fundo ocupa a seção; texto centralizado", () => {
   const home = ler("app/(public)/page.tsx");
-  const hero = home.slice(home.indexOf('data-testid="hero-home"'), home.indexOf("<AtalhosCategoria />"));
+  const hero = home.slice(home.indexOf('data-testid="hero-home"'), home.indexOf("<AtalhosCategoria"));
   assert.match(hero, /<HeroVideoBg \/>/);
   assert.match(hero, /text-center/);
   assert.match(hero, /<h1/);
@@ -43,6 +43,7 @@ test("atalhos por categoria usam filtros que a /buscar realmente lê da URL", as
     pet: /on\("pet"\)/,
     homeoffice: /on\("homeoffice"\)/,
     quartos: /num\("quartos"\)/,
+    local: /sp\.get\("local"\)/,
   };
   for (const a of ATALHOS_CATEGORIA) {
     const u = new URL(a.href, "https://x");
