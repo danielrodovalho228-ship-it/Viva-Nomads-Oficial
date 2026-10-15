@@ -92,7 +92,8 @@
         "admin"
       ],
       "specs": [
-        "t91-avaliacao-resposta"
+        "t91-avaliacao-resposta",
+        "t93-avaliacao-tela"
       ]
     },
     "/admin/documentos": {
@@ -347,7 +348,8 @@
         "proprietario"
       ],
       "specs": [
-        "t91-avaliacao-resposta"
+        "t91-avaliacao-resposta",
+        "t93-avaliacao-tela"
       ]
     },
     "/dashboard/buscas": {
@@ -1584,7 +1586,9 @@
       "personas": [
         "admin"
       ],
-      "specs": []
+      "specs": [
+        "t93-avaliacao-tela"
+      ]
     },
     "src/lib/data/avaliacoes-resposta-actions.ts#pedirRevisaoAvaliacao": {
       "personas": [
@@ -1592,7 +1596,8 @@
         "proprietario"
       ],
       "specs": [
-        "t91-avaliacao-resposta"
+        "t91-avaliacao-resposta",
+        "t93-avaliacao-tela"
       ]
     },
     "src/lib/data/avaliacoes-resposta-actions.ts#responderAvaliacao": {
@@ -1601,7 +1606,8 @@
         "proprietario"
       ],
       "specs": [
-        "t91-avaliacao-resposta"
+        "t91-avaliacao-resposta",
+        "t93-avaliacao-tela"
       ]
     },
     "src/lib/data/avatar-actions.ts#clearMyAvatar": {
