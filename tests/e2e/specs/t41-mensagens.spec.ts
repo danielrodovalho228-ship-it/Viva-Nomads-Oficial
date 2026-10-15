@@ -40,7 +40,8 @@ test.describe("T41 — Mensagens inquilino ↔ dono", () => {
     const paginaDono = await entrar(browser, dono.email, senha);
     await paginaDono.goto("/dashboard/mensagens", { waitUntil: "networkidle" });
     await paginaDono.getByRole("button", { name: /Studio das mensagens/ }).first().click();
-    await expect(paginaDono.getByText("Olá! Tenho interesse no studio.")).toBeVisible();
+    // A frase aparece na lista (prévia) e na conversa aberta: a bolha é a última.
+    await expect(paginaDono.getByText("Olá! Tenho interesse no studio.").last()).toBeVisible();
 
     await paginaDono.getByPlaceholder("Escreva uma mensagem...").fill("Claro! Me chama no (34) 99999-8888 ou em dora@exemplo.com");
     await paginaDono.getByRole("button", { name: "Enviar" }).click();
@@ -61,7 +62,7 @@ test.describe("T41 — Mensagens inquilino ↔ dono", () => {
     const paginaInq = await entrar(browser, inq.email, senha);
     await paginaInq.goto("/dashboard/mensagens", { waitUntil: "networkidle" });
     await paginaInq.getByRole("button", { name: /Studio das mensagens/ }).first().click();
-    await expect(paginaInq.getByText(/Claro!/)).toBeVisible();
+    await expect(paginaInq.getByText(/Claro!/).last()).toBeVisible();
     await expect(paginaInq.locator("body")).not.toContainText("99999-8888");
     await expect(paginaInq.locator("body")).not.toContainText("dora@exemplo.com");
     await paginaDono.context().close();
