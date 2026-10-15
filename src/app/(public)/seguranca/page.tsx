@@ -15,7 +15,7 @@ const GOLPES = [
   {
     golpe: "“Faça um PIX para reservar antes de visitar.”",
     protecao:
-      "A plataforma nunca pede pagamento para reservar e nunca movimenta o aluguel — o dinheiro vai direto do inquilino para a conta do proprietário, já no fechamento oficial.",
+      "A plataforma nunca pede pagamento para reservar e nunca movimenta o valor mensal — o dinheiro vai direto do inquilino para a conta do proprietário, já no fechamento oficial.",
     icon: Wallet,
   },
   {
@@ -83,9 +83,9 @@ export default function SegurancaPage() {
         <div className="mt-5 grid gap-4">
           <Faq q="Como o Viva Nomads protege meu dinheiro?">
             <p>
-              A plataforma <strong className="text-ink">nunca movimenta o aluguel</strong>: ele vai
-              direto do inquilino para a conta do proprietário. A comissão é uma taxa única por
-              contrato, transparente no fechamento.
+              A plataforma <strong className="text-ink">nunca movimenta o valor mensal</strong>: ele vai
+              direto do inquilino para a conta do proprietário. A taxa da Viva é cobrada do
+              proprietário sobre o valor total de cada contrato, transparente no fechamento.
             </p>
           </Faq>
           <Faq q="Por que a conversa fica na plataforma?">
