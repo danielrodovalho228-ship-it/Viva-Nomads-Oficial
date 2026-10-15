@@ -22,6 +22,10 @@ import {
   CalendarCheck,
   ShieldCheck,
   ArrowRight,
+  CalendarDays,
+  Clock,
+  Handshake,
+  Hash,
 } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { Button, buttonClasses } from "@/components/ui/button";
@@ -50,6 +54,8 @@ import { OwnerCard } from "@/components/property/owner-card";
 import { Reviews } from "@/components/property/reviews";
 import { isExemplo, EXEMPLO_SEM_CONTATO } from "@/lib/demo-listing";
 import { registrarEvento } from "@/lib/eventos/registrar";
+import { NavSecoes } from "@/components/property/nav-secoes";
+import { secoesDoImovel, sinaisDeConfianca, type SinalConfianca } from "@/lib/imovel-pagina";
 
 export function PropertyDetail({ property: anuncio, similar }: { property: Property; similar: Property[] }) {
   // Anúncio de EXEMPLO: sem nota, avaliações, selos do dono, taxa de resposta,
@@ -311,7 +317,7 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
     <div className="container-page py-8 pb-40 lg:pb-8">
       {composer}
       <BarraFixaCelular
-        barra={barraFixaImovel({ monthlyPrice: property.monthlyPrice, exemplo, candidatouSe })}
+        barra={barraFixaImovel({ monthlyPrice: property.monthlyPrice, exemplo, candidatouSe, availableFrom: property.availableFrom })}
         pending={pending !== null}
         onCandidatar={() => handleLead("candidatura")}
       />
@@ -336,10 +342,14 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
         readyToLive={property.readyToLiveBadge}
       />
 
+      {/* Abas âncora presas ao rolar (ordem d943f893). */}
+      <NavSecoes secoes={secoesDoImovel({ avaliacoes: reviewsReais, temDono: !!(property.owner?.name ?? property.ownerName) })} />
+
       <div className="mt-6 grid gap-8 lg:grid-cols-3">
         {/* Conteúdo (seções roláveis) */}
         <div className="min-w-0 space-y-10 lg:col-span-2">
-          {/* Cabeçalho */}
+          {/* Visão geral: cabeçalho, sinais de confiança, destaques, medidas, vídeo e descrição. */}
+          <div id="visao-geral" className="scroll-mt-36 space-y-10">
           <header>
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 text-sm text-muted">
@@ -351,6 +361,16 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
               </span>
             </div>
             <h1 className="mt-2 font-title text-3xl font-bold text-ink">{property.title}</h1>
+
+            {/* Sinais de confiança (só dado real): disponibilidade, resposta, tempo de casa, código. */}
+            <ul data-testid="sinais-confianca" className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-sm">
+              {sinaisDeConfianca(property, new Date().toISOString().slice(0, 10)).map((s) => (
+                <li key={s.tipo} className={s.tipo === "codigo" ? "inline-flex items-center gap-1.5 text-xs text-muted" : "inline-flex items-center gap-1.5 text-ink"}>
+                  <IconeSinal tipo={s.tipo} />
+                  <span className={s.tipo === "disponibilidade" ? "font-semibold text-forest" : undefined}>{s.texto}</span>
+                </li>
+              ))}
+            </ul>
 
             <div className="mt-3 flex flex-wrap items-center gap-2">
               {/* Anúncio de exemplo (ilustrativo): selo honesto e visível. */}
@@ -427,17 +447,29 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
 
           {/* Sobre o imóvel (~5 linhas + "Mostrar mais") */}
           {property.description && <SobreImovel descricao={property.description} />}
+          </div>
 
-          <AmenitiesGrid property={property} />
-          <WorkspaceSection property={property} />
-          <AvailabilityCalendar property={property} />
-          <LocationNearby property={property} />
-          <GoogleProximities property={property} />
-          <BomSaber property={property} />
-          <StayRules property={property} />
-          <PrivacidadeAcesso privacidade={property.privacidade} />
-          <OwnerCard property={property} />
-          <Reviews property={property} />
+          {/* Comodidades + regras da casa + o que é bom saber. */}
+          <div id="comodidades" className="scroll-mt-36 space-y-10">
+            <AmenitiesGrid property={property} />
+            <WorkspaceSection property={property} />
+            <StayRules property={property} />
+            <BomSaber property={property} />
+            <PrivacidadeAcesso privacidade={property.privacidade} />
+          </div>
+          <div id="disponibilidade" className="scroll-mt-36">
+            <AvailabilityCalendar property={property} />
+          </div>
+          <div id="avaliacoes" className="scroll-mt-36">
+            <Reviews property={property} />
+          </div>
+          <div id="proprietario" className="scroll-mt-36 empty:hidden">
+            <OwnerCard property={property} />
+          </div>
+          <div id="localizacao" className="scroll-mt-36 space-y-10">
+            <LocationNearby property={property} />
+            <GoogleProximities property={property} />
+          </div>
         </div>
 
         {/* Card de preço (sticky no desktop, empilhado no mobile) */}
@@ -471,4 +503,10 @@ function semSinaisInventados(p: Property): Property {
     googlePlaces: [],
     owner: p.owner ? { name: p.owner.name, avatarUrl: p.owner.avatarUrl } : undefined,
   };
+}
+
+/** Ícone de cada sinal de confiança do topo. */
+function IconeSinal({ tipo }: { tipo: SinalConfianca["tipo"] }) {
+  const Icone = { disponibilidade: CalendarDays, resposta: Clock, desde: Handshake, codigo: Hash }[tipo];
+  return <Icone className={tipo === "codigo" ? "h-3.5 w-3.5" : "h-4 w-4 text-sage"} aria-hidden />;
 }
