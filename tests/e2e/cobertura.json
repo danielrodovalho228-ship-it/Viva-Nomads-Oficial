@@ -1763,6 +1763,15 @@
       ],
       "specs": []
     },
+    "src/lib/data/denuncia-conversa-actions.ts#denunciarConversa": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t87-denunciar-mensagem"
+      ]
+    },
     "src/lib/data/documentos-actions.ts#documentosDosContratos": {
       "personas": [
         "proprietario",
