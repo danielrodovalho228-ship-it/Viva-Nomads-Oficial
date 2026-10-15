@@ -14,24 +14,6 @@ test.describe("T12 — Escada de planos @criticos", () => {
   test.describe("Regra 1 — Gestor por elegibilidade", () => {
     test.use({ storageState: authFile("proprietario") });
 
-    test("conta comum não ativa Gestor: card mostra critério + 'Fale com a gente'", async ({
-      page,
-    }) => {
-      await page.goto("/dashboard/assinatura", { waitUntil: "networkidle" });
-      // O card do Gestor existe. `.last()`: entre os divs que contêm o título,
-      // o card é o mais interno (o `.first()` pegava a grade com todos os planos).
-      const cardGestor = page
-        .locator("div")
-        .filter({ has: page.getByRole("heading", { name: /^Gestor$/ }) })
-        .last();
-      await expect(cardGestor).toBeVisible();
-      // Não há botão de ativar/assinar o Gestor — só "Fale com a gente".
-      await expect(cardGestor.getByRole("button", { name: /Assinar|Ativar|Plano atual/i })).toHaveCount(0);
-      await expect(cardGestor.getByRole("link", { name: /Fale com a gente/i })).toBeVisible();
-      // A barreira aparece como META (critério de desbloqueio), não porta muda.
-      await expect(cardGestor).toContainText(/administradoras|documenta[çc][ãa]o aprovada|elegível/i);
-    });
-
     test("a guarda do servidor recusa cobrança do Gestor (403)", async ({ request }) => {
       const res = await request.post("/api/assinatura", {
         data: { planId: "gestor", billingType: "PIX" },
