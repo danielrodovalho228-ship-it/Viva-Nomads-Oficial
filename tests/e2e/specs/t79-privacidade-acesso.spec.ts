@@ -42,7 +42,7 @@ test.describe("T79 — Privacidade e acesso ao imóvel", () => {
   });
 
   test("2. com a declaração, fechadura com senha e câmera externa: publica e o anúncio mostra o bloco Privacidade", async ({ browser, request }) => {
-    test.setTimeout(120_000);
+    test.setTimeout(180_000);
     const { error } = await adm()
       .from("properties")
       .update({ sem_cameras_interior: true, cameras_externas: "portaria do prédio", tipo_acesso: "fechadura_senha", senha_trocada_estadia: true })
@@ -50,13 +50,23 @@ test.describe("T79 — Privacidade e acesso ao imóvel", () => {
     expect(error).toBeNull();
     const page = await entrar(browser, dono.email, senha);
     await publicarPeloEditor(page, ids.comSenha!);
-    await expect(page.getByTestId("prontidao")).toHaveText("Anúncio publicado", { timeout: 20_000 });
-    expect(await statusDoImovel(ids.comSenha!)).toBe("active");
+    await expect(page.getByTestId("prontidao")).toHaveText("Anúncio publicado", { timeout: 30_000 });
+    await expect.poll(() => statusDoImovel(ids.comSenha!), { timeout: 20_000 }).toBe("active");
     await page.context().close();
 
-    const r = await request.get(`/imoveis/${ids.comSenha}`);
-    expect(r.status()).toBe(200);
-    const html = await r.text();
+    // A consulta pública tem limite próprio (sem ele, uma resposta presa gasta o teste inteiro) e repete:
+    // a página do imóvel guarda cache de 60 s e a primeira resposta pode vir antes da publicação propagar.
+    let html = "";
+    await expect
+      .poll(
+        async () => {
+          const r = await request.get(`/imoveis/${ids.comSenha}`, { timeout: 25_000 });
+          html = r.status() === 200 ? await r.text() : "";
+          return html.includes('data-testid="bloco-privacidade"');
+        },
+        { timeout: 90_000, intervals: [2_000, 5_000, 10_000] }
+      )
+      .toBe(true);
     expect(html).toContain('data-testid="bloco-privacidade"');
     expect(html).toContain("Sem câmeras no interior (declarado pelo anunciante)");
     expect(html).toContain("Câmeras externas: portaria do prédio");
