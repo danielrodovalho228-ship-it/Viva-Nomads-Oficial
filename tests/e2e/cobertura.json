@@ -150,6 +150,14 @@
         "t51-admin-padrao-caixa-socios"
       ]
     },
+    "/admin/usuarios": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t101-admin-usuarios"
+      ]
+    },
     "/ajuda": {
       "personas": [
         "publico"
