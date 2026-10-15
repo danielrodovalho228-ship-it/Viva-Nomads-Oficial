@@ -11,7 +11,7 @@ import {
 import { COOKIE_ADMIN_ATIVO, LIMITE_OCIOSO_ADMIN_MS, sessaoAdminOciosa } from "@/lib/admin/sessao-ociosa";
 import { APP_COOKIE, appHome, isAppUserAgent, isMarketingPath } from "@/lib/app-mode";
 import { destinoAposLogin } from "@/lib/destino-login";
-import { requisicaoPrefetch, temCookieSessao } from "@/lib/login-celular";
+import { precisaVerificarUsuario, requisicaoPrefetch, temCookieSessao } from "@/lib/login-celular";
 import { decidirPortaoMfa, mfaAdminObrigatoria, rotaLivreDeAal2, urlAtivar2fa, urlVerificarCodigo } from "@/lib/admin/mfa";
 
 /**
@@ -134,7 +134,7 @@ export async function proxy(request: NextRequest) {
 
   const {
     data: { user },
-  } = prefetch && !temCookieSessao(request.cookies.getAll())
+  } = !precisaVerificarUsuario(request.cookies.getAll())
     ? { data: { user: null } }
     : await supabase.auth.getUser();
 

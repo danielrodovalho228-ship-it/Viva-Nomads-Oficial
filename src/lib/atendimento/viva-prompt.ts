@@ -28,7 +28,7 @@ export function fontes(): string {
     "",
     "## Regras do contrato (fonte oficial)",
     `- Estadias de 30 a 180 dias: de ${REGRAS_CONTRATO.prazoMinMeses} a ${REGRAS_CONTRATO.prazoMaxMeses} meses, no máximo ${REGRAS_CONTRATO.prazoMaxDias} dias, em blocos de até ${REGRAS_CONTRATO.maxDiasBloco} dias.`,
-    `- Caução: ${Math.round(REGRAS_CONTRATO.caucaoFracaoBloco * 100)}% do valor de cada bloco, sem passar de ${REGRAS_CONTRATO.caucaoMaxAlugueis} aluguéis no total, depositada em poupança. Volta no fim, depois da vistoria de saída.`,
+    `- Caução: ${Math.round(REGRAS_CONTRATO.caucaoFracaoBloco * 100)}% do valor de cada bloco, sem passar de ${REGRAS_CONTRATO.caucaoMaxAlugueis} aluguéis no total, depositada em poupança. Volta no fim, depois da conferência de saída.`,
     "- Contato direto (telefone, e-mail, redes) nunca é trocado: a conversa fica toda na plataforma.",
     "",
     "## Parcerias (fonte oficial)",

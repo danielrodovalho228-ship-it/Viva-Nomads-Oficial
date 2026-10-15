@@ -117,7 +117,7 @@ export function DevolucaoCaucaoDono({
           </select>
         </label>
       </div>
-      {Number(valor) < caucaoConfirmada && <p className="mt-2 text-[11px] text-amber-800">Com desconto, explique os motivos ao inquilino (com fotos da vistoria) pela conversa antes de registrar.</p>}
+      {Number(valor) < caucaoConfirmada && <p className="mt-2 text-[11px] text-amber-800">Com desconto, explique os motivos ao inquilino (com fotos da conferência) pela conversa antes de registrar.</p>}
       {erro && <p className="mt-2 text-xs text-red-600">{erro}</p>}
       <div className="mt-3 flex justify-end gap-2">
         <Button variant="ghost" size="sm" disabled={salvando} onClick={() => setAberto(false)}>
