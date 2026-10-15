@@ -1,11 +1,11 @@
--- 0128 — AVALIAÇÕES: RESPOSTA PÚBLICA do avaliado e PEDIDO DE REVISÃO (ordem 404cd213, item 4).
+-- 0129 — AVALIAÇÕES: RESPOSTA PÚBLICA do avaliado e PEDIDO DE REVISÃO (ordem 404cd213, item 4).
 --
 -- • Resposta: só o AVALIADO, a uma avaliação PUBLICADA, uma vez, até 500 caracteres,
 --   sem contato nem ofensa (o banco recusa). Aparece junto da avaliação, para todos. Imutável.
 -- • Pedido de revisão: só o avaliado, de avaliação publicada, com motivo OBJETIVO
 --   (ofensa, dado pessoal, fato falso) + explicação. Uma pendente por avaliação. Vai para a fila do admin;
 --   quem decide é o admin (service_role no servidor). A avaliação só sai do ar por essa regra objetiva.
--- Rollback: supabase/producao/rollback/0128_rollback.sql
+-- Rollback: supabase/producao/rollback/0129_rollback.sql
 
 create table if not exists public.avaliacao_respostas (
   avaliacao_id uuid primary key references public.avaliacoes(id) on delete cascade,

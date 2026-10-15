@@ -12,7 +12,7 @@ type Resultado = { ok: boolean; error?: string };
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
- * Resposta pública do AVALIADO a uma avaliação publicada (0128). Grava com o
+ * Resposta pública do AVALIADO a uma avaliação publicada (0129). Grava com o
  * cliente da SESSÃO: a RLS e o gatilho conferem que quem responde é o avaliado,
  * que a avaliação está publicada e que o texto não tem contato nem ofensa. Uma por avaliação.
  */

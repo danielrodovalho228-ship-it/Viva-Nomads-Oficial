@@ -1,6 +1,6 @@
 /*
   Resposta pública e pedido de revisão de avaliação (ordem 404cd213, item 4) —
-  regras PURAS e testáveis. Espelham os checks da migração 0128.
+  regras PURAS e testáveis. Espelham os checks da migração 0129.
 */
 import { contemOfensa } from "./avaliacoes.ts";
 import { contemContato } from "./pedidos/pedidos.ts";
