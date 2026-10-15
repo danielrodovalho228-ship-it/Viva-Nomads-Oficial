@@ -124,7 +124,7 @@ test.describe("T33 — Documentos do inquilino depois do aceite", () => {
       dono.waitForEvent("popup"),
       dono.getByTestId("doc-inquilino-vinculo").getByRole("button", { name: /Abrir/ }).click(),
     ]);
-    // A aba abre em branco (noopener) e só depois segue para o link assinado: espera a navegação.
+    // A aba abre em branco no clique e só depois segue para o link assinado: espera a navegação.
     await popup.waitForURL(/\/storage\/v1\/object\/sign\/inquilino-docs\/.+token=/, { timeout: 15_000, waitUntil: "commit" });
     await dono.context().close();
   });

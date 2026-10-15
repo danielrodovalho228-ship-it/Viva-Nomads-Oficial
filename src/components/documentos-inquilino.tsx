@@ -1,5 +1,6 @@
 "use client";
 
+import { abrirLinkAssinado } from "@/lib/abrir-link-assinado";
 import { useCallback, useEffect, useState } from "react";
 import { CheckCircle2, ExternalLink, FileText, Loader2, Upload } from "lucide-react";
 import { linkDocInquilino, listarDocsInquilino, type DocInquilinoResumo } from "@/lib/data/documentos-inquilino-actions";
@@ -52,9 +53,11 @@ export function DocumentosInquilino({ leadId, modo }: { leadId: string; modo: "i
 
   async function abrir(tipo: TipoDocInquilino) {
     setErro(null);
-    const r = await linkDocInquilino(leadId, tipo).catch(() => ({ ok: false, error: "Não foi possível abrir agora." }) as const);
-    if (r.ok && "url" in r && r.url) window.open(r.url, "_blank", "noopener,noreferrer");
-    else setErro(("error" in r && r.error) || "Não foi possível abrir agora.");
+    const r = await abrirLinkAssinado(
+      () => window.open("", "_blank"),
+      () => linkDocInquilino(leadId, tipo) as Promise<{ ok: boolean; url?: string; error?: string }>,
+    );
+    if (!r.ok) setErro(r.error);
   }
 
   if (docs === null) return null;
