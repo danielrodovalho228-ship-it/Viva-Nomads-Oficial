@@ -19,7 +19,7 @@ test("home: cada atalho mostra o total real de imóveis e nenhum aparece com 0",
   const n = await totais.count();
   for (let i = 0; i < n; i++) {
     const txt = (await totais.nth(i).innerText()).trim();
-    expect(txt).toMatch(/^[1-9]\d* im[óo]veis?$/);
+    expect(txt).toMatch(/^[1-9]\d* im[óo]ve(l|is)$/);
   }
 });
 
