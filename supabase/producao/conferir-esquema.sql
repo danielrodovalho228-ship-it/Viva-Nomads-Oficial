@@ -344,10 +344,10 @@ with e(m, k, t, c) as (values
   ('0122','F','buscas_salvas_limite',''),
   ('0123','F','pets_inquilino_limite',''),
   ('0124','C','contratos','pets_regras_congeladas'),
-  ('0126','C','contratos','checkin_horario'),
-  ('0126','C','contratos','checkin_instrucoes'),
-  ('0126','C','contratos','checkin_plantao'),
-  ('0126','C','contratos','checkin_atualizado_em')
+  ('0127','T','contratos_checkin',''),
+  ('0127','C','contratos_checkin','plantao'),
+  ('0127','C','contratos_checkin','lembrete_48h_em'),
+  ('0127','C','contratos_checkin','lembrete_24h_em')
 )
 select m as migracao,
        string_agg(k || ':' || t || case when c <> '' then '.' || c else '' end, ', ') as faltando
