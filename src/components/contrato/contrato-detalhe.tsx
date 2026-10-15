@@ -6,7 +6,7 @@ import { getContratoParaAssinar } from "@/lib/data/contrato-assinar-actions";
 import { ROTULO_ETAPA, etapaContrato } from "@/lib/contrato-etapas";
 import { conferenciasDoContrato } from "@/lib/data/conferencia-actions";
 import { tipoAcessoDoContrato } from "@/lib/data/contrato-acesso";
-import { LEMBRETE_SENHA_ENTRADA, mostrarLembreteSenha } from "@/lib/anuncio/privacidade";
+import { DICAS_CONFERENCIA_CAMERAS, ITEM_CONFERENCIA_CAMERAS, LEMBRETE_SENHA_ENTRADA, mostrarChecklistCameras, mostrarLembreteSenha } from "@/lib/anuncio/privacidade";
 import { AssinarContrato } from "./assinar-contrato";
 import { LinhaDoTempoEstadia } from "./linha-do-tempo-estadia";
 import { ConferenciaContrato } from "./conferencia-contrato";
@@ -73,6 +73,16 @@ export async function ContratoDetalhe({
         <Panel className="mt-5 p-5">
           <h2 className="font-title text-base font-bold text-ink">Conferência de entrada e saída</h2>
           <p className="mt-1 text-sm text-muted">Fotos e itens por cômodo, confirmados ou contestados pelas duas partes. É a base para conversar sobre a Caução.</p>
+          {mostrarChecklistCameras({ papel: c.papel, status: c.status }) && (
+            <div className="mt-4 rounded-lg bg-sage-50 p-3 text-sm text-ink" data-testid="checklist-cameras">
+              <p className="font-medium">☐ {ITEM_CONFERENCIA_CAMERAS}</p>
+              <ul className="mt-1 list-disc space-y-0.5 pl-5 text-muted">
+                {DICAS_CONFERENCIA_CAMERAS.map((d) => (
+                  <li key={d}>{d}</li>
+                ))}
+              </ul>
+            </div>
+          )}
           <div className="mt-4">
             <ConferenciaContrato contratoId={c.id} statusContrato={c.status} dados={conferencia} />
           </div>

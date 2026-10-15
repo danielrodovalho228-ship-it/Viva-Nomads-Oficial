@@ -87,6 +87,19 @@ export function mostrarLembreteSenha(i: {
   return i.papel === "inquilino" && i.tipoAcesso === "fechadura_senha" && i.status === "ativo" && i.assinadoPelasDuasPartes;
 }
 
+/** Item do checklist da conferência de entrada (ordem f92bc582, item 5): só o inquilino vê. */
+export const ITEM_CONFERENCIA_CAMERAS = "Conferi que não há câmeras ou dispositivos de gravação dentro do imóvel.";
+export const DICAS_CONFERENCIA_CAMERAS = [
+  "Olhe detectores de fumaça, carregadores, relógios, tomadas e a TV.",
+  "Apague a luz e passe a lanterna do celular: uma lente costuma refletir um ponto de luz.",
+  "Se achar algo, não mexa no aparelho: fotografe e abra um chamado em Ajuda (\"Encontrei câmera ou dispositivo\").",
+] as const;
+
+/** O checklist aparece só ao inquilino, no contrato em andamento. */
+export function mostrarChecklistCameras(i: { papel: string; status: string }): boolean {
+  return i.papel === "inquilino" && i.status === "ativo";
+}
+
 export interface PrivacidadeLinha {
   sem_cameras_interior?: boolean | null;
   cameras_externas?: string | null;

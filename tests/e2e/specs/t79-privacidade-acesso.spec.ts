@@ -97,6 +97,7 @@ test.describe("T79 — Privacidade e acesso ao imóvel", () => {
     await prop.goto(`/dashboard/contratos/${ids.contrato}`, { waitUntil: "networkidle" });
     await expect(prop.getByTestId("contrato-resumo")).toBeVisible();
     await expect(prop.getByTestId("lembrete-senha-entrada")).toHaveCount(0);
+    await expect(prop.getByTestId("checklist-cameras")).toHaveCount(0); // item 5: o checklist é só do inquilino
     await prop.context().close();
   });
 

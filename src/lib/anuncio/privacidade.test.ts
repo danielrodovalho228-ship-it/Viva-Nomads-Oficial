@@ -114,3 +114,14 @@ test("o detalhe do contrato mostra o lembrete (ordem f92bc582, item 3)", () => {
   assert.match(d, /data-testid="lembrete-senha-entrada"/);
   assert.match(d, /LEMBRETE_SENHA_ENTRADA/);
 });
+
+test("checklist de câmeras na conferência de entrada: só o inquilino, contrato em andamento (ordem f92bc582, item 5)", async () => {
+  const m = await import("./privacidade.ts");
+  assert.equal(m.mostrarChecklistCameras({ papel: "inquilino", status: "ativo" }), true);
+  assert.equal(m.mostrarChecklistCameras({ papel: "proprietario", status: "ativo" }), false);
+  assert.equal(m.mostrarChecklistCameras({ papel: "inquilino", status: "encerrado" }), false);
+  assert.match(m.ITEM_CONFERENCIA_CAMERAS, /Conferi que não há câmeras/);
+  assert.ok(!/vistoria/i.test(m.ITEM_CONFERENCIA_CAMERAS + m.DICAS_CONFERENCIA_CAMERAS.join(" ")));
+  const src = readFileSync(new URL("../../components/contrato/contrato-detalhe.tsx", import.meta.url), "utf8");
+  assert.match(src, /checklist-cameras/);
+});
