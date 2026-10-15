@@ -357,7 +357,9 @@
         "proprietario",
         "admin"
       ],
-      "specs": []
+      "specs": [
+        "t97-plangate-precos"
+      ]
     },
     "/dashboard/comparar": {
       "personas": [
@@ -620,7 +622,9 @@
       "personas": [
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t97-plangate-precos"
+      ]
     },
     "/decisao": {
       "personas": [
