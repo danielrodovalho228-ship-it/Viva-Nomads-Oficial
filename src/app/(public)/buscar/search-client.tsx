@@ -217,6 +217,8 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
   // popstate, marca skipNextSync para não reescrever a URL que o histórico
   // acabou de restaurar.
   useEffect(() => {
+    // Lê a URL (sistema externo) e aplica nos controles; só roda no navegador.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     restaurarFiltrosDaURL();
   }, [restaurarFiltrosDaURL]);
 

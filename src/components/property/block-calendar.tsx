@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useHoje } from "@/lib/use-client-state";
 import { CalendarDays, Loader2, Trash2, Ban } from "lucide-react";
 import {
   mesesCalendario,
@@ -32,7 +33,7 @@ function brDate(iso: string): string {
  * lidos pelo calendário público (dias indisponíveis) e pela validação de reserva.
  */
 export function BlockCalendar({ propertyId }: { propertyId: string }) {
-  const [today, setToday] = useState<string | null>(null);
+  const today = useHoje();
   const [blocks, setBlocks] = useState<BlocoDatas[]>([]);
   const [sel, setSel] = useState<{ ini: string | null; fim: string | null }>({
     ini: null,
@@ -42,7 +43,6 @@ export function BlockCalendar({ propertyId }: { propertyId: string }) {
   const [erro, setErro] = useState<string | null>(null);
 
   useEffect(() => {
-    setToday(ymd(new Date()));
     getBlocks(propertyId).then(setBlocks).catch(() => {});
   }, [propertyId]);
 

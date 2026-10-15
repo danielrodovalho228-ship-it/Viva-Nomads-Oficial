@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { Home, Search, X } from "lucide-react";
 import { useAuthStore } from "@/lib/store";
@@ -17,20 +17,23 @@ export function RoleWelcomeModal() {
   const user = useAuthStore((s) => s.user);
   const setActiveMode = useAuthStore((s) => s.setActiveMode);
   const router = useRouter();
-  const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    if (!user) return; // só usuário real logado
-    // No app o papel já foi escolhido na tela de boas-vindas (e lá não há
-    // "seletor no topo"): o modal não aparece.
-    if (document.documentElement.dataset.app === "1") return;
-    try {
-      if (localStorage.getItem(ASKED_KEY)) return;
-    } catch {
-      return;
-    }
-    setOpen(true);
-  }, [user]);
+  const [fechado, setFechado] = useState(false);
+  // Só no navegador (servidor/hidratação = false): usuário real logado, fora do
+  // app (lá o papel já foi escolhido na tela de boas-vindas) e ainda não
+  // perguntado neste navegador.
+  const podeAbrir = useSyncExternalStore(
+    () => () => {},
+    () => {
+      if (document.documentElement.dataset.app === "1") return false;
+      try {
+        return !localStorage.getItem(ASKED_KEY);
+      } catch {
+        return false;
+      }
+    },
+    () => false
+  );
+  const open = !!user && podeAbrir && !fechado;
 
   function done() {
     try {
@@ -38,7 +41,7 @@ export function RoleWelcomeModal() {
     } catch {
       /* ignore */
     }
-    setOpen(false);
+    setFechado(true);
   }
 
   function pick(mode: "tenant" | "owner") {
