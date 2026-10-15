@@ -90,13 +90,16 @@ export interface ContaLab {
 }
 
 /** Cria a conta (Auth + perfil). `comCpf=false` deixa o CPF vazio (o spec preenche pela tela). */
+/** Telefone válido nas contas do laboratório: publicar exige perfil de dono com nome e telefone (F45, updateProperty). */
+export const TELEFONE_LAB = "(62) 99999-1234";
+
 export async function criarConta(c: ContaLab, senha: string, comCpf = true): Promise<string> {
   const { data, error } = await adm().auth.admin.createUser({ email: c.email, password: senha, email_confirm: true, user_metadata: { full_name: c.nome } });
   if (error) throw error;
   const id = data.user.id;
   const { error: e2 } = await adm()
     .from("profiles")
-    .upsert({ id, email: c.email, full_name: c.nome, role: c.role, cpf: comCpf ? cpfAleatorio() : null }, { onConflict: "id" });
+    .upsert({ id, email: c.email, full_name: c.nome, phone: TELEFONE_LAB, role: c.role, cpf: comCpf ? cpfAleatorio() : null }, { onConflict: "id" });
   if (e2) throw e2;
   return id;
 }
