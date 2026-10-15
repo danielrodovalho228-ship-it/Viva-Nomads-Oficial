@@ -44,6 +44,8 @@ export interface Opcoes {
   parceiros?: readonly string[];
   /** % do prêmio que a Viva recebe como representante de seguros (0 a 15%; padrão 10%). */
   pctSeguro?: number;
+  /** Duração média do contrato, em meses (premissa editável; padrão MESES_MEDIOS_CONTRATO). */
+  mesesContrato?: number;
 }
 
 export interface Mes {
@@ -95,8 +97,31 @@ export function taxaMediaPorContrato(aluguel = ALUGUEL_MEDIO, meses = MESES_MEDI
 }
 
 /** Receita bruta mensal da taxa de serviço para `contratos` contratos fechados no mês. */
-export function receitaBrutaMensal(contratos: number): number {
-  return contratos * taxaMediaPorContrato();
+export function receitaBrutaMensal(contratos: number, meses = MESES_MEDIOS_CONTRATO): number {
+  return contratos * taxaMediaPorContrato(ALUGUEL_MEDIO, meses);
+}
+
+/** Duração aceita nas simulações: inteiro de 1 a 12 meses; fora disso (ou ilegível) vale o padrão. */
+export function mesesContratoValidos(valor: unknown, padrao = MESES_MEDIOS_CONTRATO): number {
+  const n = typeof valor === "string" && valor.trim() !== "" ? Number(valor) : typeof valor === "number" ? valor : Number.NaN;
+  return Number.isInteger(n) && n >= 1 && n <= 12 ? n : padrao;
+}
+
+export interface ComparativoRegra {
+  meses: number;
+  /** Regra antiga (histórica): taxa só sobre o 1º mês de aluguel. */
+  regraAntiga: number;
+  /** Regra vigente: taxa sobre o valor total (aluguel × meses). */
+  regraNova: number;
+  diferenca: number;
+}
+
+/** Taxa por contrato nas duas regras, com o mesmo aluguel e a mesma taxa média — só para a página /decisao. */
+export function comparativoRegraComissao(meses = MESES_MEDIOS_CONTRATO, aluguel = ALUGUEL_MEDIO, taxa = TAXA_MEDIA): ComparativoRegra {
+  const m = mesesContratoValidos(meses);
+  const regraAntiga = comissaoSobreContrato(aluguel, 1, taxa);
+  const regraNova = comissaoSobreContrato(aluguel, m, taxa);
+  return { meses: m, regraAntiga, regraNova, diferenca: Math.round((regraNova - regraAntiga) * 100) / 100 };
 }
 
 export interface CenarioContratos {
@@ -136,7 +161,7 @@ export function parceirosPorContrato(op: Opcoes, m = Infinity): number {
 export function projetar(id: CenarioId, op: Opcoes): Projecao {
   const cen = CENARIOS[id];
   const fixo = op.custoFixo ?? CUSTO_FIXO_PADRAO;
-  const taxaContrato = taxaMediaPorContrato();
+  const taxaContrato = taxaMediaPorContrato(ALUGUEL_MEDIO, mesesContratoValidos(op.mesesContrato));
   let donos = 0;
   let caixa = -INVESTIMENTO_INICIAL;
   let piorCaixa = caixa;
@@ -192,7 +217,7 @@ export interface PorContrato {
 /** Conta de UM contrato típico (dono comum; parceiros só se ligados). */
 export function porContrato(op: Opcoes): PorContrato {
   const fixo = op.custoFixo ?? CUSTO_FIXO_PADRAO;
-  const receita = taxaMediaPorContrato() + parceirosPorContrato(op);
+  const receita = taxaMediaPorContrato(ALUGUEL_MEDIO, mesesContratoValidos(op.mesesContrato)) + parceirosPorContrato(op);
   const custoVariavel = CUSTO_FERRAMENTAS_POR_CONTRATO + (op.imposto ?? IMPOSTO_SOBRE_RECEITA) * receita + op.operador;
   const margem = receita - custoVariavel;
   const empate = (mkt: number) => (margem > 0 ? (fixo + mkt) / margem : Infinity);
