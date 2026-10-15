@@ -4,6 +4,7 @@
  * nunca coordenada exata nem dado pessoal. Campo sem dado = "—" (nunca inventar).
  */
 import type { Property } from "../types.ts";
+import { garantiaLabel } from "../faixas.ts";
 import { textoValorPet } from "../anuncio/pets-regras.ts";
 
 export const MAX_COMPARAR = 3;
@@ -62,7 +63,9 @@ export function montarTabela(imoveis: readonly Property[]): LinhaComparar[] {
     por("limpeza", "Limpeza de entrada", (p) => (p.prepFee > 0 ? brl(p.prepFee) : SEM_DADO)),
     por("caucao", "Caução", (p) => {
       const r = p.petsRegras?.reforcoCaucao ?? 0;
-      return r > 0 ? `Reforço de ${brl(r)} por causa do pet` : SEM_DADO;
+      if (r > 0) return `Reforço de ${brl(r)} por causa do pet`;
+      const g = p.garantiasAceitas ?? [];
+      return g.length > 0 ? g.map(garantiaLabel).join(", ") : SEM_DADO;
     }),
     por("pet", "Aceita pet", (p) => (p.petsAllowed === undefined ? SEM_DADO : p.petsAllowed ? "Sim" : "Não")),
     por("valorPet", "Valor pet", (p) => (p.petsAllowed ? textoValorPet(p.petsRegras) ?? SEM_DADO : SEM_DADO)),

@@ -36,3 +36,15 @@ test("tabela: campo sem dado vira '—', nunca inventa", () => {
   assert.match(l.caucao[0], /R\$ 500/);
   assert.ok(t.every((x) => x.valores.length === 2));
 });
+
+test("Caução: sem reforço pet mostra as garantias aceitas; com reforço mostra o reforço", () => {
+  const t = montarTabela([
+    imovel({ garantiasAceitas: ["caucao_avista", "seguro_fianca"] }),
+    imovel({ garantiasAceitas: ["caucao_avista"], petsRegras: { especies: ["cao"], porteMax: "M", qtdMax: 1, reforcoCaucao: 500, regrasCondominio: "", valorPet: 0, valorPetTipo: "reembolsavel" } }),
+    imovel({}),
+  ]);
+  const c = t.find((x) => x.chave === "caucao")!.valores;
+  assert.equal(c[0], "Caução à vista, Seguro-fiança");
+  assert.match(c[1], /Reforço de R\$ 500/);
+  assert.equal(c[2], SEM_DADO);
+});
