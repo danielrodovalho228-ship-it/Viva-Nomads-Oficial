@@ -2,13 +2,13 @@ import { test, expect } from "@playwright/test";
 import { account, hasAccount } from "../fixtures/accounts";
 
 /**
- * T80 — LOGIN NO CELULAR (ordem c27c7ae6, bug do Daniel no iPhone).
+ * T82 — LOGIN NO CELULAR (ordem c27c7ae6, bug do Daniel no iPhone).
  * Roda no Chromium (390 px) e no WebKit "iPhone 13". Login certo cai no painel
  * em até 5 s com UM único POST /token, o botão fica desabilitado durante a
  * entrada, recarregar o painel continua logado e senha errada mostra a
  * mensagem padrão sem travar.
  */
-test.describe("T80 — Login no celular", () => {
+test.describe("T82 — Login no celular", () => {
   test.use({ storageState: { cookies: [], origins: [] }, viewport: { width: 390, height: 844 } });
 
   test("campo de e-mail sem autocorreção do iPhone", async ({ page }) => {

@@ -2,7 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 
 /**
- * T79 — ordem 9f3085d8: menu do painel em CASCATA, conta única (decisão do Daniel, 14/10).
+ * T81 — ordem 9f3085d8: menu do painel em CASCATA, conta única (decisão do Daniel, 14/10).
  *  • Todo usuário: Visão geral, Minha moradia, Mensagens, Ferramentas, Minha conta.
  *  • Quem já anunciou: + Meus imóveis e Contratos e garantias (no mesmo menu).
  *  • Quem nunca anunciou: botão "Anunciar meu imóvel" (abre o cadastro, sem cair fora).
@@ -13,7 +13,7 @@ const menu = (page: Page) => page.locator("aside").first().getByTestId("menu-cas
 const topo = (page: Page) =>
   menu(page).locator(":scope > li > a, :scope > li > button").allInnerTexts().then((t) => t.map((x) => x.trim()));
 
-test.describe("T79 — dono (já anunciou)", () => {
+test.describe("T81 — dono (já anunciou)", () => {
   test.use({ storageState: authFile("proprietario") });
 
   test("grupos de dono no mesmo menu; grupo da tela atual abre sozinho", async ({ page }) => {
@@ -56,7 +56,7 @@ test.describe("T79 — dono (já anunciou)", () => {
   });
 });
 
-test.describe("T79 — quem nunca anunciou", () => {
+test.describe("T81 — quem nunca anunciou", () => {
   test.use({ storageState: authFile("inquilino") });
 
   test("sem seções de dono; 'Anunciar meu imóvel' abre o cadastro", async ({ page }) => {
@@ -88,7 +88,7 @@ test.describe("T79 — quem nunca anunciou", () => {
   });
 });
 
-test.describe("T79 — admin", () => {
+test.describe("T81 — admin", () => {
   test.use({ storageState: authFile("admin") });
 
   test("Administração separada, com subgrupos (itens dentro de itens)", async ({ page }) => {
