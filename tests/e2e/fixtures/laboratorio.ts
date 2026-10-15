@@ -1,7 +1,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { randomBytes } from "node:crypto";
 import { deflateSync } from "node:zlib";
-import type { Browser, Page } from "@playwright/test";
+import { expect, type Browser, type Page } from "@playwright/test";
 
 /**
  * Apoio dos specs do LABORATÓRIO (t34–t37): contas NOVAS por spec (não mexem nas
@@ -218,8 +218,12 @@ export async function entrar(browser: Browser, email: string, senha: string): Pr
 
 /** Abre o editor do imóvel e clica em Publicar (falha se o botão estiver travado). */
 export async function publicarPeloEditor(page: Page, propertyId: string): Promise<void> {
-  await page.goto(`/dashboard/imoveis/${propertyId}/editar`, { waitUntil: "networkidle" });
-  await page.getByRole("button", { name: "Publicar", exact: true }).click();
+  await page.goto(`/dashboard/imoveis/${propertyId}/editar`, { waitUntil: "domcontentloaded" });
+  // O Publicar só habilita depois do aceite do termo de IA (editar-client.tsx): sem marcar, o clique esperava até estourar o tempo do teste.
+  await page.getByTestId("aceite-ia").getByRole("checkbox").check({ timeout: 20_000 });
+  const publicar = page.getByRole("button", { name: "Publicar", exact: true });
+  await expect(publicar, "Publicar deveria estar habilitado: veja 'Falta para publicar' no editor").toBeEnabled({ timeout: 20_000 });
+  await publicar.click();
 }
 
 export async function apagarContas(ids: (string | undefined)[]): Promise<void> {
