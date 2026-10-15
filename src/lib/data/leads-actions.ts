@@ -10,6 +10,8 @@ import { getPropertyForOwner } from "@/lib/data/properties";
 import { formatDocNumber } from "@/lib/documents";
 import type { Property } from "@/lib/types";
 import { erroBancoPT } from "@/lib/erros-banco";
+import { inicioSugerido } from "@/lib/inicio-estadia";
+import { hojeBR } from "@/lib/utils";
 import { lerDocumento, temDocumento } from "@/lib/data/documento-servidor";
 import { documentoCompleto, MSG_DOCUMENTO } from "@/lib/documento-pessoa";
 import { docsInquilinoCompletos } from "@/lib/data/documentos-inquilino-servidor";
@@ -226,6 +228,8 @@ export interface FechamentoContexto {
   contractNumber: string;
   /** Cadastro confiável: o que falta (CPF/CNPJ do dono ou do inquilino) para gerar o contrato. */
   documentoPendente?: { quem: "dono" | "inquilino"; mensagem: string } | null;
+  /** F37: data de início que o Fechamento abre preenchida (a da candidatura, se ainda vale; senão hoje). */
+  inicioSugerido?: string;
 }
 
 export async function getFechamentoContext(
@@ -258,9 +262,13 @@ export async function getFechamentoContext(
   // role (só exibição ao dono habilitado) — nunca contato.
   let tenantName = "Candidato(a)";
   let documentoPendente: FechamentoContexto["documentoPendente"] = null;
+  let inicioDesejado: string | null = null;
   try {
     const admin = createAdminClient();
     if (admin) {
+      // O SELECT de leads é por coluna para o usuário; a data desejada vem pelo servidor.
+      const { data: d } = await admin.from("leads").select("inicio_desejado").eq("id", lead.id).maybeSingle();
+      inicioDesejado = (d?.inicio_desejado as string | null) ?? null;
       const [docDono, docInq] = await Promise.all([lerDocumento(admin, user.id), lerDocumento(admin, lead.tenant_id as string)]);
       if (!documentoCompleto(docDono)) documentoPendente = { quem: "dono", mensagem: MSG_DOCUMENTO.fecharDono };
       else if (!documentoCompleto(docInq)) documentoPendente = { quem: "inquilino", mensagem: MSG_DOCUMENTO.fecharInquilino };
@@ -293,5 +301,6 @@ export async function getFechamentoContext(
     acceptedAt: (lead.accepted_at as string) ?? null,
     contractNumber: numeroContrato(lead.id as string, (lead.accepted_at as string) ?? null),
     documentoPendente,
+    inicioSugerido: inicioSugerido(inicioDesejado, hojeBR()),
   };
 }

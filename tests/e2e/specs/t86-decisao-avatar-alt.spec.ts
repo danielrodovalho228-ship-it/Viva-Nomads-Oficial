@@ -72,8 +72,9 @@ test.describe("T86 — #536: avatar sem 'P(' e alt 'imóvel mobiliado'", () => {
     test.use({ storageState: authFile("proprietario") });
 
     test("alt é 'Sala de imóvel mobiliado preparada para anúncio' (nunca 'apartamento')", async ({ page }) => {
-      await page.goto("/dashboard", { waitUntil: "networkidle" });
-      await expect(page.getByAltText("Sala de imóvel mobiliado preparada para anúncio").first()).toBeAttached();
+      // "networkidle" estourava 45 s no lab (a Visão geral mantém requisições abertas): basta o HTML.
+      await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+      await expect(page.getByAltText("Sala de imóvel mobiliado preparada para anúncio").first()).toBeAttached({ timeout: 20_000 });
       await expect(page.getByAltText(/apartamento mobiliado/i)).toHaveCount(0);
     });
   });

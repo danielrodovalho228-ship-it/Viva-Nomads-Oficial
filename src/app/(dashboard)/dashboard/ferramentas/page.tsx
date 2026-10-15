@@ -101,7 +101,7 @@ export default function FerramentasPage() {
                 return (
                   <Link
                     key={f.href}
-                    href={bloqueado ? "/dashboard/assinatura" : f.href}
+                    href={bloqueado ? "/precos" : f.href}
                     className="group flex flex-col rounded-2xl border border-sage-200 bg-white p-5 transition-colors hover:border-sage hover:bg-surface-2"
                   >
                     <div className="flex items-center justify-between">

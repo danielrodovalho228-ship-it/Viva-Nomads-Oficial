@@ -66,11 +66,19 @@ test.describe("T38 — Vários imóveis por dono", () => {
     await page.goto(`/dashboard/imoveis/${ids.imoveis[1]}/editar`, { waitUntil: "networkidle" });
     await expect(page.getByTestId("prontidao")).toContainText("Anúncio", { timeout: 15_000 });
     await expect(page.getByText(/Vaga no seu plano/).first()).toBeVisible();
-    await expect(page.getByText(/o plano já tem o máximo de anúncios publicados — pause um ou faça upgrade/).first()).toBeVisible();
+    await expect(page.getByText(/Seu plano permite 1 anúncio no ar\. Para publicar este, pause outro ou mude de plano/).first()).toBeVisible();
     await expect(page.getByRole("button", { name: "Publicar", exact: true })).toBeDisabled();
     await page.screenshot({ path: "tests/laboratorio/saida/t38-1-gratuito-sem-vaga.png", fullPage: true });
     expect(await statusDoImovel(ids.imoveis[1])).toBe("draft");
     expect(await contarAtivos(ids.dono!)).toBe(1);
+
+    // Painel (390 px): o aviso "Vaga no seu plano" vem com os 2 botões.
+    await page.goto("/dashboard", { waitUntil: "networkidle" });
+    const vaga = page.getByTestId("check-vaga").first();
+    await expect(vaga).toContainText("Seu plano permite 1 anúncio no ar", { timeout: 20_000 });
+    await expect(vaga.getByRole("link", { name: "Pausar outro anúncio" })).toHaveAttribute("href", "/dashboard/imoveis");
+    await expect(vaga.getByRole("link", { name: "Mudar de plano" })).toHaveAttribute("href", "/precos");
+    await page.screenshot({ path: "tests/laboratorio/saida/t38-1b-painel-vaga-390.png", fullPage: true });
     await page.context().close();
   });
 
@@ -81,6 +89,8 @@ test.describe("T38 — Vários imóveis por dono", () => {
     await adm().from("properties").update({ status: "draft" }).eq("id", ids.imoveis[0]);
     const page = await entrar(browser, dono.email, senha);
     await page.goto(`/dashboard/imoveis/${ids.imoveis[1]}/editar`, { waitUntil: "networkidle" });
+    // O Publicar só habilita depois do aceite do termo de IA (como em publicarPeloEditor).
+    await page.getByTestId("aceite-ia").getByRole("checkbox").check({ timeout: 20_000 });
     const publicar = page.getByRole("button", { name: "Publicar", exact: true });
     await expect(publicar).toBeEnabled();
 

@@ -29,9 +29,13 @@ export function BarraFixaCelular({
             <span className="font-title text-lg font-bold text-forest">{barra.valor}</span>
             <span className="text-sm text-muted"> /mês</span>
           </p>
-          <Link href="#cartao-preco" className="block truncate text-xs text-muted underline">
-            {barra.linha}
-          </Link>
+          <p className="truncate text-xs">
+            <span className="font-semibold text-forest" data-testid="barra-status">{barra.status}</span>
+            <span className="text-muted"> · </span>
+            <Link href="#cartao-preco" className="text-muted underline">
+              {barra.linha}
+            </Link>
+          </p>
         </div>
         {barra.estado === "candidatou" ? (
           <Link

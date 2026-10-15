@@ -92,7 +92,7 @@ test.describe("T14 — Modo app", () => {
 
     test("Admin a 390 px: toca Admin → painel → Caixa dos Sócios → Voltar ao painel", async ({ page }) => {
       test.skip(!hasAccount("admin"), "sem conta de teste do admin");
-      await page.goto("/dashboard", { waitUntil: "networkidle" });
+      await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
       await esperarModoApp(page);
       await barraDoApp(page).getByRole("link", { name: "Admin", exact: true }).click();
       await expect(page).toHaveURL(/\/admin\/?$/);
@@ -107,9 +107,9 @@ test.describe("T14 — Modo app", () => {
 
     test("Equipe abre /admin/agentes dentro do app, sem rolagem lateral, com notificações e atalhos", async ({ page }) => {
       test.skip(!hasAccount("admin"), "sem conta de teste do admin");
-      await page.goto("/dashboard", { waitUntil: "networkidle" });
+      await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
       await esperarModoApp(page);
-      await page.goto("/admin/agentes", { waitUntil: "networkidle" });
+      await page.goto("/admin/agentes", { waitUntil: "domcontentloaded" });
       await expect(page.getByTestId("central-agentes")).toBeVisible();
       await expect(page.getByTestId("atalhos-app").getByRole("button", { name: /Ativar notifica/ })).toBeVisible();
       await expect(page.getByTestId("atalhos-app").getByRole("link", { name: "Documentos" })).toBeVisible();
@@ -126,7 +126,7 @@ test.describe("T14 — Modo app", () => {
 
     test("Conta em lista e as 5 abas do proprietário", async ({ page }) => {
       test.skip(!hasAccount("proprietario"), "sem conta de teste do proprietário");
-      await page.goto("/dashboard/conta", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
       await esperarModoApp(page);
       // Outro spec (T2) alterna o modo desta conta em paralelo: garante o modo.
       // O seletor de dois lados da Conta (radio) substituiu o item "Usar como …".
@@ -136,7 +136,7 @@ test.describe("T14 — Modo app", () => {
       if (await usarComoDono.isVisible()) {
         await usarComoDono.click();
         await expect(page).toHaveURL(/\/dashboard\/?$/);
-        await page.goto("/dashboard/conta", { waitUntil: "networkidle" });
+        await page.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
       }
       await conferirAbas(page, ABAS_PROPRIETARIO);
       await expect(page.getByRole("link", { name: /^Perfil/ })).toBeVisible();
