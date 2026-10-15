@@ -60,10 +60,13 @@ export async function ContratoDetalhe({
         <h2 className="font-title text-base font-bold text-ink">Contrato</h2>
         <ul className="mt-3 space-y-1.5 text-sm text-ink" data-testid="contrato-resumo">
           {c.resumo.map((linha) => (
-            <li key={linha}>{linha}</li>
+            // O número do contrato (UUID) e a data não têm espaço: sem isto estouram a tela a 360 px.
+            <li key={linha} className="[overflow-wrap:anywhere]">
+              {linha}
+            </li>
           ))}
         </ul>
-        <p className="mt-4 text-sm text-muted" data-testid="contrato-aviso-assinatura">
+        <p className="mt-4 text-sm text-muted [overflow-wrap:anywhere]" data-testid="contrato-aviso-assinatura">
           {c.aviso}
         </p>
         {!c.euAssinei && c.status === "ativo" && <AssinarContrato contratoId={c.id} />}
