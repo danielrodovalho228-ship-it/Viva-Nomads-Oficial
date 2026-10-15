@@ -6,7 +6,7 @@ import { randomBytes } from "node:crypto";
  * T34 — JORNADA DO DONO: vários imóveis e troca de plano (laboratório). Conta NOVA.
  * O caminho que o Daniel relatou ("coloco um imóvel e tento um plano mais avançado,
  * não dá certo"):
- *  1. Gratuito com 1 anúncio ativo + 3 rascunhos: os rascunhos mostram "Vaga no seu plano".
+ *  1. Gratuito com 1 anúncio ativo + 3 rascunhos: os rascunhos mostram o que falta (a "Vaga no seu plano" só aparece quando é o único bloqueio).
  *  2. Assinatura mostra o plano REAL e "1 de 1 anúncio ativo"; sem o seletor de demonstração.
  *  3. Sem CPF: aviso + botão de assinar travado; com CPF: assina o Essencial (simulado).
  *  4. Fundador: a tela mostra Profissional sem custo (e não "Gratuito").
@@ -72,11 +72,15 @@ test.describe("T34 — Jornada do dono: vários imóveis e troca de plano", () =
     if (donoId) await adm().auth.admin.deleteUser(donoId);
   });
 
-  test("Gratuito: 1 ativo, os outros 3 esbarram na vaga do plano", async ({ browser }) => {
+  test("Gratuito: 1 ativo, os outros 3 mostram o que falta para publicar", async ({ browser }) => {
     const page = await entrar(browser);
     await page.goto("/dashboard/imoveis", { waitUntil: "networkidle" });
     await expect(page.getByText(`Imóvel 4 da Paula T34 ${sufixo}`)).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByTestId("prontidao").filter({ hasText: "Vaga no seu plano" })).toHaveCount(3);
+    // Regra vigente (ordem de8761b0, item 2): "Vaga no seu plano" só aparece quando é o ÚNICO bloqueio.
+    // Estes rascunhos não têm fotos nem documento aprovado, então a lista mostra o que falta (e não a vaga).
+    const cartoes = page.getByTestId("prontidao");
+    await expect(cartoes.filter({ hasText: "Falta para publicar" })).toHaveCount(3);
+    await expect(cartoes.filter({ hasText: "Vaga no seu plano" })).toHaveCount(0);
     await page.screenshot({ path: "tests/laboratorio/saida/t34-1-quatro-imoveis.png", fullPage: true });
     await page.context().close();
   });
