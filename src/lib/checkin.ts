@@ -73,3 +73,39 @@ export function telefoneParaExibir(digitos: string): string {
   if (nacional.length === 10) return `(${nacional.slice(0, 2)}) ${nacional.slice(2, 6)}-${nacional.slice(6)}`;
   return d;
 }
+
+export const MSG_FALTAM_INSTRUCOES =
+  "Antes de assinar, preencha as instruções de entrada (horário, como pegar a chave ou o acesso e telefone de plantão) na seção \"Check-in garantido\" deste contrato.";
+
+/** O proprietário só assina com as instruções de entrada completas; o inquilino pode assinar a qualquer momento. */
+export function motivoFaltamInstrucoes(c: { papel: "inquilino" | "proprietario"; preenchidas: boolean }): string | null {
+  return c.papel === "proprietario" && !c.preenchidas ? MSG_FALTAM_INSTRUCOES : null;
+}
+
+export type LembreteCheckin = "48h" | "24h";
+
+const DIA_MS = 86_400_000;
+const soData = (iso: string) => iso.slice(0, 10);
+
+/** Dia (AAAA-MM-DD) em Brasília: o cron roda uma vez por dia e conta dias de calendário, não horas corridas. */
+export function hojeEmBrasilia(agora: Date): string {
+  return new Date(agora.getTime() - 3 * 3600_000).toISOString().slice(0, 10);
+}
+
+/** Faltam 2 dias para a entrada → lembrete de 48 h; falta 1 dia → de 24 h; senão, nada. */
+export function lembreteDoDia(inicio: string, hoje: string): LembreteCheckin | null {
+  const dias = Math.round((Date.parse(soData(inicio)) - Date.parse(soData(hoje))) / DIA_MS);
+  return dias === 2 ? "48h" : dias === 1 ? "24h" : null;
+}
+
+/** Primeiro dia dos blocos do contrato (a entrada). */
+export function inicioDaEstadia(blocos: { inicio?: string | null }[]): string | null {
+  const datas = blocos.map((b) => b?.inicio).filter((d): d is string => !!d).sort();
+  return datas[0] ?? null;
+}
+
+export function textoLembrete(lembrete: LembreteCheckin, inicio: string, horario: string | null): string {
+  const [a, m, d] = soData(inicio).split("-");
+  const quando = lembrete === "24h" ? "amanhã" : `em ${d}/${m}/${a}`;
+  return `A entrada no imóvel é ${quando}${horario ? `, às ${horario}` : ""}. Confira as instruções de entrada no contrato pela plataforma.`;
+}

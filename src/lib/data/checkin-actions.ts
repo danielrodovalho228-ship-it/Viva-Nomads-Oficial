@@ -32,25 +32,27 @@ async function contexto(contratoId: string) {
   if (!user) return null;
   const { data: c } = await admin
     .from("contratos")
-    .select("tenant_id, status, assinado_proprietario_em, assinado_inquilino_em, checkin_horario, checkin_instrucoes, checkin_plantao, checkin_atualizado_em, properties(owner_id)")
+    .select("tenant_id, status, assinado_proprietario_em, assinado_inquilino_em, properties(owner_id)")
     .eq("id", contratoId)
     .maybeSingle();
   if (!c) return null;
   const donoId = (c.properties as unknown as { owner_id?: string } | null)?.owner_id;
   const papel = c.tenant_id === user.id ? ("inquilino" as const) : donoId === user.id ? ("proprietario" as const) : null;
   if (!papel) return null;
-  return { admin, uid: user.id, c, papel };
+  // Instruções ficam em tabela própria, só do servidor (0127): o inquilino não lê pela API.
+  const { data: k } = await admin.from("contratos_checkin").select("horario, instrucoes, plantao, atualizado_em").eq("contrato_id", contratoId).maybeSingle();
+  return { admin, uid: user.id, c, k, papel };
 }
 
 /** Instruções de entrada: o proprietário vê sempre; o inquilino só com as duas assinaturas. */
 export async function instrucoesDoContrato(contratoId: string): Promise<InstrucoesDoContrato | null> {
   const ctx = await contexto(contratoId);
   if (!ctx) return null;
-  const { c, papel } = ctx;
-  const preenchidas = !!(c.checkin_horario && c.checkin_instrucoes && c.checkin_plantao);
+  const { c, k, papel } = ctx;
+  const preenchidas = !!(k?.horario && k?.instrucoes && k?.plantao);
   const pode = papel === "proprietario" || inquilinoVeInstrucoes({ status: String(c.status), papel, assinadoProprietarioEm: c.assinado_proprietario_em, assinadoInquilinoEm: c.assinado_inquilino_em });
-  const dados = pode && preenchidas ? { horario: c.checkin_horario as string, instrucoes: c.checkin_instrucoes as string, plantao: c.checkin_plantao as string } : null;
-  return { papel, dados, preenchidas, atualizadoEm: (c.checkin_atualizado_em as string | null) ?? null };
+  const dados = pode && preenchidas ? { horario: k!.horario as string, instrucoes: k!.instrucoes as string, plantao: k!.plantao as string } : null;
+  return { papel, dados, preenchidas, atualizadoEm: (k?.atualizado_em as string | null) ?? null };
 }
 
 /** O proprietário grava horário, como entrar e telefone de plantão. */
@@ -63,9 +65,8 @@ export async function salvarInstrucoesEntrada(input: { contratoId: string; horar
   if (!v.ok) return { ok: false, error: v.erro };
   if (!(await consumirLimite(`checkin-instrucoes:${uid}`, 30, HORA))) return { ok: false, error: "Muitas alterações em pouco tempo. Tente de novo em instantes." };
   const { error } = await admin
-    .from("contratos")
-    .update({ checkin_horario: v.dados.horario, checkin_instrucoes: v.dados.instrucoes, checkin_plantao: v.dados.plantao, checkin_atualizado_em: new Date().toISOString() })
-    .eq("id", input.contratoId);
+    .from("contratos_checkin")
+    .upsert({ contrato_id: input.contratoId, horario: v.dados.horario, instrucoes: v.dados.instrucoes, plantao: v.dados.plantao, atualizado_em: new Date().toISOString() }, { onConflict: "contrato_id" });
   if (error) {
     console.error("[checkin] salvar:", error.code);
     return { ok: false, error: "Não foi possível salvar agora. Tente de novo." };

@@ -7,6 +7,12 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
   LIMITE_INSTRUCOES,
+  MSG_FALTAM_INSTRUCOES,
+  hojeEmBrasilia,
+  inicioDaEstadia,
+  lembreteDoDia,
+  motivoFaltamInstrucoes,
+  textoLembrete,
   MSG_ABRIU_ACESSO,
   inquilinoVeInstrucoes,
   normalizarTelefone,
@@ -72,4 +78,58 @@ test("abrirChamado abre ordem URGENTE para 'acesso_imovel' com contrato (ligaç�
   assert.match(src, /abreOrdem/);
   assert.match(src, /acesso_imovel/);
   assert.match(src, /urgencia: cat\.key === "acesso_imovel" \? "urgente"/);
+});
+
+test("proprietário só assina com as instruções de entrada completas; inquilino assina sempre", () => {
+  assert.equal(motivoFaltamInstrucoes({ papel: "proprietario", preenchidas: false }), MSG_FALTAM_INSTRUCOES);
+  assert.equal(motivoFaltamInstrucoes({ papel: "proprietario", preenchidas: true }), null);
+  assert.equal(motivoFaltamInstrucoes({ papel: "inquilino", preenchidas: false }), null);
+  assert.match(MSG_FALTAM_INSTRUCOES, /Check-in garantido/);
+});
+
+test("as duas ações de assinatura conferem as instruções no servidor, e a leitura vem da tabela fechada", () => {
+  const src = readFileSync(new URL("./data/contrato-assinar-actions.ts", import.meta.url), "utf8");
+  assert.equal((src.match(/motivoFaltamInstrucoes\(/g) ?? []).length, 2); // pedir código + assinar
+  const acoes = readFileSync(new URL("./data/checkin-actions.ts", import.meta.url), "utf8");
+  assert.match(acoes, /from\("contratos_checkin"\)/);
+  assert.doesNotMatch(acoes, /checkin_(horario|plantao|instrucoes)/);
+});
+
+test("lembretes: 2 dias antes = 48 h, 1 dia antes = 24 h, o resto não envia", () => {
+  assert.equal(lembreteDoDia("2026-11-10", "2026-11-08"), "48h");
+  assert.equal(lembreteDoDia("2026-11-10", "2026-11-09"), "24h");
+  for (const hoje of ["2026-11-10", "2026-11-11", "2026-11-07", "2026-11-01"]) assert.equal(lembreteDoDia("2026-11-10", hoje), null, hoje);
+  assert.equal(lembreteDoDia("2026-12-01T00:00:00Z", "2026-11-29"), "48h"); // vira o mês
+});
+
+test("dia de Brasília: 02h UTC ainda é o dia anterior; 12h UTC é o mesmo dia", () => {
+  assert.equal(hojeEmBrasilia(new Date("2026-11-09T02:00:00Z")), "2026-11-08");
+  assert.equal(hojeEmBrasilia(new Date("2026-11-09T12:00:00Z")), "2026-11-09");
+});
+
+test("início da estadia é o menor início dos blocos; sem bloco, nada", () => {
+  assert.equal(inicioDaEstadia([{ inicio: "2026-12-01" }, { inicio: "2026-11-10" }, { inicio: null }]), "2026-11-10");
+  assert.equal(inicioDaEstadia([]), null);
+});
+
+test("texto do lembrete: dia e horário, sem telefone nem instrução", () => {
+  const t48 = textoLembrete("48h", "2026-11-10", "14:00");
+  assert.match(t48, /10\/11\/2026/);
+  assert.match(t48, /14:00/);
+  assert.match(textoLembrete("24h", "2026-11-10", null), /amanhã/);
+  assert.doesNotMatch(t48, /\d{8,}|vistoria/i);
+});
+
+test("cron de lembretes: exige segredo, marca antes de enviar e está agendado; tabela fechada na migração", () => {
+  const rota = readFileSync(new URL("../app/api/cron/checkin-lembretes/route.ts", import.meta.url), "utf8");
+  assert.match(rota, /CRON_SECRET/);
+  assert.match(rota, /status: 401/);
+  assert.ok(rota.indexOf(".upsert(") < rota.indexOf("notify("), "marca o lembrete antes de enviar");
+  assert.doesNotMatch(rota, /plantao|instrucoes/);
+  assert.match(readFileSync(new URL("../../vercel.json", import.meta.url), "utf8"), /\/api\/cron\/checkin-lembretes/);
+  const mig = readFileSync(new URL("../../supabase/migrations/0127_contrato_checkin_tabela.sql", import.meta.url), "utf8");
+  assert.match(mig, /enable row level security/);
+  assert.match(mig, /revoke all on public\.contratos_checkin from anon, authenticated/);
+  assert.match(mig, /drop column if exists checkin_plantao/);
+  assert.doesNotMatch(mig, /create policy/i);
 });

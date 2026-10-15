@@ -16,6 +16,8 @@ import {
   resumoContrato,
   type PapelContrato,
 } from "@/lib/contrato-assinar";
+import { motivoFaltamInstrucoes } from "@/lib/checkin";
+import { instrucoesPreenchidas } from "@/lib/checkin-servidor";
 import { montarLinhaDoTempo, type EtapaEstadia } from "@/lib/estadia-linha-tempo";
 import {
   MSG_CODIGO_BLOQUEADO,
@@ -137,6 +139,8 @@ export async function pedirCodigoAssinatura(contratoId: string): Promise<{ ok: b
   if (!c || !visao) return { ok: false, error: "Contrato não encontrado." };
   if (c.status !== "ativo") return { ok: false, error: "Este contrato não está mais aguardando assinatura." };
   if (visao.euAssinei) return { ok: false, error: "Você já assinou este contrato." };
+  const faltam = motivoFaltamInstrucoes({ papel: visao.papel, preenchidas: await instrucoesPreenchidas(admin, c.id) });
+  if (faltam) return { ok: false, error: faltam };
 
   const agora = Date.now();
   const { data: atual } = await admin
@@ -211,6 +215,9 @@ export async function assinarContrato(input: {
     aceite: input.aceite === true,
   });
   if (motivo) return { ok: false, error: motivo };
+  // Check-in garantido: o proprietário só assina com as instruções de entrada preenchidas (conferido aqui, no servidor).
+  const faltam = motivoFaltamInstrucoes({ papel: visao.papel, preenchidas: await instrucoesPreenchidas(admin, c.id) });
+  if (faltam) return { ok: false, error: faltam };
 
   // Confirmação de identidade NO SERVIDOR: código de e-mail de uso único, com validade e limite de falhas.
   const { data: linhaCodigo } = await admin

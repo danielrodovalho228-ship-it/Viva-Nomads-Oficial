@@ -1,6 +1,9 @@
 import { test, expect, type Page } from "@playwright/test";
+import { createClient } from "@supabase/supabase-js";
 import {
+  CHAVE_ANON,
   NO_LABORATORIO,
+  URL_SUPABASE,
   adm,
   apagarContas,
   criarConta,
@@ -19,6 +22,7 @@ import {
  *  4. Inquilino aperta "Não consegui entrar": nasce ordem de manutenção URGENTE (prazo de 4 h) para o dono
  *     e um chamado P1 para a equipe; o dono vê a ordem em /dashboard/solicitacoes.
  *  5. O dono NÃO vê o botão "Não consegui entrar".
+ *  6. O inquilino, pela API com a chave pública, não lê o plantão nem as instruções (0127).
  * 360, 390 e 1280 px sem rolagem lateral.
  */
 const senha = novaSenha();
@@ -157,5 +161,19 @@ test.describe("T83 — Check-in garantido: instruções de entrada e 'Não conse
     await expect(ordem).toBeVisible({ timeout: 20_000 });
     await expect(ordem.getByTestId("prazo-ordem")).toContainText("prazo de 4 h");
     await d.context().close();
+  });
+
+  test("6. o inquilino não lê o telefone de plantão pela API (tabela fechada, sem colunas em contratos)", async () => {
+    test.setTimeout(60_000);
+    const inq = createClient(URL_SUPABASE!, CHAVE_ANON!, { auth: { persistSession: false } });
+    const { error: eLogin } = await inq.auth.signInWithPassword({ email: inquilino.email, password: senha });
+    expect(eLogin).toBeNull();
+    const { data, error } = await inq.from("contratos_checkin").select("plantao, instrucoes").eq("contrato_id", ids.contrato!);
+    expect(error !== null || (data ?? []).length === 0, "contratos_checkin sem leitura para o inquilino").toBe(true);
+    const { error: eColuna } = await inq.from("contratos").select("checkin_plantao").eq("id", ids.contrato!);
+    expect(eColuna, "a coluna saiu de contratos").not.toBeNull();
+    const { data: linha } = await inq.from("contratos").select("*").eq("id", ids.contrato!).maybeSingle();
+    expect(JSON.stringify(linha ?? {})).not.toMatch(/9999|cofre da portaria/);
+    await inq.auth.signOut();
   });
 });
