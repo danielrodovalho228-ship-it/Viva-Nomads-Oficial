@@ -24,6 +24,7 @@ import {
   MoreHorizontal,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AvisoAntigolpe } from "@/components/seguranca/aviso-antigolpe";
 import { DateFieldBR } from "@/components/ui/date-field-br";
 import { MOTIVOS, contemContato, CONTATO_AVISO, calcExpiraEm, PRAZO_MAX_MESES } from "@/lib/pedidos/pedidos";
 import { MUNICIPIOS, UFS } from "@/lib/municipios";
@@ -301,6 +302,8 @@ function PedidoForm() {
     <div className="rounded-2xl border border-line bg-white p-6 shadow-lg sm:p-8">
       <h2 className="font-title text-2xl font-bold text-ink">Publique seu pedido</h2>
       <p className="mt-1 text-sm text-muted">Leva 2 minutos. Os proprietários da cidade respondem pela plataforma.</p>
+
+      <AvisoAntigolpe className="mt-3" />
 
       {!user && (
         <p className="mt-3 flex items-start gap-2 rounded-xl border border-champagne/50 bg-champagne/10 px-3.5 py-2.5 text-sm text-ink">

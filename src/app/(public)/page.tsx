@@ -53,7 +53,8 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const featured = (await listProperties()).slice(0, 3);
+  const todos = await listProperties();
+  const featured = todos.slice(0, 3);
   // Enquanto só há exemplos, a seção diz isso (nada de "Disponíveis agora").
   const soExemplos = featured.length > 0 && featured.every((p) => isExemplo(p.id));
 
@@ -78,7 +79,7 @@ export default async function HomePage() {
       </section>
 
       {/* ───────── ATALHOS POR CATEGORIA ───────── */}
-      <AtalhosCategoria />
+      <AtalhosCategoria imoveis={todos} />
 
       {/* ───────── CONFIANÇA (o que vem com toda estadia) ───────── */}
       <section className="border-y border-line bg-white">

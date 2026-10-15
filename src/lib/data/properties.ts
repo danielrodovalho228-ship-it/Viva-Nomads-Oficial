@@ -3,12 +3,30 @@ import { isExemplo } from "@/lib/demo-listing";
 import { createPublicClient } from "@/lib/supabase/public";
 import type { Property, AmenityGroup } from "@/lib/types";
 import { SAMPLE_PROPERTIES } from "@/lib/properties";
+import { primeiroPerfilPublico, type PerfilPublicoDono } from "@/lib/data/perfil-publico-dono";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { signAvatarPath } from "@/lib/data/avatar-url";
 import { semAnunciosDeTeste } from "@/lib/data/anuncio-teste";
 import { comCoordenadaAproximada } from "@/lib/data/coordenada-aproximada";
 import { ROTULOS_FILTRAVEIS, chavesFiltroDe } from "@/lib/busca/filtro-comodidades";
 import { normalizarRegrasPets } from "@/lib/anuncio/pets-regras";
 import { privacidadeDaLinha, type PrivacidadeLinha } from "@/lib/anuncio/privacidade";
+
+/**
+ * Perfil PÚBLICO do dono de um anúncio ativo. SERVER-ONLY: a função é SECURITY DEFINER e,
+ * desde a 0133, só o service_role executa (anon/authenticated não chamam direto no banco).
+ * Sem chave de serviço (local/sandbox) ou com erro, devolve null e o bloco não aparece.
+ */
+async function buscarPerfilPublicoDono(imovelId: string): Promise<PerfilPublicoDono | null> {
+  const admin = createAdminClient();
+  if (!admin) return null;
+  try {
+    const { data } = await admin.rpc("perfil_publico_dono", { p_imovel: imovelId });
+    return primeiroPerfilPublico(data as PerfilPublicoDono[] | null);
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Colunas SEGURAS de `properties` para leitura (público e dono). NUNCA inclui
@@ -198,7 +216,7 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     safe(supabase.from("property_amenities").select("category, label, sort_order").eq("property_id", base.id).order("sort_order")),
     safe(supabase.from("property_workspaces").select("name, type, distance_m").eq("property_id", base.id)),
     safe(supabase.from("property_proximities").select("category, name, note, sort_order").eq("property_id", base.id).order("sort_order")),
-    safe(supabase.from("avaliacoes").select("nota_geral, comentario_publico, publicada_em").eq("imovel_id", base.id).eq("papel_autor", "inquilino").eq("status", "publicada").order("publicada_em", { ascending: false })),
+    safe(supabase.from("avaliacoes").select("id, nota_geral, comentario_publico, publicada_em").eq("imovel_id", base.id).eq("papel_autor", "inquilino").eq("status", "publicada").order("publicada_em", { ascending: false })),
     ownerId ? safe(supabase.from("profiles").select("full_name, avatar_url, created_at, response_rate, is_verified").eq("id", ownerId).maybeSingle()) : Promise.resolve(null),
     // Regras de pets (0119): coluna à parte para a página não quebrar se a migração atrasar.
     safe(supabase.from("properties").select("pets_regras").eq("id", base.id).maybeSingle()),
@@ -206,6 +224,16 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     safe(supabase.from("properties").select("sem_cameras_interior, cameras_externas, tipo_acesso, senha_trocada_estadia").eq("id", base.id).maybeSingle()),
   ]);
   const privacidade = privacidadeDaLinha(priv as PrivacidadeLinha | null);
+
+  // Resposta pública do proprietário (0128): leitura à parte — sem a migração o anúncio abre igual.
+  const idsAvaliacoes = ((reviews as { id: string }[] | null) ?? []).map((r) => r.id);
+  const respostas =
+    idsAvaliacoes.length > 0
+      ? await safe(supabase.from("avaliacao_respostas").select("avaliacao_id, texto").in("avaliacao_id", idsAvaliacoes))
+      : null;
+  const respostasPorAvaliacao = new Map(
+    ((respostas as { avaliacao_id: string; texto: string }[] | null) ?? []).map((r) => [r.avaliacao_id, r.texto]),
+  );
 
   // Comodidades agrupadas por categoria (na ordem de cadastro).
   const groupsMap = new Map<string, string[]>();
@@ -218,7 +246,16 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     items,
   }));
 
-  const ownerRow = owner as { full_name: string | null; avatar_url: string | null; created_at: string | null; response_rate: number | null; is_verified: boolean | null } | null;
+  type LinhaDono = { full_name: string | null; avatar_url: string | null; created_at: string | null; response_rate: number | null; is_verified: boolean | null };
+  let ownerRow = owner as LinhaDono | null;
+  // Visitante (RLS de profiles só libera o próprio perfil): perfil PÚBLICO do dono pela
+  // função da 0131 (chamada no servidor com service_role, 0133) — só primeiro nome, foto, desde, taxa de resposta e verificado, e só de
+  // anúncio ativo (ordem d943f893). Sem a migração, a chamada falha e o bloco não aparece.
+  if (!ownerRow && ownerId) {
+    const d = await buscarPerfilPublicoDono(base.id);
+    if (d)
+      ownerRow = { full_name: d.nome, avatar_url: d.avatar_url, created_at: d.desde, response_rate: d.taxa_resposta, is_verified: d.verificado };
+  }
 
   // Foto do proprietário é PÚBLICA (podeVerAvatar owner = true). O bucket é
   // privado, então assinamos o caminho no servidor (admin) — null vira iniciais.
@@ -240,11 +277,12 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
       note: p.note ?? undefined,
     })),
     // Avaliação real de quem morou (0089): sem nome digitado — "Inquilino verificado".
-    reviews: ((reviews as { nota_geral: number; comentario_publico: string | null; publicada_em: string | null }[] | null) ?? []).map((r) => ({
+    reviews: ((reviews as { id: string; nota_geral: number; comentario_publico: string | null; publicada_em: string | null }[] | null) ?? []).map((r) => ({
       author: "Inquilino verificado",
       rating: Number(r.nota_geral),
       comment: r.comentario_publico ?? "",
       date: r.publicada_em ?? undefined,
+      reply: respostasPorAvaliacao.get(r.id),
     })),
     petsRegras: normalizarRegrasPets((petsLinha as { pets_regras?: unknown } | null)?.pets_regras) ?? undefined,
     privacidade,
@@ -284,6 +322,7 @@ export async function listProperties(): Promise<Property[]> {
     await attachCoverPhotos(supabase, mapped); // capa real para os cards (best-effort)
     await attachReviewAggregates(supabase, mapped); // nota/contagem REAL (fonte única)
     await attachComodidadesFiltro(supabase, mapped); // Wi-Fi/cozinha/garagem/lavar, para os filtros da busca (best-effort)
+    await attachPrecoJusto(supabase, mapped); // selo Preço justo (0130; best-effort)
     await attachPetsRegras(supabase, mapped); // porte máximo de pet, para o filtro da busca (0119; best-effort)
     return withDemos(mapped);
   } catch (e) {
@@ -316,6 +355,7 @@ export async function getProperty(id: string): Promise<Property | undefined> {
     if (!data) return showDemoProperties() ? SAMPLE_PROPERTIES.find((p) => p.id === id) : undefined;
     // Página pública: coordenada aproximada no servidor (a exata só no painel do dono).
     const base = comCoordenadaAproximada(rowToProperty(data as unknown as PropertyRow));
+    await attachPrecoJusto(supabase, [base]);
     return enrichProperty(supabase, base, (data as { owner_id?: string }).owner_id ?? null);
   } catch {
     return showDemoProperties() ? SAMPLE_PROPERTIES.find((p) => p.id === id) : undefined;
@@ -348,6 +388,7 @@ export async function getPropertyForOwner(id: string): Promise<Property | undefi
     const { data: aut } = await supabase.from("properties").select("autorizacao_anexada").eq("id", id).eq("owner_id", user.id).maybeSingle();
     if (aut && typeof (aut as { autorizacao_anexada?: unknown }).autorizacao_anexada === "boolean")
       base.autorizacaoAnexada = (aut as { autorizacao_anexada: boolean }).autorizacao_anexada;
+    await attachPrecoJusto(supabase, [base]);
     return enrichProperty(supabase, base, user.id);
   } catch {
     return undefined;
@@ -401,6 +442,29 @@ async function attachComodidadesFiltro(supabase: SupabaseLike, list: Property[])
     for (const p of list) p.comodidadesFiltro = chavesFiltroDe(rotulos.get(p.id) ?? []);
   } catch {
     /* sem a tabela, o filtro só enxerga o que o imóvel já traz */
+  }
+}
+
+/** Selo "Preço justo" (0130): coluna calculada no banco; sem a migração, ninguém ganha selo. Best-effort. */
+async function attachPrecoJusto(supabase: SupabaseLike, list: Property[]): Promise<void> {
+  const reais = list.filter((p) => !isExemplo(p.id));
+  if (reais.length === 0) return;
+  try {
+    const { data, error } = await supabase
+      .from("properties")
+      .select("id, preco_justo, airbnb_monthly_price")
+      .in("id", reais.map((p) => p.id));
+    if (error) return;
+    const porId = new Map(
+      ((data as { id: string; preco_justo: boolean | null; airbnb_monthly_price: number | null }[] | null) ?? []).map((r) => [r.id, r]),
+    );
+    for (const p of reais) {
+      const r = porId.get(p.id);
+      p.precoJusto = r?.preco_justo === true;
+      if (r?.airbnb_monthly_price) p.airbnbMonthlyPrice = Number(r.airbnb_monthly_price);
+    }
+  } catch {
+    /* sem a coluna, sem selo */
   }
 }
 

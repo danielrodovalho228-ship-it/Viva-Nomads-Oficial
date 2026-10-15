@@ -56,7 +56,8 @@ import {
   faixaResumo,
   CLAUSULAS_PLACEHOLDER,
 } from "@/lib/modelos-contrato";
-import { hojeBR, formatBRL, cn } from "@/lib/utils";
+import { hojeBR, dataBR, formatBRL, cn } from "@/lib/utils";
+import { validarInicioEstadia } from "@/lib/inicio-estadia";
 import { MARCA_MINUTA, MSG_ASSINATURA_INATIVA } from "@/lib/contrato-etapas";
 import { LINK_DOCUMENTO } from "@/lib/documento-pessoa";
 
@@ -99,6 +100,10 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   const [step, setStep] = useState(0);
   // Prazo total pretendido (contrato-mãe) — o inquilino escolhe no fechamento.
   const [prazoMeses, setPrazoMeses] = useState(DEFAULT_MESES);
+  // F37: data de início da estadia (obrigatória, hoje ou futura); os blocos partem dela.
+  const hoje = hojeBR();
+  const [inicioISO, setInicioISO] = useState(ctx.inicioSugerido ?? hoje);
+  const inicioValido = validarInicioEstadia(inicioISO, hoje);
   // Derivações do prazo (dinâmicas). Nomes espelham os antigos p/ o JSX seguir.
   const STAY_MESES = prazoMeses;
   const STAY_DAYS = prazoMeses * 30;
@@ -254,7 +259,6 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
       // Registra o CONTRATO-MÃE + blocos (contrato fracionado v2). A comissão
       // fica no contrato-mãe (taxa × valor total, UMA vez); cada bloco carrega a
       // caução (50%). O servidor confere o documento das duas partes (F32).
-      const inicioISO = hojeBR();
       // A6: inquilino, imóvel, aluguel e taxa vêm da candidatura aceita (servidor).
       const reg = await registrarContrato({
         leadId: ctx.leadId,
@@ -288,7 +292,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   }
 
   const canAdvance =
-    (step === 0 && verified && !ocupantesExcede) ||
+    (step === 0 && verified && !ocupantesExcede && inicioValido.ok) ||
     (step === 1 && !!guaranteeId && cienteProtecao) ||
     step === 2 || // serviços: opcional, pode seguir sem escolher
     (step === 3 && patrimonial !== null) ||
@@ -486,6 +490,30 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                   )}
                 </select>
               </div>
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-sage-200 pt-3">
+                <div>
+                  <label htmlFor="inicio-estadia" className="font-medium text-ink">
+                    Data de início da estadia
+                  </label>
+                  <p className="text-xs text-muted">Os blocos, os prazos de pagamento e o fim da estadia contam a partir dela.</p>
+                </div>
+                <input
+                  id="inicio-estadia"
+                  data-testid="inicio-estadia"
+                  type="date"
+                  required
+                  min={hoje}
+                  value={inicioISO}
+                  onChange={(e) => setInicioISO(e.target.value)}
+                  aria-invalid={!inicioValido.ok}
+                  className="min-h-11 rounded-lg border border-sage-200 bg-white px-3 py-2 outline-none focus:border-sage"
+                />
+              </div>
+              {!inicioValido.ok && (
+                <p role="alert" data-testid="inicio-estadia-erro" className="mt-2 text-xs text-red-700">
+                  {inicioValido.error}
+                </p>
+              )}
               <p className="mt-3 text-xs text-muted">
                 {resumo.blocos.length} {resumo.blocos.length === 1 ? "bloco" : "blocos"} ·{" "}
                 {formatBRL(PROPERTY.monthlyRent)}/mês · total do período{" "}
@@ -953,6 +981,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
             <div className="rounded-xl bg-surface-2 p-4 text-sm">
               <Row label="Inquilino" value={tenant.name} />
               <Row label="Imóvel" value={PROPERTY.title} />
+              <Row label="Início da estadia" value={dataBR(inicioISO)} />
               <Row label="Prazo" value={`${prazoMeses} meses`} />
               <Row label="Aluguel" value={`${formatBRL(PROPERTY.monthlyRent)}/mês`} />
               <Row label="Garantia" value={selectedGarantia?.nome ?? "—"} />
