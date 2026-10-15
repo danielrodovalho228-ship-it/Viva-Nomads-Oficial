@@ -29,10 +29,12 @@ test.describe("T77 — Filtro de pet com porte", () => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/buscar", { waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("filtro-porte-pet")).toHaveCount(0);
-    // Desde a busca compacta (#488) o chip "Aceita pet" mora no painel "Mais filtros".
+    // Desde a busca compacta (#488) os filtros abrem por ela (como no T78) e o chip
+    // "Aceita pet" mora no painel "Mais filtros".
+    await page.getByTestId("busca-compacta").click();
     await page.getByRole("button", { name: /Mais filtros/ }).first().click();
     await page.getByTestId("mais-filtros-painel").getByRole("button", { name: /Aceita pet/ }).click();
-    await expect(page.getByTestId("filtro-porte-pet")).toBeVisible();
+    await expect(page.getByTestId("filtro-porte-pet").getByRole("combobox", { name: "Porte do pet" })).toBeVisible();
     await expect(page).toHaveURL(/pet=1/);
   });
 });
