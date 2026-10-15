@@ -18,6 +18,7 @@ const SearchMap = dynamic(
 import { EmptySearchIllustration } from "@/components/illustrations";
 import { cn, distanceKm, formatBRL } from "@/lib/utils";
 import { tierFromPhotoCount, searchPriority } from "@/lib/listing";
+import { prioridadeNaBusca } from "@/lib/preco-justo";
 import { LocationSearch } from "@/components/location-search";
 import type { GeoSuggestion } from "@/lib/integrations/geocoding";
 import { PROPERTY_TYPES } from "@/lib/amenities";
@@ -387,8 +388,8 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
     else
       list = [...list].sort(
         (a, b) =>
-          searchPriority(tierFromPhotoCount(b.photos.length)) -
-          searchPriority(tierFromPhotoCount(a.photos.length))
+          prioridadeNaBusca(searchPriority(tierFromPhotoCount(b.photos.length)), b.precoJusto) -
+          prioridadeNaBusca(searchPriority(tierFromPhotoCount(a.photos.length)), a.precoJusto)
       );
     return list;
   }, [base, dist, filtrosPainel, sort]);
