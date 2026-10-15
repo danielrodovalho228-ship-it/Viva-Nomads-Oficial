@@ -11,6 +11,7 @@ import {
 import { COOKIE_ADMIN_ATIVO, LIMITE_OCIOSO_ADMIN_MS, sessaoAdminOciosa } from "@/lib/admin/sessao-ociosa";
 import { APP_COOKIE, appHome, isAppUserAgent, isMarketingPath } from "@/lib/app-mode";
 import { destinoAposLogin } from "@/lib/destino-login";
+import { requisicaoPrefetch, temCookieSessao } from "@/lib/login-celular";
 import { decidirPortaoMfa, mfaAdminObrigatoria, rotaLivreDeAal2, urlAtivar2fa, urlVerificarCodigo } from "@/lib/admin/mfa";
 
 /**
@@ -118,9 +119,24 @@ export async function proxy(request: NextRequest) {
     },
   });
 
+  // Prefetch (o Next pré-carrega links visíveis): não é navegação de verdade, e
+  // cada um custava um getUser no Supabase (~25 por login) — a 1ª tela ficava
+  // lenta no celular. Sem cookie de sessão a rota protegida segue barrada
+  // abaixo (sem rede, só leitura local); com cookie respondemos vazio e a
+  // navegação real, que passa por toda a checagem, busca a página.
+  const prefetch = requisicaoPrefetch(request.headers);
+  const protegidaPorPrefixo =
+    pathname.startsWith("/dashboard") || pathname.startsWith("/qualificar") ||
+    pathname.startsWith("/admin") || pathname.startsWith("/pedidos");
+  if (prefetch && protegidaPorPrefixo && temCookieSessao(request.cookies.getAll())) {
+    return new NextResponse(null, { status: 204 });
+  }
+
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = prefetch && !temCookieSessao(request.cookies.getAll())
+    ? { data: { user: null } }
+    : await supabase.auth.getUser();
 
   const isAdminRoute = pathname.startsWith("/admin");
   // O módulo Pedido de Moradia exige sessão para LISTAR/responder (o mural expõe

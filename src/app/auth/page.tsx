@@ -30,6 +30,7 @@ import type { UserRole } from "@/lib/types";
 import type { PersonType } from "@/lib/tax";
 import { cn } from "@/lib/utils";
 import { safeInternalPath } from "@/lib/safe-redirect";
+import { ATRIBUTOS_EMAIL, limparEmail } from "@/lib/login-celular";
 import { LOGIN_APPLE_ATIVO, LOGIN_GOOGLE_ATIVO } from "@/lib/flags";
 import { useIsNative } from "@/lib/use-native";
 import { registrarEvento } from "@/lib/eventos/registrar";
@@ -60,6 +61,8 @@ export default function AuthPage() {
   const [showReferral, setShowReferral] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false); // aceite explícito no cadastro
   const [loading, setLoading] = useState(false);
+  // Trava contra clique duplo: o estado só muda no próximo render; a ref, na hora.
+  const enviandoRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null); // pós-cadastro / reset enviado
   const [awaitingConfirm, setAwaitingConfirm] = useState(false);
@@ -299,6 +302,7 @@ export default function AuthPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (enviandoRef.current) return;
     setError(null);
     setNotice(null);
 
@@ -316,7 +320,11 @@ export default function AuthPage() {
       return;
     }
 
+    enviandoRef.current = true;
     setLoading(true);
+    // Depois do sucesso o botão fica "Entrando…" até a página nova abrir.
+    let navegando = false;
+    const emailLimpo = limparEmail(email);
     const supabase = createClient();
     try {
       if (supabase) {
@@ -325,7 +333,7 @@ export default function AuthPage() {
           const ver = await fetch("/api/auth/validar-email", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email }),
+            body: JSON.stringify({ email: emailLimpo }),
           })
             .then((r) => r.json() as Promise<{ ok?: boolean; error?: string }>)
             .catch(() => ({ ok: true }) as { ok?: boolean; error?: string });
@@ -336,7 +344,7 @@ export default function AuthPage() {
           }
           const { data, error } = await withTimeout(
             supabase.auth.signUp({
-              email,
+              email: emailLimpo,
               password,
               options: comCaptcha(
                 {
@@ -372,7 +380,7 @@ export default function AuthPage() {
           }
         } else {
           const { data, error } = await withTimeout(
-            supabase.auth.signInWithPassword({ email, password, options: comCaptcha({}, captcha.token) })
+            supabase.auth.signInWithPassword({ email: emailLimpo, password, options: comCaptcha({}, captcha.token) })
           );
           if (error) {
             const m = (error.message || "").toLowerCase();
@@ -413,8 +421,12 @@ export default function AuthPage() {
         startSession();
         // Cache de imóveis começa limpo p/ o novo usuário (mesma aba).
         resetPropertiesCache();
-        // Navega já com o usuário na store (o AuthProvider enriquece depois).
-        router.push(postAuthTarget());
+        // Navegação COMPLETA (não router.push): garante que o cookie da sessão
+        // já vai na 1ª requisição ao servidor — no Safari/iPhone a navegação
+        // do cliente podia chegar antes do cookie e o proxy devolvia para /auth.
+        // O usuário já está na store (persistida); o AuthProvider enriquece depois.
+        navegando = true;
+        window.location.assign(postAuthTarget());
         return;
       }
 
@@ -455,7 +467,10 @@ export default function AuthPage() {
         setError(friendlyAuthError(msg, mode === "signup" ? "cadastro" : "login"));
       }
     } finally {
-      setLoading(false);
+      if (!navegando) {
+        enviandoRef.current = false;
+        setLoading(false);
+      }
       captcha.reset();
     }
   }
@@ -792,7 +807,7 @@ export default function AuthPage() {
                   disabled={loading || (mode === "signup" && !acceptedTerms) || (mode === "login" && espera > 0) || !podeEnviar(captcha.ligado, captcha.token)}
                 >
                   {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-                  {loading ? "Aguarde..." : mode === "login" ? "Entrar" : "Criar conta"}
+                  {loading ? (mode === "login" ? "Entrando…" : "Aguarde...") : mode === "login" ? "Entrar" : "Criar conta"}
                 </Button>
               </form>
 
@@ -894,6 +909,7 @@ function Input({
         required={required}
         name={name}
         autoComplete={autoComplete}
+        {...(type === "email" ? ATRIBUTOS_EMAIL : {})}
         className="w-full bg-transparent text-sm outline-none placeholder:text-muted"
       />
       {isPassword && (

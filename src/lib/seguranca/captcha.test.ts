@@ -34,7 +34,7 @@ test("erro de CAPTCHA do Supabase vira mensagem clara", () => {
 test("todas as chamadas de senha do navegador mandam o token (senão quebram com o CAPTCHA ligado)", () => {
   const auth = ler("app/auth/page.tsx");
   assert.match(auth, /signUp\(\{[\s\S]{0,200}options: comCaptcha\(/);
-  assert.match(auth, /signInWithPassword\(\{ email, password, options: comCaptcha\(\{\}, captcha\.token\) \}\)/);
+  assert.match(auth, /signInWithPassword\(\{ email: emailLimpo, password, options: comCaptcha\(\{\}, captcha\.token\) \}\)/);
   assert.match(auth, /resetPasswordForEmail\(email, comCaptcha\(/);
   assert.match(auth, /resend\(\{[\s\S]{0,200}options: comCaptcha\(/);
   const conta = ler("components/account/conta-secoes.tsx");
