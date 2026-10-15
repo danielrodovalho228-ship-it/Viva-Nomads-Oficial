@@ -261,7 +261,7 @@ export async function pausarAnuncioPorCamera(chamadoId: string, usuarioId: strin
   if (!usuarioId || !contratoId) return false;
   const admin = createAdminClient();
   if (!admin) return false;
-  const { data: ct } = await admin.from("contratos").select("tenant_id, property_id").eq("id", contratoId).maybeSingle();
+  const { data: ct } = await admin.from("contratos").select("status, tenant_id, property_id").eq("id", contratoId).maybeSingle();
   const propId = anuncioParaPausarPorCamera("camera", usuarioId, (ct as ContratoParaCamera | null) ?? null);
   if (!propId) return false;
   const { data: pausado } = await admin.from("properties").update({ status: "paused" }).eq("id", propId).eq("status", "active").select("id");

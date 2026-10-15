@@ -91,6 +91,8 @@ test.describe("T79 — Privacidade e acesso ao imóvel", () => {
     const inq = await entrar(browser, inquilino.email, senha);
     await inq.goto(`/dashboard/locacoes/${ids.contrato}`, { waitUntil: "networkidle" });
     await expect(inq.getByTestId("lembrete-senha-entrada")).toContainText(LEMBRETE_SENHA_ENTRADA, { timeout: 15_000 });
+    await expect(inq.getByTestId("checklist-cameras")).toBeVisible(); // item 5: o inquilino com contrato ativo vê o checklist
+    await expect(inq.getByTestId("checklist-cameras")).toContainText("Conferi que não há câmeras");
     await inq.context().close();
 
     const prop = await entrar(browser, dono.email, senha);
