@@ -7,7 +7,8 @@
       ],
       "specs": [
         "t66-home-busca-principal",
-        "t69-botoes-header"
+        "t69-botoes-header",
+        "t90-orcamento-velocidade"
       ]
     },
     "/acesso-socios": {
@@ -229,10 +230,11 @@
         "t20-p1-agentes",
         "t23-pacote-seguranca",
         "t67-busca-celular",
-        "t7-fluxo-publico",
         "t69-botoes-header",
+        "t7-fluxo-publico",
         "t70-busca-split",
-        "t71-busca-topo"
+        "t71-busca-topo",
+        "t90-orcamento-velocidade"
       ]
     },
     "/cidades": {
@@ -431,7 +433,8 @@
         "t31-cadastro-documento",
         "t33-documentos-inquilino",
         "t36-cadastro-ponta-a-ponta",
-        "t4-fronteira-demo-real"
+        "t4-fronteira-demo-real",
+        "t89-fechamento-data-inicio"
       ]
     },
     "/dashboard/ferramentas": {
@@ -754,7 +757,8 @@
         "t6-dinheiro-numeros",
         "t68-comissao-valor-total",
         "t69-botoes-header",
-        "t72-paginas-institucionais"
+        "t72-paginas-institucionais",
+        "t90-orcamento-velocidade"
       ]
     },
     "/privacidade": {
@@ -1762,6 +1766,15 @@
         "inquilino"
       ],
       "specs": []
+    },
+    "src/lib/data/denuncia-conversa-actions.ts#denunciarConversa": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t87-denunciar-mensagem"
+      ]
     },
     "src/lib/data/documentos-actions.ts#documentosDosContratos": {
       "personas": [

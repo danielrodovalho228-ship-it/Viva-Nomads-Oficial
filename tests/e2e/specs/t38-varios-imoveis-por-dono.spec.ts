@@ -81,6 +81,8 @@ test.describe("T38 — Vários imóveis por dono", () => {
     await adm().from("properties").update({ status: "draft" }).eq("id", ids.imoveis[0]);
     const page = await entrar(browser, dono.email, senha);
     await page.goto(`/dashboard/imoveis/${ids.imoveis[1]}/editar`, { waitUntil: "networkidle" });
+    // O Publicar só habilita depois do aceite do termo de IA (como em publicarPeloEditor).
+    await page.getByTestId("aceite-ia").getByRole("checkbox").check({ timeout: 20_000 });
     const publicar = page.getByRole("button", { name: "Publicar", exact: true });
     await expect(publicar).toBeEnabled();
 

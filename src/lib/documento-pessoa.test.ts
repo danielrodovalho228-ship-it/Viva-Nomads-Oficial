@@ -128,9 +128,10 @@ test("F26: a seção Documento aparece para todo papel logado — nunca some em 
   const corpo = acoes.slice(i, acoes.indexOf("\n}\n", i));
   // perfil sem linha/erro de leitura => formulário PF padrão, não null
   assert.match(corpo, /if \(!p\) return \{ \.\.\.DOCUMENTO_VAZIO_PF \};/);
-  // a tela não esconde a seção quando a leitura falha
+  // a tela não esconde a seção quando a leitura falha: mostra erro + "Tentar de novo" (c53c86f0)
   const ui = ler("components/account/conta-secoes.tsx");
-  assert.match(ui, /\.catch\(\(\) => vivo && setDoc\(\{ \.\.\.DOCUMENTO_VAZIO_PF \}\)\)/);
+  assert.match(ui, /setFalhou\(true\)/);
+  assert.match(ui, /Tentar de novo/);
   // Conta fora do padrão de tela: sem mx-auto max-w-5xl
   assert.doesNotMatch(ler("app/(dashboard)/dashboard/conta/page.tsx"), /mx-auto max-w-5xl/);
 });

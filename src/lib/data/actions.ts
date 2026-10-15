@@ -45,6 +45,7 @@ import { conversationId as idConversa } from "@/lib/messages/conversation-id";
 import { SITE_URL } from "@/lib/site";
 import type { Property } from "@/lib/types";
 import { hojeBR, dataBR } from "@/lib/utils";
+import { validarInicioEstadia } from "@/lib/inicio-estadia";
 import {
   resumoContrato,
   encadearDatas,
@@ -1006,7 +1007,9 @@ export async function registrarContrato(
   if (!FAIXAS_CONTRATO.has(input.faixa)) return { ok: false, error: "Faixa de prazo inválida." };
   const ocupantes = Math.round(Number(input.qtdOcupantes));
   if (!(ocupantes >= 1 && ocupantes <= 20)) return { ok: false, error: "Número de ocupantes inválido." };
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.inicioISO)) return { ok: false, error: "Data de início inválida." };
+  // F37: data de início obrigatória, hoje ou futura (os blocos e os prazos partem dela).
+  const inicio = validarInicioEstadia(input.inicioISO, hojeBR());
+  if (!inicio.ok) return { ok: false, error: inicio.error };
 
   const plano = (lead.accepted_plan as string) ?? "free";
   // NULL cai para a taxa do plano no aceite (antes Number(null) = 0 = Gestor).
@@ -1254,7 +1257,9 @@ export async function requestLead(
   // e-mail oficial (dava para enviar um título com link de golpe).
   _tituloDoCliente: string,
   kind: LeadKind,
-  note?: string
+  note?: string,
+  // F37: data de entrada que o inquilino quer (opcional). Só a candidatura guarda; o servidor valida.
+  inicioDesejado?: string
 ): Promise<ActionResult & { needsAuth?: boolean; selfOwned?: boolean; exemplo?: boolean }> {
   // T9: anúncio de EXEMPLO não tem dono — nada de candidatura, contato nem e-mail
   // (antes ia o nome do inquilino para um e-mail pessoal de fallback).
@@ -1355,7 +1360,15 @@ export async function requestLead(
     if (!existing) {
       const { error: leadErr } = await supabase
         .from("leads")
-        .insert({ property_id: propertyId, owner_id: ownerId, tenant_id: user.id, status: "new" });
+        .insert({
+          property_id: propertyId,
+          owner_id: ownerId,
+          tenant_id: user.id,
+          status: "new",
+          ...(kind === "candidatura" && validarInicioEstadia(inicioDesejado, hojeBR()).ok
+            ? { inicio_desejado: inicioDesejado!.trim() }
+            : {}),
+        });
       // 23505 = duplicado (corrida): não é erro real. Demais erros: registra.
       if (leadErr && leadErr.code !== "23505") {
         console.error("[requestLead] falha ao gravar lead:", leadErr.message);

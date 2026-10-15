@@ -108,7 +108,7 @@ export const GARANTIAS_CADASTRO: GarantiaCadastro[] = [
   {
     key: "caucao_avista",
     label: "Caução (depósito devolvível)",
-    microtext: `${CAUCAO_FRASE} 50% antes da entrada; o restante conforme o contrato. Devolvida ao inquilino no fim, após a vistoria de saída.`,
+    microtext: `${CAUCAO_FRASE} 50% antes da entrada; o restante conforme o contrato. Devolvida ao inquilino no fim, após a conferência de saída.`,
   },
   ...(CAUCAO_PARCELADA_UI
     ? [{ key: "caucao_parcelada" as GarantiaKey, label: "Caução parcelada" }]

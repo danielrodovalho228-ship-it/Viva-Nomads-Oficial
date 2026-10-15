@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Send, ArrowLeft } from "lucide-react";
 import { PageTitle } from "@/components/dashboard/primitives";
+import { DenunciarConversa } from "@/components/mensagens/denunciar-conversa";
 import { Avatar } from "@/components/ui/avatar";
 import { sendMessage } from "@/lib/data/actions";
 import { getAvatarUrl } from "@/lib/data/avatar-actions";
@@ -226,6 +227,8 @@ function MessagesInner({ initial, demo }: { initial: Conversation[]; demo: boole
               {GUARD_NOTICE}
             </p>
           )}
+          {/* Conversa com imóvel = entre pessoas; "Suporte" é a equipe, não há o que denunciar. */}
+          {active.papel !== "suporte" && <DenunciarConversa key={active.id} conversationId={active.id} demo={demo} />}
           <form onSubmit={submit} className="flex items-center gap-2 border-t border-sage-200 p-3">
             <input
               value={draft}

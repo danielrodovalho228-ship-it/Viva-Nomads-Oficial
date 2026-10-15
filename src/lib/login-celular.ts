@@ -27,3 +27,12 @@ export function requisicaoPrefetch(headers: { get(nome: string): string | null }
 export function temCookieSessao(cookies: ReadonlyArray<{ name: string }>): boolean {
   return cookies.some((c) => /^sb-.+-auth-token/.test(c.name));
 }
+
+/**
+ * Visitante sem cookie de sessão não tem usuário: dispensa a ida ao servidor de
+ * autenticação (getUser) no proxy — era uma viagem de rede em TODA página pública
+ * (ordem 0f66a754). Com cookie, a verificação segue igual.
+ */
+export function precisaVerificarUsuario(cookies: ReadonlyArray<{ name: string }>): boolean {
+  return temCookieSessao(cookies);
+}

@@ -230,6 +230,11 @@ function ContratoCard({
             <span className="inline-flex items-center gap-1">
               <Users className="h-3.5 w-3.5" /> {contrato.qtdOcupantes} ocupante(s)
             </span>
+            {contrato.blocos[0] && (
+              <span className="inline-flex items-center gap-1" data-testid="contrato-inicio">
+                <CalendarDays className="h-3.5 w-3.5" /> Início da estadia: {formatDate(contrato.blocos[0].inicio)}
+              </span>
+            )}
           </div>
         </div>
         <span
