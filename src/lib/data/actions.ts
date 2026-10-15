@@ -2,6 +2,7 @@
 
 import { perfilDonoCompleto, MSG_PERFIL_DONO_INCOMPLETO } from "@/lib/anuncio/perfil-dono";
 import { atualizarRascunhoDoDono } from "@/lib/data/rascunho-dono";
+import { camposDeConteudoDoRascunho } from "@/lib/data/rascunho-campos";
 import { ligarQualificacaoAoImovel } from "@/lib/data/ligar-qualificacao";
 import { caminhoDoDono, operacaoValida } from "@/lib/anuncio/operacao";
 import { revalidatePath } from "next/cache";
@@ -1575,6 +1576,10 @@ export async function saveDraftData(snap: {
   title?: string;
   city?: string;
   monthlyPrice?: number;
+  neighborhood?: string;
+  bathrooms?: number;
+  areaM2?: number;
+  description?: string;
   data: unknown;
 }): Promise<{ ok: boolean; id?: string; error?: string; demo?: boolean }> {
   const supabase = await createClient();
@@ -1590,6 +1595,8 @@ export async function saveDraftData(snap: {
     title: (snap.title?.trim() || "Rascunho de anúncio").slice(0, 200),
     city: snap.city?.trim() || "Uberlândia",
     monthly_price: Number.isFinite(snap.monthlyPrice) ? (snap.monthlyPrice as number) : 0,
+    // Colunas que a prontidão lê (Visão geral, Meus imóveis): endereço e detalhes não ficam só no draft_data.
+    ...camposDeConteudoDoRascunho(snap),
     draft_data: snap.data as object,
   };
 
