@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { CheckCircle2, ExternalLink, FileText, Loader2, Upload } from "lucide-react";
 import { linkDocInquilino, listarDocsInquilino, type DocInquilinoResumo } from "@/lib/data/documentos-inquilino-actions";
 import { DOCS_INQUILINO, documentosInquilinoCompletos, type TipoDocInquilino } from "@/lib/documentos-inquilino";
+import { abrirLinkEmNovaAba } from "@/lib/abrir-aba";
 import { validarArquivoDoc } from "@/lib/upload-limits";
 
 function dataBR(iso: string): string {
@@ -52,9 +53,17 @@ export function DocumentosInquilino({ leadId, modo }: { leadId: string; modo: "i
 
   async function abrir(tipo: TipoDocInquilino) {
     setErro(null);
-    const r = await linkDocInquilino(leadId, tipo).catch(() => ({ ok: false, error: "Não foi possível abrir agora." }) as const);
-    if (r.ok && "url" in r && r.url) window.open(r.url, "_blank", "noopener,noreferrer");
-    else setErro(("error" in r && r.error) || "Não foi possível abrir agora.");
+    let motivo = "Não foi possível abrir agora.";
+    const ok = await abrirLinkEmNovaAba(
+      () => window.open("about:blank", "_blank"),
+      async () => {
+        const r = await linkDocInquilino(leadId, tipo);
+        if (r.ok && "url" in r && r.url) return r.url;
+        if ("error" in r && r.error) motivo = r.error;
+        return null;
+      },
+    );
+    if (!ok) setErro(motivo);
   }
 
   if (docs === null) return null;
