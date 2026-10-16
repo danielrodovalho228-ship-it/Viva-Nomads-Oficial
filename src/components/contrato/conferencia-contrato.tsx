@@ -12,7 +12,7 @@ import {
   type ConferenciaView,
   type ConferenciasContrato,
 } from "@/lib/data/conferencia-actions";
-import { mesclarItens, type ItemTela, type TipoConferencia } from "@/lib/conferencia";
+import { estadoConferencia, mesclarItens, mesclarRespostas, type ItemTela, type RespostaTela, type TipoConferencia } from "@/lib/conferencia";
 
 const ROTULO_TIPO: Record<TipoConferencia, string> = { entrada: "Conferência de entrada", saida: "Conferência de saída" };
 const ROTULO_ESTADO = {
@@ -51,20 +51,23 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
   const [ocupado, setOcupado] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [locais, setLocais] = useState<ItemTela[]>([]);
+  const [respostasLocais, setRespostasLocais] = useState<RespostaTela[]>([]);
 
   const parte = dados.minhaParte;
-  const respondeu = !!conf?.respostas.some((r) => r.parte === parte);
-  const travada = (conf?.respostas.length ?? 0) > 0;
-  const estado = conf?.estado ?? "em_andamento";
+  const respostas = mesclarRespostas(conf?.respostas ?? [], respostasLocais);
+  const respondeu = respostas.some((r) => r.parte === parte);
+  const travada = respostas.length > 0;
+  const estado = conf ? estadoConferencia(respostas) : "em_andamento";
   const itens = mesclarItens(conf?.itens ?? [], locais);
 
-  async function rodar(fn: () => Promise<{ ok: boolean; error?: string; item?: ItemTela }>) {
+  async function rodar(fn: () => Promise<{ ok: boolean; error?: string; item?: ItemTela; resposta?: RespostaTela }>) {
     setErro(null);
     setOcupado(true);
     try {
       const r = await fn();
       if (!r.ok) return setErro(r.error ?? "Não foi possível concluir.");
       if (r.item) setLocais((l) => [...l, r.item!]);
+      if (r.resposta) setRespostasLocais((l) => [...l, r.resposta!]);
       setComodo("");
       setDescricao("");
       setFoto(null);
@@ -151,9 +154,9 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
         <p className="mt-3 text-sm text-muted">Nenhum item registrado ainda.</p>
       )}
 
-      {conf && conf.respostas.length > 0 && (
+      {conf && respostas.length > 0 && (
         <ul className="mt-3 space-y-1 text-sm text-ink" data-testid={`conferencia-${tipo}-respostas`}>
-          {conf.respostas.map((r) => (
+          {respostas.map((r) => (
             <li key={r.parte}>
               {ROTULO_PARTE[r.parte]} {r.decisao === "confirmou" ? "confirmou" : "contestou"} em {fmt(r.decididoEm)}
               {r.motivo ? ` — ${r.motivo}` : ""}

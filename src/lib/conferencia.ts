@@ -127,3 +127,15 @@ export function mesclarItens(servidor: ItemTela[], locais: ItemTela[]): ItemTela
   const ids = new Set(servidor.map((i) => i.id));
   return [...servidor, ...locais.filter((i) => !ids.has(i.id))].sort((a, b) => a.criadoEm.localeCompare(b.criadoEm));
 }
+
+/** Resposta como a tela a mostra (com a hora em que foi dada). */
+export type RespostaTela = RespostaConferencia & { decididoEm: string };
+
+/**
+ * Junta as respostas do servidor com a que a própria pessoa acabou de dar, para o estado
+ * ("Aguardando a outra parte") mudar na hora. Uma resposta por parte; vale a do servidor.
+ */
+export function mesclarRespostas(servidor: RespostaTela[], locais: RespostaTela[]): RespostaTela[] {
+  const partes = new Set(servidor.map((r) => r.parte));
+  return [...servidor, ...locais.filter((r) => !partes.has(r.parte))];
+}
