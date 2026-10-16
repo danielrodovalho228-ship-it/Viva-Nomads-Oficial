@@ -302,6 +302,29 @@ html[data-app] body {
 html[data-app] .vn-tabbar-spacer {
   display: block !important;
 }
+/* Altura da barra de abas do celular (mobile-tab-bar.tsx), usada pelos fixos de rodapé. */
+:root {
+  --altura-abas: 3.5rem;
+}
+/* Barra "Comparar" da busca (ordem 7ffea8c7): no celular fica ACIMA das abas (altura + safe-area + 12 px);
+   no computador, 12 px do rodapé. O "Fale com a Viva" sobe acima dela e o fim da página ganha folga. */
+.vn-barra-comparar {
+  bottom: calc(var(--altura-abas) + env(safe-area-inset-bottom, 0px) + 0.75rem);
+}
+@media (min-width: 768px) {
+  .vn-barra-comparar {
+    bottom: 0.75rem;
+  }
+}
+html[data-app] .vn-barra-comparar {
+  bottom: calc(var(--altura-abas) + env(safe-area-inset-bottom, 0px) + 0.75rem);
+}
+@media (max-width: 767px) {
+  body:has([data-testid="barra-comparar"]) {
+    --ajuda-bottom: 10rem;
+    padding-bottom: calc(var(--altura-abas) + 6rem + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
 /* Barra fixa do imóvel (celular): fica logo acima da barra de abas. */
 .vn-barra-fixa {
   bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px));
