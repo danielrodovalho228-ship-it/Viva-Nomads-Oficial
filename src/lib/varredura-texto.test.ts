@@ -1,6 +1,7 @@
 /* Roda: node --test src/lib/varredura-texto.test.ts */
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { CAUCAO_FRASE } from "./faixas.ts";
 import { achadosNoTexto, rotaVarreTermos } from "./varredura-texto.ts";
 
 test("tela limpa não tem achados", () => {
@@ -33,4 +34,10 @@ test("/termos, /privacidade e contratos ficam fora da varredura de termos", () =
   assert.equal(rotaVarreTermos("/termos"), false);
   assert.equal(rotaVarreTermos("/privacidade?x=1"), false);
   assert.equal(rotaVarreTermos("/como-funciona"), true);
+});
+
+test("a frase única da caução (parecer jurídico pendente) não é achado; outro 'aluguel' continua sendo", () => {
+  assert.deepEqual(achadosNoTexto(`Garantia. ${CAUCAO_FRASE} Depositada antes da entrada.`), []);
+  assert.deepEqual(achadosNoTexto(`Garantia. ${CAUCAO_FRASE.replace(/ /g, "\n")} Fim.`), []);
+  assert.equal(achadosNoTexto(`${CAUCAO_FRASE} Seu aluguel sobe.`).length, 1);
 });
