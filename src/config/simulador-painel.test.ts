@@ -18,3 +18,10 @@ test("simulador do painel usa as faixas da regra única e o nº de imóveis ativ
   assert.match(PAGINA, /taxaPublicaTexto|pctTexto/);
   assert.match(PAGINA, /data-testid="imoveis-ativos"/);
 });
+
+test("spec t12 testa a taxa por faixa, não a recomendação de plano antiga", () => {
+  const spec = readFileSync("tests/e2e/specs/t12-planos.spec.ts", "utf8");
+  assert.doesNotMatch(spec, /plano-recomendado|Recomendado para você:/);
+  assert.match(spec, /taxa-faixa/);
+  assert.match(spec, /imoveis-ativos/);
+});

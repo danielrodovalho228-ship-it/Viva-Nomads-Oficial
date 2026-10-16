@@ -23,36 +23,32 @@ test.describe("T12 — Escada de planos @criticos", () => {
     });
   });
 
-  test.describe("Regra 3 — simulador recomenda pelo volume", () => {
+  test.describe("Regra 3 — simulador mostra a taxa pela faixa de imóveis ativos", () => {
     test.use({ storageState: authFile("proprietario") });
 
-    test("a recomendação muda conforme o volume digitado", async ({ page }) => {
+    test("a taxa muda conforme o número de imóveis ativos (sem planos nem mensalidade)", async ({ page }) => {
       await page.goto("/dashboard/simulador", { waitUntil: "networkidle" });
-      const reco = page.getByTestId("plano-recomendado");
-      await expect(reco).toBeVisible({ timeout: 10_000 });
+      const ativos = page.getByTestId("imoveis-ativos");
+      const taxa = page.getByTestId("taxa-faixa");
+      await expect(taxa).toBeVisible({ timeout: 10_000 });
+      const slider = page.locator("#imoveis-ativos");
 
-      const aluguel = page.getByLabel(/Aluguel mensal pretendido/i);
-      const mesesSlider = page.locator('input[type="range"]').first();
+      // Faixas vigentes (ordem 75553f0a): 1–2 → 12%, 3–5 → 10%, 6–15 → 8%, 16–30 → 6%, 31+ → Plano Gestor (negociado).
+      const casos: Array<[string, RegExp]> = [
+        ["1", /12%/],
+        ["3", /10%/],
+        ["6", /8%/],
+        ["16", /6%/],
+        ["31", /Negociado/i],
+      ];
+      for (const [n, esperado] of casos) {
+        await slider.fill(n);
+        await expect(ativos).toHaveText(n);
+        await expect(taxa).toHaveText(esperado);
+      }
 
-      // Cenário BAIXO volume/valor: aluguel modesto, prazo longo (poucos
-      // contratos/ano) → o Gratuito é o melhor (assinatura não se paga). Com a
-      // comissão sobre o valor TOTAL do contrato e as faixas atuais (Essencial
-      // 8%, Pro 4%), 3.000 × 6 meses já recomenda o Essencial: o limite é ~R$ 1.500.
-      await aluguel.fill("1500");
-      await mesesSlider.fill("6");
-      await page.getByRole("button", { name: /^6 meses$/ }).click();
-      await page.waitForTimeout(400);
-      // O texto fixo do card também cita o "Gratuito"; vale só o plano recomendado.
-      await expect(reco).toContainText(/Recomendado para você:\s*Gratuito/i);
-
-      // Cenário ALTO volume/valor: aluguel alto, muitos meses, prazo curto (mais
-      // contratos/ano) → a economia de comissão supera a assinatura: sai do Grátis.
-      await aluguel.fill("12000");
-      await mesesSlider.fill("12");
-      await page.getByRole("button", { name: /^2 meses$/ }).click();
-      await page.waitForTimeout(400);
-      await expect(reco).not.toContainText(/Recomendado para você:\s*Gratuito/i);
-      await expect(reco).toContainText(/Recomendado para você:\s*(Essencial|Profissional)/i);
+      const corpo = (await page.locator("body").innerText()) ?? "";
+      expect(corpo).not.toMatch(/Recomendado para você|Gratuito|Essencial|Profissional|mensalidade/i);
     });
   });
 });
