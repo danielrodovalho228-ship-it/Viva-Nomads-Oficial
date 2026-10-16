@@ -75,7 +75,7 @@ async function conferir(page: Page, rota: string): Promise<string[]> {
     const alvo = m.location().url;
     // Imagem/arquivo de FORA do site que o laboratório não consegue baixar não é defeito do site.
     if (/Failed to load resource/i.test(m.text()) && alvo && !alvo.startsWith(origem)) return;
-    problemas.push(`console.error: ${m.text().slice(0, 160)}`);
+    problemas.push(`console.error: ${m.text().slice(0, 160)}${alvo ? ` (${alvo.slice(0, 140)})` : ""}`);
   };
   page.on("pageerror", aoErro);
   page.on("console", aoConsole);
