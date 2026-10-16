@@ -14,6 +14,7 @@ import {
   podeAvaliarLocacao,
   resumoContrato,
   petsRegrasDoResumo,
+  limpezaDoContrato,
 } from "./contrato-assinar.ts";
 import { qtdPetsCongelada, type RegrasPets } from "./anuncio/pets-regras.ts";
 
@@ -142,4 +143,24 @@ test("achado #553: quem assina depois de quem assinou sem 'Início da estadia' f
   // sem assinatura anterior, ou com hash novo, nada muda
   assert.deepEqual(linhasParaHash(com, null), com);
   assert.deepEqual(linhasParaHash(com, hashResumo(com)), com);
+});
+
+test("resumo do contrato traz a quantidade de limpezas por mês; sem pacote, o resumo (e o hash) não muda", () => {
+  const semPacote = resumoContrato(dados);
+  const comPacote = resumoContrato({ ...dados, limpezaEstadia: { porMes: 4, inclui: "Tudo", valorMes: 0 } });
+  assert.ok(comPacote.some((l) => /^Limpeza durante a estadia — 4 limpezas por mês/.test(l)));
+  assert.ok(!semPacote.some((l) => /Limpeza durante a estadia/.test(l)));
+  assert.deepEqual(resumoContrato({ ...dados, limpezaEstadia: null }), semPacote);
+  assert.notEqual(hashResumo(comPacote), hashResumo(semPacote));
+});
+
+test("limpezaDoContrato: ao vivo antes da assinatura, congelada depois (as duas partes assinam o mesmo texto)", () => {
+  const pacote = { porMes: 1, inclui: "", valorMes: 90 };
+  assert.equal(limpezaDoContrato({ algumaAssinatura: false, viva: pacote, congeladas: {} })?.porMes, 1);
+  assert.equal(limpezaDoContrato({ algumaAssinatura: true, viva: null, congeladas: { limpezaEstadia: pacote } })?.valorMes, 90);
+  // dono mudou o anúncio depois da 1ª assinatura: vale o congelado
+  assert.equal(limpezaDoContrato({ algumaAssinatura: true, viva: { porMes: 4, inclui: "", valorMes: 1 }, congeladas: { limpezaEstadia: pacote } })?.porMes, 1);
+  // contrato antigo, sem a chave: sem linha
+  assert.equal(limpezaDoContrato({ algumaAssinatura: true, viva: pacote, congeladas: { especies: ["cao"] } }), null);
+  assert.equal(limpezaDoContrato({ algumaAssinatura: true, viva: pacote, congeladas: null }), null);
 });

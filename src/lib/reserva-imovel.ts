@@ -10,12 +10,13 @@
  */
 import { textoValorPet } from "./anuncio/pets-regras.ts";
 import type { RegrasPets } from "./anuncio/pets-regras.ts";
+import { textoLimpezaEstadia, type LimpezaEstadia } from "./anuncio/limpeza-estadia.ts";
 import { codigoDoImovel } from "./imovel-pagina.ts";
 import { isMotivo, motivoLabel } from "./pedidos/pedidos.ts";
 import { formatBRL } from "./utils.ts";
 
 export interface LinhaTaxa {
-  chave: "mensal" | "condominio" | "consumo" | "preparacao" | "saida" | "pet" | "caucao" | "viva";
+  chave: "mensal" | "condominio" | "consumo" | "preparacao" | "saida" | "pet" | "limpeza" | "caucao" | "viva";
   rotulo: string;
   /** Valor formatado; ausente quando a linha é só texto (ex.: Caução). */
   valor?: string;
@@ -33,6 +34,8 @@ export interface EntradaTaxas {
   checkoutCleaningFee?: number;
   petsAllowed?: boolean;
   petsRegras?: Pick<RegrasPets, "valorPet" | "valorPetTipo"> | null;
+  /** Pacote de limpeza durante a estadia (ordem 4c74ac38, item 3). */
+  limpezaEstadia?: LimpezaEstadia | null;
 }
 
 const positivo = (n: unknown): n is number => typeof n === "number" && Number.isFinite(n) && n > 0;
@@ -52,6 +55,7 @@ export function linhasDeTaxas(p: EntradaTaxas): LinhaTaxa[] {
   }
   const pet = p.petsAllowed ? textoValorPet(p.petsRegras) : null;
   if (pet) l.push({ chave: "pet", rotulo: pet });
+  if (p.limpezaEstadia) l.push({ chave: "limpeza", rotulo: `Limpeza durante a estadia: ${textoLimpezaEstadia(p.limpezaEstadia)}` });
   l.push({ chave: "caucao", rotulo: "Caução", nota: "Paga uma vez, devolvida no fim, após a conferência de saída. O valor fica no contrato." });
   l.push({ chave: "viva", rotulo: "Taxa da Viva para você", valor: formatBRL(0) });
   return l;
@@ -110,6 +114,7 @@ export function resumoSolicitacao(e: {
   inicioDesejado?: string;
   motivoEstadia?: string;
   hoje: string;
+  limpezaEstadia?: LimpezaEstadia | null;
 }): ResumoSolicitacao {
   const inicio = (e.inicioDesejado ?? "").trim();
   const motivo = (e.motivoEstadia ?? "").trim();
@@ -126,6 +131,7 @@ export function resumoSolicitacao(e: {
       { rotulo: "Entrada", valor: inicio && ISO_DIA.test(inicio) ? `${d}/${m}/${a}` : "A combinar com o proprietário" },
       { rotulo: "Motivo da estadia", valor: motivo && isMotivo(motivo) ? motivoLabel(motivo) : "Prefiro não informar" },
       { rotulo: "Valor por mês", valor: formatBRL(e.monthlyPrice) },
+      ...(e.limpezaEstadia ? [{ rotulo: "Limpeza durante a estadia", valor: textoLimpezaEstadia(e.limpezaEstadia) }] : []),
       { rotulo: "Caução", valor: "Paga uma vez, devolvida no fim (valor no contrato)" },
       { rotulo: "Taxa da Viva para você", valor: formatBRL(0) },
     ],

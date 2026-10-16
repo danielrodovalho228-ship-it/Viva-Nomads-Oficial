@@ -57,7 +57,7 @@ export function PriceCard({ property, actions }: { property: Property; actions: 
       <ul data-testid="taxas-itemizadas" className="mt-3 space-y-2 rounded-lg bg-surface-2 px-3 py-3 text-sm">
         <li className="text-xs font-semibold uppercase tracking-wide text-muted">Fora do total mensal</li>
         {linhasDeTaxas(property)
-          .filter((l) => ["preparacao", "saida", "pet", "caucao"].includes(l.chave))
+          .filter((l) => ["preparacao", "saida", "pet", "limpeza", "caucao"].includes(l.chave))
           .map((l) => (
             <li key={l.chave} data-taxa={l.chave} className={l.chave === "caucao" ? "border-t border-line pt-2" : undefined}>
               <div className="flex items-baseline justify-between gap-3 text-ink">

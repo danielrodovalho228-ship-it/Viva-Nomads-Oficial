@@ -10,9 +10,11 @@ import {
   Landmark,
   FileCheck,
   HandCoins,
+  Sparkles,
 } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { linhasRegrasPets } from "@/lib/anuncio/pets-regras";
+import { textoLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 
 /**
  * Regras da estadia: duração, mobília, animais, fumante, hóspedes, check-in/out
@@ -41,6 +43,8 @@ export function StayRules({ property }: { property: Property }) {
             ? "Aceita animais"
             : "Não aceita animais",
     });
+  if (property.limpezaEstadia)
+    rows.push({ icon: Sparkles, label: "Limpeza durante a estadia", value: textoLimpezaEstadia(property.limpezaEstadia) });
   if (property.smokingAllowed !== undefined)
     rows.push({ icon: Cigarette, label: "Fumante", value: property.smokingAllowed ? "Permitido fumar" : "Não é permitido fumar" });
   if (property.maxGuests !== undefined)

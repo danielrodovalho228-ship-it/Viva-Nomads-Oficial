@@ -70,6 +70,7 @@ import {
   type BlocoComDatas,
 } from "@/lib/contrato-blocos";
 import { normalizarRegrasPets } from "@/lib/anuncio/pets-regras";
+import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 import { validarGarantia, type GarantiaContrato } from "@/lib/guarantees";
 
 type ActionResult = { ok: boolean; demo?: boolean; id?: string; error?: string };
@@ -354,6 +355,8 @@ export interface PropertyInput {
   petsAllowed?: boolean;
   /** Regras de pets do proprietário (validadas no servidor; requer migração 0119). */
   petsRegras?: unknown;
+  /** Pacote de limpeza durante a estadia; validado no servidor (0144). */
+  limpezaEstadia?: unknown;
   smokingAllowed?: boolean;
   childrenAllowed?: boolean;
   maxGuests?: number;
@@ -794,6 +797,16 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
     await supabase.from("properties").update({ pets_regras: regras }).eq("id", id).eq("owner_id", user.id);
   } catch {
     /* migração 0119 ausente — segue com o aceite geral */
+  }
+
+  // Pacote de limpeza durante a estadia (0144): validado aqui; sem pacote válido grava null.
+  if ("limpezaEstadia" in input) {
+    try {
+      const pacote = normalizarLimpezaEstadia(input.limpezaEstadia);
+      await supabase.from("properties").update({ limpeza_estadia: pacote }).eq("id", id).eq("owner_id", user.id);
+    } catch {
+      /* migração 0144 ausente — segue sem o pacote */
+    }
   }
 
   // Re-sincroniza tabelas filhas: apaga as atuais e regrava as do formulário.

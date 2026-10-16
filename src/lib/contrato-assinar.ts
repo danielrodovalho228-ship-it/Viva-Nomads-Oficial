@@ -5,6 +5,7 @@
 */
 import { createHash } from "node:crypto";
 import { MARCA_MINUTA } from "./contrato-etapas.ts";
+import { limpezaDoResumo, linhaLimpezaResumo, type LimpezaEstadia } from "./anuncio/limpeza-estadia.ts";
 import { linhasRegrasPets, linhaValorPetCandidatura, normalizarRegrasPets, type RegrasPets } from "./anuncio/pets-regras.ts";
 
 export type PapelContrato = "proprietario" | "inquilino";
@@ -28,6 +29,8 @@ export interface DadosResumo {
   petsRegras?: RegrasPets | null;
   /** Pets da ficha do inquilino na candidatura: sem pet, a linha "Valor pet" não aparece. */
   qtdPetsCandidatura?: number;
+  /** Pacote de limpeza durante a estadia (ordem 4c74ac38 item 3): a quantidade por mês entra no resumo. */
+  limpezaEstadia?: LimpezaEstadia | null;
 }
 
 /** Linhas do resumo mostradas na tela e usadas no hash (mesma fonte: o que a pessoa lê é o que ela assina). */
@@ -50,6 +53,7 @@ export function resumoContrato(d: DadosResumo): string[] {
     `Ocupantes: ${d.ocupantes}`,
     ...(d.petsRegras ? [`Pets — ${linhasRegrasPets(d.petsRegras, { semValorPet: true }).join("; ")}`] : []),
     ...(valorPet ? [valorPet] : []),
+    ...(d.limpezaEstadia ? [linhaLimpezaResumo(d.limpezaEstadia)] : []),
     `Registrado em: ${d.criadoEm}`,
   ];
 }
@@ -66,6 +70,12 @@ export function petsRegrasDoResumo(d: {
   congeladas: unknown;
 }): RegrasPets | null {
   return normalizarRegrasPets(d.algumaAssinatura ? d.congeladas : d.vivas);
+}
+
+/** Pacote de limpeza do resumo: ao vivo antes da 1ª assinatura, congelado (dentro de pets_regras_congeladas) depois. */
+export function limpezaDoContrato(d: { algumaAssinatura: boolean; viva: unknown; congeladas: unknown }): LimpezaEstadia | null {
+  const c = d.congeladas && typeof d.congeladas === "object" ? (d.congeladas as Record<string, unknown>).limpezaEstadia : null;
+  return limpezaDoResumo({ algumaAssinatura: d.algumaAssinatura, viva: d.viva, congelada: c });
 }
 
 export function hashResumo(linhas: string[]): string {
