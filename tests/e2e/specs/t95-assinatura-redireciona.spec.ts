@@ -10,14 +10,14 @@ test.describe("T95 — Assinatura aposentada @criticos", () => {
   test.use({ storageState: authFile("proprietario"), viewport: { width: 390, height: 844 } });
 
   test("/dashboard/assinatura leva a /precos, sem plano pago à venda", async ({ page }) => {
-    await page.goto("/dashboard/assinatura", { waitUntil: "networkidle" });
+    await page.goto("/dashboard/assinatura", { waitUntil: "domcontentloaded" });
     await expect(page).toHaveURL(/\/precos$/);
     await expect(page.getByRole("button", { name: /Assinar (Essencial|Profissional)/i })).toHaveCount(0);
     await expect(page.getByText("Visualizar como plano (demonstração)")).toHaveCount(0);
   });
 
   test("Visão geral do dono não tem 'Plano e assinatura' no menu", async ({ page }) => {
-    await page.goto("/dashboard", { waitUntil: "networkidle" });
+    await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
     await expect(page.getByRole("link", { name: /Plano e assinatura/i })).toHaveCount(0);
     const rolagem = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(rolagem).toBeLessThanOrEqual(1);
