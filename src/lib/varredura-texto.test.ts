@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { CAUCAO_FRASE } from "./faixas.ts";
-import { achadosNasMetas, achadosNoTexto, recursoFicticioDoLab, rotaVarreLeis, rotaVarreTermos, rotaVarreVocabulario } from "./varredura-texto.ts";
+import { achadosNasMetas, achadosNoTexto, recursoFicticioDoLab, rotaVarreLeis, rotaVarreTermos, rotaVarreVocabulario, semTabelaComparativa } from "./varredura-texto.ts";
 
 test("tela limpa não tem achados", () => {
   assert.deepEqual(achadosNoTexto("Valor mensal R$ 3.000. Entrada em 12/11/2026. Código 1a2b3c4d. Aguardando aceite. Conferência de saída."), []);
@@ -82,4 +82,11 @@ test("tela de publicar imóvel: citação de lei é achado; nas outras telas nã
   assert.equal(achadosNoTexto(texto, { leis: true }).length, 3);
   assert.deepEqual(achadosNoTexto(texto), []);
   assert.deepEqual(achadosNoTexto("Publique seu imóvel mobiliado em 5 passos.", { leis: true }), []);
+});
+
+test("tabela comparativa (compare-precos.ts) é a única exceção: o termo dela não reprova, o mesmo termo fora dela sim", () => {
+  const daTabela = "Diferenciais\nSem faxina nem check-in toda semana\nNenhuma taxa para quem vem morar";
+  assert.deepEqual(achadosNoTexto(semTabelaComparativa(daTabela), { vocabulario: true }), []);
+  const fora = "Faça o check-in pelo app";
+  assert.equal(achadosNoTexto(semTabelaComparativa(fora), { vocabulario: true }).length, 1);
 });
