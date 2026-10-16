@@ -796,8 +796,8 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
               <h2 className="font-title text-lg font-bold text-ink">Serviços adicionais</h2>
               <p className="mt-1 text-sm text-muted">
                 Opcionais e <strong>combináveis</strong> — <strong>não são garantia</strong>. A
-                plataforma intermedeia e roteia o pagamento ao prestador;{" "}
-                <strong>não executa o serviço</strong>. Você pode seguir sem nenhum.
+                Viva não recebe esse valor: você contrata e paga direto ao prestador parceiro;{" "}
+                <strong>a Viva não executa o serviço</strong>. Você pode seguir sem nenhum.
               </p>
             </div>
 
