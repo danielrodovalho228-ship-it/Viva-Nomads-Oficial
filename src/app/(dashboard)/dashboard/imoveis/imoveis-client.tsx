@@ -49,7 +49,7 @@ export function MyPropertiesClient({ properties: real, prontidao = {} }: { prope
 
   return (
     <>
-      <PageTitle
+      <PageTitle capa="imoveis"
         title="Meus imóveis"
         subtitle="Gerencie seus anúncios e o status de publicação."
         action={

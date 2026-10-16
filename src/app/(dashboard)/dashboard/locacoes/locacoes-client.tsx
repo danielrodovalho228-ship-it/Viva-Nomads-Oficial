@@ -43,7 +43,7 @@ export function LocacoesClient({
 
   return (
     <>
-      <PageTitle
+      <PageTitle capa="locacoes"
         title="Minhas locações"
         subtitle="Suas estadias e a avaliação do proprietário."
         action={demoOn ? <DemoBadge /> : undefined}

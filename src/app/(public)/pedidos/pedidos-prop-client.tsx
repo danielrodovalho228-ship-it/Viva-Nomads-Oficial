@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Megaphone, ShieldCheck, Home, Plus, Info, Check, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PageTitle } from "@/components/dashboard/primitives";
 import { formatBRL, cn, dataBR } from "@/lib/utils";
 import {
   motivoLabel,
@@ -99,23 +100,19 @@ export function PedidosProprietarioClient({
     respostas.find((r) => r.pedido_id === pedidoId);
 
   return (
-    <div className="container-page py-10">
-      <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="font-title text-2xl font-bold text-ink sm:text-3xl">Pedidos de moradia</h1>
-          <p className="mt-1 text-muted">
-            Inquilinos dizem o que precisam. Responda com um imóvel seu — a conversa acontece pela
-            plataforma.
-          </p>
-        </div>
-      </div>
+    <div>
+      <PageTitle
+        capa="pedidos-cidade"
+        title="Pedidos de moradia"
+        subtitle="Quem procura casa conta o que precisa. Responda com um imóvel seu — a conversa acontece pela plataforma."
+      />
 
       {todos.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-line bg-white p-12 text-center">
           <Megaphone className="mx-auto h-10 w-10 text-blue-500" />
           <h3 className="mt-4 font-title text-lg font-bold text-ink">Nenhum pedido ativo por aqui</h3>
           <p className="mx-auto mt-1 max-w-md text-muted">
-            Quando um inquilino publicar um pedido na cidade dos seus imóveis, ele aparece aqui.
+            Quando alguém publicar um pedido na cidade dos seus imóveis, ele aparece aqui.
           </p>
         </div>
       ) : (
@@ -170,7 +167,7 @@ export function PedidosProprietarioClient({
             </p>
           )}
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid auto-rows-fr gap-4 sm:grid-cols-2">
           {lista.map((p) => {
             const naCidade = myProperties.filter((m) => chaveCidade(m.city) === chaveCidade(p.cidade));
             // O imóvel que combina (ou o do link do e-mail) vem primeiro no seletor.
@@ -184,7 +181,7 @@ export function PedidosProprietarioClient({
             return (
               <article
                 key={p.id}
-                className="relative overflow-hidden rounded-2xl border border-line bg-white p-5 pl-6"
+                className="relative h-full overflow-hidden rounded-2xl border border-line bg-white p-5 pl-6"
               >
                 {/* Barra dourada à esquerda (padrão do protótipo) */}
                 <span className="absolute inset-y-0 left-0 w-1.5 bg-gold" />

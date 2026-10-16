@@ -149,7 +149,7 @@ export function ContratosClient({
 
   return (
     <>
-      <PageTitle
+      <PageTitle capa="contratos"
         title="Contratos & blocos"
         subtitle="Acompanhe cada contrato, seus blocos e registre os recebimentos."
         action={demoOn ? <DemoBadge /> : undefined}
@@ -378,7 +378,7 @@ function BlocoRow({
         </span>
       </div>
 
-      <div className="mt-3 grid gap-2 text-xs sm:grid-cols-3">
+      <div className="mt-3 grid grid-cols-2 gap-2 text-xs lg:grid-cols-4">
         <div className="rounded-lg bg-surface-2 px-3 py-2">
           <p className="text-muted">Valor do bloco</p>
           <p className="font-medium text-ink">{formatBRL(bloco.valor)}</p>
@@ -404,6 +404,12 @@ function BlocoRow({
           <p className={cn("font-medium", quitado ? "text-forest" : "text-ink")}>
             {formatBRL(pago)}{" "}
             {quitado && <Check className="inline h-3.5 w-3.5" />}
+          </p>
+        </div>
+        <div className="rounded-lg bg-surface-2 px-3 py-2">
+          <p className="text-muted">Em aberto</p>
+          <p className={cn("font-medium", quitado ? "text-forest" : "text-ink")}>
+            {formatBRL(Math.max(0, bloco.valor - pago))}
           </p>
         </div>
       </div>

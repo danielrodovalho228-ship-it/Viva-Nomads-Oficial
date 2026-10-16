@@ -78,7 +78,7 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
 
   return (
     <>
-      <PageTitle
+      <PageTitle capa="leads"
         title="Interessados"
         subtitle="Inquilinos interessados. Você vê o necessário para decidir; ao aprovar, responda pela plataforma — onde a conversa fica registrada e protegida."
         action={demoOn ? <DemoBadge /> : undefined}

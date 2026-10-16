@@ -93,7 +93,7 @@ export default function VerificationPage() {
 
   return (
     <div className="w-full">
-      <PageTitle title={C.title} subtitle={C.subtitle} />
+      <PageTitle capa="verificacao" title={C.title} subtitle={C.subtitle} />
       {demo ? <DemoFlow copy={C} mode={mode} /> : <RealNaoVerificado copy={C} perfil={perfilCopy} />}
     </div>
   );
@@ -262,7 +262,7 @@ function DemoFlow({
               <VerificationBadge />
             </div>
 
-            <div className="mt-4 grid gap-2 sm:grid-cols-3">
+            <div className="mt-4 grid gap-2">
               <Item icon={Fingerprint} label="Identidade" ok={result.identity} />
               <Item icon={ScanFace} label="Prova de vida" ok={result.liveness} />
               <Item icon={FileCheck2} label="Documento" ok={result.document} />

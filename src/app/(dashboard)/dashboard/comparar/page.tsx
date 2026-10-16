@@ -19,7 +19,7 @@ export default function ComparePage() {
     return (
       <>
         <FavoritosTabs />
-        <PageTitle title="Comparar imóveis" />
+        <PageTitle capa="comparar" title="Comparar imóveis" />
         <EmptyState
           icon={GitCompare}
           title="Favorite ao menos 2 imóveis"
@@ -81,7 +81,7 @@ export default function ComparePage() {
   return (
     <>
       <FavoritosTabs />
-      <PageTitle
+      <PageTitle capa="comparar"
         title="Comparar imóveis"
         subtitle={`${items.length} imóveis · compatibilidade com seu perfil de trabalho`}
       />

@@ -27,7 +27,7 @@ export default function AccountPage() {
         <ContaMenu />
       </div>
       <div className="web-only">
-        <PageTitle title="Conta" subtitle="Seus dados pessoais e preferências." />
+        <PageTitle capa="conta" title="Conta" subtitle="Seus dados pessoais e preferências." />
         <DadosPessoais />
         <DocumentoPessoa />
         <PetsFicha />
