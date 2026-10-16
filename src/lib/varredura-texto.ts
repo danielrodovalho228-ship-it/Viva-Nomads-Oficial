@@ -59,3 +59,18 @@ export function achadosNoTexto(texto: string, opcoes: { termos?: boolean } = {})
   if (q) out.push(`valor quebrado "${q[1]}": …${trecho(texto, q.index)}…`);
   return [...new Set(out)];
 }
+
+/**
+ * Foto de imóvel semeado pelo laboratório sem upload real (https://lab.vivanomads.test/…): o Next recusa o host
+ * (400 em /_next/image). Não é defeito do site, e o t48 não deve acusá-la.
+ */
+export function recursoFicticioDoLab(alvo: string | null | undefined): boolean {
+  if (!alvo) return false;
+  try {
+    const u = new URL(alvo);
+    if (u.pathname !== "/_next/image") return false;
+    return new URL(u.searchParams.get("url") ?? "").hostname === "lab.vivanomads.test";
+  } catch {
+    return false;
+  }
+}
