@@ -35,3 +35,10 @@ test("F42: os equivalentes neutros existem", () => {
     assert.ok(f.includes(frase), `falta: ${frase}`);
   }
 });
+
+test("achado #596: dano em voz neutra e taxa lida da constante única (F35)", () => {
+  assert.ok(!f.includes("você responde pelos danos"));
+  assert.ok(f.includes("o inquilino responde pelos danos que causar"));
+  assert.ok(!f.includes("A comissão é cobrada"));
+  assert.ok(f.includes("{TEXTO_RENOVACAO_COMISSAO}"));
+});

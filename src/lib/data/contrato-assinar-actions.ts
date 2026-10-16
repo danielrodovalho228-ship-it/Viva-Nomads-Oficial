@@ -14,6 +14,7 @@ import {
   motivoNaoPodeAssinar,
   papelNoContrato,
   resumoContrato,
+  linhasParaHash,
   type PapelContrato,
 } from "@/lib/contrato-assinar";
 import { qtdPetsCongelada } from "@/lib/anuncio/pets-regras";
@@ -48,7 +49,7 @@ export interface ContratoParaAssinar {
   assinadoInquilinoEm: string | null;
   aviso: string;
   euAssinei: boolean;
-  /** F37: data de início da estadia (1º bloco), AAAA-MM-DD; fora do resumo assinado para não mudar o hash. */
+  /** F37: data de início da estadia (1º bloco), AAAA-MM-DD; entra no resumo; se a outra parte assinou antes disso, o hash segue o texto dela (linhasParaHash). */
   inicioEstadia: string | null;
   /** Entrada, conferência e saída com dia e horário (vazio se o contrato ainda não tem blocos). */
   linhaDoTempo: EtapaEstadia[];
@@ -287,13 +288,22 @@ export async function assinarContrato(input: {
   const ip = (h.get("x-forwarded-for") ?? "").split(",")[0]?.trim().slice(0, 64) || null;
   const agora = new Date().toISOString();
 
+  const { data: assOutra } = await admin
+    .from("contrato_assinaturas")
+    .select("hash_documento")
+    .eq("contrato_id", c.id)
+    .neq("user_id", user.id)
+    .limit(1)
+    .maybeSingle();
+  const hashDaOutraParte = (assOutra as { hash_documento?: string | null } | null)?.hash_documento ?? null;
+
   const { error: errReg } = await admin.from("contrato_assinaturas").insert({
     contrato_id: c.id,
     user_id: user.id,
     papel: visao.papel,
     assinado_em: agora,
     ip,
-    hash_documento: hashResumo(visao.resumo),
+    hash_documento: hashResumo(linhasParaHash(visao.resumo, hashDaOutraParte)),
   });
   if (errReg) return { ok: false, error: "Não foi possível registrar a assinatura. Tente de novo." };
 

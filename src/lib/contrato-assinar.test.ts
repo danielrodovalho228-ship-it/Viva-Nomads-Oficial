@@ -8,6 +8,7 @@ import {
   assuntoAvisoOutraParte,
   avisoAssinatura,
   hashResumo,
+  linhasParaHash,
   motivoNaoPodeAssinar,
   papelNoContrato,
   podeAvaliarLocacao,
@@ -130,4 +131,15 @@ test("pets congelados no contrato: lê a quantidade só se válida", () => {
   for (const ruim of [null, {}, { qtdPetsCandidatura: 0 }, { qtdPetsCandidatura: 9 }, { qtdPetsCandidatura: "x" }, "a"]) {
     assert.equal(qtdPetsCongelada(ruim), 0);
   }
+});
+
+test("achado #553: quem assina depois de quem assinou sem 'Início da estadia' fica com o mesmo hash", () => {
+  const base = { contratoId: "c1", imovel: "Apto", aluguelMensal: 2500, prazoDias: 90, ocupantes: 1, criadoEm: "2026-10-01" };
+  const sem = resumoContrato(base);
+  const com = resumoContrato({ ...base, inicioEstadia: "2026-11-01" });
+  const hashAntigo = hashResumo(sem);
+  assert.equal(hashResumo(linhasParaHash(com, hashAntigo)), hashAntigo);
+  // sem assinatura anterior, ou com hash novo, nada muda
+  assert.deepEqual(linhasParaHash(com, null), com);
+  assert.deepEqual(linhasParaHash(com, hashResumo(com)), com);
 });
