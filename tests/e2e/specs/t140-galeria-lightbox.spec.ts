@@ -2,10 +2,12 @@ import { test, expect } from "@playwright/test";
 
 /**
  * T140 — Galeria: toda foto abre o lightbox na própria posição (ordem d1b76e6b, P0 16/10).
- * ube-001 tem 8 fotos: mosaico mostra 5 e o "+3 mais" abre na 6ª.
+ * ube-001 tem várias fotos: mosaico mostra 5 e o "+N mais" abre na 6ª.
  */
 const IMOVEL = "/imoveis/ube-001";
-const TOTAL = 8;
+// O anúncio de exemplo cresceu (8 → 20 fotos): o spec confere a POSIÇÃO e que há ao menos 8,
+// sem fixar o total (ordem 75553f0a: specs desatualizadas).
+const posicao = (n: number) => new RegExp(`^${n} / (\\d{1,3})$`);
 
 for (const largura of [1280, 1920]) {
   test.describe(`${largura} px`, () => {
@@ -36,15 +38,15 @@ for (const largura of [1280, 1920]) {
       ["galeria-ver-todas", 1],
     ];
     for (const [id, esperado] of casos) {
-      test(`${id} abre em ${esperado} / ${TOTAL}, navega e fecha`, async ({ page }) => {
+      test(`${id} abre em ${esperado}, navega e fecha`, async ({ page }) => {
         await page.goto(IMOVEL, { waitUntil: "networkidle" });
         await page.getByTestId(id).locator("visible=true").first().click();
         const contador = page.getByTestId("galeria-contador");
-        await expect(contador).toHaveText(`${esperado} / ${TOTAL}`);
+        await expect(contador).toHaveText(posicao(esperado));
         await page.keyboard.press("ArrowRight");
-        await expect(contador).toHaveText(`${(esperado % TOTAL) + 1} / ${TOTAL}`);
+        await expect(contador).toHaveText(posicao(esperado + 1));
         await page.keyboard.press("ArrowLeft");
-        await expect(contador).toHaveText(`${esperado} / ${TOTAL}`);
+        await expect(contador).toHaveText(posicao(esperado));
         await page.keyboard.press("Escape");
         await expect(page.getByTestId("galeria-lightbox")).toHaveCount(0);
       });
@@ -59,11 +61,11 @@ test.describe("390 px", () => {
     await page.goto(IMOVEL, { waitUntil: "networkidle" });
     await page.getByTestId("galeria-tile-0").locator("visible=true").first().click();
     const contador = page.getByTestId("galeria-contador");
-    await expect(contador).toHaveText(`1 / ${TOTAL}`);
+    await expect(contador).toHaveText(posicao(1));
     await page.getByRole("button", { name: "Próxima foto" }).click();
-    await expect(contador).toHaveText(`2 / ${TOTAL}`);
+    await expect(contador).toHaveText(posicao(2));
     await page.getByRole("button", { name: "Foto anterior" }).click();
-    await expect(contador).toHaveText(`1 / ${TOTAL}`);
+    await expect(contador).toHaveText(posicao(1));
     await page.getByRole("button", { name: "Fechar" }).click();
     await expect(page.getByTestId("galeria-lightbox")).toHaveCount(0);
   });
