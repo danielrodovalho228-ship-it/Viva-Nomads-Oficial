@@ -20,21 +20,21 @@ import {
 } from "lucide-react";
 import { useViewMode, primeiroNomeExibicao } from "@/lib/roles";
 import { getLatestDraft } from "@/lib/data/actions";
-import { StatCard, Panel, EmptyState } from "@/components/dashboard/primitives";
-import { DashboardBanner } from "@/components/dashboard/banner";
+import { StatCard, Panel, EmptyState, PageTitle } from "@/components/dashboard/primitives";
 import { PropertyRow } from "@/components/dashboard/property-row";
 import { TenantOnboarding } from "@/components/dashboard/tenant-onboarding";
 import { RoleWelcomeModal } from "@/components/dashboard/role-welcome-modal";
 import { ButtonLink, buttonClasses } from "@/components/ui/button";
 import { useProperties } from "@/lib/use-properties";
 import { checklistAnuncio, type ChecklistAnuncio } from "@/lib/anuncio/prontidao";
+import { itensDoChecklist } from "@/lib/anuncio/checklist-compacto";
 import type { ScoreAnuncio } from "@/lib/anuncio/score";
 import { imoveisPublicados } from "@/lib/anuncio/publicados";
 import { kpiInteressados } from "@/lib/painel/kpi-interessados";
 import type { Property } from "@/lib/types";
 import { useDashDemo, DemoBadge, useDisplayUser } from "@/lib/demo/demo-mode";
 import { DEMO_PROPERTIES, DEMO_KPIS } from "@/lib/demo/seed";
-import { PHOTOS, coverPhoto } from "@/lib/media";
+import { coverPhoto } from "@/lib/media";
 import { formatBRL } from "@/lib/utils";
 import { ReadyToLiveBadge } from "@/components/ui/badge";
 
@@ -118,10 +118,8 @@ function OwnerDashboard({
   return (
     <>
       {draft && <DraftPendingCard draft={draft} className="mb-6" />}
-      <DashboardBanner
-        className="mb-6"
-        image={PHOTOS.dashOwner}
-        alt="Sala de imóvel mobiliado preparada para anúncio"
+      <PageTitle
+        capa="imoveis"
         title={`Olá${name ? `, ${name}` : "!"} 👋`}
         subtitle="Prepare seu imóvel, publique e fale com inquilinos qualificados."
         action={
@@ -332,6 +330,8 @@ function DraftPendingCard({
   className?: string;
 }) {
   const check = !draft.pronto ? draft.checklist : null;
+  const [expandido, setExpandido] = useState(false);
+  const lista = check ? itensDoChecklist(check.itens, expandido) : null;
   return (
     <div className={`rounded-2xl border border-champagne bg-champagne/10 p-4 ${className ?? ""}`} data-testid="anuncio-andamento">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -402,7 +402,7 @@ function DraftPendingCard({
       )}
       {check && (
         <ul className="mt-3 grid gap-1.5 sm:grid-cols-2" data-testid="anuncio-checklist">
-          {check.itens.map((i) => (
+          {lista?.visiveis.map((i) => (
             <li key={i.key}>
               {i.ok ? (
                 <span className="flex min-h-11 items-center gap-2 rounded-xl px-2 text-sm text-ink" data-testid="check-feito">
@@ -443,6 +443,25 @@ function DraftPendingCard({
             </li>
           ))}
         </ul>
+      )}
+      {check && (lista?.ocultos ?? 0) > 0 && (
+        <button
+          type="button"
+          data-testid="checklist-ver-todos"
+          onClick={() => setExpandido(true)}
+          className="mt-2 inline-flex min-h-11 items-center px-2 text-sm font-medium text-forest underline-offset-2 hover:underline"
+        >
+          Ver todos os itens ({lista?.ocultos} a mais)
+        </button>
+      )}
+      {check && expandido && (
+        <button
+          type="button"
+          onClick={() => setExpandido(false)}
+          className="mt-2 inline-flex min-h-11 items-center px-2 text-sm font-medium text-forest underline-offset-2 hover:underline"
+        >
+          Mostrar menos
+        </button>
       )}
     </div>
   );
@@ -487,10 +506,8 @@ function OwnerFunnel({ name, draft }: { name: string; draft?: RascunhoPendente |
   return (
     <>
       {draft && <DraftPendingCard draft={draft} className="mb-6" />}
-      <DashboardBanner
-        className="mb-6"
-        image={PHOTOS.dashOwner}
-        alt="Sala de imóvel mobiliado preparada para anúncio"
+      <PageTitle
+        capa="imoveis"
         title={`Bem-vindo${name ? `, ${name}` : ""}! 👋`}
         subtitle="Do primeiro anúncio ao contrato fechado em 4 passos."
         action={
