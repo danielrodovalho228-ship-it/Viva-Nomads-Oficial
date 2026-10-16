@@ -4,6 +4,7 @@
   usa a MESMA regra (passaNoPainel para preço/quartos/pet/home office; texto de local
   para bairro/cidade). Sem número inventado: atalho com 0 imóveis some.
 */
+import { comodidadesDaUrl } from "./filtro-comodidades.ts";
 import { FILTROS_PAINEL_VAZIOS, passaNoPainel } from "./painel-filtros.ts";
 
 type ImovelContavel = Parameters<typeof passaNoPainel>[0] & { neighborhood: string; city: string };
@@ -21,6 +22,7 @@ export function contarAtalho(href: string, imoveis: ImovelContavel[]): number {
     minBedrooms: quartos,
     petsOnly: sp.get("pet") === "1",
     homeOfficeOnly: sp.get("homeoffice") === "1",
+    comodidades: comodidadesDaUrl(sp.get("comod")),
   };
   return imoveis.filter((p) => {
     if (local && !`${p.neighborhood} ${p.city}`.toLowerCase().includes(local)) return false;

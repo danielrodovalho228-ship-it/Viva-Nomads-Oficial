@@ -25,3 +25,17 @@ test("#a875278a: atalho com 0 imóveis some e os demais trazem o total real", ()
   assert.equal(vis[0].total, 1);
   assert.deepEqual(atalhosComContagem(ATALHOS_CATEGORIA, []), []);
 });
+
+test("#de7b27fd: 6ª caixa da home (Garagem) usa o filtro real da /buscar e conta de verdade", () => {
+  const garagem = ATALHOS_CATEGORIA.find((a) => a.rotulo === "Com garagem");
+  assert.ok(garagem, "atalho Com garagem existe");
+  assert.equal(garagem.href, "/buscar?comod=garagem");
+  assert.equal(ATALHOS_CATEGORIA.length % 2, 0, "grade com número par de caixas");
+  const lista = [
+    { ...base, monthlyPrice: 2000, bedrooms: 1, parkingSpots: 1 },
+    { ...base, monthlyPrice: 2000, bedrooms: 1, comodidadesFiltro: ["garagem"] },
+    { ...base, monthlyPrice: 2000, bedrooms: 1 },
+  ];
+  assert.equal(contarAtalho(garagem.href, lista), 2);
+  assert.equal(contarAtalho(garagem.href, [{ ...base, monthlyPrice: 2000, bedrooms: 1 }]), 0);
+});

@@ -9,4 +9,6 @@ export const ATALHOS_CATEGORIA = [
   { rotulo: "3+ quartos", icone: "BedDouble", href: "/buscar?quartos=3" },
   // "Perto do HC-UFU/Umuarama" usa o texto de local que a /buscar já lê (bairro/cidade).
   { rotulo: "Perto do HC-UFU/Umuarama", icone: "MapPin", href: "/buscar?local=Umuarama" },
+  // 6ª caixa (ordem de7b27fd): "Com garagem" usa o filtro de comodidade que a /buscar já lê (?comod=garagem).
+  { rotulo: "Com garagem", icone: "CarFront", href: "/buscar?comod=garagem" },
 ] as const;

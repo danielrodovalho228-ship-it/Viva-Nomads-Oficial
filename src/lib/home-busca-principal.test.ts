@@ -44,6 +44,7 @@ test("atalhos por categoria usam filtros que a /buscar realmente lê da URL", as
     homeoffice: /on\("homeoffice"\)/,
     quartos: /num\("quartos"\)/,
     local: /sp\.get\("local"\)/,
+    comod: /sp\.get\("comod"\)/,
   };
   for (const a of ATALHOS_CATEGORIA) {
     const u = new URL(a.href, "https://x");
