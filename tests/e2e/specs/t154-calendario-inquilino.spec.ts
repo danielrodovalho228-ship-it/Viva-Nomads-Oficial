@@ -2,11 +2,11 @@ import { test, expect } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, novaSenha, novoSufixo, tornarContratoVigente } from "../fixtures/laboratorio";
 
 /**
- * T153 — ordem 8195c772: o calendário do proprietário mostra a estadia com contrato como PÍLULA com o
+ * T154 — ordem 8195c772: o calendário do proprietário mostra a estadia com contrato como PÍLULA com o
  * primeiro nome do inquilino (foto ou iniciais). Candidatura pendente nunca mostra identidade.
  * Roda no laboratório: o próprio teste cria dono, dois inquilinos, imóvel, um contrato vigente e um pedido pendente.
  */
-test.describe("T153 — Calendário do proprietário: pílula da estadia", () => {
+test.describe("T154 — Calendário do proprietário: pílula da estadia", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial" });
 
@@ -68,7 +68,7 @@ test.describe("T153 — Calendário do proprietário: pílula da estadia", () =>
       // Grade de 7 colunas intacta: sem rolagem lateral.
       const sobra = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       expect(sobra).toBeLessThanOrEqual(0);
-      await page.screenshot({ path: `test-results/t153-calendario-${largura}.png`, fullPage: false });
+      await page.screenshot({ path: `test-results/t154-calendario-${largura}.png`, fullPage: false });
       await page.context().close();
     });
   }
