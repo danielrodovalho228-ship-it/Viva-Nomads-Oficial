@@ -443,7 +443,8 @@
         "t14-app-mode",
         "t17-conta-salvar",
         "t36-cadastro-ponta-a-ponta",
-        "t92-documento-secao"
+        "t92-documento-secao",
+        "t129-motivo-estadia-perfil"
       ]
     },
     "/dashboard/conta/[secao]": {

@@ -36,6 +36,8 @@ import { PropertyCard } from "@/components/property-card";
 import { PropertyGallery } from "@/components/property-gallery";
 import { VideoWalkthrough } from "@/components/video-walkthrough";
 import { requestLead } from "@/lib/data/actions";
+import { getMeusDados } from "@/lib/data/perfil-actions";
+import { MOTIVOS, isMotivo } from "@/lib/pedidos/pedidos";
 import { marcarVisto } from "@/lib/marcas/actions";
 import { useMarcasStore } from "@/lib/marcas/store";
 import { CHAVE_ULTIMA_BUSCA, ultimaBuscaParaPedido } from "@/lib/marcas/regra";
@@ -74,6 +76,8 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
   const [candidatouSe, setCandidatouSe] = useState(false);
   // F37: quando a pessoa quer entrar (opcional); o Fechamento do dono abre com essa data.
   const [inicioDesejado, setInicioDesejado] = useState("");
+  // Motivo da estadia (lista única MOTIVOS): vem do perfil, editável; o servidor revalida.
+  const [motivoEstadia, setMotivoEstadia] = useState("");
   // Composer de dúvida/visita: o inquilino escreve a mensagem de verdade.
   const [composeKind, setComposeKind] = useState<"duvida" | "visita" | null>(null);
   const [composeText, setComposeText] = useState("");
@@ -116,11 +120,25 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
     }
   }, []);
 
+  // Candidatura pré-preenchida com o motivo do perfil (deslogado: sem sessão, fica vazio).
+  useEffect(() => {
+    if (isExemplo(property)) return;
+    let vivo = true;
+    void getMeusDados()
+      .then((d) => {
+        if (vivo && d && isMotivo(d.motivoEstadia)) setMotivoEstadia((atual) => atual || d.motivoEstadia);
+      })
+      .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, [property]);
+
   async function handleLead(kind: LeadKind, note?: string) {
     if (kind === "candidatura") registrarEvento("iniciar_candidatura", { imovelId: property.id, cidade: property.city });
     setPending(kind);
     setLeadErro(null);
-    const r = await requestLead(property.id, property.title, kind, note, kind === "candidatura" && inicioDesejado ? inicioDesejado : undefined).catch(() => null);
+    const r = await requestLead(property.id, property.title, kind, note, kind === "candidatura" && inicioDesejado ? inicioDesejado : undefined, kind === "candidatura" ? motivoEstadia : undefined).catch(() => null);
     setPending(null);
     if (r?.needsAuth) {
       // Sem sessão: leva ao login e volta para este anúncio depois de entrar.
@@ -223,6 +241,22 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
           onChange={(e) => setInicioDesejado(e.target.value)}
           className="h-11 w-full rounded-xl border border-line bg-white px-3 text-base text-ink"
         />
+      </label>
+      <label className="flex flex-col gap-1 text-xs font-medium text-ink">
+        Motivo da estadia (opcional)
+        <select
+          data-testid="candidatura-motivo"
+          value={motivoEstadia}
+          onChange={(e) => setMotivoEstadia(e.target.value)}
+          className="h-11 w-full rounded-xl border border-line bg-white px-3 text-base text-ink"
+        >
+          <option value="">Prefiro não informar</option>
+          {MOTIVOS.map((m) => (
+            <option key={m.key} value={m.key}>
+              {m.label}
+            </option>
+          ))}
+        </select>
       </label>
       <Button
         variant="gold"
