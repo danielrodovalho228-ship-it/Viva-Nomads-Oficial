@@ -1,3 +1,4 @@
+import { descricaoCidade } from "@/lib/cidades-meta";
 import { isExemplo } from "@/lib/demo-listing";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -25,7 +26,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { cidade } = await params;
   const name = cityFromSlug(cidade);
   const title = `Imóveis mobiliados mensais em ${name}`;
-  const description = `Alugue imóveis mobiliados para estadias de 30 a 180 dias em ${name}. Para profissionais em transição: executivos, médicos, famílias e nômades digitais.`;
+  const description = descricaoCidade(name);
   return {
     title,
     description,
