@@ -6,6 +6,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
+  erroTamanhoLaudo,
   JANELA_ENTRADA_HORAS,
   decidirResposta,
   mesclarItens,
@@ -181,4 +182,10 @@ test("tela: depois de confirmar ou contestar, a resposta entra na tela sem esper
   const acoes = readFileSync("src/lib/data/conferencia-actions.ts", "utf8");
   const trecho = acoes.slice(acoes.indexOf("export async function responderConferencia"), acoes.indexOf("export interface ConferenciaView"));
   assert.match(trecho, /resposta:/);
+});
+
+test("laudo: o tamanho é conferido antes do envio (acima de 15 MB nem sobe)", () => {
+  assert.equal(erroTamanhoLaudo(15 * 1024 * 1024), null);
+  assert.equal(erroTamanhoLaudo(15 * 1024 * 1024 + 1), "O laudo deve ter até 15 MB.");
+  assert.equal(erroTamanhoLaudo(0), "Arquivo vazio.");
 });

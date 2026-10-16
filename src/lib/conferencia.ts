@@ -86,10 +86,18 @@ function tipoFoto(b: Uint8Array): { tipo: string; ext: string } | null {
   return null;
 }
 
+export const ERRO_LAUDO_GRANDE = "O laudo deve ter até 15 MB.";
+
+/** Confere o tamanho antes de enviar: acima do limite do corpo das Server Actions o Next recusa sem chegar à validação. */
+export function erroTamanhoLaudo(tamanho: number): string | null {
+  if (tamanho <= 0) return "Arquivo vazio.";
+  return tamanho > LAUDO_MAX_BYTES ? ERRO_LAUDO_GRANDE : null;
+}
+
 /** Laudo de parceiro independente: PDF de verdade, até 15 MB. */
 export function validarLaudo(a: { bytes: Uint8Array; tamanho: number }): ArquivoValidado {
-  if (a.tamanho <= 0) return { ok: false, erro: "Arquivo vazio." };
-  if (a.tamanho > LAUDO_MAX_BYTES) return { ok: false, erro: "O laudo deve ter até 15 MB." };
+  const tam = erroTamanhoLaudo(a.tamanho);
+  if (tam) return { ok: false, erro: tam };
   if (!ehPdf(a.bytes)) return { ok: false, erro: "Envie o laudo em PDF." };
   return { ok: true, tipo: "application/pdf", ext: "pdf" };
 }
