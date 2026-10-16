@@ -19,6 +19,7 @@ import {
   CheckCircle2,
   FileSignature,
   MessageSquare,
+  MessageCircle,
   CalendarCheck,
   ShieldCheck,
   ArrowRight,
@@ -58,7 +59,8 @@ import { AvailabilityCalendar } from "@/components/property/availability-calenda
 import { PrivacidadeAcesso } from "@/components/property/privacidade-acesso";
 import { OwnerCard } from "@/components/property/owner-card";
 import { Reviews } from "@/components/property/reviews";
-import { isExemplo, EXEMPLO_SEM_CONTATO } from "@/lib/demo-listing";
+import { isExemplo, EXEMPLO_SEM_CONTATO, EXEMPLO_AVISO_DEMO } from "@/lib/demo-listing";
+import { destinoWhatsappViva } from "@/lib/reserva-imovel";
 import { registrarEvento } from "@/lib/eventos/registrar";
 import { NavSecoes } from "@/components/property/nav-secoes";
 import { secoesDoImovel, sinaisDeConfianca, type SinalConfianca } from "@/lib/imovel-pagina";
@@ -135,6 +137,11 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
   }, [property]);
 
   async function handleLead(kind: LeadKind, note?: string) {
+    // DEMONSTRAÇÃO (anúncio de exemplo): abre o mesmo fluxo, mas não chama o servidor nem grava nada.
+    if (exemplo) {
+      setLeadErro(EXEMPLO_AVISO_DEMO);
+      return false;
+    }
     if (kind === "candidatura") registrarEvento("iniciar_candidatura", { imovelId: property.id, cidade: property.city });
     setPending(kind);
     setLeadErro(null);
@@ -207,30 +214,14 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
     </div>
   );
 
-  // T9: anúncio de EXEMPLO não tem proprietário — sem candidatura, dúvida ou
-  // visita (nada é enviado a ninguém). Nota neutra no lugar dos botões.
-  const notaExemplo = (
-    <div className="flex flex-col gap-2 rounded-2xl border border-line bg-white p-4 text-center">
-      <p className="text-sm font-semibold text-ink">Anúncio de exemplo</p>
-      <p className="text-xs text-muted">{EXEMPLO_SEM_CONTATO}</p>
-      <Link
-        href="/buscar"
-        className="inline-flex items-center justify-center gap-1.5 rounded-full border border-forest px-4 py-2 text-sm font-semibold text-forest transition-colors hover:bg-sage-100"
-      >
-        Ver imóveis <ArrowRight className="h-4 w-4" />
-      </Link>
-    </div>
-  );
+  // WhatsApp: SEMPRE o da Viva (com o código do imóvel) — o contato do dono fica mascarado até o aceite.
+  const whatsapp = destinoWhatsappViva(property.id, process.env.NEXT_PUBLIC_VIVA_WHATSAPP);
 
   // Bloco de ações reutilizado dentro do card de preço.
-  const actions = exemplo ? (
-    notaExemplo
-  ) : candidatouSe ? (
+  const actions = candidatouSe ? (
     confirmacaoCandidatura
   ) : (
     <div className="flex flex-col gap-2">
-      <AvisoPetCandidatura petsAllowed={property.petsAllowed} regras={property.petsRegras} />
-      <AvisoAntigolpe />
       <label className="flex flex-col gap-1 text-xs font-medium text-ink">
         Quando quer entrar? (opcional)
         <input
@@ -258,58 +249,78 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
           ))}
         </select>
       </label>
+      {exemplo && (
+        <p data-testid="aviso-demo" className="rounded-lg bg-sage-100 px-3 py-2 text-center text-xs font-medium text-forest">
+          {EXEMPLO_AVISO_DEMO}
+        </p>
+      )}
       <Button
-        variant="gold"
+        variant="primary"
         size="lg"
         className="w-full"
+        data-cta
         onClick={() => handleLead("candidatura")}
         disabled={pending !== null}
       >
         <FileSignature className="h-4 w-4" />
-        {pending === "candidatura" ? "Enviando..." : "Candidatar-se"}
+        {pending === "candidatura" ? "Enviando..." : "Solicitar reserva"}
       </Button>
-      <div className="grid grid-cols-2 gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            setComposeText("");
-            setComposeKind("duvida");
-          }}
-          disabled={pending !== null || sent.duvida}
-        >
-          {sent.duvida ? (
-            <>
-              <Check className="h-4 w-4" /> Dúvida enviada
-            </>
-          ) : (
-            <>
-              <MessageSquare className="h-4 w-4" />
-              {pending === "duvida" ? "Enviando..." : "Tirar dúvida"}
-            </>
-          )}
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            setComposeText("");
-            setComposeKind("visita");
-          }}
-          disabled={pending !== null || sent.visita}
-        >
-          {sent.visita ? (
-            <>
-              <Check className="h-4 w-4" /> Visita solicitada
-            </>
-          ) : (
-            <>
-              <CalendarCheck className="h-4 w-4" />
-              {pending === "visita" ? "Enviando..." : "Agendar visita"}
-            </>
-          )}
-        </Button>
-      </div>
+      <Button
+        variant="secondary"
+        size="md"
+        className="w-full"
+        data-cta
+        onClick={() => {
+          setComposeText("");
+          setComposeKind("duvida");
+        }}
+        disabled={pending !== null || sent.duvida}
+      >
+        {sent.duvida ? (
+          <>
+            <Check className="h-4 w-4" /> Mensagem enviada
+          </>
+        ) : (
+          <>
+            <MessageSquare className="h-4 w-4" />
+            {pending === "duvida" ? "Enviando..." : "Enviar mensagem"}
+          </>
+        )}
+      </Button>
+      <a
+        data-cta
+        href={whatsapp.href}
+        {...(whatsapp.externo ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+        className={buttonClasses({ variant: "secondary", size: "md", className: "w-full" })}
+      >
+        <MessageCircle className="h-4 w-4" /> WhatsApp da Viva
+      </a>
+      <p className="text-center text-xs text-muted">
+        O WhatsApp fala com a Viva. O contato do proprietário só aparece depois do aceite.
+      </p>
+      <AvisoPetCandidatura petsAllowed={property.petsAllowed} regras={property.petsRegras} />
+      <AvisoAntigolpe />
+      <Button
+        variant="ghost"
+        size="sm"
+        className="w-full"
+        onClick={() => {
+          setComposeText("");
+          setComposeKind("visita");
+        }}
+        disabled={pending !== null || sent.visita}
+      >
+        {sent.visita ? (
+          <>
+            <Check className="h-4 w-4" /> Visita solicitada
+          </>
+        ) : (
+          <>
+            <CalendarCheck className="h-4 w-4" />
+            {pending === "visita" ? "Enviando..." : "Agendar visita"}
+          </>
+        )}
+      </Button>
       {(sent.duvida || sent.visita) && (
         <p className="text-center text-xs text-sage">
           Enviamos seu contato ao proprietário — ele responde por e-mail/WhatsApp.
@@ -386,12 +397,17 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
   );
 
   return (
-    <div className="container-page py-8 pb-40 lg:pb-8">
+    <div className="w-full px-5 py-8 pb-48 sm:px-8 lg:px-10 lg:pb-8 2xl:px-16" data-testid="imovel-largura-total">
       {composer}
       <BarraFixaCelular
         barra={barraFixaImovel({ monthlyPrice: property.monthlyPrice, exemplo, candidatouSe, availableFrom: property.availableFrom })}
         pending={pending !== null}
-        onCandidatar={() => handleLead("candidatura")}
+        onSolicitar={() => handleLead("candidatura")}
+        onMensagem={() => {
+          setComposeText("");
+          setComposeKind("duvida");
+        }}
+        whatsapp={whatsapp}
       />
       {/* Breadcrumb (navegação + SEO) */}
       <nav
@@ -417,9 +433,9 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
       {/* Abas âncora presas ao rolar (ordem d943f893). */}
       <NavSecoes secoes={secoesDoImovel({ avaliacoes: reviewsReais, temDono: !!(property.owner?.name ?? property.ownerName) })} />
 
-      <div className="mt-6 grid gap-8 lg:grid-cols-3">
+      <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_26rem] xl:gap-12">
         {/* Conteúdo (seções roláveis) */}
-        <div className="min-w-0 space-y-10 lg:col-span-2">
+        <div className="min-w-0 space-y-10">
           {/* Visão geral: cabeçalho, sinais de confiança, destaques, medidas, vídeo e descrição. */}
           <div id="visao-geral" className="scroll-mt-36 space-y-10">
           <header>
@@ -546,7 +562,7 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
         </div>
 
         {/* Card de preço (sticky no desktop, empilhado no mobile) */}
-        <aside className="lg:col-span-1">
+        <aside>
           <PriceCard property={property} actions={actions} />
         </aside>
       </div>

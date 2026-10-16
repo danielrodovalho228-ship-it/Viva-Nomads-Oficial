@@ -1,9 +1,10 @@
-import { ChevronDown, FileText, MapPinned, ShieldCheck } from "lucide-react";
+import { FileText, MapPinned, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import type { Property } from "@/lib/types";
 import { hojeBR, formatBRL } from "@/lib/utils";
 import { calcularTudoIncluido } from "@/lib/precos";
 import { SELO_NF_UI } from "@/lib/flags";
+import { linhasDeTaxas } from "@/lib/reserva-imovel";
 
 /** Formata uma data ISO (YYYY-MM-DD) para DD/MM/AAAA. */
 function formatDate(iso?: string): string | null {
@@ -32,12 +33,11 @@ function disponivelFuturo(iso?: string): string | null {
 export function PriceCard({ property, actions }: { property: Property; actions: React.ReactNode }) {
   // "Tudo incluído" pela FONTE ÚNICA — o mesmo número do card da busca.
   const inc = calcularTudoIncluido(property);
-  const condo = inc.condominio;
   const allIncluded = inc.total;
   const availableFrom = disponivelFuturo(property.availableFrom);
 
   return (
-    <div id="cartao-preco" className="sticky top-36 scroll-mt-36 rounded-2xl border border-sage-200 bg-white p-6 shadow-sm">
+    <div id="cartao-preco" className="sticky top-36 scroll-mt-36 rounded-2xl border border-sage-200 bg-white p-5 xl:p-6 shadow-sm">
       <div className="flex items-baseline gap-1">
         <span className="font-title text-3xl font-bold text-forest">
           {formatBRL(property.monthlyPrice)}
@@ -52,49 +52,28 @@ export function PriceCard({ property, actions }: { property: Property; actions: 
         </p>
       )}
 
-      {/* Composição do custo — transparente, sem sobrecarregar */}
-      <details className="group mt-3 rounded-lg bg-surface-2 px-3 py-2 text-sm">
-        <summary className="flex cursor-pointer list-none items-center justify-between font-medium text-ink">
-          Detalhes do custo
-          <ChevronDown className="h-4 w-4 text-muted transition-transform group-open:rotate-180" />
-        </summary>
-        <div className="mt-2 space-y-1.5">
-          <Line label="Valor mensal" value={formatBRL(property.monthlyPrice)} />
-          {condo > 0 && <Line label="Condomínio" value={formatBRL(condo)} />}
-          {property.utilitiesMode === "fixed" && property.utilitiesEstimate > 0 ? (
-            <p className="text-ink">
-              + consumo estimado <strong>{formatBRL(property.utilitiesEstimate)}</strong>/mês
-              <span className="block text-xs text-muted">
-                Água, luz e gás em valor fixo no contrato (ajuste se exceder{" "}
-                {property.utilitiesOverageMargin}%).
-              </span>
-            </p>
-          ) : (
-            <p className="text-ink">
-              + consumo conforme medição
-              <span className="block text-xs text-muted">
-                Contas repassadas ao inquilino mediante comprovante.
-              </span>
-            </p>
-          )}
-          {property.prepFee > 0 && (
-            <p className="text-ink">
-              + preparação <strong>{formatBRL(property.prepFee)}</strong>
-              <span className="block text-xs text-muted">
-                Limpeza profunda antes da entrada — cobrada uma única vez.
-              </span>
-            </p>
-          )}
-          {SELO_NF_UI && property.issuesInvoice && (
-            <p className="inline-flex items-center gap-1 text-xs font-medium text-blue-700">
-              <FileText className="h-3.5 w-3.5" /> Emite Nota Fiscal do valor mensal
-            </p>
-          )}
-          <p className="text-xs text-sage">Sem taxa da plataforma para o inquilino.</p>
-        </div>
-      </details>
+      {/* Taxas itemizadas — só o que o dono informou; Caução em linha separada. */}
+      <ul data-testid="taxas-itemizadas" className="mt-3 space-y-2 rounded-lg bg-surface-2 px-3 py-3 text-sm">
+        {linhasDeTaxas(property).map((l) => (
+          <li key={l.chave} data-taxa={l.chave} className={l.chave === "caucao" ? "border-t border-line pt-2" : undefined}>
+            <div className="flex items-baseline justify-between gap-3 text-ink">
+              <span className={l.chave === "mensal" ? "font-medium" : "text-muted"}>{l.rotulo}</span>
+              {l.valor && <span className={l.chave === "viva" ? "font-semibold text-forest" : "font-medium"}>{l.valor}</span>}
+            </div>
+            {l.nota && <p className="text-xs text-muted">{l.nota}</p>}
+          </li>
+        ))}
+        {SELO_NF_UI && property.issuesInvoice && (
+          <li className="inline-flex items-center gap-1 text-xs font-medium text-blue-700">
+            <FileText className="h-3.5 w-3.5" /> Emite Nota Fiscal do valor mensal
+          </li>
+        )}
+      </ul>
 
-      <p className="mt-2 inline-flex items-center gap-1.5 text-sm text-sage">
+      {/* Ações (Solicitar reserva / Enviar mensagem / WhatsApp) — vêm da página */}
+      <div className="mt-3">{actions}</div>
+
+      <p className="mt-4 inline-flex items-center gap-1.5 text-sm text-sage">
         <span className="h-2 w-2 rounded-full bg-sage" />
         {availableFrom ? `Disponível a partir de ${availableFrom}` : "Disponível agora"}
       </p>
@@ -104,16 +83,13 @@ export function PriceCard({ property, actions }: { property: Property; actions: 
           navega seja um proprietário-admin. */}
       <Link
         href="/dashboard/verificacao?como=inquilino"
-        className="mt-5 flex items-start gap-2 rounded-xl bg-blue-50 px-3 py-2.5 text-xs text-blue-800 transition-colors hover:bg-blue-100"
+        className="mt-3 flex items-start gap-2 rounded-xl bg-blue-50 px-3 py-2.5 text-xs text-blue-800 transition-colors hover:bg-blue-100"
       >
         <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />
         <span>
           <strong>Verificação de identidade: em breve.</strong> Por enquanto, candidate-se direto pela plataforma.
         </span>
       </Link>
-
-      {/* Ações (Candidatar-se / Tirar dúvida / Agendar visita) — vêm da página */}
-      <div className="mt-3">{actions}</div>
 
       <p className="mt-4 flex items-start gap-1.5 text-xs text-muted">
         <MapPinned className="mt-0.5 h-3.5 w-3.5 shrink-0" />
@@ -124,15 +100,6 @@ export function PriceCard({ property, actions }: { property: Property; actions: 
         O valor mensal é pago direto ao proprietário. A plataforma conecta e documenta —
         não participa do pagamento.
       </p>
-    </div>
-  );
-}
-
-function Line({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between text-ink">
-      <span className="text-muted">{label}</span>
-      <span className="font-medium">{value}</span>
     </div>
   );
 }

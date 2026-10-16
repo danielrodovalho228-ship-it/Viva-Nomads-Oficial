@@ -8,6 +8,8 @@ import { statusDisponibilidade } from "./imovel-pagina.ts";
 export interface BarraFixaImovel {
   visivel: boolean;
   estado: "candidatar" | "candidatou";
+  /** Anúncio de exemplo: as ações abrem o fluxo em demonstração, sem gravar nada. */
+  demonstracao: boolean;
   valor: string;
   linha: string;
   /** "Disponível agora" / "Disponível a partir de dd/mm" (ordem d943f893). */
@@ -24,7 +26,9 @@ export function barraFixaImovel(p: {
 }): BarraFixaImovel {
   const precoValido = Number.isFinite(p.monthlyPrice) && p.monthlyPrice > 0;
   return {
-    visivel: !p.exemplo && precoValido,
+    // Exemplo também mostra a barra (estado de demonstração, nada é enviado).
+    visivel: precoValido,
+    demonstracao: p.exemplo,
     estado: p.candidatouSe ? "candidatou" : "candidatar",
     valor: precoValido ? formatBRL(p.monthlyPrice) : "",
     linha: "Caução e taxas no detalhe",
