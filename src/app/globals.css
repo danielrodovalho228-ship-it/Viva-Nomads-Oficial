@@ -353,6 +353,30 @@ html[data-app] body {
     --ajuda-bottom: 1.5rem;
   }
 }
+/* Botão "Fale com a Viva" (ordem a9982623): posição PADRÃO parada no canto inferior direito;
+   sem JS de scroll. Na página do imóvel fica acima da barra fixa (celular) e, no computador,
+   no canto ESQUERDO, fora da coluna de reserva. A posição escolhida pela pessoa vai inline. */
+.vn-viva-flut {
+  right: 1rem;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + var(--ajuda-bottom, 1.5rem));
+}
+@media (min-width: 768px) {
+  .vn-viva-flut {
+    right: 1.5rem;
+  }
+}
+body:has([data-testid="imovel-largura-total"]) {
+  --ajuda-bottom: 11rem;
+}
+@media (min-width: 1024px) {
+  body:has([data-testid="imovel-largura-total"]) {
+    --ajuda-bottom: 1.5rem;
+  }
+  body:has([data-testid="imovel-largura-total"]) .vn-viva-flut[data-posicao="padrao"] {
+    right: auto;
+    left: 1.5rem;
+  }
+}
 /* F49: folga no fim da página no celular (site), só onde o botão existe (t16: telas de 100dvh como /app/boas-vindas não rolam) para o botão redondo da Viva nunca tampar o último botão/campo. */
 @media (max-width: 767px) {
   html:not([data-app]) body:has([data-testid="fale-com-a-viva-raiz"]) {
