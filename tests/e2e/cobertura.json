@@ -374,7 +374,8 @@
         "t6-dinheiro-numeros",
         "t7-fluxo-publico",
         "t8-rascunho",
-        "t98-score-anuncio"
+        "t98-score-anuncio",
+        "t151-modo-app-iphone"
       ]
     },
     "/dashboard/assinatura": {
@@ -445,7 +446,8 @@
         "t17-conta-salvar",
         "t36-cadastro-ponta-a-ponta",
         "t92-documento-secao",
-        "t129-motivo-estadia-perfil"
+        "t129-motivo-estadia-perfil",
+        "t151-modo-app-iphone"
       ]
     },
     "/dashboard/conta/[secao]": {
@@ -546,7 +548,9 @@
       "personas": [
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t151-modo-app-iphone"
+      ]
     },
     "/dashboard/imoveis/novo": {
       "personas": [
