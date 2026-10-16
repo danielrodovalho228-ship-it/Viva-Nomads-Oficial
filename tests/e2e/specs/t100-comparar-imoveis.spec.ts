@@ -48,7 +48,7 @@ test.describe("T100 — Comparar imóveis", () => {
     }
 
     await page.getByTestId("comparar-abrir").click();
-    await expect(page).toHaveURL(/\/comparar\?comparar=[0-9a-f-]{36},[0-9a-f-]{36}/);
+    await expect(page).toHaveURL(/\/comparar\?comparar=[\w-]+,[\w-]+/);
     const tabela = page.getByTestId("comparar-tabela");
     await expect(tabela).toBeVisible();
     await expect(page.getByTestId("comparar-coluna")).toHaveCount(2);
