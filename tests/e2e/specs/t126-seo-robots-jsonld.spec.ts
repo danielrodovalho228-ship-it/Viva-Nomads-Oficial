@@ -57,10 +57,19 @@ test("/cidades/uberlandia: FAQPage e lista no HTML do servidor, sem endereço ne
 
 test("anúncio real: Offer com Accommodation, estadia mín/máx e sem coordenada", async ({ request }) => {
   const busca = await (await request.get("/cidades/uberlandia")).text();
-  const id = busca.match(/\/imoveis\/([0-9a-f]{8}-[0-9a-f-]{27})/)?.[1];
-  test.skip(!id, "sem anúncio real publicado em Uberlândia neste ambiente");
-  const html = await (await request.get(`/imoveis/${id}`)).text();
-  const ld = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)?.[1] ?? "";
+  // A página da cidade fica em cache por 60 s e pode listar um anúncio que outro spec já apagou (404): usa o primeiro que abre.
+  const ids = [...new Set([...busca.matchAll(/\/imoveis\/([0-9a-f]{8}-[0-9a-f-]{27})/g)].map((m) => m[1]))];
+  test.skip(ids.length === 0, "sem anúncio real publicado em Uberlândia neste ambiente");
+  let ld = "";
+  let abriu = false;
+  for (const id of ids) {
+    const resp = await request.get(`/imoveis/${id}`);
+    if (resp.status() !== 200) continue;
+    abriu = true;
+    ld = (await resp.text()).match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)?.[1] ?? "";
+    break;
+  }
+  test.skip(!abriu, "os anúncios listados já foram apagados por outro spec (cache de 60 s)");
   const json = JSON.parse(ld);
   const texto = JSON.stringify(json);
   expect(texto).toContain('"Accommodation"');

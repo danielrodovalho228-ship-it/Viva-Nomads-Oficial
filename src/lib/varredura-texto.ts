@@ -22,6 +22,18 @@ const VOCABULARIO_PUBLICO: Array<[string, RegExp]> = [
   ["quem se hospeda", /\bse hospeda\b/i],
 ];
 
+/** Citação de lei na tela de publicar imóvel (ordem b68f4ede, prova do #650): o dono não vê "Lei 8.245", "art. 38" nem "art. 13". */
+const CITACAO_DE_LEI: Array<[string, RegExp]> = [
+  ["Lei 8.245", /\b8\.?245\b/],
+  ["art. 38", /\bart\.?\s*38\b/i],
+  ["art. 13", /\bart\.?\s*13\b/i],
+];
+
+/** Telas onde a citação de lei é proibida (publicar imóvel). */
+export function rotaVarreLeis(rota: string): boolean {
+  return /^\/dashboard\/imoveis\/novo(\/|$)/.test(rota.split(/[?#]/)[0]);
+}
+
 /** Status internos (snake_case com prefixo conhecido) que nunca podem aparecer cruamente. */
 const STATUS_CRU = /\b(?:pendente|aguardando|encerrado|removido|em)_[a-z]+(?:_[a-z]+)*\b/g;
 const DATA_ISO = /\b\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2})?)?\b/;
@@ -46,8 +58,14 @@ export function rotaVarreVocabulario(rota: string): boolean {
   return rotaVarreTermos(rota) && !/^\/(dashboard|admin|seguranca)(\/|$)/.test(caminho);
 }
 
-export function achadosNoTexto(texto: string, opcoes: { termos?: boolean; vocabulario?: boolean } = {}): string[] {
+export function achadosNoTexto(texto: string, opcoes: { termos?: boolean; vocabulario?: boolean; leis?: boolean } = {}): string[] {
   const out: string[] = [];
+  if (opcoes.leis) {
+    for (const [nome, re] of CITACAO_DE_LEI) {
+      const m = re.exec(texto);
+      if (m) out.push(`citação de lei "${nome}": …${trecho(texto, m.index)}…`);
+    }
+  }
   if (opcoes.vocabulario) {
     for (const [nome, re] of VOCABULARIO_PUBLICO) {
       const m = re.exec(texto);
@@ -74,7 +92,7 @@ export function achadosNoTexto(texto: string, opcoes: { termos?: boolean; vocabu
  * Metas de uma página (description, og:title/description, twitter:title/description) entram na varredura
  * de termos como se fossem texto da tela (ordem 7816ce3a, parte 2). Vazias e repetidas são ignoradas.
  */
-export function achadosNasMetas(metas: Array<string | null | undefined>, opcoes: { termos?: boolean; vocabulario?: boolean } = {}): string[] {
+export function achadosNasMetas(metas: Array<string | null | undefined>, opcoes: { termos?: boolean; vocabulario?: boolean; leis?: boolean } = {}): string[] {
   const textos = [...new Set(metas.map((m) => (m ?? "").trim()).filter(Boolean))];
   return textos.flatMap((t) => achadosNoTexto(t, opcoes).map((a) => `meta: ${a}`));
 }
