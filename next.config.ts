@@ -97,6 +97,13 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      // Ponte do login social no app: o código PKCE vai na URL, então esta rota nunca manda
+      // referrer. Vem DEPOIS da regra global para vencer o "strict-origin-when-cross-origin"
+      // (o lab t47 recebia o valor global em vez de "no-referrer").
+      {
+        source: "/auth/app-callback",
+        headers: [{ key: "Referrer-Policy", value: "no-referrer" }],
+      },
       // noindex/nofollow no header HTTP (independe da meta tag dentro do HTML).
       {
         source: "/simulacao",
