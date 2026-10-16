@@ -72,6 +72,17 @@ export function hashResumo(linhas: string[]): string {
   return createHash("sha256").update(linhas.join("\n"), "utf8").digest("hex");
 }
 
+/**
+ * Linhas que entram no hash de quem assina. A linha "Início da estadia" (F37) passou a fazer parte do
+ * resumo depois que alguém já podia ter assinado sem ela; se a outra parte já assinou sem a linha,
+ * esta assina o mesmo texto (sem a linha) para as duas partes terem o mesmo hash.
+ */
+export function linhasParaHash(linhas: string[], hashDaOutraParte: string | null): string[] {
+  if (!hashDaOutraParte || hashResumo(linhas) === hashDaOutraParte) return linhas;
+  const sem = linhas.filter((l) => !l.startsWith("Início da estadia:"));
+  return hashResumo(sem) === hashDaOutraParte ? sem : linhas;
+}
+
 export function motivoNaoPodeAssinar(c: {
   status: string;
   papel: PapelContrato | null;

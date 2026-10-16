@@ -46,7 +46,7 @@ import {
   MAX_PARCELAS,
   type FormaPagamentoCaucao,
 } from "@/lib/caucao";
-import { textoTaxaPainel, pctTexto } from "@/lib/cobranca/regra";
+import { textoTaxaPainel, pctTexto, TEXTO_RENOVACAO_COMISSAO } from "@/lib/cobranca/regra";
 import { registrarContrato } from "@/lib/data/actions";
 import type { FechamentoContexto } from "@/lib/data/leads-actions";
 import { resumoContrato } from "@/lib/contrato-blocos";
@@ -1032,8 +1032,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
               </p>
               <p className="mt-1 text-xs text-muted">
                 Cobrada de você <strong>sobre o valor total do contrato</strong> (aluguel × meses), em
-                uma cobrança à parte, no fechamento. A comissão é cobrada uma vez em cada contrato e em
-                cada renovação, sobre o valor total do período contratado. O valor mensal, de todos os
+                uma cobrança à parte, no fechamento. {TEXTO_RENOVACAO_COMISSAO} O valor mensal, de todos os
                 meses, vai do inquilino{" "}
                 <strong>direto para a sua conta</strong> — a plataforma nunca cobra nem repassa
                 esse valor. O inquilino não paga taxa da Viva.
@@ -1279,7 +1278,7 @@ export function SuaProtecao({
         </table>
       </div>
       <ul className="mt-3 space-y-1.5 rounded-lg bg-surface-2 px-3 py-2 text-xs font-medium text-ink">
-        <li>Em qualquer opção, você responde pelos danos que causar.</li>
+        <li>Em qualquer opção, o inquilino responde pelos danos que causar.</li>
         <li>Desgaste normal e defeitos são do proprietário.</li>
       </ul>
       <label className="mt-3 flex items-start gap-2 text-sm text-ink">
