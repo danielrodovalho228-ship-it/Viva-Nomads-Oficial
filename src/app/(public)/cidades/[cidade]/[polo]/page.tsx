@@ -10,6 +10,8 @@ import { PropertyCard } from "@/components/property-card";
 import { ButtonLink } from "@/components/ui/button";
 import { JsonLd } from "@/components/seo/json-ld";
 import { SITE_URL } from "@/lib/site";
+import { imoveisDoBairro } from "@/lib/bairros";
+import { BairroPagina, metadadosDoBairro, type BairroDados } from "@/components/cidades/bairro-pagina";
 
 export const revalidate = 60;
 
@@ -21,11 +23,21 @@ export function generateStaticParams() {
   return POLOS.map((p) => ({ cidade: p.cidade, polo: p.slug }));
 }
 
+/** O 2º trecho da URL é um polo (lista fixa) ou um BAIRRO com anúncio real (ordem 7000fbe0). */
+async function acharBairro(cidadeNome: string, slug: string): Promise<BairroDados | null> {
+  const imoveis = imoveisDoBairro(slug, await listPropertiesByCity(cidadeNome), isExemplo);
+  return imoveis.length === 0 ? null : { slug, nome: imoveis[0].neighborhood.trim(), imoveis };
+}
+
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { cidade, polo } = await params;
   const p = acharPolo(cidade, polo);
   const c = CITIES.find((x) => x.slug === cidade);
-  if (!p || !c) return { robots: { index: false } };
+  if (!c) return { robots: { index: false } };
+  if (!p) {
+    const b = await acharBairro(c.name, polo);
+    return b ? metadadosDoBairro(c, b) : { robots: { index: false } };
+  }
   const title = `Imóveis mobiliados ${tituloDoPolo(p.nome)} · ${c.name}`;
   const description = `Imóveis mobiliados para estadias de 30 a 180 dias perto de ${p.referencia}, em ${c.name}. Valor médio por mês, perguntas frequentes e anúncios reais.`;
   const url = `/cidades/${cidade}/${polo}`;
@@ -42,7 +54,12 @@ export default async function PoloPage({ params }: Params) {
   const { cidade, polo } = await params;
   const p = acharPolo(cidade, polo);
   const c = CITIES.find((x) => x.slug === cidade);
-  if (!p || !c) notFound();
+  if (!c) notFound();
+  if (!p) {
+    const b = await acharBairro(c.name, polo);
+    if (!b) notFound();
+    return <BairroPagina cidade={c} bairro={b} />;
+  }
 
   const todos = await listPropertiesByCity(c.name);
   const imoveis = imoveisDoPolo(p, todos);

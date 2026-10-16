@@ -1,0 +1,152 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { isExemplo } from "@/lib/demo-listing";
+import { PONTOS_REFERENCIA } from "@/config/pontos-referencia";
+import { CITIES } from "@/lib/constants";
+import { calcularPrecosMedios, rotuloQuartos } from "@/lib/preco-medio";
+import { centroDoBairro, distanciasDoBairro, perguntasDoBairro, resumoDoBairro } from "@/lib/bairros";
+import { PropertyCard } from "@/components/property-card";
+import { PropertyMap } from "@/components/property-map-lazy";
+import { JsonLd } from "@/components/seo/json-ld";
+import { SITE_URL } from "@/lib/site";
+import type { Property } from "@/lib/types";
+
+type Cidade = (typeof CITIES)[number];
+export interface BairroDados {
+  slug: string;
+  nome: string;
+  imoveis: Property[];
+}
+
+export function metadadosDoBairro(cidade: Cidade, b: BairroDados): Metadata {
+  const title = `Imóveis mobiliados em ${b.nome} · ${cidade.name}`;
+  const description = `Imóveis mobiliados em ${b.nome}, ${cidade.name}, para estadias de 30 a 180 dias. Mapa da área, distâncias e anúncios reais.`;
+  const url = `/cidades/${cidade.slug}/${b.slug}`;
+  return {
+    title,
+    description,
+    robots: { index: true, follow: true },
+    alternates: { canonical: url },
+    openGraph: { title, description, locale: "pt_BR", url, images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: title }] },
+  };
+}
+
+/** Página de bairro (ordem 7000fbe0, tela 5). Só existe com anúncio real; sem endereço e sem coordenada exata. */
+export function BairroPagina({ cidade, bairro }: { cidade: Cidade; bairro: BairroDados }) {
+  const url = `${SITE_URL}/cidades/${cidade.slug}/${bairro.slug}`;
+  const medias = calcularPrecosMedios(bairro.imoveis);
+  const comMedia = medias.filter((g) => g.media !== null);
+  const mediaGeral =
+    comMedia.length > 0
+      ? Math.round(comMedia.reduce((s, g) => s + (g.media as number) * g.anuncios, 0) / comMedia.reduce((s, g) => s + g.anuncios, 0))
+      : null;
+  const centro = centroDoBairro(bairro.imoveis);
+  const distancias = distanciasDoBairro(centro, PONTOS_REFERENCIA.filter((p) => p.cidade === cidade.slug));
+  const faq = perguntasDoBairro(bairro.nome, cidade.name, mediaGeral);
+  const total = bairro.imoveis.filter((i) => !isExemplo(i.id)).length;
+
+  const dados = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "CollectionPage",
+        "@id": `${url}#pagina`,
+        url,
+        name: `Imóveis mobiliados em ${bairro.nome}, ${cidade.name}`,
+        about: { "@type": "Place", name: `${bairro.nome}, ${cidade.name}` },
+      },
+      {
+        "@type": "FAQPage",
+        "@id": `${url}#faq`,
+        mainEntity: faq.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Início", item: SITE_URL },
+          { "@type": "ListItem", position: 2, name: cidade.name, item: `${SITE_URL}/cidades/${cidade.slug}` },
+          { "@type": "ListItem", position: 3, name: bairro.nome, item: url },
+        ],
+      },
+    ],
+  };
+
+  return (
+    <>
+      <JsonLd dados={dados} />
+      <section className="bg-forest section-y text-white">
+        <div className="container-page">
+          <nav className="text-sm text-white/60">
+            <Link href="/" className="hover:text-champagne">Início</Link> /{" "}
+            <Link href={`/cidades/${cidade.slug}`} className="hover:text-champagne">{cidade.name}</Link> /{" "}
+            <span className="text-white/80">{bairro.nome}</span>
+          </nav>
+          <h1 className="mt-4 max-w-3xl font-title text-3xl font-bold md:text-5xl">Imóveis mobiliados em {bairro.nome}</h1>
+          <p className="mt-5 max-w-2xl text-lg text-white/80" data-testid="bairro-resumo">{resumoDoBairro(bairro.nome, cidade.name, total)}</p>
+        </div>
+      </section>
+
+      <section className="container-page section-y">
+        <div className="grid gap-8 lg:grid-cols-2">
+          {centro && (
+            <div data-testid="bairro-mapa">
+              <h2 className="font-title text-2xl font-bold text-ink">Área aproximada</h2>
+              <PropertyMap className="mt-4 aspect-[16/10] w-full" center={centro} markers={[]} approximate />
+              <p className="mt-2 text-sm text-muted">Mapa da região. O endereço exato só é liberado depois do aceite.</p>
+            </div>
+          )}
+          {distancias.length > 0 && (
+            <div data-testid="bairro-distancias">
+              <h2 className="font-title text-2xl font-bold text-ink">Distâncias</h2>
+              <ul className="mt-4 divide-y divide-sage-200 rounded-2xl border border-sage-200">
+                {distancias.map((d) => (
+                  <li key={d.slug} className="flex items-center justify-between gap-4 px-4 py-3">
+                    <span className="text-ink">{d.nome}</span>
+                    <span className="shrink-0 font-semibold text-forest">{d.texto}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+
+        <h2 className="mt-12 font-title text-2xl font-bold text-ink">
+          {total} {total === 1 ? "anúncio" : "anúncios"} em {bairro.nome}
+        </h2>
+        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3" data-testid="bairro-anuncios">
+          {bairro.imoveis.map((i) => (
+            <PropertyCard key={i.id} property={i} />
+          ))}
+        </div>
+
+        <div className="mt-12 max-w-3xl" data-testid="bairro-precos">
+          <h2 className="font-title text-2xl font-bold text-ink">Valor médio por mês no bairro</h2>
+          {comMedia.length === 0 ? (
+            <p className="mt-2 text-sm text-muted">Dados insuficientes: a média aparece quando houver pelo menos 3 anúncios reais no mesmo grupo.</p>
+          ) : (
+            <ul className="mt-4 divide-y divide-sage-200 rounded-2xl border border-sage-200">
+              {comMedia.map((g) => (
+                <li key={`${g.bairro}-${g.quartos}`} className="flex items-center justify-between gap-4 px-4 py-3">
+                  <span className="text-ink"><span className="text-muted">{rotuloQuartos(g.quartos)}</span></span>
+                  <span className="shrink-0 font-semibold text-forest">R$ {(g.media as number).toLocaleString("pt-BR")} por mês</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div className="mt-12 max-w-3xl" data-testid="bairro-faq">
+          <h2 className="font-title text-2xl font-bold text-ink">Perguntas frequentes</h2>
+          <dl className="mt-4 space-y-4">
+            {faq.map((f) => (
+              <div key={f.q}>
+                <dt className="font-semibold text-ink">{f.q}</dt>
+                <dd className="mt-1 text-muted">{f.a}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      </section>
+    </>
+  );
+}

@@ -13,6 +13,8 @@ import { paginaCidade } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
 import { calcularPrecosMedios, rotuloQuartos } from "@/lib/preco-medio";
 import { polosDaCidade } from "@/lib/polos";
+import { agruparBairros, limitarAPar } from "@/lib/bairros";
+import { MapPin } from "lucide-react";
 import { faqPageCidade, perguntasCidade } from "@/lib/seo/anuncio-cidade";
 
 // F9: dados frescos (revalidatePath nas ações + rede de segurança de 60 s).
@@ -56,6 +58,7 @@ export default async function CityLandingPage({ params }: Params) {
   const properties = await listPropertiesByCity(name);
   const infoCidade = CITIES.find((c) => c.slug === cidade);
   const precosMedios = calcularPrecosMedios(properties);
+  const bairros = limitarAPar(agruparBairros(properties, isExemplo));
   const atualizadoEm = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo" }).format(new Date());
 
   return (
@@ -132,6 +135,31 @@ export default async function CityLandingPage({ params }: Params) {
                       `R$ ${g.media.toLocaleString("pt-BR")} por mês`
                     )}
                   </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {bairros.length > 0 && (
+          <div className="mt-12" data-testid="bairros-grade">
+            <h2 className="font-title text-2xl font-bold text-ink">Bairros de {name}</h2>
+            <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+              {bairros.map((b) => (
+                <li key={b.slug}>
+                  <Link
+                    href={`/cidades/${cidade}/${b.slug}`}
+                    data-testid="bairro-cartao"
+                    className="flex items-center gap-4 rounded-2xl border border-sage-200 p-4 hover:border-forest"
+                  >
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-sage-100 text-forest" aria-hidden>
+                      <MapPin className="h-6 w-6" />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block truncate font-semibold text-forest">{b.nome}</span>
+                      <span className="block text-sm text-muted">{b.total} {b.total === 1 ? "imóvel" : "imóveis"}</span>
+                    </span>
+                  </Link>
                 </li>
               ))}
             </ul>
