@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/site";
 import { CITIES } from "@/lib/constants";
 import { POLOS } from "@/lib/polos";
+import { caminhosDeBairros } from "@/lib/bairros";
 import { listProperties } from "@/lib/data/properties";
 import { isExemplo } from "@/lib/demo-listing";
 import { GUIAS } from "@/lib/guias/guias";
@@ -59,5 +60,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
-  return [...staticRoutes, ...cityRoutes, ...poloRoutes, ...propertyRoutes];
+  const poloCaminhos = new Set(POLOS.map((p) => `/cidades/${p.cidade}/${p.slug}`));
+  const bairroRoutes = caminhosDeBairros(CITIES, properties, (id) => isExemplo(id))
+    .filter((c) => !poloCaminhos.has(c))
+    .map((c) => ({ url: `${SITE_URL}${c}`, changeFrequency: "weekly" as const, priority: 0.6 }));
+
+  return [...staticRoutes, ...cityRoutes, ...poloRoutes, ...bairroRoutes, ...propertyRoutes];
 }
