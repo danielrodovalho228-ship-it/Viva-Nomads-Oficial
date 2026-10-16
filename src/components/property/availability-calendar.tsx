@@ -271,8 +271,10 @@ export function AvailabilityCalendar({ property }: { property: Property }) {
             </p>
           ) : isDemo ? (
             <p className="mt-3 flex items-center gap-1.5 rounded-lg bg-sage-100 px-3 py-2 text-sm text-forest">
-              <CircleAlert className="h-4 w-4 shrink-0" /> Anúncio de demonstração — a solicitação de
-              estadia fica disponível nos imóveis reais da plataforma.
+              <CircleAlert className="h-4 w-4 shrink-0" /> Anúncio de exemplo: esta solicitação não é enviada.{" "}
+              <a href="#cartao-preco" className="font-medium underline">
+                Ver o caminho de reserva
+              </a>
             </p>
           ) : isOwner ? (
             <p className="mt-3 flex flex-wrap items-center gap-1.5 rounded-lg bg-sage-100 px-3 py-2 text-sm text-forest">
