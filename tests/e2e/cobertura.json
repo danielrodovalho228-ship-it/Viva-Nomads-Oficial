@@ -1997,6 +1997,14 @@
       ],
       "specs": []
     },
+    "src/lib/data/estadias-calendario.ts#getEstadiasDoImovel": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t154-calendario-inquilino"
+      ]
+    },
     "src/lib/data/leads-actions.ts#aceitarCandidatura": {
       "personas": [
         "proprietario",
