@@ -94,7 +94,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
       { category: "mercado", name: "Supermercado Bahamas", note: "5 min a pé" },
       { category: "transporte", name: "Ponto de ônibus (linhas Centro)", note: "2 min a pé" },
     ],
-    owner: { name: DONO_EXEMPLO, memberSince: "2025-03-01", responseRate: 98, verified: true },
+    owner: { name: DONO_EXEMPLO, memberSince: "2025-03-01", responseRate: 98, verified: false },
   },
   {
     id: "ube-002",
@@ -163,7 +163,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
       { category: "mercado", name: "Mercado do Centro", note: "3 min a pé" },
       { category: "transporte", name: "Terminal Central", note: "7 min a pé" },
     ],
-    owner: { name: DONO_EXEMPLO, memberSince: "2025-06-15", responseRate: 92, verified: true },
+    owner: { name: DONO_EXEMPLO, memberSince: "2025-06-15", responseRate: 92, verified: false },
   },
   {
     id: "ube-003",
@@ -268,7 +268,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
       { category: "educacao", name: "UFU — Campus Umuarama", note: "6 min a pé" },
       { category: "mercado", name: "Supermercado", note: "3 min a pé" },
     ],
-    owner: { name: DONO_EXEMPLO, memberSince: "2025-08-01", responseRate: 95, verified: true },
+    owner: { name: DONO_EXEMPLO, memberSince: "2025-08-01", responseRate: 95, verified: false },
   },
   {
     id: "ube-005",
@@ -323,7 +323,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
       { category: "saude", name: "UMC — Uberlândia Medical Center", note: "9 min de carro" },
       { category: "mercado", name: "Farmácia 24h", note: "2 min a pé" },
     ],
-    owner: { name: DONO_EXEMPLO, memberSince: "2025-05-01", responseRate: 99, verified: true },
+    owner: { name: DONO_EXEMPLO, memberSince: "2025-05-01", responseRate: 99, verified: false },
   },
   {
     id: "ube-006",
@@ -381,7 +381,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
       { category: "transporte", name: "Terminal Central", note: "6 min a pé" },
       { category: "mercado", name: "Supermercado", note: "4 min a pé" },
     ],
-    owner: { name: DONO_EXEMPLO, memberSince: "2025-02-01", responseRate: 97, verified: true },
+    owner: { name: DONO_EXEMPLO, memberSince: "2025-02-01", responseRate: 97, verified: false },
   },
   {
     id: "ube-007",
@@ -431,7 +431,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     availableFrom: emDias(35),
     faixasAceitas: ["temporada", "media_estadia"],
     garantiasAceitas: ["caucao_avista", "caucao_parcelada", "seguro_fianca"],
-    owner: { name: DONO_EXEMPLO, memberSince: "2025-09-01", responseRate: 94, verified: true },
+    owner: { name: DONO_EXEMPLO, memberSince: "2025-09-01", responseRate: 94, verified: false },
   },
   {
     id: "ube-008",
@@ -486,7 +486,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
       { category: "educacao", name: "Escola particular", note: "8 min de carro" },
       { category: "mercado", name: "Shopping e supermercado", note: "6 min de carro" },
     ],
-    owner: { name: DONO_EXEMPLO, memberSince: "2025-04-01", responseRate: 96, verified: true },
+    owner: { name: DONO_EXEMPLO, memberSince: "2025-04-01", responseRate: 96, verified: false },
   },
   {
     id: "ube-009",
@@ -543,7 +543,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
       { category: "educacao", name: "UFU — Campus Santa Mônica", note: "6 min a pé" },
       { category: "mercado", name: "Supermercado Bahamas", note: "4 min a pé" },
     ],
-    owner: { name: DONO_EXEMPLO, memberSince: "2025-07-01", responseRate: 98, verified: true },
+    owner: { name: DONO_EXEMPLO, memberSince: "2025-07-01", responseRate: 98, verified: false },
   },
   {
     id: "ube-010",
@@ -593,7 +593,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     availableFrom: emDias(47),
     faixasAceitas: ["temporada", "media_estadia"],
     garantiasAceitas: ["caucao_avista", "caucao_parcelada", "seguro_fianca"],
-    owner: { name: DONO_EXEMPLO, memberSince: "2025-06-01", responseRate: 93, verified: true },
+    owner: { name: DONO_EXEMPLO, memberSince: "2025-06-01", responseRate: 93, verified: false },
   },
   {
     id: "ube-011",
@@ -643,7 +643,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     availableFrom: emDias(51),
     faixasAceitas: ["temporada", "media_estadia"],
     garantiasAceitas: ["caucao_avista", "caucao_parcelada", "seguro_fianca"],
-    owner: { name: DONO_EXEMPLO, memberSince: "2025-10-01", responseRate: 91, verified: true },
+    owner: { name: DONO_EXEMPLO, memberSince: "2025-10-01", responseRate: 91, verified: false },
   },
   {
     id: "ube-012",
@@ -693,7 +693,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     availableFrom: emDias(55),
     faixasAceitas: ["temporada", "media_estadia"],
     garantiasAceitas: ["caucao_avista", "caucao_parcelada", "titulo", "seguro_fianca"],
-    owner: { name: DONO_EXEMPLO, memberSince: "2025-03-15", responseRate: 96, verified: true },
+    owner: { name: DONO_EXEMPLO, memberSince: "2025-03-15", responseRate: 96, verified: false },
   },
   {
     id: "ube-013",
@@ -744,7 +744,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     availableFrom: emDias(59),
     faixasAceitas: ["media_estadia"],
     garantiasAceitas: ["caucao_avista", "caucao_parcelada", "titulo"],
-    owner: { name: DONO_EXEMPLO, memberSince: "2025-05-20", responseRate: 94, verified: true },
+    owner: { name: DONO_EXEMPLO, memberSince: "2025-05-20", responseRate: 94, verified: false },
   },
   {
     id: "ube-014",
@@ -794,7 +794,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     availableFrom: emDias(63),
     faixasAceitas: ["temporada", "media_estadia"],
     garantiasAceitas: ["caucao_avista", "caucao_parcelada", "titulo", "seguro_fianca"],
-    owner: { name: DONO_EXEMPLO, memberSince: "2025-01-10", responseRate: 97, verified: true },
+    owner: { name: DONO_EXEMPLO, memberSince: "2025-01-10", responseRate: 97, verified: false },
   },
   {
     id: "ube-015",
@@ -847,7 +847,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     availableFrom: emDias(67),
     faixasAceitas: ["temporada", "media_estadia"],
     garantiasAceitas: ["caucao_avista", "caucao_parcelada", "seguro_fianca"],
-    owner: { name: DONO_EXEMPLO, memberSince: "2025-11-01", responseRate: 92, verified: true },
+    owner: { name: DONO_EXEMPLO, memberSince: "2025-11-01", responseRate: 92, verified: false },
   },
 ];
 
