@@ -94,12 +94,15 @@ export function StatCard({
   value,
   icon: Icon,
   href,
+  hint,
 }: {
   label: string;
   value: string | number;
   icon: React.ComponentType<{ className?: string }>;
   /** Opcional: transforma o card num atalho para a seção correspondente. */
   href?: string;
+  /** Opcional: contexto curto sob o número (comparação ou próxima ação). */
+  hint?: string;
 }) {
   // Compacto no mobile (ADENDO item 1): rótulo pequeno + ícone reduzido + número
   // menor, padding enxuto (~72px de altura) para caber 3 numa linha a 390px. A
@@ -113,6 +116,11 @@ export function StatCard({
         <Icon className="h-4 w-4 shrink-0 text-sage sm:h-5 sm:w-5" />
       </div>
       <p className="mt-1 font-title text-xl font-bold text-forest sm:mt-2 sm:text-3xl">{value}</p>
+      {hint && (
+        <p data-testid="stat-hint" className="mt-1 text-[11px] leading-snug text-muted sm:text-xs">
+          {hint}
+        </p>
+      )}
     </>
   );
   if (href) {

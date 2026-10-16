@@ -30,6 +30,7 @@ import { useProperties } from "@/lib/use-properties";
 import { checklistAnuncio, type ChecklistAnuncio } from "@/lib/anuncio/prontidao";
 import type { ScoreAnuncio } from "@/lib/anuncio/score";
 import { imoveisPublicados } from "@/lib/anuncio/publicados";
+import { kpiInteressados } from "@/lib/painel/kpi-interessados";
 import type { Property } from "@/lib/types";
 import { useDashDemo, DemoBadge, useDisplayUser } from "@/lib/demo/demo-mode";
 import { DEMO_PROPERTIES, DEMO_KPIS } from "@/lib/demo/seed";
@@ -37,7 +38,13 @@ import { PHOTOS, coverPhoto } from "@/lib/media";
 import { formatBRL } from "@/lib/utils";
 import { ReadyToLiveBadge } from "@/components/ui/badge";
 
-export function VisaoGeral({ imoveisDono }: { imoveisDono: Property[] }) {
+export function VisaoGeral({
+  imoveisDono,
+  interessados = { atual: 0, anterior: 0 },
+}: {
+  imoveisDono: Property[];
+  interessados?: { atual: number; anterior: number };
+}) {
   // Identidade de EXIBIÇÃO: nunca cai na persona demo ("Marcos") para conta real
   // com demo desligado (fronteira demo/real). Sem nome → "Olá!".
   const user = useDisplayUser();
@@ -50,12 +57,20 @@ export function VisaoGeral({ imoveisDono }: { imoveisDono: Property[] }) {
     <>
       {/* Pergunta de papel no primeiro login (uma vez só). */}
       <RoleWelcomeModal />
-      {mode === "tenant" ? <TenantDashboard name={firstName} /> : <OwnerDashboard name={firstName} imoveisDono={imoveisDono} />}
+      {mode === "tenant" ? <TenantDashboard name={firstName} /> : <OwnerDashboard name={firstName} imoveisDono={imoveisDono} interessados={interessados} />}
     </>
   );
 }
 
-function OwnerDashboard({ name, imoveisDono }: { name: string; imoveisDono: Property[] }) {
+function OwnerDashboard({
+  name,
+  imoveisDono,
+  interessados,
+}: {
+  name: string;
+  imoveisDono: Property[];
+  interessados: { atual: number; anterior: number };
+}) {
   // Fonte demo: build de demonstração OU modo demonstração do admin. Os dados
   // reais e o seed NUNCA se misturam — a fonte é uma ou outra.
   const demo = useDashDemo();
@@ -65,6 +80,9 @@ function OwnerDashboard({ name, imoveisDono }: { name: string; imoveisDono: Prop
   // chega do servidor: não há estado "carregando" que pareça "nenhum imóvel".
   const allProperties = imoveisPublicados(demo ? DEMO_PROPERTIES : imoveisDono);
   const myProperties = allProperties.slice(0, 2);
+  const kpiLeads = kpiInteressados(interessados.atual, interessados.anterior, {
+    temImovelPublicado: allProperties.length > 0,
+  });
 
   // Rascunho em andamento (P0): card de pendência "continue de onde parou".
   const [draft, setDraft] = useState<RascunhoPendente | null>(null);
@@ -152,7 +170,17 @@ function OwnerDashboard({ name, imoveisDono }: { name: string; imoveisDono: Prop
           value={demo ? DEMO_KPIS.visualizacoes.toLocaleString("pt-BR") : "0"}
           icon={Eye}
         />
-        <StatCard label="Interessados" value={demo ? String(DEMO_KPIS.leads) : "0"} icon={Users} />
+        {demo ? (
+          <StatCard label="Interessados" value={String(DEMO_KPIS.leads)} icon={Users} />
+        ) : (
+          <StatCard
+            label={kpiLeads.rotulo}
+            value={kpiLeads.valor}
+            hint={kpiLeads.dica}
+            href={kpiLeads.href}
+            icon={Users}
+          />
+        )}
         <StatCard label="Mensagens" value={demo ? String(DEMO_KPIS.mensagens) : "0"} icon={MessageSquare} />
         <StatCard label="Imóveis ativos" value={String(allProperties.length)} icon={Home} />
       </div>
