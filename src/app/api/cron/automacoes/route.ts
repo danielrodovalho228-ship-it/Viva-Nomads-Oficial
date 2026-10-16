@@ -8,6 +8,7 @@ import {
   chaveEnvio,
   detalheAutomacao,
   lembreteDeSaida,
+  modoSimulado,
   pedirAvaliacao,
   podeReceber,
   type TipoAutomacao,
@@ -19,6 +20,7 @@ import {
  * Cron diário da Vercel (vercel.json) com `Authorization: Bearer <CRON_SECRET>`; sem o segredo, não roda.
  * Cada aviso sai UMA vez por pessoa (automacoes_envios). Quem desligou os avisos (notif_email) não recebe.
  * `?simular=1` só conta o que sairia: não envia e não marca nada (passe obrigatório antes de ligar de verdade).
+ * Trava: sem `AUTOMACOES_ATIVO=1` no ambiente o cron SEMPRE simula, mesmo agendado no vercel.json.
  * Candidatura iniciada e não enviada fica de fora: a candidatura não guarda rascunho no banco.
  */
 type Alvo = { tipo: TipoAutomacao; usuarioId: string; refId: string; variante?: string; url: string; detalhe: string; depois?: () => Promise<unknown> };
@@ -31,7 +33,7 @@ export async function GET(request: Request) {
   }
   const admin = createAdminClient();
   if (!admin) return NextResponse.json({ error: "Serviço indisponível." }, { status: 503 });
-  const simular = new URL(request.url).searchParams.get("simular") === "1";
+  const simular = modoSimulado(new URL(request.url).searchParams.get("simular"), process.env.AUTOMACOES_ATIVO);
   const hoje = hojeEmBrasilia(new Date());
   const dia = (n: number) => new Date(Date.parse(hoje) + n * 86_400_000).toISOString().slice(0, 10);
   const alvos: Alvo[] = [];

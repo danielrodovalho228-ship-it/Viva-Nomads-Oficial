@@ -74,3 +74,11 @@ export function detalheAutomacao(tipo: TipoAutomacao, ctx: { imovel?: string; fi
       return `${imovel} O bloco termina em ${ctx.fim ? dataBr(ctx.fim) : "15 dias"}. Quer renovar? Combine pela plataforma.`.trim();
   }
 }
+
+/**
+ * Trava do cron: sem `AUTOMACOES_ATIVO=1` no ambiente o cron só SIMULA (conta, não envia nem marca nada).
+ * O Daniel liga o envio real depois de ver a contagem simulada. `?simular=1` sempre força a simulação.
+ */
+export function modoSimulado(paramSimular: string | null, automacoesAtivo: string | undefined): boolean {
+  return paramSimular === "1" || automacoesAtivo !== "1";
+}
