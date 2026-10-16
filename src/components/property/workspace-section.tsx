@@ -1,6 +1,7 @@
-import { Wifi, Check, Building2, Users, Coffee } from "lucide-react";
+import { Wifi, Building2, Users, Coffee } from "lucide-react";
 import type { Property, WorkspaceType } from "@/lib/types";
 import { INTERNET_META } from "@/lib/internet";
+import { CLASSE_ICONE_LISTA, TRACO_ICONE_LISTA, iconeDaComodidade } from "@/lib/anuncio/comodidades-icones";
 
 const WORKSPACE_ICONS: Record<WorkspaceType, React.ComponentType<{ className?: string }>> = {
   coworking: Building2,
@@ -38,12 +39,15 @@ export function WorkspaceSection({ property }: { property: Property }) {
       )}
 
       {hasFeatures && (
-        <ul className="mt-4 grid gap-2 sm:grid-cols-2">
-          {property.workFeatures.map((f) => (
-            <li key={f} className="flex items-center gap-2 text-sm text-ink">
-              <Check className="h-4 w-4 shrink-0 text-champagne-600" /> {f}
-            </li>
-          ))}
+        <ul className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3" data-testid="trabalho-itens">
+          {property.workFeatures.map((f) => {
+            const Icone = iconeDaComodidade(f);
+            return (
+              <li key={f} className="flex items-center gap-3 text-sm text-ink">
+                <Icone className={CLASSE_ICONE_LISTA} strokeWidth={TRACO_ICONE_LISTA} aria-hidden /> {f}
+              </li>
+            );
+          })}
         </ul>
       )}
 
