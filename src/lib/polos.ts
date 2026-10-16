@@ -39,6 +39,11 @@ export const POLOS: readonly Polo[] = [
   },
 ];
 
+/** Nome do polo dentro de uma frase ("Imóveis mobiliados perto do HC-UFU…"): só a 1ª letra vira minúscula, siglas ficam. */
+export function tituloDoPolo(nome: string): string {
+  return nome.charAt(0).toLowerCase() + nome.slice(1);
+}
+
 export function polosDaCidade(cidade: string): Polo[] {
   return POLOS.filter((p) => p.cidade === cidade);
 }
