@@ -1654,8 +1654,8 @@ export default function NewPropertyPage() {
             <Labeled label="Garantias que você aceita">
               <p className="mb-2 text-xs text-muted">
                 Só preferência de aceite — <strong>não muda o caminho do dinheiro</strong> (a
-                caução em dinheiro vai para uma conta poupança, como manda o art. 38, §2º da Lei
-                8.245/91 — a plataforma não tem acesso).
+                caução em dinheiro vai para uma conta poupança, como manda a lei — a plataforma
+                não tem acesso).
               </p>
               <div className="space-y-3">
                 {GARANTIAS_CADASTRO.map((g) =>
