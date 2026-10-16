@@ -23,6 +23,18 @@ const TERMOS_PROIBIDOS: Array<[string, RegExp]> = [
   ["art. 48", /\bart\.?\s*48\b/i],
 ];
 
+/** Citação de lei na tela de publicar imóvel (ordem b68f4ede, prova do #650): o dono não vê "Lei 8.245", "art. 38" nem "art. 13". */
+const CITACAO_DE_LEI: Array<[string, RegExp]> = [
+  ["Lei 8.245", /\b8\.?245\b/],
+  ["art. 38", /\bart\.?\s*38\b/i],
+  ["art. 13", /\bart\.?\s*13\b/i],
+];
+
+/** Telas onde a citação de lei é proibida (publicar imóvel). */
+export function rotaVarreLeis(rota: string): boolean {
+  return /^\/dashboard\/imoveis\/novo(\/|$)/.test(rota.split(/[?#]/)[0]);
+}
+
 /** Status internos (snake_case com prefixo conhecido) que nunca podem aparecer cruamente. */
 const STATUS_CRU = /\b(?:pendente|aguardando|encerrado|removido|em)_[a-z]+(?:_[a-z]+)*\b/g;
 const DATA_ISO = /\b\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2})?)?\b/;
@@ -41,8 +53,14 @@ function trecho(texto: string, i: number): string {
   return texto.slice(Math.max(0, i - 20), i + 40).replace(/\s+/g, " ").trim();
 }
 
-export function achadosNoTexto(texto: string, opcoes: { termos?: boolean } = {}): string[] {
+export function achadosNoTexto(texto: string, opcoes: { termos?: boolean; leis?: boolean } = {}): string[] {
   const out: string[] = [];
+  if (opcoes.leis) {
+    for (const [nome, re] of CITACAO_DE_LEI) {
+      const m = re.exec(texto);
+      if (m) out.push(`citação de lei "${nome}": …${trecho(texto, m.index)}…`);
+    }
+  }
   if (opcoes.termos !== false) {
     const semCaucao = texto.replace(FRASE_CAUCAO, " ");
     for (const [nome, re] of TERMOS_PROIBIDOS) {
@@ -64,7 +82,7 @@ export function achadosNoTexto(texto: string, opcoes: { termos?: boolean } = {})
  * Metas de uma página (description, og:title/description, twitter:title/description) entram na varredura
  * de termos como se fossem texto da tela (ordem 7816ce3a, parte 2). Vazias e repetidas são ignoradas.
  */
-export function achadosNasMetas(metas: Array<string | null | undefined>, opcoes: { termos?: boolean } = {}): string[] {
+export function achadosNasMetas(metas: Array<string | null | undefined>, opcoes: { termos?: boolean; leis?: boolean } = {}): string[] {
   const textos = [...new Set(metas.map((m) => (m ?? "").trim()).filter(Boolean))];
   return textos.flatMap((t) => achadosNoTexto(t, opcoes).map((a) => `meta: ${a}`));
 }
