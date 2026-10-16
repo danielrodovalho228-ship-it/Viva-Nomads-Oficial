@@ -12,7 +12,7 @@ const MORADOR = ["/dashboard/favoritos", "/dashboard/buscas", "/dashboard/pedido
 
 async function conferirCapa(page: Page, rota: string, largura: number) {
   await page.goto(rota, { waitUntil: "domcontentloaded" });
-  const capa = page.getByTestId("painel-capa").first();
+  const capa = page.locator('[data-testid="painel-capa"]:visible').first();
   await expect(capa, `${rota}: capa`).toBeVisible({ timeout: 20_000 });
   await expect(capa.locator("h1"), `${rota}: título na capa`).toBeVisible();
   const foto = capa.locator("img").first();
