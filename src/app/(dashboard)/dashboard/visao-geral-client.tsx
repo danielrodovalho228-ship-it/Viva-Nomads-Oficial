@@ -189,7 +189,7 @@ function OwnerDashboard({
       <p className="mt-4 flex items-start gap-2 rounded-xl border border-forest/20 bg-forest/5 px-4 py-3 text-sm text-ink">
         <Wallet className="mt-0.5 h-4 w-4 shrink-0 text-forest" />
         <span>
-          O aluguel vai do inquilino <strong>direto para a sua conta</strong> — a plataforma nunca
+          O valor mensal vai <strong>direto para a sua conta</strong> — a plataforma nunca
           toca no dinheiro.
         </span>
       </p>
