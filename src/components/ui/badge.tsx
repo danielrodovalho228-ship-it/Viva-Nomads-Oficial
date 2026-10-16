@@ -9,7 +9,7 @@ export function PrecoJustoBadge({ className }: { className?: string }) {
     <span
       data-testid="selo-preco-justo"
       className={cn(
-        "inline-flex items-center gap-1 rounded-full border border-sage-200 bg-white px-2.5 py-1 text-xs font-semibold text-forest",
+        "inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-sage-200 bg-white px-2.5 py-1 text-xs font-semibold text-forest shadow-sm",
         className
       )}
     >

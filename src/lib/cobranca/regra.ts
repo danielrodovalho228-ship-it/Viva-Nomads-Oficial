@@ -195,4 +195,4 @@ export function comissaoCurta(taxaTexto: string): string {
 
 /** Renovação/prorrogação (decisão do Daniel, 14/10): cobrada à parte, sobre o valor total do período renovado. */
 export const TEXTO_RENOVACAO_COMISSAO =
-  "A comissão é cobrada uma vez em cada contrato e em cada renovação, sobre o valor total do período contratado.";
+  "A taxa é cobrada uma vez em cada contrato e em cada renovação, sobre o valor total do período contratado.";
