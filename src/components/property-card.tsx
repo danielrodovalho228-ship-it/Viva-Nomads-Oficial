@@ -11,6 +11,7 @@ import { ReadyToLiveBadge, PrecoJustoBadge, PropertyTags, InvoiceBadge, Insuranc
 import { BrandImage } from "@/components/brand-image";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
 import { FavoriteButton } from "@/components/favorite-button";
+import { repartirSelos, type SeloCard } from "@/lib/card-selos";
 import { MarcaImovel } from "@/components/property/marca-imovel";
 
 export function PropertyCard({
@@ -31,6 +32,14 @@ export function PropertyCard({
   const inc = calcularTudoIncluido(property);
   const totalPeriodo = periodMonths && periodMonths > 0 ? inc.total * periodMonths : null;
   const disponivel = disponivelAPartirDe(property.availableFrom);
+  const selos = repartirSelos({
+    precoJusto: !!property.precoJusto,
+    pets: !!property.petsAllowed,
+    pronto: !!property.readyToLiveBadge,
+    video: !!property.videoUrl,
+    exemplo: exemplo,
+    destaque: tier !== "padrao",
+  });
 
   return (
     <Link
@@ -49,20 +58,11 @@ export function PropertyCard({
         ) : (
           <PhotoPlaceholder label={cover} className="h-full w-full" />
         )}
-        {/* Máximo 2 badges na foto: Pronto para Morar (prioridade 1) + Vídeo. */}
-        <div className="absolute left-3 top-3 flex flex-col items-start gap-1.5">
-          {exemplo && (
-            <span className="inline-flex items-center rounded-full bg-night/85 px-2 py-0.5 text-[11px] font-semibold text-white">
-              Exemplo ilustrativo
-            </span>
-          )}
-          {property.readyToLiveBadge && <ReadyToLiveBadge size="sm" />}
-          {property.precoJusto && <PrecoJustoBadge />}
-          {property.videoUrl && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-night/85 px-2 py-0.5 text-xs font-semibold text-white">
-              <PlayCircle className="h-3.5 w-3.5" /> Vídeo
-            </span>
-          )}
+        {/* Máximo 2 selos na foto (ordem 86dcb4db, B1): prioridade Preço justo e Aceita pets; o resto vai na linha de baixo. */}
+        <div className="absolute left-3 top-3 flex flex-col items-start gap-1.5" data-testid="selos-foto">
+          {selos.foto.map((s) => (
+            <Selo key={s} id={s} />
+          ))}
         </div>
         <div className="absolute right-3 top-3">
           <FavoriteButton propertyId={property.id} />
@@ -71,12 +71,6 @@ export function PropertyCard({
         <div className="absolute bottom-3 left-3">
           <MarcaImovel propertyId={property.id} />
         </div>
-        {/* Destaque de anúncio — selo discreto (borda dourada), não um badge cheio. */}
-        {tier !== "padrao" && (
-          <span className="absolute bottom-3 right-3 rounded-full border border-gold bg-white/95 px-2 py-0.5 text-[11px] font-semibold text-forest shadow-sm">
-            Destaque
-          </span>
-        )}
       </div>
 
       <div className="flex flex-1 flex-col gap-2.5 p-4">
@@ -135,8 +129,11 @@ export function PropertyCard({
           )}
         </div>
 
-        {((SELO_NF_UI && property.issuesInvoice) || property.acceptsInsurance) && (
-          <div className="flex flex-wrap gap-1.5">
+        {(selos.linha.length > 0 || (SELO_NF_UI && property.issuesInvoice) || property.acceptsInsurance) && (
+          <div className="flex flex-wrap gap-1.5" data-testid="selos-linha">
+            {selos.linha.map((s) => (
+              <Selo key={s} id={s} />
+            ))}
             {SELO_NF_UI && property.issuesInvoice && <InvoiceBadge />}
             {/* Seguro-fiança em estruturação: exemplo não promete. */}
             {!exemplo && property.acceptsInsurance && <InsuranceBadge />}
@@ -176,4 +173,31 @@ export function PropertyCard({
       </div>
     </Link>
   );
+}
+
+const SELO_BASE = "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold";
+
+function Selo({ id }: { id: SeloCard }) {
+  switch (id) {
+    case "precoJusto":
+      return <PrecoJustoBadge />;
+    case "pronto":
+      return <ReadyToLiveBadge size="sm" />;
+    case "pets":
+      return (
+        <span className={`${SELO_BASE} border border-sage-200 bg-white text-forest shadow-sm`}>
+          <PawPrint className="h-3.5 w-3.5" aria-hidden /> Aceita pets
+        </span>
+      );
+    case "video":
+      return (
+        <span className={`${SELO_BASE} bg-night/85 text-white`}>
+          <PlayCircle className="h-3.5 w-3.5" aria-hidden /> Vídeo
+        </span>
+      );
+    case "exemplo":
+      return <span className={`${SELO_BASE} bg-night/85 text-[11px] text-white`}>Exemplo ilustrativo</span>;
+    case "destaque":
+      return <span className={`${SELO_BASE} border border-gold bg-white/95 text-[11px] text-forest shadow-sm`}>Destaque</span>;
+  }
 }
