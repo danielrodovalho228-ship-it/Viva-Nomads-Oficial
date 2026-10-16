@@ -21,7 +21,7 @@ export function BarraFixaCelular({
   pending: boolean;
   onSolicitar: () => void;
   onMensagem: () => void;
-  whatsapp: { href: string; externo: boolean };
+  whatsapp: { href: string; externo: boolean; rotulo: string };
 }) {
   if (!barra.visivel) return null;
   const primario = buttonClasses({ variant: "primary", size: "sm", className: "h-11 px-3" });
@@ -67,10 +67,10 @@ export function BarraFixaCelular({
           <a
             href={whatsapp.href}
             {...(whatsapp.externo ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-            aria-label="WhatsApp da Viva"
+            aria-label={whatsapp.rotulo}
             className={secundario}
           >
-            <MessageCircle className="h-4 w-4" /> <span className="sr-only sm:not-sr-only">WhatsApp</span>
+            <MessageCircle className="h-4 w-4" /> <span className="sr-only sm:not-sr-only">{whatsapp.externo ? "WhatsApp" : "Viva"}</span>
           </a>
         </div>
       </div>
