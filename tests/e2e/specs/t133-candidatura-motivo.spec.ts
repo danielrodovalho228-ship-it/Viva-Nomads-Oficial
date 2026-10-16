@@ -14,8 +14,9 @@ const inqA = { email: `inq.mot133a.${sufixo}@lab.vivanomads.test`, nome: "Alice 
 const inqB = { email: `inq.mot133b.${sufixo}@lab.vivanomads.test`, nome: "Bruno Sobrenomeoculto", role: "tenant" as const };
 const ids: { dono?: string; a?: string; b?: string; imovel?: string } = {};
 
-async function candidatar(page: import("@playwright/test").Page, imovel: string): Promise<void> {
-  await page.goto(`/imoveis/${imovel}`, { waitUntil: "networkidle" });
+async function candidatar(page: import("@playwright/test").Page, imovel: string, recarregar = true): Promise<void> {
+  // Recarregar apaga a escolha feita na tela (volta ao motivo do perfil): quem já escolheu passa recarregar=false.
+  if (recarregar) await page.goto(`/imoveis/${imovel}`, { waitUntil: "networkidle" });
   await page.getByTestId("barra-fixa-imovel").getByRole("button", { name: "Solicitar reserva" }).click();
   const passo = page.getByTestId("solicitacao-passo");
   await expect(passo).toBeVisible();
@@ -56,7 +57,7 @@ test.describe("T133 — Motivo na candidatura", () => {
     await seletor.selectOption("trabalho_remoto");
     await page.waitForTimeout(1500);
     await expect(seletor).toHaveValue("trabalho_remoto");
-    await candidatar(page, ids.imovel!);
+    await candidatar(page, ids.imovel!, false);
     expect(await motivoGravado(ids.a!)).toBe("trabalho_remoto");
     await page.context().close();
   });
@@ -66,7 +67,7 @@ test.describe("T133 — Motivo na candidatura", () => {
     const page = await entrar(browser, inqB.email, senha);
     await page.goto(`/imoveis/${ids.imovel}`, { waitUntil: "networkidle" });
     await expect(page.locator("#cartao-preco").getByTestId("candidatura-motivo")).toHaveValue("tratamento_medico", { timeout: 20_000 });
-    await candidatar(page, ids.imovel!);
+    await candidatar(page, ids.imovel!, false);
     expect(await motivoGravado(ids.b!)).toBe("tratamento_medico");
     await page.context().close();
 
