@@ -104,6 +104,16 @@ const nextConfig: NextConfig = {
         source: "/auth/app-callback",
         headers: [{ key: "Referrer-Policy", value: "no-referrer" }],
       },
+      // Arquivos estáticos para robôs: a Vercel acrescenta "Access-Control-Allow-Origin: *"
+      // em saída estática. Fixamos a origem do próprio site (depois da regra global) para que
+      // nenhum site de terceiro leia isso pelo navegador (#126).
+      {
+        source: "/:arquivo(llms\\.txt|llms-full\\.txt|sitemap\\.xml)",
+        headers: [
+          { key: "Access-Control-Allow-Origin", value: "https://vivanomads.com.br" },
+          { key: "Vary", value: "Origin" },
+        ],
+      },
       // noindex/nofollow no header HTTP (independe da meta tag dentro do HTML).
       {
         source: "/simulacao",
