@@ -763,6 +763,7 @@
       "specs": [
         "t11-travessias",
         "t136-imovel-largura-maxima",
+        "t137-comodidades-tem-nao-tem",
         "t75-barra-fixa-imovel",
         "t133-candidatura-motivo",
         "t20-p1-agentes",
