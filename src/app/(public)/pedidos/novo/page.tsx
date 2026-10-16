@@ -30,6 +30,7 @@ import { MOTIVOS, isMotivo, contemContato, CONTATO_AVISO, calcExpiraEm, PRAZO_MA
 import { CHAVE_ULTIMA_BUSCA, CHAVE_ULTIMO_MOTIVO, ultimaBuscaParaPedido, ultimoMotivoParaPedido } from "@/lib/marcas/regra";
 import { MUNICIPIOS, UFS } from "@/lib/municipios";
 import { criarPedido } from "@/lib/data/pedidos-actions";
+import { getMeusDados } from "@/lib/data/perfil-actions";
 import { registrarEvento } from "@/lib/eventos/registrar";
 import { useAuthStore } from "@/lib/store";
 import { hojeBR } from "@/lib/utils";
@@ -241,6 +242,21 @@ function PedidoForm() {
       /* localStorage bloqueado: segue sem pré-preencher */
     }
   }, [ocupQ]);
+
+  // Motivo salvo no perfil (Conta): entra só se nada preencheu o campo (URL, último pedido ou escolha da pessoa).
+  const logado = Boolean(user);
+  useEffect(() => {
+    if (!logado) return;
+    let vivo = true;
+    getMeusDados()
+      .then((d) => {
+        if (vivo && d && isMotivo(d.motivoEstadia)) setMotivo((atual) => atual || d.motivoEstadia);
+      })
+      .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, [logado]);
 
   // Eco do filtro anti-contato no cliente (o servidor é a fonte da verdade).
   const contatoNoTexto = apresentacao.length > 0 && contemContato(apresentacao);
