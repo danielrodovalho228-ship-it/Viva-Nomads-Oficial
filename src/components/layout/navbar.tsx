@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useMontado } from "@/lib/use-client-state";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X, ChevronDown } from "lucide-react";
@@ -99,10 +100,8 @@ export function Navbar() {
   // `mounted` evita mismatch de hidratação (o servidor sempre renderiza o estado
   // deslogado; o cliente corrige após reidratar o store).
   const user = useAuthStore((s) => s.user);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useMontado();
   const loggedIn = mounted && !!user;
-
-  useEffect(() => setMounted(true), []);
 
   // Foto do próprio usuário (opcional) para o "Meu painel".
   const [foto, setFoto] = useState<string | null>(null);

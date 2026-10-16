@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 
 /**
- * T100 — ordem 19b8abf5: imagens únicas no site. Em cada página pública, no computador e
+ * T112 — ordem 19b8abf5: imagens únicas no site. Em cada página pública, no computador e
  * no celular: toda imagem decorativa carrega (sem quebra) e nenhuma se repete na mesma
  * página nem entre páginas. Fotos de ANÚNCIO (cards e links de imóvel), logo, avatares e
  * mapa ficam de fora — a foto do imóvel acompanha o imóvel onde ele aparecer.

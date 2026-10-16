@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useHoje } from "@/lib/use-client-state";
 import Link from "next/link";
 import { CalendarDays, Check, Loader2, CircleAlert } from "lucide-react";
 import type { Property } from "@/lib/types";
@@ -45,10 +46,9 @@ function brDate(iso: string): string {
  */
 export function AvailabilityCalendar({ property }: { property: Property }) {
   const user = useAuthStore((s) => s.user);
-  const [today, setToday] = useState<string | null>(null);
+  const today = useHoje();
   const [blockDays, setBlockDays] = useState<string[]>([]);
   useEffect(() => {
-    setToday(ymd(new Date()));
     // Dias fechados pelo proprietário (leitura pública). [] sem backend.
     getBlocks(property.id)
       .then((r) => setBlockDays(expandirBloqueios(r as Bloqueio[])))

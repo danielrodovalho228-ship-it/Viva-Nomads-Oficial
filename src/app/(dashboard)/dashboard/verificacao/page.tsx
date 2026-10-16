@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { gravarLocalStorageBruto, useLocalStorageBruto } from "@/lib/use-client-state";
 import { useSearchParams } from "next/navigation";
 import {
   ShieldCheck,
@@ -103,24 +104,14 @@ export default function VerificationPage() {
    Nunca nasce verificada nem exibe selo sem verificação real concluída.
    ───────────────────────────────────────────────────────────────────────── */
 function RealNaoVerificado({ copy, perfil }: { copy: VerifyCopy; perfil: "tenant" | "owner" }) {
-  const [avisar, setAvisar] = useState(false);
-
-  useEffect(() => {
-    try {
-      if (localStorage.getItem("vivanomads-verif-interesse")) setAvisar(true);
-    } catch {
-      /* ignore */
-    }
-  }, []);
+  const [avisarLocal, setAvisar] = useState(false);
+  const interesseGravado = useLocalStorageBruto("vivanomads-verif-interesse");
+  const avisar = avisarLocal || !!interesseGravado;
 
   function registrarInteresse() {
     // Placeholder honesto: registra o interesse no navegador. Quando existir a
     // lista de espera no servidor, este clique passa a gravá-la também.
-    try {
-      localStorage.setItem("vivanomads-verif-interesse", "1");
-    } catch {
-      /* ignore */
-    }
+    gravarLocalStorageBruto("vivanomads-verif-interesse", "1");
     setAvisar(true);
   }
 

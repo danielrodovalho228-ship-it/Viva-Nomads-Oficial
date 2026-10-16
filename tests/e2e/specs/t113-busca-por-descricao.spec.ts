@@ -1,10 +1,10 @@
 import { test, expect } from "@playwright/test";
 
 /**
- * T108 — Busca por descrição (ordem c470bb63, Próximo do FF 2/6), pública, 390 px.
+ * T113 — Busca por descrição (ordem c470bb63, Próximo do FF 2/6), pública, 390 px.
  * A frase vira filtros (chips); tirar um chip tira só aquele filtro; sem IA ligada vale o leitor local.
  */
-test.describe("T108 — Busca por descrição", () => {
+test.describe("T113 — Busca por descrição", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
   test("a frase vira chips de filtro e dá para tirar um deles", async ({ page }) => {

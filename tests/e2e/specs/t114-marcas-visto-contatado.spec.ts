@@ -3,7 +3,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { account, hasAccount, type Role } from "../fixtures/accounts";
 
 /**
- * T108 — MARCAS "VISTO / VOCÊ JÁ CONTATOU" (0134, ordem 8302024d). Direto no PostgREST:
+ * T114 — MARCAS "VISTO / VOCÊ JÁ CONTATOU" (0134, ordem 8302024d). Direto no PostgREST:
  *  - o inquilino grava e lê a própria marca;
  *  - o proprietário (outra conta) não vê a marca do inquilino (RLS);
  *  - anônimo não lê nada;
@@ -23,7 +23,7 @@ async function logado(papel: Role): Promise<{ sb: SupabaseClient; id: string }> 
   return { sb, id: data.user!.id };
 }
 
-test.describe("T108 — Marcas Visto / contatou (0134)", () => {
+test.describe("T114 — Marcas Visto / contatou (0134)", () => {
   test.skip(!temEnv, "Sem URL/chaves do Supabase ou contas de teste.");
 
   test("cada usuário vê só as próprias marcas", async () => {

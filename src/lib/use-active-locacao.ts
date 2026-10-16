@@ -11,10 +11,7 @@ import { getMinhasLocacoes } from "@/lib/data/contratos-actions";
 export function useHasActiveLocacao(enabled: boolean): boolean {
   const [active, setActive] = useState(false);
   useEffect(() => {
-    if (!enabled) {
-      setActive(false);
-      return;
-    }
+    if (!enabled) return;
     let alive = true;
     getMinhasLocacoes()
       .then((ls) => {
@@ -25,5 +22,6 @@ export function useHasActiveLocacao(enabled: boolean): boolean {
       alive = false;
     };
   }, [enabled]);
-  return active;
+  // Desligado = sempre false (sem setState no effect).
+  return enabled && active;
 }
