@@ -18,7 +18,6 @@ export default async function SavedSearchesPage() {
 
   return (
     <>
-      <FavoritosTabs />
       <PageTitle capa="buscas"
         title="Buscas salvas"
         subtitle="Receba avisos quando novos imóveis combinarem com seus filtros."
@@ -28,6 +27,7 @@ export default async function SavedSearchesPage() {
           </ButtonLink>
         }
       />
+      <FavoritosTabs />
       {vazio ? (
         <EmptyState
           icon={Search}
