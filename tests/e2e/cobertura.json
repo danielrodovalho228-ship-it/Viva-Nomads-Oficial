@@ -1002,6 +1002,14 @@
         "t62-cadastro-email-recusado"
       ]
     },
+    "/api/busca/descricao": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t108-busca-por-descricao"
+      ]
+    },
     "/api/caf/verify": {
       "personas": [
         "inquilino",

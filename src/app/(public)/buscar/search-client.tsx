@@ -33,6 +33,8 @@ import { OPCOES_PORTE_PET, ROTULO_PORTE_CURTO, contarFiltrosPainel, passaNoPaine
 import { TituloBuscaContexto } from "@/components/busca/titulo-busca";
 import { buttonClasses } from "@/components/ui/button";
 import { SalvarBusca } from "@/components/busca/salvar-busca";
+import { DescricaoBusca } from "@/components/busca/descricao-busca";
+import type { ChaveChip, FiltrosDescricao } from "@/lib/busca/descricao-filtros";
 
 // Filtro de garantia exibido na busca pública: caução unificada + seguro-fiança
 // (a modalidade parcelada fica fora da UI até o parecer — B1). Religa com a flag.
@@ -183,7 +185,7 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
     const num = (k: string) => Number(sp.get(k)) || 0;
     // Preço: aceita `orcamento` (busca do hero) OU `preco` (sync interno) — A3.
     const orc = num("orcamento") || num("preco");
-    if ([2500, 3500, 5000].includes(orc)) setMaxPrice(orc);
+    if (orc >= 300 && orc <= 50000) setMaxPrice(orc);
     if ([1, 2, 3].includes(num("quartos"))) setMinBedrooms(num("quartos"));
     if (num("adultos") >= 1) setAdults(Math.min(16, num("adultos")));
     if (num("criancas") >= 1) setChildren(Math.min(10, num("criancas")));
@@ -466,6 +468,43 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
     setFurnishedOnly(false);
   }
 
+  // Busca por descrição (ordem c470bb63): cidades e bairros que existem no catálogo.
+  const locaisDoCatalogo = useMemo(
+    () => [...new Set(properties.flatMap((p) => [p.city, p.neighborhood]).filter(Boolean))],
+    [properties]
+  );
+  // Só mexe no que a descrição citou; o resto dos filtros fica como a pessoa deixou.
+  function aplicarDescricao(f: FiltrosDescricao) {
+    if (f.maxPrice) setMaxPrice(f.maxPrice);
+    if (f.minBedrooms) setMinBedrooms(f.minBedrooms);
+    if (f.petsOnly) {
+      setPetsOnly(true);
+      setPetPorte(f.petPorte);
+    }
+    if (f.homeOfficeOnly) setHomeOfficeOnly(true);
+    if (f.readyToLiveOnly) setReadyToLiveOnly(true);
+    if (f.furnishedOnly) setFurnishedOnly(true);
+    if (f.comodidades.length) setComodidades((l) => [...new Set([...l, ...f.comodidades])]);
+    if (f.local) {
+      setLocationQuery(f.local);
+      setGeoCenter(null);
+    }
+  }
+  function removerDescricao(chave: ChaveChip) {
+    if (chave === "local") {
+      setLocationQuery("");
+      setGeoCenter(null);
+    } else if (chave === "maxPrice") setMaxPrice(0);
+    else if (chave === "minBedrooms") setMinBedrooms(0);
+    else if (chave === "petsOnly") {
+      setPetsOnly(false);
+      setPetPorte("");
+    } else if (chave === "homeOfficeOnly") setHomeOfficeOnly(false);
+    else if (chave === "readyToLiveOnly") setReadyToLiveOnly(false);
+    else if (chave === "furnishedOnly") setFurnishedOnly(false);
+    else setComodidades((l) => l.filter((c) => c !== chave));
+  }
+
   const nPainel = contarFiltrosPainel(filtrosPainel);
   // Muda sempre que um filtro muda: o "Salvar busca" reconsulta se a busca atual já está salva.
   const versaoBusca = [
@@ -498,6 +537,7 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
     <TituloBuscaContexto.Provider value={tituloBusca}>
     <div className="flex flex-col py-4 sm:py-6 lg:px-6 lg:py-0" data-testid="busca">
       {topo && <div className="-mt-4 sm:-mt-6 lg:order-2 lg:mt-0">{topo}</div>}
+      <DescricaoBusca locais={locaisDoCatalogo} onAplicar={aplicarDescricao} onRemover={removerDescricao} />
       {slotHeader &&
         createPortal(
           <BuscaCompacta
@@ -696,6 +736,8 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
               ["2500", "Até R$ 2.500"],
               ["3500", "Até R$ 3.500"],
               ["5000", "Até R$ 5.000"],
+              // Teto vindo da busca por descrição (ex.: 2.000): aparece como opção para o select não ficar em branco.
+              ...(maxPrice > 0 && ![2500, 3500, 5000].includes(maxPrice) ? ([[String(maxPrice), `Até ${formatBRL(maxPrice)}`]] as [string, string][]) : []),
             ]}
           />
           <GuestsPicker
