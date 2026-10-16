@@ -170,13 +170,13 @@ function DesktopMosaic({
   let content: React.ReactNode;
   if (n === 1) {
     content = (
-      <div className="aspect-[16/9] max-h-[520px] overflow-hidden rounded-2xl">
+      <div className="h-[480px] overflow-hidden rounded-2xl">
         <Tile src={photos[0]} alt={title} className="h-full w-full" onClick={() => onOpen(0)} testId="galeria-tile-0" />
       </div>
     );
   } else if (n < 5) {
     content = (
-      <div className="grid aspect-[2/1] max-h-[520px] grid-cols-3 gap-2 overflow-hidden rounded-2xl">
+      <div className="grid h-[480px] grid-cols-3 gap-2 overflow-hidden rounded-2xl">
         <Tile src={photos[0]} alt={title} className="col-span-2 row-span-1 h-full" onClick={() => onOpen(0)} testId="galeria-tile-0" />
         <div className="grid gap-2" style={{ gridTemplateRows: `repeat(${n - 1}, minmax(0, 1fr))` }}>
           {photos.slice(1).map((p, i) => (
@@ -187,7 +187,7 @@ function DesktopMosaic({
     );
   } else {
     content = (
-      <div className="grid aspect-[2/1] max-h-[520px] grid-cols-4 grid-rows-2 gap-2 overflow-hidden rounded-2xl">
+      <div className="grid h-[480px] grid-cols-4 grid-rows-2 gap-2 overflow-hidden rounded-2xl">
         <Tile src={photos[0]} alt={title} className="col-span-2 row-span-2 h-full" onClick={() => onOpen(0)} testId="galeria-tile-0" />
         {photos.slice(1, 5).map((p, i) => {
           const isLast = i === 3 && n > 5;
@@ -214,7 +214,7 @@ function DesktopMosaic({
   }
 
   return (
-    <div className="relative hidden md:block">
+    <div className="relative hidden md:block" data-testid="galeria-mosaico">
       {content}
       {readyToLive && (
         <div className="pointer-events-none absolute left-4 top-4">
@@ -291,9 +291,9 @@ function Lightbox({
         {photos.length > 1 && (
           <IconButton onClick={prev} label="Foto anterior" icon={ChevronLeft} iconClassName="h-6 w-6" className="absolute left-4 h-11 w-11 bg-white/10 text-white hover:bg-white/20" />
         )}
-        <div className="max-h-full w-full max-w-4xl">
+        <div className="w-full max-w-4xl">
           {isPhoto(photos[index]) ? (
-            <BrandImage src={photos[index]} alt={`${title} — foto ${index + 1}`} treat={false} sizes="100vw" className="max-h-[80vh] w-full rounded-xl object-contain" />
+            <BrandImage src={photos[index]} alt={`${title} — foto ${index + 1}`} treat={false} sizes="100vw" fit="object-contain" rounded="rounded-xl" className="h-[80vh] w-full bg-transparent" />
           ) : (
             <PhotoPlaceholder label={photos[index]} className="aspect-[4/3] w-full rounded-xl" />
           )}

@@ -461,10 +461,10 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
   );
 
   return (
-    // Página PÚBLICA com fotos: "largura total" = a medida do container (1280 px), nunca a
+    // Página PÚBLICA com fotos: "largura total" = a medida do container (1536 px, como o Furnished Finder), nunca a
     // tela inteira (ordem 4252e0d6, Daniel 16/10). A regra "painel sem mx-auto max-w-*" vale
     // só para dashboards, não para páginas públicas com galeria. Celular: ocupa a largura toda.
-    <div className="mx-auto w-full max-w-[1280px] px-5 py-8 pb-48 sm:px-8 lg:px-10 lg:pb-8" data-testid="imovel-largura-total">
+    <div className="mx-auto w-full max-w-[1536px] px-5 py-8 pb-48 sm:px-8 lg:px-7 lg:pb-8" data-testid="imovel-largura-total">
       {composer}
       {solicitacao}
       <BarraFixaCelular
