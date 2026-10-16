@@ -20,7 +20,13 @@ test.describe("T102 — Preço sugerido no cadastro", () => {
     });
     await page.reload({ waitUntil: "networkidle" });
     const retomar = page.getByRole("button", { name: /Continuar|Retomar/ }).first();
-    if (await retomar.isVisible().catch(() => false)) await retomar.click();
+    if (await retomar.isVisible().catch(() => false)) {
+      // Conta com rascunho no servidor: "Continuar" abre ?draft=<id> na etapa gravada lá, não no passo 5.
+      // Vai direto ao passo de preço pela URL (?etapa=5), que vale para rascunho do servidor.
+      await retomar.click();
+      await page.waitForURL(/[?&]draft=/);
+      await page.goto(`${page.url()}&etapa=5`, { waitUntil: "networkidle" });
+    }
     const bloco = page.getByTestId("preco-sugerido");
     // Falha alto (nada de skip silencioso): se o passo de preço não abrir, o lab precisa mostrar.
     await expect(bloco).toBeVisible();
