@@ -26,7 +26,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { AvisoAntigolpe } from "@/components/seguranca/aviso-antigolpe";
 import { DateFieldBR } from "@/components/ui/date-field-br";
-import { MOTIVOS, contemContato, CONTATO_AVISO, calcExpiraEm, PRAZO_MAX_MESES } from "@/lib/pedidos/pedidos";
+import { MOTIVOS, isMotivo, contemContato, CONTATO_AVISO, calcExpiraEm, PRAZO_MAX_MESES } from "@/lib/pedidos/pedidos";
+import { CHAVE_ULTIMA_BUSCA, CHAVE_ULTIMO_MOTIVO, ultimaBuscaParaPedido, ultimoMotivoParaPedido } from "@/lib/marcas/regra";
 import { MUNICIPIOS, UFS } from "@/lib/municipios";
 import { criarPedido } from "@/lib/data/pedidos-actions";
 import { registrarEvento } from "@/lib/eventos/registrar";
@@ -226,6 +227,21 @@ function PedidoForm() {
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
 
+  // Pré-preenchimento (ordem 8302024d): o que a última busca e o último pedido deixaram no aparelho.
+  // Só entra no que a pessoa ainda não preencheu e que a URL não trouxe; tudo segue editável.
+  useEffect(() => {
+    try {
+      const b = ultimaBuscaParaPedido(window.localStorage.getItem(CHAVE_ULTIMA_BUSCA), hojeBR());
+      /* eslint-disable react-hooks/set-state-in-effect -- lê o localStorage só no navegador (SSR não tem) */
+      if (b.pessoas && !ocupQ) setOcupantes(b.pessoas);
+      const m = ultimoMotivoParaPedido(window.localStorage.getItem(CHAVE_ULTIMO_MOTIVO), isMotivo);
+      if (m) setMotivo((atual) => atual || m);
+      /* eslint-enable react-hooks/set-state-in-effect */
+    } catch {
+      /* localStorage bloqueado: segue sem pré-preencher */
+    }
+  }, [ocupQ]);
+
   // Eco do filtro anti-contato no cliente (o servidor é a fonte da verdade).
   const contatoNoTexto = apresentacao.length > 0 && contemContato(apresentacao);
 
@@ -257,6 +273,11 @@ function PedidoForm() {
     setEnviando(false);
     if (res.ok) {
       registrarEvento("publicar_pedido", { cidade });
+      try {
+        window.localStorage.setItem(CHAVE_ULTIMO_MOTIVO, motivo);
+      } catch {
+        /* localStorage bloqueado: segue sem guardar */
+      }
       setResultado({ compativeis: res.compativeis ?? 0, sugestao: res.sugestao ?? null });
     } else {
       setErro(res.error ?? "Não foi possível publicar o pedido.");

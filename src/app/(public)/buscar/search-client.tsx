@@ -296,16 +296,16 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
   // busca; a página do imóvel usa para sugerir a data (editável). Nada de dado pessoal, nada vai ao servidor.
   useEffect(() => {
     try {
-      if (dataEntrada || maxPeriod > 0) {
+      if (dataEntrada || maxPeriod > 0 || adults + children > 1) {
         window.localStorage.setItem(
           CHAVE_ULTIMA_BUSCA,
-          serializarUltimaBusca({ inicio: dataEntrada, meses: maxPeriod > 0 ? Math.round(maxPeriod / 30) : 0 })
+          serializarUltimaBusca({ inicio: dataEntrada, meses: maxPeriod > 0 ? Math.round(maxPeriod / 30) : 0, pessoas: adults + children })
         );
       }
     } catch {
       /* localStorage bloqueado: segue sem guardar */
     }
-  }, [dataEntrada, maxPeriod]);
+  }, [dataEntrada, maxPeriod, adults, children]);
 
   // Evento anônimo "busca" (0067): 1 por local pesquisado, depois que a pessoa
   // para de digitar. Só a CIDADE vai (e só se for de um anúncio da lista) —
