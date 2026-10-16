@@ -100,3 +100,13 @@ test("pacote de limpeza (ordem 4c74ac38): linha própria na proposta e no cartã
   assert.match(linha!.valor, /2 limpezas por mês/);
   assert.ok(!resumoSolicitacao({ monthlyPrice: 2500, hoje: "2026-10-16" }).linhas.some((x) => x.rotulo === "Limpeza durante a estadia"));
 });
+
+test("pacote pago: linha da proposta traz o valor e o resumo mostra o total por mês (ordem 87aabd61)", () => {
+  const pago = linhasDeTaxas({ ...base, limpezaEstadia: { porMes: 2, inclui: "", valorMes: 180 } }).find((x) => x.chave === "limpeza")!;
+  assert.equal(pago.valor, formatBRL(180));
+  const incl = linhasDeTaxas({ ...base, limpezaEstadia: { porMes: 1, inclui: "", valorMes: 0 } }).find((x) => x.chave === "limpeza")!;
+  assert.equal(incl.valor, undefined);
+  const r = resumoSolicitacao({ monthlyPrice: 2400, hoje: "2026-10-16", totalMensal: 3130 });
+  assert.equal(r.linhas.find((x) => x.rotulo === "Total por mês")!.valor, formatBRL(3130));
+  assert.ok(!resumoSolicitacao({ monthlyPrice: 2400, hoje: "2026-10-16" }).linhas.some((x) => x.rotulo === "Total por mês"));
+});

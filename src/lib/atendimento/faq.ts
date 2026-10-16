@@ -102,6 +102,13 @@ export const FAQ: Pergunta[] = [
     termos: ["publicar", "anuncio", "documento", "analise", "fotos", "travado"],
   },
   {
+    id: "limpeza-estadia",
+    pergunta: "Posso oferecer limpezas durante a estadia?",
+    resposta:
+      "Sim, é opcional. No editor do anúncio você escolhe quantas limpezas por mês (1, 2 ou 4), o que cada uma inclui e o valor do pacote por mês. Se houver valor, ele entra no total por mês que o inquilino vê no anúncio, na busca e no contrato; com valor zero, aparece como incluída no valor mensal.",
+    termos: ["limpeza", "faxina", "durante a estadia", "pacote", "total por mes"],
+  },
+  {
     id: "email-confirmacao",
     pergunta: "Não recebi o e-mail de confirmação",
     resposta:

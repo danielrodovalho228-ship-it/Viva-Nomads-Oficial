@@ -97,3 +97,27 @@ test("textos do cartão: total em destaque e detalhe menor", () => {
   assert.match(d.detalhe, /^Valor mensal R\$\s?3\.000$/);
   for (const x of [a, b, c, d]) assert.doesNotMatch(x.destaque + x.detalhe, /aluguel|comiss/i);
 });
+
+// ── Pacote de limpeza durante a estadia no total do mês (ordem 87aabd61) ──
+test("pacote PAGO entra na linha e no total (ube-001: sem pacote segue 3.960)", () => {
+  const sem = calcularTotalMensal(imovel({ monthlyPrice: 3200, condoFee: 480, utilitiesMode: "fixed", utilitiesEstimate: 280 }));
+  assert.equal(sem.total, 3960);
+  assert.ok(!sem.linhas.some((l) => l.chave === "limpeza"));
+  const com = calcularTotalMensal(imovel({ monthlyPrice: 2400, condoFee: 350, utilitiesMode: "fixed", utilitiesEstimate: 200, limpezaEstadia: { porMes: 2, inclui: "pisos", valorMes: 180 } }));
+  assert.equal(com.total, 3130);
+  const l = com.linhas.find((x) => x.chave === "limpeza")!;
+  assert.equal(l.valor, 180);
+  assert.match(l.rotulo, /Limpeza durante a estadia \(2 por mês\)/);
+  assert.equal(com.total, com.linhas.reduce((s, x) => s + x.valor, 0));
+  assert.equal(calcularTudoIncluido(imovel({ monthlyPrice: 2400, limpezaEstadia: { porMes: 2, inclui: "", valorMes: 180 } })).total, 2580);
+  assert.match(textosTotalMensal(imovel({ monthlyPrice: 2400, limpezaEstadia: { porMes: 2, inclui: "", valorMes: 180 } })).detalhe, /limpeza/);
+});
+
+test("pacote incluído (valor 0): linha diz incluída e soma 0", () => {
+  const t = calcularTotalMensal(imovel({ monthlyPrice: 2500, limpezaEstadia: { porMes: 1, inclui: "", valorMes: 0 } }));
+  assert.equal(t.total, 2500);
+  const l = t.linhas.find((x) => x.chave === "limpeza")!;
+  assert.equal(l.valor, 0);
+  assert.equal(l.incluida, true);
+  assert.match(l.rotulo, /incluída no valor mensal/);
+});
