@@ -35,7 +35,7 @@ test.describe("T125 — alerta de busca salva", () => {
       await expect(botao).toHaveText(/Alerta ligado/);
       await botao.click();
       await expect(botao).toHaveText(/Alerta desligado/, { timeout: 10_000 });
-      const { data } = await adm().from("buscas_salvas").select("alerta_ativo").ilike("parametros", "%homeoffice=1%quartos=2%");
+      const { data } = await adm().from("buscas_salvas").select("alerta_ativo").ilike("parametros", "%quartos=2%homeoffice=1%");
       expect((data ?? []).some((r) => r.alerta_ativo === false)).toBe(true);
       await botao.click();
       await expect(botao).toHaveText(/Alerta ligado/, { timeout: 10_000 });

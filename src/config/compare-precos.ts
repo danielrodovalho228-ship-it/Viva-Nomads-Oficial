@@ -44,7 +44,7 @@ export const LINHAS_COMPARE: readonly LinhaCompare[] = [
   {
     id: "airbnb",
     nome: "Airbnb",
-    regra: "Taxa de serviço de 16% sobre o valor de cada estadia para anfitriões no Brasil.",
+    regra: "Taxa de serviço de 16% sobre cada estadia para anfitriões no Brasil.",
     pct: 0.16,
     fonte: { nome: "Central de Ajuda do Airbnb — taxas de serviço (artigo 1857)", url: "https://www.airbnb.com.br/help/article/1857" },
     conferidoEm: "2026-10-10",
@@ -53,7 +53,7 @@ export const LINHAS_COMPARE: readonly LinhaCompare[] = [
   {
     id: "booking",
     nome: "Booking",
-    regra: "Comissão de 18% sobre a reserva (programa Preferred Partner; a comissão padrão pode ser menor).",
+    regra: "Comissão de 18% sobre a estadia (programa Preferred Partner; a comissão padrão pode ser menor).",
     pct: 0.18,
     fonte: null,
     conferidoEm: null,

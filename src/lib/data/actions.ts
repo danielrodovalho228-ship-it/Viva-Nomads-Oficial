@@ -38,6 +38,7 @@ import { adminsPorAviso } from "@/lib/notifications/push-admins";
 import { avisarPedidosDoImovel } from "@/lib/data/pedidos-compat";
 import { avisarBuscasDoImovel } from "@/lib/data/alerta-busca-servidor";
 import { INTERNET_META } from "@/lib/internet";
+import { validarMotivoEstadia } from "@/lib/conta-validacao";
 import { getPropertyForOwner } from "@/lib/data/properties";
 import { colunaAirbnb } from "@/lib/preco-justo";
 import { colunasPrivacidade, type TipoAcesso } from "@/lib/anuncio/privacidade";
@@ -1271,7 +1272,9 @@ export async function requestLead(
   kind: LeadKind,
   note?: string,
   // F37: data de entrada que o inquilino quer (opcional). Só a candidatura guarda; o servidor valida.
-  inicioDesejado?: string
+  inicioDesejado?: string,
+  // Motivo da estadia (chave de MOTIVOS). Vazio na candidatura = usa o do perfil. Inválido é ignorado.
+  motivoEstadia?: string
 ): Promise<ActionResult & { needsAuth?: boolean; selfOwned?: boolean; exemplo?: boolean }> {
   // T9: anúncio de EXEMPLO não tem dono — nada de candidatura, contato nem e-mail
   // (antes ia o nome do inquilino para um e-mail pessoal de fallback).
@@ -1370,6 +1373,17 @@ export async function requestLead(
       .maybeSingle();
     novoContato = !existing;
     if (!existing) {
+      // Motivo da candidatura: o escolhido (validado no servidor) ou, sem escolha, o do perfil.
+      let motivoLead: string | null = null;
+      if (kind === "candidatura") {
+        const escolhido = validarMotivoEstadia(motivoEstadia ?? "");
+        motivoLead = escolhido.ok ? escolhido.valor : null;
+        if (!motivoLead) {
+          const { data: perfil } = await supabase.from("profiles").select("motivo_estadia").eq("id", user.id).maybeSingle();
+          const doPerfil = validarMotivoEstadia((perfil?.motivo_estadia as string | null) ?? "");
+          motivoLead = doPerfil.ok ? doPerfil.valor : null;
+        }
+      }
       const { error: leadErr } = await supabase
         .from("leads")
         .insert({
@@ -1380,6 +1394,7 @@ export async function requestLead(
           ...(kind === "candidatura" && validarInicioEstadia(inicioDesejado, hojeBR()).ok
             ? { inicio_desejado: inicioDesejado!.trim() }
             : {}),
+          ...(motivoLead ? { motivo_estadia: motivoLead } : {}),
         });
       // 23505 = duplicado (corrida): não é erro real. Demais erros: registra.
       if (leadErr && leadErr.code !== "23505") {

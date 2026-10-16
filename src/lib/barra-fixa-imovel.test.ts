@@ -11,9 +11,11 @@ test("barra fixa mostra o mesmo valor por mês do cartão de preço", () => {
   assert.equal(b.linha, "Caução e taxas no detalhe");
 });
 
-test("anúncio de exemplo não mostra a barra (ninguém recebe candidatura)", () => {
+test("anúncio de exemplo mostra a barra em demonstração (ordem 4f8023d1)", () => {
   const b = barraFixaImovel({ monthlyPrice: 3200, exemplo: true, candidatouSe: false });
-  assert.equal(b.visivel, false);
+  assert.equal(b.visivel, true);
+  assert.equal(b.demonstracao, true);
+  assert.equal(barraFixaImovel({ monthlyPrice: 3200, exemplo: false, candidatouSe: false }).demonstracao, false);
 });
 
 test("depois de candidatar, a barra mostra o estado e não o botão de enviar", () => {

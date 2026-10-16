@@ -3,8 +3,10 @@
 import { useEffect, useMemo, useRef } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { MapPin } from "lucide-react";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import { formatBRL, cn } from "@/lib/utils";
+import { ATRIBUICAO_MAPA, RAIO_APROXIMADO_KM, TILES_CARTO, borrarCoordenada as blur, motorDoMapa } from "@/lib/mapa-base";
 
 const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
@@ -17,10 +19,7 @@ export interface MapMarker {
 }
 
 const AREA_COLOR = "#123b26"; // primária de marca (forest)
-const APPROX_RADIUS_KM = 0.5; // raio da área aproximada exibida
-
-/** Arredonda ~3 casas (≈110 m) para não expor o ponto exato (privacidade). */
-const blur = (n: number) => Math.round(n * 1000) / 1000;
+const APPROX_RADIUS_KM = RAIO_APROXIMADO_KM; // raio da área aproximada exibida
 
 /** Polígono que aproxima um círculo de `radiusKm` ao redor de (lng,lat). */
 function circle(lng: number, lat: number, radiusKm: number, steps = 64): GeoJSON.Feature<GeoJSON.Polygon> {
@@ -34,26 +33,27 @@ function circle(lng: number, lat: number, radiusKm: number, steps = 64): GeoJSON
   return { type: "Feature", properties: {}, geometry: { type: "Polygon", coordinates: [ring] } };
 }
 
-/**
- * Mapa com marcadores (Mapbox GL). Sem NEXT_PUBLIC_MAPBOX_TOKEN, exibe um
- * placeholder marcado, mantendo a app funcional em modo demonstração.
- *
- * Com `approximate`, mostra uma ÁREA aproximada (círculo do bairro) em vez do
- * ponto exato — o endereço exato só é liberado após o aceite (privacidade).
- */
-export function PropertyMap({
-  markers,
-  center,
-  zoom = 13,
-  approximate = false,
-  className,
-}: {
+interface PropertyMapProps {
   markers: MapMarker[];
   center?: { lat: number; lng: number };
   zoom?: number;
   approximate?: boolean;
   className?: string;
-}) {
+}
+
+/**
+ * Mapa com marcadores. Mesmo caminho da /buscar (ordem b4fd5b18): com
+ * NEXT_PUBLIC_MAPBOX_TOKEN, Mapbox GL; sem o token, Leaflet + mapa-base CARTO.
+ *
+ * Com `approximate`, mostra uma ÁREA aproximada (círculo do bairro) em vez do
+ * ponto exato — o endereço exato só é liberado após o aceite (privacidade).
+ */
+export function PropertyMap(props: PropertyMapProps) {
+  if (motorDoMapa(TOKEN) === "leaflet") return <PropertyMapLeaflet {...props} />;
+  return <PropertyMapbox {...props} />;
+}
+
+function PropertyMapbox({ markers, center, zoom = 13, approximate = false, className }: PropertyMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
 
@@ -103,56 +103,74 @@ export function PropertyMap({
     return () => map.remove();
   }, [shownMarkers, first, zoom, approximate]);
 
-  if (!TOKEN || !first) {
-    // Fallback elegante (sem texto técnico) enquanto o Mapbox não está configurado:
-    // grade sutil de marca + área aproximada / chips de preço.
-    return (
-      <div
-        className={cn(
-          "relative overflow-hidden rounded-2xl border border-line bg-surface-2",
-          className
-        )}
-      >
-        <div
-          className="absolute inset-0 opacity-60"
-          style={{
-            backgroundImage:
-              "linear-gradient(#e2e7ee 1px, transparent 1px), linear-gradient(90deg, #e2e7ee 1px, transparent 1px)",
-            backgroundSize: "40px 40px",
-          }}
-        />
-        {approximate ? (
-          <div
-            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed"
-            style={{ width: "55%", aspectRatio: "1 / 1", borderColor: AREA_COLOR, backgroundColor: `${AREA_COLOR}1a` }}
-            aria-label="Área aproximada do imóvel"
-          />
-        ) : (
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-blue-200">
-            <MapPin className="h-10 w-10" />
-          </div>
-        )}
-        {shownMarkers.length > 0 && (
-          <div className="absolute inset-x-0 bottom-0 flex flex-wrap gap-2 p-3">
-            {shownMarkers.slice(0, 6).map((m) => (
-              <span
-                key={m.id}
-                className={cn(
-                  "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold shadow",
-                  m.kind === "workspace" ? "bg-white text-blue-700" : "bg-blue-500 text-white"
-                )}
-              >
-                <MapPin className="h-3 w-3" />
-                {m.label}
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
-
+  if (!first) return <div className={cn("rounded-2xl border border-line bg-surface-2", className)} />;
   return <div ref={containerRef} className={cn("overflow-hidden rounded-2xl", className)} />;
+}
+
+/** Leaflet + CARTO (sem token Mapbox): área aproximada de ~500 m e lugares próximos. */
+function PropertyMapLeaflet({ markers, center, zoom = 13, approximate = false, className }: PropertyMapProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const raw = center ?? markers[0];
+  const first = useMemo(
+    () => (raw ? (approximate ? { lat: blur(raw.lat), lng: blur(raw.lng) } : raw) : undefined),
+    [raw, approximate]
+  );
+  const shownMarkers = useMemo(
+    () => (approximate ? markers.filter((m) => m.kind !== "property") : markers),
+    [markers, approximate]
+  );
+
+  useEffect(() => {
+    if (!containerRef.current || !first) return;
+    const map = L.map(containerRef.current, { zoomControl: false, scrollWheelZoom: false }).setView(
+      [first.lat, first.lng],
+      approximate ? Math.min(zoom, 15) : zoom
+    );
+    // topleft: o canto direito é do botão "Ampliar mapa"
+    L.control.zoom({ position: "topleft" }).addTo(map);
+    if (TILES_CARTO) L.tileLayer(TILES_CARTO, { maxZoom: 19, attribution: ATRIBUICAO_MAPA }).addTo(map);
+    else console.error("[mapa] NEXT_PUBLIC_CARTO_API_KEY ausente neste build: mapa-base desligado (sem marca d'água).");
+
+    if (approximate) {
+      L.circle([first.lat, first.lng], {
+        radius: APPROX_RADIUS_KM * 1000,
+        color: AREA_COLOR,
+        weight: 1.5,
+        opacity: 0.5,
+        dashArray: "4 4",
+        fillColor: AREA_COLOR,
+        fillOpacity: 0.1,
+      }).addTo(map);
+    }
+    shownMarkers.forEach((m) => {
+      const el = document.createElement("div");
+      el.className =
+        (m.kind === "workspace"
+          ? "rounded-full border border-sage bg-white text-forest px-2 py-1 text-xs font-semibold shadow"
+          : "rounded-full bg-forest text-white px-2.5 py-1 text-xs font-semibold shadow") +
+        " absolute left-0 top-0 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap";
+      el.textContent = m.label ?? "";
+      L.marker([m.lat, m.lng], { icon: L.divIcon({ className: "", iconSize: [0, 0], html: el }), interactive: false }).addTo(map);
+    });
+
+    // O contêiner pode ganhar tamanho depois (tela cheia, layout assentando).
+    const ro = new ResizeObserver(() => map.invalidateSize());
+    ro.observe(containerRef.current);
+    return () => {
+      ro.disconnect();
+      map.remove();
+    };
+  }, [shownMarkers, first, zoom, approximate]);
+
+  if (!first) return <div className={cn("rounded-2xl border border-line bg-surface-2", className)} />;
+  return (
+    <div
+      ref={containerRef}
+      data-testid="mapa-imovel"
+      data-mapa-base={TILES_CARTO ? "carto" : "sem-chave"}
+      className={cn("z-0 overflow-hidden rounded-2xl bg-surface-2", className)}
+    />
+  );
 }
 
 /** Helper para formatar o rótulo de preço de um marcador de imóvel. */

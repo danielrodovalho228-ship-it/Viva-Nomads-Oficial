@@ -3,6 +3,25 @@
  * Puro: recebe o texto visível de uma tela e devolve o que está errado. Usado pelo spec t118 do laboratório
  * e testado em src/lib/varredura-texto.test.ts. Nunca recebe dado de pessoa: só o texto da tela.
  */
+import { COMPARE_RODAPE, DIFERENCIAIS_VIVA, LINHAS_COMPARE } from "../config/compare-precos.ts";
+
+/**
+ * Exceção da tabela comparativa Viva × Airbnb × QuintoAndar (src/config/compare-precos.ts). Por regra
+ * permanente do Daniel a tabela é intocável e é a ÚNICA fonte autorizada a manter termos que a varredura
+ * barraria (ex.: "check-in" em "Sem faxina nem check-in toda semana"). Os textos vindos desse arquivo
+ * saem da tela antes da varredura; o mesmo termo em qualquer outro lugar continua reprovado.
+ */
+const TEXTOS_DA_TABELA: readonly string[] = [
+  COMPARE_RODAPE,
+  ...DIFERENCIAIS_VIVA,
+  ...LINHAS_COMPARE.flatMap((l) => [l.nome, l.regra, l.nota ?? "", l.fonte?.nome ?? ""]),
+].filter((t) => t.trim().length >= 12);
+
+export function semTabelaComparativa(texto: string): string {
+  let out = texto;
+  for (const t of TEXTOS_DA_TABELA) out = out.split(t).join(" ");
+  return out;
+}
 
 const TERMOS_PROIBIDOS: Array<[string, RegExp]> = [
   ["aluguel", /\balugu[eé](?:l|is)\b/i],

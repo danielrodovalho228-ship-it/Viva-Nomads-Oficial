@@ -443,7 +443,8 @@
         "t14-app-mode",
         "t17-conta-salvar",
         "t36-cadastro-ponta-a-ponta",
-        "t92-documento-secao"
+        "t92-documento-secao",
+        "t129-motivo-estadia-perfil"
       ]
     },
     "/dashboard/conta/[secao]": {
@@ -571,7 +572,8 @@
       "specs": [
         "t11-travessias",
         "t31-cadastro-documento",
-        "t36-cadastro-ponta-a-ponta"
+        "t36-cadastro-ponta-a-ponta",
+        "t133-candidatura-motivo"
       ]
     },
     "/dashboard/locacoes": {
@@ -759,7 +761,9 @@
       ],
       "specs": [
         "t11-travessias",
+        "t136-imovel-largura-maxima",
         "t75-barra-fixa-imovel",
+        "t133-candidatura-motivo",
         "t20-p1-agentes",
         "t23-pacote-seguranca",
         "t28-avaliacoes-fase1",
