@@ -469,6 +469,7 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
       {composer}
       {solicitacao}
       <BarraFixaCelular
+        key={property.id}
         barra={barraFixaImovel({ monthlyPrice: property.monthlyPrice, totalMensal: calcularTotalMensal(property).total, exemplo, candidatouSe, availableFrom: property.availableFrom })}
         pending={pending !== null}
         onSolicitar={abrirSolicitacao}
