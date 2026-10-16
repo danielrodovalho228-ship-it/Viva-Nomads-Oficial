@@ -281,7 +281,7 @@ export function PerfilDoModo() {
   return (
     <>
       {mode !== "tenant" && (
-        <div className="mt-6">
+        <div id="tributacao" className="mt-6 scroll-mt-24">
           <h2 className="mb-3 font-title text-lg font-bold text-ink">Tributação das locações</h2>
           <TaxSimulator />
         </div>

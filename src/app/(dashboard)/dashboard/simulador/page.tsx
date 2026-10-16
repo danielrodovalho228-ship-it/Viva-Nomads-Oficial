@@ -44,7 +44,7 @@ export default function SimuladorPage() {
 
   return (
     <>
-      <PageTitle title="Simulador de rentabilidade" subtitle="Quanto o seu imóvel rende por mês na Viva Nomads." />
+      <PageTitle capa="simulador" title="Simulador de rentabilidade" subtitle="Quanto o seu imóvel rende por mês na Viva Nomads." />
 
       <SimHero
         icon={TrendingUp}
@@ -52,7 +52,6 @@ export default function SimuladorPage() {
         subtitulo="Ajuste os valores e veja a receita líquida estimada, já descontada a taxa de serviço da sua faixa."
         stats={[
           { label: "Valor mensal médio mobiliado · Uberlândia", valor: "R$ 2.800–3.400" },
-          { label: "Prazo médio de estadia", valor: "3–4 meses" },
           { label: "Ocupação típica", valor: "~10 meses/ano" },
         ]}
       />
@@ -120,7 +119,7 @@ export default function SimuladorPage() {
           <div className="grid grid-cols-2 gap-4">
             <ResultCard label="Receita bruta / ano" value={formatBRL(res.receitaBrutaAnual)} />
             <ResultCard label="Custos / ano" value={`− ${formatBRL(res.custosAnuais)}`} />
-            <ResultCard label={`Taxa de serviço (${taxaTexto})`} value={`− ${formatBRL(res.comissaoAnual)}`} hint={`${numBR(res.contratosPorAno, 1)} contrato(s)/ano · % do valor total de cada contrato`} />
+            <ResultCard label={`Taxa de serviço (${taxaTexto})`} className="col-span-2" value={`− ${formatBRL(res.comissaoAnual)}`} hint={`${numBR(res.contratosPorAno, 1)} contrato(s)/ano · % do valor total de cada contrato`} />
           </div>
           <div className="rounded-2xl border border-forest bg-forest p-5 text-white">
             <p className="text-sm text-white/80">Receita líquida estimada / ano</p>

@@ -62,7 +62,7 @@ export default function RoiImovelPage() {
 
   return (
     <>
-      <PageTitle title="Calculadora de ROI" subtitle="Vale a pena mobiliar o seu imóvel para média duração?" />
+      <PageTitle capa="roi" title="Calculadora de ROI" subtitle="Vale a pena mobiliar o seu imóvel para média duração?" />
 
       <SimHero
         icon={Percent}
@@ -70,7 +70,6 @@ export default function RoiImovelPage() {
         subtitulo="Compare o valor mensal vazio × mobiliado e descubra em quanto tempo o investimento se paga."
         stats={[
           { label: "Prêmio típico do mobiliado", valor: "+40–70%" },
-          { label: "Investimento p/ mobiliar", valor: "R$ 15–35 mil" },
           { label: "Payback comum", valor: "2–4 anos" },
         ]}
       />

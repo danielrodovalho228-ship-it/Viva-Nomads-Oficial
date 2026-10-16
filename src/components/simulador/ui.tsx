@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { Info } from "lucide-react";
 import { PLANOS, type PlanoId } from "@/config/planos";
 
-/** Banner de topo dos simuladores (gradiente verde → sálvia + mini-stats). */
+/**
+ * Valores de referência dos simuladores. A foto fica na capa da tela (PageTitle
+ * capa), então aqui é um painel claro: ícone, título curto e 4 números em grade par.
+ */
 export function SimHero({
   icon: Icon,
   titulo,
@@ -18,32 +20,28 @@ export function SimHero({
   stats: { label: string; valor: string }[];
 }) {
   return (
-    <section className="relative overflow-hidden rounded-2xl p-6 text-white sm:p-8">
-      {/* Fundo: foto de interior (Fase 2.4) SOB o gradiente ~0.85 — o texto manda. */}
-      <Image
-        src="/media/banner-simulador.webp"
-        alt=""
-        aria-hidden
-        fill
-        sizes="100vw"
-        className="pointer-events-none object-cover"
-      />
-      <div aria-hidden className="absolute inset-0 bg-gradient-to-br from-forest/95 to-sage/85" />
-      <Icon aria-hidden className="pointer-events-none absolute -right-6 -top-6 h-40 w-40 text-white/[0.08]" />
-      <div className="relative">
-        <h2 className="font-title text-2xl font-bold sm:text-3xl">{titulo}</h2>
-        <p className="mt-2 max-w-2xl text-white/85">{subtitulo}</p>
-        <div className="mt-5 grid gap-2.5 sm:grid-cols-3">
-          {stats.map((s) => (
-            <div key={s.label} className="rounded-xl bg-white/10 p-3 ring-1 ring-white/15">
-              <p className="font-title text-lg font-bold">{s.valor}</p>
-              <p className="text-xs text-white/70">{s.label}</p>
-            </div>
-          ))}
+    <section className="rounded-2xl border border-sage-200 bg-white p-5 sm:p-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex items-start gap-3">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-sage-100 text-forest">
+            <Icon className="h-5 w-5" />
+          </span>
+          <div>
+            <h2 className="font-title text-lg font-bold text-ink">{titulo}</h2>
+            <p className="mt-0.5 max-w-2xl text-sm text-muted">{subtitulo}</p>
+          </div>
         </div>
-        <span className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-xs font-medium text-white ring-1 ring-white/20">
+        <span className="rounded-full bg-surface-2 px-2.5 py-1 text-xs font-medium text-muted">
           Valores de referência
         </span>
+      </div>
+      <div className="mt-4 grid auto-rows-fr grid-cols-2 gap-2.5">
+        {stats.map((s) => (
+          <div key={s.label} className="rounded-xl bg-surface-2 p-3">
+            <p className="font-title text-lg font-bold text-forest">{s.valor}</p>
+            <p className="text-xs text-muted">{s.label}</p>
+          </div>
+        ))}
       </div>
     </section>
   );
@@ -99,9 +97,9 @@ export function NumInput({
 }
 
 /** Card de resultado (rótulo + valor + dica opcional). */
-export function ResultCard({ label, value, hint }: { label: string; value: string; hint?: string }) {
+export function ResultCard({ label, value, hint, className }: { label: string; value: string; hint?: string; className?: string }) {
   return (
-    <div className="rounded-2xl border border-sage-200 bg-white p-4">
+    <div className={`rounded-2xl border border-sage-200 bg-white p-4 ${className ?? ""}`}>
       <p className="text-xs text-muted">{label}</p>
       <p className="mt-1 font-title text-xl font-bold text-ink">{value}</p>
       {hint && <p className="mt-0.5 text-[11px] text-muted">{hint}</p>}

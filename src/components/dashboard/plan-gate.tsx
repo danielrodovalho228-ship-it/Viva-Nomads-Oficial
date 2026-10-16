@@ -5,6 +5,7 @@ import { useAuthStore, DEMO_USER, type SubscriptionPlan } from "@/lib/store";
 import { PLAN_RANK, PLAN_LABEL } from "@/lib/plan";
 import { ButtonLink } from "@/components/ui/button";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
+import type { CapaPainel } from "@/components/dashboard/capas";
 
 /**
  * Libera o conteúdo apenas para o plano mínimo exigido (default: Gestor).
@@ -13,10 +14,13 @@ import { PageTitle, Panel } from "@/components/dashboard/primitives";
 export function PlanGate({
   min = "gestor",
   title,
+  capa,
   children,
 }: {
   min?: SubscriptionPlan;
   title: string;
+  /** Mesma capa da tela liberada — o bloqueio não muda o topo da página. */
+  capa?: CapaPainel;
   children: React.ReactNode;
 }) {
   const { user } = useAuthStore();
@@ -28,7 +32,7 @@ export function PlanGate({
 
   return (
     <div>
-      <PageTitle title={title} />
+      <PageTitle capa={capa} title={title} />
       <Panel className="text-center">
         <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-sage-100">
           <Lock className="h-7 w-7 text-forest" />
