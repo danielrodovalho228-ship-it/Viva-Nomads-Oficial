@@ -11,6 +11,7 @@
 import { textoValorPet } from "./anuncio/pets-regras.ts";
 import type { RegrasPets } from "./anuncio/pets-regras.ts";
 import { codigoDoImovel } from "./imovel-pagina.ts";
+import { isMotivo, motivoLabel } from "./pedidos/pedidos.ts";
 import { formatBRL } from "./utils.ts";
 
 export interface LinhaTaxa {
@@ -68,12 +69,65 @@ export function mensagemWhatsappViva(imovelId: string): string {
 }
 
 /**
- * Destino do botão "WhatsApp": o número da Viva (variável pública
- * NEXT_PUBLIC_VIVA_WHATSAPP) com a mensagem pronta; sem número configurado, a
- * Central de Ajuda ("Fale com a Viva"). NUNCA o telefone do proprietário.
+ * Destino do botão de contato com a Viva: com o número público da Viva
+ * (NEXT_PUBLIC_WHATSAPP_VIVA, ou o nome antigo NEXT_PUBLIC_VIVA_WHATSAPP) abre o
+ * WhatsApp com a mensagem pronta; SEM número, o botão NÃO promete WhatsApp: vira
+ * "Falar com a Viva" e leva ao atendimento com o código do imóvel. NUNCA o telefone
+ * do proprietário.
  */
-export function destinoWhatsappViva(imovelId: string, numeroViva?: string | null): { href: string; externo: boolean } {
+export function destinoWhatsappViva(
+  imovelId: string,
+  numeroViva?: string | null,
+): { href: string; externo: boolean; rotulo: string } {
   const numero = numeroWhatsappViva(numeroViva);
-  if (!numero) return { href: `/ajuda?imovel=${encodeURIComponent(codigoDoImovel(imovelId))}`, externo: false };
-  return { href: `https://wa.me/${numero}?text=${encodeURIComponent(mensagemWhatsappViva(imovelId))}`, externo: true };
+  if (!numero) {
+    return { href: `/ajuda?imovel=${encodeURIComponent(codigoDoImovel(imovelId))}`, externo: false, rotulo: "Falar com a Viva" };
+  }
+  return {
+    href: `https://wa.me/${numero}?text=${encodeURIComponent(mensagemWhatsappViva(imovelId))}`,
+    externo: true,
+    rotulo: "WhatsApp da Viva",
+  };
+}
+
+export interface ResumoSolicitacao {
+  /** Mensagem visível quando algo não pode seguir (ex.: data de entrada no passado). */
+  erro: string | null;
+  /** Linhas "rótulo: valor" do passo de confirmação (datas, motivo, valores). */
+  linhas: { rotulo: string; valor: string }[];
+}
+
+const ISO_DIA = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Passo de confirmação do "Solicitar reserva": valida o que a pessoa preencheu e
+ * monta o resumo (entrada, motivo, valor mensal, Caução, taxa da Viva). Datas em
+ * ISO (yyyy-mm-dd), comparadas como texto, sem fuso. Data e motivo são opcionais,
+ * mas, se preenchidos, precisam ser válidos — o servidor revalida tudo.
+ */
+export function resumoSolicitacao(e: {
+  monthlyPrice: number;
+  inicioDesejado?: string;
+  motivoEstadia?: string;
+  hoje: string;
+}): ResumoSolicitacao {
+  const inicio = (e.inicioDesejado ?? "").trim();
+  const motivo = (e.motivoEstadia ?? "").trim();
+  let erro: string | null = null;
+  if (inicio && (!ISO_DIA.test(inicio) || inicio < e.hoje)) {
+    erro = "A data de entrada precisa ser hoje ou depois. Ajuste ou apague a data para continuar.";
+  } else if (motivo && !isMotivo(motivo)) {
+    erro = "Escolha um motivo da lista ou marque “Prefiro não informar”.";
+  }
+  const [a, m, d] = inicio.split("-");
+  return {
+    erro,
+    linhas: [
+      { rotulo: "Entrada", valor: inicio && ISO_DIA.test(inicio) ? `${d}/${m}/${a}` : "A combinar com o proprietário" },
+      { rotulo: "Motivo da estadia", valor: motivo && isMotivo(motivo) ? motivoLabel(motivo) : "Prefiro não informar" },
+      { rotulo: "Valor por mês", valor: formatBRL(e.monthlyPrice) },
+      { rotulo: "Caução", valor: "Paga uma vez, devolvida no fim (valor no contrato)" },
+      { rotulo: "Taxa da Viva para você", valor: formatBRL(0) },
+    ],
+  };
 }

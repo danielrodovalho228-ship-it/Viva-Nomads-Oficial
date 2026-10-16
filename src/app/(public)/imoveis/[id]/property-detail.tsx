@@ -60,7 +60,7 @@ import { PrivacidadeAcesso } from "@/components/property/privacidade-acesso";
 import { OwnerCard } from "@/components/property/owner-card";
 import { Reviews } from "@/components/property/reviews";
 import { isExemplo, EXEMPLO_SEM_CONTATO, EXEMPLO_AVISO_DEMO } from "@/lib/demo-listing";
-import { destinoWhatsappViva } from "@/lib/reserva-imovel";
+import { destinoWhatsappViva, resumoSolicitacao } from "@/lib/reserva-imovel";
 import { registrarEvento } from "@/lib/eventos/registrar";
 import { NavSecoes } from "@/components/property/nav-secoes";
 import { secoesDoImovel, sinaisDeConfianca, type SinalConfianca } from "@/lib/imovel-pagina";
@@ -83,6 +83,9 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
   // Composer de dúvida/visita: o inquilino escreve a mensagem de verdade.
   const [composeKind, setComposeKind] = useState<"duvida" | "visita" | null>(null);
   const [composeText, setComposeText] = useState("");
+  // Passo de confirmação do "Solicitar reserva": resumo + (exemplo) aviso de demonstração.
+  const [solicitacaoAberta, setSolicitacaoAberta] = useState(false);
+  const [solicitacaoErro, setSolicitacaoErro] = useState<string | null>(null);
 
   // Avaliações — FONTE ÚNICA (A2): usa o array real de reviews, igual à seção de
   // avaliações. `rating` só é usado como média quando há review real.
@@ -176,6 +179,19 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
     return true;
   }
 
+  // "Solicitar reserva" nunca fica mudo: valida o que foi preenchido e abre o passo de confirmação.
+  const resumo = resumoSolicitacao({ monthlyPrice: property.monthlyPrice, inicioDesejado, motivoEstadia, hoje: hojeBR() });
+  function abrirSolicitacao() {
+    setLeadErro(null);
+    setSolicitacaoErro(resumo.erro);
+    setSolicitacaoAberta(true);
+  }
+  async function enviarSolicitacao() {
+    if (resumo.erro) return;
+    const ok = await handleLead("candidatura");
+    if (ok) setSolicitacaoAberta(false);
+  }
+
   const citySlug = property.city
     .toLowerCase()
     .normalize("NFD")
@@ -215,7 +231,7 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
   );
 
   // WhatsApp: SEMPRE o da Viva (com o código do imóvel) — o contato do dono fica mascarado até o aceite.
-  const whatsapp = destinoWhatsappViva(property.id, process.env.NEXT_PUBLIC_VIVA_WHATSAPP);
+  const whatsapp = destinoWhatsappViva(property.id, process.env.NEXT_PUBLIC_WHATSAPP_VIVA ?? process.env.NEXT_PUBLIC_VIVA_WHATSAPP);
 
   // Bloco de ações reutilizado dentro do card de preço.
   const actions = candidatouSe ? (
@@ -259,7 +275,7 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
         size="lg"
         className="w-full"
         data-cta
-        onClick={() => handleLead("candidatura")}
+        onClick={abrirSolicitacao}
         disabled={pending !== null}
       >
         <FileSignature className="h-4 w-4" />
@@ -293,10 +309,10 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
         {...(whatsapp.externo ? { target: "_blank", rel: "noopener noreferrer" } : {})}
         className={buttonClasses({ variant: "secondary", size: "md", className: "w-full" })}
       >
-        <MessageCircle className="h-4 w-4" /> WhatsApp da Viva
+        <MessageCircle className="h-4 w-4" /> {whatsapp.rotulo}
       </a>
       <p className="text-center text-xs text-muted">
-        O WhatsApp fala com a Viva. O contato do proprietário só aparece depois do aceite.
+        {whatsapp.externo ? "O WhatsApp fala com a Viva." : "A conversa é com a Viva."} O contato do proprietário só aparece depois do aceite.
       </p>
       <AvisoPetCandidatura petsAllowed={property.petsAllowed} regras={property.petsRegras} />
       <AvisoAntigolpe />
@@ -396,13 +412,62 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
     </div>
   );
 
+  // Passo de confirmação da solicitação (modal no celular e no computador).
+  const solicitacao = solicitacaoAberta && !candidatouSe && (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-night/40 p-0 sm:items-center sm:p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="solicitacao-titulo"
+      data-testid="solicitacao-passo"
+      onClick={() => setSolicitacaoAberta(false)}
+    >
+      <div className="w-full max-w-md rounded-t-2xl bg-white p-5 shadow-xl sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
+        <h3 id="solicitacao-titulo" className="font-title text-lg font-bold text-ink">
+          Confirmar solicitação
+        </h3>
+        <p className="mt-1 text-sm text-muted">{property.title}</p>
+        <dl className="mt-3 space-y-2 rounded-lg bg-surface-2 px-3 py-3 text-sm">
+          {resumo.linhas.map((l) => (
+            <div key={l.rotulo} className="flex items-baseline justify-between gap-3">
+              <dt className="text-muted">{l.rotulo}</dt>
+              <dd className="text-right font-medium text-ink">{l.valor}</dd>
+            </div>
+          ))}
+        </dl>
+        {exemplo && (
+          <p data-testid="solicitacao-demo" className="mt-3 rounded-lg bg-sage-100 px-3 py-2 text-center text-xs font-medium text-forest">
+            Demonstração: este anúncio é de exemplo e a solicitação não é enviada.
+          </p>
+        )}
+        {solicitacaoErro && (
+          <p role="alert" data-testid="solicitacao-erro" className="mt-3 text-sm text-red-600">
+            {solicitacaoErro}
+          </p>
+        )}
+        {!solicitacaoErro && leadErro && !exemplo && <p role="alert" className="mt-3 text-sm text-red-600">{leadErro}</p>}
+        <div className="mt-4 flex justify-end gap-2">
+          <Button variant="ghost" size="sm" onClick={() => setSolicitacaoAberta(false)} disabled={pending !== null}>
+            {exemplo ? "Entendi" : "Voltar"}
+          </Button>
+          {!exemplo && (
+            <Button variant="primary" size="sm" disabled={pending !== null || !!resumo.erro} onClick={enviarSolicitacao}>
+              {pending === "candidatura" ? "Enviando..." : "Enviar solicitação"}
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="w-full px-5 py-8 pb-48 sm:px-8 lg:px-10 lg:pb-8 2xl:px-16" data-testid="imovel-largura-total">
       {composer}
+      {solicitacao}
       <BarraFixaCelular
         barra={barraFixaImovel({ monthlyPrice: property.monthlyPrice, exemplo, candidatouSe, availableFrom: property.availableFrom })}
         pending={pending !== null}
-        onSolicitar={() => handleLead("candidatura")}
+        onSolicitar={abrirSolicitacao}
         onMensagem={() => {
           setComposeText("");
           setComposeKind("duvida");
