@@ -125,6 +125,9 @@ export async function avisarUsuario(
 export async function avisarEquipe(c: ChamadoResumo, motivo: string, detalhesHtml?: string): Promise<void> {
   const admin = createAdminClient();
   if (!admin) return;
+  // Chamado de conta de teste / simulação nunca acorda a equipe (ordem 7436a29a, item 3).
+  const { data: sim } = await admin.from("chamados").select("simulacao").eq("id", c.id).maybeSingle();
+  if (sim?.simulacao) return;
   // Só admins que ligaram "receber alertas" na Conta (ordem 27cfd36a); admin novo nasce desligado.
   const admins = await adminsPorAviso<{ email: string | null; full_name: string | null; notif_email: boolean | null }>("operacional", "email, full_name, notif_email");
   const rotulo = PRAZOS[c.prioridade]?.rotulo ?? c.prioridade;
