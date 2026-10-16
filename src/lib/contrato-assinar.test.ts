@@ -94,6 +94,17 @@ test("dono assina, o anúncio muda as regras de pets e o inquilino assina o mesm
   assert.equal(petsRegrasDoResumo({ algumaAssinatura: true, vivas: depois, congeladas: {} }), null);
 });
 
+test("resumo mostra a data de início da estadia escolhida no Fechamento (F37) e o hash acompanha", () => {
+  const sem = resumoContrato(dados);
+  assert.ok(!sem.some((l) => l.startsWith("Início da estadia")));
+  const com = resumoContrato({ ...dados, inicioEstadia: "2026-11-03" });
+  assert.ok(com.includes("Início da estadia: 03/11/2026"));
+  assert.notEqual(hashResumo(sem), hashResumo(com));
+  assert.notEqual(hashResumo(com), hashResumo(resumoContrato({ ...dados, inicioEstadia: "2026-11-04" })));
+  // Data inválida não vira lixo no resumo assinado.
+  assert.ok(!resumoContrato({ ...dados, inicioEstadia: "03/11/2026" }).some((l) => l.startsWith("Início da estadia")));
+});
+
 test("valor pet no resumo: linha própria, só com pet na candidatura (ordem 0a746da1, parte 3b)", () => {
   const base = { especies: ["cao" as const], porteMax: "M" as const, qtdMax: 2, reforcoCaucao: 0, regrasCondominio: "" };
   const reemb = { ...base, valorPet: 500, valorPetTipo: "reembolsavel" as const };

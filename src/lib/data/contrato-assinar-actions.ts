@@ -95,6 +95,9 @@ function montar(c: LinhaContrato, userId: string): ContratoParaAssinar | null {
   const papel = papelNoContrato(userId, c.tenant_id, ownerId);
   if (!papel) return null;
   const imovel = c.properties?.title ?? "Imóvel";
+  const datas = (c.contrato_blocos ?? []).filter((b) => b?.inicio && b?.fim);
+  const inicio = datas.map((b) => b.inicio).sort()[0] ?? null;
+  const fim = datas.map((b) => b.fim).sort().at(-1) ?? null;
   const resumo = resumoContrato({
     contratoId: c.id,
     imovel,
@@ -102,6 +105,7 @@ function montar(c: LinhaContrato, userId: string): ContratoParaAssinar | null {
     prazoDias: Number(c.prazo_total_dias),
     ocupantes: Number(c.qtd_ocupantes),
     criadoEm: c.created_at.slice(0, 10),
+    inicioEstadia: inicio,
     petsRegras: petsRegrasDoResumo({
       algumaAssinatura: !!(c.assinado_proprietario_em || c.assinado_inquilino_em),
       vivas: c.properties?.pets_regras,
@@ -110,9 +114,6 @@ function montar(c: LinhaContrato, userId: string): ContratoParaAssinar | null {
     qtdPetsCandidatura:
       c.assinado_proprietario_em || c.assinado_inquilino_em ? qtdPetsCongelada(c.pets_regras_congeladas) : (c.qtd_pets_vivos ?? 0),
   });
-  const datas = (c.contrato_blocos ?? []).filter((b) => b?.inicio && b?.fim);
-  const inicio = datas.map((b) => b.inicio).sort()[0] ?? null;
-  const fim = datas.map((b) => b.fim).sort().at(-1) ?? null;
   const a = { proprietario: c.assinado_proprietario_em, inquilino: c.assinado_inquilino_em };
   return {
     id: c.id,

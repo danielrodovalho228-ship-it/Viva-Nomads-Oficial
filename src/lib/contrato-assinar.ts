@@ -22,6 +22,8 @@ export interface DadosResumo {
   prazoDias: number;
   ocupantes: number;
   criadoEm: string;
+  /** Início do 1º bloco (AAAA-MM-DD), a data de início escolhida no Fechamento (F37). Sem ela a linha não aparece. */
+  inicioEstadia?: string | null;
   /** Regras de pets do anúncio (ordem 022afabb item 5): entram no resumo, não no texto do modelo. */
   petsRegras?: RegrasPets | null;
   /** Pets da ficha do inquilino na candidatura: sem pet, a linha "Valor pet" não aparece. */
@@ -29,7 +31,13 @@ export interface DadosResumo {
 }
 
 /** Linhas do resumo mostradas na tela e usadas no hash (mesma fonte: o que a pessoa lê é o que ela assina). */
+function dataDoResumo(iso: string): string | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : null;
+}
+
 export function resumoContrato(d: DadosResumo): string[] {
+  const inicio = d.inicioEstadia ? dataDoResumo(d.inicioEstadia) : null;
   const valor = d.aluguelMensal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   const valorPet = linhaValorPetCandidatura(!!d.petsRegras, d.petsRegras, d.qtdPetsCandidatura ?? 0);
   return [
@@ -37,6 +45,7 @@ export function resumoContrato(d: DadosResumo): string[] {
     `Contrato ${d.contratoId}`,
     `Imóvel: ${d.imovel}`,
     `Valor mensal: ${valor}`,
+    ...(inicio ? [`Início da estadia: ${inicio}`] : []),
     `Prazo total: ${d.prazoDias} dias`,
     `Ocupantes: ${d.ocupantes}`,
     ...(d.petsRegras ? [`Pets — ${linhasRegrasPets(d.petsRegras, { semValorPet: true }).join("; ")}`] : []),
