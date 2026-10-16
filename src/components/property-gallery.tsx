@@ -8,6 +8,9 @@ import { ReadyToLiveBadge } from "@/components/ui/badge";
 import { IconButton } from "@/components/ui/icon-button";
 import { cn } from "@/lib/utils";
 
+/** O mosaico mostra 5 fotos (0–4); o "+N mais" abre na primeira oculta. */
+export const PRIMEIRA_FOTO_OCULTA = 5;
+
 const isPhoto = (s?: string) =>
   typeof s === "string" && (/^https?:\/\//.test(s) || s.startsWith("/"));
 
@@ -46,7 +49,6 @@ export function PropertyGallery({
         title={title}
         readyToLive={readyToLive}
         onOpen={openAt}
-        onSeeAll={() => openAt(0)}
       />
 
       {lightbox && (
@@ -67,15 +69,18 @@ function Tile({
   alt,
   className,
   onClick,
+  testId,
 }: {
   src: string;
   alt: string;
   className?: string;
   onClick?: () => void;
+  testId?: string;
 }) {
   return (
     <button
       type="button"
+      data-testid={testId}
       onClick={onClick}
       className={cn("group relative block overflow-hidden", className)}
     >
@@ -118,16 +123,16 @@ function MobileCarousel({
       >
         {photos.map((p, i) => (
           <div key={i} className="aspect-[4/3] w-full shrink-0 snap-center">
-            <Tile src={p} alt={`${title} — foto ${i + 1}`} className="h-full w-full" onClick={() => onOpen(i)} />
+            <Tile src={p} alt={`${title} — foto ${i + 1}`} className="h-full w-full" onClick={() => onOpen(i)} testId={`galeria-tile-${i}`} />
           </div>
         ))}
       </div>
       {readyToLive && (
-        <div className="absolute left-3 top-3">
+        <div className="pointer-events-none absolute left-3 top-3">
           <ReadyToLiveBadge size="sm" />
         </div>
       )}
-      <span className="absolute bottom-3 right-3 rounded-full bg-night/70 px-2.5 py-1 text-xs font-medium text-white">
+      <span className="pointer-events-none absolute bottom-3 right-3 rounded-full bg-night/70 px-2.5 py-1 text-xs font-medium text-white">
         {active + 1}/{photos.length}
       </span>
       {/* Pontos */}
@@ -153,13 +158,11 @@ function DesktopMosaic({
   title,
   readyToLive,
   onOpen,
-  onSeeAll,
 }: {
   photos: string[];
   title: string;
   readyToLive?: boolean;
   onOpen: (i: number) => void;
-  onSeeAll: () => void;
 }) {
   const n = photos.length;
 
@@ -168,16 +171,16 @@ function DesktopMosaic({
   if (n === 1) {
     content = (
       <div className="aspect-[16/9] max-h-[520px] overflow-hidden rounded-2xl">
-        <Tile src={photos[0]} alt={title} className="h-full w-full" onClick={() => onOpen(0)} />
+        <Tile src={photos[0]} alt={title} className="h-full w-full" onClick={() => onOpen(0)} testId="galeria-tile-0" />
       </div>
     );
   } else if (n < 5) {
     content = (
       <div className="grid aspect-[2/1] max-h-[520px] grid-cols-3 gap-2 overflow-hidden rounded-2xl">
-        <Tile src={photos[0]} alt={title} className="col-span-2 row-span-1 h-full" onClick={() => onOpen(0)} />
+        <Tile src={photos[0]} alt={title} className="col-span-2 row-span-1 h-full" onClick={() => onOpen(0)} testId="galeria-tile-0" />
         <div className="grid gap-2" style={{ gridTemplateRows: `repeat(${n - 1}, minmax(0, 1fr))` }}>
           {photos.slice(1).map((p, i) => (
-            <Tile key={i} src={p} alt={`${title} — ${i + 2}`} className="h-full" onClick={() => onOpen(i + 1)} />
+            <Tile key={i} src={p} alt={`${title} — ${i + 2}`} className="h-full" onClick={() => onOpen(i + 1)} testId={`galeria-tile-${i + 1}`} />
           ))}
         </div>
       </div>
@@ -185,16 +188,17 @@ function DesktopMosaic({
   } else {
     content = (
       <div className="grid aspect-[2/1] max-h-[520px] grid-cols-4 grid-rows-2 gap-2 overflow-hidden rounded-2xl">
-        <Tile src={photos[0]} alt={title} className="col-span-2 row-span-2 h-full" onClick={() => onOpen(0)} />
+        <Tile src={photos[0]} alt={title} className="col-span-2 row-span-2 h-full" onClick={() => onOpen(0)} testId="galeria-tile-0" />
         {photos.slice(1, 5).map((p, i) => {
           const isLast = i === 3 && n > 5;
           return (
             <div key={i} className="relative h-full">
-              <Tile src={p} alt={`${title} — ${i + 2}`} className="h-full w-full" onClick={() => onOpen(i + 1)} />
+              <Tile src={p} alt={`${title} — ${i + 2}`} className="h-full w-full" onClick={() => onOpen(i + 1)} testId={`galeria-tile-${i + 1}`} />
               {isLast && (
                 <button
                   type="button"
-                  onClick={onSeeAll}
+                  data-testid="galeria-mais"
+                  onClick={() => onOpen(PRIMEIRA_FOTO_OCULTA)}
                   className="absolute inset-0 grid place-items-center bg-night/55 text-sm font-semibold text-white"
                 >
                   <span className="inline-flex items-center gap-1.5">
@@ -213,13 +217,14 @@ function DesktopMosaic({
     <div className="relative hidden md:block">
       {content}
       {readyToLive && (
-        <div className="absolute left-4 top-4">
+        <div className="pointer-events-none absolute left-4 top-4">
           <ReadyToLiveBadge />
         </div>
       )}
       <button
         type="button"
-        onClick={onSeeAll}
+        data-testid="galeria-ver-todas"
+        onClick={() => onOpen(0)}
         className="absolute bottom-4 right-4 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-3.5 py-2 text-sm font-medium text-ink shadow-sm hover:bg-white"
       >
         <Images className="h-4 w-4" /> Ver todas as {n} fotos
@@ -271,12 +276,13 @@ function Lightbox({
 
   return (
     <div
+      data-testid="galeria-lightbox"
       className="fixed inset-0 z-50 flex flex-col bg-night/95"
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
       <div className="flex items-center justify-between p-4 text-white">
-        <span className="text-sm">
+        <span className="text-sm" data-testid="galeria-contador">
           {index + 1} / {photos.length}
         </span>
         <IconButton onClick={onClose} label="Fechar" icon={X} iconClassName="h-6 w-6" className="h-10 w-10 text-white hover:bg-white/10" />
