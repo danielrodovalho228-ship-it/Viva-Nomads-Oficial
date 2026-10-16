@@ -110,6 +110,8 @@ test.describe("T85 — Conferência de entrada e saída: fotos, confirmar/contes
     await expect(page.getByTestId("conferencia-entrada-estado")).toHaveText("Em andamento");
     await adicionarItem(page, "entrada", SALA, "Sofá sem manchas, TV na parede.", true);
     const itens = page.getByTestId("conferencia-entrada-itens");
+    // Se o servidor recusar o item, a tela mostra o motivo: sem ele a falha vira só "não encontrado".
+    await expect(page.getByTestId("conferencia-erro")).toHaveCount(0);
     await expect(itens).toContainText(SALA, { timeout: 20_000 });
     await expect(itens.getByRole("img", { name: `Foto: ${SALA}` })).toBeVisible();
     await semRolagemLateral(page, 390);

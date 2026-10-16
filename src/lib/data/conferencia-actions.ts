@@ -8,6 +8,7 @@ import {
   decidirResposta,
   estadoConferencia,
   fonteDaConferencia,
+  type ItemTela,
   podeEditarItens,
   prazoEntrada,
   validarFotoConferencia,
@@ -28,7 +29,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 const STATUS_ENTRADA = ["ativo"];
 const STATUS_SAIDA = ["ativo", "concluido", "encerrado_sem_renovacao"];
 
-type Resultado = { ok: true; id?: string } | { ok: false; error: string };
+type Resultado = { ok: true; id?: string; item?: ItemTela } | { ok: false; error: string };
 const erro = (error: string): Resultado => ({ ok: false, error });
 
 /** Quem é a pessoa neste contrato: "inquilino", "proprietario" ou null (não é parte). */
@@ -97,11 +98,14 @@ export async function registrarItemConferencia(input: {
       descricao: input.descricao.trim(),
       foto_path: input.fotoPath ?? null,
     })
-    .select("id")
+    .select("id, criado_em")
     .single();
   if (error) return erro("Não foi possível salvar o item. Tente de novo.");
   revalidatePath("/dashboard/locacoes");
-  return { ok: true, id: data.id as string };
+  revalidatePath("/dashboard/contratos");
+  const fotoUrl = input.fotoPath ? ((await admin.storage.from(BUCKET).createSignedUrl(input.fotoPath, URL_SEGUNDOS)).data?.signedUrl ?? null) : null;
+  const item: ItemTela = { id: data.id as string, parte: ctx.parte, comodo: input.comodo.trim(), descricao: input.descricao.trim(), fotoUrl, criadoEm: String(data.criado_em) };
+  return { ok: true, id: item.id, item };
 }
 
 /** Confirma ou contesta (uma vez por parte). Depois disso a conferência fica imutável. */
@@ -137,6 +141,7 @@ export async function responderConferencia(input: {
     .insert({ conferencia_id: conf.id, parte: ctx.parte, autor_id: ctx.uid, decisao: input.decisao, motivo: d.motivo });
   if (error) return erro("Não foi possível registrar sua resposta. Ela pode já ter sido enviada.");
   revalidatePath("/dashboard/locacoes");
+  revalidatePath("/dashboard/contratos");
   return { ok: true };
 }
 
