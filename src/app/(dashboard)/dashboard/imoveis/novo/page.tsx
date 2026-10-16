@@ -42,6 +42,8 @@ import { DOC_AUTORIZACAO, exigeAutorizacao, OPERACOES, operacaoValida, type Oper
 import { MIN_PHOTOS, SUGGESTED_ROOMS, tierFromPhotoCount, TIER_META } from "@/lib/listing";
 import { FAIXAS, GARANTIAS_CADASTRO } from "@/lib/faixas";
 import { PROPERTY_TYPES, AMENITY_GROUPS, propertyTypeLabel, amenityKeysFromLabels } from "@/lib/amenities";
+import { ImportarAnuncio } from "@/components/property/importar-anuncio";
+import type { AnuncioOrganizado } from "@/lib/anuncio/importar-anuncio";
 import { PlacesPicker, type CuratedPlace } from "@/components/property/places-picker";
 import { ManualProximities } from "@/components/property/manual-proximities";
 import { LocationDatalist } from "@/lib/locations";
@@ -223,6 +225,20 @@ export default function NewPropertyPage() {
     selo: qual.baseBadge,
     video: !!videoUrl.trim(),
   });
+  // Ordem 4c178768: só preenche o que veio do texto colado; o resto fica como está.
+  function aplicarImportado(a: AnuncioOrganizado) {
+    if (a.titulo) setTitle(a.titulo);
+    if (a.descricao) setDescription(a.descricao);
+    if (a.tipo && PROPERTY_TYPES.some((t) => t.value === a.tipo)) setPropertyType(a.tipo);
+    if (a.quartos != null) setBedrooms(String(a.quartos));
+    if (a.banheiros != null) setBathrooms(String(a.banheiros));
+    if (a.areaM2 != null) setAreaM2(String(a.areaM2));
+    if (a.vagas != null) setParkingSpots(String(a.vagas));
+    if (a.comodidades.length) setAmenityKeys((s) => ({ ...s, ...Object.fromEntries(a.comodidades.map((k) => [k, true])) }));
+    if (a.aceitaPet != null) setPetsOk(a.aceitaPet);
+    if (a.permiteFumar != null) setSmokingAllowed(a.permiteFumar);
+  }
+
   const completude = prontidao.obrigatorios;
   const podePublicar = prontidao.podePublicar && qualificado && aceitouIa;
 
@@ -1079,6 +1095,7 @@ export default function NewPropertyPage() {
         {/* ── ETAPA 1 — Tipo e operação ── */}
         {step === 0 && (
           <div className="space-y-4">
+            <ImportarAnuncio onAplicar={aplicarImportado} />
             <Labeled label="Tipo de imóvel">
               <select value={propertyType} onChange={(e) => setPropertyType(e.target.value)} className="input">
                 {PROPERTY_TYPES.map((t) => (
