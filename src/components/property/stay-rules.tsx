@@ -74,7 +74,7 @@ export function StayRules({ property }: { property: Property }) {
           <li>• Caução conforme contrato — registrada e documentada pela plataforma.</li>
           {property.acceptsInsurance && <li>• Aceita Seguro-Fiança.</li>}
           <li className="text-muted">
-            O pagamento do aluguel é feito direto ao proprietário — a plataforma conecta,
+            O pagamento do valor mensal é feito direto ao proprietário — a plataforma conecta,
             verifica, documenta e registra, mas nunca retém o dinheiro.
           </li>
         </ul>
