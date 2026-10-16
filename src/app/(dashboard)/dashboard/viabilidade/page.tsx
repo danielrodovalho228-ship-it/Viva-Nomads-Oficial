@@ -48,13 +48,13 @@ function Calc() {
         <Panel title="Premissas">
           <div className="space-y-4">
             <Field
-              label="Aluguel vazio (long-term)"
+              label="Valor mensal vazio (long-term)"
               hint="Quanto renderia alugando tradicional, por mês"
               value={emptyRent}
               onChange={setEmptyRent}
             />
             <Field
-              label="Aluguel mobiliado (30 a 180 dias)"
+              label="Valor mensal mobiliado (30 a 180 dias)"
               hint="Mensal cobrado mobiliado para estadias de 30 a 180 dias"
               value={furnishedRent}
               onChange={setFurnishedRent}

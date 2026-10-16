@@ -28,20 +28,33 @@ function semComentarios(src: string): string {
   return src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[\s;{}()])\/\/[^\n]*/g, "$1");
 }
 
-/** Ocorrências visíveis: palavra inteira, exceto o valor de dado "aluguel" (aspas coladas, minúsculo). */
+/**
+ * Ocorrências visíveis: "Aluguel"/"aluguéis"/"intermedeia" sempre; "aluguel" minúsculo só quando é palavra de frase
+ * ("do aluguel"), não variável (`const aluguel`, `{aluguel}`, `aluguel={...}`) nem o valor de dado "aluguel".
+ */
 export function ocorrenciasProibidas(src: string): string[] {
   const out: string[] = [];
   const limpo = semComentarios(src);
   for (const m of limpo.matchAll(/\b(alugu[eé](?:l|is)|intermedeia)\b/gi)) {
     const i = m.index ?? 0;
-    const dadoInterno = m[0] === "aluguel" && /["'`]/.test(limpo[i - 1] ?? "") && /["'`]/.test(limpo[i + m[0].length] ?? "");
-    if (!dadoInterno) out.push(limpo.slice(Math.max(0, i - 25), i + 35).replace(/\s+/g, " "));
+    let proibida = true;
+    if (m[0] === "aluguel") {
+      const antes = limpo.slice(Math.max(0, i - 12), i);
+      const prop = /^=[^=]/.test(limpo.slice(i + m[0].length, i + m[0].length + 2));
+      const frase = !prop && /[a-zà-ú]\s$/i.test(antes) && !/\b(const|let|var|return|typeof|in|of|case)\s$/.test(antes);
+      proibida = frase;
+    }
+    if (proibida) out.push(limpo.slice(Math.max(0, i - 25), i + 35).replace(/\s+/g, " "));
   }
   return out;
 }
 
 test("o detector ignora comentário, variável e o valor de dado \"aluguel\"", () => {
-  assert.deepEqual(ocorrenciasProibidas('// aluguel\n/* o aluguel */ const aluguelMensal = 1; tipo === "aluguel"'), []);
+  assert.deepEqual(
+    ocorrenciasProibidas('// aluguel\n/* o aluguel */ const aluguelMensal = 1; const aluguel = 2; f(aluguel + 1); <X aluguel={1} />; tipo === "aluguel"'),
+    [],
+  );
+  assert.equal(ocorrenciasProibidas("<p>junto do aluguel. Se</p>").length, 1);
   assert.equal(ocorrenciasProibidas("<p>Aluguel do bloco</p>").length, 1);
   assert.equal(ocorrenciasProibidas('{t === "aluguel" ? "Aluguel" : "Caução"}').length, 1);
 });

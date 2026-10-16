@@ -51,7 +51,7 @@ export default function SimuladorPage() {
         titulo="Simule a rentabilidade do seu imóvel"
         subtitulo="Ajuste os valores e veja a receita líquida estimada, já descontada a taxa de serviço da sua faixa."
         stats={[
-          { label: "Aluguel médio mobiliado · Uberlândia", valor: "R$ 2.800–3.400" },
+          { label: "Valor mensal médio mobiliado · Uberlândia", valor: "R$ 2.800–3.400" },
           { label: "Prazo médio de estadia", valor: "3–4 meses" },
           { label: "Ocupação típica", valor: "~10 meses/ano" },
         ]}
@@ -73,7 +73,7 @@ export default function SimuladorPage() {
             )}
           </div>
           <div className="mt-4 space-y-4">
-            <NumInput label="Aluguel mensal pretendido" value={aluguelMensal} onChange={setAluguel} step={100} prefix="R$" max={MAX_ALUGUEL_MENSAL} />
+            <NumInput label="Valor mensal pretendido" value={aluguelMensal} onChange={setAluguel} step={100} prefix="R$" max={MAX_ALUGUEL_MENSAL} />
             <NumInput label="Condomínio + IPTU (mês)" value={condoIptu} onChange={setCondoIptu} step={50} prefix="R$" max={MAX_ALUGUEL_MENSAL} />
             <NumInput label="Contas incluídas — água/luz/internet (mês)" value={contas} onChange={setContas} step={50} prefix="R$" max={MAX_ALUGUEL_MENSAL} />
             <div>
@@ -140,7 +140,7 @@ export default function SimuladorPage() {
                 titulo: "Simulação de rentabilidade",
                 subtitulo: `Taxa de serviço ${taxaTexto} do valor total de cada contrato`,
                 entradas: [
-                  { label: "Aluguel mensal pretendido", valor: formatBRL(aluguelMensal) },
+                  { label: "Valor mensal pretendido", valor: formatBRL(aluguelMensal) },
                   { label: "Condomínio + IPTU (mês)", valor: formatBRL(condoIptu) },
                   { label: "Contas incluídas (mês)", valor: formatBRL(contas) },
                   { label: "Meses ocupados no ano", valor: String(mesesOcupados) },

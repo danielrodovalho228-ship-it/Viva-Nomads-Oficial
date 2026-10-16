@@ -67,7 +67,7 @@ export default function RoiImovelPage() {
       <SimHero
         icon={Percent}
         titulo="Vale a pena mobiliar?"
-        subtitulo="Compare o aluguel vazio × mobiliado e descubra em quanto tempo o investimento se paga."
+        subtitulo="Compare o valor mensal vazio × mobiliado e descubra em quanto tempo o investimento se paga."
         stats={[
           { label: "Prêmio típico do mobiliado", valor: "+40–70%" },
           { label: "Investimento p/ mobiliar", valor: "R$ 15–35 mil" },
@@ -86,8 +86,8 @@ export default function RoiImovelPage() {
                 <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {INCLUI}
               </p>
             </div>
-            <NumInput label="Aluguel VAZIO de referência (mês)" value={aluguelVazio} onChange={setVazio} step={100} prefix="R$" max={MAX_ALUGUEL_MENSAL} />
-            <NumInput label="Aluguel MOBILIADO pretendido (mês)" value={aluguelMobiliado} onChange={setMob} step={100} prefix="R$" max={MAX_ALUGUEL_MENSAL} />
+            <NumInput label="Valor mensal VAZIO de referência" value={aluguelVazio} onChange={setVazio} step={100} prefix="R$" max={MAX_ALUGUEL_MENSAL} />
+            <NumInput label="Valor mensal MOBILIADO pretendido" value={aluguelMobiliado} onChange={setMob} step={100} prefix="R$" max={MAX_ALUGUEL_MENSAL} />
             <NumInput label="Contas incluídas no mobiliado (água, luz, internet) por mês" value={contasMensais} onChange={setContas} step={50} prefix="R$" max={MAX_ALUGUEL_MENSAL} />
             <NumInput label="Reposição e desgaste da mobília (% do investimento por ano)" value={reposicaoPct} onChange={setReposicao} step={1} max={100} />
             <div>
@@ -150,8 +150,8 @@ export default function RoiImovelPage() {
                 subtitulo: `Taxa de serviço ${pctTexto(faixa.taxa)} do valor total de cada contrato`,
                 entradas: [
                   { label: "Investimento para mobiliar", valor: formatBRL(investimentoMobiliar) },
-                  { label: "Aluguel vazio (mês)", valor: formatBRL(aluguelVazio) },
-                  { label: "Aluguel mobiliado (mês)", valor: formatBRL(aluguelMobiliado) },
+                  { label: "Valor mensal vazio", valor: formatBRL(aluguelVazio) },
+                  { label: "Valor mensal mobiliado", valor: formatBRL(aluguelMobiliado) },
                   { label: "Meses ocupados no ano", valor: String(mesesOcupados) },
                 ],
                 resultados: [
