@@ -46,6 +46,9 @@ test.describe("T57 — Contrato: ver e assinar", () => {
       await expect(page.getByTestId("assinar-enviar")).toBeDisabled(); // falta o código de 6 dígitos
       await page.getByTestId("assinar-codigo").fill("123456");
       await expect(page.getByTestId("assinar-enviar")).toBeEnabled(); // o servidor recusa código que não foi pedido
+      await page.getByTestId("assinar-enviar").click();
+      await expect(page.getByRole("alert").filter({ hasText: /código/i })).toBeVisible(); // recusa mostrada, sem assinar
+      await expect(page.getByTestId("form-assinar")).toBeVisible();
     }
   });
 });
