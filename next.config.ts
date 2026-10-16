@@ -17,6 +17,9 @@ const nextConfig: NextConfig = {
   images: {
     // AVIF/WebP: imagens bem menores que JPEG/PNG onde o navegador suporta.
     formats: ["image/avif", "image/webp"],
+    // Next 16 recusa (400) imagem em IP local; o laboratório guarda fotos no Supabase local (127.0.0.1).
+    // Só no laboratório: o build de produção com a chave ligada já falha no topo deste arquivo.
+    dangerouslyAllowLocalIP: LABORATORIO,
     remotePatterns: [
       // Fotografia interina (carrega em produção; substituir por fotos reais do cliente)
       { protocol: "https", hostname: "images.unsplash.com" },
