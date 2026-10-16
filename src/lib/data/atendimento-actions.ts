@@ -10,7 +10,7 @@ import { ehAdmin } from "@/lib/data/admin-guard";
 import { situacaoLimite, HORA } from "@/lib/limites";
 import { guardContactInfo } from "@/lib/messages/contact-guard";
 import { textoEmail } from "@/lib/notifications/texto-seguro";
-import { validarVisitante } from "@/lib/atendimento/identificacao-chamado";
+import { validarVisitanteComDns } from "@/lib/atendimento/identificacao-chamado-dns";
 import {
   calcularPrazos,
   mensagemPrazo,
@@ -117,7 +117,7 @@ export async function abrirChamado(
   let visitanteEmail: string | null = null;
   let visitanteNome: string | null = null;
   if (!user) {
-    const v = validarVisitante({ nome: input.visitanteNome, email: input.visitanteEmail });
+    const v = await validarVisitanteComDns({ nome: input.visitanteNome, email: input.visitanteEmail });
     if (!v.ok) return { ok: false, error: v.error };
     visitanteEmail = v.email;
     visitanteNome = v.nome;
