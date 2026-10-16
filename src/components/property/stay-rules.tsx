@@ -75,7 +75,7 @@ export function StayRules({ property }: { property: Property }) {
           {property.acceptsInsurance && <li>• Aceita Seguro-Fiança.</li>}
           <li className="text-muted">
             O pagamento do valor mensal é feito direto ao proprietário — a plataforma conecta,
-            verifica, documenta e registra, mas nunca retém o dinheiro.
+            confere a documentação do imóvel e registra a negociação, mas nunca recebe o dinheiro.
           </li>
         </ul>
       </div>

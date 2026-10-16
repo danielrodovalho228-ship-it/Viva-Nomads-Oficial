@@ -29,7 +29,7 @@ export default function ForLandlordsPage() {
         eyebrow="Para proprietários"
         titulo={
           <>
-            Mais <span className="text-green-300">margem</span> que a locação de curta duração
+            Seu imóvel mobiliado ocupado por <span className="text-green-300">meses</span>, com contrato
           </>
         }
         subtitulo={
@@ -122,7 +122,7 @@ export default function ForLandlordsPage() {
             <ul className="mt-6 space-y-4">
               {[
                 "Checklist de qualificação que ajuda a declarar a regularidade da locação.",
-                "Selo Pronto para Morar para anunciar mais caro.",
+                "Selo Pronto para Morar para seu anúncio se destacar na busca.",
                 "Verificação de identidade do inquilino — em breve.",
                 "Contrato de 30 a 180 dias gerado e assinado digitalmente, com validade jurídica.",
                 "Pagamento mensal direto na sua conta.",

@@ -240,7 +240,7 @@ function DuranteDepois() {
   return (
     <section className="container-page pb-4">
       <h2 className="font-title text-2xl font-bold text-ink">Durante e depois da estadia</h2>
-      <div className="mt-6 grid gap-6 sm:grid-cols-3">
+      <div className="mt-6 grid gap-6 sm:grid-cols-2">
         {itens.map((it) => (
           <div key={it.title} className="flex flex-col overflow-hidden rounded-2xl border border-sage-200 bg-white">
             <StepImage src={it.img} alt={it.alt} />
@@ -262,7 +262,7 @@ function DuranteDepois() {
 /**
  * Faixa "Você fica protegido por" (proprietário): 3 camadas de segurança já
  * existentes. Sem vistoria/dossiê — só entram quando forem construídos (pós-QA).
- * Seguro incêndio: obrigação legal em toda locação; contratação via parceiro.
+ * Seguro incêndio: não é proteção ainda — aparece só como "Em breve" (ordem #141).
  */
 function ProtegidoPor() {
   const itens = [
@@ -277,12 +277,6 @@ function ProtegidoPor() {
       alt: "Aperto de mãos fechando o contrato de locação",
       title: "Garantia do contrato",
       text: `${CAUCAO_FRASE} Combinada entre proprietário e inquilino. A Viva não é garantidora.`,
-    },
-    {
-      img: "/images/unicas/cf-seguro-condominio.webp",
-      alt: "Fachada de um condomínio residencial",
-      title: "Seguro incêndio",
-      text: "Obrigatório por lei em toda locação; contratação via parceiro (em estruturação).",
     },
   ];
   return (
@@ -299,6 +293,7 @@ function ProtegidoPor() {
           </div>
         ))}
       </div>
+      <p className="mt-4 text-sm text-muted">Em breve: seguro incêndio via parceiro.</p>
     </section>
   );
 }

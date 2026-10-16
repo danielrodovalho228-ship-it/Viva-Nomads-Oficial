@@ -218,9 +218,9 @@ export default async function HomePage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/[0.06]">
-                  <CompareRow label="Estadia de 30 a 180 dias" a="yes" b="no" c="partial" />
+                  <CompareRow label="Estadia mensal ou mais longa" a="yes" b="partial" c="partial" />
                   <CompareRow label="Mobiliado e pronto para morar" a="yes" b="yes" c="no" />
-                  <CompareRow label="Contrato digital de média duração" a="yes" b="no" c="partial" />
+                  <CompareRow label="Contrato de locação com assinatura digital" a="yes" b="no" c="partial" />
                   <CompareRow label="Dinheiro direto na conta do proprietário" a="yes" b="no" c="no" />
                   <CompareRow label="Custo ao dono: taxa única por contrato" a="yes" b="no" c="no" />
                   <CompareRow label="Inquilino paga R$ 0 de taxa de plataforma" a="yes" b="no" c="yes" />
@@ -263,8 +263,8 @@ export default async function HomePage() {
               <div>
                 <Eyebrow light>Para proprietários</Eyebrow>
                 <h2 className="mt-4 font-title font-bold display-lg">
-                  Mais estabilidade, menos tempo com o imóvel parado,{" "}
-                  <span className="text-gradient-brand">mais margem líquida</span>.
+                  Mais estabilidade e{" "}
+                  <span className="text-gradient-brand">menos tempo com o imóvel parado</span>.
                 </h2>
                 <p className="mt-5 max-w-md text-white/65">
                   Um inquilino por uma estadia inteira traz previsibilidade: agenda estável,
