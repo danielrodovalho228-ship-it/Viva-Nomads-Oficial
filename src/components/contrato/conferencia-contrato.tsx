@@ -12,7 +12,7 @@ import {
   type ConferenciaView,
   type ConferenciasContrato,
 } from "@/lib/data/conferencia-actions";
-import { estadoConferencia, mesclarItens, mesclarRespostas, type ItemTela, type RespostaTela, type TipoConferencia } from "@/lib/conferencia";
+import { erroTamanhoLaudo, estadoConferencia, mesclarItens, mesclarRespostas, type ItemTela, type RespostaTela, type TipoConferencia } from "@/lib/conferencia";
 
 const ROTULO_TIPO: Record<TipoConferencia, string> = { entrada: "Conferência de entrada", saida: "Conferência de saída" };
 const ROTULO_ESTADO = {
@@ -74,6 +74,8 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
       setMotivo("");
       setContestando(false);
       router.refresh();
+    } catch {
+      setErro("Não foi possível enviar o arquivo. Confira o tamanho e tente de novo.");
     } finally {
       setOcupado(false);
     }
@@ -97,6 +99,8 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
 
   const anexarLaudo = (arquivo: File | undefined) => {
     if (!arquivo) return;
+    const grande = erroTamanhoLaudo(arquivo.size);
+    if (grande) return setErro(grande);
     rodar(() => {
       const fd = new FormData();
       fd.set("contratoId", contratoId);
