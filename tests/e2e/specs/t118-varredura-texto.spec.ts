@@ -34,10 +34,12 @@ const TELAS_LOGADAS = [
   "/dashboard/roi-imovel",
 ];
 
-async function textoDaTela(page: Page, rota: string): Promise<string[]> {
+async function textoDaTela(page: Page, rota: string, esperado404 = false): Promise<string[]> {
   try {
     const resp = await page.goto(rota, { waitUntil: "networkidle", timeout: 40_000 });
-    if ((resp?.status() ?? 0) >= 400) return [`HTTP ${resp?.status()}`];
+    const status = resp?.status() ?? 0;
+    // A rota inexistente de propósito TEM de dar 404 (a página "não encontrada" também é varrida); qualquer outra, não.
+    if (esperado404 ? status !== 404 : status >= 400) return [`HTTP ${status}`];
     const texto = await page.locator("body").innerText();
     const termos = rotaVarreTermos(rota);
     const metas = await page.evaluate(() =>
@@ -71,9 +73,10 @@ test.describe("T118 — Varredura de texto", () => {
     const xml = await (await request.get("/sitemap.xml")).text();
     const rotas = [...new Set([...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => new URL(m[1]).pathname))];
     expect(rotas.length, "o sitemap lista rotas").toBeGreaterThan(10);
-    for (const rota of [...rotas, "/404-inexistente-t118"]) {
+    for (const rota of rotas) {
       expect.soft(await textoDaTela(page, rota), rota).toEqual([]);
     }
+    expect.soft(await textoDaTela(page, "/404-inexistente-t118", true), "/404-inexistente-t118").toEqual([]);
   });
 
   for (const [nome, conta, extra] of [
