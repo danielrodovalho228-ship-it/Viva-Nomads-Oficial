@@ -469,7 +469,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
             <div className="rounded-xl border border-sage-200 p-4 text-sm">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <p className="font-medium text-ink">Por quanto tempo você quer ficar?</p>
+                  <p className="font-medium text-ink">Por quanto tempo será a estadia?</p>
                   <p className="text-xs text-muted">
                     Prazo total pretendido — cria o <strong>contrato</strong>. Contratado em{" "}
                     blocos de {TAMANHO_BLOCO} meses (cada bloco ≤ 90 dias).
@@ -674,14 +674,14 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                   </table>
                 </div>
                 <p className="rounded-lg bg-sage-100 px-3 py-2 text-xs text-forest">
-                  Para começar você paga só o <strong>1º bloco</strong>:{" "}
+                  Para começar o inquilino paga só o <strong>1º bloco</strong>:{" "}
                   {formatBRL(resumo.desembolsoPrimeiroBloco)} (aluguel + caução). Os próximos blocos
-                  são contratados por renovação, sempre com seu aceite — nunca automática.
+                  são contratados por renovação, sempre com o aceite das duas partes — nunca automática.
                 </p>
 
                 {/* Caução flexível: o inquilino escolhe como pagar. */}
                 <div>
-                  <p className="mb-1.5 font-medium text-ink">Como você quer pagar?</p>
+                  <p className="mb-1.5 font-medium text-ink">Como o inquilino vai pagar a caução?</p>
                   <div className="flex rounded-full bg-surface-2 p-0.5 text-xs">
                     {(
                       [
@@ -1249,10 +1249,10 @@ export function SuaProtecao({
   onCiente: (v: boolean) => void;
 }) {
   const linhas: [string, string, string][] = [
-    ["Quanto você paga", `${formatBRL(caucao)} depositados na entrada (50% de cada bloco, no máximo 3 aluguéis = ${formatBRL(aluguel * 3)})`, "O prêmio do seguro (valor de cotação da seguradora)"],
-    ["Volta para você?", "Sim, no fim, com o rendimento da poupança, menos os descontos com prova", "Não"],
+    ["Quanto o inquilino paga", `${formatBRL(caucao)} depositados na entrada (50% de cada bloco, no máximo 3 aluguéis = ${formatBRL(aluguel * 3)})`, "O prêmio do seguro (valor de cotação da seguradora)"],
+    ["Volta para o inquilino?", "Sim, no fim, com o rendimento da poupança, menos os descontos com prova", "Não"],
     ["O que cobre para o proprietário", `Aluguel e danos até ${formatBRL(caucao)}`, "Aluguel e danos até o limite da apólice"],
-    ["Se você quebrar algo", "O conserto é descontado da caução", "A seguradora paga o proprietário e cobra de você"],
+    ["Se o inquilino quebrar algo", "O conserto é descontado da caução", "A seguradora paga o proprietário e cobra do inquilino"],
   ];
   return (
     <div className="rounded-xl border border-sage-200 p-4 text-sm" data-testid="sua-protecao">
