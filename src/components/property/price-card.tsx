@@ -2,7 +2,7 @@ import { FileText, MapPinned, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import type { Property } from "@/lib/types";
 import { hojeBR, formatBRL } from "@/lib/utils";
-import { calcularTudoIncluido } from "@/lib/precos";
+import { calcularTotalMensal } from "@/lib/precos";
 import { SELO_NF_UI } from "@/lib/flags";
 import { linhasDeTaxas } from "@/lib/reserva-imovel";
 
@@ -31,38 +31,42 @@ function disponivelFuturo(iso?: string): string | null {
  * botões de ação (recebidos via `actions`). Mantém a regra de ouro visível.
  */
 export function PriceCard({ property, actions }: { property: Property; actions: React.ReactNode }) {
-  // "Tudo incluído" pela FONTE ÚNICA — o mesmo número do card da busca.
-  const inc = calcularTudoIncluido(property);
-  const allIncluded = inc.total;
+  // Custo total do mês pela FONTE ÚNICA — o mesmo número do cartão da busca e da barra do celular.
+  const mes = calcularTotalMensal(property);
   const availableFrom = disponivelFuturo(property.availableFrom);
 
   return (
     <div id="cartao-preco" className="sticky top-36 scroll-mt-36 rounded-2xl border border-sage-200 bg-white p-5 xl:p-6 shadow-sm">
-      <div className="flex items-baseline gap-1">
-        <span className="font-title text-3xl font-bold text-forest">
-          {formatBRL(property.monthlyPrice)}
-        </span>
-        <span className="text-muted">/mês</span>
-      </div>
-      <p className="mt-0.5 text-xs text-muted">R$ 0 de taxa para você: o inquilino não paga nada à plataforma.</p>
-
-      {allIncluded > property.monthlyPrice && (
-        <p className="mt-1 text-sm text-muted">
-          ≈ {formatBRL(allIncluded)}/mês com tudo incluído
-        </p>
-      )}
-
-      {/* Taxas itemizadas — só o que o dono informou; Caução em linha separada. */}
-      <ul data-testid="taxas-itemizadas" className="mt-3 space-y-2 rounded-lg bg-surface-2 px-3 py-3 text-sm">
-        {linhasDeTaxas(property).map((l) => (
-          <li key={l.chave} data-taxa={l.chave} className={l.chave === "caucao" ? "border-t border-line pt-2" : undefined}>
-            <div className="flex items-baseline justify-between gap-3 text-ink">
-              <span className={l.chave === "mensal" ? "font-medium" : "text-muted"}>{l.rotulo}</span>
-              {l.valor && <span className={l.chave === "viva" ? "font-semibold text-forest" : "font-medium"}>{l.valor}</span>}
-            </div>
-            {l.nota && <p className="text-xs text-muted">{l.nota}</p>}
+      <p className="text-sm font-semibold text-ink">Quanto você paga por mês</p>
+      <ul data-testid="total-mensal" className="mt-2 space-y-1.5 text-sm">
+        {mes.linhas.map((l) => (
+          <li key={l.chave} data-taxa={l.chave === "contas" ? "consumo" : l.chave} className="flex items-baseline justify-between gap-3">
+            <span className={l.chave === "mensal" ? "font-medium text-ink" : "text-muted"}>{l.rotulo}</span>
+            <span className={l.chave === "viva" ? "font-semibold text-forest" : "font-medium text-ink"}>{formatBRL(l.valor)}</span>
           </li>
         ))}
+        <li data-testid="total-por-mes" className="flex items-baseline justify-between gap-3 border-t border-line pt-2">
+          <span className="font-semibold text-ink">Total por mês</span>
+          <span className="font-title text-2xl font-bold text-forest">{formatBRL(mes.total)}</span>
+        </li>
+      </ul>
+      <p className="mt-1 text-xs text-muted" data-testid="iptu-nota">IPTU não incluso no total.{mes.contasMedidas && " Água, luz e gás medidos à parte."}</p>
+      <p className="mt-0.5 text-xs text-muted">R$ 0 de taxa para você: o inquilino não paga nada à plataforma.</p>
+
+      {/* Fora do total: pagamentos únicos, pet e Caução (devolvida após a conferência de saída). */}
+      <ul data-testid="taxas-itemizadas" className="mt-3 space-y-2 rounded-lg bg-surface-2 px-3 py-3 text-sm">
+        <li className="text-xs font-semibold uppercase tracking-wide text-muted">Fora do total mensal</li>
+        {linhasDeTaxas(property)
+          .filter((l) => ["preparacao", "saida", "pet", "caucao"].includes(l.chave))
+          .map((l) => (
+            <li key={l.chave} data-taxa={l.chave} className={l.chave === "caucao" ? "border-t border-line pt-2" : undefined}>
+              <div className="flex items-baseline justify-between gap-3 text-ink">
+                <span className="text-muted">{l.rotulo}</span>
+                {l.valor && <span className="font-medium">{l.valor}</span>}
+              </div>
+              {l.nota && <p className="text-xs text-muted">{l.nota}</p>}
+            </li>
+          ))}
         {SELO_NF_UI && property.issuesInvoice && (
           <li className="inline-flex items-center gap-1 text-xs font-medium text-blue-700">
             <FileText className="h-3.5 w-3.5" /> Emite Nota Fiscal do valor mensal

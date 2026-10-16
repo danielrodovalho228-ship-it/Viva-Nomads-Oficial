@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Bath, BedDouble, PawPrint, Ruler, Star, PlayCircle, Users } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { formatBRL, numBR } from "@/lib/utils";
-import { calcularTudoIncluido } from "@/lib/precos";
+import { calcularTudoIncluido, textosTotalMensal } from "@/lib/precos";
 import { tierFromPhotoCount } from "@/lib/listing";
 import { SELO_NF_UI } from "@/lib/flags";
 import { isExemplo } from "@/lib/demo-listing";
@@ -30,6 +30,7 @@ export function PropertyCard({
   // "Tudo incluído" pela FONTE ÚNICA (aluguel + condomínio + consumo fixo) — o
   // mesmo número da página do imóvel. Total do período = mensal × meses.
   const inc = calcularTudoIncluido(property);
+  const totais = textosTotalMensal(property);
   const totalPeriodo = periodMonths && periodMonths > 0 ? inc.total * periodMonths : null;
   const disponivel = disponivelAPartirDe(property.availableFrom);
   const selos = repartirSelos({
@@ -143,25 +144,12 @@ export function PropertyCard({
         {disponivel && <p className="text-xs font-medium text-forest">Disponível a partir de {disponivel}</p>}
 
         <div className="mt-auto border-t border-line pt-3">
-          <div className="flex items-end justify-between">
-            <div>
-              <span className="font-title text-xl font-bold text-ink">
-                {formatBRL(property.monthlyPrice)}
-              </span>
-              <span className="text-sm text-muted">/mês</span>
-            </div>
-            <span className="text-right text-xs text-muted">
-              {property.utilitiesMode === "fixed" && property.utilitiesEstimate > 0
-                ? `+ ${formatBRL(property.utilitiesEstimate)} consumo`
-                : "+ consumo medido"}
-            </span>
+          {/* Custo total do mês em destaque; valor mensal + extras menor (ordem 1a555bfa). */}
+          <div data-testid="cartao-total-mes">
+            <span className="font-title text-xl font-bold text-ink">{formatBRL(inc.total)}</span>
+            <span className="text-sm font-semibold text-ink">/mês total</span>
+            <p className="mt-0.5 text-xs text-muted" data-testid="cartao-valor-mensal">{totais.detalhe}</p>
           </div>
-          {/* Custo total estimado — fonte única (aluguel + condomínio + consumo). */}
-          {inc.temExtras && (
-            <p className="mt-1.5 text-xs font-semibold text-forest">
-              ≈ {formatBRL(inc.total)}/mês tudo incluído
-            </p>
-          )}
           {/* Total do período buscado (Fase 3) — só quando há período na busca. */}
           {totalPeriodo != null && (
             <p className="mt-0.5 text-xs text-muted">

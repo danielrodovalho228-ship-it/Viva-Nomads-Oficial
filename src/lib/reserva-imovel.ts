@@ -52,7 +52,7 @@ export function linhasDeTaxas(p: EntradaTaxas): LinhaTaxa[] {
   }
   const pet = p.petsAllowed ? textoValorPet(p.petsRegras) : null;
   if (pet) l.push({ chave: "pet", rotulo: pet });
-  l.push({ chave: "caucao", rotulo: "Caução", nota: "Paga uma vez, devolvida no fim. O valor fica no contrato." });
+  l.push({ chave: "caucao", rotulo: "Caução", nota: "Paga uma vez, devolvida no fim, após a conferência de saída. O valor fica no contrato." });
   l.push({ chave: "viva", rotulo: "Taxa da Viva para você", valor: formatBRL(0) });
   return l;
 }

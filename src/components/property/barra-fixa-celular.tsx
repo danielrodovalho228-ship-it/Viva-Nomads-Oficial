@@ -34,8 +34,10 @@ export function BarraFixaCelular({
     >
       <div className="mx-auto max-w-xl">
         <p className="truncate">
-          <span className="font-title text-lg font-bold text-forest">{barra.valor}</span>
-          <span className="text-sm text-muted"> /mês</span>
+          <Link href="#cartao-preco" data-testid="barra-total" aria-label={`Total por mês ${barra.valor}: ver detalhamento`}>
+            <span className="font-title text-lg font-bold text-forest">{barra.valor}</span>
+            <span className="text-sm text-muted"> /mês total</span>
+          </Link>
           <span className="text-muted"> · </span>
           <span className="text-xs font-semibold text-forest" data-testid="barra-status">{barra.status}</span>
         </p>

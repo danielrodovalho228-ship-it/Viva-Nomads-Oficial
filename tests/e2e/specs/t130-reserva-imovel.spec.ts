@@ -16,7 +16,7 @@ test.describe("T130 — Reserva no imóvel", () => {
     await expect(card.getByRole("button", { name: "Enviar mensagem" })).toBeVisible();
     await expect(card.getByRole("link", { name: /WhatsApp|Falar com a Viva/ })).toBeVisible();
     await expect(card.getByTestId("taxas-itemizadas").locator('[data-taxa="caucao"]')).toContainText("devolvida no fim");
-    await expect(card.getByTestId("taxas-itemizadas").locator('[data-taxa="viva"]')).toContainText("R$");
+    await expect(card.getByTestId("total-mensal").locator('[data-taxa="viva"]')).toContainText("R$");
     await expect(page.getByText(/fica disponível nos imóveis reais/)).toHaveCount(0);
   });
 
