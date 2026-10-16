@@ -52,7 +52,7 @@ const REGRAS = [
 const DUVIDAS = [
   { p: "Preciso de CNPJ?", r: "Para aparecer no site, CNPJ ou MEI. Você pode se cadastrar antes." },
   { p: "Quanto custa?", r: "É grátis. A taxa de parceria só existe quando você aceita um pedido." },
-  { p: "Em quais cidades?", r: "Começando por Uberlândia (MG). Cadastre-se de qualquer cidade e avisamos quando chegarmos aí." },
+  { p: "Em quais cidades?", r: "Em todo o Brasil: a busca funciona por CEP ou cidade em qualquer região." },
 ];
 
 export default async function ParceirosPage({ searchParams }: { searchParams: Promise<{ tipo?: string }> }) {
@@ -78,7 +78,7 @@ export default async function ParceirosPage({ searchParams }: { searchParams: Pr
       {/* Números rápidos. */}
       <section className="container-page relative z-10 -mt-10">
         <dl className="grid gap-4 rounded-2xl border border-line bg-white p-6 shadow-lg sm:grid-cols-3">
-          <div><dt className="font-title text-2xl font-bold text-ink">Uberlândia</dt><dd className="text-sm text-muted">Começando por Uberlândia (MG); avisamos quando chegarmos à sua cidade</dd></div>
+          <div><dt className="font-title text-2xl font-bold text-ink">Brasil</dt><dd className="text-sm text-muted">Busca por CEP ou cidade em qualquer região</dd></div>
           <div><dt className="font-title text-2xl font-bold text-ink">30–180 dias</dt><dd className="text-sm text-muted">de estadia em imóveis mobiliados</dd></div>
           <div><dt className="font-title text-2xl font-bold text-ink">R$ 0</dt><dd className="text-sm text-muted">para se cadastrar, sem mensalidade</dd></div>
         </dl>

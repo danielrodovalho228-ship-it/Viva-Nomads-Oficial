@@ -1,6 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, apagarContas, criarConta, criarImovelPronto, entrar, fotosReais, novaSenha, novoSufixo } from "../fixtures/laboratorio";
-import { achadosNoTexto, rotaVarreTermos, rotaVarreVocabulario } from "../../../src/lib/varredura-texto";
+import { achadosNasMetas, achadosNoTexto, rotaVarreTermos, rotaVarreVocabulario } from "../../../src/lib/varredura-texto";
 
 /**
  * T118 — VARREDURA DE TEXTO (ordem 0569d129, item 6). Percorre as rotas públicas do sitemap e as telas do
@@ -34,12 +34,19 @@ const TELAS_LOGADAS = [
   "/dashboard/roi-imovel",
 ];
 
-async function textoDaTela(page: Page, rota: string): Promise<string[]> {
+async function textoDaTela(page: Page, rota: string, esperado = 200): Promise<string[]> {
   try {
     const resp = await page.goto(rota, { waitUntil: "networkidle", timeout: 40_000 });
-    if ((resp?.status() ?? 0) >= 400) return [`HTTP ${resp?.status()}`];
+    const status = resp?.status() ?? 0;
+    // A rota inexistente de propósito devolve 404 com a página de "não encontrado": o texto dela também é varrido.
+    if (esperado === 404 ? status !== 404 : status >= 400) return [`HTTP ${status}`];
     const texto = await page.locator("body").innerText();
-    return achadosNoTexto(texto, { termos: rotaVarreTermos(rota), vocabulario: rotaVarreVocabulario(rota) });
+    const opcoes = { termos: rotaVarreTermos(rota), vocabulario: rotaVarreVocabulario(rota) };
+    const metas = await page.evaluate(() =>
+      ['meta[name="description"]', 'meta[property="og:title"]', 'meta[property="og:description"]', 'meta[name="twitter:title"]', 'meta[name="twitter:description"]']
+        .map((q) => document.querySelector(q)?.getAttribute("content") ?? ""),
+    );
+    return [...achadosNoTexto(texto, opcoes), ...achadosNasMetas(metas, opcoes)];
   } catch (e) {
     return [`não abriu: ${String(e).slice(0, 160)}`];
   }
@@ -66,14 +73,15 @@ test.describe("T118 — Varredura de texto", () => {
     const xml = await (await request.get("/sitemap.xml")).text();
     const rotas = [...new Set([...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => new URL(m[1]).pathname))];
     expect(rotas.length, "o sitemap lista rotas").toBeGreaterThan(10);
-    for (const rota of [...rotas, "/404-inexistente-t118"]) {
+    for (const rota of rotas) {
       expect.soft(await textoDaTela(page, rota), rota).toEqual([]);
     }
+    expect.soft(await textoDaTela(page, "/404-inexistente-t118", 404), "/404-inexistente-t118").toEqual([]);
   });
 
   for (const [nome, conta, extra] of [
     ["inquilino", inq, [] as string[]],
-    ["proprietário", dono, () => [`/dashboard/imoveis/${ids.imovel}/editar`]],
+    ["proprietário", dono, () => [`/dashboard/imoveis/${ids.imovel}/editar`, "/dashboard/imoveis/novo"]],
   ] as const) {
     test(`${nome}: telas do painel sem texto proibido`, async ({ browser }) => {
       test.setTimeout(600_000);

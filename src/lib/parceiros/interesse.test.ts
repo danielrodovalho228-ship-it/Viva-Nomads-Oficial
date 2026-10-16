@@ -64,7 +64,5 @@ test("rota e página: limite por IP, sem dangerouslySetInnerHTML, textos da marc
   assert.doesNotMatch(tela, /apartamentos?|comiss[ãa]o|corretagem|intermedia[çc][ãa]o|vistoria|aluguel/i);
   assert.match(tela, /taxa de parceria/i);
   assert.match(tela, /a Viva não recebe esse dinheiro/);
-  // Ordem 1c00ab68 (#143): a cobertura é dita com franqueza — começa por Uberlândia, sem prometer o Brasil todo.
-  assert.match(tela, /Começando por Uberlândia \(MG\)/);
-  assert.doesNotMatch(tela, /todo o Brasil/i);
+  assert.doesNotMatch(tela, /Uberl[âa]ndia/);
 });

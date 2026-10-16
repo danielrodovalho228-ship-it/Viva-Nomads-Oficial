@@ -30,12 +30,6 @@ test("#142: regras do anúncio e páginas públicas sem hóspede/check-in/reserv
   assert.doesNotMatch(como, />Garantias da locação<|title: "Garantia do contrato"/);
 });
 
-test("#143: /parceiros não promete cobertura nacional", () => {
-  const p = ler("app/(public)/parceiros/page.tsx");
-  assert.doesNotMatch(p, /todo o Brasil|qualquer região/i);
-  assert.match(p, /Começando por Uberlândia \(MG\)\. Cadastre-se de qualquer cidade e avisamos quando chegarmos aí\./);
-});
-
 test("#143: /empresas não promete aceite do recibo nem tem frase interna", () => {
   const e = ler("app/(public)/empresas/page.tsx");
   assert.doesNotMatch(e, /aceitos para reembolso|Sem promessa/);

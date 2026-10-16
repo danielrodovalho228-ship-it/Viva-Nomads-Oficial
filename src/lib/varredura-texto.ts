@@ -4,15 +4,6 @@
  * e testado em src/lib/varredura-texto.test.ts. Nunca recebe dado de pessoa: só o texto da tela.
  */
 
-import { CAUCAO_FRASE } from "./faixas.ts";
-
-/**
- * A frase única da caução cita "3 aluguéis" (limite legal) e aguarda a redação da Dra. Beatriz
- * (TODO(juridico) em faixas.ts). Enquanto isso, só ELA fica fora da busca por "aluguel"; qualquer
- * outro "aluguel" na tela continua sendo achado.
- */
-const FRASE_CAUCAO = new RegExp(CAUCAO_FRASE.split(/\s+/).map((p) => p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("\\s+"), "g");
-
 const TERMOS_PROIBIDOS: Array<[string, RegExp]> = [
   ["aluguel", /\balugu[eé](?:l|is)\b/i],
   ["comissão", /\bcomiss(?:ão|ões|ao|oes)\b/i],
@@ -64,10 +55,9 @@ export function achadosNoTexto(texto: string, opcoes: { termos?: boolean; vocabu
     }
   }
   if (opcoes.termos !== false) {
-    const semCaucao = texto.replace(FRASE_CAUCAO, " ");
     for (const [nome, re] of TERMOS_PROIBIDOS) {
-      const m = re.exec(semCaucao);
-      if (m) out.push(`termo proibido "${nome}": …${trecho(semCaucao, m.index)}…`);
+      const m = re.exec(texto);
+      if (m) out.push(`termo proibido "${nome}": …${trecho(texto, m.index)}…`);
     }
   }
   for (const m of texto.matchAll(STATUS_CRU)) out.push(`código de status cru "${m[0]}"`);
@@ -78,6 +68,15 @@ export function achadosNoTexto(texto: string, opcoes: { termos?: boolean; vocabu
   const q = VALOR_QUEBRADO.exec(texto);
   if (q) out.push(`valor quebrado "${q[1]}": …${trecho(texto, q.index)}…`);
   return [...new Set(out)];
+}
+
+/**
+ * Metas de uma página (description, og:title/description, twitter:title/description) entram na varredura
+ * de termos como se fossem texto da tela (ordem 7816ce3a, parte 2). Vazias e repetidas são ignoradas.
+ */
+export function achadosNasMetas(metas: Array<string | null | undefined>, opcoes: { termos?: boolean; vocabulario?: boolean } = {}): string[] {
+  const textos = [...new Set(metas.map((m) => (m ?? "").trim()).filter(Boolean))];
+  return textos.flatMap((t) => achadosNoTexto(t, opcoes).map((a) => `meta: ${a}`));
 }
 
 /**
