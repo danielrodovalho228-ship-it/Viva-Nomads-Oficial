@@ -4,7 +4,7 @@ import { test, expect } from "@playwright/test";
  * Ordem 7ffea8c7 — a barra "Comparar" não pode ficar atrás da barra de abas do celular
  * nem colidir com o "Fale com a Viva". 390x844, público.
  */
-test.describe("T140 — Barra Comparar acima das abas (390 px)", () => {
+test.describe("T150 — Barra Comparar acima das abas (390 px)", () => {
   test.use({ storageState: { cookies: [], origins: [] }, viewport: { width: 390, height: 844 } });
 
   test("marcar 1 e 2 imóveis: barra acima da nav, sem tocar no Fale com a Viva; último cartão acima da nav", async ({ page }) => {
