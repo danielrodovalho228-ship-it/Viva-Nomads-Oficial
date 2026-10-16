@@ -2,11 +2,11 @@ import { test, expect } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 
 /**
- * T137 — ordem 8f0582d6 (D6 e D8), painéis a 390 px:
+ * T138 — ordem 8f0582d6 (D6 e D8), painéis a 390 px:
  *  - o botão "Fale com a Viva" não cobre o último card (o conteúdo reserva espaço embaixo);
  *  - estado vazio sem ilustração mostra o ícone em círculo de destaque (padrão de Mensagens).
  */
-test.describe("T137 — painéis 390 px", () => {
+test.describe("T138 — painéis 390 px", () => {
   test.use({ storageState: authFile("inquilino"), viewport: { width: 390, height: 844 } });
 
   for (const rota of ["/dashboard/ferramentas", "/dashboard/favoritos", "/dashboard/candidaturas"]) {
