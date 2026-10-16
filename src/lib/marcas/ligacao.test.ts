@@ -29,3 +29,11 @@ test("ações validam id e exigem login; marcas nunca vão para anúncio de exem
   assert.match(a, /auth\.getUser\(\)/);
   assert.match(a, /\.eq\("user_id", user\.id\)/);
 });
+
+test("pedido novo lê a última busca (nº de pessoas) e o último motivo, e guarda o motivo ao publicar", () => {
+  const d = src("src/app/(public)/pedidos/novo/page.tsx");
+  assert.match(d, /ultimaBuscaParaPedido\(/);
+  assert.match(d, /ultimoMotivoParaPedido\(/);
+  assert.match(d, /setItem\(CHAVE_ULTIMO_MOTIVO, motivo\)/);
+  assert.match(src("src/app/(public)/buscar/search-client.tsx"), /pessoas: adults \+ children/);
+});
