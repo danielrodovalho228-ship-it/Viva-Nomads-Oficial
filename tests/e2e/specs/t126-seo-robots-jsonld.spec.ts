@@ -51,7 +51,8 @@ test("/cidades/uberlandia: FAQPage e lista no HTML do servidor, sem endereço ne
   for (const j of jsons) expect(() => JSON.parse(j)).not.toThrow();
   // O FAQ também está no HTML visível (sem JavaScript).
   expect(html).toContain('data-testid="faq-cidade"');
-  expect(html).toContain('data-testid="valor-medio-cidade"');
+  // Valor médio por mês (data-testid "precos-medios") só aparece com média real (3+ anúncios): se vier, não pode estar quebrado.
+  if (html.includes('data-testid="precos-medios"')) expect(html).not.toMatch(/R\$\s*(NaN|undefined|null)/);
 });
 
 test("anúncio real: Offer com Accommodation, estadia mín/máx e sem coordenada", async ({ request }) => {

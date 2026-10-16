@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, apagarContas, criarAdmin, criarConta, criarImovelPronto, entrar, fotosReais, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { recursoFicticioDoLab } from "../../../src/lib/varredura-texto";
 
 /**
  * T48 — VARREDURA (laboratório, ordem 225d0648). Percorre a 390 px:
@@ -75,6 +76,8 @@ async function conferir(page: Page, rota: string): Promise<string[]> {
     const alvo = m.location().url;
     // Imagem/arquivo de FORA do site que o laboratório não consegue baixar não é defeito do site.
     if (/Failed to load resource/i.test(m.text()) && alvo && !alvo.startsWith(origem)) return;
+    // Foto fictícia que o próprio laboratório semeou (host lab.vivanomads.test): o Next devolve 400, não é defeito do site.
+    if (/Failed to load resource/i.test(m.text()) && recursoFicticioDoLab(alvo)) return;
     problemas.push(`console.error: ${m.text().slice(0, 160)}${alvo ? ` (${alvo.slice(0, 140)})` : ""}`);
   };
   page.on("pageerror", aoErro);

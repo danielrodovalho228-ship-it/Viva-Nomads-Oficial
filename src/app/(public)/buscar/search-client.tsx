@@ -888,7 +888,7 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
             )}
             {(adults > 1 || children > 0) && (
               <ActiveChip
-                label={`${adults + children} ${adults + children === 1 ? "hóspede" : "hóspedes"}`}
+                label={`${adults + children} ${adults + children === 1 ? "morador" : "moradores"}`}
                 onClear={() => {
                   setAdults(1);
                   setChildren(0);
@@ -1232,14 +1232,14 @@ function GuestsPicker({
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        aria-label="Hóspedes"
+        aria-label="Moradores"
         className={cn(
           "inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border bg-white px-4 py-2 text-sm outline-none lg:px-3 xl:px-4",
           ativo ? "border-sage text-forest" : "border-sage-200 text-ink focus:border-sage"
         )}
       >
         <Users className="h-4 w-4 text-sage" />
-        {ativo ? (total === 1 ? "1 hóspede" : `${total} hóspedes`) : "Hóspedes"}
+        {ativo ? (total === 1 ? "1 morador" : `${total} moradores`) : "Moradores"}
         <ChevronDown className="h-4 w-4 text-muted" />
       </button>
       {open && (
@@ -1332,7 +1332,7 @@ function BuscaCompacta({
   const partes = [
     { rotulo: local || "Qualquer cidade", forte: true },
     { rotulo: periodo || "Qualquer período", forte: false },
-    { rotulo: hospedes > 1 ? `${hospedes} hóspedes` : "Hóspedes", forte: false },
+    { rotulo: hospedes > 1 ? `${hospedes} moradores` : "Moradores", forte: false },
   ];
   return (
     <button

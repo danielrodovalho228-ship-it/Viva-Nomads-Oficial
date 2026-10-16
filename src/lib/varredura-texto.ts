@@ -4,6 +4,15 @@
  * e testado em src/lib/varredura-texto.test.ts. Nunca recebe dado de pessoa: só o texto da tela.
  */
 
+import { CAUCAO_FRASE } from "./faixas.ts";
+
+/**
+ * A frase única da caução cita "3 aluguéis" (limite legal) e aguarda a redação da Dra. Beatriz
+ * (TODO(juridico) em faixas.ts). Enquanto isso, só ELA fica fora da busca por "aluguel"; qualquer
+ * outro "aluguel" na tela continua sendo achado.
+ */
+const FRASE_CAUCAO = new RegExp(CAUCAO_FRASE.split(/\s+/).map((p) => p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("\\s+"), "g");
+
 const TERMOS_PROIBIDOS: Array<[string, RegExp]> = [
   ["aluguel", /\balugu[eé](?:l|is)\b/i],
   ["comissão", /\bcomiss(?:ão|ões|ao|oes)\b/i],
@@ -55,9 +64,10 @@ export function achadosNoTexto(texto: string, opcoes: { termos?: boolean; vocabu
     }
   }
   if (opcoes.termos !== false) {
+    const semCaucao = texto.replace(FRASE_CAUCAO, " ");
     for (const [nome, re] of TERMOS_PROIBIDOS) {
-      const m = re.exec(texto);
-      if (m) out.push(`termo proibido "${nome}": …${trecho(texto, m.index)}…`);
+      const m = re.exec(semCaucao);
+      if (m) out.push(`termo proibido "${nome}": …${trecho(semCaucao, m.index)}…`);
     }
   }
   for (const m of texto.matchAll(STATUS_CRU)) out.push(`código de status cru "${m[0]}"`);
@@ -68,4 +78,19 @@ export function achadosNoTexto(texto: string, opcoes: { termos?: boolean; vocabu
   const q = VALOR_QUEBRADO.exec(texto);
   if (q) out.push(`valor quebrado "${q[1]}": …${trecho(texto, q.index)}…`);
   return [...new Set(out)];
+}
+
+/**
+ * Foto de imóvel semeado pelo laboratório sem upload real (https://lab.vivanomads.test/…): o Next recusa o host
+ * (400 em /_next/image). Não é defeito do site, e o t48 não deve acusá-la.
+ */
+export function recursoFicticioDoLab(alvo: string | null | undefined): boolean {
+  if (!alvo) return false;
+  try {
+    const u = new URL(alvo);
+    if (u.pathname !== "/_next/image") return false;
+    return new URL(u.searchParams.get("url") ?? "").hostname === "lab.vivanomads.test";
+  } catch {
+    return false;
+  }
 }

@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { isExemplo } from "@/lib/demo-listing";
 import { listPropertiesByCity } from "@/lib/data/properties";
 import { CITIES } from "@/lib/constants";
-import { POLOS, acharPolo, imoveisDoPolo, perguntasDoPolo } from "@/lib/polos";
+import { POLOS, acharPolo, imoveisDoPolo, tituloDoPolo, perguntasDoPolo } from "@/lib/polos";
 import { calcularPrecosMedios, rotuloQuartos } from "@/lib/preco-medio";
 import { PropertyCard } from "@/components/property-card";
 import { ButtonLink } from "@/components/ui/button";
@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const p = acharPolo(cidade, polo);
   const c = CITIES.find((x) => x.slug === cidade);
   if (!p || !c) return { robots: { index: false } };
-  const title = `Imóveis mobiliados ${p.nome.toLowerCase()} · ${c.name}`;
+  const title = `Imóveis mobiliados ${tituloDoPolo(p.nome)} · ${c.name}`;
   const description = `Imóveis mobiliados para estadias de 30 a 180 dias perto de ${p.referencia}, em ${c.name}. Valor médio por mês, perguntas frequentes e anúncios reais.`;
   const url = `/cidades/${cidade}/${polo}`;
   return {
@@ -86,7 +86,7 @@ export default async function PoloPage({ params }: Params) {
             <span className="text-white/80">{p.nome}</span>
           </nav>
           <h1 className="mt-4 max-w-3xl font-title text-3xl font-bold md:text-5xl">
-            Imóveis mobiliados {p.nome.toLowerCase()}
+            Imóveis mobiliados {tituloDoPolo(p.nome)}
           </h1>
           <p className="mt-5 max-w-2xl text-lg text-white/80">{p.intro}</p>
           <p className="mt-3 max-w-2xl text-sm text-white/70">{p.publico}</p>

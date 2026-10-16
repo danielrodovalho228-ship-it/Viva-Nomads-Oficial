@@ -1,7 +1,8 @@
 /* Roda: node --test src/lib/varredura-texto.test.ts */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { achadosNoTexto, rotaVarreTermos, rotaVarreVocabulario } from "./varredura-texto.ts";
+import { CAUCAO_FRASE } from "./faixas.ts";
+import { achadosNoTexto, recursoFicticioDoLab, rotaVarreTermos, rotaVarreVocabulario } from "./varredura-texto.ts";
 
 test("tela limpa não tem achados", () => {
   assert.deepEqual(achadosNoTexto("Valor mensal R$ 3.000. Entrada em 12/11/2026. Código 1a2b3c4d. Aguardando aceite. Conferência de saída."), []);
@@ -49,4 +50,19 @@ test("vocabulário público não vale no painel, admin, /seguranca, /termos nem 
   for (const r of ["/dashboard/locacoes", "/admin", "/seguranca", "/termos", "/privacidade", "/contratos/x"]) {
     assert.equal(rotaVarreVocabulario(r), false, r);
   }
+});
+
+test("a frase única da caução (parecer jurídico pendente) não é achado; outro 'aluguel' continua sendo", () => {
+  assert.deepEqual(achadosNoTexto(`Garantia. ${CAUCAO_FRASE} Depositada antes da entrada.`), []);
+  assert.deepEqual(achadosNoTexto(`Garantia. ${CAUCAO_FRASE.replace(/ /g, "\n")} Fim.`), []);
+  assert.equal(achadosNoTexto(`${CAUCAO_FRASE} Seu aluguel sobe.`).length, 1);
+});
+
+test("foto fictícia do laboratório não é achado do t48; imagem real quebrada continua sendo", () => {
+  const img = (u: string) => `http://localhost:3123/_next/image?url=${encodeURIComponent(u)}&w=640&q=75`;
+  assert.equal(recursoFicticioDoLab(img("https://lab.vivanomads.test/storage/v1/object/public/property-photos/a/b-0.png")), true);
+  assert.equal(recursoFicticioDoLab(img("https://abc.supabase.co/storage/v1/object/public/property-photos/a.png")), false);
+  assert.equal(recursoFicticioDoLab("http://localhost:3123/api/qualquer?url=https://lab.vivanomads.test/x"), false);
+  assert.equal(recursoFicticioDoLab(undefined), false);
+  assert.equal(recursoFicticioDoLab("não é url"), false);
 });

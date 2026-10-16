@@ -41,3 +41,13 @@ test("#143: /empresas não promete aceite do recibo nem tem frase interna", () =
   assert.doesNotMatch(e, /aceitos para reembolso|Sem promessa/);
   assert.match(e, /Recibo mensal emitido pelo proprietário|Recibo mensal da estadia emitido pelo proprietário \+ contrato assinado, que podem ser usados no reembolso conforme a política da sua empresa\./);
 });
+
+test("#142 (ajuste do Moacir): 'Até as', busca com Moradores e calendário sem 'reserva' visível", () => {
+  assert.match(ler("components/property/stay-rules.tsx"), /`Até as \$\{/);
+  assert.doesNotMatch(ler("components/property/stay-rules.tsx"), /Até às/);
+  const busca = ler("app/(public)/buscar/search-client.tsx");
+  assert.doesNotMatch(busca, /aria-label="Hóspedes"|"hóspedes"|`\$\{total\} hóspedes`|: "Hóspedes"/);
+  assert.match(busca, /"Moradores"/);
+  const cal = ler("components/property/availability-calendar.tsx");
+  assert.doesNotMatch(cal, /solicitação de\s+reserva|reservá-lo/);
+});

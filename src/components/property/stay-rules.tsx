@@ -45,7 +45,7 @@ export function StayRules({ property }: { property: Property }) {
   if (property.checkinAfter)
     rows.push({ icon: LogIn, label: "Entrada", value: `A partir das ${property.checkinAfter}` });
   if (property.checkoutBefore)
-    rows.push({ icon: LogOut, label: "Saída", value: `Até às ${property.checkoutBefore}` });
+    rows.push({ icon: LogOut, label: "Saída", value: `Até as ${property.checkoutBefore}` });
 
   return (
     <section id="regras-da-estadia" aria-labelledby="regras-title">
