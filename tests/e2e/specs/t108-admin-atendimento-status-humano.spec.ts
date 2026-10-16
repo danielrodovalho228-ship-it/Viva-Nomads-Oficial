@@ -2,10 +2,10 @@ import { test, expect } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 
 /**
- * T107 — Admin: a tela do chamado (/admin/atendimento/[id]) nunca mostra código de status
+ * T108 — Admin: a tela do chamado (/admin/atendimento/[id]) nunca mostra código de status
  * (ex.: pendente_aceite) — só texto humano (ordem 0569d129 item 2, achado do Moacir no #595).
  */
-test.describe("T107 — Admin: chamado sem código de status", () => {
+test.describe("T108 — Admin: chamado sem código de status", () => {
   test.use({ storageState: authFile("admin") });
 
   for (const largura of [390, 1280]) {
