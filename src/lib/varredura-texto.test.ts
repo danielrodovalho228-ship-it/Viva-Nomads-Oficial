@@ -1,6 +1,7 @@
 /* Roda: node --test src/lib/varredura-texto.test.ts */
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { DIFERENCIAIS_VIVA, LINHAS_COMPARE } from "../config/compare-precos.ts";
 import { CAUCAO_FRASE } from "./faixas.ts";
 import { achadosNasMetas, achadosNoTexto, recursoFicticioDoLab, rotaVarreLeis, rotaVarreTermos, rotaVarreVocabulario, semTabelaComparativa } from "./varredura-texto.ts";
 
@@ -85,8 +86,11 @@ test("tela de publicar imóvel: citação de lei é achado; nas outras telas nã
 });
 
 test("tabela comparativa (compare-precos.ts) é a única exceção: o termo dela não reprova, o mesmo termo fora dela sim", () => {
-  const daTabela = "Diferenciais\nSem faxina nem check-in toda semana\nNenhuma taxa para quem vem morar";
+  const daTabela = ["Diferenciais", ...DIFERENCIAIS_VIVA, ...LINHAS_COMPARE.map((l) => l.regra)].join("\n");
   assert.deepEqual(achadosNoTexto(semTabelaComparativa(daTabela), { vocabulario: true }), []);
+  // a frase da tabela acompanhada de um termo barrado: o termo some só dentro do texto da tabela
+  const frase = DIFERENCIAIS_VIVA.find((t) => t.length >= 12)!;
+  assert.equal(achadosNoTexto(semTabelaComparativa(`${frase}\nFaça o check-in pelo app`), { vocabulario: true }).length, 1);
   const fora = "Faça o check-in pelo app";
   assert.equal(achadosNoTexto(semTabelaComparativa(fora), { vocabulario: true }).length, 1);
 });
