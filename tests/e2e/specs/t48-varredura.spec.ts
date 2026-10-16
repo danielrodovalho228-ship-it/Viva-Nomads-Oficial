@@ -94,7 +94,14 @@ async function conferir(page: Page, rota: string): Promise<string[]> {
     for (const h of internos.slice(0, 80)) {
       if (linksVistos.has(h)) continue;
       linksVistos.add(h);
-      const r = await page.request.get(h, { maxRedirects: 5, timeout: 30_000 }).catch(() => null);
+      let r = await page.request.get(h, { maxRedirects: 5, timeout: 30_000 }).catch(() => null);
+      // Páginas de cidade ficam em cache por 60 s: um anúncio que OUTRO spec do laboratório criou e já apagou
+      // ainda aparece na lista e dá 404 por alguns segundos. Isso não é link quebrado do site: confere de novo.
+      if (r?.status() === 404 && /^\/imoveis\/[0-9a-f]{8}-[0-9a-f-]{27}$/.test(h)) {
+        await page.waitForTimeout(1_500);
+        r = await page.request.get(h, { maxRedirects: 5, timeout: 30_000 }).catch(() => null);
+        if (r?.status() === 404) continue;
+      }
       if (!r || r.status() >= 400) problemas.push(`link quebrado ${h} → ${r ? r.status() : "sem resposta"}`);
     }
   } catch (e) {
