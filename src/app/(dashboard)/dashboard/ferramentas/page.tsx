@@ -160,7 +160,7 @@ function CardFerramenta({ f }: { f: Ferramenta }) {
           </span>
         )}
       </div>
-      <h3 className="mt-3 font-title font-bold text-ink">{f.titulo}</h3>
+      <h3 className="mt-3 line-clamp-2 min-h-[2.75rem] font-title font-bold text-ink">{f.titulo}</h3>
       <p className="mt-1 flex-1 text-sm text-muted">{f.texto}</p>
       {f.href ? (
         <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-forest">

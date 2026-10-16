@@ -16,7 +16,6 @@ export default function FavoritesPage() {
 
   return (
     <>
-      <FavoritosTabs />
       <PageTitle capa="favoritos"
         title="Favoritos"
         subtitle="Imóveis que você salvou para comparar depois."
@@ -28,6 +27,7 @@ export default function FavoritesPage() {
           ) : undefined
         }
       />
+      <FavoritosTabs />
 
       {favorites.length === 0 ? (
         <EmptyState
