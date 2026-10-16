@@ -349,6 +349,7 @@
         "admin"
       ],
       "specs": [
+        "t138-paineis-viva-vazio",
         "t1-auth-guards",
         "t11-travessias",
         "t12-planos",
@@ -763,6 +764,7 @@
         "t11-travessias",
         "t136-imovel-largura-maxima",
         "t141-galeria-1536",
+        "t140-galeria-lightbox",
         "t137-comodidades-tem-nao-tem",
         "t75-barra-fixa-imovel",
         "t133-candidatura-motivo",
