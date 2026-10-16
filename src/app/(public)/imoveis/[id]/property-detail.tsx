@@ -47,6 +47,7 @@ import { PriceCard } from "@/components/property/price-card";
 import { AvisoAntigolpe } from "@/components/seguranca/aviso-antigolpe";
 import { BarraFixaCelular } from "@/components/property/barra-fixa-celular";
 import { barraFixaImovel } from "@/lib/barra-fixa-imovel";
+import { calcularTotalMensal } from "@/lib/precos";
 import { AmenitiesGrid } from "@/components/property/amenities-grid";
 import { WorkspaceSection } from "@/components/property/workspace-section";
 import { LocationNearby } from "@/components/property/location-nearby";
@@ -468,7 +469,7 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
       {composer}
       {solicitacao}
       <BarraFixaCelular
-        barra={barraFixaImovel({ monthlyPrice: property.monthlyPrice, exemplo, candidatouSe, availableFrom: property.availableFrom })}
+        barra={barraFixaImovel({ monthlyPrice: property.monthlyPrice, totalMensal: calcularTotalMensal(property).total, exemplo, candidatouSe, availableFrom: property.availableFrom })}
         pending={pending !== null}
         onSolicitar={abrirSolicitacao}
         onMensagem={() => {

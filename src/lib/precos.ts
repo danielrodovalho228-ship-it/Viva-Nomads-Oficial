@@ -13,6 +13,7 @@
 */
 
 import type { Property } from "@/lib/types";
+import { formatBRL } from "./utils.ts";
 
 export interface TudoIncluido {
   aluguel: number;
@@ -35,4 +36,69 @@ export function calcularTudoIncluido(property: Property): TudoIncluido {
 /** Total "tudo incluído" × meses (para o total do período na busca). */
 export function totalPeriodo(property: Property, meses: number): number {
   return calcularTudoIncluido(property).total * Math.max(0, Math.floor(meses));
+}
+
+/*
+  CUSTO TOTAL DO MÊS (ordem 1a555bfa) — a mesma conta na página do imóvel, no cartão
+  da busca/home e na barra fixa do celular. O total é o mesmo de calcularTudoIncluido.
+  Pagamentos únicos (preparação, limpeza de saída) ficam FORA do total; IPTU não
+  existe no cadastro, então o texto avisa que não está incluso.
+*/
+export interface LinhaTotalMensal {
+  chave: "mensal" | "condominio" | "contas" | "viva";
+  rotulo: string;
+  valor: number;
+  /** Contas fixas são estimativa combinada no contrato. */
+  estimativa?: boolean;
+}
+
+export interface PagamentoUnico {
+  chave: "preparacao" | "saida";
+  rotulo: string;
+  valor: number;
+}
+
+export interface TotalMensal {
+  total: number;
+  linhas: LinhaTotalMensal[];
+  unicos: PagamentoUnico[];
+  /** Regime "real": o consumo é medido e não entra no total. */
+  contasMedidas: boolean;
+  iptuNaoIncluso: true;
+}
+
+const positivo = (n: unknown): n is number => typeof n === "number" && Number.isFinite(n) && n > 0;
+
+export function calcularTotalMensal(property: Property): TotalMensal {
+  const inc = calcularTudoIncluido(property);
+  const linhas: LinhaTotalMensal[] = [{ chave: "mensal", rotulo: "Valor mensal", valor: inc.aluguel }];
+  if (positivo(inc.condominio)) linhas.push({ chave: "condominio", rotulo: "Condomínio", valor: inc.condominio });
+  if (positivo(inc.consumoFixo)) {
+    linhas.push({ chave: "contas", rotulo: "Água, luz e gás (estimativa)", valor: inc.consumoFixo, estimativa: true });
+  }
+  linhas.push({ chave: "viva", rotulo: "Taxa da Viva para você", valor: 0 });
+  const unicos: PagamentoUnico[] = [];
+  if (positivo(property.prepFee)) unicos.push({ chave: "preparacao", rotulo: "Limpeza de preparação", valor: property.prepFee });
+  if (property.checkoutCleaningEnabled && positivo(property.checkoutCleaningFee)) {
+    unicos.push({ chave: "saida", rotulo: "Limpeza de saída", valor: property.checkoutCleaningFee });
+  }
+  return {
+    total: inc.total,
+    linhas,
+    unicos,
+    contasMedidas: property.utilitiesMode !== "fixed",
+    iptuNaoIncluso: true,
+  };
+}
+
+/** Textos do cartão: total em destaque e o detalhe menor embaixo. */
+export function textosTotalMensal(property: Property): { destaque: string; detalhe: string } {
+  const t = calcularTotalMensal(property);
+  const extras: string[] = [];
+  if (t.linhas.some((l) => l.chave === "condominio")) extras.push("condomínio");
+  if (t.linhas.some((l) => l.chave === "contas")) extras.push("contas");
+  let detalhe = `Valor mensal ${formatBRL(t.linhas[0].valor)}`;
+  if (extras.length > 0) detalhe += ` + ${extras.join(" e ")}`;
+  else if (t.contasMedidas) detalhe += " + consumo medido";
+  return { destaque: `${formatBRL(t.total)}/mês total`, detalhe };
 }

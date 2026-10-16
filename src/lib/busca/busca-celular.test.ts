@@ -82,7 +82,7 @@ test("card: foto, preço por mês, quartos/banheiros por extenso, bairro e dispo
   assert.match(c, /\{property\.bedrooms === 1 \? "quarto" : "quartos"\}/);
   assert.match(c, /\{property\.bathrooms === 1 \? "banheiro" : "banheiros"\}/);
   assert.match(c, /\{property\.neighborhood\}, \{property\.city\}/);
-  assert.match(c, /<span className="text-sm text-muted">\/mês<\/span>/);
+  assert.match(c, /\/mês total<\/span>/); // custo total do mês em destaque (ordem 1a555bfa)
   const hoje = new Date("2026-10-14T12:00:00Z");
   assert.equal(disponivelAPartirDe("2026-11-15", hoje), "15/11");
   assert.equal(disponivelAPartirDe("2027-01-05", hoje), "05/01/2027");
