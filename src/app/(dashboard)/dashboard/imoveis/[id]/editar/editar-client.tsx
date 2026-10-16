@@ -530,7 +530,7 @@ export function EditarImovelClient({
             <NumField label="Banheiros" value={bathrooms} onChange={setBathrooms} />
             <NumField label="Área (m²)" value={areaM2} onChange={setAreaM2} />
             <NumField label="Capacidade (pessoas)" value={maxGuests} onChange={setMaxGuests} />
-            <NumField label="Aluguel (R$/mês)" value={monthlyPrice} onChange={setMonthlyPrice} />
+            <NumField label="Valor mensal (R$/mês)" value={monthlyPrice} onChange={setMonthlyPrice} />
             <NumField label="Condomínio (R$/mês)" value={condoFee} onChange={setCondoFee} />
           </div>
         </Section>
