@@ -64,6 +64,10 @@ test.describe("T94 — Valor pet no anúncio", () => {
     const page = await entrar(browser, dono.email, senha);
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`/dashboard/imoveis/${ids.taxa}/editar`, { waitUntil: "networkidle" });
+    // "Regras da casa" vem fechada no editor: abre a seção antes de procurar o campo.
+    const secao = page.getByRole("button", { name: /Regras da casa/ });
+    await expect(secao).toBeVisible({ timeout: 20_000 });
+    if ((await secao.getAttribute("aria-expanded")) !== "true") await secao.click();
     const campo = page.getByTestId("valor-pet");
     await expect(campo).toBeVisible({ timeout: 20_000 });
     await expect(campo).toHaveValue("300");
