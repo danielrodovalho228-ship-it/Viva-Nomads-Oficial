@@ -16,7 +16,7 @@ test.describe("T103 — Selo Preço justo", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
   test("aparece só quando o Airbnb informado é maior que o valor mensal", async ({ page }) => {
-    test.setTimeout(240_000);
+    test.setTimeout(480_000);
     const adm = createClient(URL!, SERVICE!, { auth: { persistSession: false } });
     const a = account("proprietario");
     const { data: u } = await adm.from("profiles").select("id").eq("email", a.email).single();
@@ -25,12 +25,12 @@ test.describe("T103 — Selo Preço justo", () => {
     const id = imovel!.id as string;
     const mensal = Number(imovel!.monthly_price);
     const selo = page.getByTestId("selo-preco-justo");
-    // A página pública pode ficar em cache por ~60 s: recarrega até refletir.
+    // A página pública revalida a cada 60 s (ISR serve a cópia velha uma vez antes de refazer): dá folga de 150 s por passo.
     const confere = async (visivel: boolean) =>
       expect(async () => {
         await page.goto(`/imoveis/${id}`, { waitUntil: "networkidle" });
         await expect(selo).toHaveCount(visivel ? 1 : 0);
-      }).toPass({ timeout: 90_000, intervals: [5_000] });
+      }).toPass({ timeout: 150_000, intervals: [5_000] });
     try {
       await adm.from("properties").update({ airbnb_monthly_price: mensal + 500 }).eq("id", id);
       await confere(true);
