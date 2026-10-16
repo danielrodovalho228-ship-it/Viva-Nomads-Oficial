@@ -41,10 +41,33 @@ export function BlockCalendar({ propertyId }: { propertyId: string }) {
   });
   const [busy, setBusy] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  // Carregamento das datas: o indicador SEMPRE some (sucesso ou falha); falha vira aviso com "Tentar de novo".
+  const [carregando, setCarregando] = useState(true);
+  const [falhou, setFalhou] = useState(false);
+  const [tentativa, setTentativa] = useState(0);
 
   useEffect(() => {
-    getBlocks(propertyId).then(setBlocks).catch(() => {});
-  }, [propertyId]);
+    let vivo = true;
+    getBlocks(propertyId)
+      .then((b) => {
+        if (vivo) setBlocks(b);
+      })
+      .catch(() => {
+        if (vivo) setFalhou(true);
+      })
+      .finally(() => {
+        if (vivo) setCarregando(false);
+      });
+    return () => {
+      vivo = false;
+    };
+  }, [propertyId, tentativa]);
+
+  function recarregar() {
+    setFalhou(false);
+    setCarregando(true);
+    setTentativa((n) => n + 1);
+  }
 
   const anchor = today;
   const meses = useMemo(() => (anchor ? mesesCalendario(anchor, 3) : []), [anchor]);
@@ -102,6 +125,20 @@ export function BlockCalendar({ propertyId }: { propertyId: string }) {
         Toque no início e no fim de um período para <strong>bloquear</strong> (o imóvel fica
         indisponível nessas datas na busca e na reserva).
       </p>
+
+      {carregando && (
+        <p role="status" data-testid="bloqueios-carregando" className="mb-3 flex items-center gap-2 text-sm text-muted">
+          <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Carregando datas bloqueadas…
+        </p>
+      )}
+      {falhou && !carregando && (
+        <p role="alert" data-testid="bloqueios-erro" className="mb-3 text-sm text-red-600">
+          Não foi possível carregar as datas bloqueadas.{" "}
+          <button type="button" onClick={recarregar} className="font-medium underline">
+            Tentar de novo
+          </button>
+        </p>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {meses.map((mes) => {
