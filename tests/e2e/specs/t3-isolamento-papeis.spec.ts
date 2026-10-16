@@ -37,8 +37,10 @@ test.describe("T3 — Não-admin (proprietário) @criticos", () => {
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
     await expect(page.locator("aside nav")).toBeVisible(); // o menu carregou (sem isso, "não contém" passaria no vazio)
     await expect(page.locator("aside nav")).not.toContainText(/Admin|Moderar/);
-    await page.goto("/admin", { waitUntil: "domcontentloaded" });
-    await expect(page).toHaveURL(/\/dashboard(?!\/)/, { timeout: 40_000 }); // redirecionado para a Visão geral
+    // Não-admin recebe 404 de verdade (a área de admin não revela que existe): sem redirect, a URL fica em /admin.
+    const resposta = await page.goto("/admin", { waitUntil: "domcontentloaded" });
+    expect(resposta?.status()).toBe(404);
+    await expect(page.getByRole("heading", { name: "Administração" })).toHaveCount(0);
   });
 
   test("páginas internas pedem o código dos sócios (redirect)", async ({ page }) => {
