@@ -11,6 +11,8 @@ import { FAQ, buscarFaq, respostaPara, type PerfilAjuda } from "@/lib/atendiment
 import { avisoEmergencia, CATEGORIAS, detectarEmergencia } from "@/lib/atendimento/classificar";
 import { PROMESSA_ATENDIMENTO } from "@/config/atendimento";
 import { podeMarcarResolvido } from "@/lib/atendimento/acolhimento";
+import { useCaptcha } from "@/components/seguranca/captcha";
+import { MSG_CAPTCHA_PENDENTE, podeEnviar } from "@/lib/seguranca/captcha";
 import { emailMascaradoDaConta } from "@/lib/atendimento/identificacao-chamado";
 import {
   abrirChamado,
@@ -275,11 +277,13 @@ function NovoChamado({
   const manutencao = cat === "manutencao";
   const camera = cat === "camera";
   const emailMascarado = emailMascaradoDaConta(emailConta);
+  const captcha = useCaptcha();
 
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
-    setEnviando(true);
     setErro(null);
+    if (!logado && !podeEnviar(captcha.ligado, captcha.token)) return setErro(MSG_CAPTCHA_PENDENTE);
+    setEnviando(true);
     const r = await abrirChamado({
       categoria: cat,
       mensagem,
@@ -291,7 +295,9 @@ function NovoChamado({
       categoriaManutencao: manutencao ? catManut : undefined,
       visitanteNome: logado ? undefined : nome,
       visitanteEmail: logado ? undefined : email,
+      captchaToken: logado ? undefined : (captcha.token ?? undefined),
     }).catch(() => ({ ok: false as const, error: "Falha de conexão. Tente de novo." }));
+    if (!logado) captcha.reset(); // o token vale uma vez só
     setEnviando(false);
     if (!r.ok) {
       setErro(r.error);
@@ -396,6 +402,7 @@ function NovoChamado({
               <span className="mb-1 block font-medium text-ink">Seu e-mail (para a resposta)</span>
               <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className={campo} />
             </label>
+            {captcha.widget && <div className="sm:col-span-2">{captcha.widget}</div>}
             <p data-testid="chamado-aviso-dados" className="text-xs text-muted sm:col-span-2">
               Usamos esses dados só para responder este chamado. Tem conta? <Link href="/auth?redirect=/ajuda" className="font-medium text-forest underline">Entre</Link> para acompanhar o chamado aqui.
             </p>
