@@ -167,13 +167,13 @@ function DesktopMosaic({
   let content: React.ReactNode;
   if (n === 1) {
     content = (
-      <div className="aspect-[16/9] overflow-hidden rounded-2xl">
+      <div className="aspect-[16/9] overflow-hidden rounded-2xl md:aspect-auto md:h-[480px] lg:h-[520px]">
         <Tile src={photos[0]} alt={title} className="h-full w-full" onClick={() => onOpen(0)} />
       </div>
     );
   } else if (n < 5) {
     content = (
-      <div className="grid aspect-[2/1] grid-cols-3 gap-2 overflow-hidden rounded-2xl">
+      <div className="grid aspect-[2/1] grid-cols-3 gap-2 md:aspect-auto md:h-[480px] lg:h-[520px] overflow-hidden rounded-2xl">
         <Tile src={photos[0]} alt={title} className="col-span-2 row-span-1 h-full" onClick={() => onOpen(0)} />
         <div className="grid gap-2" style={{ gridTemplateRows: `repeat(${n - 1}, minmax(0, 1fr))` }}>
           {photos.slice(1).map((p, i) => (
@@ -184,7 +184,7 @@ function DesktopMosaic({
     );
   } else {
     content = (
-      <div className="grid aspect-[2/1] grid-cols-4 grid-rows-2 gap-2 overflow-hidden rounded-2xl">
+      <div className="grid aspect-[2/1] grid-cols-4 grid-rows-2 gap-2 md:aspect-auto md:h-[480px] lg:h-[520px] overflow-hidden rounded-2xl">
         <Tile src={photos[0]} alt={title} className="col-span-2 row-span-2 h-full" onClick={() => onOpen(0)} />
         {photos.slice(1, 5).map((p, i) => {
           const isLast = i === 3 && n > 5;
@@ -210,7 +210,7 @@ function DesktopMosaic({
   }
 
   return (
-    <div className="relative hidden md:block">
+    <div className="relative hidden md:block" data-testid="galeria-desktop">
       {content}
       {readyToLive && (
         <div className="absolute left-4 top-4">

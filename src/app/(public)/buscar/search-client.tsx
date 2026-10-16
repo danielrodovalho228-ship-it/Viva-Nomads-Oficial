@@ -1039,7 +1039,7 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
           ) : (
             // EXCEÇÃO da regra de grade par (ordem 86dcb4db, B2; decidido pela coordenação):
             // ao lado do mapa a /buscar mantém 3 cards por linha em telas largas (aprovado na ordem ca0e7dad).
-            <div className="grid auto-rows-fr gap-4 sm:grid-cols-2 sm:gap-6 lg:gap-4 xl:grid-cols-3" data-testid="grade-resultados">
+            <div className="grid auto-rows-fr gap-4 sm:grid-cols-2 sm:gap-6 lg:gap-4 xl:grid-cols-3 min-[1920px]:grid-cols-4" data-testid="grade-resultados">
               {/* h2 (invisível) entre o h1 do topo e os h3 dos cards — sem pular nível. */}
               <h2 className="sr-only">Imóveis encontrados</h2>
               {results.map((p) => (

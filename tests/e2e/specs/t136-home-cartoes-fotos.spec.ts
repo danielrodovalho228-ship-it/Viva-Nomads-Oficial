@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 /*
-  T133 — Fotos dos cartões da home (ordens 0f93aa8c e 5ade9aaa): cada atalho por
+  T136 — Fotos dos cartões da home (ordens 0f93aa8c e 5ade9aaa): cada atalho por
   categoria é um cartão com foto própria (carregada, 4:3), cartões da mesma altura,
   6 colunas no desktop e 2 no celular, sem foto repetida e sem rolagem lateral.
 */

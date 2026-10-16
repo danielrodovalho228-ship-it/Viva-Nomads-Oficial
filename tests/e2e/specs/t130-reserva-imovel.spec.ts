@@ -20,13 +20,13 @@ test.describe("T130 — Reserva no imóvel", () => {
     await expect(page.getByText(/fica disponível nos imóveis reais/)).toHaveCount(0);
   });
 
-  test("1920 px: conteúdo ocupa a tela (sem a faixa vazia de 350 px de cada lado)", async ({ page }) => {
+  test("1920 px: conteúdo contido na largura máxima (ordem 4252e0d6), com a coluna de reserva dentro dela", async ({ page }) => {
     await page.setViewportSize({ width: 1920, height: 1000 });
     await page.goto("/imoveis/ube-001", { waitUntil: "networkidle" });
     const caixa = await page.getByTestId("imovel-largura-total").boundingBox();
-    expect(caixa!.width).toBeGreaterThan(1800);
+    expect(caixa!.width).toBeLessThanOrEqual(1280);
     const card = await page.locator("#cartao-preco").boundingBox();
-    expect(card!.x + card!.width).toBeGreaterThan(1700);
+    expect(card!.x + card!.width).toBeLessThanOrEqual(caixa!.x + caixa!.width);
   });
 
   test("demonstração: clicar nos botões mostra o aviso e NÃO grava candidatura nem mensagem", async ({ page }) => {

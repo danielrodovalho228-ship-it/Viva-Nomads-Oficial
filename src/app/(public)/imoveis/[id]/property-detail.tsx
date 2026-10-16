@@ -461,7 +461,9 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
   );
 
   return (
-    <div className="w-full px-5 py-8 pb-48 sm:px-8 lg:px-10 lg:pb-8 2xl:px-16" data-testid="imovel-largura-total">
+    // Página PÚBLICA com fotos: container centralizado com largura máxima (padrão Furnished Finder).
+    // Exceção à regra de painel "largura cheia sem max-w-*", que vale só para dashboards (ordem 4252e0d6).
+    <div className="mx-auto w-full max-w-[1280px] px-5 py-8 pb-48 sm:px-8 lg:px-10 lg:pb-8" data-testid="imovel-largura-total">
       {composer}
       {solicitacao}
       <BarraFixaCelular
