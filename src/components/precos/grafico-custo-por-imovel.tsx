@@ -47,7 +47,7 @@ export function GraficoCustoPorImovel({
     <figure className="m-0" data-testid="grafico-custo-por-imovel">
       <figcaption className="text-sm font-semibold text-ink">Custo por imóvel no ano</figcaption>
       <p className="text-xs text-muted">
-        Aluguel de {reaisInteiros(aluguel)}, {locacoes} {locacoes === 1 ? "locação" : "locações"} de {meses} {meses === 1 ? "mês" : "meses"} por imóvel no ano. Cada plano aparece só na faixa de imóveis que ele atende.
+        Valor mensal de {reaisInteiros(aluguel)}, {locacoes} {locacoes === 1 ? "locação" : "locações"} de {meses} {meses === 1 ? "mês" : "meses"} por imóvel no ano. Cada plano aparece só na faixa de imóveis que ele atende.
       </p>
       <svg viewBox={`0 0 ${W} ${H}`} className="mt-2 w-full" role="img" aria-label="Custo por imóvel no ano, de 1 a 20 imóveis, por plano e no Airbnb">
         {ticks.map((t) => (

@@ -159,7 +159,7 @@ export default async function CityLandingPage({ params }: Params) {
             A locação mensal mobiliada é feita para quem vai morar em {name} por algumas
             semanas ou meses: você entra com tudo pronto e a tranquilidade de um contrato
             formal de 30 a 180 dias, aceito em condomínios e com
-            segurança para inquilino e proprietário. É o meio-termo entre o aluguel
+            segurança para inquilino e proprietário. É o meio-termo entre a locação
             tradicional e a hospedagem por diária.
           </p>
           <p className="mt-3 leading-relaxed">

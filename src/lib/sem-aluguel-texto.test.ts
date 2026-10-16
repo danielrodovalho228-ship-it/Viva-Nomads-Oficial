@@ -10,7 +10,20 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
 const GRUPOS: Record<string, string[]> = {
-  "páginas públicas": ["src/components/property/price-card.tsx", "src/app/(public)/conferir/[codigo]/page.tsx"],
+  "páginas públicas": [
+    "src/components/property/price-card.tsx",
+    "src/app/(public)/conferir/[codigo]/page.tsx",
+    "src/app/(public)/como-funciona/page.tsx",
+    "src/app/(public)/cidades/[cidade]/page.tsx",
+    "src/components/property/stay-rules.tsx",
+    "src/components/precos/grafico-custo-por-imovel.tsx",
+  ],
+  "ferramentas do painel": [
+    "src/components/simulador/ui.tsx",
+    "src/components/tax-simulator.tsx",
+    "src/components/account/conta-secoes.tsx",
+    "src/components/documentos/documentos-contrato.tsx",
+  ],
   "formulário do anúncio": [
     "src/app/(dashboard)/dashboard/imoveis/novo/page.tsx",
     "src/app/(dashboard)/dashboard/imoveis/[id]/editar/editar-client.tsx",

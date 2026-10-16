@@ -135,7 +135,7 @@ export function SimDisclaimer() {
     <p className="mt-6 flex items-start gap-2 rounded-xl border border-sage-200 bg-surface-2 px-4 py-3 text-xs text-muted">
       <Info className="mt-0.5 h-4 w-4 shrink-0 text-sage" />
       Estimativa ilustrativa — não é promessa de rentabilidade. Depende da ocupação real, do valor
-      combinado e do mercado. A Viva Nomads calcula e documenta; o aluguel vai direto ao
+      combinado e do mercado. A Viva Nomads calcula e documenta; o valor mensal vai direto ao
       proprietário — a plataforma nunca retém valores.
     </p>
   );

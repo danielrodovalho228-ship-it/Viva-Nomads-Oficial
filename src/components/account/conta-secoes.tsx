@@ -282,7 +282,7 @@ export function PerfilDoModo() {
     <>
       {mode !== "tenant" && (
         <div className="mt-6">
-          <h2 className="mb-3 font-title text-lg font-bold text-ink">Tributação dos aluguéis</h2>
+          <h2 className="mb-3 font-title text-lg font-bold text-ink">Tributação das locações</h2>
           <TaxSimulator />
         </div>
       )}

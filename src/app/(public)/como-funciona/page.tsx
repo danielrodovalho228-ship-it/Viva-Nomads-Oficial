@@ -134,7 +134,7 @@ function GarantiasInquilino() {
               <dt className="font-semibold text-ink">Para o proprietário</dt>
               <dd className="text-muted">
                 {CAUCAO_FRASE} Depositada antes da entrada, cobre
-                danos ou aluguel em aberto conforme o contrato — com tudo documentado.
+                danos ou valor mensal em aberto conforme o contrato — com tudo documentado.
               </dd>
             </div>
           </dl>
