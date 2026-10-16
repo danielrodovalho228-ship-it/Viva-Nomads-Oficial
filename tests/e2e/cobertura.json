@@ -549,7 +549,8 @@
         "proprietario"
       ],
       "specs": [
-        "t151-modo-app-iphone"
+        "t151-modo-app-iphone",
+        "t153-limpeza-estadia"
       ]
     },
     "/dashboard/imoveis/novo": {
@@ -766,13 +767,13 @@
       ],
       "specs": [
         "t11-travessias",
-        "t136-imovel-largura-maxima",
-        "t141-galeria-1536",
-        "t140-galeria-lightbox",
-        "t137-comodidades-tem-nao-tem",
-        "t75-barra-fixa-imovel",
-        "t152-barra-fixa-imovel",
         "t133-candidatura-motivo",
+        "t136-imovel-largura-maxima",
+        "t137-comodidades-tem-nao-tem",
+        "t140-galeria-lightbox",
+        "t141-galeria-1536",
+        "t152-barra-fixa-imovel",
+        "t153-limpeza-estadia",
         "t20-p1-agentes",
         "t23-pacote-seguranca",
         "t28-avaliacoes-fase1",
@@ -784,6 +785,7 @@
         "t38-varios-imoveis-por-dono",
         "t40-novo-anuncio-fotos",
         "t7-fluxo-publico",
+        "t75-barra-fixa-imovel",
         "t8-rascunho"
       ]
     },

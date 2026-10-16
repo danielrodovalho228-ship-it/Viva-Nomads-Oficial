@@ -87,3 +87,16 @@ test("solicitação: campos opcionais vazios seguem; data no passado, data torta
   assert.ok(resumoSolicitacao({ monthlyPrice: 1000, motivoEstadia: "hackeado", hoje: "2026-10-16" }).erro);
   assert.equal(resumoSolicitacao({ monthlyPrice: 1000, inicioDesejado: "2026-10-16", hoje: "2026-10-16" }).erro, null);
 });
+
+test("pacote de limpeza (ordem 4c74ac38): linha própria na proposta e no cartão, com a quantidade", () => {
+  const pacote = { porMes: 2, inclui: "Pisos e banheiro", valorMes: 180 };
+  const l = linhasDeTaxas({ ...base, limpezaEstadia: pacote });
+  assert.deepEqual(l.map((x) => x.chave), ["mensal", "limpeza", "caucao", "viva"]);
+  assert.match(l.find((x) => x.chave === "limpeza")!.rotulo, /2 limpezas por mês/);
+  assert.ok(!linhasDeTaxas(base).some((x) => x.chave === "limpeza"));
+
+  const r = resumoSolicitacao({ monthlyPrice: 2500, hoje: "2026-10-16", limpezaEstadia: pacote });
+  const linha = r.linhas.find((x) => x.rotulo === "Limpeza durante a estadia");
+  assert.match(linha!.valor, /2 limpezas por mês/);
+  assert.ok(!resumoSolicitacao({ monthlyPrice: 2500, hoje: "2026-10-16" }).linhas.some((x) => x.rotulo === "Limpeza durante a estadia"));
+});

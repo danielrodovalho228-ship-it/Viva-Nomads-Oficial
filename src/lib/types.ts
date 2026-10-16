@@ -121,6 +121,8 @@ export interface Property {
   petsAllowed?: boolean;
   /** Regras detalhadas de pets (espécies, porte, quantidade, reforço de Caução). */
   petsRegras?: import("@/lib/anuncio/pets-regras").RegrasPets;
+  /** Pacote de limpeza durante a estadia (ordem 4c74ac38; requer migração 0144). */
+  limpezaEstadia?: import("@/lib/anuncio/limpeza-estadia").LimpezaEstadia;
   smokingAllowed?: boolean;
   childrenAllowed?: boolean;
   maxGuests?: number;
