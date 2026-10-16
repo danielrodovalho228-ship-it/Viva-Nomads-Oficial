@@ -55,13 +55,16 @@ test("anúncio: aviso antigolpe fica perto da candidatura", async ({ page }) => 
   }
   test.skip(!achou, "só anúncios de exemplo na busca; o aviso do anúncio real é coberto pelo unitário antigolpe.test.ts");
 });
-test("home: atalhos usam ícones (svg) e não fotos", async ({ page }) => {
+// Ordens 0f93aa8c e 5ade9aaa (16/10) substituem a regra "só ícone" do #555: cada cartão tem foto
+// própria E mantém o ícone da categoria sobre a foto. As fotos são conferidas em detalhe no t133.
+test("home: cada atalho tem foto própria e o ícone da categoria", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/", { waitUntil: "networkidle" });
-  const lista = page.getByTestId("atalhos-categoria");
-  if (await lista.count()) {
-    await expect(lista.locator("svg").first()).toBeVisible();
-    await expect(lista.locator("img")).toHaveCount(0);
+  const cartoes = page.getByTestId("atalhos-categoria").getByTestId("atalho-cartao");
+  const n = await cartoes.count();
+  for (let i = 0; i < n; i++) {
+    await expect(cartoes.nth(i).locator("svg")).toHaveCount(1);
+    await expect(cartoes.nth(i).locator("img")).toHaveCount(1);
   }
 });
 });
