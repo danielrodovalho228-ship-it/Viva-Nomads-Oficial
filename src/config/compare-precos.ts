@@ -44,7 +44,7 @@ export const LINHAS_COMPARE: readonly LinhaCompare[] = [
   {
     id: "airbnb",
     nome: "Airbnb",
-    regra: "Taxa de serviço de 16% do valor da reserva para anfitriões no Brasil, em todas as reservas.",
+    regra: "Taxa de serviço de 16% sobre o valor de cada estadia para anfitriões no Brasil.",
     pct: 0.16,
     fonte: { nome: "Central de Ajuda do Airbnb — taxas de serviço (artigo 1857)", url: "https://www.airbnb.com.br/help/article/1857" },
     conferidoEm: "2026-10-10",
@@ -109,7 +109,7 @@ export const DIFERENCIAIS_VIVA: readonly string[] = [
   "Avaliação dos dois lados",
   "Profissionais que ficam meses",
   "Sem contrato de 30 meses",
-  "Sem faxina nem check-in toda semana",
+  "Sem faxina nem troca de morador toda semana",
   "Nenhuma taxa para quem vem morar",
 ];
 
