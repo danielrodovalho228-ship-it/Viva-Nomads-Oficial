@@ -88,6 +88,14 @@
         "t25-chamado-resumo"
       ]
     },
+    "/admin/emails-teste": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t116-admin-emails-teste"
+      ]
+    },
     "/admin/avaliacoes": {
       "personas": [
         "admin"
