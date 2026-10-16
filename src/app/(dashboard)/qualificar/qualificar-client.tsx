@@ -247,7 +247,7 @@ export default function QualificationChecklistPage() {
         style={{ minHeight: 180 }}
       >
         <Image
-          src="/media/banner-simulador.webp"
+          src="/images/unicas/qualificar-banner-simulador.webp"
           alt=""
           aria-hidden
           fill
@@ -590,7 +590,7 @@ export default function QualificationChecklistPage() {
             Abaixo da dobra → lazy. Chip reforça o benefício, não é decoração. */}
         <div className="relative mt-6 h-36 overflow-hidden rounded-xl sm:h-40">
           <Image
-            src="/media/hero-proprietarios.webp"
+            src="/images/unicas/qualificar-hero.webp"
             alt="Sala mobiliada pronta para receber inquilinos"
             fill
             loading="lazy"
@@ -635,7 +635,7 @@ export default function QualificationChecklistPage() {
           earned={tHome}
           items={homeOfficeItems(quality)}
           onToggle={(key) => toggleQuality(key)}
-          banner="/media/como-funciona-01-converse.webp"
+          banner="/images/unicas/qualificar-trabalho.webp"
           bannerAlt="Pessoa trabalhando de casa no notebook"
         />
         <TagBlock
@@ -644,7 +644,7 @@ export default function QualificationChecklistPage() {
           earned={tWork}
           items={workLocatedItems(quality)}
           onToggle={(key) => toggleQuality(key)}
-          banner="/media/como-funciona-03-qualifique.webp"
+          banner="/images/unicas/qualificar-vizinhanca.webp"
           bannerAlt="Pessoa avaliando opções pela vizinhança no tablet"
         />
       </section>
