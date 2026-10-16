@@ -35,9 +35,12 @@ test.describe("T127 — Fechamento: serviços adicionais", () => {
       await pagina.setViewportSize({ width: largura, height: 900 });
       await pagina.goto(`/dashboard/fechamento?c=${ids.lead}`, { waitUntil: "networkidle" });
       await expect(pagina.getByTestId("inicio-estadia")).toBeVisible({ timeout: 15_000 });
+      // A etapa 1 só libera "Continuar" depois de "Verificar identidade" (portão suave: conta real fica pendente e segue).
+      await pagina.getByRole("button", { name: /verificar identidade/i }).click();
+      await expect(pagina.getByRole("button", { name: /continuar/i })).toBeEnabled({ timeout: 15_000 });
       await pagina.getByRole("button", { name: /continuar/i }).click();
       await pagina.getByRole("radio").and(pagina.locator(":not([disabled])")).first().click();
-      await pagina.getByTestId("ciente-protecao").check();
+      await pagina.getByTestId("ciente-protecao").check({ timeout: 15_000 });
       await pagina.getByRole("button", { name: /continuar/i }).click();
 
       await expect(pagina.getByRole("heading", { name: /serviços adicionais/i })).toBeVisible({ timeout: 15_000 });
