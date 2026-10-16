@@ -51,3 +51,11 @@ test("D7: títulos dos cards de Ferramentas limitados a 2 linhas e com altura un
   const f = ler("src/app/(dashboard)/dashboard/ferramentas/page.tsx");
   assert.match(f, /<h3 className="[^"]*line-clamp-2[^"]*min-h-\[2\.75rem\][^"]*">\{f\.titulo\}/);
 });
+
+test("D8: estado vazio sem ilustração usa o ícone em destaque (círculo), igual ao de Mensagens", () => {
+  const f = ler("src/components/dashboard/primitives.tsx");
+  const bloco = f.slice(f.indexOf("export function EmptyState"));
+  assert.match(bloco, /data-testid="estado-vazio-icone"[\s\S]*rounded-full bg-blue-50/);
+  assert.match(bloco, /h-20 w-20/);
+  assert.doesNotMatch(bloco, /mx-auto h-8 w-8 text-blue-500/, "sem o ícone pequeno solto");
+});

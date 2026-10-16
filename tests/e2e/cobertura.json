@@ -349,6 +349,7 @@
         "admin"
       ],
       "specs": [
+        "t138-paineis-viva-vazio",
         "t1-auth-guards",
         "t11-travessias",
         "t12-planos",
