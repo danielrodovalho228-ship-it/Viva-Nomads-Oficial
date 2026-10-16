@@ -36,10 +36,10 @@ const CARDS = [
 ];
 
 const PASSOS = [
-  { t: "Cadastre-se", d: "Conte o que você faz e onde atende. Leva poucos minutos.", foto: "/images/como-funciona/01-busque.webp", alt: "Pessoa preenchendo o cadastro no notebook" },
-  { t: "A Viva confere", d: "CNPJ ou MEI, portfólio e reputação, antes de aparecer no site.", foto: "/images/como-funciona/03-verifique.webp", alt: "Conferência de documentos no computador" },
-  { t: "Receba pedidos", d: "Quem anuncia ou busca imóveis mobiliados chama você; a conversa é pela plataforma.", foto: "/images/como-funciona/02-converse.webp", alt: "Conversa pelo celular" },
-  { t: "Entregue e seja avaliado", d: "Depois da entrega, o cliente avalia — boas avaliações trazem mais pedidos.", foto: "/images/como-funciona/06-selo.webp", alt: "Selo de qualidade em destaque" },
+  { t: "Cadastre-se", d: "Conte o que você faz e onde atende. Leva poucos minutos.", foto: "/images/unicas/parceiros-passo-cadastro.webp", alt: "Pessoa preenchendo o cadastro no notebook" },
+  { t: "A Viva confere", d: "CNPJ ou MEI, portfólio e reputação, antes de aparecer no site.", foto: "/images/unicas/parceiros-passo-confere.webp", alt: "Conferência de documentos no computador" },
+  { t: "Receba pedidos", d: "Quem anuncia ou busca imóveis mobiliados chama você; a conversa é pela plataforma.", foto: "/images/unicas/parceiros-passo-pedidos.webp", alt: "Conversa pelo celular" },
+  { t: "Entregue e seja avaliado", d: "Depois da entrega, o cliente avalia — boas avaliações trazem mais pedidos.", foto: "/images/unicas/parceiros-passo-avaliado.webp", alt: "Quarto arrumado e limpo depois do serviço" },
 ];
 
 const REGRAS = [
@@ -61,7 +61,7 @@ export default async function ParceirosPage({ searchParams }: { searchParams: Pr
     <div>
       <JsonLd dados={trilha(SITE_URL, [{ nome: "Parceiros", caminho: "/parceiros" }])} />
       <BannerTopo
-        foto="/images/como-funciona/07-anuncie.webp"
+        foto="/images/unicas/parceiros-banner.webp"
         alt="Fotógrafo registrando uma sala mobiliada"
         eyebrow="Parceiros"
         titulo="Seja parceiro da Viva Nomads"

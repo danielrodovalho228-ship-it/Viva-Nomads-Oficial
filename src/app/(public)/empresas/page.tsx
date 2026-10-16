@@ -3,7 +3,6 @@ import { Building2, FileText, BarChart3, MapPin, ArrowRight, ShieldCheck, Home, 
 import { ButtonLink } from "@/components/ui/button";
 import { BrandImage } from "@/components/brand-image";
 import { BannerTopo } from "@/components/institucional/banner-topo";
-import { PHOTOS } from "@/lib/media";
 import { EmpresasForm } from "./empresas-form";
 import { JsonLd } from "@/components/seo/json-ld";
 import { paginaInstitucional } from "@/lib/seo/estruturados";
@@ -23,8 +22,8 @@ export const metadata: Metadata = {
 };
 
 const PASSOS = [
-  { titulo: "Conte a necessidade", texto: "Cidade, período (30 a 180 dias) e quantas pessoas. Respondemos com opções de imóveis mobiliados.", foto: "/images/como-funciona/01-busque.webp", alt: "Pessoa buscando imóveis mobiliados no notebook" },
-  { titulo: "Escolha o imóvel", texto: "A pessoa do time ou o RH conversa com o proprietário pela plataforma e envia a candidatura.", foto: "/images/como-funciona/02-converse.webp", alt: "Conversa entre inquilino e proprietário pelo celular" },
+  { titulo: "Conte a necessidade", texto: "Cidade, período (30 a 180 dias) e quantas pessoas. Respondemos com opções de imóveis mobiliados.", foto: "/images/unicas/empresas-passo-necessidade.webp", alt: "Pessoa buscando imóveis mobiliados no notebook" },
+  { titulo: "Escolha o imóvel", texto: "A pessoa do time ou o RH conversa com o proprietário pela plataforma e envia a candidatura.", foto: "/images/unicas/empresas-passo-escolha.webp", alt: "Colegas escolhendo o imóvel no tablet" },
   { titulo: "Contrato e recibo", texto: "Contrato digital assinado pelas partes; todo mês a empresa recebe o recibo da estadia para o reembolso.", foto: "/images/como-funciona/04-assine.webp", alt: "Assinatura digital do contrato no celular" },
 ];
 
@@ -68,7 +67,7 @@ export default function EmpresasPage() {
     <>
       <JsonLd dados={paginaInstitucional(SITE_URL, { caminho: "/empresas", nome: "Para empresas", descricao: "Mobilidade corporativa com locação mobiliada de média duração: imóveis prontos, recibo mensal da estadia para reembolso e relatórios." })} />
       <BannerTopo
-        foto={PHOTOS.personas.executivos}
+        foto="/images/unicas/empresas-banner.webp"
         alt="Profissional chegando a um imóvel mobiliado com a mala"
         eyebrow="Para empresas"
         titulo="Moradia de média duração para o seu time"
@@ -135,7 +134,7 @@ export default function EmpresasPage() {
       {/* Benefícios + foto. */}
       <section className="container-page section-y">
         <div className="grid items-center gap-10 md:grid-cols-2">
-          <BrandImage src={PHOTOS.homeOffice} alt="Espaço de trabalho em casa num imóvel mobiliado" sizes="(max-width: 768px) 100vw, 50vw" className="aspect-[4/3] w-full rounded-3xl" />
+          <BrandImage src="/images/unicas/empresas-homeoffice.webp" alt="Espaço de trabalho em casa num imóvel mobiliado" sizes="(max-width: 768px) 100vw, 50vw" className="aspect-[4/3] w-full rounded-3xl" />
           <div>
             <h2 className="font-title text-3xl font-bold text-ink">O que a empresa ganha</h2>
             <ul className="mt-6 space-y-3">

@@ -181,7 +181,7 @@ function DoisCaminhos() {
       </p>
       <div className="mt-6 grid gap-6 md:grid-cols-2">
         <div className="flex flex-col overflow-hidden rounded-2xl border border-sage-200 bg-white">
-          <StepImage src="/images/busca/busca-hero-villa.webp" alt="Imóvel mobiliado disponível para estadias de 30 a 180 dias" />
+          <StepImage src="/images/unicas/cf-buscar-imoveis.webp" alt="Imóvel mobiliado disponível para estadias de 30 a 180 dias" />
           <div className="flex flex-1 flex-col p-6">
             <h3 className="font-title text-lg font-bold text-ink">Buscar imóveis</h3>
             <p className="mt-2 flex-1 text-sm text-muted">
@@ -219,19 +219,19 @@ function DoisCaminhos() {
 function DuranteDepois() {
   const itens = [
     {
-      img: "/images/home/home-diferencial-homeoffice.webp",
+      img: "/images/unicas/cf-pagamentos.webp",
       alt: "Pessoa organizando os pagamentos no computador em casa",
       title: "Pagamentos",
       text: "Vão direto ao proprietário e ficam registrados na plataforma. Nada passa pela Viva Nomads.",
     },
     {
-      img: "/images/home/home-hero-chegada.webp",
+      img: "/images/unicas/cf-renovacao.webp",
       alt: "Hóspede chegando com a bagagem para mais um período de estadia",
       title: "Renovação",
       text: "A estadia se renova em blocos, com aceite das duas partes. A comissão do proprietário é cobrada uma vez em cada contrato e em cada renovação, sobre o valor total do período.",
     },
     {
-      img: "/images/home/home-proprietarios-chaves.webp",
+      img: "/images/unicas/cf-devolucao.webp",
       alt: "Entrega das chaves ao fim da estadia",
       title: "Devolução da caução",
       text: "Ao fim da estadia, conforme o contrato, com tudo documentado.",
@@ -267,8 +267,8 @@ function DuranteDepois() {
 function ProtegidoPor() {
   const itens = [
     {
-      img: "/images/como-funciona/02-converse.webp",
-      alt: "Proprietária respondendo a um pedido por vídeo",
+      img: "/images/unicas/cf-conversa-registrada.webp",
+      alt: "Proprietária respondendo a um pedido pelo celular",
       title: "Conversa registrada",
       text: "Toda a negociação acontece na plataforma, com o contato protegido até o aceite.",
     },
@@ -279,7 +279,7 @@ function ProtegidoPor() {
       text: `${CAUCAO_FRASE} Combinada entre proprietário e inquilino. A Viva não é garantidora.`,
     },
     {
-      img: "/images/home/home-condominio-tranquilo.webp",
+      img: "/images/unicas/cf-seguro-condominio.webp",
       alt: "Fachada de um condomínio residencial",
       title: "Seguro incêndio",
       text: "Obrigatório por lei em toda locação; contratação via parceiro (em estruturação).",
