@@ -5,7 +5,7 @@ import { test, expect } from "@playwright/test";
  * o exemplo ganha o selo pelo critério real (valor mensal < equivalente informado) no cartão da /buscar e na página.
  * Outro exemplo (sem valor do Airbnb) não ganha. 390 e 1280 px sem rolagem lateral.
  */
-for (const largura of [390, 1280]) {
+for (const largura of [360, 390, 1280]) {
   test.describe(`T106 — Selo nos exemplos (${largura}px)`, () => {
     test.use({ viewport: { width: largura, height: 900 } });
 
