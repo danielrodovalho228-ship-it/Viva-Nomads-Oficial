@@ -163,6 +163,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
       { category: "mercado", name: "Mercado do Centro", note: "3 min a pé" },
       { category: "transporte", name: "Terminal Central", note: "7 min a pé" },
     ],
+    limpezaEstadia: { porMes: 2, inclui: "pisos, banheiro e cozinha", valorMes: 180 },
     owner: { name: DONO_EXEMPLO, memberSince: "2025-06-15", responseRate: 92, verified: false },
   },
   {

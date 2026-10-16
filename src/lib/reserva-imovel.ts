@@ -55,7 +55,14 @@ export function linhasDeTaxas(p: EntradaTaxas): LinhaTaxa[] {
   }
   const pet = p.petsAllowed ? textoValorPet(p.petsRegras) : null;
   if (pet) l.push({ chave: "pet", rotulo: pet });
-  if (p.limpezaEstadia) l.push({ chave: "limpeza", rotulo: `Limpeza durante a estadia: ${textoLimpezaEstadia(p.limpezaEstadia)}` });
+  if (p.limpezaEstadia) {
+    const pago = p.limpezaEstadia.valorMes > 0;
+    l.push({
+      chave: "limpeza",
+      rotulo: `Limpeza durante a estadia: ${textoLimpezaEstadia(p.limpezaEstadia)}`,
+      ...(pago ? { valor: formatBRL(p.limpezaEstadia.valorMes), nota: "Entra no total por mês." } : {}),
+    });
+  }
   l.push({ chave: "caucao", rotulo: "Caução", nota: "Paga uma vez, devolvida no fim, após a conferência de saída. O valor fica no contrato." });
   l.push({ chave: "viva", rotulo: "Taxa da Viva para você", valor: formatBRL(0) });
   return l;
@@ -115,6 +122,8 @@ export function resumoSolicitacao(e: {
   motivoEstadia?: string;
   hoje: string;
   limpezaEstadia?: LimpezaEstadia | null;
+  /** Custo total do mês (calcularTotalMensal): quando vem, o resumo mostra a linha "Total por mês". */
+  totalMensal?: number;
 }): ResumoSolicitacao {
   const inicio = (e.inicioDesejado ?? "").trim();
   const motivo = (e.motivoEstadia ?? "").trim();
@@ -132,6 +141,7 @@ export function resumoSolicitacao(e: {
       { rotulo: "Motivo da estadia", valor: motivo && isMotivo(motivo) ? motivoLabel(motivo) : "Prefiro não informar" },
       { rotulo: "Valor por mês", valor: formatBRL(e.monthlyPrice) },
       ...(e.limpezaEstadia ? [{ rotulo: "Limpeza durante a estadia", valor: textoLimpezaEstadia(e.limpezaEstadia) }] : []),
+      ...(typeof e.totalMensal === "number" ? [{ rotulo: "Total por mês", valor: formatBRL(e.totalMensal) }] : []),
       { rotulo: "Caução", valor: "Paga uma vez, devolvida no fim (valor no contrato)" },
       { rotulo: "Taxa da Viva para você", valor: formatBRL(0) },
     ],

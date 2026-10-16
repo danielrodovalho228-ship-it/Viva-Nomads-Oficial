@@ -181,7 +181,7 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
   }
 
   // "Solicitar reserva" nunca fica mudo: valida o que foi preenchido e abre o passo de confirmação.
-  const resumo = resumoSolicitacao({ monthlyPrice: property.monthlyPrice, inicioDesejado, motivoEstadia, hoje: hojeBR(), limpezaEstadia: property.limpezaEstadia });
+  const resumo = resumoSolicitacao({ monthlyPrice: property.monthlyPrice, inicioDesejado, motivoEstadia, hoje: hojeBR(), limpezaEstadia: property.limpezaEstadia, totalMensal: calcularTotalMensal(property).total });
   function abrirSolicitacao() {
     setLeadErro(null);
     setSolicitacaoErro(resumo.erro);

@@ -70,7 +70,7 @@ export default function ForLandlordsPage() {
           <h2 className="text-center font-title text-3xl font-bold text-ink md:text-4xl">Do anúncio às chaves, em 3 passos</h2>
           <ol className="mt-10 grid gap-6 md:grid-cols-3">
             {[
-              { foto: "/images/unicas/prop-passo-anuncie.webp", alt: "Proprietário fotografando a sala para o anúncio", t: "Anuncie de graça", d: "Fotos, valor e regras da casa. A qualificação ajuda a ganhar o selo Pronto para Morar." },
+              { foto: "/images/unicas/prop-passo-anuncie.webp", alt: "Proprietário fotografando a sala para o anúncio", t: "Anuncie de graça", d: "Fotos, valor e regras da casa. Você pode oferecer limpezas durante a estadia, com quantidade e valor por mês. A qualificação ajuda a ganhar o selo Pronto para Morar." },
               { foto: "/images/unicas/prop-passo-converse.webp", alt: "Conversa com o inquilino pelo celular", t: "Converse e escolha", d: "Os interessados falam com você pela plataforma; o contato fica protegido até o aceite." },
               { foto: "/images/unicas/prop-passo-feche.webp", alt: "Entrega das chaves ao inquilino", t: "Feche com contrato", d: "Contrato digital de 30 a 180 dias, caução combinada e o valor mensal direto na sua conta." },
             ].map((p, i) => (
