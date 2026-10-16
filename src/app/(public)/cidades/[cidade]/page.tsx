@@ -10,6 +10,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { JsonLd } from "@/components/seo/json-ld";
 import { paginaCidade } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
+import { calcularPrecosMedios, rotuloQuartos } from "@/lib/preco-medio";
 
 // F9: dados frescos (revalidatePath nas ações + rede de segurança de 60 s).
 export const revalidate = 60;
@@ -51,6 +52,8 @@ export default async function CityLandingPage({ params }: Params) {
   const name = cityFromSlug(cidade);
   const properties = await listPropertiesByCity(name);
   const infoCidade = CITIES.find((c) => c.slug === cidade);
+  const precosMedios = calcularPrecosMedios(properties);
+  const atualizadoEm = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo" }).format(new Date());
 
   return (
     <>
@@ -102,6 +105,32 @@ export default async function CityLandingPage({ params }: Params) {
             <ButtonLink href="/dashboard/imoveis/novo" variant="gold" className="mt-4">
               Anuncie seu imóvel em {name}
             </ButtonLink>
+          </div>
+        )}
+
+        {precosMedios.length > 0 && (
+          <div className="mt-12 max-w-3xl" data-testid="precos-medios">
+            <h2 className="font-title text-2xl font-bold text-ink">Valor médio por mês em {name}</h2>
+            <p className="mt-2 text-sm text-muted">
+              Média dos anúncios publicados na Viva, por bairro e número de quartos. Só mostramos a média
+              quando há pelo menos 3 anúncios no grupo. Atualizado em {atualizadoEm}.
+            </p>
+            <ul className="mt-4 divide-y divide-sage-200 rounded-2xl border border-sage-200">
+              {precosMedios.map((g) => (
+                <li key={`${g.bairro}-${g.quartos}`} className="flex items-center justify-between gap-4 px-4 py-3">
+                  <span className="text-ink">
+                    {g.bairro} <span className="text-muted">· {rotuloQuartos(g.quartos)}</span>
+                  </span>
+                  <span className="shrink-0 text-right font-semibold text-forest">
+                    {g.media === null ? (
+                      <span className="text-sm font-normal text-muted">Dados insuficientes</span>
+                    ) : (
+                      `R$ ${g.media.toLocaleString("pt-BR")} por mês`
+                    )}
+                  </span>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
 
