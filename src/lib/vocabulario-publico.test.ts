@@ -64,3 +64,10 @@ test("t118 (achado do Moacir): config do comparativo publicado não usa 'check-i
   assert.doesNotMatch(texto, /check[- ]?(in|out)\b/i);
   assert.doesNotMatch(texto, /\breservas?\b/i);
 });
+
+test("#143: /parceiros e o texto da Viva não prometem cobertura nacional", () => {
+  const p = ler("app/(public)/parceiros/page.tsx");
+  assert.doesNotMatch(p, /todo o Brasil|em qualquer região/i);
+  assert.match(p, /Começando por Uberlândia \(MG\)\. Cadastre-se de qualquer cidade e avisamos quando chegarmos aí\./);
+  assert.doesNotMatch(ler("lib/atendimento/parceiros-texto.ts"), /todo o Brasil/i);
+});
