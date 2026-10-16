@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { CAUCAO_FRASE } from "./faixas.ts";
-import { achadosNasMetas, achadosNoTexto, recursoFicticioDoLab, rotaVarreTermos } from "./varredura-texto.ts";
+import { achadosNasMetas, achadosNoTexto, recursoFicticioDoLab, rotaVarreLeis, rotaVarreTermos } from "./varredura-texto.ts";
 
 test("tela limpa não tem achados", () => {
   assert.deepEqual(achadosNoTexto("Valor mensal R$ 3.000. Entrada em 12/11/2026. Código 1a2b3c4d. Aguardando aceite. Conferência de saída."), []);
@@ -57,4 +57,14 @@ test("metas (description/og/twitter) entram na varredura de termos; vazias e rep
   assert.equal(a.length, 1);
   assert.match(a[0], /^meta: termo proibido "comissão"/);
   assert.deepEqual(achadosNasMetas(["comissão"], { termos: false }), []);
+});
+
+test("tela de publicar imóvel: citação de lei é achado; nas outras telas não é varrida", () => {
+  assert.equal(rotaVarreLeis("/dashboard/imoveis/novo"), true);
+  assert.equal(rotaVarreLeis("/dashboard/imoveis/novo?x=1"), true);
+  assert.equal(rotaVarreLeis("/dashboard/imoveis"), false);
+  const texto = "Conforme a Lei 8.245/91, art. 38 e art. 13";
+  assert.equal(achadosNoTexto(texto, { leis: true }).length, 3);
+  assert.deepEqual(achadosNoTexto(texto), []);
+  assert.deepEqual(achadosNoTexto("Publique seu imóvel mobiliado em 5 passos.", { leis: true }), []);
 });
