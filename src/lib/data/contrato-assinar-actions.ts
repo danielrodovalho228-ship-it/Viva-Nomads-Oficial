@@ -27,6 +27,7 @@ import {
   conferirCodigo,
   gerarCodigoAssinatura,
   hashCodigoAssinatura,
+  incrementarFalhas,
   podeReenviar,
   type LinhaCodigo,
 } from "@/lib/contrato-codigo";
@@ -264,12 +265,29 @@ export async function assinarContrato(input: {
   const conf = conferirCodigo(lc, input.codigo, user.id, c.id, Date.now());
   if (!conf.ok) {
     if (conf.contarFalha && lc) {
-      await admin
-        .from("contrato_assinatura_codigos")
-        .update({ falhas: lc.falhas + 1 })
-        .eq("contrato_id", c.id)
-        .eq("user_id", user.id)
-        .is("usado_em", null);
+      // Incremento atômico (comparação e troca): dois palpites ao mesmo tempo contam os dois.
+      const chave = { contrato_id: c.id, user_id: user.id };
+      await incrementarFalhas(
+        async () => {
+          const { data: atual } = await admin
+            .from("contrato_assinatura_codigos")
+            .select("falhas")
+            .match(chave)
+            .is("usado_em", null)
+            .maybeSingle();
+          return atual ? Number((atual as { falhas: number }).falhas) : null;
+        },
+        async (de) => {
+          const { data: trocou } = await admin
+            .from("contrato_assinatura_codigos")
+            .update({ falhas: de + 1 })
+            .match(chave)
+            .eq("falhas", de)
+            .is("usado_em", null)
+            .select("contrato_id");
+          return (trocou?.length ?? 0) > 0;
+        },
+      );
     }
     return { ok: false, error: conf.erro };
   }
