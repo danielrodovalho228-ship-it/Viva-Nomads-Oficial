@@ -36,6 +36,9 @@ import { PropertyCard } from "@/components/property-card";
 import { PropertyGallery } from "@/components/property-gallery";
 import { VideoWalkthrough } from "@/components/video-walkthrough";
 import { requestLead } from "@/lib/data/actions";
+import { marcarVisto } from "@/lib/marcas/actions";
+import { useMarcasStore } from "@/lib/marcas/store";
+import { CHAVE_ULTIMA_BUSCA, ultimaBuscaParaPedido } from "@/lib/marcas/regra";
 import type { LeadKind } from "@/lib/leads";
 import { PriceCard } from "@/components/property/price-card";
 import { AvisoAntigolpe } from "@/components/seguranca/aviso-antigolpe";
@@ -92,6 +95,26 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
   useEffect(() => {
     if (!isExemplo(property)) registrarEvento("ver_anuncio", { imovelId: property.id, cidade: property.city });
   }, [property]);
+
+  // Marca "Visto" (ordem 8302024d): só logado grava; deslogado/exemplo ignoram em silêncio.
+  const marcarVistoLocal = useMarcasStore((s) => s.marcarVistoLocal);
+  useEffect(() => {
+    if (isExemplo(property)) return;
+    void marcarVisto(property.id).then((r) => {
+      if (r.ok) marcarVistoLocal(property.id);
+    });
+  }, [property, marcarVistoLocal]);
+
+  // Pedido pré-preenchido: data de entrada da última busca (editável; vencida ou estranha é descartada).
+  useEffect(() => {
+    try {
+      const { inicio } = ultimaBuscaParaPedido(window.localStorage.getItem(CHAVE_ULTIMA_BUSCA), hojeBR());
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- lê o localStorage só no navegador (SSR não tem)
+      if (inicio) setInicioDesejado((atual) => atual || inicio);
+    } catch {
+      /* localStorage bloqueado: segue sem pré-preencher */
+    }
+  }, []);
 
   async function handleLead(kind: LeadKind, note?: string) {
     if (kind === "candidatura") registrarEvento("iniciar_candidatura", { imovelId: property.id, cidade: property.city });

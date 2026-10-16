@@ -2311,6 +2311,22 @@
       ],
       "specs": []
     },
+    "src/lib/marcas/actions.ts#listarMarcas": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t107-marcas-visto-contatado"
+      ]
+    },
+    "src/lib/marcas/actions.ts#marcarVisto": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t107-marcas-visto-contatado"
+      ]
+    },
     "src/lib/parceiros/admin-actions.ts#atualizarStatusInteresse": {
       "personas": [
         "admin"

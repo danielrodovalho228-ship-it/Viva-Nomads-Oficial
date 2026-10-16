@@ -4,6 +4,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { CHAVE_ULTIMA_BUSCA, serializarUltimaBusca } from "@/lib/marcas/regra";
 import { SlidersHorizontal, ChevronDown, MapPin, ArrowRight, Users, Search } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { PropertyCard } from "@/components/property-card";
@@ -286,6 +287,21 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
     typeFilter, faixa, dataEntrada, garantia, petsOnly, petPorte, furnishedOnly,
     readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly, comodidades,
   ]);
+
+  // Pedido pré-preenchido (ordem 8302024d): guarda no aparelho a data de entrada e o período da última
+  // busca; a página do imóvel usa para sugerir a data (editável). Nada de dado pessoal, nada vai ao servidor.
+  useEffect(() => {
+    try {
+      if (dataEntrada || maxPeriod > 0) {
+        window.localStorage.setItem(
+          CHAVE_ULTIMA_BUSCA,
+          serializarUltimaBusca({ inicio: dataEntrada, meses: maxPeriod > 0 ? Math.round(maxPeriod / 30) : 0 })
+        );
+      }
+    } catch {
+      /* localStorage bloqueado: segue sem guardar */
+    }
+  }, [dataEntrada, maxPeriod]);
 
   // Evento anônimo "busca" (0067): 1 por local pesquisado, depois que a pessoa
   // para de digitar. Só a CIDADE vai (e só se for de um anúncio da lista) —
