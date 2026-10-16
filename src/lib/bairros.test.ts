@@ -2,7 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { PONTOS_REFERENCIA } from "../config/pontos-referencia.ts";
-import { agruparBairros, centroDoBairro, distanciaKm, distanciasDoBairro, imoveisDoBairro, limitarAPar, perguntasDoBairro, resumoDoBairro, slugBairro } from "./bairros.ts";
+import { caminhosDeBairros, agruparBairros, centroDoBairro, distanciaKm, distanciasDoBairro, imoveisDoBairro, limitarAPar, perguntasDoBairro, resumoDoBairro, slugBairro } from "./bairros.ts";
 
 const UUID = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
 const ehExemplo = (id: string) => !/^[0-9a-f]{8}-/.test(id);
@@ -71,4 +71,9 @@ test("textos do bairro: sem termos proibidos e sem preço inventado", () => {
   assert.match(perguntasDoBairro("Centro", "Uberlândia", null)[1].a, /Ainda não há anúncios suficientes/);
   assert.match(perguntasDoBairro("Centro", "Uberlândia", 2500)[1].a, /R\$ 2\.500/);
   assert.match(resumoDoBairro("Centro", "Uberlândia", 1), /1 imóvel mobiliado publicado/);
+});
+
+test("sitemap: um caminho por bairro com anúncio real, na cidade certa", () => {
+  const lista = [{ ...im(1, "Centro"), city: "Uberlândia" }, { ...im(2, "centro"), city: "Uberlandia" }, { ...im(3, "Tibery"), city: "Araguari" }, { id: "ube-001", neighborhood: "Osvaldo", lat: 0, lng: 0, city: "Uberlândia" }];
+  assert.deepEqual(caminhosDeBairros([{ slug: "uberlandia", name: "Uberlândia" }], lista, ehExemplo), ["/cidades/uberlandia/centro"]);
 });

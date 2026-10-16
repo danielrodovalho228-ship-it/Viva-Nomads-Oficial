@@ -4,7 +4,7 @@
   do bairro é a média das coordenadas JÁ aproximadas e arredondada de novo (~110 m).
   Distância = linha reta entre o centro aproximado e um ponto público, arredondada.
 */
-import { chaveCidade } from "./cidades.ts";
+import { chaveCidade, mesmaCidade } from "./cidades.ts";
 
 export interface BairroResumo {
   slug: string;
@@ -113,4 +113,15 @@ export function perguntasDoBairro(nome: string, cidade: string, mediaGeral: numb
       a: "Não. O valor combinado vai direto ao proprietário; a plataforma não toca em dinheiro. A conversa e o contrato ficam registrados.",
     },
   ];
+}
+
+/** Caminhos de bairro para o sitemap: só bairros com anúncio real, sem repetir. */
+export function caminhosDeBairros(
+  cidades: readonly { slug: string; name: string }[],
+  imoveis: readonly (ImovelBairro & { city: string })[],
+  ehExemplo: (id: string) => boolean,
+): string[] {
+  return cidades.flatMap((c) =>
+    agruparBairros(imoveis.filter((i) => mesmaCidade(i.city, c.name)), ehExemplo).map((b) => `/cidades/${c.slug}/${b.slug}`),
+  );
 }
