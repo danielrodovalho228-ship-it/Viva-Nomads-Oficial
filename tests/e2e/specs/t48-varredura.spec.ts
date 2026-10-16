@@ -129,13 +129,23 @@ test.describe("T48 — Varredura do site e do app", () => {
 
   test("visitante: todas as rotas do sitemap", async ({ page, request }) => {
     test.setTimeout(900_000);
-    const xml = await (await request.get("/sitemap.xml")).text();
-    const rotas = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => {
-      const u = new URL(m[1]);
-      return u.pathname + u.search;
-    });
+    // O sitemap tem cache de 60 s (revalidate): o imóvel criado agora entra na próxima geração.
+    const lerRotas = async () => {
+      const xml = await (await request.get("/sitemap.xml")).text();
+      return [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => {
+        const u = new URL(m[1]);
+        return u.pathname + u.search;
+      });
+    };
+    await expect
+      .poll(async () => (await lerRotas()).includes(`/imoveis/${ids.imovel}`), {
+        message: "o imóvel publicado entra no sitemap (cache de 60 s)",
+        timeout: 120_000,
+        intervals: [5_000],
+      })
+      .toBe(true);
+    const rotas = await lerRotas();
     expect(rotas.length, "o sitemap lista rotas").toBeGreaterThan(10);
-    expect(rotas).toContain(`/imoveis/${ids.imovel}`);
     await varrer(page, [...new Set(rotas)]);
   });
 
