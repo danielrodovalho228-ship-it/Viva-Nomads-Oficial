@@ -11,6 +11,7 @@ import { ReadyToLiveBadge, PrecoJustoBadge, PropertyTags, InvoiceBadge, Insuranc
 import { BrandImage } from "@/components/brand-image";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
 import { FavoriteButton } from "@/components/favorite-button";
+import { MarcaImovel } from "@/components/property/marca-imovel";
 
 export function PropertyCard({
   property,
@@ -65,6 +66,10 @@ export function PropertyCard({
         </div>
         <div className="absolute right-3 top-3">
           <FavoriteButton propertyId={property.id} />
+        </div>
+        {/* Marca do usuário logado ("Visto" / "Você já contatou"): canto inferior esquerdo, fora dos 2 badges do topo. */}
+        <div className="absolute bottom-3 left-3">
+          <MarcaImovel propertyId={property.id} />
         </div>
         {/* Destaque de anúncio — selo discreto (borda dourada), não um badge cheio. */}
         {tier !== "padrao" && (

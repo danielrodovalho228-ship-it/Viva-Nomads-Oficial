@@ -1,5 +1,6 @@
 "use server";
 
+import { gravarMarca } from "@/lib/marcas/servidor";
 import { perfilDonoCompleto, MSG_PERFIL_DONO_INCOMPLETO } from "@/lib/anuncio/perfil-dono";
 import { atualizarRascunhoDoDono } from "@/lib/data/rascunho-dono";
 import { camposDeConteudoDoRascunho } from "@/lib/data/rascunho-campos";
@@ -1400,6 +1401,9 @@ export async function requestLead(
       }
     }
   }
+
+  // Marca "Você já contatou" (ordem 8302024d): dúvida, visita ou candidatura. Best-effort.
+  await gravarMarca(supabase, user.id, propertyId, "contatado_em");
 
   // Notifica o dono só em contato NOVO — ou sempre que for candidatura (evento
   // de maior valor; o teto de 20/h barra repetição). É isto que faz os botões
