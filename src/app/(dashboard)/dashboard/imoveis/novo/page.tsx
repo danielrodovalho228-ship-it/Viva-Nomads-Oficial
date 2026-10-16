@@ -266,7 +266,7 @@ export default function NewPropertyPage() {
       e.fotos = "Adicione ao menos 1 foto para continuar (o mínimo para publicar é " + MIN_PHOTOS + ").";
     if (s === 5) {
       if (title.trim().length < 3) e.titulo = "Dê um título ao anúncio (mín. 3 caracteres).";
-      if (!(Number(monthlyPrice) > 0)) e.preco = "Informe o aluguel mensal.";
+      if (!(Number(monthlyPrice) > 0)) e.preco = "Informe o valor mensal.";
       if (!garantiaOk) e.garantia = "Escolha ao menos uma garantia.";
     }
     return e;
@@ -1541,7 +1541,7 @@ export default function NewPropertyPage() {
               />
             </Labeled>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <Labeled label="Aluguel mensal (R$)">
+              <Labeled label="Valor mensal (R$)">
                 <input type="number" min={0} value={monthlyPrice} onChange={(e) => setMonthlyPrice(e.target.value)} className="input" placeholder="3200" />
                 {Number(monthlyPrice) > 0 && (
                   <span className="mt-1 block text-xs text-muted">{formatBRL(Number(monthlyPrice))}/mês</span>
@@ -1574,7 +1574,7 @@ export default function NewPropertyPage() {
                     <span className="text-sm font-normal text-muted">/mês tudo incluído</span>
                   </p>
                   <dl className="mt-2 space-y-0.5 text-xs text-muted">
-                    <div className="flex justify-between"><dt>Aluguel</dt><dd>{formatBRL(aluguel)}</dd></div>
+                    <div className="flex justify-between"><dt>Valor mensal</dt><dd>{formatBRL(aluguel)}</dd></div>
                     {condo > 0 && <div className="flex justify-between"><dt>Condomínio</dt><dd>{formatBRL(condo)}</dd></div>}
                     {consumoFixo > 0 && (
                       <div className="flex justify-between"><dt>Consumo (fixo estimado)</dt><dd>{formatBRL(consumoFixo)}</dd></div>
@@ -1593,7 +1593,7 @@ export default function NewPropertyPage() {
               <p className="flex items-start gap-2 rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted">
                 <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-sage" />
                 <span>
-                  <strong className="text-ink">Você recebe o aluguel direto na sua conta.</strong> {" "}
+                  <strong className="text-ink">Você recebe o valor mensal direto na sua conta.</strong> {" "}
                   {TEXTO_REGRA_CURTO}
                 </span>
               </p>
@@ -1621,7 +1621,7 @@ export default function NewPropertyPage() {
               {utilitiesMode === "fixed" ? (
                 <div className="mt-3">
                   <p className="mb-2 text-xs text-muted">
-                    O inquilino paga um <strong>valor fixo por mês</strong> junto do aluguel. Se o
+                    O inquilino paga um <strong>valor fixo por mês</strong> junto do valor mensal. Se o
                     consumo real exceder cerca de 20% da estimativa, há cláusula de ajuste (cobrança
                     complementar, com comprovante — registrada pela plataforma, não intermediada).
                   </p>
@@ -1647,7 +1647,7 @@ export default function NewPropertyPage() {
                 O dado (issues_invoice) continua no banco, sem mudança. */}
             {SELO_NF_UI && (
               <div className="space-y-2">
-                <Toggle checked={issuesInvoice} onChange={() => setIssuesInvoice((v) => !v)} label="Este imóvel emite Nota Fiscal do aluguel" hint="Decisivo para o público corporativo (reembolso pela empresa)." />
+                <Toggle checked={issuesInvoice} onChange={() => setIssuesInvoice((v) => !v)} label="Este imóvel emite Nota Fiscal do valor mensal" hint="Decisivo para o público corporativo (reembolso pela empresa)." />
               </div>
             )}
 

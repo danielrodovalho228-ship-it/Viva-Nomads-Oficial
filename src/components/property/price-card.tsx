@@ -59,7 +59,7 @@ export function PriceCard({ property, actions }: { property: Property; actions: 
           <ChevronDown className="h-4 w-4 text-muted transition-transform group-open:rotate-180" />
         </summary>
         <div className="mt-2 space-y-1.5">
-          <Line label="Aluguel" value={formatBRL(property.monthlyPrice)} />
+          <Line label="Valor mensal" value={formatBRL(property.monthlyPrice)} />
           {condo > 0 && <Line label="Condomínio" value={formatBRL(condo)} />}
           {property.utilitiesMode === "fixed" && property.utilitiesEstimate > 0 ? (
             <p className="text-ink">
@@ -87,7 +87,7 @@ export function PriceCard({ property, actions }: { property: Property; actions: 
           )}
           {SELO_NF_UI && property.issuesInvoice && (
             <p className="inline-flex items-center gap-1 text-xs font-medium text-blue-700">
-              <FileText className="h-3.5 w-3.5" /> Emite Nota Fiscal do aluguel
+              <FileText className="h-3.5 w-3.5" /> Emite Nota Fiscal do valor mensal
             </p>
           )}
           <p className="text-xs text-sage">Sem taxa da plataforma para o inquilino.</p>
@@ -121,8 +121,8 @@ export function PriceCard({ property, actions }: { property: Property; actions: 
         aproximada ({property.neighborhood}).
       </p>
       <p className="mt-3 text-center text-xs text-muted">
-        O pagamento do aluguel é feito direto ao proprietário. A plataforma conecta e documenta —
-        não intermedeia a transação.
+        O valor mensal é pago direto ao proprietário. A plataforma conecta e documenta —
+        não participa do pagamento.
       </p>
     </div>
   );
