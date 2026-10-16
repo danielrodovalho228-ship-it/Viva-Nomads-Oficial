@@ -6,6 +6,8 @@ import { usePathname } from "next/navigation";
 import { LifeBuoy, Loader2, MessageCircle, Send, UserRound, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/lib/store";
+import { useCaptcha } from "@/components/seguranca/captcha";
+import { MSG_CAPTCHA_PENDENTE, podeEnviar } from "@/lib/seguranca/captcha";
 import { abrirChamado } from "@/lib/data/atendimento-actions";
 import { SAUDACAO_CHAT, transcricaoChat, type MsgChat } from "@/lib/atendimento/viva-chat-texto";
 import { PROMESSA_ATENDIMENTO } from "@/config/atendimento";
@@ -289,9 +291,11 @@ function FormPessoa({ logado, msgs, onCancelar }: { logado: boolean; msgs: MsgCh
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [ok, setOk] = useState<{ numero: string } | null>(null);
+  const captcha = useCaptcha();
 
   async function abrir() {
     setErro(null);
+    if (!logado && !podeEnviar(captcha.ligado, captcha.token)) return setErro(MSG_CAPTCHA_PENDENTE);
     // Sem conversa ainda: vai só o pedido; com conversa, ela vai anexada.
     const mensagem = msgs.length ? transcricaoChat(msgs, pedido) : pedido.trim();
     if (!msgs.length && pedido.trim().length < 5) return setErro("Conte em poucas palavras o que você precisa.");
@@ -302,8 +306,9 @@ function FormPessoa({ logado, msgs, onCancelar }: { logado: boolean; msgs: MsgCh
       assunto: "Conversa com a Viva (chat do site)",
       canal: "site",
       pedePessoa: true,
-      ...(logado ? {} : { visitanteNome: nome, visitanteEmail: email }),
+      ...(logado ? {} : { visitanteNome: nome, visitanteEmail: email, captchaToken: captcha.token ?? undefined }),
     }).catch(() => ({ ok: false as const, error: "Sem conexão. Tente de novo." }));
+    if (!logado) captcha.reset(); // o token vale uma vez só
     setEnviando(false);
     if (!r.ok) return setErro(r.error ?? "Não foi possível abrir o chamado agora.");
     setOk({ numero: r.numero });
@@ -341,6 +346,7 @@ function FormPessoa({ logado, msgs, onCancelar }: { logado: boolean; msgs: MsgCh
         <>
           <input required minLength={2} className={campo} placeholder="Seu nome" value={nome} maxLength={60} onChange={(e) => setNome(e.target.value)} aria-label="Seu nome" />
           <input className={campo} type="email" placeholder="Seu e-mail (a resposta chega por lá)" value={email} onChange={(e) => setEmail(e.target.value)} aria-label="Seu e-mail" />
+          {captcha.widget}
         </>
       )}
       <textarea className={cn(campo, "min-h-[60px]")} placeholder={msgs.length ? "Quer acrescentar algo? (opcional)" : "O que você precisa?"} value={pedido} maxLength={600} onChange={(e) => setPedido(e.target.value)} aria-label="Pedido para a equipe" />

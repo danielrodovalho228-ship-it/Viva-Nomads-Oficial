@@ -10,7 +10,8 @@ import { ehAdmin } from "@/lib/data/admin-guard";
 import { situacaoLimite, HORA } from "@/lib/limites";
 import { guardContactInfo } from "@/lib/messages/contact-guard";
 import { textoEmail } from "@/lib/notifications/texto-seguro";
-import { validarVisitante } from "@/lib/atendimento/identificacao-chamado";
+import { verificarCaptchaServidor } from "@/lib/seguranca/captcha-servidor";
+import { validarVisitanteComDns } from "@/lib/atendimento/identificacao-chamado-dns";
 import {
   calcularPrazos,
   mensagemPrazo,
@@ -98,6 +99,8 @@ export interface AbrirChamadoInput {
   pedePessoa?: boolean;
   visitanteNome?: string;
   visitanteEmail?: string;
+  /** Token do Turnstile (só visitante, e só quando o captcha está ligado). */
+  captchaToken?: string;
 }
 
 export async function abrirChamado(
@@ -117,8 +120,13 @@ export async function abrirChamado(
   let visitanteEmail: string | null = null;
   let visitanteNome: string | null = null;
   if (!user) {
-    const v = validarVisitante({ nome: input.visitanteNome, email: input.visitanteEmail });
+    const v = await validarVisitanteComDns({ nome: input.visitanteNome, email: input.visitanteEmail });
     if (!v.ok) return { ok: false, error: v.error };
+    const cap = await verificarCaptchaServidor(input.captchaToken, {
+      chavePublica: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
+      segredo: process.env.TURNSTILE_SECRET_KEY,
+    });
+    if (!cap.ok) return { ok: false, error: cap.error };
     visitanteEmail = v.email;
     visitanteNome = v.nome;
   }
