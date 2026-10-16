@@ -7,7 +7,7 @@ export function BarraComparar({ ids, aviso, onLimpar }: { ids: string[]; aviso: 
   if (ids.length === 0) return null;
   const pronto = ids.length >= MIN_COMPARAR;
   return (
-    <div className="fixed inset-x-0 bottom-3 z-40 flex justify-center px-4" data-testid="barra-comparar">
+    <div className="vn-barra-comparar fixed inset-x-0 z-40 flex justify-center px-4" data-testid="barra-comparar">
       <div className="flex max-w-full flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-2xl border border-line bg-white px-4 py-2 shadow-lg">
         {aviso ? (
           <p role="status" className="text-sm text-ink" data-testid="comparar-aviso">{aviso}</p>
