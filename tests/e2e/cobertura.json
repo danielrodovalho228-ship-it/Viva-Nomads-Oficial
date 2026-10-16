@@ -1082,7 +1082,7 @@
         "sistema"
       ],
       "specs": [
-        "t127-cron-automacoes"
+        "t128-cron-automacoes"
       ]
     },
     "/api/cron/avisos-daniel": {
