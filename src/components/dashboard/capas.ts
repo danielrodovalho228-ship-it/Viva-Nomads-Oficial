@@ -26,6 +26,18 @@ export const CAPAS = {
   indicacoes: { src: `${DIR}/painel-indicacoes.webp`, alt: "Duas canecas de café brindando na varanda" },
   reembolsos: { src: `${DIR}/painel-reembolsos.webp`, alt: "Comprovantes organizados com clipe sobre a mesa" },
   comparar: { src: `${DIR}/painel-comparar.webp`, alt: "Duas plantas de apartamento lado a lado sobre a mesa" },
+  ferramentas: { src: `${DIR}/painel-ferramentas.webp`, alt: "Mesa organizada com trena, chaves, caderno e tablet" },
+  simulador: { src: `${DIR}/painel-simulador.webp`, alt: "Sala mobiliada banhada pelo sol do fim de tarde" },
+  roi: { src: `${DIR}/painel-roi.webp`, alt: "Apartamento claro recebendo móveis novos" },
+  viabilidade: { src: `${DIR}/painel-viabilidade.webp`, alt: "Prédio residencial com varandas em rua arborizada" },
+  orcamentos: { src: `${DIR}/painel-orcamentos.webp`, alt: "Prancheta com proposta e chaves sobre a bancada" },
+} as const;
+
+/** Fotos dos grupos da página "Ferramentas" (uma por grupo, também únicas). */
+export const FOTOS_FERRAMENTAS = {
+  analise: { src: `${DIR}/ferramentas-analise.webp`, alt: "Lápis sobre um gráfico de barras impresso" },
+  fechamento: { src: `${DIR}/ferramentas-fechamento.webp`, alt: "Entrega das chaves do apartamento de mão em mão" },
+  protecao: { src: `${DIR}/ferramentas-protecao.webp`, alt: "Detector de fumaça no teto e extintor no corredor do apartamento" },
 } as const;
 
 export type CapaPainel = keyof typeof CAPAS;

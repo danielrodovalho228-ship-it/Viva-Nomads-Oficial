@@ -1,220 +1,235 @@
-"use client";
-
+import Image from "next/image";
 import Link from "next/link";
 import {
   TrendingUp,
   Percent,
+  Calculator,
+  Scale,
   FileText,
   FileSignature,
   Receipt,
+  ClipboardCheck,
   Flame,
   ShieldCheck,
+  Wrench,
+  BadgeCheck,
   ArrowRight,
   Lock,
-  Wrench,
   Sparkles,
 } from "lucide-react";
 import { PageTitle } from "@/components/dashboard/primitives";
-import { useAuthStore } from "@/lib/store";
-import { cn } from "@/lib/utils";
+import { FOTOS_FERRAMENTAS } from "@/components/dashboard/capas";
+import { BRAND_BLUR } from "@/lib/media";
+
+/*
+  Central de Ferramentas (ampliação da ordem 9f3085d8). Três grupos, quatro
+  ferramentas reais em cada: foto do grupo ao lado de uma grade 2×2 de cards
+  da mesma altura. Ferramenta ainda sem parceiro aparece como card de status,
+  sem link e sem botão.
+*/
 
 interface Ferramenta {
-  href: string;
-  title: string;
-  desc: string;
-  icon: React.ComponentType<{ className?: string }>;
-  tag?: string; // ex.: "Plano Gestor"
+  /** Sem href = card informativo (em estruturação). */
+  href?: string;
+  titulo: string;
+  texto: string;
+  icone: React.ComponentType<{ className?: string }>;
+  acao?: string;
+  status?: string;
 }
 
 interface Grupo {
+  id: keyof typeof FOTOS_FERRAMENTAS;
   titulo: string;
-  descricao: string;
-  itens: Ferramenta[];
+  texto: string;
+  itens: [Ferramenta, Ferramenta, Ferramenta, Ferramenta];
 }
 
 const GRUPOS: Grupo[] = [
   {
+    id: "analise",
     titulo: "Análise & cálculo",
-    descricao: "Entenda o retorno antes de anunciar.",
+    texto: "Entenda o retorno antes de anunciar ou de investir em móveis.",
     itens: [
       {
         href: "/dashboard/simulador",
-        title: "Simulador de rentabilidade (do seu imóvel)",
-        desc: "Quanto o SEU imóvel rende por mês na Viva Nomads — receita, custos e líquido.",
-        icon: TrendingUp,
+        titulo: "Simulador de rentabilidade",
+        texto: "Quanto o seu imóvel rende por mês na Viva Nomads — receita, custos e líquido.",
+        icone: TrendingUp,
       },
       {
         href: "/dashboard/roi-imovel",
-        title: "Calculadora de ROI",
-        desc: "Vale a pena mobiliar? Payback do investimento e retorno anual.",
-        icon: Percent,
+        titulo: "Calculadora de ROI",
+        texto: "Vale a pena mobiliar? Veja o payback do investimento e o retorno anual.",
+        icone: Percent,
+      },
+      {
+        href: "/dashboard/viabilidade",
+        titulo: "Viabilidade de mobiliar",
+        texto: "Compare o aluguel mobiliado de média duração com o aluguel vazio.",
+        icone: Calculator,
+      },
+      {
+        href: "/dashboard/conta#tributacao",
+        titulo: "Tributação PF × PJ",
+        texto: "Estime o imposto das locações como pessoa física e como empresa.",
+        icone: Scale,
       },
     ],
   },
   {
+    id: "fechamento",
     titulo: "Fechamento & documentos",
-    descricao: "Do orçamento ao contrato assinado.",
+    texto: "Do orçamento ao contrato assinado, com tudo registrado.",
     itens: [
       {
         href: "/dashboard/orcamentos",
-        title: "Orçamentos",
-        desc: "Monte e compartilhe propostas para os interessados.",
-        icon: FileText,
+        titulo: "Orçamentos",
+        texto: "Monte e envie propostas numeradas para os interessados.",
+        icone: FileText,
       },
       {
         href: "/dashboard/fechamento",
-        title: "Fechamento",
-        desc: "Verificação, garantia, serviços e contrato — em um fluxo só.",
-        icon: FileSignature,
+        titulo: "Fechamento",
+        texto: "Verificação, garantia, serviços e contrato — em um fluxo só.",
+        icone: FileSignature,
       },
       {
         href: "/dashboard/contratos",
-        title: "Contratos & blocos",
-        desc: "Acompanhe os blocos e registre os recebimentos — você mesmo declara; a plataforma só registra.",
-        icon: Receipt,
+        titulo: "Contratos & blocos",
+        texto: "Acompanhe os blocos e registre os recebimentos que você declara.",
+        icone: Receipt,
+      },
+      {
+        href: "/dashboard/contratos#conferencia",
+        titulo: "Conferência de entrada",
+        texto: "Registre o estado do imóvel na entrada e na saída do morador.",
+        icone: ClipboardCheck,
+      },
+    ],
+  },
+  {
+    id: "protecao",
+    titulo: "Proteção & garantias",
+    texto: "Coberturas, garantias e registros que dão segurança à locação.",
+    itens: [
+      {
+        href: "/dashboard/garantias",
+        titulo: "Garantia locatícia",
+        texto: "Caução Viva (50% por bloco, devolvível) — o dinheiro nunca fica com a plataforma.",
+        icone: ShieldCheck,
+      },
+      {
+        href: "/dashboard/verificacao",
+        titulo: "Verificação de identidade",
+        texto: "Documento e prova de vida para fechar com quem é quem diz ser.",
+        icone: BadgeCheck,
+      },
+      {
+        href: "/dashboard/solicitacoes",
+        titulo: "Solicitações de manutenção",
+        texto: "Problema reportado com foto, resposta e solução — tudo no histórico do contrato.",
+        icone: Wrench,
+      },
+      {
+        titulo: "Seguro incêndio",
+        texto: "Obrigatório pela Lei do Inquilinato. A contratação via parceiro está em estruturação.",
+        icone: Flame,
+        status: "Em estruturação",
       },
     ],
   },
 ];
 
-export default function FerramentasPage() {
-  const user = useAuthStore((s) => s.user);
-  const isGestor = user?.plan === "gestor";
+function CardFerramenta({ f }: { f: Ferramenta }) {
+  const corpo = (
+    <>
+      <div className="flex items-center justify-between gap-2">
+        <span
+          className={
+            f.href
+              ? "grid h-10 w-10 place-items-center rounded-xl bg-sage-100 text-forest"
+              : "grid h-10 w-10 place-items-center rounded-xl bg-amber-50 text-amber-700"
+          }
+        >
+          <f.icone className="h-5 w-5" />
+        </span>
+        {f.status && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
+            <Lock className="h-3 w-3" /> {f.status}
+          </span>
+        )}
+      </div>
+      <h3 className="mt-3 font-title font-bold text-ink">{f.titulo}</h3>
+      <p className="mt-1 flex-1 text-sm text-muted">{f.texto}</p>
+      {f.href ? (
+        <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-forest">
+          {f.acao ?? "Abrir"}
+          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+        </span>
+      ) : (
+        <span className="mt-3 text-sm font-medium text-muted">Via parceiro — em breve</span>
+      )}
+    </>
+  );
+  const base = "flex h-full flex-col rounded-2xl border border-sage-200 bg-white p-5";
+  return f.href ? (
+    <Link
+      href={f.href}
+      data-testid="ferramenta-card"
+      className={`group ${base} transition-colors hover:border-sage hover:bg-surface-2`}
+    >
+      {corpo}
+    </Link>
+  ) : (
+    <div data-testid="ferramenta-card" className={base}>
+      {corpo}
+    </div>
+  );
+}
 
+export default function FerramentasPage() {
   return (
     <div>
       <PageTitle
+        capa="ferramentas"
         title="Ferramentas"
         subtitle="Tudo o que ajuda você a analisar, fechar e proteger a locação — em um só lugar."
       />
 
-      <div className="space-y-8">
-        {GRUPOS.map((g) => (
-          <section key={g.titulo}>
-            <div className="mb-3">
-              <h2 className="font-title text-lg font-bold text-ink">{g.titulo}</h2>
-              <p className="text-sm text-muted">{g.descricao}</p>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {g.itens.map((f) => {
-                const bloqueado = f.tag === "Plano Gestor" && !isGestor;
-                return (
-                  <Link
-                    key={f.href}
-                    href={bloqueado ? "/precos" : f.href}
-                    className="group flex flex-col rounded-2xl border border-sage-200 bg-white p-5 transition-colors hover:border-sage hover:bg-surface-2"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="grid h-10 w-10 place-items-center rounded-xl bg-sage-100 text-forest">
-                        <f.icon className="h-5 w-5" />
-                      </span>
-                      {f.tag && (
-                        <span
-                          className={cn(
-                            "rounded-full px-2.5 py-1 text-xs font-medium",
-                            bloqueado
-                              ? "bg-champagne/20 text-forest"
-                              : "bg-sage-100 text-forest"
-                          )}
-                        >
-                          {f.tag}
-                        </span>
-                      )}
-                    </div>
-                    <h3 className="mt-3 font-title font-bold text-ink">{f.title}</h3>
-                    <p className="mt-1 flex-1 text-sm text-muted">{f.desc}</p>
-                    <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-forest">
-                      {bloqueado ? "Fazer upgrade" : "Abrir"}
-                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-                    </span>
-                  </Link>
-                );
-              })}
-            </div>
-          </section>
-        ))}
-
-        {/* Proteção & garantias — inclui o seguro incêndio (obrigatório por lei),
-            em estruturação via parceiro. SEM CTA (aguarda parecer/parceiro). */}
-        <section>
-          <div className="mb-3">
-            <h2 className="font-title text-lg font-bold text-ink">Proteção & garantias</h2>
-            <p className="text-sm text-muted">
-              Coberturas e garantias que dão segurança à locação.
-            </p>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {/* Card SEM link/CTA — apenas informa o status. */}
-            <div className="flex flex-col rounded-2xl border border-sage-200 bg-white p-5">
-              <div className="flex items-center justify-between">
-                <span className="grid h-10 w-10 place-items-center rounded-xl bg-amber-50 text-amber-700">
-                  <Flame className="h-5 w-5" />
-                </span>
-                <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
-                  <Lock className="h-3 w-3" /> Em estruturação
-                </span>
+      <div className="space-y-10">
+        {GRUPOS.map((g) => {
+          const foto = FOTOS_FERRAMENTAS[g.id];
+          return (
+            <section key={g.id} aria-labelledby={`grupo-${g.id}`} data-testid="ferramentas-grupo">
+              <div className="mb-4">
+                <h2 id={`grupo-${g.id}`} className="font-title text-xl font-bold text-ink">
+                  {g.titulo}
+                </h2>
+                <p className="text-sm text-muted">{g.texto}</p>
               </div>
-              <h3 className="mt-3 font-title font-bold text-ink">
-                Seguro incêndio{" "}
-                <span className="text-sm font-normal text-muted">(obrigatório por lei)</span>
-              </h3>
-              <p className="mt-1 flex-1 text-sm text-muted">
-                Exigido pela Lei do Inquilinato para locações. Estamos estruturando a contratação
-                <strong className="text-ink"> via parceiro</strong> — sem custo escondido e sem a
-                plataforma intermediar o valor.
-              </p>
-              <span className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-muted">
-                Em estruturação — via parceiro
-              </span>
-            </div>
-
-            {/* Garantia locatícia → página própria (explica a caução + status). */}
-            <Link
-              href="/dashboard/garantias"
-              className="group flex flex-col rounded-2xl border border-sage-200 bg-white p-5 transition-colors hover:border-sage hover:bg-surface-2"
-            >
-              <div className="flex items-center justify-between">
-                <span className="grid h-10 w-10 place-items-center rounded-xl bg-sage-100 text-forest">
-                  <ShieldCheck className="h-5 w-5" />
-                </span>
+              <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+                <div className="relative aspect-[16/7] overflow-hidden rounded-2xl bg-surface-2 lg:aspect-auto lg:min-h-full">
+                  <Image
+                    src={foto.src}
+                    alt={foto.alt}
+                    fill
+                    sizes="(min-width: 1024px) 30vw, 100vw"
+                    placeholder="blur"
+                    blurDataURL={BRAND_BLUR}
+                    className="object-cover"
+                  />
+                </div>
+                <div className="grid auto-rows-fr gap-4 sm:grid-cols-2">
+                  {g.itens.map((f) => (
+                    <CardFerramenta key={f.titulo} f={f} />
+                  ))}
+                </div>
               </div>
-              <h3 className="mt-3 font-title font-bold text-ink">Garantia locatícia</h3>
-              <p className="mt-1 flex-1 text-sm text-muted">
-                Caução Viva (50% por bloco, devolvível) ou seguro-fiança via parceiro (em
-                estruturação). Uma garantia por contrato — o dinheiro nunca fica com a plataforma.
-              </p>
-              <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-forest">
-                Ver garantias e cauções
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-              </span>
-            </Link>
+            </section>
+          );
+        })}
 
-            {/* Solicitações de manutenção — documentadas entre inquilino e proprietário
-                (insumo do dossiê). SEM prometer rede de parceiros (ainda não existe). */}
-            <Link
-              href="/dashboard/solicitacoes"
-              className="group flex flex-col rounded-2xl border border-sage-200 bg-white p-5 transition-colors hover:border-sage hover:bg-surface-2"
-            >
-              <div className="flex items-center justify-between">
-                <span className="grid h-10 w-10 place-items-center rounded-xl bg-sage-100 text-forest">
-                  <Wrench className="h-5 w-5" />
-                </span>
-              </div>
-              <h3 className="mt-3 font-title font-bold text-ink">Solicitações de manutenção</h3>
-              <p className="mt-1 flex-1 text-sm text-muted">
-                O inquilino reporta um problema (com foto); você responde e resolve. Tudo fica
-                registrado no histórico do contrato. Rede de parceiros de manutenção — em
-                estruturação.
-              </p>
-              <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-forest">
-                Abrir solicitações
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-              </span>
-            </Link>
-          </div>
-        </section>
-
-        {/* Regra de ouro — rodapé. */}
         <p className="flex items-start gap-2 rounded-xl border border-sage-200 bg-surface-2 px-4 py-3 text-sm text-muted">
           <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-sage" />
           Em todas as ferramentas, a Viva Nomads <strong>calcula, conecta e documenta</strong> — o
