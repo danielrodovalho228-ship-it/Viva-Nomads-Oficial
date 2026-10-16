@@ -160,9 +160,11 @@ function RealNaoVerificado({ copy, perfil }: { copy: VerifyCopy; perfil: "tenant
 
         <p className="mt-4 flex items-start gap-2 rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted">
           <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          Você já pode se candidatar sem o selo — o proprietário vê{" "}
-          <strong className="text-ink">verificação pendente</strong> no lugar do resultado até a
-          verificação abrir. Seus dados serão tratados apenas para a verificação (LGPD).
+          <span className="min-w-0">
+            Você já pode se candidatar sem o selo — o proprietário vê{" "}
+            <strong className="text-ink">verificação pendente</strong> no lugar do resultado até a
+            verificação abrir. Seus dados serão tratados apenas para a verificação (LGPD).
+          </span>
         </p>
 
         {/* Inquilino: caminho REAL de conclusão — a candidatura acontece no

@@ -207,38 +207,37 @@ function OwnerDashboard({
             <>
               <ul className="divide-y divide-sage-200">
                 {myProperties.map((p) => (
-                  <li key={p.id} className="flex items-center justify-between gap-3 py-3">
-                    <div className="flex min-w-0 items-center gap-3">
-                      <Image
-                        src={coverPhoto(p.id, p.photos)}
-                        alt=""
-                        width={56}
-                        height={56}
-                        className="h-14 w-14 shrink-0 rounded-xl object-cover"
-                      />
-                      <div className="min-w-0">
-                        {/* Imóveis de demonstração não têm página real (/imoveis/demo-*
-                            daria 404) — mostra como texto. Reais viram link. */}
-                        {demo ? (
-                          <span className="font-medium text-ink">{p.title}</span>
-                        ) : (
-                          <Link
-                            href={`/imoveis/${p.id}`}
-                            className="font-medium text-ink hover:text-forest"
-                          >
-                            {p.title}
-                          </Link>
-                        )}
-                        <p className="text-sm text-muted">
-                          {formatBRL(p.monthlyPrice)}/mês · {p.neighborhood}
-                        </p>
+                  <li key={p.id} className="flex items-center gap-3 py-3">
+                    <Image
+                      src={coverPhoto(p.id, p.photos)}
+                      alt=""
+                      width={56}
+                      height={56}
+                      className="h-14 w-14 shrink-0 rounded-xl object-cover"
+                    />
+                    <div className="min-w-0 flex-1">
+                      {/* Imóveis de demonstração não têm página real (/imoveis/demo-*
+                          daria 404) — mostra como texto. Reais viram link. */}
+                      {demo ? (
+                        <span className="line-clamp-2 font-medium text-ink">{p.title}</span>
+                      ) : (
+                        <Link
+                          href={`/imoveis/${p.id}`}
+                          className="line-clamp-2 font-medium text-ink hover:text-forest"
+                        >
+                          {p.title}
+                        </Link>
+                      )}
+                      <p className="text-sm text-muted">
+                        {formatBRL(p.monthlyPrice)}/mês · {p.neighborhood}
+                      </p>
+                      {/* Selos abaixo do título: em 390 px não espremem o texto. */}
+                      <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                        {p.readyToLiveBadge && <ReadyToLiveBadge />}
+                        <span className="rounded-full bg-sage-100 px-2.5 py-1 text-xs font-medium text-forest">
+                          Ativo
+                        </span>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {p.readyToLiveBadge && <ReadyToLiveBadge />}
-                      <span className="rounded-full bg-sage-100 px-2.5 py-1 text-xs font-medium text-forest">
-                        Ativo
-                      </span>
                     </div>
                   </li>
                 ))}
