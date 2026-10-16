@@ -1,6 +1,6 @@
-import type { Property } from "./types";
-import { galleryFor } from "./media";
-import { temSeloPrecoJusto } from "./preco-justo";
+import type { Property } from "./types.ts";
+import { galleryFor } from "./media.ts";
+import { temSeloPrecoJusto } from "./preco-justo.ts";
 
 /*
   Dados de exemplo para popular as telas públicas enquanto o Supabase
@@ -84,7 +84,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
       { category: "trabalho", items: ["Internet fibra 300 Mbps", "Mesa de trabalho", "Cadeira ergonômica", "Monitor extra"] },
       { category: "cozinha", items: ["Fogão", "Geladeira", "Microondas", "Utensílios completos", "Cafeteira"] },
       { category: "conforto", items: ["Ar-condicionado", "Roupa de cama e banho", "Máquina de lavar", "Smart TV"] },
-      { category: "edificio", items: ["Elevador", "Portaria 24h", "Academia"] },
+      { category: "edificio", items: ["Elevador", "Portaria 24h", "Academia", "Vaga de garagem"] },
       { category: "seguranca", items: ["Câmeras nas áreas comuns", "Interfone"] },
     ],
     proximities: [
@@ -201,7 +201,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     ownershipType: "subleased",
     subleaseAuthorized: true,
     photos: galleryFor("ube-003", 8),
-    amenities: ["Mobiliado completo", "Máquina de lavar", "Cozinha equipada", "Aceita pets"],
+    amenities: ["Mobiliado completo", "Máquina de lavar", "Cozinha equipada", "Aceita pets", "Vaga de garagem"],
     workFeatures: [],
     internetTier: "trabalho_remoto",
     nearbyWorkspaces: [{ name: "Coworking Tibery", type: "coworking", distanceM: 1800 }],
@@ -250,7 +250,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     tagCondoApproved: true,
     ownershipType: "own",
     photos: galleryFor("ube-004", 10),
-    amenities: ["Mobiliado completo", "Ar-condicionado", "Cozinha compacta equipada", "Smart TV"],
+    amenities: ["Mobiliado completo", "Ar-condicionado", "Cozinha compacta equipada", "Smart TV", "Wi-Fi", "Vaga de garagem"],
     workFeatures: ["Internet fibra", "Bancada de trabalho"],
     internetTier: "home_office",
     nearbyWorkspaces: [{ name: "Biblioteca UFU Umuarama", type: "cafe", distanceM: 600 }],
@@ -305,7 +305,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     tagCondoApproved: true,
     ownershipType: "own",
     photos: galleryFor("ube-005", 12),
-    amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Acessível"],
+    amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Acessível", "Wi-Fi", "Vaga de garagem"],
     workFeatures: ["Internet fibra"],
     internetTier: "basica",
     nearbyWorkspaces: [{ name: "Praça Sérgio Pacheco", type: "cafe", distanceM: 500 }],
@@ -360,7 +360,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     tagCondoApproved: true,
     ownershipType: "own",
     photos: galleryFor("ube-006", 14),
-    amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Smart TV"],
+    amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Smart TV", "Wi-Fi", "Vaga de garagem"],
     workFeatures: ["Escritório dedicado", "Internet fibra 300 Mbps", "Cadeira ergonômica", "Monitor extra"],
     internetTier: "home_office",
     nearbyWorkspaces: [
@@ -418,7 +418,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     tagCondoApproved: true,
     ownershipType: "own",
     photos: galleryFor("ube-007", 10),
-    amenities: ["Mobiliado completo", "Ar-condicionado", "Cozinha compacta", "Smart TV"],
+    amenities: ["Mobiliado completo", "Ar-condicionado", "Cozinha compacta", "Smart TV", "Wi-Fi", "Vaga de garagem"],
     workFeatures: ["Internet fibra", "Mesa de trabalho"],
     internetTier: "home_office",
     nearbyWorkspaces: [{ name: "Coworking Brasil", type: "coworking", distanceM: 900 }],
@@ -468,7 +468,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     tagCondoApproved: true,
     ownershipType: "own",
     photos: galleryFor("ube-008", 16),
-    amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Quintal", "Churrasqueira"],
+    amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Quintal", "Churrasqueira", "Wi-Fi", "Vaga de garagem"],
     workFeatures: ["Escritório dedicado", "Internet fibra"],
     internetTier: "home_office",
     nearbyWorkspaces: [{ name: "Shopping Jardim Karaíba", type: "cafe", distanceM: 1200 }],
@@ -523,7 +523,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     tagCondoApproved: true,
     ownershipType: "own",
     photos: galleryFor("ube-009", 12),
-    amenities: ["Mobiliado completo", "Ar-condicionado", "Cozinha compacta", "Smart TV"],
+    amenities: ["Mobiliado completo", "Ar-condicionado", "Cozinha compacta", "Smart TV", "Wi-Fi", "Vaga de garagem"],
     workFeatures: ["Internet fibra", "Mesa de estudos"],
     internetTier: "home_office",
     nearbyWorkspaces: [
@@ -580,7 +580,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     tagCondoApproved: true,
     ownershipType: "own",
     photos: galleryFor("ube-010", 12),
-    amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada"],
+    amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Wi-Fi", "Vaga de garagem"],
     workFeatures: ["Internet fibra"],
     internetTier: "trabalho_remoto",
     nearbyWorkspaces: [{ name: "Coworking Tibery", type: "coworking", distanceM: 1000 }],
@@ -630,7 +630,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     tagCondoApproved: true,
     ownershipType: "own",
     photos: galleryFor("ube-011", 10),
-    amenities: ["Mobiliado completo", "Ar-condicionado", "Cozinha compacta", "Smart TV"],
+    amenities: ["Mobiliado completo", "Ar-condicionado", "Cozinha compacta", "Smart TV", "Wi-Fi"],
     workFeatures: ["Internet fibra", "Mesa de estudos"],
     internetTier: "home_office",
     nearbyWorkspaces: [{ name: "Biblioteca UFU", type: "cafe", distanceM: 700 }],
@@ -680,7 +680,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     tagCondoApproved: true,
     ownershipType: "own",
     photos: galleryFor("ube-012", 12),
-    amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada"],
+    amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Wi-Fi", "Vaga de garagem"],
     workFeatures: ["Escritório dedicado", "Internet fibra 300 Mbps"],
     internetTier: "home_office",
     nearbyWorkspaces: [{ name: "Café Saraiva", type: "cafe", distanceM: 350 }],
@@ -730,7 +730,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     tagCondoApproved: true,
     ownershipType: "own",
     photos: galleryFor("ube-013", 14),
-    amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Quintal"],
+    amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Quintal", "Wi-Fi", "Vaga de garagem"],
     workFeatures: ["Escritório dedicado", "Internet fibra"],
     internetTier: "home_office",
     nearbyWorkspaces: [{ name: "Center Shopping", type: "cafe", distanceM: 1500 }],
@@ -781,7 +781,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     tagCondoApproved: true,
     ownershipType: "own",
     photos: galleryFor("ube-014", 16),
-    amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Smart TV", "Varanda gourmet"],
+    amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Smart TV", "Varanda gourmet", "Wi-Fi", "Vaga de garagem"],
     workFeatures: ["Escritório dedicado", "Internet fibra 500 Mbps", "Cadeira ergonômica"],
     internetTier: "home_office",
     nearbyWorkspaces: [{ name: "Business Center Cidade Jardim", type: "coworking", distanceM: 800 }],
@@ -831,7 +831,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     tagCondoApproved: true,
     ownershipType: "own",
     photos: galleryFor("ube-015", 10),
-    amenities: ["Mobiliado completo", "Ar-condicionado", "Cozinha compacta", "Smart TV"],
+    amenities: ["Mobiliado completo", "Ar-condicionado", "Cozinha compacta", "Smart TV", "Wi-Fi"],
     workFeatures: ["Internet fibra", "Mesa de trabalho"],
     internetTier: "home_office",
     nearbyWorkspaces: [
