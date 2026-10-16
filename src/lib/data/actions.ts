@@ -36,6 +36,7 @@ import { erroBancoPT } from "@/lib/erros-banco";
 import { planoDoProprietario } from "@/lib/data/plano-efetivo";
 import { adminsPorAviso } from "@/lib/notifications/push-admins";
 import { avisarPedidosDoImovel } from "@/lib/data/pedidos-compat";
+import { avisarBuscasDoImovel } from "@/lib/data/alerta-busca-servidor";
 import { INTERNET_META } from "@/lib/internet";
 import { getPropertyForOwner } from "@/lib/data/properties";
 import { colunaAirbnb } from "@/lib/preco-justo";
@@ -646,6 +647,7 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
   if (!input.asDraft) {
     try {
       await avisarPedidosDoImovel(data.id as string);
+      await avisarBuscasDoImovel(data.id as string);
     } catch {
       /* best-effort */
     }
@@ -847,6 +849,7 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
   if (input.asDraft === false && antes?.status !== "active") {
     try {
       await avisarPedidosDoImovel(id);
+      await avisarBuscasDoImovel(id);
     } catch {
       /* best-effort */
     }

@@ -179,6 +179,14 @@
         "t30-atendimento-autonomo"
       ]
     },
+    "/alerta-busca/desligar": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t125-alerta-busca-salva"
+      ]
+    },
     "/app/boas-vindas": {
       "personas": [
         "publico"
@@ -277,7 +285,7 @@
         "publico"
       ],
       "specs": [
-        "t119-seo-robots-jsonld",
+        "t126-seo-robots-jsonld",
         "t18-seo-a11y",
         "t20-p1-agentes"
       ]
@@ -395,6 +403,7 @@
         "inquilino"
       ],
       "specs": [
+        "t125-alerta-busca-salva",
         "t71-busca-topo"
       ]
     },
@@ -1256,6 +1265,14 @@
     }
   },
   "actions": {
+    "src/app/(public)/alerta-busca/desligar/acao.ts#desligarAlertaPorLink": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t125-alerta-busca-salva"
+      ]
+    },
     "src/app/acesso-socios/actions.ts#entrarSocios": {
       "personas": [
         "socio"
@@ -1756,6 +1773,15 @@
       ],
       "specs": [
         "t71-busca-topo"
+      ]
+    },
+    "src/lib/data/buscas-salvas-actions.ts#definirAlertaBusca": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t125-alerta-busca-salva"
       ]
     },
     "src/lib/data/buscas-salvas-actions.ts#listarBuscasSalvas": {
