@@ -809,6 +809,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                   <button
                     key={s.id}
                     type="button"
+                    data-testid={`servico-${s.id}`}
                     aria-pressed={active}
                     aria-disabled={!selectable}
                     disabled={!selectable}
