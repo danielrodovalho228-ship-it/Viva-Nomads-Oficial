@@ -1,5 +1,6 @@
 "use server";
 
+import { linhaQuemRespondeuHtml } from "@/lib/atendimento/quem-respondeu";
 import crypto from "node:crypto";
 import { headers } from "next/headers";
 import { after } from "next/server";
@@ -599,7 +600,7 @@ export async function responderComoAdmin(id: string, texto: string, interno: boo
     // Respondido: o prazo passa a ser o de resolução (ou fica "estourado" se a resposta atrasou).
     await ctx.admin.rpc("atendimento_varrer_prazos");
     await ctx.admin.from("chamado_eventos").insert({ chamado_id: id, ator_tipo: "admin", ator_id: ctx.userId, acao: "respondido", de: c.status as string, para: "aguardando_usuario" });
-    await avisarUsuario(c as ChamadoResumo, "chamado_respondido", `<blockquote style="margin:12px 0 0;padding:10px 14px;border-left:3px solid #1c6b3a;color:#334155;">${textoEmail(corpo, 1500)}</blockquote>`);
+    await avisarUsuario(c as ChamadoResumo, "chamado_respondido", `${linhaQuemRespondeuHtml("equipe")}<blockquote style="margin:12px 0 0;padding:10px 14px;border-left:3px solid #1c6b3a;color:#334155;">${textoEmail(corpo, 1500)}</blockquote>`);
   }
   return { ok: true };
 }
