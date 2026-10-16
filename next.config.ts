@@ -13,6 +13,8 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   experimental: {
     optimizePackageImports: ["lucide-react"],
+    // Conferência de entrada/saída sobe laudo (até 15 MB) e foto (até 8 MB) por Server Action; o padrão do Next é 1 MB.
+    serverActions: { bodySizeLimit: "16mb" },
   },
   images: {
     // AVIF/WebP: imagens bem menores que JPEG/PNG onde o navegador suporta.
