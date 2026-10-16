@@ -9,6 +9,7 @@ import {
   podeReceber,
   detalheAutomacao,
   dataEmBrasilia,
+  modoSimulado,
 } from "./regras.ts";
 
 test("rascunho parado: avisa com 1 e 3 dias, nos outros dias não", () => {
@@ -58,4 +59,13 @@ test("textos seguem o vocabulário da Viva (sem aluguel, comissão, vistoria, te
   }
   assert.match(detalheAutomacao("saida_lembrete", { fim: "2026-11-04" }), /04\/11\/2026/);
   assert.match(detalheAutomacao("saida_lembrete", {}), /conferência de saída/);
+});
+
+test("cron de automações só envia de verdade com AUTOMACOES_ATIVO=1 (trava do Moacir, #658)", () => {
+  assert.equal(modoSimulado(null, undefined), true);
+  assert.equal(modoSimulado(null, ""), true);
+  assert.equal(modoSimulado(null, "0"), true);
+  assert.equal(modoSimulado(null, "true"), true);
+  assert.equal(modoSimulado("1", "1"), true); // ?simular=1 sempre vence
+  assert.equal(modoSimulado(null, "1"), false);
 });
