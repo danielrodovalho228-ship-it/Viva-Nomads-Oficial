@@ -47,11 +47,11 @@ export function ComparativoPrecos({ variante = "completo" }: { variante?: "compl
           <Scale className="h-5 w-5 text-forest" aria-hidden /> Quanto você paga
         </p>
         <p className="mt-2 text-sm text-muted">
-          {`Reserva de ${COMPARE_MESES} meses a ${reaisInteiros(COMPARE_ALUGUEL)} por mês (${reaisInteiros(COMPARE_CONTRATO)} no contrato):`}
+          {`Contrato de ${COMPARE_MESES} meses a ${reaisInteiros(COMPARE_ALUGUEL)} por mês (${reaisInteiros(COMPARE_CONTRATO)} no contrato):`}
         </p>
         <div className="mt-3 grid grid-cols-1 gap-3 text-center sm:grid-cols-3" data-testid="comparativo-curto">
           <div className="rounded-xl bg-sage-100 p-3">
-            <p className="text-xs text-muted">Viva Nomads (reserva de 3 meses)</p>
+            <p className="text-xs text-muted">Viva Nomads (contrato de 3 meses)</p>
             <p className="font-title text-2xl font-bold text-forest">{aprox(viva.pct ?? 0)}</p>
             <p className="text-xs text-muted">do total, menor com mais imóveis</p>
           </div>
@@ -86,7 +86,7 @@ export function ComparativoPrecos({ variante = "completo" }: { variante?: "compl
         <Scale className="h-6 w-6 text-forest" aria-hidden /> Compare
       </h2>
       <p className="mt-1 text-sm text-muted">
-        {`Reserva de ${COMPARE_MESES} meses a ${reaisInteiros(COMPARE_ALUGUEL)} por mês (${reaisInteiros(COMPARE_CONTRATO)} no total).`} Os percentuais são sobre o total pago pelo morador, no formato típico de cada empresa.
+        {`Contrato de ${COMPARE_MESES} meses a ${reaisInteiros(COMPARE_ALUGUEL)} por mês (${reaisInteiros(COMPARE_CONTRATO)} no total).`} Os percentuais são sobre o total pago pelo morador, no formato típico de cada empresa.
       </p>
       <ul className="mt-5 grid gap-3 md:grid-cols-3" data-testid="comparativo-linhas">
         {linhas.map((l) => (
@@ -118,7 +118,7 @@ export function LinhaComparativoAnuncio({ aluguel }: { aluguel: number }) {
   const valor = comissaoSobreContrato(aluguel, MESES_EXEMPLO, TAXA_COMISSAO_PADRAO);
   return (
     <p className="rounded-lg bg-sage-100 px-3 py-2 text-xs text-ink" data-testid="linha-comparativo">
-      Num contrato de {MESES_EXEMPLO} meses neste valor mensal, a taxa é de <strong>{brl(valor)} uma vez</strong> (12% sobre o valor total do contrato para quem tem 1 ou 2 imóveis; menor com mais imóveis), só quando a reserva é fechada.{" "}
+      Num contrato de {MESES_EXEMPLO} meses neste valor mensal, a taxa é de <strong>{brl(valor)} uma vez</strong> (12% sobre o valor total do contrato para quem tem 1 ou 2 imóveis; menor com mais imóveis), só quando o contrato é fechado.{" "}
       <Link href="/precos" className="web-only font-medium text-forest underline">
         Ver preços
       </Link>

@@ -233,7 +233,7 @@ test("vocabulário (ordens 12eea681/5faa3903): a cobrança da Viva nas páginas 
 
 test("Compare: mantém a seção e os diferenciais da Viva (só a coluna da Viva, concorrente só com fonte)", () => {
   assert.equal(DIFERENCIAIS_VIVA.length, 8);
-  assert.ok(DIFERENCIAIS_VIVA.includes("Você só paga quando a reserva é fechada"));
+  assert.ok(DIFERENCIAIS_VIVA.includes("Você só paga quando o contrato é fechado"));
   assert.ok(DIFERENCIAIS_VIVA.includes("Nenhuma taxa para quem vem morar"));
   const comp = ler("src/components/precos/comparativo-precos.tsx");
   assert.match(comp, /DIFERENCIAIS_VIVA/);
