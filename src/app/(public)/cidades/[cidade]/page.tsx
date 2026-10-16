@@ -11,6 +11,7 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { paginaCidade } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
 import { calcularPrecosMedios, rotuloQuartos } from "@/lib/preco-medio";
+import { polosDaCidade } from "@/lib/polos";
 
 // F9: dados frescos (revalidatePath nas ações + rede de segurança de 60 s).
 export const revalidate = 60;
@@ -128,6 +129,21 @@ export default async function CityLandingPage({ params }: Params) {
                       `R$ ${g.media.toLocaleString("pt-BR")} por mês`
                     )}
                   </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {polosDaCidade(cidade).length > 0 && (
+          <div className="mt-12 max-w-3xl" data-testid="polos-da-cidade">
+            <h2 className="font-title text-2xl font-bold text-ink">Por região de {name}</h2>
+            <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+              {polosDaCidade(cidade).map((p) => (
+                <li key={p.slug}>
+                  <Link href={`/cidades/${cidade}/${p.slug}`} className="block rounded-2xl border border-sage-200 p-4 font-semibold text-forest hover:border-forest">
+                    {p.nome}
+                  </Link>
                 </li>
               ))}
             </ul>

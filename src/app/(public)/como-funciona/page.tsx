@@ -228,7 +228,7 @@ function DuranteDepois() {
       img: "/images/unicas/cf-renovacao.webp",
       alt: "Hóspede chegando com a bagagem para mais um período de estadia",
       title: "Renovação",
-      text: "A estadia se renova em blocos, com aceite das duas partes. A comissão do proprietário é cobrada uma vez em cada contrato e em cada renovação, sobre o valor total do período.",
+      text: "A estadia se renova em blocos, com aceite das duas partes. A taxa do proprietário é cobrada uma vez em cada contrato e em cada renovação, sobre o valor total do período.",
     },
     {
       img: "/images/unicas/cf-devolucao.webp",
