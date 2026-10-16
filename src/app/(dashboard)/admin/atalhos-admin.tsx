@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bot, Camera, FileSignature, Handshake, Inbox, LifeBuoy, Megaphone, Star, TrendingUp, Wallet } from "lucide-react";
+import { Bot, Camera, FileSignature, Handshake, Inbox, LifeBuoy, Mail, Megaphone, Star, TrendingUp, Wallet } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Panel, StatCard } from "@/components/dashboard/primitives";
 
@@ -12,6 +12,7 @@ const OUTRAS_AREAS = [
   { href: "/admin/pedidos", label: "Moderar pedidos", icon: Megaphone },
   { href: "/admin/documentos", label: "Documentos", icon: FileSignature },
   { href: "/admin/atendimento", label: "Atendimento", icon: LifeBuoy },
+  { href: "/admin/emails-teste", label: "E-mails de teste", icon: Mail },
   { href: "/admin/financeiro", label: "Financeiro", icon: Wallet },
   { href: "/admin/avaliacoes", label: "Avaliações", icon: Star },
   { href: "/admin/marketing", label: "Marketing", icon: TrendingUp },

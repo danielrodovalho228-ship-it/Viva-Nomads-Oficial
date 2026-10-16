@@ -1,4 +1,5 @@
 import { sendEmail, isEmailConfigured } from "./email";
+import { guardarSeContaDeTeste } from "./caixa-teste-servidor";
 import { sendWhatsapp, isWhatsappConfigured } from "./whatsapp";
 import { sendPush } from "./push";
 import { brandedNotification, notificationText, emailImage } from "./templates";
@@ -176,6 +177,8 @@ export async function notify(params: {
         ...(params.doSuporte ? { from: `Viva Nomads Suporte <${SUPORTE_EMAIL}>`, replyTo: SUPORTE_EMAIL } : {}),
       });
       result.email = r.demo ? "demo" : !r.error;
+      // Caixa de e-mails de teste: só conta is_teste; falha aqui não afeta o envio.
+      await guardarSeContaDeTeste({ evento: params.event, assunto: tpl.subject, texto: text, para: params.email, usuarioId: params.userId });
     } catch {
       result.email = false;
     }
