@@ -61,6 +61,15 @@ export function achadosNoTexto(texto: string, opcoes: { termos?: boolean } = {})
 }
 
 /**
+ * Metas de uma página (description, og:title/description, twitter:title/description) entram na varredura
+ * de termos como se fossem texto da tela (ordem 7816ce3a, parte 2). Vazias e repetidas são ignoradas.
+ */
+export function achadosNasMetas(metas: Array<string | null | undefined>, opcoes: { termos?: boolean } = {}): string[] {
+  const textos = [...new Set(metas.map((m) => (m ?? "").trim()).filter(Boolean))];
+  return textos.flatMap((t) => achadosNoTexto(t, opcoes).map((a) => `meta: ${a}`));
+}
+
+/**
  * Foto de imóvel semeado pelo laboratório sem upload real (https://lab.vivanomads.test/…): o Next recusa o host
  * (400 em /_next/image). Não é defeito do site, e o t48 não deve acusá-la.
  */

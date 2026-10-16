@@ -11,7 +11,8 @@ import { adm } from "../fixtures/laboratorio";
 test.describe("T125 — alerta de busca salva", () => {
   test("1. link de desligar sem assinatura válida não desliga nada", async ({ page }) => {
     await page.goto("/alerta-busca/desligar?b=00000000-0000-4000-8000-000000000000&t=invalido", { waitUntil: "networkidle" });
-    await expect(page.getByRole("alert")).toContainText("não é válido");
+    // O Next injeta o próprio role="alert" (anunciador de rota): filtra pelo aviso da página.
+    await expect(page.getByRole("alert").filter({ hasText: "não é válido" })).toHaveCount(1);
     await expect(page.getByRole("button", { name: "Desligar este alerta" })).toHaveCount(0);
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
   });
@@ -22,6 +23,9 @@ test.describe("T125 — alerta de busca salva", () => {
       await page.setViewportSize({ width: 390, height: 800 });
       await page.goto("/buscar?local=Uberl%C3%A2ndia&homeoffice=1&quartos=2", { waitUntil: "networkidle" });
       const salvar = page.getByTestId("salvar-busca").filter({ visible: true });
+      // Uma execução anterior interrompida pode ter deixado a busca salva: parte sempre do estado "não salva".
+      await expect(salvar).toHaveText(/Salvar busca|Busca salva/, { timeout: 10_000 });
+      if ((await salvar.textContent())?.includes("Busca salva")) await salvar.click();
       await expect(salvar).toHaveText("Salvar busca", { timeout: 10_000 });
       await salvar.click();
       await expect(salvar).toHaveText("Busca salva", { timeout: 10_000 });
