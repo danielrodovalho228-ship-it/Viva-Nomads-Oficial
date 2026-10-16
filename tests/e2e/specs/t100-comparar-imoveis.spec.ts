@@ -4,10 +4,11 @@ import { test, expect, type Locator, type APIRequestContext } from "@playwright/
  * A busca fica em cache por 60 s e pode listar anúncio que outro spec já apagou (o /imoveis/<id> dá 404 e o
  * /comparar devolve "Escolha de 2 a 3 imóveis"). Devolve os índices das marcas cujo anúncio ainda abre.
  */
-async function indicesQueAbrem(marcas: Locator, request: APIRequestContext): Promise<number[]> {
+async function indicesQueAbrem(marcas: Locator, request: APIRequestContext, maximo = 4): Promise<number[]> {
   const total = await marcas.count();
   const abertos: number[] = [];
-  for (let i = 0; i < total; i++) {
+  // Para ao achar o que o teste usa (no máximo 4): conferir a busca inteira estourava os 45 s do teste no lab.
+  for (let i = 0; i < total && abertos.length < maximo; i++) {
     const href = await marcas
       .nth(i)
       .evaluate((el) => el.closest("label")?.parentElement?.querySelector('a[href^="/imoveis/"]')?.getAttribute("href") ?? null);
