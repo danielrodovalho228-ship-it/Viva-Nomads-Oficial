@@ -12,7 +12,7 @@ import {
   type ConferenciaView,
   type ConferenciasContrato,
 } from "@/lib/data/conferencia-actions";
-import type { TipoConferencia } from "@/lib/conferencia";
+import { mesclarItens, type ItemTela, type TipoConferencia } from "@/lib/conferencia";
 
 const ROTULO_TIPO: Record<TipoConferencia, string> = { entrada: "Conferência de entrada", saida: "Conferência de saída" };
 const ROTULO_ESTADO = {
@@ -50,18 +50,21 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
   const [contestando, setContestando] = useState(false);
   const [ocupado, setOcupado] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [locais, setLocais] = useState<ItemTela[]>([]);
 
   const parte = dados.minhaParte;
   const respondeu = !!conf?.respostas.some((r) => r.parte === parte);
   const travada = (conf?.respostas.length ?? 0) > 0;
   const estado = conf?.estado ?? "em_andamento";
+  const itens = mesclarItens(conf?.itens ?? [], locais);
 
-  async function rodar(fn: () => Promise<{ ok: boolean; error?: string }>) {
+  async function rodar(fn: () => Promise<{ ok: boolean; error?: string; item?: ItemTela }>) {
     setErro(null);
     setOcupado(true);
     try {
       const r = await fn();
       if (!r.ok) return setErro(r.error ?? "Não foi possível concluir.");
+      if (r.item) setLocais((l) => [...l, r.item!]);
       setComodo("");
       setDescricao("");
       setFoto(null);
@@ -126,9 +129,9 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
         </p>
       )}
 
-      {conf && conf.itens.length > 0 ? (
+      {itens.length > 0 ? (
         <ul className="mt-3 divide-y divide-line text-sm" data-testid={`conferencia-${tipo}-itens`}>
-          {conf.itens.map((i) => (
+          {itens.map((i) => (
             <li key={i.id} className="flex items-start gap-3 py-2">
               {i.fotoUrl && (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -177,7 +180,7 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
         </label>
       )}
 
-      {parte && conf && conf.itens.length > 0 && !respondeu && (
+      {parte && conf && itens.length > 0 && !respondeu && (
         <div className="mt-4 space-y-2">
           {contestando ? (
             <>

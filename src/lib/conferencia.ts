@@ -107,3 +107,23 @@ export function validarFotoConferencia(a: { bytes: Uint8Array; tamanho: number }
 export function fonteDaConferencia(temLaudo: boolean): "fotos" | "laudo_independente" {
   return temLaudo ? "laudo_independente" : "fotos";
 }
+
+/** Item de cômodo como a tela o mostra (foto já com link temporário). */
+export type ItemTela = {
+  id: string;
+  parte: ParteConferencia;
+  comodo: string;
+  descricao: string;
+  fotoUrl: string | null;
+  criadoEm: string;
+};
+
+/**
+ * Junta os itens vindos do servidor com os que a própria pessoa acabou de registrar.
+ * O item novo aparece na hora, sem esperar a página recarregar; quando o servidor já o
+ * traz, vale a versão do servidor (sem repetir). Ordem: do mais antigo para o mais novo.
+ */
+export function mesclarItens(servidor: ItemTela[], locais: ItemTela[]): ItemTela[] {
+  const ids = new Set(servidor.map((i) => i.id));
+  return [...servidor, ...locais.filter((i) => !ids.has(i.id))].sort((a, b) => a.criadoEm.localeCompare(b.criadoEm));
+}
