@@ -19,7 +19,9 @@ test.describe("T56 — Admin em AAL2", () => {
   });
 
   test("sem a elevação (sessão nova só com senha) o portão manda para o código", async ({ browser, baseURL }) => {
-    const ctx = await browser.newContext({ baseURL });
+    // O Playwright aplica o storageState do describe (admin em AAL2) a TODO contexto novo;
+    // sem esvaziar, este "visitante" já chegava logado e ficava em /admin (falso vermelho no lab).
+    const ctx = await browser.newContext({ baseURL, storageState: { cookies: [], origins: [] } });
     const page = await ctx.newPage();
     await page.goto("/admin", { waitUntil: "networkidle" });
     await expect(page).not.toHaveURL(/\/admin(\?|$|\/)/); // anônimo nunca vê o /admin
