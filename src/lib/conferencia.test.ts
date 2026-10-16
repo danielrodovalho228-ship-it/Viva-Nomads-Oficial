@@ -9,6 +9,7 @@ import {
   JANELA_ENTRADA_HORAS,
   decidirResposta,
   mesclarItens,
+  mesclarRespostas,
   estadoConferencia,
   podeEditarItens,
   prazoEntrada,
@@ -161,4 +162,23 @@ test("ações: registrar item devolve o item e atualiza as duas telas (locaçõe
   assert.match(acoes, /return \{ ok: true, id: item\.id, item \}/);
   const trecho = acoes.slice(acoes.indexOf("export async function registrarItemConferencia"), acoes.indexOf("export async function responderConferencia"));
   assert.match(trecho, /revalidatePath\("\/dashboard\/contratos"\)/);
+});
+
+test("mesclarRespostas: a resposta que a pessoa acabou de dar vale na hora e não repete quando o servidor já a traz", () => {
+  const minha = { parte: "inquilino" as const, decisao: "confirmou" as const, motivo: null, decididoEm: "2026-10-16T03:00:00Z" };
+  const doDono = { parte: "proprietario" as const, decisao: "confirmou" as const, motivo: null, decididoEm: "2026-10-16T04:00:00Z" };
+  // Servidor ainda sem resposta (página não recarregou): a minha aparece e o estado muda.
+  assert.deepEqual(mesclarRespostas([], [minha]), [minha]);
+  assert.equal(estadoConferencia(mesclarRespostas([], [minha])), "aguardando_outra_parte");
+  // Servidor já traz a minha: uma só por parte, vale a do servidor.
+  assert.deepEqual(mesclarRespostas([minha], [minha]), [minha]);
+  assert.equal(estadoConferencia(mesclarRespostas([doDono], [minha])), "confirmada");
+});
+
+test("tela: depois de confirmar ou contestar, a resposta entra na tela sem esperar o recarregamento", () => {
+  const tela = readFileSync("src/components/contrato/conferencia-contrato.tsx", "utf8");
+  assert.match(tela, /mesclarRespostas\(/);
+  const acoes = readFileSync("src/lib/data/conferencia-actions.ts", "utf8");
+  const trecho = acoes.slice(acoes.indexOf("export async function responderConferencia"), acoes.indexOf("export interface ConferenciaView"));
+  assert.match(trecho, /resposta:/);
 });
