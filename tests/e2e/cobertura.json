@@ -2324,7 +2324,7 @@
         "inquilino"
       ],
       "specs": [
-        "t107-marcas-visto-contatado"
+        "t108-marcas-visto-contatado"
       ]
     },
     "src/lib/marcas/actions.ts#marcarVisto": {
@@ -2332,7 +2332,7 @@
         "inquilino"
       ],
       "specs": [
-        "t107-marcas-visto-contatado"
+        "t108-marcas-visto-contatado"
       ]
     },
     "src/lib/parceiros/admin-actions.ts#atualizarStatusInteresse": {

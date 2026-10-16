@@ -41,9 +41,19 @@ test("home: o atalho de preço é \"Até R$ 2.000/mês\" e abre a busca com orca
 test("anúncio: aviso antigolpe fica perto da candidatura", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/buscar", { waitUntil: "domcontentloaded" });
-  const card = page.locator('a[href^="/imoveis/"]').first();
-  await card.click();
-  await expect(page.getByTestId("aviso-antigolpe").first()).toContainText("nunca pede PIX");
+  await page.locator('a[href^="/imoveis/"]').first().waitFor({ state: "attached" });
+  const hrefs = await page.locator('a[href^="/imoveis/"]').evaluateAll((els) => [...new Set(els.map((e) => e.getAttribute("href") as string))]);
+  // Anúncio de EXEMPLO não tem formulário de candidatura (nem o aviso): procura o primeiro anúncio real.
+  let achou = false;
+  for (const href of hrefs.slice(0, 8)) {
+    await page.goto(href, { waitUntil: "domcontentloaded" });
+    await page.locator("h1").first().waitFor();
+    if (await page.getByText("Anúncio de exemplo").count()) continue;
+    await expect(page.getByTestId("aviso-antigolpe").first()).toContainText("nunca pede PIX");
+    achou = true;
+    break;
+  }
+  test.skip(!achou, "só anúncios de exemplo na busca; o aviso do anúncio real é coberto pelo unitário antigolpe.test.ts");
 });
 test("home: atalhos usam ícones (svg) e não fotos", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
