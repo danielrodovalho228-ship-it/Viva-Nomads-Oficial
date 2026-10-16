@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 /**
- * T119 — SEO e IA (ordem 9f68d9d3): robots.txt e dados estruturados que o
+ * T126 — SEO e IA (ordem 9f68d9d3): robots.txt e dados estruturados que o
  * servidor entrega SEM JavaScript (o que Google e buscadores de IA leem).
  */
 test.use({ storageState: { cookies: [], origins: [] }, javaScriptEnabled: false });
