@@ -88,14 +88,6 @@
         "t25-chamado-resumo"
       ]
     },
-    "/admin/emails-teste": {
-      "personas": [
-        "admin"
-      ],
-      "specs": [
-        "t116-admin-emails-teste"
-      ]
-    },
     "/admin/avaliacoes": {
       "personas": [
         "admin"
@@ -114,6 +106,14 @@
         "t32-autorizacao-preconferencia",
         "t36-cadastro-ponta-a-ponta",
         "t9-documentos"
+      ]
+    },
+    "/admin/emails-teste": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t116-admin-emails-teste"
       ]
     },
     "/admin/financeiro": {
@@ -277,6 +277,16 @@
         "publico"
       ],
       "specs": [
+        "t18-seo-a11y",
+        "t20-p1-agentes"
+      ]
+    },
+    "/cidades/[cidade]/[polo]": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t117-polos-cidade",
         "t18-seo-a11y",
         "t20-p1-agentes"
       ]
