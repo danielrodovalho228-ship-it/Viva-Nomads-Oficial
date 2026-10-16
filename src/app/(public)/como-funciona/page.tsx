@@ -111,7 +111,7 @@ export default function HowItWorksPage() {
 function GarantiasInquilino() {
   return (
     <section id="garantias" className="container-page section-y scroll-mt-24">
-      <h2 className="font-title text-3xl font-bold text-ink">Garantias da locação</h2>
+      <h2 className="font-title text-3xl font-bold text-ink">Caução da locação</h2>
       <p className="mt-3 max-w-2xl text-muted">
         Por lei, cada contrato usa <strong>uma</strong> garantia. Hoje a garantia é a
         Caução, com a mesma proteção para as duas partes — e nada fica com a plataforma.
@@ -275,7 +275,7 @@ function ProtegidoPor() {
     {
       img: "/images/como-funciona/08-feche.webp",
       alt: "Aperto de mãos fechando o contrato de locação",
-      title: "Garantia do contrato",
+      title: "Caução do contrato",
       text: `${CAUCAO_FRASE} Combinada entre proprietário e inquilino. A Viva não é garantidora.`,
     },
   ];
@@ -306,7 +306,7 @@ function ProtegidoPor() {
 function SubNav() {
   const links = [
     { href: "#para-inquilinos", label: "Para quem busca" },
-    { href: "#garantias", label: "Garantias e estadia" },
+    { href: "#garantias", label: "Caução e estadia" },
     { href: "#para-proprietarios", label: "Para proprietários" },
   ];
   return (

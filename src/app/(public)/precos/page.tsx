@@ -26,7 +26,7 @@ export const metadata: Metadata = {
  */
 const OPCIONAIS = [
   { icon: PiggyBank, titulo: "Caução", texto: `${CAUCAO_FRASE} Devolvida ao fim da estadia.`, status: "Disponível", ok: true, href: "/como-funciona#garantias" },
-  { icon: ShieldCheck, titulo: "Outras garantias", texto: "Outras modalidades de garantia locatícia: em breve. A plataforma não é a garantidora.", status: "Em breve", ok: false, href: "/como-funciona#garantias" },
+  { icon: ShieldCheck, titulo: "Outras modalidades", texto: "Outras modalidades de garantia locatícia: em breve. A plataforma não é a garantidora.", status: "Em breve", ok: false, href: "/como-funciona#garantias" },
   { icon: Camera, titulo: "Fotografia profissional", texto: "Sessão de fotos do imóvel com parceiro, sob consulta.", status: "Via parceiro", ok: false, href: "/parceiros/fotografos" },
 ] as const;
 
@@ -87,9 +87,9 @@ export default function PricingPage() {
           <ul className="mt-5 space-y-3">
             {[
               "Anunciar é grátis, com quantos imóveis mobiliados você quiser.",
-              "Você só paga quando a reserva é fechada, sobre o valor total do contrato (valor mensal × meses). " + TEXTO_RENOVACAO_COMISSAO,
+              "Você só paga quando o contrato é fechado, sobre o valor total do contrato (valor mensal × meses). " + TEXTO_RENOVACAO_COMISSAO,
               "Sem mensalidade. Quem vem morar não paga taxa da plataforma.",
-              "A cobrança é feita ao proprietário; a plataforma não recebe nem retém o valor mensal da reserva.",
+              "A cobrança é feita ao proprietário; a plataforma não recebe nem retém o valor mensal do contrato.",
             ].map((t) => (
               <li key={t} className="flex items-start gap-2.5 text-sm text-ink">
                 <Check className="mt-0.5 h-4 w-4 shrink-0 text-sage" aria-hidden /> {t}

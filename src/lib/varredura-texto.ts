@@ -14,6 +14,14 @@ const TERMOS_PROIBIDOS: Array<[string, RegExp]> = [
   ["art. 48", /\bart\.?\s*48\b/i],
 ];
 
+/** Vocabulário de hospedagem/reserva que não vale nas páginas públicas (ordem 8652162e): somos locação mobiliada. */
+const VOCABULARIO_PUBLICO: Array<[string, RegExp]> = [
+  ["hóspede", /\bh[óo]spedes?\b/i],
+  ["check-in/out", /\bcheck[- ]?(?:in|out)\b/i],
+  ["reserva", /\breservas?\b/i],
+  ["quem se hospeda", /\bse hospeda\b/i],
+];
+
 /** Status internos (snake_case com prefixo conhecido) que nunca podem aparecer cruamente. */
 const STATUS_CRU = /\b(?:pendente|aguardando|encerrado|removido|em)_[a-z]+(?:_[a-z]+)*\b/g;
 const DATA_ISO = /\b\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2})?)?\b/;
@@ -32,8 +40,20 @@ function trecho(texto: string, i: number): string {
   return texto.slice(Math.max(0, i - 20), i + 40).replace(/\s+/g, " ").trim();
 }
 
-export function achadosNoTexto(texto: string, opcoes: { termos?: boolean } = {}): string[] {
+/** Vocabulário público só vale em página pública (fora painel, admin, contrato, /termos, /privacidade e /seguranca). */
+export function rotaVarreVocabulario(rota: string): boolean {
+  const caminho = rota.split(/[?#]/)[0];
+  return rotaVarreTermos(rota) && !/^\/(dashboard|admin|seguranca)(\/|$)/.test(caminho);
+}
+
+export function achadosNoTexto(texto: string, opcoes: { termos?: boolean; vocabulario?: boolean } = {}): string[] {
   const out: string[] = [];
+  if (opcoes.vocabulario) {
+    for (const [nome, re] of VOCABULARIO_PUBLICO) {
+      const m = re.exec(texto);
+      if (m) out.push(`vocabulário de hospedagem "${nome}": …${trecho(texto, m.index)}…`);
+    }
+  }
   if (opcoes.termos !== false) {
     for (const [nome, re] of TERMOS_PROIBIDOS) {
       const m = re.exec(texto);

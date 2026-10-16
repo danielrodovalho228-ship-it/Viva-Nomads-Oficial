@@ -1,7 +1,7 @@
 /* Roda: node --test src/lib/varredura-texto.test.ts */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { achadosNoTexto, rotaVarreTermos } from "./varredura-texto.ts";
+import { achadosNoTexto, rotaVarreTermos, rotaVarreVocabulario } from "./varredura-texto.ts";
 
 test("tela limpa não tem achados", () => {
   assert.deepEqual(achadosNoTexto("Valor mensal R$ 3.000. Entrada em 12/11/2026. Código 1a2b3c4d. Aguardando aceite. Conferência de saída."), []);
@@ -33,4 +33,20 @@ test("/termos, /privacidade e contratos ficam fora da varredura de termos", () =
   assert.equal(rotaVarreTermos("/termos"), false);
   assert.equal(rotaVarreTermos("/privacidade?x=1"), false);
   assert.equal(rotaVarreTermos("/como-funciona"), true);
+});
+
+test("vocabulário de hospedagem só é pego quando pedido (páginas públicas)", () => {
+  for (const t of ["Hóspedes", "Check-in", "check out", "a reserva é fechada", "quem se hospeda"]) {
+    assert.equal(achadosNoTexto(t, { vocabulario: true }).length, 1, t);
+    assert.deepEqual(achadosNoTexto(t), [], t);
+  }
+  assert.deepEqual(achadosNoTexto("Moradores. Entrada a partir das 14:00. Saída até as 11:00. Reservado.", { vocabulario: true }), []);
+});
+
+test("vocabulário público não vale no painel, admin, /seguranca, /termos nem contratos", () => {
+  assert.equal(rotaVarreVocabulario("/precos"), true);
+  assert.equal(rotaVarreVocabulario("/imoveis/abc"), true);
+  for (const r of ["/dashboard/locacoes", "/admin", "/seguranca", "/termos", "/privacidade", "/contratos/x"]) {
+    assert.equal(rotaVarreVocabulario(r), false, r);
+  }
 });

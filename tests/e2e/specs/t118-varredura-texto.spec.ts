@@ -1,6 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, apagarContas, criarConta, criarImovelPronto, entrar, fotosReais, novaSenha, novoSufixo } from "../fixtures/laboratorio";
-import { achadosNoTexto, rotaVarreTermos } from "../../../src/lib/varredura-texto";
+import { achadosNoTexto, rotaVarreTermos, rotaVarreVocabulario } from "../../../src/lib/varredura-texto";
 
 /**
  * T118 — VARREDURA DE TEXTO (ordem 0569d129, item 6). Percorre as rotas públicas do sitemap e as telas do
@@ -39,7 +39,7 @@ async function textoDaTela(page: Page, rota: string): Promise<string[]> {
     const resp = await page.goto(rota, { waitUntil: "networkidle", timeout: 40_000 });
     if ((resp?.status() ?? 0) >= 400) return [`HTTP ${resp?.status()}`];
     const texto = await page.locator("body").innerText();
-    return achadosNoTexto(texto, { termos: rotaVarreTermos(rota) });
+    return achadosNoTexto(texto, { termos: rotaVarreTermos(rota), vocabulario: rotaVarreVocabulario(rota) });
   } catch (e) {
     return [`não abriu: ${String(e).slice(0, 160)}`];
   }
