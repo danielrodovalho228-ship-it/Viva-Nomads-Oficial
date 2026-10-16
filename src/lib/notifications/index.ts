@@ -57,7 +57,12 @@ export type NotificationEvent =
   | "manutencao_atrasada" // prazo da manutenção vencido → proprietário
   | "manutencao_atualizada" // status da ordem mudou → a outra parte
   | "manutencao_mensagem" // nova mensagem dentro da ordem → a outra parte
-  | "checkin_lembrete"; // entrada em 2 dias / amanhã → proprietário e inquilino
+  | "checkin_lembrete" // entrada em 2 dias / amanhã → proprietário e inquilino
+  // Automações por data (cron /api/cron/automacoes, ordem d250ea2f item 5)
+  | "anuncio_incompleto" // rascunho parado há 1 e 3 dias → proprietário
+  | "saida_lembrete" // saída em 3 dias → proprietário e inquilino
+  | "avaliacao_pedido" // 1 dia após a saída → proprietário e inquilino
+  | "renovacao_aviso"; // 15 dias antes do fim do bloco → proprietário e inquilino
 
 // `img` = chave da imagem de assunto (public/media/email/<img>.jpg).
 const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: string) => string; img: string }> = {
@@ -91,6 +96,10 @@ const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: string)
   manutencao_mensagem: { subject: "Nova mensagem na ordem de manutenção", body: (n) => `Olá${n ? " " + n : ""}, há uma nova mensagem na ordem de manutenção do imóvel. Responda pela plataforma.`, img: "nova-mensagem" },
   checkin_lembrete: { subject: "Lembrete: a entrada no imóvel está chegando", body: (n) => `Olá${n ? " " + n : ""}, a entrada no imóvel do seu contrato está chegando. Confira o horário e as instruções de entrada pela plataforma.`, img: "transacional" },
   documento_recebido: { subject: "Novo documento de imóvel para conferir", body: () => "Um proprietário enviou a documentação do imóvel. Há um item aguardando conferência na fila de moderação.", img: "transacional" },
+  anuncio_incompleto: { subject: "Falta pouco para publicar seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, seu cadastro de imóvel ficou pela metade. Termine, envie a documentação e publique.`, img: "transacional" },
+  saida_lembrete: { subject: "Lembrete: a saída está chegando", body: (n) => `Olá${n ? " " + n : ""}, a saída do imóvel do seu contrato é em 3 dias. Combine a conferência de saída pela plataforma.`, img: "transacional" },
+  avaliacao_pedido: { subject: "Como foi a estadia? Deixe sua avaliação", body: (n) => `Olá${n ? " " + n : ""}, a estadia terminou. Sua avaliação leva 2 minutos e ajuda os próximos moradores e proprietários.`, img: "nova-mensagem" },
+  renovacao_aviso: { subject: "Quer renovar? Seu bloco termina em 15 dias", body: (n) => `Olá${n ? " " + n : ""}, o bloco do seu contrato termina em 15 dias. Se quiserem seguir, combinem a renovação pela plataforma.`, img: "pedido-resposta" },
 };
 
 export interface NotifyResult {

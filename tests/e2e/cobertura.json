@@ -1076,6 +1076,14 @@
       ],
       "specs": []
     },
+    "/api/cron/automacoes": {
+      "personas": [
+        "sistema"
+      ],
+      "specs": [
+        "t127-cron-automacoes"
+      ]
+    },
     "/api/cron/avisos-daniel": {
       "personas": [
         "sistema"
