@@ -1,6 +1,6 @@
 /*
   Seção "Compare" da página de preços (ordens 3914d70c e aa916ba9, item 6). Base JUSTA: percentual do
-  total pago pelo morador, no formato típico de cada empresa (não valores em R$ de 3 meses). Reserva de
+  total pago pelo morador, no formato típico de cada empresa (não valores em R$ de 3 meses). Contrato de
   exemplo: 3 meses de R$ 4.320 = R$ 12.960 (usada só no exemplo da Viva). Cada número de concorrente carrega FONTE e DATA;
   linha sem fonte conferida (`fonte === null`) NÃO é exibida ao público (exceto pela regra permanente
   do Daniel, ordem c6b62141: Viva × Airbnb × QuintoAndar sempre visíveis — QuintoAndar com fonte e nota) — texto
@@ -103,7 +103,7 @@ export const LINHAS_COMPARE: readonly LinhaCompare[] = [
   coluna com `fonte` e `conferidoEm`.
 */
 export const DIFERENCIAIS_VIVA: readonly string[] = [
-  "Você só paga quando a reserva é fechada",
+  "Você só paga quando o contrato é fechado",
   "Contrato pronto, assinado na plataforma",
   "Chat com quem vai morar",
   "Avaliação dos dois lados",

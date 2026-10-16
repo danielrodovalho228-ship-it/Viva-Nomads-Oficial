@@ -45,3 +45,14 @@ test("#142 (ajuste do Moacir): 'Até as', busca com Moradores e calendário sem 
   const cal = ler("components/property/availability-calendar.tsx");
   assert.doesNotMatch(cal, /solicitação de\s+reserva|reservá-lo/);
 });
+
+test("#645 (ajuste do Moacir): comparativo e /precos dizem 'contrato' e 'Caução', nunca 'reserva' da Viva nem 'Garantia:'", () => {
+  const comp = ler("components/precos/comparativo-precos.tsx");
+  assert.doesNotMatch(comp, /[Rr]eserva de|reserva é fechada/);
+  assert.match(comp, /Contrato de \$\{COMPARE_MESES\} meses/);
+  const cfg = ler("config/compare-precos.ts");
+  assert.doesNotMatch(cfg, /Você só paga quando a reserva/);
+  assert.match(cfg, /Você só paga quando o contrato é fechado/);
+  assert.doesNotMatch(ler("app/(public)/precos/page.tsx"), /Garantia: uma por contrato/);
+  assert.match(ler("app/(public)/precos/page.tsx"), /Caução: uma por contrato/);
+});
