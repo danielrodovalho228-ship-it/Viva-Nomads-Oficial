@@ -156,7 +156,7 @@ export default function PricingPage() {
       <section className="container-page section-y" data-testid="precos-opcionais">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="font-title text-2xl font-bold text-ink">Se você precisar</h2>
-          <p className="mt-2 text-muted">Opcionais, contratados no momento certo do fluxo. Garantia: uma por contrato, combinada entre proprietário e inquilino.</p>
+          <p className="mt-2 text-muted">Opcionais, contratados no momento certo do fluxo. Caução: uma por contrato, combinada entre proprietário e inquilino.</p>
         </div>
         <ul className="mx-auto mt-8 grid max-w-5xl gap-4 md:grid-cols-3">
           {OPCIONAIS.map((o) => {
