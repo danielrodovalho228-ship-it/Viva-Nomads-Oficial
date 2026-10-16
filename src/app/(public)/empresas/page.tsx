@@ -32,13 +32,13 @@ const BENEFICIOS = [
   "Imóveis mobiliados e prontos para morar: a pessoa chega e começa a trabalhar.",
   "Estadias de 30 a 180 dias, no tempo do projeto — sem diária de hotel.",
   "Contrato formal e assinatura digital, com tudo registrado na plataforma.",
-  "Recibo mensal da estadia para o reembolso, todo mês.",
-  "Nenhuma taxa para quem se hospeda: a Viva Nomads não cobra o inquilino.",
-  "Garantia combinada com o proprietário (ex.: Caução) e conversa direta pela plataforma.",
+  "Recibo mensal da estadia, emitido pelo proprietário.",
+  "Nenhuma taxa para quem vem morar: a Viva Nomads não cobra o inquilino.",
+  "Caução combinada com o proprietário e conversa direta pela plataforma.",
 ];
 
 const FAQ_EMPRESAS = [
-  { p: "Como a empresa recebe o recibo?", r: "O proprietário emite o recibo mensal da estadia em nome dele. A Viva Nomads não emite nota para a empresa e não cobra nada de quem se hospeda." },
+  { p: "Como a empresa recebe o recibo?", r: "O proprietário emite o recibo mensal da estadia em nome dele. A Viva Nomads não emite nota para a empresa e não cobra nada de quem vem morar." },
   { p: "Qual é o prazo das estadias?", r: "De 30 a 180 dias, com imóveis mobiliados e prontos para morar." },
   { p: "Quem assina o contrato?", r: "O proprietário e quem vai morar (ou a empresa, quando ela for a responsável). A assinatura é digital, pela plataforma." },
 ];
@@ -53,7 +53,7 @@ const PILARES = [
   {
     icon: FileText,
     titulo: "Recibo para reembolso",
-    texto: "Recibo mensal da estadia em nome do proprietário + contrato assinado, aceitos para reembolso. A Viva Nomads não cobra nada do inquilino.",
+    texto: "Recibo mensal da estadia emitido pelo proprietário + contrato assinado, que podem ser usados no reembolso conforme a política da sua empresa. A Viva Nomads não cobra nada do inquilino.",
   },
   {
     icon: BarChart3,
@@ -180,8 +180,7 @@ export default function EmpresasPage() {
           <div className="md:col-span-2">
             <h2 className="font-title text-3xl font-bold text-ink">Fale com a gente</h2>
             <p className="mt-3 text-muted">
-              Conte seu volume e sua necessidade — retornamos com o que dá para fazer hoje. Sem promessa
-              de recurso que ainda não existe.
+              Conte seu volume e sua necessidade — retornamos com o que dá para fazer hoje.
             </p>
           </div>
           <div className="rounded-2xl border border-line bg-white p-6 shadow-sm md:col-span-3">

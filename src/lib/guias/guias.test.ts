@@ -23,7 +23,7 @@ test("#1438f18d: regras de texto (sem temporada, vistoria, aluguel, comissão, c
     const t = textoDoGuia(g);
     assert.doesNotMatch(t, /temporada|vistoria|comiss|corretag|intermedia|art\.? ?48/i, g.slug);
     // “aluguéis” só vem da frase única da Caução; “aluguel” solto não.
-    assert.doesNotMatch(t.replace(/Caução devolvível de até 3 aluguéis/, ""), /alugu?[eé]|alugar/i, g.slug);
+    assert.doesNotMatch(t, /alugu?[eé]|alugar/i, g.slug);
     assert.doesNotMatch(t, /garantia/i, g.slug);
     assert.doesNotMatch(t, /\bR\$ ?\d/, `${g.slug}: sem número de mercado`);
   }

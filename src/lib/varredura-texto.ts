@@ -4,15 +4,6 @@
  * e testado em src/lib/varredura-texto.test.ts. Nunca recebe dado de pessoa: só o texto da tela.
  */
 
-import { CAUCAO_FRASE } from "./faixas.ts";
-
-/**
- * A frase única da caução cita "3 aluguéis" (limite legal) e aguarda a redação da Dra. Beatriz
- * (TODO(juridico) em faixas.ts). Enquanto isso, só ELA fica fora da busca por "aluguel"; qualquer
- * outro "aluguel" na tela continua sendo achado.
- */
-const FRASE_CAUCAO = new RegExp(CAUCAO_FRASE.split(/\s+/).map((p) => p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("\\s+"), "g");
-
 const TERMOS_PROIBIDOS: Array<[string, RegExp]> = [
   ["aluguel", /\balugu[eé](?:l|is)\b/i],
   ["comissão", /\bcomiss(?:ão|ões|ao|oes)\b/i],
@@ -21,6 +12,14 @@ const TERMOS_PROIBIDOS: Array<[string, RegExp]> = [
   ["intermediação", /\bintermedia(?:ção|çao|cao)\b|\bintermedeia\b/i],
   ["temporada", /\btemporada\b/i],
   ["art. 48", /\bart\.?\s*48\b/i],
+];
+
+/** Vocabulário de hospedagem/reserva que não vale nas páginas públicas (ordem 8652162e): somos locação mobiliada. */
+const VOCABULARIO_PUBLICO: Array<[string, RegExp]> = [
+  ["hóspede", /\bh[óo]spedes?\b/i],
+  ["check-in/out", /\bcheck[- ]?(?:in|out)\b/i],
+  ["reserva", /\breservas?\b/i],
+  ["quem se hospeda", /\bse hospeda\b/i],
 ];
 
 /** Citação de lei na tela de publicar imóvel (ordem b68f4ede, prova do #650): o dono não vê "Lei 8.245", "art. 38" nem "art. 13". */
@@ -53,7 +52,13 @@ function trecho(texto: string, i: number): string {
   return texto.slice(Math.max(0, i - 20), i + 40).replace(/\s+/g, " ").trim();
 }
 
-export function achadosNoTexto(texto: string, opcoes: { termos?: boolean; leis?: boolean } = {}): string[] {
+/** Vocabulário público só vale em página pública (fora painel, admin, contrato, /termos, /privacidade e /seguranca). */
+export function rotaVarreVocabulario(rota: string): boolean {
+  const caminho = rota.split(/[?#]/)[0];
+  return rotaVarreTermos(rota) && !/^\/(dashboard|admin|seguranca)(\/|$)/.test(caminho);
+}
+
+export function achadosNoTexto(texto: string, opcoes: { termos?: boolean; vocabulario?: boolean; leis?: boolean } = {}): string[] {
   const out: string[] = [];
   if (opcoes.leis) {
     for (const [nome, re] of CITACAO_DE_LEI) {
@@ -61,11 +66,16 @@ export function achadosNoTexto(texto: string, opcoes: { termos?: boolean; leis?:
       if (m) out.push(`citação de lei "${nome}": …${trecho(texto, m.index)}…`);
     }
   }
+  if (opcoes.vocabulario) {
+    for (const [nome, re] of VOCABULARIO_PUBLICO) {
+      const m = re.exec(texto);
+      if (m) out.push(`vocabulário de hospedagem "${nome}": …${trecho(texto, m.index)}…`);
+    }
+  }
   if (opcoes.termos !== false) {
-    const semCaucao = texto.replace(FRASE_CAUCAO, " ");
     for (const [nome, re] of TERMOS_PROIBIDOS) {
-      const m = re.exec(semCaucao);
-      if (m) out.push(`termo proibido "${nome}": …${trecho(semCaucao, m.index)}…`);
+      const m = re.exec(texto);
+      if (m) out.push(`termo proibido "${nome}": …${trecho(texto, m.index)}…`);
     }
   }
   for (const m of texto.matchAll(STATUS_CRU)) out.push(`código de status cru "${m[0]}"`);
@@ -82,7 +92,7 @@ export function achadosNoTexto(texto: string, opcoes: { termos?: boolean; leis?:
  * Metas de uma página (description, og:title/description, twitter:title/description) entram na varredura
  * de termos como se fossem texto da tela (ordem 7816ce3a, parte 2). Vazias e repetidas são ignoradas.
  */
-export function achadosNasMetas(metas: Array<string | null | undefined>, opcoes: { termos?: boolean; leis?: boolean } = {}): string[] {
+export function achadosNasMetas(metas: Array<string | null | undefined>, opcoes: { termos?: boolean; vocabulario?: boolean; leis?: boolean } = {}): string[] {
   const textos = [...new Set(metas.map((m) => (m ?? "").trim()).filter(Boolean))];
   return textos.flatMap((t) => achadosNoTexto(t, opcoes).map((a) => `meta: ${a}`));
 }

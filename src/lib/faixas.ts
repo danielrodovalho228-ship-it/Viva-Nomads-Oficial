@@ -66,7 +66,7 @@ export type GarantiaKey = "caucao_avista" | "caucao_parcelada" | "titulo" | "seg
  * todo lugar. TODO(juridico): redação validada com a Dra. Beatriz.
  */
 export const CAUCAO_FRASE =
-  "Caução devolvível de até 3 aluguéis, em poupança — a plataforma não tem acesso ao dinheiro.";
+  "Caução de até 3 vezes o valor mensal, depositada em poupança — a plataforma não tem acesso ao dinheiro.";
 
 export interface GarantiaDef {
   key: GarantiaKey;
