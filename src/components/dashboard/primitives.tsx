@@ -1,4 +1,7 @@
+import Image from "next/image";
 import Link from "next/link";
+import { BRAND_BLUR } from "@/lib/media";
+import { CAPAS, type CapaPainel } from "@/components/dashboard/capas";
 import { cn } from "@/lib/utils";
 import { ArrowUpRight, HardHat } from "lucide-react";
 
@@ -35,11 +38,46 @@ export function PageTitle({
   title,
   subtitle,
   action,
+  capa,
 }: {
   title: string;
   subtitle?: string;
   action?: React.ReactNode;
+  /** Foto de capa da tela (CAPAS). Com ela, o título vira uma faixa full-width com imagem. */
+  capa?: CapaPainel;
 }) {
+  if (capa) {
+    const foto = CAPAS[capa];
+    // Faixa de capa: foto cobrindo toda a largura do conteúdo, véu escuro da
+    // esquerda para a direita (legibilidade) e ação à direita no desktop / abaixo
+    // do texto no mobile. Altura mínima fixa para todas as telas ficarem iguais.
+    return (
+      <header
+        data-testid="painel-capa"
+        data-capa={capa}
+        className="relative mb-6 overflow-hidden rounded-2xl bg-night sm:mb-8"
+      >
+        <Image
+          src={foto.src}
+          alt={foto.alt}
+          fill
+          priority
+          sizes="(min-width: 1024px) 75vw, 100vw"
+          placeholder="blur"
+          blurDataURL={BRAND_BLUR}
+          className="object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-night/90 via-night/65 to-night/15" />
+        <div className="relative flex min-h-[176px] flex-col justify-end gap-4 p-5 sm:min-h-[220px] sm:flex-row sm:items-end sm:justify-between sm:p-8">
+          <div className="max-w-2xl">
+            <h1 className="font-title text-2xl font-bold text-white sm:text-3xl">{title}</h1>
+            {subtitle && <p className="mt-1.5 text-sm text-white/85 sm:text-base">{subtitle}</p>}
+          </div>
+          {action && <div className="shrink-0">{action}</div>}
+        </div>
+      </header>
+    );
+  }
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-3 sm:mb-8 sm:gap-4">
       <div>

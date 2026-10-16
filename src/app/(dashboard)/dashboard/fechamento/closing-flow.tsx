@@ -316,7 +316,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
 
   return (
     <div>
-      <PageTitle
+      <PageTitle capa="fechamento"
         title="Fechamento"
         subtitle={
           demo
@@ -347,9 +347,9 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         {/* Resumo lateral (sticky no desktop) — aproveita a largura da tela */}
-        <aside className="order-1 lg:order-2 lg:col-span-1">
+        <aside className="order-1 lg:order-2">
           <div className="space-y-4 lg:sticky lg:top-20">
             <PropertyMiniCard property={PROPERTY_FULL} />
             {/* Identificação clara dos papéis (A6) */}
@@ -367,7 +367,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
         </aside>
 
         {/* Coluna principal: stepper + etapas do wizard */}
-        <div className="order-2 lg:order-1 lg:col-span-2">
+        <div className="order-2 lg:order-1">
           {/* Stepper (passos alcançados são clicáveis — A4).
               Rola no mobile; quebra em linhas no desktop (sem scroll horizontal). */}
           <div className="mb-6 flex items-center gap-2 overflow-x-auto pb-2 sm:flex-wrap sm:overflow-visible sm:pb-0">
@@ -1183,7 +1183,7 @@ function CafLaudo({ result }: { result: CafResult }) {
         <span className="text-2xl">{meta.emoji}</span>
         <span className="font-title text-lg font-bold">Verificação de identidade — {meta.label}</span>
       </div>
-      <div className="mt-4 grid gap-2 sm:grid-cols-3">
+      <div className="mt-4 grid gap-2">
         <LaudoItem icon={Fingerprint} label="Identidade" ok={result.identity} />
         <LaudoItem icon={ScanFace} label="Prova de vida" ok={result.liveness} />
         <LaudoItem icon={FileCheck2} label="Documento (OCR)" ok={result.document} />

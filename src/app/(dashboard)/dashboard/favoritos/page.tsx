@@ -17,7 +17,7 @@ export default function FavoritesPage() {
   return (
     <>
       <FavoritosTabs />
-      <PageTitle
+      <PageTitle capa="favoritos"
         title="Favoritos"
         subtitle="Imóveis que você salvou para comparar depois."
         action={
@@ -41,7 +41,7 @@ export default function FavoritesPage() {
           }
         />
       ) : (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid auto-rows-fr gap-6 sm:grid-cols-2 xl:grid-cols-4">
           {favorites.map((p) => (
             <PropertyCard key={p.id} property={p} />
           ))}

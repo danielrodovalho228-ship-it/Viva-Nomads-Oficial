@@ -57,7 +57,7 @@ export default function ReembolsosPage() {
 function ReembolsoReal() {
   return (
     <div className="w-full">
-      <PageTitle
+      <PageTitle capa="reembolsos"
         title="Reembolso da caução"
         subtitle="O cálculo do reembolso abre quando uma locação é encerrada."
       />
@@ -115,13 +115,13 @@ function ReembolsoPreview() {
 
   return (
     <div>
-      <PageTitle
+      <PageTitle capa="reembolsos"
         title="Reembolso da caução"
         subtitle="A plataforma calcula, notifica e documenta. O pagamento é feito pelo locador — a plataforma nunca movimenta o valor."
       />
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <div className="space-y-6">
           {/* Contexto da locação */}
           <Panel>
             <div className="rounded-xl bg-surface-2 p-4 text-sm">

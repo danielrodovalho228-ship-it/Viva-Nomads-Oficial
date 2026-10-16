@@ -166,8 +166,8 @@ function OwnerDashboard({ name, imoveisDono }: { name: string; imoveisDono: Prop
         </span>
       </p>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-3">
-        <Panel title="Meus imóveis" className="lg:col-span-2">
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        <Panel title="Meus imóveis">
           {myProperties.length === 0 ? (
             <p className="py-3 text-sm text-muted">
               Você ainda não publicou imóveis.{" "}
@@ -447,6 +447,14 @@ function OwnerFunnel({ name, draft }: { name: string; draft?: RascunhoPendente |
       href: "/pedidos",
       ativo: false,
     },
+    {
+      n: 4,
+      titulo: "Feche com segurança",
+      texto: "Aceite o candidato e conclua contrato, caução e conferência de entrada pelo painel.",
+      cta: "Ver fechamento",
+      href: "/dashboard/fechamento",
+      ativo: false,
+    },
   ];
 
   return (
@@ -457,7 +465,7 @@ function OwnerFunnel({ name, draft }: { name: string; draft?: RascunhoPendente |
         image={PHOTOS.dashOwner}
         alt="Sala de imóvel mobiliado preparada para anúncio"
         title={`Bem-vindo${name ? `, ${name}` : ""}! 👋`}
-        subtitle="Vamos colocar seu primeiro imóvel no ar em 3 passos."
+        subtitle="Do primeiro anúncio ao contrato fechado em 4 passos."
         action={
           <ButtonLink href="/dashboard/imoveis/novo" variant="accent">
             <ClipboardCheck className="h-4 w-4" /> Começar agora
@@ -465,11 +473,11 @@ function OwnerFunnel({ name, draft }: { name: string; draft?: RascunhoPendente |
         }
       />
 
-      <ol className="grid gap-4 lg:grid-cols-3">
+      <ol className="grid auto-rows-fr gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {passos.map((p) => (
           <li
             key={p.n}
-            className={`rounded-2xl border p-5 ${
+            className={`flex h-full flex-col rounded-2xl border p-5 ${
               p.ativo ? "border-forest bg-white shadow-sm" : "border-line bg-surface-2"
             }`}
           >
@@ -483,7 +491,7 @@ function OwnerFunnel({ name, draft }: { name: string; draft?: RascunhoPendente |
               </span>
               <h3 className="font-title font-bold text-ink">{p.titulo}</h3>
             </div>
-            <p className="mt-2 text-sm text-muted">{p.texto}</p>
+            <p className="mt-2 flex-1 text-sm text-muted">{p.texto}</p>
             {p.ativo ? (
               <ButtonLink href={p.href} variant="primary" className="mt-4 w-full justify-center">
                 {p.cta} <ArrowRight className="h-4 w-4" />

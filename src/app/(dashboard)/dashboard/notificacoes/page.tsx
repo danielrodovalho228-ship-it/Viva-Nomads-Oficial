@@ -15,7 +15,7 @@ export default async function NotificacoesPage() {
   const avisos = r?.avisos ?? [];
   return (
     <>
-      <PageTitle
+      <PageTitle capa="notificacoes"
         title="Notificações"
         subtitle="Avisos de manutenção, interessados, mensagens e pedidos. Tudo ligado por padrão."
       />
