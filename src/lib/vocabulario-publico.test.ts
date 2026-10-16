@@ -57,3 +57,10 @@ test("#645 (ajuste do Moacir): comparativo e /precos dizem 'contrato' e 'Cauçã
   assert.doesNotMatch(precos, /Garantia: uma por contrato/);
   assert.match(precos, /Caução: uma por contrato/);
 });
+
+test("t118 (achado do Moacir): config do comparativo publicado não usa 'check-in' nem 'reserva' (nem na citação do Airbnb)", () => {
+  const cfg = ler("config/compare-precos.ts");
+  const texto = cfg.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+  assert.doesNotMatch(texto, /check[- ]?(in|out)\b/i);
+  assert.doesNotMatch(texto, /\breservas?\b/i);
+});
