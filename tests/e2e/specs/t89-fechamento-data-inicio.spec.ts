@@ -93,6 +93,8 @@ test.describe("T89 — data de início no Fechamento", () => {
     test.setTimeout(120_000);
     const futura = addDiasISO(hojeBR(), 20);
     const fim = addDiasISO(futura, 89);
+    // O teste anterior já registrou um contrato para este lead (lead_id é único): começa limpo.
+    await adm().from("contratos").delete().eq("lead_id", ids.lead!);
     const { data: contrato, error } = await adm()
       .from("contratos")
       .insert({
