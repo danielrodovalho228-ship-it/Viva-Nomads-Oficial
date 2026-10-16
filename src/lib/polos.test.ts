@@ -1,7 +1,7 @@
 /* Roda: node --test src/lib/polos.test.ts */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { POLOS, acharPolo, bairroNoPolo, imoveisDoPolo, perguntasDoPolo, polosDaCidade } from "./polos.ts";
+import { POLOS, acharPolo, tituloDoPolo, bairroNoPolo, imoveisDoPolo, perguntasDoPolo, polosDaCidade } from "./polos.ts";
 
 test("polos de Uberlândia existem e slugs são únicos", () => {
   assert.equal(polosDaCidade("uberlandia").length >= 2, true);
@@ -28,4 +28,10 @@ test("FAQ não inventa preço: sem média diz que faltam anúncios", () => {
 test("texto público dos polos evita palavras proibidas", () => {
   const txt = JSON.stringify([POLOS, perguntasDoPolo(POLOS[0], "Uberlândia", 2000)]);
   assert.doesNotMatch(txt, /aluguel|alugue|comiss|corretag|intermedi|vistoria|temporada|art\. ?48/i);
+});
+
+test("título do polo só minusculiza a 1ª letra: siglas e nomes próprios ficam como estão (lab t117)", () => {
+  assert.equal(tituloDoPolo("Perto do HC-UFU e Umuarama"), "perto do HC-UFU e Umuarama");
+  assert.equal(tituloDoPolo(POLOS[0].nome).includes("HC-UFU"), true);
+  assert.equal(tituloDoPolo(""), "");
 });
