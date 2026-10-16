@@ -9,6 +9,7 @@ import "leaflet/dist/leaflet.css";
 import type { Property } from "@/lib/types";
 import { formatBRL, cn } from "@/lib/utils";
 import { CardPinMapa } from "@/components/busca/card-pin-mapa";
+import { ATRIBUICAO_MAPA, TILES_CARTO, motorDoMapa } from "@/lib/mapa-base";
 
 const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
@@ -80,7 +81,7 @@ interface SearchMapProps {
 }
 
 export function SearchMap(props: SearchMapProps) {
-  if (!TOKEN) return <SearchMapLeaflet {...props} />;
+  if (motorDoMapa(TOKEN) === "leaflet") return <SearchMapLeaflet {...props} />;
   return <SearchMapbox {...props} />;
 }
 
@@ -313,20 +314,6 @@ function SearchMapbox({
 /* ------------------------------------------------------------------ */
 
 /**
- * Ordem 0ee6d5f6: a CARTO passou a exigir chave (gratuita) — sem ela, cada tile
- * vem carimbado com "API KEY REQUIRED". A chave fica na variável de ambiente
- * NEXT_PUBLIC_CARTO_API_KEY (Vercel), nunca no código. O teste
- * `search-map-tiles.test.ts` garante isso.
- */
-const CARTO_KEY = process.env.NEXT_PUBLIC_CARTO_API_KEY;
-/**
- * Ordem 64005753: SEM chave, nenhum tile da CARTO é pedido (pedir sem chave é o
- * que traz o carimbo "API KEY REQUIRED"). O mapa fica com o fundo neutro e os
- * pins continuam funcionando — nunca há marca d'água para ninguém (logado ou não).
- */
-const TILES_CARTO = CARTO_KEY ? `https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?key=${encodeURIComponent(CARTO_KEY)}` : null;
-
-/**
  * Sem NEXT_PUBLIC_MAPBOX_TOKEN, o mapa da busca usa Leaflet com o mapa-base
  * Voyager da CARTO. Pins de preço em HTML (mesma marca do Mapbox), realce em
  * sincronia com a lista e clique abrindo o card do imóvel.
@@ -382,7 +369,7 @@ function SearchMapLeaflet({ properties, activeId, onHover, selectedId = null, on
     if (TILES_CARTO) {
       L.tileLayer(TILES_CARTO, {
         maxZoom: 19,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        attribution: ATRIBUICAO_MAPA,
       }).addTo(map);
     } else {
       console.error("[mapa] NEXT_PUBLIC_CARTO_API_KEY ausente neste build: mapa-base desligado (sem marca d'água).");
