@@ -7,7 +7,7 @@ import { authFile } from "../fixtures/auth";
  * Para cada botão principal visível (data-cta / submit) e cada campo, o elemento que recebe o
  * clique no centro é o próprio controle (elementFromPoint).
  * Ordem 4f8d17c6: o flutuante é o botão primário do site (ícone + texto, 48 px de altura,
- * cantos de 8 px), igual em todas as páginas; não some ao rolar — sobe para não tampar.
+ * cantos de 8 px), igual em todas as páginas; não some ao rolar. Ordem a9982623: posição estável (arrastável), sem subir sozinho; só conferimos o topo e o fim da página.
  */
 async function nadaTampa(page: Page) {
   const tampados = await page.evaluate(() => {
@@ -57,7 +57,6 @@ for (const largura of [360, 390]) {
         await page.evaluate((yy) => window.scrollTo(0, yy), y);
         await page.waitForTimeout(300);
         await expect(flut, `visível na /buscar após rolar ${y}px`).toBeVisible();
-        await nadaTampa(page);
       }
     });
 

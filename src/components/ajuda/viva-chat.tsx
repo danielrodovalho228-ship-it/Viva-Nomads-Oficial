@@ -12,7 +12,8 @@ import { abrirChamado } from "@/lib/data/atendimento-actions";
 import { SAUDACAO_CHAT, transcricaoChat, type MsgChat } from "@/lib/atendimento/viva-chat-texto";
 import { PROMESSA_ATENDIMENTO } from "@/config/atendimento";
 import { SUPORTE_EMAIL } from "@/lib/site";
-import { ehCampoDeFormulario, elevacaoDoFlutuante, flutuanteVisivel } from "@/lib/atendimento/flutuante-visivel";
+import { ehCampoDeFormulario, flutuanteVisivel } from "@/lib/atendimento/flutuante-visivel";
+import { ehArraste, gravarPosicao, grudarNaBorda, lerPosicao, limitarBaixo, posicaoDuranteArraste, type Posicao, type Tamanho, type Tela } from "@/lib/atendimento/flutuante-arrastavel";
 import { buttonClasses } from "@/components/ui/button";
 
 /**
@@ -45,20 +46,37 @@ function guardar(m: MsgChat[]) {
   }
 }
 
-/** Botão flutuante (layout raiz). */
+/** Botão flutuante (layout raiz). Arrastável (ordem a9982623): parado no canto, sem recalcular em scroll. */
 export function VivaChatFlutuante() {
   const pathname = usePathname() ?? "/";
   const [aberto, setAberto] = useState(false);
   const [campoEmFoco, setCampoEmFoco] = useState(false);
-  const [sobe, setSobe] = useState(0); // px acima do repouso para não tampar um controle
+  const [pos, setPos] = useState<Posicao | null>(null); // null = posição padrão (CSS)
+  const [arrastando, setArrastando] = useState<{ esquerda: number; baixo: number } | null>(null);
   const raiz = useRef<HTMLDivElement>(null);
   const botao = useRef<HTMLButtonElement>(null);
-  const sobeRef = useRef(0);
+  const gesto = useRef<{ id: number; x: number; y: number; dxBotao: number; baixo0: number; arrastou: boolean } | null>(null);
   const escondido = ESCONDER.some((p) => pathname === p || pathname.startsWith(p + "/"));
 
-  // F49 + ordem 4f8d17c6: o botão é sempre visível e no mesmo formato. Some só
-  // enquanto a pessoa digita num campo (celular); quando um botão principal ou
-  // campo passa por baixo dele, ele SOBE o necessário e depois volta.
+  const medirTela = (): Tela => ({ largura: window.innerWidth, altura: window.innerHeight });
+  const tamanhoBotao = (): Tamanho => {
+    const r = botao.current?.getBoundingClientRect();
+    return { largura: r?.width ?? 160, altura: r?.height ?? 48 };
+  };
+
+  // Posição salva (só no navegador) e reenquadramento se a janela mudar de tamanho.
+  useEffect(() => {
+    if (escondido) return;
+    const t = setTimeout(() => setPos(lerPosicao(typeof localStorage === "undefined" ? null : localStorage)), 0);
+    const aoRedimensionar = () => setPos((p) => (p ? { ...p, baixo: limitarBaixo(p.baixo, medirTela(), tamanhoBotao()) } : p));
+    window.addEventListener("resize", aoRedimensionar);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener("resize", aoRedimensionar);
+    };
+  }, [escondido]);
+
+  // F49: some só enquanto a pessoa digita num campo (celular); volta ao sair do campo.
   useEffect(() => {
     if (escondido) return;
     const fora = (el: EventTarget | null) => !(el instanceof Element) || !raiz.current?.contains(el);
@@ -69,55 +87,57 @@ export function VivaChatFlutuante() {
     const aoSair = () => setCampoEmFoco(false);
     document.addEventListener("focusin", aoFocar);
     document.addEventListener("focusout", aoSair);
-
-    let quadro = 0;
-    function medir() {
-      quadro = 0;
-      const b = botao.current?.getBoundingClientRect();
-      if (!b) return;
-      // Posição de repouso = a atual descontando o quanto ele já subiu.
-      const s = sobeRef.current;
-      const repouso = { left: b.left, right: b.right, top: b.top + s, bottom: b.bottom + s };
-      const controles: DOMRect[] = [];
-      for (const el of document.querySelectorAll("[data-cta], button[type=submit], input:not([type=hidden]), textarea, select")) {
-        if (raiz.current?.contains(el)) continue;
-        controles.push(el.getBoundingClientRect());
-      }
-      const novo = elevacaoDoFlutuante(repouso, controles, Math.round(window.innerHeight * 0.6));
-      if (novo !== sobeRef.current) {
-        sobeRef.current = novo;
-        setSobe(novo);
-      }
-    }
-    const agendar = () => {
-      if (!quadro) quadro = requestAnimationFrame(medir);
-    };
-    agendar();
-    const mo = new MutationObserver(agendar);
-    mo.observe(document.body, { childList: true, subtree: true });
-    window.addEventListener("scroll", agendar, { passive: true });
-    window.addEventListener("resize", agendar);
     return () => {
       document.removeEventListener("focusin", aoFocar);
       document.removeEventListener("focusout", aoSair);
-      window.removeEventListener("scroll", agendar);
-      window.removeEventListener("resize", agendar);
-      mo.disconnect();
-      if (quadro) cancelAnimationFrame(quadro);
       setCampoEmFoco(false);
-      sobeRef.current = 0;
-      setSobe(0);
     };
   }, [pathname, escondido]);
 
+  function aoPressionar(e: React.PointerEvent<HTMLButtonElement>) {
+    if (e.button !== 0 || aberto) return;
+    const r = e.currentTarget.getBoundingClientRect();
+    gesto.current = { id: e.pointerId, x: e.clientX, y: e.clientY, dxBotao: e.clientX - r.left, baixo0: window.innerHeight - r.bottom, arrastou: false };
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+  }
+  function aoMover(e: React.PointerEvent<HTMLButtonElement>) {
+    const g = gesto.current;
+    if (!g || g.id !== e.pointerId) return;
+    if (!g.arrastou && !ehArraste(e.clientX - g.x, e.clientY - g.y)) return;
+    g.arrastou = true;
+    const tam = tamanhoBotao();
+    const tela = medirTela();
+    setArrastando(posicaoDuranteArraste(e.clientX - g.dxBotao, g.baixo0 - (e.clientY - g.y), tela, tam));
+  }
+  function aoSoltar(e: React.PointerEvent<HTMLButtonElement>) {
+    const g = gesto.current;
+    if (!g || g.id !== e.pointerId) return;
+    e.currentTarget.releasePointerCapture?.(e.pointerId);
+    if (g.arrastou && arrastando) {
+      const tam = tamanhoBotao();
+      const nova = grudarNaBorda(arrastando.esquerda + tam.largura / 2, arrastando.baixo, medirTela(), tam);
+      setPos(nova);
+      gravarPosicao(typeof localStorage === "undefined" ? null : localStorage, nova);
+    }
+    setArrastando(null);
+    // O clique que o navegador dispara logo após um arraste não pode abrir o chat.
+    if (g.arrastou) setTimeout(() => (gesto.current = null), 0);
+    else gesto.current = null;
+  }
+
   if (escondido) return null;
   const visivel = flutuanteVisivel({ chatAberto: aberto, campoEmFoco });
+  const estilo: React.CSSProperties = arrastando
+    ? { left: arrastando.esquerda, right: "auto", bottom: arrastando.baixo }
+    : pos
+      ? { bottom: pos.baixo, ...(pos.lado === "esq" ? { left: 16, right: "auto" } : { right: 16, left: "auto" }) }
+      : {};
   return (
     <div
       ref={raiz}
-      className={cn("web-only fixed right-4 z-40 flex flex-col items-end gap-3 transition-[bottom] duration-150 print:hidden md:right-6", !visivel && "max-md:hidden")}
-      style={{ bottom: `calc(env(safe-area-inset-bottom, 0px) + var(--ajuda-bottom, 1.5rem) + ${aberto ? 0 : sobe}px)` }}
-      data-sobe={sobe}
+      className={cn("vn-viva-flut web-only fixed z-40 flex flex-col gap-3 print:hidden", pos?.lado === "esq" ? "items-start" : "items-end", !visivel && "max-md:hidden")}
+      style={estilo}
+      data-posicao={arrastando ? "arrastando" : pos ? pos.lado : "padrao"}
       data-testid="fale-com-a-viva-raiz"
     >
       {aberto && (
@@ -126,14 +146,21 @@ export function VivaChatFlutuante() {
         </div>
       )}
       {/* Mesmo botão primário do site (tokens do <Button>), igual em todas as
-          páginas e larguras: ícone + texto. */}
+          páginas e larguras: ícone + texto. Clique curto abre; arrastar move. */}
       <button
         ref={botao}
         type="button"
-        onClick={() => setAberto((v) => !v)}
+        onClick={() => {
+          if (gesto.current?.arrastou) return;
+          setAberto((v) => !v);
+        }}
+        onPointerDown={aoPressionar}
+        onPointerMove={aoMover}
+        onPointerUp={aoSoltar}
+        onPointerCancel={aoSoltar}
         aria-expanded={aberto}
         aria-label={aberto ? "Fechar o chat" : "Fale com a Viva"}
-        className={buttonClasses()}
+        className={cn(buttonClasses(), "touch-none select-none", arrastando && "cursor-grabbing shadow-xl")}
         data-testid="fale-com-a-viva"
       >
         {aberto ? <X className="h-4 w-4" /> : <MessageCircle className="h-4 w-4" />}
