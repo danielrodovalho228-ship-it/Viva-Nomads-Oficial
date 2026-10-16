@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { AirVent, Bath, BedDouble, Car, Dumbbell, Laptop, PawPrint, Waves, WashingMachine, Wifi, X, type LucideIcon } from "lucide-react";
+import { Bath, BedDouble, PawPrint, X, type LucideIcon } from "lucide-react";
+import { ICONE_POR_CHAVE } from "@/lib/anuncio/comodidades-icones";
 import type { Property } from "@/lib/types";
 import { formatBRL } from "@/lib/utils";
 import { AMENITY_KEY_BY_LABEL, AMENITY_LABEL } from "@/lib/amenities";
@@ -9,15 +10,8 @@ import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
 import { ReadyToLiveBadge } from "@/components/ui/badge";
 
 /** Comodidades com ícone no card do mapa (as mais procuradas por quem fica meses). */
-const ICONES: [string, LucideIcon][] = [
-  ["internet_fibra", Wifi],
-  ["home_office", Laptop],
-  ["ar_condicionado", AirVent],
-  ["maquina_lavar", WashingMachine],
-  ["vaga_garagem", Car],
-  ["piscina", Waves],
-  ["academia", Dumbbell],
-];
+const CHAVES_NO_CARD = ["internet_fibra", "home_office", "ar_condicionado", "maquina_lavar", "vaga_garagem", "piscina", "academia"];
+const ICONES: [string, LucideIcon][] = CHAVES_NO_CARD.map((k) => [k, ICONE_POR_CHAVE[k]]);
 
 const isPhoto = (s?: string) => typeof s === "string" && (/^https?:\/\//.test(s) || s.startsWith("/"));
 

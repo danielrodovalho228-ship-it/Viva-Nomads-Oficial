@@ -26,29 +26,32 @@ test("ordena as categorias conhecidas e deixa as desconhecidas por último", () 
   assert.equal(g.total, 4);
 });
 
-test("principais: no máximo 5, na ordem das categorias", () => {
+test("principais: no máximo 6 (par), na ordem das categorias", () => {
   const g = agruparComodidades(
     com({
       amenityGroups: [
-        { category: "cozinha", items: ["Fogão", "Geladeira", "Micro-ondas"] },
+        { category: "cozinha", items: ["Fogão", "Geladeira", "Micro-ondas", "Cafeteira"] },
         { category: "trabalho", items: ["Wi-Fi", "Mesa", "Cadeira"] },
       ],
     }),
   );
   const p = comodidadesPrincipais(g);
-  assert.equal(LIMITE_PRINCIPAIS, 5);
-  assert.equal(p.length, 5);
+  assert.equal(LIMITE_PRINCIPAIS, 6);
+  assert.equal(p.length, 6);
   assert.deepEqual(p.slice(0, 3), ["Wi-Fi", "Mesa", "Cadeira"]);
-  assert.equal(g.total, 6);
+  assert.equal(g.total, 7);
+  assert.equal(g.precisaVerTodas, true);
 });
 
-test("lista plana vira um grupo; até 5 itens não precisa de 'Ver todas'", () => {
+test("lista plana vira um grupo; até 6 itens não precisa de 'Ver todas'", () => {
   const g = agruparComodidades(com({ amenities: ["A", "B", "C"] }));
   assert.equal(g.total, 3);
   assert.equal(comodidadesPrincipais(g).length, 3);
   assert.equal(g.precisaVerTodas, false);
   const g6 = agruparComodidades(com({ amenities: ["A", "B", "C", "D", "E", "F"] }));
-  assert.equal(g6.precisaVerTodas, true);
+  assert.equal(g6.precisaVerTodas, false);
+  const g7 = agruparComodidades(com({ amenities: ["A", "B", "C", "D", "E", "F", "G"] }));
+  assert.equal(g7.precisaVerTodas, true);
 });
 
 test("itens repetidos ou em branco não contam", () => {
