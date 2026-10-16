@@ -153,6 +153,12 @@ test.describe("T57 — Contrato semeado: as duas partes têm o código de assina
       .single();
     if (error) throw error;
     ids.contrato = data.id as string;
+    // O dono só assina com as instruções de entrada completas (Check-in garantido, conferido no servidor ANTES
+    // do código). Sem isto a recusa vinha com a mensagem das instruções, sem a palavra "código" (lab 5ced34d).
+    const { error: errCheckin } = await adm()
+      .from("contratos_checkin")
+      .insert({ contrato_id: ids.contrato, horario: "14:00", instrucoes: "Chave na portaria, apto 12.", plantao: "34999990000" });
+    if (errCheckin) throw errCheckin;
   });
 
   test.afterAll(async () => {
