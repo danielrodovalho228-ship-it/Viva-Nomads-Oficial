@@ -1,12 +1,12 @@
 import { test, expect } from "@playwright/test";
 
 /**
- * T131 — Mapa da página do imóvel igual ao da /buscar (ordem b4fd5b18): mapa real
+ * T134 — Mapa da página do imóvel igual ao da /buscar (ordem b4fd5b18): mapa real
  * (Leaflet + CARTO sem token Mapbox), com tiles, e "Ampliar mapa" abrindo a tela cheia,
  * a 390 e 1280 px. Nunca o ponto exato do imóvel.
  */
 for (const largura of [390, 1280]) {
-  test(`T131 — /imoveis/ube-001 mostra o mapa real e o "Ampliar mapa" abre a ${largura}px`, async ({ page }) => {
+  test(`T134 — /imoveis/ube-001 mostra o mapa real e o "Ampliar mapa" abre a ${largura}px`, async ({ page }) => {
     await page.setViewportSize({ width: largura, height: 900 });
     await page.goto("/imoveis/ube-001", { waitUntil: "networkidle" });
     const mapa = page.getByTestId("mapa-imovel").first();
