@@ -8,6 +8,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { Property } from "@/lib/types";
 import { formatBRL, cn } from "@/lib/utils";
+import { precoDeBusca } from "@/lib/busca/painel-filtros";
 import { CardPinMapa } from "@/components/busca/card-pin-mapa";
 import { ATRIBUICAO_MAPA, TILES_CARTO, avisarMapaSemChave, motorDoMapa } from "@/lib/mapa-base";
 
@@ -163,7 +164,7 @@ function SearchMapbox({
       el.className = pinClass(p.id === activeId || p.id === selectedId);
       el.dataset.testid = "pin-mapa";
       el.dataset.id = p.id;
-      el.textContent = formatBRL(p.monthlyPrice);
+      el.textContent = formatBRL(precoDeBusca(p));
       el.addEventListener("mouseenter", () => onHoverRef.current(p.id));
       el.addEventListener("mouseleave", () => onHoverRef.current(null));
       el.addEventListener("click", (e) => {
