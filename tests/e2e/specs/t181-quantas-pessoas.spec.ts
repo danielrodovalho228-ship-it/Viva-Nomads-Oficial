@@ -29,7 +29,7 @@ async function candidatar(page: Page, largura: number, pessoas: number) {
   const passo = page.getByTestId("solicitacao-passo");
   await expect(passo).toBeVisible();
   await passo.getByRole("button", { name: "Enviar solicitação" }).click();
-  await expect(page.getByText("Candidatura enviada").first()).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByText("Candidatura enviada").filter({ visible: true }).first()).toBeVisible({ timeout: 20_000 });
 }
 
 test.describe("T181 — quantas pessoas vão morar", () => {
