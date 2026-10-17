@@ -64,6 +64,9 @@ import { OwnerCard } from "@/components/property/owner-card";
 import type { PerfilProprietario } from "@/lib/data/perfil-proprietario";
 import { Reviews } from "@/components/property/reviews";
 import { CampoData } from "@/components/ui/campo-data";
+import { AvaliacoesExemplo } from "@/components/property/avaliacoes-exemplo";
+import { FaixaProprietario } from "@/components/property/faixa-proprietario";
+import { avaliacoesDoExemplo, proprietarioDoExemplo, resumoAvaliacoesExemplo } from "@/config/exemplo-proprietarios";
 import { isExemplo, EXEMPLO_SEM_CONTATO, EXEMPLO_AVISO_DEMO } from "@/lib/demo-listing";
 import { destinoContatoViva, resumoSolicitacao } from "@/lib/reserva-imovel";
 import { registrarEvento } from "@/lib/eventos/registrar";
@@ -105,6 +108,11 @@ export function PropertyDetail({
   // avaliações. `rating` só é usado como média quando há review real.
   const exemplo = isExemplo(property);
   const reviewsReais = property.reviews?.length ?? 0;
+  // Exemplo ilustrativo (prompt 9): dados de demonstração, só em anúncio de exemplo e sempre marcados.
+  const donoExemplo = exemplo ? proprietarioDoExemplo(property.id) : null;
+  const avaliacoesExemplo = exemplo ? avaliacoesDoExemplo(property.id) : [];
+  const resumoExemplo = exemplo ? resumoAvaliacoesExemplo(property.id) : null;
+  const temFaixa = !!donoExemplo || !!proprietario;
   const mediaReal =
     reviewsReais > 0
       ? property.rating > 0
@@ -514,7 +522,7 @@ export function PropertyDetail({
       />
 
       {/* Abas âncora presas ao rolar (ordem d943f893). */}
-      <NavSecoes secoes={secoesDoImovel({ avaliacoes: reviewsReais, temDono: !!(property.owner?.name ?? property.ownerName) })} />
+      <NavSecoes secoes={secoesDoImovel({ avaliacoes: exemplo ? avaliacoesExemplo.length : reviewsReais, temDono: !!(property.owner?.name ?? property.ownerName) })} />
 
       <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_26rem] xl:gap-12">
         {/* Conteúdo (seções roláveis) */}
@@ -533,9 +541,14 @@ export function PropertyDetail({
             </div>
             <h1 className="mt-2 font-title text-3xl font-bold text-ink">{property.title}</h1>
 
+            {/* Faixa: tempo de resposta · calendário · proprietário (prompt 9). */}
+            <FaixaProprietario real={exemplo ? null : proprietario} exemplo={donoExemplo} hoje={hojeBR()} />
+
             {/* Sinais de confiança (só dado real): disponibilidade, resposta, tempo de casa, código. */}
             <ul data-testid="sinais-confianca" className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-sm">
-              {sinaisDeConfianca(property, new Date().toISOString().slice(0, 10)).map((s) => (
+              {sinaisDeConfianca(property, new Date().toISOString().slice(0, 10))
+                .filter((s) => !(temFaixa || exemplo) || (s.tipo !== "resposta" && s.tipo !== "desde"))
+                .map((s) => (
                 <li key={s.tipo} className={s.tipo === "codigo" ? "inline-flex items-center gap-1.5 text-xs text-muted" : "inline-flex items-center gap-1.5 text-ink"}>
                   <IconeSinal tipo={s.tipo} />
                   <span className={s.tipo === "disponibilidade" ? "font-semibold text-forest" : undefined}>{s.texto}</span>
@@ -552,7 +565,12 @@ export function PropertyDetail({
               )}
               {/* Fonte ÚNICA (A2): a contagem vem das avaliações REAIS (reviews),
                   igual à seção de avaliações. Sem review real → selo honesto. */}
-              {reviewsReais > 0 ? (
+              {resumoExemplo ? (
+                <a href="#avaliacoes" data-testid="estrelas-titulo" className="inline-flex items-center gap-1 text-sm font-medium text-forest hover:underline">
+                  <Star className="h-4 w-4 fill-champagne text-champagne" aria-hidden />
+                  {numBR(resumoExemplo.media, 1)} · {resumoExemplo.n} avaliações
+                </a>
+              ) : reviewsReais > 0 ? (
                 <span className="inline-flex items-center gap-1 text-sm font-medium text-forest">
                   <Star className="h-4 w-4 fill-champagne text-champagne" />
                   {numBR(mediaReal, 1)} · {reviewsReais}{" "}
@@ -633,7 +651,7 @@ export function PropertyDetail({
             <AvailabilityCalendar property={property} />
           </div>
           <div id="avaliacoes" className="scroll-mt-36">
-            <Reviews property={property} />
+            {avaliacoesExemplo.length > 0 ? <AvaliacoesExemplo avaliacoes={avaliacoesExemplo} /> : <Reviews property={property} />}
           </div>
           <div id="proprietario" className="scroll-mt-36 empty:hidden">
             <OwnerCard

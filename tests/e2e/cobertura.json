@@ -193,7 +193,8 @@
         "publico"
       ],
       "specs": [
-        "t173-perfis-dono-inquilino"
+        "t173-perfis-dono-inquilino",
+        "t176-exemplo-proprietario-avaliacoes"
       ]
     },
     "/app/boas-vindas": {
@@ -297,7 +298,8 @@
       "specs": [
         "t126-seo-robots-jsonld",
         "t18-seo-a11y",
-        "t20-p1-agentes"
+        "t20-p1-agentes",
+        "t176-exemplo-proprietario-avaliacoes"
       ]
     },
     "/cidades/[cidade]/[polo]": {
@@ -831,7 +833,8 @@
         "t8-rascunho",
         "t164-tour-video-galeria",
         "t172-bom-saber-completo",
-        "t173-perfis-dono-inquilino"
+        "t173-perfis-dono-inquilino",
+        "t176-exemplo-proprietario-avaliacoes"
       ]
     },
     "/modelodenegocio": {
