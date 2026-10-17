@@ -33,6 +33,8 @@ export interface DadosResumo {
   limpezaEstadia?: LimpezaEstadia | null;
   /** Condomínio + contas fixas por mês (R$): entram no "Total por mês" quando há limpeza paga. */
   outrosCustosMes?: number;
+  /** Contrato assinado antes da linha existir (sem `outrosCustosMes` congelado): sem "Total por mês", para o resumo assinado e o hash não mudarem. */
+  semTotalMes?: boolean;
 }
 
 /** Linhas do resumo mostradas na tela e usadas no hash (mesma fonte: o que a pessoa lê é o que ela assina). */
@@ -42,7 +44,8 @@ function dataDoResumo(iso: string): string | null {
 }
 
 /** Total por mês do resumo: valor mensal + condomínio e contas fixas + limpeza paga. Só existe com limpeza paga. */
-export function totalMensalDoResumo(d: Pick<DadosResumo, "aluguelMensal" | "outrosCustosMes" | "limpezaEstadia">): number | null {
+export function totalMensalDoResumo(d: Pick<DadosResumo, "aluguelMensal" | "outrosCustosMes" | "limpezaEstadia" | "semTotalMes">): number | null {
+  if (d.semTotalMes) return null;
   const limpeza = d.limpezaEstadia?.valorMes ?? 0;
   if (limpeza <= 0) return null;
   const outros = d.outrosCustosMes && d.outrosCustosMes > 0 ? d.outrosCustosMes : 0;
@@ -95,6 +98,12 @@ export function outrosCustosDoContrato(d: { algumaAssinatura: boolean; vivo: unk
   const c = d.congeladas && typeof d.congeladas === "object" ? (d.congeladas as Record<string, unknown>).outrosCustosMes : null;
   const n = Number(d.algumaAssinatura ? c : d.vivo);
   return Number.isFinite(n) && n > 0 && n <= 1_000_000 ? n : 0;
+}
+
+/** Depois da 1ª assinatura a linha "Total por mês" só vale se o total foi congelado junto (chave `outrosCustosMes`). */
+export function totalMesAplicavel(d: { algumaAssinatura: boolean; congeladas: unknown }): boolean {
+  if (!d.algumaAssinatura) return true;
+  return !!d.congeladas && typeof d.congeladas === "object" && "outrosCustosMes" in (d.congeladas as Record<string, unknown>);
 }
 
 export function hashResumo(linhas: string[]): string {

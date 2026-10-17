@@ -1908,7 +1908,8 @@
         "proprietario"
       ],
       "specs": [
-        "t57-contrato-assinar"
+        "t57-contrato-assinar",
+        "t159-contrato-total-mes"
       ]
     },
     "src/lib/data/contrato-assinar-actions.ts#pedirCodigoAssinatura": {
