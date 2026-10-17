@@ -9,7 +9,7 @@ import "leaflet/dist/leaflet.css";
 import type { Property } from "@/lib/types";
 import { formatBRL, cn } from "@/lib/utils";
 import { CardPinMapa } from "@/components/busca/card-pin-mapa";
-import { ATRIBUICAO_MAPA, TILES_CARTO, motorDoMapa } from "@/lib/mapa-base";
+import { ATRIBUICAO_MAPA, TILES_CARTO, avisarMapaSemChave, motorDoMapa } from "@/lib/mapa-base";
 
 const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
@@ -372,7 +372,7 @@ function SearchMapLeaflet({ properties, activeId, onHover, selectedId = null, on
         attribution: ATRIBUICAO_MAPA,
       }).addTo(map);
     } else {
-      console.error("[mapa] NEXT_PUBLIC_CARTO_API_KEY ausente neste build: mapa-base desligado (sem marca d'água).");
+      avisarMapaSemChave();
     }
     map.on("click", () => onSelectRef.current?.(null));
     mapRef.current = map;

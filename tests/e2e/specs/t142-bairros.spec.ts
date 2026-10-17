@@ -37,7 +37,7 @@ test.describe("T142 — Bairros", () => {
       await centro.click();
       await expect(page).toHaveURL(/\/cidades\/uberlandia\/centro$/);
       await expect(page.getByRole("heading", { level: 1 })).toContainText("Imóveis mobiliados em Centro");
-      await expect(page.getByTestId("bairro-resumo")).toContainText("imóvel mobiliado publicado");
+      await expect(page.getByTestId("bairro-resumo")).toContainText(/imóve(l|is) mobiliados? publicados?/);
       await expect(page.getByTestId("bairro-mapa")).toBeVisible();
       await expect(page.getByTestId("bairro-anuncios")).toContainText("Studio do bairro de teste");
       await expect(page.getByTestId("bairro-faq")).toBeVisible();

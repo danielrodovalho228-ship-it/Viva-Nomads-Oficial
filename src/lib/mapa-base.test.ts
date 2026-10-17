@@ -5,7 +5,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { borrarCoordenada, motorDoMapa, RAIO_APROXIMADO_KM } from "./mapa-base.ts";
+import { avisarMapaSemChave, borrarCoordenada, motorDoMapa, RAIO_APROXIMADO_KM } from "./mapa-base.ts";
 
 const mapaImovel = readFileSync(new URL("../components/property-map.tsx", import.meta.url), "utf8");
 const buscar = readFileSync(new URL("../components/search-map.tsx", import.meta.url), "utf8");
@@ -43,4 +43,15 @@ test("modo aproximado: círculo de ~500 m, coordenada arredondada, pino do imóv
   // o centro do mapa e do círculo é sempre `first` (já arredondado), nunca `raw`/`center`
   assert.doesNotMatch(leaflet, /setView\(\s*\[raw|\[center\.lat|L\.circle\(\[raw/);
   assert.match(leaflet, /attribution: ATRIBUICAO_MAPA/);
+});
+
+test("sem chave da CARTO o aviso é discreto: nada de console.error nos mapas (t48 do lab, ordem 8ed8e043)", () => {
+  assert.doesNotMatch(mapaImovel, /console\.error/);
+  assert.doesNotMatch(buscar, /console\.error/);
+  assert.match(mapaImovel, /avisarMapaSemChave\(\)/);
+  assert.match(buscar, /avisarMapaSemChave\(\)/);
+  const msgs: string[] = [];
+  avisarMapaSemChave((m) => msgs.push(m));
+  assert.equal(msgs.length, 1);
+  assert.match(msgs[0], /NEXT_PUBLIC_CARTO_API_KEY/);
 });
