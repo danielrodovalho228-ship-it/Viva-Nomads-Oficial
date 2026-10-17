@@ -61,8 +61,9 @@ export default async function PoloPage({ params }: Params) {
   if (!p) {
     const b = await acharBairro(cidade, c.name, polo);
     if (!b) notFound();
-    const vizinhos = bairrosDaGrade(cidade, await listPropertiesByCity(c.name), isExemplo).filter((x) => x.total > 0 && x.slug !== b.slug);
-    return <BairroPagina cidade={c} bairro={b} vizinhos={vizinhos} />;
+    const daCidade = await listPropertiesByCity(c.name);
+    const vizinhos = bairrosDaGrade(cidade, daCidade, isExemplo).filter((x) => x.total > 0 && x.slug !== b.slug);
+    return <BairroPagina cidade={c} bairro={b} vizinhos={vizinhos} totalCidade={daCidade.filter((i) => !isExemplo(i.id)).length} />;
   }
 
   const todos = await listPropertiesByCity(c.name);

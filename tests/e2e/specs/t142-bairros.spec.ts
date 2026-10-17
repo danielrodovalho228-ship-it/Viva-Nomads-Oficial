@@ -41,6 +41,8 @@ test.describe("T142 — Bairros", () => {
       await expect(page.getByTestId("bairro-mapa")).toBeVisible();
       await expect(page.getByTestId("bairro-anuncios")).toContainText("Studio do bairro de teste");
       await expect(page.getByTestId("bairro-faq")).toBeVisible();
+      await expect(page.getByTestId("bairro-faq")).toContainText("Sim.");
+      await expect(page.getByTestId("bairro-ver-cidade")).toBeVisible();
       expect(await semRolagem(page)).toBeLessThanOrEqual(1);
     });
   }
@@ -74,6 +76,14 @@ test.describe("T142 — Bairros", () => {
       await expect(page.getByTestId("bairro-vazio")).toContainText("Ainda não há imóveis mobiliados publicados no Martins");
       await expect(page.getByTestId("bairro-vazio").getByTestId("salvar-busca")).toContainText("Avise-me quando houver");
       await expect(page.getByTestId("bairro-vizinhos")).toContainText("Centro");
+      // Saída para os imóveis da cidade, com a contagem real, e FAQ sem afirmar anúncio.
+      const ver = page.getByTestId("bairro-vazio").getByTestId("bairro-ver-cidade");
+      await expect(ver).toContainText(/Ver (todos os \d+ imóve(l|is)|todos os imóveis) em Uberlândia/);
+      await expect(page.getByTestId("bairro-faq")).toContainText("Ainda não há imóveis mobiliados publicados em Martins");
+      await expect(page.getByTestId("bairro-faq")).not.toContainText(/^Sim\./m);
+      await ver.click();
+      await expect(page).toHaveURL(/\/buscar\?local=Uberl/);
+      await page.goBack();
       expect(await semRolagem(page)).toBeLessThanOrEqual(1);
       const xml = await (await request.get("/sitemap.xml")).text();
       expect(xml).not.toContain("/cidades/uberlandia/martins");

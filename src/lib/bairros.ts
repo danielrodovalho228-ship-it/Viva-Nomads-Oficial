@@ -125,11 +125,14 @@ export function resumoDoBairro(nome: string, cidade: string, total: number): str
   return `${nome}, em ${cidade}: ${n} na Viva Nomads para estadias de 30 a 180 dias. O mapa mostra só a área aproximada; o endereço exato é liberado depois do aceite.`;
 }
 
-export function perguntasDoBairro(nome: string, cidade: string, mediaGeral: number | null): { q: string; a: string }[] {
+export function perguntasDoBairro(nome: string, cidade: string, mediaGeral: number | null, total = 1): { q: string; a: string }[] {
   return [
     {
       q: `Há imóveis mobiliados em ${nome}, ${cidade}?`,
-      a: `Sim. Os imóveis do Viva Nomads em ${nome} são mobiliados e a estadia é de 30 a 180 dias, com contrato registrado na plataforma.`,
+      a:
+        total === 0
+          ? `Ainda não há imóveis mobiliados publicados em ${nome}. Salve a busca para ser avisado, ou veja os imóveis de ${cidade}: a estadia é de 30 a 180 dias, com contrato registrado na plataforma.`
+          : `Sim. Os imóveis do Viva Nomads em ${nome} são mobiliados e a estadia é de 30 a 180 dias, com contrato registrado na plataforma.`,
     },
     {
       q: `Quanto custa por mês em ${nome}?`,
