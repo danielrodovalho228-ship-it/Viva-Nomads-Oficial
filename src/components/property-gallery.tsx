@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { X, Images, ChevronLeft, ChevronRight } from "lucide-react";
+import { X, Images, ChevronLeft, ChevronRight, PlayCircle } from "lucide-react";
 import { BrandImage } from "@/components/brand-image";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
 import { ReadyToLiveBadge } from "@/components/ui/badge";
 import { IconButton } from "@/components/ui/icon-button";
 import { cn } from "@/lib/utils";
+import { ITEM_VIDEO, itensDaGaleria } from "@/lib/video-tour";
+import { ROTULO_SELO_VIDEO } from "@/lib/card-selos";
+import { VideoModal } from "@/components/video-walkthrough";
 
 /** O mosaico mostra 5 fotos (0–4); o "+N mais" abre na primeira oculta. */
 export const PRIMEIRA_FOTO_OCULTA = 5;
@@ -24,24 +27,35 @@ export function PropertyGallery({
   photos,
   title,
   readyToLive,
+  videoUrl,
 }: {
   photos: string[];
   title: string;
   readyToLive?: boolean;
+  /** Tour em vídeo: vira a 1ª peça (ordem 6f964617, tela 7). */
+  videoUrl?: string;
 }) {
   const [lightbox, setLightbox] = useState(false);
+  const [videoAberto, setVideoAberto] = useState(false);
   const [index, setIndex] = useState(0);
-  const list = photos.length ? photos : [""];
+  const fotos = photos.length ? photos : [""];
+  const list = itensDaGaleria(fotos, videoUrl);
+  const temVideo = list[0] === ITEM_VIDEO;
 
+  // O vídeo abre na janela própria; o lightbox só tem fotos (índice sem o vídeo).
   function openAt(i: number) {
-    setIndex(i);
+    if (list[i] === ITEM_VIDEO) {
+      setVideoAberto(true);
+      return;
+    }
+    setIndex(temVideo ? i - 1 : i);
     setLightbox(true);
   }
 
   return (
     <>
       {/* ── Mobile: carrossel ── */}
-      <MobileCarousel photos={list} title={title} readyToLive={readyToLive} onOpen={openAt} />
+      <MobileCarousel photos={list} title={title} readyToLive={readyToLive} onOpen={openAt} capa={fotos[0]} />
 
       {/* ── Desktop: mosaico adaptável ── */}
       <DesktopMosaic
@@ -49,11 +63,16 @@ export function PropertyGallery({
         title={title}
         readyToLive={readyToLive}
         onOpen={openAt}
+        capa={fotos[0]}
       />
+
+      {videoAberto && videoUrl && (
+        <VideoModal url={videoUrl} title={title} onClose={() => setVideoAberto(false)} />
+      )}
 
       {lightbox && (
         <Lightbox
-          photos={list}
+          photos={fotos}
           title={title}
           index={index}
           setIndex={setIndex}
@@ -70,13 +89,42 @@ function Tile({
   className,
   onClick,
   testId,
+  capa,
 }: {
   src: string;
   alt: string;
   className?: string;
   onClick?: () => void;
   testId?: string;
+  /** Capa do vídeo (a 1ª foto), usada só quando src é o vídeo. */
+  capa?: string;
 }) {
+  if (src === ITEM_VIDEO) {
+    return (
+      <button
+        type="button"
+        data-testid={testId ?? "galeria-video"}
+        onClick={onClick}
+        aria-label={`${ROTULO_SELO_VIDEO}: ${alt}`}
+        className={cn("group relative block overflow-hidden bg-night", className)}
+      >
+        {isPhoto(capa) && (
+          <BrandImage
+            src={capa as string}
+            alt={alt}
+            treat={false}
+            rounded="rounded-none"
+            sizes="(max-width: 768px) 100vw, 50vw"
+            className="h-full w-full opacity-80 transition-transform duration-500 group-hover:scale-105"
+          />
+        )}
+        <span className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-white">
+          <PlayCircle className="h-14 w-14 drop-shadow" aria-hidden />
+          <span className="rounded-full bg-night/80 px-3 py-1 text-sm font-semibold">{ROTULO_SELO_VIDEO}</span>
+        </span>
+      </button>
+    );
+  }
   return (
     <button
       type="button"
@@ -105,11 +153,13 @@ function MobileCarousel({
   title,
   readyToLive,
   onOpen,
+  capa,
 }: {
   photos: string[];
   title: string;
   readyToLive?: boolean;
   onOpen: (i: number) => void;
+  capa?: string;
 }) {
   const [active, setActive] = useState(0);
   return (
@@ -123,7 +173,7 @@ function MobileCarousel({
       >
         {photos.map((p, i) => (
           <div key={i} className="aspect-[4/3] w-full shrink-0 snap-center">
-            <Tile src={p} alt={`${title} — foto ${i + 1}`} className="h-full w-full" onClick={() => onOpen(i)} testId={`galeria-tile-${i}`} />
+            <Tile src={p} alt={`${title} — foto ${i + 1}`} className="h-full w-full" onClick={() => onOpen(i)} capa={capa} testId={`galeria-tile-${i}`} />
           </div>
         ))}
       </div>
@@ -158,11 +208,13 @@ function DesktopMosaic({
   title,
   readyToLive,
   onOpen,
+  capa,
 }: {
   photos: string[];
   title: string;
   readyToLive?: boolean;
   onOpen: (i: number) => void;
+  capa?: string;
 }) {
   const n = photos.length;
 
@@ -171,16 +223,16 @@ function DesktopMosaic({
   if (n === 1) {
     content = (
       <div className="h-[480px] overflow-hidden rounded-2xl">
-        <Tile src={photos[0]} alt={title} className="h-full w-full" onClick={() => onOpen(0)} testId="galeria-tile-0" />
+        <Tile src={photos[0]} alt={title} className="h-full w-full" onClick={() => onOpen(0)} capa={capa} testId="galeria-tile-0" />
       </div>
     );
   } else if (n < 5) {
     content = (
       <div className="grid h-[480px] grid-cols-3 gap-2 overflow-hidden rounded-2xl">
-        <Tile src={photos[0]} alt={title} className="col-span-2 row-span-1 h-full" onClick={() => onOpen(0)} testId="galeria-tile-0" />
+        <Tile src={photos[0]} alt={title} className="col-span-2 row-span-1 h-full" onClick={() => onOpen(0)} capa={capa} testId="galeria-tile-0" />
         <div className="grid gap-2" style={{ gridTemplateRows: `repeat(${n - 1}, minmax(0, 1fr))` }}>
           {photos.slice(1).map((p, i) => (
-            <Tile key={i} src={p} alt={`${title} — ${i + 2}`} className="h-full" onClick={() => onOpen(i + 1)} testId={`galeria-tile-${i + 1}`} />
+            <Tile key={i} src={p} alt={`${title} — ${i + 2}`} className="h-full" onClick={() => onOpen(i + 1)} capa={capa} testId={`galeria-tile-${i + 1}`} />
           ))}
         </div>
       </div>
@@ -188,12 +240,12 @@ function DesktopMosaic({
   } else {
     content = (
       <div className="grid h-[480px] grid-cols-4 grid-rows-2 gap-2 overflow-hidden rounded-2xl">
-        <Tile src={photos[0]} alt={title} className="col-span-2 row-span-2 h-full" onClick={() => onOpen(0)} testId="galeria-tile-0" />
+        <Tile src={photos[0]} alt={title} className="col-span-2 row-span-2 h-full" onClick={() => onOpen(0)} capa={capa} testId="galeria-tile-0" />
         {photos.slice(1, 5).map((p, i) => {
           const isLast = i === 3 && n > 5;
           return (
             <div key={i} className="relative h-full">
-              <Tile src={p} alt={`${title} — ${i + 2}`} className="h-full w-full" onClick={() => onOpen(i + 1)} testId={`galeria-tile-${i + 1}`} />
+              <Tile src={p} alt={`${title} — ${i + 2}`} className="h-full w-full" onClick={() => onOpen(i + 1)} capa={capa} testId={`galeria-tile-${i + 1}`} />
               {isLast && (
                 <button
                   type="button"
@@ -225,7 +277,7 @@ function DesktopMosaic({
         onClick={() => onOpen(0)}
         className="absolute bottom-4 right-4 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-3.5 py-2 text-sm font-medium text-ink shadow-sm hover:bg-white"
       >
-        <Images className="h-4 w-4" /> Ver todas as {n} fotos
+        <Images className="h-4 w-4" /> Ver todas as {photos[0] === ITEM_VIDEO ? n - 1 : n} fotos
       </button>
     </div>
   );

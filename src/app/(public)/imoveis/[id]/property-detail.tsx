@@ -499,6 +499,7 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
         photos={property.photos}
         title={property.title}
         readyToLive={property.readyToLiveBadge}
+        videoUrl={property.videoUrl}
       />
 
       {/* Abas âncora presas ao rolar (ordem d943f893). */}
