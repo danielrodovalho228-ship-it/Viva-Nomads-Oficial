@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { verifyTenant, isCafConfigured } from "@/lib/integrations/caf";
-import { IntegracaoNaoConfigurada, MSG_NAO_CONFIGURADA, emProducao } from "@/lib/integracoes";
+import { IntegracaoNaoConfigurada, emProducao } from "@/lib/integracoes";
+import { contaEhDeTeste, laudoSimuladoTeste, MSG_VERIFICACAO_EM_BREVE } from "@/lib/contas-de-teste";
 import { consumirLimite, DIA } from "@/lib/limites";
 
 /**
@@ -22,6 +23,9 @@ export async function POST() {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
 
+  // Conta de teste (is_teste): laudo SIMULADO, sem CPF, sem Certta/CAF e sem gastar a cota (ordem ee7d27b8).
+  if (await contaEhDeTeste(admin, user.id)) return NextResponse.json(laudoSimuladoTeste());
+
   const { data: perfil } = await supabase
     .from("profiles")
     .select("full_name, cpf")
@@ -34,7 +38,7 @@ export async function POST() {
 
   // Sem a integração em produção: avisa ANTES de gastar a cota de 90 dias.
   if (!isCafConfigured() && emProducao()) {
-    return NextResponse.json({ error: MSG_NAO_CONFIGURADA }, { status: 503 });
+    return NextResponse.json({ error: MSG_VERIFICACAO_EM_BREVE }, { status: 503 });
   }
   if (!(await consumirLimite(`caf:user:${user.id}`, 1, 90 * DIA))) {
     return NextResponse.json(
@@ -56,7 +60,7 @@ export async function POST() {
     return NextResponse.json(result);
   } catch (err) {
     if (err instanceof IntegracaoNaoConfigurada) {
-      return NextResponse.json({ error: MSG_NAO_CONFIGURADA }, { status: 503 });
+      return NextResponse.json({ error: MSG_VERIFICACAO_EM_BREVE }, { status: 503 });
     }
     console.error("[caf] falha:", err);
     return NextResponse.json({ error: "Falha na verificação." }, { status: 502 });

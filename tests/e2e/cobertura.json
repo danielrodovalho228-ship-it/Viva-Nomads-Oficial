@@ -1093,7 +1093,9 @@
         "proprietario",
         "admin"
       ],
-      "specs": []
+      "specs": [
+        "t169-conta-teste-sem-efeito"
+      ]
     },
     "/api/calendario/[id]/[token]": {
       "personas": [
@@ -1107,7 +1109,19 @@
         "proprietario",
         "admin"
       ],
-      "specs": []
+      "specs": [
+        "t169-conta-teste-sem-efeito"
+      ]
+    },
+    "/api/conta/caixa-teste": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": [
+        "t169-conta-teste-sem-efeito"
+      ]
     },
     "/api/contrato": {
       "personas": [
@@ -1116,6 +1130,7 @@
         "admin"
       ],
       "specs": [
+        "t169-conta-teste-sem-efeito",
         "t36-cadastro-ponta-a-ponta"
       ]
     },
