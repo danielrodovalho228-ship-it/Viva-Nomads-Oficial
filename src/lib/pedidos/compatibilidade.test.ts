@@ -4,7 +4,7 @@
 */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { melhorPor, porQueCombina, sugestaoAjuste, ordenarPares, type ParCompat } from "./compatibilidade.ts";
+import { melhorPor, porQueCombina, sugestaoAjuste, ordenarPares, imoveisParaTela, type ParCompat } from "./compatibilidade.ts";
 
 const base: ParCompat = {
   pedido_id: "p1",
@@ -58,4 +58,21 @@ test("sugestão ao inquilino sem compatível: usa o 'quase' mais comum", () => {
     /3 imóveis quase combinam — aumentar um pouco o orçamento pode resolver \(R\$ 250 acima do orçamento\)/
   );
   assert.match(sugestaoAjuste([{ situacao: "quase", motivo: "começa 10 dias depois" }])!, /adiar a entrada/);
+});
+
+test("lista pós-publicação: só compatíveis, melhor nota primeiro, até 6, só dado público do anúncio", () => {
+  const pares: ParCompat[] = [
+    { ...base, imovel_id: "q", situacao: "quase", nota: 99 },
+    { ...base, imovel_id: "a", titulo: "A", nota: 70, total_mensal: 2900 },
+    { ...base, imovel_id: "b", titulo: "B", nota: 95, total_mensal: 3100 },
+    ...Array.from({ length: 6 }, (_, i) => ({ ...base, imovel_id: `x${i}`, nota: 10 + i })),
+  ];
+  const lista = imoveisParaTela(pares);
+  assert.equal(lista.length, 6);
+  assert.deepEqual(lista.slice(0, 2), [
+    { id: "b", titulo: "B", total: 3100 },
+    { id: "a", titulo: "A", total: 2900 },
+  ]);
+  assert.ok(lista.every((i) => i.id !== "q"));
+  assert.deepEqual(Object.keys(lista[0]).sort(), ["id", "titulo", "total"]);
 });

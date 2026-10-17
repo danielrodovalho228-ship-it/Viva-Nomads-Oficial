@@ -866,7 +866,8 @@
         "t18-seo-a11y",
         "t69-botoes-header",
         "t72-paginas-institucionais",
-        "t96-antigolpe-atalhos"
+        "t96-antigolpe-atalhos",
+        "t165-pedido-contador"
       ]
     },
     "/precos": {
@@ -2154,6 +2155,14 @@
         "proprietario"
       ],
       "specs": []
+    },
+    "src/lib/data/pedido-contador-actions.ts#contarImoveisQueCombinam": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t165-pedido-contador"
+      ]
     },
     "src/lib/data/pedidos-actions.ts#aceitarResposta": {
       "personas": [
