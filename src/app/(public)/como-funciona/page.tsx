@@ -1,3 +1,4 @@
+import { VideoInstitucional } from "@/components/institucional/video-institucional";
 import type { Metadata } from "next";
 import {
   Search,
@@ -66,6 +67,9 @@ export default function HowItWorksPage() {
 
       {/* Sub-navegação ancorada — atalhos para as três partes da história. */}
       <SubNav />
+
+      {/* Vídeo institucional v3 no topo, antes dos passos (só toca no play). */}
+      <VideoInstitucional />
 
       <Steps id="para-inquilinos" title="Para quem busca um imóvel" steps={TENANT_STEPS} eager tone="tenant" badge="Para inquilinos" />
 
