@@ -29,8 +29,18 @@ async function esperarSalvo(page: Page) {
   await expect(page.getByText(/Salvo/).first()).toBeVisible({ timeout: 15_000 });
 }
 
+/** Sem rolagem lateral, medida depois da animação de entrada da etapa; se sobrar, diz qual elemento passa da tela. */
 async function semRolagemLateral(page: Page) {
-  expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
+  await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== "running"), undefined, { timeout: 10_000 }).catch(() => {});
+  const r = await page.evaluate(() => {
+    const sobra = document.documentElement.scrollWidth - window.innerWidth;
+    const largo = [...document.querySelectorAll<HTMLElement>("body *")]
+      .filter((el) => el.getBoundingClientRect().right > window.innerWidth + 1 && el.offsetParent !== null)
+      .map((el) => `${el.tagName.toLowerCase()}.${String(el.className).slice(0, 60)}`)
+      .slice(0, 3);
+    return { sobra, largo };
+  });
+  expect(r.sobra, `passa da tela: ${r.largo.join(" | ")}`).toBeLessThanOrEqual(1);
 }
 
 /** Todo campo da etapa fica dentro do cartão (Q9). Mede tudo de uma vez, já sem a animação de entrada da etapa. */
