@@ -39,7 +39,8 @@ export async function preencherPedido(page: Page, opts: PreencherOpts): Promise<
   // Prompt 12: um campo só de cidade com autocomplete; escolher na lista grava cidade + UF.
   const uf = opts.uf ?? "MG";
   const cidade = opts.cidade ?? "Uberlândia";
-  await page.getByPlaceholder("Comece a digitar a cidade").fill(cidade);
+  // Digita o começo (o nome inteiro, se for único, já fica escolhido e a lista nem abre).
+  await page.getByPlaceholder("Comece a digitar a cidade").fill(cidade.slice(0, 5));
   await page.getByRole("listbox", { name: "Cidades" }).getByRole("option", { name: `${cidade} – ${uf}` }).click();
   await page.getByTestId("pedido-data").fill(dataIsoDaqui(7));
   await page.getByTestId("pedido-orcamento").fill(opts.orcamento ?? "3200");
