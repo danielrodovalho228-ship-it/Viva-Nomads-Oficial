@@ -88,3 +88,12 @@ export function primeiroNome(nomeCompleto: string | null | undefined): string {
   const n = (nomeCompleto ?? "").trim().split(/\s+/)[0] ?? "";
   return n || "Inquilino";
 }
+
+/**
+ * Selo da estadia na tela do INQUILINO (/dashboard/locacoes, ordem 8195c772 item 2): primeiro nome
+ * do anfitrião; sem nome conhecido, "Sua estadia" (nunca um nome inventado).
+ */
+export function rotuloSeloEstadia(nomeCompletoAnfitriao: string | null | undefined): string {
+  const n = (nomeCompletoAnfitriao ?? "").trim().split(/\s+/)[0] ?? "";
+  return n || "Sua estadia";
+}
