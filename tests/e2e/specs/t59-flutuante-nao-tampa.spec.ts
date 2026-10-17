@@ -86,13 +86,13 @@ for (const largura of [360, 390]) {
 
 /** Ordem 4f8d17c6: mesmo formato e mesmos tokens do botão primário em todas as páginas e larguras. */
 test("4f8d17c6 — flutuante idêntico em /, /buscar, /precos e /como-funciona a 390, 768 e 1280 px", async ({ page }) => {
-  // 12 páginas (3 larguras × 4 rotas): não cabe nos 45 s padrão; "load" evita esperar o mapa e os pings.
+  // 12 páginas (3 larguras × 4 rotas): não cabe nos 45 s padrão; só o HTML (o "load" de /buscar fica preso no mapa).
   test.setTimeout(180_000);
   const estilos = new Set<string>();
   for (const largura of [390, 768, 1280]) {
     await page.setViewportSize({ width: largura, height: 800 });
     for (const rota of ["/", "/buscar", "/precos", "/como-funciona"]) {
-      await page.goto(rota, { waitUntil: "load" });
+      await page.goto(rota, { waitUntil: "domcontentloaded" });
       const flut = page.getByTestId("fale-com-a-viva");
       await expect(flut, `${rota} a ${largura}px`).toBeVisible();
       await expect(flut).toHaveText("Fale com a Viva");
