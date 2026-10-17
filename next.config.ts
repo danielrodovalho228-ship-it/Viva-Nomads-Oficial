@@ -115,6 +115,16 @@ const nextConfig: NextConfig = {
         source: "/auth/app-callback",
         headers: [{ key: "Referrer-Policy", value: "no-referrer" }],
       },
+      // Páginas e APIs: a Vercel acrescenta "Access-Control-Allow-Origin: *" em saída estática
+      // (/, /precos, /como-funciona...). Fixamos a origem do próprio site em tudo que não é
+      // arquivo de build (_next), para nenhum site de terceiro ler as páginas pelo navegador (#126).
+      {
+        source: "/((?!_next/).*)",
+        headers: [
+          { key: "Access-Control-Allow-Origin", value: "https://vivanomads.com.br" },
+          { key: "Vary", value: "Origin" },
+        ],
+      },
       // Arquivos estáticos para robôs: a Vercel acrescenta "Access-Control-Allow-Origin: *"
       // em saída estática. Fixamos a origem do próprio site (depois da regra global) para que
       // nenhum site de terceiro leia isso pelo navegador (#126).
