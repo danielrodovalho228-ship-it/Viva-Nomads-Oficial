@@ -14,13 +14,17 @@ import { compatibilidadePets, linhaValorPetCandidatura, ROTULO_ESPECIE, type Reg
 export function AvisoPetCandidatura({
   petsAllowed,
   regras,
+  exemplo = false,
 }: {
   petsAllowed: boolean | undefined;
   regras: RegrasPets | null | undefined;
+  /** Anúncio de exemplo (demonstração): não consulta o servidor. */
+  exemplo?: boolean;
 }) {
   const [pets, setPets] = useState<PetSalvo[]>([]);
 
   useEffect(() => {
+    if (exemplo) return;
     let vivo = true;
     meusPets()
       .then((p) => vivo && setPets(p ?? []))
@@ -28,7 +32,7 @@ export function AvisoPetCandidatura({
     return () => {
       vivo = false;
     };
-  }, []);
+  }, [exemplo]);
 
   if (pets.length === 0) return null;
   const { ok, motivos } = compatibilidadePets(petsAllowed, regras ?? null, pets);
