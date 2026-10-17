@@ -1,6 +1,19 @@
 import { test, expect } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 
+/** Id do usuário logado lido do cookie de sessão (pode vir em pedaços .0/.1 e com prefixo "base64-"). */
+async function idDoUsuarioPeloCookie(context: import("@playwright/test").BrowserContext): Promise<string | null> {
+  const partes = (await context.cookies()).filter((c) => /^sb-.*-auth-token(\.\d+)?$/.test(c.name)).sort((a, b) => a.name.localeCompare(b.name));
+  if (!partes.length) return null;
+  let bruto = decodeURIComponent(partes.map((c) => c.value).join(""));
+  if (bruto.startsWith("base64-")) bruto = Buffer.from(bruto.slice(7), "base64url").toString("utf8");
+  try {
+    return JSON.parse(bruto)?.user?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * T102 — Preço justo (ordem 4c74ac38, item 1): no passo de preço do cadastro, "Comparar com o Airbnb" mostra
  * o que o dono recebe lá e na Viva e o botão "Usar preço sugerido" preenche o valor mensal. 390 px.
@@ -10,14 +23,13 @@ import { authFile } from "../fixtures/auth";
 test.describe("T102 — Preço sugerido no cadastro", () => {
   test.use({ storageState: authFile("proprietario"), viewport: { width: 390, height: 844 } });
 
-  test("compara com o Airbnb e usa o preço sugerido", async ({ page }) => {
+  test("compara com o Airbnb e usa o preço sugerido", async ({ page, context }) => {
     await page.goto("/dashboard/imoveis/novo", { waitUntil: "networkidle" });
     // Abre o passo de preço pelo rascunho local (mesma chave que a tela usa: vivanomads-*:<id do usuário>).
-    await page.evaluate(() => {
-      const bruto = Object.entries(localStorage).find(([k]) => /^sb-.*-auth-token$/.test(k))?.[1];
-      const id = bruto ? JSON.parse(bruto)?.user?.id : null;
-      if (id) localStorage.setItem(`vivanomads-novo-draft:${id}`, JSON.stringify({ step: 5, monthlyPrice: "" }));
-    });
+    // A sessão (@supabase/ssr) mora em COOKIE, não em localStorage: o id vem do cookie sb-*-auth-token.
+    const id = await idDoUsuarioPeloCookie(context);
+    expect(id, "id do usuário no cookie de sessão").toBeTruthy();
+    await page.evaluate((uid) => localStorage.setItem(`vivanomads-novo-draft:${uid}`, JSON.stringify({ step: 5, monthlyPrice: "" })), id);
     await page.reload({ waitUntil: "networkidle" });
     // Só o "Continuar" do AVISO de rascunho: o "Continuar" do rodapé do cadastro também casaria com a regex
     // e avançaria de etapa em vez de abrir ?draft=<id> (o waitForURL abaixo esperava até o teste estourar 45 s).
