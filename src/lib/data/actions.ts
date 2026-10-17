@@ -71,6 +71,7 @@ import {
 } from "@/lib/contrato-blocos";
 import { normalizarRegrasPets } from "@/lib/anuncio/pets-regras";
 import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
+import { videoTourPermitido } from "@/lib/video-tour";
 import { validarGarantia, type GarantiaContrato } from "@/lib/guarantees";
 
 type ActionResult = { ok: boolean; demo?: boolean; id?: string; error?: string };
@@ -437,6 +438,10 @@ async function exigirAceiteIa(
 }
 
 export async function createProperty(input: PropertyInput): Promise<ActionResult> {
+  // Tour em vídeo (ordem 6f964617): só YouTube/Vimeo em https, validado no servidor.
+  if (input.videoUrl?.trim() && !videoTourPermitido(input.videoUrl)) {
+    return { ok: false, error: "O vídeo precisa ser um link do YouTube ou do Vimeo." };
+  }
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
 
@@ -512,7 +517,7 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
       accepts_insurance: input.acceptsInsurance ?? false,
       garantias_aceitas: input.garantiasAceitas ?? [],
       prep_fee: input.prepFee ?? 0,
-      video_url: input.videoUrl ?? null,
+      video_url: input.videoUrl?.trim() || null,
     })
     .select("id")
     .single();
@@ -673,6 +678,10 @@ export async function loadPropertyForEdit(id: string): Promise<Property | null> 
  * tabelas de enriquecimento — migração ausente não derruba a edição base.
  */
 export async function updateProperty(id: string, input: PropertyInput): Promise<ActionResult> {
+  // Tour em vídeo (ordem 6f964617): só YouTube/Vimeo em https, validado no servidor.
+  if (input.videoUrl?.trim() && !videoTourPermitido(input.videoUrl)) {
+    return { ok: false, error: "O vídeo precisa ser um link do YouTube ou do Vimeo." };
+  }
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
   const {
@@ -753,7 +762,7 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
       accepts_insurance: input.acceptsInsurance ?? false,
       garantias_aceitas: input.garantiasAceitas ?? [],
       prep_fee: input.prepFee ?? 0,
-      video_url: input.videoUrl ?? null,
+      video_url: input.videoUrl?.trim() || null,
     })
     .eq("id", id)
     .eq("owner_id", user.id);

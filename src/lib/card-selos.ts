@@ -6,6 +6,9 @@ export type SeloCard = "precoJusto" | "pets" | "pronto" | "video" | "exemplo" | 
 
 export const MAX_SELOS_NA_FOTO = 2;
 
+/** Texto do selo de vídeo (ordem 6f964617, tela 7). */
+export const ROTULO_SELO_VIDEO = "Tour em vídeo";
+
 /** Ordem de prioridade: Preço justo, Aceita pets, depois os demais. */
 const ORDEM: SeloCard[] = ["precoJusto", "pets", "pronto", "video", "exemplo", "destaque"];
 
