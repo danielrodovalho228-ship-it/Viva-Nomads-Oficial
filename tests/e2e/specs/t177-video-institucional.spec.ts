@@ -54,6 +54,10 @@ for (const rota of ["/", "/como-funciona"]) {
         return v.play().catch(() => undefined);
       });
       await expect.poll(() => mp4.length, { timeout: 15_000 }).toBeGreaterThan(0);
+      // A legenda carrega de verdade (cues válidas).
+      await expect
+        .poll(() => video.evaluate((v: HTMLVideoElement) => v.textTracks[0]?.cues?.length ?? 0), { timeout: 15_000 })
+        .toBeGreaterThan(0);
     });
   }
 }
