@@ -35,9 +35,14 @@ async function semRolagemLateral(page: Page) {
   const r = await page.evaluate(() => {
     const sobra = document.documentElement.scrollWidth - window.innerWidth;
     const largo = [...document.querySelectorAll<HTMLElement>("body *")]
-      .filter((el) => el.getBoundingClientRect().right > window.innerWidth + 1 && el.offsetParent !== null)
-      .map((el) => `${el.tagName.toLowerCase()}.${String(el.className).slice(0, 60)}`)
-      .slice(0, 3);
+      // Ignora o que está dentro de um contêiner com rolagem/corte próprio (ex.: a fileira de etapas no celular).
+      .filter((el) => {
+        if (el.getBoundingClientRect().right <= window.innerWidth + 1 || el.offsetParent === null) return false;
+        for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) if (getComputedStyle(p).overflowX !== "visible") return false;
+        return true;
+      })
+      .map((el) => `${el.tagName.toLowerCase()}[${el.getAttribute("data-testid") ?? ""}].${String(el.className).slice(0, 60)} → ${Math.round(el.getBoundingClientRect().right)}px`)
+      .slice(0, 5);
     return { sobra, largo };
   });
   expect(r.sobra, `passa da tela: ${r.largo.join(" | ")}`).toBeLessThanOrEqual(1);

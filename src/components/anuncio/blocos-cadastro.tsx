@@ -49,7 +49,7 @@ export function ProximidadesAutomaticas({
         </p>
       )}
       {!carregando && itens && itens.length > 0 && (
-        <ul className="grid gap-2 sm:grid-cols-2">
+        <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           {itens.map((l) => {
             const chave = chaveLugar(l);
             const marcado = !desmarcados.includes(chave);
