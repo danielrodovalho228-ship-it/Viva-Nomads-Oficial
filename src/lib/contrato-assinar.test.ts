@@ -15,6 +15,8 @@ import {
   resumoContrato,
   petsRegrasDoResumo,
   limpezaDoContrato,
+  outrosCustosDoContrato,
+  totalMensalDoResumo,
 } from "./contrato-assinar.ts";
 import { qtdPetsCongelada, type RegrasPets } from "./anuncio/pets-regras.ts";
 
@@ -163,4 +165,23 @@ test("limpezaDoContrato: ao vivo antes da assinatura, congelada depois (as duas 
   // contrato antigo, sem a chave: sem linha
   assert.equal(limpezaDoContrato({ algumaAssinatura: true, viva: pacote, congeladas: { especies: ["cao"] } }), null);
   assert.equal(limpezaDoContrato({ algumaAssinatura: true, viva: pacote, congeladas: null }), null);
+});
+
+test("resumo do contrato soma o pacote de limpeza pago no Total por mês (2.400 + 350 + 200 + 180 = 3.130)", () => {
+  const d = { ...dados, aluguelMensal: 2400, outrosCustosMes: 550, limpezaEstadia: { porMes: 2, inclui: "", valorMes: 180 } };
+  assert.equal(totalMensalDoResumo(d), 3130);
+  const linhas = resumoContrato(d);
+  assert.ok(linhas.some((l) => /^Total por mês: R\$\s?3\.130,00$/.test(l)), linhas.join(" | "));
+  // limpeza incluída (R$ 0) ou sem pacote: sem a linha, o resumo e o hash seguem como eram
+  assert.equal(totalMensalDoResumo({ ...d, limpezaEstadia: { porMes: 2, inclui: "", valorMes: 0 } }), null);
+  assert.ok(!resumoContrato({ ...d, limpezaEstadia: null }).some((l) => l.startsWith("Total por mês")));
+  assert.deepEqual(resumoContrato({ ...dados, limpezaEstadia: null, outrosCustosMes: 550 }), resumoContrato(dados));
+});
+
+test("outrosCustosDoContrato: ao vivo antes da assinatura, congelado depois; lixo vira 0", () => {
+  assert.equal(outrosCustosDoContrato({ algumaAssinatura: false, vivo: 550, congeladas: {} }), 550);
+  assert.equal(outrosCustosDoContrato({ algumaAssinatura: true, vivo: 999, congeladas: { outrosCustosMes: 550 } }), 550);
+  assert.equal(outrosCustosDoContrato({ algumaAssinatura: true, vivo: 999, congeladas: { especies: [] } }), 0);
+  assert.equal(outrosCustosDoContrato({ algumaAssinatura: false, vivo: -5, congeladas: null }), 0);
+  assert.equal(outrosCustosDoContrato({ algumaAssinatura: false, vivo: "x", congeladas: null }), 0);
 });
