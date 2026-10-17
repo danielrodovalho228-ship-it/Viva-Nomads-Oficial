@@ -31,3 +31,11 @@ test("cada foto do mosaico e do carrossel tem tile clicável identificado", () =
   assert.match(src, /testId=\{`galeria-tile-\$\{i \+ 1\}`\}/);
   assert.match(src, /testId=\{`galeria-tile-\$\{i\}`\}/);
 });
+
+test("\"+N mais\" é botão pequeno no canto: não cobre a miniatura da foto 5 (ordem a45eec8b)", () => {
+  const botao = src.match(/data-testid="galeria-mais"[\s\S]{0,260}/)?.[0] ?? "";
+  assert.doesNotMatch(botao, /absolute inset-0/);
+  assert.doesNotMatch(botao, /bg-night/);
+  assert.match(botao, /absolute (left|right)-\d+ (bottom|top)-\d/);
+  assert.match(src, /testId=\{`galeria-tile-\$\{i \+ 1\}`\}[\s\S]{0,40}\/>\s*\{isLast/);
+});

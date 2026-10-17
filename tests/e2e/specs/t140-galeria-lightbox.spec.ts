@@ -21,7 +21,8 @@ for (const largura of [1280, 1920]) {
         const noTopo = await page.evaluate(
           ({ x, y, i }) => {
             const el = document.elementFromPoint(x, y);
-            return !!el?.closest(`[data-testid="galeria-tile-${i}"], [data-testid="galeria-mais"]`);
+            // ordem a45eec8b: o "+N mais" é botão de canto; o centro de cada miniatura (inclusive a 5ª) é a própria foto
+            return !!el?.closest(`[data-testid="galeria-tile-${i}"]`);
           },
           { x: c.x + c.width / 2, y: c.y + c.height / 2, i },
         );
@@ -34,6 +35,7 @@ for (const largura of [1280, 1920]) {
       ["galeria-tile-1", 2],
       ["galeria-tile-2", 3],
       ["galeria-tile-3", 4],
+      ["galeria-tile-4", 5],
       ["galeria-mais", 6],
       ["galeria-ver-todas", 1],
     ];
