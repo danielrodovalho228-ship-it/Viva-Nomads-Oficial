@@ -640,7 +640,9 @@
         "proprietario",
         "admin"
       ],
-      "specs": []
+      "specs": [
+        "t191-propostas"
+      ]
     },
     "/dashboard/orcamentos/nova": {
       "personas": [
@@ -648,7 +650,9 @@
         "proprietario",
         "admin"
       ],
-      "specs": []
+      "specs": [
+        "t191-propostas"
+      ]
     },
     "/dashboard/pedidos": {
       "personas": [
@@ -676,7 +680,9 @@
         "proprietario",
         "admin"
       ],
-      "specs": []
+      "specs": [
+        "t191-propostas"
+      ]
     },
     "/dashboard/reembolsos": {
       "personas": [
@@ -2530,42 +2536,54 @@
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t191-propostas"
+      ]
     },
     "src/lib/data/propostas-actions.ts#enviarProposta": {
       "personas": [
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t191-propostas"
+      ]
     },
     "src/lib/data/propostas-actions.ts#interessadosParaProposta": {
       "personas": [
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t191-propostas"
+      ]
     },
     "src/lib/data/propostas-actions.ts#lerProposta": {
       "personas": [
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t191-propostas"
+      ]
     },
     "src/lib/data/propostas-actions.ts#listarPropostas": {
       "personas": [
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t191-propostas"
+      ]
     },
     "src/lib/data/propostas-actions.ts#responderProposta": {
       "personas": [
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t191-propostas"
+      ]
     },
     "src/lib/data/push-actions.ts#enviarPushDeTeste": {
       "personas": [

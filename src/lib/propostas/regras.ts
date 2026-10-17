@@ -20,10 +20,10 @@ export const STATUS_PROPOSTA: Record<StatusProposta, { rotulo: string; tom: "neu
   enviada: { rotulo: "Enviada", tom: "info" },
   vista: { rotulo: "Vista", tom: "info" },
   contraproposta: { rotulo: "Contraproposta", tom: "alerta" },
-  aceita: { rotulo: "Aceita", tom: "ok" },
+  aceita: { rotulo: "Aceita → Em fechamento", tom: "ok" },
   recusada: { rotulo: "Recusada", tom: "erro" },
   expirada: { rotulo: "Expirada", tom: "neutro" },
-  em_contrato: { rotulo: "Aceita → Em fechamento", tom: "ok" },
+  em_contrato: { rotulo: "Em contrato", tom: "ok" },
   contrato_assinado: { rotulo: "Contrato assinado", tom: "ok" },
 };
 
