@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Info } from "lucide-react";
+import { Info, ChevronDown } from "lucide-react";
 import { PLANOS, type PlanoId } from "@/config/planos";
 
 /**
@@ -136,5 +136,81 @@ export function SimDisclaimer() {
       combinado e do mercado. A Viva Nomads calcula e documenta; o valor mensal vai direto ao
       proprietário — a plataforma nunca retém valores.
     </p>
+  );
+}
+
+/** Como o condomínio/IPTU ou as contas chegam ao morador (prompt 15). Padrão da Viva: cobrado à parte. */
+export function CobrancaToggle({
+  rotulo,
+  value,
+  onChange,
+  testid,
+}: {
+  rotulo: string;
+  value: "aparte" | "incluido";
+  onChange: (v: "aparte" | "incluido") => void;
+  testid: string;
+}) {
+  return (
+    <div role="radiogroup" aria-label={rotulo} className="mt-1.5 grid grid-cols-2 gap-2" data-testid={testid}>
+      {(["aparte", "incluido"] as const).map((v) => (
+        <button
+          key={v}
+          type="button"
+          role="radio"
+          aria-checked={value === v}
+          onClick={() => onChange(v)}
+          className={`rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
+            value === v ? "border-forest bg-forest text-white" : "border-sage-200 text-ink hover:border-sage"
+          }`}
+        >
+          {v === "aparte" ? "Cobrado à parte" : "Incluído no valor mensal"}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** "Como calculamos" (prompt 15): as fórmulas em texto simples, abertas sob demanda. */
+export function ComoCalculamos({ itens, testid }: { itens: string[]; testid: string }) {
+  return (
+    <details className="group mt-6 rounded-2xl border border-sage-200 bg-white p-5" data-testid={testid}>
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-title text-base font-bold text-ink">
+        Como calculamos
+        <ChevronDown className="h-4 w-4 shrink-0 text-muted transition-transform group-open:rotate-180" aria-hidden />
+      </summary>
+      <ul className="mt-3 list-disc space-y-1.5 pl-5 text-sm text-muted">
+        {itens.map((t) => (
+          <li key={t}>{t}</li>
+        ))}
+      </ul>
+    </details>
+  );
+}
+
+/** Barra horizontal de um gráfico simples (valor com sinal; negativos aparecem esmaecidos). */
+export function BarraValor({
+  label,
+  valor,
+  max,
+  tone = "forest",
+  formatar,
+}: {
+  label: string;
+  valor: number;
+  max: number;
+  tone?: "forest" | "sage" | "champagne";
+  formatar: (v: number) => string;
+}) {
+  const pct = Math.min(100, (Math.abs(valor) / Math.max(1, max)) * 100);
+  const cor = tone === "forest" ? "bg-forest" : tone === "sage" ? "bg-sage" : "bg-champagne";
+  return (
+    <div className="flex items-center gap-2">
+      <span className="w-24 shrink-0 text-xs text-muted sm:w-28">{label}</span>
+      <div className="h-4 min-w-0 flex-1 overflow-hidden rounded-full bg-surface-2">
+        <div className={`h-full rounded-full ${cor} ${valor < 0 ? "opacity-40" : ""}`} style={{ width: `${pct}%` }} />
+      </div>
+      <span className="w-24 shrink-0 text-right text-xs font-medium text-ink">{formatar(valor)}</span>
+    </div>
   );
 }

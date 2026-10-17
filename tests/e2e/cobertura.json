@@ -688,7 +688,8 @@
         "proprietario"
       ],
       "specs": [
-        "t68-comissao-valor-total"
+        "t68-comissao-valor-total",
+        "t189-simulador-roi"
       ]
     },
     "/dashboard/simulador": {
@@ -700,7 +701,8 @@
       "specs": [
         "t12-planos",
         "t37-simuladores-e-numeros",
-        "t68-comissao-valor-total"
+        "t68-comissao-valor-total",
+        "t189-simulador-roi"
       ]
     },
     "/dashboard/solicitacoes": {
