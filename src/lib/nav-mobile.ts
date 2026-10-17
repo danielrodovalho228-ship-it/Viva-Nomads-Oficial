@@ -94,6 +94,7 @@ const TITULOS_APP: [RegExp, string][] = [
   [/^\/(dashboard\/)?favoritos/, "Favoritos"],
   [/^\/dashboard\/comparar/, "Comparar"],
   [/^\/dashboard\/candidaturas/, "Candidaturas"],
+  [/^\/dashboard\/visitas/, "Visitas por vídeo"],
   [/^\/dashboard\/pedidos-cidade/, "Pedidos na cidade"],
   [/^\/dashboard\/pedidos/, "Meus pedidos"],
   [/^\/dashboard\/conta\/perfil/, "Perfil"],
