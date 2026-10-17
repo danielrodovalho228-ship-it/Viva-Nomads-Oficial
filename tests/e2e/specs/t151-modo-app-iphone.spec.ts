@@ -18,7 +18,8 @@ test.describe("T151 — Modo app no iPhone (proprietário)", () => {
   });
   test.use({
     storageState: hasAccount("proprietario") ? authFile("proprietario") : { cookies: [], origins: [] },
-    ...devices["iPhone 14"],
+    // O aparelho (WebKit, iPhone) vem do projeto `webkit-iphone`: espalhar `devices[...]` aqui derruba a suíte inteira
+    // ("Cannot use({ defaultBrowserType }) in a describe group").
     userAgent: UA_APP,
   });
 
