@@ -9,7 +9,8 @@
         "t66-home-busca-principal",
         "t69-botoes-header",
         "t90-orcamento-velocidade",
-        "t96-antigolpe-atalhos"
+        "t96-antigolpe-atalhos",
+        "t177-video-institucional"
       ]
     },
     "/acesso-socios": {
@@ -320,7 +321,8 @@
         "t14-app-mode",
         "t18-seo-a11y",
         "t69-botoes-header",
-        "t72-paginas-institucionais"
+        "t72-paginas-institucionais",
+        "t177-video-institucional"
       ]
     },
     "/comparar": {

@@ -42,3 +42,9 @@ test("t150 espera a lista da busca assentar antes de medir o último cartão (la
   assert.match(t150, /expect\s*\n?\s*\.poll\(/);
   assert.doesNotMatch(t150, /expect\(ultimo\)/);
 });
+
+test("t61 não usa getByRole('alert') puro: o anunciador de rota do Next também é role=alert (strict mode)", () => {
+  const s = spec("t61-2fa-codigos-recuperacao.spec.ts");
+  assert.doesNotMatch(s, /getByRole\("alert"\)/);
+  assert.match(s, /locator\('p\[role="alert"\]'\)/);
+});
