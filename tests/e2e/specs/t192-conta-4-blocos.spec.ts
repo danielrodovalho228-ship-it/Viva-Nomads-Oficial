@@ -57,24 +57,36 @@ for (const [persona, rotulo] of [["proprietario", "dono"], ["inquilino", "inquil
 }
 
 test.describe("T192 — simulador tributário só em Ferramentas", () => {
-  test.use({ storageState: { cookies: [], origins: [] } });
+  test.skip(!hasAccount("proprietario"), "conta proprietario do laboratório não configurada");
+  test.use({ storageState: authFile("proprietario") });
 
   for (const largura of [390, 1280]) {
-    test(`${largura}px — /tributario com outros rendimentos e custo da empresa; cadastro sem simulador`, async ({ page }) => {
+    test(`${largura}px — Ferramentas › Tributação PF × PJ com outros rendimentos e custo da empresa; cadastro sem simulador`, async ({ page, browser }) => {
       await page.setViewportSize({ width: largura, height: 900 });
-      await page.goto("/tributario", { waitUntil: "networkidle" });
-      await expect(page.getByText("Simulador tributário PF × PJ")).toBeVisible();
-      await expect(page.getByTestId("tax-outros-rendimentos")).toBeVisible();
-      const corpo = await page.locator("body").innerText();
+      await page.goto("/dashboard/ferramentas", { waitUntil: "networkidle" });
+      const cartao = page.locator('a[href="/dashboard/tributacao"]');
+      await expect(cartao.first()).toBeVisible();
+      await expect(page.locator('a[href="/tributario"]')).toHaveCount(0);
+      await cartao.first().click();
+      await expect(page).toHaveURL(/\/dashboard\/tributacao$/);
+      const ferramenta = page.getByTestId("ferramenta-tributacao");
+      await expect(ferramenta.getByText("Simulador tributário PF × PJ")).toBeVisible();
+      await expect(ferramenta.getByTestId("tax-outros-rendimentos")).toBeVisible();
+      const corpo = await ferramenta.innerText();
       expect(corpo).not.toMatch(/Lucro presumido \+ IBS\/CBS|ago\/2026/);
-      await expect(page.getByTestId("tax-resultado")).toContainText("custo de manter a empresa");
+      await expect(ferramenta.getByTestId("tax-resultado")).toContainText("custo de manter a empresa");
       // Aviso de IBS/CBS segue desligado até a revisão.
-      await expect(page.getByTestId("tax-aviso-ibs-cbs")).toHaveCount(0);
+      await expect(ferramenta.getByTestId("tax-aviso-ibs-cbs")).toHaveCount(0);
       await semRolagemLateral(page);
-      await page.screenshot({ path: `${SAIDA}/t192-tributario-${largura}.png`, fullPage: true });
+      await page.screenshot({ path: `${SAIDA}/t192-tributacao-${largura}.png`, fullPage: true });
 
-      await page.goto("/auth?cadastro=1&papel=owner", { waitUntil: "networkidle" });
-      expect(await page.locator("body").innerText()).not.toContain("Simulador tributário PF × PJ");
+      // Cadastro (visitante): sem simulador e sem link para a página interna; só a dica de onde ele fica.
+      const ctx = await browser.newContext({ viewport: { width: largura, height: 900 }, storageState: { cookies: [], origins: [] } });
+      const visitante = await ctx.newPage();
+      await visitante.goto("/auth?cadastro=1&papel=owner", { waitUntil: "networkidle" });
+      expect(await visitante.locator("body").innerText()).not.toContain("Simulador tributário PF × PJ");
+      await expect(visitante.locator('a[href="/tributario"]')).toHaveCount(0);
+      await ctx.close();
     });
   }
 });

@@ -16,7 +16,7 @@ import { BlocoConta, ConfiancaLista, PerfilProfissional, VerComoOutrosVeem } fro
  * 2. Dados da conta (nome, e-mail, celular com SMS, documento, pets);
  * 3. Confiança e segurança (uma lista: e-mail, celular, identidade, LinkedIn, duas etapas e senha);
  * 4. Preferências (notificações, ajuda, excluir conta).
- * O simulador tributário fica só em Ferramentas (/tributario). No APP: o menu de subtelas.
+ * O simulador tributário fica só em Ferramentas (/dashboard/tributacao). No APP: o menu de subtelas.
  */
 export default function AccountPage() {
   return (

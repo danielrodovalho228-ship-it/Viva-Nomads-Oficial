@@ -190,15 +190,6 @@
         "t125-alerta-busca-salva"
       ]
     },
-    "/proprietario/[id]": {
-      "personas": [
-        "publico"
-      ],
-      "specs": [
-        "t173-perfis-dono-inquilino",
-        "t176-exemplo-proprietario-avaliacoes"
-      ]
-    },
     "/app/boas-vindas": {
       "personas": [
         "publico"
@@ -715,6 +706,16 @@
         "t55-manutencao-ciclo"
       ]
     },
+    "/dashboard/tributacao": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": [
+        "t192-conta-4-blocos"
+      ]
+    },
     "/dashboard/verificacao": {
       "personas": [
         "inquilino",
@@ -934,6 +935,15 @@
       ],
       "specs": [
         "t18-seo-a11y"
+      ]
+    },
+    "/proprietario/[id]": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t173-perfis-dono-inquilino",
+        "t176-exemplo-proprietario-avaliacoes"
       ]
     },
     "/qualificar": {

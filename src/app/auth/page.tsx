@@ -665,10 +665,10 @@ export default function AuthPage() {
                       text="CNPJ"
                     />
                   </div>
-                  {/* Prompt 18: o simulador PF × PJ fica só em Ferramentas (/tributario). */}
-                  <a href="/tributario" target="_blank" rel="noopener" className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-forest hover:text-blue-700">
-                    <Calculator className="h-4 w-4" /> Não sei qual escolher? Veja o simulador
-                  </a>
+                  {/* Prompt 18: o simulador PF × PJ fica só em Ferramentas (painel), não no cadastro. */}
+                  <p className="mt-2 inline-flex items-center gap-1.5 text-sm text-muted" data-testid="dica-simulador-tributario">
+                    <Calculator className="h-4 w-4 shrink-0" aria-hidden /> Não sabe qual escolher? Depois de entrar, compare em Ferramentas › Tributação PF × PJ.
+                  </p>
                 </div>
               )}
 

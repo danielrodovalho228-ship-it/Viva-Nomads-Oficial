@@ -21,10 +21,13 @@ test("Conta: sem repetições — senha, verificação e 'Perfil do modo' saíra
   assert.equal(CONTA.match(/<AvatarUploader \/>/g)?.length, 1);
 });
 
-test("simulador tributário: fora da Conta e do cadastro; fica em /tributario", () => {
+test("simulador tributário: fora da Conta e do cadastro; fica em Ferramentas (/dashboard/tributacao)", () => {
   assert.doesNotMatch(ler("src/components/account/conta-secoes.tsx"), /TaxSimulator/);
   assert.doesNotMatch(ler("src/app/auth/page.tsx"), /TaxSimulator/);
-  assert.match(ler("src/app/tributario/page.tsx"), /<TaxSimulator \/>/);
+  assert.match(ler("src/app/(dashboard)/dashboard/tributacao/page.tsx"), /<TaxSimulator \/>/);
+  // O cadastro e Ferramentas não mandam o público para a página interna (/tributario fica atrás do acesso de sócios).
+  assert.doesNotMatch(ler("src/app/auth/page.tsx"), /href="\/tributario"/);
+  assert.match(ler("src/app/(dashboard)/dashboard/ferramentas/page.tsx"), /href: "\/dashboard\/tributacao"/);
   assert.doesNotMatch(ler("src/app/(dashboard)/dashboard/ferramentas/page.tsx"), /conta#tributacao/);
 });
 
