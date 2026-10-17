@@ -23,6 +23,15 @@ const ROTAS = [
 
 test.use({ storageState: authFile("proprietario") });
 
+/** 10 rotas em série não cabem nos 45 s de um teste comum (lab 17/10: "Test timeout of 45000ms"). */
+const ORCAMENTO_ROTAS_MS = 15_000 * ROTAS.length;
+
+/** Vai à rota e espera o <main> aparecer; "networkidle" nunca aquieta com a conexão em tempo real aberta. */
+async function irPara(page: Page, rota: string): Promise<void> {
+  await page.goto(rota, { waitUntil: "domcontentloaded" });
+  await page.locator("main").first().waitFor();
+}
+
 /** Largura do maior bloco direto dentro do <main> (o conteúdo da página). */
 async function larguraConteudo(page: Page): Promise<number> {
   return page.evaluate(() => {
@@ -34,12 +43,13 @@ async function larguraConteudo(page: Page): Promise<number> {
 
 for (const largura of [1280, 1920]) {
   test(`T64 — conteúdo em largura cheia a ${largura}px (±24 px da Visão geral)`, async ({ page }) => {
+    test.setTimeout(ORCAMENTO_ROTAS_MS);
     await page.setViewportSize({ width: largura, height: 900 });
-    await page.goto("/dashboard", { waitUntil: "networkidle" });
+    await irPara(page, "/dashboard");
     const referencia = await larguraConteudo(page);
     expect(referencia).toBeGreaterThan(largura * 0.6);
     for (const rota of ROTAS.slice(1)) {
-      await page.goto(rota, { waitUntil: "networkidle" });
+      await irPara(page, rota);
       const w = await larguraConteudo(page);
       expect(Math.abs(w - referencia), `${rota}: ${w}px contra ${referencia}px da Visão geral`).toBeLessThanOrEqual(24);
     }
@@ -48,9 +58,10 @@ for (const largura of [1280, 1920]) {
 
 for (const largura of [360, 390]) {
   test(`T64 — sem rolagem lateral a ${largura}px nas ${ROTAS.length} rotas`, async ({ page }) => {
+    test.setTimeout(ORCAMENTO_ROTAS_MS);
     await page.setViewportSize({ width: largura, height: 800 });
     for (const rota of ROTAS) {
-      await page.goto(rota, { waitUntil: "networkidle" });
+      await irPara(page, rota);
       const sobra = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
       expect(sobra, `${rota} rola ${sobra}px para o lado`).toBeLessThanOrEqual(1);
     }
