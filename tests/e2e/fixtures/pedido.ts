@@ -3,7 +3,7 @@ import type { Page } from "@playwright/test";
 /**
  * Helpers do Pedido de Moradia (T5 e T11) — criação e LIMPEZA idempotente.
  *
- * A cidade agora vem da lista do IBGE (UF primeiro, depois a cidade; o servidor
+ * A cidade vem da lista do IBGE (autocomplete "Cidade – UF"; o servidor
  * confere), então o marcador único do teste vai na APRESENTAÇÃO — texto que
  * aparece no card de "Meus pedidos" e no mural do dono. Só letras: um marcador
  * com muitos dígitos poderia ser lido como telefone pela trava de contato.
@@ -36,14 +36,15 @@ interface PreencherOpts {
 /** Preenche o formulário /pedidos/novo (sem publicar). */
 export async function preencherPedido(page: Page, opts: PreencherOpts): Promise<void> {
   await page.goto("/pedidos/novo", { waitUntil: "networkidle" });
-  await page.locator("select").filter({ has: page.locator('option[value="MG"]') }).first().selectOption(opts.uf ?? "MG");
-  await page.getByPlaceholder("Comece a digitar a cidade").fill(opts.cidade ?? "Uberlândia");
+  // Prompt 12: um campo só de cidade com autocomplete; escolher na lista grava cidade + UF.
+  const uf = opts.uf ?? "MG";
+  const cidade = opts.cidade ?? "Uberlândia";
+  await page.getByPlaceholder("Comece a digitar a cidade").fill(cidade);
+  await page.getByRole("listbox", { name: "Cidades" }).getByRole("option", { name: `${cidade} – ${uf}` }).click();
   await page.getByPlaceholder("dd/mm/aaaa").fill(dataBRDaqui(7));
-  await page.getByPlaceholder("3500").fill(opts.orcamento ?? "3200");
-  // Motivo é um seletor customizado (botão → listbox).
-  // (Só as opções da lista do motivo: o campo UF também tem <option>.)
-  await page.getByText(/Selecione o motivo da estadia/i).click();
-  await page.getByRole("listbox").getByRole("option").first().click();
+  await page.getByTestId("pedido-orcamento").fill(opts.orcamento ?? "3200");
+  // Motivo: select nativo ("Selecione" + a lista); pega a primeira opção da lista.
+  await page.getByTestId("pedido-motivo").selectOption({ index: 1 });
   await page.getByPlaceholder(/Conte um pouco do seu perfil/i).fill(opts.apresentacao);
 }
 
@@ -54,7 +55,7 @@ export async function publicarPreenchido(page: Page): Promise<void> {
     await page.getByRole("heading", { name: "Pedido publicado" }).waitFor({ timeout: 20_000 });
   } catch (e) {
     // Mostra o erro que a tela exibiu (limite de pedidos, validação…).
-    const aviso = await page.locator("form p.text-red-700").first().innerText().catch(() => "");
+    const aviso = await page.getByTestId("pedido-erro").first().innerText().catch(() => "");
     throw new Error(`Pedido não publicado${aviso ? `: ${aviso}` : ""} (${String(e).slice(0, 120)})`);
   }
   await page.getByRole("button", { name: "Ver meus pedidos" }).click();
