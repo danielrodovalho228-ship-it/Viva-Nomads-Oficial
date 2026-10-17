@@ -317,6 +317,7 @@
       ],
       "specs": [
         "t100-comparar-imoveis",
+        "t156-comparar-exemplos",
         "t48-varredura"
       ]
     },
