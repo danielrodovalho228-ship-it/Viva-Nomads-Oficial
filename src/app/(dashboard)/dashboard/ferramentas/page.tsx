@@ -70,7 +70,7 @@ const GRUPOS: Grupo[] = [
         icone: Calculator,
       },
       {
-        href: "/dashboard/conta#tributacao",
+        href: "/tributario",
         titulo: "Tributação PF × PJ",
         texto: "Estime o imposto das locações como pessoa física e como empresa.",
         icone: Scale,

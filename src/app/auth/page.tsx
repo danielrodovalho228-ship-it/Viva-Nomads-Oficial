@@ -19,7 +19,6 @@ import {
 import { Logo } from "@/components/ui/logo";
 import { Button } from "@/components/ui/button";
 import { BrandImage } from "@/components/brand-image";
-import { TaxSimulator } from "@/components/tax-simulator";
 import { useAuthStore } from "@/lib/store";
 import { resetPropertiesCache } from "@/lib/use-properties";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
@@ -53,7 +52,6 @@ export default function AuthPage() {
   // OU inquilino no cadastro (evita criar proprietário sem querer).
   const [role, setRole] = useState<UserRole | null>(null);
   const [personType, setPersonType] = useState<PersonType>("pf");
-  const [showSimulator, setShowSimulator] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -667,19 +665,10 @@ export default function AuthPage() {
                       text="CNPJ"
                     />
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowSimulator((v) => !v)}
-                    className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-forest hover:text-blue-700"
-                  >
-                    <Calculator className="h-4 w-4" />
-                    {showSimulator ? "Fechar simulador" : "Não sei qual escolher? Simule aqui"}
-                  </button>
-                  {showSimulator && (
-                    <div className="mt-3">
-                      <TaxSimulator />
-                    </div>
-                  )}
+                  {/* Prompt 18: o simulador PF × PJ fica só em Ferramentas (/tributario). */}
+                  <a href="/tributario" target="_blank" rel="noopener" className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-forest hover:text-blue-700">
+                    <Calculator className="h-4 w-4" /> Não sei qual escolher? Veja o simulador
+                  </a>
                 </div>
               )}
 
