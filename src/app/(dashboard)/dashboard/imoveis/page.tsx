@@ -10,9 +10,9 @@ import { MyPropertiesClient } from "./imoveis-client";
  * client (imoveis-client), que suporta o modo demonstração do admin.
  */
 export default async function MyPropertiesPage() {
-  const properties = await listMyProperties();
+  // A lista e o usuário não dependem um do outro: busca os dois juntos (ordem 0f66a754, item 4).
+  const [properties, supabase] = await Promise.all([listMyProperties(), createClient()]);
   const prontidao: Record<string, Prontidao> = {};
-  const supabase = await createClient();
   if (supabase && properties.length) {
     const {
       data: { user },
