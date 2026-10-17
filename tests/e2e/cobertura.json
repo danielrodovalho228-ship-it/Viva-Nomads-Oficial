@@ -189,15 +189,6 @@
         "t125-alerta-busca-salva"
       ]
     },
-    "/proprietario/[id]": {
-      "personas": [
-        "publico"
-      ],
-      "specs": [
-        "t173-perfis-dono-inquilino",
-        "t176-exemplo-proprietario-avaliacoes"
-      ]
-    },
     "/app/boas-vindas": {
       "personas": [
         "publico"
@@ -651,6 +642,14 @@
       ],
       "specs": []
     },
+    "/dashboard/orcamentos/nova": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": []
+    },
     "/dashboard/pedidos": {
       "personas": [
         "inquilino",
@@ -670,6 +669,14 @@
       "specs": [
         "t11-travessias"
       ]
+    },
+    "/dashboard/propostas/[id]": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": []
     },
     "/dashboard/reembolsos": {
       "personas": [
@@ -927,6 +934,15 @@
       ],
       "specs": [
         "t18-seo-a11y"
+      ]
+    },
+    "/proprietario/[id]": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t173-perfis-dono-inquilino",
+        "t176-exemplo-proprietario-avaliacoes"
       ]
     },
     "/qualificar": {
@@ -2506,6 +2522,48 @@
       "personas": [
         "proprietario",
         "inquilino"
+      ],
+      "specs": []
+    },
+    "src/lib/data/propostas-actions.ts#dadosNovaProposta": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/propostas-actions.ts#enviarProposta": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/propostas-actions.ts#interessadosParaProposta": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/propostas-actions.ts#lerProposta": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/propostas-actions.ts#listarPropostas": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/propostas-actions.ts#responderProposta": {
+      "personas": [
+        "inquilino",
+        "proprietario"
       ],
       "specs": []
     },

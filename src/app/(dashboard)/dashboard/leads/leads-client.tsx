@@ -265,11 +265,17 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
                   </p>
                 )}
 
-                {open && (
-                  <div className="mt-4 flex justify-end">
-                    <ButtonLink href="/dashboard/fechamento" variant="accent" size="sm">
-                      Iniciar fechamento
+                {(st === "open" || open) && (
+                  <div className="mt-4 flex flex-wrap justify-end gap-2">
+                    {/* Prompt 17: a proposta nasce do interessado real (sem nome ou contato digitado à mão). */}
+                    <ButtonLink href={`/dashboard/orcamentos/nova?interessado=${l.id}`} variant="secondary" size="sm" data-testid="enviar-proposta-lead">
+                      Enviar proposta
                     </ButtonLink>
+                    {open && (
+                      <ButtonLink href={`/dashboard/fechamento?c=${l.id}`} variant="accent" size="sm">
+                        Iniciar fechamento
+                      </ButtonLink>
+                    )}
                   </div>
                 )}
               </Panel>
