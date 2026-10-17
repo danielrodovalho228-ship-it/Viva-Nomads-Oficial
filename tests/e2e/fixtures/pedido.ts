@@ -19,10 +19,10 @@ export function marcadorPedido(): string {
 /** Marcador que identifica QUALQUER pedido de teste (varredura no teardown). */
 export const MARCADOR_RE = /\bteste[a-z]{8}\b/;
 
-/** Data no formato do campo (dd/mm/aaaa), `dias` a partir de hoje. */
-export function dataBRDaqui(dias: number): string {
+/** Data no formato do campo nativo (aaaa-mm-dd), `dias` a partir de hoje. */
+export function dataIsoDaqui(dias: number): string {
   const d = new Date(Date.now() + dias * 86400000);
-  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 interface PreencherOpts {
@@ -41,7 +41,7 @@ export async function preencherPedido(page: Page, opts: PreencherOpts): Promise<
   const cidade = opts.cidade ?? "Uberlândia";
   await page.getByPlaceholder("Comece a digitar a cidade").fill(cidade);
   await page.getByRole("listbox", { name: "Cidades" }).getByRole("option", { name: `${cidade} – ${uf}` }).click();
-  await page.getByPlaceholder("dd/mm/aaaa").fill(dataBRDaqui(7));
+  await page.getByTestId("pedido-data").fill(dataIsoDaqui(7));
   await page.getByTestId("pedido-orcamento").fill(opts.orcamento ?? "3200");
   // Motivo: select nativo ("Selecione" + a lista); pega a primeira opção da lista.
   await page.getByTestId("pedido-motivo").selectOption({ index: 1 });

@@ -61,6 +61,19 @@ test("1280px — imagem à esquerda, formulário no topo à direita, sem cartão
   await page.screenshot({ path: `${SAIDA}/t188-pedido-novo-1280.png`, fullPage: false });
 });
 
+test("1920px — print da tela larga: imagem 45% e formulário no topo, sem vão", async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto("/pedidos/novo", { waitUntil: "networkidle" });
+  const header = (await page.locator("header:visible").first().boundingBox())!;
+  const t = (await page.getByRole("heading", { name: "Publique seu pedido" }).boundingBox())!;
+  expect(t.y - (header.y + header.height)).toBeLessThanOrEqual(120);
+  const lateral = (await page.getByTestId("pedido-lateral").boundingBox())!;
+  expect(lateral.width / 1920).toBeGreaterThan(0.42);
+  expect(lateral.width / 1920).toBeLessThan(0.48);
+  await semRolagemLateral(page);
+  await page.screenshot({ path: `${SAIDA}/t188-pedido-novo-1920.png`, fullPage: false });
+});
+
 test("390px — faixa de 200 px, autocomplete de cidade, pessoas, R$, contador e login por código", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/pedidos/novo", { waitUntil: "networkidle" });
@@ -107,14 +120,16 @@ test("390px — faixa de 200 px, autocomplete de cidade, pessoas, R$, contador e
   await page.getByPlaceholder(/Conte um pouco do seu perfil/i).fill("Analista em projeto de seis meses.");
   await expect(page.getByTestId("pedido-apresentacao-contador")).toHaveText("34/500");
 
-  await page.getByPlaceholder("dd/mm/aaaa").fill("01/03/2027");
+  await expect(page.getByTestId("campo-data-exemplo")).toHaveText("dd/mm/aaaa");
+  await page.getByTestId("pedido-data").fill("2027-03-01");
+  await expect(page.getByTestId("pedido-data")).toHaveValue("2027-03-01");
   const alturas = await alturasDosCampos(page);
   expect(new Set(alturas), `alturas ${alturas.join(",")}`).toEqual(new Set([48]));
 
   // Rodapé: aviso numa linha só sob o botão + texto legal com "Como a Viva funciona".
   const aviso = page.getByTestId("aviso-antigolpe");
   await expect(aviso).toContainText("Ao publicar, você entra com um código enviado por e-mail.");
-  await expect(aviso).toContainText("nunca pede PIX");
+  await expect(aviso).toContainText("A Viva nunca pede PIX ou pagamento fora do contrato — Dicas de segurança.");
   await expect(aviso.getByRole("link", { name: "Dicas de segurança" })).toHaveAttribute("href", "/seguranca");
   const legal = page.getByTestId("pedido-rodape-legal");
   await expect(legal).toContainText("A Viva Nomads conecta e documenta; não é locadora, fiadora nem intermediária de pagamento.");

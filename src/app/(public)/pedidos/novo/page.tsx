@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Megaphone, ShieldCheck, Info, Loader2, Minus, Plus, Check, PawPrint, Baby } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AvisoAntigolpe } from "@/components/seguranca/aviso-antigolpe";
-import { DateFieldBR } from "@/components/ui/date-field-br";
+import { CampoData } from "@/components/ui/campo-data";
 import { MOTIVOS, isMotivo, contemContato, CONTATO_AVISO, calcExpiraEm, PRAZO_MAX_MESES } from "@/lib/pedidos/pedidos";
 import { CHAVE_ULTIMA_BUSCA, CHAVE_ULTIMO_MOTIVO, ultimaBuscaParaPedido, ultimoMotivoParaPedido } from "@/lib/marcas/regra";
 import { MUNICIPIOS } from "@/lib/municipios";
@@ -362,8 +362,17 @@ function PedidoForm() {
           />
           <div className="grid gap-4 sm:grid-cols-2 [&>*]:min-w-0">
             <div>
-              <Rotulo>A partir de</Rotulo>
-              <DateFieldBR required value={dataInicio} onChange={setDataInicio} className={CAMPO} ariaLabel="A partir de" />
+              <Rotulo htmlFor="pedido-data">Data de entrada</Rotulo>
+              {/* Um seletor só, o calendário nativo, com o conserto do iPhone (Q3/Q8). */}
+              <CampoData
+                id="pedido-data"
+                required
+                value={dataInicio}
+                min={hojeBR()}
+                onChange={(e) => setDataInicio(e.target.value)}
+                className={CAMPO}
+                data-testid="pedido-data"
+              />
             </div>
             <div>
               <Rotulo htmlFor="pedido-prazo">Por quanto tempo</Rotulo>
@@ -377,7 +386,7 @@ function PedidoForm() {
             </div>
           </div>
           {dataInicio && (
-            <p className="text-xs text-muted">
+            <p className="text-[13px] text-muted">
               Seu pedido expira em <strong className="text-ink">{calcExpiraEm(dataInicio, hojeBR())}</strong> (o menor
               entre 15 dias após o início e 60 dias após publicar).
             </p>
@@ -448,7 +457,7 @@ function PedidoForm() {
                   data-testid="pedido-orcamento"
                 />
               </div>
-              <span className="mt-1 block text-xs text-muted">Valor mensal total que cabe no seu bolso.</span>
+              <span className="mt-1 block text-[13px] text-muted">Valor mensal total que cabe no seu bolso.</span>
             </div>
             <div>
               <Rotulo htmlFor="pedido-motivo">Motivo da estadia</Rotulo>
@@ -483,7 +492,7 @@ function PedidoForm() {
                 contatoNoTexto ? "border-red-300" : "border-line",
               )}
             />
-            <div className="mt-1 flex items-start justify-between gap-3 text-xs">
+            <div className="mt-1 flex items-start justify-between gap-3 text-[13px]">
               <span className="min-w-0 text-red-600">
                 {contatoNoTexto && (
                   <span className="flex items-start gap-1.5">
@@ -510,7 +519,7 @@ function PedidoForm() {
           </p>
 
           {erro && (
-            <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" data-testid="pedido-erro">
+            <p className="text-[13px] text-red-600" role="alert" data-testid="pedido-erro">
               {erro}{" "}
               {erro.startsWith("Entre") && (
                 <Link href="/auth" className="font-medium underline">

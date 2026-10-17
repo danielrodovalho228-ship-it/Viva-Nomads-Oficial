@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ShieldAlert } from "lucide-react";
-import { AVISO_ANTIGOLPE_TEXTO } from "@/lib/seguranca/antigolpe";
+import { AVISO_ANTIGOLPE_LINHA, AVISO_ANTIGOLPE_TEXTO } from "@/lib/seguranca/antigolpe";
 
 /**
  * Aviso antigolpe curto (ordem 19cfa5b1): mesmo texto no anúncio, no pedido de moradia e em Mensagens.
@@ -19,10 +19,11 @@ export function AvisoAntigolpe({
     return (
       <p data-testid="aviso-antigolpe" className={`text-[13px] leading-relaxed text-muted ${className}`}>
         {antes ? <>{antes} </> : null}
-        {AVISO_ANTIGOLPE_TEXTO}{" "}
+        {AVISO_ANTIGOLPE_LINHA} —{" "}
         <Link href="/seguranca" className="font-semibold text-forest underline underline-offset-2">
           Dicas de segurança
         </Link>
+        .
       </p>
     );
   }
