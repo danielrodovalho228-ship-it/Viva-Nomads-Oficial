@@ -227,6 +227,18 @@ test.describe("T186 — cadastro em 5 etapas com IA, OSM e documento simulados",
         fotos.push({ id: `lab-${i}`, url: `https://lab.vivanomads.test/storage/v1/object/public/property-photos/${caminho}`, name: "", path: caminho, demo: false });
       }
       await adm().from("properties").update({ draft_data: { ...(rasc!.draft_data as object), photos: fotos } }).eq("id", imovelId);
+      // Ao reabrir pelo rascunho, a qualificação vem do SERVIDOR (não do sessionStorage): grava o checklist
+      // "Antes de anunciar" respondido, como a tela /qualificar deixaria, na linha que o envio do documento criou.
+      const { data: qual } = await adm().from("qualification_checklists").select("id, formulario").eq("owner_id", donoId).eq("property_id", imovelId).maybeSingle();
+      expect(qual, "o envio do documento ligou o checklist ao rascunho").toBeTruthy();
+      const formulario = (qual!.formulario ?? {}) as { elig?: Record<string, unknown> };
+      const { error: eQual } = await adm()
+        .from("qualification_checklists")
+        .update({
+          formulario: { versao: 1, ...formulario, elig: { ...(formulario.elig ?? {}), furnished: true, accepts30days: true, iptuOk: true, habitable: true, isOwnerOrAgent: true, condoAllows: "yes" } },
+        })
+        .eq("id", qual!.id);
+      expect(eQual).toBeNull();
 
       await page.goto(`/dashboard/imoveis/novo?draft=${imovelId}&etapa=4`, { waitUntil: "domcontentloaded" });
       await expect(page.getByRole("heading", { name: "Revisar e publicar" })).toBeVisible({ timeout: 20_000 });
