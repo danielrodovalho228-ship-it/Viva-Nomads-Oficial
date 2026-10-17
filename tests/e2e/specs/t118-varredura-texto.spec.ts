@@ -1,6 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, apagarContas, criarConta, criarImovelPronto, entrar, fotosReais, novaSenha, novoSufixo } from "../fixtures/laboratorio";
-import { achadosNasMetas, achadosNoTexto, rotaVarreLeis, rotaVarreTermos, rotaVarreVocabulario, semTabelaComparativa } from "../../../src/lib/varredura-texto";
+import { achadoTamanhoDescription, achadosNasMetas, achadosNoTexto, rotaVarreLeis, rotaVarreTermos, rotaVarreVocabulario, semTabelaComparativa } from "../../../src/lib/varredura-texto";
 
 /**
  * T118 — VARREDURA DE TEXTO (ordem 0569d129, item 6). Percorre as rotas públicas do sitemap e as telas do
@@ -47,7 +47,7 @@ async function textoDaTela(page: Page, rota: string, esperado404 = false): Promi
       ['meta[name="description"]', 'meta[property="og:title"]', 'meta[property="og:description"]', 'meta[name="twitter:title"]', 'meta[name="twitter:description"]']
         .map((q) => document.querySelector(q)?.getAttribute("content") ?? ""),
     );
-    return [...achadosNoTexto(texto, opcoes), ...achadosNasMetas(metas, opcoes)];
+    return [...achadosNoTexto(texto, opcoes), ...achadosNasMetas(metas, opcoes), ...achadoTamanhoDescription(metas[0])];
   } catch (e) {
     return [`não abriu: ${String(e).slice(0, 160)}`];
   }

@@ -116,6 +116,12 @@ export function achadosNasMetas(metas: Array<string | null | undefined>, opcoes:
   return textos.flatMap((t) => achadosNoTexto(t, opcoes).map((a) => `meta: ${a}`));
 }
 
+/** Meta description acima de 155 caracteres é cortada no Google (ordem 49c2dbef). */
+export function achadoTamanhoDescription(description: string | null | undefined, limite = 155): string[] {
+  const n = (description ?? "").trim().length;
+  return n > limite ? [`meta: description com ${n} caracteres (limite ${limite})`] : [];
+}
+
 /**
  * Foto de imóvel semeado pelo laboratório sem upload real (https://lab.vivanomads.test/…): o Next recusa o host
  * (400 em /_next/image). Não é defeito do site, e o t48 não deve acusá-la.

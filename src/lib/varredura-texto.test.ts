@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { DIFERENCIAIS_VIVA, LINHAS_COMPARE } from "../config/compare-precos.ts";
 import { CAUCAO_FRASE } from "./faixas.ts";
-import { achadosNasMetas, achadosNoTexto, recursoFicticioDoLab, rotaVarreLeis, rotaVarreTermos, rotaVarreVocabulario, semTabelaComparativa } from "./varredura-texto.ts";
+import { achadoTamanhoDescription, achadosNasMetas, achadosNoTexto, recursoFicticioDoLab, rotaVarreLeis, rotaVarreTermos, rotaVarreVocabulario, semTabelaComparativa } from "./varredura-texto.ts";
 
 test("tela limpa não tem achados", () => {
   assert.deepEqual(achadosNoTexto("Valor mensal R$ 3.000. Entrada em 12/11/2026. Código 1a2b3c4d. Aguardando aceite. Conferência de saída."), []);
@@ -93,4 +93,11 @@ test("tabela comparativa (compare-precos.ts) é a única exceção: o termo dela
   assert.equal(achadosNoTexto(semTabelaComparativa(`${frase}\nFaça o check-in pelo app`), { vocabulario: true }).length, 1);
   const fora = "Faça o check-in pelo app";
   assert.equal(achadosNoTexto(semTabelaComparativa(fora), { vocabulario: true }).length, 1);
+});
+
+test("achadoTamanhoDescription: acusa description com mais de 155 caracteres (ordem 49c2dbef)", () => {
+  assert.deepEqual(achadoTamanhoDescription("a".repeat(155)), []);
+  assert.deepEqual(achadoTamanhoDescription(""), []);
+  assert.deepEqual(achadoTamanhoDescription(null), []);
+  assert.deepEqual(achadoTamanhoDescription("a".repeat(156)), ["meta: description com 156 caracteres (limite 155)"]);
 });
