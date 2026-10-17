@@ -7,6 +7,7 @@ import { lerDocumento } from "@/lib/data/documento-servidor";
 import { DOCUMENTO_VAZIO_PF, documentoCompleto, mascararCnpj, mascararCpf, msgDocumentoDuplicado, validarDocumento, type DocumentoInput, type TipoPessoa } from "@/lib/documento-pessoa";
 import { contemContato } from "@/lib/pedidos/pedidos";
 import { validarNome, normalizarTelefone, validarLinkedin, validarMotivoEstadia } from "@/lib/conta-validacao";
+import { validarBio, validarCidade, validarIdiomas } from "@/lib/perfil/perfil-publico";
 import {
   isCategoriaKey,
   CATEGORIA_NAO_INFORMAR,
@@ -214,4 +215,61 @@ export async function salvarMeuDocumento(input: Omit<DocumentoInput, "tipo">): P
   }
   revalidatePath("/dashboard/conta");
   return { ok: true, documento: (await getMeuDocumento()) ?? undefined };
+}
+
+/* ─────────── Perfil público (prompt 6): bio, idiomas e cidade + barra "Complete seu perfil" ─────────── */
+
+export interface MeuPerfilPublico {
+  bio: string;
+  idiomas: string[];
+  cidade: string;
+  temFoto: boolean;
+  profissao: string | null;
+  motivo: string | null;
+  /** Já anunciou ao menos um imóvel (a barra não pede profissão/motivo de quem só anuncia). */
+  anuncia: boolean;
+}
+
+export async function getMeuPerfilPublico(): Promise<MeuPerfilPublico | null> {
+  const supabase = await createClient();
+  if (!supabase) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const [{ data }, { count }] = await Promise.all([
+    supabase.from("profiles").select("bio, idiomas, cidade, avatar_url, professional_category, motivo_estadia").eq("id", user.id).maybeSingle(),
+    supabase.from("properties").select("id", { count: "exact", head: true }).eq("owner_id", user.id),
+  ]);
+  return {
+    bio: (data?.bio as string | null) ?? "",
+    idiomas: (data?.idiomas as string[] | null) ?? [],
+    cidade: (data?.cidade as string | null) ?? "",
+    temFoto: !!data?.avatar_url,
+    profissao: (data?.professional_category as string | null) ?? null,
+    motivo: (data?.motivo_estadia as string | null) ?? null,
+    anuncia: (count ?? 0) > 0,
+  };
+}
+
+/** Grava bio, idiomas e cidade do PRÓPRIO perfil. Bio e cidade sem contato (contact-guard). */
+export async function salvarMeuPerfilPublico(input: { bio: string; idiomas: string[]; cidade: string }): Promise<Result> {
+  const bio = validarBio(input.bio);
+  if (!bio.ok) return { ok: false, error: bio.erro };
+  const cidade = validarCidade(input.cidade);
+  if (!cidade.ok) return { ok: false, error: cidade.erro };
+  const idiomas = validarIdiomas(Array.isArray(input.idiomas) ? input.idiomas : []);
+  const supabase = await createClient();
+  if (!supabase) return { ok: true };
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Sessão expirada. Entre de novo." };
+  const { error } = await supabase.from("profiles").update({ bio: bio.valor, idiomas, cidade: cidade.valor }).eq("id", user.id);
+  if (error) {
+    console.error("[salvarMeuPerfilPublico]", error.code, error.message);
+    return { ok: false, error: "Não foi possível salvar agora. Tente de novo." };
+  }
+  revalidatePath("/dashboard/conta");
+  return { ok: true };
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { PetsFicha } from "@/components/account/pets-ficha";
+import { PerfilPublicoForm } from "@/components/account/perfil-publico-form";
 import { use } from "react";
 import { notFound } from "next/navigation";
 import { AvatarUploader } from "@/components/account/avatar-uploader";
@@ -31,6 +32,7 @@ export default function ContaSecaoPage({ params }: { params: Promise<{ secao: st
         <div className="w-full">
           <PageTitle title={TITULOS.perfil.titulo} subtitle={TITULOS.perfil.subtitulo} />
           <DadosPessoais />
+          <PerfilPublicoForm />
           <DocumentoPessoa />
           <PetsFicha />
           <AvatarUploader />

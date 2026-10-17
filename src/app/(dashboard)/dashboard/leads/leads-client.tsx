@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { Lock, Users, X, Check, Send, ArrowDownWideNarrow, MessageSquare } from "lucide-react";
+import { Lock, Users, X, Check, Send, ArrowDownWideNarrow, MessageSquare, UserRound, BadgeCheck, Star, Dot } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { ButtonLink, buttonClasses } from "@/components/ui/button";
 import { OwnerDecisionNotice } from "@/components/legal-notice";
@@ -114,13 +114,23 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
             return (
               <Panel key={l.id}>
                 <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div className="flex min-w-0 items-start gap-3" data-testid="cartao-candidato">
+                    {/* Foto só depois do aceite; antes, um avatar neutro (sem inicial nem nome). */}
+                    {l.fotoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={l.fotoUrl} alt={`Foto de ${l.name}`} className="h-12 w-12 shrink-0 rounded-full object-cover" data-testid="candidato-foto" />
+                    ) : (
+                      <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-sage-100 text-forest" aria-hidden>
+                        <UserRound className="h-6 w-6" />
+                      </span>
+                    )}
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       {/* Semáforo em destaque, primeiro (o que decide) */}
                       <span className={cn("rounded-full px-2.5 py-1 text-xs font-semibold", LIGHT[l.light].tone)}>
                         {LIGHT[l.light].label}
                       </span>
-                      <h3 className="font-title text-lg font-bold text-ink">{l.name}</h3>
+                      <h3 className="font-title text-lg font-bold text-ink" data-testid="candidato-nome">{l.name}</h3>
                       {l.verified && (
                         <span className="rounded-full bg-champagne px-2 py-0.5 text-xs font-semibold text-night">
                           Identidade conferida
@@ -130,6 +140,27 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
                     {/* Resumo do candidato em uma linha */}
                     <p className="mt-1 text-sm font-medium text-ink">{leadSummary(l)}</p>
                     <p className="text-xs text-muted">interesse em {l.property}</p>
+                    {(l.sinais?.length || l.selos?.length || l.reputacao) && (
+                      <ul className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink" data-testid="candidato-sinais">
+                        {l.selos?.map((x) => (
+                          <li key={x} className="inline-flex items-center gap-1 font-medium text-forest">
+                            <BadgeCheck className="h-3.5 w-3.5" aria-hidden /> {x}
+                          </li>
+                        ))}
+                        {l.reputacao && (
+                          <li className="inline-flex items-center gap-1">
+                            <Star className="h-3.5 w-3.5 fill-champagne text-champagne" aria-hidden />
+                            {l.reputacao.media.toLocaleString("pt-BR", { minimumFractionDigits: 1 })} · {l.reputacao.n}{" "}
+                            {l.reputacao.n === 1 ? "avaliação de proprietário" : "avaliações de proprietários"}
+                          </li>
+                        )}
+                        {l.sinais?.map((x) => (
+                          <li key={x} className="inline-flex items-center gap-1 text-muted">
+                            <Dot className="h-3.5 w-3.5" aria-hidden /> {x}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                     <div className="mt-2 flex flex-wrap items-center gap-2">
                       {l.riskCategories.map((c) => (
                         <span key={c} className="rounded-full bg-blue-50 px-2.5 py-1 text-xs text-blue-700">
@@ -137,6 +168,7 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
                         </span>
                       ))}
                     </div>
+                  </div>
                   </div>
 
                   <div className="text-right">

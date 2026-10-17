@@ -7,7 +7,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
  *  1. O dono recebe a mensagem do inquilino e responde pela tela de Mensagens.
  *  2. Telefone e e-mail digitados no chat são MASCARADOS antes de gravar (o banco nunca guarda o número),
  *     e o inquilino recebe a resposta já mascarada. Aparece o aviso "telefones e e-mails são protegidos".
- *  3. Antes do aceite o dono vê só o PRIMEIRO nome do inquilino; depois do aceite, o nome completo —
+ *  3. Interessados (prompt 6): antes do aceite o dono vê "Candidato(a)", sem nome; depois, o nome curto —
  *     e o chat continua mascarado (contato direto não é trocado nem depois do aceite).
  */
 const senha = novaSenha();
@@ -82,17 +82,19 @@ test.describe("T41 — Mensagens inquilino ↔ dono", () => {
     await pagina.context().close();
   });
 
-  test("dono: primeiro nome antes do aceite; nome completo depois — e o chat segue mascarado", async ({ browser }) => {
+  test("dono: 'Candidato(a)' antes do aceite; nome curto depois — e o chat segue mascarado", async ({ browser }) => {
     test.setTimeout(90_000);
     const pagina = await entrar(browser, dono.email, senha);
     await pagina.goto("/dashboard/leads", { waitUntil: "networkidle" });
-    await expect(pagina.locator("body")).toContainText("Iara");
+    await expect(pagina.getByTestId("candidato-nome").first()).toHaveText("Candidato(a)");
+    await expect(pagina.locator("main")).not.toContainText("Iara");
     await expect(pagina.locator("body")).not.toContainText("Inquilinasobrenome");
 
     const { error } = await adm().from("leads").update({ status: "accepted" }).eq("id", ids.lead!);
     expect(error).toBeNull();
     await pagina.reload({ waitUntil: "networkidle" });
-    await expect(pagina.locator("body")).toContainText("Iara Inquilinasobrenome");
+    await expect(pagina.getByTestId("candidato-nome").first()).toHaveText("Iara I.");
+    await expect(pagina.locator("main")).not.toContainText("Inquilinasobrenome");
 
     // Depois do aceite o chat continua protegido: o contato não é trocado pela conversa.
     await pagina.goto("/dashboard/mensagens", { waitUntil: "networkidle" });

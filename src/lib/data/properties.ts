@@ -336,6 +336,27 @@ export async function listProperties(): Promise<Property[]> {
   }
 }
 
+/** Imóveis ATIVOS de um proprietário, para a página pública dele (prompt 6). Anúncio de teste fica de fora. */
+export async function listPropertiesDoProprietario(donoId: string): Promise<Property[]> {
+  const supabase = createPublicClient();
+  if (!supabase || !/^[0-9a-f-]{36}$/i.test(donoId)) return [];
+  try {
+    const { data, error } = await supabase
+      .from("properties")
+      .select(PROPERTY_PUBLIC_COLUMNS)
+      .eq("owner_id", donoId)
+      .eq("status", "active")
+      .order("created_at", { ascending: false });
+    if (error || !data) return [];
+    const mapped = semAnunciosDeTeste((data as unknown as PropertyRow[]).map(rowToProperty).map(comCoordenadaAproximada));
+    await attachCoverPhotos(supabase, mapped);
+    await attachReviewAggregates(supabase, mapped);
+    return mapped;
+  } catch {
+    return [];
+  }
+}
+
 export async function getProperty(id: string): Promise<Property | undefined> {
   const supabase = createPublicClient();
   // Modo demonstração (sem Supabase): dados de exemplo.
