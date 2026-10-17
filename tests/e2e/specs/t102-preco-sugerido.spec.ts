@@ -19,7 +19,9 @@ test.describe("T102 — Preço sugerido no cadastro", () => {
       if (id) localStorage.setItem(`vivanomads-novo-draft:${id}`, JSON.stringify({ step: 5, monthlyPrice: "" }));
     });
     await page.reload({ waitUntil: "networkidle" });
-    const retomar = page.getByRole("button", { name: /Continuar|Retomar/ }).first();
+    // Só o "Continuar" do AVISO de rascunho: o "Continuar" do rodapé do cadastro também casaria com a regex
+    // e avançaria de etapa em vez de abrir ?draft=<id> (o waitForURL abaixo esperava até o teste estourar 45 s).
+    const retomar = page.getByText("Você tem um anúncio em andamento").locator("xpath=ancestor::div[contains(@class,'rounded-2xl')][1]").getByRole("button", { name: "Continuar" });
     if (await retomar.isVisible().catch(() => false)) {
       // Conta com rascunho no servidor: "Continuar" abre ?draft=<id> na etapa gravada lá, não no passo 5.
       // Vai direto ao passo de preço pela URL (?etapa=5), que vale para rascunho do servidor.
