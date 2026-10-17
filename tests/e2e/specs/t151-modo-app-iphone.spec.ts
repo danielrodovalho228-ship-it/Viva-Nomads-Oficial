@@ -71,7 +71,8 @@ async function provarDisponibilidade(page: Page, editar: Locator) {
   const dias = page.locator("button:not([disabled])").filter({ hasText: /^\d{1,2}$/ });
   await dias.nth(2).click();
   await dias.nth(5).click();
-  await page.mouse.wheel(0, 600);
+  // mouse.wheel não existe no WebKit móvel: rola pelo próprio documento.
+  await page.evaluate(() => window.scrollBy(0, 600));
   const longas = await page.evaluate(() => (window as unknown as { __longas: number[] }).__longas);
   expect(Math.max(0, ...longas), `tarefas longas: ${longas.join(", ")} ms`).toBeLessThan(200);
 
