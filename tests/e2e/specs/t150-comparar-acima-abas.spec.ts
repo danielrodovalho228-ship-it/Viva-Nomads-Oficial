@@ -35,9 +35,16 @@ test.describe("T150 — Barra Comparar acima das abas (390 px)", () => {
     await expect(page.getByTestId("comparar-abrir")).toContainText("Comparar (2)");
     await page.getByTestId("comparar-abrir").click({ trial: true });
 
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    const ultimo = await page.getByTestId("marcar-comparar").last().evaluate((el) => el.closest("label")?.parentElement?.getBoundingClientRect().bottom ?? 0);
+    // A lista da busca carrega aos poucos: rola até o fim de novo a cada tentativa, até o último cartão assentar.
     const navTop = (await nav.boundingBox())!.y;
-    expect(ultimo).toBeLessThanOrEqual(navTop);
+    await expect
+      .poll(
+        async () => {
+          await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+          return page.getByTestId("marcar-comparar").last().evaluate((el) => el.closest("label")?.parentElement?.getBoundingClientRect().bottom ?? 0);
+        },
+        { message: "o último cartão fica acima da nav", timeout: 15_000, intervals: [500] },
+      )
+      .toBeLessThanOrEqual(navTop);
   });
 });
