@@ -1008,7 +1008,7 @@ export default function NewPropertyPage() {
       {/* Detecção de rascunho em andamento (P0): abriu em branco mas já existe um
           rascunho salvo — oferece retomar de onde parou em vez de recomeçar. */}
       {!editingId && !draftParam && existingDraft && !draftServerId && !draftBannerDismissed && (
-        <div className="mb-5 flex flex-col gap-3 rounded-2xl border border-champagne bg-champagne/10 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div data-testid="rascunho-aviso" className="mb-5 flex flex-col gap-3 rounded-2xl border border-champagne bg-champagne/10 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
             <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-champagne/40 text-forest">
               <ClipboardCheck className="h-5 w-5" />
@@ -1030,6 +1030,7 @@ export default function NewPropertyPage() {
             <Button
               variant="gold"
               size="sm"
+              data-testid="rascunho-continuar"
               onClick={() => {
                 setDraftBannerDismissed(true);
                 router.push(`/dashboard/imoveis/novo?draft=${existingDraft.id}`);
