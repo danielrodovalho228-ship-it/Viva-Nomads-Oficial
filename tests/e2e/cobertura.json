@@ -2438,7 +2438,8 @@
         "inquilino"
       ],
       "specs": [
-        "t114-marcas-visto-contatado"
+        "t114-marcas-visto-contatado",
+        "t166-selo-visto-busca"
       ]
     },
     "src/lib/marcas/actions.ts#marcarVisto": {
