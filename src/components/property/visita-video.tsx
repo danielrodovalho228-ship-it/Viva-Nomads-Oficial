@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { Video, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MOTIVOS } from "@/lib/pedidos/pedidos";
@@ -58,7 +59,7 @@ export function VisitaVideo({ propertyId, exemplo }: { propertyId: string; exemp
           </>
         )}
       </Button>
-      {aberto && (
+      {aberto && createPortal(
         <div
           className="fixed inset-0 z-50 flex items-end justify-center bg-night/40 p-0 sm:items-center sm:p-4"
           role="dialog"
@@ -147,7 +148,8 @@ export function VisitaVideo({ propertyId, exemplo }: { propertyId: string; exemp
               </>
             )}
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );
