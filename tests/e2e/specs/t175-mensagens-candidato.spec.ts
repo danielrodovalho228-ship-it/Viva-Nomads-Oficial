@@ -3,7 +3,7 @@ import { conversationId } from "../../../src/lib/messages/conversation-id";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, gravarMensagem, novaSenha, novoSufixo, pngDeTeste } from "../fixtures/laboratorio";
 
 /*
-  T174 — Mensagens com a mesma regra do cartão do candidato (prompt 6), a 390 e 1280 px.
+  T175 — Mensagens com a mesma regra do cartão do candidato (prompt 6), a 390 e 1280 px.
   1. Antes do aceite o proprietário vê "Candidato(a)": sem nome, sem foto e sem contato.
   2. Depois do aceite: nome curto ("Iara S.") e a foto.
   3. O inquilino vê o nome curto do proprietário, nunca o sobrenome completo.
@@ -20,7 +20,7 @@ async function abrirConversa(page: Page) {
   await page.getByRole("button", { name: new RegExp(`Studio do chat ${sufixo}`) }).first().click();
 }
 
-test.describe("T174 — Mensagens: Candidato(a) antes do aceite, nome curto e foto depois", () => {
+test.describe("T175 — Mensagens: Candidato(a) antes do aceite, nome curto e foto depois", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial" });
 
@@ -52,7 +52,7 @@ test.describe("T174 — Mensagens: Candidato(a) antes do aceite, nome curto e fo
       const corpo = await page.locator("main").innerText();
       expect(corpo).not.toMatch(/Iara|Inquilinamsg|Sobrenomeoculto/);
       expect(corpo).not.toContain(inq.email);
-      await page.screenshot({ path: `${SAIDA}/t174-mensagens-antes-${largura}.png`, fullPage: false });
+      await page.screenshot({ path: `${SAIDA}/t175-mensagens-antes-${largura}.png`, fullPage: false });
     }
 
     const { error } = await adm().from("leads").update({ status: "accepted" }).eq("id", ids.lead!);
@@ -65,7 +65,7 @@ test.describe("T174 — Mensagens: Candidato(a) antes do aceite, nome curto e fo
       const corpo = await page.locator("main").innerText();
       expect(corpo).not.toMatch(/Inquilinamsg|Sobrenomeoculto/);
       expect(corpo).not.toContain(inq.email);
-      await page.screenshot({ path: `${SAIDA}/t174-mensagens-depois-${largura}.png`, fullPage: false });
+      await page.screenshot({ path: `${SAIDA}/t175-mensagens-depois-${largura}.png`, fullPage: false });
     }
     await page.context().close();
   });
