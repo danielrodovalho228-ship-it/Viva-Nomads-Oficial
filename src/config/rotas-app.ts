@@ -46,6 +46,7 @@ export const ROTAS_APP: Regra[] = [
   exato("/favoritos"), // lista pública de favoritos (guardada no aparelho)
   ramo("/dashboard/favoritos"),
   ramo("/dashboard/candidaturas"),
+  ramo("/dashboard/visitas"),
   ramo("/dashboard/leads"), // interessados (proprietário)
   ramo("/dashboard/pedidos"),
   ramo("/dashboard/pedidos-cidade"),

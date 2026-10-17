@@ -94,3 +94,9 @@ test("0148: aplicar idempotente, begin/commit, registra em schema_migrations, co
   assert.match(ap, /not exists \(select 1 from supabase_migrations\.schema_migrations/);
   assert.match(ler("supabase/producao/rollback/0148_rollback.sql"), /drop table if exists public\.visitas_video/);
 });
+
+import { formatarHorario } from "./visitas-video.ts";
+test("formatarHorario usa o fuso de Brasília", () => {
+  assert.match(formatarHorario("2026-10-18T17:30:00.000Z"), /18\/10 às 14:30/);
+  assert.equal(formatarHorario("lixo"), "");
+});

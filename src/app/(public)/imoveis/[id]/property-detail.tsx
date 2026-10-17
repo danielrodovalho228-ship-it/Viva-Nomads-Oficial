@@ -31,6 +31,7 @@ import {
 import type { Property } from "@/lib/types";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { ShareButton } from "@/components/share-button";
+import { VisitaVideo } from "@/components/property/visita-video";
 import { PropertyTags, InvoiceBadge, InsuranceBadge, PrecoJustoBadge } from "@/components/ui/badge";
 import { SELO_NF_UI } from "@/lib/flags";
 import { PropertyCard } from "@/components/property-card";
@@ -284,6 +285,7 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
         <FileSignature className="h-4 w-4" />
         {pending === "candidatura" ? "Enviando..." : "Enviar candidatura"}
       </Button>
+      <VisitaVideo propertyId={property.id} exemplo={exemplo} />
       <Button
         variant="secondary"
         size="md"

@@ -709,6 +709,16 @@
         "t97-plangate-precos"
       ]
     },
+    "/dashboard/visitas": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": [
+        "t168-visita-video"
+      ]
+    },
     "/decisao": {
       "personas": [
         "socio"
@@ -2404,6 +2414,42 @@
         "inquilino"
       ],
       "specs": []
+    },
+    "src/lib/data/visitas-video-actions.ts#listMinhasVisitas": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t168-visita-video"
+      ]
+    },
+    "src/lib/data/visitas-video-actions.ts#listVisitasDono": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t168-visita-video"
+      ]
+    },
+    "src/lib/data/visitas-video-actions.ts#pedirVisitaVideo": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t168-visita-video"
+      ]
+    },
+    "src/lib/data/visitas-video-actions.ts#responderVisitaVideo": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t168-visita-video"
+      ]
     },
     "src/lib/fotografos/actions.ts#alternarAprovacaoFotografo": {
       "personas": [

@@ -76,3 +76,20 @@ export function podeTransicionar(de: StatusVisita, para: StatusVisita, quem: Que
 export function ehStatusVisita(v: unknown): v is StatusVisita {
   return v === "pedido" || v === "confirmado" || v === "feito" || v === "cancelado";
 }
+
+/** "sáb., 18/10 às 14:30" no fuso de Brasília, igual no servidor e no navegador. */
+export function formatarHorario(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const p = new Intl.DateTimeFormat("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    weekday: "short",
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(d);
+  const g = (t: string) => p.find((x) => x.type === t)?.value ?? "";
+  return `${g("weekday")}, ${g("day")}/${g("month")} às ${g("hour")}:${g("minute")}`;
+}
