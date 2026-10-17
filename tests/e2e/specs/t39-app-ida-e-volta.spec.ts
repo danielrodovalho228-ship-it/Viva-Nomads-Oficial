@@ -35,12 +35,15 @@ test.describe("T39 — App: ida e volta", () => {
       expect(new URL(page.url()).hostname).not.toBe("exemplo.com");
     });
 
-    test("Ferramentas e Assinatura pedem login dentro do app (não mostram 'fica no site')", async ({ page }) => {
-      for (const rota of ["/dashboard/ferramentas", "/dashboard/assinatura"]) {
-        await page.goto(rota);
-        await expect(page).toHaveURL(/\/auth/);
-        await expect(page.getByText("Esta parte fica no site")).toHaveCount(0);
-      }
+    test("Ferramentas pede login dentro do app e Assinatura (aposentada) volta à tela inicial do app", async ({ page }) => {
+      await page.goto("/dashboard/ferramentas");
+      await expect(page).toHaveURL(/\/auth/);
+      await expect(page.getByText("Esta parte fica no site")).toHaveCount(0);
+      // Ordem 90181c57: não há mais assinatura; /dashboard/assinatura vai para /precos, que no app
+      // (página de marketing) leva às boas-vindas de quem não entrou.
+      await page.goto("/dashboard/assinatura");
+      await expect(page).toHaveURL(/\/app\/boas-vindas/);
+      await expect(page.getByText("Esta parte fica no site")).toHaveCount(0);
     });
   });
 
