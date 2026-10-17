@@ -13,6 +13,8 @@ export const SEM_DADO = "—";
 export const AVISO_LIMITE = `Você pode comparar até ${MAX_COMPARAR} imóveis. Tire um para escolher outro.`;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+// Anúncios de exemplo (src/lib/properties.ts) têm id "ube-001"… e entram na comparação como os reais.
+const EXEMPLO = /^ube-\d{3}$/;
 
 /** Lê ?comparar=id1,id2: só ids válidos, sem repetir, no máximo 3. */
 export function idsDeComparar(valor: string | string[] | undefined | null): string[] {
@@ -20,7 +22,7 @@ export function idsDeComparar(valor: string | string[] | undefined | null): stri
   const ids: string[] = [];
   for (const parte of bruto.split(",")) {
     const id = parte.trim();
-    if (UUID.test(id) && !ids.includes(id)) ids.push(id);
+    if ((UUID.test(id) || EXEMPLO.test(id)) && !ids.includes(id)) ids.push(id);
     if (ids.length === MAX_COMPARAR) break;
   }
   return ids;

@@ -24,6 +24,14 @@ test("a URL só aceita ids válidos, sem repetir, no máximo 3", () => {
   assert.equal(hrefComparar([A, B]), `/comparar?comparar=${A},${B}`);
 });
 
+test("ids de anúncio de exemplo (ube-001) e a seleção mista valem; texto fora do padrão não", () => {
+  assert.deepEqual(idsDeComparar("ube-001,ube-002"), ["ube-001", "ube-002"]);
+  assert.deepEqual(idsDeComparar(`ube-015,${A},ube-015`), ["ube-015", A]);
+  assert.deepEqual(idsDeComparar("ube-1,ube-0001,UBE-001,ube-001x,ube-00a,../ube-001,ube-001;drop"), []);
+  assert.deepEqual(idsDeComparar("ube-001,ube-002,ube-003,ube-004"), ["ube-001", "ube-002", "ube-003"]);
+  assert.equal(hrefComparar(["ube-001", "ube-002"]), "/comparar?comparar=ube-001,ube-002");
+});
+
 test("tabela: campo sem dado vira '—', nunca inventa", () => {
   const t = montarTabela([imovel({ monthlyPrice: 3200, bedrooms: 2, rating: 4.5, reviewCount: 8, petsAllowed: true, petsRegras: { especies: ["cao"], porteMax: "M", qtdMax: 1, reforcoCaucao: 500, regrasCondominio: "", valorPet: 300, valorPetTipo: "reembolsavel" } }), imovel({})]);
   const l = Object.fromEntries(t.map((x) => [x.chave, x.valores]));
