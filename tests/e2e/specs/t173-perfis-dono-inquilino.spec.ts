@@ -161,7 +161,8 @@ test.describe("T173 — perfis do proprietário e do inquilino", () => {
     const page = await entrar(browser, inq.email, senha);
     for (const largura of [390, 1280]) {
       await page.setViewportSize({ width: largura, height: 900 });
-      await page.goto("/dashboard/conta/perfil", { waitUntil: "networkidle" });
+      // Celular: subtela do app; computador: a página completa da Conta (site).
+      await page.goto(largura === 390 ? "/dashboard/conta/perfil" : "/dashboard/conta", { waitUntil: "networkidle" });
       const bloco = page.getByTestId("complete-perfil");
       await expect(bloco).toBeVisible({ timeout: 20_000 });
       await expect(bloco.getByTestId("perfil-progresso")).toContainText("% completo");

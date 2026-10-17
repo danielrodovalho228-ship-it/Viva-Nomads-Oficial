@@ -458,7 +458,8 @@
         "t36-cadastro-ponta-a-ponta",
         "t92-documento-secao",
         "t129-motivo-estadia-perfil",
-        "t151-modo-app-iphone"
+        "t151-modo-app-iphone",
+        "t173-perfis-dono-inquilino"
       ]
     },
     "/dashboard/conta/[secao]": {
