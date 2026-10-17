@@ -26,7 +26,7 @@ test.describe("T142 — Bairros", () => {
   for (const largura of [390, 1280]) {
     test(`${largura} px: grade da cidade e página do bairro`, async ({ page }) => {
       await page.setViewportSize({ width: largura, height: 900 });
-      await page.goto("/cidades/uberlandia", { waitUntil: "networkidle" });
+      await page.goto("/cidades/uberlandia", { waitUntil: "domcontentloaded" });
       const grade = page.getByTestId("bairros-grade");
       await expect(grade).toBeVisible();
       const centro = grade.getByTestId("bairro-cartao").filter({ hasText: "Centro" });
@@ -62,7 +62,7 @@ test.describe("T142 — Bairros", () => {
   for (const largura of [390, 1280]) {
     test(`${largura} px: grade tem os 3 bairros aprovados e Martins vazio é honesto e noindex`, async ({ page, request }) => {
       await page.setViewportSize({ width: largura, height: 900 });
-      await page.goto("/cidades/uberlandia", { waitUntil: "networkidle" });
+      await page.goto("/cidades/uberlandia", { waitUntil: "domcontentloaded" });
       for (const nome of ["Umuarama", "Santa Mônica", "Martins"]) {
         await expect(page.getByTestId("bairros-grade").getByTestId("bairro-cartao").filter({ hasText: nome })).toHaveCount(1);
       }
@@ -72,7 +72,7 @@ test.describe("T142 — Bairros", () => {
       const r = await request.get("/cidades/uberlandia/martins");
       expect(r.status()).toBe(200);
       expect(await r.text()).toMatch(/name="robots" content="noindex/);
-      await page.goto("/cidades/uberlandia/martins", { waitUntil: "networkidle" });
+      await page.goto("/cidades/uberlandia/martins", { waitUntil: "domcontentloaded" });
       await expect(page.getByTestId("bairro-vazio")).toContainText("Ainda não há imóveis mobiliados publicados no Martins");
       await expect(page.getByTestId("bairro-vazio").getByTestId("salvar-busca")).toContainText("Avise-me quando houver");
       await expect(page.getByTestId("bairro-vizinhos")).toContainText("Centro");

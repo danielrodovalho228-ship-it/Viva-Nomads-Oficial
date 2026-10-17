@@ -2,6 +2,7 @@ import { descricaoCidade } from "@/lib/cidades-meta";
 import { isExemplo } from "@/lib/demo-listing";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { listPropertiesByCity } from "@/lib/data/properties";
 import { cityFromSlug } from "@/lib/utils";
 import { CITIES } from "@/lib/constants";
@@ -24,8 +25,21 @@ interface Params {
   params: Promise<{ cidade: string }>;
 }
 
+/**
+ * Cidade válida (QA do Moacir, 17/10): está na lista liberada (CITIES) OU tem anúncio REAL ativo
+ * (o breadcrumb do anúncio aponta para cá). Qualquer outro slug (/cidades/xpto123) é 404 com noindex.
+ */
+async function cidadeValida(cidade: string): Promise<boolean> {
+  if (CITIES.some((c) => c.slug === cidade)) return true;
+  if (!/^[a-z0-9-]{2,60}$/.test(cidade)) return false;
+  const imoveis = await listPropertiesByCity(cityFromSlug(cidade));
+  return imoveis.some((p) => !isExemplo(p));
+}
+
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { cidade } = await params;
+  // Fora da lista: a página chama notFound() e o Next põe o noindex do 404 sozinho.
+  if (!(await cidadeValida(cidade))) return { title: "Página não encontrada" };
   const name = cityFromSlug(cidade);
   const title = `Imóveis mobiliados mensais em ${name}`;
   const description = descricaoCidade(name);
@@ -54,6 +68,7 @@ export function generateStaticParams() {
 
 export default async function CityLandingPage({ params }: Params) {
   const { cidade } = await params;
+  if (!(await cidadeValida(cidade))) notFound();
   const name = cityFromSlug(cidade);
   const properties = await listPropertiesByCity(name);
   const infoCidade = CITIES.find((c) => c.slug === cidade);

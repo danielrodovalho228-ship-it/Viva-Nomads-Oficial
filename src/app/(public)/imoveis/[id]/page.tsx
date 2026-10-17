@@ -19,7 +19,7 @@ interface Params {
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { id } = await params;
   const property = await getProperty(id);
-  if (!property) return { title: "Imóvel não encontrado" };
+  if (!property) return { title: "Página não encontrada", robots: { index: false, follow: false } };
 
   const title = tituloAbaImovel(property);
   const description = descricaoAbaImovel(property);

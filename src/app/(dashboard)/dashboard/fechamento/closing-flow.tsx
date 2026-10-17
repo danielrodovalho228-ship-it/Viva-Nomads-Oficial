@@ -1,5 +1,6 @@
 "use client";
 
+import { CampoData } from "@/components/ui/campo-data";
 import { DocumentosInquilino } from "@/components/documentos-inquilino";
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -497,10 +498,9 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                   </label>
                   <p className="text-xs text-muted">Os blocos, os prazos de pagamento e o fim da estadia contam a partir dela.</p>
                 </div>
-                <input
+                <CampoData
                   id="inicio-estadia"
                   data-testid="inicio-estadia"
-                  type="date"
                   required
                   min={hoje}
                   value={inicioISO}

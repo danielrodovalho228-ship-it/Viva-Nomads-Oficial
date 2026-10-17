@@ -15,12 +15,16 @@ const SPECS = {
   "t40-novo-anuncio-fotos": "tests/e2e/specs/t40-novo-anuncio-fotos.spec.ts",
   "t39-app-ida-e-volta": "tests/e2e/specs/t39-app-ida-e-volta.spec.ts",
   "t46-modo-do-app": "tests/e2e/specs/t46-modo-do-app.spec.ts",
+  // Lab 17/10 (b726ef6): mesmos 45 s estourados em t115 (painel), t140 (galeria) e t142 (bairros).
+  "t115-importar-anuncio": "tests/e2e/specs/t115-importar-anuncio.spec.ts",
+  "t140-galeria-lightbox": "tests/e2e/specs/t140-galeria-lightbox.spec.ts",
+  "t142-bairros": "tests/e2e/specs/t142-bairros.spec.ts",
 };
 
 function navegacoesComNetworkidle(arquivo: string): string[] {
   return readFileSync(arquivo, "utf8")
     .split("\n")
-    .filter((l) => /\.goto\(/.test(l) && /networkidle/.test(l) && !/["']\/auth["']/.test(l))
+    .filter((l) => /\.(goto|reload)\(/.test(l) && /networkidle/.test(l) && !/["']\/auth["']/.test(l))
     .map((l) => l.trim());
 }
 

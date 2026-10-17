@@ -9,7 +9,8 @@
         "t66-home-busca-principal",
         "t69-botoes-header",
         "t90-orcamento-velocidade",
-        "t96-antigolpe-atalhos"
+        "t96-antigolpe-atalhos",
+        "t177-video-institucional"
       ]
     },
     "/acesso-socios": {
@@ -193,7 +194,8 @@
         "publico"
       ],
       "specs": [
-        "t173-perfis-dono-inquilino"
+        "t173-perfis-dono-inquilino",
+        "t176-exemplo-proprietario-avaliacoes"
       ]
     },
     "/app/boas-vindas": {
@@ -297,7 +299,8 @@
       "specs": [
         "t126-seo-robots-jsonld",
         "t18-seo-a11y",
-        "t20-p1-agentes"
+        "t20-p1-agentes",
+        "t176-exemplo-proprietario-avaliacoes"
       ]
     },
     "/cidades/[cidade]/[polo]": {
@@ -318,7 +321,8 @@
         "t14-app-mode",
         "t18-seo-a11y",
         "t69-botoes-header",
-        "t72-paginas-institucionais"
+        "t72-paginas-institucionais",
+        "t177-video-institucional"
       ]
     },
     "/comparar": {
@@ -831,7 +835,8 @@
         "t8-rascunho",
         "t164-tour-video-galeria",
         "t172-bom-saber-completo",
-        "t173-perfis-dono-inquilino"
+        "t173-perfis-dono-inquilino",
+        "t176-exemplo-proprietario-avaliacoes"
       ]
     },
     "/modelodenegocio": {
@@ -912,7 +917,8 @@
         "t68-comissao-valor-total",
         "t69-botoes-header",
         "t72-paginas-institucionais",
-        "t90-orcamento-velocidade"
+        "t90-orcamento-velocidade",
+        "t185-precos-3s"
       ]
     },
     "/privacidade": {

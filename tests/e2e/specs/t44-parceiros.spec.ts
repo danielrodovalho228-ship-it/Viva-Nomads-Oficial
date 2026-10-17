@@ -69,6 +69,44 @@ test.describe("T44 — Parceiros", () => {
     expect(ruim.status()).toBe(400);
   });
 
+  test("prompt 14: o formulário aceita o tipo 'mobilia' (Mobília, enxoval e mudança) vindo do cartão", async ({ page }) => {
+    await page.goto("/parceiros?tipo=mobilia#quero-ser-parceiro", { waitUntil: "networkidle" });
+    await expect(page.getByLabel("Tipo de parceria")).toHaveValue("mobilia");
+    await page.getByLabel("Seu nome ou nome da empresa").fill(`Mudanças Lab ${sufixo}`);
+    await page.getByLabel("Cidade", { exact: true }).fill("Uberlândia");
+    await page.getByLabel("UF").selectOption("MG");
+    await page.getByLabel(/WhatsApp \(com DDD\) ou e-mail/).fill(`mudancas.${sufixo}@lab.vivanomads.test`);
+    await page.getByLabel(/Aceito que a Viva Nomads entre em contato/).check();
+    await page.getByRole("button", { name: "Quero ser parceiro" }).click();
+    await expect(page.getByText("Recebemos seu interesse.")).toBeVisible({ timeout: 20_000 });
+    const { data } = await adm().from("parceiros_interesse").select("tipo").like("nome", `Mudanças Lab ${sufixo}`);
+    expect(data).toEqual([{ tipo: "mobilia" }]);
+  });
+
+  for (const largura of [390, 1280]) {
+    test(`prompt 14: 6 cartões com foto carregada, grade ${largura === 1280 ? "3 + 3" : "em 1 coluna"} e sem rolagem lateral (${largura}px)`, async ({ page }) => {
+      await page.setViewportSize({ width: largura, height: 900 });
+      await page.goto("/parceiros", { waitUntil: "networkidle" });
+      const lista = page.getByTestId("parceiros-tipos");
+      const cartoes = lista.locator(":scope > li");
+      await expect(cartoes).toHaveCount(6);
+      await expect(page.getByTestId("parceiros-foto-pendente")).toHaveCount(0);
+      await lista.scrollIntoViewIfNeeded();
+      for (let i = 0; i < 6; i++) {
+        const img = cartoes.nth(i).locator("img").first();
+        await img.scrollIntoViewIfNeeded();
+        await expect.poll(() => img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0), { timeout: 15_000 }).toBe(true);
+      }
+      const tops = await cartoes.evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)));
+      const linhas = new Set(tops).size;
+      expect(linhas).toBe(largura === 1280 ? 2 : 6);
+      await expect(page.getByTestId("parceiros-numeros").locator(":scope > div")).toHaveCount(4);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
+      await lista.scrollIntoViewIfNeeded();
+      await page.screenshot({ path: `tests/laboratorio/saida/t44-parceiros-cartoes-${largura}.png`, fullPage: false });
+    });
+  }
+
   test("busca por cidade e por CEP de outra região: só aprovados da região", async ({ page }) => {
     await page.goto("/parceiros/fotografos?cidade=Uberl%C3%A2ndia&uf=MG", { waitUntil: "networkidle" });
     await expect(page.getByText(nomeUdi)).toBeVisible();
