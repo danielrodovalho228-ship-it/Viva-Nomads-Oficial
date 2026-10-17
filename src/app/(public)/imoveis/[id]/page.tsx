@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   if (!property) return { title: "Imóvel não encontrado" };
 
   const title = tituloAbaImovel(property);
-  const description = descricaoAbaImovel(property, adjetivoMobiliado(property.propertyType));
+  const description = descricaoAbaImovel(property);
 
   return {
     title,
@@ -65,9 +65,3 @@ export default async function PropertyDetailPage({ params }: Params) {
   );
 }
 
-/** Concordância: "Casa mobiliada", "Apartamento mobiliado". */
-function adjetivoMobiliado(tipo: string | null | undefined): string {
-  return /^(casa|kitnet|quitinete|cobertura|su[ií]te|ch[aá]cara|loja|sala)/i.test(String(tipo ?? "").trim())
-    ? "mobiliada"
-    : "mobiliado";
-}
