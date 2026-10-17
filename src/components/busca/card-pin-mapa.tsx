@@ -3,6 +3,7 @@ import { Bath, BedDouble, PawPrint, X, type LucideIcon } from "lucide-react";
 import { ICONE_POR_CHAVE } from "@/lib/anuncio/comodidades-icones";
 import type { Property } from "@/lib/types";
 import { formatBRL } from "@/lib/utils";
+import { precoDeBusca } from "@/lib/busca/painel-filtros";
 import { AMENITY_KEY_BY_LABEL, AMENITY_LABEL } from "@/lib/amenities";
 import { disponivelAPartirDe } from "@/lib/busca/disponibilidade";
 import { BrandImage } from "@/components/brand-image";
@@ -64,7 +65,7 @@ export function CardPinMapa({ property: p, onFechar }: { property: Property; onF
           </p>
           {disponivel && <p className="text-xs font-medium text-forest">Disponível a partir de {disponivel}</p>}
           <p>
-            <span className="font-title text-lg font-bold text-ink">{formatBRL(p.monthlyPrice)}</span>
+            <span className="font-title text-lg font-bold text-ink">{formatBRL(precoDeBusca(p))}</span>
             <span className="text-xs text-muted">/mês</span>
           </p>
           <div className="flex flex-wrap items-center gap-1.5">

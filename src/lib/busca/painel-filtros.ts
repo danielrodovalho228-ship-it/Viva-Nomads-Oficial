@@ -53,6 +53,8 @@ export const OPCOES_QUARTOS: { valor: number; rotulo: string }[] = [
 
 type ImovelFiltravel = {
   monthlyPrice: number;
+  /** Total do mês anunciado no cartão; sem ele vale o valor mensal. */
+  totalMes?: number;
   bedrooms: number;
   petsAllowed?: boolean;
   petsRegras?: RegrasPets | null;
@@ -63,9 +65,14 @@ type ImovelFiltravel = {
   parkingSpots?: number;
 };
 
+/** Preço que a busca compara e mostra: o total do mês do cartão (ordem 826719b1, D1). */
+export function precoDeBusca(p: { monthlyPrice: number; totalMes?: number }): number {
+  return p.totalMes && p.totalMes > 0 ? p.totalMes : p.monthlyPrice;
+}
+
 /** O imóvel passa nos filtros do painel? */
 export function passaNoPainel(p: ImovelFiltravel, f: FiltrosPainel): boolean {
-  if (f.maxPrice && p.monthlyPrice > f.maxPrice) return false;
+  if (f.maxPrice && precoDeBusca(p) > f.maxPrice) return false;
   if (f.minBedrooms && p.bedrooms < f.minBedrooms) return false;
   if (f.petsOnly && !p.petsAllowed) return false;
   if (f.petsOnly && f.petPorte && !aceitaPorte(p.petsAllowed, p.petsRegras, f.petPorte)) return false;

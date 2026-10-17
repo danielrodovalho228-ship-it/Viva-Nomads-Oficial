@@ -19,6 +19,7 @@ const SearchMap = dynamic(
 import { EmptySearchIllustration } from "@/components/illustrations";
 import { cn, distanceKm, formatBRL } from "@/lib/utils";
 import { tierFromPhotoCount, searchPriority } from "@/lib/listing";
+import { comTotalMes } from "@/lib/precos";
 import { prioridadeNaBusca } from "@/lib/preco-justo";
 import { LocationSearch } from "@/components/location-search";
 import type { GeoSuggestion } from "@/lib/integrations/geocoding";
@@ -29,7 +30,7 @@ import { FAIXAS, GARANTIAS_FAIXA, GARANTIAS_PUBLICAS, CAUCAO_PARCELADA_UI } from
 import { SELO_NF_UI } from "@/lib/flags";
 import { PainelFiltrosCelular } from "@/components/busca/painel-filtros-celular";
 import { COMODIDADES_FILTRO, ROTULO_COMODIDADE, comodidadesDaUrl, type ComodidadeFiltro } from "@/lib/busca/filtro-comodidades";
-import { OPCOES_PORTE_PET, ROTULO_PORTE_CURTO, contarFiltrosPainel, passaNoPainel, resumoFiltros, type FiltrosPainel } from "@/lib/busca/painel-filtros";
+import { OPCOES_PORTE_PET, ROTULO_PORTE_CURTO, contarFiltrosPainel, passaNoPainel, precoDeBusca, resumoFiltros, type FiltrosPainel } from "@/lib/busca/painel-filtros";
 import { TituloBuscaContexto } from "@/components/busca/titulo-busca";
 import { buttonClasses } from "@/components/ui/button";
 import { SalvarBusca } from "@/components/busca/salvar-busca";
@@ -80,7 +81,9 @@ function aceitaGarantia(p: Property, g: string): boolean {
   return arr.includes(g); // caucao_avista | caucao_parcelada | titulo
 }
 
-export function SearchClient({ properties, topo }: { properties: Property[]; /** Título (e banner do tablet) vindo da página. */ topo?: React.ReactNode }) {
+export function SearchClient({ properties: imoveis, topo }: { properties: Property[]; /** Título (e banner do tablet) vindo da página. */ topo?: React.ReactNode }) {
+  // Filtro, ordem e pino usam o total do mês do cartão (ordem 826719b1, D1).
+  const properties = useMemo(() => imoveis.map((p) => comTotalMes(p)), [imoveis]);
   const [locationQuery, setLocationQuery] = useState("");
   // Coordenadas de um endereço escolhido no autocomplete (filtra por raio).
   const [geoCenter, setGeoCenter] = useState<{ lat: number; lng: number } | null>(null);
@@ -323,8 +326,11 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
     return () => window.clearTimeout(timer);
   }, [locationQuery, properties]);
 
+  // Muda a cada "Limpar filtros": remonta a busca por descrição (campo e chips) — ordem 826719b1, D5.
+  const [reinicioDescricao, setReinicioDescricao] = useState(0);
   // Zera todos os filtros (usado no estado vazio para o usuário recomeçar).
   function clearFilters() {
+    setReinicioDescricao((n) => n + 1);
     setLocationQuery("");
     setGeoCenter(null);
     setRadiusKm(DEFAULT_RADIUS_KM);
@@ -395,8 +401,8 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
 
   const results = useMemo(() => {
     let list = base.filter((p) => passaNoPainel(p, filtrosPainel));
-    if (sort === "price-asc") list = [...list].sort((a, b) => a.monthlyPrice - b.monthlyPrice);
-    else if (sort === "price-desc") list = [...list].sort((a, b) => b.monthlyPrice - a.monthlyPrice);
+    if (sort === "price-asc") list = [...list].sort((a, b) => precoDeBusca(a) - precoDeBusca(b));
+    else if (sort === "price-desc") list = [...list].sort((a, b) => precoDeBusca(b) - precoDeBusca(a));
     // Adicionados recentemente: mais novos (data de cadastro) primeiro.
     else if (sort === "recent")
       list = [...list].sort(
@@ -539,7 +545,7 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
     <TituloBuscaContexto.Provider value={tituloBusca}>
     <div className="flex flex-col py-4 sm:py-6 lg:px-6 lg:py-0" data-testid="busca">
       {topo && <div className="-mt-4 sm:-mt-6 lg:order-2 lg:mt-0">{topo}</div>}
-      <DescricaoBusca locais={locaisDoCatalogo} onAplicar={aplicarDescricao} onRemover={removerDescricao} />
+      <DescricaoBusca key={reinicioDescricao} locais={locaisDoCatalogo} onAplicar={aplicarDescricao} onRemover={removerDescricao} />
       {slotHeader &&
         createPortal(
           <BuscaCompacta

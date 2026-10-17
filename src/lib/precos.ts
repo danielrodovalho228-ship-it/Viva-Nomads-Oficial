@@ -102,6 +102,11 @@ export function calcularTotalMensal(property: Property): TotalMensal {
   };
 }
 
+/** Anota o total do mês (mesma conta do cartão) para filtro, ordem e pino da busca. */
+export function comTotalMes<T extends Property>(property: T): T & { totalMes: number } {
+  return { ...property, totalMes: calcularTotalMensal(property).total };
+}
+
 /** Textos do cartão: total em destaque e o detalhe menor embaixo. */
 export function textosTotalMensal(property: Property): { destaque: string; detalhe: string } {
   const t = calcularTotalMensal(property);
