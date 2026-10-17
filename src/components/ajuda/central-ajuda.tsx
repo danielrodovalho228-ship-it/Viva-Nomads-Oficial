@@ -1,5 +1,6 @@
 "use client";
 
+import { ROTULO_QUEM_RESPONDEU } from "@/lib/atendimento/quem-respondeu";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, ArrowLeft, CheckCircle2, ChevronDown, LifeBuoy, MessageSquare, Search, Send, UserRound } from "lucide-react";
@@ -10,6 +11,8 @@ import { FAQ, buscarFaq, respostaPara, type PerfilAjuda } from "@/lib/atendiment
 import { avisoEmergencia, CATEGORIAS, detectarEmergencia } from "@/lib/atendimento/classificar";
 import { PROMESSA_ATENDIMENTO } from "@/config/atendimento";
 import { podeMarcarResolvido } from "@/lib/atendimento/acolhimento";
+import { useCaptcha } from "@/components/seguranca/captcha";
+import { MSG_CAPTCHA_PENDENTE, podeEnviar } from "@/lib/seguranca/captcha";
 import { emailMascaradoDaConta } from "@/lib/atendimento/identificacao-chamado";
 import {
   abrirChamado,
@@ -38,7 +41,7 @@ const STATUS: Record<string, string> = {
   resolvido: "Resolvido",
   encerrado: "Encerrado",
 };
-const AUTOR: Record<string, string> = { usuario: "Você", admin: "Equipe Viva Nomads", ia: "Viva (assistente virtual) · Resposta automática da Viva Nomads", sistema: "Viva Nomads" };
+const AUTOR: Record<string, string> = { usuario: "Você", admin: ROTULO_QUEM_RESPONDEU.equipe, ia: "Viva (assistente virtual) · Resposta automática da Viva Nomads", sistema: "Viva Nomads" };
 const CONTEXTO_ROTULO: Record<string, string> = { pedido: "seu Pedido de Moradia", contrato: "seu contrato", anuncio: "este anúncio" };
 
 function lerParams(): URLSearchParams {
@@ -210,6 +213,8 @@ function Perguntas({ perfil }: { perfil: PerfilAjuda }) {
         <span className="sr-only">Buscar nas perguntas frequentes</span>
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
         <input
+          aria-label="Buscar nas perguntas frequentes"
+          type="search"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Ex.: caução, senha, anúncio não publica"
@@ -272,11 +277,13 @@ function NovoChamado({
   const manutencao = cat === "manutencao";
   const camera = cat === "camera";
   const emailMascarado = emailMascaradoDaConta(emailConta);
+  const captcha = useCaptcha();
 
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
-    setEnviando(true);
     setErro(null);
+    if (!logado && !podeEnviar(captcha.ligado, captcha.token)) return setErro(MSG_CAPTCHA_PENDENTE);
+    setEnviando(true);
     const r = await abrirChamado({
       categoria: cat,
       mensagem,
@@ -288,7 +295,9 @@ function NovoChamado({
       categoriaManutencao: manutencao ? catManut : undefined,
       visitanteNome: logado ? undefined : nome,
       visitanteEmail: logado ? undefined : email,
+      captchaToken: logado ? undefined : (captcha.token ?? undefined),
     }).catch(() => ({ ok: false as const, error: "Falha de conexão. Tente de novo." }));
+    if (!logado) captcha.reset(); // o token vale uma vez só
     setEnviando(false);
     if (!r.ok) {
       setErro(r.error);
@@ -393,6 +402,7 @@ function NovoChamado({
               <span className="mb-1 block font-medium text-ink">Seu e-mail (para a resposta)</span>
               <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className={campo} />
             </label>
+            {captcha.widget && <div className="sm:col-span-2">{captcha.widget}</div>}
             <p data-testid="chamado-aviso-dados" className="text-xs text-muted sm:col-span-2">
               Usamos esses dados só para responder este chamado. Tem conta? <Link href="/auth?redirect=/ajuda" className="font-medium text-forest underline">Entre</Link> para acompanhar o chamado aqui.
             </p>

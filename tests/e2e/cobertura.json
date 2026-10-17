@@ -7,7 +7,10 @@
       ],
       "specs": [
         "t66-home-busca-principal",
-        "t69-botoes-header"
+        "t69-botoes-header",
+        "t90-orcamento-velocidade",
+        "t96-antigolpe-atalhos",
+        "t177-video-institucional"
       ]
     },
     "/acesso-socios": {
@@ -86,6 +89,15 @@
         "t25-chamado-resumo"
       ]
     },
+    "/admin/avaliacoes": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t91-avaliacao-resposta",
+        "t93-avaliacao-tela"
+      ]
+    },
     "/admin/documentos": {
       "personas": [
         "admin"
@@ -95,6 +107,14 @@
         "t32-autorizacao-preconferencia",
         "t36-cadastro-ponta-a-ponta",
         "t9-documentos"
+      ]
+    },
+    "/admin/emails-teste": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t116-admin-emails-teste"
       ]
     },
     "/admin/financeiro": {
@@ -139,17 +159,43 @@
         "t51-admin-padrao-caixa-socios"
       ]
     },
+    "/admin/usuarios": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t101-admin-usuarios"
+      ]
+    },
     "/ajuda": {
       "personas": [
         "publico"
       ],
       "specs": [
+        "t158-ajuda-parceiro",
         "t19-atendimento-online",
         "t20-p1-agentes",
         "t21-central-agentes",
         "t24-atendimento-acolhimento",
         "t25-chamado-resumo",
         "t30-atendimento-autonomo"
+      ]
+    },
+    "/alerta-busca/desligar": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t125-alerta-busca-salva"
+      ]
+    },
+    "/proprietario/[id]": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t173-perfis-dono-inquilino",
+        "t176-exemplo-proprietario-avaliacoes"
       ]
     },
     "/app/boas-vindas": {
@@ -229,10 +275,12 @@
         "t20-p1-agentes",
         "t23-pacote-seguranca",
         "t67-busca-celular",
-        "t7-fluxo-publico",
         "t69-botoes-header",
+        "t7-fluxo-publico",
         "t70-busca-split",
-        "t71-busca-topo"
+        "t71-busca-topo",
+        "t90-orcamento-velocidade",
+        "t164-tour-video-galeria"
       ]
     },
     "/cidades": {
@@ -249,6 +297,18 @@
         "publico"
       ],
       "specs": [
+        "t126-seo-robots-jsonld",
+        "t18-seo-a11y",
+        "t20-p1-agentes",
+        "t176-exemplo-proprietario-avaliacoes"
+      ]
+    },
+    "/cidades/[cidade]/[polo]": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t117-polos-cidade",
         "t18-seo-a11y",
         "t20-p1-agentes"
       ]
@@ -261,7 +321,18 @@
         "t14-app-mode",
         "t18-seo-a11y",
         "t69-botoes-header",
-        "t72-paginas-institucionais"
+        "t72-paginas-institucionais",
+        "t177-video-institucional"
+      ]
+    },
+    "/comparar": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t100-comparar-imoveis",
+        "t156-comparar-exemplos",
+        "t48-varredura"
       ]
     },
     "/conferir": {
@@ -293,6 +364,7 @@
         "admin"
       ],
       "specs": [
+        "t138-paineis-viva-vazio",
         "t1-auth-guards",
         "t11-travessias",
         "t12-planos",
@@ -316,7 +388,9 @@
         "t55-manutencao-ciclo",
         "t6-dinheiro-numeros",
         "t7-fluxo-publico",
-        "t8-rascunho"
+        "t8-rascunho",
+        "t98-score-anuncio",
+        "t151-modo-app-iphone"
       ]
     },
     "/dashboard/assinatura": {
@@ -331,11 +405,22 @@
         "t39-app-ida-e-volta"
       ]
     },
+    "/dashboard/avaliacoes": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t91-avaliacao-resposta",
+        "t93-avaliacao-tela"
+      ]
+    },
     "/dashboard/buscas": {
       "personas": [
         "inquilino"
       ],
       "specs": [
+        "t125-alerta-busca-salva",
         "t71-busca-topo"
       ]
     },
@@ -355,7 +440,9 @@
         "proprietario",
         "admin"
       ],
-      "specs": []
+      "specs": [
+        "t97-plangate-precos"
+      ]
     },
     "/dashboard/comparar": {
       "personas": [
@@ -372,7 +459,12 @@
       "specs": [
         "t14-app-mode",
         "t17-conta-salvar",
-        "t36-cadastro-ponta-a-ponta"
+        "t36-cadastro-ponta-a-ponta",
+        "t92-documento-secao",
+        "t129-motivo-estadia-perfil",
+        "t151-modo-app-iphone",
+        "t173-perfis-dono-inquilino",
+        "t174-conta-complete-perfil"
       ]
     },
     "/dashboard/conta/[secao]": {
@@ -384,7 +476,10 @@
       "specs": [
         "t14-app-mode",
         "t17-conta-salvar",
-        "t36-cadastro-ponta-a-ponta"
+        "t36-cadastro-ponta-a-ponta",
+        "t92-documento-secao",
+        "t173-perfis-dono-inquilino",
+        "t174-conta-complete-perfil"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -431,7 +526,9 @@
         "t31-cadastro-documento",
         "t33-documentos-inquilino",
         "t36-cadastro-ponta-a-ponta",
-        "t4-fronteira-demo-real"
+        "t4-fronteira-demo-real",
+        "t127-fechamento-servicos",
+        "t89-fechamento-data-inicio"
       ]
     },
     "/dashboard/ferramentas": {
@@ -470,7 +567,10 @@
       "personas": [
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t151-modo-app-iphone",
+        "t153-limpeza-estadia"
+      ]
     },
     "/dashboard/imoveis/novo": {
       "personas": [
@@ -497,14 +597,19 @@
       "specs": [
         "t11-travessias",
         "t31-cadastro-documento",
-        "t36-cadastro-ponta-a-ponta"
+        "t36-cadastro-ponta-a-ponta",
+        "t133-candidatura-motivo",
+        "t173-perfis-dono-inquilino"
       ]
     },
     "/dashboard/locacoes": {
       "personas": [
+        "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t163-locacoes-selo-anfitriao"
+      ]
     },
     "/dashboard/locacoes/[id]": {
       "personas": [
@@ -523,7 +628,8 @@
         "admin"
       ],
       "specs": [
-        "t11-travessias"
+        "t11-travessias",
+        "t175-mensagens-candidato"
       ]
     },
     "/dashboard/notificacoes": {
@@ -617,7 +723,19 @@
       "personas": [
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t97-plangate-precos"
+      ]
+    },
+    "/dashboard/visitas": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": [
+        "t168-visita-video"
+      ]
     },
     "/decisao": {
       "personas": [
@@ -655,11 +773,38 @@
       ],
       "specs": []
     },
+    "/favoritos": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t119-painel-capas",
+        "t138-paineis-viva-vazio",
+        "t160-favoritos-pagina",
+        "t48-varredura"
+      ]
+    },
     "/guia-fotos": {
       "personas": [
         "publico"
       ],
       "specs": []
+    },
+    "/guias": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t105-guias"
+      ]
+    },
+    "/guias/[slug]": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t105-guias"
+      ]
     },
     "/imoveis/[id]": {
       "personas": [
@@ -667,7 +812,14 @@
       ],
       "specs": [
         "t11-travessias",
-        "t75-barra-fixa-imovel",
+        "t133-candidatura-motivo",
+        "t136-imovel-largura-maxima",
+        "t137-comodidades-tem-nao-tem",
+        "t140-galeria-lightbox",
+        "t141-galeria-1536",
+        "t152-barra-fixa-imovel",
+        "t153-limpeza-estadia",
+        "t161-coerencia-imovel",
         "t20-p1-agentes",
         "t23-pacote-seguranca",
         "t28-avaliacoes-fase1",
@@ -679,7 +831,12 @@
         "t38-varios-imoveis-por-dono",
         "t40-novo-anuncio-fotos",
         "t7-fluxo-publico",
-        "t8-rascunho"
+        "t75-barra-fixa-imovel",
+        "t8-rascunho",
+        "t164-tour-video-galeria",
+        "t172-bom-saber-completo",
+        "t173-perfis-dono-inquilino",
+        "t176-exemplo-proprietario-avaliacoes"
       ]
     },
     "/modelodenegocio": {
@@ -708,14 +865,17 @@
       ],
       "specs": [
         "t69-botoes-header",
-        "t72-paginas-institucionais"
+        "t72-paginas-institucionais",
+        "t171-faixas-taxa-cors"
       ]
     },
     "/parceiros/fotografos": {
       "personas": [
         "publico"
       ],
-      "specs": []
+      "specs": [
+        "t171-faixas-taxa-cors"
+      ]
     },
     "/pedidos": {
       "personas": [
@@ -739,7 +899,9 @@
         "t1-auth-guards",
         "t18-seo-a11y",
         "t69-botoes-header",
-        "t72-paginas-institucionais"
+        "t72-paginas-institucionais",
+        "t96-antigolpe-atalhos",
+        "t165-pedido-contador"
       ]
     },
     "/precos": {
@@ -754,7 +916,9 @@
         "t6-dinheiro-numeros",
         "t68-comissao-valor-total",
         "t69-botoes-header",
-        "t72-paginas-institucionais"
+        "t72-paginas-institucionais",
+        "t90-orcamento-velocidade",
+        "t185-precos-3s"
       ]
     },
     "/privacidade": {
@@ -937,13 +1101,23 @@
         "t62-cadastro-email-recusado"
       ]
     },
+    "/api/busca/descricao": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t113-busca-por-descricao"
+      ]
+    },
     "/api/caf/verify": {
       "personas": [
         "inquilino",
         "proprietario",
         "admin"
       ],
-      "specs": []
+      "specs": [
+        "t169-conta-teste-sem-efeito"
+      ]
     },
     "/api/calendario/[id]/[token]": {
       "personas": [
@@ -957,7 +1131,19 @@
         "proprietario",
         "admin"
       ],
-      "specs": []
+      "specs": [
+        "t169-conta-teste-sem-efeito"
+      ]
+    },
+    "/api/conta/caixa-teste": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": [
+        "t169-conta-teste-sem-efeito"
+      ]
     },
     "/api/contrato": {
       "personas": [
@@ -966,6 +1152,7 @@
         "admin"
       ],
       "specs": [
+        "t169-conta-teste-sem-efeito",
         "t36-cadastro-ponta-a-ponta"
       ]
     },
@@ -974,6 +1161,14 @@
         "sistema"
       ],
       "specs": []
+    },
+    "/api/cron/automacoes": {
+      "personas": [
+        "sistema"
+      ],
+      "specs": [
+        "t128-cron-automacoes"
+      ]
     },
     "/api/cron/avisos-daniel": {
       "personas": [
@@ -1164,6 +1359,14 @@
     }
   },
   "actions": {
+    "src/app/(public)/alerta-busca/desligar/acao.ts#desligarAlertaPorLink": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t125-alerta-busca-salva"
+      ]
+    },
     "src/app/acesso-socios/actions.ts#entrarSocios": {
       "personas": [
         "socio"
@@ -1308,7 +1511,9 @@
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t94-valor-pet"
+      ]
     },
     "src/lib/data/actions.ts#varrerCicloBlocos": {
       "personas": [
@@ -1560,6 +1765,34 @@
       ],
       "specs": []
     },
+    "src/lib/data/avaliacoes-resposta-actions.ts#decidirRevisaoAvaliacao": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t93-avaliacao-tela"
+      ]
+    },
+    "src/lib/data/avaliacoes-resposta-actions.ts#pedirRevisaoAvaliacao": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t91-avaliacao-resposta",
+        "t93-avaliacao-tela"
+      ]
+    },
+    "src/lib/data/avaliacoes-resposta-actions.ts#responderAvaliacao": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t91-avaliacao-resposta",
+        "t93-avaliacao-tela"
+      ]
+    },
     "src/lib/data/avatar-actions.ts#clearMyAvatar": {
       "personas": [
         "inquilino",
@@ -1634,6 +1867,15 @@
       ],
       "specs": [
         "t71-busca-topo"
+      ]
+    },
+    "src/lib/data/buscas-salvas-actions.ts#definirAlertaBusca": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t125-alerta-busca-salva"
       ]
     },
     "src/lib/data/buscas-salvas-actions.ts#listarBuscasSalvas": {
@@ -1723,7 +1965,8 @@
         "proprietario"
       ],
       "specs": [
-        "t57-contrato-assinar"
+        "t57-contrato-assinar",
+        "t159-contrato-total-mes"
       ]
     },
     "src/lib/data/contrato-assinar-actions.ts#pedirCodigoAssinatura": {
@@ -1825,6 +2068,14 @@
       ],
       "specs": []
     },
+    "src/lib/data/estadias-calendario.ts#getEstadiasDoImovel": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t154-calendario-inquilino"
+      ]
+    },
     "src/lib/data/leads-actions.ts#aceitarCandidatura": {
       "personas": [
         "proprietario",
@@ -1852,6 +2103,14 @@
         "inquilino"
       ],
       "specs": []
+    },
+    "src/lib/data/locacoes-selo.ts#getSelosDasLocacoes": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t163-locacoes-selo-anfitriao"
+      ]
     },
     "src/lib/data/manutencao-actions.ts#avisosRecentes": {
       "personas": [
@@ -1946,6 +2205,14 @@
         "proprietario"
       ],
       "specs": []
+    },
+    "src/lib/data/pedido-contador-actions.ts#contarImoveisQueCombinam": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t165-pedido-contador"
+      ]
     },
     "src/lib/data/pedidos-actions.ts#aceitarResposta": {
       "personas": [
@@ -2076,6 +2343,15 @@
       ],
       "specs": []
     },
+    "src/lib/data/perfil-actions.ts#getMeuPerfilPublico": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t173-perfis-dono-inquilino"
+      ]
+    },
     "src/lib/data/perfil-actions.ts#getMeusDados": {
       "personas": [
         "inquilino",
@@ -2096,6 +2372,15 @@
         "proprietario"
       ],
       "specs": []
+    },
+    "src/lib/data/perfil-actions.ts#salvarMeuPerfilPublico": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t173-perfis-dono-inquilino"
+      ]
     },
     "src/lib/data/perfil-actions.ts#salvarMeusDados": {
       "personas": [
@@ -2188,6 +2473,42 @@
       ],
       "specs": []
     },
+    "src/lib/data/visitas-video-actions.ts#listMinhasVisitas": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t168-visita-video"
+      ]
+    },
+    "src/lib/data/visitas-video-actions.ts#listVisitasDono": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t168-visita-video"
+      ]
+    },
+    "src/lib/data/visitas-video-actions.ts#pedirVisitaVideo": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t168-visita-video"
+      ]
+    },
+    "src/lib/data/visitas-video-actions.ts#responderVisitaVideo": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t168-visita-video"
+      ]
+    },
     "src/lib/fotografos/actions.ts#alternarAprovacaoFotografo": {
       "personas": [
         "proprietario",
@@ -2216,11 +2537,38 @@
       ],
       "specs": []
     },
+    "src/lib/marcas/actions.ts#listarMarcas": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t114-marcas-visto-contatado",
+        "t166-selo-visto-busca"
+      ]
+    },
+    "src/lib/marcas/actions.ts#marcarVisto": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t114-marcas-visto-contatado"
+      ]
+    },
     "src/lib/parceiros/admin-actions.ts#atualizarStatusInteresse": {
       "personas": [
         "admin"
       ],
       "specs": []
+    },
+    "src/lib/preco-justo-actions.ts#taxaDoMeuNovoAnuncio": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t102-preco-sugerido",
+        "t103-selo-preco-justo"
+      ]
     },
     "src/lib/seguranca/recuperacao-actions.ts#confirmarRefazer": {
       "personas": [

@@ -27,14 +27,21 @@ export function useProperties(endpoint: "/api/properties" | "/api/properties/min
   // Só "carregando" na 1ª vez (sem cache); depois usa o cache na hora.
   const [loading, setLoading] = useState(() => !cache.has(endpoint));
 
-  useEffect(() => {
-    let alive = true;
+  // Troca de endpoint: ajusta o estado durante a renderização (sem setState em
+  // effect). Com cache, usa na hora; sem cache, volta a "carregando".
+  const [endpointAtual, setEndpointAtual] = useState(endpoint);
+  if (endpointAtual !== endpoint) {
+    setEndpointAtual(endpoint);
     if (cache.has(endpoint)) {
       setProperties(cache.get(endpoint)!);
       setLoading(false);
     } else {
       setLoading(true);
     }
+  }
+
+  useEffect(() => {
+    let alive = true;
     // Revalida SEMPRE em segundo plano (dado fresco sem travar a navegação).
     fetch(endpoint)
       .then((r) => r.json())

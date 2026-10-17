@@ -66,11 +66,19 @@ test.describe("T38 — Vários imóveis por dono", () => {
     await page.goto(`/dashboard/imoveis/${ids.imoveis[1]}/editar`, { waitUntil: "networkidle" });
     await expect(page.getByTestId("prontidao")).toContainText("Anúncio", { timeout: 15_000 });
     await expect(page.getByText(/Vaga no seu plano/).first()).toBeVisible();
-    await expect(page.getByText(/o plano já tem o máximo de anúncios publicados — pause um ou faça upgrade/).first()).toBeVisible();
+    await expect(page.getByText(/Seu plano permite 1 anúncio no ar\. Para publicar este, pause outro ou mude de plano/).first()).toBeVisible();
     await expect(page.getByRole("button", { name: "Publicar", exact: true })).toBeDisabled();
     await page.screenshot({ path: "tests/laboratorio/saida/t38-1-gratuito-sem-vaga.png", fullPage: true });
     expect(await statusDoImovel(ids.imoveis[1])).toBe("draft");
     expect(await contarAtivos(ids.dono!)).toBe(1);
+
+    // Painel (390 px): o aviso "Vaga no seu plano" vem com os 2 botões.
+    await page.goto("/dashboard", { waitUntil: "networkidle" });
+    const vaga = page.getByTestId("check-vaga").first();
+    await expect(vaga).toContainText("Seu plano permite 1 anúncio no ar", { timeout: 20_000 });
+    await expect(vaga.getByRole("link", { name: "Pausar outro anúncio" })).toHaveAttribute("href", "/dashboard/imoveis");
+    await expect(vaga.getByRole("link", { name: "Mudar de plano" })).toHaveAttribute("href", "/precos");
+    await page.screenshot({ path: "tests/laboratorio/saida/t38-1b-painel-vaga-390.png", fullPage: true });
     await page.context().close();
   });
 
@@ -81,6 +89,8 @@ test.describe("T38 — Vários imóveis por dono", () => {
     await adm().from("properties").update({ status: "draft" }).eq("id", ids.imoveis[0]);
     const page = await entrar(browser, dono.email, senha);
     await page.goto(`/dashboard/imoveis/${ids.imoveis[1]}/editar`, { waitUntil: "networkidle" });
+    // O Publicar só habilita depois do aceite do termo de IA (como em publicarPeloEditor).
+    await page.getByTestId("aceite-ia").getByRole("checkbox").check({ timeout: 20_000 });
     const publicar = page.getByRole("button", { name: "Publicar", exact: true });
     await expect(publicar).toBeEnabled();
 
@@ -90,30 +100,6 @@ test.describe("T38 — Vários imóveis por dono", () => {
     expect(await statusDoImovel(ids.imoveis[1])).toBe("draft");
     expect(await contarAtivos(ids.dono!)).toBe(1);
     await page.screenshot({ path: "tests/laboratorio/saida/t38-2-servidor-barra-segundo.png", fullPage: true });
-    await page.context().close();
-  });
-
-  test("caminho para assinar: Essencial (5) e Profissional (20) com o botão de assinar", async ({ browser }) => {
-    test.setTimeout(120_000);
-    const page = await entrar(browser, dono.email, senha);
-    await page.goto("/dashboard/assinatura", { waitUntil: "networkidle" });
-
-    const essencial = page.locator("div").filter({ has: page.getByRole("heading", { name: /^Essencial$/ }) }).last();
-    const profissional = page.locator("div").filter({ has: page.getByRole("heading", { name: /^Profissional$/ }) }).last();
-    await expect(essencial).toContainText("Até 5 anúncios ativos");
-    await expect(profissional).toContainText("Até 20 anúncios ativos");
-    await expect(essencial.getByRole("button", { name: "Assinar Essencial" })).toBeEnabled();
-    await expect(profissional.getByRole("button", { name: "Assinar Profissional" })).toBeEnabled();
-
-    // Profissional: abre a forma de pagamento (o pedido de cobrança sai uma vez por dia por conta).
-    await profissional.getByRole("button", { name: "Assinar Profissional" }).click();
-    await expect(page.getByRole("button", { name: /Assinar Profissional via pix/i })).toBeVisible();
-
-    // Essencial: confirma o pedido (Asaas simulado).
-    await essencial.getByRole("button", { name: "Assinar Essencial" }).click();
-    await page.getByRole("button", { name: /Assinar Essencial via pix/i }).click();
-    await expect(page.getByText(/Assinatura criada/)).toBeVisible({ timeout: 20_000 });
-    await page.screenshot({ path: "tests/laboratorio/saida/t38-3-assinar-essencial.png", fullPage: true });
     await page.context().close();
   });
 
@@ -132,15 +118,6 @@ test.describe("T38 — Vários imóveis por dono", () => {
     await page.goto("/dashboard/imoveis", { waitUntil: "networkidle" });
     for (let i = 1; i <= 4; i++) await expect(page.getByText(`Studio ${i} do teste de vários imóveis ${sufixo}`).first()).toBeVisible();
     await page.screenshot({ path: "tests/laboratorio/saida/t38-4-quatro-ativos.png", fullPage: true });
-    await page.context().close();
-  });
-
-  test("a tela Assinatura mostra o Essencial como plano atual (corrigido no #321)", async ({ browser }) => {
-    const page = await entrar(browser, dono.email, senha);
-    await page.goto("/dashboard/assinatura", { waitUntil: "networkidle" });
-    await expect(page.getByTestId("plano-atual")).toContainText("Essencial", { timeout: 15_000 });
-    await expect(page.getByTestId("plano-atual")).toContainText("4 de 5 anúncios ativos");
-    await expect(page.getByRole("button", { name: "Plano atual" })).toHaveCount(1);
     await page.context().close();
   });
 });

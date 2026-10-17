@@ -5,7 +5,13 @@ import {
   descricaoPrecisaMostrarMais,
   linhasBomSaber,
   LIMITE_DESCRICAO_CURTA,
+  PROTECOES_VIVA,
+  RESUMO_SEGURANCA_SEM_DECLARACAO,
+  SEGURANCA_SEM_DECLARACAO,
 } from "./resumos-imovel.ts";
+import { SAMPLE_PROPERTIES } from "../properties.ts";
+import { achadosNoTexto } from "../varredura-texto.ts";
+import { fraseInternetAnuncio } from "../internet.ts";
 import type { Property } from "../types.ts";
 
 const base = {
@@ -28,7 +34,7 @@ test("proximidade de saúde/educação cadastrada vira destaque, com o nome real
   );
   assert.equal(d.length, 1);
   assert.match(d[0].titulo, /HC-UFU/);
-  assert.equal(d[0].detalhe, "10 min a pé");
+  assert.equal(d[0].detalhe, "~10 min a pé");
 });
 
 test("máximo de 3 destaques, na ordem de prioridade", () => {
@@ -78,9 +84,11 @@ test("Bom saber: 3 linhas fixas, sem inventar regra", () => {
   assert.match(l[1].resumo, /sem pets/i);
 });
 
-test("Segurança: só o que o anunciante declarou; sem declaração, diz isso", () => {
+test("Segurança: proteções da Viva sempre; sem declaração, convida a perguntar pelo chat", () => {
   const vazio = linhasBomSaber(base)[2];
-  assert.match(vazio.resumo, /não informad/i);
+  assert.equal(vazio.resumo, RESUMO_SEGURANCA_SEM_DECLARACAO);
+  assert.doesNotMatch(vazio.resumo + vazio.detalhe.join(" "), /não informad/i);
+  assert.deepEqual(vazio.detalhe, [...PROTECOES_VIVA, SEGURANCA_SEM_DECLARACAO]);
   const decl = linhasBomSaber(
     com({
       privacidade: {
@@ -93,6 +101,50 @@ test("Segurança: só o que o anunciante declarou; sem declaração, diz isso", 
   )[2];
   assert.match(decl.resumo, /Sem câmeras no interior/);
   assert.match(decl.resumo, /portaria/);
+  assert.match(decl.resumo, /Acesso: Chave/);
+  // Proteções da Viva primeiro, depois o que o anunciante declarou.
+  assert.deepEqual(decl.detalhe.slice(0, PROTECOES_VIVA.length), [...PROTECOES_VIVA]);
+  assert.ok(decl.detalhe.includes("Acesso: Chave"));
+  assert.ok(!decl.detalhe.includes(SEGURANCA_SEM_DECLARACAO));
+});
+
+test("Cancelamento: nada é cobrado antes do contrato; Caução e saída antecipada sem regra nova", () => {
+  const c = linhasBomSaber(base)[0];
+  assert.equal(c.resumo, "Antes do contrato assinado, nada é cobrado");
+  const t = c.detalhe.join(" ");
+  assert.match(t, /contrato assinado pelas duas partes/);
+  assert.match(t, /Antes da assinatura, nada é cobrado/);
+  assert.match(t, /Caução fica registrada.*conferência de saída/);
+  assert.match(t, /saída antecipada estão no contrato/);
+  assert.match(t, /nunca retém o valor mensal/);
+});
+
+test("gavetas do Bom saber sem palavra proibida — base e os 15 anúncios de exemplo (t118 não abre gavetas)", () => {
+  for (const p of [base, ...SAMPLE_PROPERTIES]) {
+    for (const l of linhasBomSaber(p)) {
+      const texto = [l.titulo, l.resumo, ...l.detalhe].join("\n");
+      assert.deepEqual(achadosNoTexto(texto, { termos: true, vocabulario: true }), [], `${p.id ?? "base"} · ${l.chave}`);
+    }
+  }
+});
+
+test("os 15 anúncios de exemplo declaram câmeras e acesso (Segurança nunca cai no 'a confirmar')", () => {
+  assert.equal(SAMPLE_PROPERTIES.length, 15);
+  for (const p of SAMPLE_PROPERTIES) {
+    const seg = linhasBomSaber(p)[2];
+    assert.notEqual(seg.resumo, RESUMO_SEGURANCA_SEM_DECLARACAO, p.id);
+    assert.match(seg.resumo, /Sem câmeras no interior/, p.id);
+    assert.match(seg.resumo, /Acesso:/, p.id);
+  }
+});
+
+test("ube-005: a internet aparece só como 'Internet fibra' (sem 'Internet boa')", () => {
+  const p = SAMPLE_PROPERTIES.find((x) => x.id === "ube-005")!;
+  const frase = fraseInternetAnuncio(p.internetTier!, [...(p.workFeatures ?? []), ...(p.amenities ?? [])]);
+  assert.match(frase, /^Internet fibra/);
+  assert.doesNotMatch(frase, /Internet boa/);
+  // Sem fibra declarada, a frase da categoria não muda (nada inventado).
+  assert.match(fraseInternetAnuncio("trabalho_remoto", ["Wi-Fi"]), /^Internet boa/);
 });
 
 test("texto não promete cancelamento nem chama de temporada/art. 48", () => {

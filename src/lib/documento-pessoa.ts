@@ -123,7 +123,7 @@ export function motivoBloqueioAprovacao(p: PerfilDocumento | null | undefined): 
     : "O dono ainda não tem CPF válido. Peça para preencher em Conta → Documento antes de aprovar.";
 }
 
-export const LINK_DOCUMENTO = "/dashboard/conta#documento";
+export const LINK_DOCUMENTO = "/dashboard/conta/perfil#documento";
 
 /** Mensagens das travas (aceitar candidatura, assinar plano, fechar contrato). */
 export const MSG_DOCUMENTO = {

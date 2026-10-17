@@ -86,10 +86,18 @@ function tipoFoto(b: Uint8Array): { tipo: string; ext: string } | null {
   return null;
 }
 
+export const ERRO_LAUDO_GRANDE = "O laudo deve ter até 15 MB.";
+
+/** Confere o tamanho antes de enviar: acima do limite do corpo das Server Actions o Next recusa sem chegar à validação. */
+export function erroTamanhoLaudo(tamanho: number): string | null {
+  if (tamanho <= 0) return "Arquivo vazio.";
+  return tamanho > LAUDO_MAX_BYTES ? ERRO_LAUDO_GRANDE : null;
+}
+
 /** Laudo de parceiro independente: PDF de verdade, até 15 MB. */
 export function validarLaudo(a: { bytes: Uint8Array; tamanho: number }): ArquivoValidado {
-  if (a.tamanho <= 0) return { ok: false, erro: "Arquivo vazio." };
-  if (a.tamanho > LAUDO_MAX_BYTES) return { ok: false, erro: "O laudo deve ter até 15 MB." };
+  const tam = erroTamanhoLaudo(a.tamanho);
+  if (tam) return { ok: false, erro: tam };
   if (!ehPdf(a.bytes)) return { ok: false, erro: "Envie o laudo em PDF." };
   return { ok: true, tipo: "application/pdf", ext: "pdf" };
 }
@@ -106,4 +114,44 @@ export function validarFotoConferencia(a: { bytes: Uint8Array; tamanho: number }
 /** Quando existe laudo independente, ele prevalece sobre as fotos das partes. */
 export function fonteDaConferencia(temLaudo: boolean): "fotos" | "laudo_independente" {
   return temLaudo ? "laudo_independente" : "fotos";
+}
+
+/** Item de cômodo como a tela o mostra (foto já com link temporário). */
+export type ItemTela = {
+  id: string;
+  parte: ParteConferencia;
+  comodo: string;
+  descricao: string;
+  fotoUrl: string | null;
+  criadoEm: string;
+};
+
+/**
+ * Junta os itens vindos do servidor com os que a própria pessoa acabou de registrar.
+ * O item novo aparece na hora, sem esperar a página recarregar; quando o servidor já o
+ * traz, vale a versão do servidor (sem repetir). Ordem: do mais antigo para o mais novo.
+ */
+export function mesclarItens(servidor: ItemTela[], locais: ItemTela[]): ItemTela[] {
+  const ids = new Set(servidor.map((i) => i.id));
+  return [...servidor, ...locais.filter((i) => !ids.has(i.id))].sort((a, b) => a.criadoEm.localeCompare(b.criadoEm));
+}
+
+/** Laudo como a tela o mostra (o link temporário só vem do servidor, depois do refresh). */
+export type LaudoTela = { url: string | null; parte: ParteConferencia; criadoEm: string };
+
+/** O laudo recém-anexado aparece na hora; quando o servidor já o traz, vale o do servidor (com o link do PDF). */
+export function mesclarLaudo(servidor: LaudoTela | null, local: LaudoTela | null): LaudoTela | null {
+  return servidor ?? local;
+}
+
+/** Resposta como a tela a mostra (com a hora em que foi dada). */
+export type RespostaTela = RespostaConferencia & { decididoEm: string };
+
+/**
+ * Junta as respostas do servidor com a que a própria pessoa acabou de dar, para o estado
+ * ("Aguardando a outra parte") mudar na hora. Uma resposta por parte; vale a do servidor.
+ */
+export function mesclarRespostas(servidor: RespostaTela[], locais: RespostaTela[]): RespostaTela[] {
+  const partes = new Set(servidor.map((r) => r.parte));
+  return [...servidor, ...locais.filter((r) => !partes.has(r.parte))];
 }

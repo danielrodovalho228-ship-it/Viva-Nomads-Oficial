@@ -9,6 +9,7 @@ import { useViewMode } from "@/lib/roles";
 import { useDisplayUser } from "@/lib/demo/demo-mode";
 import { Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { PasswordInput } from "@/components/ui/password-input";
 import { TaxSimulator } from "@/components/tax-simulator";
 import { CategoriaProfissional } from "@/components/account/categoria-profissional";
@@ -18,8 +19,8 @@ import { friendlyAuthError, MIN_PASSWORD } from "@/lib/auth-errors";
 import { elevarParaAal2 } from "@/lib/seguranca/elevar-aal2";
 import { Switch } from "@/components/ui/switch";
 import { getMeusDados, salvarMeusDados, getMeuDocumento, salvarMeuDocumento, type MeuDocumento } from "@/lib/data/perfil-actions";
-import { DOCUMENTO_VAZIO_PF } from "@/lib/documento-pessoa";
 import { getAlertasEquipe, getNotifPrefs, setAlertasEquipe, setNotifPrefs } from "@/lib/data/pedidos-actions";
+import { MOTIVOS } from "@/lib/pedidos/pedidos";
 import { useCaptcha } from "@/components/seguranca/captcha";
 import { MSG_CAPTCHA_PENDENTE, comCaptcha, podeEnviar } from "@/lib/seguranca/captcha";
 
@@ -36,6 +37,7 @@ export function DadosPessoais() {
   const [nome, setNome] = useState(nomeCompletoLimpo(user?.fullName));
   const [telefone, setTelefone] = useState("");
   const [linkedin, setLinkedin] = useState("");
+  const [motivoEstadia, setMotivoEstadia] = useState("");
   const [email, setEmail] = useState(user?.email ?? "");
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -50,6 +52,7 @@ export function DadosPessoais() {
         setNome(nomeCompletoLimpo(d.fullName));
         setTelefone(d.phone);
         setLinkedin(d.linkedin);
+        setMotivoEstadia(d.motivoEstadia);
         setEmail(d.email);
       })
       .catch(() => {});
@@ -66,7 +69,7 @@ export function DadosPessoais() {
     const r = await salvarMeusDados({
       fullName: nome,
       phone: telefone,
-      ...(mode === "tenant" ? { linkedin } : {}),
+      ...(mode === "tenant" ? { linkedin, motivoEstadia } : {}),
     }).catch(() => ({ ok: false as const, error: "Sem conexão. Tente de novo.", dados: undefined }));
     setSalvando(false);
     if (!r.ok || !r.dados) {
@@ -75,7 +78,10 @@ export function DadosPessoais() {
     }
     setNome(r.dados.fullName);
     setTelefone(r.dados.phone ?? "");
-    if (mode === "tenant") setLinkedin(r.dados.linkedin ?? "");
+    if (mode === "tenant") {
+      setLinkedin(r.dados.linkedin ?? "");
+      setMotivoEstadia(r.dados.motivoEstadia ?? "");
+    }
     // O nome novo aparece já no menu e no topo.
     const atual = useAuthStore.getState().user;
     if (atual) setUser({ ...atual, name: r.dados.fullName, fullName: r.dados.fullName });
@@ -112,6 +118,27 @@ export function DadosPessoais() {
               placeholder="https://linkedin.com/in/seu-perfil"
               inputMode="url"
             />
+          )}
+          {mode === "tenant" && (
+            <label className="block text-sm font-medium text-ink">
+              Motivo da estadia (opcional)
+              <select
+                data-testid="perfil-motivo-estadia"
+                value={motivoEstadia}
+                onChange={(e) => setMotivoEstadia(e.target.value)}
+                className="mt-1 block min-h-11 w-full rounded-lg border border-border bg-white px-3 text-base font-normal text-ink"
+              >
+                <option value="">Prefiro não informar</option>
+                {MOTIVOS.map((m) => (
+                  <option key={m.key} value={m.key}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+              <span className="mt-1 block text-xs font-normal text-muted">
+                Já vem preenchido nos seus próximos pedidos. Você pode trocar a qualquer hora.
+              </span>
+            </label>
           )}
         </div>
         <p className="mt-3 text-xs text-muted">
@@ -152,15 +179,27 @@ export function DocumentoPessoa() {
   const [erro, setErro] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
 
+  const [falhou, setFalhou] = useState(false);
+  const [tentativa, setTentativa] = useState(0);
+
   useEffect(() => {
     let vivo = true;
     getMeuDocumento()
-      .then((d) => vivo && setDoc(d))
-      .catch(() => vivo && setDoc({ ...DOCUMENTO_VAZIO_PF }));
+      .then((d) => {
+        if (!vivo) return;
+        // null = sessão ainda não resolvida: nunca esconde a seção, oferece tentar de novo.
+        setFalhou(d === null);
+        setDoc(d);
+      })
+      .catch(() => {
+        if (!vivo) return;
+        setFalhou(true);
+        setDoc(null);
+      });
     return () => {
       vivo = false;
     };
-  }, []);
+  }, [tentativa]);
 
   async function salvar(e: React.FormEvent) {
     e.preventDefault();
@@ -177,10 +216,41 @@ export function DocumentoPessoa() {
     setOk(true);
   }
 
-  if (doc === undefined || doc === null) return null; // carregando ou demonstração
+  if (doc === undefined || doc === null) {
+    // Nunca some da tela: esqueleto enquanto carrega; mensagem + "Tentar de novo" se falhar.
+    return (
+      <section id="documento" className="scroll-mt-24" data-testid="documento-secao">
+        <Panel title="Documento (CPF)" className="mt-6">
+          {doc === undefined ? (
+            <div role="status" aria-label="Carregando documento" data-testid="documento-carregando" className="space-y-3">
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-11 w-full sm:w-1/2" />
+            </div>
+          ) : (
+            <div data-testid="documento-erro">
+              <p role="alert" className="text-sm text-muted">
+                {falhou ? "Não conseguimos carregar seu documento agora." : "Seu documento ainda não carregou."}
+              </p>
+              <div className="mt-4">
+                <Button
+                  type="button"
+                  onClick={() => {
+                    setDoc(undefined);
+                    setTentativa((n) => n + 1);
+                  }}
+                >
+                  Tentar de novo
+                </Button>
+              </div>
+            </div>
+          )}
+        </Panel>
+      </section>
+    );
+  }
   const pj = doc.tipo === "pj";
   return (
-    <section id="documento" className="scroll-mt-24">
+    <section id="documento" className="scroll-mt-24" data-testid="documento-secao">
       <Panel title={pj ? "Documento da empresa (CNPJ)" : "Documento (CPF)"} className="mt-6">
         <p className="text-sm text-muted">
           Vai no contrato, na cobrança e na nota fiscal. Fica guardado com segurança: só você e a equipe da Viva Nomads
@@ -238,8 +308,8 @@ export function PerfilDoModo() {
   return (
     <>
       {mode !== "tenant" && (
-        <div className="mt-6">
-          <h2 className="mb-3 font-title text-lg font-bold text-ink">Tributação dos aluguéis</h2>
+        <div id="tributacao" className="mt-6 scroll-mt-24">
+          <h2 className="mb-3 font-title text-lg font-bold text-ink">Tributação das locações</h2>
           <TaxSimulator />
         </div>
       )}

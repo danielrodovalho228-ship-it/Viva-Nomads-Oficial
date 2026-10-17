@@ -138,10 +138,10 @@ test("urgência da manutenção: falta de água é urgente", () => {
 import { FAQ, buscarFaq, respostaPara } from "./faq.ts";
 import { CATEGORIAS } from "./classificar.ts";
 
-test("FAQ: caução fala de poupança e 50% — nunca 'conta vinculada'", () => {
+test("FAQ: caução fala de poupança e até 3 vezes o valor mensal — nunca 50% nem 'conta vinculada'", () => {
   const c = FAQ.find((p) => p.id === "caucao")!;
   assert.match(c.resposta, /poupança/);
-  assert.match(c.resposta, /50%/);
+  assert.match(c.resposta, /3 vezes o valor mensal/);
   for (const p of FAQ) {
     assert.doesNotMatch(p.resposta, /conta vinculada|garantia do aluguel|inquilino verificado|apartamentos/i, p.id);
   }

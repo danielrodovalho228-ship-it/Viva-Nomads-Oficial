@@ -313,7 +313,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         {/* Aviso fixo do modo demonstração (só aparece quando ligado). */}
         <DemoBanner />
 
-        <main key={mode} className="mode-transition flex-1 p-5 sm:p-8 lg:overflow-y-auto print:overflow-visible">
+        <main key={mode} className="mode-transition flex-1 p-5 pb-[calc(6rem+env(safe-area-inset-bottom))] sm:p-8 lg:overflow-y-auto print:overflow-visible">
           {children}
           {/* Espaço para a barra inferior não cobrir o conteúdo (só mobile). */}
           <div className="vn-tabbar-spacer h-20 md:hidden print:hidden" aria-hidden />

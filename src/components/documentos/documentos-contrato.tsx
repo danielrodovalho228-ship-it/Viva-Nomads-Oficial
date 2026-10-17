@@ -1,5 +1,6 @@
 "use client";
 
+import { CampoData } from "@/components/ui/campo-data";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Download, FileText, ShieldCheck } from "lucide-react";
@@ -105,7 +106,7 @@ export function DevolucaoCaucaoDono({
         </label>
         <label className="text-xs text-muted">
           Data
-          <input type="date" value={data} onChange={(e) => setData(e.target.value)} className={input} />
+          <CampoData value={data} onChange={(e) => setData(e.target.value)} className={input} />
         </label>
         <label className="text-xs text-muted">
           Como
@@ -200,7 +201,7 @@ export function ConfirmarPagamentos({ pagamentos }: { pagamentos: PagamentoView[
         {pendentes.map((p) => (
           <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
             <span className="text-ink">
-              {p.tipo === "caucao" ? "Caução" : "Aluguel"} de {formatBRL(p.valor)} em {dataBR(p.dataPagamento)}, por {FORMA[p.forma] ?? p.forma}
+              {p.tipo === "caucao" ? "Caução" : "Valor mensal"} de {formatBRL(p.valor)} em {dataBR(p.dataPagamento)}, por {FORMA[p.forma] ?? p.forma}
             </span>
             <Button
               size="sm"

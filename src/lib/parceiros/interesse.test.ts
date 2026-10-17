@@ -39,7 +39,7 @@ test("armadilha preenchida (robô) é marcada para descartar sem erro", () => {
 });
 
 test("tipos cobrem os cards da tela", () => {
-  assert.deepEqual([...TIPOS_PARCEIRO.map((t) => t.valor)].sort(), ["empresa", "fotografo", "gestor", "seguros", "servicos"]);
+  assert.deepEqual([...TIPOS_PARCEIRO.map((t) => t.valor)].sort(), ["empresa", "fotografo", "gestor", "mobilia", "seguros", "servicos"]);
 });
 
 test("migração 0104: anon só insere com aceite, admin lê, aplicar registra 0104_", async () => {
@@ -64,5 +64,6 @@ test("rota e página: limite por IP, sem dangerouslySetInnerHTML, textos da marc
   assert.doesNotMatch(tela, /apartamentos?|comiss[ãa]o|corretagem|intermedia[çc][ãa]o|vistoria|aluguel/i);
   assert.match(tela, /taxa de parceria/i);
   assert.match(tela, /a Viva não recebe esse dinheiro/);
-  assert.doesNotMatch(tela, /Uberl[âa]ndia/);
+  // Ordem 1c00ab68 (#143): a página diz onde a Viva começa, sem prometer o país inteiro.
+  assert.doesNotMatch(tela, /todo o Brasil/i);
 });

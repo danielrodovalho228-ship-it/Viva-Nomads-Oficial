@@ -39,6 +39,8 @@ export interface Review {
   rating: number; // 0–5
   comment: string;
   date?: string; // ISO
+  /** Resposta pública do proprietário (0128), se houver. */
+  reply?: string;
 }
 
 /** Perfil público do proprietário (bloco de confiança). */
@@ -66,6 +68,12 @@ export interface Property {
   areaM2: number;
   minPeriodDays: number;
   monthlyPrice: number;
+  /** Custo total do mês (calcularTotalMensal): preenchido na /buscar para filtro, ordem e pino. */
+  totalMes?: number;
+  /** Equivalente mensal que o dono informou ter no Airbnb (opcional; 0130). Só o dono lê de volta no editor. */
+  airbnbMonthlyPrice?: number;
+  /** Selo "Preço justo": aluguel abaixo do Airbnb informado (coluna gerada da 0130). */
+  precoJusto?: boolean;
   // Despesas de consumo (Atualização 6)
   utilitiesMode: UtilitiesMode;
   utilitiesEstimate: number; // R$/mês (regime fixo)
@@ -115,6 +123,8 @@ export interface Property {
   petsAllowed?: boolean;
   /** Regras detalhadas de pets (espécies, porte, quantidade, reforço de Caução). */
   petsRegras?: import("@/lib/anuncio/pets-regras").RegrasPets;
+  /** Pacote de limpeza durante a estadia (ordem 4c74ac38; requer migração 0144). */
+  limpezaEstadia?: import("@/lib/anuncio/limpeza-estadia").LimpezaEstadia;
   smokingAllowed?: boolean;
   childrenAllowed?: boolean;
   maxGuests?: number;

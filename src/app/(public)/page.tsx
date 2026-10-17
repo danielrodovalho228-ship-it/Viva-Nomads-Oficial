@@ -16,7 +16,10 @@ import {
   X,
   Minus,
   ShieldCheck,
-  Sofa,
+  Lock,
+  FileCheck,
+  BadgeCheck,
+  ClipboardCheck,
 } from "lucide-react";
 import { PERSONAS } from "@/lib/constants";
 import { SELOS } from "@/config/selos";
@@ -29,9 +32,12 @@ import { PropertyCard } from "@/components/property-card";
 import { BuscaPrincipal } from "@/components/home/busca-principal";
 import { AtalhosCategoria } from "@/components/home/atalhos-categoria";
 import { HeroVideoBg } from "@/components/hero-video-bg";
+import { VideoInstitucional } from "@/components/institucional/video-institucional";
 import { JsonLd } from "@/components/seo/json-ld";
 import { organizacao } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
+import { HOME_PASSOS_IMAGENS, HOME_PROPRIETARIOS_FUNDO, quantosDestaques } from "@/lib/home-imagens";
+import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
 
 const PERSONA_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   Briefcase,
@@ -53,7 +59,8 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const featured = (await listProperties()).slice(0, 3);
+  const todos = await listProperties();
+  const featured = todos.slice(0, quantosDestaques(todos.length));
   // Enquanto só há exemplos, a seção diz isso (nada de "Disponíveis agora").
   const soExemplos = featured.length > 0 && featured.every((p) => isExemplo(p.id));
 
@@ -77,15 +84,19 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* ───────── A VIVA EM 30 SEGUNDOS (vídeo institucional v3; só toca no play) ───────── */}
+      <VideoInstitucional />
+
       {/* ───────── ATALHOS POR CATEGORIA ───────── */}
-      <AtalhosCategoria />
+      <AtalhosCategoria imoveis={todos} />
 
       {/* ───────── CONFIANÇA (o que vem com toda estadia) ───────── */}
       <section className="border-y border-line bg-white">
-        <div className="container-page grid grid-cols-3 gap-3 py-6 sm:flex sm:flex-wrap sm:items-center sm:justify-center sm:gap-x-10">
-          <TrustItem icon={FileSignature} text="Contrato digital de 30 a 180 dias" />
-          <TrustItem icon={Sofa} text="Pronto para morar" />
-          <TrustItem icon={ShieldCheck} text="Conversa registrada" />
+        <div className="container-page grid grid-cols-2 gap-3 py-6 sm:grid-cols-4" data-testid="faixa-confianca">
+          <TrustItem icon={Lock} text="Contato protegido até o aceite" />
+          <TrustItem icon={FileCheck} text="Caução documentada" />
+          <TrustItem icon={ShieldCheck} text="Documentação do imóvel conferida" />
+          <TrustItem icon={BadgeCheck} text="R$ 0 de taxa para o morador" />
         </div>
       </section>
 
@@ -217,9 +228,9 @@ export default async function HomePage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/[0.06]">
-                  <CompareRow label="Estadia de 30 a 180 dias" a="yes" b="no" c="partial" />
+                  <CompareRow label="Estadia mensal ou mais longa" a="yes" b="partial" c="partial" />
                   <CompareRow label="Mobiliado e pronto para morar" a="yes" b="yes" c="no" />
-                  <CompareRow label="Contrato digital de média duração" a="yes" b="no" c="partial" />
+                  <CompareRow label="Contrato de locação com assinatura digital" a="yes" b="no" c="partial" />
                   <CompareRow label="Dinheiro direto na conta do proprietário" a="yes" b="no" c="no" />
                   <CompareRow label="Custo ao dono: taxa única por contrato" a="yes" b="no" c="no" />
                   <CompareRow label="Inquilino paga R$ 0 de taxa de plataforma" a="yes" b="no" c="yes" />
@@ -240,15 +251,15 @@ export default async function HomePage() {
           <div className="max-w-2xl">
             <Eyebrow>Como funciona</Eyebrow>
             <h2 className="mt-4 font-title font-bold text-ink display-lg">
-              Do anúncio ao contrato em 3 passos
+              Do anúncio ao contrato em 4 passos
             </h2>
           </div>
 
-          <div className="relative mt-10 md:mt-12 grid gap-10 md:grid-cols-3">
-            <div className="absolute left-0 right-0 top-7 hidden h-px bg-line md:block" />
-            <Step n="1" icon={Search} title="Busque" text="Encontre imóveis mobiliados pela cidade, período e orçamento. Filtre por Pronto para Morar." />
-            <Step n="2" icon={MessageSquare} title="Converse" text="Fale direto com o proprietário, tire dúvidas e agende a visita pela plataforma." />
-            <Step n="3" icon={FileSignature} title="Assine com segurança" text="Garantia locatícia combinada entre proprietário e inquilino (ex.: Caução) e contrato assinado digitalmente, com validade jurídica." />
+          <div className="mt-10 grid grid-cols-1 gap-8 sm:grid-cols-2 md:mt-12" data-testid="passos-home">
+            <Step n="1" img={HOME_PASSOS_IMAGENS[0]} icon={Search} title="Busque" text="Encontre imóveis mobiliados pela cidade, período e orçamento. Filtre por Pronto para Morar." />
+            <Step n="2" img={HOME_PASSOS_IMAGENS[1]} icon={MessageSquare} title="Converse" text="Fale direto com o proprietário, tire dúvidas e agende a visita pela plataforma." />
+            <Step n="3" img={HOME_PASSOS_IMAGENS[2]} icon={FileSignature} title="Assine com segurança" text="Caução combinada entre proprietário e inquilino e contrato assinado digitalmente, com validade jurídica." />
+            <Step n="4" img={HOME_PASSOS_IMAGENS[3]} icon={ClipboardCheck} title="Conferência de entrada" text="Na chegada, você e o proprietário conferem o estado do imóvel e registram tudo na plataforma." />
           </div>
         </div>
       </section>
@@ -256,14 +267,20 @@ export default async function HomePage() {
       {/* ───────── FAIXA PROPRIETÁRIOS (preto de impacto) ───────── */}
       <section className="bg-surface section-y">
         <div className="container-page">
-          <div className="relative overflow-hidden rounded-3xl bg-night px-8 py-14 text-white md:px-16 md:py-20">
+          <div className="relative overflow-hidden rounded-3xl bg-night px-8 py-14 text-white md:px-16 md:py-20" data-testid="bloco-proprietarios">
+            {HOME_PROPRIETARIOS_FUNDO.pronta && (
+              <>
+                <BrandImage src={HOME_PROPRIETARIOS_FUNDO.src} alt="" sizes="100vw" rounded="rounded-none" treat={false} className="absolute inset-0 h-full w-full" />
+                <div className="absolute inset-0 bg-night/75" />
+              </>
+            )}
             <div className="pointer-events-none absolute -right-20 -top-20 h-80 w-80 rounded-full bg-gradient-brand opacity-30 blur-3xl" />
             <div className="relative grid items-center gap-10 md:grid-cols-2">
               <div>
                 <Eyebrow light>Para proprietários</Eyebrow>
                 <h2 className="mt-4 font-title font-bold display-lg">
-                  Mais estabilidade, menos tempo com o imóvel parado,{" "}
-                  <span className="text-gradient-brand">mais margem líquida</span>.
+                  Mais estabilidade e{" "}
+                  <span className="text-gradient-brand">menos tempo com o imóvel parado</span>.
                 </h2>
                 <p className="mt-5 max-w-md text-white/65">
                   Um inquilino por uma estadia inteira traz previsibilidade: agenda estável,
@@ -302,7 +319,7 @@ export default async function HomePage() {
             </Link>
           </div>
           {featured.length > 0 ? (
-            <div className="mt-6 md:mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-6 md:mt-8 grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4" data-testid="destaques-home">
               {featured.map((p) => (
                 <PropertyCard key={p.id} property={p} />
               ))}
@@ -350,17 +367,24 @@ function WorkFeature({
 
 function Step({
   n,
+  img,
   icon: Icon,
   title,
   text,
 }: {
   n: string;
+  img: { src: string; pronta: boolean };
   icon: React.ComponentType<{ className?: string }>;
   title: string;
   text: string;
 }) {
   return (
     <div className="relative">
+      {img.pronta ? (
+        <BrandImage src={img.src} alt={title} sizes="(max-width: 640px) 100vw, 50vw" className="mb-5 aspect-[16/9] w-full" />
+      ) : (
+        <PhotoPlaceholder label="Foto do passo em breve" className="mb-5 aspect-[16/9] w-full rounded-2xl" />
+      )}
       <div className="flex items-center gap-4">
         <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-night font-title text-xl font-bold text-white ring-8 ring-surface">
           {n}

@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import { Check, Camera, FileSignature, ShieldCheck, UserCheck, Banknote, PiggyBank, ArrowRight, Megaphone, TrendingDown, Users } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { BannerTopo } from "@/components/institucional/banner-topo";
 import { BrandImage } from "@/components/brand-image";
 import { PHOTOS } from "@/lib/media";
-import { FAIXAS_COMISSAO_PADRAO, TEXTO_REGRA_UNICA, TEXTO_REGRA_CURTO, TAXA_NEGOCIADA_TEXTO, taxaPublicaTexto, comissaoSobreContrato, TEXTO_RENOVACAO_COMISSAO } from "@/lib/cobranca/regra";
+import { FAIXAS_COMISSAO_PADRAO, TEXTO_REGRA_UNICA, DESCRICAO_PRECOS, TAXA_NEGOCIADA_TEXTO, taxaPublicaTexto, comissaoSobreContrato } from "@/lib/cobranca/regra";
+import { DESTAQUES_PRECOS, FRASES_REGRA, INCLUIDO_CONTRATO, OPCIONAIS_PRECOS, SUBTITULO_OPCIONAIS } from "@/lib/precos-pagina";
 import { PlanoGestorForm } from "@/components/precos/plano-gestor-form";
 import { ComparativoPrecos } from "@/components/precos/comparativo-precos";
 import { ButtonLink } from "@/components/ui/button";
@@ -11,31 +12,14 @@ import { formatBRL, cn } from "@/lib/utils";
 import { CAUCAO_FRASE } from "@/lib/faixas";
 import { JsonLd } from "@/components/seo/json-ld";
 import { ofertaRegraUnica } from "@/lib/seo/estruturados";
-import { SITE_URL, SUPORTE_EMAIL } from "@/lib/site";
+import { SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/precos" },
-  title: "Anuncie imóveis mobiliados: 12% do valor total do contrato",
-  description: TEXTO_REGRA_CURTO + " Para imóveis mobiliados.",
+  // Título bate com o conteúdo (12% → 6%, faixas de regra.ts); literal para os testes de SEO medirem.
+  title: "Imóveis mobiliados: 12% a 6% por contrato",
+  description: DESCRICAO_PRECOS,
 };
-
-/**
- * Serviços opcionais (ordem 5a4b9146: simplificados) — só o que existe, com
- * status honesto, numa faixa compacta. A plataforma organiza e documenta; nunca
- * é a garantidora. Por lei, só uma garantia por contrato.
- */
-const OPCIONAIS = [
-  { icon: PiggyBank, titulo: "Caução", texto: `${CAUCAO_FRASE} Devolvida ao fim da estadia.`, status: "Disponível", ok: true, href: "/como-funciona#garantias" },
-  { icon: ShieldCheck, titulo: "Outras garantias", texto: "Outras modalidades de garantia locatícia: em breve. A plataforma não é a garantidora.", status: "Em breve", ok: false, href: "/como-funciona#garantias" },
-  { icon: Camera, titulo: "Fotografia profissional", texto: "Sessão de fotos do imóvel com parceiro, sob consulta.", status: "Via parceiro", ok: false, href: "/parceiros/fotografos" },
-] as const;
-
-/** Já vem em toda locação — sem contratar nada à parte (antes era a seção "Tecnologia & segurança"). */
-const INCLUIDO = [
-  { icon: FileSignature, titulo: "Contrato assinado digitalmente", texto: "De 30 a 180 dias, com validade jurídica." },
-  { icon: UserCheck, titulo: "Conversa registrada", texto: "Negociação na plataforma, com o contato protegido até o aceite." },
-  { icon: Banknote, titulo: "Valor mensal direto ao proprietário", texto: "A plataforma não recebe nem retém o valor mensal." },
-] as const;
 
 export default function PricingPage() {
   return (
@@ -44,6 +28,7 @@ export default function PricingPage() {
 
       <BannerTopo
         foto={PHOTOS.ownerKeys}
+        posicaoFoto="50% 25%"
         alt="Proprietário entregando as chaves de um imóvel mobiliado"
         eyebrow="Preços"
         titulo="Anunciar é grátis"
@@ -59,126 +44,121 @@ export default function PricingPage() {
         </ButtonLink>
       </BannerTopo>
 
-      {/* Os três números que importam, logo abaixo do banner. */}
+      {/* Os quatro números que importam (todos de regra.ts), logo abaixo do banner. Grade PAR. */}
       <section className="container-page relative z-10 -mt-10">
-        <div className="grid gap-4 sm:grid-cols-3" data-testid="precos-destaques">
-          {[
-            { Icon: Megaphone, n: "R$ 0", t: "para anunciar, quantos imóveis quiser" },
-            { Icon: TrendingDown, n: "12% → 6%", t: "quanto mais imóveis, menor a taxa" },
-            { Icon: Users, n: "R$ 0", t: "de taxa para quem vem morar" },
-          ].map(({ Icon, n, t }) => (
-            <div key={t} className="flex items-center gap-4 rounded-2xl border border-line bg-white p-5 shadow-lg">
-              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-sage-100 text-forest">
-                <Icon className="h-6 w-6" aria-hidden />
-              </span>
-              <div>
-                <p className="font-title text-2xl font-bold text-ink">{n}</p>
-                <p className="text-sm text-muted">{t}</p>
-              </div>
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4" data-testid="precos-destaques">
+          {DESTAQUES_PRECOS.map(({ n, t }) => (
+            <div key={t} className="rounded-2xl border border-line bg-white p-5 shadow-lg">
+              <p className="font-title text-2xl font-bold text-ink">{n}</p>
+              <p className="text-sm text-muted">{t}</p>
             </div>
           ))}
         </div>
       </section>
 
-      <section className="container-page pb-16 pt-10">
-        <div className="mb-10 rounded-3xl border border-champagne bg-white p-6 shadow-xl ring-2 ring-champagne sm:p-8" data-testid="regra-unica">
+      <section className="container-page section-y">
+        <div className="mb-10 w-full rounded-2xl border border-line bg-white p-6 sm:p-8" data-testid="regra-unica">
           <h2 className="font-title text-2xl font-bold text-ink">Quanto mais imóveis, menor a taxa</h2>
           <p className="mt-3 text-ink">{TEXTO_REGRA_UNICA}</p>
-          <ul className="mt-5 space-y-3">
-            {[
-              "Anunciar é grátis, com quantos imóveis mobiliados você quiser.",
-              "Você só paga quando a reserva é fechada, sobre o valor total do contrato (valor mensal × meses). " + TEXTO_RENOVACAO_COMISSAO,
-              "Sem mensalidade. Quem vem morar não paga taxa da plataforma.",
-              "A cobrança é feita ao proprietário; a plataforma não recebe nem retém o valor mensal da reserva.",
-            ].map((t) => (
-              <li key={t} className="flex items-start gap-2.5 text-sm text-ink">
-                <Check className="mt-0.5 h-4 w-4 shrink-0 text-sage" aria-hidden /> {t}
-              </li>
+          <ul className="mt-4 grid gap-2 text-sm text-ink sm:grid-cols-3">
+            {FRASES_REGRA.map((t) => (
+              <li key={t} className="rounded-xl bg-surface-2 px-4 py-3">{t}</li>
             ))}
           </ul>
-          <table className="mt-5 w-full text-left text-sm" data-testid="faixas-taxa">
+
+          {/* Computador: tabela. Celular: um cartão por faixa (sem rolagem lateral). */}
+          <table className="mt-6 hidden w-full text-left text-sm sm:table" data-testid="faixas-taxa">
             <caption className="sr-only">Taxa por número de imóveis ativos</caption>
             <thead>
-              <tr className="border-b border-champagne text-muted">
-                <th scope="col" className="py-2 pr-3 font-medium">Imóveis ativos</th>
-                <th scope="col" className="py-2 pr-3 font-medium">Taxa sobre o valor total do contrato</th>
-                <th scope="col" className="py-2 font-medium">Exemplo: 3 meses a R$ 3.000 por mês (total R$ 9.000)</th>
+              <tr className="border-b border-line text-muted">
+                <th scope="col" className="py-2.5 pl-3 pr-3 font-medium">Imóveis ativos</th>
+                <th scope="col" className="py-2.5 pr-3 text-right font-medium">Taxa sobre o valor total do contrato</th>
+                <th scope="col" className="py-2.5 pr-3 text-right font-medium">Exemplo: 3 meses a R$ 3.000 por mês (total R$ 9.000)</th>
               </tr>
             </thead>
             <tbody>
               {FAIXAS_COMISSAO_PADRAO.map((f) => (
-                <tr key={f.minImoveis} className="border-b border-champagne/50 text-ink">
-                  <th scope="row" className="py-2 pr-3 font-medium">
+                <tr
+                  key={f.minImoveis}
+                  data-gestor={f.gestor ? "1" : undefined}
+                  className={cn("border-b border-line text-ink even:bg-surface-2", f.gestor && "bg-sage-100 font-semibold even:bg-sage-100")}
+                >
+                  <th scope="row" className="py-2.5 pl-3 pr-3 font-medium">
                     {f.gestor ? `${f.minImoveis}+ · Plano Gestor` : f.maxImoveis === null ? `${f.minImoveis}+` : `${f.minImoveis}–${f.maxImoveis}`}
                   </th>
-                  <td className="py-2 pr-3">{taxaPublicaTexto(f)}</td>
-                  <td className="py-2">{f.gestor ? TAXA_NEGOCIADA_TEXTO : formatBRL(comissaoSobreContrato(3000, 3, f.taxa))}</td>
+                  <td className="py-2.5 pr-3 text-right tabular-nums">{taxaPublicaTexto(f)}</td>
+                  <td className="py-2.5 pr-3 text-right tabular-nums">{f.gestor ? TAXA_NEGOCIADA_TEXTO : formatBRL(comissaoSobreContrato(3000, 3, f.taxa))}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <p className="mt-3 rounded-lg bg-surface-2 px-3 py-2 text-sm text-muted" data-testid="plano-gestor">
-            31 imóveis ou mais? Plano Gestor: condições negociadas, entre em contato.
-          </p>
-          <PlanoGestorForm />
-          <ButtonLink href="/dashboard/imoveis/novo" variant="gold" className="mt-6 w-full sm:w-auto">
-            Anunciar meu imóvel
-          </ButtonLink>
+          <ul className="mt-6 grid gap-3 sm:hidden" data-testid="faixas-taxa-cartoes">
+            {FAIXAS_COMISSAO_PADRAO.map((f) => (
+              <li key={f.minImoveis} className={cn("rounded-xl border border-line p-4", f.gestor && "border-forest bg-sage-100")}>
+                <p className="font-semibold text-ink">
+                  {f.gestor ? `${f.minImoveis}+ imóveis · Plano Gestor` : f.maxImoveis === null ? `${f.minImoveis}+ imóveis` : `${f.minImoveis}–${f.maxImoveis} imóveis`}
+                </p>
+                <p className="mt-1 flex justify-between text-sm text-ink">
+                  <span>Taxa sobre o total</span> <span className="font-semibold tabular-nums">{taxaPublicaTexto(f)}</span>
+                </p>
+                <p className="flex justify-between text-sm text-muted">
+                  <span>3 meses a R$ 3.000</span>
+                  <span className="tabular-nums">{f.gestor ? TAXA_NEGOCIADA_TEXTO : formatBRL(comissaoSobreContrato(3000, 3, f.taxa))}</span>
+                </p>
+              </li>
+            ))}
+          </ul>
+
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row" data-testid="precos-botoes">
+            <ButtonLink href="/dashboard/imoveis/novo" variant="primary" size="lg">
+              Anunciar meu imóvel
+            </ButtonLink>
+            <PlanoGestorForm />
+          </div>
         </div>
 
         <ComparativoPrecos />
       </section>
 
-      {/* Incluído em toda locação (antes "Tecnologia & segurança"). */}
+      {/* Incluído em todo contrato: 4 caixas (grade PAR), com foto quando houver (única no site, t112). */}
       <section className="bg-surface-2 section-y" data-testid="precos-incluido">
         <div className="container-page">
-          <h2 className="text-center font-title text-3xl font-bold text-ink">Incluído em toda locação</h2>
-          <div className="mt-8 grid gap-5 md:grid-cols-3">
-            {INCLUIDO.map((b) => {
-              const Icon = b.icon;
-              return (
-                <div key={b.titulo} className="flex gap-4 rounded-2xl border border-line bg-white p-5">
-                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-sage-100 text-forest">
-                    <Icon className="h-5 w-5" aria-hidden />
-                  </span>
-                  <div>
-                    <h3 className="font-title text-base font-bold text-ink">{b.titulo}</h3>
-                    <p className="mt-1 text-sm text-muted">{b.texto}</p>
-                  </div>
+          <h2 className="text-center font-title text-3xl font-bold text-ink">Incluído em todo contrato</h2>
+          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {INCLUIDO_CONTRATO.map((b) => (
+              <div key={b.titulo} className="flex flex-col overflow-hidden rounded-2xl border border-line bg-white">
+                {b.foto && <BrandImage src={b.foto} alt={b.alt ?? ""} rounded="rounded-none" sizes="(max-width: 640px) 100vw, 25vw" className="aspect-[16/9] w-full" />}
+                <div className="p-5">
+                  <h3 className="font-title text-base font-bold text-ink">{b.titulo}</h3>
+                  <p className="mt-1 text-sm text-muted">{b.texto}</p>
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Serviços opcionais — simplificados: uma faixa compacta, status honesto. */}
+      {/* Se você precisar: 4 opcionais (grade PAR), só o que existe, status honesto. */}
       <section className="container-page section-y" data-testid="precos-opcionais">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="font-title text-2xl font-bold text-ink">Se você precisar</h2>
-          <p className="mt-2 text-muted">Opcionais, contratados no momento certo do fluxo. Garantia: uma por contrato, combinada entre proprietário e inquilino.</p>
+          <p className="mt-2 text-muted">{SUBTITULO_OPCIONAIS}</p>
         </div>
-        <ul className="mx-auto mt-8 grid max-w-5xl gap-4 md:grid-cols-3">
-          {OPCIONAIS.map((o) => {
-            const Icon = o.icon;
-            return (
-              <li key={o.titulo}>
-                <a href={o.href} className="flex h-full flex-col rounded-2xl border border-line bg-white p-5 transition hover:border-forest hover:shadow-md">
-                  <div className="flex items-center justify-between gap-3">
-                    <Icon className="h-5 w-5 text-forest" aria-hidden />
-                    <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-semibold", o.ok ? "bg-green-50 text-green-900" : "bg-amber-50 text-amber-700")}>{o.status}</span>
-                  </div>
-                  <h3 className="mt-3 font-title text-base font-bold text-ink">{o.titulo}</h3>
-                  <p className="mt-1 text-sm text-muted">{o.texto}</p>
-                </a>
-              </li>
-            );
-          })}
+        <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {OPCIONAIS_PRECOS(CAUCAO_FRASE).map((o) => (
+            <li key={o.titulo}>
+              <a href={o.href} className="flex h-full flex-col rounded-2xl border border-line bg-white p-5 transition hover:border-forest hover:shadow-md">
+                <span className={cn("self-start rounded-full px-2.5 py-0.5 text-xs font-semibold", o.ok ? "bg-green-50 text-green-900" : "bg-amber-50 text-amber-700")}>{o.status}</span>
+                <h3 className="mt-3 font-title text-base font-bold text-ink">{o.titulo}</h3>
+                <p className="mt-1 text-sm text-muted">{o.texto}</p>
+              </a>
+            </li>
+          ))}
         </ul>
       </section>
 
       {/* Chamada final com foto. */}
-      <section className="container-page pb-16">
+      <section className="container-page pb-16 pt-4">
         <div className="grid items-center gap-8 overflow-hidden rounded-3xl bg-forest text-white md:grid-cols-2">
           <div className="p-8 md:p-12">
             <h2 className="font-title text-3xl font-bold">Seu imóvel mobiliado, ocupado por meses</h2>

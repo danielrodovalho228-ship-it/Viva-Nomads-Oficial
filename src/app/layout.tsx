@@ -9,6 +9,7 @@ import { LinksDoApp } from "@/components/app/links-do-app";
 import { OrigemVisita } from "@/components/app/origem-visita";
 import { VivaChatFlutuante } from "@/components/ajuda/viva-chat";
 import { APP_PREPAINT_SCRIPT } from "@/lib/app-mode";
+import { descricaoHome } from "@/lib/seo/meta-descricao";
 
 // Tipografia única do site (Atualização 18): Inter para títulos e corpo,
 // variando apenas o peso. Desenhada para telas — sem corte de descidas/acentos.
@@ -28,11 +29,10 @@ export const metadata: Metadata = {
   ...(process.env.NEXT_PUBLIC_IOS_APP_ID ? { itunes: { appId: process.env.NEXT_PUBLIC_IOS_APP_ID } } : {}),
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Viva Nomads — Imóveis mobiliados para estadias de 30 a 180 dias",
+    default: "Imóveis mobiliados de 30 a 180 dias · Viva Nomads",
     template: "%s · Viva Nomads",
   },
-  description:
-    "Imóveis mobiliados e prontos para morar, para estadias de 30 a 180 dias. Contrato com validade jurídica e conversa registrada na plataforma.",
+  description: descricaoHome(),
   keywords: [
     "estadias de 30 a 180 dias",
     "imóvel mobiliado mensal",

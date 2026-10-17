@@ -29,3 +29,9 @@ test("comissão = aluguel × meses × taxa, cobrada do proprietário (nunca o al
   assert.equal(valorComissao(3000, 3, 0), 0);
   assert.equal(valorComissao(0, 3, 0.12), 0);
 });
+
+test("#82 (ordem 90181c57): contrato congelado em 6% (faixa 16+ imóveis) usa 6%, não a taxa do plano", () => {
+  assert.equal(taxaDoContrato(0.06, "free"), 0.06);
+  assert.equal(taxaDoContrato("0.06", "essential"), 0.06);
+  assert.equal(taxaDoContrato(0.1, "free"), 0.1);
+});

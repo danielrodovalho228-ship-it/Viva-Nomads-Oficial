@@ -3,7 +3,6 @@ import { Building2, FileText, BarChart3, MapPin, ArrowRight, ShieldCheck, Home, 
 import { ButtonLink } from "@/components/ui/button";
 import { BrandImage } from "@/components/brand-image";
 import { BannerTopo } from "@/components/institucional/banner-topo";
-import { PHOTOS } from "@/lib/media";
 import { EmpresasForm } from "./empresas-form";
 import { JsonLd } from "@/components/seo/json-ld";
 import { paginaInstitucional } from "@/lib/seo/estruturados";
@@ -23,8 +22,8 @@ export const metadata: Metadata = {
 };
 
 const PASSOS = [
-  { titulo: "Conte a necessidade", texto: "Cidade, período (30 a 180 dias) e quantas pessoas. Respondemos com opções de imóveis mobiliados.", foto: "/images/como-funciona/01-busque.webp", alt: "Pessoa buscando imóveis mobiliados no notebook" },
-  { titulo: "Escolha o imóvel", texto: "A pessoa do time ou o RH conversa com o proprietário pela plataforma e envia a candidatura.", foto: "/images/como-funciona/02-converse.webp", alt: "Conversa entre inquilino e proprietário pelo celular" },
+  { titulo: "Conte a necessidade", texto: "Cidade, período (30 a 180 dias) e quantas pessoas. Respondemos com opções de imóveis mobiliados.", foto: "/images/unicas/empresas-passo-necessidade.webp", alt: "Pessoa buscando imóveis mobiliados no notebook" },
+  { titulo: "Escolha o imóvel", texto: "A pessoa do time ou o RH conversa com o proprietário pela plataforma e envia a candidatura.", foto: "/images/unicas/empresas-passo-escolha.webp", alt: "Colegas escolhendo o imóvel no tablet" },
   { titulo: "Contrato e recibo", texto: "Contrato digital assinado pelas partes; todo mês a empresa recebe o recibo da estadia para o reembolso.", foto: "/images/como-funciona/04-assine.webp", alt: "Assinatura digital do contrato no celular" },
 ];
 
@@ -33,13 +32,13 @@ const BENEFICIOS = [
   "Imóveis mobiliados e prontos para morar: a pessoa chega e começa a trabalhar.",
   "Estadias de 30 a 180 dias, no tempo do projeto — sem diária de hotel.",
   "Contrato formal e assinatura digital, com tudo registrado na plataforma.",
-  "Recibo mensal da estadia para o reembolso, todo mês.",
-  "Nenhuma taxa para quem se hospeda: a Viva Nomads não cobra o inquilino.",
-  "Garantia combinada com o proprietário (ex.: Caução) e conversa direta pela plataforma.",
+  "Recibo mensal da estadia, emitido pelo proprietário.",
+  "Nenhuma taxa para quem vem morar: a Viva Nomads não cobra o inquilino.",
+  "Caução combinada com o proprietário e conversa direta pela plataforma.",
 ];
 
 const FAQ_EMPRESAS = [
-  { p: "Como a empresa recebe o recibo?", r: "O proprietário emite o recibo mensal da estadia em nome dele. A Viva Nomads não emite nota para a empresa e não cobra nada de quem se hospeda." },
+  { p: "Como a empresa recebe o recibo?", r: "O proprietário emite o recibo mensal da estadia em nome dele. A Viva Nomads não emite nota para a empresa e não cobra nada de quem vem morar." },
   { p: "Qual é o prazo das estadias?", r: "De 30 a 180 dias, com imóveis mobiliados e prontos para morar." },
   { p: "Quem assina o contrato?", r: "O proprietário e quem vai morar (ou a empresa, quando ela for a responsável). A assinatura é digital, pela plataforma." },
 ];
@@ -54,7 +53,7 @@ const PILARES = [
   {
     icon: FileText,
     titulo: "Recibo para reembolso",
-    texto: "Recibo mensal da estadia em nome do proprietário + contrato assinado, aceitos para reembolso. A Viva Nomads não cobra nada do inquilino.",
+    texto: "Recibo mensal da estadia emitido pelo proprietário + contrato assinado, que podem ser usados no reembolso conforme a política da sua empresa. A Viva Nomads não cobra nada do inquilino.",
   },
   {
     icon: BarChart3,
@@ -68,7 +67,7 @@ export default function EmpresasPage() {
     <>
       <JsonLd dados={paginaInstitucional(SITE_URL, { caminho: "/empresas", nome: "Para empresas", descricao: "Mobilidade corporativa com locação mobiliada de média duração: imóveis prontos, recibo mensal da estadia para reembolso e relatórios." })} />
       <BannerTopo
-        foto={PHOTOS.personas.executivos}
+        foto="/images/unicas/empresas-banner.webp"
         alt="Profissional chegando a um imóvel mobiliado com a mala"
         eyebrow="Para empresas"
         titulo="Moradia de média duração para o seu time"
@@ -135,7 +134,7 @@ export default function EmpresasPage() {
       {/* Benefícios + foto. */}
       <section className="container-page section-y">
         <div className="grid items-center gap-10 md:grid-cols-2">
-          <BrandImage src={PHOTOS.homeOffice} alt="Espaço de trabalho em casa num imóvel mobiliado" sizes="(max-width: 768px) 100vw, 50vw" className="aspect-[4/3] w-full rounded-3xl" />
+          <BrandImage src="/images/unicas/empresas-homeoffice.webp" alt="Espaço de trabalho em casa num imóvel mobiliado" sizes="(max-width: 768px) 100vw, 50vw" className="aspect-[4/3] w-full rounded-3xl" />
           <div>
             <h2 className="font-title text-3xl font-bold text-ink">O que a empresa ganha</h2>
             <ul className="mt-6 space-y-3">
@@ -181,8 +180,7 @@ export default function EmpresasPage() {
           <div className="md:col-span-2">
             <h2 className="font-title text-3xl font-bold text-ink">Fale com a gente</h2>
             <p className="mt-3 text-muted">
-              Conte seu volume e sua necessidade — retornamos com o que dá para fazer hoje. Sem promessa
-              de recurso que ainda não existe.
+              Conte seu volume e sua necessidade — retornamos com o que dá para fazer hoje.
             </p>
           </div>
           <div className="rounded-2xl border border-line bg-white p-6 shadow-sm md:col-span-3">

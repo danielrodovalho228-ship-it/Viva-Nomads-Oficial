@@ -28,7 +28,7 @@ export function CarteiraClient() {
   if (units.length === 0) {
     return (
       <>
-        <PageTitle
+        <PageTitle capa="carteira"
           title="Carteira consolidada"
           subtitle="Ocupação, receita e contratos a vencer de todos os imóveis sob sua gestão."
         />
@@ -45,7 +45,7 @@ export function CarteiraClient() {
 
   return (
     <>
-      <PageTitle
+      <PageTitle capa="carteira"
         title="Carteira consolidada"
         subtitle="Ocupação, receita e contratos a vencer de todos os imóveis sob sua gestão."
         action={adminDemo ? <DemoBadge /> : undefined}
@@ -81,7 +81,7 @@ export function CarteiraClient() {
         </div>
       )}
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-3">
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
         {/* Próprio vs operado */}
         <Panel title="Próprio vs. operado">
           <div className="space-y-4">
@@ -113,8 +113,8 @@ export function CarteiraClient() {
         </Panel>
 
         {/* Contratos a vencer */}
-        <Panel title="Contratos a vencer" className="lg:col-span-2">
-          <div className="grid gap-4 sm:grid-cols-3">
+        <Panel title="Contratos a vencer">
+          <div className="grid gap-3">
             <ExpiringColumn title="Em 30 dias" tone="urgent" units={m.expiring30} />
             <ExpiringColumn title="31–60 dias" tone="warn" units={m.expiring60} />
             <ExpiringColumn title="61–90 dias" tone="calm" units={m.expiring90} />

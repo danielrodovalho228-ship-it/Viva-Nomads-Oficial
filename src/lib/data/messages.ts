@@ -1,4 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { relacaoAceitaEntreServidor } from "@/lib/data/avatar-url";
+import { nomeNaConversa } from "@/lib/perfil/perfil-publico";
+import { contratoAssinadoEntrePartes, type ContratoParaAlerta } from "@/lib/seguranca/antigolpe";
 import { papelDaConversa, formatarPeriodo, type PapelConversa } from "@/lib/mensagens-filtros";
 
 export interface ChatMessage {
@@ -19,6 +23,8 @@ export interface Conversation {
   /** Foto de capa do imóvel e período da estadia (quando há contrato). */
   foto?: string;
   periodo?: string;
+  /** Contrato ASSINADO pelas duas partes desta conversa (o alerta antigolpe só vale antes disso). */
+  contratoFechado?: boolean;
   messages: ChatMessage[];
 }
 
@@ -101,40 +107,58 @@ export async function listConversations(): Promise<Conversation[]> {
     conv.preview = m.body;
   }
 
-  // A1: o nome da outra pessoa é só o PRIMEIRO nome, e só para quem tem conversa
-  // ou candidatura com você (RPC primeiros_nomes, 0057). Sem a RPC, fica "Conversa".
-  const outros = [...new Set([...byConv.values()].map((c) => c.otherId).filter(Boolean))] as string[];
+  // Nome do outro lado (prompt 6, mesma regra do cartão do candidato): o proprietário vê
+  // "Candidato(a)" até aceitar e o nome curto depois; o inquilino vê o nome curto do
+  // proprietário. Nome completo e aceite vêm do servidor (service role); sem ele, o
+  // proprietário continua vendo "Candidato(a)". Suporte segue com o primeiro nome (RPC 0057).
+  const conversas = [...byConv.values()];
+  const outros = [...new Set(conversas.map((c) => c.otherId).filter(Boolean))] as string[];
   if (outros.length > 0) {
     const { data: nomes } = await supabase.rpc("primeiros_nomes", { ids: outros });
-    const porId = new Map(
+    const primeiro = new Map(
       ((nomes ?? []) as { id: string; primeiro_nome: string | null }[]).map((n) => [n.id, n.primeiro_nome])
     );
-    for (const conv of byConv.values()) {
-      const nome = conv.otherId ? porId.get(conv.otherId) : null;
-      conv.name = nome || "Conversa";
+    const completo = new Map<string, string | null>();
+    const aceito = new Map<string, boolean>();
+    const admin = createAdminClient();
+    if (admin) {
+      const { data: perfis } = await admin.from("profiles").select("id, full_name").in("id", outros);
+      for (const p of (perfis ?? []) as { id: string; full_name: string | null }[]) completo.set(p.id, p.full_name);
+      const candidatos = [...new Set(conversas.filter((c) => c.papel === "proprietario" && c.otherId).map((c) => c.otherId!))];
+      await Promise.all(candidatos.map(async (id) => aceito.set(id, await relacaoAceitaEntreServidor(user.id, id))));
+    }
+    for (const conv of conversas) {
+      const id = conv.otherId ?? "";
+      conv.name = nomeNaConversa({
+        papel: conv.papel ?? "suporte",
+        nomeCompleto: completo.get(id) ?? null,
+        aceito: aceito.get(id) === true,
+        primeiroNome: primeiro.get(id) ?? null,
+      });
     }
   }
-  await enriquecer(supabase, [...byConv.values()]);
+  await enriquecer(supabase, [...byConv.values()], user.id);
   return [...byConv.values()];
 }
 
 type Supa = NonNullable<Awaited<ReturnType<typeof createClient>>>;
 
 /** Foto de capa e período da estadia por imóvel. Best-effort: se falhar, a conversa fica sem eles. */
-async function enriquecer(supabase: Supa, conversas: Conversation[]) {
+async function enriquecer(supabase: Supa, conversas: Conversation[], eu: string) {
   const ids = [...new Set(conversas.map((c) => c.propertyId).filter(Boolean))] as string[];
   if (ids.length === 0) return;
   try {
     const [{ data: fotos }, { data: contratos }] = await Promise.all([
       supabase.from("property_photos").select("property_id, url, sort_order").in("property_id", ids).order("sort_order"),
-      supabase.from("contratos").select("property_id, contrato_blocos(inicio, fim)").in("property_id", ids),
+      supabase.from("contratos").select("property_id, tenant_id, assinado_proprietario_em, assinado_inquilino_em, contrato_blocos(inicio, fim)").in("property_id", ids),
     ]);
     const capa = new Map<string, string>();
     for (const f of (fotos ?? []) as { property_id: string; url: string }[]) {
       if (!capa.has(f.property_id)) capa.set(f.property_id, f.url);
     }
     const periodo = new Map<string, string>();
-    for (const ct of (contratos ?? []) as unknown as { property_id: string; contrato_blocos: { inicio: string; fim: string }[] | null }[]) {
+    const lista = (contratos ?? []) as unknown as (ContratoParaAlerta & { contrato_blocos: { inicio: string; fim: string }[] | null })[];
+    for (const ct of lista) {
       const bl = ct.contrato_blocos ?? [];
       if (bl.length === 0 || periodo.has(ct.property_id)) continue;
       periodo.set(ct.property_id, formatarPeriodo(bl.map((b) => b.inicio).sort()[0], bl.map((b) => b.fim).sort().at(-1)));
@@ -143,6 +167,7 @@ async function enriquecer(supabase: Supa, conversas: Conversation[]) {
       if (!c.propertyId) continue;
       c.foto = capa.get(c.propertyId);
       c.periodo = periodo.get(c.propertyId) || undefined;
+      c.contratoFechado = contratoAssinadoEntrePartes(lista, { propertyId: c.propertyId, eu, outroId: c.otherId });
     }
   } catch {
     /* sem foto/período: a conversa continua utilizável */

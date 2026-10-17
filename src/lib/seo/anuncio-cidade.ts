@@ -107,20 +107,3 @@ export function faqPageCidade(cidade: string) {
     })),
   };
 }
-
-/** Mínimo de anúncios reais para mostrar uma média (abaixo disso: "dados insuficientes"). */
-export const MINIMO_ANUNCIOS_MEDIA = 3;
-
-/**
- * Valor médio por mês dos anúncios REAIS da cidade (exemplos nunca entram).
- * Com menos de 3 anúncios devolve null: média de 1–2 imóveis expõe o preço de alguém.
- */
-export function valorMedioPorMes(
-  imoveis: { id: string; monthlyPrice: number }[],
-  ehExemplo: (id: string) => boolean
-): { media: number; anuncios: number } | null {
-  const reais = imoveis.filter((p) => !ehExemplo(p.id) && Number.isFinite(p.monthlyPrice) && p.monthlyPrice > 0);
-  if (reais.length < MINIMO_ANUNCIOS_MEDIA) return null;
-  const soma = reais.reduce((s, p) => s + p.monthlyPrice, 0);
-  return { media: Math.round(soma / reais.length), anuncios: reais.length };
-}

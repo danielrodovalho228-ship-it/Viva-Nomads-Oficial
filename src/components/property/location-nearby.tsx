@@ -1,24 +1,11 @@
-import { HeartPulse, GraduationCap, Briefcase, ShoppingCart, Bus, MapPin } from "lucide-react";
+"use client";
+
+import { useEffect, useState } from "react";
+import { HeartPulse, GraduationCap, Briefcase, ShoppingCart, Bus, MapPin, Maximize2, X } from "lucide-react";
 import type { ProximityCategory, Property } from "@/lib/types";
 import type { MapMarker } from "@/components/property-map";
 import { PropertyMap } from "@/components/property-map-lazy";
-
-/**
- * Distância APROXIMADA para o anúncio público (item 2 do QA): arredonda os
- * minutos para o múltiplo de 5 mais próximo (mín. 5) e prefixa "~", para não
- * dar precisão que ajude a triangular o endereço antes do aceite. Sem minutos
- * no texto (ex.: "a pé"), devolve nada — evita combinação hiperespecífica.
- */
-function distanciaAprox(note?: string): string | undefined {
-  if (!note) return undefined;
-  const m = note.match(/(\d+)\s*min/i);
-  if (!m) return undefined;
-  const min = parseInt(m[1], 10);
-  if (!Number.isFinite(min)) return undefined;
-  const arred = Math.max(5, Math.round(min / 5) * 5);
-  const modo = /p[ée]/i.test(note) ? " a pé" : /carro|autom[óo]vel|dirig/i.test(note) ? " de carro" : "";
-  return `~${arred} min${modo}`;
-}
+import { distanciaAprox, proximidadesDoImovel } from "@/lib/anuncio/proximidades";
 
 const PROXIMITY_META: Record<ProximityCategory, { label: string; icon: React.ComponentType<{ className?: string }> }> = {
   saude: { label: "Saúde", icon: HeartPulse },
@@ -44,10 +31,23 @@ export function LocationNearby({ property }: { property: Property }) {
   // Antes do aceite, limitamos os POIs exibidos para não re-identificar o
   // endereço por combinação (item 4 do QA): no máximo 4, sem a lista completa.
   const MAX_POIS_PUBLICOS = 4;
-  const todosProximities = property.proximities ?? [];
+  const todosProximities = proximidadesDoImovel(property);
   const proximities = todosProximities.slice(0, MAX_POIS_PUBLICOS);
   const ocultos = todosProximities.length - proximities.length;
   const hasProximities = proximities.length > 0;
+  // Mapa em tela cheia (ordem d943f893): mesma área aproximada, maior; Esc ou × fecha.
+  const [cheio, setCheio] = useState(false);
+  useEffect(() => {
+    if (!cheio) return;
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && setCheio(false);
+    document.addEventListener("keydown", esc);
+    const antes = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", esc);
+      document.body.style.overflow = antes;
+    };
+  }, [cheio]);
 
   return (
     <section aria-labelledby="localizacao-title">
@@ -55,16 +55,58 @@ export function LocationNearby({ property }: { property: Property }) {
         Localização
       </h2>
 
-      <PropertyMap
-        className="mt-5 aspect-[16/9] w-full"
-        center={{ lat: property.lat, lng: property.lng }}
-        markers={[marker]}
-        approximate
-      />
+      <div className="relative mt-5">
+        <PropertyMap
+          className="aspect-[16/9] w-full"
+          center={{ lat: property.lat, lng: property.lng }}
+          markers={[marker]}
+          approximate
+        />
+        <button
+          type="button"
+          onClick={() => setCheio(true)}
+          data-testid="ampliar-mapa"
+          className="absolute right-3 top-3 z-[5] inline-flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-2 text-xs font-semibold text-ink shadow-md hover:bg-white"
+        >
+          <Maximize2 className="h-3.5 w-3.5" /> Ampliar mapa
+        </button>
+      </div>
+      {cheio && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Mapa da região aproximada"
+          data-testid="mapa-tela-cheia"
+          className="fixed inset-0 z-[90] bg-night/60 p-0 sm:p-6"
+          onClick={() => setCheio(false)}
+        >
+          <div className="relative h-full w-full overflow-hidden bg-white sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
+            <PropertyMap
+              className="h-full w-full"
+              center={{ lat: property.lat, lng: property.lng }}
+              markers={[marker]}
+              approximate
+            />
+            <button
+              type="button"
+              onClick={() => setCheio(false)}
+              aria-label="Fechar mapa"
+              className="absolute right-3 top-3 z-[5] grid h-10 w-10 place-items-center rounded-full bg-white text-ink shadow-md"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <p className="absolute inset-x-3 bottom-3 z-[5] rounded-xl bg-white/95 px-3 py-2 text-xs text-muted shadow">
+              Área aproximada de {property.neighborhood}. O endereço exato é liberado após o aceite da candidatura.
+            </p>
+          </div>
+        </div>
+      )}
       <p className="mt-3 flex items-start gap-1.5 text-sm text-muted">
         <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
-        Mostramos a <strong className="mx-1 text-ink">região aproximada</strong> (
-        {property.neighborhood}). O endereço exato é liberado após o aceite da candidatura.
+        <span>
+          Mostramos a <strong className="text-ink">região aproximada</strong> ({property.neighborhood}). O endereço
+          exato é liberado após o aceite da candidatura.
+        </span>
       </p>
 
       {hasProximities && (

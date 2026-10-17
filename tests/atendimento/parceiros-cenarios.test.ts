@@ -18,7 +18,7 @@ const CASOS: { pergunta: string; artigo: string; resposta: RegExp[] }[] = [
   { pergunta: "A Viva fica com o dinheiro do serviço do fotógrafo?", artigo: "taxa-parceria", resposta: [/não recebe o dinheiro do serviço/] },
   { pergunta: "Quando o parceiro vê o contato do proprietário?", artigo: "taxa-parceria", resposta: [/só são liberados/, /aceita o pedido/] },
   { pergunta: "O que acontece se o fotógrafo não entregar? Tem advertência?", artigo: "taxa-parceria", resposta: [/5 dias/, /advert[êe]ncia/, /suspenso/, /cr[ée]dito/] },
-  { pergunta: "Quero contratar um fotógrafo para o meu imóvel", artigo: "contratar-fotografo", resposta: [/Contratar fotógrafo parceiro/, /todo o Brasil/, /CEP/] },
+  { pergunta: "Quero contratar um fotógrafo para o meu imóvel", artigo: "contratar-fotografo", resposta: [/Contratar fotógrafo parceiro/, /Uberlândia \(MG\)/, /CEP/] },
 ];
 
 for (const c of CASOS) {
@@ -31,11 +31,12 @@ for (const c of CASOS) {
   });
 }
 
-test("parceiros: o prompt da Viva traz tipos, modos, taxa 40/60/80, aceite e Brasil inteiro", () => {
-  for (const re of [/lista de espera por cidade/, /tr[eê]s modos/, /R\$ 40 até 20 fotos/, /só são liberados/, /todo o Brasil/, /Plano Gestor/, /12\/10\/8\/6%/]) {
+test("parceiros: o prompt da Viva traz tipos, modos, taxa 40/60/80, aceite e começo por Uberlândia", () => {
+  for (const re of [/lista de espera por cidade/, /tr[eê]s modos/, /R\$ 40 até 20 fotos/, /só são liberados/, /Uberlândia \(MG\)/, /Plano Gestor/, /12\/10\/8\/6%/]) {
     assert.match(SYSTEM_VIVA, re);
   }
   assert.doesNotMatch(SYSTEM_VIVA, /até 4%/);
+  assert.doesNotMatch(SYSTEM_VIVA, /todo o Brasil/i);
 });
 
 test("parceiros: os três artigos novos existem uma vez só e não prometem o que a Viva não faz", () => {

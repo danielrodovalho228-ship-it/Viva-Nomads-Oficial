@@ -16,6 +16,7 @@ export function BannerTopo({
   children,
   alinhamento = "esquerda",
   className,
+  posicaoFoto,
 }: {
   foto: string;
   alt: string;
@@ -26,11 +27,13 @@ export function BannerTopo({
   children?: React.ReactNode;
   alinhamento?: "esquerda" | "centro";
   className?: string;
+  /** Enquadramento da foto (object-position), ex.: "50% 25%" para não cortar cabeças. */
+  posicaoFoto?: string;
 }) {
   const centro = alinhamento === "centro";
   return (
     <section data-testid="banner-topo" className={cn("relative isolate overflow-hidden bg-night text-white", className)}>
-      <Image src={foto} alt={alt} fill priority sizes="100vw" placeholder="blur" blurDataURL={BRAND_BLUR} className="-z-10 object-cover" />
+      <Image src={foto} alt={alt} fill priority sizes="100vw" placeholder="blur" blurDataURL={BRAND_BLUR} className="-z-10 object-cover" style={posicaoFoto ? { objectPosition: posicaoFoto } : undefined} />
       <div
         aria-hidden
         className={cn(

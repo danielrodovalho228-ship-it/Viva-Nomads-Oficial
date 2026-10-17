@@ -6,8 +6,12 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
+  erroTamanhoLaudo,
   JANELA_ENTRADA_HORAS,
   decidirResposta,
+  mesclarItens,
+  mesclarLaudo,
+  mesclarRespostas,
   estadoConferencia,
   podeEditarItens,
   prazoEntrada,
@@ -143,4 +147,60 @@ test("ações: arquivos validados no servidor e nunca a palavra 'vistoria' em te
   assert.doesNotMatch(tela, /vistoria/i);
   assert.match(tela, /laudo independente/i);
   assert.match(readFileSync("src/components/contrato/contrato-detalhe.tsx", "utf8"), /ConferenciaContrato/);
+});
+
+test("mesclarItens: o item recém-registrado aparece na hora e não repete quando o servidor já o traz", () => {
+  const sala = { id: "a", parte: "proprietario" as const, comodo: "Sala", descricao: "Sofá", fotoUrl: null, criadoEm: "2026-10-16T01:00:00Z" };
+  const quarto = { id: "b", parte: "inquilino" as const, comodo: "Quarto", descricao: "Cama", fotoUrl: null, criadoEm: "2026-10-16T02:00:00Z" };
+  // Servidor ainda vazio (página não recarregou): o item local aparece.
+  assert.deepEqual(mesclarItens([], [sala]), [sala]);
+  // Servidor já traz o item: sem repetir, ordem do mais antigo ao mais novo.
+  assert.deepEqual(mesclarItens([sala], [sala, quarto]), [sala, quarto]);
+  assert.deepEqual(mesclarItens([quarto, sala], []), [sala, quarto]);
+});
+
+test("ações: registrar item devolve o item e atualiza as duas telas (locações e contratos)", () => {
+  const acoes = readFileSync("src/lib/data/conferencia-actions.ts", "utf8");
+  assert.match(acoes, /return \{ ok: true, id: item\.id, item \}/);
+  const trecho = acoes.slice(acoes.indexOf("export async function registrarItemConferencia"), acoes.indexOf("export async function responderConferencia"));
+  assert.match(trecho, /revalidatePath\("\/dashboard\/contratos"\)/);
+});
+
+test("mesclarRespostas: a resposta que a pessoa acabou de dar vale na hora e não repete quando o servidor já a traz", () => {
+  const minha = { parte: "inquilino" as const, decisao: "confirmou" as const, motivo: null, decididoEm: "2026-10-16T03:00:00Z" };
+  const doDono = { parte: "proprietario" as const, decisao: "confirmou" as const, motivo: null, decididoEm: "2026-10-16T04:00:00Z" };
+  // Servidor ainda sem resposta (página não recarregou): a minha aparece e o estado muda.
+  assert.deepEqual(mesclarRespostas([], [minha]), [minha]);
+  assert.equal(estadoConferencia(mesclarRespostas([], [minha])), "aguardando_outra_parte");
+  // Servidor já traz a minha: uma só por parte, vale a do servidor.
+  assert.deepEqual(mesclarRespostas([minha], [minha]), [minha]);
+  assert.equal(estadoConferencia(mesclarRespostas([doDono], [minha])), "confirmada");
+});
+
+test("tela: depois de confirmar ou contestar, a resposta entra na tela sem esperar o recarregamento", () => {
+  const tela = readFileSync("src/components/contrato/conferencia-contrato.tsx", "utf8");
+  assert.match(tela, /mesclarRespostas\(/);
+  const acoes = readFileSync("src/lib/data/conferencia-actions.ts", "utf8");
+  const trecho = acoes.slice(acoes.indexOf("export async function responderConferencia"), acoes.indexOf("export interface ConferenciaView"));
+  assert.match(trecho, /resposta:/);
+});
+
+test("laudo: o tamanho é conferido antes do envio (acima de 15 MB nem sobe)", () => {
+  assert.equal(erroTamanhoLaudo(15 * 1024 * 1024), null);
+  assert.equal(erroTamanhoLaudo(15 * 1024 * 1024 + 1), "O laudo deve ter até 15 MB.");
+  assert.equal(erroTamanhoLaudo(0), "Arquivo vazio.");
+});
+
+test("mesclarLaudo: o laudo recém-anexado aparece na hora e o do servidor (com link) prevalece quando chega", () => {
+  const local = { url: null, parte: "proprietario" as const, criadoEm: "2026-10-17T14:00:00Z" };
+  const servidor = { url: "https://x/laudo.pdf", parte: "proprietario" as const, criadoEm: "2026-10-17T14:00:01Z" };
+  assert.equal(mesclarLaudo(null, null), null);
+  assert.deepEqual(mesclarLaudo(null, local), local);
+  assert.deepEqual(mesclarLaudo(servidor, local), servidor);
+});
+
+test("ações: anexar laudo devolve o laudo para a tela mostrá-lo na hora (lab t85 teste 4)", () => {
+  const acoes = readFileSync("src/lib/data/conferencia-actions.ts", "utf8");
+  const trecho = acoes.slice(acoes.indexOf("export async function anexarLaudoConferencia"), acoes.indexOf("export async function conferenciasDoContrato"));
+  assert.match(trecho, /return \{ ok: true, laudo:/);
 });

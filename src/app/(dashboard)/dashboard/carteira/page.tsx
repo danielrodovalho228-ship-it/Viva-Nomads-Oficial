@@ -12,7 +12,7 @@ export const metadata: Metadata = {
  */
 export default function PortfolioPage() {
   return (
-    <PlanGate title="Carteira">
+    <PlanGate capa="carteira" title="Carteira">
       <CarteiraClient />
     </PlanGate>
   );

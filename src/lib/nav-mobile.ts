@@ -33,7 +33,7 @@ export interface MobileTab {
 /** Modo inquilino — 5 abas (mesmas do app: Buscar, Favoritos, Candidaturas, Mensagens, Conta). */
 export const TENANT_TABS: MobileTab[] = [
   { href: "/buscar", label: "Buscar", icon: Search },
-  { href: "/dashboard/favoritos", label: "Favoritos", icon: Heart, authRequired: true },
+  { href: "/favoritos", label: "Favoritos", icon: Heart },
   { href: "/dashboard/candidaturas", label: "Candidaturas", icon: FileText, authRequired: true },
   { href: "/dashboard/mensagens", label: "Mensagens", icon: MessageSquare, authRequired: true, badge: "mensagens" },
   { href: "/dashboard/conta", label: "Conta", icon: Settings, authRequired: true },
@@ -54,7 +54,7 @@ export const OWNER_TABS: MobileTab[] = [
  */
 export const TENANT_APP_TABS: MobileTab[] = [
   { href: "/buscar", label: "Buscar", icon: Search },
-  { href: "/dashboard/favoritos", label: "Favoritos", icon: Heart, authRequired: true },
+  { href: "/favoritos", label: "Favoritos", icon: Heart },
   { href: "/dashboard/candidaturas", label: "Candidaturas", icon: FileText, authRequired: true },
   { href: "/dashboard/mensagens", label: "Mensagens", icon: MessageSquare, authRequired: true, badge: "mensagens" },
   { href: "/dashboard/conta", label: "Conta", icon: UserRound, authRequired: true },
@@ -91,9 +91,10 @@ const TITULOS_APP: [RegExp, string][] = [
   [/^\/dashboard\/imoveis/, "Imóveis"],
   [/^\/dashboard\/leads/, "Interessados"],
   [/^\/dashboard\/mensagens/, "Mensagens"],
-  [/^\/dashboard\/favoritos/, "Favoritos"],
+  [/^\/(dashboard\/)?favoritos/, "Favoritos"],
   [/^\/dashboard\/comparar/, "Comparar"],
   [/^\/dashboard\/candidaturas/, "Candidaturas"],
+  [/^\/dashboard\/visitas/, "Visitas por vídeo"],
   [/^\/dashboard\/pedidos-cidade/, "Pedidos na cidade"],
   [/^\/dashboard\/pedidos/, "Meus pedidos"],
   [/^\/dashboard\/conta\/perfil/, "Perfil"],

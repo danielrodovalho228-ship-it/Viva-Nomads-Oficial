@@ -5,14 +5,17 @@ import { Star } from "lucide-react";
 import { getReputacaoDoImovel, type Reputacao } from "@/lib/data/avaliacoes-actions";
 import { reputacaoLabel } from "@/lib/avaliacoes";
 import { cn } from "@/lib/utils";
+import { isExemplo } from "@/lib/demo-listing";
 
 /**
  * Reputação do proprietário (avaliações bidirecionais) exibida no anúncio.
  * Busca por propertyId — o owner_id fica no servidor. Some se não há avaliações.
+ * Anúncio de exemplo não tem avaliação real: não chama o servidor (ordem 4e2c5382, t130).
  */
 export function OwnerRating({ propertyId }: { propertyId: string }) {
   const [rep, setRep] = useState<Reputacao | null>(null);
   useEffect(() => {
+    if (isExemplo(propertyId)) return;
     getReputacaoDoImovel(propertyId)
       .then(setRep)
       .catch(() => {});

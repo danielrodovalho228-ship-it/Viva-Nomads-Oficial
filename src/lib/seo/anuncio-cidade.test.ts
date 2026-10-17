@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { faqPageCidade, ofertaDoAnuncio, perguntasCidade, valorMedioPorMes } from "./anuncio-cidade.ts";
+import { faqPageCidade, ofertaDoAnuncio, perguntasCidade } from "./anuncio-cidade.ts";
 
 const SITE = "https://vivanomads.com.br";
 const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
@@ -38,18 +38,8 @@ test("#9f68d9d3: FAQPage da cidade usa as perguntas da tela e respeita o vocabul
   assert.doesNotMatch(texto, /alugu|comiss|corretag|intermedia|vistoria|temporada|art\. ?48/i);
 });
 
-test("#09e730c3: valor médio por mês exige 3 anúncios reais (exemplos não contam)", () => {
-  const ex = (id: string) => id.startsWith("ube-");
-  const real = (i: number, v: number) => ({ id: `r${i}`, monthlyPrice: v });
-  assert.equal(valorMedioPorMes([real(1, 3000), real(2, 3000)], ex), null, "2 reais: insuficiente");
-  assert.equal(valorMedioPorMes([real(1, 3000), real(2, 3000), { id: "ube-001", monthlyPrice: 9999 }], ex), null, "exemplo não conta");
-  assert.deepEqual(valorMedioPorMes([real(1, 3000), real(2, 3500), real(3, 4000)], ex), { media: 3500, anuncios: 3 });
-});
-
 test("a página da cidade e o JSON-LD do anúncio usam os construtores", () => {
   const cidade = ler("src/app/(public)/cidades/[cidade]/page.tsx");
   assert.match(cidade, /<JsonLd dados=\{faqPageCidade\(name\)\} \/>/);
-  assert.match(cidade, /valorMedioPorMes\(/);
-  assert.match(cidade, /dados insuficientes/i);
   assert.match(ler("src/components/seo/property-json-ld.tsx"), /ofertaDoAnuncio\(SITE_URL, property, disponibilidadeSchema\(property\)\)/);
 });

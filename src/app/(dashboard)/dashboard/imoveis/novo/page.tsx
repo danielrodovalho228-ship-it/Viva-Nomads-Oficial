@@ -42,6 +42,8 @@ import { DOC_AUTORIZACAO, exigeAutorizacao, OPERACOES, operacaoValida, type Oper
 import { MIN_PHOTOS, SUGGESTED_ROOMS, tierFromPhotoCount, TIER_META } from "@/lib/listing";
 import { FAIXAS, GARANTIAS_CADASTRO } from "@/lib/faixas";
 import { PROPERTY_TYPES, AMENITY_GROUPS, propertyTypeLabel, amenityKeysFromLabels } from "@/lib/amenities";
+import { ImportarAnuncio } from "@/components/property/importar-anuncio";
+import type { AnuncioOrganizado } from "@/lib/anuncio/importar-anuncio";
 import { PlacesPicker, type CuratedPlace } from "@/components/property/places-picker";
 import { ManualProximities } from "@/components/property/manual-proximities";
 import { LocationDatalist } from "@/lib/locations";
@@ -51,6 +53,7 @@ import type { Property, Proximity } from "@/lib/types";
 import { cn, formatBRL } from "@/lib/utils";
 import { TEXTO_REGRA_CURTO } from "@/lib/cobranca/regra";
 import { LinhaComparativoAnuncio } from "@/components/precos/comparativo-precos";
+import { PrecoSugerido } from "@/components/precos/preco-sugerido";
 import { useAuthStore } from "@/lib/store";
 import { qualificadoDoServidor } from "@/lib/anuncio/qualificacao-rascunho";
 import { draftKey, DRAFT_KEY_LEGADO } from "@/lib/local-keys";
@@ -134,6 +137,7 @@ export default function NewPropertyPage() {
   // Proximidades manuais (nome + distância digitados) — sem depender do Google.
   const [manualProximities, setManualProximities] = useState<Proximity[]>([]);
   const [monthlyPrice, setMonthlyPrice] = useState("");
+  const [airbnbMensal, setAirbnbMensal] = useState(""); // preço mensal equivalente no Airbnb (opcional; selo Preço justo)
   // Condomínio (R$/mês) — entra no "tudo incluído" do inquilino (fonte única
   // lib/precos). Separado das contas de consumo.
   const [condoFee, setCondoFee] = useState("");
@@ -221,6 +225,20 @@ export default function NewPropertyPage() {
     selo: qual.baseBadge,
     video: !!videoUrl.trim(),
   });
+  // Ordem 4c178768: só preenche o que veio do texto colado; o resto fica como está.
+  function aplicarImportado(a: AnuncioOrganizado) {
+    if (a.titulo) setTitle(a.titulo);
+    if (a.descricao) setDescription(a.descricao);
+    if (a.tipo && PROPERTY_TYPES.some((t) => t.value === a.tipo)) setPropertyType(a.tipo);
+    if (a.quartos != null) setBedrooms(String(a.quartos));
+    if (a.banheiros != null) setBathrooms(String(a.banheiros));
+    if (a.areaM2 != null) setAreaM2(String(a.areaM2));
+    if (a.vagas != null) setParkingSpots(String(a.vagas));
+    if (a.comodidades.length) setAmenityKeys((s) => ({ ...s, ...Object.fromEntries(a.comodidades.map((k) => [k, true])) }));
+    if (a.aceitaPet != null) setPetsOk(a.aceitaPet);
+    if (a.permiteFumar != null) setSmokingAllowed(a.permiteFumar);
+  }
+
   const completude = prontidao.obrigatorios;
   const podePublicar = prontidao.podePublicar && qualificado && aceitouIa;
 
@@ -248,7 +266,7 @@ export default function NewPropertyPage() {
       e.fotos = "Adicione ao menos 1 foto para continuar (o mínimo para publicar é " + MIN_PHOTOS + ").";
     if (s === 5) {
       if (title.trim().length < 3) e.titulo = "Dê um título ao anúncio (mín. 3 caracteres).";
-      if (!(Number(monthlyPrice) > 0)) e.preco = "Informe o aluguel mensal.";
+      if (!(Number(monthlyPrice) > 0)) e.preco = "Informe o valor mensal.";
       if (!garantiaOk) e.garantia = "Escolha ao menos uma garantia.";
     }
     return e;
@@ -409,6 +427,7 @@ export default function NewPropertyPage() {
       areaM2: Number(areaM2) || 0,
       minPeriodDays: Number(minPeriod) || 30,
       monthlyPrice: Number(monthlyPrice) || 0,
+      airbnbMonthlyPrice: Number(airbnbMensal) || 0,
       readyToLiveScore: q.score,
       tagHomeOffice: q.tHome,
       tagWorkLocated: q.tWork,
@@ -505,6 +524,7 @@ export default function NewPropertyPage() {
     if (s(d.availableFrom)) setAvailableFrom(d.availableFrom as string);
     if (s(d.availableUntil)) setAvailableUntil(d.availableUntil as string);
     if (s(d.monthlyPrice)) setMonthlyPrice(d.monthlyPrice as string);
+    if (s(d.airbnbMensal)) setAirbnbMensal(d.airbnbMensal as string);
     if (s(d.condoFee)) setCondoFee(d.condoFee as string);
     if (typeof d.descricaoGeradaPorIa === "boolean") setDescricaoGeradaPorIa(d.descricaoGeradaPorIa);
     if (s(d.street)) setStreet(d.street as string);
@@ -539,6 +559,7 @@ export default function NewPropertyPage() {
     setEtapaMax(posMaxDoRascunho(d));
   }
 
+  const draftIdRef = useRef<string | null>(null);
   // Retomada por `?draft=<id>` — carrega o snapshot do SERVIDOR e restaura tudo
   // (campos + etapa). É o "Continuar editando" de um rascunho de Meus imóveis.
   useEffect(() => {
@@ -637,6 +658,7 @@ export default function NewPropertyPage() {
       setAvailableFrom(p.availableFrom ? p.availableFrom.slice(0, 10) : "");
       setAvailableUntil(p.availableUntil ? p.availableUntil.slice(0, 10) : "");
       setMonthlyPrice(p.monthlyPrice ? String(p.monthlyPrice) : "");
+      setAirbnbMensal(p.airbnbMonthlyPrice ? String(p.airbnbMonthlyPrice) : "");
       setNeighborhood(p.neighborhood || "");
       setCity(p.city || "Uberlândia");
       setFurnished(p.furnished ?? true);
@@ -674,7 +696,7 @@ export default function NewPropertyPage() {
   // cabem com segurança no armazenamento local — por isso o aviso na tela.
   const draftJson = JSON.stringify({
     title, propertyType, description, bedrooms, bathrooms, areaM2, parkingSpots, maxGuests,
-    minPeriod, maxPeriod, availableFrom, availableUntil, monthlyPrice,
+    minPeriod, maxPeriod, availableFrom, availableUntil, monthlyPrice, airbnbMensal,
     street, neighborhood, city, cep, videoUrl,
     privacidade, furnished, petsOk, smokingAllowed, childrenAllowed, issuesInvoice,
     amenityKeys, googlePlaces, manualProximities,
@@ -692,7 +714,6 @@ export default function NewPropertyPage() {
   // Autosave REAL no servidor (P0). draftIdRef guarda o id de forma síncrona (o
   // 1º save insere e fixa o id; os seguintes ATUALIZAM — sem rascunhos
   // duplicados). localStorage segue como cinto secundário.
-  const draftIdRef = useRef<string | null>(null);
   useEffect(() => {
     // Não autossalva em modo edição (?id — imóvel existente, não é rascunho novo).
     if (approved !== true || editId) return;
@@ -708,6 +729,9 @@ export default function NewPropertyPage() {
     if (vazio) return;
 
     let on = true;
+    // Marca "Salvando…" já ao detectar a alteração (antes do debounce): é a
+    // sincronização com o autosave, por isso o setState dentro do effect.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSaveStatus("saving");
     const t = setTimeout(async () => {
       if (!on) return;
@@ -716,6 +740,10 @@ export default function NewPropertyPage() {
         title,
         city,
         monthlyPrice: Number(monthlyPrice) || 0,
+        neighborhood,
+        bathrooms: Number(bathrooms) || 0,
+        areaM2: Number(areaM2) || 0,
+        description,
         data: JSON.parse(draftJson),
       });
       if (!on) return;
@@ -747,7 +775,9 @@ export default function NewPropertyPage() {
   // ("Salvando…") ou após falha de rede ("não salvo"). Ref para não reassinar o
   // listener a cada tecla. Edição (?id) não é rascunho — sem guarda.
   const unsavedRef = useRef(false);
-  unsavedRef.current = !editId && (saveStatus === "saving" || saveStatus === "error");
+  useEffect(() => {
+    unsavedRef.current = !editId && (saveStatus === "saving" || saveStatus === "error");
+  }, [editId, saveStatus]);
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
       if (!unsavedRef.current) return;
@@ -1065,6 +1095,7 @@ export default function NewPropertyPage() {
         {/* ── ETAPA 1 — Tipo e operação ── */}
         {step === 0 && (
           <div className="space-y-4">
+            <ImportarAnuncio onAplicar={aplicarImportado} />
             <Labeled label="Tipo de imóvel">
               <select value={propertyType} onChange={(e) => setPropertyType(e.target.value)} className="input">
                 {PROPERTY_TYPES.map((t) => (
@@ -1510,7 +1541,7 @@ export default function NewPropertyPage() {
               />
             </Labeled>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <Labeled label="Aluguel mensal (R$)">
+              <Labeled label="Valor mensal (R$)">
                 <input type="number" min={0} value={monthlyPrice} onChange={(e) => setMonthlyPrice(e.target.value)} className="input" placeholder="3200" />
                 {Number(monthlyPrice) > 0 && (
                   <span className="mt-1 block text-xs text-muted">{formatBRL(Number(monthlyPrice))}/mês</span>
@@ -1543,7 +1574,7 @@ export default function NewPropertyPage() {
                     <span className="text-sm font-normal text-muted">/mês tudo incluído</span>
                   </p>
                   <dl className="mt-2 space-y-0.5 text-xs text-muted">
-                    <div className="flex justify-between"><dt>Aluguel</dt><dd>{formatBRL(aluguel)}</dd></div>
+                    <div className="flex justify-between"><dt>Valor mensal</dt><dd>{formatBRL(aluguel)}</dd></div>
                     {condo > 0 && <div className="flex justify-between"><dt>Condomínio</dt><dd>{formatBRL(condo)}</dd></div>}
                     {consumoFixo > 0 && (
                       <div className="flex justify-between"><dt>Consumo (fixo estimado)</dt><dd>{formatBRL(consumoFixo)}</dd></div>
@@ -1562,12 +1593,13 @@ export default function NewPropertyPage() {
               <p className="flex items-start gap-2 rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted">
                 <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-sage" />
                 <span>
-                  <strong className="text-ink">Você recebe o aluguel direto na sua conta.</strong> {" "}
+                  <strong className="text-ink">Você recebe o valor mensal direto na sua conta.</strong> {" "}
                   {TEXTO_REGRA_CURTO}
                 </span>
               </p>
             )}
             <LinhaComparativoAnuncio aluguel={Number(monthlyPrice)} />
+            <PrecoSugerido aluguel={Number(monthlyPrice) || 0} onUsar={(v) => setMonthlyPrice(String(v))} onAirbnbMensal={(v) => setAirbnbMensal(v ? String(v) : "")} />
 
             <div className="rounded-xl border border-sage-200 p-4">
               <p className="text-sm font-medium text-ink">Despesas de consumo (água, luz, gás)</p>
@@ -1589,7 +1621,7 @@ export default function NewPropertyPage() {
               {utilitiesMode === "fixed" ? (
                 <div className="mt-3">
                   <p className="mb-2 text-xs text-muted">
-                    O inquilino paga um <strong>valor fixo por mês</strong> junto do aluguel. Se o
+                    O inquilino paga um <strong>valor fixo por mês</strong> junto do valor mensal. Se o
                     consumo real exceder cerca de 20% da estimativa, há cláusula de ajuste (cobrança
                     complementar, com comprovante — registrada pela plataforma, não intermediada).
                   </p>
@@ -1615,15 +1647,15 @@ export default function NewPropertyPage() {
                 O dado (issues_invoice) continua no banco, sem mudança. */}
             {SELO_NF_UI && (
               <div className="space-y-2">
-                <Toggle checked={issuesInvoice} onChange={() => setIssuesInvoice((v) => !v)} label="Este imóvel emite Nota Fiscal do aluguel" hint="Decisivo para o público corporativo (reembolso pela empresa)." />
+                <Toggle checked={issuesInvoice} onChange={() => setIssuesInvoice((v) => !v)} label="Este imóvel emite Nota Fiscal do valor mensal" hint="Decisivo para o público corporativo (reembolso pela empresa)." />
               </div>
             )}
 
             <Labeled label="Garantias que você aceita">
               <p className="mb-2 text-xs text-muted">
                 Só preferência de aceite — <strong>não muda o caminho do dinheiro</strong> (a
-                caução em dinheiro vai para uma conta poupança, como manda o art. 38, §2º da Lei
-                8.245/91 — a plataforma não tem acesso).
+                caução em dinheiro vai para uma conta poupança, como manda a lei — a plataforma
+                não tem acesso).
               </p>
               <div className="space-y-3">
                 {GARANTIAS_CADASTRO.map((g) =>

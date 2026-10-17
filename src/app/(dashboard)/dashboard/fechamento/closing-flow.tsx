@@ -1,5 +1,6 @@
 "use client";
 
+import { CampoData } from "@/components/ui/campo-data";
 import { DocumentosInquilino } from "@/components/documentos-inquilino";
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -46,7 +47,7 @@ import {
   MAX_PARCELAS,
   type FormaPagamentoCaucao,
 } from "@/lib/caucao";
-import { textoTaxaPainel, pctTexto } from "@/lib/cobranca/regra";
+import { textoTaxaPainel, pctTexto, TEXTO_RENOVACAO_COMISSAO } from "@/lib/cobranca/regra";
 import { registrarContrato } from "@/lib/data/actions";
 import type { FechamentoContexto } from "@/lib/data/leads-actions";
 import { resumoContrato } from "@/lib/contrato-blocos";
@@ -56,8 +57,10 @@ import {
   faixaResumo,
   CLAUSULAS_PLACEHOLDER,
 } from "@/lib/modelos-contrato";
-import { hojeBR, formatBRL, cn } from "@/lib/utils";
+import { hojeBR, dataBR, formatBRL, cn } from "@/lib/utils";
+import { validarInicioEstadia } from "@/lib/inicio-estadia";
 import { MARCA_MINUTA, MSG_ASSINATURA_INATIVA } from "@/lib/contrato-etapas";
+import { LINK_DOCUMENTO } from "@/lib/documento-pessoa";
 
 const STEPS = ["Candidatura & verificação", "Garantia", "Serviços", "Patrimonial", "Contrato", "Resumo"];
 
@@ -98,6 +101,10 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   const [step, setStep] = useState(0);
   // Prazo total pretendido (contrato-mãe) — o inquilino escolhe no fechamento.
   const [prazoMeses, setPrazoMeses] = useState(DEFAULT_MESES);
+  // F37: data de início da estadia (obrigatória, hoje ou futura); os blocos partem dela.
+  const hoje = hojeBR();
+  const [inicioISO, setInicioISO] = useState(ctx.inicioSugerido ?? hoje);
+  const inicioValido = validarInicioEstadia(inicioISO, hoje);
   // Derivações do prazo (dinâmicas). Nomes espelham os antigos p/ o JSX seguir.
   const STAY_MESES = prazoMeses;
   const STAY_DAYS = prazoMeses * 30;
@@ -253,7 +260,6 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
       // Registra o CONTRATO-MÃE + blocos (contrato fracionado v2). A comissão
       // fica no contrato-mãe (taxa × valor total, UMA vez); cada bloco carrega a
       // caução (50%). O servidor confere o documento das duas partes (F32).
-      const inicioISO = hojeBR();
       // A6: inquilino, imóvel, aluguel e taxa vêm da candidatura aceita (servidor).
       const reg = await registrarContrato({
         leadId: ctx.leadId,
@@ -287,7 +293,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   }
 
   const canAdvance =
-    (step === 0 && verified && !ocupantesExcede) ||
+    (step === 0 && verified && !ocupantesExcede && inicioValido.ok) ||
     (step === 1 && !!guaranteeId && cienteProtecao) ||
     step === 2 || // serviços: opcional, pode seguir sem escolher
     (step === 3 && patrimonial !== null) ||
@@ -311,7 +317,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
 
   return (
     <div>
-      <PageTitle
+      <PageTitle capa="fechamento"
         title="Fechamento"
         subtitle={
           demo
@@ -329,7 +335,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
           <p className="font-semibold">Falta um documento para gerar o contrato</p>
           <p className="mt-1">{ctx.documentoPendente.mensagem}</p>
           {ctx.documentoPendente.quem === "dono" && (
-            <Link href="/dashboard/conta#documento" className="mt-2 inline-block font-semibold text-forest underline">
+            <Link href={LINK_DOCUMENTO} className="mt-2 inline-block font-semibold text-forest underline">
               Informar meu documento
             </Link>
           )}
@@ -342,9 +348,9 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         {/* Resumo lateral (sticky no desktop) — aproveita a largura da tela */}
-        <aside className="order-1 lg:order-2 lg:col-span-1">
+        <aside className="order-1 lg:order-2">
           <div className="space-y-4 lg:sticky lg:top-20">
             <PropertyMiniCard property={PROPERTY_FULL} />
             {/* Identificação clara dos papéis (A6) */}
@@ -362,7 +368,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
         </aside>
 
         {/* Coluna principal: stepper + etapas do wizard */}
-        <div className="order-2 lg:order-1 lg:col-span-2">
+        <div className="order-2 lg:order-1">
           {/* Stepper (passos alcançados são clicáveis — A4).
               Rola no mobile; quebra em linhas no desktop (sem scroll horizontal). */}
           <div className="mb-6 flex items-center gap-2 overflow-x-auto pb-2 sm:flex-wrap sm:overflow-visible sm:pb-0">
@@ -464,7 +470,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
             <div className="rounded-xl border border-sage-200 p-4 text-sm">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <p className="font-medium text-ink">Por quanto tempo você quer ficar?</p>
+                  <p className="font-medium text-ink">Por quanto tempo será a estadia?</p>
                   <p className="text-xs text-muted">
                     Prazo total pretendido — cria o <strong>contrato</strong>. Contratado em{" "}
                     blocos de {TAMANHO_BLOCO} meses (cada bloco ≤ 90 dias).
@@ -485,6 +491,29 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                   )}
                 </select>
               </div>
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-sage-200 pt-3">
+                <div>
+                  <label htmlFor="inicio-estadia" className="font-medium text-ink">
+                    Data de início da estadia
+                  </label>
+                  <p className="text-xs text-muted">Os blocos, os prazos de pagamento e o fim da estadia contam a partir dela.</p>
+                </div>
+                <CampoData
+                  id="inicio-estadia"
+                  data-testid="inicio-estadia"
+                  required
+                  min={hoje}
+                  value={inicioISO}
+                  onChange={(e) => setInicioISO(e.target.value)}
+                  aria-invalid={!inicioValido.ok}
+                  className="min-h-11 rounded-lg border border-sage-200 bg-white px-3 py-2 outline-none focus:border-sage"
+                />
+              </div>
+              {!inicioValido.ok && (
+                <p role="alert" data-testid="inicio-estadia-erro" className="mt-2 text-xs text-red-700">
+                  {inicioValido.error}
+                </p>
+              )}
               <p className="mt-3 text-xs text-muted">
                 {resumo.blocos.length} {resumo.blocos.length === 1 ? "bloco" : "blocos"} ·{" "}
                 {formatBRL(PROPERTY.monthlyRent)}/mês · total do período{" "}
@@ -645,14 +674,14 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                   </table>
                 </div>
                 <p className="rounded-lg bg-sage-100 px-3 py-2 text-xs text-forest">
-                  Para começar você paga só o <strong>1º bloco</strong>:{" "}
+                  Para começar o inquilino paga só o <strong>1º bloco</strong>:{" "}
                   {formatBRL(resumo.desembolsoPrimeiroBloco)} (aluguel + caução). Os próximos blocos
-                  são contratados por renovação, sempre com seu aceite — nunca automática.
+                  são contratados por renovação, sempre com o aceite das duas partes — nunca automática.
                 </p>
 
                 {/* Caução flexível: o inquilino escolhe como pagar. */}
                 <div>
-                  <p className="mb-1.5 font-medium text-ink">Como você quer pagar?</p>
+                  <p className="mb-1.5 font-medium text-ink">Como o inquilino vai pagar a caução?</p>
                   <div className="flex rounded-full bg-surface-2 p-0.5 text-xs">
                     {(
                       [
@@ -767,8 +796,8 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
               <h2 className="font-title text-lg font-bold text-ink">Serviços adicionais</h2>
               <p className="mt-1 text-sm text-muted">
                 Opcionais e <strong>combináveis</strong> — <strong>não são garantia</strong>. A
-                plataforma intermedeia e roteia o pagamento ao prestador;{" "}
-                <strong>não executa o serviço</strong>. Você pode seguir sem nenhum.
+                Viva não recebe esse valor: você contrata e paga direto ao prestador parceiro;{" "}
+                <strong>a Viva não executa o serviço</strong>. Você pode seguir sem nenhum.
               </p>
             </div>
 
@@ -780,6 +809,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                   <button
                     key={s.id}
                     type="button"
+                    data-testid={`servico-${s.id}`}
                     aria-pressed={active}
                     aria-disabled={!selectable}
                     disabled={!selectable}
@@ -952,6 +982,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
             <div className="rounded-xl bg-surface-2 p-4 text-sm">
               <Row label="Inquilino" value={tenant.name} />
               <Row label="Imóvel" value={PROPERTY.title} />
+              <Row label="Início da estadia" value={dataBR(inicioISO)} />
               <Row label="Prazo" value={`${prazoMeses} meses`} />
               <Row label="Aluguel" value={`${formatBRL(PROPERTY.monthlyRent)}/mês`} />
               <Row label="Garantia" value={selectedGarantia?.nome ?? "—"} />
@@ -1001,9 +1032,8 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                 {aceiteBR ? ` (taxa travada em ${aceiteBR})` : ""}
               </p>
               <p className="mt-1 text-xs text-muted">
-                Cobrada de você <strong>sobre o valor total do contrato</strong> (aluguel × meses), em
-                uma cobrança à parte, no fechamento. A comissão é cobrada uma vez em cada contrato e em
-                cada renovação, sobre o valor total do período contratado. O valor mensal, de todos os
+                Cobrada de você <strong>sobre o valor total do contrato</strong> (valor mensal × meses), em
+                uma cobrança à parte, no fechamento. {TEXTO_RENOVACAO_COMISSAO} O valor mensal, de todos os
                 meses, vai do inquilino{" "}
                 <strong>direto para a sua conta</strong> — a plataforma nunca cobra nem repassa
                 esse valor. O inquilino não paga taxa da Viva.
@@ -1154,7 +1184,7 @@ function CafLaudo({ result }: { result: CafResult }) {
         <span className="text-2xl">{meta.emoji}</span>
         <span className="font-title text-lg font-bold">Verificação de identidade — {meta.label}</span>
       </div>
-      <div className="mt-4 grid gap-2 sm:grid-cols-3">
+      <div className="mt-4 grid gap-2">
         <LaudoItem icon={Fingerprint} label="Identidade" ok={result.identity} />
         <LaudoItem icon={ScanFace} label="Prova de vida" ok={result.liveness} />
         <LaudoItem icon={FileCheck2} label="Documento (OCR)" ok={result.document} />
@@ -1219,10 +1249,10 @@ export function SuaProtecao({
   onCiente: (v: boolean) => void;
 }) {
   const linhas: [string, string, string][] = [
-    ["Quanto você paga", `${formatBRL(caucao)} depositados na entrada (50% de cada bloco, no máximo 3 aluguéis = ${formatBRL(aluguel * 3)})`, "O prêmio do seguro (valor de cotação da seguradora)"],
-    ["Volta para você?", "Sim, no fim, com o rendimento da poupança, menos os descontos com prova", "Não"],
+    ["Quanto o inquilino paga", `${formatBRL(caucao)} depositados na entrada (50% de cada bloco, no máximo 3 aluguéis = ${formatBRL(aluguel * 3)})`, "O prêmio do seguro (valor de cotação da seguradora)"],
+    ["Volta para o inquilino?", "Sim, no fim, com o rendimento da poupança, menos os descontos com prova", "Não"],
     ["O que cobre para o proprietário", `Aluguel e danos até ${formatBRL(caucao)}`, "Aluguel e danos até o limite da apólice"],
-    ["Se você quebrar algo", "O conserto é descontado da caução", "A seguradora paga o proprietário e cobra de você"],
+    ["Se o inquilino quebrar algo", "O conserto é descontado da caução", "A seguradora paga o proprietário e cobra do inquilino"],
   ];
   return (
     <div className="rounded-xl border border-sage-200 p-4 text-sm" data-testid="sua-protecao">
@@ -1249,7 +1279,7 @@ export function SuaProtecao({
         </table>
       </div>
       <ul className="mt-3 space-y-1.5 rounded-lg bg-surface-2 px-3 py-2 text-xs font-medium text-ink">
-        <li>Em qualquer opção, você responde pelos danos que causar.</li>
+        <li>Em qualquer opção, o inquilino responde pelos danos que causar.</li>
         <li>Desgaste normal e defeitos são do proprietário.</li>
       </ul>
       <label className="mt-3 flex items-start gap-2 text-sm text-ink">

@@ -3,11 +3,13 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { trilha } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
 import Link from "next/link";
-import { Camera, Building2, KeyRound, Wrench, ShieldCheck, ArrowRight, Check } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 import { BannerTopo } from "@/components/institucional/banner-topo";
 import { BrandImage } from "@/components/brand-image";
 import { ButtonLink } from "@/components/ui/button";
 import { ParceiroForm } from "./parceiro-form";
+import { FaixasTaxaParceria } from "@/components/parceiros/faixas-taxa";
+import { FOTOS_PARCERIA } from "@/lib/parceiros-cartoes";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/parceiros" },
@@ -15,36 +17,30 @@ export const metadata: Metadata = {
   description: "Fotógrafos, empresas, gestores e prestadores de serviços para imóveis mobiliados: cadastre seu interesse e seja parceiro da Viva Nomads.",
 };
 
-const ICONE: Record<string, React.ComponentType<{ className?: string }>> = {
-  fotografos: Camera,
-  empresas: Building2,
-  gestores: KeyRound,
-  servicos: Wrench,
-  seguros: ShieldCheck,
-};
-
 const CARDS = [
-  { id: "fotografos", titulo: "Fotógrafos", selo: "Aberto", texto: "Perfil com portfólio, pacote e prazo. Depois do aceite você vê a identidade do dono, e a conversa segue pela plataforma. Há avaliação após a entrega.",
+  { id: "fotografos", titulo: "Fotógrafos", selo: "Aberto", texto: "Perfil com portfólio, pacote e prazo. A conversa é pela plataforma e você é avaliado após a entrega.",
     links: [{ href: "/parceiros?tipo=fotografo#quero-ser-parceiro", rotulo: "Sou fotógrafo" }, { href: "/parceiros/fotografos", rotulo: "Procuro fotógrafo" }] },
   { id: "empresas", titulo: "Empresas", selo: "Aberto", texto: "Empresas que hospedam equipes em imóveis mobiliados.", links: [{ href: "/empresas", rotulo: "Conhecer" }] },
-  { id: "gestores", titulo: "Gestores e administradoras", selo: "Aberto", texto: "Taxa menor por volume (12/10/8/6%) e Plano Gestor para quem tem 31 ou mais imóveis.",
+  { id: "gestores", titulo: "Gestores e administradoras", selo: "Aberto", texto: "Taxa menor por volume e Plano Gestor para quem tem 31 ou mais imóveis.",
     links: [{ href: "/precos", rotulo: "Ver o Plano Gestor" }] },
-  { id: "servicos", titulo: "Serviços para o imóvel", selo: "Em breve", texto: "Limpeza, manutenção, mobília, enxoval, internet e mudança. Em breve: deixe seu contato.",
+  { id: "servicos", titulo: "Limpeza e manutenção", selo: "Em breve", texto: "Limpeza por pacote mensal, reparos e manutenção preventiva para imóveis mobiliados. Em breve: deixe seu contato.",
     links: [{ href: "/parceiros?tipo=servicos#quero-ser-parceiro", rotulo: "Deixar contato" }] },
+  { id: "mobilia", titulo: "Mobília, enxoval e mudança", selo: "Em breve", texto: "Mobiliar, montar enxoval, internet e mudança para quem anuncia ou vem morar. Em breve: deixe seu contato.",
+    links: [{ href: "/parceiros?tipo=mobilia#quero-ser-parceiro", rotulo: "Deixar contato" }] },
   { id: "seguros", titulo: "Seguros e garantias", selo: "Em breve", texto: "Seguros e garantias para imóveis mobiliados. Em breve: deixe seu contato.",
     links: [{ href: "/parceiros?tipo=seguros#quero-ser-parceiro", rotulo: "Deixar contato" }] },
 ];
 
 const PASSOS = [
-  { t: "Cadastre-se", d: "Conte o que você faz e onde atende. Leva poucos minutos.", foto: "/images/como-funciona/01-busque.webp", alt: "Pessoa preenchendo o cadastro no notebook" },
-  { t: "A Viva confere", d: "CNPJ ou MEI, portfólio e reputação, antes de aparecer no site.", foto: "/images/como-funciona/03-verifique.webp", alt: "Conferência de documentos no computador" },
-  { t: "Receba pedidos", d: "Quem anuncia ou busca imóveis mobiliados chama você; a conversa é pela plataforma.", foto: "/images/como-funciona/02-converse.webp", alt: "Conversa pelo celular" },
-  { t: "Entregue e seja avaliado", d: "Depois da entrega, o cliente avalia — boas avaliações trazem mais pedidos.", foto: "/images/como-funciona/06-selo.webp", alt: "Selo de qualidade em destaque" },
+  { t: "Cadastre-se", d: "Conte o que você faz e onde atende. Leva poucos minutos.", foto: "/images/unicas/parceiros-passo-cadastro.webp", alt: "Pessoa preenchendo o cadastro no notebook" },
+  { t: "A Viva confere", d: "CNPJ ou MEI, portfólio e reputação, antes de aparecer no site.", foto: "/images/unicas/parceiros-passo-confere.webp", alt: "Conferência de documentos no computador" },
+  { t: "Receba pedidos", d: "Quem anuncia ou busca imóveis mobiliados chama você; a conversa é pela plataforma.", foto: "/images/unicas/parceiros-passo-pedidos.webp", alt: "Conversa pelo celular" },
+  { t: "Entregue e seja avaliado", d: "Depois da entrega, o cliente avalia — boas avaliações trazem mais pedidos.", foto: "/images/unicas/parceiros-passo-avaliado.webp", alt: "Quarto arrumado e limpo depois do serviço" },
 ];
 
 const REGRAS = [
   "O pagamento do serviço é entre parceiro e cliente: a Viva não recebe esse dinheiro.",
-  "Taxa de parceria só quando você aceita um pedido, com o valor mostrado antes.",
+  "Taxa de parceria só quando você aceita um pedido, com o valor mostrado antes (veja as faixas abaixo).",
   "Sem exclusividade e sem mensalidade.",
   "Contato fora da plataforma antes do aceite leva ao descadastro.",
 ];
@@ -52,7 +48,7 @@ const REGRAS = [
 const DUVIDAS = [
   { p: "Preciso de CNPJ?", r: "Para aparecer no site, CNPJ ou MEI. Você pode se cadastrar antes." },
   { p: "Quanto custa?", r: "É grátis. A taxa de parceria só existe quando você aceita um pedido." },
-  { p: "Em quais cidades?", r: "Em todo o Brasil: a busca funciona por CEP ou cidade em qualquer região." },
+  { p: "Em quais cidades?", r: "Começando por Uberlândia (MG). Cadastre-se de qualquer cidade e avisamos quando chegarmos aí." },
 ];
 
 export default async function ParceirosPage({ searchParams }: { searchParams: Promise<{ tipo?: string }> }) {
@@ -61,7 +57,7 @@ export default async function ParceirosPage({ searchParams }: { searchParams: Pr
     <div>
       <JsonLd dados={trilha(SITE_URL, [{ nome: "Parceiros", caminho: "/parceiros" }])} />
       <BannerTopo
-        foto="/images/como-funciona/07-anuncie.webp"
+        foto="/images/unicas/parceiros-banner.webp"
         alt="Fotógrafo registrando uma sala mobiliada"
         eyebrow="Parceiros"
         titulo="Seja parceiro da Viva Nomads"
@@ -77,30 +73,35 @@ export default async function ParceirosPage({ searchParams }: { searchParams: Pr
 
       {/* Números rápidos. */}
       <section className="container-page relative z-10 -mt-10">
-        <dl className="grid gap-4 rounded-2xl border border-line bg-white p-6 shadow-lg sm:grid-cols-3">
-          <div><dt className="font-title text-2xl font-bold text-ink">Brasil</dt><dd className="text-sm text-muted">Busca por CEP ou cidade em qualquer região</dd></div>
+        <dl className="grid gap-4 rounded-2xl border border-line bg-white p-6 shadow-lg sm:grid-cols-2 lg:grid-cols-4" data-testid="parceiros-numeros">
+          <div><dt className="font-title text-2xl font-bold text-ink">Uberlândia (MG)</dt><dd className="text-sm text-muted">Começamos por aqui; cadastre-se de qualquer cidade</dd></div>
           <div><dt className="font-title text-2xl font-bold text-ink">30–180 dias</dt><dd className="text-sm text-muted">de estadia em imóveis mobiliados</dd></div>
           <div><dt className="font-title text-2xl font-bold text-ink">R$ 0</dt><dd className="text-sm text-muted">para se cadastrar, sem mensalidade</dd></div>
+          <div><dt className="font-title text-2xl font-bold text-ink">Contato só pela plataforma</dt><dd className="text-sm text-muted">identidade revelada após o aceite</dd></div>
         </dl>
       </section>
 
       <section id="tipos" aria-labelledby="h-tipos" className="container-page section-y scroll-mt-24">
         <h2 id="h-tipos" className="text-center font-title text-3xl font-bold text-ink md:text-4xl">Tipos de parceria</h2>
-        <ul className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-6" data-testid="parceiros-tipos">
           {CARDS.map((c) => {
-            const Icon = ICONE[c.id] ?? Building2;
+            const f = FOTOS_PARCERIA.find((x) => x.id === c.id)!;
             return (
-              <li key={c.id} className="flex flex-col rounded-2xl border border-line bg-white p-6 shadow-sm">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="grid h-11 w-11 place-items-center rounded-xl bg-sage-100 text-forest">
-                    <Icon className="h-5 w-5" aria-hidden />
-                  </span>
-                  <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${c.selo === "Aberto" ? "bg-sage-100 text-forest" : "bg-night/10 text-ink"}`}>{c.selo}</span>
-                </div>
-                <h3 className="mt-4 font-title text-lg font-bold text-ink">{c.titulo}</h3>
-                <p className="mt-2 flex-1 text-sm leading-relaxed text-muted">{c.texto}</p>
-                <div className="mt-4 flex flex-wrap gap-4 text-sm font-semibold text-forest">
-                  {c.links.map((l) => <Link key={l.href} href={l.href} className="underline underline-offset-2 hover:text-blue-700">{l.rotulo}</Link>)}
+              <li key={c.id} className={`flex flex-col overflow-hidden rounded-2xl border border-line bg-white shadow-sm ${f.classeGrade}`}>
+                {f.fotoPronta ? (
+                  <BrandImage src={f.foto} alt={f.alt} rounded="rounded-none" sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="aspect-[16/9] w-full" />
+                ) : (
+                  <div className="aspect-[16/9] w-full bg-sage-100" data-testid="parceiros-foto-pendente" aria-hidden />
+                )}
+                <div className="flex flex-1 flex-col p-6">
+                  <div className="flex items-start justify-between gap-3">
+                    <h3 className="line-clamp-2 font-title text-lg font-bold text-ink">{c.titulo}</h3>
+                    <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${c.selo === "Aberto" ? "bg-sage-100 text-forest" : "bg-night/10 text-ink"}`}>{c.selo}</span>
+                  </div>
+                  <p className="mt-2 flex-1 text-sm leading-relaxed text-muted">{c.texto}</p>
+                  <div className="mt-4 flex flex-wrap gap-4 text-sm font-semibold text-forest">
+                    {c.links.map((l) => <Link key={l.href} href={l.href} className="underline underline-offset-2 hover:text-blue-700">{l.rotulo}</Link>)}
+                  </div>
                 </div>
               </li>
             );
@@ -129,7 +130,7 @@ export default async function ParceirosPage({ searchParams }: { searchParams: Pr
 
       <section aria-labelledby="h-regras" className="container-page section-y">
         <div className="grid items-center gap-10 md:grid-cols-2">
-          <BrandImage src="/images/como-funciona/05-qualifique.webp" alt="Sala mobiliada pronta para receber hóspedes" sizes="(max-width: 768px) 100vw, 50vw" className="aspect-[4/3] w-full rounded-3xl" />
+          <BrandImage src="/images/como-funciona/05-qualifique.webp" alt="Sala mobiliada pronta para receber moradores" sizes="(max-width: 768px) 100vw, 50vw" className="aspect-[4/3] w-full rounded-3xl" />
           <div>
             <h2 id="h-regras" className="font-title text-3xl font-bold text-ink">Regras claras</h2>
             <ul className="mt-6 space-y-3">
@@ -140,6 +141,7 @@ export default async function ParceirosPage({ searchParams }: { searchParams: Pr
                 </li>
               ))}
             </ul>
+            <div className="mt-6"><FaixasTaxaParceria titulo="Taxa de parceria para fotógrafos" /></div>
           </div>
         </div>
       </section>

@@ -17,6 +17,12 @@ export function isExemplo(idOrProperty: string | { id: string }): boolean {
   return !UUID_RE.test(id);
 }
 
+/** Anúncio de TESTE ("[TESTE …]", "[TEST]", "[QA]"; ordem fa84ea52): fora do Google e do sitemap. Regra única em data/anuncio-teste. */
+export { ehAnuncioDeTeste } from "./data/anuncio-teste.ts";
+
 /** Mensagem única quando alguém tenta contato/candidatura num anúncio de exemplo. */
 export const EXEMPLO_SEM_CONTATO =
   "Este é um anúncio de exemplo — candidaturas e contatos ficam disponíveis nos imóveis reais.";
+
+/** Aviso único nos botões de reserva/mensagem de um anúncio de exemplo (demonstração: nada é gravado). */
+export const EXEMPLO_AVISO_DEMO = "Anúncio de exemplo: esta solicitação não é enviada.";

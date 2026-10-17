@@ -1,5 +1,6 @@
 "use client";
 
+import { CampoData } from "@/components/ui/campo-data";
 import { ProblemaComIsto } from "@/components/ajuda/problema-com-isto";
 import { useMemo, useState } from "react";
 import Link from "next/link";
@@ -149,7 +150,7 @@ export function ContratosClient({
 
   return (
     <>
-      <PageTitle
+      <PageTitle capa="contratos"
         title="Contratos & blocos"
         subtitle="Acompanhe cada contrato, seus blocos e registre os recebimentos."
         action={demoOn ? <DemoBadge /> : undefined}
@@ -230,6 +231,11 @@ function ContratoCard({
             <span className="inline-flex items-center gap-1">
               <Users className="h-3.5 w-3.5" /> {contrato.qtdOcupantes} ocupante(s)
             </span>
+            {contrato.blocos[0] && (
+              <span className="inline-flex items-center gap-1" data-testid="contrato-inicio">
+                <CalendarDays className="h-3.5 w-3.5" /> Início da estadia: {formatDate(contrato.blocos[0].inicio)}
+              </span>
+            )}
           </div>
         </div>
         <span
@@ -268,7 +274,7 @@ function ContratoCard({
           <> ({Math.round(contrato.comissaoPercent * 100)}% do valor total)</>
         )}{" "}
         — cobrada <strong>uma vez em cada contrato e em cada renovação</strong>, sobre o valor total do
-        período contratado; os aluguéis vão direto a você.
+        período contratado; o valor mensal vai direto a você.
       </p>
 
       {/* Timeline dos blocos */}
@@ -373,9 +379,9 @@ function BlocoRow({
         </span>
       </div>
 
-      <div className="mt-3 grid gap-2 text-xs sm:grid-cols-3">
+      <div className="mt-3 grid grid-cols-2 gap-2 text-xs lg:grid-cols-4">
         <div className="rounded-lg bg-surface-2 px-3 py-2">
-          <p className="text-muted">Aluguel do bloco</p>
+          <p className="text-muted">Valor do bloco</p>
           <p className="font-medium text-ink">{formatBRL(bloco.valor)}</p>
         </div>
         <div className="rounded-lg bg-surface-2 px-3 py-2">
@@ -401,13 +407,19 @@ function BlocoRow({
             {quitado && <Check className="inline h-3.5 w-3.5" />}
           </p>
         </div>
+        <div className="rounded-lg bg-surface-2 px-3 py-2">
+          <p className="text-muted">Em aberto</p>
+          <p className={cn("font-medium", quitado ? "text-forest" : "text-ink")}>
+            {formatBRL(Math.max(0, bloco.valor - pago))}
+          </p>
+        </div>
       </div>
 
       {/* Registro declaratório de recebimento (só em blocos já iniciados). */}
       {bloco.status !== "agendado" ? (
         quitado ? (
           <p className="mt-3 inline-flex items-center gap-1.5 text-xs text-forest">
-            <Check className="h-3.5 w-3.5" /> Aluguel do bloco registrado como recebido.
+            <Check className="h-3.5 w-3.5" /> Valor do bloco registrado como recebido.
           </p>
         ) : (
           <RegistrarRecebimento
@@ -529,13 +541,13 @@ function RegistrarRecebimento({
             }}
             className={cn("rounded-md px-3 py-1 font-medium", tipo === t ? "bg-sage-100 text-forest" : "text-muted")}
           >
-            {t === "aluguel" ? "Aluguel" : "Caução"}
+            {t === "aluguel" ? "Valor do bloco" : "Caução"}
           </button>
         ))}
       </div>
       <div className="grid gap-2 sm:grid-cols-3">
         <label className="text-xs text-muted">
-          {tipo === "caucao" ? "Valor da caução" : "Valor do aluguel"}
+          {tipo === "caucao" ? "Valor da caução" : "Valor do bloco"}
           <input
             type="number"
             min={0}
@@ -560,8 +572,7 @@ function RegistrarRecebimento({
         </label>
         <label className="text-xs text-muted">
           Data
-          <input
-            type="date"
+          <CampoData
             value={data}
             onChange={(e) => setData(e.target.value)}
             className="mt-1 w-full rounded-lg border border-sage-200 px-2 py-1.5 text-sm text-ink outline-none focus:border-sage"

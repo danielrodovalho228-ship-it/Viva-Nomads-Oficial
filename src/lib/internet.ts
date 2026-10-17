@@ -17,6 +17,8 @@ export interface InternetTierMeta {
   description: string;
   /** Frase de benefício exibida no anúncio (linguagem do inquilino). */
   anuncio: string;
+  /** Mesma frase quando o anúncio declara internet fibra (não mistura "boa" com "fibra"). */
+  anuncioFibra: string;
 }
 
 export const INTERNET_TIERS: InternetTierMeta[] = [
@@ -25,12 +27,14 @@ export const INTERNET_TIERS: InternetTierMeta[] = [
     label: "Básica",
     description: "Boa para navegar, e-mails e streaming.",
     anuncio: "Internet básica — boa para navegar e streaming.",
+    anuncioFibra: "Internet fibra — boa para navegar e streaming.",
   },
   {
     value: "trabalho_remoto",
     label: "Boa para trabalho remoto",
     description: "Aguenta videochamadas e o trabalho do dia a dia.",
     anuncio: "Internet boa para trabalho remoto — aguenta videochamadas.",
+    anuncioFibra: "Internet fibra para trabalho remoto — aguenta videochamadas.",
   },
   {
     value: "home_office",
@@ -39,12 +43,23 @@ export const INTERNET_TIERS: InternetTierMeta[] = [
       "Ideal para videochamadas pesadas, uploads e vários dispositivos ao mesmo tempo.",
     anuncio:
       "Internet excelente para home office — videochamadas pesadas e vários dispositivos.",
+    anuncioFibra:
+      "Internet fibra para home office — videochamadas pesadas e vários dispositivos.",
   },
 ];
 
 export const INTERNET_META: Record<InternetTier, InternetTierMeta> = Object.fromEntries(
   INTERNET_TIERS.map((t) => [t.value, t])
 ) as Record<InternetTier, InternetTierMeta>;
+
+/**
+ * Frase da internet no anúncio. Se o anúncio declara "Internet fibra" (recursos de trabalho
+ * ou comodidades), a frase usa o mesmo termo — o ube-005 dizia "fibra" e "boa" ao mesmo tempo.
+ */
+export function fraseInternetAnuncio(tier: InternetTier, declarados: readonly string[] = []): string {
+  const meta = INTERNET_META[tier];
+  return declarados.some((d) => /internet fibra/i.test(d)) ? meta.anuncioFibra : meta.anuncio;
+}
 
 /**
  * A internet aguenta trabalho? (categoria >= "trabalho_remoto"). É o critério

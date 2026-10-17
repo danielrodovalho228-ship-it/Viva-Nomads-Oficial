@@ -7,9 +7,14 @@ import {
   LogOut,
   Sofa,
   ShieldCheck,
+  Landmark,
+  FileCheck,
+  HandCoins,
+  Sparkles,
 } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { linhasRegrasPets } from "@/lib/anuncio/pets-regras";
+import { textoLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 
 /**
  * Regras da estadia: duração, mobília, animais, fumante, hóspedes, check-in/out
@@ -38,14 +43,16 @@ export function StayRules({ property }: { property: Property }) {
             ? "Aceita animais"
             : "Não aceita animais",
     });
+  if (property.limpezaEstadia)
+    rows.push({ icon: Sparkles, label: "Limpeza durante a estadia", value: textoLimpezaEstadia(property.limpezaEstadia) });
   if (property.smokingAllowed !== undefined)
     rows.push({ icon: Cigarette, label: "Fumante", value: property.smokingAllowed ? "Permitido fumar" : "Não é permitido fumar" });
   if (property.maxGuests !== undefined)
-    rows.push({ icon: Users, label: "Hóspedes", value: `Até ${property.maxGuests} ${property.maxGuests === 1 ? "pessoa" : "pessoas"}` });
+    rows.push({ icon: Users, label: "Moradores", value: `Até ${property.maxGuests} ${property.maxGuests === 1 ? "pessoa" : "pessoas"}` });
   if (property.checkinAfter)
-    rows.push({ icon: LogIn, label: "Check-in", value: `A partir das ${property.checkinAfter}` });
+    rows.push({ icon: LogIn, label: "Entrada", value: `A partir das ${property.checkinAfter}` });
   if (property.checkoutBefore)
-    rows.push({ icon: LogOut, label: "Check-out", value: `Até às ${property.checkoutBefore}` });
+    rows.push({ icon: LogOut, label: "Saída", value: `Até as ${property.checkoutBefore}` });
 
   return (
     <section id="regras-da-estadia" aria-labelledby="regras-title">
@@ -65,17 +72,26 @@ export function StayRules({ property }: { property: Property }) {
         ))}
       </ul>
 
-      {/* Garantias e pagamento (diferencial brasileiro) */}
+      {/* Caução e pagamento (diferencial brasileiro) */}
       <div className="mt-4 rounded-xl bg-sage-100/60 p-4">
         <h3 className="flex items-center gap-2 text-sm font-bold text-forest">
-          <ShieldCheck className="h-4 w-4 text-sage" /> Garantias e pagamento
+          <ShieldCheck className="h-4 w-4 text-sage" /> Caução e pagamento
         </h3>
-        <ul className="mt-2 space-y-1 text-sm text-ink">
-          <li>• Caução conforme contrato — registrada e documentada pela plataforma.</li>
-          {property.acceptsInsurance && <li>• Aceita Seguro-Fiança.</li>}
-          <li className="text-muted">
-            O pagamento do aluguel é feito direto ao proprietário — a plataforma conecta,
-            verifica, documenta e registra, mas nunca retém o dinheiro.
+        <ul className="mt-3 space-y-2.5 text-sm text-ink" data-testid="caucao-lista">
+          <li className="flex items-start gap-3">
+            <Landmark className="mt-0.5 h-5 w-5 shrink-0 text-sage" strokeWidth={1.75} aria-hidden />
+            Caução conforme contrato — registrada e documentada pela plataforma.
+          </li>
+          {property.acceptsInsurance && (
+            <li className="flex items-start gap-3">
+              <FileCheck className="mt-0.5 h-5 w-5 shrink-0 text-sage" strokeWidth={1.75} aria-hidden />
+              Aceita Seguro-Fiança.
+            </li>
+          )}
+          <li className="flex items-start gap-3 text-muted">
+            <HandCoins className="mt-0.5 h-5 w-5 shrink-0 text-sage" strokeWidth={1.75} aria-hidden />
+            <span>O pagamento do valor mensal é feito direto ao proprietário — a plataforma conecta,
+            confere a documentação do imóvel e registra a negociação, mas nunca recebe o dinheiro.</span>
           </li>
         </ul>
       </div>

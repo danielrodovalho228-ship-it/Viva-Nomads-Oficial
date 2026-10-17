@@ -1,7 +1,7 @@
 import type { AmenityCategory, AmenityGroup, Property } from "../types.ts";
 
-/** Quantas comodidades aparecem na página; o resto fica em "Ver todas as N comodidades". */
-export const LIMITE_PRINCIPAIS = 5;
+/** Quantas comodidades aparecem na página (número par, para a grade de 2 colunas não deixar vão); o resto fica em "Ver todas as N comodidades". */
+export const LIMITE_PRINCIPAIS = 6;
 
 const ORDEM: AmenityCategory[] = ["trabalho", "cozinha", "conforto", "edificio", "seguranca"];
 const rank = (c: AmenityCategory) => {

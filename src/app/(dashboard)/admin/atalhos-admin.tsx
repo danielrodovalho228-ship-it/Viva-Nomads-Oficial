@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bot, Camera, FileSignature, Handshake, Inbox, LifeBuoy, Megaphone, TrendingUp, Wallet } from "lucide-react";
+import { Bot, Camera, Video, FileSignature, Handshake, Inbox, LifeBuoy, Mail, Megaphone, Star, TrendingUp, Wallet } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Panel, StatCard } from "@/components/dashboard/primitives";
 
@@ -12,7 +12,9 @@ const OUTRAS_AREAS = [
   { href: "/admin/pedidos", label: "Moderar pedidos", icon: Megaphone },
   { href: "/admin/documentos", label: "Documentos", icon: FileSignature },
   { href: "/admin/atendimento", label: "Atendimento", icon: LifeBuoy },
+  { href: "/admin/emails-teste", label: "E-mails de teste", icon: Mail },
   { href: "/admin/financeiro", label: "Financeiro", icon: Wallet },
+  { href: "/admin/avaliacoes", label: "Avaliações", icon: Star },
   { href: "/admin/marketing", label: "Marketing", icon: TrendingUp },
 ];
 
@@ -27,21 +29,23 @@ export async function AtalhosAdmin() {
       return "—";
     }
   };
-  const [caixa, interessados, fotografos, ordens] = await Promise.all([
+  const [caixa, interessados, fotografos, ordens, visitas] = await Promise.all([
     contar(supabase.from("caixa_socios").select("id", { count: "exact", head: true }).in("status", ["novo", "precisa_daniel"])),
     contar(supabase.from("parceiros_interesse").select("id", { count: "exact", head: true }).eq("status", "novo")),
     contar(supabase.from("fotografos").select("id", { count: "exact", head: true }).eq("aprovado", false)),
     contar(supabase.from("agentes_ordens").select("id", { count: "exact", head: true }).in("status", ["pendente", "lida"])),
+    contar(supabase.from("visitas_video").select("id", { count: "exact", head: true }).eq("status", "pedido")),
   ]);
   return (
     <Panel title="Áreas do admin" className="mt-6">
-      <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-5">
         <StatCard label="Caixa dos Sócios — a tratar" value={caixa} icon={Inbox} href="/admin/socios" />
         <StatCard label="Parceiros — novos interessados" value={interessados} icon={Handshake} href="/admin/parceiros" />
         <StatCard label="Fotógrafos em análise" value={fotografos} icon={Camera} href="/admin/fotografos" />
         <StatCard label="Equipe — ordens abertas" value={ordens} icon={Bot} href="/admin/agentes" />
+        <StatCard label="Visitas por vídeo — pedidos abertos" value={visitas} icon={Video} href="/dashboard/visitas" />
       </div>
-      <ul data-testid="admin-outras-areas" className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5">
+      <ul data-testid="admin-outras-areas" className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-6">
         {OUTRAS_AREAS.map(({ href, label, icon: Icon }) => (
           <li key={href}>
             <Link href={href} className="flex min-h-11 items-center gap-2 rounded-2xl border border-sage-200 bg-white px-3 text-sm font-medium text-forest hover:border-sage">
