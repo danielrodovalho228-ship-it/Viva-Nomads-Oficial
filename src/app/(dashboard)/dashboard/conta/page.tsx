@@ -1,6 +1,7 @@
 "use client";
 
 import { PetsFicha } from "@/components/account/pets-ficha";
+import { PerfilPublicoForm } from "@/components/account/perfil-publico-form";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { ButtonLink } from "@/components/ui/button";
 import { AvatarUploader } from "@/components/account/avatar-uploader";
@@ -30,6 +31,7 @@ export default function AccountPage() {
       <div className="web-only">
         <PageTitle capa="conta" title="Conta" subtitle="Seus dados pessoais e preferências." />
         <DadosPessoais />
+        <PerfilPublicoForm />
         <DocumentoPessoa />
         <PetsFicha />
         {/* Foto de perfil (Fase 2) — opcional; visibilidade decidida no servidor. */}
