@@ -10,6 +10,7 @@ import { PropertyCard } from "@/components/property-card";
 import { PropertyMap } from "@/components/property-map-lazy";
 import { JsonLd } from "@/components/seo/json-ld";
 import { SITE_URL } from "@/lib/site";
+import { descricaoBairro } from "@/lib/seo/meta-descricao";
 import type { Property } from "@/lib/types";
 
 type Cidade = (typeof CITIES)[number];
@@ -22,7 +23,7 @@ export interface BairroDados {
 export function metadadosDoBairro(cidade: Cidade, b: BairroDados): Metadata {
   const semImovel = b.imoveis.filter((i) => !isExemplo(i.id)).length === 0;
   const title = `Imóveis mobiliados em ${b.nome} · ${cidade.name}`;
-  const description = `Imóveis mobiliados em ${b.nome}, ${cidade.name}, para estadias de 30 a 180 dias. Mapa da área, distâncias e anúncios reais.`;
+  const description = descricaoBairro(b.nome, cidade.name);
   const url = `/cidades/${cidade.slug}/${b.slug}`;
   return {
     title,

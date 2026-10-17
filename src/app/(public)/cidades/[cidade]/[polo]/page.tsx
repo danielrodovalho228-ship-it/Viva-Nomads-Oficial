@@ -12,6 +12,7 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { SITE_URL } from "@/lib/site";
 import { acharBairroCurado, bairrosDaGrade, imoveisDoBairro } from "@/lib/bairros";
 import { BairroPagina, metadadosDoBairro, type BairroDados } from "@/components/cidades/bairro-pagina";
+import { descricaoPolo } from "@/lib/seo/meta-descricao";
 
 export const revalidate = 60;
 
@@ -42,7 +43,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     return b ? metadadosDoBairro(c, b) : { robots: { index: false } };
   }
   const title = `Imóveis mobiliados ${tituloDoPolo(p.nome)} · ${c.name}`;
-  const description = `Imóveis mobiliados para estadias de 30 a 180 dias perto de ${p.referencia}, em ${c.name}. Valor médio por mês, perguntas frequentes e anúncios reais.`;
+  const description = descricaoPolo(p, c.name);
   const url = `/cidades/${cidade}/${polo}`;
   return {
     title,
