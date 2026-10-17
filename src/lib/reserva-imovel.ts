@@ -68,37 +68,13 @@ export function linhasDeTaxas(p: EntradaTaxas): LinhaTaxa[] {
   return l;
 }
 
-/** Só dígitos, 12 a 13 (55 + DDD + número) — senão o WhatsApp não é montado. */
-export function numeroWhatsappViva(bruto: string | undefined | null): string | null {
-  const d = String(bruto ?? "").replace(/\D/g, "");
-  return /^55\d{10,11}$/.test(d) ? d : null;
-}
-
-/** Mensagem pré-preenchida: cita só o código do imóvel (nunca endereço nem contato). */
-export function mensagemWhatsappViva(imovelId: string): string {
-  return `Olá, Viva! Tenho interesse no imóvel ${codigoDoImovel(imovelId)}.`;
-}
-
 /**
- * Destino do botão de contato com a Viva: com o número público da Viva
- * (NEXT_PUBLIC_WHATSAPP_VIVA, ou o nome antigo NEXT_PUBLIC_VIVA_WHATSAPP) abre o
- * WhatsApp com a mensagem pronta; SEM número, o botão NÃO promete WhatsApp: vira
- * "Falar com a Viva" e leva ao atendimento com o código do imóvel. NUNCA o telefone
- * do proprietário.
+ * Destino do botão de contato com a Viva: a plataforma NÃO tem número oficial de
+ * WhatsApp (decisão do Daniel, 16/10). O botão é sempre "Falar com a Viva" e leva ao
+ * atendimento da plataforma com o código do imóvel. NUNCA o telefone do proprietário.
  */
-export function destinoWhatsappViva(
-  imovelId: string,
-  numeroViva?: string | null,
-): { href: string; externo: boolean; rotulo: string } {
-  const numero = numeroWhatsappViva(numeroViva);
-  if (!numero) {
-    return { href: `/ajuda?imovel=${encodeURIComponent(codigoDoImovel(imovelId))}`, externo: false, rotulo: "Falar com a Viva" };
-  }
-  return {
-    href: `https://wa.me/${numero}?text=${encodeURIComponent(mensagemWhatsappViva(imovelId))}`,
-    externo: true,
-    rotulo: "WhatsApp da Viva",
-  };
+export function destinoContatoViva(imovelId: string): { href: string; rotulo: string } {
+  return { href: `/ajuda?imovel=${encodeURIComponent(codigoDoImovel(imovelId))}`, rotulo: "Falar com a Viva" };
 }
 
 export interface ResumoSolicitacao {

@@ -62,7 +62,7 @@ import { PrivacidadeAcesso } from "@/components/property/privacidade-acesso";
 import { OwnerCard } from "@/components/property/owner-card";
 import { Reviews } from "@/components/property/reviews";
 import { isExemplo, EXEMPLO_SEM_CONTATO, EXEMPLO_AVISO_DEMO } from "@/lib/demo-listing";
-import { destinoWhatsappViva, resumoSolicitacao } from "@/lib/reserva-imovel";
+import { destinoContatoViva, resumoSolicitacao } from "@/lib/reserva-imovel";
 import { registrarEvento } from "@/lib/eventos/registrar";
 import { NavSecoes } from "@/components/property/nav-secoes";
 import { secoesDoImovel, sinaisDeConfianca, type SinalConfianca } from "@/lib/imovel-pagina";
@@ -234,7 +234,7 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
   );
 
   // WhatsApp: SEMPRE o da Viva (com o código do imóvel) — o contato do dono fica mascarado até o aceite.
-  const whatsapp = destinoWhatsappViva(property.id, process.env.NEXT_PUBLIC_WHATSAPP_VIVA ?? process.env.NEXT_PUBLIC_VIVA_WHATSAPP);
+  const contatoViva = destinoContatoViva(property.id);
 
   // Bloco de ações reutilizado dentro do card de preço.
   const actions = candidatouSe ? (
@@ -308,14 +308,13 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
       </Button>
       <a
         data-cta
-        href={whatsapp.href}
-        {...(whatsapp.externo ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+        href={contatoViva.href}
         className={buttonClasses({ variant: "secondary", size: "md", className: "w-full" })}
       >
-        <MessageCircle className="h-4 w-4" /> {whatsapp.rotulo}
+        <MessageCircle className="h-4 w-4" /> {contatoViva.rotulo}
       </a>
       <p className="text-center text-xs text-muted">
-        {whatsapp.externo ? "O WhatsApp fala com a Viva." : "A conversa é com a Viva."} O contato do proprietário só aparece depois do aceite.
+        A conversa é com a Viva. O contato do proprietário só aparece depois do aceite.
       </p>
       <AvisoPetCandidatura petsAllowed={property.petsAllowed} regras={property.petsRegras} />
       <AvisoAntigolpe />
@@ -479,7 +478,7 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
           setComposeText("");
           setComposeKind("duvida");
         }}
-        whatsapp={whatsapp}
+        contato={contatoViva}
       />
       {/* Breadcrumb (navegação + SEO) */}
       <nav
