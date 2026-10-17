@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { SAMPLE_PROPERTIES } from "@/lib/properties";
 import { getProperty, listProperties } from "@/lib/data/properties";
 import { isDemoMode } from "@/lib/env";
-import { isExemplo } from "@/lib/demo-listing";
+import { isExemplo, ehAnuncioDeTeste } from "@/lib/demo-listing";
 import { tituloAbaImovel, descricaoAbaImovel } from "@/lib/anuncio/metadados-imovel";
 import { PropertyJsonLd } from "@/components/seo/property-json-ld";
 import { PropertyDetail } from "./property-detail";
@@ -31,7 +31,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     alternates: { canonical: `/imoveis/${property.id}` },
     // Anúncio de EXEMPLO (ilustrativo): fora do Google (noindex), mas ainda
     // visível ao visitante com o selo "Exemplo ilustrativo".
-    ...(isExemplo(property.id) ? { robots: { index: false, follow: true } } : {}),
+    ...(isExemplo(property.id) || ehAnuncioDeTeste(property.title) ? { robots: { index: false, follow: true } } : {}),
     openGraph: {
       title,
       description,

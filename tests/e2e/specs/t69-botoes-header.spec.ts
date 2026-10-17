@@ -91,8 +91,8 @@ test.describe("T69 — header e botões padronizados", () => {
       const problemas: string[] = [];
       const estilos = new Set<string>();
       for (const rota of PAGINAS) {
-        await page.goto(rota, { waitUntil: "domcontentloaded" });
-        await page.waitForLoadState("load");
+        // Sem esperar o evento "load": a 768 px o mapa de /buscar e os pings seguram o load além dos 240 s.
+        await page.goto(rota, { waitUntil: "domcontentloaded", timeout: 20_000 });
         await page.locator("[data-cta]").first().waitFor({ state: "attached", timeout: 10_000 }).catch(() => undefined);
         // Abre o menu mobile do header (se a página tiver o header público) para medir os botões dele também.
         // Só clica no botão visível (a 768 px podem existir dois "Abrir menu", um escondido).

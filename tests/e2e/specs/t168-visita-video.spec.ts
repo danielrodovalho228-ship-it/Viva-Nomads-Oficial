@@ -37,12 +37,18 @@ test.describe("T168 — Visita por vídeo: pedir → confirmar", () => {
       const page = await entrar(browser, inq.email, senha);
       await page.setViewportSize({ width: largura, height: altura });
       await page.goto(`/imoveis/${ids.imovel}`, { waitUntil: "domcontentloaded" });
-      await page.getByTestId("visita-video-abrir").first().click();
+      // Na 1ª carga fria o clique pode chegar antes da hidratação e o formulário não abre: reclica até aparecer
+      // (só clica se ainda estiver fechado, para o botão não fechar o que acabou de abrir).
+      const horario = page.getByTestId("visita-video-horario-0");
+      await expect(async () => {
+        if (!(await horario.isVisible())) await page.getByTestId("visita-video-abrir").first().click();
+        await expect(horario).toBeVisible({ timeout: 3_000 });
+      }).toPass({ timeout: 40_000 });
       const quando = new Date(Date.now() + 2 * 24 * 3600_000);
       quando.setMinutes(0, 0, 0);
       const z = (n: number) => String(n).padStart(2, "0");
       const campo = `${quando.getFullYear()}-${z(quando.getMonth() + 1)}-${z(quando.getDate())}T${z(quando.getHours())}:00`;
-      await page.getByTestId("visita-video-horario-0").fill(campo);
+      await horario.fill(campo);
       await page.getByTestId("visita-video-enviar").click();
       await expect(page.getByTestId("visita-video-ok")).toBeVisible({ timeout: 25_000 });
       const sobra = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
