@@ -118,7 +118,11 @@ async function ultimoControleLivre(page: Page): Promise<string[]> {
       const s = getComputedStyle(n);
       if ((s.overflowY === "auto" || s.overflowY === "scroll") && n.scrollHeight > n.clientHeight + 1) n.scrollTop = n.scrollHeight;
     }
+    // A tela pode ter crescido depois da 1ª rolagem (blocos que carregam depois, ex.: Conta): rola a janela de novo.
+    window.scrollTo(0, document.documentElement.scrollHeight);
     await new Promise((ok) => setTimeout(ok, 400));
+    window.scrollTo(0, document.documentElement.scrollHeight);
+    await new Promise((ok) => setTimeout(ok, 200));
     const r = ultimo.getBoundingClientRect();
     const nome = (ultimo.textContent || ultimo.getAttribute("aria-label") || ultimo.getAttribute("name") || ultimo.tagName).trim().replace(/\s+/g, " ").slice(0, 40);
     const y = r.top + r.height / 2;
