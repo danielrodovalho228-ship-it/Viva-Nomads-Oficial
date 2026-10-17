@@ -95,7 +95,8 @@
       ],
       "specs": [
         "t91-avaliacao-resposta",
-        "t93-avaliacao-tela"
+        "t93-avaliacao-tela",
+        "t48-varredura"
       ]
     },
     "/admin/documentos": {
@@ -114,7 +115,8 @@
         "admin"
       ],
       "specs": [
-        "t116-admin-emails-teste"
+        "t116-admin-emails-teste",
+        "t48-varredura"
       ]
     },
     "/admin/financeiro": {
@@ -165,7 +167,8 @@
       ],
       "specs": [
         "t101-admin-usuarios",
-        "t178-telefone-sms"
+        "t178-telefone-sms",
+        "t48-varredura"
       ]
     },
     "/ajuda": {
@@ -196,7 +199,9 @@
       ],
       "specs": [
         "t173-perfis-dono-inquilino",
-        "t176-exemplo-proprietario-avaliacoes"
+        "t176-exemplo-proprietario-avaliacoes",
+        "t179-isolamento-perfil",
+        "t180-anuncio-real-sem-exemplo"
       ]
     },
     "/app/boas-vindas": {
@@ -413,7 +418,8 @@
       ],
       "specs": [
         "t91-avaliacao-resposta",
-        "t93-avaliacao-tela"
+        "t93-avaliacao-tela",
+        "t48-varredura"
       ]
     },
     "/dashboard/buscas": {
@@ -466,7 +472,8 @@
         "t151-modo-app-iphone",
         "t178-telefone-sms",
         "t173-perfis-dono-inquilino",
-        "t174-conta-complete-perfil"
+        "t174-conta-complete-perfil",
+        "t179-isolamento-perfil"
       ]
     },
     "/dashboard/conta/[secao]": {
@@ -740,7 +747,8 @@
         "admin"
       ],
       "specs": [
-        "t168-visita-video"
+        "t168-visita-video",
+        "t48-varredura"
       ]
     },
     "/decisao": {
@@ -843,7 +851,8 @@
         "t172-bom-saber-completo",
         "t173-perfis-dono-inquilino",
         "t178-telefone-sms",
-        "t176-exemplo-proprietario-avaliacoes"
+        "t176-exemplo-proprietario-avaliacoes",
+        "t180-anuncio-real-sem-exemplo"
       ]
     },
     "/modelodenegocio": {
@@ -2387,7 +2396,8 @@
         "proprietario"
       ],
       "specs": [
-        "t173-perfis-dono-inquilino"
+        "t173-perfis-dono-inquilino",
+        "t179-isolamento-perfil"
       ]
     },
     "src/lib/data/perfil-actions.ts#salvarMeusDados": {
