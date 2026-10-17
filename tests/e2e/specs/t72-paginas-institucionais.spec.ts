@@ -65,7 +65,7 @@ test.describe("T72 — páginas institucionais", () => {
     await page.goto("/pedidos/novo", { waitUntil: "networkidle" });
     await expect(page.getByRole("heading", { name: "Publique seu pedido" })).toBeVisible();
     const alturas = await page
-      .locator("form input:not([type=checkbox]):not([type=hidden]), form select, form button[aria-haspopup], form label:has(input[type=checkbox])")
+      .locator("form input:not([type=checkbox]):not([type=hidden]), form select, form button[aria-pressed], form [data-testid=pedido-pessoas]")
       .evaluateAll((els) => els.filter((e) => (e as HTMLElement).offsetParent !== null).map((e) => Math.round(e.getBoundingClientRect().height)));
     expect(alturas.length).toBeGreaterThanOrEqual(6);
     expect(new Set(alturas), `alturas ${alturas.join(",")}`).toEqual(new Set([48]));
