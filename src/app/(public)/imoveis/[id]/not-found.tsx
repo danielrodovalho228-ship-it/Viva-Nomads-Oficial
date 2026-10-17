@@ -13,7 +13,7 @@ export default function ImovelNotFound() {
     <div className="container-page flex flex-col items-center py-20 text-center">
       <NotFoundIllustration />
       <h1 className="mt-8 font-title text-2xl font-bold text-ink sm:text-3xl">
-        Imóvel não encontrado
+        Página não encontrada
       </h1>
       <p className="mt-2 max-w-md text-muted">
         Este anúncio não existe mais ou foi removido.

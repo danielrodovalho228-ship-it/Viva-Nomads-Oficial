@@ -59,12 +59,15 @@ test.describe("T86 — /decisao: duração editável, regra antiga × nova", () 
 });
 
 test.describe("T86 — #536: avatar sem 'P(' e alt 'imóvel mobiliado'", () => {
-  test("avatar do proprietário de exemplo mostra 'P', nunca 'P('", async ({ page }) => {
+  test("avatar do proprietário de exemplo mostra só as iniciais, nunca '('", async ({ page }) => {
     await page.goto("/imoveis/ube-001", { waitUntil: "networkidle" });
-    test.skip((await page.getByText("Proprietário (exemplo)").count()) === 0, "imóvel de exemplo não está no ar neste ambiente.");
-    const avatar = page.locator("div[aria-hidden]").filter({ hasText: /^P\(?$/ }).first();
-    await expect(avatar).toHaveText("P");
-    await expect(page.locator("body")).not.toContainText("P(");
+    const card = page.getByTestId("sobre-proprietario");
+    test.skip((await card.count()) === 0, "imóvel de exemplo não está no ar neste ambiente.");
+    // "Helena M. (exemplo)" → "HM" (o que está entre parênteses nunca entra no avatar).
+    const avatar = card.locator("div[aria-hidden]").filter({ hasText: /^\p{Lu}{1,2}$/u }).first();
+    await expect(avatar).toHaveText(/^\p{Lu}{1,2}$/u);
+    await expect(page.locator("body")).not.toContainText(/\b\p{Lu}\($/u);
+    await expect(card.locator("div[aria-hidden]").filter({ hasText: "(" })).toHaveCount(0);
   });
 
   test.describe("banner da Visão geral do dono", () => {
