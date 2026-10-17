@@ -36,3 +36,12 @@ test("t119 confere a capa visível, não a primeira do DOM", () => {
   assert.match(src, /painel-capa"\]:visible/);
   assert.doesNotMatch(src, /getByTestId\("painel-capa"\)\.first\(\)/);
 });
+
+// Ordem ec7988fe, item 3: no lab a conta de teste do proprietário não tem imóvel e a
+// Disponibilidade era PULADA (t151: 1 passou / 3 pularam). O spec cria o próprio imóvel.
+test("t151 cria o próprio imóvel no laboratório e não pula a Disponibilidade", () => {
+  const src = readFileSync(join(raiz, "tests", "e2e", "specs", "t151-modo-app-iphone.spec.ts"), "utf8");
+  assert.match(src, /criarImovelPronto/);
+  assert.match(src, /NO_LABORATORIO/);
+  assert.match(src, /apagarContas/);
+});
