@@ -269,7 +269,8 @@
         "t7-fluxo-publico",
         "t70-busca-split",
         "t71-busca-topo",
-        "t90-orcamento-velocidade"
+        "t90-orcamento-velocidade",
+        "t164-tour-video-galeria"
       ]
     },
     "/cidades": {
@@ -803,7 +804,8 @@
         "t40-novo-anuncio-fotos",
         "t7-fluxo-publico",
         "t75-barra-fixa-imovel",
-        "t8-rascunho"
+        "t8-rascunho",
+        "t164-tour-video-galeria"
       ]
     },
     "/modelodenegocio": {

@@ -12,7 +12,8 @@ import { ReadyToLiveBadge, PrecoJustoBadge, PropertyTags, InvoiceBadge, Insuranc
 import { BrandImage } from "@/components/brand-image";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
 import { FavoriteButton } from "@/components/favorite-button";
-import { repartirSelos, type SeloCard } from "@/lib/card-selos";
+import { repartirSelos, ROTULO_SELO_VIDEO, type SeloCard } from "@/lib/card-selos";
+import { videoTourPermitido } from "@/lib/video-tour";
 import { MarcaImovel } from "@/components/property/marca-imovel";
 
 export function PropertyCard({
@@ -38,7 +39,7 @@ export function PropertyCard({
     precoJusto: !!property.precoJusto,
     pets: !!property.petsAllowed,
     pronto: !!property.readyToLiveBadge,
-    video: !!property.videoUrl,
+    video: videoTourPermitido(property.videoUrl),
     exemplo: exemplo,
     destaque: tier !== "padrao",
   });
@@ -184,7 +185,7 @@ function Selo({ id }: { id: SeloCard }) {
     case "video":
       return (
         <span className={`${SELO_BASE} bg-night/85 text-white`}>
-          <PlayCircle className="h-3.5 w-3.5" aria-hidden /> Vídeo
+          <PlayCircle className="h-3.5 w-3.5" aria-hidden /> {ROTULO_SELO_VIDEO}
         </span>
       );
     case "exemplo":
