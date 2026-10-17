@@ -307,7 +307,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     photos: galleryFor("ube-005", 12),
     amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Acessível", "Wi-Fi", "Vaga de garagem"],
     workFeatures: ["Internet fibra"],
-    internetTier: "basica",
+    internetTier: "trabalho_remoto",
     nearbyWorkspaces: [{ name: "Praça Sérgio Pacheco", type: "cafe", distanceM: 500 }],
     ownerName: DONO_EXEMPLO,
     createdAt: "2026-05-28T09:00:00Z",

@@ -4,6 +4,7 @@
 */
 import type { Property } from "../types";
 import { linhasPrivacidadePublica } from "./privacidade.ts";
+import { distanciaAprox, proximidadesDoImovel } from "./proximidades.ts";
 
 export type ChaveDestaque = "saude" | "educacao" | "pronto" | "trabalho" | "vaga";
 export interface Destaque {
@@ -19,11 +20,11 @@ export const LIMITE_DESCRICAO_CURTA = 280;
 /** Até 3 destaques, em ordem de relevância; só com dado cadastrado. */
 export function destaquesDoImovel(p: Property): Destaque[] {
   const d: Destaque[] = [];
-  const prox = p.proximities ?? [];
+  const prox = proximidadesDoImovel(p);
   const saude = prox.find((x) => x.category === "saude" && x.name.trim());
   const educ = prox.find((x) => x.category === "educacao" && x.name.trim());
-  if (saude) d.push({ chave: "saude", titulo: `Perto de ${saude.name.trim()}`, detalhe: saude.note });
-  if (educ) d.push({ chave: "educacao", titulo: `Perto de ${educ.name.trim()}`, detalhe: educ.note });
+  if (saude) d.push({ chave: "saude", titulo: `Perto de ${saude.name.trim()}`, detalhe: distanciaAprox(saude.note) });
+  if (educ) d.push({ chave: "educacao", titulo: `Perto de ${educ.name.trim()}`, detalhe: distanciaAprox(educ.note) });
   if (p.readyToLiveBadge) d.push({ chave: "pronto", titulo: "Pronto para morar", detalhe: "Imóvel mobiliado e equipado" });
   if (p.tagHomeOffice || (p.workFeatures ?? []).length > 0)
     d.push({ chave: "trabalho", titulo: "Espaço para trabalhar", detalhe: p.workFeatures?.[0] });
