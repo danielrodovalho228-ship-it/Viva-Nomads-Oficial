@@ -27,3 +27,18 @@ test("t140/t141 não fixam o total de fotos do anúncio de exemplo", () => {
 test("t100 aceita ids de anúncio de exemplo (ube-001) na URL de comparar", () => {
   assert.doesNotMatch(spec("t100-comparar-imoveis.spec.ts"), /\[0-9a-f-\]\{36\}/);
 });
+
+test("t161: o título com o total do mês casa com o espaço fixo que o formatBRL devolve", async () => {
+  const { formatBRL } = await import("./utils.ts");
+  const titulo = `Imóvel mobiliado no Santa Mônica — ${formatBRL(3960)}/mês total · Viva Nomads`;
+  const m = spec("t161-coerencia-imovel.spec.ts").match(/toHaveTitle\((\/.+\/)\)/);
+  assert.ok(m, "o spec confere o título");
+  const re = new RegExp(m[1].slice(1, -1));
+  assert.match(titulo, re);
+});
+
+test("t150 espera a lista da busca assentar antes de medir o último cartão (lab: 25030 px)", () => {
+  const t150 = spec("t150-comparar-acima-abas.spec.ts");
+  assert.match(t150, /expect\s*\n?\s*\.poll\(/);
+  assert.doesNotMatch(t150, /expect\(ultimo\)/);
+});

@@ -12,7 +12,7 @@ for (const largura of [390, 1280]) {
     await page.setViewportSize({ width: largura, height: 900 });
     for (const id of IDS) {
       await page.goto(`/imoveis/${id}`, { waitUntil: "domcontentloaded" });
-      await expect(page).toHaveTitle(/R\$ [\d.]+\/mês total/);
+      await expect(page).toHaveTitle(/R\$\s[\d.]+\/mês total/);
       const corpo = page.locator("body");
       await expect(corpo).not.toContainText(/\b1 quartos\b|\b1 banheiros\b/);
       await expect(corpo).not.toContainText(/Aceita pet(?!s)/);
