@@ -132,7 +132,8 @@ export function AdminDocumentosClient({
 
 /** O que a conferência automática leu e por que o caso veio para a revisão (o admin decide). */
 function ConferenciaIaBox({ c, revisaoAte }: { c: ConferenciaResumo; revisaoAte?: string | null }) {
-  const vencido = !!revisaoAte && Date.parse(revisaoAte) < Date.now();
+  const [agora] = useState(() => Date.now());
+  const vencido = !!revisaoAte && Date.parse(revisaoAte) < agora;
   return (
     <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900" data-testid="conferencia-ia">
       <p className="font-semibold">Conferência automática</p>

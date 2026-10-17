@@ -109,20 +109,20 @@ export function textoVagaNoPlano(limite?: number | null): string {
 
 export function prontidaoAnuncio(f: FatosAnuncio): Prontidao {
   const obrigatorios: ItemProntidao[] = [
-    { key: "endereco", label: OBRIGATORIOS_ROTULOS[0], ok: f.enderecoOk, etapa: 1 },
+    { key: "endereco", label: OBRIGATORIOS_ROTULOS[0], ok: f.enderecoOk, etapa: 0 },
     { key: "detalhes", label: OBRIGATORIOS_ROTULOS[1], ok: f.detalhesOk, etapa: 2 },
-    { key: "periodo", label: OBRIGATORIOS_ROTULOS[2], ok: f.periodoOk, etapa: 2 },
-    { key: "fotos", label: OBRIGATORIOS_ROTULOS[3], ok: f.fotos >= MIN_FOTOS, etapa: 3, detalhe: f.fotos < MIN_FOTOS ? `tem ${f.fotos}` : undefined },
-    { key: "titulo", label: OBRIGATORIOS_ROTULOS[4], ok: f.titulo.trim().length >= 3, etapa: 5 },
+    { key: "periodo", label: OBRIGATORIOS_ROTULOS[2], ok: f.periodoOk, etapa: 3 },
+    { key: "fotos", label: OBRIGATORIOS_ROTULOS[3], ok: f.fotos >= MIN_FOTOS, etapa: 1, detalhe: f.fotos < MIN_FOTOS ? `tem ${f.fotos}` : undefined },
+    { key: "titulo", label: OBRIGATORIOS_ROTULOS[4], ok: f.titulo.trim().length >= 3, etapa: 2 },
     {
       key: "descricao",
       label: OBRIGATORIOS_ROTULOS[5],
       ok: f.descricao.trim().length >= MIN_DESCRICAO,
-      etapa: 5,
+      etapa: 2,
       detalhe: f.descricao.trim().length < MIN_DESCRICAO ? `tem ${f.descricao.trim().length}` : undefined,
     },
-    { key: "preco", label: OBRIGATORIOS_ROTULOS[6], ok: f.preco > 0, etapa: 5 },
-    { key: "garantia", label: OBRIGATORIOS_ROTULOS[7], ok: f.garantiaOk, etapa: 5 },
+    { key: "preco", label: OBRIGATORIOS_ROTULOS[6], ok: f.preco > 0, etapa: 3 },
+    { key: "garantia", label: OBRIGATORIOS_ROTULOS[7], ok: f.garantiaOk, etapa: 3 },
     { key: "documento", label: OBRIGATORIOS_ROTULOS[8], ok: f.documento === "approved", etapa: 0, detalhe: f.documento === "approved" ? undefined : DOC_DETALHE[f.documento] },
   ];
   if (!f.sublocacaoOk) {
@@ -134,11 +134,11 @@ export function prontidaoAnuncio(f: FatosAnuncio): Prontidao {
   }
   // A vaga só aparece quando é o único bloqueio que resta (ordem de8761b0, item 2).
   if (f.limitePlanoOk === false && obrigatorios.every((i) => i.ok)) {
-    obrigatorios.push({ key: "limite", label: "Vaga no seu plano", ok: false, etapa: 6, detalhe: textoVagaNoPlano(f.limiteAnuncios) });
+    obrigatorios.push({ key: "limite", label: "Vaga no seu plano", ok: false, etapa: 4, detalhe: textoVagaNoPlano(f.limiteAnuncios) });
   }
   const opcionais: ItemProntidao[] = [
     { key: "selo", label: "Selo Pronto para Morar", ok: f.selo, etapa: 0 },
-    { key: "video", label: "Vídeo do imóvel", ok: f.video, etapa: 3 },
+    { key: "video", label: "Vídeo do imóvel", ok: f.video, etapa: 1 },
   ];
   const cumpridos = obrigatorios.filter((i) => i.ok).length;
   return {
@@ -171,13 +171,14 @@ export interface ChecklistAnuncio {
 /**
  * Checklist clicável do "Anúncio em andamento" (ordem de8761b0, item 1): cada
  * obrigatório vira ✓ feito / ○ falta com link direto para a etapa do editor.
- * O documento é aprovado pela equipe (não se resolve numa etapa): leva à Revisão,
- * onde o estado da moderação aparece. A vaga no plano leva à página do plano.
+ * Etapas do cadastro em 5 (prompt 10): 0 Onde fica (endereço e DOCUMENTO), 1 Fotos, 2 O que encontramos,
+ * 3 Preço e disponibilidade, 4 Revisar. O documento fica na etapa 1 (conferência automática na hora).
+ * A vaga no plano leva à página do plano.
  */
 export function checklistAnuncio(p: Prontidao, draftId: string): ChecklistAnuncio {
   const id = encodeURIComponent(draftId);
   const itens = p.obrigatorios.map((i): ItemChecklist => {
-    const etapa = i.key === "documento" ? 6 : i.etapa;
+    const etapa = i.etapa;
     return {
       key: i.key,
       label: i.label,

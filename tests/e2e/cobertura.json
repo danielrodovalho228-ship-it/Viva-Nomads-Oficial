@@ -1195,6 +1195,14 @@
       ],
       "specs": []
     },
+    "/api/documentos/conferir": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t187-conferencia-documento"
+      ]
+    },
     "/api/empresas": {
       "personas": [
         "publico"
@@ -1256,6 +1264,14 @@
         "admin"
       ],
       "specs": []
+    },
+    "/api/proximidades": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t186-cadastro-5-etapas"
+      ]
     },
     "/api/test-email": {
       "personas": [
@@ -1386,6 +1402,14 @@
       ],
       "specs": []
     },
+    "src/lib/data/actions.ts#carregarLimitesNegociacao": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t186-cadastro-5-etapas"
+      ]
+    },
     "src/lib/data/actions.ts#carregarQualificacao": {
       "personas": [
         "inquilino",
@@ -1476,6 +1500,14 @@
         "proprietario"
       ],
       "specs": []
+    },
+    "src/lib/data/actions.ts#salvarLimitesNegociacao": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t186-cadastro-5-etapas"
+      ]
     },
     "src/lib/data/actions.ts#saveDraftData": {
       "personas": [
@@ -1886,6 +1918,14 @@
         "t71-busca-topo"
       ]
     },
+    "src/lib/data/cadastro-actions.ts#precoDaRegiao": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t186-cadastro-5-etapas"
+      ]
+    },
     "src/lib/data/checkin-actions.ts#instrucoesDoContrato": {
       "personas": [
         "inquilino",
@@ -2035,11 +2075,27 @@
       ],
       "specs": []
     },
+    "src/lib/data/documentos-admin.ts#contadoresConferencia": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t187-conferencia-documento"
+      ]
+    },
     "src/lib/data/documentos-admin.ts#countDocumentosPendentes": {
       "personas": [
         "admin"
       ],
       "specs": []
+    },
+    "src/lib/data/documentos-admin.ts#listConferidosAutomaticamente": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t187-conferencia-documento"
+      ]
     },
     "src/lib/data/documentos-admin.ts#listDocumentosPendentes": {
       "personas": [
@@ -2052,6 +2108,14 @@
         "admin"
       ],
       "specs": []
+    },
+    "src/lib/data/documentos-admin.ts#reabrirConferencia": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t187-conferencia-documento"
+      ]
     },
     "src/lib/data/documentos-inquilino-actions.ts#linkDocInquilino": {
       "personas": [

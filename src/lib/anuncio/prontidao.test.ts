@@ -141,10 +141,11 @@ test("checklist do anúncio em andamento: ✓/○, cada pendência leva à etapa
   assert.equal(c.itens.length, p.obrigatorios.length);
   assert.equal(c.itens.filter((i) => !i.ok).length, p.faltam.length);
   assert.equal(c.proximo?.key, "fotos");
-  assert.equal(c.proximo?.href, "/dashboard/imoveis/novo?draft=abc-123&etapa=3");
-  assert.equal(c.itens.find((i) => i.key === "descricao")?.href, "/dashboard/imoveis/novo?draft=abc-123&etapa=5");
-  // documento não é etapa do editor: leva à Revisão (6), onde aparece o estado da moderação.
-  assert.equal(c.itens.find((i) => i.key === "documento")?.href, "/dashboard/imoveis/novo?draft=abc-123&etapa=6");
+  // Cadastro em 5 etapas (prompt 10): 0 Onde fica · 1 Fotos · 2 O que encontramos · 3 Preço · 4 Revisar.
+  assert.equal(c.proximo?.href, "/dashboard/imoveis/novo?draft=abc-123&etapa=1");
+  assert.equal(c.itens.find((i) => i.key === "descricao")?.href, "/dashboard/imoveis/novo?draft=abc-123&etapa=2");
+  // o documento agora é enviado e conferido na etapa Onde fica (prompt 11).
+  assert.equal(c.itens.find((i) => i.key === "documento")?.href, "/dashboard/imoveis/novo?draft=abc-123&etapa=0");
   assert.equal(c.itens.find((i) => i.key === "endereco")?.ok, true);
 });
 

@@ -30,8 +30,15 @@ test.describe("T54 — Upload de foto seguro", () => {
 
     test("F47 na tela: SVG é recusado com mensagem visível e o contador não sobe", async ({ page }) => {
       await page.goto("/dashboard/imoveis/novo", { waitUntil: "networkidle" });
+      const outro = page.getByRole("button", { name: "Começar outro" });
+      if (await outro.isVisible().catch(() => false)) await outro.click();
+      // Cadastro em 5 etapas (prompt 10): as fotos são a 2ª etapa, depois de "Onde fica".
+      await page.getByTestId("cadastro-rua").fill("Rua do Upload");
+      await page.getByTestId("cadastro-numero").fill("1");
+      await page.getByTestId("cadastro-bairro").fill("Centro");
+      await page.getByRole("button", { name: "Continuar", exact: true }).click();
       await expect(page.getByRole("heading", { name: "Fotos do imóvel" })).toBeVisible();
-      await page.locator('input[type="file"]').first().setInputFiles({
+      await page.getByTestId("etapa-fotos").locator('input[type="file"]').first().setInputFiles({
         name: "x.svg",
         mimeType: "image/svg+xml",
         buffer: Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>'),

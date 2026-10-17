@@ -10,11 +10,11 @@ test.describe("T115 — Importar meu anúncio", () => {
 
   test("cola, confere, aplica e o cadastro recebe os campos", async ({ page }) => {
     await page.goto("/dashboard/imoveis/novo", { waitUntil: "networkidle" });
-    // Abre a etapa "Tipo" pelo rascunho local (mesma chave que a tela usa).
+    // Abre a etapa 1, "Onde fica", onde fica o atalho de importar (rascunho local, mesma chave que a tela usa).
     await page.evaluate(() => {
       const bruto = Object.entries(localStorage).find(([k]) => /^sb-.*-auth-token$/.test(k))?.[1];
       const id = bruto ? JSON.parse(bruto)?.user?.id : null;
-      if (id) localStorage.setItem(`vivanomads-novo-draft:${id}`, JSON.stringify({ step: 0 }));
+      if (id) localStorage.setItem(`vivanomads-novo-draft:${id}`, JSON.stringify({ step: 0, ordemEtapas: 3 }));
     });
     await page.reload({ waitUntil: "networkidle" });
     const retomar = page.getByRole("button", { name: /Continuar|Retomar/ }).first();
@@ -31,7 +31,13 @@ test.describe("T115 — Importar meu anúncio", () => {
     await expect(revisao).toContainText("65 m²");
     await expect(revisao).toContainText("Removemos telefone");
     await revisao.getByTestId("importar-aplicar").click();
-    await expect(page.getByTestId("importar-aplicado")).toBeVisible();
+    // Prompt 10: o atalho leva direto à etapa 3, "O que encontramos", com tudo preenchido.
+    await expect(page.getByRole("heading", { name: "O que encontramos" })).toBeVisible();
+    await expect(page.getByTestId("cadastro-quartos")).toHaveValue("2");
+    await expect(page.getByTestId("cadastro-banheiros")).toHaveValue("1");
+    await expect(page.getByTestId("cadastro-area")).toHaveValue("65");
+    await expect(page.getByTestId("cadastro-titulo")).toHaveValue("Apartamento mobiliado no Santa Mônica");
+    await expect(page.getByTestId("cadastro-descricao")).not.toHaveValue(/99999/);
 
     // Sem rolagem lateral a 390 px.
     const largura = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);

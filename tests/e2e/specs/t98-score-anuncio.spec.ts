@@ -25,8 +25,11 @@ test.describe("T98 — Score de qualidade do anúncio", () => {
     await page.goto("/dashboard/imoveis/novo", { waitUntil: "domcontentloaded" });
     const comecarOutro = page.getByRole("button", { name: "Começar outro" });
     if (await comecarOutro.isVisible().catch(() => false)) await comecarOutro.click();
-    await page.locator('input[type="file"]').first().setInputFiles("public/images/imoveis/ube/ube-001-sala.webp");
-    await expect(page.getByText(/^1\/40 fotos/)).toBeVisible({ timeout: 20_000 });
+    // Cadastro em 5 etapas (prompt 10): a 1ª etapa é "Onde fica"; o endereço já cria o rascunho.
+    await expect(page.getByRole("heading", { name: "Onde fica" })).toBeVisible({ timeout: 20_000 });
+    await page.getByTestId("cadastro-rua").fill("Rua do Score");
+    await page.getByTestId("cadastro-numero").fill("10");
+    await page.getByTestId("cadastro-bairro").fill("Centro");
     await expect(page.getByText(/Salvo/).first()).toBeVisible({ timeout: 20_000 });
 
     await expect(async () => {
@@ -47,9 +50,9 @@ test.describe("T98 — Score de qualidade do anúncio", () => {
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
     const antes = Number((await page.getByTestId("anuncio-score-valor").innerText()).replace("%", ""));
     await page.getByTestId("score-dica").filter({ hasText: /Descrição com pelo menos/ }).click();
-    await expect(page).toHaveURL(/\/dashboard\/imoveis\/novo\?draft=.*&etapa=5/);
+    await expect(page).toHaveURL(/\/dashboard\/imoveis\/novo\?draft=.*&etapa=2/);
     const descricao = Array.from({ length: 45 }, (_, i) => `palavra${i}`).join(" ");
-    await page.getByPlaceholder("Descreva o imóvel...").fill(descricao);
+    await page.getByTestId("cadastro-descricao").fill(descricao);
     await expect(page.getByText(/Salvo/).first()).toBeVisible({ timeout: 20_000 });
     await expect(async () => {
       await page.goto("/dashboard", { waitUntil: "domcontentloaded" });

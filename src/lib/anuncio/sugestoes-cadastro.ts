@@ -57,3 +57,27 @@ export function mbpsValido(v: unknown): number | null {
   const n = Math.round(Number(String(v ?? "").replace(/\D/g, "")));
   return Number.isFinite(n) && n >= 1 && n <= 10_000 ? n : null;
 }
+
+/*
+  Preço sugerido para imóveis parecidos na região (prompt 10, etapa 4): MEDIANA do valor mensal de anúncios ATIVOS
+  e reais da plataforma — mesma cidade e mesmo número de quartos, de preferência no mesmo bairro. Sem pelo menos
+  MIN_COMPARAVEIS anúncios, não há sugestão (nunca um número inventado). Arredondado para R$ 50.
+*/
+export const MIN_COMPARAVEIS = 3;
+
+export function medianaSugerida(valores: readonly number[], min = MIN_COMPARAVEIS): number | null {
+  const v = valores.filter((x) => Number.isFinite(x) && x > 0).sort((a, b) => a - b);
+  if (v.length < min) return null;
+  const meio = Math.floor(v.length / 2);
+  const mediana = v.length % 2 ? v[meio] : (v[meio - 1] + v[meio]) / 2;
+  return Math.round(mediana / 50) * 50;
+}
+
+/** Bairro primeiro (com comparáveis suficientes); senão a cidade; senão nada. */
+export function sugestaoDaRegiao(doBairro: readonly number[], daCidade: readonly number[]): { valor: number; base: "bairro" | "cidade"; n: number } | null {
+  const b = medianaSugerida(doBairro);
+  if (b !== null) return { valor: b, base: "bairro", n: doBairro.length };
+  const c = medianaSugerida(daCidade);
+  if (c !== null) return { valor: c, base: "cidade", n: daCidade.length };
+  return null;
+}

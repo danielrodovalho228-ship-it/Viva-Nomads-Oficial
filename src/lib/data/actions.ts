@@ -485,6 +485,22 @@ async function gravarNegociacao(
   }
 }
 
+/**
+ * Grava só os limites PRIVADOS da negociação de um rascunho do próprio dono (o autosave não os põe no JSON do
+ * rascunho, para nunca irem a uma coluna legível por outros).
+ */
+export async function salvarLimitesNegociacao(id: string, limites: unknown): Promise<ActionResult> {
+  const supabase = await createClient();
+  if (!supabase) return { ok: true, demo: true };
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Não autenticado." };
+  if (!UUID_RE.test(id)) return { ok: false, error: "Imóvel inválido." };
+  await gravarNegociacao(supabase, user.id, id, { limitesNegociacao: limites } as PropertyInput);
+  return { ok: true };
+}
+
 /** Limites privados da negociação de um imóvel do PRÓPRIO dono (para o cadastro abrir preenchido). */
 export async function carregarLimitesNegociacao(id: string): Promise<{ valorMinimo: number | null; limpezasMax: number | null }> {
   const vazio = { valorMinimo: null, limpezasMax: null };

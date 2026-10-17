@@ -124,3 +124,14 @@ test("sugestões: capacidade 2 por quarto, consumo por quartos, contador dos ess
   assert.equal(mbpsValido(""), null);
   assert.equal(mbpsValido("99999"), null);
 });
+
+test("preço sugerido da região: mediana de anúncios reais, bairro antes da cidade, nada sem 3 comparáveis", async () => {
+  const { medianaSugerida, sugestaoDaRegiao } = await import("./sugestoes-cadastro.ts");
+  assert.equal(medianaSugerida([3000, 3200]), null);
+  assert.equal(medianaSugerida([3000, 3200, 3500]), 3200);
+  assert.equal(medianaSugerida([3000, 3100, 3300, 3500]), 3200);
+  assert.equal(medianaSugerida([2990, 3010, 3030]), 3000);
+  assert.deepEqual(sugestaoDaRegiao([2800, 2900, 3100], [1, 2, 3, 4]), { valor: 2900, base: "bairro", n: 3 });
+  assert.deepEqual(sugestaoDaRegiao([2800], [2500, 2600, 2700, 2800]), { valor: 2650, base: "cidade", n: 4 });
+  assert.equal(sugestaoDaRegiao([], [2500]), null);
+});

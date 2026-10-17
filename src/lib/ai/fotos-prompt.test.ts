@@ -75,11 +75,14 @@ test("rota /api/ai/fotos: login de proprietário, flag, limite diário e corpo l
   assert.doesNotMatch(src, /NEXT_PUBLIC_/);
 });
 
-test("tela: botão 'Preencher com IA' no passo Fotos, marcado 'sugerido pela IA', só preenche o que está vazio", () => {
-  const src = readFileSync(join(process.cwd(), "src/app/(dashboard)/dashboard/imoveis/novo/page.tsx"), "utf8");
-  assert.match(src, /Preencher com IA/);
-  assert.match(src, /Sugerido pela IA/);
-  assert.match(src, /\/api\/ai\/fotos/);
+test("tela (prompt 10): a IA roda sozinha ao terminar o envio das fotos, uma vez por rascunho, e marca 'Sugerido · confira'", () => {
+  const dir = join(process.cwd(), "src/app/(dashboard)/dashboard/imoveis/novo");
+  const pagina = readFileSync(join(dir, "page.tsx"), "utf8");
+  assert.match(pagina, /\/api\/ai\/fotos/);
+  assert.match(pagina, /precisaReanalisar\(iaAnalisadas, fotosUrls\)/);
+  assert.match(pagina, /miniaturaBase64\(u, FOTOS_LADO_MAX_PX\)/);
+  assert.match(readFileSync(join(dir, "campos.tsx"), "utf8"), /MARCA_SUGERIDO/);
+  assert.match(readFileSync(join(dir, "etapa-fotos.tsx"), "utf8"), /Analisando as fotos/);
 });
 
 test("IA das fotos: 7 fotos bloqueia, 8 libera (ordem abc34d72)", async () => {

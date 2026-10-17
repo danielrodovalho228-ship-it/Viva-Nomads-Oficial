@@ -29,7 +29,7 @@ test.describe("T102 — Preço sugerido no cadastro", () => {
     // A sessão (@supabase/ssr) mora em COOKIE, não em localStorage: o id vem do cookie sb-*-auth-token.
     const id = await idDoUsuarioPeloCookie(context);
     expect(id, "id do usuário no cookie de sessão").toBeTruthy();
-    await page.evaluate((uid) => localStorage.setItem(`vivanomads-novo-draft:${uid}`, JSON.stringify({ step: 5, monthlyPrice: "" })), id);
+    await page.evaluate((uid) => localStorage.setItem(`vivanomads-novo-draft:${uid}`, JSON.stringify({ step: 3, ordemEtapas: 3, monthlyPrice: "" })), id);
     await page.reload({ waitUntil: "networkidle" });
     // Só o "Continuar" do AVISO de rascunho: o "Continuar" do rodapé do cadastro também casaria com a regex
     // e avançaria de etapa em vez de abrir ?draft=<id> (o waitForURL abaixo esperava até o teste estourar 45 s).
@@ -43,11 +43,11 @@ test.describe("T102 — Preço sugerido no cadastro", () => {
       throw new Error(`t102: nem o aviso do rascunho nem o preço sugerido apareceram. URL: ${page.url()} · texto: ${texto} · ${String(e).slice(0, 120)}`);
     });
     if (await retomar.isVisible()) {
-      // Conta com rascunho no servidor: "Continuar" abre ?draft=<id> na etapa gravada lá, não no passo 5.
-      // Vai direto ao passo de preço pela URL (?etapa=5), que vale para rascunho do servidor.
+      // Conta com rascunho no servidor: "Continuar" abre ?draft=<id> na etapa gravada lá, não no passo de preço.
+      // Vai direto ao passo de preço pela URL (?etapa=3 no cadastro em 5 etapas), que vale para rascunho do servidor.
       await retomar.click();
       await page.waitForURL(/[?&]draft=/);
-      await page.goto(`${page.url()}&etapa=5`, { waitUntil: "networkidle" });
+      await page.goto(`${page.url()}&etapa=3`, { waitUntil: "networkidle" });
     }
     // Falha alto (nada de skip silencioso): se o passo de preço não abrir, o lab precisa mostrar.
     await expect(bloco).toBeVisible({ timeout: 30000 });
