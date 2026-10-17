@@ -65,6 +65,7 @@ create table if not exists public.proposta_versoes (
   valor_limpeza numeric(12, 2) not null default 0,
   taxa_pet numeric(12, 2) not null default 0,
   limpeza_unica numeric(12, 2) not null default 0,
+  pessoas integer,
   total_mensal numeric(12, 2) not null,
   total_contrato numeric(12, 2) not null,
   mensagem text,
@@ -80,6 +81,7 @@ create table if not exists public.proposta_versoes (
     and condominio >= 0 and consumo >= 0 and valor_limpeza >= 0 and taxa_pet >= 0 and limpeza_unica >= 0
     and (mensagem is null or char_length(mensagem) <= 500)
     and (motivo_desconto is null or char_length(motivo_desconto) <= 80)
+    and (pessoas is null or pessoas between 1 and 20)
   )
 );
 create index if not exists proposta_versoes_proposta_idx on public.proposta_versoes (proposta_id, versao);

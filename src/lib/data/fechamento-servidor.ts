@@ -6,6 +6,7 @@ import { documentoParaContrato } from "@/lib/documento-pessoa";
 import { motivoBloqueioContrato } from "@/lib/contrato-trava";
 import { lerDocumento } from "@/lib/data/documento-servidor";
 import { docsInquilinoCompletos } from "@/lib/data/documentos-inquilino-servidor";
+import { propostaAcordadaDoLead } from "@/lib/data/propostas-servidor";
 
 /**
  * A5: os dados de uma cobrança/contrato de fechamento vêm SÓ do banco, a partir
@@ -61,7 +62,9 @@ export async function carregarFechamento(leadId: unknown): Promise<DadosFechamen
     lerDocumento(admin, lead.tenant_id as string),
   ]);
   if (!imovel || imovel.owner_id !== lead.owner_id) return { status: 404, error: "Imóvel não encontrado." };
-  const aluguel = Number(imovel.monthly_price);
+  // Prompt 17: com proposta aceita, vale o valor mensal ACORDADO (não o do anúncio).
+  const acordada = await propostaAcordadaDoLead(admin, lead.id as string);
+  const aluguel = acordada ? acordada.valorMensal : Number(imovel.monthly_price);
   if (!Number.isFinite(aluguel) || aluguel <= 0) return { status: 400, error: "Imóvel sem valor de aluguel." };
 
   // Taxa congelada no aceite; NULL cai para a do plano no aceite (nunca 0).

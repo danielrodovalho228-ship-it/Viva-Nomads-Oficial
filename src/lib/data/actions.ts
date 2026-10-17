@@ -75,6 +75,7 @@ import { normalizarLimites, normalizarNegociacao } from "@/lib/anuncio/negociaca
 import { mbpsValido } from "@/lib/anuncio/sugestoes-cadastro";
 import { videoTourPermitido } from "@/lib/video-tour";
 import { validarGarantia, type GarantiaContrato } from "@/lib/guarantees";
+import { marcarPropostaEmContrato, propostaAcordadaDoLead } from "@/lib/data/propostas-servidor";
 
 type ActionResult = { ok: boolean; demo?: boolean; id?: string; error?: string };
 
@@ -1120,12 +1121,14 @@ export async function registrarContrato(
     .select("monthly_price, owner_id")
     .eq("id", lead.property_id)
     .maybeSingle();
-  const aluguel = Number(imovel?.monthly_price);
+  // Prompt 17: com proposta aceita, o contrato usa o valor mensal e os meses ACORDADOS (não os do anúncio/tela).
+  const acordada = await propostaAcordadaDoLead(admin, lead.id as string);
+  const aluguel = acordada ? acordada.valorMensal : Number(imovel?.monthly_price);
   if (!imovel || imovel.owner_id !== user.id || !(aluguel > 0)) {
     return { ok: false, error: "Imóvel sem valor de aluguel." };
   }
 
-  const prazo = Math.round(Number(input.prazoTotalMeses));
+  const prazo = acordada ? acordada.meses : Math.round(Number(input.prazoTotalMeses));
   if (!(prazo >= PRAZO_MIN_MESES && prazo <= PRAZO_MAX_MESES))
     return { ok: false, error: `Prazo inválido (${PRAZO_MIN_MESES} a ${PRAZO_MAX_MESES} meses, até ${PRAZO_MAX_DIAS} dias).` };
   if (!FAIXAS_CONTRATO.has(input.faixa)) return { ok: false, error: "Faixa de prazo inválida." };
@@ -1183,6 +1186,7 @@ export async function registrarContrato(
   }));
   const { error: bErr } = await admin.from("contrato_blocos").insert(rows);
   // Best-effort: o contrato-mãe já existe mesmo se a inserção dos blocos falhar.
+  if (acordada) await marcarPropostaEmContrato(admin, lead.id as string).catch(() => {});
   if (bErr) return { ok: true, id: contrato!.id, blocos: 0, error: erroBancoPT(bErr) };
   return { ok: true, id: contrato!.id, blocos: rows.length };
 }
