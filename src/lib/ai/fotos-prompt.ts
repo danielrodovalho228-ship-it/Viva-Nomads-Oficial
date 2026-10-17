@@ -165,9 +165,9 @@ export const SUGESTAO_LAB_BRUTA = {
   quartos: 2,
   banheiros: 1,
   comodidades: ["ar_condicionado", "cozinha_equipada", "internet_fibra", "maquina_lavar"],
-  titulo: "Apartamento mobiliado com home office perto do centro",
+  titulo: "Imóvel mobiliado com home office perto do centro",
   descricao:
-    "Apartamento mobiliado de 2 quartos, com cozinha equipada, ar-condicionado e um canto de trabalho com mesa e cadeira. Pronto para morar por alguns meses, com valor mensal claro.",
+    "Imóvel mobiliado de 2 quartos, com cozinha equipada, ar-condicionado e um canto de trabalho com mesa e cadeira. Pronto para morar por alguns meses, com valor mensal claro.",
   mobiliado: true,
   trabalho: { mesa: true, cadeira: true, iluminacao: false },
   comodos: ["sala", "quarto", "cozinha", "banheiro", "quarto", "escritorio"],

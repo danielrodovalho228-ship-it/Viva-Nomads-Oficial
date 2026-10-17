@@ -33,16 +33,21 @@ async function semRolagemLateral(page: Page) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
 }
 
-/** Todo campo da etapa fica dentro do cartão (Q9). */
+/** Todo campo da etapa fica dentro do cartão (Q9). Mede tudo de uma vez, já sem a animação de entrada da etapa. */
 async function camposDentroDoCartao(page: Page, etapa: string) {
-  const cartao = (await page.getByTestId(etapa).boundingBox())!;
-  for (const campo of await page.getByTestId(etapa).locator("input:visible, select:visible, textarea:visible").all()) {
-    const b = await campo.boundingBox();
-    if (!b) continue;
-    const qual = await campo.evaluate((el) => el.outerHTML.slice(0, 160));
-    expect(b.x, `campo fora do cartão (esquerda): ${qual}`).toBeGreaterThanOrEqual(cartao.x - 1);
-    expect(b.x + b.width, `campo fora do cartão (direita): ${qual}`).toBeLessThanOrEqual(cartao.x + cartao.width + 1);
-  }
+  await page.waitForFunction((id) => {
+    const el = document.querySelector(`[data-testid="${id}"]`);
+    return !!el && el.getAnimations({ subtree: true }).every((a) => a.playState !== "running");
+  }, etapa);
+  const fora = await page.getByTestId(etapa).evaluate((cartao) => {
+    const c = cartao.getBoundingClientRect();
+    return [...cartao.querySelectorAll<HTMLElement>("input, select, textarea")]
+      .filter((el) => el.offsetParent !== null)
+      .map((el) => ({ r: el.getBoundingClientRect(), html: el.outerHTML.slice(0, 160) }))
+      .filter(({ r }) => r.width > 0 && (r.left < c.left - 1 || r.right > c.right + 1))
+      .map(({ r, html }) => `${html} (${Math.round(r.left)}–${Math.round(r.right)} fora de ${Math.round(c.left)}–${Math.round(c.right)})`);
+  });
+  expect(fora, "campo fora do cartão").toEqual([]);
 }
 
 test.describe("T186 — cadastro em 5 etapas com IA, OSM e documento simulados", () => {
