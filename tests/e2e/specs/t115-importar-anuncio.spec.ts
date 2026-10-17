@@ -17,12 +17,21 @@ test.describe("T115 — Importar meu anúncio", () => {
       if (id) localStorage.setItem(`vivanomads-novo-draft:${id}`, JSON.stringify({ step: 0 }));
     });
     await page.reload({ waitUntil: "domcontentloaded" });
-    const retomar = page.getByRole("button", { name: /Continuar|Retomar/ }).first();
-    if (await retomar.isVisible().catch(() => false)) await retomar.click();
+
+    // A tela decide sozinha: sem rascunho no servidor aplica o local (abre em "Tipo"); com rascunho oferece
+    // "Continuar". Espera um dos dois (não adivinha por isVisible) e, no 2º caso, reabre o rascunho já na etapa 0.
+    const abrir = page.getByTestId("importar-abrir");
+    const continuar = page.getByTestId("rascunho-continuar");
+    await expect(abrir.or(continuar)).toBeVisible({ timeout: 30_000 });
+    if (await continuar.isVisible()) {
+      await continuar.click();
+      await page.waitForURL(/draft=/, { timeout: 15_000 });
+      await page.goto(`${page.url()}&etapa=0`, { waitUntil: "domcontentloaded" });
+    }
 
     // Sem networkidle (estourava os 45 s no lab): repete o clique até a página hidratar e o aviso abrir.
     await expect(async () => {
-      await page.getByTestId("importar-abrir").click();
+      await abrir.click({ timeout: 3_000 });
       await expect(page.getByTestId("importar-aviso")).toBeVisible({ timeout: 2_000 });
     }).toPass({ timeout: 20_000 });
     await expect(page.getByTestId("importar-aviso")).toContainText("apenas conteúdo que é seu");

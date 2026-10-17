@@ -27,8 +27,8 @@ test.describe("T129 — Motivo da estadia no perfil", () => {
         await expect(page.getByTestId("perfil-motivo-estadia")).toHaveValue(novo);
 
         await page.goto("/pedidos/novo", { waitUntil: "networkidle" });
-        const rotulo = novo === "viagem_longa" ? "Viagem longa" : "Mudança familiar";
-        await expect(page.getByRole("button", { name: new RegExp(rotulo) }).first()).toBeVisible();
+        // Prompt 12: o motivo é um select nativo, pré-preenchido com o do perfil.
+        await expect(page.getByTestId("pedido-motivo")).toHaveValue(novo);
       } finally {
         await page.goto("/dashboard/conta", { waitUntil: "networkidle" });
         await page.getByTestId("perfil-motivo-estadia").selectOption(original);
