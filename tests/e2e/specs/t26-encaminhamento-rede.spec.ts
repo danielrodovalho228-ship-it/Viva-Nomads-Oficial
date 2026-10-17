@@ -40,11 +40,24 @@ test.describe("T26 — Encaminhamento entre agentes e Rede ao vivo real", () => 
     expect(ordens![0]).toMatchObject({ agente_slug: "otavio", origem_slug: "bruno", prioridade: "P1" });
     const ordemId = ordens![0].id as string;
 
-    // Abrir a Central dispara os encaminhamentos P0/P1 pendentes (dentro do limite diário).
+    // Regra do Despachante (ordens 0f6b35b5/5a885ef5): ordem criada por AGENTE (criado_por nulo) não
+    // dispara sozinha; fica "Aguardando ronda" até o Daniel aprovar na Central.
     await page.goto("/admin/agentes", { waitUntil: "networkidle" });
     await abrirAba(page, "Conversar");
     await page.locator('aside[aria-label="Agentes"]').getByRole("button", { name: /Otávio/ }).click();
     const ordem = page.getByTestId("ordem").filter({ hasText: marca });
+    await expect(ordem).toHaveAttribute("data-estado", "aguardando");
+    if (LAB_OUTBOX && fs.existsSync(LAB_OUTBOX)) expect(fs.readFileSync(LAB_OUTBOX, "utf8")).not.toContain(`ordem ${ordemId} encaminhada`);
+
+    // Com o aval do Daniel (criado_por preenchido), abrir a Central dispara (dentro do limite diário).
+    const { data: lista } = await adm().auth.admin.listUsers({ perPage: 1000 });
+    const adminId = lista.users.find((u) => u.email === process.env.TESTES_ADMIN_EMAIL)?.id;
+    expect(adminId, "conta admin de teste").toBeTruthy();
+    const { error: eAval } = await adm().from("agentes_ordens").update({ criado_por: adminId }).eq("id", ordemId);
+    expect(eAval).toBeNull();
+    await page.reload({ waitUntil: "networkidle" });
+    await abrirAba(page, "Conversar");
+    await page.locator('aside[aria-label="Agentes"]').getByRole("button", { name: /Otávio/ }).click();
     await expect(ordem).toHaveAttribute("data-estado", "enviada");
     await expect(ordem.getByTestId("ordem-origem")).toHaveText("encaminhado por Bruno · P1");
     await expect(ordem).toContainText(`Encaminhado por Bruno (P1): Login cai no Safari ${marca} — erro 500 no /auth`);
