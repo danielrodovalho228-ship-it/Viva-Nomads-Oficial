@@ -4,7 +4,7 @@ import { CITIES } from "@/lib/constants";
 import { POLOS } from "@/lib/polos";
 import { caminhosDeBairros } from "@/lib/bairros";
 import { listProperties } from "@/lib/data/properties";
-import { isExemplo } from "@/lib/demo-listing";
+import { isExemplo, ehAnuncioDeTeste } from "@/lib/demo-listing";
 import { GUIAS } from "@/lib/guias/guias";
 
 // F9: lista de imóveis sempre fresca (revalidatePath nas ações + 60 s de rede de segurança).
@@ -52,7 +52,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   // Só imóveis REAIS no sitemap — os de exemplo (ilustrativos) ficam de fora.
-  const properties = (await listProperties()).filter((p) => !isExemplo(p));
+  const properties = (await listProperties()).filter((p) => !isExemplo(p) && !ehAnuncioDeTeste(p.title));
   const propertyRoutes = properties.map((p) => ({
     url: `${SITE_URL}/imoveis/${p.id}`,
     ...(p.createdAt ? { lastModified: new Date(p.createdAt) } : {}),
