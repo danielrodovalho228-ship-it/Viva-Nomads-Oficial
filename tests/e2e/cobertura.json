@@ -531,7 +531,8 @@
         "t36-cadastro-ponta-a-ponta",
         "t4-fronteira-demo-real",
         "t127-fechamento-servicos",
-        "t89-fechamento-data-inicio"
+        "t89-fechamento-data-inicio",
+        "t181-quantas-pessoas"
       ]
     },
     "/dashboard/ferramentas": {
@@ -603,7 +604,8 @@
         "t36-cadastro-ponta-a-ponta",
         "t133-candidatura-motivo",
         "t173-perfis-dono-inquilino",
-        "t178-telefone-sms"
+        "t178-telefone-sms",
+        "t181-quantas-pessoas"
       ]
     },
     "/dashboard/locacoes": {
@@ -843,7 +845,8 @@
         "t172-bom-saber-completo",
         "t173-perfis-dono-inquilino",
         "t178-telefone-sms",
-        "t176-exemplo-proprietario-avaliacoes"
+        "t176-exemplo-proprietario-avaliacoes",
+        "t181-quantas-pessoas"
       ]
     },
     "/modelodenegocio": {
@@ -1477,7 +1480,9 @@
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t181-quantas-pessoas"
+      ]
     },
     "src/lib/data/actions.ts#resumoImovelDoDono": {
       "personas": [

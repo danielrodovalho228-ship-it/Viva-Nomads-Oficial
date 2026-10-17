@@ -97,6 +97,8 @@ export function PropertyDetail({
   const [inicioDesejado, setInicioDesejado] = useState("");
   // Motivo da estadia (lista única MOTIVOS): vem do perfil, editável; o servidor revalida.
   const [motivoEstadia, setMotivoEstadia] = useState("");
+  // Prompt 8: quantas pessoas vão morar (vai na candidatura; o servidor confere com a capacidade).
+  const [pessoas, setPessoas] = useState(1);
   // Composer de dúvida/visita: o inquilino escreve a mensagem de verdade.
   const [composeKind, setComposeKind] = useState<"duvida" | "visita" | null>(null);
   const [composeText, setComposeText] = useState("");
@@ -170,7 +172,7 @@ export function PropertyDetail({
     if (kind === "candidatura") registrarEvento("iniciar_candidatura", { imovelId: property.id, cidade: property.city });
     setPending(kind);
     setLeadErro(null);
-    const r = await requestLead(property.id, property.title, kind, note, kind === "candidatura" && inicioDesejado ? inicioDesejado : undefined, kind === "candidatura" ? motivoEstadia : undefined).catch(() => null);
+    const r = await requestLead(property.id, property.title, kind, note, kind === "candidatura" && inicioDesejado ? inicioDesejado : undefined, kind === "candidatura" ? motivoEstadia : undefined, kind === "candidatura" ? pessoas : undefined).catch(() => null);
     setPending(null);
     if (r?.needsAuth) {
       // Sem sessão: leva ao login e volta para este anúncio depois de entrar.
@@ -269,6 +271,21 @@ export function PropertyDetail({
           onChange={(e) => setInicioDesejado(e.target.value)}
           className="h-11 rounded-xl border border-line bg-white px-3 text-base text-ink"
         />
+      </label>
+      <label className="flex flex-col gap-1 text-xs font-medium text-ink">
+        Quantas pessoas vão morar?
+        <select
+          data-testid="candidatura-pessoas"
+          value={pessoas}
+          onChange={(e) => setPessoas(Number(e.target.value))}
+          className="h-11 w-full rounded-xl border border-line bg-white px-3 text-base text-ink"
+        >
+          {Array.from({ length: Math.max(1, Math.min(20, property.maxGuests ?? 10)) }, (_, i) => i + 1).map((n) => (
+            <option key={n} value={n}>
+              {n === 1 ? "1 pessoa" : `${n} pessoas`}
+            </option>
+          ))}
+        </select>
       </label>
       <label className="flex flex-col gap-1 text-xs font-medium text-ink">
         Motivo da estadia (opcional)
