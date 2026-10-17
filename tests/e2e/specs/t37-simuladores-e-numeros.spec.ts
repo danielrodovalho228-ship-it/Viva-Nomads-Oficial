@@ -64,7 +64,10 @@ test.describe("T37 — /precos (visitante)", () => {
   // Regra vigente (ordens 75553f0a / 5df28a7b): sem cartões de plano com mensalidade; uma tabela de faixas
   // 12 / 10 / 8 / 6% sobre o valor TOTAL do contrato e o Plano Gestor a partir de 31 imóveis.
   test("a tabela de faixas mostra a taxa e o exemplo em reais de cada faixa; sem mensalidade", async ({ page }) => {
+    // Prompt 13: no celular as faixas viram cartões; a tabela aparece a partir de 640 px.
     await page.goto("/precos", { waitUntil: "networkidle" });
+    await expect(page.getByTestId("faixas-taxa-cartoes").locator("li")).toHaveCount(FAIXAS_COMISSAO_PADRAO.length);
+    await page.setViewportSize({ width: 1280, height: 900 });
     const tabela = page.getByTestId("faixas-taxa");
     await expect(tabela).toBeVisible();
     const linhas = tabela.locator("tbody tr");
