@@ -741,6 +741,17 @@
       ],
       "specs": []
     },
+    "/favoritos": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t119-painel-capas",
+        "t138-paineis-viva-vazio",
+        "t160-favoritos-pagina",
+        "t48-varredura"
+      ]
+    },
     "/guia-fotos": {
       "personas": [
         "publico"
