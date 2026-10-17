@@ -55,6 +55,10 @@ const nextConfig: NextConfig = {
       { source: "/publicar-pedido", destination: "/pedidos/novo", permanent: true },
       { source: "/pedido", destination: "/pedidos/novo", permanent: true },
       { source: "/proprietarios", destination: "/para-proprietarios", permanent: true },
+      // Sem mensalidade (ordem 90181c57): a antiga tela de assinatura vai a /precos já na resposta HTTP.
+      // Só o redirect() da página, dentro do painel com loading.tsx, saía como 200 + navegação do
+      // navegador, e o lab (t48) via um 404 de recurso nesse caminho.
+      { source: "/dashboard/assinatura", destination: "/precos", permanent: false },
     ];
   },
   async rewrites() {
