@@ -23,6 +23,6 @@ mude `src/lib/notifications/templates-supabase.ts` e gere de novo.
 ## Observações
 
 - O link de cada e-mail usa `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=…` (rota `src/app/auth/confirm/route.ts`, igual a `docs/email-templates`); **nunca** `{{ .ConfirmationURL }}`, que quebra confirmar cadastro, redefinir senha, trocar e-mail e convite (correção #182); o código de acesso usa `{{ .Token }}` (6 dígitos).
-- **NÃO cole `codigo-de-acesso.html` (modelo Magic link) antes de existir a tela "Entrar com código" (ordem d250ea2f, item 4):** ele troca o link por código e quem pedir link de acesso ficaria sem como entrar. Os outros cinco podem ser colados.
+- **`codigo-de-acesso.html` (modelo Magic link): cole SÓ depois que a tela "Entrar com código por e-mail" (ordem d250ea2f, item 4) estiver no ar em vivanomads.com.br** — ele troca o link por código; com a tela publicada, quem pedir código entra por ela. Os outros cinco podem ser colados a qualquer hora.
 - Se o Supabase tiver "Secure email change" ligado, o aviso do endereço antigo usa o modelo de troca de e-mail.
 - Nada aqui altera a configuração do Supabase sozinho: só vale depois que você colar e salvar.
