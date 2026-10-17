@@ -61,20 +61,22 @@ test.describe("T37 — Números do código (fonte única)", () => {
 test.describe("T37 — /precos (visitante)", () => {
   test.use({ storageState: { cookies: [], origins: [] }, viewport: { width: 390, height: 844 } });
 
-  // Regra vigente (ordens 75553f0a / 5df28a7b): sem cartões de plano com mensalidade; uma tabela de faixas
+  // Regra vigente (ordens 75553f0a / 5df28a7b): sem cartões de plano com mensalidade; faixas
   // 12 / 10 / 8 / 6% sobre o valor TOTAL do contrato e o Plano Gestor a partir de 31 imóveis.
-  test("a tabela de faixas mostra a taxa e o exemplo em reais de cada faixa; sem mensalidade", async ({ page }) => {
+  // Celular mostra cartões (#767); a tabela só aparece de 640 px para cima.
+  function conferirLinha(texto: string, f: (typeof FAIXAS_COMISSAO_PADRAO)[number]) {
+    expect(texto).toContain(limpo(taxaPublicaTexto(f)));
+    if (f.gestor) expect(texto).toContain("Plano Gestor");
+    else expect(texto).toContain(limpo(formatBRL(comissaoSobreContrato(3000, 3, f.taxa))));
+  }
+
+  test("390 px: os cartões das faixas mostram a taxa e o exemplo em reais; sem mensalidade", async ({ page }) => {
     await page.goto("/precos", { waitUntil: "networkidle" });
-    const tabela = page.getByTestId("faixas-taxa");
-    await expect(tabela).toBeVisible();
-    const linhas = tabela.locator("tbody tr");
-    await expect(linhas).toHaveCount(FAIXAS_COMISSAO_PADRAO.length);
-    for (const [i, f] of FAIXAS_COMISSAO_PADRAO.entries()) {
-      const texto = limpo(await linhas.nth(i).innerText());
-      expect(texto).toContain(limpo(taxaPublicaTexto(f)));
-      if (f.gestor) expect(texto).toContain("Plano Gestor");
-      else expect(texto).toContain(limpo(formatBRL(comissaoSobreContrato(3000, 3, f.taxa))));
-    }
+    await expect(page.getByTestId("faixas-taxa")).toBeHidden();
+    const cartoes = page.getByTestId("faixas-taxa-cartoes").locator("li");
+    await expect(cartoes.first()).toBeVisible();
+    await expect(cartoes).toHaveCount(FAIXAS_COMISSAO_PADRAO.length);
+    for (const [i, f] of FAIXAS_COMISSAO_PADRAO.entries()) conferirLinha(limpo(await cartoes.nth(i).innerText()), f);
     await expect(page.getByTestId("plano-gestor")).toContainText("31 imóveis ou mais");
     const corpo = limpo(await page.locator("body").innerText());
     expect(corpo).toContain("Sem mensalidade");
@@ -83,6 +85,17 @@ test.describe("T37 — /precos (visitante)", () => {
     expect(corpo).not.toMatch(/apartamentos mobiliados/i);
     expect(corpo).not.toMatch(/aceito onde o Airbnb não é/i);
     await page.screenshot({ path: "tests/laboratorio/saida/t37-1-precos.png", fullPage: true });
+  });
+
+  test("1280 px: a tabela de faixas mostra a taxa e o exemplo em reais de cada faixa", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto("/precos", { waitUntil: "networkidle" });
+    const tabela = page.getByTestId("faixas-taxa");
+    await expect(tabela).toBeVisible();
+    await expect(page.getByTestId("faixas-taxa-cartoes")).toBeHidden();
+    const linhas = tabela.locator("tbody tr");
+    await expect(linhas).toHaveCount(FAIXAS_COMISSAO_PADRAO.length);
+    for (const [i, f] of FAIXAS_COMISSAO_PADRAO.entries()) conferirLinha(limpo(await linhas.nth(i).innerText()), f);
   });
 });
 
