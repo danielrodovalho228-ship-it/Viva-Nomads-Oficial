@@ -76,7 +76,8 @@ function LinkFavoritos({ className, onClick }: { className?: string; onClick?: (
       className={cn("inline-flex items-center gap-1.5 whitespace-nowrap text-sm font-medium text-ink/75 transition-colors hover:text-blue-500", className)}
     >
       <Heart className="h-4 w-4" aria-hidden />
-      Favoritos{montado && total > 0 ? ` (${total})` : ""}
+      {/* a 1280 px o texto não cabe ao lado dos links (t69): só o coração; o texto volta a partir de 2xl */}
+      <span className={cn(!className && "sr-only 2xl:not-sr-only")}>Favoritos{montado && total > 0 ? ` (${total})` : ""}</span>
     </Link>
   );
 }
