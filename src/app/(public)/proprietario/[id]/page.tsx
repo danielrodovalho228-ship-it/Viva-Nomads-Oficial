@@ -10,6 +10,8 @@ import { corAvatar, iniciais } from "@/lib/avatar";
 import { PropertyCard } from "@/components/property-card";
 import { buttonClasses } from "@/components/ui/button";
 import { dataBR } from "@/lib/utils";
+import { proprietarioExemploPorId } from "@/config/exemplo-proprietarios";
+import { PerfilExemplo } from "./perfil-exemplo";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -17,8 +19,11 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { id } = await params;
+  // Proprietário de exemplo (prompt 9): ilustrativo, sempre fora do Google.
+  const ex = proprietarioExemploPorId(id);
+  if (ex) return { title: `${ex.nome} — exemplo ilustrativo`, robots: { index: false, follow: false } };
   const p = await getPerfilProprietario(id);
-  if (!p) return { title: "Proprietário", robots: { index: false, follow: false } };
+  if (!p) return { title: "Página não encontrada", robots: { index: false, follow: false } };
   return {
     title: `${p.nome} — proprietário na Viva Nomads`,
     description: `${p.nome}${p.cidade ? `, ${p.cidade}` : ""}: imóveis mobiliados na Viva Nomads.`,
@@ -30,6 +35,8 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 /** Perfil público de quem anuncia (prompt 6): tudo do cartão + imóveis ativos + avaliações com resposta. */
 export default async function ProprietarioPage({ params }: Params) {
   const { id } = await params;
+  const ex = proprietarioExemploPorId(id);
+  if (ex) return <PerfilExemplo p={ex} />;
   const p = await getPerfilProprietario(id);
   if (!p) notFound();
   const [imoveis, avaliacoes] = await Promise.all([listPropertiesDoProprietario(id), getAvaliacoesRecebidas(id)]);
