@@ -78,8 +78,8 @@ test.describe("T186 — cadastro em 5 etapas com IA, OSM e documento simulados",
   test.beforeAll(async () => {
     // 3 anúncios ATIVOS e reais de 2 quartos no mesmo bairro: a mediana (3.200) é o preço sugerido.
     ids.vizinho = await criarConta({ email: `vizinho.cad.${sufixo}@lab.vivanomads.test`, nome: "Vera Vizinha Sobrenome", role: "owner" }, senha);
-    for (const preco of [3000, 3200, 3400]) {
-      const id = await criarImovelPronto(ids.vizinho, `Comparável ${preco} ${sufixo}`, { ativo: true, preco });
+    for (const [letra, preco] of [["A", 3000], ["B", 3200], ["C", 3400]] as const) {
+      const id = await criarImovelPronto(ids.vizinho, `Comparável ${letra} ${sufixo}` /* sem o preço no título: com um sufixo só de dígitos, viraria "telefone" para a trava de contato */, { ativo: true, preco });
       await adm().from("properties").update({ bedrooms: 2, address: bairro, city: "Uberlândia" }).eq("id", id);
     }
   });
