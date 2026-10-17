@@ -131,6 +131,15 @@ create trigger messages_proposta_so_servidor
   for each row execute function public.messages_proposta_so_servidor();
 revoke execute on function public.messages_proposta_so_servidor() from public, anon, authenticated;
 
+-- 4) Numeração (0008): o contador de documentos passa a ter linhas (ORC-…) e não pode ser lido de fora.
+--    Só o servidor numera: RLS sem política (service role passa), sem leitura para anon/authenticated e a função
+--    de numeração só para o service role.
+alter table public.document_counters enable row level security;
+revoke all on public.document_counters from anon, authenticated;
+grant all on public.document_counters to service_role;
+revoke execute on function public.next_document_number(doc_type, integer) from public, anon, authenticated;
+grant execute on function public.next_document_number(doc_type, integer) to service_role;
+
 insert into supabase_migrations.schema_migrations (version, name, statements, created_by)
 select '20261017000153', '0153_propostas',
        array['-- conteúdo em supabase/migrations/0153_propostas.sql'], 'danielrodovalho228@gmail.com'

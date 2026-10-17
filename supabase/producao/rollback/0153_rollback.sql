@@ -6,5 +6,6 @@ drop index if exists public.idx_messages_proposta_id;
 alter table public.messages drop column if exists proposta_id;
 drop table if exists public.proposta_versoes;
 drop table if exists public.propostas;
+-- O contador de documentos continua fechado (correção de segurança; não volta a ficar legível).
 delete from supabase_migrations.schema_migrations where version = '20261017000153';
 commit;

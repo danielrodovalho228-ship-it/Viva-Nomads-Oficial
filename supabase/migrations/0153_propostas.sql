@@ -6,6 +6,7 @@
 -- 1) propostas: uma negociação por candidatura (no máximo uma aberta), status, validade, taxa congelada no aceite.
 -- 2) proposta_versoes: até 3 versões (rodadas) por proposta, com quem propôs e os valores de cada uma.
 -- 3) messages.proposta_id: o cartão da proposta na conversa. Só o servidor preenche.
+-- 4) document_counters (0008) fechado: só o servidor lê e numera.
 -- Leitura: só o proprietário e o interessado daquela proposta. Escrita: só o servidor (service role).
 
 create table if not exists public.propostas (
@@ -136,3 +137,12 @@ create trigger messages_proposta_so_servidor
   before insert or update of proposta_id on public.messages
   for each row execute function public.messages_proposta_so_servidor();
 revoke execute on function public.messages_proposta_so_servidor() from public, anon, authenticated;
+
+-- 4) Numeração (0008): o contador de documentos passa a ter linhas (ORC-…) e não pode ser lido de fora.
+--    Só o servidor numera: RLS sem política (service role passa), sem leitura para anon/authenticated e a função
+--    de numeração só para o service role.
+alter table public.document_counters enable row level security;
+revoke all on public.document_counters from anon, authenticated;
+grant all on public.document_counters to service_role;
+revoke execute on function public.next_document_number(doc_type, integer) from public, anon, authenticated;
+grant execute on function public.next_document_number(doc_type, integer) to service_role;
