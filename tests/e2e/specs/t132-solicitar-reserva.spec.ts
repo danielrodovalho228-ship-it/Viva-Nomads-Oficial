@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 /**
- * T132 — "Solicitar reserva" nunca fica mudo (complemento 2 da ordem 4f8023d1).
+ * T132 — "Enviar candidatura" nunca fica mudo (complemento 2 da ordem 4f8023d1).
  * Anúncio de exemplo (ube-001): clicar abre o passo de confirmação com o resumo
  * (entrada, motivo, valores) e o aviso de demonstração; nada é gravado.
  * Data no passado: mensagem visível, sem seguir.
@@ -21,7 +21,7 @@ for (const [nome, largura, altura] of [["1280", 1280, 900], ["390", 390, 844]] a
         if (r.method() === "POST") gravacoes.push(r.url());
       });
       const gatilho = largura >= 1024 ? card : page.getByTestId("barra-fixa-imovel");
-      await gatilho.getByRole("button", { name: "Solicitar reserva" }).click();
+      await gatilho.getByRole("button", { name: "Enviar candidatura" }).click();
       const passo = page.getByTestId("solicitacao-passo");
       await expect(passo).toBeVisible();
       await expect(passo).toContainText("10/01/2099");
@@ -44,7 +44,7 @@ for (const [nome, largura, altura] of [["1280", 1280, 900], ["390", 390, 844]] a
       });
       await card.getByTestId("candidatura-inicio").fill("2020-01-10");
       const gatilho = largura >= 1024 ? card : page.getByTestId("barra-fixa-imovel");
-      await gatilho.getByRole("button", { name: "Solicitar reserva" }).click();
+      await gatilho.getByRole("button", { name: "Enviar candidatura" }).click();
       await expect(page.getByTestId("solicitacao-erro")).toContainText("hoje ou depois");
     });
   });
