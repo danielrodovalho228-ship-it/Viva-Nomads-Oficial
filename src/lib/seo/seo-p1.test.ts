@@ -108,3 +108,7 @@ test("#93089e14 (#36/#61/#113): títulos <= 60 com o sufixo da marca e og:url da
     if (og) assert.match(src, new RegExp(`openGraph:\\s*\\{[^}]*url:\\s*"${og}"`));
   }
 });
+
+test("CLS da /buscar: o esqueleto de carregamento ocupa ao menos uma tela (o rodapé não aparece e some)", () => {
+  assert.match(ler("src/app/(public)/buscar/loading.tsx"), /min-h-screen/);
+});

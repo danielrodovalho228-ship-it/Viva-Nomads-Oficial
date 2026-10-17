@@ -56,8 +56,14 @@ export default function ContaSecaoPage({ params }: { params: Promise<{ secao: st
         </div>
       );
     case "ajuda":
-      // App: a MESMA Central de Ajuda do site, aqui dentro (sem tela nova).
-      return <CentralAjuda canal="app" />;
+      // App: a MESMA Central de Ajuda do site, aqui dentro (sem tela nova). Com o título principal (h1) que a
+      // /ajuda do site tem — sem ele a tela ficava sem cabeçalho (t183).
+      return (
+        <div className="w-full">
+          <PageTitle title="Central de Ajuda" subtitle="Perguntas frequentes, chamados e contato com a equipe." />
+          <CentralAjuda canal="app" />
+        </div>
+      );
     case "excluir":
       return (
         <div className="w-full">

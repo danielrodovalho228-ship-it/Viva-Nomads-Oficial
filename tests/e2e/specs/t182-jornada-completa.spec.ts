@@ -1,5 +1,5 @@
 import { test, expect, type Page, type Request } from "@playwright/test";
-import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, fotosReais, lerSaida, novaSenha, novoSufixo, tornarContratoVigente } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, fotosReais, lerSaida, novaSenha, novoSufixo, pdf, tornarContratoVigente } from "../fixtures/laboratorio";
 import { MSG_ASSINATURA_INATIVA, ROTULO_ETAPA } from "../../../src/lib/contrato-etapas";
 import { addDiasISO } from "../../../src/lib/contrato-blocos";
 import { hojeBR } from "../../../src/lib/utils";
@@ -169,6 +169,21 @@ test.describe("T182 — jornada completa, do anúncio à avaliação dos dois la
     await expect(pi.getByText(resposta).last()).toBeVisible({ timeout: 15_000 });
     expect(await pi.locator("main").innerText()).not.toMatch(/Sobrenomedono/);
     await foto(pi, "3-mensagens-inquilina");
+    await pi.context().close();
+  });
+
+  test("3b. depois do aceite, a inquilina envia identidade e renda pela tela (Minhas candidaturas, 390 px)", async ({ browser }) => {
+    test.setTimeout(90_000);
+    const pi = await entrar(browser, inq.email, senha);
+    await abrir(pi, "/dashboard/candidaturas");
+    const bloco = pi.getByTestId("docs-inquilino").filter({ has: pi.getByTestId("doc-inquilino-identidade") }).first();
+    await expect(bloco).toBeVisible({ timeout: 20_000 });
+    await bloco.getByLabel("Enviar documento de identidade").setInputFiles({ name: "rg.pdf", mimeType: "application/pdf", buffer: pdf() });
+    await expect(pi.getByTestId("doc-inquilino-identidade")).toContainText("enviado", { timeout: 20_000 });
+    await bloco.getByLabel("Enviar comprovante de renda").setInputFiles({ name: "renda.pdf", mimeType: "application/pdf", buffer: pdf() });
+    await expect(pi.getByTestId("doc-inquilino-renda")).toContainText("enviado", { timeout: 20_000 });
+    await expect(pi.getByTestId("docs-inquilino-completos")).toBeVisible({ timeout: 20_000 });
+    await foto(pi, "3b-documentos-inquilina");
     await pi.context().close();
   });
 
