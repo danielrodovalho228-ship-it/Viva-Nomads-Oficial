@@ -52,7 +52,6 @@ export const SAMPLE_PROPERTIES: Property[] = [
     tagCondoApproved: true,
     ownershipType: "own",
     photos: galleryFor("ube-001", 20),
-    videoUrl: "https://www.youtube.com/watch?v=demo-walkthrough",
     amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada"],
     workFeatures: ["Escritório dedicado", "Mesa de trabalho", "Cadeira ergonômica"],
     internetTier: "home_office",
