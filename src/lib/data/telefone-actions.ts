@@ -2,6 +2,7 @@
 
 import crypto from "node:crypto";
 import { headers } from "next/headers";
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { consumirLimite, HORA } from "@/lib/limites";
@@ -70,6 +71,16 @@ export async function getTelefoneEstado(): Promise<EstadoTelefone | null> {
 }
 
 /** Envia o código de 6 dígitos. Pedir para um número zera o selo até confirmar. */
+/**
+ * O selo "Telefone verificado" aparece na página pública do proprietário e no cartão dos anúncios dele, que são
+ * páginas em cache (revalidate 60 s): ao ganhar ou perder o selo, renova essas páginas na hora.
+ */
+async function renovarPaginasDoSelo(admin: NonNullable<ReturnType<typeof createAdminClient>>, userId: string) {
+  revalidatePath(`/proprietario/${userId}`);
+  const { data } = await admin.from("properties").select("id").eq("owner_id", userId).limit(200);
+  for (const p of (data ?? []) as { id: string }[]) revalidatePath(`/imoveis/${p.id}`);
+}
+
 export async function enviarCodigoTelefone(numero: string): Promise<Resultado> {
   const s = await usuarioAtual();
   if (!s) return { ok: false, error: "Entre na sua conta para verificar o celular." };
@@ -96,6 +107,7 @@ export async function enviarCodigoTelefone(numero: string): Promise<Resultado> {
     .from("telefone_verificacao")
     .upsert({ user_id: s.user.id, verificado_em: null, pedido_em: new Date().toISOString(), atualizado_em: new Date().toISOString() });
   if (eTv) return { ok: false, error: ERRO_ENVIO };
+  await renovarPaginasDoSelo(admin, s.user.id);
 
   if (disp.simulado) {
     const { error } = await admin.auth.admin.updateUserById(s.user.id, { phone: v.e164 });
@@ -146,5 +158,6 @@ export async function confirmarCodigoTelefone(numero: string, codigoDigitado: st
   const agora = new Date().toISOString();
   const { error } = await admin.from("telefone_verificacao").upsert({ user_id: s.user.id, verificado_em: agora, pedido_em: null, atualizado_em: agora });
   if (error) return { ok: false, error: ERRO_CODIGO };
+  await renovarPaginasDoSelo(admin, s.user.id);
   return { ok: true };
 }
