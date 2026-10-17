@@ -40,6 +40,8 @@ const nextConfig: NextConfig = {
       // /planos é natural de digitar e pode ter links antigos; a página canônica
       // é /precos (o rótulo "Planos" no menu/rodapé já aponta para /precos).
       { source: "/planos", destination: "/precos", permanent: true },
+      // Link curto de bairro (só Uberlândia tem bairros curados): vai para a página da cidade.
+      { source: "/bairros/:bairro", destination: "/cidades/uberlandia/:bairro", permanent: true },
       // Link antigo/intuitivo: quem procura "anunciar" cai na página do proprietário (301).
       { source: "/anunciar", destination: "/para-proprietarios", statusCode: 301 },
       // O simulador agora é uma rota React em /simulacao (URL principal divulgada).
