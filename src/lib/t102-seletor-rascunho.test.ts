@@ -32,3 +32,18 @@ test("t102: espera o aviso de rascunho ou o bloco do preço antes de decidir (is
   assert.ok(espera > 0 && espera < spec.indexOf("retomar.isVisible("));
   assert.match(spec, /toBeVisible\(\{\s*timeout:\s*\d{5,}/);
 });
+
+// Lab 69fd29d: t102 seguiu vermelho sem dizer onde a página estava. O erro agora leva URL e texto da tela.
+test("t102: se nada aparece, o erro mostra a URL e o texto da página", () => {
+  const spec = readFileSync("tests/e2e/specs/t102-preco-sugerido.spec.ts", "utf8");
+  assert.match(spec, /page\.url\(\)/);
+  assert.match(spec, /innerText\(\)/);
+});
+
+// Lab 69fd29d: t168 "morador pede a visita — 390 px" estourava 120 s (só a 1ª carga, fria): o clique chegava antes
+// da hidratação e o formulário não abria. A spec reclica até o campo do horário aparecer.
+test("t168: reclica até o formulário de horário abrir (hidratação)", () => {
+  const spec = readFileSync("tests/e2e/specs/t168-visita-video.spec.ts", "utf8");
+  assert.match(spec, /toPass\(\{\s*timeout:\s*40_000/);
+  assert.ok(!/visita-video-abrir"\)\.first\(\)\.click\(\);\s*\n\s*const quando/.test(spec));
+});

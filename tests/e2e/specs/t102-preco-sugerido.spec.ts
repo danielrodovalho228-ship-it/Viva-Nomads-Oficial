@@ -37,7 +37,11 @@ test.describe("T102 — Preço sugerido no cadastro", () => {
     const bloco = page.getByTestId("preco-sugerido");
     // O aviso de rascunho chega depois do networkidle (consulta assíncrona): espera o aviso OU o bloco do preço
     // (conta sem rascunho no servidor abre direto pelo rascunho local) em vez de decidir na hora.
-    await retomar.or(bloco).first().waitFor({ state: "visible", timeout: 30000 });
+    // Se nenhum dos dois aparecer, o erro diz ONDE a página está (URL e começo do texto), para o lab apontar a causa.
+    await retomar.or(bloco).first().waitFor({ state: "visible", timeout: 30000 }).catch(async (e) => {
+      const texto = (await page.locator("body").innerText().catch(() => "")).replace(/\s+/g, " ").slice(0, 300);
+      throw new Error(`t102: nem o aviso do rascunho nem o preço sugerido apareceram. URL: ${page.url()} · texto: ${texto} · ${String(e).slice(0, 120)}`);
+    });
     if (await retomar.isVisible()) {
       // Conta com rascunho no servidor: "Continuar" abre ?draft=<id> na etapa gravada lá, não no passo 5.
       // Vai direto ao passo de preço pela URL (?etapa=5), que vale para rascunho do servidor.
