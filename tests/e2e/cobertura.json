@@ -164,7 +164,8 @@
         "admin"
       ],
       "specs": [
-        "t101-admin-usuarios"
+        "t101-admin-usuarios",
+        "t178-telefone-sms"
       ]
     },
     "/ajuda": {
@@ -463,6 +464,7 @@
         "t92-documento-secao",
         "t129-motivo-estadia-perfil",
         "t151-modo-app-iphone",
+        "t178-telefone-sms",
         "t173-perfis-dono-inquilino",
         "t174-conta-complete-perfil"
       ]
@@ -479,6 +481,7 @@
         "t36-cadastro-ponta-a-ponta",
         "t92-documento-secao",
         "t173-perfis-dono-inquilino",
+        "t178-telefone-sms",
         "t174-conta-complete-perfil"
       ]
     },
@@ -599,7 +602,8 @@
         "t31-cadastro-documento",
         "t36-cadastro-ponta-a-ponta",
         "t133-candidatura-motivo",
-        "t173-perfis-dono-inquilino"
+        "t173-perfis-dono-inquilino",
+        "t178-telefone-sms"
       ]
     },
     "/dashboard/locacoes": {
@@ -836,6 +840,7 @@
         "t164-tour-video-galeria",
         "t172-bom-saber-completo",
         "t173-perfis-dono-inquilino",
+        "t178-telefone-sms",
         "t176-exemplo-proprietario-avaliacoes"
       ]
     },
@@ -2472,6 +2477,33 @@
         "inquilino"
       ],
       "specs": []
+    },
+    "src/lib/data/telefone-actions.ts#confirmarCodigoTelefone": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t178-telefone-sms"
+      ]
+    },
+    "src/lib/data/telefone-actions.ts#enviarCodigoTelefone": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t178-telefone-sms"
+      ]
+    },
+    "src/lib/data/telefone-actions.ts#getTelefoneEstado": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t178-telefone-sms"
+      ]
     },
     "src/lib/data/visitas-video-actions.ts#listMinhasVisitas": {
       "personas": [
