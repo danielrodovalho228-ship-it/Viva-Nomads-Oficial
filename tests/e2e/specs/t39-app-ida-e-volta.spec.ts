@@ -52,8 +52,8 @@ test.describe("T39 — App: ida e volta", () => {
 
     test("Ferramentas abre no app e o voltar do sistema retorna ao painel, com a sessão", async ({ page, request }) => {
       test.skip(!hasAccount("proprietario"), "sem conta de teste do proprietário");
-      await page.goto("/dashboard", { waitUntil: "networkidle" });
-      await page.goto("/dashboard/ferramentas", { waitUntil: "networkidle" });
+      await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+      await page.goto("/dashboard/ferramentas", { waitUntil: "domcontentloaded" });
       await expect(page.getByText("Esta parte fica no site")).toHaveCount(0);
       await page.goBack();
       await expect(page).toHaveURL(/\/dashboard\/?$/);

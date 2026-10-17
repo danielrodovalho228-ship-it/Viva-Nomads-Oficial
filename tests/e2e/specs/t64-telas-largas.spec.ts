@@ -23,6 +23,12 @@ const ROTAS = [
 
 test.use({ storageState: authFile("proprietario") });
 
+/** Abre a rota sem esperar "networkidle" (nunca assenta no painel) e espera o <main> aparecer. */
+async function abrir(page: Page, rota: string) {
+  await page.goto(rota, { waitUntil: "domcontentloaded" });
+  await page.locator("main").first().waitFor();
+}
+
 /** Largura do maior bloco direto dentro do <main> (o conteúdo da página). */
 async function larguraConteudo(page: Page): Promise<number> {
   return page.evaluate(() => {
@@ -34,12 +40,13 @@ async function larguraConteudo(page: Page): Promise<number> {
 
 for (const largura of [1280, 1920]) {
   test(`T64 — conteúdo em largura cheia a ${largura}px (±24 px da Visão geral)`, async ({ page }) => {
+    test.slow(); // 10 rotas em sequência: o prazo de 45 s de um teste só não cobre
     await page.setViewportSize({ width: largura, height: 900 });
-    await page.goto("/dashboard", { waitUntil: "networkidle" });
+    await abrir(page, "/dashboard");
     const referencia = await larguraConteudo(page);
     expect(referencia).toBeGreaterThan(largura * 0.6);
     for (const rota of ROTAS.slice(1)) {
-      await page.goto(rota, { waitUntil: "networkidle" });
+      await abrir(page, rota);
       const w = await larguraConteudo(page);
       expect(Math.abs(w - referencia), `${rota}: ${w}px contra ${referencia}px da Visão geral`).toBeLessThanOrEqual(24);
     }
@@ -48,9 +55,10 @@ for (const largura of [1280, 1920]) {
 
 for (const largura of [360, 390]) {
   test(`T64 — sem rolagem lateral a ${largura}px nas ${ROTAS.length} rotas`, async ({ page }) => {
+    test.slow();
     await page.setViewportSize({ width: largura, height: 800 });
     for (const rota of ROTAS) {
-      await page.goto(rota, { waitUntil: "networkidle" });
+      await abrir(page, rota);
       const sobra = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
       expect(sobra, `${rota} rola ${sobra}px para o lado`).toBeLessThanOrEqual(1);
     }
@@ -59,7 +67,7 @@ for (const largura of [360, 390]) {
 
 test("T64 — novo anúncio: etapa à esquerda e resumo à direita a 1280px; uma coluna a 390px", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
-  await page.goto("/dashboard/imoveis/novo", { waitUntil: "networkidle" });
+  await abrir(page, "/dashboard/imoveis/novo");
   const resumo = page.getByTestId("novo-resumo");
   await expect(resumo).toBeVisible();
   const grade = page.getByTestId("novo-duas-colunas");
