@@ -1,34 +1,24 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useId, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-  Megaphone,
-  ShieldCheck,
-  Info,
-  Loader2,
-  ChevronDown,
-  Check,
-  CircleCheck,
-  Clock,
-  MessageSquare,
-  Laptop,
-  HeartPulse,
-  Briefcase,
-  GraduationCap,
-  Hammer,
-  Users,
-  Palmtree,
-  Plane,
-  MoreHorizontal,
-} from "lucide-react";
+import { Megaphone, ShieldCheck, Info, Loader2, Minus, Plus, Check, PawPrint, Baby } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AvisoAntigolpe } from "@/components/seguranca/aviso-antigolpe";
-import { DateFieldBR } from "@/components/ui/date-field-br";
+import { CampoData } from "@/components/ui/campo-data";
 import { MOTIVOS, isMotivo, contemContato, CONTATO_AVISO, calcExpiraEm, PRAZO_MAX_MESES } from "@/lib/pedidos/pedidos";
 import { CHAVE_ULTIMA_BUSCA, CHAVE_ULTIMO_MOTIVO, ultimaBuscaParaPedido, ultimoMotivoParaPedido } from "@/lib/marcas/regra";
-import { MUNICIPIOS, UFS } from "@/lib/municipios";
+import { MUNICIPIOS } from "@/lib/municipios";
+import {
+  APRESENTACAO_MAX,
+  buscarCidades,
+  fraseContador,
+  lerCidadeUf,
+  mascararMilhar,
+  rotuloCidade,
+  soDigitos,
+} from "@/lib/pedidos/formulario";
 import { criarPedido } from "@/lib/data/pedidos-actions";
 import { contarImoveisQueCombinam } from "@/lib/data/pedido-contador-actions";
 import type { ResultadoContador } from "@/lib/pedidos/contador";
@@ -36,28 +26,9 @@ import type { ImovelCompativel } from "@/lib/pedidos/compatibilidade";
 import { getMeusDados } from "@/lib/data/perfil-actions";
 import { registrarEvento } from "@/lib/eventos/registrar";
 import { useAuthStore } from "@/lib/store";
-import { formatBRL, hojeBR } from "@/lib/utils";
+import { cn, formatBRL, hojeBR } from "@/lib/utils";
 
-/** Ícone por motivo (a lib MOTIVOS segue pura; o mapa visual vive aqui). */
-const MOTIVO_ICON: Record<string, React.ComponentType<{ className?: string }>> = {
-  trabalho_remoto: Laptop,
-  tratamento_medico: HeartPulse,
-  relocacao_corporativa: Briefcase,
-  intercambio_pos: GraduationCap,
-  reforma_transicao: Hammer,
-  mudanca_familiar: Users,
-  aposentadoria_lifestyle: Palmtree,
-  viagem_longa: Plane,
-  outro: MoreHorizontal,
-};
-
-const CHECKLIST = [
-  { icon: MessageSquare, t: "Você publica", d: "Cidade, datas, orçamento e perfil." },
-  { icon: CircleCheck, t: "Proprietários respondem", d: "Só imóveis que atendem." },
-  { icon: Clock, t: "Sem custo e sem spam", d: "Contato só pela plataforma." },
-];
-
-/** Um só estilo para todos os campos do formulário (ordem 5a4b9146: caixas iguais). */
+/** Um só estilo para todos os campos do formulário: 48 px de altura (prompt 12). */
 const CAMPO =
   "h-12 w-full rounded-xl border border-line bg-white px-3.5 text-sm text-ink outline-none transition focus:border-forest focus:ring-2 focus:ring-forest/15";
 
@@ -67,142 +38,95 @@ const PASSOS = [
   "Converse e feche pela plataforma",
 ];
 
-/** /pedidos/novo — o inquilino publica o que precisa (housing request reverso). */
+/**
+ * /pedidos/novo — o inquilino publica o que precisa (housing request reverso).
+ * Prompt 12: imagem fixa à esquerda (45%) com título, texto e os 3 passos; formulário à direita (55%), em fundo
+ * branco, alinhado ao topo, sem cartão flutuante. No celular, uma faixa de 200 px com o título e o formulário logo
+ * abaixo.
+ */
 export default function NovoPedidoPage() {
-  // Só o formulário (lê ?cidade=… da busca) fica sob Suspense; o título, o texto
-  // e os passos saem no HTML do servidor (antes a página inteira esperava o
-  // cliente e o Google via uma tela vazia).
-  return <NovoPedidoSplit />;
-}
-
-function NovoPedidoSplit() {
   return (
-    <div className="lg:grid lg:grid-cols-[44%_56%]">
-      {/* A coluna inteira fica verde (o painel é fixo ao rolar e o formulário pode ser mais alto que a tela). */}
-      <div className="lg:bg-forest">
-      {/* LADO ESQUERDO — imagem + overlay da marca + proposta de valor.
-          No desktop fica fixo ao rolar; no mobile vira um hero compacto. */}
-      <aside className="relative flex min-h-[14rem] items-end overflow-hidden bg-forest text-white lg:sticky lg:top-[4.5rem] lg:h-[calc(100vh-4.5rem)] lg:min-h-0 lg:items-center">
-        {/* Imagem de fundo (Daniel adiciona public/media/pedido-lateral.webp).
-            Se faltar, o gradiente da marca sustenta o visual sozinho. */}
+    <div className="bg-white lg:grid lg:grid-cols-[45%_55%]">
+      <aside
+        className="relative flex h-[200px] items-end overflow-hidden bg-forest text-white lg:sticky lg:top-[4.5rem] lg:h-[calc(100vh-4.5rem)] lg:items-center"
+        data-testid="pedido-lateral"
+      >
+        <div aria-hidden className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url(/media/pedido-lateral.webp)" }} />
         <div
           aria-hidden
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: "url(/media/pedido-lateral.webp)" }}
+          className="absolute inset-0 bg-gradient-to-t from-forest via-forest/80 to-forest/20 lg:bg-gradient-to-br lg:from-forest lg:via-forest/85 lg:to-forest/30"
         />
-        <div
-          aria-hidden
-          className="absolute inset-0 bg-gradient-to-t from-forest via-forest/85 to-forest/30 lg:bg-gradient-to-br lg:from-forest lg:via-forest/85 lg:to-transparent"
-        />
-        <Megaphone
-          aria-hidden
-          className="pointer-events-none absolute -right-8 -top-8 hidden h-48 w-48 rotate-12 text-white/[0.07] lg:block"
-        />
-        <div className="relative z-10 p-6 sm:p-8 lg:max-w-md lg:p-10">
+        <div className="relative z-10 p-5 sm:p-8 lg:max-w-md lg:p-10">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white ring-1 ring-white/20">
-            <Megaphone className="h-3.5 w-3.5" /> Pedido de moradia
+            <Megaphone className="h-3.5 w-3.5" aria-hidden /> Pedido de moradia
           </span>
-          <h1 className="mt-4 font-title text-2xl font-bold leading-tight md:text-3xl lg:text-[2.4rem]">
-            Deixe os imóveis virem até você
-          </h1>
-          <p className="mt-3 text-white/85 md:text-lg">
-            Em vez de procurar um a um, diga o que você precisa. Os proprietários da cidade veem seu
-            pedido e respondem com os imóveis que combinam — de graça, pela plataforma.
-          </p>
-
-          {/* Checklist + passos: no desktop moram aqui; no mobile vão abaixo do form. */}
+          <h1 className="mt-3 font-title text-2xl font-bold leading-tight lg:mt-4 lg:text-[2.4rem]">Deixe os imóveis virem até você</h1>
           <div className="hidden lg:block">
-            <Checklist />
-            <Passos />
+            <p className="mt-3 text-lg text-white/85">
+              Em vez de procurar um a um, diga o que você precisa. Os proprietários da cidade veem seu pedido e respondem
+              com os imóveis que combinam — de graça, pela plataforma.
+            </p>
+            <ol className="mt-8 space-y-2.5 border-t border-white/15 pt-6" data-testid="pedido-passos">
+              {PASSOS.map((p, i) => (
+                <li key={p} className="flex items-center gap-3 text-sm text-white/90">
+                  <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-champagne text-xs font-bold text-night">
+                    {i + 1}
+                  </span>
+                  {p}
+                </li>
+              ))}
+            </ol>
           </div>
         </div>
       </aside>
-      </div>
 
-      {/* LADO DIREITO — card branco "flutua" sobre off-white; no desktop a coluna
-          tem a altura da imagem e centraliza o card na vertical (sem vão branco). */}
-      <div className="bg-[#F7F6F2] px-4 py-8 sm:px-8 lg:flex lg:min-h-[calc(100vh-4.5rem)] lg:items-center lg:px-10 lg:py-10">
-        <div className="mx-auto w-full max-w-xl">
-          <Suspense fallback={<div className="min-h-[32rem] rounded-2xl border border-line bg-white" aria-busy="true" />}>
+      <div className="min-w-0 px-4 pb-10 pt-6 sm:px-8 lg:pb-16 lg:pl-16 lg:pr-10 lg:pt-10">
+        <div className="w-full max-w-[600px]">
+          <Suspense fallback={<div className="min-h-[40rem]" aria-busy="true" />}>
             <PedidoForm />
           </Suspense>
 
-          {/* Mobile: checklist + passos abaixo do formulário. */}
-          <div className="mt-8 rounded-2xl border border-line bg-white p-6 lg:hidden">
-            <ChecklistLight />
-            <PassosLight />
-          </div>
+          <footer className="mt-10 border-t border-line pt-5 text-xs text-muted" data-testid="pedido-rodape-legal">
+            <p className="flex items-start gap-2">
+              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-sage" aria-hidden />
+              <span>
+                Toda a conversa acontece pela plataforma — é o que fica registrado. A Viva Nomads conecta e documenta; não
+                é locadora, fiadora nem intermediária de pagamento.{" "}
+                <Link href="/como-funciona" className="font-medium text-forest underline underline-offset-2">
+                  Como a Viva funciona
+                </Link>
+              </span>
+            </p>
+          </footer>
         </div>
       </div>
     </div>
   );
 }
 
-/* ── Blocos reutilizáveis (versão clara p/ o painel escuro; versão light p/ mobile) ── */
-function Checklist() {
+/** Título pequeno de cada grupo do formulário (ONDE E QUANDO, QUEM VAI MORAR, ORÇAMENTO E MOTIVO). */
+function Grupo({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
-    <ul className="mt-8 space-y-3.5">
-      {CHECKLIST.map((s) => (
-        <li key={s.t} className="flex items-start gap-3">
-          <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white/10 ring-1 ring-white/15">
-            <s.icon className="h-4 w-4 text-champagne" />
-          </span>
-          <div>
-            <p className="text-sm font-semibold text-white">{s.t}</p>
-            <p className="text-xs text-white/70">{s.d}</p>
-          </div>
-        </li>
-      ))}
-    </ul>
+    <fieldset className="min-w-0 space-y-4">
+      <legend className="mb-3 text-xs font-bold uppercase tracking-[0.08em] text-muted">{titulo}</legend>
+      {children}
+    </fieldset>
   );
 }
 
-function Passos() {
+function Rotulo({ children, htmlFor }: { children: React.ReactNode; htmlFor?: string }) {
   return (
-    <ol className="mt-8 space-y-2.5 border-t border-white/15 pt-6">
-      {PASSOS.map((p, i) => (
-        <li key={p} className="flex items-center gap-3 text-sm text-white/90">
-          <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-champagne text-xs font-bold text-night">
-            {i + 1}
-          </span>
-          {p}
-        </li>
-      ))}
-    </ol>
+    <label htmlFor={htmlFor} className="mb-1.5 block text-sm font-medium text-ink">
+      {children}
+    </label>
   );
 }
 
-function ChecklistLight() {
-  return (
-    <ul className="space-y-3">
-      {CHECKLIST.map((s) => (
-        <li key={s.t} className="flex items-start gap-3">
-          <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-sage-100">
-            <s.icon className="h-4 w-4 text-forest" />
-          </span>
-          <div>
-            <p className="text-sm font-semibold text-ink">{s.t}</p>
-            <p className="text-xs text-muted">{s.d}</p>
-          </div>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function PassosLight() {
-  return (
-    <ol className="mt-5 space-y-2.5 border-t border-line pt-5">
-      {PASSOS.map((p, i) => (
-        <li key={p} className="flex items-center gap-3 text-sm text-ink">
-          <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-forest text-xs font-bold text-white">
-            {i + 1}
-          </span>
-          {p}
-        </li>
-      ))}
-    </ol>
-  );
+/** Rótulo inicial do campo de cidade a partir da URL (?cidade=…&uf=…). */
+function textoInicialCidade(cidade: string, uf: string): string {
+  if (!cidade) return "";
+  const r = lerCidadeUf(MUNICIPIOS, uf ? `${cidade} – ${uf}` : cidade);
+  return r ? rotuloCidade(r.cidade, r.uf) : cidade;
 }
 
 function PedidoForm() {
@@ -216,11 +140,16 @@ function PedidoForm() {
   const ocupQ = Number(sp.get("adultos") || 0) + Number(sp.get("criancas") || 0);
   const orcQ = sp.get("orcamento") ?? "";
 
-  const [cidade, setCidade] = useState(sp.get("cidade") ?? "");
-  const [uf, setUf] = useState((sp.get("uf") ?? "").toUpperCase().slice(0, 2));
+  // Cidade: um campo só, com sugestões de todo o Brasil; escolher grava cidade + UF.
+  const [textoCidade, setTextoCidade] = useState(() =>
+    textoInicialCidade(sp.get("cidade") ?? "", (sp.get("uf") ?? "").toUpperCase().slice(0, 2)),
+  );
+  const [cidadeUf, setCidadeUf] = useState(() => lerCidadeUf(MUNICIPIOS, textoCidade));
+  const cidade = cidadeUf?.cidade ?? "";
+  const uf = cidadeUf?.uf ?? "";
   const [dataInicio, setDataInicio] = useState(/^\d{4}-\d{2}-\d{2}$/.test(inicioQ) ? inicioQ : "");
   const [prazoMeses, setPrazoMeses] = useState(mesesQ >= 1 && mesesQ <= PRAZO_MAX_MESES ? mesesQ : PRAZO_MAX_MESES);
-  const [orcamento, setOrcamento] = useState(/^\d+$/.test(orcQ) ? orcQ : "");
+  const [orcamento, setOrcamento] = useState(/^\d+$/.test(orcQ) ? soDigitos(orcQ) : "");
   const [ocupantes, setOcupantes] = useState(ocupQ >= 1 ? ocupQ : 1);
   const [motivo, setMotivo] = useState("");
   const [apresentacao, setApresentacao] = useState("");
@@ -307,9 +236,21 @@ function PedidoForm() {
       setErro(CONTATO_AVISO);
       return;
     }
-    // Deslogado: leva ao login guardando o destino (volta para cá após entrar).
+    if (!cidade || !uf) {
+      setErro("Escolha a cidade na lista de sugestões.");
+      return;
+    }
+    // Deslogado: entra com o código por e-mail e volta para cá com o que já preencheu.
     if (!user) {
-      router.push("/auth?redirect=/pedidos/novo");
+      const volta = `/pedidos/novo?${new URLSearchParams({
+        cidade,
+        uf,
+        ...(dataInicio ? { inicio: dataInicio } : {}),
+        meses: String(prazoMeses),
+        ...(orcamento ? { orcamento } : {}),
+        adultos: String(ocupantes),
+      }).toString()}`;
+      router.push(`/auth?codigo=1&redirect=${encodeURIComponent(volta)}`);
       return;
     }
     setEnviando(true);
@@ -346,8 +287,8 @@ function PedidoForm() {
   if (resultado) {
     const n = resultado.compativeis;
     return (
-      <div className="rounded-2xl border border-line bg-white p-6 shadow-lg sm:p-7" role="status" aria-live="polite">
-        <h2 className="font-title text-xl font-bold text-ink">Pedido publicado</h2>
+      <div role="status" aria-live="polite">
+        <h2 className="font-title text-2xl font-bold text-ink">Pedido publicado</h2>
         {n > 0 ? (
           <p className="mt-3 rounded-xl bg-sage-100 px-4 py-3 text-sm text-forest">
             <strong>
@@ -401,206 +342,194 @@ function PedidoForm() {
   }
 
   return (
-    <div className="rounded-2xl border border-line bg-white p-6 shadow-lg sm:p-8">
-      <h2 className="font-title text-2xl font-bold text-ink">Publique seu pedido</h2>
-      <p className="mt-1 text-sm text-muted">Leva 2 minutos. Os proprietários da cidade respondem pela plataforma.</p>
+    <div data-testid="pedido-formulario">
+      <h2 className="font-title text-2xl font-bold text-ink md:text-[1.75rem]">Publique seu pedido</h2>
+      <p className="mt-1 text-sm text-muted">Os proprietários da cidade veem seu pedido e respondem pela plataforma.</p>
 
-      <AvisoAntigolpe className="mt-3" />
-
-      {!user && (
-        <p className="mt-3 flex items-start gap-2 rounded-xl border border-champagne/50 bg-champagne/10 px-3.5 py-2.5 text-sm text-ink">
-          <Info className="mt-0.5 h-4 w-4 shrink-0 text-forest" />
-          Preencha à vontade — ao publicar, pedimos um login rápido (ou cadastro) para os
-          proprietários poderem responder você.
-        </p>
-      )}
-
-      <form onSubmit={submit} className="mt-5 space-y-5">
-        <div className="grid gap-4 sm:grid-cols-3">
-          <label className="sm:col-span-2">
-            <span className="mb-1 block text-sm font-medium text-ink">Cidade</span>
-            {/* Nome da lista do IBGE (sugestões por UF): evita a mesma cidade
-                escrita de dois jeitos. O servidor confere de novo. */}
-            <input
-              required
-              value={cidade}
-              onChange={(e) => setCidade(e.target.value)}
-              placeholder={uf ? "Comece a digitar a cidade" : "Escolha a UF primeiro"}
-              list="cidades-uf"
-              autoComplete="off"
-              className={CAMPO}
-            />
-            <datalist id="cidades-uf">
-              {(MUNICIPIOS[uf] ?? []).map((c) => (
-                <option key={c} value={c} />
-              ))}
-            </datalist>
-          </label>
-          <label>
-            <span className="mb-1 block text-sm font-medium text-ink">UF</span>
-            <select
-              required
-              value={uf}
-              onChange={(e) => setUf(e.target.value)}
-              className={CAMPO}
-            >
-              <option value="">UF</option>
-              {UFS.map((u) => (
-                <option key={u} value={u}>
-                  {u}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-3">
-          <label>
-            <span className="mb-1 block text-sm font-medium text-ink">A partir de</span>
-            <DateFieldBR
-              required
-              value={dataInicio}
-              onChange={setDataInicio}
-              className={CAMPO}
-            />
-          </label>
-          <label>
-            <span className="mb-1 block text-sm font-medium text-ink">Prazo (meses)</span>
-            <select
-              value={prazoMeses}
-              onChange={(e) => setPrazoMeses(Number(e.target.value))}
-              className={CAMPO}
-            >
-              {Array.from({ length: PRAZO_MAX_MESES }, (_, i) => i + 1).map((m) => (
-                <option key={m} value={m}>
-                  {m} {m === 1 ? "mês" : "meses"}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <span className="mb-1 block text-sm font-medium text-ink">Ocupantes</span>
-            <input
-              type="number"
-              min={1}
-              value={ocupantes}
-              onChange={(e) => setOcupantes(Math.max(1, Math.round(Number(e.target.value) || 1)))}
-              className={CAMPO}
-            />
-          </label>
-        </div>
-
-        {/* Só imóveis que aceitam entram como compatíveis. */}
-        <fieldset className="grid gap-3 text-sm text-ink sm:grid-cols-2">
-          <legend className="sr-only">Pet e crianças</legend>
-          <label className="flex h-12 cursor-pointer items-center gap-2.5 rounded-xl border border-line bg-white px-3.5 has-[:checked]:border-forest has-[:checked]:bg-sage-100">
-            <input type="checkbox" checked={pets} onChange={(e) => setPets(e.target.checked)} className="h-4 w-4 accent-forest" />
-            Vou com pet
-          </label>
-          <label className="flex h-12 cursor-pointer items-center gap-2.5 rounded-xl border border-line bg-white px-3.5 has-[:checked]:border-forest has-[:checked]:bg-sage-100">
-            <input type="checkbox" checked={criancas} onChange={(e) => setCriancas(e.target.checked)} className="h-4 w-4 accent-forest" />
-            Vou com crianças
-          </label>
-        </fieldset>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label>
-            <span className="mb-1 block text-sm font-medium text-ink">Orçamento por mês (R$)</span>
-            <input
-              required
-              inputMode="numeric"
-              value={orcamento}
-              onChange={(e) => setOrcamento(e.target.value.replace(/\D/g, ""))}
-              placeholder="3500"
-              className={CAMPO}
-            />
-          </label>
-          <div>
-            <span className="mb-1 block text-sm font-medium text-ink">Motivo</span>
-            <MotivoSelect value={motivo} onChange={setMotivo} />
-          </div>
-        </div>
-
-        <label className="block">
-          <span className="mb-1 block text-sm font-medium text-ink">Apresentação (opcional)</span>
-          <textarea
-            rows={4}
-            value={apresentacao}
-            onChange={(e) => setApresentacao(e.target.value)}
-            placeholder="Conte um pouco do seu perfil e do que procura. Não inclua telefone, e-mail ou apps de mensagem."
-            className={`w-full rounded-xl border bg-white px-3.5 py-3 text-sm text-ink outline-none transition focus:border-forest focus:ring-2 focus:ring-forest/15 ${
-              contatoNoTexto ? "border-red-300" : "border-line"
-            }`}
+      <form onSubmit={submit} className="mt-6 space-y-8" noValidate>
+        <Grupo titulo="Onde e quando">
+          <CampoCidade
+            texto={textoCidade}
+            onTexto={(t) => {
+              setTextoCidade(t);
+              setCidadeUf(lerCidadeUf(MUNICIPIOS, t));
+            }}
+            onEscolher={(c) => {
+              setTextoCidade(c.rotulo);
+              setCidadeUf({ cidade: c.cidade, uf: c.uf });
+            }}
+            escolhida={Boolean(cidadeUf)}
           />
-          {contatoNoTexto && (
-            <span className="mt-1 flex items-start gap-1.5 text-xs text-red-600">
-              <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {CONTATO_AVISO}
-            </span>
+          <div className="grid gap-4 sm:grid-cols-2 [&>*]:min-w-0">
+            <div>
+              <Rotulo htmlFor="pedido-data">Data de entrada</Rotulo>
+              {/* Um seletor só, o calendário nativo, com o conserto do iPhone (Q3/Q8). */}
+              <CampoData
+                id="pedido-data"
+                required
+                value={dataInicio}
+                min={hojeBR()}
+                onChange={(e) => setDataInicio(e.target.value)}
+                className={CAMPO}
+                data-testid="pedido-data"
+              />
+            </div>
+            <div>
+              <Rotulo htmlFor="pedido-prazo">Por quanto tempo</Rotulo>
+              <select id="pedido-prazo" value={prazoMeses} onChange={(e) => setPrazoMeses(Number(e.target.value))} className={CAMPO}>
+                {Array.from({ length: PRAZO_MAX_MESES }, (_, i) => i + 1).map((m) => (
+                  <option key={m} value={m}>
+                    {m} {m === 1 ? "mês" : "meses"}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          {dataInicio && (
+            <p className="text-[13px] text-muted">
+              Seu pedido expira em <strong className="text-ink">{calcExpiraEm(dataInicio, hojeBR())}</strong> (o menor
+              entre 15 dias após o início e 60 dias após publicar).
+            </p>
           )}
-        </label>
+        </Grupo>
 
-        {contagemAtual && (
-          <div
+        <Grupo titulo="Quem vai morar">
+          <div>
+            <Rotulo htmlFor="pedido-pessoas">Pessoas</Rotulo>
+            <div className="flex h-12 w-full max-w-[220px] items-stretch overflow-hidden rounded-xl border border-line bg-white" data-testid="pedido-pessoas">
+              <button
+                type="button"
+                onClick={() => setOcupantes((n) => Math.max(1, n - 1))}
+                disabled={ocupantes <= 1}
+                aria-label="Menos uma pessoa"
+                className="grid w-12 shrink-0 place-items-center text-forest transition hover:bg-surface-2 disabled:text-muted disabled:opacity-50"
+              >
+                <Minus className="h-4 w-4" aria-hidden />
+              </button>
+              <input
+                id="pedido-pessoas"
+                type="number"
+                min={1}
+                inputMode="numeric"
+                value={ocupantes}
+                onChange={(e) => setOcupantes(Math.max(1, Math.min(20, Math.round(Number(e.target.value) || 1))))}
+                className="h-12 w-full min-w-0 border-x border-line bg-white text-center text-sm font-semibold text-ink outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                aria-label="Quantas pessoas vão morar"
+              />
+              <button
+                type="button"
+                onClick={() => setOcupantes((n) => Math.min(20, n + 1))}
+                aria-label="Mais uma pessoa"
+                className="grid w-12 shrink-0 place-items-center text-forest transition hover:bg-surface-2"
+              >
+                <Plus className="h-4 w-4" aria-hidden />
+              </button>
+            </div>
+          </div>
+          {/* Só imóveis que aceitam entram como compatíveis. */}
+          <div className="grid grid-cols-2 gap-3">
+            <BotaoMarca ativo={pets} onClick={() => setPets((v) => !v)} icone={PawPrint} testid="pedido-pet">
+              Vou com pet
+            </BotaoMarca>
+            <BotaoMarca ativo={criancas} onClick={() => setCriancas((v) => !v)} icone={Baby} testid="pedido-criancas">
+              Vou com crianças
+            </BotaoMarca>
+          </div>
+        </Grupo>
+
+        <Grupo titulo="Orçamento e motivo">
+          <div className="grid gap-4 sm:grid-cols-2 [&>*]:min-w-0">
+            <div>
+              <Rotulo htmlFor="pedido-orcamento">Orçamento por mês</Rotulo>
+              <div className="relative">
+                <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-medium text-muted" aria-hidden>
+                  R$
+                </span>
+                <input
+                  id="pedido-orcamento"
+                  required
+                  inputMode="numeric"
+                  autoComplete="off"
+                  value={mascararMilhar(orcamento)}
+                  onChange={(e) => setOrcamento(soDigitos(e.target.value))}
+                  placeholder="3.500"
+                  className={cn(CAMPO, "pl-10")}
+                  data-testid="pedido-orcamento"
+                />
+              </div>
+              <span className="mt-1 block text-[13px] text-muted">Valor mensal total que cabe no seu bolso.</span>
+            </div>
+            <div>
+              <Rotulo htmlFor="pedido-motivo">Motivo da estadia</Rotulo>
+              <select
+                id="pedido-motivo"
+                value={motivo}
+                onChange={(e) => setMotivo(e.target.value)}
+                className={cn(CAMPO, !motivo && "text-muted")}
+                data-testid="pedido-motivo"
+              >
+                <option value="">Selecione</option>
+                {MOTIVOS.map((m) => (
+                  <option key={m.key} value={m.key}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <Rotulo htmlFor="pedido-apresentacao">Apresentação (opcional)</Rotulo>
+            <textarea
+              id="pedido-apresentacao"
+              rows={4}
+              maxLength={APRESENTACAO_MAX}
+              value={apresentacao}
+              onChange={(e) => setApresentacao(e.target.value.slice(0, APRESENTACAO_MAX))}
+              placeholder="Conte um pouco do seu perfil e do que procura. Não inclua telefone, e-mail ou apps de mensagem."
+              className={cn(
+                "w-full rounded-xl border bg-white px-3.5 py-3 text-sm text-ink outline-none transition focus:border-forest focus:ring-2 focus:ring-forest/15",
+                contatoNoTexto ? "border-red-300" : "border-line",
+              )}
+            />
+            <div className="mt-1 flex items-start justify-between gap-3 text-[13px]">
+              <span className="min-w-0 text-red-600">
+                {contatoNoTexto && (
+                  <span className="flex items-start gap-1.5">
+                    <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden /> {CONTATO_AVISO}
+                  </span>
+                )}
+              </span>
+              <span className="shrink-0 tabular-nums text-muted" data-testid="pedido-apresentacao-contador">
+                {apresentacao.length}/{APRESENTACAO_MAX}
+              </span>
+            </div>
+          </div>
+        </Grupo>
+
+        <div className="space-y-3">
+          <p
             role="status"
             aria-live="polite"
             data-testid="pedido-contador"
-            className={`rounded-xl px-4 py-3 text-sm ${
-              contagemAtual.combinam > 0 ? "bg-sage-100 text-forest" : "bg-amber-50 text-amber-900"
-            }`}
+            data-combinam={contagemAtual ? contagemAtual.combinam : undefined}
+            className={cn("min-h-5 text-sm", contagemAtual && contagemAtual.combinam > 0 ? "text-forest" : "text-muted")}
           >
-            {contagemAtual.combinam > 0 ? (
-              <strong>
-                {contagemAtual.combinam} {contagemAtual.combinam === 1 ? "imóvel combina" : "imóveis combinam"} agora
-              </strong>
-            ) : contagemAtual.naCidade === 0 ? (
-              <span>
-                <strong>Ainda não há imóveis publicados em {cidade}.</strong> Publique o pedido: avisamos você quando
-                surgir um.
-              </span>
-            ) : (
-              <span>
-                <strong>Nenhum imóvel combina com tudo agora.</strong>
-                {contagemAtual.dica ? ` ${contagemAtual.dica}` : " Mexer em mais de um campo pode ajudar."}
-              </span>
-            )}
-            {contagemAtual.combinam > 0 && " com o que você preencheu. É uma estimativa; o número final sai ao publicar."}
-          </div>
-        )}
-
-        {dataInicio && (
-          <p className="rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted">
-            Seu pedido expira em{" "}
-            <strong className="text-ink">
-              {calcExpiraEm(dataInicio, hojeBR())}
-            </strong>{" "}
-            (o menor entre 15 dias após o início e 60 dias após publicar).
+            {contagemAtual ? fraseContador(contagemAtual.combinam) : null}
           </p>
-        )}
 
-        <p className="flex items-start gap-2 rounded-lg border border-sage-200 bg-surface-2 px-3 py-2 text-xs text-muted">
-          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-sage" />
-          Toda a conversa acontece pela plataforma — é o que fica registrado. A Viva Nomads conecta
-          e documenta; não é locadora, fiadora nem intermediária de pagamento.
-        </p>
-
-        {erro && (
-          <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-            {erro}{" "}
-            {erro.startsWith("Entre") && (
-              <Link href="/auth" className="font-medium underline">
-                Entrar
-              </Link>
-            )}
-          </p>
-        )}
-
-        <div className="flex items-center justify-end gap-3">
-          {user && (
-            <Link href="/dashboard/pedidos" className="text-sm text-muted hover:text-ink">
-              Ver meus pedidos
-            </Link>
+          {erro && (
+            <p className="text-[13px] text-red-600" role="alert" data-testid="pedido-erro">
+              {erro}{" "}
+              {erro.startsWith("Entre") && (
+                <Link href="/auth" className="font-medium underline">
+                  Entrar
+                </Link>
+              )}
+            </p>
           )}
-          <Button type="submit" variant="gold" disabled={enviando || contatoNoTexto}>
+
+          <Button type="submit" variant="gold" size="lg" className="h-[52px] w-full" disabled={enviando || contatoNoTexto}>
             {enviando ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" /> Publicando…
@@ -609,89 +538,145 @@ function PedidoForm() {
               "Publicar pedido"
             )}
           </Button>
+
+          <AvisoAntigolpe variante="linha" antes={user ? null : "Ao publicar, você entra com um código enviado por e-mail."} />
+          {user && (
+            <p className="text-[13px]">
+              <Link href="/dashboard/pedidos" className="text-muted underline-offset-2 hover:text-ink hover:underline">
+                Ver meus pedidos
+              </Link>
+            </p>
+          )}
         </div>
       </form>
     </div>
   );
 }
 
-/** Seletor de motivo com ícone + rótulo + descrição por opção (dropdown, click-away). */
-function MotivoSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const atual = MOTIVOS.find((m) => m.key === value);
-  const AtualIcon = atual ? MOTIVO_ICON[atual.key] : null;
+/** Botão liga/desliga (pet, crianças) com a mesma altura dos campos. */
+function BotaoMarca({
+  ativo,
+  onClick,
+  icone: Icone,
+  testid,
+  children,
+}: {
+  ativo: boolean;
+  onClick: () => void;
+  icone: React.ComponentType<{ className?: string }>;
+  testid: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={ativo}
+      onClick={onClick}
+      data-testid={testid}
+      className={cn(
+        "flex h-12 min-w-0 items-center justify-center gap-2 rounded-xl border px-3 text-sm font-medium transition-colors",
+        ativo ? "border-forest bg-sage-100 text-forest" : "border-line bg-white text-ink hover:border-sage",
+      )}
+    >
+      {ativo ? <Check className="h-4 w-4 shrink-0" aria-hidden /> : <Icone className="h-4 w-4 shrink-0 text-muted" />}
+      <span className="truncate">{children}</span>
+    </button>
+  );
+}
 
-  useEffect(() => {
-    if (!open) return;
-    function onDown(e: PointerEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
-    }
-    document.addEventListener("pointerdown", onDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("pointerdown", onDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
+/**
+ * Cidade com autocomplete (prompt 12): um campo só, sugestões "Cidade – UF" de todo o Brasil (lista do IBGE).
+ * Escolher na lista grava cidade + UF; o servidor confere de novo.
+ */
+function CampoCidade({
+  texto,
+  onTexto,
+  onEscolher,
+  escolhida,
+}: {
+  texto: string;
+  onTexto: (t: string) => void;
+  onEscolher: (c: { cidade: string; uf: string; rotulo: string }) => void;
+  escolhida: boolean;
+}) {
+  const id = useId();
+  const listaId = `${id}-lista`;
+  const [aberto, setAberto] = useState(false);
+  const [ativo, setAtivo] = useState(0);
+  const sugestoes = aberto && !escolhida ? buscarCidades(MUNICIPIOS, texto, 8) : [];
+  const mostrar = sugestoes.length > 0;
+
+  function escolher(i: number) {
+    const c = sugestoes[i];
+    if (!c) return;
+    onEscolher(c);
+    setAberto(false);
+  }
 
   return (
-    <div className="relative" ref={ref}>
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        className={`flex h-12 w-full items-center justify-between gap-2 rounded-xl border bg-white px-3.5 text-left text-sm outline-none transition focus:border-forest focus:ring-2 focus:ring-forest/15 ${
-          open ? "border-sage" : "border-line"
-        }`}
-      >
-        <span className={`flex items-center gap-2 ${atual ? "text-ink" : "text-muted"}`}>
-          {AtualIcon && <AtualIcon className="h-4 w-4 text-forest" />}
-          {atual ? atual.label : "Selecione o motivo da estadia…"}
-        </span>
-        <ChevronDown
-          className={`h-4 w-4 shrink-0 text-muted transition-transform ${open ? "rotate-180" : ""}`}
-        />
-      </button>
-
-      {open && (
-        <div
+    <div className="relative">
+      <Rotulo htmlFor={`${id}-campo`}>Cidade</Rotulo>
+      <input
+        id={`${id}-campo`}
+        role="combobox"
+        aria-expanded={mostrar}
+        aria-controls={listaId}
+        aria-autocomplete="list"
+        aria-activedescendant={mostrar ? `${id}-op-${ativo}` : undefined}
+        autoComplete="off"
+        required
+        value={texto}
+        placeholder="Comece a digitar a cidade"
+        onChange={(e) => {
+          onTexto(e.target.value);
+          setAberto(true);
+          setAtivo(0);
+        }}
+        onFocus={() => setAberto(true)}
+        onBlur={() => setAberto(false)}
+        onKeyDown={(e) => {
+          if (!mostrar) return;
+          if (e.key === "ArrowDown") {
+            e.preventDefault();
+            setAtivo((a) => Math.min(sugestoes.length - 1, a + 1));
+          } else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            setAtivo((a) => Math.max(0, a - 1));
+          } else if (e.key === "Enter") {
+            e.preventDefault();
+            escolher(ativo);
+          } else if (e.key === "Escape") {
+            setAberto(false);
+          }
+        }}
+        className={cn(CAMPO, escolhida && "pr-10")}
+        data-testid="pedido-cidade"
+        data-cidade-escolhida={escolhida ? "1" : undefined}
+      />
+      {escolhida && <Check className="pointer-events-none absolute bottom-4 right-3.5 h-4 w-4 text-forest" aria-hidden />}
+      {mostrar && (
+        <ul
+          id={listaId}
           role="listbox"
-          className="absolute left-0 right-0 top-full z-30 mt-2 max-h-72 overflow-auto rounded-xl border border-line bg-white py-1 shadow-xl"
+          aria-label="Cidades"
+          className="absolute left-0 right-0 top-full z-30 mt-1 max-h-72 overflow-auto rounded-xl border border-line bg-white py-1 shadow-xl"
         >
-          {MOTIVOS.map((m) => {
-            const ativo = m.key === value;
-            const Icon = MOTIVO_ICON[m.key] ?? MoreHorizontal;
-            return (
-              <button
-                key={m.key}
-                type="button"
-                role="option"
-                aria-selected={ativo}
-                onClick={() => {
-                  onChange(m.key);
-                  setOpen(false);
-                }}
-                className={`flex w-full items-start gap-2.5 px-3.5 py-2 text-left hover:bg-surface-2 ${
-                  ativo ? "bg-sage-100" : ""
-                }`}
-              >
-                <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-sage-100 text-forest">
-                  <Icon className="h-4 w-4" />
-                </span>
-                <span className="flex-1">
-                  <span className="block text-sm font-semibold text-forest">{m.label}</span>
-                  <span className="block text-xs text-muted">{m.descricao}</span>
-                </span>
-                {ativo && <Check className="mt-0.5 h-4 w-4 shrink-0 text-forest" />}
-              </button>
-            );
-          })}
-        </div>
+          {sugestoes.map((c, i) => (
+            <li
+              key={`${c.uf}-${c.cidade}`}
+              id={`${id}-op-${i}`}
+              role="option"
+              aria-selected={i === ativo}
+              // mousedown antes do blur do campo: a escolha não se perde.
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => escolher(i)}
+              onMouseEnter={() => setAtivo(i)}
+              className={cn("cursor-pointer px-3.5 py-2.5 text-sm text-ink", i === ativo && "bg-sage-100")}
+            >
+              {c.cidade} <span className="text-muted">– {c.uf}</span>
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   );

@@ -85,6 +85,8 @@ export default function AuthPage() {
     const papel = params.get("papel");
     if (papel === "owner" || papel === "tenant") setRole(papel);
     if (params.get("cadastro") === "1") setMode("signup");
+    // Pedido de moradia (prompt 12): "Ao publicar, você entra com um código enviado por e-mail" (?codigo=1).
+    if (params.get("codigo") === "1") setMode("codigo");
     const ref = params.get("ref")?.trim().slice(0, 40);
     if (ref) {
       setReferral(ref);

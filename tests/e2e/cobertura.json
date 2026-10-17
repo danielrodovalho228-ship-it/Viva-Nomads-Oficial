@@ -681,7 +681,8 @@
         "proprietario"
       ],
       "specs": [
-        "t68-comissao-valor-total"
+        "t68-comissao-valor-total",
+        "t189-simulador-roi"
       ]
     },
     "/dashboard/simulador": {
@@ -693,7 +694,8 @@
       "specs": [
         "t12-planos",
         "t37-simuladores-e-numeros",
-        "t68-comissao-valor-total"
+        "t68-comissao-valor-total",
+        "t189-simulador-roi"
       ]
     },
     "/dashboard/solicitacoes": {
@@ -909,7 +911,8 @@
         "t69-botoes-header",
         "t72-paginas-institucionais",
         "t96-antigolpe-atalhos",
-        "t165-pedido-contador"
+        "t165-pedido-contador",
+        "t188-pedido-novo-layout"
       ]
     },
     "/precos": {

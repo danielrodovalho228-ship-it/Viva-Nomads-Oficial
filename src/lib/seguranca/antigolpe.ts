@@ -3,6 +3,9 @@
   O texto é o mesmo nos 3 lugares (anúncio, pedido de moradia, Mensagens) e leva a /seguranca.
   O detector só ALERTA quem recebe; nunca bloqueia nem guarda o texto.
 */
+/** Versão de uma linha, sob o botão do pedido de moradia (prompt 12). */
+export const AVISO_ANTIGOLPE_LINHA = "A Viva nunca pede PIX ou pagamento fora do contrato";
+
 export const AVISO_ANTIGOLPE_TEXTO =
   "A Viva nunca pede PIX, transferência ou pagamento fora do contrato. Desconfie de quem pedir sinal antes de assinar.";
 
