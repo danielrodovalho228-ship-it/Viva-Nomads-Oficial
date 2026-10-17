@@ -741,6 +741,17 @@
       ],
       "specs": []
     },
+    "/favoritos": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t119-painel-capas",
+        "t138-paineis-viva-vazio",
+        "t160-favoritos-pagina",
+        "t48-varredura"
+      ]
+    },
     "/guia-fotos": {
       "personas": [
         "publico"
@@ -776,6 +787,7 @@
         "t141-galeria-1536",
         "t152-barra-fixa-imovel",
         "t153-limpeza-estadia",
+        "t161-coerencia-imovel",
         "t20-p1-agentes",
         "t23-pacote-seguranca",
         "t28-avaliacoes-fase1",
@@ -1897,7 +1909,8 @@
         "proprietario"
       ],
       "specs": [
-        "t57-contrato-assinar"
+        "t57-contrato-assinar",
+        "t159-contrato-total-mes"
       ]
     },
     "src/lib/data/contrato-assinar-actions.ts#pedirCodigoAssinatura": {

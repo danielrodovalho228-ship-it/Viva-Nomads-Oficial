@@ -55,10 +55,10 @@ test("D12: o coração fica fora do <a> do cartão", () => {
   assert.match(card.slice(card.indexOf("</Link>")), /<FavoriteButton/);
 });
 
-test("#544b148a D1: o pino do Leaflet usa o total do cartão, não o valor base", () => {
+test("D1 (achado do Moacir no #702): os dois pinos do mapa (Mapbox e Leaflet) mostram o total do mês", () => {
   const mapa = ler("components/search-map.tsx");
   assert.doesNotMatch(mapa, /formatBRL\(p\.monthlyPrice\)/);
-  assert.equal((mapa.match(/formatBRL\(precoDeBusca\(p\)\)/g) ?? []).length, 2); // criação e atualização do pino
+  assert.equal((mapa.match(/formatBRL\(precoDeBusca\(p\)\)/g) ?? []).length, 2);
 });
 
 test("#544b148a: a home conta os atalhos pelo total do mês", () => {

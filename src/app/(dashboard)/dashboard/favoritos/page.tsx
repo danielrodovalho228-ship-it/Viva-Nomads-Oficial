@@ -6,13 +6,10 @@ import { PropertyCard } from "@/components/property-card";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyTripIllustration } from "@/components/illustrations";
 import { FavoritosTabs } from "@/components/dashboard/favoritos-tabs";
-import { useFavoritesStore } from "@/lib/favorites-store";
-import { useProperties } from "@/lib/use-properties";
+import { useFavoritos } from "@/lib/use-favoritos";
 
 export default function FavoritesPage() {
-  const ids = useFavoritesStore((s) => s.ids);
-  const { properties } = useProperties("/api/properties");
-  const favorites = properties.filter((p) => ids.includes(p.id));
+  const { favoritos: favorites } = useFavoritos();
 
   return (
     <>

@@ -11,6 +11,7 @@ import {
   avisoAssinatura,
   hashResumo,
   petsRegrasDoResumo,
+  totalMesAplicavel,
   limpezaDoContrato,
   outrosCustosDoContrato,
   motivoNaoPodeAssinar,
@@ -165,6 +166,10 @@ function montar(c: LinhaContrato, userId: string): ContratoParaAssinar | null {
     outrosCustosMes: outrosCustosDoContrato({
       algumaAssinatura: !!(c.assinado_proprietario_em || c.assinado_inquilino_em),
       vivo: c.outros_custos_vivos,
+      congeladas: c.pets_regras_congeladas,
+    }),
+    semTotalMes: !totalMesAplicavel({
+      algumaAssinatura: !!(c.assinado_proprietario_em || c.assinado_inquilino_em),
       congeladas: c.pets_regras_congeladas,
     }),
   });

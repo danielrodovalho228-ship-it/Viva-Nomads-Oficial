@@ -16,6 +16,7 @@ import {
   petsRegrasDoResumo,
   limpezaDoContrato,
   outrosCustosDoContrato,
+  totalMesAplicavel,
   totalMensalDoResumo,
 } from "./contrato-assinar.ts";
 import { qtdPetsCongelada, type RegrasPets } from "./anuncio/pets-regras.ts";
@@ -184,4 +185,18 @@ test("outrosCustosDoContrato: ao vivo antes da assinatura, congelado depois; lix
   assert.equal(outrosCustosDoContrato({ algumaAssinatura: true, vivo: 999, congeladas: { especies: [] } }), 0);
   assert.equal(outrosCustosDoContrato({ algumaAssinatura: false, vivo: -5, congeladas: null }), 0);
   assert.equal(outrosCustosDoContrato({ algumaAssinatura: false, vivo: "x", congeladas: null }), 0);
+});
+
+test("contrato já assinado só mostra o Total por mês se o total foi congelado (ordem ddcda0fa)", () => {
+  const limpezaEstadia = { porMes: 2, inclui: "", valorMes: 180 };
+  // assinado antes da linha existir: congelou a limpeza, mas não os outros custos -> resumo e hash não mudam
+  const antigo = { algumaAssinatura: true, congeladas: { limpezaEstadia } };
+  assert.equal(totalMesAplicavel(antigo), false);
+  const base = { ...dados, aluguelMensal: 2400, limpezaEstadia };
+  assert.ok(!resumoContrato({ ...base, semTotalMes: !totalMesAplicavel(antigo) }).some((l) => l.startsWith("Total por mês")));
+  // assinado com o total congelado (mesmo sem condomínio: 0): a linha segue
+  assert.equal(totalMesAplicavel({ algumaAssinatura: true, congeladas: { limpezaEstadia, outrosCustosMes: 0 } }), true);
+  // ainda sem assinatura: ao vivo, sempre aplicável
+  assert.equal(totalMesAplicavel({ algumaAssinatura: false, congeladas: null }), true);
+  assert.ok(resumoContrato({ ...base, semTotalMes: false }).some((l) => l.startsWith("Total por mês: ")));
 });
