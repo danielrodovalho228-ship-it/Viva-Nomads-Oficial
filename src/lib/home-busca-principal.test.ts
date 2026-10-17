@@ -39,7 +39,7 @@ test("atalhos por categoria usam filtros que a /buscar realmente lê da URL", as
   assert.ok(rotulos.includes("3+ quartos"));
   const busca = ler("app/(public)/buscar/search-client.tsx");
   const lidos: Record<string, RegExp> = {
-    orcamento: /num\("orcamento"\)/,
+    preco: /num\("preco"\)/,
     pet: /on\("pet"\)/,
     homeoffice: /on\("homeoffice"\)/,
     quartos: /num\("quartos"\)/,

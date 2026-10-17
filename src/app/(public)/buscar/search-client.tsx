@@ -1102,6 +1102,8 @@ export function SearchClient({ properties: imoveis, topo }: { properties: Proper
             </div>
           )}
 
+          {/* Respiro: a barra fixa não cobre as caixinhas dos últimos cartões. */}
+          {comparar.length > 0 && <div aria-hidden="true" data-testid="comparar-respiro" className="h-32" />}
           <BarraComparar ids={comparar} aviso={avisoComparar} onLimpar={() => { setComparar([]); setAvisoComparar(null); }} />
 
           {/* O botão flutuante "Fale com a Viva" não aparece aqui (cobria "Mais filtros"). */}

@@ -54,3 +54,18 @@ test("D12: o coração fica fora do <a> do cartão", () => {
   assert.doesNotMatch(link, /FavoriteButton/);
   assert.match(card.slice(card.indexOf("</Link>")), /<FavoriteButton/);
 });
+
+test("#544b148a D1: o pino do Leaflet usa o total do cartão, não o valor base", () => {
+  const mapa = ler("components/search-map.tsx");
+  assert.doesNotMatch(mapa, /formatBRL\(p\.monthlyPrice\)/);
+  assert.equal((mapa.match(/formatBRL\(precoDeBusca\(p\)\)/g) ?? []).length, 2); // criação e atualização do pino
+});
+
+test("#544b148a: a home conta os atalhos pelo total do mês", () => {
+  assert.match(ler("components/home/atalhos-categoria.tsx"), /imoveis\.map\(\(p\) => comTotalMes\(p\)\)/);
+});
+
+test("#544b148a: respiro no fim da lista com itens no comparador", () => {
+  const cli = ler("app/(public)/buscar/search-client.tsx");
+  assert.match(cli, /comparar\.length > 0 && <div aria-hidden="true" data-testid="comparar-respiro"/);
+});

@@ -407,7 +407,7 @@ function SearchMapLeaflet({ properties, activeId, onHover, selectedId = null, on
       const icon = L.divIcon({
         className: "",
         iconSize: [0, 0],
-        html: `<div data-testid="pin-mapa" data-id="${esc(p.id)}" class="${pinClass(p.id === activeRef.current || p.id === selRef.current)} absolute left-0 top-0 -translate-x-1/2 -translate-y-1/2">${esc(formatBRL(p.monthlyPrice))}</div>`,
+        html: `<div data-testid="pin-mapa" data-id="${esc(p.id)}" class="${pinClass(p.id === activeRef.current || p.id === selRef.current)} absolute left-0 top-0 -translate-x-1/2 -translate-y-1/2">${esc(formatBRL(precoDeBusca(p)))}</div>`,
       });
       const marker = L.marker([p.lat, p.lng], { icon, title: p.title, riseOnHover: true }).addTo(map);
       const el = marker.getElement()!.firstElementChild as HTMLElement;
