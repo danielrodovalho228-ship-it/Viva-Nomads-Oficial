@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 /**
- * T167 — Faixas da taxa de parceria e CORS das páginas (ordens 39cc7c00 e a4a13765).
+ * T169 — Faixas da taxa de parceria e CORS das páginas (ordens 39cc7c00 e a4a13765).
  * 1) /parceiros e /parceiros/fotografos mostram as 3 faixas (R$ 40 / 60 / 80) a 360 e 1280 px.
  * 2) Páginas HTML e /api/comissao não respondem "Access-Control-Allow-Origin: *".
  */
