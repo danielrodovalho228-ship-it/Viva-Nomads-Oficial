@@ -81,10 +81,11 @@ export function validarCidade(texto: string): Validacao<string | null> {
   return { ok: true, valor: t };
 }
 
-/** Selos que só aparecem com verificação REAL registrada. Telefone e identidade entram depois (prompt 7 / Certta). */
-export function selosReais(p: { emailConfirmado?: boolean | null }): string[] {
+/** Selos que só aparecem com verificação REAL registrada. Telefone: código por SMS (prompt 7). Identidade: Certta (depois). */
+export function selosReais(p: { emailConfirmado?: boolean | null; telefoneVerificado?: boolean | null }): string[] {
   const s: string[] = [];
   if (p.emailConfirmado === true) s.push("E-mail confirmado");
+  if (p.telefoneVerificado === true) s.push("Telefone verificado");
   return s;
 }
 
@@ -98,6 +99,7 @@ export interface CandidatoBase {
   desde: string | null;
   reputacao: { media: number; n: number } | null;
   emailConfirmado: boolean;
+  telefoneVerificado?: boolean;
 }
 
 export interface CartaoCandidato {
@@ -121,13 +123,13 @@ export function cartaoCandidato(c: CandidatoBase, aceito: boolean): CartaoCandid
     titulo: aceito ? (nomeCurto(c.nome) ?? "Candidato(a)") : "Candidato(a)",
     fotoUrl: aceito ? c.fotoUrl : null,
     sinais,
-    selos: selosReais({ emailConfirmado: c.emailConfirmado }),
+    selos: selosReais({ emailConfirmado: c.emailConfirmado, telefoneVerificado: c.telefoneVerificado }),
     reputacao: c.reputacao && c.reputacao.n > 0 ? c.reputacao : null,
   };
 }
 
 export interface ItemProgresso {
-  chave: "foto" | "bio" | "idiomas" | "cidade" | "profissao" | "motivo";
+  chave: "foto" | "bio" | "idiomas" | "cidade" | "profissao" | "motivo" | "telefone";
   rotulo: string;
   feito: boolean;
 }
@@ -135,7 +137,8 @@ export interface ItemProgresso {
 /** Barra "Complete seu perfil": nunca obrigatória. Quem só procura casa também vê profissão e motivo. */
 export function progressoPerfil(
   p: { foto: boolean; bio: string | null; idiomas: string[]; cidade: string | null; profissao: string | null; motivo: string | null },
-  opts: { anuncia: boolean },
+  /** telefone: undefined = verificação por SMS indisponível (o item não aparece). */
+  opts: { anuncia: boolean; telefone?: boolean },
 ): { itens: ItemProgresso[]; pct: number } {
   const itens: ItemProgresso[] = [
     { chave: "foto", rotulo: "Foto de perfil", feito: p.foto },
@@ -147,6 +150,8 @@ export function progressoPerfil(
     itens.push({ chave: "profissao", rotulo: "Profissão", feito: !!p.profissao });
     itens.push({ chave: "motivo", rotulo: "Motivo da estadia", feito: !!p.motivo });
   }
+  if (opts.telefone !== undefined)
+    itens.push({ chave: "telefone", rotulo: "Verifique seu celular: perfis verificados passam mais confiança", feito: opts.telefone });
   const pct = Math.round((itens.filter((i) => i.feito).length / itens.length) * 100);
   return { itens, pct };
 }

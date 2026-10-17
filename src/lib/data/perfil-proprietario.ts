@@ -51,10 +51,13 @@ export async function getPerfilProprietario(donoId: string | null | undefined): 
     const l = ((data as Linha[] | null) ?? [])[0];
     if (error || !l) return null;
     // Reputação pelo cliente do servidor (sem cookies): a página do imóvel é estática e quebraria ao ler a sessão.
-    const [fotoUrl, notas] = await Promise.all([
+    const [fotoUrl, notas, fones] = await Promise.all([
       signAvatarPath(l.avatar_url, donoId),
       admin.from("avaliacoes").select("nota_geral").eq("alvo_id", donoId).eq("status", "publicada"),
+      admin.rpc("telefones_verificados", { p_ids: [donoId] }),
     ]);
+    // Selo do telefone (0150): sem a função (ainda não aplicada) ou com erro, simplesmente não aparece.
+    const telefoneVerificado = !fones.error && ((fones.data ?? []) as { verificado: boolean }[]).some((f) => f.verificado);
     const ns = ((notas.data ?? []) as { nota_geral: number }[]).map((r) => Number(r.nota_geral));
     const reputacao: Reputacao = ns.length
       ? { media: Math.round((ns.reduce((a, n) => a + n, 0) / ns.length) * 10) / 10, n: ns.length }
@@ -71,7 +74,7 @@ export async function getPerfilProprietario(donoId: string | null | undefined): 
       estadiasConcluidas: l.estadias_concluidas ?? 0,
       resposta: metricaResposta(l.conversas ?? 0, l.conversas_respondidas ?? 0, l.resposta_media_min),
       reputacao,
-      selos: selosReais({ emailConfirmado: l.email_confirmado }),
+      selos: selosReais({ emailConfirmado: l.email_confirmado, telefoneVerificado }),
     };
   } catch {
     return null;

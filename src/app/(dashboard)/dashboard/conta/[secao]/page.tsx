@@ -5,6 +5,7 @@ import { PerfilPublicoForm } from "@/components/account/perfil-publico-form";
 import { use } from "react";
 import { notFound } from "next/navigation";
 import { AvatarUploader } from "@/components/account/avatar-uploader";
+import { TelefoneVerificacao } from "@/components/account/telefone-verificacao";
 import { PageTitle } from "@/components/dashboard/primitives";
 import { CentralAjuda } from "@/components/ajuda/central-ajuda";
 import {
@@ -36,6 +37,7 @@ export default function ContaSecaoPage({ params }: { params: Promise<{ secao: st
           <DocumentoPessoa />
           <PetsFicha />
           <AvatarUploader />
+          <TelefoneVerificacao />
           <PerfilDoModo />
         </div>
       );

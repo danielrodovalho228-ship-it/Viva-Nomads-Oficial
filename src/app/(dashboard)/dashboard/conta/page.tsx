@@ -4,6 +4,7 @@ import { PetsFicha } from "@/components/account/pets-ficha";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { ButtonLink } from "@/components/ui/button";
 import { AvatarUploader } from "@/components/account/avatar-uploader";
+import { TelefoneVerificacao } from "@/components/account/telefone-verificacao";
 import { CaixaEmailsTeste } from "@/components/account/caixa-emails-teste";
 import { ContaMenu } from "@/components/account/conta-menu";
 import {
@@ -34,6 +35,7 @@ export default function AccountPage() {
         <PetsFicha />
         {/* Foto de perfil (Fase 2) — opcional; visibilidade decidida no servidor. */}
         <AvatarUploader />
+        <TelefoneVerificacao />
         <PerfilDoModo />
         <Panel title="Verificação" className="mt-6">
           {/* Sem progresso inventado: a verificação ainda não existe (em breve). */}

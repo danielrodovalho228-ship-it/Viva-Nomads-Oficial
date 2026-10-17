@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { PageTitle, Panel, StatCard, EmptyState } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { cadastroCompleto, filtrosUsuarios, hrefUsuarios, rotuloFiltroUsuarios } from "@/lib/admin/usuarios-lista";
 import { Users } from "lucide-react";
@@ -33,6 +34,7 @@ export default async function AdminUsuariosPage({
   const supabase = await createClient();
   let linhas: { id: string; full_name: string | null; role: string; created_at: string; fundador: boolean | null; phone: string | null }[] = [];
   let total = 0;
+  const foneVerificado = new Map<string, boolean>();
   if (supabase) {
     const {
       data: { user },
@@ -54,6 +56,12 @@ export default async function AdminUsuariosPage({
     const { data, count } = await q;
     linhas = data ?? [];
     total = count ?? linhas.length;
+    // Telefone verificado (0150): só sim/não, pelo servidor; o número nunca sai daqui.
+    const admin = createAdminClient();
+    if (admin && linhas.length > 0) {
+      const { data: fs, error } = await admin.rpc("telefones_verificados", { p_ids: linhas.map((l) => l.id) });
+      if (!error) for (const f of (fs ?? []) as { id: string; verificado: boolean }[]) foneVerificado.set(f.id, f.verificado);
+    }
   }
   const data = (iso: string) => new Date(iso).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
 
@@ -105,7 +113,8 @@ export default async function AdminUsuariosPage({
                   <p className="font-medium text-ink">{u.full_name?.trim() || "Sem nome"}</p>
                   <p className="text-sm text-muted">
                     {PAPEL[u.role] ?? u.role}
-                    {u.fundador ? " · Fundador" : ""} · cadastro {cadastroCompleto(u) ? "completo" : "incompleto"} · desde {data(u.created_at)}
+                    {u.fundador ? " · Fundador" : ""} · cadastro {cadastroCompleto(u) ? "completo" : "incompleto"} · telefone verificado:{" "}
+                    {foneVerificado.get(u.id) ? "sim" : "não"} · desde {data(u.created_at)}
                   </p>
                 </li>
               ))}
@@ -118,6 +127,7 @@ export default async function AdminUsuariosPage({
                     <th className="py-2 pr-4 font-medium">Papel</th>
                     <th className="py-2 pr-4 font-medium">Fundador</th>
                     <th className="py-2 pr-4 font-medium">Cadastro completo</th>
+                    <th className="py-2 pr-4 font-medium">Telefone verificado</th>
                     <th className="py-2 font-medium">Cadastro</th>
                   </tr>
                 </thead>
@@ -128,6 +138,7 @@ export default async function AdminUsuariosPage({
                       <td className="py-2 pr-4">{PAPEL[u.role] ?? u.role}</td>
                       <td className="py-2 pr-4">{u.fundador ? "Sim" : "—"}</td>
                       <td className="py-2 pr-4">{cadastroCompleto(u) ? "Sim" : "Não"}</td>
+                      <td className="py-2 pr-4" data-testid="admin-telefone-verificado">{foneVerificado.get(u.id) ? "Sim" : "Não"}</td>
                       <td className="py-2">{data(u.created_at)}</td>
                     </tr>
                   ))}

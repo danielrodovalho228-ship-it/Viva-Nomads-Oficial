@@ -101,3 +101,22 @@ test("Complete seu perfil: nunca obrigatório; quem só anuncia não precisa de 
   const meio = { ...vazio, foto: true, bio: "Oi", idiomas: [], cidade: null };
   assert.equal(progressoPerfil(meio, { anuncia: true }).pct, 50);
 });
+
+test("selo 'Telefone verificado' só com verificação real (prompt 7)", () => {
+  assert.deepEqual(selosReais({ emailConfirmado: true }), ["E-mail confirmado"]);
+  assert.deepEqual(selosReais({ emailConfirmado: true, telefoneVerificado: true }), ["E-mail confirmado", "Telefone verificado"]);
+  assert.deepEqual(selosReais({ emailConfirmado: false, telefoneVerificado: false }), []);
+  const base = { nome: "Iara Perfilinq Sobrenomeoculto", fotoUrl: null, profissao: null, motivo: null, inicioDesejado: null, pets: 0, desde: null, reputacao: null, emailConfirmado: false };
+  assert.deepEqual(cartaoCandidato({ ...base, telefoneVerificado: true }, false).selos, ["Telefone verificado"]);
+  assert.deepEqual(cartaoCandidato({ ...base, telefoneVerificado: false }, false).selos, []);
+});
+
+test("barra 'Complete seu perfil': celular é item opcional só quando a verificação existe", () => {
+  const vazio = { foto: false, bio: null, idiomas: [], cidade: null, profissao: null, motivo: null };
+  assert.equal(progressoPerfil(vazio, { anuncia: true }).itens.some((i) => i.chave === "telefone"), false);
+  const com = progressoPerfil(vazio, { anuncia: true, telefone: false });
+  const item = com.itens.find((i) => i.chave === "telefone")!;
+  assert.equal(item.feito, false);
+  assert.match(item.rotulo, /^Verifique seu celular: perfis verificados passam mais confiança$/);
+  assert.equal(progressoPerfil({ ...vazio, foto: true, bio: "Oi", idiomas: ["Português"], cidade: "X" }, { anuncia: true, telefone: true }).pct, 100);
+});
