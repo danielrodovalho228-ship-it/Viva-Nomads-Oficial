@@ -136,6 +136,14 @@ export function mesclarItens(servidor: ItemTela[], locais: ItemTela[]): ItemTela
   return [...servidor, ...locais.filter((i) => !ids.has(i.id))].sort((a, b) => a.criadoEm.localeCompare(b.criadoEm));
 }
 
+/** Laudo como a tela o mostra (o link temporário só vem do servidor, depois do refresh). */
+export type LaudoTela = { url: string | null; parte: ParteConferencia; criadoEm: string };
+
+/** O laudo recém-anexado aparece na hora; quando o servidor já o traz, vale o do servidor (com o link do PDF). */
+export function mesclarLaudo(servidor: LaudoTela | null, local: LaudoTela | null): LaudoTela | null {
+  return servidor ?? local;
+}
+
 /** Resposta como a tela a mostra (com a hora em que foi dada). */
 export type RespostaTela = RespostaConferencia & { decididoEm: string };
 

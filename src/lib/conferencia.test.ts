@@ -10,6 +10,7 @@ import {
   JANELA_ENTRADA_HORAS,
   decidirResposta,
   mesclarItens,
+  mesclarLaudo,
   mesclarRespostas,
   estadoConferencia,
   podeEditarItens,
@@ -188,4 +189,18 @@ test("laudo: o tamanho é conferido antes do envio (acima de 15 MB nem sobe)", (
   assert.equal(erroTamanhoLaudo(15 * 1024 * 1024), null);
   assert.equal(erroTamanhoLaudo(15 * 1024 * 1024 + 1), "O laudo deve ter até 15 MB.");
   assert.equal(erroTamanhoLaudo(0), "Arquivo vazio.");
+});
+
+test("mesclarLaudo: o laudo recém-anexado aparece na hora e o do servidor (com link) prevalece quando chega", () => {
+  const local = { url: null, parte: "proprietario" as const, criadoEm: "2026-10-17T14:00:00Z" };
+  const servidor = { url: "https://x/laudo.pdf", parte: "proprietario" as const, criadoEm: "2026-10-17T14:00:01Z" };
+  assert.equal(mesclarLaudo(null, null), null);
+  assert.deepEqual(mesclarLaudo(null, local), local);
+  assert.deepEqual(mesclarLaudo(servidor, local), servidor);
+});
+
+test("ações: anexar laudo devolve o laudo para a tela mostrá-lo na hora (lab t85 teste 4)", () => {
+  const acoes = readFileSync("src/lib/data/conferencia-actions.ts", "utf8");
+  const trecho = acoes.slice(acoes.indexOf("export async function anexarLaudoConferencia"), acoes.indexOf("export async function conferenciasDoContrato"));
+  assert.match(trecho, /return \{ ok: true, laudo:/);
 });

@@ -12,7 +12,7 @@ import {
   type ConferenciaView,
   type ConferenciasContrato,
 } from "@/lib/data/conferencia-actions";
-import { erroTamanhoLaudo, estadoConferencia, mesclarItens, mesclarRespostas, type ItemTela, type RespostaTela, type TipoConferencia } from "@/lib/conferencia";
+import { erroTamanhoLaudo, estadoConferencia, mesclarItens, mesclarLaudo, mesclarRespostas, type ItemTela, type LaudoTela, type RespostaTela, type TipoConferencia } from "@/lib/conferencia";
 
 const ROTULO_TIPO: Record<TipoConferencia, string> = { entrada: "Conferência de entrada", saida: "Conferência de saída" };
 const ROTULO_ESTADO = {
@@ -52,6 +52,7 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
   const [erro, setErro] = useState<string | null>(null);
   const [locais, setLocais] = useState<ItemTela[]>([]);
   const [respostasLocais, setRespostasLocais] = useState<RespostaTela[]>([]);
+  const [laudoLocal, setLaudoLocal] = useState<LaudoTela | null>(null);
 
   const parte = dados.minhaParte;
   const respostas = mesclarRespostas(conf?.respostas ?? [], respostasLocais);
@@ -59,8 +60,9 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
   const travada = respostas.length > 0;
   const estado = conf ? estadoConferencia(respostas) : "em_andamento";
   const itens = mesclarItens(conf?.itens ?? [], locais);
+  const laudo = mesclarLaudo(conf?.laudo ?? null, laudoLocal);
 
-  async function rodar(fn: () => Promise<{ ok: boolean; error?: string; item?: ItemTela; resposta?: RespostaTela }>) {
+  async function rodar(fn: () => Promise<{ ok: boolean; error?: string; item?: ItemTela; resposta?: RespostaTela; laudo?: LaudoTela }>) {
     setErro(null);
     setOcupado(true);
     try {
@@ -68,6 +70,7 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
       if (!r.ok) return setErro(r.error ?? "Não foi possível concluir.");
       if (r.item) setLocais((l) => [...l, r.item!]);
       if (r.resposta) setRespostasLocais((l) => [...l, r.resposta!]);
+      if (r.laudo) setLaudoLocal(r.laudo);
       setComodo("");
       setDescricao("");
       setFoto(null);
@@ -122,13 +125,13 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
         <p className="mt-1 text-xs text-muted">Registre fotos e itens por cômodo até {fmt(dados.prazoEntradaEm)} (48 h depois do início).</p>
       )}
 
-      {conf?.laudo && (
+      {laudo && (
         <p className="mt-3 flex items-center gap-2 rounded-lg bg-sage-50 p-3 text-sm text-ink" data-testid="conferencia-laudo">
           <FileCheck2 className="h-4 w-4 shrink-0 text-forest" />
           <span>
-            <strong>Laudo independente</strong> anexado em {fmt(conf.laudo.criadoEm)} — prevalece sobre as fotos.{" "}
-            {conf.laudo.url && (
-              <a href={conf.laudo.url} target="_blank" rel="noopener noreferrer" className="font-medium text-forest underline">
+            <strong>Laudo independente</strong> anexado em {fmt(laudo.criadoEm)} — prevalece sobre as fotos.{" "}
+            {laudo.url && (
+              <a href={laudo.url} target="_blank" rel="noopener noreferrer" className="font-medium text-forest underline">
                 Abrir PDF
               </a>
             )}
@@ -180,7 +183,7 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
         </form>
       )}
 
-      {parte && !conf?.laudo && (
+      {parte && !laudo && (
         <label className="mt-3 block text-sm text-muted">
           Anexar laudo independente (PDF, até 15 MB)
           <input type="file" accept="application/pdf" disabled={ocupado} onChange={(e) => anexarLaudo(e.target.files?.[0])} className="mt-1 block w-full min-w-0 max-w-full text-sm" data-testid={`conferencia-${tipo}-laudo-input`} />
