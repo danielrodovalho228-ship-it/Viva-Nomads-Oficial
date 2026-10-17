@@ -76,18 +76,20 @@ test.describe("T72 — páginas institucionais", () => {
   });
 
   test("5. comparações com outras plataformas intactas", async ({ page }) => {
-    // Regra permanente do Daniel (ordem c6b62141): Viva × Airbnb × QuintoAndar sempre visíveis.
+    // /para-proprietarios (versão curta) ainda segue a regra c6b62141; /precos mudou no prompt 13.
     await page.goto("/para-proprietarios", { waitUntil: "networkidle" });
     const curto = page.getByTestId("comparativo-curto");
     await expect(curto).toContainText("Viva Nomads");
     await expect(curto).toContainText("Airbnb");
     await expect(curto).toContainText("QuintoAndar");
+    // /precos (prompt 13, decisão do Daniel em 17/10): Viva × Airbnb × Booking.com × anúncio por conta própria.
     await page.goto("/precos#compare", { waitUntil: "networkidle" });
     const linhas = page.getByTestId("comparativo-linhas");
     await expect(linhas).toContainText("Viva Nomads");
     await expect(linhas).toContainText("Airbnb");
-    await expect(linhas).toContainText("QuintoAndar");
-    await expect(linhas).toContainText("confira o vigente no QuintoAndar");
+    await expect(linhas).toContainText("Booking.com");
+    await expect(linhas).toContainText("Anúncio por conta própria");
+    await expect(linhas).not.toContainText("QuintoAndar");
     await expect(page.getByTestId("diferenciais-viva").first()).toBeVisible();
     await expect(page.getByTestId("regra-unica")).toBeVisible();
     await expect(page.getByTestId("faixas-taxa")).toBeVisible();

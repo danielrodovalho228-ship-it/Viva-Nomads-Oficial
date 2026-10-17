@@ -53,8 +53,9 @@ test("#645 (ajuste do Moacir): comparativo e /precos dizem 'contrato' e 'Cauçã
   const cfg = ler("config/compare-precos.ts");
   assert.doesNotMatch(cfg, /Você só paga quando a reserva/);
   assert.match(cfg, /Você só paga quando o contrato é fechado/);
-  assert.doesNotMatch(ler("app/(public)/precos/page.tsx"), /Garantia: uma por contrato/);
-  assert.match(ler("app/(public)/precos/page.tsx"), /Caução: uma por contrato/);
+  const precosTudo = ler("app/(public)/precos/page.tsx") + ler("lib/precos-pagina.ts");
+  assert.doesNotMatch(precosTudo, /Garantia: uma por contrato/);
+  assert.match(precosTudo, /Caução: uma por contrato/);
 });
 
 test("#645 (ajuste do Moacir): comparativo e /precos dizem 'contrato' e 'Caução', não 'reserva' nem 'Garantia'", () => {
@@ -64,7 +65,7 @@ test("#645 (ajuste do Moacir): comparativo e /precos dizem 'contrato' e 'Cauçã
   assert.match(comp, /só quando o contrato é fechado/);
   const cfg = ler("config/compare-precos.ts");
   assert.match(cfg, /"Você só paga quando o contrato é fechado"/);
-  const precos = ler("app/(public)/precos/page.tsx");
+  const precos = ler("app/(public)/precos/page.tsx") + ler("lib/precos-pagina.ts");
   assert.doesNotMatch(precos, /Garantia: uma por contrato/);
   assert.match(precos, /Caução: uma por contrato/);
 });

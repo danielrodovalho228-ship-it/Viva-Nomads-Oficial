@@ -598,6 +598,16 @@ export function SearchClient({ properties: imoveis, topo }: { properties: Proper
         <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
           <div className="flex min-w-0 items-center gap-1">
             <SalvarBusca versao={versaoBusca} />
+            {activeCount > 0 && (
+              <button
+                type="button"
+                onClick={clearFilters}
+                data-testid="limpar-filtros-celular"
+                className="ml-2 whitespace-nowrap text-sm font-medium text-forest underline hover:text-blue-700"
+              >
+                Limpar filtros ({activeCount})
+              </button>
+            )}
           </div>
           <Select
             label="Ordenar resultados"

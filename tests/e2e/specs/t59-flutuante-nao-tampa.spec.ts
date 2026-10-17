@@ -108,3 +108,72 @@ test("4f8d17c6 — flutuante idêntico em /, /buscar, /precos e /como-funciona a
   const [bg, cor, raio, peso, altura] = [...estilos][0].split("|");
   expect([bg, cor, raio, peso, altura]).toEqual(["rgb(28, 107, 58)", "rgb(255, 255, 255)", "8px", "600", "48px"]);
 });
+
+/**
+ * Q4 (iPhone do Daniel, 17/10): na página do imóvel a 390 px o flutuante vira só o ícone redondo (48 px), acima da
+ * barra fixa, e não tampa as estrelas da seção Avaliações nem o texto do total ("o inquilino não paga nada à
+ * plataforma") quando a pessoa rola até eles. O nome acessível continua "Fale com a Viva".
+ */
+test("Q4 — /imoveis/ube-001 a 390 px: ícone redondo, sem tampar Avaliações nem o total do mês", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/imoveis/ube-001", { waitUntil: "networkidle" });
+  const flut = page.getByTestId("fale-com-a-viva");
+  await expect(flut).toBeVisible();
+  await expect(flut).toHaveAttribute("aria-label", "Fale com a Viva");
+  await expect(flut).toHaveAttribute("data-compacto", "1");
+  const caixa = (await flut.boundingBox())!;
+  expect(Math.round(caixa.width)).toBeLessThanOrEqual(48);
+  expect(Math.round(caixa.height)).toBe(48);
+  // Acima da barra fixa (não em cima dela).
+  const barra = (await page.locator(".vn-barra-fixa").first().boundingBox())!;
+  expect(caixa.y + caixa.height).toBeLessThanOrEqual(barra.y + 1);
+
+  const alvos = [
+    page.locator("#avaliacoes-title"),
+    page.getByText("o inquilino não paga nada à plataforma", { exact: false }).first(),
+  ];
+  for (const alvo of alvos) {
+    for (const bloco of ["center", "start"] as const) {
+      await alvo.evaluate((el, b) => el.scrollIntoView({ block: b }), bloco);
+      await page.waitForTimeout(250);
+      const tampado = await alvo.evaluate((el) => {
+        const flutEl = document.querySelector('[data-testid="fale-com-a-viva-raiz"]');
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        for (const r of Array.from(range.getClientRects())) {
+          for (const x of [r.left + 2, (r.left + r.right) / 2, r.right - 2]) {
+            const y = (r.top + r.bottom) / 2;
+            if (y < 0 || y > innerHeight || x < 0 || x > innerWidth) continue;
+            const topo = document.elementFromPoint(x, y);
+            if (flutEl && topo && flutEl.contains(topo)) return true;
+          }
+        }
+        return false;
+      });
+      expect(tampado, `flutuante tampa o alvo (scroll ${bloco})`).toBe(false);
+    }
+  }
+  await nadaTampa(page);
+  await page.locator("#avaliacoes-title").scrollIntoViewIfNeeded();
+  await page.screenshot({ path: "tests/laboratorio/saida/t59-q4-imovel-390.png" });
+});
+
+/** Q3 (iPhone): o campo "Quando quer entrar?" cabe no cartão (como o select do motivo) e, vazio, mostra "dd/mm/aaaa". */
+test("Q3 — /imoveis/ube-001 a 390 px: campo de data dentro do cartão e com exemplo de formato", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/imoveis/ube-001", { waitUntil: "networkidle" });
+  const data = page.getByTestId("candidatura-inicio").first();
+  await data.scrollIntoViewIfNeeded();
+  const motivo = page.getByTestId("candidatura-motivo").first();
+  const [cd, cm] = [(await data.boundingBox())!, (await motivo.boundingBox())!];
+  // Mesma largura e alinhamento do select logo abaixo (nada passa da borda).
+  expect(Math.abs(cd.x - cm.x)).toBeLessThanOrEqual(1);
+  expect(Math.abs(cd.width - cm.width)).toBeLessThanOrEqual(1);
+  expect(Math.abs(cd.height - cm.height)).toBeLessThanOrEqual(1);
+  const wrap = data.locator("xpath=..");
+  await expect(wrap.getByTestId("campo-data-exemplo")).toHaveText("dd/mm/aaaa");
+  await data.fill("2030-01-15");
+  await expect(wrap.getByTestId("campo-data-exemplo")).toHaveCount(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
+  await page.screenshot({ path: "tests/laboratorio/saida/t59-q3-data-390.png" });
+});
