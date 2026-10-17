@@ -17,10 +17,8 @@ export function isExemplo(idOrProperty: string | { id: string }): boolean {
   return !UUID_RE.test(id);
 }
 
-/** Anúncio de TESTE (título começa com "[TESTE]", ordem fa84ea52): fora do Google e do sitemap. */
-export function ehAnuncioDeTeste(titulo: string | null | undefined): boolean {
-  return /^\s*\[teste\]/i.test(titulo ?? "");
-}
+/** Anúncio de TESTE ("[TESTE …]", "[TEST]", "[QA]"; ordem fa84ea52): fora do Google e do sitemap. Regra única em data/anuncio-teste. */
+export { ehAnuncioDeTeste } from "./data/anuncio-teste.ts";
 
 /** Mensagem única quando alguém tenta contato/candidatura num anúncio de exemplo. */
 export const EXEMPLO_SEM_CONTATO =
