@@ -48,6 +48,7 @@ import { AvisoAntigolpe } from "@/components/seguranca/aviso-antigolpe";
 import { BarraFixaCelular } from "@/components/property/barra-fixa-celular";
 import { barraFixaImovel } from "@/lib/barra-fixa-imovel";
 import { calcularTotalMensal } from "@/lib/precos";
+import { quartosTexto, banheirosTexto } from "@/lib/anuncio/plural";
 import { AmenitiesGrid } from "@/components/property/amenities-grid";
 import { WorkspaceSection } from "@/components/property/workspace-section";
 import { LocationNearby } from "@/components/property/location-nearby";
@@ -566,10 +567,10 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
             {/* Specs com ícones */}
             <div className="mt-4 flex flex-wrap gap-5 text-sm text-muted">
               <span className="inline-flex items-center gap-1.5">
-                <BedDouble className="h-4 w-4" /> {property.bedrooms} quartos
+                <BedDouble className="h-4 w-4" /> {quartosTexto(property.bedrooms)}
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <Bath className="h-4 w-4" /> {property.bathrooms} banheiros
+                <Bath className="h-4 w-4" /> {banheirosTexto(property.bathrooms)}
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <Ruler className="h-4 w-4" /> {property.areaM2} m²

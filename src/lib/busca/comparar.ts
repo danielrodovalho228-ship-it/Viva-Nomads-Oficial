@@ -69,7 +69,7 @@ export function montarTabela(imoveis: readonly Property[]): LinhaComparar[] {
       const g = p.garantiasAceitas ?? [];
       return g.length > 0 ? g.map(garantiaLabel).join(", ") : SEM_DADO;
     }),
-    por("pet", "Aceita pet", (p) => (p.petsAllowed === undefined ? SEM_DADO : p.petsAllowed ? "Sim" : "Não")),
+    por("pet", "Aceita pets", (p) => (p.petsAllowed === undefined ? SEM_DADO : p.petsAllowed ? "Sim" : "Não")),
     por("valorPet", "Valor pet", (p) => (p.petsAllowed ? textoValorPet(p.petsRegras) ?? SEM_DADO : SEM_DADO)),
     por("avaliacao", "Avaliação", (p) =>
       p.reviewCount > 0 && p.rating > 0 ? `${p.rating.toFixed(1).replace(".", ",")} (${p.reviewCount})` : SEM_DADO,

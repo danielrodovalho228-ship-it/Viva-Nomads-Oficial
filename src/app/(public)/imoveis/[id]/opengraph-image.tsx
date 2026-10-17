@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { ImageResponse } from "next/og";
 import { getProperty } from "@/lib/data/properties";
 import { formatBRL } from "@/lib/utils";
+import { quartosTexto } from "@/lib/anuncio/plural";
 
 export const alt = "Imóvel no Viva Nomads";
 export const size = { width: 1200, height: 630 };
@@ -79,7 +80,7 @@ export default async function OG({ params }: { params: Promise<{ id: string }> }
             {p ? `${formatBRL(p.monthlyPrice)}` : ""}
           </div>
           <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 28, paddingBottom: 8 }}>
-            {p ? `/mês · ${p.bedrooms} quartos · ${p.areaM2} m²` : ""}
+            {p ? `/mês · ${quartosTexto(p.bedrooms)} · ${p.areaM2} m²` : ""}
           </div>
         </div>
       </div>

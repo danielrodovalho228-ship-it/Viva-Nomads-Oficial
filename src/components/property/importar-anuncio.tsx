@@ -27,7 +27,7 @@ export function ImportarAnuncio({ onAplicar }: { onAplicar: (a: AnuncioOrganizad
         ["Área", r.areaM2 != null ? `${r.areaM2} m²` : ""],
         ["Vagas", r.vagas != null ? String(r.vagas) : ""],
         ["Comodidades", r.comodidades.map((k) => AMENITY_LABEL[k] ?? k).join(", ")],
-        ["Aceita pet", r.aceitaPet == null ? "" : r.aceitaPet ? "Sim" : "Não"],
+        ["Aceita pets", r.aceitaPet == null ? "" : r.aceitaPet ? "Sim" : "Não"],
         ["Permite fumar", r.permiteFumar == null ? "" : r.permiteFumar ? "Sim" : "Não"],
       ] as [string, string][])
     : [];

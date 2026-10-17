@@ -4,7 +4,7 @@ import { SAMPLE_PROPERTIES } from "@/lib/properties";
 import { getProperty, listProperties } from "@/lib/data/properties";
 import { isDemoMode } from "@/lib/env";
 import { isExemplo } from "@/lib/demo-listing";
-import { formatBRL } from "@/lib/utils";
+import { tituloAbaImovel, descricaoAbaImovel } from "@/lib/anuncio/metadados-imovel";
 import { PropertyJsonLd } from "@/components/seo/property-json-ld";
 import { PropertyDetail } from "./property-detail";
 
@@ -20,8 +20,8 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const property = await getProperty(id);
   if (!property) return { title: "Imóvel não encontrado" };
 
-  const title = `${property.title} — ${formatBRL(property.monthlyPrice)}/mês`;
-  const description = `${property.propertyType} ${adjetivoMobiliado(property.propertyType)} em ${property.neighborhood}, ${property.city}. ${property.bedrooms} quartos · ${property.areaM2} m² · período mínimo ${property.minPeriodDays} dias.`;
+  const title = tituloAbaImovel(property);
+  const description = descricaoAbaImovel(property, adjetivoMobiliado(property.propertyType));
 
   return {
     title,
