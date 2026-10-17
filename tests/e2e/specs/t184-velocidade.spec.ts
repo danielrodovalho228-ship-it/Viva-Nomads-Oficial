@@ -23,7 +23,7 @@ const CENARIOS = [
   { nome: "1280-sem-limite", largura: 1280, altura: 900, limitado: false },
 ] as const;
 
-type Medida = { rota: string; cenario: string; lcpMs: number | null; lcpElemento: string | null; cls: number; medidoEm: string };
+type Medida = { rota: string; cenario: string; lcpMs: number | null; lcpElemento: string | null; cls: number; deslocamentos: string[]; medidoEm: string };
 
 /** Junta a medida no JSON de saída (um arquivo para as 6 combinações; os testes podem rodar em paralelo). */
 function gravar(m: Medida) {
@@ -55,8 +55,8 @@ for (const c of CENARIOS) {
       await page.setViewportSize({ width: c.largura, height: c.altura });
 
       await page.addInitScript(() => {
-        const w = window as unknown as { __vel: { lcp: number | null; lcpEl: string | null; cls: number } };
-        w.__vel = { lcp: null, lcpEl: null, cls: 0 };
+        const w = window as unknown as { __vel: { lcp: number | null; lcpEl: string | null; cls: number; fontes: string[] } };
+        w.__vel = { lcp: null, lcpEl: null, cls: 0, fontes: [] };
         new PerformanceObserver((lista) => {
           const e = lista.getEntries();
           const ultimo = e[e.length - 1] as PerformanceEntry & { element?: Element | null };
@@ -65,8 +65,16 @@ for (const c of CENARIOS) {
           w.__vel.lcpEl = el ? `${el.tagName.toLowerCase()}${el.id ? `#${el.id}` : ""}${el.getAttribute("data-testid") ? `[data-testid=${el.getAttribute("data-testid")}]` : ""}` : null;
         }).observe({ type: "largest-contentful-paint", buffered: true });
         new PerformanceObserver((lista) => {
-          for (const e of lista.getEntries() as (PerformanceEntry & { value: number; hadRecentInput: boolean })[]) {
-            if (!e.hadRecentInput) w.__vel.cls += e.value;
+          type Fonte = { node?: Node | null; previousRect: DOMRectReadOnly; currentRect: DOMRectReadOnly };
+          for (const e of lista.getEntries() as (PerformanceEntry & { value: number; hadRecentInput: boolean; sources?: Fonte[] })[]) {
+            if (e.hadRecentInput) continue;
+            w.__vel.cls += e.value;
+            // Quem se mexeu (para o PR apontar a causa, não só o número).
+            for (const f of (e.sources ?? []).slice(0, 2)) {
+              const el = f.node instanceof Element ? f.node : f.node?.parentElement;
+              const nome = el ? `${el.tagName.toLowerCase()}${el.getAttribute("data-testid") ? `[data-testid=${el.getAttribute("data-testid")}]` : ""}.${String(el.className).split(/\s+/).slice(0, 3).join(".")}` : "?";
+              w.__vel.fontes.push(`${e.value.toFixed(4)} ${nome} y ${Math.round(f.previousRect.y)}→${Math.round(f.currentRect.y)} h ${Math.round(f.previousRect.height)}→${Math.round(f.currentRect.height)} @${Math.round(e.startTime)}ms`);
+            }
           }
         }).observe({ type: "layout-shift", buffered: true });
       });
@@ -87,13 +95,14 @@ for (const c of CENARIOS) {
       expect(resp?.status(), `${rota} responde 200`).toBe(200);
       await page.waitForTimeout(3_000); // assentar: imagens tardias e deslocamentos depois do load
 
-      const v = await page.evaluate(() => (window as unknown as { __vel: { lcp: number | null; lcpEl: string | null; cls: number } }).__vel);
+      const v = await page.evaluate(() => (window as unknown as { __vel: { lcp: number | null; lcpEl: string | null; cls: number; fontes: string[] } }).__vel);
       const medida: Medida = {
         rota,
         cenario: c.nome,
         lcpMs: v.lcp === null ? null : Math.round(v.lcp),
         lcpElemento: v.lcpEl,
         cls: Math.round(v.cls * 10_000) / 10_000,
+        deslocamentos: v.fontes.slice(0, 8),
         medidoEm: new Date().toISOString(),
       };
       gravar(medida);

@@ -45,6 +45,8 @@ async function semRolagemLateral(page: Page, largura: number): Promise<string[]>
 }
 
 async function temH1(page: Page): Promise<string[]> {
+  // O painel abre com o esqueleto do loading.tsx (sem h1) e troca pela tela quando os dados chegam.
+  await page.locator("h1:visible").first().waitFor({ timeout: 15_000 }).catch(() => {});
   const visiveis = await page.locator("h1:visible").count();
   return visiveis > 0 ? [] : ["sem h1 visível"];
 }
@@ -88,7 +90,7 @@ async function maisLargosQueATela(page: Page): Promise<string[]> {
 async function ultimoControleLivre(page: Page): Promise<string[]> {
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
   await page.waitForTimeout(400);
-  return page.evaluate(() => {
+  return page.evaluate(async () => {
     const raiz = document.querySelector("main") ?? document.body;
     const SEL = "a[href], button, input:not([type=hidden]), select, textarea, [role=button], [data-cta]";
     const dentroDeFixo = (el: Element) => {
@@ -99,10 +101,24 @@ async function ultimoControleLivre(page: Page): Promise<string[]> {
       const r = el.getBoundingClientRect();
       const cs = getComputedStyle(el);
       if (r.width < 2 || r.height < 2 || cs.visibility === "hidden" || el.closest("[aria-hidden='true'], [inert]")) return false;
+      if (!el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) return false;
+      // Cortado por um ancestral que esconde o excesso (gaveta/acordeão fechado, carrossel): não é o "último" da tela.
+      for (let n = el.parentElement; n && n !== raiz; n = n.parentElement) {
+        const s = getComputedStyle(n);
+        if (s.overflowX === "visible" && s.overflowY === "visible") continue;
+        const a = n.getBoundingClientRect();
+        if (r.bottom <= a.top || r.top >= a.bottom || r.right <= a.left || r.left >= a.right) return false;
+      }
       return !dentroDeFixo(el);
     });
     if (candidatos.length === 0) return [];
     const ultimo = candidatos.reduce((a, b) => (b.getBoundingClientRect().bottom >= a.getBoundingClientRect().bottom ? b : a));
+    // O painel pode rolar num contêiner próprio (não na janela): rola esse contêiner até o fim, como a pessoa faria.
+    for (let n = ultimo.parentElement; n; n = n.parentElement) {
+      const s = getComputedStyle(n);
+      if ((s.overflowY === "auto" || s.overflowY === "scroll") && n.scrollHeight > n.clientHeight + 1) n.scrollTop = n.scrollHeight;
+    }
+    await new Promise((ok) => setTimeout(ok, 400));
     const r = ultimo.getBoundingClientRect();
     const nome = (ultimo.textContent || ultimo.getAttribute("aria-label") || ultimo.getAttribute("name") || ultimo.tagName).trim().replace(/\s+/g, " ").slice(0, 40);
     const y = r.top + r.height / 2;
