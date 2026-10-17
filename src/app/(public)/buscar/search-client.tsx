@@ -942,6 +942,7 @@ export function SearchClient({ properties: imoveis, topo }: { properties: Proper
             <button
               type="button"
               onClick={clearFilters}
+              data-testid="limpar-filtros-chips"
               className="ml-1 text-sm font-medium text-forest underline hover:text-blue-700"
             >
               Limpar filtros
