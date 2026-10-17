@@ -133,7 +133,7 @@ const GRUPOS: Grupo[] = [
       },
       {
         titulo: "Seguro incêndio",
-        texto: "Obrigatório pela Lei do Inquilinato. A contratação via parceiro está em estruturação.",
+        texto: "Proteção contra incêndio do imóvel. A contratação via parceiro está em estruturação.",
         icone: Flame,
         status: "Em estruturação",
       },
