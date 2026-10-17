@@ -15,7 +15,7 @@ interface Email {
 const quando = (iso: string) =>
   new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 
-/** Conta → Caixa de e-mails de teste. Só aparece para conta is_teste (a rota responde 404 às demais). */
+/** Conta → Caixa de e-mails de teste. Só aparece para conta is_teste (a rota responde sem e-mails às demais). */
 export function CaixaEmailsTeste() {
   const [emails, setEmails] = useState<Email[] | null>(null);
 

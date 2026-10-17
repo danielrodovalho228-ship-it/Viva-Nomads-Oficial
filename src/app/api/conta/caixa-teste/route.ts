@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * Caixa de e-mails de teste da PRÓPRIA conta de teste (ordem ee7d27b8, item 3): o QA lê o código de
- * assinatura sem acesso de admin. Só a sessão decide quem é; só linhas com usuario_id = ela; conta real recebe 404.
+ * assinatura sem acesso de admin. Só a sessão decide quem é; só linhas com usuario_id = ela; conta real recebe 200 sem e-mails (um 404 aparecia como erro no console de toda tela Conta; lab t48).
  */
 export async function GET() {
   const supabase = await createClient();
@@ -18,7 +18,7 @@ export async function GET() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
-  if (!(await contaEhDeTeste(admin, user.id))) return NextResponse.json({ error: "Não encontrado." }, { status: 404 });
+  if (!(await contaEhDeTeste(admin, user.id))) return NextResponse.json({ emails: null }, { headers: { "Cache-Control": "no-store" } });
 
   const { data } = await admin
     .from("emails_teste")

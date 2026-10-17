@@ -5,11 +5,14 @@
 import type { Property } from "../types";
 import { textosTotalMensal } from "../precos.ts";
 import { quartosTexto } from "./plural.ts";
+import { limitarMeta } from "../seo/meta-descricao.ts";
 
 export function tituloAbaImovel(p: Property): string {
   return `${p.title} — ${textosTotalMensal(p).destaque}`;
 }
 
 export function descricaoAbaImovel(p: Property): string {
-  return `Imóvel mobiliado em ${p.neighborhood}, ${p.city}: ${p.propertyType.toLowerCase()} de ${quartosTexto(p.bedrooms)} · ${p.areaM2} m² · estadia de 30 a 180 dias.`;
+  return limitarMeta(
+    `Imóvel mobiliado em ${p.neighborhood}, ${p.city}: ${p.propertyType.toLowerCase()} de ${quartosTexto(p.bedrooms)} · ${p.areaM2} m² · estadia de 30 a 180 dias.`,
+  );
 }
