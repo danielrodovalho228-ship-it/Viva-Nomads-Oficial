@@ -23,7 +23,7 @@ export function BarraComparar({ ids, aviso, onLimpar }: { ids: string[]; aviso: 
             Comparar ({ids.length})
           </span>
         )}
-        <button type="button" onClick={onLimpar} className="text-sm text-muted underline underline-offset-2">
+        <button type="button" onClick={onLimpar} className="text-sm text-muted underline underline-offset-2" data-testid="comparar-limpar">
           Limpar
         </button>
       </div>
