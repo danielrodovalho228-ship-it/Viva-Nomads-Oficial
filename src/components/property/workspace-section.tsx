@@ -1,6 +1,6 @@
 import { Wifi, Building2, Users, Coffee } from "lucide-react";
 import type { Property, WorkspaceType } from "@/lib/types";
-import { INTERNET_META } from "@/lib/internet";
+import { fraseInternetAnuncio } from "@/lib/internet";
 import { CLASSE_ICONE_LISTA, TRACO_ICONE_LISTA, iconeDaComodidade } from "@/lib/anuncio/comodidades-icones";
 
 const WORKSPACE_ICONS: Record<WorkspaceType, React.ComponentType<{ className?: string }>> = {
@@ -34,7 +34,7 @@ export function WorkspaceSection({ property }: { property: Property }) {
       {hasInternet && (
         <div className="mt-5 flex items-start gap-2 rounded-xl border border-champagne/40 bg-champagne/5 px-4 py-3 text-sm">
           <Wifi className="mt-0.5 h-4 w-4 shrink-0 text-champagne-600" />
-          <span className="text-ink">{INTERNET_META[property.internetTier!].anuncio}</span>
+          <span className="text-ink">{fraseInternetAnuncio(property.internetTier!, [...(property.workFeatures ?? []), ...(property.amenities ?? [])])}</span>
         </div>
       )}
 
