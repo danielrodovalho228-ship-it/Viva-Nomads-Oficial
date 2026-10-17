@@ -57,6 +57,8 @@ test.describe("T154 — Calendário do proprietário: pílula da estadia", () =>
       const page = await entrar(browser, dono.email, senha);
       await page.setViewportSize({ width: largura, height: altura });
       await page.goto(`/dashboard/imoveis/${ids.imovel}/editar`, { waitUntil: "domcontentloaded" });
+      // A seção "Disponibilidade" nasce fechada: o calendário (e as pílulas) só existem depois de abri-la.
+      await page.getByRole("button", { name: /Disponibilidade/ }).click();
       const pilula = page.getByTestId("pilula-estadia").first();
       await expect(pilula).toBeVisible({ timeout: 25_000 });
       await expect(pilula).toHaveAttribute("aria-label", /^Reservado por Iago, \d{2}\/\d{2} a \d{2}\/\d{2}$/);
