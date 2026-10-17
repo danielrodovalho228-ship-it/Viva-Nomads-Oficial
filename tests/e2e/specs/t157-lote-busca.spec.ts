@@ -28,7 +28,8 @@ for (const largura of [390, 1280]) {
       await campo.fill("2 quartos, aceita gato, até 2.500");
       await page.getByTestId("descricao-aplicar").click();
       await expect(page.getByTestId("descricao-chips")).toBeVisible();
-      await page.getByTestId("limpar-filtros").or(page.getByTestId("limpar-filtros-painel")).first().click();
+      // Só um dos três "Limpar filtros" aparece em cada largura (celular: abaixo dos chips; computador: barra ou painel).
+      await page.locator('[data-testid^="limpar-filtros"]:visible').first().click();
       await expect(page.getByTestId("descricao-chips")).toHaveCount(0);
       await expect(campo).toHaveValue("");
     });

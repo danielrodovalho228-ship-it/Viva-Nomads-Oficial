@@ -86,3 +86,9 @@ test("#544b148a D1: pino = cartão para todos os imóveis de exemplo (inclui os 
   const santa = SAMPLE_PROPERTIES.find((p) => p.neighborhood === "Santa Mônica");
   assert.equal(precoDeBusca(comTotalMes(santa!)), 3960);
 });
+
+test("D5: o 'Limpar filtros' do celular (chips) tem seletor próprio — os outros dois só aparecem a partir de lg (t157)", () => {
+  const src = ler("app/(public)/buscar/search-client.tsx");
+  assert.match(src, /data-testid="limpar-filtros-chips"/);
+  assert.equal((src.match(/data-testid="limpar-filtros/g) ?? []).length, 3);
+});

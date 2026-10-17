@@ -73,22 +73,26 @@ export function PerfilPublicoForm() {
       </ul>
 
       <div className="mt-5 grid gap-4">
-        <label className="block">
-          <span className="mb-1.5 block text-sm font-medium text-ink">Uma frase sobre você</span>
+        <div>
+          <label htmlFor="perfil-bio" className="mb-1.5 block text-sm font-medium text-ink">
+            Uma frase sobre você
+          </label>
           <textarea
             id="perfil-bio"
             value={bio}
             maxLength={BIO_MAX}
             rows={3}
+            aria-describedby="perfil-bio-ajuda"
+            aria-invalid={!bioCheck.ok}
             onChange={(e) => setBio(e.target.value)}
             placeholder="Ex.: Médica em residência, organizada e tranquila. Gosto de cozinhar."
             className="w-full rounded-xl border border-sage-200 px-3.5 py-2.5 text-sm outline-none focus:border-sage"
           />
-          <span className="mt-1 flex justify-between text-xs text-muted">
+          <p id="perfil-bio-ajuda" className="mt-1 flex justify-between text-xs text-muted">
             <span className={bioCheck.ok ? "" : "text-red-700"}>{bioCheck.ok ? "Sem telefone, e-mail, @ ou link: o contato fica protegido." : bioCheck.erro}</span>
             <span>{bio.length}/{BIO_MAX}</span>
-          </span>
-        </label>
+          </p>
+        </div>
 
         <fieldset>
           <legend className="mb-1.5 text-sm font-medium text-ink">Idiomas</legend>
@@ -114,18 +118,21 @@ export function PerfilPublicoForm() {
           </div>
         </fieldset>
 
-        <label className="block">
-          <span className="mb-1.5 block text-sm font-medium text-ink">Cidade onde você mora</span>
+        <div>
+          <label htmlFor="perfil-cidade" className="mb-1.5 block text-sm font-medium text-ink">
+            Cidade onde você mora
+          </label>
           <input
             id="perfil-cidade"
             value={cidade}
             maxLength={60}
+            aria-describedby="perfil-cidade-ajuda"
             onChange={(e) => setCidade(e.target.value)}
             placeholder="Ex.: Uberlândia (MG)"
             className="w-full rounded-xl border border-sage-200 px-3.5 py-2.5 text-sm outline-none focus:border-sage"
           />
-          <span className="mt-1 block text-xs text-muted">Só a cidade. O endereço nunca aparece no perfil.</span>
-        </label>
+          <p id="perfil-cidade-ajuda" className="mt-1 text-xs text-muted">Só a cidade. O endereço nunca aparece no perfil.</p>
+        </div>
       </div>
 
       <div className="mt-5 flex flex-wrap items-center gap-3">
