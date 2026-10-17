@@ -6,7 +6,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { formatBRL, cn } from "@/lib/utils";
-import { ATRIBUICAO_MAPA, RAIO_APROXIMADO_KM, TILES_CARTO, borrarCoordenada as blur, motorDoMapa } from "@/lib/mapa-base";
+import { ATRIBUICAO_MAPA, RAIO_APROXIMADO_KM, TILES_CARTO, avisarMapaSemChave, borrarCoordenada as blur, motorDoMapa } from "@/lib/mapa-base";
 
 const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
@@ -129,7 +129,7 @@ function PropertyMapLeaflet({ markers, center, zoom = 13, approximate = false, c
     // topleft: o canto direito é do botão "Ampliar mapa"
     L.control.zoom({ position: "topleft" }).addTo(map);
     if (TILES_CARTO) L.tileLayer(TILES_CARTO, { maxZoom: 19, attribution: ATRIBUICAO_MAPA }).addTo(map);
-    else console.error("[mapa] NEXT_PUBLIC_CARTO_API_KEY ausente neste build: mapa-base desligado (sem marca d'água).");
+    else avisarMapaSemChave();
 
     if (approximate) {
       L.circle([first.lat, first.lng], {

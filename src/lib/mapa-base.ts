@@ -11,6 +11,11 @@ export const CARTO_KEY = process.env.NEXT_PUBLIC_CARTO_API_KEY;
 /** Modelo de URL dos tiles; `null` sem chave (mapa-base desligado). */
 export const TILES_CARTO = CARTO_KEY ? `https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?key=${encodeURIComponent(CARTO_KEY)}` : null;
 
+/** Sem chave o mapa-base fica desligado: aviso discreto (warn), nunca console.error, que derruba a t48 do lab. */
+export function avisarMapaSemChave(aviso: (msg: string) => void = console.warn) {
+  aviso("[mapa] NEXT_PUBLIC_CARTO_API_KEY ausente neste build: mapa-base desligado (sem marca d'água).");
+}
+
 export const ATRIBUICAO_MAPA = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
 
 /** Qual motor desenha o mapa: Mapbox só com token; senão Leaflet + CARTO. */
