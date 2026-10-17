@@ -10,7 +10,7 @@ import type { BarraFixaImovel } from "@/lib/barra-fixa-imovel";
 /**
  * Barra fixa no rodapé do celular (< lg) da página do imóvel: valor por mês,
  * "Caução e taxas no detalhe" (leva ao cartão de preço) e as MESMAS três ações do
- * cartão do computador: Solicitar reserva / Mensagem / WhatsApp (da Viva).
+ * cartão do computador: Enviar candidatura / Mensagem / WhatsApp (da Viva).
  * Fica acima da barra de abas (.vn-barra-fixa); `data-cta` na barra faz o botão flutuante
  * "Fale com a Viva" subir acima dela em vez de cobrir valor e botões.
  * O link "Caução e taxas" nunca é cortado e tem alvo de toque de 44 px (ordem c9d21980, D1);
@@ -80,7 +80,7 @@ export function BarraFixaCelular({
           ) : (
             <button type="button" onClick={onSolicitar} disabled={pending} className={primario}>
               <FileSignature className="h-4 w-4" />
-              {pending ? "Enviando..." : "Solicitar reserva"}
+              {pending ? "Enviando..." : "Enviar candidatura"}
             </button>
           )}
           <button type="button" onClick={onMensagem} aria-label="Enviar mensagem" className={secundario}>

@@ -34,6 +34,7 @@ for (const largura of [390, 1280]) {
     });
 
     test("cada atalho da home: contagem anunciada = resultados na /buscar", async ({ page }) => {
+      test.setTimeout(180_000); // vários atalhos, um carregamento da /buscar cada (lab: 45 s estourava)
       await page.goto("/", { waitUntil: "networkidle" });
       const atalhos = page.locator('a[href^="/buscar?"]').filter({ hasText: /\d+ imóve/ });
       const n = await atalhos.count();
@@ -46,8 +47,8 @@ for (const largura of [390, 1280]) {
       }
       for (const { href, qtd } of alvos) {
         expect(qtd, href).toBeGreaterThan(0);
-        await page.goto(href, { waitUntil: "networkidle" });
-        await expect(page.getByTestId("card-resultado"), href).toHaveCount(qtd);
+        await page.goto(href, { waitUntil: "domcontentloaded" });
+        await expect(page.getByTestId("card-resultado"), href).toHaveCount(qtd, { timeout: 20_000 });
       }
     });
 

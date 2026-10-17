@@ -111,7 +111,7 @@ export interface ResumoSolicitacao {
 const ISO_DIA = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
- * Passo de confirmação do "Solicitar reserva": valida o que a pessoa preencheu e
+ * Passo de confirmação do "Enviar candidatura": valida o que a pessoa preencheu e
  * monta o resumo (entrada, motivo, valor mensal, Caução, taxa da Viva). Datas em
  * ISO (yyyy-mm-dd), comparadas como texto, sem fuso. Data e motivo são opcionais,
  * mas, se preenchidos, precisam ser válidos — o servidor revalida tudo.

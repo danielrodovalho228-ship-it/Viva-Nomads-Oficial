@@ -85,7 +85,7 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
   // Composer de dúvida/visita: o inquilino escreve a mensagem de verdade.
   const [composeKind, setComposeKind] = useState<"duvida" | "visita" | null>(null);
   const [composeText, setComposeText] = useState("");
-  // Passo de confirmação do "Solicitar reserva": resumo + (exemplo) aviso de demonstração.
+  // Passo de confirmação do "Enviar candidatura": resumo + (exemplo) aviso de demonstração.
   const [solicitacaoAberta, setSolicitacaoAberta] = useState(false);
   const [solicitacaoErro, setSolicitacaoErro] = useState<string | null>(null);
 
@@ -181,7 +181,7 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
     return true;
   }
 
-  // "Solicitar reserva" nunca fica mudo: valida o que foi preenchido e abre o passo de confirmação.
+  // "Enviar candidatura" nunca fica mudo: valida o que foi preenchido e abre o passo de confirmação.
   const resumo = resumoSolicitacao({ monthlyPrice: property.monthlyPrice, inicioDesejado, motivoEstadia, hoje: hojeBR(), limpezaEstadia: property.limpezaEstadia, totalMensal: calcularTotalMensal(property).total });
   function abrirSolicitacao() {
     setLeadErro(null);
@@ -281,7 +281,7 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
         disabled={pending !== null}
       >
         <FileSignature className="h-4 w-4" />
-        {pending === "candidatura" ? "Enviando..." : "Solicitar reserva"}
+        {pending === "candidatura" ? "Enviando..." : "Enviar candidatura"}
       </Button>
       <Button
         variant="secondary"

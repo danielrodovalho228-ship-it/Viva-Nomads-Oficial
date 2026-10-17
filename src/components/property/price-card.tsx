@@ -74,7 +74,7 @@ export function PriceCard({ property, actions }: { property: Property; actions: 
         )}
       </ul>
 
-      {/* Ações (Solicitar reserva / Enviar mensagem / WhatsApp) — vêm da página */}
+      {/* Ações (Enviar candidatura / Enviar mensagem / WhatsApp) — vêm da página */}
       <div className="mt-3">{actions}</div>
 
       <p className="mt-4 inline-flex items-center gap-1.5 text-sm text-sage">
