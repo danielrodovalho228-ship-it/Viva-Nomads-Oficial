@@ -78,6 +78,15 @@ test("solicitação: resumo com entrada, motivo e valores", () => {
   assert.match(v("Caução"), /devolvida no fim/);
 });
 
+test("solicitação: com pacote de limpeza, o total do mês soma 2.400 + 350 + 200 + 180 = 3.130 (ordem 87aabd61)", () => {
+  const total = 2400 + 350 + 200 + 180;
+  const r = resumoSolicitacao({ monthlyPrice: 2400, hoje: "2026-10-16", limpezaEstadia: { porMes: 2, inclui: "", valorMes: 180 }, totalMensal: total });
+  assert.equal(total, 3130);
+  assert.equal(r.linhas.find((l) => l.rotulo === "Total por mês")!.valor, formatBRL(3130));
+  assert.ok(r.linhas.some((l) => l.rotulo === "Limpeza durante a estadia"));
+  assert.equal(resumoSolicitacao({ monthlyPrice: 2400, hoje: "2026-10-16" }).linhas.some((l) => l.rotulo === "Total por mês"), false);
+});
+
 test("solicitação: campos opcionais vazios seguem; data no passado, data torta e motivo fora da lista são recusados", () => {
   const ok = resumoSolicitacao({ monthlyPrice: 1000, hoje: "2026-10-16" });
   assert.equal(ok.erro, null);
