@@ -133,7 +133,9 @@ test.describe("T187 — conferência automática do documento", () => {
       await page.screenshot({ path: `${SAIDA}/t187-admin-fila-1280.png`, fullPage: false });
 
       await page.getByRole("tab", { name: /Conferidos automaticamente/ }).click();
-      const auto = page.getByTestId("auto-card").filter({ hasText: "Carla" }).first();
+      // Os dois aprovados da Carla (390 e 1280) aparecem; reabre o de 1280.
+      await expect(page.getByTestId("auto-card").filter({ hasText: "Carla" })).toHaveCount(2);
+      const auto = page.getByTestId("auto-card").filter({ hasText: "Corrija1280" });
       await expect(auto).toBeVisible();
       await auto.getByText("Ver o que a conferência leu").click();
       await expect(auto.getByTestId("auto-card-json")).toContainText('"estado": "aprovado"');

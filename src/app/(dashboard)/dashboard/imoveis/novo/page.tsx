@@ -869,6 +869,8 @@ export default function NewPropertyPage() {
     setIaAnalisadas([]);
     setSugeridos([]);
     setComodidadesSugeridas([]);
+    // O botão "Começar outro" some com o aviso: o foco volta para o CEP, primeiro campo da etapa 1.
+    setTimeout(() => document.querySelector<HTMLInputElement>('[data-testid="cadastro-cep"]')?.focus(), 0);
   }
 
   function aplicarSugestao(d: SugestaoFotos, analisadas: string[]) {

@@ -39,8 +39,9 @@ async function camposDentroDoCartao(page: Page, etapa: string) {
   for (const campo of await page.getByTestId(etapa).locator("input:visible, select:visible, textarea:visible").all()) {
     const b = await campo.boundingBox();
     if (!b) continue;
-    expect(b.x, "campo fora do cartão (esquerda)").toBeGreaterThanOrEqual(cartao.x - 1);
-    expect(b.x + b.width, "campo fora do cartão (direita)").toBeLessThanOrEqual(cartao.x + cartao.width + 1);
+    const qual = await campo.evaluate((el) => el.outerHTML.slice(0, 160));
+    expect(b.x, `campo fora do cartão (esquerda): ${qual}`).toBeGreaterThanOrEqual(cartao.x - 1);
+    expect(b.x + b.width, `campo fora do cartão (direita): ${qual}`).toBeLessThanOrEqual(cartao.x + cartao.width + 1);
   }
 }
 
