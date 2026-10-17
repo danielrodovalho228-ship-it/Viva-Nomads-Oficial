@@ -40,7 +40,7 @@ export const FAQ: Pergunta[] = [
   {
     id: "caucao",
     pergunta: "Como funciona a caução?",
-    resposta: `${CAUCAO_FRASE} Em cada bloco do contrato, a caução é de ${Math.round(REGRAS_CONTRATO.caucaoFracaoBloco * 100)}% do valor do bloco, sem passar de ${REGRAS_CONTRATO.caucaoMaxAlugueis} aluguéis no total. Ela volta para o inquilino no fim, depois da conferência de saída.`,
+    resposta: `${CAUCAO_FRASE} Ela volta para o inquilino no fim, depois da conferência de saída.`,
     termos: ["caucao", "deposito", "garantia", "poupanca", "devolucao"],
   },
   {
@@ -50,17 +50,10 @@ export const FAQ: Pergunta[] = [
     termos: ["preco", "taxa", "anunciar", "comissao", "mensalidade", "quanto custa", "airbnb", "12"],
   },
   {
-    id: "parceiro",
-    pergunta: "Como posso virar parceiro da Viva?",
-    resposta:
-      "Depende do tipo de parceria. Fotógrafo: cadastre-se em /parceiros/fotografos (\"Quero ser parceiro\"). Empresa que hospeda equipes: veja /empresas. Proprietário que quer anunciar imóveis mobiliados: crie a conta em /auth. Seguro, limpeza, mobília e outros serviços: deixe seu contato em /parceiros (em breve). Qual é o seu caso?",
-    termos: ["parceiro", "parceria", "parceiros", "fotografo", "empresa", "servico", "limpeza", "seguro", "mobilia"],
-  },
-  {
     id: "como-virar-parceiro",
-    pergunta: "Como virar parceiro",
+    pergunta: "Como posso virar parceiro da Viva?",
     resposta: `${TIPOS_PARCEIRO} ${MODOS_CONTA} ${CADASTRO_PARCEIRO} ${EMPRESAS_E_GESTORES}`,
-    termos: ["parceiro", "parceria", "virar parceiro", "modo parceiro", "cadastro", "cnpj", "mei", "empresa", "gestor"],
+    termos: ["parceiro", "parceria", "virar parceiro", "modo parceiro", "cadastro", "cnpj", "mei", "empresa", "gestor", "fotografo", "servico", "limpeza", "seguro", "mobilia"],
   },
   {
     id: "taxa-parceria",
@@ -84,13 +77,13 @@ export const FAQ: Pergunta[] = [
   {
     id: "prazo",
     pergunta: "Qual o prazo mínimo e máximo da locação?",
-    resposta: `De ${REGRAS_CONTRATO.prazoMinMeses} a ${REGRAS_CONTRATO.prazoMaxMeses} meses — de 30 a ${REGRAS_CONTRATO.prazoMaxDias} dias no total, em blocos de até ${REGRAS_CONTRATO.maxDiasBloco} dias.`,
+    resposta: `Estadias de 30 a ${REGRAS_CONTRATO.prazoMaxDias} dias, de ${REGRAS_CONTRATO.prazoMinMeses} a ${REGRAS_CONTRATO.prazoMaxMeses} meses.`,
     termos: ["prazo", "minimo", "maximo", "meses", "dias", "duracao"],
   },
   {
     id: "renovar",
     pergunta: "Posso renovar o contrato?",
-    resposta: `Sim, enquanto o total não passar de ${REGRAS_CONTRATO.prazoMaxDias} dias. A renovação é um novo bloco, só vale com o aceite do proprietário e do inquilino, e é cobrada à parte do proprietário: a taxa da faixa dele sobre o valor total do período renovado (cada período é cobrado uma só vez). Depois de ${REGRAS_CONTRATO.prazoMaxDias} dias, é preciso um novo contrato.`,
+    resposta: `Sim, enquanto o total não passar de ${REGRAS_CONTRATO.prazoMaxDias} dias. A renovação só vale com o aceite do proprietário e do inquilino, e é cobrada à parte do proprietário: a taxa da faixa dele sobre o valor total do período renovado (cada período é cobrado uma só vez). Depois de ${REGRAS_CONTRATO.prazoMaxDias} dias, é preciso um novo contrato.`,
     termos: ["renovar", "renovacao", "prorrogar", "estender"],
   },
   {
