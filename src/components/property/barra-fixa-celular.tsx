@@ -22,13 +22,13 @@ export function BarraFixaCelular({
   pending,
   onSolicitar,
   onMensagem,
-  whatsapp,
+  contato,
 }: {
   barra: BarraFixaImovel;
   pending: boolean;
   onSolicitar: () => void;
   onMensagem: () => void;
-  whatsapp: { href: string; externo: boolean; rotulo: string };
+  contato: { href: string; rotulo: string };
 }) {
   const router = useRouter();
   useEffect(() => {
@@ -87,12 +87,11 @@ export function BarraFixaCelular({
             <MessageSquare className="h-4 w-4" /> <span>Mensagem</span>
           </button>
           <a
-            href={whatsapp.href}
-            {...(whatsapp.externo ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-            aria-label={whatsapp.rotulo}
+            href={contato.href}
+            aria-label={contato.rotulo}
             className={secundario}
           >
-            <MessageCircle className="h-4 w-4" /> <span className="sr-only sm:not-sr-only">{whatsapp.externo ? "WhatsApp" : "Viva"}</span>
+            <MessageCircle className="h-4 w-4" /> <span className="sr-only sm:not-sr-only">Viva</span>
           </a>
         </div>
       </div>

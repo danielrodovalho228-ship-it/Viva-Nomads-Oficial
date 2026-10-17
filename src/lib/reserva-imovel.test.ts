@@ -3,9 +3,10 @@
   Roda: node --test src/lib/reserva-imovel.test.ts
 */
 import { test } from "node:test";
+import { readFileSync } from "node:fs";
 import assert from "node:assert/strict";
 import { formatBRL } from "./utils.ts";
-import { destinoWhatsappViva, linhasDeTaxas, mensagemWhatsappViva, numeroWhatsappViva, resumoSolicitacao } from "./reserva-imovel.ts";
+import { destinoContatoViva, linhasDeTaxas, resumoSolicitacao } from "./reserva-imovel.ts";
 
 const base = { monthlyPrice: 3200 };
 
@@ -41,31 +42,23 @@ test("Caução é linha separada, sem valor inventado; taxa da Viva é R$ 0", ()
   assert.equal(l.find((x) => x.chave === "viva")!.valor, formatBRL(0));
 });
 
-test("WhatsApp: com número da Viva abre wa.me com o código do imóvel", () => {
-  const d = destinoWhatsappViva("3f9a2c10-aaaa-bbbb-cccc-111122223333", "+55 (34) 99999-0000");
-  assert.equal(d.externo, true);
-  assert.ok(d.href.startsWith("https://wa.me/5534999990000?text="));
-  assert.ok(decodeURIComponent(d.href).includes("VN-3F9A2C"));
+test("contato com a Viva: imóvel com uuid também leva o código ao atendimento", () => {
+  const d = destinoContatoViva("3f9a2c10-aaaa-bbbb-cccc-111122223333");
+  assert.ok(d.href.startsWith("/ajuda?imovel=VN-3F9A2C"));
 });
 
-test("WhatsApp: sem número configurado cai na Central de Ajuda, nunca em telefone de dono", () => {
-  for (const n of [undefined, null, "", "abc", "123"]) {
-    const d = destinoWhatsappViva("ube-001", n);
-    assert.equal(d.externo, false);
-    assert.ok(d.href.startsWith("/ajuda?imovel=VN-UBE001"));
-    assert.ok(!d.href.includes("wa.me"));
+test("contato com a Viva: sempre 'Falar com a Viva' no atendimento com o código; sem WhatsApp nem telefone de dono", () => {
+  const d = destinoContatoViva("ube-001");
+  assert.equal(d.rotulo, "Falar com a Viva");
+  assert.equal(d.href, "/ajuda?imovel=VN-UBE001");
+  assert.ok(!/wa\.me|whatsapp/i.test(d.href + d.rotulo));
+});
+
+test("o código não tem mais o caminho wa.me / NEXT_PUBLIC_WHATSAPP_VIVA da Viva", () => {
+  for (const f of ["src/lib/reserva-imovel.ts", "src/app/(public)/imoveis/[id]/property-detail.tsx", "src/components/property/barra-fixa-celular.tsx"]) {
+    const src = readFileSync(f, "utf8");
+    assert.ok(!/WHATSAPP_VIVA|VIVA_WHATSAPP|wa\.me/.test(src), f);
   }
-});
-
-test("a mensagem cita só o código; número inválido é recusado", () => {
-  assert.equal(mensagemWhatsappViva("ube-001"), "Olá, Viva! Tenho interesse no imóvel VN-UBE001.");
-  assert.equal(numeroWhatsappViva("5534999990000"), "5534999990000");
-  assert.equal(numeroWhatsappViva("34999990000"), null);
-});
-
-test("WhatsApp: rótulo só promete WhatsApp quando há número da Viva", () => {
-  assert.equal(destinoWhatsappViva("ube-001", "5534999990000").rotulo, "WhatsApp da Viva");
-  for (const n of [undefined, "", "abc"]) assert.equal(destinoWhatsappViva("ube-001", n).rotulo, "Falar com a Viva");
 });
 
 test("solicitação: resumo com entrada, motivo e valores", () => {
