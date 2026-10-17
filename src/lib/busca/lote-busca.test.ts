@@ -69,3 +69,20 @@ test("#544b148a: respiro no fim da lista com itens no comparador", () => {
   const cli = ler("app/(public)/buscar/search-client.tsx");
   assert.match(cli, /comparar\.length > 0 && <div aria-hidden="true" data-testid="comparar-respiro"/);
 });
+
+test("#544b148a D1: pino = cartão para todos os imóveis de exemplo (inclui os 4 casos medidos)", async () => {
+  const { SAMPLE_PROPERTIES } = await import("../properties.ts");
+  const { comTotalMes, textosTotalMensal } = await import("../precos.ts");
+  const { formatBRL } = await import("../utils.ts");
+  const { precoDeBusca } = await import("./painel-filtros.ts");
+  assert.ok(SAMPLE_PROPERTIES.length >= 15);
+  for (const p of SAMPLE_PROPERTIES) {
+    const pino = formatBRL(precoDeBusca(comTotalMes(p)));
+    assert.ok(textosTotalMensal(p).destaque.startsWith(pino), `${p.id}: pino ${pino} × cartão ${textosTotalMensal(p).destaque}`);
+  }
+  // Caso negativo: sem totalMes (lista ainda não enriquecida) o pino cai no valor base, nunca em zero.
+  assert.equal(precoDeBusca({ monthlyPrice: 3200 }), 3200);
+  assert.equal(precoDeBusca({ monthlyPrice: 3200, totalMes: 0 }), 3200);
+  const santa = SAMPLE_PROPERTIES.find((p) => p.neighborhood === "Santa Mônica");
+  assert.equal(precoDeBusca(comTotalMes(santa!)), 3960);
+});
