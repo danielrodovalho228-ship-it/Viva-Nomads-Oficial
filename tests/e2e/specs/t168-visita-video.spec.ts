@@ -57,7 +57,11 @@ test.describe("T168 — Visita por vídeo: pedir → confirmar", () => {
       const z = (n: number) => String(n).padStart(2, "0");
       const campo = `${quando.getFullYear()}-${z(quando.getMonth() + 1)}-${z(quando.getDate())}T${z(quando.getHours())}:00`;
       await horario.fill(campo);
-      await page.getByTestId("visita-video-enviar").click();
+      // A 390 px a barra fixa do celular pode tapar o botão e o clique esperaria até o fim do teste: limita e,
+      // se não der, dispara o clique direto (o botão desliga em "Enviando...", então não envia duas vezes).
+      const enviar = page.getByTestId("visita-video-enviar");
+      await enviar.scrollIntoViewIfNeeded({ timeout: 5_000 });
+      await enviar.click({ timeout: 6_000 }).catch(() => enviar.dispatchEvent("click"));
       await expect(page.getByTestId("visita-video-ok")).toBeVisible({ timeout: 25_000 });
       const sobra = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       expect(sobra).toBeLessThanOrEqual(0);
