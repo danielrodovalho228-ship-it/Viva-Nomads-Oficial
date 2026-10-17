@@ -834,14 +834,17 @@
       ],
       "specs": [
         "t69-botoes-header",
-        "t72-paginas-institucionais"
+        "t72-paginas-institucionais",
+        "t167-faixas-taxa-cors"
       ]
     },
     "/parceiros/fotografos": {
       "personas": [
         "publico"
       ],
-      "specs": []
+      "specs": [
+        "t167-faixas-taxa-cors"
+      ]
     },
     "/pedidos": {
       "personas": [

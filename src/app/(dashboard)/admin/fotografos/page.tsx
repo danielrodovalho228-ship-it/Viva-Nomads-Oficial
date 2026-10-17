@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { FAIXAS_TAXA_PARCERIA, reais } from "@/config/taxa-parceria";
 import { Camera, CheckCircle2, Clock, ClipboardList, Handshake } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { PageTitle, Panel, StatCard, EmptyState } from "@/components/dashboard/primitives";
@@ -83,9 +84,9 @@ export default async function AdminFotografosPage() {
         <Panel title="Taxa de parceria" className="lg:col-span-1">
           <p className="mb-3 text-sm text-muted">Paga pelo fotógrafo ao aceitar o pedido. A Viva não recebe o dinheiro do serviço.</p>
           <ul className="mb-4 space-y-1 rounded-xl bg-sage-100 p-3 text-sm text-ink">
-            <li>Até 20 fotos: <strong>R$ 40</strong></li>
-            <li>21 a 40 fotos: <strong>R$ 60</strong></li>
-            <li>Acima de 40 fotos: <strong>R$ 80</strong></li>
+            {FAIXAS_TAXA_PARCERIA.map((f) => (
+              <li key={f.rotulo}>{f.rotulo}: <strong>{reais(f.valor)}</strong></li>
+            ))}
           </ul>
           <TaxaForm taxa={taxa} />
           <p className="mt-2 text-xs text-muted">Valor único usado hoje nos pedidos. As faixas acima entram na próxima etapa da jornada do parceiro.</p>

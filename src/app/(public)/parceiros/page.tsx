@@ -8,6 +8,7 @@ import { BannerTopo } from "@/components/institucional/banner-topo";
 import { BrandImage } from "@/components/brand-image";
 import { ButtonLink } from "@/components/ui/button";
 import { ParceiroForm } from "./parceiro-form";
+import { FaixasTaxaParceria } from "@/components/parceiros/faixas-taxa";
 import { FOTOS_PARCERIA } from "@/lib/parceiros-cartoes";
 
 export const metadata: Metadata = {
@@ -37,7 +38,7 @@ const PASSOS = [
 
 const REGRAS = [
   "O pagamento do serviço é entre parceiro e cliente: a Viva não recebe esse dinheiro.",
-  "Taxa de parceria só quando você aceita um pedido, com o valor mostrado antes.",
+  "Taxa de parceria só quando você aceita um pedido, com o valor mostrado antes (veja as faixas abaixo).",
   "Sem exclusividade e sem mensalidade.",
   "Contato fora da plataforma antes do aceite leva ao descadastro.",
 ];
@@ -137,6 +138,7 @@ export default async function ParceirosPage({ searchParams }: { searchParams: Pr
                 </li>
               ))}
             </ul>
+            <div className="mt-6"><FaixasTaxaParceria titulo="Taxa de parceria para fotógrafos" /></div>
           </div>
         </div>
       </section>
