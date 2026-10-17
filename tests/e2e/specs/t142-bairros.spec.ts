@@ -57,6 +57,38 @@ test.describe("T142 — Bairros", () => {
     expect((await request.get("/cidades/uberlandia/bairro-que-nao-existe-xyz")).status()).toBe(404);
   });
 
+  for (const largura of [390, 1280]) {
+    test(`${largura} px: grade tem os 3 bairros aprovados e Martins vazio é honesto e noindex`, async ({ page, request }) => {
+      await page.setViewportSize({ width: largura, height: 900 });
+      await page.goto("/cidades/uberlandia", { waitUntil: "networkidle" });
+      for (const nome of ["Umuarama", "Santa Mônica", "Martins"]) {
+        await expect(page.getByTestId("bairros-grade").getByTestId("bairro-cartao").filter({ hasText: nome })).toHaveCount(1);
+      }
+      expect(await semRolagem(page)).toBeLessThanOrEqual(1);
+
+      // Martins não tem anúncio real no laboratório: 200, estado vazio, noindex e fora do sitemap.
+      const r = await request.get("/cidades/uberlandia/martins");
+      expect(r.status()).toBe(200);
+      expect(await r.text()).toMatch(/name="robots" content="noindex/);
+      await page.goto("/cidades/uberlandia/martins", { waitUntil: "networkidle" });
+      await expect(page.getByTestId("bairro-vazio")).toContainText("Ainda não há imóveis mobiliados publicados no Martins");
+      await expect(page.getByTestId("bairro-vazio").getByTestId("salvar-busca")).toContainText("Avise-me quando houver");
+      await expect(page.getByTestId("bairro-vizinhos")).toContainText("Centro");
+      expect(await semRolagem(page)).toBeLessThanOrEqual(1);
+      const xml = await (await request.get("/sitemap.xml")).text();
+      expect(xml).not.toContain("/cidades/uberlandia/martins");
+    });
+  }
+
+  test("/bairros/martins redireciona para a página do bairro; Umuarama e Santa Mônica abrem sem 404", async ({ request }) => {
+    const r = await request.get("/bairros/martins", { maxRedirects: 0 });
+    expect([301, 308]).toContain(r.status());
+    expect(r.headers()["location"]).toContain("/cidades/uberlandia/martins");
+    for (const slug of ["umuarama", "santa-monica"]) {
+      expect((await request.get(`/cidades/uberlandia/${slug}`)).status()).toBe(200);
+    }
+  });
+
   test("sitemap lista o bairro", async ({ request }) => {
     const xml = await (await request.get("/sitemap.xml")).text();
     expect(xml).toContain("/cidades/uberlandia/centro");

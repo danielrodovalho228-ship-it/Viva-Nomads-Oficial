@@ -13,7 +13,7 @@ import { paginaCidade } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
 import { calcularPrecosMedios, rotuloQuartos } from "@/lib/preco-medio";
 import { polosDaCidade } from "@/lib/polos";
-import { agruparBairros, limitarAPar } from "@/lib/bairros";
+import { bairrosDaGrade } from "@/lib/bairros";
 import { MapPin } from "lucide-react";
 import { faqPageCidade, perguntasCidade } from "@/lib/seo/anuncio-cidade";
 
@@ -58,7 +58,7 @@ export default async function CityLandingPage({ params }: Params) {
   const properties = await listPropertiesByCity(name);
   const infoCidade = CITIES.find((c) => c.slug === cidade);
   const precosMedios = calcularPrecosMedios(properties);
-  const bairros = limitarAPar(agruparBairros(properties, isExemplo));
+  const bairros = bairrosDaGrade(cidade, properties, isExemplo);
   const atualizadoEm = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo" }).format(new Date());
 
   return (
@@ -144,7 +144,7 @@ export default async function CityLandingPage({ params }: Params) {
         {bairros.length > 0 && (
           <div className="mt-12" data-testid="bairros-grade">
             <h2 className="font-title text-2xl font-bold text-ink">Bairros de {name}</h2>
-            <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+            <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {bairros.map((b) => (
                 <li key={b.slug}>
                   <Link
@@ -157,7 +157,7 @@ export default async function CityLandingPage({ params }: Params) {
                     </span>
                     <span className="min-w-0">
                       <span className="block truncate font-semibold text-forest">{b.nome}</span>
-                      <span className="block text-sm text-muted">{b.total} {b.total === 1 ? "imóvel" : "imóveis"}</span>
+                      <span className="block text-sm text-muted">{b.total === 0 ? "Em breve" : `${b.total} ${b.total === 1 ? "imóvel" : "imóveis"}`}</span>
                     </span>
                   </Link>
                 </li>

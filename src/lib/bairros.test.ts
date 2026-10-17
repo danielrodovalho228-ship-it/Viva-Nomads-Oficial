@@ -2,7 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { PONTOS_REFERENCIA } from "../config/pontos-referencia.ts";
-import { caminhosDeBairros, agruparBairros, centroDoBairro, distanciaKm, distanciasDoBairro, imoveisDoBairro, limitarAPar, perguntasDoBairro, resumoDoBairro, slugBairro } from "./bairros.ts";
+import { acharBairroCurado, bairrosDaGrade, caminhosDeBairros, agruparBairros, centroDoBairro, distanciaKm, distanciasDoBairro, imoveisDoBairro, limitarAPar, perguntasDoBairro, resumoDoBairro, slugBairro } from "./bairros.ts";
 
 const UUID = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
 const ehExemplo = (id: string) => !/^[0-9a-f]{8}-/.test(id);
@@ -76,4 +76,43 @@ test("textos do bairro: sem termos proibidos e sem preço inventado", () => {
 test("sitemap: um caminho por bairro com anúncio real, na cidade certa", () => {
   const lista = [{ ...im(1, "Centro"), city: "Uberlândia" }, { ...im(2, "centro"), city: "Uberlandia" }, { ...im(3, "Tibery"), city: "Araguari" }, { id: "ube-001", neighborhood: "Osvaldo", lat: 0, lng: 0, city: "Uberlândia" }];
   assert.deepEqual(caminhosDeBairros([{ slug: "uberlandia", name: "Uberlândia" }], lista, ehExemplo), ["/cidades/uberlandia/centro"]);
+});
+
+const nenhumExemplo = () => false;
+const imovelEm = (id: string, neighborhood: string) => ({ id, neighborhood, lat: -18.9, lng: -48.27 });
+
+test("Uberlândia: a grade mostra Umuarama, Santa Mônica e Martins mesmo sem anúncio, com contagem real 0", () => {
+  const g = bairrosDaGrade("uberlandia", [], nenhumExemplo);
+  assert.deepEqual(g.map((b) => b.slug).sort(), ["martins", "santa-monica", "umuarama"]);
+  assert.ok(g.every((b) => b.total === 0));
+});
+
+test("a contagem dos curados vem do banco e bairro real fora da lista também aparece", () => {
+  const g = bairrosDaGrade("uberlandia", [imovelEm("a", "Martins"), imovelEm("b", "Martins"), imovelEm("c", "Centro")], nenhumExemplo);
+  assert.equal(g.find((b) => b.slug === "martins")?.total, 2);
+  assert.equal(g.find((b) => b.slug === "centro")?.total, 1);
+  assert.equal(g.find((b) => b.slug === "umuarama")?.total, 0);
+  assert.equal(g[0].slug, "martins");
+});
+
+test("anúncio de exemplo não conta no bairro curado", () => {
+  const g = bairrosDaGrade("uberlandia", [imovelEm("ube-001", "Martins")], (id) => id.startsWith("ube-"));
+  assert.equal(g.find((b) => b.slug === "martins")?.total, 0);
+});
+
+test("cidade sem lista curada mantém a grade par de antes", () => {
+  const g = bairrosDaGrade("goiania", [imovelEm("a", "Setor Bueno"), imovelEm("b", "Setor Oeste"), imovelEm("c", "Setor Oeste")], nenhumExemplo);
+  assert.equal(g.length, 2);
+});
+
+test("acharBairroCurado reconhece Martins só em Uberlândia", () => {
+  assert.equal(acharBairroCurado("uberlandia", "martins")?.nome, "Martins");
+  assert.equal(acharBairroCurado("uberlandia", "bairro-que-nao-existe-xyz"), null);
+  assert.equal(acharBairroCurado("goiania", "martins"), null);
+});
+
+test("sitemap continua só com bairro que tem anúncio real (Martins vazio fica de fora)", () => {
+  const c = [{ slug: "uberlandia", name: "Uberlândia" }];
+  const caminhos = caminhosDeBairros(c, [{ ...imovelEm("a", "Centro"), city: "Uberlândia" }], nenhumExemplo);
+  assert.deepEqual(caminhos, ["/cidades/uberlandia/centro"]);
 });

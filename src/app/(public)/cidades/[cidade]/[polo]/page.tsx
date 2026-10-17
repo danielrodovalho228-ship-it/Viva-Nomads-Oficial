@@ -10,7 +10,7 @@ import { PropertyCard } from "@/components/property-card";
 import { ButtonLink } from "@/components/ui/button";
 import { JsonLd } from "@/components/seo/json-ld";
 import { SITE_URL } from "@/lib/site";
-import { imoveisDoBairro } from "@/lib/bairros";
+import { acharBairroCurado, bairrosDaGrade, imoveisDoBairro } from "@/lib/bairros";
 import { BairroPagina, metadadosDoBairro, type BairroDados } from "@/components/cidades/bairro-pagina";
 
 export const revalidate = 60;
@@ -24,9 +24,12 @@ export function generateStaticParams() {
 }
 
 /** O 2º trecho da URL é um polo (lista fixa) ou um BAIRRO com anúncio real (ordem 7000fbe0). */
-async function acharBairro(cidadeNome: string, slug: string): Promise<BairroDados | null> {
+async function acharBairro(cidadeSlug: string, cidadeNome: string, slug: string): Promise<BairroDados | null> {
   const imoveis = imoveisDoBairro(slug, await listPropertiesByCity(cidadeNome), isExemplo);
-  return imoveis.length === 0 ? null : { slug, nome: imoveis[0].neighborhood.trim(), imoveis };
+  if (imoveis.length > 0) return { slug, nome: imoveis[0].neighborhood.trim(), imoveis };
+  // Bairro da lista curada sem anúncio real: página com estado vazio (noindex), nunca 404.
+  const curado = acharBairroCurado(cidadeSlug, slug);
+  return curado ? { slug, nome: curado.nome, imoveis: [] } : null;
 }
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
@@ -35,7 +38,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const c = CITIES.find((x) => x.slug === cidade);
   if (!c) return { robots: { index: false } };
   if (!p) {
-    const b = await acharBairro(c.name, polo);
+    const b = await acharBairro(cidade, c.name, polo);
     return b ? metadadosDoBairro(c, b) : { robots: { index: false } };
   }
   const title = `Imóveis mobiliados ${tituloDoPolo(p.nome)} · ${c.name}`;
@@ -56,9 +59,10 @@ export default async function PoloPage({ params }: Params) {
   const c = CITIES.find((x) => x.slug === cidade);
   if (!c) notFound();
   if (!p) {
-    const b = await acharBairro(c.name, polo);
+    const b = await acharBairro(cidade, c.name, polo);
     if (!b) notFound();
-    return <BairroPagina cidade={c} bairro={b} />;
+    const vizinhos = bairrosDaGrade(cidade, await listPropertiesByCity(c.name), isExemplo).filter((x) => x.total > 0 && x.slug !== b.slug);
+    return <BairroPagina cidade={c} bairro={b} vizinhos={vizinhos} />;
   }
 
   const todos = await listPropertiesByCity(c.name);

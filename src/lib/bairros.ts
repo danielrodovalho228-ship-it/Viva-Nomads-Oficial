@@ -38,6 +38,36 @@ export function agruparBairros(imoveis: readonly ImovelBairro[], ehExemplo: (id:
   return [...mapa.values()].sort((a, b) => b.total - a.total || a.nome.localeCompare(b.nome, "pt-BR"));
 }
 
+/**
+  Bairros aprovados pelo Daniel (mockup 17/10) que a grade da cidade mostra mesmo sem anúncio
+  real: lista curada, sem número inventado (a contagem vem sempre do banco). Só Uberlândia por ora.
+*/
+export const BAIRROS_CURADOS: Readonly<Record<string, readonly string[]>> = {
+  uberlandia: ["Umuarama", "Santa Mônica", "Martins"],
+};
+
+export function bairrosCuradosDaCidade(cidadeSlug: string): BairroResumo[] {
+  return (BAIRROS_CURADOS[cidadeSlug] ?? []).map((nome) => ({ slug: slugBairro(nome), nome, total: 0 }));
+}
+
+/** O slug está na lista curada da cidade? Devolve o bairro (total 0) ou null. */
+export function acharBairroCurado(cidadeSlug: string, slug: string): BairroResumo | null {
+  return bairrosCuradosDaCidade(cidadeSlug).find((b) => b.slug === slug) ?? null;
+}
+
+/**
+  Grade da cidade: curados (com a contagem REAL, 0 se não há) + bairros com anúncio real.
+  Sem lista curada, vale a regra antiga (grade par). Com ela, a grade mostra todos os curados.
+*/
+export function bairrosDaGrade(cidadeSlug: string, imoveis: readonly ImovelBairro[], ehExemplo: (id: string) => boolean): BairroResumo[] {
+  const reais = agruparBairros(imoveis, ehExemplo);
+  const curados = bairrosCuradosDaCidade(cidadeSlug);
+  if (curados.length === 0) return limitarAPar(reais);
+  const mapa = new Map<string, BairroResumo>(curados.map((b) => [b.slug, b]));
+  for (const r of reais) mapa.set(r.slug, r);
+  return [...mapa.values()].sort((a, b) => b.total - a.total || a.nome.localeCompare(b.nome, "pt-BR"));
+}
+
 /** Grade PAR (2 colunas sem cartão sozinho na última linha): com número ímpar (>1), o menos cheio fica de fora da grade. */
 export function limitarAPar<T>(lista: readonly T[]): T[] {
   return lista.length > 1 && lista.length % 2 === 1 ? lista.slice(0, -1) : [...lista];
