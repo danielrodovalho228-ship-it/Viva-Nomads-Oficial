@@ -48,3 +48,9 @@ test("cabeçalho tem o link Favoritos com contador e o coração informa o estad
   assert.match(navbar, /href="\/favoritos"/);
   assert.match(ler("../components/favorite-button.tsx"), /aria-label=\{isFavorite \? "Remover dos favoritos" : "Adicionar aos favoritos"\}/);
 });
+
+test("cabeçalho a 1280 px: Favoritos vira só o coração (texto acessível) e o texto volta em 2xl; menu mobile mantém o texto (t69)", () => {
+  const navbar = ler("../components/layout/navbar.tsx");
+  assert.match(navbar, /sr-only 2xl:not-sr-only/);
+  assert.match(navbar, /<LinkFavoritos className="[^"]*"/); // menu mobile passa className → texto sempre visível
+});
