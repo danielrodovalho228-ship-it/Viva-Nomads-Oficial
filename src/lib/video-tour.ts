@@ -19,17 +19,19 @@ export function resolverVideoTour(url: string | null | undefined): string | null
   }
   if (u.protocol !== "https:") return null;
   const host = u.hostname.toLowerCase();
-  const idSeguro = (id: string | null | undefined) => (id && /^[\w-]{3,64}$/.test(id) ? id : null);
+  // Id real: YouTube tem 11 caracteres [A-Za-z0-9_-]; Vimeo é só número. Outro formato = sem tour.
+  const idYoutube = (id: string | null | undefined) => (id && /^[A-Za-z0-9_-]{11}$/.test(id) ? id : null);
+  const idVimeo = (id: string | null | undefined) => (id && /^\d{1,12}$/.test(id) ? id : null);
   if (host === "youtu.be") {
-    const id = idSeguro(u.pathname.slice(1));
+    const id = idYoutube(u.pathname.slice(1));
     return id ? `https://www.youtube.com/embed/${id}` : null;
   }
   if (HOSTS_YOUTUBE.includes(host)) {
-    const id = idSeguro(u.searchParams.get("v") ?? u.pathname.split("/").filter(Boolean).pop());
+    const id = idYoutube(u.searchParams.get("v") ?? u.pathname.split("/").filter(Boolean).pop());
     return id ? `https://www.youtube.com/embed/${id}` : null;
   }
   if (HOSTS_VIMEO.includes(host)) {
-    const id = idSeguro(u.pathname.split("/").filter(Boolean).pop());
+    const id = idVimeo(u.pathname.split("/").filter(Boolean).pop());
     return id ? `https://player.vimeo.com/video/${id}` : null;
   }
   return null;

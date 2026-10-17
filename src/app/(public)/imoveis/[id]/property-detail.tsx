@@ -66,6 +66,7 @@ import { destinoWhatsappViva, resumoSolicitacao } from "@/lib/reserva-imovel";
 import { registrarEvento } from "@/lib/eventos/registrar";
 import { NavSecoes } from "@/components/property/nav-secoes";
 import { secoesDoImovel, sinaisDeConfianca, type SinalConfianca } from "@/lib/imovel-pagina";
+import { videoTourPermitido } from "@/lib/video-tour";
 
 export function PropertyDetail({ property: anuncio, similar }: { property: Property; similar: Property[] }) {
   // Anúncio de EXEMPLO: sem nota, avaliações, selos do dono, taxa de resposta,
@@ -597,9 +598,9 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
           </header>
 
           {/* Walk-through em vídeo */}
-          {property.videoUrl && (
+          {videoTourPermitido(property.videoUrl) && (
             <section>
-              <VideoWalkthrough url={property.videoUrl} title={property.title} />
+              <VideoWalkthrough url={property.videoUrl!} title={property.title} />
               <p className="mt-1.5 text-xs text-muted">
                 {isExemplo(property) ? "Vídeo ilustrativo." : "Tour em vídeo gravado pelo proprietário."}
               </p>
