@@ -31,6 +31,8 @@ export interface DadosResumo {
   qtdPetsCandidatura?: number;
   /** Pacote de limpeza durante a estadia (ordem 4c74ac38 item 3): a quantidade por mês entra no resumo. */
   limpezaEstadia?: LimpezaEstadia | null;
+  /** Condomínio + contas fixas por mês (R$): entram no "Total por mês" quando há limpeza paga. */
+  outrosCustosMes?: number;
 }
 
 /** Linhas do resumo mostradas na tela e usadas no hash (mesma fonte: o que a pessoa lê é o que ela assina). */
@@ -39,9 +41,18 @@ function dataDoResumo(iso: string): string | null {
   return m ? `${m[3]}/${m[2]}/${m[1]}` : null;
 }
 
+/** Total por mês do resumo: valor mensal + condomínio e contas fixas + limpeza paga. Só existe com limpeza paga. */
+export function totalMensalDoResumo(d: Pick<DadosResumo, "aluguelMensal" | "outrosCustosMes" | "limpezaEstadia">): number | null {
+  const limpeza = d.limpezaEstadia?.valorMes ?? 0;
+  if (limpeza <= 0) return null;
+  const outros = d.outrosCustosMes && d.outrosCustosMes > 0 ? d.outrosCustosMes : 0;
+  return Math.round((d.aluguelMensal + outros + limpeza) * 100) / 100;
+}
+
 export function resumoContrato(d: DadosResumo): string[] {
   const inicio = d.inicioEstadia ? dataDoResumo(d.inicioEstadia) : null;
   const valor = d.aluguelMensal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  const total = totalMensalDoResumo(d);
   const valorPet = linhaValorPetCandidatura(!!d.petsRegras, d.petsRegras, d.qtdPetsCandidatura ?? 0);
   return [
     MARCA_MINUTA,
@@ -54,6 +65,7 @@ export function resumoContrato(d: DadosResumo): string[] {
     ...(d.petsRegras ? [`Pets — ${linhasRegrasPets(d.petsRegras, { semValorPet: true }).join("; ")}`] : []),
     ...(valorPet ? [valorPet] : []),
     ...(d.limpezaEstadia ? [linhaLimpezaResumo(d.limpezaEstadia)] : []),
+    ...(total != null ? [`Total por mês: ${total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`] : []),
     `Registrado em: ${d.criadoEm}`,
   ];
 }
@@ -76,6 +88,13 @@ export function petsRegrasDoResumo(d: {
 export function limpezaDoContrato(d: { algumaAssinatura: boolean; viva: unknown; congeladas: unknown }): LimpezaEstadia | null {
   const c = d.congeladas && typeof d.congeladas === "object" ? (d.congeladas as Record<string, unknown>).limpezaEstadia : null;
   return limpezaDoResumo({ algumaAssinatura: d.algumaAssinatura, viva: d.viva, congelada: c });
+}
+
+/** Condomínio + contas fixas do resumo: ao vivo antes da 1ª assinatura, congelado depois (sem a chave = 0). */
+export function outrosCustosDoContrato(d: { algumaAssinatura: boolean; vivo: unknown; congeladas: unknown }): number {
+  const c = d.congeladas && typeof d.congeladas === "object" ? (d.congeladas as Record<string, unknown>).outrosCustosMes : null;
+  const n = Number(d.algumaAssinatura ? c : d.vivo);
+  return Number.isFinite(n) && n > 0 && n <= 1_000_000 ? n : 0;
 }
 
 export function hashResumo(linhas: string[]): string {
