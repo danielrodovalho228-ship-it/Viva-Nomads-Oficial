@@ -7,7 +7,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 const src = readFileSync(new URL("./conta-secoes.tsx", import.meta.url), "utf8");
-const bloco = src.slice(src.indexOf("export function DocumentoPessoa"), src.indexOf("export function PerfilDoModo"));
+const bloco = src.slice(src.indexOf("export function DocumentoPessoa"), src.indexOf("export function AjudaContato"));
 
 test("DocumentoPessoa não devolve null (carregando ou sessão não resolvida)", () => {
   assert.doesNotMatch(bloco, /return null/);

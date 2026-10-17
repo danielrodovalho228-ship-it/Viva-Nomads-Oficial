@@ -50,7 +50,8 @@ test.describe("T17 — Conta salva de verdade", () => {
   });
 
   test("senha atual errada não troca a senha", async ({ page }) => {
-    await page.goto("/dashboard/conta", { waitUntil: "networkidle" });
+    // Prompt 18: a troca de senha fica numa tela só (Confiança e segurança); a Conta tem só o link.
+    await page.goto("/dashboard/conta/seguranca", { waitUntil: "networkidle" });
     const painel = page.locator("form").filter({ hasText: "Salvar nova senha" });
     const campos = painel.locator('input[type="password"]');
     await campos.nth(0).fill("senha-errada-de-proposito");

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Calculator, TrendingDown, AlertTriangle, Building2, User } from "lucide-react";
-import { simulateTax, PJ_ACCOUNTING_YEAR } from "@/lib/tax";
+import { simulateTax, AVISO_IBS_CBS_LIBERADO, AVISO_IBS_CBS_PF } from "@/lib/tax";
 import { limitar, avisoTeto, MAX_RECEITA_CARTEIRA } from "@/lib/campos-valor";
 import { formatBRL, cn, numBR } from "@/lib/utils";
 
@@ -14,6 +14,7 @@ export function TaxSimulator() {
   const [monthlyRent, setMonthlyRent] = useState(10000);
   const [propertyCount, setPropertyCount] = useState(4);
   const [deducoes, setDeducoes] = useState(0);
+  const [outros, setOutros] = useState(0);
 
   const r = useMemo(
     () =>
@@ -21,8 +22,9 @@ export function TaxSimulator() {
         monthlyRent: limitar(monthlyRent, MAX_RECEITA_CARTEIRA),
         propertyCount: Math.max(0, Math.floor(propertyCount)),
         monthlyDeductions: limitar(deducoes, MAX_RECEITA_CARTEIRA),
+        otherMonthlyIncome: limitar(outros, MAX_RECEITA_CARTEIRA),
       }),
-    [monthlyRent, propertyCount, deducoes]
+    [monthlyRent, propertyCount, deducoes, outros]
   );
   const aviso = avisoTeto(monthlyRent, MAX_RECEITA_CARTEIRA);
 
@@ -33,7 +35,7 @@ export function TaxSimulator() {
         <h3 className="font-title text-lg font-bold text-ink">Simulador tributário PF × PJ</h3>
       </div>
 
-      <div className="mt-5 grid gap-4 sm:grid-cols-3">
+      <div className="mt-5 grid gap-4 sm:grid-cols-2">
         <label className="block">
           <span className="mb-1.5 block text-sm font-medium text-ink">
             Receita mensal das locações (total)
@@ -68,6 +70,20 @@ export function TaxSimulator() {
             className="w-full rounded-xl border border-sage-200 px-3.5 py-2.5 text-sm outline-none focus:border-sage"
           />
         </label>
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-medium text-ink">
+            Seus outros rendimentos por mês (salário, pró-labore)
+          </span>
+          <input
+            type="number"
+            min={0}
+            value={outros || ""}
+            onChange={(e) => setOutros(Number(e.target.value))}
+            className="w-full rounded-xl border border-sage-200 px-3.5 py-2.5 text-sm outline-none focus:border-sage"
+            data-testid="tax-outros-rendimentos"
+          />
+          <span className="mt-1 block text-xs text-muted">A receita das locações soma a eles na tabela do imposto de renda.</span>
+        </label>
       </div>
       {aviso && <p className="mt-2 text-xs text-amber-700">{aviso}</p>}
 
@@ -89,38 +105,31 @@ export function TaxSimulator() {
           active={r.recommendation === "pj"}
           icon={Building2}
           title="Pessoa Jurídica (CNPJ)"
-          tax={r.pjAnnualTax}
-          rate={r.pjRate}
-          note="Lucro presumido + IBS/CBS"
+          tax={r.pjAnnualTax + r.pjAnnualCost}
+          rate={r.annualRevenue > 0 ? (r.pjAnnualTax + r.pjAnnualCost) / r.annualRevenue : 0}
+          note={`Lucro presumido ${formatBRL(r.pjAnnualTax)} + custo de manter a empresa ${formatBRL(r.pjAnnualCost)}`}
         />
       </div>
 
       {/* Resultado da simulação — linguagem ilustrativa, não prescritiva */}
-      <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl bg-surface-2 p-4 text-sm">
+      <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl bg-surface-2 p-4 text-sm" data-testid="tax-resultado">
         <TrendingDown className="h-5 w-5 shrink-0 text-sage" />
         <span className="text-muted">
           Nesta simulação, o cenário{" "}
-          <strong className="text-ink">
-            {r.taxSavings > 0 ? "Pessoa Jurídica" : "Pessoa Física"}
-          </strong>{" "}
-          resultaria em menor carga estimada — diferença de{" "}
-          <strong className="text-forest">{formatBRL(Math.abs(r.taxSavings))}</strong>/ano.
-          {r.taxSavings > 0 && (
-            <>
-              {" "}
-              Manter uma PJ custa cerca de {formatBRL(PJ_ACCOUNTING_YEAR)}/ano (contador e taxas)
-              {r.taxSavings <= PJ_ACCOUNTING_YEAR ? ", o que consome essa diferença" : ""}.
-            </>
-          )}{" "}
-          Valores estimados.
+          <strong className="text-ink">{r.taxSavings > 0 ? "Pessoa Jurídica" : "Pessoa Física"}</strong> sai mais em conta: a diferença
+          de imposto é de {formatBRL(Math.abs(r.taxDifference))}/ano e, descontado o custo de manter a empresa (
+          {formatBRL(r.pjAnnualCost)}/ano), a vantagem real é de{" "}
+          <strong className="text-forest">{formatBRL(Math.abs(r.taxSavings))}</strong>/ano. Valores estimados.
         </span>
       </div>
 
-      {r.needsNfse && (
-        <p className="mt-3 flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
+      {/* IBS/CBS: só pela regra cumulativa e só depois da revisão do Sérgio (AVISO_IBS_CBS_LIBERADO). */}
+      {AVISO_IBS_CBS_LIBERADO && r.ibsCbsAviso && (
+        <p className="mt-3 flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700" data-testid="tax-aviso-ibs-cbs">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-          A partir de ago/2026, este perfil deve emitir NFS-e com destaque de CBS/IBS.
-          Procure um contador.
+          <span>
+            {AVISO_IBS_CBS_PF.texto} <span className="block text-amber-800/80">{AVISO_IBS_CBS_PF.fonte}</span>
+          </span>
         </p>
       )}
 

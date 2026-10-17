@@ -457,7 +457,8 @@
         "t151-modo-app-iphone",
         "t178-telefone-sms",
         "t173-perfis-dono-inquilino",
-        "t174-conta-complete-perfil"
+        "t174-conta-complete-perfil",
+        "t192-conta-4-blocos"
       ]
     },
     "/dashboard/conta/[secao]": {
@@ -473,7 +474,8 @@
         "t92-documento-secao",
         "t173-perfis-dono-inquilino",
         "t178-telefone-sms",
-        "t174-conta-complete-perfil"
+        "t174-conta-complete-perfil",
+        "t192-conta-4-blocos"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -706,6 +708,16 @@
       ],
       "specs": [
         "t55-manutencao-ciclo"
+      ]
+    },
+    "/dashboard/tributacao": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": [
+        "t192-conta-4-blocos"
       ]
     },
     "/dashboard/verificacao": {
@@ -997,7 +1009,9 @@
       "personas": [
         "socio"
       ],
-      "specs": []
+      "specs": [
+        "t192-conta-4-blocos"
+      ]
     }
   },
   "rotas": {
