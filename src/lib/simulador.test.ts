@@ -298,3 +298,18 @@ test("prompt 15 — custo de oportunidade: acima/abaixo da aplicação só com r
   // 6.800 − 25.000 × 10% = 4.300 acima da aplicação.
   assert.equal(simularROI({ ...base, rendimentoAplicacaoPct: 0.1 }, 0.12, 0).versusAplicacaoAnual, 4300);
 });
+
+import { cenariosOcupacao } from "./simulador.ts";
+
+test("prompt 15 — cenários de ocupação: −2 / informado / +2, presos em 6..12", () => {
+  assert.deepEqual(cenariosOcupacao(10).map((c) => c.mesesOcupados), [8, 10, 12]);
+  assert.deepEqual(cenariosOcupacao(12).map((c) => c.mesesOcupados), [10, 12, 12]);
+  assert.deepEqual(cenariosOcupacao(6).map((c) => c.mesesOcupados), [6, 6, 8]);
+  assert.deepEqual(cenariosOcupacao(3).map((c) => c.nome), ["Pessimista", "Esperado", "Otimista"]);
+});
+
+test("prompt 15 — cenários: mais meses ocupados nunca dão líquida menor (mesma base do simulador)", () => {
+  const base = { valorMensal: 3000, condoIptu: 550, contas: 350 };
+  const liq = cenariosOcupacao(9).map((c) => baseMobiliadoAno({ ...base, mesesOcupados: c.mesesOcupados }, 0.12).liquidaAnual);
+  assert.ok(liq[0] <= liq[1] && liq[1] <= liq[2]);
+});

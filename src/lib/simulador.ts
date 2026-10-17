@@ -341,3 +341,21 @@ export function simularROI(e: EntradaROI, comissaoPct: number, assinaturaAno: nu
     versusAplicacaoAnual,
   };
 }
+
+export interface Cenario {
+  nome: "Pessimista" | "Esperado" | "Otimista";
+  mesesOcupados: number;
+}
+
+/**
+ * Cenários de ocupação (prompt 15) a partir do que a PESSOA informou — nenhum número de mercado inventado:
+ * 2 meses a menos, o informado e 2 a mais, dentro de 6..12 meses (o mesmo intervalo do controle da tela).
+ */
+export function cenariosOcupacao(mesesOcupados: number): Cenario[] {
+  const m = Math.min(12, Math.max(6, Math.round(mesesOcupados)));
+  return [
+    { nome: "Pessimista", mesesOcupados: Math.max(6, m - 2) },
+    { nome: "Esperado", mesesOcupados: m },
+    { nome: "Otimista", mesesOcupados: Math.min(12, m + 2) },
+  ];
+}
