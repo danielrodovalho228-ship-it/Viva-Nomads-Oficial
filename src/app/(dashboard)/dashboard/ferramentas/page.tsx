@@ -64,9 +64,9 @@ const GRUPOS: Grupo[] = [
         icone: Percent,
       },
       {
-        href: "/dashboard/viabilidade",
-        titulo: "Viabilidade de mobiliar",
-        texto: "Compare o imóvel mobiliado para média duração com o imóvel vazio.",
+        href: "/dashboard/carteira",
+        titulo: "Análise da carteira",
+        texto: "Com 3 imóveis ativos ou mais: ocupação, receita e vencimentos de todos juntos.",
         icone: Calculator,
       },
       {
