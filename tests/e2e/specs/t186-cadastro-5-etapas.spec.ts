@@ -90,7 +90,8 @@ test.describe("T186 — cadastro em 5 etapas com IA, OSM e documento simulados",
   for (const largura of [390, 1280]) {
     test(`${largura}px — do CEP ao anúncio publicado`, async ({ browser }) => {
       const email = `dono.cad${largura}.${sufixo}@lab.vivanomads.test`;
-      const nome = `Clara Cadastro${largura} Sobrenome`;
+      // Sem dígitos no nome: "Cadastro1280" vira "telefone" para a validação de nome e o servidor recusa publicar.
+      const nome = `Clara ${largura === 390 ? "Celular" : "Computador"} Sobrenome`;
       const donoId = await criarConta({ email, nome, role: "owner" }, senha);
       ids[`dono${largura}`] = donoId;
       const page = await entrar(browser, email, senha);
