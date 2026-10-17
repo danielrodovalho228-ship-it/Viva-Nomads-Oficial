@@ -77,7 +77,7 @@ export default async function CityLandingPage({ params }: Params) {
             Imóveis mobiliados mensais em {name}
           </h1>
           <p className="mt-5 max-w-2xl text-lg text-white/80">
-            Estadias de 30 a 180 dias em {name}, mobiliada e pronta para morar.
+            Imóveis mobiliados e prontos para morar em {name}, para estadias de 30 a 180 dias.
             Para executivos em transferência, profissionais de saúde, famílias em transição,
             estudantes e nômades digitais — instalados e em casa desde o primeiro dia.
           </p>

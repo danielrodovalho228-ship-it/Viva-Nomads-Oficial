@@ -10,6 +10,6 @@ export function tituloAbaImovel(p: Property): string {
   return `${p.title} — ${textosTotalMensal(p).destaque}`;
 }
 
-export function descricaoAbaImovel(p: Property, adjetivo: string): string {
-  return `${p.propertyType} ${adjetivo} em ${p.neighborhood}, ${p.city}. ${quartosTexto(p.bedrooms)} · ${p.areaM2} m² · período mínimo ${p.minPeriodDays} dias.`;
+export function descricaoAbaImovel(p: Property): string {
+  return `Imóvel mobiliado em ${p.neighborhood}, ${p.city}: ${p.propertyType.toLowerCase()} de ${quartosTexto(p.bedrooms)} · ${p.areaM2} m² · estadia de 30 a 180 dias.`;
 }

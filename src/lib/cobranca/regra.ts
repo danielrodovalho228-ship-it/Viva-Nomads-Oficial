@@ -183,6 +183,10 @@ export const TEXTO_REGRA_UNICA =
 
 export const TEXTO_REGRA_CURTO = TEXTO_REGRA_UNICA;
 
+/** Meta description de /precos (≤155 caracteres; ordem 218c62ad, #153). */
+export const DESCRICAO_PRECOS =
+  "Anunciar é grátis. A Viva cobra 12% do contrato fechado, menor com mais imóveis (até 6%). Sem mensalidade. Para imóveis mobiliados.";
+
 /** Frase padrão (ordem b3c9d76e), com a taxa da faixa. */
 export function fraseComissaoUnica(taxaTexto: string): string {
   return `A VivaNomads cobra uma comissão única de ${taxaTexto} sobre o valor total do contrato de locação fechado pela plataforma.`;
