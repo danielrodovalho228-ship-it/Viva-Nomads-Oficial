@@ -199,11 +199,9 @@ function DesktopMosaic({
                   type="button"
                   data-testid="galeria-mais"
                   onClick={() => onOpen(PRIMEIRA_FOTO_OCULTA)}
-                  className="absolute inset-0 grid place-items-center bg-night/55 text-sm font-semibold text-white"
+                  className="absolute left-2 top-2 inline-flex min-h-9 items-center gap-1.5 rounded-full bg-white/95 px-3 text-sm font-semibold text-ink shadow-sm hover:bg-white"
                 >
-                  <span className="inline-flex items-center gap-1.5">
-                    <Images className="h-4 w-4" /> +{n - 5} mais
-                  </span>
+                  <Images className="h-4 w-4" /> +{n - 5} mais
                 </button>
               )}
             </div>

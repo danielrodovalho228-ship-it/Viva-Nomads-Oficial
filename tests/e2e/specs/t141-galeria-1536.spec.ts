@@ -30,6 +30,7 @@ const casos: [string, number][] = [
   ["galeria-tile-1", 2],
   ["galeria-tile-2", 3],
   ["galeria-tile-3", 4],
+  ["galeria-tile-4", 5],
   ["galeria-mais", 6],
 ];
 
