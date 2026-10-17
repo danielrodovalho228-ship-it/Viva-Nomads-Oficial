@@ -47,3 +47,12 @@ test("t168: reclica até o formulário de horário abrir (hidratação)", () => 
   assert.match(spec, /toPass\(\{\s*timeout:\s*40_000/);
   assert.ok(!/visita-video-abrir"\)\.first\(\)\.click\(\);\s*\n\s*const quando/.test(spec));
 });
+
+// Lab b0d3e6f: t59 "flutuante idêntico" (12 páginas) estourava 180 s esperando o "load" de /buscar (o mapa segura).
+// A espera é o HTML e o botão visível (expect.toBeVisible já espera), não o evento load.
+test("t59: o teste do flutuante idêntico não espera o evento load das páginas", () => {
+  const spec = readFileSync("tests/e2e/specs/t59-flutuante-nao-tampa.spec.ts", "utf8");
+  const trecho = spec.slice(spec.indexOf("4f8d17c6 — flutuante idêntico"));
+  assert.ok(!/waitUntil:\s*"load"/.test(trecho));
+  assert.match(trecho, /waitUntil:\s*"domcontentloaded"/);
+});
