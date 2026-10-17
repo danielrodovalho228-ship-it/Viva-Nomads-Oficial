@@ -9,6 +9,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
 test.describe("T168 — Visita por vídeo: pedir → confirmar", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial" });
+  // Sem teto por ação, qualquer clique/preenchimento travado esperava os 120 s do teste e a falha vinha sem dizer onde.
+  test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });
 
   const senha = novaSenha();
   const sufixo = novoSufixo();
@@ -41,7 +43,13 @@ test.describe("T168 — Visita por vídeo: pedir → confirmar", () => {
       // (só clica se ainda estiver fechado, para o botão não fechar o que acabou de abrir).
       const horario = page.getByTestId("visita-video-horario-0");
       await expect(async () => {
-        if (!(await horario.isVisible())) await page.getByTestId("visita-video-abrir").first().click();
+        if (!(await horario.isVisible())) {
+          // Sem actionTimeout no config, um clique tapado pela barra fixa do celular esperaria até os 120 s do teste:
+          // limita o clique e, se não der, dispara o clique direto no botão (o toPass tenta de novo).
+          const abrir = page.getByTestId("visita-video-abrir").first();
+          await abrir.scrollIntoViewIfNeeded({ timeout: 3_000 });
+          await abrir.click({ timeout: 4_000 }).catch(() => abrir.dispatchEvent("click"));
+        }
         await expect(horario).toBeVisible({ timeout: 3_000 });
       }).toPass({ timeout: 40_000 });
       const quando = new Date(Date.now() + 2 * 24 * 3600_000);

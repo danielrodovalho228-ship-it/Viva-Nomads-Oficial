@@ -6,6 +6,7 @@ import {
   desdeLabel,
   metricaResposta,
   nomeCurto,
+  nomeNaConversa,
   progressoPerfil,
   selosReais,
   tempoRespostaLabel,
@@ -119,4 +120,15 @@ test("barra 'Complete seu perfil': celular é item opcional só quando a verific
   assert.equal(item.feito, false);
   assert.match(item.rotulo, /^Verifique seu celular: perfis verificados passam mais confiança$/);
   assert.equal(progressoPerfil({ ...vazio, foto: true, bio: "Oi", idiomas: ["Português"], cidade: "X" }, { anuncia: true, telefone: true }).pct, 100);
+});
+
+test("nomeNaConversa: proprietário vê 'Candidato(a)' até o aceite; inquilino vê o nome curto do proprietário", () => {
+  const nome = "Iara Perfilinq Sobrenomeoculto";
+  assert.equal(nomeNaConversa({ papel: "proprietario", nomeCompleto: nome, aceito: false, primeiroNome: "Iara" }), "Candidato(a)");
+  assert.equal(nomeNaConversa({ papel: "proprietario", nomeCompleto: nome, aceito: true }), "Iara S.");
+  assert.equal(nomeNaConversa({ papel: "proprietario", nomeCompleto: null, aceito: true }), "Candidato(a)");
+  assert.equal(nomeNaConversa({ papel: "inquilino", nomeCompleto: "Túlio Perfildono Sobrenomedono", aceito: false }), "Túlio S.");
+  assert.equal(nomeNaConversa({ papel: "inquilino", nomeCompleto: null, aceito: false, primeiroNome: "Túlio" }), "Túlio");
+  assert.equal(nomeNaConversa({ papel: "suporte", nomeCompleto: nome, aceito: false, primeiroNome: "Iara" }), "Iara");
+  assert.equal(nomeNaConversa({ papel: "suporte", nomeCompleto: null, aceito: false }), "Conversa");
 });

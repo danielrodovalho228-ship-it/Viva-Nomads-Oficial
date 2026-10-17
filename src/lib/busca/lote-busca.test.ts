@@ -86,3 +86,11 @@ test("#544b148a D1: pino = cartão para todos os imóveis de exemplo (inclui os 
   const santa = SAMPLE_PROPERTIES.find((p) => p.neighborhood === "Santa Mônica");
   assert.equal(precoDeBusca(comTotalMes(santa!)), 3960);
 });
+
+test("D5: o 'Limpar filtros' do celular (<390 px) fica no bloco do celular, não na caixa que some abaixo de sm (t157)", () => {
+  const src = ler("app/(public)/buscar/search-client.tsx");
+  const celular = src.slice(src.indexOf('data-testid="busca-celular"'), src.indexOf('data-testid="filtros-barra"'));
+  assert.match(celular, /data-testid="limpar-filtros-celular"/);
+  assert.match(celular, /onClick=\{clearFilters\}/);
+  assert.equal((src.match(/data-testid="limpar-filtros/g) ?? []).length, 4);
+});

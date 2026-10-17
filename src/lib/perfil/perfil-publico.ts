@@ -128,6 +128,23 @@ export function cartaoCandidato(c: CandidatoBase, aceito: boolean): CartaoCandid
   };
 }
 
+/**
+ * Nome do outro lado em Mensagens (mesma regra do cartão do candidato):
+ * - eu sou o proprietário do imóvel → "Candidato(a)" até o aceite; depois, nome curto;
+ * - eu sou o inquilino → nome curto do proprietário (público, como no anúncio);
+ * - conversa sem imóvel (suporte) → primeiro nome, como antes.
+ */
+export function nomeNaConversa(p: {
+  papel: "proprietario" | "inquilino" | "suporte";
+  nomeCompleto: string | null;
+  aceito: boolean;
+  primeiroNome?: string | null;
+}): string {
+  if (p.papel === "proprietario") return p.aceito ? (nomeCurto(p.nomeCompleto) ?? "Candidato(a)") : "Candidato(a)";
+  if (p.papel === "inquilino") return nomeCurto(p.nomeCompleto) ?? (p.primeiroNome || "Proprietário");
+  return p.primeiroNome || "Conversa";
+}
+
 export interface ItemProgresso {
   chave: "foto" | "bio" | "idiomas" | "cidade" | "profissao" | "motivo" | "telefone";
   rotulo: string;

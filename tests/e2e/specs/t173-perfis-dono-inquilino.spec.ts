@@ -8,7 +8,7 @@ import { CHAVE_ANON, NO_LABORATORIO, URL_SUPABASE, adm, apagarContas, criarConta
      conversas), idiomas, bio, selo REAL (e-mail confirmado) e os botões; página pública /proprietario/[id] certa.
   2. Candidato ANTES do aceite: "Candidato(a)", sem nome, foto ou contato; DEPOIS: nome curto e foto.
   3. Nenhum selo sem base (telefone/identidade) e nenhum telefone/e-mail na tela.
-  4. Anúncio de exemplo: "Proprietário (exemplo)" e nenhum número.
+  4. Anúncio de exemplo: bloco ilustrativo, sempre com "Exemplo ilustrativo" (prompt 9), sem contato.
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -143,16 +143,18 @@ test.describe("T173 — perfis do proprietário e do inquilino", () => {
     await logada.auth.signOut();
   });
 
-  test("anúncio de exemplo: 'Proprietário (exemplo)' sem números nem botões (390 e 1280)", async ({ browser }) => {
+  test("anúncio de exemplo: bloco completo marcado como 'Exemplo ilustrativo' (prompt 9), sem contato (390 e 1280)", async ({ browser }) => {
     for (const largura of [390, 1280]) {
       const ctx = await browser.newContext({ viewport: { width: largura, height: 900 }, storageState: { cookies: [], origins: [] } });
       const page = await ctx.newPage();
       await page.goto("/imoveis/ube-001", { waitUntil: "domcontentloaded" });
       const card = page.getByTestId("sobre-proprietario");
-      await expect(card).toContainText("Proprietário (exemplo)", { timeout: 20_000 });
+      await expect(card.getByTestId("selo-exemplo")).toHaveText("Exemplo ilustrativo", { timeout: 20_000 });
       await expect(card.getByTestId("proprietario-exemplo")).toBeVisible();
-      await expect(card).not.toContainText(/\d/);
-      await expect(card.getByRole("link", { name: "Ver perfil completo" })).toHaveCount(0);
+      await expect(card.getByTestId("proprietario-nome")).toHaveText(/\(exemplo\)$/);
+      // Nunca telefone nem e-mail, nem no exemplo.
+      await expect(card).not.toContainText(/\(\d{2}\)\s?9?\d{4}-?\d{4}|@[a-z]/i);
+      await expect(card.getByRole("link", { name: "Ver perfil completo" })).toHaveAttribute("href", "/proprietario/exemplo-1");
       await ctx.close();
     }
   });
@@ -161,7 +163,8 @@ test.describe("T173 — perfis do proprietário e do inquilino", () => {
     const page = await entrar(browser, inq.email, senha);
     for (const largura of [390, 1280]) {
       await page.setViewportSize({ width: largura, height: 900 });
-      await page.goto("/dashboard/conta/perfil", { waitUntil: "networkidle" });
+      // Celular: subtela do app; computador: a página completa da Conta (site).
+      await page.goto(largura === 390 ? "/dashboard/conta/perfil" : "/dashboard/conta", { waitUntil: "networkidle" });
       const bloco = page.getByTestId("complete-perfil");
       await expect(bloco).toBeVisible({ timeout: 20_000 });
       await expect(bloco.getByTestId("perfil-progresso")).toContainText("% completo");

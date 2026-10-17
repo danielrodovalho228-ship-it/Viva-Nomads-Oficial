@@ -32,3 +32,11 @@ test("specs que abrem chamado de visitante pelo chat liberam o limite de 8/h por
   assert.match(t21, /await liberarLimiteChamados\(\);/);
   assert.match(readFileSync("tests/e2e/fixtures/laboratorio.ts", "utf8"), /delete\(\)\.like\("chave", "chamado:%"\)/);
 });
+
+test("t61 (2FA, códigos de recuperação) usa conta própria: a persona compartilhada é disputada por t58/t48/t59 em paralelo (ordem f80af05d)", () => {
+  const t61 = readFileSync(`${SPECS}/t61-2fa-codigos-recuperacao.spec.ts`, "utf8");
+  assert.doesNotMatch(t61, /authFile\("proprietario"\)/);
+  assert.match(t61, /criarConta\(/);
+  assert.match(t61, /apagarContas\(/);
+  assert.match(t61, /NO_LABORATORIO/);
+});

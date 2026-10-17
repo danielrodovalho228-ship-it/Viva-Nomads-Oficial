@@ -39,7 +39,7 @@ test("armadilha preenchida (robô) é marcada para descartar sem erro", () => {
 });
 
 test("tipos cobrem os cards da tela", () => {
-  assert.deepEqual([...TIPOS_PARCEIRO.map((t) => t.valor)].sort(), ["empresa", "fotografo", "gestor", "seguros", "servicos"]);
+  assert.deepEqual([...TIPOS_PARCEIRO.map((t) => t.valor)].sort(), ["empresa", "fotografo", "gestor", "mobilia", "seguros", "servicos"]);
 });
 
 test("migração 0104: anon só insere com aceite, admin lê, aplicar registra 0104_", async () => {
