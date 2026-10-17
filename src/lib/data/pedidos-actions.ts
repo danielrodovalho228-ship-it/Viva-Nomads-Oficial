@@ -25,6 +25,7 @@ import {
   PRAZO_MAX_MESES,
 } from "@/lib/pedidos/pedidos";
 import { cidadeOficial } from "@/lib/municipios";
+import { APRESENTACAO_MAX } from "@/lib/pedidos/formulario";
 import { chaveCidade } from "@/lib/cidades";
 import { erroBancoPT } from "@/lib/erros-banco";
 
@@ -118,6 +119,8 @@ export async function criarPedido(
   if (!isMotivo(input.motivo)) return { ok: false, error: "Selecione um motivo válido." };
   if (input.apresentacao && contemContato(input.apresentacao))
     return { ok: false, error: CONTATO_AVISO };
+  if ((input.apresentacao ?? "").length > APRESENTACAO_MAX)
+    return { ok: false, error: `A apresentação tem até ${APRESENTACAO_MAX} caracteres.` };
 
   // Limite por dia (cada pedido avisa proprietários por e-mail): sem ele,
   // publicar/pausar em loop disparava avisos sem fim. Falha fechada.

@@ -12,12 +12,12 @@ for (const largura of [390, 1280]) {
       waitUntil: "domcontentloaded",
     });
     const contador = page.getByTestId("pedido-contador");
-    await expect(contador).toBeVisible({ timeout: 15_000 });
-    await expect(contador).toContainText(/combina|Nenhum imóvel combina|Ainda não há imóveis/);
+    await expect(contador).toHaveAttribute("data-combinam", /\d+/, { timeout: 15_000 });
+    await expect(contador).toContainText(/combinam? com seu pedido agora|Nenhum imóvel ainda/);
 
     // Orçamento baixíssimo: nenhum imóvel combina e a tela diz o que afrouxar (ou que mexer em mais de um campo ajuda).
-    await page.getByPlaceholder("3500").fill("300");
-    await expect(contador).toContainText(/Nenhum imóvel combina|Ainda não há imóveis/, { timeout: 15_000 });
+    await page.getByTestId("pedido-orcamento").fill("300");
+    await expect(contador).toContainText("Nenhum imóvel ainda — seu pedido avisa quando entrar um", { timeout: 15_000 });
 
     const semRolagemLateral = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
     expect(semRolagemLateral).toBe(true);

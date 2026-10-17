@@ -339,7 +339,7 @@ function Lightbox({
       </div>
       <div className="relative flex flex-1 items-center justify-center px-4 pb-4">
         {photos.length > 1 && (
-          <IconButton onClick={prev} label="Foto anterior" icon={ChevronLeft} iconClassName="h-6 w-6" className="absolute left-4 h-11 w-11 bg-white/10 text-white hover:bg-white/20" />
+          <IconButton onClick={prev} label="Foto anterior" icon={ChevronLeft} iconClassName="h-6 w-6" className="absolute left-4 z-10 h-11 w-11 bg-white/10 text-white hover:bg-white/20" />
         )}
         <div className="w-full max-w-4xl">
           {isPhoto(photos[index]) ? (
@@ -349,7 +349,7 @@ function Lightbox({
           )}
         </div>
         {photos.length > 1 && (
-          <IconButton onClick={next} label="Próxima foto" icon={ChevronRight} iconClassName="h-6 w-6" className="absolute right-4 h-11 w-11 bg-white/10 text-white hover:bg-white/20" />
+          <IconButton onClick={next} label="Próxima foto" icon={ChevronRight} iconClassName="h-6 w-6" className="absolute right-4 z-10 h-11 w-11 bg-white/10 text-white hover:bg-white/20" />
         )}
       </div>
     </div>
