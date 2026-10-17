@@ -1,32 +1,32 @@
 /*
-  Cartões de "Tipos de parceria" em /parceiros (ordem b6621ca2). Cada cartão aponta para
-  public/images/unicas/parceiros-<id>.webp. Enquanto a foto não existir, `fotoPronta` fica
-  false e a tela mostra um fundo neutro do tema (sem ícone gigante); quem colocar o arquivo
-  vira a chave para true. src/lib/parceiros-cartoes.test.ts barra `fotoPronta` sem arquivo.
+  Cartões de "Tipos de parceria" em /parceiros (ordem b6621ca2 + prompt 14). Cada cartão aponta para
+  public/images/unicas/parceiros-<id>.webp (fotos geradas sem texto, marca nem lugar real).
+  Grade 3 + 3 (número PAR, regra do site): todos com lg:col-span-2 numa grade de 6 colunas.
+  src/lib/parceiros-cartoes.test.ts barra `fotoPronta` sem arquivo.
 */
 export type CartaoParceria = {
-  id: "fotografos" | "empresas" | "gestores" | "servicos" | "seguros";
+  id: "fotografos" | "empresas" | "gestores" | "servicos" | "mobilia" | "seguros";
   foto: string;
   fotoPronta: boolean;
   alt: string;
-  /** O que a foto deve mostrar (tabela do PR para a coordenação). */
+  /** O que a foto mostra (tabela do PR para a coordenação). */
   briefing: string;
-  /** Posição na grade: 3 cartões em cima (2 de 6 colunas) e 2 embaixo (3 de 6). */
   classeGrade: string;
 };
 
-const EM_CIMA = "lg:col-span-2";
-const EMBAIXO = "lg:col-span-3";
+const CELULA = "sm:col-span-1 lg:col-span-2";
 
 export const FOTOS_PARCERIA: CartaoParceria[] = [
-  { id: "fotografos", foto: "/images/unicas/parceiros-fotografos.webp", fotoPronta: false, alt: "Fotógrafo fotografando a sala de um imóvel mobiliado",
-    briefing: "Fotógrafo com câmera em uma sala mobiliada e iluminada, de frente ou de lado, sem rosto em destaque.", classeGrade: `sm:col-span-1 ${EM_CIMA}` },
-  { id: "empresas", foto: "/images/unicas/parceiros-empresas.webp", fotoPronta: false, alt: "Equipe de trabalho em um imóvel mobiliado",
-    briefing: "Duas ou três pessoas com notebook em uma sala de imóvel mobiliado, clima de trabalho.", classeGrade: `sm:col-span-1 ${EM_CIMA}` },
-  { id: "gestores", foto: "/images/unicas/parceiros-gestores.webp", fotoPronta: false, alt: "Gestor entregando a chave de um imóvel mobiliado",
-    briefing: "Mão entregando um molho de chaves na porta de um apartamento, sem rosto identificável.", classeGrade: `sm:col-span-1 ${EM_CIMA}` },
-  { id: "servicos", foto: "/images/unicas/parceiros-servicos.webp", fotoPronta: false, alt: "Profissional de limpeza arrumando um quarto mobiliado",
-    briefing: "Profissional arrumando cama ou limpando bancada em um quarto/cozinha mobiliados.", classeGrade: `sm:col-span-1 ${EMBAIXO}` },
-  { id: "seguros", foto: "/images/unicas/parceiros-seguros.webp", fotoPronta: false, alt: "Documento de seguro sobre a mesa de um imóvel mobiliado",
-    briefing: "Documento e caneta sobre uma mesa de sala mobiliada; sem texto legível nem marca.", classeGrade: `sm:col-span-2 ${EMBAIXO}` },
+  { id: "fotografos", foto: "/images/unicas/parceiros-fotografos.webp", fotoPronta: true, alt: "Fotógrafo com câmera no tripé fotografando uma sala mobiliada",
+    briefing: "Fotógrafo com câmera no tripé fotografando uma sala mobiliada.", classeGrade: CELULA },
+  { id: "empresas", foto: "/images/unicas/parceiros-empresas.webp", fotoPronta: true, alt: "Três profissionais trabalhando com notebooks numa sala de imóvel mobiliado",
+    briefing: "Três profissionais trabalhando com notebooks numa sala mobiliada.", classeGrade: CELULA },
+  { id: "gestores", foto: "/images/unicas/parceiros-gestores.webp", fotoPronta: true, alt: "Mão entregando chaves na porta de um imóvel mobiliado",
+    briefing: "Mão entregando chaves na porta de um imóvel mobiliado.", classeGrade: CELULA },
+  { id: "servicos", foto: "/images/unicas/parceiros-servicos.webp", fotoPronta: true, alt: "Profissional arrumando a cama com roupa de cama limpa",
+    briefing: "Profissional arrumando a cama com roupa de cama limpa.", classeGrade: CELULA },
+  { id: "mobilia", foto: "/images/unicas/parceiros-mobilia.webp", fotoPronta: true, alt: "Dois carregadores entrando com caixa e poltrona embalada",
+    briefing: "Dois carregadores entrando com caixa e poltrona embalada.", classeGrade: CELULA },
+  { id: "seguros", foto: "/images/unicas/parceiros-seguros.webp", fotoPronta: true, alt: "Apólice sem texto legível, caneta e chaveiro de casinha sobre a mesa",
+    briefing: "Apólice sem texto legível, caneta e chaveiro de casinha na mesa.", classeGrade: CELULA },
 ];
