@@ -163,12 +163,7 @@ export function VivaChatFlutuante() {
         onPointerCancel={aoSoltar}
         aria-expanded={aberto}
         aria-label={aberto ? "Fechar o chat" : "Fale com a Viva"}
-        className={cn(
-          buttonClasses(),
-          "touch-none select-none",
-          compacto && !aberto && "max-lg:h-12 max-lg:w-12 max-lg:rounded-full max-lg:px-0 max-lg:shadow-lg",
-          arrastando && "cursor-grabbing shadow-xl",
-        )}
+        className={cn(buttonClasses(), "touch-none select-none", compacto && !aberto && "max-lg:h-12 max-lg:w-12 max-lg:rounded-full max-lg:px-0 max-lg:shadow-lg", arrastando && "cursor-grabbing shadow-xl")}
         data-testid="fale-com-a-viva"
         data-compacto={compacto && !aberto ? "1" : undefined}
       >
