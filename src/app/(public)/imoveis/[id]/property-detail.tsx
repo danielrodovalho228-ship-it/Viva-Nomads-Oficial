@@ -327,7 +327,7 @@ export function PropertyDetail({
       <p className="text-center text-xs text-muted">
         A conversa é com a Viva. O contato do proprietário só aparece depois do aceite.
       </p>
-      <AvisoPetCandidatura petsAllowed={property.petsAllowed} regras={property.petsRegras} />
+      <AvisoPetCandidatura petsAllowed={property.petsAllowed} regras={property.petsRegras} exemplo={exemplo} />
       <AvisoAntigolpe />
       <Button
         variant="ghost"
