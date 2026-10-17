@@ -38,7 +38,8 @@ async function cidadeValida(cidade: string): Promise<boolean> {
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { cidade } = await params;
-  if (!(await cidadeValida(cidade))) return { title: "Página não encontrada", robots: { index: false, follow: false } };
+  // Fora da lista: a página chama notFound() e o Next põe o noindex do 404 sozinho.
+  if (!(await cidadeValida(cidade))) return { title: "Página não encontrada" };
   const name = cityFromSlug(cidade);
   const title = `Imóveis mobiliados mensais em ${name}`;
   const description = descricaoCidade(name);
