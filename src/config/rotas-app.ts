@@ -39,6 +39,7 @@ export const ROTAS_APP: Regra[] = [
   ramo("/app"), // boas-vindas do app
   ramo("/buscar"),
   ramo("/imoveis"), // anúncio público
+  ramo("/proprietario"), // perfil público de quem anuncia (aberto pelo anúncio)
   ramo("/pedidos"), // mural e "Publicar pedido"
   ramo("/ajuda"), // Central de Ajuda e chamados
   exato("/dashboard"), // painel

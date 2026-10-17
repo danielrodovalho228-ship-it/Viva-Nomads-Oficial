@@ -61,6 +61,7 @@ import { BomSaber } from "@/components/property/bom-saber";
 import { AvailabilityCalendar } from "@/components/property/availability-calendar";
 import { PrivacidadeAcesso } from "@/components/property/privacidade-acesso";
 import { OwnerCard } from "@/components/property/owner-card";
+import type { PerfilProprietario } from "@/lib/data/perfil-proprietario";
 import { Reviews } from "@/components/property/reviews";
 import { isExemplo, EXEMPLO_SEM_CONTATO, EXEMPLO_AVISO_DEMO } from "@/lib/demo-listing";
 import { destinoContatoViva, resumoSolicitacao } from "@/lib/reserva-imovel";
@@ -69,7 +70,15 @@ import { NavSecoes } from "@/components/property/nav-secoes";
 import { secoesDoImovel, sinaisDeConfianca, type SinalConfianca } from "@/lib/imovel-pagina";
 import { videoTourPermitido } from "@/lib/video-tour";
 
-export function PropertyDetail({ property: anuncio, similar }: { property: Property; similar: Property[] }) {
+export function PropertyDetail({
+  property: anuncio,
+  similar,
+  proprietario = null,
+}: {
+  property: Property;
+  similar: Property[];
+  proprietario?: PerfilProprietario | null;
+}) {
   // Anúncio de EXEMPLO: sem nota, avaliações, selos do dono, taxa de resposta,
   // "Aceita Seguro-Fiança" (em estruturação) nem dados do Google — nada disso
   // existe de verdade para um anúncio ilustrativo.
@@ -627,7 +636,18 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
             <Reviews property={property} />
           </div>
           <div id="proprietario" className="scroll-mt-36 empty:hidden">
-            <OwnerCard property={property} />
+            <OwnerCard
+              property={property}
+              proprietario={proprietario}
+              onMensagem={
+                exemplo
+                  ? undefined
+                  : () => {
+                      setComposeText("");
+                      setComposeKind("duvida");
+                    }
+              }
+            />
           </div>
           <div id="localizacao" className="scroll-mt-36 space-y-10">
             <LocationNearby property={property} />

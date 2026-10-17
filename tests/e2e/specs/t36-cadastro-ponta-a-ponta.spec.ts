@@ -27,7 +27,7 @@ import {
  *  3. Admin: pré-conferência "Parece OK" → checklist → Aprovar.
  *  4. Dono publica pelo editor.
  *  5. Inquilina se candidata; o dono vê só o primeiro nome (identidade oculta).
- *  6. Dono aceita: nome completo aparece, comissão do Essencial (8%) congelada
+ *  6. Dono aceita: nome curto aparece (prompt 6: antes do aceite, "Candidato(a)"), comissão do Essencial (8%) congelada
  *     no aceite — continua 8% depois de o dono subir para o Profissional.
  *  7. Inquilina envia os documentos (identidade e vínculo) depois do aceite.
  *  8. Fechamento: documentos completos, sem aviso pendente; contrato (ZapSign
@@ -112,6 +112,10 @@ test.describe("T36 — Cadastro completo, do CPF ao fechamento", () => {
     await inq.goto(`/imoveis/${ids.imovel}`, { waitUntil: "networkidle" });
     // No celular o botão aparece no cartão E na barra fixa (t75): as duas fazem a mesma candidatura.
     await inq.getByRole("button", { name: /Enviar candidatura/ }).first().click();
+    // Passo de confirmação (resumo) antes de enviar (610a1d5).
+    const passo = inq.getByTestId("solicitacao-passo");
+    await expect(passo).toBeVisible();
+    await passo.getByRole("button", { name: "Enviar solicitação" }).click();
     // A confirmação aparece no cartão E no chip da barra fixa (celular): basta uma visível.
     await expect(inq.getByText("Candidatura enviada").first()).toBeVisible({ timeout: 20_000 });
     await inq.screenshot({ path: "tests/laboratorio/saida/t36-3-candidatura-enviada.png", fullPage: true });
@@ -124,12 +128,12 @@ test.describe("T36 — Cadastro completo, do CPF ao fechamento", () => {
     const donoPage = await entrar(browser, dono.email, senha);
     await donoPage.goto("/dashboard/leads", { waitUntil: "networkidle" });
     const antes = await donoPage.locator("body").innerText();
-    expect(antes).toContain("Iara");
+    expect(antes).toContain("Candidato(a)");
     expect(antes).not.toContain("Sobrenomeoculto");
     expect(antes).not.toContain(inquilina.email);
     await donoPage.screenshot({ path: "tests/laboratorio/saida/t36-4-dono-ve-primeiro-nome.png", fullPage: true });
 
-    // 6) Aceite: nome completo aparece; comissão do plano (Essencial) fica congelada.
+    // 6) Aceite: nome curto aparece (prompt 6); comissão do plano (Essencial) fica congelada.
     await donoPage.getByRole("button", { name: /Aprovar e responder/i }).first().click();
     await expect.poll(async () => (await adm().from("leads").select("status").eq("id", ids.lead!).single()).data?.status, { timeout: 20_000 }).toBe("accepted");
     await expect(donoPage.getByTestId("aceite-erro")).toHaveCount(0);
@@ -138,7 +142,7 @@ test.describe("T36 — Cadastro completo, do CPF ao fechamento", () => {
     expect(Number(aceito.accepted_commission_rate)).toBe(essencial.comissao);
     expect(aceito.accepted_plan).toBe("essential");
     await donoPage.reload({ waitUntil: "networkidle" });
-    expect(await donoPage.locator("body").innerText()).toContain(inquilina.nome);
+    expect(await donoPage.locator("body").innerText()).toContain("Iara S.");
     expect(await donoPage.content()).not.toContain(inquilina.email);
 
     // Subir de plano depois do aceite NÃO muda a comissão deste contrato.

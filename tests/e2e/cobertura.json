@@ -188,6 +188,14 @@
         "t125-alerta-busca-salva"
       ]
     },
+    "/proprietario/[id]": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t173-perfis-dono-inquilino"
+      ]
+    },
     "/app/boas-vindas": {
       "personas": [
         "publico"
@@ -463,7 +471,8 @@
         "t14-app-mode",
         "t17-conta-salvar",
         "t36-cadastro-ponta-a-ponta",
-        "t92-documento-secao"
+        "t92-documento-secao",
+        "t173-perfis-dono-inquilino"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -582,7 +591,8 @@
         "t11-travessias",
         "t31-cadastro-documento",
         "t36-cadastro-ponta-a-ponta",
-        "t133-candidatura-motivo"
+        "t133-candidatura-motivo",
+        "t173-perfis-dono-inquilino"
       ]
     },
     "/dashboard/locacoes": {
@@ -816,7 +826,8 @@
         "t75-barra-fixa-imovel",
         "t8-rascunho",
         "t164-tour-video-galeria",
-        "t172-bom-saber-completo"
+        "t172-bom-saber-completo",
+        "t173-perfis-dono-inquilino"
       ]
     },
     "/modelodenegocio": {
@@ -2322,6 +2333,15 @@
       ],
       "specs": []
     },
+    "src/lib/data/perfil-actions.ts#getMeuPerfilPublico": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t173-perfis-dono-inquilino"
+      ]
+    },
     "src/lib/data/perfil-actions.ts#getMeusDados": {
       "personas": [
         "inquilino",
@@ -2342,6 +2362,15 @@
         "proprietario"
       ],
       "specs": []
+    },
+    "src/lib/data/perfil-actions.ts#salvarMeuPerfilPublico": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t173-perfis-dono-inquilino"
+      ]
     },
     "src/lib/data/perfil-actions.ts#salvarMeusDados": {
       "personas": [

@@ -7,6 +7,7 @@ import { isExemplo } from "@/lib/demo-listing";
 import { tituloAbaImovel, descricaoAbaImovel } from "@/lib/anuncio/metadados-imovel";
 import { PropertyJsonLd } from "@/components/seo/property-json-ld";
 import { PropertyDetail } from "./property-detail";
+import { getPerfilProprietario } from "@/lib/data/perfil-proprietario";
 
 // F9: dados frescos (revalidatePath nas ações + rede de segurança de 60 s).
 export const revalidate = 60;
@@ -56,11 +57,16 @@ export default async function PropertyDetailPage({ params }: Params) {
   const property = await getProperty(id);
   if (!property) notFound();
 
-  const similar = (await listProperties()).filter((p) => p.id !== property.id).slice(0, 3);
+  const [similares, proprietario] = await Promise.all([
+    listProperties(),
+    // Exemplo nunca busca perfil (continua "Proprietário (exemplo)", sem números).
+    isExemplo(property) ? Promise.resolve(null) : getPerfilProprietario(property.ownerId),
+  ]);
+  const similar = similares.filter((p) => p.id !== property.id).slice(0, 3);
   return (
     <>
       <PropertyJsonLd property={property} />
-      <PropertyDetail property={property} similar={similar} />
+      <PropertyDetail property={property} similar={similar} proprietario={proprietario} />
     </>
   );
 }

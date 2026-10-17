@@ -9,7 +9,15 @@ export interface Lead {
   id: string;
   /** Status cru persistido (leads.status): 'new' | 'accepted' | 'rejected'. */
   status?: string;
-  name: string; // primeiro nome; nome COMPLETO só após o aceite. Nunca contato.
+  name: string; // "Candidato(a)" antes do aceite; nome curto (Maria S.) depois. Nunca contato.
+  /** Foto só depois do aceite. */
+  fotoUrl?: string | null;
+  /** Sinais do candidato (início desejado, pets, "Na Viva desde"). */
+  sinais?: string[];
+  /** Selos REAIS (hoje: e-mail confirmado). */
+  selos?: string[];
+  /** Avaliações de outros proprietários (só com pelo menos 1 publicada). */
+  reputacao?: { media: number; n: number } | null;
   property: string;
   category: string;
   riskCategories: string[];
