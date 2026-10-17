@@ -6,8 +6,8 @@ import Link from "next/link";
 import { CalendarDays, Check, Loader2, CircleAlert } from "lucide-react";
 import type { Property } from "@/lib/types";
 import {
-  diaDisponivel,
   inicioEfetivo,
+  estadoDiaCalendario,
   mesesCalendario,
   estadiaLabel,
   validarReserva,
@@ -81,8 +81,9 @@ export function AvailabilityCalendar({ property }: { property: Property }) {
   const bloqSet = new Set(bloqueados);
 
   // Um dia é SELECIONÁVEL se está na janela, não é passado e não está bloqueado.
-  const selecionavel = (iso: string) =>
-    diaDisponivel(iso, fromEff, until) && !bloqSet.has(iso) && (!today || iso >= today);
+  const estadoDia = (iso: string) =>
+    estadoDiaCalendario(iso, { fromISO: fromEff, untilISO: until, bloqueados: bloqSet, hojeISO: today });
+  const selecionavel = (iso: string) => estadoDia(iso) === "disponivel";
 
   function clicarDia(iso: string) {
     setErroEnvio(null);
@@ -177,7 +178,8 @@ export function AvailabilityCalendar({ property }: { property: Property }) {
                 {celulas.map((dia, i) => {
                   if (dia === null) return <span key={i} />;
                   const iso = ymd(new Date(y, m, dia));
-                  const podeSelecionar = selecionavel(iso);
+                  const estado = estadoDia(iso);
+                  const podeSelecionar = estado === "disponivel";
                   const isHoje = today === iso;
                   const isIn = checkIn === iso;
                   const isOut = checkOut === iso;
@@ -189,10 +191,12 @@ export function AvailabilityCalendar({ property }: { property: Property }) {
                       type="button"
                       disabled={!podeSelecionar}
                       onClick={() => clicarDia(iso)}
-                      aria-label={`${dia} de ${MESES[m]}`}
+                      aria-label={`${dia} de ${MESES[m]}${estado === "indisponivel" ? " (indisponível)" : ""}`}
+                      data-estado-dia={estado}
                       className={cn(
                         "grid aspect-square place-items-center rounded-md text-xs transition-colors",
-                        !podeSelecionar && "cursor-not-allowed text-muted/40 line-through",
+                        estado === "passado" && "cursor-not-allowed text-muted/40",
+                        estado === "indisponivel" && "cursor-not-allowed bg-sage-200/60 text-muted line-through",
                         podeSelecionar && "text-forest hover:bg-sage-200",
                         podeSelecionar && !isIn && !isOut && !noIntervalo && "bg-sage-100 font-medium",
                         noIntervalo && "bg-sage-200 font-medium",
@@ -216,6 +220,9 @@ export function AvailabilityCalendar({ property }: { property: Property }) {
         </span>
         <span className="inline-flex items-center gap-1.5">
           <span className="h-3 w-3 rounded bg-forest" /> Selecionado
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-3 w-3 rounded bg-sage-200/60" /> <span className="line-through">Indisponível</span>
         </span>
         <span className="inline-flex items-center gap-1.5">
           <span className="h-3 w-3 rounded ring-2 ring-champagne" /> Hoje

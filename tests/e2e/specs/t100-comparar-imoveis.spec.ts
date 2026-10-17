@@ -52,7 +52,7 @@ test.describe("T100 — Comparar imóveis", () => {
     const tabela = page.getByTestId("comparar-tabela");
     await expect(tabela).toBeVisible();
     await expect(page.getByTestId("comparar-coluna")).toHaveCount(2);
-    for (const l of ["Valor mensal", "Quartos", "Banheiros", "Área (m²)", "Aceita pet", "Avaliação"]) {
+    for (const l of ["Valor mensal", "Quartos", "Banheiros", "Área (m²)", "Aceita pets", "Avaliação"]) {
       await expect(tabela.getByRole("rowheader", { name: l })).toBeVisible();
     }
     await expect(tabela.locator('[data-linha="mensal"] td').first()).toContainText(/R\$|—/);
