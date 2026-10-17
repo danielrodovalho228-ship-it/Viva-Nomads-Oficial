@@ -50,7 +50,7 @@ test.describe("T46 — Modo do app", () => {
   test("conta única: sem seletor de modo no topo e o menu de abas continua inteiro", async ({ page }) => {
     test.setTimeout(120_000);
     await entrarNoApp(page);
-    await page.goto("/dashboard", { waitUntil: "networkidle" });
+    await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
     await expect(page.locator("html")).toHaveAttribute("data-app", "1");
     // Ordem a8c05cd0: não existe mais o chip Inquilino/Proprietário.
     await expect(page.getByTestId("modo-chip")).toHaveCount(0);
@@ -64,7 +64,8 @@ test.describe("T46 — Modo do app", () => {
     test.setTimeout(120_000);
     await entrarNoApp(page);
     for (const rota of ["/dashboard", "/dashboard/imoveis", "/dashboard/mensagens", "/dashboard/conta"]) {
-      await page.goto(rota, { waitUntil: "networkidle" });
+      await page.goto(rota, { waitUntil: "domcontentloaded" });
+      await page.locator("main").first().waitFor();
       const sobra = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       expect(sobra, `rolagem lateral em ${rota}`).toBeLessThanOrEqual(0);
     }
