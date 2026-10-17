@@ -1,5 +1,6 @@
 "use server";
 
+import { getTelefoneEstado } from "@/lib/data/telefone-actions";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -228,6 +229,8 @@ export interface MeuPerfilPublico {
   motivo: string | null;
   /** Já anunciou ao menos um imóvel (a barra não pede profissão/motivo de quem só anuncia). */
   anuncia: boolean;
+  /** Celular verificado (prompt 7). undefined = verificação por SMS indisponível: o item não entra na barra. */
+  telefone?: boolean;
 }
 
 export async function getMeuPerfilPublico(): Promise<MeuPerfilPublico | null> {
@@ -237,9 +240,10 @@ export async function getMeuPerfilPublico(): Promise<MeuPerfilPublico | null> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
-  const [{ data }, { count }] = await Promise.all([
+  const [{ data }, { count }, fone] = await Promise.all([
     supabase.from("profiles").select("bio, idiomas, cidade, avatar_url, professional_category, motivo_estadia").eq("id", user.id).maybeSingle(),
     supabase.from("properties").select("id", { count: "exact", head: true }).eq("owner_id", user.id),
+    getTelefoneEstado().catch(() => null),
   ]);
   return {
     bio: (data?.bio as string | null) ?? "",
@@ -249,6 +253,7 @@ export async function getMeuPerfilPublico(): Promise<MeuPerfilPublico | null> {
     profissao: (data?.professional_category as string | null) ?? null,
     motivo: (data?.motivo_estadia as string | null) ?? null,
     anuncia: (count ?? 0) > 0,
+    telefone: fone?.disponivel ? fone.verificado : undefined,
   };
 }
 
