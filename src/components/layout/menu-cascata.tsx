@@ -18,7 +18,7 @@ const ICONES: Record<IconeMenu, React.ComponentType<{ className?: string }>> = {
   mensagens: MessageSquare, notificacoes: Bell, imoveis: Home, interessados: Users,
   pedidosCidade: MapPinned, fechamento: FileSignature, contratos: Receipt, garantias: ShieldCheck,
   conferencia: ClipboardCheck, ferramentas: Hammer, simulador: TrendingUp, roi: Percent,
-  viabilidade: Calculator, orcamentos: FileSpreadsheet, conta: Settings, verificacao: BadgeCheck,
+  carteira: Calculator, orcamentos: FileSpreadsheet, conta: Settings, verificacao: BadgeCheck,
   assinatura: CreditCard, admin: ShieldHalf, documentos: Files, atendimento: LifeBuoy,
   parceiros: Handshake, fotografos: Camera, financeiro: Wallet, socios: Inbox,
   marketing: BarChart3, agentes: Bot, operacao: Workflow, rede: Network, dinheiro: Banknote,

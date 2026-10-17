@@ -190,15 +190,6 @@
         "t125-alerta-busca-salva"
       ]
     },
-    "/proprietario/[id]": {
-      "personas": [
-        "publico"
-      ],
-      "specs": [
-        "t173-perfis-dono-inquilino",
-        "t176-exemplo-proprietario-avaliacoes"
-      ]
-    },
     "/app/boas-vindas": {
       "personas": [
         "publico"
@@ -938,6 +929,15 @@
       ],
       "specs": [
         "t18-seo-a11y"
+      ]
+    },
+    "/proprietario/[id]": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t173-perfis-dono-inquilino",
+        "t176-exemplo-proprietario-avaliacoes"
       ]
     },
     "/qualificar": {
@@ -2188,6 +2188,15 @@
         "admin"
       ],
       "specs": []
+    },
+    "src/lib/data/menu-actions.ts#imoveisAtivosDoDono": {
+      "personas": [
+        "proprietario",
+        "inquilino"
+      ],
+      "specs": [
+        "t97-plangate-precos"
+      ]
     },
     "src/lib/data/menu-actions.ts#temImovelAnunciado": {
       "personas": [

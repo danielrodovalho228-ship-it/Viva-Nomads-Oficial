@@ -20,7 +20,7 @@ import { AppHeader } from "@/components/app/app-header";
 import { useDemoMode, DemoToggle, DemoBanner, useDisplayUser } from "@/lib/demo/demo-mode";
 import { MenuCascata } from "@/components/layout/menu-cascata";
 import { ANUNCIAR, menuDoPainel } from "@/config/menu-painel";
-import { temImovelAnunciado } from "@/lib/data/menu-actions";
+import { imoveisAtivosDoDono, temImovelAnunciado } from "@/lib/data/menu-actions";
 
 /**
  * REGRA PERMANENTE (0.5) — integridade da casca do dashboard:
@@ -129,6 +129,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   // quem já anunciou; "Solicitações" só com estadia ativa; Administração só para admin.
   const estadiaAtiva = useHasActiveLocacao(true);
   const [temImovel, setTemImovel] = useState(false);
+  const [imoveisAtivos, setImoveisAtivos] = useState(0);
   const naAreaDeImoveis = pathname.startsWith("/dashboard/imoveis");
   useEffect(() => {
     let alive = true;
@@ -137,12 +138,17 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         if (alive) setTemImovel(t);
       })
       .catch(() => {});
+    imoveisAtivosDoDono()
+      .then((n) => {
+        if (alive) setImoveisAtivos(n);
+      })
+      .catch(() => {});
     return () => {
       alive = false;
     };
     // Reavalia ao sair do cadastro de imóvel (o primeiro anúncio revela as seções de dono).
   }, [displayUser?.id, naAreaDeImoveis]);
-  const menu = menuDoPainel({ temImovel, admin: display.role === "admin", estadiaAtiva, plano: plan });
+  const menu = menuDoPainel({ temImovel, admin: display.role === "admin", estadiaAtiva, plano: plan, imoveisAtivos });
   const badges = { "admin-documentos": docsPendentes, "admin-agentes": achadosP1 };
 
   // Guarda de rota por papel (B1). Ao abrir por URL/deep-link uma tela exclusiva
