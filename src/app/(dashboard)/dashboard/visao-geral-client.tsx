@@ -20,23 +20,31 @@ import {
 } from "lucide-react";
 import { useViewMode, primeiroNomeExibicao } from "@/lib/roles";
 import { getLatestDraft } from "@/lib/data/actions";
-import { StatCard, Panel, EmptyState } from "@/components/dashboard/primitives";
-import { DashboardBanner } from "@/components/dashboard/banner";
+import { StatCard, Panel, EmptyState, PageTitle } from "@/components/dashboard/primitives";
 import { PropertyRow } from "@/components/dashboard/property-row";
 import { TenantOnboarding } from "@/components/dashboard/tenant-onboarding";
 import { RoleWelcomeModal } from "@/components/dashboard/role-welcome-modal";
 import { ButtonLink, buttonClasses } from "@/components/ui/button";
 import { useProperties } from "@/lib/use-properties";
 import { checklistAnuncio, type ChecklistAnuncio } from "@/lib/anuncio/prontidao";
+import { itensDoChecklist } from "@/lib/anuncio/checklist-compacto";
+import type { ScoreAnuncio } from "@/lib/anuncio/score";
 import { imoveisPublicados } from "@/lib/anuncio/publicados";
+import { kpiInteressados } from "@/lib/painel/kpi-interessados";
 import type { Property } from "@/lib/types";
 import { useDashDemo, DemoBadge, useDisplayUser } from "@/lib/demo/demo-mode";
 import { DEMO_PROPERTIES, DEMO_KPIS } from "@/lib/demo/seed";
-import { PHOTOS, coverPhoto } from "@/lib/media";
+import { coverPhoto } from "@/lib/media";
 import { formatBRL } from "@/lib/utils";
 import { ReadyToLiveBadge } from "@/components/ui/badge";
 
-export function VisaoGeral({ imoveisDono }: { imoveisDono: Property[] }) {
+export function VisaoGeral({
+  imoveisDono,
+  interessados = { atual: 0, anterior: 0 },
+}: {
+  imoveisDono: Property[];
+  interessados?: { atual: number; anterior: number };
+}) {
   // Identidade de EXIBIÇÃO: nunca cai na persona demo ("Marcos") para conta real
   // com demo desligado (fronteira demo/real). Sem nome → "Olá!".
   const user = useDisplayUser();
@@ -49,12 +57,20 @@ export function VisaoGeral({ imoveisDono }: { imoveisDono: Property[] }) {
     <>
       {/* Pergunta de papel no primeiro login (uma vez só). */}
       <RoleWelcomeModal />
-      {mode === "tenant" ? <TenantDashboard name={firstName} /> : <OwnerDashboard name={firstName} imoveisDono={imoveisDono} />}
+      {mode === "tenant" ? <TenantDashboard name={firstName} /> : <OwnerDashboard name={firstName} imoveisDono={imoveisDono} interessados={interessados} />}
     </>
   );
 }
 
-function OwnerDashboard({ name, imoveisDono }: { name: string; imoveisDono: Property[] }) {
+function OwnerDashboard({
+  name,
+  imoveisDono,
+  interessados,
+}: {
+  name: string;
+  imoveisDono: Property[];
+  interessados: { atual: number; anterior: number };
+}) {
   // Fonte demo: build de demonstração OU modo demonstração do admin. Os dados
   // reais e o seed NUNCA se misturam — a fonte é uma ou outra.
   const demo = useDashDemo();
@@ -64,6 +80,9 @@ function OwnerDashboard({ name, imoveisDono }: { name: string; imoveisDono: Prop
   // chega do servidor: não há estado "carregando" que pareça "nenhum imóvel".
   const allProperties = imoveisPublicados(demo ? DEMO_PROPERTIES : imoveisDono);
   const myProperties = allProperties.slice(0, 2);
+  const kpiLeads = kpiInteressados(interessados.atual, interessados.anterior, {
+    temImovelPublicado: allProperties.length > 0,
+  });
 
   // Rascunho em andamento (P0): card de pendência "continue de onde parou".
   const [draft, setDraft] = useState<RascunhoPendente | null>(null);
@@ -79,6 +98,7 @@ function OwnerDashboard({ name, imoveisDono }: { name: string; imoveisDono: Prop
           pronto: !!d.prontidao?.podePublicar,
           faltam: d.prontidao?.faltam ?? [],
           checklist: d.prontidao ? checklistAnuncio(d.prontidao, d.id) : null,
+          score: d.score,
         });
       })
       .catch(() => {});
@@ -98,10 +118,8 @@ function OwnerDashboard({ name, imoveisDono }: { name: string; imoveisDono: Prop
   return (
     <>
       {draft && <DraftPendingCard draft={draft} className="mb-6" />}
-      <DashboardBanner
-        className="mb-6"
-        image={PHOTOS.dashOwner}
-        alt="Sala de imóvel mobiliado preparada para anúncio"
+      <PageTitle
+        capa="imoveis"
         title={`Olá${name ? `, ${name}` : "!"} 👋`}
         subtitle="Prepare seu imóvel, publique e fale com inquilinos qualificados."
         action={
@@ -150,7 +168,17 @@ function OwnerDashboard({ name, imoveisDono }: { name: string; imoveisDono: Prop
           value={demo ? DEMO_KPIS.visualizacoes.toLocaleString("pt-BR") : "0"}
           icon={Eye}
         />
-        <StatCard label="Interessados" value={demo ? String(DEMO_KPIS.leads) : "0"} icon={Users} />
+        {demo ? (
+          <StatCard label="Interessados" value={String(DEMO_KPIS.leads)} icon={Users} />
+        ) : (
+          <StatCard
+            label={kpiLeads.rotulo}
+            value={kpiLeads.valor}
+            hint={kpiLeads.dica}
+            href={kpiLeads.href}
+            icon={Users}
+          />
+        )}
         <StatCard label="Mensagens" value={demo ? String(DEMO_KPIS.mensagens) : "0"} icon={MessageSquare} />
         <StatCard label="Imóveis ativos" value={String(allProperties.length)} icon={Home} />
       </div>
@@ -159,13 +187,13 @@ function OwnerDashboard({ name, imoveisDono }: { name: string; imoveisDono: Prop
       <p className="mt-4 flex items-start gap-2 rounded-xl border border-forest/20 bg-forest/5 px-4 py-3 text-sm text-ink">
         <Wallet className="mt-0.5 h-4 w-4 shrink-0 text-forest" />
         <span>
-          O aluguel vai do inquilino <strong>direto para a sua conta</strong> — a plataforma nunca
+          O valor mensal vai <strong>direto para a sua conta</strong> — a plataforma nunca
           toca no dinheiro.
         </span>
       </p>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-3">
-        <Panel title="Meus imóveis" className="lg:col-span-2">
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        <Panel title="Meus imóveis">
           {myProperties.length === 0 ? (
             <p className="py-3 text-sm text-muted">
               Você ainda não publicou imóveis.{" "}
@@ -177,38 +205,37 @@ function OwnerDashboard({ name, imoveisDono }: { name: string; imoveisDono: Prop
             <>
               <ul className="divide-y divide-sage-200">
                 {myProperties.map((p) => (
-                  <li key={p.id} className="flex items-center justify-between gap-3 py-3">
-                    <div className="flex min-w-0 items-center gap-3">
-                      <Image
-                        src={coverPhoto(p.id, p.photos)}
-                        alt=""
-                        width={56}
-                        height={56}
-                        className="h-14 w-14 shrink-0 rounded-xl object-cover"
-                      />
-                      <div className="min-w-0">
-                        {/* Imóveis de demonstração não têm página real (/imoveis/demo-*
-                            daria 404) — mostra como texto. Reais viram link. */}
-                        {demo ? (
-                          <span className="font-medium text-ink">{p.title}</span>
-                        ) : (
-                          <Link
-                            href={`/imoveis/${p.id}`}
-                            className="font-medium text-ink hover:text-forest"
-                          >
-                            {p.title}
-                          </Link>
-                        )}
-                        <p className="text-sm text-muted">
-                          {formatBRL(p.monthlyPrice)}/mês · {p.neighborhood}
-                        </p>
+                  <li key={p.id} className="flex items-center gap-3 py-3">
+                    <Image
+                      src={coverPhoto(p.id, p.photos)}
+                      alt=""
+                      width={56}
+                      height={56}
+                      className="h-14 w-14 shrink-0 rounded-xl object-cover"
+                    />
+                    <div className="min-w-0 flex-1">
+                      {/* Imóveis de demonstração não têm página real (/imoveis/demo-*
+                          daria 404) — mostra como texto. Reais viram link. */}
+                      {demo ? (
+                        <span className="line-clamp-2 font-medium text-ink">{p.title}</span>
+                      ) : (
+                        <Link
+                          href={`/imoveis/${p.id}`}
+                          className="line-clamp-2 font-medium text-ink hover:text-forest"
+                        >
+                          {p.title}
+                        </Link>
+                      )}
+                      <p className="text-sm text-muted">
+                        {formatBRL(p.monthlyPrice)}/mês · {p.neighborhood}
+                      </p>
+                      {/* Selos abaixo do título: em 390 px não espremem o texto. */}
+                      <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                        {p.readyToLiveBadge && <ReadyToLiveBadge />}
+                        <span className="rounded-full bg-sage-100 px-2.5 py-1 text-xs font-medium text-forest">
+                          Ativo
+                        </span>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {p.readyToLiveBadge && <ReadyToLiveBadge />}
-                      <span className="rounded-full bg-sage-100 px-2.5 py-1 text-xs font-medium text-forest">
-                        Ativo
-                      </span>
                     </div>
                   </li>
                 ))}
@@ -293,7 +320,7 @@ function TenantDashboard({ name }: { name: string }) {
  */
 /** Card de pendência "Anúncio em andamento" (P0) — atalho para retomar o
  * rascunho de onde parou, com o % completo honesto. */
-type RascunhoPendente = { id: string; pct: number; pronto: boolean; faltam: string[]; checklist: ChecklistAnuncio | null };
+type RascunhoPendente = { id: string; pct: number; pronto: boolean; faltam: string[]; checklist: ChecklistAnuncio | null; score?: ScoreAnuncio | null };
 
 function DraftPendingCard({
   draft,
@@ -303,6 +330,8 @@ function DraftPendingCard({
   className?: string;
 }) {
   const check = !draft.pronto ? draft.checklist : null;
+  const [expandido, setExpandido] = useState(false);
+  const lista = check ? itensDoChecklist(check.itens, expandido) : null;
   return (
     <div className={`rounded-2xl border border-champagne bg-champagne/10 p-4 ${className ?? ""}`} data-testid="anuncio-andamento">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -325,22 +354,78 @@ function DraftPendingCard({
             </p>
           </div>
         </div>
-        <Link
-          href={check?.proximo?.href ?? `/dashboard/imoveis/novo?draft=${draft.id}`}
-          className={buttonClasses({ size: "sm" })}
-        >
-          {draft.pronto ? "Revisar e publicar" : check?.proximo ? "Fazer o próximo passo" : "Continuar edição"} <ArrowRight className="h-4 w-4" />
-        </Link>
+        <div className="flex flex-col gap-1 sm:items-end">
+          <Link
+            href={check?.proximo?.href ?? `/dashboard/imoveis/novo?draft=${draft.id}`}
+            className={buttonClasses({ size: "sm" })}
+          >
+            {draft.pronto ? "Revisar e publicar" : check?.proximo ? "Fazer o próximo passo" : "Continuar edição"} <ArrowRight className="h-4 w-4" />
+          </Link>
+          {check?.proximo && (
+            <Link
+              href={`/dashboard/imoveis/novo?draft=${encodeURIComponent(draft.id)}`}
+              data-testid="retomar-rascunho"
+              className="inline-flex min-h-11 items-center justify-center text-sm font-medium text-forest underline-offset-2 hover:underline"
+            >
+              Continuar de onde parou
+            </Link>
+          )}
+        </div>
       </div>
+      {draft.score && (
+        <div className="mt-3" data-testid="anuncio-score">
+          <div className="flex items-baseline justify-between gap-2 text-sm">
+            <span className="font-medium text-ink">Qualidade do anúncio</span>
+            <span className="font-title font-bold text-forest" data-testid="anuncio-score-valor">{draft.score.score}%</span>
+          </div>
+          <div className="mt-1 h-2 overflow-hidden rounded-full bg-champagne/40" role="progressbar" aria-valuenow={draft.score.score} aria-valuemin={0} aria-valuemax={100} aria-label="Qualidade do anúncio">
+            <div className="h-full rounded-full bg-forest" style={{ width: `${draft.score.score}%` }} />
+          </div>
+          {draft.score.dicas.length > 0 && (
+            <ul className="mt-2 grid gap-1.5 sm:grid-cols-2" data-testid="anuncio-score-dicas">
+              {draft.score.dicas.slice(0, 4).map((d) => (
+                <li key={d.key}>
+                  <Link
+                    href={`/dashboard/imoveis/novo?draft=${encodeURIComponent(draft.id)}&etapa=${d.etapa}`}
+                    data-testid="score-dica"
+                    className="flex min-h-11 items-center gap-2 rounded-xl border border-transparent px-2 text-sm font-medium text-forest hover:bg-champagne/30"
+                  >
+                    <span className="min-w-0">{d.label}</span>
+                    <span className="ml-auto shrink-0 text-xs text-muted">+{d.pontos}</span>
+                    <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
       {check && (
         <ul className="mt-3 grid gap-1.5 sm:grid-cols-2" data-testid="anuncio-checklist">
-          {check.itens.map((i) => (
+          {lista?.visiveis.map((i) => (
             <li key={i.key}>
               {i.ok ? (
                 <span className="flex min-h-11 items-center gap-2 rounded-xl px-2 text-sm text-ink" data-testid="check-feito">
                   <Check className="h-4 w-4 shrink-0 text-forest" aria-hidden /> <span>{i.label}</span>
                   <span className="sr-only"> — feito</span>
                 </span>
+              ) : i.acoes ? (
+                <div className="rounded-xl border border-forest bg-champagne/30 p-2" data-testid="check-vaga">
+                  <span className="flex items-start gap-2 text-sm font-medium text-forest">
+                    <Circle className="mt-0.5 h-4 w-4 shrink-0 text-muted" aria-hidden />
+                    <span className="min-w-0">
+                      {i.label}
+                      {i.detalhe && <span className="block text-xs font-normal text-muted">{i.detalhe}</span>}
+                    </span>
+                  </span>
+                  <span className="mt-2 flex flex-wrap gap-2">
+                    {i.acoes.map((a) => (
+                      <Link key={a.href} href={a.href} className={buttonClasses({ size: "sm", variant: "outline" })}>
+                        {a.label}
+                      </Link>
+                    ))}
+                  </span>
+                </div>
               ) : (
                 <Link
                   href={i.href}
@@ -358,6 +443,25 @@ function DraftPendingCard({
             </li>
           ))}
         </ul>
+      )}
+      {check && (lista?.ocultos ?? 0) > 0 && (
+        <button
+          type="button"
+          data-testid="checklist-ver-todos"
+          onClick={() => setExpandido(true)}
+          className="mt-2 inline-flex min-h-11 items-center px-2 text-sm font-medium text-forest underline-offset-2 hover:underline"
+        >
+          Ver todos os itens ({lista?.ocultos} a mais)
+        </button>
+      )}
+      {check && expandido && (
+        <button
+          type="button"
+          onClick={() => setExpandido(false)}
+          className="mt-2 inline-flex min-h-11 items-center px-2 text-sm font-medium text-forest underline-offset-2 hover:underline"
+        >
+          Mostrar menos
+        </button>
       )}
     </div>
   );
@@ -389,17 +493,23 @@ function OwnerFunnel({ name, draft }: { name: string; draft?: RascunhoPendente |
       href: "/pedidos",
       ativo: false,
     },
+    {
+      n: 4,
+      titulo: "Feche com segurança",
+      texto: "Aceite o candidato e conclua contrato, caução e conferência de entrada pelo painel.",
+      cta: "Ver fechamento",
+      href: "/dashboard/fechamento",
+      ativo: false,
+    },
   ];
 
   return (
     <>
       {draft && <DraftPendingCard draft={draft} className="mb-6" />}
-      <DashboardBanner
-        className="mb-6"
-        image={PHOTOS.dashOwner}
-        alt="Sala de imóvel mobiliado preparada para anúncio"
+      <PageTitle
+        capa="imoveis"
         title={`Bem-vindo${name ? `, ${name}` : ""}! 👋`}
-        subtitle="Vamos colocar seu primeiro imóvel no ar em 3 passos."
+        subtitle="Do primeiro anúncio ao contrato fechado em 4 passos."
         action={
           <ButtonLink href="/dashboard/imoveis/novo" variant="accent">
             <ClipboardCheck className="h-4 w-4" /> Começar agora
@@ -407,11 +517,11 @@ function OwnerFunnel({ name, draft }: { name: string; draft?: RascunhoPendente |
         }
       />
 
-      <ol className="grid gap-4 lg:grid-cols-3">
+      <ol className="grid auto-rows-fr gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {passos.map((p) => (
           <li
             key={p.n}
-            className={`rounded-2xl border p-5 ${
+            className={`flex h-full flex-col rounded-2xl border p-5 ${
               p.ativo ? "border-forest bg-white shadow-sm" : "border-line bg-surface-2"
             }`}
           >
@@ -425,7 +535,7 @@ function OwnerFunnel({ name, draft }: { name: string; draft?: RascunhoPendente |
               </span>
               <h3 className="font-title font-bold text-ink">{p.titulo}</h3>
             </div>
-            <p className="mt-2 text-sm text-muted">{p.texto}</p>
+            <p className="mt-2 flex-1 text-sm text-muted">{p.texto}</p>
             {p.ativo ? (
               <ButtonLink href={p.href} variant="primary" className="mt-4 w-full justify-center">
                 {p.cta} <ArrowRight className="h-4 w-4" />

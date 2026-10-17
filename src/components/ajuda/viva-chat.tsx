@@ -6,11 +6,14 @@ import { usePathname } from "next/navigation";
 import { LifeBuoy, Loader2, MessageCircle, Send, UserRound, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/lib/store";
+import { useCaptcha } from "@/components/seguranca/captcha";
+import { MSG_CAPTCHA_PENDENTE, podeEnviar } from "@/lib/seguranca/captcha";
 import { abrirChamado } from "@/lib/data/atendimento-actions";
 import { SAUDACAO_CHAT, transcricaoChat, type MsgChat } from "@/lib/atendimento/viva-chat-texto";
 import { PROMESSA_ATENDIMENTO } from "@/config/atendimento";
 import { SUPORTE_EMAIL } from "@/lib/site";
-import { ehCampoDeFormulario, elevacaoDoFlutuante, flutuanteVisivel } from "@/lib/atendimento/flutuante-visivel";
+import { ehCampoDeFormulario, flutuanteVisivel } from "@/lib/atendimento/flutuante-visivel";
+import { ehArraste, gravarPosicao, grudarNaBorda, lerPosicao, limitarBaixo, posicaoDuranteArraste, type Posicao, type Tamanho, type Tela } from "@/lib/atendimento/flutuante-arrastavel";
 import { buttonClasses } from "@/components/ui/button";
 
 /**
@@ -22,7 +25,8 @@ import { buttonClasses } from "@/components/ui/button";
 // Fica fora só onde a própria tela já é a ajuda (/ajuda) ou é um fluxo de formulário
 // (login, anúncio, fechamento, segurança — t58) e no admin.
 // "/dashboard/conta/seguranca": cobria "Nova senha"/"Salvar nova senha" e os botões do 2FA a 390 px (t58).
-export const ESCONDER = ["/ajuda", "/admin", "/auth", "/dashboard/conta/ajuda", "/dashboard/imoveis/novo", "/dashboard/fechamento", "/dashboard/conta/seguranca"];
+// "/app/boas-vindas": tela de 100dvh do app; o botão cobria "Quero anunciar" e o respiro do fim da página a fazia rolar (t16).
+export const ESCONDER = ["/ajuda", "/admin", "/auth", "/dashboard/conta/ajuda", "/dashboard/imoveis/novo", "/dashboard/fechamento", "/dashboard/conta/seguranca", "/app/boas-vindas"];
 const CHAVE = "vivanomads-viva-chat";
 
 function carregar(): MsgChat[] {
@@ -42,20 +46,37 @@ function guardar(m: MsgChat[]) {
   }
 }
 
-/** Botão flutuante (layout raiz). */
+/** Botão flutuante (layout raiz). Arrastável (ordem a9982623): parado no canto, sem recalcular em scroll. */
 export function VivaChatFlutuante() {
   const pathname = usePathname() ?? "/";
   const [aberto, setAberto] = useState(false);
   const [campoEmFoco, setCampoEmFoco] = useState(false);
-  const [sobe, setSobe] = useState(0); // px acima do repouso para não tampar um controle
+  const [pos, setPos] = useState<Posicao | null>(null); // null = posição padrão (CSS)
+  const [arrastando, setArrastando] = useState<{ esquerda: number; baixo: number } | null>(null);
   const raiz = useRef<HTMLDivElement>(null);
   const botao = useRef<HTMLButtonElement>(null);
-  const sobeRef = useRef(0);
+  const gesto = useRef<{ id: number; x: number; y: number; dxBotao: number; baixo0: number; arrastou: boolean } | null>(null);
   const escondido = ESCONDER.some((p) => pathname === p || pathname.startsWith(p + "/"));
 
-  // F49 + ordem 4f8d17c6: o botão é sempre visível e no mesmo formato. Some só
-  // enquanto a pessoa digita num campo (celular); quando um botão principal ou
-  // campo passa por baixo dele, ele SOBE o necessário e depois volta.
+  const medirTela = (): Tela => ({ largura: window.innerWidth, altura: window.innerHeight });
+  const tamanhoBotao = (): Tamanho => {
+    const r = botao.current?.getBoundingClientRect();
+    return { largura: r?.width ?? 160, altura: r?.height ?? 48 };
+  };
+
+  // Posição salva (só no navegador) e reenquadramento se a janela mudar de tamanho.
+  useEffect(() => {
+    if (escondido) return;
+    const t = setTimeout(() => setPos(lerPosicao(typeof localStorage === "undefined" ? null : localStorage)), 0);
+    const aoRedimensionar = () => setPos((p) => (p ? { ...p, baixo: limitarBaixo(p.baixo, medirTela(), tamanhoBotao()) } : p));
+    window.addEventListener("resize", aoRedimensionar);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener("resize", aoRedimensionar);
+    };
+  }, [escondido]);
+
+  // F49: some só enquanto a pessoa digita num campo (celular); volta ao sair do campo.
   useEffect(() => {
     if (escondido) return;
     const fora = (el: EventTarget | null) => !(el instanceof Element) || !raiz.current?.contains(el);
@@ -66,55 +87,57 @@ export function VivaChatFlutuante() {
     const aoSair = () => setCampoEmFoco(false);
     document.addEventListener("focusin", aoFocar);
     document.addEventListener("focusout", aoSair);
-
-    let quadro = 0;
-    function medir() {
-      quadro = 0;
-      const b = botao.current?.getBoundingClientRect();
-      if (!b) return;
-      // Posição de repouso = a atual descontando o quanto ele já subiu.
-      const s = sobeRef.current;
-      const repouso = { left: b.left, right: b.right, top: b.top + s, bottom: b.bottom + s };
-      const controles: DOMRect[] = [];
-      for (const el of document.querySelectorAll("[data-cta], button[type=submit], input:not([type=hidden]), textarea, select")) {
-        if (raiz.current?.contains(el)) continue;
-        controles.push(el.getBoundingClientRect());
-      }
-      const novo = elevacaoDoFlutuante(repouso, controles, Math.round(window.innerHeight * 0.6));
-      if (novo !== sobeRef.current) {
-        sobeRef.current = novo;
-        setSobe(novo);
-      }
-    }
-    const agendar = () => {
-      if (!quadro) quadro = requestAnimationFrame(medir);
-    };
-    agendar();
-    const mo = new MutationObserver(agendar);
-    mo.observe(document.body, { childList: true, subtree: true });
-    window.addEventListener("scroll", agendar, { passive: true });
-    window.addEventListener("resize", agendar);
     return () => {
       document.removeEventListener("focusin", aoFocar);
       document.removeEventListener("focusout", aoSair);
-      window.removeEventListener("scroll", agendar);
-      window.removeEventListener("resize", agendar);
-      mo.disconnect();
-      if (quadro) cancelAnimationFrame(quadro);
       setCampoEmFoco(false);
-      sobeRef.current = 0;
-      setSobe(0);
     };
   }, [pathname, escondido]);
 
+  function aoPressionar(e: React.PointerEvent<HTMLButtonElement>) {
+    if (e.button !== 0 || aberto) return;
+    const r = e.currentTarget.getBoundingClientRect();
+    gesto.current = { id: e.pointerId, x: e.clientX, y: e.clientY, dxBotao: e.clientX - r.left, baixo0: window.innerHeight - r.bottom, arrastou: false };
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+  }
+  function aoMover(e: React.PointerEvent<HTMLButtonElement>) {
+    const g = gesto.current;
+    if (!g || g.id !== e.pointerId) return;
+    if (!g.arrastou && !ehArraste(e.clientX - g.x, e.clientY - g.y)) return;
+    g.arrastou = true;
+    const tam = tamanhoBotao();
+    const tela = medirTela();
+    setArrastando(posicaoDuranteArraste(e.clientX - g.dxBotao, g.baixo0 - (e.clientY - g.y), tela, tam));
+  }
+  function aoSoltar(e: React.PointerEvent<HTMLButtonElement>) {
+    const g = gesto.current;
+    if (!g || g.id !== e.pointerId) return;
+    e.currentTarget.releasePointerCapture?.(e.pointerId);
+    if (g.arrastou && arrastando) {
+      const tam = tamanhoBotao();
+      const nova = grudarNaBorda(arrastando.esquerda + tam.largura / 2, arrastando.baixo, medirTela(), tam);
+      setPos(nova);
+      gravarPosicao(typeof localStorage === "undefined" ? null : localStorage, nova);
+    }
+    setArrastando(null);
+    // O clique que o navegador dispara logo após um arraste não pode abrir o chat.
+    if (g.arrastou) setTimeout(() => (gesto.current = null), 0);
+    else gesto.current = null;
+  }
+
   if (escondido) return null;
   const visivel = flutuanteVisivel({ chatAberto: aberto, campoEmFoco });
+  const estilo: React.CSSProperties = arrastando
+    ? { left: arrastando.esquerda, right: "auto", bottom: arrastando.baixo }
+    : pos
+      ? { bottom: pos.baixo, ...(pos.lado === "esq" ? { left: 16, right: "auto" } : { right: 16, left: "auto" }) }
+      : {};
   return (
     <div
       ref={raiz}
-      className={cn("web-only fixed right-4 z-40 flex flex-col items-end gap-3 transition-[bottom] duration-150 print:hidden md:right-6", !visivel && "max-md:hidden")}
-      style={{ bottom: `calc(env(safe-area-inset-bottom, 0px) + var(--ajuda-bottom, 1.5rem) + ${aberto ? 0 : sobe}px)` }}
-      data-sobe={sobe}
+      className={cn("vn-viva-flut web-only fixed z-40 flex flex-col gap-3 print:hidden", pos?.lado === "esq" ? "items-start" : "items-end", !visivel && "max-md:hidden")}
+      style={estilo}
+      data-posicao={arrastando ? "arrastando" : pos ? pos.lado : "padrao"}
       data-testid="fale-com-a-viva-raiz"
     >
       {aberto && (
@@ -123,14 +146,21 @@ export function VivaChatFlutuante() {
         </div>
       )}
       {/* Mesmo botão primário do site (tokens do <Button>), igual em todas as
-          páginas e larguras: ícone + texto. */}
+          páginas e larguras: ícone + texto. Clique curto abre; arrastar move. */}
       <button
         ref={botao}
         type="button"
-        onClick={() => setAberto((v) => !v)}
+        onClick={() => {
+          if (gesto.current?.arrastou) return;
+          setAberto((v) => !v);
+        }}
+        onPointerDown={aoPressionar}
+        onPointerMove={aoMover}
+        onPointerUp={aoSoltar}
+        onPointerCancel={aoSoltar}
         aria-expanded={aberto}
         aria-label={aberto ? "Fechar o chat" : "Fale com a Viva"}
-        className={buttonClasses()}
+        className={cn(buttonClasses(), "touch-none select-none", arrastando && "cursor-grabbing shadow-xl")}
         data-testid="fale-com-a-viva"
       >
         {aberto ? <X className="h-4 w-4" /> : <MessageCircle className="h-4 w-4" />}
@@ -288,9 +318,11 @@ function FormPessoa({ logado, msgs, onCancelar }: { logado: boolean; msgs: MsgCh
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [ok, setOk] = useState<{ numero: string } | null>(null);
+  const captcha = useCaptcha();
 
   async function abrir() {
     setErro(null);
+    if (!logado && !podeEnviar(captcha.ligado, captcha.token)) return setErro(MSG_CAPTCHA_PENDENTE);
     // Sem conversa ainda: vai só o pedido; com conversa, ela vai anexada.
     const mensagem = msgs.length ? transcricaoChat(msgs, pedido) : pedido.trim();
     if (!msgs.length && pedido.trim().length < 5) return setErro("Conte em poucas palavras o que você precisa.");
@@ -301,8 +333,9 @@ function FormPessoa({ logado, msgs, onCancelar }: { logado: boolean; msgs: MsgCh
       assunto: "Conversa com a Viva (chat do site)",
       canal: "site",
       pedePessoa: true,
-      ...(logado ? {} : { visitanteNome: nome, visitanteEmail: email }),
+      ...(logado ? {} : { visitanteNome: nome, visitanteEmail: email, captchaToken: captcha.token ?? undefined }),
     }).catch(() => ({ ok: false as const, error: "Sem conexão. Tente de novo." }));
+    if (!logado) captcha.reset(); // o token vale uma vez só
     setEnviando(false);
     if (!r.ok) return setErro(r.error ?? "Não foi possível abrir o chamado agora.");
     setOk({ numero: r.numero });
@@ -340,6 +373,7 @@ function FormPessoa({ logado, msgs, onCancelar }: { logado: boolean; msgs: MsgCh
         <>
           <input required minLength={2} className={campo} placeholder="Seu nome" value={nome} maxLength={60} onChange={(e) => setNome(e.target.value)} aria-label="Seu nome" />
           <input className={campo} type="email" placeholder="Seu e-mail (a resposta chega por lá)" value={email} onChange={(e) => setEmail(e.target.value)} aria-label="Seu e-mail" />
+          {captcha.widget}
         </>
       )}
       <textarea className={cn(campo, "min-h-[60px]")} placeholder={msgs.length ? "Quer acrescentar algo? (opcional)" : "O que você precisa?"} value={pedido} maxLength={600} onChange={(e) => setPedido(e.target.value)} aria-label="Pedido para a equipe" />

@@ -14,7 +14,7 @@ import { FAIXAS_COMISSAO_PADRAO, comissaoSobreContrato, taxaPublicaTexto } from 
  *  3. Caução: 50% de cada bloco, soma limitada a 3 aluguéis (cálculo puro).
  *  4. /precos: tabela de faixas (12 / 10 / 8 / 6% do valor total do contrato, Plano Gestor 31+),
  *     sem mensalidade; a marca ("imóveis mobiliados", "Caução") e a Viva sem tocar em dinheiro.
- *  5. Simulador do painel: a comissão anual de cada plano é a do cálculo da config.
+ *  5. Simulador do painel: a taxa de serviço de cada faixa é a da regra única (sem planos).
  */
 const limpo = (t: string) => t.replace(/ /g, " ").replace(/\s+/g, " ");
 
@@ -89,19 +89,22 @@ test.describe("T37 — /precos (visitante)", () => {
 test.describe("T37 — Simulador do painel (proprietário)", () => {
   test.use({ storageState: authFile("proprietario"), viewport: { width: 390, height: 844 } });
 
-  test("a comissão anual de cada plano é a do cálculo da config (aluguel R$ 3.000, 10 meses, 4 por contrato)", async ({ page }) => {
+  test("a taxa de serviço de cada faixa é a da regra única (aluguel R$ 3.000, 10 meses, 4 por contrato), sem planos", async ({ page }) => {
     await page.goto("/dashboard/simulador", { waitUntil: "networkidle" });
+    const corpo = limpo(await page.locator("body").innerText());
+    expect(corpo).not.toMatch(/Gratuito|Essencial|Profissional|Simular no plano|Assinatura \/ ano/);
     const entrada = { aluguelMensal: 3000, condoIptu: 550, contas: 350, mesesOcupados: 10, prazoMedioMeses: 4 };
-    for (const p of PLANOS) {
-      await page.getByRole("button", { name: p.nome, exact: true }).click();
-      const esperado = simularRentabilidade(entrada, p.comissao, p.assinaturaAnual ?? 0);
-      const cartao = page.getByText(/^Comissão Viva \(/).locator("xpath=..");
-      await expect(cartao).toContainText(limpo(textoComissao(p.comissao)));
+    for (const f of FAIXAS_COMISSAO_PADRAO) {
+      await page.locator("#imoveis-ativos").fill(String(f.minImoveis));
+      await expect(page.getByTestId("imoveis-ativos")).toHaveText(String(f.minImoveis));
+      await expect(page.getByTestId("taxa-faixa")).toHaveText(limpo(taxaPublicaTexto(f)));
+      const esperado = simularRentabilidade(entrada, f.taxa, 0);
+      const cartao = page.getByText(/^Taxa de serviço \(/).first().locator("xpath=..");
       await expect(cartao).toContainText(limpo(`− ${formatBRL(esperado.comissaoAnual)}`));
     }
-    // Valores de referência: Gratuito 12% de (3.000 × 4 meses) × 2,5 contratos = R$ 3.600; Gestor = R$ 0.
+    // Valores de referência: 12% de (3.000 × 4 meses) × 2,5 contratos = R$ 3.600; 6% = R$ 1.800.
     expect(simularRentabilidade(entrada, 0.12, 0).comissaoAnual).toBe(3600);
-    expect(simularRentabilidade(entrada, 0, 0).comissaoAnual).toBe(0);
+    expect(simularRentabilidade(entrada, 0.06, 0).comissaoAnual).toBe(1800);
     await page.screenshot({ path: "tests/laboratorio/saida/t37-2-simulador.png", fullPage: true });
   });
 });

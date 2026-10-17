@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Gift, Copy, Check, Users, BadgeDollarSign } from "lucide-react";
+import { Gift, Copy, Check, Users, BadgeDollarSign, Clock } from "lucide-react";
 import { PageTitle, Panel, StatCard } from "@/components/dashboard/primitives";
 import { useAuthStore } from "@/lib/store";
 import { SITE_URL } from "@/lib/site";
@@ -59,13 +59,14 @@ export default function ReferralsPage() {
 
   return (
     <>
-      <PageTitle
+      <PageTitle capa="indicacoes"
         title="Programa de indicação"
         subtitle="Indique e ganhe créditos quando seus indicados fecharem a primeira reserva."
       />
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
+      <div className="mb-6 grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-4">
         <StatCard label="Indicados" value="0" icon={Users} />
+        <StatCard label="Aguardando 1ª reserva" value="0" icon={Clock} />
         <StatCard label="Converteram" value="0" icon={Check} />
         <StatCard label="Créditos" value="R$ 0" icon={BadgeDollarSign} />
       </div>

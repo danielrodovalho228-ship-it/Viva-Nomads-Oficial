@@ -19,23 +19,37 @@ import {
   CheckCircle2,
   FileSignature,
   MessageSquare,
+  MessageCircle,
   CalendarCheck,
   ShieldCheck,
   ArrowRight,
+  CalendarDays,
+  Clock,
+  Handshake,
+  Hash,
 } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { ShareButton } from "@/components/share-button";
-import { PropertyTags, InvoiceBadge, InsuranceBadge } from "@/components/ui/badge";
+import { VisitaVideo } from "@/components/property/visita-video";
+import { PropertyTags, InvoiceBadge, InsuranceBadge, PrecoJustoBadge } from "@/components/ui/badge";
 import { SELO_NF_UI } from "@/lib/flags";
 import { PropertyCard } from "@/components/property-card";
 import { PropertyGallery } from "@/components/property-gallery";
 import { VideoWalkthrough } from "@/components/video-walkthrough";
 import { requestLead } from "@/lib/data/actions";
+import { getMeusDados } from "@/lib/data/perfil-actions";
+import { MOTIVOS, isMotivo } from "@/lib/pedidos/pedidos";
+import { marcarVisto } from "@/lib/marcas/actions";
+import { useMarcasStore } from "@/lib/marcas/store";
+import { CHAVE_ULTIMA_BUSCA, ultimaBuscaParaPedido } from "@/lib/marcas/regra";
 import type { LeadKind } from "@/lib/leads";
 import { PriceCard } from "@/components/property/price-card";
+import { AvisoAntigolpe } from "@/components/seguranca/aviso-antigolpe";
 import { BarraFixaCelular } from "@/components/property/barra-fixa-celular";
 import { barraFixaImovel } from "@/lib/barra-fixa-imovel";
+import { calcularTotalMensal } from "@/lib/precos";
+import { quartosTexto, banheirosTexto } from "@/lib/anuncio/plural";
 import { AmenitiesGrid } from "@/components/property/amenities-grid";
 import { WorkspaceSection } from "@/components/property/workspace-section";
 import { LocationNearby } from "@/components/property/location-nearby";
@@ -48,8 +62,12 @@ import { AvailabilityCalendar } from "@/components/property/availability-calenda
 import { PrivacidadeAcesso } from "@/components/property/privacidade-acesso";
 import { OwnerCard } from "@/components/property/owner-card";
 import { Reviews } from "@/components/property/reviews";
-import { isExemplo, EXEMPLO_SEM_CONTATO } from "@/lib/demo-listing";
+import { isExemplo, EXEMPLO_SEM_CONTATO, EXEMPLO_AVISO_DEMO } from "@/lib/demo-listing";
+import { destinoContatoViva, resumoSolicitacao } from "@/lib/reserva-imovel";
 import { registrarEvento } from "@/lib/eventos/registrar";
+import { NavSecoes } from "@/components/property/nav-secoes";
+import { secoesDoImovel, sinaisDeConfianca, type SinalConfianca } from "@/lib/imovel-pagina";
+import { videoTourPermitido } from "@/lib/video-tour";
 
 export function PropertyDetail({ property: anuncio, similar }: { property: Property; similar: Property[] }) {
   // Anúncio de EXEMPLO: sem nota, avaliações, selos do dono, taxa de resposta,
@@ -64,9 +82,14 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
   const [candidatouSe, setCandidatouSe] = useState(false);
   // F37: quando a pessoa quer entrar (opcional); o Fechamento do dono abre com essa data.
   const [inicioDesejado, setInicioDesejado] = useState("");
+  // Motivo da estadia (lista única MOTIVOS): vem do perfil, editável; o servidor revalida.
+  const [motivoEstadia, setMotivoEstadia] = useState("");
   // Composer de dúvida/visita: o inquilino escreve a mensagem de verdade.
   const [composeKind, setComposeKind] = useState<"duvida" | "visita" | null>(null);
   const [composeText, setComposeText] = useState("");
+  // Passo de confirmação do "Enviar candidatura": resumo + (exemplo) aviso de demonstração.
+  const [solicitacaoAberta, setSolicitacaoAberta] = useState(false);
+  const [solicitacaoErro, setSolicitacaoErro] = useState<string | null>(null);
 
   // Avaliações — FONTE ÚNICA (A2): usa o array real de reviews, igual à seção de
   // avaliações. `rating` só é usado como média quando há review real.
@@ -86,11 +109,50 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
     if (!isExemplo(property)) registrarEvento("ver_anuncio", { imovelId: property.id, cidade: property.city });
   }, [property]);
 
+  // Marca "Visto" (ordem 8302024d): só logado grava; deslogado/exemplo ignoram em silêncio.
+  const marcarVistoLocal = useMarcasStore((s) => s.marcarVistoLocal);
+  useEffect(() => {
+    if (isExemplo(property)) return;
+    void marcarVisto(property.id).then((r) => {
+      if (r.ok) marcarVistoLocal(property.id);
+    });
+  }, [property, marcarVistoLocal]);
+
+  // Pedido pré-preenchido: data de entrada da última busca (editável; vencida ou estranha é descartada).
+  useEffect(() => {
+    try {
+      const { inicio } = ultimaBuscaParaPedido(window.localStorage.getItem(CHAVE_ULTIMA_BUSCA), hojeBR());
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- lê o localStorage só no navegador (SSR não tem)
+      if (inicio) setInicioDesejado((atual) => atual || inicio);
+    } catch {
+      /* localStorage bloqueado: segue sem pré-preencher */
+    }
+  }, []);
+
+  // Candidatura pré-preenchida com o motivo do perfil (deslogado: sem sessão, fica vazio).
+  useEffect(() => {
+    if (isExemplo(property)) return;
+    let vivo = true;
+    void getMeusDados()
+      .then((d) => {
+        if (vivo && d && isMotivo(d.motivoEstadia)) setMotivoEstadia((atual) => atual || d.motivoEstadia);
+      })
+      .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, [property]);
+
   async function handleLead(kind: LeadKind, note?: string) {
+    // DEMONSTRAÇÃO (anúncio de exemplo): abre o mesmo fluxo, mas não chama o servidor nem grava nada.
+    if (exemplo) {
+      setLeadErro(EXEMPLO_AVISO_DEMO);
+      return false;
+    }
     if (kind === "candidatura") registrarEvento("iniciar_candidatura", { imovelId: property.id, cidade: property.city });
     setPending(kind);
     setLeadErro(null);
-    const r = await requestLead(property.id, property.title, kind, note, kind === "candidatura" && inicioDesejado ? inicioDesejado : undefined).catch(() => null);
+    const r = await requestLead(property.id, property.title, kind, note, kind === "candidatura" && inicioDesejado ? inicioDesejado : undefined, kind === "candidatura" ? motivoEstadia : undefined).catch(() => null);
     setPending(null);
     if (r?.needsAuth) {
       // Sem sessão: leva ao login e volta para este anúncio depois de entrar.
@@ -119,6 +181,19 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
     }
     setSent((s) => ({ ...s, [kind]: true }));
     return true;
+  }
+
+  // "Enviar candidatura" nunca fica mudo: valida o que foi preenchido e abre o passo de confirmação.
+  const resumo = resumoSolicitacao({ monthlyPrice: property.monthlyPrice, inicioDesejado, motivoEstadia, hoje: hojeBR(), limpezaEstadia: property.limpezaEstadia, totalMensal: calcularTotalMensal(property).total });
+  function abrirSolicitacao() {
+    setLeadErro(null);
+    setSolicitacaoErro(resumo.erro);
+    setSolicitacaoAberta(true);
+  }
+  async function enviarSolicitacao() {
+    if (resumo.erro) return;
+    const ok = await handleLead("candidatura");
+    if (ok) setSolicitacaoAberta(false);
   }
 
   const citySlug = property.city
@@ -159,29 +234,14 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
     </div>
   );
 
-  // T9: anúncio de EXEMPLO não tem proprietário — sem candidatura, dúvida ou
-  // visita (nada é enviado a ninguém). Nota neutra no lugar dos botões.
-  const notaExemplo = (
-    <div className="flex flex-col gap-2 rounded-2xl border border-line bg-white p-4 text-center">
-      <p className="text-sm font-semibold text-ink">Anúncio de exemplo</p>
-      <p className="text-xs text-muted">{EXEMPLO_SEM_CONTATO}</p>
-      <Link
-        href="/buscar"
-        className="inline-flex items-center justify-center gap-1.5 rounded-full border border-forest px-4 py-2 text-sm font-semibold text-forest transition-colors hover:bg-sage-100"
-      >
-        Ver imóveis <ArrowRight className="h-4 w-4" />
-      </Link>
-    </div>
-  );
+  // WhatsApp: SEMPRE o da Viva (com o código do imóvel) — o contato do dono fica mascarado até o aceite.
+  const contatoViva = destinoContatoViva(property.id);
 
   // Bloco de ações reutilizado dentro do card de preço.
-  const actions = exemplo ? (
-    notaExemplo
-  ) : candidatouSe ? (
+  const actions = candidatouSe ? (
     confirmacaoCandidatura
   ) : (
     <div className="flex flex-col gap-2">
-      <AvisoPetCandidatura petsAllowed={property.petsAllowed} regras={property.petsRegras} />
       <label className="flex flex-col gap-1 text-xs font-medium text-ink">
         Quando quer entrar? (opcional)
         <input
@@ -193,58 +253,94 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
           className="h-11 w-full rounded-xl border border-line bg-white px-3 text-base text-ink"
         />
       </label>
+      <label className="flex flex-col gap-1 text-xs font-medium text-ink">
+        Motivo da estadia (opcional)
+        <select
+          data-testid="candidatura-motivo"
+          value={motivoEstadia}
+          onChange={(e) => setMotivoEstadia(e.target.value)}
+          className="h-11 w-full rounded-xl border border-line bg-white px-3 text-base text-ink"
+        >
+          <option value="">Prefiro não informar</option>
+          {MOTIVOS.map((m) => (
+            <option key={m.key} value={m.key}>
+              {m.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      {exemplo && (
+        <p data-testid="aviso-demo" className="rounded-lg bg-sage-100 px-3 py-2 text-center text-xs font-medium text-forest">
+          {EXEMPLO_AVISO_DEMO}
+        </p>
+      )}
       <Button
-        variant="gold"
+        variant="primary"
         size="lg"
         className="w-full"
-        onClick={() => handleLead("candidatura")}
+        data-cta
+        onClick={abrirSolicitacao}
         disabled={pending !== null}
       >
         <FileSignature className="h-4 w-4" />
-        {pending === "candidatura" ? "Enviando..." : "Candidatar-se"}
+        {pending === "candidatura" ? "Enviando..." : "Enviar candidatura"}
       </Button>
-      <div className="grid grid-cols-2 gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            setComposeText("");
-            setComposeKind("duvida");
-          }}
-          disabled={pending !== null || sent.duvida}
-        >
-          {sent.duvida ? (
-            <>
-              <Check className="h-4 w-4" /> Dúvida enviada
-            </>
-          ) : (
-            <>
-              <MessageSquare className="h-4 w-4" />
-              {pending === "duvida" ? "Enviando..." : "Tirar dúvida"}
-            </>
-          )}
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            setComposeText("");
-            setComposeKind("visita");
-          }}
-          disabled={pending !== null || sent.visita}
-        >
-          {sent.visita ? (
-            <>
-              <Check className="h-4 w-4" /> Visita solicitada
-            </>
-          ) : (
-            <>
-              <CalendarCheck className="h-4 w-4" />
-              {pending === "visita" ? "Enviando..." : "Agendar visita"}
-            </>
-          )}
-        </Button>
-      </div>
+      <VisitaVideo propertyId={property.id} exemplo={exemplo} />
+      <Button
+        variant="secondary"
+        size="md"
+        className="w-full"
+        data-cta
+        onClick={() => {
+          setComposeText("");
+          setComposeKind("duvida");
+        }}
+        disabled={pending !== null || sent.duvida}
+      >
+        {sent.duvida ? (
+          <>
+            <Check className="h-4 w-4" /> Mensagem enviada
+          </>
+        ) : (
+          <>
+            <MessageSquare className="h-4 w-4" />
+            {pending === "duvida" ? "Enviando..." : "Enviar mensagem"}
+          </>
+        )}
+      </Button>
+      <a
+        data-cta
+        href={contatoViva.href}
+        className={buttonClasses({ variant: "secondary", size: "md", className: "w-full" })}
+      >
+        <MessageCircle className="h-4 w-4" /> {contatoViva.rotulo}
+      </a>
+      <p className="text-center text-xs text-muted">
+        A conversa é com a Viva. O contato do proprietário só aparece depois do aceite.
+      </p>
+      <AvisoPetCandidatura petsAllowed={property.petsAllowed} regras={property.petsRegras} />
+      <AvisoAntigolpe />
+      <Button
+        variant="ghost"
+        size="sm"
+        className="w-full"
+        onClick={() => {
+          setComposeText("");
+          setComposeKind("visita");
+        }}
+        disabled={pending !== null || sent.visita}
+      >
+        {sent.visita ? (
+          <>
+            <Check className="h-4 w-4" /> Visita solicitada
+          </>
+        ) : (
+          <>
+            <CalendarCheck className="h-4 w-4" />
+            {pending === "visita" ? "Enviando..." : "Agendar visita"}
+          </>
+        )}
+      </Button>
       {(sent.duvida || sent.visita) && (
         <p className="text-center text-xs text-sage">
           Enviamos seu contato ao proprietário — ele responde por e-mail/WhatsApp.
@@ -320,13 +416,71 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
     </div>
   );
 
+  // Passo de confirmação da solicitação (modal no celular e no computador).
+  const solicitacao = solicitacaoAberta && !candidatouSe && (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-night/40 p-0 sm:items-center sm:p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="solicitacao-titulo"
+      data-testid="solicitacao-passo"
+      onClick={() => setSolicitacaoAberta(false)}
+    >
+      <div className="w-full max-w-md rounded-t-2xl bg-white p-5 shadow-xl sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
+        <h3 id="solicitacao-titulo" className="font-title text-lg font-bold text-ink">
+          Confirmar solicitação
+        </h3>
+        <p className="mt-1 text-sm text-muted">{property.title}</p>
+        <dl className="mt-3 space-y-2 rounded-lg bg-surface-2 px-3 py-3 text-sm">
+          {resumo.linhas.map((l) => (
+            <div key={l.rotulo} className="flex items-baseline justify-between gap-3">
+              <dt className="text-muted">{l.rotulo}</dt>
+              <dd className="text-right font-medium text-ink">{l.valor}</dd>
+            </div>
+          ))}
+        </dl>
+        {exemplo && (
+          <p data-testid="solicitacao-demo" className="mt-3 rounded-lg bg-sage-100 px-3 py-2 text-center text-xs font-medium text-forest">
+            Demonstração: este anúncio é de exemplo e a solicitação não é enviada.
+          </p>
+        )}
+        {solicitacaoErro && (
+          <p role="alert" data-testid="solicitacao-erro" className="mt-3 text-sm text-red-600">
+            {solicitacaoErro}
+          </p>
+        )}
+        {!solicitacaoErro && leadErro && !exemplo && <p role="alert" className="mt-3 text-sm text-red-600">{leadErro}</p>}
+        <div className="mt-4 flex justify-end gap-2">
+          <Button variant="ghost" size="sm" onClick={() => setSolicitacaoAberta(false)} disabled={pending !== null}>
+            {exemplo ? "Entendi" : "Voltar"}
+          </Button>
+          {!exemplo && (
+            <Button variant="primary" size="sm" disabled={pending !== null || !!resumo.erro} onClick={enviarSolicitacao}>
+              {pending === "candidatura" ? "Enviando..." : "Enviar solicitação"}
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="container-page py-8 pb-40 lg:pb-8">
+    // Página PÚBLICA com fotos: "largura total" = a medida do container (1536 px, como o Furnished Finder), nunca a
+    // tela inteira (ordem 4252e0d6, Daniel 16/10). A regra "painel sem mx-auto max-w-*" vale
+    // só para dashboards, não para páginas públicas com galeria. Celular: ocupa a largura toda.
+    <div className="mx-auto w-full max-w-[1536px] px-5 py-8 pb-48 sm:px-8 lg:px-7 lg:pb-8" data-testid="imovel-largura-total">
       {composer}
+      {solicitacao}
       <BarraFixaCelular
-        barra={barraFixaImovel({ monthlyPrice: property.monthlyPrice, exemplo, candidatouSe })}
+        key={property.id}
+        barra={barraFixaImovel({ monthlyPrice: property.monthlyPrice, totalMensal: calcularTotalMensal(property).total, exemplo, candidatouSe, availableFrom: property.availableFrom })}
         pending={pending !== null}
-        onCandidatar={() => handleLead("candidatura")}
+        onSolicitar={abrirSolicitacao}
+        onMensagem={() => {
+          setComposeText("");
+          setComposeKind("duvida");
+        }}
+        contato={contatoViva}
       />
       {/* Breadcrumb (navegação + SEO) */}
       <nav
@@ -347,12 +501,17 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
         photos={property.photos}
         title={property.title}
         readyToLive={property.readyToLiveBadge}
+        videoUrl={property.videoUrl}
       />
 
-      <div className="mt-6 grid gap-8 lg:grid-cols-3">
+      {/* Abas âncora presas ao rolar (ordem d943f893). */}
+      <NavSecoes secoes={secoesDoImovel({ avaliacoes: reviewsReais, temDono: !!(property.owner?.name ?? property.ownerName) })} />
+
+      <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_26rem] xl:gap-12">
         {/* Conteúdo (seções roláveis) */}
-        <div className="min-w-0 space-y-10 lg:col-span-2">
-          {/* Cabeçalho */}
+        <div className="min-w-0 space-y-10">
+          {/* Visão geral: cabeçalho, sinais de confiança, destaques, medidas, vídeo e descrição. */}
+          <div id="visao-geral" className="scroll-mt-36 space-y-10">
           <header>
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 text-sm text-muted">
@@ -364,6 +523,16 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
               </span>
             </div>
             <h1 className="mt-2 font-title text-3xl font-bold text-ink">{property.title}</h1>
+
+            {/* Sinais de confiança (só dado real): disponibilidade, resposta, tempo de casa, código. */}
+            <ul data-testid="sinais-confianca" className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-sm">
+              {sinaisDeConfianca(property, new Date().toISOString().slice(0, 10)).map((s) => (
+                <li key={s.tipo} className={s.tipo === "codigo" ? "inline-flex items-center gap-1.5 text-xs text-muted" : "inline-flex items-center gap-1.5 text-ink"}>
+                  <IconeSinal tipo={s.tipo} />
+                  <span className={s.tipo === "disponibilidade" ? "font-semibold text-forest" : undefined}>{s.texto}</span>
+                </li>
+              ))}
+            </ul>
 
             <div className="mt-3 flex flex-wrap items-center gap-2">
               {/* Anúncio de exemplo (ilustrativo): selo honesto e visível. */}
@@ -387,6 +556,7 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
               )}
               {SELO_NF_UI && property.issuesInvoice && <InvoiceBadge />}
               {property.acceptsInsurance && <InsuranceBadge />}
+              {property.precoJusto && <PrecoJustoBadge />}
             </div>
 
             <div className="mt-3">
@@ -400,10 +570,10 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
             {/* Specs com ícones */}
             <div className="mt-4 flex flex-wrap gap-5 text-sm text-muted">
               <span className="inline-flex items-center gap-1.5">
-                <BedDouble className="h-4 w-4" /> {property.bedrooms} quartos
+                <BedDouble className="h-4 w-4" /> {quartosTexto(property.bedrooms)}
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <Bath className="h-4 w-4" /> {property.bathrooms} banheiros
+                <Bath className="h-4 w-4" /> {banheirosTexto(property.bathrooms)}
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <Ruler className="h-4 w-4" /> {property.areaM2} m²
@@ -429,9 +599,9 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
           </header>
 
           {/* Walk-through em vídeo */}
-          {property.videoUrl && (
+          {videoTourPermitido(property.videoUrl) && (
             <section>
-              <VideoWalkthrough url={property.videoUrl} title={property.title} />
+              <VideoWalkthrough url={property.videoUrl!} title={property.title} />
               <p className="mt-1.5 text-xs text-muted">
                 {isExemplo(property) ? "Vídeo ilustrativo." : "Tour em vídeo gravado pelo proprietário."}
               </p>
@@ -440,21 +610,33 @@ export function PropertyDetail({ property: anuncio, similar }: { property: Prope
 
           {/* Sobre o imóvel (~5 linhas + "Mostrar mais") */}
           {property.description && <SobreImovel descricao={property.description} />}
+          </div>
 
-          <AmenitiesGrid property={property} />
-          <WorkspaceSection property={property} />
-          <AvailabilityCalendar property={property} />
-          <LocationNearby property={property} />
-          <GoogleProximities property={property} />
-          <BomSaber property={property} />
-          <StayRules property={property} />
-          <PrivacidadeAcesso privacidade={property.privacidade} />
-          <OwnerCard property={property} />
-          <Reviews property={property} />
+          {/* Comodidades + regras da casa + o que é bom saber. */}
+          <div id="comodidades" className="scroll-mt-36 space-y-10">
+            <AmenitiesGrid property={property} />
+            <WorkspaceSection property={property} />
+            <StayRules property={property} />
+            <BomSaber property={property} />
+            <PrivacidadeAcesso privacidade={property.privacidade} />
+          </div>
+          <div id="disponibilidade" className="scroll-mt-36">
+            <AvailabilityCalendar property={property} />
+          </div>
+          <div id="avaliacoes" className="scroll-mt-36">
+            <Reviews property={property} />
+          </div>
+          <div id="proprietario" className="scroll-mt-36 empty:hidden">
+            <OwnerCard property={property} />
+          </div>
+          <div id="localizacao" className="scroll-mt-36 space-y-10">
+            <LocationNearby property={property} />
+            <GoogleProximities property={property} />
+          </div>
         </div>
 
         {/* Card de preço (sticky no desktop, empilhado no mobile) */}
-        <aside className="lg:col-span-1">
+        <aside>
           <PriceCard property={property} actions={actions} />
         </aside>
       </div>
@@ -484,4 +666,10 @@ function semSinaisInventados(p: Property): Property {
     googlePlaces: [],
     owner: p.owner ? { name: p.owner.name, avatarUrl: p.owner.avatarUrl } : undefined,
   };
+}
+
+/** Ícone de cada sinal de confiança do topo. */
+function IconeSinal({ tipo }: { tipo: SinalConfianca["tipo"] }) {
+  const Icone = { disponibilidade: CalendarDays, resposta: Clock, desde: Handshake, codigo: Hash }[tipo];
+  return <Icone className={tipo === "codigo" ? "h-3.5 w-3.5" : "h-4 w-4 text-sage"} aria-hidden />;
 }

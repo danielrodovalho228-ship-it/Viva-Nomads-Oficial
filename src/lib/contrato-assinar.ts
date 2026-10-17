@@ -5,7 +5,8 @@
 */
 import { createHash } from "node:crypto";
 import { MARCA_MINUTA } from "./contrato-etapas.ts";
-import { linhasRegrasPets, normalizarRegrasPets, type RegrasPets } from "./anuncio/pets-regras.ts";
+import { limpezaDoResumo, linhaLimpezaResumo, type LimpezaEstadia } from "./anuncio/limpeza-estadia.ts";
+import { linhasRegrasPets, linhaValorPetCandidatura, normalizarRegrasPets, type RegrasPets } from "./anuncio/pets-regras.ts";
 
 export type PapelContrato = "proprietario" | "inquilino";
 
@@ -22,21 +23,52 @@ export interface DadosResumo {
   prazoDias: number;
   ocupantes: number;
   criadoEm: string;
+  /** Início do 1º bloco (AAAA-MM-DD), a data de início escolhida no Fechamento (F37). Sem ela a linha não aparece. */
+  inicioEstadia?: string | null;
   /** Regras de pets do anúncio (ordem 022afabb item 5): entram no resumo, não no texto do modelo. */
   petsRegras?: RegrasPets | null;
+  /** Pets da ficha do inquilino na candidatura: sem pet, a linha "Valor pet" não aparece. */
+  qtdPetsCandidatura?: number;
+  /** Pacote de limpeza durante a estadia (ordem 4c74ac38 item 3): a quantidade por mês entra no resumo. */
+  limpezaEstadia?: LimpezaEstadia | null;
+  /** Condomínio + contas fixas por mês (R$): entram no "Total por mês" quando há limpeza paga. */
+  outrosCustosMes?: number;
+  /** Contrato assinado antes da linha existir (sem `outrosCustosMes` congelado): sem "Total por mês", para o resumo assinado e o hash não mudarem. */
+  semTotalMes?: boolean;
 }
 
 /** Linhas do resumo mostradas na tela e usadas no hash (mesma fonte: o que a pessoa lê é o que ela assina). */
+function dataDoResumo(iso: string): string | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : null;
+}
+
+/** Total por mês do resumo: valor mensal + condomínio e contas fixas + limpeza paga. Só existe com limpeza paga. */
+export function totalMensalDoResumo(d: Pick<DadosResumo, "aluguelMensal" | "outrosCustosMes" | "limpezaEstadia" | "semTotalMes">): number | null {
+  if (d.semTotalMes) return null;
+  const limpeza = d.limpezaEstadia?.valorMes ?? 0;
+  if (limpeza <= 0) return null;
+  const outros = d.outrosCustosMes && d.outrosCustosMes > 0 ? d.outrosCustosMes : 0;
+  return Math.round((d.aluguelMensal + outros + limpeza) * 100) / 100;
+}
+
 export function resumoContrato(d: DadosResumo): string[] {
+  const inicio = d.inicioEstadia ? dataDoResumo(d.inicioEstadia) : null;
   const valor = d.aluguelMensal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  const total = totalMensalDoResumo(d);
+  const valorPet = linhaValorPetCandidatura(!!d.petsRegras, d.petsRegras, d.qtdPetsCandidatura ?? 0);
   return [
     MARCA_MINUTA,
     `Contrato ${d.contratoId}`,
     `Imóvel: ${d.imovel}`,
     `Valor mensal: ${valor}`,
+    ...(inicio ? [`Início da estadia: ${inicio}`] : []),
     `Prazo total: ${d.prazoDias} dias`,
     `Ocupantes: ${d.ocupantes}`,
-    ...(d.petsRegras ? [`Pets — ${linhasRegrasPets(d.petsRegras).join("; ")}`] : []),
+    ...(d.petsRegras ? [`Pets — ${linhasRegrasPets(d.petsRegras, { semValorPet: true }).join("; ")}`] : []),
+    ...(valorPet ? [valorPet] : []),
+    ...(d.limpezaEstadia ? [linhaLimpezaResumo(d.limpezaEstadia)] : []),
+    ...(total != null ? [`Total por mês: ${total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`] : []),
     `Registrado em: ${d.criadoEm}`,
   ];
 }
@@ -55,8 +87,38 @@ export function petsRegrasDoResumo(d: {
   return normalizarRegrasPets(d.algumaAssinatura ? d.congeladas : d.vivas);
 }
 
+/** Pacote de limpeza do resumo: ao vivo antes da 1ª assinatura, congelado (dentro de pets_regras_congeladas) depois. */
+export function limpezaDoContrato(d: { algumaAssinatura: boolean; viva: unknown; congeladas: unknown }): LimpezaEstadia | null {
+  const c = d.congeladas && typeof d.congeladas === "object" ? (d.congeladas as Record<string, unknown>).limpezaEstadia : null;
+  return limpezaDoResumo({ algumaAssinatura: d.algumaAssinatura, viva: d.viva, congelada: c });
+}
+
+/** Condomínio + contas fixas do resumo: ao vivo antes da 1ª assinatura, congelado depois (sem a chave = 0). */
+export function outrosCustosDoContrato(d: { algumaAssinatura: boolean; vivo: unknown; congeladas: unknown }): number {
+  const c = d.congeladas && typeof d.congeladas === "object" ? (d.congeladas as Record<string, unknown>).outrosCustosMes : null;
+  const n = Number(d.algumaAssinatura ? c : d.vivo);
+  return Number.isFinite(n) && n > 0 && n <= 1_000_000 ? n : 0;
+}
+
+/** Depois da 1ª assinatura a linha "Total por mês" só vale se o total foi congelado junto (chave `outrosCustosMes`). */
+export function totalMesAplicavel(d: { algumaAssinatura: boolean; congeladas: unknown }): boolean {
+  if (!d.algumaAssinatura) return true;
+  return !!d.congeladas && typeof d.congeladas === "object" && "outrosCustosMes" in (d.congeladas as Record<string, unknown>);
+}
+
 export function hashResumo(linhas: string[]): string {
   return createHash("sha256").update(linhas.join("\n"), "utf8").digest("hex");
+}
+
+/**
+ * Linhas que entram no hash de quem assina. A linha "Início da estadia" (F37) passou a fazer parte do
+ * resumo depois que alguém já podia ter assinado sem ela; se a outra parte já assinou sem a linha,
+ * esta assina o mesmo texto (sem a linha) para as duas partes terem o mesmo hash.
+ */
+export function linhasParaHash(linhas: string[], hashDaOutraParte: string | null): string[] {
+  if (!hashDaOutraParte || hashResumo(linhas) === hashDaOutraParte) return linhas;
+  const sem = linhas.filter((l) => !l.startsWith("Início da estadia:"));
+  return hashResumo(sem) === hashDaOutraParte ? sem : linhas;
 }
 
 export function motivoNaoPodeAssinar(c: {

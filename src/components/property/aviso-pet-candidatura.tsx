@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { PawPrint, TriangleAlert } from "lucide-react";
 import { meusPets, type PetSalvo } from "@/lib/data/pets-ficha-actions";
-import { compatibilidadePets, ROTULO_ESPECIE, type RegrasPets } from "@/lib/anuncio/pets-regras";
+import { compatibilidadePets, linhaValorPetCandidatura, ROTULO_ESPECIE, type RegrasPets } from "@/lib/anuncio/pets-regras";
 
 /**
  * Antes de enviar a candidatura (ordem 022afabb, itens 1 e 4): mostra os pets da ficha
@@ -32,6 +32,7 @@ export function AvisoPetCandidatura({
 
   if (pets.length === 0) return null;
   const { ok, motivos } = compatibilidadePets(petsAllowed, regras ?? null, pets);
+  const valorPet = linhaValorPetCandidatura(petsAllowed, regras, pets.length);
   return (
     <div
       data-testid={ok ? "pet-candidatura-ok" : "pet-candidatura-aviso"}
@@ -42,6 +43,11 @@ export function AvisoPetCandidatura({
         {ok ? "Seus pets vão na candidatura" : "Atenção: seu pet pode não caber nas regras deste imóvel"}
       </p>
       <p className="mt-1">{pets.map((p) => `${p.nome} (${ROTULO_ESPECIE[p.especie]}, porte ${p.porte})`).join(", ")}</p>
+      {valorPet && (
+        <p data-testid="pet-candidatura-valor" className="mt-1 font-semibold">
+          {valorPet}
+        </p>
+      )}
       {!ok && (
         <ul className="mt-1 list-disc pl-4">
           {motivos.map((m) => (

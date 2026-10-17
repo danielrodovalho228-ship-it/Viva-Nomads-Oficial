@@ -61,3 +61,19 @@ test("WhatsApp recebe E.164 sem + a partir do telefone gravado", () => {
   assert.equal(telefoneParaWhatsapp("+447911123456"), "447911123456");
   assert.equal(telefoneParaWhatsapp("123"), null);
 });
+
+// Ordem a8bb8cfa: motivo da estadia no perfil (lista única de pedidos.ts).
+import { validarMotivoEstadia } from "./conta-validacao.ts";
+import { MOTIVOS } from "./pedidos/pedidos.ts";
+
+test("motivo da estadia: aceita cada motivo da lista única e vazio (opcional)", () => {
+  for (const m of MOTIVOS) assert.deepEqual(validarMotivoEstadia(m.key), { ok: true, valor: m.key }, m.key);
+  assert.deepEqual(validarMotivoEstadia(""), { ok: true, valor: null });
+  assert.deepEqual(validarMotivoEstadia("  "), { ok: true, valor: null });
+});
+
+test("motivo da estadia: recusa texto livre, contato e chave inventada", () => {
+  for (const v of ["viagem", "34999990001", "joao@x.com", "trabalho_remoto; drop table", "<script>"]) {
+    assert.equal(validarMotivoEstadia(v).ok, false, v);
+  }
+});

@@ -9,7 +9,10 @@ import assert from "node:assert/strict";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
-const src = readFileSync(new URL("./search-map.tsx", import.meta.url), "utf8");
+const mapa = readFileSync(new URL("./search-map.tsx", import.meta.url), "utf8");
+// ordem b4fd5b18: a configuração do mapa-base vive num módulo só, usado pela /buscar e pela página do imóvel
+const base = readFileSync(new URL("../lib/mapa-base.ts", import.meta.url), "utf8");
+const src = mapa + "\n" + base;
 
 test("tiles da CARTO Voyager com a chave lida de NEXT_PUBLIC_CARTO_API_KEY", () => {
   assert.match(src, /const CARTO_KEY = process\.env\.NEXT_PUBLIC_CARTO_API_KEY;/);

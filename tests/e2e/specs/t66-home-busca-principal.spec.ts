@@ -17,7 +17,7 @@ test.describe("T66 — Home: busca principal e atalhos", () => {
       await expect(busca.getByLabel("Para onde você vai?")).toBeVisible();
       await expect(busca.locator("input")).toHaveCount(1);
       await expect(busca.locator("select")).toHaveCount(0);
-      await expect(page.getByTestId("atalhos-categoria").getByRole("link")).toHaveCount(4);
+      await expect(page.getByTestId("atalhos-categoria").getByRole("link")).not.toHaveCount(0); // 5 atalhos; some o que tiver 0 imóveis (ordem a875278a)
       const sobra = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       expect(sobra).toBeLessThanOrEqual(1);
       await page.screenshot({ path: `tests/laboratorio/saida/t66-home-${largura}.png` });

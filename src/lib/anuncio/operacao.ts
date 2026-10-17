@@ -4,7 +4,7 @@
   Pacote "Cadastro confiável", parte B (Daniel, 08/10/2026):
   • "É meu" — o dono anuncia o próprio imóvel.
   • "Opero por sublocação" — exige a AUTORIZAÇÃO ESCRITA do proprietário
-    (art. 13 da Lei 8.245/91) anexada para publicar. Antes era só uma caixinha.
+    anexada para publicar. Antes era só uma caixinha.
   • "Administro para o proprietário" (gestor/procurador) — exige o CONTRATO DE
     ADMINISTRAÇÃO ou a PROCURAÇÃO anexada para publicar.
   O documento vai para o bucket privado (pasta do próprio dono) e aparece para
@@ -30,7 +30,7 @@ export const DOC_AUTORIZACAO: Record<Exclude<Operacao, "own">, { titulo: string;
   subleased: {
     titulo: "Autorização escrita do proprietário para sublocar",
     declaracao: "Tenho autorização escrita do proprietário para sublocar este imóvel",
-    aviso: "Para sublocar legalmente é preciso autorização escrita do proprietário (art. 13 da Lei 8.245/91). Anexe a autorização: sem ela o anúncio não é publicado.",
+    aviso: "Para sublocar legalmente é preciso autorização escrita do proprietário. Anexe a autorização: sem ela o anúncio não é publicado.",
   },
   managed: {
     titulo: "Contrato de administração ou procuração",

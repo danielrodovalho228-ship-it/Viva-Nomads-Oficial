@@ -54,7 +54,7 @@ export default function OrcamentosPage() {
 
   return (
     <>
-      <PageTitle
+      <PageTitle capa="orcamentos"
         title="Orçamentos"
         subtitle="Envie um orçamento numerado e acompanhe até virar contrato assinado."
         action={
@@ -243,7 +243,7 @@ function NewBudget({
     // Layout padrão (título + EmptyState), não uma linha solta (item 8 do QA).
     return (
       <>
-        <PageTitle title="Novo orçamento" subtitle="Imóvel → interessado → valores" />
+        <PageTitle capa="orcamentos" title="Novo orçamento" subtitle="Imóvel → interessado → valores" />
         {loading ? (
           <Panel>
             <p className="text-sm text-muted">Carregando seus imóveis…</p>
@@ -273,7 +273,7 @@ function NewBudget({
 
   return (
     <div className="w-full">
-      <PageTitle title="Novo orçamento" subtitle="Imóvel → interessado → valores" />
+      <PageTitle capa="orcamentos" title="Novo orçamento" subtitle="Imóvel → interessado → valores" />
 
       {/* Card do imóvel no topo (Atualização 16) */}
       <div className="mb-5">

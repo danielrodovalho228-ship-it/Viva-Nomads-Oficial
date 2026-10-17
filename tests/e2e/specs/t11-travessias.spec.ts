@@ -124,7 +124,7 @@ test.describe("T-TRAV-C — Candidatura sem verificação = confirmação + nudg
 
   test("candidatar-se confirma e convida a verificar — nunca bloqueia", async ({ page }) => {
     await page.goto(`/imoveis/${SEED_PROPERTY_ID}`, { waitUntil: "networkidle" });
-    const candidatar = page.getByRole("button", { name: /^Candidatar-se$/i });
+    const candidatar = page.getByRole("button", { name: /^Enviar candidatura$/i });
     if (!(await candidatar.isVisible().catch(() => false))) {
       test.skip(true, "Imóvel semeado ausente — rode `npm run seed:teste` no projeto de teste.");
       return;
@@ -147,7 +147,7 @@ test.describe("T-TRAV-C — Candidatura sem verificação = confirmação + nudg
   }) => {
     // Garante ao menos uma candidatura (idempotente — dedup por imóvel+inquilino).
     await page.goto(`/imoveis/${SEED_PROPERTY_ID}`, { waitUntil: "networkidle" });
-    const candidatar = page.getByRole("button", { name: /^Candidatar-se$/i });
+    const candidatar = page.getByRole("button", { name: /^Enviar candidatura$/i });
     if (await candidatar.isVisible().catch(() => false)) {
       await candidatar.click();
       await expect(page.getByText(/Candidatura enviada/i)).toBeVisible({ timeout: 15_000 });
@@ -172,7 +172,7 @@ test.describe("T-TRAV-D — Fechamento herda a candidatura aceita real @criticos
     const ctxInq = await browser.newContext({ storageState: authFile("inquilino") });
     const pageInq = await ctxInq.newPage();
     await pageInq.goto(`/imoveis/${SEED_PROPERTY_ID}`, { waitUntil: "networkidle" });
-    const candidatar = pageInq.getByRole("button", { name: /^Candidatar-se$/i });
+    const candidatar = pageInq.getByRole("button", { name: /^Enviar candidatura$/i });
     if (!(await candidatar.isVisible().catch(() => false))) {
       await ctxInq.close();
       test.skip(true, "Imóvel semeado ausente — rode `npm run seed:teste` no projeto de teste.");

@@ -60,24 +60,26 @@ export function EmpresasForm() {
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block">
           <span className="mb-1 block text-sm font-medium text-ink">Nome</span>
-          <input required value={nome} onChange={(e) => setNome(e.target.value)} className={inputCls} />
+          <input required name="nome" autoComplete="name" value={nome} onChange={(e) => setNome(e.target.value)} className={inputCls} />
         </label>
         <label className="block">
           <span className="mb-1 block text-sm font-medium text-ink">Empresa</span>
-          <input required value={empresa} onChange={(e) => setEmpresa(e.target.value)} className={inputCls} />
+          <input required name="empresa" autoComplete="organization" value={empresa} onChange={(e) => setEmpresa(e.target.value)} className={inputCls} />
         </label>
         <label className="block">
           <span className="mb-1 block text-sm font-medium text-ink">E-mail corporativo</span>
-          <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} />
+          <input required type="email" name="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} />
         </label>
         <label className="block">
           <span className="mb-1 block text-sm font-medium text-ink">Estadias por ano (estimativa)</span>
-          <input value={volumeAno} onChange={(e) => setVolumeAno(e.target.value)} placeholder="ex.: 20" className={inputCls} />
+          <input name="estadiasPorAno" autoComplete="off" inputMode="numeric" value={volumeAno} onChange={(e) => setVolumeAno(e.target.value)} placeholder="ex.: 20" className={inputCls} />
         </label>
       </div>
       <label className="block">
         <span className="mb-1 block text-sm font-medium text-ink">Mensagem (opcional)</span>
         <textarea
+          name="mensagem"
+          autoComplete="off"
           rows={3}
           value={mensagem}
           onChange={(e) => setMensagem(e.target.value)}

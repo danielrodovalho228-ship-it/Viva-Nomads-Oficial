@@ -7,14 +7,14 @@ import {
   MessageSquare, Bell, Home, Users, MapPinned, FileSignature, Receipt, ShieldCheck, ClipboardCheck,
   Hammer, TrendingUp, Percent, Calculator, FileSpreadsheet, Settings, BadgeCheck, CreditCard,
   ShieldHalf, Files, LifeBuoy, Handshake, Camera, Wallet, Inbox, BarChart3, Bot, Workflow,
-  Network, Banknote, Plus, ChevronDown,
+  Network, Banknote, Plus, ChevronDown, Video,
 } from "lucide-react";
 import { contemRota, rotaAtiva, type IconeMenu, type ItemMenu } from "@/config/menu-painel";
 import { cn } from "@/lib/utils";
 
 const ICONES: Record<IconeMenu, React.ComponentType<{ className?: string }>> = {
   visao: LayoutDashboard, moradia: House, buscar: Search, favoritos: Heart, buscas: Bookmark,
-  pedidos: Megaphone, candidaturas: FileText, estadias: KeyRound, solicitacoes: Wrench,
+  pedidos: Megaphone, candidaturas: FileText, visitas: Video, estadias: KeyRound, solicitacoes: Wrench,
   mensagens: MessageSquare, notificacoes: Bell, imoveis: Home, interessados: Users,
   pedidosCidade: MapPinned, fechamento: FileSignature, contratos: Receipt, garantias: ShieldCheck,
   conferencia: ClipboardCheck, ferramentas: Hammer, simulador: TrendingUp, roi: Percent,

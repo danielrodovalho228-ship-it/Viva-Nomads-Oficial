@@ -9,6 +9,7 @@ import {
   simularROI,
   type PlanoCalc,
 } from "./simulador.ts";
+import { PLANOS } from "../config/planos.ts";
 
 // Espelha config/planos.ts (Grátis 12%/R$0, Essencial 10%/R$588, Pro 8%/R$1548,
 // Gestor sob consulta).
@@ -166,4 +167,30 @@ test("comissão sobre o valor total (ordem 5df28a7b): R$ 3.000 a 12% = 360 / 720
   // 12 meses ocupados em contratos de 3 meses = 4 contratos × R$ 1.080
   const r = simularRentabilidade({ aluguelMensal: 3000, condoIptu: 0, contas: 0, mesesOcupados: 12, prazoMedioMeses: 3 }, 0.12, 0);
   assert.equal(r.comissaoAnual, 4320);
+});
+
+// Com as faixas REAIS (config/planos.ts), não o espelho acima: é o que a tela do
+// simulador usa e o que o spec t12 confere (lab 15/10: 3.000 × 6 meses já
+// recomenda o Essencial; o Gratuito só ganha em valor menor).
+const PLANOS_REAIS: PlanoCalc[] = PLANOS.map((p) => ({
+  id: p.id,
+  nome: p.nome,
+  comissao: p.comissao,
+  assinaturaAnual: p.assinaturaAnual,
+}));
+
+test("recomendação com as faixas reais: 1.500 × 1 contrato de 6 meses → Gratuito", () => {
+  const r = recomendarPlano(
+    { aluguelMensal: 1500, condoIptu: 0, contas: 0, mesesOcupados: 6, prazoMedioMeses: 6 },
+    PLANOS_REAIS
+  );
+  assert.equal(r?.planoId, "free");
+});
+
+test("recomendação com as faixas reais: 3.000 × 1 contrato de 6 meses → já não é o Gratuito", () => {
+  const r = recomendarPlano(
+    { aluguelMensal: 3000, condoIptu: 0, contas: 0, mesesOcupados: 6, prazoMedioMeses: 6 },
+    PLANOS_REAIS
+  );
+  assert.notEqual(r?.planoId, "free");
 });

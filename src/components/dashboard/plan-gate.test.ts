@@ -21,8 +21,10 @@ test("PlanGate bloqueado leva a /precos", () => {
   assert.doesNotMatch(bloqueado, /\/dashboard\/assinatura/);
 });
 
-test("Ferramentas bloqueadas por plano levam a /precos", () => {
+// A Viva cobra só comissão (90181c57): a central de Ferramentas não trava nada por plano
+// e nenhum card leva à antiga tela de assinatura.
+test("Ferramentas: nenhum card preso a plano nem apontando para /dashboard/assinatura", () => {
   const f = readFileSync("src/app/(dashboard)/dashboard/ferramentas/page.tsx", "utf8");
-  assert.match(f, /bloqueado \? "\/precos"/);
+  assert.doesNotMatch(f, /Plano Gestor|bloqueado/);
   assert.doesNotMatch(f, /\/dashboard\/assinatura/);
 });

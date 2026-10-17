@@ -56,7 +56,7 @@ test.describe("T93 — Tela de avaliações recebidas (responder, pedir revisão
 
       // 2) Pede revisão pela tela.
       await cartao.getByTestId("avaliacao-pedir-revisao").click();
-      await cartao.getByLabel("Motivo").selectOption("fato_falso");
+      await cartao.getByLabel("Motivo", { exact: true }).selectOption("fato_falso");
       await cartao.getByLabel(/explique o motivo/i).fill(`O comentário cita um fato que não aconteceu ${marca}, tenho comprovação`);
       await cartao.getByTestId("avaliacao-enviar").click();
       await expect(cartao.getByTestId("revisao-em-analise")).toBeVisible();

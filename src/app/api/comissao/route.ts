@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createCommissionCharge } from "@/lib/payments/asaas";
 import { IntegracaoNaoConfigurada, MSG_NAO_CONFIGURADA } from "@/lib/integracoes";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { contaEhDeTeste, cobrancaSimuladaTeste } from "@/lib/contas-de-teste";
 import { carregarFechamento, comissaoDoContrato, reservarFechamento, concluirFechamento } from "@/lib/data/fechamento-servidor";
 
 /**
@@ -23,6 +25,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "A comissão desta candidatura já foi gerada." }, { status: 409 });
   }
   try {
+    // Conta de teste (is_teste): cobrança SIMULADA, rótulo TESTE, nada vai ao Asaas (ordem ee7d27b8).
+    if (await contaEhDeTeste(createAdminClient(), f.ownerId)) {
+      const simulada = cobrancaSimuladaTeste({ aluguelMensal: contrato.aluguelMensal, meses: contrato.meses, commissionRate: contrato.taxa });
+      await concluirFechamento(f.leadId, "comissao", simulada.chargeId);
+      return NextResponse.json(simulada);
+    }
     const result = await createCommissionCharge({
       aluguelMensal: contrato.aluguelMensal,
       meses: contrato.meses,

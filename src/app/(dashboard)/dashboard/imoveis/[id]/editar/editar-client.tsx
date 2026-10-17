@@ -1,5 +1,6 @@
 "use client";
 
+import { LimpezaEstadiaCampos, formDeLimpeza, type LimpezaEstadiaForm } from "@/components/anuncio/limpeza-estadia-campos";
 import { PetsRegrasCampos, formDeRegras, type RegrasPetsForm } from "@/components/anuncio/pets-regras-campos";
 import { useMemo, useState } from "react";
 import Link from "next/link";
@@ -87,6 +88,7 @@ export function EditarImovelClient({
   const [privacidade, setPrivacidade] = useState<Privacidade>(property.privacidade ?? PRIVACIDADE_VAZIA);
   const [petsAllowed, setPetsAllowed] = useState(property.petsAllowed ?? false);
   const [petsRegras, setPetsRegras] = useState<RegrasPetsForm>(formDeRegras(property.petsRegras));
+  const [limpeza, setLimpeza] = useState<LimpezaEstadiaForm>(formDeLimpeza(property.limpezaEstadia));
   const [smokingAllowed, setSmokingAllowed] = useState(property.smokingAllowed ?? false);
   const [childrenAllowed, setChildrenAllowed] = useState(property.childrenAllowed ?? true);
   const [bedrooms, setBedrooms] = useState(String(property.bedrooms || ""));
@@ -119,6 +121,7 @@ export function EditarImovelClient({
         privacidadeOk: property.privacidade === undefined ? true : privacidade.semCamerasInterior,
         documento: fatos?.documento ?? "approved",
         limitePlanoOk: fatos?.limitePlanoOk ?? null,
+        limiteAnuncios: fatos?.limiteAnuncios,
         descricao: description,
         selo: fatos?.selo ?? !!property.readyToLiveBadge,
         video: fatos?.video ?? !!property.videoUrl,
@@ -177,6 +180,7 @@ export function EditarImovelClient({
       furnished: property.furnished,
       petsAllowed,
       petsRegras: petsAllowed ? petsRegras : undefined,
+      limpezaEstadia: limpeza,
       smokingAllowed,
       childrenAllowed,
       // Só manda quando a coluna existe (property.privacidade definida): senão não grava nada.
@@ -508,6 +512,9 @@ export function EditarImovelClient({
             />
           </div>
           {petsAllowed && <PetsRegrasCampos value={petsRegras} onChange={setPetsRegras} />}
+          <div className="mt-5">
+            <LimpezaEstadiaCampos value={limpeza} onChange={setLimpeza} />
+          </div>
           {property.privacidade && (
             <div className="mt-5">
               <PrivacidadeCampos valor={privacidade} onChange={setPrivacidade} />
@@ -529,7 +536,7 @@ export function EditarImovelClient({
             <NumField label="Banheiros" value={bathrooms} onChange={setBathrooms} />
             <NumField label="Área (m²)" value={areaM2} onChange={setAreaM2} />
             <NumField label="Capacidade (pessoas)" value={maxGuests} onChange={setMaxGuests} />
-            <NumField label="Aluguel (R$/mês)" value={monthlyPrice} onChange={setMonthlyPrice} />
+            <NumField label="Valor mensal (R$/mês)" value={monthlyPrice} onChange={setMonthlyPrice} />
             <NumField label="Condomínio (R$/mês)" value={condoFee} onChange={setCondoFee} />
           </div>
         </Section>

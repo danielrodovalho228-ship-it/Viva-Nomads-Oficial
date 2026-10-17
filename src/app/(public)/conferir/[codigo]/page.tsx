@@ -84,7 +84,7 @@ export default async function ConferirPage({ params }: { params: Promise<{ codig
                 </div>
               ))}
             </dl>
-            <p className="mt-4 text-xs text-muted">Por privacidade, mostramos só as iniciais das partes. Não é nota fiscal: a Viva Nomads não recebe aluguel nem caução.</p>
+            <p className="mt-4 text-xs text-muted">Por privacidade, mostramos só as iniciais das partes. Não é nota fiscal: a Viva Nomads não recebe o valor mensal nem a caução.</p>
           </>
         ) : (
           <p className="mt-3 inline-flex items-start gap-2 text-sm text-ink" data-testid="conferir-nao">

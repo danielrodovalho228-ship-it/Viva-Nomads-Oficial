@@ -14,7 +14,9 @@ test("rodapé antigolpe: aviso, link para /seguranca e aviso de fase de testes",
 });
 
 test("o layout-mãe dos e-mails (todos os modelos) usa o rodapé antigolpe", () => {
-  const fonte = readFileSync(new URL("./templates.ts", import.meta.url), "utf8");
-  const layout = fonte.slice(fonte.indexOf("function layout("), fonte.indexOf("function button("));
-  assert.match(layout, /rodapeAntigolpeHtml\(SITE_URL\)/);
+  const fonte = readFileSync(new URL("./modelo-email.ts", import.meta.url), "utf8");
+  const layout = fonte.slice(fonte.indexOf("export function layoutEmail("), fonte.indexOf("export function rodapeTexto("));
+  assert.match(layout, /rodapeAntigolpeHtml\(site\)/);
+  const templates = readFileSync(new URL("./templates.ts", import.meta.url), "utf8");
+  assert.match(templates, /layoutEmail\(inner, \{ siteUrl: SITE_URL/);
 });

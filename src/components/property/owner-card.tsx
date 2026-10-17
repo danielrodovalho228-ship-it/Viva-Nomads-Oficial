@@ -1,9 +1,11 @@
 import Image from "next/image";
-import { BadgeCheck, Clock, Handshake } from "lucide-react";
+import { Clock, Handshake } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { ResponsiveOwnerBadge } from "@/components/ui/badge";
 import { OwnerRating } from "@/components/property/owner-rating";
 import { iniciais, corAvatar } from "@/lib/avatar";
+import { donoVerificado } from "@/lib/anuncio/dono-verificado";
+import { SeloDonoVerificado } from "@/components/property/selo-dono-verificado";
 
 /** "desde 2025" / "desde mar. 2025" a partir de uma data ISO. */
 function memberSinceLabel(iso?: string): string | null {
@@ -52,12 +54,9 @@ export function OwnerCard({ property }: { property: Property }) {
         <div className="min-w-0">
           <p className="flex items-center gap-1.5 font-title font-bold text-ink">
             {name}
-            {/* Selo só quando VERIFICADO de fato (nunca por padrão). */}
-            {owner?.verified === true && <BadgeCheck className="h-4 w-4 text-blue-600" />}
           </p>
-          <p className="text-sm text-muted">
-            {owner?.verified === true ? "Proprietário verificado" : "Proprietário"}
-          </p>
+          {/* Selo só com verificação REAL registrada (nunca por padrão, nunca em exemplo). */}
+          {donoVerificado(property) ? <SeloDonoVerificado /> : <p className="text-sm text-muted">Proprietário</p>}
           <OwnerRating propertyId={property.id} />
           {/* "Responsivo" só com taxa de resposta REAL alta (antes aparecia para todos). */}
           {owner?.responseRate != null && owner.responseRate >= 90 && (

@@ -18,9 +18,11 @@ import { formatBRL, dataBR } from "@/lib/utils";
 import { motivoLabel } from "@/lib/pedidos/pedidos";
 import {
   EMAILS_PEDIDO_POR_DIA,
+  imoveisParaTela,
   melhorPor,
   porQueCombina,
   sugestaoAjuste,
+  type ImovelCompativel,
   type ParCompat,
 } from "@/lib/pedidos/compatibilidade";
 import { consumirLimite, DIA } from "@/lib/limites";
@@ -201,11 +203,11 @@ async function avisarDono(admin: Admin, pedido: PedidoResumo, par: ParCompat): P
  */
 export async function avisarCompativeisDoPedido(
   pedidoId: string
-): Promise<{ compativeis: number; sugestao: string | null }> {
+): Promise<{ compativeis: number; sugestao: string | null; imoveis: ImovelCompativel[] }> {
   const admin = createAdminClient();
-  if (!admin) return { compativeis: 0, sugestao: null };
+  if (!admin) return { compativeis: 0, sugestao: null, imoveis: [] };
   const pedido = await carregarPedido(admin, pedidoId);
-  if (!pedido) return { compativeis: 0, sugestao: null };
+  if (!pedido) return { compativeis: 0, sugestao: null, imoveis: [] };
 
   const pares = await paresCompat(admin, { pedido: pedidoId });
   const compat = pares.filter((p) => p.situacao === "compativel");
@@ -218,7 +220,11 @@ export async function avisarCompativeisDoPedido(
       console.error("[avisarCompativeisDoPedido] falha ao avisar dono:", e);
     }
   }
-  return { compativeis: compat.length, sugestao: compat.length === 0 ? sugestaoAjuste(pares) : null };
+  return {
+    compativeis: compat.length,
+    sugestao: compat.length === 0 ? sugestaoAjuste(pares) : null,
+    imoveis: imoveisParaTela(compat),
+  };
 }
 
 /**

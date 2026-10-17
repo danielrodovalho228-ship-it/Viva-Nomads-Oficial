@@ -7,43 +7,14 @@
 */
 import { SITE_URL } from "@/lib/site";
 import { buildLeadNotification } from "@/lib/leads";
-import { rodapeAntigolpeHtml } from "./aviso-antigolpe";
+import { botaoEmail, layoutEmail, rodapeTexto } from "./modelo-email";
 
-const MARK = `${SITE_URL}/email-mark.png`;
-
-/** Hero opcional: imagem correspondente ao assunto, full-width sob o cabeçalho. */
-function heroRow(image?: { src: string; alt: string }): string {
-  if (!image) return "";
-  return `<tr><td style="padding:0;font-size:0;line-height:0;">
-    <img src="${image.src}" alt="${image.alt}" width="600" style="display:block;width:100%;max-width:600px;height:auto;border:0;" />
-  </td></tr>`;
-}
-
-function layout(inner: string, image?: { src: string; alt: string }): string {
-  return `<!doctype html><html lang="pt-BR"><body style="margin:0;padding:0;background:#f1f5f4;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f4;padding:24px 12px;"><tr><td align="center">
-    <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#fff;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;">
-      <tr><td style="padding:22px 32px;border-bottom:1px solid #eef2f1;">
-        <table role="presentation" cellpadding="0" cellspacing="0"><tr>
-          <td style="vertical-align:middle;"><img src="${MARK}" width="34" height="34" alt="Viva Nomads" style="display:block;border:0;"></td>
-          <td style="vertical-align:middle;padding-left:10px;font-size:20px;font-weight:800;letter-spacing:-0.5px;"><span style="color:#0A4FD6;">Viva</span><span style="color:#5DBB1E;">Nomads</span></td>
-        </tr></table>
-      </td></tr>
-      ${heroRow(image)}
-      <tr><td style="padding:32px;">${inner}</td></tr>
-      <tr><td style="padding:20px 32px;background:#f8fafc;border-top:1px solid #eef2f1;">
-        <p style="margin:0;font-size:12px;line-height:1.6;color:#9ca3af;">Viva Nomads — imóveis mobiliados para estadias de 30 a 180 dias.<br>Se você não solicitou este e-mail, pode ignorá-lo com segurança.</p>
-        ${rodapeAntigolpeHtml(SITE_URL)}
-      </td></tr>
-    </table>
-  </td></tr></table>
-  </body></html>`;
+function layout(inner: string, image?: { src: string; alt: string }, preheader?: string): string {
+  return layoutEmail(inner, { siteUrl: SITE_URL, image, preheader });
 }
 
 function button(url: string, label: string): string {
-  return `<table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="border-radius:10px;background:#1c6b3a;">
-    <a href="${url}" style="display:inline-block;padding:13px 28px;font-size:15px;font-weight:700;color:#fff;text-decoration:none;border-radius:10px;">${label}</a>
-  </td></tr></table>`;
+  return botaoEmail(url, label);
 }
 
 type Hero = { src: string; alt: string };
@@ -115,7 +86,7 @@ export function notificationText(o: {
     o.intro,
     o.detailsText ? `\n${o.detailsText}` : "",
     o.cta ? `\n${o.cta.label}: ${o.cta.url}` : "",
-    "\n— Viva Nomads · imóveis mobiliados para estadias de 30 a 180 dias",
+    `\n${rodapeTexto(SITE_URL)}`,
   ]
     .filter((l) => l !== "")
     .join("\n");

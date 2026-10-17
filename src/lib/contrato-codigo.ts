@@ -61,3 +61,19 @@ export function conferirCodigo(
 export function podeReenviar(linha: Pick<LinhaCodigo, "enviado_em"> | null, agora: number): boolean {
   return !linha || Date.parse(linha.enviado_em) + REENVIO_MIN_MS <= agora;
 }
+
+/**
+ * Soma 1 às falhas do código sem perder tentativas simultâneas (comparação e troca): a troca só vale se o
+ * contador ainda for o que foi lido; senão lê de novo. `lerFalhas` devolve null se o código não existe ou já foi usado.
+ */
+export async function incrementarFalhas(
+  lerFalhas: () => Promise<number | null>,
+  trocar: (de: number) => Promise<boolean>,
+  tentativasMax = 5,
+): Promise<void> {
+  for (let i = 0; i < tentativasMax; i++) {
+    const atual = await lerFalhas();
+    if (atual === null) return;
+    if (await trocar(atual)) return;
+  }
+}

@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Check, ShieldCheck, Megaphone, MessageSquare, X } from "lucide-react";
-import { DashboardBanner } from "@/components/dashboard/banner";
+import { PageTitle } from "@/components/dashboard/primitives";
 import { ButtonLink } from "@/components/ui/button";
-import { PHOTOS } from "@/lib/media";
 import { cn } from "@/lib/utils";
+import { gravarLocalStorageBruto, useLocalStorageBruto } from "@/lib/use-client-state";
 
 const KEY = "vivanomads-tenant-onboarding";
 
@@ -58,31 +58,27 @@ type Saved = { done: string[]; hidden: boolean };
  * o banner normal. Estado persistido por navegador (localStorage).
  */
 export function TenantOnboarding({ name }: { name: string }) {
-  const [saved, setSaved] = useState<Saved | null>(null); // null = ainda hidratando
-
-  useEffect(() => {
+  const raw = useLocalStorageBruto(KEY); // undefined = ainda hidratando
+  // Cópia local: mantém a tela funcionando mesmo se o navegador bloquear o localStorage.
+  const [local, setLocal] = useState<Saved | null>(null);
+  let doArmazenamento: Saved = { done: [], hidden: false };
+  if (raw) {
     try {
-      const raw = localStorage.getItem(KEY);
-      setSaved(raw ? (JSON.parse(raw) as Saved) : { done: [], hidden: false });
+      doArmazenamento = JSON.parse(raw) as Saved;
     } catch {
-      setSaved({ done: [], hidden: false });
+      /* valor corrompido: recomeça */
     }
-  }, []);
+  }
+  const saved: Saved | null = raw === undefined ? null : (local ?? doArmazenamento);
 
   function persist(next: Saved) {
-    setSaved(next);
-    try {
-      localStorage.setItem(KEY, JSON.stringify(next));
-    } catch {
-      /* ignore */
-    }
+    setLocal(next);
+    gravarLocalStorageBruto(KEY, JSON.stringify(next));
   }
 
   const banner = (
-    <DashboardBanner
-      className="mb-6"
-      image={PHOTOS.dashTenant}
-      alt="Canto aconchegante de imóvel mobiliado com luz da manhã"
+    <PageTitle
+      capa="buscas"
       title={`Olá${name ? `, ${name}` : "!"} 👋`}
       subtitle="Encontre o imóvel certo para a sua próxima fase."
       action={

@@ -1,6 +1,6 @@
 /*
   Seção "Compare" da página de preços (ordens 3914d70c e aa916ba9, item 6). Base JUSTA: percentual do
-  total pago pelo morador, no formato típico de cada empresa (não valores em R$ de 3 meses). Reserva de
+  total pago pelo morador, no formato típico de cada empresa (não valores em R$ de 3 meses). Contrato de
   exemplo: 3 meses de R$ 4.320 = R$ 12.960 (usada só no exemplo da Viva). Cada número de concorrente carrega FONTE e DATA;
   linha sem fonte conferida (`fonte === null`) NÃO é exibida ao público (exceto pela regra permanente
   do Daniel, ordem c6b62141: Viva × Airbnb × QuintoAndar sempre visíveis — QuintoAndar com fonte e nota) — texto
@@ -44,7 +44,7 @@ export const LINHAS_COMPARE: readonly LinhaCompare[] = [
   {
     id: "airbnb",
     nome: "Airbnb",
-    regra: "Taxa de serviço de 16% do valor da reserva para anfitriões no Brasil, em todas as reservas.",
+    regra: "Taxa de serviço de 16% sobre cada estadia para anfitriões no Brasil.",
     pct: 0.16,
     fonte: { nome: "Central de Ajuda do Airbnb — taxas de serviço (artigo 1857)", url: "https://www.airbnb.com.br/help/article/1857" },
     conferidoEm: "2026-10-10",
@@ -53,7 +53,7 @@ export const LINHAS_COMPARE: readonly LinhaCompare[] = [
   {
     id: "booking",
     nome: "Booking",
-    regra: "Comissão de 18% sobre a reserva (programa Preferred Partner; a comissão padrão pode ser menor).",
+    regra: "Comissão de 18% sobre a estadia (programa Preferred Partner; a comissão padrão pode ser menor).",
     pct: 0.18,
     fonte: null,
     conferidoEm: null,
@@ -103,13 +103,13 @@ export const LINHAS_COMPARE: readonly LinhaCompare[] = [
   coluna com `fonte` e `conferidoEm`.
 */
 export const DIFERENCIAIS_VIVA: readonly string[] = [
-  "Você só paga quando a reserva é fechada",
+  "Você só paga quando o contrato é fechado",
   "Contrato pronto, assinado na plataforma",
   "Chat com quem vai morar",
   "Avaliação dos dois lados",
   "Profissionais que ficam meses",
   "Sem contrato de 30 meses",
-  "Sem faxina nem check-in toda semana",
+  "Sem faxina nem troca de morador toda semana",
   "Nenhuma taxa para quem vem morar",
 ];
 

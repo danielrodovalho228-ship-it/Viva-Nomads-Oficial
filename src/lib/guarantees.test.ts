@@ -111,13 +111,12 @@ test("garantia 'inativo' nunca é elegível", () => {
   assert.ok(!filtra.some((g) => g.id === "x"));
 });
 
-test("Aqui Resolve ATIVA: os dois serviços aparecem como disponíveis e selecionáveis", () => {
-  // Assistência 24h e Plano de manutenção agora estão 'ativo' (MVP).
-  assert.equal(servicosDisponiveis().length, 2);
+test("Serviços: Plano de manutenção disponível; Assistência 24h 'Em breve' (sem parceiro real, ordem 3e2b7030)", () => {
+  assert.equal(servicosDisponiveis().length, 1);
   const visiveis = servicosVisiveis();
   assert.equal(visiveis.length, 2);
-  // Todos selecionáveis agora que estão 'ativo'.
-  assert.equal(visiveis.every((s) => servicoSelecionavel(s)), true);
+  assert.equal(servicoSelecionavel(visiveis.find((s) => s.id === "assistencia_24h")!), false);
+  assert.equal(servicoSelecionavel(visiveis.find((s) => s.id === "plano_manutencao")!), true);
   // Quem paga continua correto por serviço.
   const assist = visiveis.find((s) => s.id === "assistencia_24h")!;
   const manut = visiveis.find((s) => s.id === "plano_manutencao")!;

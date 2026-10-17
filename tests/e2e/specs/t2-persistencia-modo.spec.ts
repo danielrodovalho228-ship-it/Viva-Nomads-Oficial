@@ -16,14 +16,14 @@ test.describe("T2 — Conta única, sem seletor de modo @criticos", () => {
   test.use({ storageState: authFile(CONTA_T2) });
 
   test("não há seletor nem texto de modo no menu lateral", async ({ page }) => {
-    await page.goto("/dashboard", { waitUntil: "networkidle" });
+    await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
     await expect(page.locator("aside nav")).toBeVisible();
     await expect(page.locator("aside")).not.toContainText(/Modo:/);
     await expect(page.getByRole("button", { name: /^Trocar para /i })).toHaveCount(0);
   });
 
   test("deep-link /dashboard/ferramentas abre dentro da casca, sem redirect", async ({ page }) => {
-    await page.goto("/dashboard/ferramentas", { waitUntil: "networkidle" });
+    await page.goto("/dashboard/ferramentas", { waitUntil: "domcontentloaded" });
     await expect(page).toHaveURL(/\/dashboard\/ferramentas/);
     await expect(page.locator("aside nav")).toBeVisible();
   });

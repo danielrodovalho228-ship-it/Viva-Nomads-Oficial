@@ -28,7 +28,7 @@ test("proximidade de saúde/educação cadastrada vira destaque, com o nome real
   );
   assert.equal(d.length, 1);
   assert.match(d[0].titulo, /HC-UFU/);
-  assert.equal(d[0].detalhe, "10 min a pé");
+  assert.equal(d[0].detalhe, "~10 min a pé");
 });
 
 test("máximo de 3 destaques, na ordem de prioridade", () => {

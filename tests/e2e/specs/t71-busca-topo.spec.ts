@@ -33,7 +33,10 @@ test.describe("T71 — topo da /buscar", () => {
     const cBox = (await compacta.boundingBox())!;
     expect(cBox.y).toBeGreaterThanOrEqual(hBox.y);
     expect(cBox.y + cBox.height).toBeLessThanOrEqual(hBox.y + hBox.height);
-    expect(Math.abs(cBox.x + cBox.width / 2 - 720), "busca compacta centralizada").toBeLessThanOrEqual(48);
+    // Centralizada no espaço entre o logo e as ações (o slot é flex-1): o logo é mais estreito que as
+    // ações, então o centro da tela não é o alvo certo (ordem 75553f0a: spec acompanha o produto).
+    const sBoxSlot = (await header.getByTestId("slot-busca-header").boundingBox())!;
+    expect(Math.abs(cBox.x + cBox.width / 2 - (sBoxSlot.x + sBoxSlot.width / 2)), "busca compacta centralizada").toBeLessThanOrEqual(4);
     await expect(page.getByTestId("filtros-caixa")).toBeHidden();
 
     // Sem espaço branco morto: o título vem logo abaixo do cabeçalho.
