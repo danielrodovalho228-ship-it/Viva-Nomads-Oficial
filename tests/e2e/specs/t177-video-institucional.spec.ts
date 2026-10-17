@@ -49,12 +49,17 @@ for (const rota of ["/", "/como-funciona"]) {
       // Nada do mp4 antes do play.
       expect(mp4, "mp4 baixado antes do play").toEqual([]);
       // No play, aí sim.
+      // Dispara o play sem esperar a promessa (o Chromium do laboratório não tem o codec H.264 e a
+      // promessa pode não resolver); o que importa aqui é o pedido do mp4 só depois do play.
       await video.evaluate((v: HTMLVideoElement) => {
         v.muted = true;
-        return v.play().catch(() => undefined);
+        void v.play().catch(() => undefined);
       });
       await expect.poll(() => mp4.length, { timeout: 15_000 }).toBeGreaterThan(0);
-      // A legenda carrega de verdade (cues válidas).
+      // A legenda carrega de verdade (cues válidas): o navegador analisou o WebVTT.
+      await video.evaluate((v: HTMLVideoElement) => {
+        if (v.textTracks[0]) v.textTracks[0].mode = "showing";
+      });
       await expect
         .poll(() => video.evaluate((v: HTMLVideoElement) => v.textTracks[0]?.cues?.length ?? 0), { timeout: 15_000 })
         .toBeGreaterThan(0);
