@@ -845,7 +845,7 @@
       "specs": [
         "t69-botoes-header",
         "t72-paginas-institucionais",
-        "t167-faixas-taxa-cors"
+        "t169-faixas-taxa-cors"
       ]
     },
     "/parceiros/fotografos": {
@@ -853,7 +853,7 @@
         "publico"
       ],
       "specs": [
-        "t167-faixas-taxa-cors"
+        "t169-faixas-taxa-cors"
       ]
     },
     "/pedidos": {
