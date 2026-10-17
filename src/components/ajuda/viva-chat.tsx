@@ -57,9 +57,9 @@ export function VivaChatFlutuante() {
   const botao = useRef<HTMLButtonElement>(null);
   const gesto = useRef<{ id: number; x: number; y: number; dxBotao: number; baixo0: number; arrastou: boolean } | null>(null);
   const escondido = ESCONDER.some((p) => pathname === p || pathname.startsWith(p + "/"));
-  // Página do imóvel no celular (Q4, iPhone do Daniel): só o ícone redondo, para não tampar
+  // Página do imóvel e /precos no celular (Q4 e prompt 13): só o ícone redondo, para não tampar
   // estrelas e o total do mês. A barra fixa fica embaixo; o nome acessível continua "Fale com a Viva".
-  const compacto = pathname.startsWith("/imoveis/");
+  const compacto = pathname.startsWith("/imoveis/") || pathname === "/precos";
 
   const medirTela = (): Tela => ({ largura: window.innerWidth, altura: window.innerHeight });
   const tamanhoBotao = (): Tamanho => {
