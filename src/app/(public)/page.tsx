@@ -32,6 +32,7 @@ import { PropertyCard } from "@/components/property-card";
 import { BuscaPrincipal } from "@/components/home/busca-principal";
 import { AtalhosCategoria } from "@/components/home/atalhos-categoria";
 import { HeroVideoBg } from "@/components/hero-video-bg";
+import { VideoInstitucional } from "@/components/institucional/video-institucional";
 import { JsonLd } from "@/components/seo/json-ld";
 import { organizacao } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
@@ -82,6 +83,9 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* ───────── A VIVA EM 30 SEGUNDOS (vídeo institucional v3; só toca no play) ───────── */}
+      <VideoInstitucional />
 
       {/* ───────── ATALHOS POR CATEGORIA ───────── */}
       <AtalhosCategoria imoveis={todos} />

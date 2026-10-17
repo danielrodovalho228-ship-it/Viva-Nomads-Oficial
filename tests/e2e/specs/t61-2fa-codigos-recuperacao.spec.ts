@@ -63,7 +63,7 @@ test.describe("T61 — 2FA códigos de recuperação (390px)", () => {
       for (const ruim of ["ZZZZZ-ZZZZZ", primeiros[0]]) {
         await p2.locator("#codigo-recuperacao").fill(ruim);
         await p2.getByRole("button", { name: "Usar código de recuperação" }).click();
-        await expect(p2.getByRole("alert")).toContainText("inválido ou já usado");
+        await expect(p2.locator('p[role="alert"]')).toContainText("inválido ou já usado");
       }
 
       // Código novo: vale uma vez, desliga o app antigo e vai para cadastrar de novo.
@@ -89,7 +89,7 @@ test.describe("T61 — 2FA códigos de recuperação (390px)", () => {
     await ativar.click();
     await page.locator("#codigo-ativar").fill("000000");
     await page.getByRole("button", { name: "Confirmar código e ativar" }).click();
-    await expect(page.getByRole("alert")).toContainText(/relógio do celular está no automático.*entrada mais nova do app/);
+    await expect(page.locator('p[role="alert"]')).toContainText(/relógio do celular está no automático.*entrada mais nova do app/);
     await page.context().close();
   });
 });
