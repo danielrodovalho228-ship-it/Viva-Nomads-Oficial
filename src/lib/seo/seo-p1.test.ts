@@ -108,3 +108,10 @@ test("#93089e14 (#36/#61/#113): títulos <= 60 com o sufixo da marca e og:url da
     if (og) assert.match(src, new RegExp(`openGraph:\\s*\\{[^}]*url:\\s*"${og}"`));
   }
 });
+
+test("robots: o layout raiz não declara 'index, follow' (vazava nas 404 com not-found próprio, junto do noindex)", () => {
+  const layout = ler("src/app/layout.tsx");
+  const bloco = layout.slice(layout.indexOf("robots: {"), layout.indexOf("},", layout.indexOf("robots: {")) + 2);
+  assert.doesNotMatch(bloco, /index:\s*true|follow:\s*true/);
+  assert.match(bloco, /"max-image-preview": "large"/);
+});
