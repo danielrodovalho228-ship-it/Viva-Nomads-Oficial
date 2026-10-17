@@ -5,6 +5,7 @@ import Link from "next/link";
 import { CheckCircle2, Circle, Clock, Eye, KeyRound, Briefcase, Mail, ShieldCheck, Smartphone, UserCheck } from "lucide-react";
 import { Panel } from "@/components/dashboard/primitives";
 import { useViewMode } from "@/lib/roles";
+import { useProperties } from "@/lib/use-properties";
 import { useDisplayUser } from "@/lib/demo/demo-mode";
 import { createClient } from "@/lib/supabase/client";
 import { getMeusDados } from "@/lib/data/perfil-actions";
@@ -49,24 +50,32 @@ export function PerfilProfissional() {
   );
 }
 
+/**
+ * A página pública do proprietário só existe para quem já anunciou (sem imóvel, dá 404). Por isso o link
+ * só aparece com ao menos um imóvel; antes disso, nada de link quebrado.
+ */
+function LinkPerfilPublico({ id }: { id: string }) {
+  const { properties } = useProperties("/api/properties/mine");
+  if (properties.length === 0) return null;
+  return (
+    <Link
+      href={`/proprietario/${id}`}
+      target="_blank"
+      className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-forest underline underline-offset-2"
+      data-testid="ver-como-outros-veem"
+    >
+      <Eye className="h-4 w-4" aria-hidden /> Ver como os outros veem
+    </Link>
+  );
+}
+
 /** "Ver como os outros veem": proprietário abre a página pública; inquilino vê o cartão de candidato. */
 export function VerComoOutrosVeem() {
   const user = useDisplayUser();
   const { mode } = useViewMode();
   const [aberto, setAberto] = useState(false);
   if (!user) return null;
-  if (mode !== "tenant") {
-    return (
-      <Link
-        href={`/proprietario/${user.id}`}
-        target="_blank"
-        className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-forest underline underline-offset-2"
-        data-testid="ver-como-outros-veem"
-      >
-        <Eye className="h-4 w-4" aria-hidden /> Ver como os outros veem
-      </Link>
-    );
-  }
+  if (mode !== "tenant") return <LinkPerfilPublico id={user.id} />;
   return (
     <div className="mt-4">
       <button
