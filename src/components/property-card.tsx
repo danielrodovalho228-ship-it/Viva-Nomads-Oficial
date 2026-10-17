@@ -3,6 +3,7 @@ import { Bath, BedDouble, PawPrint, Ruler, Star, PlayCircle, Users } from "lucid
 import type { Property } from "@/lib/types";
 import { formatBRL, numBR } from "@/lib/utils";
 import { calcularTudoIncluido, textosTotalMensal } from "@/lib/precos";
+import { quartosTexto, banheirosTexto } from "@/lib/anuncio/plural";
 import { tierFromPhotoCount } from "@/lib/listing";
 import { SELO_NF_UI } from "@/lib/flags";
 import { isExemplo } from "@/lib/demo-listing";
@@ -108,10 +109,10 @@ export function PropertyCard({
           {/* Tipo saiu da foto e virou metadado (Fase 3). */}
           <span className="font-medium text-ink">{property.propertyType}</span>
           <span className="inline-flex items-center gap-1" data-testid="card-quartos">
-            <BedDouble className="h-4 w-4" aria-hidden /> {property.bedrooms} {property.bedrooms === 1 ? "quarto" : "quartos"}
+            <BedDouble className="h-4 w-4" aria-hidden /> {quartosTexto(property.bedrooms)}
           </span>
           <span className="inline-flex items-center gap-1">
-            <Bath className="h-4 w-4" aria-hidden /> {property.bathrooms} {property.bathrooms === 1 ? "banheiro" : "banheiros"}
+            <Bath className="h-4 w-4" aria-hidden /> {banheirosTexto(property.bathrooms)}
           </span>
           <span className="inline-flex items-center gap-1">
             <Ruler className="h-4 w-4" /> {property.areaM2} m²
@@ -122,9 +123,9 @@ export function PropertyCard({
             </span>
           )}
           {property.petsAllowed && (
-            <span className="inline-flex items-center gap-1" title="Aceita pet">
+            <span className="inline-flex items-center gap-1" title="Aceita pets">
               <PawPrint className="h-4 w-4" aria-hidden="true" />
-              <span className="sr-only">Aceita pet</span>
+              <span className="sr-only">Aceita pets</span>
             </span>
           )}
         </div>

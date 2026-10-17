@@ -3,6 +3,7 @@ import { Bath, BedDouble, PawPrint, X, type LucideIcon } from "lucide-react";
 import { ICONE_POR_CHAVE } from "@/lib/anuncio/comodidades-icones";
 import type { Property } from "@/lib/types";
 import { formatBRL } from "@/lib/utils";
+import { quartosTexto, banheirosTexto } from "@/lib/anuncio/plural";
 import { precoDeBusca } from "@/lib/busca/painel-filtros";
 import { AMENITY_KEY_BY_LABEL, AMENITY_LABEL } from "@/lib/amenities";
 import { disponivelAPartirDe } from "@/lib/busca/disponibilidade";
@@ -20,7 +21,7 @@ const isPhoto = (s?: string) => typeof s === "string" && (/^https?:\/\//.test(s)
 export function iconesComodidades(p: Pick<Property, "amenities" | "petsAllowed">): { chave: string; rotulo: string; Icone: LucideIcon }[] {
   const tem = new Set((p.amenities ?? []).map((a) => AMENITY_KEY_BY_LABEL[a] ?? a));
   const out = ICONES.filter(([k]) => tem.has(k)).map(([k, Icone]) => ({ chave: k, rotulo: AMENITY_LABEL[k] ?? k, Icone }));
-  if (p.petsAllowed) out.push({ chave: "pet", rotulo: "Aceita pet", Icone: PawPrint });
+  if (p.petsAllowed) out.push({ chave: "pet", rotulo: "Aceita pets", Icone: PawPrint });
   return out.slice(0, 6);
 }
 
@@ -70,10 +71,10 @@ export function CardPinMapa({ property: p, onFechar }: { property: Property; onF
           </p>
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 text-xs text-ink">
-              <BedDouble className="h-3.5 w-3.5" aria-hidden /> {p.bedrooms} {p.bedrooms === 1 ? "quarto" : "quartos"}
+              <BedDouble className="h-3.5 w-3.5" aria-hidden /> {quartosTexto(p.bedrooms)}
             </span>
             <span className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 text-xs text-ink">
-              <Bath className="h-3.5 w-3.5" aria-hidden /> {p.bathrooms} {p.bathrooms === 1 ? "banheiro" : "banheiros"}
+              <Bath className="h-3.5 w-3.5" aria-hidden /> {banheirosTexto(p.bathrooms)}
             </span>
           </div>
           {icones.length > 0 && (

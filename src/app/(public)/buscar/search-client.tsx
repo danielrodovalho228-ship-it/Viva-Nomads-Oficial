@@ -847,7 +847,7 @@ export function SearchClient({ properties: imoveis, topo }: { properties: Proper
                 💻 Para trabalhar de casa
               </Chip>
               <Chip on={petsOnly} onClick={() => { setPetsOnly((v) => !v); setPetPorte(""); }}>
-                🐾 Aceita pet
+                🐾 Aceita pets
               </Chip>
               {petsOnly && (
                 <div data-testid="filtro-porte-pet" className="contents">
@@ -928,7 +928,7 @@ export function SearchClient({ properties: imoveis, topo }: { properties: Proper
             {homeOfficeOnly && (
               <ActiveChip label="Trabalhar de casa" onClear={() => setHomeOfficeOnly(false)} />
             )}
-            {petsOnly && <ActiveChip label={petPorte ? `Aceita pet ${ROTULO_PORTE_CURTO[petPorte]}` : "Aceita pet"} onClear={() => { setPetsOnly(false); setPetPorte(""); }} />}
+            {petsOnly && <ActiveChip label={petPorte ? `Aceita pets ${ROTULO_PORTE_CURTO[petPorte]}` : "Aceita pets"} onClear={() => { setPetsOnly(false); setPetPorte(""); }} />}
             {SELO_NF_UI && invoiceOnly && <ActiveChip label="Nota Fiscal" onClear={() => setInvoiceOnly(false)} />}
             {insuranceOnly && (
               <ActiveChip label="Seguro-Fiança" onClear={() => setInsuranceOnly(false)} />

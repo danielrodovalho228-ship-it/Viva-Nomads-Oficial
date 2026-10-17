@@ -79,8 +79,8 @@ test("painel: rascunho só vale ao aplicar; diálogo acessível; Esc fecha", () 
 
 test("card: foto, preço por mês, quartos/banheiros por extenso, bairro e disponibilidade", () => {
   const c = ler("components/property-card.tsx");
-  assert.match(c, /\{property\.bedrooms === 1 \? "quarto" : "quartos"\}/);
-  assert.match(c, /\{property\.bathrooms === 1 \? "banheiro" : "banheiros"\}/);
+  assert.match(c, /\{quartosTexto\(property\.bedrooms\)\}/); // plural único (ordem dd15064d, D7b)
+  assert.match(c, /\{banheirosTexto\(property\.bathrooms\)\}/);
   assert.match(c, /\{property\.neighborhood\}, \{property\.city\}/);
   assert.match(c, /\/mês total<\/span>/); // custo total do mês em destaque (ordem 1a555bfa)
   const hoje = new Date("2026-10-14T12:00:00Z");
