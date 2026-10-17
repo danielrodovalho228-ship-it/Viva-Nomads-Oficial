@@ -24,3 +24,10 @@ test("#b6621ca2: grade de 6 colunas fecha 3 cartões de 2 + 2 de 3, sem buraco",
   assert.equal(soma, 12);
   assert.deepEqual(FOTOS_PARCERIA.map((c) => /lg:col-span-(\d)/.exec(c.classeGrade)?.[1]), ["2", "2", "2", "3", "3"]);
 });
+
+test("#4615cfb8: alt de 'empresas' diz 'imóvel mobiliado' e o 5º cartão ocupa a linha toda", () => {
+  const empresas = FOTOS_PARCERIA.find((c) => c.id === "empresas")!;
+  assert.match(empresas.alt, /imóvel mobiliado/);
+  assert.doesNotMatch(empresas.alt, /apartamento/);
+  assert.match(FOTOS_PARCERIA.find((c) => c.id === "seguros")!.classeGrade, /sm:col-span-2/);
+});

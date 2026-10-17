@@ -21,8 +21,8 @@ const EMBAIXO = "lg:col-span-3";
 export const FOTOS_PARCERIA: CartaoParceria[] = [
   { id: "fotografos", foto: "/images/unicas/parceiros-fotografos.webp", fotoPronta: false, alt: "Fotógrafo fotografando a sala de um imóvel mobiliado",
     briefing: "Fotógrafo com câmera em uma sala mobiliada e iluminada, de frente ou de lado, sem rosto em destaque.", classeGrade: `sm:col-span-1 ${EM_CIMA}` },
-  { id: "empresas", foto: "/images/unicas/parceiros-empresas.webp", fotoPronta: false, alt: "Equipe de trabalho em um apartamento mobiliado",
-    briefing: "Duas ou três pessoas com notebook em uma sala de apartamento mobiliado, clima de trabalho.", classeGrade: `sm:col-span-1 ${EM_CIMA}` },
+  { id: "empresas", foto: "/images/unicas/parceiros-empresas.webp", fotoPronta: false, alt: "Equipe de trabalho em um imóvel mobiliado",
+    briefing: "Duas ou três pessoas com notebook em uma sala de imóvel mobiliado, clima de trabalho.", classeGrade: `sm:col-span-1 ${EM_CIMA}` },
   { id: "gestores", foto: "/images/unicas/parceiros-gestores.webp", fotoPronta: false, alt: "Gestor entregando a chave de um imóvel mobiliado",
     briefing: "Mão entregando um molho de chaves na porta de um apartamento, sem rosto identificável.", classeGrade: `sm:col-span-1 ${EM_CIMA}` },
   { id: "servicos", foto: "/images/unicas/parceiros-servicos.webp", fotoPronta: false, alt: "Profissional de limpeza arrumando um quarto mobiliado",
