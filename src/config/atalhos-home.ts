@@ -5,7 +5,8 @@
  * em public/images/home/cartao-*.webp (4:3).
  */
 export const ATALHOS_CATEGORIA = [
-  { rotulo: "Até R$ 2.000/mês", icone: "Wallet", href: "/buscar?orcamento=2000", foto: "/images/home/cartao-ate-2000.webp", alt: "Sala ampla e clara com vista para a cidade" },
+  // Faixas = as do filtro de preço da /buscar (2500/3500/5000), comparadas ao TOTAL do mês (ordem 544b148a, D15).
+  { rotulo: "Até R$ 2.500/mês", icone: "Wallet", href: "/buscar?preco=2500", foto: "/images/home/cartao-ate-2000.webp", alt: "Sala ampla e clara com vista para a cidade" },
   { rotulo: "Aceita pets", icone: "PawPrint", href: "/buscar?pet=1", foto: "/images/home/cartao-aceita-pets.webp", alt: "Cachorro deitado no sofá de um imóvel mobiliado" },
   { rotulo: "Para trabalhar de casa", icone: "Laptop", href: "/buscar?homeoffice=1", foto: "/images/home/cartao-home-office.webp", alt: "Escritório em casa com mesa, notebook e cadeira ergonômica" },
   { rotulo: "3+ quartos", icone: "BedDouble", href: "/buscar?quartos=3", foto: "/images/home/cartao-3-quartos.webp", alt: "Sala de estar espaçosa de imóvel mobiliado para família" },

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { BedDouble, CarFront, Laptop, MapPin, PawPrint, Wallet, type LucideIcon } from "lucide-react";
 import { ATALHOS_CATEGORIA } from "@/config/atalhos-home";
 import { atalhosComContagem } from "@/lib/busca/atalhos-contagem";
+import { comTotalMes } from "@/lib/precos";
 import type { Property } from "@/lib/types";
 import { BRAND_BLUR } from "@/lib/media";
 
@@ -15,7 +16,8 @@ const ICONES: Record<string, LucideIcon> = { Wallet, PawPrint, Laptop, BedDouble
  * sobre a foto, título com no máximo 2 linhas e contagem — todos com a mesma altura.
  */
 export function AtalhosCategoria({ imoveis }: { imoveis: Property[] }) {
-  const atalhos = atalhosComContagem(ATALHOS_CATEGORIA, imoveis);
+  // Conta pelo TOTAL do mês (o do cartão), como a /buscar filtra.
+  const atalhos = atalhosComContagem(ATALHOS_CATEGORIA, imoveis.map((p) => comTotalMes(p)));
   if (atalhos.length === 0) return null;
   return (
     <section className="bg-surface py-10 sm:py-14" aria-labelledby="atalhos-titulo">
