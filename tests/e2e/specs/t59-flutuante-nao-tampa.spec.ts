@@ -7,7 +7,7 @@ import { authFile } from "../fixtures/auth";
  * Para cada botão principal visível (data-cta / submit) e cada campo, o elemento que recebe o
  * clique no centro é o próprio controle (elementFromPoint).
  * Ordem 4f8d17c6: o flutuante é o botão primário do site (ícone + texto, 48 px de altura,
- * cantos de 8 px), igual em todas as páginas; não some ao rolar — sobe para não tampar.
+ * cantos de 8 px), igual em todas as páginas; não some ao rolar. Ordem a9982623: posição estável (arrastável), sem subir sozinho; só conferimos o topo e o fim da página.
  */
 async function nadaTampa(page: Page) {
   const tampados = await page.evaluate(() => {
@@ -57,7 +57,6 @@ for (const largura of [360, 390]) {
         await page.evaluate((yy) => window.scrollTo(0, yy), y);
         await page.waitForTimeout(300);
         await expect(flut, `visível na /buscar após rolar ${y}px`).toBeVisible();
-        await nadaTampa(page);
       }
     });
 
@@ -87,11 +86,13 @@ for (const largura of [360, 390]) {
 
 /** Ordem 4f8d17c6: mesmo formato e mesmos tokens do botão primário em todas as páginas e larguras. */
 test("4f8d17c6 — flutuante idêntico em /, /buscar, /precos e /como-funciona a 390, 768 e 1280 px", async ({ page }) => {
+  // 12 páginas (3 larguras × 4 rotas): não cabe nos 45 s padrão; "load" evita esperar o mapa e os pings.
+  test.setTimeout(180_000);
   const estilos = new Set<string>();
   for (const largura of [390, 768, 1280]) {
     await page.setViewportSize({ width: largura, height: 800 });
     for (const rota of ["/", "/buscar", "/precos", "/como-funciona"]) {
-      await page.goto(rota, { waitUntil: "networkidle" });
+      await page.goto(rota, { waitUntil: "load" });
       const flut = page.getByTestId("fale-com-a-viva");
       await expect(flut, `${rota} a ${largura}px`).toBeVisible();
       await expect(flut).toHaveText("Fale com a Viva");

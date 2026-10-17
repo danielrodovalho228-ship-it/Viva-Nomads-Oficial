@@ -59,7 +59,7 @@ for (const largura of [360, 390]) {
       for (let i = 0; i < n; i++) {
         const el = alvos.nth(i);
         if (!(await el.isVisible())) continue;
-        await el.evaluate((e) => e.scrollIntoView({ block: "center" }));
+        await el.evaluate((e) => e.scrollIntoView({ block: "center", behavior: "instant" }));
         const livre = await el.evaluate((e) => {
           const r = e.getBoundingClientRect();
           const topo = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
@@ -79,7 +79,7 @@ for (const largura of [360, 390]) {
         expect(caixa.height).toBeGreaterThanOrEqual(44);
         expect(caixa.x + caixa.width).toBeLessThanOrEqual(largura);
         const livreAtivo = await remover.evaluate((e) => {
-          e.scrollIntoView({ block: "center" });
+          e.scrollIntoView({ block: "center", behavior: "instant" });
           const r = e.getBoundingClientRect();
           const topo = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
           return !!topo && (e === topo || e.contains(topo));

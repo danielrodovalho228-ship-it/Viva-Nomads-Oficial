@@ -1,7 +1,9 @@
 "use server";
 
+import { gravarMarca } from "@/lib/marcas/servidor";
 import { perfilDonoCompleto, MSG_PERFIL_DONO_INCOMPLETO } from "@/lib/anuncio/perfil-dono";
 import { atualizarRascunhoDoDono } from "@/lib/data/rascunho-dono";
+import { camposDeConteudoDoRascunho } from "@/lib/data/rascunho-campos";
 import { ligarQualificacaoAoImovel } from "@/lib/data/ligar-qualificacao";
 import { caminhoDoDono, operacaoValida } from "@/lib/anuncio/operacao";
 import { revalidatePath } from "next/cache";
@@ -34,10 +36,15 @@ import { erroBancoPT } from "@/lib/erros-banco";
 import { planoDoProprietario } from "@/lib/data/plano-efetivo";
 import { adminsPorAviso } from "@/lib/notifications/push-admins";
 import { avisarPedidosDoImovel } from "@/lib/data/pedidos-compat";
+import { avisarBuscasDoImovel } from "@/lib/data/alerta-busca-servidor";
 import { INTERNET_META } from "@/lib/internet";
+import { validarMotivoEstadia } from "@/lib/conta-validacao";
 import { getPropertyForOwner } from "@/lib/data/properties";
+import { colunaAirbnb } from "@/lib/preco-justo";
 import { colunasPrivacidade, type TipoAcesso } from "@/lib/anuncio/privacidade";
-import { prontidaoDoImovel } from "@/lib/anuncio/prontidao-servidor";
+import { prontidaoDoImovel, fatosDosImoveis } from "@/lib/anuncio/prontidao-servidor";
+import { prontidaoAnuncio } from "@/lib/anuncio/prontidao";
+import { scoreAnuncio, type ScoreAnuncio } from "@/lib/anuncio/score";
 import type { Prontidao } from "@/lib/anuncio/prontidao";
 import { guardContactInfo } from "@/lib/messages/contact-guard";
 import { isExemplo, EXEMPLO_SEM_CONTATO } from "@/lib/demo-listing";
@@ -45,6 +52,7 @@ import { conversationId as idConversa } from "@/lib/messages/conversation-id";
 import { SITE_URL } from "@/lib/site";
 import type { Property } from "@/lib/types";
 import { hojeBR, dataBR } from "@/lib/utils";
+import { validarInicioEstadia } from "@/lib/inicio-estadia";
 import {
   resumoContrato,
   encadearDatas,
@@ -62,6 +70,8 @@ import {
   type BlocoComDatas,
 } from "@/lib/contrato-blocos";
 import { normalizarRegrasPets } from "@/lib/anuncio/pets-regras";
+import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
+import { videoTourPermitido } from "@/lib/video-tour";
 import { validarGarantia, type GarantiaContrato } from "@/lib/guarantees";
 
 type ActionResult = { ok: boolean; demo?: boolean; id?: string; error?: string };
@@ -299,6 +309,8 @@ export interface PropertyInput {
   areaM2: number;
   minPeriodDays: number;
   monthlyPrice: number;
+  /** Preço mensal equivalente no Airbnb (opcional) — base do selo "Preço justo" (0130). */
+  airbnbMonthlyPrice?: number;
   readyToLiveScore: number;
   tagHomeOffice?: boolean;
   tagWorkLocated?: boolean;
@@ -344,6 +356,8 @@ export interface PropertyInput {
   petsAllowed?: boolean;
   /** Regras de pets do proprietário (validadas no servidor; requer migração 0119). */
   petsRegras?: unknown;
+  /** Pacote de limpeza durante a estadia; validado no servidor (0144). */
+  limpezaEstadia?: unknown;
   smokingAllowed?: boolean;
   childrenAllowed?: boolean;
   maxGuests?: number;
@@ -424,6 +438,10 @@ async function exigirAceiteIa(
 }
 
 export async function createProperty(input: PropertyInput): Promise<ActionResult> {
+  // Tour em vídeo (ordem 6f964617): só YouTube/Vimeo em https, validado no servidor.
+  if (input.videoUrl?.trim() && !videoTourPermitido(input.videoUrl)) {
+    return { ok: false, error: "O vídeo precisa ser um link do YouTube ou do Vimeo." };
+  }
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
 
@@ -479,6 +497,7 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
       area_m2: input.areaM2,
       min_period_days: input.minPeriodDays,
       monthly_price: input.monthlyPrice,
+      ...colunaAirbnb(input.airbnbMonthlyPrice),
       // Nasce rascunho: a qualificação é ligada logo abaixo e só então o
       // imóvel é publicado (o banco confere o documento DESTE imóvel — 0060).
       status: "draft",
@@ -498,7 +517,7 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
       accepts_insurance: input.acceptsInsurance ?? false,
       garantias_aceitas: input.garantiasAceitas ?? [],
       prep_fee: input.prepFee ?? 0,
-      video_url: input.videoUrl ?? null,
+      video_url: input.videoUrl?.trim() || null,
     })
     .select("id")
     .single();
@@ -637,6 +656,7 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
   if (!input.asDraft) {
     try {
       await avisarPedidosDoImovel(data.id as string);
+      await avisarBuscasDoImovel(data.id as string);
     } catch {
       /* best-effort */
     }
@@ -658,6 +678,10 @@ export async function loadPropertyForEdit(id: string): Promise<Property | null> 
  * tabelas de enriquecimento — migração ausente não derruba a edição base.
  */
 export async function updateProperty(id: string, input: PropertyInput): Promise<ActionResult> {
+  // Tour em vídeo (ordem 6f964617): só YouTube/Vimeo em https, validado no servidor.
+  if (input.videoUrl?.trim() && !videoTourPermitido(input.videoUrl)) {
+    return { ok: false, error: "O vídeo precisa ser um link do YouTube ou do Vimeo." };
+  }
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
   const {
@@ -719,6 +743,7 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
       area_m2: input.areaM2,
       min_period_days: input.minPeriodDays,
       monthly_price: input.monthlyPrice,
+      ...colunaAirbnb(input.airbnbMonthlyPrice),
       ready_to_live_score: input.readyToLiveScore,
       ready_to_live_badge: input.readyToLiveScore >= 70,
       tag_home_office: input.tagHomeOffice ?? false,
@@ -737,7 +762,7 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
       accepts_insurance: input.acceptsInsurance ?? false,
       garantias_aceitas: input.garantiasAceitas ?? [],
       prep_fee: input.prepFee ?? 0,
-      video_url: input.videoUrl ?? null,
+      video_url: input.videoUrl?.trim() || null,
     })
     .eq("id", id)
     .eq("owner_id", user.id);
@@ -781,6 +806,16 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
     await supabase.from("properties").update({ pets_regras: regras }).eq("id", id).eq("owner_id", user.id);
   } catch {
     /* migração 0119 ausente — segue com o aceite geral */
+  }
+
+  // Pacote de limpeza durante a estadia (0144): validado aqui; sem pacote válido grava null.
+  if ("limpezaEstadia" in input) {
+    try {
+      const pacote = normalizarLimpezaEstadia(input.limpezaEstadia);
+      await supabase.from("properties").update({ limpeza_estadia: pacote }).eq("id", id).eq("owner_id", user.id);
+    } catch {
+      /* migração 0144 ausente — segue sem o pacote */
+    }
   }
 
   // Re-sincroniza tabelas filhas: apaga as atuais e regrava as do formulário.
@@ -837,6 +872,7 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
   if (input.asDraft === false && antes?.status !== "active") {
     try {
       await avisarPedidosDoImovel(id);
+      await avisarBuscasDoImovel(id);
     } catch {
       /* best-effort */
     }
@@ -1006,7 +1042,9 @@ export async function registrarContrato(
   if (!FAIXAS_CONTRATO.has(input.faixa)) return { ok: false, error: "Faixa de prazo inválida." };
   const ocupantes = Math.round(Number(input.qtdOcupantes));
   if (!(ocupantes >= 1 && ocupantes <= 20)) return { ok: false, error: "Número de ocupantes inválido." };
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.inicioISO)) return { ok: false, error: "Data de início inválida." };
+  // F37: data de início obrigatória, hoje ou futura (os blocos e os prazos partem dela).
+  const inicio = validarInicioEstadia(input.inicioISO, hojeBR());
+  if (!inicio.ok) return { ok: false, error: inicio.error };
 
   const plano = (lead.accepted_plan as string) ?? "free";
   // NULL cai para a taxa do plano no aceite (antes Number(null) = 0 = Gestor).
@@ -1254,7 +1292,11 @@ export async function requestLead(
   // e-mail oficial (dava para enviar um título com link de golpe).
   _tituloDoCliente: string,
   kind: LeadKind,
-  note?: string
+  note?: string,
+  // F37: data de entrada que o inquilino quer (opcional). Só a candidatura guarda; o servidor valida.
+  inicioDesejado?: string,
+  // Motivo da estadia (chave de MOTIVOS). Vazio na candidatura = usa o do perfil. Inválido é ignorado.
+  motivoEstadia?: string
 ): Promise<ActionResult & { needsAuth?: boolean; selfOwned?: boolean; exemplo?: boolean }> {
   // T9: anúncio de EXEMPLO não tem dono — nada de candidatura, contato nem e-mail
   // (antes ia o nome do inquilino para um e-mail pessoal de fallback).
@@ -1353,9 +1395,29 @@ export async function requestLead(
       .maybeSingle();
     novoContato = !existing;
     if (!existing) {
+      // Motivo da candidatura: o escolhido (validado no servidor) ou, sem escolha, o do perfil.
+      let motivoLead: string | null = null;
+      if (kind === "candidatura") {
+        const escolhido = validarMotivoEstadia(motivoEstadia ?? "");
+        motivoLead = escolhido.ok ? escolhido.valor : null;
+        if (!motivoLead) {
+          const { data: perfil } = await supabase.from("profiles").select("motivo_estadia").eq("id", user.id).maybeSingle();
+          const doPerfil = validarMotivoEstadia((perfil?.motivo_estadia as string | null) ?? "");
+          motivoLead = doPerfil.ok ? doPerfil.valor : null;
+        }
+      }
       const { error: leadErr } = await supabase
         .from("leads")
-        .insert({ property_id: propertyId, owner_id: ownerId, tenant_id: user.id, status: "new" });
+        .insert({
+          property_id: propertyId,
+          owner_id: ownerId,
+          tenant_id: user.id,
+          status: "new",
+          ...(kind === "candidatura" && validarInicioEstadia(inicioDesejado, hojeBR()).ok
+            ? { inicio_desejado: inicioDesejado!.trim() }
+            : {}),
+          ...(motivoLead ? { motivo_estadia: motivoLead } : {}),
+        });
       // 23505 = duplicado (corrida): não é erro real. Demais erros: registra.
       if (leadErr && leadErr.code !== "23505") {
         console.error("[requestLead] falha ao gravar lead:", leadErr.message);
@@ -1379,6 +1441,9 @@ export async function requestLead(
       }
     }
   }
+
+  // Marca "Você já contatou" (ordem 8302024d): dúvida, visita ou candidatura. Best-effort.
+  await gravarMarca(supabase, user.id, propertyId, "contatado_em");
 
   // Notifica o dono só em contato NOVO — ou sempre que for candidatura (evento
   // de maior valor; o teto de 20/h barra repetição). É isto que faz os botões
@@ -1555,6 +1620,10 @@ export async function saveDraftData(snap: {
   title?: string;
   city?: string;
   monthlyPrice?: number;
+  neighborhood?: string;
+  bathrooms?: number;
+  areaM2?: number;
+  description?: string;
   data: unknown;
 }): Promise<{ ok: boolean; id?: string; error?: string; demo?: boolean }> {
   const supabase = await createClient();
@@ -1570,6 +1639,8 @@ export async function saveDraftData(snap: {
     title: (snap.title?.trim() || "Rascunho de anúncio").slice(0, 200),
     city: snap.city?.trim() || "Uberlândia",
     monthly_price: Number.isFinite(snap.monthlyPrice) ? (snap.monthlyPrice as number) : 0,
+    // Colunas que a prontidão lê (Visão geral, Meus imóveis): endereço e detalhes não ficam só no draft_data.
+    ...camposDeConteudoDoRascunho(snap),
     draft_data: snap.data as object,
   };
 
@@ -1671,6 +1742,8 @@ export async function getLatestDraft(): Promise<{
   data: unknown;
   /** Prontidão real (fonte única) — o "% completo" e o "falta" de todas as telas. */
   prontidao: Prontidao | null;
+  /** Score de qualidade 0–100 com dicas clicáveis (ordem 0f9b9d58), calculado aqui no servidor. */
+  score: ScoreAnuncio | null;
 } | null> {
   const supabase = await createClient();
   if (!supabase) return null;
@@ -1690,10 +1763,27 @@ export async function getLatestDraft(): Promise<{
   // C4: draft_data vem pela RPC (coluna sensível fora do SELECT por coluna).
   const { data: priv } = await supabase.rpc("property_private_details", { prop_id: data.id });
   const row = Array.isArray(priv) ? priv[0] : priv;
+  const fatos = (await fatosDosImoveis(supabase, user.id, [data.id as string])).get(data.id as string) ?? null;
+  const prontidao = fatos ? prontidaoAnuncio(fatos) : null;
+  let score: ScoreAnuncio | null = null;
+  if (fatos && prontidao) {
+    const [{ count: comodidades }, { data: pets }] = await Promise.all([
+      supabase.from("property_amenities").select("id", { count: "exact", head: true }).eq("property_id", data.id),
+      supabase.from("properties").select("pets_allowed, pets_regras").eq("id", data.id).eq("owner_id", user.id).maybeSingle(),
+    ]);
+    score = scoreAnuncio(prontidao, fatos, {
+      comodidades: comodidades ?? 0,
+      // Só cobra regras de pet de quem aceita pet.
+      petsDefinido:
+        (pets as { pets_allowed?: boolean | null } | null)?.pets_allowed !== true ||
+        normalizarRegrasPets((pets as { pets_regras?: unknown } | null)?.pets_regras) !== null,
+    });
+  }
   return {
     id: data.id as string,
     title: (data.title as string) || "Rascunho de anúncio",
     data: (row as { draft_data?: unknown } | null)?.draft_data ?? null,
-    prontidao: await prontidaoDoImovel(supabase, user.id, data.id as string),
+    prontidao,
+    score,
   };
 }

@@ -1,4 +1,7 @@
+import Image from "next/image";
 import Link from "next/link";
+import { BRAND_BLUR } from "@/lib/media";
+import { CAPAS, type CapaPainel } from "@/components/dashboard/capas";
 import { cn } from "@/lib/utils";
 import { ArrowUpRight, HardHat } from "lucide-react";
 
@@ -35,11 +38,46 @@ export function PageTitle({
   title,
   subtitle,
   action,
+  capa,
 }: {
   title: string;
   subtitle?: string;
   action?: React.ReactNode;
+  /** Foto de capa da tela (CAPAS). Com ela, o título vira uma faixa full-width com imagem. */
+  capa?: CapaPainel;
 }) {
+  if (capa) {
+    const foto = CAPAS[capa];
+    // Faixa de capa: foto cobrindo toda a largura do conteúdo, véu escuro da
+    // esquerda para a direita (legibilidade) e ação à direita no desktop / abaixo
+    // do texto no mobile. Altura mínima fixa para todas as telas ficarem iguais.
+    return (
+      <header
+        data-testid="painel-capa"
+        data-capa={capa}
+        className="relative mb-6 overflow-hidden rounded-2xl bg-night sm:mb-8"
+      >
+        <Image
+          src={foto.src}
+          alt={foto.alt}
+          fill
+          priority
+          sizes="(min-width: 1024px) 75vw, 100vw"
+          placeholder="blur"
+          blurDataURL={BRAND_BLUR}
+          className="object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-night/90 via-night/65 to-night/15" />
+        <div className="relative flex min-h-[176px] flex-col justify-end gap-4 p-5 sm:min-h-[220px] sm:flex-row sm:items-end sm:justify-between sm:p-8">
+          <div className="max-w-2xl">
+            <h1 className="font-title text-2xl font-bold text-white sm:text-3xl">{title}</h1>
+            {subtitle && <p className="mt-1.5 text-sm text-white/85 sm:text-base">{subtitle}</p>}
+          </div>
+          {action && <div className="shrink-0">{action}</div>}
+        </div>
+      </header>
+    );
+  }
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-3 sm:mb-8 sm:gap-4">
       <div>
@@ -56,12 +94,15 @@ export function StatCard({
   value,
   icon: Icon,
   href,
+  hint,
 }: {
   label: string;
   value: string | number;
   icon: React.ComponentType<{ className?: string }>;
   /** Opcional: transforma o card num atalho para a seção correspondente. */
   href?: string;
+  /** Opcional: contexto curto sob o número (comparação ou próxima ação). */
+  hint?: string;
 }) {
   // Compacto no mobile (ADENDO item 1): rótulo pequeno + ícone reduzido + número
   // menor, padding enxuto (~72px de altura) para caber 3 numa linha a 390px. A
@@ -75,6 +116,11 @@ export function StatCard({
         <Icon className="h-4 w-4 shrink-0 text-sage sm:h-5 sm:w-5" />
       </div>
       <p className="mt-1 font-title text-xl font-bold text-forest sm:mt-2 sm:text-3xl">{value}</p>
+      {hint && (
+        <p data-testid="stat-hint" className="mt-1 text-[11px] leading-snug text-muted sm:text-xs">
+          {hint}
+        </p>
+      )}
     </>
   );
   if (href) {
@@ -130,11 +176,18 @@ export function EmptyState({
   // Compacto no mobile (ADENDO item 4): padding ~24px e ilustração/ícone menores;
   // a partir de sm volta ao card espaçoso (p-12, ícone maior).
   return (
-    <div className="rounded-2xl border border-dashed border-line bg-white p-6 text-center sm:p-12">
+    <div data-testid="estado-vazio" className="rounded-2xl border border-dashed border-line bg-white p-6 text-center sm:p-12">
       {illustration ? (
         <div className="flex justify-center">{illustration}</div>
       ) : (
-        Icon && <Icon className="mx-auto h-8 w-8 text-blue-500 sm:h-10 sm:w-10" />
+        Icon && (
+          <div
+            data-testid="estado-vazio-icone"
+            className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-blue-50 sm:h-28 sm:w-28"
+          >
+            <Icon className="h-9 w-9 text-blue-500 sm:h-12 sm:w-12" />
+          </div>
+        )
       )}
       <h3 className="mt-3 font-title text-base font-bold text-ink sm:mt-4 sm:text-lg">{title}</h3>
       <p className="mx-auto mt-2 max-w-md text-sm text-muted">{text}</p>

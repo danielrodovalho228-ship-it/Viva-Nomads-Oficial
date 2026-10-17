@@ -1,8 +1,11 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/site";
 import { CITIES } from "@/lib/constants";
+import { POLOS } from "@/lib/polos";
+import { caminhosDeBairros } from "@/lib/bairros";
 import { listProperties } from "@/lib/data/properties";
 import { isExemplo } from "@/lib/demo-listing";
+import { GUIAS } from "@/lib/guias/guias";
 
 // F9: lista de imóveis sempre fresca (revalidatePath nas ações + 60 s de rede de segurança).
 export const revalidate = 60;
@@ -24,6 +27,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/precos",
     "/seguranca",
     "/ajuda",
+    "/guias",
+    ...GUIAS.map((g) => `/guias/${g.slug}`),
     "/termos",
     "/privacidade",
   ].map((path) => ({
@@ -40,6 +45,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }));
 
+  const poloRoutes = POLOS.map((p) => ({
+    url: `${SITE_URL}/cidades/${p.cidade}/${p.slug}`,
+    changeFrequency: "weekly" as const,
+    priority: 0.7,
+  }));
+
   // Só imóveis REAIS no sitemap — os de exemplo (ilustrativos) ficam de fora.
   const properties = (await listProperties()).filter((p) => !isExemplo(p));
   const propertyRoutes = properties.map((p) => ({
@@ -49,5 +60,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
-  return [...staticRoutes, ...cityRoutes, ...propertyRoutes];
+  const poloCaminhos = new Set(POLOS.map((p) => `/cidades/${p.cidade}/${p.slug}`));
+  const bairroRoutes = caminhosDeBairros(CITIES, properties, (id) => isExemplo(id))
+    .filter((c) => !poloCaminhos.has(c))
+    .map((c) => ({ url: `${SITE_URL}${c}`, changeFrequency: "weekly" as const, priority: 0.6 }));
+
+  return [...staticRoutes, ...cityRoutes, ...poloRoutes, ...bairroRoutes, ...propertyRoutes];
 }

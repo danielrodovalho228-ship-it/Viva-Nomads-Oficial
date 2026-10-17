@@ -5,6 +5,8 @@ import Link from "next/link";
 import { Home, CircleDollarSign } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
+import { Avatar } from "@/components/ui/avatar";
+import type { SeloEstadia } from "@/lib/data/locacoes-selo";
 import { AvaliacaoForm } from "@/components/avaliacao-form";
 import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
 import { DEMO_CONTRACTS } from "@/lib/demo/seed";
@@ -33,9 +35,12 @@ function buildDemoLocacoes(): LocacaoView[] {
 export function LocacoesClient({
   locacoes: real,
   extras = {},
+  selos = {},
 }: {
   locacoes: LocacaoView[];
   extras?: Awaited<ReturnType<typeof documentosDosContratos>>;
+  /** Selo do anfitrião por contrato (foto/iniciais + primeiro nome); sem entrada → "Sua estadia". */
+  selos?: Record<string, SeloEstadia>;
 }) {
   const { on: demoOn } = useDemoMode();
   const demoLocacoes = useMemo(() => buildDemoLocacoes(), []);
@@ -43,7 +48,7 @@ export function LocacoesClient({
 
   return (
     <>
-      <PageTitle
+      <PageTitle capa="locacoes"
         title="Minhas locações"
         subtitle="Suas estadias e a avaliação do proprietário."
         action={demoOn ? <DemoBadge /> : undefined}
@@ -75,6 +80,16 @@ export function LocacoesClient({
                       </Link>
                     )}
                   </h2>
+                  {!demoOn && (
+                    <p
+                      className="mt-1 inline-flex max-w-full items-center gap-1.5 text-xs font-medium text-forest"
+                      data-testid="locacao-selo"
+                      aria-label={selos[l.id] ? `Anfitrião: ${selos[l.id].rotulo}` : "Sua estadia"}
+                    >
+                      <Avatar name={selos[l.id]?.rotulo ?? "Sua estadia"} size={20} photoUrl={selos[l.id]?.fotoUrl ?? undefined} />
+                      <span className="min-w-0 truncate">{selos[l.id]?.rotulo ?? "Sua estadia"}</span>
+                    </p>
+                  )}
                   <p className="mt-1 inline-flex items-center gap-1 text-xs text-muted">
                     <CircleDollarSign className="h-3.5 w-3.5" /> {formatBRL(l.aluguelMensal)}/mês
                   </p>

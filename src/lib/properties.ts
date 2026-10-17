@@ -1,5 +1,6 @@
-import type { Property } from "./types";
-import { galleryFor } from "./media";
+import type { Property } from "./types.ts";
+import { galleryFor } from "./media.ts";
+import { temSeloPrecoJusto } from "./preco-justo.ts";
 
 /*
   Dados de exemplo para popular as telas públicas enquanto o Supabase
@@ -32,6 +33,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     areaM2: 68,
     minPeriodDays: 30,
     monthlyPrice: 3200,
+    airbnbMonthlyPrice: 3900, // dado do anúncio de exemplo (não é número de mercado); gera o selo "Preço justo" pelo critério real
     utilitiesMode: "fixed",
     utilitiesEstimate: 280,
     utilitiesOverageMargin: 20,
@@ -50,7 +52,6 @@ export const SAMPLE_PROPERTIES: Property[] = [
     tagCondoApproved: true,
     ownershipType: "own",
     photos: galleryFor("ube-001", 20),
-    videoUrl: "https://www.youtube.com/watch?v=demo-walkthrough",
     amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada"],
     workFeatures: ["Escritório dedicado", "Mesa de trabalho", "Cadeira ergonômica"],
     internetTier: "home_office",
@@ -82,7 +83,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
       { category: "trabalho", items: ["Internet fibra 300 Mbps", "Mesa de trabalho", "Cadeira ergonômica", "Monitor extra"] },
       { category: "cozinha", items: ["Fogão", "Geladeira", "Microondas", "Utensílios completos", "Cafeteira"] },
       { category: "conforto", items: ["Ar-condicionado", "Roupa de cama e banho", "Máquina de lavar", "Smart TV"] },
-      { category: "edificio", items: ["Elevador", "Portaria 24h", "Academia"] },
+      { category: "edificio", items: ["Elevador", "Portaria 24h", "Academia", "Vaga de garagem"] },
       { category: "seguranca", items: ["Câmeras nas áreas comuns", "Interfone"] },
     ],
     proximities: [
@@ -92,7 +93,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
       { category: "mercado", name: "Supermercado Bahamas", note: "5 min a pé" },
       { category: "transporte", name: "Ponto de ônibus (linhas Centro)", note: "2 min a pé" },
     ],
-    owner: { name: DONO_EXEMPLO, memberSince: "2025-03-01", responseRate: 98, verified: true },
+    owner: { name: DONO_EXEMPLO, memberSince: "2025-03-01", responseRate: 98, verified: false },
   },
   {
     id: "ube-002",
@@ -161,7 +162,8 @@ export const SAMPLE_PROPERTIES: Property[] = [
       { category: "mercado", name: "Mercado do Centro", note: "3 min a pé" },
       { category: "transporte", name: "Terminal Central", note: "7 min a pé" },
     ],
-    owner: { name: DONO_EXEMPLO, memberSince: "2025-06-15", responseRate: 92, verified: true },
+    limpezaEstadia: { porMes: 2, inclui: "pisos, banheiro e cozinha", valorMes: 180 },
+    owner: { name: DONO_EXEMPLO, memberSince: "2025-06-15", responseRate: 92, verified: false },
   },
   {
     id: "ube-003",
@@ -198,7 +200,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     ownershipType: "subleased",
     subleaseAuthorized: true,
     photos: galleryFor("ube-003", 8),
-    amenities: ["Mobiliado completo", "Máquina de lavar", "Cozinha equipada", "Aceita pets"],
+    amenities: ["Mobiliado completo", "Máquina de lavar", "Cozinha equipada", "Aceita pets", "Vaga de garagem"],
     workFeatures: [],
     internetTier: "trabalho_remoto",
     nearbyWorkspaces: [{ name: "Coworking Tibery", type: "coworking", distanceM: 1800 }],
@@ -247,7 +249,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     tagCondoApproved: true,
     ownershipType: "own",
     photos: galleryFor("ube-004", 10),
-    amenities: ["Mobiliado completo", "Ar-condicionado", "Cozinha compacta equipada", "Smart TV"],
+    amenities: ["Mobiliado completo", "Ar-condicionado", "Cozinha compacta equipada", "Smart TV", "Wi-Fi", "Vaga de garagem"],
     workFeatures: ["Internet fibra", "Bancada de trabalho"],
     internetTier: "home_office",
     nearbyWorkspaces: [{ name: "Biblioteca UFU Umuarama", type: "cafe", distanceM: 600 }],
@@ -266,7 +268,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
       { category: "educacao", name: "UFU — Campus Umuarama", note: "6 min a pé" },
       { category: "mercado", name: "Supermercado", note: "3 min a pé" },
     ],
-    owner: { name: DONO_EXEMPLO, memberSince: "2025-08-01", responseRate: 95, verified: true },
+    owner: { name: DONO_EXEMPLO, memberSince: "2025-08-01", responseRate: 95, verified: false },
   },
   {
     id: "ube-005",
@@ -302,9 +304,9 @@ export const SAMPLE_PROPERTIES: Property[] = [
     tagCondoApproved: true,
     ownershipType: "own",
     photos: galleryFor("ube-005", 12),
-    amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Acessível"],
+    amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Acessível", "Wi-Fi", "Vaga de garagem"],
     workFeatures: ["Internet fibra"],
-    internetTier: "basica",
+    internetTier: "trabalho_remoto",
     nearbyWorkspaces: [{ name: "Praça Sérgio Pacheco", type: "cafe", distanceM: 500 }],
     ownerName: DONO_EXEMPLO,
     createdAt: "2026-05-28T09:00:00Z",
@@ -321,7 +323,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
       { category: "saude", name: "UMC — Uberlândia Medical Center", note: "9 min de carro" },
       { category: "mercado", name: "Farmácia 24h", note: "2 min a pé" },
     ],
-    owner: { name: DONO_EXEMPLO, memberSince: "2025-05-01", responseRate: 99, verified: true },
+    owner: { name: DONO_EXEMPLO, memberSince: "2025-05-01", responseRate: 99, verified: false },
   },
   {
     id: "ube-006",
@@ -357,7 +359,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     tagCondoApproved: true,
     ownershipType: "own",
     photos: galleryFor("ube-006", 14),
-    amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Smart TV"],
+    amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Smart TV", "Wi-Fi", "Vaga de garagem"],
     workFeatures: ["Escritório dedicado", "Internet fibra 300 Mbps", "Cadeira ergonômica", "Monitor extra"],
     internetTier: "home_office",
     nearbyWorkspaces: [
@@ -379,7 +381,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
       { category: "transporte", name: "Terminal Central", note: "6 min a pé" },
       { category: "mercado", name: "Supermercado", note: "4 min a pé" },
     ],
-    owner: { name: DONO_EXEMPLO, memberSince: "2025-02-01", responseRate: 97, verified: true },
+    owner: { name: DONO_EXEMPLO, memberSince: "2025-02-01", responseRate: 97, verified: false },
   },
   {
     id: "ube-007",
@@ -415,7 +417,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     tagCondoApproved: true,
     ownershipType: "own",
     photos: galleryFor("ube-007", 10),
-    amenities: ["Mobiliado completo", "Ar-condicionado", "Cozinha compacta", "Smart TV"],
+    amenities: ["Mobiliado completo", "Ar-condicionado", "Cozinha compacta", "Smart TV", "Wi-Fi", "Vaga de garagem"],
     workFeatures: ["Internet fibra", "Mesa de trabalho"],
     internetTier: "home_office",
     nearbyWorkspaces: [{ name: "Coworking Brasil", type: "coworking", distanceM: 900 }],
@@ -429,7 +431,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     availableFrom: emDias(35),
     faixasAceitas: ["temporada", "media_estadia"],
     garantiasAceitas: ["caucao_avista", "caucao_parcelada", "seguro_fianca"],
-    owner: { name: DONO_EXEMPLO, memberSince: "2025-09-01", responseRate: 94, verified: true },
+    owner: { name: DONO_EXEMPLO, memberSince: "2025-09-01", responseRate: 94, verified: false },
   },
   {
     id: "ube-008",
@@ -465,7 +467,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     tagCondoApproved: true,
     ownershipType: "own",
     photos: galleryFor("ube-008", 16),
-    amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Quintal", "Churrasqueira"],
+    amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Quintal", "Churrasqueira", "Wi-Fi", "Vaga de garagem"],
     workFeatures: ["Escritório dedicado", "Internet fibra"],
     internetTier: "home_office",
     nearbyWorkspaces: [{ name: "Shopping Jardim Karaíba", type: "cafe", distanceM: 1200 }],
@@ -484,7 +486,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
       { category: "educacao", name: "Escola particular", note: "8 min de carro" },
       { category: "mercado", name: "Shopping e supermercado", note: "6 min de carro" },
     ],
-    owner: { name: DONO_EXEMPLO, memberSince: "2025-04-01", responseRate: 96, verified: true },
+    owner: { name: DONO_EXEMPLO, memberSince: "2025-04-01", responseRate: 96, verified: false },
   },
   {
     id: "ube-009",
@@ -520,7 +522,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     tagCondoApproved: true,
     ownershipType: "own",
     photos: galleryFor("ube-009", 12),
-    amenities: ["Mobiliado completo", "Ar-condicionado", "Cozinha compacta", "Smart TV"],
+    amenities: ["Mobiliado completo", "Ar-condicionado", "Cozinha compacta", "Smart TV", "Wi-Fi", "Vaga de garagem"],
     workFeatures: ["Internet fibra", "Mesa de estudos"],
     internetTier: "home_office",
     nearbyWorkspaces: [
@@ -541,7 +543,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
       { category: "educacao", name: "UFU — Campus Santa Mônica", note: "6 min a pé" },
       { category: "mercado", name: "Supermercado Bahamas", note: "4 min a pé" },
     ],
-    owner: { name: DONO_EXEMPLO, memberSince: "2025-07-01", responseRate: 98, verified: true },
+    owner: { name: DONO_EXEMPLO, memberSince: "2025-07-01", responseRate: 98, verified: false },
   },
   {
     id: "ube-010",
@@ -577,7 +579,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     tagCondoApproved: true,
     ownershipType: "own",
     photos: galleryFor("ube-010", 12),
-    amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada"],
+    amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Wi-Fi", "Vaga de garagem"],
     workFeatures: ["Internet fibra"],
     internetTier: "trabalho_remoto",
     nearbyWorkspaces: [{ name: "Coworking Tibery", type: "coworking", distanceM: 1000 }],
@@ -591,7 +593,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     availableFrom: emDias(47),
     faixasAceitas: ["temporada", "media_estadia"],
     garantiasAceitas: ["caucao_avista", "caucao_parcelada", "seguro_fianca"],
-    owner: { name: DONO_EXEMPLO, memberSince: "2025-06-01", responseRate: 93, verified: true },
+    owner: { name: DONO_EXEMPLO, memberSince: "2025-06-01", responseRate: 93, verified: false },
   },
   {
     id: "ube-011",
@@ -627,7 +629,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     tagCondoApproved: true,
     ownershipType: "own",
     photos: galleryFor("ube-011", 10),
-    amenities: ["Mobiliado completo", "Ar-condicionado", "Cozinha compacta", "Smart TV"],
+    amenities: ["Mobiliado completo", "Ar-condicionado", "Cozinha compacta", "Smart TV", "Wi-Fi"],
     workFeatures: ["Internet fibra", "Mesa de estudos"],
     internetTier: "home_office",
     nearbyWorkspaces: [{ name: "Biblioteca UFU", type: "cafe", distanceM: 700 }],
@@ -641,7 +643,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     availableFrom: emDias(51),
     faixasAceitas: ["temporada", "media_estadia"],
     garantiasAceitas: ["caucao_avista", "caucao_parcelada", "seguro_fianca"],
-    owner: { name: DONO_EXEMPLO, memberSince: "2025-10-01", responseRate: 91, verified: true },
+    owner: { name: DONO_EXEMPLO, memberSince: "2025-10-01", responseRate: 91, verified: false },
   },
   {
     id: "ube-012",
@@ -677,7 +679,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     tagCondoApproved: true,
     ownershipType: "own",
     photos: galleryFor("ube-012", 12),
-    amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada"],
+    amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Wi-Fi", "Vaga de garagem"],
     workFeatures: ["Escritório dedicado", "Internet fibra 300 Mbps"],
     internetTier: "home_office",
     nearbyWorkspaces: [{ name: "Café Saraiva", type: "cafe", distanceM: 350 }],
@@ -691,7 +693,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     availableFrom: emDias(55),
     faixasAceitas: ["temporada", "media_estadia"],
     garantiasAceitas: ["caucao_avista", "caucao_parcelada", "titulo", "seguro_fianca"],
-    owner: { name: DONO_EXEMPLO, memberSince: "2025-03-15", responseRate: 96, verified: true },
+    owner: { name: DONO_EXEMPLO, memberSince: "2025-03-15", responseRate: 96, verified: false },
   },
   {
     id: "ube-013",
@@ -727,7 +729,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     tagCondoApproved: true,
     ownershipType: "own",
     photos: galleryFor("ube-013", 14),
-    amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Quintal"],
+    amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Quintal", "Wi-Fi", "Vaga de garagem"],
     workFeatures: ["Escritório dedicado", "Internet fibra"],
     internetTier: "home_office",
     nearbyWorkspaces: [{ name: "Center Shopping", type: "cafe", distanceM: 1500 }],
@@ -742,7 +744,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     availableFrom: emDias(59),
     faixasAceitas: ["media_estadia"],
     garantiasAceitas: ["caucao_avista", "caucao_parcelada", "titulo"],
-    owner: { name: DONO_EXEMPLO, memberSince: "2025-05-20", responseRate: 94, verified: true },
+    owner: { name: DONO_EXEMPLO, memberSince: "2025-05-20", responseRate: 94, verified: false },
   },
   {
     id: "ube-014",
@@ -778,7 +780,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     tagCondoApproved: true,
     ownershipType: "own",
     photos: galleryFor("ube-014", 16),
-    amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Smart TV", "Varanda gourmet"],
+    amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Smart TV", "Varanda gourmet", "Wi-Fi", "Vaga de garagem"],
     workFeatures: ["Escritório dedicado", "Internet fibra 500 Mbps", "Cadeira ergonômica"],
     internetTier: "home_office",
     nearbyWorkspaces: [{ name: "Business Center Cidade Jardim", type: "coworking", distanceM: 800 }],
@@ -792,7 +794,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     availableFrom: emDias(63),
     faixasAceitas: ["temporada", "media_estadia"],
     garantiasAceitas: ["caucao_avista", "caucao_parcelada", "titulo", "seguro_fianca"],
-    owner: { name: DONO_EXEMPLO, memberSince: "2025-01-10", responseRate: 97, verified: true },
+    owner: { name: DONO_EXEMPLO, memberSince: "2025-01-10", responseRate: 97, verified: false },
   },
   {
     id: "ube-015",
@@ -828,7 +830,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     tagCondoApproved: true,
     ownershipType: "own",
     photos: galleryFor("ube-015", 10),
-    amenities: ["Mobiliado completo", "Ar-condicionado", "Cozinha compacta", "Smart TV"],
+    amenities: ["Mobiliado completo", "Ar-condicionado", "Cozinha compacta", "Smart TV", "Wi-Fi"],
     workFeatures: ["Internet fibra", "Mesa de trabalho"],
     internetTier: "home_office",
     nearbyWorkspaces: [
@@ -845,9 +847,12 @@ export const SAMPLE_PROPERTIES: Property[] = [
     availableFrom: emDias(67),
     faixasAceitas: ["temporada", "media_estadia"],
     garantiasAceitas: ["caucao_avista", "caucao_parcelada", "seguro_fianca"],
-    owner: { name: DONO_EXEMPLO, memberSince: "2025-11-01", responseRate: 92, verified: true },
+    owner: { name: DONO_EXEMPLO, memberSince: "2025-11-01", responseRate: 92, verified: false },
   },
 ];
+
+/* Selo "Preço justo" também nos exemplos, pelo MESMO critério dos anúncios reais (nunca forçado). */
+for (const p of SAMPLE_PROPERTIES) p.precoJusto = temSeloPrecoJusto(p.monthlyPrice, p.airbnbMonthlyPrice);
 
 export function getPropertyById(id: string): Property | undefined {
   return SAMPLE_PROPERTIES.find((p) => p.id === id);

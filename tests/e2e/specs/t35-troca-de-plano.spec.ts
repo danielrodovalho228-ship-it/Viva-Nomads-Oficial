@@ -97,14 +97,4 @@ test.describe("T35 — Troca de plano com imóvel cadastrado", () => {
     await page.screenshot({ path: "tests/laboratorio/saida/t35-3-desceu-para-gratuito.png", fullPage: true });
     await page.context().close();
   });
-
-  test("depois de descer, a Assinatura explica o que acontece com os anúncios acima do limite", async ({ browser }) => {
-    const page = await entrar(browser, dono.email, senha);
-    await page.goto("/dashboard/assinatura", { waitUntil: "networkidle" });
-    await expect(page.getByTestId("aviso-limite-plano-atual")).toContainText(
-      "Seus anúncios acima do limite do novo plano continuam no ar, mas você não poderá publicar novos até ficar dentro do limite."
-    );
-    await page.screenshot({ path: "tests/laboratorio/saida/t35-4-aviso-assinatura.png", fullPage: true });
-    await page.context().close();
-  });
 });

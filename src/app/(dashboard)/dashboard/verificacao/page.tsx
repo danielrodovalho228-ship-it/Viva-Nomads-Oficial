@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { gravarLocalStorageBruto, useLocalStorageBruto } from "@/lib/use-client-state";
 import { useSearchParams } from "next/navigation";
 import {
   ShieldCheck,
@@ -92,7 +93,7 @@ export default function VerificationPage() {
 
   return (
     <div className="w-full">
-      <PageTitle title={C.title} subtitle={C.subtitle} />
+      <PageTitle capa="verificacao" title={C.title} subtitle={C.subtitle} />
       {demo ? <DemoFlow copy={C} mode={mode} /> : <RealNaoVerificado copy={C} perfil={perfilCopy} />}
     </div>
   );
@@ -103,24 +104,14 @@ export default function VerificationPage() {
    Nunca nasce verificada nem exibe selo sem verificação real concluída.
    ───────────────────────────────────────────────────────────────────────── */
 function RealNaoVerificado({ copy, perfil }: { copy: VerifyCopy; perfil: "tenant" | "owner" }) {
-  const [avisar, setAvisar] = useState(false);
-
-  useEffect(() => {
-    try {
-      if (localStorage.getItem("vivanomads-verif-interesse")) setAvisar(true);
-    } catch {
-      /* ignore */
-    }
-  }, []);
+  const [avisarLocal, setAvisar] = useState(false);
+  const interesseGravado = useLocalStorageBruto("vivanomads-verif-interesse");
+  const avisar = avisarLocal || !!interesseGravado;
 
   function registrarInteresse() {
     // Placeholder honesto: registra o interesse no navegador. Quando existir a
     // lista de espera no servidor, este clique passa a gravá-la também.
-    try {
-      localStorage.setItem("vivanomads-verif-interesse", "1");
-    } catch {
-      /* ignore */
-    }
+    gravarLocalStorageBruto("vivanomads-verif-interesse", "1");
     setAvisar(true);
   }
 
@@ -169,9 +160,11 @@ function RealNaoVerificado({ copy, perfil }: { copy: VerifyCopy; perfil: "tenant
 
         <p className="mt-4 flex items-start gap-2 rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted">
           <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          Você já pode se candidatar sem o selo — o proprietário vê{" "}
-          <strong className="text-ink">verificação pendente</strong> no lugar do resultado até a
-          verificação abrir. Seus dados serão tratados apenas para a verificação (LGPD).
+          <span className="min-w-0">
+            Você já pode se candidatar sem o selo — o proprietário vê{" "}
+            <strong className="text-ink">verificação pendente</strong> no lugar do resultado até a
+            verificação abrir. Seus dados serão tratados apenas para a verificação (LGPD).
+          </span>
         </p>
 
         {/* Inquilino: caminho REAL de conclusão — a candidatura acontece no
@@ -271,7 +264,7 @@ function DemoFlow({
               <VerificationBadge />
             </div>
 
-            <div className="mt-4 grid gap-2 sm:grid-cols-3">
+            <div className="mt-4 grid gap-2">
               <Item icon={Fingerprint} label="Identidade" ok={result.identity} />
               <Item icon={ScanFace} label="Prova de vida" ok={result.liveness} />
               <Item icon={FileCheck2} label="Documento" ok={result.document} />

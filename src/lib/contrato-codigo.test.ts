@@ -13,6 +13,7 @@ import {
   conferirCodigo,
   gerarCodigoAssinatura,
   hashCodigoAssinatura,
+  incrementarFalhas,
   podeReenviar,
   type LinhaCodigo,
 } from "./contrato-codigo.ts";
@@ -69,4 +70,27 @@ test("servidor: assinarContrato exige o código e o consome; a senha no navegado
   assert.match(acao, /export async function pedirCodigoAssinatura/);
   assert.doesNotMatch(tela, /signInWithPassword/);
   assert.match(tela, /pedirCodigoAssinatura/);
+});
+
+test("incrementarFalhas: duas tentativas erradas ao mesmo tempo contam as duas (sem perder uma)", async () => {
+  // Banco simulado: o "trocar" só vale se o valor ainda for o que foi lido (comparação e troca).
+  const banco = { falhas: 0 };
+  const lerComPausa = async () => {
+    const v = banco.falhas;
+    await new Promise((r) => setTimeout(r, 1));
+    return v;
+  };
+  const trocar = async (de: number) => {
+    if (banco.falhas !== de) return false;
+    banco.falhas = de + 1;
+    return true;
+  };
+  await Promise.all([incrementarFalhas(lerComPausa, trocar), incrementarFalhas(lerComPausa, trocar)]);
+  assert.equal(banco.falhas, 2);
+});
+
+test("incrementarFalhas: código já usado ou inexistente não conta nada", async () => {
+  let trocou = false;
+  await incrementarFalhas(async () => null, async () => ((trocou = true), true));
+  assert.equal(trocou, false);
 });

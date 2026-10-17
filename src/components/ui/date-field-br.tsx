@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 /**
  * Campo de data em pt-BR (dd/mm/aaaa), com máscara — independente do locale do
@@ -50,10 +50,13 @@ export function DateFieldBR({
 }) {
   const [texto, setTexto] = useState(isoParaBr(value));
 
-  // Reflete mudanças externas do valor (ex.: reset do form).
-  useEffect(() => {
+  // Reflete mudanças externas do valor (ex.: reset do form) — ajuste durante a
+  // renderização, sem setState em effect.
+  const [valorAnterior, setValorAnterior] = useState(value);
+  if (valorAnterior !== value) {
+    setValorAnterior(value);
     setTexto(isoParaBr(value));
-  }, [value]);
+  }
 
   return (
     <input

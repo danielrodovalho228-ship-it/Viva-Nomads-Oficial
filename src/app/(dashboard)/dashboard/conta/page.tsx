@@ -4,6 +4,7 @@ import { PetsFicha } from "@/components/account/pets-ficha";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { ButtonLink } from "@/components/ui/button";
 import { AvatarUploader } from "@/components/account/avatar-uploader";
+import { CaixaEmailsTeste } from "@/components/account/caixa-emails-teste";
 import { ContaMenu } from "@/components/account/conta-menu";
 import {
   AjudaContato,
@@ -27,7 +28,7 @@ export default function AccountPage() {
         <ContaMenu />
       </div>
       <div className="web-only">
-        <PageTitle title="Conta" subtitle="Seus dados pessoais e preferências." />
+        <PageTitle capa="conta" title="Conta" subtitle="Seus dados pessoais e preferências." />
         <DadosPessoais />
         <DocumentoPessoa />
         <PetsFicha />
@@ -54,6 +55,7 @@ export default function AccountPage() {
         <ChangePassword />
         {/* Notificações (Atualização 20.7) */}
         <NotificationsPanel />
+        <CaixaEmailsTeste />
         {/* Ajuda & contato — canal oficial de saída (Fase 3.3). */}
         <AjudaContato />
         {/* Zona de risco — excluir conta com dupla confirmação (Atualização 20.7) */}

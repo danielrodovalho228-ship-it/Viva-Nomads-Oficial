@@ -20,3 +20,6 @@ export function isExemplo(idOrProperty: string | { id: string }): boolean {
 /** Mensagem única quando alguém tenta contato/candidatura num anúncio de exemplo. */
 export const EXEMPLO_SEM_CONTATO =
   "Este é um anúncio de exemplo — candidaturas e contatos ficam disponíveis nos imóveis reais.";
+
+/** Aviso único nos botões de reserva/mensagem de um anúncio de exemplo (demonstração: nada é gravado). */
+export const EXEMPLO_AVISO_DEMO = "Anúncio de exemplo: esta solicitação não é enviada.";

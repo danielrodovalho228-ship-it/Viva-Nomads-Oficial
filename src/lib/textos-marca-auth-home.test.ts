@@ -11,10 +11,10 @@ test("/auth: texto alternativo segue a marca (imóvel mobiliado, nunca apartamen
   assert.match(s, /em um imóvel mobiliado e tranquilo/);
 });
 
-test("home passo 3: garantia combinada entre as partes, sem 'Garantia escolhida' solta (#48)", () => {
+test("home passo 3: Caução combinada entre as partes, sem 'Garantia escolhida' solta (#48)", () => {
   const s = ler("app/(public)/page.tsx");
   assert.doesNotMatch(s, /Garantia escolhida/);
-  assert.match(s, /Garantia locatícia combinada entre proprietário e inquilino \(ex\.: Caução\)/);
+  assert.match(s, /Caução combinada entre proprietário e inquilino/);
 });
 
 test("textos alternativos das páginas públicas e do onboarding: 'imóvel mobiliado', nunca 'apartamento' (ordem 809fcade)", () => {

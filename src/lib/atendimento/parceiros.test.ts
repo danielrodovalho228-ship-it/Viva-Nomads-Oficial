@@ -8,10 +8,11 @@ test("a Viva sabe explicar como virar parceiro, com os links certos", () => {
   for (const link of ["/parceiros/fotografos", "/empresas", "/auth", "/parceiros"]) {
     assert.ok(f.includes(link), `fontes sem ${link}`);
   }
-  const p = FAQ.find((x) => x.id === "parceiro");
+  const p = FAQ.find((x) => x.id === "como-virar-parceiro");
   assert.ok(p, "FAQ sem a pergunta de parceiro");
-  assert.match(p.resposta, /Fotógrafo/);
-  assert.match(p.resposta, /Empresa que hospeda equipes/);
+  assert.match(p.resposta, /Fotografia/);
+  assert.match(p.resposta, /Empresa que quer ser parceira[^.]*\/parceiros/);
+  assert.match(p.resposta, /Empresa que quer moradia para funcionários: \/empresas/);
   assert.match(p.resposta, /imóveis mobiliados/);
   assert.doesNotMatch(p.resposta, /apartamentos?|comiss[ãa]o|corretagem|intermedia[çc][ãa]o|aluguel/i);
 });

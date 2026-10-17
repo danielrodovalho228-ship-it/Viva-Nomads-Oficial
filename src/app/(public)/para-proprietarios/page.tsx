@@ -4,7 +4,6 @@ import { TrendingUp, FileSignature, Receipt, ShieldCheck, Check, ArrowRight } fr
 import { ButtonLink } from "@/components/ui/button";
 import { BrandImage } from "@/components/brand-image";
 import { BannerTopo } from "@/components/institucional/banner-topo";
-import { PHOTOS } from "@/lib/media";
 import { CAUCAO_FRASE } from "@/lib/faixas";
 import { ComparativoPrecos } from "@/components/precos/comparativo-precos";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -14,7 +13,8 @@ import { CITIES } from "@/lib/constants";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/para-proprietarios" },
-  title: "Para proprietários — estadias de 1 a 6 meses com mais margem",
+  title: "Para proprietários: estadias de 1 a 6 meses",
+  openGraph: { type: "website", locale: "pt_BR", siteName: "Viva Nomads", url: "/para-proprietarios" },
   description:
     "Anuncie seu imóvel mobiliado para estadias de 30 a 180 dias. Menos rotatividade, menos meses parado e custos repassáveis ao inquilino conforme o contrato.",
 };
@@ -29,7 +29,7 @@ export default function ForLandlordsPage() {
         eyebrow="Para proprietários"
         titulo={
           <>
-            Mais <span className="text-green-300">margem</span> que a locação de curta duração
+            Seu imóvel mobiliado ocupado por <span className="text-green-300">meses</span>, com contrato
           </>
         }
         subtitulo={
@@ -70,9 +70,9 @@ export default function ForLandlordsPage() {
           <h2 className="text-center font-title text-3xl font-bold text-ink md:text-4xl">Do anúncio às chaves, em 3 passos</h2>
           <ol className="mt-10 grid gap-6 md:grid-cols-3">
             {[
-              { foto: "/images/como-funciona/07-anuncie.webp", alt: "Proprietário fotografando a sala para o anúncio", t: "Anuncie de graça", d: "Fotos, valor e regras da casa. A qualificação ajuda a ganhar o selo Pronto para Morar." },
-              { foto: "/images/como-funciona/02-converse.webp", alt: "Conversa com o inquilino pelo celular", t: "Converse e escolha", d: "Os interessados falam com você pela plataforma; o contato fica protegido até o aceite." },
-              { foto: "/images/como-funciona/08-feche.webp", alt: "Entrega das chaves ao inquilino", t: "Feche com contrato", d: "Contrato digital de 30 a 180 dias, caução combinada e o valor mensal direto na sua conta." },
+              { foto: "/images/unicas/prop-passo-anuncie.webp", alt: "Proprietário fotografando a sala para o anúncio", t: "Anuncie de graça", d: "Fotos, valor e regras da casa. Você pode oferecer limpezas durante a estadia, com quantidade e valor por mês. A qualificação ajuda a ganhar o selo Pronto para Morar." },
+              { foto: "/images/unicas/prop-passo-converse.webp", alt: "Conversa com o inquilino pelo celular", t: "Converse e escolha", d: "Os interessados falam com você pela plataforma; o contato fica protegido até o aceite." },
+              { foto: "/images/unicas/prop-passo-feche.webp", alt: "Entrega das chaves ao inquilino", t: "Feche com contrato", d: "Contrato digital de 30 a 180 dias, caução combinada e o valor mensal direto na sua conta." },
             ].map((p, i) => (
               <li key={p.t} className="overflow-hidden rounded-2xl border border-line bg-white shadow-sm">
                 <BrandImage src={p.foto} alt={p.alt} rounded="rounded-none" sizes="(max-width: 768px) 100vw, 33vw" className="aspect-[16/10] w-full" />
@@ -110,7 +110,7 @@ export default function ForLandlordsPage() {
       <section className="bg-surface-2 section-y">
         <div className="container-page grid items-center gap-12 md:grid-cols-2">
           <BrandImage
-            src={PHOTOS.dashOwner}
+            src="/images/unicas/prop-sala-preparada.webp"
             alt="Sala de imóvel mobiliado preparada para anúncio"
             sizes="(max-width: 768px) 100vw, 50vw"
             className="aspect-square w-full rounded-3xl"
@@ -122,7 +122,7 @@ export default function ForLandlordsPage() {
             <ul className="mt-6 space-y-4">
               {[
                 "Checklist de qualificação que ajuda a declarar a regularidade da locação.",
-                "Selo Pronto para Morar para anunciar mais caro.",
+                "Selo Pronto para Morar para seu anúncio se destacar na busca.",
                 "Verificação de identidade do inquilino — em breve.",
                 "Contrato de 30 a 180 dias gerado e assinado digitalmente, com validade jurídica.",
                 "Pagamento mensal direto na sua conta.",

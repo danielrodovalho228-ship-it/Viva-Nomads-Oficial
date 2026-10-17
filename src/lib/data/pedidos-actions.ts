@@ -10,7 +10,7 @@ import { conversationId as idConversa } from "@/lib/messages/conversation-id";
 import { listMyProperties } from "@/lib/data/properties";
 import { notify } from "@/lib/notifications";
 import { avisarCompativeisDoPedido, paresCompat } from "@/lib/data/pedidos-compat";
-import { melhorPor, porQueCombina } from "@/lib/pedidos/compatibilidade";
+import { melhorPor, porQueCombina, type ImovelCompativel } from "@/lib/pedidos/compatibilidade";
 import {
   detalheResposta,
   detalheAceito,
@@ -95,7 +95,7 @@ const PEDIDOS_POR_DIA = 3;
 
 export async function criarPedido(
   input: PedidoInput
-): Promise<ActionResult & { compativeis?: number; sugestao?: string | null }> {
+): Promise<ActionResult & { compativeis?: number; sugestao?: string | null; imoveis?: ImovelCompativel[] }> {
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
   const {
@@ -161,14 +161,18 @@ export async function criarPedido(
 
   // (a) Avisa SÓ os donos com imóvel COMPATÍVEL (regra do banco, 0064) — antes
   // ia para todos os donos da cidade. Devolve quantos imóveis combinam agora.
-  let compat: { compativeis: number; sugestao: string | null } = { compativeis: 0, sugestao: null };
+  let compat: { compativeis: number; sugestao: string | null; imoveis: ImovelCompativel[] } = {
+    compativeis: 0,
+    sugestao: null,
+    imoveis: [],
+  };
   try {
     compat = await avisarCompativeisDoPedido(data.id as string);
   } catch {
     /* best-effort: o pedido já foi publicado */
   }
 
-  return { ok: true, id: data?.id, compativeis: compat.compativeis, sugestao: compat.sugestao };
+  return { ok: true, id: data?.id, compativeis: compat.compativeis, sugestao: compat.sugestao, imoveis: compat.imoveis };
 }
 
 /** Meus pedidos (inquilino). Best-effort: [] em demo/sem sessão. */

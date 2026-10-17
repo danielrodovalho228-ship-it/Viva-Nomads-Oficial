@@ -9,7 +9,7 @@ import { formatBRL, numBR } from "@/lib/utils";
 
 export default function ViabilityPage() {
   return (
-    <PlanGate title="Viabilidade de mobiliar">
+    <PlanGate capa="viabilidade" title="Viabilidade de mobiliar">
       <Calc />
     </PlanGate>
   );
@@ -38,7 +38,7 @@ function Calc() {
 
   return (
     <>
-      <PageTitle
+      <PageTitle capa="viabilidade"
         title="Viabilidade de mobiliar"
         subtitle="Vale a pena mobiliar este imóvel para estadias de 30 a 180 dias? Compare com alugar vazio."
       />
@@ -48,13 +48,13 @@ function Calc() {
         <Panel title="Premissas">
           <div className="space-y-4">
             <Field
-              label="Aluguel vazio (long-term)"
+              label="Valor mensal vazio (long-term)"
               hint="Quanto renderia alugando tradicional, por mês"
               value={emptyRent}
               onChange={setEmptyRent}
             />
             <Field
-              label="Aluguel mobiliado (30 a 180 dias)"
+              label="Valor mensal mobiliado (30 a 180 dias)"
               hint="Mensal cobrado mobiliado para estadias de 30 a 180 dias"
               value={furnishedRent}
               onChange={setFurnishedRent}

@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { categoriaLabel } from "@/config/categorias-profissionais";
+import { motivoParaDono } from "@/lib/pedidos/pedidos";
 import { SAMPLE_LEADS, type Lead, type Light } from "./lead-types";
 
 // Re-exporta os utilitários puros para compatibilidade com importações server-side.
@@ -91,6 +92,17 @@ export async function listLeads(): Promise<Lead[]> {
     }
   }
 
+  // Motivo da estadia: a coluna não é liberada ao navegador (SELECT por coluna em leads);
+  // lido pelo servidor só dos leads deste dono (ids já filtrados pela RLS acima).
+  const motivos = new Map<string, string>();
+  if (admin && rows.length > 0) {
+    const { data: ms } = await admin.from("leads").select("id, motivo_estadia").in("id", rows.map((r) => r.id));
+    for (const m of (ms ?? []) as { id: string; motivo_estadia: string | null }[]) {
+      const rotulo = motivoParaDono(m.motivo_estadia);
+      if (rotulo) motivos.set(m.id, rotulo);
+    }
+  }
+
   return rows.map((r) => {
     const v = verificacoes.get(r.tenant_id);
     const t = perfis.get(r.tenant_id);
@@ -103,6 +115,7 @@ export async function listLeads(): Promise<Lead[]> {
       riskCategories: v?.risk_categories ?? ["Verificação pendente"],
       light: v?.traffic_light ?? "yellow",
       verified: !!v?.traffic_light,
+      motivo: motivos.get(r.id),
     };
   });
 }

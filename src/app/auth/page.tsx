@@ -36,9 +36,10 @@ import { useIsNative } from "@/lib/use-native";
 import { registrarEvento } from "@/lib/eventos/registrar";
 import { useCaptcha } from "@/components/seguranca/captcha";
 import { MSG_CAPTCHA_PENDENTE, comCaptcha, podeEnviar } from "@/lib/seguranca/captcha";
+import { LoginPorCodigo } from "@/components/auth/login-por-codigo";
 import { chaveFalhas, exigeCaptchaPorFalhas, lerFalhas, segundosRestantes } from "@/lib/seguranca/tentativas-login";
 
-type Mode = "login" | "signup" | "forgot";
+type Mode = "login" | "signup" | "forgot" | "codigo";
 
 export default function AuthPage() {
   const router = useRouter();
@@ -545,6 +546,25 @@ export default function AuthPage() {
                 <ArrowLeft className="h-4 w-4" /> Voltar para entrar
               </button>
             </div>
+          ) : mode === "codigo" ? (
+            /* ── Entrar com código por e-mail (ordem d250ea2f, item 4) ── */
+            <LoginPorCodigo
+              email={email}
+              onEmail={setEmail}
+              onVoltar={() => switchMode("login")}
+              onEntrou={(u) => {
+                setUser({
+                  id: u.id,
+                  name: u.nome ?? u.email ?? "Usuário",
+                  fullName: u.nome,
+                  email: u.email,
+                  role: (u.papel as UserRole) ?? "tenant",
+                });
+                startSession();
+                resetPropertiesCache();
+                window.location.assign(postAuthTarget());
+              }}
+            />
           ) : mode === "forgot" ? (
             /* ── Recuperação de senha (Atualização 20.3) ── */
             <div>
@@ -736,6 +756,16 @@ export default function AuthPage() {
                       Esqueci minha senha
                     </button>
                   </div>
+                )}
+                {mode === "login" && (
+                  <button
+                    type="button"
+                    data-testid="entrar-com-codigo"
+                    onClick={() => switchMode("codigo")}
+                    className="w-full rounded-xl border border-sage-200 px-4 py-3 text-sm font-medium text-forest hover:bg-sage-100"
+                  >
+                    Entrar com código por e-mail (sem senha)
+                  </button>
                 )}
                 {mode === "login" && noApp && !LOGIN_GOOGLE_ATIVO && (
                   <p className="text-xs text-muted" data-testid="dica-google-app">

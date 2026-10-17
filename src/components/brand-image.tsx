@@ -14,6 +14,7 @@ export function BrandImage({
   sizes = "100vw",
   treat = true,
   rounded = "rounded-2xl",
+  fit = "object-cover",
 }: {
   src: string;
   alt: string;
@@ -22,6 +23,8 @@ export function BrandImage({
   sizes?: string;
   treat?: boolean;
   rounded?: string;
+  /** Classe de ajuste da foto: "object-contain" mostra inteira, sem cortar. */
+  fit?: string;
 }) {
   return (
     <div className={cn("relative overflow-hidden bg-surface-2", rounded, className)}>
@@ -33,7 +36,7 @@ export function BrandImage({
         priority={priority}
         placeholder="blur"
         blurDataURL={BRAND_BLUR}
-        className="object-cover"
+        className={fit}
       />
       {treat && (
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-blue-900/45 via-transparent to-transparent" />

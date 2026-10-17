@@ -1,0 +1,25 @@
+import { test, expect } from "@playwright/test";
+
+/**
+ * T165 — ordem 8dca1437 (Próximo do FF 3/6, itens 1 e 4): em /pedidos/novo o contador
+ * "N imóveis combinam" aparece enquanto a pessoa preenche (sem publicar e sem login),
+ * com dica quando der 0; 390 e 1280 px sem rolagem lateral.
+ */
+for (const largura of [390, 1280]) {
+  test(`${largura} px: contador ao vivo aparece ao preencher cidade, data e orçamento`, async ({ page }) => {
+    await page.setViewportSize({ width: largura, height: 900 });
+    await page.goto("/pedidos/novo?cidade=Uberl%C3%A2ndia&uf=MG&inicio=2027-03-01&meses=3&orcamento=2500", {
+      waitUntil: "domcontentloaded",
+    });
+    const contador = page.getByTestId("pedido-contador");
+    await expect(contador).toBeVisible({ timeout: 15_000 });
+    await expect(contador).toContainText(/combina|Nenhum imóvel combina|Ainda não há imóveis/);
+
+    // Orçamento baixíssimo: nenhum imóvel combina e a tela diz o que afrouxar (ou que mexer em mais de um campo ajuda).
+    await page.getByPlaceholder("3500").fill("300");
+    await expect(contador).toContainText(/Nenhum imóvel combina|Ainda não há imóveis/, { timeout: 15_000 });
+
+    const semRolagemLateral = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
+    expect(semRolagemLateral).toBe(true);
+  });
+}

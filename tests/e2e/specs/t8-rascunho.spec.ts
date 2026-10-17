@@ -34,14 +34,26 @@ test.describe("T-RASC — Rascunho salva e retoma @criticos", () => {
     page.on("dialog", (d) => d.accept());
   });
 
+  /** Sem networkidle (o painel mantém conexões abertas): espera um pouco o aviso de rascunho
+   * e, se ele aparecer, começa outro; se não aparecer, segue com o editor em branco. */
+  async function comecarOutroSeHouver(page: Page) {
+    await page.locator('input[type="file"]').first().waitFor({ state: "attached", timeout: 20_000 });
+    const comecarOutro = page.getByRole("button", { name: "Começar outro" });
+    try {
+      await comecarOutro.waitFor({ state: "visible", timeout: 4_000 });
+      await comecarOutro.click();
+    } catch {
+      /* sem rascunho anterior — editor em branco */
+    }
+  }
+
   /** Abre o editor em branco e preenche o endereço (dispara o autosave). Devolve
    * a marca única usada no bairro, para conferir a restauração depois. */
   async function novoComEndereco(page: Page): Promise<string> {
     const marca = `QA${Date.now().toString().slice(-6)}`;
-    await page.goto("/dashboard/imoveis/novo", { waitUntil: "networkidle" });
+    await page.goto("/dashboard/imoveis/novo", { waitUntil: "domcontentloaded" });
     // Se um rascunho anterior for detectado, começa outro para partir do zero.
-    const comecarOutro = page.getByRole("button", { name: "Começar outro" });
-    if (await comecarOutro.isVisible().catch(() => false)) await comecarOutro.click();
+    await comecarOutroSeHouver(page);
     // "Fotos primeiro" (ordem 04e2fe5e): Fotos → Tipo → Detalhes → Comodidades → Endereço.
     await page.locator('input[type="file"]').first().setInputFiles("public/images/imoveis/ube/ube-001-sala.webp");
     await expect(page.getByText(/^1\/40 fotos/)).toBeVisible({ timeout: 20_000 });
@@ -59,15 +71,21 @@ test.describe("T-RASC — Rascunho salva e retoma @criticos", () => {
   }
 
   async function esperarSalvo(page: Page) {
-    // Debounce de 2s; o indicador passa por "Salvando…" e chega em "Salvo".
+    // Debounce de 2s: um "Salvo" antigo (do autosave anterior) ainda pode estar na tela logo depois da última
+    // digitação. Passa o debounce, e só então exige "Salvo" sem "Salvando…" — senão sai da página com o servidor sem o endereço.
+    await page.waitForTimeout(2_500);
+    await expect(page.getByText("Salvando…")).toHaveCount(0, { timeout: 12_000 });
     await expect(page.getByText(/Salvo/).first()).toBeVisible({ timeout: 12_000 });
   }
+
+  /** Link que retoma o rascunho de onde parou (o botão principal agora leva ao próximo passo do checklist). */
+  const retomar = (page: Page) => page.getByTestId("retomar-rascunho");
 
   test("T-RASC-1 — autosave mostra 'Salvando…' → 'Salvo' e reload mantém", async ({ page }) => {
     const marca = await novoComEndereco(page);
     await esperarSalvo(page);
     // Reload na mesma URL: o rascunho volta (cinto local + servidor).
-    await page.reload({ waitUntil: "networkidle" });
+    await page.reload({ waitUntil: "domcontentloaded" });
     await expect(page.locator('input[list="novo-bairros"]')).toHaveValue(marca);
   });
 
@@ -75,10 +93,10 @@ test.describe("T-RASC — Rascunho salva e retoma @criticos", () => {
     const marca = await novoComEndereco(page);
     await esperarSalvo(page);
     // Sai do editor SEM publicar; a Visão geral deve oferecer retomar.
-    await page.goto("/dashboard", { waitUntil: "networkidle" });
+    await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
     const card = page.getByText(/Anúncio em andamento/i);
     await expect(card).toBeVisible({ timeout: 10_000 });
-    await page.getByRole("link", { name: /Continuar edição/i }).click();
+    await retomar(page).click();
     await expect(page).toHaveURL(/\/dashboard\/imoveis\/novo\?draft=/);
     // Restaurou do SERVIDOR (não do localStorage desta aba): bairro de volta.
     await expect(page.locator('input[list="novo-bairros"]')).toHaveValue(marca);
@@ -88,11 +106,14 @@ test.describe("T-RASC — Rascunho salva e retoma @criticos", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await novoComEndereco(page);
     await esperarSalvo(page);
-    await page.goto("/dashboard", { waitUntil: "networkidle" });
+    // O "Salvo" pode ser do autosave das fotos, anterior ao endereço (debounce de 2 s):
+    // recarrega a Visão geral até o servidor refletir o endereço, em vez de sair cedo.
     const lista = page.getByTestId("anuncio-checklist");
-    await expect(lista).toBeVisible({ timeout: 10_000 });
+    await expect(async () => {
+      await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+      await expect(lista.getByTestId("check-feito").filter({ hasText: "Endereço preenchido" })).toBeVisible({ timeout: 3_000 });
+    }).toPass({ timeout: 40_000, intervals: [2_000, 3_000] });
     // Endereço já preenchido = feito; fotos (só 1 de 8) = falta e é clicável.
-    await expect(lista.getByTestId("check-feito").filter({ hasText: "Endereço preenchido" })).toBeVisible();
     await expect(lista.getByTestId("check-falta").filter({ hasText: "Endereço preenchido" })).toHaveCount(0);
     // Sem rolagem lateral a 390 px.
     const estouro = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
@@ -113,7 +134,7 @@ test.describe("T-RASC — Rascunho salva e retoma @criticos", () => {
     const id = new URL(page.url()).searchParams.get("draft");
     // Abre o editor de novo, em branco: deve detectar o rascunho anterior, sem
     // aplicar a cópia local nem criar outro rascunho por baixo (bug 12).
-    await page.goto("/dashboard/imoveis/novo", { waitUntil: "networkidle" });
+    await page.goto("/dashboard/imoveis/novo", { waitUntil: "domcontentloaded" });
     await expect(page.getByText(/Você tem um anúncio em andamento/i)).toBeVisible({ timeout: 10_000 });
     await page.waitForTimeout(3_000); // passa o debounce do autosave
     await expect(page).toHaveURL(/\/dashboard\/imoveis\/novo$/);
@@ -125,9 +146,8 @@ test.describe("T-RASC — Rascunho salva e retoma @criticos", () => {
   });
 
   test("T-RASC-5 — o cadastro abre pelas Fotos (fotos primeiro), não pela qualificação", async ({ page }) => {
-    await page.goto("/dashboard/imoveis/novo", { waitUntil: "networkidle" });
-    const comecarOutro = page.getByRole("button", { name: "Começar outro" });
-    if (await comecarOutro.isVisible().catch(() => false)) await comecarOutro.click();
+    await page.goto("/dashboard/imoveis/novo", { waitUntil: "domcontentloaded" });
+    await comecarOutroSeHouver(page);
     await expect(page.getByRole("heading", { name: "Fotos do imóvel" })).toBeVisible();
     await expect(page.getByText("Conclua a qualificação primeiro")).toHaveCount(0);
   });
@@ -143,8 +163,8 @@ test.describe("T-RASC — Rascunho salva e retoma @criticos", () => {
     await page.waitForTimeout(2_500);
     await esperarSalvo(page);
     // Retoma pela Visão geral: abre no Endereço, e Comodidades segue clicável.
-    await page.goto("/dashboard", { waitUntil: "networkidle" });
-    await page.getByRole("link", { name: /Continuar edição/i }).click();
+    await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+    await retomar(page).click();
     await expect(page).toHaveURL(/\?draft=/);
     await expect(page.getByPlaceholder("Rua, número")).toBeVisible();
     const comodidades = page.getByRole("button", { name: /Comodidades/i });
@@ -160,7 +180,7 @@ test.describe("T-RASC — Rascunho salva e retoma @criticos", () => {
     const context = await browser.newContext({ storageState: authFile("proprietario") });
     const page = await context.newPage();
     page.on("dialog", (d) => d.accept());
-    await page.goto("/dashboard/imoveis", { waitUntil: "networkidle" });
+    await page.goto("/dashboard/imoveis", { waitUntil: "domcontentloaded" });
     for (let i = 0; i < 20; i++) {
       const botao = page.getByRole("button", { name: "Excluir rascunho" }).first();
       if (!(await botao.isVisible().catch(() => false))) break;

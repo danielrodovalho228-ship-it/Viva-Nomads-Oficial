@@ -13,10 +13,15 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   experimental: {
     optimizePackageImports: ["lucide-react"],
+    // Conferência de entrada/saída sobe laudo (até 15 MB) e foto (até 8 MB) por Server Action; o padrão do Next é 1 MB.
+    serverActions: { bodySizeLimit: "16mb" },
   },
   images: {
     // AVIF/WebP: imagens bem menores que JPEG/PNG onde o navegador suporta.
     formats: ["image/avif", "image/webp"],
+    // Next 16 recusa (400) imagem em IP local; o laboratório guarda fotos no Supabase local (127.0.0.1).
+    // Só no laboratório: o build de produção com a chave ligada já falha no topo deste arquivo.
+    dangerouslyAllowLocalIP: LABORATORIO,
     remotePatterns: [
       // Fotografia interina (carrega em produção; substituir por fotos reais do cliente)
       { protocol: "https", hostname: "images.unsplash.com" },
@@ -35,6 +40,8 @@ const nextConfig: NextConfig = {
       // /planos é natural de digitar e pode ter links antigos; a página canônica
       // é /precos (o rótulo "Planos" no menu/rodapé já aponta para /precos).
       { source: "/planos", destination: "/precos", permanent: true },
+      // Link curto de bairro (só Uberlândia tem bairros curados): vai para a página da cidade.
+      { source: "/bairros/:bairro", destination: "/cidades/uberlandia/:bairro", permanent: true },
       // Link antigo/intuitivo: quem procura "anunciar" cai na página do proprietário (301).
       { source: "/anunciar", destination: "/para-proprietarios", statusCode: 301 },
       // O simulador agora é uma rota React em /simulacao (URL principal divulgada).
@@ -48,6 +55,10 @@ const nextConfig: NextConfig = {
       { source: "/publicar-pedido", destination: "/pedidos/novo", permanent: true },
       { source: "/pedido", destination: "/pedidos/novo", permanent: true },
       { source: "/proprietarios", destination: "/para-proprietarios", permanent: true },
+      // Sem mensalidade (ordem 90181c57): a antiga tela de assinatura vai a /precos já na resposta HTTP.
+      // Só o redirect() da página, dentro do painel com loading.tsx, saía como 200 + navegação do
+      // navegador, e o lab (t48) via um 404 de recurso nesse caminho.
+      { source: "/dashboard/assinatura", destination: "/precos", permanent: false },
     ];
   },
   async rewrites() {
@@ -95,6 +106,33 @@ const nextConfig: NextConfig = {
               "frame-src 'self' https://player.vimeo.com https://www.youtube.com https://challenges.cloudflare.com",
             ].join("; "),
           },
+        ],
+      },
+      // Ponte do login social no app: o código PKCE vai na URL, então esta rota nunca manda
+      // referrer. Vem DEPOIS da regra global para vencer o "strict-origin-when-cross-origin"
+      // (o lab t47 recebia o valor global em vez de "no-referrer").
+      {
+        source: "/auth/app-callback",
+        headers: [{ key: "Referrer-Policy", value: "no-referrer" }],
+      },
+      // Páginas e APIs: a Vercel acrescenta "Access-Control-Allow-Origin: *" em saída estática
+      // (/, /precos, /como-funciona...). Fixamos a origem do próprio site em tudo que não é
+      // arquivo de build (_next), para nenhum site de terceiro ler as páginas pelo navegador (#126).
+      {
+        source: "/((?!_next/).*)",
+        headers: [
+          { key: "Access-Control-Allow-Origin", value: "https://vivanomads.com.br" },
+          { key: "Vary", value: "Origin" },
+        ],
+      },
+      // Arquivos estáticos para robôs: a Vercel acrescenta "Access-Control-Allow-Origin: *"
+      // em saída estática. Fixamos a origem do próprio site (depois da regra global) para que
+      // nenhum site de terceiro leia isso pelo navegador (#126).
+      {
+        source: "/:arquivo(llms\\.txt|llms-full\\.txt|sitemap\\.xml)",
+        headers: [
+          { key: "Access-Control-Allow-Origin", value: "https://vivanomads.com.br" },
+          { key: "Vary", value: "Origin" },
         ],
       },
       // noindex/nofollow no header HTTP (independe da meta tag dentro do HTML).

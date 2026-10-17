@@ -36,7 +36,7 @@ export function TaxSimulator() {
       <div className="mt-5 grid gap-4 sm:grid-cols-3">
         <label className="block">
           <span className="mb-1.5 block text-sm font-medium text-ink">
-            Receita de aluguel mensal (total)
+            Receita mensal das locações (total)
           </span>
           <input
             type="number"

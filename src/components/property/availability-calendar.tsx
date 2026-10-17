@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useHoje } from "@/lib/use-client-state";
 import Link from "next/link";
 import { CalendarDays, Check, Loader2, CircleAlert } from "lucide-react";
 import type { Property } from "@/lib/types";
 import {
-  diaDisponivel,
   inicioEfetivo,
+  estadoDiaCalendario,
   mesesCalendario,
   estadiaLabel,
   validarReserva,
@@ -45,10 +46,9 @@ function brDate(iso: string): string {
  */
 export function AvailabilityCalendar({ property }: { property: Property }) {
   const user = useAuthStore((s) => s.user);
-  const [today, setToday] = useState<string | null>(null);
+  const today = useHoje();
   const [blockDays, setBlockDays] = useState<string[]>([]);
   useEffect(() => {
-    setToday(ymd(new Date()));
     // Dias fechados pelo proprietário (leitura pública). [] sem backend.
     getBlocks(property.id)
       .then((r) => setBlockDays(expandirBloqueios(r as Bloqueio[])))
@@ -81,8 +81,9 @@ export function AvailabilityCalendar({ property }: { property: Property }) {
   const bloqSet = new Set(bloqueados);
 
   // Um dia é SELECIONÁVEL se está na janela, não é passado e não está bloqueado.
-  const selecionavel = (iso: string) =>
-    diaDisponivel(iso, fromEff, until) && !bloqSet.has(iso) && (!today || iso >= today);
+  const estadoDia = (iso: string) =>
+    estadoDiaCalendario(iso, { fromISO: fromEff, untilISO: until, bloqueados: bloqSet, hojeISO: today });
+  const selecionavel = (iso: string) => estadoDia(iso) === "disponivel";
 
   function clicarDia(iso: string) {
     setErroEnvio(null);
@@ -177,7 +178,8 @@ export function AvailabilityCalendar({ property }: { property: Property }) {
                 {celulas.map((dia, i) => {
                   if (dia === null) return <span key={i} />;
                   const iso = ymd(new Date(y, m, dia));
-                  const podeSelecionar = selecionavel(iso);
+                  const estado = estadoDia(iso);
+                  const podeSelecionar = estado === "disponivel";
                   const isHoje = today === iso;
                   const isIn = checkIn === iso;
                   const isOut = checkOut === iso;
@@ -189,10 +191,12 @@ export function AvailabilityCalendar({ property }: { property: Property }) {
                       type="button"
                       disabled={!podeSelecionar}
                       onClick={() => clicarDia(iso)}
-                      aria-label={`${dia} de ${MESES[m]}`}
+                      aria-label={`${dia} de ${MESES[m]}${estado === "indisponivel" ? " (indisponível)" : ""}`}
+                      data-estado-dia={estado}
                       className={cn(
                         "grid aspect-square place-items-center rounded-md text-xs transition-colors",
-                        !podeSelecionar && "cursor-not-allowed text-muted/40 line-through",
+                        estado === "passado" && "cursor-not-allowed text-muted/40",
+                        estado === "indisponivel" && "cursor-not-allowed bg-sage-200/60 text-muted line-through",
                         podeSelecionar && "text-forest hover:bg-sage-200",
                         podeSelecionar && !isIn && !isOut && !noIntervalo && "bg-sage-100 font-medium",
                         noIntervalo && "bg-sage-200 font-medium",
@@ -216,6 +220,9 @@ export function AvailabilityCalendar({ property }: { property: Property }) {
         </span>
         <span className="inline-flex items-center gap-1.5">
           <span className="h-3 w-3 rounded bg-forest" /> Selecionado
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-3 w-3 rounded bg-sage-200/60" /> <span className="line-through">Indisponível</span>
         </span>
         <span className="inline-flex items-center gap-1.5">
           <span className="h-3 w-3 rounded ring-2 ring-champagne" /> Hoje
@@ -271,13 +278,15 @@ export function AvailabilityCalendar({ property }: { property: Property }) {
             </p>
           ) : isDemo ? (
             <p className="mt-3 flex items-center gap-1.5 rounded-lg bg-sage-100 px-3 py-2 text-sm text-forest">
-              <CircleAlert className="h-4 w-4 shrink-0" /> Anúncio de demonstração — a solicitação de
-              reserva fica disponível nos imóveis reais da plataforma.
+              <CircleAlert className="h-4 w-4 shrink-0" /> Anúncio de exemplo: esta solicitação não é enviada.{" "}
+              <a href="#cartao-preco" className="font-medium underline">
+                Ver o caminho de reserva
+              </a>
             </p>
           ) : isOwner ? (
             <p className="mt-3 flex flex-wrap items-center gap-1.5 rounded-lg bg-sage-100 px-3 py-2 text-sm text-forest">
               <CircleAlert className="h-4 w-4 shrink-0" /> Este é o seu imóvel — você não pode
-              reservá-lo.
+              solicitá-lo.
               <Link href="/dashboard/imoveis" className="font-medium underline">
                 Gerenciar em Meus imóveis
               </Link>

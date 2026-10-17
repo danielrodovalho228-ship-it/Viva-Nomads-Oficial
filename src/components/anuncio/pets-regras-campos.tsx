@@ -5,11 +5,14 @@ import {
   PORTES_PET,
   MAX_PETS,
   MAX_TEXTO_CONDOMINIO,
+  TIPOS_VALOR_PET,
+  ROTULO_TIPO_VALOR_PET,
   ROTULO_ESPECIE,
   ROTULO_PORTE,
   type EspeciePet,
   type PortePet,
   type RegrasPets,
+  type TipoValorPet,
 } from "@/lib/anuncio/pets-regras";
 
 /** Rascunho do formulário: tudo em texto até o servidor validar. */
@@ -17,8 +20,9 @@ export interface RegrasPetsForm {
   especies: EspeciePet[];
   porteMax: PortePet;
   qtdMax: string;
-  reforcoCaucao: string;
   regrasCondominio: string;
+  valorPet: string;
+  valorPetTipo: TipoValorPet;
 }
 
 export function formDeRegras(r?: RegrasPets): RegrasPetsForm {
@@ -26,8 +30,9 @@ export function formDeRegras(r?: RegrasPets): RegrasPetsForm {
     especies: r?.especies ?? ["cao", "gato"],
     porteMax: r?.porteMax ?? "M",
     qtdMax: String(r?.qtdMax ?? 1),
-    reforcoCaucao: r && r.reforcoCaucao > 0 ? String(r.reforcoCaucao) : "",
     regrasCondominio: r?.regrasCondominio ?? "",
+    valorPet: r?.valorPet && r.valorPet > 0 ? String(r.valorPet) : "",
+    valorPetTipo: r?.valorPetTipo ?? "reembolsavel",
   };
 }
 
@@ -71,10 +76,32 @@ export function PetsRegrasCampos({ value, onChange }: { value: RegrasPetsForm; o
           </select>
         </label>
       </div>
-      <label className="grid gap-1 text-sm font-semibold text-ink">
-        Reforço de Caução por causa do pet (R$, opcional)
-        <input className={campo} inputMode="decimal" placeholder="0" value={value.reforcoCaucao} onChange={(e) => onChange({ ...value, reforcoCaucao: e.target.value.replace(",", ".") })} />
-      </label>
+      <div className="grid gap-3 sm:grid-cols-2" data-testid="valor-pet-campos">
+        <label className="grid gap-1 text-sm font-semibold text-ink">
+          Valor pet (R$, opcional)
+          <input
+            className={campo}
+            inputMode="decimal"
+            placeholder="0"
+            data-testid="valor-pet"
+            value={value.valorPet}
+            onChange={(e) => onChange({ ...value, valorPet: e.target.value.replace(",", ".") })}
+          />
+        </label>
+        <label className="grid gap-1 text-sm font-semibold text-ink">
+          Esse valor é
+          <select
+            className={campo}
+            data-testid="valor-pet-tipo"
+            value={value.valorPetTipo}
+            onChange={(e) => onChange({ ...value, valorPetTipo: e.target.value as TipoValorPet })}
+          >
+            {TIPOS_VALOR_PET.map((t) => (
+              <option key={t} value={t}>{ROTULO_TIPO_VALOR_PET[t]}</option>
+            ))}
+          </select>
+        </label>
+      </div>
       <label className="grid gap-1 text-sm font-semibold text-ink">
         Regra do condomínio sobre pets (opcional)
         <input className={campo} maxLength={MAX_TEXTO_CONDOMINIO} value={value.regrasCondominio} onChange={(e) => onChange({ ...value, regrasCondominio: e.target.value })} />

@@ -18,8 +18,8 @@ export default function ComparePage() {
   if (items.length < 2) {
     return (
       <>
+        <PageTitle capa="comparar" title="Comparar imóveis" />
         <FavoritosTabs />
-        <PageTitle title="Comparar imóveis" />
         <EmptyState
           icon={GitCompare}
           title="Favorite ao menos 2 imóveis"
@@ -80,11 +80,11 @@ export default function ComparePage() {
 
   return (
     <>
-      <FavoritosTabs />
-      <PageTitle
+      <PageTitle capa="comparar"
         title="Comparar imóveis"
         subtitle={`${items.length} imóveis · compatibilidade com seu perfil de trabalho`}
       />
+      <FavoritosTabs />
       <div className="overflow-x-auto rounded-2xl border border-sage-200 bg-white">
         <table className="w-full min-w-[640px] text-sm">
           <thead>

@@ -10,7 +10,7 @@ import { hasAccount } from "../fixtures/accounts";
  *    A página é dos sócios: usa o cookie vn_socios derivado do código
  *    (SOCIOS_ACCESS_CODE); sem o código o teste se pula, nunca passa em falso.
  * 2) #536: o avatar do proprietário de exemplo mostra "P" (nunca "P(") e o
- *    banner da Visão geral do dono tem o alt com "imóvel mobiliado".
+ *    capa da Visão geral do dono tem o alt com "sala mobiliada".
  */
 const CODIGO = process.env.SOCIOS_ACCESS_CODE ?? process.env.TESTES_SOCIOS_CODIGO;
 
@@ -71,9 +71,12 @@ test.describe("T86 — #536: avatar sem 'P(' e alt 'imóvel mobiliado'", () => {
     test.skip(!hasAccount("proprietario"), "conta de teste do proprietário não configurada");
     test.use({ storageState: authFile("proprietario") });
 
-    test("alt é 'Sala de imóvel mobiliado preparada para anúncio' (nunca 'apartamento')", async ({ page }) => {
-      await page.goto("/dashboard", { waitUntil: "networkidle" });
-      await expect(page.getByAltText("Sala de imóvel mobiliado preparada para anúncio").first()).toBeAttached();
+    test("capa da Visão geral do dono: alt de sala mobiliada (nunca 'apartamento mobiliado')", async ({ page }) => {
+      // "networkidle" estourava 45 s no lab (a Visão geral mantém requisições abertas): basta o HTML.
+      await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+      // O banner antigo virou a capa do painel (ordem ec7988fe): o alt agora vem de CAPAS.imoveis.
+      const capa = page.getByTestId("painel-capa").first().locator("img");
+      await expect(capa).toHaveAttribute("alt", /sala mobiliada/i, { timeout: 20_000 });
       await expect(page.getByAltText(/apartamento mobiliado/i)).toHaveCount(0);
     });
   });

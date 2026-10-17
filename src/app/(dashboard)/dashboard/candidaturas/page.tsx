@@ -33,7 +33,7 @@ export default async function CandidaturasPage() {
 
   return (
     <>
-      <PageTitle
+      <PageTitle capa="candidaturas"
         title="Minhas candidaturas"
         subtitle="Acompanhe suas candidaturas do envio até a resposta. A conversa segue sempre pela plataforma."
       />

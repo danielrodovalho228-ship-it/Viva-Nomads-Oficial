@@ -24,6 +24,9 @@ test("seções de dono só para quem já anunciou; quem nunca anunciou não vê 
     assert.ok(!sem.includes(h), h);
   const com = menuDoPainel({ ...base, temImovel: true });
   assert.deepEqual(ids(com), ["visao", "moradia", "comunicacao", "imoveis", "contratos", "ferramentas", "conta"]);
+  const todos = folhas(com).map((i) => i.href);
+  assert.ok(!todos.includes("/dashboard/assinatura"), "sem mensalidade: dono não vê 'Plano e assinatura'");
+  assert.ok(!folhas(com).some((i) => /assinatura|mensalidade/i.test(i.rotulo)), "nenhum rótulo de mensalidade");
   const contratos = folhas(com.filter((i) => i.id === "contratos")).map((i) => i.rotulo);
   assert.deepEqual(contratos, ["Contratos & blocos", "Caução e garantias", "Conferência de entrada"]);
   assert.equal(ANUNCIAR.href, "/dashboard/imoveis/novo");
