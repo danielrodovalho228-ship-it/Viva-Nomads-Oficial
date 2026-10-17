@@ -8,7 +8,8 @@ export const TIPOS_PARCEIRO = [
   { valor: "fotografo", rotulo: "Fotógrafo" },
   { valor: "empresa", rotulo: "Empresa que hospeda equipes" },
   { valor: "gestor", rotulo: "Gestor ou administradora de imóveis" },
-  { valor: "servicos", rotulo: "Serviços para o imóvel (limpeza, manutenção, mobília, enxoval, internet, mudança)" },
+  { valor: "servicos", rotulo: "Limpeza e manutenção" },
+  { valor: "mobilia", rotulo: "Mobília, enxoval e mudança" },
   { valor: "seguros", rotulo: "Seguros e garantias" },
 ] as const;
 

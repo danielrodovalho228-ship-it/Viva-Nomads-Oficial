@@ -9,6 +9,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
 test.describe("T168 — Visita por vídeo: pedir → confirmar", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial" });
+  // Sem teto por ação, qualquer clique/preenchimento travado esperava os 120 s do teste e a falha vinha sem dizer onde.
+  test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });
 
   const senha = novaSenha();
   const sufixo = novoSufixo();
