@@ -57,6 +57,9 @@ export function VivaChatFlutuante() {
   const botao = useRef<HTMLButtonElement>(null);
   const gesto = useRef<{ id: number; x: number; y: number; dxBotao: number; baixo0: number; arrastou: boolean } | null>(null);
   const escondido = ESCONDER.some((p) => pathname === p || pathname.startsWith(p + "/"));
+  // Página do imóvel no celular (Q4, iPhone do Daniel): só o ícone redondo, para não tampar
+  // estrelas e o total do mês. A barra fixa fica embaixo; o nome acessível continua "Fale com a Viva".
+  const compacto = pathname.startsWith("/imoveis/");
 
   const medirTela = (): Tela => ({ largura: window.innerWidth, altura: window.innerHeight });
   const tamanhoBotao = (): Tamanho => {
@@ -160,11 +163,17 @@ export function VivaChatFlutuante() {
         onPointerCancel={aoSoltar}
         aria-expanded={aberto}
         aria-label={aberto ? "Fechar o chat" : "Fale com a Viva"}
-        className={cn(buttonClasses(), "touch-none select-none", arrastando && "cursor-grabbing shadow-xl")}
+        className={cn(
+          buttonClasses(),
+          "touch-none select-none",
+          compacto && !aberto && "max-lg:h-12 max-lg:w-12 max-lg:rounded-full max-lg:px-0 max-lg:shadow-lg",
+          arrastando && "cursor-grabbing shadow-xl",
+        )}
         data-testid="fale-com-a-viva"
+        data-compacto={compacto && !aberto ? "1" : undefined}
       >
-        {aberto ? <X className="h-4 w-4" /> : <MessageCircle className="h-4 w-4" />}
-        {aberto ? "Fechar" : "Fale com a Viva"}
+        {aberto ? <X className="h-4 w-4" /> : <MessageCircle className={compacto ? "h-4 w-4 max-lg:h-5 max-lg:w-5" : "h-4 w-4"} />}
+        <span className={compacto && !aberto ? "max-lg:sr-only" : undefined}>{aberto ? "Fechar" : "Fale com a Viva"}</span>
       </button>
     </div>
   );

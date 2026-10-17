@@ -1,5 +1,6 @@
 "use client";
 
+import { CampoData } from "@/components/ui/campo-data";
 import { useActionState, useState } from "react";
 import { criarPedidoFotografo, type ResultadoAcao } from "@/lib/fotografos/actions";
 import { Button } from "@/components/ui/button";
@@ -20,7 +21,7 @@ export function PedidoForm({ fotografoId, cep, cidade, uf, minData, maxData }: {
       <input type="hidden" name="uf" value={uf} />
       <div>
         <label htmlFor={id} className="block text-sm font-medium text-ink">Data sugerida</label>
-        <input id={id} name="data" type="date" required value={dataSugerida} onChange={(e) => setDataSugerida(e.target.value)} min={minData} max={maxData} className="mt-1 w-full rounded-lg border border-sage-200 px-3 py-2 text-base" />
+        <CampoData id={id} name="data" required value={dataSugerida} onChange={(e) => setDataSugerida(e.target.value)} min={minData} max={maxData} className="mt-1 w-full rounded-lg border border-sage-200 px-3 py-2 text-base" />
       </div>
       <div>
         <label htmlFor={`obs-${fotografoId}`} className="block text-sm font-medium text-ink">Observação (opcional)</label>

@@ -1,5 +1,6 @@
 "use client";
 
+import { CampoData } from "@/components/ui/campo-data";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Download, FileText, ShieldCheck } from "lucide-react";
@@ -105,7 +106,7 @@ export function DevolucaoCaucaoDono({
         </label>
         <label className="text-xs text-muted">
           Data
-          <input type="date" value={data} onChange={(e) => setData(e.target.value)} className={input} />
+          <CampoData value={data} onChange={(e) => setData(e.target.value)} className={input} />
         </label>
         <label className="text-xs text-muted">
           Como

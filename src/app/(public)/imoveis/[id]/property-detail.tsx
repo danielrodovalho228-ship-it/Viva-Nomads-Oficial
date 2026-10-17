@@ -63,6 +63,7 @@ import { PrivacidadeAcesso } from "@/components/property/privacidade-acesso";
 import { OwnerCard } from "@/components/property/owner-card";
 import type { PerfilProprietario } from "@/lib/data/perfil-proprietario";
 import { Reviews } from "@/components/property/reviews";
+import { CampoData } from "@/components/ui/campo-data";
 import { isExemplo, EXEMPLO_SEM_CONTATO, EXEMPLO_AVISO_DEMO } from "@/lib/demo-listing";
 import { destinoContatoViva, resumoSolicitacao } from "@/lib/reserva-imovel";
 import { registrarEvento } from "@/lib/eventos/registrar";
@@ -253,13 +254,12 @@ export function PropertyDetail({
     <div className="flex flex-col gap-2">
       <label className="flex flex-col gap-1 text-xs font-medium text-ink">
         Quando quer entrar? (opcional)
-        <input
-          type="date"
+        <CampoData
           data-testid="candidatura-inicio"
           min={hojeBR()}
           value={inicioDesejado}
           onChange={(e) => setInicioDesejado(e.target.value)}
-          className="h-11 w-full rounded-xl border border-line bg-white px-3 text-base text-ink"
+          className="h-11 rounded-xl border border-line bg-white px-3 text-base text-ink"
         />
       </label>
       <label className="flex flex-col gap-1 text-xs font-medium text-ink">
@@ -477,7 +477,7 @@ export function PropertyDetail({
     // Página PÚBLICA com fotos: "largura total" = a medida do container (1536 px, como o Furnished Finder), nunca a
     // tela inteira (ordem 4252e0d6, Daniel 16/10). A regra "painel sem mx-auto max-w-*" vale
     // só para dashboards, não para páginas públicas com galeria. Celular: ocupa a largura toda.
-    <div className="mx-auto w-full max-w-[1536px] px-5 py-8 pb-48 sm:px-8 lg:px-7 lg:pb-8" data-testid="imovel-largura-total">
+    <div className="mx-auto w-full max-w-[1536px] px-5 py-8 pb-64 sm:px-8 lg:px-7 lg:pb-8" data-testid="imovel-largura-total">
       {composer}
       {solicitacao}
       <BarraFixaCelular

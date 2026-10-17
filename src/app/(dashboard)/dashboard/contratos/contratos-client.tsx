@@ -1,5 +1,6 @@
 "use client";
 
+import { CampoData } from "@/components/ui/campo-data";
 import { ProblemaComIsto } from "@/components/ajuda/problema-com-isto";
 import { useMemo, useState } from "react";
 import Link from "next/link";
@@ -571,8 +572,7 @@ function RegistrarRecebimento({
         </label>
         <label className="text-xs text-muted">
           Data
-          <input
-            type="date"
+          <CampoData
             value={data}
             onChange={(e) => setData(e.target.value)}
             className="mt-1 w-full rounded-lg border border-sage-200 px-2 py-1.5 text-sm text-ink outline-none focus:border-sage"
