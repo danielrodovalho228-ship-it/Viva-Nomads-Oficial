@@ -11,6 +11,13 @@ test("#fa84ea52: título [TESTE] é anúncio de teste; título normal não", () 
   assert.equal(ehAnuncioDeTeste(null), false);
 });
 
+test("#fa84ea52: '[TESTE QA] …', '[QA] x' e '[TEST] y' também são anúncio de teste (fonte única)", () => {
+  assert.equal(ehAnuncioDeTeste("[TESTE QA] Apto perto do HC-UFU"), true);
+  assert.equal(ehAnuncioDeTeste("[QA] x"), true);
+  assert.equal(ehAnuncioDeTeste("[TEST] y"), true);
+  assert.doesNotMatch(readFileSync("src/lib/demo-listing.ts", "utf8"), /\/\^\\s\*\\\[teste/i);
+});
+
 test("#fa84ea52: sitemap exclui e página do imóvel marca noindex os anúncios de teste", () => {
   assert.match(readFileSync("src/app/sitemap.ts", "utf8"), /ehAnuncioDeTeste\(p\.title\)/);
   assert.match(readFileSync("src/app/(public)/imoveis/[id]/page.tsx", "utf8"), /ehAnuncioDeTeste\(property\.title\)/);
