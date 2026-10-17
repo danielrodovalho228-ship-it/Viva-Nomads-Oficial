@@ -616,6 +616,11 @@ export default function NewPropertyPage() {
       try {
         if (alive && local) aplicarDraft(JSON.parse(local));
       } catch {}
+      // `?etapa=` na URL de um anúncio novo vence a etapa guardada no rascunho local.
+      if (alive && etapaParam !== null) {
+        setStep(etapaParam);
+        setEtapaMax((m) => Math.max(m, posicaoDaEtapa(etapaParam)));
+      }
     };
     getLatestDraft()
       .then((d) => {

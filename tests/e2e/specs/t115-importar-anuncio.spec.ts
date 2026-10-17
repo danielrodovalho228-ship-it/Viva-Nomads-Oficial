@@ -9,19 +9,11 @@ test.describe("T115 — Importar meu anúncio", () => {
   test.use({ storageState: authFile("proprietario"), viewport: { width: 390, height: 844 } });
 
   test("cola, confere, aplica e o cadastro recebe os campos", async ({ page }) => {
-    await page.goto("/dashboard/imoveis/novo", { waitUntil: "domcontentloaded" });
-    // Abre a etapa "Tipo" pelo rascunho local (mesma chave que a tela usa).
-    await page.evaluate(() => {
-      const bruto = Object.entries(localStorage).find(([k]) => /^sb-.*-auth-token$/.test(k))?.[1];
-      const id = bruto ? JSON.parse(bruto)?.user?.id : null;
-      if (id) localStorage.setItem(`vivanomads-novo-draft:${id}`, JSON.stringify({ step: 0 }));
-    });
-    await page.reload({ waitUntil: "domcontentloaded" });
-
-    // A tela decide sozinha: sem rascunho no servidor aplica o local (abre em "Tipo"); com rascunho oferece
-    // "Continuar". Espera um dos dois (não adivinha por isVisible) e, no 2º caso, reabre o rascunho já na etapa 0.
+    // Abre direto na etapa "Tipo" (?etapa=0). Não depende do token no localStorage nem de rascunho local.
+    await page.goto("/dashboard/imoveis/novo?etapa=0", { waitUntil: "domcontentloaded" });
     const abrir = page.getByTestId("importar-abrir");
     const continuar = page.getByTestId("rascunho-continuar");
+    // Com rascunho no servidor a tela oferece "Continuar": reabre o rascunho já na etapa 0.
     await expect(abrir.or(continuar)).toBeVisible({ timeout: 30_000 });
     if (await continuar.isVisible()) {
       await continuar.click();
