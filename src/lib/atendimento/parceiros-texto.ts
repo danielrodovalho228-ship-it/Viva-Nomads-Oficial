@@ -30,7 +30,7 @@ export const CONTRATAR_FOTOGRAFO =
   "No passo Fotos do cadastro do imóvel, escolha \"Contratar fotógrafo parceiro\", veja quem atende o CEP do imóvel, escolha o pacote e envie o pedido. O contato do fotógrafo vem depois que ele aceita; o rascunho fica \"Aguardando fotos do fotógrafo\" e você segue preenchendo à mão.";
 
 export const EMPRESAS_E_GESTORES =
-  "Empresa que hospeda equipes: /empresas. Gestor ou administradora de imóveis: não é parceria separada; veja o Plano Gestor (taxa menor por volume, 12/10/8/6%, e Plano Gestor para quem tem 31 imóveis ativos ou mais).";
+  "Empresa que quer moradia para funcionários: /empresas. Empresa que quer ser parceira (limpeza, manutenção, mobília, seguro): deixe seu contato em /parceiros (em breve). Proprietário que quer anunciar imóveis mobiliados: crie a conta em /auth. Gestor ou administradora de imóveis: não é parceria separada; veja o Plano Gestor (taxa menor por volume, 12/10/8/6%, e Plano Gestor para quem tem 31 imóveis ativos ou mais).";
 
 /** Bloco para o prompt da Viva. */
 export function blocoParceirosPrompt(): string {
