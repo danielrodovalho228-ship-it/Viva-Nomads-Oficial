@@ -40,6 +40,8 @@ const nextConfig: NextConfig = {
       // /planos é natural de digitar e pode ter links antigos; a página canônica
       // é /precos (o rótulo "Planos" no menu/rodapé já aponta para /precos).
       { source: "/planos", destination: "/precos", permanent: true },
+      // Link curto de bairro (só Uberlândia tem bairros curados): vai para a página da cidade.
+      { source: "/bairros/:bairro", destination: "/cidades/uberlandia/:bairro", permanent: true },
       // Link antigo/intuitivo: quem procura "anunciar" cai na página do proprietário (301).
       { source: "/anunciar", destination: "/para-proprietarios", statusCode: 301 },
       // O simulador agora é uma rota React em /simulacao (URL principal divulgada).
@@ -53,6 +55,10 @@ const nextConfig: NextConfig = {
       { source: "/publicar-pedido", destination: "/pedidos/novo", permanent: true },
       { source: "/pedido", destination: "/pedidos/novo", permanent: true },
       { source: "/proprietarios", destination: "/para-proprietarios", permanent: true },
+      // Sem mensalidade (ordem 90181c57): a antiga tela de assinatura vai a /precos já na resposta HTTP.
+      // Só o redirect() da página, dentro do painel com loading.tsx, saía como 200 + navegação do
+      // navegador, e o lab (t48) via um 404 de recurso nesse caminho.
+      { source: "/dashboard/assinatura", destination: "/precos", permanent: false },
     ];
   },
   async rewrites() {
@@ -108,6 +114,16 @@ const nextConfig: NextConfig = {
       {
         source: "/auth/app-callback",
         headers: [{ key: "Referrer-Policy", value: "no-referrer" }],
+      },
+      // Páginas e APIs: a Vercel acrescenta "Access-Control-Allow-Origin: *" em saída estática
+      // (/, /precos, /como-funciona...). Fixamos a origem do próprio site em tudo que não é
+      // arquivo de build (_next), para nenhum site de terceiro ler as páginas pelo navegador (#126).
+      {
+        source: "/((?!_next/).*)",
+        headers: [
+          { key: "Access-Control-Allow-Origin", value: "https://vivanomads.com.br" },
+          { key: "Vary", value: "Origin" },
+        ],
       },
       // Arquivos estáticos para robôs: a Vercel acrescenta "Access-Control-Allow-Origin: *"
       // em saída estática. Fixamos a origem do próprio site (depois da regra global) para que

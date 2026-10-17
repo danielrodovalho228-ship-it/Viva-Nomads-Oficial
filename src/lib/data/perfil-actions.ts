@@ -6,7 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { lerDocumento } from "@/lib/data/documento-servidor";
 import { DOCUMENTO_VAZIO_PF, documentoCompleto, mascararCnpj, mascararCpf, msgDocumentoDuplicado, validarDocumento, type DocumentoInput, type TipoPessoa } from "@/lib/documento-pessoa";
 import { contemContato } from "@/lib/pedidos/pedidos";
-import { validarNome, normalizarTelefone, validarLinkedin } from "@/lib/conta-validacao";
+import { validarNome, normalizarTelefone, validarLinkedin, validarMotivoEstadia } from "@/lib/conta-validacao";
 import {
   isCategoriaKey,
   CATEGORIA_NAO_INFORMAR,
@@ -77,6 +77,8 @@ export interface MeusDados {
   email: string;
   phone: string;
   linkedin: string;
+  /** Chave de MOTIVOS (pedidos.ts) ou "" — pré-preenche pedidos novos. */
+  motivoEstadia: string;
 }
 
 /** Lê os MEUS dados pessoais (nome, e-mail, telefone, LinkedIn). */
@@ -89,7 +91,7 @@ export async function getMeusDados(): Promise<MeusDados | null> {
   if (!user) return null;
   const { data } = await supabase
     .from("profiles")
-    .select("full_name, phone, linkedin_url")
+    .select("full_name, phone, linkedin_url, motivo_estadia")
     .eq("id", user.id)
     .maybeSingle();
   return {
@@ -97,6 +99,7 @@ export async function getMeusDados(): Promise<MeusDados | null> {
     email: user.email ?? "",
     phone: (data?.phone as string) ?? "",
     linkedin: (data?.linkedin_url as string) ?? "",
+    motivoEstadia: (data?.motivo_estadia as string) ?? "",
   };
 }
 
@@ -111,16 +114,20 @@ export async function salvarMeusDados(input: {
   fullName: string;
   phone: string;
   linkedin?: string;
-}): Promise<Result & { dados?: { fullName: string; phone: string | null; linkedin: string | null } }> {
+  motivoEstadia?: string;
+}): Promise<Result & { dados?: { fullName: string; phone: string | null; linkedin: string | null; motivoEstadia: string | null } }> {
   const nome = validarNome(input.fullName);
   if (!nome.ok) return { ok: false, error: nome.erro };
   const tel = normalizarTelefone(input.phone);
   if (!tel.ok) return { ok: false, error: tel.erro };
   const li = input.linkedin === undefined ? null : validarLinkedin(input.linkedin);
   if (li && !li.ok) return { ok: false, error: li.erro };
+  const mo = input.motivoEstadia === undefined ? null : validarMotivoEstadia(input.motivoEstadia);
+  if (mo && !mo.ok) return { ok: false, error: mo.erro };
+  const motivoEstadia = mo?.ok ? mo.valor : null;
 
   const supabase = await createClient();
-  if (!supabase) return { ok: true, dados: { fullName: nome.valor, phone: tel.valor, linkedin: li?.ok ? li.valor : null } };
+  if (!supabase) return { ok: true, dados: { fullName: nome.valor, phone: tel.valor, linkedin: li?.ok ? li.valor : null, motivoEstadia } };
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -128,6 +135,7 @@ export async function salvarMeusDados(input: {
 
   const update: Record<string, string | null> = { full_name: nome.valor, phone: tel.valor };
   if (li?.ok) update.linkedin_url = li.valor;
+  if (mo?.ok) update.motivo_estadia = mo.valor;
   const { error } = await supabase.from("profiles").update(update).eq("id", user.id);
   if (error) {
     console.error("[salvarMeusDados]", error.code, error.message);
@@ -139,7 +147,7 @@ export async function salvarMeusDados(input: {
     };
   }
   revalidatePath("/dashboard/conta");
-  return { ok: true, dados: { fullName: nome.valor, phone: tel.valor, linkedin: li?.ok ? li.valor : null } };
+  return { ok: true, dados: { fullName: nome.valor, phone: tel.valor, linkedin: li?.ok ? li.valor : null, motivoEstadia } };
 }
 
 export interface MeuDocumento {

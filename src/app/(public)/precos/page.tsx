@@ -3,7 +3,7 @@ import { Check, Camera, FileSignature, ShieldCheck, UserCheck, Banknote, PiggyBa
 import { BannerTopo } from "@/components/institucional/banner-topo";
 import { BrandImage } from "@/components/brand-image";
 import { PHOTOS } from "@/lib/media";
-import { FAIXAS_COMISSAO_PADRAO, TEXTO_REGRA_UNICA, TEXTO_REGRA_CURTO, TAXA_NEGOCIADA_TEXTO, taxaPublicaTexto, comissaoSobreContrato, TEXTO_RENOVACAO_COMISSAO } from "@/lib/cobranca/regra";
+import { FAIXAS_COMISSAO_PADRAO, TEXTO_REGRA_UNICA, DESCRICAO_PRECOS, TAXA_NEGOCIADA_TEXTO, taxaPublicaTexto, comissaoSobreContrato, TEXTO_RENOVACAO_COMISSAO } from "@/lib/cobranca/regra";
 import { PlanoGestorForm } from "@/components/precos/plano-gestor-form";
 import { ComparativoPrecos } from "@/components/precos/comparativo-precos";
 import { ButtonLink } from "@/components/ui/button";
@@ -16,7 +16,7 @@ import { SITE_URL, SUPORTE_EMAIL } from "@/lib/site";
 export const metadata: Metadata = {
   alternates: { canonical: "/precos" },
   title: "Anuncie imóveis mobiliados: 12% por contrato",
-  description: TEXTO_REGRA_CURTO + " Para imóveis mobiliados.",
+  description: DESCRICAO_PRECOS,
 };
 
 /**

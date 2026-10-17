@@ -17,6 +17,8 @@ export interface Lead {
   verified: boolean;
   desiredPeriodDays?: number; // período pretendido (para o resumo em uma linha)
   budgetMatch?: boolean; // orçamento compatível com o aluguel
+  /** Motivo da estadia (rótulo público; "Saúde" para tratamento médico). Só categoria, nunca texto livre. */
+  motivo?: string;
   // PRIVACIDADE: telefone/e-mail/LinkedIn NÃO entram aqui. O proprietário
   // decide pelo perfil de risco e responde pela plataforma (conversa já aberta).
 }
@@ -40,6 +42,7 @@ export function leadScore(l: Lead): number {
 /** Resumo do candidato em uma linha. */
 export function leadSummary(l: Lead): string {
   const parts = [l.category, LIGHT_SHORT[l.light]];
+  if (l.motivo) parts.push(`motivo: ${l.motivo}`);
   if (l.desiredPeriodDays) parts.push(`quer ${l.desiredPeriodDays} dias`);
   if (l.budgetMatch !== undefined) parts.push(l.budgetMatch ? "orçamento ok" : "orçamento a confirmar");
   return parts.join(" · ");

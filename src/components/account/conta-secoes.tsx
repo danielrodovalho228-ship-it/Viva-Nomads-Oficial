@@ -20,6 +20,7 @@ import { elevarParaAal2 } from "@/lib/seguranca/elevar-aal2";
 import { Switch } from "@/components/ui/switch";
 import { getMeusDados, salvarMeusDados, getMeuDocumento, salvarMeuDocumento, type MeuDocumento } from "@/lib/data/perfil-actions";
 import { getAlertasEquipe, getNotifPrefs, setAlertasEquipe, setNotifPrefs } from "@/lib/data/pedidos-actions";
+import { MOTIVOS } from "@/lib/pedidos/pedidos";
 import { useCaptcha } from "@/components/seguranca/captcha";
 import { MSG_CAPTCHA_PENDENTE, comCaptcha, podeEnviar } from "@/lib/seguranca/captcha";
 
@@ -36,6 +37,7 @@ export function DadosPessoais() {
   const [nome, setNome] = useState(nomeCompletoLimpo(user?.fullName));
   const [telefone, setTelefone] = useState("");
   const [linkedin, setLinkedin] = useState("");
+  const [motivoEstadia, setMotivoEstadia] = useState("");
   const [email, setEmail] = useState(user?.email ?? "");
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -50,6 +52,7 @@ export function DadosPessoais() {
         setNome(nomeCompletoLimpo(d.fullName));
         setTelefone(d.phone);
         setLinkedin(d.linkedin);
+        setMotivoEstadia(d.motivoEstadia);
         setEmail(d.email);
       })
       .catch(() => {});
@@ -66,7 +69,7 @@ export function DadosPessoais() {
     const r = await salvarMeusDados({
       fullName: nome,
       phone: telefone,
-      ...(mode === "tenant" ? { linkedin } : {}),
+      ...(mode === "tenant" ? { linkedin, motivoEstadia } : {}),
     }).catch(() => ({ ok: false as const, error: "Sem conexão. Tente de novo.", dados: undefined }));
     setSalvando(false);
     if (!r.ok || !r.dados) {
@@ -75,7 +78,10 @@ export function DadosPessoais() {
     }
     setNome(r.dados.fullName);
     setTelefone(r.dados.phone ?? "");
-    if (mode === "tenant") setLinkedin(r.dados.linkedin ?? "");
+    if (mode === "tenant") {
+      setLinkedin(r.dados.linkedin ?? "");
+      setMotivoEstadia(r.dados.motivoEstadia ?? "");
+    }
     // O nome novo aparece já no menu e no topo.
     const atual = useAuthStore.getState().user;
     if (atual) setUser({ ...atual, name: r.dados.fullName, fullName: r.dados.fullName });
@@ -112,6 +118,27 @@ export function DadosPessoais() {
               placeholder="https://linkedin.com/in/seu-perfil"
               inputMode="url"
             />
+          )}
+          {mode === "tenant" && (
+            <label className="block text-sm font-medium text-ink">
+              Motivo da estadia (opcional)
+              <select
+                data-testid="perfil-motivo-estadia"
+                value={motivoEstadia}
+                onChange={(e) => setMotivoEstadia(e.target.value)}
+                className="mt-1 block min-h-11 w-full rounded-lg border border-border bg-white px-3 text-base font-normal text-ink"
+              >
+                <option value="">Prefiro não informar</option>
+                {MOTIVOS.map((m) => (
+                  <option key={m.key} value={m.key}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+              <span className="mt-1 block text-xs font-normal text-muted">
+                Já vem preenchido nos seus próximos pedidos. Você pode trocar a qualquer hora.
+              </span>
+            </label>
           )}
         </div>
         <p className="mt-3 text-xs text-muted">
@@ -281,7 +308,7 @@ export function PerfilDoModo() {
   return (
     <>
       {mode !== "tenant" && (
-        <div className="mt-6">
+        <div id="tributacao" className="mt-6 scroll-mt-24">
           <h2 className="mb-3 font-title text-lg font-bold text-ink">Tributação das locações</h2>
           <TaxSimulator />
         </div>

@@ -19,6 +19,7 @@ const SearchMap = dynamic(
 import { EmptySearchIllustration } from "@/components/illustrations";
 import { cn, distanceKm, formatBRL } from "@/lib/utils";
 import { tierFromPhotoCount, searchPriority } from "@/lib/listing";
+import { comTotalMes } from "@/lib/precos";
 import { prioridadeNaBusca } from "@/lib/preco-justo";
 import { LocationSearch } from "@/components/location-search";
 import type { GeoSuggestion } from "@/lib/integrations/geocoding";
@@ -29,7 +30,7 @@ import { FAIXAS, GARANTIAS_FAIXA, GARANTIAS_PUBLICAS, CAUCAO_PARCELADA_UI } from
 import { SELO_NF_UI } from "@/lib/flags";
 import { PainelFiltrosCelular } from "@/components/busca/painel-filtros-celular";
 import { COMODIDADES_FILTRO, ROTULO_COMODIDADE, comodidadesDaUrl, type ComodidadeFiltro } from "@/lib/busca/filtro-comodidades";
-import { OPCOES_PORTE_PET, ROTULO_PORTE_CURTO, contarFiltrosPainel, passaNoPainel, resumoFiltros, type FiltrosPainel } from "@/lib/busca/painel-filtros";
+import { OPCOES_PORTE_PET, ROTULO_PORTE_CURTO, contarFiltrosPainel, passaNoPainel, precoDeBusca, resumoFiltros, type FiltrosPainel } from "@/lib/busca/painel-filtros";
 import { TituloBuscaContexto } from "@/components/busca/titulo-busca";
 import { buttonClasses } from "@/components/ui/button";
 import { SalvarBusca } from "@/components/busca/salvar-busca";
@@ -80,7 +81,9 @@ function aceitaGarantia(p: Property, g: string): boolean {
   return arr.includes(g); // caucao_avista | caucao_parcelada | titulo
 }
 
-export function SearchClient({ properties, topo }: { properties: Property[]; /** Título (e banner do tablet) vindo da página. */ topo?: React.ReactNode }) {
+export function SearchClient({ properties: imoveis, topo }: { properties: Property[]; /** Título (e banner do tablet) vindo da página. */ topo?: React.ReactNode }) {
+  // Filtro, ordem e pino usam o total do mês do cartão (ordem 826719b1, D1).
+  const properties = useMemo(() => imoveis.map((p) => comTotalMes(p)), [imoveis]);
   const [locationQuery, setLocationQuery] = useState("");
   // Coordenadas de um endereço escolhido no autocomplete (filtra por raio).
   const [geoCenter, setGeoCenter] = useState<{ lat: number; lng: number } | null>(null);
@@ -323,8 +326,11 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
     return () => window.clearTimeout(timer);
   }, [locationQuery, properties]);
 
+  // Muda a cada "Limpar filtros": remonta a busca por descrição (campo e chips) — ordem 826719b1, D5.
+  const [reinicioDescricao, setReinicioDescricao] = useState(0);
   // Zera todos os filtros (usado no estado vazio para o usuário recomeçar).
   function clearFilters() {
+    setReinicioDescricao((n) => n + 1);
     setLocationQuery("");
     setGeoCenter(null);
     setRadiusKm(DEFAULT_RADIUS_KM);
@@ -395,8 +401,8 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
 
   const results = useMemo(() => {
     let list = base.filter((p) => passaNoPainel(p, filtrosPainel));
-    if (sort === "price-asc") list = [...list].sort((a, b) => a.monthlyPrice - b.monthlyPrice);
-    else if (sort === "price-desc") list = [...list].sort((a, b) => b.monthlyPrice - a.monthlyPrice);
+    if (sort === "price-asc") list = [...list].sort((a, b) => precoDeBusca(a) - precoDeBusca(b));
+    else if (sort === "price-desc") list = [...list].sort((a, b) => precoDeBusca(b) - precoDeBusca(a));
     // Adicionados recentemente: mais novos (data de cadastro) primeiro.
     else if (sort === "recent")
       list = [...list].sort(
@@ -539,7 +545,7 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
     <TituloBuscaContexto.Provider value={tituloBusca}>
     <div className="flex flex-col py-4 sm:py-6 lg:px-6 lg:py-0" data-testid="busca">
       {topo && <div className="-mt-4 sm:-mt-6 lg:order-2 lg:mt-0">{topo}</div>}
-      <DescricaoBusca locais={locaisDoCatalogo} onAplicar={aplicarDescricao} onRemover={removerDescricao} />
+      <DescricaoBusca key={reinicioDescricao} locais={locaisDoCatalogo} onAplicar={aplicarDescricao} onRemover={removerDescricao} />
       {slotHeader &&
         createPortal(
           <BuscaCompacta
@@ -841,7 +847,7 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
                 💻 Para trabalhar de casa
               </Chip>
               <Chip on={petsOnly} onClick={() => { setPetsOnly((v) => !v); setPetPorte(""); }}>
-                🐾 Aceita pet
+                🐾 Aceita pets
               </Chip>
               {petsOnly && (
                 <div data-testid="filtro-porte-pet" className="contents">
@@ -922,7 +928,7 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
             {homeOfficeOnly && (
               <ActiveChip label="Trabalhar de casa" onClear={() => setHomeOfficeOnly(false)} />
             )}
-            {petsOnly && <ActiveChip label={petPorte ? `Aceita pet ${ROTULO_PORTE_CURTO[petPorte]}` : "Aceita pet"} onClear={() => { setPetsOnly(false); setPetPorte(""); }} />}
+            {petsOnly && <ActiveChip label={petPorte ? `Aceita pets ${ROTULO_PORTE_CURTO[petPorte]}` : "Aceita pets"} onClear={() => { setPetsOnly(false); setPetPorte(""); }} />}
             {SELO_NF_UI && invoiceOnly && <ActiveChip label="Nota Fiscal" onClear={() => setInvoiceOnly(false)} />}
             {insuranceOnly && (
               <ActiveChip label="Seguro-Fiança" onClear={() => setInsuranceOnly(false)} />
@@ -1037,6 +1043,8 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
               </Link>
             </div>
           ) : (
+            // EXCEÇÃO da regra de grade par (ordem 86dcb4db, B2; decidido pela coordenação):
+            // ao lado do mapa a /buscar mantém 3 cards por linha em telas largas (aprovado na ordem ca0e7dad).
             <div className="grid auto-rows-fr gap-4 sm:grid-cols-2 sm:gap-6 lg:gap-4 xl:grid-cols-3" data-testid="grade-resultados">
               {/* h2 (invisível) entre o h1 do topo e os h3 dos cards — sem pular nível. */}
               <h2 className="sr-only">Imóveis encontrados</h2>
@@ -1094,6 +1102,8 @@ export function SearchClient({ properties, topo }: { properties: Property[]; /**
             </div>
           )}
 
+          {/* Respiro: a barra fixa não cobre as caixinhas dos últimos cartões. */}
+          {comparar.length > 0 && <div aria-hidden="true" data-testid="comparar-respiro" className="h-32" />}
           <BarraComparar ids={comparar} aviso={avisoComparar} onLimpar={() => { setComparar([]); setAvisoComparar(null); }} />
 
           {/* O botão flutuante "Fale com a Viva" não aparece aqui (cobria "Mais filtros"). */}

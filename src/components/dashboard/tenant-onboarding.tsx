@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import { Check, ShieldCheck, Megaphone, MessageSquare, X } from "lucide-react";
-import { DashboardBanner } from "@/components/dashboard/banner";
+import { PageTitle } from "@/components/dashboard/primitives";
 import { ButtonLink } from "@/components/ui/button";
-import { PHOTOS } from "@/lib/media";
 import { cn } from "@/lib/utils";
 import { gravarLocalStorageBruto, useLocalStorageBruto } from "@/lib/use-client-state";
 
@@ -78,10 +77,8 @@ export function TenantOnboarding({ name }: { name: string }) {
   }
 
   const banner = (
-    <DashboardBanner
-      className="mb-6"
-      image={PHOTOS.dashTenant}
-      alt="Canto aconchegante de imóvel mobiliado com luz da manhã"
+    <PageTitle
+      capa="buscas"
       title={`Olá${name ? `, ${name}` : "!"} 👋`}
       subtitle="Encontre o imóvel certo para a sua próxima fase."
       action={

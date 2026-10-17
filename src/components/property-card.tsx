@@ -2,7 +2,8 @@ import Link from "next/link";
 import { Bath, BedDouble, PawPrint, Ruler, Star, PlayCircle, Users } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { formatBRL, numBR } from "@/lib/utils";
-import { calcularTudoIncluido } from "@/lib/precos";
+import { calcularTudoIncluido, textosTotalMensal } from "@/lib/precos";
+import { quartosTexto, banheirosTexto } from "@/lib/anuncio/plural";
 import { tierFromPhotoCount } from "@/lib/listing";
 import { SELO_NF_UI } from "@/lib/flags";
 import { isExemplo } from "@/lib/demo-listing";
@@ -11,6 +12,8 @@ import { ReadyToLiveBadge, PrecoJustoBadge, PropertyTags, InvoiceBadge, Insuranc
 import { BrandImage } from "@/components/brand-image";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
 import { FavoriteButton } from "@/components/favorite-button";
+import { repartirSelos, ROTULO_SELO_VIDEO, type SeloCard } from "@/lib/card-selos";
+import { videoTourPermitido } from "@/lib/video-tour";
 import { MarcaImovel } from "@/components/property/marca-imovel";
 
 export function PropertyCard({
@@ -29,13 +32,24 @@ export function PropertyCard({
   // "Tudo incluído" pela FONTE ÚNICA (aluguel + condomínio + consumo fixo) — o
   // mesmo número da página do imóvel. Total do período = mensal × meses.
   const inc = calcularTudoIncluido(property);
+  const totais = textosTotalMensal(property);
   const totalPeriodo = periodMonths && periodMonths > 0 ? inc.total * periodMonths : null;
   const disponivel = disponivelAPartirDe(property.availableFrom);
+  const selos = repartirSelos({
+    precoJusto: !!property.precoJusto,
+    pets: !!property.petsAllowed,
+    pronto: !!property.readyToLiveBadge,
+    video: videoTourPermitido(property.videoUrl),
+    exemplo: exemplo,
+    destaque: tier !== "padrao",
+  });
 
   return (
+    // O coração fica FORA do <a> (botão dentro de link é HTML inválido e o clique navegava junto): ordem 826719b1, D12.
+    <div className="group relative h-full">
     <Link
       href={`/imoveis/${property.id}`}
-      className="group flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-white transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-[0_20px_40px_-24px_rgba(11,42,102,0.45)]"
+      className="flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-white transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-[0_20px_40px_-24px_rgba(11,42,102,0.45)]"
     >
       <div className="relative aspect-[4/3] overflow-hidden">
         {hasRealPhoto ? (
@@ -49,34 +63,16 @@ export function PropertyCard({
         ) : (
           <PhotoPlaceholder label={cover} className="h-full w-full" />
         )}
-        {/* Máximo 2 badges na foto: Pronto para Morar (prioridade 1) + Vídeo. */}
-        <div className="absolute left-3 top-3 flex flex-col items-start gap-1.5">
-          {exemplo && (
-            <span className="inline-flex items-center rounded-full bg-night/85 px-2 py-0.5 text-[11px] font-semibold text-white">
-              Exemplo ilustrativo
-            </span>
-          )}
-          {property.readyToLiveBadge && <ReadyToLiveBadge size="sm" />}
-          {property.precoJusto && <PrecoJustoBadge />}
-          {property.videoUrl && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-night/85 px-2 py-0.5 text-xs font-semibold text-white">
-              <PlayCircle className="h-3.5 w-3.5" /> Vídeo
-            </span>
-          )}
-        </div>
-        <div className="absolute right-3 top-3">
-          <FavoriteButton propertyId={property.id} />
+        {/* Máximo 2 selos na foto (ordem 86dcb4db, B1): prioridade Preço justo e Aceita pets; o resto vai na linha de baixo. */}
+        <div className="absolute left-3 top-3 flex flex-col items-start gap-1.5" data-testid="selos-foto">
+          {selos.foto.map((s) => (
+            <Selo key={s} id={s} />
+          ))}
         </div>
         {/* Marca do usuário logado ("Visto" / "Você já contatou"): canto inferior esquerdo, fora dos 2 badges do topo. */}
         <div className="absolute bottom-3 left-3">
           <MarcaImovel propertyId={property.id} />
         </div>
-        {/* Destaque de anúncio — selo discreto (borda dourada), não um badge cheio. */}
-        {tier !== "padrao" && (
-          <span className="absolute bottom-3 right-3 rounded-full border border-gold bg-white/95 px-2 py-0.5 text-[11px] font-semibold text-forest shadow-sm">
-            Destaque
-          </span>
-        )}
       </div>
 
       <div className="flex flex-1 flex-col gap-2.5 p-4">
@@ -114,10 +110,10 @@ export function PropertyCard({
           {/* Tipo saiu da foto e virou metadado (Fase 3). */}
           <span className="font-medium text-ink">{property.propertyType}</span>
           <span className="inline-flex items-center gap-1" data-testid="card-quartos">
-            <BedDouble className="h-4 w-4" aria-hidden /> {property.bedrooms} {property.bedrooms === 1 ? "quarto" : "quartos"}
+            <BedDouble className="h-4 w-4" aria-hidden /> {quartosTexto(property.bedrooms)}
           </span>
           <span className="inline-flex items-center gap-1">
-            <Bath className="h-4 w-4" aria-hidden /> {property.bathrooms} {property.bathrooms === 1 ? "banheiro" : "banheiros"}
+            <Bath className="h-4 w-4" aria-hidden /> {banheirosTexto(property.bathrooms)}
           </span>
           <span className="inline-flex items-center gap-1">
             <Ruler className="h-4 w-4" /> {property.areaM2} m²
@@ -128,15 +124,18 @@ export function PropertyCard({
             </span>
           )}
           {property.petsAllowed && (
-            <span className="inline-flex items-center gap-1" title="Aceita pet">
+            <span className="inline-flex items-center gap-1" title="Aceita pets">
               <PawPrint className="h-4 w-4" aria-hidden="true" />
-              <span className="sr-only">Aceita pet</span>
+              <span className="sr-only">Aceita pets</span>
             </span>
           )}
         </div>
 
-        {((SELO_NF_UI && property.issuesInvoice) || property.acceptsInsurance) && (
-          <div className="flex flex-wrap gap-1.5">
+        {(selos.linha.length > 0 || (SELO_NF_UI && property.issuesInvoice) || property.acceptsInsurance) && (
+          <div className="flex flex-wrap gap-1.5" data-testid="selos-linha">
+            {selos.linha.map((s) => (
+              <Selo key={s} id={s} />
+            ))}
             {SELO_NF_UI && property.issuesInvoice && <InvoiceBadge />}
             {/* Seguro-fiança em estruturação: exemplo não promete. */}
             {!exemplo && property.acceptsInsurance && <InsuranceBadge />}
@@ -146,25 +145,12 @@ export function PropertyCard({
         {disponivel && <p className="text-xs font-medium text-forest">Disponível a partir de {disponivel}</p>}
 
         <div className="mt-auto border-t border-line pt-3">
-          <div className="flex items-end justify-between">
-            <div>
-              <span className="font-title text-xl font-bold text-ink">
-                {formatBRL(property.monthlyPrice)}
-              </span>
-              <span className="text-sm text-muted">/mês</span>
-            </div>
-            <span className="text-right text-xs text-muted">
-              {property.utilitiesMode === "fixed" && property.utilitiesEstimate > 0
-                ? `+ ${formatBRL(property.utilitiesEstimate)} consumo`
-                : "+ consumo medido"}
-            </span>
+          {/* Custo total do mês em destaque; valor mensal + extras menor (ordem 1a555bfa). */}
+          <div data-testid="cartao-total-mes">
+            <span className="font-title text-xl font-bold text-ink">{formatBRL(inc.total)}</span>
+            <span className="text-sm font-semibold text-ink">/mês total</span>
+            <p className="mt-0.5 text-xs text-muted" data-testid="cartao-valor-mensal">{totais.detalhe}</p>
           </div>
-          {/* Custo total estimado — fonte única (aluguel + condomínio + consumo). */}
-          {inc.temExtras && (
-            <p className="mt-1.5 text-xs font-semibold text-forest">
-              ≈ {formatBRL(inc.total)}/mês tudo incluído
-            </p>
-          )}
           {/* Total do período buscado (Fase 3) — só quando há período na busca. */}
           {totalPeriodo != null && (
             <p className="mt-0.5 text-xs text-muted">
@@ -175,5 +161,36 @@ export function PropertyCard({
         </div>
       </div>
     </Link>
+    <div className="absolute right-3 top-3 z-10">
+      <FavoriteButton propertyId={property.id} />
+    </div>
+    </div>
   );
+}
+
+const SELO_BASE = "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold";
+
+function Selo({ id }: { id: SeloCard }) {
+  switch (id) {
+    case "precoJusto":
+      return <PrecoJustoBadge />;
+    case "pronto":
+      return <ReadyToLiveBadge size="sm" />;
+    case "pets":
+      return (
+        <span className={`${SELO_BASE} border border-sage-200 bg-white text-forest shadow-sm`}>
+          <PawPrint className="h-3.5 w-3.5" aria-hidden /> Aceita pets
+        </span>
+      );
+    case "video":
+      return (
+        <span className={`${SELO_BASE} bg-night/85 text-white`}>
+          <PlayCircle className="h-3.5 w-3.5" aria-hidden /> {ROTULO_SELO_VIDEO}
+        </span>
+      );
+    case "exemplo":
+      return <span className={`${SELO_BASE} bg-night/85 text-[11px] text-white`}>Exemplo ilustrativo</span>;
+    case "destaque":
+      return <span className={`${SELO_BASE} border border-gold bg-white/95 text-[11px] text-forest shadow-sm`}>Destaque</span>;
+  }
 }

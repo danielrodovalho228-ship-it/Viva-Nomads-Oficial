@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createContract } from "@/lib/integrations/zapsign";
 import { COST_SPLIT_ITEMS } from "@/lib/closing";
 import { IntegracaoNaoConfigurada, MSG_NAO_CONFIGURADA } from "@/lib/integracoes";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { contaEhDeTeste, contratoSimuladoTeste } from "@/lib/contas-de-teste";
 import { carregarFechamento, reservarFechamento, concluirFechamento } from "@/lib/data/fechamento-servidor";
 
 /**
@@ -37,6 +39,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "O contrato desta candidatura já foi gerado." }, { status: 409 });
   }
   try {
+    // Qualquer das partes sendo conta de teste (is_teste): contrato SIMULADO, nada vai ao ZapSign (ordem ee7d27b8).
+    const admin = createAdminClient();
+    if ((await contaEhDeTeste(admin, f.ownerId)) || (await contaEhDeTeste(admin, f.tenantId))) {
+      const simulado = contratoSimuladoTeste();
+      await concluirFechamento(f.leadId, "contrato", simulado.docId);
+      return NextResponse.json(simulado);
+    }
     const result = await createContract({
       tenantName: f.tenantNome,
       tenantEmail: f.tenantEmail ?? undefined,

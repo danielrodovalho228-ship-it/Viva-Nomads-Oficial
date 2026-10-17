@@ -2,7 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useHoje } from "@/lib/use-client-state";
+import Link from "next/link";
 import { CalendarDays, Loader2, Trash2, Ban } from "lucide-react";
+import { Avatar } from "@/components/ui/avatar";
+import { segmentosDaPilula, rotuloPilula } from "@/lib/calendario-estadias";
+import { getEstadiasDoImovel, type EstadiaCalendario } from "@/lib/data/estadias-calendario";
 import {
   mesesCalendario,
   expandirBloqueios,
@@ -35,16 +39,46 @@ function brDate(iso: string): string {
 export function BlockCalendar({ propertyId }: { propertyId: string }) {
   const today = useHoje();
   const [blocks, setBlocks] = useState<BlocoDatas[]>([]);
+  // Estadias com contrato (pílulas com o inquilino). Falha aqui não derruba o calendário: fica só com os bloqueios.
+  const [estadias, setEstadias] = useState<EstadiaCalendario[]>([]);
   const [sel, setSel] = useState<{ ini: string | null; fim: string | null }>({
     ini: null,
     fim: null,
   });
   const [busy, setBusy] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  // Carregamento das datas: o indicador SEMPRE some (sucesso ou falha); falha vira aviso com "Tentar de novo".
+  const [carregando, setCarregando] = useState(true);
+  const [falhou, setFalhou] = useState(false);
+  const [tentativa, setTentativa] = useState(0);
 
   useEffect(() => {
-    getBlocks(propertyId).then(setBlocks).catch(() => {});
-  }, [propertyId]);
+    let vivo = true;
+    getBlocks(propertyId)
+      .then((b) => {
+        if (vivo) setBlocks(b);
+      })
+      .catch(() => {
+        if (vivo) setFalhou(true);
+      })
+      .finally(() => {
+        if (vivo) setCarregando(false);
+      });
+    getEstadiasDoImovel(propertyId)
+      .then((e) => {
+        if (vivo) setEstadias(e);
+      })
+      .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, [propertyId, tentativa]);
+
+  function recarregar() {
+    setFalhou(false);
+    setCarregando(true);
+    setTentativa((n) => n + 1);
+  }
 
   const anchor = today;
   const meses = useMemo(() => (anchor ? mesesCalendario(anchor, 3) : []), [anchor]);
@@ -103,6 +137,31 @@ export function BlockCalendar({ propertyId }: { propertyId: string }) {
         indisponível nessas datas na busca e na reserva).
       </p>
 
+      {carregando && (
+        <p role="status" data-testid="bloqueios-carregando" className="mb-3 flex items-center gap-2 text-sm text-muted">
+          <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Carregando datas bloqueadas…
+        </p>
+      )}
+      {falhou && !carregando && (
+        <p role="alert" data-testid="bloqueios-erro" className="mb-3 text-sm text-red-600">
+          Não foi possível carregar as datas bloqueadas.{" "}
+          <button type="button" onClick={recarregar} className="font-medium underline">
+            Tentar de novo
+          </button>
+        </p>
+      )}
+
+      {estadias.length > 0 && (
+        <p className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-2.5 w-4 rounded-full bg-forest/90" aria-hidden /> Estadia com contrato (toque para abrir)
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-2.5 w-4 rounded bg-red-100" aria-hidden /> Bloqueio seu
+          </span>
+        </p>
+      )}
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {meses.map((mes) => {
           const y = mes.year;
@@ -124,8 +183,31 @@ export function BlockCalendar({ propertyId }: { propertyId: string }) {
                 ))}
               </div>
               <div className="mt-1 grid grid-cols-7 gap-0.5">
+                {estadias.flatMap((e) =>
+                  segmentosDaPilula(e.inicio, e.fim, y, m).map((seg) => (
+                    <Link
+                      key={`${e.contratoId}-${seg.semana}`}
+                      href="/dashboard/contratos"
+                      data-testid="pilula-estadia"
+                      aria-label={rotuloPilula(e.nome, e.inicio, e.fim)}
+                      style={{
+                        gridRow: seg.semana + 1,
+                        gridColumn: `${seg.colIni + 1} / ${seg.colFim + 2}`,
+                      }}
+                      className={cn(
+                        "z-10 flex min-w-0 items-center gap-1 self-end overflow-hidden bg-forest/90 px-0.5 py-0.5 text-[10px] font-medium text-white",
+                        seg.continuaAntes ? "rounded-l-none" : "rounded-l-full",
+                        seg.continuaDepois ? "rounded-r-none" : "rounded-r-full"
+                      )}
+                    >
+                      {seg.abreAqui && <Avatar name={e.nome} size={16} photoUrl={e.fotoUrl ?? undefined} />}
+                      {seg.abreAqui && <span className="min-w-0 truncate">{e.nome}</span>}
+                    </Link>
+                  ))
+                )}
                 {celulas.map((dia, i) => {
-                  if (dia === null) return <span key={i} />;
+                  const pos = { gridRow: Math.floor(i / 7) + 1, gridColumn: (i % 7) + 1 };
+                  if (dia === null) return <span key={i} style={pos} />;
                   const iso = ymd(new Date(y, m, dia));
                   const passado = today ? iso < today : false;
                   const bloqueado = diasBloqueados.has(iso);
@@ -136,6 +218,7 @@ export function BlockCalendar({ propertyId }: { propertyId: string }) {
                     <button
                       key={i}
                       type="button"
+                      style={pos}
                       disabled={passado}
                       onClick={() => clicar(iso)}
                       className={cn(

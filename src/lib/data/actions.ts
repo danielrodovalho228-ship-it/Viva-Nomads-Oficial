@@ -38,6 +38,7 @@ import { adminsPorAviso } from "@/lib/notifications/push-admins";
 import { avisarPedidosDoImovel } from "@/lib/data/pedidos-compat";
 import { avisarBuscasDoImovel } from "@/lib/data/alerta-busca-servidor";
 import { INTERNET_META } from "@/lib/internet";
+import { validarMotivoEstadia } from "@/lib/conta-validacao";
 import { getPropertyForOwner } from "@/lib/data/properties";
 import { colunaAirbnb } from "@/lib/preco-justo";
 import { colunasPrivacidade, type TipoAcesso } from "@/lib/anuncio/privacidade";
@@ -69,6 +70,8 @@ import {
   type BlocoComDatas,
 } from "@/lib/contrato-blocos";
 import { normalizarRegrasPets } from "@/lib/anuncio/pets-regras";
+import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
+import { videoTourPermitido } from "@/lib/video-tour";
 import { validarGarantia, type GarantiaContrato } from "@/lib/guarantees";
 
 type ActionResult = { ok: boolean; demo?: boolean; id?: string; error?: string };
@@ -353,6 +356,8 @@ export interface PropertyInput {
   petsAllowed?: boolean;
   /** Regras de pets do proprietário (validadas no servidor; requer migração 0119). */
   petsRegras?: unknown;
+  /** Pacote de limpeza durante a estadia; validado no servidor (0144). */
+  limpezaEstadia?: unknown;
   smokingAllowed?: boolean;
   childrenAllowed?: boolean;
   maxGuests?: number;
@@ -433,6 +438,10 @@ async function exigirAceiteIa(
 }
 
 export async function createProperty(input: PropertyInput): Promise<ActionResult> {
+  // Tour em vídeo (ordem 6f964617): só YouTube/Vimeo em https, validado no servidor.
+  if (input.videoUrl?.trim() && !videoTourPermitido(input.videoUrl)) {
+    return { ok: false, error: "O vídeo precisa ser um link do YouTube ou do Vimeo." };
+  }
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
 
@@ -508,7 +517,7 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
       accepts_insurance: input.acceptsInsurance ?? false,
       garantias_aceitas: input.garantiasAceitas ?? [],
       prep_fee: input.prepFee ?? 0,
-      video_url: input.videoUrl ?? null,
+      video_url: input.videoUrl?.trim() || null,
     })
     .select("id")
     .single();
@@ -669,6 +678,10 @@ export async function loadPropertyForEdit(id: string): Promise<Property | null> 
  * tabelas de enriquecimento — migração ausente não derruba a edição base.
  */
 export async function updateProperty(id: string, input: PropertyInput): Promise<ActionResult> {
+  // Tour em vídeo (ordem 6f964617): só YouTube/Vimeo em https, validado no servidor.
+  if (input.videoUrl?.trim() && !videoTourPermitido(input.videoUrl)) {
+    return { ok: false, error: "O vídeo precisa ser um link do YouTube ou do Vimeo." };
+  }
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
   const {
@@ -749,7 +762,7 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
       accepts_insurance: input.acceptsInsurance ?? false,
       garantias_aceitas: input.garantiasAceitas ?? [],
       prep_fee: input.prepFee ?? 0,
-      video_url: input.videoUrl ?? null,
+      video_url: input.videoUrl?.trim() || null,
     })
     .eq("id", id)
     .eq("owner_id", user.id);
@@ -793,6 +806,16 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
     await supabase.from("properties").update({ pets_regras: regras }).eq("id", id).eq("owner_id", user.id);
   } catch {
     /* migração 0119 ausente — segue com o aceite geral */
+  }
+
+  // Pacote de limpeza durante a estadia (0144): validado aqui; sem pacote válido grava null.
+  if ("limpezaEstadia" in input) {
+    try {
+      const pacote = normalizarLimpezaEstadia(input.limpezaEstadia);
+      await supabase.from("properties").update({ limpeza_estadia: pacote }).eq("id", id).eq("owner_id", user.id);
+    } catch {
+      /* migração 0144 ausente — segue sem o pacote */
+    }
   }
 
   // Re-sincroniza tabelas filhas: apaga as atuais e regrava as do formulário.
@@ -1271,7 +1294,9 @@ export async function requestLead(
   kind: LeadKind,
   note?: string,
   // F37: data de entrada que o inquilino quer (opcional). Só a candidatura guarda; o servidor valida.
-  inicioDesejado?: string
+  inicioDesejado?: string,
+  // Motivo da estadia (chave de MOTIVOS). Vazio na candidatura = usa o do perfil. Inválido é ignorado.
+  motivoEstadia?: string
 ): Promise<ActionResult & { needsAuth?: boolean; selfOwned?: boolean; exemplo?: boolean }> {
   // T9: anúncio de EXEMPLO não tem dono — nada de candidatura, contato nem e-mail
   // (antes ia o nome do inquilino para um e-mail pessoal de fallback).
@@ -1370,6 +1395,17 @@ export async function requestLead(
       .maybeSingle();
     novoContato = !existing;
     if (!existing) {
+      // Motivo da candidatura: o escolhido (validado no servidor) ou, sem escolha, o do perfil.
+      let motivoLead: string | null = null;
+      if (kind === "candidatura") {
+        const escolhido = validarMotivoEstadia(motivoEstadia ?? "");
+        motivoLead = escolhido.ok ? escolhido.valor : null;
+        if (!motivoLead) {
+          const { data: perfil } = await supabase.from("profiles").select("motivo_estadia").eq("id", user.id).maybeSingle();
+          const doPerfil = validarMotivoEstadia((perfil?.motivo_estadia as string | null) ?? "");
+          motivoLead = doPerfil.ok ? doPerfil.valor : null;
+        }
+      }
       const { error: leadErr } = await supabase
         .from("leads")
         .insert({
@@ -1380,6 +1416,7 @@ export async function requestLead(
           ...(kind === "candidatura" && validarInicioEstadia(inicioDesejado, hojeBR()).ok
             ? { inicio_desejado: inicioDesejado!.trim() }
             : {}),
+          ...(motivoLead ? { motivo_estadia: motivoLead } : {}),
         });
       // 23505 = duplicado (corrida): não é erro real. Demais erros: registra.
       if (leadErr && leadErr.code !== "23505") {

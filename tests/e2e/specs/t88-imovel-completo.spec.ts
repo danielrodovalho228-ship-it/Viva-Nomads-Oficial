@@ -95,11 +95,13 @@ test.describe("T88 — Página do imóvel completa", () => {
     });
   }
 
-  test("anúncio de exemplo: avaliações em estado vazio honesto, sem barra de contato", async ({ page }) => {
+  test("anúncio de exemplo: avaliações em estado vazio honesto e barra em demonstração", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/imoveis/ube-001", { waitUntil: "networkidle" });
     await expect(page.getByTestId("nav-secoes")).toBeVisible();
     await expect(page.getByTestId("avaliacoes-vazio")).toHaveCount(1);
-    await expect(page.getByTestId("barra-fixa-imovel")).toHaveCount(0);
+    // O exemplo mostra a barra em demonstração (ordem 4f8023d1); nada é enviado.
+    await expect(page.getByTestId("barra-fixa-imovel")).toHaveCount(1);
+    await expect(page.getByTestId("barra-demo")).toBeVisible();
   });
 });

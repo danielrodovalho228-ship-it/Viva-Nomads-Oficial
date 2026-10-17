@@ -10,6 +10,9 @@ import { PropertyCard } from "@/components/property-card";
 import { ButtonLink } from "@/components/ui/button";
 import { JsonLd } from "@/components/seo/json-ld";
 import { SITE_URL } from "@/lib/site";
+import { acharBairroCurado, bairrosDaGrade, imoveisDoBairro } from "@/lib/bairros";
+import { BairroPagina, metadadosDoBairro, type BairroDados } from "@/components/cidades/bairro-pagina";
+import { descricaoPolo } from "@/lib/seo/meta-descricao";
 
 export const revalidate = 60;
 
@@ -21,13 +24,26 @@ export function generateStaticParams() {
   return POLOS.map((p) => ({ cidade: p.cidade, polo: p.slug }));
 }
 
+/** O 2º trecho da URL é um polo (lista fixa) ou um BAIRRO com anúncio real (ordem 7000fbe0). */
+async function acharBairro(cidadeSlug: string, cidadeNome: string, slug: string): Promise<BairroDados | null> {
+  const imoveis = imoveisDoBairro(slug, await listPropertiesByCity(cidadeNome), isExemplo);
+  if (imoveis.length > 0) return { slug, nome: imoveis[0].neighborhood.trim(), imoveis };
+  // Bairro da lista curada sem anúncio real: página com estado vazio (noindex), nunca 404.
+  const curado = acharBairroCurado(cidadeSlug, slug);
+  return curado ? { slug, nome: curado.nome, imoveis: [] } : null;
+}
+
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { cidade, polo } = await params;
   const p = acharPolo(cidade, polo);
   const c = CITIES.find((x) => x.slug === cidade);
-  if (!p || !c) return { robots: { index: false } };
+  if (!c) return { robots: { index: false } };
+  if (!p) {
+    const b = await acharBairro(cidade, c.name, polo);
+    return b ? metadadosDoBairro(c, b) : { robots: { index: false } };
+  }
   const title = `Imóveis mobiliados ${tituloDoPolo(p.nome)} · ${c.name}`;
-  const description = `Imóveis mobiliados para estadias de 30 a 180 dias perto de ${p.referencia}, em ${c.name}. Valor médio por mês, perguntas frequentes e anúncios reais.`;
+  const description = descricaoPolo(p, c.name);
   const url = `/cidades/${cidade}/${polo}`;
   return {
     title,
@@ -42,7 +58,14 @@ export default async function PoloPage({ params }: Params) {
   const { cidade, polo } = await params;
   const p = acharPolo(cidade, polo);
   const c = CITIES.find((x) => x.slug === cidade);
-  if (!p || !c) notFound();
+  if (!c) notFound();
+  if (!p) {
+    const b = await acharBairro(cidade, c.name, polo);
+    if (!b) notFound();
+    const daCidade = await listPropertiesByCity(c.name);
+    const vizinhos = bairrosDaGrade(cidade, daCidade, isExemplo).filter((x) => x.total > 0 && x.slug !== b.slug);
+    return <BairroPagina cidade={c} bairro={b} vizinhos={vizinhos} totalCidade={daCidade.filter((i) => !isExemplo(i.id)).length} />;
+  }
 
   const todos = await listPropertiesByCity(c.name);
   const imoveis = imoveisDoPolo(p, todos);

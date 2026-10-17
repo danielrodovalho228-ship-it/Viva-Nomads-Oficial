@@ -8,6 +8,7 @@ import { ButtonLink, buttonClasses } from "@/components/ui/button";
 import { formatBRL } from "@/lib/utils";
 import { cidadeDoCep, filtrarPorCidade, formatarCep, MAX_DIAS_ANTECEDENCIA, normalizarCep, portfolioSeguro, type FotografoPublico } from "@/lib/fotografos/regras";
 import { PedidoForm } from "./pedido-form";
+import { FaixasTaxaParceria } from "@/components/parceiros/faixas-taxa";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/parceiros/fotografos" },
@@ -107,7 +108,12 @@ export default async function FotografosPage({ searchParams }: { searchParams: P
           )}
         </section>
       )}
-      <div className="mt-8"><ButtonLink href="/parceiros" variant="outline" className="w-full min-h-11 sm:w-auto">É fotógrafo? Seja parceiro</ButtonLink></div>
+      <section className="mt-8" aria-labelledby="h-e-fotografo">
+        <h2 id="h-e-fotografo" className="font-display text-xl font-bold text-ink">É fotógrafo?</h2>
+        <p className="mb-3 mt-1 text-sm text-ink/70">Veja quanto é a taxa de parceria antes de se cadastrar.</p>
+        <FaixasTaxaParceria />
+      </section>
+      <div className="mt-4"><ButtonLink href="/parceiros" variant="outline" className="w-full min-h-11 sm:w-auto">É fotógrafo? Seja parceiro</ButtonLink></div>
       <p className="mt-4 text-xs text-ink/60">O pagamento do serviço é combinado entre você e o fotógrafo; a Viva não recebe esse dinheiro. Seu contato e o endereço só são liberados depois que o fotógrafo aceitar o pedido.</p>
     </div>
   );

@@ -111,7 +111,7 @@ test.describe("T36 — Cadastro completo, do CPF ao fechamento", () => {
     const inq = await entrar(browser, inquilina.email, senha);
     await inq.goto(`/imoveis/${ids.imovel}`, { waitUntil: "networkidle" });
     // No celular o botão aparece no cartão E na barra fixa (t75): as duas fazem a mesma candidatura.
-    await inq.getByRole("button", { name: /Candidatar-se/ }).first().click();
+    await inq.getByRole("button", { name: /Enviar candidatura/ }).first().click();
     // A confirmação aparece no cartão E no chip da barra fixa (celular): basta uma visível.
     await expect(inq.getByText("Candidatura enviada").first()).toBeVisible({ timeout: 20_000 });
     await inq.screenshot({ path: "tests/laboratorio/saida/t36-3-candidatura-enviada.png", fullPage: true });

@@ -56,3 +56,38 @@ test("#645 (ajuste do Moacir): comparativo e /precos dizem 'contrato' e 'Cauçã
   assert.doesNotMatch(ler("app/(public)/precos/page.tsx"), /Garantia: uma por contrato/);
   assert.match(ler("app/(public)/precos/page.tsx"), /Caução: uma por contrato/);
 });
+
+test("#645 (ajuste do Moacir): comparativo e /precos dizem 'contrato' e 'Caução', não 'reserva' nem 'Garantia'", () => {
+  const comp = ler("components/precos/comparativo-precos.tsx");
+  assert.doesNotMatch(comp, /[Rr]eserva/);
+  assert.match(comp, /Contrato de \$\{COMPARE_MESES\} meses/);
+  assert.match(comp, /só quando o contrato é fechado/);
+  const cfg = ler("config/compare-precos.ts");
+  assert.match(cfg, /"Você só paga quando o contrato é fechado"/);
+  const precos = ler("app/(public)/precos/page.tsx");
+  assert.doesNotMatch(precos, /Garantia: uma por contrato/);
+  assert.match(precos, /Caução: uma por contrato/);
+});
+
+test("t118 (achado do Moacir): config do comparativo publicado não usa 'check-in' nem 'reserva' (nem na citação do Airbnb)", () => {
+  const cfg = ler("config/compare-precos.ts");
+  const texto = cfg.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+  assert.doesNotMatch(texto, /check[- ]?(in|out)\b/i);
+  assert.doesNotMatch(texto, /\breservas?\b/i);
+});
+
+test("#143: /parceiros e o texto da Viva não prometem cobertura nacional", () => {
+  const p = ler("app/(public)/parceiros/page.tsx");
+  assert.doesNotMatch(p, /todo o Brasil|em qualquer região/i);
+  assert.match(p, /Começando por Uberlândia \(MG\)\. Cadastre-se de qualquer cidade e avisamos quando chegarmos aí\./);
+  assert.doesNotMatch(ler("lib/atendimento/parceiros-texto.ts"), /todo o Brasil/i);
+});
+
+test("#142 (t118 no lab 4f5a): o botão do anúncio é 'Enviar candidatura', sem 'reserva' no texto visível", () => {
+  for (const arq of ["components/property/barra-fixa-celular.tsx", "app/(public)/imoveis/[id]/property-detail.tsx"]) {
+    const src = ler(arq);
+    assert.doesNotMatch(src, /"Solicitar reserva"/, arq);
+    assert.match(src, /"Enviar candidatura"/, arq);
+  }
+  assert.deepEqual(achadosNoTexto("Enviar candidatura Mensagem Viva", { vocabulario: true }), []);
+});

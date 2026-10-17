@@ -20,21 +20,21 @@ import {
 } from "lucide-react";
 import { useViewMode, primeiroNomeExibicao } from "@/lib/roles";
 import { getLatestDraft } from "@/lib/data/actions";
-import { StatCard, Panel, EmptyState } from "@/components/dashboard/primitives";
-import { DashboardBanner } from "@/components/dashboard/banner";
+import { StatCard, Panel, EmptyState, PageTitle } from "@/components/dashboard/primitives";
 import { PropertyRow } from "@/components/dashboard/property-row";
 import { TenantOnboarding } from "@/components/dashboard/tenant-onboarding";
 import { RoleWelcomeModal } from "@/components/dashboard/role-welcome-modal";
 import { ButtonLink, buttonClasses } from "@/components/ui/button";
 import { useProperties } from "@/lib/use-properties";
 import { checklistAnuncio, type ChecklistAnuncio } from "@/lib/anuncio/prontidao";
+import { itensDoChecklist } from "@/lib/anuncio/checklist-compacto";
 import type { ScoreAnuncio } from "@/lib/anuncio/score";
 import { imoveisPublicados } from "@/lib/anuncio/publicados";
 import { kpiInteressados } from "@/lib/painel/kpi-interessados";
 import type { Property } from "@/lib/types";
 import { useDashDemo, DemoBadge, useDisplayUser } from "@/lib/demo/demo-mode";
 import { DEMO_PROPERTIES, DEMO_KPIS } from "@/lib/demo/seed";
-import { PHOTOS, coverPhoto } from "@/lib/media";
+import { coverPhoto } from "@/lib/media";
 import { formatBRL } from "@/lib/utils";
 import { ReadyToLiveBadge } from "@/components/ui/badge";
 
@@ -118,10 +118,8 @@ function OwnerDashboard({
   return (
     <>
       {draft && <DraftPendingCard draft={draft} className="mb-6" />}
-      <DashboardBanner
-        className="mb-6"
-        image={PHOTOS.dashOwner}
-        alt="Sala de imóvel mobiliado preparada para anúncio"
+      <PageTitle
+        capa="imoveis"
         title={`Olá${name ? `, ${name}` : "!"} 👋`}
         subtitle="Prepare seu imóvel, publique e fale com inquilinos qualificados."
         action={
@@ -189,7 +187,7 @@ function OwnerDashboard({
       <p className="mt-4 flex items-start gap-2 rounded-xl border border-forest/20 bg-forest/5 px-4 py-3 text-sm text-ink">
         <Wallet className="mt-0.5 h-4 w-4 shrink-0 text-forest" />
         <span>
-          O aluguel vai do inquilino <strong>direto para a sua conta</strong> — a plataforma nunca
+          O valor mensal vai <strong>direto para a sua conta</strong> — a plataforma nunca
           toca no dinheiro.
         </span>
       </p>
@@ -207,38 +205,37 @@ function OwnerDashboard({
             <>
               <ul className="divide-y divide-sage-200">
                 {myProperties.map((p) => (
-                  <li key={p.id} className="flex items-center justify-between gap-3 py-3">
-                    <div className="flex min-w-0 items-center gap-3">
-                      <Image
-                        src={coverPhoto(p.id, p.photos)}
-                        alt=""
-                        width={56}
-                        height={56}
-                        className="h-14 w-14 shrink-0 rounded-xl object-cover"
-                      />
-                      <div className="min-w-0">
-                        {/* Imóveis de demonstração não têm página real (/imoveis/demo-*
-                            daria 404) — mostra como texto. Reais viram link. */}
-                        {demo ? (
-                          <span className="font-medium text-ink">{p.title}</span>
-                        ) : (
-                          <Link
-                            href={`/imoveis/${p.id}`}
-                            className="font-medium text-ink hover:text-forest"
-                          >
-                            {p.title}
-                          </Link>
-                        )}
-                        <p className="text-sm text-muted">
-                          {formatBRL(p.monthlyPrice)}/mês · {p.neighborhood}
-                        </p>
+                  <li key={p.id} className="flex items-center gap-3 py-3">
+                    <Image
+                      src={coverPhoto(p.id, p.photos)}
+                      alt=""
+                      width={56}
+                      height={56}
+                      className="h-14 w-14 shrink-0 rounded-xl object-cover"
+                    />
+                    <div className="min-w-0 flex-1">
+                      {/* Imóveis de demonstração não têm página real (/imoveis/demo-*
+                          daria 404) — mostra como texto. Reais viram link. */}
+                      {demo ? (
+                        <span className="line-clamp-2 font-medium text-ink">{p.title}</span>
+                      ) : (
+                        <Link
+                          href={`/imoveis/${p.id}`}
+                          className="line-clamp-2 font-medium text-ink hover:text-forest"
+                        >
+                          {p.title}
+                        </Link>
+                      )}
+                      <p className="text-sm text-muted">
+                        {formatBRL(p.monthlyPrice)}/mês · {p.neighborhood}
+                      </p>
+                      {/* Selos abaixo do título: em 390 px não espremem o texto. */}
+                      <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                        {p.readyToLiveBadge && <ReadyToLiveBadge />}
+                        <span className="rounded-full bg-sage-100 px-2.5 py-1 text-xs font-medium text-forest">
+                          Ativo
+                        </span>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {p.readyToLiveBadge && <ReadyToLiveBadge />}
-                      <span className="rounded-full bg-sage-100 px-2.5 py-1 text-xs font-medium text-forest">
-                        Ativo
-                      </span>
                     </div>
                   </li>
                 ))}
@@ -333,6 +330,8 @@ function DraftPendingCard({
   className?: string;
 }) {
   const check = !draft.pronto ? draft.checklist : null;
+  const [expandido, setExpandido] = useState(false);
+  const lista = check ? itensDoChecklist(check.itens, expandido) : null;
   return (
     <div className={`rounded-2xl border border-champagne bg-champagne/10 p-4 ${className ?? ""}`} data-testid="anuncio-andamento">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -403,7 +402,7 @@ function DraftPendingCard({
       )}
       {check && (
         <ul className="mt-3 grid gap-1.5 sm:grid-cols-2" data-testid="anuncio-checklist">
-          {check.itens.map((i) => (
+          {lista?.visiveis.map((i) => (
             <li key={i.key}>
               {i.ok ? (
                 <span className="flex min-h-11 items-center gap-2 rounded-xl px-2 text-sm text-ink" data-testid="check-feito">
@@ -444,6 +443,25 @@ function DraftPendingCard({
             </li>
           ))}
         </ul>
+      )}
+      {check && (lista?.ocultos ?? 0) > 0 && (
+        <button
+          type="button"
+          data-testid="checklist-ver-todos"
+          onClick={() => setExpandido(true)}
+          className="mt-2 inline-flex min-h-11 items-center px-2 text-sm font-medium text-forest underline-offset-2 hover:underline"
+        >
+          Ver todos os itens ({lista?.ocultos} a mais)
+        </button>
+      )}
+      {check && expandido && (
+        <button
+          type="button"
+          onClick={() => setExpandido(false)}
+          className="mt-2 inline-flex min-h-11 items-center px-2 text-sm font-medium text-forest underline-offset-2 hover:underline"
+        >
+          Mostrar menos
+        </button>
       )}
     </div>
   );
@@ -488,10 +506,8 @@ function OwnerFunnel({ name, draft }: { name: string; draft?: RascunhoPendente |
   return (
     <>
       {draft && <DraftPendingCard draft={draft} className="mb-6" />}
-      <DashboardBanner
-        className="mb-6"
-        image={PHOTOS.dashOwner}
-        alt="Sala de imóvel mobiliado preparada para anúncio"
+      <PageTitle
+        capa="imoveis"
         title={`Bem-vindo${name ? `, ${name}` : ""}! 👋`}
         subtitle="Do primeiro anúncio ao contrato fechado em 4 passos."
         action={

@@ -45,3 +45,8 @@ test("migração 0139: atualiza a descrição e deixa a Assistência 24h 'em_bre
   assert.match(apl, /begin;[\s\S]*20261016000139[\s\S]*commit;/);
   assert.match(apl, /0139_servicos_adicionais_texto/);
 });
+
+test("tela de fechamento: cada serviço adicional tem data-testid para o lab provar 'Em breve' sem botão ativo", () => {
+  const src = readFileSync("src/app/(dashboard)/dashboard/fechamento/closing-flow.tsx", "utf8");
+  assert.match(src, /data-testid=\{`servico-\$\{s\.id\}`\}/);
+});

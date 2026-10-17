@@ -3,6 +3,8 @@
   usado no servidor (fonte da verdade) e testado em conta-validacao.test.ts.
 */
 
+import { isMotivo } from "./pedidos/pedidos.ts";
+
 export type Validado<T> = { ok: true; valor: T } | { ok: false; erro: string };
 
 /** Nome completo: 3 a 80 caracteres, com letras, sem e-mail/telefone/links. */
@@ -88,4 +90,11 @@ export function validarLinkedin(bruto: string): Validado<string | null> {
   } catch {
     return { ok: false, erro: "Endereço do LinkedIn inválido." };
   }
+}
+
+/** Motivo da estadia (opcional): só uma chave da lista única MOTIVOS de pedidos.ts, nunca texto livre. Vazio → null. */
+export function validarMotivoEstadia(bruto: string): Validado<string | null> {
+  const v = String(bruto ?? "").trim();
+  if (!v) return { ok: true, valor: null };
+  return isMotivo(v) ? { ok: true, valor: v } : { ok: false, erro: "Escolha um motivo da lista." };
 }

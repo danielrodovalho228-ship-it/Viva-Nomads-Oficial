@@ -13,7 +13,7 @@ type AtalhoBase = { href: string };
 /** Quantos imóveis a /buscar mostraria ao abrir este atalho. */
 export function contarAtalho(href: string, imoveis: ImovelContavel[]): number {
   const sp = new URL(href, "https://x").searchParams;
-  const orcamento = Number(sp.get("orcamento")) || 0;
+  const orcamento = Number(sp.get("preco")) || Number(sp.get("orcamento")) || 0;
   const quartos = Number(sp.get("quartos")) || 0;
   const local = (sp.get("local") ?? "").trim().toLowerCase();
   const filtros = {

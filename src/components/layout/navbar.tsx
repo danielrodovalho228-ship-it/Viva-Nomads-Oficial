@@ -4,11 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import { useMontado } from "@/lib/use-client-state";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, ChevronDown } from "lucide-react";
+import { Menu, X, ChevronDown, Heart } from "lucide-react";
 import { PUBLIC_NAV } from "@/lib/constants";
 import { Logo } from "@/components/ui/logo";
 import { ButtonLink } from "@/components/ui/button";
 import { useAuthStore } from "@/lib/store";
+import { useFavoritesStore } from "@/lib/favorites-store";
 import { Avatar } from "@/components/ui/avatar";
 import { getMyAvatarUrl } from "@/lib/data/avatar-actions";
 import { identidadeUsuario } from "@/lib/roles";
@@ -60,6 +61,24 @@ function MenuMais() {
         </div>
       )}
     </div>
+  );
+}
+
+/** "Favoritos (N)": o contador atualiza na hora; no servidor e antes de montar não mostra número (evita mismatch). */
+function LinkFavoritos({ className, onClick }: { className?: string; onClick?: () => void }) {
+  const total = useFavoritesStore((s) => s.ids.length);
+  const montado = useMontado();
+  return (
+    <Link
+      href="/favoritos"
+      data-testid="link-favoritos"
+      onClick={onClick}
+      className={cn("inline-flex items-center gap-1.5 whitespace-nowrap text-sm font-medium text-ink/75 transition-colors hover:text-blue-500", className)}
+    >
+      <Heart className="h-4 w-4" aria-hidden />
+      {/* a 1280 px o texto não cabe ao lado dos links (t69): só o coração; o texto volta a partir de 2xl */}
+      <span className={cn(!className && "sr-only 2xl:not-sr-only")}>Favoritos{montado && total > 0 ? ` (${total})` : ""}</span>
+    </Link>
   );
 }
 
@@ -156,6 +175,7 @@ export function Navbar() {
         </div>
 
         <div data-testid="nav-acoes" className={cn("hidden shrink-0 items-center gap-3 xl:flex 2xl:gap-4", naBusca && "ml-auto lg:flex")}>
+          <LinkFavoritos />
           {loggedIn ? (
             <MeuPainel nome={nome} foto={foto} />
           ) : (
@@ -190,6 +210,7 @@ export function Navbar() {
                 {item.label}
               </Link>
             ))}
+            <LinkFavoritos className="rounded-lg px-3 py-3 text-base text-ink" onClick={() => setOpen(false)} />
             <div className="mt-2 flex flex-col gap-2">
               {loggedIn ? (
                 <MeuPainel nome={nome} foto={foto} onClick={() => setOpen(false)} className="h-12 justify-center border border-blue-500" />

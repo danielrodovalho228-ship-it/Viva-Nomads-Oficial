@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
  * novo remove. Visitante vai para o login e volta para a mesma busca.
  * `versao` muda quando os filtros mudam (reconsulta se a busca já está salva).
  */
-export function SalvarBusca({ versao, className }: { versao: string; className?: string }) {
+export function SalvarBusca({ versao, className, qs, rotulo = "Salvar busca", rotuloSalva = "Busca salva" }: { versao: string; className?: string; qs?: string; rotulo?: string; rotuloSalva?: string }) {
   const router = useRouter();
   const [salva, setSalva] = useState<boolean | null>(null);
   const [ocupado, setOcupado] = useState(false);
@@ -21,7 +21,7 @@ export function SalvarBusca({ versao, className }: { versao: string; className?:
   useEffect(() => {
     let vivo = true;
     const t = window.setTimeout(() => {
-      buscaEstaSalva(window.location.search)
+      buscaEstaSalva(qs ?? window.location.search)
         .then((r) => vivo && setSalva(r.salva))
         .catch(() => {});
     }, 400);
@@ -29,12 +29,12 @@ export function SalvarBusca({ versao, className }: { versao: string; className?:
       vivo = false;
       window.clearTimeout(t);
     };
-  }, [versao]);
+  }, [versao, qs]);
 
   async function alternar() {
     setAviso(null);
     setOcupado(true);
-    const r = await alternarBuscaSalva(window.location.search).catch(() => ({ ok: false as const, error: "Sem conexão. Tente de novo." }));
+    const r = await alternarBuscaSalva(qs ?? window.location.search).catch(() => ({ ok: false as const, error: "Sem conexão. Tente de novo." }));
     setOcupado(false);
     if (!r.ok) {
       if ("precisaEntrar" in r && r.precisaEntrar) {
@@ -59,7 +59,7 @@ export function SalvarBusca({ versao, className }: { versao: string; className?:
         className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-sm font-semibold text-blue-500 transition-colors hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:opacity-60"
       >
         <Heart className={cn("h-4 w-4", salva && "fill-current")} aria-hidden />
-        {salva ? "Busca salva" : "Salvar busca"}
+        {salva ? rotuloSalva : rotulo}
       </button>
       {aviso && (
         <span role="status" className="text-xs text-muted">

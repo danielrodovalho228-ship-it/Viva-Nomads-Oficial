@@ -30,9 +30,13 @@ import { MOTIVOS, isMotivo, contemContato, CONTATO_AVISO, calcExpiraEm, PRAZO_MA
 import { CHAVE_ULTIMA_BUSCA, CHAVE_ULTIMO_MOTIVO, ultimaBuscaParaPedido, ultimoMotivoParaPedido } from "@/lib/marcas/regra";
 import { MUNICIPIOS, UFS } from "@/lib/municipios";
 import { criarPedido } from "@/lib/data/pedidos-actions";
+import { contarImoveisQueCombinam } from "@/lib/data/pedido-contador-actions";
+import type { ResultadoContador } from "@/lib/pedidos/contador";
+import type { ImovelCompativel } from "@/lib/pedidos/compatibilidade";
+import { getMeusDados } from "@/lib/data/perfil-actions";
 import { registrarEvento } from "@/lib/eventos/registrar";
 import { useAuthStore } from "@/lib/store";
-import { hojeBR } from "@/lib/utils";
+import { formatBRL, hojeBR } from "@/lib/utils";
 
 /** Ícone por motivo (a lib MOTIVOS segue pura; o mapa visual vive aqui). */
 const MOTIVO_ICON: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -223,7 +227,14 @@ function PedidoForm() {
   const [pets, setPets] = useState(false);
   const [criancas, setCriancas] = useState(Number(sp.get("criancas") || 0) > 0);
   // Depois de publicar: quantos imóveis combinam AGORA (regra do banco).
-  const [resultado, setResultado] = useState<{ compativeis: number; sugestao: string | null } | null>(null);
+  const [resultado, setResultado] = useState<{
+    compativeis: number;
+    sugestao: string | null;
+    imoveis: ImovelCompativel[];
+  } | null>(null);
+  // Contador ao vivo (ordem 8dca1437): a resposta guarda a chave dos campos que a geraram,
+  // então só vale enquanto os campos não mudam (sem precisar zerar estado dentro do effect).
+  const [contagem, setContagem] = useState<{ chave: string; r: ResultadoContador } | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
 
@@ -241,6 +252,50 @@ function PedidoForm() {
       /* localStorage bloqueado: segue sem pré-preencher */
     }
   }, [ocupQ]);
+
+  // Motivo salvo no perfil (Conta): entra só se nada preencheu o campo (URL, último pedido ou escolha da pessoa).
+  const logado = Boolean(user);
+  useEffect(() => {
+    if (!logado) return;
+    let vivo = true;
+    getMeusDados()
+      .then((d) => {
+        if (vivo && d && isMotivo(d.motivoEstadia)) setMotivo((atual) => atual || d.motivoEstadia);
+      })
+      .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, [logado]);
+
+  const orcamentoNum = Number(orcamento) || 0;
+  const chaveContagem = [cidade, uf, dataInicio, prazoMeses, orcamentoNum, ocupantes, pets, criancas].join("|");
+  const contagemPronta = Boolean(cidade && uf && dataInicio && orcamentoNum > 0);
+  useEffect(() => {
+    if (!contagemPronta) return;
+    let vivo = true;
+    const t = setTimeout(() => {
+      contarImoveisQueCombinam({
+        cidade,
+        uf,
+        dataInicio,
+        prazoMeses,
+        orcamentoMensal: orcamentoNum,
+        qtdOcupantes: ocupantes,
+        pets,
+        criancas,
+      })
+        .then((r) => {
+          if (vivo && r) setContagem({ chave: chaveContagem, r });
+        })
+        .catch(() => {});
+    }, 600);
+    return () => {
+      vivo = false;
+      clearTimeout(t);
+    };
+  }, [contagemPronta, chaveContagem, cidade, uf, dataInicio, prazoMeses, orcamentoNum, ocupantes, pets, criancas]);
+  const contagemAtual = contagem && contagem.chave === chaveContagem ? contagem.r : null;
 
   // Eco do filtro anti-contato no cliente (o servidor é a fonte da verdade).
   const contatoNoTexto = apresentacao.length > 0 && contemContato(apresentacao);
@@ -278,7 +333,11 @@ function PedidoForm() {
       } catch {
         /* localStorage bloqueado: segue sem guardar */
       }
-      setResultado({ compativeis: res.compativeis ?? 0, sugestao: res.sugestao ?? null });
+      setResultado({
+        compativeis: res.compativeis ?? 0,
+        sugestao: res.sugestao ?? null,
+        imoveis: res.imoveis ?? [],
+      });
     } else {
       setErro(res.error ?? "Não foi possível publicar o pedido.");
     }
@@ -312,7 +371,29 @@ function PedidoForm() {
             </p>
           </div>
         )}
-        <div className="mt-5 flex justify-end">
+        {resultado.imoveis.length > 0 && (
+          <ul className="mt-4 divide-y divide-line rounded-xl border border-line" data-testid="pedido-compativeis">
+            {resultado.imoveis.map((i) => (
+              <li key={i.id}>
+                <Link
+                  href={`/imoveis/${i.id}`}
+                  className="flex items-center justify-between gap-3 px-4 py-3 text-sm hover:bg-surface-2"
+                >
+                  <span className="min-w-0 truncate font-medium text-ink">{i.titulo}</span>
+                  <span className="shrink-0 text-muted">{formatBRL(i.total)}/mês</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+        <div className="mt-5 flex flex-wrap items-center justify-end gap-3">
+          <Link
+            href={`/buscar?${new URLSearchParams({ local: cidade }).toString()}`}
+            className="text-sm font-medium text-forest underline"
+            data-testid="pedido-ver-mapa"
+          >
+            Ver {cidade} no mapa
+          </Link>
           <Button onClick={() => router.push("/dashboard/pedidos")}>Ver meus pedidos</Button>
         </div>
       </div>
@@ -457,6 +538,34 @@ function PedidoForm() {
             </span>
           )}
         </label>
+
+        {contagemAtual && (
+          <div
+            role="status"
+            aria-live="polite"
+            data-testid="pedido-contador"
+            className={`rounded-xl px-4 py-3 text-sm ${
+              contagemAtual.combinam > 0 ? "bg-sage-100 text-forest" : "bg-amber-50 text-amber-900"
+            }`}
+          >
+            {contagemAtual.combinam > 0 ? (
+              <strong>
+                {contagemAtual.combinam} {contagemAtual.combinam === 1 ? "imóvel combina" : "imóveis combinam"} agora
+              </strong>
+            ) : contagemAtual.naCidade === 0 ? (
+              <span>
+                <strong>Ainda não há imóveis publicados em {cidade}.</strong> Publique o pedido: avisamos você quando
+                surgir um.
+              </span>
+            ) : (
+              <span>
+                <strong>Nenhum imóvel combina com tudo agora.</strong>
+                {contagemAtual.dica ? ` ${contagemAtual.dica}` : " Mexer em mais de um campo pode ajudar."}
+              </span>
+            )}
+            {contagemAtual.combinam > 0 && " com o que você preencheu. É uma estimativa; o número final sai ao publicar."}
+          </div>
+        )}
 
         {dataInicio && (
           <p className="rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted">

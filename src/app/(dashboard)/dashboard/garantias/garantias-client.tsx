@@ -69,7 +69,7 @@ export function GarantiasClient({ contratos }: { contratos: ContratoView[] }) {
               <PiggyBank className="mt-0.5 h-4 w-4 shrink-0 text-forest" />
               <span>
                 <strong>50% do bloco</strong> (contrato por blocos de até 90 dias), <strong>devolvível</strong> ao
-                fim da estadia — em conta poupança, até 3 aluguéis (Lei 8.245/91, art. 38, §2º).
+                fim da estadia — em conta poupança, até 3 vezes o valor mensal.
               </span>
             </li>
             <li className="flex items-start gap-2">
@@ -95,7 +95,7 @@ export function GarantiasClient({ contratos }: { contratos: ContratoView[] }) {
 
         <Panel title="Seguro-fiança (alternativa)">
           <p className="text-sm text-ink">
-            Para quem prefere não imobilizar caixa: uma mensalidade diluída cobre o aluguel, sem
+            Para quem prefere não imobilizar caixa: uma mensalidade diluída cobre o valor mensal, sem
             depósito. Contratado com parceiro e sujeito a análise.
           </p>
           <span className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">

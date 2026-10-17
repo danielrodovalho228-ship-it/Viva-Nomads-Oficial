@@ -4,10 +4,11 @@ import { test, expect, type Locator, type APIRequestContext } from "@playwright/
  * A busca fica em cache por 60 s e pode listar anúncio que outro spec já apagou (o /imoveis/<id> dá 404 e o
  * /comparar devolve "Escolha de 2 a 3 imóveis"). Devolve os índices das marcas cujo anúncio ainda abre.
  */
-async function indicesQueAbrem(marcas: Locator, request: APIRequestContext): Promise<number[]> {
+async function indicesQueAbrem(marcas: Locator, request: APIRequestContext, maximo = 4): Promise<number[]> {
   const total = await marcas.count();
   const abertos: number[] = [];
-  for (let i = 0; i < total; i++) {
+  // Para ao achar o que o teste usa (no máximo 4): conferir a busca inteira estourava os 45 s do teste no lab.
+  for (let i = 0; i < total && abertos.length < maximo; i++) {
     const href = await marcas
       .nth(i)
       .evaluate((el) => el.closest("label")?.parentElement?.querySelector('a[href^="/imoveis/"]')?.getAttribute("href") ?? null);
@@ -47,11 +48,11 @@ test.describe("T100 — Comparar imóveis", () => {
     }
 
     await page.getByTestId("comparar-abrir").click();
-    await expect(page).toHaveURL(/\/comparar\?comparar=[0-9a-f-]{36},[0-9a-f-]{36}/);
+    await expect(page).toHaveURL(/\/comparar\?comparar=[\w-]+,[\w-]+/);
     const tabela = page.getByTestId("comparar-tabela");
     await expect(tabela).toBeVisible();
     await expect(page.getByTestId("comparar-coluna")).toHaveCount(2);
-    for (const l of ["Valor mensal", "Quartos", "Banheiros", "Área (m²)", "Aceita pet", "Avaliação"]) {
+    for (const l of ["Valor mensal", "Quartos", "Banheiros", "Área (m²)", "Aceita pets", "Avaliação"]) {
       await expect(tabela.getByRole("rowheader", { name: l })).toBeVisible();
     }
     await expect(tabela.locator('[data-linha="mensal"] td').first()).toContainText(/R\$|—/);

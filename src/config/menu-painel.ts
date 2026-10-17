@@ -16,7 +16,7 @@
 
 export type IconeMenu =
   | "visao" | "moradia" | "buscar" | "favoritos" | "buscas" | "pedidos" | "candidaturas"
-  | "estadias" | "solicitacoes" | "mensagens" | "notificacoes" | "imoveis" | "interessados"
+  | "visitas" | "estadias" | "solicitacoes" | "mensagens" | "notificacoes" | "imoveis" | "interessados"
   | "pedidosCidade" | "fechamento" | "contratos" | "garantias" | "conferencia" | "ferramentas"
   | "simulador" | "roi" | "viabilidade" | "orcamentos" | "conta" | "verificacao" | "assinatura"
   | "admin" | "documentos" | "atendimento" | "parceiros" | "fotografos" | "financeiro"
@@ -92,6 +92,7 @@ export function menuDoPainel(ctx: ContextoMenu): ItemMenu[] {
     { id: "buscas", rotulo: "Buscas salvas", icone: "buscas", href: "/dashboard/buscas" },
     { id: "pedidos", rotulo: "Meus pedidos", icone: "pedidos", href: "/dashboard/pedidos" },
     { id: "candidaturas", rotulo: "Candidaturas", icone: "candidaturas", href: "/dashboard/candidaturas" },
+    { id: "visitas", rotulo: "Visitas por vídeo", icone: "visitas", href: "/dashboard/visitas" },
     { id: "estadias", rotulo: "Minhas estadias", icone: "estadias", href: "/dashboard/locacoes" },
   ];
   if (ctx.estadiaAtiva)

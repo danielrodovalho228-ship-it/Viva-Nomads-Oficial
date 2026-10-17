@@ -176,11 +176,18 @@ export function EmptyState({
   // Compacto no mobile (ADENDO item 4): padding ~24px e ilustração/ícone menores;
   // a partir de sm volta ao card espaçoso (p-12, ícone maior).
   return (
-    <div className="rounded-2xl border border-dashed border-line bg-white p-6 text-center sm:p-12">
+    <div data-testid="estado-vazio" className="rounded-2xl border border-dashed border-line bg-white p-6 text-center sm:p-12">
       {illustration ? (
         <div className="flex justify-center">{illustration}</div>
       ) : (
-        Icon && <Icon className="mx-auto h-8 w-8 text-blue-500 sm:h-10 sm:w-10" />
+        Icon && (
+          <div
+            data-testid="estado-vazio-icone"
+            className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-blue-50 sm:h-28 sm:w-28"
+          >
+            <Icon className="h-9 w-9 text-blue-500 sm:h-12 sm:w-12" />
+          </div>
+        )
       )}
       <h3 className="mt-3 font-title text-base font-bold text-ink sm:mt-4 sm:text-lg">{title}</h3>
       <p className="mx-auto mt-2 max-w-md text-sm text-muted">{text}</p>

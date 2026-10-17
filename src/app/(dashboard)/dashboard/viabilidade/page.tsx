@@ -9,7 +9,7 @@ import { formatBRL, numBR } from "@/lib/utils";
 
 export default function ViabilityPage() {
   return (
-    <PlanGate title="Viabilidade de mobiliar">
+    <PlanGate capa="viabilidade" title="Viabilidade de mobiliar">
       <Calc />
     </PlanGate>
   );
@@ -38,7 +38,7 @@ function Calc() {
 
   return (
     <>
-      <PageTitle
+      <PageTitle capa="viabilidade"
         title="Viabilidade de mobiliar"
         subtitle="Vale a pena mobiliar este imóvel para estadias de 30 a 180 dias? Compare com alugar vazio."
       />

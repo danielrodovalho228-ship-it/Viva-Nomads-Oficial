@@ -11,9 +11,11 @@ test("barra fixa mostra o mesmo valor por mês do cartão de preço", () => {
   assert.equal(b.linha, "Caução e taxas no detalhe");
 });
 
-test("anúncio de exemplo não mostra a barra (ninguém recebe candidatura)", () => {
+test("anúncio de exemplo mostra a barra em demonstração (ordem 4f8023d1)", () => {
   const b = barraFixaImovel({ monthlyPrice: 3200, exemplo: true, candidatouSe: false });
-  assert.equal(b.visivel, false);
+  assert.equal(b.visivel, true);
+  assert.equal(b.demonstracao, true);
+  assert.equal(barraFixaImovel({ monthlyPrice: 3200, exemplo: false, candidatouSe: false }).demonstracao, false);
 });
 
 test("depois de candidatar, a barra mostra o estado e não o botão de enviar", () => {
@@ -31,4 +33,10 @@ test("barra mostra o status de disponibilidade (ordem d943f893)", () => {
   const b = barraFixaImovel({ monthlyPrice: 3200, exemplo: false, candidatouSe: false, availableFrom: "2026-12-05", hoje: "2026-10-15" });
   assert.equal(b.status, "Disponível a partir de 05/12");
   assert.equal(barraFixaImovel({ monthlyPrice: 3200, exemplo: false, candidatouSe: false, hoje: "2026-10-15" }).status, "Disponível agora");
+});
+
+test("barra fixa mostra o TOTAL do mês quando informado (ordem 1a555bfa), não só o valor mensal", () => {
+  const b = barraFixaImovel({ monthlyPrice: 3000, totalMensal: 3760, exemplo: false, candidatouSe: false });
+  assert.equal(b.valor, formatBRL(3760));
+  assert.equal(barraFixaImovel({ monthlyPrice: 3000, exemplo: false, candidatouSe: false }).valor, formatBRL(3000));
 });

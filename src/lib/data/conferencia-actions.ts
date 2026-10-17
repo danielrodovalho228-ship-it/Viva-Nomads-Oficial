@@ -9,6 +9,7 @@ import {
   estadoConferencia,
   fonteDaConferencia,
   type ItemTela,
+  type LaudoTela,
   podeEditarItens,
   prazoEntrada,
   validarFotoConferencia,
@@ -30,7 +31,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 const STATUS_ENTRADA = ["ativo"];
 const STATUS_SAIDA = ["ativo", "concluido", "encerrado_sem_renovacao"];
 
-type Resultado = { ok: true; id?: string; item?: ItemTela; resposta?: RespostaTela } | { ok: false; error: string };
+type Resultado = { ok: true; id?: string; item?: ItemTela; resposta?: RespostaTela; laudo?: LaudoTela } | { ok: false; error: string };
 const erro = (error: string): Resultado => ({ ok: false, error });
 
 /** Quem é a pessoa neste contrato: "inquilino", "proprietario" ou null (não é parte). */
@@ -227,7 +228,7 @@ export async function anexarLaudoConferencia(formData: FormData): Promise<Result
   }
   revalidatePath("/dashboard/locacoes");
   revalidatePath("/dashboard/contratos");
-  return { ok: true };
+  return { ok: true, laudo: { url: null, parte: ctx.parte, criadoEm: new Date().toISOString() } };
 }
 
 /** As conferências do contrato, lidas pelo RLS (só as partes e a equipe enxergam). */

@@ -14,6 +14,10 @@ import {
   podeAvaliarLocacao,
   resumoContrato,
   petsRegrasDoResumo,
+  limpezaDoContrato,
+  outrosCustosDoContrato,
+  totalMesAplicavel,
+  totalMensalDoResumo,
 } from "./contrato-assinar.ts";
 import { qtdPetsCongelada, type RegrasPets } from "./anuncio/pets-regras.ts";
 
@@ -142,4 +146,57 @@ test("achado #553: quem assina depois de quem assinou sem 'Início da estadia' f
   // sem assinatura anterior, ou com hash novo, nada muda
   assert.deepEqual(linhasParaHash(com, null), com);
   assert.deepEqual(linhasParaHash(com, hashResumo(com)), com);
+});
+
+test("resumo do contrato traz a quantidade de limpezas por mês; sem pacote, o resumo (e o hash) não muda", () => {
+  const semPacote = resumoContrato(dados);
+  const comPacote = resumoContrato({ ...dados, limpezaEstadia: { porMes: 4, inclui: "Tudo", valorMes: 0 } });
+  assert.ok(comPacote.some((l) => /^Limpeza durante a estadia — 4 limpezas por mês/.test(l)));
+  assert.ok(!semPacote.some((l) => /Limpeza durante a estadia/.test(l)));
+  assert.deepEqual(resumoContrato({ ...dados, limpezaEstadia: null }), semPacote);
+  assert.notEqual(hashResumo(comPacote), hashResumo(semPacote));
+});
+
+test("limpezaDoContrato: ao vivo antes da assinatura, congelada depois (as duas partes assinam o mesmo texto)", () => {
+  const pacote = { porMes: 1, inclui: "", valorMes: 90 };
+  assert.equal(limpezaDoContrato({ algumaAssinatura: false, viva: pacote, congeladas: {} })?.porMes, 1);
+  assert.equal(limpezaDoContrato({ algumaAssinatura: true, viva: null, congeladas: { limpezaEstadia: pacote } })?.valorMes, 90);
+  // dono mudou o anúncio depois da 1ª assinatura: vale o congelado
+  assert.equal(limpezaDoContrato({ algumaAssinatura: true, viva: { porMes: 4, inclui: "", valorMes: 1 }, congeladas: { limpezaEstadia: pacote } })?.porMes, 1);
+  // contrato antigo, sem a chave: sem linha
+  assert.equal(limpezaDoContrato({ algumaAssinatura: true, viva: pacote, congeladas: { especies: ["cao"] } }), null);
+  assert.equal(limpezaDoContrato({ algumaAssinatura: true, viva: pacote, congeladas: null }), null);
+});
+
+test("resumo do contrato soma o pacote de limpeza pago no Total por mês (2.400 + 350 + 200 + 180 = 3.130)", () => {
+  const d = { ...dados, aluguelMensal: 2400, outrosCustosMes: 550, limpezaEstadia: { porMes: 2, inclui: "", valorMes: 180 } };
+  assert.equal(totalMensalDoResumo(d), 3130);
+  const linhas = resumoContrato(d);
+  assert.ok(linhas.some((l) => /^Total por mês: R\$\s?3\.130,00$/.test(l)), linhas.join(" | "));
+  // limpeza incluída (R$ 0) ou sem pacote: sem a linha, o resumo e o hash seguem como eram
+  assert.equal(totalMensalDoResumo({ ...d, limpezaEstadia: { porMes: 2, inclui: "", valorMes: 0 } }), null);
+  assert.ok(!resumoContrato({ ...d, limpezaEstadia: null }).some((l) => l.startsWith("Total por mês")));
+  assert.deepEqual(resumoContrato({ ...dados, limpezaEstadia: null, outrosCustosMes: 550 }), resumoContrato(dados));
+});
+
+test("outrosCustosDoContrato: ao vivo antes da assinatura, congelado depois; lixo vira 0", () => {
+  assert.equal(outrosCustosDoContrato({ algumaAssinatura: false, vivo: 550, congeladas: {} }), 550);
+  assert.equal(outrosCustosDoContrato({ algumaAssinatura: true, vivo: 999, congeladas: { outrosCustosMes: 550 } }), 550);
+  assert.equal(outrosCustosDoContrato({ algumaAssinatura: true, vivo: 999, congeladas: { especies: [] } }), 0);
+  assert.equal(outrosCustosDoContrato({ algumaAssinatura: false, vivo: -5, congeladas: null }), 0);
+  assert.equal(outrosCustosDoContrato({ algumaAssinatura: false, vivo: "x", congeladas: null }), 0);
+});
+
+test("contrato já assinado só mostra o Total por mês se o total foi congelado (ordem ddcda0fa)", () => {
+  const limpezaEstadia = { porMes: 2, inclui: "", valorMes: 180 };
+  // assinado antes da linha existir: congelou a limpeza, mas não os outros custos -> resumo e hash não mudam
+  const antigo = { algumaAssinatura: true, congeladas: { limpezaEstadia } };
+  assert.equal(totalMesAplicavel(antigo), false);
+  const base = { ...dados, aluguelMensal: 2400, limpezaEstadia };
+  assert.ok(!resumoContrato({ ...base, semTotalMes: !totalMesAplicavel(antigo) }).some((l) => l.startsWith("Total por mês")));
+  // assinado com o total congelado (mesmo sem condomínio: 0): a linha segue
+  assert.equal(totalMesAplicavel({ algumaAssinatura: true, congeladas: { limpezaEstadia, outrosCustosMes: 0 } }), true);
+  // ainda sem assinatura: ao vivo, sempre aplicável
+  assert.equal(totalMesAplicavel({ algumaAssinatura: false, congeladas: null }), true);
+  assert.ok(resumoContrato({ ...base, semTotalMes: false }).some((l) => l.startsWith("Total por mês: ")));
 });

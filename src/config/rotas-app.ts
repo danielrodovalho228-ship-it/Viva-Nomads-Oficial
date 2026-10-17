@@ -43,8 +43,10 @@ export const ROTAS_APP: Regra[] = [
   ramo("/ajuda"), // Central de Ajuda e chamados
   exato("/dashboard"), // painel
   ramo("/dashboard/mensagens"),
+  exato("/favoritos"), // lista pública de favoritos (guardada no aparelho)
   ramo("/dashboard/favoritos"),
   ramo("/dashboard/candidaturas"),
+  ramo("/dashboard/visitas"),
   ramo("/dashboard/leads"), // interessados (proprietário)
   ramo("/dashboard/pedidos"),
   ramo("/dashboard/pedidos-cidade"),

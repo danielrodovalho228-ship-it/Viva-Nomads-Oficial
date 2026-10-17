@@ -18,3 +18,8 @@ test("a tela não oferece mais plano pago nem cobrança", () => {
     assert.doesNotMatch(page, ruim);
   }
 });
+
+test("o redirecionamento é HTTP (next.config), não um redirect() dentro do painel em streaming", () => {
+  const config = readFileSync(new URL("../../../next.config.ts", import.meta.url), "utf8");
+  assert.match(config, /source:\s*"\/dashboard\/assinatura"[^}]*destination:\s*"\/precos"/);
+});

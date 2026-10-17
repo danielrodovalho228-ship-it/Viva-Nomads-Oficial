@@ -7,12 +7,12 @@ import { authFile } from "../fixtures/auth";
   repete entre telas, sem rolagem horizontal, e as grades de cards têm colunas pares
   com cards da mesma altura. Desktop (1440) e mobile (390).
 */
-const DONO = ["/dashboard/imoveis", "/dashboard/leads", "/dashboard/pedidos-cidade", "/dashboard/fechamento", "/dashboard/contratos", "/dashboard/garantias", "/dashboard/conta", "/dashboard/verificacao", "/dashboard/notificacoes", "/dashboard/solicitacoes"];
+const DONO = ["/dashboard/imoveis", "/dashboard/leads", "/dashboard/pedidos-cidade", "/dashboard/fechamento", "/dashboard/contratos", "/dashboard/garantias", "/dashboard/conta", "/dashboard/verificacao", "/dashboard/notificacoes", "/dashboard/solicitacoes", "/dashboard/ferramentas", "/dashboard/simulador", "/dashboard/roi-imovel", "/dashboard/viabilidade", "/dashboard/orcamentos"];
 const MORADOR = ["/dashboard/favoritos", "/dashboard/buscas", "/dashboard/pedidos", "/dashboard/candidaturas", "/dashboard/locacoes", "/dashboard/avaliacoes", "/dashboard/indicacoes", "/dashboard/comparar"];
 
 async function conferirCapa(page: Page, rota: string, largura: number) {
   await page.goto(rota, { waitUntil: "domcontentloaded" });
-  const capa = page.getByTestId("painel-capa").first();
+  const capa = page.locator('[data-testid="painel-capa"]:visible').first();
   await expect(capa, `${rota}: capa`).toBeVisible({ timeout: 20_000 });
   await expect(capa.locator("h1"), `${rota}: título na capa`).toBeVisible();
   const foto = capa.locator("img").first();

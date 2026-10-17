@@ -11,6 +11,9 @@ import {
   avisoAssinatura,
   hashResumo,
   petsRegrasDoResumo,
+  totalMesAplicavel,
+  limpezaDoContrato,
+  outrosCustosDoContrato,
   motivoNaoPodeAssinar,
   papelNoContrato,
   resumoContrato,
@@ -18,6 +21,7 @@ import {
   type PapelContrato,
 } from "@/lib/contrato-assinar";
 import { qtdPetsCongelada } from "@/lib/anuncio/pets-regras";
+import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 import { motivoFaltamInstrucoes } from "@/lib/checkin";
 import { instrucoesPreenchidas } from "@/lib/checkin-servidor";
 import { montarLinhaDoTempo, type EtapaEstadia } from "@/lib/estadia-linha-tempo";
@@ -68,13 +72,18 @@ interface LinhaContrato {
   assinado_inquilino_em: string | null;
   properties: { title?: string; owner_id?: string; checkin_after?: string | null; checkout_before?: string | null; pets_regras?: unknown } | null;
   pets_regras_congeladas?: unknown;
+  property_id?: string;
+  /** Pacote de limpeza do anúncio agora (0144; só vale antes da 1ª assinatura). */
+  limpeza_viva?: unknown;
+  /** Condomínio + contas fixas do anúncio agora (só vale antes da 1ª assinatura). */
+  outros_custos_vivos?: number;
   /** Pets do inquilino agora (só vale antes da 1ª assinatura; depois vale o congelado). */
   qtd_pets_vivos?: number;
   contrato_blocos?: { inicio: string; fim: string }[] | null;
 }
 
 const COLUNAS =
-  "id, tenant_id, status, aluguel_mensal, prazo_total_dias, qtd_ocupantes, created_at, assinado_proprietario_em, assinado_inquilino_em, pets_regras_congeladas, properties(title, owner_id, checkin_after, checkout_before, pets_regras), contrato_blocos(inicio, fim)";
+  "id, tenant_id, status, aluguel_mensal, prazo_total_dias, qtd_ocupantes, created_at, assinado_proprietario_em, assinado_inquilino_em, pets_regras_congeladas, property_id, properties(title, owner_id, checkin_after, checkout_before, pets_regras), contrato_blocos(inicio, fim)";
 
 function objetoOuVazio(v: unknown): Record<string, unknown> {
   return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
@@ -89,7 +98,41 @@ async function contarPetsDoInquilino(tenantId: string): Promise<number> {
 
 /** Depois da 1ª assinatura vale o número congelado; antes, o da ficha do inquilino agora. */
 async function completarPets(c: LinhaContrato): Promise<void> {
-  if (!c.assinado_proprietario_em && !c.assinado_inquilino_em) c.qtd_pets_vivos = await contarPetsDoInquilino(c.tenant_id);
+  if (!c.assinado_proprietario_em && !c.assinado_inquilino_em) {
+    c.qtd_pets_vivos = await contarPetsDoInquilino(c.tenant_id);
+    c.limpeza_viva = await lerLimpezaViva(c.property_id);
+    c.outros_custos_vivos = await lerOutrosCustosVivos(c.property_id);
+  }
+}
+
+/** Condomínio + contas fixas do anúncio (R$ por mês); contas medidas não entram. Falha de leitura = 0. */
+async function lerOutrosCustosVivos(propertyId: string | undefined): Promise<number> {
+  const admin = createAdminClient();
+  if (!admin || !propertyId) return 0;
+  try {
+    const { data } = await admin.from("properties").select("condo_fee, utilities_mode, utilities_estimate").eq("id", propertyId).maybeSingle();
+    const p = data as { condo_fee?: number | null; utilities_mode?: string | null; utilities_estimate?: number | null } | null;
+    if (!p) return 0;
+    return outrosCustosDoContrato({
+      algumaAssinatura: false,
+      vivo: Number(p.condo_fee ?? 0) + (p.utilities_mode === "fixed" ? Number(p.utilities_estimate ?? 0) : 0),
+      congeladas: null,
+    });
+  } catch {
+    return 0;
+  }
+}
+
+/** Pacote de limpeza do anúncio (0144). Leitura à parte: sem a migração, o contrato abre igual, sem a linha. */
+async function lerLimpezaViva(propertyId: string | undefined): Promise<unknown> {
+  const admin = createAdminClient();
+  if (!admin || !propertyId) return null;
+  try {
+    const { data } = await admin.from("properties").select("limpeza_estadia").eq("id", propertyId).maybeSingle();
+    return (data as { limpeza_estadia?: unknown } | null)?.limpeza_estadia ?? null;
+  } catch {
+    return null;
+  }
 }
 
 function montar(c: LinhaContrato, userId: string): ContratoParaAssinar | null {
@@ -115,6 +158,20 @@ function montar(c: LinhaContrato, userId: string): ContratoParaAssinar | null {
     }),
     qtdPetsCandidatura:
       c.assinado_proprietario_em || c.assinado_inquilino_em ? qtdPetsCongelada(c.pets_regras_congeladas) : (c.qtd_pets_vivos ?? 0),
+    limpezaEstadia: limpezaDoContrato({
+      algumaAssinatura: !!(c.assinado_proprietario_em || c.assinado_inquilino_em),
+      viva: c.limpeza_viva,
+      congeladas: c.pets_regras_congeladas,
+    }),
+    outrosCustosMes: outrosCustosDoContrato({
+      algumaAssinatura: !!(c.assinado_proprietario_em || c.assinado_inquilino_em),
+      vivo: c.outros_custos_vivos,
+      congeladas: c.pets_regras_congeladas,
+    }),
+    semTotalMes: !totalMesAplicavel({
+      algumaAssinatura: !!(c.assinado_proprietario_em || c.assinado_inquilino_em),
+      congeladas: c.pets_regras_congeladas,
+    }),
   });
   const a = { proprietario: c.assinado_proprietario_em, inquilino: c.assinado_inquilino_em };
   return {
@@ -231,10 +288,28 @@ export async function assinarContrato(input: {
     await admin
       .from("contratos")
       .update({
-        pets_regras_congeladas: { ...(objetoOuVazio(c.properties?.pets_regras)), qtdPetsCandidatura: await contarPetsDoInquilino(c.tenant_id) },
+        pets_regras_congeladas: {
+          ...(objetoOuVazio(c.properties?.pets_regras)),
+          qtdPetsCandidatura: await contarPetsDoInquilino(c.tenant_id),
+          limpezaEstadia: normalizarLimpezaEstadia(await lerLimpezaViva(c.property_id)),
+          outrosCustosMes: await lerOutrosCustosVivos(c.property_id),
+        },
       })
       .eq("id", c.id)
       .is("pets_regras_congeladas", null);
+    ({ data } = await admin.from("contratos").select(COLUNAS).eq("id", input.contratoId).maybeSingle());
+    c = data as unknown as LinhaContrato | null;
+  }
+  // Pacote de limpeza (0144): congelado junto, também em contrato ainda não assinado que já tinha as regras de pets congeladas
+  // antes desta regra; a chave limpezaEstadia presente (mesmo null) marca "já congelado".
+  if (c && !c.assinado_proprietario_em && !c.assinado_inquilino_em && c.pets_regras_congeladas != null && !("limpezaEstadia" in objetoOuVazio(c.pets_regras_congeladas))) {
+    const pacote = normalizarLimpezaEstadia(await lerLimpezaViva(c.property_id));
+    await admin
+      .from("contratos")
+      .update({ pets_regras_congeladas: { ...objetoOuVazio(c.pets_regras_congeladas), limpezaEstadia: pacote, outrosCustosMes: await lerOutrosCustosVivos(c.property_id) } })
+      .eq("id", c.id)
+      .is("assinado_proprietario_em", null)
+      .is("assinado_inquilino_em", null);
     ({ data } = await admin.from("contratos").select(COLUNAS).eq("id", input.contratoId).maybeSingle());
     c = data as unknown as LinhaContrato | null;
   }
