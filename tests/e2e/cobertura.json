@@ -586,9 +586,12 @@
     },
     "/dashboard/locacoes": {
       "personas": [
+        "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t163-locacoes-selo-anfitriao"
+      ]
     },
     "/dashboard/locacoes/[id]": {
       "personas": [
@@ -2047,6 +2050,14 @@
         "inquilino"
       ],
       "specs": []
+    },
+    "src/lib/data/locacoes-selo.ts#getSelosDasLocacoes": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t163-locacoes-selo-anfitriao"
+      ]
     },
     "src/lib/data/manutencao-actions.ts#avisosRecentes": {
       "personas": [
