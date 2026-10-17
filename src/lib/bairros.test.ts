@@ -73,6 +73,16 @@ test("textos do bairro: sem termos proibidos e sem preço inventado", () => {
   assert.match(resumoDoBairro("Centro", "Uberlândia", 1), /1 imóvel mobiliado publicado/);
 });
 
+test("FAQ de bairro sem anúncio não afirma oferta; com anúncio mantém a resposta atual", () => {
+  const vazio = perguntasDoBairro("Martins", "Uberlândia", null, 0);
+  assert.match(vazio[0].a, /Ainda não há imóveis mobiliados publicados em Martins/);
+  assert.doesNotMatch(vazio.map((f) => f.a).join(" "), /^Sim\.|Os imóveis do Viva Nomads em Martins/);
+  assert.match(vazio[1].a, /Ainda não há anúncios/);
+  assert.match(perguntasDoBairro("Centro", "Uberlândia", null, 2)[0].a, /^Sim\./);
+  assert.match(perguntasDoBairro("Centro", "Uberlândia", null)[0].a, /^Sim\./);
+  assert.doesNotMatch(vazio.map((f) => f.q + f.a).join(" "), /temporada|vistoria|comiss|art\. 48/i);
+});
+
 test("sitemap: um caminho por bairro com anúncio real, na cidade certa", () => {
   const lista = [{ ...im(1, "Centro"), city: "Uberlândia" }, { ...im(2, "centro"), city: "Uberlandia" }, { ...im(3, "Tibery"), city: "Araguari" }, { id: "ube-001", neighborhood: "Osvaldo", lat: 0, lng: 0, city: "Uberlândia" }];
   assert.deepEqual(caminhosDeBairros([{ slug: "uberlandia", name: "Uberlândia" }], lista, ehExemplo), ["/cidades/uberlandia/centro"]);

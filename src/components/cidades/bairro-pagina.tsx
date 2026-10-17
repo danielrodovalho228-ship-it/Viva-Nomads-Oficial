@@ -34,7 +34,7 @@ export function metadadosDoBairro(cidade: Cidade, b: BairroDados): Metadata {
 }
 
 /** Página de bairro (ordem 7000fbe0, tela 5). Só existe com anúncio real; sem endereço e sem coordenada exata. */
-export function BairroPagina({ cidade, bairro, vizinhos = [] }: { cidade: Cidade; bairro: BairroDados; vizinhos?: BairroResumo[] }) {
+export function BairroPagina({ cidade, bairro, vizinhos = [], totalCidade = 0 }: { cidade: Cidade; bairro: BairroDados; vizinhos?: BairroResumo[]; totalCidade?: number }) {
   const url = `${SITE_URL}/cidades/${cidade.slug}/${bairro.slug}`;
   const medias = calcularPrecosMedios(bairro.imoveis);
   const comMedia = medias.filter((g) => g.media !== null);
@@ -44,8 +44,8 @@ export function BairroPagina({ cidade, bairro, vizinhos = [] }: { cidade: Cidade
       : null;
   const centro = centroDoBairro(bairro.imoveis);
   const distancias = distanciasDoBairro(centro, PONTOS_REFERENCIA.filter((p) => p.cidade === cidade.slug));
-  const faq = perguntasDoBairro(bairro.nome, cidade.name, mediaGeral);
   const total = bairro.imoveis.filter((i) => !isExemplo(i.id)).length;
+  const faq = perguntasDoBairro(bairro.nome, cidade.name, mediaGeral, total);
 
   const dados = {
     "@context": "https://schema.org",
@@ -121,6 +121,11 @@ export function BairroPagina({ cidade, bairro, vizinhos = [] }: { cidade: Cidade
             <div className="mt-4 flex justify-center">
               <SalvarBusca versao={bairro.slug} qs={`?local=${encodeURIComponent(`${bairro.nome}, ${cidade.name}`)}`} rotulo="Avise-me quando houver" rotuloSalva="Aviso ativado" />
             </div>
+            <p className="mt-4 text-sm">
+              <Link href={`/buscar?${new URLSearchParams({ local: cidade.name }).toString()}`} className="font-semibold text-forest hover:underline" data-testid="bairro-ver-cidade">
+                Ver {totalCidade > 0 ? `todos os ${totalCidade} ${totalCidade === 1 ? "imóvel" : "imóveis"}` : "todos os imóveis"} em {cidade.name}
+              </Link>
+            </p>
             {vizinhos.length > 0 && (
               <p className="mt-4 text-sm text-muted" data-testid="bairro-vizinhos">
                 Veja também:{" "}
@@ -145,6 +150,11 @@ export function BairroPagina({ cidade, bairro, vizinhos = [] }: { cidade: Cidade
                 <PropertyCard key={i.id} property={i} />
               ))}
             </div>
+            <p className="mt-6 text-sm">
+              <Link href={`/buscar?${new URLSearchParams({ local: cidade.name }).toString()}`} className="font-semibold text-forest hover:underline" data-testid="bairro-ver-cidade">
+                Ver {totalCidade > 0 ? `todos os ${totalCidade} ${totalCidade === 1 ? "imóvel" : "imóveis"}` : "todos os imóveis"} em {cidade.name}
+              </Link>
+            </p>
           </>
         )}
 
