@@ -23,8 +23,31 @@ for (const largura of [390, 1280]) {
     test("cartão da busca de ube-002 mostra o mesmo total", async ({ page }) => {
       await page.goto("/buscar", { waitUntil: "domcontentloaded" });
       const cartao = page.locator('a[href="/imoveis/ube-002"]').first();
-      test.skip((await cartao.count()) === 0, "ube-002 fora da busca deste ambiente");
+      await expect(cartao).toBeVisible();
       await expect(cartao.getByTestId("cartao-total-mes")).toContainText("3.130");
     });
+
+    test("ube-002: 'Enviar candidatura' abre o resumo com a limpeza e 'Total por mês' R$ 3.130", async ({ page }) => {
+      await page.goto("/imoveis/ube-002", { waitUntil: "domcontentloaded" });
+      // No celular o botão está na barra fixa; no computador, no cartão de preço.
+      const botao = page.getByRole("button", { name: "Enviar candidatura" }).locator("visible=true").first();
+      await botao.click();
+      const passo = page.getByTestId("solicitacao-passo");
+      await expect(passo).toBeVisible();
+      await expect(passo).toContainText("Limpeza durante a estadia");
+      await expect(passo.locator("div", { hasText: /^Total por mês/ }).first()).toContainText("3.130");
+      await expect(page.getByTestId("solicitacao-demo")).toBeVisible();
+      await page.screenshot({ path: `test-results/t155-resumo-${largura}.png` });
+    });
+
+    if (largura === 390) {
+      test("ube-002: barra fixa do celular mostra o total 3.130", async ({ page }) => {
+        await page.goto("/imoveis/ube-002", { waitUntil: "domcontentloaded" });
+        const barra = page.getByTestId("barra-total");
+        await expect(barra).toBeVisible();
+        await expect(barra).toContainText("3.130");
+        await page.screenshot({ path: "test-results/t155-barra-390.png" });
+      });
+    }
   });
 }
