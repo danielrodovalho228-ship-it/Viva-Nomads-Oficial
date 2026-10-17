@@ -33,9 +33,12 @@ test.describe("T130 — Reserva no imóvel", () => {
     const gravacoes: string[] = [];
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/imoveis/ube-001", { waitUntil: "networkidle" });
-    // Só conta o que acontece DEPOIS dos cliques (a leitura inicial da página também usa POST).
+    // Só conta o que acontece DEPOIS dos cliques e só POST que leve a candidatura ou o texto da mensagem:
+    // a própria página faz POST de leitura/rastreio (Server Action) logo depois de hidratar, e isso não grava nada.
     page.on("request", (r) => {
-      if (r.method() === "POST") gravacoes.push(r.url());
+      if (r.method() !== "POST") return;
+      const corpo = r.postData() ?? "";
+      if (/candidatura|mensagem|Posso entrar em dezembro/i.test(corpo)) gravacoes.push(r.url());
     });
     const card = page.locator("#cartao-preco");
     await card.getByRole("button", { name: "Enviar candidatura" }).click();
