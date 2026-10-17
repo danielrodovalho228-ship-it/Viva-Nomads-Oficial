@@ -59,6 +59,7 @@ const TELAS_LOGADAS = [
   "/dashboard/pedidos-cidade",
   "/dashboard/avaliacoes",
   "/dashboard/visitas",
+  "/dashboard/tributacao",
 ];
 const TELAS_ADMIN = [
   "/admin",

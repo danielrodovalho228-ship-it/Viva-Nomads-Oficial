@@ -29,7 +29,7 @@ export function CarteiraClient() {
     return (
       <>
         <PageTitle capa="carteira"
-          title="Carteira consolidada"
+          title="Análise da carteira"
           subtitle="Ocupação, receita e contratos a vencer de todos os imóveis sob sua gestão."
         />
         <EmptyState
@@ -46,7 +46,7 @@ export function CarteiraClient() {
   return (
     <>
       <PageTitle capa="carteira"
-        title="Carteira consolidada"
+        title="Análise da carteira"
         subtitle="Ocupação, receita e contratos a vencer de todos os imóveis sob sua gestão."
         action={adminDemo ? <DemoBadge /> : undefined}
       />

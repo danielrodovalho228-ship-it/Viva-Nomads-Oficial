@@ -193,17 +193,6 @@
         "t125-alerta-busca-salva"
       ]
     },
-    "/proprietario/[id]": {
-      "personas": [
-        "publico"
-      ],
-      "specs": [
-        "t173-perfis-dono-inquilino",
-        "t176-exemplo-proprietario-avaliacoes",
-        "t179-isolamento-perfil",
-        "t180-anuncio-real-sem-exemplo"
-      ]
-    },
     "/app/boas-vindas": {
       "personas": [
         "publico"
@@ -473,6 +462,7 @@
         "t178-telefone-sms",
         "t173-perfis-dono-inquilino",
         "t174-conta-complete-perfil",
+        "t192-conta-4-blocos",
         "t179-isolamento-perfil"
       ]
     },
@@ -489,7 +479,8 @@
         "t92-documento-secao",
         "t173-perfis-dono-inquilino",
         "t178-telefone-sms",
-        "t174-conta-complete-perfil"
+        "t174-conta-complete-perfil",
+        "t192-conta-4-blocos"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -538,7 +529,8 @@
         "t36-cadastro-ponta-a-ponta",
         "t4-fronteira-demo-real",
         "t127-fechamento-servicos",
-        "t89-fechamento-data-inicio"
+        "t89-fechamento-data-inicio",
+        "t181-quantas-pessoas"
       ]
     },
     "/dashboard/ferramentas": {
@@ -610,7 +602,8 @@
         "t36-cadastro-ponta-a-ponta",
         "t133-candidatura-motivo",
         "t173-perfis-dono-inquilino",
-        "t178-telefone-sms"
+        "t178-telefone-sms",
+        "t181-quantas-pessoas"
       ]
     },
     "/dashboard/locacoes": {
@@ -720,6 +713,17 @@
       ],
       "specs": [
         "t55-manutencao-ciclo"
+      ]
+    },
+    "/dashboard/tributacao": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": [
+        "t192-conta-4-blocos",
+        "t48-varredura"
       ]
     },
     "/dashboard/verificacao": {
@@ -852,6 +856,7 @@
         "t173-perfis-dono-inquilino",
         "t178-telefone-sms",
         "t176-exemplo-proprietario-avaliacoes",
+        "t181-quantas-pessoas",
         "t180-anuncio-real-sem-exemplo"
       ]
     },
@@ -946,6 +951,17 @@
         "t18-seo-a11y"
       ]
     },
+    "/proprietario/[id]": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t173-perfis-dono-inquilino",
+        "t176-exemplo-proprietario-avaliacoes",
+        "t179-isolamento-perfil",
+        "t180-anuncio-real-sem-exemplo"
+      ]
+    },
     "/qualificar": {
       "personas": [
         "inquilino",
@@ -1003,7 +1019,9 @@
       "personas": [
         "socio"
       ],
-      "specs": []
+      "specs": [
+        "t192-conta-4-blocos"
+      ]
     }
   },
   "rotas": {
@@ -1486,7 +1504,9 @@
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t181-quantas-pessoas"
+      ]
     },
     "src/lib/data/actions.ts#resumoImovelDoDono": {
       "personas": [
@@ -2192,6 +2212,15 @@
         "admin"
       ],
       "specs": []
+    },
+    "src/lib/data/menu-actions.ts#imoveisAtivosDoDono": {
+      "personas": [
+        "proprietario",
+        "inquilino"
+      ],
+      "specs": [
+        "t97-plangate-precos"
+      ]
     },
     "src/lib/data/menu-actions.ts#temImovelAnunciado": {
       "personas": [

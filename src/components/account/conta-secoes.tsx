@@ -11,7 +11,6 @@ import { Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PasswordInput } from "@/components/ui/password-input";
-import { TaxSimulator } from "@/components/tax-simulator";
 import { CategoriaProfissional } from "@/components/account/categoria-profissional";
 import { createClient } from "@/lib/supabase/client";
 import { nomeCompletoLimpo } from "@/lib/display-name";
@@ -300,33 +299,6 @@ export function DocumentoPessoa() {
         )}
       </Panel>
     </section>
-  );
-}
-
-export function PerfilDoModo() {
-  const { mode } = useViewMode();
-  return (
-    <>
-      {mode !== "tenant" && (
-        <div id="tributacao" className="mt-6 scroll-mt-24">
-          <h2 className="mb-3 font-title text-lg font-bold text-ink">Tributação das locações</h2>
-          <TaxSimulator />
-        </div>
-      )}
-
-      {mode === "tenant" && (
-        <Panel title="Perfil profissional" className="mt-6">
-          <p className="text-sm text-muted">
-            Estes dados ajudam o proprietário a conhecer você. Complementam a verificação de identidade — não
-            o substituem.
-          </p>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <CategoriaProfissional />
-            <p className="self-end text-xs text-muted">O LinkedIn fica em Dados pessoais.</p>
-          </div>
-        </Panel>
-      )}
-    </>
   );
 }
 

@@ -95,6 +95,8 @@ export interface CandidatoBase {
   profissao: string | null;
   motivo: string | null;
   inicioDesejado: string | null;
+  /** Prompt 8: quantas pessoas vão morar (da candidatura). */
+  qtdOcupantes?: number | null;
   pets: number;
   desde: string | null;
   reputacao: { media: number; n: number } | null;
@@ -116,6 +118,7 @@ export function cartaoCandidato(c: CandidatoBase, aceito: boolean): CartaoCandid
   if (c.profissao) sinais.push(c.profissao);
   if (c.motivo) sinais.push(`Motivo: ${c.motivo}`);
   if (c.inicioDesejado) sinais.push(`A partir de ${c.inicioDesejado}`);
+  if (c.qtdOcupantes && c.qtdOcupantes > 0) sinais.push(c.qtdOcupantes === 1 ? "Para 1 pessoa" : `Para ${c.qtdOcupantes} pessoas`);
   if (c.pets > 0) sinais.push(c.pets === 1 ? "Com 1 pet" : `Com ${c.pets} pets`);
   const desde = desdeLabel(c.desde);
   if (desde) sinais.push(desde);

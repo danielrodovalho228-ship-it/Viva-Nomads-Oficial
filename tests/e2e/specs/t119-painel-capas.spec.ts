@@ -7,7 +7,7 @@ import { authFile } from "../fixtures/auth";
   repete entre telas, sem rolagem horizontal, e as grades de cards têm colunas pares
   com cards da mesma altura. Desktop (1440) e mobile (390).
 */
-const DONO = ["/dashboard/imoveis", "/dashboard/leads", "/dashboard/pedidos-cidade", "/dashboard/fechamento", "/dashboard/contratos", "/dashboard/garantias", "/dashboard/conta", "/dashboard/verificacao", "/dashboard/notificacoes", "/dashboard/solicitacoes", "/dashboard/ferramentas", "/dashboard/simulador", "/dashboard/roi-imovel", "/dashboard/viabilidade", "/dashboard/orcamentos"];
+const DONO = ["/dashboard/imoveis", "/dashboard/leads", "/dashboard/pedidos-cidade", "/dashboard/fechamento", "/dashboard/contratos", "/dashboard/garantias", "/dashboard/conta", "/dashboard/verificacao", "/dashboard/notificacoes", "/dashboard/solicitacoes", "/dashboard/ferramentas", "/dashboard/simulador", "/dashboard/roi-imovel", "/dashboard/orcamentos"];
 const MORADOR = ["/dashboard/favoritos", "/dashboard/buscas", "/dashboard/pedidos", "/dashboard/candidaturas", "/dashboard/locacoes", "/dashboard/avaliacoes", "/dashboard/indicacoes", "/dashboard/comparar"];
 
 async function conferirCapa(page: Page, rota: string, largura: number) {

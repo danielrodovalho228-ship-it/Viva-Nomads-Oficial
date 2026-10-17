@@ -73,6 +73,7 @@ import { normalizarRegrasPets } from "@/lib/anuncio/pets-regras";
 import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 import { videoTourPermitido } from "@/lib/video-tour";
 import { validarGarantia, type GarantiaContrato } from "@/lib/guarantees";
+import { validarOcupantes } from "@/lib/candidaturas/ocupantes";
 
 type ActionResult = { ok: boolean; demo?: boolean; id?: string; error?: string };
 
@@ -1296,7 +1297,9 @@ export async function requestLead(
   // F37: data de entrada que o inquilino quer (opcional). Só a candidatura guarda; o servidor valida.
   inicioDesejado?: string,
   // Motivo da estadia (chave de MOTIVOS). Vazio na candidatura = usa o do perfil. Inválido é ignorado.
-  motivoEstadia?: string
+  motivoEstadia?: string,
+  // Prompt 8: quantas pessoas vão morar (opcional). O servidor confere com a capacidade do imóvel.
+  qtdOcupantes?: number
 ): Promise<ActionResult & { needsAuth?: boolean; selfOwned?: boolean; exemplo?: boolean }> {
   // T9: anúncio de EXEMPLO não tem dono — nada de candidatura, contato nem e-mail
   // (antes ia o nome do inquilino para um e-mail pessoal de fallback).
@@ -1316,13 +1319,15 @@ export async function requestLead(
   let ownerPhone: string | null = null;
   let ownerName: string | null = null;
   let propertyTitle = "seu imóvel";
+  let capacidadeImovel: number | null = null;
   {
     const { data: prop } = await supabase
       .from("properties")
-      .select("owner_id, title")
+      .select("owner_id, title, max_guests")
       .eq("id", propertyId)
       .maybeSingle();
     ownerId = (prop?.owner_id as string | undefined) ?? null;
+    capacidadeImovel = (prop?.max_guests as number | null | undefined) ?? null;
     propertyTitle = ((prop?.title as string | undefined) ?? "").trim() || propertyTitle;
     if (ownerId) {
       // A RLS de `profiles` ("perfil próprio") bloqueia a sessão do inquilino de
@@ -1344,6 +1349,9 @@ export async function requestLead(
   // T9: sem e-mail do dono (RPC falhou/sem service role) NÃO há desvio para outro
   // endereço — o aviso segue por push (userId) e fica o registro no log.
   if (!ownerEmail) console.warn("[requestLead] sem e-mail do proprietário; aviso só por push", propertyId);
+
+  const ocupantes = kind === "candidatura" ? validarOcupantes(qtdOcupantes, capacidadeImovel) : ({ ok: true, valor: null } as const);
+  if (!ocupantes.ok) return { ok: false, error: ocupantes.erro };
 
   // O próprio dono abrindo seu anúncio: não gera lead para si mesmo.
   if (ownerId && ownerId === user.id) return { ok: true, selfOwned: true };
@@ -1417,6 +1425,7 @@ export async function requestLead(
             ? { inicio_desejado: inicioDesejado!.trim() }
             : {}),
           ...(motivoLead ? { motivo_estadia: motivoLead } : {}),
+          ...(ocupantes.valor ? { qtd_ocupantes: ocupantes.valor } : {}),
         });
       // 23505 = duplicado (corrida): não é erro real. Demais erros: registra.
       if (leadErr && leadErr.code !== "23505") {

@@ -86,7 +86,7 @@ export function TelefoneVerificacao() {
   }
 
   return (
-    <Panel title="Confiança" className="mt-6" data-testid="confianca-telefone">
+    <Panel title="Celular (SMS)" className="mt-6 scroll-mt-24" id="celular" data-testid="confianca-telefone">
       <div className="flex items-start gap-3">
         <Smartphone className="mt-0.5 h-5 w-5 shrink-0 text-sage" aria-hidden />
         <div className="min-w-0 flex-1">
