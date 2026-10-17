@@ -79,3 +79,21 @@ test("T185 — Plano Gestor abre numa janela à parte e fecha (390 e 1280)", asy
     await expect(janela).toHaveCount(0);
   }
 });
+
+test("T185 — 390px: o 'Fale com a Viva' não tampa os botões nem as faixas da tabela (mesma regra do Q4)", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/precos", { waitUntil: "networkidle" });
+  const flut = page.getByTestId("fale-com-a-viva");
+  await expect(flut).toBeVisible();
+  const alvos = [page.getByTestId("precos-botoes"), ...(await page.getByTestId("faixas-taxa-cartoes").locator(":scope > li").all())];
+  for (const alvo of alvos) {
+    await alvo.evaluate((el) => el.scrollIntoView({ block: "center" }));
+    await page.waitForTimeout(150);
+    const a = (await alvo.boundingBox())!;
+    const f = (await flut.boundingBox())!;
+    const cruza = a.x < f.x + f.width && f.x < a.x + a.width && a.y < f.y + f.height && f.y < a.y + a.height;
+    expect(cruza, `flutuante tampa ${await alvo.getAttribute("data-testid") ?? "uma faixa"}`).toBe(false);
+  }
+  await page.getByTestId("precos-botoes").evaluate((el) => el.scrollIntoView({ block: "center" }));
+  await page.screenshot({ path: `${SAIDA}/t185-flutuante-390.png`, fullPage: false });
+});
