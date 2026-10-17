@@ -63,7 +63,7 @@ export function acoesPorRegra(texto: string, visitante: boolean): AcaoResumo[] {
   const t = norm(texto);
   const a: AcaoResumo[] = [];
   if (/segur(o|a|adora)|fianca/.test(t)) a.push({ texto: "Responder sobre seguros: ainda não oferecemos; estamos conversando com seguradoras", para: "thiago" });
-  if (/caucao/.test(t)) a.push({ texto: "Explicar a regra do Caução (poupança, devolução após a vistoria de saída)", para: null });
+  if (/caucao/.test(t)) a.push({ texto: "Explicar a regra do Caução (poupança, devolução após a conferência de saída)", para: null });
   if (/contrato|juridic|advogad|lei\b|multa/.test(t)) a.push({ texto: "Conferir a dúvida de contrato/jurídico", para: "sergio" });
   if (/cobranc|pagament|boleto|pix|assinatura|plano/.test(t)) a.push({ texto: "Conferir cobrança ou plano da pessoa", para: null });
   if (/erro|bug|nao (funciona|carrega|abre|publica)|travou/.test(t)) a.push({ texto: "Reproduzir o problema no site e, se for falha, mandar ao Renato", para: "renato" });
@@ -81,7 +81,7 @@ export function resumoPorRegra(textoPessoa: string, visitante: boolean, agora = 
 export function sugestaoPorRegra(textoPessoa: string, nome: string | null, visitante: boolean): string {
   const t = norm(textoPessoa);
   const partes = [`Olá${nome ? `, ${nome}` : ""}! Obrigado por falar com a Viva Nomads.`];
-  if (/caucao/.test(t)) partes.push("Sobre o Caução: ele fica depositado em poupança e volta no fim da locação, depois da vistoria de saída.");
+  if (/caucao/.test(t)) partes.push("Sobre o Caução: ele fica depositado em poupança e volta no fim da locação, depois da conferência de saída.");
   if (/segur(o|a|adora)|fianca/.test(t)) partes.push(visitante ? SITUACAO_VIVA.seguros.replace("em /auth", "no site") : SITUACAO_VIVA.segurosComConta);
   partes.push(SITUACAO_VIVA.fase);
   if (visitante && !/segur(o|a|adora)|fianca/.test(t)) partes.push("Se quiser, crie a conta gratuita no site para acompanhar as novidades.");
