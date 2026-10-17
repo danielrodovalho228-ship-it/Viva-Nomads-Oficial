@@ -43,9 +43,11 @@ export function PropertyCard({
   });
 
   return (
+    // O coração fica FORA do <a> (botão dentro de link é HTML inválido e o clique navegava junto): ordem 826719b1, D12.
+    <div className="group relative h-full">
     <Link
       href={`/imoveis/${property.id}`}
-      className="group flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-white transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-[0_20px_40px_-24px_rgba(11,42,102,0.45)]"
+      className="flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-white transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-[0_20px_40px_-24px_rgba(11,42,102,0.45)]"
     >
       <div className="relative aspect-[4/3] overflow-hidden">
         {hasRealPhoto ? (
@@ -64,9 +66,6 @@ export function PropertyCard({
           {selos.foto.map((s) => (
             <Selo key={s} id={s} />
           ))}
-        </div>
-        <div className="absolute right-3 top-3">
-          <FavoriteButton propertyId={property.id} />
         </div>
         {/* Marca do usuário logado ("Visto" / "Você já contatou"): canto inferior esquerdo, fora dos 2 badges do topo. */}
         <div className="absolute bottom-3 left-3">
@@ -160,6 +159,10 @@ export function PropertyCard({
         </div>
       </div>
     </Link>
+    <div className="absolute right-3 top-3 z-10">
+      <FavoriteButton propertyId={property.id} />
+    </div>
+    </div>
   );
 }
 
