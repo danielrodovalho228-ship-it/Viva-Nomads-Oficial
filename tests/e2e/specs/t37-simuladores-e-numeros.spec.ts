@@ -63,10 +63,42 @@ test.describe("T37 — /precos (visitante)", () => {
 
   // Regra vigente (ordens 75553f0a / 5df28a7b): sem cartões de plano com mensalidade; uma tabela de faixas
   // 12 / 10 / 8 / 6% sobre o valor TOTAL do contrato e o Plano Gestor a partir de 31 imóveis.
-  test("a tabela de faixas mostra a taxa e o exemplo em reais de cada faixa; sem mensalidade", async ({ page }) => {
-    await page.goto("/precos", { waitUntil: "networkidle" });
+  // A 390 px a tabela some (hidden sm:table) e as mesmas faixas aparecem em cartões (t185).
+  test("390 px: os cartões de faixa mostram a taxa e o exemplo em reais de cada faixa; sem mensalidade", async ({ page }) => {
+    await page.goto("/precos", { waitUntil: "domcontentloaded" });
+    await expect(page.getByTestId("faixas-taxa")).toBeHidden();
+    const cartoes = page.getByTestId("faixas-taxa-cartoes");
+    await expect(cartoes).toBeVisible();
+    const linhas = cartoes.locator(":scope > li");
+    await expect(linhas).toHaveCount(FAIXAS_COMISSAO_PADRAO.length);
+    for (const [i, f] of FAIXAS_COMISSAO_PADRAO.entries()) {
+      const texto = limpo(await linhas.nth(i).innerText());
+      expect(texto).toContain(limpo(taxaPublicaTexto(f)));
+      if (f.gestor) expect(texto).toContain("Plano Gestor");
+      else expect(texto).toContain(limpo(formatBRL(comissaoSobreContrato(3000, 3, f.taxa))));
+    }
+    // O Plano Gestor é um botão que abre a janela de contato (t185); não há mais bloco fixo na página.
+    await page.getByTestId("plano-gestor-botao").click();
+    await expect(page.getByTestId("plano-gestor-form")).toContainText("31 imóveis ou mais");
+    await page.keyboard.press("Escape");
+    const corpo = limpo(await page.locator("body").innerText());
+    expect(corpo).toContain("Sem mensalidade");
+    expect(corpo).toMatch(/Caução/);
+    expect(corpo).not.toMatch(/Grátis\s+R\$\s*0|Assinar Essencial|Assinar Profissional/);
+    expect(corpo).not.toMatch(/apartamentos mobiliados/i);
+    expect(corpo).not.toMatch(/aceito onde o Airbnb não é/i);
+    await page.screenshot({ path: "tests/laboratorio/saida/t37-1-precos.png", fullPage: true });
+  });
+});
+
+test.describe("T37 — /precos (visitante, 1280 px)", () => {
+  test.use({ storageState: { cookies: [], origins: [] }, viewport: { width: 1280, height: 800 } });
+
+  test("a tabela de faixas mostra a taxa e o exemplo em reais de cada faixa", async ({ page }) => {
+    await page.goto("/precos", { waitUntil: "domcontentloaded" });
     const tabela = page.getByTestId("faixas-taxa");
     await expect(tabela).toBeVisible();
+    await expect(page.getByTestId("faixas-taxa-cartoes")).toBeHidden();
     const linhas = tabela.locator("tbody tr");
     await expect(linhas).toHaveCount(FAIXAS_COMISSAO_PADRAO.length);
     for (const [i, f] of FAIXAS_COMISSAO_PADRAO.entries()) {
@@ -75,14 +107,6 @@ test.describe("T37 — /precos (visitante)", () => {
       if (f.gestor) expect(texto).toContain("Plano Gestor");
       else expect(texto).toContain(limpo(formatBRL(comissaoSobreContrato(3000, 3, f.taxa))));
     }
-    await expect(page.getByTestId("plano-gestor")).toContainText("31 imóveis ou mais");
-    const corpo = limpo(await page.locator("body").innerText());
-    expect(corpo).toContain("Sem mensalidade");
-    expect(corpo).toMatch(/Caução/);
-    expect(corpo).not.toMatch(/Grátis\s+R\$\s*0|Assinar Essencial|Assinar Profissional/);
-    expect(corpo).not.toMatch(/apartamentos mobiliados/i);
-    expect(corpo).not.toMatch(/aceito onde o Airbnb não é/i);
-    await page.screenshot({ path: "tests/laboratorio/saida/t37-1-precos.png", fullPage: true });
   });
 });
 
