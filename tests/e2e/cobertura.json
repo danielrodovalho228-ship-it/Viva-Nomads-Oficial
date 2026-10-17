@@ -624,7 +624,8 @@
         "admin"
       ],
       "specs": [
-        "t11-travessias"
+        "t11-travessias",
+        "t175-mensagens-candidato"
       ]
     },
     "/dashboard/notificacoes": {

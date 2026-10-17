@@ -202,9 +202,11 @@ function MessagesInner({ initial, demo }: { initial: Conversation[]; demo: boole
             >
               <ArrowLeft className="h-5 w-5 text-ink" />
             </button>
-            <Avatar name={active.name} size={36} photoUrl={avatars[active.id] ?? undefined} />
+            <span className="shrink-0" data-testid="conversa-avatar">
+              <Avatar name={active.name} size={36} photoUrl={avatars[active.id] ?? undefined} />
+            </span>
             <div className="min-w-0">
-              <p className="truncate font-medium text-ink">{active.name}</p>
+              <p className="truncate font-medium text-ink" data-testid="conversa-nome">{active.name}</p>
               {active.property && (
                 <p className="truncate text-xs text-muted">Sobre: {active.property}</p>
               )}
