@@ -18,13 +18,15 @@ export const metadata: Metadata = {
 };
 
 const CARDS = [
-  { id: "fotografos", titulo: "Fotógrafos", selo: "Aberto", texto: "Perfil com portfólio, pacote e prazo. Depois do aceite você vê a identidade do dono, e a conversa segue pela plataforma. Há avaliação após a entrega.",
+  { id: "fotografos", titulo: "Fotógrafos", selo: "Aberto", texto: "Perfil com portfólio, pacote e prazo. A conversa é pela plataforma e você é avaliado após a entrega.",
     links: [{ href: "/parceiros?tipo=fotografo#quero-ser-parceiro", rotulo: "Sou fotógrafo" }, { href: "/parceiros/fotografos", rotulo: "Procuro fotógrafo" }] },
   { id: "empresas", titulo: "Empresas", selo: "Aberto", texto: "Empresas que hospedam equipes em imóveis mobiliados.", links: [{ href: "/empresas", rotulo: "Conhecer" }] },
-  { id: "gestores", titulo: "Gestores e administradoras", selo: "Aberto", texto: "Taxa menor por volume (12/10/8/6%) e Plano Gestor para quem tem 31 ou mais imóveis.",
+  { id: "gestores", titulo: "Gestores e administradoras", selo: "Aberto", texto: "Taxa menor por volume e Plano Gestor para quem tem 31 ou mais imóveis.",
     links: [{ href: "/precos", rotulo: "Ver o Plano Gestor" }] },
-  { id: "servicos", titulo: "Serviços para o imóvel", selo: "Em breve", texto: "Limpeza, manutenção, mobília, enxoval, internet e mudança. Em breve: deixe seu contato.",
+  { id: "servicos", titulo: "Limpeza e manutenção", selo: "Em breve", texto: "Limpeza por pacote mensal, reparos e manutenção preventiva para imóveis mobiliados. Em breve: deixe seu contato.",
     links: [{ href: "/parceiros?tipo=servicos#quero-ser-parceiro", rotulo: "Deixar contato" }] },
+  { id: "mobilia", titulo: "Mobília, enxoval e mudança", selo: "Em breve", texto: "Mobiliar, montar enxoval, internet e mudança para quem anuncia ou vem morar. Em breve: deixe seu contato.",
+    links: [{ href: "/parceiros?tipo=mobilia#quero-ser-parceiro", rotulo: "Deixar contato" }] },
   { id: "seguros", titulo: "Seguros e garantias", selo: "Em breve", texto: "Seguros e garantias para imóveis mobiliados. Em breve: deixe seu contato.",
     links: [{ href: "/parceiros?tipo=seguros#quero-ser-parceiro", rotulo: "Deixar contato" }] },
 ];
@@ -71,10 +73,11 @@ export default async function ParceirosPage({ searchParams }: { searchParams: Pr
 
       {/* Números rápidos. */}
       <section className="container-page relative z-10 -mt-10">
-        <dl className="grid gap-4 rounded-2xl border border-line bg-white p-6 shadow-lg sm:grid-cols-3">
+        <dl className="grid gap-4 rounded-2xl border border-line bg-white p-6 shadow-lg sm:grid-cols-2 lg:grid-cols-4" data-testid="parceiros-numeros">
           <div><dt className="font-title text-2xl font-bold text-ink">Uberlândia (MG)</dt><dd className="text-sm text-muted">Começamos por aqui; cadastre-se de qualquer cidade</dd></div>
           <div><dt className="font-title text-2xl font-bold text-ink">30–180 dias</dt><dd className="text-sm text-muted">de estadia em imóveis mobiliados</dd></div>
           <div><dt className="font-title text-2xl font-bold text-ink">R$ 0</dt><dd className="text-sm text-muted">para se cadastrar, sem mensalidade</dd></div>
+          <div><dt className="font-title text-2xl font-bold text-ink">Contato só pela plataforma</dt><dd className="text-sm text-muted">identidade revelada após o aceite</dd></div>
         </dl>
       </section>
 
@@ -127,7 +130,7 @@ export default async function ParceirosPage({ searchParams }: { searchParams: Pr
 
       <section aria-labelledby="h-regras" className="container-page section-y">
         <div className="grid items-center gap-10 md:grid-cols-2">
-          <BrandImage src="/images/como-funciona/05-qualifique.webp" alt="Sala mobiliada pronta para receber hóspedes" sizes="(max-width: 768px) 100vw, 50vw" className="aspect-[4/3] w-full rounded-3xl" />
+          <BrandImage src="/images/como-funciona/05-qualifique.webp" alt="Sala mobiliada pronta para receber moradores" sizes="(max-width: 768px) 100vw, 50vw" className="aspect-[4/3] w-full rounded-3xl" />
           <div>
             <h2 id="h-regras" className="font-title text-3xl font-bold text-ink">Regras claras</h2>
             <ul className="mt-6 space-y-3">
