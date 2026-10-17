@@ -85,3 +85,17 @@ export function sugestaoAjuste(pares: Pick<ParCompat, "situacao" | "motivo">[]):
   if (data >= prazo) return `${plural} — adiar a entrada em alguns dias pode resolver (${quase.find((p) => /começa/.test(p.motivo!))!.motivo}).`;
   return `${plural} — ajustar o prazo pode resolver (${quase.find((p) => /prazo/.test(p.motivo!))!.motivo}).`;
 }
+
+/** Imóvel da lista "compatíveis" mostrada ao inquilino depois de publicar. */
+export interface ImovelCompativel {
+  id: string;
+  titulo: string;
+  total: number;
+}
+
+/** Melhores compatíveis (até 6), só com dado público do anúncio: id, título e valor mensal. */
+export function imoveisParaTela(pares: ParCompat[]): ImovelCompativel[] {
+  return ordenarPares(pares.filter((p) => p.situacao === "compativel"))
+    .slice(0, 6)
+    .map((p) => ({ id: p.imovel_id, titulo: p.titulo, total: p.total_mensal }));
+}
