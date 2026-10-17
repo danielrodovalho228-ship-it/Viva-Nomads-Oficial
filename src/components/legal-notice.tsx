@@ -35,8 +35,8 @@ export function PlatformLegalNotice({ className }: { className?: string }) {
       <Scale className="mt-0.5 h-4 w-4 shrink-0 text-sage" />
       <p>
         O Viva Nomads <strong className="text-forest">conecta e documenta</strong> —
-        não é locador, fiador nem garantidor, e não responde pelo aluguel. A decisão de alugar
-        é exclusivamente do proprietário.
+        não é locador, fiador nem garantidor, e não responde pelo valor mensal. A decisão de aceitar
+        o inquilino é exclusivamente do proprietário.
       </p>
     </div>
   );
@@ -53,7 +53,7 @@ export function OwnerDecisionNotice({ className }: { className?: string }) {
     >
       <span aria-hidden>⚠️</span>
       <span>
-        Esta é uma análise <strong>informativa</strong>. A decisão de alugar é exclusivamente
+        Esta é uma análise <strong>informativa</strong>. A decisão de aceitar o inquilino é exclusivamente
         do proprietário — a plataforma nunca aprova ou reprova o inquilino.
       </span>
     </p>

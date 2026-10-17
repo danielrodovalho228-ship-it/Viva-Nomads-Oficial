@@ -33,6 +33,7 @@ const GRUPOS: Record<string, string[]> = {
     "src/app/(dashboard)/dashboard/roi-imovel/page.tsx",
     "src/app/(dashboard)/dashboard/viabilidade/page.tsx",
   ],
+  "avisos do painel": ["src/components/legal-notice.tsx"],
   "contratos do painel": ["src/app/(dashboard)/dashboard/contratos/contratos-client.tsx"],
 };
 

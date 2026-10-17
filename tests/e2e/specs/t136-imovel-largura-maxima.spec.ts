@@ -11,7 +11,9 @@ for (const largura of [1920, 2560]) {
     const caixa = (await page.getByTestId("imovel-largura-total").boundingBox())!;
     expect(caixa.width).toBeLessThanOrEqual(1536);
     expect(Math.abs(caixa.x - (largura - (caixa.x + caixa.width)))).toBeLessThanOrEqual(2);
-    const galeria = page.locator("main img").first();
+    // A 1ª <img> de main pode ser oculta/lazy (boundingBox nulo): usa a 1ª foto visível da caixa.
+    const galeria = page.getByTestId("imovel-largura-total").locator("img:visible").first();
+    await expect(galeria).toBeVisible();
     const foto = (await galeria.boundingBox())!;
     expect(foto.x).toBeGreaterThanOrEqual(caixa.x - 1);
     expect(foto.x + foto.width).toBeLessThanOrEqual(caixa.x + caixa.width + 1);
