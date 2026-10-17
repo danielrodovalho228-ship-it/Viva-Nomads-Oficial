@@ -18,6 +18,7 @@ import { autorizacaoOk, exigeAutorizacao } from "@/lib/anuncio/operacao";
 import { erroConflitoInteresse } from "@/lib/moderacao/conflito-interesse";
 import { motivoBloqueioAprovacao } from "@/lib/documento-pessoa";
 import { situacaoCnpj, titularPorOcr } from "@/lib/integrations/conferencia-doc";
+import { mascararCpfParcial, REVISAO_PRAZO_HORAS } from "@/lib/documento/conferencia";
 
 type ActionResult = { ok: boolean; demo?: boolean; error?: string };
 
@@ -46,6 +47,48 @@ export interface DocumentoPendente {
   titularInformado: string | null;
   /** Motivo pelo qual Aprovar fica desabilitado (dono sem CPF/CNPJ válido); null = liberado. */
   bloqueioAprovacao: string | null;
+  /** Conferência automática (prompt 11): o motivo da IA e o checklist pré-marcado. null = enviado antes dela. */
+  conferenciaIa: ConferenciaResumo | null;
+  /** Prazo de 48 h da revisão (null = sem prazo). */
+  revisaoAte: string | null;
+}
+
+export interface ConferenciaResumo {
+  estado: string;
+  motivos: string[];
+  checklist: Record<string, boolean>;
+  /** O que a IA leu, sem o CPF inteiro (só o trecho do meio, mascarado). */
+  leitura: { tipo: string | null; titular: string | null; endereco: string | null; data: string | null; cpf: string | null; sinais: string[] } | null;
+  conferidor: string | null;
+  modelo: string | null;
+}
+
+/** Resumo seguro da trilha `conferencia` (jsonb) para a tela do admin. */
+function resumoConferencia(c: unknown): ConferenciaResumo | null {
+  if (!c || typeof c !== "object") return null;
+  const o = c as Record<string, unknown>;
+  const l = (o.leitura && typeof o.leitura === "object" ? o.leitura : null) as Record<string, unknown> | null;
+  const end = (l?.endereco && typeof l.endereco === "object" ? l.endereco : {}) as Record<string, unknown>;
+  const txt = (v: unknown) => (typeof v === "string" && v ? v : null);
+  return {
+    estado: txt(o.estado) ?? "revisao",
+    motivos: Array.isArray(o.motivos)
+      ? o.motivos.map((m) => (m && typeof m === "object" ? txt((m as Record<string, unknown>).texto) : txt(m))).filter((m): m is string => !!m)
+      : [],
+    checklist: (o.checklist && typeof o.checklist === "object" ? o.checklist : {}) as Record<string, boolean>,
+    leitura: l
+      ? {
+          tipo: txt(l.tipo),
+          titular: txt(l.titular),
+          endereco: [end.rua, end.numero, end.bairro, end.cidade, end.cep].filter((x) => typeof x === "string" && x).join(", ") || null,
+          data: txt(l.dataDocumento),
+          cpf: txt(l.cpfCnpjParcial) ? mascararCpfParcial(l.cpfCnpjParcial as string) : null,
+          sinais: Array.isArray(l.sinaisDeEdicao) ? (l.sinaisDeEdicao as unknown[]).filter((x): x is string => typeof x === "string") : [],
+        }
+      : null,
+    conferidor: txt(o.conferidor),
+    modelo: txt(o.modelo),
+  };
 }
 
 /**
@@ -60,7 +103,7 @@ export async function listDocumentosPendentes(): Promise<DocumentoPendente[]> {
   if (!supabase) return [];
   const { data } = await supabase
     .from("qualification_checklists")
-    .select("id, owner_id, property_id, document_path, document_hash_sha256, created_at, formulario")
+    .select("*")
     .eq("document_status", "pending")
     .order("created_at", { ascending: true })
     .limit(200);
@@ -173,6 +216,8 @@ export async function listDocumentosPendentes(): Promise<DocumentoPendente[]> {
       autorizacaoTipo: tipoVisualizacaoDoc(autorizacaoPath),
       titularInformado: titular,
       bloqueioAprovacao,
+      conferenciaIa: resumoConferencia((r as Record<string, unknown>).conferencia),
+      revisaoAte: ((r as Record<string, unknown>).revisao_ate as string | null) ?? null,
     });
   }
   return out;
@@ -282,5 +327,122 @@ export async function moderarDocumento(
   } catch {
     /* best-effort */
   }
+  return { ok: true };
+}
+
+export interface ConferidoAutomatico {
+  id: string;
+  ownerNome: string;
+  tituloImovel: string | null;
+  criadoEm: string | null;
+  docUrl: string | null;
+  docTipo: VisualizacaoDoc;
+  conferencia: ConferenciaResumo | null;
+}
+
+/**
+ * Aba "Conferidos automaticamente" (prompt 11): os últimos documentos aprovados pela conferência automática, para
+ * a equipe conferir por amostragem e reabrir qualquer um. Só admin.
+ */
+export async function listConferidosAutomaticamente(limite = 30): Promise<ConferidoAutomatico[]> {
+  const supabase = await createClient();
+  if (!supabase) return [];
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user || !(await ehAdmin(supabase, user.id))) return [];
+  const { data } = await supabase
+    .from("qualification_checklists")
+    .select("id, owner_id, property_id, document_path, created_at, conferencia")
+    .eq("document_status", "approved")
+    .eq("conferido_por", "automatico")
+    .order("created_at", { ascending: false })
+    .limit(Math.min(100, Math.max(1, limite)));
+  const out: ConferidoAutomatico[] = [];
+  for (const r of data ?? []) {
+    const [{ data: perfil }, prop, signed] = await Promise.all([
+      supabase.from("profiles").select("full_name").eq("id", r.owner_id as string).maybeSingle(),
+      r.property_id
+        ? supabase.from("properties").select("title").eq("id", r.property_id as string).maybeSingle()
+        : Promise.resolve({ data: null }),
+      r.document_path ? supabase.storage.from(DOCS_BUCKET).createSignedUrl(r.document_path as string, SIGNED_TTL) : Promise.resolve({ data: null }),
+    ]);
+    out.push({
+      id: r.id as string,
+      ownerNome: primeiroNome(perfil?.full_name as string | undefined) || "Proprietário",
+      tituloImovel: ((prop as { data: { title?: string } | null }).data?.title as string | undefined) ?? null,
+      criadoEm: (r.created_at as string) ?? null,
+      docUrl: (signed as { data: { signedUrl?: string } | null }).data?.signedUrl ?? null,
+      docTipo: tipoVisualizacaoDoc(r.document_path as string | null),
+      conferencia: resumoConferencia(r.conferencia),
+    });
+  }
+  return out;
+}
+
+/** Contadores da conferência automática nos últimos 7 dias: aprovados, corrija e em revisão. Só admin. */
+export async function contadoresConferencia(): Promise<{ automaticos: number; corrija: number; revisao: number }> {
+  const zero = { automaticos: 0, corrija: 0, revisao: 0 };
+  const supabase = await createClient();
+  if (!supabase) return zero;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user || !(await ehAdmin(supabase, user.id))) return zero;
+  const desde = new Date(Date.now() - 7 * 86_400_000).toISOString();
+  const { data } = await supabase
+    .from("qualification_checklists")
+    .select("conferencia")
+    .not("conferencia", "is", null)
+    .gte("created_at", desde)
+    .limit(2000);
+  const out = { ...zero };
+  for (const r of data ?? []) {
+    const e = (r.conferencia as { estado?: string } | null)?.estado;
+    if (e === "aprovado") out.automaticos++;
+    else if (e === "corrija") out.corrija++;
+    else if (e === "revisao") out.revisao++;
+  }
+  return out;
+}
+
+/**
+ * Reabre um documento aprovado automaticamente: volta para a fila ("em revisão", prazo de 48 h) e some o selo até
+ * a equipe decidir. Só admin, nunca no próprio documento (o banco reforça — 0056/0072).
+ */
+export async function reabrirConferencia(qualId: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  if (!supabase) return { ok: true, demo: true };
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Não autenticado." };
+  if (!(await ehAdmin(supabase, user.id))) return { ok: false, error: "Sem permissão." };
+  const { data: alvo } = await supabase
+    .from("qualification_checklists")
+    .select("owner_id, property_id")
+    .eq("id", qualId)
+    .eq("conferido_por", "automatico")
+    .maybeSingle();
+  if (!alvo) return { ok: false, error: "Documento não encontrado." };
+  const conflito = erroConflitoInteresse(alvo.owner_id as string, user.id);
+  if (conflito) return { ok: false, error: conflito };
+  const { data, error } = await supabase
+    .from("qualification_checklists")
+    .update({
+      document_status: "pending",
+      document_review_reason: "Reaberto pela equipe para conferência.",
+      document_reviewed_at: null,
+      document_reviewed_by: null,
+      conferido_por: null,
+      revisao_ate: new Date(Date.now() + REVISAO_PRAZO_HORAS * 3_600_000).toISOString(),
+    })
+    .eq("id", qualId)
+    .neq("owner_id", user.id)
+    .select("id");
+  if (error) return { ok: false, error: erroBancoPT(error) };
+  if (!data?.length) return { ok: false, error: "Documento não encontrado." };
+  revalidarAnuncio(alvo.property_id as string | null, revalidatePath);
+  await logModeracao(supabase, user.id, "reabrir_documento", "qualificacao", qualId, null);
   return { ok: true };
 }

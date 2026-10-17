@@ -125,6 +125,10 @@ export interface Property {
   petsRegras?: import("@/lib/anuncio/pets-regras").RegrasPets;
   /** Pacote de limpeza durante a estadia (ordem 4c74ac38; requer migração 0144). */
   limpezaEstadia?: import("@/lib/anuncio/limpeza-estadia").LimpezaEstadia;
+  /** Negociação pública (aceita? itens; desconto por estadia longa) — prompt 17 §8, requer 0152. */
+  negociacao?: import("@/lib/anuncio/negociacao").Negociacao;
+  /** Velocidade da internet informada pelo dono (Mbps), opcional — requer 0152. */
+  internetMbps?: number;
   smokingAllowed?: boolean;
   childrenAllowed?: boolean;
   maxGuests?: number;

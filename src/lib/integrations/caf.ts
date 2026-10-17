@@ -79,3 +79,21 @@ export async function verifyTenant(req: CafRequest): Promise<CafResult> {
     notes: data.risk?.reasons ?? ["Análise concluída."],
   };
 }
+
+/*
+  Certta (ex-CAF) — Verif AI Smart OCR para COMPROVANTE DE RESIDÊNCIA (prompt 11, camada preparada).
+  DESLIGADO até o contrato: só liga com CERTTA_SMART_OCR=on + CAF_API_TOKEN. Tem a mesma interface do conferidor
+  da IA (src/lib/documento/conferidor.ts), para trocar por configuração. Enquanto o endpoint e o formato da resposta
+  não forem confirmados no contrato, devolve null (o caso vai para a revisão humana).
+*/
+export function certtaOcrAtivo(): boolean {
+  return process.env.CERTTA_SMART_OCR === "on" && !!process.env.CAF_API_TOKEN && !integracoesSimuladas();
+}
+
+export async function lerComprovanteCertta(
+  _bytes: Uint8Array,
+  _mime: string,
+): Promise<import("@/lib/documento/conferencia").LeituraDocumento | null> {
+  // TODO(certta): chamar o Smart OCR (conferência do código de barras incluída) quando o contrato sair.
+  return null;
+}
