@@ -256,6 +256,11 @@ function ContratoCard({
                 : "Cancelado"}
         </span>
       </div>
+      {contrato.status === "ativo" && contrato.etapa === "aguardando_assinatura" && contrato.assinaturaStatus && (
+        <p className="mt-1 text-xs font-medium text-amber-800" data-testid="contrato-assinatura-status">
+          {contrato.assinaturaStatus}
+        </p>
+      )}
 
       {!demo && (
         <Link

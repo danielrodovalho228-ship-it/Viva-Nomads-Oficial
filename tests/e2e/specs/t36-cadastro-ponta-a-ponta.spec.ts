@@ -30,8 +30,8 @@ import {
  *  6. Dono aceita: nome curto aparece (prompt 6: antes do aceite, "Candidato(a)"), comissão do Essencial (8%) congelada
  *     no aceite — continua 8% depois de o dono subir para o Profissional.
  *  7. Inquilina envia os documentos (identidade e vínculo) depois do aceite.
- *  8. Fechamento: documentos completos, sem aviso pendente; contrato (ZapSign
- *     simulado) gerado uma vez só — a segunda tentativa é recusada.
+ *  8. Fechamento: documentos completos, sem aviso pendente; contrato com contas reais e sem assinatura digital
+ *     ligada: 503 "inativa" antes de reservar, e repetir não prende nada (prompt 24).
  * Limite desta versão: o contrato é gerado pela rota /api/contrato (a mesma que
  * a tela chama); o passo a passo visual do Fechamento tem seus próprios testes.
  */
@@ -176,14 +176,16 @@ test.describe("T36 — Cadastro completo, do CPF ao fechamento", () => {
     await expect(donoPage.getByTestId("documento-pendente")).toHaveCount(0);
     await donoPage.screenshot({ path: "tests/laboratorio/saida/t36-6-fechamento.png", fullPage: true });
 
-    // Contrato (ZapSign simulado): sai uma vez; a segunda tentativa é recusada.
+    // Contrato com contas REAIS e sem assinatura digital ligada (laboratório): prompt 24 — 503 "inativa" ANTES de
+    // reservar, e repetir dá a mesma resposta (nada fica preso; o botão continua disponível para depois).
     const corpo = { leadId: ids.lead, termMonths: 2, guarantee: "Caução", costSplit: {} };
     const primeira = await donoPage.request.post("/api/contrato", { data: corpo });
-    expect(primeira.status()).toBe(200);
+    expect(primeira.status()).toBe(503);
+    expect((await primeira.json()).modo).toBe("inativa");
     const segunda = await donoPage.request.post("/api/contrato", { data: corpo });
-    expect(segunda.status()).toBe(409);
+    expect(segunda.status()).toBe(503);
     const { data: reservas } = await adm().from("cobrancas_fechamento").select("tipo").eq("lead_id", ids.lead!);
-    expect((reservas ?? []).filter((r) => r.tipo === "contrato")).toHaveLength(1);
+    expect((reservas ?? []).filter((r) => r.tipo === "contrato")).toHaveLength(0);
     await donoPage.context().close();
   });
 });

@@ -1,5 +1,6 @@
 "use server";
 
+import { statusAssinaturaCurto } from "@/lib/fechamento-contrato";
 import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -63,6 +64,8 @@ export interface ContratoView {
   status: string;
   /** F33: etapa real (assinatura → 1º pagamento → vigência); só vale com status "ativo". */
   etapa: EtapaContrato;
+  /** Prompt 24: "Aguardando assinatura · falta você / falta o inquilino" (visão do proprietário). */
+  assinaturaStatus?: string;
   criadoEm: string;
   blocos: BlocoView[];
   pagamentos: PagamentoView[];
@@ -214,6 +217,10 @@ export async function getMeusContratos(): Promise<ContratoView[]> {
         assinadoProprietarioEm: c.assinado_proprietario_em as string | null,
         assinadoInquilinoEm: c.assinado_inquilino_em as string | null,
         primeiroPagamentoConfirmado: primeiroPagamentoConfirmado(pagamentos),
+      }),
+      assinaturaStatus: statusAssinaturaCurto("proprietario", {
+        proprietario: (c.assinado_proprietario_em as string | null) ?? null,
+        inquilino: (c.assinado_inquilino_em as string | null) ?? null,
       }),
       criadoEm: String(c.created_at),
       blocos,

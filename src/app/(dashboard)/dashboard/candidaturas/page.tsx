@@ -76,6 +76,16 @@ export default async function CandidaturasPage() {
                   )}
                 </div>
               </div>
+              {c.contrato && (
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-sage-100 px-3 py-2 text-sm text-forest" data-testid="candidatura-contrato">
+                  <span className="min-w-0">
+                    Contrato: <strong data-testid="candidatura-contrato-status">{c.contrato.status}</strong>
+                  </span>
+                  <Link href={`/dashboard/locacoes/${c.contrato.id}`} className="font-medium underline" data-testid="candidatura-contrato-abrir">
+                    Ver contrato
+                  </Link>
+                </div>
+              )}
               {c.situacao.chave === "aceita" && (
                 <div className="mt-4 border-t border-sage-200 pt-4">
                   <DocumentosInquilino leadId={c.id} modo="inquilino" />

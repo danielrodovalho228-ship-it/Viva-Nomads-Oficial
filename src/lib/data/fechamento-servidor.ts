@@ -7,6 +7,7 @@ import { motivoBloqueioContrato } from "@/lib/contrato-trava";
 import { lerDocumento } from "@/lib/data/documento-servidor";
 import { docsInquilinoCompletos } from "@/lib/data/documentos-inquilino-servidor";
 import { propostaAcordadaDoLead } from "@/lib/data/propostas-servidor";
+import { RESERVA_EXPIRA_MS, type ReservaLida } from "@/lib/fechamento-contrato";
 
 /**
  * A5: os dados de uma cobrança/contrato de fechamento vêm SÓ do banco, a partir
@@ -95,13 +96,34 @@ export async function carregarFechamento(leadId: unknown): Promise<DadosFechamen
   };
 }
 
+/** Reserva atual da cobrança/contrato desta candidatura (null = nenhuma). */
+export async function lerReservaFechamento(leadId: string, tipo: "comissao" | "contrato"): Promise<ReservaLida | null> {
+  const admin = createAdminClient();
+  if (!admin) return null;
+  const { data } = await admin
+    .from("cobrancas_fechamento")
+    .select("externo_id, criado_em")
+    .eq("lead_id", leadId)
+    .eq("tipo", tipo)
+    .maybeSingle();
+  return data ? { externoId: (data.externo_id as string | null) ?? null, criadoEm: String(data.criado_em) } : null;
+}
+
 /**
  * Reserva o direito de criar a cobrança/contrato desta candidatura (uma vez).
- * true = pode criar; false = já existe (idempotente).
+ * true = pode criar; false = já existe (idempotente). Prompt 24: reserva SEM conclusão (a resposta nunca chegou)
+ * vence em RESERVA_EXPIRA_MS e é liberada aqui — nenhum caminho deixa a candidatura presa.
  */
 export async function reservarFechamento(leadId: string, tipo: "comissao" | "contrato"): Promise<boolean> {
   const admin = createAdminClient();
   if (!admin) return false;
+  await admin
+    .from("cobrancas_fechamento")
+    .delete()
+    .eq("lead_id", leadId)
+    .eq("tipo", tipo)
+    .is("externo_id", null)
+    .lt("criado_em", new Date(Date.now() - RESERVA_EXPIRA_MS).toISOString());
   const { error } = await admin.from("cobrancas_fechamento").insert({ lead_id: leadId, tipo });
   return !error;
 }

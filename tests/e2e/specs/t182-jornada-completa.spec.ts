@@ -12,9 +12,9 @@ import { hojeBR } from "../../../src/lib/utils";
    2. Dono vê "Candidato(a)" em Interessados (sem nome), clica "Aprovar e responder" (tela): aparece o nome curto.
    3. Mensagens: o dono abre a conversa que a candidatura criou e responde; a inquilina lê (tela).
    4. Fechamento pela tela: verificação (portão suave), garantia, "Li e entendi", serviços, patrimonial e
-      "Gerar contrato para assinatura". No laboratório não há assinatura digital ativa: a tela diz a verdade
-      (MSG_ASSINATURA_INATIVA) e NÃO registra contrato nem chama a cobrança da taxa (closing-flow.tsx,
-      generateContract). Daí em diante o contrato é gravado pelo banco, como no t89, e as duas assinaturas +
+      "Gerar contrato para assinatura". No laboratório não há assinatura digital ativa e as contas são reais: a
+      rota responde 503 ANTES de reservar (prompt 24) e a tela diz a verdade (MSG_ASSINATURA_INATIVA), sem registrar
+      contrato nem chamar a cobrança da taxa (closing-flow.tsx, generateContract). Daí em diante o contrato é gravado pelo banco, como no t89, e as duas assinaturas +
       o 1º aluguel confirmado vêm do fixture tornarContratoVigente (o que o laboratório já faz; nada é cobrado).
    5. Fim da estadia: o bloco 1 passa a ter terminado ontem e o PRÓPRIO app encerra o contrato quando o dono
       abre Contratos (rpc avancar_ciclo_blocos → "encerrado_sem_renovacao" + encerrado_em), que é um dos
@@ -23,7 +23,7 @@ import { hojeBR } from "../../../src/lib/utils";
       avalia e as duas publicam. Cada lado vê a do outro em "Avaliações recebidas"; a página pública do
       proprietário e o anúncio mostram o comentário real.
    7. Sem cobrança: o navegador do dono não chamou /api/comissao nem um provedor de pagamento, não há reserva
-      de "comissao" para esta candidatura e o contrato saiu simulado (LAB_OUTBOX: "zapsign", nunca na rede).
+      de "comissao" para esta candidatura e nada foi ao ZapSign.
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -220,11 +220,13 @@ test.describe("T182 — jornada completa, do anúncio à avaliação dos dois la
 
     // A tela não registrou contrato nem pediu a cobrança da taxa.
     expect((await adm().from("contratos").select("id").eq("lead_id", ids.lead!)).data ?? []).toHaveLength(0);
-    const reservas = ((await adm().from("cobrancas_fechamento").select("tipo, externo_id").eq("lead_id", ids.lead!)).data ?? []) as { tipo: string; externo_id: string | null }[];
-    expect(reservas.map((r) => r.tipo)).toEqual(["contrato"]);
-    expect(reservas[0].externo_id ?? "", "contrato simulado, nunca o ZapSign de verdade").toMatch(/^demo_|teste/);
+    // Prompt 24: conta real sem assinatura digital recebe 503 ANTES de reservar — nenhuma reserva fica presa
+    // (o botão continua disponível para quando a assinatura ligar) e nada vai ao ZapSign.
+    const reservas = ((await adm().from("cobrancas_fechamento").select("tipo").eq("lead_id", ids.lead!)).data ?? []) as { tipo: string }[];
+    expect(reservas, "nenhuma reserva de contrato ou taxa fica marcada").toEqual([]);
+    await expect(page.getByRole("button", { name: /Gerar contrato para assinatura/ })).toBeEnabled();
     const novas = (await lerSaida()).slice(saidaAntes);
-    if (process.env.LAB_OUTBOX) expect(novas.some((l) => l.servico === "zapsign"), "o contrato 'teria sido enviado' (LAB_OUTBOX)").toBe(true);
+    expect(novas.some((l) => l.servico === "zapsign"), "nada foi enviado ao ZapSign").toBe(false);
     expect(cobrancas, "o navegador não chamou cobrança nem provedor de pagamento").toEqual([]);
     await page.context().close();
   });
