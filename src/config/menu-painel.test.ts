@@ -37,7 +37,7 @@ test("Administração separada, só para admin, com itens dentro de itens", () =
   const adm = menuDoPainel({ ...base, admin: true }).find((i) => i.id === "admin")!;
   assert.ok(adm.filhos!.some((f) => f.filhos && f.filhos.length > 1), "subgrupos (cascata de 3 níveis)");
   const hrefs = folhas([adm]).map((i) => i.href);
-  for (const h of ["/admin", "/admin/pedidos", "/admin/documentos", "/admin/socios", "/admin/parceiros", "/admin/fotografos", "/admin/atendimento", "/admin/financeiro", "/admin/marketing", "/admin/agentes"])
+  for (const h of ["/admin", "/admin/pedidos", "/admin/ajuda-publicacao", "/admin/documentos", "/admin/socios", "/admin/parceiros", "/admin/fotografos", "/admin/atendimento", "/admin/financeiro", "/admin/marketing", "/admin/agentes"])
     assert.ok(hrefs.includes(h), h);
 });
 

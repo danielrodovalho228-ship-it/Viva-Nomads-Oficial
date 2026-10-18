@@ -72,6 +72,14 @@
         "t183-telas-logadas-390"
       ]
     },
+    "/admin/ajuda-publicacao": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t191-ajuda-publicacao"
+      ]
+    },
     "/admin/atendimento": {
       "personas": [
         "admin"
@@ -1698,6 +1706,38 @@
         "admin"
       ],
       "specs": []
+    },
+    "src/lib/data/ajuda-publicacao-actions.ts#filaAjudaPublicacaoAdmin": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t191-ajuda-publicacao"
+      ]
+    },
+    "src/lib/data/ajuda-publicacao-actions.ts#meusPedidosDeAjuda": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t191-ajuda-publicacao"
+      ]
+    },
+    "src/lib/data/ajuda-publicacao-actions.ts#mudarStatusAjudaPublicacao": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t191-ajuda-publicacao"
+      ]
+    },
+    "src/lib/data/ajuda-publicacao-actions.ts#pedirAjudaParaPublicar": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t191-ajuda-publicacao"
+      ]
     },
     "src/lib/data/atendimento-actions.ts#abrirChamado": {
       "personas": [

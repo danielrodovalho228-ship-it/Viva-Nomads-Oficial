@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bot, Camera, Video, FileSignature, Handshake, Inbox, LifeBuoy, Mail, Megaphone, Star, TrendingUp, Wallet } from "lucide-react";
+import { Bot, Camera, HandHelping, Video, FileSignature, Handshake, Inbox, LifeBuoy, Mail, Megaphone, Star, TrendingUp, Wallet } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Panel, StatCard } from "@/components/dashboard/primitives";
 
@@ -10,6 +10,7 @@ import { Panel, StatCard } from "@/components/dashboard/primitives";
 /** Áreas do menu do admin sem número ao vivo aqui: cartões tocáveis (44 px+) para o celular/app. */
 const OUTRAS_AREAS = [
   { href: "/admin/pedidos", label: "Moderar pedidos", icon: Megaphone },
+  { href: "/admin/ajuda-publicacao", label: "Publicamos para você", icon: HandHelping },
   { href: "/admin/documentos", label: "Documentos", icon: FileSignature },
   { href: "/admin/atendimento", label: "Atendimento", icon: LifeBuoy },
   { href: "/admin/emails-teste", label: "E-mails de teste", icon: Mail },

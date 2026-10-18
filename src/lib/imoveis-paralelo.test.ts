@@ -9,6 +9,6 @@ import { test } from "node:test";
 const pagina = readFileSync(new URL("../app/(dashboard)/dashboard/imoveis/page.tsx", import.meta.url), "utf8");
 
 test("meus imóveis: lista e cliente em Promise.all, sem await em sequência", () => {
-  assert.match(pagina, /await Promise\.all\(\[listMyProperties\(\), createClient\(\)\]\)/);
+  assert.match(pagina, /await Promise\.all\(\[listMyProperties\(\), createClient\(\), meusPedidosDeAjuda\(\)\]\)/);
   assert.doesNotMatch(pagina, /const properties = await listMyProperties\(\)/);
 });
