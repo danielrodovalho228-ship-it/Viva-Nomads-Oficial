@@ -146,6 +146,13 @@ export function DocumentoVinculo({
           <p className="flex items-center gap-2 font-semibold">
             <Clock className="h-4 w-4 shrink-0" /> Em revisão
           </p>
+          {motivos.length > 0 && (
+            <ul className="mt-1 list-disc space-y-0.5 pl-6 text-xs" data-testid="documento-motivos">
+              {motivos.map((m) => (
+                <li key={m}>{m}</li>
+              ))}
+            </ul>
+          )}
           <p className="mt-0.5 text-xs">
             Nossa equipe confere em até 48 horas e avisa por e-mail. Você pode seguir o cadastro; a publicação libera depois
             da conferência.

@@ -7,6 +7,7 @@ import { AjudaPublicar } from "@/components/property/ajuda-publicar";
 import type { AnuncioOrganizado } from "@/lib/anuncio/importar-anuncio";
 import { DocumentoUploader } from "@/components/documento-uploader";
 import { DocumentoVinculo, type EstadoDocumentoTela } from "@/components/anuncio/documento-vinculo";
+import { EtapaIdentidade } from "@/components/anuncio/etapa-identidade";
 import type { PhotoItem } from "@/components/photo-uploader";
 import { DOC_AUTORIZACAO, exigeAutorizacao, OPERACOES, type Operacao } from "@/lib/anuncio/operacao";
 import { PROPERTY_TYPES } from "@/lib/amenities";
@@ -291,6 +292,9 @@ export function EtapaOndeFica(p: {
           <Erro msg={p.erros.sublocacao} />
         </div>
       )}
+
+      {/* Ordem (decisão do Daniel, 18/10): endereço → identidade (CAF) → matrícula. Com laudo válido a etapa já vem feita. */}
+      <EtapaIdentidade />
 
       <DocumentoVinculo
         imovelId={p.imovelId}

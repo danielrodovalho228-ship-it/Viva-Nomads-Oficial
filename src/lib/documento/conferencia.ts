@@ -73,7 +73,7 @@ export interface CadastroComparado {
 export type EstadoConferencia = "aprovado" | "corrija" | "revisao";
 
 export interface MotivoConferencia {
-  codigo: MotivoRecusa | "sinal_edicao" | "baixa_confianca" | "falha_leitura";
+  codigo: MotivoRecusa | "sinal_edicao" | "baixa_confianca" | "falha_leitura" | "sem_matricula";
   texto: string;
 }
 

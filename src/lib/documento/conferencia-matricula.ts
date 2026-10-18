@@ -12,7 +12,7 @@
   O ônus nunca aparece para o dono ("Precisamos olhar um detalhe da matrícula"). CPF de outros proprietários: só os
   3 últimos dígitos e o resultado da comparação (o número inteiro nunca é gravado). Não consultamos cartório/ONR.
 */
-import { enderecoConfere, normalizarRua, soDigitos, type EnderecoLido } from "./conferencia.ts";
+import { enderecoConfere, normalizarRua, soDigitos, type EnderecoLido, type ResultadoConferencia, type TipoDocumento } from "./conferencia.ts";
 import { normalizarNome } from "../moderacao/pre-conferencia.ts";
 
 export const TIPOS_ONUS = ["hipoteca", "alienacao_fiduciaria", "penhora", "usufruto", "indisponibilidade", "outro"] as const;
@@ -236,6 +236,21 @@ export function statusDaMatricula(r: ResultadoMatricula): "approved" | "pending"
 /** Estado da tela do documento (prompt 11) para cada resultado. */
 export function estadoTelaDaMatricula(r: ResultadoMatricula): "aprovado" | "revisao" | "corrija" {
   return r === "conferido" || r === "provavel" ? "aprovado" : r === "recusado" ? "corrija" : "revisao";
+}
+
+/* ── Sem matrícula (decisão do Daniel, 18/10) ─────────────────────────────── */
+
+export const MSG_SEM_MATRICULA =
+  "Documento recebido. Sem a matrícula, a equipe confere o IPTU e o contrato de compra e venda em até 48 horas. Com a matrícula, a conferência sai na hora.";
+
+/**
+ * A matrícula é o caminho para publicar na hora. Sem ela (IPTU, contrato de compra e venda, conta de consumo,
+ * contrato de administração), o documento é aceito mas NUNCA aprovado automaticamente: o que passaria vira
+ * "em revisão" (48 h). O que tem erro claro continua "Corrija" e o que já ia para revisão continua lá.
+ */
+export function semMatriculaVaiParaRevisao(r: ResultadoConferencia, tipo: TipoDocumento | null): ResultadoConferencia {
+  if (r.estado !== "aprovado" || tipo === "matricula") return r;
+  return { ...r, estado: "revisao", motivos: [{ codigo: "sem_matricula", texto: MSG_SEM_MATRICULA }] };
 }
 
 /* ── Preenchimento do anúncio ─────────────────────────────────────────────── */

@@ -227,3 +227,33 @@ test("laboratório: marcador no arquivo e leituras simuladas por caso", () => {
   assert.deepEqual(decidirMatricula(leituraMatriculaSimulada("antiga", e), entrada()).avisos.map((a) => a.codigo), ["matricula_antiga"]);
   assert.deepEqual(decidirMatricula(leituraMatriculaSimulada("outro_endereco", e), entrada()).avisos.map((a) => a.codigo), ["endereco_diferente"]);
 });
+
+test("decisão 1 — sem matrícula: IPTU + contrato de compra é aceito, mas fica 'em revisão' (nunca aprovado na hora)", async () => {
+  const { semMatriculaVaiParaRevisao, MSG_SEM_MATRICULA } = await import("./conferencia-matricula.ts");
+  const { decidirConferencia } = await import("./conferencia.ts");
+  const cadastro = { nomeConta: "José da Silva", endereco: ENDERECO, operacao: "own", duplicado: 0, hoje: HOJE };
+  const iptu = {
+    tipo: "iptu" as const,
+    titular: "José da Silva",
+    cpfCnpjParcial: "982247",
+    endereco: ENDERECO,
+    dataDocumento: "2026",
+    legivel: true,
+    completo: true,
+    sinaisDeEdicao: [],
+    proprietariosListados: [],
+    baixaConfianca: false,
+  };
+  // O IPTU certinho passaria na conferência do prompt 11…
+  assert.equal(decidirConferencia(iptu, cadastro).estado, "aprovado");
+  // …mas, sem matrícula, vai para a equipe (48 h), com o motivo explicado.
+  const r = semMatriculaVaiParaRevisao(decidirConferencia(iptu, cadastro), iptu.tipo);
+  assert.equal(r.estado, "revisao");
+  assert.deepEqual(r.motivos, [{ codigo: "sem_matricula", texto: MSG_SEM_MATRICULA }]);
+  // Conta de consumo e contrato de administração: mesma regra. Erro claro continua "Corrija".
+  assert.equal(semMatriculaVaiParaRevisao(decidirConferencia({ ...iptu, tipo: "conta_consumo", dataDocumento: HOJE }, cadastro), "conta_consumo").estado, "revisao");
+  assert.equal(semMatriculaVaiParaRevisao(decidirConferencia({ ...iptu, legivel: false }, cadastro), "iptu").estado, "corrija");
+  // A matrícula aprovada não muda.
+  const aprovado = { estado: "aprovado" as const, checklist: { titular: true, imovel: true, legivel: true, validade: true }, motivos: [] };
+  assert.equal(semMatriculaVaiParaRevisao(aprovado, "matricula").estado, "aprovado");
+});
