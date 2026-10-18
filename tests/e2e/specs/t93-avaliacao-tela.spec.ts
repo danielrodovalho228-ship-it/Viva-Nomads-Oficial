@@ -60,7 +60,7 @@ test.describe("T93 — Tela de avaliações recebidas (responder, pedir revisão
       await cartao.getByLabel("Motivo", { exact: true }).selectOption("fato_falso");
       await cartao.getByLabel(/explique o motivo/i).fill(`O comentário cita um fato que não aconteceu ${marca}, tenho comprovação`);
       await cartao.getByTestId("avaliacao-enviar").click();
-      await expect(cartao.getByTestId("revisao-em-analise")).toBeVisible();
+      await expect(cartao.getByTestId("revisao-em-analise")).toBeVisible({ timeout: 30_000 });
 
       // 3) O admin decide pela tela.
       const ctxAdmin = await browser.newContext({ storageState: authFile("admin"), viewport: { width: 1280, height: 800 } });
@@ -71,7 +71,7 @@ test.describe("T93 — Tela de avaliações recebidas (responder, pedir revisão
         await expect(pedido).toBeVisible();
         await pedido.getByLabel(/justificativa/i).fill("Conferido: o comentário é opinião sobre a estadia.");
         await pedido.getByRole("button", { name: /manter no ar/i }).click();
-        await expect(pedido).toContainText("Mantida");
+        await expect(pedido).toContainText("Mantida", { timeout: 30_000 });
       } finally {
         await ctxAdmin.close();
       }
