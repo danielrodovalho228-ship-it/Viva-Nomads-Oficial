@@ -48,8 +48,10 @@ test("assinar: caso positivo e os negativos (não é parte, não ativo, já assi
 
 test("aviso: cada parte vê 'você já assinou / falta o outro'", () => {
   const t = "2026-10-13";
-  assert.equal(avisoAssinatura("inquilino", { proprietario: null, inquilino: t }), "Você já assinou — falta o outro assinar.");
-  assert.equal(avisoAssinatura("proprietario", { proprietario: null, inquilino: t }), "O outro já assinou — falta você assinar.");
+  assert.equal(avisoAssinatura("inquilino", { proprietario: null, inquilino: t }), "Você já assinou — falta o proprietário assinar.");
+  assert.equal(avisoAssinatura("proprietario", { proprietario: null, inquilino: t }), "O inquilino já assinou — falta você assinar.");
+  assert.equal(avisoAssinatura("inquilino", { proprietario: t, inquilino: null }), "O proprietário já assinou — falta você assinar.");
+  assert.equal(avisoAssinatura("proprietario", { proprietario: t, inquilino: null }), "Você já assinou — falta o inquilino assinar.");
   assert.equal(avisoAssinatura("inquilino", { proprietario: t, inquilino: t }), "As duas partes assinaram.");
   assert.equal(avisoAssinatura("inquilino", { proprietario: null, inquilino: null }), "Nenhuma assinatura ainda.");
 });
