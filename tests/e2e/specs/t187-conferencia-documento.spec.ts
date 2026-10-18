@@ -144,16 +144,17 @@ test.describe("T187 — conferência automática do documento", () => {
       await page.screenshot({ path: `${SAIDA}/t187-admin-fila-1280.png`, fullPage: false });
 
       await page.getByRole("tab", { name: /Conferidos automaticamente/ }).click();
-      // Os dois aprovados da Carla (390 e 1280) aparecem; reabre o de 1280.
+      // Os dois aprovados da Carla (390 e 1280) aparecem; reabre um e fica só o outro.
       await expect(page.getByTestId("auto-card").filter({ hasText: "Carla" })).toHaveCount(2);
-      const auto = page.getByTestId("auto-card").filter({ hasText: "Corrija1280" });
+      // A trilha da matrícula não guarda nome (sem dado pessoal): reabre um dos dois da Carla.
+      const auto = page.getByTestId("auto-card").filter({ hasText: "Carla" }).first();
       await expect(auto).toBeVisible();
       await auto.getByText("Ver o que a conferência leu").click();
       await expect(auto.getByTestId("auto-card-json")).toContainText('"estado": "aprovado"');
       await expect(auto.getByTestId("auto-card-json")).not.toContainText(/\d{3}\.\d{3}\.\d{3}-\d{2}/);
       await page.screenshot({ path: `${SAIDA}/t187-admin-automaticos-1280.png`, fullPage: false });
       await auto.getByRole("button", { name: "Reabrir para revisão" }).click();
-      await expect(auto).toHaveCount(0, { timeout: 10_000 });
+      await expect(page.getByTestId("auto-card").filter({ hasText: "Carla" })).toHaveCount(1, { timeout: 10_000 });
     });
   });
 });
