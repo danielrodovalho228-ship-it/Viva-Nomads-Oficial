@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
-import { CHAVE_ANON, NO_LABORATORIO, URL_SUPABASE, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { authFile } from "../fixtures/auth";
+import { CHAVE_ANON, NO_LABORATORIO, URL_SUPABASE, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo, pngDeTeste } from "../fixtures/laboratorio";
 
 /**
  * T191 — ordem 65e999b2 (Próximo do FF 4/6, "Publicamos para você"): rota da fila fechada para quem não é admin
@@ -119,5 +120,93 @@ test.describe("T191 — o dono decide o rascunho (ordem 65e999b2, logado)", () =
     expect(r2.data ?? []).toHaveLength(0);
     expect(await statusDe(recebido)).toBe("recebido");
     await adm().from("pedidos_ajuda_publicacao").delete().in("id", [alheio, recebido]);
+  });
+
+  // ---- Fotos no pedido (ordem 65e999b2, fotos; achado do Moacir no #813) ----
+  const BUCKET = "property-photos";
+  const caminhosParaLimpar: string[] = [];
+  test.afterAll(async () => {
+    if (caminhosParaLimpar.length) await adm().storage.from(BUCKET).remove(caminhosParaLimpar);
+  });
+
+  /** Abre o passo 1 do novo anúncio já hidratado e o formulário "Publicamos para você". */
+  async function abrirPedido(page: import("@playwright/test").Page) {
+    await page.goto("/dashboard/imoveis/novo", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+    await page.getByTestId("ajuda-publicar-abrir").click();
+    await expect(page.getByTestId("ajuda-publicar")).toBeVisible({ timeout: 20_000 });
+  }
+
+  for (const largura of [390, 1280]) {
+    test(`${largura} px — dono anexa 1 foto e envia só com foto: o pedido grava 1 caminho dele`, async ({ browser }) => {
+      const page = await entrar(browser, dono.email, senha);
+      try {
+        await page.setViewportSize({ width: largura, height: 900 });
+        await abrirPedido(page);
+        await page.getByTestId("ajuda-publicar-foto-input").setInputFiles({ name: "sala.png", mimeType: "image/png", buffer: pngDeTeste(largura) });
+        await expect(page.getByTestId("ajuda-publicar-fotos").locator("li")).toHaveCount(1, { timeout: 20_000 });
+        // Sem link e sem texto: só a foto basta.
+        await page.getByTestId("ajuda-publicar-enviar").click();
+        await expect(page.getByTestId("ajuda-publicar-enviado")).toBeVisible({ timeout: 20_000 });
+        const { data } = await adm().from("pedidos_ajuda_publicacao").select("fotos, link_anuncio, texto_anuncio").eq("owner_id", dono.id);
+        expect(data).toHaveLength(1);
+        expect(data![0].fotos).toHaveLength(1);
+        expect(String((data![0].fotos as string[])[0])).toMatch(new RegExp(`^${dono.id}/[0-9a-f-]{36}\\.png$`));
+        expect(data![0].link_anuncio).toBeNull();
+        expect(data![0].texto_anuncio).toBeNull();
+        caminhosParaLimpar.push(...(data![0].fotos as string[]));
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+      } finally {
+        await page.context().close();
+      }
+    });
+  }
+
+  test("negativo — caminho de foto de OUTRO dono é recusado pela ação e nada é gravado", async ({ browser }) => {
+    const page = await entrar(browser, dono.email, senha);
+    try {
+      const alheia = `${outro.id}/${crypto.randomUUID()}.png`;
+      // A rota de upload devolve o caminho da pasta do outro dono: a ação do servidor precisa recusar.
+      await page.route("**/api/upload/foto", (r) => r.fulfill({ json: { path: alheia, url: "/icon.png" } }));
+      await abrirPedido(page);
+      await page.getByTestId("ajuda-publicar-foto-input").setInputFiles({ name: "x.png", mimeType: "image/png", buffer: pngDeTeste(3) });
+      await expect(page.getByTestId("ajuda-publicar-fotos").locator("li")).toHaveCount(1, { timeout: 20_000 });
+      await page.getByTestId("ajuda-publicar-enviar").click();
+      await expect(page.getByTestId("ajuda-publicar-erro")).toContainText("Uma das fotos não é válida", { timeout: 20_000 });
+      await expect(page.getByTestId("ajuda-publicar-enviado")).toHaveCount(0);
+      const { data } = await adm().from("pedidos_ajuda_publicacao").select("id").eq("owner_id", dono.id);
+      expect(data ?? []).toHaveLength(0);
+    } finally {
+      await page.context().close();
+    }
+  });
+
+  test("admin vê a miniatura da foto do pedido na fila", async ({ browser }) => {
+    const caminho = `${dono.id}/${crypto.randomUUID()}.png`;
+    const { error } = await adm().storage.from(BUCKET).upload(caminho, pngDeTeste(7), { contentType: "image/png" });
+    expect(error).toBeNull();
+    caminhosParaLimpar.push(caminho);
+    const { data, error: e2 } = await adm()
+      .from("pedidos_ajuda_publicacao")
+      .insert({ owner_id: dono.id, texto_anuncio: "Studio mobiliado perto do metrô, 30 m², com varanda.", fotos: [caminho] })
+      .select("id")
+      .single();
+    if (e2) throw e2;
+    const ctx = await browser.newContext({ storageState: authFile("admin"), viewport: { width: 390, height: 844 } });
+    const page = await ctx.newPage();
+    try {
+      for (const largura of [390, 1280]) {
+        await page.setViewportSize({ width: largura, height: 900 });
+        await page.goto("/admin/ajuda-publicacao", { waitUntil: "domcontentloaded" });
+        const item = page.getByTestId("ajuda-item").filter({ has: page.getByTestId("ajuda-item-fotos") }).first();
+        const miniatura = item.getByTestId("ajuda-item-fotos").locator("img").first();
+        await expect(miniatura).toBeVisible({ timeout: 30_000 });
+        await expect.poll(() => miniatura.evaluate((i: HTMLImageElement) => i.naturalWidth), { timeout: 15_000 }).toBeGreaterThan(0);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+      }
+      expect(data!.id).toBeTruthy();
+    } finally {
+      await ctx.close();
+    }
   });
 });
