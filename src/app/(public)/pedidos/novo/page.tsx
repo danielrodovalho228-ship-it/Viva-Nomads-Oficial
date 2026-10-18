@@ -22,6 +22,7 @@ import {
 } from "@/lib/pedidos/formulario";
 import { criarPedido } from "@/lib/data/pedidos-actions";
 import { contarImoveisQueCombinam } from "@/lib/data/pedido-contador-actions";
+import { AVISO_CONFIRMACAO, ROTA_CONFIRMAR_CONTATO } from "@/lib/pedidos/confirmacao";
 import type { ResultadoContador } from "@/lib/pedidos/contador";
 import type { ImovelCompativel } from "@/lib/pedidos/compatibilidade";
 import { getMeusDados } from "@/lib/data/perfil-actions";
@@ -161,6 +162,7 @@ function PedidoForm() {
     compativeis: number;
     sugestao: string | null;
     imoveis: ImovelCompativel[];
+    chegaAosDonos: boolean;
   } | null>(null);
   // Contador ao vivo (ordem 8dca1437): a resposta guarda a chave dos campos que a geraram,
   // então só vale enquanto os campos não mudam (sem precisar zerar estado dentro do effect).
@@ -279,6 +281,7 @@ function PedidoForm() {
         compativeis: res.compativeis ?? 0,
         sugestao: res.sugestao ?? null,
         imoveis: res.imoveis ?? [],
+        chegaAosDonos: res.chegaAosDonos ?? false,
       });
     } else {
       setErro(res.error ?? "Não foi possível publicar o pedido.");
@@ -290,13 +293,22 @@ function PedidoForm() {
     return (
       <div role="status" aria-live="polite">
         <h2 className="font-title text-2xl font-bold text-ink">Pedido publicado</h2>
+        {!resultado.chegaAosDonos && (
+          <p className="mt-3 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900" data-testid="pedido-falta-confirmar">
+            <strong>Falta confirmar seu e-mail e telefone.</strong> {AVISO_CONFIRMACAO}{" "}
+            <Link href={ROTA_CONFIRMAR_CONTATO} className="font-medium underline">
+              Confirmar agora
+            </Link>
+          </p>
+        )}
         {n > 0 ? (
           <p className="mt-3 rounded-xl bg-sage-100 px-4 py-3 text-sm text-forest">
             <strong>
               {n} {n === 1 ? "imóvel compatível" : "imóveis compatíveis"} agora
             </strong>{" "}
-            — {n === 1 ? "o proprietário foi avisado" : "os proprietários foram avisados"}. Quando alguém
-            responder, você recebe um aviso; a conversa é pela plataforma.
+            {resultado.chegaAosDonos
+              ? `— ${n === 1 ? "o proprietário foi avisado" : "os proprietários foram avisados"}. Quando alguém responder, você recebe um aviso; a conversa é pela plataforma.`
+              : "— os proprietários só são avisados depois que você confirmar e-mail e telefone."}
           </p>
         ) : (
           <div className="mt-3 space-y-2 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
@@ -540,6 +552,10 @@ function PedidoForm() {
               "Publicar pedido"
             )}
           </Button>
+
+          <p className="text-[13px] text-muted" data-testid="pedido-aviso-confirmacao">
+            {AVISO_CONFIRMACAO}
+          </p>
 
           <AvisoAntigolpe variante="linha" antes={user ? null : "Ao publicar, você entra com um código enviado por e-mail."} />
           {user && (

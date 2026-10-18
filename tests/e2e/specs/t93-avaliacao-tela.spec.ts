@@ -24,9 +24,6 @@ async function logado(papel: Role): Promise<{ sb: SupabaseClient; id: string }> 
   return { sb, id: data.user!.id };
 }
 
-// A ação do servidor demora no laboratório (servidor frio): falhou 1 vez em 12 execuções com o padrão de 10 s.
-const FOLGA_SERVIDOR = 30_000;
-
 test.describe("T93 — Tela de avaliações recebidas (responder, pedir revisão, admin decide)", () => {
   test.skip(!temEnv, "Sem URL/chaves do Supabase ou contas de teste.");
   test.use({ storageState: temEnv ? authFile("proprietario") : undefined, viewport: { width: 390, height: 844 } });
@@ -55,14 +52,15 @@ test.describe("T93 — Tela de avaliações recebidas (responder, pedir revisão
       await cartao.getByTestId("avaliacao-responder").click();
       await cartao.getByLabel(/sua resposta/i).fill(`Obrigado pela estadia ${marca}`);
       await cartao.getByTestId("avaliacao-enviar").click();
-      await expect(cartao.getByTestId("avaliacao-resposta")).toContainText(`Obrigado pela estadia ${marca}`, { timeout: FOLGA_SERVIDOR });
+      // A resposta grava no servidor e a tela recarrega: no lab lento passa de 10 s. Se não vier, mostra o que a tela disse.
+      await expect(cartao.getByTestId("avaliacao-resposta"), `alerta da tela: ${await cartao.getByRole("alert").allTextContents()}`).toContainText(`Obrigado pela estadia ${marca}`, { timeout: 30_000 });
 
       // 2) Pede revisão pela tela.
       await cartao.getByTestId("avaliacao-pedir-revisao").click();
       await cartao.getByLabel("Motivo", { exact: true }).selectOption("fato_falso");
       await cartao.getByLabel(/explique o motivo/i).fill(`O comentário cita um fato que não aconteceu ${marca}, tenho comprovação`);
       await cartao.getByTestId("avaliacao-enviar").click();
-      await expect(cartao.getByTestId("revisao-em-analise")).toBeVisible({ timeout: FOLGA_SERVIDOR });
+      await expect(cartao.getByTestId("revisao-em-analise")).toBeVisible({ timeout: 30_000 });
 
       // 3) O admin decide pela tela.
       const ctxAdmin = await browser.newContext({ storageState: authFile("admin"), viewport: { width: 1280, height: 800 } });
@@ -73,7 +71,7 @@ test.describe("T93 — Tela de avaliações recebidas (responder, pedir revisão
         await expect(pedido).toBeVisible();
         await pedido.getByLabel(/justificativa/i).fill("Conferido: o comentário é opinião sobre a estadia.");
         await pedido.getByRole("button", { name: /manter no ar/i }).click();
-        await expect(pedido).toContainText("Mantida", { timeout: FOLGA_SERVIDOR });
+        await expect(pedido).toContainText("Mantida", { timeout: 30_000 });
       } finally {
         await ctxAdmin.close();
       }

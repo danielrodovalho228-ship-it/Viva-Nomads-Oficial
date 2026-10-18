@@ -23,3 +23,18 @@ for (const largura of [390, 1280]) {
     expect(semRolagemLateral).toBe(true);
   });
 }
+
+// Ordem 8dca1437, item 3: o formulário avisa, antes de publicar, que o pedido só chega aos proprietários com
+// e-mail e telefone confirmados (a regra em si vale no banco, migração 0160).
+for (const largura of [390, 1280]) {
+  test(`${largura} px: o formulário avisa que o pedido só chega aos proprietários com e-mail e telefone confirmados`, async ({ page }) => {
+    await page.setViewportSize({ width: largura, height: 900 });
+    await page.goto("/pedidos/novo", { waitUntil: "domcontentloaded" });
+    const aviso = page.getByTestId("pedido-aviso-confirmacao");
+    await expect(aviso).toBeVisible({ timeout: 15_000 });
+    await expect(aviso).toContainText("e-mail e telefone confirmados");
+    await expect(aviso).toContainText("contato continua escondido até você aceitar");
+    const semRolagemLateral = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
+    expect(semRolagemLateral).toBe(true);
+  });
+}

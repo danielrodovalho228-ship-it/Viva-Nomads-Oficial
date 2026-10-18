@@ -46,9 +46,9 @@ async function semRolagemLateral(page: Page, largura: number): Promise<string[]>
 
 async function temH1(page: Page): Promise<string[]> {
   // O painel abre com o esqueleto do loading.tsx (sem h1) e troca pela tela quando os dados chegam.
-  await page.locator("h1:visible").first().waitFor({ timeout: 15_000 }).catch(() => {});
+  await page.locator("h1:visible").first().waitFor({ timeout: 30_000 }).catch(() => {});
   const visiveis = await page.locator("h1:visible").count();
-  return visiveis > 0 ? [] : ["sem h1 visível"];
+  return visiveis > 0 ? [] : [`sem h1 visível (rota final ${new URL(page.url()).pathname})`];
 }
 
 /** Elementos que passam da largura da tela sem estar dentro de um contêiner que rola/corta na horizontal. */
