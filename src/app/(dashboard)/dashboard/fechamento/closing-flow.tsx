@@ -184,6 +184,20 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
     // "Verificação pendente" e AVANÇA (a pendência fica visível ao proprietário no
     // resumo). Portão RÍGIDO (flag): sem verificação real, não avança.
     if (!demo) {
+      // Prompt 23 (item 3): conta de TESTE (o servidor decide) recebe o laudo SIMULADO, rotulado TESTE, e segue até a
+      // assinatura. Conta real: segue o portão abaixo ("pendente" até o parceiro abrir).
+      const st = (await fetch("/api/caf/status").then((r) => r.json()).catch(() => null)) as { teste?: boolean } | null;
+      if (st?.teste === true) {
+        const res = await fetch("/api/caf/verify", { method: "POST" }).catch(() => null);
+        const laudo = res?.ok ? ((await res.json().catch(() => null)) as CafResult | null) : null;
+        if (laudo?.light) {
+          setCafResult(laudo);
+          setVerifStatus("ok");
+          setVerified(true);
+          setVerifying(false);
+          return;
+        }
+      }
       setCafResult(null);
       setVerifStatus("pendente");
       setVerified(!KYC_PORTAO_RIGIDO);

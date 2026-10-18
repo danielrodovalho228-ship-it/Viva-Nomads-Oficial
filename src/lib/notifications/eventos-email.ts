@@ -45,7 +45,16 @@ export type NotificationEvent =
   | "renovacao_aviso" // 15 dias antes do fim do bloco → proprietário e inquilino
   // Propostas (prompt 17)
   | "proposta_recebida" // proposta ou contraproposta nova → a outra parte
-  | "proposta_respondida"; // proposta aceita ou recusada → a outra parte
+  | "proposta_respondida" // proposta aceita ou recusada → a outra parte
+  // Visitas (prompt 23): vídeo e presencial, sempre pela plataforma
+  | "visita_pedida" // morador pediu → proprietário
+  | "visita_confirmada" // horário confirmado → a outra parte
+  | "visita_remarcada" // proprietário propôs outro horário → morador
+  | "visita_cancelada" // cancelada ou recusada (com motivo) → a outra parte
+  // Candidatura e contrato (prompt 23): nunca e-mail de "recusada"
+  | "candidatura_nova" // candidatura recebida → proprietário
+  | "contrato_pronto" // contrato pronto para assinar → as duas partes
+  | "contrato_assinado"; // assinado pelas duas partes → as duas partes
 
 // `img` = chave da imagem de assunto (public/media/email/<img>.jpg).
 export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: string) => string; img: string; cta: string; path: string }> = {
@@ -83,6 +92,13 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   avaliacao_pedido: { subject: "Como foi a estadia? Deixe sua avaliação", body: (n) => `Olá${n ? " " + n : ""}, a estadia terminou. Sua avaliação leva 2 minutos e ajuda os próximos moradores e proprietários.`, img: "nova-mensagem", cta: "Avaliar a estadia", path: "/dashboard/contratos" },
   renovacao_aviso: { subject: "Quer renovar? Seu bloco termina em 15 dias", body: (n) => `Olá${n ? " " + n : ""}, o bloco do seu contrato termina em 15 dias. Se quiserem seguir, combinem a renovação pela plataforma.`, img: "pedido-resposta", cta: "Ver o contrato", path: "/dashboard/contratos" },
   proposta_recebida: { subject: "Você recebeu uma proposta", body: (n) => `Olá${n ? " " + n : ""}, há uma proposta nova para você no Viva Nomads. Confira os valores e responda pela plataforma.`, img: "pedido-resposta", cta: "Ver a proposta", path: "/dashboard/orcamentos" },
+  visita_pedida: { subject: "Pedido de visita no seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, um interessado pediu uma visita ao seu imóvel. Confirme um horário, proponha outro ou recuse pela plataforma.`, img: "novo-interessado", cta: "Responder o pedido", path: "/dashboard/visitas" },
+  visita_confirmada: { subject: "Visita confirmada", body: (n) => `Olá${n ? " " + n : ""}, a visita foi confirmada. O horário é sempre de Brasília.`, img: "candidatura-recebida", cta: "Ver a visita", path: "/dashboard/visitas" },
+  visita_remarcada: { subject: "Proposta de novo horário para a visita", body: (n) => `Olá${n ? " " + n : ""}, o proprietário propôs outro horário para a visita. Aceite ou cancele pela plataforma.`, img: "pedido-resposta", cta: "Ver o horário", path: "/dashboard/visitas" },
+  visita_cancelada: { subject: "Visita cancelada", body: (n) => `Olá${n ? " " + n : ""}, a visita foi cancelada. Veja os detalhes pela plataforma.`, img: "transacional", cta: "Ver detalhes", path: "/dashboard/visitas" },
+  candidatura_nova: { subject: "Nova candidatura no seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, você recebeu uma candidatura para o seu imóvel. Veja o pedido e responda pela plataforma.`, img: "novo-interessado", cta: "Ver a candidatura", path: "/dashboard/leads" },
+  contrato_pronto: { subject: "Contrato pronto para assinar", body: (n) => `Olá${n ? " " + n : ""}, o contrato de locação está pronto. Confira e assine pela plataforma.`, img: "pedido-resposta", cta: "Ver e assinar", path: "/dashboard/contratos" },
+  contrato_assinado: { subject: "Contrato assinado pelas duas partes", body: (n) => `Olá${n ? " " + n : ""}, o contrato de locação foi assinado pelas duas partes. A cópia fica disponível na plataforma.`, img: "candidatura-recebida", cta: "Ver contrato", path: "/dashboard/contratos" },
   proposta_respondida: { subject: "Sua proposta foi respondida", body: (n) => `Olá${n ? " " + n : ""}, a sua proposta teve resposta no Viva Nomads.`, img: "pedido-resposta", cta: "Ver a resposta", path: "/dashboard/orcamentos" },
   documento_recebido: { subject: "Novo documento de imóvel para conferir", body: () => "Um proprietário enviou a documentação do imóvel. Há um item aguardando conferência na fila de moderação.", img: "transacional", cta: "Conferir documento", path: "/admin/documentos" },
 };
