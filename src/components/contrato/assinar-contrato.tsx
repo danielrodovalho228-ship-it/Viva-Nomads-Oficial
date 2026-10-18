@@ -14,6 +14,7 @@ export function AssinarContrato({ contratoId }: { contratoId: string }) {
   const [enviado, setEnviado] = useState(false);
   const [pedindo, setPedindo] = useState(false);
   const [enviando, setEnviando] = useState(false);
+  const [assinado, setAssinado] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
   async function pedir() {
@@ -41,11 +42,14 @@ export function AssinarContrato({ contratoId }: { contratoId: string }) {
         setErro(r.error ?? "Não foi possível assinar.");
         return;
       }
+      setAssinado(true);
       router.refresh();
     } finally {
       setEnviando(false);
     }
   }
+
+  if (assinado) return null;
 
   return (
     <form onSubmit={assinar} className="mt-5 space-y-3 border-t border-line pt-4" data-testid="form-assinar">
