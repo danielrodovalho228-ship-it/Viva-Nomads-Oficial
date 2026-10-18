@@ -432,7 +432,8 @@
         "t8-rascunho",
         "t98-score-anuncio",
         "t151-modo-app-iphone",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t211-complemento-23"
       ]
     },
     "/dashboard/assinatura": {
@@ -647,7 +648,8 @@
       ],
       "specs": [
         "t151-modo-app-iphone",
-        "t153-limpeza-estadia"
+        "t153-limpeza-estadia",
+        "t211-complemento-23"
       ]
     },
     "/dashboard/imoveis/novo": {
@@ -883,7 +885,8 @@
         "t168-visita-video",
         "t48-varredura",
         "t183-telas-logadas-390",
-        "t209-jornada-dois-lados"
+        "t209-jornada-dois-lados",
+        "t211-complemento-23"
       ]
     },
     "/decisao": {
@@ -993,7 +996,8 @@
         "t184-velocidade",
         "t197-anuncio-teste-oculto",
         "t201-qa-muse",
-        "t209-jornada-dois-lados"
+        "t209-jornada-dois-lados",
+        "t211-complemento-23"
       ]
     },
     "/modelodenegocio": {
@@ -1805,7 +1809,8 @@
         "proprietario"
       ],
       "specs": [
-        "t94-valor-pet"
+        "t94-valor-pet",
+        "t211-complemento-23"
       ]
     },
     "src/lib/data/actions.ts#varrerCicloBlocos": {
@@ -3136,7 +3141,8 @@
         "proprietario"
       ],
       "specs": [
-        "t209-jornada-dois-lados"
+        "t209-jornada-dois-lados",
+        "t211-complemento-23"
       ]
     },
     "src/lib/data/visitas-video-actions.ts#responderVisita": {
@@ -3145,7 +3151,8 @@
         "proprietario"
       ],
       "specs": [
-        "t209-jornada-dois-lados"
+        "t209-jornada-dois-lados",
+        "t211-complemento-23"
       ]
     },
     "src/lib/data/visitas-video-actions.ts#visitaDaConversa": {

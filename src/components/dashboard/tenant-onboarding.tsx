@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Check, ShieldCheck, Megaphone, MessageSquare, X } from "lucide-react";
 import { PageTitle } from "@/components/dashboard/primitives";
 import { ButtonLink } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { gravarLocalStorageBruto, useLocalStorageBruto } from "@/lib/use-client-state";
+import { cartaoVerificacao, type StatusVerificacao } from "@/lib/cartao-verificacao";
 
 const KEY = "vivanomads-tenant-onboarding";
 
@@ -57,8 +58,29 @@ type Saved = { done: string[]; hidden: boolean };
  * card pode ser ocultado. Quando os 3 estão concluídos (ou ao ocultar), volta
  * o banner normal. Estado persistido por navegador (localStorage).
  */
+/** O laudo real da pessoa (mesma fonte de /dashboard/verificacao). null = ainda carregando ou sem resposta. */
+function useStatusVerificacao(): StatusVerificacao | null {
+  const [s, setS] = useState<StatusVerificacao | null>(null);
+  useEffect(() => {
+    let vivo = true;
+    fetch("/api/caf/status")
+      .then((r) => (r.ok ? (r.json() as Promise<Partial<StatusVerificacao>>) : null))
+      .then((d) => {
+        if (vivo && d) setS({ teste: d.teste === true, feita: d.feita === true, ok: d.ok === true, validoAte: d.validoAte ?? null });
+      })
+      .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, []);
+  return s;
+}
+
 export function TenantOnboarding({ name }: { name: string }) {
   const raw = useLocalStorageBruto(KEY); // undefined = ainda hidratando
+  // Complemento do prompt 23: o passo "verificar" lê o laudo (confirmada / teste / em breve), não um texto fixo.
+  const cartao = cartaoVerificacao(useStatusVerificacao());
+  const passos: Step[] = STEPS.map((s) => (s.id === "verificar" ? { ...s, title: cartao.titulo, text: cartao.texto, ctas: [cartao.cta] } : s));
   // Cópia local: mantém a tela funcionando mesmo se o navegador bloquear o localStorage.
   const [local, setLocal] = useState<Saved | null>(null);
   let doArmazenamento: Saved = { done: [], hidden: false };
@@ -92,6 +114,8 @@ export function TenantOnboarding({ name }: { name: string }) {
   // Antes de hidratar, mostra o banner (evita "pulo" e SSR consistente).
   if (saved === null) return banner;
 
+  const feitos = cartao.estado === "confirmada" && !saved.done.includes("verificar") ? [...saved.done, "verificar"] : saved.done;
+  // O "concluído" automático da identidade só muda a exibição: o cartão não some sozinho por causa dele.
   const allDone = STEPS.every((s) => saved.done.includes(s.id));
   if (saved.hidden || allDone) return banner;
 
@@ -103,7 +127,7 @@ export function TenantOnboarding({ name }: { name: string }) {
     persist({ ...cur, done });
   }
 
-  const doneCount = saved.done.length;
+  const doneCount = feitos.length;
 
   return (
     <section className="mb-6 overflow-hidden rounded-2xl border border-sage-200 bg-white">
@@ -125,11 +149,11 @@ export function TenantOnboarding({ name }: { name: string }) {
       </div>
 
       <ol className="divide-y divide-sage-200">
-        {STEPS.map((s, i) => {
-          const done = saved.done.includes(s.id);
+        {passos.map((s, i) => {
+          const done = feitos.includes(s.id);
           const Icon = s.icon;
           return (
-            <li key={s.id} className="flex flex-col gap-3 p-5 sm:flex-row sm:items-start">
+            <li key={s.id} className="flex flex-col gap-3 p-5 sm:flex-row sm:items-start" data-testid={`onboarding-${s.id}`} data-estado={s.id === "verificar" ? cartao.estado : undefined}>
               <span
                 className={cn(
                   "grid h-9 w-9 shrink-0 place-items-center rounded-full text-sm font-bold",

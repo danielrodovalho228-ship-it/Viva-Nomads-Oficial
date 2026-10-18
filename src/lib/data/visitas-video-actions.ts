@@ -10,6 +10,7 @@ import { conversationId as idConversa } from "@/lib/messages/conversation-id";
 import { after } from "next/server";
 import { notify } from "@/lib/notifications";
 import type { NotificationEvent } from "@/lib/notifications/eventos-email";
+import { enderecoDaVisita, mostraEnderecoDaVisita, type EnderecoVisita } from "@/lib/visitas/endereco-visita";
 import {
   ehModalidade,
   ehStatusVisita,
@@ -37,7 +38,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
  * a outra parte. Sem nome, telefone ou e-mail do morador para o dono (contato protegido até o aceite).
  * Depois da resposta (`after`) e best-effort: o aviso nunca quebra o fluxo.
  */
-function avisarVisita(admin: Admin, para: string, evento: NotificationEvent, detalhe: string) {
+function avisarVisita(admin: Admin, para: string, evento: NotificationEvent, detalhe: string, endereco?: EnderecoVisita | null) {
   after(async () => {
     try {
       const { data: p } = await admin.from("profiles").select("email, full_name, notif_email").eq("id", para).maybeSingle();
@@ -48,8 +49,13 @@ function avisarVisita(admin: Admin, para: string, evento: NotificationEvent, det
         name: ((p.full_name as string | null) ?? "").split(" ")[0] || undefined,
         userId: para,
         pushUrl: "/dashboard/visitas",
-        detailsText: detalhe,
-        detailsHtml: `<p style="margin:12px 0 0">${detalhe.replace(/[<>&]/g, "")}</p>`,
+        // Visita presencial confirmada: o endereço exato e "Abrir no mapa" vão SÓ para o morador (complemento do prompt 23).
+        detailsText: endereco ? `${detalhe}\nEndereço: ${endereco.texto}\nAbrir no mapa: ${endereco.mapa}` : detalhe,
+        detailsHtml:
+          `<p style="margin:12px 0 0">${detalhe.replace(/[<>&]/g, "")}</p>` +
+          (endereco
+            ? `<p style="margin:8px 0 0"><strong>Endereço:</strong> ${endereco.texto.replace(/[<>&"]/g, "")}</p><p style="margin:8px 0 0"><a href="${endereco.mapa.replace(/"/g, "%22")}">Abrir no mapa</a></p>`
+            : ""),
       });
     } catch {
       /* best-effort */
@@ -140,8 +146,10 @@ export interface VisitaDono {
 
 export interface MinhaVisita extends Omit<VisitaDono, "motivo"> {
   motivo: string;
-  /** Endereço exato: SÓ na visita presencial confirmada (regra de privacidade). */
+  /** Endereço exato: SÓ na visita presencial confirmada e ainda não passada (regra de privacidade). */
   endereco: string | null;
+  /** Link "Abrir no mapa" do endereço exato (mesma regra). */
+  enderecoMapa: string | null;
 }
 
 type Linha = {
@@ -213,17 +221,21 @@ export async function listMinhasVisitas(): Promise<MinhaVisita[]> {
     .order("criado_em", { ascending: false })
     .limit(100);
   const linhas = ((data ?? []) as unknown as Linha[]).map((r) => mapear(r, (m) => (m && isMotivo(m) ? motivoLabel(m) : "")));
-  // Endereço exato só da visita PRESENCIAL CONFIRMADA (o resto continua só com a região aproximada).
-  const confirmadas = linhas.filter((v) => v.modalidade === "presencial" && v.status === "confirmado").map((v) => v.propertyId);
-  const enderecos = new Map<string, string>();
+  // Endereço exato só da visita PRESENCIAL CONFIRMADA e ainda não passada (o resto: só a região aproximada).
+  const agora = new Date();
+  const confirmadas = linhas.filter((v) => mostraEnderecoDaVisita(v, agora)).map((v) => v.propertyId);
+  const enderecos = new Map<string, EnderecoVisita>();
   if (confirmadas.length) {
-    const { data: props } = await admin.from("properties").select("id, exact_address, address, city").in("id", confirmadas); // consistency-ignore: prompt 23 — endereço exato só ao morador da visita presencial CONFIRMADA
+    const { data: props } = await admin.from("properties").select("id, exact_address, address, city, state").in("id", confirmadas); // consistency-ignore: prompt 23 — endereço exato só ao morador da visita presencial CONFIRMADA
     for (const p of props ?? []) {
-      const exato = [p.exact_address, p.address, p.city].filter(Boolean).join(" · ");
-      if (exato) enderecos.set(p.id as string, exato);
+      const e = enderecoDaVisita(p);
+      if (e) enderecos.set(p.id as string, e);
     }
   }
-  return linhas.map((v) => ({ ...v, endereco: enderecos.get(v.propertyId) ?? null }));
+  return linhas.map((v) => {
+    const e = mostraEnderecoDaVisita(v, agora) ? enderecos.get(v.propertyId) : undefined;
+    return { ...v, endereco: e?.texto ?? null, enderecoMapa: e?.mapa ?? null };
+  });
 }
 
 export type AcaoVisita = AcaoVisitaDono & { id: string };
@@ -249,7 +261,7 @@ export async function responderVisita(entrada: AcaoVisita): Promise<Resultado> {
 
   const { data: v } = await admin
     .from("visitas_video")
-    .select("id, owner_id, tenant_id, status, modalidade, horario_proposto, link_chamada")
+    .select("id, owner_id, tenant_id, property_id, status, modalidade, horario_proposto, link_chamada")
     .eq("id", entrada.id)
     .maybeSingle();
   if (!v) return { ok: false, error: "Pedido não encontrado." };
@@ -273,7 +285,13 @@ export async function responderVisita(entrada: AcaoVisita): Promise<Resultado> {
   const outro = (quem === "dono" ? v.tenant_id : v.owner_id) as string;
   const tipo = MODALIDADE_ROTULO[modalidade].toLowerCase();
   if (campos.status === "confirmado" && campos.horario_confirmado) {
-    avisarVisita(admin, outro, "visita_confirmada", `Visita ${tipo} confirmada para ${formatarHorarioBrasilia(campos.horario_confirmado)}.`);
+    // Presencial confirmada pelo dono: o e-mail do MORADOR leva o endereço exato e "Abrir no mapa".
+    let endereco: EnderecoVisita | null = null;
+    if (quem === "dono" && modalidade === "presencial") {
+      const { data: p } = await admin.from("properties").select("exact_address, address, city, state").eq("id", v.property_id).maybeSingle(); // consistency-ignore: complemento do prompt 23 — endereço exato só ao morador da visita presencial CONFIRMADA
+      endereco = p ? enderecoDaVisita(p) : null;
+    }
+    avisarVisita(admin, outro, "visita_confirmada", `Visita ${tipo} confirmada para ${formatarHorarioBrasilia(campos.horario_confirmado)}.`, endereco);
   } else if (campos.status === "remarcar" && campos.horario_proposto) {
     avisarVisita(admin, outro, "visita_remarcada", `O proprietário propôs outro horário para a visita ${tipo}: ${formatarHorarioBrasilia(campos.horario_proposto)}. Aceite ou cancele em Visitas.`);
   } else if (campos.status === "cancelado") {
@@ -315,10 +333,10 @@ export async function visitaDaConversa(propertyId: string, outroId: string): Pro
   const r = data as unknown as Linha & { owner_id: string; tenant_id: string };
   const papel = r.owner_id === user.id ? "dono" : "morador";
   const v = mapear(r, (m) => (papel === "dono" ? motivoParaDono(m) : m && isMotivo(m) ? motivoLabel(m) : ""));
-  let endereco: string | null = null;
-  if (papel === "morador" && v.modalidade === "presencial" && v.status === "confirmado") {
-    const { data: p } = await admin.from("properties").select("exact_address, address, city").eq("id", propertyId).maybeSingle(); // consistency-ignore: prompt 23 — endereço exato só ao morador da visita presencial CONFIRMADA
-    endereco = p ? [p.exact_address, p.address, p.city].filter(Boolean).join(" · ") || null : null;
+  let e: EnderecoVisita | null = null;
+  if (papel === "morador" && mostraEnderecoDaVisita(v, new Date())) {
+    const { data: p } = await admin.from("properties").select("exact_address, address, city, state").eq("id", propertyId).maybeSingle(); // consistency-ignore: prompt 23 — endereço exato só ao morador da visita presencial CONFIRMADA
+    e = p ? enderecoDaVisita(p) : null;
   }
-  return { ...v, endereco, papel };
+  return { ...v, endereco: e?.texto ?? null, enderecoMapa: e?.mapa ?? null, papel };
 }
