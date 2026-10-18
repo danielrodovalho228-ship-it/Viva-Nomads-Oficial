@@ -515,7 +515,8 @@
         "t174-conta-complete-perfil",
         "t192-conta-4-blocos",
         "t179-isolamento-perfil",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t198-rodape-painel-390"
       ]
     },
     "/dashboard/conta/[secao]": {
@@ -626,7 +627,8 @@
         "t38-varios-imoveis-por-dono",
         "t40-novo-anuncio-fotos",
         "t8-rascunho",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t198-rodape-painel-390"
       ]
     },
     "/dashboard/imoveis/[id]/editar": {
@@ -708,7 +710,8 @@
         "t11-travessias",
         "t175-mensagens-candidato",
         "t182-jornada-completa",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t198-rodape-painel-390"
       ]
     },
     "/dashboard/notificacoes": {
