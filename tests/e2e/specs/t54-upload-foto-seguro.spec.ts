@@ -26,6 +26,8 @@ test.describe("T54 — Upload de foto seguro", () => {
       expect(svg.status()).toBe(415);
       const txt = await post(request, "x.png", "image/png", Buffer.from("só texto"));
       expect(txt.status()).toBe(415);
+      const txtJpg = await post(request, "x.jpg", "image/jpeg", Buffer.from("só texto renomeado para jpg"));
+      expect(txtJpg.status()).toBe(415);
     });
 
     test("F47 na tela: SVG é recusado com mensagem visível e o contador não sobe", async ({ page }) => {
