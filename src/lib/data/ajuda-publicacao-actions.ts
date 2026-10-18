@@ -27,20 +27,22 @@ export type PedidoAjuda = {
   texto_anuncio?: string | null;
   observacao?: string | null;
   owner_nome?: string | null;
+  /** URLs públicas das fotos que o dono enviou (só a equipe vê, na fila do /admin). */
+  fotos?: string[];
 };
 
 const PEDIDOS_POR_DIA = 5;
 
 /** O dono pede ajuda da equipe para montar o rascunho do anúncio (ordem 65e999b2). */
 export async function pedirAjudaParaPublicar(entrada: EntradaAjuda): Promise<Resultado> {
-  const v = validarPedidoAjuda(entrada ?? {});
-  if (!v.ok) return { ok: false, error: v.erro };
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Entre na sua conta para pedir ajuda." };
+  const v = validarPedidoAjuda(entrada ?? {}, user.id);
+  if (!v.ok) return { ok: false, error: v.erro };
   if (!(await dentroDoLimite(`ajuda-publicacao:${user.id}`, PEDIDOS_POR_DIA, DIA))) {
     return { ok: false, error: "Você já enviou vários pedidos hoje. Tente novamente amanhã." };
   }
@@ -57,6 +59,7 @@ export async function pedirAjudaParaPublicar(entrada: EntradaAjuda): Promise<Res
     link_anuncio: v.valor.link,
     texto_anuncio: v.valor.texto,
     observacao: v.valor.observacao,
+    fotos: v.valor.fotos,
   });
   if (error) return { ok: false, error: erroBancoPT(error) };
   revalidatePath("/dashboard/imoveis");
@@ -92,7 +95,7 @@ export async function filaAjudaPublicacaoAdmin(): Promise<PedidoAjuda[]> {
   if (!user || !(await ehAdmin(supabase, user.id))) return [];
   const { data } = await supabase
     .from("pedidos_ajuda_publicacao")
-    .select("id, status, criado_em, atualizado_em, link_anuncio, texto_anuncio, observacao, owner_id")
+    .select("id, status, criado_em, atualizado_em, link_anuncio, texto_anuncio, observacao, fotos, owner_id")
     .order("criado_em", { ascending: false })
     .limit(200);
   const linhas = data ?? [];
@@ -112,6 +115,7 @@ export async function filaAjudaPublicacaoAdmin(): Promise<PedidoAjuda[]> {
       link_anuncio: l.link_anuncio as string | null,
       texto_anuncio: l.texto_anuncio as string | null,
       observacao: l.observacao as string | null,
+      fotos: ((l.fotos as string[] | null) ?? []).map((f) => supabase.storage.from("property-photos").getPublicUrl(f).data.publicUrl),
       owner_nome: nomes.get(l.owner_id as string) || null,
     }));
 }
