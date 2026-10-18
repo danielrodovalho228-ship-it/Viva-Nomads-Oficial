@@ -49,7 +49,8 @@ test.describe("T98 — Score de qualidade do anúncio", () => {
     // Editar um campo faz o score subir (ordem 0f9b9d58): descrição com 40+ palavras = +6 pontos.
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
     const antes = Number((await page.getByTestId("anuncio-score-valor").innerText()).replace("%", ""));
-    await page.getByTestId("score-dica").filter({ hasText: /Descrição com pelo menos/ }).click();
+    // Painel mostra só as dicas que mais valem: com a descrição obrigatória (60+ caracteres, f9753c6), é ela que aparece.
+    await page.getByTestId("score-dica").filter({ hasText: /Descrição com/ }).first().click();
     await expect(page).toHaveURL(/\/dashboard\/imoveis\/novo\?draft=.*&etapa=2/);
     const descricao = Array.from({ length: 45 }, (_, i) => `palavra${i}`).join(" ");
     await page.getByTestId("cadastro-descricao").fill(descricao);
