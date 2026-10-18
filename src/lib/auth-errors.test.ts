@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { friendlyAuthError } from "./auth-errors.ts";
+import { cadastroDuplicadoOfuscado, friendlyAuthError, MSG_CADASTRO_NEUTRO } from "./auth-errors.ts";
 
 const MSG = "Não conseguimos usar este e-mail. Confira se está digitado certo ou use outro endereço.";
 
@@ -35,4 +35,19 @@ test("F2: erro 500 do provedor de e-mail no cadastro vira a mensagem do e-mail, 
   }
   // caso negativo: no login, "unexpected_failure" sozinho não vira mensagem de e-mail
   assert.notEqual(friendlyAuthError("unexpected_failure", "login"), MSG);
+});
+
+test("dddccd2f: cadastro com e-mail já existente NÃO revela que a conta existe (mensagem neutra)", () => {
+  for (const raw of ["User already registered", "A user with this email address has already been registered"]) {
+    const msg = friendlyAuthError(raw, "cadastro");
+    assert.equal(msg, MSG_CADASTRO_NEUTRO, raw);
+    assert.doesNotMatch(msg, /já possui|já existe|já cadastrad/i);
+  }
+});
+
+test("dddccd2f: usuário ofuscado do Supabase (sem identities) é detectado; usuário novo não", () => {
+  assert.equal(cadastroDuplicadoOfuscado({ identities: [] }), true);
+  assert.equal(cadastroDuplicadoOfuscado({ identities: [{ id: "x" }] }), false);
+  assert.equal(cadastroDuplicadoOfuscado({}), false);
+  assert.equal(cadastroDuplicadoOfuscado(null), false);
 });
