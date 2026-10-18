@@ -359,3 +359,54 @@
 .fonte { font-size: 11.5px; color: var(--muted); }
 .fonte a { color: var(--sage); }
 .off { color: var(--muted); }
+
+/* ── ROI dos sócios (prompt 21): frase, 4 cartões, gráficos, painel de receitas ── */
+.frase {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--forest);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+.cards4 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 0 0 16px; }
+@media (min-width: 720px) { .cards4 { grid-template-columns: repeat(4, 1fr); } }
+.cartao { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; min-width: 0; }
+.cartao .k { font-size: 12px; color: var(--muted); font-weight: 600; }
+.cartao .v { font-size: clamp(18px, 3vw, 26px); font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.2; margin-top: 2px; }
+.cartao .hint { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+.grafico { margin: 0 0 8px; }
+.svgArea { display: block; width: 100%; height: 160px; }
+.areaRel { position: relative; }
+.eixoY { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; margin-bottom: 2px; }
+.eixoX { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+.legenda { list-style: none; display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 8px 0 0; padding: 0; }
+.legenda li { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink); }
+.legenda .sw { width: 12px; height: 12px; border-radius: 3px; flex: none; }
+.marcaPayback { position: absolute; font-size: 11.5px; font-weight: 700; white-space: nowrap; background: rgba(255, 255, 255, .85); padding: 0 4px; border-radius: 4px; }
+.barrasH { display: grid; gap: 6px; }
+.barraH { display: grid; grid-template-columns: minmax(0, 38%) 1fr auto; align-items: center; gap: 8px; font-size: 12.5px; }
+.barraNome { overflow-wrap: anywhere; }
+.barraSvg { width: 100%; height: 14px; display: block; }
+.barraValor { font-variant-numeric: tabular-nums; font-weight: 700; white-space: nowrap; }
+.barraTotal { border-top: 1px solid var(--line); padding-top: 6px; font-weight: 800; color: var(--forest); }
+.grupo { border-top: 1px solid var(--line); padding-top: 12px; margin-top: 14px; }
+.grupo h3 { font-size: 13px; color: var(--forest); margin: 0 0 8px; text-transform: uppercase; letter-spacing: .03em; }
+.linhaReceita { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; }
+.linhaTopo { display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; }
+.linhaTopo input { width: 18px; height: 18px; accent-color: var(--forest); flex: none; }
+.selos { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+.seloPequeno { display: inline-block; border-radius: 999px; background: #fff7e0; border: 1px solid #e8cf86; color: #5c4500; padding: 0 6px; font-size: 11px; font-weight: 700; }
+.seloParecer { display: inline-block; border-radius: 999px; background: #fdecea; border: 1px solid #f1b8b0; color: #8a2a1e; padding: 0 6px; font-size: 11px; font-weight: 700; }
+.campos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 4px 0 6px; }
+.campo { display: flex; flex-direction: column; gap: 3px; font-size: 11.5px; color: var(--muted); min-width: 0; }
+.campo input { width: 100%; min-width: 0; border: 1px solid var(--line); border-radius: 8px; padding: 7px 8px; font-size: 15px; color: var(--ink); background: #fff; font-variant-numeric: tabular-nums; }
+.campo input:focus { outline: 2px solid var(--sage); outline-offset: 1px; }
+.rodapeSocios { margin-top: 22px; text-align: center; color: var(--muted); font-size: 12px; }
+.rodapeSocios p { margin: 2px 0; }
+@media print {
+  .frase, .cartao, .grafico { break-inside: avoid; }
+  .cards4 { grid-template-columns: repeat(4, 1fr); }
+}

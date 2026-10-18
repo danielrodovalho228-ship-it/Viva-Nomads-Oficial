@@ -1091,7 +1091,8 @@
         "socio"
       ],
       "specs": [
-        "t3-isolamento-papeis"
+        "t3-isolamento-papeis",
+        "t200-roi-socios"
       ]
     },
     "/seguranca": {
@@ -1108,7 +1109,8 @@
       ],
       "specs": [
         "t3-isolamento-papeis",
-        "t7-fluxo-publico"
+        "t7-fluxo-publico",
+        "t200-roi-socios"
       ]
     },
     "/socios": {
