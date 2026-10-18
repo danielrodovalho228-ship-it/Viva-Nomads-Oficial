@@ -70,14 +70,16 @@ export async function novaJornadaDeTeste(input: { tenantId: string; propertyId: 
     .single();
   if (error || !lead) return { ok: false, error: `Não foi possível criar a candidatura: ${error?.message ?? "erro"}` };
   // Documentos FICTÍCIOS do inquilino (a trava do fechamento só confere que foram enviados; nenhum arquivo real).
+  // Caminho no formato que o banco exige: <inquilino>/<candidatura>/<uuid>.pdf.
   for (const tipo of ["identidade", "vinculo"]) {
-    await admin.from("documentos_inquilino").insert({
+    const { error: eDoc } = await admin.from("documentos_inquilino").insert({
       lead_id: lead.id,
       tenant_id: input.tenantId,
       tipo,
-      caminho: `${input.tenantId}/teste-qa/${randomUUID()}.pdf`,
+      caminho: `${input.tenantId}/${lead.id}/${randomUUID()}.pdf`,
       hash_sha256: "0".repeat(64),
     });
+    if (eDoc) return { ok: false, error: `Candidatura criada, mas os documentos fictícios falharam: ${eDoc.message}` };
   }
   revalidatePath("/admin/dados-de-teste");
   return { ok: true, leadId: lead.id as string, link: `/dashboard/fechamento?c=${lead.id}`, reaproveitada: false };

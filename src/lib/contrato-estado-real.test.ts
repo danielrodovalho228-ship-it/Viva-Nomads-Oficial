@@ -32,3 +32,11 @@ test("p28 — o Resumo lê o estado do banco (nunca supõe 'aguardando assinatur
   const locacoes = readFileSync(new URL("../app/(dashboard)/dashboard/locacoes/page.tsx", import.meta.url), "utf8");
   assert.match(locacoes, /etapa !== "aguardando_assinatura"/);
 });
+
+test("p28 — Nova jornada: documentos fictícios no caminho que o banco aceita (<inquilino>/<candidatura>/<uuid>.pdf) e erro não é engolido", () => {
+  const acao = readFileSync(new URL("./data/jornada-teste-actions.ts", import.meta.url), "utf8");
+  assert.match(acao, /caminho: `\$\{input\.tenantId\}\/\$\{lead\.id\}\/\$\{randomUUID\(\)\}\.pdf`/);
+  assert.match(acao, /if \(eDoc\) return \{ ok: false/);
+  const re = /^[0-9a-f-]{36}\/[0-9a-f-]{36}\/[0-9a-f-]{36}\.(pdf|jpg|png)$/; // documentos_inquilino_caminho_check
+  assert.match("0c5f1b2a-1111-4222-8333-444455556666/1d6e2c3b-1111-4222-8333-444455556666/2e7f3d4c-1111-4222-8333-444455556666.pdf", re);
+});
