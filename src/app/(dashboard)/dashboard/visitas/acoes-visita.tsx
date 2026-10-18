@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { responderVisitaVideo } from "@/lib/data/visitas-video-actions";
-import { formatarHorario, type StatusVisita } from "@/lib/visitas-video";
+import { formatarHorario, statusAposAcao, type StatusVisita } from "@/lib/visitas-video";
+import { useStatusVisita } from "./status-visita";
 
 /** Ações do PROPRIETÁRIO num pedido: confirmar um horário (ou propor outro) com o link da chamada, concluir ou cancelar. */
 export function AcoesVisitaDono({ id, status, horarios }: { id: string; status: StatusVisita; horarios: string[] }) {
@@ -15,8 +16,9 @@ export function AcoesVisitaDono({ id, status, horarios }: { id: string; status: 
   const [msg, setMsg] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
   const [respondido, setRespondido] = useState(false);
+  const { mudar } = useStatusVisita(status);
 
-  async function rodar(fn: () => ReturnType<typeof responderVisitaVideo>) {
+  async function rodar(acao: "confirmar" | "concluir" | "cancelar", fn: () => ReturnType<typeof responderVisitaVideo>) {
     setMsg(null);
     setOcupado(true);
     const r = await fn().catch(() => null);
@@ -24,6 +26,7 @@ export function AcoesVisitaDono({ id, status, horarios }: { id: string; status: 
     if (!r?.ok) return setMsg(r?.error ?? "Não foi possível agora. Tente de novo.");
     // Os botões somem na hora e a lista é recarregada, sem depender só da revalidação da ação (t168).
     setRespondido(true);
+    mudar(statusAposAcao(acao));
     router.refresh();
   }
 
@@ -70,12 +73,12 @@ export function AcoesVisitaDono({ id, status, horarios }: { id: string; status: 
               disabled={ocupado}
               data-testid="visita-confirmar"
               onClick={() =>
-                rodar(() => responderVisitaVideo({ acao: "confirmar", id, horario: outro ? new Date(outro).toISOString() : horario, link }))
+                rodar("confirmar", () => responderVisitaVideo({ acao: "confirmar", id, horario: outro ? new Date(outro).toISOString() : horario, link }))
               }
             >
               Confirmar horário
             </Button>
-            <Button variant="ghost" size="sm" disabled={ocupado} onClick={() => rodar(() => responderVisitaVideo({ acao: "cancelar", id }))}>
+            <Button variant="ghost" size="sm" disabled={ocupado} onClick={() => rodar("cancelar", () => responderVisitaVideo({ acao: "cancelar", id }))}>
               Cancelar pedido
             </Button>
           </div>
@@ -83,10 +86,10 @@ export function AcoesVisitaDono({ id, status, horarios }: { id: string; status: 
       )}
       {status === "confirmado" && (
         <div className="flex flex-wrap gap-2">
-          <Button variant="primary" size="sm" disabled={ocupado} data-testid="visita-concluir" onClick={() => rodar(() => responderVisitaVideo({ acao: "concluir", id }))}>
+          <Button variant="primary" size="sm" disabled={ocupado} data-testid="visita-concluir" onClick={() => rodar("concluir", () => responderVisitaVideo({ acao: "concluir", id }))}>
             Marcar como feita
           </Button>
-          <Button variant="ghost" size="sm" disabled={ocupado} onClick={() => rodar(() => responderVisitaVideo({ acao: "cancelar", id }))}>
+          <Button variant="ghost" size="sm" disabled={ocupado} onClick={() => rodar("cancelar", () => responderVisitaVideo({ acao: "cancelar", id }))}>
             Cancelar
           </Button>
         </div>
