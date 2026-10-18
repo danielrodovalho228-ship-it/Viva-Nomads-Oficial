@@ -18,15 +18,71 @@ export interface PlanoCalc {
   assinaturaAnual: number | null; // null = sob consulta (Gestor)
 }
 
+/**
+ * Como condomínio/IPTU e contas de consumo chegam ao morador (prompt 15):
+ * - "aparte" (PADRÃO da Viva, igual ao card do anúncio): o morador paga junto com o valor mensal; não é custo do
+ *   proprietário nos meses ocupados. Nos meses VAZIOS o proprietário paga condomínio/IPTU (contas, não).
+ * - "incluido": já estão dentro do valor mensal; o proprietário paga condomínio/IPTU nos 12 meses e as contas
+ *   nos meses ocupados.
+ */
+export type Cobranca = "aparte" | "incluido";
+
 export interface EntradaRentabilidade {
+  /** Valor mensal pretendido (nome interno antigo; nunca aparece na tela). */
   aluguelMensal: number;
-  condoIptu: number; // condomínio + IPTU mensais (o dono paga o ano todo)
-  contas: number; // água/luz/internet incluídas (durante a ocupação)
+  condoIptu: number; // condomínio + IPTU mensais
+  contas: number; // água/luz/internet por mês ocupado
   mesesOcupados: number; // 6..12
   prazoMedioMeses: number; // 2/3/4/6
+  /** Padrão: "aparte". */
+  condoCobranca?: Cobranca;
+  /** Padrão: "aparte". */
+  contasCobranca?: Cobranca;
+  /** Valor do imóvel (opcional): rentabilidade sobre o valor do imóvel. */
+  valorImovel?: number;
+}
+
+/** Base ÚNICA do imóvel mobiliado no ano (simulador e ROI usam a mesma conta). */
+export interface BaseMobiliadoAno {
+  receitaBrutaAnual: number;
+  custosAnuais: number;
+  taxaVivaAnual: number;
+  liquidaAnual: number;
+}
+
+/**
+ * Receita bruta = valor mensal × meses ocupados. Taxa da Viva = taxa × valor mensal × meses ocupados (= taxa sobre
+ * o valor total dos contratos; nunca sobre condomínio/contas cobrados à parte — regra.ts). Custos conforme `Cobranca`.
+ */
+export function baseMobiliadoAno(
+  e: { valorMensal: number; condoIptu: number; contas: number; mesesOcupados: number; condoCobranca?: Cobranca; contasCobranca?: Cobranca },
+  taxa: number,
+): BaseMobiliadoAno {
+  const valor = n(e.valorMensal);
+  const meses = Math.min(12, Math.max(0, e.mesesOcupados));
+  const vazios = 12 - meses;
+  const condo = (e.condoCobranca ?? "aparte") === "aparte" ? n(e.condoIptu) * vazios : n(e.condoIptu) * 12;
+  const contas = (e.contasCobranca ?? "aparte") === "aparte" ? 0 : n(e.contas) * meses;
+  const receitaBrutaAnual = valor * meses;
+  const custosAnuais = condo + contas;
+  const taxaVivaAnual = Math.max(0, taxa) * valor * meses;
+  return {
+    receitaBrutaAnual: Math.round(receitaBrutaAnual),
+    custosAnuais: Math.round(custosAnuais),
+    taxaVivaAnual: Math.round(taxaVivaAnual),
+    liquidaAnual: Math.round(receitaBrutaAnual - custosAnuais - taxaVivaAnual),
+  };
+}
+
+/** Rentabilidade sobre o valor do imóvel (ao ano, 0..1); null sem valor informado. */
+export function rentabilidadeSobreImovel(liquidaAnual: number, valorImovel: number | undefined): number | null {
+  const v = n(valorImovel ?? 0);
+  return v > 0 ? liquidaAnual / v : null;
 }
 
 export interface ResultadoRentabilidade {
+  /** Rentabilidade líquida sobre o valor do imóvel (ao ano); null sem valor do imóvel. */
+  rentabilidadeImovel: number | null;
   contratosPorAno: number;
   receitaBrutaAnual: number;
   custosAnuais: number;
@@ -58,24 +114,21 @@ export function simularRentabilidade(
   comissaoPct: number,
   assinaturaAno: number
 ): ResultadoRentabilidade {
-  const aluguel = n(e.aluguelMensal);
   const meses = Math.min(12, Math.max(0, e.mesesOcupados));
   const contratos = contratosPorAno(meses, e.prazoMedioMeses);
-
-  const receitaBrutaAnual = aluguel * meses;
-  const custosAnuais = n(e.condoIptu) * 12 + n(e.contas) * meses;
-  const comissaoAnual = Math.round(comissaoAnualSobreTotal(contratos, e.prazoMedioMeses, comissaoPct, aluguel));
+  const b = baseMobiliadoAno({ ...e, valorMensal: e.aluguelMensal }, comissaoPct);
   const assin = n(assinaturaAno);
-  const receitaLiquidaAnual = Math.round(receitaBrutaAnual - custosAnuais - comissaoAnual - assin);
+  const receitaLiquidaAnual = b.liquidaAnual - assin;
 
   return {
     contratosPorAno: contratos,
-    receitaBrutaAnual: Math.round(receitaBrutaAnual),
-    custosAnuais: Math.round(custosAnuais),
-    comissaoAnual,
+    receitaBrutaAnual: b.receitaBrutaAnual,
+    custosAnuais: b.custosAnuais,
+    comissaoAnual: b.taxaVivaAnual,
     assinaturaAnual: assin,
     receitaLiquidaAnual,
     mediaMensal: Math.round(receitaLiquidaAnual / 12),
+    rentabilidadeImovel: rentabilidadeSobreImovel(receitaLiquidaAnual, e.valorImovel),
   };
 }
 
@@ -92,14 +145,11 @@ export interface LinhaComparador {
 
 /** Compara os planos com os MESMOS inputs (o "vendedor silencioso" do Fundador). */
 export function compararPlanos(e: EntradaRentabilidade, planos: PlanoCalc[]): LinhaComparador[] {
-  const aluguel = n(e.aluguelMensal);
-  const meses = Math.min(12, Math.max(0, e.mesesOcupados));
-  const contratos = contratosPorAno(meses, e.prazoMedioMeses);
-  const receitaBruta = aluguel * meses;
-  const custos = n(e.condoIptu) * 12 + n(e.contas) * meses;
-
   return planos.map((p) => {
-    const comissaoAnual = Math.round(comissaoAnualSobreTotal(contratos, e.prazoMedioMeses, p.comissao, aluguel));
+    const b = baseMobiliadoAno({ ...e, valorMensal: e.aluguelMensal }, p.comissao);
+    const receitaBruta = b.receitaBrutaAnual;
+    const custos = b.custosAnuais;
+    const comissaoAnual = b.taxaVivaAnual;
     const assin = p.assinaturaAnual ?? 0;
     const totalViva = comissaoAnual + assin;
     return {
@@ -154,6 +204,39 @@ export interface EntradaROI {
   contasMensais?: number;
   /** Reposição e desgaste da mobília, em % do investimento por ano (ex.: 0.1). */
   reposicaoAnualPct?: number;
+  /** Condomínio + IPTU mensais (custo nos meses vazios dos DOIS cenários quando cobrados à parte). */
+  condoIptu?: number;
+  /** Padrão "aparte" (igual ao simulador). */
+  condoCobranca?: Cobranca;
+  /** Padrão "aparte": contas pagas pelo morador nos meses ocupados. */
+  contasCobranca?: Cobranca;
+  /** Contrato tradicional (12+ meses): meses vazios por ano. Padrão 1 (referência de mercado — confira). */
+  mesesVaziosTradicional?: number;
+  /** Contrato tradicional: taxa de administração da imobiliária (0..1). Padrão 0,10. */
+  taxaAdmTradicional?: number;
+  /** Contrato tradicional: 1 valor mensal de intermediação a cada N meses de contrato. Padrão 30; 0 = sem. */
+  intermediacaoACadaMeses?: number;
+  /** Rendimento anual se o investimento ficasse aplicado (0..1), opcional — sem taxa fixa no código. */
+  rendimentoAplicacaoPct?: number;
+}
+
+/** Padrões do contrato tradicional (referência de mercado — confira com a sua imobiliária). */
+export const PADROES_TRADICIONAL = { mesesVazios: 1, taxaAdm: 0.1, intermediacaoACadaMeses: 30 } as const;
+
+/** Líquido anual do contrato tradicional (12+ meses), sem mobília. */
+export function liquidoTradicionalAnual(e: {
+  valorMensal: number;
+  condoIptu?: number;
+  mesesVazios?: number;
+  taxaAdm?: number;
+  intermediacaoACadaMeses?: number;
+}): number {
+  const v = n(e.valorMensal);
+  const vazios = Math.min(12, Math.max(0, e.mesesVazios ?? PADROES_TRADICIONAL.mesesVazios));
+  const adm = Math.min(1, Math.max(0, e.taxaAdm ?? PADROES_TRADICIONAL.taxaAdm));
+  const cada = e.intermediacaoACadaMeses ?? PADROES_TRADICIONAL.intermediacaoACadaMeses;
+  const intermediacao = cada > 0 ? (v * 12) / cada : 0;
+  return Math.round(v * (12 - vazios) * (1 - adm) - intermediacao - n(e.condoIptu ?? 0) * vazios);
 }
 
 export interface ResultadoROI {
@@ -167,9 +250,15 @@ export interface ResultadoROI {
   paybackMeses: number | null;
   /** null quando não há investimento (ROI indefinido). */
   roiAnual: number | null;
-  /** Custos do mobiliado no ano (contas + reposição), já descontados. */
+  /** Custos do mobiliado no ano (condomínio/contas conforme a cobrança + reposição), já descontados. */
   custosMobiliadoAnual: number;
   acumulado: { ano: number; mobiliado: number; vazio: number }[];
+  /** Ponto de equilíbrio: valor mensal mobiliado mínimo para empatar com o tradicional (R$, arredondado p/ cima). */
+  valorMinimoEmpate: number | null;
+  /** Ponto de equilíbrio: meses ocupados mínimos por ano para empatar (1..12); null se nem com 12 empata. */
+  ocupacaoMinimaEmpate: number | null;
+  /** Ganho do mobiliado acima (positivo) ou abaixo (negativo) do rendimento da aplicação; null sem rendimento. */
+  versusAplicacaoAnual: number | null;
 }
 
 export function simularROI(e: EntradaROI, comissaoPct: number, assinaturaAno: number): ResultadoROI {
@@ -177,21 +266,30 @@ export function simularROI(e: EntradaROI, comissaoPct: number, assinaturaAno: nu
   const vazio = n(e.aluguelVazio);
   const mob = n(e.aluguelMobiliado);
   const invest = n(e.investimentoMobiliar);
-  const contratos = contratosPorAno(meses, e.prazoMedioMeses);
 
-  // Prêmio de verdade: negativo quando o mobiliado rende menos que o vazio
-  // (antes ficava "+R$ 0 (0%)" ao lado de um ganho negativo).
+  // Prêmio de verdade: negativo quando o mobiliado rende menos que o vazio.
   const premioMensal = mob - vazio;
   const premioPct = vazio > 0 ? premioMensal / vazio : 0;
 
-  // F4: o mobiliado paga as contas incluídas e repõe a mobília.
-  const contasAnual = n(e.contasMensais ?? 0) * meses;
   const reposicaoAnual = invest * Math.max(0, e.reposicaoAnualPct ?? 0);
-  const custosMobiliadoAnual = Math.round(contasAnual + reposicaoAnual);
+  const assin = n(assinaturaAno);
+  const baseDe = (valor: number, m: number) =>
+    baseMobiliadoAno(
+      { valorMensal: valor, condoIptu: n(e.condoIptu ?? 0), contas: n(e.contasMensais ?? 0), mesesOcupados: m, condoCobranca: e.condoCobranca, contasCobranca: e.contasCobranca },
+      comissaoPct,
+    );
+  const liquidoMob = (valor: number, m: number) => baseDe(valor, m).liquidaAnual - reposicaoAnual - assin;
 
-  const comissaoAnualMob = comissaoAnualSobreTotal(contratos, e.prazoMedioMeses, comissaoPct, mob);
-  const netMobiliadoAnual = Math.round(mob * meses - comissaoAnualMob - n(assinaturaAno) - custosMobiliadoAnual);
-  const netVazioAnual = Math.round(vazio * 12);
+  const b = baseDe(mob, meses);
+  const custosMobiliadoAnual = Math.round(b.custosAnuais + reposicaoAnual);
+  const netMobiliadoAnual = Math.round(liquidoMob(mob, meses));
+  const netVazioAnual = liquidoTradicionalAnual({
+    valorMensal: vazio,
+    condoIptu: e.condoIptu,
+    mesesVazios: e.mesesVaziosTradicional,
+    taxaAdm: e.taxaAdmTradicional,
+    intermediacaoACadaMeses: e.intermediacaoACadaMeses,
+  });
   const ganhoAdicionalAnual = netMobiliadoAnual - netVazioAnual;
 
   // Sem investimento e com ganho → payback imediato e ROI indefinido.
@@ -205,6 +303,29 @@ export function simularROI(e: EntradaROI, comissaoPct: number, assinaturaAno: nu
     vazio: Math.round(netVazioAnual * ano),
   }));
 
+  // Ponto de equilíbrio (sobre o líquido do ano, sem o investimento inicial).
+  // Valor mínimo: o líquido cresce linear com o valor → resolve por busca binária em R$ inteiros.
+  let valorMinimoEmpate: number | null = null;
+  if (meses > 0 && liquidoMob(1_000_000, meses) >= netVazioAnual) {
+    let lo = 0;
+    let hi = 1_000_000;
+    while (lo < hi) {
+      const mid = Math.floor((lo + hi) / 2);
+      if (liquidoMob(mid, meses) >= netVazioAnual) hi = mid;
+      else lo = mid + 1;
+    }
+    valorMinimoEmpate = lo;
+  }
+  let ocupacaoMinimaEmpate: number | null = null;
+  for (let m = 1; m <= 12; m++) {
+    if (liquidoMob(mob, m) >= netVazioAnual) {
+      ocupacaoMinimaEmpate = m;
+      break;
+    }
+  }
+  const rend = e.rendimentoAplicacaoPct;
+  const versusAplicacaoAnual = rend != null && rend > 0 && invest > 0 ? Math.round(ganhoAdicionalAnual - invest * rend) : null;
+
   return {
     premioMensal,
     premioPct,
@@ -215,5 +336,26 @@ export function simularROI(e: EntradaROI, comissaoPct: number, assinaturaAno: nu
     roiAnual,
     custosMobiliadoAnual,
     acumulado,
+    valorMinimoEmpate,
+    ocupacaoMinimaEmpate,
+    versusAplicacaoAnual,
   };
+}
+
+export interface Cenario {
+  nome: "Pessimista" | "Esperado" | "Otimista";
+  mesesOcupados: number;
+}
+
+/**
+ * Cenários de ocupação (prompt 15) a partir do que a PESSOA informou — nenhum número de mercado inventado:
+ * 2 meses a menos, o informado e 2 a mais, dentro de 6..12 meses (o mesmo intervalo do controle da tela).
+ */
+export function cenariosOcupacao(mesesOcupados: number): Cenario[] {
+  const m = Math.min(12, Math.max(6, Math.round(mesesOcupados)));
+  return [
+    { nome: "Pessimista", mesesOcupados: Math.max(6, m - 2) },
+    { nome: "Esperado", mesesOcupados: m },
+    { nome: "Otimista", mesesOcupados: Math.min(12, m + 2) },
+  ];
 }

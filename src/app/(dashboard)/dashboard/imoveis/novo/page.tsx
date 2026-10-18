@@ -591,6 +591,11 @@ export default function NewPropertyPage() {
       try {
         if (alive && local) aplicarDraft(JSON.parse(local));
       } catch {}
+      // `?etapa=` na URL de um anúncio novo vence a etapa guardada no rascunho local.
+      if (alive && etapaParam !== null) {
+        setStep(etapaParam);
+        setEtapaMax((m) => Math.max(m, posicaoDaEtapa(etapaParam)));
+      }
     };
     getLatestDraft()
       .then((d) => {
@@ -1016,7 +1021,7 @@ export default function NewPropertyPage() {
       </div>
 
       {!editingId && !draftParam && existingDraft && !draftServerId && !draftBannerDismissed && (
-        <div className="mb-5 flex flex-col gap-3 rounded-2xl border border-champagne bg-champagne/10 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div data-testid="rascunho-aviso" className="mb-5 flex flex-col gap-3 rounded-2xl border border-champagne bg-champagne/10 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
             <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-champagne/40 text-forest">
               <ClipboardCheck className="h-5 w-5" />
@@ -1036,6 +1041,7 @@ export default function NewPropertyPage() {
             <Button
               variant="gold"
               size="sm"
+              data-testid="rascunho-continuar"
               onClick={() => {
                 setDraftBannerDismissed(true);
                 router.push(`/dashboard/imoveis/novo?draft=${existingDraft.id}`);

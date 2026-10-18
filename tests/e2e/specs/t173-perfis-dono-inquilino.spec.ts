@@ -74,8 +74,12 @@ test.describe("T173 — perfis do proprietário e do inquilino", () => {
       await expect(perfil).toContainText("Avaliações recebidas");
       await expect(perfil).not.toContainText(dono.email);
       // Com imóvel ativo, a página pode ir para o Google.
-      await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /index/);
-      await expect(page.locator('meta[name="robots"]')).not.toHaveAttribute("content", /noindex/);
+      // Depois da navegação pelo cliente o Next pode manter, por um instante, a tag da página anterior e a nova:
+      // confere TODAS — nenhuma com noindex e ao menos uma com index.
+      await expect
+        .poll(() => page.locator('meta[name="robots"]').evaluateAll((ms) => ms.map((m) => m.getAttribute("content") ?? "")))
+        .toEqual(expect.arrayContaining([expect.stringMatching(/(^|[ ,])index/)]));
+      expect((await page.locator('meta[name="robots"]').evaluateAll((ms) => ms.map((m) => m.getAttribute("content") ?? ""))).some((c) => c.includes("noindex"))).toBe(false);
       expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
       await page.screenshot({ path: `${SAIDA}/t173-pagina-proprietario-${largura}.png`, fullPage: true });
       await ctx.close();

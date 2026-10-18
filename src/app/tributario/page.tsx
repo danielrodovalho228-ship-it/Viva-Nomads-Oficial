@@ -113,8 +113,10 @@ export default async function TributarioPage() {
           <div className="mt-4 rounded-xl bg-surface-2 p-4 text-sm">
             <p className="font-semibold text-ink">Exemplo ao vivo — mesmo aluguel:</p>
             <ul className="mt-2 space-y-1 text-muted">
-              <li>Alíquota PJ aplicada: <strong className="text-ink">{pct(exemplo.pjRate)}</strong> (inclui IBS/CBS)</li>
+              <li>Alíquota PJ aplicada: <strong className="text-ink">{pct(exemplo.pjRate)}</strong> (lucro presumido)</li>
               <li>Imposto PJ estimado/ano: <strong className="text-ink">{formatBRL(exemplo.pjAnnualTax)}</strong></li>
+              <li>Custo de manter a empresa/ano: <strong className="text-ink">{formatBRL(exemplo.pjAnnualCost)}</strong></li>
+              <li>Vantagem real da PJ/ano: <strong className="text-ink">{formatBRL(exemplo.taxSavings)}</strong></li>
               <li>Recomendação do modelo: <strong className="text-ink">{exemplo.recommendation.toUpperCase()}</strong> (considera o custo de manter a PJ)</li>
             </ul>
           </div>

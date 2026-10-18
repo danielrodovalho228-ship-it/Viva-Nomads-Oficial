@@ -69,6 +69,7 @@ export const ROTAS_APP: Regra[] = [
   ramo("/dashboard/ferramentas"),
   ramo("/dashboard/simulador"),
   ramo("/dashboard/roi-imovel"),
+  ramo("/dashboard/tributacao"),
   ramo("/dashboard/assinatura"),
   ramo("/dashboard/fechamento"),
   ramo("/dashboard/conta"), // perfil

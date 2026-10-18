@@ -79,7 +79,11 @@ export async function listLeads(): Promise<Lead[]> {
   const pets = new Map<string, number>();
   const emailOk = new Map<string, boolean>();
   const reputacoes = new Map<string, { media: number; n: number }>();
+  const foneOk = new Map<string, boolean>();
   if (admin && tenantIds.length > 0) {
+    // Selo "Telefone verificado" (0150): só o sim/não, nunca o número.
+    const { data: fs, error: eFs } = await admin.rpc("telefones_verificados", { p_ids: tenantIds });
+    if (!eFs) for (const f of (fs ?? []) as { id: string; verificado: boolean }[]) foneOk.set(f.id, f.verificado);
     const { data: ps } = await admin.from("pets_inquilino").select("user_id").in("user_id", tenantIds);
     for (const p of (ps ?? []) as { user_id: string }[]) pets.set(p.user_id, (pets.get(p.user_id) ?? 0) + 1);
     await Promise.all(
@@ -105,9 +109,11 @@ export async function listLeads(): Promise<Lead[]> {
   // lido pelo servidor só dos leads deste dono (ids já filtrados pela RLS acima).
   const motivos = new Map<string, string>();
   const inicios = new Map<string, string>();
+  const ocupantes = new Map<string, number>();
   if (admin && rows.length > 0) {
-    const { data: ms } = await admin.from("leads").select("id, motivo_estadia, inicio_desejado").in("id", rows.map((r) => r.id));
-    for (const m of (ms ?? []) as { id: string; motivo_estadia: string | null; inicio_desejado: string | null }[]) {
+    const { data: ms } = await admin.from("leads").select("id, motivo_estadia, inicio_desejado, qtd_ocupantes").in("id", rows.map((r) => r.id));
+    for (const m of (ms ?? []) as { id: string; motivo_estadia: string | null; inicio_desejado: string | null; qtd_ocupantes: number | null }[]) {
+      if (m.qtd_ocupantes) ocupantes.set(m.id, m.qtd_ocupantes);
       const rotulo = motivoParaDono(m.motivo_estadia);
       if (rotulo) motivos.set(m.id, rotulo);
       if (m.inicio_desejado) inicios.set(m.id, m.inicio_desejado);
@@ -131,10 +137,12 @@ export async function listLeads(): Promise<Lead[]> {
         profissao: null, // a categoria já vai em `category`
         motivo: null, // idem `motivo`
         inicioDesejado: inicios.has(r.id) ? dataBR(inicios.get(r.id)!) : null,
+        qtdOcupantes: ocupantes.get(r.id) ?? null,
         pets: pets.get(r.tenant_id) ?? 0,
         desde: t?.created_at ?? null,
         reputacao: reputacoes.get(r.tenant_id) ?? null,
         emailConfirmado: emailOk.get(r.tenant_id) ?? false,
+        telefoneVerificado: foneOk.get(r.tenant_id) ?? false,
       },
       r.status === "accepted",
     );

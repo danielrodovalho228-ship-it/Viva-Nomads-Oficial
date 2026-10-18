@@ -230,6 +230,8 @@ export interface FechamentoContexto {
   documentoPendente?: { quem: "dono" | "inquilino"; mensagem: string } | null;
   /** F37: data de início que o Fechamento abre preenchida (a da candidatura, se ainda vale; senão hoje). */
   inicioSugerido?: string;
+  /** Prompt 8: quantas pessoas vão morar, da candidatura (o Fechamento abre com o número). */
+  ocupantesSugerido?: number | null;
 }
 
 export async function getFechamentoContext(
@@ -263,12 +265,14 @@ export async function getFechamentoContext(
   let tenantName = "Candidato(a)";
   let documentoPendente: FechamentoContexto["documentoPendente"] = null;
   let inicioDesejado: string | null = null;
+  let ocupantesSugerido: number | null = null;
   try {
     const admin = createAdminClient();
     if (admin) {
       // O SELECT de leads é por coluna para o usuário; a data desejada vem pelo servidor.
-      const { data: d } = await admin.from("leads").select("inicio_desejado").eq("id", lead.id).maybeSingle();
+      const { data: d } = await admin.from("leads").select("inicio_desejado, qtd_ocupantes").eq("id", lead.id).maybeSingle();
       inicioDesejado = (d?.inicio_desejado as string | null) ?? null;
+      ocupantesSugerido = (d?.qtd_ocupantes as number | null) ?? null;
       const [docDono, docInq] = await Promise.all([lerDocumento(admin, user.id), lerDocumento(admin, lead.tenant_id as string)]);
       if (!documentoCompleto(docDono)) documentoPendente = { quem: "dono", mensagem: MSG_DOCUMENTO.fecharDono };
       else if (!documentoCompleto(docInq)) documentoPendente = { quem: "inquilino", mensagem: MSG_DOCUMENTO.fecharInquilino };
@@ -302,5 +306,6 @@ export async function getFechamentoContext(
     contractNumber: numeroContrato(lead.id as string, (lead.accepted_at as string) ?? null),
     documentoPendente,
     inicioSugerido: inicioSugerido(inicioDesejado, hojeBR()),
+    ocupantesSugerido,
   };
 }

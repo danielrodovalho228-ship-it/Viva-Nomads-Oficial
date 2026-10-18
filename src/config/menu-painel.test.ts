@@ -67,3 +67,11 @@ test("grupo abre na tela atual; /dashboard só exato; subpágina conta", () => {
   assert.equal(rotaAtiva("/dashboard", "/dashboard/imoveis"), false);
   assert.equal(rotaAtiva("/dashboard/contratos#conferencia", "/dashboard/contratos"), true);
 });
+
+test("prompt 16: Viabilidade saiu do menu; 'Análise da carteira' só com 3+ imóveis ativos", () => {
+  const ids = (m: ReturnType<typeof menuDoPainel>) => m.flatMap((i) => [i.id, ...(i.filhos ?? []).map((f) => f.id)]);
+  const base = { temImovel: true, admin: false, estadiaAtiva: false };
+  assert.ok(!ids(menuDoPainel(base)).includes("viabilidade"));
+  assert.ok(!ids(menuDoPainel({ ...base, imoveisAtivos: 2 })).includes("carteira"));
+  assert.ok(ids(menuDoPainel({ ...base, imoveisAtivos: 3 })).includes("carteira"));
+});
