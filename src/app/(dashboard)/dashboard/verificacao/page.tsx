@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { gravarLocalStorageBruto, useLocalStorageBruto } from "@/lib/use-client-state";
 import { useSearchParams } from "next/navigation";
 import {
@@ -28,6 +28,7 @@ import { useAuthStore } from "@/lib/store";
 import { useViewMode } from "@/lib/roles";
 import { useDashDemo, DemoBadge } from "@/lib/demo/demo-mode";
 import { cn } from "@/lib/utils";
+import { NOTA_VERIFICACAO_TESTE, ramoVerificacao } from "@/lib/contas-de-teste";
 import { validadeDoLaudo } from "@/lib/caf/validade";
 
 /**
@@ -95,7 +96,139 @@ export default function VerificationPage() {
   return (
     <div className="w-full">
       <PageTitle capa="verificacao" title={C.title} subtitle={C.subtitle} />
-      {demo ? <DemoFlow copy={C} mode={mode} /> : <RealNaoVerificado copy={C} perfil={perfilCopy} />}
+      {demo ? <DemoFlow copy={C} mode={mode} /> : <VerificacaoDaConta copy={C} perfil={perfilCopy} />}
+    </div>
+  );
+}
+
+type StatusCaf = { teste: boolean; feita: boolean; ok: boolean; validoAte: string | null };
+
+/**
+ * Prompt 23 (item 3): o servidor diz se a conta é de teste (/api/caf/status lê profiles.is_teste). Conta de teste →
+ * laudo SIMULADO pela /api/caf/verify, rotulado "TESTE — verificação simulada"; conta real → segue "em breve".
+ */
+function VerificacaoDaConta({ copy, perfil }: { copy: VerifyCopy; perfil: "tenant" | "owner" }) {
+  const [status, setStatus] = useState<StatusCaf | null>(null);
+  const [erro, setErro] = useState(false);
+  useEffect(() => {
+    let vivo = true;
+    fetch("/api/caf/status")
+      .then((r) => (r.ok ? (r.json() as Promise<Partial<StatusCaf>>) : Promise.reject(new Error(String(r.status)))))
+      .then((d) => {
+        if (vivo) setStatus({ teste: d.teste === true, feita: d.feita === true, ok: d.ok === true, validoAte: d.validoAte ?? null });
+      })
+      .catch(() => {
+        if (vivo) setErro(true);
+      });
+    return () => {
+      vivo = false;
+    };
+  }, []);
+  const ramo = ramoVerificacao({ demo: false, teste: erro ? false : status ? status.teste : null });
+  if (ramo === "carregando") {
+    return (
+      <Panel className="flex items-center gap-2 text-sm text-muted">
+        <Loader2 className="h-4 w-4 animate-spin" /> Carregando a sua verificação…
+      </Panel>
+    );
+  }
+  if (ramo === "teste" && status) return <TesteFlow copy={copy} perfil={perfil} inicial={status} />;
+  return <RealNaoVerificado copy={copy} perfil={perfil} />;
+}
+
+/* Conta de TESTE (is_teste): laudo simulado de ponta a ponta, sempre rotulado — nunca vale como verificação real. */
+function TesteFlow({ copy, perfil, inicial }: { copy: VerifyCopy; perfil: "tenant" | "owner"; inicial: StatusCaf }) {
+  const [laudo, setLaudo] = useState<{ ok: boolean; validoAte: string | null } | null>(
+    inicial.feita ? { ok: inicial.ok, validoAte: inicial.validoAte } : null
+  );
+  const [carregando, setCarregando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+
+  async function verificar() {
+    setCarregando(true);
+    setErro(null);
+    try {
+      const res = await fetch("/api/caf/verify", { method: "POST" });
+      const r = (await res.json().catch(() => ({}))) as Partial<CafResult> & { error?: string };
+      if (!res.ok || !r.light) {
+        setErro(r.error ?? "Não foi possível fazer a verificação simulada agora. Tente de novo.");
+        return;
+      }
+      const st = (await fetch("/api/caf/status").then((x) => x.json()).catch(() => ({}))) as Partial<StatusCaf>;
+      setLaudo({ ok: r.identity === true && r.liveness === true && r.document === true, validoAte: st.validoAte ?? null });
+    } finally {
+      setCarregando(false);
+    }
+  }
+
+  return (
+    <div className="space-y-4" data-testid="verificacao-teste">
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-amber-800">
+        Conta de teste
+      </span>
+      {!laudo ? (
+        <Panel className="text-center">
+          <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-sage-100">
+            <ShieldCheck className="h-8 w-8 text-forest" />
+          </div>
+          <h2 className="mt-4 font-title text-xl font-bold text-ink">{copy.heading}</h2>
+          <p className="mx-auto mt-2 max-w-md text-sm text-muted">
+            Esta é uma conta de teste: a verificação é <strong>simulada</strong>, sem documento, sem CPF e sem consulta ao
+            parceiro. Serve para seguir a jornada até a assinatura.
+          </p>
+          <Button variant="gold" className="mt-6" onClick={verificar} disabled={carregando} data-testid="verificacao-teste-verificar">
+            {carregando && <Loader2 className="h-4 w-4 animate-spin" />}
+            {carregando ? "Verificando..." : "Fazer a verificação simulada"}
+          </Button>
+          {erro && (
+            <p role="alert" className="mt-3 text-sm text-red-600">
+              {erro}
+            </p>
+          )}
+        </Panel>
+      ) : (
+        <>
+          <Panel data-testid="verificacao-teste-laudo">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="grid h-12 w-12 place-items-center rounded-full bg-champagne text-forest">
+                <BadgeCheck className="h-7 w-7" />
+              </span>
+              <div className="min-w-0">
+                <h2 className="font-title text-lg font-bold text-ink">{laudo.ok ? copy.badge : "Verificação simulada"}</h2>
+                <p className="text-sm font-semibold text-amber-800" data-testid="verificacao-teste-rotulo">
+                  {NOTA_VERIFICACAO_TESTE}
+                </p>
+              </div>
+            </div>
+            <div className="mt-4 grid gap-2">
+              <Item icon={Fingerprint} label="Identidade" ok={laudo.ok} />
+              <Item icon={ScanFace} label="Prova de vida" ok={laudo.ok} />
+              <Item icon={FileCheck2} label="Documento" ok={laudo.ok} />
+            </div>
+            {laudo.validoAte && (
+              <p className="mt-3 text-xs text-muted" data-testid="verificacao-teste-validade">
+                Vale até {new Date(laudo.validoAte).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })} (simulação).
+              </p>
+            )}
+          </Panel>
+          {perfil === "tenant" && (
+            <Panel>
+              <h3 className="font-title font-bold text-ink">Siga a jornada</h3>
+              <p className="mt-1 text-sm text-muted">
+                Candidate-se a um imóvel; depois do aceite, o fechamento usa este resultado simulado até a assinatura.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <ButtonLink href="/dashboard/candidaturas" variant="primary" data-testid="verificacao-teste-continuar">
+                  Minhas candidaturas
+                </ButtonLink>
+                <ButtonLink href="/buscar" variant="outline">
+                  <Search className="h-4 w-4" /> Buscar imóveis
+                </ButtonLink>
+              </div>
+            </Panel>
+          )}
+        </>
+      )}
     </div>
   );
 }

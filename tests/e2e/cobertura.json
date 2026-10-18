@@ -564,7 +564,8 @@
         "t6-dinheiro-numeros",
         "t182-jornada-completa",
         "t183-telas-logadas-390",
-        "t205-fechamento-sem-beco"
+        "t205-fechamento-sem-beco",
+        "t209-jornada-dois-lados"
       ]
     },
     "/dashboard/contratos/[id]": {
@@ -599,7 +600,8 @@
         "t181-quantas-pessoas",
         "t182-jornada-completa",
         "t183-telas-logadas-390",
-        "t205-fechamento-sem-beco"
+        "t205-fechamento-sem-beco",
+        "t209-jornada-dois-lados"
       ]
     },
     "/dashboard/ferramentas": {
@@ -723,7 +725,8 @@
         "t175-mensagens-candidato",
         "t182-jornada-completa",
         "t183-telas-logadas-390",
-        "t198-rodape-painel-390"
+        "t198-rodape-painel-390",
+        "t209-jornada-dois-lados"
       ]
     },
     "/dashboard/notificacoes": {
@@ -857,7 +860,8 @@
       ],
       "specs": [
         "t4-fronteira-demo-real",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t209-jornada-dois-lados"
       ]
     },
     "/dashboard/viabilidade": {
@@ -878,7 +882,8 @@
       "specs": [
         "t168-visita-video",
         "t48-varredura",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t209-jornada-dois-lados"
       ]
     },
     "/decisao": {
@@ -987,7 +992,8 @@
         "t182-jornada-completa",
         "t184-velocidade",
         "t197-anuncio-teste-oculto",
-        "t201-qa-muse"
+        "t201-qa-muse",
+        "t209-jornada-dois-lados"
       ]
     },
     "/modelodenegocio": {
@@ -1158,6 +1164,14 @@
       ],
       "specs": [
         "t192-conta-4-blocos"
+      ]
+    },
+    "/dashboard/agenda": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t209-jornada-dois-lados"
       ]
     }
   },
@@ -1567,7 +1581,8 @@
       "specs": [
         "t195-matricula-caf",
         "t186-cadastro-5-etapas",
-        "t207-cep-matricula-identidade"
+        "t207-cep-matricula-identidade",
+        "t209-jornada-dois-lados"
       ]
     },
     "/api/ai/status": {
@@ -3113,6 +3128,33 @@
       ],
       "specs": [
         "t201-qa-muse"
+      ]
+    },
+    "src/lib/data/visitas-video-actions.ts#pedirVisita": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t209-jornada-dois-lados"
+      ]
+    },
+    "src/lib/data/visitas-video-actions.ts#responderVisita": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t209-jornada-dois-lados"
+      ]
+    },
+    "src/lib/data/visitas-video-actions.ts#visitaDaConversa": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t209-jornada-dois-lados"
       ]
     }
   }

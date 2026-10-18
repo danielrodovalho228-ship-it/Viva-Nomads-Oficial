@@ -9,6 +9,7 @@ import { join, relative, sep } from "node:path";
  */
 export const TELAS_PAINEL = [
   "/dashboard",
+  "/dashboard/agenda",
   "/dashboard/assinatura",
   "/dashboard/avaliacoes",
   "/dashboard/buscas",

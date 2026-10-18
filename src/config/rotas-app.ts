@@ -48,6 +48,7 @@ export const ROTAS_APP: Regra[] = [
   ramo("/dashboard/favoritos"),
   ramo("/dashboard/candidaturas"),
   ramo("/dashboard/visitas"),
+  ramo("/dashboard/agenda"),
   ramo("/dashboard/leads"), // interessados (proprietário)
   ramo("/dashboard/pedidos"),
   ramo("/dashboard/pedidos-cidade"),
