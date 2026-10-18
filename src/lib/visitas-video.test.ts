@@ -9,6 +9,7 @@ import {
   JANELA_DIAS,
   MAX_HORARIOS,
   podeTransicionar,
+  statusAposAcao,
   validarHorarios,
   validarLinkChamada,
 } from "./visitas-video.ts";
@@ -125,4 +126,17 @@ test("t168 — a ação grava, confere a linha gravada e revalida /dashboard/vis
   assert.match(src, /mudancaDeStatus\(/);
   assert.match(src, /revalidatePath\("\/dashboard\/visitas"\)/);
   assert.match(src, /\.update\(campos\)[\s\S]{0,120}\.select\("id"\)/);
+});
+
+test("t168: a tela troca a etiqueta na hora com o status da ação, sem esperar o recarregamento", () => {
+  assert.equal(statusAposAcao("confirmar"), "confirmado");
+  assert.equal(statusAposAcao("concluir"), "feito");
+  assert.equal(statusAposAcao("cancelar"), "cancelado");
+  // Prompt 23: Remarcar e aceitar o novo horário também.
+  assert.equal(statusAposAcao("remarcar"), "remarcar");
+  assert.equal(statusAposAcao("aceitar_remarcacao"), "confirmado");
+  // O cartão da visita (Visitas e conversa) aplica o status na hora.
+  const cartao = readFileSync("src/components/visitas/cartao-visita.tsx", "utf8");
+  assert.match(cartao, /onStatus\?\.\(statusAposAcao\(acao\.acao\)\)/);
+  assert.match(cartao, /data-testid="visita-status"[^>]*>\s*\{STATUS_VISITA_ROTULO\[status\]\}/);
 });

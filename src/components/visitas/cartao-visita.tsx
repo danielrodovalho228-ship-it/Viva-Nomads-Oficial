@@ -13,6 +13,7 @@ import {
   formatarHorario,
   formatarHorarioBrasilia,
   instanteParaCampoBrasilia,
+  statusAposAcao,
   CONFIRMAR_ATE_DIAS,
   type ModalidadeVisita,
   type StatusVisita,
@@ -60,6 +61,10 @@ export function CartaoVisita({
   onMudou?: () => void;
 }) {
   const Icone = v.modalidade === "presencial" ? MapPin : Video;
+  // A etiqueta muda na hora depois de uma resposta aceita (t168, #842); se o servidor trouxer outro status, vale o dele.
+  const [alterado, setAlterado] = useState<{ de: StatusVisita; para: StatusVisita } | null>(null);
+  const status = alterado && alterado.de === v.status ? alterado.para : v.status;
+  const onStatus = (para: StatusVisita) => setAlterado({ de: v.status, para });
   return (
     <div id={`visita-${v.id}`} data-testid="cartao-visita" data-status={v.status} data-modalidade={v.modalidade} className={cn(compacto && "text-sm")}>
       <div className="flex flex-wrap items-start justify-between gap-2">
@@ -70,8 +75,8 @@ export function CartaoVisita({
           {!compacto && <h3 className="line-clamp-2 font-title text-base font-bold text-ink">{v.imovel}</h3>}
           {v.motivo && <p className="text-xs text-muted">Motivo da estadia: {v.motivo}</p>}
         </div>
-        <span data-testid="visita-status" className={`rounded-full px-3 py-1 text-xs font-semibold ${TOM[v.status]}`}>
-          {STATUS_VISITA_ROTULO[v.status]}
+        <span data-testid="visita-status" className={`rounded-full px-3 py-1 text-xs font-semibold ${TOM[status]}`}>
+          {STATUS_VISITA_ROTULO[status]}
         </span>
       </div>
 
@@ -123,12 +128,12 @@ export function CartaoVisita({
         )
       )}
 
-      {papel === "dono" ? <AcoesDono v={v} onMudou={onMudou} /> : <AcoesMorador v={v} onMudou={onMudou} />}
+      {papel === "dono" ? <AcoesDono v={v} onMudou={onMudou} onStatus={onStatus} /> : <AcoesMorador v={v} onMudou={onMudou} onStatus={onStatus} />}
     </div>
   );
 }
 
-function useResposta(onMudou?: () => void) {
+function useResposta(onMudou?: () => void, onStatus?: (s: StatusVisita) => void) {
   const router = useRouter();
   const [msg, setMsg] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
@@ -141,6 +146,7 @@ function useResposta(onMudou?: () => void) {
     if (!r?.ok) return setMsg(r?.error ?? "Não foi possível agora. Tente de novo.");
     // Os botões somem na hora e a lista é recarregada, sem depender só da revalidação da ação (t168).
     setRespondido(true);
+    onStatus?.(statusAposAcao(acao.acao));
     router.refresh();
     onMudou?.();
   }
@@ -156,8 +162,8 @@ function Erro({ msg }: { msg: string | null }) {
 }
 
 /** Ações do PROPRIETÁRIO: confirmar um horário (vídeo: com o link), propor outro (Remarcar), recusar com motivo, concluir. */
-function AcoesDono({ v, onMudou }: { v: VisitaNaTela; onMudou?: () => void }) {
-  const { msg, ocupado, respondido, rodar } = useResposta(onMudou);
+function AcoesDono({ v, onMudou, onStatus }: { v: VisitaNaTela; onMudou?: () => void; onStatus?: (s: StatusVisita) => void }) {
+  const { msg, ocupado, respondido, rodar } = useResposta(onMudou, onStatus);
   const [horario, setHorario] = useState(v.horarios[0] ?? "");
   const [outro, setOutro] = useState("");
   const [link, setLink] = useState("");
@@ -277,8 +283,8 @@ function AcoesDono({ v, onMudou }: { v: VisitaNaTela; onMudou?: () => void }) {
 }
 
 /** Ações do MORADOR: aceitar o horário proposto (Remarcar) e cancelar o próprio pedido. */
-function AcoesMorador({ v, onMudou }: { v: VisitaNaTela; onMudou?: () => void }) {
-  const { msg, ocupado, respondido, rodar } = useResposta(onMudou);
+function AcoesMorador({ v, onMudou, onStatus }: { v: VisitaNaTela; onMudou?: () => void; onStatus?: (s: StatusVisita) => void }) {
+  const { msg, ocupado, respondido, rodar } = useResposta(onMudou, onStatus);
   if (respondido || !(v.status === "pedido" || v.status === "confirmado" || v.status === "remarcar")) return null;
   return (
     <div className="mt-3 flex flex-wrap gap-2">

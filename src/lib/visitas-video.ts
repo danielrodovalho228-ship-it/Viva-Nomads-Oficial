@@ -159,14 +159,7 @@ export function mudancaDeStatus(
   atual: { modalidade?: ModalidadeVisita; horarioProposto?: string | null; linkChamada?: string | null } = {},
 ): { ok: true; campos: Record<string, string | null> } | { ok: false; error: string } {
   const modalidade = atual.modalidade ?? "video";
-  const para: StatusVisita =
-    entrada.acao === "confirmar" || entrada.acao === "aceitar_remarcacao"
-      ? "confirmado"
-      : entrada.acao === "remarcar"
-        ? "remarcar"
-        : entrada.acao === "concluir"
-          ? "feito"
-          : "cancelado";
+  const para = statusAposAcao(entrada.acao);
   if (!podeTransicionar(de, para, quem)) return { ok: false, error: "Este pedido não pode mais ser alterado." };
   const campos: Record<string, string | null> = { status: para, atualizado_em: agora.toISOString() };
 
@@ -202,6 +195,20 @@ export function mudancaDeStatus(
     campos.motivo_recusa = motivo ? motivo.slice(0, MOTIVO_RECUSA_MAX) : null;
   }
   return { ok: true, campos };
+}
+
+/**
+ * Status que o pedido passa a ter depois de uma ação aceita pelo servidor — a tela usa isto na hora, sem esperar o
+ * recarregamento (t168, #842). Inclui as ações do prompt 23 (Remarcar e aceitar o novo horário).
+ */
+export function statusAposAcao(acao: AcaoVisitaDono["acao"]): StatusVisita {
+  return acao === "confirmar" || acao === "aceitar_remarcacao"
+    ? "confirmado"
+    : acao === "remarcar"
+      ? "remarcar"
+      : acao === "concluir"
+        ? "feito"
+        : "cancelado";
 }
 
 export function ehStatusVisita(v: unknown): v is StatusVisita {

@@ -3,7 +3,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
 import { campoBrasiliaParaIso, instanteParaCampoBrasilia } from "../../../src/lib/visitas-video";
 
 /*
-  T206 — Prompt 23, jornada dos dois lados (QA do Muse, 18/10). 390 e 1280 px.
+  T209 — Prompt 23, jornada dos dois lados (QA do Muse, 18/10). 390 e 1280 px.
    1. Horário de Brasília: a mesma escolha "15:00" num navegador em America/Chicago e em America/Sao_Paulo grava o
       MESMO instante (18:00 UTC) e o proprietário vê 15:00 "horário de Brasília".
    2. Visita presencial dentro da plataforma: confirmar, propor outro horário (Remarcar → o morador aceita) e recusar
@@ -89,7 +89,7 @@ async function pedirPresencial(page: Page, imovelId: string, campo: string) {
 const visitaDe = async (tenantId: string) =>
   (await adm().from("visitas_video").select("id, status, horarios, horario_confirmado, horario_proposto, modalidade").eq("tenant_id", tenantId).eq("property_id", ids.imovel!).maybeSingle()).data;
 
-test.describe("T206 — jornada dos dois lados (prompt 23)", () => {
+test.describe("T209 — jornada dos dois lados (prompt 23)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial" });
   test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });
@@ -122,11 +122,11 @@ test.describe("T206 — jornada dos dois lados (prompt 23)", () => {
     const a = await entrarNoFuso(browser, inqA.email, "America/Chicago", 390);
     await pedirPresencial(a, ids.imovel!, campo);
     await semRolagemLateral(a);
-    await a.screenshot({ path: `${SAIDA}/t206-pedido-chicago-390.png` });
+    await a.screenshot({ path: `${SAIDA}/t209-pedido-chicago-390.png` });
     await a.context().close();
     const b = await entrarNoFuso(browser, inqB.email, "America/Sao_Paulo", 1280);
     await pedirPresencial(b, ids.imovel!, campo);
-    await b.screenshot({ path: `${SAIDA}/t206-pedido-saopaulo-1280.png` });
+    await b.screenshot({ path: `${SAIDA}/t209-pedido-saopaulo-1280.png` });
     await b.context().close();
 
     const va = await visitaDe(ids.inqA!);
@@ -143,7 +143,7 @@ test.describe("T206 — jornada dos dois lados (prompt 23)", () => {
     await expect(cartao).toContainText("15:00", { timeout: 25_000 });
     await expect(d.getByText(/horário de Brasília/).first()).toBeVisible();
     await expect(d.getByText("Chicago Sobrenome")).toHaveCount(0);
-    await d.screenshot({ path: `${SAIDA}/t206-dono-visitas-1280.png`, fullPage: true });
+    await d.screenshot({ path: `${SAIDA}/t209-dono-visitas-1280.png`, fullPage: true });
     await d.context().close();
     await expect.poll(() => assuntos(ids.dono!), { timeout: 20_000 }).toContain("Pedido de visita no seu imóvel");
   });
@@ -169,7 +169,7 @@ test.describe("T206 — jornada dos dois lados (prompt 23)", () => {
     await expect(a2.getByTestId("visita-status").first()).toHaveText("Confirmada", { timeout: 25_000 });
     await expect(a2.getByTestId("visita-endereco").first()).toContainText(ENDERECO);
     await semRolagemLateral(a2);
-    await a2.screenshot({ path: `${SAIDA}/t206-endereco-confirmada-390.png`, fullPage: true });
+    await a2.screenshot({ path: `${SAIDA}/t209-endereco-confirmada-390.png`, fullPage: true });
     await a2.context().close();
     await expect.poll(() => assuntos(ids.inqA!), { timeout: 20_000 }).toContain("Visita confirmada");
   });
@@ -195,7 +195,7 @@ test.describe("T206 — jornada dos dois lados (prompt 23)", () => {
     await conversa.getByTestId("visita-outro-horario").fill(novo);
     await conversa.getByTestId("visita-propor").click();
     await expect.poll(async () => (await visitaDe(ids.inqB!))?.status, { timeout: 25_000 }).toBe("remarcar");
-    await d.screenshot({ path: `${SAIDA}/t206-conversa-remarcar-1280.png`, fullPage: true });
+    await d.screenshot({ path: `${SAIDA}/t209-conversa-remarcar-1280.png`, fullPage: true });
     await d.context().close();
     await expect.poll(() => assuntos(ids.inqB!), { timeout: 20_000 }).toContain("Proposta de novo horário para a visita");
 
@@ -244,7 +244,7 @@ test.describe("T206 — jornada dos dois lados (prompt 23)", () => {
       await expect(a.getByTestId("verificacao-teste-rotulo")).toHaveText("TESTE — verificação simulada", { timeout: 25_000 });
       await expect(a.getByText("Disponível em breve")).toHaveCount(0);
       await semRolagemLateral(a);
-      await a.screenshot({ path: `${SAIDA}/t206-laudo-teste-${largura}.png`, fullPage: true });
+      await a.screenshot({ path: `${SAIDA}/t209-laudo-teste-${largura}.png`, fullPage: true });
       await a.context().close();
     }
     const r = await entrar(browser, real.email, senha);
@@ -266,7 +266,7 @@ test.describe("T206 — jornada dos dois lados (prompt 23)", () => {
     await expect(d.getByText("TESTE — verificação simulada").first()).toBeVisible({ timeout: 25_000 });
     await expect(d.getByText("Verificação pendente")).toHaveCount(0);
     await expect(d.getByRole("button", { name: /continuar/i })).toBeEnabled();
-    await d.screenshot({ path: `${SAIDA}/t206-fechamento-laudo-teste-1280.png`, fullPage: true });
+    await d.screenshot({ path: `${SAIDA}/t209-fechamento-laudo-teste-1280.png`, fullPage: true });
     await d.context().close();
   });
 
@@ -294,7 +294,7 @@ test.describe("T206 — jornada dos dois lados (prompt 23)", () => {
       await expect(d.getByTestId("contrato-taxa").first()).toContainText("Taxa de serviço do contrato");
       await expect(d.getByTestId("contrato-taxa").first()).not.toContainText(/[Cc]omissão/);
       await semRolagemLateral(d);
-      await d.screenshot({ path: `${SAIDA}/t206-taxa-base-${largura}.png`, fullPage: true });
+      await d.screenshot({ path: `${SAIDA}/t209-taxa-base-${largura}.png`, fullPage: true });
     }
     await d.context().close();
   });
@@ -312,11 +312,11 @@ test.describe("T206 — jornada dos dois lados (prompt 23)", () => {
       await expect(d.locator('[data-testid="agenda-item"][data-tipo="entrada"]').first()).toContainText("Ana");
       await expect(d.getByText("Saopaulo Sobrenome")).toHaveCount(0);
       await semRolagemLateral(d);
-      await d.screenshot({ path: `${SAIDA}/t206-agenda-lista-${largura}.png`, fullPage: true });
+      await d.screenshot({ path: `${SAIDA}/t209-agenda-lista-${largura}.png`, fullPage: true });
       await d.getByTestId("agenda-vista-mes").click();
       await expect(d.getByTestId("agenda-mes-titulo")).toBeVisible();
       await semRolagemLateral(d);
-      await d.screenshot({ path: `${SAIDA}/t206-agenda-mes-${largura}.png`, fullPage: true });
+      await d.screenshot({ path: `${SAIDA}/t209-agenda-mes-${largura}.png`, fullPage: true });
     }
     // Clicar no item leva à visita.
     await d.getByTestId("agenda-vista-lista").click();
