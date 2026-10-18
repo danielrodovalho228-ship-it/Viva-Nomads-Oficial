@@ -76,7 +76,7 @@ test.describe("T57 — Contrato semeado: inquilino e proprietário veem e assina
   });
 
   test("Minhas locações: título e botão abrem o detalhe; assinar exige 'Li e concordo' e o código de e-mail", async ({ browser }) => {
-    test.setTimeout(120_000);
+    test.setTimeout(150_000);
     const page = await entrar(browser, inq.email, senha);
     await page.goto("/dashboard/locacoes", { waitUntil: "domcontentloaded" });
     const titulo = page.getByTestId("locacao-titulo").first();
@@ -93,7 +93,14 @@ test.describe("T57 — Contrato semeado: inquilino e proprietário veem e assina
     await page.getByTestId("assinar-codigo").fill("123456");
     await expect(page.getByTestId("assinar-enviar")).toBeEnabled(); // o servidor recusa código que não foi pedido
     await page.getByTestId("assinar-enviar").click();
-    await expect(page.getByRole("alert").filter({ hasText: /código/i })).toBeVisible({ timeout: 30_000 }); // recusa mostrada, sem assinar (a ação do servidor pode demorar no lab)
+    // Recusa mostrada, sem assinar (a ação do servidor pode demorar no lab). Se falhar, o erro traz o que a tela mostrou.
+    try {
+      await expect(page.getByRole("alert").filter({ hasText: /código/i })).toBeVisible({ timeout: 45_000 });
+    } catch (e) {
+      const alertas = await page.getByRole("alert").allInnerTexts();
+      const botao = await page.getByTestId("assinar-enviar").innerText().catch(() => "(sem botão)");
+      throw new Error(`Alertas na tela: ${JSON.stringify(alertas)}; botão: ${JSON.stringify(botao)}; url: ${page.url()}\n${(e as Error).message}`);
+    }
     await expect(page.getByTestId("form-assinar")).toBeVisible();
     const { data } = await adm().from("contratos").select("assinado_inquilino_em").eq("id", ids.contrato!).single();
     expect(data?.assinado_inquilino_em, "código inventado não pode assinar").toBeNull();

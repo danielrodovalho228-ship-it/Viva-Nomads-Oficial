@@ -47,8 +47,9 @@ export interface Conferencia {
 export function numeroMigracao(m: MigracaoAplicada): string | null {
   const porNome = /^(\d{4})_/.exec(m.name ?? "")?.[1];
   if (porNome) return porNome;
-  const v = /^\d{14}$/.test(m.version ?? "") ? m.version.slice(-4) : null;
-  return v;
+  // Produção: version de 14 dígitos terminada no número; laboratório (supabase start): version = "0156".
+  if (/^\d{14}$/.test(m.version ?? "")) return m.version.slice(-4);
+  return /^\d{4}$/.test(m.version ?? "") ? m.version : null;
 }
 
 export interface Resolvido {
