@@ -52,9 +52,7 @@ export type NotificationEvent =
   | "visita_remarcada" // proprietário propôs outro horário → morador
   | "visita_cancelada" // cancelada ou recusada (com motivo) → a outra parte
   // Candidatura e contrato (prompt 23): nunca e-mail de "recusada"
-  | "candidatura_nova" // candidatura recebida → proprietário
-  | "contrato_pronto" // contrato pronto para assinar → as duas partes
-  | "contrato_assinado"; // assinado pelas duas partes → as duas partes
+  | "candidatura_nova"; // candidatura recebida → proprietário (contrato pronto/assinado: contract_status, prompt 24)
 
 // `img` = chave da imagem de assunto (public/media/email/<img>.jpg).
 export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: string) => string; img: string; cta: string; path: string }> = {
@@ -97,8 +95,6 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   visita_remarcada: { subject: "Proposta de novo horário para a visita", body: (n) => `Olá${n ? " " + n : ""}, o proprietário propôs outro horário para a visita. Aceite ou cancele pela plataforma.`, img: "pedido-resposta", cta: "Ver o horário", path: "/dashboard/visitas" },
   visita_cancelada: { subject: "Visita cancelada", body: (n) => `Olá${n ? " " + n : ""}, a visita foi cancelada. Veja os detalhes pela plataforma.`, img: "transacional", cta: "Ver detalhes", path: "/dashboard/visitas" },
   candidatura_nova: { subject: "Nova candidatura no seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, você recebeu uma candidatura para o seu imóvel. Veja o pedido e responda pela plataforma.`, img: "novo-interessado", cta: "Ver a candidatura", path: "/dashboard/leads" },
-  contrato_pronto: { subject: "Contrato pronto para assinar", body: (n) => `Olá${n ? " " + n : ""}, o contrato de locação está pronto. Confira e assine pela plataforma.`, img: "pedido-resposta", cta: "Ver e assinar", path: "/dashboard/contratos" },
-  contrato_assinado: { subject: "Contrato assinado pelas duas partes", body: (n) => `Olá${n ? " " + n : ""}, o contrato de locação foi assinado pelas duas partes. A cópia fica disponível na plataforma.`, img: "candidatura-recebida", cta: "Ver contrato", path: "/dashboard/contratos" },
   proposta_respondida: { subject: "Sua proposta foi respondida", body: (n) => `Olá${n ? " " + n : ""}, a sua proposta teve resposta no Viva Nomads.`, img: "pedido-resposta", cta: "Ver a resposta", path: "/dashboard/orcamentos" },
   documento_recebido: { subject: "Novo documento de imóvel para conferir", body: () => "Um proprietário enviou a documentação do imóvel. Há um item aguardando conferência na fila de moderação.", img: "transacional", cta: "Conferir documento", path: "/admin/documentos" },
 };

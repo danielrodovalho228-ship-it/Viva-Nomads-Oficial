@@ -560,7 +560,8 @@
         "t4-fronteira-demo-real",
         "t6-dinheiro-numeros",
         "t182-jornada-completa",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t206-jornada-dois-lados"
       ]
     },
     "/dashboard/contratos/[id]": {
@@ -593,7 +594,8 @@
         "t89-fechamento-data-inicio",
         "t181-quantas-pessoas",
         "t182-jornada-completa",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t206-jornada-dois-lados"
       ]
     },
     "/dashboard/ferramentas": {
@@ -713,7 +715,8 @@
         "t175-mensagens-candidato",
         "t182-jornada-completa",
         "t183-telas-logadas-390",
-        "t198-rodape-painel-390"
+        "t198-rodape-painel-390",
+        "t206-jornada-dois-lados"
       ]
     },
     "/dashboard/notificacoes": {
@@ -847,7 +850,8 @@
       ],
       "specs": [
         "t4-fronteira-demo-real",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t206-jornada-dois-lados"
       ]
     },
     "/dashboard/viabilidade": {
@@ -868,7 +872,8 @@
       "specs": [
         "t168-visita-video",
         "t48-varredura",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t206-jornada-dois-lados"
       ]
     },
     "/decisao": {
@@ -977,7 +982,8 @@
         "t182-jornada-completa",
         "t184-velocidade",
         "t197-anuncio-teste-oculto",
-        "t201-qa-muse"
+        "t201-qa-muse",
+        "t206-jornada-dois-lados"
       ]
     },
     "/modelodenegocio": {
@@ -1146,6 +1152,14 @@
       ],
       "specs": [
         "t192-conta-4-blocos"
+      ]
+    },
+    "/dashboard/agenda": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t206-jornada-dois-lados"
       ]
     }
   },
@@ -1549,7 +1563,8 @@
       ],
       "specs": [
         "t195-matricula-caf",
-        "t186-cadastro-5-etapas"
+        "t186-cadastro-5-etapas",
+        "t206-jornada-dois-lados"
       ]
     }
   },
