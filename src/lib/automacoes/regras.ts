@@ -5,7 +5,7 @@
   Roda: node --test src/lib/automacoes/regras.test.ts
 */
 
-export type TipoAutomacao = "anuncio_incompleto" | "saida_lembrete" | "avaliacao_pedido" | "renovacao_aviso";
+export type TipoAutomacao = "anuncio_incompleto" | "saida_lembrete" | "avaliacao_pedido" | "renovacao_aviso" | "proposta_vencendo";
 
 const DIA_MS = 86_400_000;
 
@@ -61,7 +61,7 @@ function dataBr(iso: string): string {
 }
 
 /** Linha de detalhe (texto puro) do e-mail/WhatsApp: só datas e nome do imóvel, nada pessoal. */
-export function detalheAutomacao(tipo: TipoAutomacao, ctx: { imovel?: string; fim?: string; dias?: 1 | 3 }): string {
+export function detalheAutomacao(tipo: TipoAutomacao, ctx: { imovel?: string; fim?: string; dias?: 1 | 3; numero?: string }): string {
   const imovel = ctx.imovel ? `Imóvel: ${ctx.imovel}.` : "";
   switch (tipo) {
     case "anuncio_incompleto":
@@ -72,6 +72,8 @@ export function detalheAutomacao(tipo: TipoAutomacao, ctx: { imovel?: string; fi
       return `${imovel} A estadia terminou em ${ctx.fim ? dataBr(ctx.fim) : "ontem"}. Sua avaliação leva 2 minutos e ajuda os próximos moradores.`.trim();
     case "renovacao_aviso":
       return `${imovel} O bloco termina em ${ctx.fim ? dataBr(ctx.fim) : "15 dias"}. Quer renovar? Combine pela plataforma.`.trim();
+    case "proposta_vencendo":
+      return `${imovel} A proposta ${ctx.numero ?? ""} vence em menos de 24 horas. Aceite, contraproponha ou recuse pela plataforma.`.replace(/\s+/g, " ").trim();
   }
 }
 

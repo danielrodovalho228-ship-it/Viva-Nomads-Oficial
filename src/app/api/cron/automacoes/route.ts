@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { notify, type NotificationEvent } from "@/lib/notifications";
 import { hojeEmBrasilia } from "@/lib/checkin";
 import { expirarVencidas } from "@/lib/data/propostas-servidor";
+import { STATUS_ABERTOS, daVez, venceEm24h, type Autor } from "@/lib/propostas/regras";
 import {
   avisoAnuncioIncompleto,
   avisarRenovacao,
@@ -101,6 +102,30 @@ export async function GET(request: Request) {
         })
       );
     }
+  }
+
+  // 5) Proposta aberta que vence nas próximas 24 h → quem tem de responder (prompt 27, item 7).
+  const agora = new Date();
+  const { data: abertas } = await admin
+    .from("propostas")
+    .select("id, numero, owner_id, tenant_id, versao_atual, valida_ate, properties(title), proposta_versoes(versao, autor)")
+    .in("status", STATUS_ABERTOS as string[])
+    .gt("valida_ate", agora.toISOString())
+    .lte("valida_ate", new Date(agora.getTime() + 86_400_000).toISOString())
+    .limit(500);
+  for (const p of abertas ?? []) {
+    if (!venceEm24h(p.valida_ate as string, agora)) continue;
+    const ultima = ((p.proposta_versoes as { versao: number; autor: Autor }[] | null) ?? []).find((v) => v.versao === p.versao_atual);
+    if (!ultima) continue;
+    const vez = daVez(ultima.autor);
+    alvos.push({
+      tipo: "proposta_vencendo",
+      usuarioId: (vez === "owner" ? p.owner_id : p.tenant_id) as string,
+      refId: p.id as string,
+      variante: String(p.versao_atual),
+      url: `/dashboard/propostas/${p.id}`,
+      detalhe: detalheAutomacao("proposta_vencendo", { imovel: (p.properties as unknown as { title?: string } | null)?.title || undefined, numero: p.numero as string }),
+    });
   }
 
   const contagem: Record<string, number> = {};

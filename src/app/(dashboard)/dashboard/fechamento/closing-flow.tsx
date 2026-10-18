@@ -1097,7 +1097,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                 {aceiteBR ? ` (taxa travada em ${aceiteBR})` : ""}
               </p>
               <p className="mt-1 text-xs text-muted">
-                Cobrada de você <strong>sobre o valor total do contrato</strong> (valor mensal × meses), em
+                Cobrada de você <strong>sobre o valor mensal × meses</strong> (sem condomínio, consumo, limpeza ou pet), em
                 uma cobrança à parte, no fechamento. {TEXTO_RENOVACAO_COMISSAO} O valor mensal, de todos os
                 meses, vai do inquilino{" "}
                 <strong>direto para a sua conta</strong> — a plataforma nunca cobra nem repassa

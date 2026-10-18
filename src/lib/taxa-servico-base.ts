@@ -25,12 +25,21 @@ export function baseDaTaxa(p: { valor: number; percent: number; aluguelMensal: n
   return "outra";
 }
 
-/** "12% do valor total" · "12% de 1 mês — regra vigente no aceite em 12/10" · "12% — valor registrado no aceite". */
+/** "R$ 3.200" / "R$ 259,20" (mesmo formato do rotuloTaxaServico de cobranca/regra.ts). */
+function brl(v: number): string {
+  const inteiro = Math.abs(v - Math.round(v)) < 0.005;
+  return `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: inteiro ? 0 : 2, maximumFractionDigits: inteiro ? 0 : 2 })}`;
+}
+
+/** "12% sobre o valor mensal × meses (R$ 3.200 × 4 = R$ 12.800)" (prompt 27) · "12% de 1 mês — regra vigente no aceite em 12/10" · "12% — valor registrado no aceite". */
 export function rotuloBaseTaxa(p: { valor: number; percent: number; aluguelMensal: number; meses: number; aceiteEm?: string | null }): string {
   const base = baseDaTaxa(p);
   const pct = pctTexto(p.percent);
   const dia = diaMes(p.aceiteEm);
-  if (base === "valor_total") return `${pct} do valor total`;
+  if (base === "valor_total") {
+    const m = Math.max(1, Math.round(p.meses));
+    return `${pct} sobre o valor mensal × meses (${brl(p.aluguelMensal)} × ${m} = ${brl(Math.round(p.aluguelMensal * m * 100) / 100)})`;
+  }
   if (base === "um_mes") return `${pct} de 1 mês — regra vigente no aceite${dia ? ` em ${dia}` : ""}`;
   return p.percent > 0 ? `${pct} — valor registrado no aceite${dia ? ` em ${dia}` : ""}` : "valor registrado no aceite";
 }

@@ -298,3 +298,29 @@ export function validaAteDe(dias: number, agora: Date): string {
 export function daVez(autorUltimaVersao: Autor): Autor {
   return autorUltimaVersao === "owner" ? "tenant" : "owner";
 }
+
+/**
+ * Contagem regressiva da validade (prompt 27, item 7): "vence hoje" (menos de 24 h), "vence amanhã", "vence em N
+ * dias" ou "venceu". Em dias corridos a partir de agora.
+ */
+export function textoVencimento(validaAte: string | Date, agora: Date): string {
+  const fim = new Date(validaAte).getTime();
+  if (!Number.isFinite(fim)) return "";
+  const ms = fim - agora.getTime();
+  if (ms <= 0) return "venceu";
+  const dias = Math.ceil(ms / 86_400_000);
+  if (dias <= 1) return "vence hoje";
+  if (dias === 2) return "vence amanhã";
+  return `vence em ${dias} dias`;
+}
+
+/** Lembrete de 24 h (rotina de automações): proposta aberta que vence nas próximas 24 h. */
+export function venceEm24h(validaAte: string | Date, agora: Date): boolean {
+  const ms = new Date(validaAte).getTime() - agora.getTime();
+  return Number.isFinite(ms) && ms > 0 && ms <= 86_400_000;
+}
+
+/** A proposta espera uma resposta de `papel`: aberta e a última versão é da outra parte. */
+export function aguardandoResposta(status: StatusProposta, autorUltimaVersao: Autor, papel: Autor): boolean {
+  return estaAberta(status) && daVez(autorUltimaVersao) === papel;
+}

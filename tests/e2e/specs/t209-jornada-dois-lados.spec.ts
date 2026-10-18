@@ -11,7 +11,7 @@ import { campoBrasiliaParaIso, instanteParaCampoBrasilia } from "../../../src/li
    3. Conta de teste: laudo simulado "TESTE — verificação simulada" em /dashboard/verificacao e no fechamento (a
       jornada segue); conta real continua "em breve".
    4. Taxa de serviço com a base real: contrato antigo "12% de 1 mês — regra vigente no aceite em DD/MM"; novo
-      "12% do valor total".
+      "12% sobre o valor mensal × meses (R$ 3.200 × N = …)" (rótulo único do prompt 27).
    5. Agenda: a visita confirmada e a locação aparecem; outro proprietário não vê; /dashboard/calendario → Agenda.
    6. E-mails da jornada na caixa de teste (visita pedida / confirmada / remarcada / cancelada).
 */
@@ -290,8 +290,8 @@ test.describe("T209 — jornada dos dois lados (prompt 23)", () => {
       await abrir(d, "/dashboard/contratos");
       const bases = d.getByTestId("contrato-taxa-base");
       await expect(bases.filter({ hasText: "12% de 1 mês — regra vigente no aceite em 12/10" })).toHaveCount(1, { timeout: 25_000 });
-      await expect(bases.filter({ hasText: "12% do valor total" })).toHaveCount(1);
-      await expect(d.getByTestId("contrato-taxa").first()).toContainText("Taxa de serviço do contrato");
+      await expect(bases.filter({ hasText: "12% sobre o valor mensal × meses (R$ 3.200 ×" })).toHaveCount(1);
+      await expect(d.getByTestId("contrato-taxa").first()).toContainText("Taxa de serviço:");
       await expect(d.getByTestId("contrato-taxa").first()).not.toContainText(/[Cc]omissão/);
       await semRolagemLateral(d);
       await d.screenshot({ path: `${SAIDA}/t209-taxa-base-${largura}.png`, fullPage: true });

@@ -13,16 +13,25 @@ export interface LinhaSimulacao {
 const escapeHtml = (s: string) =>
   s.replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c] ?? c));
 
-export function imprimirSimulacao(o: {
+export interface FolhaSimulacao {
   titulo: string;
   subtitulo?: string;
   entradas: LinhaSimulacao[];
   resultados: LinhaSimulacao[];
-}): void {
+  /** Cenários de ocupação (Conservador / Realista / Otimista), opcional. */
+  cenarios?: LinhaSimulacao[];
+}
+
+export function imprimirSimulacao(o: FolhaSimulacao): void {
   if (typeof window === "undefined") return;
   const w = window.open("", "_blank", "width=820,height=900");
   if (!w) return;
+  w.document.write(htmlSimulacao(o));
+  w.document.close();
+}
 
+/** A folha em HTML (pura, testável). */
+export function htmlSimulacao(o: FolhaSimulacao): string {
   const linhas = (arr: LinhaSimulacao[]) =>
     arr
       .map(
@@ -31,7 +40,7 @@ export function imprimirSimulacao(o: {
       )
       .join("");
 
-  w.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
+  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
 <title>${escapeHtml(o.titulo)} — Viva Nomads</title>
 <style>
   * { box-sizing: border-box; }
@@ -54,9 +63,9 @@ export function imprimirSimulacao(o: {
   <table>${linhas(o.entradas)}</table>
   <h2>Resultado estimado</h2>
   <table>${linhas(o.resultados)}</table>
+  ${o.cenarios?.length ? `<h2>Cenários de ocupação</h2>\n  <table>${linhas(o.cenarios)}</table>` : ""}
   <p class="foot">Estimativa ILUSTRATIVA — não é promessa de rentabilidade nem aconselhamento
   financeiro/tributário. A plataforma nunca movimenta o aluguel: o valor vai direto ao proprietário.</p>
   <script>window.onload = function(){ window.focus(); window.print(); };<\/script>
-</body></html>`);
-  w.document.close();
+</body></html>`;
 }

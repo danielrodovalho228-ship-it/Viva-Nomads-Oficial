@@ -10,11 +10,11 @@ test("p23 — contrato ANTIGO (taxa sobre 1 mês) mostra a regra vigente no acei
   assert.equal(rotuloBaseTaxa(antigo), "12% de 1 mês — regra vigente no aceite em 12/10");
 });
 
-test("p23 — contrato NOVO (taxa sobre o valor total) mostra '12% do valor total'", () => {
+test("p23/p27 — contrato NOVO mostra a base: '12% sobre o valor mensal × meses (R$ 3.200 × 4 = R$ 12.800)'", () => {
   const novo = { valor: 1536, percent: 0.12, aluguelMensal: 3200, meses: 4, aceiteEm: "2026-10-18T10:00:00Z" };
   assert.equal(baseDaTaxa(novo), "valor_total");
-  assert.equal(rotuloBaseTaxa(novo), "12% do valor total");
-  assert.equal(rotuloBaseTaxa({ valor: 720, percent: 0.08, aluguelMensal: 3000, meses: 3 }), "8% do valor total");
+  assert.equal(rotuloBaseTaxa(novo), "12% sobre o valor mensal × meses (R$ 3.200 × 4 = R$ 12.800)");
+  assert.equal(rotuloBaseTaxa({ valor: 720, percent: 0.08, aluguelMensal: 3000, meses: 3 }), "8% sobre o valor mensal × meses (R$ 3.000 × 3 = R$ 9.000)");
 });
 
 test("p23 — valor que não bate com nenhuma regra não inventa base", () => {
@@ -24,7 +24,7 @@ test("p23 — valor que não bate com nenhuma regra não inventa base", () => {
 test("p23 — a tela usa 'taxa de serviço' (nunca 'comissão') e não afirma regra de renovação", () => {
   const tela = readFileSync(new URL("../app/(dashboard)/dashboard/contratos/contratos-client.tsx", import.meta.url), "utf8");
   const bloco = tela.slice(tela.indexOf('data-testid="contrato-taxa"'), tela.indexOf('data-testid="contrato-taxa"') + 700);
-  assert.match(bloco, /Taxa de serviço do contrato/);
+  assert.match(bloco, /Taxa de serviço:/);
   assert.doesNotMatch(bloco, /[Cc]omissão/);
   assert.doesNotMatch(bloco, /renova/);
   assert.match(tela, /rotuloBaseTaxa\(/);

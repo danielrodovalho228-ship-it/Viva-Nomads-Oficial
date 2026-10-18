@@ -36,14 +36,24 @@ import { useDashDemo, DemoBadge, useDisplayUser } from "@/lib/demo/demo-mode";
 import { DEMO_PROPERTIES, DEMO_KPIS } from "@/lib/demo/seed";
 import { coverPhoto } from "@/lib/media";
 import { formatBRL } from "@/lib/utils";
+import { textoVencimento } from "@/lib/propostas/regras";
 import { ReadyToLiveBadge } from "@/components/ui/badge";
+
+export interface PropostaAguardando {
+  id: string;
+  numero: string;
+  imovel: string;
+  validaAte: string;
+}
 
 export function VisaoGeral({
   imoveisDono,
   interessados = { atual: 0, anterior: 0 },
+  propostasAguardando = [],
 }: {
   imoveisDono: Property[];
   interessados?: { atual: number; anterior: number };
+  propostasAguardando?: PropostaAguardando[];
 }) {
   // Identidade de EXIBIÇÃO: nunca cai na persona demo ("Marcos") para conta real
   // com demo desligado (fronteira demo/real). Sem nome → "Olá!".
@@ -57,7 +67,7 @@ export function VisaoGeral({
     <>
       {/* Pergunta de papel no primeiro login (uma vez só). */}
       <RoleWelcomeModal />
-      {mode === "tenant" ? <TenantDashboard name={firstName} /> : <OwnerDashboard name={firstName} imoveisDono={imoveisDono} interessados={interessados} />}
+      {mode === "tenant" ? <TenantDashboard name={firstName} propostas={propostasAguardando} /> : <OwnerDashboard name={firstName} imoveisDono={imoveisDono} interessados={interessados} />}
     </>
   );
 }
@@ -266,13 +276,41 @@ function OwnerDashboard({
   );
 }
 
-function TenantDashboard({ name }: { name: string }) {
+/** "Você recebeu uma proposta — vence em 5 dias" (prompt 27, item 7). */
+function CartaoPropostas({ propostas }: { propostas: PropostaAguardando[] }) {
+  if (!propostas.length) return null;
+  const primeira = propostas[0];
+  const vence = textoVencimento(primeira.validaAte, new Date());
+  const titulo =
+    propostas.length === 1 ? `Você recebeu uma proposta — ${vence}` : `Você tem ${propostas.length} propostas para responder — a primeira ${vence}`;
+  return (
+    <Link
+      href={propostas.length === 1 ? `/dashboard/propostas/${primeira.id}` : "/dashboard/propostas"}
+      className="mb-5 flex items-center gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 hover:border-amber-400"
+      data-testid="cartao-proposta-recebida"
+    >
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white text-amber-800">
+        <FileSignature className="h-5 w-5" aria-hidden />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block font-semibold text-ink">{titulo}</span>
+        <span className="block truncate text-sm text-muted">
+          {primeira.numero} · {primeira.imovel}
+        </span>
+      </span>
+      <span className="shrink-0 text-sm font-medium text-forest underline">Responder</span>
+    </Link>
+  );
+}
+
+function TenantDashboard({ name, propostas }: { name: string; propostas: PropostaAguardando[] }) {
   const demo = useDashDemo();
   const recommended = useProperties("/api/properties").properties.slice(0, 3);
   return (
     <>
       {/* Título da tela (h1): sem ele a Visão geral do inquilino não tinha cabeçalho principal (varredura t48). */}
       <PageTitle title="Visão geral" subtitle="Candidaturas, favoritos, buscas salvas e mensagens num lugar só." />
+      <CartaoPropostas propostas={propostas} />
       {/* Primeiro acesso: checklist de 3 passos (ou o banner, quando concluído/oculto). */}
       <TenantOnboarding name={name} />
 

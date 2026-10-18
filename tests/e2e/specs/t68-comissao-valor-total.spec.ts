@@ -33,14 +33,14 @@ test.describe("T68 — Comissão sobre o valor total: páginas públicas", () =>
 test.describe("T68 — Comissão sobre o valor total: ferramentas do proprietário", () => {
   test.use({ storageState: authFile("proprietario") });
 
-  test("/dashboard/simulador e /dashboard/roi-imovel: % do valor total do contrato", async ({ page }) => {
+  test("/dashboard/simulador e /dashboard/roi-imovel: % sobre o valor mensal × meses (rótulo único do prompt 27)", async ({ page }) => {
     await page.goto("/dashboard/simulador", { waitUntil: "networkidle" });
     let texto = await page.locator("main").innerText();
-    expect(texto).toMatch(/do valor total/i);
+    expect(texto).toMatch(/sobre o valor mensal × meses/i);
     expect(texto).not.toMatch(/de 1 aluguel|de um aluguel|1º aluguel/i);
     await page.goto("/dashboard/roi-imovel", { waitUntil: "networkidle" });
     texto = await page.locator("main").innerText();
-    expect(texto).toMatch(/valor total do contrato/i);
+    expect(texto).toMatch(/sobre o valor mensal × meses/i);
     expect(texto).not.toMatch(/primeiro mês/i);
   });
 });
