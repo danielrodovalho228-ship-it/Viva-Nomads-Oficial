@@ -120,23 +120,24 @@ test("parceiros: todos desligados por padrão = receita base (só a taxa de serv
 
 const TODOS = PARCEIROS.map((p) => p.id);
 
-test("parceiros: todos ligados no Base ≈ R$ 38,87 por contrato antes do imposto (seguros a 10% do prêmio)", () => {
+test("parceiros: todos ligados no Base ≈ R$ 36,37 por contrato antes do imposto (seguros a 10% do prêmio)", () => {
   assert.equal(REPRESENTANTE_SEGUROS.padrao, 0.1);
-  assert.equal(Math.round(parceirosPorContrato({ operador: 0, parceiros: TODOS }) * 100) / 100, 38.87);
+  assert.equal(Math.round(parceirosPorContrato({ operador: 0, parceiros: TODOS }) * 100) / 100, 36.37);
   const p = projetar("base", { operador: 0, parceiros: TODOS });
   const m = p.meses[20]; // mês 21: todos já começaram
-  assert.equal(Math.round(m.receitaParceiros * 100) / 100, Math.round(m.contratos * 38.87 * 100) / 100);
-  perto(p.anos[2].receitaParceiros, 13294, "parceiros ano 3");
+  assert.equal(Math.round(m.receitaParceiros * 100) / 100, Math.round(m.contratos * 36.37 * 100) / 100);
+  perto(p.anos[2].receitaParceiros, 12439, "parceiros ano 3");
   perto(p.piorCaixa, -41187, "pior caixa com parceiros");
   assert.equal(p.mesPayback, 14);
 });
 
-test("parceiro com início no mês 13 não soma nada no ano 1", () => {
-  const carro = PARCEIROS.find((p) => p.id === "carro")!;
-  assert.equal(carro.mesInicio, 13);
-  const p = projetar("base", { operador: 0, parceiros: ["carro"] });
-  assert.equal(p.anos[0].receitaParceiros, 0);
-  assert.ok(p.anos[1].receitaParceiros > 0);
+test("parceiro só soma a partir do mês de início (o que começa mais tarde)", () => {
+  // (O "Carro mensal" saiu da lista: a Nômade Drive não existe mais — correção do Daniel, 18/10.)
+  const tardio = [...PARCEIROS].sort((a, b) => b.mesInicio - a.mesInicio)[0];
+  const p = projetar("base", { operador: 0, parceiros: [tardio.id] });
+  for (const m of p.meses.slice(0, tardio.mesInicio - 1)) assert.equal(m.receitaParceiros, 0);
+  assert.ok(p.meses.slice(tardio.mesInicio - 1).some((m) => m.receitaParceiros > 0));
+  assert.equal(PARCEIROS.some((x) => /n[ôo]made drive|carro mensal/i.test(x.nome)), false);
 });
 
 test("seguros como representante: 0% = zero; acima de 15% é limitado a 15%", () => {

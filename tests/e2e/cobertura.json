@@ -1110,7 +1110,8 @@
       ],
       "specs": [
         "t3-isolamento-papeis",
-        "t200-roi-socios"
+        "t200-roi-socios",
+        "t208-sem-nomade-drive"
       ]
     },
     "/seguranca": {
@@ -1128,7 +1129,8 @@
       "specs": [
         "t3-isolamento-papeis",
         "t7-fluxo-publico",
-        "t200-roi-socios"
+        "t200-roi-socios",
+        "t208-sem-nomade-drive"
       ]
     },
     "/socios": {

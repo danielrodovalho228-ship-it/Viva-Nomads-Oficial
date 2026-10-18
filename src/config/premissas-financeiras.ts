@@ -184,7 +184,6 @@ export const PARCEIROS: Parceiro[] = [
   { id: "conferencia", nome: "Conferência de entrada e saída", tipo: "servico", valorUnidade: 25, adesao: 0.2, unidadesPorContrato: 2, mesInicio: 4, status: "sem parceiro", detalhe: "Entrada e saída." },
   { id: "fotografia", nome: "Fotografia", tipo: "servico", valorUnidade: 45, adesao: 0.1, unidadesPorContrato: 1, mesInicio: 4, status: "sem parceiro", detalhe: "Fotos do anúncio." },
   { id: "limpeza", nome: "Limpeza/manutenção", tipo: "servico", valorUnidade: 20, adesao: 0.1, unidadesPorContrato: 1, mesInicio: 6, status: "sem parceiro", detalhe: "Entre locações." },
-  { id: "carro", nome: "Carro mensal (Nômade Drive)", tipo: "servico", valorUnidade: 50, adesao: 0.05, unidadesPorContrato: 1, mesInicio: 13, status: "em conversa", detalhe: "Indicação de aluguel mensal de carro." },
   { id: "mudanca", nome: "Mudança/frete", tipo: "servico", valorUnidade: 20, adesao: 0.05, unidadesPorContrato: 1, mesInicio: 6, status: "sem parceiro", detalhe: "Indicação." },
 ];
 
