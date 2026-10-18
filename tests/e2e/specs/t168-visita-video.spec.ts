@@ -84,6 +84,13 @@ test.describe("T168 — Visita por vídeo: pedir → confirmar", () => {
     await expect(page.getByTestId("visita-erro")).toBeVisible();
     await page.getByTestId("visita-link").fill(LINK);
     await page.getByTestId("visita-confirmar").click();
+    // Confere primeiro o que o servidor gravou: separa "a ação não gravou" (mostra o alerta da tela) de "a tela não recarregou".
+    await expect
+      .poll(async () => (await adm().from("visitas_video").select("status").eq("property_id", ids.imovel!).maybeSingle()).data?.status, {
+        timeout: 25_000,
+        message: `ação não gravou; alerta na tela: ${await page.getByTestId("visita-erro").textContent({ timeout: 1_000 }).catch(() => "(nenhum)")}`,
+      })
+      .toBe("confirmado");
     await expect(page.getByTestId("visita-status").first()).toHaveText("Confirmada", { timeout: 25_000 });
     await page.screenshot({ path: "test-results/t168-dono-390.png" });
     await page.setViewportSize({ width: 1280, height: 800 });

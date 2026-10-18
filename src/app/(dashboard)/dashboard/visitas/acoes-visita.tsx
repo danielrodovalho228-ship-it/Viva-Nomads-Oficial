@@ -14,6 +14,7 @@ export function AcoesVisitaDono({ id, status, horarios }: { id: string; status: 
   const [link, setLink] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
+  const [respondido, setRespondido] = useState(false);
 
   async function rodar(fn: () => ReturnType<typeof responderVisitaVideo>) {
     setMsg(null);
@@ -21,10 +22,12 @@ export function AcoesVisitaDono({ id, status, horarios }: { id: string; status: 
     const r = await fn().catch(() => null);
     setOcupado(false);
     if (!r?.ok) return setMsg(r?.error ?? "Não foi possível agora. Tente de novo.");
+    // Os botões somem na hora e a lista é recarregada, sem depender só da revalidação da ação (t168).
+    setRespondido(true);
     router.refresh();
   }
 
-  if (status === "feito" || status === "cancelado") return null;
+  if (status === "feito" || status === "cancelado" || respondido) return null;
   return (
     <div className="mt-4 border-t border-sage-200 pt-4" data-testid="visita-acoes">
       {status === "pedido" && (
