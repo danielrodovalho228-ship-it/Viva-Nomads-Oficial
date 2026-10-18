@@ -36,7 +36,13 @@ test.describe("T115 — Importar meu anúncio", () => {
     await expect(revisao).toContainText("65 m²");
     await expect(revisao).toContainText("Removemos telefone");
     await revisao.getByTestId("importar-aplicar").click();
-    await expect(page.getByTestId("importar-aplicado")).toBeVisible();
+    // Prompt 10: o atalho leva direto à etapa 3, "O que encontramos", com tudo preenchido.
+    await expect(page.getByRole("heading", { name: "O que encontramos" })).toBeVisible();
+    await expect(page.getByTestId("cadastro-quartos")).toHaveValue("2");
+    await expect(page.getByTestId("cadastro-banheiros")).toHaveValue("1");
+    await expect(page.getByTestId("cadastro-area")).toHaveValue("65");
+    await expect(page.getByTestId("cadastro-titulo")).toHaveValue("Apartamento mobiliado no Santa Mônica");
+    await expect(page.getByTestId("cadastro-descricao")).not.toHaveValue(/99999/);
 
     // Sem rolagem lateral a 390 px.
     const largura = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);

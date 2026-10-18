@@ -594,7 +594,7 @@ export default function NewPropertyPage() {
       // `?etapa=` na URL de um anúncio novo vence a etapa guardada no rascunho local.
       if (alive && etapaParam !== null) {
         setStep(etapaParam);
-        setEtapaMax((m) => Math.max(m, posicaoDaEtapa(etapaParam)));
+        setEtapaMax((m) => Math.max(m, etapaParam));
       }
     };
     getLatestDraft()
