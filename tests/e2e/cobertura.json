@@ -112,6 +112,14 @@
         "t183-telas-logadas-390"
       ]
     },
+    "/admin/cidades": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t196-cidades-liberadas"
+      ]
+    },
     "/admin/documentos": {
       "personas": [
         "admin"
@@ -720,6 +728,17 @@
         "t193-propostas"
       ]
     },
+    "/dashboard/orcamentos/nova": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": [
+        "t193-propostas",
+        "t183-telas-logadas-390"
+      ]
+    },
     "/dashboard/pedidos": {
       "personas": [
         "inquilino",
@@ -740,6 +759,16 @@
       "specs": [
         "t11-travessias",
         "t183-telas-logadas-390"
+      ]
+    },
+    "/dashboard/propostas/[id]": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": [
+        "t193-propostas"
       ]
     },
     "/dashboard/reembolsos": {
@@ -1102,27 +1131,6 @@
       "specs": [
         "t192-conta-4-blocos"
       ]
-    },
-    "/dashboard/orcamentos/nova": {
-      "personas": [
-        "inquilino",
-        "proprietario",
-        "admin"
-      ],
-      "specs": [
-        "t193-propostas",
-        "t183-telas-logadas-390"
-      ]
-    },
-    "/dashboard/propostas/[id]": {
-      "personas": [
-        "inquilino",
-        "proprietario",
-        "admin"
-      ],
-      "specs": [
-        "t193-propostas"
-      ]
     }
   },
   "rotas": {
@@ -1342,6 +1350,14 @@
         "t195-matricula-caf"
       ]
     },
+    "/api/documentos/matricula/caso": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t195-matricula-caf"
+      ]
+    },
     "/api/empresas": {
       "personas": [
         "publico"
@@ -1510,14 +1526,6 @@
       "specs": [
         "t20-p1-agentes"
       ]
-    },
-    "/api/documentos/matricula/caso": {
-      "personas": [
-        "proprietario"
-      ],
-      "specs": [
-        "t195-matricula-caf"
-      ]
     }
   },
   "actions": {
@@ -1532,6 +1540,34 @@
     "src/app/acesso-socios/actions.ts#entrarSocios": {
       "personas": [
         "socio"
+      ],
+      "specs": []
+    },
+    "src/lib/cidades-liberadas/actions.ts#alternarCidade": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/cidades-liberadas/actions.ts#cadastrarCidade": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/cidades-liberadas/actions.ts#registrarInteresseCidade": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/cidades-liberadas/actions.ts#statusCidade": {
+      "personas": [
+        "inquilino",
+        "proprietario"
       ],
       "specs": []
     },
@@ -1741,6 +1777,14 @@
       ],
       "specs": []
     },
+    "src/lib/data/ajuda-publicacao-actions.ts#decidirRascunhoAjuda": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t191-ajuda-publicacao"
+      ]
+    },
     "src/lib/data/ajuda-publicacao-actions.ts#filaAjudaPublicacaoAdmin": {
       "personas": [
         "admin"
@@ -1750,14 +1794,6 @@
       ]
     },
     "src/lib/data/ajuda-publicacao-actions.ts#meusPedidosDeAjuda": {
-      "personas": [
-        "proprietario"
-      ],
-      "specs": [
-        "t191-ajuda-publicacao"
-      ]
-    },
-    "src/lib/data/ajuda-publicacao-actions.ts#decidirRascunhoAjuda": {
       "personas": [
         "proprietario"
       ],
@@ -2440,6 +2476,30 @@
       ],
       "specs": []
     },
+    "src/lib/data/matriculas-admin.ts#contadoresMatriculas": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t195-matricula-caf"
+      ]
+    },
+    "src/lib/data/matriculas-admin.ts#decidirMatriculaAdmin": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t195-matricula-caf"
+      ]
+    },
+    "src/lib/data/matriculas-admin.ts#listMatriculasFila": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t195-matricula-caf"
+      ]
+    },
     "src/lib/data/menu-actions.ts#imoveisAtivosDoDono": {
       "personas": [
         "proprietario",
@@ -2719,6 +2779,60 @@
       ],
       "specs": []
     },
+    "src/lib/data/propostas-actions.ts#dadosNovaProposta": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t193-propostas"
+      ]
+    },
+    "src/lib/data/propostas-actions.ts#enviarProposta": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t193-propostas"
+      ]
+    },
+    "src/lib/data/propostas-actions.ts#interessadosParaProposta": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t193-propostas"
+      ]
+    },
+    "src/lib/data/propostas-actions.ts#lerProposta": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t193-propostas"
+      ]
+    },
+    "src/lib/data/propostas-actions.ts#listarPropostas": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t193-propostas"
+      ]
+    },
+    "src/lib/data/propostas-actions.ts#responderProposta": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t193-propostas"
+      ]
+    },
     "src/lib/data/push-actions.ts#enviarPushDeTeste": {
       "personas": [
         "inquilino",
@@ -2933,84 +3047,6 @@
         "admin"
       ],
       "specs": []
-    },
-    "src/lib/data/propostas-actions.ts#dadosNovaProposta": {
-      "personas": [
-        "inquilino",
-        "proprietario"
-      ],
-      "specs": [
-        "t193-propostas"
-      ]
-    },
-    "src/lib/data/propostas-actions.ts#enviarProposta": {
-      "personas": [
-        "inquilino",
-        "proprietario"
-      ],
-      "specs": [
-        "t193-propostas"
-      ]
-    },
-    "src/lib/data/propostas-actions.ts#interessadosParaProposta": {
-      "personas": [
-        "inquilino",
-        "proprietario"
-      ],
-      "specs": [
-        "t193-propostas"
-      ]
-    },
-    "src/lib/data/propostas-actions.ts#lerProposta": {
-      "personas": [
-        "inquilino",
-        "proprietario"
-      ],
-      "specs": [
-        "t193-propostas"
-      ]
-    },
-    "src/lib/data/propostas-actions.ts#listarPropostas": {
-      "personas": [
-        "inquilino",
-        "proprietario"
-      ],
-      "specs": [
-        "t193-propostas"
-      ]
-    },
-    "src/lib/data/propostas-actions.ts#responderProposta": {
-      "personas": [
-        "inquilino",
-        "proprietario"
-      ],
-      "specs": [
-        "t193-propostas"
-      ]
-    },
-    "src/lib/data/matriculas-admin.ts#listMatriculasFila": {
-      "personas": [
-        "admin"
-      ],
-      "specs": [
-        "t195-matricula-caf"
-      ]
-    },
-    "src/lib/data/matriculas-admin.ts#contadoresMatriculas": {
-      "personas": [
-        "admin"
-      ],
-      "specs": [
-        "t195-matricula-caf"
-      ]
-    },
-    "src/lib/data/matriculas-admin.ts#decidirMatriculaAdmin": {
-      "personas": [
-        "admin"
-      ],
-      "specs": [
-        "t195-matricula-caf"
-      ]
     }
   }
 }
