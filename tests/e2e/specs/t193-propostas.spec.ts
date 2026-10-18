@@ -3,7 +3,7 @@ import { randomBytes } from "node:crypto";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T191 — Orçamentos de verdade (prompt 17), com 2 contas de teste por cenário, a 390 e 1280 px:
+  T193 — Orçamentos de verdade (prompt 17), com 2 contas de teste por cenário, a 390 e 1280 px:
   1. proprietário envia R$ 3.200 × 4 (v1) → interessado vê "Vista" → "Vou ficar mais tempo" (6 meses, 6%) (v2) →
      proprietário aceita → o Fechamento abre com R$ 3.008 × 6 = R$ 18.048, sem redigitar;
   2. o interessado recusa com motivo → o proprietário vê o status e o motivo; nada de fechamento;
@@ -89,7 +89,7 @@ async function propostaNoBanco(c: Cenario, versoes: Array<{ autor: "owner" | "te
   return p.id as string;
 }
 
-test.describe("T191 — propostas", () => {
+test.describe("T193 — propostas", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório (contas de teste).");
   test.describe.configure({ mode: "serial" });
   test.setTimeout(180_000);
@@ -104,7 +104,7 @@ test.describe("T191 — propostas", () => {
       const id = await enviarPelaTela(dono, c);
       await expect(dono.getByTestId("proposta-status")).toHaveText("Enviada");
       await expect(dono.getByTestId("proposta-taxa")).toContainText("Taxa de serviço 12%");
-      await dono.screenshot({ path: `${SAIDA}/t191-1-enviada-dono-${largura}.png`, fullPage: true });
+      await dono.screenshot({ path: `${SAIDA}/t193-1-enviada-dono-${largura}.png`, fullPage: true });
       // Número do servidor.
       await expect(dono.getByRole("heading", { name: /Proposta ORC-\d{4}-\d{4}/ })).toBeVisible();
 
@@ -118,7 +118,7 @@ test.describe("T191 — propostas", () => {
       await inq.getByTestId("ficar-mais-tempo").click();
       await expect(inq.getByTestId("frase-mais-tempo")).toHaveText("Antes: R$ 3.200 × 4 = R$ 12.800 → Agora: R$ 3.008 × 6 = R$ 18.048 (6% de desconto)");
       await expect(inq.getByTestId("resumo-mudancas")).toContainText("4 meses");
-      await inq.screenshot({ path: `${SAIDA}/t191-2-contraproposta-${largura}.png`, fullPage: true });
+      await inq.screenshot({ path: `${SAIDA}/t193-2-contraproposta-${largura}.png`, fullPage: true });
       await inq.getByTestId("enviar-contraproposta").click();
       await expect(inq.getByTestId("aguardando")).toBeVisible({ timeout: 15_000 });
       await expect(inq.getByTestId("proposta-status")).toHaveText("Contraproposta");
@@ -127,26 +127,26 @@ test.describe("T191 — propostas", () => {
       await inq.goto("/dashboard/mensagens", { waitUntil: "domcontentloaded" });
       await inq.getByText(/Studio proposta Fluxo/).first().click().catch(() => {});
       await expect(inq.getByTestId("cartao-proposta").first()).toBeVisible({ timeout: 15_000 });
-      await inq.screenshot({ path: `${SAIDA}/t191-3-cartao-conversa-${largura}.png`, fullPage: false });
+      await inq.screenshot({ path: `${SAIDA}/t193-3-cartao-conversa-${largura}.png`, fullPage: false });
 
       // Lista de Orçamentos do proprietário: status e versão.
       await dono.goto("/dashboard/orcamentos", { waitUntil: "domcontentloaded" });
       const linha = largura < 768 ? dono.getByTestId("proposta-item").first() : dono.getByTestId("tabela-propostas").locator("tbody tr").first();
       await expect(linha).toContainText("Contraproposta");
       await expect(linha).toContainText("v2");
-      await dono.screenshot({ path: `${SAIDA}/t191-4-lista-${largura}.png`, fullPage: true });
+      await dono.screenshot({ path: `${SAIDA}/t193-4-lista-${largura}.png`, fullPage: true });
 
       await dono.goto(`/dashboard/propostas/${id}`, { waitUntil: "domcontentloaded" });
       await expect(dono.getByTestId("historico-versoes").getByTestId("versao")).toHaveCount(2);
       await expect(dono.getByTestId("historico-versoes")).toContainText("4 meses");
       await expect(dono.getByTestId("historico-versoes")).toContainText("6 meses");
-      await dono.screenshot({ path: `${SAIDA}/t191-5-historico-${largura}.png`, fullPage: true });
+      await dono.screenshot({ path: `${SAIDA}/t193-5-historico-${largura}.png`, fullPage: true });
       await dono.getByTestId("proposta-aceitar").click();
       await dono.waitForURL(/\/dashboard\/fechamento\?c=/, { timeout: 20_000 });
       const acordo = dono.getByTestId("fechamento-proposta");
       await expect(acordo).toContainText("3.008", { timeout: 20_000 });
       await expect(acordo).toContainText("18.048");
-      await dono.screenshot({ path: `${SAIDA}/t191-6-fechamento-${largura}.png`, fullPage: false });
+      await dono.screenshot({ path: `${SAIDA}/t193-6-fechamento-${largura}.png`, fullPage: false });
       // Taxa congelada no aceite (1 imóvel ativo = 12%) e candidatura aceita.
       const { data: p } = await adm().from("propostas").select("status, taxa_congelada").eq("id", id).single();
       expect(p!.status).toBe("aceita");
@@ -174,7 +174,7 @@ test.describe("T191 — propostas", () => {
     await dono.goto(`/dashboard/propostas/${id}`, { waitUntil: "domcontentloaded" });
     await expect(dono.getByTestId("proposta-recusa")).toContainText("Motivo: Datas");
     await expect(dono.getByTestId("ir-fechamento")).toHaveCount(0);
-    await dono.screenshot({ path: `${SAIDA}/t191-7-recusa-390.png`, fullPage: true });
+    await dono.screenshot({ path: `${SAIDA}/t193-7-recusa-390.png`, fullPage: true });
     const { count } = await adm().from("contratos").select("id", { count: "exact", head: true }).eq("lead_id", c.lead);
     expect(count ?? 0).toBe(0);
     await dono.context().close();
@@ -188,7 +188,7 @@ test.describe("T191 — propostas", () => {
     await expect(inq.getByTestId("proposta-status")).toHaveText("Expirada");
     await expect(inq.getByTestId("proposta-expirada")).toBeVisible();
     await expect(inq.getByTestId("proposta-acoes")).toHaveCount(0);
-    await inq.screenshot({ path: `${SAIDA}/t191-8-expirada-1280.png`, fullPage: true });
+    await inq.screenshot({ path: `${SAIDA}/t193-8-expirada-1280.png`, fullPage: true });
     await inq.context().close();
   });
 
@@ -209,7 +209,7 @@ test.describe("T191 — propostas", () => {
     await expect(inq.getByTestId("proposta-recusar")).toBeVisible();
     await expect(inq.getByTestId("proposta-contrapropor")).toHaveCount(0);
     await expect(inq.getByTestId("historico-versoes").getByTestId("versao")).toHaveCount(3);
-    await inq.screenshot({ path: `${SAIDA}/t191-9-tres-rodadas-390.png`, fullPage: true });
+    await inq.screenshot({ path: `${SAIDA}/t193-9-tres-rodadas-390.png`, fullPage: true });
     await inq.context().close();
   });
 
@@ -264,7 +264,7 @@ test.describe("T191 — propostas", () => {
     await b.getByTestId("contra-valor").fill("2800");
     await b.getByTestId("enviar-contraproposta").click();
     await expect(b.getByTestId("aviso-minimo")).toHaveText("Abaixo do que o proprietário aceita; tente a partir de R$ 3.000.");
-    await b.screenshot({ path: `${SAIDA}/t191-10-abaixo-minimo-390.png`, fullPage: true });
+    await b.screenshot({ path: `${SAIDA}/t193-10-abaixo-minimo-390.png`, fullPage: true });
     const tudo = (await b.content()) + respostas.join("\n");
     expect(tudo).not.toMatch(/2\.?950/);
     await b.context().close();

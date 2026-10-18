@@ -714,7 +714,7 @@
       ],
       "specs": [
         "t183-telas-logadas-390",
-        "t191-propostas"
+        "t193-propostas"
       ]
     },
     "/dashboard/pedidos": {
@@ -1107,7 +1107,7 @@
         "admin"
       ],
       "specs": [
-        "t191-propostas",
+        "t193-propostas",
         "t183-telas-logadas-390"
       ]
     },
@@ -1118,7 +1118,7 @@
         "admin"
       ],
       "specs": [
-        "t191-propostas"
+        "t193-propostas"
       ]
     }
   },
@@ -2920,7 +2920,7 @@
         "proprietario"
       ],
       "specs": [
-        "t191-propostas"
+        "t193-propostas"
       ]
     },
     "src/lib/data/propostas-actions.ts#enviarProposta": {
@@ -2929,7 +2929,7 @@
         "proprietario"
       ],
       "specs": [
-        "t191-propostas"
+        "t193-propostas"
       ]
     },
     "src/lib/data/propostas-actions.ts#interessadosParaProposta": {
@@ -2938,7 +2938,7 @@
         "proprietario"
       ],
       "specs": [
-        "t191-propostas"
+        "t193-propostas"
       ]
     },
     "src/lib/data/propostas-actions.ts#lerProposta": {
@@ -2947,7 +2947,7 @@
         "proprietario"
       ],
       "specs": [
-        "t191-propostas"
+        "t193-propostas"
       ]
     },
     "src/lib/data/propostas-actions.ts#listarPropostas": {
@@ -2956,7 +2956,7 @@
         "proprietario"
       ],
       "specs": [
-        "t191-propostas"
+        "t193-propostas"
       ]
     },
     "src/lib/data/propostas-actions.ts#responderProposta": {
@@ -2965,7 +2965,7 @@
         "proprietario"
       ],
       "specs": [
-        "t191-propostas"
+        "t193-propostas"
       ]
     }
   }
