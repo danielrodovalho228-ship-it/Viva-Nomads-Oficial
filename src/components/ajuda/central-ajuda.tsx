@@ -396,11 +396,11 @@ function NovoChamado({
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block text-sm">
               <span className="mb-1 block font-medium text-ink">Seu nome</span>
-              <input required minLength={2} value={nome} onChange={(e) => setNome(e.target.value)} maxLength={60} autoComplete="name" className={campo} />
+              <input required minLength={2} name="nome" value={nome} onChange={(e) => setNome(e.target.value)} maxLength={60} autoComplete="name" className={campo} />
             </label>
             <label className="block text-sm">
               <span className="mb-1 block font-medium text-ink">Seu e-mail (para a resposta)</span>
-              <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className={campo} />
+              <input type="email" required name="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className={campo} />
             </label>
             {captcha.widget && <div className="sm:col-span-2">{captcha.widget}</div>}
             <p data-testid="chamado-aviso-dados" className="text-xs text-muted sm:col-span-2">
