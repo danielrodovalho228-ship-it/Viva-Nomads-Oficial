@@ -35,6 +35,8 @@ export async function GET() {
     feita: r.feita,
     ok: r.ok,
     temCpf: String(perfil?.cpf ?? "").replace(/\D/g, "").length === 11,
+    // Prompt 23: a tela de verificação mostra o laudo simulado só para a conta de teste (decisão do servidor).
+    teste: perfil?.is_teste === true,
     validoAte: r.feita ? ((laudo?.valid_until as string | null) ?? null) : null,
   });
 }

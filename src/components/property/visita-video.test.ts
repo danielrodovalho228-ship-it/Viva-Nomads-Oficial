@@ -11,6 +11,8 @@ test("t168: a janela do pedido de visita sai do cartão de preço (portal no bod
 });
 
 test("t168: o botão de enviar e o de abrir mantêm os data-testid do laboratório", () => {
-  assert.match(src, /data-testid="visita-video-enviar"/);
-  assert.match(src, /data-testid="visita-video-abrir"/);
+  // Prompt 23: vídeo e presencial usam o mesmo pedido; o prefixo da visita por vídeo continua "visita-video".
+  assert.match(src, /prefixo: "visita-video"/);
+  assert.match(src, /data-testid=\{`\$\{t\.prefixo\}-enviar`\}/);
+  assert.match(src, /modalidade === "video" \? "visita-video-abrir" : "agendar-visita"/);
 });

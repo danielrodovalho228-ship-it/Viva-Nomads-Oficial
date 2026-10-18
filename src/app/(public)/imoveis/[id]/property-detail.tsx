@@ -20,7 +20,6 @@ import {
   FileSignature,
   MessageSquare,
   MessageCircle,
-  CalendarCheck,
   ShieldCheck,
   ArrowRight,
   CalendarDays,
@@ -31,7 +30,7 @@ import {
 import type { Property } from "@/lib/types";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { ShareButton } from "@/components/share-button";
-import { VisitaVideo } from "@/components/property/visita-video";
+import { VisitaPresencial, VisitaVideo } from "@/components/property/visita-video";
 import { useAuthStore } from "@/lib/store";
 import { alvoAbrir, urlLoginParaAbrir, type AlvoAbrir } from "@/lib/imovel/abrir-apos-login";
 import { PropertyTags, InvoiceBadge, InsuranceBadge, PrecoJustoBadge } from "@/components/ui/badge";
@@ -101,23 +100,23 @@ export function PropertyDetail({
   const [motivoEstadia, setMotivoEstadia] = useState("");
   // Prompt 8: quantas pessoas vão morar (vai na candidatura; o servidor confere com a capacidade).
   const [pessoas, setPessoas] = useState(1);
-  // Composer de dúvida/visita: o inquilino escreve a mensagem de verdade.
-  const [composeKind, setComposeKind] = useState<"duvida" | "visita" | null>(null);
+  // Composer de dúvida: o inquilino escreve a mensagem de verdade. A visita presencial (prompt 23) tem o próprio pedido,
+  // com até 3 horários em horário de Brasília, como a visita por vídeo.
+  const [composeKind, setComposeKind] = useState<"duvida" | null>(null);
   const [composeText, setComposeText] = useState("");
   // QA do Muse (18/10): sem login, "Agendar visita" e "Visita por vídeo" levam ao login e voltam com a janela aberta.
   const usuario = useAuthStore((s) => s.user);
   const authChecked = useAuthStore((s) => s.authChecked);
   const semLogin = authChecked && !usuario && !isExemplo(property);
   const [abrirVideo, setAbrirVideo] = useState(false);
+  const [abrirPresencial, setAbrirPresencial] = useState(false);
   const irParaLogin = (alvo: AlvoAbrir) => router.push(urlLoginParaAbrir(property.id, alvo));
   useEffect(() => {
     const alvo = alvoAbrir(window.location.search);
     if (!alvo) return;
     const t = setTimeout(() => {
-      if (alvo === "visita") {
-        setComposeText("");
-        setComposeKind("visita");
-      } else setAbrirVideo(true);
+      if (alvo === "visita") setAbrirPresencial(true);
+      else setAbrirVideo(true);
     }, 0);
     return () => clearTimeout(t);
   }, []);
@@ -142,7 +141,7 @@ export function PropertyDetail({
       : 0;
 
   // Dúvida / visita / candidatura: registra o interesse e avisa o proprietário
-  // (e-mail/WhatsApp). Candidatura segue para o fluxo de fechamento.
+  // (pela plataforma). Candidatura segue para o fluxo de fechamento.
   // Evento anônimo de uso (0067): uma visualização por abertura do anúncio.
   useEffect(() => {
     if (!isExemplo(property)) registrarEvento("ver_anuncio", { imovelId: property.id, cidade: property.city });
@@ -373,34 +372,14 @@ export function PropertyDetail({
       </p>
       <AvisoPetCandidatura petsAllowed={property.petsAllowed} regras={property.petsRegras} exemplo={exemplo} />
       <AvisoAntigolpe />
-      <Button
-        variant="ghost"
-        size="sm"
-        className="w-full"
-        onClick={() => {
-          if (semLogin) return irParaLogin("visita");
-          setComposeText("");
-          setComposeKind("visita");
-        }}
-        data-testid="agendar-visita"
-        disabled={pending !== null || sent.visita}
-      >
-        {sent.visita ? (
-          <>
-            <Check className="h-4 w-4" /> Visita solicitada
-          </>
-        ) : (
-          <>
-            <CalendarCheck className="h-4 w-4" />
-            {pending === "visita" ? "Enviando..." : "Agendar visita"}
-          </>
-        )}
-      </Button>
-      {(sent.duvida || sent.visita) && (
-        <p className="text-center text-xs text-sage">
-          Enviamos seu contato ao proprietário — ele responde por e-mail/WhatsApp.
-        </p>
-      )}
+      <VisitaPresencial
+        propertyId={property.id}
+        exemplo={exemplo}
+        semLogin={semLogin}
+        abrirInicial={abrirPresencial}
+        onEntrar={() => irParaLogin("visita")}
+      />
+      {sent.duvida && <p className="text-center text-xs text-sage">Mensagem enviada. O proprietário responde aqui na plataforma.</p>}
       {leadErro && <p className="text-center text-xs text-red-600">{leadErro}</p>}
       {selfNote && (
         <p className="text-center text-xs text-muted">
@@ -427,23 +406,17 @@ export function PropertyDetail({
         onClick={(e) => e.stopPropagation()}
       >
         <h3 className="font-title text-lg font-bold text-ink">
-          {composeKind === "duvida" ? "Tirar uma dúvida" : "Agendar uma visita"}
+          Tirar uma dúvida
         </h3>
         <p className="mt-1 text-sm text-muted">
-          {composeKind === "duvida"
-            ? "Escreva sua pergunta sobre o imóvel. O proprietário responde pela plataforma."
-            : "Diga os dias e horários que funcionam para você. O proprietário confirma pela plataforma."}
+          Escreva sua pergunta sobre o imóvel. O proprietário responde pela plataforma.
         </p>
         <textarea
           rows={4}
           autoFocus
           value={composeText}
           onChange={(e) => setComposeText(e.target.value)}
-          placeholder={
-            composeKind === "duvida"
-              ? "Ex.: O condomínio tem academia? Aceita 2 pessoas?"
-              : "Ex.: Posso visitar quinta ou sexta à tarde?"
-          }
+          placeholder="Ex.: O condomínio tem academia? Aceita 2 pessoas?"
           className="mt-3 w-full rounded-xl border border-sage-200 px-3.5 py-2.5 text-sm outline-none focus:border-sage"
         />
         <p className="mt-1 flex items-center gap-1 text-xs text-muted">

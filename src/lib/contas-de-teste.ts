@@ -27,6 +27,19 @@ export async function contaEhDeTeste(admin: SupabaseClient | null, userId: strin
   }
 }
 
+/**
+ * Prompt 23 (item 3): qual tela a /dashboard/verificacao mostra. O inquilino1 (is_teste) via "em breve" porque a página
+ * só conhecia demonstração × conta real; a rota /api/caf/verify já gerava o laudo simulado, mas ninguém a chamava.
+ * Conta de teste → laudo SIMULADO (rotulado TESTE); conta real → segue "em breve" até o parceiro abrir.
+ * `teste` vem SEMPRE do servidor (/api/caf/status lê profiles.is_teste).
+ */
+export type RamoVerificacao = "demonstracao" | "teste" | "em_breve" | "carregando";
+export function ramoVerificacao(p: { demo: boolean; teste: boolean | null }): RamoVerificacao {
+  if (p.demo) return "demonstracao";
+  if (p.teste === null) return "carregando";
+  return p.teste ? "teste" : "em_breve";
+}
+
 export function laudoSimuladoTeste(): CafResult {
   return {
     light: "green",

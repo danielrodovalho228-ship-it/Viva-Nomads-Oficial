@@ -1597,7 +1597,8 @@ export async function requestLead(
       name: tenantName,
     });
     await notify({
-      event: "new_lead",
+      // Prompt 23: candidatura tem e-mail próprio ("Nova candidatura no seu imóvel"); dúvida/visita seguem como interessado.
+      event: kind === "candidatura" ? "candidatura_nova" : "new_lead",
       email: ownerEmail ?? undefined,
       phone: ownerPhone ?? undefined,
       name: ownerName ?? undefined,
