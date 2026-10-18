@@ -5,6 +5,7 @@ import { FAIXAS, GARANTIAS_CADASTRO } from "@/lib/faixas";
 import { SELO_NF_UI } from "@/lib/flags";
 import { TEXTO_REGRA_CURTO } from "@/lib/cobranca/regra";
 import { LinhaComparativoAnuncio } from "@/components/precos/comparativo-precos";
+import { SimuladorBolso } from "@/components/precos/simulador-bolso";
 import { PrecoSugerido } from "@/components/precos/preco-sugerido";
 import { BlocoNegociacao } from "@/components/anuncio/blocos-cadastro";
 import type { LimitesPrivados, Negociacao } from "@/lib/anuncio/negociacao";
@@ -147,6 +148,7 @@ export function EtapaPreco(p: {
         </div>
       )}
       <LinhaComparativoAnuncio aluguel={aluguel} />
+      <SimuladorBolso compacto valorMensal={aluguel} />
       <PrecoSugerido aluguel={aluguel} onUsar={(v) => p.setMonthlyPrice(String(v))} onAirbnbMensal={(v) => p.setAirbnbMensal(v ? String(v) : "")} />
 
       {/* Q8/Q9: um seletor só (calendário nativo), rótulos curtos, um embaixo do outro no celular; no computador os dois
