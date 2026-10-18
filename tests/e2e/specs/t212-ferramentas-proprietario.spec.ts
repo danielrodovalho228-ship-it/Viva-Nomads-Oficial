@@ -208,12 +208,12 @@ test.describe("T212 — ferramentas do proprietário (prompt 27)", () => {
       const inqT = await criarConta({ email: `inq.cart.${tag}.${sufixo}@lab.vivanomads.test`, nome: "Ivo Carteira Sobrenome", role: "tenant" }, senha);
       await adm().from("profiles").update({ is_teste: true }).in("id", [donoT, inqT]);
       try {
-        page.on("dialog", (dg) => dg.accept());
         await page.setViewportSize({ width: 1280, height: 900 });
         await abrir(page, "/admin/dados-de-teste");
         await page.getByTestId("carteira-proprietario").selectOption(donoT);
         await page.getByTestId("carteira-inquilino").selectOption(inqT);
         await page.getByTestId("carteira-semear").click();
+        await page.getByTestId("carteira-confirmar").click();
         await expect(page.getByTestId("carteira-ok")).toContainText("3 imóveis ativos e 3 contratos (3 imóveis e 3 contratos criados agora)", { timeout: 30_000 });
         const { data: props } = await adm().from("properties").select("id, title, status").eq("owner_id", donoT);
         expect((props ?? []).filter((x) => x.status === "active" && /^\[TESTE QA\] Carteira/.test(x.title as string))).toHaveLength(3);
@@ -222,6 +222,7 @@ test.describe("T212 — ferramentas do proprietário (prompt 27)", () => {
         await page.screenshot({ path: `${SAIDA}/t212-carteira-semeada-1280.png`, fullPage: true });
         // Idempotente.
         await page.getByTestId("carteira-semear").click();
+        await page.getByTestId("carteira-confirmar").click();
         await expect(page.getByTestId("carteira-ok")).toContainText("(0 imóveis e 0 contratos criados agora)", { timeout: 30_000 });
         // A Análise da carteira abre para o dono de teste.
         const pd = await entrar(page.context().browser()!, `dono.cart.${tag}.${sufixo}@lab.vivanomads.test`, senha);
@@ -233,6 +234,7 @@ test.describe("T212 — ferramentas do proprietário (prompt 27)", () => {
         // Limpar apaga só a carteira de teste.
         const outro = await criarImovelPronto(donoT, `Studio que fica ${tag}`, { ativo: true });
         await page.getByTestId("carteira-limpar").click();
+        await page.getByTestId("carteira-confirmar").click();
         await expect(page.getByTestId("carteira-ok")).toContainText("Carteira limpa: 3 imóveis e 3 contratos apagados.", { timeout: 30_000 });
         const { data: resto } = await adm().from("properties").select("id").eq("owner_id", donoT);
         expect((resto ?? []).map((x) => x.id)).toEqual([outro]);

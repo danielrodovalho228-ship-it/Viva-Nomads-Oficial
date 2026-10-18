@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { exigirAdminAal2 } from "@/lib/data/admin-guard";
 import { PREFIXO_CARTEIRA_TESTE, planoCarteiraTeste } from "@/lib/carteira-teste";
+import { TAXA_COMISSAO_PADRAO, comissaoSobreContrato } from "@/lib/cobranca/regra";
 
 /*
   Prompt 27, item 8 — /admin › Dados de teste › "Semear carteira de teste" e "Limpar carteira de teste".
@@ -95,8 +96,8 @@ export async function semearCarteiraDeTeste(input: { ownerId: string; tenantId: 
         prazo_total_dias: item.meses * 30,
         aluguel_mensal: item.valorMensal,
         tamanho_bloco_meses: item.meses,
-        comissao_percent: 0.12,
-        comissao_valor: Math.round(item.valorMensal * item.meses * 12) / 100,
+        comissao_percent: TAXA_COMISSAO_PADRAO,
+        comissao_valor: comissaoSobreContrato(item.valorMensal, item.meses, TAXA_COMISSAO_PADRAO),
         qtd_ocupantes: 1,
         status: item.statusContrato,
         garantia: "caucao",

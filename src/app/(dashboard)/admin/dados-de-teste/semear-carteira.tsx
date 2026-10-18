@@ -20,9 +20,11 @@ export function SemearCarteiraTeste({ proprietarios, inquilinos }: { proprietari
   const [tenantId, setTenantId] = useState(() => padrao(inquilinos, "inquilino1"));
   const [ocupado, setOcupado] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; texto: string } | null>(null);
+  // Confirmação NA PÁGINA, em dois passos (o window.confirm era cancelado no navegador automatizado do QA).
+  const [confirmando, setConfirmando] = useState<"semear" | "limpar" | null>(null);
 
   async function semear() {
-    if (!window.confirm("Semear a carteira de teste: 3 imóveis [TESTE QA] Carteira publicados, 2 contratos encerrados e 1 ativo?")) return;
+    setConfirmando(null);
     setOcupado(true);
     const r = await semearCarteiraDeTeste({ ownerId, tenantId }).catch(() => ({ ok: false as const, error: "Não foi possível agora." }));
     setMsg(
@@ -34,7 +36,7 @@ export function SemearCarteiraTeste({ proprietarios, inquilinos }: { proprietari
   }
 
   async function limpar() {
-    if (!window.confirm("Limpar a carteira de teste? Apaga só os imóveis [TESTE QA] Carteira e os contratos deles.")) return;
+    setConfirmando(null);
     setOcupado(true);
     const r = await limparCarteiraDeTeste({ ownerId }).catch(() => ({ ok: false as const, error: "Não foi possível agora." }));
     setMsg(r.ok ? { ok: true, texto: `Carteira limpa: ${r.imoveis} imóveis e ${r.contratos} contratos apagados.` } : { ok: false, texto: r.error });
@@ -66,13 +68,30 @@ export function SemearCarteiraTeste({ proprietarios, inquilinos }: { proprietari
         </label>
       </div>
       <div className="flex flex-wrap gap-2">
-        <Button variant="primary" onClick={semear} disabled={ocupado || !ownerId || !tenantId} data-testid="carteira-semear">
-          Semear carteira de teste
+        <Button variant="primary" onClick={() => setConfirmando("semear")} disabled={ocupado || !ownerId || !tenantId} data-testid="carteira-semear">
+          {ocupado ? "Aguarde…" : "Semear carteira de teste"}
         </Button>
-        <Button variant="outline" onClick={limpar} disabled={ocupado || !ownerId} data-testid="carteira-limpar">
+        <Button variant="outline" onClick={() => setConfirmando("limpar")} disabled={ocupado || !ownerId} data-testid="carteira-limpar">
           Limpar carteira de teste
         </Button>
       </div>
+      {confirmando && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900" role="alertdialog" data-testid="carteira-confirmacao">
+          <p>
+            {confirmando === "semear"
+              ? "Semear a carteira de teste: 3 imóveis [TESTE QA] Carteira publicados, 2 contratos encerrados e 1 ativo. O que já existe não é recriado."
+              : "Limpar a carteira de teste: apaga só os imóveis [TESTE QA] Carteira e os contratos deles."}
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <Button variant="primary" size="sm" onClick={confirmando === "semear" ? semear : limpar} data-testid="carteira-confirmar">
+              {confirmando === "semear" ? "Confirmar e semear" : "Confirmar e limpar"}
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setConfirmando(null)} data-testid="carteira-cancelar">
+              Cancelar
+            </Button>
+          </div>
+        </div>
+      )}
       {msg && (
         <p role={msg.ok ? "status" : "alert"} className={msg.ok ? "text-sm text-forest" : "text-sm text-red-600"} data-testid={msg.ok ? "carteira-ok" : "carteira-erro"}>
           {msg.texto}
