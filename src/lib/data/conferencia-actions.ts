@@ -8,6 +8,7 @@ import {
   decidirResposta,
   estadoConferencia,
   fonteDaConferencia,
+  janelaEncerrada,
   type ItemTela,
   type LaudoTela,
   podeEditarItens,
@@ -88,7 +89,7 @@ export async function registrarItemConferencia(input: {
   if (!confId) return erro("Não foi possível abrir a conferência. Tente de novo.");
 
   const { data: respostas } = await admin.from("conferencia_respostas").select("parte, decisao, motivo").eq("conferencia_id", confId);
-  if (!podeEditarItens((respostas ?? []) as RespostaConferencia[])) return erro("A conferência já foi respondida e não pode mais ser alterada.");
+  if (!podeEditarItens((respostas ?? []) as RespostaConferencia[], ctx.parte)) return erro("Você já respondeu esta conferência e ela não pode mais ser alterada.");
 
   const { data, error } = await admin
     .from("conferencia_itens")
@@ -125,16 +126,19 @@ export async function responderConferencia(input: {
   const { data: conf } = await admin.from("conferencias").select("id").eq("contrato_id", input.contratoId).eq("tipo", input.tipo).maybeSingle();
   if (!conf) return erro("Ainda não há itens registrados nesta conferência.");
 
-  const [{ data: respostas }, { count }] = await Promise.all([
+  const [{ data: respostas }, { data: itens }] = await Promise.all([
     admin.from("conferencia_respostas").select("parte, decisao, motivo").eq("conferencia_id", conf.id),
-    admin.from("conferencia_itens").select("id", { count: "exact", head: true }).eq("conferencia_id", conf.id),
+    admin.from("conferencia_itens").select("parte").eq("conferencia_id", conf.id),
   ]);
+  const itensPorParte = { proprietario: 0, inquilino: 0 };
+  for (const i of (itens ?? []) as { parte: ParteConferencia }[]) itensPorParte[i.parte] += 1;
   const d = decidirResposta({
     respostas: (respostas ?? []) as RespostaConferencia[],
     parte: ctx.parte,
     decisao: input.decisao,
     motivo: input.motivo ?? "",
-    qtdItens: count ?? 0,
+    itensPorParte,
+    janelaEncerrada: janelaEncerrada(input.tipo, ctx.inicio),
   });
   if (!d.ok) return erro(d.erro);
 
