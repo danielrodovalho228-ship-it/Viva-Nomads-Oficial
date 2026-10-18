@@ -9,6 +9,7 @@ import {
   JANELA_DIAS,
   MAX_HORARIOS,
   podeTransicionar,
+  statusAposAcao,
   validarHorarios,
   validarLinkChamada,
 } from "./visitas-video.ts";
@@ -125,4 +126,13 @@ test("t168 — a ação grava, confere a linha gravada e revalida /dashboard/vis
   assert.match(src, /mudancaDeStatus\(/);
   assert.match(src, /revalidatePath\("\/dashboard\/visitas"\)/);
   assert.match(src, /\.update\(campos\)[\s\S]{0,120}\.select\("id"\)/);
+});
+
+test("t168: a tela do dono troca a etiqueta na hora com o status da ação, sem esperar o recarregamento", () => {
+  assert.equal(statusAposAcao("confirmar"), "confirmado");
+  assert.equal(statusAposAcao("concluir"), "feito");
+  assert.equal(statusAposAcao("cancelar"), "cancelado");
+  const d = "src/app/(dashboard)/dashboard/visitas/";
+  assert.match(readFileSync(d + "acoes-visita.tsx", "utf8"), /mudar\(statusAposAcao\(acao\)\)/);
+  assert.match(readFileSync(d + "page.tsx", "utf8"), /<SeloStatusVisita inicial=\{v\.status\} \/>/);
 });

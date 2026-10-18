@@ -91,7 +91,7 @@ export function mudancaDeStatus(
   entrada: AcaoVisitaDono,
   agora: Date = new Date(),
 ): { ok: true; campos: Record<string, string> } | { ok: false; error: string } {
-  const para: StatusVisita = entrada.acao === "confirmar" ? "confirmado" : entrada.acao === "concluir" ? "feito" : "cancelado";
+  const para = statusAposAcao(entrada.acao);
   if (!podeTransicionar(de, para, quem)) return { ok: false, error: "Este pedido não pode mais ser alterado." };
   const campos: Record<string, string> = { status: para, atualizado_em: agora.toISOString() };
   if (entrada.acao === "confirmar") {
@@ -104,6 +104,11 @@ export function mudancaDeStatus(
     campos.link_chamada = link.url;
   }
   return { ok: true, campos };
+}
+
+/** Status que o pedido passa a ter depois de uma ação aceita pelo servidor (a tela do dono usa isto na hora, sem esperar o recarregamento). */
+export function statusAposAcao(acao: AcaoVisitaDono["acao"]): StatusVisita {
+  return acao === "confirmar" ? "confirmado" : acao === "concluir" ? "feito" : "cancelado";
 }
 
 export function ehStatusVisita(v: unknown): v is StatusVisita {

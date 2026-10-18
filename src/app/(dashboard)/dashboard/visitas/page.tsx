@@ -3,8 +3,9 @@ import { Video } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { ButtonLink } from "@/components/ui/button";
 import { listMinhasVisitas, listVisitasDono, type VisitaDono } from "@/lib/data/visitas-video-actions";
-import { STATUS_VISITA_ROTULO, formatarHorario } from "@/lib/visitas-video";
+import { formatarHorario } from "@/lib/visitas-video";
 import { AcoesVisitaDono, CancelarVisitaMorador } from "./acoes-visita";
+import { SeloStatusVisita, StatusVisitaProvider } from "./status-visita";
 
 export const metadata: Metadata = {
   title: "Visitas por vídeo",
@@ -13,24 +14,16 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-const TOM = {
-  pedido: "bg-blue-50 text-blue-700",
-  confirmado: "bg-emerald-100 text-emerald-700",
-  feito: "bg-slate-100 text-slate-700",
-  cancelado: "bg-slate-100 text-slate-500",
-} as const;
-
 function Cartao({ v, dono }: { v: VisitaDono; dono: boolean }) {
   return (
     <Panel>
+      <StatusVisitaProvider inicial={v.status}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <h3 className="line-clamp-2 font-title text-base font-bold text-ink">{v.imovel}</h3>
           {v.motivo && <p className="text-xs text-muted">Motivo da estadia: {v.motivo}</p>}
         </div>
-        <span data-testid="visita-status" className={`rounded-full px-3 py-1 text-xs font-semibold ${TOM[v.status]}`}>
-          {STATUS_VISITA_ROTULO[v.status]}
-        </span>
+        <SeloStatusVisita inicial={v.status} />
       </div>
       {v.status === "confirmado" && v.horarioConfirmado ? (
         <div className="mt-3 text-sm text-ink">
@@ -63,6 +56,7 @@ function Cartao({ v, dono }: { v: VisitaDono; dono: boolean }) {
       ) : (
         (v.status === "pedido" || v.status === "confirmado") && <CancelarVisitaMorador id={v.id} />
       )}
+      </StatusVisitaProvider>
     </Panel>
   );
 }

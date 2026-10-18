@@ -9,6 +9,6 @@ import { test } from "node:test";
 const acoes = readFileSync(new URL("../app/(dashboard)/dashboard/visitas/acoes-visita.tsx", import.meta.url), "utf8");
 
 test("visitas do dono: após o sucesso esconde as ações e chama router.refresh()", () => {
-  assert.match(acoes, /setRespondido\(true\);\s*router\.refresh\(\)/);
+  assert.match(acoes, /setRespondido\(true\);[\s\S]*router\.refresh\(\)/);
   assert.match(acoes, /respondido\) return null/);
 });
