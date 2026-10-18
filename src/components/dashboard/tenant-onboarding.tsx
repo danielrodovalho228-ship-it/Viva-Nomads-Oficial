@@ -6,6 +6,16 @@ import { PageTitle } from "@/components/dashboard/primitives";
 import { ButtonLink } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { gravarLocalStorageBruto, useLocalStorageBruto } from "@/lib/use-client-state";
+import { useEstadoIdentidade } from "@/lib/identidade/use-estado-identidade";
+import type { EstadoIdentidade } from "@/lib/identidade/estado";
+
+/** O passo "Verificação de identidade" com o estado ÚNICO (complemento do prompt 23): o texto vem da função. */
+function passoIdentidade(id: EstadoIdentidade | null): { titulo: string; texto: string; cta: Cta } {
+  if (!id) return { titulo: "Verificação de identidade", texto: "Carregando…", cta: { label: "Saber mais", href: "/dashboard/verificacao", variant: "outline" } };
+  if (id.estado === "confirmada") return { titulo: id.texto, texto: "Seu perfil mostra a identidade confirmada.", cta: { label: "Ver verificação", href: "/dashboard/verificacao", variant: "outline" } };
+  if (id.acao) return { titulo: id.texto, texto: "Leva um minuto e reforça seu perfil.", cta: { label: id.acao.texto, href: id.acao.href, variant: "primary" } };
+  return { titulo: id.texto, texto: "Você já pode se candidatar sem ela. Quando abrir, avisamos — e ela reforça seu perfil.", cta: { label: "Saber mais", href: "/dashboard/verificacao", variant: "outline" } };
+}
 
 const KEY = "vivanomads-tenant-onboarding";
 
@@ -25,9 +35,10 @@ const STEPS: Step[] = [
   {
     id: "verificar",
     icon: ShieldCheck,
-    title: "Verificação de identidade (em breve)",
-    text: "Você já pode se candidatar sem ela. Quando abrir, avisamos — e ela reforça seu perfil.",
-    ctas: [{ label: "Saber mais", href: "/dashboard/verificacao", variant: "outline" }],
+    // Título, texto e botão vêm do estado único da identidade (passoIdentidade).
+    title: "Verificação de identidade",
+    text: "",
+    ctas: [],
   },
   {
     id: "encontrar",
@@ -59,6 +70,10 @@ type Saved = { done: string[]; hidden: boolean };
  */
 export function TenantOnboarding({ name }: { name: string }) {
   const raw = useLocalStorageBruto(KEY); // undefined = ainda hidratando
+  // Complemento do prompt 23: o passo "verificar" lê o laudo (confirmada / teste / em breve), não um texto fixo.
+  const identidade = useEstadoIdentidade().situacao?.identidade ?? null;
+  const cartao = { ...passoIdentidade(identidade), estado: identidade?.estado ?? "carregando" };
+  const passos: Step[] = STEPS.map((s) => (s.id === "verificar" ? { ...s, title: cartao.titulo, text: cartao.texto, ctas: [cartao.cta] } : s));
   // Cópia local: mantém a tela funcionando mesmo se o navegador bloquear o localStorage.
   const [local, setLocal] = useState<Saved | null>(null);
   let doArmazenamento: Saved = { done: [], hidden: false };
@@ -92,6 +107,8 @@ export function TenantOnboarding({ name }: { name: string }) {
   // Antes de hidratar, mostra o banner (evita "pulo" e SSR consistente).
   if (saved === null) return banner;
 
+  const feitos = cartao.estado === "confirmada" && !saved.done.includes("verificar") ? [...saved.done, "verificar"] : saved.done;
+  // O "concluído" automático da identidade só muda a exibição: o cartão não some sozinho por causa dele.
   const allDone = STEPS.every((s) => saved.done.includes(s.id));
   if (saved.hidden || allDone) return banner;
 
@@ -103,7 +120,7 @@ export function TenantOnboarding({ name }: { name: string }) {
     persist({ ...cur, done });
   }
 
-  const doneCount = saved.done.length;
+  const doneCount = feitos.length;
 
   return (
     <section className="mb-6 overflow-hidden rounded-2xl border border-sage-200 bg-white">
@@ -125,11 +142,11 @@ export function TenantOnboarding({ name }: { name: string }) {
       </div>
 
       <ol className="divide-y divide-sage-200">
-        {STEPS.map((s, i) => {
-          const done = saved.done.includes(s.id);
+        {passos.map((s, i) => {
+          const done = feitos.includes(s.id);
           const Icon = s.icon;
           return (
-            <li key={s.id} className="flex flex-col gap-3 p-5 sm:flex-row sm:items-start">
+            <li key={s.id} className="flex flex-col gap-3 p-5 sm:flex-row sm:items-start" data-testid={`onboarding-${s.id}`} data-estado={s.id === "verificar" ? cartao.estado : undefined}>
               <span
                 className={cn(
                   "grid h-9 w-9 shrink-0 place-items-center rounded-full text-sm font-bold",

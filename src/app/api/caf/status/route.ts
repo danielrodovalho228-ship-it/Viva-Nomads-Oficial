@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { integracoesSimuladas } from "@/lib/integracoes";
 import { resumoDoLaudo, type LaudoCafGravado } from "@/lib/documento/conferencia-matricula";
+import { estadoIdentidadeDe } from "@/lib/identidade/estado";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,10 @@ export async function GET() {
       .limit(1)
       .maybeSingle(),
   ]);
-  const r = resumoDoLaudo((laudo as LaudoCafGravado | null) ?? null, new Date(), integracoesSimuladas() || perfil?.is_teste === true);
+  const simulavel = integracoesSimuladas() || perfil?.is_teste === true;
+  const r = resumoDoLaudo((laudo as LaudoCafGravado | null) ?? null, new Date(), simulavel);
+  // Complemento do prompt 23: o ESTADO único da identidade (confirmada / vencida / simulavel / em_breve), com o texto.
+  const identidade = estadoIdentidadeDe((laudo as LaudoCafGravado | null) ?? null, simulavel, new Date());
   return NextResponse.json({
     feita: r.feita,
     ok: r.ok,
@@ -39,6 +43,7 @@ export async function GET() {
     teste: perfil?.is_teste === true,
     validoAte: r.feita ? ((laudo?.valid_until as string | null) ?? null) : null,
     // Prompt 25: havia laudo e ele deixou de valer (venceu ou a pessoa trocou o nome/CPF — 0164): "Confirmar de novo".
-    refazer: !r.feita && !!laudo,
+    refazer: identidade.estado === "vencida",
+    identidade,
   });
 }
