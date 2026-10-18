@@ -31,8 +31,11 @@ test("rascunho continua podendo ser salvo sem qualificação (só publicar é ba
 });
 
 test("o uploader trata a foto (EXIF/rotação, avisos, original) e aceita até 40", () => {
-  assert.match(uploader, /tratarFoto\(/);
-  assert.match(uploader, /avisosDaFoto\(/);
+  // Prompt 20: o envio mora em lib/fotos/enviar.ts (um caminho só para galeria, cartão da IA e barra do celular).
+  const envio = ler("lib/fotos/enviar.ts");
+  assert.match(uploader, /enviarFotos\(/);
+  assert.match(envio, /tratarFoto\(/);
+  assert.match(envio, /avisosDaFoto\(/);
   assert.match(uploader, /Usar original/);
   assert.match(uploader, /MAX_FOTOS_POR_ANUNCIO/);
   assert.match(pagina, /max=\{MAX_FOTOS_POR_ANUNCIO\}/);

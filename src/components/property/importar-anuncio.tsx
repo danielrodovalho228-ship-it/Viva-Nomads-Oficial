@@ -12,8 +12,8 @@ import {
 import { AMENITY_LABEL, propertyTypeLabel } from "@/lib/amenities";
 
 /** Ordem 4c178768: o dono cola o texto do próprio anúncio, confere o que foi organizado e só então aplica. */
-export function ImportarAnuncio({ onAplicar }: { onAplicar: (a: AnuncioOrganizado) => void }) {
-  const [aberto, setAberto] = useState(false);
+export function ImportarAnuncio({ onAplicar, abertoInicial = false }: { onAplicar: (a: AnuncioOrganizado) => void; /** Prompt 20: aberto pela linha de atalhos do passo 1 (sem a caixa tracejada). */ abertoInicial?: boolean }) {
+  const [aberto, setAberto] = useState(abertoInicial);
   const [texto, setTexto] = useState("");
   const [r, setR] = useState<AnuncioOrganizado | null>(null);
   const [aplicado, setAplicado] = useState(false);

@@ -75,6 +75,13 @@ import { estadoDoStatus, type EstadoDocumentoTela } from "@/components/anuncio/d
 import { chaveLugar } from "@/components/anuncio/blocos-cadastro";
 import type { CampoSugerido } from "./tipos";
 import { EtapaOndeFica } from "./etapa-onde-fica";
+import { CartaoIa } from "./cartao-ia";
+import { BarraFotos } from "./barra-fotos";
+import { buscarCep, formatarCep, type OpcaoEndereco, type ResultadoCep } from "@/lib/cep/buscar";
+import { enviarFotos } from "@/lib/fotos/enviar";
+import { MAX_FOTOS_POR_ANUNCIO } from "@/lib/fotos/qualidade";
+import { uploadPropertyPhoto } from "@/lib/data/storage";
+import { resumoDaSugestao } from "@/lib/anuncio/resumo-ia";
 import { EtapaFotos } from "./etapa-fotos";
 import { EtapaEncontramos } from "./etapa-encontramos";
 import { EtapaPreco } from "./etapa-preco";
@@ -164,6 +171,12 @@ export default function NewPropertyPage() {
   const [city, setCity] = useState("Uberlândia");
   const [cep, setCep] = useState("");
   const [cepLoading, setCepLoading] = useState(false);
+  // Prompt 20: toda busca de CEP vira uma mensagem (achou, só a cidade, não achou, sem rede).
+  const [cepResultado, setCepResultado] = useState<ResultadoCep | null>(null);
+  // Envio de fotos pelo cartão da IA (passo 1) e pela barra do celular — o mesmo envio da galeria do passo 2.
+  const [enviandoFotos, setEnviandoFotos] = useState<{ feitas: number; total: number } | null>(null);
+  const [erroEnvioFotos, setErroEnvioFotos] = useState<string | null>(null);
+  const [resumoIa, setResumoIa] = useState("");
   const [bairroDoCep, setBairroDoCep] = useState<string | null>(null);
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
   const [videoUrl, setVideoUrl] = useState("");
@@ -758,30 +771,64 @@ export default function NewPropertyPage() {
     return () => window.removeEventListener("beforeunload", handler);
   }, []);
 
-  // CEP primeiro (prompt 10): ao completar 8 dígitos, o ViaCEP preenche rua, bairro, cidade e UF.
+  // CEP primeiro (prompt 10) que sempre responde (prompt 20): ViaCEP → BrasilAPI, e cada resultado vira mensagem.
   async function lookupCep(value: string) {
-    const digits = value.replace(/\D/g, "");
-    if (digits.length !== 8) return;
+    if (value.replace(/\D/g, "").length !== 8) return;
     setCepLoading(true);
-    try {
-      const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
-      const data = await res.json();
-      if (!data.erro) {
-        // Só preenche o que está VAZIO — vale o que o dono digitou. Bairro diferente vira uma pergunta.
-        if (data.logradouro && !street.trim()) setStreet(data.logradouro);
-        if (data.localidade) setCity((c) => (c.trim() && c !== "Uberlândia" ? c : data.localidade));
-        if (data.uf) setUf(String(data.uf).slice(0, 2));
-        if (data.bairro) {
-          const digitado = neighborhood.trim();
-          if (!digitado) setNeighborhood(data.bairro);
-          else if (digitado.toLowerCase() !== String(data.bairro).trim().toLowerCase()) setBairroDoCep(data.bairro);
-        }
+    setCepResultado(null);
+    const r = await buscarCep(value, (url) => fetch(url));
+    if (r.tipo === "rua" || r.tipo === "cidade") {
+      // Só preenche o que está VAZIO — vale o que o dono digitou. Bairro diferente vira uma pergunta.
+      if (r.tipo === "rua" && !street.trim()) setStreet(r.rua);
+      setCity((c) => (c.trim() && c !== "Uberlândia" ? c : r.cidade));
+      if (r.uf) setUf(r.uf.slice(0, 2));
+      if (r.tipo === "rua" && r.bairro) {
+        const digitado = neighborhood.trim();
+        if (!digitado) setNeighborhood(r.bairro);
+        else if (digitado.toLowerCase() !== r.bairro.trim().toLowerCase()) setBairroDoCep(r.bairro);
       }
-    } catch {
-      /* sem rede — preenche manual */
-    } finally {
-      setCepLoading(false);
     }
+    setCepResultado(r);
+    setCepLoading(false);
+    // Achou a rua: o próximo campo é o Número.
+    if (r.tipo === "rua") setTimeout(() => document.querySelector<HTMLInputElement>('[data-testid="cadastro-numero"]')?.focus(), 0);
+  }
+
+  /** "Buscar pelo endereço" (prompt 20): a opção escolhida preenche o CEP certo e o que estiver vazio. */
+  function escolherEndereco(o: OpcaoEndereco) {
+    setCep(formatarCep(o.cep));
+    if (!street.trim()) setStreet(o.rua);
+    if (!neighborhood.trim() && o.bairro) setNeighborhood(o.bairro);
+    if (o.cidade) setCity(o.cidade);
+    if (o.uf) setUf(o.uf);
+    setCepResultado({ tipo: "rua", rua: o.rua, bairro: o.bairro, cidade: o.cidade, uf: o.uf });
+    setTimeout(() => document.querySelector<HTMLInputElement>('[data-testid="cadastro-numero"]')?.focus(), 0);
+  }
+
+  /** Fotos pelo cartão da IA (passo 1) e pela barra do celular: sobem para a galeria do passo 2, com as mesmas regras. */
+  async function adicionarFotos(files: File[]) {
+    if (enviandoFotos) return;
+    setErroEnvioFotos(null);
+    try {
+      const r = await enviarFotos(files, {
+        atuais: photos,
+        max: MAX_FOTOS_POR_ANUNCIO,
+        ownerId: userId ?? undefined,
+        uploader: uploadPropertyPhoto,
+        aoProgresso: (feitas, total) => setEnviandoFotos({ feitas, total }),
+      });
+      if (r.novas.length) setPhotos((atuais) => [...atuais, ...r.novas]);
+      if (r.erro) setErroEnvioFotos(r.erro);
+    } finally {
+      setEnviandoFotos(null);
+    }
+  }
+
+  /** "Enviar matrícula": o mesmo leitor de documento do imóvel (prompt 11), logo abaixo no passo 1. */
+  function enviarMatricula() {
+    const bloco = document.querySelector<HTMLElement>('[data-testid="documento-vinculo"]');
+    bloco?.scrollIntoView({ behavior: "smooth", block: "center" });
+    bloco?.querySelector<HTMLInputElement>('input[type="file"]')?.click();
   }
 
   // Proximidades em segundo plano: com CEP + rua + número, busca uma vez por CEP (cache no servidor).
@@ -879,6 +926,7 @@ export default function NewPropertyPage() {
   }
 
   function aplicarSugestao(d: SugestaoFotos, analisadas: string[]) {
+    setResumoIa(resumoDaSugestao(d));
     const marcados: CampoSugerido[] = [];
     if (d.tipo && PROPERTY_TYPES.some((t) => t.value === d.tipo) && propertyType === "apartamento" && d.tipo !== propertyType) {
       setPropertyType(d.tipo);
@@ -1053,9 +1101,14 @@ export default function NewPropertyPage() {
         </div>
       )}
 
-      {/* Stepper + barra de progresso */}
+      {/* Stepper + barra de progresso. Celular (prompt 20): "Passo 1 de 5 — Onde fica" numa linha (nada cortado);
+          do tablet para cima, as etapas em pílulas, com o contador de fotos. */}
       <div className="mb-5">
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-2 sm:flex-wrap sm:overflow-visible" data-testid="etapas-cadastro">
+        <p className="pb-2 text-sm font-medium text-ink sm:hidden" data-testid="etapas-celular" aria-live="polite">
+          Passo {pos + 1} de {ORDEM_ETAPAS.length} — <span className="text-forest">{STEP_META[step].label}</span>
+          {step !== 1 && photos.length > 0 && <span className="text-muted"> · {photos.length} {photos.length === 1 ? "foto" : "fotos"}</span>}
+        </p>
+        <div className="hidden items-center gap-1.5 pb-2 sm:flex sm:flex-wrap" data-testid="etapas-cadastro">
           {ORDEM_ETAPAS.map((id, i) => (
             <button
               key={STEP_META[id].label}
@@ -1075,6 +1128,7 @@ export default function NewPropertyPage() {
             >
               {i < pos ? <Check className="h-3.5 w-3.5" /> : <span>{i + 1}</span>}
               {STEP_META[id].label}
+              {id === 1 && photos.length > 0 && <span data-testid="etapa-fotos-contador">({photos.length})</span>}
             </button>
           ))}
         </div>
@@ -1098,6 +1152,20 @@ export default function NewPropertyPage() {
 
             {step === 0 && (
               <EtapaOndeFica
+                topo={
+                  <CartaoIa
+                    totalFotos={photos.length}
+                    enviando={enviandoFotos}
+                    erroEnvio={erroEnvioFotos}
+                    iaEstado={iaEstado}
+                    resumoIa={resumoIa}
+                    onFotos={(f) => void adicionarFotos(f)}
+                    onMatricula={enviarMatricula}
+                    onVerPasso3={() => irPara(2)}
+                  />
+                }
+                cepResultado={cepResultado}
+                onEscolherEndereco={escolherEndereco}
                 aplicarImportado={aplicarImportado}
                 propertyType={propertyType}
                 setPropertyType={(v) => {
@@ -1119,6 +1187,7 @@ export default function NewPropertyPage() {
                 setCep={(v) => {
                   setCep(v);
                   if (v.replace(/\D/g, "").length === 8) void lookupCep(v);
+                  else setCepResultado(null);
                 }}
                 cepLoading={cepLoading}
                 street={street}
@@ -1313,6 +1382,17 @@ export default function NewPropertyPage() {
         </aside>
       </div>
 
+      {/* Prompt 20: fotos sempre à vista no celular, em todos os passos (abre a escolha de arquivos). */}
+      {!editingId && (
+        <BarraFotos
+          total={photos.length}
+          minimo={MIN_PHOTOS}
+          enviando={enviandoFotos}
+          onFotos={(f) => void adicionarFotos(f)}
+          onOrganizar={() => irPara(1)}
+          noPassoFotos={step === 1}
+        />
+      )}
       <style>{`.input{width:100%;border-radius:0.75rem;border:1px solid var(--color-sage-200);background:#fff;padding:0.625rem 0.875rem;font-size:0.875rem;outline:none}.input:focus{border-color:var(--color-sage)}`}</style>
     </div>
   );

@@ -1,6 +1,7 @@
 "use client";
 
-import { MapPin, AlertTriangle } from "lucide-react";
+import { useState } from "react";
+import { MapPin, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { ImportarAnuncio } from "@/components/property/importar-anuncio";
 import { AjudaPublicar } from "@/components/property/ajuda-publicar";
 import type { AnuncioOrganizado } from "@/lib/anuncio/importar-anuncio";
@@ -12,7 +13,9 @@ import { PROPERTY_TYPES } from "@/lib/amenities";
 import { LocationDatalist } from "@/lib/locations";
 import { CITIES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import { mensagemCep, type OpcaoEndereco, type ResultadoCep } from "@/lib/cep/buscar";
 import { Erro, Labeled, Toggle } from "./campos";
+import { BuscaEndereco } from "./busca-endereco";
 
 /** A cidade está entre as liberadas? (comparação sem acento e sem maiúscula). */
 function cidadeLiberada(cidade: string): boolean {
@@ -21,11 +24,14 @@ function cidadeLiberada(cidade: string): boolean {
 }
 
 /**
- * Etapa 1 — Onde fica (prompt 10): tipo do imóvel, quem opera, CEP PRIMEIRO (com foco; o ViaCEP preenche rua,
- * bairro, cidade e UF), número e complemento, aviso de cidade fora da lista e o documento do imóvel (prompt 11),
- * conferido na hora. Proximidades e o ponto no mapa rodam em segundo plano a partir daqui.
+ * Etapa 1 — Onde fica (prompt 10): tipo do imóvel, quem opera, CEP PRIMEIRO (com foco; ViaCEP e, se não achar,
+ * BrasilAPI), número e complemento, aviso de cidade fora da lista e o documento do imóvel (prompt 11), conferido na
+ * hora. Prompt 20: no topo, o cartão "Preencher com IA" (`topo`); o CEP sempre responde com uma mensagem (e, se não
+ * existir, "buscar pelo endereço"); importar e pedir ajuda viram uma linha discreta no fim.
  */
 export function EtapaOndeFica(p: {
+  /** Cartão "Preencher com IA" (prompt 20), no topo do passo. */
+  topo?: React.ReactNode;
   aplicarImportado: (a: AnuncioOrganizado) => void;
   propertyType: string;
   setPropertyType: (v: string) => void;
@@ -40,6 +46,9 @@ export function EtapaOndeFica(p: {
   cep: string;
   setCep: (v: string) => void;
   cepLoading: boolean;
+  /** Resposta da busca do CEP (prompt 20): sempre vira mensagem na tela. */
+  cepResultado: ResultadoCep | null;
+  onEscolherEndereco: (o: OpcaoEndereco) => void;
   street: string;
   setStreet: (v: string) => void;
   numero: string;
@@ -61,11 +70,16 @@ export function EtapaOndeFica(p: {
 }) {
   const doc = exigeAutorizacao(p.ownershipType) ? DOC_AUTORIZACAO[p.ownershipType as "subleased" | "managed"] : null;
   const foraDaArea = !!p.city.trim() && !cidadeLiberada(p.city);
+  // Erro de formato do CEP só ao sair do campo (nunca enquanto a pessoa digita).
+  const [cepSaiu, setCepSaiu] = useState(false);
+  const [buscaAberta, setBuscaAberta] = useState(false);
+  const [atalho, setAtalho] = useState<"importar" | "ajuda" | null>(null);
+  const digitosCep = p.cep.replace(/\D/g, "").length;
+  const r = p.cepResultado;
+  const podeBuscarEndereco = r?.tipo === "nao_encontrado" || r?.tipo === "cidade";
   return (
     <div className="space-y-4" data-testid="etapa-onde-fica">
-      {/* Atalho (t115): importar o texto do próprio anúncio leva direto à etapa 3, com tudo preenchido. */}
-      <ImportarAnuncio onAplicar={p.aplicarImportado} />
-      <AjudaPublicar />
+      {p.topo}
       <Labeled label="CEP">
         <div className="relative">
           <input
@@ -80,12 +94,60 @@ export function EtapaOndeFica(p: {
             placeholder="00000-000"
             className="input"
             autoFocus
+            onBlur={() => setCepSaiu(true)}
+            onFocus={() => setCepSaiu(false)}
             data-testid="cadastro-cep"
           />
           {p.cepLoading && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted">buscando…</span>}
         </div>
-        <span className="mt-1 block text-xs text-muted">Com o CEP, preenchemos rua, bairro e cidade.</span>
+        {!p.cepLoading && r && digitosCep === 8 ? (
+          <span
+            role="status"
+            data-testid="cep-resultado"
+            data-tipo={r.tipo}
+            className={cn("mt-1 flex items-start gap-1.5 text-xs", r.tipo === "rua" ? "text-forest" : "text-amber-900")}
+          >
+            {r.tipo === "rua" ? <CheckCircle2 className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden /> : <AlertTriangle className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden />}
+            <span>
+              {r.tipo === "nao_encontrado" ? (
+                <>
+                  Não encontramos esse CEP. Confira os números ou{" "}
+                  <button type="button" className="font-semibold underline" onClick={() => setBuscaAberta(true)} data-testid="cep-buscar-endereco">
+                    busque pelo endereço
+                  </button>
+                </>
+              ) : (
+                mensagemCep(r)
+              )}
+              {r.tipo === "cidade" && (
+                <>
+                  {" · "}
+                  <button type="button" className="font-semibold underline" onClick={() => setBuscaAberta(true)} data-testid="cep-buscar-endereco">
+                    buscar pelo endereço
+                  </button>
+                </>
+              )}
+            </span>
+          </span>
+        ) : cepSaiu && digitosCep > 0 && digitosCep < 8 ? (
+          <span className="mt-1 block text-xs text-red-700" role="alert" data-testid="cep-incompleto">
+            O CEP tem 8 números.
+          </span>
+        ) : (
+          <span className="mt-1 block text-xs text-muted">Com o CEP, preenchemos rua, bairro e cidade.</span>
+        )}
       </Labeled>
+      {buscaAberta && podeBuscarEndereco && (
+        <BuscaEndereco
+          ufInicial={p.uf}
+          cidadeInicial={r?.tipo === "cidade" ? r.cidade : p.city}
+          ruaInicial={p.street}
+          onEscolher={(o) => {
+            p.onEscolherEndereco(o);
+            setBuscaAberta(false);
+          }}
+        />
+      )}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_8rem]">
         <Labeled label="Rua">
@@ -214,6 +276,20 @@ export function EtapaOndeFica(p: {
         onResultado={p.onDocumento}
       />
 
+      {/* Prompt 20: atalhos de exceção numa linha discreta (o caminho principal é o cartão da IA lá em cima). */}
+      <p className="text-xs text-muted" data-testid="atalhos-passo1">
+        Já tem anúncio em outro site?{" "}
+        <button type="button" className="font-semibold text-forest underline underline-offset-2" onClick={() => setAtalho("importar")} data-testid="importar-abrir">
+          Importar
+        </button>
+        {" · "}Prefere ajuda?{" "}
+        <button type="button" className="font-semibold text-forest underline underline-offset-2" onClick={() => setAtalho("ajuda")} data-testid="ajuda-publicar-abrir">
+          Falar com a equipe
+        </button>
+      </p>
+      {/* Atalho (t115): importar o texto do próprio anúncio leva direto à etapa 3, com tudo preenchido. */}
+      {atalho === "importar" && <ImportarAnuncio onAplicar={p.aplicarImportado} abertoInicial />}
+      {atalho === "ajuda" && <AjudaPublicar abertoInicial />}
     </div>
   );
 }
