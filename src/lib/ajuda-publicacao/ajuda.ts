@@ -5,13 +5,15 @@
   Funções puras: validação da entrada, rótulos e transições de status. Sem rede.
 */
 
-export const STATUS_AJUDA = ["recebido", "em_montagem", "enviado_dono", "cancelado"] as const;
+export const STATUS_AJUDA = ["recebido", "em_montagem", "enviado_dono", "aprovado_dono", "ajustes_pedidos", "cancelado"] as const;
 export type StatusAjuda = (typeof STATUS_AJUDA)[number];
 
 export const ROTULO_STATUS: Record<StatusAjuda, string> = {
   recebido: "Recebido",
   em_montagem: "Em montagem",
   enviado_dono: "Enviado para a sua aprovação",
+  aprovado_dono: "Aprovado por você",
+  ajustes_pedidos: "Ajustes pedidos por você",
   cancelado: "Cancelado",
 };
 
@@ -24,13 +26,27 @@ export const AVISO_SEM_CUSTO = "Sem custo nesta fase. A equipe monta o rascunho 
 export const AVISO_APROVACAO =
   "Nada vai ao ar sem a sua aprovação, e publicar continua exigindo o documento do imóvel aprovado.";
 
-/** Próximos passos permitidos para a equipe (cancelado e enviado_dono não voltam). */
+/** Próximos passos permitidos para a equipe (a decisão sobre o rascunho enviado é só do dono). */
 const PROXIMOS: Record<StatusAjuda, StatusAjuda[]> = {
   recebido: ["em_montagem", "cancelado"],
   em_montagem: ["enviado_dono", "cancelado"],
   enviado_dono: [],
+  aprovado_dono: [],
+  ajustes_pedidos: ["em_montagem", "cancelado"],
   cancelado: [],
 };
+
+/** O dono decide sobre o rascunho montado: aprova ou pede ajustes. Só vale quando está "enviado_dono". */
+export const DECISOES_DONO = ["aprovado_dono", "ajustes_pedidos"] as const;
+export type DecisaoDono = (typeof DECISOES_DONO)[number];
+
+export function ehDecisaoDono(v: unknown): v is DecisaoDono {
+  return typeof v === "string" && (DECISOES_DONO as readonly string[]).includes(v);
+}
+
+export function donoPodeDecidir(atual: StatusAjuda): boolean {
+  return atual === "enviado_dono";
+}
 
 export function ehStatusAjuda(v: unknown): v is StatusAjuda {
   return typeof v === "string" && (STATUS_AJUDA as readonly string[]).includes(v);
@@ -46,7 +62,7 @@ export function transicaoValida(de: StatusAjuda, para: StatusAjuda): boolean {
 
 /** Pedido ainda em andamento (conta para o limite por dono). */
 export function estaAberto(status: StatusAjuda): boolean {
-  return status === "recebido" || status === "em_montagem";
+  return status === "recebido" || status === "em_montagem" || status === "ajustes_pedidos";
 }
 
 export type EntradaAjuda = { link?: string | null; texto?: string | null; observacao?: string | null };

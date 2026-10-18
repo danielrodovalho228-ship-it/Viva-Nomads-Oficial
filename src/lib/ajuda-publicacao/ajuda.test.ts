@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
+  donoPodeDecidir,
+  ehDecisaoDono,
   estaAberto,
   linkValido,
   proximosStatus,
@@ -50,4 +52,42 @@ test("migração 0155: RLS ligada, anon sem acesso, dono só cria 'recebido', s�
   assert.match(aplicar, /schema_migrations/);
   assert.match(aplicar, /commit;\s*$/);
   assert.match(readFileSync("supabase/producao/rollback/0155_rollback.sql", "utf8"), /drop table if exists public\.pedidos_ajuda_publicacao/);
+});
+
+test("dono decide só sobre rascunho enviado: aprova ou pede ajustes; equipe não decide por ele", () => {
+  assert.ok(donoPodeDecidir("enviado_dono"));
+  for (const s of ["recebido", "em_montagem", "aprovado_dono", "ajustes_pedidos", "cancelado"] as const) {
+    assert.equal(donoPodeDecidir(s), false, s);
+  }
+  assert.ok(ehDecisaoDono("aprovado_dono") && ehDecisaoDono("ajustes_pedidos"));
+  assert.equal(ehDecisaoDono("enviado_dono"), false);
+  assert.equal(ehDecisaoDono("cancelado"), false);
+  // a equipe não pula a aprovação do dono
+  assert.equal(transicaoValida("enviado_dono", "aprovado_dono"), false);
+  assert.equal(transicaoValida("em_montagem", "aprovado_dono"), false);
+  // ajustes pedidos voltam para a montagem e contam como pedido aberto
+  assert.ok(transicaoValida("ajustes_pedidos", "em_montagem"));
+  assert.ok(estaAberto("ajustes_pedidos"));
+  assert.ok(!estaAberto("aprovado_dono"));
+  for (const s of STATUS_AJUDA) assert.ok(ROTULO_STATUS[s]);
+});
+
+test("migração 0156: dono só decide pedido seu 'enviado_dono' e só vincula imóvel dele; rollback e registro", () => {
+  const sql = readFileSync("supabase/migrations/0156_ajuda_publicacao_decisao_dono.sql", "utf8");
+  assert.match(sql, /using \(owner_id = \(select auth\.uid\(\)\) and status = 'enviado_dono'\)/);
+  assert.match(sql, /status in \('aprovado_dono', 'ajustes_pedidos'\)/);
+  assert.match(sql, /p\.owner_id = \(select auth\.uid\(\)\)/);
+  const aplicar = readFileSync("supabase/producao/aplicar-0156.sql", "utf8");
+  assert.match(aplicar, /^begin;/m);
+  assert.match(aplicar, /20261018000156/);
+  assert.match(aplicar, /commit;\s*$/);
+  assert.match(readFileSync("supabase/producao/rollback/0156_rollback.sql", "utf8"), /drop policy if exists ajuda_publicacao_dono_decide/);
+});
+
+test("ação decidirRascunhoAjuda exige dono, status enviado_dono e não confia no cliente", () => {
+  const src = readFileSync("src/lib/data/ajuda-publicacao-actions.ts", "utf8");
+  const corpo = src.slice(src.indexOf("export async function decidirRascunhoAjuda"));
+  assert.match(corpo, /ehDecisaoDono\(decisao\)/);
+  assert.match(corpo, /\.eq\("owner_id", user\.id\)/);
+  assert.match(corpo, /\.eq\("status", "enviado_dono"\)/);
 });
