@@ -21,7 +21,7 @@ test.describe("T198 — fim das telas do painel a 390 px", () => {
   for (const [nome, rota] of ROTAS) {
     test(`${nome}: último botão livre acima da barra de abas`, async ({ page }) => {
       await page.goto(rota, { waitUntil: "domcontentloaded" });
-      await expect(page.locator("h1").first()).toBeVisible({ timeout: 20_000 });
+      await expect(page.locator("h1:visible").first()).toBeVisible({ timeout: 20_000 });
       // Rola até o fim até a altura parar (blocos que carregam depois).
       await page.evaluate(async () => {
         let antes = -1;
@@ -38,8 +38,10 @@ test.describe("T198 — fim das telas do painel a 390 px", () => {
           for (let n: Element | null = el; n; n = n.parentElement) if (getComputedStyle(n).position === "fixed") return true;
           return false;
         };
-        const controles = Array.from(document.querySelectorAll("main a[href], main button, main input, main select, main textarea")).filter((el) => {
+        // Controles da tela (fora do cabeçalho, do menu e do que é fixo): o último da página é o que importa.
+        const controles = Array.from(document.querySelectorAll("a[href], button, input, select, textarea")).filter((el) => {
           const b = el.getBoundingClientRect();
+          if (el.closest("header, nav, aside, [data-testid='fale-com-a-viva-raiz']")) return false;
           return b.width > 0 && b.height > 0 && !fixo(el) && getComputedStyle(el).visibility !== "hidden";
         });
         const ultimo = controles.reduce<Element | null>((a, b) => (!a || b.getBoundingClientRect().bottom >= a.getBoundingClientRect().bottom ? b : a), null);
