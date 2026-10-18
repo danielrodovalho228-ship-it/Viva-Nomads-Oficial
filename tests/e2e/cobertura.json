@@ -1745,6 +1745,14 @@
         "t191-ajuda-publicacao"
       ]
     },
+    "src/lib/data/ajuda-publicacao-actions.ts#decidirRascunhoAjuda": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t191-ajuda-publicacao"
+      ]
+    },
     "src/lib/data/ajuda-publicacao-actions.ts#mudarStatusAjudaPublicacao": {
       "personas": [
         "admin"

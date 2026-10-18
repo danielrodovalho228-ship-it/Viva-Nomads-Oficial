@@ -13,6 +13,8 @@ const TOM: Record<StatusAjuda, string> = {
   recebido: "bg-amber-50 text-amber-800",
   em_montagem: "bg-blue-50 text-blue-700",
   enviado_dono: "bg-green-50 text-green-800",
+  aprovado_dono: "bg-green-100 text-green-900",
+  ajustes_pedidos: "bg-amber-50 text-amber-800",
   cancelado: "bg-surface-2 text-muted",
 };
 const ACAO: Partial<Record<StatusAjuda, string>> = {

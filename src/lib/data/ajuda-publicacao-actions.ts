@@ -6,6 +6,8 @@ import { ehAdmin } from "@/lib/data/admin-guard";
 import { erroBancoPT } from "@/lib/erros-banco";
 import { dentroDoLimite, DIA } from "@/lib/limites";
 import {
+  donoPodeDecidir,
+  ehDecisaoDono,
   ehStatusAjuda,
   MAX_ABERTOS_POR_DONO,
   transicaoValida,
@@ -46,7 +48,7 @@ export async function pedirAjudaParaPublicar(entrada: EntradaAjuda): Promise<Res
     .from("pedidos_ajuda_publicacao")
     .select("id", { count: "exact", head: true })
     .eq("owner_id", user.id)
-    .in("status", ["recebido", "em_montagem"]);
+    .in("status", ["recebido", "em_montagem", "ajustes_pedidos"]);
   if ((count ?? 0) >= MAX_ABERTOS_POR_DONO) {
     return { ok: false, error: "Você já tem pedidos em andamento. Aguarde a equipe concluir." };
   }
@@ -138,5 +140,37 @@ export async function mudarStatusAjudaPublicacao(id: string, para: string): Prom
   if (!feito) return { ok: false, error: "O pedido mudou enquanto você olhava. Atualize a página." };
   revalidatePath("/admin/ajuda-publicacao");
   revalidatePath("/dashboard/imoveis");
+  return { ok: true };
+}
+
+/** O DONO aprova o rascunho montado pela equipe ou pede ajustes (só quando está "enviado para aprovação"). */
+export async function decidirRascunhoAjuda(id: string, decisao: string): Promise<Resultado> {
+  if (!/^[0-9a-f-]{36}$/i.test(id ?? "") || !ehDecisaoDono(decisao)) return { ok: false, error: "Pedido inválido." };
+  const supabase = await createClient();
+  if (!supabase) return { ok: true, demo: true };
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Entre na sua conta." };
+  const { data: atual } = await supabase
+    .from("pedidos_ajuda_publicacao")
+    .select("status")
+    .eq("id", id)
+    .eq("owner_id", user.id)
+    .maybeSingle();
+  if (!atual || !ehStatusAjuda(atual.status)) return { ok: false, error: "Pedido não encontrado." };
+  if (!donoPodeDecidir(atual.status)) return { ok: false, error: "Este pedido não está esperando a sua aprovação." };
+  const { data: feito, error } = await supabase
+    .from("pedidos_ajuda_publicacao")
+    .update({ status: decisao, atualizado_em: new Date().toISOString() })
+    .eq("id", id)
+    .eq("owner_id", user.id)
+    .eq("status", "enviado_dono")
+    .select("id")
+    .maybeSingle();
+  if (error) return { ok: false, error: erroBancoPT(error) };
+  if (!feito) return { ok: false, error: "O pedido mudou enquanto você olhava. Atualize a página." };
+  revalidatePath("/dashboard/imoveis");
+  revalidatePath("/admin/ajuda-publicacao");
   return { ok: true };
 }

@@ -3,7 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { prontidaoDosImoveis } from "@/lib/anuncio/prontidao-servidor";
 import type { Prontidao } from "@/lib/anuncio/prontidao";
 import { meusPedidosDeAjuda } from "@/lib/data/ajuda-publicacao-actions";
-import { ROTULO_STATUS } from "@/lib/ajuda-publicacao/ajuda";
+import { donoPodeDecidir, ROTULO_STATUS } from "@/lib/ajuda-publicacao/ajuda";
+import { DecisaoRascunho } from "@/components/property/decisao-rascunho";
 import { MyPropertiesClient } from "./imoveis-client";
 
 /**
@@ -33,6 +34,7 @@ export default async function MyPropertiesPage() {
             {ajudas.map((a) => (
               <li key={a.id}>
                 Pedido de {new Date(a.criado_em).toLocaleDateString("pt-BR")}: <strong>{ROTULO_STATUS[a.status]}</strong>
+                {donoPodeDecidir(a.status) && <DecisaoRascunho id={a.id} />}
               </li>
             ))}
           </ul>
