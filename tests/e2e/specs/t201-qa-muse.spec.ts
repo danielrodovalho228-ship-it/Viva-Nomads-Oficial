@@ -5,7 +5,7 @@ import { hasAccount } from "../fixtures/accounts";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, novaSenha } from "../fixtures/laboratorio";
 
 /*
-  T199 — QA do Muse (18/10), 390 e 1280 px:
+  T201 — QA do Muse (18/10), 390 e 1280 px:
   1. /parceiros/fotografos: busca sem fotógrafo tem saída ("Ainda não temos…" + "Deixe seu contato e avisamos…");
      visitante entra para ser avisado; logado grava o aviso (0162). CEP não encontrado explica o que fazer.
   2. Home: os 4 passos com foto real — nenhum "Foto do passo em breve" no site.
@@ -20,7 +20,7 @@ async function semRolagemLateral(page: Page) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
 }
 
-test.describe("T199 — QA do Muse", () => {
+test.describe("T201 — QA do Muse", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
 
   for (const largura of LARGURAS) {
@@ -33,7 +33,7 @@ test.describe("T199 — QA do Muse", () => {
       const entrar = vazio.getByTestId("aviso-fotografo-entrar");
       await expect(entrar).toHaveAttribute("href", /\/auth\?redirect=%2Fparceiros%2Ffotografos%3Fcidade%3DAraguari/);
       await vazio.scrollIntoViewIfNeeded();
-      await page.screenshot({ path: `${SAIDA}/t199-fotografos-vazio-${largura}.png`, fullPage: false });
+      await page.screenshot({ path: `${SAIDA}/t201-fotografos-vazio-${largura}.png`, fullPage: false });
       await semRolagemLateral(page);
       // CEP que não resolve: a tela diz o que fazer (digitar a cidade), nunca fica sem resposta.
       await page.goto("/parceiros/fotografos?cep=00000000", { waitUntil: "domcontentloaded" });
@@ -52,7 +52,7 @@ test.describe("T199 — QA do Muse", () => {
         await imgs.nth(i).scrollIntoViewIfNeeded();
         await expect.poll(() => imgs.nth(i).evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0), { timeout: 15_000 }).toBe(true);
       }
-      await passos.screenshot({ path: `${SAIDA}/t199-home-passos-${largura}.png` });
+      await passos.screenshot({ path: `${SAIDA}/t201-home-passos-${largura}.png` });
 
       await page.goto("/como-funciona", { waitUntil: "domcontentloaded" });
       const banner = page.getByTestId("banner-topo");
@@ -60,7 +60,7 @@ test.describe("T199 — QA do Muse", () => {
       await expect.poll(() => foto.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0), { timeout: 15_000 }).toBe(true);
       await expect(page.getByText("Foto do passo em breve")).toHaveCount(0);
       await page.waitForTimeout(500);
-      await page.screenshot({ path: `${SAIDA}/t199-como-funciona-topo-${largura}.png`, fullPage: false });
+      await page.screenshot({ path: `${SAIDA}/t201-como-funciona-topo-${largura}.png`, fullPage: false });
       await semRolagemLateral(page);
     });
   }
@@ -76,7 +76,7 @@ test.describe("T199 — QA do Muse", () => {
       await expect(page.getByTestId("aviso-fotografo-ok")).toContainText("Avisamos você quando houver fotógrafo parceiro em Araguari");
       const { count } = await adm().from("interesse_fotografo_cidade").select("id", { count: "exact", head: true }).eq("chave", "araguari").eq("uf", "MG");
       expect(count).toBeGreaterThanOrEqual(1);
-      await page.screenshot({ path: `${SAIDA}/t199-fotografos-avisado-390.png`, fullPage: false });
+      await page.screenshot({ path: `${SAIDA}/t201-fotografos-avisado-390.png`, fullPage: false });
     });
   });
 
@@ -87,7 +87,7 @@ test.describe("T199 — QA do Muse", () => {
     const ids: string[] = [];
     let imovel = "";
     test.beforeAll(async () => {
-      const dono = await criarConta({ email: `dono.t199.${randomBytes(3).toString("hex")}@lab.vivanomads.test`, nome: "Otto Visitado Sobrenome", role: "owner" }, senha);
+      const dono = await criarConta({ email: `dono.t201.${randomBytes(3).toString("hex")}@lab.vivanomads.test`, nome: "Otto Visitado Sobrenome", role: "owner" }, senha);
       ids.push(dono);
       imovel = await criarImovelPronto(dono, "Studio do QA da visita", { ativo: true });
     });
@@ -103,7 +103,7 @@ test.describe("T199 — QA do Muse", () => {
       for (const largura of LARGURAS) {
         test(`${largura}px — "${alvo}": sem login vai ao login e volta ao imóvel com a janela aberta`, async ({ page }) => {
           test.setTimeout(90_000);
-          const email = `inq.t199.${alvo}.${largura}.${randomBytes(3).toString("hex")}@lab.vivanomads.test`;
+          const email = `inq.t201.${alvo}.${largura}.${randomBytes(3).toString("hex")}@lab.vivanomads.test`;
           ids.push(await criarConta({ email, nome: "Iara Visitante Sobrenome", role: "tenant" }, senha));
           await page.setViewportSize({ width: largura, height: 900 });
           await page.goto(`/imoveis/${imovel}`, { waitUntil: "domcontentloaded" });
@@ -121,7 +121,7 @@ test.describe("T199 — QA do Muse", () => {
           await expect(page).toHaveURL(new RegExp(`/imoveis/${imovel}\\?abrir=${alvo}`), { timeout: 30_000 });
           if (alvo === "visita") await expect(page.getByText(prova).first()).toBeVisible({ timeout: 20_000 });
           else await expect(page.getByTestId(prova)).toBeVisible({ timeout: 20_000 });
-          await page.screenshot({ path: `${SAIDA}/t199-visita-${alvo}-aberta-${largura}.png`, fullPage: false });
+          await page.screenshot({ path: `${SAIDA}/t201-visita-${alvo}-aberta-${largura}.png`, fullPage: false });
         });
       }
     }
