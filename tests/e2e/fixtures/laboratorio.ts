@@ -26,6 +26,30 @@ export async function liberarLimiteChamados(): Promise<void> {
   await adm().from("limites_uso").delete().like("chave", "chamado:%");
 }
 
+/**
+ * Zera o limite diário de pedidos de moradia (3 por conta por dia). As contas fixas do laboratório publicam
+ * pedidos em vários specs (e nas repetições); sem isto o último recebe "Você já publicou 3 pedidos hoje".
+ */
+export async function liberarLimitePedidos(): Promise<void> {
+  await adm().from("limites_uso").delete().like("chave", "pedido:%");
+}
+
+/**
+ * Deixa e-mail e telefone da conta confirmados, como o pedido de moradia exige para chegar aos proprietários
+ * (migração 0160: auth.users + public.telefone_verificacao). Só no laboratório; idempotente.
+ */
+export async function confirmarContatoDaConta(email: string): Promise<void> {
+  const { data: perfil, error } = await adm().from("profiles").select("id").eq("email", email).maybeSingle();
+  if (error || !perfil) throw new Error(`conta do laboratório não encontrada: ${email}`);
+  const id = perfil.id as string;
+  const { error: e1 } = await adm().auth.admin.updateUserById(id, { email_confirm: true, phone: "5562999991234", phone_confirm: true });
+  if (e1) throw e1;
+  const { error: e2 } = await adm()
+    .from("telefone_verificacao")
+    .upsert({ user_id: id, verificado_em: new Date().toISOString() }, { onConflict: "user_id" });
+  if (e2) throw e2;
+}
+
 export const novaSenha = (): string => randomBytes(12).toString("hex");
 export const novoSufixo = (): string => randomBytes(3).toString("hex");
 

@@ -64,6 +64,7 @@ test.describe("T197 — Anúncio de teste oculto @seo", () => {
   });
 
   test("a página do anúncio de teste (pelo link) é noindex; a do normal é indexável", async ({ page }) => {
+    test.setTimeout(120_000); // duas visitas a páginas de imóvel com o servidor frio do laboratório (45 s não bastava)
     const robots = async (id: string | undefined) => {
       await page.goto(`/imoveis/${id}`, { waitUntil: "domcontentloaded" });
       return (await page.locator('meta[name="robots"]').first().getAttribute("content").catch(() => null)) ?? "";
