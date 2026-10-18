@@ -210,3 +210,107 @@ test.describe("T57 — Contrato semeado: as duas partes têm o código de assina
     await page.context().close();
   });
 });
+
+/**
+ * Assinatura PELA TELA até o fim (ordem d07e4c70, achado do Moacir no #825): as duas partes pedem o código,
+ * leem na caixa de e-mails de teste da própria conta (profiles.is_teste, só no laboratório), marcam "Li e concordo"
+ * e assinam. Nenhuma assinatura é gravada pelo cliente admin.
+ */
+test.describe("T57 — Contrato semeado: as duas partes assinam pela tela com o código da caixa de teste", () => {
+  test.skip(!NO_LABORATORIO, "Só no laboratório.");
+  test.describe.configure({ mode: "serial" });
+
+  const senha = novaSenha();
+  const sufixo = novoSufixo();
+  const dono = { email: `dono.tela.${sufixo}@lab.vivanomads.test`, nome: "Dora Tela", role: "owner" as const };
+  const inq = { email: `inq.tela.${sufixo}@lab.vivanomads.test`, nome: "Ivo Tela", role: "tenant" as const };
+  const ids: { dono?: string; inq?: string; imovel?: string; contrato?: string } = {};
+
+  test.beforeAll(async () => {
+    ids.dono = await criarConta(dono, senha);
+    ids.inq = await criarConta(inq, senha);
+    // Conta de teste: o e-mail do código vai para a caixa dela (emails_teste), que o próprio teste lê.
+    const { error: eTeste } = await adm().from("profiles").update({ is_teste: true }).in("id", [ids.dono, ids.inq]);
+    if (eTeste) throw eTeste;
+    ids.imovel = await criarImovelPronto(ids.dono, `Assinatura tela ${sufixo}`, { ativo: true, preco: 3200 });
+    const { data, error } = await adm()
+      .from("contratos")
+      .insert({
+        property_id: ids.imovel,
+        tenant_id: ids.inq,
+        owner_plan: "essential",
+        faixa: "temporada",
+        prazo_total_dias: 60,
+        aluguel_mensal: 3200,
+        tamanho_bloco_meses: 2,
+        comissao_percent: 0.08,
+        comissao_valor: 256,
+        qtd_ocupantes: 1,
+        status: "ativo",
+        garantia: "caucao",
+      })
+      .select("id")
+      .single();
+    if (error) throw error;
+    ids.contrato = data.id as string;
+    const { error: errCheckin } = await adm()
+      .from("contratos_checkin")
+      .insert({ contrato_id: ids.contrato, horario: "14:00", instrucoes: "Chave na portaria, apto 12.", plantao: "34999990000" });
+    if (errCheckin) throw errCheckin;
+  });
+
+  test.afterAll(async () => {
+    if (ids.contrato) await adm().from("contratos").delete().eq("id", ids.contrato);
+    await apagarContas([ids.dono, ids.inq]);
+  });
+
+  async function codigoDaCaixa(usuarioId: string): Promise<string> {
+    for (let i = 0; i < 30; i++) {
+      const { data } = await adm()
+        .from("emails_teste")
+        .select("corpo")
+        .eq("usuario_id", usuarioId)
+        .eq("evento", "contract_signature_code")
+        .order("criado_em", { ascending: false })
+        .limit(1);
+      const m = /\b(\d{6})\b/.exec(String(data?.[0]?.corpo ?? ""));
+      if (m) return m[1];
+      await new Promise((r) => setTimeout(r, 1000));
+    }
+    throw new Error("O código de assinatura não chegou à caixa de testes em 30 s.");
+  }
+
+  test("inquilino pede o código, lê na caixa de teste, marca 'Li e concordo' e assina", async ({ browser }) => {
+    test.setTimeout(150_000);
+    const page = await entrar(browser, inq.email, senha);
+    await page.goto(`/dashboard/locacoes/${ids.contrato}`, { waitUntil: "domcontentloaded" });
+    await expect(page.getByTestId("form-assinar")).toBeVisible({ timeout: 20_000 });
+    await page.getByTestId("assinar-pedir-codigo").click();
+    await expect(page.getByText(/Enviamos 6 números/)).toBeVisible({ timeout: 45_000 });
+    await page.getByTestId("assinar-aceite").check();
+    await page.getByTestId("assinar-codigo").fill(await codigoDaCaixa(ids.inq!));
+    await page.getByTestId("assinar-enviar").click();
+    await expect(page.getByTestId("form-assinar")).toHaveCount(0, { timeout: 45_000 });
+    const { data } = await adm().from("contratos").select("assinado_inquilino_em, assinado_proprietario_em").eq("id", ids.contrato!).single();
+    expect(data?.assinado_inquilino_em, "assinatura do inquilino gravada pelo servidor").not.toBeNull();
+    expect(data?.assinado_proprietario_em).toBeNull();
+    await page.context().close();
+  });
+
+  test("proprietário vê 'O inquilino já assinou', assina pela tela e as duas partes aparecem assinadas", async ({ browser }) => {
+    test.setTimeout(150_000);
+    const page = await entrar(browser, dono.email, senha);
+    await page.goto(`/dashboard/contratos/${ids.contrato}`, { waitUntil: "domcontentloaded" });
+    await expect(page.getByTestId("contrato-aviso-assinatura")).toHaveText("O inquilino já assinou — falta você assinar.", { timeout: 20_000 });
+    await page.getByTestId("assinar-pedir-codigo").click();
+    await expect(page.getByText(/Enviamos 6 números/)).toBeVisible({ timeout: 45_000 });
+    await page.getByTestId("assinar-aceite").check();
+    await page.getByTestId("assinar-codigo").fill(await codigoDaCaixa(ids.dono!));
+    await page.getByTestId("assinar-enviar").click();
+    await expect(page.getByTestId("form-assinar")).toHaveCount(0, { timeout: 45_000 });
+    await expect(page.getByTestId("contrato-aviso-assinatura")).toHaveText("As duas partes assinaram.");
+    const { data } = await adm().from("contratos").select("assinado_inquilino_em, assinado_proprietario_em").eq("id", ids.contrato!).single();
+    expect(data?.assinado_proprietario_em, "assinatura do dono gravada pelo servidor").not.toBeNull();
+    await page.context().close();
+  });
+});

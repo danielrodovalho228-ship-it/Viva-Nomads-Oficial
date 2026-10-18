@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify } from "@/lib/notifications";
 import { sendEmail } from "@/lib/notifications/email";
+import { guardarSeContaDeTeste } from "@/lib/notifications/caixa-teste-servidor";
 import {
   assuntoAvisoOutraParte,
   avisoAssinatura,
@@ -262,6 +263,14 @@ export async function pedirCodigoAssinatura(contratoId: string): Promise<{ ok: b
     html: `<p>Seu código para assinar o contrato de <strong>${visao.imovel.replace(/[<>&]/g, "")}</strong>: <strong style="font-size:20px;letter-spacing:4px">${codigo}</strong></p><p>Vale por 15 minutos e só pode ser usado uma vez. Se não foi você, ignore este e-mail e troque a senha.</p>`,
   });
   if (r.error) return { ok: false, error: "Não foi possível enviar o e-mail agora. Tente de novo." };
+  // Conta de teste (is_teste): o QA lê o código na caixa da própria conta, sem caixa de e-mail real. Conta real: nada é guardado.
+  await guardarSeContaDeTeste({
+    evento: "contract_signature_code",
+    assunto: "Seu código para assinar o contrato",
+    texto: `Seu código para assinar o contrato de "${visao.imovel}": ${codigo}`,
+    para: user.email,
+    usuarioId: user.id,
+  });
   return { ok: true };
 }
 
