@@ -60,7 +60,7 @@ async function codigoDaCaixa(usuarioId: string, depoisDe: string): Promise<strin
       .gte("criado_em", depoisDe)
       .order("criado_em", { ascending: false })
       .limit(1);
-    const m = /\b(\d{6})\b/.exec(String(data?.[0]?.corpo ?? ""));
+    const m = /:\s*(\d{6})\s*$/.exec(String(data?.[0]?.corpo ?? "").trim()); // o código vem no FIM ("…de \"<imóvel>\": 123456"); o título pode ter 6 dígitos
     if (m) return m[1];
     await new Promise((r) => setTimeout(r, 1000));
   }

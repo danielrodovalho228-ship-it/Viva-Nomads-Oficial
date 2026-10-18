@@ -277,7 +277,7 @@ test.describe("T57 — Contrato semeado: as duas partes assinam pela tela com o 
         .eq("evento", "contract_signature_code")
         .order("criado_em", { ascending: false })
         .limit(1);
-      const m = /\b(\d{6})\b/.exec(String(data?.[0]?.corpo ?? ""));
+      const m = /:\s*(\d{6})\s*$/.exec(String(data?.[0]?.corpo ?? "").trim()); // o código vem no FIM ("…de \"<imóvel>\": 123456"); o título pode ter 6 dígitos
       if (m) return m[1];
       await new Promise((r) => setTimeout(r, 1000));
     }
