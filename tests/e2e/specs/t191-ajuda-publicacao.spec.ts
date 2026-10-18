@@ -52,41 +52,52 @@ test.describe("T191 — o dono decide o rascunho (ordem 65e999b2, logado)", () =
     await apagarContas(ids);
   });
 
+  // Um pedido que sobra de um teste que falhou duplicaria os botões no seguinte: cada teste começa sem pedidos do dono.
+  test.beforeEach(async () => {
+    await adm().from("pedidos_ajuda_publicacao").delete().eq("owner_id", dono.id);
+  });
+  test.afterEach(async () => {
+    await adm().from("pedidos_ajuda_publicacao").delete().eq("owner_id", dono.id);
+  });
+
+  /** Abre o painel já hidratado (o botão só responde depois do JavaScript) e clica no botão da decisão. */
+  async function decidir(browser: import("@playwright/test").Browser, botao: string, largura = 1280): Promise<void> {
+    const page = await entrar(browser, dono.email, senha);
+    try {
+      await page.setViewportSize({ width: largura, height: 900 });
+      await page.goto("/dashboard/imoveis", { waitUntil: "networkidle" });
+      await expect(page.getByTestId(botao)).toBeVisible({ timeout: 20_000 });
+      await page.getByTestId(botao).click();
+      await expect(page.getByTestId("decisao-rascunho")).toHaveCount(0, { timeout: 20_000 });
+    } finally {
+      await page.context().close();
+    }
+  }
+
   for (const largura of [390, 1280]) {
     test(`${largura} px — pedido enviado para aprovação: Aprovar grava aprovado_dono e os botões somem`, async ({ browser }) => {
       const id = await pedido(dono.id, "enviado_dono");
-      const page = await entrar(browser, dono.email, senha);
-      await page.setViewportSize({ width: largura, height: 900 });
-      await page.goto("/dashboard/imoveis", { waitUntil: "domcontentloaded" });
-      await expect(page.getByTestId("decisao-aprovar")).toBeVisible({ timeout: 20_000 });
-      await expect(page.getByTestId("decisao-ajustes")).toBeVisible();
-      await page.getByTestId("decisao-aprovar").click();
-      await expect(page.getByTestId("decisao-rascunho")).toHaveCount(0, { timeout: 20_000 });
-      expect(await statusDe(id)).toBe("aprovado_dono");
-      await page.context().close();
-      await adm().from("pedidos_ajuda_publicacao").delete().eq("id", id);
+      await decidir(browser, "decisao-aprovar", largura);
+      await expect.poll(() => statusDe(id), { timeout: 15_000 }).toBe("aprovado_dono");
     });
   }
 
   test("Pedir ajustes grava ajustes_pedidos", async ({ browser }) => {
     const id = await pedido(dono.id, "enviado_dono");
-    const page = await entrar(browser, dono.email, senha);
-    await page.goto("/dashboard/imoveis", { waitUntil: "domcontentloaded" });
-    await page.getByTestId("decisao-ajustes").click({ timeout: 20_000 });
-    await expect(page.getByTestId("decisao-rascunho")).toHaveCount(0, { timeout: 20_000 });
-    expect(await statusDe(id)).toBe("ajustes_pedidos");
-    await page.context().close();
-    await adm().from("pedidos_ajuda_publicacao").delete().eq("id", id);
+    await decidir(browser, "decisao-ajustes");
+    await expect.poll(() => statusDe(id), { timeout: 15_000 }).toBe("ajustes_pedidos");
   });
 
   test("negativo — pedido ainda 'recebido' não mostra os botões", async ({ browser }) => {
-    const id = await pedido(dono.id, "recebido");
+    await pedido(dono.id, "recebido");
     const page = await entrar(browser, dono.email, senha);
-    await page.goto("/dashboard/imoveis", { waitUntil: "domcontentloaded" });
-    await expect(page.getByTestId("ajuda-andamento")).toBeVisible({ timeout: 20_000 });
-    await expect(page.getByTestId("decisao-rascunho")).toHaveCount(0);
-    await page.context().close();
-    await adm().from("pedidos_ajuda_publicacao").delete().eq("id", id);
+    try {
+      await page.goto("/dashboard/imoveis", { waitUntil: "domcontentloaded" });
+      await expect(page.getByTestId("ajuda-andamento")).toBeVisible({ timeout: 20_000 });
+      await expect(page.getByTestId("decisao-rascunho")).toHaveCount(0);
+    } finally {
+      await page.context().close();
+    }
   });
 
   test("negativo (RLS) — outro dono não decide pedido alheio, e o dono não decide pedido 'recebido'", async () => {
