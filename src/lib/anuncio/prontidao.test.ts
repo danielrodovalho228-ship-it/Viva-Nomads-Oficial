@@ -171,3 +171,21 @@ test("checklist: o id do rascunho vai codificado na URL", () => {
   const c = checklistAnuncio(prontidaoAnuncio({ ...completo(), fotos: 0 }), "a&b=1");
   assert.ok(c.proximo?.href.includes("draft=a%26b%3D1"));
 });
+
+import { ROTULO_QUALIFICACAO } from "./prontidao.ts";
+
+test("p22 — portão único: no cadastro, 'Antes de anunciar' é item da mesma lista desde o início; fora dele não aparece", () => {
+  const fatos = {
+    enderecoOk: true, detalhesOk: true, periodoOk: true, fotos: 8, titulo: "Studio mobiliado", preco: 3000, garantiaOk: true,
+    sublocacaoOk: true, privacidadeOk: true, documento: "approved" as const, limitePlanoOk: null, descricao: "x".repeat(200), selo: false, video: false,
+  };
+  const sem = prontidaoAnuncio({ ...fatos, qualificacaoOk: false });
+  const item = sem.obrigatorios.find((i) => i.key === "qualificacao");
+  assert.ok(item);
+  assert.equal(item.label, ROTULO_QUALIFICACAO);
+  assert.equal(item.ok, false);
+  assert.equal(sem.podePublicar, false, "sem a qualificação não publica — e isso aparece na lista, não num segundo bloqueio");
+  assert.ok(sem.faltam.some((f) => f.startsWith(ROTULO_QUALIFICACAO)));
+  assert.equal(prontidaoAnuncio({ ...fatos, qualificacaoOk: true }).podePublicar, true);
+  assert.equal(prontidaoAnuncio(fatos).obrigatorios.some((i) => i.key === "qualificacao"), false, "editor/lista: não se aplica");
+});

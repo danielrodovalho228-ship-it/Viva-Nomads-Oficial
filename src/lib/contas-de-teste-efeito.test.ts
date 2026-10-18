@@ -57,7 +57,7 @@ test("rotas: conta de teste desvia ANTES de Asaas, ZapSign e CAF; decisão vem d
   const caf = ler("src/app/api/caf/verify/route.ts");
   assert.match(caf, /contaEhDeTeste\(/);
   assert.ok(caf.indexOf("contaEhDeTeste(") < caf.indexOf("await verifyTenant("));
-  assert.ok(caf.indexOf("contaEhDeTeste(") < caf.indexOf("consumirLimite("), "não gasta a cota de 90 dias da conta de teste");
+  assert.ok(caf.indexOf("contaEhDeTeste(") < caf.indexOf("consumirLimite("), "não gasta a cota de 12 meses da conta de teste");
   assert.match(caf, /MSG_VERIFICACAO_EM_BREVE/);
   assert.ok(!/body\.(isTeste|is_teste|teste)/.test(com + con + caf), "o navegador não decide");
 });

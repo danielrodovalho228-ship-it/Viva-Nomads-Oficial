@@ -1,5 +1,6 @@
 "use server";
 
+import { statusAssinaturaCurto } from "@/lib/fechamento-contrato";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify } from "@/lib/notifications";
@@ -155,6 +156,8 @@ export interface MinhaCandidatura {
   propertyTitle: string;
   situacao: RotuloCandidatura;
   createdAt: string | null;
+  /** Prompt 24: contrato registrado desta candidatura (aparece no cartão com o status da assinatura). */
+  contrato: { id: string; status: string } | null;
 }
 
 /**
@@ -186,6 +189,19 @@ export async function listMinhasCandidaturas(): Promise<MinhaCandidatura[]> {
     .select("sender_id, property_id")
     .eq("receiver_id", user.id);
   const engajou = new Set((msgs ?? []).map((m) => `${m.sender_id}_${m.property_id}`));
+  // Contrato de cada candidatura (o RLS deixa o inquilino ler os próprios contratos).
+  const { data: contratos } = await supabase
+    .from("contratos")
+    .select("id, lead_id, assinado_proprietario_em, assinado_inquilino_em")
+    .eq("tenant_id", user.id);
+  const contratoDoLead = new Map(
+    ((contratos ?? []) as { id: string; lead_id: string | null; assinado_proprietario_em: string | null; assinado_inquilino_em: string | null }[])
+      .filter((c) => c.lead_id)
+      .map((c) => [
+        c.lead_id as string,
+        { id: c.id, status: statusAssinaturaCurto("inquilino", { proprietario: c.assinado_proprietario_em, inquilino: c.assinado_inquilino_em }) },
+      ]),
+  );
 
   type Row = {
     id: string;
@@ -200,6 +216,7 @@ export async function listMinhasCandidaturas(): Promise<MinhaCandidatura[]> {
     propertyTitle: r.property?.title ?? "Imóvel",
     situacao: situacaoCandidatura(r.status, engajou.has(`${r.owner_id}_${r.property_id}`)),
     createdAt: r.created_at,
+    contrato: contratoDoLead.get(r.id) ?? null,
   }));
 }
 

@@ -70,7 +70,22 @@ const initialQuality: QualityState = {
   cafe1km: false,
 };
 
-export default function QualificationChecklistPage() {
+/**
+ * Prompt 22: a mesma qualificação abre DENTRO do cadastro (painel lateral, `emPainel`), sem sair do anúncio. No
+ * painel o imóvel vem por `imovelIdInicial` (null = o próximo imóvel, ligado ao criar), "Salvar" avisa o cadastro
+ * (`onSalva`) e "Voltar ao cadastro" fecha o painel (`onFechar`). Na página /qualificar nada muda.
+ */
+export default function QualificationChecklistPage({
+  imovelIdInicial,
+  emPainel = false,
+  onSalva,
+  onFechar,
+}: {
+  imovelIdInicial?: string | null;
+  emPainel?: boolean;
+  onSalva?: (r: { elegivel: boolean; selo: boolean; tHome: boolean; tWork: boolean }) => void;
+  onFechar?: () => void;
+} = {}) {
   const router = useRouter();
   const [elig, setElig] = useState<EligibilityState>(initialEligibility);
   const [quality, setQuality] = useState<QualityState>(initialQuality);
@@ -96,7 +111,7 @@ export default function QualificationChecklistPage() {
   const [imovelInvalido, setImovelInvalido] = useState(false);
   useEffect(() => {
     let alive = true;
-    const id = new URLSearchParams(window.location.search).get("imovel");
+    const id = imovelIdInicial !== undefined ? imovelIdInicial : new URLSearchParams(window.location.search).get("imovel");
     (async () => {
       const resumo = id ? await resumoImovelDoDono(id).catch(() => null) : null;
       if (!alive) return;
@@ -123,7 +138,7 @@ export default function QualificationChecklistPage() {
     return () => {
       alive = false;
     };
-  }, []);
+  }, [imovelIdInicial]);
   const eligible = isEligible(elig);
   const score = useMemo(() => readyToLiveScore(quality), [quality]);
   const baseBadge = score >= READY_TO_LIVE_THRESHOLD;
@@ -236,6 +251,7 @@ export default function QualificationChecklistPage() {
       return;
     }
     setSaved(true);
+    onSalva?.({ elegivel: eligible, selo: baseBadge, tHome, tWork });
   }
 
   return (
@@ -243,8 +259,8 @@ export default function QualificationChecklistPage() {
       {/* Banner de topo (item 4): foto de interior SOB o gradiente da marca (lado
           esquerdo mais escuro), texto branco. Altura contida (~180px). */}
       <header
-        className="relative mb-8 flex flex-col justify-center overflow-hidden rounded-2xl p-6 text-white sm:p-8"
-        style={{ minHeight: 180 }}
+        className={cn("relative flex flex-col justify-center overflow-hidden rounded-2xl text-white", emPainel ? "mb-5 p-5" : "mb-8 p-6 sm:p-8")}
+        style={{ minHeight: emPainel ? 120 : 180 }}
       >
         <Image
           src="/images/unicas/qualificar-banner-simulador.webp"
@@ -665,14 +681,13 @@ export default function QualificationChecklistPage() {
         {saved ? (
           <Button
             variant="accent"
-            onClick={() =>
-              router.push(rotaVoltarAoAnuncio(imovel))
-            }
+            onClick={() => (emPainel ? onFechar?.() : router.push(rotaVoltarAoAnuncio(imovel)))}
+            data-testid="qualificacao-voltar"
           >
-            {imovel ? "Voltar ao anúncio" : "Continuar para o anúncio"} <ArrowRight className="h-4 w-4" />
+            {emPainel ? "Voltar ao cadastro" : imovel ? "Voltar ao anúncio" : "Continuar para o anúncio"} <ArrowRight className="h-4 w-4" />
           </Button>
         ) : (
-          <Button disabled={!eligible || saving} onClick={save}>
+          <Button disabled={!eligible || saving} onClick={save} data-testid="qualificacao-salvar">
             {saving ? "Salvando..." : "Salvar qualificação"}
           </Button>
         )}

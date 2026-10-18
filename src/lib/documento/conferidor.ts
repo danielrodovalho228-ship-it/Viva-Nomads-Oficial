@@ -1,6 +1,9 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { integracoesSimuladas, registrarSimulado } from "@/lib/integracoes";
+import { classificarFalhaIa, textoDaResposta, type FalhaIa, type RotaIa } from "@/lib/ai/falha-ia";
+import { registrarChamadaIa } from "@/lib/ai/registro-ia";
+import { precisaReduzirImagem, IMAGEM_LADO_MAX_PX } from "@/lib/documento/arquivo-leitura";
 import { lerComprovanteCertta, certtaOcrAtivo } from "@/lib/integrations/caf";
 import {
   casoLabDoArquivo,
@@ -28,6 +31,9 @@ import {
     • "certta" — Certta (ex-CAF) Smart OCR, PREPARADO e DESLIGADO até o contrato (CERTTA_SMART_OCR=on);
     • "ia"     — modelo de visão da Anthropic (a mesma chave do assistente), uma chamada por documento.
   Sem nenhum disponível, ou com erro, a leitura é null → o caso vai para a revisão humana, sem travar o cadastro.
+  Prompt 22: o erro NÃO é mais engolido — volta como `falha` (motivo para a tela: arquivo grande, ilegível,
+  indisponível) e vira uma linha em ia_chamadas (0163) sem dado pessoal. Foto grande de celular é reduzida antes
+  do envio (o limite da API para imagem é menor que o de PDF).
 
   Matrícula pelo ONR/Registradores (Infosimples): só a interface abaixo. Exige certificado digital e tem custo por
   pedido; uso futuro apenas nos casos em revisão ou para o selo "Dono verificado". NÃO implementado.
@@ -45,6 +51,8 @@ export interface LeituraComOrigem {
   leitura: LeituraDocumento | null;
   conferidor: NomeConferidor;
   modelo: string | null;
+  /** A leitura falhou (prompt 22): o motivo vai para a tela e para o registro. */
+  falha?: FalhaIa;
 }
 
 /** Modelo de visão usado na leitura (o mesmo da leitura das fotos do cadastro). */
@@ -76,6 +84,50 @@ export interface LeituraMatriculaComOrigem {
   leitura: LeituraMatricula | null;
   conferidor: NomeConferidor;
   modelo: string | null;
+  falha?: FalhaIa;
+}
+
+/**
+ * Prepara o arquivo para a leitura: imagem acima do limite (foto de celular de 5 MB ou mais, ou lados grandes demais)
+ * é girada pela orientação da câmera e reduzida para JPEG de até IMAGEM_LADO_MAX_PX. PDF vai como veio.
+ */
+async function prepararParaLeitura(arquivo: ArquivoDocumento): Promise<{ arquivo: ArquivoDocumento; reduzido: boolean }> {
+  if (arquivo.mime === "application/pdf") return { arquivo, reduzido: false };
+  try {
+    const sharp = (await import("sharp")).default;
+    const meta = await sharp(arquivo.bytes).metadata();
+    if (!precisaReduzirImagem(arquivo.bytes.length, meta.width ?? 0, meta.height ?? 0)) return { arquivo, reduzido: false };
+    const saida = await sharp(arquivo.bytes)
+      .rotate()
+      .resize({ width: IMAGEM_LADO_MAX_PX, height: IMAGEM_LADO_MAX_PX, fit: "inside", withoutEnlargement: true })
+      .jpeg({ quality: 85 })
+      .toBuffer();
+    return { arquivo: { bytes: new Uint8Array(saida), mime: "image/jpeg" }, reduzido: true };
+  } catch (e) {
+    console.warn("[conferidor] não reduziu a imagem:", e instanceof Error ? e.message : "erro");
+    return { arquivo, reduzido: false };
+  }
+}
+
+/** Uma chamada de leitura com registro (ok ou falha, sem dado pessoal) e o erro classificado — nunca engolido. */
+async function chamarLeitura<T>(
+  rota: RotaIa,
+  original: ArquivoDocumento,
+  pedir: (a: ArquivoDocumento) => Promise<Anthropic.Message>,
+  sanear: (json: unknown) => T,
+): Promise<{ leitura: T | null; falha?: FalhaIa }> {
+  const inicio = Date.now();
+  const { arquivo, reduzido } = await prepararParaLeitura(original);
+  const base = { rota, modelo: MODELO_LEITURA, arquivoMime: original.mime, arquivoBytes: original.bytes.length, reduzido };
+  try {
+    const leitura = sanear(JSON.parse(textoDaResposta(await pedir(arquivo))));
+    await registrarChamadaIa({ ...base, ok: true, status: 200, duracaoMs: Date.now() - inicio });
+    return { leitura };
+  } catch (e) {
+    const falha = classificarFalhaIa(e);
+    await registrarChamadaIa({ ...base, ok: false, status: falha.status, tipoErro: falha.tipo, motivo: falha.motivo, duracaoMs: Date.now() - inicio });
+    return { leitura: null, falha };
+  }
 }
 
 /**
@@ -94,20 +146,22 @@ export async function lerMatricula(
   }
   // Certta Smart OCR não lê matrícula (só comprovante): sem a IA, o caso vai para a revisão humana.
   if (qual !== "ia") return { leitura: null, conferidor: qual, modelo: null };
-  try {
-    const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-    const res = await anthropic.messages.create({
-      model: MODELO_LEITURA,
-      max_tokens: 2048,
-      system: MATRICULA_SYSTEM_PROMPT,
-      output_config: { effort: "low", format: { type: "json_schema", schema: MATRICULA_OUTPUT_SCHEMA } },
-      messages: [{ role: "user", content: [blocoDoArquivo(arquivo), { type: "text" as const, text: "Leia esta matrícula seguindo as regras." }] }],
-    });
-    const texto = res.content.find((b) => b.type === "text");
-    return { leitura: sanearMatricula(JSON.parse(texto && texto.type === "text" ? texto.text : "")), conferidor: "ia", modelo: MODELO_LEITURA };
-  } catch {
-    return { leitura: null, conferidor: "ia", modelo: MODELO_LEITURA };
-  }
+  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const r = await chamarLeitura(
+    "matricula",
+    arquivo,
+    (a) =>
+      anthropic.messages.create({
+        model: MODELO_LEITURA,
+        // Matrícula longa (vários proprietários e atos) não pode sair cortada: o JSON cortado virava "não foi possível ler".
+        max_tokens: 8192,
+        system: MATRICULA_SYSTEM_PROMPT,
+        output_config: { effort: "low", format: { type: "json_schema", schema: MATRICULA_OUTPUT_SCHEMA } },
+        messages: [{ role: "user", content: [blocoDoArquivo(a), { type: "text" as const, text: "Leia esta matrícula seguindo as regras." }] }],
+      }),
+    sanearMatricula,
+  );
+  return { leitura: r.leitura, conferidor: "ia", modelo: MODELO_LEITURA, falha: r.falha };
 }
 
 export async function lerDocumento(arquivo: ArquivoDocumento, cadastro: CadastroComparado): Promise<LeituraComOrigem> {
@@ -122,22 +176,21 @@ export async function lerDocumento(arquivo: ArquivoDocumento, cadastro: Cadastro
   }
   if (qual === "nenhum") return { leitura: null, conferidor: "nenhum", modelo: null };
 
-  try {
-    const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-    const bloco = blocoDoArquivo(arquivo);
-    const res = await anthropic.messages.create({
-      model: MODELO_LEITURA,
-      max_tokens: 1024,
-      system: LEITURA_SYSTEM_PROMPT,
-      output_config: { effort: "low", format: { type: "json_schema", schema: LEITURA_OUTPUT_SCHEMA } },
-      messages: [{ role: "user", content: [bloco, { type: "text" as const, text: "Leia este documento seguindo as regras." }] }],
-    });
-    const texto = res.content.find((b) => b.type === "text");
-    const leitura = sanearLeitura(JSON.parse(texto && texto.type === "text" ? texto.text : ""));
-    return { leitura, conferidor: "ia", modelo: MODELO_LEITURA };
-  } catch {
-    return { leitura: null, conferidor: "ia", modelo: MODELO_LEITURA };
-  }
+  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const r = await chamarLeitura(
+    "documento",
+    arquivo,
+    (a) =>
+      anthropic.messages.create({
+        model: MODELO_LEITURA,
+        max_tokens: 2048,
+        system: LEITURA_SYSTEM_PROMPT,
+        output_config: { effort: "low", format: { type: "json_schema", schema: LEITURA_OUTPUT_SCHEMA } },
+        messages: [{ role: "user", content: [blocoDoArquivo(a), { type: "text" as const, text: "Leia este documento seguindo as regras." }] }],
+      }),
+    sanearLeitura,
+  );
+  return { leitura: r.leitura, conferidor: "ia", modelo: MODELO_LEITURA, falha: r.falha };
 }
 
 /**

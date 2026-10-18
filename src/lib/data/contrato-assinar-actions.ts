@@ -427,6 +427,16 @@ export async function assinarContrato(input: {
         pushUrl: visao.papel === "inquilino" ? `/dashboard/contratos/${c.id}` : `/dashboard/locacoes/${c.id}`,
         subject: assuntoAvisoOutraParte(outraJaAssinou),
       });
+      // Prompt 24: com as duas assinaturas, quem assinou por último também recebe o "contrato assinado" (os dois lados).
+      if (outraJaAssinou) {
+        await notify({
+          event: "contract_status",
+          email: user.email ?? undefined,
+          userId: user.id,
+          pushUrl: visao.papel === "inquilino" ? `/dashboard/locacoes/${c.id}` : `/dashboard/contratos/${c.id}`,
+          subject: assuntoAvisoOutraParte(true),
+        });
+      }
     } catch {
       /* aviso é best-effort: a assinatura já está gravada */
     }

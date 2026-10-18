@@ -63,22 +63,29 @@ for (const largura of [390, 1280]) {
       const marcas = page.getByTestId("marcar-comparar");
       test.skip((await marcas.count()) < 1, "sem cartões");
       await marcas.first().check();
-      await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
       const barra = page.getByTestId("barra-comparar").locator("> div");
       await expect(barra).toBeVisible();
-      const topo = (await barra.boundingBox())!.y;
-      for (let i = 0; i < (await marcas.count()); i++) {
-        const caixa = marcas.nth(i);
-        const b = await caixa.boundingBox();
-        if (!b || b.y + b.height < 0 || b.y > (page.viewportSize()!.height)) continue; // fora da tela
-        if (b.y + b.height <= topo) continue; // acima da barra
-        const coberto = await caixa.evaluate((el) => {
-          const r = el.getBoundingClientRect();
-          const alvo = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
-          return !!alvo && !el.contains(alvo) && !el.closest("label")?.contains(alvo);
-        });
-        expect(coberto, `caixinha ${i} coberta pela barra`).toBe(false);
-      }
+      // a página ainda cresce (fotos/cartões carregando) logo após rolar: rola e confere de novo até estabilizar (instável no lab)
+      await expect
+        .poll(
+          async () => {
+            await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+            await page.waitForTimeout(300);
+            return page.evaluate(() => {
+              const topo = document.querySelector('[data-testid="barra-comparar"] > div')?.getBoundingClientRect().top ?? window.innerHeight;
+              const cobertas: number[] = [];
+              document.querySelectorAll('[data-testid="marcar-comparar"]').forEach((el, i) => {
+                const r = el.getBoundingClientRect();
+                if (r.bottom < 0 || r.top > window.innerHeight || r.bottom <= topo) return; // fora da tela ou acima da barra
+                const alvo = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+                if (alvo && !el.contains(alvo) && !el.closest("label")?.contains(alvo)) cobertas.push(i);
+              });
+              return cobertas;
+            });
+          },
+          { timeout: 20_000, message: "caixinhas cobertas pela barra fixa" },
+        )
+        .toEqual([]);
     });
   });
 }

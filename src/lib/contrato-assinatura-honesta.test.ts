@@ -18,12 +18,15 @@ test("mensagens fixas da ordem", () => {
   assert.equal(MARCA_MINUTA, "MINUTA DE TESTE — sem validade");
 });
 
-test("F40: sem chave (503) ou resposta simulada, não marca como gerado nem cobra a taxa", () => {
-  assert.match(gerar, /res\.status === 503/);
-  assert.match(gerar, /data\.demo/);
-  // o 'return' do modo de teste vem ANTES da cobrança e do registro do contrato
+test("F40 + p24: conta REAL sem assinatura (inativa) não marca como gerado nem cobra; conta de TESTE segue o fluxo", () => {
+  // A rota diz o modo; a tela decide pela regra única (passoDaRespostaContrato: 503/"inativa" → inativa).
+  assert.match(gerar, /passoDaRespostaContrato\(res\.status, data\)/);
+  assert.match(gerar, /passo === "inativa"/);
+  // o 'return' da assinatura inativa vem ANTES da cobrança e do registro do contrato
   assert.ok(gerar.indexOf("MSG_ASSINATURA_INATIVA") < gerar.indexOf('"/api/comissao"'));
   assert.ok(gerar.indexOf("MSG_ASSINATURA_INATIVA") < gerar.indexOf("registrarContrato("));
+  // p24: a resposta simulada da conta de TESTE não é mais tratada como "inativa" (era o beco sem saída).
+  assert.doesNotMatch(gerar, /res\.ok && data\.demo/);
 });
 
 test("F40: o catch não avança mais o assistente (antes setGenerated(true) mesmo com erro)", () => {

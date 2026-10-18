@@ -160,7 +160,23 @@ export function DocumentoVinculo({
         </div>
       )}
 
-      {matricula && <MatriculaResultado key={matricula.id} info={matricula} onConfirmarIdentidade={confirmarIdentidade} />}
+      {matricula && (
+        <MatriculaResultado
+          key={matricula.id}
+          info={matricula}
+          onConfirmarIdentidade={confirmarIdentidade}
+          onTentarDeNovo={
+            ultimoPath
+              ? () => {
+                  setErro(null);
+                  void conferir(ultimoPath)
+                    .catch((e) => setErro(e instanceof Error ? e.message : "Não foi possível conferir o documento agora."))
+                    .finally(() => setEnviando(null));
+                }
+              : undefined
+          }
+        />
+      )}
 
       <label
         className={cn(

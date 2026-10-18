@@ -7,6 +7,7 @@ import { camposDeConteudoDoRascunho } from "@/lib/data/rascunho-campos";
 import { ligarMatriculaAoImovel, ligarQualificacaoAoImovel } from "@/lib/data/ligar-qualificacao";
 import { caminhoDoDono, operacaoValida } from "@/lib/anuncio/operacao";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { revalidarAnuncio } from "@/lib/anuncio/revalidar";
 import { createClient } from "@/lib/supabase/server";
 import { dentroDoLimite, HORA, DIA as DIA_SEGUNDOS } from "@/lib/limites";
@@ -1210,6 +1211,25 @@ export async function registrarContrato(
   const { error: bErr } = await admin.from("contrato_blocos").insert(rows);
   // Best-effort: o contrato-mãe já existe mesmo se a inserção dos blocos falhar.
   if (acordada) await marcarPropostaEmContrato(admin, lead.id as string).catch(() => {});
+  // Prompt 24: o contrato aparece nos dois lados e o inquilino é avisado (na conta de teste, na caixa de teste).
+  const contratoNovoId = contrato!.id as string;
+  after(async () => {
+    try {
+      const { data: pessoa } = await admin.auth.admin.getUserById(lead.tenant_id as string);
+      await notify({
+        event: "contract_status",
+        email: pessoa?.user?.email ?? undefined,
+        userId: lead.tenant_id as string,
+        pushUrl: `/dashboard/locacoes/${contratoNovoId}`,
+        subject: "Seu contrato está pronto para assinar",
+      });
+    } catch {
+      /* aviso é best-effort: o contrato já está registrado */
+    }
+  });
+  revalidatePath("/dashboard/contratos");
+  revalidatePath("/dashboard/locacoes");
+  revalidatePath("/dashboard/candidaturas");
   if (bErr) return { ok: true, id: contrato!.id, blocos: 0, error: erroBancoPT(bErr) };
   return { ok: true, id: contrato!.id, blocos: rows.length };
 }

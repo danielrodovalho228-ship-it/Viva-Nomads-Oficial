@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * Situação da confirmação de identidade (CAF) da PRÓPRIA pessoa, para a etapa "Identidade" do cadastro do anúncio
- * (decisão do Daniel, 18/10): pula a etapa se já há laudo válido (90 dias). Devolve só booleanos e a validade —
+ * (decisão do Daniel, 18/10): pula a etapa se já há laudo válido (12 meses). Devolve só booleanos e a validade —
  * nunca o laudo, o CPF ou o nome.
  */
 export async function GET() {

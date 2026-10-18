@@ -47,7 +47,8 @@
         "t36-cadastro-ponta-a-ponta",
         "t39-app-ida-e-volta",
         "t9-documentos",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t204-cadastro-ia-real"
       ]
     },
     "/admin/2fa/refazer": {
@@ -477,7 +478,8 @@
         "t11-travessias",
         "t33-documentos-inquilino",
         "t36-cadastro-ponta-a-ponta",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t205-fechamento-sem-beco"
       ]
     },
     "/dashboard/carteira": {
@@ -561,6 +563,7 @@
         "t6-dinheiro-numeros",
         "t182-jornada-completa",
         "t183-telas-logadas-390",
+        "t205-fechamento-sem-beco",
         "t206-jornada-dois-lados"
       ]
     },
@@ -569,7 +572,8 @@
         "proprietario"
       ],
       "specs": [
-        "t57-contrato-assinar"
+        "t57-contrato-assinar",
+        "t205-fechamento-sem-beco"
       ]
     },
     "/dashboard/favoritos": {
@@ -595,6 +599,7 @@
         "t181-quantas-pessoas",
         "t182-jornada-completa",
         "t183-telas-logadas-390",
+        "t205-fechamento-sem-beco",
         "t206-jornada-dois-lados"
       ]
     },
@@ -654,7 +659,8 @@
         "t8-rascunho",
         "t183-telas-logadas-390",
         "t194-passo1-ia-cep",
-        "t195-matricula-caf"
+        "t195-matricula-caf",
+        "t204-cadastro-ia-real"
       ]
     },
     "/dashboard/indicacoes": {
@@ -691,7 +697,8 @@
       "specs": [
         "t163-locacoes-selo-anfitriao",
         "t182-jornada-completa",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t205-fechamento-sem-beco"
       ]
     },
     "/dashboard/locacoes/[id]": {
@@ -701,7 +708,8 @@
       ],
       "specs": [
         "t48-varredura",
-        "t57-contrato-assinar"
+        "t57-contrato-assinar",
+        "t205-fechamento-sem-beco"
       ]
     },
     "/dashboard/mensagens": {
@@ -1220,7 +1228,9 @@
         "proprietario",
         "admin"
       ],
-      "specs": []
+      "specs": [
+        "t204-cadastro-ia-real"
+      ]
     },
     "/api/app/login-social": {
       "personas": [
@@ -1306,7 +1316,8 @@
         "admin"
       ],
       "specs": [
-        "t169-conta-teste-sem-efeito"
+        "t169-conta-teste-sem-efeito",
+        "t205-fechamento-sem-beco"
       ]
     },
     "/api/conta/caixa-teste": {
@@ -1328,7 +1339,8 @@
       "specs": [
         "t169-conta-teste-sem-efeito",
         "t36-cadastro-ponta-a-ponta",
-        "t182-jornada-completa"
+        "t182-jornada-completa",
+        "t205-fechamento-sem-beco"
       ]
     },
     "/api/cron/atendimento": {
@@ -1377,7 +1389,8 @@
       ],
       "specs": [
         "t187-conferencia-documento",
-        "t195-matricula-caf"
+        "t195-matricula-caf",
+        "t204-cadastro-ia-real"
       ]
     },
     "/api/documentos/matricula/caso": {
@@ -1565,6 +1578,14 @@
         "t195-matricula-caf",
         "t186-cadastro-5-etapas",
         "t206-jornada-dois-lados"
+      ]
+    },
+    "/api/ai/status": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t204-cadastro-ia-real"
       ]
     }
   },

@@ -2,6 +2,7 @@ import { hojeBR } from "@/lib/utils";
 import { resolverPeriodo } from "@/lib/admin/visao-geral";
 import { getVisaoGeral, cidadesComAnuncio } from "@/lib/data/admin-visao-geral";
 import { PushTeste } from "@/components/admin/push-teste";
+import { PainelIaCadastro } from "@/components/admin/painel-ia-cadastro";
 import { VisaoGeralClient } from "./visao-geral-client";
 import { AtalhosAdmin } from "./atalhos-admin";
 
@@ -49,6 +50,9 @@ export default async function AdminPage({
         cidades={cidades}
       />
       <AtalhosAdmin />
+      <div className="mt-6">
+        <PainelIaCadastro />
+      </div>
       <div className="mt-6">
         <PushTeste />
       </div>
