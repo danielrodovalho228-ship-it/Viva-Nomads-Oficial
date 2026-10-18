@@ -20,3 +20,10 @@ test("7ffea8c7: com a barra visível o 'Fale com a Viva' sobe e o fim da página
   assert.match(css, /max-width: 767px\)\s*\{\s*body:has\(\[data-testid="barra-comparar"\]\)\s*\{\s*--ajuda-bottom: 10rem/);
   assert.match(css, /padding-bottom: calc\(var\(--altura-abas\) \+ 6rem/);
 });
+
+test("af3a27e3: 'Fale com a Viva' arrastado também respeita o piso da barra Comparar (celular)", () => {
+  const css = ler("app/globals.css");
+  assert.match(css, /body:has\(\[data-testid="barra-comparar"\]\)\s*\{\s*--ajuda-bottom: 10rem;\s*--viva-piso: 10rem;/);
+  const src = ler("components/ajuda/viva-chat.tsx");
+  assert.match(src, /bottom: `max\(\$\{pos\.baixo\}px, var\(--viva-piso, 0px\)\)`/);
+});

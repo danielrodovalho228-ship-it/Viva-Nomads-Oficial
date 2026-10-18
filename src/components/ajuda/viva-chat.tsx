@@ -135,7 +135,7 @@ export function VivaChatFlutuante() {
   const estilo: React.CSSProperties = arrastando
     ? { left: arrastando.esquerda, right: "auto", bottom: arrastando.baixo }
     : pos
-      ? { bottom: pos.baixo, ...(pos.lado === "esq" ? { left: 16, right: "auto" } : { right: 16, left: "auto" }) }
+      ? { bottom: `max(${pos.baixo}px, var(--viva-piso, 0px))`, ...(pos.lado === "esq" ? { left: 16, right: "auto" } : { right: 16, left: "auto" }) }
       : {};
   return (
     <div
