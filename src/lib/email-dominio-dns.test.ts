@@ -34,3 +34,12 @@ test("F24: o domínio das contas do laboratório não depende de DNS", async () 
   const r = await validarVisitanteComDns({ nome: "Ana", email: "visitante@lab.vivanomads.com.br" }, semDominio);
   assert.equal(r.ok, true);
 });
+
+test("t62 — resolvedor do laboratório só com LAB_DNS_SIMULADO=on e nunca em produção; a regra de recusa não muda", async () => {
+  const { resolvedorPadrao, resolvedorLab, dominioExiste } = await import("./email-dominio-dns.ts");
+  assert.equal(resolvedorPadrao({ LAB_DNS_SIMULADO: "on" }), resolvedorLab);
+  assert.notEqual(resolvedorPadrao({ LAB_DNS_SIMULADO: "on", VERCEL_ENV: "production" }), resolvedorLab);
+  assert.notEqual(resolvedorPadrao({}), resolvedorLab);
+  assert.equal(await dominioExiste("gmail.com", resolvedorLab), true);
+  assert.equal(await dominioExiste("dominio-que-nao-existe-xyz.com.br", resolvedorLab), false);
+});

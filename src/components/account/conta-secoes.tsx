@@ -221,9 +221,15 @@ export function DocumentoPessoa() {
       <section id="documento" className="scroll-mt-24" data-testid="documento-secao">
         <Panel title="Documento (CPF)" className="mt-6">
           {doc === undefined ? (
-            <div role="status" aria-label="Carregando documento" data-testid="documento-carregando" className="space-y-3">
-              <Skeleton className="h-4 w-3/4" />
+            // Mesma altura do bloco carregado (texto + campo + confirmação): a tela não "pula" quando o CPF chega.
+            <div role="status" aria-label="Carregando documento" data-testid="documento-carregando" className="space-y-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-5/6" />
+              <Skeleton className="h-4 w-2/3" />
+              <Skeleton className="!mt-4 h-5 w-16" />
               <Skeleton className="h-11 w-full sm:w-1/2" />
+              <Skeleton className="!mt-3 h-5 w-3/4" />
             </div>
           ) : (
             <div data-testid="documento-erro">
