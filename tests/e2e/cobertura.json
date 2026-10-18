@@ -11,7 +11,8 @@
         "t90-orcamento-velocidade",
         "t96-antigolpe-atalhos",
         "t177-video-institucional",
-        "t184-velocidade"
+        "t184-velocidade",
+        "t197-anuncio-teste-oculto"
       ]
     },
     "/acesso-socios": {
@@ -311,7 +312,8 @@
         "t90-orcamento-velocidade",
         "t164-tour-video-galeria",
         "t182-jornada-completa",
-        "t184-velocidade"
+        "t184-velocidade",
+        "t197-anuncio-teste-oculto"
       ]
     },
     "/cidades": {
@@ -331,7 +333,8 @@
         "t126-seo-robots-jsonld",
         "t18-seo-a11y",
         "t20-p1-agentes",
-        "t176-exemplo-proprietario-avaliacoes"
+        "t176-exemplo-proprietario-avaliacoes",
+        "t197-anuncio-teste-oculto"
       ]
     },
     "/cidades/[cidade]/[polo]": {
@@ -964,7 +967,8 @@
         "t181-quantas-pessoas",
         "t180-anuncio-real-sem-exemplo",
         "t182-jornada-completa",
-        "t184-velocidade"
+        "t184-velocidade",
+        "t197-anuncio-teste-oculto"
       ]
     },
     "/modelodenegocio": {
