@@ -30,6 +30,19 @@ test.describe("T54 — Upload de foto seguro", () => {
       expect(txtJpg.status()).toBe(415);
     });
 
+    test("foto verdadeira (JPEG) → 200 e salva como WebP; cabeçalho de JPEG sem imagem → 415", async ({ request }) => {
+      const sharp = (await import("sharp")).default;
+      const jpeg = await sharp({ create: { width: 640, height: 480, channels: 3, background: "#336699" } })
+        .withExif({ IFD0: { Copyright: "Dono Fulano" } })
+        .jpeg()
+        .toBuffer();
+      const ok = await post(request, "casa.jpg", "image/jpeg", jpeg);
+      expect(ok.status()).toBe(200);
+      expect((await ok.json()).path).toMatch(/\.webp$/);
+      const falso = await post(request, "falsa.jpg", "image/jpeg", Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 0, 0, 0, 0, 0, 0, 0]));
+      expect(falso.status()).toBe(415);
+    });
+
     test("F47 na tela: SVG é recusado com mensagem visível e o contador não sobe", async ({ page }) => {
       await page.goto("/dashboard/imoveis/novo", { waitUntil: "networkidle" });
       const outro = page.getByRole("button", { name: "Começar outro" });
