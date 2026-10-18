@@ -12,6 +12,7 @@ import { salvarModo } from "@/lib/salvar-modo";
 import { createClient } from "@/lib/supabase/client";
 import { removerPushToken } from "@/lib/data/push-actions";
 import { countDocumentosPendentes } from "@/lib/data/documentos-admin";
+import { contarContratosParaAssinar } from "@/lib/data/contratos-actions";
 import { contarAchadosP1 } from "@/lib/data/agentes-actions";
 import { useHasActiveLocacao } from "@/lib/use-active-locacao";
 import { useViewMode, identidadeUsuario } from "@/lib/roles";
@@ -46,7 +47,6 @@ const OWNER_ONLY = [
   "/dashboard/leads",
   "/dashboard/orcamentos",
   "/dashboard/fechamento",
-  "/dashboard/contratos",
   "/dashboard/ferramentas",
   "/dashboard/reembolsos",
   "/dashboard/assinatura",
@@ -95,6 +95,21 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       alive = false;
     };
   }, [displayUser?.id]);
+
+  // Prompt 28: contratos esperando a assinatura do inquilino — número no item "Contratos".
+  const [contratosParaAssinar, setContratosParaAssinar] = useState(0);
+  useEffect(() => {
+    if (!displayUser?.id) return;
+    let alive = true;
+    contarContratosParaAssinar()
+      .then((n) => {
+        if (alive) setContratosParaAssinar(n);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [displayUser?.id, pathname]);
 
   // Documentos aguardando conferência — badge no item "Documentos" do nav admin.
   const [docsPendentes, setDocsPendentes] = useState(0);
@@ -150,7 +165,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     // Reavalia ao sair do cadastro de imóvel (o primeiro anúncio revela as seções de dono).
   }, [displayUser?.id, naAreaDeImoveis]);
   const menu = menuDoPainel({ temImovel, admin: display.role === "admin", estadiaAtiva, plano: plan, imoveisAtivos });
-  const badges = { "admin-documentos": docsPendentes, "admin-agentes": achadosP1 };
+  const badges = { "admin-documentos": docsPendentes, "admin-agentes": achadosP1, "contratos-inquilino": contratosParaAssinar };
 
   // Guarda de rota por papel (B1). Ao abrir por URL/deep-link uma tela exclusiva
   // do OUTRO modo, a regra deixou de ser "sempre redireciona": se a conta TEM o

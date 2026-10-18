@@ -329,11 +329,12 @@ export async function tornarContratoVigente(contratoId: string, donoId: string, 
   const hoje = new Date();
   const fim = new Date(hoje.getTime() + 59 * 86_400_000);
   const dia = (d: Date) => d.toISOString().slice(0, 10);
-  const { data: bloco, error: e2 } = await adm()
-    .from("contrato_blocos")
-    .insert({ contrato_id: contratoId, numero_bloco: 1, inicio: dia(hoje), fim: dia(fim), meses: 2, valor: aluguel * 2, caucao: aluguel, status: "ativo" })
-    .select("id")
-    .single();
+  // O contrato gerado pela tela já pode ter o bloco 1 (aguardando assinatura): reaproveita e põe em vigência.
+  const linhaBloco = { inicio: dia(hoje), fim: dia(fim), meses: 2, valor: aluguel * 2, caucao: aluguel, status: "ativo" };
+  const { data: existente } = await adm().from("contrato_blocos").select("id").eq("contrato_id", contratoId).eq("numero_bloco", 1).maybeSingle();
+  const { data: bloco, error: e2 } = existente
+    ? await adm().from("contrato_blocos").update(linhaBloco).eq("id", existente.id).select("id").single()
+    : await adm().from("contrato_blocos").insert({ contrato_id: contratoId, numero_bloco: 1, ...linhaBloco }).select("id").single();
   if (e2) throw e2;
   const { error: e3 } = await adm().from("pagamentos_bloco").insert({
     bloco_id: bloco.id,

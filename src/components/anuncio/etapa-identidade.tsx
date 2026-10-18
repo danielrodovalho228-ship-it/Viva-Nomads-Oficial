@@ -6,7 +6,7 @@ import { CheckCircle2, Loader2, ShieldCheck } from "lucide-react";
 import { buttonClasses } from "@/components/ui/button";
 import { TEXTO_VALIDADE_CAF } from "@/lib/caf/validade";
 
-type Situacao = { feita: boolean; ok: boolean; temCpf: boolean; validoAte: string | null };
+type Situacao = { feita: boolean; ok: boolean; temCpf: boolean; validoAte: string | null; refazer?: boolean };
 
 /**
  * Etapa "Confirme sua identidade" do cadastro do anúncio (decisão do Daniel, 18/10): vem DEPOIS do endereço e ANTES
@@ -77,9 +77,14 @@ export function EtapaIdentidade({ onConfirmada }: { onConfirmada?: () => void })
           para confirmar a identidade. Você pode seguir o cadastro enquanto isso.
         </p>
       )}
+      {estado === "pendente" && s?.refazer && (
+        <p className="mt-3 text-sm text-ink" data-testid="identidade-refazer">
+          A confirmação anterior deixou de valer (venceu ou o nome/CPF do cadastro mudou). Confirme de novo.
+        </p>
+      )}
       {estado === "pendente" && (
         <button type="button" onClick={() => void confirmar()} disabled={enviando} className={buttonClasses({ className: "mt-3 w-full sm:w-auto disabled:opacity-60" })} data-testid="identidade-confirmar">
-          {enviando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <ShieldCheck className="h-4 w-4" aria-hidden />} Confirmar minha identidade
+          {enviando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <ShieldCheck className="h-4 w-4" aria-hidden />} {s?.refazer ? "Confirmar de novo" : "Confirmar minha identidade"}
         </button>
       )}
       {aviso && (

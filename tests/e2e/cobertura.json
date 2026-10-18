@@ -48,7 +48,8 @@
         "t39-app-ida-e-volta",
         "t9-documentos",
         "t183-telas-logadas-390",
-        "t204-cadastro-ia-real"
+        "t204-cadastro-ia-real",
+        "t207-cep-matricula-identidade"
       ]
     },
     "/admin/2fa/refazer": {
@@ -564,6 +565,7 @@
         "t182-jornada-completa",
         "t183-telas-logadas-390",
         "t205-fechamento-sem-beco",
+        "t210-contrato-estado-jornada",
         "t209-jornada-dois-lados"
       ]
     },
@@ -600,6 +602,7 @@
         "t182-jornada-completa",
         "t183-telas-logadas-390",
         "t205-fechamento-sem-beco",
+        "t210-contrato-estado-jornada",
         "t209-jornada-dois-lados"
       ]
     },
@@ -660,7 +663,8 @@
         "t183-telas-logadas-390",
         "t194-passo1-ia-cep",
         "t195-matricula-caf",
-        "t204-cadastro-ia-real"
+        "t204-cadastro-ia-real",
+        "t207-cep-matricula-identidade"
       ]
     },
     "/dashboard/indicacoes": {
@@ -698,7 +702,8 @@
         "t163-locacoes-selo-anfitriao",
         "t182-jornada-completa",
         "t183-telas-logadas-390",
-        "t205-fechamento-sem-beco"
+        "t205-fechamento-sem-beco",
+        "t210-contrato-estado-jornada"
       ]
     },
     "/dashboard/locacoes/[id]": {
@@ -1164,6 +1169,14 @@
         "t192-conta-4-blocos"
       ]
     },
+    "/admin/dados-de-teste": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t210-contrato-estado-jornada"
+      ]
+    },
     "/dashboard/agenda": {
       "personas": [
         "proprietario"
@@ -1579,6 +1592,7 @@
       "specs": [
         "t195-matricula-caf",
         "t186-cadastro-5-etapas",
+        "t207-cep-matricula-identidade",
         "t209-jornada-dois-lados"
       ]
     },
@@ -1588,6 +1602,14 @@
       ],
       "specs": [
         "t204-cadastro-ia-real"
+      ]
+    },
+    "/api/admin/ia-diagnostico": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t207-cep-matricula-identidade"
       ]
     }
   },
@@ -3117,6 +3139,41 @@
       ],
       "specs": [
         "t201-qa-muse"
+      ]
+    },
+    "src/lib/data/contratos-actions.ts#lerEstadoDoContrato": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t210-contrato-estado-jornada"
+      ]
+    },
+    "src/lib/data/contratos-actions.ts#getContratosDoInquilino": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t210-contrato-estado-jornada"
+      ]
+    },
+    "src/lib/data/contratos-actions.ts#contarContratosParaAssinar": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t210-contrato-estado-jornada"
+      ]
+    },
+    "src/lib/data/jornada-teste-actions.ts#novaJornadaDeTeste": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t210-contrato-estado-jornada"
       ]
     },
     "src/lib/data/visitas-video-actions.ts#pedirVisita": {

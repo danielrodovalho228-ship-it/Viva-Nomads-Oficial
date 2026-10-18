@@ -14,14 +14,19 @@ test.describe("T138 — painéis 390 px", () => {
       await page.goto(rota, { waitUntil: "domcontentloaded" });
       const viva = page.getByTestId("fale-com-a-viva");
       await expect(viva).toBeVisible({ timeout: 20_000 });
-      await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-      await page.waitForTimeout(300);
-      const botao = await viva.boundingBox();
-      const ultimo = await page.locator("main").first().evaluate((m) => {
-        const filhos = [...m.querySelectorAll<HTMLElement>("*")].filter((e) => e.offsetParent !== null && e.getBoundingClientRect().height > 0);
-        return Math.max(...filhos.map((e) => e.getBoundingClientRect().bottom));
-      });
-      expect(ultimo, `${rota}: conteúdo termina acima do botão`).toBeLessThanOrEqual(botao!.y + 1);
+      // A página pode crescer depois do primeiro scroll (cartões que chegam por fetch): rola de novo
+      // e mede até o fim do conteúdo ficar estável, em vez de medir uma única vez.
+      const medir = async () => {
+        await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+        await page.waitForTimeout(300);
+        const botao = await viva.boundingBox();
+        const ultimo = await page.locator("main").first().evaluate((m) => {
+          const filhos = [...m.querySelectorAll<HTMLElement>("*")].filter((e) => e.offsetParent !== null && e.getBoundingClientRect().height > 0);
+          return Math.max(...filhos.map((e) => e.getBoundingClientRect().bottom));
+        });
+        return ultimo - (botao!.y + 1);
+      };
+      await expect.poll(medir, { message: `${rota}: conteúdo termina acima do botão`, timeout: 15_000 }).toBeLessThanOrEqual(0);
     });
   }
 

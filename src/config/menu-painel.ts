@@ -64,6 +64,7 @@ export function menuDoPainel(ctx: ContextoMenu): ItemMenu[] {
             { id: "admin-ajuda-publicacao", rotulo: "Publicamos para você", icone: "documentos", href: "/admin/ajuda-publicacao" },
             { id: "admin-documentos", rotulo: "Documentos", icone: "documentos", href: "/admin/documentos" },
             { id: "admin-atendimento", rotulo: "Atendimento", icone: "atendimento", href: "/admin/atendimento" },
+            { id: "admin-dados-teste", rotulo: "Dados de teste", icone: "atendimento", href: "/admin/dados-de-teste" },
             { id: "admin-emails-teste", rotulo: "E-mails de teste", icone: "atendimento", href: "/admin/emails-teste" },
           ],
         },
@@ -98,7 +99,10 @@ export function menuDoPainel(ctx: ContextoMenu): ItemMenu[] {
     { id: "pedidos", rotulo: "Meus pedidos", icone: "pedidos", href: "/dashboard/pedidos" },
     { id: "candidaturas", rotulo: "Candidaturas", icone: "candidaturas", href: "/dashboard/candidaturas" },
     { id: "visitas", rotulo: "Visitas por vídeo", icone: "visitas", href: "/dashboard/visitas" },
-    { id: "estadias", rotulo: "Minhas estadias", icone: "estadias", href: "/dashboard/locacoes" },
+    // Prompt 28: contrato aguardando assinatura ainda não é locação — "Contratos" (com o número do que falta assinar)
+    // e "Locações" (as ativas e as encerradas).
+    { id: "contratos-inquilino", rotulo: "Contratos", icone: "contratos", href: "/dashboard/contratos" },
+    { id: "estadias", rotulo: "Locações", icone: "estadias", href: "/dashboard/locacoes" },
   ];
   if (ctx.estadiaAtiva)
     moradia.push({ id: "solicitacoes", rotulo: "Solicitações", icone: "solicitacoes", href: "/dashboard/solicitacoes" });
