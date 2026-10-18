@@ -10,8 +10,10 @@ import { campoBrasiliaParaIso, instanteParaCampoBrasilia } from "../../../src/li
    3. Endereço exato: oculto antes da confirmação; depois, no cartão (com "Abrir no mapa") e no e-mail "Visita
       confirmada" da caixa de teste, só para aquele morador; outro usuário e o visitante nunca recebem o endereço
       (nem no HTML nem na API); visita que já passou volta à região.
-   4. Visão geral do inquilino: "Identidade confirmada · válida até DD/MM/AAAA" com laudo; conta de teste sem laudo
-      → "Verificar (simulado)"; conta real → "em breve".
+   4. Identidade com UMA fonte (estadoIdentidadeDe): Visão geral do inquilino (confirmada / simulável);
+   5. o proprietário vê o mesmo texto na Conta, no assistente do anúncio e em /dashboard/verificacao (confirmada e
+      vencida). "Em breve, por meio de um parceiro" (conta real em produção) fica no unitário: no laboratório a CAF é
+      simulada.
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -174,7 +176,7 @@ test.describe("T211 — complemento do prompt 23: endereço da visita, horário 
   });
 
   for (const largura of [390, 1280]) {
-    test(`4. ${largura} — Visão geral: identidade confirmada com a data; teste sem laudo: simulado; real: em breve`, async ({ browser }) => {
+    test(`4. ${largura} — Visão geral do inquilino: o passo de identidade usa o estado único`, async ({ browser }) => {
       test.setTimeout(120_000);
       const ate = new Date();
       ate.setFullYear(ate.getFullYear() + 1);
@@ -183,24 +185,53 @@ test.describe("T211 — complemento do prompt 23: endereço da visita, horário 
         .from("tenant_verifications")
         .insert({ tenant_id: ids.inqA, caf_result: { identity: true, document: true, liveness: true, light: "green", simulado: true }, traffic_light: "green", valid_until: ate.toISOString() });
       const dataBR = ate.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
-
-      const casos: [typeof inqA, RegExp][] = [
-        [inqA, new RegExp(`Identidade confirmada · válida até ${dataBR.replace(/\//g, "\\/")}`)],
-        [inqB, /Verificação de identidade/],
-        [real, /Verificação de identidade \(em breve\)/],
+      const casos: [typeof inqA, string, RegExp][] = [
+        [inqA, "confirmada", new RegExp(`Identidade confirmada · válida até ${dataBR.replace(/\//g, "\\/")}`)],
+        [inqB, "simulavel", /Verificar identidade \(simulado — conta de teste\)/],
       ];
-      for (const [conta, esperado] of casos) {
+      for (const [conta, estado, texto] of casos) {
         const p = await entrar(browser, conta.email, senha);
         await p.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
         await abrir(p, "/dashboard");
         const passo = p.getByTestId("onboarding-verificar");
-        await expect(passo).toContainText(esperado, { timeout: 25_000 });
-        if (conta === inqB) await expect(passo).toContainText("Verificar (simulado)");
-        if (conta === real) await expect(passo).toContainText("Saber mais");
+        await expect(passo).toHaveAttribute("data-estado", estado, { timeout: 25_000 });
+        await expect(passo).toContainText(texto);
         await semRolagemLateral(p);
         if (conta === inqA) await p.screenshot({ path: `${SAIDA}/t211-identidade-confirmada-${largura}.png` });
         await p.context().close();
       }
+    });
+  }
+
+  for (const largura of [390, 1280]) {
+    test(`5. ${largura} — o proprietário vê o MESMO texto na Conta, no assistente do anúncio e em /dashboard/verificacao`, async ({ browser }) => {
+      test.setTimeout(150_000);
+      const ate = new Date();
+      ate.setFullYear(ate.getFullYear() + 1);
+      await adm().from("tenant_verifications").delete().eq("tenant_id", ids.dono!);
+      await adm()
+        .from("tenant_verifications")
+        .insert({ tenant_id: ids.dono, caf_result: { identity: true, document: true, liveness: true, light: "green", simulado: true }, traffic_light: "green", valid_until: ate.toISOString() });
+      const esperado = `Identidade confirmada · válida até ${ate.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}`;
+      const d = await entrar(browser, dono.email, senha);
+      await d.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
+      await abrir(d, "/dashboard/conta");
+      await expect(d.getByTestId("confianca-identidade")).toContainText(esperado, { timeout: 25_000 });
+      await expect(d.getByTestId("confianca-identidade")).toHaveAttribute("data-situacao", "ok");
+      await semRolagemLateral(d);
+      await d.screenshot({ path: `${SAIDA}/t211-conta-identidade-${largura}.png` });
+      await abrir(d, "/dashboard/imoveis/novo");
+      await expect(d.getByTestId("identidade-confirmada")).toHaveText(esperado, { timeout: 25_000 });
+      await abrir(d, "/dashboard/verificacao");
+      await expect(d.getByTestId("identidade-estado")).toHaveText(esperado, { timeout: 25_000 });
+      await d.screenshot({ path: `${SAIDA}/t211-verificacao-identidade-${largura}.png` });
+      // A mesma pessoa, com o laudo vencido: "Identidade vencida em … · Confirmar de novo" nas três telas.
+      await adm().from("tenant_verifications").update({ valid_until: new Date(Date.now() - 2 * 86_400_000).toISOString() }).eq("tenant_id", ids.dono!);
+      await abrir(d, "/dashboard/conta");
+      await expect(d.getByTestId("confianca-identidade")).toContainText(/Identidade vencida em \d{2}\/\d{2}\/\d{4} · Confirmar de novo/, { timeout: 25_000 });
+      await abrir(d, "/dashboard/verificacao");
+      await expect(d.getByTestId("identidade-estado")).toHaveAttribute("data-estado", "vencida", { timeout: 25_000 });
+      await d.context().close();
     });
   }
 });

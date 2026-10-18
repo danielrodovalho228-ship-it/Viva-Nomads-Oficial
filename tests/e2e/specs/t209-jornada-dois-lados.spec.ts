@@ -231,7 +231,7 @@ test.describe("T209 — jornada dos dois lados (prompt 23)", () => {
     await r.context().close();
   });
 
-  test("3. conta de teste: laudo simulado na Verificação e no fechamento; conta real segue 'em breve'", async ({ browser }) => {
+  test("3. conta de teste: laudo simulado na Verificação e no fechamento; conta real: estado único (simulável no laboratório)", async ({ browser }) => {
     test.setTimeout(150_000);
     for (const largura of [390, 1280]) {
       const a = await entrar(browser, inqA.email, senha);
@@ -247,10 +247,11 @@ test.describe("T209 — jornada dos dois lados (prompt 23)", () => {
       await a.screenshot({ path: `${SAIDA}/t209-laudo-teste-${largura}.png`, fullPage: true });
       await a.context().close();
     }
+    // Complemento do prompt 23 (estado único da identidade): no laboratório a CAF é SIMULADA, então a conta real também
+    // é "simulável" aqui; em produção ela fica "Em breve, por meio de um parceiro" (unitário complemento-23.test.ts, estado 4).
     const r = await entrar(browser, real.email, senha);
     await abrir(r, "/dashboard/verificacao?como=inquilino");
-    await expect(r.getByText("Disponível em breve")).toBeVisible({ timeout: 25_000 });
-    await expect(r.getByTestId("verificacao-teste")).toHaveCount(0);
+    await expect(r.getByTestId("identidade-estado")).toHaveAttribute("data-estado", "simulavel", { timeout: 25_000 });
     await r.context().close();
 
     // Fechamento com a candidatura aceita da conta de teste: o laudo simulado aparece e a jornada segue.

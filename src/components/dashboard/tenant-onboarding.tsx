@@ -1,12 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Check, ShieldCheck, Megaphone, MessageSquare, X } from "lucide-react";
 import { PageTitle } from "@/components/dashboard/primitives";
 import { ButtonLink } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { gravarLocalStorageBruto, useLocalStorageBruto } from "@/lib/use-client-state";
-import { cartaoVerificacao, type StatusVerificacao } from "@/lib/cartao-verificacao";
+import { useEstadoIdentidade } from "@/lib/identidade/use-estado-identidade";
+import type { EstadoIdentidade } from "@/lib/identidade/estado";
+
+/** O passo "Verificação de identidade" com o estado ÚNICO (complemento do prompt 23): o texto vem da função. */
+function passoIdentidade(id: EstadoIdentidade | null): { titulo: string; texto: string; cta: Cta } {
+  if (!id) return { titulo: "Verificação de identidade", texto: "Carregando…", cta: { label: "Saber mais", href: "/dashboard/verificacao", variant: "outline" } };
+  if (id.estado === "confirmada") return { titulo: id.texto, texto: "Seu perfil mostra a identidade confirmada.", cta: { label: "Ver verificação", href: "/dashboard/verificacao", variant: "outline" } };
+  if (id.acao) return { titulo: id.texto, texto: "Leva um minuto e reforça seu perfil.", cta: { label: id.acao.texto, href: id.acao.href, variant: "primary" } };
+  return { titulo: id.texto, texto: "Você já pode se candidatar sem ela. Quando abrir, avisamos — e ela reforça seu perfil.", cta: { label: "Saber mais", href: "/dashboard/verificacao", variant: "outline" } };
+}
 
 const KEY = "vivanomads-tenant-onboarding";
 
@@ -26,9 +35,10 @@ const STEPS: Step[] = [
   {
     id: "verificar",
     icon: ShieldCheck,
-    title: "Verificação de identidade (em breve)",
-    text: "Você já pode se candidatar sem ela. Quando abrir, avisamos — e ela reforça seu perfil.",
-    ctas: [{ label: "Saber mais", href: "/dashboard/verificacao", variant: "outline" }],
+    // Título, texto e botão vêm do estado único da identidade (passoIdentidade).
+    title: "Verificação de identidade",
+    text: "",
+    ctas: [],
   },
   {
     id: "encontrar",
@@ -58,28 +68,11 @@ type Saved = { done: string[]; hidden: boolean };
  * card pode ser ocultado. Quando os 3 estão concluídos (ou ao ocultar), volta
  * o banner normal. Estado persistido por navegador (localStorage).
  */
-/** O laudo real da pessoa (mesma fonte de /dashboard/verificacao). null = ainda carregando ou sem resposta. */
-function useStatusVerificacao(): StatusVerificacao | null {
-  const [s, setS] = useState<StatusVerificacao | null>(null);
-  useEffect(() => {
-    let vivo = true;
-    fetch("/api/caf/status")
-      .then((r) => (r.ok ? (r.json() as Promise<Partial<StatusVerificacao>>) : null))
-      .then((d) => {
-        if (vivo && d) setS({ teste: d.teste === true, feita: d.feita === true, ok: d.ok === true, validoAte: d.validoAte ?? null });
-      })
-      .catch(() => {});
-    return () => {
-      vivo = false;
-    };
-  }, []);
-  return s;
-}
-
 export function TenantOnboarding({ name }: { name: string }) {
   const raw = useLocalStorageBruto(KEY); // undefined = ainda hidratando
   // Complemento do prompt 23: o passo "verificar" lê o laudo (confirmada / teste / em breve), não um texto fixo.
-  const cartao = cartaoVerificacao(useStatusVerificacao());
+  const identidade = useEstadoIdentidade().situacao?.identidade ?? null;
+  const cartao = { ...passoIdentidade(identidade), estado: identidade?.estado ?? "carregando" };
   const passos: Step[] = STEPS.map((s) => (s.id === "verificar" ? { ...s, title: cartao.titulo, text: cartao.texto, ctas: [cartao.cta] } : s));
   // Cópia local: mantém a tela funcionando mesmo se o navegador bloquear o localStorage.
   const [local, setLocal] = useState<Saved | null>(null);

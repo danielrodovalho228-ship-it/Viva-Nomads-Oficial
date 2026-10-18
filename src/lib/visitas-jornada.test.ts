@@ -84,7 +84,8 @@ test("p23 — recusar exige motivo (3 a 200 caracteres); o morador cancela sem e
 
 test("p23 — endereço exato só para o morador e só com a presencial CONFIRMADA; sem WhatsApp no pedido", () => {
   const acoes = ler("./data/visitas-video-actions.ts");
-  assert.match(acoes, /papel === "morador" && v\.modalidade === "presencial" && v\.status === "confirmado"/);
+  // Complemento do 23: a regra mora em mostraEnderecoDaVisita (presencial, confirmada e ainda não passada).
+  assert.match(acoes, /papel === "morador" && mostraEnderecoDaVisita\(v, new Date\(\)\)/);
   const cartao = ler("../components/visitas/cartao-visita.tsx");
   assert.match(cartao, /data-testid="visita-endereco-oculto"/);
   const pedido = ler("../components/property/visita-video.tsx");

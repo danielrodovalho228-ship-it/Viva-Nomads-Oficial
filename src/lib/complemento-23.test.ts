@@ -3,7 +3,10 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { enderecoDaVisita, linhaEnderecoExato, mostraEnderecoDaVisita, FOLGA_ENDERECO_MS } from "./visitas/endereco-visita.ts";
-import { cartaoVerificacao } from "./cartao-verificacao.ts";
+import { estadoIdentidadeDe } from "./identidade/estado.ts";
+import { readdirSync, statSync } from "node:fs";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const ler = (rel: string) => readFileSync(new URL(rel, import.meta.url), "utf8");
 
@@ -46,14 +49,62 @@ test("item 2 — o horário tem chave estável e não é campo controlado (não 
   assert.match(tela, /const \[\{ min, max \}\] = useState\(/, "limites calculados uma vez");
 });
 
-test("item 3 — cartão da Visão geral com o estado real do laudo", () => {
-  const ok = cartaoVerificacao({ teste: true, feita: true, ok: true, validoAte: "2027-10-18T15:00:00Z" });
-  assert.equal(ok.estado, "confirmada");
-  assert.equal(ok.titulo, "Identidade confirmada · válida até 18/10/2027");
-  const teste = cartaoVerificacao({ teste: true, feita: false, ok: false, validoAte: null });
-  assert.equal(teste.cta.label, "Verificar (simulado)");
-  const real = cartaoVerificacao({ teste: false, feita: false, ok: false, validoAte: null });
-  assert.match(real.titulo, /em breve/);
-  assert.match(cartaoVerificacao(null).titulo, /em breve/);
-  assert.match(ler("../components/dashboard/tenant-onboarding.tsx"), /fetch\("\/api\/caf\/status"\)/);
+const laudo = (valid_until: string, extra: Record<string, unknown> = {}) => ({
+  caf_result: { identity: true, document: true, liveness: true, light: "green", ...extra },
+  traffic_light: "green",
+  valid_until,
+  created_at: "2026-10-18T15:00:00Z",
+});
+const AGORA = new Date("2026-10-19T12:00:00Z");
+
+test("identidade (estado único) — 1. confirmada: 'Identidade confirmada · válida até 18/10/2027'", () => {
+  const e = estadoIdentidadeDe(laudo("2027-10-18T15:00:00Z"), false, AGORA);
+  assert.equal(e.estado, "confirmada");
+  assert.equal(e.texto, "Identidade confirmada · válida até 18/10/2027");
+  assert.equal(e.acao, null);
+});
+
+test("identidade (estado único) — 2. vencida: 'Identidade vencida em dd/mm/aaaa · Confirmar de novo'", () => {
+  const e = estadoIdentidadeDe(laudo("2026-10-10T15:00:00Z"), true, AGORA);
+  assert.equal(e.estado, "vencida");
+  assert.equal(e.texto, "Identidade vencida em 10/10/2026 · Confirmar de novo");
+  assert.equal(e.acao?.texto, "Confirmar de novo");
+});
+
+test("identidade (estado único) — 3. simulável: conta de teste sem laudo", () => {
+  const e = estadoIdentidadeDe(null, true, AGORA);
+  assert.equal(e.estado, "simulavel");
+  assert.equal(e.texto, "Verificar identidade (simulado — conta de teste)");
+  assert.ok(e.acao);
+});
+
+test("identidade (estado único) — 4. em breve: conta real sem laudo (e laudo simulado numa conta real não conta)", () => {
+  assert.equal(estadoIdentidadeDe(null, false, AGORA).texto, "Em breve, por meio de um parceiro");
+  const simuladoEmContaReal = estadoIdentidadeDe(laudo("2027-10-18T15:00:00Z", { simulado: true }), false, AGORA);
+  assert.equal(simuladoEmContaReal.estado, "em_breve");
+  // Na conta de teste, o mesmo laudo simulado vale.
+  assert.equal(estadoIdentidadeDe(laudo("2027-10-18T15:00:00Z", { simulado: true }), true, AGORA).estado, "confirmada");
+});
+
+test("identidade — guarda: o texto 'Em breve, por meio de um parceiro' só existe na função; as telas usam a fonte única", () => {
+  const raiz = fileURLToPath(new URL("../", import.meta.url));
+  const achados: string[] = [];
+  const andar = (dir: string) => {
+    for (const n of readdirSync(dir)) {
+      const c = join(dir, n);
+      if (statSync(c).isDirectory()) andar(c);
+      else if (/\.(ts|tsx)$/.test(n) && !/\.test\.ts$/.test(n) && readFileSync(c, "utf8").includes("Em breve, por meio de um parceiro")) achados.push(c.slice(raiz.length));
+    }
+  };
+  andar(raiz);
+  assert.deepEqual(achados, ["lib/identidade/estado.ts"]);
+  for (const tela of [
+    "../components/account/conta-blocos.tsx",
+    "../components/anuncio/etapa-identidade.tsx",
+    "../components/dashboard/tenant-onboarding.tsx",
+  ])
+    assert.match(ler(tela), /useEstadoIdentidade\(/, tela);
+  assert.match(ler("../app/(dashboard)/dashboard/verificacao/page.tsx"), /<LinhaIdentidade id=\{status\.identidade\} \/>/);
+  assert.match(ler("./data/leads.ts"), /estadosIdentidade\(admin, tenantIds\)/);
+  assert.match(ler("../app/api/caf/status/route.ts"), /estadoIdentidadeDe\(/);
 });

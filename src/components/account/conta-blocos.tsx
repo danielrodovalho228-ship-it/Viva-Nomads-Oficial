@@ -12,6 +12,7 @@ import { getMeusDados } from "@/lib/data/perfil-actions";
 import { getTelefoneEstado } from "@/lib/data/telefone-actions";
 import { CategoriaProfissional } from "./categoria-profissional";
 import { cn } from "@/lib/utils";
+import { useEstadoIdentidade } from "@/lib/identidade/use-estado-identidade";
 
 /**
  * Conta em 4 blocos (prompt 18): 1. Perfil público · 2. Dados da conta · 3. Confiança e segurança · 4. Preferências.
@@ -122,6 +123,8 @@ export function ConfiancaLista() {
   const [celular, setCelular] = useState<{ disponivel: boolean; verificado: boolean } | null>(null);
   const [linkedin, setLinkedin] = useState<boolean | null>(null);
   const [duasEtapas, setDuasEtapas] = useState<boolean | null>(null);
+  // Identidade: o estado ÚNICO (complemento do prompt 23) — nenhum texto próprio aqui.
+  const identidade = useEstadoIdentidade().situacao?.identidade ?? null;
 
   useEffect(() => {
     let vivo = true;
@@ -164,9 +167,9 @@ export function ConfiancaLista() {
       chave: "identidade",
       icone: UserCheck,
       rotulo: "Identidade",
-      situacao: "em_breve",
-      detalhe: "Em breve, por meio de um parceiro",
-      acao: { texto: "Saber mais", href: "/dashboard/verificacao" },
+      situacao: !identidade ? "falta" : identidade.estado === "confirmada" ? "ok" : identidade.estado === "em_breve" ? "em_breve" : "falta",
+      detalhe: identidade?.texto ?? "Carregando…",
+      acao: identidade?.acao ?? (identidade?.estado === "confirmada" ? undefined : { texto: "Saber mais", href: "/dashboard/verificacao" }),
     },
     ...(mode === "tenant"
       ? [

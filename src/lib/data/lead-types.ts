@@ -23,6 +23,8 @@ export interface Lead {
   riskCategories: string[];
   light: Light;
   verified: boolean;
+  /** Estado ÚNICO da identidade do candidato (complemento do prompt 23); null no exemplo de demonstração. */
+  identidade?: import("@/lib/identidade/estado").EstadoIdentidade | null;
   desiredPeriodDays?: number; // período pretendido (para o resumo em uma linha)
   budgetMatch?: boolean; // orçamento compatível com o aluguel
   /** Motivo da estadia (rótulo público; "Saúde" para tratamento médico). Só categoria, nunca texto livre. */
