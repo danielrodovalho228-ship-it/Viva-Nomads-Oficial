@@ -108,7 +108,9 @@ async function conferir(page: Page, rota: string, largura = 390): Promise<string
   page.on("console", aoConsole);
   page.on("request", aoPedido);
   try {
-    const resp = await page.goto(rota, { waitUntil: "networkidle", timeout: 40_000 });
+    // Primeira visita a uma tela pesada no servidor frio do laboratório pode passar de 40 s; uma segunda tentativa
+    // (já com o servidor aquecido) separa lentidão de arranque de tela realmente quebrada.
+    const resp = await page.goto(rota, { waitUntil: "networkidle", timeout: 40_000 }).catch(() => page.goto(rota, { waitUntil: "networkidle", timeout: 60_000 }));
     const status = resp?.status() ?? 0;
     if (status >= 400) problemas.push(`HTTP ${status}`);
     const sobra = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
