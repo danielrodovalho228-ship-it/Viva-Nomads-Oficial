@@ -130,6 +130,7 @@ test.describe("T70 — busca split-screen no computador", () => {
   });
 
   test("5. 1024 e 1280 px: tela dividida sem rolagem lateral e filtros numa linha", async ({ page }) => {
+    test.setTimeout(120_000); // duas cargas da /buscar com mapa no servidor frio do laboratório (45 s não bastava)
     for (const largura of [1024, 1280]) {
       await abrir(page, largura);
       await expect(page.getByTestId("busca-mapa")).toBeVisible();

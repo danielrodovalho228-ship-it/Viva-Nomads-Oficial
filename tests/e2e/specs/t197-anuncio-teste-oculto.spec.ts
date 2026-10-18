@@ -67,7 +67,10 @@ test.describe("T197 — Anúncio de teste oculto @seo", () => {
     test.setTimeout(120_000); // duas visitas a páginas de imóvel com o servidor frio do laboratório (45 s não bastava)
     const robots = async (id: string | undefined) => {
       await page.goto(`/imoveis/${id}`, { waitUntil: "domcontentloaded" });
-      return (await page.locator('meta[name="robots"]').first().getAttribute("content").catch(() => null)) ?? "";
+      // getAttribute espera o elemento até o fim do teste: o anúncio normal não tem <meta robots>, então conta antes.
+      const meta = page.locator('meta[name="robots"]');
+      if ((await meta.count()) === 0) return "";
+      return (await meta.first().getAttribute("content")) ?? "";
     };
     expect(await robots(ids.teste)).toMatch(/noindex/);
     expect(await robots(ids.normal)).not.toMatch(/noindex/);

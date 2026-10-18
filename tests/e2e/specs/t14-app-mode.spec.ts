@@ -120,8 +120,11 @@ test.describe("T14 — Modo app", () => {
       await esperarModoApp(page);
       await barraDoApp(page).getByRole("link", { name: "Admin", exact: true }).click();
       await expect(page).toHaveURL(/\/admin\/?$/);
-      await page.getByRole("link", { name: /Caixa dos Sócios/ }).first().click();
-      await expect(page).toHaveURL(/\/admin\/socios/);
+      // No lab o primeiro toque pode cair antes da hidratação do painel: repete o toque até a rota mudar.
+      await expect(async () => {
+        await page.getByRole("link", { name: /Caixa dos Sócios/ }).first().click();
+        await expect(page).toHaveURL(/\/admin\/socios/, { timeout: 5_000 });
+      }).toPass({ timeout: 30_000 });
       await page.getByRole("button", { name: "Voltar" }).click();
       await expect(page).toHaveURL(/\/admin\/?$/);
       await expect(page.getByTestId("admin-outras-areas").getByRole("link", { name: "Documentos" })).toBeVisible();
