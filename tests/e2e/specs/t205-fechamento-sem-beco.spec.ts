@@ -60,7 +60,7 @@ async function codigoDaCaixa(usuarioId: string, depoisDe: string): Promise<strin
       .gte("criado_em", depoisDe)
       .order("criado_em", { ascending: false })
       .limit(1);
-    const m = /\b(\d{6})\b/.exec(String(data?.[0]?.corpo ?? ""));
+    const m = /:\s*(\d{6})\s*$/.exec(String(data?.[0]?.corpo ?? "").trim()); // o código vem no FIM ("…de \"<imóvel>\": 123456"); o título pode ter 6 dígitos
     if (m) return m[1];
     await new Promise((r) => setTimeout(r, 1000));
   }
@@ -141,7 +141,8 @@ test.describe("T205 — fechamento: 'Gerar contrato' sem beco, dos dois lados at
     await expect(continuar).toBeEnabled();
     await continuar.click();
     await expect(page.getByRole("heading", { name: "Fechamento concluído" })).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByText("TESTE · aguardando assinatura")).toBeVisible();
+    // Prompt 28: o Resumo mostra o estado REAL do contrato, lido do banco.
+    await expect(page.getByText("TESTE · Aguardando assinatura · falta você e o inquilino")).toBeVisible();
     await page.screenshot({ path: `${SAIDA}/t205-resumo-1280.png`, fullPage: true });
 
     // Um contrato só, com blocos; reserva concluída com o id simulado; taxa de serviço simulada (nada cobrado).
@@ -198,8 +199,9 @@ test.describe("T205 — fechamento: 'Gerar contrato' sem beco, dos dois lados at
       await expect(pi.getByTestId("candidatura-contrato-status").first()).toHaveText("Aguardando assinatura · falta você e o proprietário", { timeout: 20_000 });
       await semRolagemLateral(pi);
       await pi.screenshot({ path: `${SAIDA}/t205-inquilina-candidatura-${largura}.png`, fullPage: true });
-      await abrir(pi, "/dashboard/locacoes");
-      await expect(pi.getByTestId("locacao-etapa").first()).toHaveText(ROTULO_ETAPA.aguardando_assinatura, { timeout: 20_000 });
+      // Prompt 28: aguardando assinatura fica em "Contratos" (não em Locações).
+      await abrir(pi, "/dashboard/contratos");
+      await expect(pi.getByTestId("contrato-inquilino-estado").first()).toHaveText("Aguardando assinatura · falta você e o proprietário", { timeout: 20_000 });
     }
     await pi.context().close();
     await expect.poll(() => assuntosDaCaixa(ids.inq!), { timeout: 20_000 }).toContain("Seu contrato está pronto para assinar");
