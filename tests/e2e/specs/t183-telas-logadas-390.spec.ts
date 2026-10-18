@@ -130,6 +130,12 @@ async function ultimoControleLivre(page: Page): Promise<string[]> {
       alturaAnterior = altura;
     }
     window.scrollTo(0, document.documentElement.scrollHeight);
+    // Blocos que terminam de carregar DEPOIS (ex.: "Documento (CPF)" da Conta, que troca o esqueleto pelo conteúdo)
+    // empurram o último controle para baixo depois da medida: rola de novo até ele parar dentro da tela (máx. ~6 s).
+    for (let i = 0; i < 20 && ultimo.getBoundingClientRect().top + ultimo.getBoundingClientRect().height / 2 > window.innerHeight - 1; i++) {
+      await new Promise((ok) => setTimeout(ok, 300));
+      window.scrollTo(0, document.documentElement.scrollHeight);
+    }
     const r = ultimo.getBoundingClientRect();
     const nome = (ultimo.textContent || ultimo.getAttribute("aria-label") || ultimo.getAttribute("name") || ultimo.tagName).trim().replace(/\s+/g, " ").slice(0, 40);
     const y = r.top + r.height / 2;

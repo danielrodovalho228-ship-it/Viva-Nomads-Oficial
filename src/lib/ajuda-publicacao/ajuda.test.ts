@@ -11,6 +11,8 @@ import {
   STATUS_AJUDA,
   transicaoValida,
   validarPedidoAjuda,
+  fotoDoDono,
+  MAX_FOTOS_AJUDA,
 } from "./ajuda.ts";
 
 test("pedido precisa de link ou texto; link só https/http e sem senha na URL", () => {
@@ -97,4 +99,31 @@ test("botões do rascunho somem na hora e a lista recarrega após a decisão do 
   assert.match(src, /setDecidido\(true\)/);
   assert.match(src, /router\.refresh\(\)/);
   assert.match(src, /if \(decidido\) return null/);
+});
+
+const DONO = "11111111-1111-4111-8111-111111111111";
+const OUTRO = "22222222-2222-4222-8222-222222222222";
+const FOTO = (uid: string, ext = "jpg") => `${uid}/33333333-3333-4333-8333-333333333333.${ext}`;
+
+test("ordem 65e999b2 (fotos): só fotos da pasta do próprio dono, JPG/PNG/WebP, no máximo 8", () => {
+  assert.ok(fotoDoDono(FOTO(DONO), DONO));
+  assert.ok(fotoDoDono(FOTO(DONO, "webp"), DONO));
+  assert.equal(fotoDoDono(FOTO(OUTRO), DONO), false); // pasta de outro dono
+  assert.equal(fotoDoDono(FOTO(DONO, "svg"), DONO), false);
+  assert.equal(fotoDoDono(`${DONO}/../${OUTRO}/x.jpg`, DONO), false);
+  assert.equal(fotoDoDono(42, DONO), false);
+  assert.equal(fotoDoDono(FOTO(DONO), ""), false);
+});
+
+test("pedido só com fotos vale; foto alheia ou passar de 8 recusa; repetida conta uma vez", () => {
+  const so = validarPedidoAjuda({ fotos: [FOTO(DONO), FOTO(DONO)] }, DONO);
+  assert.ok(so.ok);
+  if (so.ok) assert.deepEqual(so.valor.fotos, [FOTO(DONO)]);
+  assert.equal(validarPedidoAjuda({ fotos: [FOTO(OUTRO)] }, DONO).ok, false);
+  assert.equal(validarPedidoAjuda({ link: "https://a.com/1", fotos: [FOTO(OUTRO)] }, DONO).ok, false);
+  const nove = Array.from({ length: MAX_FOTOS_AJUDA + 1 }, (_, i) => `${DONO}/${String(i).padStart(8, "0")}-3333-4333-8333-333333333333.jpg`);
+  assert.equal(validarPedidoAjuda({ fotos: nove }, DONO).ok, false);
+  assert.equal(validarPedidoAjuda({ fotos: [] }, DONO).ok, false); // sem nada continua recusado
+  const sem = validarPedidoAjuda({ link: "https://a.com/1" }, DONO);
+  assert.ok(sem.ok && sem.valor.fotos.length === 0);
 });

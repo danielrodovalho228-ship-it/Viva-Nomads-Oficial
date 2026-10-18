@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { HandHelping } from "lucide-react";
+import { HandHelping, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { pedirAjudaParaPublicar } from "@/lib/data/ajuda-publicacao-actions";
 import {
@@ -9,6 +9,7 @@ import {
   AVISO_SEM_CUSTO,
   LIMITE_OBSERVACAO,
   LIMITE_TEXTO,
+  MAX_FOTOS_AJUDA,
 } from "@/lib/ajuda-publicacao/ajuda";
 
 /** Ordem 65e999b2: "Quero ajuda da equipe para publicar" — o dono envia o link/texto do anúncio que já tem. */
@@ -20,11 +21,33 @@ export function AjudaPublicar({ abertoInicial = false }: { /** Prompt 20: aberto
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState("");
   const [enviado, setEnviado] = useState(false);
+  const [fotos, setFotos] = useState<{ path: string; url: string }[]>([]);
+  const [subindo, setSubindo] = useState(false);
+
+  async function anexar(lista: FileList | null) {
+    if (!lista?.length) return;
+    setErro("");
+    setSubindo(true);
+    const novas: { path: string; url: string }[] = [];
+    for (const arq of Array.from(lista).slice(0, MAX_FOTOS_AJUDA - fotos.length)) {
+      const fd = new FormData();
+      fd.append("file", arq);
+      const res = await fetch("/api/upload/foto", { method: "POST", body: fd }).catch(() => null);
+      const j = res ? await res.json().catch(() => ({})) : {};
+      if (!res?.ok) {
+        setErro(j.error ?? "Não foi possível enviar a foto.");
+        break;
+      }
+      novas.push({ path: j.path, url: j.url });
+    }
+    setFotos((f) => [...f, ...novas]);
+    setSubindo(false);
+  }
 
   async function enviar() {
     setEnviando(true);
     setErro("");
-    const r = await pedirAjudaParaPublicar({ link, texto, observacao: obs });
+    const r = await pedirAjudaParaPublicar({ link, texto, observacao: obs, fotos: fotos.map((f) => f.path) });
     setEnviando(false);
     if (!r.ok) return setErro(r.error ?? "Não foi possível enviar agora.");
     setEnviado(true);
@@ -57,7 +80,7 @@ export function AjudaPublicar({ abertoInicial = false }: { /** Prompt 20: aberto
       <p className="text-sm font-medium text-ink">Publicamos para você</p>
       <p className="mt-1 text-xs text-muted">{AVISO_SEM_CUSTO} {AVISO_APROVACAO}</p>
       <label className="mt-3 block text-sm text-ink">
-        Link do seu anúncio (opcional se colar o texto)
+        Link do seu anúncio (opcional se enviar texto ou fotos)
         <input
           value={link}
           onChange={(e) => setLink(e.target.value)}
@@ -91,13 +114,50 @@ export function AjudaPublicar({ abertoInicial = false }: { /** Prompt 20: aberto
           data-testid="ajuda-publicar-obs"
         />
       </label>
+      <div className="mt-3">
+        <p className="text-sm text-ink">Fotos do imóvel (opcional, até {MAX_FOTOS_AJUDA})</p>
+        {fotos.length > 0 && (
+          <ul className="mt-2 grid grid-cols-4 gap-2" data-testid="ajuda-publicar-fotos">
+            {fotos.map((f) => (
+              <li key={f.path} className="relative aspect-square overflow-hidden rounded-lg border border-sage-200">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={f.url} alt="Foto enviada" className="h-full w-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => setFotos((l) => l.filter((x) => x.path !== f.path))}
+                  aria-label="Remover foto"
+                  className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-ink"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {fotos.length < MAX_FOTOS_AJUDA && (
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            multiple
+            disabled={subindo}
+            onChange={(e) => {
+              void anexar(e.target.files);
+              e.target.value = "";
+            }}
+            aria-label="Enviar fotos do imóvel"
+            className="mt-2 block w-full text-sm"
+            data-testid="ajuda-publicar-foto-input"
+          />
+        )}
+        {subindo && <p className="mt-1 text-xs text-muted">Enviando…</p>}
+      </div>
       {erro && (
         <p className="mt-3 text-sm text-red-700" role="alert" data-testid="ajuda-publicar-erro">
           {erro}
         </p>
       )}
       <div className="mt-3 flex flex-wrap gap-2">
-        <Button size="sm" variant="gold" onClick={enviar} disabled={enviando} data-testid="ajuda-publicar-enviar">
+        <Button size="sm" variant="gold" onClick={enviar} disabled={enviando || subindo} data-testid="ajuda-publicar-enviar">
           {enviando ? "Enviando…" : "Enviar pedido"}
         </Button>
         <Button size="sm" variant="outline" onClick={() => setAberto(false)}>
