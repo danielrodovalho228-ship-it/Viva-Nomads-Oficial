@@ -36,3 +36,12 @@ test("falhas trazem o trecho do erro (até 300 caracteres, sem cor de terminal, 
   assert.ok(!longo.includes("JBSWY3DP"));
   assert.equal(trechoDoErro(undefined), "");
 });
+
+test("instável grava o erro da 1ª tentativa que falhou (a última passou e não tem erro); falhou segue com a última", () => {
+  const tentativas = [{ status: "failed", error: { message: "1ª: botão não apareceu" } }, { status: "failed", error: { message: "2ª: igual" } }, { status: "passed" }];
+  const instavel = coletar([{ file: "t9-x.spec.ts", specs: [t("t9-x.spec.ts", "oscila", "flaky", "passed", tentativas)] }]);
+  assert.equal(instavel[0].erro, "1ª: botão não apareceu");
+  const falhou = coletar([{ file: "t9-x.spec.ts", specs: [t("t9-x.spec.ts", "quebra", "unexpected", "passed", tentativas.slice(0, 2))] }]);
+  assert.equal(falhou[0].erro, "2ª: igual");
+  assert.equal(trechoDoErro([{ status: "passed" }]), "");
+});
