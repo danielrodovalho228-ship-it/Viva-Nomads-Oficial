@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { ehAnuncioDeTeste } from "@/lib/data/anuncio-teste";
 import { NovaJornadaTeste } from "./nova-jornada";
+import { SemearCarteiraTeste } from "./semear-carteira";
 
 export const metadata = { title: "Dados de teste — Admin" };
 export const dynamic = "force-dynamic";
@@ -37,6 +38,16 @@ export default async function AdminDadosDeTestePage() {
           <NovaJornadaTeste
             inquilinos={contas.filter((c) => c.role !== "admin").map((c) => ({ id: c.id, rotulo: c.email ?? c.full_name ?? c.id }))}
             anuncios={anuncios.map((p) => ({ id: p.id, rotulo: `${p.title ?? "Anúncio"} — ${nome.get(p.owner_id) ?? ""}`, donoId: p.owner_id }))}
+          />
+        )}
+      </Panel>
+      <Panel title="Carteira de teste (Análise da carteira)" className="mt-6">
+        {contas.length < 2 ? (
+          <EmptyState icon={FlaskConical} title="Faltam contas de teste" text="É preciso um proprietário e um inquilino de teste (is_teste)." />
+        ) : (
+          <SemearCarteiraTeste
+            proprietarios={contas.filter((c) => c.role !== "admin").map((c) => ({ id: c.id, rotulo: c.email ?? c.full_name ?? c.id }))}
+            inquilinos={contas.filter((c) => c.role !== "admin").map((c) => ({ id: c.id, rotulo: c.email ?? c.full_name ?? c.id }))}
           />
         )}
       </Panel>

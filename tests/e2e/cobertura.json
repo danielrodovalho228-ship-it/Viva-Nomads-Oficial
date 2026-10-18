@@ -432,7 +432,8 @@
         "t8-rascunho",
         "t98-score-anuncio",
         "t151-modo-app-iphone",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t212-ferramentas-proprietario"
       ]
     },
     "/dashboard/assinatura": {
@@ -649,7 +650,8 @@
       ],
       "specs": [
         "t151-modo-app-iphone",
-        "t153-limpeza-estadia"
+        "t153-limpeza-estadia",
+        "t212-ferramentas-proprietario"
       ]
     },
     "/dashboard/imoveis/novo": {
@@ -741,7 +743,8 @@
       "specs": [
         "t48-varredura",
         "t55-manutencao-ciclo",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t212-ferramentas-proprietario"
       ]
     },
     "/dashboard/orcamentos": {
@@ -763,7 +766,8 @@
       ],
       "specs": [
         "t193-propostas",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t212-ferramentas-proprietario"
       ]
     },
     "/dashboard/pedidos": {
@@ -795,7 +799,8 @@
         "admin"
       ],
       "specs": [
-        "t193-propostas"
+        "t193-propostas",
+        "t212-ferramentas-proprietario"
       ]
     },
     "/dashboard/reembolsos": {
@@ -815,7 +820,8 @@
       "specs": [
         "t68-comissao-valor-total",
         "t189-simulador-roi",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t212-ferramentas-proprietario"
       ]
     },
     "/dashboard/simulador": {
@@ -829,7 +835,8 @@
         "t37-simuladores-e-numeros",
         "t68-comissao-valor-total",
         "t189-simulador-roi",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t212-ferramentas-proprietario"
       ]
     },
     "/dashboard/solicitacoes": {
@@ -1174,7 +1181,8 @@
         "admin"
       ],
       "specs": [
-        "t210-contrato-estado-jornada"
+        "t210-contrato-estado-jornada",
+        "t212-ferramentas-proprietario"
       ]
     },
     "/dashboard/agenda": {
@@ -1183,6 +1191,14 @@
       ],
       "specs": [
         "t209-jornada-dois-lados"
+      ]
+    },
+    "/dashboard/propostas": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t212-ferramentas-proprietario"
       ]
     }
   },
@@ -3201,6 +3217,30 @@
       ],
       "specs": [
         "t209-jornada-dois-lados"
+      ]
+    },
+    "src/lib/data/propostas-actions.ts#contarPropostasAguardando": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t212-ferramentas-proprietario"
+      ]
+    },
+    "src/lib/data/carteira-teste-actions.ts#semearCarteiraDeTeste": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t212-ferramentas-proprietario"
+      ]
+    },
+    "src/lib/data/carteira-teste-actions.ts#limparCarteiraDeTeste": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t212-ferramentas-proprietario"
       ]
     }
   }

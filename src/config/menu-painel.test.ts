@@ -10,11 +10,13 @@ import { ANUNCIAR, contemRota, folhas, menuDoPainel, rotaAtiva } from "./menu-pa
 const base = { temImovel: false, admin: false, estadiaAtiva: false };
 const ids = (m: ReturnType<typeof menuDoPainel>) => m.map((i) => i.id);
 
-test("todo usuário vê moradia (busca, favoritos, candidaturas, Contratos, Locações), mensagens, ferramentas e conta", () => {
+test("todo usuário vê moradia (busca, favoritos, candidaturas, Propostas, Contratos, Locações), mensagens, ferramentas e conta", () => {
   const m = menuDoPainel(base);
   assert.deepEqual(ids(m), ["visao", "moradia", "comunicacao", "ferramentas", "conta"]);
   const moradia = folhas(m.filter((i) => i.id === "moradia")).map((i) => i.rotulo);
-  for (const r of ["Buscar imóveis", "Favoritos & comparações", "Candidaturas", "Contratos", "Locações"]) assert.ok(moradia.includes(r), r);
+  for (const r of ["Buscar imóveis", "Favoritos & comparações", "Candidaturas", "Propostas", "Contratos", "Locações"]) assert.ok(moradia.includes(r), r);
+  // Prompt 27: "Propostas" do inquilino aponta para a lista dele (/dashboard/propostas), não para Orçamentos do dono.
+  assert.equal(folhas(m).find((i) => i.rotulo === "Propostas")?.href, "/dashboard/propostas");
   assert.ok(!moradia.includes("Solicitações"), "Solicitações só com estadia ativa");
 });
 

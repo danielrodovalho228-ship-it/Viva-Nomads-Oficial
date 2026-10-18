@@ -13,6 +13,7 @@ import { createClient } from "@/lib/supabase/client";
 import { removerPushToken } from "@/lib/data/push-actions";
 import { countDocumentosPendentes } from "@/lib/data/documentos-admin";
 import { contarContratosParaAssinar } from "@/lib/data/contratos-actions";
+import { contarPropostasAguardando } from "@/lib/data/propostas-actions";
 import { contarAchadosP1 } from "@/lib/data/agentes-actions";
 import { useHasActiveLocacao } from "@/lib/use-active-locacao";
 import { useViewMode, identidadeUsuario } from "@/lib/roles";
@@ -111,6 +112,21 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     };
   }, [displayUser?.id, pathname]);
 
+  // Prompt 27: propostas esperando a resposta do inquilino — número no item "Propostas".
+  const [propostasAguardando, setPropostasAguardando] = useState(0);
+  useEffect(() => {
+    if (!displayUser?.id) return;
+    let alive = true;
+    contarPropostasAguardando()
+      .then((n) => {
+        if (alive) setPropostasAguardando(n);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [displayUser?.id, pathname]);
+
   // Documentos aguardando conferência — badge no item "Documentos" do nav admin.
   const [docsPendentes, setDocsPendentes] = useState(0);
   useEffect(() => {
@@ -165,7 +181,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     // Reavalia ao sair do cadastro de imóvel (o primeiro anúncio revela as seções de dono).
   }, [displayUser?.id, naAreaDeImoveis]);
   const menu = menuDoPainel({ temImovel, admin: display.role === "admin", estadiaAtiva, plano: plan, imoveisAtivos });
-  const badges = { "admin-documentos": docsPendentes, "admin-agentes": achadosP1, "contratos-inquilino": contratosParaAssinar };
+  const badges = { "admin-documentos": docsPendentes, "admin-agentes": achadosP1, "contratos-inquilino": contratosParaAssinar, "propostas-inquilino": propostasAguardando };
 
   // Guarda de rota por papel (B1). Ao abrir por URL/deep-link uma tela exclusiva
   // do OUTRO modo, a regra deixou de ser "sempre redireciona": se a conta TEM o
