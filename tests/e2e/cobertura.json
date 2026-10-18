@@ -3080,6 +3080,33 @@
       "specs": [
         "t201-qa-muse"
       ]
+    },
+    "src/lib/data/visitas-video-actions.ts#pedirVisita": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t206-jornada-dois-lados"
+      ]
+    },
+    "src/lib/data/visitas-video-actions.ts#responderVisita": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t206-jornada-dois-lados"
+      ]
+    },
+    "src/lib/data/visitas-video-actions.ts#visitaDaConversa": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t206-jornada-dois-lados"
+      ]
     }
   }
 }
