@@ -40,6 +40,11 @@ export interface FatosAnuncio {
   limiteAnuncios?: number | null;
   /** Obrigatória: mínimo de MIN_DESCRICAO caracteres. */
   descricao: string;
+  /**
+   * Qualificação "Antes de anunciar" (prompt 22): no cadastro novo entra na MESMA lista, visível desde o passo 1 —
+   * antes era um segundo portão que só aparecia no fim. Ausente = não se aplica aqui (editor, lista de imóveis).
+   */
+  qualificacaoOk?: boolean;
   // Opcionais
   selo: boolean;
   video: boolean;
@@ -101,6 +106,9 @@ export const OBRIGATORIOS_ROTULOS = [
   "Documento do imóvel aprovado",
 ] as const;
 
+/** Item da qualificação no portão único (prompt 22). */
+export const ROTULO_QUALIFICACAO = "Antes de anunciar (qualificação do imóvel)";
+
 export function textoVagaNoPlano(limite?: number | null): string {
   const n = typeof limite === "number" && limite > 0 && Number.isFinite(limite) ? limite : null;
   const quanto = n === null ? "O seu plano já tem o máximo de anúncios no ar" : `Seu plano permite ${n} ${n === 1 ? "anúncio" : "anúncios"} no ar`;
@@ -125,6 +133,9 @@ export function prontidaoAnuncio(f: FatosAnuncio): Prontidao {
     { key: "garantia", label: OBRIGATORIOS_ROTULOS[7], ok: f.garantiaOk, etapa: 3 },
     { key: "documento", label: OBRIGATORIOS_ROTULOS[8], ok: f.documento === "approved", etapa: 0, detalhe: f.documento === "approved" ? undefined : DOC_DETALHE[f.documento] },
   ];
+  if (f.qualificacaoOk !== undefined) {
+    obrigatorios.push({ key: "qualificacao", label: ROTULO_QUALIFICACAO, ok: f.qualificacaoOk, etapa: 0, detalhe: f.qualificacaoOk ? undefined : "leva poucos minutos" });
+  }
   if (!f.sublocacaoOk) {
     const label = f.operacao === "managed" ? ROTULO_FALTA_AUTORIZACAO.managed : ROTULO_FALTA_AUTORIZACAO.subleased;
     obrigatorios.push({ key: "sublocacao", label, ok: false, etapa: 0 });

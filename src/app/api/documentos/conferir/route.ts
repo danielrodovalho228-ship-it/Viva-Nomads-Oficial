@@ -9,6 +9,7 @@ import { lerDocumento, lerMatricula, matriculaDoLaboratorio } from "@/lib/docume
 import {
   camposParaGravar,
   decidirMatricula,
+  decisaoComFalhaDeLeitura,
   estadoTelaDaMatricula,
   preenchimentoDaMatricula,
   semMatriculaVaiParaRevisao,
@@ -104,7 +105,11 @@ export async function POST(request: Request) {
   const arquivo = { bytes, mime };
   // Matrícula fictícia do laboratório vai direto para a leitura completa; no resto, a leitura do documento diz o tipo.
   const lida = matriculaDoLaboratorio(bytes) ? null : await lerDocumento(arquivo, cadastro);
-  const ehMatricula = !lida || lida.leitura?.tipo === "matricula";
+  // Prompt 22: a leitura FALHOU (arquivo grande, ilegível, serviço fora)? A tentativa vai para a conferência do dono
+  // (property_ownership_checks) em revisão, com o motivo — antes caía no ramo genérico e a tabela ficava vazia.
+  const falhaLeitura = lida?.falha;
+  // Sem leitura nenhuma (falhou ou ninguém leu) também conta: a equipe confere, e a tentativa fica registrada.
+  const ehMatricula = !lida || !lida.leitura || lida.leitura.tipo === "matricula";
 
   // Respostas da qualificação anterior do mesmo imóvel (ou da que está à espera): a linha nova só troca o documento.
   const ultima = async (doImovel: string | null) => {
@@ -133,7 +138,10 @@ export async function POST(request: Request) {
 
   if (ehMatricula) {
     const perfilDono = { nome: (perfil?.full_name as string | null) ?? null, cpf: (perfil?.cpf as string | null) ?? null, cnpj: (perfil?.cnpj as string | null) ?? null };
-    const { leitura: mat, conferidor, modelo } = await lerMatricula(arquivo, { perfil: perfilDono, endereco: cadastro.endereco, hoje: cadastro.hoje });
+    // Se a leitura do documento já falhou, não chama a IA de novo: grava a tentativa com o motivo.
+    const { leitura: mat, conferidor, modelo, falha } = falhaLeitura
+      ? { leitura: null, conferidor: lida!.conferidor, modelo: lida!.modelo, falha: falhaLeitura }
+      : await lerMatricula(arquivo, { perfil: perfilDono, endereco: cadastro.endereco, hoje: cadastro.hoje });
     // Laudo CAF mais recente da pessoa (90 dias). O simulado só vale no laboratório ou em conta de teste.
     const { data: laudo } = await admin
       .from("tenant_verifications")
@@ -143,7 +151,10 @@ export async function POST(request: Request) {
       .limit(1)
       .maybeSingle();
     const caf = resumoDoLaudo((laudo as LaudoCafGravado | null) ?? null, agora, integracoesSimuladas() || perfil?.is_teste === true);
-    const d = decidirMatricula(mat, { perfil: perfilDono, caf, enderecoCadastro: cadastro.endereco, duplicado: cadastro.duplicado, hoje: cadastro.hoje });
+    const d = decisaoComFalhaDeLeitura(
+      decidirMatricula(mat, { perfil: perfilDono, caf, enderecoCadastro: cadastro.endereco, duplicado: cadastro.duplicado, hoje: cadastro.hoje }),
+      falha,
+    );
     const estado = estadoTelaDaMatricula(d.resultado);
     const emRevisao = d.resultado === "em_revisao";
 
@@ -171,7 +182,19 @@ export async function POST(request: Request) {
       conferido_por: emRevisao ? null : "automatico",
       revisao_ate: emRevisao ? new Date(agora.getTime() + REVISAO_PRAZO_HORAS * 3_600_000).toISOString() : null,
       // Trilha de auditoria SEM dado pessoal: o detalhe da matrícula fica em property_ownership_checks (0158).
-      conferencia: { versao: 2, tipo: "matricula", estado, resultado: d.resultado, motivo: d.motivo, caf_ok: caf.ok, conferidor, modelo, em: agora.toISOString() },
+      conferencia: {
+        versao: 2,
+        tipo: "matricula",
+        estado,
+        resultado: d.resultado,
+        motivo: d.motivo,
+        caf_ok: caf.ok,
+        conferidor,
+        modelo,
+        // Falha da leitura (prompt 22), sem dado pessoal: status HTTP e tipo do erro.
+        falha: falha ? { motivo: falha.motivo, status: falha.status, tipo: falha.tipo } : null,
+        em: agora.toISOString(),
+      },
     });
     if (erroCheck || erroQual || !check) {
       console.error("[conferir-matricula] falha ao gravar:", erroCheck?.message ?? erroQual?.message ?? "sem linha");

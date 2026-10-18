@@ -257,3 +257,21 @@ test("decisão 1 — sem matrícula: IPTU + contrato de compra é aceito, mas fi
   const aprovado = { estado: "aprovado" as const, checklist: { titular: true, imovel: true, legivel: true, validade: true }, motivos: [] };
   assert.equal(semMatriculaVaiParaRevisao(aprovado, "matricula").estado, "aprovado");
 });
+
+import { decisaoComFalhaDeLeitura } from "./conferencia-matricula.ts";
+
+test("p22 — leitura que falhou vira 'em revisão' com o motivo certo (arquivo grande, ilegível, indisponível)", () => {
+  const base = decidirMatricula(null, entrada());
+  assert.equal(base.resultado, "em_revisao");
+  for (const [motivo, esperado, texto] of [
+    ["arquivo_grande", "falha_arquivo_grande", /grande demais/],
+    ["ilegivel", "falha_ilegivel", /ilegível/],
+    ["indisponivel", "falha_indisponivel", /indisponível agora — tente de novo/],
+  ] as const) {
+    const d = decisaoComFalhaDeLeitura(base, { motivo });
+    assert.equal(d.resultado, "em_revisao");
+    assert.equal(d.motivo, esperado);
+    assert.match(d.mensagem, texto);
+  }
+  assert.equal(decisaoComFalhaDeLeitura(base, undefined).motivo, "falha_leitura");
+});

@@ -80,6 +80,9 @@ export type MotivoMatricula =
   | "dono_diferente"
   | "detalhe_matricula"
   | "falha_leitura"
+  | "falha_arquivo_grande"
+  | "falha_ilegivel"
+  | "falha_indisponivel"
   | "sinal_edicao"
   | "duplicado";
 
@@ -105,6 +108,9 @@ export const MSG_MATRICULA = {
   dono_diferente: "O nome ou o CPF da matrícula é diferente do seu cadastro. Escolha o seu caso e anexe o documento.",
   detalhe_matricula: "Precisamos olhar um detalhe da matrícula. A equipe confere em até 48 horas e avisa por e-mail.",
   falha_leitura: "Não foi possível ler a matrícula automaticamente. A equipe confere em até 48 horas.",
+  falha_arquivo_grande: "Arquivo grande demais para a leitura automática. Envie um PDF ou uma foto menor — enquanto isso, a equipe confere em até 48 horas.",
+  falha_ilegivel: "Imagem ilegível. Envie uma foto mais nítida, com a matrícula inteira e boa luz — enquanto isso, a equipe confere em até 48 horas.",
+  falha_indisponivel: "Leitura indisponível agora — tente de novo em alguns minutos. Enquanto isso, a equipe confere em até 48 horas.",
   sinal_edicao: "A equipe precisa conferir este documento. Prazo de até 48 horas.",
   duplicado: "Este documento já foi usado em outra conta. Envie a matrícula do seu imóvel.",
   matricula_antiga: "Para conferência mais rápida, envie a certidão atualizada (emitida nos últimos 30 dias).",
@@ -137,6 +143,17 @@ export interface DecisaoMatricula {
   pedirCaf: boolean;
   avisos: AvisoMatricula[];
   comparacao: ComparacaoProprietario[];
+}
+
+/**
+ * Prompt 22: a leitura falhou (arquivo grande, ilegível, serviço fora) → o motivo e a mensagem certos, em vez do
+ * genérico "não foi possível ler". A decisão continua "em revisão" (a equipe confere), e a tentativa fica gravada.
+ */
+export function decisaoComFalhaDeLeitura(d: DecisaoMatricula, falha: { motivo: "desligada" | "limite" | "arquivo_grande" | "ilegivel" | "indisponivel" } | undefined): DecisaoMatricula {
+  if (!falha || d.motivo !== "falha_leitura") return d;
+  const motivo: MotivoMatricula =
+    falha.motivo === "arquivo_grande" ? "falha_arquivo_grande" : falha.motivo === "ilegivel" ? "falha_ilegivel" : "falha_indisponivel";
+  return { ...d, motivo, mensagem: MSG_MATRICULA[motivo] };
 }
 
 /* ── Comparações ──────────────────────────────────────────────────────────── */

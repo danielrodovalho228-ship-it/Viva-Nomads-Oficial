@@ -102,7 +102,7 @@ test.describe("T194 — passo 1: IA primeiro, CEP que sempre responde, fotos à 
       await cep.fill("38482288");
       const resultado = page.getByTestId("cep-resultado");
       await expect(resultado).toHaveAttribute("data-tipo", "nao_encontrado", { timeout: 15_000 });
-      await expect(resultado).toContainText("Não encontramos esse CEP. Confira os números ou busque pelo endereço");
+      await expect(resultado).toContainText("Não encontramos esse CEP — buscar pelo endereço");
       await expect(cep).toHaveValue("38482-288");
       await cep.scrollIntoViewIfNeeded();
       await page.screenshot({ path: `${SAIDA}/t194-cep-nao-encontrado-${largura}.png`, fullPage: false });

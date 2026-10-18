@@ -47,7 +47,8 @@
         "t36-cadastro-ponta-a-ponta",
         "t39-app-ida-e-volta",
         "t9-documentos",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t204-cadastro-ia-real"
       ]
     },
     "/admin/2fa/refazer": {
@@ -651,7 +652,8 @@
         "t8-rascunho",
         "t183-telas-logadas-390",
         "t194-passo1-ia-cep",
-        "t195-matricula-caf"
+        "t195-matricula-caf",
+        "t204-cadastro-ia-real"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1205,7 +1207,9 @@
         "proprietario",
         "admin"
       ],
-      "specs": []
+      "specs": [
+        "t204-cadastro-ia-real"
+      ]
     },
     "/api/app/login-social": {
       "personas": [
@@ -1362,7 +1366,8 @@
       ],
       "specs": [
         "t187-conferencia-documento",
-        "t195-matricula-caf"
+        "t195-matricula-caf",
+        "t204-cadastro-ia-real"
       ]
     },
     "/api/documentos/matricula/caso": {
@@ -1549,6 +1554,14 @@
       "specs": [
         "t195-matricula-caf",
         "t186-cadastro-5-etapas"
+      ]
+    },
+    "/api/ai/status": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t204-cadastro-ia-real"
       ]
     }
   },
