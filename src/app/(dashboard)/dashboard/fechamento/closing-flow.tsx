@@ -59,6 +59,7 @@ import {
 } from "@/lib/modelos-contrato";
 import { hojeBR, dataBR, formatBRL, cn } from "@/lib/utils";
 import { validarInicioEstadia } from "@/lib/inicio-estadia";
+import { ocupantesIniciais } from "@/lib/candidaturas/ocupantes";
 import { MARCA_MINUTA, MSG_ASSINATURA_INATIVA } from "@/lib/contrato-etapas";
 import { LINK_DOCUMENTO } from "@/lib/documento-pessoa";
 
@@ -141,7 +142,8 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   // Nº de pessoas que vão morar (Onda 1) — informado pelo inquilino, validado
   // contra a capacidade do imóvel. Vai para o registro da locação (cláusula de
   // ocupação). Excedeu a capacidade → bloqueia e sugere outro imóvel.
-  const [qtdOcupantes, setQtdOcupantes] = useState(1);
+  // Prompt 8: abre com quantas pessoas a candidatura informou (preso à capacidade).
+  const [qtdOcupantes, setQtdOcupantes] = useState(() => ocupantesIniciais(ctx.ocupantesSugerido, CAPACIDADE));
   const ocupantesExcede = qtdOcupantes > CAPACIDADE;
   // Caução flexível: como o inquilino paga a caução (não trava o aluguel).
   // À vista → poupança da caução (art. 38, §2º); parcelado → emissor do cartão. Nunca a plataforma.

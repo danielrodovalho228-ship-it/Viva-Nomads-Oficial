@@ -271,6 +271,8 @@ function TenantDashboard({ name }: { name: string }) {
   const recommended = useProperties("/api/properties").properties.slice(0, 3);
   return (
     <>
+      {/* Título da tela (h1): sem ele a Visão geral do inquilino não tinha cabeçalho principal (varredura t48). */}
+      <PageTitle title="Visão geral" subtitle="Candidaturas, favoritos, buscas salvas e mensagens num lugar só." />
       {/* Primeiro acesso: checklist de 3 passos (ou o banner, quando concluído/oculto). */}
       <TenantOnboarding name={name} />
 

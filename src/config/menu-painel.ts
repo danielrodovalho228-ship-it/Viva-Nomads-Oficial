@@ -14,11 +14,13 @@
  * Função PURA (testada em menu-painel.test.ts); quem desenha é o DashboardShell.
  */
 
+import { MIN_IMOVEIS_ANALISE_CARTEIRA } from "../lib/cobranca/regra.ts";
+
 export type IconeMenu =
   | "visao" | "moradia" | "buscar" | "favoritos" | "buscas" | "pedidos" | "candidaturas"
   | "visitas" | "estadias" | "solicitacoes" | "mensagens" | "notificacoes" | "imoveis" | "interessados"
   | "pedidosCidade" | "fechamento" | "contratos" | "garantias" | "conferencia" | "ferramentas"
-  | "simulador" | "roi" | "viabilidade" | "orcamentos" | "conta" | "verificacao" | "assinatura"
+  | "simulador" | "roi" | "carteira" | "orcamentos" | "conta" | "verificacao" | "assinatura"
   | "admin" | "documentos" | "atendimento" | "parceiros" | "fotografos" | "financeiro"
   | "socios" | "marketing" | "agentes" | "operacao" | "rede" | "dinheiro" | "anunciar";
 
@@ -39,6 +41,8 @@ export interface ContextoMenu {
   /** Há estadia ativa — revela "Solicitações". */
   estadiaAtiva: boolean;
   plano?: string;
+  /** Imóveis ATIVOS do dono: com 3 ou mais (regra das faixas), aparece a "Análise da carteira". */
+  imoveisAtivos?: number;
 }
 
 export function menuDoPainel(ctx: ContextoMenu): ItemMenu[] {
@@ -141,7 +145,9 @@ export function menuDoPainel(ctx: ContextoMenu): ItemMenu[] {
       { id: "ferramentas-todas", rotulo: "Todas as ferramentas", icone: "ferramentas", href: "/dashboard/ferramentas" },
       { id: "simulador", rotulo: "Simulador de rentabilidade", icone: "simulador", href: "/dashboard/simulador" },
       { id: "roi", rotulo: "Calculadora de ROI", icone: "roi", href: "/dashboard/roi-imovel" },
-      { id: "viabilidade", rotulo: "Viabilidade", icone: "viabilidade", href: "/dashboard/viabilidade" },
+      ...((ctx.imoveisAtivos ?? 0) >= MIN_IMOVEIS_ANALISE_CARTEIRA
+        ? [{ id: "carteira", rotulo: "Análise da carteira", icone: "carteira" as const, href: "/dashboard/carteira" }]
+        : []),
       ...(ctx.temImovel
         ? [{ id: "orcamentos", rotulo: "Orçamentos", icone: "orcamentos" as const, href: "/dashboard/orcamentos" }]
         : []),
@@ -155,7 +161,7 @@ export function menuDoPainel(ctx: ContextoMenu): ItemMenu[] {
     filhos: [
       { id: "conta-dados", rotulo: "Perfil e dados", icone: "conta", href: "/dashboard/conta" },
       { id: "avaliacoes", rotulo: "Avaliações recebidas", icone: "conta", href: "/dashboard/avaliacoes" },
-      { id: "verificacao", rotulo: "Verificação", icone: "verificacao", href: "/dashboard/verificacao" },
+      { id: "verificacao", rotulo: "Verificação", icone: "verificacao", href: "/dashboard/conta#confianca" },
     ],
   });
 

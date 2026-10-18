@@ -149,10 +149,11 @@ export function EtapaPreco(p: {
       <LinhaComparativoAnuncio aluguel={aluguel} />
       <PrecoSugerido aluguel={aluguel} onUsar={(v) => p.setMonthlyPrice(String(v))} onAirbnbMensal={(v) => p.setAirbnbMensal(v ? String(v) : "")} />
 
-      {/* Q8/Q9: um seletor só (calendário nativo), rótulos curtos, um embaixo do outro no celular. */}
+      {/* Q8/Q9: um seletor só (calendário nativo), rótulos curtos, um embaixo do outro no celular; no computador os dois
+          campos alinham pela base (o "(opcional)" do segundo não o empurra para baixo). */}
       <div className="rounded-xl border border-sage-200 p-4" data-testid="disponibilidade">
         <p className="text-sm font-medium text-ink">Disponibilidade e prazo</p>
-        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 [&>*]:min-w-0">
+        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:items-end [&>*]:min-w-0">
           <Labeled label="Disponível a partir de">
             <CampoDataUnico value={p.availableFrom} onChange={p.setAvailableFrom} ariaLabel="Disponível a partir de" min={hojeBR()} testid="disponivel-de" />
           </Labeled>

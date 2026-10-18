@@ -5,6 +5,7 @@ import { PerfilPublicoForm } from "@/components/account/perfil-publico-form";
 import { use } from "react";
 import { notFound } from "next/navigation";
 import { AvatarUploader } from "@/components/account/avatar-uploader";
+import { TelefoneVerificacao } from "@/components/account/telefone-verificacao";
 import { PageTitle } from "@/components/dashboard/primitives";
 import { CentralAjuda } from "@/components/ajuda/central-ajuda";
 import {
@@ -13,12 +14,12 @@ import {
   DangerZone,
   DocumentoPessoa,
   NotificationsPanel,
-  PerfilDoModo,
 } from "@/components/account/conta-secoes";
+import { ConfiancaLista, PerfilProfissional, VerComoOutrosVeem } from "@/components/account/conta-blocos";
 
 const TITULOS: Record<string, { titulo: string; subtitulo: string }> = {
   perfil: { titulo: "Perfil", subtitulo: "Seus dados, documento e foto." },
-  seguranca: { titulo: "Senha e segurança", subtitulo: "Troque a senha da sua conta." },
+  seguranca: { titulo: "Confiança e segurança", subtitulo: "O que está verificado, duas etapas e senha." },
   notificacoes: { titulo: "Notificações", subtitulo: "Escolha como quer ser avisado." },
   excluir: { titulo: "Excluir conta", subtitulo: "Apaga seus dados, com confirmação." },
 };
@@ -31,18 +32,21 @@ export default function ContaSecaoPage({ params }: { params: Promise<{ secao: st
       return (
         <div className="w-full">
           <PageTitle title={TITULOS.perfil.titulo} subtitle={TITULOS.perfil.subtitulo} />
-          <DadosPessoais />
+          <AvatarUploader />
           <PerfilPublicoForm />
+          <PerfilProfissional />
+          <VerComoOutrosVeem />
+          <DadosPessoais />
+          <TelefoneVerificacao />
           <DocumentoPessoa />
           <PetsFicha />
-          <AvatarUploader />
-          <PerfilDoModo />
         </div>
       );
     case "seguranca":
       return (
         <div className="w-full">
           <PageTitle title={TITULOS.seguranca.titulo} subtitle={TITULOS.seguranca.subtitulo} />
+          <ConfiancaLista />
           <ChangePassword />
         </div>
       );
@@ -54,8 +58,14 @@ export default function ContaSecaoPage({ params }: { params: Promise<{ secao: st
         </div>
       );
     case "ajuda":
-      // App: a MESMA Central de Ajuda do site, aqui dentro (sem tela nova).
-      return <CentralAjuda canal="app" />;
+      // App: a MESMA Central de Ajuda do site, aqui dentro (sem tela nova). Com o título principal (h1) que a
+      // /ajuda do site tem — sem ele a tela ficava sem cabeçalho (t183).
+      return (
+        <div className="w-full">
+          <PageTitle title="Central de Ajuda" subtitle="Perguntas frequentes, chamados e contato com a equipe." />
+          <CentralAjuda canal="app" />
+        </div>
+      );
     case "excluir":
       return (
         <div className="w-full">

@@ -95,7 +95,8 @@
       ],
       "specs": [
         "t91-avaliacao-resposta",
-        "t93-avaliacao-tela"
+        "t93-avaliacao-tela",
+        "t48-varredura"
       ]
     },
     "/admin/documentos": {
@@ -114,7 +115,8 @@
         "admin"
       ],
       "specs": [
-        "t116-admin-emails-teste"
+        "t116-admin-emails-teste",
+        "t48-varredura"
       ]
     },
     "/admin/financeiro": {
@@ -164,7 +166,9 @@
         "admin"
       ],
       "specs": [
-        "t101-admin-usuarios"
+        "t101-admin-usuarios",
+        "t178-telefone-sms",
+        "t48-varredura"
       ]
     },
     "/ajuda": {
@@ -403,7 +407,8 @@
       ],
       "specs": [
         "t91-avaliacao-resposta",
-        "t93-avaliacao-tela"
+        "t93-avaliacao-tela",
+        "t48-varredura"
       ]
     },
     "/dashboard/buscas": {
@@ -454,8 +459,11 @@
         "t92-documento-secao",
         "t129-motivo-estadia-perfil",
         "t151-modo-app-iphone",
+        "t178-telefone-sms",
         "t173-perfis-dono-inquilino",
-        "t174-conta-complete-perfil"
+        "t174-conta-complete-perfil",
+        "t192-conta-4-blocos",
+        "t179-isolamento-perfil"
       ]
     },
     "/dashboard/conta/[secao]": {
@@ -470,7 +478,9 @@
         "t36-cadastro-ponta-a-ponta",
         "t92-documento-secao",
         "t173-perfis-dono-inquilino",
-        "t174-conta-complete-perfil"
+        "t178-telefone-sms",
+        "t174-conta-complete-perfil",
+        "t192-conta-4-blocos"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -519,7 +529,8 @@
         "t36-cadastro-ponta-a-ponta",
         "t4-fronteira-demo-real",
         "t127-fechamento-servicos",
-        "t89-fechamento-data-inicio"
+        "t89-fechamento-data-inicio",
+        "t181-quantas-pessoas"
       ]
     },
     "/dashboard/ferramentas": {
@@ -590,7 +601,9 @@
         "t31-cadastro-documento",
         "t36-cadastro-ponta-a-ponta",
         "t133-candidatura-motivo",
-        "t173-perfis-dono-inquilino"
+        "t173-perfis-dono-inquilino",
+        "t178-telefone-sms",
+        "t181-quantas-pessoas"
       ]
     },
     "/dashboard/locacoes": {
@@ -644,16 +657,6 @@
         "t191-propostas"
       ]
     },
-    "/dashboard/orcamentos/nova": {
-      "personas": [
-        "inquilino",
-        "proprietario",
-        "admin"
-      ],
-      "specs": [
-        "t191-propostas"
-      ]
-    },
     "/dashboard/pedidos": {
       "personas": [
         "inquilino",
@@ -674,16 +677,6 @@
         "t11-travessias"
       ]
     },
-    "/dashboard/propostas/[id]": {
-      "personas": [
-        "inquilino",
-        "proprietario",
-        "admin"
-      ],
-      "specs": [
-        "t191-propostas"
-      ]
-    },
     "/dashboard/reembolsos": {
       "personas": [
         "inquilino",
@@ -697,7 +690,8 @@
         "proprietario"
       ],
       "specs": [
-        "t68-comissao-valor-total"
+        "t68-comissao-valor-total",
+        "t189-simulador-roi"
       ]
     },
     "/dashboard/simulador": {
@@ -709,7 +703,8 @@
       "specs": [
         "t12-planos",
         "t37-simuladores-e-numeros",
-        "t68-comissao-valor-total"
+        "t68-comissao-valor-total",
+        "t189-simulador-roi"
       ]
     },
     "/dashboard/solicitacoes": {
@@ -720,6 +715,17 @@
       ],
       "specs": [
         "t55-manutencao-ciclo"
+      ]
+    },
+    "/dashboard/tributacao": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": [
+        "t192-conta-4-blocos",
+        "t48-varredura"
       ]
     },
     "/dashboard/verificacao": {
@@ -747,7 +753,8 @@
         "admin"
       ],
       "specs": [
-        "t168-visita-video"
+        "t168-visita-video",
+        "t48-varredura"
       ]
     },
     "/decisao": {
@@ -849,7 +856,10 @@
         "t164-tour-video-galeria",
         "t172-bom-saber-completo",
         "t173-perfis-dono-inquilino",
-        "t176-exemplo-proprietario-avaliacoes"
+        "t178-telefone-sms",
+        "t176-exemplo-proprietario-avaliacoes",
+        "t181-quantas-pessoas",
+        "t180-anuncio-real-sem-exemplo"
       ]
     },
     "/modelodenegocio": {
@@ -914,7 +924,8 @@
         "t69-botoes-header",
         "t72-paginas-institucionais",
         "t96-antigolpe-atalhos",
-        "t165-pedido-contador"
+        "t165-pedido-contador",
+        "t188-pedido-novo-layout"
       ]
     },
     "/precos": {
@@ -948,7 +959,9 @@
       ],
       "specs": [
         "t173-perfis-dono-inquilino",
-        "t176-exemplo-proprietario-avaliacoes"
+        "t176-exemplo-proprietario-avaliacoes",
+        "t179-isolamento-perfil",
+        "t180-anuncio-real-sem-exemplo"
       ]
     },
     "/qualificar": {
@@ -1008,7 +1021,29 @@
       "personas": [
         "socio"
       ],
-      "specs": []
+      "specs": [
+        "t192-conta-4-blocos"
+      ]
+    },
+    "/dashboard/orcamentos/nova": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": [
+        "t191-propostas"
+      ]
+    },
+    "/dashboard/propostas/[id]": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": [
+        "t191-propostas"
+      ]
     }
   },
   "rotas": {
@@ -1515,7 +1550,9 @@
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t181-quantas-pessoas"
+      ]
     },
     "src/lib/data/actions.ts#resumoImovelDoDono": {
       "personas": [
@@ -2262,6 +2299,15 @@
       ],
       "specs": []
     },
+    "src/lib/data/menu-actions.ts#imoveisAtivosDoDono": {
+      "personas": [
+        "proprietario",
+        "inquilino"
+      ],
+      "specs": [
+        "t97-plangate-precos"
+      ]
+    },
     "src/lib/data/menu-actions.ts#temImovelAnunciado": {
       "personas": [
         "inquilino",
@@ -2465,7 +2511,8 @@
         "proprietario"
       ],
       "specs": [
-        "t173-perfis-dono-inquilino"
+        "t173-perfis-dono-inquilino",
+        "t179-isolamento-perfil"
       ]
     },
     "src/lib/data/perfil-actions.ts#salvarMeusDados": {
@@ -2531,60 +2578,6 @@
       ],
       "specs": []
     },
-    "src/lib/data/propostas-actions.ts#dadosNovaProposta": {
-      "personas": [
-        "inquilino",
-        "proprietario"
-      ],
-      "specs": [
-        "t191-propostas"
-      ]
-    },
-    "src/lib/data/propostas-actions.ts#enviarProposta": {
-      "personas": [
-        "inquilino",
-        "proprietario"
-      ],
-      "specs": [
-        "t191-propostas"
-      ]
-    },
-    "src/lib/data/propostas-actions.ts#interessadosParaProposta": {
-      "personas": [
-        "inquilino",
-        "proprietario"
-      ],
-      "specs": [
-        "t191-propostas"
-      ]
-    },
-    "src/lib/data/propostas-actions.ts#lerProposta": {
-      "personas": [
-        "inquilino",
-        "proprietario"
-      ],
-      "specs": [
-        "t191-propostas"
-      ]
-    },
-    "src/lib/data/propostas-actions.ts#listarPropostas": {
-      "personas": [
-        "inquilino",
-        "proprietario"
-      ],
-      "specs": [
-        "t191-propostas"
-      ]
-    },
-    "src/lib/data/propostas-actions.ts#responderProposta": {
-      "personas": [
-        "inquilino",
-        "proprietario"
-      ],
-      "specs": [
-        "t191-propostas"
-      ]
-    },
     "src/lib/data/push-actions.ts#enviarPushDeTeste": {
       "personas": [
         "inquilino",
@@ -2612,6 +2605,33 @@
         "inquilino"
       ],
       "specs": []
+    },
+    "src/lib/data/telefone-actions.ts#confirmarCodigoTelefone": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t178-telefone-sms"
+      ]
+    },
+    "src/lib/data/telefone-actions.ts#enviarCodigoTelefone": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t178-telefone-sms"
+      ]
+    },
+    "src/lib/data/telefone-actions.ts#getTelefoneEstado": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t178-telefone-sms"
+      ]
     },
     "src/lib/data/visitas-video-actions.ts#listMinhasVisitas": {
       "personas": [
@@ -2772,6 +2792,60 @@
         "admin"
       ],
       "specs": []
+    },
+    "src/lib/data/propostas-actions.ts#dadosNovaProposta": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t191-propostas"
+      ]
+    },
+    "src/lib/data/propostas-actions.ts#enviarProposta": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t191-propostas"
+      ]
+    },
+    "src/lib/data/propostas-actions.ts#interessadosParaProposta": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t191-propostas"
+      ]
+    },
+    "src/lib/data/propostas-actions.ts#lerProposta": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t191-propostas"
+      ]
+    },
+    "src/lib/data/propostas-actions.ts#listarPropostas": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t191-propostas"
+      ]
+    },
+    "src/lib/data/propostas-actions.ts#responderProposta": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t191-propostas"
+      ]
     }
   }
 }

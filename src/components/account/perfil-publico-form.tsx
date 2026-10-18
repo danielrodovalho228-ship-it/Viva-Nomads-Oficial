@@ -10,7 +10,7 @@ import { BIO_MAX, IDIOMAS, progressoPerfil, validarBio } from "@/lib/perfil/perf
 /**
  * "Complete seu perfil" (prompt 6): barra de progresso — nunca obrigatória — e os campos públicos
  * (frase sobre você, idiomas, cidade). Foto: no bloco "Foto de perfil" logo abaixo.
- * Telefone verificado entra na barra quando a verificação por SMS existir (prompt 7).
+ * Celular verificado (prompt 7) entra como item opcional quando a verificação por SMS está disponível.
  */
 export function PerfilPublicoForm() {
   const [p, setP] = useState<MeuPerfilPublico | null | undefined>(undefined);
@@ -42,7 +42,7 @@ export function PerfilPublicoForm() {
 
   const prog = progressoPerfil(
     { foto: p.temFoto, bio: bio.trim() || null, idiomas, cidade: cidade.trim() || null, profissao: p.profissao, motivo: p.motivo },
-    { anuncia: p.anuncia },
+    { anuncia: p.anuncia, telefone: p.telefone },
   );
   const bioCheck = validarBio(bio);
 

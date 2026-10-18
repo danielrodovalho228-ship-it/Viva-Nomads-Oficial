@@ -12,7 +12,10 @@ import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo
 const senha = novaSenha();
 const sufixo = novoSufixo();
 const dono = { email: `dono.2fa.${sufixo}@lab.vivanomads.test`, nome: "Dora Duas Etapas", role: "owner" as const };
+// Conta própria do 2º teste: o 1º termina com o app de 2FA já desligado ou, se falhar no meio, com ele ligado (o 2º era PULADO em "conta já com 2FA").
+const dono2 = { email: `dono.2fa.alerta.${sufixo}@lab.vivanomads.test`, nome: "Dora Alerta Duas Etapas", role: "owner" as const };
 let donoId: string | undefined;
+let dono2Id: string | undefined;
 
 test.describe.configure({ mode: "serial" });
 
@@ -21,9 +24,10 @@ test.describe("T61 — 2FA códigos de recuperação (390px)", () => {
 
   test.beforeAll(async () => {
     donoId = await criarConta(dono, senha, true);
+    dono2Id = await criarConta(dono2, senha, true);
   });
   test.afterAll(async () => {
-    await apagarContas([donoId]);
+    await apagarContas([donoId, dono2Id]);
   });
 
   test("ativar entrega 10 códigos; novos invalidam os antigos; código vale uma vez", async ({ browser }) => {
@@ -82,11 +86,9 @@ test.describe("T61 — 2FA códigos de recuperação (390px)", () => {
   });
 
   test("mensagem de erro do código do app orienta sobre relógio e entrada nova", async ({ browser }) => {
-    const page = await entrar(browser, dono.email, senha);
+    const page = await entrar(browser, dono2.email, senha);
     await page.goto("/dashboard/conta/seguranca");
-    const ativar = page.getByRole("button", { name: /Ativar duas etapas/ });
-    test.skip(!(await ativar.isVisible({ timeout: 8000 }).catch(() => false)), "conta já com 2FA");
-    await ativar.click();
+    await page.getByRole("button", { name: /Ativar duas etapas/ }).click({ timeout: 15000 });
     await page.locator("#codigo-ativar").fill("000000");
     await page.getByRole("button", { name: "Confirmar código e ativar" }).click();
     await expect(page.locator('p[role="alert"]')).toContainText(/relógio do celular está no automático.*entrada mais nova do app/);

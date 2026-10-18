@@ -39,7 +39,7 @@ test("servidor da candidatura valida o motivo, cai no perfil e grava só em cand
 
 test("lista do proprietário lê o motivo pelo servidor e nunca expõe a chave crua", () => {
   const l = ler("src/lib/data/leads.ts");
-  assert.match(l, /admin\.from\("leads"\)\.select\("id, motivo_estadia(, inicio_desejado)?"\)/);
+  assert.match(l, /admin\.from\("leads"\)\.select\("id, motivo_estadia(, inicio_desejado)?(, qtd_ocupantes)?"\)/);
   assert.match(l, /motivoParaDono\(m\.motivo_estadia\)/);
 });
 

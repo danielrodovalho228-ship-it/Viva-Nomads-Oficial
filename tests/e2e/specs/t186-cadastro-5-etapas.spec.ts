@@ -29,8 +29,23 @@ async function esperarSalvo(page: Page) {
   await expect(page.getByText(/Salvo/).first()).toBeVisible({ timeout: 15_000 });
 }
 
+/** Sem rolagem lateral, medida depois da animação de entrada da etapa; se sobrar, diz qual elemento passa da tela. */
 async function semRolagemLateral(page: Page) {
-  expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
+  await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== "running"), undefined, { timeout: 10_000 }).catch(() => {});
+  const r = await page.evaluate(() => {
+    const sobra = document.documentElement.scrollWidth - window.innerWidth;
+    const largo = [...document.querySelectorAll<HTMLElement>("body *")]
+      // Ignora o que está dentro de um contêiner com rolagem/corte próprio (ex.: a fileira de etapas no celular).
+      .filter((el) => {
+        if (el.getBoundingClientRect().right <= window.innerWidth + 1 || el.offsetParent === null) return false;
+        for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) if (getComputedStyle(p).overflowX !== "visible") return false;
+        return true;
+      })
+      .map((el) => `${el.tagName.toLowerCase()}[${el.getAttribute("data-testid") ?? ""}].${String(el.className).slice(0, 60)} → ${Math.round(el.getBoundingClientRect().right)}px`)
+      .slice(0, 5);
+    return { sobra, largo };
+  });
+  expect(r.sobra, `passa da tela: ${r.largo.join(" | ")}`).toBeLessThanOrEqual(1);
 }
 
 /** Todo campo da etapa fica dentro do cartão (Q9). Mede tudo de uma vez, já sem a animação de entrada da etapa. */
@@ -63,8 +78,8 @@ test.describe("T186 — cadastro em 5 etapas com IA, OSM e documento simulados",
   test.beforeAll(async () => {
     // 3 anúncios ATIVOS e reais de 2 quartos no mesmo bairro: a mediana (3.200) é o preço sugerido.
     ids.vizinho = await criarConta({ email: `vizinho.cad.${sufixo}@lab.vivanomads.test`, nome: "Vera Vizinha Sobrenome", role: "owner" }, senha);
-    for (const preco of [3000, 3200, 3400]) {
-      const id = await criarImovelPronto(ids.vizinho, `Comparável ${preco} ${sufixo}`, { ativo: true, preco });
+    for (const [letra, preco] of [["A", 3000], ["B", 3200], ["C", 3400]] as const) {
+      const id = await criarImovelPronto(ids.vizinho, `Comparável ${letra} ${sufixo}` /* sem o preço no título: com um sufixo só de dígitos, viraria "telefone" para a trava de contato */, { ativo: true, preco });
       await adm().from("properties").update({ bedrooms: 2, address: bairro, city: "Uberlândia" }).eq("id", id);
     }
   });
@@ -75,7 +90,8 @@ test.describe("T186 — cadastro em 5 etapas com IA, OSM e documento simulados",
   for (const largura of [390, 1280]) {
     test(`${largura}px — do CEP ao anúncio publicado`, async ({ browser }) => {
       const email = `dono.cad${largura}.${sufixo}@lab.vivanomads.test`;
-      const nome = `Clara Cadastro${largura} Sobrenome`;
+      // Sem dígitos no nome: "Cadastro1280" vira "telefone" para a validação de nome e o servidor recusa publicar.
+      const nome = `Clara ${largura === 390 ? "Celular" : "Computador"} Sobrenome`;
       const donoId = await criarConta({ email, nome, role: "owner" }, senha);
       ids[`dono${largura}`] = donoId;
       const page = await entrar(browser, email, senha);
@@ -212,6 +228,18 @@ test.describe("T186 — cadastro em 5 etapas com IA, OSM e documento simulados",
         fotos.push({ id: `lab-${i}`, url: `https://lab.vivanomads.test/storage/v1/object/public/property-photos/${caminho}`, name: "", path: caminho, demo: false });
       }
       await adm().from("properties").update({ draft_data: { ...(rasc!.draft_data as object), photos: fotos } }).eq("id", imovelId);
+      // Ao reabrir pelo rascunho, a qualificação vem do SERVIDOR (não do sessionStorage): grava o checklist
+      // "Antes de anunciar" respondido, como a tela /qualificar deixaria, na linha que o envio do documento criou.
+      const { data: qual } = await adm().from("qualification_checklists").select("id, formulario").eq("owner_id", donoId).eq("property_id", imovelId).maybeSingle();
+      expect(qual, "o envio do documento ligou o checklist ao rascunho").toBeTruthy();
+      const formulario = (qual!.formulario ?? {}) as { elig?: Record<string, unknown> };
+      const { error: eQual } = await adm()
+        .from("qualification_checklists")
+        .update({
+          formulario: { versao: 1, ...formulario, elig: { ...(formulario.elig ?? {}), furnished: true, accepts30days: true, iptuOk: true, habitable: true, isOwnerOrAgent: true, condoAllows: "yes" } },
+        })
+        .eq("id", qual!.id);
+      expect(eQual).toBeNull();
 
       await page.goto(`/dashboard/imoveis/novo?draft=${imovelId}&etapa=4`, { waitUntil: "domcontentloaded" });
       await expect(page.getByRole("heading", { name: "Revisar e publicar" })).toBeVisible({ timeout: 20_000 });

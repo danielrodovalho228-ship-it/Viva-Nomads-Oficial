@@ -233,6 +233,8 @@ export interface FechamentoContexto {
   inicioSugerido?: string;
   /** Prompt 17: proposta ACEITA desta candidatura — o fechamento abre com estes valores, sem redigitar. */
   proposta?: { id: string; numero: string; valorMensal: number; meses: number; dataEntrada: string } | null;
+  /** Prompt 8: quantas pessoas vão morar, da candidatura (o Fechamento abre com o número). */
+  ocupantesSugerido?: number | null;
 }
 
 export async function getFechamentoContext(
@@ -267,14 +269,16 @@ export async function getFechamentoContext(
   let documentoPendente: FechamentoContexto["documentoPendente"] = null;
   let inicioDesejado: string | null = null;
   let proposta: FechamentoContexto["proposta"] = null;
+  let ocupantesSugerido: number | null = null;
   try {
     const admin = createAdminClient();
     if (admin) {
       // O SELECT de leads é por coluna para o usuário; a data desejada vem pelo servidor.
-      const { data: d } = await admin.from("leads").select("inicio_desejado").eq("id", lead.id).maybeSingle();
+      const { data: d } = await admin.from("leads").select("inicio_desejado, qtd_ocupantes").eq("id", lead.id).maybeSingle();
       inicioDesejado = (d?.inicio_desejado as string | null) ?? null;
       const acordada = await propostaAcordadaDoLead(admin, lead.id as string);
       if (acordada) proposta = { id: acordada.id, numero: acordada.numero, valorMensal: acordada.valorMensal, meses: acordada.meses, dataEntrada: acordada.dataEntrada };
+      ocupantesSugerido = (d?.qtd_ocupantes as number | null) ?? null;
       const [docDono, docInq] = await Promise.all([lerDocumento(admin, user.id), lerDocumento(admin, lead.tenant_id as string)]);
       if (!documentoCompleto(docDono)) documentoPendente = { quem: "dono", mensagem: MSG_DOCUMENTO.fecharDono };
       else if (!documentoCompleto(docInq)) documentoPendente = { quem: "inquilino", mensagem: MSG_DOCUMENTO.fecharInquilino };
@@ -309,5 +313,6 @@ export async function getFechamentoContext(
     documentoPendente,
     inicioSugerido: inicioSugerido(proposta?.dataEntrada ?? inicioDesejado, hojeBR()),
     proposta,
+    ocupantesSugerido,
   };
 }

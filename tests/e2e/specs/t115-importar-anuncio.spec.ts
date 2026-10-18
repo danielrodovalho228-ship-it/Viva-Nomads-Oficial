@@ -9,20 +9,21 @@ test.describe("T115 — Importar meu anúncio", () => {
   test.use({ storageState: authFile("proprietario"), viewport: { width: 390, height: 844 } });
 
   test("cola, confere, aplica e o cadastro recebe os campos", async ({ page }) => {
-    await page.goto("/dashboard/imoveis/novo", { waitUntil: "domcontentloaded" });
-    // Abre a etapa 1, "Onde fica", onde fica o atalho de importar (rascunho local, mesma chave que a tela usa).
-    await page.evaluate(() => {
-      const bruto = Object.entries(localStorage).find(([k]) => /^sb-.*-auth-token$/.test(k))?.[1];
-      const id = bruto ? JSON.parse(bruto)?.user?.id : null;
-      if (id) localStorage.setItem(`vivanomads-novo-draft:${id}`, JSON.stringify({ step: 0, ordemEtapas: 3 }));
-    });
-    await page.reload({ waitUntil: "domcontentloaded" });
-    const retomar = page.getByRole("button", { name: /Continuar|Retomar/ }).first();
-    if (await retomar.isVisible().catch(() => false)) await retomar.click();
+    // Abre direto na etapa "Onde fica" (?etapa=0), onde fica o atalho de importar. Não depende do token no localStorage nem de rascunho local.
+    await page.goto("/dashboard/imoveis/novo?etapa=0", { waitUntil: "domcontentloaded" });
+    const abrir = page.getByTestId("importar-abrir");
+    const continuar = page.getByTestId("rascunho-continuar");
+    // Com rascunho no servidor a tela oferece "Continuar": reabre o rascunho já na etapa 0.
+    await expect(abrir.or(continuar)).toBeVisible({ timeout: 30_000 });
+    if (await continuar.isVisible()) {
+      await continuar.click();
+      await page.waitForURL(/draft=/, { timeout: 15_000 });
+      await page.goto(`${page.url()}&etapa=0`, { waitUntil: "domcontentloaded" });
+    }
 
     // Sem networkidle (estourava os 45 s no lab): repete o clique até a página hidratar e o aviso abrir.
     await expect(async () => {
-      await page.getByTestId("importar-abrir").click();
+      await abrir.click({ timeout: 3_000 });
       await expect(page.getByTestId("importar-aviso")).toBeVisible({ timeout: 2_000 });
     }).toPass({ timeout: 20_000 });
     await expect(page.getByTestId("importar-aviso")).toContainText("apenas conteúdo que é seu");
