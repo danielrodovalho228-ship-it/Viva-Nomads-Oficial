@@ -26,7 +26,9 @@ import { buttonClasses } from "@/components/ui/button";
 // (login, anúncio, fechamento, segurança — t58) e no admin.
 // "/dashboard/conta/seguranca": cobria "Nova senha"/"Salvar nova senha" e os botões do 2FA a 390 px (t58).
 // "/app/boas-vindas": tela de 100dvh do app; o botão cobria "Quero anunciar" e o respiro do fim da página a fazia rolar (t16).
-export const ESCONDER = ["/ajuda", "/admin", "/auth", "/dashboard/conta/ajuda", "/dashboard/imoveis/novo", "/dashboard/fechamento", "/dashboard/conta/seguranca", "/app/boas-vindas"];
+// "/dashboard/mensagens": a tela já é uma conversa (com a aba Suporte); no computador o botão ficava em cima do
+// "Enviar" da caixa de mensagem e o proprietário não conseguia mandar a resposta (t182).
+export const ESCONDER = ["/ajuda", "/admin", "/auth", "/dashboard/conta/ajuda", "/dashboard/imoveis/novo", "/dashboard/fechamento", "/dashboard/conta/seguranca", "/app/boas-vindas", "/dashboard/mensagens"];
 const CHAVE = "vivanomads-viva-chat";
 
 function carregar(): MsgChat[] {
