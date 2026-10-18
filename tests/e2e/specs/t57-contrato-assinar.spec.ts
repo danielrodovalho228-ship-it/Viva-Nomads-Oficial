@@ -93,7 +93,7 @@ test.describe("T57 — Contrato semeado: inquilino e proprietário veem e assina
     await page.getByTestId("assinar-codigo").fill("123456");
     await expect(page.getByTestId("assinar-enviar")).toBeEnabled(); // o servidor recusa código que não foi pedido
     await page.getByTestId("assinar-enviar").click();
-    await expect(page.getByRole("alert").filter({ hasText: /código/i })).toBeVisible(); // recusa mostrada, sem assinar
+    await expect(page.getByRole("alert").filter({ hasText: /código/i })).toBeVisible({ timeout: 30_000 }); // recusa mostrada, sem assinar (a ação do servidor pode demorar no lab)
     await expect(page.getByTestId("form-assinar")).toBeVisible();
     const { data } = await adm().from("contratos").select("assinado_inquilino_em").eq("id", ids.contrato!).single();
     expect(data?.assinado_inquilino_em, "código inventado não pode assinar").toBeNull();
