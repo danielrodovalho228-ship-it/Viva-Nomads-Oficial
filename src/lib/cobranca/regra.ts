@@ -30,6 +30,11 @@ export const FAIXAS_COMISSAO_PADRAO: readonly FaixaComissao[] = [
 ];
 
 export const TAXA_COMISSAO_PADRAO = FAIXAS_COMISSAO_PADRAO[0].taxa; // 1–2 imóveis
+/**
+ * Prompt 16: a "Análise da carteira" abre a partir da 2ª faixa (3 imóveis ativos), pela MESMA regra das taxas —
+ * sem plano pago nem trava de upgrade.
+ */
+export const MIN_IMOVEIS_ANALISE_CARTEIRA = FAIXAS_COMISSAO_PADRAO[1].minImoveis;
 export const DIAS_PARA_NOVA_TAXA_APOS_QUEDA = 30;
 const DIA_MS = 86_400_000;
 

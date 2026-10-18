@@ -50,8 +50,10 @@ test.describe("T81 — dono (já anunciou)", () => {
     await page.goto("/dashboard/simulador", { waitUntil: "networkidle" });
     const g = menu(page).getByRole("button", { name: "Ferramentas" });
     await expect(g).toHaveAttribute("aria-expanded", "true");
-    for (const r of ["Todas as ferramentas", "Simulador de rentabilidade", "Calculadora de ROI", "Viabilidade", "Orçamentos"])
+    for (const r of ["Todas as ferramentas", "Simulador de rentabilidade", "Calculadora de ROI", "Orçamentos"])
       await expect(menu(page).getByRole("link", { name: r })).toBeVisible();
+    // Prompt 16: "Viabilidade" saiu do menu (a página redireciona para a Calculadora de ROI).
+    await expect(menu(page).getByRole("link", { name: "Viabilidade" })).toHaveCount(0);
     await expect(menu(page).getByRole("link", { name: "Simulador de rentabilidade" })).toHaveAttribute("aria-current", "page");
   });
 });

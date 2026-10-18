@@ -55,7 +55,8 @@ export const IBS_CBS_RATE = 0; // custo líquido em 2026 (teste compensável)
  * presunção) só pesa para carteiras grandes e não entra aqui.
  */
 export const PJ_PRESUMIDO_RATE = 0.1133;
-export const PJ_ACCOUNTING_YEAR = 5000; // custo estimado de contador/PJ por ano (só no limiar da recomendação)
+/** Custo estimado de MANTER a empresa por ano (contador, taxas, certificado): entra na comparação PF × PJ (prompt 18). */
+export const PJ_ACCOUNTING_YEAR = 5000;
 
 /** IRPF de UM mês pela tabela, SEM o redutor (exportado para a memória). */
 export function irpfMensalTabela(baseMensal: number): number {
@@ -81,6 +82,18 @@ export function irpfMensal(baseMensal: number): number {
   return Math.max(0, tabela - redutorLei15270(baseMensal, tabela));
 }
 
+/**
+ * Aviso de IBS/CBS para a PF (prompt 18): só com a regra CUMULATIVA atendida (mais de 3 imóveis E receita anual
+ * acima de R$ 240 mil), cobrança a partir de 2027 com base em 2026. O texto só vai ao ar depois da revisão do
+ * Sérgio (ordem f74a8e59): até lá `AVISO_IBS_CBS_LIBERADO` fica desligado e a tela não mostra aviso nenhum.
+ */
+export const AVISO_IBS_CBS_LIBERADO = false;
+export const AVISO_IBS_CBS_PF = {
+  texto:
+    "Com mais de 3 imóveis e receita acima de R$ 240 mil por ano, a pessoa física passa a pagar IBS/CBS sobre a locação. A cobrança começa em 2027, com base no que foi recebido em 2026. Procure um contador.",
+  fonte: "Fontes: Barbieri Advogados e Renova Invest (artigos sobre a Reforma Tributária na locação), sob revisão.",
+} as const;
+
 // Gatilhos cumulativos para a PF virar contribuinte de IBS/CBS.
 export const PF_CONTRIBUTOR_MIN_PROPERTIES = 4; // "mais de 3 imóveis"
 export const PF_CONTRIBUTOR_MIN_ANNUAL = 240000; // receita anual > R$ 240 mil
@@ -93,6 +106,11 @@ export interface TaxInput {
    * (IPTU, condomínio, taxa de administração), por mês. Padrão 0.
    */
   monthlyDeductions?: number;
+  /**
+   * Outros rendimentos tributáveis da pessoa por mês (salário, pró-labore…). O aluguel soma a eles na tabela
+   * progressiva: o imposto atribuído ao aluguel é a DIFERENÇA (com − sem o aluguel). Padrão 0.
+   */
+  otherMonthlyIncome?: number;
 }
 
 export interface TaxResult {
@@ -102,17 +120,22 @@ export interface TaxResult {
   pfAnnualTax: number;
   /** Alíquota EFETIVA da PF (imposto anual ÷ aluguel anual). */
   pfRate: number;
-  pjAnnualTax: number; // já inclui IBS/CBS
+  /** Imposto da empresa no lucro presumido (sem IBS/CBS: em 2026 é só a alíquota-teste compensável). */
+  pjAnnualTax: number;
   pjRate: number;
-  /** Economia anual (tributo PF − tributo PJ). Positivo = PJ paga menos. */
+  /** Custo de manter a empresa no ano. */
+  pjAnnualCost: number;
+  /** Diferença só de imposto (PF − PJ). */
+  taxDifference: number;
+  /** Vantagem REAL da PJ: imposto da PF − (imposto da PJ + custo de manter a empresa). Positivo = PJ compensa. */
   taxSavings: number;
-  /** Recomendação considerando o custo de manter PJ. */
+  /** Recomendação: PJ só quando a vantagem real é positiva. */
   recommendation: PersonType;
-  /** PJ (ou PF contribuinte) precisa emitir NFS-e com CBS/IBS (a partir de ago/2026). */
-  needsNfse: boolean;
+  /** Mostrar o aviso de IBS/CBS (regra cumulativa da PF). A tela também depende de AVISO_IBS_CBS_LIBERADO. */
+  ibsCbsAviso: boolean;
 }
 
-export function simulateTax({ monthlyRent, propertyCount, monthlyDeductions = 0 }: TaxInput): TaxResult {
+export function simulateTax({ monthlyRent, propertyCount, monthlyDeductions = 0, otherMonthlyIncome = 0 }: TaxInput): TaxResult {
   const aluguel = Math.max(0, monthlyRent);
   const annualRevenue = aluguel * 12;
 
@@ -122,16 +145,19 @@ export function simulateTax({ monthlyRent, propertyCount, monthlyDeductions = 0 
   // PF: carnê-leão mês a mês pela tabela progressiva, sobre o aluguel menos as
   // despesas dedutíveis; IBS/CBS só se a PF for contribuinte.
   const deducoes = Math.min(Math.max(0, monthlyDeductions), aluguel);
-  const irpfAno = irpfMensal(aluguel - deducoes) * 12;
+  const outros = Math.max(0, otherMonthlyIncome);
+  const irpfAno = (irpfMensal(outros + aluguel - deducoes) - irpfMensal(outros)) * 12;
   const ibsCbsPf = pfIsContributor ? annualRevenue * IBS_CBS_RATE : 0;
   const pfAnnualTax = Math.round(irpfAno + ibsCbsPf);
   const pfRate = annualRevenue > 0 ? pfAnnualTax / annualRevenue : 0; // alíquota EFETIVA
-  const pjRate = PJ_PRESUMIDO_RATE + IBS_CBS_RATE;
+  const pjRate = PJ_PRESUMIDO_RATE;
   const pjAnnualTax = Math.round(annualRevenue * pjRate);
-  const taxSavings = pfAnnualTax - pjAnnualTax;
+  const pjAnnualCost = annualRevenue > 0 ? PJ_ACCOUNTING_YEAR : 0;
+  const taxDifference = pfAnnualTax - pjAnnualTax;
+  const taxSavings = taxDifference - pjAnnualCost;
 
-  // PJ só compensa quando a economia tributária supera o custo de mantê-la.
-  const recommendation: PersonType = taxSavings > PJ_ACCOUNTING_YEAR ? "pj" : "pf";
+  // PJ só compensa quando a economia de imposto supera o custo de manter a empresa.
+  const recommendation: PersonType = taxSavings > 0 ? "pj" : "pf";
 
   return {
     annualRevenue,
@@ -140,8 +166,10 @@ export function simulateTax({ monthlyRent, propertyCount, monthlyDeductions = 0 
     pfRate,
     pjAnnualTax,
     pjRate,
+    pjAnnualCost,
+    taxDifference,
     taxSavings,
     recommendation,
-    needsNfse: recommendation === "pj" || pfIsContributor,
+    ibsCbsAviso: pfIsContributor,
   };
 }

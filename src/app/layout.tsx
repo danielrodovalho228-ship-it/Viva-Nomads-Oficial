@@ -46,11 +46,12 @@ export const metadata: Metadata = {
     siteName: SITE_NAME,
     url: SITE_URL,
   },
-  // Site novo: declara explicitamente que pode ser indexado/seguido (boa prática).
+  // Sem "index, follow" global: sem a tag, o padrão dos buscadores já é indexar e seguir. Declarado aqui, ele
+  // vazava para as 404 das rotas com not-found próprio (/imoveis/[id]) ao lado do "noindex" do Next — duas
+  // ordens contraditórias (varredura t48). Fica só a prévia grande de imagem para o Google; quem precisa de
+  // noindex (ou index explícito) declara no próprio generateMetadata.
   robots: {
-    index: true,
-    follow: true,
-    googleBot: { index: true, follow: true, "max-image-preview": "large" },
+    googleBot: { "max-image-preview": "large" },
   },
   // Sem canonical global aqui: antes, TODAS as páginas herdavam `canonical: "/"`
   // e se declaravam cópia da home. Sem canonical declarado, o Google usa a própria

@@ -100,6 +100,7 @@
       "specs": [
         "t91-avaliacao-resposta",
         "t93-avaliacao-tela",
+        "t48-varredura",
         "t183-telas-logadas-390"
       ]
     },
@@ -121,6 +122,7 @@
       ],
       "specs": [
         "t116-admin-emails-teste",
+        "t48-varredura",
         "t183-telas-logadas-390"
       ]
     },
@@ -182,6 +184,7 @@
       "specs": [
         "t101-admin-usuarios",
         "t178-telefone-sms",
+        "t48-varredura",
         "t183-telas-logadas-390"
       ]
     },
@@ -205,16 +208,6 @@
       ],
       "specs": [
         "t125-alerta-busca-salva"
-      ]
-    },
-    "/proprietario/[id]": {
-      "personas": [
-        "publico"
-      ],
-      "specs": [
-        "t173-perfis-dono-inquilino",
-        "t176-exemplo-proprietario-avaliacoes",
-        "t182-jornada-completa"
       ]
     },
     "/app/boas-vindas": {
@@ -436,6 +429,7 @@
       "specs": [
         "t91-avaliacao-resposta",
         "t93-avaliacao-tela",
+        "t48-varredura",
         "t182-jornada-completa",
         "t183-telas-logadas-390"
       ]
@@ -496,6 +490,8 @@
         "t178-telefone-sms",
         "t173-perfis-dono-inquilino",
         "t174-conta-complete-perfil",
+        "t192-conta-4-blocos",
+        "t179-isolamento-perfil",
         "t183-telas-logadas-390"
       ]
     },
@@ -513,6 +509,7 @@
         "t173-perfis-dono-inquilino",
         "t178-telefone-sms",
         "t174-conta-complete-perfil",
+        "t192-conta-4-blocos",
         "t183-telas-logadas-390"
       ]
     },
@@ -568,6 +565,7 @@
         "t4-fronteira-demo-real",
         "t127-fechamento-servicos",
         "t89-fechamento-data-inicio",
+        "t181-quantas-pessoas",
         "t182-jornada-completa",
         "t183-telas-logadas-390"
       ]
@@ -649,6 +647,7 @@
         "t133-candidatura-motivo",
         "t173-perfis-dono-inquilino",
         "t178-telefone-sms",
+        "t181-quantas-pessoas",
         "t182-jornada-completa",
         "t183-telas-logadas-390"
       ]
@@ -776,6 +775,18 @@
         "t183-telas-logadas-390"
       ]
     },
+    "/dashboard/tributacao": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": [
+        "t192-conta-4-blocos",
+        "t48-varredura",
+        "t183-telas-logadas-390"
+      ]
+    },
     "/dashboard/verificacao": {
       "personas": [
         "inquilino",
@@ -804,6 +815,7 @@
       ],
       "specs": [
         "t168-visita-video",
+        "t48-varredura",
         "t183-telas-logadas-390"
       ]
     },
@@ -908,6 +920,8 @@
         "t173-perfis-dono-inquilino",
         "t178-telefone-sms",
         "t176-exemplo-proprietario-avaliacoes",
+        "t181-quantas-pessoas",
+        "t180-anuncio-real-sem-exemplo",
         "t182-jornada-completa",
         "t184-velocidade"
       ]
@@ -1003,6 +1017,18 @@
         "t18-seo-a11y"
       ]
     },
+    "/proprietario/[id]": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t173-perfis-dono-inquilino",
+        "t176-exemplo-proprietario-avaliacoes",
+        "t179-isolamento-perfil",
+        "t180-anuncio-real-sem-exemplo",
+        "t182-jornada-completa"
+      ]
+    },
     "/qualificar": {
       "personas": [
         "inquilino",
@@ -1061,7 +1087,9 @@
       "personas": [
         "socio"
       ],
-      "specs": []
+      "specs": [
+        "t192-conta-4-blocos"
+      ]
     }
   },
   "rotas": {
@@ -1546,6 +1574,7 @@
         "proprietario"
       ],
       "specs": [
+        "t181-quantas-pessoas",
         "t182-jornada-completa"
       ]
     },
@@ -2265,6 +2294,15 @@
       ],
       "specs": []
     },
+    "src/lib/data/menu-actions.ts#imoveisAtivosDoDono": {
+      "personas": [
+        "proprietario",
+        "inquilino"
+      ],
+      "specs": [
+        "t97-plangate-precos"
+      ]
+    },
     "src/lib/data/menu-actions.ts#temImovelAnunciado": {
       "personas": [
         "inquilino",
@@ -2468,7 +2506,8 @@
         "proprietario"
       ],
       "specs": [
-        "t173-perfis-dono-inquilino"
+        "t173-perfis-dono-inquilino",
+        "t179-isolamento-perfil"
       ]
     },
     "src/lib/data/perfil-actions.ts#salvarMeusDados": {

@@ -112,3 +112,16 @@ test("#93089e14 (#36/#61/#113): títulos <= 60 com o sufixo da marca e og:url da
 test("CLS da /buscar: o esqueleto de carregamento ocupa ao menos uma tela (o rodapé não aparece e some)", () => {
   assert.match(ler("src/app/(public)/buscar/loading.tsx"), /min-h-screen/);
 });
+
+test("robots: o layout raiz não declara 'index, follow' (vazava nas 404 com not-found próprio, junto do noindex)", () => {
+  const layout = ler("src/app/layout.tsx");
+  const bloco = layout.slice(layout.indexOf("robots: {"), layout.indexOf("},", layout.indexOf("robots: {")) + 2);
+  assert.doesNotMatch(bloco, /index:\s*true|follow:\s*true/);
+  assert.match(bloco, /"max-image-preview": "large"/);
+});
+
+test("h1: a Visão geral do inquilino tem título principal, como a do proprietário (varredura t48)", () => {
+  const src = ler("src/app/(dashboard)/dashboard/visao-geral-client.tsx");
+  const inquilino = src.slice(src.indexOf("function TenantDashboard"), src.indexOf("function DraftPendingCard"));
+  assert.match(inquilino, /<PageTitle title="Visão geral"/);
+});
