@@ -9,6 +9,8 @@ export interface ChatMessage {
   id: string;
   from: "me" | "them";
   text: string;
+  /** Prompt 17: mensagem que é o cartão de uma proposta (link para /dashboard/propostas/<id>). */
+  propostaId?: string;
 }
 
 export interface Conversation {
@@ -58,6 +60,7 @@ interface MsgRow {
   property_id: string | null;
   body: string;
   created_at: string;
+  proposta_id?: string | null;
   property: { title: string | null; owner_id: string | null } | null;
 }
 
@@ -78,7 +81,7 @@ export async function listConversations(): Promise<Conversation[]> {
   const { data, error } = await supabase
     .from("messages")
     .select(
-      `id, conversation_id, sender_id, receiver_id, property_id, body, created_at,
+      `id, conversation_id, sender_id, receiver_id, property_id, body, created_at, proposta_id,
        property:properties!messages_property_id_fkey ( title, owner_id )`
     )
     .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
@@ -103,7 +106,7 @@ export async function listConversations(): Promise<Conversation[]> {
       });
     }
     const conv = byConv.get(m.conversation_id)!;
-    conv.messages.push({ id: m.id, from: mine ? "me" : "them", text: m.body });
+    conv.messages.push({ id: m.id, from: mine ? "me" : "them", text: m.body, ...(m.proposta_id ? { propostaId: m.proposta_id } : {}) });
     conv.preview = m.body;
   }
 

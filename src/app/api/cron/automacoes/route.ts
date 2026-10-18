@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify, type NotificationEvent } from "@/lib/notifications";
 import { hojeEmBrasilia } from "@/lib/checkin";
+import { expirarVencidas } from "@/lib/data/propostas-servidor";
 import {
   avisoAnuncioIncompleto,
   avisarRenovacao,
@@ -124,5 +125,7 @@ export async function GET(request: Request) {
     if (a.depois) await a.depois().catch(() => null);
     contagem[a.tipo] = (contagem[a.tipo] ?? 0) + 1;
   }
-  return NextResponse.json({ ok: true, simulado: simular, enviados: contagem });
+  // Propostas (prompt 17): validade vencida → "Expirada" (a leitura também expira, esta é a rede diária).
+  const propostasExpiradas = await expirarVencidas(admin);
+  return NextResponse.json({ ok: true, simulado: simular, enviados: contagem, propostasExpiradas });
 }

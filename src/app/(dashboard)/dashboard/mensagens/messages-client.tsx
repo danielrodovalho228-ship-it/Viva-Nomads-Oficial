@@ -224,6 +224,15 @@ function MessagesInner({ initial, demo }: { initial: Conversation[]; demo: boole
                   )}
                 >
                   {m.text}
+                  {m.propostaId && (
+                    <Link
+                      href={`/dashboard/propostas/${m.propostaId}`}
+                      className={cn("mt-2 block rounded-lg px-3 py-1.5 text-center text-xs font-semibold", m.from === "me" ? "bg-white/15 text-white" : "bg-sage-100 text-forest")}
+                      data-testid="cartao-proposta"
+                    >
+                      Ver proposta
+                    </Link>
+                  )}
                 </span>
                 {m.from !== "me" && !active.contratoFechado && pareceDadoBancario(m.text) && (
                   <span data-testid="alerta-antigolpe-mensagem" role="alert" className="max-w-[75%] rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs text-amber-900">

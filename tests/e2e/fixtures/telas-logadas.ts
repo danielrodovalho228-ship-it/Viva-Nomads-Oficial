@@ -30,6 +30,7 @@ export const TELAS_PAINEL = [
   "/dashboard/mensagens",
   "/dashboard/notificacoes",
   "/dashboard/orcamentos",
+  "/dashboard/orcamentos/nova",
   "/dashboard/pedidos",
   "/dashboard/pedidos-cidade",
   "/dashboard/reembolsos",
@@ -70,6 +71,7 @@ export const ROTAS_COM_PARAMETRO: Record<string, readonly string[]> = {
   "/dashboard/contratos/[id]": [],
   "/dashboard/imoveis/[id]/editar": [],
   "/dashboard/locacoes/[id]": [],
+  "/dashboard/propostas/[id]": [],
   "/dashboard/conta/[secao]": ["/dashboard/conta/perfil", "/dashboard/conta/notificacoes", "/dashboard/conta/ajuda"],
 };
 

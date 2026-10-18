@@ -86,7 +86,9 @@ const CHECKOUT_FEE = 250;
 export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: boolean }) {
   // Imóvel, partes e valores herdados do contexto (candidatura aceita / exemplo).
   const PROPERTY_FULL = ctx.property;
-  const PROPERTY = { title: PROPERTY_FULL.title, monthlyRent: PROPERTY_FULL.monthlyPrice };
+  // Prompt 17: com proposta aceita, o fechamento abre com o valor mensal, os meses e a data ACORDADOS (sem redigitar).
+  const ACORDO = ctx.proposta ?? null;
+  const PROPERTY = { title: PROPERTY_FULL.title, monthlyRent: ACORDO ? ACORDO.valorMensal : PROPERTY_FULL.monthlyPrice };
   const CAPACIDADE = PROPERTY_FULL.maxGuests ?? 4;
   // Comissão CONGELADA no aceite (não o plano atual) — taxa × valor total do contrato (aluguel × meses).
   const COMMISSION_RATE = ctx.comissaoRate;
@@ -101,7 +103,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   const [verifStatus, setVerifStatus] = useState<"none" | "ok" | "pendente">("none");
   const [step, setStep] = useState(0);
   // Prazo total pretendido (contrato-mãe) — o inquilino escolhe no fechamento.
-  const [prazoMeses, setPrazoMeses] = useState(DEFAULT_MESES);
+  const [prazoMeses, setPrazoMeses] = useState(ACORDO ? ACORDO.meses : DEFAULT_MESES);
   // F37: data de início da estadia (obrigatória, hoje ou futura); os blocos partem dela.
   const hoje = hojeBR();
   const [inicioISO, setInicioISO] = useState(ctx.inicioSugerido ?? hoje);
@@ -481,6 +483,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                 <select
                   value={prazoMeses}
                   onChange={(e) => setPrazoMeses(Number(e.target.value))}
+                  disabled={!!ACORDO}
                   aria-label="Prazo total em meses"
                   className="rounded-lg border border-sage-200 bg-white px-3 py-2 outline-none focus:border-sage"
                 >
@@ -514,6 +517,12 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
               {!inicioValido.ok && (
                 <p role="alert" data-testid="inicio-estadia-erro" className="mt-2 text-xs text-red-700">
                   {inicioValido.error}
+                </p>
+              )}
+              {ACORDO && (
+                <p className="mt-3 rounded-lg bg-sage-100 px-3 py-2 text-xs text-forest" data-testid="fechamento-proposta">
+                  Valores da proposta <strong>{ACORDO.numero}</strong>, aceita pelas duas partes: {formatBRL(ACORDO.valorMensal)}/mês ×{" "}
+                  {ACORDO.meses} {ACORDO.meses === 1 ? "mês" : "meses"} = <strong>{formatBRL(ACORDO.valorMensal * ACORDO.meses)}</strong>.
                 </p>
               )}
               <p className="mt-3 text-xs text-muted">

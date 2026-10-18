@@ -42,7 +42,10 @@ export type NotificationEvent =
   | "anuncio_incompleto" // rascunho parado há 1 e 3 dias → proprietário
   | "saida_lembrete" // saída em 3 dias → proprietário e inquilino
   | "avaliacao_pedido" // 1 dia após a saída → proprietário e inquilino
-  | "renovacao_aviso"; // 15 dias antes do fim do bloco → proprietário e inquilino
+  | "renovacao_aviso" // 15 dias antes do fim do bloco → proprietário e inquilino
+  // Propostas (prompt 17)
+  | "proposta_recebida" // proposta ou contraproposta nova → a outra parte
+  | "proposta_respondida"; // proposta aceita ou recusada → a outra parte
 
 // `img` = chave da imagem de assunto (public/media/email/<img>.jpg).
 export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: string) => string; img: string; cta: string; path: string }> = {
@@ -79,5 +82,7 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   saida_lembrete: { subject: "Lembrete: a saída está chegando", body: (n) => `Olá${n ? " " + n : ""}, a saída do imóvel do seu contrato é em 3 dias. Combine a conferência de saída pela plataforma.`, img: "transacional", cta: "Ver conferência de saída", path: "/dashboard/contratos" },
   avaliacao_pedido: { subject: "Como foi a estadia? Deixe sua avaliação", body: (n) => `Olá${n ? " " + n : ""}, a estadia terminou. Sua avaliação leva 2 minutos e ajuda os próximos moradores e proprietários.`, img: "nova-mensagem", cta: "Avaliar a estadia", path: "/dashboard/contratos" },
   renovacao_aviso: { subject: "Quer renovar? Seu bloco termina em 15 dias", body: (n) => `Olá${n ? " " + n : ""}, o bloco do seu contrato termina em 15 dias. Se quiserem seguir, combinem a renovação pela plataforma.`, img: "pedido-resposta", cta: "Ver o contrato", path: "/dashboard/contratos" },
+  proposta_recebida: { subject: "Você recebeu uma proposta", body: (n) => `Olá${n ? " " + n : ""}, há uma proposta nova para você no Viva Nomads. Confira os valores e responda pela plataforma.`, img: "pedido-resposta", cta: "Ver a proposta", path: "/dashboard/orcamentos" },
+  proposta_respondida: { subject: "Sua proposta foi respondida", body: (n) => `Olá${n ? " " + n : ""}, a sua proposta teve resposta no Viva Nomads.`, img: "pedido-resposta", cta: "Ver a resposta", path: "/dashboard/orcamentos" },
   documento_recebido: { subject: "Novo documento de imóvel para conferir", body: () => "Um proprietário enviou a documentação do imóvel. Há um item aguardando conferência na fila de moderação.", img: "transacional", cta: "Conferir documento", path: "/admin/documentos" },
 };

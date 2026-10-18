@@ -713,7 +713,8 @@
         "admin"
       ],
       "specs": [
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t193-propostas"
       ]
     },
     "/dashboard/pedidos": {
@@ -1097,6 +1098,27 @@
       ],
       "specs": [
         "t192-conta-4-blocos"
+      ]
+    },
+    "/dashboard/orcamentos/nova": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": [
+        "t193-propostas",
+        "t183-telas-logadas-390"
+      ]
+    },
+    "/dashboard/propostas/[id]": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "admin"
+      ],
+      "specs": [
+        "t193-propostas"
       ]
     }
   },
@@ -2891,6 +2913,60 @@
         "admin"
       ],
       "specs": []
+    },
+    "src/lib/data/propostas-actions.ts#dadosNovaProposta": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t193-propostas"
+      ]
+    },
+    "src/lib/data/propostas-actions.ts#enviarProposta": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t193-propostas"
+      ]
+    },
+    "src/lib/data/propostas-actions.ts#interessadosParaProposta": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t193-propostas"
+      ]
+    },
+    "src/lib/data/propostas-actions.ts#lerProposta": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t193-propostas"
+      ]
+    },
+    "src/lib/data/propostas-actions.ts#listarPropostas": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t193-propostas"
+      ]
+    },
+    "src/lib/data/propostas-actions.ts#responderProposta": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t193-propostas"
+      ]
     }
   }
 }
