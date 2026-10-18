@@ -10,7 +10,8 @@
         "t69-botoes-header",
         "t90-orcamento-velocidade",
         "t96-antigolpe-atalhos",
-        "t177-video-institucional"
+        "t177-video-institucional",
+        "t184-velocidade"
       ]
     },
     "/acesso-socios": {
@@ -43,7 +44,8 @@
         "t32-autorizacao-preconferencia",
         "t36-cadastro-ponta-a-ponta",
         "t39-app-ida-e-volta",
-        "t9-documentos"
+        "t9-documentos",
+        "t183-telas-logadas-390"
       ]
     },
     "/admin/2fa/refazer": {
@@ -66,7 +68,8 @@
         "t29-chat-sem-aprovacao",
         "t30-atendimento-autonomo",
         "t30-chat-ir-para-o-fim",
-        "t39-app-ida-e-volta"
+        "t39-app-ida-e-volta",
+        "t183-telas-logadas-390"
       ]
     },
     "/admin/atendimento": {
@@ -76,7 +79,8 @@
       "specs": [
         "t19-atendimento-online",
         "t24-atendimento-acolhimento",
-        "t25-chamado-resumo"
+        "t25-chamado-resumo",
+        "t183-telas-logadas-390"
       ]
     },
     "/admin/atendimento/[id]": {
@@ -96,7 +100,8 @@
       "specs": [
         "t91-avaliacao-resposta",
         "t93-avaliacao-tela",
-        "t48-varredura"
+        "t48-varredura",
+        "t183-telas-logadas-390"
       ]
     },
     "/admin/documentos": {
@@ -107,7 +112,8 @@
         "t15-admin-real",
         "t32-autorizacao-preconferencia",
         "t36-cadastro-ponta-a-ponta",
-        "t9-documentos"
+        "t9-documentos",
+        "t183-telas-logadas-390"
       ]
     },
     "/admin/emails-teste": {
@@ -116,7 +122,8 @@
       ],
       "specs": [
         "t116-admin-emails-teste",
-        "t48-varredura"
+        "t48-varredura",
+        "t183-telas-logadas-390"
       ]
     },
     "/admin/financeiro": {
@@ -124,33 +131,41 @@
         "admin"
       ],
       "specs": [
-        "t15-admin-real"
+        "t15-admin-real",
+        "t183-telas-logadas-390"
       ]
     },
     "/admin/fotografos": {
       "personas": [
         "admin"
       ],
-      "specs": []
+      "specs": [
+        "t183-telas-logadas-390"
+      ]
     },
     "/admin/marketing": {
       "personas": [
         "admin"
       ],
-      "specs": []
+      "specs": [
+        "t183-telas-logadas-390"
+      ]
     },
     "/admin/parceiros": {
       "personas": [
         "admin"
       ],
-      "specs": []
+      "specs": [
+        "t183-telas-logadas-390"
+      ]
     },
     "/admin/pedidos": {
       "personas": [
         "admin"
       ],
       "specs": [
-        "t15-admin-real"
+        "t15-admin-real",
+        "t183-telas-logadas-390"
       ]
     },
     "/admin/socios": {
@@ -158,7 +173,8 @@
         "admin"
       ],
       "specs": [
-        "t51-admin-padrao-caixa-socios"
+        "t51-admin-padrao-caixa-socios",
+        "t183-telas-logadas-390"
       ]
     },
     "/admin/usuarios": {
@@ -168,7 +184,8 @@
       "specs": [
         "t101-admin-usuarios",
         "t178-telefone-sms",
-        "t48-varredura"
+        "t48-varredura",
+        "t183-telas-logadas-390"
       ]
     },
     "/ajuda": {
@@ -275,7 +292,9 @@
         "t70-busca-split",
         "t71-busca-topo",
         "t90-orcamento-velocidade",
-        "t164-tour-video-galeria"
+        "t164-tour-video-galeria",
+        "t182-jornada-completa",
+        "t184-velocidade"
       ]
     },
     "/cidades": {
@@ -385,7 +404,8 @@
         "t7-fluxo-publico",
         "t8-rascunho",
         "t98-score-anuncio",
-        "t151-modo-app-iphone"
+        "t151-modo-app-iphone",
+        "t183-telas-logadas-390"
       ]
     },
     "/dashboard/assinatura": {
@@ -397,7 +417,8 @@
         "t34-jornada-dono-planos",
         "t35-troca-de-plano",
         "t38-varios-imoveis-por-dono",
-        "t39-app-ida-e-volta"
+        "t39-app-ida-e-volta",
+        "t183-telas-logadas-390"
       ]
     },
     "/dashboard/avaliacoes": {
@@ -408,7 +429,9 @@
       "specs": [
         "t91-avaliacao-resposta",
         "t93-avaliacao-tela",
-        "t48-varredura"
+        "t48-varredura",
+        "t182-jornada-completa",
+        "t183-telas-logadas-390"
       ]
     },
     "/dashboard/buscas": {
@@ -417,7 +440,8 @@
       ],
       "specs": [
         "t125-alerta-busca-salva",
-        "t71-busca-topo"
+        "t71-busca-topo",
+        "t183-telas-logadas-390"
       ]
     },
     "/dashboard/candidaturas": {
@@ -427,7 +451,8 @@
       "specs": [
         "t11-travessias",
         "t33-documentos-inquilino",
-        "t36-cadastro-ponta-a-ponta"
+        "t36-cadastro-ponta-a-ponta",
+        "t183-telas-logadas-390"
       ]
     },
     "/dashboard/carteira": {
@@ -437,14 +462,17 @@
         "admin"
       ],
       "specs": [
-        "t97-plangate-precos"
+        "t97-plangate-precos",
+        "t183-telas-logadas-390"
       ]
     },
     "/dashboard/comparar": {
       "personas": [
         "inquilino"
       ],
-      "specs": []
+      "specs": [
+        "t183-telas-logadas-390"
+      ]
     },
     "/dashboard/conta": {
       "personas": [
@@ -463,7 +491,8 @@
         "t173-perfis-dono-inquilino",
         "t174-conta-complete-perfil",
         "t192-conta-4-blocos",
-        "t179-isolamento-perfil"
+        "t179-isolamento-perfil",
+        "t183-telas-logadas-390"
       ]
     },
     "/dashboard/conta/[secao]": {
@@ -480,7 +509,8 @@
         "t173-perfis-dono-inquilino",
         "t178-telefone-sms",
         "t174-conta-complete-perfil",
-        "t192-conta-4-blocos"
+        "t192-conta-4-blocos",
+        "t183-telas-logadas-390"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -490,7 +520,8 @@
         "admin"
       ],
       "specs": [
-        "t48-varredura"
+        "t48-varredura",
+        "t183-telas-logadas-390"
       ]
     },
     "/dashboard/contratos": {
@@ -501,7 +532,9 @@
       ],
       "specs": [
         "t4-fronteira-demo-real",
-        "t6-dinheiro-numeros"
+        "t6-dinheiro-numeros",
+        "t182-jornada-completa",
+        "t183-telas-logadas-390"
       ]
     },
     "/dashboard/contratos/[id]": {
@@ -516,7 +549,9 @@
       "personas": [
         "inquilino"
       ],
-      "specs": []
+      "specs": [
+        "t183-telas-logadas-390"
+      ]
     },
     "/dashboard/fechamento": {
       "personas": [
@@ -530,7 +565,9 @@
         "t4-fronteira-demo-real",
         "t127-fechamento-servicos",
         "t89-fechamento-data-inicio",
-        "t181-quantas-pessoas"
+        "t181-quantas-pessoas",
+        "t182-jornada-completa",
+        "t183-telas-logadas-390"
       ]
     },
     "/dashboard/ferramentas": {
@@ -541,14 +578,17 @@
       ],
       "specs": [
         "t2-persistencia-modo",
-        "t39-app-ida-e-volta"
+        "t39-app-ida-e-volta",
+        "t183-telas-logadas-390"
       ]
     },
     "/dashboard/garantias": {
       "personas": [
         "inquilino"
       ],
-      "specs": []
+      "specs": [
+        "t183-telas-logadas-390"
+      ]
     },
     "/dashboard/imoveis": {
       "personas": [
@@ -562,7 +602,8 @@
         "t36-cadastro-ponta-a-ponta",
         "t38-varios-imoveis-por-dono",
         "t40-novo-anuncio-fotos",
-        "t8-rascunho"
+        "t8-rascunho",
+        "t183-telas-logadas-390"
       ]
     },
     "/dashboard/imoveis/[id]/editar": {
@@ -581,7 +622,8 @@
       "specs": [
         "t30-atendimento-autonomo",
         "t32-autorizacao-preconferencia",
-        "t8-rascunho"
+        "t8-rascunho",
+        "t183-telas-logadas-390"
       ]
     },
     "/dashboard/indicacoes": {
@@ -590,7 +632,9 @@
         "proprietario",
         "admin"
       ],
-      "specs": []
+      "specs": [
+        "t183-telas-logadas-390"
+      ]
     },
     "/dashboard/leads": {
       "personas": [
@@ -603,7 +647,9 @@
         "t133-candidatura-motivo",
         "t173-perfis-dono-inquilino",
         "t178-telefone-sms",
-        "t181-quantas-pessoas"
+        "t181-quantas-pessoas",
+        "t182-jornada-completa",
+        "t183-telas-logadas-390"
       ]
     },
     "/dashboard/locacoes": {
@@ -612,7 +658,9 @@
         "proprietario"
       ],
       "specs": [
-        "t163-locacoes-selo-anfitriao"
+        "t163-locacoes-selo-anfitriao",
+        "t182-jornada-completa",
+        "t183-telas-logadas-390"
       ]
     },
     "/dashboard/locacoes/[id]": {
@@ -633,7 +681,9 @@
       ],
       "specs": [
         "t11-travessias",
-        "t175-mensagens-candidato"
+        "t175-mensagens-candidato",
+        "t182-jornada-completa",
+        "t183-telas-logadas-390"
       ]
     },
     "/dashboard/notificacoes": {
@@ -644,7 +694,8 @@
       ],
       "specs": [
         "t48-varredura",
-        "t55-manutencao-ciclo"
+        "t55-manutencao-ciclo",
+        "t183-telas-logadas-390"
       ]
     },
     "/dashboard/orcamentos": {
@@ -653,7 +704,9 @@
         "proprietario",
         "admin"
       ],
-      "specs": []
+      "specs": [
+        "t183-telas-logadas-390"
+      ]
     },
     "/dashboard/pedidos": {
       "personas": [
@@ -662,7 +715,8 @@
         "admin"
       ],
       "specs": [
-        "t11-travessias"
+        "t11-travessias",
+        "t183-telas-logadas-390"
       ]
     },
     "/dashboard/pedidos-cidade": {
@@ -672,7 +726,8 @@
         "admin"
       ],
       "specs": [
-        "t11-travessias"
+        "t11-travessias",
+        "t183-telas-logadas-390"
       ]
     },
     "/dashboard/reembolsos": {
@@ -681,7 +736,9 @@
         "proprietario",
         "admin"
       ],
-      "specs": []
+      "specs": [
+        "t183-telas-logadas-390"
+      ]
     },
     "/dashboard/roi-imovel": {
       "personas": [
@@ -689,7 +746,8 @@
       ],
       "specs": [
         "t68-comissao-valor-total",
-        "t189-simulador-roi"
+        "t189-simulador-roi",
+        "t183-telas-logadas-390"
       ]
     },
     "/dashboard/simulador": {
@@ -702,7 +760,8 @@
         "t12-planos",
         "t37-simuladores-e-numeros",
         "t68-comissao-valor-total",
-        "t189-simulador-roi"
+        "t189-simulador-roi",
+        "t183-telas-logadas-390"
       ]
     },
     "/dashboard/solicitacoes": {
@@ -712,7 +771,8 @@
         "admin"
       ],
       "specs": [
-        "t55-manutencao-ciclo"
+        "t55-manutencao-ciclo",
+        "t183-telas-logadas-390"
       ]
     },
     "/dashboard/tributacao": {
@@ -723,7 +783,8 @@
       ],
       "specs": [
         "t192-conta-4-blocos",
-        "t48-varredura"
+        "t48-varredura",
+        "t183-telas-logadas-390"
       ]
     },
     "/dashboard/verificacao": {
@@ -733,7 +794,8 @@
         "admin"
       ],
       "specs": [
-        "t4-fronteira-demo-real"
+        "t4-fronteira-demo-real",
+        "t183-telas-logadas-390"
       ]
     },
     "/dashboard/viabilidade": {
@@ -741,7 +803,8 @@
         "proprietario"
       ],
       "specs": [
-        "t97-plangate-precos"
+        "t97-plangate-precos",
+        "t183-telas-logadas-390"
       ]
     },
     "/dashboard/visitas": {
@@ -752,7 +815,8 @@
       ],
       "specs": [
         "t168-visita-video",
-        "t48-varredura"
+        "t48-varredura",
+        "t183-telas-logadas-390"
       ]
     },
     "/decisao": {
@@ -857,7 +921,9 @@
         "t178-telefone-sms",
         "t176-exemplo-proprietario-avaliacoes",
         "t181-quantas-pessoas",
-        "t180-anuncio-real-sem-exemplo"
+        "t180-anuncio-real-sem-exemplo",
+        "t182-jornada-completa",
+        "t184-velocidade"
       ]
     },
     "/modelodenegocio": {
@@ -959,7 +1025,8 @@
         "t173-perfis-dono-inquilino",
         "t176-exemplo-proprietario-avaliacoes",
         "t179-isolamento-perfil",
-        "t180-anuncio-real-sem-exemplo"
+        "t180-anuncio-real-sem-exemplo",
+        "t182-jornada-completa"
       ]
     },
     "/qualificar": {
@@ -970,7 +1037,8 @@
       ],
       "specs": [
         "t18-seo-a11y",
-        "t40-novo-anuncio-fotos"
+        "t40-novo-anuncio-fotos",
+        "t183-telas-logadas-390"
       ]
     },
     "/roi": {
@@ -1188,7 +1256,8 @@
       ],
       "specs": [
         "t169-conta-teste-sem-efeito",
-        "t36-cadastro-ponta-a-ponta"
+        "t36-cadastro-ponta-a-ponta",
+        "t182-jornada-completa"
       ]
     },
     "/api/cron/atendimento": {
@@ -1529,7 +1598,8 @@
         "proprietario"
       ],
       "specs": [
-        "t181-quantas-pessoas"
+        "t181-quantas-pessoas",
+        "t182-jornada-completa"
       ]
     },
     "src/lib/data/actions.ts#resumoImovelDoDono": {
@@ -1566,7 +1636,9 @@
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t182-jornada-completa"
+      ]
     },
     "src/lib/data/actions.ts#toggleFavorite": {
       "personas": [
@@ -1810,7 +1882,8 @@
         "proprietario"
       ],
       "specs": [
-        "t28-avaliacoes-fase1"
+        "t28-avaliacoes-fase1",
+        "t182-jornada-completa"
       ]
     },
     "src/lib/data/avaliacoes-actions.ts#getReputacao": {
@@ -2067,14 +2140,18 @@
         "proprietario",
         "inquilino"
       ],
-      "specs": []
+      "specs": [
+        "t182-jornada-completa"
+      ]
     },
     "src/lib/data/contratos-actions.ts#getMinhasLocacoes": {
       "personas": [
         "proprietario",
         "inquilino"
       ],
-      "specs": []
+      "specs": [
+        "t182-jornada-completa"
+      ]
     },
     "src/lib/data/contratos-actions.ts#marcarPagamentoRecebido": {
       "personas": [
@@ -2182,14 +2259,18 @@
         "proprietario",
         "inquilino"
       ],
-      "specs": []
+      "specs": [
+        "t182-jornada-completa"
+      ]
     },
     "src/lib/data/leads-actions.ts#getFechamentoContext": {
       "personas": [
         "proprietario",
         "inquilino"
       ],
-      "specs": []
+      "specs": [
+        "t182-jornada-completa"
+      ]
     },
     "src/lib/data/leads-actions.ts#listMinhasCandidaturas": {
       "personas": [

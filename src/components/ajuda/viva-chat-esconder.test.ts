@@ -63,3 +63,11 @@ test("a9982623: o flutuante é arrastável e NÃO recalcula a posição em scrol
   assert.match(css, /\.vn-viva-flut\s*\{/);
   assert.match(css, /body:has\(\[data-testid="imovel-largura-total"\]\)/);
 });
+
+test("t182: o botão flutuante some em Mensagens (tampava o 'Enviar' da conversa no computador)", () => {
+  const src = ler("components/ajuda/viva-chat.tsx");
+  const linha = src.split("\n").find((l) => l.includes("const ESCONDER")) ?? "";
+  assert.match(linha, /"\/dashboard\/mensagens"/);
+  // caso negativo: o painel em geral continua com o botão
+  assert.doesNotMatch(linha, /"\/dashboard"[,\]]/);
+});
