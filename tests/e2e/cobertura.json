@@ -1538,6 +1538,15 @@
       "specs": [
         "t20-p1-agentes"
       ]
+    },
+    "/api/caf/status": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t195-matricula-caf",
+        "t186-cadastro-5-etapas"
+      ]
     }
   },
   "actions": {

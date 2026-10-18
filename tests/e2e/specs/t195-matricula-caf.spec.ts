@@ -96,6 +96,7 @@ test.describe("T195 — matrícula + CAF", () => {
     }
     await novaConta("c", `Caio Identidade ${sufixo}`);
     await novaConta("intruso", `Ivo Intruso ${sufixo}`);
+    await novaConta("etapa", `Elisa Etapa ${sufixo}`);
   });
   test.afterAll(async () => {
     await apagarContas(ids);
@@ -226,6 +227,34 @@ test.describe("T195 — matrícula + CAF", () => {
       // CPF do outro proprietário: só os 3 últimos dígitos.
       expect(JSON.stringify(c.campos_extraidos)).toContain('"documento_final":"191"');
       expect(JSON.stringify(c.campos_extraidos)).not.toContain("00000000191");
+      await page.context().close();
+    });
+  }
+
+  for (const largura of [390, 1280]) {
+    test(`${largura}px — etapa Identidade vem ANTES da matrícula e já aparece feita com laudo válido (90 dias)`, async ({ browser }) => {
+      const page = await etapa1(browser, "etapa", largura);
+      const passo = page.getByTestId("etapa-onde-fica");
+      const ordem = await passo.evaluate((el) => {
+        const ids = [...el.querySelectorAll("[data-testid]")].map((n) => n.getAttribute("data-testid"));
+        return { identidade: ids.indexOf("etapa-identidade"), documento: ids.indexOf("documento-vinculo"), numero: ids.indexOf("cadastro-numero") };
+      });
+      expect(ordem.numero).toBeLessThan(ordem.identidade);
+      expect(ordem.identidade).toBeLessThan(ordem.documento);
+      if (largura === 390) {
+        await expect(page.getByTestId("etapa-identidade")).toHaveAttribute("data-estado", "pendente", { timeout: 15_000 });
+        await page.getByTestId("etapa-identidade").scrollIntoViewIfNeeded();
+        await page.screenshot({ path: `${SAIDA}/t195-etapa-identidade-${largura}.png`, fullPage: false });
+        // Confirma pela própria etapa (laboratório: laudo simulado, gravado e marcado).
+        await page.getByTestId("identidade-confirmar").click();
+        await expect(page.getByTestId("identidade-confirmada")).toBeVisible({ timeout: 20_000 });
+      } else {
+        // Já tem laudo válido (feito a 390): a etapa vem concluída, sem botão.
+        await expect(page.getByTestId("etapa-identidade")).toHaveAttribute("data-estado", "ok", { timeout: 15_000 });
+        await expect(page.getByTestId("identidade-confirmar")).toHaveCount(0);
+        await page.getByTestId("etapa-identidade").scrollIntoViewIfNeeded();
+        await page.screenshot({ path: `${SAIDA}/t195-etapa-identidade-feita-${largura}.png`, fullPage: false });
+      }
       await page.context().close();
     });
   }

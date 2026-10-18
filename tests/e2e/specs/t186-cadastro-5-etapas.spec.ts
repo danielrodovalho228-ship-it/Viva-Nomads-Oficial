@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { randomBytes } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, fotosReais, novaSenha, novoSufixo, pngDeTeste } from "../fixtures/laboratorio";
 
 /*
@@ -19,8 +20,9 @@ const SAIDA = "tests/laboratorio/saida";
 const FOTOS = ["sala", "quarto-1", "quarto-2", "cozinha", "banheiro", "home-office", "varanda", "fachada"].map((n) => `public/images/imoveis/ube/ube-001-${n}.webp`);
 
 /** Documento FICTÍCIO do laboratório: PDF mínimo com o marcador do caso e bytes aleatórios (hash único). */
-function docLab(caso: "ok" | "endereco_errado" | "editado" | "vencido", extra = randomBytes(8).toString("hex")): Buffer {
-  return Buffer.concat([Buffer.from(`%PDF-1.4\n% documento ficticio do laboratorio VIVA-LAB-DOC:${caso} ${extra}\n`), Buffer.alloc(12 * 1024, 0x20), Buffer.from("\n%%EOF\n")]);
+/** Matrícula FICTÍCIA do laboratório (tests/fixtures), com bytes extras: cada envio tem um hash próprio. */
+function matriculaLab(): Buffer {
+  return Buffer.concat([readFileSync("tests/fixtures/matricula-ficticia-dono.pdf"), Buffer.from(`% ${randomBytes(8).toString("hex")}\n`)]);
 }
 
 async function esperarSalvo(page: Page) {
@@ -121,8 +123,13 @@ test.describe("T186 — cadastro em 5 etapas com IA, OSM e documento simulados",
       await page.getByTestId("cadastro-numero").fill("102");
       await esperarSalvo(page); // o rascunho existe: o documento fica ligado a ele
 
-      const docEnviar = page.getByTestId("documento-vinculo").locator('input[type="file"]');
-      await docEnviar.setInputFiles({ name: "conta-de-luz-ficticia.pdf", mimeType: "application/pdf", buffer: docLab("ok") });
+      // Endereço → identidade → matrícula (decisão do Daniel, 18/10): sem matrícula o documento vai para a equipe.
+      const identidade = page.getByTestId("etapa-identidade");
+      await expect(identidade).toHaveAttribute("data-estado", "pendente", { timeout: 15_000 });
+      await identidade.getByTestId("identidade-confirmar").click();
+      await expect(identidade.getByTestId("identidade-confirmada")).toBeVisible({ timeout: 20_000 });
+      const docEnviar = page.getByTestId("documento-vinculo").locator('input[type="file"]').first();
+      await docEnviar.setInputFiles({ name: "matricula-ficticia.pdf", mimeType: "application/pdf", buffer: matriculaLab() });
       await expect(page.getByTestId("documento-estado")).toHaveAttribute("data-estado", "aprovado", { timeout: 30_000 });
       await expect(page.getByTestId("documento-estado")).toContainText("Documentação conferida ✓");
       await camposDentroDoCartao(page, "etapa-onde-fica");

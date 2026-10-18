@@ -11,6 +11,7 @@ import {
   decidirMatricula,
   estadoTelaDaMatricula,
   preenchimentoDaMatricula,
+  semMatriculaVaiParaRevisao,
   resumoDoLaudo,
   statusDaMatricula,
   type LaudoCafGravado,
@@ -170,7 +171,7 @@ export async function POST(request: Request) {
       conferido_por: emRevisao ? null : "automatico",
       revisao_ate: emRevisao ? new Date(agora.getTime() + REVISAO_PRAZO_HORAS * 3_600_000).toISOString() : null,
       // Trilha de auditoria SEM dado pessoal: o detalhe da matrícula fica em property_ownership_checks (0158).
-      conferencia: { versao: 2, tipo: "matricula", resultado: d.resultado, motivo: d.motivo, caf_ok: caf.ok, conferidor, modelo, em: agora.toISOString() },
+      conferencia: { versao: 2, tipo: "matricula", estado, resultado: d.resultado, motivo: d.motivo, caf_ok: caf.ok, conferidor, modelo, em: agora.toISOString() },
     });
     if (erroCheck || erroQual || !check) {
       console.error("[conferir-matricula] falha ao gravar:", erroCheck?.message ?? erroQual?.message ?? "sem linha");
@@ -195,7 +196,8 @@ export async function POST(request: Request) {
   }
 
   const { leitura, conferidor, modelo } = lida;
-  const r = decidirConferencia(leitura, cadastro);
+  // Sem matrícula (IPTU, contrato de compra, conta…): aceito, mas a equipe confere — nunca aprovado na hora.
+  const r = semMatriculaVaiParaRevisao(decidirConferencia(leitura, cadastro), leitura?.tipo ?? null);
   const motivosTexto = r.motivos.map((m) => m.texto).join(" · ").slice(0, 500) || null;
   const { error: erroIns } = await gravarQualificacao({
     document_status: statusDoEstado(r.estado),
