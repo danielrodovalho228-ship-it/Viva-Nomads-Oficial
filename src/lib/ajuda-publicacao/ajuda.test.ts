@@ -91,3 +91,10 @@ test("ação decidirRascunhoAjuda exige dono, status enviado_dono e não confia 
   assert.match(corpo, /\.eq\("owner_id", user\.id\)/);
   assert.match(corpo, /\.eq\("status", "enviado_dono"\)/);
 });
+
+test("botões do rascunho somem na hora e a lista recarrega após a decisão do dono (t191)", () => {
+  const src = readFileSync("src/components/property/decisao-rascunho.tsx", "utf8");
+  assert.match(src, /setDecidido\(true\)/);
+  assert.match(src, /router\.refresh\(\)/);
+  assert.match(src, /if \(decidido\) return null/);
+});
