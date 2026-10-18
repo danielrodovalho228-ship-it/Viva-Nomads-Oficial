@@ -104,6 +104,7 @@ test.describe("T194 — passo 1: IA primeiro, CEP que sempre responde, fotos à 
       await expect(resultado).toHaveAttribute("data-tipo", "nao_encontrado", { timeout: 15_000 });
       await expect(resultado).toContainText("Não encontramos esse CEP. Confira os números ou busque pelo endereço");
       await expect(cep).toHaveValue("38482-288");
+      await cep.scrollIntoViewIfNeeded();
       await page.screenshot({ path: `${SAIDA}/t194-cep-nao-encontrado-${largura}.png`, fullPage: false });
 
       // "Buscar pelo endereço" preenche o CEP certo e a rua.
@@ -114,6 +115,7 @@ test.describe("T194 — passo 1: IA primeiro, CEP que sempre responde, fotos à 
       await busca.getByTestId("busca-endereco-rua").fill("Rua do Te");
       await busca.getByTestId("busca-endereco-buscar").click();
       await expect(busca.getByTestId("busca-endereco-opcao")).toHaveCount(1);
+      await busca.scrollIntoViewIfNeeded();
       await page.screenshot({ path: `${SAIDA}/t194-busca-endereco-${largura}.png`, fullPage: false });
       await busca.getByTestId("busca-endereco-opcao").first().click();
       await expect(cep).toHaveValue("38400-200");
@@ -127,6 +129,7 @@ test.describe("T194 — passo 1: IA primeiro, CEP que sempre responde, fotos à 
       await expect(page.getByTestId("cep-resultado")).toHaveText("Endereço encontrado", { timeout: 15_000 });
       await expect(page.getByTestId("cadastro-rua")).toHaveValue("Avenida do Laboratório");
       await expect(page.getByTestId("cadastro-numero")).toBeFocused();
+      await cep.scrollIntoViewIfNeeded();
       await page.screenshot({ path: `${SAIDA}/t194-cep-encontrado-${largura}.png`, fullPage: false });
 
       // Sem rede nas duas bases: mensagem para preencher à mão.
@@ -147,6 +150,7 @@ test.describe("T194 — passo 1: IA primeiro, CEP que sempre responde, fotos à 
       await expect(status).toHaveAttribute("data-estado", "feita", { timeout: 90_000 });
       await expect(status).toContainText(/^Pronto: /);
       await expect(status.getByTestId("cartao-ia-ver-passo3")).toBeVisible();
+      await cartao.scrollIntoViewIfNeeded();
       await page.screenshot({ path: `${SAIDA}/t194-cartao-ia-pronto-${largura}.png`, fullPage: false });
       if (largura === 390) {
         await expect(page.getByTestId("barra-fotos-contador")).toContainText("Fotos: 8 enviadas");
