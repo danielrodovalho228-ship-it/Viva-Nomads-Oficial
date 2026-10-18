@@ -77,6 +77,8 @@ import { videoTourPermitido } from "@/lib/video-tour";
 import { validarGarantia, type GarantiaContrato } from "@/lib/guarantees";
 import { marcarPropostaEmContrato, propostaAcordadaDoLead } from "@/lib/data/propostas-servidor";
 import { validarOcupantes } from "@/lib/candidaturas/ocupantes";
+import { anotarInteresseDoDono, bloqueioPorCidade } from "@/lib/cidades-liberadas/servidor";
+import { MUNICIPIOS } from "@/lib/municipios";
 
 type ActionResult = { ok: boolean; demo?: boolean; id?: string; error?: string };
 
@@ -411,6 +413,20 @@ async function gravarPrivacidade(
 }
 
 /**
+ * Trava de cidades liberadas (ordem 335b4064): publicar só em cidade liberada. Vale no servidor; rascunho não passa
+ * por aqui. Em cidade fechada, grava o interesse do dono e devolve o convite.
+ */
+async function cidadeFechada(
+  supabase: NonNullable<Awaited<ReturnType<typeof createClient>>>,
+  userId: string,
+  cidade: string,
+): Promise<string | null> {
+  const msg = await bloqueioPorCidade(supabase, cidade);
+  if (msg) await anotarInteresseDoDono(supabase, userId, cidade, MUNICIPIOS);
+  return msg;
+}
+
+/**
  * Portão final do Publicar: a MESMA prontidão de Meus imóveis, Visão geral, FAQ
  * e Viva (lib/anuncio/prontidao), lida do banco depois de salvar. Só os itens
  * obrigatórios barram; selo, vídeo e demais opcionais nunca.
@@ -545,6 +561,8 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
     if (!perfilDonoCompleto(perfil as { full_name: string | null; phone: string | null } | null)) {
       return { ok: false, error: MSG_PERFIL_DONO_INCOMPLETO };
     }
+    const fechada = await cidadeFechada(supabase, user.id, input.city);
+    if (fechada) return { ok: false, error: `${fechada} Você pode salvar como rascunho.` };
   }
 
   // Portão anti-fraude NO SERVIDOR (item 1): publicar (status active) exige a
@@ -943,6 +961,10 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
   // pela prontidão (fonte única). Ao publicar, ZERA o draft_data (ele guarda a
   // rua exata e a linha fica pública — C4/T1).
   if (input.asDraft === false) {
+    if (antes?.status !== "active") {
+      const fechada = await cidadeFechada(supabase, user.id, input.city);
+      if (fechada) return { ok: false, id, error: `${fechada} Suas alterações foram salvas como rascunho.` };
+    }
     const falta = await faltaParaPublicar(supabase, user.id, id);
     if (falta) return { ok: false, id, error: `${falta} Suas alterações foram salvas.` };
     if (antes?.status !== "active") {
