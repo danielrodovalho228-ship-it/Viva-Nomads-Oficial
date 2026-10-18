@@ -44,6 +44,14 @@ test("Voltar nas telas /admin/* leva ao painel /admin; o painel e o resto não",
   assert.match(f, /voltaParaAdmin\(pathname\) \? router\.push\("\/admin"\)/);
 });
 
+test("Voltar do app tem alvo de toque de 44 px e a spec t14 repete o toque até hidratar", () => {
+  const f = readFileSync(new URL("../components/app/app-header.tsx", import.meta.url), "utf8");
+  assert.match(f, /aria-label="Voltar"[\s\S]*h-11 w-11/);
+  assert.doesNotMatch(f, /h-10 w-10/);
+  const spec = readFileSync(new URL("../../tests/e2e/specs/t14-app-mode.spec.ts", import.meta.url), "utf8");
+  assert.match(spec, /getByRole\("button", \{ name: "Voltar" \}\)\.click\(\);\s*await expect\(page\)\.toHaveURL\(\/\\\/admin\\\/\?\$\/, \{ timeout: 5_000 \}\)/);
+});
+
 test("painel /admin lista todos os itens do menu do admin como atalhos", () => {
   // Menu em cascata (ordem 9f3085d8): o grupo Administração mora em config/menu-painel.ts.
   const config = readFileSync(new URL("../config/menu-painel.ts", import.meta.url), "utf8");
