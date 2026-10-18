@@ -27,9 +27,9 @@ test("ViaCEP acha com rua → preenche e nem chama a BrasilAPI", async () => {
   assert.equal(mensagemCep(r), "Endereço encontrado");
 });
 
-test("ViaCEP responde erro e a BrasilAPI acha → preenche pela BrasilAPI", async () => {
+test("p25 — ViaCEP fora do ar (5xx) + BrasilAPI correta → preenche pela BrasilAPI", async () => {
   const { buscar, chamadas } = simular({
-    [VIA("38408100")]: { status: 200, corpo: { erro: "true" } },
+    [VIA("38408100")]: { status: 503 },
     [BR("38408100")]: { status: 200, corpo: { cep: "38408100", state: "MG", city: "Uberlândia", neighborhood: "Santa Mônica", street: "Rua Nova" } },
   });
   const r = await buscarCep("38408100", buscar);
@@ -37,12 +37,12 @@ test("ViaCEP responde erro e a BrasilAPI acha → preenche pela BrasilAPI", asyn
   assert.deepEqual(chamadas, [VIA("38408100"), BR("38408100")]);
 });
 
-test("os dois não acham (38482-288, o CEP do print) → 'Não encontramos', com convite para buscar pelo endereço", async () => {
-  const { buscar } = simular({
+test("ViaCEP não acha (38482-288, o CEP do print) → 'Não encontramos', com convite para buscar pelo endereço", async () => {
+  const { buscar, chamadas } = simular({
     [VIA("38482288")]: { status: 200, corpo: { erro: "true" } },
-    [BR("38482288")]: { status: 404, corpo: { message: "Todos os serviços de CEP retornaram erro." } },
   });
   const r = await buscarCep("38482-288", buscar);
+  assert.deepEqual(chamadas, [VIA("38482288")]);
   assert.deepEqual(r, { tipo: "nao_encontrado" });
   assert.match(mensagemCep(r), /Não encontramos esse CEP/);
   assert.match(mensagemCep(r), /buscar pelo endereço/);
@@ -96,4 +96,36 @@ test("buscar pelo endereço sem rede avisa", async () => {
 test("formatarCep", () => {
   assert.equal(formatarCep("38400100"), "38400-100");
   assert.equal(formatarCep("384"), "384");
+});
+
+// ── Prompt 25: a BrasilAPI inventava endereço para CEP inexistente ──────────────────────────────────────────────
+const FANTASMA = { street: "Avenida das Torres", neighborhood: "Jardim Centro Cívico", city: "Sarandi", state: "PR", service: "open-cep" };
+
+test("p25 — 99999-999 com ViaCEP 'erro' → não encontrado e a BrasilAPI NÃO é chamada", async () => {
+  const { buscar, chamadas } = simular({
+    [VIA("99999999")]: { status: 200, corpo: { erro: "true" } },
+    [BR("99999999")]: { status: 200, corpo: FANTASMA },
+  });
+  assert.deepEqual(await buscarCep("99999-999", buscar), { tipo: "nao_encontrado" });
+  assert.deepEqual(chamadas, [VIA("99999999")]);
+});
+
+test("p25 — ViaCEP 400/404 também é definitivo (não chama a BrasilAPI)", async () => {
+  for (const status of [400, 404]) {
+    const { buscar, chamadas } = simular({ [VIA("99999999")]: { status }, [BR("99999999")]: { status: 200, corpo: FANTASMA } });
+    assert.deepEqual(await buscarCep("99999999", buscar), { tipo: "nao_encontrado" });
+    assert.equal(chamadas.length, 1, String(status));
+  }
+});
+
+test("p25 — ViaCEP fora do ar + BrasilAPI com UF incompatível com a faixa (99xxx = RS, veio PR) → não encontrado", async () => {
+  const { buscar } = simular({ [VIA("99999999")]: "rede", [BR("99999999")]: { status: 200, corpo: FANTASMA } });
+  assert.deepEqual(await buscarCep("99999999", buscar), { tipo: "nao_encontrado" });
+});
+
+test("p25 — 38408-000 → Rua Modesta Maria, Saraiva, Uberlândia/MG (ViaCEP)", async () => {
+  const { buscar } = simular({
+    [VIA("38408000")]: { status: 200, corpo: { cep: "38408-000", logradouro: "Rua Modesta Maria", bairro: "Saraiva", localidade: "Uberlândia", uf: "MG" } },
+  });
+  assert.deepEqual(await buscarCep("38408-000", buscar), { tipo: "rua", rua: "Rua Modesta Maria", bairro: "Saraiva", cidade: "Uberlândia", uf: "MG" });
 });

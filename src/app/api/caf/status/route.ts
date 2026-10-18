@@ -36,5 +36,7 @@ export async function GET() {
     ok: r.ok,
     temCpf: String(perfil?.cpf ?? "").replace(/\D/g, "").length === 11,
     validoAte: r.feita ? ((laudo?.valid_until as string | null) ?? null) : null,
+    // Prompt 25: havia laudo e ele deixou de valer (venceu ou a pessoa trocou o nome/CPF — 0164): "Confirmar de novo".
+    refazer: !r.feita && !!laudo,
   });
 }

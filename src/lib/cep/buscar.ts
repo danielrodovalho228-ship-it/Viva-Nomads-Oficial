@@ -1,8 +1,11 @@
+import { ufBateComCep } from "./faixas-uf.ts";
+
 /**
- * CEP que sempre responde (prompt 20). Busca em cascata — ViaCEP e, se ele não achar ou falhar, a BrasilAPI (que já
- * consulta várias bases) — e devolve SEMPRE um resultado que a tela transforma em mensagem: com rua, só a cidade
- * (CEP geral), não encontrado ou sem rede. Nada de `catch` mudo: antes, o CEP 38482-288 não preenchia nada e a tela
- * ficava em silêncio.
+ * CEP que sempre responde (prompt 20). Devolve SEMPRE um resultado que a tela transforma em mensagem: com rua, só a
+ * cidade (CEP geral), não encontrado ou sem rede. Nada de `catch` mudo.
+ * Prompt 25: o ViaCEP é a fonte. Quando ele diz "não existe", a resposta é DEFINITIVA — a BrasilAPI inventava
+ * endereço (99999-999 → "Avenida das Torres, Sarandi/PR", service "open-cep"). A BrasilAPI só entra quando o ViaCEP
+ * FALHA (rede, 5xx, tempo esgotado), e a resposta dela só vale se a UF bater com a faixa do CEP (Correios).
  *
  * O `buscar` é injetável (os testes simulam as respostas; a tela usa o `fetch` do navegador).
  */
@@ -60,26 +63,24 @@ async function brasilApi(cep: string, buscar: Buscar): Promise<Fonte> {
     if (r.status === 404 || r.status === 400) return "nao_achou";
     if (!r.ok) return null;
     const d = (await r.json()) as Record<string, unknown>;
+    // Conferência de sanidade: UF fora da faixa do CEP = endereço inventado → "não achou".
+    if (!ufBateComCep(cep, txt(d.state))) return "nao_achou";
     return montar(txt(d.street), txt(d.neighborhood), txt(d.city), txt(d.state)) ?? "nao_achou";
   } catch {
     return null;
   }
 }
 
-/** ViaCEP → BrasilAPI. "Sem rede" só quando nenhuma das duas respondeu de forma definitiva. */
+/** ViaCEP; a BrasilAPI só quando o ViaCEP FALHA. "Sem rede" só quando nenhuma das duas respondeu de forma definitiva. */
 export async function buscarCep(valor: string, buscar: Buscar): Promise<ResultadoCep> {
   const cep = digitosCep(valor);
   if (!cep) return { tipo: "nao_encontrado" };
   const a = await viaCep(cep, buscar);
-  if (a && a !== "nao_achou" && a.tipo === "rua") return a;
-  const b = await brasilApi(cep, buscar);
-  if (b && b !== "nao_achou") {
-    // A BrasilAPI achou com rua: vale ela; achou só a cidade e o ViaCEP também: tanto faz.
-    if (b.tipo === "rua" || !a || a === "nao_achou") return b;
-  }
-  if (a && a !== "nao_achou") return a; // ViaCEP: CEP geral (só cidade)
-  if (a === null && b === null) return { tipo: "sem_rede" };
-  return { tipo: "nao_encontrado" };
+  if (a === "nao_achou") return { tipo: "nao_encontrado" }; // definitivo: a BrasilAPI NÃO é chamada
+  if (a) return a; // rua ou CEP geral (só cidade)
+  const b = await brasilApi(cep, buscar); // ViaCEP fora do ar
+  if (b && b !== "nao_achou") return b;
+  return b === null ? { tipo: "sem_rede" } : { tipo: "nao_encontrado" };
 }
 
 export interface OpcaoEndereco {

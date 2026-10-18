@@ -48,7 +48,8 @@
         "t39-app-ida-e-volta",
         "t9-documentos",
         "t183-telas-logadas-390",
-        "t204-cadastro-ia-real"
+        "t204-cadastro-ia-real",
+        "t207-cep-matricula-identidade"
       ]
     },
     "/admin/2fa/refazer": {
@@ -654,7 +655,8 @@
         "t183-telas-logadas-390",
         "t194-passo1-ia-cep",
         "t195-matricula-caf",
-        "t204-cadastro-ia-real"
+        "t204-cadastro-ia-real",
+        "t207-cep-matricula-identidade"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1554,7 +1556,8 @@
       ],
       "specs": [
         "t195-matricula-caf",
-        "t186-cadastro-5-etapas"
+        "t186-cadastro-5-etapas",
+        "t207-cep-matricula-identidade"
       ]
     },
     "/api/ai/status": {
@@ -1563,6 +1566,14 @@
       ],
       "specs": [
         "t204-cadastro-ia-real"
+      ]
+    },
+    "/api/admin/ia-diagnostico": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t207-cep-matricula-identidade"
       ]
     }
   },

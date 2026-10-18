@@ -16,6 +16,21 @@ export interface FalhaIa {
   status: number | null;
   /** Tipo curto do erro, para o admin (ex.: "invalid_request_error", "conexao", "json_invalido", "max_tokens"). */
   tipo: string;
+  /**
+   * Prompt 25: a MENSAGEM do erro da API (até 300 caracteres) — ex.: o motivo exato de um 400. A API descreve o
+   * pedido (parâmetros, schema), nunca o conteúdo do arquivo; sem dado pessoal. null quando não há mensagem.
+   */
+  resumo: string | null;
+}
+
+export const ERRO_RESUMO_MAX = 300;
+
+/** Mensagem do erro da API, limpa e curta (o corpo do erro, se houver; senão a mensagem do SDK). */
+export function resumoDoErro(e: unknown): string | null {
+  const corpo = (e as { error?: { error?: { message?: unknown } } } | undefined)?.error?.error?.message;
+  const msg = typeof corpo === "string" && corpo.trim() ? corpo : e instanceof Error ? e.message : "";
+  const limpo = msg.replace(/\s+/g, " ").trim();
+  return limpo ? limpo.slice(0, ERRO_RESUMO_MAX) : null;
 }
 
 /** O que a tela diz em cada caso (o dono sempre sabe o que houve e o que fazer). */
@@ -35,20 +50,42 @@ const RE_GRANDE = /too large|exceed|maximum|size|dimension|pixels|pages|request_
  * entre "tente de novo" e "não adianta tentar"; o texto só separa "arquivo grande" dos outros 400.
  */
 export function classificarFalhaIa(e: unknown): FalhaIa {
-  if (e instanceof Anthropic.APIConnectionTimeoutError) return { motivo: "indisponivel", status: null, tipo: "tempo_esgotado" };
-  if (e instanceof Anthropic.APIConnectionError) return { motivo: "indisponivel", status: null, tipo: "conexao" };
+  if (e instanceof Anthropic.APIConnectionTimeoutError) return { motivo: "indisponivel", status: null, tipo: "tempo_esgotado", resumo: resumoDoErro(e) };
+  if (e instanceof Anthropic.APIConnectionError) return { motivo: "indisponivel", status: null, tipo: "conexao", resumo: resumoDoErro(e) };
   if (e instanceof Anthropic.APIError) {
     const status = typeof e.status === "number" ? e.status : null;
     // Tipo do erro: o que o SDK leu do corpo (`type`) ou, se não leu, o `error.type` do corpo da resposta.
     const doCorpo = (e.error as { error?: { type?: unknown } } | undefined)?.error?.type;
     const tipo = (e.type ?? (typeof doCorpo === "string" ? doCorpo : null) ?? (status ? `http_${status}` : "api")).slice(0, 60);
-    if (status === 413) return { motivo: "arquivo_grande", status, tipo };
-    if (e instanceof Anthropic.BadRequestError && RE_GRANDE.test(e.message)) return { motivo: "arquivo_grande", status, tipo };
-    return { motivo: "indisponivel", status, tipo };
+    if (status === 413) return { motivo: "arquivo_grande", status, tipo, resumo: resumoDoErro(e) };
+    if (e instanceof Anthropic.BadRequestError && RE_GRANDE.test(e.message)) return { motivo: "arquivo_grande", status, tipo, resumo: resumoDoErro(e) };
+    return { motivo: "indisponivel", status, tipo, resumo: resumoDoErro(e) };
   }
-  if (e instanceof SyntaxError) return { motivo: "ilegivel", status: 200, tipo: "json_invalido" };
-  if (e instanceof RespostaIaIncompleta) return { motivo: e.motivo, status: 200, tipo: e.tipo };
-  return { motivo: "indisponivel", status: null, tipo: "desconhecido" };
+  if (e instanceof SyntaxError) return { motivo: "ilegivel", status: 200, tipo: "json_invalido", resumo: null };
+  if (e instanceof RespostaIaIncompleta) return { motivo: e.motivo, status: 200, tipo: e.tipo, resumo: null };
+  return { motivo: "indisponivel", status: null, tipo: "desconhecido", resumo: null };
+}
+
+/**
+ * A API recusou o FORMATO do pedido (400 invalid_request_error, em menos de 1 s)? É o caso em que vale tentar de novo
+ * sem a saída estruturada (prompt 25) — arquivo grande demais tem o próprio motivo e não entra aqui.
+ */
+export function pedidoRecusadoPelaApi(f: FalhaIa): boolean {
+  return f.status === 400 && f.tipo === "invalid_request_error" && f.motivo !== "arquivo_grande";
+}
+
+/** JSON da resposta em texto livre (sem saída estruturada): tira a cerca ``` e pega do 1º "{" ao último "}". */
+export function extrairJson(texto: string): unknown {
+  const t = texto.replace(/^\s*```(?:json)?/i, "").replace(/```\s*$/, "");
+  const ini = t.indexOf("{");
+  const fim = t.lastIndexOf("}");
+  if (ini < 0 || fim <= ini) throw new SyntaxError("Resposta sem objeto JSON");
+  return JSON.parse(t.slice(ini, fim + 1));
+}
+
+/** Instrução para pedir JSON no prompt quando a saída estruturada não é aceita (mesmo schema, mesmas chaves). */
+export function instrucaoJsonNoPrompt(schema: unknown): string {
+  return `Responda SOMENTE com um objeto JSON válido, sem nenhum texto antes ou depois, seguindo exatamente este JSON Schema (todas as chaves de "required" presentes; null quando não houver o dado): ${JSON.stringify(schema)}`;
 }
 
 /** A API respondeu, mas a resposta não serve (cortada por max_tokens, recusa, sem texto). */
