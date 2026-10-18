@@ -117,6 +117,14 @@ test.describe("T57 — Contrato semeado: inquilino e proprietário veem e assina
     await expect(page).toHaveURL(/\/dashboard\/contratos\/[0-9a-f-]{36}$/);
     await expect(page.getByTestId("contrato-resumo")).toBeVisible();
     await expect(page.getByTestId("contrato-aviso-assinatura")).toBeVisible();
+    // O inquilino assina (gravado pelo servidor de teste: o código vai por e-mail e o lab não lê caixa): o dono vê quem falta.
+    await adm().from("contratos").update({ assinado_inquilino_em: new Date().toISOString() }).eq("id", ids.contrato!);
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await expect(page.getByTestId("contrato-aviso-assinatura")).toHaveText("O inquilino já assinou — falta você assinar.");
+    await expect(page.getByTestId("form-assinar")).toBeVisible();
+    await adm().from("contratos").update({ assinado_proprietario_em: new Date().toISOString() }).eq("id", ids.contrato!);
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await expect(page.getByTestId("contrato-aviso-assinatura")).toHaveText("As duas partes assinaram.");
     await page.context().close();
   });
 });
