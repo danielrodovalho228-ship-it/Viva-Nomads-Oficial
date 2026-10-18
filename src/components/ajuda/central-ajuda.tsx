@@ -6,6 +6,7 @@ import Link from "next/link";
 import { AlertTriangle, ArrowLeft, CheckCircle2, ChevronDown, LifeBuoy, MessageSquare, Search, Send, UserRound } from "lucide-react";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { cn, dataBR } from "@/lib/utils";
+import { abertoEmBR } from "@/lib/atendimento/data-br";
 import { useAuthStore } from "@/lib/store";
 import { FAQ, buscarFaq, respostaPara, type PerfilAjuda } from "@/lib/atendimento/faq";
 import { avisoEmergencia, CATEGORIAS, detectarEmergencia } from "@/lib/atendimento/classificar";
@@ -557,6 +558,7 @@ function DetalheChamado({ numero, onVoltar }: { numero: string; onVoltar: () => 
           <h2 className="font-title text-lg font-bold text-ink">{dados.chamado.assunto}</h2>
           <p className="mt-1 text-sm text-muted">
             {dados.chamado.numero_publico} · {STATUS[dados.chamado.status] ?? dados.chamado.status}
+            <span data-testid="chamado-aberto-em"> · {abertoEmBR(dados.chamado.criado_em)}</span>
             {comViva ? " · com a Viva (assistente virtual)" : ""}
           </p>
           <ol className="mt-4 space-y-3">
