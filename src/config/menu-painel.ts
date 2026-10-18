@@ -61,6 +61,7 @@ export function menuDoPainel(ctx: ContextoMenu): ItemMenu[] {
           icone: "operacao",
           filhos: [
             { id: "admin-pedidos", rotulo: "Moderar pedidos", icone: "pedidos", href: "/admin/pedidos" },
+            { id: "admin-ajuda-publicacao", rotulo: "Publicamos para você", icone: "documentos", href: "/admin/ajuda-publicacao" },
             { id: "admin-documentos", rotulo: "Documentos", icone: "documentos", href: "/admin/documentos" },
             { id: "admin-atendimento", rotulo: "Atendimento", icone: "atendimento", href: "/admin/atendimento" },
             { id: "admin-emails-teste", rotulo: "E-mails de teste", icone: "atendimento", href: "/admin/emails-teste" },

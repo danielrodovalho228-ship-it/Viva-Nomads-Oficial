@@ -2,6 +2,7 @@
 
 import { MapPin, AlertTriangle } from "lucide-react";
 import { ImportarAnuncio } from "@/components/property/importar-anuncio";
+import { AjudaPublicar } from "@/components/property/ajuda-publicar";
 import type { AnuncioOrganizado } from "@/lib/anuncio/importar-anuncio";
 import { DocumentoUploader } from "@/components/documento-uploader";
 import { DocumentoVinculo, type EstadoDocumentoTela } from "@/components/anuncio/documento-vinculo";
@@ -64,6 +65,7 @@ export function EtapaOndeFica(p: {
     <div className="space-y-4" data-testid="etapa-onde-fica">
       {/* Atalho (t115): importar o texto do próprio anúncio leva direto à etapa 3, com tudo preenchido. */}
       <ImportarAnuncio onAplicar={p.aplicarImportado} />
+      <AjudaPublicar />
       <Labeled label="CEP">
         <div className="relative">
           <input

@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { ehGravacaoDeLead } from "../fixtures/gravacao-lead";
 
 /**
  * T130 — Página do imóvel: largura total + coluna de reserva (ordem 4f8023d1).
@@ -33,9 +34,10 @@ test.describe("T130 — Reserva no imóvel", () => {
     const gravacoes: string[] = [];
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/imoveis/ube-001", { waitUntil: "networkidle" });
-    // Só conta o que acontece DEPOIS dos cliques (a leitura inicial da página também usa POST).
+    // Só conta o que acontece DEPOIS dos cliques e só POST que grava contato (candidatura/dúvida/visita ou o texto
+    // digitado): a página dispara Server Actions de leitura sozinha depois de hidratar (lab 439be2b: 2 POST em /imoveis/ube-001).
     page.on("request", (r) => {
-      if (r.method() === "POST") gravacoes.push(r.url());
+      if (ehGravacaoDeLead(r.method(), r.postData(), ["Posso entrar em dezembro?"])) gravacoes.push(r.url());
     });
     const card = page.locator("#cartao-preco");
     await card.getByRole("button", { name: "Enviar candidatura" }).click();
