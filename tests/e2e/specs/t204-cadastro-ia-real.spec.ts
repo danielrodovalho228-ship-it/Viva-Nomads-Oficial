@@ -35,8 +35,15 @@ async function novoDono(browser: Browser, largura: number, opcoes: BrowserContex
   const ctx = await browser.newContext({ viewport: { width: largura, height: 900 }, ...opcoes });
   const page = await ctx.newPage();
   await page.goto("/auth", { waitUntil: "domcontentloaded" });
-  await page.locator('input[name="email"], input[type="email"]').first().fill(email);
-  await page.locator('input[name="password"], input[type="password"]').first().fill(senha);
+  // A tela pode hidratar depois do preenchimento e zerar o e-mail: preenche até os dois valores ficarem.
+  const campoEmail = page.locator('input[name="email"], input[type="email"]').first();
+  const campoSenha = page.locator('input[name="password"], input[type="password"]').first();
+  await expect(async () => {
+    await campoEmail.fill(email);
+    await campoSenha.fill(senha);
+    await expect(campoEmail).toHaveValue(email, { timeout: 1_000 });
+    await expect(campoSenha).toHaveValue(senha, { timeout: 1_000 });
+  }).toPass({ timeout: 15_000 });
   await page.locator("form").getByRole("button", { name: /^entrar$/i }).click();
   await page.waitForURL(/\/dashboard/, { timeout: 30_000 });
   await page.evaluate(() => localStorage.setItem("vivanomads-role-asked", "1"));
