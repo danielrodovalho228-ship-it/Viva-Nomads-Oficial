@@ -66,7 +66,7 @@ export default async function FotografosPage({ searchParams }: { searchParams: P
         </div>
         <div>
           <label htmlFor="cidade" className="block text-sm font-medium text-ink">ou cidade</label>
-          <input id="cidade" name="cidade" defaultValue={cidade} placeholder="Uberlândia" className="mt-1 w-full rounded-lg border border-sage-200 px-3 py-2 text-base" />
+          <input id="cidade" name="cidade" autoComplete="address-level2" defaultValue={cidade} placeholder="Uberlândia" className="mt-1 w-full rounded-lg border border-sage-200 px-3 py-2 text-base" />
         </div>
         <button type="submit" className={buttonClasses({ size: "md" })}>Buscar</button>
       </form>

@@ -82,7 +82,7 @@ export function ParceiroForm({ tipoInicial }: { tipoInicial: string }) {
       </div>
       <div>
         <label htmlFor="p-site" className="block text-sm font-medium text-ink">Site, Instagram ou portfólio (opcional)</label>
-        <input id="p-site" name="site" maxLength={300} inputMode="url" className={campo} />
+        <input id="p-site" name="site" autoComplete="url" maxLength={300} inputMode="url" className={campo} />
       </div>
       {/* Armadilha para robôs: pessoas não veem nem preenchem. */}
       <div aria-hidden className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
