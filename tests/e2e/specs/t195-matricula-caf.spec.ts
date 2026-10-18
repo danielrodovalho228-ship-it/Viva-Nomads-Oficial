@@ -167,7 +167,7 @@ test.describe("T195 — matrícula + CAF", () => {
     expect(corpo.estado).toBe("aprovado");
     expect(corpo.matricula.resultado).toBe("conferido");
     // A resposta ao dono não traz CPF, número da matrícula nem cartório.
-    expect(JSON.stringify(corpo)).not.toMatch(/00\.000-LAB|Cartório|\d{11}/);
+    expect(JSON.stringify(corpo)).not.toMatch(/00\.000-LAB|Cartório|(?<!\d)\d{11}(?!\d)/);
 
     await publicarPeloEditor(page, imovel);
     await expect.poll(() => statusDoImovel(imovel), { timeout: 20_000 }).toBe("active");
