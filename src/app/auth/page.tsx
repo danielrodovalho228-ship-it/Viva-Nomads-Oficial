@@ -24,7 +24,14 @@ import { resetPropertiesCache } from "@/lib/use-properties";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { SITE_URL } from "@/lib/site";
 import { MSG_EMAIL_INUTILIZAVEL } from "@/lib/email-dominio";
-import { friendlyAuthError, isEmailSendError, isValidEmail, MIN_PASSWORD } from "@/lib/auth-errors";
+import {
+  cadastroDuplicadoOfuscado,
+  friendlyAuthError,
+  isEmailSendError,
+  isValidEmail,
+  MIN_PASSWORD,
+  MSG_CADASTRO_NEUTRO,
+} from "@/lib/auth-errors";
 import type { UserRole } from "@/lib/types";
 import type { PersonType } from "@/lib/tax";
 import { cn } from "@/lib/utils";
@@ -362,13 +369,12 @@ export default function AuthPage() {
             })
           );
           if (error) throw error;
-          // E-mail JÁ cadastrado: com "Confirm email" ligado, o Supabase NÃO
-          // devolve erro no signUp — retorna um usuário "ofuscado" sem
-          // identities (anti-enumeração interna). Sem checar isso, um e-mail
-          // repetido cairia na tela "confirme seu e-mail" em vez de avisar que
-          // a conta já existe (Caso 3 do QA). Aqui o sinal é claro ao usuário.
-          if (data.user && data.user.identities && data.user.identities.length === 0) {
-            setError("Este e-mail já possui uma conta. Faça login ou recupere a senha.");
+          // E-mail JÁ cadastrado: o Supabase devolve usuário "ofuscado" (sem identities).
+          // Anti-enumeração (dddccd2f): mesma tela neutra de um cadastro novo, sem
+          // registrar "concluir_cadastro" e sem revelar que a conta existe.
+          if (cadastroDuplicadoOfuscado(data.user)) {
+            setNotice(MSG_CADASTRO_NEUTRO);
+            setAwaitingConfirm(true);
             setLoading(false);
             return;
           }
