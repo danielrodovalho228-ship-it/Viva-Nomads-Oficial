@@ -5,6 +5,7 @@ import { hojeBR, formatBRL } from "@/lib/utils";
 import { calcularTotalMensal } from "@/lib/precos";
 import { SELO_NF_UI } from "@/lib/flags";
 import { linhasDeTaxas } from "@/lib/reserva-imovel";
+import { fraseDescontoCard, ROTULO_VALOR_FIXO } from "@/lib/anuncio/negociacao";
 
 /** Formata uma data ISO (YYYY-MM-DD) para DD/MM/AAAA. */
 function formatDate(iso?: string): string | null {
@@ -52,6 +53,22 @@ export function PriceCard({ property, actions }: { property: Property; actions: 
       </ul>
       <p className="mt-1 text-xs text-muted" data-testid="iptu-nota">IPTU não incluso no total.{mes.contasMedidas && " Água, luz e gás medidos à parte."}</p>
       <p className="mt-0.5 text-xs text-muted">R$ 0 de taxa para você: o inquilino não paga nada à plataforma.</p>
+      {/* Negociação configurada pelo dono (prompt 17 §8): "Valor fixo" ou o desconto por estadia mais longa. */}
+      {property.negociacao && (
+        <div className="mt-2 flex flex-wrap gap-1.5" data-testid="negociacao-anuncio">
+          {!property.negociacao.aceita && (
+            <span className="rounded-full bg-surface-2 px-2.5 py-1 text-xs font-semibold text-ink">{ROTULO_VALOR_FIXO}</span>
+          )}
+          {property.negociacao.aceita && (
+            <span className="rounded-full bg-sage-100 px-2.5 py-1 text-xs font-semibold text-forest">Aceita negociar</span>
+          )}
+          {fraseDescontoCard(property.negociacao.descontos) && (
+            <span className="rounded-full bg-champagne/30 px-2.5 py-1 text-xs font-semibold text-forest" data-testid="desconto-estadia">
+              {fraseDescontoCard(property.negociacao.descontos)}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Fora do total: pagamentos únicos, pet e Caução (devolvida após a conferência de saída). */}
       <ul data-testid="taxas-itemizadas" className="mt-3 space-y-2 rounded-lg bg-surface-2 px-3 py-3 text-sm">

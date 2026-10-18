@@ -16,8 +16,9 @@ import { cn } from "@/lib/utils";
 export interface PhotoItem extends UploadedPhoto {
   id: string;
   name: string;
-  /** Hash de aparência (detecta foto repetida) e avisos de qualidade, quando a foto foi tratada. */
+  /** Hash e assinatura de aparência (detectam foto repetida) e avisos de qualidade, quando a foto foi tratada. */
   hash?: string;
+  assinatura?: string;
   avisos?: AvisoFoto[];
   /** A foto passou por ajuste leve de exposição (dá para voltar ao original). */
   melhorada?: boolean;
@@ -79,7 +80,9 @@ export function PhotoUploader({
     try {
       const uploaded: PhotoItem[] = [];
       const novosOriginais: Record<string, File> = {};
-      const hashes = photos.map((p) => p.hash).filter((h): h is string => !!h);
+      const outras: { id: string; hash?: string; assinatura?: string }[] = photos
+        .filter((p) => p.hash || p.assinatura)
+        .map((p) => ({ id: p.id, hash: p.hash, assinatura: p.assinatura }));
       let feitas = 0;
       for (const file of chosen) {
         // Validação de tipo/tamanho no cliente (feedback rápido). O bucket do
@@ -104,9 +107,10 @@ export function PhotoUploader({
           const item: PhotoItem = { ...result, id, name: file.name };
           if (t?.analise) {
             item.hash = t.analise.hash;
-            item.avisos = avisosDaFoto(t.analise, hashes);
+            item.assinatura = t.analise.assinatura;
+            item.avisos = avisosDaFoto(t.analise, outras);
             item.melhorada = t.melhorada;
-            hashes.push(t.analise.hash);
+            outras.push({ id, hash: t.analise.hash, assinatura: t.analise.assinatura });
           }
           if (t?.melhorada) novosOriginais[id] = t.original;
           uploaded.push(item);
@@ -172,6 +176,28 @@ export function PhotoUploader({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={p.url} alt={p.name} className="h-full w-full object-cover" />
 
+            {/* Q6: o aviso de repetida fica DENTRO do card da foto repetida, com a miniatura da parecida. */}
+            {p.avisos
+              ?.filter((a) => a.codigo === "repetida")
+              .map((a) => {
+                const parecida = photos.find((x) => x.id === a.parecidaCom);
+                return (
+                  <div
+                    key="repetida"
+                    className="absolute inset-x-1.5 bottom-1.5 flex items-center gap-1.5 rounded-lg bg-amber-50/95 p-1.5 text-[11px] leading-tight text-amber-900 shadow"
+                    data-testid="aviso-foto-repetida"
+                  >
+                    {parecida && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={parecida.url} alt="Foto parecida" className="h-8 w-10 shrink-0 rounded object-cover" data-testid="aviso-foto-repetida-miniatura" />
+                    )}
+                    <span>
+                      <strong>{a.mensagem}</strong> {parecida ? "Quase igual a esta foto." : a.dica}
+                    </span>
+                  </div>
+                );
+              })}
+
             {i === 0 && (
               <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-champagne px-2 py-0.5 text-xs font-semibold text-forest">
                 <Star className="h-3 w-3" /> Capa
@@ -204,9 +230,9 @@ export function PhotoUploader({
               </button>
             </div>
           </div>
-          {(p.avisos?.length || p.melhorada) ? (
+          {(p.avisos?.some((a) => a.codigo !== "repetida") || p.melhorada) ? (
             <div className="mt-1 space-y-1 text-xs">
-              {p.avisos?.map((a) => (
+              {p.avisos?.filter((a) => a.codigo !== "repetida").map((a) => (
                 <p key={a.codigo} className="flex items-start gap-1 text-amber-800" data-testid={`aviso-foto-${a.codigo}`}>
                   <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
                   <span><strong>{a.mensagem}</strong> {a.dica}</span>

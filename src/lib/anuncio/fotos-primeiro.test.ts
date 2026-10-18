@@ -6,14 +6,17 @@
 */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 const ler = (p: string) => readFileSync(join(process.cwd(), "src", p), "utf8");
-const pagina = ler("app/(dashboard)/dashboard/imoveis/novo/page.tsx");
+const dirCadastro = join(process.cwd(), "src/app/(dashboard)/dashboard/imoveis/novo");
+const lerCadastro = () => readdirSync(dirCadastro).filter((f) => f.endsWith(".tsx")).sort().map((f) => readFileSync(join(dirCadastro, f), "utf8")).join("\n");
+// Cadastro em 5 etapas (prompt 10): a tela é a página + os componentes de cada etapa.
+const pagina = lerCadastro();
 const uploader = ler("components/photo-uploader.tsx");
 
-test("o cadastro abre pela primeira etapa da ordem (Fotos), não pelo Tipo", () => {
+test("o cadastro abre pela primeira etapa da ordem (Onde fica, prompt 10)", () => {
   assert.match(pagina, /useState<number>\(ORDEM_ETAPAS\[0\]\)/);
 });
 

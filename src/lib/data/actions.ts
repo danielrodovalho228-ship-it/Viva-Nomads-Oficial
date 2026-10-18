@@ -71,6 +71,8 @@ import {
 } from "@/lib/contrato-blocos";
 import { normalizarRegrasPets } from "@/lib/anuncio/pets-regras";
 import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
+import { normalizarLimites, normalizarNegociacao } from "@/lib/anuncio/negociacao";
+import { mbpsValido } from "@/lib/anuncio/sugestoes-cadastro";
 import { videoTourPermitido } from "@/lib/video-tour";
 import { validarGarantia, type GarantiaContrato } from "@/lib/guarantees";
 import { validarOcupantes } from "@/lib/candidaturas/ocupantes";
@@ -359,6 +361,12 @@ export interface PropertyInput {
   petsRegras?: unknown;
   /** Pacote de limpeza durante a estadia; validado no servidor (0144). */
   limpezaEstadia?: unknown;
+  /** Negociação pública do anúncio (0152), validada em lib/anuncio/negociacao. */
+  negociacao?: unknown;
+  /** Limites PRIVADOS da negociação (0152): só o dono lê; nunca vão ao anúncio. */
+  limitesNegociacao?: unknown;
+  /** Velocidade da internet informada (Mbps), opcional (0152). */
+  internetMbps?: unknown;
   smokingAllowed?: boolean;
   childrenAllowed?: boolean;
   maxGuests?: number;
@@ -436,6 +444,84 @@ async function exigirAceiteIa(
     campos_editados: v.aceite.camposEditados,
   });
   return error ? "Não foi possível registrar a sua confirmação. Tente novamente." : null;
+}
+
+/**
+ * Negociação (pública), limites privados e velocidade da internet (0152) — prompt 10 + prompt 17 §8. Best-effort:
+ * sem a migração aplicada o cadastro segue igual. Os limites ficam numa tabela só do dono (RLS) e nunca vão ao anúncio.
+ */
+async function gravarNegociacao(
+  supabase: NonNullable<Awaited<ReturnType<typeof createClient>>>,
+  ownerId: string,
+  id: string,
+  input: PropertyInput,
+): Promise<void> {
+  if ("negociacao" in input || "internetMbps" in input) {
+    try {
+      const campos: Record<string, unknown> = {};
+      if ("negociacao" in input) campos.negociacao = normalizarNegociacao(input.negociacao);
+      if ("internetMbps" in input) campos.internet_mbps = mbpsValido(input.internetMbps);
+      await supabase.from("properties").update(campos).eq("id", id).eq("owner_id", ownerId);
+    } catch {
+      /* migração 0152 ausente */
+    }
+  }
+  if ("limitesNegociacao" in input) {
+    try {
+      const l = normalizarLimites(input.limitesNegociacao);
+      if (l.valorMinimo === null && l.limpezasMax === null) {
+        await supabase.from("property_negociacao_limites").delete().eq("property_id", id).eq("owner_id", ownerId);
+      } else {
+        await supabase.from("property_negociacao_limites").upsert({
+          property_id: id,
+          owner_id: ownerId,
+          valor_minimo: l.valorMinimo,
+          limpezas_max: l.limpezasMax,
+          atualizado_em: new Date().toISOString(),
+        });
+      }
+    } catch {
+      /* migração 0152 ausente */
+    }
+  }
+}
+
+/**
+ * Grava só os limites PRIVADOS da negociação de um rascunho do próprio dono (o autosave não os põe no JSON do
+ * rascunho, para nunca irem a uma coluna legível por outros).
+ */
+export async function salvarLimitesNegociacao(id: string, limites: unknown): Promise<ActionResult> {
+  const supabase = await createClient();
+  if (!supabase) return { ok: true, demo: true };
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Não autenticado." };
+  if (!UUID_RE.test(id)) return { ok: false, error: "Imóvel inválido." };
+  await gravarNegociacao(supabase, user.id, id, { limitesNegociacao: limites } as PropertyInput);
+  return { ok: true };
+}
+
+/** Limites privados da negociação de um imóvel do PRÓPRIO dono (para o cadastro abrir preenchido). */
+export async function carregarLimitesNegociacao(id: string): Promise<{ valorMinimo: number | null; limpezasMax: number | null }> {
+  const vazio = { valorMinimo: null, limpezasMax: null };
+  const supabase = await createClient();
+  if (!supabase || !UUID_RE.test(id)) return vazio;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return vazio;
+  try {
+    const { data } = await supabase
+      .from("property_negociacao_limites")
+      .select("valor_minimo, limpezas_max")
+      .eq("property_id", id)
+      .eq("owner_id", user.id)
+      .maybeSingle();
+    return normalizarLimites({ valorMinimo: data?.valor_minimo, limpezasMax: data?.limpezas_max });
+  } catch {
+    return vazio;
+  }
 }
 
 export async function createProperty(input: PropertyInput): Promise<ActionResult> {
@@ -663,6 +749,7 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
     }
   }
 
+  await gravarNegociacao(supabase, user.id, data.id, input);
   return { ok: true, id: data.id };
 }
 
@@ -818,6 +905,8 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
       /* migração 0144 ausente — segue sem o pacote */
     }
   }
+
+  await gravarNegociacao(supabase, user.id, id, input);
 
   // Re-sincroniza tabelas filhas: apaga as atuais e regrava as do formulário.
   const resync = async (table: string, rows: Record<string, unknown>[]) => {

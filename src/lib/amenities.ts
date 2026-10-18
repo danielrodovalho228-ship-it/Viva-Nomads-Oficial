@@ -48,6 +48,8 @@ export const AMENITY_GROUPS: AmenityCatalogGroup[] = [
       { key: "mesa_trabalho", label: "Mesa de trabalho" },
       { key: "cadeira_ergonomica", label: "Cadeira ergonômica" },
       { key: "ambiente_silencioso", label: "Ambiente silencioso" },
+      { key: "iluminacao_boa", label: "Boa iluminação para trabalhar" },
+      { key: "tomadas_mesa", label: "Tomadas perto da mesa" },
       { key: "sala_reuniao", label: "Sala de reunião (no prédio)" },
       { key: "coworking", label: "Espaço de coworking (no prédio)" },
       { key: "cabine_chamadas", label: "Cabine para chamadas" },

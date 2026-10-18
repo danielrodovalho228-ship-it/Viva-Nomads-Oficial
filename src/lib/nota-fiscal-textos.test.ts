@@ -24,7 +24,7 @@ test("busca: filtro 'Com Nota Fiscal' só com a chave do selo (SELO_NF_UI)", () 
 });
 
 test("editor: interruptor 'emite Nota Fiscal do valor mensal' só com a chave do selo", () => {
-  const s = ler("app/(dashboard)/dashboard/imoveis/novo/page.tsx");
+  const s = ler("app/(dashboard)/dashboard/imoveis/novo/etapa-preco.tsx");
   const i = s.indexOf("Este imóvel emite Nota Fiscal do valor mensal");
   assert.ok(i > 0);
   assert.ok(s.lastIndexOf("{SELO_NF_UI && (", i) > s.lastIndexOf("</Labeled>", i), "interruptor fora da chave");

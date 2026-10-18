@@ -1,7 +1,7 @@
 import {
   AirVent, Armchair, Bike, Building, Car, CookingPot, Dumbbell, Fan, Flame, Laptop, MonitorSmartphone,
   Refrigerator, Shirt, ShieldCheck, Sofa, Soup, Tv, UtensilsCrossed, VolumeX, Waves, WashingMachine,
-  Wifi, Camera, Microwave, Users, DoorOpen, Sun, Check, type LucideIcon,
+  Wifi, Camera, Microwave, Users, DoorOpen, Sun, Check, Lamp, Plug, type LucideIcon,
 } from "lucide-react";
 import { AMENITY_KEY_BY_LABEL } from "../amenities.ts";
 
@@ -12,6 +12,8 @@ export const ICONE_POR_CHAVE: Record<string, LucideIcon> = {
   mesa_trabalho: Laptop,
   cadeira_ergonomica: Armchair,
   ambiente_silencioso: VolumeX,
+  iluminacao_boa: Lamp,
+  tomadas_mesa: Plug,
   sala_reuniao: Users,
   coworking: Building,
   cabine_chamadas: MonitorSmartphone,

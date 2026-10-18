@@ -3,7 +3,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
 import { GERACAO_IA_ATIVA } from "@/lib/flags";
 import { consumirLimite, ipHash, DIA } from "@/lib/limites";
-import { integracoesSimuladas } from "@/lib/integracoes";
+import { integracoesSimuladas, registrarSimulado } from "@/lib/integracoes";
 import { IA_LIMITE_DIA } from "@/lib/ai/anuncio-prompt";
 import {
   validarMiniaturas,
@@ -11,6 +11,7 @@ import {
   FOTOS_SYSTEM_PROMPT,
   FOTOS_OUTPUT_SCHEMA,
   FOTOS_MAX_CORPO,
+  SUGESTAO_LAB_BRUTA,
 } from "@/lib/ai/fotos-prompt";
 
 /**
@@ -22,9 +23,14 @@ import {
  * O cliente manda só miniaturas JPEG em base64 (sem EXIF, sem URL — o servidor
  * não busca nada e não grava nada); nenhum dado pessoal vai junto. A saída é
  * sanitizada (enum, faixas, chaves do catálogo, sem contato) antes de voltar.
+ *
+ * Cadastro em 5 etapas (prompt 10): a tela chama esta rota sozinha ao terminar o envio das fotos (uma vez por
+ * rascunho). Sem chave ou com a flag desligada responde 503 e a etapa segue sem sugestões. No laboratório
+ * (INTEGRACOES_SIMULADAS=on) devolve SEMPRE a mesma resposta fixa, sem chamar a API.
  */
 export async function POST(request: Request) {
-  if (!GERACAO_IA_ATIVA || !process.env.ANTHROPIC_API_KEY || integracoesSimuladas()) {
+  const simulado = integracoesSimuladas();
+  if (!simulado && (!GERACAO_IA_ATIVA || !process.env.ANTHROPIC_API_KEY)) {
     return NextResponse.json({ error: "A geração por IA está desativada no momento." }, { status: 503 });
   }
 
@@ -67,6 +73,12 @@ export async function POST(request: Request) {
       { error: `Limite de ${IA_LIMITE_DIA} gerações por dia atingido. Tente novamente amanhã.` },
       { status: 429 },
     );
+  }
+
+  if (simulado) {
+    await registrarSimulado("ia", { acao: "fotos", fotos: miniaturas.length });
+    const lab = sanearSugestao(SUGESTAO_LAB_BRUTA);
+    return lab.ok ? NextResponse.json(lab.sugestao) : NextResponse.json({ error: "Indisponível." }, { status: 503 });
   }
 
   try {

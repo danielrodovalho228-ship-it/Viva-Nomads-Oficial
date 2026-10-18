@@ -107,9 +107,9 @@ test("ligações: admin vê veredito e a autorização; service role só depois 
   assert.doesNotMatch(integ, /exigirChaveEmProducao/); // pré-conferência nunca trava o admin
   const acoes = ler("lib/data/actions.ts");
   assert.equal((acoes.match(/caminhoDoDono\(input\.subleaseDocUrl, user\.id\)/g) ?? []).length, 2);
-  const novo = ler("app/(dashboard)/dashboard/imoveis/novo/page.tsx");
+  const novo = ["page.tsx", "etapa-onde-fica.tsx"].map((f) => ler(`app/(dashboard)/dashboard/imoveis/novo/${f}`)).join("\n");
   assert.match(novo, /if \(!asDraft && subleaseBlocked\)/);
-  assert.match(novo, /<DocumentoUploader\s+docs=\{subleaseDoc\}/);
+  assert.match(novo, /<DocumentoUploader\s+docs=\{(p\.)?subleaseDoc\}/);
   // O upload do documento passa pelo servidor (tipo real + hash), não direto no bucket.
   assert.match(ler("lib/data/storage.ts"), /fetch\("\/api\/upload\/documento"/);
 });

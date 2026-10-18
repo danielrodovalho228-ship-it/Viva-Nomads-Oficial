@@ -3,6 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   orientacao, caixaDeCorte, tamanhoFinal, avisosDaFoto, dHash, distanciaHash,
+  assinaturaFoto, distanciaAssinatura, fotosRepetidas, reduzirCinza, LADO_ASSINATURA, LIMIAR_REPETIDA,
   nitidezLaplaciano, luminanciaMedia, paraCinza, fatorExposicao, fatorAplicado, MAX_FOTOS_POR_ANUNCIO,
   type Analise,
 } from "./qualidade.ts";
@@ -51,7 +52,7 @@ test("avisa pequena (<1200 px), escura, estourada, tremida — com dica", () => 
 });
 
 test("avisa repetida só quando o hash é parecido com o de outra foto", () => {
-  const outro = "0123456789abcdee"; // 1 bit de diferença
+  const outro = "0123456789abcdee"; // 1 bit de diferença (foto antiga, sem assinatura)
   assert.deepEqual(avisosDaFoto(boa, [outro]).map((x) => x.codigo), ["repetida"]);
   assert.deepEqual(avisosDaFoto(boa, ["fedcba9876543210"]), []);
 });
@@ -102,4 +103,52 @@ test("'usar original' não ajusta exposição, mas o normal ajusta (caminho pass
   assert.equal(fatorAplicado(230, true), 1);
   assert.equal(fatorAplicado(50), fatorExposicao(50));
   assert.ok(fatorAplicado(50) > 1);
+});
+
+/* Q6 (prompt 10): cena sintética de um quarto, para medir a assinatura sem depender de arquivo. */
+function quarto(W: number, H: number, mesa = false): Float32Array {
+  const g = new Float32Array(W * H);
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++) {
+      let v = 90 + 60 * (y / H);
+      if (x > W * 0.1 && x < W * 0.25 && y < H * 0.45 && y > H * 0.08) v = 220; // janela
+      if (x > W * 0.35 && x < W * 0.8 && y > H * 0.55 && y < H * 0.85) v = 200; // cama
+      if (x > W * 0.35 && x < W * 0.8 && y > H * 0.4 && y <= H * 0.55) v = 60; // cabeceira
+      if (x > W * 0.85 && x < W * 0.97 && y > H * 0.3 && y < H * 0.9) v = 40; // armário
+      if (mesa && x > W * 0.02 && x < W * 0.2 && y > H * 0.6 && y < H * 0.75) v = 150; // mesa
+      g[y * W + x] = v;
+    }
+  return g;
+}
+function recorte(g: Float32Array, W: number, x0: number, y0: number, w: number, h: number, ruido = 0): Float32Array {
+  const o = new Float32Array(w * h);
+  let semente = 7;
+  const aleatorio = () => ((semente = (semente * 16807) % 2147483647) / 2147483647) * 2 - 1;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) o[y * w + x] = g[(y + y0) * W + x + x0] + aleatorio() * ruido;
+  return o;
+}
+const ass = (g: Float32Array, w: number, h: number) => assinaturaFoto(reduzirCinza(g, w, h, LADO_ASSINATURA, LADO_ASSINATURA));
+
+test("Q6: dois ângulos do mesmo quarto (cama × cama com mesa) NÃO são repetidos; a mesma foto recortada/comprimida é", () => {
+  const cena = quarto(800, 400);
+  const cenaComMesa = quarto(800, 400, true);
+  const angulo1 = recorte(cena, 800, 0, 0, 600, 400);
+  const angulo2 = recorte(cenaComMesa, 800, 200, 0, 600, 400);
+  const mesmaRecortada = recorte(cena, 800, 30, 20, 540, 360, 4);
+  const mesmaComprimida = recorte(cena, 800, 0, 0, 600, 400, 6);
+  const a1 = { hash: "", assinatura: ass(angulo1, 600, 400) };
+  assert.equal(fotosRepetidas(a1, { assinatura: ass(angulo2, 600, 400) }), false);
+  assert.ok(distanciaAssinatura(a1.assinatura, ass(angulo2, 600, 400)) > LIMIAR_REPETIDA * 2);
+  assert.equal(fotosRepetidas(a1, { assinatura: ass(mesmaRecortada, 540, 360) }), true);
+  assert.equal(fotosRepetidas(a1, { assinatura: ass(mesmaComprimida, 600, 400) }), true);
+  // O aviso aponta QUAL foto é a parecida (o card mostra a miniatura dela).
+  const aviso = avisosDaFoto({ ...boa, assinatura: a1.assinatura }, [{ id: "foto-2", assinatura: ass(mesmaRecortada, 540, 360) }]);
+  assert.deepEqual(aviso.map((x) => [x.codigo, x.parecidaCom]), [["repetida", "foto-2"]]);
+  assert.deepEqual(avisosDaFoto({ ...boa, assinatura: a1.assinatura }, [{ id: "foto-3", assinatura: ass(angulo2, 600, 400) }]), []);
+});
+
+test("assinatura: tamanho fixo e distância inválida = infinita", () => {
+  assert.equal(ass(quarto(64, 48), 64, 48).length, LADO_ASSINATURA * LADO_ASSINATURA * 2);
+  assert.equal(distanciaAssinatura("00", "0000"), Infinity);
+  assert.equal(distanciaAssinatura(undefined, "00"), Infinity);
 });

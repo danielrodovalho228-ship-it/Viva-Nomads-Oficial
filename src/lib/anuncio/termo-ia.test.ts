@@ -45,7 +45,7 @@ test("a publicação exige o aceite no servidor e a tela exige a caixa marcada",
   const actions = ler("lib/data/actions.ts");
   assert.match(actions, /exigirAceiteIa/);
   const pagina = ler("app/(dashboard)/dashboard/imoveis/novo/page.tsx");
-  assert.match(pagina, /data-testid="aceite-ia"/);
+  assert.match(ler("app/(dashboard)/dashboard/imoveis/novo/etapa-revisar.tsx"), /data-testid="aceite-ia"/);
   assert.match(pagina, /podePublicar = prontidao\.podePublicar && qualificado && aceitouIa/);
 });
 

@@ -1,114 +1,128 @@
 "use client";
 
-import { useEffect, useRef, useState, Children, cloneElement, isValidElement } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { linkQualificacao } from "@/lib/qualificar-link";
 import {
-  Lock,
   ClipboardCheck,
   Check,
-  Sparkles,
   ArrowRight,
   ArrowLeft,
-  Home,
   MapPin,
-  BedDouble,
   Camera,
-  Briefcase,
+  Sparkles,
   Tag,
   CheckCircle2,
-  PlayCircle,
-  ShieldCheck,
   XCircle,
-  AlertTriangle,
 } from "lucide-react";
-import { DateFieldBR } from "@/components/ui/date-field-br";
-import { createProperty, updateProperty, loadPropertyForEdit, getMyDocumentStatus, carregarQualificacao, saveDraftData, loadDraftData, getLatestDraft, type DocumentStatus } from "@/lib/data/actions";
-import { prontidaoAnuncio, rotuloDocumento } from "@/lib/anuncio/prontidao";
+import {
+  createProperty,
+  updateProperty,
+  loadPropertyForEdit,
+  getMyDocumentStatus,
+  carregarQualificacao,
+  saveDraftData,
+  loadDraftData,
+  getLatestDraft,
+  carregarLimitesNegociacao,
+  salvarLimitesNegociacao,
+  type DocumentStatus,
+} from "@/lib/data/actions";
+import { precoDaRegiao } from "@/lib/data/cadastro-actions";
+import { prontidaoAnuncio } from "@/lib/anuncio/prontidao";
 import { geocodeForSave } from "@/lib/integrations/geocoding";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
-import { Button, ButtonLink } from "@/components/ui/button";
-import { DocConferidaBadge } from "@/components/ui/badge";
-import { PropertyMiniCard } from "@/components/property-mini-card";
-import { GuiaFotos } from "@/components/fotos/guia-fotos";
-import { PhotoUploader, type PhotoItem } from "@/components/photo-uploader";
-import { MAX_FOTOS_POR_ANUNCIO } from "@/lib/fotos/qualidade";
-import { PrivacidadeCampos } from "@/components/anuncio/privacidade-campos";
+import { Button } from "@/components/ui/button";
+import { type PhotoItem } from "@/components/photo-uploader";
 import { PRIVACIDADE_VAZIA, type Privacidade } from "@/lib/anuncio/privacidade";
-import { DocumentoUploader } from "@/components/documento-uploader";
-import { DOC_AUTORIZACAO, exigeAutorizacao, OPERACOES, operacaoValida, type Operacao } from "@/lib/anuncio/operacao";
-import { MIN_PHOTOS, SUGGESTED_ROOMS, tierFromPhotoCount, TIER_META } from "@/lib/listing";
-import { FAIXAS, GARANTIAS_CADASTRO } from "@/lib/faixas";
-import { PROPERTY_TYPES, AMENITY_GROUPS, propertyTypeLabel, amenityKeysFromLabels } from "@/lib/amenities";
-import { ImportarAnuncio } from "@/components/property/importar-anuncio";
+import { DOC_AUTORIZACAO, operacaoValida, type Operacao, exigeAutorizacao } from "@/lib/anuncio/operacao";
+import { MIN_PHOTOS } from "@/lib/listing";
+import { PROPERTY_TYPES, propertyTypeLabel, amenityKeysFromLabels } from "@/lib/amenities";
 import type { AnuncioOrganizado } from "@/lib/anuncio/importar-anuncio";
-import { PlacesPicker, type CuratedPlace } from "@/components/property/places-picker";
-import { ManualProximities } from "@/components/property/manual-proximities";
-import { LocationDatalist } from "@/lib/locations";
-import { GERACAO_IA_ATIVA, SELO_NF_UI } from "@/lib/flags";
+import type { CuratedPlace } from "@/components/property/places-picker";
 import { PHOTOS } from "@/lib/media";
 import type { Property, Proximity } from "@/lib/types";
-import { cn, formatBRL } from "@/lib/utils";
-import { TEXTO_REGRA_CURTO } from "@/lib/cobranca/regra";
-import { LinhaComparativoAnuncio } from "@/components/precos/comparativo-precos";
-import { PrecoSugerido } from "@/components/precos/preco-sugerido";
+import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/lib/store";
 import { qualificadoDoServidor } from "@/lib/anuncio/qualificacao-rascunho";
 import { draftKey, DRAFT_KEY_LEGADO } from "@/lib/local-keys";
 import { registrarEvento } from "@/lib/eventos/registrar";
-import { TERMO_IA_TEXTO, TERMO_IA_VERSAO, camposDaIa } from "@/lib/anuncio/termo-ia";
+import { TERMO_IA_VERSAO, camposDaIa } from "@/lib/anuncio/termo-ia";
 import { miniaturaBase64 } from "@/lib/fotos/miniatura";
-import { FOTOS_MAX_MINIATURAS, iaFotosLiberada, mensagemFaltamFotosIa, type SugestaoFotos } from "@/lib/ai/fotos-prompt";
-import { etapaDaUrl, etapaLiberada, etapaMaisAvancada, etapaDoRascunho, etapaNaPosicao, posicaoDaEtapa, posMaxDoRascunho, ORDEM_ETAPAS, VERSAO_ORDEM_ETAPAS } from "@/lib/etapas-anuncio";
+import {
+  FOTOS_LADO_MAX_PX,
+  FOTOS_MAX_MINIATURAS,
+  iaFotosLiberada,
+  precisaReanalisar,
+  type SugestaoFotos,
+} from "@/lib/ai/fotos-prompt";
+import {
+  etapaDaUrl,
+  etapaLiberada,
+  etapaMaisAvancada,
+  etapaDoRascunho,
+  posMaxDoRascunho,
+  ORDEM_ETAPAS,
+  ULTIMA_ETAPA,
+  VERSAO_ORDEM_ETAPAS,
+} from "@/lib/etapas-anuncio";
+import { capacidadeSugerida, consumoSugerido, mbpsValido } from "@/lib/anuncio/sugestoes-cadastro";
+import { NEGOCIACAO_PADRAO, normalizarNegociacao, type LimitesPrivados, type Negociacao } from "@/lib/anuncio/negociacao";
+import { cepValido, paraProximity, type LugarProximo } from "@/lib/proximidades/osm";
+import { estadoDoStatus, type EstadoDocumentoTela } from "@/components/anuncio/documento-vinculo";
+import { chaveLugar } from "@/components/anuncio/blocos-cadastro";
+import type { CampoSugerido } from "./tipos";
+import { EtapaOndeFica } from "./etapa-onde-fica";
+import { EtapaFotos } from "./etapa-fotos";
+import { EtapaEncontramos } from "./etapa-encontramos";
+import { EtapaPreco } from "./etapa-preco";
+import { EtapaRevisar } from "./etapa-revisar";
 
-/** Metadados das 7 etapas do wizard (rodada 15). O índice é o ID estável da etapa; a ordem em que
- * aparecem é ORDEM_ETAPAS ("fotos primeiro", ordem 04e2fe5e). */
+/**
+ * Cadastro do anúncio em 5 etapas (prompt 10, aprovado pelo Daniel em 17/10):
+ *   1 Onde fica (tipo, CEP primeiro, documento do imóvel) · 2 Fotos (a IA analisa ao terminar) ·
+ *   3 O que encontramos (tudo pré-preenchido com "Sugerido · confira") · 4 Preço e disponibilidade ·
+ *   5 Revisar e publicar.
+ * A IA só SUGERE: nada sugerido vai ao anúncio sem o proprietário confirmar (termo de aceite na revisão). Mantém
+ * as regras que já funcionavam: rascunho salvo a cada etapa, mínimo de 8 fotos, preço sugerido, importar anúncio,
+ * faixas de prazo e o portão de publicação (documento aprovado — 0120).
+ */
 const STEP_META = [
-  { label: "Tipo", icon: Home, title: "Tipo e operação", subtitle: "Que imóvel é e quem o opera." },
-  { label: "Endereço", icon: MapPin, title: "Endereço", subtitle: "Onde fica o imóvel." },
-  { label: "Detalhes", icon: BedDouble, title: "Detalhes do imóvel", subtitle: "Cômodos, área e período." },
-  { label: "Fotos", icon: Camera, title: "Fotos do imóvel", subtitle: "Mínimo de 8 — anúncio bem fotografado se destaca." },
-  { label: "Comodidades", icon: Briefcase, title: "Comodidades", subtitle: "Marque o que o imóvel oferece — por categoria." },
-  { label: "Preço", icon: Tag, title: "Descrição e preço", subtitle: "Como o anúncio se apresenta e quanto custa." },
-  { label: "Revisão", icon: CheckCircle2, title: "Revisão", subtitle: "Confira tudo antes de publicar." },
+  { label: "Onde fica", icon: MapPin, title: "Onde fica", subtitle: "Tipo do imóvel, endereço e o documento do imóvel." },
+  { label: "Fotos", icon: Camera, title: "Fotos do imóvel", subtitle: "Mínimo de 8. Ao terminar, a IA sugere o resto do cadastro." },
+  { label: "O que encontramos", icon: Sparkles, title: "O que encontramos", subtitle: "Já preenchemos pelo que aparece nas fotos. Confira e ajuste." },
+  { label: "Preço e disponibilidade", icon: Tag, title: "Preço e disponibilidade", subtitle: "Valor mensal, datas, prazos e negociação." },
+  { label: "Revisar", icon: CheckCircle2, title: "Revisar e publicar", subtitle: "Confira tudo como o morador vai ver." },
 ] as const;
-const LAST = STEP_META.length - 1;
+
 
 export default function NewPropertyPage() {
   // T1: o rascunho local é POR USUÁRIO — nunca abre o de outra conta.
   const userId = useAuthStore((s) => s.user?.id ?? null);
   const [approved, setApproved] = useState<boolean | null>(null);
-  // Qualificação "Antes de anunciar" (ordem 04e2fe5e): deixou de ser a 1ª tela —
-  // abre o cadastro pelas fotos e só BARRA A PUBLICAÇÃO (rascunho sempre pode).
-  // Edição e rascunho retomado já passaram por ela (não pedem de novo).
+  // Qualificação "Antes de anunciar": só BARRA A PUBLICAÇÃO (rascunho sempre pode).
   const [qualificado, setQualificado] = useState(true);
-  // Estado da verificação do documento (anti-fraude, item 1). Só "approved"
-  // libera Publicar. Em demo/preview vem "approved" (não trava).
+  // Documento do imóvel (prompt 11): conferido na etapa 1. Só "approved" libera Publicar (0120).
   const [docStatus, setDocStatus] = useState<DocumentStatus>("approved");
-  const [docReason, setDocReason] = useState<string | null>(null);
-  // `step` é o ID da etapa (0 Tipo … 6 Revisão); abre pelas fotos.
+  const [docEstado, setDocEstado] = useState<EstadoDocumentoTela>("nenhum");
+  const [docMotivos, setDocMotivos] = useState<string[]>([]);
   const [step, setStep] = useState<number>(ORDEM_ETAPAS[0]);
-  const pos = posicaoDaEtapa(step);
-  // Etapa mais avançada já visitada (bug 13 da L2): guardada no rascunho, para a
-  // retomada deixar pular de novo até onde a pessoa já tinha chegado. É uma POSIÇÃO na ordem das etapas.
+  const pos = step;
+  // Etapa mais avançada já visitada (bug 13 da L2): guardada no rascunho.
   const [etapaMax, setEtapaMax] = useState(0);
-  /** Muda de etapa lembrando a mais avançada já visitada. */
   function irPara(i: number) {
-    setEtapaMax((m) => etapaMaisAvancada(m, posicaoDaEtapa(step), posicaoDaEtapa(i)));
+    setEtapaMax((m) => etapaMaisAvancada(m, step, i));
     setStep(i);
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   }
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiWarn, setAiWarn] = useState<string | null>(null);
-  // "Preencher com IA" pelas fotos (ordem 721a139a, parte B): o que a IA sugeriu fica visível até o dono revisar.
-  const [fotosIaLoading, setFotosIaLoading] = useState(false);
-  const [fotosIaWarn, setFotosIaWarn] = useState<string | null>(null);
-  const [sugeridoPelaIa, setSugeridoPelaIa] = useState<string[]>([]);
-  // Auditoria: descrição gerada por IA (some ao editar à mão). Persistido.
+  // IA das fotos (prompt 10): roda sozinha ao terminar o envio; uma vez por rascunho.
+  const [iaEstado, setIaEstado] = useState<"parada" | "analisando" | "feita" | "sem_sugestoes">("parada");
+  const [iaAnalisadas, setIaAnalisadas] = useState<string[]>([]);
+  const [sugeridos, setSugeridos] = useState<CampoSugerido[]>([]);
+  const [comodidadesSugeridas, setComodidadesSugeridas] = useState<string[]>([]);
   const [descricaoGeradaPorIa, setDescricaoGeradaPorIa] = useState(false);
-  // Termo de aceite (ordem 04e2fe5e, item 5): obrigatório para publicar; o texto da IA
-  // original fica aqui para saber, ao publicar, o que o dono editou depois.
   const [aceitouIa, setAceitouIa] = useState(false);
   const [textoIaOriginal, setTextoIaOriginal] = useState<{ titulo: string; descricao: string } | null>(null);
   const [title, setTitle] = useState("");
@@ -118,8 +132,7 @@ export default function NewPropertyPage() {
   const [bathrooms, setBathrooms] = useState("");
   const [areaM2, setAreaM2] = useState("");
   const [parkingSpots, setParkingSpots] = useState("");
-  // Capacidade máxima de pessoas (Onda 1 — valida contra o nº de ocupantes no
-  // fechamento). Persistido em `max_guests`.
+  // Capacidade (quantas pessoas podem morar) — valida contra o nº de ocupantes no fechamento.
   const [maxGuests, setMaxGuests] = useState("");
   const [minPeriod, setMinPeriod] = useState("30");
   const [maxPeriod, setMaxPeriod] = useState("180");
@@ -130,82 +143,67 @@ export default function NewPropertyPage() {
   const [privacidade, setPrivacidade] = useState<Privacidade>(PRIVACIDADE_VAZIA);
   const [smokingAllowed, setSmokingAllowed] = useState(false);
   const [childrenAllowed, setChildrenAllowed] = useState(true);
-  // Comodidades selecionadas (chaves do catálogo único).
   const [amenityKeys, setAmenityKeys] = useState<Record<string, boolean>>({});
-  // Proximidades reais (Google) — só place_id + categoria + rótulo.
+  const [internetMbps, setInternetMbps] = useState("");
+  // Proximidades: as do OSM (todas marcadas; o dono desmarca) + as manuais ("Adicionar outro").
+  const [proxOsm, setProxOsm] = useState<LugarProximo[] | null>(null);
+  const [proxCarregando, setProxCarregando] = useState(false);
+  const [proxDesmarcados, setProxDesmarcados] = useState<string[]>([]);
+  const proxBuscadoRef = useRef<string | null>(null);
   const [googlePlaces, setGooglePlaces] = useState<CuratedPlace[]>([]);
-  // Proximidades manuais (nome + distância digitados) — sem depender do Google.
   const [manualProximities, setManualProximities] = useState<Proximity[]>([]);
   const [monthlyPrice, setMonthlyPrice] = useState("");
-  const [airbnbMensal, setAirbnbMensal] = useState(""); // preço mensal equivalente no Airbnb (opcional; selo Preço justo)
-  // Condomínio (R$/mês) — entra no "tudo incluído" do inquilino (fonte única
-  // lib/precos). Separado das contas de consumo.
+  const [airbnbMensal, setAirbnbMensal] = useState("");
+  const [precoRegiao, setPrecoRegiao] = useState<{ valor: number; base: "bairro" | "cidade"; n: number } | null>(null);
   const [condoFee, setCondoFee] = useState("");
   const [street, setStreet] = useState("");
+  const [numero, setNumero] = useState("");
+  const [complemento, setComplemento] = useState("");
+  const [uf, setUf] = useState("MG");
   const [neighborhood, setNeighborhood] = useState("");
   const [city, setCity] = useState("Uberlândia");
   const [cep, setCep] = useState("");
   const [cepLoading, setCepLoading] = useState(false);
-  // Bairro do CEP diferente do digitado: pergunta em vez de trocar sem aviso.
   const [bairroDoCep, setBairroDoCep] = useState<string | null>(null);
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
   const [videoUrl, setVideoUrl] = useState("");
   const [utilitiesMode, setUtilitiesMode] = useState<"fixed" | "real">("fixed");
-  const [utilitiesEstimate, setUtilitiesEstimate] = useState(200);
+  const [utilitiesEstimate, setUtilitiesEstimate] = useState(0);
   const [issuesInvoice, setIssuesInvoice] = useState(false);
-  // Faixas de prazo aceitas (temporada / média estadia / longa).
-  const [faixas, setFaixas] = useState<Record<string, boolean>>({
-    temporada: true,
-    media_estadia: true,
-  });
-  // Garantias que o proprietário ACEITA (só preferência de aceite — não muda o
-  // caminho do dinheiro). Caução à vista por padrão. (Título aposentado — Onda 1.)
-  const [garantias, setGarantias] = useState<Record<string, boolean>>({
-    caucao_avista: true,
-    caucao_parcelada: false,
-    seguro_fianca: false,
-  });
+  const [faixas, setFaixas] = useState<Record<string, boolean>>({ temporada: true, media_estadia: true });
+  const [garantias, setGarantias] = useState<Record<string, boolean>>({ caucao_avista: true, caucao_parcelada: false, seguro_fianca: false });
   const [prepFee, setPrepFee] = useState(450);
+  const [negociacao, setNegociacao] = useState<Negociacao>(NEGOCIACAO_PADRAO);
+  const [limites, setLimites] = useState<LimitesPrivados>({ valorMinimo: null, limpezasMax: null });
   const [ownershipType, setOwnershipType] = useState<Operacao>("own");
   const [subleaseAuthorized, setSubleaseAuthorized] = useState(false);
   const [subleaseDoc, setSubleaseDoc] = useState<PhotoItem[]>([]);
-  // Edição: o documento já anexado antes (o caminho do arquivo não vem para a tela).
   const [docOperacaoAnexado, setDocOperacaoAnexado] = useState(false);
   const [qual, setQual] = useState({ baseBadge: false, tHome: false, tWork: false });
-  // Autosave no SERVIDOR (P0): status honesto + id do rascunho + hora do salvamento.
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [savedAt, setSavedAt] = useState<string>("");
   const [draftServerId, setDraftServerId] = useState<string | null>(null);
-  // "Novo anúncio detecta rascunho": rascunho anterior do dono, oferecido para
-  // retomada quando a página abre em branco (sem ?draft/?id). Dispensável.
   const [existingDraft, setExistingDraft] = useState<{ id: string; pct: number } | null>(null);
   const [draftBannerDismissed, setDraftBannerDismissed] = useState(false);
   const [publishing, setPublishing] = useState(false);
-  // Validação POR ETAPA (item QA): "Continuar" trava com campo obrigatório vazio
-  // (mensagem no próprio campo). Voltar segue livre; a Revisão é o portão final.
   const [erros, setErros] = useState<Record<string, string>>({});
   const [publishError, setPublishError] = useState<string | null>(null);
-  // Edição: ?id= carrega um imóvel do dono para editar (em vez de criar novo).
   const searchParams = useSearchParams();
   const editId = searchParams.get("id");
-  // Retomada de rascunho do servidor: `?draft=<id>`.
   const draftParam = searchParams.get("draft");
-  // ?etapa=N (link do checklist "Anúncio em andamento"): abre direto no campo que falta.
   const etapaParam = etapaDaUrl(searchParams.get("etapa"));
   const [editingId, setEditingId] = useState<string | null>(null);
   const router = useRouter();
 
-  // Sublocado/administrado: declaração + documento anexado (arquivo real no bucket privado).
+  const tirarSugestao = (c: CampoSugerido) => setSugeridos((s) => s.filter((x) => x !== c));
+  const sugerido = (c: CampoSugerido) => sugeridos.includes(c);
+
   const docOperacaoOk = docOperacaoAnexado || subleaseDoc.some((d) => !!d.path && !d.demo);
   const subleaseBlocked = exigeAutorizacao(ownershipType) && (!subleaseAuthorized || !docOperacaoOk);
   const photosMissing = Math.max(0, MIN_PHOTOS - photos.length);
   const photoBlocked = photos.length < MIN_PHOTOS;
-  const fotosMsg = photosMissing === 1 ? "Falta 1 foto" : `Faltam ${photosMissing} fotos`;
+  const enderecoCompleto = [street.trim(), numero.trim()].filter(Boolean).join(", ");
 
-  // Checklist da Revisão = PRONTIDÃO (fonte única: lib/anuncio/prontidao — a
-  // mesma de Meus imóveis, Visão geral, servidor do Publicar, FAQ e Viva).
-  // Publicar só libera com os OBRIGATÓRIOS verdes; os opcionais (selo, vídeo…)
-  // nunca bloqueiam. A navegação entre etapas continua livre (autosave).
   const garantiaOk = Object.values(garantias).some(Boolean);
   const prontidao = prontidaoAnuncio({
     enderecoOk: !!(street.trim() && neighborhood.trim() && city.trim()),
@@ -219,13 +217,12 @@ export default function NewPropertyPage() {
     privacidadeOk: privacidade.semCamerasInterior,
     operacao: ownershipType,
     documento: docStatus,
-    // O limite do plano é conferido no servidor ao publicar.
     limitePlanoOk: null,
     descricao: description,
     selo: qual.baseBadge,
     video: !!videoUrl.trim(),
   });
-  // Ordem 4c178768: só preenche o que veio do texto colado; o resto fica como está.
+  // "Importar anúncio" (t115): preenche o que veio do texto colado e leva direto à etapa 3, com tudo preenchido.
   function aplicarImportado(a: AnuncioOrganizado) {
     if (a.titulo) setTitle(a.titulo);
     if (a.descricao) setDescription(a.descricao);
@@ -237,64 +234,55 @@ export default function NewPropertyPage() {
     if (a.comodidades.length) setAmenityKeys((s) => ({ ...s, ...Object.fromEntries(a.comodidades.map((k) => [k, true])) }));
     if (a.aceitaPet != null) setPetsOk(a.aceitaPet);
     if (a.permiteFumar != null) setSmokingAllowed(a.permiteFumar);
+    irPara(2);
   }
 
   const completude = prontidao.obrigatorios;
   const podePublicar = prontidao.podePublicar && qualificado && aceitouIa;
 
-  /** Campos obrigatórios da etapa atual (chave → mensagem). Vazio = pode avançar.
-   * Só barra o AVANÇO ("Continuar"); voltar e pular para etapas já visitadas
-   * seguem livres, e a Revisão continua sendo o portão final da publicação. */
+  /** Campos obrigatórios da etapa atual (chave → mensagem). Só barra o AVANÇO; a Revisão é o portão final. */
   function validarEtapa(s: number): Record<string, string> {
     const e: Record<string, string> = {};
-    if (s === 0 && exigeAutorizacao(ownershipType)) {
-      const doc = DOC_AUTORIZACAO[ownershipType as "subleased" | "managed"];
-      if (!subleaseAuthorized) e.sublocacao = "Marque a declaração para continuar.";
-      else if (!docOperacaoOk) e.sublocacao = `Anexe: ${doc.titulo.toLowerCase()}.`;
-    }
-    if (s === 1) {
-      if (!street.trim()) e.rua = "Informe o endereço (rua e número).";
+    if (s === 0) {
+      if (exigeAutorizacao(ownershipType)) {
+        if (!subleaseAuthorized) e.sublocacao = "Marque a declaração para continuar.";
+        else if (!docOperacaoOk) e.sublocacao = `Anexe: ${DOC_AUTORIZACAO[ownershipType as "subleased" | "managed"].titulo.toLowerCase()}.`;
+      }
+      if (!street.trim()) e.rua = "Informe a rua.";
+      if (!numero.trim()) e.numero = "Informe o número (ou s/n).";
       if (!neighborhood.trim()) e.bairro = "Informe o bairro.";
       if (!city.trim()) e.cidade = "Informe a cidade.";
     }
+    if (s === 1 && photos.length === 0)
+      e.fotos = "Adicione ao menos 1 foto para continuar (o mínimo para publicar é " + MIN_PHOTOS + ").";
     if (s === 2) {
       if ((Number(bathrooms) || 0) < 1) e.banheiros = "Informe ao menos 1 banheiro.";
       if ((Number(areaM2) || 0) <= 0) e.area = "Informe a área do imóvel (m²).";
-      if ((Number(maxGuests) || 0) < 1) e.hospedes = "Informe a capacidade (nº de hóspedes).";
-    }
-    if (s === 3 && photos.length === 0)
-      e.fotos = "Adicione ao menos 1 foto para continuar (o mínimo para publicar é " + MIN_PHOTOS + ").";
-    if (s === 5) {
+      if ((Number(maxGuests) || 0) < 1) e.capacidade = "Informe quantas pessoas podem morar no imóvel.";
       if (title.trim().length < 3) e.titulo = "Dê um título ao anúncio (mín. 3 caracteres).";
+    }
+    if (s === 3) {
       if (!(Number(monthlyPrice) > 0)) e.preco = "Informe o valor mensal.";
       if (!garantiaOk) e.garantia = "Escolha ao menos uma garantia.";
     }
     return e;
   }
 
-  /** Avança se a etapa atual estiver válida; senão fixa os erros nos campos. */
   function avancarEtapa() {
     const e = validarEtapa(step);
     setErros(e);
-    if (Object.keys(e).length === 0) irPara(etapaNaPosicao(pos + 1));
+    if (Object.keys(e).length === 0) irPara(Math.min(ULTIMA_ETAPA, step + 1));
   }
 
-  /** Volta/pula para trás sempre livre — limpa as mensagens de erro. */
   function voltarEtapa() {
     setErros({});
-    irPara(etapaNaPosicao(pos - 1));
+    irPara(Math.max(0, step - 1));
   }
 
-  // Evento anônimo (0067): começou um anúncio novo (edição não conta).
   useEffect(() => {
     if (!editId) registrarEvento("iniciar_anuncio");
   }, [editId]);
 
-  // Estado da verificação do documento DESTE imóvel (portão de Publicar). O
-  // imóvel pode ter vindo por ?id= (edição), ?draft= (rascunho) ou ter virado
-  // rascunho no servidor durante a sessão — antes só o ?id= contava, e um
-  // rascunho com documento APROVADO seguia "Em análise" e sem Publicar.
-  // Imóvel ainda sem id: a qualificação à espera (ligada a ele ao criar).
   const imovelId = editId ?? draftParam ?? draftServerId;
   useEffect(() => {
     let alive = true;
@@ -302,7 +290,8 @@ export default function NewPropertyPage() {
       .then((r) => {
         if (!alive) return;
         setDocStatus(r.status);
-        setDocReason(r.reason);
+        setDocEstado(estadoDoStatus(r.status));
+        setDocMotivos(r.reason ? r.reason.split(" · ") : []);
       })
       .catch(() => {});
     return () => {
@@ -310,8 +299,6 @@ export default function NewPropertyPage() {
     };
   }, [imovelId]);
 
-  // F8: rascunho retomado (?draft=) lê a qualificação DESTE imóvel no servidor;
-  // sem ela (ou não elegível), o aviso "Antes de anunciar" aparece e publicar é barrado.
   useEffect(() => {
     if (!draftParam || editId) return;
     let alive = true;
@@ -327,21 +314,23 @@ export default function NewPropertyPage() {
     };
   }, [draftParam, editId]);
 
-  // Barra de qualidade do anúncio: fotos + descrição + recursos (rodada 11).
+  // Barra de qualidade do anúncio: fotos + descrição + selo (rodada 11).
   const quality = Math.min(
     100,
-    Math.round((Math.min(photos.length, 20) / 20) * 60) +
-      (description.trim().length > 30 ? 20 : 0) +
-      (qual.baseBadge ? 20 : 0)
+    Math.round((Math.min(photos.length, 20) / 20) * 60) + (description.trim().length > 30 ? 20 : 0) + (qual.baseBadge ? 20 : 0)
   );
 
-  // Imóvel "ao vivo" para o preview do card (montado conforme preenche).
+  const proximidadesFinais: Proximity[] = [
+    ...(proxOsm ?? []).filter((l) => !proxDesmarcados.includes(chaveLugar(l))).map(paraProximity),
+    ...manualProximities,
+  ];
+
   const previewProperty = {
     id: "preview",
     title: title.trim() || "Sem título ainda",
     propertyType: propertyTypeLabel(propertyType),
     city: city || "Uberlândia",
-    state: "MG",
+    state: uf || "MG",
     neighborhood: neighborhood || "Bairro",
     bedrooms: Number(bedrooms) || 0,
     bathrooms: Number(bathrooms) || 0,
@@ -355,13 +344,13 @@ export default function NewPropertyPage() {
   } as Property;
 
   async function publish(asDraft = false, irParaQualificacao = false) {
-    // Publicar exige documento aprovado (anti-fraude, item 1). Rascunho sempre
-    // pode. Não vale na edição de imóvel já existente.
     if (!asDraft && !editingId && docStatus !== "approved") {
       setPublishError(
         docStatus === "rejected"
-          ? "Documentação não aprovada — reenvie na qualificação para publicar."
-          : "Documentação em análise. Você pode salvar como rascunho; a publicação libera após a aprovação."
+          ? "O documento precisa ser corrigido: reenvie na etapa Onde fica para publicar."
+          : docStatus === "pending"
+            ? "Documentação em revisão. Você pode salvar como rascunho; a publicação libera depois da conferência."
+            : "Envie o documento do imóvel na etapa Onde fica para publicar."
       );
       return;
     }
@@ -369,13 +358,11 @@ export default function NewPropertyPage() {
       setPublishError("Falta a qualificação (checklist \"Antes de anunciar\"). Você pode salvar como rascunho e concluí-la para publicar.");
       return;
     }
-    // Publicação exige tudo verde na checklist de completude (item 3). Rascunho
-    // salva mesmo incompleto (o autosave depende disso).
     if (!asDraft) {
       const falta = completude.find((c) => !c.ok);
       if (falta) {
         setPublishError(`Falta para publicar: ${prontidao.faltam.join("; ")}.`);
-        if (falta.key !== "documento") irPara(falta.etapa);
+        irPara(falta.etapa);
         return;
       }
     }
@@ -383,7 +370,6 @@ export default function NewPropertyPage() {
       setPublishError(`Adicione pelo menos ${MIN_PHOTOS} fotos para publicar. Faltam ${photosMissing}.`);
       return;
     }
-    // Rascunho pode ficar sem o documento; publicar, não (o banco também barra — 0091).
     if (!asDraft && subleaseBlocked) {
       setPublishError(
         ownershipType === "managed"
@@ -392,7 +378,6 @@ export default function NewPropertyPage() {
       );
       return;
     }
-    // Duração máxima não pode ser menor que a mínima (evita range invertido).
     const minDays = Number(minPeriod) || 30;
     const maxDays = Number(maxPeriod) || 0;
     if (maxDays && maxDays < minDays) {
@@ -411,10 +396,8 @@ export default function NewPropertyPage() {
       if (raw) q = { ...q, ...JSON.parse(raw) };
     } catch {}
 
-    // Geocodifica o endereço para gravar lat/lng — assim o imóvel aparece no
-    // mapa e nos filtros por raio. Nunca lança: cai no centro da cidade quando
-    // não há coordenada válida (não some do mapa, não vai parar no oceano).
-    const coords = await geocodeForSave({ street, neighborhood, city });
+    // Geocodifica para gravar lat/lng (o ponto exato nunca é público: vale o círculo do bairro).
+    const coords = await geocodeForSave({ street: enderecoCompleto, neighborhood, city });
 
     const payload = {
       title: title || "Imóvel mobiliado",
@@ -434,20 +417,16 @@ export default function NewPropertyPage() {
       tagCondoApproved: q.tCondo,
       ownershipType,
       subleaseAuthorized,
-      // Guarda o PATH do bucket privado (estável); a URL assinada expira. Cai
-      // na url só se for preview local (demo/sem migração).
       subleaseDocUrl: subleaseDoc[0]?.path ?? subleaseDoc[0]?.url,
       condoFee: Number(condoFee) || 0,
       descricaoGeradaPorIa,
       utilitiesMode,
       utilitiesEstimate,
       issuesInvoice,
-      // selo "Aceita Seguro-Fiança" deriva da garantia seguro_fianca.
       acceptsInsurance: !!garantias.seguro_fianca,
       faixasAceitas: Object.keys(faixas).filter((k) => faixas[k]),
       garantiasAceitas: Object.keys(garantias).filter((k) => garantias[k]),
       prepFee,
-      // Enriquecimento (FASE 1/2)
       parkingSpots: Number(parkingSpots) || 0,
       maxGuests: Number(maxGuests) || undefined,
       availableFrom: availableFrom || undefined,
@@ -463,14 +442,14 @@ export default function NewPropertyPage() {
       childrenAllowed,
       amenityKeys: Object.keys(amenityKeys).filter((k) => amenityKeys[k]),
       googlePlaces,
-      proximities: manualProximities,
+      proximities: proximidadesFinais,
+      negociacao,
+      limitesNegociacao: limites,
+      internetMbps: mbpsValido(internetMbps),
       lat: coords.lat,
       lng: coords.lng,
-      // Só URLs persistentes (Storage). URLs blob: do modo demo morrem ao
-      // recarregar — não devem ser gravadas como foto do imóvel.
       photoUrls: photos.map((p) => p.url).filter((u) => u && !u.startsWith("blob:")),
       videoUrl: videoUrl.trim() || undefined,
-      // "Salvar rascunho" => draft; "Publicar anúncio" => active (entra na busca).
       asDraft,
       aceiteIa: asDraft
         ? undefined
@@ -480,9 +459,6 @@ export default function NewPropertyPage() {
           },
     };
 
-    // Edição OU rascunho já persistido no servidor → ATUALIZA a mesma linha
-    // (converte o rascunho em ativo ao publicar; nunca cria duplicado). Só cria
-    // do zero quando não há id de rascunho ainda.
     const targetId = editingId || draftServerId;
     const res = targetId ? await updateProperty(targetId, payload) : await createProperty(payload);
 
@@ -491,24 +467,18 @@ export default function NewPropertyPage() {
       setPublishError(res.error ?? "Não foi possível salvar.");
       return;
     }
-    // Evento anônimo (0067): publicação de anúncio novo (não a reedição).
     if (!asDraft && !editingId) registrarEvento("publicar_anuncio", { imovelId: targetId, cidade: city });
-    // Só limpa o rascunho de "novo anúncio" quando de fato criamos um novo.
     if (!editingId) {
       try {
         localStorage.removeItem(DRAFT_KEY_LEGADO);
         if (userId) localStorage.removeItem(draftKey(userId));
       } catch {}
     }
-    // F8: "Antes de anunciar" salva o rascunho e segue ao checklist daquele
-    // imóvel (nunca recarrega o próprio assistente).
     const destinoQual = irParaQualificacao ? linkQualificacao(res.id ?? targetId) : null;
     router.push(destinoQual ?? "/dashboard/imoveis");
   }
 
-  // Aplica um snapshot de rascunho (localStorage OU servidor) ao formulário.
-  // Fonte única da restauração — usada pela retomada local e pela retomada por
-  // `?draft=<id>` (servidor), para nunca divergirem.
+  // Aplica um snapshot de rascunho (localStorage OU servidor) ao formulário — fonte única da restauração.
   function aplicarDraft(d: Record<string, unknown>) {
     const s = (v: unknown) => (typeof v === "string" ? v : undefined);
     if (s(d.title)) setTitle(d.title as string);
@@ -528,10 +498,14 @@ export default function NewPropertyPage() {
     if (s(d.condoFee)) setCondoFee(d.condoFee as string);
     if (typeof d.descricaoGeradaPorIa === "boolean") setDescricaoGeradaPorIa(d.descricaoGeradaPorIa);
     if (s(d.street)) setStreet(d.street as string);
+    if (s(d.numero)) setNumero(d.numero as string);
+    if (s(d.complemento)) setComplemento(d.complemento as string);
+    if (s(d.uf)) setUf(d.uf as string);
     if (s(d.neighborhood)) setNeighborhood(d.neighborhood as string);
     if (s(d.city)) setCity(d.city as string);
     if (s(d.cep)) setCep(d.cep as string);
     if (s(d.videoUrl)) setVideoUrl(d.videoUrl as string);
+    if (s(d.internetMbps)) setInternetMbps(d.internetMbps as string);
     if (typeof d.furnished === "boolean") setFurnished(d.furnished);
     if (typeof d.petsOk === "boolean") setPetsOk(d.petsOk);
     if (d.privacidade && typeof d.privacidade === "object") setPrivacidade({ ...PRIVACIDADE_VAZIA, ...(d.privacidade as Partial<Privacidade>) });
@@ -540,13 +514,21 @@ export default function NewPropertyPage() {
     if (typeof d.issuesInvoice === "boolean") setIssuesInvoice(d.issuesInvoice);
     if (d.amenityKeys && typeof d.amenityKeys === "object") setAmenityKeys(d.amenityKeys as Record<string, boolean>);
     if (Array.isArray(d.googlePlaces)) setGooglePlaces(d.googlePlaces as CuratedPlace[]);
-    if (Array.isArray(d.manualProximities))
-      setManualProximities(d.manualProximities as Parameters<typeof setManualProximities>[0]);
+    if (Array.isArray(d.manualProximities)) setManualProximities(d.manualProximities as Proximity[]);
+    if (Array.isArray(d.proxOsm)) {
+      setProxOsm(d.proxOsm as LugarProximo[]);
+      proxBuscadoRef.current = cepValido(d.cep);
+    }
+    if (Array.isArray(d.proxDesmarcados)) setProxDesmarcados((d.proxDesmarcados as unknown[]).filter((x): x is string => typeof x === "string"));
+    if (Array.isArray(d.iaAnalisadas)) setIaAnalisadas((d.iaAnalisadas as unknown[]).filter((x): x is string => typeof x === "string"));
+    if (Array.isArray(d.sugeridos)) setSugeridos(d.sugeridos as CampoSugerido[]);
+    if (Array.isArray(d.comodidadesSugeridas)) setComodidadesSugeridas(d.comodidadesSugeridas as string[]);
     if (d.utilitiesMode === "fixed" || d.utilitiesMode === "real") setUtilitiesMode(d.utilitiesMode);
     if (typeof d.utilitiesEstimate === "number") setUtilitiesEstimate(d.utilitiesEstimate);
     if (d.faixas && typeof d.faixas === "object") setFaixas(d.faixas as Record<string, boolean>);
     if (d.garantias && typeof d.garantias === "object") setGarantias(d.garantias as Record<string, boolean>);
     if (typeof d.prepFee === "number") setPrepFee(d.prepFee);
+    if (d.negociacao && typeof d.negociacao === "object") setNegociacao(normalizarNegociacao(d.negociacao));
     if (operacaoValida(d.ownershipType)) setOwnershipType(d.ownershipType);
     if (typeof d.subleaseAuthorized === "boolean") setSubleaseAuthorized(d.subleaseAuthorized);
     if (Array.isArray(d.photos)) setPhotos(d.photos as PhotoItem[]);
@@ -555,16 +537,13 @@ export default function NewPropertyPage() {
       const q = d.qual as Record<string, unknown>;
       setQual({ baseBadge: !!q.baseBadge, tHome: !!q.tHome, tWork: !!q.tWork });
     }
+    // Rascunho das ordens antigas (7 etapas) abre na primeira etapa ainda incompleta.
     setStep(etapaDoRascunho(d));
     setEtapaMax(posMaxDoRascunho(d));
   }
 
   const draftIdRef = useRef<string | null>(null);
-  // Retomada por `?draft=<id>` — carrega o snapshot do SERVIDOR e restaura tudo
-  // (campos + etapa). É o "Continuar editando" de um rascunho de Meus imóveis.
   useEffect(() => {
-    // Já é o rascunho aberto nesta tela (a URL ganhou ?draft= após o 1º
-    // autosave): não recarrega, senão apagaria o que foi digitado no meio.
     if (!draftParam || draftParam === draftIdRef.current) return;
     let alive = true;
     (async () => {
@@ -574,9 +553,10 @@ export default function NewPropertyPage() {
       setDraftServerId(draftParam);
       setApproved(true);
       if (d && typeof d === "object") aplicarDraft(d as Record<string, unknown>);
+      carregarLimitesNegociacao(draftParam).then((l) => alive && setLimites(l)).catch(() => {});
       if (etapaParam !== null) {
         setStep(etapaParam);
-        setEtapaMax((m) => Math.max(m, posicaoDaEtapa(etapaParam)));
+        setEtapaMax((m) => Math.max(m, etapaParam));
       }
     })();
     return () => {
@@ -586,7 +566,6 @@ export default function NewPropertyPage() {
   }, [draftParam]);
 
   useEffect(() => {
-    // Em edição (?id=) ou retomada de rascunho (?draft=), não lê o rascunho local.
     if (editId || draftParam) return;
     const raw = sessionStorage.getItem("vivanomads-qualification");
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -597,13 +576,9 @@ export default function NewPropertyPage() {
         const q = JSON.parse(raw);
         setQual({ baseBadge: !!q.baseBadge, tHome: !!q.tHome, tWork: !!q.tWork });
       }
-      // Chave antiga (global, sem dono) é descartada — podia ser de outra conta.
       localStorage.removeItem(DRAFT_KEY_LEGADO);
     } catch {}
-    // Bug 12 (L2): abrir "Novo anúncio" em branco aplicava a cópia local, e o
-    // autosave criava OUTRO rascunho no servidor (duplicado), o que escondia o
-    // aviso "anúncio em andamento". Agora pergunta ao servidor primeiro: com
-    // rascunho lá, oferece retomar (banner); sem, usa a cópia local (cinto).
+    // Bug 12 (L2): com rascunho no servidor, oferece retomar (banner); sem, usa a cópia local.
     let alive = true;
     const local = (() => {
       try {
@@ -619,7 +594,7 @@ export default function NewPropertyPage() {
       // `?etapa=` na URL de um anúncio novo vence a etapa guardada no rascunho local.
       if (alive && etapaParam !== null) {
         setStep(etapaParam);
-        setEtapaMax((m) => Math.max(m, posicaoDaEtapa(etapaParam)));
+        setEtapaMax((m) => Math.max(m, etapaParam));
       }
     };
     getLatestDraft()
@@ -635,8 +610,7 @@ export default function NewPropertyPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editId, draftParam, userId]);
 
-  // Edição: carrega o imóvel do dono e preenche o formulário. Não requer
-  // requalificação (já é um anúncio existente) e não usa o rascunho local.
+  // Edição: carrega o imóvel do dono e preenche o formulário.
   useEffect(() => {
     if (!editId) return;
     let alive = true;
@@ -681,61 +655,50 @@ export default function NewPropertyPage() {
       setSubleaseAuthorized(!!p.subleaseAuthorized);
       setDocOperacaoAnexado(!!p.autorizacaoAnexada);
       setVideoUrl(p.videoUrl || "");
-      setAmenityKeys(
-        Object.fromEntries(amenityKeysFromLabels(p.amenities || []).map((k) => [k, true]))
-      );
+      setInternetMbps(p.internetMbps ? String(p.internetMbps) : "");
+      if (p.negociacao) setNegociacao(p.negociacao);
+      setAmenityKeys(Object.fromEntries(amenityKeysFromLabels(p.amenities || []).map((k) => [k, true])));
       setGooglePlaces((p.googlePlaces || []).map((g) => ({ placeId: g.placeId, categoria: g.categoria, rotulo: g.rotulo })));
       setManualProximities(p.proximities || []);
       if (p.faixasAceitas?.length) setFaixas(Object.fromEntries(p.faixasAceitas.map((k) => [k, true])));
       if (p.garantiasAceitas?.length) setGarantias(Object.fromEntries(p.garantiasAceitas.map((k) => [k, true])));
       setPhotos((p.photos || []).map((url, i) => ({ id: `edit-${i}`, url, name: "", path: null, demo: false })));
+      // Edição: as fotos atuais já foram "analisadas" (não chama a IA só por abrir).
+      setIaAnalisadas(p.photos || []);
+      carregarLimitesNegociacao(editId).then((l) => alive && setLimites(l)).catch(() => {});
     })();
     return () => {
       alive = false;
     };
   }, [editId]);
 
-  // Auto-save do rascunho + indicador "Salvo ✓" (Bloco F).
-  // Guarda TODOS os campos serializáveis + a etapa atual, para que trocar de
-  // página e voltar não perca nada. Exceção: fotos/documentos (arquivos) não
-  // cabem com segurança no armazenamento local — por isso o aviso na tela.
+  // Auto-save do rascunho + "Salvo ✓". Os limites PRIVADOS da negociação NÃO vão no JSON (salvos à parte).
   const draftJson = JSON.stringify({
     title, propertyType, description, bedrooms, bathrooms, areaM2, parkingSpots, maxGuests,
     minPeriod, maxPeriod, availableFrom, availableUntil, monthlyPrice, airbnbMensal,
-    street, neighborhood, city, cep, videoUrl,
+    street, numero, complemento, uf, neighborhood, city, cep, videoUrl, internetMbps,
     privacidade, furnished, petsOk, smokingAllowed, childrenAllowed, issuesInvoice,
-    amenityKeys, googlePlaces, manualProximities,
-    condoFee, descricaoGeradaPorIa, utilitiesMode, utilitiesEstimate, faixas, garantias, prepFee,
+    amenityKeys, googlePlaces, manualProximities, proxOsm, proxDesmarcados,
+    condoFee, descricaoGeradaPorIa, utilitiesMode, utilitiesEstimate, faixas, garantias, prepFee, negociacao,
     ownershipType, subleaseAuthorized, step, ordemEtapas: VERSAO_ORDEM_ETAPAS, etapaMax: Math.max(etapaMax, pos),
-    // Qualificação (selo + etiquetas). Guardada no rascunho para a retomada por
-    // `?draft` (que não passa pela sessionStorage) nunca zerar o 6/6 do selo.
+    iaAnalisadas, sugeridos, comodidadesSugeridas,
     qual,
-    // Fotos/documentos só são guardados quando já têm URL persistente
-    // (Supabase Storage). URLs "blob:" do modo demo morrem ao recarregar,
-    // então ficam de fora para não restaurar imagens quebradas.
     photos: photos.filter((p) => p.url && !p.url.startsWith("blob:")),
     subleaseDoc: subleaseDoc.filter((p) => p.url && !p.url.startsWith("blob:")),
   });
-  // Autosave REAL no servidor (P0). draftIdRef guarda o id de forma síncrona (o
-  // 1º save insere e fixa o id; os seguintes ATUALIZAM — sem rascunhos
-  // duplicados). localStorage segue como cinto secundário.
   useEffect(() => {
-    // Não autossalva em modo edição (?id — imóvel existente, não é rascunho novo).
     if (approved !== true || editId) return;
     try {
       if (userId) localStorage.setItem(draftKey(userId), draftJson);
     } catch {
       /* cota do navegador cheia — o rascunho ainda tenta o servidor */
     }
-    // Não cria rascunho vazio (evita lixo ao só abrir a página).
     const vazio =
-      !title.trim() && !description.trim() && !street.trim() && !neighborhood.trim() &&
+      !title.trim() && !description.trim() && !street.trim() && !neighborhood.trim() && !cep.trim() &&
       photos.length === 0 && !(Number(monthlyPrice) > 0) && !bedrooms && !bathrooms && !areaM2;
     if (vazio) return;
 
     let on = true;
-    // Marca "Salvando…" já ao detectar a alteração (antes do debounce): é a
-    // sincronização com o autosave, por isso o setState dentro do effect.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSaveStatus("saving");
     const t = setTimeout(async () => {
@@ -757,14 +720,11 @@ export default function NewPropertyPage() {
           const novo = draftIdRef.current !== res.id;
           draftIdRef.current = res.id;
           setDraftServerId(res.id);
-          // A URL passa a apontar para este rascunho: recarregar retoma ELE, e
-          // abrir "Novo anúncio" de novo detecta e oferece retomar (bug 12).
           if (novo && !editId) window.history.replaceState(null, "", `/dashboard/imoveis/novo?draft=${res.id}`);
         }
         setSaveStatus("saved");
         setSavedAt(new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }));
       } else {
-        // Falha real de gravação → avisa (não finge sucesso). Demo não tem backend.
         setSaveStatus(res.demo ? "saved" : "error");
       }
     }, 2000);
@@ -775,10 +735,15 @@ export default function NewPropertyPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [approved, draftJson, editId, userId]);
 
-  // Guarda de saída (cinto além do autosave): avisa antes de fechar/recarregar a
-  // aba com alteração ainda não persistida — dentro da janela de debounce
-  // ("Salvando…") ou após falha de rede ("não salvo"). Ref para não reassinar o
-  // listener a cada tecla. Edição (?id) não é rascunho — sem guarda.
+  // Limites privados do rascunho: gravados à parte (tabela só do dono), nunca no JSON do rascunho.
+  const limitesJson = JSON.stringify(limites);
+  useEffect(() => {
+    const id = editingId ?? draftServerId;
+    if (!id || editingId) return;
+    const t = setTimeout(() => void salvarLimitesNegociacao(id, JSON.parse(limitesJson)).catch(() => {}), 1500);
+    return () => clearTimeout(t);
+  }, [limitesJson, draftServerId, editingId]);
+
   const unsavedRef = useRef(false);
   useEffect(() => {
     unsavedRef.current = !editId && (saveStatus === "saving" || saveStatus === "error");
@@ -793,6 +758,7 @@ export default function NewPropertyPage() {
     return () => window.removeEventListener("beforeunload", handler);
   }, []);
 
+  // CEP primeiro (prompt 10): ao completar 8 dígitos, o ViaCEP preenche rua, bairro, cidade e UF.
   async function lookupCep(value: string) {
     const digits = value.replace(/\D/g, "");
     if (digits.length !== 8) return;
@@ -801,10 +767,10 @@ export default function NewPropertyPage() {
       const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
       const data = await res.json();
       if (!data.erro) {
-        // Só preenche o que está VAZIO — vale o que o dono digitou. Bairro
-        // diferente vira uma pergunta (antes "Santa Mônica" virava "Saraiva").
+        // Só preenche o que está VAZIO — vale o que o dono digitou. Bairro diferente vira uma pergunta.
         if (data.logradouro && !street.trim()) setStreet(data.logradouro);
-        if (data.localidade && !city.trim()) setCity(data.localidade);
+        if (data.localidade) setCity((c) => (c.trim() && c !== "Uberlândia" ? c : data.localidade));
+        if (data.uf) setUf(String(data.uf).slice(0, 2));
         if (data.bairro) {
           const digitado = neighborhood.trim();
           if (!digitado) setNeighborhood(data.bairro);
@@ -818,15 +784,64 @@ export default function NewPropertyPage() {
     }
   }
 
-  // "Começar outro" (banner de detecção): esquece o rascunho anterior nesta
-  // sessão e limpa o formulário para um anúncio novo do zero. O autosave então
-  // cria uma linha nova (draftIdRef zerado) — o rascunho anterior fica intacto
-  // em Meus imóveis.
+  // Proximidades em segundo plano: com CEP + rua + número, busca uma vez por CEP (cache no servidor).
+  useEffect(() => {
+    const c = cepValido(cep);
+    if (!c || !street.trim() || !numero.trim() || proxBuscadoRef.current === c) return;
+    const t = setTimeout(async () => {
+      proxBuscadoRef.current = c;
+      setProxCarregando(true);
+      try {
+        const res = await fetch("/api/proximidades", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ cep: c, rua: street, numero, bairro: neighborhood, cidade: city, uf }),
+        });
+        const data = (await res.json().catch(() => ({}))) as { itens?: LugarProximo[] };
+        setProxOsm(Array.isArray(data.itens) ? data.itens : []);
+        setProxDesmarcados([]);
+      } catch {
+        setProxOsm([]);
+      } finally {
+        setProxCarregando(false);
+      }
+    }, 800);
+    return () => clearTimeout(t);
+  }, [cep, street, numero, neighborhood, city, uf]);
+
+  // Preço sugerido para imóveis parecidos na região (mediana de anúncios reais; sem dados, nada).
+  useEffect(() => {
+    if (step !== 3 || !city.trim()) return;
+    let alive = true;
+    precoDaRegiao({ cidade: city, bairro: neighborhood, quartos: Number(bedrooms) || 0 })
+      .then((r) => {
+        if (!alive) return;
+        setPrecoRegiao(r);
+        if (r && !(Number(monthlyPrice) > 0)) {
+          setMonthlyPrice(String(r.valor));
+          setSugeridos((s) => (s.includes("preco") ? s : [...s, "preco"]));
+        }
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, city, neighborhood, bedrooms]);
+
+  // Consumo pré-preenchido por quartos (estimativa simples e editável) ao chegar na etapa de preço.
+  useEffect(() => {
+    if (step !== 3 || utilitiesEstimate > 0 || editingId) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setUtilitiesEstimate(consumoSugerido(Number(bedrooms) || 1));
+    setSugeridos((s) => (s.includes("consumo") ? s : [...s, "consumo"]));
+  }, [step, utilitiesEstimate, bedrooms, editingId]);
+
   function comecarOutro() {
     setDraftBannerDismissed(true);
     try {
       localStorage.removeItem(DRAFT_KEY_LEGADO);
-        if (userId) localStorage.removeItem(draftKey(userId));
+      if (userId) localStorage.removeItem(draftKey(userId));
     } catch {}
     draftIdRef.current = null;
     setDraftServerId(null);
@@ -843,6 +858,8 @@ export default function NewPropertyPage() {
     setMaxGuests("");
     setMonthlyPrice("");
     setStreet("");
+    setNumero("");
+    setComplemento("");
     setNeighborhood("");
     setCep("");
     setVideoUrl("");
@@ -851,104 +868,107 @@ export default function NewPropertyPage() {
     setAmenityKeys({});
     setGooglePlaces([]);
     setManualProximities([]);
+    setProxOsm(null);
+    setProxDesmarcados([]);
+    proxBuscadoRef.current = null;
+    setIaAnalisadas([]);
+    setSugeridos([]);
+    setComodidadesSugeridas([]);
+    // O botão "Começar outro" some com o aviso: o foco volta para o CEP, primeiro campo da etapa 1.
+    setTimeout(() => document.querySelector<HTMLInputElement>('[data-testid="cadastro-cep"]')?.focus(), 0);
   }
 
-  // Gera título/descrição pela IA (rota do servidor — a chave NUNCA vem ao
-  // cliente). Envia só campos SEGUROS do imóvel (sem endereço exato/PII). Marca
-  // a descrição como gerada por IA (auditoria) até o dono editar à mão.
-  async function generateAI() {
-    setAiWarn(null);
-    setAiLoading(true);
-    try {
-      const comodidades = AMENITY_GROUPS.flatMap((g) => g.items)
-        .filter((it) => amenityKeys[it.key])
-        .map((it) => it.label);
-      const brief = {
-        tipo: propertyTypeLabel(propertyType),
-        cidade: city,
-        bairro: neighborhood,
-        quartos: Number(bedrooms) || undefined,
-        banheiros: Number(bathrooms) || undefined,
-        areaM2: Number(areaM2) || undefined,
-        vagas: Number(parkingSpots) || undefined,
-        mobiliado: furnished,
-        aceitaPet: petsOk,
-        comodidades,
-        faixas: FAIXAS.filter((f) => faixas[f.key]).map((f) => f.label),
-        temHomeOffice: qual.tHome,
-      };
-      const res = await fetch("/api/ai/anuncio", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(brief),
-      });
-      const data = (await res.json().catch(() => ({}))) as { titulo?: string; descricao?: string; error?: string };
-      if (!res.ok || !data.titulo || !data.descricao) {
-        setAiWarn(data.error ?? "Não foi possível gerar agora. Tente novamente.");
-        return;
+  function aplicarSugestao(d: SugestaoFotos, analisadas: string[]) {
+    const marcados: CampoSugerido[] = [];
+    if (d.tipo && PROPERTY_TYPES.some((t) => t.value === d.tipo) && propertyType === "apartamento" && d.tipo !== propertyType) {
+      setPropertyType(d.tipo);
+      marcados.push("tipo");
+    }
+    if (d.quartos !== undefined && !bedrooms) {
+      setBedrooms(String(d.quartos));
+      marcados.push("quartos");
+      if (!maxGuests) {
+        setMaxGuests(String(capacidadeSugerida(d.quartos)));
+        marcados.push("capacidade");
       }
-      setTitle(data.titulo);
-      setDescription(data.descricao);
+    }
+    if (d.banheiros !== undefined && !bathrooms) {
+      setBathrooms(String(d.banheiros));
+      marcados.push("banheiros");
+    }
+    if (d.mobiliado !== undefined && d.mobiliado !== furnished) {
+      setFurnished(d.mobiliado);
+      marcados.push("mobiliado");
+    }
+    if (d.comodidades?.length) {
+      const novas = d.comodidades.filter((k) => !amenityKeys[k]);
+      setAmenityKeys((a) => ({ ...a, ...Object.fromEntries(d.comodidades.map((k) => [k, true])) }));
+      setComodidadesSugeridas(novas);
+    }
+    if (d.titulo && !title.trim()) {
+      setTitle(d.titulo);
+      marcados.push("titulo");
+    }
+    if (d.descricao && !description.trim()) {
+      setDescription(d.descricao);
       setDescricaoGeradaPorIa(true);
-      setTextoIaOriginal({ titulo: data.titulo, descricao: data.descricao });
-    } catch {
-      setAiWarn("Não foi possível gerar agora. Verifique a conexão e tente novamente.");
-    } finally {
-      setAiLoading(false);
+      marcados.push("descricao");
     }
+    if (d.titulo || d.descricao) setTextoIaOriginal({ titulo: d.titulo ?? "", descricao: d.descricao ?? "" });
+    // Capa sugerida (a sala ou a foto mais clara) vai para a 1ª posição, se o dono ainda não escolheu outra.
+    if (typeof d.capa === "number" && analisadas[d.capa]) {
+      const url = analisadas[d.capa];
+      setPhotos((ps) => {
+        const i = ps.findIndex((p) => p.url === url);
+        if (i <= 0) return ps;
+        const next = [...ps];
+        const [capa] = next.splice(i, 1);
+        return [capa, ...next];
+      });
+    }
+    setSugeridos((s) => [...new Set([...s, ...marcados])]);
   }
 
-  // Preenche o cadastro a partir das fotos (rota do servidor; chave só lá). Manda só
-  // miniaturas — sem endereço, contato nem URL. NUNCA sobrescreve o que o dono já
-  // escreveu: só campos vazios (tipo e comodidades somam). O termo de aceite cobre o texto.
-  async function preencherComIa() {
-    if (!iaFotosLiberada(photos.length)) {
-      setFotosIaWarn(mensagemFaltamFotosIa(photos.length));
-      return;
-    }
-    setFotosIaWarn(null);
-    setFotosIaLoading(true);
-    try {
-      const passo = Math.max(1, Math.floor(photos.length / FOTOS_MAX_MINIATURAS));
-      const escolhidas = photos.filter((_, i) => i % passo === 0).slice(0, FOTOS_MAX_MINIATURAS);
-      const minis = (await Promise.all(escolhidas.map((p) => miniaturaBase64(p.url)))).filter((m): m is string => !!m);
-      if (minis.length === 0) {
-        setFotosIaWarn("Não consegui ler as fotos agora. Tente de novo.");
-        return;
+  /*
+    Análise das fotos pela IA (prompt 10): roda SOZINHA quando o envio termina e há o mínimo de fotos. Uma chamada
+    por rascunho; refaz só se o dono trocar mais de 3 fotos. Falhou ou sem chave: a etapa segue sem sugestões.
+    Nunca sobrescreve o que o dono já escreveu: só campos vazios, e cada sugestão fica marcada "Sugerido · confira".
+  */
+  const fotosUrls = photos.map((p) => p.url).filter((u) => u && !u.startsWith("blob:"));
+  const fotosKey = fotosUrls.join("|");
+  useEffect(() => {
+    if (editingId || !iaFotosLiberada(fotosUrls.length) || iaEstado === "analisando") return;
+    if (!precisaReanalisar(iaAnalisadas, fotosUrls)) return;
+    let alive = true;
+    const t = setTimeout(async () => {
+      setIaEstado("analisando");
+      try {
+        const passo = Math.max(1, Math.floor(fotosUrls.length / FOTOS_MAX_MINIATURAS));
+        const escolhidas = fotosUrls.filter((_, i) => i % passo === 0).slice(0, FOTOS_MAX_MINIATURAS);
+        const minis = (await Promise.all(escolhidas.map((u) => miniaturaBase64(u, FOTOS_LADO_MAX_PX)))).filter((m): m is string => !!m);
+        if (!alive) return;
+        setIaAnalisadas(fotosUrls);
+        if (minis.length === 0) return setIaEstado("sem_sugestoes");
+        const res = await fetch("/api/ai/fotos", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ miniaturas: minis }),
+        });
+        const data = (await res.json().catch(() => ({}))) as Partial<SugestaoFotos> & { error?: string };
+        if (!alive) return;
+        if (!res.ok) return setIaEstado("sem_sugestoes");
+        aplicarSugestao(data as SugestaoFotos, escolhidas);
+        setIaEstado("feita");
+      } catch {
+        if (alive) setIaEstado("sem_sugestoes");
       }
-      const res = await fetch("/api/ai/fotos", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ miniaturas: minis }),
-      });
-      const data = (await res.json().catch(() => ({}))) as Partial<SugestaoFotos> & { error?: string };
-      if (!res.ok) {
-        setFotosIaWarn(data.error ?? "Não foi possível analisar agora. Tente novamente.");
-        return;
-      }
-      const marcados: string[] = [];
-      if (data.tipo) { setPropertyType(data.tipo); marcados.push("tipo de imóvel"); }
-      if (data.quartos !== undefined && !bedrooms) { setBedrooms(String(data.quartos)); marcados.push("quartos"); }
-      if (data.banheiros !== undefined && !bathrooms) { setBathrooms(String(data.banheiros)); marcados.push("banheiros"); }
-      if (data.comodidades?.length) {
-        setAmenityKeys((a) => ({ ...a, ...Object.fromEntries(data.comodidades!.map((k) => [k, true])) }));
-        marcados.push("comodidades");
-      }
-      if (data.titulo && data.descricao && !title.trim() && !description.trim()) {
-        setTitle(data.titulo);
-        setDescription(data.descricao);
-        setDescricaoGeradaPorIa(true);
-        setTextoIaOriginal({ titulo: data.titulo, descricao: data.descricao });
-        marcados.push("título e descrição");
-      }
-      setSugeridoPelaIa(marcados);
-      if (marcados.length === 0) setFotosIaWarn("A IA não teve certeza de nada nestas fotos. Preencha à mão.");
-    } catch {
-      setFotosIaWarn("Não foi possível analisar agora. Verifique a conexão e tente novamente.");
-    } finally {
-      setFotosIaLoading(false);
-    }
-  }
+    }, 600);
+    return () => {
+      alive = false;
+      clearTimeout(t);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fotosKey, editingId]);
 
   if (approved === null) return null;
 
@@ -959,27 +979,18 @@ export default function NewPropertyPage() {
     <div className="w-full">
       <PageTitle
         title={editingId ? "Editar anúncio" : "Anuncie seu imóvel"}
-        subtitle={
-          editingId
-            ? "Ajuste os dados do imóvel e salve as alterações."
-            : "Em 7 etapas. Salvamos seu progresso automaticamente."
-        }
+        subtitle={editingId ? "Ajuste os dados do imóvel e salve as alterações." : "Em 5 etapas. Salvamos seu progresso automaticamente."}
         action={
           !editingId && saveStatus !== "idle" ? (
             <span
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium",
-                saveStatus === "saved"
-                  ? "bg-sage-100 text-forest"
-                  : saveStatus === "error"
-                    ? "bg-red-50 text-red-700"
-                    : "bg-surface-2 text-muted"
+                saveStatus === "saved" ? "bg-sage-100 text-forest" : saveStatus === "error" ? "bg-red-50 text-red-700" : "bg-surface-2 text-muted"
               )}
             >
               {saveStatus === "saved" ? (
                 <>
-                  <Check className="h-3.5 w-3.5" />
- Salvo{savedAt ? ` às ${savedAt}` : ""}
+                  <Check className="h-3.5 w-3.5" /> Salvo{savedAt ? ` às ${savedAt}` : ""}
                 </>
               ) : saveStatus === "error" ? (
                 <>
@@ -993,11 +1004,10 @@ export default function NewPropertyPage() {
         }
       />
 
-      {/* Banner de boas-vindas (imagem pontual — Bloco IMAGENS) */}
       <div className="relative mb-5 overflow-hidden rounded-2xl">
         <Image
           src={PHOTOS.cadastro.welcome}
-          alt="Proprietário com as chaves de um apartamento pronto para anunciar"
+          alt="Proprietário com as chaves de um imóvel mobiliado pronto para anunciar"
           width={800}
           height={300}
           priority
@@ -1006,12 +1016,10 @@ export default function NewPropertyPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-night/70 to-night/10" />
         <div className="absolute inset-0 flex flex-col justify-center p-5 text-white">
           <p className="font-title text-lg font-bold sm:text-xl">Vamos publicar seu imóvel</p>
-          <p className="text-sm text-white/80">Quanto mais completo, mais visibilidade na busca.</p>
+          <p className="text-sm text-white/80">Comece pelo CEP. A IA preenche o resto pelas fotos.</p>
         </div>
       </div>
 
-      {/* Detecção de rascunho em andamento (P0): abriu em branco mas já existe um
-          rascunho salvo — oferece retomar de onde parou em vez de recomeçar. */}
       {!editingId && !draftParam && existingDraft && !draftServerId && !draftBannerDismissed && (
         <div data-testid="rascunho-aviso" className="mb-5 flex flex-col gap-3 rounded-2xl border border-champagne bg-champagne/10 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
@@ -1023,9 +1031,7 @@ export default function NewPropertyPage() {
                 Você tem um anúncio em andamento
                 {existingDraft.pct > 0 ? ` (${existingDraft.pct}% completo)` : ""}
               </p>
-              <p className="text-xs text-muted">
-                Retome de onde parou — seus dados foram salvos automaticamente.
-              </p>
+              <p className="text-xs text-muted">Retome de onde parou — seus dados foram salvos automaticamente.</p>
             </div>
           </div>
           <div className="flex shrink-0 gap-2">
@@ -1049,7 +1055,7 @@ export default function NewPropertyPage() {
 
       {/* Stepper + barra de progresso */}
       <div className="mb-5">
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-2 sm:flex-wrap sm:overflow-visible">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-2 sm:flex-wrap sm:overflow-visible" data-testid="etapas-cadastro">
           {ORDEM_ETAPAS.map((id, i) => (
             <button
               key={STEP_META[id].label}
@@ -1061,13 +1067,10 @@ export default function NewPropertyPage() {
                 }
               }}
               disabled={!etapaLiberada(i, pos, etapaMax)}
+              aria-current={i === pos ? "step" : undefined}
               className={cn(
-                "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors",
-                i === pos
-                  ? "bg-forest text-white"
-                  : etapaLiberada(i, pos, etapaMax)
-                    ? "bg-sage-100 text-forest hover:bg-blue-100"
-                    : "bg-surface-2 text-muted"
+                "flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+                i === pos ? "bg-forest text-white" : etapaLiberada(i, pos, etapaMax) ? "bg-sage-100 text-forest hover:bg-blue-100" : "bg-surface-2 text-muted"
               )}
             >
               {i < pos ? <Check className="h-3.5 w-3.5" /> : <span>{i + 1}</span>}
@@ -1076,940 +1079,241 @@ export default function NewPropertyPage() {
           ))}
         </div>
         <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-surface-2">
-          <div
-            className="h-full rounded-full bg-forest transition-all"
-            style={{ width: `${((pos + 1) / STEP_META.length) * 100}%` }}
-          />
+          <div className="h-full rounded-full bg-forest transition-all" style={{ width: `${((pos + 1) / STEP_META.length) * 100}%` }} />
         </div>
       </div>
 
-      {/* Computador: etapa à esquerda, resumo e dicas à direita; celular: uma coluna. */}
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start" data-testid="novo-duas-colunas">
-      <div className="min-w-0">
-      <Panel>
-        {/* Cabeçalho da etapa */}
-        <div className="mb-5 flex items-start gap-3">
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-sage-100 text-forest">
-            <StepIcon className="h-5 w-5" />
-          </span>
-          <div>
-            <h2 className="font-title text-xl font-bold text-ink">{meta.title}</h2>
-            <p className="text-sm text-muted">{meta.subtitle}</p>
-          </div>
-        </div>
-
-        {/* ── ETAPA 1 — Tipo e operação ── */}
-        {step === 0 && (
-          <div className="space-y-4">
-            <ImportarAnuncio onAplicar={aplicarImportado} />
-            <Labeled label="Tipo de imóvel">
-              <select value={propertyType} onChange={(e) => setPropertyType(e.target.value)} className="input">
-                {PROPERTY_TYPES.map((t) => (
-                  <option key={t.value} value={t.value}>{t.label}</option>
-                ))}
-              </select>
-            </Labeled>
-
-            <div className="rounded-xl border border-sage-200 p-4">
-              <p className="text-sm font-medium text-ink">Quem opera este imóvel?</p>
-              <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3" role="radiogroup" aria-label="Quem opera este imóvel?">
-                {OPERACOES.map(({ valor, rotulo }) => (
-                  <button
-                    key={valor}
-                    type="button"
-                    role="radio"
-                    aria-checked={ownershipType === valor}
-                    onClick={() => setOwnershipType(valor)}
-                    className={cn(
-                      "rounded-lg border px-3 py-2 text-sm font-medium transition-colors",
-                      ownershipType === valor ? "border-forest bg-forest text-white" : "border-sage-200 text-ink hover:border-sage"
-                    )}
-                  >
-                    {rotulo}
-                  </button>
-                ))}
-              </div>
-              {exigeAutorizacao(ownershipType) && (
-                <div className="mt-4 space-y-3" data-testid="documento-operacao">
-                  <div className="rounded-lg bg-champagne/10 px-3 py-2 text-xs text-ink">
-                    {DOC_AUTORIZACAO[ownershipType as "subleased" | "managed"].aviso}
-                  </div>
-                  <Toggle
-                    checked={subleaseAuthorized}
-                    onChange={() => setSubleaseAuthorized((v) => !v)}
-                    label={DOC_AUTORIZACAO[ownershipType as "subleased" | "managed"].declaracao}
-                    hint="Declaração obrigatória. A equipe confere o documento antes de publicar."
-                  />
-                  <div>
-                    <span className="mb-1.5 block text-sm font-medium text-ink">
-                      {DOC_AUTORIZACAO[ownershipType as "subleased" | "managed"].titulo} <span className="font-normal text-muted">(obrigatório para publicar)</span>
-                    </span>
-                    {docOperacaoAnexado && subleaseDoc.length === 0 && (
-                      <p className="mb-2 text-xs text-forest" data-testid="documento-operacao-anexado">Documento já anexado. Envie outro só se quiser substituir.</p>
-                    )}
-                    <DocumentoUploader
-                      docs={subleaseDoc}
-                      onChange={(d) => {
-                        setSubleaseDoc(d);
-                        if (d.length) setErros(({ sublocacao: _resolvido, ...resto }) => resto);
-                      }}
-                      rotulo="Anexar documento"
-                    />
-                    <p className="mt-1.5 text-xs text-muted">
-                      PDF, JPG ou PNG. Fica em armazenamento privado: só você e a equipe de verificação veem. Você pode
-                      salvar como rascunho e anexar depois, mas sem o documento o anúncio não é publicado.
-                    </p>
-                  </div>
-                  <Erro msg={erros.sublocacao} />
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* ── ETAPA 2 — Endereço ── */}
-        {step === 1 && (
-          <div className="space-y-4">
-            <Labeled label="CEP">
-              <div className="relative">
-                <input
-                  value={cep}
-                  onChange={(e) => setCep(e.target.value)}
-                  onBlur={(e) => lookupCep(e.target.value)}
-                  inputMode="numeric"
-                  maxLength={9}
-                  placeholder="00000-000"
-                  className="input"
-                />
-                {cepLoading && (
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted">buscando…</span>
-                )}
-              </div>
-              <span className="mt-1 block text-xs text-muted">
-                Digite o CEP para preencher rua, bairro e cidade que estiverem em branco.
+        <div className="min-w-0">
+          <Panel>
+            <div className="mb-5 flex items-start gap-3">
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-sage-100 text-forest">
+                <StepIcon className="h-5 w-5" />
               </span>
-            </Labeled>
-            <Labeled label="Endereço (rua e número)">
-              <input value={street} onChange={(e) => setStreet(e.target.value)} className="input" placeholder="Rua, número" />
-              <Erro msg={erros.rua} />
-            </Labeled>
-            <div className="grid grid-cols-2 gap-3">
-              <Labeled label="Bairro">
-                <input
-                  value={neighborhood}
-                  onChange={(e) => setNeighborhood(e.target.value)}
-                  list="novo-bairros"
-                  autoComplete="off"
-                  className="input"
-                />
-                <LocationDatalist id="novo-bairros" />
-                <Erro msg={erros.bairro} />
-                {bairroDoCep && (
-                  <span className="mt-1 block rounded-lg bg-amber-50 px-2 py-1.5 text-xs text-amber-900" role="status">
-                    O CEP indica <strong>{bairroDoCep}</strong> — confirmar?{" "}
-                    <button
-                      type="button"
-                      className="font-semibold underline"
-                      onClick={() => {
-                        setNeighborhood(bairroDoCep);
-                        setBairroDoCep(null);
-                      }}
-                    >
-                      Usar {bairroDoCep}
-                    </button>{" "}
-                    ·{" "}
-                    <button type="button" className="font-semibold underline" onClick={() => setBairroDoCep(null)}>
-                      Manter {neighborhood}
-                    </button>
-                  </span>
-                )}
-              </Labeled>
-              <Labeled label="Cidade">
-                <input value={city} onChange={(e) => setCity(e.target.value)} className="input" />
-                <Erro msg={erros.cidade} />
-              </Labeled>
-            </div>
-
-            {/* Privacidade do endereço (item 5 do QA) */}
-            <p className="flex items-start gap-1.5 rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted">
-              <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-sage" />
-              <span>
-                <strong className="text-ink">Rua e número NUNCA aparecem no anúncio público</strong> —
-                mostramos só a região aproximada (um círculo do bairro, sem o pino exato). O endereço
-                completo é liberado apenas <strong className="text-ink">após o aceite</strong> da candidatura.
-              </span>
-            </p>
-          </div>
-        )}
-
-        {/* ── ETAPA 3 — Detalhes ── */}
-        {step === 2 && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <Labeled label="Quartos">
-                <input type="number" min={0} value={bedrooms} onChange={(e) => setBedrooms(e.target.value)} className="input" />
-              </Labeled>
-              <Labeled label="Banheiros">
-                <input type="number" min={0} value={bathrooms} onChange={(e) => setBathrooms(e.target.value)} className="input" />
-                <Erro msg={erros.banheiros} />
-              </Labeled>
-              <Labeled label="Área (m²)">
-                <input type="number" min={0} value={areaM2} onChange={(e) => setAreaM2(e.target.value)} className="input" />
-                <Erro msg={erros.area} />
-              </Labeled>
-              <Labeled label="Vagas">
-                <input type="number" min={0} value={parkingSpots} onChange={(e) => setParkingSpots(e.target.value)} className="input" />
-              </Labeled>
-              <Labeled label="Capacidade máxima (pessoas)">
-                <input type="number" min={1} value={maxGuests} onChange={(e) => setMaxGuests(e.target.value)} className="input" placeholder="Ex.: 2" />
-                <span className="mt-1 block text-xs text-muted">Quantas pessoas o imóvel comporta. Validado no fechamento.</span>
-                <Erro msg={erros.hospedes} />
-              </Labeled>
-            </div>
-
-            <div className="rounded-xl border border-sage-200 p-4">
-              <p className="text-sm font-medium text-ink">Disponibilidade e prazo</p>
-              {/* Campo de texto com máscara dd/mm/aaaa: o campo de data nativo do iOS aparece vazio e com altura diferente. */}
-              <div className="mt-3 grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 [&>*]:min-w-0">
-                <Labeled label="Disponível a partir de">
-                  <DateFieldBR value={availableFrom} onChange={setAvailableFrom} ariaLabel="Disponível a partir de" className="input h-11 min-w-0" />
-                </Labeled>
-                <Labeled label="Disponível até (opcional)">
-                  <DateFieldBR value={availableUntil} onChange={setAvailableUntil} ariaLabel="Disponível até (opcional)" className="input h-11 min-w-0" />
-                </Labeled>
-              </div>
-              <div className="mt-3 grid grid-cols-2 gap-3">
-                <Labeled label="Duração mínima">
-                  <select value={minPeriod} onChange={(e) => setMinPeriod(e.target.value)} className="input">
-                    <option value="30">30 dias</option>
-                    <option value="60">60 dias</option>
-                    <option value="90">90 dias</option>
-                    <option value="180">180 dias</option>
-                  </select>
-                </Labeled>
-                <Labeled label="Duração máxima">
-                  <select value={maxPeriod} onChange={(e) => setMaxPeriod(e.target.value)} className="input">
-                    <option value="90">90 dias</option>
-                    <option value="180">180 dias</option>
-                                      </select>
-                </Labeled>
-              </div>
-              <span className="mt-2 block text-xs text-muted">Estadias de 30 a 180 dias são o usual.</span>
-            </div>
-
-            <div className="rounded-xl border border-sage-200 p-4">
-              <p className="text-sm font-medium text-ink">Faixas de prazo aceitas</p>
-              <p className="mb-3 text-xs text-muted">Cada faixa tem regras próprias. Marque as que você aceita.</p>
-              <div className="space-y-2">
-                {FAIXAS.map((f) => (
-                  <div key={f.key}>
-                    <Toggle
-                      checked={!!faixas[f.key]}
-                      onChange={() => setFaixas((s) => ({ ...s, [f.key]: !s[f.key] }))}
-                      label={`${f.label} · ${f.resumo}`}
-                    />
-                    {faixas[f.key] && <p className="ml-1 mt-1 text-xs text-muted">{f.aviso}</p>}
-                  </div>
-                ))}
+              <div>
+                <h2 className="font-title text-xl font-bold text-ink">{meta.title}</h2>
+                <p className="text-sm text-muted">{meta.subtitle}</p>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-ink">Regras</p>
-              <Toggle checked={furnished} onChange={() => setFurnished((v) => !v)} label="Mobiliado e equipado" hint="Pré-requisito das estadias de 30 a 180 dias da Viva Nomads." />
-              <Toggle checked={petsOk} onChange={() => setPetsOk((v) => !v)} label="Aceita pets" hint="Amplia o público interessado." />
-              <Toggle checked={childrenAllowed} onChange={() => setChildrenAllowed((v) => !v)} label="Aceita crianças" />
-              <Toggle checked={smokingAllowed} onChange={() => setSmokingAllowed((v) => !v)} label="Permite fumar" />
-            </div>
-            <PrivacidadeCampos valor={privacidade} onChange={setPrivacidade} />
-          </div>
-        )}
-
-        {/* ── ETAPA 4 — Fotos ── */}
-        {step === 3 && (
-          <div>
-            <div className="rounded-xl border border-sage-200 p-4">
-              <div className="flex items-center justify-between text-sm">
-                <span className="font-medium text-ink">
-                  {photos.length} / {MIN_PHOTOS} fotos
-                  {photoBlocked && <span className="ml-2 text-red-600">{fotosMsg}</span>}
-                </span>
-                {photos.length >= MIN_PHOTOS && (
-                  <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-semibold", TIER_META[tierFromPhotoCount(photos.length)].tone)}>
-                    {TIER_META[tierFromPhotoCount(photos.length)].label}
-                  </span>
-                )}
-              </div>
-              <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface-2">
-                <div
-                  className={cn("h-full rounded-full transition-all", photoBlocked ? "bg-champagne" : "bg-forest")}
-                  style={{ width: `${Math.min(100, (photos.length / 20) * 100)}%` }}
-                />
-              </div>
-              <p className="mt-2 text-xs text-muted">
-                8–11 padrão · 12–19 <strong>Anúncio completo</strong> · 20+ <strong>Anúncio premium</strong> (mais prioridade na busca).
-              </p>
-            </div>
-
-            <details className="mt-3 rounded-xl border border-sage-200 p-3">
-              <summary className="cursor-pointer text-sm font-medium text-forest underline">Ver dicas de foto</summary>
-              <div className="mt-3"><GuiaFotos comCta={false} /></div>
-            </details>
-
-            <p className="mt-3 text-sm">
-              <a href={`/parceiros/fotografos${cep ? `?cep=${encodeURIComponent(cep)}` : ""}`} target="_blank" rel="noopener" className="font-medium text-forest underline">
-                Quer ajuda profissional? Veja fotógrafos parceiros na sua cidade
-              </a>
-            </p>
-            <div className="mt-3 flex flex-wrap gap-1.5">
-              {SUGGESTED_ROOMS.map((r) => (
-                <span key={r} className="rounded-full bg-surface-2 px-2.5 py-1 text-xs text-muted">{r}</span>
-              ))}
-            </div>
-
-            {/* Estado vazio amigável (ilustração — Bloco IMAGENS) */}
-            {photos.length === 0 && (
-              <div className="mt-4 flex flex-col items-center rounded-xl border border-dashed border-sage-200 bg-surface-2 p-5 text-center">
-                <Image src={PHOTOS.cadastro.uploadEmpty} alt="Fotografe os ambientes do imóvel" width={400} height={300} className="h-32 w-auto" />
-                <p className="mt-2 text-sm font-medium text-ink">Adicione as fotos dos ambientes</p>
-                <p className="text-xs text-muted">Arraste e solte no computador, ou toque para escolher no celular.</p>
-              </div>
+            {step === 0 && (
+              <EtapaOndeFica
+                aplicarImportado={aplicarImportado}
+                propertyType={propertyType}
+                setPropertyType={(v) => {
+                  setPropertyType(v);
+                  tirarSugestao("tipo");
+                }}
+                tipoSugerido={sugerido("tipo")}
+                ownershipType={ownershipType}
+                setOwnershipType={setOwnershipType}
+                subleaseAuthorized={subleaseAuthorized}
+                setSubleaseAuthorized={setSubleaseAuthorized}
+                subleaseDoc={subleaseDoc}
+                setSubleaseDoc={(d) => {
+                  setSubleaseDoc(d);
+                  if (d.length) setErros(({ sublocacao: _resolvido, ...resto }) => resto);
+                }}
+                docOperacaoAnexado={docOperacaoAnexado}
+                cep={cep}
+                setCep={(v) => {
+                  setCep(v);
+                  if (v.replace(/\D/g, "").length === 8) void lookupCep(v);
+                }}
+                cepLoading={cepLoading}
+                street={street}
+                setStreet={setStreet}
+                numero={numero}
+                setNumero={setNumero}
+                complemento={complemento}
+                setComplemento={setComplemento}
+                neighborhood={neighborhood}
+                setNeighborhood={setNeighborhood}
+                bairroDoCep={bairroDoCep}
+                setBairroDoCep={setBairroDoCep}
+                city={city}
+                setCity={setCity}
+                uf={uf}
+                imovelId={imovelId}
+                docEstado={docEstado}
+                docMotivos={docMotivos}
+                onDocumento={(e, m) => {
+                  setDocEstado(e);
+                  setDocMotivos(m);
+                  setDocStatus(e === "aprovado" ? "approved" : e === "corrija" ? "rejected" : e === "revisao" ? "pending" : "none");
+                }}
+                erros={erros}
+              />
             )}
 
-            <div className="mt-4">
-              {/* Até 40 fotos do rolo da câmera (o tier "premium" começa em 20). */}
-              <PhotoUploader photos={photos} onChange={setPhotos} max={MAX_FOTOS_POR_ANUNCIO} />
-              <Erro msg={erros.fotos} />
-            </div>
-
-            {GERACAO_IA_ATIVA && photos.length > 0 && (
-              <div className="mt-4 rounded-xl bg-champagne/10 px-4 py-3" data-testid="preencher-com-ia">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-sm text-forest">Deixe a IA ler as fotos e sugerir o cadastro</span>
-                  <Button size="sm" variant="gold" onClick={preencherComIa} disabled={fotosIaLoading || !iaFotosLiberada(photos.length)}>
-                    <Sparkles className="h-4 w-4" /> {fotosIaLoading ? "Lendo as fotos..." : "Preencher com IA"}
-                  </Button>
-                </div>
-                {!iaFotosLiberada(photos.length) && (
-                  <p className="mt-2 text-xs font-medium text-forest" data-testid="ia-faltam-fotos">{mensagemFaltamFotosIa(photos.length)}</p>
-                )}
-                {fotosIaWarn && <p className="mt-2 text-xs font-medium text-red-600">{fotosIaWarn}</p>}
-                {sugeridoPelaIa.length > 0 && (
-                  <p className="mt-2 inline-flex items-start gap-1 text-xs font-medium text-forest">
-                    <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span>Sugerido pela IA: {sugeridoPelaIa.join(", ")}. Confira cada campo — tudo é editável.</span>
-                  </p>
-                )}
-                <p className="mt-2 text-xs text-muted">
-                  A IA pode errar. Enviamos só miniaturas das fotos — <strong className="text-ink">sem endereço nem
-                  contato</strong> — e nada é guardado fora do seu anúncio. Você confirma tudo no termo antes de publicar.
-                </p>
-              </div>
+            {step === 1 && (
+              <EtapaFotos photos={photos} setPhotos={setPhotos} cep={cep} videoUrl={videoUrl} setVideoUrl={setVideoUrl} iaEstado={iaEstado} erroFotos={erros.fotos} />
             )}
 
-            {/* Privacidade das fotos (item 4 do QA): as fotos sobem re-codificadas,
-                sem metadados — inclusive a localização (GPS) embutida pelo celular. */}
-            <p className="mt-2 flex items-start gap-1.5 text-xs text-muted">
-              <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-sage" />
-              Removemos os metadados das fotos ao enviar — <strong className="text-ink">inclusive a
-              localização (GPS)</strong> — para o endereço exato nunca sair na imagem.
-            </p>
-
-            {/* Vídeo walk-through (opcional) — reduz o atrito de alugar sem visita */}
-            <div className="mt-5 rounded-xl border border-sage-200 p-4">
-              <Labeled label="Link do vídeo do imóvel (opcional)">
-                <input
-                  className="input"
-                  type="url"
-                  inputMode="url"
-                  placeholder="Cole o link do YouTube, Vimeo ou do arquivo de vídeo"
-                  value={videoUrl}
-                  onChange={(e) => setVideoUrl(e.target.value)}
-                />
-              </Labeled>
-              <p className="mt-1.5 flex items-center gap-1.5 text-xs text-muted">
-                <PlayCircle className="h-3.5 w-3.5" />
-                Um tour em vídeo aumenta a confiança e gera um selo “Vídeo” no anúncio. Grave com o
-                celular percorrendo os cômodos.
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* ── ETAPA 5 — Recursos de trabalho ── */}
-        {step === 4 && (
-          <div className="space-y-4">
-            <Image
-              src={PHOTOS.cadastro.workspace}
-              alt="Home office montado: mesa, cadeira ergonômica e notebook"
-              width={1000}
-              height={600}
-              className="aspect-[16/9] w-full rounded-xl object-cover"
-            />
-            {qual.tHome && (
-              <div className="rounded-xl border border-sage-200 p-4 text-sm text-ink">
-                ✓ Da qualificação:{" "}
-                <span className="font-medium text-forest">etiqueta “Para trabalhar de casa” ativa.</span>
-              </div>
-            )}
-
-            {/* Comodidades por categoria (catálogo único) */}
-            {AMENITY_GROUPS.map((g) => (
-              <div key={g.category}>
-                <p className="text-sm font-bold text-forest">{g.label}</p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {g.items.map((it) => {
-                    const on = !!amenityKeys[it.key];
-                    return (
-                      <button
-                        key={it.key}
-                        type="button"
-                        aria-pressed={on}
-                        onClick={() => setAmenityKeys((s) => ({ ...s, [it.key]: !s[it.key] }))}
-                        className={cn(
-                          "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
-                          on
-                            ? "border-forest bg-forest text-white"
-                            : "border-sage-200 text-ink hover:border-sage"
-                        )}
-                      >
-                        {it.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-
-            {/* Proximidades manuais (sem depender do Google) */}
-            <div className="rounded-xl border border-sage-200 p-4">
-              <p className="text-sm font-bold text-forest">Proximidades</p>
-              <p className="mb-3 text-xs text-muted">
-                Liste pontos úteis perto do imóvel (hospital, universidade, mercado…) com a
-                distância. Aparecem na seção “O que tem por perto”.
-              </p>
-              <ManualProximities value={manualProximities} onChange={setManualProximities} />
-
-              {/* Opção avançada: distância automática via Google (requer chave) */}
-              <details className="mt-4">
-                <summary className="cursor-pointer text-xs font-medium text-muted hover:text-forest">
-                  Distância automática pelo Google Maps (opcional, requer chave)
-                </summary>
-                <div className="mt-3">
-                  <PlacesPicker value={googlePlaces} onChange={setGooglePlaces} />
-                </div>
-              </details>
-            </div>
-          </div>
-        )}
-
-        {/* ── ETAPA 6 — Descrição e preço ── */}
-        {step === 5 && (
-          <div className="space-y-4">
-            {/* Geração por IA atrás de flag (item 7 do QA): desligada até haver
-                provedor definido e cobertura na Política de Privacidade. */}
-            {GERACAO_IA_ATIVA && (
-              <div className="rounded-xl bg-champagne/10 px-4 py-3">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-sm text-forest">Gerar título e descrição com IA</span>
-                  <Button size="sm" variant="gold" onClick={generateAI} disabled={aiLoading}>
-                    <Sparkles className="h-4 w-4" /> {aiLoading ? "Gerando..." : "Gerar"}
-                  </Button>
-                </div>
-                {aiWarn && <p className="mt-2 text-xs font-medium text-red-600">{aiWarn}</p>}
-                <p className="mt-2 text-xs text-muted">
-                  Enviamos só os dados do imóvel (tipo, região, cômodos, comodidades) a um provedor
-                  de IA para redigir o texto — <strong className="text-ink">sem seu contato nem o
-                  endereço exato</strong>. Revise antes de publicar; o texto é sua responsabilidade.
-                </p>
-                {descricaoGeradaPorIa && (
-                  <p className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-forest">
-                    <Sparkles className="h-3.5 w-3.5" /> Descrição gerada por IA — revise e ajuste.
-                  </p>
-                )}
-              </div>
-            )}
-            <Labeled label="Título do anúncio">
-              <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex.: Studio mobiliado no Centro" className="input" />
-              <Erro msg={erros.titulo} />
-            </Labeled>
-            <Labeled label="Descrição">
-              <textarea
-                rows={4}
-                value={description}
-                onChange={(e) => {
-                  setDescription(e.target.value);
-                  // Editou à mão → deixa de ser "gerada por IA" (auditoria honesta).
+            {step === 2 && (
+              <EtapaEncontramos
+                iaEstado={iaEstado}
+                sugerido={sugerido}
+                tirarSugestao={tirarSugestao}
+                bedrooms={bedrooms}
+                setBedrooms={setBedrooms}
+                bathrooms={bathrooms}
+                setBathrooms={setBathrooms}
+                maxGuests={maxGuests}
+                setMaxGuests={setMaxGuests}
+                areaM2={areaM2}
+                setAreaM2={setAreaM2}
+                parkingSpots={parkingSpots}
+                setParkingSpots={setParkingSpots}
+                amenityKeys={amenityKeys}
+                setAmenityKeys={setAmenityKeys}
+                comodidadesSugeridas={comodidadesSugeridas}
+                internetMbps={internetMbps}
+                setInternetMbps={setInternetMbps}
+                proxOsm={proxOsm}
+                proxCarregando={proxCarregando}
+                proxDesmarcados={proxDesmarcados}
+                setProxDesmarcados={setProxDesmarcados}
+                manualProximities={manualProximities}
+                setManualProximities={setManualProximities}
+                title={title}
+                setTitle={setTitle}
+                description={description}
+                setDescription={(v) => {
+                  setDescription(v);
                   setDescricaoGeradaPorIa(false);
                 }}
-                className="input"
-                placeholder="Descreva o imóvel..."
+                furnished={furnished}
+                setFurnished={setFurnished}
+                petsOk={petsOk}
+                setPetsOk={setPetsOk}
+                childrenAllowed={childrenAllowed}
+                setChildrenAllowed={setChildrenAllowed}
+                smokingAllowed={smokingAllowed}
+                setSmokingAllowed={setSmokingAllowed}
+                privacidade={privacidade}
+                setPrivacidade={setPrivacidade}
+                qualTHome={qual.tHome}
+                erros={erros}
               />
-            </Labeled>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <Labeled label="Valor mensal (R$)">
-                <input type="number" min={0} value={monthlyPrice} onChange={(e) => setMonthlyPrice(e.target.value)} className="input" placeholder="3200" />
-                {Number(monthlyPrice) > 0 && (
-                  <span className="mt-1 block text-xs text-muted">{formatBRL(Number(monthlyPrice))}/mês</span>
-                )}
-                <Erro msg={erros.preco} />
-              </Labeled>
-              <Labeled label="Condomínio (R$/mês)">
-                <input type="number" min={0} value={condoFee} onChange={(e) => setCondoFee(e.target.value)} className="input" placeholder="0" />
-                <span className="mt-1 block text-xs text-muted">
-                  {Number(condoFee) > 0 ? `${formatBRL(Number(condoFee))}/mês` : "Deixe 0 se não houver."}
-                </span>
-              </Labeled>
-            </div>
-
-            {/* Prévia do custo mensal do inquilino (fonte única lib/precos:
-                aluguel + condomínio + consumo fixo). Atualiza ao digitar. */}
-            {(() => {
-              const aluguel = Number(monthlyPrice) || 0;
-              const condo = Number(condoFee) || 0;
-              const consumoFixo = utilitiesMode === "fixed" ? utilitiesEstimate || 0 : 0;
-              const tudo = aluguel + condo + consumoFixo;
-              if (aluguel <= 0) return null;
-              return (
-                <div className="rounded-xl border border-sage-200 bg-sage-100/50 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-                    Prévia — o inquilino vê
-                  </p>
-                  <p className="mt-1 font-title text-2xl font-bold text-forest">
-                    {formatBRL(tudo)}
-                    <span className="text-sm font-normal text-muted">/mês tudo incluído</span>
-                  </p>
-                  <dl className="mt-2 space-y-0.5 text-xs text-muted">
-                    <div className="flex justify-between"><dt>Valor mensal</dt><dd>{formatBRL(aluguel)}</dd></div>
-                    {condo > 0 && <div className="flex justify-between"><dt>Condomínio</dt><dd>{formatBRL(condo)}</dd></div>}
-                    {consumoFixo > 0 && (
-                      <div className="flex justify-between"><dt>Consumo (fixo estimado)</dt><dd>{formatBRL(consumoFixo)}</dd></div>
-                    )}
-                    {utilitiesMode === "real" && (
-                      <div className="flex justify-between"><dt>Consumo (água/luz/gás)</dt><dd>conforme medição</dd></div>
-                    )}
-                  </dl>
-                </div>
-              );
-            })()}
-
-            {/* Transparência da comissão (config/planos) — a plataforma NÃO fica
-                com o aluguel; cobra a comissão só no fechamento, uma única vez. */}
-            {Number(monthlyPrice) > 0 && (
-              <p className="flex items-start gap-2 rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted">
-                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-sage" />
-                <span>
-                  <strong className="text-ink">Você recebe o valor mensal direto na sua conta.</strong> {" "}
-                  {TEXTO_REGRA_CURTO}
-                </span>
-              </p>
-            )}
-            <LinhaComparativoAnuncio aluguel={Number(monthlyPrice)} />
-            <PrecoSugerido aluguel={Number(monthlyPrice) || 0} onUsar={(v) => setMonthlyPrice(String(v))} onAirbnbMensal={(v) => setAirbnbMensal(v ? String(v) : "")} />
-
-            <div className="rounded-xl border border-sage-200 p-4">
-              <p className="text-sm font-medium text-ink">Despesas de consumo (água, luz, gás)</p>
-              <div className="mt-2 flex gap-2">
-                {(["fixed", "real"] as const).map((m) => (
-                  <button
-                    key={m}
-                    type="button"
-                    onClick={() => setUtilitiesMode(m)}
-                    className={cn(
-                      "flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors",
-                      utilitiesMode === m ? "border-forest bg-forest text-white" : "border-sage-200 text-ink hover:border-sage"
-                    )}
-                  >
-                    {m === "fixed" ? "Valor fixo estimado" : "Consumo real"}
-                  </button>
-                ))}
-              </div>
-              {utilitiesMode === "fixed" ? (
-                <div className="mt-3">
-                  <p className="mb-2 text-xs text-muted">
-                    O inquilino paga um <strong>valor fixo por mês</strong> junto do valor mensal. Se o
-                    consumo real exceder cerca de 20% da estimativa, há cláusula de ajuste (cobrança
-                    complementar, com comprovante — registrada pela plataforma, não intermediada).
-                  </p>
-                  <Labeled label="Estimativa (R$/mês)">
-                    <input type="number" min={0} value={utilitiesEstimate || ""} onChange={(e) => setUtilitiesEstimate(Number(e.target.value))} className="input" placeholder="200" />
-                  </Labeled>
-                </div>
-              ) : (
-                <p className="mt-3 text-xs text-muted">
-                  O inquilino paga a água, a luz e o gás pelo <strong>consumo real</strong> do
-                  período — pelo valor efetivo das faturas, sem valor fixo. Por isso não há nada a
-                  preencher aqui: o acerto é feito pelas contas reais.
-                </p>
-              )}
-            </div>
-
-            <Labeled label="Taxa de preparação (R$, única)">
-              <input type="number" min={0} value={prepFee || ""} onChange={(e) => setPrepFee(Number(e.target.value))} className="input" placeholder="450" />
-              <span className="mt-1 block text-xs text-muted">Limpeza profunda antes da entrada — cobrada uma única vez.</span>
-            </Labeled>
-
-            {/* Escondido com a chave do selo (SELO_NF_UI): proprietário PF emite recibo, não NF.
-                O dado (issues_invoice) continua no banco, sem mudança. */}
-            {SELO_NF_UI && (
-              <div className="space-y-2">
-                <Toggle checked={issuesInvoice} onChange={() => setIssuesInvoice((v) => !v)} label="Este imóvel emite Nota Fiscal do valor mensal" hint="Decisivo para o público corporativo (reembolso pela empresa)." />
-              </div>
             )}
 
-            <Labeled label="Garantias que você aceita">
-              <p className="mb-2 text-xs text-muted">
-                Só preferência de aceite — <strong>não muda o caminho do dinheiro</strong> (a
-                caução em dinheiro vai para uma conta poupança, como manda a lei — a plataforma
-                não tem acesso).
-              </p>
-              <div className="space-y-3">
-                {GARANTIAS_CADASTRO.map((g) =>
-                  g.disabled ? (
-                    // Seguro-fiança visível porém desabilitado até o parceiro fechar.
-                    <div
-                      key={g.key}
-                      className="flex items-center justify-between gap-3 rounded-xl border border-sage-200 bg-surface-2 px-4 py-3 opacity-70"
-                    >
-                      <span className="text-sm font-medium text-muted">Aceito {g.label}</span>
-                      {g.badge && (
-                        <span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-semibold text-amber-800">
-                          {g.badge}
-                        </span>
-                      )}
-                    </div>
-                  ) : (
-                    <div key={g.key}>
-                      <Toggle
-                        checked={!!garantias[g.key]}
-                        onChange={() => setGarantias((s) => ({ ...s, [g.key]: !s[g.key] }))}
-                        label={`Aceito ${g.label}`}
-                      />
-                      {g.microtext && <p className="ml-1 mt-1 text-xs text-muted">{g.microtext}</p>}
-                    </div>
-                  )
-                )}
-              </div>
-              {!garantiaOk && (
-                <p className="mt-3 flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
-                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                  Escolha ao menos uma garantia — contrato sem garantia deixa você sem cobertura de danos.
-                </p>
-              )}
-            </Labeled>
-          </div>
-        )}
-
-        {/* ── ETAPA 7 — Revisão (preview ao vivo) ── */}
-        {step === 6 && (
-          <div className="space-y-4">
-            <div>
-              <p className="text-sm font-medium text-ink">Prévia do seu anúncio na busca</p>
-              <div className="mt-2">
-                <PropertyMiniCard property={previewProperty} />
-              </div>
-            </div>
-
-            {/* Checklist de completude (item 3 do QA): PUBLICAR só com tudo verde. */}
-            <div className="rounded-xl border border-sage-200 p-4">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-ink">Pronto para publicar?</p>
-                <span className="text-xs text-muted">
-                  {completude.filter((c) => c.ok).length}/{completude.length}
-                </span>
-              </div>
-              <ul className="mt-3 space-y-1.5">
-                {completude.map((c) => (
-                  <li key={c.key} className="flex items-center justify-between gap-2 text-sm">
-                    <span className="flex items-center gap-2">
-                      {c.ok ? (
-                        <CheckCircle2 className="h-4 w-4 shrink-0 text-forest" />
-                      ) : (
-                        <XCircle className="h-4 w-4 shrink-0 text-red-500" />
-                      )}
-                      <span className={c.ok ? "text-ink" : "text-muted"}>{c.label}</span>
-                    </span>
-                    {!c.ok &&
-                      (c.key === "documento" ? (
-                        // O item do documento não é uma etapa do editor: mostra o
-                        // estado da moderação em vez de "Resolver".
-                        <span
-                          className={cn(
-                            "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold",
-                            docStatus === "rejected"
-                              ? "bg-red-100 text-red-700"
-                              : docStatus === "pending"
-                                ? "bg-amber-100 text-amber-800"
-                                : "bg-surface-2 text-muted"
-                          )}
-                        >
-                          {rotuloDocumento(docStatus, docReason)}
-                        </span>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => irPara(c.etapa)}
-                          className="shrink-0 text-xs font-medium text-forest underline"
-                        >
-                          Resolver
-                        </button>
-                      ))}
-                  </li>
-                ))}
-              </ul>
-              {prontidao.melhorar.length > 0 && (
-                <p className="mt-3 border-t border-sage-200 pt-2 text-xs text-muted" data-testid="prontidao-opcionais">
-                  Para melhorar (opcional, não impede publicar): {prontidao.melhorar.join(" · ")}
-                </p>
-              )}
-            </div>
-
-            {/* Barra de qualidade do anúncio */}
-            <div className="rounded-xl border border-sage-200 p-4">
-              <div className="flex items-center justify-between text-sm">
-                <span className="font-medium text-ink">Qualidade do anúncio</span>
-                <span className="font-title font-bold text-forest">{quality}%</span>
-              </div>
-              <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface-2">
-                <div className="h-full rounded-full bg-forest transition-all" style={{ width: `${quality}%` }} />
-              </div>
-              {/* Qualidade ACIONÁVEL (item 3): o que ainda dá para somar. */}
-              {(() => {
-                const dicas = [
-                  photos.length < 12 && { t: `Chegar a 12 fotos (tem ${photos.length}) — anúncio completo`, p: "+15%" },
-                  photos.length >= 12 && photos.length < 20 && { t: `Chegar a 20 fotos (tem ${photos.length}) — anúncio premium`, p: "+prioridade" },
-                  description.trim().length <= 30 && { t: "Descrição com 150+ palavras", p: "+20%" },
-                  !qual.baseBadge && { t: "Conquistar o selo Pronto para Morar na qualificação", p: "+20%" },
-                ].filter(Boolean) as { t: string; p: string }[];
-                if (dicas.length === 0)
-                  return <p className="mt-2 text-xs text-forest">Ótimo — seu anúncio está no topo da qualidade. 🏅</p>;
-                return (
-                  <details className="mt-2 group">
-                    <summary className="cursor-pointer list-none text-xs font-medium text-forest">
-                      O que aumenta a qualidade ({dicas.length})
-                    </summary>
-                    <ul className="mt-2 space-y-1">
-                      {dicas.map((d) => (
-                        <li key={d.t} className="flex items-center justify-between gap-2 text-xs text-muted">
-                          <span>{d.t}</span>
-                          <span className="shrink-0 font-semibold text-forest">{d.p}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </details>
-                );
-              })()}
-            </div>
-
-            {photoBlocked && (
-              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                <strong>{fotosMsg} para publicar.</strong> O mínimo é {MIN_PHOTOS}. Você pode salvar como rascunho e completar depois.{" "}
-                <button type="button" onClick={() => irPara(3)} className="font-medium underline">Ir para Fotos</button>.
-              </div>
-            )}
-            {subleaseBlocked && (
-              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                <strong>Publicação bloqueada.</strong>{" "}
-                {ownershipType === "managed" ? "Anexe o contrato de administração ou a procuração" : "Anexe a autorização escrita do proprietário"} e marque a declaração no passo{" "}
-                <button type="button" onClick={() => irPara(0)} className="font-medium underline">Tipo e operação</button>.
-              </div>
-            )}
-
-            {/* Portão da verificação do documento (item 1). Não aparece na edição
-                de um imóvel já existente. */}
-            {!editingId && !qualificado && (
-              <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800" data-testid="aviso-qualificacao">
-                <ClipboardCheck className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>
-                  <strong>Falta a qualificação.</strong> Responda o checklist{" "}
-                  {linkQualificacao(imovelId) ? (
-                    <a href={linkQualificacao(imovelId)!} className="font-medium underline" data-testid="link-antes-de-anunciar">Antes de anunciar</a>
-                  ) : (
-                    <button type="button" onClick={() => publish(true, true)} disabled={publishing} className="font-medium underline" data-testid="link-antes-de-anunciar">Antes de anunciar</button>
-                  )}{" "}
-                  (leva poucos minutos) para liberar a publicação. Suas fotos e dados ficam salvos no rascunho.
-                </span>
-              </div>
-            )}
-            {!editingId && docStatus === "pending" && (
-              <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>
-                  <strong>Documentação em análise.</strong> Nossa equipe está verificando a matrícula/contrato.
-                  Você pode <strong>salvar como rascunho</strong> e continuar editando; a publicação libera
-                  assim que o documento for aprovado (avisamos por e-mail).
-                </span>
-              </div>
-            )}
-            {!editingId && docStatus === "none" && (
-              <div className="flex items-start gap-2 rounded-xl border border-sage-200 bg-surface-2 px-4 py-3 text-sm text-ink">
-                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-forest" />
-                <span>
-                  <strong>Documento do imóvel ainda não enviado.</strong> Envie a matrícula ou o contrato na{" "}
-                  {imovelId ? <a href={`/qualificar?imovel=${imovelId}`} className="font-medium underline">qualificação</a> : "qualificação"}
-                  ; a publicação libera depois que a equipe conferir.
-                </span>
-              </div>
-            )}
-            {!editingId && docStatus === "rejected" && (
-              <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>
-                  <strong>Documentação não aprovada.</strong>
-                  {docReason ? ` Motivo: ${docReason}.` : ""} Reenvie o documento na{" "}
-                  {imovelId ? <a href={`/qualificar?imovel=${imovelId}`} className="font-medium underline">qualificação</a> : "qualificação"} para liberar a publicação.
-                </span>
-              </div>
-            )}
-            {!editingId && docStatus === "approved" && (
-              <div className="flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-900">
-                <DocConferidaBadge size="sm" />
-                <span>Documento conferido pela equipe — você já pode publicar.</span>
-              </div>
-            )}
-            <label className="flex items-start gap-3 rounded-xl border border-sage-200 bg-surface-2 px-4 py-3 text-sm text-ink" data-testid="aceite-ia">
-              <input
-                type="checkbox"
-                checked={aceitouIa}
-                onChange={(e) => setAceitouIa(e.target.checked)}
-                className="mt-0.5 h-5 w-5 shrink-0 accent-forest"
+            {step === 3 && (
+              <EtapaPreco
+                sugerido={sugerido}
+                tirarSugestao={tirarSugestao}
+                monthlyPrice={monthlyPrice}
+                setMonthlyPrice={setMonthlyPrice}
+                precoRegiao={precoRegiao}
+                setAirbnbMensal={setAirbnbMensal}
+                condoFee={condoFee}
+                setCondoFee={setCondoFee}
+                utilitiesMode={utilitiesMode}
+                setUtilitiesMode={setUtilitiesMode}
+                utilitiesEstimate={utilitiesEstimate}
+                setUtilitiesEstimate={setUtilitiesEstimate}
+                availableFrom={availableFrom}
+                setAvailableFrom={setAvailableFrom}
+                availableUntil={availableUntil}
+                setAvailableUntil={setAvailableUntil}
+                minPeriod={minPeriod}
+                setMinPeriod={setMinPeriod}
+                maxPeriod={maxPeriod}
+                setMaxPeriod={setMaxPeriod}
+                faixas={faixas}
+                setFaixas={setFaixas}
+                garantias={garantias}
+                setGarantias={setGarantias}
+                prepFee={prepFee}
+                setPrepFee={setPrepFee}
+                issuesInvoice={issuesInvoice}
+                setIssuesInvoice={setIssuesInvoice}
+                negociacao={negociacao}
+                setNegociacao={setNegociacao}
+                limites={limites}
+                setLimites={setLimites}
+                erros={erros}
               />
-              <span>{TERMO_IA_TEXTO}</span>
-            </label>
-            {publishError && <p className="text-sm text-red-600">{publishError}</p>}
+            )}
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-              <Button variant="outline" onClick={() => publish(true)} disabled={publishing}>
-                {editingId ? "Salvar sem publicar" : "Salvar como rascunho"}
-              </Button>
-              <Button
-                variant={podePublicar ? "gold" : "outline"}
-                onClick={() => publish(false)}
-                disabled={publishing || !podePublicar}
-                title={podePublicar ? undefined : "Resolva os itens pendentes acima"}
-                className={podePublicar ? undefined : "cursor-not-allowed opacity-60"}
-              >
-                {publishing
-                  ? "Salvando..."
-                  : editingId
-                    ? "Salvar alterações"
-                    : "Publicar anúncio"}
-              </Button>
-            </div>
-          </div>
-        )}
+            {step === 4 && (
+              <EtapaRevisar
+                previewProperty={previewProperty}
+                titulo={title}
+                descricao={description}
+                fotos={photos.map((p) => p.url)}
+                endereco={[neighborhood, city].filter(Boolean).join(", ")}
+                comodidades={Object.keys(amenityKeys).filter((k) => amenityKeys[k])}
+                proximidades={proximidadesFinais}
+                negociacao={negociacao}
+                completude={completude}
+                melhorar={prontidao.melhorar}
+                quality={quality}
+                photosCount={photos.length}
+                qualBaseBadge={qual.baseBadge}
+                docEstado={docEstado}
+                docMotivos={docMotivos}
+                editingId={editingId}
+                qualificado={qualificado}
+                imovelId={imovelId}
+                publishing={publishing}
+                publish={publish}
+                irPara={irPara}
+                subleaseBlocked={subleaseBlocked}
+                ownershipType={ownershipType}
+                aceitouIa={aceitouIa}
+                setAceitouIa={setAceitouIa}
+                publishError={publishError}
+                podePublicar={podePublicar}
+              />
+            )}
 
-        {/* Navegação */}
-        {pos < LAST && (
-          <div className="mt-6 flex justify-between">
-            <Button variant="ghost" onClick={voltarEtapa} disabled={pos === 0}>
-              <ArrowLeft className="h-4 w-4" /> Voltar
-            </Button>
-            <Button onClick={avancarEtapa}>
-              Continuar <ArrowRight className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
-      </Panel>
+            {pos < ULTIMA_ETAPA && (
+              <div className="mt-6 flex justify-between">
+                <Button variant="ghost" onClick={voltarEtapa} disabled={pos === 0}>
+                  <ArrowLeft className="h-4 w-4" /> Voltar
+                </Button>
+                <Button onClick={avancarEtapa} data-testid="cadastro-continuar">
+                  Continuar <ArrowRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </Panel>
 
-      <p className="mt-4 text-center text-sm text-muted">
-        <Link href="/dashboard/imoveis" className="hover:text-forest">Cancelar e voltar</Link>
-      </p>
-      </div>
-
-      <aside className="space-y-4 lg:sticky lg:top-4" data-testid="novo-resumo" aria-label="Resumo e dicas">
-        <Panel>
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted">Seu progresso</p>
-          <p className="mt-1 font-title text-2xl font-bold text-forest">
-            Etapa {pos + 1} de {ORDEM_ETAPAS.length}
+          <p className="mt-4 text-center text-sm text-muted">
+            <Link href="/dashboard/imoveis" className="hover:text-forest">
+              Cancelar e voltar
+            </Link>
           </p>
-          <ol className="mt-3 space-y-1.5 text-sm">
-            {ORDEM_ETAPAS.map((id, i) => (
-              <li key={STEP_META[id].label} className={cn("flex items-center gap-2", i === pos ? "font-semibold text-forest" : i < pos ? "text-ink" : "text-muted")}>
-                {i < pos ? <Check className="h-4 w-4 shrink-0 text-forest" /> : <span className="grid h-4 w-4 shrink-0 place-items-center text-xs">{i + 1}</span>}
-                {STEP_META[id].label}
-              </li>
-            ))}
-          </ol>
-        </Panel>
-        <Panel>
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted">Dicas</p>
-          <ul className="mt-2 list-disc space-y-1.5 pl-4 text-sm text-ink">
-            <li>Suas respostas ficam salvas no rascunho: você pode sair e voltar.</li>
-            <li>Fotos claras, de dia e na horizontal, atraem mais pedidos.</li>
-            <li>A publicação libera depois que a equipe conferir o documento do imóvel.</li>
-          </ul>
-        </Panel>
-      </aside>
+        </div>
+
+        <aside className="space-y-4 lg:sticky lg:top-4" data-testid="novo-resumo" aria-label="Resumo e dicas">
+          <Panel>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted">Seu progresso</p>
+            <p className="mt-1 font-title text-2xl font-bold text-forest">
+              Etapa {pos + 1} de {ORDEM_ETAPAS.length}
+            </p>
+            <ol className="mt-3 space-y-1.5 text-sm">
+              {ORDEM_ETAPAS.map((id, i) => (
+                <li key={STEP_META[id].label} className={cn("flex items-center gap-2", i === pos ? "font-semibold text-forest" : i < pos ? "text-ink" : "text-muted")}>
+                  {i < pos ? <Check className="h-4 w-4 shrink-0 text-forest" /> : <span className="grid h-4 w-4 shrink-0 place-items-center text-xs">{i + 1}</span>}
+                  {STEP_META[id].label}
+                </li>
+              ))}
+            </ol>
+          </Panel>
+          <Panel>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted">Dicas</p>
+            <ul className="mt-2 list-disc space-y-1.5 pl-4 text-sm text-ink">
+              <li>Suas respostas ficam salvas no rascunho: você pode sair e voltar.</li>
+              <li>Fotos claras, de dia e na horizontal, atraem mais pedidos.</li>
+              <li>O que a IA sugere aparece com “Sugerido · confira”: nada vai ao anúncio sem você confirmar.</li>
+            </ul>
+          </Panel>
+        </aside>
       </div>
 
       <style>{`.input{width:100%;border-radius:0.75rem;border:1px solid var(--color-sage-200);background:#fff;padding:0.625rem 0.875rem;font-size:0.875rem;outline:none}.input:focus{border-color:var(--color-sage)}`}</style>
     </div>
-  );
-}
-
-/** Mensagem de erro de validação sob um campo (item QA — validação por etapa). */
-function Erro({ msg }: { msg?: string }) {
-  if (!msg) return null;
-  return (
-    <p className="mt-1 flex items-center gap-1 text-xs font-medium text-red-600" role="alert">
-      <AlertTriangle className="h-3.5 w-3.5 shrink-0" /> {msg}
-    </p>
-  );
-}
-
-function Labeled({ label, children }: { label: string; children: React.ReactNode }) {
-  // Além do <label> em volta, o campo ganha um nome acessível explícito
-  // (leitores de tela/validadores que não seguem o rótulo implícito).
-  const [primeiro, ...resto] = Children.toArray(children);
-  const campo =
-    isValidElement<Record<string, unknown>>(primeiro) &&
-    typeof primeiro.type === "string" &&
-    ["input", "select", "textarea"].includes(primeiro.type) &&
-    !primeiro.props["aria-label"]
-      ? cloneElement(primeiro, { "aria-label": label })
-      : primeiro;
-  return (
-    <label className="block">
-      <span className="mb-1.5 block text-sm font-medium text-ink">{label}</span>
-      {campo}
-      {resto}
-    </label>
-  );
-}
-
-function Toggle({
-  checked,
-  onChange,
-  label,
-  hint,
-}: {
-  checked: boolean;
-  onChange: () => void;
-  label: string;
-  hint?: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onChange}
-      className={cn(
-        "flex w-full items-start gap-3 rounded-xl border px-4 py-3 text-left transition-colors",
-        checked ? "border-forest bg-sage-100" : "border-sage-200 hover:border-sage"
-      )}
-    >
-      <span
-        className={cn(
-          "mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md border",
-          checked ? "border-forest bg-forest text-white" : "border-sage-200 bg-white"
-        )}
-      >
-        {checked && <Check className="h-4 w-4" />}
-      </span>
-      <span>
-        <span className="block text-sm font-medium text-ink">{label}</span>
-        {hint && <span className="block text-xs text-muted">{hint}</span>}
-      </span>
-    </button>
   );
 }

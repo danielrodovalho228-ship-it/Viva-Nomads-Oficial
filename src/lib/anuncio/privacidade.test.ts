@@ -90,7 +90,7 @@ test("texto da declaração e ligações no código (anúncio público, editores
   assert.doesNotMatch(TEXTO_DECLARACAO_CAMERAS, /vistoria/i);
   const le = (p: string) => readFileSync(new URL(`../../${p}`, import.meta.url), "utf8");
   assert.match(le("app/(public)/imoveis/[id]/property-detail.tsx"), /<PrivacidadeAcesso privacidade=\{property\.privacidade\}/);
-  assert.match(le("app/(dashboard)/dashboard/imoveis/novo/page.tsx"), /<PrivacidadeCampos/);
+  assert.match(le("app/(dashboard)/dashboard/imoveis/novo/etapa-encontramos.tsx"), /<PrivacidadeCampos/);
   assert.match(le("app/(dashboard)/dashboard/imoveis/[id]/editar/editar-client.tsx"), /<PrivacidadeCampos/);
   const acoes = le("lib/data/actions.ts");
   assert.ok(acoes.indexOf("await gravarPrivacidade(supabase, user.id, data.id") < acoes.indexOf("faltaParaPublicar(supabase, user.id, data.id"));
