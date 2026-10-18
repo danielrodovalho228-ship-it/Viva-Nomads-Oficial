@@ -35,4 +35,10 @@ test.describe("logado", () => {
     await expect(aviso).toContainText("***@");
     await expect(aviso.getByRole("link", { name: "Alterar em Conta" })).toBeVisible();
   });
+  test("F14: o detalhe do chamado mostra 'Aberto em dd/mm/aaaa, hh:mm'", async ({ page }) => {
+    await page.goto("/ajuda?novo=1", { waitUntil: "networkidle" });
+    await page.getByLabel("O que aconteceu?").fill("Teste T63: conferir a data de abertura no detalhe do chamado.");
+    await page.getByRole("button", { name: "Enviar chamado" }).click();
+    await expect(page.getByTestId("chamado-aberto-em")).toContainText(/Aberto em \d{2}\/\d{2}\/\d{4}, \d{2}:\d{2}/, { timeout: 20_000 });
+  });
 });

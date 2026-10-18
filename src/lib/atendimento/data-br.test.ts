@@ -34,3 +34,11 @@ test("nenhum arquivo de src mistura dateStyle/timeStyle com campos soltos no mes
   andar(raiz);
   assert.deepEqual(ruins, []);
 });
+
+test("F14: 'Aberto em' mostra dd/mm/aaaa, hh:mm em Brasília e não quebra com data ruim", async () => {
+  const { abertoEmBR } = await import("./data-br.ts");
+  assert.equal(abertoEmBR("2026-10-07T21:07:00Z"), "Aberto em 07/10/2026, 18:07");
+  assert.equal(abertoEmBR("2026-10-08T02:30:00Z"), "Aberto em 07/10/2026, 23:30");
+  assert.equal(abertoEmBR(""), "");
+  assert.equal(abertoEmBR("não é data"), "");
+});

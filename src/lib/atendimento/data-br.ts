@@ -15,3 +15,18 @@ export function agoraBRTexto(agora: Date): string {
     minute: "2-digit",
   });
 }
+
+/** "Aberto em 07/10/2026, 18:07" (Brasília) para o cabeçalho do chamado; vazio se a data for inválida. */
+export function abertoEmBR(iso: string | null | undefined): string {
+  const d = iso ? new Date(iso) : null;
+  if (!d || Number.isNaN(d.getTime())) return "";
+  const texto = d.toLocaleString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  return `Aberto em ${texto}`;
+}
