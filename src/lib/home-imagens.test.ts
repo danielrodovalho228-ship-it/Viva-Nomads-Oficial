@@ -13,8 +13,8 @@ test("H2: 4 destaques com 4 ou mais imóveis; 2 com menos; nunca ímpar", () => 
 
 test("H1/H4: slots com os nomes combinados; marcados prontos só se o arquivo existe", () => {
   assert.equal(HOME_PASSOS_IMAGENS.length, 4);
-  // QA do Muse (18/10): os 4 passos com as fotos reais de /como-funciona, todas prontas e existentes.
-  assert.equal(HOME_PASSOS_IMAGENS[0].src, "/images/como-funciona/01-busque.webp");
+  // t112 (ordem 0f204e06): os 4 passos, todos prontos e existentes, com fotos distintas entre si.
+  assert.equal(new Set(HOME_PASSOS_IMAGENS.map((i) => i.src)).size, 4);
   assert.ok(HOME_PASSOS_IMAGENS.every((i) => i.pronta));
   assert.equal(HOME_PROPRIETARIOS_FUNDO.src, "/images/unicas/home-proprietarios-fundo.webp");
   for (const i of [...HOME_PASSOS_IMAGENS, HOME_PROPRIETARIOS_FUNDO]) {
@@ -43,4 +43,19 @@ test("H1: 4 passos, o 4º é Conferência de entrada (nunca vistoria)", () => {
 
 test("QA do Muse: nenhum \"Foto do passo em breve\" na home", () => {
   assert.ok(!home.includes("Foto do passo em breve"));
+});
+
+test("t112: nenhuma foto dos passos da home aparece em outra página pública", () => {
+  const paginas = ["como-funciona", "para-proprietarios", "parceiros", "empresas", "precos"].map((p) =>
+    readFileSync(new URL(`../app/(public)/${p}/page.tsx`, import.meta.url), "utf8")
+  );
+  const extras = ["../lib/parceiros-cartoes.ts", "../config/atalhos-home.ts", "../lib/media.ts"].map((f) => {
+    // media.ts: só conta o que as páginas públicas realmente usam; aqui basta o nome do arquivo literal.
+    return readFileSync(new URL(f, import.meta.url), "utf8");
+  });
+  for (const i of HOME_PASSOS_IMAGENS) {
+    const nome = i.src.split("/").pop()!;
+    for (const fonte of [...paginas, ...extras.slice(0, 2)])
+      assert.ok(!fonte.includes(nome), `${nome} repetida fora da home`);
+  }
 });
