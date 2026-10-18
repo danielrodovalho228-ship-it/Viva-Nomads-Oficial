@@ -48,13 +48,22 @@ export default async function AdminParceirosPage({
     .limit(200);
   if (filtro !== "todos") consulta = consulta.eq("status", filtro);
 
-  const [lista, todos, fotAprov, fotPend, pedAbertos] = await Promise.all([
+  const [lista, todos, fotAprov, fotPend, pedAbertos, avisos] = await Promise.all([
     consulta,
     supabase.from("parceiros_interesse").select("tipo, status"),
     supabase.from("fotografos").select("id", { count: "exact", head: true }).eq("aprovado", true),
     supabase.from("fotografos").select("id", { count: "exact", head: true }).eq("aprovado", false),
     supabase.from("fotografo_pedidos").select("id", { count: "exact", head: true }).in("status", ["enviado", "aceito"]),
+    // QA do Muse (0162): quem pediu aviso de fotógrafo parceiro, por cidade — onde recrutar primeiro.
+    supabase.from("interesse_fotografo_cidade").select("uf, chave, cidade").is("avisado_em", null).limit(2000),
   ]);
+  const avisosPorCidade = Object.values(
+    ((avisos.data ?? []) as { uf: string; chave: string; cidade: string }[]).reduce<Record<string, { cidade: string; uf: string; total: number }>>((acc, a) => {
+      const k = `${a.uf}|${a.chave}`;
+      acc[k] = { cidade: a.cidade, uf: a.uf, total: (acc[k]?.total ?? 0) + 1 };
+      return acc;
+    }, {}),
+  ).sort((a, b) => b.total - a.total);
 
   const erroLeitura = Boolean(lista.error || todos.error);
   const interesses = lista.data ?? [];
@@ -185,6 +194,22 @@ export default async function AdminParceirosPage({
           )}
         </Panel>
       </div>
+      <Panel title="Pedidos de aviso de fotógrafo por cidade" className="mt-6">
+        {avisosPorCidade.length === 0 ? (
+          <p className="text-sm text-muted">Ninguém pediu aviso ainda.</p>
+        ) : (
+          <ul className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2" data-testid="avisos-fotografo-cidade">
+            {avisosPorCidade.map((a) => (
+              <li key={`${a.uf}-${a.cidade}`} className="flex justify-between rounded-lg bg-surface-2 px-3 py-2">
+                <span>
+                  {a.cidade}/{a.uf}
+                </span>
+                <strong>{a.total}</strong>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Panel>
     </>
   );
 }

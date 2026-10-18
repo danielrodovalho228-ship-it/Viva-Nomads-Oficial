@@ -49,6 +49,8 @@ export default function HowItWorksPage() {
       <BannerTopo
         foto={PHOTOS.heroProfessional}
         alt="Pessoa chegando com a mala a um imóvel mobiliado"
+        // A pessoa está à direita da foto: no celular o corte central mostrava só a sala vazia sob o degradê (QA do Muse).
+        posicaoFoto="78% 30%"
         eyebrow="Passo a passo"
         titulo="Como funciona"
         subtitulo={
