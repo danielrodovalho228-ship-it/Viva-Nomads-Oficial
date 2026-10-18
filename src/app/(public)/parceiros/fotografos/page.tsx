@@ -9,6 +9,18 @@ import { formatBRL } from "@/lib/utils";
 import { cidadeDoCep, filtrarPorCidade, formatarCep, MAX_DIAS_ANTECEDENCIA, normalizarCep, portfolioSeguro, type FotografoPublico } from "@/lib/fotografos/regras";
 import { PedidoForm } from "./pedido-form";
 import { FaixasTaxaParceria } from "@/components/parceiros/faixas-taxa";
+import { AvisoFotografo } from "./aviso-fotografo";
+import { TITULO_SEM_FOTOGRAFO } from "@/lib/fotografos/aviso";
+import { MUNICIPIOS } from "@/lib/municipios";
+import { chaveCidade } from "@/lib/cidades";
+
+/** UF da cidade digitada sem CEP, quando o nome é de um só município (senão, o aviso pede o CEP). */
+function ufUnica(cidade: string): string {
+  const chave = chaveCidade(cidade);
+  if (!chave) return "";
+  const ufs = Object.keys(MUNICIPIOS).filter((u) => MUNICIPIOS[u].some((m) => chaveCidade(m) === chave));
+  return ufs.length === 1 ? ufs[0] : "";
+}
 
 export const metadata: Metadata = {
   alternates: { canonical: "/parceiros/fotografos" },
@@ -39,7 +51,7 @@ export default async function FotografosPage({ searchParams }: { searchParams: P
   const cepBusca = normalizarCep(sp.cep) ?? cepRascunho;
   const doCep = cepBusca ? await cidadeDoCep(cepBusca) : null;
   const cidade = (doCep?.cidade ?? sp.cidade ?? "").toString().trim().slice(0, 80);
-  const uf = (doCep?.uf ?? sp.uf ?? "").toString().trim().toUpperCase().slice(0, 2);
+  const uf = ((doCep?.uf ?? sp.uf ?? "").toString().trim().toUpperCase().slice(0, 2)) || (cidade ? ufUnica(cidade) : "");
   const buscou = !!(cidade || cepBusca);
 
   let fotografos: FotografoPublico[] = [];
@@ -71,13 +83,26 @@ export default async function FotografosPage({ searchParams }: { searchParams: P
         <button type="submit" className={buttonClasses({ size: "md" })}>Buscar</button>
       </form>
 
-      {buscou && !cidade && <p className="mt-6 text-ink/70">Não encontramos esse CEP. Confira os números ou digite a cidade.</p>}
+      {buscou && !cidade && (
+        <p className="mt-6 text-ink/70" data-testid="fotografos-cep-nao-encontrado">
+          Não encontramos esse CEP. Confira os números ou digite só a cidade (ex.: Uberlândia) — se ainda não houver
+          fotógrafo nela, você pode pedir para ser avisado.
+        </p>
+      )}
 
       {cidade && (
         <section aria-live="polite" className="mt-8">
           <h2 className="flex items-center gap-2 text-lg font-semibold text-ink"><MapPin className="size-5" aria-hidden /> Fotógrafos em {cidade}</h2>
           {fotografos.length === 0 ? (
-            <p className="mt-3 text-ink/70">Ainda não temos fotógrafo parceiro nesta cidade. Você pode seguir com as suas próprias fotos: o anúncio pode ser publicado normalmente.</p>
+            <div data-testid="fotografos-vazio">
+              <p className="mt-3 text-ink">{TITULO_SEM_FOTOGRAFO(cidade)}</p>
+              <AvisoFotografo
+                cidade={cidade}
+                uf={uf}
+                logado={!!user}
+                voltarPara={`/parceiros/fotografos?cidade=${encodeURIComponent(cidade)}${uf ? `&uf=${uf}` : ""}${cepBusca ? `&cep=${cepBusca}` : ""}`}
+              />
+            </div>
           ) : (
             <ul className="mt-4 space-y-4">
               {fotografos.map((f) => {

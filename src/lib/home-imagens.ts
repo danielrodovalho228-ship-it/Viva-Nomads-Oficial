@@ -1,13 +1,14 @@
 /**
- * Slots de imagem da home (ordem 86dcb4db, H1/H4). As fotos são únicas e vêm da
- * coordenação: coloque o arquivo em public/images/unicas/ e troque `pronta` para
- * true. Enquanto isso a home mostra um espaço marcado (nunca imagem quebrada).
- * FALTA IMAGEM: home-passo-1..4.webp e home-proprietarios-fundo.webp.
+ * Slots de imagem da home (ordem 86dcb4db, H1/H4). Os 4 passos usam as MESMAS fotos reais de /como-funciona (QA do
+ * Muse, 18/10: nada de "Foto do passo em breve"). O fundo dos proprietários continua esperando a foto única
+ * (public/images/unicas/home-proprietarios-fundo.webp; trocar `pronta` para true quando chegar).
  */
-export const HOME_PASSOS_IMAGENS = [1, 2, 3, 4].map((n) => ({
-  src: `/images/unicas/home-passo-${n}.webp`,
-  pronta: false,
-}));
+export const HOME_PASSOS_IMAGENS = [
+  { src: "/images/como-funciona/01-busque.webp", alt: "Profissional pesquisando imóveis mobiliados no notebook", pronta: true },
+  { src: "/media/como-funciona-01-converse.webp", alt: "Mulher jovem sorrindo no laptop, conversando pela plataforma", pronta: true },
+  { src: "/media/como-funciona-02-assine.webp", alt: "Homem assinando o contrato pelo celular", pronta: true },
+  { src: "/media/como-funciona-04-chaves.webp", alt: "Casal recebendo as chaves do imóvel na chegada", pronta: true },
+];
 export const HOME_PROPRIETARIOS_FUNDO = {
   src: "/images/unicas/home-proprietarios-fundo.webp",
   pronta: false,

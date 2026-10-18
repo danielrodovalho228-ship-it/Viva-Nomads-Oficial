@@ -32,6 +32,8 @@ import type { Property } from "@/lib/types";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { ShareButton } from "@/components/share-button";
 import { VisitaVideo } from "@/components/property/visita-video";
+import { useAuthStore } from "@/lib/store";
+import { alvoAbrir, urlLoginParaAbrir, type AlvoAbrir } from "@/lib/imovel/abrir-apos-login";
 import { PropertyTags, InvoiceBadge, InsuranceBadge, PrecoJustoBadge } from "@/components/ui/badge";
 import { SELO_NF_UI } from "@/lib/flags";
 import { PropertyCard } from "@/components/property-card";
@@ -102,6 +104,23 @@ export function PropertyDetail({
   // Composer de dúvida/visita: o inquilino escreve a mensagem de verdade.
   const [composeKind, setComposeKind] = useState<"duvida" | "visita" | null>(null);
   const [composeText, setComposeText] = useState("");
+  // QA do Muse (18/10): sem login, "Agendar visita" e "Visita por vídeo" levam ao login e voltam com a janela aberta.
+  const usuario = useAuthStore((s) => s.user);
+  const authChecked = useAuthStore((s) => s.authChecked);
+  const semLogin = authChecked && !usuario && !isExemplo(property);
+  const [abrirVideo, setAbrirVideo] = useState(false);
+  const irParaLogin = (alvo: AlvoAbrir) => router.push(urlLoginParaAbrir(property.id, alvo));
+  useEffect(() => {
+    const alvo = alvoAbrir(window.location.search);
+    if (!alvo) return;
+    const t = setTimeout(() => {
+      if (alvo === "visita") {
+        setComposeText("");
+        setComposeKind("visita");
+      } else setAbrirVideo(true);
+    }, 0);
+    return () => clearTimeout(t);
+  }, []);
   // Passo de confirmação do "Enviar candidatura": resumo + (exemplo) aviso de demonstração.
   const [solicitacaoAberta, setSolicitacaoAberta] = useState(false);
   const [solicitacaoErro, setSolicitacaoErro] = useState<string | null>(null);
@@ -175,8 +194,8 @@ export function PropertyDetail({
     const r = await requestLead(property.id, property.title, kind, note, kind === "candidatura" && inicioDesejado ? inicioDesejado : undefined, kind === "candidatura" ? motivoEstadia : undefined, kind === "candidatura" ? pessoas : undefined).catch(() => null);
     setPending(null);
     if (r?.needsAuth) {
-      // Sem sessão: leva ao login e volta para este anúncio depois de entrar.
-      router.push(`/auth?redirect=/imoveis/${property.id}`);
+      // Sem sessão: leva ao login e volta para este anúncio depois de entrar (a visita volta com a janela aberta).
+      router.push(kind === "visita" ? urlLoginParaAbrir(property.id, "visita") : `/auth?redirect=/imoveis/${property.id}`);
       return false;
     }
     if (r?.selfOwned) {
@@ -319,7 +338,7 @@ export function PropertyDetail({
         <FileSignature className="h-4 w-4" />
         {pending === "candidatura" ? "Enviando..." : "Enviar candidatura"}
       </Button>
-      <VisitaVideo propertyId={property.id} exemplo={exemplo} />
+      <VisitaVideo propertyId={property.id} exemplo={exemplo} semLogin={semLogin} abrirInicial={abrirVideo} onEntrar={() => irParaLogin("video")} />
       <Button
         variant="secondary"
         size="md"
@@ -359,9 +378,11 @@ export function PropertyDetail({
         size="sm"
         className="w-full"
         onClick={() => {
+          if (semLogin) return irParaLogin("visita");
           setComposeText("");
           setComposeKind("visita");
         }}
+        data-testid="agendar-visita"
         disabled={pending !== null || sent.visita}
       >
         {sent.visita ? (
