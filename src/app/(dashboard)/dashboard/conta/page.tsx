@@ -47,9 +47,10 @@ export default function AccountPage() {
 
         <BlocoConta id="preferencias" numero={4} titulo="Preferências" subtitulo="Avisos, ajuda e a sua conta.">
           <NotificationsPanel />
-          <CaixaEmailsTeste />
           <AjudaContato />
           <DangerZone />
+          {/* Por último: carrega depois da tela e não pode empurrar "Excluir conta" para fora do alcance (t183). */}
+          <CaixaEmailsTeste />
         </BlocoConta>
       </div>
     </>
