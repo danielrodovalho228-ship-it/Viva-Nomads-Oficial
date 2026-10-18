@@ -3,7 +3,6 @@ import {
   NO_LABORATORIO,
   adm,
   apagarContas,
-  criarAdmin,
   criarConta,
   criarImovelPronto,
   entrar,
@@ -12,6 +11,7 @@ import {
   publicarPeloEditor,
   statusDoImovel,
 } from "../fixtures/laboratorio";
+import { authFile } from "../fixtures/auth";
 
 /**
  * T202 — cidades liberadas COM LOGIN (ordem b0d6365f, sobre a 335b4064; o t196 cobre só o visitante). Laboratório.
@@ -28,8 +28,7 @@ const CIDADE = "Anápolis";
 const CHAVE = "anapolis";
 const dono = { email: `dono.cidade.${sufixo}@lab.vivanomads.test`, nome: "Daniela Dona de Anápolis", role: "owner" as const };
 const inquilino = { email: `inq.cidade.${sufixo}@lab.vivanomads.test`, nome: "Iara Inquilina de Anápolis", role: "tenant" as const };
-const admin = { email: `adm.cidade.${sufixo}@lab.vivanomads.test`, nome: "Alice Admin de Cidades" };
-const ids: { dono?: string; inquilino?: string; admin?: string; imovel?: string } = {};
+const ids: { dono?: string; inquilino?: string; imovel?: string } = {};
 
 const semRolagemLateral = (page: import("@playwright/test").Page) =>
   page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
@@ -47,7 +46,6 @@ test.describe("T202 — Cidades liberadas com login", () => {
     await limparCidade();
     ids.dono = await criarConta(dono, senha);
     ids.inquilino = await criarConta(inquilino, senha);
-    ids.admin = await criarAdmin(admin.email, admin.nome, senha);
     ids.imovel = await criarImovelPronto(ids.dono, `Studio em ${CIDADE} do teste ${sufixo}`);
     const { error } = await adm().from("properties").update({ city: CIDADE, state: "GO" }).eq("id", ids.imovel);
     if (error) throw error;
@@ -55,7 +53,7 @@ test.describe("T202 — Cidades liberadas com login", () => {
 
   test.afterAll(async () => {
     await limparCidade();
-    await apagarContas([ids.dono, ids.inquilino, ids.admin]);
+    await apagarContas([ids.dono, ids.inquilino]);
   });
 
   test("dono em cidade fechada: o servidor recusa, o imóvel segue rascunho e o interesse dele é gravado", async ({ browser }) => {
@@ -87,7 +85,10 @@ test.describe("T202 — Cidades liberadas com login", () => {
 
   test("admin vê o ranking proprietário × inquilino e libera a cidade (390 e 1280 px)", async ({ browser }) => {
     test.setTimeout(120_000);
-    const page = await entrar(browser, admin.email, senha);
+    // O /admin exige a verificação em duas etapas (AAL2, ordem f7817f00): uma conta admin recém-criada seria mandada para
+    // a ativação do 2FA. Usa a admin do laboratório, que já tem o fator TOTP verificado (storageState do global-setup).
+    const ctx = await browser.newContext({ storageState: authFile("admin") });
+    const page = await ctx.newPage();
     for (const largura of [390, 1280]) {
       await page.setViewportSize({ width: largura, height: 900 });
       await page.goto("/admin/cidades", { waitUntil: "domcontentloaded" });
@@ -103,7 +104,7 @@ test.describe("T202 — Cidades liberadas com login", () => {
     await expect(page.getByText(`${CIDADE} liberada.`)).toBeVisible({ timeout: 15_000 });
     const { data } = await adm().from("cidades_liberadas").select("liberada").eq("uf", "GO").eq("chave", CHAVE).single();
     expect(data?.liberada).toBe(true);
-    await page.context().close();
+    await ctx.close();
   });
 
   test("cidade liberada: o mesmo dono publica e o anúncio fica no ar", async ({ browser }) => {
