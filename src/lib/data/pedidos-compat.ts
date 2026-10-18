@@ -16,6 +16,7 @@ import { SITE_URL } from "@/lib/site";
 import { textoEmail, textoPlano } from "@/lib/notifications/texto-seguro";
 import { formatBRL, dataBR } from "@/lib/utils";
 import { motivoLabel } from "@/lib/pedidos/pedidos";
+import { contatoConfirmado } from "@/lib/pedidos/confirmacao";
 import {
   EMAILS_PEDIDO_POR_DIA,
   imoveisParaTela,
@@ -128,6 +129,26 @@ async function carregarPedido(admin: Admin, pedidoId: string): Promise<PedidoRes
 }
 
 /**
+ * O inquilino confirmou e-mail E telefone? Sem isso o pedido não chega aos donos (ordem 8dca1437, item 3;
+ * o mural já esconde o pedido pela migração 0157). Falha fechada: na dúvida, não avisa.
+ */
+export async function inquilinoConfirmouContato(admin: Admin, inquilinoId: string): Promise<boolean> {
+  try {
+    const [{ data: u }, { data: tv }] = await Promise.all([
+      admin.auth.admin.getUserById(inquilinoId),
+      admin.from("telefone_verificacao").select("verificado_em").eq("user_id", inquilinoId).maybeSingle(),
+    ]);
+    return contatoConfirmado({
+      emailConfirmadoEm: u?.user?.email_confirmed_at,
+      telefoneConfirmadoEm: u?.user?.phone_confirmed_at,
+      telefoneVerificadoEm: (tv?.verificado_em as string | null) ?? null,
+    });
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Aviso ao DONO de um imóvel compatível (1 por pedido por dono). Decide o
  * canal: e-mail (até 5/dia), resumo diário (passou do limite) ou nenhum
  * (sem e-mail ou notificações desligadas). Registra em pedido_avisos.
@@ -203,17 +224,19 @@ async function avisarDono(admin: Admin, pedido: PedidoResumo, par: ParCompat): P
  */
 export async function avisarCompativeisDoPedido(
   pedidoId: string
-): Promise<{ compativeis: number; sugestao: string | null; imoveis: ImovelCompativel[] }> {
+): Promise<{ compativeis: number; sugestao: string | null; imoveis: ImovelCompativel[]; chegaAosDonos: boolean }> {
   const admin = createAdminClient();
-  if (!admin) return { compativeis: 0, sugestao: null, imoveis: [] };
+  if (!admin) return { compativeis: 0, sugestao: null, imoveis: [], chegaAosDonos: false };
   const pedido = await carregarPedido(admin, pedidoId);
-  if (!pedido) return { compativeis: 0, sugestao: null, imoveis: [] };
+  if (!pedido) return { compativeis: 0, sugestao: null, imoveis: [], chegaAosDonos: false };
 
   const pares = await paresCompat(admin, { pedido: pedidoId });
   const compat = pares.filter((p) => p.situacao === "compativel");
   await admin.from("pedidos_moradia").update({ compativeis_ao_publicar: compat.length }).eq("id", pedidoId);
 
-  for (const par of melhorPor(compat, "dono_id").values()) {
+  // Sem e-mail e telefone confirmados o pedido fica guardado e NÃO avisa ninguém.
+  const confirmado = await inquilinoConfirmouContato(admin, pedido.inquilino_id);
+  for (const par of confirmado ? melhorPor(compat, "dono_id").values() : []) {
     try {
       await avisarDono(admin, pedido, par);
     } catch (e) {
@@ -224,6 +247,7 @@ export async function avisarCompativeisDoPedido(
     compativeis: compat.length,
     sugestao: compat.length === 0 ? sugestaoAjuste(pares) : null,
     imoveis: imoveisParaTela(compat),
+    chegaAosDonos: confirmado,
   };
 }
 
@@ -240,6 +264,7 @@ export async function avisarPedidosDoImovel(imovelId: string): Promise<void> {
     try {
       const pedido = await carregarPedido(admin, par.pedido_id);
       if (!pedido) continue;
+      if (!(await inquilinoConfirmouContato(admin, pedido.inquilino_id))) continue;
       await avisarDono(admin, pedido, par);
       if (!(await consumirLimite(`pedido-imovel-novo:${pedido.id}`, 1, DIA))) continue;
       const { data: inq } = await admin

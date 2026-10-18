@@ -96,7 +96,7 @@ const PEDIDOS_POR_DIA = 3;
 
 export async function criarPedido(
   input: PedidoInput
-): Promise<ActionResult & { compativeis?: number; sugestao?: string | null; imoveis?: ImovelCompativel[] }> {
+): Promise<ActionResult & { compativeis?: number; sugestao?: string | null; imoveis?: ImovelCompativel[]; chegaAosDonos?: boolean }> {
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
   const {
@@ -164,10 +164,11 @@ export async function criarPedido(
 
   // (a) Avisa SÓ os donos com imóvel COMPATÍVEL (regra do banco, 0064) — antes
   // ia para todos os donos da cidade. Devolve quantos imóveis combinam agora.
-  let compat: { compativeis: number; sugestao: string | null; imoveis: ImovelCompativel[] } = {
+  let compat: { compativeis: number; sugestao: string | null; imoveis: ImovelCompativel[]; chegaAosDonos: boolean } = {
     compativeis: 0,
     sugestao: null,
     imoveis: [],
+    chegaAosDonos: false,
   };
   try {
     compat = await avisarCompativeisDoPedido(data.id as string);
@@ -175,7 +176,7 @@ export async function criarPedido(
     /* best-effort: o pedido já foi publicado */
   }
 
-  return { ok: true, id: data?.id, compativeis: compat.compativeis, sugestao: compat.sugestao, imoveis: compat.imoveis };
+  return { ok: true, id: data?.id, compativeis: compat.compativeis, sugestao: compat.sugestao, imoveis: compat.imoveis, chegaAosDonos: compat.chegaAosDonos };
 }
 
 /** Meus pedidos (inquilino). Best-effort: [] em demo/sem sessão. */
