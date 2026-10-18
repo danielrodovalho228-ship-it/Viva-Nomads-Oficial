@@ -24,9 +24,11 @@ test.describe("T142 — Bairros", () => {
   });
 
   for (const largura of [390, 1280]) {
-    test(`${largura} px: grade da cidade e página do bairro`, async ({ page }) => {
+    test(`${largura} px: grade da cidade e página do bairro`, async ({ page, request }) => {
       // A página do bairro compila na primeira visita no servidor frio do laboratório: dá folga (instável em todas as execuções).
-      test.setTimeout(90_000);
+      test.setTimeout(120_000);
+      // Esquenta as duas páginas (compilação/cache frios) antes de medir, para a 1ª tentativa não estourar.
+      for (const rota of ["/cidades/uberlandia", "/cidades/uberlandia/centro"]) await request.get(rota, { timeout: 60_000 }).catch(() => {});
       await page.setViewportSize({ width: largura, height: 900 });
       await page.goto("/cidades/uberlandia", { waitUntil: "domcontentloaded" });
       const grade = page.getByTestId("bairros-grade");
