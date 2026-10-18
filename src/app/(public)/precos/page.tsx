@@ -7,6 +7,7 @@ import { FAIXAS_COMISSAO_PADRAO, TEXTO_REGRA_UNICA, DESCRICAO_PRECOS, TAXA_NEGOC
 import { DESTAQUES_PRECOS, FRASES_REGRA, INCLUIDO_CONTRATO, OPCIONAIS_PRECOS, SUBTITULO_OPCIONAIS } from "@/lib/precos-pagina";
 import { PlanoGestorForm } from "@/components/precos/plano-gestor-form";
 import { ComparativoPrecos } from "@/components/precos/comparativo-precos";
+import { SimuladorBolso } from "@/components/precos/simulador-bolso";
 import { ButtonLink } from "@/components/ui/button";
 import { formatBRL, cn } from "@/lib/utils";
 import { CAUCAO_FRASE } from "@/lib/faixas";
@@ -116,6 +117,8 @@ export default function PricingPage() {
             <PlanoGestorForm />
           </div>
         </div>
+
+        <SimuladorBolso className="mb-10" />
 
         <ComparativoPrecos />
       </section>
