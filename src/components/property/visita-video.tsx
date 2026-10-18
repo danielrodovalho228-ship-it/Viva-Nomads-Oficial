@@ -16,8 +16,28 @@ function paraCampo(d: Date): string {
 }
 
 /** Botão "Visita por vídeo" ao lado de "Solicitar reserva": até 3 horários nos próximos 7 dias. */
-export function VisitaVideo({ propertyId, exemplo }: { propertyId: string; exemplo: boolean }) {
-  const [aberto, setAberto] = useState(false);
+export function VisitaVideo({
+  propertyId,
+  exemplo,
+  semLogin = false,
+  abrirInicial = false,
+  onEntrar,
+}: {
+  propertyId: string;
+  exemplo: boolean;
+  /** Visitante sem login: o botão leva ao login (e volta com a janela aberta). */
+  semLogin?: boolean;
+  /** Voltou do login com ?abrir=video: a janela abre sozinha. */
+  abrirInicial?: boolean;
+  onEntrar?: () => void;
+}) {
+  const [abertoManual, setAberto] = useState(false);
+  const [fechadoManual, setFechado] = useState(false);
+  const aberto = abertoManual || (abrirInicial && !fechadoManual);
+  const fechar = () => {
+    setAberto(false);
+    setFechado(true);
+  };
   const [horarios, setHorarios] = useState<string[]>([""]);
   const [motivo, setMotivo] = useState("");
   const [enviando, setEnviando] = useState(false);
@@ -40,7 +60,10 @@ export function VisitaVideo({ propertyId, exemplo }: { propertyId: string; exemp
     const r = await pedirVisitaVideo(propertyId, preenchidos.map((d) => d.toISOString()), motivo || undefined).catch(() => null);
     setEnviando(false);
     if (!r) return setErro("Não foi possível enviar agora. Tente de novo.");
-    if (r.needsAuth) return setErro(r.error ?? "Entre para pedir a visita por vídeo.");
+    if (r.needsAuth) {
+      if (onEntrar) return onEntrar();
+      return setErro(r.error ?? "Entre para pedir a visita por vídeo.");
+    }
     if (!r.ok) return setErro(r.error ?? "Não foi possível enviar.");
     setDemo(!!r.demo);
     setEnviado(true);
@@ -48,7 +71,7 @@ export function VisitaVideo({ propertyId, exemplo }: { propertyId: string; exemp
 
   return (
     <>
-      <Button variant="secondary" size="md" className="w-full" data-cta data-testid="visita-video-abrir" onClick={() => setAberto(true)}>
+      <Button variant="secondary" size="md" className="w-full" data-cta data-testid="visita-video-abrir" onClick={() => (semLogin && onEntrar ? onEntrar() : setAberto(true))}>
         {enviado ? (
           <>
             <Check className="h-4 w-4" /> Visita por vídeo pedida
@@ -66,7 +89,7 @@ export function VisitaVideo({ propertyId, exemplo }: { propertyId: string; exemp
           aria-modal="true"
           aria-labelledby="visita-video-titulo"
           data-testid="visita-video-passo"
-          onClick={() => setAberto(false)}
+          onClick={() => fechar()}
         >
           <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-2xl bg-white p-5 shadow-xl sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
             <h3 id="visita-video-titulo" className="font-title text-lg font-bold text-ink">
@@ -80,7 +103,7 @@ export function VisitaVideo({ propertyId, exemplo }: { propertyId: string; exemp
                     : "Pedido enviado. O proprietário confirma um horário e informa o link da chamada; você acompanha em Visitas por vídeo."}
                 </p>
                 <div className="mt-4 flex justify-end">
-                  <Button variant="ghost" size="sm" onClick={() => setAberto(false)}>
+                  <Button variant="ghost" size="sm" onClick={() => fechar()}>
                     Fechar
                   </Button>
                 </div>
@@ -138,7 +161,7 @@ export function VisitaVideo({ propertyId, exemplo }: { propertyId: string; exemp
                   </p>
                 )}
                 <div className="mt-4 flex justify-end gap-2">
-                  <Button variant="ghost" size="sm" onClick={() => setAberto(false)} disabled={enviando}>
+                  <Button variant="ghost" size="sm" onClick={() => fechar()} disabled={enviando}>
                     Voltar
                   </Button>
                   <Button variant="primary" size="sm" onClick={enviar} disabled={enviando} data-testid="visita-video-enviar">

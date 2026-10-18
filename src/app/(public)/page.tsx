@@ -37,7 +37,6 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { organizacao } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
 import { HOME_PASSOS_IMAGENS, HOME_PROPRIETARIOS_FUNDO, quantosDestaques } from "@/lib/home-imagens";
-import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
 
 const PERSONA_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   Briefcase,
@@ -373,18 +372,14 @@ function Step({
   text,
 }: {
   n: string;
-  img: { src: string; pronta: boolean };
+  img: { src: string; alt: string; pronta: boolean };
   icon: React.ComponentType<{ className?: string }>;
   title: string;
   text: string;
 }) {
   return (
     <div className="relative">
-      {img.pronta ? (
-        <BrandImage src={img.src} alt={title} sizes="(max-width: 640px) 100vw, 50vw" className="mb-5 aspect-[16/9] w-full" />
-      ) : (
-        <PhotoPlaceholder label="Foto do passo em breve" className="mb-5 aspect-[16/9] w-full rounded-2xl" />
-      )}
+      <BrandImage src={img.src} alt={img.alt} sizes="(max-width: 640px) 100vw, 50vw" className="mb-5 aspect-[16/9] w-full" />
       <div className="flex items-center gap-4">
         <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-night font-title text-xl font-bold text-white ring-8 ring-surface">
           {n}

@@ -5,11 +5,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { isExemplo, EXEMPLO_AVISO_DEMO } from "@/lib/demo-listing";
 import { isMotivo, motivoLabel, motivoParaDono } from "@/lib/pedidos/pedidos";
 import { erroBancoPT } from "@/lib/erros-banco";
+import { revalidatePath } from "next/cache";
 import {
   ehStatusVisita,
-  podeTransicionar,
+  mudancaDeStatus,
   validarHorarios,
-  validarLinkChamada,
   type StatusVisita,
 } from "@/lib/visitas-video";
 
@@ -54,6 +54,7 @@ export async function pedirVisitaVideo(propertyId: string, horarios: unknown, mo
     if (error.code === "23505") return { ok: false, error: "Você já tem um pedido em aberto para este imóvel." };
     return { ok: false, error: erroBancoPT(error) };
   }
+  revalidatePath("/dashboard/visitas");
   return { ok: true };
 }
 
@@ -162,22 +163,14 @@ export async function responderVisitaVideo(entrada: AcaoVisita): Promise<Resulta
   if (!quem) return { ok: false, error: "Sem permissão." };
   if (!ehStatusVisita(v.status)) return { ok: false, error: "Pedido inválido." };
 
-  const para: StatusVisita = entrada.acao === "confirmar" ? "confirmado" : entrada.acao === "concluir" ? "feito" : "cancelado";
-  if (!podeTransicionar(v.status, para, quem)) return { ok: false, error: "Este pedido não pode mais ser alterado." };
-
-  const campos: Record<string, unknown> = { status: para, atualizado_em: new Date().toISOString() };
-  if (entrada.acao === "confirmar") {
-    const link = validarLinkChamada(entrada.link);
-    if (!link.ok) return { ok: false, error: link.error };
-    // Um dos horários pedidos ou outro proposto pelo dono (a partir de agora, até 14 dias).
-    const alvo = Date.parse(entrada.horario);
-    const agora = Date.now();
-    if (!Number.isFinite(alvo) || alvo <= agora || alvo > agora + 14 * 24 * 3600_000)
-      return { ok: false, error: "Escolha um horário nos próximos 14 dias." };
-    campos.horario_confirmado = new Date(alvo).toISOString();
-    campos.link_chamada = link.url;
-  }
-  const { error } = await admin.from("visitas_video").update(campos).eq("id", v.id).eq("status", v.status);
+  const m = mudancaDeStatus(v.status, quem, entrada);
+  if (!m.ok) return { ok: false, error: m.error };
+  const campos = m.campos;
+  const { data: gravou, error } = await admin.from("visitas_video").update(campos).eq("id", v.id).eq("status", v.status).select("id");
   if (error) return { ok: false, error: erroBancoPT(error) };
+  if (!gravou?.length) return { ok: false, error: "Este pedido mudou enquanto você respondia. Atualize a página." };
+  // Sem isto a tela voltava com o status antigo: a resposta da ação chegava depois do router.refresh() do
+  // navegador e trazia a árvore antiga (t168: gravava "confirmado" e continuava "Pedido enviado").
+  revalidatePath("/dashboard/visitas");
   return { ok: true };
 }

@@ -13,7 +13,9 @@ test("H2: 4 destaques com 4 ou mais imóveis; 2 com menos; nunca ímpar", () => 
 
 test("H1/H4: slots com os nomes combinados; marcados prontos só se o arquivo existe", () => {
   assert.equal(HOME_PASSOS_IMAGENS.length, 4);
-  assert.equal(HOME_PASSOS_IMAGENS[0].src, "/images/unicas/home-passo-1.webp");
+  // QA do Muse (18/10): os 4 passos com as fotos reais de /como-funciona, todas prontas e existentes.
+  assert.equal(HOME_PASSOS_IMAGENS[0].src, "/images/como-funciona/01-busque.webp");
+  assert.ok(HOME_PASSOS_IMAGENS.every((i) => i.pronta));
   assert.equal(HOME_PROPRIETARIOS_FUNDO.src, "/images/unicas/home-proprietarios-fundo.webp");
   for (const i of [...HOME_PASSOS_IMAGENS, HOME_PROPRIETARIOS_FUNDO]) {
     if (i.pronta) assert.ok(existsSync(`public${i.src}`), `${i.src} marcado pronto mas não existe`);
@@ -37,4 +39,8 @@ test("H1: 4 passos, o 4º é Conferência de entrada (nunca vistoria)", () => {
   assert.match(home, /Do anúncio ao contrato em 4 passos/);
   assert.match(home, /title="Conferência de entrada"/);
   assert.doesNotMatch(home, /vistoria/i);
+});
+
+test("QA do Muse: nenhum \"Foto do passo em breve\" na home", () => {
+  assert.ok(!home.includes("Foto do passo em breve"));
 });

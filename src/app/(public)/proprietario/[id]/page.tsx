@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { BadgeCheck, Building2, Clock, Handshake, Languages, MapPin, Star, UserRound } from "lucide-react";
 import { getAvaliacoesRecebidas, getPerfilProprietario } from "@/lib/data/perfil-proprietario";
 import { listPropertiesDoProprietario } from "@/lib/data/properties";
-import { desdeLabel } from "@/lib/perfil/perfil-publico";
+import { desdeLabel, robotsDoProprietario } from "@/lib/perfil/perfil-publico";
 import { corAvatar, iniciais } from "@/lib/avatar";
 import { PropertyCard } from "@/components/property-card";
 import { buttonClasses } from "@/components/ui/button";
@@ -24,11 +24,13 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   if (ex) return { title: `${ex.nome} — exemplo ilustrativo`, robots: { index: false, follow: false } };
   const p = await getPerfilProprietario(id);
   if (!p) return { title: "Página não encontrada", robots: { index: false, follow: false } };
+  // Conta o que a página realmente lista (o anúncio de teste não aparece nem conta).
+  const visiveis = await listPropertiesDoProprietario(id);
   return {
     title: `${p.nome} — proprietário na Viva Nomads`,
     description: `${p.nome}${p.cidade ? `, ${p.cidade}` : ""}: imóveis mobiliados na Viva Nomads.`,
     // Sem imóvel ativo, a página fica fora do Google.
-    robots: p.imoveisAtivos > 0 ? { index: true, follow: true } : { index: false, follow: false },
+    robots: robotsDoProprietario(visiveis.length),
   };
 }
 
@@ -45,7 +47,7 @@ export default async function ProprietarioPage({ params }: Params) {
   const fatos = [
     p.cidade && { icone: MapPin, texto: p.cidade },
     desde && { icone: Handshake, texto: desde },
-    { icone: Building2, texto: `${p.imoveisAtivos} ${p.imoveisAtivos === 1 ? "imóvel" : "imóveis"} na Viva` },
+    { icone: Building2, texto: `${imoveis.length} ${imoveis.length === 1 ? "imóvel" : "imóveis"} na Viva` },
     { icone: UserRound, texto: `${p.estadiasConcluidas} ${p.estadiasConcluidas === 1 ? "estadia concluída" : "estadias concluídas"}` },
     { icone: Clock, texto: p.resposta ? `Responde ${p.resposta.taxa}% das conversas, ${p.resposta.tempo}` : "Novo na Viva" },
     p.idiomas.length > 0 && { icone: Languages, texto: `Fala ${p.idiomas.join(", ")}` },
