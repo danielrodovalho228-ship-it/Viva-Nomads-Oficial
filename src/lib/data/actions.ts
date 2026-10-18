@@ -1120,7 +1120,7 @@ const FAIXAS_CONTRATO = new Set(["temporada", "media_estadia", "longa"]);
  */
 export async function registrarContrato(
   input: ContratoInput
-): Promise<ActionResult & { blocos?: number }> {
+): Promise<ActionResult & { blocos?: number; existente?: boolean }> {
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
   const {
@@ -1142,7 +1142,8 @@ export async function registrarContrato(
   if (!admin) return { ok: false, error: "Serviço indisponível." };
 
   const { data: existente } = await admin.from("contratos").select("id").eq("lead_id", lead.id).maybeSingle();
-  if (existente) return { ok: true, id: existente.id as string, blocos: 0 };
+  // Prompt 28: avisa que o contrato JÁ existia (o Resumo mostra "gerado em" e o estado real dele).
+  if (existente) return { ok: true, id: existente.id as string, blocos: 0, existente: true };
 
   // F32: o contrato nasce só com o documento das DUAS partes e os documentos do
   // inquilino — a trava vale aqui no servidor, não só na tela do fechamento.

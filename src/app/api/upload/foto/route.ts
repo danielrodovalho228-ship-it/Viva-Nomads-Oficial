@@ -2,15 +2,16 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { consumirLimite, DIA } from "@/lib/limites";
 import { PHOTO_MAX_BYTES, tipoRealFotoPorMagicBytes } from "@/lib/upload-limits";
+import { reconverterFotoParaWebp } from "@/lib/foto-reconversao";
 
 const BUCKET = "property-photos";
-const EXT = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" } as const;
 
 /**
  * Upload da FOTO do anúncio com validação NO SERVIDOR (QA teste 4, F46–F48):
  * exige dono logado, confere o tipo REAL por magic bytes (só JPEG/PNG/WebP —
  * nunca SVG, executável ou texto renomeado) e grava na pasta do próprio dono
- * com o Content-Type real e extensão derivada dele (a do arquivo é ignorada).
+ * depois de RE-CODIFICAR no servidor para WebP (sem EXIF/GPS, orientação aplicada, lado máximo 2560 px): o que
+ * fica salvo é sempre image/webp, e um arquivo com cabeçalho de foto mas conteúdo falso é recusado (415).
  * Sobe como o próprio usuário, então a RLS do bucket (insert só na pasta do
  * uid) continua valendo. Devolve só path e URL pública.
  */
@@ -44,8 +45,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Arquivo recusado: envie uma foto JPG, PNG ou WebP de verdade." }, { status: 415 });
   }
 
-  const path = `${user.id}/${crypto.randomUUID()}.${EXT[tipo]}`;
-  const { error } = await supabase.storage.from(BUCKET).upload(path, bytes, { contentType: tipo, upsert: false });
+  const webp = await reconverterFotoParaWebp(bytes);
+  if (!webp) {
+    return NextResponse.json({ error: "Arquivo recusado: envie uma foto JPG, PNG ou WebP de verdade." }, { status: 415 });
+  }
+
+  const path = `${user.id}/${crypto.randomUUID()}.webp`;
+  const { error } = await supabase.storage.from(BUCKET).upload(path, webp, { contentType: "image/webp", upsert: false });
   if (error) return NextResponse.json({ error: "Não foi possível salvar a foto. Tente de novo." }, { status: 500 });
 
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);

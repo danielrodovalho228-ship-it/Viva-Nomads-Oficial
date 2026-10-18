@@ -1,6 +1,6 @@
 "use server";
 
-import { statusAssinaturaCurto } from "@/lib/fechamento-contrato";
+import { estadoDoContrato, statusAssinaturaCurto, type ChaveEstadoContrato } from "@/lib/fechamento-contrato";
 import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -104,6 +104,90 @@ function toPagamento(p: Record<string, unknown>): PagamentoView {
 /** 1º pagamento do aluguel declarado pelo proprietário E confirmado pelo inquilino. */
 function primeiroPagamentoConfirmado(pagamentos: PagamentoView[]): boolean {
   return pagamentos.some((p) => p.tipo === "aluguel" && p.confirmado);
+}
+
+/** Prompt 28: estado REAL de um contrato (o RLS deixa as duas partes lerem), para o Resumo do fechamento. */
+export interface EstadoContratoView {
+  id: string;
+  chave: ChaveEstadoContrato;
+  texto: string;
+  criadoEm: string;
+}
+
+export async function lerEstadoDoContrato(contratoId: string, papel: "inquilino" | "proprietario"): Promise<EstadoContratoView | null> {
+  if (!/^[0-9a-f-]{36}$/i.test(String(contratoId))) return null;
+  const supabase = await createClient();
+  if (!supabase) return null;
+  const { data } = await supabase
+    .from("contratos")
+    .select("id, status, created_at, assinado_proprietario_em, assinado_inquilino_em, pagamentos_bloco(*)")
+    .eq("id", contratoId)
+    .maybeSingle();
+  if (!data) return null;
+  const pagamentos = (((data as Record<string, unknown>).pagamentos_bloco as Record<string, unknown>[]) ?? []).map(toPagamento);
+  const e = estadoDoContrato(
+    {
+      status: String(data.status ?? "ativo"),
+      assinadoProprietarioEm: (data.assinado_proprietario_em as string | null) ?? null,
+      assinadoInquilinoEm: (data.assinado_inquilino_em as string | null) ?? null,
+      primeiroPagamentoConfirmado: primeiroPagamentoConfirmado(pagamentos),
+    },
+    papel,
+  );
+  return { id: String(data.id), chave: e.chave, texto: e.texto, criadoEm: String(data.created_at) };
+}
+
+/** Contrato do INQUILINO (prompt 28): a seção "Contratos" — aguardando assinatura ainda não é locação. */
+export interface ContratoInquilinoView {
+  id: string;
+  numero: string;
+  propertyTitle: string;
+  aluguelMensal: number;
+  chave: ChaveEstadoContrato;
+  texto: string;
+  faltaVoce: boolean;
+  criadoEm: string;
+}
+
+export async function getContratosDoInquilino(): Promise<ContratoInquilinoView[]> {
+  const supabase = await createClient();
+  if (!supabase) return [];
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data } = await supabase
+    .from("contratos")
+    .select("id, status, aluguel_mensal, created_at, assinado_proprietario_em, assinado_inquilino_em, properties(title), pagamentos_bloco(*)")
+    .eq("tenant_id", user.id)
+    .order("created_at", { ascending: false });
+  return ((data ?? []) as Record<string, unknown>[]).map((c) => {
+    const pagamentos = ((c.pagamentos_bloco as Record<string, unknown>[]) ?? []).map(toPagamento);
+    const e = estadoDoContrato(
+      {
+        status: String(c.status ?? "ativo"),
+        assinadoProprietarioEm: (c.assinado_proprietario_em as string | null) ?? null,
+        assinadoInquilinoEm: (c.assinado_inquilino_em as string | null) ?? null,
+        primeiroPagamentoConfirmado: primeiroPagamentoConfirmado(pagamentos),
+      },
+      "inquilino",
+    );
+    return {
+      id: String(c.id),
+      numero: `VN-CT-${String(c.id).slice(0, 8).toUpperCase()}`,
+      propertyTitle: (c.properties as { title?: string } | null)?.title ?? "Imóvel",
+      aluguelMensal: Number(c.aluguel_mensal),
+      chave: e.chave,
+      texto: e.texto,
+      faltaVoce: e.faltaVoce,
+      criadoEm: String(c.created_at),
+    };
+  });
+}
+
+/** Quantos contratos esperam a assinatura do inquilino (o número no menu "Contratos"). */
+export async function contarContratosParaAssinar(): Promise<number> {
+  return (await getContratosDoInquilino()).filter((c) => c.faltaVoce).length;
 }
 
 /** Locação do INQUILINO (visão simplificada) para avaliar o proprietário. */
