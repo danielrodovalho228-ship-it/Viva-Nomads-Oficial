@@ -46,7 +46,7 @@ test.describe("T200 — /roi e /simulacao dos sócios (prompt 21)", () => {
       await expect(page.getByTestId("roi-36")).toContainText(/12 meses: .*24 meses: /);
       for (const g of ["grafico-fontes", "grafico-caixa", "grafico-contrato"]) {
         await expect(page.getByTestId(g)).toBeVisible();
-        await expect(page.getByTestId(g).locator("table.sr-only")).toHaveCount(1);
+        await expect(page.getByTestId(g).locator(".sr-only table")).toHaveCount(1);
       }
       await expect(page.getByTestId("grafico-fontes").locator("svg rect").first()).toBeAttached();
       for (const id of ["verificacao_inquilino", "b2b_alocacao", "publicamos_pago", "ferramentas_fora", "fundadores"]) {
@@ -66,7 +66,7 @@ test.describe("T200 — /roi e /simulacao dos sócios (prompt 21)", () => {
       await expect(frase).toContainText("receitas adicionais ligadas (potencial)");
       await expect(page.getByTestId("roi-payback")).not.toHaveText(paybackDesligado);
       for (const id of ["verificacao_inquilino", "fundadores"]) await expect(page.getByTestId(`receita-${id}`)).toHaveAttribute("data-ligada", "1");
-      await expect(page.getByTestId("grafico-fontes").getByText("Desconto fundadores")).toBeVisible();
+      await expect(page.getByTestId("grafico-fontes").locator("ul").getByText("Desconto fundadores")).toBeVisible();
       await expect(page.getByTestId("receita-fundadores")).toContainText("aguarda parecer jurídico");
       const tabelaLigado = await comparativo(page);
       expect(tabelaLigado[3][2]).not.toBe(tabelaLigado[3][1]); // receita por contrato sobe

@@ -736,8 +736,7 @@ function GraficoFontes({ proj }: { proj: Projecao }) {
   return (
     <div className={styles.grafico} data-testid="grafico-fontes">
       <div className={styles.eixoY}>
-        <span>{mil(max)}</span>
-        {min < 0 && <span>{mil(min)}</span>}
+        Escala: de {mil(min)} a {mil(max)} por mês
       </div>
       <svg viewBox={`0 0 ${GW} ${GH}`} preserveAspectRatio="none" aria-hidden="true" className={styles.svgArea}>
         {proj.meses.map((m) => {
@@ -765,27 +764,29 @@ function GraficoFontes({ proj }: { proj: Projecao }) {
           </li>
         ))}
       </ul>
-      <table className="sr-only">
-        <caption>Receita por fonte, por ano (R$)</caption>
-        <thead>
-          <tr>
-            <th>Fonte</th>
-            {proj.anos.map((a) => (
-              <th key={a.ano}>Ano {a.ano}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {ativas.map((f) => (
-            <tr key={f.campo}>
-              <td>{f.nome}</td>
+      <div className="sr-only">
+        <table>
+          <caption>Receita por fonte, por ano (R$)</caption>
+          <thead>
+            <tr>
+              <th>Fonte</th>
               {proj.anos.map((a) => (
-                <td key={a.ano}>{brl(valorAno(a, f.campo))}</td>
+                <th key={a.ano}>Ano {a.ano}</th>
               ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {ativas.map((f) => (
+              <tr key={f.campo}>
+                <td>{f.nome}</td>
+                {proj.anos.map((a) => (
+                  <td key={a.ano}>{brl(valorAno(a, f.campo))}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -807,8 +808,7 @@ function GraficoCaixa({ soTaxa, comExtras }: { soTaxa: Projecao; comExtras: Proj
   return (
     <div className={styles.grafico} data-testid="grafico-caixa">
       <div className={styles.eixoY}>
-        <span>{mil(max)}</span>
-        <span>{mil(min)}</span>
+        Escala: de {mil(min)} a {mil(max)} (linha tracejada = zero)
       </div>
       <div className={styles.areaRel}>
         <svg viewBox={`0 0 ${GW} ${GH}`} preserveAspectRatio="none" aria-hidden="true" className={styles.svgArea}>
@@ -839,30 +839,32 @@ function GraficoCaixa({ soTaxa, comExtras }: { soTaxa: Projecao; comExtras: Proj
           <span className={styles.sw} style={{ background: "#c8a24b" }} /> Taxa + extras
         </li>
       </ul>
-      <table className="sr-only">
-        <caption>Caixa acumulado (R$)</caption>
-        <thead>
-          <tr>
-            <th>Mês</th>
-            <th>Só taxa</th>
-            <th>Taxa + extras</th>
-          </tr>
-        </thead>
-        <tbody>
-          {[0, 6, 12, 18, 24, 30, 36].map((m) => (
-            <tr key={m}>
-              <td>Mês {m}</td>
-              <td>{brl(a[m].caixa)}</td>
-              <td>{brl(b[m].caixa)}</td>
+      <div className="sr-only">
+        <table>
+          <caption>Caixa acumulado (R$)</caption>
+          <thead>
+            <tr>
+              <th>Mês</th>
+              <th>Só taxa</th>
+              <th>Taxa + extras</th>
             </tr>
-          ))}
-          <tr>
-            <td>Payback</td>
-            <td>{mes(soTaxa.mesPayback)}</td>
-            <td>{mes(comExtras.mesPayback)}</td>
-          </tr>
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {[0, 6, 12, 18, 24, 30, 36].map((m) => (
+              <tr key={m}>
+                <td>Mês {m}</td>
+                <td>{brl(a[m].caixa)}</td>
+                <td>{brl(b[m].caixa)}</td>
+              </tr>
+            ))}
+            <tr>
+              <td>Payback</td>
+              <td>{mes(soTaxa.mesPayback)}</td>
+              <td>{mes(comExtras.mesPayback)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -889,21 +891,23 @@ function GraficoContrato({ r }: { r: ReturnType<typeof receitaPorContrato> }) {
           <span className={styles.barraValor}>{brl2(r.total)}</span>
         </div>
       </div>
-      <table className="sr-only">
-        <caption>Receita por contrato fechado, por fonte (média do ano 3)</caption>
-        <tbody>
-          {linhas.map((f) => (
-            <tr key={f.campo}>
-              <td>{f.nome}</td>
-              <td>{brl2(r[f.campo])}</td>
+      <div className="sr-only">
+        <table>
+          <caption>Receita por contrato fechado, por fonte (média do ano 3)</caption>
+          <tbody>
+            {linhas.map((f) => (
+              <tr key={f.campo}>
+                <td>{f.nome}</td>
+                <td>{brl2(r[f.campo])}</td>
+              </tr>
+            ))}
+            <tr>
+              <td>Total</td>
+              <td>{brl2(r.total)}</td>
             </tr>
-          ))}
-          <tr>
-            <td>Total</td>
-            <td>{brl2(r.total)}</td>
-          </tr>
-        </tbody>
-      </table>
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
