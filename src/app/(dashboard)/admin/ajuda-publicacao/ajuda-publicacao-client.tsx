@@ -66,6 +66,18 @@ export function AjudaPublicacaoClient({ fila }: { fila: PedidoAjuda[] }) {
                   </p>
                   {p.link_anuncio && <p className="mt-1 break-all text-sm text-muted">{p.link_anuncio}</p>}
                   {p.texto_anuncio && <p className="mt-1 line-clamp-3 whitespace-pre-line text-sm text-muted">{p.texto_anuncio}</p>}
+                  {!!p.fotos?.length && (
+                    <ul className="mt-2 flex flex-wrap gap-2" data-testid="ajuda-item-fotos">
+                      {p.fotos.map((u) => (
+                        <li key={u}>
+                          <a href={u} target="_blank" rel="noopener noreferrer">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={u} alt="Foto enviada pelo dono" loading="lazy" className="h-16 w-16 rounded-lg object-cover" />
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                   {p.observacao && <p className="mt-1 text-xs text-muted">Recado: {p.observacao}</p>}
                   {erro[p.id] && <p className="mt-1 text-xs text-red-600" role="alert">{erro[p.id]}</p>}
                 </div>
