@@ -18,7 +18,7 @@ test("anúncio vazio: score 0 e dicas clicáveis (etapa) para tudo", () => {
   const r = calc(vazio);
   assert.equal(r.score, 0);
   assert.ok(r.dicas.length >= 15);
-  assert.ok(r.dicas.every((d) => Number.isInteger(d.etapa) && d.etapa >= 0 && d.etapa <= 6));
+  assert.ok(r.dicas.every((d) => Number.isInteger(d.etapa) && d.etapa >= 0 && d.etapa <= 4));
 });
 
 test("parcial: obrigatórios feitos, qualidade em branco = 70", () => {
@@ -43,4 +43,15 @@ test("subir um campo sobe o score; dicas vêm das que mais valem", () => {
 test("contarPalavras ignora espaços sobrando", () => {
   assert.equal(contarPalavras("  a  b\nc "), 3);
   assert.equal(contarPalavras(""), 0);
+});
+
+test("dicas levam à etapa certa do cadastro em 5 etapas (t98)", () => {
+  const r = calc({ ...completo, fotos: 8, descricao: palavras(10), selo: false, video: false });
+  const etapa = (key: string) => r.dicas.find((d) => d.key === key)?.etapa;
+  assert.equal(etapa("fotos12"), 1);
+  assert.equal(etapa("video"), 1);
+  assert.equal(etapa("palavras"), 2);
+  assert.equal(etapa("comodidades"), 2);
+  assert.equal(etapa("pets"), 2);
+  assert.equal(etapa("selo"), 0);
 });

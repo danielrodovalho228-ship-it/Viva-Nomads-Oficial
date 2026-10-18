@@ -28,7 +28,7 @@ export interface DicaScore {
   key: string;
   label: string;
   pontos: number;
-  /** Etapa do editor onde se resolve (0..6). */
+  /** Etapa do editor onde se resolve (0..4: cadastro em 5 etapas). */
   etapa: number;
 }
 
@@ -53,15 +53,15 @@ export function scoreAnuncio(p: Prontidao, f: FatosAnuncio, x: ExtrasQualidade):
   // Obrigatórios que faltam também viram dica (a mesma lista do checklist).
   const porItem = total > 0 ? PONTOS_OBRIGATORIOS / total : 0;
   for (const i of p.obrigatorios) {
-    if (!i.ok) dicas.push({ key: i.key, label: i.label, pontos: Math.round(porItem), etapa: i.key === "documento" ? 6 : i.etapa });
+    if (!i.ok) dicas.push({ key: i.key, label: i.label, pontos: Math.round(porItem), etapa: i.etapa });
   }
 
   const qualidade: { key: string; label: string; pontos: number; etapa: number; ok: boolean }[] = [
-    { key: "fotos12", label: `Adicione fotos: ${MIN_FOTOS_BOAS}+ aparecem mais na busca (tem ${f.fotos})`, pontos: 8, etapa: 3, ok: f.fotos >= MIN_FOTOS_BOAS },
-    { key: "palavras", label: `Descrição com pelo menos ${MIN_PALAVRAS} palavras`, pontos: 6, etapa: 5, ok: contarPalavras(f.descricao) >= MIN_PALAVRAS },
-    { key: "comodidades", label: `Marque as comodidades (pelo menos ${MIN_COMODIDADES})`, pontos: 6, etapa: 4, ok: x.comodidades >= MIN_COMODIDADES },
+    { key: "fotos12", label: `Adicione fotos: ${MIN_FOTOS_BOAS}+ aparecem mais na busca (tem ${f.fotos})`, pontos: 8, etapa: 1, ok: f.fotos >= MIN_FOTOS_BOAS },
+    { key: "palavras", label: `Descrição com pelo menos ${MIN_PALAVRAS} palavras`, pontos: 6, etapa: 2, ok: contarPalavras(f.descricao) >= MIN_PALAVRAS },
+    { key: "comodidades", label: `Marque as comodidades (pelo menos ${MIN_COMODIDADES})`, pontos: 6, etapa: 2, ok: x.comodidades >= MIN_COMODIDADES },
     { key: "pets", label: "Defina as regras de pet", pontos: 4, etapa: 2, ok: x.petsDefinido },
-    { key: "video", label: "Adicione um vídeo do imóvel", pontos: 3, etapa: 3, ok: f.video },
+    { key: "video", label: "Adicione um vídeo do imóvel", pontos: 3, etapa: 1, ok: f.video },
     { key: "selo", label: "Peça o Selo Pronto para Morar", pontos: 3, etapa: 0, ok: f.selo },
   ];
   for (const q of qualidade) {
