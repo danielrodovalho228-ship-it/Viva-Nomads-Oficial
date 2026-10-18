@@ -33,6 +33,7 @@ export function Labeled({
   children,
   sugerido = false,
   ajuda,
+  daMatricula = false,
 }: {
   label: string;
   children: React.ReactNode;
@@ -40,6 +41,8 @@ export function Labeled({
   sugerido?: boolean;
   /** Texto curto abaixo do rótulo (ex.: "(opcional)") — mantém o rótulo numa linha só (Q9). */
   ajuda?: string;
+  /** Prompt 19: o valor veio da matrícula (editável) — etiqueta "veio da matrícula". */
+  daMatricula?: boolean;
 }) {
   // Além do <label> em volta, o campo ganha um nome acessível explícito
   // (leitores de tela/validadores que não seguem o rótulo implícito).
@@ -56,6 +59,11 @@ export function Labeled({
       <span className="mb-1.5 flex flex-wrap items-center text-sm font-medium text-ink">
         <span className="whitespace-nowrap">{label}</span>
         <MarcaSugerido ativo={sugerido} />
+        {daMatricula && (
+          <span className="ml-1.5 inline-flex items-center rounded-full bg-sage-50 px-2 py-0.5 text-[11px] font-semibold text-forest" data-testid="veio-da-matricula">
+            veio da matrícula
+          </span>
+        )}
       </span>
       {ajuda && <span className="-mt-1 mb-1.5 block text-xs text-muted">{ajuda}</span>}
       {campo}

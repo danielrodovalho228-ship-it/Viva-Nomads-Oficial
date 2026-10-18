@@ -1,12 +1,14 @@
 /*
-  Integração CAF — verificação de inquilino (seção 8.1).
+  Integração CAF — verificação de identidade (seção 8.1). Prompt 19: vale para qualquer conta (inquilino e
+  proprietário — o dono confirma a identidade antes da conferência da matrícula).
   Identidade, documento (OCR), prova de vida (biometria) e risco contextual.
   Cobre estrangeiros (CRNM/RNE). Sem CAF_API_TOKEN, retorna laudo simulado.
 
   Docs: https://docs.caf.io
 */
 
-import type { CafResult, TrafficLight } from "@/lib/closing";
+import type { CafResult } from "@/lib/closing";
+import { idSemResultado, lerRespostaCaf } from "@/lib/integrations/caf-resposta";
 
 import { exigirChaveEmProducao, integracoesSimuladas, registrarSimulado } from "@/lib/integracoes";
 
@@ -58,25 +60,29 @@ export async function verifyTenant(req: CafRequest): Promise<CafResult> {
     throw new Error(`CAF ${res.status}: ${await res.text()}`);
   }
 
-  const data = (await res.json()) as {
-    status?: string;
-    validations?: { identity?: boolean; liveness?: boolean; document?: boolean };
-    risk?: { level?: string; reasons?: string[] };
-  };
+  // A documentação descreve a criação da transação devolvendo só o id; o resultado vem no GET da transação.
+  let data: unknown = await res.json();
+  const id = idSemResultado(data);
+  if (id) {
+    const det = await fetch(`${API_BASE}/v1/transactions/${encodeURIComponent(id)}`, {
+      headers: { Authorization: `Bearer ${process.env.CAF_API_TOKEN}` },
+    });
+    if (det.ok) data = await det.json();
+  }
 
-  // Mapeia o nível de risco do CAF para o semáforo da plataforma.
-  const level = data.risk?.level?.toUpperCase();
-  const light: TrafficLight =
-    level === "HIGH" ? "red" : level === "MEDIUM" ? "yellow" : "green";
-
+  // Leitura defensiva (formato do template não confirmado sem contrato): ver src/lib/integrations/caf-resposta.ts.
+  const l = lerRespostaCaf(data, { name: req.name, cpf: req.cpf });
   return {
-    light,
-    identity: data.validations?.identity ?? false,
-    liveness: data.validations?.liveness ?? false,
-    document: data.validations?.document ?? false,
+    light: l.light,
+    identity: l.identity,
+    liveness: l.liveness,
+    document: l.document,
     coversForeigners: true,
     demo: false,
-    notes: data.risk?.reasons ?? ["Análise concluída."],
+    notes: l.notes,
+    ocrConfere: l.ocrConfere,
+    receitaConfere: l.receitaConfere,
+    pendente: l.pendente,
   };
 }
 

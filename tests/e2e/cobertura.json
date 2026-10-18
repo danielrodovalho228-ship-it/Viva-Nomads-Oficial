@@ -121,7 +121,8 @@
         "t32-autorizacao-preconferencia",
         "t36-cadastro-ponta-a-ponta",
         "t9-documentos",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t195-matricula-caf"
       ]
     },
     "/admin/emails-teste": {
@@ -632,7 +633,8 @@
         "t32-autorizacao-preconferencia",
         "t8-rascunho",
         "t183-telas-logadas-390",
-        "t194-passo1-ia-cep"
+        "t194-passo1-ia-cep",
+        "t195-matricula-caf"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1336,7 +1338,8 @@
         "proprietario"
       ],
       "specs": [
-        "t187-conferencia-documento"
+        "t187-conferencia-documento",
+        "t195-matricula-caf"
       ]
     },
     "/api/empresas": {
@@ -1506,6 +1509,14 @@
       ],
       "specs": [
         "t20-p1-agentes"
+      ]
+    },
+    "/api/documentos/matricula/caso": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t195-matricula-caf"
       ]
     }
   },
@@ -2975,6 +2986,30 @@
       ],
       "specs": [
         "t193-propostas"
+      ]
+    },
+    "src/lib/data/matriculas-admin.ts#listMatriculasFila": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t195-matricula-caf"
+      ]
+    },
+    "src/lib/data/matriculas-admin.ts#contadoresMatriculas": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t195-matricula-caf"
+      ]
+    },
+    "src/lib/data/matriculas-admin.ts#decidirMatriculaAdmin": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t195-matricula-caf"
       ]
     }
   }

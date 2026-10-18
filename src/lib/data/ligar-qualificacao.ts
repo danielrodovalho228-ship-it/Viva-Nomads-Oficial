@@ -41,3 +41,16 @@ export async function ligarQualificacaoAoImovel(cliente: Cliente, ownerId: strin
     return false;
   }
 }
+
+/**
+ * Prompt 19: a conferência da matrícula enviada antes do rascunho existir passa a pertencer a ele. A tabela
+ * (0158) só é gravada pelo servidor: aqui roda com o cliente de SERVIÇO, sempre filtrando pelo dono do login.
+ */
+export async function ligarMatriculaAoImovel(admin: Cliente, ownerId: string, propertyId: string): Promise<void> {
+  if (!admin) return;
+  try {
+    await admin.from("property_ownership_checks").update({ property_id: propertyId }).eq("user_id", ownerId).is("property_id", null);
+  } catch (e) {
+    console.error("[ligarMatriculaAoImovel] erro:", e instanceof Error ? e.message : "desconhecido");
+  }
+}

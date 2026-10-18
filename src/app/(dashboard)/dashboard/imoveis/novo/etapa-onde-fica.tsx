@@ -16,6 +16,8 @@ import { cn } from "@/lib/utils";
 import { mensagemCep, type OpcaoEndereco, type ResultadoCep } from "@/lib/cep/buscar";
 import { Erro, Labeled, Toggle } from "./campos";
 import { BuscaEndereco } from "./busca-endereco";
+import type { InfoMatricula } from "@/components/anuncio/matricula-resultado";
+import type { PreenchimentoMatricula } from "@/lib/documento/conferencia-matricula";
 
 /** A cidade está entre as liberadas? (comparação sem acento e sem maiúscula). */
 function cidadeLiberada(cidade: string): boolean {
@@ -66,6 +68,12 @@ export function EtapaOndeFica(p: {
   docEstado: EstadoDocumentoTela;
   docMotivos: string[];
   onDocumento: (estado: EstadoDocumentoTela, motivos: string[]) => void;
+  /** Prompt 19: a matrícula conferida preenche o anúncio. */
+  onMatricula?: (m: InfoMatricula) => void;
+  daMatricula?: Set<string>;
+  /** Endereço da matrícula quando é diferente do CEP: o dono escolhe qual vale. */
+  enderecoMatricula?: PreenchimentoMatricula["endereco"] | null;
+  onEnderecoMatricula?: (usar: boolean) => void;
   erros: Record<string, string>;
 }) {
   const doc = exigeAutorizacao(p.ownershipType) ? DOC_AUTORIZACAO[p.ownershipType as "subleased" | "managed"] : null;
@@ -150,7 +158,7 @@ export function EtapaOndeFica(p: {
       )}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_8rem]">
-        <Labeled label="Rua">
+        <Labeled label="Rua" daMatricula={p.daMatricula?.has("endereco")}>
           <input value={p.street} onChange={(e) => p.setStreet(e.target.value)} className="input" placeholder="Rua ou avenida" data-testid="cadastro-rua" />
           <Erro msg={p.erros.rua} />
         </Labeled>
@@ -159,8 +167,25 @@ export function EtapaOndeFica(p: {
           <Erro msg={p.erros.numero} />
         </Labeled>
       </div>
-      <Labeled label="Complemento" ajuda="(opcional)">
-        <input value={p.complemento} onChange={(e) => p.setComplemento(e.target.value.slice(0, 60))} className="input" placeholder="Apto 101, bloco B" />
+      {p.enderecoMatricula && (
+        <div className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900" role="status" data-testid="endereco-matricula-conflito">
+          <p className="font-semibold">O endereço da matrícula é diferente do CEP — confira.</p>
+          <p className="mt-0.5 text-xs">
+            Na matrícula:{" "}
+            {[p.enderecoMatricula.rua, p.enderecoMatricula.numero, p.enderecoMatricula.bairro, p.enderecoMatricula.cidade].filter(Boolean).join(", ")}
+          </p>
+          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+            <button type="button" className="font-semibold underline" onClick={() => p.onEnderecoMatricula?.(true)} data-testid="endereco-matricula-usar">
+              Usar o endereço da matrícula
+            </button>
+            <button type="button" className="font-semibold underline" onClick={() => p.onEnderecoMatricula?.(false)} data-testid="endereco-matricula-manter">
+              Manter o do CEP
+            </button>
+          </div>
+        </div>
+      )}
+      <Labeled label="Complemento" ajuda="(opcional)" daMatricula={p.daMatricula?.has("complemento")}>
+        <input value={p.complemento} onChange={(e) => p.setComplemento(e.target.value.slice(0, 60))} className="input" placeholder="Apto 101, bloco B" data-testid="cadastro-complemento" />
       </Labeled>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Labeled label="Bairro">
@@ -274,6 +299,7 @@ export function EtapaOndeFica(p: {
         estado={p.docEstado}
         motivos={p.docMotivos}
         onResultado={p.onDocumento}
+        onMatricula={p.onMatricula}
       />
 
       {/* Prompt 20: atalhos de exceção numa linha discreta (o caminho principal é o cartão da IA lá em cima). */}
