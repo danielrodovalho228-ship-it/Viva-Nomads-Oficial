@@ -169,7 +169,15 @@ export function ConfiancaLista() {
       rotulo: "Identidade",
       situacao: !identidade ? "falta" : identidade.estado === "confirmada" ? "ok" : identidade.estado === "em_breve" ? "em_breve" : "falta",
       detalhe: identidade?.texto ?? "Carregando…",
-      acao: identidade?.acao ?? (identidade?.estado === "confirmada" ? undefined : { texto: "Saber mais", href: "/dashboard/verificacao" }),
+      // O texto do estado fica no detalhe; o botão é curto (o rótulo longo do estado estourava a 390 px).
+      acao:
+        identidade?.estado === "confirmada"
+          ? undefined
+          : identidade?.estado === "vencida"
+            ? { texto: "Confirmar de novo", href: "/dashboard/verificacao" }
+            : identidade?.estado === "simulavel"
+              ? { texto: "Verificar", href: "/dashboard/verificacao" }
+              : { texto: "Saber mais", href: "/dashboard/verificacao" },
     },
     ...(mode === "tenant"
       ? [
