@@ -13,11 +13,12 @@ const MORADOR = ["/dashboard/favoritos", "/dashboard/buscas", "/dashboard/pedido
 async function conferirCapa(page: Page, rota: string, largura: number) {
   await page.goto(rota, { waitUntil: "domcontentloaded" });
   const capa = page.locator('[data-testid="painel-capa"]:visible').first();
-  await expect(capa, `${rota}: capa`).toBeVisible({ timeout: 20_000 });
+  // Servidor do laboratório começa frio: a 1ª tela (e o 1º redimensionamento de imagem) leva mais que as seguintes.
+  await expect(capa, `${rota}: capa`).toBeVisible({ timeout: 45_000 });
   await expect(capa.locator("h1"), `${rota}: título na capa`).toBeVisible();
   const foto = capa.locator("img").first();
   await expect
-    .poll(() => foto.evaluate((i: HTMLImageElement) => i.complete && i.naturalWidth > 0), { message: `${rota}: foto carregou`, timeout: 15_000 })
+    .poll(() => foto.evaluate((i: HTMLImageElement) => i.complete && i.naturalWidth > 0), { message: `${rota}: foto carregou`, timeout: 45_000 })
     .toBe(true);
   // Capa ocupa toda a largura do conteúdo e tem altura de faixa (não é um título solto).
   const caixa = await capa.boundingBox();
