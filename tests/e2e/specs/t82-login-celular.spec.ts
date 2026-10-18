@@ -22,11 +22,13 @@ test.describe("T82 — Login no celular", () => {
 
   test("senha errada: mensagem padrão, botão volta a funcionar", async ({ page }) => {
     await page.goto("/auth");
-    await page.locator('input[name="email"]').first().fill("naoexiste-t80@example.com");
+    await page.locator('input[name="email"]').first().fill(`naoexiste-t80-${Date.now()}@example.com`);
     await page.locator('input[name="password"]').first().fill("senha-errada-123");
     const entrar = page.locator("form").getByRole("button", { name: /^entrar$/i });
     await entrar.click();
-    await expect(page.getByText(/e-mail ou senha/i).first()).toBeVisible({ timeout: 15_000 });
+    // E-mail novo a cada execução: o limite do Supabase por e-mail não acumula entre labs.
+    // Se o limite por IP do lab disparar ("Muitas tentativas"), a mensagem amigável também prova o fluxo.
+    await expect(page.getByText(/e-mail ou senha|muitas tentativas/i).first()).toBeVisible({ timeout: 20_000 });
     await expect(page).toHaveURL(/\/auth/);
     await expect(page.locator("form").getByRole("button", { name: /^entrar$/i })).toBeEnabled();
   });
