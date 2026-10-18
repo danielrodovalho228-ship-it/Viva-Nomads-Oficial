@@ -8,6 +8,7 @@ import { readFileSync } from "node:fs";
 import {
   erroTamanhoLaudo,
   JANELA_ENTRADA_HORAS,
+  janelaEncerrada,
   decidirResposta,
   mesclarItens,
   mesclarLaudo,
@@ -41,22 +42,48 @@ test("estado: qualquer contestação = contestada (mesmo se a outra parte confir
   assert.equal(estadoConferencia([R("inquilino", "confirmou"), R("proprietario", "contestou")]), "contestada");
 });
 
-test("itens só mudam enquanto ninguém respondeu (imutável depois de confirmado ou contestado)", () => {
-  assert.equal(podeEditarItens([]), true);
-  assert.equal(podeEditarItens([R("inquilino", "confirmou")]), false);
-  assert.equal(podeEditarItens([R("proprietario", "contestou")]), false);
+test("itens: cada parte edita até responder; com as duas respostas nada mais muda (ordem 99c7c1e0)", () => {
+  assert.equal(podeEditarItens([], "inquilino"), true);
+  // o inquilino respondeu: o proprietário ainda registra, o inquilino não
+  assert.equal(podeEditarItens([R("inquilino", "confirmou")], "proprietario"), true);
+  assert.equal(podeEditarItens([R("inquilino", "confirmou")], "inquilino"), false);
+  assert.equal(podeEditarItens([R("proprietario", "contestou")], "inquilino"), true);
+  // as duas responderam: tudo congelado
+  assert.equal(podeEditarItens([R("inquilino", "confirmou"), R("proprietario", "confirmou")], "proprietario"), false);
+  assert.equal(podeEditarItens([R("inquilino", "confirmou"), R("proprietario", "contestou")], "inquilino"), false);
 });
 
+const AMBOS = { proprietario: 2, inquilino: 1 };
+
 test("resposta: cada parte responde uma vez; contestar exige motivo; confirmar sem itens é recusado", () => {
-  assert.deepEqual(decidirResposta({ respostas: [], parte: "inquilino", decisao: "confirmou", motivo: "", qtdItens: 3 }), { ok: true, motivo: null });
-  const jaRespondeu = decidirResposta({ respostas: [R("inquilino", "confirmou")], parte: "inquilino", decisao: "contestou", motivo: "mudei de ideia", qtdItens: 3 });
+  assert.deepEqual(decidirResposta({ respostas: [], parte: "inquilino", decisao: "confirmou", motivo: "", itensPorParte: AMBOS }), { ok: true, motivo: null });
+  const jaRespondeu = decidirResposta({ respostas: [R("inquilino", "confirmou")], parte: "inquilino", decisao: "contestou", motivo: "mudei de ideia", itensPorParte: AMBOS });
   assert.equal(jaRespondeu.ok, false);
-  const semMotivo = decidirResposta({ respostas: [], parte: "proprietario", decisao: "contestou", motivo: "  ", qtdItens: 3 });
+  const semMotivo = decidirResposta({ respostas: [], parte: "proprietario", decisao: "contestou", motivo: "  ", itensPorParte: AMBOS });
   assert.equal(semMotivo.ok, false);
-  const semItens = decidirResposta({ respostas: [], parte: "proprietario", decisao: "confirmou", motivo: "", qtdItens: 0 });
+  const semItens = decidirResposta({ respostas: [], parte: "proprietario", decisao: "confirmou", motivo: "", itensPorParte: { proprietario: 0, inquilino: 0 } });
   assert.equal(semItens.ok, false);
-  const comMotivo = decidirResposta({ respostas: [], parte: "proprietario", decisao: "contestou", motivo: "  Parede riscada  ", qtdItens: 3 });
+  const comMotivo = decidirResposta({ respostas: [], parte: "proprietario", decisao: "contestou", motivo: "  Parede riscada  ", itensPorParte: AMBOS });
   assert.deepEqual(comMotivo, { ok: true, motivo: "Parede riscada" });
+});
+
+test("resposta: parte que responde antes de a outra registrar é recusada (caso negativo da ordem 99c7c1e0)", () => {
+  const antes = decidirResposta({ respostas: [], parte: "inquilino", decisao: "confirmou", motivo: "", itensPorParte: { proprietario: 0, inquilino: 3 } });
+  assert.equal(antes.ok, false);
+  assert.match(antes.ok ? "" : antes.erro, /outra parte/);
+  // depois de a outra registrar, passa
+  assert.equal(decidirResposta({ respostas: [], parte: "inquilino", decisao: "confirmou", motivo: "", itensPorParte: { proprietario: 1, inquilino: 3 } }).ok, true);
+  // janela de 48 h da entrada fechada: responde mesmo sem a outra parte, desde que tenha item próprio
+  assert.equal(decidirResposta({ respostas: [], parte: "inquilino", decisao: "confirmou", motivo: "", itensPorParte: { proprietario: 0, inquilino: 3 }, janelaEncerrada: true }).ok, true);
+  assert.equal(decidirResposta({ respostas: [], parte: "inquilino", decisao: "confirmou", motivo: "", itensPorParte: { proprietario: 2, inquilino: 0 }, janelaEncerrada: true }).ok, false);
+});
+
+test("janela: só a entrada tem prazo de 48 h", () => {
+  const inicio = "2026-11-01T12:00:00Z";
+  assert.equal(janelaEncerrada("entrada", inicio, new Date("2026-11-03T11:59:00Z")), false);
+  assert.equal(janelaEncerrada("entrada", inicio, new Date("2026-11-03T12:01:00Z")), true);
+  assert.equal(janelaEncerrada("entrada", null, new Date("2030-01-01T00:00:00Z")), false);
+  assert.equal(janelaEncerrada("saida", inicio, new Date("2030-01-01T00:00:00Z")), false);
 });
 
 test("item: cômodo obrigatório, descrição até 300, foto só do próprio envio, sem 'vistoria'", () => {
@@ -203,4 +230,25 @@ test("ações: anexar laudo devolve o laudo para a tela mostrá-lo na hora (lab 
   const acoes = readFileSync("src/lib/data/conferencia-actions.ts", "utf8");
   const trecho = acoes.slice(acoes.indexOf("export async function anexarLaudoConferencia"), acoes.indexOf("export async function conferenciasDoContrato"));
   assert.match(trecho, /return \{ ok: true, laudo:/);
+});
+
+test("migração 0168: itens congelam por parte e produção registra a migração (ordem 99c7c1e0)", () => {
+  const sql = readFileSync("supabase/migrations/0168_conferencia_itens_por_parte.sql", "utf8");
+  assert.match(sql, /create or replace function public\.conferencia_itens_trava/);
+  assert.match(sql, /r\.parte = minha/);
+  assert.match(sql, />= 2/);
+  const aplicar = readFileSync("supabase/producao/aplicar-0168.sql", "utf8");
+  assert.match(aplicar, /^begin;/m);
+  assert.match(aplicar, /commit;\s*$/);
+  assert.match(aplicar, /0168_conferencia_itens_por_parte/);
+  assert.match(aplicar, /where not exists/);
+  assert.match(readFileSync("supabase/producao/rollback/0168_rollback.sql", "utf8"), /0168/);
+  assert.doesNotMatch(sql, /vistoria/i);
+});
+
+test("ação: a parte que respondeu não registra mais itens; a resposta pede itens das duas partes e a janela", () => {
+  const src = readFileSync("src/lib/data/conferencia-actions.ts", "utf8");
+  assert.match(src, /podeEditarItens\(\(respostas \?\? \[\]\) as RespostaConferencia\[\], ctx\.parte\)/);
+  assert.match(src, /itensPorParte/);
+  assert.match(src, /janelaEncerrada\(input\.tipo, ctx\.inicio\)/);
 });

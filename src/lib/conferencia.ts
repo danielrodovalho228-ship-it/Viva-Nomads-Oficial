@@ -1,7 +1,9 @@
 /*
   Conferência de entrada e de saída (ordem 404cd213, item 1) — regras puras, sem banco.
   As duas partes (proprietário e inquilino) registram cômodos, itens e fotos; cada uma
-  confirma ou contesta uma vez; depois da primeira resposta nada mais muda.
+  confirma ou contesta uma vez. Os itens de cada parte congelam quando ela responde; tudo
+  congela quando as duas respondem. Só se responde depois que as duas registraram itens
+  (ou, na entrada, depois da janela de 48 h) — ordem 99c7c1e0.
   O banco repete estas regras (migração 0110); aqui ficam testáveis.
 */
 
@@ -30,9 +32,15 @@ export function estadoConferencia(respostas: RespostaConferencia[]): EstadoConfe
   return new Set(respostas.map((r) => r.parte)).size >= 2 ? "confirmada" : "aguardando_outra_parte";
 }
 
-/** Imutável depois de confirmado ou contestado: itens só mudam antes da primeira resposta. */
-export function podeEditarItens(respostas: RespostaConferencia[]): boolean {
-  return respostas.length === 0;
+/** Os itens de uma parte mudam até ela responder; quando as duas respondem, nada mais muda. */
+export function podeEditarItens(respostas: RespostaConferencia[], parte: ParteConferencia): boolean {
+  const partes = new Set(respostas.map((r) => r.parte));
+  return !partes.has(parte) && partes.size < 2;
+}
+
+/** A janela de 48 h só existe na entrada; na saída ninguém "perde o prazo" de registrar. */
+export function janelaEncerrada(tipo: TipoConferencia, inicioContrato: string | Date | null, agora: Date = new Date()): boolean {
+  return tipo === "entrada" && inicioContrato !== null && agora.getTime() > prazoEntrada(inicioContrato).getTime();
 }
 
 export type Decisao = { ok: true; motivo: string | null } | { ok: false; erro: string };
@@ -42,10 +50,16 @@ export function decidirResposta(p: {
   parte: ParteConferencia;
   decisao: "confirmou" | "contestou";
   motivo: string;
-  qtdItens: number;
+  /** Itens já registrados por cada parte. */
+  itensPorParte: Record<ParteConferencia, number>;
+  /** Entrada com a janela de 48 h fechada: dá para responder mesmo que a outra parte não tenha registrado. */
+  janelaEncerrada?: boolean;
 }): Decisao {
   if (p.respostas.some((r) => r.parte === p.parte)) return { ok: false, erro: "Você já respondeu esta conferência e ela não pode mais ser alterada." };
-  if (p.qtdItens < 1) return { ok: false, erro: "Registre ao menos um item antes de responder." };
+  if (p.itensPorParte[p.parte] < 1) return { ok: false, erro: "Registre ao menos um item antes de responder." };
+  if (!p.janelaEncerrada && (p.itensPorParte.proprietario < 1 || p.itensPorParte.inquilino < 1)) {
+    return { ok: false, erro: "Você só pode responder depois que a outra parte registrar ao menos um item." };
+  }
   const motivo = p.motivo.trim();
   if (p.decisao === "contestou") {
     if (!motivo) return { ok: false, erro: "Conte o motivo da contestação." };

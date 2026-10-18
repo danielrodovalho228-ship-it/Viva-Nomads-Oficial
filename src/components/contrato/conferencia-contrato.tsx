@@ -57,7 +57,8 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
   const parte = dados.minhaParte;
   const respostas = mesclarRespostas(conf?.respostas ?? [], respostasLocais);
   const respondeu = respostas.some((r) => r.parte === parte);
-  const travada = respostas.length > 0;
+  // cada parte registra até responder; com as duas respostas tudo congela
+  const travada = respondeu || new Set(respostas.map((r) => r.parte)).size >= 2;
   const estado = conf ? estadoConferencia(respostas) : "em_andamento";
   const itens = mesclarItens(conf?.itens ?? [], locais);
   const laudo = mesclarLaudo(conf?.laudo ?? null, laudoLocal);
