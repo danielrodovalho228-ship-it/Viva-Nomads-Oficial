@@ -217,7 +217,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
     };
     // Só demonstração (admin, fora de produção): laudo de EXEMPLO local. Não
     // chama a verificação real — ela só vale para o CPF da própria pessoa (A5)
-    // e gastaria a cota de 90 dias de quem apresenta.
+    // e gastaria a cota de 12 meses de quem apresenta.
     setCafResult(demoLaudo);
     setVerifStatus("ok");
     setVerified(true);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Upload, X, Loader2, Star, AlertTriangle, Undo2 } from "lucide-react";
 import {
   uploadPropertyPhoto,
@@ -58,6 +58,11 @@ export function PhotoUploader({
   const [error, setError] = useState<string | null>(null);
   // Índice sendo arrastado (reordenar por drag — a 1ª posição é a capa).
   const [dragIndex, setDragIndex] = useState<number | null>(null);
+  // Prompt 22 (item 8): "Adicionar" é um BOTÃO que abre a escolha de arquivos, e a galeria aceita ARRASTAR E SOLTAR
+  // arquivos do computador (antes o soltar só reordenava as fotos, apesar do texto "arraste e solte").
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [soltando, setSoltando] = useState(false);
+  const temArquivos = (e: React.DragEvent) => Array.from(e.dataTransfer?.types ?? []).includes("Files");
 
   /** Reordena a galeria movendo `from` para a posição `to` (a[0] = capa). */
   function reorder(from: number, to: number) {
@@ -119,7 +124,25 @@ export function PhotoUploader({
 
   return (
     <div>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div
+        className={cn("grid grid-cols-2 gap-3 rounded-xl sm:grid-cols-3", soltando && "ring-2 ring-forest ring-offset-2")}
+        data-testid="fotos-galeria"
+        onDragOver={(e) => {
+          if (!temArquivos(e)) return;
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "copy";
+          setSoltando(true);
+        }}
+        onDragLeave={(e) => {
+          if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setSoltando(false);
+        }}
+        onDrop={(e) => {
+          setSoltando(false);
+          if (!e.dataTransfer?.files?.length) return; // arrastar uma foto da galeria: só reordena (tratado no item)
+          e.preventDefault();
+          void handleFiles(e.dataTransfer.files);
+        }}
+      >
         {photos.map((p, i) => (
           <div key={p.id} className={cn(i === 0 && "col-span-2")}>
           <div
@@ -217,11 +240,15 @@ export function PhotoUploader({
         ))}
 
         {photos.length < max && (
-          <label
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            disabled={uploading}
             className={cn(
-              "flex aspect-[4/3] cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-sage-200 text-sage transition-colors hover:border-sage",
+              "flex aspect-[4/3] cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-sage-200 text-sage transition-colors hover:border-sage focus-visible:outline focus-visible:outline-2 focus-visible:outline-forest",
               uploading && "pointer-events-none opacity-60"
             )}
+            data-testid="fotos-adicionar"
           >
             {uploading ? (
               <Loader2 className="h-5 w-5 animate-spin" />
@@ -229,15 +256,24 @@ export function PhotoUploader({
               <Upload className="h-5 w-5" />
             )}
             <span className="text-xs">{uploading ? (progresso ? `Enviando ${Math.min(progresso.feitas + 1, progresso.total)} de ${progresso.total}…` : "Enviando...") : "Adicionar"}</span>
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              multiple
-              className="hidden"
-              onChange={(e) => handleFiles(e.target.files)}
-            />
-          </label>
+            <span className="hidden text-[11px] text-muted sm:block">ou arraste as fotos para cá</span>
+          </button>
         )}
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          multiple
+          className="hidden"
+          data-testid="fotos-input"
+          onChange={(e) => {
+            const files = e.target.files;
+            void handleFiles(files).finally(() => {
+              // Escolher o MESMO arquivo de novo também dispara (antes ficava sem resposta).
+              if (inputRef.current) inputRef.current.value = "";
+            });
+          }}
+        />
       </div>
 
       <p className="mt-2 text-xs text-muted">

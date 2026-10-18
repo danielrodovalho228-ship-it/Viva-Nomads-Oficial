@@ -23,7 +23,9 @@ test("o cadastro abre pela primeira etapa da ordem (Onde fica, prompt 10)", () =
 test("a qualificação não é mais um portão que esconde o cadastro", () => {
   assert.doesNotMatch(pagina, /Conclua a qualificação primeiro/);
   assert.match(pagina, /podePublicar = prontidao\.podePublicar && qualificado/);
-  assert.match(pagina, /data-testid="aviso-qualificacao"/);
+  // Prompt 22: a qualificação é um ITEM do portão único (visível desde o passo 1), com "Responder aqui" no painel.
+  assert.match(pagina, /qualificacaoOk: editingId \? undefined : qualificado/);
+  assert.match(pagina, /checklist-resolver-\$\{c\.key\}/);
 });
 
 test("rascunho continua podendo ser salvo sem qualificação (só publicar é barrado)", () => {

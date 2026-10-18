@@ -23,7 +23,16 @@ export interface InfoMatricula {
  * Resultado da matrícula na etapa 1 (prompt 19): falta a identidade (botão da CAF), nome/CPF diferente (escolher o
  * caso e anexar o documento), detalhe da matrícula (sem dizer qual) e os avisos (matrícula antiga, endereço ≠ CEP).
  */
-export function MatriculaResultado({ info, onConfirmarIdentidade }: { info: InfoMatricula; onConfirmarIdentidade: () => Promise<string | null> }) {
+export function MatriculaResultado({
+  info,
+  onConfirmarIdentidade,
+  onTentarDeNovo,
+}: {
+  info: InfoMatricula;
+  onConfirmarIdentidade: () => Promise<string | null>;
+  /** Prompt 22: leitura indisponível → confere o MESMO arquivo de novo. */
+  onTentarDeNovo?: () => void;
+}) {
   const [verificando, setVerificando] = useState(false);
   const [erroCaf, setErroCaf] = useState<string | null>(null);
   const [caso, setCaso] = useState<CasoDono | null>(null);
@@ -74,6 +83,11 @@ export function MatriculaResultado({ info, onConfirmarIdentidade }: { info: Info
           <p className="flex items-start gap-2 font-semibold">
             <Clock className="mt-0.5 h-4 w-4 shrink-0" /> <span data-testid="matricula-mensagem">{info.mensagem}</span>
           </p>
+          {info.motivo === "falha_indisponivel" && onTentarDeNovo && (
+            <button type="button" onClick={onTentarDeNovo} className="mt-2 text-sm font-semibold text-forest underline underline-offset-2" data-testid="matricula-tentar-de-novo">
+              Tentar de novo
+            </button>
+          )}
           {info.motivo === "falta_identidade" && (
             <p className="mt-1 text-xs">
               Confirme sua identidade para a conferência sair na hora. Sem ela, a equipe confere em até 48 horas — você pode seguir o

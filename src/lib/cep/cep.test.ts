@@ -45,7 +45,7 @@ test("os dois não acham (38482-288, o CEP do print) → 'Não encontramos', com
   const r = await buscarCep("38482-288", buscar);
   assert.deepEqual(r, { tipo: "nao_encontrado" });
   assert.match(mensagemCep(r), /Não encontramos esse CEP/);
-  assert.match(mensagemCep(r), /busque pelo endereço/);
+  assert.match(mensagemCep(r), /buscar pelo endereço/);
 });
 
 test("CEP geral (só cidade) → preenche cidade/UF e pede a rua", async () => {

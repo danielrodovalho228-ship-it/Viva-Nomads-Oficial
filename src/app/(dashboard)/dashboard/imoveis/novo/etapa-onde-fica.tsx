@@ -15,6 +15,7 @@ import { LocationDatalist } from "@/lib/locations";
 import { CITIES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { mensagemCep, type OpcaoEndereco, type ResultadoCep } from "@/lib/cep/buscar";
+import { digitadoPelaPessoa, type CampoEndereco } from "@/lib/cep/aplicar";
 import { Erro, Labeled, Toggle } from "./campos";
 import { BuscaEndereco } from "./busca-endereco";
 import type { InfoMatricula } from "@/components/anuncio/matricula-resultado";
@@ -54,6 +55,8 @@ export function EtapaOndeFica(p: {
   onEscolherEndereco: (o: OpcaoEndereco) => void;
   street: string;
   setStreet: (v: string) => void;
+  /** Prompt 22: a pessoa digitou neste campo (o CEP não troca mais). O autofill do navegador não marca. */
+  marcarDigitado: (c: CampoEndereco) => void;
   numero: string;
   setNumero: (v: string) => void;
   complemento: string;
@@ -98,7 +101,10 @@ export function EtapaOndeFica(p: {
               p.setCep(d.length > 5 ? `${d.slice(0, 5)}-${d.slice(5)}` : d);
             }}
             inputMode="numeric"
-            autoComplete="postal-code"
+            // Prompt 22: sem autofill no endereço — o Chrome preenchia o endereço SALVO (outra cidade) antes do ViaCEP.
+            autoComplete="off"
+            name="vn-cadastro-a1"
+            id="vn-cadastro-a1"
             maxLength={9}
             placeholder="00000-000"
             className="input"
@@ -120,9 +126,9 @@ export function EtapaOndeFica(p: {
             <span>
               {r.tipo === "nao_encontrado" ? (
                 <>
-                  Não encontramos esse CEP. Confira os números ou{" "}
+                  Não encontramos esse CEP —{" "}
                   <button type="button" className="font-semibold underline" onClick={() => setBuscaAberta(true)} data-testid="cep-buscar-endereco">
-                    busque pelo endereço
+                    buscar pelo endereço
                   </button>
                 </>
               ) : (
@@ -160,11 +166,31 @@ export function EtapaOndeFica(p: {
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_8rem]">
         <Labeled label="Rua" daMatricula={p.daMatricula?.has("endereco")}>
-          <input value={p.street} onChange={(e) => p.setStreet(e.target.value)} className="input" placeholder="Rua ou avenida" data-testid="cadastro-rua" />
+          <input
+            value={p.street}
+            onChange={(e) => {
+              if (digitadoPelaPessoa(e.nativeEvent)) p.marcarDigitado("rua");
+              p.setStreet(e.target.value);
+            }}
+            autoComplete="off"
+            name="vn-cadastro-a2"
+            className="input"
+            placeholder="Rua ou avenida"
+            data-testid="cadastro-rua"
+          />
           <Erro msg={p.erros.rua} />
         </Labeled>
         <Labeled label="Número">
-          <input value={p.numero} onChange={(e) => p.setNumero(e.target.value.slice(0, 20))} className="input" placeholder="123" inputMode="text" data-testid="cadastro-numero" />
+          <input
+            value={p.numero}
+            onChange={(e) => p.setNumero(e.target.value.slice(0, 20))}
+            autoComplete="off"
+            name="vn-cadastro-a3"
+            className="input"
+            placeholder="123"
+            inputMode="text"
+            data-testid="cadastro-numero"
+          />
           <Erro msg={p.erros.numero} />
         </Labeled>
       </div>
@@ -186,11 +212,30 @@ export function EtapaOndeFica(p: {
         </div>
       )}
       <Labeled label="Complemento" ajuda="(opcional)" daMatricula={p.daMatricula?.has("complemento")}>
-        <input value={p.complemento} onChange={(e) => p.setComplemento(e.target.value.slice(0, 60))} className="input" placeholder="Apto 101, bloco B" data-testid="cadastro-complemento" />
+        <input
+          value={p.complemento}
+          onChange={(e) => p.setComplemento(e.target.value.slice(0, 60))}
+          autoComplete="off"
+          name="vn-cadastro-a4"
+          className="input"
+          placeholder="Apto 101, bloco B"
+          data-testid="cadastro-complemento"
+        />
       </Labeled>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Labeled label="Bairro">
-          <input value={p.neighborhood} onChange={(e) => p.setNeighborhood(e.target.value)} list="novo-bairros" autoComplete="off" className="input" data-testid="cadastro-bairro" />
+          <input
+            value={p.neighborhood}
+            onChange={(e) => {
+              if (digitadoPelaPessoa(e.nativeEvent)) p.marcarDigitado("bairro");
+              p.setNeighborhood(e.target.value);
+            }}
+            list="novo-bairros"
+            autoComplete="off"
+            name="vn-cadastro-a5"
+            className="input"
+            data-testid="cadastro-bairro"
+          />
           <LocationDatalist id="novo-bairros" />
           <Erro msg={p.erros.bairro} />
           {p.bairroDoCep && (
@@ -214,7 +259,17 @@ export function EtapaOndeFica(p: {
           )}
         </Labeled>
         <Labeled label={`Cidade${p.uf ? ` (${p.uf})` : ""}`}>
-          <input value={p.city} onChange={(e) => p.setCity(e.target.value)} className="input" data-testid="cadastro-cidade" />
+          <input
+            value={p.city}
+            onChange={(e) => {
+              if (digitadoPelaPessoa(e.nativeEvent)) p.marcarDigitado("cidade");
+              p.setCity(e.target.value);
+            }}
+            autoComplete="off"
+            name="vn-cadastro-a6"
+            className="input"
+            data-testid="cadastro-cidade"
+          />
           <Erro msg={p.erros.cidade} />
         </Labeled>
       </div>

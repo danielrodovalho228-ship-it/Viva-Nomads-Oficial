@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Loader2, PlayCircle, ShieldCheck, Sparkles } from "lucide-react";
+import { AlertTriangle, Loader2, PlayCircle, RotateCcw, ShieldCheck, Sparkles } from "lucide-react";
 import { GuiaFotos } from "@/components/fotos/guia-fotos";
 import { PhotoUploader, type PhotoItem } from "@/components/photo-uploader";
 import { MAX_FOTOS_POR_ANUNCIO } from "@/lib/fotos/qualidade";
@@ -10,7 +10,7 @@ import { mensagemFaltamFotosIa, iaFotosLiberada } from "@/lib/ai/fotos-prompt";
 import { PHOTOS } from "@/lib/media";
 import { cn } from "@/lib/utils";
 import { Erro, Labeled } from "./campos";
-import type { EstadoIaFotos } from "./tipos";
+import type { EstadoIaFotos, FalhaIaFotos } from "./tipos";
 
 /**
  * Etapa 2 — Fotos (prompt 10): envio como antes (até 40, a 1ª é a capa, sem metadados nem GPS). Ao terminar o
@@ -23,6 +23,8 @@ export function EtapaFotos({
   videoUrl,
   setVideoUrl,
   iaEstado,
+  iaFalha,
+  onTentarDeNovo,
   erroFotos,
 }: {
   photos: PhotoItem[];
@@ -31,6 +33,8 @@ export function EtapaFotos({
   videoUrl: string;
   setVideoUrl: (v: string) => void;
   iaEstado: EstadoIaFotos;
+  iaFalha?: FalhaIaFotos | null;
+  onTentarDeNovo?: () => void;
   erroFotos?: string;
 }) {
   const faltam = Math.max(0, MIN_PHOTOS - photos.length);
@@ -106,8 +110,10 @@ export function EtapaFotos({
             <Sparkles className="mr-1 inline h-4 w-4" aria-hidden />
             Pronto: preenchemos o que dá para ver nas fotos. Confira na próxima etapa, tudo marcado com “Sugerido · confira”.
           </p>
+        ) : iaEstado === "erro" && iaFalha ? (
+          <FalhaIa falha={iaFalha} onTentarDeNovo={onTentarDeNovo} />
         ) : iaEstado === "sem_sugestoes" ? (
-          <p className="text-muted">Sem sugestões automáticas agora. Você preenche na próxima etapa.</p>
+          <p className="text-muted">A IA não encontrou o que sugerir nestas fotos. Você preenche na próxima etapa.</p>
         ) : (
           <p className="text-muted">Ao terminar o envio, a IA lê as fotos e sugere o cadastro.</p>
         )}
@@ -140,6 +146,31 @@ export function EtapaFotos({
           Um tour em vídeo aumenta a confiança e gera um selo “Vídeo” no anúncio.
         </p>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Prompt 22: a falha da IA das fotos com o motivo real e "Tentar de novo" (desligada não tem o que tentar: o texto
+ * diz que o dono preenche na próxima etapa). Compartilhada com o cartão do passo 1.
+ */
+export function FalhaIa({ falha, onTentarDeNovo }: { falha: FalhaIaFotos; onTentarDeNovo?: () => void }) {
+  return (
+    <div className="text-amber-900" role="status" data-testid="ia-fotos-falha" data-motivo={falha.motivo}>
+      <p className="flex items-start gap-1.5">
+        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+        <span>{falha.texto}</span>
+      </p>
+      {falha.motivo !== "desligada" && falha.motivo !== "limite" && onTentarDeNovo && (
+        <button
+          type="button"
+          onClick={onTentarDeNovo}
+          className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-forest px-3 py-1.5 text-sm font-semibold text-forest hover:bg-sage-50"
+          data-testid="ia-fotos-tentar-de-novo"
+        >
+          <RotateCcw className="h-4 w-4" aria-hidden /> Tentar de novo
+        </button>
+      )}
     </div>
   );
 }

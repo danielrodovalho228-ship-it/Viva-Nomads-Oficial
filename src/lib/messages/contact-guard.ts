@@ -33,6 +33,9 @@ const SOCIAL_URL_RE = /(?:https?:\/\/)?(?:www\.)?(?:instagram|facebook|fb|tiktok
  *  o char anterior para não colidir com e-mails (já mascarados antes). */
 const HANDLE_RE = /(^|[^\w@])@([a-zA-Z0-9._]{2,30})/g;
 
+/** Ids (UUID) não são contato: trocados por marcador sem dígitos antes das regras e devolvidos no fim. */
+const UUID_RE = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi;
+
 export interface GuardResult {
   /** Texto com os contatos mascarados. */
   text: string;
@@ -43,7 +46,11 @@ export interface GuardResult {
 /** Mascara contatos diretos no texto da mensagem. */
 export function guardContactInfo(input: string): GuardResult {
   let masked = false;
-  let text = input;
+  const ids: string[] = [];
+  let text = input.replace(UUID_RE, (id) => {
+    ids.push(id);
+    return String.fromCharCode(0xe000 + ids.length - 1);
+  });
 
   text = text.replace(MESSENGER_RE, () => {
     masked = true;
@@ -70,6 +77,8 @@ export function guardContactInfo(input: string): GuardResult {
     masked = true;
     return `${pre}${MASK}`;
   });
+
+  text = text.replace(/[\ue000-\uf8ff]/g, (c) => ids[c.charCodeAt(0) - 0xe000] ?? c);
 
   return { text, masked };
 }

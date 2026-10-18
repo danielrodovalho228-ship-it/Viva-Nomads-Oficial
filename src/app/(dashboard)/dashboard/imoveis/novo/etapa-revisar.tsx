@@ -1,13 +1,13 @@
 "use client";
 
-import { CheckCircle2, ClipboardCheck, Clock, XCircle } from "lucide-react";
+import { CheckCircle2, Clock, XCircle } from "lucide-react";
+import { ChecklistPublicar } from "./checklist-publicar";
+import type { ItemProntidao } from "@/lib/anuncio/prontidao";
 import type { Property, Proximity } from "@/lib/types";
 import { PropertyMiniCard } from "@/components/property-mini-card";
 import { Button } from "@/components/ui/button";
 import { AMENITY_LABEL } from "@/lib/amenities";
-import { MIN_PHOTOS } from "@/lib/listing";
 import { TERMO_IA_TEXTO } from "@/lib/anuncio/termo-ia";
-import { linkQualificacao } from "@/lib/qualificar-link";
 import { fraseDescontoCard, ROTULO_VALOR_FIXO, type Negociacao } from "@/lib/anuncio/negociacao";
 import type { EstadoDocumentoTela } from "@/components/anuncio/documento-vinculo";
 import { cn } from "@/lib/utils";
@@ -25,7 +25,9 @@ export function EtapaRevisar(p: {
   comodidades: string[];
   proximidades: Proximity[];
   negociacao: Negociacao;
-  completude: { key: string; label: string; ok: boolean; etapa: number }[];
+  completude: ItemProntidao[];
+  /** Prompt 22: "Resolver" de cada item (a qualificação abre no painel lateral). */
+  onResolver: (item: ItemProntidao) => void;
   melhorar: string[];
   quality: number;
   photosCount: number;
@@ -33,13 +35,9 @@ export function EtapaRevisar(p: {
   docEstado: EstadoDocumentoTela;
   docMotivos: string[];
   editingId: string | null;
-  qualificado: boolean;
-  imovelId: string | null;
   publishing: boolean;
   publish: (asDraft?: boolean, irParaQualificacao?: boolean) => void;
   irPara: (i: number) => void;
-  subleaseBlocked: boolean;
-  ownershipType: string;
   aceitouIa: boolean;
   setAceitouIa: (v: boolean) => void;
   publishError: string | null;
@@ -126,34 +124,13 @@ export function EtapaRevisar(p: {
         </div>
       )}
 
-      <div className="rounded-xl border border-sage-200 p-4">
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-medium text-ink">Pronto para publicar?</p>
-          <span className="text-xs text-muted">
-            {p.completude.filter((c) => c.ok).length}/{p.completude.length}
-          </span>
-        </div>
-        <ul className="mt-3 space-y-1.5">
-          {p.completude.map((c) => (
-            <li key={c.key} className="flex items-center justify-between gap-2 text-sm">
-              <span className="flex items-center gap-2">
-                {c.ok ? <CheckCircle2 className="h-4 w-4 shrink-0 text-forest" /> : <XCircle className="h-4 w-4 shrink-0 text-red-500" />}
-                <span className={c.ok ? "text-ink" : "text-muted"}>{c.label}</span>
-              </span>
-              {!c.ok && (
-                <button type="button" onClick={() => p.irPara(c.etapa)} className="shrink-0 text-xs font-medium text-forest underline">
-                  Resolver
-                </button>
-              )}
-            </li>
-          ))}
-        </ul>
-        {p.melhorar.length > 0 && (
-          <p className="mt-3 border-t border-sage-200 pt-2 text-xs text-muted" data-testid="prontidao-opcionais">
-            Para melhorar (opcional, não impede publicar): {p.melhorar.join(" · ")}
-          </p>
-        )}
-      </div>
+      {/* Prompt 22: UMA lista do que falta (inclui a qualificação), cada item com "Resolver". */}
+      <ChecklistPublicar itens={p.completude} onResolver={p.onResolver} />
+      {p.melhorar.length > 0 && (
+        <p className="-mt-2 px-1 text-xs text-muted" data-testid="prontidao-opcionais">
+          Para melhorar (opcional, não impede publicar): {p.melhorar.join(" · ")}
+        </p>
+      )}
 
       <div className="rounded-xl border border-sage-200 p-4" data-testid="qualidade-anuncio">
         <div className="flex items-center justify-between text-sm">
@@ -176,44 +153,6 @@ export function EtapaRevisar(p: {
           </ul>
         )}
       </div>
-
-      {p.photosCount < MIN_PHOTOS && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          <strong>Faltam {MIN_PHOTOS - p.photosCount} fotos para publicar.</strong> Você pode salvar como rascunho e completar depois.{" "}
-          <button type="button" onClick={() => p.irPara(1)} className="font-medium underline">
-            Ir para Fotos
-          </button>
-          .
-        </div>
-      )}
-      {p.subleaseBlocked && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          <strong>Publicação bloqueada.</strong>{" "}
-          {p.ownershipType === "managed" ? "Anexe o contrato de administração ou a procuração" : "Anexe a autorização escrita do proprietário"} e marque a declaração na etapa{" "}
-          <button type="button" onClick={() => p.irPara(0)} className="font-medium underline">
-            Onde fica
-          </button>
-          .
-        </div>
-      )}
-      {!p.editingId && !p.qualificado && (
-        <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800" data-testid="aviso-qualificacao">
-          <ClipboardCheck className="mt-0.5 h-4 w-4 shrink-0" />
-          <span>
-            <strong>Falta a qualificação.</strong> Responda o checklist{" "}
-            {linkQualificacao(p.imovelId) ? (
-              <a href={linkQualificacao(p.imovelId)!} className="font-medium underline" data-testid="link-antes-de-anunciar">
-                Antes de anunciar
-              </a>
-            ) : (
-              <button type="button" onClick={() => p.publish(true, true)} disabled={p.publishing} className="font-medium underline" data-testid="link-antes-de-anunciar">
-                Antes de anunciar
-              </button>
-            )}{" "}
-            (leva poucos minutos) para liberar a publicação. Suas fotos e dados ficam salvos no rascunho.
-          </span>
-        </div>
-      )}
 
       <label className="flex items-start gap-3 rounded-xl border border-sage-200 bg-surface-2 px-4 py-3 text-sm text-ink" data-testid="aceite-ia">
         <input type="checkbox" checked={p.aceitouIa} onChange={(e) => p.setAceitouIa(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-forest" />
