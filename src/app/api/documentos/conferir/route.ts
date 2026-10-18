@@ -40,7 +40,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
  *
  * Prompt 19 — MATRÍCULA: quando o arquivo é uma matrícula, a leitura é a completa (proprietários, ônus, unidade,
  * área, vaga) e a decisão cruza com o laudo CAF da pessoa (src/lib/documento/conferencia-matricula.ts). A
- * conferência fica em property_ownership_checks (0157, só dono e admin). Ao dono voltam só o resultado, a mensagem,
+ * conferência fica em property_ownership_checks (0158, só dono e admin). Ao dono voltam só o resultado, a mensagem,
  * as opções do caso e o que preenche o anúncio — nunca CPF, número da matrícula, cartório ou o ônus.
  */
 export async function POST(request: Request) {
@@ -169,7 +169,7 @@ export async function POST(request: Request) {
       document_reviewed_at: emRevisao ? null : agora.toISOString(),
       conferido_por: emRevisao ? null : "automatico",
       revisao_ate: emRevisao ? new Date(agora.getTime() + REVISAO_PRAZO_HORAS * 3_600_000).toISOString() : null,
-      // Trilha de auditoria SEM dado pessoal: o detalhe da matrícula fica em property_ownership_checks (0157).
+      // Trilha de auditoria SEM dado pessoal: o detalhe da matrícula fica em property_ownership_checks (0158).
       conferencia: { versao: 2, tipo: "matricula", resultado: d.resultado, motivo: d.motivo, caf_ok: caf.ok, conferidor, modelo, em: agora.toISOString() },
     });
     if (erroCheck || erroQual || !check) {

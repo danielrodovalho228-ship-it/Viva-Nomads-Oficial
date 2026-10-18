@@ -1,6 +1,6 @@
--- Viva Nomads — aplicar 0157 (conferência do dono pela matrícula + CAF, prompt 19). Idempotente.
+-- Viva Nomads — aplicar 0158 (conferência do dono pela matrícula + CAF, prompt 19). Idempotente.
 -- Aplicada pela Action quando o PR é mesclado (o merge é a aprovação do Daniel).
--- Rollback: supabase/producao/rollback/0157_rollback.sql.
+-- Rollback: supabase/producao/rollback/0158_rollback.sql.
 begin;
 set local lock_timeout = '5s';
 
@@ -42,7 +42,7 @@ create policy ownership_checks_dono_ou_admin_le on public.property_ownership_che
   using (user_id = (select auth.uid()) or public.is_admin());
 
 insert into supabase_migrations.schema_migrations (version, name, statements, created_by)
-select '20261018000157', '0157_property_ownership_checks',
-       array['-- conteúdo em supabase/migrations/0157_property_ownership_checks.sql'], 'danielrodovalho228@gmail.com'
- where not exists (select 1 from supabase_migrations.schema_migrations where version = '20261018000157');
+select '20261018000158', '0158_property_ownership_checks',
+       array['-- conteúdo em supabase/migrations/0158_property_ownership_checks.sql'], 'danielrodovalho228@gmail.com'
+ where not exists (select 1 from supabase_migrations.schema_migrations where version = '20261018000158');
 commit;
