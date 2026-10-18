@@ -1,6 +1,7 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { account, hasAccount } from "../fixtures/accounts";
 import { authFile } from "../fixtures/auth";
+import { NO_LABORATORIO, confirmarContatoDaConta, liberarLimitePedidos } from "../fixtures/laboratorio";
 import { encerrarPedido, marcadorPedido, preencherPedido, publicarPreenchido } from "../fixtures/pedido";
 
 /**
@@ -40,6 +41,14 @@ function sobrenome(nome: string): string {
 
 // ───────────────────────────── B — Identidade protegida ─────────────────────
 test.describe("T-TRAV-B — Pedido: identidade não vaza antes do aceite @criticos", () => {
+  // Laboratório: o pedido só chega ao dono com e-mail e telefone da conta confirmados (0160) e a conta fixa do
+  // inquilino tem limite de 3 pedidos por dia; sem isto o mural vem vazio e o último pedido do dia é recusado.
+  test.beforeAll(async () => {
+    if (!NO_LABORATORIO || !hasAccount("inquilino")) return;
+    await confirmarContatoDaConta(account("inquilino").email);
+    await liberarLimitePedidos();
+  });
+
   /** Cria um pedido de moradia (Uberlândia/MG, para casar com o imóvel semeado). */
   async function publicarPedido(page: Page, tag: string): Promise<void> {
     // Apresentação carrega a marca — deve APARECER para o dono (conteúdo flui).
