@@ -129,7 +129,15 @@ test.describe("T21 — Central de Agentes v2", () => {
     const marca = `t21b-${Date.now()}`;
     await page.getByPlaceholder("Escreva para Bruno…").fill(`corrige o bug do /conferir (${marca})`);
     await page.getByRole("button", { name: "Enviar" }).click();
-    await expect(page.getByTestId("bolha-agente").filter({ hasText: /Registrei a ordem para Renato/ }).last()).toBeVisible();
+    // 30 s: a ação do servidor fica lenta no lab (como no t57). Se ainda falhar, o erro traz o que a tela mostrou.
+    const registrou = page.getByTestId("bolha-agente").filter({ hasText: /Registrei a ordem para Renato/ }).last();
+    try {
+      await expect(registrou).toBeVisible({ timeout: 30_000 });
+    } catch (e) {
+      const balões = await page.getByTestId("bolha-agente").allInnerTexts();
+      const tela = (await page.locator("main").innerText()).slice(-500);
+      throw new Error(`Balões do agente: ${JSON.stringify(balões.slice(-3))}; fim da tela: ${JSON.stringify(tela)}\n${(e as Error).message}`);
+    }
     await expect(page.getByTestId("ordem").filter({ hasText: marca })).toHaveCount(1);
   });
 
