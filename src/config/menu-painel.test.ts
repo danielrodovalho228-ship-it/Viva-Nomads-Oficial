@@ -10,17 +10,18 @@ import { ANUNCIAR, contemRota, folhas, menuDoPainel, rotaAtiva } from "./menu-pa
 const base = { temImovel: false, admin: false, estadiaAtiva: false };
 const ids = (m: ReturnType<typeof menuDoPainel>) => m.map((i) => i.id);
 
-test("todo usuário vê moradia (busca, favoritos, candidaturas, Minhas estadias), mensagens, ferramentas e conta", () => {
+test("todo usuário vê moradia (busca, favoritos, candidaturas, Contratos, Locações), mensagens, ferramentas e conta", () => {
   const m = menuDoPainel(base);
   assert.deepEqual(ids(m), ["visao", "moradia", "comunicacao", "ferramentas", "conta"]);
   const moradia = folhas(m.filter((i) => i.id === "moradia")).map((i) => i.rotulo);
-  for (const r of ["Buscar imóveis", "Favoritos & comparações", "Candidaturas", "Minhas estadias"]) assert.ok(moradia.includes(r), r);
+  for (const r of ["Buscar imóveis", "Favoritos & comparações", "Candidaturas", "Contratos", "Locações"]) assert.ok(moradia.includes(r), r);
   assert.ok(!moradia.includes("Solicitações"), "Solicitações só com estadia ativa");
 });
 
 test("seções de dono só para quem já anunciou; quem nunca anunciou não vê nada de dono", () => {
   const sem = folhas(menuDoPainel(base)).map((i) => i.href);
-  for (const h of ["/dashboard/imoveis", "/dashboard/contratos", "/dashboard/garantias", "/dashboard/assinatura", "/dashboard/orcamentos"])
+  // (Prompt 28: "/dashboard/contratos" também é do inquilino — "Contratos" em Minha moradia.)
+  for (const h of ["/dashboard/imoveis", "/dashboard/garantias", "/dashboard/assinatura", "/dashboard/orcamentos"])
     assert.ok(!sem.includes(h), h);
   const com = menuDoPainel({ ...base, temImovel: true });
   assert.deepEqual(ids(com), ["visao", "moradia", "comunicacao", "imoveis", "contratos", "ferramentas", "conta"]);

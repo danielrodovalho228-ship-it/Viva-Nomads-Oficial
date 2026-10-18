@@ -563,7 +563,8 @@
         "t6-dinheiro-numeros",
         "t182-jornada-completa",
         "t183-telas-logadas-390",
-        "t205-fechamento-sem-beco"
+        "t205-fechamento-sem-beco",
+        "t210-contrato-estado-jornada"
       ]
     },
     "/dashboard/contratos/[id]": {
@@ -598,7 +599,8 @@
         "t181-quantas-pessoas",
         "t182-jornada-completa",
         "t183-telas-logadas-390",
-        "t205-fechamento-sem-beco"
+        "t205-fechamento-sem-beco",
+        "t210-contrato-estado-jornada"
       ]
     },
     "/dashboard/ferramentas": {
@@ -696,7 +698,8 @@
         "t163-locacoes-selo-anfitriao",
         "t182-jornada-completa",
         "t183-telas-logadas-390",
-        "t205-fechamento-sem-beco"
+        "t205-fechamento-sem-beco",
+        "t210-contrato-estado-jornada"
       ]
     },
     "/dashboard/locacoes/[id]": {
@@ -1156,6 +1159,14 @@
       ],
       "specs": [
         "t192-conta-4-blocos"
+      ]
+    },
+    "/admin/dados-de-teste": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t210-contrato-estado-jornada"
       ]
     }
   },
@@ -3102,6 +3113,41 @@
       ],
       "specs": [
         "t201-qa-muse"
+      ]
+    },
+    "src/lib/data/contratos-actions.ts#lerEstadoDoContrato": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t210-contrato-estado-jornada"
+      ]
+    },
+    "src/lib/data/contratos-actions.ts#getContratosDoInquilino": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t210-contrato-estado-jornada"
+      ]
+    },
+    "src/lib/data/contratos-actions.ts#contarContratosParaAssinar": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t210-contrato-estado-jornada"
+      ]
+    },
+    "src/lib/data/jornada-teste-actions.ts#novaJornadaDeTeste": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t210-contrato-estado-jornada"
       ]
     }
   }

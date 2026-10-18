@@ -49,6 +49,7 @@ import {
 } from "@/lib/caucao";
 import { textoTaxaPainel, pctTexto, TEXTO_RENOVACAO_COMISSAO } from "@/lib/cobranca/regra";
 import { registrarContrato } from "@/lib/data/actions";
+import { lerEstadoDoContrato, type EstadoContratoView } from "@/lib/data/contratos-actions";
 import type { FechamentoContexto } from "@/lib/data/leads-actions";
 import { resumoContrato } from "@/lib/contrato-blocos";
 import { faixaForDays, faixaLabel } from "@/lib/faixas";
@@ -134,6 +135,9 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   const [signUrl, setSignUrl] = useState<string | null>(null);
   const [modoContrato, setModoContrato] = useState<"teste" | "real" | null>(null);
   const [contratoId, setContratoId] = useState<string | null>(null);
+  // Prompt 28: estado REAL do contrato (lido do banco) e se ele já existia (gerado antes).
+  const [estadoContrato, setEstadoContrato] = useState<EstadoContratoView | null>(null);
+  const [contratoExistente, setContratoExistente] = useState(false);
   const [gerando, setGerando] = useState(false);
   const [erroContrato, setErroContrato] = useState<string | null>(null);
   // Seleção ÚNICA de garantia: guardamos um único id. Selecionar outra substitui
@@ -260,7 +264,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
           costSplit: split,
         }),
       });
-      const data = (await res.json().catch(() => ({}))) as { error?: string; modo?: string; signUrl?: string };
+      const data = (await res.json().catch(() => ({}))) as { error?: string; modo?: string; signUrl?: string; existente?: boolean };
       // Prompt 24: a rota diz o modo. Conta REAL sem assinatura digital ("inativa", 503): a tela diz a verdade, NÃO
       // avança, não cobra e não registra — e o botão continua disponível. Conta de TESTE e conta real com assinatura
       // seguem o caminho completo. Contrato já gerado volta com 200 (2º clique ou página recarregada não travam).
@@ -274,6 +278,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
         return;
       }
       setModoContrato(data.modo === "teste" ? "teste" : "real");
+      setContratoExistente(data.existente === true);
       setSignUrl(data.modo === "real" ? (data.signUrl ?? null) : null);
       // Registra o CONTRATO-MÃE + blocos (contrato fracionado v2). A comissão
       // fica no contrato-mãe (taxa × valor total, UMA vez); cada bloco carrega a
@@ -295,7 +300,11 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
         setErroContrato(reg.error ?? "Não foi possível registrar o contrato.");
         return;
       }
-      setContratoId("id" in reg && typeof reg.id === "string" ? reg.id : null);
+      const idRegistrado = "id" in reg && typeof reg.id === "string" ? reg.id : null;
+      setContratoId(idRegistrado);
+      if ("existente" in reg && reg.existente === true) setContratoExistente(true);
+      // O Resumo mostra o estado do banco — nunca supõe "aguardando assinatura" (o contrato pode já estar assinado).
+      setEstadoContrato(idRegistrado ? await lerEstadoDoContrato(idRegistrado, "proprietario").catch(() => null) : null);
       // Depois do contrato registrado: a cobrança lê aluguel, meses e taxa do CONTRATO (ordem c54366b0).
       // Gera a cobrança da comissão — do PROPRIETÁRIO, à parte (o aluguel nunca
       // passa pela plataforma).
@@ -1112,17 +1121,29 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                   <FileCheck2 className="h-5 w-5" />{" "}
                   {demo
                     ? "Exemplo de demonstração — nada foi enviado."
-                    : modoContrato === "teste"
-                      ? "Contrato de TESTE registrado — as duas partes assinam aqui na plataforma com o código recebido por e-mail."
-                      : "Contrato registrado — as duas partes assinam aqui na plataforma com o código recebido por e-mail."}
+                    : estadoContrato && estadoContrato.chave !== "aguardando_assinatura"
+                      ? `${modoContrato === "teste" ? "Contrato de TESTE" : "Contrato"}: ${estadoContrato.texto}.`
+                      : modoContrato === "teste"
+                        ? "Contrato de TESTE registrado — as duas partes assinam aqui na plataforma com o código recebido por e-mail."
+                        : "Contrato registrado — as duas partes assinam aqui na plataforma com o código recebido por e-mail."}
                 </div>
+                {!demo && estadoContrato && (
+                  <p className="text-sm text-ink" data-testid="fechamento-estado-contrato">
+                    Situação do contrato: <strong>{estadoContrato.texto}</strong>
+                  </p>
+                )}
+                {!demo && contratoExistente && estadoContrato && (
+                  <p className="text-xs text-muted" data-testid="fechamento-contrato-gerado-em">
+                    Este contrato foi gerado em {estadoContrato.criadoEm.slice(0, 10).split("-").reverse().join("/")}.
+                  </p>
+                )}
                 {contratoId && (
                   <a
                     href={`/dashboard/contratos/${contratoId}`}
                     className="inline-flex items-center gap-2 text-sm font-medium text-forest underline"
                     data-testid="fechamento-abrir-contrato"
                   >
-                    Abrir o contrato para assinar
+                    {estadoContrato && estadoContrato.chave !== "aguardando_assinatura" ? "Ver contrato" : "Abrir o contrato para assinar"}
                   </a>
                 )}
                 {signUrl && (
@@ -1200,7 +1221,24 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                 }
               />
               <Row label="Seguro patrimonial" value={patrimonial ? "Contratado" : "Não contratado"} />
-              <Row label="Contrato" value={generated ? (demo ? "Exemplo de demonstração" : modoContrato === "teste" ? "TESTE · aguardando assinatura" : "Aguardando assinatura") : "Pendente"} />
+              <Row
+                label="Contrato"
+                value={
+                  generated
+                    ? demo
+                      ? "Exemplo de demonstração"
+                      : `${modoContrato === "teste" ? "TESTE · " : ""}${estadoContrato?.texto ?? "Situação indisponível — abra o contrato"}`
+                    : "Pendente"
+                }
+              />
+              {!demo && generated && contratoId && (
+                <p className="text-right text-xs text-muted" data-testid="resumo-contrato">
+                  {contratoExistente && estadoContrato ? `Gerado em ${estadoContrato.criadoEm.slice(0, 10).split("-").reverse().join("/")} · ` : ""}
+                  <a href={`/dashboard/contratos/${contratoId}`} className="font-medium text-forest underline" data-testid="resumo-ver-contrato">
+                    Ver contrato
+                  </a>
+                </p>
+              )}
               <Row
                 label={`Taxa de serviço (${pctTexto(COMMISSION_RATE)})`}
                 value={`${formatBRL(PLATFORM_COMMISSION)} · cobrança à parte, do proprietário`}

@@ -78,12 +78,16 @@ test.describe("T57 — Contrato semeado: inquilino e proprietário veem e assina
   test("Minhas locações: título e botão abrem o detalhe; assinar exige 'Li e concordo' e o código de e-mail", async ({ browser }) => {
     test.setTimeout(150_000);
     const page = await entrar(browser, inq.email, senha);
+    // Prompt 28: aguardando assinatura ainda não é locação — o contrato fica em "Contratos", com "Assinar agora".
+    await page.goto("/dashboard/contratos", { waitUntil: "domcontentloaded" });
+    const assinar = page.getByTestId("contrato-inquilino-assinar").first();
+    await expect(assinar).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByTestId("contrato-inquilino-estado").first()).toHaveText("Aguardando assinatura · falta você e o proprietário");
     await page.goto("/dashboard/locacoes", { waitUntil: "domcontentloaded" });
-    const titulo = page.getByTestId("locacao-titulo").first();
-    await expect(titulo).toBeVisible({ timeout: 20_000 });
-    await expect(page.getByTestId("locacao-ver-contrato").first()).toBeVisible();
-    await titulo.click();
-    await expect(page).toHaveURL(/\/dashboard\/locacoes\/[0-9a-f-]{36}$/);
+    await expect(page.getByTestId("locacao-titulo")).toHaveCount(0);
+    await page.goto("/dashboard/contratos", { waitUntil: "domcontentloaded" });
+    await page.getByTestId("contrato-inquilino-assinar").first().click();
+    await expect(page).toHaveURL(/\/dashboard\/contratos\/[0-9a-f-]{36}$/);
     await expect(page.getByTestId("contrato-resumo")).toContainText("MINUTA DE TESTE — sem validade");
     await expect(page.getByTestId("contrato-aviso-assinatura")).toBeVisible();
     await expect(page.getByTestId("form-assinar")).toBeVisible();
@@ -184,9 +188,9 @@ test.describe("T57 — Contrato semeado: as duas partes têm o código de assina
   test("inquilino: título abre o contrato e o código que não foi pedido é recusado", async ({ browser }) => {
     test.setTimeout(90_000);
     const page = await entrar(browser, inq.email, senha);
-    await page.goto("/dashboard/locacoes", { waitUntil: "networkidle" });
-    await page.getByTestId("locacao-titulo").first().click();
-    await expect(page).toHaveURL(new RegExp(`/dashboard/locacoes/${ids.contrato}$`));
+    await page.goto("/dashboard/contratos", { waitUntil: "networkidle" });
+    await page.getByTestId("contrato-inquilino-assinar").first().click();
+    await expect(page).toHaveURL(new RegExp(`/dashboard/contratos/${ids.contrato}$`));
     await expect(page.getByTestId("contrato-resumo")).toContainText("MINUTA DE TESTE — sem validade");
     await page.getByTestId("assinar-aceite").check();
     await page.getByTestId("assinar-codigo").fill("123456");
