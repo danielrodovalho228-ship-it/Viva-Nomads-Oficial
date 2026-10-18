@@ -13,7 +13,7 @@
         "t177-video-institucional",
         "t184-velocidade",
         "t197-anuncio-teste-oculto",
-        "t199-qa-muse"
+        "t201-qa-muse"
       ]
     },
     "/acesso-socios": {
@@ -176,7 +176,7 @@
       ],
       "specs": [
         "t183-telas-logadas-390",
-        "t199-qa-muse"
+        "t201-qa-muse"
       ]
     },
     "/admin/pedidos": {
@@ -359,7 +359,7 @@
         "t69-botoes-header",
         "t72-paginas-institucionais",
         "t177-video-institucional",
-        "t199-qa-muse"
+        "t201-qa-muse"
       ]
     },
     "/comparar": {
@@ -975,7 +975,7 @@
         "t182-jornada-completa",
         "t184-velocidade",
         "t197-anuncio-teste-oculto",
-        "t199-qa-muse"
+        "t201-qa-muse"
       ]
     },
     "/modelodenegocio": {
@@ -1014,7 +1014,7 @@
       ],
       "specs": [
         "t171-faixas-taxa-cors",
-        "t199-qa-muse"
+        "t201-qa-muse"
       ]
     },
     "/pedidos": {
@@ -3076,7 +3076,7 @@
         "proprietario"
       ],
       "specs": [
-        "t199-qa-muse"
+        "t201-qa-muse"
       ]
     }
   }
