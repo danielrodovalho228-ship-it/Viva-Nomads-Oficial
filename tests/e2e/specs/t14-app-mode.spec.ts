@@ -1,6 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 import { hasAccount } from "../fixtures/accounts";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
  * T14 — MODO APP (Android/iPhone). Roda no projeto `app-mobile` (390x844 com o
@@ -70,8 +71,31 @@ test.describe("T14 — Modo app", () => {
   test.describe("inquilino", () => {
     test.use({ storageState: hasAccount("inquilino") ? authFile("inquilino") : { cookies: [], origins: [] } });
 
-    test("abre em Buscar com as 5 abas do inquilino", async ({ page }) => {
-      test.skip(!hasAccount("inquilino"), "sem conta de teste do inquilino");
+    // A aba inicial do app vem de profiles.preferred_mode. A conta compartilhada do inquilino é usada por
+    // dezenas de specs em paralelo e uma delas pode gravar "owner" — aí "/" caía em /dashboard (instável
+    // no lab). No laboratório o teste usa uma conta só dele, com modo "tenant" fixo.
+    const senha = novaSenha();
+    const conta = { email: `inq.app.${novoSufixo()}@lab.vivanomads.test`, nome: "Ines App Modo", role: "tenant" as const };
+    const ids: { id?: string } = {};
+    test.beforeAll(async () => {
+      if (!NO_LABORATORIO || test.info().project.name !== "app-mobile") return;
+      ids.id = await criarConta(conta, senha);
+      await adm().from("profiles").update({ preferred_mode: "tenant" }).eq("id", ids.id);
+    });
+    test.afterAll(async () => {
+      if (ids.id) await apagarContas([ids.id]);
+    });
+
+    test("abre em Buscar com as 5 abas do inquilino", async ({ page, context }) => {
+      test.skip(!hasAccount("inquilino") && !ids.id, "sem conta de teste do inquilino");
+      if (ids.id) {
+        await context.clearCookies();
+        await page.goto("/auth", { waitUntil: "networkidle" });
+        await page.locator('input[name="email"], input[type="email"]').first().fill(conta.email);
+        await page.locator('input[name="password"], input[type="password"]').first().fill(senha);
+        await page.locator("form").getByRole("button", { name: /^entrar$/i }).click();
+        await page.waitForURL(/\/(dashboard|app\/boas-vindas|buscar)/, { timeout: 20_000 });
+      }
       await page.goto("/");
       await expect(page).toHaveURL(/\/buscar/);
       await esperarModoApp(page);
