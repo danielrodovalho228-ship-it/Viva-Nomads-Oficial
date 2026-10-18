@@ -45,7 +45,7 @@ test("p27 item 1 — as duas telas chamam a mesma função; nenhuma faz conta pr
   for (const tela of [SIM, ROI]) assert.doesNotMatch(tela, /baseMobiliadoAno\(/, "a tela não calcula por fora");
   assert.match(SIM, /Reposição e desgaste da mobília/);
   assert.match(SIM, /mesma conta do mobiliado na Calculadora de ROI/);
-  assert.match(ROI, /mesma função do Simulador de rentabilidade/);
+  assert.match(ROI, /mesma conta do Simulador de rentabilidade \(a mesma função\)/);
   assert.equal(liquidoMobiliadoAnual({ valorMensal: 3000, condoIptu: 0, contas: 0, mesesOcupados: 10, investimentoMobilia: 25000, reposicaoAnualPct: 0.1 }, 0.12).liquidoAnual, 23900);
 });
 

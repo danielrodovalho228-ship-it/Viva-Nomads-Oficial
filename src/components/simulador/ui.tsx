@@ -239,14 +239,15 @@ export function GraficoColunas({
   const geo = geometriaBarras(grupos.flatMap((g) => g.valores), ALTURA);
   let i = 0;
   return (
-    <figure data-testid={testid}>
-      <div aria-hidden className="relative" style={{ height: ALTURA + 2 * MARGEM }}>
+    <figure data-testid={testid} className="overflow-hidden">
+      {/* px-3: espaço para o rótulo das colunas da ponta não sair da tela a 390 px. */}
+      <div aria-hidden className="relative px-3" style={{ height: ALTURA + 2 * MARGEM }}>
         <div
           className="absolute inset-x-0 border-t border-ink/50"
           style={{ top: MARGEM + geo.zeroY }}
           data-testid={testid ? `${testid}-zero` : undefined}
         />
-        <div className="absolute inset-0 flex gap-3 sm:gap-6">
+        <div className="absolute inset-y-0 left-3 right-3 flex gap-3 sm:gap-6">
           {grupos.map((g) => (
             <div key={g.rotulo} className="flex min-w-0 flex-1 gap-1">
               {g.valores.map((v, s) => {
@@ -275,7 +276,7 @@ export function GraficoColunas({
           ))}
         </div>
       </div>
-      <div aria-hidden className="mt-1 flex gap-3 sm:gap-6">
+      <div aria-hidden className="mt-1 flex gap-3 px-3 sm:gap-6">
         {grupos.map((g) => (
           <p key={g.rotulo} className="min-w-0 flex-1 text-center text-xs text-muted">
             {g.rotulo}

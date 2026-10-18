@@ -37,7 +37,9 @@ async function semRolagemLateral(page: Page) {
 }
 
 async function numero(page: Page, rotulo: string, valor: number) {
-  const campo = page.getByLabel(rotulo, { exact: true });
+  // O nome acessível do campo leva o prefixo "R$" quando há (ex.: "Valor mensal pretendido R$").
+  const esc = rotulo.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const campo = page.getByRole("spinbutton", { name: new RegExp(`^${esc}( R\\$)?$`) });
   await campo.fill(String(valor));
   await expect(campo).toHaveValue(String(valor));
 }

@@ -18,7 +18,7 @@ const INCLUI =
 
 /** Fórmulas da tela (prompt 15). O mobiliado usa a MESMA base do simulador (baseMobiliadoAno). */
 const COMO_CALCULAMOS = [
-  "Mobiliado: valor mensal × meses ocupados − taxa de serviço da sua faixa (sobre o valor mensal × meses) − condomínio/IPTU e contas conforme a cobrança − reposição e desgaste da mobília. É a mesma função do Simulador de rentabilidade: com os mesmos números, o líquido é igual.",
+  "Mobiliado: valor mensal × meses ocupados − taxa de serviço da sua faixa (sobre o valor mensal × meses) − condomínio/IPTU e contas conforme a cobrança − reposição e desgaste da mobília. É a mesma conta do Simulador de rentabilidade (a mesma função): com os mesmos números, o líquido é igual.",
   "Tradicional (12 meses ou mais, sem mobília): valor mensal × (12 − meses vazios) × (1 − taxa de administração) − 1 valor mensal a cada N meses de contrato (taxa de contrato da imobiliária) − condomínio/IPTU nos meses vazios.",
   "Os padrões do tradicional (1 mês vazio por ano, 10% de administração, 1 valor mensal a cada 30 meses) são referência de mercado: confira com a sua imobiliária e ajuste.",
   "Ganho adicional = líquido do mobiliado − líquido do tradicional, no mesmo ano. Payback = investimento ÷ ganho adicional por mês. ROI anual = ganho adicional ÷ investimento.",

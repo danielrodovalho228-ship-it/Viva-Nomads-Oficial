@@ -39,7 +39,8 @@ export default function SimuladorPage() {
   const [valorImovel, setValorImovel] = useState(0);
   const [mesesOcupados, setMeses] = useState(10);
   const [prazoMedioMeses, setPrazo] = useState(4);
-  const [investimentoMobilia, setInvest] = useState(25000);
+  // Padrão R$ 0: sem inventar custo de mobília; quem informa o investimento vê a reposição (a mesma conta do ROI).
+  const [investimentoMobilia, setInvest] = useState(0);
   const [reposicaoPct, setReposicao] = useState(10);
 
   const entrada: EntradaRentabilidade = {
