@@ -17,6 +17,8 @@ import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
 import { DEMO_CONVERSATIONS } from "@/lib/demo/seed";
 import { FILTROS, contarPorFiltro, filtrarConversas, type Filtro } from "@/lib/mensagens-filtros";
 import { cn } from "@/lib/utils";
+import { CartaoVisita } from "@/components/visitas/cartao-visita";
+import { visitaDaConversa } from "@/lib/data/visitas-video-actions";
 
 /**
  * Modo demonstração (admin): troca a fonte pelo seed e REMONTA o inner via
@@ -212,6 +214,9 @@ function MessagesInner({ initial, demo }: { initial: Conversation[]; demo: boole
               )}
             </div>
           </header>
+          {!demo && active.propertyId && active.otherId && (
+            <VisitaNaConversa key={active.id} propertyId={active.propertyId} outroId={active.otherId} />
+          )}
           <div className="flex-1 space-y-3 overflow-y-auto bg-surface-2 p-5">
             {active.messages.map((m) => (
               <div key={m.id} className={cn("flex flex-col gap-1", m.from === "me" ? "items-end" : "items-start")}>
@@ -268,5 +273,32 @@ function MessagesInner({ initial, demo }: { initial: Conversation[]; demo: boole
         </section>
       </div>
     </>
+  );
+}
+
+/**
+ * Prompt 23: a visita (vídeo ou presencial) em aberto entre as duas pessoas aparece no topo da conversa, com as mesmas
+ * ações do painel Visitas (confirmar, propor outro horário, recusar com motivo; o morador aceita o novo horário).
+ */
+function VisitaNaConversa({ propertyId, outroId }: { propertyId: string; outroId: string }) {
+  const [visita, setVisita] = useState<Awaited<ReturnType<typeof visitaDaConversa>>>(null);
+  const [versao, setVersao] = useState(0);
+  useEffect(() => {
+    let alive = true;
+    visitaDaConversa(propertyId, outroId)
+      .then((v) => {
+        if (alive) setVisita(v);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [propertyId, outroId, versao]);
+  if (!visita) return null;
+  const { papel, ...v } = visita;
+  return (
+    <div className="border-b border-line bg-white px-4 py-3" data-testid="conversa-visita">
+      <CartaoVisita key={`${v.id}-${v.status}`} v={v} papel={papel} compacto onMudou={() => setVersao((n) => n + 1)} />
+    </div>
   );
 }

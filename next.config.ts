@@ -59,6 +59,9 @@ const nextConfig: NextConfig = {
       // Só o redirect() da página, dentro do painel com loading.tsx, saía como 200 + navegação do
       // navegador, e o lab (t48) via um 404 de recurso nesse caminho.
       { source: "/dashboard/assinatura", destination: "/precos", permanent: false },
+      // Prompt 23: a agenda do proprietário mora em Ferramentas › Agenda; o endereço antigo dava 404.
+      { source: "/dashboard/calendario", destination: "/dashboard/agenda", permanent: false },
+      { source: "/dashboard/calendario/:resto*", destination: "/dashboard/agenda", permanent: false },
     ];
   },
   async rewrites() {

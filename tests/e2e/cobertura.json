@@ -48,7 +48,8 @@
         "t39-app-ida-e-volta",
         "t9-documentos",
         "t183-telas-logadas-390",
-        "t204-cadastro-ia-real"
+        "t204-cadastro-ia-real",
+        "t207-cep-matricula-identidade"
       ]
     },
     "/admin/2fa/refazer": {
@@ -564,7 +565,8 @@
         "t182-jornada-completa",
         "t183-telas-logadas-390",
         "t205-fechamento-sem-beco",
-        "t210-contrato-estado-jornada"
+        "t210-contrato-estado-jornada",
+        "t209-jornada-dois-lados"
       ]
     },
     "/dashboard/contratos/[id]": {
@@ -600,7 +602,8 @@
         "t182-jornada-completa",
         "t183-telas-logadas-390",
         "t205-fechamento-sem-beco",
-        "t210-contrato-estado-jornada"
+        "t210-contrato-estado-jornada",
+        "t209-jornada-dois-lados"
       ]
     },
     "/dashboard/ferramentas": {
@@ -660,7 +663,8 @@
         "t183-telas-logadas-390",
         "t194-passo1-ia-cep",
         "t195-matricula-caf",
-        "t204-cadastro-ia-real"
+        "t204-cadastro-ia-real",
+        "t207-cep-matricula-identidade"
       ]
     },
     "/dashboard/indicacoes": {
@@ -724,7 +728,8 @@
         "t175-mensagens-candidato",
         "t182-jornada-completa",
         "t183-telas-logadas-390",
-        "t198-rodape-painel-390"
+        "t198-rodape-painel-390",
+        "t209-jornada-dois-lados"
       ]
     },
     "/dashboard/notificacoes": {
@@ -858,7 +863,8 @@
       ],
       "specs": [
         "t4-fronteira-demo-real",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t209-jornada-dois-lados"
       ]
     },
     "/dashboard/viabilidade": {
@@ -879,7 +885,8 @@
       "specs": [
         "t168-visita-video",
         "t48-varredura",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t209-jornada-dois-lados"
       ]
     },
     "/decisao": {
@@ -988,7 +995,8 @@
         "t182-jornada-completa",
         "t184-velocidade",
         "t197-anuncio-teste-oculto",
-        "t201-qa-muse"
+        "t201-qa-muse",
+        "t209-jornada-dois-lados"
       ]
     },
     "/modelodenegocio": {
@@ -1167,6 +1175,14 @@
       ],
       "specs": [
         "t210-contrato-estado-jornada"
+      ]
+    },
+    "/dashboard/agenda": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t209-jornada-dois-lados"
       ]
     }
   },
@@ -1575,7 +1591,9 @@
       ],
       "specs": [
         "t195-matricula-caf",
-        "t186-cadastro-5-etapas"
+        "t186-cadastro-5-etapas",
+        "t207-cep-matricula-identidade",
+        "t209-jornada-dois-lados"
       ]
     },
     "/api/ai/status": {
@@ -1584,6 +1602,14 @@
       ],
       "specs": [
         "t204-cadastro-ia-real"
+      ]
+    },
+    "/api/admin/ia-diagnostico": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t207-cep-matricula-identidade"
       ]
     }
   },
@@ -3148,6 +3174,33 @@
       ],
       "specs": [
         "t210-contrato-estado-jornada"
+      ]
+    },
+    "src/lib/data/visitas-video-actions.ts#pedirVisita": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t209-jornada-dois-lados"
+      ]
+    },
+    "src/lib/data/visitas-video-actions.ts#responderVisita": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t209-jornada-dois-lados"
+      ]
+    },
+    "src/lib/data/visitas-video-actions.ts#visitaDaConversa": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t209-jornada-dois-lados"
       ]
     }
   }

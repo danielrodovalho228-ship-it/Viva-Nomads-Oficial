@@ -148,6 +148,7 @@ export function menuDoPainel(ctx: ContextoMenu): ItemMenu[] {
     icone: "ferramentas",
     filhos: [
       { id: "ferramentas-todas", rotulo: "Todas as ferramentas", icone: "ferramentas", href: "/dashboard/ferramentas" },
+      ...(ctx.temImovel ? [{ id: "agenda", rotulo: "Agenda", icone: "visitas" as const, href: "/dashboard/agenda" }] : []),
       { id: "simulador", rotulo: "Simulador de rentabilidade", icone: "simulador", href: "/dashboard/simulador" },
       { id: "roi", rotulo: "Calculadora de ROI", icone: "roi", href: "/dashboard/roi-imovel" },
       ...((ctx.imoveisAtivos ?? 0) >= MIN_IMOVEIS_ANALISE_CARTEIRA

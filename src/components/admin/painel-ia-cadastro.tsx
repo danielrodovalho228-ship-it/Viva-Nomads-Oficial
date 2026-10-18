@@ -2,6 +2,7 @@ import { Sparkles } from "lucide-react";
 import { resumoIaCadastro } from "@/lib/ai/registro-ia";
 import { MENSAGEM_FALHA_IA } from "@/lib/ai/falha-ia";
 import { cn } from "@/lib/utils";
+import { TestarLeituraIa } from "./testar-leitura-ia";
 
 const ROTA: Record<string, string> = { fotos: "fotos", documento: "documento", matricula: "matrícula" };
 const quando = (iso: string) =>
@@ -47,6 +48,11 @@ export async function PainelIaCadastro() {
               {quando(r.ultimoErro.em)} ({ROTA[r.ultimoErro.rota] ?? r.ultimoErro.rota}) · {r.ultimoErro.status ?? "sem resposta"} ·{" "}
               {r.ultimoErro.tipo ?? "—"}
               {r.ultimoErro.motivo && <span className="text-muted"> — a pessoa viu: “{MENSAGEM_FALHA_IA[r.ultimoErro.motivo]}”</span>}
+              {r.ultimoErro.resumo && (
+                <span className="mt-1 block break-words rounded bg-red-50 px-2 py-1 text-xs text-red-900" data-testid="painel-ia-erro-resumo">
+                  Mensagem da API: {r.ultimoErro.resumo}
+                </span>
+              )}
             </>
           ) : (
             "nenhum registrado"
@@ -56,6 +62,7 @@ export async function PainelIaCadastro() {
           {r.dia ? `Últimas 24 h: ${r.dia.total} chamada${r.dia.total === 1 ? "" : "s"}, ${r.dia.falhas} com falha.` : "Registro ainda não disponível (migração 0163 pendente)."}
         </li>
       </ul>
+      <TestarLeituraIa />
     </section>
   );
 }

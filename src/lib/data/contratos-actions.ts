@@ -60,6 +60,8 @@ export interface ContratoView {
   tamanhoBlocoMeses: number;
   comissaoValor: number; // taxa × valor total (aluguel × meses), UMA vez (snapshot no fechamento)
   comissaoPercent: number; // 0..1 — taxa aplicada (para exibir "X% do valor total")
+  /** Prompt 23: data do aceite da candidatura (a base da taxa segue a regra vigente nesse dia). */
+  aceiteEm?: string | null;
   qtdOcupantes: number;
   status: string;
   /** F33: etapa real (assinatura → 1º pagamento → vigência); só vale com status "ativo". */
@@ -278,6 +280,12 @@ export async function getMeusContratos(): Promise<ContratoView[]> {
     .order("created_at", { ascending: false });
 
   const contratos = (data ?? []) as Record<string, unknown>[];
+  // Data do aceite de cada candidatura (o RLS deixa o dono ler as próprias).
+  const leadIds = [...new Set(contratos.map((c) => c.lead_id).filter((x): x is string => typeof x === "string"))];
+  const { data: leads } = leadIds.length
+    ? await supabase.from("leads").select("id, accepted_at").in("id", leadIds)
+    : { data: [] as { id: string; accepted_at: string | null }[] };
+  const aceiteDoLead = new Map(((leads ?? []) as { id: string; accepted_at: string | null }[]).map((l) => [l.id, l.accepted_at]));
   return contratos.map((c) => {
     const meta = titleById.get(String(c.property_id));
     const blocos = ((c.contrato_blocos as Record<string, unknown>[]) ?? [])
@@ -295,6 +303,7 @@ export async function getMeusContratos(): Promise<ContratoView[]> {
       tamanhoBlocoMeses: Number(c.tamanho_bloco_meses ?? 2),
       comissaoValor: Number(c.comissao_valor ?? 0),
       comissaoPercent: Number(c.comissao_percent ?? 0),
+      aceiteEm: aceiteDoLead.get(String(c.lead_id)) ?? null,
       qtdOcupantes: Number(c.qtd_ocupantes ?? 1),
       status: String(c.status ?? "ativo"),
       etapa: etapaContrato({
