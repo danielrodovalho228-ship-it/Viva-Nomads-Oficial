@@ -1,15 +1,19 @@
 import { NextResponse } from "next/server";
-import { createContract } from "@/lib/integrations/zapsign";
+import { createContract, isZapsignConfigured } from "@/lib/integrations/zapsign";
 import { COST_SPLIT_ITEMS } from "@/lib/closing";
-import { IntegracaoNaoConfigurada, MSG_NAO_CONFIGURADA } from "@/lib/integracoes";
+import { IntegracaoNaoConfigurada } from "@/lib/integracoes";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { contaEhDeTeste, contratoSimuladoTeste } from "@/lib/contas-de-teste";
-import { carregarFechamento, reservarFechamento, concluirFechamento } from "@/lib/data/fechamento-servidor";
+import { MSG_ASSINATURA_INATIVA } from "@/lib/contrato-etapas";
+import { MSG_CONTRATO_EM_ANDAMENTO, decidirGeracaoContrato } from "@/lib/fechamento-contrato";
+import { carregarFechamento, reservarFechamento, concluirFechamento, lerReservaFechamento } from "@/lib/data/fechamento-servidor";
 
 /**
  * Contrato no ZapSign. A5: recebe o id da candidatura aceita + escolhas do
  * fechamento (prazo, garantia, divisão de custos); partes, imóvel e aluguel vêm
  * do banco. Um contrato por candidatura.
+ * Prompt 24: a resposta diz o `modo` ("teste" | "real" | "inativa"). Conta de teste segue o caminho completo; conta
+ * real sem assinatura digital recebe 503 ANTES de reservar; repetir devolve o contrato existente (200, nunca 409).
  */
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as {
@@ -35,16 +39,34 @@ export async function POST(request: Request) {
     }
   }
 
+  // Qualquer das partes sendo conta de teste (is_teste): contrato SIMULADO, nada vai ao ZapSign (ordem ee7d27b8).
+  const admin = createAdminClient();
+  const teste = (await contaEhDeTeste(admin, f.ownerId)) || (await contaEhDeTeste(admin, f.tenantId));
+  const d = decidirGeracaoContrato({
+    teste,
+    assinaturaLigada: isZapsignConfigured(),
+    reserva: await lerReservaFechamento(f.leadId, "contrato"),
+    agora: Date.now(),
+  });
+  if (d.acao === "inativa") {
+    return NextResponse.json({ modo: "inativa", error: MSG_ASSINATURA_INATIVA }, { status: 503 });
+  }
+  if (d.acao === "existente") {
+    return NextResponse.json({ modo: d.modo, docId: d.docId, existente: true, ...(d.modo === "teste" ? { rotulo: "TESTE" } : {}) });
+  }
+  if (d.acao === "em_andamento") {
+    return NextResponse.json({ error: MSG_CONTRATO_EM_ANDAMENTO }, { status: 409 });
+  }
+
   if (!(await reservarFechamento(f.leadId, "contrato"))) {
-    return NextResponse.json({ error: "O contrato desta candidatura já foi gerado." }, { status: 409 });
+    // Corrida com outro clique: o outro pedido está gerando — a tela mantém o botão para tentar de novo.
+    return NextResponse.json({ error: MSG_CONTRATO_EM_ANDAMENTO }, { status: 409 });
   }
   try {
-    // Qualquer das partes sendo conta de teste (is_teste): contrato SIMULADO, nada vai ao ZapSign (ordem ee7d27b8).
-    const admin = createAdminClient();
-    if ((await contaEhDeTeste(admin, f.ownerId)) || (await contaEhDeTeste(admin, f.tenantId))) {
+    if (d.modo === "teste") {
       const simulado = contratoSimuladoTeste();
       await concluirFechamento(f.leadId, "contrato", simulado.docId);
-      return NextResponse.json(simulado);
+      return NextResponse.json({ ...simulado, modo: "teste" });
     }
     const result = await createContract({
       tenantName: f.tenantNome,
@@ -56,12 +78,17 @@ export async function POST(request: Request) {
       guarantee: garantia,
       costSplit: split,
     });
+    if (result.demo) {
+      // Sem a assinatura digital de verdade a conta real não avança — e a reserva é liberada para depois.
+      await concluirFechamento(f.leadId, "contrato", null);
+      return NextResponse.json({ modo: "inativa", error: MSG_ASSINATURA_INATIVA }, { status: 503 });
+    }
     await concluirFechamento(f.leadId, "contrato", result.docId);
-    return NextResponse.json(result);
+    return NextResponse.json({ ...result, modo: "real" });
   } catch (err) {
     await concluirFechamento(f.leadId, "contrato", null);
     if (err instanceof IntegracaoNaoConfigurada) {
-      return NextResponse.json({ error: MSG_NAO_CONFIGURADA }, { status: 503 });
+      return NextResponse.json({ modo: "inativa", error: MSG_ASSINATURA_INATIVA }, { status: 503 });
     }
     console.error("[contrato] falha:", err);
     return NextResponse.json({ error: "Falha ao gerar o contrato." }, { status: 502 });

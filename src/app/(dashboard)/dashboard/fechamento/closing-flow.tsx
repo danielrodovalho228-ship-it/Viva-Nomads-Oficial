@@ -61,6 +61,7 @@ import { hojeBR, dataBR, formatBRL, cn } from "@/lib/utils";
 import { validarInicioEstadia } from "@/lib/inicio-estadia";
 import { ocupantesIniciais } from "@/lib/candidaturas/ocupantes";
 import { MARCA_MINUTA, MSG_ASSINATURA_INATIVA } from "@/lib/contrato-etapas";
+import { passoDaRespostaContrato, quadroAntesDaEntrada } from "@/lib/fechamento-contrato";
 import { LINK_DOCUMENTO } from "@/lib/documento-pessoa";
 
 const STEPS = ["Candidatura & verificação", "Garantia", "Serviços", "Patrimonial", "Contrato", "Resumo"];
@@ -131,12 +132,21 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   const [verifying, setVerifying] = useState(false);
   const [cafResult, setCafResult] = useState<CafResult | null>(null);
   const [signUrl, setSignUrl] = useState<string | null>(null);
+  const [modoContrato, setModoContrato] = useState<"teste" | "real" | null>(null);
+  const [contratoId, setContratoId] = useState<string | null>(null);
+  const [gerando, setGerando] = useState(false);
   const [erroContrato, setErroContrato] = useState<string | null>(null);
   // Seleção ÚNICA de garantia: guardamos um único id. Selecionar outra substitui
   // a anterior — é impossível ter duas garantias no contrato (Lei 8.245, art. 37).
   // Caução é a opção PADRÃO (obrigatória): nenhum fechamento avança sem garantia,
   // e a caução cobre todas as faixas de prazo (1..180). O usuário pode trocar.
   const [guaranteeId, setGuaranteeId] = useState<string | null>("caucao");
+  // Quadro "antes da entrada" (prompt 24): 1º pagamento + Caução ao lado (some com seguro-fiança).
+  const quadroEntrada = quadroAntesDaEntrada({
+    primeiroPagamento: PROPERTY.monthlyRent + 280 + PREP_FEE,
+    caucao: CAUCAO_50,
+    garantia: garantiaDoContrato(guaranteeId),
+  });
   // "Sua proteção": o inquilino confirma que leu a comparação antes de seguir.
   const [cienteProtecao, setCienteProtecao] = useState(false);
   // Nº de pessoas que vão morar (Onda 1) — informado pelo inquilino, validado
@@ -230,12 +240,14 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   }
 
   async function generateContract() {
+    if (gerando) return;
     setErroContrato(null);
     // Exemplo de demonstração (admin): sem candidatura real, nada é enviado nem cobrado.
     if (demo || !ctx.leadId) {
       setGenerated(true);
       return;
     }
+    setGerando(true);
     try {
       const res = await fetch("/api/contrato", {
         method: "POST",
@@ -248,19 +260,21 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
           costSplit: split,
         }),
       });
-      const data = (await res.json().catch(() => ({}))) as { error?: string; demo?: boolean; signUrl?: string };
-      // F40/F36: só vale como "enviado para assinatura" quando a assinatura digital de verdade
-      // aceitou o documento. Sem ela (503 sem chave, ou resposta simulada) a tela diz a verdade
-      // e NÃO avança, não cobra a taxa e não registra o contrato.
-      if (res.status === 503 || (res.ok && data.demo)) {
+      const data = (await res.json().catch(() => ({}))) as { error?: string; modo?: string; signUrl?: string };
+      // Prompt 24: a rota diz o modo. Conta REAL sem assinatura digital ("inativa", 503): a tela diz a verdade, NÃO
+      // avança, não cobra e não registra — e o botão continua disponível. Conta de TESTE e conta real com assinatura
+      // seguem o caminho completo. Contrato já gerado volta com 200 (2º clique ou página recarregada não travam).
+      const passo = passoDaRespostaContrato(res.status, data);
+      if (passo === "inativa") {
         setErroContrato(MSG_ASSINATURA_INATIVA);
         return;
       }
-      if (!res.ok) {
+      if (passo !== "registrar") {
         setErroContrato(data.error ?? "Não foi possível gerar o contrato. Tente de novo.");
         return;
       }
-      setSignUrl(data.signUrl ?? null);
+      setModoContrato(data.modo === "teste" ? "teste" : "real");
+      setSignUrl(data.modo === "real" ? (data.signUrl ?? null) : null);
       // Registra o CONTRATO-MÃE + blocos (contrato fracionado v2). A comissão
       // fica no contrato-mãe (taxa × valor total, UMA vez); cada bloco carrega a
       // caução (50%). O servidor confere o documento das duas partes (F32).
@@ -281,6 +295,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
         setErroContrato(reg.error ?? "Não foi possível registrar o contrato.");
         return;
       }
+      setContratoId("id" in reg && typeof reg.id === "string" ? reg.id : null);
       // Depois do contrato registrado: a cobrança lê aluguel, meses e taxa do CONTRATO (ordem c54366b0).
       // Gera a cobrança da comissão — do PROPRIETÁRIO, à parte (o aluguel nunca
       // passa pela plataforma).
@@ -293,6 +308,8 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
       setGenerated(true);
     } catch {
       setErroContrato("Não foi possível gerar o contrato. Tente de novo.");
+    } finally {
+      setGerando(false);
     }
   }
 
@@ -1030,9 +1047,32 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                 <Row label="Consumo estimado" value={`${formatBRL(280)}/mês`} />
                 <Row label="Preparação (única)" value={formatBRL(PREP_FEE)} />
                 <div className="flex items-center justify-between border-t border-blue-200 pt-1 font-bold text-blue-900">
-                  <span>Total do 1º pagamento</span>
-                  <span>{formatBRL(PROPERTY.monthlyRent + 280 + PREP_FEE)}</span>
+                  <span>1º pagamento</span>
+                  <span data-testid="entrada-primeiro-pagamento">{formatBRL(quadroEntrada.primeiroPagamento)}</span>
                 </div>
+              </div>
+              {/* Prompt 24 (Daniel, 18/10): a Caução é garantia devolvível — fica FORA do 1º pagamento, mostrada ao lado.
+                  Com seguro-fiança (garantia única) a linha não aparece. */}
+              {quadroEntrada.caucao !== null && (
+                <div className="mt-3 space-y-1 border-t border-blue-200 pt-2" data-testid="entrada-caucao">
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="min-w-0">
+                      Caução (50% antes da entrada) — devolvida no fim, conforme a conferência de saída
+                    </span>
+                    <span className="shrink-0">{formatBRL(quadroEntrada.caucao)}</span>
+                  </div>
+                </div>
+              )}
+              <div className="mt-2 flex items-start justify-between gap-3 font-bold text-blue-900" data-testid="entrada-total">
+                <span className="min-w-0">
+                  Total antes da entrada
+                  {quadroEntrada.caucao !== null && (
+                    <span className="block text-xs font-normal">
+                      {formatBRL(quadroEntrada.primeiroPagamento)} + {formatBRL(quadroEntrada.caucao)}
+                    </span>
+                  )}
+                </span>
+                <span className="shrink-0">{formatBRL(quadroEntrada.totalAntesDaEntrada)}</span>
               </div>
             </div>
 
@@ -1069,8 +1109,22 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
             {generated ? (
               <div className="space-y-2">
                 <div className="flex items-center gap-2 rounded-xl bg-sage-100 px-4 py-3 text-sm text-forest">
-                  <FileCheck2 className="h-5 w-5" /> {demo ? "Exemplo de demonstração — nada foi enviado." : "Contrato enviado para assinatura digital."}
+                  <FileCheck2 className="h-5 w-5" />{" "}
+                  {demo
+                    ? "Exemplo de demonstração — nada foi enviado."
+                    : modoContrato === "teste"
+                      ? "Contrato de TESTE registrado — as duas partes assinam aqui na plataforma com o código recebido por e-mail."
+                      : "Contrato registrado — as duas partes assinam aqui na plataforma com o código recebido por e-mail."}
                 </div>
+                {contratoId && (
+                  <a
+                    href={`/dashboard/contratos/${contratoId}`}
+                    className="inline-flex items-center gap-2 text-sm font-medium text-forest underline"
+                    data-testid="fechamento-abrir-contrato"
+                  >
+                    Abrir o contrato para assinar
+                  </a>
+                )}
                 {signUrl && (
                   <a
                     href={signUrl}
@@ -1102,8 +1156,8 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                     {erroContrato}
                   </p>
                 )}
-                <Button variant="gold" onClick={generateContract}>
-                  <FileSignature className="h-4 w-4" /> Gerar contrato para assinatura
+                <Button variant="gold" onClick={generateContract} disabled={gerando} data-testid="fechamento-gerar-contrato">
+                  <FileSignature className="h-4 w-4" /> {gerando ? "Gerando..." : "Gerar contrato para assinatura"}
                 </Button>
               </div>
             )}
@@ -1146,7 +1200,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                 }
               />
               <Row label="Seguro patrimonial" value={patrimonial ? "Contratado" : "Não contratado"} />
-              <Row label="Contrato" value={generated ? (demo ? "Exemplo de demonstração" : "Enviado para assinatura") : "Pendente"} />
+              <Row label="Contrato" value={generated ? (demo ? "Exemplo de demonstração" : modoContrato === "teste" ? "TESTE · aguardando assinatura" : "Aguardando assinatura") : "Pendente"} />
               <Row
                 label={`Taxa de serviço (${pctTexto(COMMISSION_RATE)})`}
                 value={`${formatBRL(PLATFORM_COMMISSION)} · cobrança à parte, do proprietário`}
