@@ -1,7 +1,7 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { integracoesSimuladas, registrarSimulado } from "@/lib/integracoes";
-import { classificarFalhaIa, textoDaResposta, type FalhaIa, type RotaIa } from "@/lib/ai/falha-ia";
+import { classificarFalhaIa, extrairJson, instrucaoJsonNoPrompt, pedidoRecusadoPelaApi, textoDaResposta, type FalhaIa, type RotaIa } from "@/lib/ai/falha-ia";
 import { registrarChamadaIa } from "@/lib/ai/registro-ia";
 import { precisaReduzirImagem, IMAGEM_LADO_MAX_PX } from "@/lib/documento/arquivo-leitura";
 import { lerComprovanteCertta, certtaOcrAtivo } from "@/lib/integrations/caf";
@@ -109,25 +109,59 @@ async function prepararParaLeitura(arquivo: ArquivoDocumento): Promise<{ arquivo
   }
 }
 
-/** Uma chamada de leitura com registro (ok ou falha, sem dado pessoal) e o erro classificado — nunca engolido. */
+/**
+ * Uma chamada de leitura com registro (ok ou falha, sem dado pessoal) e o erro classificado — nunca engolido.
+ * Prompt 25: em produção a API recusava o pedido (400 invalid_request_error em < 0,6 s) por causa da saída
+ * estruturada. A mensagem exata vai para ia_chamadas.erro_resumo e, nesse caso, a leitura é refeita UMA vez sem a
+ * saída estruturada — o JSON é pedido no prompt e passa pelo mesmo saneamento.
+ */
 async function chamarLeitura<T>(
   rota: RotaIa,
   original: ArquivoDocumento,
-  pedir: (a: ArquivoDocumento) => Promise<Anthropic.Message>,
+  pedir: (a: ArquivoDocumento, estruturado: boolean) => Promise<Anthropic.Message>,
   sanear: (json: unknown) => T,
 ): Promise<{ leitura: T | null; falha?: FalhaIa }> {
-  const inicio = Date.now();
   const { arquivo, reduzido } = await prepararParaLeitura(original);
   const base = { rota, modelo: MODELO_LEITURA, arquivoMime: original.mime, arquivoBytes: original.bytes.length, reduzido };
-  try {
-    const leitura = sanear(JSON.parse(textoDaResposta(await pedir(arquivo))));
-    await registrarChamadaIa({ ...base, ok: true, status: 200, duracaoMs: Date.now() - inicio });
-    return { leitura };
-  } catch (e) {
-    const falha = classificarFalhaIa(e);
-    await registrarChamadaIa({ ...base, ok: false, status: falha.status, tipoErro: falha.tipo, motivo: falha.motivo, duracaoMs: Date.now() - inicio });
-    return { leitura: null, falha };
-  }
+  const tentar = async (estruturado: boolean): Promise<{ leitura: T | null; falha?: FalhaIa }> => {
+    const inicio = Date.now();
+    try {
+      const texto = textoDaResposta(await pedir(arquivo, estruturado));
+      const leitura = sanear(estruturado ? JSON.parse(texto) : extrairJson(texto));
+      await registrarChamadaIa({ ...base, ok: true, status: 200, tipoErro: estruturado ? null : "sem_saida_estruturada", duracaoMs: Date.now() - inicio });
+      return { leitura };
+    } catch (e) {
+      const falha = classificarFalhaIa(e);
+      await registrarChamadaIa({
+        ...base,
+        ok: false,
+        status: falha.status,
+        tipoErro: falha.tipo,
+        motivo: falha.motivo,
+        erroResumo: falha.resumo,
+        duracaoMs: Date.now() - inicio,
+      });
+      return { leitura: null, falha };
+    }
+  };
+  const primeira = await tentar(true);
+  if (primeira.falha && pedidoRecusadoPelaApi(primeira.falha)) return tentar(false);
+  return primeira;
+}
+
+/** Parâmetros da leitura: com saída estruturada (padrão) ou com o JSON pedido no prompt (quando a API recusa). */
+function parametrosLeitura(
+  a: ArquivoDocumento,
+  estruturado: boolean,
+  p: { system: string; schema: Record<string, unknown>; maxTokens: number; pedido: string },
+): Anthropic.MessageCreateParamsNonStreaming {
+  return {
+    model: MODELO_LEITURA,
+    max_tokens: p.maxTokens,
+    system: estruturado ? p.system : `${p.system}\n\n${instrucaoJsonNoPrompt(p.schema)}`,
+    ...(estruturado ? { output_config: { effort: "low" as const, format: { type: "json_schema" as const, schema: p.schema } } } : {}),
+    messages: [{ role: "user", content: [blocoDoArquivo(a), { type: "text" as const, text: p.pedido }] }],
+  };
 }
 
 /**
@@ -150,15 +184,16 @@ export async function lerMatricula(
   const r = await chamarLeitura(
     "matricula",
     arquivo,
-    (a) =>
-      anthropic.messages.create({
-        model: MODELO_LEITURA,
-        // Matrícula longa (vários proprietários e atos) não pode sair cortada: o JSON cortado virava "não foi possível ler".
-        max_tokens: 8192,
-        system: MATRICULA_SYSTEM_PROMPT,
-        output_config: { effort: "low", format: { type: "json_schema", schema: MATRICULA_OUTPUT_SCHEMA } },
-        messages: [{ role: "user", content: [blocoDoArquivo(a), { type: "text" as const, text: "Leia esta matrícula seguindo as regras." }] }],
-      }),
+    (a, estruturado) =>
+      anthropic.messages.create(
+        parametrosLeitura(a, estruturado, {
+          system: MATRICULA_SYSTEM_PROMPT,
+          schema: MATRICULA_OUTPUT_SCHEMA as unknown as Record<string, unknown>,
+          // Matrícula longa (vários proprietários e atos) não pode sair cortada: o JSON cortado virava "não foi possível ler".
+          maxTokens: 8192,
+          pedido: "Leia esta matrícula seguindo as regras.",
+        }),
+      ),
     sanearMatricula,
   );
   return { leitura: r.leitura, conferidor: "ia", modelo: MODELO_LEITURA, falha: r.falha };
@@ -180,14 +215,15 @@ export async function lerDocumento(arquivo: ArquivoDocumento, cadastro: Cadastro
   const r = await chamarLeitura(
     "documento",
     arquivo,
-    (a) =>
-      anthropic.messages.create({
-        model: MODELO_LEITURA,
-        max_tokens: 2048,
-        system: LEITURA_SYSTEM_PROMPT,
-        output_config: { effort: "low", format: { type: "json_schema", schema: LEITURA_OUTPUT_SCHEMA } },
-        messages: [{ role: "user", content: [blocoDoArquivo(a), { type: "text" as const, text: "Leia este documento seguindo as regras." }] }],
-      }),
+    (a, estruturado) =>
+      anthropic.messages.create(
+        parametrosLeitura(a, estruturado, {
+          system: LEITURA_SYSTEM_PROMPT,
+          schema: LEITURA_OUTPUT_SCHEMA as unknown as Record<string, unknown>,
+          maxTokens: 2048,
+          pedido: "Leia este documento seguindo as regras.",
+        }),
+      ),
     sanearLeitura,
   );
   return { leitura: r.leitura, conferidor: "ia", modelo: MODELO_LEITURA, falha: r.falha };

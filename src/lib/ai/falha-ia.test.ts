@@ -10,12 +10,19 @@ import {
   RespostaIaIncompleta,
 } from "./falha-ia.ts";
 
+/** Prompt 25: a falha também traz `resumo` (a mensagem da API); estes testes conferem o resto. */
+const semResumo = (f: { resumo?: unknown }) => {
+  const { resumo: _r, ...resto } = f;
+  void _r;
+  return resto;
+};
+
 const h = new Headers();
 const corpo = (type: string, message: string) => ({ type: "error", error: { type, message } });
 
 test("p22 — imagem acima do limite da API (400) e pedido grande demais (413) → 'arquivo grande demais'", () => {
   const e400 = new Anthropic.BadRequestError(400, corpo("invalid_request_error", "image exceeds 5 MB maximum"), "image exceeds 5 MB maximum", h);
-  assert.deepEqual(classificarFalhaIa(e400), { motivo: "arquivo_grande", status: 400, tipo: "invalid_request_error" });
+  assert.deepEqual(semResumo(classificarFalhaIa(e400)), { motivo: "arquivo_grande", status: 400, tipo: "invalid_request_error" });
   const e413 = Anthropic.APIError.generate(413, corpo("request_too_large", "Request exceeds the maximum size"), "too large", h);
   assert.equal(classificarFalhaIa(e413).motivo, "arquivo_grande");
   assert.match(MENSAGEM_FALHA_IA.arquivo_grande, /arquivo grande demais/i);
@@ -23,16 +30,16 @@ test("p22 — imagem acima do limite da API (400) e pedido grande demais (413) �
 
 test("p22 — outros 400 (ex.: parâmetro recusado), 401, 429, 529 e rede → 'leitura indisponível — tente de novo', com status e tipo", () => {
   const schema = new Anthropic.BadRequestError(400, corpo("invalid_request_error", "output_config.format: unsupported keyword"), "unsupported keyword", h);
-  assert.deepEqual(classificarFalhaIa(schema), { motivo: "indisponivel", status: 400, tipo: "invalid_request_error" });
-  assert.deepEqual(classificarFalhaIa(Anthropic.APIError.generate(401, corpo("authentication_error", "invalid x-api-key"), "x", h)), {
+  assert.deepEqual(semResumo(classificarFalhaIa(schema)), { motivo: "indisponivel", status: 400, tipo: "invalid_request_error" });
+  assert.deepEqual(semResumo(classificarFalhaIa(Anthropic.APIError.generate(401, corpo("authentication_error", "invalid x-api-key"), "x", h))), {
     motivo: "indisponivel",
     status: 401,
     tipo: "authentication_error",
   });
   assert.equal(classificarFalhaIa(Anthropic.APIError.generate(429, corpo("rate_limit_error", "slow down"), "x", h)).status, 429);
   assert.equal(classificarFalhaIa(Anthropic.APIError.generate(529, corpo("overloaded_error", "Overloaded"), "x", h)).motivo, "indisponivel");
-  assert.deepEqual(classificarFalhaIa(new Anthropic.APIConnectionError({ message: "fetch failed" })), { motivo: "indisponivel", status: null, tipo: "conexao" });
-  assert.deepEqual(classificarFalhaIa(new Anthropic.APIConnectionTimeoutError()), { motivo: "indisponivel", status: null, tipo: "tempo_esgotado" });
+  assert.deepEqual(semResumo(classificarFalhaIa(new Anthropic.APIConnectionError({ message: "fetch failed" }))), { motivo: "indisponivel", status: null, tipo: "conexao" });
+  assert.deepEqual(semResumo(classificarFalhaIa(new Anthropic.APIConnectionTimeoutError())), { motivo: "indisponivel", status: null, tipo: "tempo_esgotado" });
   assert.match(MENSAGEM_FALHA_IA.indisponivel, /indisponível agora — tente de novo/);
 });
 
@@ -47,7 +54,7 @@ test("p22 — resposta cortada (max_tokens) nunca chega ao JSON.parse; recusa e 
   } catch (e) {
     erro = e;
   }
-  assert.deepEqual(classificarFalhaIa(erro), { motivo: "ilegivel", status: 200, tipo: "json_invalido" });
+  assert.deepEqual(semResumo(classificarFalhaIa(erro)), { motivo: "ilegivel", status: 200, tipo: "json_invalido" });
   assert.equal(classificarFalhaIa(new RespostaIaIncompleta("max_tokens")).tipo, "max_tokens");
   assert.match(MENSAGEM_FALHA_IA.ilegivel, /imagem ilegível/i);
 });
