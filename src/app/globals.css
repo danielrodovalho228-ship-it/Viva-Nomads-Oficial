@@ -322,6 +322,7 @@ html[data-app] .vn-barra-comparar {
 @media (max-width: 767px) {
   body:has([data-testid="barra-comparar"]) {
     --ajuda-bottom: 10rem;
+    --viva-piso: 10rem; /* piso também para o botão arrastado (posição inline) */
     padding-bottom: calc(var(--altura-abas) + 6rem + env(safe-area-inset-bottom, 0px)) !important;
   }
 }

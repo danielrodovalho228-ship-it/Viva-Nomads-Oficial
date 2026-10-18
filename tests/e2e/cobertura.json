@@ -479,7 +479,8 @@
         "t11-travessias",
         "t33-documentos-inquilino",
         "t36-cadastro-ponta-a-ponta",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t205-fechamento-sem-beco"
       ]
     },
     "/dashboard/carteira": {
@@ -562,7 +563,8 @@
         "t4-fronteira-demo-real",
         "t6-dinheiro-numeros",
         "t182-jornada-completa",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t205-fechamento-sem-beco"
       ]
     },
     "/dashboard/contratos/[id]": {
@@ -570,7 +572,8 @@
         "proprietario"
       ],
       "specs": [
-        "t57-contrato-assinar"
+        "t57-contrato-assinar",
+        "t205-fechamento-sem-beco"
       ]
     },
     "/dashboard/favoritos": {
@@ -595,7 +598,8 @@
         "t89-fechamento-data-inicio",
         "t181-quantas-pessoas",
         "t182-jornada-completa",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t205-fechamento-sem-beco"
       ]
     },
     "/dashboard/ferramentas": {
@@ -693,7 +697,8 @@
       "specs": [
         "t163-locacoes-selo-anfitriao",
         "t182-jornada-completa",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t205-fechamento-sem-beco"
       ]
     },
     "/dashboard/locacoes/[id]": {
@@ -703,7 +708,8 @@
       ],
       "specs": [
         "t48-varredura",
-        "t57-contrato-assinar"
+        "t57-contrato-assinar",
+        "t205-fechamento-sem-beco"
       ]
     },
     "/dashboard/mensagens": {
@@ -1106,7 +1112,8 @@
       ],
       "specs": [
         "t3-isolamento-papeis",
-        "t200-roi-socios"
+        "t200-roi-socios",
+        "t208-sem-nomade-drive"
       ]
     },
     "/seguranca": {
@@ -1124,7 +1131,8 @@
       "specs": [
         "t3-isolamento-papeis",
         "t7-fluxo-publico",
-        "t200-roi-socios"
+        "t200-roi-socios",
+        "t208-sem-nomade-drive"
       ]
     },
     "/socios": {
@@ -1298,7 +1306,8 @@
         "admin"
       ],
       "specs": [
-        "t169-conta-teste-sem-efeito"
+        "t169-conta-teste-sem-efeito",
+        "t205-fechamento-sem-beco"
       ]
     },
     "/api/conta/caixa-teste": {
@@ -1320,7 +1329,8 @@
       "specs": [
         "t169-conta-teste-sem-efeito",
         "t36-cadastro-ponta-a-ponta",
-        "t182-jornada-completa"
+        "t182-jornada-completa",
+        "t205-fechamento-sem-beco"
       ]
     },
     "/api/cron/atendimento": {
