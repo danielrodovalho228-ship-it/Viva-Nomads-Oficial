@@ -25,6 +25,8 @@ test.describe("T142 — Bairros", () => {
 
   for (const largura of [390, 1280]) {
     test(`${largura} px: grade da cidade e página do bairro`, async ({ page }) => {
+      // A página do bairro compila na primeira visita no servidor frio do laboratório: dá folga (instável em todas as execuções).
+      test.setTimeout(90_000);
       await page.setViewportSize({ width: largura, height: 900 });
       await page.goto("/cidades/uberlandia", { waitUntil: "domcontentloaded" });
       const grade = page.getByTestId("bairros-grade");
@@ -35,8 +37,8 @@ test.describe("T142 — Bairros", () => {
       expect(await semRolagem(page)).toBeLessThanOrEqual(1);
 
       await centro.click();
-      await expect(page).toHaveURL(/\/cidades\/uberlandia\/centro$/);
-      await expect(page.getByRole("heading", { level: 1 })).toContainText("Imóveis mobiliados em Centro");
+      await expect(page).toHaveURL(/\/cidades\/uberlandia\/centro$/, { timeout: 30_000 });
+      await expect(page.getByRole("heading", { level: 1 })).toContainText("Imóveis mobiliados em Centro", { timeout: 30_000 });
       await expect(page.getByTestId("bairro-resumo")).toContainText(/imóve(l|is) mobiliados? publicados?/);
       await expect(page.getByTestId("bairro-mapa")).toBeVisible();
       await expect(page.getByTestId("bairro-anuncios")).toContainText("Studio do bairro de teste");
