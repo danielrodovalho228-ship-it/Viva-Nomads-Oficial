@@ -73,6 +73,39 @@ export function podeTransicionar(de: StatusVisita, para: StatusVisita, quem: Que
   return TRANSICOES[de]?.[para]?.includes(quem) ?? false;
 }
 
+export type AcaoVisitaDono =
+  | { acao: "confirmar"; horario: string; link: string }
+  | { acao: "concluir" | "cancelar" };
+
+/** Janela para o dono confirmar ou propor um horário: de agora até 14 dias. */
+export const CONFIRMAR_ATE_DIAS = 14;
+export const MSG_HORARIO_CONFIRMAR = `Escolha um horário nos próximos ${CONFIRMAR_ATE_DIAS} dias.`;
+
+/**
+ * A mudança de status de um pedido, decidida aqui (puro) e só GRAVADA pela ação do servidor: o status novo, quem
+ * pode, e — ao confirmar — o horário (dentro da janela) e o link da chamada validados.
+ */
+export function mudancaDeStatus(
+  de: StatusVisita,
+  quem: QuemAge,
+  entrada: AcaoVisitaDono,
+  agora: Date = new Date(),
+): { ok: true; campos: Record<string, string> } | { ok: false; error: string } {
+  const para: StatusVisita = entrada.acao === "confirmar" ? "confirmado" : entrada.acao === "concluir" ? "feito" : "cancelado";
+  if (!podeTransicionar(de, para, quem)) return { ok: false, error: "Este pedido não pode mais ser alterado." };
+  const campos: Record<string, string> = { status: para, atualizado_em: agora.toISOString() };
+  if (entrada.acao === "confirmar") {
+    const link = validarLinkChamada(entrada.link);
+    if (!link.ok) return { ok: false, error: link.error };
+    const alvo = Date.parse(entrada.horario);
+    const t = agora.getTime();
+    if (!Number.isFinite(alvo) || alvo <= t || alvo > t + CONFIRMAR_ATE_DIAS * 24 * 3600_000) return { ok: false, error: MSG_HORARIO_CONFIRMAR };
+    campos.horario_confirmado = new Date(alvo).toISOString();
+    campos.link_chamada = link.url;
+  }
+  return { ok: true, campos };
+}
+
 export function ehStatusVisita(v: unknown): v is StatusVisita {
   return v === "pedido" || v === "confirmado" || v === "feito" || v === "cancelado";
 }

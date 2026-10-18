@@ -100,3 +100,29 @@ test("formatarHorario usa o fuso de Brasília", () => {
   assert.match(formatarHorario("2026-10-18T17:30:00.000Z"), /18\/10 às 14:30/);
   assert.equal(formatarHorario("lixo"), "");
 });
+
+test("t168 — mudança de status: dono confirma (horário na janela + link válido) e o status vira 'confirmado'", async () => {
+  const { mudancaDeStatus } = await import("./visitas-video.ts");
+  const agora = new Date("2026-10-18T12:00:00Z");
+  const ok = mudancaDeStatus("pedido", "dono", { acao: "confirmar", horario: "2026-10-20T12:00:00Z", link: "https://meet.google.com/abc-defg-hij" }, agora);
+  assert.ok(ok.ok);
+  assert.equal(ok.ok && ok.campos.status, "confirmado");
+  assert.equal(ok.ok && ok.campos.horario_confirmado, "2026-10-20T12:00:00.000Z");
+  assert.equal(ok.ok && ok.campos.link_chamada, "https://meet.google.com/abc-defg-hij");
+  // Morador não confirma; link fora da lista e horário no passado/fora da janela são recusados.
+  assert.equal(mudancaDeStatus("pedido", "morador", { acao: "confirmar", horario: "2026-10-20T12:00:00Z", link: "https://meet.google.com/x" }, agora).ok, false);
+  assert.equal(mudancaDeStatus("pedido", "dono", { acao: "confirmar", horario: "2026-10-20T12:00:00Z", link: "https://wa.me/5534999999999" }, agora).ok, false);
+  assert.equal(mudancaDeStatus("pedido", "dono", { acao: "confirmar", horario: "2026-10-17T12:00:00Z", link: "https://meet.google.com/x" }, agora).ok, false);
+  assert.equal(mudancaDeStatus("pedido", "dono", { acao: "confirmar", horario: "2026-11-30T12:00:00Z", link: "https://meet.google.com/x" }, agora).ok, false);
+  // Depois de confirmado: concluir (dono) e cancelar (os dois); feito/cancelado não mudam mais.
+  assert.equal(mudancaDeStatus("confirmado", "dono", { acao: "concluir" }, agora).ok && "feito", "feito");
+  assert.equal(mudancaDeStatus("confirmado", "morador", { acao: "cancelar" }, agora).ok, true);
+  assert.equal(mudancaDeStatus("feito", "dono", { acao: "cancelar" }, agora).ok, false);
+});
+
+test("t168 — a ação grava, confere a linha gravada e revalida /dashboard/visitas (a tela não volta com o status antigo)", () => {
+  const src = readFileSync(new URL("./data/visitas-video-actions.ts", import.meta.url), "utf8");
+  assert.match(src, /mudancaDeStatus\(/);
+  assert.match(src, /revalidatePath\("\/dashboard\/visitas"\)/);
+  assert.match(src, /\.update\(campos\)[\s\S]{0,120}\.select\("id"\)/);
+});
