@@ -89,7 +89,12 @@ test.describe("T69 — header e botões padronizados", () => {
         test.setTimeout(90_000);
         await page.setViewportSize({ width: largura, height: 900 });
         // Sem esperar "load" nem "networkidle": o mapa de /buscar e os pings seguram a rede além do limite.
+        // Aquece a rota pelo servidor (sem navegador) e registra o tempo: se travar de novo, o log do lab diz se foi o servidor ou o navegador.
+        const t0 = Date.now();
+        const aquecimento = await page.request.get(rota, { timeout: 60_000 }).catch(() => null);
+        const servidorMs = Date.now() - t0;
         await page.goto(rota, { waitUntil: "domcontentloaded", timeout: 60_000 });
+        test.info().annotations.push({ type: "tempo", description: `${rota} ${largura}px: servidor ${servidorMs} ms (HTTP ${aquecimento?.status() ?? "sem resposta"}), página ${Date.now() - t0} ms` });
         await page.locator("[data-cta]").first().waitFor({ state: "attached", timeout: 10_000 }).catch(() => undefined);
         // Abre o menu mobile do header (se a página tiver o header público) para medir os botões dele também.
         // Só clica no botão visível (a 768 px podem existir dois "Abrir menu", um escondido).

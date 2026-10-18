@@ -69,6 +69,12 @@ test.describe("T191 — o dono decide o rascunho (ordem 65e999b2, logado)", () =
       await page.goto("/dashboard/imoveis", { waitUntil: "networkidle" });
       await expect(page.getByTestId(botao)).toBeVisible({ timeout: 20_000 });
       await page.getByTestId(botao).click();
+      // Primeiro o desfecho (botões somem ou aparece o alerta): se a decisão falhar, o erro da tela vai na mensagem do teste.
+      const alerta = page.getByTestId("decisao-rascunho").getByRole("alert");
+      await expect
+        .poll(async () => ((await page.getByTestId("decisao-rascunho").count()) === 0 ? "feito" : (await alerta.count()) ? "erro" : "aguardando"), { timeout: 20_000 })
+        .not.toBe("aguardando");
+      if (await alerta.count()) throw new Error(`A decisão falhou na tela: ${await alerta.first().innerText()}`);
       await expect(page.getByTestId("decisao-rascunho")).toHaveCount(0, { timeout: 20_000 });
     } finally {
       await page.context().close();
