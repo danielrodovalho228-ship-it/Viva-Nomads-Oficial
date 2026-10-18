@@ -75,11 +75,16 @@ import { estadoDoStatus, type EstadoDocumentoTela } from "@/components/anuncio/d
 import type { InfoMatricula } from "@/components/anuncio/matricula-resultado";
 import type { PreenchimentoMatricula } from "@/lib/documento/conferencia-matricula";
 import { chaveLugar } from "@/components/anuncio/blocos-cadastro";
-import type { CampoSugerido } from "./tipos";
+import type { CampoSugerido, EstadoIaFotos, FalhaIaFotos } from "./tipos";
+import { ChecklistPublicar } from "./checklist-publicar";
+import { PainelQualificacao } from "./painel-qualificacao";
+import type { ItemProntidao } from "@/lib/anuncio/prontidao";
+import { MENSAGEM_FALHA_IA, motivoDoStatusFotos, type MotivoFalhaIa } from "@/lib/ai/falha-ia";
 import { EtapaOndeFica } from "./etapa-onde-fica";
 import { CartaoIa } from "./cartao-ia";
 import { BarraFotos } from "./barra-fotos";
 import { buscarCep, formatarCep, type OpcaoEndereco, type ResultadoCep } from "@/lib/cep/buscar";
+import { aplicarResultadoCep, type CampoEndereco } from "@/lib/cep/aplicar";
 import { enviarFotos } from "@/lib/fotos/enviar";
 import { MAX_FOTOS_POR_ANUNCIO } from "@/lib/fotos/qualidade";
 import { uploadPropertyPhoto } from "@/lib/data/storage";
@@ -113,6 +118,8 @@ export default function NewPropertyPage() {
   const [approved, setApproved] = useState<boolean | null>(null);
   // Qualificação "Antes de anunciar": só BARRA A PUBLICAÇÃO (rascunho sempre pode).
   const [qualificado, setQualificado] = useState(true);
+  // Prompt 22: a qualificação abre num painel lateral, sem sair do cadastro.
+  const [painelQualificacao, setPainelQualificacao] = useState(false);
   // Documento do imóvel (prompt 11): conferido na etapa 1. Só "approved" libera Publicar (0120).
   const [docStatus, setDocStatus] = useState<DocumentStatus>("approved");
   const [docEstado, setDocEstado] = useState<EstadoDocumentoTela>("nenhum");
@@ -130,7 +137,12 @@ export default function NewPropertyPage() {
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   }
   // IA das fotos (prompt 10): roda sozinha ao terminar o envio; uma vez por rascunho.
-  const [iaEstado, setIaEstado] = useState<"parada" | "analisando" | "feita" | "sem_sugestoes">("parada");
+  const [iaEstado, setIaEstado] = useState<EstadoIaFotos>("parada");
+  // Prompt 22: o motivo real quando a IA das fotos falha (nunca o silencioso "sem sugestões") e o "Tentar de novo".
+  const [iaFalha, setIaFalha] = useState<FalhaIaFotos | null>(null);
+  const [iaTentativa, setIaTentativa] = useState(0);
+  // A IA do cadastro está ligada neste servidor? (null = ainda não sabemos: a frase do topo espera.)
+  const [iaLigada, setIaLigada] = useState<boolean | null>(null);
   const [iaAnalisadas, setIaAnalisadas] = useState<string[]>([]);
   const [sugeridos, setSugeridos] = useState<CampoSugerido[]>([]);
   const [comodidadesSugeridas, setComodidadesSugeridas] = useState<string[]>([]);
@@ -183,6 +195,8 @@ export default function NewPropertyPage() {
   const [erroEnvioFotos, setErroEnvioFotos] = useState<string | null>(null);
   const [resumoIa, setResumoIa] = useState("");
   const [bairroDoCep, setBairroDoCep] = useState<string | null>(null);
+  // Prompt 22: campos de endereço que a PESSOA digitou (o autofill do navegador não entra aqui).
+  const digitadosRef = useRef(new Set<CampoEndereco>());
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
   const [videoUrl, setVideoUrl] = useState("");
   const [utilitiesMode, setUtilitiesMode] = useState<"fixed" | "real">("fixed");
@@ -239,7 +253,14 @@ export default function NewPropertyPage() {
     descricao: description,
     selo: qual.baseBadge,
     video: !!videoUrl.trim(),
+    // Prompt 22: a qualificação é item da MESMA lista, desde o passo 1 (no editor de anúncio publicado não se aplica).
+    qualificacaoOk: editingId ? undefined : qualificado,
   });
+  /** "Resolver" de um item do portão: vai à etapa; a qualificação abre ali mesmo. */
+  function resolverItem(item: ItemProntidao) {
+    if (item.key === "qualificacao") setPainelQualificacao(true);
+    else irPara(item.etapa);
+  }
   // "Importar anúncio" (t115): preenche o que veio do texto colado e leva direto à etapa 3, com tudo preenchido.
   function aplicarImportado(a: AnuncioOrganizado) {
     if (a.titulo) setTitle(a.titulo);
@@ -782,31 +803,28 @@ export default function NewPropertyPage() {
     setCepLoading(true);
     setCepResultado(null);
     const r = await buscarCep(value, (url) => fetch(url));
-    if (r.tipo === "rua" || r.tipo === "cidade") {
-      // Só preenche o que está VAZIO — vale o que o dono digitou. Bairro diferente vira uma pergunta.
-      if (r.tipo === "rua" && !street.trim()) setStreet(r.rua);
-      setCity((c) => (c.trim() && c !== "Uberlândia" ? c : r.cidade));
-      if (r.uf) setUf(r.uf.slice(0, 2));
-      if (r.tipo === "rua" && r.bairro) {
-        const digitado = neighborhood.trim();
-        if (!digitado) setNeighborhood(r.bairro);
-        else if (digitado.toLowerCase() !== r.bairro.trim().toLowerCase()) setBairroDoCep(r.bairro);
-      }
-    }
+    // Prompt 22: o CEP substitui o que a pessoa NÃO digitou (autofill do navegador e valor antigo não contam).
+    aplicarNoFormulario(aplicarResultadoCep(r, { rua: street, bairro: neighborhood, cidade: city }, digitadosRef.current));
     setCepResultado(r);
     setCepLoading(false);
     // Achou a rua: o próximo campo é o Número.
     if (r.tipo === "rua") setTimeout(() => document.querySelector<HTMLInputElement>('[data-testid="cadastro-numero"]')?.focus(), 0);
   }
 
-  /** "Buscar pelo endereço" (prompt 20): a opção escolhida preenche o CEP certo e o que estiver vazio. */
+  function aplicarNoFormulario(a: ReturnType<typeof aplicarResultadoCep>) {
+    if (a.rua !== undefined) setStreet(a.rua);
+    if (a.bairro !== undefined) setNeighborhood(a.bairro);
+    if (a.cidade !== undefined) setCity(a.cidade);
+    if (a.uf) setUf(a.uf);
+    if (a.perguntarBairro) setBairroDoCep(a.perguntarBairro);
+  }
+
+  /** "Buscar pelo endereço" (prompt 20): a opção escolhida preenche o CEP certo (e substitui o que não foi digitado). */
   function escolherEndereco(o: OpcaoEndereco) {
     setCep(formatarCep(o.cep));
-    if (!street.trim()) setStreet(o.rua);
-    if (!neighborhood.trim() && o.bairro) setNeighborhood(o.bairro);
-    if (o.cidade) setCity(o.cidade);
-    if (o.uf) setUf(o.uf);
-    setCepResultado({ tipo: "rua", rua: o.rua, bairro: o.bairro, cidade: o.cidade, uf: o.uf });
+    const r: ResultadoCep = { tipo: "rua", rua: o.rua, bairro: o.bairro, cidade: o.cidade, uf: o.uf };
+    aplicarNoFormulario(aplicarResultadoCep(r, { rua: street, bairro: neighborhood, cidade: city }, digitadosRef.current));
+    setCepResultado(r);
     setTimeout(() => document.querySelector<HTMLInputElement>('[data-testid="cadastro-numero"]')?.focus(), 0);
   }
 
@@ -951,6 +969,7 @@ export default function NewPropertyPage() {
     setComplemento("");
     setNeighborhood("");
     setCep("");
+    digitadosRef.current.clear();
     setVideoUrl("");
     setPhotos([]);
     setSubleaseDoc([]);
@@ -1021,7 +1040,8 @@ export default function NewPropertyPage() {
 
   /*
     Análise das fotos pela IA (prompt 10): roda SOZINHA quando o envio termina e há o mínimo de fotos. Uma chamada
-    por rascunho; refaz só se o dono trocar mais de 3 fotos. Falhou ou sem chave: a etapa segue sem sugestões.
+    por rascunho; refaz só se o dono trocar mais de 3 fotos. Falhou ou desligada (prompt 22): a tela diz o motivo e
+    oferece "Tentar de novo"; com a IA desligada no servidor, nem chama a rota.
     Nunca sobrescreve o que o dono já escreveu: só campos vazios, e cada sugestão fica marcada "Sugerido · confira".
   */
   const fotosUrls = photos.map((p) => p.url).filter((u) => u && !u.startsWith("blob:"));
@@ -1031,6 +1051,13 @@ export default function NewPropertyPage() {
     if (!precisaReanalisar(iaAnalisadas, fotosUrls)) return;
     let alive = true;
     const t = setTimeout(async () => {
+      const falhou = (motivo: MotivoFalhaIa, texto?: string) => {
+        // Falhou: o rascunho não guarda estas fotos como "analisadas" — ao reabrir (ou em "Tentar de novo") analisa de novo.
+        setIaAnalisadas([]);
+        setIaFalha({ motivo, texto: texto || MENSAGEM_FALHA_IA[motivo] });
+        setIaEstado("erro");
+      };
+      if (iaLigada === false) return falhou("desligada");
       setIaEstado("analisando");
       try {
         const passo = Math.max(1, Math.floor(fotosUrls.length / FOTOS_MAX_MINIATURAS));
@@ -1038,19 +1065,20 @@ export default function NewPropertyPage() {
         const minis = (await Promise.all(escolhidas.map((u) => miniaturaBase64(u, FOTOS_LADO_MAX_PX)))).filter((m): m is string => !!m);
         if (!alive) return;
         setIaAnalisadas(fotosUrls);
-        if (minis.length === 0) return setIaEstado("sem_sugestoes");
+        if (minis.length === 0) return falhou("ilegivel", "Não conseguimos preparar as fotos para a análise. Tente de novo.");
         const res = await fetch("/api/ai/fotos", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ miniaturas: minis }),
         });
-        const data = (await res.json().catch(() => ({}))) as Partial<SugestaoFotos> & { error?: string };
+        const data = (await res.json().catch(() => ({}))) as Partial<SugestaoFotos> & { error?: string; motivo?: MotivoFalhaIa };
         if (!alive) return;
-        if (!res.ok) return setIaEstado("sem_sugestoes");
+        if (!res.ok) return falhou(data.motivo ?? motivoDoStatusFotos(res.status, false), data.error);
+        setIaFalha(null);
         aplicarSugestao(data as SugestaoFotos, escolhidas);
         setIaEstado("feita");
       } catch {
-        if (alive) setIaEstado("sem_sugestoes");
+        if (alive) falhou("indisponivel", "Sem conexão com a análise das fotos agora. Confira a internet e tente de novo.");
       }
     }, 600);
     return () => {
@@ -1058,7 +1086,27 @@ export default function NewPropertyPage() {
       clearTimeout(t);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fotosKey, editingId]);
+  }, [fotosKey, editingId, iaTentativa, iaLigada]);
+
+  /** "Tentar de novo" (prompt 22): esquece a análise que falhou e chama a IA outra vez. */
+  function tentarIaDeNovo() {
+    setIaFalha(null);
+    setIaAnalisadas([]);
+    setIaEstado("parada");
+    setIaTentativa((n) => n + 1);
+  }
+
+  // A frase "A IA preenche o resto pelas fotos" só aparece com a IA ligada (prompt 22).
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/ai/status")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j: { fotos?: boolean } | null) => alive && setIaLigada(j?.fotos === true))
+      .catch(() => alive && setIaLigada(false));
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   if (approved === null) return null;
 
@@ -1106,7 +1154,9 @@ export default function NewPropertyPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-night/70 to-night/10" />
         <div className="absolute inset-0 flex flex-col justify-center p-5 text-white">
           <p className="font-title text-lg font-bold sm:text-xl">Vamos publicar seu imóvel</p>
-          <p className="text-sm text-white/80">Comece pelo CEP. A IA preenche o resto pelas fotos.</p>
+          <p className="text-sm text-white/80" data-testid="cadastro-frase-topo">
+            {iaLigada ? "Comece pelo CEP. A IA preenche o resto pelas fotos." : "Comece pelo CEP. Depois, fotos, detalhes, preço e revisão."}
+          </p>
         </div>
       </div>
 
@@ -1181,6 +1231,17 @@ export default function NewPropertyPage() {
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start" data-testid="novo-duas-colunas">
         <div className="min-w-0">
+          <ChecklistPublicar itens={completude} onResolver={resolverItem} recolhivel />
+          {painelQualificacao && (
+            <PainelQualificacao
+              imovelId={imovelId}
+              onFechar={() => setPainelQualificacao(false)}
+              onSalva={(r) => {
+                setQualificado(r.elegivel);
+                setQual({ baseBadge: r.selo, tHome: r.tHome, tWork: r.tWork });
+              }}
+            />
+          )}
           <Panel>
             <div className="mb-5 flex items-start gap-3">
               <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-sage-100 text-forest">
@@ -1200,6 +1261,8 @@ export default function NewPropertyPage() {
                     enviando={enviandoFotos}
                     erroEnvio={erroEnvioFotos}
                     iaEstado={iaEstado}
+                    iaFalha={iaFalha}
+                    onTentarDeNovo={tentarIaDeNovo}
                     resumoIa={resumoIa}
                     onFotos={(f) => void adicionarFotos(f)}
                     onMatricula={enviarMatricula}
@@ -1234,6 +1297,7 @@ export default function NewPropertyPage() {
                 cepLoading={cepLoading}
                 street={street}
                 setStreet={setStreet}
+                marcarDigitado={(c) => digitadosRef.current.add(c)}
                 numero={numero}
                 setNumero={setNumero}
                 complemento={complemento}
@@ -1262,7 +1326,7 @@ export default function NewPropertyPage() {
             )}
 
             {step === 1 && (
-              <EtapaFotos photos={photos} setPhotos={setPhotos} cep={cep} videoUrl={videoUrl} setVideoUrl={setVideoUrl} iaEstado={iaEstado} erroFotos={erros.fotos} />
+              <EtapaFotos photos={photos} setPhotos={setPhotos} cep={cep} videoUrl={videoUrl} setVideoUrl={setVideoUrl} iaEstado={iaEstado} iaFalha={iaFalha} onTentarDeNovo={tentarIaDeNovo} erroFotos={erros.fotos} />
             )}
 
             {step === 2 && (
@@ -1363,6 +1427,7 @@ export default function NewPropertyPage() {
                 proximidades={proximidadesFinais}
                 negociacao={negociacao}
                 completude={completude}
+                onResolver={resolverItem}
                 melhorar={prontidao.melhorar}
                 quality={quality}
                 photosCount={photos.length}
@@ -1370,13 +1435,9 @@ export default function NewPropertyPage() {
                 docEstado={docEstado}
                 docMotivos={docMotivos}
                 editingId={editingId}
-                qualificado={qualificado}
-                imovelId={imovelId}
                 publishing={publishing}
                 publish={publish}
                 irPara={irPara}
-                subleaseBlocked={subleaseBlocked}
-                ownershipType={ownershipType}
                 aceitouIa={aceitouIa}
                 setAceitouIa={setAceitouIa}
                 publishError={publishError}

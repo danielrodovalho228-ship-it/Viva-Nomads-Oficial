@@ -28,6 +28,7 @@ import { useAuthStore } from "@/lib/store";
 import { useViewMode } from "@/lib/roles";
 import { useDashDemo, DemoBadge } from "@/lib/demo/demo-mode";
 import { cn } from "@/lib/utils";
+import { validadeDoLaudo } from "@/lib/caf/validade";
 
 /**
  * Estados futuros da verificação (preparados; a integração real entra depois):
@@ -214,7 +215,7 @@ function DemoFlow({
         body: JSON.stringify({ name: user?.fullName ?? "Inquilino" }),
       });
       setResult((await res.json()) as CafResult);
-      setValidUntil(new Date(Date.now() + 90 * 86400000).toLocaleDateString("pt-BR"));
+      setValidUntil(validadeDoLaudo(new Date()).toLocaleDateString("pt-BR"));
     } finally {
       setLoading(false);
     }
@@ -274,7 +275,7 @@ function DemoFlow({
               <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               Verificação de <strong>demonstração</strong> (válida só nesta vitrine). A real é
               feita <strong>via parceiro — em estruturação</strong>; só então o selo vale de fato
-              e a validade de {validUntil ? `até ${validUntil}` : "90 dias"} passa a contar.
+              e a validade de {validUntil ? `até ${validUntil}` : "12 meses"} passa a contar.
             </p>
           </Panel>
 

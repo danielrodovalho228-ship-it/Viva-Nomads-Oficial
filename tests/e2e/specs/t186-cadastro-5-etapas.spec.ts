@@ -184,15 +184,14 @@ test.describe("T186 — cadastro em 5 etapas com IA, OSM e documento simulados",
       await expect(page.getByTestId("cadastro-preco")).toHaveValue("3200", { timeout: 15_000 });
       await expect(page.getByTestId("preco-regiao")).toContainText("Sugestão para imóveis parecidos na região");
       await expect(page.getByTestId("cadastro-consumo")).toHaveValue("220"); // 2 quartos
-      // Um seletor de data só: o calendário nativo, sem máscara de digitação.
+      // Prompt 22: no computador a data aceita digitar dd/mm/aaaa (com máscara) e o calendário fica num botão; no
+      // celular (toque) segue o seletor nativo — coberto no t204.
       const de = page.getByTestId("disponivel-de");
       const ate = page.getByTestId("disponivel-ate");
-      for (const d of [de, ate]) {
-        await expect(d).toHaveAttribute("type", "date");
-        expect(await d.getAttribute("inputmode")).toBeNull();
-      }
-      await de.fill("2026-11-01");
-      await expect(de).toHaveValue("2026-11-01");
+      for (const d of [de, ate]) await expect(d).toHaveAttribute("type", "text");
+      await expect(page.getByTestId("disponivel-de-calendario")).toBeVisible();
+      await de.pressSequentially("01112026");
+      await expect(de).toHaveValue("01/11/2026");
       // Q9: rótulo curto; no celular os dois campos ficam um embaixo do outro, com a mesma largura.
       await expect(page.getByTestId("disponibilidade")).toContainText("Disponível até");
       const bde = (await de.boundingBox())!;

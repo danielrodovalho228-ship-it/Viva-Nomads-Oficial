@@ -232,7 +232,7 @@ test.describe("T195 — matrícula + CAF", () => {
   }
 
   for (const largura of [390, 1280]) {
-    test(`${largura}px — etapa Identidade vem ANTES da matrícula e já aparece feita com laudo válido (90 dias)`, async ({ browser }) => {
+    test(`${largura}px — etapa Identidade vem ANTES da matrícula e já aparece feita com laudo válido (12 meses)`, async ({ browser }) => {
       const page = await etapa1(browser, "etapa", largura);
       const passo = page.getByTestId("etapa-onde-fica");
       const ordem = await passo.evaluate((el) => {

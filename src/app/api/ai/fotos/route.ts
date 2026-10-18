@@ -5,6 +5,8 @@ import { GERACAO_IA_ATIVA } from "@/lib/flags";
 import { consumirLimite, ipHash, DIA } from "@/lib/limites";
 import { integracoesSimuladas, registrarSimulado } from "@/lib/integracoes";
 import { IA_LIMITE_DIA } from "@/lib/ai/anuncio-prompt";
+import { classificarFalhaIa, textoDaResposta, MENSAGEM_FALHA_IA, type MotivoFalhaIa } from "@/lib/ai/falha-ia";
+import { registrarChamadaIa } from "@/lib/ai/registro-ia";
 import {
   validarMiniaturas,
   sanearSugestao,
@@ -25,14 +27,21 @@ import {
  * sanitizada (enum, faixas, chaves do catálogo, sem contato) antes de voltar.
  *
  * Cadastro em 5 etapas (prompt 10): a tela chama esta rota sozinha ao terminar o envio das fotos (uma vez por
- * rascunho). Sem chave ou com a flag desligada responde 503 e a etapa segue sem sugestões. No laboratório
- * (INTEGRACOES_SIMULADAS=on) devolve SEMPRE a mesma resposta fixa, sem chamar a API.
+ * rascunho). No laboratório (INTEGRACOES_SIMULADAS=on) devolve SEMPRE a mesma resposta fixa, sem chamar a API.
+ *
+ * Prompt 22: toda falha volta com `motivo` (desligada · limite · arquivo_grande · ilegivel · indisponivel) para a tela
+ * dizer o que houve — nunca mais o silencioso "Sem sugestões" — e vira uma linha em ia_chamadas (0163), sem dado
+ * pessoal, que o painel "IA do cadastro" do /admin mostra.
  */
+const MODELO_FOTOS = "claude-opus-4-8";
+
+function falha(motivo: MotivoFalhaIa, status: number, texto = MENSAGEM_FALHA_IA[motivo]) {
+  return NextResponse.json({ error: texto, motivo }, { status });
+}
+
 export async function POST(request: Request) {
   const simulado = integracoesSimuladas();
-  if (!simulado && (!GERACAO_IA_ATIVA || !process.env.ANTHROPIC_API_KEY)) {
-    return NextResponse.json({ error: "A geração por IA está desativada no momento." }, { status: 503 });
-  }
+  const desligada = !simulado && (!GERACAO_IA_ATIVA || !process.env.ANTHROPIC_API_KEY);
 
   const supabase = await createClient();
   if (!supabase) return NextResponse.json({ error: "Indisponível." }, { status: 503 });
@@ -49,10 +58,14 @@ export async function POST(request: Request) {
   const podeAnunciar =
     perfil?.role === "owner" || perfil?.role === "admin" || perfil?.preferred_mode === "owner";
   if (!podeAnunciar) return NextResponse.json({ error: "Disponível para proprietários." }, { status: 403 });
+  if (desligada) {
+    await registrarChamadaIa({ rota: "fotos", ok: false, status: 503, tipoErro: !GERACAO_IA_ATIVA ? "flag_desligada" : "sem_chave", motivo: "desligada" });
+    return falha("desligada", 503);
+  }
 
   const cru = await request.text().catch(() => "");
   if (cru.length > FOTOS_MAX_CORPO) {
-    return NextResponse.json({ error: "Fotos demais para analisar de uma vez." }, { status: 413 });
+    return falha("arquivo_grande", 413, "Fotos demais para analisar de uma vez.");
   }
   let miniaturas: string[];
   try {
@@ -69,10 +82,7 @@ export async function POST(request: Request) {
   const okPessoa = await consumirLimite(`ia:user:${user.id}`, IA_LIMITE_DIA, DIA);
   const okIp = okPessoa && (await consumirLimite(`ia:ip:${ipHash(request)}`, IA_LIMITE_DIA * 3, DIA));
   if (!okPessoa || !okIp) {
-    return NextResponse.json(
-      { error: `Limite de ${IA_LIMITE_DIA} gerações por dia atingido. Tente novamente amanhã.` },
-      { status: 429 },
-    );
+    return falha("limite", 429, `Limite de ${IA_LIMITE_DIA} análises por dia atingido. Tente de novo amanhã ou preencha os campos na próxima etapa.`);
   }
 
   if (simulado) {
@@ -81,11 +91,14 @@ export async function POST(request: Request) {
     return lab.ok ? NextResponse.json(lab.sugestao) : NextResponse.json({ error: "Indisponível." }, { status: 503 });
   }
 
+  const inicio = Date.now();
+  const bytes = miniaturas.reduce((t, m) => t + Math.floor((m.length * 3) / 4), 0);
+  const registro = { rota: "fotos" as const, modelo: MODELO_FOTOS, arquivoMime: "image/jpeg", arquivoBytes: bytes };
   try {
     const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const res = await anthropic.messages.create({
-      model: "claude-opus-4-8",
-      max_tokens: 1024,
+      model: MODELO_FOTOS,
+      max_tokens: 4096,
       system: FOTOS_SYSTEM_PROMPT,
       output_config: { effort: "low", format: { type: "json_schema", schema: FOTOS_OUTPUT_SCHEMA } },
       messages: [
@@ -102,25 +115,21 @@ export async function POST(request: Request) {
       ],
     });
 
-    const bloco = res.content.find((b) => b.type === "text");
-    let saneada: ReturnType<typeof sanearSugestao>;
-    try {
-      saneada = sanearSugestao(JSON.parse(bloco && bloco.type === "text" ? bloco.text : ""));
-    } catch {
-      return NextResponse.json({ error: "Não foi possível analisar agora. Tente de novo." }, { status: 502 });
-    }
+    const saneada = sanearSugestao(JSON.parse(textoDaResposta(res)));
     if (!saneada.ok) {
+      const motivo: MotivoFalhaIa = saneada.motivo === "nao_imovel" ? "ilegivel" : "indisponivel";
+      await registrarChamadaIa({ ...registro, ok: false, status: 200, tipoErro: `saneamento_${saneada.motivo}`, motivo, duracaoMs: Date.now() - inicio });
       return saneada.motivo === "nao_imovel"
-        ? NextResponse.json(
-            { error: "Estas fotos não parecem ser de um imóvel. Envie fotos dos ambientes." },
-            { status: 422 },
-          )
-        : NextResponse.json({ error: "Não foi possível analisar agora. Tente de novo." }, { status: 502 });
+        ? falha("ilegivel", 422, "Estas fotos não parecem ser de um imóvel. Envie fotos dos ambientes.")
+        : falha("indisponivel", 502);
     }
 
+    await registrarChamadaIa({ ...registro, ok: true, status: 200, duracaoMs: Date.now() - inicio });
     await supabase.from("ai_generations").insert({ user_id: user.id, kind: "anuncio" });
     return NextResponse.json(saneada.sugestao);
-  } catch {
-    return NextResponse.json({ error: "A geração por IA está indisponível agora." }, { status: 503 });
+  } catch (e) {
+    const f = classificarFalhaIa(e);
+    await registrarChamadaIa({ ...registro, ok: false, status: f.status, tipoErro: f.tipo, motivo: f.motivo, duracaoMs: Date.now() - inicio });
+    return falha(f.motivo, f.motivo === "arquivo_grande" ? 413 : 503);
   }
 }

@@ -130,7 +130,7 @@ export function mensagemCep(r: ResultadoCep): string {
     case "cidade":
       return "Este CEP é da cidade toda — digite a rua";
     case "nao_encontrado":
-      return "Não encontramos esse CEP. Confira os números ou busque pelo endereço";
+      return "Não encontramos esse CEP — buscar pelo endereço";
     case "sem_rede":
       return "Não conseguimos buscar agora — preencha o endereço abaixo";
   }
