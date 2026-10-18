@@ -36,7 +36,7 @@ import { VideoInstitucional } from "@/components/institucional/video-institucion
 import { JsonLd } from "@/components/seo/json-ld";
 import { organizacao } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
-import { HOME_PASSOS_IMAGENS, HOME_PROPRIETARIOS_FUNDO, quantosDestaques } from "@/lib/home-imagens";
+import { HOME_PROPRIETARIOS_FUNDO, quantosDestaques } from "@/lib/home-imagens";
 
 const PERSONA_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   Briefcase,
@@ -255,10 +255,10 @@ export default async function HomePage() {
           </div>
 
           <div className="mt-10 grid grid-cols-1 gap-8 sm:grid-cols-2 md:mt-12" data-testid="passos-home">
-            <Step n="1" img={HOME_PASSOS_IMAGENS[0]} icon={Search} title="Busque" text="Encontre imóveis mobiliados pela cidade, período e orçamento. Filtre por Pronto para Morar." />
-            <Step n="2" img={HOME_PASSOS_IMAGENS[1]} icon={MessageSquare} title="Converse" text="Fale direto com o proprietário, tire dúvidas e agende a visita pela plataforma." />
-            <Step n="3" img={HOME_PASSOS_IMAGENS[2]} icon={FileSignature} title="Assine com segurança" text="Caução combinada entre proprietário e inquilino e contrato assinado digitalmente, com validade jurídica." />
-            <Step n="4" img={HOME_PASSOS_IMAGENS[3]} icon={ClipboardCheck} title="Conferência de entrada" text="Na chegada, você e o proprietário conferem o estado do imóvel e registram tudo na plataforma." />
+            <Step n="1" icon={Search} title="Busque" text="Encontre imóveis mobiliados pela cidade, período e orçamento. Filtre por Pronto para Morar." />
+            <Step n="2" icon={MessageSquare} title="Converse" text="Fale direto com o proprietário, tire dúvidas e agende a visita pela plataforma." />
+            <Step n="3" icon={FileSignature} title="Assine com segurança" text="Caução combinada entre proprietário e inquilino e contrato assinado digitalmente, com validade jurídica." />
+            <Step n="4" icon={ClipboardCheck} title="Conferência de entrada" text="Na chegada, você e o proprietário conferem o estado do imóvel e registram tudo na plataforma." />
           </div>
         </div>
       </section>
@@ -366,20 +366,17 @@ function WorkFeature({
 
 function Step({
   n,
-  img,
   icon: Icon,
   title,
   text,
 }: {
   n: string;
-  img: { src: string; alt: string; pronta: boolean };
   icon: React.ComponentType<{ className?: string }>;
   title: string;
   text: string;
 }) {
   return (
     <div className="relative">
-      <BrandImage src={img.src} alt={img.alt} sizes="(max-width: 640px) 100vw, 50vw" className="mb-5 aspect-[16/9] w-full" />
       <div className="flex items-center gap-4">
         <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-night font-title text-xl font-bold text-white ring-8 ring-surface">
           {n}
