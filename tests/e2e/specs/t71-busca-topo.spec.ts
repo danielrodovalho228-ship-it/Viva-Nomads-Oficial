@@ -104,6 +104,7 @@ test.describe("T71 — topo da /buscar", () => {
   });
 
   test("6. celular 390 px e 1024 px adaptam sem quebrar", async ({ page }) => {
+    test.setTimeout(120_000); // duas cargas da /buscar no servidor frio do laboratório (45 s não bastava)
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/buscar?local=Uberl%C3%A2ndia", { waitUntil: "networkidle" });
     await expect(page.getByTestId("busca-celular")).toBeVisible();
@@ -121,6 +122,7 @@ test.describe("T71 — topo da /buscar", () => {
 
   for (const [largura, altura] of [[1440, 900], [1280, 800], [1024, 800], [390, 844]] as const) {
     test(`7. cards da grade todos do mesmo tamanho a ${largura}px`, async ({ page }) => {
+      test.setTimeout(120_000); // carga da /buscar com mapa no servidor frio do laboratório (45 s não bastava)
       await page.setViewportSize({ width: largura, height: altura });
       await page.goto("/buscar", { waitUntil: "networkidle" });
       const cards = page.getByTestId("card-resultado");
