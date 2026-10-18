@@ -88,7 +88,7 @@ test.describe("T27 — Agentes com dados ao vivo", () => {
     test.skip(process.env.INTEGRACOES_SIMULADAS !== "on" || !URL || !SERVICE, "Só no laboratório.");
     const { data, error } = await adm().rpc("migracoes_aplicadas");
     expect(error).toBeNull();
-    expect((data as { name: string }[]).some((m) => m.name.startsWith(`${ULTIMA_MIGRACAO}_`) || m.version === ULTIMA_MIGRACAO || m.version.endsWith(ULTIMA_MIGRACAO))).toBe(true);
+    expect((data as { name: string; version: string }[]).some((m) => m.name.startsWith(`${ULTIMA_MIGRACAO}_`) || m.version === ULTIMA_MIGRACAO || m.version.endsWith(ULTIMA_MIGRACAO))).toBe(true);
     expect(Object.keys((data as object[])[0]).sort()).toEqual(["name", "version"]);
     // Logado (mesmo admin) não chama a função direto: só o servidor.
     await page.goto("/admin/agentes", { waitUntil: "networkidle" });

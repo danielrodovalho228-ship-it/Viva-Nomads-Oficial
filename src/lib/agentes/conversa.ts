@@ -131,6 +131,6 @@ export function lerTextoSimples(texto: string): BlocoTexto[] {
  * alvo, então a troca de mensagens deste pedido muda junto — senão o balão "Registrei a ordem…"
  * fica gravado no agente anterior e some da tela (t21).
  */
-export function moverTrocaParaAgente<T extends { id: string; agente_slug: string }>(msgs: T[], ids: string[], slug: string): T[] {
+export function moverTrocaParaAgente<T extends { id: string; agente_slug: string | null }>(msgs: T[], ids: string[], slug: string): T[] {
   return msgs.map((m) => (ids.includes(m.id) ? { ...m, agente_slug: slug } : m));
 }
