@@ -119,7 +119,8 @@
         "admin"
       ],
       "specs": [
-        "t196-cidades-liberadas"
+        "t196-cidades-liberadas",
+        "t202-cidades-liberadas-logado"
       ]
     },
     "/admin/documentos": {
