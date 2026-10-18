@@ -5,6 +5,8 @@ import { CheckCircle2, Clock, FileText, Loader2, ShieldCheck, Upload, XCircle } 
 import { DOCUMENTOS_ACEITOS_TEXTO, FORMATOS_ACEITOS_TEXTO, type EstadoConferencia } from "@/lib/documento/conferencia";
 import { validarArquivoDoc } from "@/lib/upload-limits";
 import { cn } from "@/lib/utils";
+import { MSG_MATRICULA } from "@/lib/documento/conferencia-matricula";
+import { MatriculaResultado, type InfoMatricula } from "./matricula-resultado";
 
 export type EstadoDocumentoTela = EstadoConferencia | "nenhum";
 
@@ -18,6 +20,8 @@ export function estadoDoStatus(s: "none" | "pending" | "approved" | "rejected"):
  * (bucket privado, tipo real conferido no servidor) e pede a conferência automática na hora:
  *   ✓ Documentação conferida · ✕ Corrija (motivo + reenviar aqui mesmo) · ⏱ Em revisão (equipe, até 48 h).
  * O documento nunca aparece no anúncio; o CPF nunca volta para a tela.
+ * Prompt 19: sendo MATRÍCULA, o resultado cruza com a CAF (conferido / provável / em revisão com o motivo) e o que
+ * foi lido preenche o anúncio (`onMatricula`).
  */
 export function DocumentoVinculo({
   imovelId,
@@ -26,6 +30,7 @@ export function DocumentoVinculo({
   estado,
   motivos,
   onResultado,
+  onMatricula,
 }: {
   imovelId: string | null;
   endereco: { cep: string; rua: string; numero: string; bairro: string; cidade: string };
@@ -33,11 +38,44 @@ export function DocumentoVinculo({
   estado: EstadoDocumentoTela;
   motivos: string[];
   onResultado: (estado: EstadoDocumentoTela, motivos: string[]) => void;
+  onMatricula?: (m: InfoMatricula) => void;
 }) {
   const [enviando, setEnviando] = useState<"enviando" | "conferindo" | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [nome, setNome] = useState<string | null>(null);
+  const [ultimoPath, setUltimoPath] = useState<string | null>(null);
+  const [matricula, setMatricula] = useState<InfoMatricula | null>(null);
   const enderecoPronto = endereco.cep.replace(/\D/g, "").length === 8 && !!endereco.rua.trim() && !!endereco.numero.trim();
+
+  async function conferir(path: string) {
+    setEnviando("conferindo");
+    const res = await fetch("/api/documentos/conferir", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ path, imovelId, endereco, operacao }),
+    });
+    const r = (await res.json().catch(() => ({}))) as { estado?: EstadoConferencia; motivos?: string[]; matricula?: InfoMatricula; error?: string };
+    if (!res.ok || !r.estado) throw new Error(r.error ?? "Não foi possível conferir o documento agora.");
+    setMatricula(r.matricula ?? null);
+    onResultado(r.estado, r.motivos ?? []);
+    if (r.matricula) onMatricula?.(r.matricula);
+  }
+
+  /** Botão da CAF (prompt 19): confirma a identidade e confere a MESMA matrícula de novo. Devolve o erro, se houver. */
+  async function confirmarIdentidade(): Promise<string | null> {
+    const res = await fetch("/api/caf/verify", { method: "POST" });
+    const r = (await res.json().catch(() => ({}))) as { error?: string };
+    if (!res.ok) return r.error ?? "Não foi possível confirmar sua identidade agora.";
+    if (!ultimoPath) return null;
+    try {
+      await conferir(ultimoPath);
+      return null;
+    } catch (e) {
+      return e instanceof Error ? e.message : "Não foi possível conferir o documento agora.";
+    } finally {
+      setEnviando(null);
+    }
+  }
 
   async function enviar(file: File | undefined) {
     if (!file) return;
@@ -57,15 +95,8 @@ export function DocumentoVinculo({
         onResultado("revisao", ["Modo de demonstração: o documento não foi gravado."]);
         return;
       }
-      setEnviando("conferindo");
-      const res = await fetch("/api/documentos/conferir", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ path: upJson.path, imovelId, endereco, operacao }),
-      });
-      const r = (await res.json().catch(() => ({}))) as { estado?: EstadoConferencia; motivos?: string[]; error?: string };
-      if (!res.ok || !r.estado) throw new Error(r.error ?? "Não foi possível conferir o documento agora.");
-      onResultado(r.estado, r.motivos ?? []);
+      setUltimoPath(upJson.path);
+      await conferir(upJson.path);
     } catch (e) {
       setErro(e instanceof Error ? e.message : "Não foi possível enviar o documento agora.");
     } finally {
@@ -86,6 +117,9 @@ export function DocumentoVinculo({
         ))}
       </ul>
       <p className="mt-1 text-xs text-muted">{FORMATOS_ACEITOS_TEXTO} No nome do proprietário e com o endereço do imóvel.</p>
+      <p className="mt-1 text-xs text-ink" data-testid="matricula-aviso-upload">
+        {MSG_MATRICULA.aviso_upload}
+      </p>
 
       {estado === "aprovado" && (
         <p className="mt-3 flex items-center gap-2 rounded-lg bg-green-50 px-3 py-2 text-sm font-medium text-green-900" data-testid="documento-estado" data-estado="aprovado">
@@ -107,7 +141,7 @@ export function DocumentoVinculo({
           <p className="mt-1 text-xs">Envie outro documento aqui mesmo.</p>
         </div>
       )}
-      {estado === "revisao" && (
+      {estado === "revisao" && !matricula && (
         <div className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900" data-testid="documento-estado" data-estado="revisao">
           <p className="flex items-center gap-2 font-semibold">
             <Clock className="h-4 w-4 shrink-0" /> Em revisão
@@ -118,6 +152,8 @@ export function DocumentoVinculo({
           </p>
         </div>
       )}
+
+      {matricula && <MatriculaResultado key={matricula.id} info={matricula} onConfirmarIdentidade={confirmarIdentidade} />}
 
       <label
         className={cn(

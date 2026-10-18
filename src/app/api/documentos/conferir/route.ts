@@ -5,7 +5,17 @@ import { consumirLimite, DIA } from "@/lib/limites";
 import { notify } from "@/lib/notifications";
 import { adminsPorAviso } from "@/lib/notifications/push-admins";
 import { tipoRealPorMagicBytes, DOC_MIME } from "@/lib/upload-limits";
-import { lerDocumento } from "@/lib/documento/conferidor";
+import { lerDocumento, lerMatricula, matriculaDoLaboratorio } from "@/lib/documento/conferidor";
+import {
+  camposParaGravar,
+  decidirMatricula,
+  estadoTelaDaMatricula,
+  preenchimentoDaMatricula,
+  resumoDoLaudo,
+  statusDaMatricula,
+  type LaudoCafGravado,
+} from "@/lib/documento/conferencia-matricula";
+import { integracoesSimuladas } from "@/lib/integracoes";
 import {
   decidirConferencia,
   rotuloEstado,
@@ -27,6 +37,11 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
  * Grava uma NOVA linha de qualificação com o cliente de serviço (o dono não grava status — 0060/0072/0152),
  * herdando as respostas da qualificação anterior do mesmo imóvel. A resposta nunca traz o que a IA leu (CPF,
  * nome, endereço): só o estado, os motivos e o checklist.
+ *
+ * Prompt 19 — MATRÍCULA: quando o arquivo é uma matrícula, a leitura é a completa (proprietários, ônus, unidade,
+ * área, vaga) e a decisão cruza com o laudo CAF da pessoa (src/lib/documento/conferencia-matricula.ts). A
+ * conferência fica em property_ownership_checks (0157, só dono e admin). Ao dono voltam só o resultado, a mensagem,
+ * as opções do caso e o que preenche o anúncio — nunca CPF, número da matrícula, cartório ou o ônus.
  */
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -75,7 +90,7 @@ export async function POST(request: Request) {
     .eq("document_hash_sha256", hash)
     .neq("owner_id", user.id);
 
-  const { data: perfil } = await admin.from("profiles").select("full_name").eq("id", user.id).maybeSingle();
+  const { data: perfil } = await admin.from("profiles").select("full_name, cpf, cnpj, is_teste").eq("id", user.id).maybeSingle();
   const cadastro: CadastroComparado = {
     nomeConta: (perfil?.full_name as string | null) ?? null,
     endereco: { cep: s(end.cep, 9), rua: s(end.rua, 150), numero: s(end.numero, 20), bairro: s(end.bairro, 100), cidade: s(end.cidade, 100) },
@@ -84,9 +99,11 @@ export async function POST(request: Request) {
     hoje: hojeBR(),
   };
 
-  const { leitura, conferidor, modelo } = await lerDocumento({ bytes, mime }, cadastro);
-  const r = decidirConferencia(leitura, cadastro);
   const agora = new Date();
+  const arquivo = { bytes, mime };
+  // Matrícula fictícia do laboratório vai direto para a leitura completa; no resto, a leitura do documento diz o tipo.
+  const lida = matriculaDoLaboratorio(bytes) ? null : await lerDocumento(arquivo, cadastro);
+  const ehMatricula = !lida || lida.leitura?.tipo === "matricula";
 
   // Respostas da qualificação anterior do mesmo imóvel (ou da que está à espera): a linha nova só troca o documento.
   const ultima = async (doImovel: string | null) => {
@@ -102,14 +119,85 @@ export async function POST(request: Request) {
     "document_review_reason", "document_reviewed_at", "document_reviewed_by", "conferencia", "conferido_por", "revisao_ate",
   ]) delete herdado[k];
 
+  const gravarQualificacao = (campos: Record<string, unknown>) =>
+    admin.from("qualification_checklists").insert({
+      ...herdado,
+      owner_id: user.id,
+      property_id: imovelId,
+      document_path: path,
+      document_hash_sha256: hash,
+      document_uploaded_at: agora.toISOString(),
+      ...campos,
+    });
+
+  if (ehMatricula) {
+    const perfilDono = { nome: (perfil?.full_name as string | null) ?? null, cpf: (perfil?.cpf as string | null) ?? null, cnpj: (perfil?.cnpj as string | null) ?? null };
+    const { leitura: mat, conferidor, modelo } = await lerMatricula(arquivo, { perfil: perfilDono, endereco: cadastro.endereco, hoje: cadastro.hoje });
+    // Laudo CAF mais recente da pessoa (90 dias). O simulado só vale no laboratório ou em conta de teste.
+    const { data: laudo } = await admin
+      .from("tenant_verifications")
+      .select("caf_result, traffic_light, valid_until, created_at")
+      .eq("tenant_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const caf = resumoDoLaudo((laudo as LaudoCafGravado | null) ?? null, agora, integracoesSimuladas() || perfil?.is_teste === true);
+    const d = decidirMatricula(mat, { perfil: perfilDono, caf, enderecoCadastro: cadastro.endereco, duplicado: cadastro.duplicado, hoje: cadastro.hoje });
+    const estado = estadoTelaDaMatricula(d.resultado);
+    const emRevisao = d.resultado === "em_revisao";
+
+    const { data: check, error: erroCheck } = await admin
+      .from("property_ownership_checks")
+      .insert({
+        property_id: imovelId,
+        user_id: user.id,
+        arquivo_path: path,
+        matricula_numero: mat?.numero ?? null,
+        cartorio: mat?.cartorio ?? null,
+        resultado: d.resultado,
+        motivo: d.motivo,
+        campos_extraidos: mat ? camposParaGravar(mat, d.comparacao) : {},
+        onus: mat?.onus ?? [],
+        caf_ok: caf.ok,
+        caf_simulado: caf.ok && (laudo?.caf_result as Record<string, unknown> | null)?.simulado === true,
+      })
+      .select("id")
+      .single();
+    const { error: erroQual } = await gravarQualificacao({
+      document_status: statusDaMatricula(d.resultado),
+      document_review_reason: d.resultado === "conferido" ? null : d.mensagem.slice(0, 500),
+      document_reviewed_at: emRevisao ? null : agora.toISOString(),
+      conferido_por: emRevisao ? null : "automatico",
+      revisao_ate: emRevisao ? new Date(agora.getTime() + REVISAO_PRAZO_HORAS * 3_600_000).toISOString() : null,
+      // Trilha de auditoria SEM dado pessoal: o detalhe da matrícula fica em property_ownership_checks (0157).
+      conferencia: { versao: 2, tipo: "matricula", resultado: d.resultado, motivo: d.motivo, caf_ok: caf.ok, conferidor, modelo, em: agora.toISOString() },
+    });
+    if (erroCheck || erroQual || !check) {
+      console.error("[conferir-matricula] falha ao gravar:", erroCheck?.message ?? erroQual?.message ?? "sem linha");
+      return NextResponse.json({ error: "Não foi possível salvar a conferência agora. Tente de novo." }, { status: 500 });
+    }
+    if (emRevisao || d.resultado === "provavel") await avisarAdmins();
+    return NextResponse.json({
+      estado,
+      rotulo: rotuloEstado(estado),
+      motivos: estado === "aprovado" ? [] : [d.mensagem],
+      matricula: {
+        id: check.id,
+        resultado: d.resultado,
+        motivo: d.motivo,
+        mensagem: d.mensagem,
+        opcoes: d.opcoes,
+        pedirCaf: d.pedirCaf,
+        avisos: d.avisos,
+        preenchimento: mat ? preenchimentoDaMatricula(mat) : null,
+      },
+    });
+  }
+
+  const { leitura, conferidor, modelo } = lida;
+  const r = decidirConferencia(leitura, cadastro);
   const motivosTexto = r.motivos.map((m) => m.texto).join(" · ").slice(0, 500) || null;
-  const { error: erroIns } = await admin.from("qualification_checklists").insert({
-    ...herdado,
-    owner_id: user.id,
-    property_id: imovelId,
-    document_path: path,
-    document_hash_sha256: hash,
-    document_uploaded_at: agora.toISOString(),
+  const { error: erroIns } = await gravarQualificacao({
     document_status: statusDoEstado(r.estado),
     document_review_reason: r.estado === "aprovado" ? null : motivosTexto,
     document_reviewed_at: r.estado === "revisao" ? null : agora.toISOString(),
@@ -133,25 +221,28 @@ export async function POST(request: Request) {
   }
 
   // Só os casos em revisão entram na fila: avisa os admins (sem dados do documento).
-  if (r.estado === "revisao") {
-    try {
-      const admins = await adminsPorAviso<{ email: string | null; full_name: string | null; notif_email: boolean | null }>(
-        "operacional",
-        "email, full_name, notif_email",
-      );
-      for (const a of admins) {
-        if (a.email && a.notif_email !== false) {
-          await notify({ event: "documento_recebido", email: a.email, name: a.full_name ?? undefined, pushUrl: "/admin/documentos" });
-        }
-      }
-    } catch {
-      /* best-effort */
-    }
-  }
+  if (r.estado === "revisao") await avisarAdmins();
 
   return NextResponse.json({
     estado: r.estado,
     rotulo: rotuloEstado(r.estado),
     motivos: r.motivos.map((m) => m.texto),
   });
+}
+
+/** Avisa a equipe de que há documento na fila (sem nenhum dado do documento). */
+async function avisarAdmins() {
+  try {
+    const admins = await adminsPorAviso<{ email: string | null; full_name: string | null; notif_email: boolean | null }>(
+      "operacional",
+      "email, full_name, notif_email",
+    );
+    for (const a of admins) {
+      if (a.email && a.notif_email !== false) {
+        await notify({ event: "documento_recebido", email: a.email, name: a.full_name ?? undefined, pushUrl: "/admin/documentos" });
+      }
+    }
+  } catch {
+    /* best-effort */
+  }
 }

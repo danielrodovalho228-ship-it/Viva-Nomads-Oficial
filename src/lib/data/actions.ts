@@ -4,7 +4,7 @@ import { gravarMarca } from "@/lib/marcas/servidor";
 import { perfilDonoCompleto, MSG_PERFIL_DONO_INCOMPLETO } from "@/lib/anuncio/perfil-dono";
 import { atualizarRascunhoDoDono } from "@/lib/data/rascunho-dono";
 import { camposDeConteudoDoRascunho } from "@/lib/data/rascunho-campos";
-import { ligarQualificacaoAoImovel } from "@/lib/data/ligar-qualificacao";
+import { ligarMatriculaAoImovel, ligarQualificacaoAoImovel } from "@/lib/data/ligar-qualificacao";
 import { caminhoDoDono, operacaoValida } from "@/lib/anuncio/operacao";
 import { revalidatePath } from "next/cache";
 import { revalidarAnuncio } from "@/lib/anuncio/revalidar";
@@ -1753,6 +1753,7 @@ export async function saveDraftData(snap: {
     if (!atualizou) return { ok: true, id: snap.id };
     await sincronizarFotos(supabase, snap.id, user.id, urlsDoRascunho(snap.data));
     await ligarQualificacaoAoImovel(supabase, user.id, snap.id);
+    await ligarMatriculaAoImovel(createAdminClient(), user.id, snap.id);
     return { ok: true, id: snap.id };
   }
   const { data, error } = await supabase.from("properties").insert(fields).select("id").single();
@@ -1760,6 +1761,7 @@ export async function saveDraftData(snap: {
   await sincronizarFotos(supabase, data.id as string, user.id, urlsDoRascunho(snap.data));
   // A qualificação enviada antes do rascunho passa a pertencer a ele (prontidão "Em análise", não "Não enviado").
   await ligarQualificacaoAoImovel(supabase, user.id, data.id as string);
+  await ligarMatriculaAoImovel(createAdminClient(), user.id, data.id as string);
   return { ok: true, id: data.id };
 }
 

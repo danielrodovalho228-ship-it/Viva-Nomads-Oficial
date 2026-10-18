@@ -72,6 +72,8 @@ import { capacidadeSugerida, consumoSugerido, mbpsValido } from "@/lib/anuncio/s
 import { NEGOCIACAO_PADRAO, normalizarNegociacao, type LimitesPrivados, type Negociacao } from "@/lib/anuncio/negociacao";
 import { cepValido, paraProximity, type LugarProximo } from "@/lib/proximidades/osm";
 import { estadoDoStatus, type EstadoDocumentoTela } from "@/components/anuncio/documento-vinculo";
+import type { InfoMatricula } from "@/components/anuncio/matricula-resultado";
+import type { PreenchimentoMatricula } from "@/lib/documento/conferencia-matricula";
 import { chaveLugar } from "@/components/anuncio/blocos-cadastro";
 import type { CampoSugerido } from "./tipos";
 import { EtapaOndeFica } from "./etapa-onde-fica";
@@ -115,6 +117,9 @@ export default function NewPropertyPage() {
   const [docStatus, setDocStatus] = useState<DocumentStatus>("approved");
   const [docEstado, setDocEstado] = useState<EstadoDocumentoTela>("nenhum");
   const [docMotivos, setDocMotivos] = useState<string[]>([]);
+  // Prompt 19: campos preenchidos pela matrícula (etiqueta "veio da matrícula") e o endereço dela, quando ≠ do CEP.
+  const [daMatricula, setDaMatricula] = useState<Set<string>>(() => new Set());
+  const [enderecoMatricula, setEnderecoMatricula] = useState<PreenchimentoMatricula["endereco"] | null>(null);
   const [step, setStep] = useState<number>(ORDEM_ETAPAS[0]);
   const pos = step;
   // Etapa mais avançada já visitada (bug 13 da L2): guardada no rascunho.
@@ -805,6 +810,43 @@ export default function NewPropertyPage() {
     setTimeout(() => document.querySelector<HTMLInputElement>('[data-testid="cadastro-numero"]')?.focus(), 0);
   }
 
+  /**
+   * Matrícula conferida (prompt 19): preenche o que estiver vazio — unidade (complemento), área e vagas — com a
+   * etiqueta "veio da matrícula" (tudo editável). Endereço diferente do CEP: só avisa e deixa o dono escolher.
+   */
+  function aplicarMatricula(m: InfoMatricula) {
+    const p = m.preenchimento;
+    if (!p) return;
+    const marcados = new Set(daMatricula);
+    if (p.unidade && !complemento.trim()) {
+      setComplemento(p.unidade.slice(0, 60));
+      marcados.add("complemento");
+    }
+    if (p.areaM2 && !((Number(areaM2) || 0) > 0)) {
+      setAreaM2(String(p.areaM2));
+      marcados.add("area");
+    }
+    if (p.vagas != null && !parkingSpots) {
+      setParkingSpots(String(p.vagas));
+      marcados.add("vagas");
+    }
+    setDaMatricula(marcados);
+    setEnderecoMatricula(m.avisos.some((a) => a.codigo === "endereco_diferente") ? p.endereco : null);
+  }
+
+  function usarEnderecoMatricula(usar: boolean) {
+    const e = enderecoMatricula;
+    setEnderecoMatricula(null);
+    if (!usar || !e) return;
+    if (e.cep) setCep(formatarCep(e.cep));
+    if (e.rua) setStreet(e.rua);
+    if (e.numero) setNumero(e.numero.slice(0, 20));
+    if (e.bairro) setNeighborhood(e.bairro);
+    if (e.cidade) setCity(e.cidade);
+    if (e.uf) setUf(e.uf.slice(0, 2));
+    setDaMatricula((atual) => new Set(atual).add("endereco"));
+  }
+
   /** Fotos pelo cartão da IA (passo 1) e pela barra do celular: sobem para a galeria do passo 2, com as mesmas regras. */
   async function adicionarFotos(files: File[]) {
     if (enviandoFotos) return;
@@ -1211,6 +1253,10 @@ export default function NewPropertyPage() {
                   setDocMotivos(m);
                   setDocStatus(e === "aprovado" ? "approved" : e === "corrija" ? "rejected" : e === "revisao" ? "pending" : "none");
                 }}
+                onMatricula={aplicarMatricula}
+                daMatricula={daMatricula}
+                enderecoMatricula={enderecoMatricula}
+                onEnderecoMatricula={usarEnderecoMatricula}
                 erros={erros}
               />
             )}
@@ -1231,6 +1277,7 @@ export default function NewPropertyPage() {
                 maxGuests={maxGuests}
                 setMaxGuests={setMaxGuests}
                 areaM2={areaM2}
+                daMatricula={daMatricula}
                 setAreaM2={setAreaM2}
                 parkingSpots={parkingSpots}
                 setParkingSpots={setParkingSpots}

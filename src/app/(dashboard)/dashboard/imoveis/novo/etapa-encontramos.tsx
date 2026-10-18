@@ -30,6 +30,8 @@ export function EtapaEncontramos(p: {
   maxGuests: string;
   setMaxGuests: (v: string) => void;
   areaM2: string;
+  /** Campos preenchidos pela matrícula (prompt 19). */
+  daMatricula?: Set<string>;
   setAreaM2: (v: string) => void;
   parkingSpots: string;
   setParkingSpots: (v: string) => void;
@@ -87,11 +89,11 @@ export function EtapaEncontramos(p: {
           <input type="number" min={1} value={p.maxGuests} onChange={campo("capacidade", p.setMaxGuests)} className="input" placeholder="Ex.: 2" data-testid="cadastro-capacidade" />
           <Erro msg={p.erros.capacidade} />
         </Labeled>
-        <Labeled label="Área (m²)">
+        <Labeled label="Área (m²)" daMatricula={p.daMatricula?.has("area")}>
           <input type="number" min={0} value={p.areaM2} onChange={(e) => p.setAreaM2(e.target.value)} className="input" data-testid="cadastro-area" />
           <Erro msg={p.erros.area} />
         </Labeled>
-        <Labeled label="Vagas">
+        <Labeled label="Vagas" daMatricula={p.daMatricula?.has("vagas")}>
           <input type="number" min={0} value={p.parkingSpots} onChange={(e) => p.setParkingSpots(e.target.value)} className="input" />
         </Labeled>
       </div>
