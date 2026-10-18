@@ -125,8 +125,11 @@ test.describe("T14 — Modo app", () => {
         await page.getByRole("link", { name: /Caixa dos Sócios/ }).first().click();
         await expect(page).toHaveURL(/\/admin\/socios/, { timeout: 5_000 });
       }).toPass({ timeout: 30_000 });
-      await page.getByRole("button", { name: "Voltar" }).click();
-      await expect(page).toHaveURL(/\/admin\/?$/);
+      // Mesmo cuidado do toque acima: o Voltar pode ser tocado antes da hidratação do cabeçalho do app.
+      await expect(async () => {
+        await page.getByRole("button", { name: "Voltar" }).click();
+        await expect(page).toHaveURL(/\/admin\/?$/, { timeout: 5_000 });
+      }).toPass({ timeout: 30_000 });
       await expect(page.getByTestId("admin-outras-areas").getByRole("link", { name: "Documentos" })).toBeVisible();
       const sobra = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       expect(sobra).toBeLessThanOrEqual(0);
