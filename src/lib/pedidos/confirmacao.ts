@@ -1,6 +1,6 @@
 /*
   Pedido de moradia: só chega aos proprietários depois de e-mail E telefone confirmados
-  (ordem 8dca1437, item 3). Módulo PURO. A regra do mural vale no banco (migração 0157);
+  (ordem 8dca1437, item 3). Módulo PURO. A regra do mural vale no banco (migração 0160);
   aqui ficam o critério usado pelos avisos e o texto da tela.
 */
 

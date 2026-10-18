@@ -52,7 +52,8 @@ test.describe("T93 — Tela de avaliações recebidas (responder, pedir revisão
       await cartao.getByTestId("avaliacao-responder").click();
       await cartao.getByLabel(/sua resposta/i).fill(`Obrigado pela estadia ${marca}`);
       await cartao.getByTestId("avaliacao-enviar").click();
-      await expect(cartao.getByTestId("avaliacao-resposta")).toContainText(`Obrigado pela estadia ${marca}`);
+      // A resposta grava no servidor e a tela recarrega: no lab lento passa de 10 s. Se não vier, mostra o que a tela disse.
+      await expect(cartao.getByTestId("avaliacao-resposta"), `alerta da tela: ${await cartao.getByRole("alert").allTextContents()}`).toContainText(`Obrigado pela estadia ${marca}`, { timeout: 30_000 });
 
       // 2) Pede revisão pela tela.
       await cartao.getByTestId("avaliacao-pedir-revisao").click();

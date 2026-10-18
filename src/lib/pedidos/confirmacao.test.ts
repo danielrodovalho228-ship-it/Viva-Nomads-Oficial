@@ -35,16 +35,16 @@ test("o aviso da tela explica a regra sem prometer o que não acontece", () => {
   assert.doesNotMatch(AVISO_CONFIRMACAO, /aluguel|comiss|corretag|intermedia/i);
 });
 
-test("migração 0157: o mural só lista pedido de quem confirmou e-mail e telefone", () => {
-  const sql = readFileSync(new URL("../../../supabase/migrations/0157_pedidos_contato_confirmado.sql", import.meta.url), "utf8");
+test("migração 0160: o mural só lista pedido de quem confirmou e-mail e telefone", () => {
+  const sql = readFileSync(new URL("../../../supabase/migrations/0160_pedidos_contato_confirmado.sql", import.meta.url), "utf8");
   assert.match(sql, /email_confirmed_at is not null/);
   assert.match(sql, /phone_confirmed_at is not null/);
   assert.match(sql, /telefone_verificacao/);
-  const aplicar = readFileSync(new URL("../../../supabase/producao/aplicar-0157.sql", import.meta.url), "utf8");
+  const aplicar = readFileSync(new URL("../../../supabase/producao/aplicar-0160.sql", import.meta.url), "utf8");
   assert.match(aplicar, /^begin;/m);
   assert.match(aplicar, /commit;\s*$/);
-  assert.match(aplicar, /20261018000157/);
+  assert.match(aplicar, /20261018000160/);
   assert.match(aplicar, /not exists \(select 1 from supabase_migrations\.schema_migrations/);
-  const volta = readFileSync(new URL("../../../supabase/producao/rollback/0157_rollback.sql", import.meta.url), "utf8");
-  assert.match(volta, /delete from supabase_migrations\.schema_migrations where version = '20261018000157'/);
+  const volta = readFileSync(new URL("../../../supabase/producao/rollback/0160_rollback.sql", import.meta.url), "utf8");
+  assert.match(volta, /delete from supabase_migrations\.schema_migrations where version = '20261018000160'/);
 });

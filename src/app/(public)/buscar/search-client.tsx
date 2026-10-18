@@ -25,6 +25,7 @@ import { LocationSearch } from "@/components/location-search";
 import type { GeoSuggestion } from "@/lib/integrations/geocoding";
 import { PROPERTY_TYPES } from "@/lib/amenities";
 import { registrarEvento } from "@/lib/eventos/registrar";
+import { ConviteCidade } from "@/components/cidades/convite-cidade";
 import { chaveCidade } from "@/lib/cidades";
 import { FAIXAS, GARANTIAS_FAIXA, GARANTIAS_PUBLICAS, CAUCAO_PARCELADA_UI } from "@/lib/faixas";
 import { SELO_NF_UI } from "@/lib/flags";
@@ -1009,6 +1010,7 @@ export function SearchClient({ properties: imoveis, topo }: { properties: Proper
                   ? `Ainda não temos imóvel para essa busca em ${locationQuery.trim()}.`
                   : "Ainda não há imóveis para esta busca"}
               </p>
+              <ConviteCidade texto={locationQuery} />
               {/* Zero resultado vira PORTA do Pedido de Moradia (Fase 4). */}
               {PEDIDO_MORADIA_ON ? (
                 <>

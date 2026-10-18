@@ -130,7 +130,7 @@ async function carregarPedido(admin: Admin, pedidoId: string): Promise<PedidoRes
 
 /**
  * O inquilino confirmou e-mail E telefone? Sem isso o pedido não chega aos donos (ordem 8dca1437, item 3;
- * o mural já esconde o pedido pela migração 0157). Falha fechada: na dúvida, não avisa.
+ * o mural já esconde o pedido pela migração 0160). Falha fechada: na dúvida, não avisa.
  */
 export async function inquilinoConfirmouContato(admin: Admin, inquilinoId: string): Promise<boolean> {
   try {

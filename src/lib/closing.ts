@@ -23,6 +23,14 @@ export interface CafResult {
   notes: string[];
   coversForeigners: boolean; // CRNM/RNE
   demo?: boolean; // laudo de demonstração (sem verificação real rodando)
+  /** Laudo simulado (laboratório ou conta de teste): só vale fora de uma conta real em produção. */
+  simulado?: boolean;
+  /** O nome/CPF do documento lido pela CAF (OCR) batem com o perfil? Só o resultado; o OCR não é gravado. */
+  ocrConfere?: boolean | null;
+  /** O nome da consulta à Receita bate com o perfil? */
+  receitaConfere?: boolean | null;
+  /** A transação ainda está em análise na CAF. */
+  pendente?: boolean;
 }
 
 export const TRAFFIC_LIGHT_META: Record<

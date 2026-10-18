@@ -25,7 +25,7 @@ import {
   type Ronda,
   type StatusAgente,
 } from "@/lib/agentes/central";
-import { decidirEnvio, dividirResposta, estaNoFim, horaCurta, lerTextoSimples, textoFeito } from "@/lib/agentes/conversa";
+import { decidirEnvio, dividirResposta, estaNoFim, horaCurta, lerTextoSimples, moverTrocaParaAgente, textoFeito } from "@/lib/agentes/conversa";
 import { COR_RONDA_HEX, achadosDaPrioridade, corDaRonda, indicadores, mesclarConversas, proximaDoAgente, resumoCurto, rondaRecente, ultimaPorAgente } from "@/lib/agentes/painel";
 import { deixarOrdem, type ChamadoVermelho, type DadosCentral } from "@/lib/data/agentes-actions";
 import { AvatarAgente } from "@/components/admin/agentes/avatar";
@@ -704,7 +704,12 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
         const o = await deixarOrdem(alvo.slug, pergunta);
         feito = o.ok ? textoFeito(alvo.nome, false, new Date().toISOString()) : (o.erro ?? "Não consegui registrar a ordem agora.");
       }
-      setExtra((e) => [...e, ...passos, { ...resposta, texto: feito }]);
+      const troca = [...passos, { ...resposta, texto: feito }];
+      setExtra((e) => {
+        const todas = [...e, ...troca];
+        // Se o chat vai para o agente alvo, a troca deste pedido vai junto (senão o balão some).
+        return alvo.slug !== slug ? moverTrocaParaAgente(todas, [`p-${agoraIso}`, ...troca.map((m) => m.id)], alvo.slug) : todas;
+      });
       if (alvo.slug !== slug) setSlug(alvo.slug);
       startTransition(() => router.refresh());
     } catch {

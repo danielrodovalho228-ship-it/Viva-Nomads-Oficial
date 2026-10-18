@@ -102,7 +102,7 @@ const nextConfig: NextConfig = {
               // mapbox-gl; endurecer com nonce é um próximo passo.
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com",
               "worker-src 'self' blob:",
-              "connect-src 'self' https://*.supabase.co https://api.mapbox.com https://events.mapbox.com https://viacep.com.br",
+              "connect-src 'self' https://*.supabase.co https://api.mapbox.com https://events.mapbox.com https://viacep.com.br https://brasilapi.com.br",
               "frame-src 'self' https://player.vimeo.com https://www.youtube.com https://challenges.cloudflare.com",
             ].join("; "),
           },

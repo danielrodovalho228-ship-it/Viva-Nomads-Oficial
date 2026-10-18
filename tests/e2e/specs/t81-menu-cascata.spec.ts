@@ -17,6 +17,7 @@ test.describe("T81 — dono (já anunciou)", () => {
   test.use({ storageState: authFile("proprietario") });
 
   test("grupos de dono no mesmo menu; grupo da tela atual abre sozinho", async ({ page }) => {
+    test.setTimeout(120_000); // duas navegações com networkidle no servidor frio do laboratório
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/dashboard", { waitUntil: "networkidle" });
     await expect.poll(() => topo(page)).toEqual([

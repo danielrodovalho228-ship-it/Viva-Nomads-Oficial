@@ -10,6 +10,7 @@ import { CampoData } from "@/components/ui/campo-data";
 import { MOTIVOS, isMotivo, contemContato, CONTATO_AVISO, calcExpiraEm, PRAZO_MAX_MESES } from "@/lib/pedidos/pedidos";
 import { CHAVE_ULTIMA_BUSCA, CHAVE_ULTIMO_MOTIVO, ultimaBuscaParaPedido, ultimoMotivoParaPedido } from "@/lib/marcas/regra";
 import { MUNICIPIOS } from "@/lib/municipios";
+import { ConviteCidade } from "@/components/cidades/convite-cidade";
 import {
   APRESENTACAO_MAX,
   buscarCidades,
@@ -372,6 +373,7 @@ function PedidoForm() {
             }}
             escolhida={Boolean(cidadeUf)}
           />
+          <ConviteCidade texto={textoCidade} />
           <div className="grid gap-4 sm:grid-cols-2 [&>*]:min-w-0">
             <div>
               <Rotulo htmlFor="pedido-data">Data de entrada</Rotulo>

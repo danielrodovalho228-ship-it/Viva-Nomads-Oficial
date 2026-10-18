@@ -25,7 +25,7 @@ for (const largura of [390, 1280]) {
 }
 
 // Ordem 8dca1437, item 3: o formulário avisa, antes de publicar, que o pedido só chega aos proprietários com
-// e-mail e telefone confirmados (a regra em si vale no banco, migração 0157).
+// e-mail e telefone confirmados (a regra em si vale no banco, migração 0160).
 for (const largura of [390, 1280]) {
   test(`${largura} px: o formulário avisa que o pedido só chega aos proprietários com e-mail e telefone confirmados`, async ({ page }) => {
     await page.setViewportSize({ width: largura, height: 900 });

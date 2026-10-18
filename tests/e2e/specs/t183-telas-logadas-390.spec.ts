@@ -46,9 +46,9 @@ async function semRolagemLateral(page: Page, largura: number): Promise<string[]>
 
 async function temH1(page: Page): Promise<string[]> {
   // O painel abre com o esqueleto do loading.tsx (sem h1) e troca pela tela quando os dados chegam.
-  await page.locator("h1:visible").first().waitFor({ timeout: 15_000 }).catch(() => {});
+  await page.locator("h1:visible").first().waitFor({ timeout: 30_000 }).catch(() => {});
   const visiveis = await page.locator("h1:visible").count();
-  return visiveis > 0 ? [] : ["sem h1 visível"];
+  return visiveis > 0 ? [] : [`sem h1 visível (rota final ${new URL(page.url()).pathname})`];
 }
 
 /** Elementos que passam da largura da tela sem estar dentro de um contêiner que rola/corta na horizontal. */
@@ -119,10 +119,17 @@ async function ultimoControleLivre(page: Page): Promise<string[]> {
       if ((s.overflowY === "auto" || s.overflowY === "scroll") && n.scrollHeight > n.clientHeight + 1) n.scrollTop = n.scrollHeight;
     }
     // A tela pode ter crescido depois da 1ª rolagem (blocos que carregam depois, ex.: Conta): rola a janela de novo.
+    // No lab lento a Conta ainda cresce depois de 600 ms: rola até a altura ficar parada por ~900 ms (máx. 8 s).
+    let alturaAnterior = -1;
+    let paradaVezes = 0;
+    for (let i = 0; i < 40 && paradaVezes < 3; i++) {
+      window.scrollTo(0, document.documentElement.scrollHeight);
+      await new Promise((ok) => setTimeout(ok, 200));
+      const altura = document.documentElement.scrollHeight;
+      paradaVezes = altura === alturaAnterior ? paradaVezes + 1 : 0;
+      alturaAnterior = altura;
+    }
     window.scrollTo(0, document.documentElement.scrollHeight);
-    await new Promise((ok) => setTimeout(ok, 400));
-    window.scrollTo(0, document.documentElement.scrollHeight);
-    await new Promise((ok) => setTimeout(ok, 200));
     const r = ultimo.getBoundingClientRect();
     const nome = (ultimo.textContent || ultimo.getAttribute("aria-label") || ultimo.getAttribute("name") || ultimo.tagName).trim().replace(/\s+/g, " ").slice(0, 40);
     const y = r.top + r.height / 2;

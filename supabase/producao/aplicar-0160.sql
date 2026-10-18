@@ -1,12 +1,8 @@
--- 0157 — Pedido de moradia só aparece para os proprietários depois de e-mail E telefone confirmados
--- (ordem 8dca1437, item 3 do pacote "Próximo do FF" 3/6).
---
--- public.pedidos_publicos_lista() (base do mural e da view pedidos_publicos) passa a listar só pedidos
--- cujo inquilino tem e-mail confirmado (auth.users.email_confirmed_at), telefone confirmado
--- (auth.users.phone_confirmed_at) E a verificação registrada pela Viva (telefone_verificacao.verificado_em,
--- que zera ao trocar de número). Nada mais muda: mesmas colunas, mesma função security definer com
--- search_path fixo, mesmas permissões da 0083. O inquilino continua vendo o próprio pedido em
--- pedidos_moradia. Reaplicar é seguro.
+-- Viva Nomads — aplicar 0160 (pedido de moradia só chega aos proprietários com e-mail e telefone confirmados). Idempotente.
+-- Aplicada pela Action quando o PR é mesclado (o merge é a aprovação do Daniel).
+-- Rollback: supabase/producao/rollback/0160_rollback.sql.
+begin;
+set local lock_timeout = '5s';
 
 create or replace function public.pedidos_publicos_lista()
 returns table (
@@ -46,3 +42,9 @@ as $$
 $$;
 revoke all on function public.pedidos_publicos_lista() from public, anon;
 grant execute on function public.pedidos_publicos_lista() to authenticated, service_role;
+
+insert into supabase_migrations.schema_migrations (version, name, statements, created_by)
+select '20261018000160', '0160_pedidos_contato_confirmado',
+       array['-- conteúdo em supabase/migrations/0160_pedidos_contato_confirmado.sql'], 'danielrodovalho228@gmail.com'
+ where not exists (select 1 from supabase_migrations.schema_migrations where version = '20261018000160');
+commit;
