@@ -139,8 +139,9 @@ export function avisoAssinatura(papel: PapelContrato, a: { proprietario: string 
   const eu = papel === "inquilino" ? a.inquilino : a.proprietario;
   const outro = papel === "inquilino" ? a.proprietario : a.inquilino;
   if (eu && outro) return "As duas partes assinaram.";
-  if (eu) return "Você já assinou — falta o outro assinar.";
-  if (outro) return "O outro já assinou — falta você assinar.";
+  const nomeOutro = papel === "inquilino" ? "proprietário" : "inquilino";
+  if (eu) return `Você já assinou — falta o ${nomeOutro} assinar.`;
+  if (outro) return `O ${nomeOutro} já assinou — falta você assinar.`;
   return "Nenhuma assinatura ainda.";
 }
 
