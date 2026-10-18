@@ -197,3 +197,138 @@ test("regra antiga (1º mês) × nova (valor total) lado a lado", () => {
   assert.equal(comparativoRegraComissao(1, 3000, 0.12).diferenca, 0); // 1 mês: as regras coincidem
   assert.equal(comparativoRegraComissao(99, 3000, 0.12).meses, MESES_MEDIOS_CONTRATO); // inválido → padrão
 });
+
+// ── Prompt 21: receitas adicionais, ROI e "de onde vem cada contrato" ────────
+import { roi, receitaPorContrato, FONTES } from "./projecao.ts";
+import { RECEITAS_ADICIONAIS, VERIFICACAO, SAIDA_DONOS_MES, FUNDADORES_REGRA, CENARIOS, INVESTIMENTO_INICIAL, CUSTOS_POR_CONTRATO, RODAPE_SOCIOS, SELO_PARECER } from "../../config/premissas-financeiras.ts";
+
+const BASE = { operador: 0 };
+
+test("p21 — tudo desligado: números idênticos aos de hoje (regressão) e todas as fontes novas em zero", () => {
+  const hoje = projetar("base", BASE);
+  const novo = projetar("base", { ...BASE, extras: [], ajustes: {}, fatorAdesao: 1 });
+  assert.deepEqual(novo.meses.map((m) => m.caixa), hoje.meses.map((m) => m.caixa));
+  assert.equal(novo.mesPayback, 14);
+  perto(novo.piorCaixa, -41321, "pior caixa");
+  for (const m of novo.meses) {
+    for (const k of ["receitaVerificacao", "receitaB2B", "receitaPublicamos", "receitaFerramentas", "descontoFundadores"] as const) assert.equal(m[k], 0, k);
+    assert.ok(Math.abs(m.receita - (m.receitaTaxa + m.receitaSeguros + m.receitaServicos)) < 1e-6);
+  }
+  assert.ok(RECEITAS_ADICIONAIS.every((e) => e.natureza === "desconto" || e.adesao > 0));
+});
+
+test("p21 — cada fonte ligada isolada soma o esperado no mês de início e zero antes", () => {
+  const base = projetar("base", BASE);
+  const c = (m: number) => base.meses[m - 1].contratos;
+  const donosNovos = CENARIOS.base.donosNovosMes;
+  const casos: [string, keyof (typeof base.meses)[0], number, (m: number) => number][] = [
+    ["verificacao_inquilino", "receitaVerificacao", 6, (m) => c(m) * VERIFICACAO.candidatosPorContrato * 0.4 * 44],
+    ["b2b_alocacao", "receitaB2B", 9, (m) => c(m) * 0.15 * 300],
+    ["publicamos_pago", "receitaPublicamos", 4, () => donosNovos * 0.2 * 150],
+  ];
+  for (const [id, campo, inicio, esperado] of casos) {
+    const p = projetar("base", { ...BASE, extras: [id] });
+    assert.equal(p.meses[inicio - 2][campo], 0, `${id} antes do início`);
+    assert.ok(Math.abs((p.meses[inicio - 1][campo] as number) - esperado(inicio)) < 1e-6, `${id} no mês ${inicio}`);
+    assert.ok(Math.abs(p.meses[inicio - 1].receita - (base.meses[inicio - 1].receita + esperado(inicio))) < 1e-6);
+  }
+});
+
+test("p21 — verificação desconta o custo da CAF no custo variável", () => {
+  const sem = projetar("base", BASE).meses[9];
+  const com = projetar("base", { ...BASE, extras: ["verificacao_inquilino"] }).meses[9];
+  const verificacoes = com.contratos * VERIFICACAO.candidatosPorContrato * 0.4;
+  const custoEsperado = sem.custoVariavel + verificacoes * VERIFICACAO.custoCaf + 0.06 * com.receitaVerificacao;
+  assert.ok(Math.abs(com.custoVariavel - custoEsperado) < 1e-6);
+  assert.equal(VERIFICACAO.custoCaf, 8);
+});
+
+test("p21 — ferramentas: assinantes acumulam sobre os donos ativos com saída de 3% ao mês (só a partir do mês 12)", () => {
+  const p = projetar("base", { ...BASE, extras: ["ferramentas_fora"] });
+  let ativos = 0;
+  for (const m of p.meses) {
+    ativos = ativos * (1 - SAIDA_DONOS_MES) + CENARIOS.base.donosNovosMes;
+    assert.ok(Math.abs(m.donosAtivos - ativos) < 1e-9);
+    const esperado = m.m >= 12 ? ativos * 0.05 * 39 : 0;
+    assert.ok(Math.abs(m.receitaFerramentas - esperado) < 1e-9, `mês ${m.m}`);
+  }
+  assert.ok(p.meses[35].receitaFerramentas > p.meses[12].receitaFerramentas, "recorrente cresce com a base");
+});
+
+test("p21 — fundadores reduzem a taxa só para os 50 primeiros donos e só por 6 meses", () => {
+  const sem = projetar("base", BASE);
+  const com = projetar("base", { ...BASE, extras: ["fundadores"] });
+  // 5 donos novos/mês a partir do mês 4 → 50 fundadores entram nos meses 4..13; o último sai da janela no mês 18.
+  assert.equal(com.meses[2].descontoFundadores, 0);
+  assert.ok(com.meses[3].descontoFundadores < 0);
+  const ultimoMesComDesconto = Math.max(...com.meses.filter((m) => m.descontoFundadores < 0).map((m) => m.m));
+  assert.equal(ultimoMesComDesconto, 4 + FUNDADORES_REGRA.donos / CENARIOS.base.donosNovosMes - 1 + FUNDADORES_REGRA.meses - 1);
+  for (const m of com.meses.slice(ultimoMesComDesconto)) assert.equal(m.descontoFundadores, 0);
+  // Nunca maior que a diferença de taxa (12% → 8%) sobre a receita da taxa do mês.
+  for (const m of com.meses) assert.ok(-m.descontoFundadores <= m.receitaTaxa * (0.12 - 0.08) / 0.12 + 1e-6);
+  assert.ok(com.anos[0].receita < sem.anos[0].receita);
+  assert.equal(com.anos[2].receita, sem.anos[2].receita);
+});
+
+test("p21 — roi() bate com a conta à mão", () => {
+  const p = projetar("base", BASE);
+  const inv = Math.abs(p.piorCaixa);
+  for (const n of [12, 24, 36]) assert.ok(Math.abs(roi(p, n)! - ((p.meses[n - 1].caixa + inv) / inv - 1)) < 1e-12);
+  // Caso pequeno: pior caixa −100, caixa no mês 1 = 50 → (50 + 100) / 100 − 1 = 0,5.
+  const pequeno = { meses: [{ caixa: 50 }], piorCaixa: -100 } as unknown as Parameters<typeof roi>[0];
+  assert.equal(roi(pequeno, 1), 0.5);
+  assert.equal(roi({ ...pequeno, piorCaixa: 0 } as typeof pequeno, 1), null);
+  assert.ok(INVESTIMENTO_INICIAL > 0);
+});
+
+test("p21 — receita por contrato separa as fontes e soma o total; ligar tudo sobe a receita por contrato", () => {
+  const so = receitaPorContrato(BASE);
+  assert.ok(Math.abs(so.receitaTaxa - 1555.2) < 1e-6);
+  assert.equal(so.total, so.receitaTaxa);
+  const tudo = receitaPorContrato({ ...BASE, parceiros: PARCEIROS.map((p) => p.id), extras: RECEITAS_ADICIONAIS.map((e) => e.id) });
+  const soma = FONTES.reduce((s, f) => s + (tudo[f.campo] as number), 0);
+  assert.ok(Math.abs(tudo.total - soma) < 1e-6);
+  assert.ok(tudo.total > so.total + 100, "meta: + R$ 100 a 300 por contrato");
+});
+
+test("p21 — sensibilidade: metade da adesão atrasa (ou mantém) o payback; o dobro adianta (ou mantém)", () => {
+  const tudo = { ...BASE, parceiros: PARCEIROS.map((p) => p.id), extras: RECEITAS_ADICIONAIS.map((e) => e.id) };
+  const pay = (f: number) => projetar("base", { ...tudo, fatorAdesao: f }).mesPayback ?? 99;
+  assert.ok(pay(0.5) >= pay(1) && pay(1) >= pay(2));
+});
+
+test("p21 — premissas: seguro-fiança acompanha a duração editável; CAF sob orçamento; selos e rodapé", () => {
+  const fianca = PARCEIROS.find((p) => p.id === "seguro_fianca")!;
+  const r3 = parceirosPorContrato({ ...BASE, parceiros: ["seguro_fianca"] });
+  const r4 = parceirosPorContrato({ ...BASE, parceiros: ["seguro_fianca"], mesesContrato: 4 });
+  assert.equal(fianca.valorUnidade, 1080);
+  assert.ok(Math.abs(r4 - r3 * 4 / 3) < 0.5);
+  assert.match(CUSTOS_POR_CONTRATO[0].obs!, /^CAF — sob orçamento \(Didit como referência de preço/);
+  assert.equal(SELO_PARECER, "aguarda parecer jurídico");
+  assert.deepEqual(RECEITAS_ADICIONAIS.filter((e) => e.aguardaParecer).map((e) => e.id), ["verificacao_inquilino", "fundadores"]);
+  assert.equal(RODAPE_SOCIOS[0], "Potencial — parcerias e produtos sem contrato assinado ou sem parecer jurídico não são receita garantida");
+  assert.equal(RODAPE_SOCIOS[2], "Premissas de out/2026");
+});
+
+import { fraseResumo, sensibilidadeAdesao, FATORES_ADESAO } from "./projecao.ts";
+
+test("p21 — sensibilidadeAdesao devolve ×0,5 / ×1 / ×2 com o payback de cada um", () => {
+  const tudo = { ...BASE, parceiros: PARCEIROS.map((p) => p.id), extras: RECEITAS_ADICIONAIS.map((e) => e.id) };
+  const s = sensibilidadeAdesao("base", tudo);
+  assert.deepEqual(s.map((x) => x.fator), [...FATORES_ADESAO]);
+  assert.equal(s[1].mesPayback, projetar("base", tudo).mesPayback);
+  assert.equal(s[0].mesPayback, projetar("base", { ...tudo, fatorAdesao: 0.5 }).mesPayback);
+});
+
+test("p21 — frase do topo: só taxa quando nada está ligado; compara as duas quando há receitas ligadas", () => {
+  const so = projetar("base", BASE);
+  const f0 = fraseResumo("Base", so, so, 0);
+  assert.match(f0, /^Cenário Base, só com a taxa de serviço: a Viva precisa de até R\$ [\d.,]+ mil/);
+  assert.match(f0, /retorno é de -?[\d.]+%/);
+  assert.doesNotMatch(f0, /comiss|aluguel|garantia/i);
+  const tudo = projetar("base", { ...BASE, parceiros: PARCEIROS.map((p) => p.id), extras: RECEITAS_ADICIONAIS.map((e) => e.id) });
+  const f1 = fraseResumo("Base", so, tudo, 13);
+  assert.match(f1, /com 13 receitas adicionais ligadas \(potencial\)/);
+  assert.match(f1, /o retorno vai de -?[\d.]+% para -?[\d.]+%/);
+  if (tudo.mesPayback !== null) assert.ok(f1.includes(`se paga no mês ${tudo.mesPayback}`));
+});

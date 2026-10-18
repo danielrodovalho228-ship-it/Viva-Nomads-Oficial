@@ -42,7 +42,7 @@ export const CONTRATOS_MES_CENARIOS = [10, 20, 40] as const;
 
 // ── Custos variáveis por contrato ───────────────────────────────────────────
 export const CUSTOS_POR_CONTRATO: Item[] = [
-  { rotulo: "Identidade do inquilino (documento, prova de vida, rosto)", valor: 2, unidade: "R$/contrato", fonte: "https://didit.me/pricing", obs: "Didit ≈ US$ 0,33; 500 grátis/mês. CAF sob orçamento." },
+  { rotulo: "Identidade do inquilino (documento, prova de vida, rosto)", valor: 2, unidade: "R$/contrato", fonte: "https://didit.me/pricing", obs: "CAF — sob orçamento (Didit como referência de preço: ≈ US$ 0,33; 500 grátis/mês)." },
   { rotulo: "Antifraude / consulta de CPF", valor: 0, unidade: "R$/contrato", obs: "Opcional, só no aceite: ≈ R$ 10 por consulta, sob orçamento." },
   { rotulo: "Assinatura eletrônica (contrato + termo de entrega)", valor: 6, unidade: "R$/contrato", fonte: "https://zapsign.co/plans-and-prices", obs: "≈ R$ 3 por documento além dos 50 do plano." },
   { rotulo: "Cobrança da taxa de serviço (Pix + aviso)", valor: 3, unidade: "R$/contrato", fonte: "https://www.asaas.com/precos-e-taxas", obs: "Pix R$ 1,99 + aviso R$ 0,99." },
@@ -127,6 +127,8 @@ export type ParceiroStatus = "sem parceiro" | "em conversa" | "em estudo";
 
 export interface Parceiro {
   id: string;
+  /** Prêmio que depende da duração do contrato: prêmio = baseMensal × meses do contrato (a mesma premissa da tela). */
+  premioPorMes?: number;
   nome: string;
   /** "seguro": receita = prêmio × % do representante; "servico": receita fixa por unidade. */
   tipo: "seguro" | "servico";
@@ -160,6 +162,7 @@ export const PARCEIROS: Parceiro[] = [
     nome: "Seguro-fiança",
     tipo: "seguro",
     valorUnidade: Math.round((ALUGUEL_MEDIO * MESES_MEDIOS_CONTRATO) / 12),
+    premioPorMes: ALUGUEL_MEDIO / 12,
     adesao: 0.1,
     unidadesPorContrato: 1,
     mesInicio: 9,
@@ -171,6 +174,7 @@ export const PARCEIROS: Parceiro[] = [
     nome: "Seguro de danos ao imóvel",
     tipo: "seguro",
     valorUnidade: 69 * MESES_MEDIOS_CONTRATO,
+    premioPorMes: 69,
     adesao: 0.1,
     unidadesPorContrato: 1,
     mesInicio: 9,
@@ -184,12 +188,134 @@ export const PARCEIROS: Parceiro[] = [
   { id: "mudanca", nome: "Mudança/frete", tipo: "servico", valorUnidade: 20, adesao: 0.05, unidadesPorContrato: 1, mesInicio: 6, status: "sem parceiro", detalhe: "Indicação." },
 ];
 
+/** Valor por unidade do parceiro para a duração do contrato (seguros proporcionais aos meses). */
+export function valorUnidadeParceiro(p: Parceiro, meses: number = MESES_MEDIOS_CONTRATO): number {
+  if (p.premioPorMes === undefined || meses === MESES_MEDIOS_CONTRATO) return p.valorUnidade;
+  return Math.round(p.premioPorMes * meses);
+}
+
 /** Receita do parceiro por contrato fechado (R$, antes do imposto). */
-export function receitaParceiroPorContrato(p: Parceiro, pctSeguro: number = REPRESENTANTE_SEGUROS.padrao): number {
+export function receitaParceiroPorContrato(p: Parceiro, pctSeguro: number = REPRESENTANTE_SEGUROS.padrao, meses: number = MESES_MEDIOS_CONTRATO): number {
   const pct = Math.min(REPRESENTANTE_SEGUROS.max, Math.max(REPRESENTANTE_SEGUROS.min, pctSeguro));
-  const porUnidade = p.tipo === "seguro" ? p.valorUnidade * pct : p.valorUnidade;
+  const valor = valorUnidadeParceiro(p, meses);
+  const porUnidade = p.tipo === "seguro" ? valor * pct : valor;
   return porUnidade * p.adesao * p.unidadesPorContrato;
 }
 
 /** Selo fixo da visão do investidor. */
 export const SELO_POTENCIAL = "Potencial — parcerias sem contrato assinado não são receita garantida";
+
+// ── Receitas adicionais: produtos da Viva (prompt 21, decisão do Daniel em 18/10) ─────
+/*
+  Regra que fica: taxa de serviço de 12/10/8/6% sobre o valor total do contrato; inquilino SEM taxa obrigatória.
+  Receitas extras aprovadas para ESTUDO (meta: + R$ 100 a 300 por contrato): todas desligadas por padrão, selo
+  "Potencial". As que dependem do parecer da Dra. Beatriz levam "aguarda parecer jurídico" (ordem 6f1b553a).
+  Números são premissas (sem fonte de mercado): editáveis na tela.
+*/
+export type GrupoReceita = "seguros" | "servicos" | "produtos";
+export const GRUPOS_RECEITA: { id: GrupoReceita; nome: string }[] = [
+  { id: "seguros", nome: "Seguros" },
+  { id: "servicos", nome: "Serviços de parceiros" },
+  { id: "produtos", nome: "Produtos da Viva" },
+];
+export const SELO_PARECER = "aguarda parecer jurídico";
+
+export type ReceitaAdicionalId = "verificacao_inquilino" | "b2b_alocacao" | "publicamos_pago" | "ferramentas_fora" | "fundadores";
+export interface ReceitaAdicional {
+  id: ReceitaAdicionalId;
+  nome: string;
+  /** Valor da unidade (R$). Fundadores: a taxa que os fundadores pagam (0..1). */
+  valor: number;
+  unidade: string;
+  /** Adesão (0..1) — a base muda por fonte (ver `base`). */
+  adesao: number;
+  /** Sobre o quê a adesão incide. */
+  base: "contratos" | "donos_novos" | "donos_ativos";
+  mesInicio: number;
+  status: "em estudo" | "aguarda parecer";
+  aguardaParecer: boolean;
+  /** Receita (ou desconto, no caso dos fundadores). */
+  natureza: "receita" | "desconto";
+  obs: string;
+}
+
+/** Verificação paga do inquilino: candidatos verificados por contrato fechado e custo da CAF por verificação. */
+export const VERIFICACAO = { candidatosPorContrato: 2, custoCaf: 8, custoCafTexto: "sob orçamento" } as const;
+/** Ferramentas fora da Viva: saída mensal da base de donos ativos. */
+export const SAIDA_DONOS_MES = 0.03;
+/** Fundadores: quantos donos e por quantos meses pagam a taxa reduzida. */
+export const FUNDADORES_REGRA = { donos: 50, meses: 6 } as const;
+
+export const RECEITAS_ADICIONAIS: ReceitaAdicional[] = [
+  {
+    id: "verificacao_inquilino",
+    nome: "Verificação paga e opcional do inquilino",
+    valor: 44,
+    unidade: "R$ por verificação",
+    adesao: 0.4,
+    base: "contratos",
+    mesInicio: 6,
+    status: "aguarda parecer",
+    aguardaParecer: true,
+    natureza: "receita",
+    obs: `Opcional, nunca condição para alugar. ${VERIFICACAO.candidatosPorContrato} candidatos por contrato fechado; menos o custo da CAF (R$ ${VERIFICACAO.custoCaf} por verificação, ${VERIFICACAO.custoCafTexto}).`,
+  },
+  {
+    id: "b2b_alocacao",
+    nome: "Empresas (alocação de funcionários)",
+    valor: 300,
+    unidade: "R$ por pessoa alocada",
+    adesao: 0.15,
+    base: "contratos",
+    mesInicio: 9,
+    status: "em estudo",
+    aguardaParecer: false,
+    natureza: "receita",
+    obs: "Taxa por pessoa alocada; adesão = parte dos contratos que vêm de empresas.",
+  },
+  {
+    id: "publicamos_pago",
+    nome: "\"Publicamos para você\" pago",
+    valor: 150,
+    unidade: "R$ por anúncio montado",
+    adesao: 0.2,
+    base: "donos_novos",
+    mesInicio: 4,
+    status: "em estudo",
+    aguardaParecer: false,
+    natureza: "receita",
+    obs: "Fotos de parceiro à parte; adesão = parte dos donos novos do mês.",
+  },
+  {
+    id: "ferramentas_fora",
+    nome: "Ferramentas para contratos fechados fora da Viva",
+    valor: 39,
+    unidade: "R$ por mês por assinante",
+    adesao: 0.05,
+    base: "donos_ativos",
+    mesInicio: 12,
+    status: "em estudo",
+    aguardaParecer: false,
+    natureza: "receita",
+    obs: `Única receita recorrente: assinantes = adesão × donos ativos (base acumulada com saída de ${Math.round(SAIDA_DONOS_MES * 100)}% ao mês).`,
+  },
+  {
+    id: "fundadores",
+    nome: "Promoção fundadores (custo, não receita)",
+    valor: 0.08,
+    unidade: "taxa paga pelos fundadores",
+    adesao: 1,
+    base: "donos_novos",
+    mesInicio: 4,
+    status: "aguarda parecer",
+    aguardaParecer: true,
+    natureza: "desconto",
+    obs: `Os ${FUNDADORES_REGRA.donos} primeiros donos pagam 8% em vez da faixa por ${FUNDADORES_REGRA.meses} meses: reduz a receita da taxa.`,
+  },
+];
+
+export const RODAPE_SOCIOS = [
+  "Potencial — parcerias e produtos sem contrato assinado ou sem parecer jurídico não são receita garantida",
+  "Estimativa para decidir, não é parecer contábil",
+  `Premissas de ${REFERENCIA}`,
+] as const;
