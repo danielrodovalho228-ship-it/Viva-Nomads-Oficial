@@ -175,3 +175,9 @@ export function progressoPerfil(
   const pct = Math.round((itens.filter((i) => i.feito).length / itens.length) * 100);
   return { itens, pct };
 }
+
+/** Página pública do proprietário: só indexa quando há imóvel visível (anúncio de teste não conta). */
+export function robotsDoProprietario(imoveisVisiveis: number): { index: boolean; follow: boolean } {
+  const indexar = imoveisVisiveis > 0;
+  return { index: indexar, follow: indexar };
+}

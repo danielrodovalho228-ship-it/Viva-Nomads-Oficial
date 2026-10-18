@@ -132,3 +132,10 @@ test("nomeNaConversa: proprietário vê 'Candidato(a)' até o aceite; inquilino 
   assert.equal(nomeNaConversa({ papel: "suporte", nomeCompleto: nome, aceito: false, primeiroNome: "Iara" }), "Iara");
   assert.equal(nomeNaConversa({ papel: "suporte", nomeCompleto: null, aceito: false }), "Conversa");
 });
+
+import { robotsDoProprietario } from "./perfil-publico.ts";
+
+test("proprietário sem imóvel visível (só anúncio de teste) fica noindex", () => {
+  assert.deepEqual(robotsDoProprietario(0), { index: false, follow: false });
+  assert.deepEqual(robotsDoProprietario(2), { index: true, follow: true });
+});
