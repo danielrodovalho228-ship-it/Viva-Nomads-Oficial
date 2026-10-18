@@ -49,14 +49,21 @@ test.describe("T93 — Tela de avaliações recebidas (responder, pedir revisão
       const cartao = page.getByTestId("avaliacao-recebida").filter({ hasText: marca });
       await expect(cartao).toBeVisible();
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-      await cartao.getByTestId("avaliacao-responder").click();
+      // O clique antes da hidratação não abre o formulário: repete o toque até o campo aparecer.
+      await expect(async () => {
+        await cartao.getByTestId("avaliacao-responder").click();
+        await expect(cartao.getByLabel(/sua resposta/i)).toBeVisible({ timeout: 3_000 });
+      }).toPass({ timeout: 30_000 });
       await cartao.getByLabel(/sua resposta/i).fill(`Obrigado pela estadia ${marca}`);
       await cartao.getByTestId("avaliacao-enviar").click();
       // A resposta grava no servidor e a tela recarrega: no lab lento passa de 10 s. Se não vier, mostra o que a tela disse.
       await expect(cartao.getByTestId("avaliacao-resposta"), `alerta da tela: ${await cartao.getByRole("alert").allTextContents()}`).toContainText(`Obrigado pela estadia ${marca}`, { timeout: 30_000 });
 
       // 2) Pede revisão pela tela.
-      await cartao.getByTestId("avaliacao-pedir-revisao").click();
+      await expect(async () => {
+        await cartao.getByTestId("avaliacao-pedir-revisao").click();
+        await expect(cartao.getByLabel("Motivo", { exact: true })).toBeVisible({ timeout: 3_000 });
+      }).toPass({ timeout: 30_000 });
       await cartao.getByLabel("Motivo", { exact: true }).selectOption("fato_falso");
       await cartao.getByLabel(/explique o motivo/i).fill(`O comentário cita um fato que não aconteceu ${marca}, tenho comprovação`);
       await cartao.getByTestId("avaliacao-enviar").click();
