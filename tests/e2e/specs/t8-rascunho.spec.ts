@@ -183,6 +183,8 @@ test.describe("T-RASC — Rascunho salva e retoma @criticos", () => {
       const botao = page.getByRole("button", { name: "Excluir rascunho" }).first();
       if (!(await botao.isVisible().catch(() => false))) break;
       await botao.click();
+      // Confirmação na página (adendo ao prompt 28): o 2º clique exclui.
+      await page.getByTestId("excluir-rascunho-confirmar").first().click();
       await page.waitForTimeout(600);
     }
     await context.close();

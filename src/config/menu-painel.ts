@@ -102,7 +102,9 @@ export function menuDoPainel(ctx: ContextoMenu): ItemMenu[] {
     // Prompt 28: contrato aguardando assinatura ainda não é locação — "Contratos" (com o número do que falta assinar)
     // e "Locações" (as ativas e as encerradas).
     { id: "contratos-inquilino", rotulo: "Contratos", icone: "contratos", href: "/dashboard/contratos" },
-    { id: "estadias", rotulo: "Locações", icone: "estadias", href: "/dashboard/locacoes" },
+    // Adendo ao prompt 28: o dono (tem imóvel) sem estadia própria não vê "Locações" — o lugar dele é
+    // "Contratos & blocos"; o inquilino continua vendo.
+    ...(ctx.temImovel && !ctx.estadiaAtiva ? [] : [{ id: "estadias" as const, rotulo: "Locações", icone: "estadias" as const, href: "/dashboard/locacoes" }]),
   ];
   if (ctx.estadiaAtiva)
     moradia.push({ id: "solicitacoes", rotulo: "Solicitações", icone: "solicitacoes", href: "/dashboard/solicitacoes" });

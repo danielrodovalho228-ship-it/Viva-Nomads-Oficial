@@ -8,6 +8,8 @@ import { exigirAdminAal2 } from "@/lib/data/admin-guard";
 import { ehAnuncioDeTeste } from "@/lib/data/anuncio-teste";
 import { planoDoProprietario } from "@/lib/data/plano-efetivo";
 import { COMISSAO_POR_PLANO } from "@/config/planos";
+import { logModeracao } from "@/lib/data/moderacao-log";
+import { ACOES_JORNADA } from "@/lib/jornada-teste";
 
 /*
   Prompt 28 — /admin › Dados de teste › "Nova jornada de teste". SÓ contas is_teste e anúncio [TESTE QA]:
@@ -16,9 +18,36 @@ import { COMISSAO_POR_PLANO } from "@/config/planos";
   uma jornada aberta (aceita, sem contrato ou com contrato ainda não assinado pelas duas partes), devolve o link dela.
 */
 
-export type ResultadoJornada = { ok: true; leadId: string; link: string; reaproveitada: boolean } | { ok: false; error: string };
+/** Os dados que a tela mostra depois do clique (adendo ao prompt 28): nunca termina sem texto. */
+export interface DetalheJornada {
+  leadId: string;
+  /** Número curto da candidatura (os 8 primeiros caracteres do id), para conferir nas telas. */
+  numero: string;
+  anuncio: string;
+  inquilino: string;
+  /** Quando a candidatura foi aceita (ISO). */
+  aceitaEm: string | null;
+  links: { fechamento: string; candidaturas: string; leads: string };
+}
+
+export type ResultadoJornada =
+  | ({ ok: true; reaproveitada: false; link: string } & DetalheJornada)
+  | ({ ok: true; reaproveitada: true; link: string; motivo: string } & DetalheJornada)
+  | { ok: false; error: string };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+
+function detalhe(leadId: string, anuncio: string, inquilino: string, aceitaEm: string | null): DetalheJornada {
+  return {
+    leadId,
+    numero: leadId.slice(0, 8),
+    anuncio,
+    inquilino,
+    aceitaEm,
+    links: { fechamento: `/dashboard/fechamento?c=${leadId}`, candidaturas: "/dashboard/candidaturas", leads: "/dashboard/leads" },
+  };
+}
 
 export async function novaJornadaDeTeste(input: { tenantId: string; propertyId: string }): Promise<ResultadoJornada> {
   if (!UUID.test(String(input.tenantId)) || !UUID.test(String(input.propertyId))) return { ok: false, error: "Escolha a conta e o anúncio de teste." };
@@ -29,13 +58,35 @@ export async function novaJornadaDeTeste(input: { tenantId: string; propertyId: 
     data: { user },
   } = await sessao.auth.getUser();
   if (!user || !(await exigirAdminAal2(sessao, user.id))) return { ok: false, error: "Só admin." };
+  const r = await jornada(admin, input);
+  // Log na página (moderacao_log): criada / reaproveitada / erro, com a mensagem.
+  if (r.ok) {
+    await logModeracao(
+      admin,
+      user.id,
+      r.reaproveitada ? ACOES_JORNADA.reaproveitada : ACOES_JORNADA.criada,
+      "lead",
+      r.leadId,
+      `${r.anuncio} · ${r.inquilino}${r.reaproveitada ? ` · ${r.motivo}` : ""}`.slice(0, 500),
+    );
+  } else {
+    await logModeracao(admin, user.id, ACOES_JORNADA.erro, "property", input.propertyId, r.error.slice(0, 500));
+  }
+  revalidatePath("/admin/dados-de-teste");
+  return r;
+}
 
+async function jornada(admin: NonNullable<ReturnType<typeof createAdminClient>>, input: { tenantId: string; propertyId: string }): Promise<ResultadoJornada> {
   const { data: imovel } = await admin.from("properties").select("id, title, owner_id").eq("id", input.propertyId).maybeSingle();
   if (!imovel || !ehAnuncioDeTeste(imovel.title as string)) return { ok: false, error: "Use um anúncio [TESTE QA]." };
-  const { data: perfis } = await admin.from("profiles").select("id, is_teste").in("id", [input.tenantId, imovel.owner_id as string]);
-  const teste = new Map(((perfis ?? []) as { id: string; is_teste: boolean | null }[]).map((p) => [p.id, p.is_teste === true]));
+  const { data: perfis } = await admin.from("profiles").select("id, is_teste, email, full_name").in("id", [input.tenantId, imovel.owner_id as string]);
+  const lista = (perfis ?? []) as { id: string; is_teste: boolean | null; email: string | null; full_name: string | null }[];
+  const teste = new Map(lista.map((p) => [p.id, p.is_teste === true]));
   if (!teste.get(input.tenantId) || !teste.get(imovel.owner_id as string)) return { ok: false, error: "Só contas de teste (is_teste) — inquilino e proprietário." };
   if (input.tenantId === imovel.owner_id) return { ok: false, error: "O inquilino não pode ser o dono do anúncio." };
+  const inq = lista.find((p) => p.id === input.tenantId);
+  const inquilino = inq?.email ?? inq?.full_name ?? input.tenantId;
+  const anuncio = (imovel.title as string) ?? "Anúncio";
 
   // Idempotente: jornada aberta (aceita e sem contrato assinado pelas duas partes) → devolve a mesma.
   const { data: aceitas } = await admin
@@ -45,10 +96,13 @@ export async function novaJornadaDeTeste(input: { tenantId: string; propertyId: 
     .eq("property_id", input.propertyId)
     .eq("status", "accepted")
     .order("accepted_at", { ascending: false });
-  for (const l of (aceitas ?? []) as { id: string }[]) {
+  for (const l of (aceitas ?? []) as { id: string; accepted_at: string | null }[]) {
     const { data: c } = await admin.from("contratos").select("assinado_proprietario_em, assinado_inquilino_em").eq("lead_id", l.id).maybeSingle();
     if (!c || !c.assinado_proprietario_em || !c.assinado_inquilino_em) {
-      return { ok: true, leadId: l.id, link: `/dashboard/fechamento?c=${l.id}`, reaproveitada: true };
+      const motivo = !c
+        ? "ela está aceita e ainda não tem contrato"
+        : "o contrato dela ainda não foi assinado pelas duas partes";
+      return { ok: true, reaproveitada: true, motivo, link: `/dashboard/fechamento?c=${l.id}`, ...detalhe(l.id, anuncio, inquilino, l.accepted_at) };
     }
   }
 
@@ -81,6 +135,5 @@ export async function novaJornadaDeTeste(input: { tenantId: string; propertyId: 
     });
     if (eDoc) return { ok: false, error: `Candidatura criada, mas os documentos fictícios falharam: ${eDoc.message}` };
   }
-  revalidatePath("/admin/dados-de-teste");
-  return { ok: true, leadId: lead.id as string, link: `/dashboard/fechamento?c=${lead.id}`, reaproveitada: false };
+  return { ok: true, reaproveitada: false, link: `/dashboard/fechamento?c=${lead.id}`, ...detalhe(lead.id as string, anuncio, inquilino, agora) };
 }

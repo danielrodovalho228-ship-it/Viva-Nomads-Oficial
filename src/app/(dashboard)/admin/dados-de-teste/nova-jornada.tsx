@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { dataHoraBrasilia } from "@/config/atendimento";
 import { novaJornadaDeTeste, type ResultadoJornada } from "@/lib/data/jornada-teste-actions";
 
 type Opcao = { id: string; rotulo: string };
@@ -17,11 +18,20 @@ export function NovaJornadaTeste({ inquilinos, anuncios }: { inquilinos: Opcao[]
   const [propertyId, setPropertyId] = useState(() => padrao(anuncios, "proprietario1"));
   const [ocupado, setOcupado] = useState(false);
   const [r, setR] = useState<ResultadoJornada | null>(null);
+  // Confirmação NA PÁGINA, em dois passos (adendo ao prompt 28): o window.confirm era cancelado no navegador
+  // automatizado do QA e o clique terminava sem nada na tela.
+  const [confirmando, setConfirmando] = useState(false);
 
   async function criar() {
-    if (!window.confirm("Criar uma nova jornada de teste (candidatura aceita, pronta para o Fechamento)? A candidatura e o contrato antigos ficam como histórico.")) return;
+    setConfirmando(false);
     setOcupado(true);
-    setR(await novaJornadaDeTeste({ tenantId, propertyId }).catch(() => ({ ok: false as const, error: "Não foi possível agora." })));
+    setR(null);
+    setR(
+      await novaJornadaDeTeste({ tenantId, propertyId }).catch((e: unknown) => ({
+        ok: false as const,
+        error: `Não foi possível agora: ${e instanceof Error ? e.message : String(e)}`,
+      })),
+    );
     setOcupado(false);
   }
 
@@ -47,22 +57,70 @@ export function NovaJornadaTeste({ inquilinos, anuncios }: { inquilinos: Opcao[]
           ))}
         </select>
       </label>
-      <Button variant="primary" onClick={criar} disabled={ocupado || !tenantId || !propertyId} data-testid="jornada-criar">
+      <Button variant="primary" onClick={() => setConfirmando(true)} disabled={ocupado || !tenantId || !propertyId} data-testid="jornada-criar">
         {ocupado ? "Criando..." : "Nova jornada de teste"}
       </Button>
+      {confirmando && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900" role="alertdialog" data-testid="jornada-confirmacao">
+          <p>
+            Cria uma candidatura nova do inquilino de teste, já aceita e pronta para o Fechamento, no anúncio [TESTE QA] escolhido. A candidatura e
+            o contrato antigos ficam como histórico.
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <Button variant="primary" size="sm" onClick={() => void criar()} data-testid="jornada-confirmar">
+              Confirmar e criar
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setConfirmando(false)} data-testid="jornada-cancelar">
+              Cancelar
+            </Button>
+          </div>
+        </div>
+      )}
+      {ocupado && (
+        <p className="text-sm text-muted" role="status" data-testid="jornada-criando">
+          Criando a jornada…
+        </p>
+      )}
       {r && !r.ok && (
-        <p role="alert" className="text-sm text-red-600" data-testid="jornada-erro">
-          {r.error}
+        <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" data-testid="jornada-erro">
+          Erro: {r.error}
         </p>
       )}
       {r && r.ok && (
-        <p className="text-sm text-forest" data-testid="jornada-ok">
-          {r.reaproveitada ? "Já havia uma jornada aberta (não assinada) — use esta: " : "Jornada criada: "}
-          <Link href={r.link} className="font-medium underline" data-testid="jornada-link">
-            abrir o Fechamento
-          </Link>
-          {" "}(entre como o proprietário de teste).
-        </p>
+        <div className="rounded-lg border border-sage-200 bg-sage-50 p-3 text-sm text-ink" role="status" data-testid="jornada-ok" data-reaproveitada={r.reaproveitada ? "1" : "0"}>
+          <p className="font-semibold text-forest">
+            {r.reaproveitada ? "Jornada reaproveitada" : "Jornada criada"} · candidatura <span data-testid="jornada-numero">{r.numero}</span>
+          </p>
+          {r.reaproveitada && (
+            <p className="mt-1" data-testid="jornada-motivo">
+              Já havia uma jornada aberta: a candidatura {r.numero}, aceita em {r.aceitaEm ? dataHoraBrasilia(new Date(r.aceitaEm)) : "data não registrada"}. Foi
+              reaproveitada porque {r.motivo}.
+            </p>
+          )}
+          <p className="mt-1 text-muted">
+            Anúncio: {r.anuncio} · Inquilino: {r.inquilino}
+          </p>
+          <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+            <li>
+              <Link href={r.links.fechamento} className="font-medium text-forest underline" data-testid="jornada-link">
+                Abrir o Fechamento
+              </Link>{" "}
+              <span className="text-xs text-muted">(entre como o proprietário)</span>
+            </li>
+            <li>
+              <Link href={r.links.candidaturas} className="font-medium text-forest underline" data-testid="jornada-link-candidaturas">
+                Ver em Candidaturas
+              </Link>{" "}
+              <span className="text-xs text-muted">(inquilino)</span>
+            </li>
+            <li>
+              <Link href={r.links.leads} className="font-medium text-forest underline" data-testid="jornada-link-leads">
+                Ver em Leads
+              </Link>{" "}
+              <span className="text-xs text-muted">(proprietário)</span>
+            </li>
+          </ul>
+        </div>
       )}
     </div>
   );

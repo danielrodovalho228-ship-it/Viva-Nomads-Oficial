@@ -1,5 +1,6 @@
 "use client";
 
+import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Download, Trash2 } from "lucide-react";
@@ -49,7 +50,6 @@ export function AdminMarketingClient({ gastos, aviso }: { gastos: GastoMarketing
   }
 
   async function apagar(id: string) {
-    if (!window.confirm("Apagar este lançamento?")) return;
     setApagando(id);
     const r = await apagarGastoMarketing(id);
     setApagando(null);
@@ -165,15 +165,16 @@ export function AdminMarketingClient({ gastos, aviso }: { gastos: GastoMarketing
                   </span>
                   <span className="flex shrink-0 items-center gap-3">
                     <span className="font-medium text-ink">{formatBRL(g.valor)}</span>
-                    <button
-                      type="button"
-                      onClick={() => apagar(g.id)}
+                    <ConfirmarNaPagina
+                      aviso="Apagar este lançamento?"
+                      confirmar="Apagar"
+                      onConfirmar={() => apagar(g.id)}
                       disabled={apagando === g.id}
-                      aria-label={`Apagar lançamento de ${canalLabel(g.canal)} em ${mesLabel(g.mes)}`}
-                      className="rounded-lg p-1.5 text-muted hover:bg-red-50 hover:text-red-700"
+                      ariaLabel={`Apagar lançamento de ${canalLabel(g.canal)} em ${mesLabel(g.mes)}`}
+                      botaoClassName="rounded-lg p-1.5 text-muted hover:bg-red-50 hover:text-red-700"
                     >
                       <Trash2 className="h-4 w-4" />
-                    </button>
+                    </ConfirmarNaPagina>
                   </span>
                 </li>
               ))}

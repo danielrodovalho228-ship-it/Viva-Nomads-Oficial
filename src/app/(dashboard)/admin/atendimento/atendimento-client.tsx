@@ -1,5 +1,6 @@
 "use client";
 
+import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
 import { abertoEmBR } from "@/lib/atendimento/data-br";
 import { useState } from "react";
 import Link from "next/link";
@@ -327,18 +328,19 @@ function Macros({ macros }: { macros: Macro[] }) {
                   <span className="block font-medium text-ink">{m.titulo}</span>
                   <span className="block truncate text-xs text-muted">{m.corpo}</span>
                 </button>
-                <button
-                  type="button"
-                  aria-label={`Apagar ${m.titulo}`}
-                  onClick={async () => {
-                    if (!window.confirm("Apagar esta resposta pronta?")) return;
+                <ConfirmarNaPagina
+                  aviso="Apagar esta resposta pronta?"
+                  confirmar="Apagar"
+                  ariaLabel={`Apagar ${m.titulo}`}
+                  className="shrink-0"
+                  botaoClassName="rounded-lg p-1.5 text-muted hover:bg-red-50 hover:text-red-700"
+                  onConfirmar={async () => {
                     await apagarMacro(m.id);
                     router.refresh();
                   }}
-                  className="shrink-0 rounded-lg p-1.5 text-muted hover:bg-red-50 hover:text-red-700"
                 >
                   <Trash2 className="h-4 w-4" />
-                </button>
+                </ConfirmarNaPagina>
               </li>
             ))}
           </ul>

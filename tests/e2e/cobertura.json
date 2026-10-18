@@ -480,7 +480,8 @@
         "t33-documentos-inquilino",
         "t36-cadastro-ponta-a-ponta",
         "t183-telas-logadas-390",
-        "t205-fechamento-sem-beco"
+        "t205-fechamento-sem-beco",
+        "t213-jornada-teste-confirmacao"
       ]
     },
     "/dashboard/carteira": {
@@ -690,7 +691,8 @@
         "t178-telefone-sms",
         "t181-quantas-pessoas",
         "t182-jornada-completa",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t213-jornada-teste-confirmacao"
       ]
     },
     "/dashboard/locacoes": {
@@ -703,7 +705,8 @@
         "t182-jornada-completa",
         "t183-telas-logadas-390",
         "t205-fechamento-sem-beco",
-        "t210-contrato-estado-jornada"
+        "t210-contrato-estado-jornada",
+        "t213-jornada-teste-confirmacao"
       ]
     },
     "/dashboard/locacoes/[id]": {
@@ -1174,7 +1177,8 @@
         "admin"
       ],
       "specs": [
-        "t210-contrato-estado-jornada"
+        "t210-contrato-estado-jornada",
+        "t213-jornada-teste-confirmacao"
       ]
     },
     "/dashboard/agenda": {
@@ -3173,7 +3177,8 @@
         "admin"
       ],
       "specs": [
-        "t210-contrato-estado-jornada"
+        "t210-contrato-estado-jornada",
+        "t213-jornada-teste-confirmacao"
       ]
     },
     "src/lib/data/visitas-video-actions.ts#pedirVisita": {
