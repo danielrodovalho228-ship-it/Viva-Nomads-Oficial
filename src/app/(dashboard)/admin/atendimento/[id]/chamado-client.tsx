@@ -10,6 +10,7 @@ import { cn, dataBR } from "@/lib/utils";
 import { PRAZOS, type Prioridade } from "@/config/atendimento";
 import { primeiroNome } from "@/lib/display-name";
 import { alterarChamado, aprovarSugestao, avaliarRespostaIA, devolverParaViva, enviarSugestaoEditada, responderComoAdmin, sugerirResposta, type chamadoAdmin, type Macro } from "@/lib/data/atendimento-actions";
+import { abertoEmBR } from "@/lib/atendimento/data-br";
 import { ehNotaResumo } from "@/lib/atendimento/resumo";
 import { ResumoEAcoes } from "./resumo-acoes";
 import { respostaDaSugestao } from "@/lib/atendimento/acolhimento";
@@ -123,7 +124,7 @@ export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; 
       <Link href="/admin/atendimento" className="mb-3 inline-flex items-center gap-1 text-sm text-muted hover:text-forest">
         <ArrowLeft className="h-4 w-4" /> Fila
       </Link>
-      <PageTitle title={c.assunto} subtitle={`${c.numero_publico} · ${c.tipo} · ${c.canal} · ${STATUS[c.status] ?? c.status}`} />
+      <PageTitle title={c.assunto} subtitle={`${c.numero_publico} · ${c.tipo} · ${c.canal} · ${STATUS[c.status] ?? c.status} · ${abertoEmBR(c.criado_em)}`} />
       {c.status === "aguardando_aprovacao" && (
         <p className="-mt-2 mb-4 text-xs text-muted" data-testid="explica-aprovacao">
           {EXPLICA_AGUARDANDO_APROVACAO}

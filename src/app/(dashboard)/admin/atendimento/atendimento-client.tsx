@@ -1,5 +1,6 @@
 "use client";
 
+import { abertoEmBR } from "@/lib/atendimento/data-br";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -190,6 +191,7 @@ function Tabela({ itens, agora, vazio }: { itens: ChamadoAdmin[]; agora: Date; v
                 <span className="mt-0.5 block text-xs text-muted">
                   {c.numero_publico} · {FILAS[filaDaCategoria(c.categoria)].rotulo} · {c.canal} · {STATUS[c.status] ?? c.status}
                   {c.visitante_email ? " · visitante" : ""}
+                  <span data-testid="chamado-aberto-em"> · {abertoEmBR(c.criado_em)}</span>
                 </span>
               </span>
               <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium", r.cor)}>
