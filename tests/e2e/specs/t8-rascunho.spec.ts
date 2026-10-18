@@ -103,6 +103,8 @@ test.describe("T-RASC — Rascunho salva e retoma @criticos", () => {
     const lista = page.getByTestId("anuncio-checklist");
     await expect(async () => {
       await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+      // O painel mostra só o que falta (até 3 itens); os feitos aparecem em "Ver todos os itens".
+      await page.getByTestId("checklist-ver-todos").click({ timeout: 3_000 });
       await expect(lista.getByTestId("check-feito").filter({ hasText: "Endereço preenchido" })).toBeVisible({ timeout: 3_000 });
     }).toPass({ timeout: 40_000, intervals: [2_000, 3_000] });
     // Endereço já preenchido = feito; fotos (só 1 de 8) = falta e é clicável.
