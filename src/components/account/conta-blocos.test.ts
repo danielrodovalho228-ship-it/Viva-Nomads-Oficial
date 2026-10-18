@@ -41,3 +41,10 @@ test("simulador: PJ sem '+ IBS/CBS', sem aviso de ago/2026 e com o custo de mant
   assert.match(sim, /custo de manter a empresa/);
   assert.match(sim, /AVISO_IBS_CBS_LIBERADO && r\.ibsCbsAviso/);
 });
+
+test("Conta: 'Ver como os outros veem' do proprietário só aparece com imóvel (sem perfil público a página dá 404)", () => {
+  const src = ler("src/components/account/conta-blocos.tsx");
+  assert.match(src, /function LinkPerfilPublico/);
+  assert.match(src, /useProperties\("\/api\/properties\/mine"\)[\s\S]*properties\.length === 0\) return null/);
+  assert.doesNotMatch(src, /mode !== "tenant"\) \{\s*return \(\s*<Link/);
+});
