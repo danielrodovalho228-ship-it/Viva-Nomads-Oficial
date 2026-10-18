@@ -4,12 +4,13 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { CheckCircle2, Loader2, ShieldCheck } from "lucide-react";
 import { buttonClasses } from "@/components/ui/button";
+import { TEXTO_VALIDADE_CAF } from "@/lib/caf/validade";
 
 type Situacao = { feita: boolean; ok: boolean; temCpf: boolean; validoAte: string | null };
 
 /**
  * Etapa "Confirme sua identidade" do cadastro do anúncio (decisão do Daniel, 18/10): vem DEPOIS do endereço e ANTES
- * da matrícula. Com laudo válido (90 dias) a etapa aparece já concluída e não pede nada; conta de teste e laboratório
+ * da matrícula. Com laudo válido (12 meses) a etapa aparece já concluída e não pede nada; conta de teste e laboratório
  * usam o laudo simulado. Enquanto a CAF não estiver ligada em produção, o aviso "em breve" aparece e o cadastro segue
  * (a matrícula fica "em revisão" até 48 h).
  */
@@ -54,8 +55,7 @@ export function EtapaIdentidade({ onConfirmada }: { onConfirmada?: () => void })
         Confirme sua identidade
       </p>
       <p className="mt-0.5 text-xs text-muted">
-        É o que permite conferir a matrícula na hora: comparamos o CPF do seu cadastro com o do proprietário. Vale por 90
-        dias.
+        É o que permite conferir a matrícula na hora: comparamos o CPF do seu cadastro com o do proprietário. {TEXTO_VALIDADE_CAF}
       </p>
       {estado === "carregando" && (
         <p className="mt-3 flex items-center gap-2 text-sm text-muted">

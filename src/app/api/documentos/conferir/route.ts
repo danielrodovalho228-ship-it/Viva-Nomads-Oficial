@@ -142,7 +142,7 @@ export async function POST(request: Request) {
     const { leitura: mat, conferidor, modelo, falha } = falhaLeitura
       ? { leitura: null, conferidor: lida!.conferidor, modelo: lida!.modelo, falha: falhaLeitura }
       : await lerMatricula(arquivo, { perfil: perfilDono, endereco: cadastro.endereco, hoje: cadastro.hoje });
-    // Laudo CAF mais recente da pessoa (90 dias). O simulado só vale no laboratório ou em conta de teste.
+    // Laudo CAF mais recente da pessoa (12 meses). O simulado só vale no laboratório ou em conta de teste.
     const { data: laudo } = await admin
       .from("tenant_verifications")
       .select("caf_result, traffic_light, valid_until, created_at")

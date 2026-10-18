@@ -145,11 +145,13 @@ test("H — conta de teste: laudo simulado vale sem gastar CAF; numa conta real 
   assert.equal(decidirMatricula(matricula(), entrada({ caf: resumoDoLaudo(simulado, agora, true) })).resultado, "conferido");
 });
 
-test("laudo CAF: vencido (90 dias) não vale; risco alto não é ok; OCR com outro nome derruba o 'ok'", () => {
+test("laudo CAF: vencido (12 meses — decisão do Daniel, 18/10) não vale; risco alto não é ok; OCR com outro nome derruba o 'ok'", () => {
   const agora = new Date(`${HOJE}T12:00:00Z`);
   const real = { caf_result: { identity: true, liveness: true, document: true }, traffic_light: "green", valid_until: null, created_at: "2026-10-10T00:00:00Z" };
   assert.equal(resumoDoLaudo(real, agora, false).ok, true);
-  assert.equal(resumoDoLaudo({ ...real, created_at: "2026-06-01T00:00:00Z" }, agora, false).feita, false);
+  assert.equal(resumoDoLaudo({ ...real, created_at: "2026-06-01T00:00:00Z" }, agora, false).feita, true, "4 meses: ainda vale");
+  assert.equal(resumoDoLaudo({ ...real, created_at: "2025-09-01T00:00:00Z" }, agora, false).feita, false, "mais de 12 meses: vencido");
+  assert.equal(resumoDoLaudo({ ...real, valid_until: "2026-10-17T00:00:00Z" }, agora, false).feita, false, "valid_until vencido (ex.: trocou nome/CPF, 0164)");
   assert.equal(resumoDoLaudo({ ...real, traffic_light: "red" }, agora, false).ok, false);
   const ocrOutro = resumoDoLaudo({ ...real, caf_result: { ...real.caf_result, ocrConfere: false } }, agora, false);
   assert.equal(decidirMatricula(matricula(), entrada({ caf: ocrOutro })).resultado, "em_revisao");

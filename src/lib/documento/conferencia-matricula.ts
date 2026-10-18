@@ -54,7 +54,7 @@ export interface LeituraMatricula {
 }
 
 export interface LaudoCafResumo {
-  /** Existe laudo válido (90 dias) da própria pessoa. */
+  /** Existe laudo válido (12 meses) da própria pessoa. */
   feita: boolean;
   /** Identidade, documento e prova de vida aprovados, sem risco alto. */
   ok: boolean;
@@ -320,7 +320,8 @@ export function camposParaGravar(l: LeituraMatricula, comparacao: ComparacaoProp
 
 /* ── Laudo CAF → resumo ───────────────────────────────────────────────────── */
 
-export const CAF_VALIDADE_DIAS = 90;
+/** Laudo antigo sem valid_until: vale 12 meses a partir de criado (decisão do Daniel, 18/10). */
+export const CAF_VALIDADE_DIAS = 365;
 
 export interface LaudoCafGravado {
   caf_result: Record<string, unknown> | null;
@@ -330,7 +331,7 @@ export interface LaudoCafGravado {
 }
 
 /**
- * Resumo do laudo mais recente da pessoa: vale por 90 dias. Laudo SIMULADO (laboratório ou conta de teste) só conta
+ * Resumo do laudo mais recente da pessoa: vale por 12 meses (decisão do Daniel, 18/10). Laudo SIMULADO (laboratório ou conta de teste) só conta
  * quando `aceitaSimulado` — numa conta real em produção, nunca.
  */
 export function resumoDoLaudo(l: LaudoCafGravado | null, agora: Date, aceitaSimulado: boolean): LaudoCafResumo {
