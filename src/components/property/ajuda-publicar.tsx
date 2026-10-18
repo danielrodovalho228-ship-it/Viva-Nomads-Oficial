@@ -12,8 +12,8 @@ import {
 } from "@/lib/ajuda-publicacao/ajuda";
 
 /** Ordem 65e999b2: "Quero ajuda da equipe para publicar" — o dono envia o link/texto do anúncio que já tem. */
-export function AjudaPublicar() {
-  const [aberto, setAberto] = useState(false);
+export function AjudaPublicar({ abertoInicial = false }: { /** Prompt 20: aberto pela linha de atalhos do passo 1 (sem a caixa tracejada). */ abertoInicial?: boolean } = {}) {
+  const [aberto, setAberto] = useState(abertoInicial);
   const [link, setLink] = useState("");
   const [texto, setTexto] = useState("");
   const [obs, setObs] = useState("");

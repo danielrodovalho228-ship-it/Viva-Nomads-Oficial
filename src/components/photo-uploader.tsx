@@ -7,10 +7,10 @@ import {
   removePropertyPhoto,
   type UploadedPhoto,
 } from "@/lib/data/storage";
-import { validarArquivoFotoImovel } from "@/lib/upload-limits";
 import { useAuthStore } from "@/lib/store";
 import { tratarFoto } from "@/lib/fotos/processar";
-import { avisosDaFoto, MAX_FOTOS_POR_ANUNCIO, type AvisoFoto } from "@/lib/fotos/qualidade";
+import { enviarFotos } from "@/lib/fotos/enviar";
+import { MAX_FOTOS_POR_ANUNCIO, type AvisoFoto } from "@/lib/fotos/qualidade";
 import { cn } from "@/lib/utils";
 
 export interface PhotoItem extends UploadedPhoto {
@@ -71,56 +71,20 @@ export function PhotoUploader({
   async function handleFiles(files: FileList | null) {
     if (!files || files.length === 0) return;
     setError(null);
-    const slots = max - photos.length;
-    const chosen = Array.from(files).slice(0, slots);
-    const excedeu = files.length > slots;
-
     setUploading(true);
-    setProgresso({ feitas: 0, total: chosen.length });
     try {
-      const uploaded: PhotoItem[] = [];
-      const novosOriginais: Record<string, File> = {};
-      const outras: { id: string; hash?: string; assinatura?: string }[] = photos
-        .filter((p) => p.hash || p.assinatura)
-        .map((p) => ({ id: p.id, hash: p.hash, assinatura: p.assinatura }));
-      let feitas = 0;
-      for (const file of chosen) {
-        // Validação de tipo/tamanho no cliente (feedback rápido). O bucket do
-        // Supabase revalida no servidor (migration 0040) — o accept do input não
-        // é a trava real.
-        const invalido = validarArquivoFotoImovel({ type: file.type, size: file.size, name: file.name });
-        if (invalido) {
-          setError(invalido);
-        } else {
-          const t = tratar ? await tratarFoto(file) : null;
-          let result: UploadedPhoto;
-          try {
-            result = await uploader(t?.arquivo ?? file, ownerId);
-          } catch (e) {
-            // Falha real de envio: erro visível, a foto NÃO entra na galeria.
-            setError(e instanceof Error ? e.message : "Não foi possível enviar a foto agora.");
-            feitas += 1;
-            setProgresso({ feitas, total: chosen.length });
-            continue;
-          }
-          const id = crypto.randomUUID();
-          const item: PhotoItem = { ...result, id, name: file.name };
-          if (t?.analise) {
-            item.hash = t.analise.hash;
-            item.assinatura = t.analise.assinatura;
-            item.avisos = avisosDaFoto(t.analise, outras);
-            item.melhorada = t.melhorada;
-            outras.push({ id, hash: t.analise.hash, assinatura: t.analise.assinatura });
-          }
-          if (t?.melhorada) novosOriginais[id] = t.original;
-          uploaded.push(item);
-        }
-        feitas += 1;
-        setProgresso({ feitas, total: chosen.length });
-      }
-      onChange([...photos, ...uploaded]);
-      setOriginais((o) => ({ ...o, ...novosOriginais }));
-      if (excedeu) setError(`Limite de ${max} fotos: as que passaram disso não foram enviadas.`);
+      // Um caminho só para enviar fotos (prompt 20): o mesmo do cartão "Preencher com IA" e da barra do celular.
+      const r = await enviarFotos(Array.from(files), {
+        atuais: photos,
+        max,
+        ownerId,
+        tratar,
+        uploader,
+        aoProgresso: (feitas, total) => setProgresso({ feitas, total }),
+      });
+      onChange([...photos, ...r.novas]);
+      setOriginais((o) => ({ ...o, ...r.originais }));
+      if (r.erro) setError(r.erro);
     } finally {
       setUploading(false);
       setProgresso(null);

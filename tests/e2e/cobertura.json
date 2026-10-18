@@ -631,7 +631,8 @@
         "t30-atendimento-autonomo",
         "t32-autorizacao-preconferencia",
         "t8-rascunho",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t194-passo1-ia-cep"
       ]
     },
     "/dashboard/indicacoes": {
