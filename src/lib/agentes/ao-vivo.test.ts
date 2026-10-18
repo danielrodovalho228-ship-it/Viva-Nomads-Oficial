@@ -50,6 +50,8 @@ test("número da migração pelo nome ou pela versão", () => {
   assert.equal(numeroMigracao({ version: "20261007000083", name: "0083_pacote_otavio" }), "0083");
   assert.equal(numeroMigracao({ version: "20261007000085", name: "" }), "0085");
   assert.equal(numeroMigracao({ version: "x", name: "sem_numero" }), null);
+  // Banco do laboratório (supabase start): version = "0156" e name sem o número.
+  assert.equal(numeroMigracao({ version: "0156", name: "ajuda_publicacao_decisao_dono" }), "0156");
 });
 
 test("conferência: 0083 aplicada e VN-000101 resolvido saem; 0084 (não registrada) e VN-000150 (aberto) ficam", () => {
