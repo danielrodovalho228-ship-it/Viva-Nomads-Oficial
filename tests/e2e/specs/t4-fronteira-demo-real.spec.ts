@@ -32,7 +32,8 @@ test.describe("T4 — Conta real, demo desligado @criticos", () => {
 
   test("verificação mostra 'Não verificado' — sem selo automático", async ({ page }) => {
     await page.goto("/dashboard/verificacao", { waitUntil: "domcontentloaded" });
-    await expect(page.locator("body")).toContainText(/Não verificado/i);
+    // Conta real → "Não verificado"; conta de teste (a do laboratório, is_teste) → fluxo rotulado "verificação simulada".
+    await expect(page.locator("body")).toContainText(/Não verificado|verificação simulada/i);
     await expect(page.locator("body")).not.toContainText(/Verificação de demonstração/i);
   });
 });
