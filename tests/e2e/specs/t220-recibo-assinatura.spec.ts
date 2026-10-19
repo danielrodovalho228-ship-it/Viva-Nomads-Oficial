@@ -22,6 +22,7 @@ const dia = (n: number) => new Date(Date.now() + n * 86_400_000).toISOString().s
 const ddmm = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
 const ROTULO = () => `Bloco 1 (2 meses: ${ddmm(dia(0))} a ${ddmm(dia(59))}) — R$ 6.400 (2 × R$ 3.200)`;
 
+let seq = 0;
 async function contrato(assinado: boolean): Promise<string> {
   const agora = new Date().toISOString();
   const { data, error } = await adm()
@@ -46,7 +47,9 @@ async function contrato(assinado: boolean): Promise<string> {
   if (error) throw error;
   const { error: eB } = await adm()
     .from("contrato_blocos")
-    .insert({ contrato_id: data.id, numero_bloco: 1, inicio: dia(0), fim: dia(59), meses: 2, valor: 6400, caucao: 3200, status: "ativo" });
+    // Contratos do mesmo imóvel em períodos SEGUIDOS (0176: dois ativos não se sobrepõem no mesmo imóvel).
+    .insert({ contrato_id: data.id, numero_bloco: 1, inicio: dia(60 * seq), fim: dia(60 * seq + 59), meses: 2, valor: 6400, caucao: 3200, status: "ativo" });
+  seq++;
   if (eB) throw eB;
   return data.id as string;
 }
