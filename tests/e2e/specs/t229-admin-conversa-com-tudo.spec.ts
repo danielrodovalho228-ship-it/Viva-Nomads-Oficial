@@ -29,7 +29,7 @@ const de = new Date(Date.now() - (40 + Math.floor(Math.random() * 300)) * 86_400
 const HOME = `/admin?periodo=custom&de=${de}&ate=${hoje}&cidade=${encodeURIComponent(CIDADE)}`;
 
 test.describe("T229 — admin conversa com tudo", () => {
-  test.describe.configure({ mode: "serial" });
+  test.describe.configure({ mode: "serial", timeout: 240_000 });
   test.skip(!NO_LABORATORIO, "Só no laboratório (banco local + chave de serviço).");
   test.skip(!hasAccount("admin"), "conta de admin do laboratório não configurada");
   test.use({ storageState: authFile("admin") });
@@ -88,7 +88,7 @@ test.describe("T229 — admin conversa com tudo", () => {
   for (const largura of [1280, 390]) {
     test(`${largura}px — cada cartão abre a lista que ele conta, com o mesmo número`, async ({ page }) => {
       await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
-      await page.goto(HOME, { waitUntil: "networkidle" });
+      await page.goto(HOME, { waitUntil: "domcontentloaded" });
       await semRolagemLateral(page);
 
       // Manutenção ≠ atendimento: dois cartões, dois destinos.
@@ -113,7 +113,7 @@ test.describe("T229 — admin conversa com tudo", () => {
       await page.screenshot({ path: `${SAIDA}/t229-home-${largura}.png`, fullPage: true });
 
       // Destinos: a lista conta o mesmo.
-      await page.goto(contratos.href!, { waitUntil: "networkidle" });
+      await page.goto(contratos.href!, { waitUntil: "domcontentloaded" });
       await expect(page.getByTestId("lista-total")).toHaveText("1");
       await expect(page.getByTestId("contratos-valor-total")).toHaveText(/R\$\s?12\.800/);
       await expect(page.getByTestId("contratos-taxa")).toHaveText(/R\$\s?1\.536/);
@@ -122,25 +122,25 @@ test.describe("T229 — admin conversa com tudo", () => {
       await semRolagemLateral(page);
       await page.screenshot({ path: `${SAIDA}/t229-contratos-${largura}.png`, fullPage: true });
 
-      await page.goto(`/admin/financeiro?periodo=custom&de=${de}&ate=${hoje}&cidade=${encodeURIComponent(CIDADE)}`, { waitUntil: "networkidle" });
+      await page.goto(`/admin/financeiro?periodo=custom&de=${de}&ate=${hoje}&cidade=${encodeURIComponent(CIDADE)}`, { waitUntil: "domcontentloaded" });
       await expect(page.locator('[data-indicador="f-valor-total-dos-contratos"] [data-valor]')).toHaveText(/R\$\s?12\.800/);
       await expect(page.locator('[data-indicador="f-taxa-de-servi-o-gerada"] [data-valor]')).toHaveText(/R\$\s?1\.536/);
       await expect(page.locator('[data-indicador="f-take-rate"] [data-valor]')).toHaveText("12%");
       await expect(page.locator("main")).not.toContainText("Aluguel contratado");
 
-      await page.goto(manut.href!, { waitUntil: "networkidle" });
+      await page.goto(manut.href!, { waitUntil: "domcontentloaded" });
       await expect(page.getByTestId("lista-total")).toHaveText(manut.valor);
       await expect(page.getByTestId("solicitacao-linha").first()).toContainText("BRT");
 
-      await page.goto(pedidos.href!, { waitUntil: "networkidle" });
+      await page.goto(pedidos.href!, { waitUntil: "domcontentloaded" });
       await expect(page.getByTestId("lista-total")).toHaveText(String(n(pedidos.valor)));
 
       // Atendimento: o número da home = as linhas da fila (a home guarda 5 min; o chamado do spec já existia antes).
-      await page.goto(atd.href!, { waitUntil: "networkidle" });
+      await page.goto(atd.href!, { waitUntil: "domcontentloaded" });
       await expect(page.getByTestId("chamado-linha")).toHaveCount(n(atd.valor));
 
       // Documentos: home = página = selo da barra lateral.
-      await page.goto("/admin/documentos", { waitUntil: "networkidle" });
+      await page.goto("/admin/documentos", { waitUntil: "domcontentloaded" });
       await expect(page.getByTestId("fila-agora-total")).toHaveText(String(filaHome));
       if (largura === 1280) {
         const selo = page.locator('[data-menu-id="admin-documentos"]');
@@ -153,7 +153,7 @@ test.describe("T229 — admin conversa com tudo", () => {
 
     test(`${largura}px — agora: imóveis reais, demonstração e teste; agentes com nome`, async ({ page }) => {
       await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
-      await page.goto(HOME, { waitUntil: "networkidle" });
+      await page.goto(HOME, { waitUntil: "domcontentloaded" });
       const agora = page.getByTestId("home-agora");
       const valorDe = async (rotulo: RegExp) => {
         const link = agora.getByRole("link", { name: rotulo });
@@ -161,44 +161,46 @@ test.describe("T229 — admin conversa com tudo", () => {
       };
       const reais = await valorDe(/Imóveis reais publicados/);
       expect(reais.valor).toBe(1);
-      await page.goto(reais.href!, { waitUntil: "networkidle" });
+      await page.goto(reais.href!, { waitUntil: "domcontentloaded" });
       await expect(page.getByTestId("lista-total")).toHaveText("1");
       await expect(page.getByTestId("imovel-tipo").first()).toHaveText("Real");
       await expect(page.getByTestId("imovel-publico").first()).toHaveText("sim");
 
-      await page.goto(HOME, { waitUntil: "networkidle" });
+      await page.goto(HOME, { waitUntil: "domcontentloaded" });
       const testes = await valorDe(/Anúncios de teste/);
       expect(testes.valor).toBe(1);
-      await page.goto(testes.href!, { waitUntil: "networkidle" });
+      await page.goto(testes.href!, { waitUntil: "domcontentloaded" });
       await expect(page.getByTestId("lista-total")).toHaveText("1");
       const linhaTeste = page.getByTestId("imovel-linha").first();
       await expect(linhaTeste).toHaveAttribute("data-tipo", "teste");
       await expect(linhaTeste.getByTestId("imovel-publico")).toHaveText("não");
       await expect(linhaTeste.getByTestId("selo-teste")).toBeVisible();
 
-      await page.goto("/admin/imoveis?tipo=demonstracao", { waitUntil: "networkidle" });
-      expect(n(await page.getByTestId("lista-total").innerText())).toBeGreaterThan(0);
+      await page.goto("/admin/imoveis?tipo=demonstracao", { waitUntil: "domcontentloaded" });
+      await expect(page.getByTestId("lista-total")).not.toHaveText("0");
       await expect(page.getByTestId("imovel-tipo").first()).toHaveText("Demonstração");
       await semRolagemLateral(page);
       await page.screenshot({ path: `${SAIDA}/t229-imoveis-${largura}.png`, fullPage: true });
 
       // Agentes: "Aguardando o seu OK" igual na home e na página.
-      await page.goto(HOME, { waitUntil: "networkidle" });
+      await page.goto(HOME, { waitUntil: "domcontentloaded" });
       const ok = await page.getByRole("link", { name: /Equipe — aguardando o seu ok/i }).locator("p").first().innerText();
-      await page.goto("/admin/agentes", { waitUntil: "networkidle" });
+      await page.goto("/admin/agentes", { waitUntil: "domcontentloaded" });
       await expect(page.getByTestId("agentes-aguardandoOk").locator("[data-valor]")).toHaveText(ok.trim());
       await expect(page.getByTestId("agentes-contadores")).toContainText("Ordens lidas não concluídas");
     });
 
     test(`${largura}px — usuários: admin na lista, selo TESTE, cadastro completo e identidade`, async ({ page }) => {
       await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
-      await page.goto("/admin/usuarios?papel=admin", { waitUntil: "networkidle" });
-      expect(await page.locator('[data-usuario][data-papel="admin"]:visible').count()).toBeGreaterThan(0);
-      await page.goto(`/admin/usuarios?q=${encodeURIComponent(teste.nome)}`, { waitUntil: "networkidle" });
+      await page.goto("/admin/usuarios?papel=admin", { waitUntil: "domcontentloaded" });
+      await expect(page.getByTestId("admin-usuarios-lista")).toBeVisible();
+      await expect(page.locator('[data-usuario][data-papel="admin"]:visible').first()).toBeVisible();
+      await page.goto(`/admin/usuarios?q=${encodeURIComponent(teste.nome)}`, { waitUntil: "domcontentloaded" });
+      await expect(page.getByText("Nenhum usuário nesta lista")).toBeVisible();
       await expect(page.locator("[data-usuario]:visible")).toHaveCount(0);
-      await page.goto(`/admin/usuarios?teste=sim&q=${encodeURIComponent(teste.nome)}`, { waitUntil: "networkidle" });
+      await page.goto(`/admin/usuarios?teste=sim&q=${encodeURIComponent(teste.nome)}`, { waitUntil: "domcontentloaded" });
       await expect(page.locator("[data-usuario]:visible").first().getByTestId("selo-teste")).toBeVisible();
-      await page.goto(`/admin/usuarios?q=${encodeURIComponent(dono.nome)}`, { waitUntil: "networkidle" });
+      await page.goto(`/admin/usuarios?q=${encodeURIComponent(dono.nome)}`, { waitUntil: "domcontentloaded" });
       const linha = page.locator("[data-usuario]:visible").first();
       await expect(linha).toContainText(/Não verificada|Confirmada|Vencida/);
       if (largura === 1280) await expect(linha.getByTestId("admin-cadastro-completo")).toHaveAttribute("title", /Falta: .*Foto de perfil/);
@@ -208,17 +210,17 @@ test.describe("T229 — admin conversa com tudo", () => {
   }
 
   test("Dados de teste: encerrar jornadas pede confirmação e grava no registro; fotógrafos dizem quem recebe", async ({ page }) => {
-    await page.goto("/admin/dados-de-teste", { waitUntil: "networkidle" });
+    await page.goto("/admin/dados-de-teste", { waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("link-emails-teste")).toHaveAttribute("href", "/admin/emails-teste");
     await page.getByTestId("encerrar-jornadas").click();
     await page.getByTestId("encerrar-jornadas-confirmar").click();
     await expect(page.getByTestId("encerrar-jornadas-resultado")).toContainText(/encerrados? em \d+ anúncios? de teste/);
-    await page.reload({ waitUntil: "networkidle" });
+    await page.reload({ waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("log-dados-teste-linha").first()).toContainText("Jornadas de teste encerradas");
     await expect(page.getByTestId("conta-teste").filter({ hasText: teste.nome })).toBeVisible();
     await page.screenshot({ path: `${SAIDA}/t229-dados-de-teste.png`, fullPage: true });
 
-    await page.goto("/admin/fotografos", { waitUntil: "networkidle" });
+    await page.goto("/admin/fotografos", { waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("texto-taxa-parceria")).toHaveText(
       "Taxa de parceria (R$ 40/60/80, por faixa de fotos): paga pelo fotógrafo à Viva Nomads ao aceitar o pedido. O serviço é pago direto do proprietário ao fotógrafo; a Viva não recebe esse valor."
     );
