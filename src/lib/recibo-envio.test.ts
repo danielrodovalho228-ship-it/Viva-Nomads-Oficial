@@ -134,10 +134,10 @@ test("1. fila: 'Reenviar e-mail' na falha de envio, 'Emitir de novo' na de emiss
   assert.match(a, /exigirAdminAal2/);
 });
 
-test("1. migração 0179: envio jsonb, etapa na fila e os documentos antigos voltam para a fila sem renumerar", () => {
-  const m = ler("../../supabase/migrations/0179_documentos_envio.sql");
-  const p = ler("../../supabase/producao/aplicar-0179.sql");
-  const r = ler("../../supabase/producao/rollback/0179_rollback.sql");
+test("1. migração 0180: envio jsonb, etapa na fila e os documentos antigos voltam para a fila sem renumerar", () => {
+  const m = ler("../../supabase/migrations/0180_documentos_envio.sql");
+  const p = ler("../../supabase/producao/aplicar-0180.sql");
+  const r = ler("../../supabase/producao/rollback/0180_rollback.sql");
   for (const s of [m, p]) {
     assert.match(s, /add column if not exists envio jsonb not null default '\[\]'::jsonb/);
     assert.match(s, /check \(etapa in \('emissao', 'envio'\)\)/);
@@ -147,9 +147,9 @@ test("1. migração 0179: envio jsonb, etapa na fila e os documentos antigos vol
   }
   assert.match(p, /^begin;/m);
   assert.match(p, /^commit;/m);
-  assert.match(p, /'20261019000179', '0179_documentos_envio'/);
+  assert.match(p, /'20261019000180', '0180_documentos_envio'/);
   assert.match(r, /drop column if exists envio/);
-  assert.match(r, /from public\._bkp_0179_enviado_em/);
+  assert.match(r, /from public\._bkp_0180_enviado_em/);
 });
 
 test("2. o corpo do erro do Resend vira o motivo (status + nome + mensagem), sem dados pessoais", () => {
