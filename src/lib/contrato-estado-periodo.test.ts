@@ -114,7 +114,8 @@ test("2. carteira: um contrato por imóvel (o vigente) e os seguintes como 'Pró
 
 test("2. app: aceite da candidatura, aceite da proposta, 'Gerar contrato', renovação e calendário conferem as datas", () => {
   const leads = ler("./data/leads-actions.ts");
-  assert.match(leads, /conflitoNoImovel\(admin, lead\.property_id as string, periodoDaEstadia\(String\(lead\.inicio_desejado\)/);
+  assert.match(leads, /conflitoNoImovel\(admin, datas\.property_id as string, periodoDaEstadia\(String\(datas\.inicio_desejado\)/);
+  assert.match(leads, /admin\.from\("leads"\)\.select\("property_id, inicio_desejado"\)/);
   assert.match(ler("./data/propostas-actions.ts"), /conflitoNoImovel\(admin, p\.property_id, periodoDaEstadia\(String\(v\.data_entrada\)\.slice\(0, 10\), Number\(v\.meses\)\)\)/);
   const acts = ler("./data/actions.ts");
   const reg = acts.slice(acts.indexOf("export async function registrarContrato"), acts.indexOf("export async function renovarBloco"));

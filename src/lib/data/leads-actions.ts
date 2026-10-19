@@ -49,7 +49,7 @@ export async function aceitarCandidatura(leadId: string): Promise<ActionResult> 
   // Carrega o lead e confirma que o solicitante é o DONO (autoridade no servidor).
   const { data: lead, error: lErr } = await supabase
     .from("leads")
-    .select("id, owner_id, tenant_id, property_id, status, inicio_desejado")
+    .select("id, owner_id, tenant_id, status")
     .eq("id", leadId)
     .maybeSingle();
   if (lErr) return { ok: false, error: erroBancoPT(lErr) };
@@ -64,8 +64,10 @@ export async function aceitarCandidatura(leadId: string): Promise<ActionResult> 
   // Cadastro confiável: o documento do dono vai no contrato — exigido ANTES do aceite.
   if (!(await temDocumento(admin, user.id))) return { ok: false, error: MSG_DOCUMENTO.aceitar };
   // Disponibilidade por datas (0174): a entrada desejada (estadia mínima de 1 mês) não pode cair em outro contrato ativo.
-  if (lead.inicio_desejado) {
-    const conflito = await conflitoNoImovel(admin, lead.property_id as string, periodoDaEstadia(String(lead.inicio_desejado).slice(0, 10), 1));
+  // (O dono não lê inicio_desejado pelo RLS/grant de colunas: a leitura é do servidor, depois de provar que ele é o dono.)
+  const { data: datas } = await admin.from("leads").select("property_id, inicio_desejado").eq("id", leadId).maybeSingle();
+  if (datas?.inicio_desejado) {
+    const conflito = await conflitoNoImovel(admin, datas.property_id as string, periodoDaEstadia(String(datas.inicio_desejado).slice(0, 10), 1));
     if (conflito) return { ok: false, error: conflito };
   }
 

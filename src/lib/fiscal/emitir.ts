@@ -131,7 +131,7 @@ async function emitir(
   for (const p of [partes.locador, partes.locatario]) {
     if (!p.email) continue;
     const title = `${rotulo} ${dados.numero}`;
-    const intro = `Segue em anexo o ${rotulo.toLowerCase()} do contrato ${dados.contratoRef}. Ele também fica guardado na plataforma, em Contratos (proprietário) ou Minhas locações (inquilino).`;
+    const intro = `Segue em anexo o ${rotulo.toLowerCase()} do contrato ${dados.contratoRef}. Ele também fica guardado na plataforma, em Contratos (proprietário) ou Minhas locações (inquilino). Para conferir a autenticidade: ${dados.conferirUrl}`;
     const r = await sendEmail({
       to: p.email,
       subject: `${title} — Viva Nomads`,

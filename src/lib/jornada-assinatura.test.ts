@@ -122,3 +122,7 @@ test("4. 'Li e concordo' persistente: sessionStorage por contrato, restaurado ao
   // O servidor continua exigindo o aceite.
   assert.match(ler("./data/contrato-assinar-actions.ts"), /aceite/);
 });
+
+test("1. o e-mail do recibo leva o link de verificação também por extenso (além do botão)", () => {
+  assert.match(ler("./fiscal/emitir.ts"), /Para conferir a autenticidade: \$\{dados\.conferirUrl\}`/);
+});
