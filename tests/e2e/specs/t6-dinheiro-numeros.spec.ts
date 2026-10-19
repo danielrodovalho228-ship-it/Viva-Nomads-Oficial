@@ -17,7 +17,7 @@ test.describe("T6 — Comissão (contrato real do proprietário)", () => {
     const noLaboratorio = process.env.INTEGRACOES_SIMULADAS === "on";
     test.skip(!noLaboratorio && !/Taxa de serviço do contrato/i.test(corpo), "Esta conta não tem contrato neste ambiente");
     // Prompt 23: a base é a REAL gravada no aceite — valor total (novos) ou 1 mês com a data da regra (antigos).
-    expect(corpo).toMatch(/\d+%\s*(do valor total|de 1 mês — regra vigente no aceite)/);
+    expect(corpo).toMatch(/\d+%\s*(do valor total|sobre o valor mensal × meses|de 1 mês — regra vigente no aceite)/);
     expect(corpo).not.toMatch(/do 1º aluguel/i);
     expect(corpo).not.toMatch(/1 m[êe]s de aluguel/i);
     expect(corpo).not.toMatch(/comiss[ãa]o.*aluguel cheio/i);
