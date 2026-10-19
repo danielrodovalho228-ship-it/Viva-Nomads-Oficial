@@ -81,7 +81,8 @@ test.describe("T73 — Ficha do pet na Conta", () => {
     expect(baixado.data!.type).toBe("image/webp");
 
     await nina.getByLabel("Enviar foto de Nina").setInputFiles({ name: "x.svg", mimeType: "image/svg+xml", buffer: Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>') });
-    await expect(page.getByRole("alert")).toContainText("foto JPG, PNG ou WebP de verdade");
+    // getByRole("alert") também pega o anúncio de rota do Next (#__next-route-announcer__): procura o texto do erro.
+    await expect(page.getByText("Envie uma foto JPG, PNG ou WebP de verdade.")).toBeVisible();
     expect((await adm().from("pets_inquilino").select("fotos").eq("id", petId).single()).data!.fotos).toHaveLength(1);
     await page.context().close();
   });
