@@ -10,7 +10,31 @@ export const COLUNAS_VERSAO =
   "id, proposta_id, versao, autor, valor_base, desconto_pct, desconto_valor, motivo_desconto, desconto_estadia_pct, valor_mensal, meses, data_entrada, condominio, consumo, limpezas_mes, valor_limpeza, taxa_pet, limpeza_unica, pessoas, total_mensal, total_contrato, mensagem, criada_em";
 
 export const COLUNAS_PROPOSTA =
-  "id, numero, lead_id, property_id, owner_id, tenant_id, status, versao_atual, validade_dias, valida_ate, visto_em, recusada_por, recusa_motivo, recusa_texto, taxa_congelada, aceita_em, criada_em, atualizada_em";
+  "id, numero, lead_id, property_id, owner_id, tenant_id, status, versao_atual, validade_dias, valida_ate, visto_em, recusada_por, recusa_motivo, recusa_texto, aceita_em, criada_em, atualizada_em";
+
+/**
+ * Colunas da taxa (só o servidor lê, com o cliente admin, para o dono e o admin). A 0172 tirou essas colunas do
+ * SELECT de authenticated: a conta do morador não as lê nem pela API direta (especificação da taxa, item 5).
+ */
+export const COLUNAS_TAXA_PROPOSTA = "taxa_congelada, taxa_no_envio, taxa_origem";
+
+export interface TaxaDaProposta {
+  taxa_congelada: number | null;
+  /** Complemento do prompt 27, parte B: a faixa do dono no envio (a taxa nunca sobe depois). */
+  taxa_no_envio: number | null;
+  taxa_origem: string | null;
+}
+
+/** As colunas de taxa da proposta, pelo cliente admin. */
+export async function lerTaxaDaProposta(admin: SupabaseClient, propostaId: string): Promise<TaxaDaProposta> {
+  const { data } = await admin.from("propostas").select(COLUNAS_TAXA_PROPOSTA).eq("id", propostaId).maybeSingle();
+  const d = (data ?? {}) as Partial<Record<keyof TaxaDaProposta, number | string | null>>;
+  return {
+    taxa_congelada: d.taxa_congelada == null ? null : Number(d.taxa_congelada),
+    taxa_no_envio: d.taxa_no_envio == null ? null : Number(d.taxa_no_envio),
+    taxa_origem: d.taxa_origem == null ? null : String(d.taxa_origem),
+  };
+}
 
 export interface LinhaProposta {
   id: string;
@@ -27,7 +51,6 @@ export interface LinhaProposta {
   recusada_por: Autor | null;
   recusa_motivo: string | null;
   recusa_texto: string | null;
-  taxa_congelada: number | null;
   aceita_em: string | null;
   criada_em: string;
   atualizada_em: string;

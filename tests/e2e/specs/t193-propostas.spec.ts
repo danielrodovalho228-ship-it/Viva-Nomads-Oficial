@@ -266,7 +266,7 @@ test.describe("T193 — propostas", () => {
     await expect(b.getByTestId("aviso-minimo")).toHaveText("Abaixo do que o proprietário aceita; tente a partir de R$ 3.000.");
     await b.screenshot({ path: `${SAIDA}/t193-10-abaixo-minimo-390.png`, fullPage: true });
     const tudo = (await b.content()) + respostas.join("\n");
-    expect(tudo).not.toMatch(/2\.?950/);
+    expect(tudo).not.toMatch(/(?<![\w-])2\.?950(?![\w-])/);
     await b.context().close();
   });
 
@@ -280,4 +280,41 @@ test.describe("T193 — propostas", () => {
     await expect(p.getByTestId("contra-valor")).toHaveCount(0);
     await p.context().close();
   });
+
+  // Complemento do prompt 27, parte B: valor digitado no formato brasileiro. Com piso de R$ 2.900, "3.000", "3.200" e
+  // "3.300" seguem sem aviso (antes "3.300" virava 3,3); "2.500" mostra só a próxima centena e, corrigido para "3.000",
+  // o aviso some ao reenviar.
+  for (const [valor, largura] of [["3.000", 390], ["3.200", 1280], ["3.300", 390], ["2.500", 1280]] as const) {
+    test(`${largura}px — reais no formato brasileiro: piso 2.900, digitar "${valor}"`, async ({ browser }) => {
+      const c = await cenario(`Reais${valor.replace(".", "")}`, NEGOCIA, 2900);
+      const id = await propostaNoBanco(c, [{ autor: "owner", valor: 3400, meses: 4 }]);
+      const b = await abrir(browser, c.inq.email, largura);
+      await b.goto(`/dashboard/propostas/${id}`, { waitUntil: "domcontentloaded" });
+      await b.getByTestId("proposta-contrapropor").click();
+      const campo = b.getByTestId("contra-valor");
+      await campo.fill("");
+      await campo.pressSequentially(valor.replace(".", ""));
+      await expect(campo).toHaveValue(valor, { timeout: 5_000 }); // formatado enquanto digita
+      await b.getByTestId("enviar-contraproposta").click();
+      if (valor === "2.500") {
+        await expect(b.getByTestId("aviso-minimo")).toHaveText("Abaixo do que o proprietário aceita; tente a partir de R$ 3.000.");
+        await campo.fill("3.000");
+        await b.getByTestId("enviar-contraproposta").click();
+        await expect(b.getByTestId("aviso-minimo")).toHaveCount(0);
+      } else {
+        await expect(b.getByTestId("form-contraproposta")).toHaveCount(0, { timeout: 20_000 });
+        await expect(b.getByTestId("aviso-minimo")).toHaveCount(0);
+      }
+      const esperado = valor === "2.500" ? 3000 : Number(valor.replace(".", ""));
+      await expect
+        .poll(async () => {
+          const { data } = await adm().from("proposta_versoes").select("valor_base").eq("proposta_id", id).eq("versao", 2).maybeSingle();
+          return data ? Number(data.valor_base) : null;
+        }, { timeout: 20_000 })
+        .toBe(esperado);
+      expect(await b.content()).not.toMatch(/2\.?900/);
+      await b.screenshot({ path: `${SAIDA}/t193-reais-${valor.replace(".", "")}-${largura}.png`, fullPage: true });
+      await b.context().close();
+    });
+  }
 });

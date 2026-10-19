@@ -3,6 +3,7 @@
  * O proprietário define quantas limpezas por mês, o que cada uma inclui e o valor do pacote por mês.
  * A validação roda no servidor; a tela só repete para avisar cedo.
  */
+import { lerReais } from "../reais.ts";
 
 export const QTDS_LIMPEZA = [0, 1, 2, 4] as const;
 export const MAX_TEXTO_LIMPEZA = 200;
@@ -30,7 +31,9 @@ export function normalizarLimpezaEstadia(raw: unknown): LimpezaEstadia | null {
   const texto =
     typeof r.inclui === "string" ? r.inclui.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim() : "";
   if (texto.length > MAX_TEXTO_LIMPEZA) return null;
-  const bruto = r.valorMes == null || r.valorMes === "" ? 0 : Number(typeof r.valorMes === "string" ? r.valorMes.replace(",", ".") : r.valorMes);
+  // Formato brasileiro pela fonte única ("3.300" = três mil e trezentos; complemento do prompt 27, parte B).
+  const lido = r.valorMes == null || r.valorMes === "" ? { ok: true as const, valor: 0 } : lerReais(r.valorMes as string | number);
+  const bruto = lido.ok ? (lido.valor ?? 0) : NaN;
   if (!Number.isFinite(bruto) || bruto < 0 || bruto > MAX_VALOR_LIMPEZA) return null;
   return { porMes, inclui: texto, valorMes: Math.round(bruto * 100) / 100 };
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { CampoReais } from "@/components/ui/campo-reais";
 import { LimpezaEstadiaCampos, formDeLimpeza, type LimpezaEstadiaForm } from "@/components/anuncio/limpeza-estadia-campos";
 import { PetsRegrasCampos, formDeRegras, type RegrasPetsForm } from "@/components/anuncio/pets-regras-campos";
 import { useEffect, useMemo, useState } from "react";
@@ -593,8 +594,8 @@ export function EditarImovelClient({
             <NumField label="Banheiros" value={bathrooms} onChange={setBathrooms} />
             <NumField label="Área (m²)" value={areaM2} onChange={setAreaM2} />
             <NumField label="Capacidade (pessoas)" value={maxGuests} onChange={setMaxGuests} />
-            <NumField label="Valor mensal (R$/mês)" value={monthlyPrice} onChange={setMonthlyPrice} />
-            <NumField label="Condomínio (R$/mês)" value={condoFee} onChange={setCondoFee} />
+            <ReaisField label="Valor mensal (R$/mês)" value={monthlyPrice} onChange={setMonthlyPrice} testid="editar-preco" />
+            <ReaisField label="Condomínio (R$/mês)" value={condoFee} onChange={setCondoFee} centavos />
           </div>
         </Section>
 
@@ -748,6 +749,23 @@ function NumField({
         value={value}
         onChange={(e) => onChange(e.target.value.replace(/\D/g, ""))}
         className="w-full rounded-xl border border-sage-200 px-3 py-2.5 outline-none focus:border-sage"
+      />
+    </label>
+  );
+}
+
+/** Dinheiro no formato brasileiro ("3.300"), pela fonte única lerReais (complemento do prompt 27, parte B). */
+function ReaisField({ label, value, onChange, centavos, testid }: { label: string; value: string; onChange: (v: string) => void; centavos?: boolean; testid?: string }) {
+  return (
+    <label className="text-sm">
+      <span className="mb-1 block font-medium text-ink">{label}</span>
+      <CampoReais
+        semPrefixo
+        centavos={centavos}
+        value={value === "" ? null : Number(value)}
+        onChange={(v) => onChange(v == null ? "" : String(v))}
+        className="w-full rounded-xl border border-sage-200 px-3 py-2.5 outline-none focus:border-sage"
+        testid={testid}
       />
     </label>
   );

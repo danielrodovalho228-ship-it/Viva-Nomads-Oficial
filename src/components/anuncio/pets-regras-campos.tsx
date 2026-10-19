@@ -1,5 +1,7 @@
 "use client";
 
+import { CampoReais } from "@/components/ui/campo-reais";
+import { reaisOu } from "@/lib/reais";
 import {
   ESPECIES_PET,
   PORTES_PET,
@@ -79,13 +81,14 @@ export function PetsRegrasCampos({ value, onChange }: { value: RegrasPetsForm; o
       <div className="grid gap-3 sm:grid-cols-2" data-testid="valor-pet-campos">
         <label className="grid gap-1 text-sm font-semibold text-ink">
           Valor pet (R$, opcional)
-          <input
+          <CampoReais
+            semPrefixo
+            centavos
             className={campo}
-            inputMode="decimal"
             placeholder="0"
-            data-testid="valor-pet"
-            value={value.valorPet}
-            onChange={(e) => onChange({ ...value, valorPet: e.target.value.replace(",", ".") })}
+            testid="valor-pet"
+            value={reaisOu(value.valorPet, NaN) >= 0 ? reaisOu(value.valorPet, NaN) : null}
+            onChange={(v) => onChange({ ...value, valorPet: v == null ? "" : String(v) })}
           />
         </label>
         <label className="grid gap-1 text-sm font-semibold text-ink">

@@ -1,5 +1,6 @@
 "use client";
 
+import { CampoReais } from "@/components/ui/campo-reais";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, ShieldCheck } from "lucide-react";
@@ -23,6 +24,7 @@ function Campo({ rotulo, ajuda, children }: { rotulo: string; ajuda?: string; ch
   );
 }
 
+/** Percentual do desconto (não é dinheiro): "6,5" → 6,5. Valores em R$ usam o CampoReais (lerReais). */
 const numero = (v: string) => (v === "" ? 0 : Math.max(0, Number(v.replace(",", ".")) || 0));
 
 /**
@@ -84,7 +86,7 @@ export function MontagemProposta({ dados }: { dados: DadosMontagem }) {
           <Panel title="Valores">
             <div className="grid gap-4 sm:grid-cols-2 [&>*]:min-w-0">
               <Campo rotulo="Valor mensal (R$)">
-                <input inputMode="decimal" className="input" value={t.valorBase || ""} onChange={(e) => set("valorBase", numero(e.target.value))} data-testid="proposta-valor" />
+                <CampoReais semPrefixo centavos value={t.valorBase || null} onChange={(v) => set("valorBase", v ?? 0)} testid="proposta-valor" />
               </Campo>
               <Campo rotulo="Número de meses" ajuda={`Entre ${dados.limites.mesesMin} e ${dados.limites.mesesMax}, como no anúncio.`}>
                 <select className="input" value={t.meses} onChange={(e) => set("meses", Number(e.target.value))} data-testid="proposta-meses">
@@ -107,10 +109,10 @@ export function MontagemProposta({ dados }: { dados: DadosMontagem }) {
           <Panel title="Encargos e itens">
             <div className="grid gap-4 sm:grid-cols-2 [&>*]:min-w-0">
               <Campo rotulo="Condomínio (R$/mês)">
-                <input inputMode="decimal" className="input" value={t.condominio || ""} onChange={(e) => set("condominio", numero(e.target.value))} />
+                <CampoReais semPrefixo centavos value={t.condominio || null} onChange={(v) => set("condominio", v ?? 0)} />
               </Campo>
               <Campo rotulo="Consumo estimado (R$/mês)">
-                <input inputMode="decimal" className="input" value={t.consumo || ""} onChange={(e) => set("consumo", numero(e.target.value))} />
+                <CampoReais semPrefixo centavos value={t.consumo || null} onChange={(v) => set("consumo", v ?? 0)} />
               </Campo>
               <Campo rotulo="Limpezas por mês">
                 <select className="input" value={t.limpezasMes} onChange={(e) => set("limpezasMes", Number(e.target.value))}>
@@ -122,13 +124,13 @@ export function MontagemProposta({ dados }: { dados: DadosMontagem }) {
                 </select>
               </Campo>
               <Campo rotulo="Valor de cada limpeza (R$)">
-                <input inputMode="decimal" className="input" value={t.valorLimpeza || ""} onChange={(e) => set("valorLimpeza", numero(e.target.value))} />
+                <CampoReais semPrefixo centavos value={t.valorLimpeza || null} onChange={(v) => set("valorLimpeza", v ?? 0)} />
               </Campo>
               <Campo rotulo="Taxa pet (R$/mês, se houver)">
-                <input inputMode="decimal" className="input" value={t.taxaPet || ""} onChange={(e) => set("taxaPet", numero(e.target.value))} />
+                <CampoReais semPrefixo centavos value={t.taxaPet || null} onChange={(v) => set("taxaPet", v ?? 0)} />
               </Campo>
               <Campo rotulo="Limpeza de preparação (R$, única)">
-                <input inputMode="decimal" className="input" value={t.limpezaUnica || ""} onChange={(e) => set("limpezaUnica", numero(e.target.value))} />
+                <CampoReais semPrefixo centavos value={t.limpezaUnica || null} onChange={(v) => set("limpezaUnica", v ?? 0)} />
               </Campo>
             </div>
             <p className="mt-3 flex items-start gap-2 text-[13px] text-muted">
@@ -145,16 +147,26 @@ export function MontagemProposta({ dados }: { dados: DadosMontagem }) {
                 </select>
               </Campo>
               <Campo rotulo={tipoDesconto === "pct" ? "Desconto (%)" : "Desconto (R$/mês)"}>
-                <input
-                  inputMode="decimal"
-                  className="input"
-                  value={(tipoDesconto === "pct" ? t.descontoPct : t.descontoValor) || ""}
-                  onChange={(e) => {
-                    const v = numero(e.target.value);
-                    setT((x) => ({ ...x, descontoPct: tipoDesconto === "pct" ? Math.min(30, v) : 0, descontoValor: tipoDesconto === "valor" ? v : 0 }));
-                  }}
-                  data-testid="proposta-desconto"
-                />
+                {tipoDesconto === "pct" ? (
+                  <input
+                    inputMode="decimal"
+                    className="input"
+                    value={t.descontoPct || ""}
+                    onChange={(e) => {
+                      const v = numero(e.target.value);
+                      setT((x) => ({ ...x, descontoPct: Math.min(30, v), descontoValor: 0 }));
+                    }}
+                    data-testid="proposta-desconto"
+                  />
+                ) : (
+                  <CampoReais
+                    semPrefixo
+                    centavos
+                    value={t.descontoValor || null}
+                    onChange={(v) => setT((x) => ({ ...x, descontoPct: 0, descontoValor: v ?? 0 }))}
+                    testid="proposta-desconto"
+                  />
+                )}
               </Campo>
               <Campo rotulo="Motivo">
                 <select className="input" value={t.motivoDesconto ?? ""} onChange={(e) => set("motivoDesconto", e.target.value || null)}>
