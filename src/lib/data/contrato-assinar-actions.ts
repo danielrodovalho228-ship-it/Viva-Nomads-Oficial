@@ -30,6 +30,7 @@ import { instrucoesPreenchidas } from "@/lib/checkin-servidor";
 import { nomeCurto } from "@/lib/perfil/perfil-publico";
 import { escaparHtml } from "@/lib/escapar-html";
 import { montarLinhaDoTempo, type EtapaEstadia } from "@/lib/estadia-linha-tempo";
+import { periodoDosBlocos } from "@/lib/contrato-blocos";
 import {
   MSG_CODIGO_BLOQUEADO,
   VALIDADE_CODIGO_ASSINATURA_MS,
@@ -145,9 +146,7 @@ function montar(c: LinhaContrato, userId: string, nomes?: { proprietario: string
   const papel = papelNoContrato(userId, c.tenant_id, ownerId);
   if (!papel) return null;
   const imovel = c.properties?.title ?? "Imóvel";
-  const datas = (c.contrato_blocos ?? []).filter((b) => b?.inicio && b?.fim);
-  const inicio = datas.map((b) => b.inicio).sort()[0] ?? null;
-  const fim = datas.map((b) => b.fim).sort().at(-1) ?? null;
+  const { inicio, fim } = periodoDosBlocos(c.contrato_blocos ?? []);
   const resumo = resumoContrato({
     contratoId: c.id,
     imovel,
