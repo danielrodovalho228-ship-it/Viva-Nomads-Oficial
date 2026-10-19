@@ -152,7 +152,8 @@ test.describe("T230 — pagamento sem repetição + Caução do contrato + VN-CT
     // E-mail (Resend falso + caixa de teste): o contrato aparece como VN-CT-….
     await expect.poll(async () => (await adm().from("emails_teste").select("corpo").eq("usuario_id", ids.inq!).ilike("assunto", `%${doc!.numero}%`)).data?.[0]?.corpo ?? "", { timeout: 30_000 }).toContain(ref);
     const r = await fetch(`${RESEND}/__emails`).then((x) => x.json()).catch(() => null);
-    if (Array.isArray(r)) expect(JSON.stringify(r.filter((e: { subject?: string }) => String(e.subject ?? "").includes(doc!.numero)))).toContain(ref);
+    // O Resend falso guarda só o assunto e os anexos (sem o corpo): o e-mail com o documento foi aceito.
+    if (Array.isArray(r)) expect(r.some((e: { assunto?: string }) => String(e.assunto ?? "").includes(doc!.numero as string))).toBe(true);
 
     // Anulação (como a 0182 faz com a duplicidade de teste): o documento existe, fica marcado e não vale mais.
     await adm().from("pagamentos_bloco").update({ anulado_em: new Date().toISOString(), anulado_motivo: "registro em duplicidade" }).eq("id", ids.cau!);
