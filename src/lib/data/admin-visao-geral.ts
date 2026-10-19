@@ -6,7 +6,17 @@ import { diasAteHoje, type Metricas } from "@/lib/admin/visao-geral";
 import { hojeBR } from "@/lib/utils";
 import { chaveCidade } from "@/lib/cidades";
 import { tipoImovel } from "@/lib/admin/indicadores";
-import { contadoresAgentes, extrasAtendimento, extrasDoPeriodo, filaDocumentos, idsContasTeste } from "@/lib/data/admin-indicadores";
+import {
+  candidaturasSemResposta48h,
+  contadoresAgentes,
+  extrasAtendimento,
+  extrasDoPeriodo,
+  filaDocumentos,
+  idsContasTeste,
+  pedidosExpirandoSemResposta,
+  taxasVencidas,
+  urgentesSemResposta4h,
+} from "@/lib/data/admin-indicadores";
 
 /**
  * Visão geral do /admin (0069). Confere ADMIN no servidor e só então lê a
@@ -53,6 +63,18 @@ const lerCache = unstable_cache(
       imoveisDeTeste(admin, cidade),
     ]);
     const precisa = { ...base.precisa };
+    // Complemento do P29 (item 4): as filas contam pela MESMA função da lista que cada uma abre.
+    const horasDesde = (iso: string | undefined) => (iso ? Math.round((Date.now() - new Date(iso).getTime()) / 3_600_000) : null);
+    const [cand48, urgentes, vencidas, expirando] = await Promise.all([
+      candidaturasSemResposta48h(admin).catch(() => null),
+      urgentesSemResposta4h(admin).catch(() => null),
+      taxasVencidas(admin, "real").catch(() => null),
+      pedidosExpirandoSemResposta(admin).catch(() => null),
+    ]);
+    if (cand48) precisa.candidaturas_sem_resposta_48h = { n: cand48.length, horas_mais_antigo: horasDesde(cand48[0]?.criadoEm) };
+    if (urgentes) precisa.chamados_urgentes_sem_resposta = { n: urgentes.length, horas_mais_antigo: horasDesde(urgentes[0]?.opened_at) };
+    if (vencidas) precisa.comissoes_vencidas = { n: vencidas.length, horas_mais_antigo: horasDesde([...vencidas].sort((a, b) => a.criadoEm.localeCompare(b.criadoEm))[0]?.criadoEm) };
+    if (expirando) precisa.pedidos_sem_resposta_expirando = { n: expirando.length, horas_mais_antigo: null };
     if (filaDocs) {
       const horas = filaDocs.maisAntigoEm ? Math.round((Date.now() - new Date(filaDocs.maisAntigoEm).getTime()) / 3_600_000) : null;
       precisa.documentos_pendentes = { n: filaDocs.total, horas_mais_antigo: horas };

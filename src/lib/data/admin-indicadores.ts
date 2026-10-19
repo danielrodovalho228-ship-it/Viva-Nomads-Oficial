@@ -4,6 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { chaveCidade } from "@/lib/cidades";
 import {
+  EVENTOS_HOME,
+  resumoCandidaturas,
+  type TipoEventoHome,
   agregarContratos,
   resolvidosAtendimento,
   respostaPedidos,
@@ -112,21 +115,22 @@ export async function contratosReais(
 export async function pedidosParaMetrica(
   admin: Admin,
   periodo: { ini: string; fim: string },
-  cidade?: string | null
-): Promise<(PedidoParaMetrica & { id: string })[]> {
+  cidade?: string | null,
+  tipo: "real" | "teste" | "todos" = "real"
+): Promise<(PedidoParaMetrica & { id: string; compativeis: number })[]> {
   const k = cidade ? chaveCidade(cidade) : null;
   const [{ data: pedidos }, teste] = await Promise.all([
-    admin.from("pedidos_moradia").select("id, inquilino_id, criado_em, cidade").gte("criado_em", periodo.ini).lt("criado_em", periodo.fim).limit(5000),
+    admin.from("pedidos_moradia").select("id, inquilino_id, criado_em, cidade, compativeis_ao_publicar").gte("criado_em", periodo.ini).lt("criado_em", periodo.fim).limit(5000),
     idsContasTeste(admin),
   ]);
-  const reais = ((pedidos ?? []) as { id: string; inquilino_id: string; criado_em: string; cidade: string | null }[]).filter(
-    (p) => !teste.has(p.inquilino_id) && (!k || chaveCidade(p.cidade) === k)
+  const doRecorte = ((pedidos ?? []) as { id: string; inquilino_id: string; criado_em: string; cidade: string | null; compativeis_ao_publicar: number | null }[]).filter(
+    (p) => (tipo === "todos" ? true : tipo === "teste" ? teste.has(p.inquilino_id) : !teste.has(p.inquilino_id)) && (!k || chaveCidade(p.cidade) === k)
   );
-  if (!reais.length) return [];
-  const { data: resp } = await admin.from("respostas_pedido").select("pedido_id, criado_em").in("pedido_id", reais.map((p) => p.id)).order("criado_em", { ascending: true });
+  if (!doRecorte.length) return [];
+  const { data: resp } = await admin.from("respostas_pedido").select("pedido_id, criado_em").in("pedido_id", doRecorte.map((p) => p.id)).order("criado_em", { ascending: true });
   const primeira = new Map<string, string>();
   for (const r of (resp ?? []) as { pedido_id: string; criado_em: string }[]) if (!primeira.has(r.pedido_id)) primeira.set(r.pedido_id, r.criado_em);
-  return reais.map((p) => ({ id: p.id, criadoEm: p.criado_em, primeiraRespostaEm: primeira.get(p.id) ?? null }));
+  return doRecorte.map((p) => ({ id: p.id, criadoEm: p.criado_em, primeiraRespostaEm: primeira.get(p.id) ?? null, compativeis: Number(p.compativeis_ao_publicar ?? 0) }));
 }
 
 /** Fila de documentos AGORA: documentos de imóvel em revisão (um por imóvel+arquivo) + matrículas em revisão. */
@@ -213,14 +217,29 @@ export async function metricasAtendimentoJanela(admin: Admin, dias: number): Pro
  */
 export async function extrasDoPeriodo(admin: Admin, inicio: string, fim: string, cidade: string | null): Promise<Record<string, number | null>> {
   const periodo = intervaloBRT(inicio, fim);
-  const [contratos, pedidos, solicitacoes] = await Promise.all([
+  const [contratos, pedidos, solicitacoes, candidaturas, eventos] = await Promise.all([
     contratosReais(admin, periodo, cidade),
     pedidosParaMetrica(admin, periodo, cidade),
     solicitacoesManutencao(admin, periodo, cidade),
+    candidaturasDoPeriodo(admin, periodo, cidade),
+    eventosDoPeriodo(admin, periodo, cidade, Object.keys(EVENTOS_HOME)),
   ]);
   const ag = agregarContratos(contratos);
   const pr = respostaPedidos(pedidos);
+  const cand = resumoCandidaturas(candidaturas);
+  const ev = (t: TipoEventoHome) => eventos.filter((e) => e.tipo === t).length;
   return {
+    x_candidaturas: cand.total,
+    x_cand_decididas: cand.decididas,
+    x_cand_aceitas: cand.aceitas,
+    x_cand_mediana_h: cand.medianaHoras,
+    x_ev_busca: ev("busca"),
+    x_ev_ver_anuncio: ev("ver_anuncio"),
+    x_ev_iniciar_candidatura: ev("iniciar_candidatura"),
+    x_ev_iniciar_cadastro: ev("iniciar_cadastro"),
+    x_ev_concluir_cadastro: ev("concluir_cadastro"),
+    x_ev_iniciar_anuncio: ev("iniciar_anuncio"),
+    x_ev_publicar_anuncio: ev("publicar_anuncio"),
     x_contratos: ag.contratos,
     x_valor_total: ag.valorTotal,
     x_taxa: ag.taxa,
@@ -336,4 +355,154 @@ export async function adminDaPagina(): Promise<Admin | null> {
   } = await supabase.auth.getUser();
   if (!user || !(await ehAdmin(supabase, user.id))) return null;
   return createAdminClient();
+}
+
+// ── Complemento do P29 (item 4): toda a home com lista — candidaturas, eventos e as filas do "Precisa de você" ─────
+
+export interface CandidaturaAdmin {
+  id: string;
+  criadoEm: string;
+  imovel: string;
+  cidade: string | null;
+  status: string;
+  aceitaEm: string | null;
+  recusadaEm: string | null;
+}
+
+type LinhaLead = {
+  id: string;
+  created_at: string;
+  accepted_at: string | null;
+  rejected_at: string | null;
+  status: string | null;
+  tenant_id: string;
+  properties: { owner_id: string; title: string | null; city: string | null };
+};
+
+const paraCandidatura = (l: LinhaLead): CandidaturaAdmin => ({
+  id: l.id,
+  criadoEm: l.created_at,
+  imovel: l.properties.title ?? "Imóvel",
+  cidade: l.properties.city,
+  status: l.status ?? "",
+  aceitaEm: l.accepted_at,
+  recusadaEm: l.rejected_at,
+});
+
+/** Candidaturas do período (imóvel real, inquilino real, cidade do imóvel) — a mesma regra da 0181 (leads_p). */
+export async function candidaturasDoPeriodo(admin: Admin, periodo: { ini: string; fim: string }, cidade?: string | null): Promise<CandidaturaAdmin[]> {
+  const k = cidade ? chaveCidade(cidade) : null;
+  const [{ data }, teste] = await Promise.all([
+    admin
+      .from("leads")
+      .select("id, created_at, accepted_at, rejected_at, status, tenant_id, properties!inner(owner_id, title, city)")
+      .gte("created_at", periodo.ini)
+      .lt("created_at", periodo.fim)
+      .order("created_at", { ascending: false })
+      .limit(5000),
+    idsContasTeste(admin),
+  ]);
+  return ((data ?? []) as unknown as LinhaLead[])
+    .filter((l) => !teste.has(l.tenant_id) && !teste.has(l.properties.owner_id) && !MARCA_TESTE.test(l.properties.title ?? ""))
+    .filter((l) => !k || chaveCidade(l.properties.city) === k)
+    .map(paraCandidatura);
+}
+
+/** "Candidaturas sem resposta há mais de 48 h" — a fila do "Precisa de você agora" (mesma regra da 0181). */
+export async function candidaturasSemResposta48h(admin: Admin): Promise<CandidaturaAdmin[]> {
+  const limite = new Date(Date.now() - 48 * 3_600_000).toISOString();
+  const [{ data }, teste] = await Promise.all([
+    admin
+      .from("leads")
+      .select("id, created_at, accepted_at, rejected_at, status, tenant_id, properties!inner(owner_id, title, city)")
+      .is("accepted_at", null)
+      .is("rejected_at", null)
+      .lt("created_at", limite)
+      .order("created_at", { ascending: true })
+      .limit(2000),
+    idsContasTeste(admin),
+  ]);
+  const fechados = new Set(["accepted", "rejected", "cancelled", "canceled", "expired"]);
+  return ((data ?? []) as unknown as LinhaLead[])
+    .filter((l) => !fechados.has(String(l.status ?? "")))
+    .filter((l) => !teste.has(l.tenant_id) && !teste.has(l.properties.owner_id) && !MARCA_TESTE.test(l.properties.title ?? ""))
+    .map(paraCandidatura);
+}
+
+/** Eventos anônimos do período por tipo (contas de teste fora; cidade pela chave do evento) — a mesma regra da 0181. */
+export async function eventosDoPeriodo(
+  admin: Admin,
+  periodo: { ini: string; fim: string },
+  cidade: string | null | undefined,
+  tipos: readonly string[]
+): Promise<{ tipo: string; criadoEm: string }[]> {
+  const k = cidade ? chaveCidade(cidade) : null;
+  let q = admin.from("eventos").select("tipo, criado_em, usuario_id, cidade_chave").in("tipo", [...tipos]).gte("criado_em", periodo.ini).lt("criado_em", periodo.fim).limit(50000);
+  if (k) q = q.eq("cidade_chave", k);
+  const [{ data }, teste] = await Promise.all([q, idsContasTeste(admin)]);
+  return ((data ?? []) as { tipo: string; criado_em: string; usuario_id: string | null }[])
+    .filter((e) => !e.usuario_id || !teste.has(e.usuario_id))
+    .map((e) => ({ tipo: e.tipo, criadoEm: e.criado_em }));
+}
+
+/** "Chamados urgentes sem resposta há mais de 4 h" (manutenção) — mesma regra da 0181. */
+export async function urgentesSemResposta4h(admin: Admin) {
+  const limite = new Date(Date.now() - 4 * 3_600_000).toISOString();
+  const { data } = await admin
+    .from("service_orders")
+    .select("id, category, priority, status, opened_at, first_response_at, resolved_at, simulacao, properties!inner(owner_id, title, city)")
+    .eq("priority", "urgente")
+    .neq("status", "resolvido")
+    .is("first_response_at", null)
+    .lt("opened_at", limite)
+    .order("opened_at", { ascending: true })
+    .limit(2000);
+  return ((data ?? []) as unknown as {
+    id: string;
+    category: string | null;
+    priority: string | null;
+    status: string;
+    opened_at: string;
+    first_response_at: string | null;
+    resolved_at: string | null;
+    simulacao: boolean | null;
+    properties: { owner_id: string; title: string | null; city: string | null };
+  }[]).filter((s) => !s.simulacao);
+}
+
+/** "Taxas vencidas": cobranças da taxa de serviço com status vencido, pelo recorte Real/Teste/Todos do contrato. */
+export async function taxasVencidas(admin: Admin, tipo: "real" | "teste" | "todos" = "real"): Promise<{ leadId: string; criadoEm: string }[]> {
+  const { data } = await admin.from("cobrancas_fechamento").select("lead_id, criado_em").eq("tipo", "comissao").eq("status", "vencido").limit(2000);
+  const linhas = (data ?? []) as { lead_id: string; criado_em: string }[];
+  if (!linhas.length || tipo === "todos") return linhas.map((l) => ({ leadId: l.lead_id, criadoEm: l.criado_em }));
+  const testeDoLead = await leadsDeTeste(admin, linhas.map((l) => l.lead_id));
+  return linhas.filter((l) => (tipo === "teste") === testeDoLead.has(l.lead_id)).map((l) => ({ leadId: l.lead_id, criadoEm: l.criado_em }));
+}
+
+/** Candidaturas (leads) que são de teste: conta de teste em qualquer lado ou anúncio [TESTE…]. */
+export async function leadsDeTeste(admin: Admin, ids: string[]): Promise<Set<string>> {
+  if (!ids.length) return new Set();
+  const [{ data }, teste] = await Promise.all([
+    admin.from("leads").select("id, tenant_id, properties!inner(owner_id, title)").in("id", [...new Set(ids)]),
+    idsContasTeste(admin),
+  ]);
+  return new Set(
+    ((data ?? []) as unknown as { id: string; tenant_id: string; properties: { owner_id: string; title: string | null } }[])
+      .filter((l) => teste.has(l.tenant_id) || teste.has(l.properties.owner_id) || MARCA_TESTE.test(l.properties.title ?? ""))
+      .map((l) => l.id)
+  );
+}
+
+/** "Pedidos expirando sem nenhuma resposta" (ativos, vencem em até 3 dias) — mesma regra da 0181. */
+export async function pedidosExpirandoSemResposta(admin: Admin): Promise<string[]> {
+  const limite = new Date(Date.now() + 3 * 86_400_000).toISOString();
+  const [{ data }, teste] = await Promise.all([
+    admin.from("pedidos_moradia").select("id, inquilino_id").eq("status", "ativo").lt("expira_em", limite).limit(2000),
+    idsContasTeste(admin),
+  ]);
+  const ativos = ((data ?? []) as { id: string; inquilino_id: string }[]).filter((p) => !teste.has(p.inquilino_id));
+  if (!ativos.length) return [];
+  const { data: resp } = await admin.from("respostas_pedido").select("pedido_id").in("pedido_id", ativos.map((p) => p.id));
+  const com = new Set(((resp ?? []) as { pedido_id: string }[]).map((r) => r.pedido_id));
+  return ativos.filter((p) => !com.has(p.id)).map((p) => p.id);
 }

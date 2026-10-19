@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Wrench } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
-import { adminDaPagina, intervaloBRT, solicitacoesManutencao } from "@/lib/data/admin-indicadores";
+import { adminDaPagina, intervaloBRT, solicitacoesManutencao, urgentesSemResposta4h } from "@/lib/data/admin-indicadores";
 import { periodoDaLista } from "@/lib/admin/indicadores";
 import { somarDias, rotuloPeriodo } from "@/lib/admin/visao-geral";
 import { dataHoraBRT } from "@/lib/datas-brasilia";
@@ -22,15 +22,21 @@ export default async function AdminSolicitacoesPage({ searchParams }: { searchPa
   const hoje = hojeBR();
   const p = periodoDaLista({ de: um("de"), ate: um("ate") }) ?? { inicio: somarDias(hoje, -29), fim: hoje };
   const cidade = (um("cidade") ?? "").trim().slice(0, 80) || null;
+  // "Chamados urgentes sem resposta há mais de 4 h" (fila do "Precisa de você agora"): agora, sem período.
+  const urgentes = um("prioridade") === "urgente" && um("sem_resposta") === "1";
   const admin = await adminDaPagina();
-  const lista = admin ? await solicitacoesManutencao(admin, intervaloBRT(p.inicio, p.fim), cidade) : [];
+  const lista = admin ? (urgentes ? await urgentesSemResposta4h(admin) : await solicitacoesManutencao(admin, intervaloBRT(p.inicio, p.fim), cidade)) : [];
   const resolvidas = lista.filter((s) => s.resolved_at).length;
 
   return (
     <div data-testid="admin-solicitacoes">
       <PageTitle
         title="Solicitações de manutenção"
-        subtitle={`${rotuloPeriodo(p.inicio, p.fim)}${cidade ? ` · ${cidade}` : ""} · imóveis reais, sem simulações nem contas de teste`}
+        subtitle={
+          urgentes
+            ? "Urgentes sem resposta do proprietário há mais de 4 h · agora · sem simulações"
+            : `${rotuloPeriodo(p.inicio, p.fim)}${cidade ? ` · ${cidade}` : ""} · imóveis reais, sem simulações nem contas de teste`
+        }
         action={
           <Link href="/admin" className="text-sm text-forest underline">
             Voltar à visão geral
@@ -38,7 +44,7 @@ export default async function AdminSolicitacoesPage({ searchParams }: { searchPa
         }
       />
       <p className="mb-4 text-sm text-ink">
-        <strong data-testid="lista-total">{lista.length}</strong> {lista.length === 1 ? "solicitação aberta" : "solicitações abertas"} no período ·{" "}
+        <strong data-testid="lista-total">{lista.length}</strong> {lista.length === 1 ? "solicitação" : "solicitações"} {urgentes ? "urgentes sem resposta" : "abertas no período"} ·{" "}
         {resolvidas} {resolvidas === 1 ? "resolvida" : "resolvidas"}. Horários no horário de Brasília (BRT).
       </p>
       <Panel title="Solicitações">

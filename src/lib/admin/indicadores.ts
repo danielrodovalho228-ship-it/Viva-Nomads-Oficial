@@ -177,3 +177,49 @@ export function faltaAssinar(c: { assinadoDono: boolean; assinadoInquilino: bool
   const falta = [!c.assinadoDono && "proprietário", !c.assinadoInquilino && "inquilino"].filter(Boolean) as string[];
   return falta.length ? `Falta assinar: ${falta.join(" e ")}` : "Assinado pelas duas partes";
 }
+
+// ── Candidaturas (complemento do P29, item 4) ─────────────────────────────────────────────────────────────────
+export function resumoCandidaturas(cs: { criadoEm: string; aceitaEm: string | null; recusadaEm: string | null }[]): {
+  total: number;
+  decididas: number;
+  aceitas: number;
+  medianaHoras: number | null;
+} {
+  const horas = cs
+    .map((c) => (c.aceitaEm ?? c.recusadaEm ? (new Date((c.aceitaEm ?? c.recusadaEm) as string).getTime() - new Date(c.criadoEm).getTime()) / 3_600_000 : null))
+    .filter((h): h is number => h !== null && Number.isFinite(h) && h >= 0);
+  const md = mediana(horas);
+  return {
+    total: cs.length,
+    decididas: cs.filter((c) => c.aceitaEm || c.recusadaEm).length,
+    aceitas: cs.filter((c) => c.aceitaEm).length,
+    medianaHoras: md === null ? null : Math.round(md * 10) / 10,
+  };
+}
+
+/** Os eventos anônimos que a home conta (tipo do evento → rótulo do relatório). */
+export const EVENTOS_HOME = {
+  busca: "Buscas",
+  ver_anuncio: "Anúncios vistos",
+  iniciar_candidatura: "Começaram a candidatura",
+  iniciar_cadastro: "Formulários de cadastro abertos",
+  concluir_cadastro: "Cadastros concluídos",
+  iniciar_anuncio: "Anúncios começados",
+  publicar_anuncio: "Anúncios publicados",
+} as const;
+export type TipoEventoHome = keyof typeof EVENTOS_HOME;
+
+// ── Recorte Real · Teste · Todos (complemento do P29, itens 3 e 5) ───────────────────────────────────────────────
+export type Recorte = "real" | "teste" | "todos";
+export function recorteDaUrl(v: unknown): Recorte {
+  return v === "teste" || v === "todos" ? v : "real";
+}
+/** A base escrita abaixo de cada cartão. */
+export const ROTULO_RECORTE: Record<Recorte, string> = { real: "só contratos reais", teste: "só de teste", todos: "todos" };
+export const ROTULO_RECORTE_PEDIDOS: Record<Recorte, string> = { real: "só contas reais", teste: "só contas de teste", todos: "todas as contas" };
+
+/** "2 de 3 pedidos do período, 67%" — a conta junto do percentual (item 5c). Sem pedido: "0 pedidos no período". */
+export function textoComCompativel(comCompativel: number, total: number): string {
+  if (total <= 0) return "0 pedidos no período";
+  return `${comCompativel} de ${total} ${total === 1 ? "pedido" : "pedidos"} do período, ${Math.round((comCompativel / total) * 100)}%`;
+}

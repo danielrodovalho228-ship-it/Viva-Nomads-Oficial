@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { EyeOff, RotateCcw, Megaphone, Sparkles, Mail, MessageSquare, Clock } from "lucide-react";
 import { PageTitle, Panel, StatCard } from "@/components/dashboard/primitives";
 import type { MetricasPedidos } from "@/lib/data/pedidos-compat";
+import type { Recorte } from "@/lib/admin/indicadores";
 import { Button } from "@/components/ui/button";
 import { formatBRL, cn } from "@/lib/utils";
 import { motivoLabel, PEDIDO_STATUS_LABEL } from "@/lib/pedidos/pedidos";
@@ -33,18 +34,22 @@ const TONE: Record<string, string> = {
   removido_admin: "bg-red-50 text-red-700",
 };
 
-type Resposta = { total: number; comResposta: number; taxa: number | null; medianaHoras: number | null; janela: string };
+type Resposta = { total: number; comResposta: number; taxa: number | null; medianaHoras: number | null; janela: string; compativel: string };
 
 export function AdminPedidosClient({
   pedidos,
   metricas,
   resposta,
   rotuloFiltro,
+  recorte,
+  filtroUrl,
 }: {
   pedidos: Record<string, unknown>[];
   metricas: MetricasPedidos | null;
   resposta: Resposta;
   rotuloFiltro: string | null;
+  recorte: Recorte;
+  filtroUrl: { de: string; ate: string; cidade: string | null; status: string | null; expirando: boolean };
 }) {
   const router = useRouter();
   const lista = pedidos as unknown as Pedido[];
@@ -75,10 +80,29 @@ export function AdminPedidosClient({
         title="Moderação de pedidos"
         subtitle="Ocultar pedidos impróprios (com motivo, notificando o inquilino) e reativar."
       />
+      {/* Recorte único dos cartões e da lista (complemento do P29, item 5b). */}
+      <form method="get" action="/admin/pedidos" className="mb-4 flex flex-wrap items-end gap-2" data-testid="pedidos-recorte">
+        <input type="hidden" name="de" value={filtroUrl.de} />
+        <input type="hidden" name="ate" value={filtroUrl.ate} />
+        {filtroUrl.cidade && <input type="hidden" name="cidade" value={filtroUrl.cidade} />}
+        {filtroUrl.status && <input type="hidden" name="status" value={filtroUrl.status} />}
+        {filtroUrl.expirando && <input type="hidden" name="expirando" value="1" />}
+        <label className="grid gap-1 text-sm text-muted">
+          Contas
+          <select name="tipo" defaultValue={recorte} className="rounded-xl border border-line px-3 py-2 text-sm text-ink" data-testid="filtro-tipo">
+            <option value="real">Real</option>
+            <option value="teste">Teste</option>
+            <option value="todos">Todos</option>
+          </select>
+        </label>
+        <Button type="submit" size="sm">
+          Aplicar
+        </Button>
+      </form>
       <MetricasPedidosPainel m={metricas} r={resposta} />
       <p className="mb-3 text-sm text-ink">
         <strong data-testid="lista-total">{lista.length}</strong> {lista.length === 1 ? "pedido" : "pedidos"} nesta lista
-        {rotuloFiltro ? ` · ${rotuloFiltro}` : " · todos, inclusive de contas de teste"}
+        {rotuloFiltro ? ` · ${rotuloFiltro}` : ""}
       </p>
       <Panel className="p-0 pt-6">
         <div className="overflow-x-auto px-6 pb-6">
@@ -182,19 +206,17 @@ export function AdminPedidosClient({
  * compatível e avisos continuam da 0059 (últimos 30 dias). "—" quando não há dado.
  */
 function MetricasPedidosPainel({ m, r }: { m: MetricasPedidos | null; r: Resposta }) {
-  const pct =
-    m && m.pedidos > 0 ? `${Math.round((m.pedidos_com_compativel / m.pedidos) * 100)}%` : "—";
   const taxa = r.taxa === null ? "—" : `${Math.round(r.taxa * 1000) / 10}%`.replace(".", ",");
   const horas = r.medianaHoras === null ? "—" : `${String(r.medianaHoras).replace(".", ",")} h`;
   return (
     <div className="mb-6">
-      <p className="mb-2 text-sm text-muted">{r.janela} · contas de teste fora</p>
+      <p className="mb-2 text-sm text-muted" data-testid="pedidos-janela">{r.janela}</p>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
         <StatCard label="Pedidos do período" value={r.total} icon={Megaphone} />
         <StatCard label="Pedidos com resposta" value={taxa} icon={MessageSquare} />
         <StatCard label="Tempo até a 1ª resposta (mediana)" value={horas} icon={Clock} />
         <StatCard label="Pedidos respondidos" value={r.comResposta} icon={MessageSquare} />
-        <StatCard label="Com compatível ao publicar (30 dias)" value={pct} icon={Sparkles} />
+        <StatCard label="Com compatível ao publicar" value={r.compativel.match(/\d+%$/)?.[0] ?? "—"} hint={r.compativel} icon={Sparkles} />
         <StatCard label="Avisos enviados (30 dias)" value={m ? m.avisos_email + m.avisos_resumo : "—"} icon={Mail} />
       </div>
       <p className="mt-2 text-xs text-muted">
