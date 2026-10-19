@@ -1,18 +1,46 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BellRing, Loader2 } from "lucide-react";
 import { ButtonLink, buttonClasses } from "@/components/ui/button";
 import { avisarFotografoNaCidade } from "@/lib/fotografos/aviso-actions";
-import { CONVITE_AVISO } from "@/lib/fotografos/aviso";
+import { CONVITE_AVISO, TEXTO_AVISO_DESLOGADO, linkEntrarParaAvisar } from "@/lib/fotografos/aviso";
 
 /**
  * Busca sem fotógrafo na cidade (QA do Muse, 18/10): sempre há uma saída — "avise-me quando houver" (gravado por
- * cidade, contato do perfil) e seguir com as próprias fotos. Sem login: entrar e voltar para a mesma busca.
+ * cidade, contato do perfil) e seguir com as próprias fotos. Sem login: entrar (ou criar a conta) e voltar para a
+ * mesma busca com ?avisar=1 — o aviso é gravado na volta, sem outro clique (complemento do P29, item 5a).
  */
-export function AvisoFotografo({ cidade, uf, logado, voltarPara }: { cidade: string; uf: string; logado: boolean; voltarPara: string }) {
+export function AvisoFotografo({
+  cidade,
+  uf,
+  logado,
+  voltarPara,
+  autoAvisar = false,
+}: {
+  cidade: string;
+  uf: string;
+  logado: boolean;
+  voltarPara: string;
+  /** Voltou do login pelo link do aviso: grava já. */
+  autoAvisar?: boolean;
+}) {
   const [enviando, setEnviando] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; texto: string } | null>(null);
+  const jaPediu = useRef(false);
+
+  useEffect(() => {
+    if (!autoAvisar || !logado || !uf || jaPediu.current) return;
+    jaPediu.current = true;
+    // Tira o ?avisar=1 da barra: recarregar a página não pede de novo.
+    try {
+      window.history.replaceState(null, "", voltarPara);
+    } catch {
+      /* sem history: segue */
+    }
+    void avisar();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoAvisar, logado, uf]);
 
   async function avisar() {
     setEnviando(true);
@@ -26,6 +54,11 @@ export function AvisoFotografo({ cidade, uf, logado, voltarPara }: { cidade: str
       <p className="flex items-center gap-2 font-semibold text-ink">
         <BellRing className="size-5 shrink-0 text-forest" aria-hidden /> {CONVITE_AVISO}
       </p>
+      {enviando && !msg && autoAvisar && (
+        <p className="mt-2 text-sm text-ink" role="status">
+          Registrando o seu pedido de aviso…
+        </p>
+      )}
       {msg?.ok ? (
         <p className="mt-2 text-sm text-forest" role="status" data-testid="aviso-fotografo-ok">
           {msg.texto}
@@ -36,8 +69,11 @@ export function AvisoFotografo({ cidade, uf, logado, voltarPara }: { cidade: str
         </button>
       ) : (
         <div className="mt-3">
-          <ButtonLink href={`/auth?redirect=${encodeURIComponent(voltarPara)}`} className="w-full sm:w-auto" data-testid="aviso-fotografo-entrar">
-            Entrar para ser avisado
+          <p className="text-sm text-ink" data-testid="aviso-fotografo-deslogado">
+            {TEXTO_AVISO_DESLOGADO}.
+          </p>
+          <ButtonLink href={linkEntrarParaAvisar(voltarPara)} className="mt-2 w-full sm:w-auto" data-testid="aviso-fotografo-entrar">
+            Entrar ou criar conta
           </ButtonLink>
         </div>
       )}

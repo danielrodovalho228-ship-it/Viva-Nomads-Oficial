@@ -12,9 +12,10 @@ function pctTexto(p: number): string {
   return `${String(Math.round(p * 1000) / 10).replace(".", ",")}%`;
 }
 
-function diaMes(iso: string | null | undefined): string | null {
+/** "12/10/2026" (data completa do aceite). */
+function dataCompleta(iso: string | null | undefined): string | null {
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso ?? ""));
-  return m ? `${m[3]}/${m[2]}` : null;
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : null;
 }
 
 export function baseDaTaxa(p: { valor: number; percent: number; aluguelMensal: number; meses: number }): BaseTaxa {
@@ -31,15 +32,22 @@ function brl(v: number): string {
   return `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: inteiro ? 0 : 2, maximumFractionDigits: inteiro ? 0 : 2 })}`;
 }
 
-/** "12% sobre o valor mensal × meses (R$ 3.200 × 4 = R$ 12.800)" (prompt 27) · "12% de 1 mês — regra vigente no aceite em 12/10" · "12% — valor registrado no aceite". */
+/**
+ * Rótulo ÚNICO da taxa de serviço de um CONTRATO (complemento do Prompt 29, item 2). Nenhuma tela monta essa frase por
+ * conta própria (teste de guarda):
+ *  - valor_total → "12% sobre o valor mensal × meses (R$ 3.200 × 4 = R$ 12.800) = R$ 1.536";
+ *  - um_mes      → "Regra anterior: 12% de 1 mês (R$ 3.200) = R$ 384, valor gravado no aceite em 12/10/2026";
+ *  - outra       → "R$ 500, valor gravado no aceite em 12/10/2026" (sem fórmula).
+ */
 export function rotuloBaseTaxa(p: { valor: number; percent: number; aluguelMensal: number; meses: number; aceiteEm?: string | null }): string {
   const base = baseDaTaxa(p);
   const pct = pctTexto(p.percent);
-  const dia = diaMes(p.aceiteEm);
+  const dia = dataCompleta(p.aceiteEm);
+  const gravado = `valor gravado no aceite${dia ? ` em ${dia}` : ""}`;
   if (base === "valor_total") {
     const m = Math.max(1, Math.round(p.meses));
-    return `${pct} sobre o valor mensal × meses (${brl(p.aluguelMensal)} × ${m} = ${brl(Math.round(p.aluguelMensal * m * 100) / 100)})`;
+    return `${pct} sobre o valor mensal × meses (${brl(p.aluguelMensal)} × ${m} = ${brl(Math.round(p.aluguelMensal * m * 100) / 100)}) = ${brl(p.valor)}`;
   }
-  if (base === "um_mes") return `${pct} de 1 mês — regra vigente no aceite${dia ? ` em ${dia}` : ""}`;
-  return p.percent > 0 ? `${pct} — valor registrado no aceite${dia ? ` em ${dia}` : ""}` : "valor registrado no aceite";
+  if (base === "um_mes") return `Regra anterior: ${pct} de 1 mês (${brl(p.aluguelMensal)}) = ${brl(p.valor)}, ${gravado}`;
+  return `${brl(p.valor)}, ${gravado}`;
 }

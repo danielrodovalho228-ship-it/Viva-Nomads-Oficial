@@ -1,5 +1,6 @@
 "use client";
 
+import { FRASE_CONVERSA_CHAT } from "@/config/conversa-chat";
 import { ETAPAS_CANDIDATURA, TERMOS_CANDIDATURA, LIMITE_APRESENTACAO, etapaAnterior, proximaEtapa, progressoEtapa, validarApresentacao, type EtapaCandidatura } from "@/lib/candidatura-etapas";
 import { AvisoPetCandidatura } from "@/components/property/aviso-pet-candidatura";
 import { ProblemaComIsto } from "@/components/ajuda/problema-com-isto";
@@ -379,7 +380,7 @@ export function PropertyDetail({
         <MessageCircle className="h-4 w-4" /> {contatoViva.rotulo}
       </a>
       <p className="text-center text-xs text-muted">
-        A conversa é com a Viva. O contato do proprietário só aparece depois do aceite.
+        {FRASE_CONVERSA_CHAT}
       </p>
       <AvisoPetCandidatura petsAllowed={property.petsAllowed} regras={property.petsRegras} exemplo={exemplo} />
       <AvisoAntigolpe />

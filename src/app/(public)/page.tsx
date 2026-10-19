@@ -1,4 +1,5 @@
 import { isExemplo } from "@/lib/demo-listing";
+import { PASSO_CONVERSE_TEXTO } from "@/config/conversa-chat";
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
@@ -260,7 +261,7 @@ export default async function HomePage() {
 
           <div className="mt-10 grid grid-cols-1 gap-8 sm:grid-cols-2 md:mt-12" data-testid="passos-home">
             <Step n="1" img={HOME_PASSOS_IMAGENS[0]} icon={Search} title="Busque" text="Encontre imóveis mobiliados pela cidade, período e orçamento. Filtre por Pronto para Morar." />
-            <Step n="2" img={HOME_PASSOS_IMAGENS[1]} icon={MessageSquare} title="Converse" text="Fale direto com o proprietário, tire dúvidas e agende a visita pela plataforma." />
+            <Step n="2" img={HOME_PASSOS_IMAGENS[1]} icon={MessageSquare} title="Converse" text={PASSO_CONVERSE_TEXTO} />
             <Step n="3" img={HOME_PASSOS_IMAGENS[2]} icon={FileSignature} title="Assine com segurança" text="Caução combinada entre proprietário e inquilino e contrato assinado digitalmente, com validade jurídica." />
             <Step n="4" img={HOME_PASSOS_IMAGENS[3]} icon={ClipboardCheck} title="Conferência de entrada" text="Na chegada, você e o proprietário conferem o estado do imóvel e registram tudo na plataforma." />
           </div>

@@ -109,13 +109,3 @@ export async function alternarAprovacaoFotografo(id: string, aprovar: boolean): 
   return { ok: true };
 }
 
-export async function salvarTaxaParceria(_: ResultadoAcao | null, form: FormData): Promise<ResultadoAcao> {
-  const adm = await exigirAdmin();
-  if (!adm) return { ok: false, erro: "Sem permissão." };
-  const valor = taxaValida(form.get("taxa"));
-  if (valor === null) return { ok: false, erro: "Informe um valor entre R$ 0 e R$ 10.000." };
-  const { error } = await adm.supabase.from("config_parceria").upsert({ chave: "taxa_parceria_fotografo", valor });
-  if (error) return { ok: false, erro: "Não foi possível salvar." };
-  revalidatePath("/admin/fotografos");
-  return { ok: true, mensagem: "Taxa de parceria atualizada (vale para os próximos pedidos)." };
-}

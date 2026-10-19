@@ -1,9 +1,10 @@
 /*
   Textos oficiais sobre PARCEIROS (ordem 7b7eaca9). FONTE ÚNICA para o chat da Viva
   (viva-prompt.ts), a Central de Ajuda (faq.ts) e os testes. Puro (node --test).
-  Decisões do Daniel em 11/10: taxa de parceria 40/60/80 por tamanho do pacote,
-  paga só ao aceitar o pedido; sem mensalidade; a Viva não recebe o dinheiro do serviço.
+  Taxa: a taxa fixa por pedido (11/10) saiu no complemento do Prompt 29. Vale a taxa de serviço de 10%
+  sobre o valor do serviço, para todas as categorias (texto único em config/taxa-servico-parceiros.ts).
 */
+import { TEXTO_TAXA_SERVICO_PARCEIROS } from "../../config/taxa-servico-parceiros.ts";
 
 export const TIPOS_PARCEIRO =
   "Fotografia (aberto agora); limpeza, manutenção, mobília/enxoval e seguro entram em lista de espera por cidade (em breve). Empresas que hospedam equipes seguem por /empresas e gestores de imóveis pelo Plano Gestor.";
@@ -14,14 +15,13 @@ export const MODOS_CONTA =
 export const CADASTRO_PARCEIRO =
   "O cadastro tem 4 passos: tipo de serviço; negócio (nome comercial, CNPJ ou MEI, cidades atendidas); vitrine (pelo menos 6 fotos de portfólio e os pacotes); e o termo de parceria. Depois a equipe analisa: aprova, pede ajuste ou recusa com motivo, e o parceiro acompanha o andamento no app. O perfil só aparece no site depois de aprovado.";
 
-export const TAXA_PARCERIA_TEXTO =
-  "A taxa de parceria é R$ 40 até 20 fotos, R$ 60 de 21 a 40 fotos e R$ 80 acima de 40 fotos. É paga pelo parceiro só ao aceitar um pedido; sem mensalidade e sem exclusividade. O valor aparece antes do aceite. A Viva não recebe o dinheiro do serviço: o valor do serviço é combinado entre parceiro e proprietário.";
+export const TAXA_PARCERIA_TEXTO = `${TEXTO_TAXA_SERVICO_PARCEIROS} Sem mensalidade e sem exclusividade. Enquanto o pagamento pela plataforma não estiver ativo, o valor do serviço é combinado e pago direto entre parceiro e proprietário.`;
 
 export const CONTATO_NO_ACEITE =
-  "O contato e o endereço do proprietário só são liberados ao parceiro depois que ele aceita o pedido e paga a taxa de parceria. Antes disso ficam protegidos.";
+  "O contato e o endereço do proprietário só são liberados ao parceiro depois que ele aceita o pedido. Antes disso ficam protegidos.";
 
 export const REGRAS_ENTREGA =
-  "Depois da entrega das fotos, o proprietário aprova ou pede ajuste (até 2 vezes); sem resposta em 5 dias, a entrega é aprovada automaticamente. Se o proprietário cancelar depois do aceite, a taxa paga vira crédito para o parceiro. Se o parceiro não entregar, perde a taxa e recebe uma advertência; com 2 advertências, o perfil é suspenso.";
+  "Depois da entrega das fotos, o proprietário aprova ou pede ajuste (até 2 vezes); sem resposta em 5 dias, a entrega é aprovada automaticamente. Se o parceiro não entregar, recebe uma advertência; com 2 advertências, o perfil é suspenso.";
 
 export const BUSCA_FOTOGRAFOS =
   "Começamos por Uberlândia (MG) e avisamos quando chegarmos a outras cidades. A busca de fotógrafos funciona por CEP: o proprietário informa o CEP do imóvel no passo Fotos do cadastro e vê os fotógrafos que atendem a região, em /parceiros/fotografos.";

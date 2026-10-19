@@ -1,13 +1,12 @@
-import { TEXTO_QUEM_RECEBE_TAXA_PARCERIA } from "@/config/taxa-parceria";
+import { textoTaxaServicoParceiros } from "@/config/taxa-servico-parceiros";
+import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
 import { dataBRT } from "@/lib/datas-brasilia";
 import Link from "next/link";
-import { FAIXAS_TAXA_PARCERIA, reais } from "@/config/taxa-parceria";
 import { Camera, CheckCircle2, Clock, ClipboardList, Handshake } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { PageTitle, Panel, StatCard, EmptyState } from "@/components/dashboard/primitives";
 import { formatBRL } from "@/lib/utils";
-import { TAXA_PARCERIA_PADRAO } from "@/lib/fotografos/regras";
-import { AprovarBotao, CadastroForm, TaxaForm } from "./forms";
+import { AprovarBotao, CadastroForm } from "./forms";
 
 export const metadata = { title: "Fotógrafos — Admin" };
 
@@ -37,7 +36,7 @@ export default async function AdminFotografosPage() {
     );
   }
 
-  const [{ data: fotografos, error: e1 }, { data: pedidos, error: e2 }, { data: cfg }] = await Promise.all([
+  const [{ data: fotografos, error: e1 }, { data: pedidos, error: e2 }] = await Promise.all([
     supabase
       .from("fotografos")
       .select("id, nome_comercial, cidades, pacote_fotos, pacote_prazo_dias, pacote_preco, nota_media, avaliacoes_qtd, aprovado, portfolio_url")
@@ -45,12 +44,10 @@ export default async function AdminFotografosPage() {
       .limit(200),
     supabase
       .from("fotografo_pedidos")
-      .select("id, cidade, uf, data_sugerida, status, taxa_valor, taxa_paga_em, criado_em, fotografos(nome_comercial)")
+      .select("id, cidade, uf, data_sugerida, status, criado_em, fotografos(nome_comercial)")
       .order("criado_em", { ascending: false })
       .limit(100),
-    supabase.from("config_parceria").select("valor").eq("chave", "taxa_parceria_fotografo").maybeSingle(),
   ]);
-  const taxa = cfg?.valor != null ? Number(cfg.valor) : TAXA_PARCERIA_PADRAO;
   const lista = fotografos ?? [];
   const peds = pedidos ?? [];
   const aprovados = lista.filter((f) => f.aprovado).length;
@@ -61,7 +58,7 @@ export default async function AdminFotografosPage() {
     <>
       <PageTitle
         title="Fotógrafos parceiros"
-        subtitle="Cadastro, aprovação, taxa de parceria e pedidos dos donos."
+        subtitle="Cadastro, aprovação e pedidos dos donos."
         action={
           <Link href="/admin/parceiros" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-sage-200 bg-white px-4 text-sm font-semibold text-ink hover:border-sage">
             <Handshake className="h-4 w-4" /> Todos os parceiros
@@ -83,15 +80,8 @@ export default async function AdminFotografosPage() {
       </div>
 
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
-        <Panel title="Taxa de parceria" className="lg:col-span-1">
-          <p className="mb-3 text-sm text-muted" data-testid="texto-taxa-parceria">{TEXTO_QUEM_RECEBE_TAXA_PARCERIA}</p>
-          <ul className="mb-4 space-y-1 rounded-xl bg-sage-100 p-3 text-sm text-ink">
-            {FAIXAS_TAXA_PARCERIA.map((f) => (
-              <li key={f.rotulo}>{f.rotulo}: <strong>{reais(f.valor)}</strong></li>
-            ))}
-          </ul>
-          <TaxaForm taxa={taxa} />
-          <p className="mt-2 text-xs text-muted">Valor único usado hoje nos pedidos. As faixas acima entram na próxima etapa da jornada do parceiro.</p>
+        <Panel title="Taxa de serviço dos parceiros" className="lg:col-span-1">
+          <p className="text-sm text-muted" data-testid="texto-taxa-parceria">{textoTaxaServicoParceiros(PAGAMENTO_PARCEIROS_ATIVO)}</p>
         </Panel>
 
         <Panel title="Cadastrar fotógrafo" className="lg:col-span-2">
@@ -185,9 +175,6 @@ export default async function AdminFotografosPage() {
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
                       <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${st.cor}`}>{st.rotulo}</span>
-                      <span className="text-xs text-muted">
-                        {p.taxa_paga_em ? `taxa paga${p.taxa_valor ? ` · ${formatBRL(Number(p.taxa_valor))}` : ""}` : "taxa pendente"}
-                      </span>
                     </div>
                   </li>
                 );

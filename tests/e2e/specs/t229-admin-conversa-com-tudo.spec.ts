@@ -12,7 +12,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, novaS
    • usuários: o admin aparece (Papel: admin), conta de teste com o selo TESTE e fora da lista padrão;
    • imóveis: Tipo (Real/Demonstração/Teste) e "Aparece para o público";
    • Dados de teste: "Encerrar jornadas de teste" pede confirmação e grava no registro;
-   • Fotógrafos: quem paga e quem recebe a taxa de parceria; horários do admin com BRT.
+   • Fotógrafos: a taxa de serviço dos parceiros (10%); horários do admin com BRT.
   Isolado por uma cidade única do spec e um período personalizado novo (a home guarda os números por 5 minutos por
   período e cidade).
 */
@@ -221,8 +221,8 @@ test.describe("T229 — admin conversa com tudo", () => {
     await page.screenshot({ path: `${SAIDA}/t229-dados-de-teste.png`, fullPage: true });
 
     await page.goto("/admin/fotografos", { waitUntil: "domcontentloaded" });
-    await expect(page.getByTestId("texto-taxa-parceria")).toHaveText(
-      "Taxa de parceria (R$ 40/60/80, por faixa de fotos): paga pelo fotógrafo à Viva Nomads ao aceitar o pedido. O serviço é pago direto do proprietário ao fotógrafo; a Viva não recebe esse valor."
-    );
+    // Complemento do P29, item 1: a taxa fixa saiu — taxa de serviço de 10% para todas as categorias.
+    await expect(page.getByTestId("texto-taxa-parceria")).toContainText("Taxa de serviço: 10% sobre o valor do serviço, para todas as categorias.");
+    await expect(page.locator("main")).not.toContainText(/R\$ ?(40|60|80)\b/);
   });
 });

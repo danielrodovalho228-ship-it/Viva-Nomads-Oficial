@@ -167,10 +167,11 @@ test.describe("T44 — Parceiros", () => {
     expect((vitrine.data ?? []).map((f) => f.nome_comercial).sort()).toEqual([nomeBelem, nomeUdi].sort());
   });
 
-  test("taxa de parceria nos textos oficiais: R$ 40 até 20 fotos, R$ 60 de 21 a 40, R$ 80 acima de 40", () => {
-    expect(TAXA_PARCERIA_TEXTO).toMatch(/R\$ 40 até 20 fotos/);
-    expect(TAXA_PARCERIA_TEXTO).toMatch(/R\$ 60 de 21 a 40 fotos/);
-    expect(TAXA_PARCERIA_TEXTO).toMatch(/R\$ 80 acima de 40 fotos/);
-    expect(TAXA_PARCERIA_TEXTO).toMatch(/A Viva não recebe o dinheiro do serviço/);
+  test("taxa de serviço nos textos oficiais: 10% para todas as categorias, sem a taxa fixa por faixa de fotos", () => {
+    // Complemento do P29, item 1: a taxa fixa dos fotógrafos saiu.
+    expect(TAXA_PARCERIA_TEXTO).toMatch(/Taxa de serviço: 10% sobre o valor do serviço, para todas as categorias\./);
+    expect(TAXA_PARCERIA_TEXTO).toMatch(/90% direto ao parceiro e 10% à Viva/);
+    expect(TAXA_PARCERIA_TEXTO).toMatch(/A Viva não guarda o dinheiro/);
+    expect(TAXA_PARCERIA_TEXTO).not.toMatch(/R\$ ?(40|60|80)(?![\d.,])/);
   });
 });

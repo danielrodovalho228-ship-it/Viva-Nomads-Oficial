@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 import { hrefUsuarios } from "@/lib/admin/usuarios-lista";
 import {
   BLOCOS,
+  FUNIL,
   PRECISA,
   csvVisaoGeral,
   fmtHoras,
@@ -146,7 +147,7 @@ export function VisaoGeralClient({
         ))}
 
         <Panel title="Funil do período">
-          <FunilPeriodo m={atual} />
+          <FunilPeriodo m={atual} filtro={filtro} />
         </Panel>
       </div>
 
@@ -214,7 +215,6 @@ function CardIndicador({
       )}
       <p className="text-xs text-muted" data-janela>
         {janela}
-        {!href && " · eventos anônimos, sem lista"}
       </p>
       {a === null && <p className="text-xs text-muted">sem dados no período</p>}
       <p
@@ -253,7 +253,7 @@ function CardIndicador({
 }
 
 // ── Funil ────────────────────────────────────────────────────────────────────
-function FunilPeriodo({ m }: { m: Metricas }) {
+function FunilPeriodo({ m, filtro }: { m: Metricas; filtro: FiltroHome }) {
   const etapas = funil(m).map((e, i) => ({
     rotulo: e.rotulo,
     valor: e.valor,
@@ -271,6 +271,22 @@ function FunilPeriodo({ m }: { m: Metricas }) {
       ) : (
         <Funil etapas={etapas} />
       )}
+      {/* Cada etapa abre a lista da etapa, no mesmo período (complemento do P29, item 4). */}
+      <ul className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3" data-testid="funil-links">
+        {FUNIL.map((e) => (
+          <li key={e.rotulo}>
+            <Link
+              href={e.href(filtro)}
+              className="flex min-h-11 items-center justify-between gap-2 rounded-xl border border-sage-200 px-3 text-sm text-ink hover:border-forest"
+              data-funil={e.rotulo}
+              data-href={e.href(filtro)}
+            >
+              <span className="min-w-0 truncate">{e.rotulo}</span>
+              <strong data-valor>{fmtInteiro(e.calc(m))}</strong>
+            </Link>
+          </li>
+        ))}
+      </ul>
       <details className="mt-3 text-sm">
         <summary className="cursor-pointer text-muted">Ver como tabela</summary>
         <table className="mt-2 w-full text-left text-sm">
@@ -321,7 +337,7 @@ function PrecisaAgora({ precisa, filaDocs }: { precisa: VisaoGeral["precisa"] | 
               href={i.href}
               className={cn(
                 "flex items-center justify-between gap-4 rounded-xl border px-4 py-3",
-                i.href && "hover:border-forest",
+                "hover:border-forest",
                 (i.n ?? 0) > 0 ? "border-amber-300 bg-amber-50/60" : "border-sage-200"
               )}
             >
@@ -333,7 +349,7 @@ function PrecisaAgora({ precisa, filaDocs }: { precisa: VisaoGeral["precisa"] | 
                 </span>
               </span>
               <span className="flex shrink-0 items-center gap-2 font-title text-lg font-bold text-forest">
-                {fmtInteiro(i.n)} {i.href && <ArrowRight className="h-4 w-4" />}
+                {fmtInteiro(i.n)} <ArrowRight className="h-4 w-4" />
               </span>
             </ItemPrecisa>
           </li>
@@ -343,10 +359,9 @@ function PrecisaAgora({ precisa, filaDocs }: { precisa: VisaoGeral["precisa"] | 
   );
 }
 
-function ItemPrecisa({ href, className, children }: { href: string | null; className: string; children: React.ReactNode }) {
-  if (!href) return <div className={className}>{children}</div>;
+function ItemPrecisa({ href, className, children }: { href: string; className: string; children: React.ReactNode }) {
   return (
-    <Link href={href} className={className}>
+    <Link href={href} className={className} data-href={href}>
       {children}
     </Link>
   );
