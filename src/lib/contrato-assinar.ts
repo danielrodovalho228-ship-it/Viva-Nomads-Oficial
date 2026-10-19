@@ -134,15 +134,45 @@ export function motivoNaoPodeAssinar(c: {
   return null;
 }
 
-/** Texto do cartão: o que cada parte vê sobre as assinaturas. */
-export function avisoAssinatura(papel: PapelContrato, a: { proprietario: string | null; inquilino: string | null }): string {
-  const eu = papel === "inquilino" ? a.inquilino : a.proprietario;
-  const outro = papel === "inquilino" ? a.proprietario : a.inquilino;
-  if (eu && outro) return "As duas partes assinaram.";
-  const nomeOutro = papel === "inquilino" ? "proprietário" : "inquilino";
-  if (eu) return `Você já assinou — falta o ${nomeOutro} assinar.`;
-  if (outro) return `O ${nomeOutro} já assinou — falta você assinar.`;
-  return "Nenhuma assinatura ainda.";
+/** Quem assinou: nome curto (nunca contato nem documento) e o momento. Sem nome, o papel. */
+export interface AssinaturaParte {
+  nome?: string | null;
+  em: string | null;
+}
+
+/** "19/10/2026 às 14:32" no horário de Brasília. */
+export function dataHoraAssinatura(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  const f = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false });
+  const p = Object.fromEntries(f.formatToParts(d).map((x) => [x.type, x.value]));
+  return `${p.day}/${p.month}/${p.year} às ${p.hour}:${p.minute}`;
+}
+
+/**
+ * Linhas do cartão de assinaturas (#825; jornada de assinatura, 19/10): nome curto + papel + data e hora de cada
+ * assinatura e o que falta — "Ana S. (proprietário) assinou em 19/10/2026 às 14:32 · falta você". Depois das duas
+ * assinaturas, as duas linhas. As mesmas linhas vão no e-mail "As duas partes assinaram".
+ */
+export function linhasAssinatura(papel: PapelContrato, a: { proprietario: AssinaturaParte | string | null; inquilino: AssinaturaParte | string | null }): string[] {
+  const norm = (x: AssinaturaParte | string | null): AssinaturaParte => (typeof x === "string" || x === null ? { em: x } : x);
+  const dono = norm(a.proprietario);
+  const inq = norm(a.inquilino);
+  const linha = (x: AssinaturaParte, rotulo: "proprietário" | "inquilino") =>
+    `${x.nome?.trim() ? `${x.nome.trim()} (${rotulo})` : `O ${rotulo}`} assinou em ${dataHoraAssinatura(x.em as string)}`;
+  if (!dono.em && !inq.em) return ["Nenhuma assinatura ainda."];
+  const linhas: string[] = [];
+  if (dono.em) linhas.push(linha(dono, "proprietário"));
+  if (inq.em) linhas.push(linha(inq, "inquilino"));
+  if (dono.em && inq.em) return linhas;
+  const euAssinei = papel === "inquilino" ? !!inq.em : !!dono.em;
+  const falta = euAssinei ? `falta o ${papel === "inquilino" ? "proprietário" : "inquilino"}` : "falta você";
+  return [`${linhas[0]} · ${falta}`];
+}
+
+/** Texto do cartão: as linhas de linhasAssinatura, uma por linha. */
+export function avisoAssinatura(papel: PapelContrato, a: { proprietario: AssinaturaParte | string | null; inquilino: AssinaturaParte | string | null }): string {
+  return linhasAssinatura(papel, a).join("\n");
 }
 
 /** Assunto do aviso à OUTRA parte depois que alguém assina: se ela já tinha assinado, o contrato está completo. */

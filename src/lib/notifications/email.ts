@@ -57,8 +57,11 @@ export async function sendEmail(params: {
   }
 
   if (!isEmailConfigured()) {
-    // Laboratório: o corpo vai em texto puro (sem tags) para os testes conferirem o conteúdo.
-    const corpo = params.html.replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim().slice(0, 4000);
+    // Laboratório: o corpo vai em texto puro (sem tags) para os testes conferirem o conteúdo; o destino de cada botão
+    // ou link fica entre parênteses ("Conferir autenticidade (https://…/conferir/…)"), senão o teste não o veria.
+    const corpo = params.html
+      .replace(/<a\b[^>]*\bhref="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi, (_m, href: string, rotulo: string) => `${rotulo} (${href}) `)
+      .replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim().slice(0, 4000);
     await registrarSimulado("email", { para: params.to, assunto: params.subject, anexos: params.attachments?.length ?? 0, corpo });
     return { demo: true };
   }

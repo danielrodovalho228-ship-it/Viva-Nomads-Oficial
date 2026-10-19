@@ -186,7 +186,7 @@ test.describe("T205 — fechamento: 'Gerar contrato' sem beco, dos dois lados at
     for (const largura of [1280, 390]) {
       await pd.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
       await abrir(pd, "/dashboard/contratos");
-      await expect(pd.getByTestId("contrato-assinatura-status").first()).toHaveText("Aguardando assinatura · falta você e o inquilino", { timeout: 20_000 });
+      await expect(pd.getByTestId("contrato-etapa").first()).toHaveText("Aguardando assinatura · falta você e o inquilino", { timeout: 20_000 });
       await semRolagemLateral(pd);
       await pd.screenshot({ path: `${SAIDA}/t205-dono-contratos-${largura}.png`, fullPage: true });
     }
@@ -216,12 +216,12 @@ test.describe("T205 — fechamento: 'Gerar contrato' sem beco, dos dois lados at
     expect(eCheckin).toBeNull();
 
     const pi = await assinarPelaTela(browser, { email: inq.email, id: ids.inq! }, `/dashboard/locacoes/${ids.contrato}`, 390);
-    await expect(pi.getByTestId("contrato-aviso-assinatura")).toHaveText("Você já assinou — falta o proprietário assinar.");
+    await expect(pi.getByTestId("contrato-aviso-assinatura")).toHaveText(/\(inquilino\) assinou em \d{2}\/\d{2}\/\d{4} às \d{2}:\d{2} · falta o proprietário$/, { timeout: 30_000 });
     await pi.screenshot({ path: `${SAIDA}/t205-inquilina-assinou-390.png`, fullPage: true });
     await pi.context().close();
 
     const pd = await assinarPelaTela(browser, { email: dono.email, id: ids.dono! }, `/dashboard/contratos/${ids.contrato}`, 1280);
-    await expect(pd.getByTestId("contrato-aviso-assinatura")).toHaveText("As duas partes assinaram.");
+    await expect(pd.getByTestId("contrato-aviso-assinatura")).toHaveText(/\(proprietário\) assinou em [\s\S]+\(inquilino\) assinou em /, { timeout: 30_000 }); // jornada de assinatura: nome + data e hora de cada um
     await pd.screenshot({ path: `${SAIDA}/t205-dono-assinou-1280.png`, fullPage: true });
     // Locação ativa no painel do dono: sai de "Aguardando assinatura" e segue para o 1º pagamento.
     await abrir(pd, "/dashboard/contratos");

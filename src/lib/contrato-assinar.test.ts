@@ -46,14 +46,19 @@ test("assinar: caso positivo e os negativos (não é parte, não ativo, já assi
   assert.match(motivoNaoPodeAssinar({ ...ok, aceite: false })!, /Li e concordo/);
 });
 
-test("aviso: cada parte vê 'você já assinou / falta o outro'", () => {
-  const t = "2026-10-13";
-  assert.equal(avisoAssinatura("inquilino", { proprietario: null, inquilino: t }), "Você já assinou — falta o proprietário assinar.");
-  assert.equal(avisoAssinatura("proprietario", { proprietario: null, inquilino: t }), "O inquilino já assinou — falta você assinar.");
-  assert.equal(avisoAssinatura("inquilino", { proprietario: t, inquilino: null }), "O proprietário já assinou — falta você assinar.");
-  assert.equal(avisoAssinatura("proprietario", { proprietario: t, inquilino: null }), "Você já assinou — falta o inquilino assinar.");
-  assert.equal(avisoAssinatura("inquilino", { proprietario: t, inquilino: t }), "As duas partes assinaram.");
+test("aviso: nome curto + papel + data e hora de quem assinou, e o que falta (#825)", () => {
+  const t = "2026-10-19T17:32:00Z"; // 14:32 em Brasília
+  const dono = { nome: "Ana S.", em: t };
+  const inq = { nome: "Iara J.", em: t };
+  assert.equal(avisoAssinatura("inquilino", { proprietario: dono, inquilino: { nome: "Iara J.", em: null } }), "Ana S. (proprietário) assinou em 19/10/2026 às 14:32 · falta você");
+  assert.equal(avisoAssinatura("proprietario", { proprietario: dono, inquilino: { nome: "Iara J.", em: null } }), "Ana S. (proprietário) assinou em 19/10/2026 às 14:32 · falta o inquilino");
+  assert.equal(avisoAssinatura("proprietario", { proprietario: { nome: "Ana S.", em: null }, inquilino: inq }), "Iara J. (inquilino) assinou em 19/10/2026 às 14:32 · falta você");
+  assert.equal(avisoAssinatura("inquilino", { proprietario: { nome: "Ana S.", em: null }, inquilino: inq }), "Iara J. (inquilino) assinou em 19/10/2026 às 14:32 · falta o proprietário");
+  // Depois das duas assinaturas, as duas linhas.
+  assert.equal(avisoAssinatura("inquilino", { proprietario: dono, inquilino: inq }), "Ana S. (proprietário) assinou em 19/10/2026 às 14:32\nIara J. (inquilino) assinou em 19/10/2026 às 14:32");
   assert.equal(avisoAssinatura("inquilino", { proprietario: null, inquilino: null }), "Nenhuma assinatura ainda.");
+  // Sem nome, o papel; nunca contato nem documento.
+  assert.equal(avisoAssinatura("inquilino", { proprietario: t, inquilino: null }), "O proprietário assinou em 19/10/2026 às 14:32 · falta você");
 });
 
 test("avaliar: nunca em contrato ativo/aguardando assinatura; só até 14 dias depois do fim", () => {
