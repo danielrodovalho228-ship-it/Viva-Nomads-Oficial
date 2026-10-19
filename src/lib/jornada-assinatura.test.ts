@@ -123,6 +123,7 @@ test("4. 'Li e concordo' persistente: sessionStorage por contrato, restaurado ao
   assert.match(ler("./data/contrato-assinar-actions.ts"), /aceite/);
 });
 
-test("1. o e-mail do recibo leva o link de verificação também por extenso (além do botão)", () => {
-  assert.match(ler("./fiscal/emitir.ts"), /Para conferir a autenticidade: \$\{dados\.conferirUrl\}`/);
+test("1. o e-mail do recibo leva o link de verificação no botão; o laboratório registra o destino do botão", () => {
+  assert.match(ler("./fiscal/emitir.ts"), /cta: \{ label: "Conferir autenticidade", url: dados\.conferirUrl \}/);
+  assert.match(ler("./notifications/email.ts"), /\$\{rotulo\} \(\$\{href\}\) /);
 });
