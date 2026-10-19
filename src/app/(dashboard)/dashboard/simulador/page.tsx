@@ -18,7 +18,7 @@ const PRAZOS = [2, 3, 4, 6];
 /** Fórmulas da tela, em texto simples (prompt 15). A mesma função do mobiliado na Calculadora de ROI: liquidoMobiliadoAnual. */
 const COMO_CALCULAMOS = [
   "Receita bruta do ano = valor mensal × meses ocupados.",
-  "Taxa de serviço = taxa da sua faixa sobre o valor mensal × meses ocupados. Ela nunca incide sobre condomínio, IPTU, contas, limpeza ou taxa pet.",
+  "Taxa de serviço = taxa da sua faixa sobre o valor mensal × meses ocupados. Ela nunca incide sobre condomínio, IPTU ou contas cobrados à parte, nem sobre limpeza ou taxa pet.",
   "Condomínio + IPTU cobrados à parte: o morador paga junto com o valor mensal nos meses ocupados; você paga só nos meses vazios. Incluídos no valor mensal: você paga os 12 meses.",
   "Contas de consumo cobradas à parte: o morador paga. Incluídas no valor mensal: você paga nos meses ocupados.",
   "Reposição e desgaste da mobília = investimento na mobília × % ao ano (o mesmo campo da Calculadora de ROI). Use 0 para não considerar.",

@@ -239,7 +239,7 @@ export function GraficoColunas({
   const geo = geometriaBarras(grupos.flatMap((g) => g.valores), ALTURA);
   let i = 0;
   return (
-    <figure data-testid={testid} className="overflow-hidden">
+    <figure data-testid={testid} className="relative overflow-hidden">
       {/* px-3: espaço para o rótulo das colunas da ponta não sair da tela a 390 px. */}
       <div aria-hidden className="relative px-3" style={{ height: ALTURA + 2 * MARGEM }}>
         <div
