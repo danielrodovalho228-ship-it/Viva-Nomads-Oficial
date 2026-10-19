@@ -6,12 +6,14 @@
   (prefers-color-scheme) e color-scheme.
 */
 import { rodapeAntigolpeHtml } from "./aviso-antigolpe.ts";
+import { REDES_OFICIAIS } from "../../config/redes.ts";
 
 export type ImagemEmail = { src: string; alt: string };
 
 /**
  * Blocos do rodapé que ficam PRONTOS mas DESLIGADOS: só ligam depois do CNPJ e
  * do app nas lojas (preencher os dados e trocar `ativo` para true).
+ * Redes: LIGADO com a constante única REDES_OFICIAIS (Prompt 35A, item 4).
  */
 export interface RodapeOpcional {
   lojas: { ativo: boolean; ios: string; android: string };
@@ -21,7 +23,7 @@ export interface RodapeOpcional {
 
 export const RODAPE_OPCIONAL: RodapeOpcional = {
   lojas: { ativo: false, ios: "", android: "" },
-  redes: { ativo: false, links: [] },
+  redes: { ativo: REDES_OFICIAIS.length > 0, links: [...REDES_OFICIAIS] },
   endereco: { ativo: false, texto: "" },
 };
 
@@ -35,7 +37,7 @@ export function rodapeOpcionalHtml(cfg: RodapeOpcional = RODAPE_OPCIONAL): strin
     partes.push(`Baixe o app: ${l.join(" · ")}`);
   }
   if (cfg.redes.ativo && cfg.redes.links.length) {
-    partes.push(cfg.redes.links.map((r) => `<a href="${r.url}" style="color:#0A4FD6;">${r.nome}</a>`).join(" · "));
+    partes.push(cfg.redes.links.map((r) => `<a href="${r.url}" rel="noopener" style="color:#0A4FD6;">${r.nome}</a>`).join(" · "));
   }
   if (cfg.endereco.ativo && cfg.endereco.texto) partes.push(cfg.endereco.texto);
   if (!partes.length) return "";
