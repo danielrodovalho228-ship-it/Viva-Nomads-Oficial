@@ -5,7 +5,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { motivoParaAprovacao, nivelEscalonamento, textoAcolhimento } from "./acolhimento.ts";
+import { motivoParaAprovacao, nivelEscalonamento, prioridadeSubida, textoAcolhimento } from "./acolhimento.ts";
 import { sugestaoPorRegra } from "./resumo.ts";
 
 const VN101 = "Sou proprietário e quero entender como funciona o Caução. Vocês oferecem seguro para o imóvel?";
@@ -61,4 +61,18 @@ test("ligações: cron avisa 1× por nível; Central mostra vermelho; Moacir vê
   assert.match(readFileSync(new URL("../agentes/servidor.ts", import.meta.url), "utf8"), /"VERMELHO" : "ATENÇÃO"/);
   const viva = readFileSync(new URL("./viva-servidor.ts", import.meta.url), "utf8");
   assert.match(viva, /registrarAcaoViva\(admin, c, "respondido_viva"/);
+});
+
+test("2º aviso (6 h): a prioridade sobe um degrau e p1 não passa de p1", () => {
+  assert.equal(prioridadeSubida("p4"), "p3");
+  assert.equal(prioridadeSubida("p3"), "p2");
+  assert.equal(prioridadeSubida("p2"), "p1");
+  assert.equal(prioridadeSubida("p1"), "p1");
+  assert.equal(prioridadeSubida("xx"), "xx");
+});
+
+test("cron: só no nível 6, uma vez, grava a prioridade nova e registra o evento", () => {
+  const src = readFileSync(new URL("../../app/api/cron/atendimento/route.ts", import.meta.url), "utf8");
+  assert.match(src, /if \(nivel === 6\)[\s\S]*prioridadeSubida\(c\.prioridade\)[\s\S]*update\(\{ prioridade:/);
+  assert.match(src, /acao: "prioridade_subiu"/);
 });
