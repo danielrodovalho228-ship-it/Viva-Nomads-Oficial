@@ -103,7 +103,7 @@ test.describe("T26 — Encaminhamento entre agentes e Rede ao vivo real", () => 
     await page.goto("/admin/agentes", { waitUntil: "networkidle" });
     await abrirAba(page, "Rede ao vivo");
     const linha = page.getByTestId("rede-linha-do-tempo");
-    await expect(linha).toContainText(/lido \d\d:\d\d · a cada 15 s/);
+    await expect(linha).toContainText(/lido \d\d:\d\d(?: BRT)? · a cada 15 s/);
     await expect(linha.locator('li[data-tipo="encaminhamento"]').filter({ hasText: "Bruno → Otávio: 1 achado (P1)" }).first()).toBeVisible();
     await expect(linha.locator('li[data-tipo="ronda"]').filter({ hasText: "Bruno fez ronda com alerta: 1 achado (P1)" }).first()).toBeVisible();
     // Evento novo aparece SEM recarregar a página (atualização de 15 s).
