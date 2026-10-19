@@ -51,3 +51,9 @@ test("dddccd2f: usuário ofuscado do Supabase (sem identities) é detectado; usu
   assert.equal(cadastroDuplicadoOfuscado({}), false);
   assert.equal(cadastroDuplicadoOfuscado(null), false);
 });
+
+test("dddccd2f: a espera do servidor (429 de /api/auth/entrar) chega à tela como 'Muitas tentativas'", () => {
+  const msg = friendlyAuthError("Muitas tentativas. Aguarde um pouco para tentar de novo.");
+  assert.match(msg, /muitas tentativas/i);
+  assert.doesNotMatch(msg, /não foi possível concluir/i);
+});
