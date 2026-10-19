@@ -3363,7 +3363,7 @@
         "t219-servicos-morador"
       ]
     },
-    "src/lib/data/servicos-morador-actions.ts#moradorTemContratoAtivo": {
+    "src/lib/data/servicos-morador-actions.ts#avisarServicoDisponivel": {
       "personas": [
         "inquilino"
       ],
@@ -3371,15 +3371,7 @@
         "t219-servicos-morador"
       ]
     },
-    "src/lib/data/servicos-morador-actions.ts#meusPedidosServico": {
-      "personas": [
-        "inquilino"
-      ],
-      "specs": [
-        "t219-servicos-morador"
-      ]
-    },
-    "src/lib/data/servicos-morador-actions.ts#pedirServico": {
+    "src/lib/data/servicos-morador-actions.ts#contratoAtivoDoMorador": {
       "personas": [
         "inquilino"
       ],

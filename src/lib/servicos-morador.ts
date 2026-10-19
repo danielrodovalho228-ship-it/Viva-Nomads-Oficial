@@ -1,9 +1,31 @@
 /**
- * Serviços para o morador (ordem 521c5af7, telas S1–S3). Regras puras; a ação do servidor e as telas só usam isto.
- * A plataforma NÃO recebe nem repassa dinheiro: o morador paga direto ao prestador parceiro. Enquanto um serviço
- * não tem parceiro definido, ele aparece como "Em breve" e não aceita pedido.
+ * Serviços para o morador (ordem 521c5af7). Regras puras; a ação do servidor e as telas só usam isto.
+ * Complemento do coordenador (reteste do #869): S1 (catálogo) agora; o pedido (S2) e o acompanhamento (S3) viram as
+ * telas do inquilino do Prompt 31b — nenhum sistema paralelo sobre servicos_adicionais. Enquanto um serviço não tem
+ * parceiro aprovado, aparece "Em breve" e o cartão abre o "Avise-me quando estiver disponível".
  */
 export const NOTA_PAGAMENTO_DIRETO = "Você paga direto ao prestador. A Viva indica parceiros e acompanha o pedido.";
+export const NOTA_PAGAMENTO_PLATAFORMA = "Pagamento pela plataforma: o valor vai direto ao prestador e a taxa da Viva é separada na origem.";
+
+/** A nota fixa do catálogo, escolhida pela chave PAGAMENTO_PARCEIROS_ATIVO (os dois textos no mesmo lugar). */
+export function notaPagamentoServicos(pagamentoParceirosAtivo: boolean): string {
+  return pagamentoParceirosAtivo ? NOTA_PAGAMENTO_PLATAFORMA : NOTA_PAGAMENTO_DIRETO;
+}
+
+/** "Meus pedidos" até o Prompt 31b: só o estado vazio, sem formulário. */
+export const MEUS_PEDIDOS_VAZIO = "Quando você pedir um serviço, ele aparece aqui com o andamento.";
+
+/** Os nomes do catálogo, com o acento devido (o teste de guarda confere o banco e as telas contra esta lista). */
+export const NOMES_SERVICOS = {
+  assistencia_24h: "Assistência 24h",
+  plano_manutencao: "Plano de manutenção",
+  limpeza: "Limpeza",
+  lavanderia_enxoval: "Lavanderia e enxoval",
+  frete_mudanca: "Frete e mudança leve",
+} as const;
+
+/** O pedido de serviço do Prompt 31b ainda não está no ar: até lá, todo serviço do catálogo é "Em breve". */
+export const PEDIDO_SERVICO_31B_NO_AR = false;
 
 export const FAIXAS_HORARIO = [
   { id: "manha", rotulo: "Manhã (8h às 12h)" },
@@ -11,10 +33,6 @@ export const FAIXAS_HORARIO = [
   { id: "noite", rotulo: "Noite (18h às 21h)" },
 ] as const;
 export type FaixaHorario = (typeof FAIXAS_HORARIO)[number]["id"];
-
-export const MAX_OBSERVACAO = 300;
-/** Quantos dias à frente o morador pode pedir. */
-export const JANELA_PEDIDO_DIAS = 90;
 
 export type EstadoPedidoServico = "enviado" | "confirmado" | "feito" | "cancelado";
 const ESTADO_ROTULO: Record<EstadoPedidoServico, string> = {
@@ -42,50 +60,25 @@ export interface ServicoCatalogo {
   preco_texto?: string | null;
 }
 
-/** Só aceita pedido o serviço ativo e com parceiro definido. */
-export function servicoAceitaPedido(s: Pick<ServicoCatalogo, "status" | "parceiro_nome">): boolean {
-  return s.status === "ativo" && typeof s.parceiro_nome === "string" && s.parceiro_nome.trim().length > 0;
+/** Só aceita pedido o serviço ativo, com parceiro aprovado e com o pedido do 31b no ar. */
+export function servicoAceitaPedido(s: Pick<ServicoCatalogo, "status" | "parceiro_nome">, pedidoNoAr: boolean = PEDIDO_SERVICO_31B_NO_AR): boolean {
+  return pedidoNoAr && s.status === "ativo" && typeof s.parceiro_nome === "string" && s.parceiro_nome.trim().length > 0;
+}
+
+/** A lista do INQUILINO: só categorias pagas pelo inquilino e não inativas (o Plano de manutenção do dono fica fora). */
+export function servicosDoInquilino<T extends { quem_paga?: string | null; status?: string | null }>(lista: T[]): T[] {
+  return lista.filter((s) => s.quem_paga === "inquilino" && s.status !== "inativo");
+}
+
+/** Destino do cartão com parceiro aprovado: o pedido do 31b com contrato e imóvel já preenchidos. */
+export function hrefPedidoServico(servicoId: string, contratoId: string | null, propertyId: string | null): string {
+  const q = new URLSearchParams({ servico: servicoId });
+  if (contratoId) q.set("contrato", contratoId);
+  if (propertyId) q.set("imovel", propertyId);
+  return `/dashboard/servicos/pedido?${q.toString()}`;
 }
 
 /** Código curto que o morador cita ao falar com a Viva sobre o pedido. */
 export function codigoDoPedido(id: string): string {
   return `SV-${id.replace(/-/g, "").slice(0, 8).toUpperCase()}`;
-}
-
-export interface PedidoValidado {
-  data: string;
-  faixa: FaixaHorario;
-  observacao: string | null;
-}
-
-const DATA = /^(\d{4})-(\d{2})-(\d{2})$/;
-
-/** "Hoje" em Brasília (UTC−3) como aaaa-mm-dd. */
-function hojeBrasilia(agora: Date): string {
-  return new Date(agora.getTime() - 3 * 3600_000).toISOString().slice(0, 10);
-}
-
-/** Entrada do formulário (não confiável) → pedido limpo, ou a mensagem do que corrigir. */
-export function validarPedido(
-  entrada: unknown,
-  agora: Date = new Date(),
-): { ok: true; pedido: PedidoValidado } | { ok: false; error: string } {
-  if (!entrada || typeof entrada !== "object") return { ok: false, error: "Preencha a data e a faixa de horário." };
-  const { data, faixa, observacao } = entrada as Record<string, unknown>;
-  const m = typeof data === "string" ? DATA.exec(data) : null;
-  if (!m) return { ok: false, error: "Escolha uma data válida." };
-  const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
-  if (d.toISOString().slice(0, 10) !== data) return { ok: false, error: "Escolha uma data válida." };
-  const hoje = hojeBrasilia(agora);
-  if ((data as string) <= hoje) return { ok: false, error: "Escolha uma data a partir de amanhã." };
-  const limite = new Date(Date.parse(`${hoje}T00:00:00Z`) + JANELA_PEDIDO_DIAS * 86400_000).toISOString().slice(0, 10);
-  if ((data as string) > limite) return { ok: false, error: `Escolha uma data nos próximos ${JANELA_PEDIDO_DIAS} dias.` };
-  if (!FAIXAS_HORARIO.some((f) => f.id === faixa)) return { ok: false, error: "Escolha a faixa de horário." };
-  let obs: string | null = null;
-  if (observacao !== undefined && observacao !== null) {
-    if (typeof observacao !== "string") return { ok: false, error: "Observação inválida." };
-    obs = observacao.trim() || null;
-    if (obs && obs.length > MAX_OBSERVACAO) return { ok: false, error: `A observação aceita até ${MAX_OBSERVACAO} caracteres.` };
-  }
-  return { ok: true, pedido: { data: data as string, faixa: faixa as FaixaHorario, observacao: obs } };
 }
