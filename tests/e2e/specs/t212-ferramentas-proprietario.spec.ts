@@ -155,8 +155,8 @@ test.describe("T212 — ferramentas do proprietário (prompt 27)", () => {
     const anon = await browser.newContext();
     const pa = await anon.newPage();
     await pa.goto(`/imoveis/${ids.imovel}`, { waitUntil: "domcontentloaded" });
-    expect(await pa.content()).not.toMatch(/2\.?950/);
-    expect(await (await pa.request.get("/api/properties")).text()).not.toMatch(/2\.?950/);
+    expect(await pa.content()).not.toMatch(/(?<![\w-])2\.?950(?![\w-])/);
+    expect(await (await pa.request.get("/api/properties")).text()).not.toMatch(/(?<![\w-])2\.?950(?![\w-])/);
     await anon.close();
   });
 

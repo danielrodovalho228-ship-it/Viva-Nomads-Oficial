@@ -56,7 +56,7 @@ test.describe("T102 — Preço sugerido no cadastro", () => {
     await expect(page.getByTestId("recebe-airbnb")).toContainText("8.652");
     await expect(bloco).toContainText("4.916");
     await bloco.getByRole("button", { name: "Usar preço sugerido" }).click();
-    await expect(page.locator('input[placeholder="3200"]')).toHaveValue("4916");
+    await expect(page.getByTestId("cadastro-preco")).toHaveValue("4.916");
     const larguraDoc = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(larguraDoc).toBeLessThanOrEqual(0); // 390 px sem rolagem lateral
     await page.screenshot({ path: "tests/laboratorio/saida/t102-preco-sugerido.png", fullPage: true });

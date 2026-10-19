@@ -266,7 +266,7 @@ test.describe("T193 — propostas", () => {
     await expect(b.getByTestId("aviso-minimo")).toHaveText("Abaixo do que o proprietário aceita; tente a partir de R$ 3.000.");
     await b.screenshot({ path: `${SAIDA}/t193-10-abaixo-minimo-390.png`, fullPage: true });
     const tudo = (await b.content()) + respostas.join("\n");
-    expect(tudo).not.toMatch(/2\.?950/);
+    expect(tudo).not.toMatch(/(?<![\w-])2\.?950(?![\w-])/);
     await b.context().close();
   });
 

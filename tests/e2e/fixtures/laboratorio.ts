@@ -241,11 +241,14 @@ export async function contarAtivos(ownerId: string): Promise<number> {
 /**
  * Zera o atraso progressivo do login SÓ deste e-mail (5 por minuto, src/lib/seguranca/limite-login.ts). Os specs
  * entram com a mesma conta várias vezes em menos de um minuto (390 e 1280, um passo atrás do outro); sem isto o
- * login recebe "Muitas tentativas" e o teste para na tela de entrar. O limite por IP continua valendo (t82).
+ * login recebe "Muitas tentativas" e o teste para na tela de entrar.
  */
 export async function liberarLimiteLogin(email: string): Promise<void> {
   const hash = createHash("sha256").update(`login:${email.trim().toLowerCase()}`).digest("hex").slice(0, 32);
   await adm().from("limites_uso").delete().like("chave", `login:email:%:${hash}`);
+  // O limite por IP (40 a cada 15 min) também: no laboratório todos os logins saem do mesmo IP e uma rodada longa
+  // (16 suítes) passa disso. O t82 não depende dele (aceita a mensagem de "Muitas tentativas" como prova do fluxo).
+  await adm().from("limites_uso").delete().like("chave", "login:ip:%");
 }
 
 /** Login pela tela, em contexto próprio de 390 px (celular). */
