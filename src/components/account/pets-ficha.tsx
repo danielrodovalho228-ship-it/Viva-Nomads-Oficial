@@ -6,6 +6,7 @@ import { Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { ROTULO_ESPECIE, ROTULO_PORTE, ESPECIES_PET, PORTES_PET, MAX_PETS } from "@/lib/anuncio/pets-regras";
 import { MAX_FOTOS_PET, podeAdicionarFotoPet, type TipoFotoPet } from "@/lib/anuncio/ficha-pet-fotos";
+import { cortarObservacoes, TEXTO_MAX_FOTOS_PET } from "@/lib/anuncio/ficha-pet-dono";
 import { enviarImagemPet, removerImagemPet, removerPet, meusPets, salvarPet, type PetSalvo } from "@/lib/data/pets-ficha-actions";
 
 const VAZIO = { nome: "", especie: "cao", porte: "P", idadeAnos: "0", raca: "", castrado: "nao", vacinasEmDia: "sim", observacoes: "" };
@@ -18,6 +19,7 @@ export function PetsFicha() {
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [enviando, setEnviando] = useState<string | null>(null);
+  const [verMais, setVerMais] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     let vivo = true;
@@ -95,6 +97,30 @@ export function PetsFicha() {
                   <p className="text-muted">
                     {p.castrado ? "Castrado" : "Não castrado"} · vacinas {p.vacinasEmDia ? "em dia" : "pendentes"}
                   </p>
+                  {p.raca && (
+                    <p className="text-muted" data-testid={`pet-raca-${p.nome}`}>
+                      Raça: <span className="text-ink">{p.raca}</span>
+                    </p>
+                  )}
+                  {p.observacoes && (() => {
+                    const o = cortarObservacoes(p.observacoes);
+                    const inteiro = verMais.has(p.id);
+                    return (
+                      <p className="break-words text-muted" data-testid={`pet-observacoes-${p.nome}`}>
+                        Observações: <span className="text-ink">{inteiro || !o.cortado ? p.observacoes : o.curto}</span>
+                        {o.cortado && (
+                          <button
+                            type="button"
+                            className="ml-1 font-medium text-forest underline"
+                            onClick={() => setVerMais((v) => { const n = new Set(v); if (n.has(p.id)) n.delete(p.id); else n.add(p.id); return n; })}
+                            data-testid={`pet-ver-mais-${p.nome}`}
+                          >
+                            {inteiro ? "ver menos" : "ver mais"}
+                          </button>
+                        )}
+                      </p>
+                    );
+                  })()}
                   <div className="mt-2 flex flex-wrap items-center gap-2" data-testid={`pet-imagens-${p.nome}`}>
                     {p.fotos.map((f, i) => (
                       <span key={f.caminho} className="relative">
@@ -105,6 +131,9 @@ export function PetsFicha() {
                         </button>
                       </span>
                     ))}
+                    {!podeAdicionarFotoPet("foto", p.fotos.length) && (
+                      <span className="text-xs text-muted" data-testid={`pet-max-fotos-${p.nome}`}>{TEXTO_MAX_FOTOS_PET}</span>
+                    )}
                     {podeAdicionarFotoPet("foto", p.fotos.length) && (
                       <label className="inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-lg border border-sage-200 px-3 text-xs font-medium text-ink hover:bg-sage-50">
                         <Camera className="h-4 w-4" /> {enviando === p.id ? "Enviando…" : `Foto (${p.fotos.length}/${MAX_FOTOS_PET})`}

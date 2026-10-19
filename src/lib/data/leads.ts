@@ -8,6 +8,7 @@ import { cartaoCandidato } from "@/lib/perfil/perfil-publico";
 import { signAvatarPath } from "@/lib/data/avatar-url";
 import { getReputacao } from "@/lib/data/avaliacoes-actions";
 import { estadosIdentidade } from "@/lib/identidade/estado-servidor";
+import { donoVeFichaPet, resumoPetsCandidatura, type PetResumo } from "@/lib/anuncio/ficha-pet-dono";
 
 // Re-exporta os utilitários puros para compatibilidade com importações server-side.
 export { SAMPLE_LEADS, LIGHT_SHORT, leadScore, leadSummary } from "./lead-types";
@@ -17,6 +18,7 @@ interface LeadRow {
   id: string;
   status: string;
   tenant_id: string;
+  property_id: string;
   property: { title: string | null } | null;
 }
 
@@ -48,7 +50,7 @@ export async function listLeads(): Promise<Lead[]> {
   const { data, error } = await supabase
     .from("leads")
     .select(
-      `id, status, tenant_id,
+      `id, status, tenant_id, property_id,
        property:properties!leads_property_id_fkey ( title )`
     )
     .eq("owner_id", user.id)
@@ -78,6 +80,9 @@ export async function listLeads(): Promise<Lead[]> {
   // Sinais do candidato (prompt 6): pets da ficha, e-mail confirmado (selo real) e reputação — lidos pelo
   // servidor só para os inquilinos dos leads deste dono. Nunca e-mail ou telefone em si.
   const pets = new Map<string, number>();
+  // Ficha do pet para o dono (complemento do #876): nome, espécie e porte no cartão; o resto só em "Ver ficha do pet".
+  const petsResumo = new Map<string, PetResumo[]>();
+  const contratoDaCandidatura = new Map<string, string>();
   const emailOk = new Map<string, boolean>();
   const reputacoes = new Map<string, { media: number; n: number }>();
   const foneOk = new Map<string, boolean>();
@@ -85,8 +90,21 @@ export async function listLeads(): Promise<Lead[]> {
     // Selo "Telefone verificado" (0150): só o sim/não, nunca o número.
     const { data: fs, error: eFs } = await admin.rpc("telefones_verificados", { p_ids: tenantIds });
     if (!eFs) for (const f of (fs ?? []) as { id: string; verificado: boolean }[]) foneOk.set(f.id, f.verificado);
-    const { data: ps } = await admin.from("pets_inquilino").select("user_id").in("user_id", tenantIds);
-    for (const p of (ps ?? []) as { user_id: string }[]) pets.set(p.user_id, (pets.get(p.user_id) ?? 0) + 1);
+    const { data: ps } = await admin.from("pets_inquilino").select("user_id, nome, especie, porte").in("user_id", tenantIds).order("criado_em");
+    for (const p of (ps ?? []) as ({ user_id: string } & PetResumo)[]) {
+      pets.set(p.user_id, (pets.get(p.user_id) ?? 0) + 1);
+      petsResumo.set(p.user_id, [...(petsResumo.get(p.user_id) ?? []), { nome: p.nome, especie: p.especie, porte: p.porte }]);
+    }
+    // Contrato mais recente de cada candidatura (imóvel + inquilino): encerrado ou cancelado tira a ficha do dono.
+    const { data: cs } = await admin
+      .from("contratos")
+      .select("property_id, tenant_id, status, created_at")
+      .in("tenant_id", tenantIds)
+      .order("created_at", { ascending: false });
+    for (const c of (cs ?? []) as { property_id: string; tenant_id: string; status: string }[]) {
+      const k = `${c.property_id}:${c.tenant_id}`;
+      if (!contratoDaCandidatura.has(k)) contratoDaCandidatura.set(k, c.status);
+    }
     await Promise.all(
       tenantIds.map(async (id) => {
         const [u, rep] = await Promise.all([admin.auth.admin.getUserById(id).catch(() => null), getReputacao(id).catch(() => null)]);
@@ -133,6 +151,9 @@ export async function listLeads(): Promise<Lead[]> {
 
   return rows.map((r) => {
     const v = verificacoes.get(r.tenant_id);
+    const fichaPet = donoVeFichaPet({ leadStatus: r.status, contratoStatus: contratoDaCandidatura.get(`${r.property_id}:${r.tenant_id}`) ?? null })
+      ? resumoPetsCandidatura(petsResumo.get(r.tenant_id) ?? [])
+      : null;
     const t = perfis.get(r.tenant_id);
     const cartao = cartaoCandidato(
       {
@@ -142,7 +163,8 @@ export async function listLeads(): Promise<Lead[]> {
         motivo: null, // idem `motivo`
         inicioDesejado: inicios.has(r.id) ? dataBR(inicios.get(r.id)!) : null,
         qtdOcupantes: ocupantes.get(r.id) ?? null,
-        pets: pets.get(r.tenant_id) ?? 0,
+        // Com a ficha visível, "Com 1 pet · Totó (cão, porte médio)" substitui o "Com 1 pet".
+        pets: fichaPet ? 0 : (pets.get(r.tenant_id) ?? 0),
         desde: t?.created_at ?? null,
         reputacao: reputacoes.get(r.tenant_id) ?? null,
         emailConfirmado: emailOk.get(r.tenant_id) ?? false,
@@ -165,6 +187,7 @@ export async function listLeads(): Promise<Lead[]> {
       verified: !!v?.traffic_light,
       identidade: identidades.get(r.tenant_id) ?? null,
       motivo: motivos.get(r.id),
+      fichaPet,
     };
   });
 }

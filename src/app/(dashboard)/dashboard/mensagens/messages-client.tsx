@@ -1,5 +1,6 @@
 "use client";
 
+import { FichaPetCandidatura } from "@/components/pets/ficha-pet-candidatura";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Send, ArrowLeft } from "lucide-react";
@@ -216,6 +217,14 @@ function MessagesInner({ initial, demo }: { initial: Conversation[]; demo: boole
           </header>
           {!demo && active.propertyId && active.otherId && (
             <VisitaNaConversa key={active.id} propertyId={active.propertyId} outroId={active.otherId} />
+          )}
+          {/* Ficha do pet da candidatura: só aparece para o DONO daquela candidatura (o servidor confere). */}
+          {!demo && active.propertyId && active.otherId && (
+            <FichaPetCandidatura
+              key={`pet-${active.id}`}
+              alvo={{ propertyId: active.propertyId, tenantId: active.otherId }}
+              className="border-b border-line bg-white px-4 py-3"
+            />
           )}
           <div className="flex-1 space-y-3 overflow-y-auto bg-surface-2 p-5">
             {active.messages.map((m) => (
