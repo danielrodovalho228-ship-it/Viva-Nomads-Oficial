@@ -10,6 +10,7 @@ import {
   FAIXAS_HORARIO,
   NOTA_PAGAMENTO_DIRETO,
   codigoDoPedido,
+  proximosEstados,
   rotuloEstado,
   servicoAceitaPedido,
   validarPedido,
@@ -52,6 +53,14 @@ test("estados, código do pedido e nota de pagamento direto", () => {
   assert.equal(codigoDoPedido("1234abcd-0000-4000-8000-000000000000"), "SV-1234ABCD");
   assert.match(NOTA_PAGAMENTO_DIRETO, /paga direto ao prestador/);
   assert.match(NOTA_PAGAMENTO_DIRETO, /indica parceiros e acompanha o pedido/);
+});
+
+test("admin só avança o estado em ordem; feito e cancelado encerram", () => {
+  assert.deepEqual(proximosEstados("enviado"), ["confirmado", "cancelado"]);
+  assert.deepEqual(proximosEstados("confirmado"), ["feito", "cancelado"]);
+  assert.deepEqual(proximosEstados("feito"), []);
+  assert.deepEqual(proximosEstados("cancelado"), []);
+  assert.deepEqual(proximosEstados("qualquer"), []);
 });
 
 test("migração 0174: RLS ligada, morador só lê os próprios pedidos, sem escrita direta", () => {

@@ -28,6 +28,13 @@ export function rotuloEstado(estado: string): string {
   return ESTADO_ROTULO[estado as EstadoPedidoServico] ?? ESTADO_ROTULO.enviado;
 }
 
+/** Admin move o pedido: enviado → confirmado ou cancelado; confirmado → feito ou cancelado. Feito e cancelado encerram. */
+export function proximosEstados(estado: string): EstadoPedidoServico[] {
+  if (estado === "enviado") return ["confirmado", "cancelado"];
+  if (estado === "confirmado") return ["feito", "cancelado"];
+  return [];
+}
+
 export interface ServicoCatalogo {
   id: string;
   status: string;
