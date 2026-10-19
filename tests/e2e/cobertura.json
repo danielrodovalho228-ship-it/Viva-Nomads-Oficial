@@ -2937,7 +2937,7 @@
         "proprietario"
       ],
       "specs": [
-        "t225-pets-ficha-dono"
+        "t226-pets-ficha-dono"
       ]
     },
     "src/lib/data/pets-candidatura.ts#resumoFichaPets": {
@@ -2945,7 +2945,7 @@
         "proprietario"
       ],
       "specs": [
-        "t225-pets-ficha-dono"
+        "t226-pets-ficha-dono"
       ]
     },
     "src/lib/data/pets-ficha-actions.ts#enviarImagemPet": {

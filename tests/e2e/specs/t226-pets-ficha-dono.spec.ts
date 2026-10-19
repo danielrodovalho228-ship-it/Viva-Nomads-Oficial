@@ -2,7 +2,7 @@ import { test, expect, type Browser, type Locator, type Page } from "@playwright
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T225 — Ficha do pet para o dono da candidatura + 3 retoques do inquilino (complemento do #876, reteste do Muse),
+  T226 — Ficha do pet para o dono da candidatura + 3 retoques do inquilino (complemento do #876, reteste do Muse),
   390 e 1280 px.
    1. inquilino: cadastra o "Totó (teste QA)"; as linhas de foto e carteira aparecem na hora (sem recarregar);
       com 3 de 3 fotos, "Máximo de 3 fotos. Remova uma para trocar."; Raça e Observações (cortadas, "ver mais");
@@ -16,9 +16,9 @@ const senha = novaSenha();
 const sufixo = novoSufixo();
 const PET = "Totó (teste QA)";
 const OBS = "Muito calmo e sociável com outros cães, não late quando fica sozinho e já morou em apartamento com elevador e portaria.";
-const dono = { email: `dono.t225.${sufixo}@lab.vivanomads.test`, nome: "Dalva Pet Sobrenome", role: "owner" as const };
-const dono2 = { email: `dono2.t225.${sufixo}@lab.vivanomads.test`, nome: "Dario Outro Sobrenome", role: "owner" as const };
-const inq = { email: `inq.t225.${sufixo}@lab.vivanomads.test`, nome: "Inês Pet Sobrenome", role: "tenant" as const };
+const dono = { email: `dono.t226.${sufixo}@lab.vivanomads.test`, nome: "Dalva Pet Sobrenome", role: "owner" as const };
+const dono2 = { email: `dono2.t226.${sufixo}@lab.vivanomads.test`, nome: "Dario Outro Sobrenome", role: "owner" as const };
+const inq = { email: `inq.t226.${sufixo}@lab.vivanomads.test`, nome: "Inês Pet Sobrenome", role: "tenant" as const };
 const ids: Record<string, string | undefined> = {};
 const TITULO_A = `Studio pet médio ${sufixo}`;
 const TITULO_B = `Studio pet pequeno ${sufixo}`;
@@ -38,7 +38,7 @@ async function jpeg(cor: string): Promise<Buffer> {
   return sharp({ create: { width: 320, height: 240, channels: 3, background: cor } }).jpeg().toBuffer();
 }
 
-test.describe("T225 — ficha do pet para o dono da candidatura", () => {
+test.describe("T226 — ficha do pet para o dono da candidatura", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial" });
   test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });
@@ -94,12 +94,12 @@ test.describe("T225 — ficha do pet para o dono da candidatura", () => {
     await expect(toto.getByTestId(`pet-max-fotos-${PET}`)).toHaveText("Máximo de 3 fotos. Remova uma para trocar.");
     await expect(toto.getByLabel(`Enviar foto de ${PET}`)).toHaveCount(0);
     await semRolagemLateral(page);
-    await page.screenshot({ path: `${SAIDA}/t225-inquilino-390.png`, fullPage: true });
+    await page.screenshot({ path: `${SAIDA}/t226-inquilino-390.png`, fullPage: true });
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.reload({ waitUntil: "networkidle" });
     await expect(page.getByTestId("pets-lista").locator("li", { hasText: PET }).getByTestId(`pet-max-fotos-${PET}`)).toBeVisible({ timeout: 15_000 });
     await semRolagemLateral(page);
-    await page.screenshot({ path: `${SAIDA}/t225-inquilino-1280.png`, fullPage: true });
+    await page.screenshot({ path: `${SAIDA}/t226-inquilino-1280.png`, fullPage: true });
     await page.context().close();
 
     // A candidatura do inquilino aos dois imóveis do dono (porte médio aceito em A; só pequeno em B).
@@ -137,7 +137,7 @@ test.describe("T225 — ficha do pet para o dono da candidatura", () => {
       trocado.pathname = new URL(carteira!).pathname;
       expect((await page.request.get(trocado.toString())).status()).not.toBe(200);
       await semRolagemLateral(page);
-      await page.screenshot({ path: `${SAIDA}/t225-dono-ficha-${largura}.png`, fullPage: true });
+      await page.screenshot({ path: `${SAIDA}/t226-dono-ficha-${largura}.png`, fullPage: true });
 
       // Imóvel B só aceita porte pequeno: a conferência diz que está fora.
       const b = cartao(page, TITULO_B);
@@ -166,7 +166,7 @@ test.describe("T225 — ficha do pet para o dono da candidatura", () => {
     await expect(cartao(page, TITULO_A).getByTestId("ver-ficha-pet")).toHaveCount(0);
     await expect(cartao(page, TITULO_A)).not.toContainText(PET);
     await semRolagemLateral(page);
-    await page.screenshot({ path: `${SAIDA}/t225-recusada-390.png`, fullPage: true });
+    await page.screenshot({ path: `${SAIDA}/t226-recusada-390.png`, fullPage: true });
     await page.context().close();
   });
 });
