@@ -69,7 +69,9 @@ test("p25 — identidade: laudos já gravados passam a 12 meses (só os que aind
   assert.match(sql, /^begin;/m);
   assert.match(sql, /schema_migrations/);
   const status = ler("../../app/api/caf/status/route.ts");
-  assert.match(status, /refazer: !r\.feita && !!laudo/);
+  // Complemento do 23: "refazer" = estado único "vencida" (texto "… · Confirmar de novo" vem de estadoIdentidadeDe).
+  assert.match(status, /refazer: identidade\.estado === "vencida"/);
   const etapa = ler("../../components/anuncio/etapa-identidade.tsx");
-  assert.match(etapa, /Confirmar de novo/);
+  assert.match(etapa, /useEstadoIdentidade\(/);
+  assert.match(ler("../identidade/estado.ts"), /Confirmar de novo/);
 });

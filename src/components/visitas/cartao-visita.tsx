@@ -41,6 +41,7 @@ export interface VisitaNaTela {
   linkChamada: string | null;
   /** Só para o morador, na presencial confirmada. */
   endereco?: string | null;
+  enderecoMapa?: string | null;
 }
 
 /**
@@ -118,9 +119,16 @@ export function CartaoVisita({
 
       {papel === "morador" && v.modalidade === "presencial" && (v.status === "pedido" || v.status === "remarcar" || v.status === "confirmado") && (
         v.status === "confirmado" && v.endereco ? (
-          <p className="mt-2 flex items-start gap-1.5 rounded-lg bg-sage-50 px-3 py-2 text-sm text-ink" data-testid="visita-endereco">
-            <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-forest" aria-hidden /> {v.endereco}
-          </p>
+          <div className="mt-2 rounded-lg bg-sage-50 px-3 py-2 text-sm text-ink" data-testid="visita-endereco">
+            <p className="flex items-start gap-1.5">
+              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-forest" aria-hidden /> {v.endereco}
+            </p>
+            {v.enderecoMapa && (
+              <a href={v.enderecoMapa} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block font-medium text-forest underline" data-testid="visita-abrir-mapa">
+                Abrir no mapa
+              </a>
+            )}
+          </div>
         ) : (
           <p className="mt-2 text-xs text-muted" data-testid="visita-endereco-oculto">
             O endereço exato aparece aqui quando a visita for confirmada.
@@ -169,9 +177,11 @@ function AcoesDono({ v, onMudou, onStatus }: { v: VisitaNaTela; onMudou?: () => 
   const [link, setLink] = useState("");
   const [recusando, setRecusando] = useState(false);
   const [motivo, setMotivo] = useState("");
-  const agora = new Date();
-  const min = instanteParaCampoBrasilia(agora);
-  const max = instanteParaCampoBrasilia(new Date(agora.getTime() + CONFIRMAR_ATE_DIAS * 24 * 3600_000));
+  // Limites calculados uma vez (complemento do prompt 23): não mudam a cada redesenho.
+  const [{ min, max }] = useState(() => {
+    const agora = new Date();
+    return { min: instanteParaCampoBrasilia(agora), max: instanteParaCampoBrasilia(new Date(agora.getTime() + CONFIRMAR_ATE_DIAS * 24 * 3600_000)) };
+  });
   if (v.status === "feito" || v.status === "cancelado" || respondido) return null;
   const outroIso = outro ? campoBrasiliaParaIso(outro) : null;
   const video = v.modalidade === "video";

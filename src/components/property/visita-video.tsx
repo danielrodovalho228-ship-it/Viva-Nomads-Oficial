@@ -70,20 +70,25 @@ function PedidoVisita({
     setAberto(false);
     setFechado(true);
   };
-  const [horarios, setHorarios] = useState<string[]>([""]);
+  // Horários com CHAVE ESTÁVEL (complemento do prompt 23): o campo nunca é recriado nem zerado quando outro campo
+  // (ex.: "Motivo da estadia") muda e a tela redesenha. O campo não recebe `value` controlado: um datetime-local meio
+  // preenchido (só a data) vale "" para o React, e reaplicar "" apagava o que a pessoa já tinha escolhido.
+  const [horarios, setHorarios] = useState<{ id: number; valor: string }[]>([{ id: 0, valor: "" }]);
   const [motivo, setMotivo] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [enviado, setEnviado] = useState(false);
   const [demo, setDemo] = useState(false);
 
-  const agora = new Date();
-  const min = instanteParaCampoBrasilia(agora);
-  const max = instanteParaCampoBrasilia(new Date(agora.getTime() + JANELA_DIAS * 24 * 3600_000));
+  // Limites calculados UMA vez (antes mudavam a cada redesenho, junto com o relógio).
+  const [{ min, max }] = useState(() => {
+    const agora = new Date();
+    return { min: instanteParaCampoBrasilia(agora), max: instanteParaCampoBrasilia(new Date(agora.getTime() + JANELA_DIAS * 24 * 3600_000)) };
+  });
 
   async function enviar() {
     setErro(null);
-    const preenchidos = horarios.filter(Boolean).map((h) => campoBrasiliaParaIso(h));
+    const preenchidos = horarios.map((h) => h.valor).filter(Boolean).map((h) => campoBrasiliaParaIso(h));
     if (preenchidos.length === 0 || preenchidos.some((d) => !d)) {
       setErro(MSG_HORARIOS);
       return;
@@ -154,19 +159,22 @@ function PedidoVisita({
                 <div className="mt-3 flex flex-col gap-2">
                   {horarios.map((h, i) => (
                     <input
-                      key={i}
+                      key={h.id}
                       type="datetime-local"
                       aria-label={`Horário ${i + 1} (${ROTULO_FUSO})`}
                       data-testid={`${t.prefixo}-horario-${i}`}
                       min={min}
                       max={max}
-                      value={h}
-                      onChange={(e) => setHorarios((l) => l.map((x, j) => (j === i ? e.target.value : x)))}
+                      defaultValue={h.valor}
+                      onChange={(e) => {
+                        const valor = e.target.value;
+                        setHorarios((l) => l.map((x) => (x.id === h.id ? { ...x, valor } : x)));
+                      }}
                       className="h-11 w-full rounded-xl border border-line bg-white px-3 text-base text-ink"
                     />
                   ))}
                   {horarios.length < MAX_HORARIOS && (
-                    <button type="button" className="self-start text-sm font-medium text-forest hover:underline" onClick={() => setHorarios((l) => [...l, ""])}>
+                    <button type="button" className="self-start text-sm font-medium text-forest hover:underline" onClick={() => setHorarios((l) => [...l, { id: Math.max(...l.map((x) => x.id)) + 1, valor: "" }])}>
                       + Outro horário
                     </button>
                   )}

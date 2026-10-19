@@ -42,13 +42,20 @@ export default async function EditarImovelPage({
   // Fatos do banco para a prontidão (documento, limite do plano, garantia, selo…);
   // o editor sobrepõe ao vivo os campos que a pessoa está mexendo.
   let fatos: FatosAnuncio | null = null;
+  // Rua, número e complemento (coluna restrita): o dono lê pela RPC de detalhes privados (complemento do prompt 23).
+  let enderecoExato = "";
   const supabase = await createClient();
   if (supabase) {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (user) fatos = (await fatosDosImoveis(supabase, user.id, [id])).get(id) ?? null;
+    if (user) {
+      fatos = (await fatosDosImoveis(supabase, user.id, [id])).get(id) ?? null;
+      const { data: priv } = await supabase.rpc("property_private_details", { prop_id: id });
+      const linha = (Array.isArray(priv) ? priv[0] : priv) as { exact_address?: string | null } | null;
+      enderecoExato = linha?.exact_address ?? "";
+    }
   }
 
-  return <EditarImovelClient property={property} demo={demo} fatos={fatos} />;
+  return <EditarImovelClient property={property} demo={demo} fatos={fatos} enderecoExatoInicial={enderecoExato} />;
 }

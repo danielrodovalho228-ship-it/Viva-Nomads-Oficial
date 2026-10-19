@@ -32,6 +32,7 @@ import {
 } from "@/lib/data/actions";
 import { precoDaRegiao } from "@/lib/data/cadastro-actions";
 import { prontidaoAnuncio } from "@/lib/anuncio/prontidao";
+import { linhaEnderecoExato } from "@/lib/visitas/endereco-visita";
 import { geocodeForSave } from "@/lib/integrations/geocoding";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
@@ -444,6 +445,8 @@ export default function NewPropertyPage() {
       propertyType,
       city: city || "Uberlândia",
       neighborhood,
+      // Rua, número e complemento vão para a coluna restrita (o rascunho é apagado ao publicar).
+      enderecoExato: linhaEnderecoExato(street, numero, complemento),
       bedrooms: Number(bedrooms) || 0,
       bathrooms: Number(bathrooms) || 0,
       areaM2: Number(areaM2) || 0,

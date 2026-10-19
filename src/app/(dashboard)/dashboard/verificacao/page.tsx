@@ -28,6 +28,7 @@ import { useAuthStore } from "@/lib/store";
 import { useViewMode } from "@/lib/roles";
 import { useDashDemo, DemoBadge } from "@/lib/demo/demo-mode";
 import { cn } from "@/lib/utils";
+import type { EstadoIdentidade } from "@/lib/identidade/estado";
 import { NOTA_VERIFICACAO_TESTE, ramoVerificacao } from "@/lib/contas-de-teste";
 import { validadeDoLaudo } from "@/lib/caf/validade";
 
@@ -101,7 +102,23 @@ export default function VerificationPage() {
   );
 }
 
-type StatusCaf = { teste: boolean; feita: boolean; ok: boolean; validoAte: string | null };
+type StatusCaf = { teste: boolean; feita: boolean; ok: boolean; validoAte: string | null; identidade: EstadoIdentidade | null };
+
+/** A linha do estado da identidade: o texto vem SEMPRE da fonte única (complemento do prompt 23). */
+function LinhaIdentidade({ id }: { id: EstadoIdentidade }) {
+  return (
+    <p
+      className={cn(
+        "rounded-xl px-4 py-3 text-sm font-semibold",
+        id.estado === "confirmada" ? "bg-green-50 text-green-900" : id.estado === "em_breve" ? "bg-amber-50 text-amber-900" : "bg-surface-2 text-ink",
+      )}
+      data-testid="identidade-estado"
+      data-estado={id.estado}
+    >
+      {id.texto}
+    </p>
+  );
+}
 
 /**
  * Prompt 23 (item 3): o servidor diz se a conta é de teste (/api/caf/status lê profiles.is_teste). Conta de teste →
@@ -115,7 +132,7 @@ function VerificacaoDaConta({ copy, perfil }: { copy: VerifyCopy; perfil: "tenan
     fetch("/api/caf/status")
       .then((r) => (r.ok ? (r.json() as Promise<Partial<StatusCaf>>) : Promise.reject(new Error(String(r.status)))))
       .then((d) => {
-        if (vivo) setStatus({ teste: d.teste === true, feita: d.feita === true, ok: d.ok === true, validoAte: d.validoAte ?? null });
+        if (vivo) setStatus({ teste: d.teste === true, feita: d.feita === true, ok: d.ok === true, validoAte: d.validoAte ?? null, identidade: d.identidade ?? null });
       })
       .catch(() => {
         if (vivo) setErro(true);
@@ -124,7 +141,8 @@ function VerificacaoDaConta({ copy, perfil }: { copy: VerifyCopy; perfil: "tenan
       vivo = false;
     };
   }, []);
-  const ramo = ramoVerificacao({ demo: false, teste: erro ? false : status ? status.teste : null });
+  // O ramo segue o estado único: "em breve" → conta real sem a CAF; os demais (confirmada, vencida, simulável) → laudo.
+  const ramo = ramoVerificacao({ demo: false, teste: erro ? false : status ? status.identidade?.estado !== "em_breve" : null });
   if (ramo === "carregando") {
     return (
       <Panel className="flex items-center gap-2 text-sm text-muted">
@@ -132,12 +150,20 @@ function VerificacaoDaConta({ copy, perfil }: { copy: VerifyCopy; perfil: "tenan
       </Panel>
     );
   }
-  if (ramo === "teste" && status) return <TesteFlow copy={copy} perfil={perfil} inicial={status} />;
-  return <RealNaoVerificado copy={copy} perfil={perfil} />;
+  return (
+    <div className="space-y-4">
+      {status?.identidade && <LinhaIdentidade id={status.identidade} />}
+      {ramo === "teste" && status ? (
+        <TesteFlow copy={copy} perfil={perfil} inicial={status} onStatus={(st) => setStatus(st)} />
+      ) : (
+        <RealNaoVerificado copy={copy} perfil={perfil} />
+      )}
+    </div>
+  );
 }
 
 /* Conta de TESTE (is_teste): laudo simulado de ponta a ponta, sempre rotulado — nunca vale como verificação real. */
-function TesteFlow({ copy, perfil, inicial }: { copy: VerifyCopy; perfil: "tenant" | "owner"; inicial: StatusCaf }) {
+function TesteFlow({ copy, perfil, inicial, onStatus }: { copy: VerifyCopy; perfil: "tenant" | "owner"; inicial: StatusCaf; onStatus: (s: StatusCaf) => void }) {
   const [laudo, setLaudo] = useState<{ ok: boolean; validoAte: string | null } | null>(
     inicial.feita ? { ok: inicial.ok, validoAte: inicial.validoAte } : null
   );
@@ -156,6 +182,8 @@ function TesteFlow({ copy, perfil, inicial }: { copy: VerifyCopy; perfil: "tenan
       }
       const st = (await fetch("/api/caf/status").then((x) => x.json()).catch(() => ({}))) as Partial<StatusCaf>;
       setLaudo({ ok: r.identity === true && r.liveness === true && r.document === true, validoAte: st.validoAte ?? null });
+      // A linha do estado (topo) passa a "Identidade confirmada · válida até …", pela fonte única.
+      onStatus({ teste: st.teste === true, feita: st.feita === true, ok: st.ok === true, validoAte: st.validoAte ?? null, identidade: st.identidade ?? null });
     } finally {
       setCarregando(false);
     }
@@ -205,11 +233,7 @@ function TesteFlow({ copy, perfil, inicial }: { copy: VerifyCopy; perfil: "tenan
               <Item icon={ScanFace} label="Prova de vida" ok={laudo.ok} />
               <Item icon={FileCheck2} label="Documento" ok={laudo.ok} />
             </div>
-            {laudo.validoAte && (
-              <p className="mt-3 text-xs text-muted" data-testid="verificacao-teste-validade">
-                Vale até {new Date(laudo.validoAte).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })} (simulação).
-              </p>
-            )}
+
           </Panel>
           {perfil === "tenant" && (
             <Panel>
@@ -259,9 +283,7 @@ function RealNaoVerificado({ copy, perfil }: { copy: VerifyCopy; perfil: "tenant
             </span>
             <div>
               <h2 className="font-title text-lg font-bold text-ink">Não verificado</h2>
-              <p className="text-sm text-muted">
-                A verificação de identidade abre em breve — via parceiro, em estruturação.
-              </p>
+              <p className="text-sm text-muted">A verificação de identidade ainda não abriu para contas reais.</p>
             </div>
           </div>
           <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1.5 text-xs font-semibold text-amber-800">
