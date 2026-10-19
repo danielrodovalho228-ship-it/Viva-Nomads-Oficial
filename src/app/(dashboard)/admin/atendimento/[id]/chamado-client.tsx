@@ -44,6 +44,7 @@ const ACAO: Record<string, string> = {
   respondido_viva: "respondido pela Viva",
   escalado_2h: "2 h sem resposta da equipe (aviso ao Daniel)",
   escalado_6h: "6 h sem resposta da equipe (vermelho na Central)",
+  prioridade_subiu: "prioridade subiu por falta de resposta",
   devolvido_ia: "devolveu para a Viva",
   mensagem: "mensagem da pessoa",
 };
