@@ -169,10 +169,11 @@ async function enviarDocumento(admin: Admin, doc: DocParaEnvio, partes: Pick<Par
     envio.push(resultadoEnvio(papel, r));
   }
   envio.sort((a, b) => a.papel.localeCompare(b.papel));
-  await admin
+  const { error } = await admin
     .from("documentos_fiscais")
     .update({ envio, enviado_em: envioConfirmado(envio) ? new Date().toISOString() : null })
     .eq("id", doc.id);
+  if (error) console.error(`[documentos] ${doc.numero}: registro do envio falhou: ${error.message}`);
   return envio;
 }
 

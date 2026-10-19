@@ -114,6 +114,7 @@ test("1. emitir: nada de `if (r) enviado = true`; envio por destinatário; envia
   assert.doesNotMatch(e, /if \(r\) enviado = true/);
   assert.match(e, /envio\.push\(resultadoEnvio\(papel, r\)\)/);
   assert.match(e, /\.update\(\{ envio, enviado_em: envioConfirmado\(envio\) \? new Date\(\)\.toISOString\(\) : null \}\)/);
+  assert.match(e, /registro do envio falhou/); // erro ao gravar não some em silêncio
   assert.doesNotMatch(e, /email: p\.email[^}]*\}\s*\)\s*;?\s*envio/); // o endereço nunca entra no registro
   // falha de envio → fila, etapa "envio"; "Reenviar e-mail" reenvia o PDF guardado, sem emitir documento novo
   assert.match(e, /const etapa = r\.ok \? "envio" : "emissao";/);
@@ -141,6 +142,8 @@ test("1. migração 0180: envio jsonb, etapa na fila e os documentos antigos vol
   for (const s of [m, p]) {
     assert.match(s, /add column if not exists envio jsonb not null default '\[\]'::jsonb/);
     assert.match(s, /check \(etapa in \('emissao', 'envio'\)\)/);
+    // o gatilho de imutabilidade (0083) libera "envio" junto com "enviado_em"; o resto do documento continua travado
+    assert.match(s, /array\['enviado_em', 'envio', 'contrato_id'/);
     assert.match(s, /update public\.documentos_fiscais d set enviado_em = null/);
     assert.match(s, /'e-mail não confirmado: emitido antes do registro de envio', 'envio'/);
     assert.doesNotMatch(s, /numero\s*=/); // a lacuna 000001–000003 fica como está
