@@ -124,11 +124,11 @@ test.describe("T57 — Contrato semeado: inquilino e proprietário veem e assina
     // O inquilino assina (gravado pelo servidor de teste: o código vai por e-mail e o lab não lê caixa): o dono vê quem falta.
     await adm().from("contratos").update({ assinado_inquilino_em: new Date().toISOString() }).eq("id", ids.contrato!);
     await page.reload({ waitUntil: "domcontentloaded" });
-    await expect(page.getByTestId("contrato-aviso-assinatura")).toHaveText("O inquilino já assinou — falta você assinar.");
+    await expect(page.getByTestId("contrato-aviso-assinatura")).toHaveText(/\(inquilino\) assinou em \d{2}\/\d{2}\/\d{4} às \d{2}:\d{2} · falta você$/);
     await expect(page.getByTestId("form-assinar")).toBeVisible();
     await adm().from("contratos").update({ assinado_proprietario_em: new Date().toISOString() }).eq("id", ids.contrato!);
     await page.reload({ waitUntil: "domcontentloaded" });
-    await expect(page.getByTestId("contrato-aviso-assinatura")).toHaveText("As duas partes assinaram.");
+    await expect(page.getByTestId("contrato-aviso-assinatura")).toHaveText(/\(proprietário\) assinou em [\s\S]+\(inquilino\) assinou em /); // jornada de assinatura: nome + data e hora de cada um
     await page.context().close();
   });
 });
@@ -305,14 +305,14 @@ test.describe("T57 — Contrato semeado: as duas partes assinam pela tela com o 
     test.setTimeout(150_000);
     const page = await entrar(browser, dono.email, senha);
     await page.goto(`/dashboard/contratos/${ids.contrato}`, { waitUntil: "domcontentloaded" });
-    await expect(page.getByTestId("contrato-aviso-assinatura")).toHaveText("O inquilino já assinou — falta você assinar.", { timeout: 20_000 });
+    await expect(page.getByTestId("contrato-aviso-assinatura")).toHaveText(/\(inquilino\) assinou em \d{2}\/\d{2}\/\d{4} às \d{2}:\d{2} · falta você$/, { timeout: 20_000 });
     await page.getByTestId("assinar-pedir-codigo").click();
     await expect(page.getByText(/Enviamos 6 números/)).toBeVisible({ timeout: 45_000 });
     await page.getByTestId("assinar-aceite").check();
     await page.getByTestId("assinar-codigo").fill(await codigoDaCaixa(ids.dono!));
     await page.getByTestId("assinar-enviar").click();
     await expect(page.getByTestId("form-assinar")).toHaveCount(0, { timeout: 45_000 });
-    await expect(page.getByTestId("contrato-aviso-assinatura")).toHaveText("As duas partes assinaram.");
+    await expect(page.getByTestId("contrato-aviso-assinatura")).toHaveText(/\(proprietário\) assinou em [\s\S]+\(inquilino\) assinou em /); // jornada de assinatura: nome + data e hora de cada um
     const { data } = await adm().from("contratos").select("assinado_inquilino_em, assinado_proprietario_em").eq("id", ids.contrato!).single();
     expect(data?.assinado_proprietario_em, "assinatura do dono gravada pelo servidor").not.toBeNull();
     await page.context().close();

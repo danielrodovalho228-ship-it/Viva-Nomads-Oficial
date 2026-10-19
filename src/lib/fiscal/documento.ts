@@ -8,6 +8,8 @@
   perfil atual. Nenhum documento leva e-mail ou telefone.
 */
 
+import { cnpjValido, cpfValido, formatarDocumento } from "../documento-pessoa.ts";
+
 export type TipoDocumento = "recibo_aluguel" | "comprovante_caucao" | "termo_devolucao_caucao";
 
 export interface Parte {
@@ -28,6 +30,8 @@ export interface DadosDocumento {
   periodoFim: string | null;
   valor: number;
   encargos: { rotulo: string; valor: number }[];
+  /** Recibo: o rótulo único do pagamento ("Bloco 1 (2 meses: 19/10 a 18/12) — R$ 6.400 (2 × R$ 3.200)"). */
+  rotuloPagamento?: string | null;
   /** Recibo/comprovante: data e forma do pagamento declarado. */
   dataPagamento?: string | null;
   forma?: string | null;
@@ -66,7 +70,11 @@ export function dataBR(s: string | null | undefined): string {
   return m ? `${m[3]}/${m[2]}/${m[1]}` : s;
 }
 
-const parte = (p: Parte) => (p.doc ? `${p.nome} (CPF/CNPJ ${p.doc})` : p.nome);
+// CPF/CNPJ sempre por extenso e formatado (000.000.000-00), venha só com dígitos ou não (jornada de assinatura, 19/10).
+const parte = (p: Parte) => {
+  const doc = formatarDocumento(p.doc);
+  return doc ? `${p.nome} (CPF/CNPJ ${doc})` : p.nome;
+};
 
 export function totalComEncargos(d: Pick<DadosDocumento, "valor" | "encargos">): number {
   return Math.round((d.valor + d.encargos.reduce((s, e) => s + e.valor, 0)) * 100) / 100;
@@ -97,7 +105,13 @@ export function conteudoDocumento(d: DadosDocumento): ConteudoDocumento {
       quadro: [
         ...base,
         ["Período", periodo],
-        ["Aluguel", brl(d.valor)],
+        // O mesmo rótulo das telas ("Bloco 1 (2 meses: …) — R$ 6.400 (2 × R$ 3.200)"); sem ele, a linha antiga.
+        ...(d.rotuloPagamento
+          ? ([
+              ["Referente a", d.rotuloPagamento],
+              ["Valor", brl(d.valor)],
+            ] as [string, string][])
+          : ([["Aluguel", brl(d.valor)]] as [string, string][])),
         ...d.encargos.map((e): [string, string] => [e.rotulo, brl(e.valor)]),
         ["Total", brl(total)],
         ["Pago em", `${dataBR(d.dataPagamento)}${d.forma ? `, por ${FORMA[d.forma] ?? d.forma}` : ""}`],
@@ -151,7 +165,16 @@ export function textoDocumento(c: ConteudoDocumento): string {
 
 /** Nenhum documento pode levar e-mail ou telefone. */
 export function temContato(texto: string): boolean {
-  return /[^\s@/]+@[^\s@]+\.[a-z]{2,}/i.test(texto) || /(?:\(?\d{2}\)?\s?)?9?\d{4}[-\s]?\d{4}\b/.test(texto.replace(/\d{3}\.\d{3}\.\d{3}-\d{2}|\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}|R\$\s?[\d.,]+|\d{2}\/\d{2}\/\d{4}|\d{4}-\d{2}-\d{2}|[A-Z]{3}-\d{4}-\d{6}/g, ""));
+  if (/[^\s@/]+@[^\s@]+\.[a-z]{2,}/i.test(texto)) return true;
+  // Antes de procurar telefone, tira o que não é telefone: CPF/CNPJ (com OU sem máscara — um CPF de 11 dígitos
+  // casava com o padrão de celular e o recibo nunca saía; jornada de assinatura, 19/10), valores, datas e números
+  // de documento. Só sai a sequência de dígitos que é um CPF/CNPJ VÁLIDO: um celular de 11 dígitos continua pego.
+  const semDocumentos = texto
+    .replace(/\d{3}\.\d{3}\.\d{3}-\d{2}|\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}/g, "")
+    .replace(/\b\d{11}\b|\b\d{14}\b/g, (m) => (cpfValido(m) || cnpjValido(m) ? "" : m));
+  return /(?:\(?\d{2}\)?\s?)?9?\d{4}[-\s]?\d{4}\b/.test(
+    semDocumentos.replace(/R\$\s?[\d.,]+|\d{2}\/\d{2}\/\d{4}|\d{4}-\d{2}-\d{2}|[A-Z]{3}-\d{4}-\d{6}/g, ""),
+  );
 }
 
 /** Código de conferência: 32 hex (128 bits). */

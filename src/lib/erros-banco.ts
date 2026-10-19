@@ -28,6 +28,9 @@ export function erroBancoPT(erro: ErroBanco | null | undefined, padrao = GENERIC
       return "Algum dado está fora do permitido (por exemplo, valor, prazo ou data). Confira e tente de novo.";
     case "23505":
       return "Isso já foi registrado antes.";
+    case "23P01":
+      // 0176: dois contratos ativos do mesmo imóvel com períodos sobrepostos.
+      return "Este imóvel já tem contrato nessas datas. Escolha outra data de entrada.";
     case "23503":
       return "Um item ligado a este registro não existe mais. Atualize a página.";
     case "23502":

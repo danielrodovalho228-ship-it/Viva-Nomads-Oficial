@@ -97,6 +97,11 @@ export function NovaJornadaTeste({ inquilinos, anuncios }: { inquilinos: Opcao[]
               reaproveitada porque {r.motivo}.
             </p>
           )}
+          {!!r.contratosEncerrados && (
+            <p className="mt-1" data-testid="jornada-encerrados">
+              {r.contratosEncerrados === 1 ? "O contrato de teste anterior deste anúncio foi encerrado" : `${r.contratosEncerrados} contratos de teste anteriores deste anúncio foram encerrados`}, para a nova jornada não cruzar as datas dele.
+            </p>
+          )}
           <p className="mt-1 text-muted">
             Anúncio: {r.anuncio} · Inquilino: {r.inquilino}
           </p>

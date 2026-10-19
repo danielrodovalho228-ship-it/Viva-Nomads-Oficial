@@ -11,6 +11,7 @@ import { guardarSeContaDeTeste } from "@/lib/notifications/caixa-teste-servidor"
 import {
   assuntoAvisoOutraParte,
   avisoAssinatura,
+  linhasAssinatura,
   hashResumo,
   petsRegrasDoResumo,
   totalMesAplicavel,
@@ -26,6 +27,9 @@ import { qtdPetsCongelada } from "@/lib/anuncio/pets-regras";
 import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 import { motivoFaltamInstrucoes } from "@/lib/checkin";
 import { instrucoesPreenchidas } from "@/lib/checkin-servidor";
+import { nomeCurto } from "@/lib/perfil/perfil-publico";
+import { estadoDoContratoUnico, type EstadoContrato } from "@/lib/contrato-estado";
+import { escaparHtml } from "@/lib/escapar-html";
 import { montarLinhaDoTempo, type EtapaEstadia } from "@/lib/estadia-linha-tempo";
 import { periodoDosBlocos } from "@/lib/contrato-blocos";
 import {
@@ -61,6 +65,8 @@ export interface ContratoParaAssinar {
   inicioEstadia: string | null;
   /** Entrada, conferência e saída com dia e horário (vazio se o contrato ainda não tem blocos). */
   linhaDoTempo: EtapaEstadia[];
+  /** Estado pela fonte única (o mesmo selo das listas e da carteira). */
+  estado: EstadoContrato;
 }
 
 interface LinhaContrato {
@@ -83,10 +89,11 @@ interface LinhaContrato {
   /** Pets do inquilino agora (só vale antes da 1ª assinatura; depois vale o congelado). */
   qtd_pets_vivos?: number;
   contrato_blocos?: { inicio: string; fim: string }[] | null;
+  pagamentos_bloco?: { tipo?: string | null; confirmado_pelo_inquilino?: boolean | null }[] | null;
 }
 
 const COLUNAS =
-  "id, tenant_id, status, aluguel_mensal, prazo_total_dias, qtd_ocupantes, created_at, assinado_proprietario_em, assinado_inquilino_em, pets_regras_congeladas, property_id, properties(title, owner_id, checkin_after, checkout_before, pets_regras), contrato_blocos(inicio, fim)";
+  "id, tenant_id, status, aluguel_mensal, prazo_total_dias, qtd_ocupantes, created_at, assinado_proprietario_em, assinado_inquilino_em, pets_regras_congeladas, property_id, properties(title, owner_id, checkin_after, checkout_before, pets_regras), contrato_blocos(inicio, fim), pagamentos_bloco(tipo, confirmado_pelo_inquilino)";
 
 function objetoOuVazio(v: unknown): Record<string, unknown> {
   return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
@@ -138,7 +145,7 @@ async function lerLimpezaViva(propertyId: string | undefined): Promise<unknown> 
   }
 }
 
-function montar(c: LinhaContrato, userId: string): ContratoParaAssinar | null {
+function montar(c: LinhaContrato, userId: string, nomes?: { proprietario: string | null; inquilino: string | null }): ContratoParaAssinar | null {
   const ownerId = String(c.properties?.owner_id ?? "");
   const papel = papelNoContrato(userId, c.tenant_id, ownerId);
   if (!papel) return null;
@@ -183,8 +190,12 @@ function montar(c: LinhaContrato, userId: string): ContratoParaAssinar | null {
     resumo,
     assinadoProprietarioEm: a.proprietario,
     assinadoInquilinoEm: a.inquilino,
-    aviso: avisoAssinatura(papel, a),
+    aviso: avisoAssinatura(papel, {
+      proprietario: { nome: nomes?.proprietario ?? null, em: a.proprietario },
+      inquilino: { nome: nomes?.inquilino ?? null, em: a.inquilino },
+    }),
     euAssinei: !!(papel === "inquilino" ? a.inquilino : a.proprietario),
+    estado: estadoDoContratoUnico(c, papel),
     inicioEstadia: inicio,
     linhaDoTempo: montarLinhaDoTempo({
       inicio,
@@ -209,7 +220,16 @@ export async function getContratoParaAssinar(contratoId: string): Promise<Contra
   // O RLS acima já provou que a pessoa é parte; o dono não lê a ficha do inquilino, então a contagem vem do servidor.
   const linha = data as unknown as LinhaContrato;
   await completarPets(linha);
-  return montar(linha, user.id);
+  return montar(linha, user.id, await nomesDasPartes(String(linha.properties?.owner_id ?? ""), linha.tenant_id));
+}
+
+/** Nome curto das duas partes (só o nome: nunca contato nem documento) — para "Ana S. (proprietário) assinou em…". */
+async function nomesDasPartes(ownerId: string, tenantId: string): Promise<{ proprietario: string | null; inquilino: string | null }> {
+  const admin = createAdminClient();
+  if (!admin) return { proprietario: null, inquilino: null };
+  const { data } = await admin.from("profiles").select("id, full_name").in("id", [ownerId, tenantId].filter(Boolean));
+  const nome = (id: string) => nomeCurto((((data ?? []) as { id: string; full_name: string | null }[]).find((p) => p.id === id)?.full_name ?? "").replace(/\S+@\S+/g, "").trim());
+  return { proprietario: nome(ownerId), inquilino: nome(tenantId) };
 }
 
 /** Envia ao e-mail da conta um código de 6 dígitos, de uso único, que vale 15 minutos (conferido no servidor). */
@@ -423,6 +443,15 @@ export async function assinarContrato(input: {
   const outroId = visao.papel === "inquilino" ? String(c.properties?.owner_id ?? "") : c.tenant_id;
   after(async () => {
     try {
+      // Jornada de assinatura (19/10): com as duas assinaturas, o e-mail traz as mesmas linhas da página do contrato.
+      const nomes = outraJaAssinou ? await nomesDasPartes(String(c.properties?.owner_id ?? ""), c.tenant_id) : null;
+      const linhas = nomes
+        ? linhasAssinatura(visao.papel, {
+            proprietario: { nome: nomes.proprietario, em: visao.papel === "proprietario" ? agora : c.assinado_proprietario_em },
+            inquilino: { nome: nomes.inquilino, em: visao.papel === "inquilino" ? agora : c.assinado_inquilino_em },
+          })
+        : null;
+      const detalhes = linhas ? `<p>${linhas.map(escaparHtml).join("<br>")}</p>` : undefined;
       const { data: pessoa } = await admin.auth.admin.getUserById(outroId);
       await notify({
         event: "contract_status",
@@ -431,6 +460,7 @@ export async function assinarContrato(input: {
         // Quem recebe é a outra parte: o dono abre em Contratos, o inquilino em Minhas locações.
         pushUrl: visao.papel === "inquilino" ? `/dashboard/contratos/${c.id}` : `/dashboard/locacoes/${c.id}`,
         subject: assuntoAvisoOutraParte(outraJaAssinou),
+        detailsHtml: detalhes,
       });
       // Prompt 24: com as duas assinaturas, quem assinou por último também recebe o "contrato assinado" (os dois lados).
       if (outraJaAssinou) {
@@ -440,6 +470,7 @@ export async function assinarContrato(input: {
           userId: user.id,
           pushUrl: visao.papel === "inquilino" ? `/dashboard/locacoes/${c.id}` : `/dashboard/contratos/${c.id}`,
           subject: assuntoAvisoOutraParte(true),
+          detailsHtml: detalhes,
         });
       }
     } catch {

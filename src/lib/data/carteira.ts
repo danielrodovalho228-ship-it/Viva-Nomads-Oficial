@@ -27,6 +27,7 @@ export async function getCarteiraDoDono(hojeISO = hojeBR()): Promise<ItemCarteir
       propertyId: c.propertyId,
       status: c.status,
       etapa: c.etapa,
+      selo: c.estado.selo,
       valorMensal: c.aluguelMensal,
       blocos: c.blocos.map((b) => ({ inicio: b.inicio, fim: b.fim })),
       morador: nomes.get(c.tenantId) ?? null,

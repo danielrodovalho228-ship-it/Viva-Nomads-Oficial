@@ -1,5 +1,6 @@
 "use client";
 
+import { rotuloPagamentoBloco } from "@/lib/pagamento-bloco";
 import { CampoReais } from "@/components/ui/campo-reais";
 import { CampoData } from "@/components/ui/campo-data";
 import { ProblemaComIsto } from "@/components/ajuda/problema-com-isto";
@@ -40,6 +41,7 @@ import { STATUS_CONTRATO_ENCERRADO } from "@/lib/fiscal/devolucao";
 type Extras = Awaited<ReturnType<typeof documentosDosContratos>>;
 import { formatBRL, cn } from "@/lib/utils";
 import { ROTULO_ETAPA, type EtapaContrato } from "@/lib/contrato-etapas";
+import { estadoDoContratoUnico, tomDoSelo } from "@/lib/contrato-estado";
 import { rotuloBaseTaxa } from "@/lib/taxa-servico-base";
 
 /** Texto imutável da regra de ouro (declaratório — nunca movimenta valores). */
@@ -112,6 +114,12 @@ function buildDemoContratos(hojeISO: string): ContratoView[] {
             dataPagamento: c.inicio,
             confirmado: true,
             observacao: null,
+            rotulo: rotuloPagamentoBloco({
+              tipo: "aluguel",
+              valor: b0.valor,
+              bloco: { numero: b0.numeroBloco, meses: b0.meses, inicio: b0.inicio, fim: b0.fim },
+              valorMensal: c.valorMes,
+            }),
           },
         ]
       : [];
@@ -129,7 +137,14 @@ function buildDemoContratos(hojeISO: string): ContratoView[] {
       comissaoPercent: DEMO_COMISSAO_PCT,
       qtdOcupantes: 1 + (ci % 3),
       status: "ativo",
-      etapa: "em_vigencia", // demonstração: pagamento já confirmado no 1º bloco
+      // Demonstração: assinado e com o pagamento do 1º bloco confirmado — o estado sai da mesma fonte única.
+      ...(() => {
+        const estado = estadoDoContratoUnico(
+          { status: "ativo", assinado_proprietario_em: c.inicio, assinado_inquilino_em: c.inicio, pagamentos_bloco: [{ tipo: "aluguel", confirmado_pelo_inquilino: true }] },
+          "proprietario",
+        );
+        return { estado, etapa: estado.etapa ?? ("em_vigencia" as const) };
+      })(),
       criadoEm: c.inicio,
       blocos,
       pagamentos,
@@ -217,7 +232,7 @@ function ContratoCard({
   const caucaoTotal = contrato.blocos.reduce((s, b) => s + b.caucao, 0);
 
   return (
-    <Panel className="p-5">
+    <Panel className="p-5" data-testid="contrato-cartao" data-contrato={contrato.id}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 className="font-title text-lg font-bold text-ink">{contrato.propertyTitle}</h2>
@@ -241,28 +256,13 @@ function ContratoCard({
           </div>
         </div>
         <span
-          className={cn(
-            "rounded-full px-2.5 py-1 text-xs font-medium",
-            contrato.status === "ativo" && contrato.etapa === "em_vigencia"
-              ? "bg-sage-100 text-forest"
-              : "bg-amber-50 text-amber-700"
-          )}
+          className={cn("rounded-full px-2.5 py-1 text-xs font-medium", tomDoSelo(contrato.estado))}
           data-testid="contrato-etapa"
+          data-chave={contrato.estado.chave}
         >
-          {contrato.status === "ativo"
-            ? ROTULO_ETAPA[contrato.etapa]
-            : contrato.status === "encerrado_sem_renovacao"
-              ? "Encerrado (sem renovação)"
-              : contrato.status === "concluido"
-                ? "Concluído"
-                : "Cancelado"}
+          {contrato.estado.selo}
         </span>
       </div>
-      {contrato.status === "ativo" && contrato.etapa === "aguardando_assinatura" && contrato.assinaturaStatus && (
-        <p className="mt-1 text-xs font-medium text-amber-800" data-testid="contrato-assinatura-status">
-          {contrato.assinaturaStatus}
-        </p>
-      )}
 
       {!demo && (
         <Link
@@ -325,7 +325,7 @@ function ContratoCard({
             acerto={extra.acerto}
             hojeISO={hojeISO}
           />
-          <ListaDocumentos documentos={extra.documentos} />
+          <ListaDocumentos documentos={extra.documentos} recibos={extra.recibos} />
         </>
       )}
 
@@ -519,7 +519,7 @@ function RegistrarRecebimento({
           ? "Registro de exemplo — em produção fica no histórico do contrato."
           : tipo === "caucao"
             ? "Caução registrada. Quando o inquilino confirmar, sai o comprovante da caução."
-            : "Recebimento registrado. Quando o inquilino confirmar, sai o recibo em PDF para os dois."}
+            : "Recebimento registrado. Quando o inquilino confirmar, o recibo em PDF fica disponível aqui e vai por e-mail para vocês dois."}
       </p>
     );
   }

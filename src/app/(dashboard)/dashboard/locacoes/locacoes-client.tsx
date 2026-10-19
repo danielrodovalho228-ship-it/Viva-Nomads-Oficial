@@ -14,10 +14,15 @@ import type { LocacaoView } from "@/lib/data/contratos-actions";
 import type { documentosDosContratos } from "@/lib/data/documentos-actions";
 import { ConfirmarPagamentos, DevolucaoCaucaoInquilino, ListaDocumentos } from "@/components/documentos/documentos-contrato";
 import { formatBRL } from "@/lib/utils";
-import { ROTULO_ETAPA } from "@/lib/contrato-etapas";
+import { estadoDoContratoUnico, tomDoSelo } from "@/lib/contrato-estado";
 
 /** Locações de DEMONSTRAÇÃO (a partir do seed) para o piloto/testes. */
 function buildDemoLocacoes(): LocacaoView[] {
+  // Demonstração: assinada e com o 1º pagamento confirmado, pelo mesmo estado das locações reais.
+  const estado = estadoDoContratoUnico(
+    { status: "ativo", assinado_proprietario_em: "2026-01-01", assinado_inquilino_em: "2026-01-01", pagamentos_bloco: [{ tipo: "aluguel", confirmado_pelo_inquilino: true }] },
+    "inquilino",
+  );
   return DEMO_CONTRACTS.map((c, i) => ({
     id: `demo-loc-${i}`,
     propertyId: `demo-prop-${i}`,
@@ -25,7 +30,8 @@ function buildDemoLocacoes(): LocacaoView[] {
     ownerId: `demo-owner-${i}`,
     aluguelMensal: c.valorMes,
     status: "ativo",
-    etapa: "em_vigencia",
+    etapa: estado.etapa ?? "em_vigencia",
+    estado,
     criadoEm: c.inicio,
     podeAvaliar: false,
     pagamentos: [],
@@ -68,7 +74,7 @@ export function LocacoesClient({
       ) : (
         <div className="space-y-5">
           {locacoes.map((l) => (
-            <Panel key={l.id} className="p-5">
+            <Panel key={l.id} className="p-5" data-testid="locacao-cartao" data-contrato={l.id}>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
                   <h2 className="font-title text-lg font-bold text-ink">
@@ -95,10 +101,11 @@ export function LocacoesClient({
                   </p>
                 </div>
                 <span
-                  className="rounded-full bg-sage-100 px-2.5 py-1 text-xs font-medium text-forest"
+                  className={`rounded-full px-2.5 py-1 text-xs font-medium ${tomDoSelo(l.estado)}`}
                   data-testid="locacao-etapa"
+                  data-chave={l.estado.chave}
                 >
-                  {l.status === "ativo" ? ROTULO_ETAPA[l.etapa] : l.status}
+                  {l.estado.selo}
                 </span>
               </div>
 
@@ -107,7 +114,7 @@ export function LocacoesClient({
                 <>
                   <ConfirmarPagamentos pagamentos={l.pagamentos} />
                   <DevolucaoCaucaoInquilino acerto={extras[l.id]?.acerto ?? null} />
-                  <ListaDocumentos documentos={extras[l.id]?.documentos ?? []} />
+                  <ListaDocumentos documentos={extras[l.id]?.documentos ?? []} recibos={extras[l.id]?.recibos ?? []} />
                 </>
               )}
 

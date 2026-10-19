@@ -15,7 +15,7 @@ import {
   type Bloqueio,
 } from "@/lib/availability";
 import { solicitarReserva } from "@/lib/data/reservas-actions";
-import { getBlocks } from "@/lib/data/blocks-actions";
+import { getDatasIndisponiveis } from "@/lib/data/blocks-actions";
 import { useAuthStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { buttonClasses } from "@/components/ui/button";
@@ -49,8 +49,8 @@ export function AvailabilityCalendar({ property }: { property: Property }) {
   const today = useHoje();
   const [blockDays, setBlockDays] = useState<string[]>([]);
   useEffect(() => {
-    // Dias fechados pelo proprietário (leitura pública). [] sem backend.
-    getBlocks(property.id)
+    // Dias fechados pelo proprietário e períodos com contrato (só as datas). [] sem backend.
+    getDatasIndisponiveis(property.id)
       .then((r) => setBlockDays(expandirBloqueios(r as Bloqueio[])))
       .catch(() => {});
   }, [property.id]);

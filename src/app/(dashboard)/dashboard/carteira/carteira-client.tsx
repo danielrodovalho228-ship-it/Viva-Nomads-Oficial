@@ -146,6 +146,20 @@ export function CarteiraClient({ itens }: { itens: ItemCarteira[] }) {
                   </td>
                   <td className="py-3">
                     <Situacao s={i.situacao} />
+                    {i.selo && (
+                      <span className="mt-1 block text-xs text-muted" data-testid="carteira-selo">
+                        {i.selo}
+                      </span>
+                    )}
+                    {(i.proximos ?? []).map((p) => (
+                      <span key={p.contratoId} className="mt-1 block text-xs font-medium text-forest" data-testid="carteira-proximo" data-contrato={p.contratoId}>
+                        Próximo morador a partir de {p.inicio ? dataBR(p.inicio) : "—"}
+                        {p.morador ? ` · ${p.morador}` : ""} ·{" "}
+                        <Link href={`/dashboard/contratos/${p.contratoId}`} className="underline">
+                          {p.contratoNumero}
+                        </Link>
+                      </span>
+                    ))}
                   </td>
                   <td className="py-3 text-ink">{i.morador ?? "—"}</td>
                   <td className="py-3 text-right text-ink">{i.valorMensal > 0 ? formatBRL(i.valorMensal) : "—"}</td>
