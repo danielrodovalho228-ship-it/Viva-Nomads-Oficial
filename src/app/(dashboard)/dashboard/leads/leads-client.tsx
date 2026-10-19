@@ -7,6 +7,7 @@ import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives"
 import { ButtonLink, buttonClasses } from "@/components/ui/button";
 import { OwnerDecisionNotice } from "@/components/legal-notice";
 import { leadScore, leadSummary, type Lead, type Light } from "@/lib/data/lead-types";
+import { FichaPetCandidatura } from "@/components/pets/ficha-pet-candidatura";
 import { aceitarCandidatura, recusarCandidatura } from "@/lib/data/leads-actions";
 import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
 import { DEMO_LEADS } from "@/lib/demo/seed";
@@ -172,6 +173,7 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
                         ))}
                       </ul>
                     )}
+                    {l.fichaPet && <FichaPetCandidatura alvo={{ leadId: l.id }} resumo={l.fichaPet} className="mt-2" />}
                     <div className="mt-2 flex flex-wrap items-center gap-2">
                       {l.riskCategories.map((c) => (
                         <span key={c} className="rounded-full bg-blue-50 px-2.5 py-1 text-xs text-blue-700">

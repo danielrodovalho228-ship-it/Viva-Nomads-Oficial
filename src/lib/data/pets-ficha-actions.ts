@@ -93,7 +93,7 @@ export async function salvarPet(raw: unknown): Promise<{ ok: true; pets: PetSalv
   const atuais = (await meusPets()) ?? [];
   if (!podeAdicionarPet(atuais.length)) return { ok: false, error: "Você já tem 3 pets cadastrados. Remova um para incluir outro." };
   const f = v.ficha;
-  const { error } = await supabase.from("pets_inquilino").insert({
+  const { data: nova, error } = await supabase.from("pets_inquilino").insert({
     user_id: user.id,
     nome: f.nome,
     especie: f.especie,
@@ -103,9 +103,11 @@ export async function salvarPet(raw: unknown): Promise<{ ok: true; pets: PetSalv
     castrado: f.castrado,
     vacinas_em_dia: f.vacinasEmDia,
     observacoes: f.observacoes,
-  });
-  if (error) return { ok: false, error: "Não foi possível salvar o pet. Tente de novo." };
-  return { ok: true, pets: (await meusPets()) ?? [] };
+  }).select(COLUNAS).single();
+  if (error || !nova) return { ok: false, error: "Não foi possível salvar o pet. Tente de novo." };
+  // O pet salvo entra na lista na hora (com as linhas de foto e carteira), sem depender de uma nova leitura.
+  const salvo = paraPet(nova as Linha, new Map());
+  return { ok: true, pets: [...atuais.filter((p) => p.id !== salvo.id), salvo] };
 }
 
 export async function removerPet(id: string): Promise<{ ok: boolean; error?: string }> {

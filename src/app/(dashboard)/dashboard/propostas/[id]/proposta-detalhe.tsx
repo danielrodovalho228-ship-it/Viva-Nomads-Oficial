@@ -1,5 +1,6 @@
 "use client";
 
+import { FichaPetCandidatura } from "@/components/pets/ficha-pet-candidatura";
 import { CampoReais } from "@/components/ui/campo-reais";
 import { useState } from "react";
 import Link from "next/link";
@@ -125,6 +126,8 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="space-y-5">
+          {/* Ficha do pet da candidatura: só para o dono (o servidor confere a candidatura). */}
+          {p.papel === "owner" && <FichaPetCandidatura alvo={{ leadId: p.leadId }} className="rounded-xl border border-sage-200 bg-white p-3" />}
           <Panel data-testid="proposta-atual">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <p className="text-sm font-semibold text-ink">
