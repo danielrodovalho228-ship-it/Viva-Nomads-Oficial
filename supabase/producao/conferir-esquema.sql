@@ -312,6 +312,7 @@ with e(m, k, t, c) as (values
   ('0105','C','profiles','recebe_avisos_ceo'),
   ('0105','C','profiles','recebe_alertas_operacionais'),
   ('0106','T','lab_execucoes',''),
+  ('0173','C','lab_execucoes','por_categoria'),
   ('0107','T','caixa_socios',''),
   ('0107','F','caixa_socios_pendentes',''),
   ('0107','F','responder_caixa_socios',''),
