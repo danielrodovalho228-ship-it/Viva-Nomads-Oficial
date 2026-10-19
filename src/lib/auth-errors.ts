@@ -58,7 +58,7 @@ export function friendlyAuthError(message: string, contexto: "login" | "cadastro
     return "Conta criada. Não conseguimos enviar o e-mail de confirmação agora; tente reenviar em instantes.";
 
   // ── Genéricos ──
-  if (m.includes("rate limit") || m.includes("too many"))
+  if (m.includes("rate limit") || m.includes("too many") || m.includes("muitas tentativas"))
     return "Muitas tentativas. Aguarde um instante e tente de novo.";
   if (m.includes("network") || m.includes("fetch"))
     return "Falha de conexão. Verifique sua internet e tente novamente.";
