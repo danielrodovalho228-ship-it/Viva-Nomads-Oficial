@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { account, hasAccount } from "../fixtures/accounts";
+import { NO_LABORATORIO, liberarLimiteLoginIp } from "../fixtures/laboratorio";
 
 /**
  * T82 — LOGIN NO CELULAR (ordem c27c7ae6, bug do Daniel no iPhone).
@@ -10,6 +11,11 @@ import { account, hasAccount } from "../fixtures/accounts";
  */
 test.describe("T82 — Login no celular", () => {
   test.use({ storageState: { cookies: [], origins: [] }, viewport: { width: 390, height: 844 } });
+
+  // O lab inteiro sai do mesmo IP (limite de login por IP, 40 em 15 min): zera antes de cada teste.
+  test.beforeEach(async () => {
+    if (NO_LABORATORIO) await liberarLimiteLoginIp();
+  });
 
   test("campo de e-mail sem autocorreção do iPhone", async ({ page }) => {
     await page.goto("/auth");

@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { NO_LABORATORIO, liberarLimiteLoginIp } from "../fixtures/laboratorio";
 
 /**
  * F43/F44 — login sem enumeração de e-mail e com atraso depois de 3 falhas.
@@ -45,6 +46,8 @@ test.describe("Login — sem enumeração e com atraso (F43/F44)", () => {
   });
 
   test("servidor: a 6ª tentativa seguida do mesmo e-mail leva 429 com Retry-After (chamando a rota direto)", async ({ request }) => {
+    // O lab inteiro sai do mesmo IP: sem zerar o contador por IP, o "outro e-mail" abaixo leva 429.
+    if (NO_LABORATORIO) await liberarLimiteLoginIp();
     const email = `atraso-${Date.now()}@exemplo.com.br`;
     let ultimo = 0;
     let retry: string | undefined;
@@ -56,6 +59,7 @@ test.describe("Login — sem enumeração e com atraso (F43/F44)", () => {
     expect(ultimo).toBe(429);
     expect(Number(retry)).toBeGreaterThan(0);
     // outro e-mail não é afetado
+    if (NO_LABORATORIO) await liberarLimiteLoginIp();
     const outro = await request.post("/api/auth/entrar", { data: { email: `outro-${Date.now()}@exemplo.com.br`, password: "x" } });
     expect(outro.status()).toBe(401);
   });
