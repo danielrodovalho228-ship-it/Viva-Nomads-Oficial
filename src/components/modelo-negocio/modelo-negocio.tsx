@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import styles from "./modelo-negocio.module.css";
-import { FAIXAS_COMISSAO_PADRAO, ehPlanoGestor, faixaPorImoveisAtivos, pctTexto, comissaoSobreContrato as taxaSobreContrato } from "@/lib/cobranca/regra";
+import { FAIXAS_COMISSAO_PADRAO, ehPlanoGestor, faixaPorImoveisAtivos, pctTexto, comissaoSobreContrato as taxaSobreContrato, TEXTO_RENOVACAO_COMISSAO } from "@/lib/cobranca/regra";
 import { COMPARE_REFERENCIA, linhasPublicas } from "@/config/compare-precos";
 import { SUPORTE_EMAIL } from "@/lib/site";
 
@@ -105,8 +105,7 @@ export function ModeloNegocio() {
         </header>
 
         <div className={styles.keymsg}>
-          <strong>Sem cobrança mensal fixa:</strong> a taxa é cobrada uma única vez por contrato fechado, do proprietário. A renovação conta
-          como novo contrato. A Viva não recebe o dinheiro da reserva do imóvel nem da Caução.
+          <strong>Sem cobrança mensal fixa:</strong> a taxa é paga pelo proprietário. {TEXTO_RENOVACAO_COMISSAO} A Viva não recebe o dinheiro da reserva do imóvel nem da Caução.
         </div>
 
         {/* Cenários */}
