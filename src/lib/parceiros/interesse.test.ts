@@ -62,8 +62,9 @@ test("rota e página: limite por IP, sem dangerouslySetInnerHTML, textos da marc
   const tela = lei("src/app/(public)/parceiros/page.tsx") + lei("src/app/(public)/parceiros/parceiro-form.tsx");
   assert.doesNotMatch(tela, /dangerouslySetInnerHTML/);
   assert.doesNotMatch(tela, /apartamentos?|comiss[ãa]o|corretagem|intermedia[çc][ãa]o|vistoria|aluguel/i);
-  assert.match(tela, /taxa de parceria/i);
-  assert.match(tela, /a Viva não recebe esse dinheiro/);
+  // Complemento do P29, item 1: a taxa fixa saiu; o texto é o da taxa de serviço (10% para todas as categorias).
+  assert.match(tela, /textoTaxaServicoParceiros\(PAGAMENTO_PARCEIROS_ATIVO\)/);
+  assert.match(tela, /a Viva não guarda esse dinheiro/);
   // Ordem 1c00ab68 (#143): a página diz onde a Viva começa, sem prometer o país inteiro.
   assert.doesNotMatch(tela, /todo o Brasil/i);
 });

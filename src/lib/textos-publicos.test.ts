@@ -39,7 +39,7 @@ test("#69: aviso de testes único, no layout público, sem cópias nas páginas"
 
 test("#70: /parceiros/fotografos tem 'pedir é grátis' e botão para /parceiros", () => {
   const t = ler("src/app/(public)/parceiros/fotografos/page.tsx");
-  assert.match(t, /Pedir é grátis: a Viva não cobra nada de você; o fotógrafo paga a taxa de parceria só quando aceita o pedido\./);
+  assert.match(t, /Pedir é grátis: a Viva não cobra nada de você pelo pedido\./);
   assert.match(t, /href="\/parceiros"[^>]*>É fotógrafo\? Seja parceiro</);
 });
 

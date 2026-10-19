@@ -49,7 +49,8 @@
         "t9-documentos",
         "t183-telas-logadas-390",
         "t204-cadastro-ia-real",
-        "t207-cep-matricula-identidade"
+        "t207-cep-matricula-identidade",
+        "t231-admin-numeros-com-lista"
       ]
     },
     "/admin/2fa/refazer": {
@@ -155,7 +156,8 @@
       ],
       "specs": [
         "t15-admin-real",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t231-admin-numeros-com-lista"
       ]
     },
     "/admin/fotografos": {
@@ -189,7 +191,8 @@
       ],
       "specs": [
         "t15-admin-real",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t231-admin-numeros-com-lista"
       ]
     },
     "/admin/socios": {
@@ -1059,7 +1062,8 @@
       "specs": [
         "t69-botoes-header",
         "t72-paginas-institucionais",
-        "t171-faixas-taxa-cors"
+        "t171-faixas-taxa-cors",
+        "t231-admin-numeros-com-lista"
       ]
     },
     "/parceiros/fotografos": {
@@ -1068,7 +1072,8 @@
       ],
       "specs": [
         "t171-faixas-taxa-cors",
-        "t201-qa-muse"
+        "t201-qa-muse",
+        "t231-admin-numeros-com-lista"
       ]
     },
     "/pedidos": {
@@ -1266,7 +1271,8 @@
       ],
       "specs": [
         "t229-admin-conversa-com-tudo",
-        "t48-varredura"
+        "t48-varredura",
+        "t231-admin-numeros-com-lista"
       ]
     },
     "/admin/candidaturas": {

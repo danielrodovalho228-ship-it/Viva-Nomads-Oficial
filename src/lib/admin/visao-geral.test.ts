@@ -84,7 +84,7 @@ test("nenhum indicador produz NaN/Infinity com tudo zerado ou vazio", () => {
 });
 
 test("funil: % sobre a etapa anterior, sem dividir por zero", () => {
-  const f = funil({ buscas: 100, visualizacoes: 40, candidaturas_iniciadas: 0, candidaturas: 0, candidaturas_aceitas: 0, contratos: 0 });
+  const f = funil({ x_ev_busca: 100, x_ev_ver_anuncio: 40, x_ev_iniciar_candidatura: 0, x_candidaturas: 0, x_cand_aceitas: 0, x_contratos: 0 });
   assert.equal(f[0].daAnterior, null);
   assert.equal(f[1].daAnterior, 0.4);
   assert.equal(f[2].daAnterior, 0);

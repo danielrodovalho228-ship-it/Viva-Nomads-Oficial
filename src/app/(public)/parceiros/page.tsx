@@ -40,7 +40,7 @@ const PASSOS = [
 ];
 
 const REGRAS = [
-  "O pagamento do serviço é entre parceiro e cliente: a Viva não recebe esse dinheiro.",
+  "O pagamento do serviço é entre parceiro e cliente: a Viva não guarda esse dinheiro.",
   "Taxa de serviço de 10% sobre o valor do serviço, igual para todas as categorias (detalhes abaixo).",
   "Sem exclusividade e sem mensalidade.",
   "Contato fora da plataforma antes do aceite leva ao descadastro.",
