@@ -17,7 +17,7 @@ test.describe("T15 — Admin real", () => {
       await expect(corpo).not.toContainText(falso);
     }
     // Cartões de contagem presentes (o valor vem do banco; "—" só sem conexão).
-    for (const rotulo of ["Usuários", "Imóveis ativos"]) {
+    for (const rotulo of ["Usuários", "Imóveis reais publicados"]) {
       await expect(corpo.getByText(rotulo, { exact: true }).first()).toBeVisible();
     }
     // A fila de checklists (sempre vazia: a qualificação nunca fica pendente)

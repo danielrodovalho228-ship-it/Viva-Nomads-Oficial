@@ -4,7 +4,7 @@ import { hasAccount } from "../fixtures/accounts";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T228 — Prompt 29, /admin "conversa com tudo" (390 e 1280 px):
+  T229 — Prompt 29, /admin "conversa com tudo" (390 e 1280 px):
    • "admin conversa com tudo": cada cartão da home com lista abre a lista que ele conta, com o MESMO filtro, e a lista
      mostra o mesmo número (contratos, solicitações de manutenção, atendimento, pedidos, imóveis);
    • "um número, uma fonte": 3.200 × 4 meses → valor total R$ 12.800 e taxa R$ 1.536 iguais na home, em
@@ -19,16 +19,16 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, novaS
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const CIDADE = `Cidade T228 ${sufixo}`;
-const dono = { email: `dono.t228.${sufixo}@lab.vivanomads.test`, nome: "Marina Conversa Prado", role: "owner" as const };
-const inq = { email: `inq.t228.${sufixo}@lab.vivanomads.test`, nome: "Rafael Conversa Dias", role: "tenant" as const };
-const teste = { email: `teste.t228.${sufixo}@lab.vivanomads.test`, nome: `Tobias Teste ${sufixo}`, role: "owner" as const };
+const CIDADE = `Cidade T229 ${sufixo}`;
+const dono = { email: `dono.t229.${sufixo}@lab.vivanomads.test`, nome: "Marina Conversa Prado", role: "owner" as const };
+const inq = { email: `inq.t229.${sufixo}@lab.vivanomads.test`, nome: "Rafael Conversa Dias", role: "tenant" as const };
+const teste = { email: `teste.t229.${sufixo}@lab.vivanomads.test`, nome: `Tobias Teste ${sufixo}`, role: "owner" as const };
 const ids: Record<string, string | undefined> = {};
 const hoje = new Date(Date.now() - 3 * 3_600_000).toISOString().slice(0, 10); // dia de Brasília
 const de = new Date(Date.now() - (40 + Math.floor(Math.random() * 300)) * 86_400_000).toISOString().slice(0, 10);
 const HOME = `/admin?periodo=custom&de=${de}&ate=${hoje}&cidade=${encodeURIComponent(CIDADE)}`;
 
-test.describe("T228 — admin conversa com tudo", () => {
+test.describe("T229 — admin conversa com tudo", () => {
   test.describe.configure({ mode: "serial" });
   test.skip(!NO_LABORATORIO, "Só no laboratório (banco local + chave de serviço).");
   test.skip(!hasAccount("admin"), "conta de admin do laboratório não configurada");
@@ -39,15 +39,15 @@ test.describe("T228 — admin conversa com tudo", () => {
     ids.inq = await criarConta(inq, senha);
     ids.teste = await criarConta(teste, senha);
     await adm().from("profiles").update({ is_teste: true }).eq("id", ids.teste);
-    ids.imovel = await criarImovelPronto(ids.dono, `Studio T228 ${sufixo}`, { ativo: true });
-    ids.imovelTeste = await criarImovelPronto(ids.teste, `[TESTE QA] T228 ${sufixo}`, { ativo: true });
+    ids.imovel = await criarImovelPronto(ids.dono, `Studio T229 ${sufixo}`, { ativo: true });
+    ids.imovelTeste = await criarImovelPronto(ids.teste, `[TESTE QA] T229 ${sufixo}`, { ativo: true });
     await adm().from("properties").update({ city: CIDADE }).in("id", [ids.imovel, ids.imovelTeste]);
     // 3.200 × 4 meses, taxa de 12% gravada no aceite = 1.536 (Prompt 29, item 6).
     const { data: c, error } = await adm()
       .from("contratos")
       .insert({
         property_id: ids.imovel, tenant_id: ids.inq, owner_plan: "free", faixa: "temporada", prazo_total_dias: 120, aluguel_mensal: 3200,
-        tamanho_bloco_meses: 4, comissao_percent: 0.12, comissao_valor: 1536, qtd_ocupantes: 1, status: "ativo", garantia: "caucao",
+        tamanho_bloco_meses: 2, comissao_percent: 0.12, comissao_valor: 1536, qtd_ocupantes: 1, status: "ativo", garantia: "caucao",
         assinado_proprietario_em: new Date().toISOString(),
       })
       .select("id")
@@ -56,12 +56,12 @@ test.describe("T228 — admin conversa com tudo", () => {
     ids.contrato = c!.id as string;
     const { error: eSo } = await adm()
       .from("service_orders")
-      .insert({ property_id: ids.imovel, tenant_id: ids.inq, owner_id: ids.dono, category: "hidraulica", priority: "media", description: "T228: torneira pingando." });
+      .insert({ property_id: ids.imovel, tenant_id: ids.inq, owner_id: ids.dono, category: "hidraulica", priority: "media", description: "T229: torneira pingando." });
     expect(eSo).toBeNull();
     const prazo = new Date(Date.now() + 24 * 3_600_000).toISOString();
     const { data: ch, error: eCh } = await adm()
       .from("chamados")
-      .insert({ visitante_nome: "Visitante T228", visitante_email: `t228.${sufixo}@lab.vivanomads.test`, tipo: "suporte", categoria: "contrato", prioridade: "p3", canal: "site", assunto: `T228 ${sufixo}`, responsavel_tipo: "humano", prazo_primeira_resposta: prazo, prazo_resolucao: prazo })
+      .insert({ visitante_nome: "Visitante T229", visitante_email: `t229.${sufixo}@lab.vivanomads.test`, tipo: "suporte", categoria: "contrato", prioridade: "p3", canal: "site", assunto: `T229 ${sufixo}`, responsavel_tipo: "humano", prazo_primeira_resposta: prazo, prazo_resolucao: prazo })
       .select("id")
       .single();
     expect(eCh).toBeNull();
@@ -110,7 +110,7 @@ test.describe("T228 — admin conversa com tudo", () => {
       const fila = page.locator('[data-precisa="documentos_pendentes"]');
       const filaHome = n(await fila.locator("span.font-title").innerText());
       await expect(fila).toContainText(/na fila \(\d+ documentos? \+ \d+ matrículas?\)/);
-      await page.screenshot({ path: `${SAIDA}/t228-home-${largura}.png`, fullPage: true });
+      await page.screenshot({ path: `${SAIDA}/t229-home-${largura}.png`, fullPage: true });
 
       // Destinos: a lista conta o mesmo.
       await page.goto(contratos.href!, { waitUntil: "networkidle" });
@@ -120,7 +120,7 @@ test.describe("T228 — admin conversa com tudo", () => {
       await expect(page.getByTestId("contrato-assinatura").first()).toHaveText("Falta assinar: inquilino");
       await expect(page.getByTestId("contrato-rotulo-taxa").first()).toContainText("Taxa de serviço: 12% sobre o valor mensal × meses (R$ 3.200 × 4 = R$ 12.800) = R$ 1.536");
       await semRolagemLateral(page);
-      await page.screenshot({ path: `${SAIDA}/t228-contratos-${largura}.png`, fullPage: true });
+      await page.screenshot({ path: `${SAIDA}/t229-contratos-${largura}.png`, fullPage: true });
 
       await page.goto(`/admin/financeiro?periodo=custom&de=${de}&ate=${hoje}&cidade=${encodeURIComponent(CIDADE)}`, { waitUntil: "networkidle" });
       await expect(page.locator('[data-indicador="f-valor-total-dos-contratos"] [data-valor]')).toHaveText(/R\$\s?12\.800/);
@@ -180,7 +180,7 @@ test.describe("T228 — admin conversa com tudo", () => {
       expect(n(await page.getByTestId("lista-total").innerText())).toBeGreaterThan(0);
       await expect(page.getByTestId("imovel-tipo").first()).toHaveText("Demonstração");
       await semRolagemLateral(page);
-      await page.screenshot({ path: `${SAIDA}/t228-imoveis-${largura}.png`, fullPage: true });
+      await page.screenshot({ path: `${SAIDA}/t229-imoveis-${largura}.png`, fullPage: true });
 
       // Agentes: "Aguardando o seu OK" igual na home e na página.
       await page.goto(HOME, { waitUntil: "networkidle" });
@@ -203,7 +203,7 @@ test.describe("T228 — admin conversa com tudo", () => {
       await expect(linha).toContainText(/Não verificada|Confirmada|Vencida/);
       if (largura === 1280) await expect(linha.getByTestId("admin-cadastro-completo")).toHaveAttribute("title", /Falta: .*Foto de perfil/);
       await semRolagemLateral(page);
-      await page.screenshot({ path: `${SAIDA}/t228-usuarios-${largura}.png`, fullPage: true });
+      await page.screenshot({ path: `${SAIDA}/t229-usuarios-${largura}.png`, fullPage: true });
     });
   }
 
@@ -216,7 +216,7 @@ test.describe("T228 — admin conversa com tudo", () => {
     await page.reload({ waitUntil: "networkidle" });
     await expect(page.getByTestId("log-dados-teste-linha").first()).toContainText("Jornadas de teste encerradas");
     await expect(page.getByTestId("conta-teste").filter({ hasText: teste.nome })).toBeVisible();
-    await page.screenshot({ path: `${SAIDA}/t228-dados-de-teste.png`, fullPage: true });
+    await page.screenshot({ path: `${SAIDA}/t229-dados-de-teste.png`, fullPage: true });
 
     await page.goto("/admin/fotografos", { waitUntil: "networkidle" });
     await expect(page.getByTestId("texto-taxa-parceria")).toHaveText(

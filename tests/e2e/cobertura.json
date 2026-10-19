@@ -1247,7 +1247,7 @@
         "admin"
       ],
       "specs": [
-        "t228-admin-conversa-com-tudo",
+        "t229-admin-conversa-com-tudo",
         "t48-varredura"
       ]
     },
@@ -1256,7 +1256,7 @@
         "admin"
       ],
       "specs": [
-        "t228-admin-conversa-com-tudo",
+        "t229-admin-conversa-com-tudo",
         "t48-varredura"
       ]
     },
@@ -1265,7 +1265,7 @@
         "admin"
       ],
       "specs": [
-        "t228-admin-conversa-com-tudo",
+        "t229-admin-conversa-com-tudo",
         "t48-varredura"
       ]
     }
@@ -3443,7 +3443,7 @@
         "admin"
       ],
       "specs": [
-        "t228-admin-conversa-com-tudo"
+        "t229-admin-conversa-com-tudo"
       ]
     },
     "src/lib/data/imoveis-admin-actions.ts#pausarImovelAdmin": {
@@ -3451,7 +3451,7 @@
         "admin"
       ],
       "specs": [
-        "t228-admin-conversa-com-tudo"
+        "t229-admin-conversa-com-tudo"
       ]
     }
   }
