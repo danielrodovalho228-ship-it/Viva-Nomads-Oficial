@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { exigirAdminAal2 } from "@/lib/data/admin-guard";
 import { logModeracao } from "@/lib/data/moderacao-log";
+import { nomeCurto } from "@/lib/perfil/perfil-publico";
+import { refContratoVN, tipoDaFalha, umaLinhaPorDocumento } from "@/lib/fiscal/fila-falhas";
 import { emitirDoPagamentoComRegistro, emitirTermoDevolucaoComRegistro, pagamentosConfirmadosSemDocumento, reenviarEmailDoDocumento } from "@/lib/fiscal/emitir";
 
 /*
@@ -21,6 +23,12 @@ export interface FalhaDocumento {
   etapa: "emissao" | "envio";
   documentoId: string | null;
   motivo: string;
+  /** O que a linha mostra antes do clique (complemento do #880): número, tipo, contrato e nomes curtos. */
+  numero: string | null;
+  tipo: string;
+  contrato: string;
+  proprietario: string;
+  inquilino: string;
   tentativas: number;
   criadoEm: string;
   atualizadoEm: string;
@@ -52,17 +60,53 @@ export async function listarFalhasDocumentos(): Promise<{ falhas: FalhaDocumento
       .limit(100),
     pagamentosConfirmadosSemDocumento(c.admin),
   ]);
-  const falhas = ((data ?? []) as Record<string, unknown>[]).map((f) => ({
-    id: String(f.id),
-    pagamentoId: (f.pagamento_id as string | null) ?? null,
-    acertoId: (f.acerto_id as string | null) ?? null,
-    etapa: (f.etapa === "envio" ? "envio" : "emissao") as FalhaDocumento["etapa"],
-    documentoId: (f.documento_id as string | null) ?? null,
-    motivo: String(f.motivo),
-    tentativas: Number(f.tentativas ?? 1),
-    criadoEm: String(f.criado_em),
-    atualizadoEm: String(f.atualizado_em),
-  }));
+  const linhas = (data ?? []) as Record<string, unknown>[];
+  const ids = (k: string) => [...new Set(linhas.map((f) => f[k] as string | null).filter((v): v is string => !!v))];
+  // Documento (número, tipo, contrato), pagamento (tipo, contrato) e acerto (contrato) de cada linha, em lote.
+  const [{ data: docs }, { data: pgs }, { data: acs }] = await Promise.all([
+    ids("documento_id").length ? c.admin.from("documentos_fiscais").select("id, numero, tipo, contrato_id").in("id", ids("documento_id")) : Promise.resolve({ data: [] }),
+    ids("pagamento_id").length ? c.admin.from("pagamentos_bloco").select("id, tipo, contrato_id").in("id", ids("pagamento_id")) : Promise.resolve({ data: [] }),
+    ids("acerto_id").length ? c.admin.from("caucao_acertos").select("id, contrato_id").in("id", ids("acerto_id")) : Promise.resolve({ data: [] }),
+  ]);
+  const doc = new Map(((docs ?? []) as { id: string; numero: string; tipo: string; contrato_id: string | null }[]).map((d) => [d.id, d]));
+  const pag = new Map(((pgs ?? []) as { id: string; tipo: string; contrato_id: string }[]).map((p) => [p.id, p]));
+  const ace = new Map(((acs ?? []) as { id: string; contrato_id: string }[]).map((a) => [a.id, a]));
+  const contratoDe = (f: Record<string, unknown>) =>
+    doc.get(f.documento_id as string)?.contrato_id ?? pag.get(f.pagamento_id as string)?.contrato_id ?? ace.get(f.acerto_id as string)?.contrato_id ?? null;
+  const contratoIds = [...new Set(linhas.map(contratoDe).filter((v): v is string => !!v))];
+  const { data: cts } = contratoIds.length
+    ? await c.admin.from("contratos").select("id, tenant_id, properties!inner(owner_id)").in("id", contratoIds)
+    : { data: [] };
+  const partes = new Map(
+    ((cts ?? []) as unknown as { id: string; tenant_id: string; properties: { owner_id: string } }[]).map((x) => [x.id, { dono: x.properties.owner_id, inq: x.tenant_id }]),
+  );
+  const pessoas = [...new Set([...partes.values()].flatMap((p) => [p.dono, p.inq]))];
+  const { data: perfis } = pessoas.length ? await c.admin.from("profiles").select("id, full_name").in("id", pessoas) : { data: [] };
+  const nome = new Map(((perfis ?? []) as { id: string; full_name: string | null }[]).map((p) => [p.id, nomeCurto(p.full_name) ?? "Sem nome"]));
+
+  const falhas = umaLinhaPorDocumento(
+    linhas.map((f) => {
+      const d = doc.get(f.documento_id as string);
+      const contratoId = contratoDe(f);
+      const pt = contratoId ? partes.get(contratoId) : undefined;
+      return {
+        id: String(f.id),
+        pagamentoId: (f.pagamento_id as string | null) ?? null,
+        acertoId: (f.acerto_id as string | null) ?? null,
+        etapa: (f.etapa === "envio" ? "envio" : "emissao") as FalhaDocumento["etapa"],
+        documentoId: (f.documento_id as string | null) ?? null,
+        motivo: String(f.motivo),
+        numero: d?.numero ?? null,
+        tipo: tipoDaFalha({ docTipo: d?.tipo, pagamentoTipo: pag.get(f.pagamento_id as string)?.tipo, acerto: !!f.acerto_id }),
+        contrato: refContratoVN(contratoId),
+        proprietario: pt ? (nome.get(pt.dono) ?? "Sem nome") : "—",
+        inquilino: pt ? (nome.get(pt.inq) ?? "Sem nome") : "—",
+        tentativas: Number(f.tentativas ?? 1),
+        criadoEm: String(f.criado_em),
+        atualizadoEm: String(f.atualizado_em),
+      };
+    }),
+  );
   return { falhas, pendentes: pendentes.length };
 }
 

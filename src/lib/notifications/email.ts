@@ -3,6 +3,7 @@
   (apenas registra no console/retorno). Docs: https://resend.com/docs
 */
 import { integracoesSimuladas, registrarSimulado } from "../integracoes.ts";
+import type { EmailParaCaixa } from "./caixa-teste.ts";
 
 export function isEmailConfigured() {
   return !!process.env.RESEND_API_KEY && !integracoesSimuladas();
@@ -49,6 +50,10 @@ export async function sendEmail(params: {
   from?: string;
   /** Para onde vai a resposta do destinatário. */
   replyTo?: string;
+  /** Evento para a caixa de e-mails de teste (ex.: "recibo_emitido", "termo_devolucao"). Padrão: "email". */
+  evento?: string;
+  /** Quem recebe, quando já se sabe (acha a conta de teste sem procurar pelo e-mail). */
+  usuarioId?: string;
 }): Promise<EmailResult> {
   const outbox = process.env.EMAIL_TEST_OUTBOX;
   if (outbox && process.env.NODE_ENV !== "production") {
@@ -101,6 +106,17 @@ export async function sendEmail(params: {
         console.error("[email] Resend respondeu sem id");
         return { demo: false, error: `Resend ${res.status}: resposta sem id` };
       }
+      // Caixa de e-mails de teste (complemento do #880): TODO e-mail aceito passa por aqui, então a captura é uma só,
+      // para qualquer remetente (notify, recibo, comprovante, termo, código de assinatura, conta…). Só conta is_teste;
+      // conta real nunca é gravada. Do anexo vai só o nome do arquivo, nunca o conteúdo.
+      await capturarNaCaixaTeste({
+        evento: params.evento?.trim() || EVENTO_PADRAO_CAIXA,
+        assunto: params.subject,
+        texto: params.text ?? textoDoHtml(params.html),
+        para: params.to,
+        usuarioId: params.usuarioId,
+        anexos: params.attachments?.map((a) => a.filename),
+      });
       return { demo: false, id: data.id };
     }
     if (res.status === 429 && tentativa < 3) {
@@ -111,6 +127,32 @@ export async function sendEmail(params: {
     const error = erroResend(res.status, await res.text().catch(() => ""));
     console.error("[email] recusado:", error);
     return { demo: false, error };
+  }
+}
+
+export const EVENTO_PADRAO_CAIXA = "email";
+
+const textoDoHtml = (html: string) => html.replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
+
+type GuardaCaixa = (p: EmailParaCaixa) => Promise<boolean>;
+let guardaDeTeste: GuardaCaixa | null = null;
+
+/** Só para testes unitários: troca o gravador da caixa de teste (por um com cliente falso). null volta ao real. */
+export function definirGuardaCaixaTeste(fn: GuardaCaixa | null): void {
+  guardaDeTeste = fn;
+}
+
+/** Nunca derruba o envio: a caixa de teste é best-effort. */
+async function capturarNaCaixaTeste(p: EmailParaCaixa): Promise<void> {
+  try {
+    if (guardaDeTeste) {
+      await guardaDeTeste(p);
+      return;
+    }
+    const { guardarSeContaDeTeste } = await import("./caixa-teste-servidor");
+    await guardarSeContaDeTeste(p);
+  } catch {
+    /* a caixa de teste nunca afeta o envio real */
   }
 }
 

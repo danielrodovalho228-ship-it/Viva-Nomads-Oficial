@@ -148,6 +148,8 @@ export async function pedirCodigoRefazer(): Promise<Res> {
   const r = await sendEmail({
     to: s.user.email,
     subject: "Seu código para refazer a verificação em duas etapas",
+    evento: "recuperacao_2fa",
+    usuarioId: s.user.id,
     text: `Seu código: ${codigo}\nVale por 15 minutos. Se não foi você, ignore este e-mail e troque a senha.`,
     html: `<p>Seu código para refazer a verificação em duas etapas: <strong style="font-size:20px;letter-spacing:4px">${codigo}</strong></p><p>Vale por 15 minutos. Se não foi você, ignore este e-mail e troque a senha.</p>`,
   });

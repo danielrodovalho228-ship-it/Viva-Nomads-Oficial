@@ -22,13 +22,14 @@ test("registro: corta tamanhos, tira controle e só aceita uuid válido", () => 
   assert.equal(ok.usuario_id, "11111111-1111-4111-8111-111111111111");
 });
 
-test("notify grava na caixa só pelo servidor e sem derrubar o envio", () => {
-  const n = ler("src/lib/notifications/index.ts");
-  assert.match(n, /await guardarSeContaDeTeste\(/);
-  const s = ler("src/lib/notifications/caixa-teste-servidor.ts");
+test("a caixa é gravada só pelo servidor (dentro do sendEmail) e sem derrubar o envio", () => {
+  const n = ler("src/lib/notifications/email.ts");
+  assert.match(n, /await guardarSeContaDeTeste\(p\)/);
+  const s = ler("src/lib/notifications/caixa-teste.ts");
   assert.match(s, /\.eq\("is_teste", true\)/);
   assert.ok(!/\.ilike\(/.test(s), "ilike trata _ do e-mail como curinga");
   assert.match(s, /catch \{\s*return false;/);
+  assert.match(ler("src/lib/notifications/caixa-teste-servidor.ts"), /catch \{\s*return false;/);
 });
 
 test("0136: tabela com RLS (só admin lê, ninguém grava pela API) + aplicar idempotente + rollback", () => {

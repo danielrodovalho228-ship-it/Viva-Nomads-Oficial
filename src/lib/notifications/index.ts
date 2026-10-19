@@ -1,5 +1,4 @@
 import { sendEmail, isEmailConfigured } from "./email";
-import { guardarSeContaDeTeste } from "./caixa-teste-servidor";
 import { sendWhatsapp, isWhatsappConfigured } from "./whatsapp";
 import { sendPush } from "./push";
 import { brandedNotification, notificationText, emailImage } from "./templates";
@@ -106,10 +105,11 @@ export async function notify(params: {
         html,
         text,
         ...(params.doSuporte ? { from: `Viva Nomads Suporte <${SUPORTE_EMAIL}>`, replyTo: SUPORTE_EMAIL } : {}),
+        // A caixa de e-mails de teste é gravada dentro do sendEmail (uma vez só, depois do envio aceito).
+        evento: params.event,
+        usuarioId: params.userId,
       });
       result.email = r.demo ? "demo" : !r.error;
-      // Caixa de e-mails de teste: só conta is_teste; falha aqui não afeta o envio.
-      await guardarSeContaDeTeste({ evento: params.event, assunto: tpl.subject, texto: text, para: params.email, usuarioId: params.userId });
     } catch {
       result.email = false;
     }
