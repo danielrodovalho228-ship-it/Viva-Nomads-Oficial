@@ -19,6 +19,7 @@ import { documentoCompleto, MSG_DOCUMENTO } from "@/lib/documento-pessoa";
 import { docsInquilinoCompletos } from "@/lib/data/documentos-inquilino-servidor";
 import { MSG_DOCS_INQUILINO } from "@/lib/documentos-inquilino";
 import { propostaAcordadaDoLead } from "@/lib/data/propostas-servidor";
+import { taxaDoLeadDoDono, type TaxaDoLead } from "@/lib/data/taxa-dono-servidor";
 
 interface ActionResult {
   ok: boolean;
@@ -273,7 +274,7 @@ export async function getFechamentoContext(
   // A candidatura aceita mais recente do dono (ou a apontada por leadId).
   let q = supabase
     .from("leads")
-    .select("id, tenant_id, property_id, accepted_plan, accepted_commission_rate, accepted_at")
+    .select("id, tenant_id, property_id, accepted_at")
     .eq("owner_id", user.id)
     .eq("status", "accepted")
     .order("accepted_at", { ascending: false })
@@ -293,9 +294,12 @@ export async function getFechamentoContext(
   let inicioDesejado: string | null = null;
   let proposta: FechamentoContexto["proposta"] = null;
   let ocupantesSugerido: number | null = null;
+  // Plano e taxa congelados no aceite: só pelo servidor, depois de conferir que a candidatura é deste dono (0177).
+  let taxaLead: TaxaDoLead | null = null;
   try {
     const admin = createAdminClient();
     if (admin) {
+      taxaLead = await taxaDoLeadDoDono(admin, user.id, lead.id as string);
       // O SELECT de leads é por coluna para o usuário; a data desejada vem pelo servidor.
       const { data: d } = await admin.from("leads").select("inicio_desejado, qtd_ocupantes").eq("id", lead.id).maybeSingle();
       inicioDesejado = (d?.inicio_desejado as string | null) ?? null;
@@ -317,11 +321,11 @@ export async function getFechamentoContext(
     /* mantém o neutro */
   }
 
-  const planoId = ((lead.accepted_plan as string) ?? "free") as PlanoId;
+  const planoId = (taxaLead?.acceptedPlan ?? "free") as PlanoId;
   // Comissão CONGELADA no aceite; retrocompatível se o snapshot faltar.
   const comissaoRate =
-    typeof lead.accepted_commission_rate === "number"
-      ? lead.accepted_commission_rate
+    typeof taxaLead?.acceptedCommissionRate === "number"
+      ? taxaLead.acceptedCommissionRate
       : COMISSAO_POR_PLANO[planoId] ?? COMISSAO_POR_PLANO.free;
 
   return {
