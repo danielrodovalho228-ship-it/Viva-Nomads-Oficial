@@ -124,3 +124,23 @@ test("item 5a: avise-me sem login — texto novo, volta para a mesma busca e gra
   assert.doesNotMatch(tela, /Entrar para ser avisado/);
   assert.match(ler("../../app/(public)/parceiros/fotografos/page.tsx"), /autoAvisar=\{!!user && sp\.avisar === "1"\}/);
 });
+
+test("aviso sem a 0183: diz o que falta e o que já segue o recorte (sem mudar a lógica)", () => {
+  const pagina = ler("../../app/(dashboard)/admin/financeiro/page.tsx");
+  assert.ok(
+    pagina.includes(
+      "Assinaturas, MRR, recebido, marketing e os gráficos mensais aparecem quando a migração 0183 for aplicada (automática no merge). Contratos, taxa de serviço e take rate já seguem o recorte Real · Teste · Todos.",
+    ),
+  );
+  assert.match(pagina, /sem_migracao: TEXTO_FINANCEIRO_SEM_0183,/);
+});
+
+test("0182 aplicável em produção: a Caução fica sem bloco ANTES do check e da anulação das duplicidades", () => {
+  for (const arq of ["../../../supabase/migrations/0182_pagamento_sem_repeticao.sql", "../../../supabase/producao/aplicar-0182.sql"]) {
+    const sql = ler(arq);
+    const nulo = sql.indexOf("update public.pagamentos_bloco set bloco_id = null where tipo = 'caucao' and bloco_id is not null;");
+    const check = sql.indexOf("add constraint pagamentos_bloco_bloco_por_tipo");
+    const anula = sql.indexOf("set anulado_em = now(), anulado_motivo = 'registro em duplicidade'");
+    assert.ok(nulo > 0 && nulo < check && check < anula, arq);
+  }
+});
