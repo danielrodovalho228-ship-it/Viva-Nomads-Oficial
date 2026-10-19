@@ -5,7 +5,7 @@
   Rodar de novo recria o que mudou e não duplica nada (ids fixos, upsert).
 */
 import { createClient } from "@supabase/supabase-js";
-import { CONTAS, IMOVEIS, CHAMADOS, hostProibido } from "./massa.mjs";
+import { CONTAS, IMOVEIS, CHAMADOS, CONTRATOS, hostProibido } from "./massa.mjs";
 
 function falhar(msg) {
   console.error(`✗ ${msg}`);
@@ -90,6 +90,25 @@ async function main() {
     );
     if (error) throw error;
     console.log(`✓ chamado ${c.id}`);
+  }
+  const dia = (n) => new Date(agora + n * 86400e3).toISOString().slice(0, 10);
+  for (const c of CONTRATOS) {
+    const inicio = dia(c.dias);
+    const fim = dia(c.dias + c.meses * 30);
+    const aluguel = IMOVEIS.find((i) => i.id === c.imovel).preco;
+    const { error } = await admin.from("contratos").upsert(
+      {
+        id: c.id, property_id: c.imovel, tenant_id: ids.INQUILINO, owner_plan: "free", faixa: "media_estadia",
+        prazo_total_dias: c.meses * 30, aluguel_mensal: aluguel, tamanho_bloco_meses: 2, qtd_ocupantes: 1,
+        comissao_percent: 0.12, comissao_valor: Math.round(aluguel * c.meses * 0.12 * 100) / 100,
+        status: c.status, garantia: "caucao", periodo: `[${inicio},${fim})`,
+        assinado_proprietario_em: c.assinado.includes("proprietario") ? new Date(agora - 86400e3).toISOString() : null,
+        assinado_inquilino_em: c.assinado.includes("inquilino") ? new Date(agora - 86400e3).toISOString() : null,
+      },
+      { onConflict: "id" },
+    );
+    if (error) throw error;
+    console.log(`✓ contrato ${c.id}`);
   }
   console.log("\n✅ Massa de teste pronta (idempotente).");
 }

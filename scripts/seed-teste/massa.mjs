@@ -37,6 +37,17 @@ export const CHAMADOS = [
   { id: "22222222-2222-4222-8222-222222222203", autor: "PROPRIETARIO", assunto: "[Teste] Chamado resolvido", status: "resolvido", prioridade: "p4" },
 ];
 
+/**
+  Contratos de teste (ordem 7436a29a, item 6, parte 2): um por estado, todos do INQUILINO. Os dois "ativo" ficam em
+  imóveis diferentes (a trava de sobreposição não deixa dois ativos no mesmo período). Datas relativas a hoje.
+  dias = deslocamento do início em relação a hoje; assinado = quem já assinou.
+*/
+export const CONTRATOS = [
+  { id: "33333333-3333-4333-8333-333333333301", imovel: "11111111-1111-4111-8111-111111111111", estado: "aguardando assinatura", status: "ativo", dias: 30, meses: 2, assinado: [] },
+  { id: "33333333-3333-4333-8333-333333333302", imovel: "11111111-1111-4111-8111-111111111112", estado: "assinado pelas duas partes", status: "ativo", dias: 7, meses: 2, assinado: ["proprietario", "inquilino"] },
+  { id: "33333333-3333-4333-8333-333333333303", imovel: "11111111-1111-4111-8111-111111111111", estado: "concluído", status: "concluido", dias: -120, meses: 2, assinado: ["proprietario", "inquilino"] },
+];
+
 /** O seed só roda em projeto de teste. */
 export function hostProibido(url) {
   return String(url ?? "").includes(PROD_HOST);

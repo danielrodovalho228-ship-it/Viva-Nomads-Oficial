@@ -26,6 +26,12 @@ Criada por `npm run seed:massa` (`scripts/seed-teste/`), só em projeto de teste
 | `22222222-2222-4222-8222-222222222202` | INQUILINO | [Teste] Chamado em andamento | em_andamento |
 | `22222222-2222-4222-8222-222222222203` | PROPRIETARIO | [Teste] Chamado resolvido | resolvido |
 
-## Ainda não coberto
+## Contratos (imóveis do PROPRIETARIO, inquilino: INQUILINO)
 
-Contratos de teste (a ordem 7436a29a pede contratos no seed): ficam para a próxima parte.
+| Código | Imóvel | Estado |
+|---|---|---|
+| `33333333-3333-4333-8333-333333333301` | `11111111-1111-4111-8111-111111111111` | aguardando assinatura |
+| `33333333-3333-4333-8333-333333333302` | `11111111-1111-4111-8111-111111111112` | assinado pelas duas partes |
+| `33333333-3333-4333-8333-333333333303` | `11111111-1111-4111-8111-111111111111` | concluído |
+
+Os dois contratos ativos ficam em imóveis diferentes (a trava de sobreposição de período não aceita dois ativos no mesmo imóvel). Datas relativas ao dia em que o seed roda; o seed não cria pagamentos nem blocos.
