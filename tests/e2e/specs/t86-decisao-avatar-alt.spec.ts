@@ -78,7 +78,7 @@ test.describe("T86 — #536: avatar sem 'P(' e alt 'imóvel mobiliado'", () => {
       // "networkidle" estourava 45 s no lab (a Visão geral mantém requisições abertas): basta o HTML.
       await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
       // O banner antigo virou a capa do painel (ordem ec7988fe): o alt agora vem de CAPAS.imoveis.
-      const capa = page.getByTestId("painel-capa").first().locator("img");
+      const capa = page.locator('[data-testid="painel-capa"]:visible').first().locator("img");
       await expect(capa).toHaveAttribute("alt", /sala mobiliada/i, { timeout: 20_000 });
       await expect(page.getByAltText(/apartamento mobiliado/i)).toHaveCount(0);
     });

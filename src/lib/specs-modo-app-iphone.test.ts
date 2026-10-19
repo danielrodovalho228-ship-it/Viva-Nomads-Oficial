@@ -45,3 +45,13 @@ test("t151 cria o próprio imóvel no laboratório e não pula a Disponibilidade
   assert.match(src, /NO_LABORATORIO/);
   assert.match(src, /apagarContas/);
 });
+
+// Ordem 75553f0a/laboratório verde: lab 1f41f14b — t151 e t86 pegavam a primeira capa do DOM,
+// que pode ser a escondida (app-only); precisam da capa VISÍVEL, como o t119.
+for (const arq of ["t151-modo-app-iphone", "t86-decisao-avatar-alt"]) {
+  test(`${arq} confere a capa visível, não a primeira do DOM`, () => {
+    const src = readFileSync(join(raiz, "tests", "e2e", "specs", `${arq}.spec.ts`), "utf8");
+    assert.match(src, /painel-capa"\]:visible/);
+    assert.doesNotMatch(src, /getByTestId\("painel-capa"\)\.first\(\)/);
+  });
+}
