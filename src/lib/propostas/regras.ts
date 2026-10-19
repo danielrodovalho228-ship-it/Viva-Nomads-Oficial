@@ -3,7 +3,7 @@
   rodadas, o que cada lado pode mudar e o histórico. O servidor (propostas-actions.ts) usa estas funções antes de
   gravar; a tela usa as mesmas para mostrar o total. A proposta é documento, não cobrança: a Viva não recebe valor.
 */
-import { comissaoSobreContrato, taxaNaAssinatura } from "../cobranca/regra.ts";
+import { comissaoSobreContrato, rotuloTaxaServico, taxaNaAssinatura } from "../cobranca/regra.ts";
 import { descontoParaMeses, PCT_MAX, type FaixaDesconto, type ItemNegociavel, type Negociacao } from "../anuncio/negociacao.ts";
 
 export type StatusProposta =
@@ -167,6 +167,12 @@ export function origemDaTaxaDaProposta(
 ): "admin" | "faixa" | "faixa_com_queda_recente" | "proposta_envio" {
   const envio = taxaNoEnvio == null ? NaN : Number(taxaNoEnvio);
   return Number.isFinite(envio) && envio < hoje.taxa ? "proposta_envio" : hoje.origem;
+}
+
+/** Linha do aviso ao DONO no aceite (item 34): a taxa congelada com a base escrita e, se caiu, o porquê. */
+export function textoTaxaCongeladaParaDono(taxa: number, valorMensal: number, meses: number, taxaNoEnvio: number | null | undefined): string {
+  const caiu = avisoTaxaCaiu(taxaNoEnvio, taxa);
+  return `${rotuloTaxaServico(taxa, valorMensal, meses)} (congelada no aceite; cobrada à parte).${caiu ? ` ${caiu}.` : ""}`;
 }
 
 /** Meses permitidos pelo anúncio (prazo em dias → meses de 30 dias, entre 1 e 6). */

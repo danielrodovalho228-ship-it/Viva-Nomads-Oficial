@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { FAIXAS_COMISSAO_PADRAO, taxaNaAssinatura, type FaixaComissao, type TaxaAplicada } from "@/lib/cobranca/regra";
+import { FAIXAS_COMISSAO_PADRAO, taxaNaAssinatura, type FaixaComissao, type TaxaAplicada } from "./regra.ts";
 
 /**
  * A taxa do dono AGORA, com a regra inteira de src/lib/cobranca/regra.ts (especificação de testes da taxa, 19/10):

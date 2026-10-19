@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify } from "@/lib/notifications";
+import { escaparHtml } from "@/lib/escapar-html";
 import type { NotificationEvent } from "@/lib/notifications/eventos-email";
 import { guardContactInfo } from "@/lib/messages/contact-guard";
 import { conversationId as idConversa } from "@/lib/messages/conversation-id";
@@ -36,6 +37,7 @@ import {
   avisoTaxaCaiu,
   textoSeAceitaHoje,
   origemDaTaxaDaProposta,
+  textoTaxaCongeladaParaDono,
   validaAteDe,
   validarTermos,
   VALIDADES_DIAS,
@@ -147,6 +149,8 @@ async function avisarOutraParte(
   de: Autor,
   texto: string,
   evento: NotificationEvent,
+  /** Só vai no e-mail quando o destino é o DONO (a taxa nunca chega ao morador — especificação da taxa, R8). */
+  detalhesSoDono?: string,
 ) {
   const remetente = de === "owner" ? p.owner_id : p.tenant_id;
   const destino = de === "owner" ? p.tenant_id : p.owner_id;
@@ -171,6 +175,7 @@ async function avisarOutraParte(
       userId: destino,
       pushUrl: `/dashboard/propostas/${p.id}`,
       subject: evento === "proposta_recebida" ? `Proposta ${p.numero}` : `Proposta ${p.numero} respondida`,
+      ...(detalhesSoDono && destino === p.owner_id ? { detailsHtml: `<p>${escaparHtml(detalhesSoDono)}</p>` } : {}),
     });
   } catch {
     /* notificação nunca quebra o fluxo */
@@ -718,13 +723,33 @@ async function aceitar(admin: Admin, p: LinhaProposta, v: LinhaVersao, papel: Au
       .eq("status", "accepted");
   }
   const tot = calcularTotais(termosDaLinha(v));
+  // Item 34: o dono recebe a taxa congelada com a base escrita; o morador, nunca.
+  const linhaTaxa = textoTaxaCongeladaParaDono(taxa, tot.valorMensal, Number(v.meses), tx.taxa_no_envio);
   await avisarOutraParte(
     admin,
     p,
     papel,
     `Proposta ${p.numero} aceita: ${brl(tot.valorMensal)}/mês × ${v.meses} ${Number(v.meses) === 1 ? "mês" : "meses"}, total ${brl(tot.totalContrato)}. Próximo passo: o fechamento.`,
     "proposta_respondida",
+    linhaTaxa,
   );
+  if (papel === "owner") {
+    // Quem aceitou foi o próprio dono: o aviso acima foi ao morador (sem taxa); o dono recebe o dele.
+    try {
+      const { data: d } = await admin.from("profiles").select("email, full_name").eq("id", p.owner_id).maybeSingle();
+      await notify({
+        event: "proposta_respondida",
+        email: (d?.email as string | undefined) ?? undefined,
+        name: (d?.full_name as string | undefined) ?? undefined,
+        userId: p.owner_id,
+        pushUrl: `/dashboard/propostas/${p.id}`,
+        subject: `Proposta ${p.numero} aceita`,
+        detailsHtml: `<p>${escaparHtml(linhaTaxa)}</p>`,
+      });
+    } catch {
+      /* notificação nunca quebra o fluxo */
+    }
+  }
   revalidatePath("/dashboard/leads");
   revalidatePath("/dashboard/fechamento");
   return { ok: true, fechamentoUrl: papel === "owner" ? `/dashboard/fechamento?c=${p.lead_id}` : null };
