@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bot, Camera, FlaskConical, MapPinned, HandHelping, Video, FileSignature, Handshake, Inbox, LifeBuoy, Mail, Megaphone, Star, TrendingUp, Wallet } from "lucide-react";
+import { Bot, Camera, FlaskConical, MapPinned, HandHelping, Video, FileSignature, Handshake, Inbox, LifeBuoy, Mail, Megaphone, Star, TrendingUp, Wallet, Wrench } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Panel, StatCard } from "@/components/dashboard/primitives";
 
@@ -14,6 +14,7 @@ const OUTRAS_AREAS = [
   { href: "/admin/ajuda-publicacao", label: "Publicamos para você", icon: HandHelping },
   { href: "/admin/documentos", label: "Documentos", icon: FileSignature },
   { href: "/admin/atendimento", label: "Atendimento", icon: LifeBuoy },
+  { href: "/admin/servicos", label: "Serviços do morador", icon: Wrench },
   { href: "/admin/dados-de-teste", label: "Dados de teste", icon: FlaskConical },
   { href: "/admin/emails-teste", label: "E-mails de teste", icon: Mail },
   { href: "/admin/financeiro", label: "Financeiro", icon: Wallet },

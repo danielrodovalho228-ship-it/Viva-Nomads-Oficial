@@ -49,6 +49,12 @@ test("estadia ativa revela Solicitações dentro de Minha moradia", () => {
   assert.ok(folhas(m).some((i) => i.href === "/dashboard/solicitacoes"));
 });
 
+test("ordem 521c5af7: Serviços só para quem tem locação ativa; o admin vê Serviços do morador", () => {
+  assert.ok(!folhas(menuDoPainel({ ...base, estadiaAtiva: false })).some((i) => i.href === "/dashboard/servicos"));
+  assert.ok(folhas(menuDoPainel({ ...base, estadiaAtiva: true })).some((i) => i.href === "/dashboard/servicos"));
+  assert.ok(folhas(menuDoPainel({ ...base, admin: true })).some((i) => i.href === "/admin/servicos"));
+});
+
 test("regra 0.5: todo link é rota interna do painel (fora a busca pública) e a tela existe", () => {
   const todos = folhas(menuDoPainel({ temImovel: true, admin: true, estadiaAtiva: true }));
   const ids = todos.map((i) => i.id);
