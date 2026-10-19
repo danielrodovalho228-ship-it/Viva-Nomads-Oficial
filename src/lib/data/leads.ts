@@ -7,6 +7,7 @@ import { SAMPLE_LEADS, type Lead, type Light } from "./lead-types";
 import { cartaoCandidato } from "@/lib/perfil/perfil-publico";
 import { signAvatarPath } from "@/lib/data/avatar-url";
 import { getReputacao } from "@/lib/data/avaliacoes-actions";
+import { estadosIdentidade } from "@/lib/identidade/estado-servidor";
 
 // Re-exporta os utilitários puros para compatibilidade com importações server-side.
 export { SAMPLE_LEADS, LIGHT_SHORT, leadScore, leadSummary } from "./lead-types";
@@ -105,6 +106,9 @@ export async function listLeads(): Promise<Lead[]> {
     }
   }
 
+  // Identidade do candidato pela fonte única (complemento do prompt 23): o mesmo texto que ele vê na Conta.
+  const identidades = admin && tenantIds.length > 0 ? await estadosIdentidade(admin, tenantIds) : new Map();
+
   // Motivo da estadia: a coluna não é liberada ao navegador (SELECT por coluna em leads);
   // lido pelo servidor só dos leads deste dono (ids já filtrados pela RLS acima).
   const motivos = new Map<string, string>();
@@ -159,6 +163,7 @@ export async function listLeads(): Promise<Lead[]> {
       riskCategories: v?.risk_categories ?? ["Verificação pendente"],
       light: v?.traffic_light ?? "yellow",
       verified: !!v?.traffic_light,
+      identidade: identidades.get(r.tenant_id) ?? null,
       motivo: motivos.get(r.id),
     };
   });

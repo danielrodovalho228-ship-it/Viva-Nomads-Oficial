@@ -131,10 +131,21 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
                         {LIGHT[l.light].label}
                       </span>
                       <h3 className="font-title text-lg font-bold text-ink" data-testid="candidato-nome">{l.name}</h3>
-                      {l.verified && (
-                        <span className="rounded-full bg-champagne px-2 py-0.5 text-xs font-semibold text-night">
-                          Identidade conferida
+                      {l.identidade ? (
+                        <span
+                          className={cn(
+                            "rounded-full px-2 py-0.5 text-xs font-semibold",
+                            l.identidade.estado === "confirmada" ? "bg-champagne text-night" : "bg-surface-2 text-muted",
+                          )}
+                          data-testid="candidato-identidade"
+                          data-estado={l.identidade.estado}
+                        >
+                          {l.identidade.texto}
                         </span>
+                      ) : (
+                        l.verified && (
+                          <span className="rounded-full bg-champagne px-2 py-0.5 text-xs font-semibold text-night">Identidade conferida</span>
+                        )
                       )}
                     </div>
                     {/* Resumo do candidato em uma linha */}

@@ -22,6 +22,7 @@ import {
   Cigarette,
   Baby,
   Handshake,
+  MapPin,
 } from "lucide-react";
 import { BlocoNegociacao } from "@/components/anuncio/blocos-cadastro";
 import { NEGOCIACAO_PADRAO, ITENS_NEGOCIAVEIS, type LimitesPrivados, type Negociacao } from "@/lib/anuncio/negociacao";
@@ -63,9 +64,12 @@ export function EditarImovelClient({
   property,
   demo,
   fatos,
+  enderecoExatoInicial = "",
 }: {
   property: Property;
   demo: boolean;
+  /** Rua, número e complemento gravados (coluna restrita; só o dono lê). */
+  enderecoExatoInicial?: string;
   /** Fatos do banco (documento, plano, garantia, selo…). null = sem backend. */
   fatos: FatosAnuncio | null;
 }) {
@@ -113,6 +117,7 @@ export function EditarImovelClient({
       vivo = false;
     };
   }, [demo, property.id]);
+  const [enderecoExato, setEnderecoExato] = useState(enderecoExatoInicial);
 
   const [savingSection, setSavingSection] = useState<string | null>(null);
   const [savedSection, setSavedSection] = useState<string | null>(null);
@@ -210,6 +215,7 @@ export function EditarImovelClient({
         : {}),
       maxGuests: Number(maxGuests) || undefined,
       negociacao,
+      enderecoExato,
       amenityKeys: Object.keys(amenityKeys).filter((k) => amenityKeys[k]),
       googlePlaces: property.googlePlaces ?? [],
       proximities: (property.proximities ?? []).map((p) => ({
@@ -359,6 +365,31 @@ export function EditarImovelClient({
             definir a capa. Mínimo de {MIN_FOTOS} para publicar.
           </p>
           <PhotoUploader photos={photos} onChange={setPhotos} max={20} />
+        </Section>
+
+        {/* Endereço exato (complemento do prompt 23): sem ele, a visita presencial confirmada não mostra rua e número. */}
+        <Section
+          icon={MapPin}
+          title="Endereço exato"
+          summary={enderecoExato.trim() ? "Preenchido · só aparece para visita confirmada e inquilino aceito" : "Falta a rua e o número"}
+          saving={savingSection === "endereco"}
+          saved={savedSection === "endereco"}
+          onSave={() => saveSection("endereco")}
+        >
+          <label className="block text-sm font-medium text-ink">
+            Rua, número e complemento
+            <input
+              value={enderecoExato}
+              onChange={(e) => setEnderecoExato(e.target.value)}
+              maxLength={300}
+              placeholder="Ex.: Rua Modesta Maria, 120, apto 302"
+              className="mt-1 h-11 w-full rounded-xl border border-line bg-white px-3 text-base text-ink"
+              data-testid="editar-endereco-exato"
+            />
+          </label>
+          <p className="mt-2 text-xs text-muted">
+            Não aparece no anúncio. Só quem tem a visita presencial confirmada (até o horário da visita) ou a candidatura aceita vê.
+          </p>
         </Section>
 
         {/* Disponibilidade — 2 inputs claros */}

@@ -157,8 +157,7 @@ test.describe("T191 — o dono decide o rascunho (ordem 65e999b2, logado)", () =
         const { data } = await adm().from("pedidos_ajuda_publicacao").select("fotos, link_anuncio, texto_anuncio").eq("owner_id", dono.id);
         expect(data).toHaveLength(1);
         expect(data![0].fotos).toHaveLength(1);
-        // Desde o #849 a foto é convertida para .webp no envio.
-        expect(String((data![0].fotos as string[])[0])).toMatch(new RegExp(`^${dono.id}/[0-9a-f-]{36}\\.(png|webp)$`));
+        expect(String((data![0].fotos as string[])[0])).toMatch(new RegExp(`^${dono.id}/[0-9a-f-]{36}\\.webp$`));
         expect(data![0].link_anuncio).toBeNull();
         expect(data![0].texto_anuncio).toBeNull();
         caminhosParaLimpar.push(...(data![0].fotos as string[]));

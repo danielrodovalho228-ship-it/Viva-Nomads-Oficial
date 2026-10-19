@@ -365,6 +365,11 @@ export interface PropertyInput {
   petsRegras?: unknown;
   /** Pacote de limpeza durante a estadia; validado no servidor (0144). */
   limpezaEstadia?: unknown;
+  /**
+   * Rua, número e complemento (complemento do prompt 23): vão para a coluna RESTRITA exact_address (nunca pública;
+   * lida só pelo dono, admin, inquilino aceito e o morador de visita presencial confirmada). Vazio = não mexe.
+   */
+  enderecoExato?: string;
   /** Negociação pública do anúncio (0152), validada em lib/anuncio/negociacao. */
   negociacao?: unknown;
   /** Limites PRIVADOS da negociação (0152): só o dono lê; nunca vão ao anúncio. */
@@ -597,6 +602,7 @@ export async function createProperty(input: PropertyInput): Promise<ActionResult
       property_type: input.propertyType,
       city: input.city,
       address: input.neighborhood,
+      ...colunaEnderecoExato(input.enderecoExato),
       lat: input.lat ?? null,
       lng: input.lng ?? null,
       bedrooms: input.bedrooms,
@@ -844,6 +850,7 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
       property_type: input.propertyType,
       city: input.city,
       address: input.neighborhood,
+      ...colunaEnderecoExato(input.enderecoExato),
       lat: input.lat ?? null,
       lng: input.lng ?? null,
       bedrooms: input.bedrooms,
@@ -993,6 +1000,12 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
   }
 
   return { ok: true, id };
+}
+
+/** exact_address só quando o formulário mandou a rua (vazio nunca apaga o que já estava gravado). */
+function colunaEnderecoExato(v: string | undefined): { exact_address?: string } {
+  const t = typeof v === "string" ? v.trim().slice(0, 300) : "";
+  return t ? { exact_address: t } : {};
 }
 
 /** Adiciona ou remove um imóvel dos favoritos do inquilino. */
