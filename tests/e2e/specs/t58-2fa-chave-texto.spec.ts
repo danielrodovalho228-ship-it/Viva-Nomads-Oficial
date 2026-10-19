@@ -98,5 +98,35 @@ for (const largura of [360, 390]) {
         await removerFator(page, segredo);
       }
     });
+    // Ordem c09fadd5 item 3 (achado do Moacir, 458dd4ad): no cenário obrigatório (admin) o botão
+    // "Continuar para o destino" aparece sozinho na linha, com fonte ≥ 12 px e altura ≥ 44 px.
+    test("cenário obrigatório: 'Continuar para o destino' tem 44 px e fonte legível", async ({ page }) => {
+      test.setTimeout(90000);
+      await page.goto("/dashboard/conta/seguranca?obrigatorio=admin&redirect=%2Fadmin");
+      await page.getByRole("button", { name: /Ativar duas etapas/ }).click();
+      const segredo = ((await page.getByTestId("chave-2fa").textContent()) ?? "").replace(/\s/g, "");
+      try {
+        await page.locator("#codigo-ativar").fill(gerarCodigoTotp(segredo));
+        await page.getByRole("button", { name: "Confirmar código e ativar" }).click();
+        const continuar = page.getByRole("link", { name: "Continuar para o destino" });
+        await expect(continuar).toBeVisible();
+        const caixa = (await continuar.boundingBox())!;
+        expect(caixa.height).toBeGreaterThanOrEqual(44);
+        expect(caixa.x + caixa.width).toBeLessThanOrEqual(largura);
+        const fonte = await continuar.evaluate((e) => parseFloat(getComputedStyle(e).fontSize));
+        expect(fonte).toBeGreaterThanOrEqual(12);
+        // Um por linha: nenhum outro link/botão da tela divide a faixa vertical do botão.
+        const outros = await page.locator("main a[href], main button").evaluateAll((els, alvo) => {
+          return els.filter((e) => {
+            const r = e.getBoundingClientRect();
+            return r.width > 0 && !(e as HTMLElement).innerText.includes("Continuar para o destino") &&
+              r.top < alvo.bottom && r.bottom > alvo.top;
+          }).length;
+        }, { top: caixa.y, bottom: caixa.y + caixa.height });
+        expect(outros, "outro alvo na mesma linha do botão").toBe(0);
+      } finally {
+        await removerFator(page, segredo);
+      }
+    });
   });
 }
