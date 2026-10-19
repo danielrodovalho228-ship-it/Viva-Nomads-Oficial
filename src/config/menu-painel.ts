@@ -201,3 +201,12 @@ export function rotaAtiva(href: string, pathname: string): boolean {
   if (base === "/dashboard" || base === "/admin") return pathname === base;
   return pathname === base || pathname.startsWith(base + "/");
 }
+
+/**
+ * Para onde vai quem abre uma rota do OUTRO papel e não tem esse papel (o guarda do painel no navegador).
+ * "Locações" de quem só é proprietário vira "Contratos & blocos" — a mesma regra da página no servidor (adendo ao
+ * prompt 28). No celular o guarda corria antes do redirecionamento do servidor e levava o dono à Visão geral.
+ */
+export function destinoForaDoPapel(pathname: string): string {
+  return pathname === "/dashboard/locacoes" ? "/dashboard/contratos" : "/dashboard";
+}

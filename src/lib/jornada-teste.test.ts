@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { destinoForaDoPapel } from "../config/menu-painel.ts";
 import { ACOES_JORNADA } from "./jornada-teste.ts";
 
 const ler = (rel: string) => readFileSync(new URL(rel, import.meta.url), "utf8");
@@ -49,4 +50,8 @@ test("Nova jornada: confirmação em dois passos na página e resultado sempre v
 test("Locações do dono: sem estadia própria, cai em Contratos & blocos e o menu não mostra 'Locações'", () => {
   assert.match(ler("../app/(dashboard)/dashboard/locacoes/page.tsx"), /locacoes\.length === 0 && \(await temImovelAnunciado\(\)\)\) redirect\("\/dashboard\/contratos"\)/);
   assert.match(ler("../config/menu-painel.ts"), /ctx\.temImovel && !ctx\.estadiaAtiva \? \[\]/);
+  // O guarda do painel no navegador segue a mesma regra (no celular ele corria antes do servidor).
+  assert.equal(destinoForaDoPapel("/dashboard/locacoes"), "/dashboard/contratos");
+  assert.equal(destinoForaDoPapel("/dashboard/favoritos"), "/dashboard");
+  assert.match(ler("../components/layout/dashboard-shell.tsx"), /router\.replace\(destinoForaDoPapel\(pathname\)\)/);
 });
