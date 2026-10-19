@@ -297,7 +297,7 @@ export async function assinarContrato(input: {
   aceite: boolean;
   /** 6 dígitos recebidos por e-mail (pedirCodigoAssinatura). */
   codigo?: string;
-}): Promise<{ ok: boolean; error?: string }> {
+}): Promise<{ ok: boolean; error?: string; /** Cartão de assinaturas já com a assinatura nova: a tela mostra na hora, sem esperar o recarregamento. */ aviso?: string }> {
   if (!UUID_RE.test(String(input.contratoId))) return { ok: false, error: "Contrato inválido." };
   const supabase = await createClient();
   const admin = createAdminClient();
@@ -475,5 +475,10 @@ export async function assinarContrato(input: {
       /* aviso é best-effort: a assinatura já está gravada */
     }
   });
-  return { ok: true };
+  const nomesAviso = await nomesDasPartes(String(c.properties?.owner_id ?? ""), c.tenant_id);
+  const aviso = avisoAssinatura(visao.papel, {
+    proprietario: { nome: nomesAviso.proprietario, em: visao.papel === "proprietario" ? agora : c.assinado_proprietario_em },
+    inquilino: { nome: nomesAviso.inquilino, em: visao.papel === "inquilino" ? agora : c.assinado_inquilino_em },
+  });
+  return { ok: true, aviso };
 }

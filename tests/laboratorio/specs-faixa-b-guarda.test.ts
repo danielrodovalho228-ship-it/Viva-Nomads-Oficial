@@ -21,8 +21,10 @@ test("specs que semeiam chamado de visitante pelo banco informam o nome (gatilho
 test("detalhe do contrato: linhas do resumo e o aviso quebram texto sem espaço (UUID) para não rolar de lado a 360 px", () => {
   const src = readFileSync("src/components/contrato/contrato-detalhe.tsx", "utf8");
   assert.match(src, /<li key=\{linha\} className="[^"]*\[overflow-wrap:anywhere\]/);
-  assert.match(src, /data-testid="contrato-aviso-assinatura"/);
-  assert.match(src, /className="[^"]*\[overflow-wrap:anywhere\][^"]*" data-testid="contrato-aviso-assinatura"/);
+  // O cartão "quem assinou" mora em aviso-assinatura.tsx (muda na hora ao assinar) e o detalhe o usa.
+  assert.match(src, /<AvisoAssinatura /);
+  const aviso = readFileSync("src/components/contrato/aviso-assinatura.tsx", "utf8");
+  assert.match(aviso, /className="[^"]*\[overflow-wrap:anywhere\][^"]*" data-testid="contrato-aviso-assinatura"/);
 });
 
 test("specs que abrem chamado de visitante pelo chat liberam o limite de 8/h por IP antes (lab ca2dd04, t24/t21)", () => {
