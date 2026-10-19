@@ -142,6 +142,7 @@ export async function solicitarExclusaoConta(email: string): Promise<{ ok: boole
           cta: { label: "Confirmar exclusão da conta", url },
         }),
         text: notificationText({ title, intro, cta: { label: "Confirmar exclusão", url } }),
+        evento: "exclusao_conta",
       }).catch(() => {});
     }
   } catch {

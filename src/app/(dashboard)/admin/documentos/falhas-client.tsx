@@ -53,11 +53,16 @@ export function FalhasDocumentos({ falhas, pendentes }: { falhas: FalhaDocumento
             <li key={f.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm" data-testid="documento-falha">
               <span className="min-w-0">
                 <span className="block font-medium text-ink">
-                  {f.pagamentoId ? "Recibo / comprovante" : "Termo de devolução"}
+                  <span data-testid="falha-numero">{f.numero ?? "Sem número (não emitido)"}</span> · <span data-testid="falha-tipo">{f.tipo}</span>
                   {f.etapa === "envio" ? " · emitido, e-mail não saiu" : ""}
                 </span>
-                <span className="block text-xs text-muted">
-                  {f.motivo} · {f.tentativas} {f.tentativas === 1 ? "tentativa" : "tentativas"} · desde {dataHoraBrasilia(new Date(f.criadoEm))}
+                <span className="block text-xs text-ink">
+                  <span data-testid="falha-contrato">{f.contrato}</span> · proprietário{" "}
+                  <span data-testid="falha-proprietario">{f.proprietario}</span> · inquilino <span data-testid="falha-inquilino">{f.inquilino}</span>
+                </span>
+                <span className="block break-words text-xs text-muted">
+                  <span data-testid="falha-motivo">{f.motivo}</span> · {f.tentativas} {f.tentativas === 1 ? "tentativa" : "tentativas"} · falhou em{" "}
+                  <span data-testid="falha-data">{dataHoraBrasilia(new Date(f.atualizadoEm))}</span>
                 </span>
               </span>
               {f.etapa === "envio" ? (

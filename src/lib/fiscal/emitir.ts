@@ -133,6 +133,13 @@ async function emitir(
   return { ok: true, id: doc.id as string, numero: dados.numero, envio };
 }
 
+/** Evento do e-mail na caixa de e-mails de teste, por tipo de documento. */
+const EVENTO_CAIXA: Record<TipoDocumento, string> = {
+  recibo_aluguel: "recibo_emitido",
+  comprovante_caucao: "comprovante_caucao_emitido",
+  termo_devolucao_caucao: "termo_devolucao",
+};
+
 interface DocParaEnvio {
   id: string;
   tipo: TipoDocumento;
@@ -165,6 +172,7 @@ async function enviarDocumento(admin: Admin, doc: DocParaEnvio, partes: Pick<Par
       html: brandedNotification({ title: textoEmail(title, 80), intro: textoEmail(intro, 400), cta: { label: "Conferir autenticidade", url: doc.conferirUrl } }),
       text: notificationText({ title, intro, cta: { label: "Conferir autenticidade", url: doc.conferirUrl } }),
       attachments: anexo,
+      evento: EVENTO_CAIXA[doc.tipo],
     }).catch((e: unknown) => ({ demo: false, error: `falha no envio: ${e instanceof Error ? e.name : "erro"}` }));
     envio.push(resultadoEnvio(papel, r));
   }
