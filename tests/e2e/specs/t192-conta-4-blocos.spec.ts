@@ -40,7 +40,8 @@ for (const [persona, rotulo] of [["proprietario", "dono"], ["inquilino", "inquil
 
         const lista = page.getByTestId("confianca-lista");
         for (const chave of ["email", "celular", "identidade", "duas-etapas", "senha"]) await expect(lista.getByTestId(`confianca-${chave}`)).toHaveCount(1);
-        await expect(lista.getByTestId("confianca-identidade")).toContainText("Em breve");
+        // Conta de teste (laboratório) → "Verificar identidade (simulado — conta de teste)"; conta real → "Em breve" (src/lib/identidade/estado.ts).
+        await expect(lista.getByTestId("confianca-identidade")).toContainText(/Em breve|simulado — conta de teste/);
         await expect(lista.getByTestId("confianca-linkedin")).toHaveCount(persona === "inquilino" ? 1 : 0);
         await expect(lista.getByTestId("confianca-senha").getByRole("link")).toHaveAttribute("href", "/dashboard/conta/seguranca");
 

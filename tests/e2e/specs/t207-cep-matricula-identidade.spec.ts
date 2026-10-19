@@ -81,12 +81,13 @@ test.describe("T207 — CEP fantasma, matrícula 400 e validade da identidade (p
       const criado = new Date();
       const ate = new Date(criado.getTime());
       ate.setFullYear(ate.getFullYear() + 1);
+      // A tela mostra a data no fuso de Brasília (dataIdentidade); o lab roda em UTC, então a 1h da manhã UTC já é "ontem" aqui.
       await adm().from("tenant_verifications").delete().eq("tenant_id", id);
       await adm()
         .from("tenant_verifications")
         .insert({ tenant_id: id, caf_result: { identity: true, document: true, liveness: true, light: "green", simulado: true }, traffic_light: "green", created_at: criado.toISOString(), valid_until: ate.toISOString() });
       const page = await abrirPasso1(browser, `dono.t207.${largura}.${sufixo}@lab.vivanomads.test`, largura, []);
-      await expect(page.getByTestId("identidade-confirmada")).toContainText(ate.toLocaleDateString("pt-BR"), { timeout: 20_000 });
+      await expect(page.getByTestId("identidade-confirmada")).toContainText(ate.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }), { timeout: 20_000 });
 
       // Troca do CPF no cadastro → o gatilho 0164 invalida o laudo → a etapa pede para confirmar de novo.
       await adm().from("profiles").update({ cpf: largura === 390 ? "52998224725" : "11144477735" }).eq("id", id);
