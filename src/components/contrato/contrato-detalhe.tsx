@@ -11,6 +11,7 @@ import { podeEditarInstrucoes, podeNaoConsegui } from "@/lib/checkin";
 import { dataBR } from "@/lib/utils";
 import { tomDoSelo } from "@/lib/contrato-estado";
 import { AssinarContrato } from "./assinar-contrato";
+import { AvisoAssinatura } from "./aviso-assinatura";
 import { CheckinContrato } from "./checkin-contrato";
 import { LinhaDoTempoEstadia } from "./linha-do-tempo-estadia";
 import { ConferenciaContrato } from "./conferencia-contrato";
@@ -72,9 +73,7 @@ export async function ContratoDetalhe({
             Início da estadia: {dataBR(c.inicioEstadia)}
           </p>
         )}
-        <p className="mt-4 whitespace-pre-line text-sm text-muted [overflow-wrap:anywhere]" data-testid="contrato-aviso-assinatura">
-          {c.aviso}
-        </p>
+        <AvisoAssinatura contratoId={c.id} aviso={c.aviso} />
         {!c.euAssinei && c.status === "ativo" && <AssinarContrato contratoId={c.id} />}
       </Panel>
       {lembreteSenha && (
