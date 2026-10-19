@@ -165,6 +165,18 @@ export function fimInclusivoISO(inicioISO: string, dias: number): string {
   return addDiasISO(inicioISO, Math.max(1, Math.round(dias)) - 1);
 }
 
+/**
+ * Início e fim do contrato a partir dos blocos gravados: o início do 1º bloco e o fim do último. Fonte única da
+ * página do contrato (Entrada / Saída) e da Análise da carteira. Sem bloco com datas → null.
+ */
+export function periodoDosBlocos(blocos: { inicio?: string | null; fim?: string | null }[]): { inicio: string | null; fim: string | null } {
+  const datas = blocos.filter((b): b is { inicio: string; fim: string } => !!b?.inicio && !!b?.fim);
+  return {
+    inicio: datas.map((b) => b.inicio).sort()[0] ?? null,
+    fim: datas.map((b) => b.fim).sort().at(-1) ?? null,
+  };
+}
+
 /** Dias corridos de um período com início e fim INCLUSIVOS. */
 export function diasInclusivos(inicioISO: string, fimISO: string): number {
   return Math.round((Date.parse(`${fimISO}T00:00:00Z`) - Date.parse(`${inicioISO}T00:00:00Z`)) / 86400000) + 1;

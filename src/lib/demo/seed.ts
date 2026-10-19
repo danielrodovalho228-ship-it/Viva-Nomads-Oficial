@@ -11,7 +11,7 @@
 
 import type { Property } from "@/lib/types";
 import type { Lead } from "@/lib/data/lead-types";
-import type { PortfolioUnit } from "@/lib/portfolio";
+import type { ItemCarteira } from "@/lib/carteira-dono";
 // Só o TIPO de messages.ts (o módulo importa o cliente de servidor — não pode
 // entrar no bundle do navegador). As conversas demo são definidas aqui.
 import type { Conversation } from "@/lib/data/messages";
@@ -281,15 +281,15 @@ export const DEMO_CONTRACTS: DemoContract[] = [
 
 // ── Carteira consolidada (Plano Gestor): 8 unidades, ocupação ~86% ──────────
 
-export const DEMO_PORTFOLIO: (PortfolioUnit & { _demo: true })[] = [
-  { _demo: true, id: "demo-001", title: "Apto Santa Mônica", neighborhood: "Santa Mônica", ownership: "own", status: "occupied", monthlyRent: 3200, tenantName: "Ana C.", contractEndsInDays: 12 },
-  { _demo: true, id: "demo-002", title: "Studio no Centro", neighborhood: "Centro", ownership: "own", status: "occupied", monthlyRent: 2900, tenantName: "Marina L.", contractEndsInDays: 45 },
-  { _demo: true, id: "demo-003", title: "Apto Jardim Karaíba", neighborhood: "Jardim Karaíba", ownership: "subleased", status: "occupied", monthlyRent: 3600, tenantName: "Pedro A.", contractEndsInDays: 88 },
-  { _demo: true, id: "demo-004", title: "Apto Fundinho", neighborhood: "Fundinho", ownership: "own", status: "occupied", monthlyRent: 2600, tenantName: "Diego F.", contractEndsInDays: 129 },
-  { _demo: true, id: "demo-005", title: "Casa no Brasil", neighborhood: "Brasil", ownership: "own", status: "occupied", monthlyRent: 4100, tenantName: "Bruno T.", contractEndsInDays: 74 },
-  { _demo: true, id: "demo-006", title: "Studio Granja Marileusa", neighborhood: "Granja Marileusa", ownership: "subleased", status: "occupied", monthlyRent: 2900, tenantName: "Carla M.", contractEndsInDays: 33 },
-  { _demo: true, id: "demo-007", title: "Apto Saraiva", neighborhood: "Saraiva", ownership: "own", status: "occupied", monthlyRent: 2750, tenantName: "Elisa R.", contractEndsInDays: 58 },
-  { _demo: true, id: "demo-008", title: "Cobertura Tabajaras", neighborhood: "Tabajaras", ownership: "own", status: "vacant", monthlyRent: 0 },
+export const DEMO_PORTFOLIO: (ItemCarteira & { _demo: true })[] = [
+  { _demo: true, propertyId: "demo-001", titulo: "Apto Santa Mônica", bairro: "Santa Mônica", situacao: "ocupado", valorMensal: 3200, inicio: null, fim: null, diasAteFim: 12, morador: "Ana C.", contratoId: null, contratoNumero: null },
+  { _demo: true, propertyId: "demo-002", titulo: "Studio no Centro", bairro: "Centro", situacao: "ocupado", valorMensal: 2900, inicio: null, fim: null, diasAteFim: 45, morador: "Marina L.", contratoId: null, contratoNumero: null },
+  { _demo: true, propertyId: "demo-003", titulo: "Apto Jardim Karaíba", bairro: "Jardim Karaíba", situacao: "ocupado", valorMensal: 3600, inicio: null, fim: null, diasAteFim: 88, morador: "Pedro A.", contratoId: null, contratoNumero: null },
+  { _demo: true, propertyId: "demo-004", titulo: "Apto Fundinho", bairro: "Fundinho", situacao: "ocupado", valorMensal: 2600, inicio: null, fim: null, diasAteFim: 129, morador: "Diego F.", contratoId: null, contratoNumero: null },
+  { _demo: true, propertyId: "demo-005", titulo: "Casa no Brasil", bairro: "Brasil", situacao: "ocupado", valorMensal: 4100, inicio: null, fim: null, diasAteFim: 74, morador: "Bruno T.", contratoId: null, contratoNumero: null },
+  { _demo: true, propertyId: "demo-006", titulo: "Studio Granja Marileusa", bairro: "Granja Marileusa", situacao: "ocupado", valorMensal: 2900, inicio: null, fim: null, diasAteFim: 33, morador: "Carla M.", contratoId: null, contratoNumero: null },
+  { _demo: true, propertyId: "demo-007", titulo: "Apto Saraiva", bairro: "Saraiva", situacao: "ocupado", valorMensal: 2750, inicio: null, fim: null, diasAteFim: 58, morador: "Elisa R.", contratoId: null, contratoNumero: null },
+  { _demo: true, propertyId: "demo-008", titulo: "Cobertura Tabajaras", bairro: "Tabajaras", situacao: "vago", valorMensal: 0, inicio: null, fim: null, diasAteFim: null, morador: null, contratoId: null, contratoNumero: null },
 ];
 
 // ── Agregados coerentes (KPIs da visão geral) ───────────────────────────────
@@ -297,10 +297,10 @@ export const DEMO_PORTFOLIO: (PortfolioUnit & { _demo: true })[] = [
 
 export const DEMO_KPIS = {
   ...DEMO_FLAG,
-  receitaMes: DEMO_PORTFOLIO.reduce((s, u) => s + u.monthlyRent, 0), // R$ 22.050
+  receitaMes: DEMO_PORTFOLIO.reduce((s, u) => s + u.valorMensal, 0), // R$ 22.050
   comissoesMes: 1764, // valor ilustrativo de comissões no mês (demonstração)
   ocupacaoPct: Math.round(
-    (DEMO_PORTFOLIO.filter((u) => u.status === "occupied").length / DEMO_PORTFOLIO.length) * 100
+    (DEMO_PORTFOLIO.filter((u) => u.situacao === "ocupado").length / DEMO_PORTFOLIO.length) * 100
   ), // 88% (~86%)
   ticketMedio: 3150,
   contratosAtivos: DEMO_CONTRACTS.length,

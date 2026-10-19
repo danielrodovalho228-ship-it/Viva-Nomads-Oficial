@@ -5,6 +5,7 @@ import { PageTitle, EmptyState } from "@/components/dashboard/primitives";
 import { imoveisAtivosDoDono } from "@/lib/data/menu-actions";
 import { isSupabaseConfigured } from "@/lib/env";
 import { MIN_IMOVEIS_ANALISE_CARTEIRA } from "@/lib/cobranca/regra";
+import { getCarteiraDoDono } from "@/lib/data/carteira";
 import { CarteiraClient } from "./carteira-client";
 
 export const metadata: Metadata = {
@@ -13,8 +14,8 @@ export const metadata: Metadata = {
 
 /**
  * Análise da carteira (prompt 16): abre a partir de 3 imóveis ATIVOS, pela mesma regra das faixas de taxa
- * (src/lib/cobranca/regra.ts) — sem plano pago nem "faça upgrade". A renderização fica no client
- * (carteira-client), que suporta o modo demonstração do admin.
+ * (src/lib/cobranca/regra.ts) — sem plano pago nem "faça upgrade". Os itens vêm do BANCO (getCarteiraDoDono, no
+ * servidor); o client só troca a fonte no modo demonstração do admin.
  */
 export default async function PortfolioPage() {
   const ativos = isSupabaseConfigured() ? await imoveisAtivosDoDono() : MIN_IMOVEIS_ANALISE_CARTEIRA;
@@ -38,5 +39,6 @@ export default async function PortfolioPage() {
       </>
     );
   }
-  return <CarteiraClient />;
+  const itens = isSupabaseConfigured() ? await getCarteiraDoDono() : [];
+  return <CarteiraClient itens={itens} />;
 }
