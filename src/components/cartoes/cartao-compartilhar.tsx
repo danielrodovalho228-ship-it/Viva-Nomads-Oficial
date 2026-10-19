@@ -24,18 +24,18 @@ export function CartaoCompartilhar({ inicial }: { inicial: PacoteDeCompartilhar 
 
   async function compartilhar() {
     setMsg(null);
+    // O toque conta na hora (cards_shared), antes de baixar a imagem: rede lenta não perde a métrica.
+    void registrarCompartilhamento(pacote.curto, "whatsapp");
     try {
       const blob = await (await fetch(imagem)).blob();
       const arquivo = new File([blob], nomeArquivo, { type: "image/png" });
       if (navigator.canShare?.({ files: [arquivo] })) {
         await navigator.share({ files: [arquivo], text: pacote.legenda });
-        void registrarCompartilhamento(pacote.curto, "sistema");
         return;
       }
     } catch (e) {
       if (e instanceof DOMException && e.name === "AbortError") return; // a pessoa fechou a folha de compartilhar
     }
-    void registrarCompartilhamento(pacote.curto, "whatsapp");
     // wa.me com a legenda pronta (mesmo formato de linkWhatsapp em lib/cartoes/compartilhar.ts).
     window.open(`https://wa.me/?text=${encodeURIComponent(pacote.legenda)}`, "_blank", "noopener,noreferrer");
   }

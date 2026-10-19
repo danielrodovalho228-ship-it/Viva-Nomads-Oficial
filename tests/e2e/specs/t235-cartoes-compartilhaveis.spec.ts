@@ -3,7 +3,7 @@ import { test, expect, type Page, type Browser, type APIRequestContext } from "@
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, fotosReais, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T234 — Cartões compartilháveis, Fase 1 (390 e 1280 px):
+  T235 — Cartões compartilháveis, Fase 1 (390 e 1280 px):
    1. dono: o anúncio publicado tem o cartão (gerado ao publicar/no 1º acesso) em Meus imóveis → "Cartão para
       compartilhar"; as duas imagens (1080×1350 e 1080×1080) saem do servidor em menos de 2 s; "Compartilhar no
       WhatsApp" em um toque abre o wa.me com a legenda e o link curto; conta cards_generated e cards_shared;
@@ -17,9 +17,9 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.t234.${sufixo}@lab.vivanomads.test`, nome: "Rafael Cartão Prado", role: "owner" as const };
-const inq = { email: `inq.t234.${sufixo}@lab.vivanomads.test`, nome: "Helena Postal Duarte", role: "tenant" as const };
-const visit = { email: `vis.t234.${sufixo}@lab.vivanomads.test`, nome: "Igor Visita Lopes", role: "tenant" as const };
+const dono = { email: `dono.t235.${sufixo}@lab.vivanomads.test`, nome: "Rafael Cartão Prado", role: "owner" as const };
+const inq = { email: `inq.t235.${sufixo}@lab.vivanomads.test`, nome: "Helena Postal Duarte", role: "tenant" as const };
+const visit = { email: `vis.t235.${sufixo}@lab.vivanomads.test`, nome: "Igor Visita Lopes", role: "tenant" as const };
 const ids: Record<string, string | undefined> = {};
 const dia = (n: number) => new Date(Date.now() - 3 * 3_600_000 + n * 86_400_000).toISOString().slice(0, 10);
 
@@ -68,7 +68,7 @@ async function abrirComo(browser: Browser, email: string, largura: number) {
   return page;
 }
 
-test.describe("T234 — cartões compartilháveis (Fase 1)", () => {
+test.describe("T235 — cartões compartilháveis (Fase 1)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório (Supabase local + integrações simuladas).");
   test.describe.configure({ mode: "serial" });
 
@@ -76,9 +76,9 @@ test.describe("T234 — cartões compartilháveis (Fase 1)", () => {
     ids.dono = await criarConta(dono, senha);
     ids.inq = await criarConta(inq, senha);
     ids.vis = await criarConta(visit, senha);
-    ids.imovel = await criarImovelPronto(ids.dono, `Studio T234 ${sufixo}`, { ativo: true, preco: 3200 });
+    ids.imovel = await criarImovelPronto(ids.dono, `Studio T235 ${sufixo}`, { ativo: true, preco: 3200 });
     await fotosReais(ids.imovel, ids.dono); // fotos de verdade no storage: o cartão usa a capa (a 1ª)
-    ids.semFoto = await criarImovelPronto(ids.dono, `Loft sem foto T234 ${sufixo}`, { ativo: true, preco: 2800 });
+    ids.semFoto = await criarImovelPronto(ids.dono, `Loft sem foto T235 ${sufixo}`, { ativo: true, preco: 2800 });
     await adm().from("property_photos").delete().eq("property_id", ids.semFoto);
     // Estadia encerrada (saída ontem) com as duas assinaturas: o cartão-postal aparece para o morador.
     const agora = new Date().toISOString();
@@ -119,7 +119,7 @@ test.describe("T234 — cartões compartilháveis (Fase 1)", () => {
       await expect.poll(() => page.getByTestId("cartao-previa").evaluate((i: HTMLImageElement) => i.naturalWidth), { timeout: 20_000 }).toBe(1080);
       await expect(page.getByTestId("cartao-legenda")).toContainText(`/c/${ids.curtoDono}`);
       await semRolagemLateral(page);
-      await page.screenshot({ path: `${SAIDA}/t234-dono-cartao-${largura}.png`, fullPage: true });
+      await page.screenshot({ path: `${SAIDA}/t235-dono-cartao-${largura}.png`, fullPage: true });
       await page.getByTestId("cartao-formato-quadrado").click();
       await expect.poll(() => page.getByTestId("cartao-previa").evaluate((i: HTMLImageElement) => i.naturalHeight), { timeout: 20_000 }).toBe(1080);
       if (largura === 1280) {
@@ -138,7 +138,7 @@ test.describe("T234 — cartões compartilháveis (Fase 1)", () => {
     await imagemRapida(request, `/cartoes/${ids.curtoDono}/imagem?formato=quadrado`, { w: 1080, h: 1080 });
     for (const formato of ["retrato", "quadrado"]) {
       const r = await request.get(`/cartoes/${ids.curtoDono}/imagem?formato=${formato}`);
-      writeFileSync(`${SAIDA}/t234-imagem-anuncio-${formato}.png`, await r.body());
+      writeFileSync(`${SAIDA}/t235-imagem-anuncio-${formato}.png`, await r.body());
     }
   });
 
@@ -153,7 +153,7 @@ test.describe("T234 — cartões compartilháveis (Fase 1)", () => {
       ids.curtoPostal = (await painel.getByTestId("cartao-compartilhar").getAttribute("data-curto")) ?? undefined;
       await expect.poll(() => page.getByTestId("cartao-previa").evaluate((i: HTMLImageElement) => i.naturalWidth), { timeout: 20_000 }).toBe(1080);
       await semRolagemLateral(page);
-      await page.screenshot({ path: `${SAIDA}/t234-postal-${largura}.png`, fullPage: true });
+      await page.screenshot({ path: `${SAIDA}/t235-postal-${largura}.png`, fullPage: true });
       if (largura === 390) {
         const { data: antes } = await adm().from("cartoes_compartilhaveis").select("mostrar_nome").eq("curto", ids.curtoPostal!).single();
         expect(antes!.mostrar_nome).toBe(false); // sem consentimento, sem nome
@@ -168,7 +168,7 @@ test.describe("T234 — cartões compartilháveis (Fase 1)", () => {
     }
     await imagemRapida(request, `/cartoes/${ids.curtoPostal}/imagem?formato=retrato`, { w: 1080, h: 1350 });
     const r = await request.get(`/cartoes/${ids.curtoPostal}/imagem?formato=retrato`);
-    writeFileSync(`${SAIDA}/t234-imagem-postal-retrato.png`, await r.body());
+    writeFileSync(`${SAIDA}/t235-imagem-postal-retrato.png`, await r.body());
     // Contrato ainda em andamento (outro morador, outro imóvel) não tem cartão-postal.
     const agora = new Date().toISOString();
     const { data: emAndamento, error } = await adm()
@@ -211,7 +211,7 @@ test.describe("T234 — cartões compartilháveis (Fase 1)", () => {
       const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] }, viewport: { width: largura, height: largura === 390 ? 844 : 900 } });
       const page = await ctx.newPage();
       await page.goto(url.replace(destino.origin, ""), { waitUntil: "domcontentloaded" });
-      await expect(page.getByRole("heading", { level: 1 })).toContainText(`Studio T234 ${sufixo}`, { timeout: 20_000 });
+      await expect(page.getByRole("heading", { level: 1 })).toContainText(`Studio T235 ${sufixo}`, { timeout: 20_000 });
       return { ctx, page };
     };
 
@@ -222,7 +222,7 @@ test.describe("T234 — cartões compartilháveis (Fase 1)", () => {
       await expect.poll(() => page.url(), { timeout: 15_000 }).not.toContain("sig=");
       await expect.poll(async () => decodeURIComponent((await ctx.cookies()).find((c) => c.name === "vn_ref")?.value ?? ""), { timeout: 15_000 }).toContain(`|ownercard|${ids.imovel}`);
       await semRolagemLateral(page);
-      await page.screenshot({ path: `${SAIDA}/t234-imovel-pelo-qr-${largura}.png`, fullPage: false });
+      await page.screenshot({ path: `${SAIDA}/t235-imovel-pelo-qr-${largura}.png`, fullPage: false });
       await ctx.close();
     }
     await expect.poll(() => contarEventos("qr_scans", ids.imovel!, "ownercard"), { timeout: 15_000 }).toBe(scans0 + 2);
@@ -294,7 +294,7 @@ test.describe("T234 — cartões compartilháveis (Fase 1)", () => {
     await page.context().close();
     await imagemRapida(request, `/cartoes/${curto}/imagem?formato=retrato`, { w: 1080, h: 1350 });
     const r = await request.get(`/cartoes/${curto}/imagem?formato=quadrado`);
-    writeFileSync(`${SAIDA}/t234-imagem-sem-foto-quadrado.png`, await r.body());
+    writeFileSync(`${SAIDA}/t235-imagem-sem-foto-quadrado.png`, await r.body());
     expect((await request.get("/cartoes/AAAAAAAAAA/imagem")).status()).toBe(404);
   });
 });
