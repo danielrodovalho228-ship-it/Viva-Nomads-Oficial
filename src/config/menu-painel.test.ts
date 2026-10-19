@@ -14,7 +14,7 @@ test("todo usuário vê moradia (busca, favoritos, candidaturas, Propostas, Cont
   const m = menuDoPainel(base);
   assert.deepEqual(ids(m), ["visao", "moradia", "comunicacao", "ferramentas", "conta"]);
   const moradia = folhas(m.filter((i) => i.id === "moradia")).map((i) => i.rotulo);
-  for (const r of ["Buscar imóveis", "Favoritos & comparações", "Candidaturas", "Propostas", "Contratos", "Locações"]) assert.ok(moradia.includes(r), r);
+  for (const r of ["Buscar imóveis", "Favoritos & comparações", "Candidaturas", "Propostas", "Contratos", "Locações", "Publicar pedido de moradia"]) assert.ok(moradia.includes(r), r);
   // Prompt 27: "Propostas" do inquilino aponta para a lista dele (/dashboard/propostas), não para Orçamentos do dono.
   assert.equal(folhas(m).find((i) => i.rotulo === "Propostas")?.href, "/dashboard/propostas");
   assert.ok(!moradia.includes("Solicitações"), "Solicitações só com estadia ativa");
@@ -61,7 +61,8 @@ test("regra 0.5: todo link é rota interna do painel (fora a busca pública) e a
   assert.equal(new Set(ids).size, ids.length, "ids únicos");
   for (const { href } of [...todos, ANUNCIAR]) {
     const rota = href!.split("#")[0];
-    if (rota === "/buscar") continue;
+    // Busca e formulário do pedido são públicos (Prompt 30, item 6: "Publicar pedido de moradia" no menu do inquilino).
+    if (rota === "/buscar" || rota === "/pedidos/novo") continue;
     assert.match(rota, /^\/(dashboard|admin|qualificar)(\/|$)/, rota);
     const pasta = new URL(`../app/(dashboard)${rota}/page.tsx`, import.meta.url);
     assert.ok(existsSync(pasta), `tela existe: ${rota}`);

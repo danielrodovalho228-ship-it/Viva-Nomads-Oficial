@@ -1,4 +1,6 @@
-import { adminListPedidos, getMetricasPedidosAdmin } from "@/lib/data/pedidos-admin";
+import { adminListPedidos, getChaveSmsAdmin, getMetricasPedidosAdmin } from "@/lib/data/pedidos-admin";
+import { colunasPedidosAdmin } from "@/lib/data/pedidos-admin-colunas";
+import { ChaveSmsPainel } from "./chave-sms";
 import { adminDaPagina, idsContasTeste, intervaloBRT, pedidosParaMetrica } from "@/lib/data/admin-indicadores";
 import { periodoDaLista, respostaPedidos } from "@/lib/admin/indicadores";
 import { rotuloPeriodo, somarDias } from "@/lib/admin/visao-geral";
@@ -22,11 +24,12 @@ export default async function AdminPedidosPage({ searchParams }: { searchParams:
   const filtrado = !!dePeriodo || !!status || !!cidade;
 
   const admin = await adminDaPagina();
-  const [pedidos, metricas, metrica, teste] = await Promise.all([
+  const [pedidos, metricas, metrica, teste, chave] = await Promise.all([
     adminListPedidos(),
     getMetricasPedidosAdmin(),
     admin ? pedidosParaMetrica(admin, intervaloBRT(p.inicio, p.fim), cidade) : Promise.resolve([]),
     admin && filtrado ? idsContasTeste(admin) : Promise.resolve(new Set<string>()),
+    getChaveSmsAdmin(),
   ]);
   const resposta = respostaPedidos(metrica);
   const doPeriodo = new Set(metrica.map((m) => m.id));
@@ -42,12 +45,20 @@ export default async function AdminPedidosPage({ searchParams }: { searchParams:
   const rotuloFiltro = filtrado
     ? [dePeriodo ? `criados ${rotuloPeriodo(p.inicio, p.fim)}` : null, status ? `situação: ${status}` : null, cidade, "só contas reais"].filter(Boolean).join(" · ")
     : null;
+  // Prompt 30, item 7: nome curto, selos e nº de respostas de donos em cada linha.
+  const colunas = admin
+    ? await colunasPedidosAdmin(admin, lista.map((x) => ({ id: String(x.id), inquilino_id: String(x.inquilino_id) }))).catch(() => new Map())
+    : new Map();
+  const listaComColunas = lista.map((x) => ({ ...x, colunas: colunas.get(String(x.id)) ?? null }));
   return (
+    <>
+    {chave && <ChaveSmsPainel ligada={chave.ligada} ligadaEm={chave.ligadaEm} />}
     <AdminPedidosClient
-      pedidos={lista}
+      pedidos={listaComColunas}
       metricas={metricas}
       resposta={{ ...resposta, janela: rotuloPeriodo(p.inicio, p.fim) }}
       rotuloFiltro={rotuloFiltro}
     />
+    </>
   );
 }

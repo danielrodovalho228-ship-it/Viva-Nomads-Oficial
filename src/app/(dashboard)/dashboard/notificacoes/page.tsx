@@ -6,6 +6,7 @@ import { avisosRecentes } from "@/lib/data/manutencao-actions";
 import { dataHoraBrasilia } from "@/config/atendimento";
 import { listarPropostas } from "@/lib/data/propostas-actions";
 import { textoVencimento } from "@/lib/propostas/regras";
+import { pedidosNovosCompativeis } from "@/lib/data/pedidos-actions";
 
 /**
  * Notificações (critério 5): as atualizações recentes das ordens de manutenção
@@ -13,7 +14,11 @@ import { textoVencimento } from "@/lib/propostas/regras";
  * desligar aqui.
  */
 export default async function NotificacoesPage() {
-  const [r, todas] = await Promise.all([avisosRecentes(), listarPropostas().catch(() => [])]);
+  const [r, todas, pedidosNovos] = await Promise.all([
+    avisosRecentes(),
+    listarPropostas().catch(() => []),
+    pedidosNovosCompativeis().catch(() => ({ total: 0, recentes: [] })),
+  ]);
   const avisos = r?.avisos ?? [];
   // Propostas esperando a SUA resposta (prompt 27, item 7): o aviso no site, junto do push e do e-mail.
   const propostas = todas.filter((p) => p.aguardandoVoce);
@@ -29,6 +34,19 @@ export default async function NotificacoesPage() {
         <StatCard label="Manutenções em aberto" value={r?.abertas ?? 0} icon={Wrench} />
         <StatCard label="Atualizações recentes" value={avisos.length} icon={Bell} />
       </div>
+
+      {/* Prompt 30, item 5: o sino do dono — pedidos de moradia novos que combinam com um imóvel dele. */}
+      {pedidosNovos.total > 0 && (
+        <Panel title="Pedidos de moradia novos para você" className="mb-6" data-testid="avisos-pedidos">
+          <p className="text-sm text-ink">
+            <strong data-testid="avisos-pedidos-total">{pedidosNovos.total}</strong>{" "}
+            {pedidosNovos.total === 1 ? "pedido combina" : "pedidos combinam"} com um imóvel seu e ainda não {pedidosNovos.total === 1 ? "teve" : "tiveram"} a sua oferta.
+          </p>
+          <Link href="/dashboard/pedidos-cidade" className="mt-2 inline-block text-sm font-medium text-forest underline">
+            Ver em &quot;Novos para você&quot;
+          </Link>
+        </Panel>
+      )}
 
       {propostas.length > 0 && (
         <Panel title="Propostas para responder" className="mb-6" data-testid="avisos-propostas">

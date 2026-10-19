@@ -906,3 +906,28 @@ export async function responderPedido(
 export async function chaveSmsLigada(): Promise<boolean> {
   return (await lerChaveSms()).ligada;
 }
+
+/**
+ * Sino do dono (Prompt 30, item 5): pedidos compatíveis novos — avisados a ele, ainda ativos, sem resposta dele e não
+ * ignorados. A lista de Notificações mostra o número e leva a "Novos para você".
+ */
+export async function pedidosNovosCompativeis(): Promise<{ total: number; recentes: { id: string; cidade: string; criadoEm: string }[] }> {
+  const supabase = await createClient();
+  if (!supabase) return { total: 0, recentes: [] };
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const admin = createAdminClient();
+  if (!user || !admin) return { total: 0, recentes: [] };
+  const { data: avisos } = await admin.from("pedido_avisos").select("pedido_id, criado_em").eq("dono_id", user.id).order("criado_em", { ascending: false }).limit(200);
+  const ids = [...new Set(((avisos ?? []) as { pedido_id: string }[]).map((a) => a.pedido_id))];
+  if (!ids.length) return { total: 0, recentes: [] };
+  const [{ data: ativos }, { data: resps }, { data: ign }] = await Promise.all([
+    admin.from("pedidos_moradia").select("id, cidade, criado_em").in("id", ids).eq("status", "ativo").gt("expira_em", new Date().toISOString()),
+    admin.from("respostas_pedido").select("pedido_id").eq("proprietario_id", user.id).in("pedido_id", ids),
+    admin.from("pedidos_ignorados").select("pedido_id").eq("proprietario_id", user.id).in("pedido_id", ids),
+  ]);
+  const fora = new Set([...((resps ?? []) as { pedido_id: string }[]), ...((ign ?? []) as { pedido_id: string }[])].map((r) => r.pedido_id));
+  const novos = ((ativos ?? []) as { id: string; cidade: string; criado_em: string }[]).filter((p) => !fora.has(p.id));
+  return { total: novos.length, recentes: novos.slice(0, 5).map((p) => ({ id: p.id, cidade: p.cidade, criadoEm: p.criado_em })) };
+}
