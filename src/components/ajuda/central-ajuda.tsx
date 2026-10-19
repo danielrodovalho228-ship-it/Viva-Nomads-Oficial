@@ -54,6 +54,8 @@ export function CentralAjuda({ canal }: { canal: "site" | "app" }) {
   const [aba, setAba] = useState<"inicio" | "novo" | "chamado">("inicio");
   const [numeroAberto, setNumeroAberto] = useState<string | null>(null);
   const [contexto, setContexto] = useState<{ tipo: string; id: string } | null>(null);
+  // Ordem 521c5af7 (S3): "Algo deu errado? Fale com a Viva" chega com o código do pedido de serviço.
+  const [codigoServico, setCodigoServico] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   const [pessoaLink, setPessoaLink] = useState<{ c: string; s: string } | null>(null);
   const [lista, setLista] = useState<ChamadoLista[] | null>(null);
@@ -76,6 +78,11 @@ export function CentralAjuda({ canal }: { canal: "site" | "app" }) {
     if (tipo && id && CONTEXTO_ROTULO[tipo]) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setContexto({ tipo, id });
+      setAba("novo");
+    }
+    const servico = (p.get("servico") ?? "").toUpperCase();
+    if (/^SV-[0-9A-F]{8}$/.test(servico)) {
+      setCodigoServico(servico);
       setAba("novo");
     }
     const chamado = p.get("chamado");
@@ -127,6 +134,7 @@ export function CentralAjuda({ canal }: { canal: "site" | "app" }) {
         <NovoChamado
           canal={canal}
           contexto={contexto}
+          codigoServico={codigoServico}
           logado={!!user}
           emailConta={user?.email ?? null}
           contratos={contratos}
@@ -250,6 +258,7 @@ function Perguntas({ perfil }: { perfil: PerfilAjuda }) {
 function NovoChamado({
   canal,
   contexto,
+  codigoServico,
   logado,
   emailConta,
   contratos,
@@ -258,6 +267,7 @@ function NovoChamado({
 }: {
   canal: "site" | "app";
   contexto: { tipo: string; id: string } | null;
+  codigoServico: string | null;
   logado: boolean;
   emailConta?: string | null;
   contratos: { id: string; titulo: string }[];
@@ -265,7 +275,7 @@ function NovoChamado({
   onAberto: (numero: string) => void;
 }) {
   const [cat, setCat] = useState(contexto?.tipo === "contrato" ? "contrato" : contexto?.tipo === "anuncio" ? "anuncio" : "duvida");
-  const [mensagem, setMensagem] = useState("");
+  const [mensagem, setMensagem] = useState(codigoServico ? `Sobre o pedido de serviço ${codigoServico}: ` : "");
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [telefone, setTelefone] = useState("");
