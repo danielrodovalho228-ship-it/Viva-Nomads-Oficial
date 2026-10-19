@@ -494,7 +494,8 @@
       ],
       "specs": [
         "t97-plangate-precos",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t214-carteira-banco"
       ]
     },
     "/dashboard/comparar": {
