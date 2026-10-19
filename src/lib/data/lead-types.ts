@@ -29,6 +29,8 @@ export interface Lead {
   budgetMatch?: boolean; // orçamento compatível com o aluguel
   /** Motivo da estadia (rótulo público; "Saúde" para tratamento médico). Só categoria, nunca texto livre. */
   motivo?: string;
+  /** Resumo da ficha do pet ("Com 1 pet · Totó (cão, porte médio)") enquanto a candidatura dá acesso; senão null. */
+  fichaPet?: string | null;
   // PRIVACIDADE: telefone/e-mail/LinkedIn NÃO entram aqui. O proprietário
   // decide pelo perfil de risco e responde pela plataforma (conversa já aberta).
 }

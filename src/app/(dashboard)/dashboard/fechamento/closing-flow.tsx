@@ -1,5 +1,6 @@
 "use client";
 
+import { FichaPetCandidatura } from "@/components/pets/ficha-pet-candidatura";
 import { CampoData } from "@/components/ui/campo-data";
 import { DocumentosInquilino } from "@/components/documentos-inquilino";
 import Link from "next/link";
@@ -389,6 +390,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
       {!demo && ctx.leadId && (
         <div className="mb-4 rounded-xl border border-sage-200 bg-white p-4">
           <DocumentosInquilino leadId={ctx.leadId} modo="dono" />
+          <FichaPetCandidatura alvo={{ leadId: ctx.leadId }} className="mt-3" />
         </div>
       )}
 

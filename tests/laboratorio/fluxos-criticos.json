@@ -1,0 +1,10 @@
+{
+  "ordem": "d86d0678",
+  "fluxos": {
+    "login": ["t55-login-sem-enumeracao", "t82-login-celular"],
+    "publicar-anuncio": ["t8-rascunho", "t45-regra-8-fotos"],
+    "candidatura-contrato-assinatura": ["t225-candidatura-etapas", "t57-contrato-assinar"],
+    "abrir-chamado": ["t63-chamado-identificacao"],
+    "upload-de-foto": ["t54-upload-foto-seguro"]
+  }
+}
