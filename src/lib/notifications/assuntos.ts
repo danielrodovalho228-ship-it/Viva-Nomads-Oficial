@@ -21,6 +21,9 @@ export function tituloNoAssunto(titulo: string | null | undefined, max = TITULO_
   const t = String(titulo ?? "")
     .replace(/[\u0000-\u001f\u007f]/g, " ")
     .replace(/(?:https?:\/\/|www\.)\S+/gi, "")
+    // 4+ dígitos seguidos (número de apartamento, telefone, código) ficam fora do assunto: a regra do item 2 vale
+    // também para o que o usuário escreveu.
+    .replace(/\d{4,}/g, "")
     .replace(/\s+/g, " ")
     .trim();
   if (!t) return "seu imóvel";

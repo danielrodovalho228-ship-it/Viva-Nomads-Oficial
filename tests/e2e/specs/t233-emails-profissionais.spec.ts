@@ -4,7 +4,7 @@ import { authFile } from "../fixtures/auth";
 import { hasAccount } from "../fixtures/accounts";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, lerSaida, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 import { catalogoEmails } from "../../../src/lib/notifications/catalogo-emails";
-import { problemasDoAssunto } from "../../../src/lib/notifications/assuntos";
+import { problemasDoAssunto, tituloNoAssunto } from "../../../src/lib/notifications/assuntos";
 
 /*
   T233 — Rota rápida "e-mails profissionais" (390 e 1280 px):
@@ -101,7 +101,7 @@ test.describe("T233 — e-mails profissionais", () => {
     await expect(cardsA).toHaveCount(0, { timeout: 20_000 });
     await expect.poll(async () => (await avisosDoDono()).length, { timeout: 20_000 }).toBe(1);
     const [a] = await avisosDoDono();
-    expect(String(a.assunto)).toBe(`Conferência dos documentos: ${titulos.a} · Viva Nomads`);
+    expect(String(a.assunto)).toBe(`Conferência dos documentos: ${tituloNoAssunto(titulos.a, 28)} · Viva Nomads`);
     expect(a.de).toBe(REMETENTE);
     const corpoA = String(a.corpo);
     expect(corpoA).toContain(`${titulos.a} · Centro`);
@@ -121,7 +121,7 @@ test.describe("T233 — e-mails profissionais", () => {
     await expect(cardB).toHaveCount(0, { timeout: 20_000 });
     await expect.poll(async () => (await avisosDoDono()).length, { timeout: 20_000 }).toBe(2);
     const b = (await avisosDoDono())[1];
-    expect(String(b.assunto)).toBe(`Documento aprovado: ${titulos.b} · Viva Nomads`);
+    expect(String(b.assunto)).toBe(`Documento aprovado: ${tituloNoAssunto(titulos.b, 36)} · Viva Nomads`);
     expect(b.de).toBe(REMETENTE);
     expect(String(b.corpo)).toContain("Documento Comprovante de propriedade do imóvel Decisão Aprovado");
     expect(String(b.corpo)).toMatch(/Ver o que falta|Publicar meu anúncio/);

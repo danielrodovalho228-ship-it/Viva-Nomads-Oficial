@@ -204,6 +204,8 @@ test("título do imóvel no assunto: até 40 caracteres, sem link, e o assunto i
   assert.equal(tituloNoAssunto("Apartamento enorme com vista para o mar e varanda gourmet"), "Apartamento enorme com vista para o mar…");
   assert.equal(tituloNoAssunto("Studio https://golpe.com no Centro"), "Studio no Centro");
   assert.equal(tituloNoAssunto(""), "seu imóvel");
+  assert.equal(tituloNoAssunto("Apto 1201 Fone 34999990000"), "Apto Fone");
+  assert.deepEqual(problemasDoAssunto(comMarca(assuntoDecisaoDocumento({ titulo: "Apto 1201", linhas: [{ aprovado: true }] }))), []);
   const longo = "Apartamento enorme com vista para o mar e varanda gourmet";
   for (const linhas of [[{ aprovado: true }], [{ aprovado: false }], [{ aprovado: true }, { aprovado: false }]]) {
     assert.deepEqual(problemasDoAssunto(comMarca(assuntoDecisaoDocumento({ titulo: longo, linhas }))), []);
