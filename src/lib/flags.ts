@@ -77,3 +77,10 @@ export const LOGIN_APPLE_ATIVO = process.env.NEXT_PUBLIC_LOGIN_APPLE_ATIVO === "
  * lançamento. Mostra o aviso nas páginas públicas (e trava a assinatura paga).
  */
 export const PRE_LANCAMENTO = process.env.NEXT_PUBLIC_PRE_LANCAMENTO !== "off";
+
+/**
+ * Pagamento de parceiros pela plataforma (Prompt 31b). OFF por padrão: o morador paga direto ao prestador. Liga com
+ * NEXT_PUBLIC_PAGAMENTO_PARCEIROS_ATIVO="on" quando o pagamento pela plataforma existir; a nota do catálogo de
+ * serviços troca de texto pela chave (servicos-morador.ts, notaPagamentoServicos).
+ */
+export const PAGAMENTO_PARCEIROS_ATIVO = process.env.NEXT_PUBLIC_PAGAMENTO_PARCEIROS_ATIVO === "on";
