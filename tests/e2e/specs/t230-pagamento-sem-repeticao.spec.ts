@@ -113,8 +113,8 @@ test.describe("T230 — pagamento sem repetição + Caução do contrato + VN-CT
     await a.getByTestId("registrar-recebimento").nth(1).click();
     await b.getByTestId("registrar-recebimento").nth(1).click();
     await a.getByTestId("confirmar-recebimento").click();
-    await expect(a.getByTestId("recebimento-registrado").first()).toBeVisible({ timeout: 20_000 });
-    expect(await contar({ bloco_id: ids.b2!, tipo: "aluguel" })).toBe(1);
+    await expect.poll(() => contar({ bloco_id: ids.b2!, tipo: "aluguel" }), { timeout: 20_000 }).toBe(1);
+    await expect(a.getByText(/Valor do bloco registrado como recebido|Recebimento registrado/).first()).toBeVisible({ timeout: 20_000 });
     await b.getByTestId("confirmar-recebimento").click();
     await expect(b.getByTestId("recebimento-registrado")).toHaveText(/Este recebimento já foi registrado/, { timeout: 20_000 });
     expect(await contar({ bloco_id: ids.b2!, tipo: "aluguel" })).toBe(1);
