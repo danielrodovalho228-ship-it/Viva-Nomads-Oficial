@@ -1763,6 +1763,14 @@
       "specs": [
         "t234-cartoes-compartilhaveis"
       ]
+    },
+    "/api/cartoes/visita": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t234-cartoes-compartilhaveis"
+      ]
     }
   },
   "actions": {
@@ -3638,14 +3646,6 @@
       "personas": [
         "inquilino",
         "proprietario"
-      ],
-      "specs": [
-        "t234-cartoes-compartilhaveis"
-      ]
-    },
-    "src/lib/data/cartoes-actions.ts#registrarVisitaComRef": {
-      "personas": [
-        "publico"
       ],
       "specs": [
         "t234-cartoes-compartilhaveis"

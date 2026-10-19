@@ -1,12 +1,9 @@
 "use server";
 
-import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { hojeBR } from "@/lib/utils";
 import {
-  codigoAtivo,
-  chaveServidor,
   garantirCartao,
   pacoteDeCompartilhar,
   registrarMetrica,
@@ -14,7 +11,7 @@ import {
   cartaoPeloCurto,
   type PacoteDeCompartilhar,
 } from "@/lib/data/cartoes-servidor";
-import { curtoValido, estadiaTerminou, lerRef, REF_COOKIE, REF_DIAS, valorCookieRef } from "@/lib/cartoes/compartilhar";
+import { curtoValido, estadiaTerminou } from "@/lib/cartoes/compartilhar";
 
 type Res<T> = { ok: true; valor: T } | { ok: false; error: string };
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -93,29 +90,4 @@ export async function trocarMeuCodigo(): Promise<Res<string>> {
   const s = await sessao();
   if (!s) return { ok: false, error: "Entre na sua conta." };
   return { ok: true, valor: await trocarCodigo(s.admin, s.user.id) };
-}
-
-/**
- * Visita à página do imóvel vinda de um cartão (QR ou link). Sem login. Só atribui com assinatura certa e código
- * ativo de OUTRA conta: conta qr_scans (QR) e ref_listing_views, e guarda a atribuição por 30 dias (cookie) para a
- * candidatura. Parâmetro adulterado → nada é contado nem guardado (a página abre normalmente).
- */
-export async function registrarVisitaComRef(listingId: string, parametros: Record<string, string>): Promise<{ atribuida: boolean }> {
-  if (!UUID_RE.test(String(listingId))) return { atribuida: false };
-  const admin = createAdminClient();
-  if (!admin) return { atribuida: false };
-  const p = lerRef(chaveServidor(), listingId, parametros ?? {});
-  if (!p) return { atribuida: false };
-  const dono = await codigoAtivo(admin, p.ref);
-  if (!dono) return { atribuida: false };
-  const supabase = await createClient();
-  const visitante = supabase ? (await supabase.auth.getUser()).data.user?.id ?? null : null;
-  if (visitante && visitante === dono.usuarioId) return { atribuida: false }; // a própria pessoa conferindo o cartão
-  // Mesma visita repetida (recarregar a página) não conta de novo neste aparelho.
-  const jar = await cookies();
-  if (jar.get(REF_COOKIE)?.value === valorCookieRef(p)) return { atribuida: true };
-  if (p.meio === "qr") await registrarMetrica(admin, "qr_scans", { cartaoTipo: p.tipo, imovelId: listingId, usuarioId: visitante, meio: "qr" });
-  await registrarMetrica(admin, "ref_listing_views", { cartaoTipo: p.tipo, imovelId: listingId, usuarioId: visitante, meio: p.meio });
-  jar.set(REF_COOKIE, valorCookieRef(p), { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", maxAge: REF_DIAS * 86_400, path: "/" });
-  return { atribuida: true };
 }

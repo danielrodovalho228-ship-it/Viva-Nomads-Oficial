@@ -1,6 +1,6 @@
 import { writeFileSync } from "node:fs";
 import { test, expect, type Page, type Browser, type APIRequestContext } from "@playwright/test";
-import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, fotosReais, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
   T234 — Cartões compartilháveis, Fase 1 (390 e 1280 px):
@@ -77,6 +77,7 @@ test.describe("T234 — cartões compartilháveis (Fase 1)", () => {
     ids.inq = await criarConta(inq, senha);
     ids.vis = await criarConta(visit, senha);
     ids.imovel = await criarImovelPronto(ids.dono, `Studio T234 ${sufixo}`, { ativo: true, preco: 3200 });
+    await fotosReais(ids.imovel, ids.dono); // fotos de verdade no storage: o cartão usa a capa (a 1ª)
     ids.semFoto = await criarImovelPronto(ids.dono, `Loft sem foto T234 ${sufixo}`, { ativo: true, preco: 2800 });
     await adm().from("property_photos").delete().eq("property_id", ids.semFoto);
     // Estadia encerrada (saída ontem) com as duas assinaturas: o cartão-postal aparece para o morador.
@@ -168,16 +169,24 @@ test.describe("T234 — cartões compartilháveis (Fase 1)", () => {
     await imagemRapida(request, `/cartoes/${ids.curtoPostal}/imagem?formato=retrato`, { w: 1080, h: 1350 });
     const r = await request.get(`/cartoes/${ids.curtoPostal}/imagem?formato=retrato`);
     writeFileSync(`${SAIDA}/t234-imagem-postal-retrato.png`, await r.body());
-    // Contrato ainda em andamento não tem cartão-postal.
-    await adm().from("contratos").update({ status: "ativo" }).eq("id", ids.contrato!);
-    await adm().from("contrato_blocos").update({ fim: dia(30) }).eq("contrato_id", ids.contrato!);
-    const page = await abrirComo(browser, inq.email, 390);
-    await page.goto(`/dashboard/locacoes/${ids.contrato}`, { waitUntil: "domcontentloaded" });
+    // Contrato ainda em andamento (outro morador, outro imóvel) não tem cartão-postal.
+    const agora = new Date().toISOString();
+    const { data: emAndamento, error } = await adm()
+      .from("contratos")
+      .insert({
+        property_id: ids.semFoto, tenant_id: ids.vis, owner_plan: "free", faixa: "temporada", prazo_total_dias: 60, aluguel_mensal: 2800,
+        tamanho_bloco_meses: 2, comissao_percent: 0.12, comissao_valor: 672, qtd_ocupantes: 1, status: "ativo", garantia: "caucao",
+        assinado_proprietario_em: agora, assinado_inquilino_em: agora,
+      })
+      .select("id")
+      .single();
+    expect(error).toBeNull();
+    await adm().from("contrato_blocos").insert({ contrato_id: emAndamento!.id, numero_bloco: 1, inicio: dia(-10), fim: dia(50), meses: 2, valor: 5600, caucao: 2800, status: "ativo" });
+    const page = await abrirComo(browser, visit.email, 390);
+    await page.goto(`/dashboard/locacoes/${emAndamento!.id}`, { waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("contrato-selo")).toBeVisible({ timeout: 20_000 });
     await expect(page.getByTestId("cartao-postal-painel")).toHaveCount(0);
     await page.context().close();
-    await adm().from("contratos").update({ status: "concluido" }).eq("id", ids.contrato!);
-    await adm().from("contrato_blocos").update({ fim: dia(-1) }).eq("contrato_id", ids.contrato!);
   });
 
   test("3. QR/link: imóvel certo com ref + UTM; visita sem login conta; adulterado não conta; código trocado para de contar", async ({ browser, request }) => {
@@ -211,7 +220,7 @@ test.describe("T234 — cartões compartilháveis (Fase 1)", () => {
     for (const largura of [390, 1280]) {
       const { ctx, page } = await visitar(qr.toString(), largura);
       await expect.poll(() => page.url(), { timeout: 15_000 }).not.toContain("sig=");
-      expect((await ctx.cookies()).find((c) => c.name === "vn_ref")?.value).toContain(`|ownercard|${ids.imovel}`);
+      await expect.poll(async () => decodeURIComponent((await ctx.cookies()).find((c) => c.name === "vn_ref")?.value ?? ""), { timeout: 15_000 }).toContain(`|ownercard|${ids.imovel}`);
       await semRolagemLateral(page);
       await page.screenshot({ path: `${SAIDA}/t234-imovel-pelo-qr-${largura}.png`, fullPage: false });
       await ctx.close();
@@ -228,6 +237,7 @@ test.describe("T234 — cartões compartilháveis (Fase 1)", () => {
     for (const u of [ruim1, ruim2]) {
       const { ctx, page } = await visitar(u.toString());
       await expect.poll(() => page.url(), { timeout: 15_000 }).not.toContain("sig=");
+      await page.waitForTimeout(2000); // dá tempo da conferência no servidor responder
       expect((await ctx.cookies()).find((c) => c.name === "vn_ref")).toBeUndefined();
       await ctx.close();
     }
