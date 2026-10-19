@@ -1296,6 +1296,14 @@
       ],
       "specs": []
     },
+    "/api/auth/entrar": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t55-login-sem-enumeracao"
+      ]
+    },
     "/api/auth/validar-email": {
       "personas": [
         "publico"

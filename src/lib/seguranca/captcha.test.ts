@@ -34,14 +34,16 @@ test("erro de CAPTCHA do Supabase vira mensagem clara", () => {
 test("todas as chamadas de senha do navegador mandam o token (senão quebram com o CAPTCHA ligado)", () => {
   const auth = ler("app/auth/page.tsx");
   assert.match(auth, /signUp\(\{[\s\S]{0,200}options: comCaptcha\(/);
-  assert.match(auth, /signInWithPassword\(\{ email: emailLimpo, password, options: comCaptcha\(\{\}, captcha\.token\) \}\)/);
+  // O login passa pelo servidor (atraso progressivo): o token segue no corpo e a rota o repassa ao Supabase.
+  assert.match(auth, /fetch\("\/api\/auth\/entrar"[\s\S]{0,200}captchaToken: captcha\.token/);
+  assert.match(ler("app/api/auth/entrar/route.ts"), /options: captchaToken \? \{ captchaToken \} : undefined/);
   assert.match(auth, /resetPasswordForEmail\(email, comCaptcha\(/);
   assert.match(auth, /resend\(\{[\s\S]{0,200}options: comCaptcha\(/);
   const conta = ler("components/account/conta-secoes.tsx");
   assert.equal((conta.match(/signInWithPassword\(\{[\s\S]{0,120}options: comCaptcha\(\{\}, captcha\.token\)/g) ?? []).length, 2);
   // Nenhuma outra chamada de senha no navegador sem token.
   const todas = (auth + conta).match(/signInWithPassword\(|signUp\(|resetPasswordForEmail\(|auth\.resend\(/g) ?? [];
-  assert.equal(todas.length, 6);
+  assert.equal(todas.length, 5);
 });
 
 test("CSP libera o Turnstile (script e iframe)", () => {
