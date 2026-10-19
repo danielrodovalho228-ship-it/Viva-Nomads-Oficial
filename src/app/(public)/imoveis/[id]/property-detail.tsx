@@ -1,5 +1,6 @@
 "use client";
 
+import { ETAPAS_CANDIDATURA, TERMOS_CANDIDATURA, LIMITE_APRESENTACAO, etapaAnterior, proximaEtapa, progressoEtapa, validarApresentacao, type EtapaCandidatura } from "@/lib/candidatura-etapas";
 import { AvisoPetCandidatura } from "@/components/property/aviso-pet-candidatura";
 import { ProblemaComIsto } from "@/components/ajuda/problema-com-isto";
 import { numBR, hojeBR } from "@/lib/utils";
@@ -123,6 +124,9 @@ export function PropertyDetail({
   // Passo de confirmação do "Enviar candidatura": resumo + (exemplo) aviso de demonstração.
   const [solicitacaoAberta, setSolicitacaoAberta] = useState(false);
   const [solicitacaoErro, setSolicitacaoErro] = useState<string | null>(null);
+  // Candidatura em etapas (ordem eb4b11d8): revisar → mensagem → confirmar → confirmação.
+  const [etapa, setEtapa] = useState<EtapaCandidatura>("revisar");
+  const [apresentacao, setApresentacao] = useState("");
 
   // Avaliações — FONTE ÚNICA (A2): usa o array real de reviews, igual à seção de
   // avaliações. `rating` só é usado como média quando há review real.
@@ -226,12 +230,19 @@ export function PropertyDetail({
   function abrirSolicitacao() {
     setLeadErro(null);
     setSolicitacaoErro(resumo.erro);
+    setEtapa("revisar");
     setSolicitacaoAberta(true);
   }
   async function enviarSolicitacao() {
     if (resumo.erro) return;
-    const ok = await handleLead("candidatura");
-    if (ok) setSolicitacaoAberta(false);
+    const msg = validarApresentacao(apresentacao);
+    if (!msg.ok) {
+      setSolicitacaoErro(msg.erro);
+      setEtapa("mensagem");
+      return;
+    }
+    // A confirmação aparece na própria janela (candidatouSe); o servidor mascara contato de novo.
+    await handleLead("candidatura", msg.texto || undefined);
   }
 
   const citySlug = property.city
@@ -444,50 +455,140 @@ export function PropertyDetail({
     </div>
   );
 
-  // Passo de confirmação da solicitação (modal no celular e no computador).
-  const solicitacao = solicitacaoAberta && !candidatouSe && (
+  // Candidatura em etapas (modal no celular e no computador): barra de progresso, Revisar → Mensagem → Confirmar.
+  const fotoCapa = property.photos?.[0];
+  const solicitacao = solicitacaoAberta && (
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-night/40 p-0 sm:items-center sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="solicitacao-titulo"
       data-testid="solicitacao-passo"
-      onClick={() => setSolicitacaoAberta(false)}
+      onClick={() => !candidatouSe && setSolicitacaoAberta(false)}
     >
-      <div className="w-full max-w-md rounded-t-2xl bg-white p-5 shadow-xl sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
-        <h3 id="solicitacao-titulo" className="font-title text-lg font-bold text-ink">
-          Confirmar solicitação
-        </h3>
-        <p className="mt-1 text-sm text-muted">{property.title}</p>
-        <dl className="mt-3 space-y-2 rounded-lg bg-surface-2 px-3 py-3 text-sm">
-          {resumo.linhas.map((l) => (
-            <div key={l.rotulo} className="flex items-baseline justify-between gap-3">
-              <dt className="text-muted">{l.rotulo}</dt>
-              <dd className="text-right font-medium text-ink">{l.valor}</dd>
+      <div className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-2xl bg-white p-5 shadow-xl sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
+        {candidatouSe ? (
+          <div data-testid="candidatura-confirmada" className="flex flex-col gap-3 text-center">
+            <CheckCircle2 className="mx-auto h-8 w-8 text-forest" />
+            <h3 id="solicitacao-titulo" className="font-title text-lg font-bold text-ink">Candidatura enviada</h3>
+            {fotoCapa && (
+              // eslint-disable-next-line @next/next/no-img-element -- miniatura da capa; a foto já está carregada na galeria
+              <img src={fotoCapa} alt={property.title} className="mx-auto h-28 w-full rounded-xl object-cover" />
+            )}
+            <p className="text-sm font-medium text-ink">{property.title}</p>
+            <p className="text-sm text-muted">{resumo.linhas.find((l) => l.rotulo === "Entrada")?.rotulo}: {resumo.linhas.find((l) => l.rotulo === "Entrada")?.valor}</p>
+            <div className="rounded-lg bg-surface-2 px-3 py-3 text-left text-sm text-muted">
+              <p className="font-medium text-ink">O que acontece agora</p>
+              <p className="mt-1">O proprietário recebeu seu perfil e responde pela plataforma. Se ele aceitar, vocês conversam e seguem para o fechamento. Você acompanha tudo em Mensagens.</p>
             </div>
-          ))}
-        </dl>
-        {exemplo && (
-          <p data-testid="solicitacao-demo" className="mt-3 rounded-lg bg-sage-100 px-3 py-2 text-center text-xs font-medium text-forest">
-            Demonstração: este anúncio é de exemplo e a solicitação não é enviada.
-          </p>
+            <Link href="/dashboard/mensagens" className={buttonClasses({ size: "sm" })}>
+              <MessageSquare className="h-4 w-4" /> Acompanhar em Mensagens
+            </Link>
+            <Button variant="ghost" size="sm" onClick={() => setSolicitacaoAberta(false)}>Fechar</Button>
+          </div>
+        ) : (
+          <>
+            <div className="mb-3" data-testid="candidatura-progresso">
+              <div className="flex justify-between text-xs font-medium text-muted">
+                {ETAPAS_CANDIDATURA.map((e, i) => (
+                  <span key={e.chave} className={e.chave === etapa ? "text-forest" : undefined}>{i + 1}. {e.rotulo}</span>
+                ))}
+              </div>
+              <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-sage-100" role="progressbar" aria-valuenow={progressoEtapa(etapa)} aria-valuemin={0} aria-valuemax={100}>
+                <div className="h-full bg-forest transition-all" style={{ width: `${progressoEtapa(etapa)}%` }} />
+              </div>
+            </div>
+            <h3 id="solicitacao-titulo" className="font-title text-lg font-bold text-ink">
+              {etapa === "revisar" ? "Revisar solicitação" : etapa === "mensagem" ? "Mensagem ao proprietário" : "Confirmar candidatura"}
+            </h3>
+            <p className="mt-1 text-sm text-muted">{property.title}</p>
+            {etapa === "mensagem" ? (
+              <label className="mt-3 flex flex-col gap-1 text-sm font-medium text-ink">
+                Apresente-se (opcional): conte o motivo da estadia e quem vai morar.
+                <textarea
+                  data-testid="candidatura-apresentacao"
+                  value={apresentacao}
+                  maxLength={LIMITE_APRESENTACAO}
+                  rows={5}
+                  onChange={(e) => setApresentacao(e.target.value)}
+                  className="rounded-xl border border-line bg-white p-3 text-base font-normal text-ink"
+                />
+                <span className="text-xs font-normal text-muted">Telefone e e-mail não podem ser enviados: a conversa segue pela plataforma e eles são ocultados.</span>
+              </label>
+            ) : (
+              <>
+                <dl className="mt-3 space-y-2 rounded-lg bg-surface-2 px-3 py-3 text-sm">
+                  {(etapa === "revisar" ? resumo.linhas.slice(0, 3) : resumo.linhas).map((l) => (
+                    <div key={l.rotulo} className="flex items-baseline justify-between gap-3">
+                      <dt className="text-muted">{l.rotulo}</dt>
+                      <dd className="text-right font-medium text-ink">{l.valor}</dd>
+                    </div>
+                  ))}
+                  <div className="flex items-baseline justify-between gap-3">
+                    <dt className="text-muted">Pessoas</dt>
+                    <dd className="text-right font-medium text-ink">{pessoas === 1 ? "1 pessoa" : `${pessoas} pessoas`}</dd>
+                  </div>
+                </dl>
+                {etapa === "revisar" && (
+                  <>
+                    <button type="button" className="mt-2 text-sm font-medium text-forest underline" onClick={() => setSolicitacaoAberta(false)}>
+                      Alterar período, pessoas ou motivo
+                    </button>
+                    <details className="mt-3 rounded-lg border border-line px-3 py-2 text-sm" data-testid="candidatura-detalhes">
+                      <summary className="cursor-pointer font-medium text-ink">Detalhes dos valores</summary>
+                      <dl className="mt-2 space-y-2">
+                        {resumo.linhas.slice(3).map((l) => (
+                          <div key={l.rotulo} className="flex items-baseline justify-between gap-3">
+                            <dt className="text-muted">{l.rotulo}</dt>
+                            <dd className="text-right text-ink">{l.valor}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                    </details>
+                  </>
+                )}
+                {etapa === "confirmar" && apresentacao.trim() && (
+                  <p className="mt-3 rounded-lg border border-line px-3 py-2 text-sm text-muted">
+                    <span className="font-medium text-ink">Sua mensagem: </span>{apresentacao.trim().slice(0, 200)}
+                  </p>
+                )}
+                {etapa === "confirmar" && <p className="mt-3 text-xs text-muted">{TERMOS_CANDIDATURA} <Link href="/termos" className="underline">Ler os termos</Link></p>}
+              </>
+            )}
+            {exemplo && (
+              <p data-testid="solicitacao-demo" className="mt-3 rounded-lg bg-sage-100 px-3 py-2 text-center text-xs font-medium text-forest">
+                Demonstração: este anúncio é de exemplo e a solicitação não é enviada.
+              </p>
+            )}
+            {solicitacaoErro && (
+              <p role="alert" data-testid="solicitacao-erro" className="mt-3 text-sm text-red-600">
+                {solicitacaoErro}
+              </p>
+            )}
+            {!solicitacaoErro && leadErro && !exemplo && <p role="alert" className="mt-3 text-sm text-red-600">{leadErro}</p>}
+            <div className="mt-4 flex justify-end gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => (etapa === "revisar" ? setSolicitacaoAberta(false) : (setSolicitacaoErro(resumo.erro), setEtapa(etapaAnterior(etapa))))}
+                disabled={pending !== null}
+              >
+                {etapa === "revisar" ? (exemplo ? "Entendi" : "Cancelar") : "Voltar"}
+              </Button>
+              {etapa !== "confirmar" ? (
+                <Button variant="primary" size="sm" disabled={!!resumo.erro} onClick={() => setEtapa(proximaEtapa(etapa))}>
+                  Continuar
+                </Button>
+              ) : (
+                !exemplo && (
+                  <Button variant="primary" size="sm" disabled={pending !== null || !!resumo.erro} onClick={enviarSolicitacao}>
+                    {pending === "candidatura" ? "Enviando..." : "Enviar candidatura"}
+                  </Button>
+                )
+              )}
+            </div>
+          </>
         )}
-        {solicitacaoErro && (
-          <p role="alert" data-testid="solicitacao-erro" className="mt-3 text-sm text-red-600">
-            {solicitacaoErro}
-          </p>
-        )}
-        {!solicitacaoErro && leadErro && !exemplo && <p role="alert" className="mt-3 text-sm text-red-600">{leadErro}</p>}
-        <div className="mt-4 flex justify-end gap-2">
-          <Button variant="ghost" size="sm" onClick={() => setSolicitacaoAberta(false)} disabled={pending !== null}>
-            {exemplo ? "Entendi" : "Voltar"}
-          </Button>
-          {!exemplo && (
-            <Button variant="primary" size="sm" disabled={pending !== null || !!resumo.erro} onClick={enviarSolicitacao}>
-              {pending === "candidatura" ? "Enviando..." : "Enviar solicitação"}
-            </Button>
-          )}
-        </div>
       </div>
     </div>
   );
