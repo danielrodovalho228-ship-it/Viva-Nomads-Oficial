@@ -573,6 +573,7 @@
         "t205-fechamento-sem-beco",
         "t210-contrato-estado-jornada",
         "t209-jornada-dois-lados",
+        "t224-taxa-fora-da-api",
         "t220-recibo-assinatura",
         "t221-contrato-estado-periodo"
       ]
@@ -614,8 +615,9 @@
         "t205-fechamento-sem-beco",
         "t210-contrato-estado-jornada",
         "t209-jornada-dois-lados",
-        "t221-contrato-estado-periodo",
-        "t216-taxa-matriz"
+        "t216-taxa-matriz",
+        "t224-taxa-fora-da-api",
+        "t221-contrato-estado-periodo"
       ]
     },
     "/dashboard/ferramentas": {
@@ -720,6 +722,7 @@
         "t205-fechamento-sem-beco",
         "t210-contrato-estado-jornada",
         "t213-jornada-teste-confirmacao",
+        "t224-taxa-fora-da-api",
         "t220-recibo-assinatura",
         "t221-contrato-estado-periodo"
       ]
@@ -733,6 +736,7 @@
         "t48-varredura",
         "t57-contrato-assinar",
         "t205-fechamento-sem-beco",
+        "t224-taxa-fora-da-api",
         "t221-contrato-estado-periodo"
       ]
     },

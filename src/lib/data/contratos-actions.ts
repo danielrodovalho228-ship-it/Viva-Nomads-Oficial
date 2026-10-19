@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { emitirDoPagamentoComRegistro } from "@/lib/fiscal/emitir";
 import { listMyProperties } from "@/lib/data/properties";
 import { erroBancoPT } from "@/lib/erros-banco";
+import { taxaDosContratosDoDono } from "@/lib/data/taxa-dono-servidor";
 import type { EtapaContrato } from "@/lib/contrato-etapas";
 import { estadoDoContratoUnico, type ChaveEstado, type EstadoContrato, type LinhaEstadoContrato } from "@/lib/contrato-estado";
 import { podeAvaliarLocacao } from "@/lib/contrato-assinar";
@@ -22,6 +23,10 @@ import { rotuloPagamentoBloco } from "@/lib/pagamento-bloco";
  */
 
 type ActionResult = { ok: boolean; demo?: boolean; id?: string; error?: string };
+
+/** Colunas de `contratos` que as partes leem pela sessão (sem a taxa — 0177). */
+const COLUNAS_CONTRATO_PARTES =
+  "id, property_id, tenant_id, lead_id, status, aluguel_mensal, prazo_total_dias, tamanho_bloco_meses, qtd_ocupantes, created_at, assinado_proprietario_em, assinado_inquilino_em";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -269,13 +274,17 @@ export async function getMeusContratos(): Promise<ContratoView[]> {
   if (ids.length === 0) return [];
   const titleById = new Map(props.map((p) => [p.id, { title: p.title, city: p.city }]));
 
+  // Lista fechada de colunas: a taxa (comissao_*) não sai mais pela API (0177) e vem do servidor logo abaixo.
   const { data } = await supabase
     .from("contratos")
-    .select("*, contrato_blocos(*), pagamentos_bloco(*, contrato_blocos(numero_bloco, meses, inicio, fim))")
+    .select(`${COLUNAS_CONTRATO_PARTES}, contrato_blocos(*), pagamentos_bloco(*, contrato_blocos(numero_bloco, meses, inicio, fim))`)
     .in("property_id", ids)
     .order("created_at", { ascending: false });
 
-  const contratos = (data ?? []) as Record<string, unknown>[];
+  const contratos = (data ?? []) as unknown as Record<string, unknown>[];
+  // A taxa de cada contrato, lida com o cliente de serviço só para imóveis DESTE dono.
+  const admin = createAdminClient();
+  const taxas = admin ? await taxaDosContratosDoDono(admin, user.id, contratos.map((c) => String(c.id))) : new Map();
   // Data do aceite de cada candidatura (o RLS deixa o dono ler as próprias).
   const leadIds = [...new Set(contratos.map((c) => c.lead_id).filter((x): x is string => typeof x === "string"))];
   const { data: leads } = leadIds.length
@@ -298,8 +307,8 @@ export async function getMeusContratos(): Promise<ContratoView[]> {
       aluguelMensal: Number(c.aluguel_mensal),
       prazoTotalDias: Number(c.prazo_total_dias),
       tamanhoBlocoMeses: Number(c.tamanho_bloco_meses ?? 2),
-      comissaoValor: Number(c.comissao_valor ?? 0),
-      comissaoPercent: Number(c.comissao_percent ?? 0),
+      comissaoValor: taxas.get(String(c.id))?.comissaoValor ?? 0,
+      comissaoPercent: taxas.get(String(c.id))?.comissaoPercent ?? 0,
       aceiteEm: aceiteDoLead.get(String(c.lead_id)) ?? null,
       qtdOcupantes: Number(c.qtd_ocupantes ?? 1),
       status: String(c.status ?? "ativo"),
