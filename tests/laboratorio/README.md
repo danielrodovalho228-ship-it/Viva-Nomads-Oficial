@@ -39,6 +39,12 @@ Actions (`.github/workflows/laboratorio.yml`, 01h do Texas).
    A suíte também roda a cada merge na `main`; o resultado de cada execução vira uma linha em
    `public.lab_execucoes` (só admin lê; migração 0106) — `select * from lab_execucoes order by criada_em desc`.
 
+**Lab crítico** (ordem d86d0678): `.github/workflows/lab-critico.yml` roda em TODO PR e a cada merge na `main` só os
+fluxos críticos (login, publicar anúncio, candidatura→contrato→assinatura, abrir chamado, upload de foto), listados em
+`tests/laboratorio/fluxos-criticos.json`, e publica o status check `lab-critico`; o resultado fica no resumo da execução
+(colar no corpo do PR). Para exigi-lo antes de mesclar, só o Daniel liga: GitHub > Settings > Branches > regra da `main` >
+*Require status checks to pass* > marcar `lab-critico` (depois da primeira execução, para o nome aparecer na lista).
+
 Resultado: resumo na própria execução do Actions (tabela passou/falhou por spec) e o artefato
 `laboratorio-<id>` com o relatório HTML, prints, vídeos e `resultado.json`.
 
