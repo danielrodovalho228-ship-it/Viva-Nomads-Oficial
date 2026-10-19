@@ -14,6 +14,16 @@ alter table public.pagamentos_bloco add constraint pagamentos_bloco_anulacao
 
 -- 2) Caução é do CONTRATO, não do bloco: bloco_id passa a ser opcional e fica vazio na Caução.
 alter table public.pagamentos_bloco alter column bloco_id drop not null;
+-- A Caução passa para o nível do contrato (bloco vazio) ANTES do check abaixo: o check NOT VALID também vale para
+-- as linhas atualizadas depois, e a anulação das duplicidades (passo 3) tocava Caução ainda com bloco — foi o que
+-- fez a 0182 falhar em produção em 19/10 ("violates check constraint pagamentos_bloco_bloco_por_tipo").
+create table if not exists public._bkp_0182_caucao_bloco (id uuid primary key, bloco_id uuid);
+alter table public._bkp_0182_caucao_bloco enable row level security;
+revoke all on public._bkp_0182_caucao_bloco from anon, authenticated;
+insert into public._bkp_0182_caucao_bloco (id, bloco_id)
+select id, bloco_id from public.pagamentos_bloco where tipo = 'caucao' and bloco_id is not null
+on conflict (id) do nothing;
+update public.pagamentos_bloco set bloco_id = null where tipo = 'caucao' and bloco_id is not null;
 alter table public.pagamentos_bloco drop constraint if exists pagamentos_bloco_bloco_por_tipo;
 alter table public.pagamentos_bloco add constraint pagamentos_bloco_bloco_por_tipo
   check ((tipo = 'caucao' and bloco_id is null) or (tipo = 'aluguel' and bloco_id is not null)) not valid;
@@ -66,14 +76,6 @@ update public.documentos_falhas f
   from public.pagamentos_bloco p
  where f.pagamento_id = p.id and p.anulado_em is not null and f.resolvido_em is null;
 
--- A Caução que vale passa para o nível do contrato (bloco vazio).
-create table if not exists public._bkp_0182_caucao_bloco (id uuid primary key, bloco_id uuid);
-alter table public._bkp_0182_caucao_bloco enable row level security;
-revoke all on public._bkp_0182_caucao_bloco from anon, authenticated;
-insert into public._bkp_0182_caucao_bloco (id, bloco_id)
-select id, bloco_id from public.pagamentos_bloco where tipo = 'caucao' and bloco_id is not null
-on conflict (id) do nothing;
-update public.pagamentos_bloco set bloco_id = null where tipo = 'caucao' and bloco_id is not null;
 
 -- 4) Sem repetição: uma Caução ativa por contrato; um pagamento de valor mensal ativo por bloco
 --    (pagamento parcial de bloco, se um dia for desejado, é decisão do Daniel).
