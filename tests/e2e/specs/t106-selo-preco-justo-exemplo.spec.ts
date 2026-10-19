@@ -10,7 +10,7 @@ for (const largura of [360, 390, 1280]) {
     test.use({ viewport: { width: largura, height: 900 } });
 
     test("cartão da busca e página do ube-001 mostram o selo; o selo não quebra linha", async ({ page }) => {
-      await page.goto("/buscar");
+      await page.goto("/buscar?exemplos=1");
       const cartao = page.locator('a[href="/imoveis/ube-001"]').first();
       await expect(cartao).toBeVisible();
       const seloCartao = cartao.getByTestId("selo-preco-justo");

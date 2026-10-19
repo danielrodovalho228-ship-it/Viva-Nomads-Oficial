@@ -36,7 +36,7 @@ import { TituloBuscaContexto } from "@/components/busca/titulo-busca";
 import { buttonClasses } from "@/components/ui/button";
 import { SalvarBusca } from "@/components/busca/salvar-busca";
 import { isExemplo } from "@/lib/demo-listing";
-import { mostrarCartaoPedido, semExemplosQuandoHaReal, TEXTO_CARTAO_PEDIDO, TEXTO_PUBLICAR_PEDIDO } from "@/lib/busca/exemplos-e-pedido";
+import { exemplosForcadosNaUrl, mostrarCartaoPedido, semExemplosQuandoHaReal, TEXTO_CARTAO_PEDIDO, TEXTO_PUBLICAR_PEDIDO } from "@/lib/busca/exemplos-e-pedido";
 import { DescricaoBusca } from "@/components/busca/descricao-busca";
 import type { ChaveChip, FiltrosDescricao } from "@/lib/busca/descricao-filtros";
 
@@ -103,6 +103,8 @@ export function SearchClient({ properties: imoveis, topo }: { properties: Proper
   const [dataEntrada, setDataEntrada] = useState(""); // disponível até esta data de entrada
   const [garantia, setGarantia] = useState(""); // "" | caucao_avista | caucao_parcelada | titulo | seguro_fianca
   const [petsOnly, setPetsOnly] = useState(false);
+  const [exemplosForcados, setExemplosForcados] = useState(false); // ?exemplos=1: laboratório/QA
+
   const [petPorte, setPetPorte] = useState<FiltrosPainel["petPorte"]>("");
   const [furnishedOnly, setFurnishedOnly] = useState(false);
   const [readyToLiveOnly, setReadyToLiveOnly] = useState(false);
@@ -178,6 +180,7 @@ export function SearchClient({ properties: imoveis, topo }: { properties: Proper
   // compartilhados e reloads mostrarem exatamente os filtros ativos (M7).
   const restaurarFiltrosDaURL = useCallback(() => {
     const sp = new URLSearchParams(window.location.search);
+    if (exemplosForcadosNaUrl(window.location.search)) setExemplosForcados(true);
     const local = sp.get("local");
     const lat = Number(sp.get("lat"));
     const lng = Number(sp.get("lng"));
@@ -401,14 +404,14 @@ export function SearchClient({ properties: imoveis, topo }: { properties: Proper
   }, [properties, locationQuery, geoCenter, radiusKm, adults, children, maxPeriod, typeFilter, faixa, dataEntrada, garantia, furnishedOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly]);
 
   const contarComPainel = useCallback(
-    (f: FiltrosPainel) => semExemplosQuandoHaReal(base.filter((p) => passaNoPainel(p, f)), (p) => isExemplo(p.id)).length,
-    [base]
+    (f: FiltrosPainel) => semExemplosQuandoHaReal(base.filter((p) => passaNoPainel(p, f)), (p) => isExemplo(p.id), exemplosForcados).length,
+    [base, exemplosForcados]
   );
 
   const results = useMemo(() => {
     let list = base.filter((p) => passaNoPainel(p, filtrosPainel));
     // Prompt 30, item 6: com imóvel real no resultado, os exemplos saem; só exemplos → aparecem marcados "exemplo".
-    list = semExemplosQuandoHaReal(list, (p) => isExemplo(p.id));
+    list = semExemplosQuandoHaReal(list, (p) => isExemplo(p.id), exemplosForcados);
     if (sort === "price-asc") list = [...list].sort((a, b) => precoDeBusca(a) - precoDeBusca(b));
     else if (sort === "price-desc") list = [...list].sort((a, b) => precoDeBusca(b) - precoDeBusca(a));
     // Adicionados recentemente: mais novos (data de cadastro) primeiro.
@@ -426,7 +429,7 @@ export function SearchClient({ properties: imoveis, topo }: { properties: Proper
           prioridadeNaBusca(searchPriority(tierFromPhotoCount(a.photos.length)), a.precoJusto)
       );
     return list;
-  }, [base, dist, filtrosPainel, sort]);
+  }, [base, dist, exemplosForcados, filtrosPainel, sort]);
 
   const activeCount =
     (maxPrice ? 1 : 0) +

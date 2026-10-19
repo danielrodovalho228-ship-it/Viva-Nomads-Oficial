@@ -24,7 +24,7 @@ for (const [nome, largura, altura] of [
     });
 
     test("a /buscar não mostra o selo 'Tour em vídeo' no cartão do ube-001", async ({ page }) => {
-      await page.goto("/buscar");
+      await page.goto("/buscar?exemplos=1");
       const cartao = page.locator('a[href="/imoveis/ube-001"]').first();
       await expect(cartao).toBeVisible();
       await expect(cartao).not.toContainText("Tour em vídeo");
