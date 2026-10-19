@@ -57,7 +57,7 @@ test.describe("T230 — pagamento sem repetição + Caução do contrato + VN-CT
       .from("contrato_blocos")
       .insert([
         { contrato_id: ids.contrato, numero_bloco: 1, inicio: dia(-70), fim: dia(-11), meses: 2, valor: 6400, caucao: 3200, status: "ativo" },
-        { contrato_id: ids.contrato, numero_bloco: 2, inicio: dia(-10), fim: dia(49), meses: 2, valor: 6400, caucao: 3200, status: "ativo" },
+        { contrato_id: ids.contrato, numero_bloco: 2, inicio: dia(-10), fim: dia(49), meses: 2, valor: 6400, caucao: 3200, status: "ativo", aceite_proprietario_em: agora, aceite_inquilino_em: agora },
       ])
       .select("id, numero_bloco");
     expect(eB).toBeNull();

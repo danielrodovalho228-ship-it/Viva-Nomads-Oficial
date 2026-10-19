@@ -1,7 +1,7 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 import { hasAccount } from "../fixtures/accounts";
-import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, blocoSemValorMensal, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
   T227 — Complemento do #880 (reteste do Muse), 390 e 1280 px:
@@ -42,10 +42,11 @@ async function contratoAssinado(imovel: string): Promise<string> {
 }
 
 async function pagamentoConfirmado(contratoId: string): Promise<string> {
-  const { data: bloco } = await adm().from("contrato_blocos").select("id").eq("contrato_id", contratoId).single();
+  // 0182: um valor mensal por bloco — usa um bloco ainda sem pagamento (cria o próximo se precisar).
+  const blocoId = await blocoSemValorMensal(contratoId);
   const { data, error } = await adm()
     .from("pagamentos_bloco")
-    .insert({ bloco_id: bloco!.id, contrato_id: contratoId, tipo: "aluguel", valor: 6400, forma: "pix", data_pagamento: dia(0), marcado_por: ids.dono, confirmado_pelo_inquilino: true, confirmado_em: new Date().toISOString() })
+    .insert({ bloco_id: blocoId, contrato_id: contratoId, tipo: "aluguel", valor: 6400, forma: "pix", data_pagamento: dia(0), marcado_por: ids.dono, confirmado_pelo_inquilino: true, confirmado_em: new Date().toISOString() })
     .select("id")
     .single();
   if (error) throw error;

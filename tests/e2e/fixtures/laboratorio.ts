@@ -371,3 +371,32 @@ export async function tornarContratoVigente(contratoId: string, donoId: string, 
   });
   if (e3) throw e3;
 }
+
+/**
+ * Um bloco do contrato ainda SEM pagamento de valor mensal (0182: um por bloco). Se todos já têm, cria o próximo
+ * bloco, já aceito pelas duas partes (renovação, 0065), logo depois do último.
+ */
+export async function blocoSemValorMensal(contratoId: string): Promise<string> {
+  const { data: blocos } = await adm().from("contrato_blocos").select("id, numero_bloco, fim, meses, valor, caucao").eq("contrato_id", contratoId).order("numero_bloco");
+  const { data: pgs } = await adm().from("pagamentos_bloco").select("bloco_id").eq("contrato_id", contratoId).eq("tipo", "aluguel").is("anulado_em", null);
+  const usados = new Set(((pgs ?? []) as { bloco_id: string | null }[]).map((p) => p.bloco_id));
+  const lista = (blocos ?? []) as { id: string; numero_bloco: number; fim: string; meses: number; valor: number; caucao: number }[];
+  const livre = lista.find((b) => !usados.has(b.id));
+  if (livre) return livre.id;
+  const ultimo = lista[lista.length - 1];
+  const ini = new Date(`${ultimo.fim}T12:00:00Z`);
+  ini.setUTCDate(ini.getUTCDate() + 1);
+  const fim = new Date(ini);
+  fim.setUTCDate(fim.getUTCDate() + 59);
+  const agora = new Date().toISOString();
+  const { data, error } = await adm()
+    .from("contrato_blocos")
+    .insert({
+      contrato_id: contratoId, numero_bloco: ultimo.numero_bloco + 1, inicio: ini.toISOString().slice(0, 10), fim: fim.toISOString().slice(0, 10),
+      meses: ultimo.meses, valor: ultimo.valor, caucao: 0, status: "ativo", aceite_proprietario_em: agora, aceite_inquilino_em: agora,
+    })
+    .select("id")
+    .single();
+  if (error) throw error;
+  return data.id as string;
+}
