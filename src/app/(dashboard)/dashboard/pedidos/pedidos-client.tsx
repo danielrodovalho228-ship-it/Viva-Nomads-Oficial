@@ -66,12 +66,15 @@ export function PedidosClient({
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
+  // Erro na própria página (adendo ao prompt 28: nada de alert, que o QA automatizado não enxerga).
+  const [erro, setErro] = useState<string | null>(null);
 
   async function run(key: string, fn: () => Promise<{ ok: boolean; error?: string }>) {
     setBusy(key);
+    setErro(null);
     const res = await fn();
     setBusy(null);
-    if (!res.ok && res.error) alert(res.error);
+    if (!res.ok) setErro(res.error ?? "Não foi possível agora. Tente de novo.");
     router.refresh();
   }
 
@@ -91,6 +94,12 @@ export function PedidosClient({
           </Link>
         }
       />
+
+      {erro && (
+        <p role="alert" className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" data-testid="pedidos-erro">
+          {erro}
+        </p>
+      )}
 
       {pedidos.length === 0 ? (
         <Panel>

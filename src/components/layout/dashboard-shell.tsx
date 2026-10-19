@@ -21,7 +21,7 @@ import { MobileTabBar } from "@/components/layout/mobile-tab-bar";
 import { AppHeader } from "@/components/app/app-header";
 import { useDemoMode, DemoToggle, DemoBanner, useDisplayUser } from "@/lib/demo/demo-mode";
 import { MenuCascata } from "@/components/layout/menu-cascata";
-import { ANUNCIAR, menuDoPainel } from "@/config/menu-painel";
+import { ANUNCIAR, destinoForaDoPapel, menuDoPainel } from "@/config/menu-painel";
 import { imoveisAtivosDoDono, temImovelAnunciado } from "@/lib/data/menu-actions";
 
 /**
@@ -217,7 +217,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       setActiveMode(target);
       salvarModo(target).catch(() => {});
     } else {
-      router.replace("/dashboard");
+      router.replace(destinoForaDoPapel(pathname));
     }
   }, [pathname, mode, isOwner, isTenant, router, setActiveMode]);
 

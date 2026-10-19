@@ -1,5 +1,6 @@
 "use client";
 
+import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -373,13 +374,15 @@ export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; 
                 </Button>
               )}
               {c.status !== "encerrado" && (
-                <Button
-                  variant="outline"
+                <ConfirmarNaPagina
+                  aviso="Encerrar? A pessoa não poderá mais responder neste chamado."
+                  confirmar="Encerrar"
                   disabled={ocupado}
-                  onClick={() => window.confirm("Encerrar? A pessoa não poderá mais responder neste chamado.") && agir(() => alterarChamado(c.id, { status: "encerrado" }))}
+                  onConfirmar={() => agir(() => alterarChamado(c.id, { status: "encerrado" }))}
+                  testid="chamado-encerrar"
                 >
                   Encerrar
-                </Button>
+                </ConfirmarNaPagina>
               )}
             </div>
           </Panel>
