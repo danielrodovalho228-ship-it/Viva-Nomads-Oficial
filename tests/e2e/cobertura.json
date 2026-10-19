@@ -1474,6 +1474,13 @@
         "t205-fechamento-sem-beco"
       ]
     },
+    "/api/contrato/[id]/provas": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
     "/api/cron/atendimento": {
       "personas": [
         "sistema"
