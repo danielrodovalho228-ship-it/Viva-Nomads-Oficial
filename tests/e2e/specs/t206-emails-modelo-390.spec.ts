@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { brandedNotification, emailImage } from "../../../src/lib/notifications/templates";
 import { TEMPLATES } from "../../../src/lib/notifications/eventos-email";
+import { imagemDoEvento } from "../../../src/lib/notifications/imagens-email";
 
 /**
  * T206 — E-mails no modelo único, renderizados de verdade (ordem d250ea2f itens 1–3, achado ddf5d851):
@@ -27,7 +28,7 @@ test.describe("T206 — E-mails do modelo único a 390 px", () => {
             title: tpl.subject,
             intro: tpl.body("Marcos"),
             cta: { label: tpl.cta, url: `${SITE}${tpl.path}` },
-            image: emailImage(tpl.img, tpl.subject),
+            image: emailImage(imagemDoEvento(evento as keyof typeof TEMPLATES).arquivo, imagemDoEvento(evento as keyof typeof TEMPLATES).alt),
           });
           await page.setContent(html, { waitUntil: "domcontentloaded" });
 

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { sampleEmails, notificationSamples } from "@/lib/notifications/templates";
+import { catalogoEmails } from "@/lib/notifications/catalogo-emails";
+import { SITE_URL } from "@/lib/site";
 
 // Preview NUNCA deve ser indexado nem exposto por engano.
 export const metadata: Metadata = { robots: { index: false, follow: false } };
@@ -33,9 +34,10 @@ export default async function DevEmailsPage({
     );
   }
 
+  const todos = catalogoEmails(SITE_URL).map((e) => ({ key: e.chave, subject: e.assunto, html: e.html, origem: e.origem }));
   const groups = [
-    { title: "Transacionais (Resend · notify)", items: notificationSamples() },
-    { title: "Autenticação (Supabase Auth · artes)", items: sampleEmails() },
+    { title: "Enviados pela plataforma (Resend)", items: todos.filter((e) => e.origem === "app") },
+    { title: "Conta (Supabase Auth)", items: todos.filter((e) => e.origem === "conta") },
   ];
 
   return (

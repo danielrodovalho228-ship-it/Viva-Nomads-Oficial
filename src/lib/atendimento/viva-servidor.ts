@@ -5,6 +5,7 @@ import { consumirLimite, DIA, situacaoLimite } from "@/lib/limites";
 import { integracoesSimuladas } from "@/lib/integracoes";
 import { agoraBRTexto } from "@/lib/atendimento/data-br";
 import { notify } from "@/lib/notifications";
+import { ASSUNTOS } from "@/lib/notifications/assuntos";
 import { textoEmail } from "@/lib/notifications/texto-seguro";
 import { SITE_URL } from "@/lib/site";
 import { calcularPrazos, frasePrazo, prazoPrometido, type Prioridade, type UrgenciaManutencao } from "@/config/atendimento";
@@ -286,7 +287,7 @@ export function ferramentasReais(admin: Admin, c: ChamadoViva, agora: Date): Fer
           name: (dono.full_name as string) ?? undefined,
           userId: lead.owner_id as string,
           pushUrl: "/dashboard/leads",
-          subject: "Lembrete: um interessado aguarda sua resposta",
+          subject: ASSUNTOS.lembreteInteressado,
         }).catch(() => null);
       }
       await registrarAcaoViva(admin, c, "viva_lembrete_dono", "candidatura");

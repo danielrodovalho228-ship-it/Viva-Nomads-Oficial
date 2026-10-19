@@ -3,6 +3,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/notifications/email";
+import { emailCodigo2fa } from "@/lib/notifications/montar-email";
+import { SITE_URL } from "@/lib/site";
 import { precisaCodigoParaOperacaoSensivel, urlAtivar2fa } from "@/lib/admin/mfa";
 import {
   MSG_CODIGO_RECUPERACAO_INVALIDO,
@@ -145,14 +147,8 @@ export async function pedirCodigoRefazer(): Promise<Res> {
     refazer_hash: hashCodigoEmail(s.user.id, codigo),
     refazer_expira: new Date(agora + VALIDADE_CODIGO_EMAIL_MS).toISOString(),
   });
-  const r = await sendEmail({
-    to: s.user.email,
-    subject: "Seu código para refazer a verificação em duas etapas",
-    evento: "recuperacao_2fa",
-    usuarioId: s.user.id,
-    text: `Seu código: ${codigo}\nVale por 15 minutos. Se não foi você, ignore este e-mail e troque a senha.`,
-    html: `<p>Seu código para refazer a verificação em duas etapas: <strong style="font-size:20px;letter-spacing:4px">${codigo}</strong></p><p>Vale por 15 minutos. Se não foi você, ignore este e-mail e troque a senha.</p>`,
-  });
+  const m = emailCodigo2fa(SITE_URL, { codigo });
+  const r = await sendEmail({ to: s.user.email, subject: m.assunto, evento: "recuperacao_2fa", usuarioId: s.user.id, imagem: m.imagem, text: m.text, html: m.html });
   if (r.error) return { ok: false, error: "Não foi possível enviar o e-mail agora. Tente de novo." };
   return { ok: true };
 }

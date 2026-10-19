@@ -71,8 +71,8 @@ test("avaliar: nunca em contrato ativo/aguardando assinatura; só até 14 dias d
 });
 
 test("aviso à outra parte: pede a assinatura que falta, ou diz que o contrato está completo", () => {
-  assert.equal(assuntoAvisoOutraParte(false), "O outro lado assinou o contrato — falta a sua assinatura");
-  assert.equal(assuntoAvisoOutraParte(true), "As duas partes assinaram o contrato");
+  assert.equal(assuntoAvisoOutraParte(false), "Falta a sua assinatura no contrato");
+  assert.equal(assuntoAvisoOutraParte(true), "Contrato assinado pelas duas partes");
   assert.doesNotMatch(assuntoAvisoOutraParte(true), /falta/);
 });
 

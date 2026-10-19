@@ -23,6 +23,7 @@ import {
 } from "@/lib/qualification";
 import { findNearbyWorkspaces } from "@/lib/integrations/places";
 import { notify } from "@/lib/notifications";
+import { ASSUNTOS } from "@/lib/notifications/assuntos";
 import { listingLimit, PLAN_LABEL } from "@/lib/plan";
 import type { SubscriptionPlan } from "@/lib/store";
 import { buildLeadNotification, LEAD_KIND_MSG, type LeadKind } from "@/lib/leads";
@@ -1252,7 +1253,7 @@ export async function registrarContrato(
         email: pessoa?.user?.email ?? undefined,
         userId: lead.tenant_id as string,
         pushUrl: `/dashboard/locacoes/${contratoNovoId}`,
-        subject: "Seu contrato está pronto para assinar",
+        subject: ASSUNTOS.contratoPronto,
       });
     } catch {
       /* aviso é best-effort: o contrato já está registrado */

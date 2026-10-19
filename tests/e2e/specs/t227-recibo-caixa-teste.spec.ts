@@ -5,7 +5,7 @@ import { NO_LABORATORIO, adm, blocoSemValorMensal, apagarContas, criarConta, cri
 
 /*
   T227 — Complemento do #880 (reteste do Muse), 390 e 1280 px:
-   1. o e-mail do recibo ("Recibo de aluguel REC-…") aparece na Caixa de e-mails de teste das DUAS contas (dono e
+   1. o e-mail do recibo ("Seu recibo de pagamento · Viva Nomads", o número no corpo e no anexo) aparece na Caixa de e-mails de teste das DUAS contas (dono e
       inquilino), com a linha "Anexo: REC-….pdf" (o conteúdo do PDF não vai para a tabela), uma vez só;
    2. a fila "Documentos com falha" é legível: com 2 falhas, cada linha mostra o seu número, tipo, contrato
       (VN-CT-…), o nome curto do proprietário e do inquilino, o motivo e a data — e as duas são diferentes.
@@ -86,7 +86,7 @@ test.describe("T227 — e-mail do recibo na caixa de teste + fila de falhas leg�
     await apagarContas([ids.inq, ids.dono]);
   });
 
-  test("1. 1280 + 390 — confirmar o pagamento → 'Recibo de aluguel REC-…' na caixa de teste das duas contas, com o anexo", async ({ browser }) => {
+  test("1. 1280 + 390 — confirmar o pagamento → 'Seu recibo de pagamento' na caixa de teste das duas contas, com o anexo", async ({ browser }) => {
     test.setTimeout(180_000);
     const d = await abrir(browser, dono.email, 1280);
     await d.goto("/dashboard/contratos", { waitUntil: "domcontentloaded" });
@@ -103,10 +103,11 @@ test.describe("T227 — e-mail do recibo na caixa de teste + fila de falhas leg�
 
     // Banco: exatamente 1 linha do recibo por conta (sem duplicar), com evento e anexo pelo nome.
     for (const id of [ids.dono!, ids.inq!]) {
-      const { data } = await adm().from("emails_teste").select("evento, assunto, corpo").eq("usuario_id", id).ilike("assunto", `%${numero}%`);
+      const { data } = await adm().from("emails_teste").select("evento, assunto, corpo").eq("usuario_id", id).eq("evento", "recibo_emitido").ilike("corpo", `%${numero}%`);
       expect(data, `caixa de ${id}`).toHaveLength(1);
       expect(data![0].evento).toBe("recibo_emitido");
-      expect(data![0].corpo).toContain(`Anexo: ${numero}.pdf`);
+      expect(data![0].corpo).toContain(`Anexo: recibo-${numero}.pdf`);
+      expect(data![0].assunto).toBe("Seu recibo de pagamento · Viva Nomads");
       expect(data![0].corpo).not.toContain("JVBERi"); // base64 de "%PDF" nunca vai para a tabela
     }
 
@@ -114,7 +115,7 @@ test.describe("T227 — e-mail do recibo na caixa de teste + fila de falhas leg�
     for (const [p, largura] of [[t, 390], [d, 1280]] as const) {
       await p.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
       const caixa = p.getByTestId("caixa-emails-teste");
-      await expect(caixa).toContainText(`Recibo de aluguel ${numero}`, { timeout: 20_000 });
+      await expect(caixa).toContainText("Seu recibo de pagamento · Viva Nomads", { timeout: 20_000 });
       await semRolagemLateral(p);
       await p.screenshot({ path: `${SAIDA}/t227-caixa-${largura}.png`, fullPage: true });
       await p.context().close();
@@ -153,7 +154,7 @@ test.describe("T227 — e-mail do recibo na caixa de teste + fila de falhas leg�
           const linha = page.getByTestId("documento-falha").filter({ hasText: numeros[i] });
           await expect(linha).toHaveCount(1, { timeout: 20_000 });
           await expect(linha.getByTestId("falha-numero")).toHaveText(numeros[i]);
-          await expect(linha.getByTestId("falha-tipo")).toHaveText("Recibo de aluguel");
+          await expect(linha.getByTestId("falha-tipo")).toHaveText("Recibo de pagamento");
           await expect(linha.getByTestId("falha-contrato")).toHaveText(ref);
           await expect(linha.getByTestId("falha-proprietario")).toHaveText("Clara S.");
           await expect(linha.getByTestId("falha-inquilino")).toHaveText("Bruno L.");

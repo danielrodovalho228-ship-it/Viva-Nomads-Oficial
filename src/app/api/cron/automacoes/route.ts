@@ -1,3 +1,4 @@
+import { avisarDecisoesAtrasadas } from "@/lib/data/aviso-decisao-documento";
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify, type NotificationEvent } from "@/lib/notifications";
@@ -152,5 +153,10 @@ export async function GET(request: Request) {
   }
   // Propostas (prompt 17): validade vencida → "Expirada" (a leitura também expira, esta é a rede diária).
   const propostasExpiradas = await expirarVencidas(admin);
-  return NextResponse.json({ ok: true, simulado: simular, enviados: contagem, propostasExpiradas });
+  // Documentos (rota rápida dos e-mails, item 3b): decisões que esperam há mais de 2 h porque o admin deixou outro
+  // documento do mesmo imóvel na fila — sai o resumo do que já foi decidido, um por imóvel, uma vez só.
+  const documentosAvisados = simular
+    ? ((await admin.rpc("decisoes_documento_atrasadas", { p_horas: 2 })).data as unknown[] | null)?.length ?? 0
+    : await avisarDecisoesAtrasadas(admin, 2);
+  return NextResponse.json({ ok: true, simulado: simular, enviados: contagem, propostasExpiradas, documentosAvisados });
 }

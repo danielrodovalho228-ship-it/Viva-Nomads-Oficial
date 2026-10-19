@@ -1,0 +1,32 @@
+# "Aplicar e-mails de conta no Supabase" (rota rápida dos e-mails, item 4): manual. Envia os 6 modelos de
+# supabase/templates (assunto + corpo) e o remetente "Viva Nomads Brasil" <suporte@vivanomads.com.br> pela API de
+# gestão do Supabase e lê de volta para conferir. Segredo: SUPABASE_ACCESS_TOKEN (criado pelo Daniel; nunca impresso).
+# Sem o segredo, falha com "Cole os 6 modelos pelo LEIA-ME".
+name: Aplicar e-mails de conta no Supabase
+
+on:
+  workflow_dispatch:
+    inputs:
+      projeto:
+        description: "Referência do projeto Supabase (20 caracteres)"
+        type: string
+        default: "esezeutgtycekfosxplk"
+
+permissions:
+  contents: read
+
+jobs:
+  aplicar:
+    if: github.repository == 'danielrodovalho228-ship-it/Viva-Nomads-Oficial'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Aplicar e conferir
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ inputs.projeto }}
+        run: node scripts/aplicar-templates-supabase.ts

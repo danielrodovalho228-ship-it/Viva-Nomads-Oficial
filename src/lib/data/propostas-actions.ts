@@ -5,6 +5,8 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify } from "@/lib/notifications";
+import { ASSUNTOS } from "@/lib/notifications/assuntos";
+import { blocoDados } from "@/lib/notifications/modelo-email";
 import { escaparHtml } from "@/lib/escapar-html";
 import type { NotificationEvent } from "@/lib/notifications/eventos-email";
 import { guardContactInfo } from "@/lib/messages/contact-guard";
@@ -176,8 +178,12 @@ async function avisarOutraParte(
       name: (d?.full_name as string | undefined) ?? undefined,
       userId: destino,
       pushUrl: `/dashboard/propostas/${p.id}`,
-      subject: evento === "proposta_recebida" ? `Proposta ${p.numero}` : `Proposta ${p.numero} respondida`,
-      ...(detalhesSoDono && destino === p.owner_id ? { detailsHtml: `<p>${escaparHtml(detalhesSoDono)}</p>` } : {}),
+      // O número da proposta vai no corpo, nunca no assunto (rota rápida dos e-mails, item 2).
+      subject: evento === "proposta_recebida" ? ASSUNTOS.propostaRecebida : ASSUNTOS.propostaRespondida,
+      detailsHtml:
+        blocoDados([{ rotulo: "Proposta", valor: escaparHtml(String(p.numero)) }]) +
+        (detalhesSoDono && destino === p.owner_id ? `<p>${escaparHtml(detalhesSoDono)}</p>` : ""),
+      detailsText: `Proposta ${p.numero}`,
     });
   } catch {
     /* notificação nunca quebra o fluxo */
@@ -748,8 +754,9 @@ async function aceitar(admin: Admin, p: LinhaProposta, v: LinhaVersao, papel: Au
         name: (d?.full_name as string | undefined) ?? undefined,
         userId: p.owner_id,
         pushUrl: `/dashboard/propostas/${p.id}`,
-        subject: `Proposta ${p.numero} aceita`,
-        detailsHtml: `<p>${escaparHtml(linhaTaxa)}</p>`,
+        subject: ASSUNTOS.propostaAceita,
+        detailsHtml: blocoDados([{ rotulo: "Proposta", valor: escaparHtml(String(p.numero)) }]) + `<p>${escaparHtml(linhaTaxa)}</p>`,
+        detailsText: `Proposta ${p.numero}`,
       });
     } catch {
       /* notificação nunca quebra o fluxo */

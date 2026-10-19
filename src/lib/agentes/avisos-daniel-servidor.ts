@@ -67,7 +67,7 @@ export function depsAvisos(admin: Admin, segredo: string): Deps {
       await pushParaCeo(conteudoPushAviso(a));
     },
     async enviar(m) {
-      const r = await sendEmail({ to: m.to, subject: m.subject, html: m.html, text: m.text, from: m.from, replyTo: m.replyTo });
+      const r = await sendEmail({ interno: true, to: m.to, subject: m.subject, html: m.html, text: m.text, from: m.from, replyTo: m.replyTo });
       if (r.error) return { ok: false, erro: r.error };
       if (r.demo && !r.captured && emProducao()) return { ok: false, erro: "RESEND_API_KEY não configurada." };
       return { ok: true };

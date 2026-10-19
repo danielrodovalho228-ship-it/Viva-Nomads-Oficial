@@ -2,7 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/notifications/email";
-import { brandedNotification, notificationText } from "@/lib/notifications/templates";
+import { emailExclusaoConta } from "@/lib/notifications/montar-email";
 import { SITE_URL } from "@/lib/site";
 import { isValidEmail } from "@/lib/auth-errors";
 import { headers } from "next/headers";
@@ -128,21 +128,15 @@ export async function solicitarExclusaoConta(email: string): Promise<{ ok: boole
     if (uid) {
       const token = criarTokenExclusao({ j: pedido.id as string, u: uid as string, e }, secret);
       const url = `${SITE_URL}/excluir-conta/confirmar?token=${encodeURIComponent(token)}`;
-      const title = "Confirme a exclusão da sua conta";
-      const intro =
-        "Recebemos um pedido para excluir sua conta no Viva Nomads. Se foi você, confirme " +
-        "no botão abaixo. O link vale por 30 minutos e só pode ser usado uma vez. Se não " +
-        "foi você, ignore este e-mail — nada será apagado.";
+      const m = emailExclusaoConta(SITE_URL, { url });
       await sendEmail({
         to: e,
-        subject: title,
-        html: brandedNotification({
-          title,
-          intro,
-          cta: { label: "Confirmar exclusão da conta", url },
-        }),
-        text: notificationText({ title, intro, cta: { label: "Confirmar exclusão", url } }),
+        subject: m.assunto,
+        html: m.html,
+        // O texto puro nunca leva link com token: a confirmação é só pelo botão do e-mail.
+        text: m.text,
         evento: "exclusao_conta",
+        imagem: m.imagem,
       }).catch(() => {});
     }
   } catch {

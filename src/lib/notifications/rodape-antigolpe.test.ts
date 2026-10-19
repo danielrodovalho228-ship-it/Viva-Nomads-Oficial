@@ -17,6 +17,9 @@ test("o layout-mãe dos e-mails (todos os modelos) usa o rodapé antigolpe", () 
   const fonte = readFileSync(new URL("./modelo-email.ts", import.meta.url), "utf8");
   const layout = fonte.slice(fonte.indexOf("export function layoutEmail("), fonte.indexOf("export function rodapeTexto("));
   assert.match(layout, /rodapeAntigolpeHtml\(site\)/);
+  // Todos os corpos (notificação, botão, código) saem do layout-mãe; templates.ts só põe o SITE_URL.
+  const corpos = readFileSync(new URL("./corpo-email.ts", import.meta.url), "utf8");
+  assert.equal((corpos.match(/return layoutEmail\(/g) ?? []).length, 3);
   const templates = readFileSync(new URL("./templates.ts", import.meta.url), "utf8");
-  assert.match(templates, /layoutEmail\(inner, \{ siteUrl: SITE_URL/);
+  assert.match(templates, /corpoNotificacao\(SITE_URL, o\)/);
 });

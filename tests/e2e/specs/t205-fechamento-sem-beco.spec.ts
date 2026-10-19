@@ -204,7 +204,7 @@ test.describe("T205 — fechamento: 'Gerar contrato' sem beco, dos dois lados at
       await expect(pi.getByTestId("contrato-inquilino-estado").first()).toHaveText("Aguardando assinatura · falta você e o proprietário", { timeout: 20_000 });
     }
     await pi.context().close();
-    await expect.poll(() => assuntosDaCaixa(ids.inq!), { timeout: 20_000 }).toContain("Seu contrato está pronto para assinar");
+    await expect.poll(() => assuntosDaCaixa(ids.inq!), { timeout: 20_000 }).toContain("Seu contrato está pronto para assinar · Viva Nomads");
   });
 
   test("4. as duas assinaturas pela tela (código na caixa de teste) → assinado dos dois lados; e-mail para os dois", async ({ browser }) => {
@@ -244,7 +244,7 @@ test.describe("T205 — fechamento: 'Gerar contrato' sem beco, dos dois lados at
     await pi2.context().close();
 
     for (const id of [ids.inq!, ids.dono!]) {
-      await expect.poll(() => assuntosDaCaixa(id), { timeout: 20_000 }).toContain("As duas partes assinaram o contrato");
+      await expect.poll(() => assuntosDaCaixa(id), { timeout: 20_000 }).toContain("Contrato assinado pelas duas partes · Viva Nomads");
     }
   });
 });

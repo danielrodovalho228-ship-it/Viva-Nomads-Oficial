@@ -122,7 +122,7 @@ test.describe("T220 — recibo, rótulo do bloco, nomes de quem assinou e 'Li e 
     expect(doc!.enviado_em).not.toBeNull();
     ids.doc = doc!.id as string;
     // E-mail nas duas caixas de teste, com o PDF anexo e o link de verificação.
-    const novos = (await lerSaida()).slice(saidaAntes).filter((l) => String(l.assunto ?? "").includes(String(doc!.numero)));
+    const novos = (await lerSaida()).slice(saidaAntes).filter((l) => String(l.corpo ?? "").includes(String(doc!.numero))); // o número vai no corpo, nunca no assunto
     for (const email of [dono.email, inq.email]) {
       const m = novos.find((l) => l.para === email);
       expect(m, `e-mail do recibo para ${email}`).toBeTruthy();
