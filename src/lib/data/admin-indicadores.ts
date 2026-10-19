@@ -1,6 +1,13 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { ContratoParaAgregado, PedidoParaMetrica } from "@/lib/admin/indicadores";
+import { chaveCidade } from "@/lib/cidades";
+import {
+  agregarContratos,
+  resolvidosAtendimento,
+  respostaPedidos,
+  type ContratoParaAgregado,
+  type PedidoParaMetrica,
+} from "@/lib/admin/indicadores";
 
 /*
   Leituras do admin "uma fonte só" (Prompt 29). Cada função aqui é a ÚNICA origem do seu número: a home, a página
@@ -43,7 +50,8 @@ export interface ContratoLinhaAdmin extends ContratoParaAgregado {
  * Contratos (reais) criados no período — a mesma lista para o Financeiro, a home e /admin/contratos.
  * Sem período: todos.
  */
-export async function contratosReais(admin: Admin, periodo?: { ini: string; fim: string }): Promise<ContratoLinhaAdmin[]> {
+export async function contratosReais(admin: Admin, periodo?: { ini: string; fim: string }, cidade?: string | null): Promise<ContratoLinhaAdmin[]> {
+  const k = cidade ? chaveCidade(cidade) : null;
   let q = admin
     .from("contratos")
     .select("id, created_at, status, property_id, tenant_id, aluguel_mensal, prazo_total_dias, comissao_valor, comissao_percent, assinado_proprietario_em, assinado_inquilino_em, properties!inner(owner_id, title, city)")
@@ -66,6 +74,7 @@ export async function contratosReais(admin: Admin, periodo?: { ini: string; fim:
     properties: { owner_id: string; title: string | null; city: string | null };
   }[])
     .filter((c) => !teste.has(c.tenant_id) && !teste.has(c.properties.owner_id) && !MARCA_TESTE.test(c.properties.title ?? ""))
+    .filter((c) => !k || chaveCidade(c.properties.city) === k)
     .map((c) => ({
       id: c.id,
       criadoEm: c.created_at,
@@ -85,17 +94,24 @@ export async function contratosReais(admin: Admin, periodo?: { ini: string; fim:
 }
 
 /** Pedidos de moradia (de contas reais) criados no período, com a 1ª resposta (contato ou proposta). */
-export async function pedidosParaMetrica(admin: Admin, periodo: { ini: string; fim: string }): Promise<PedidoParaMetrica[]> {
+export async function pedidosParaMetrica(
+  admin: Admin,
+  periodo: { ini: string; fim: string },
+  cidade?: string | null
+): Promise<(PedidoParaMetrica & { id: string })[]> {
+  const k = cidade ? chaveCidade(cidade) : null;
   const [{ data: pedidos }, teste] = await Promise.all([
-    admin.from("pedidos_moradia").select("id, inquilino_id, criado_em").gte("criado_em", periodo.ini).lt("criado_em", periodo.fim).limit(5000),
+    admin.from("pedidos_moradia").select("id, inquilino_id, criado_em, cidade").gte("criado_em", periodo.ini).lt("criado_em", periodo.fim).limit(5000),
     idsContasTeste(admin),
   ]);
-  const reais = ((pedidos ?? []) as { id: string; inquilino_id: string; criado_em: string }[]).filter((p) => !teste.has(p.inquilino_id));
+  const reais = ((pedidos ?? []) as { id: string; inquilino_id: string; criado_em: string; cidade: string | null }[]).filter(
+    (p) => !teste.has(p.inquilino_id) && (!k || chaveCidade(p.cidade) === k)
+  );
   if (!reais.length) return [];
   const { data: resp } = await admin.from("respostas_pedido").select("pedido_id, criado_em").in("pedido_id", reais.map((p) => p.id)).order("criado_em", { ascending: true });
   const primeira = new Map<string, string>();
   for (const r of (resp ?? []) as { pedido_id: string; criado_em: string }[]) if (!primeira.has(r.pedido_id)) primeira.set(r.pedido_id, r.criado_em);
-  return reais.map((p) => ({ criadoEm: p.criado_em, primeiraRespostaEm: primeira.get(p.id) ?? null }));
+  return reais.map((p) => ({ id: p.id, criadoEm: p.criado_em, primeiraRespostaEm: primeira.get(p.id) ?? null }));
 }
 
 /** Fila de documentos AGORA: documentos de imóvel em revisão (um por imóvel+arquivo) + matrículas em revisão. */
@@ -136,7 +152,8 @@ export async function chamadosAbertosAgora(admin: Admin): Promise<number> {
 }
 
 /** Manutenção: solicitações abertas no período (imóveis reais, sem simulação) — a lista de /admin/solicitacoes. */
-export async function solicitacoesManutencao(admin: Admin, periodo: { ini: string; fim: string }) {
+export async function solicitacoesManutencao(admin: Admin, periodo: { ini: string; fim: string }, cidade?: string | null) {
+  const k = cidade ? chaveCidade(cidade) : null;
   const [{ data }, teste] = await Promise.all([
     admin
       .from("service_orders")
@@ -157,5 +174,57 @@ export async function solicitacoesManutencao(admin: Admin, periodo: { ini: strin
     resolved_at: string | null;
     simulacao: boolean | null;
     properties: { owner_id: string; title: string | null; city: string | null };
-  }[]).filter((s) => !s.simulacao && !teste.has(s.properties.owner_id) && !MARCA_TESTE.test(s.properties.title ?? ""));
+  }[]).filter(
+    (s) => !s.simulacao && !teste.has(s.properties.owner_id) && !MARCA_TESTE.test(s.properties.title ?? "") && (!k || chaveCidade(s.properties.city) === k)
+  );
+}
+
+/** Atendimento na janela móvel de N dias: a MESMA função das Métricas de /admin/atendimento (admin_atendimento_metricas). */
+export async function metricasAtendimentoJanela(admin: Admin, dias: number): Promise<Record<string, unknown> | null> {
+  const { data, error } = await admin.rpc("admin_atendimento_metricas", { p_dias: dias });
+  if (error) return null;
+  return data as Record<string, unknown>;
+}
+
+/**
+ * Os números da home que saem das funções "uma fonte só" (chaves x_*), para o período e a cidade: contratos e taxa,
+ * pedidos com resposta e solicitações de manutenção. Cada página da área chama as mesmas funções.
+ */
+export async function extrasDoPeriodo(admin: Admin, inicio: string, fim: string, cidade: string | null): Promise<Record<string, number | null>> {
+  const periodo = intervaloBRT(inicio, fim);
+  const [contratos, pedidos, solicitacoes] = await Promise.all([
+    contratosReais(admin, periodo, cidade),
+    pedidosParaMetrica(admin, periodo, cidade),
+    solicitacoesManutencao(admin, periodo, cidade),
+  ]);
+  const ag = agregarContratos(contratos);
+  const pr = respostaPedidos(pedidos);
+  return {
+    x_contratos: ag.contratos,
+    x_valor_total: ag.valorTotal,
+    x_taxa: ag.taxa,
+    x_take_rate: ag.takeRate,
+    x_valor_mensal: ag.valorMensalSoma,
+    x_regra_anterior: ag.regraAnterior,
+    x_pedidos: pr.total,
+    x_pedidos_com_resposta: pr.comResposta,
+    x_pedidos_taxa: pr.taxa,
+    x_pedidos_mediana_h: pr.medianaHoras,
+    x_solicitacoes: solicitacoes.length,
+    x_solicitacoes_resolvidas: solicitacoes.filter((s) => s.resolved_at).length,
+  };
+}
+
+/** Atendimento para a home (janela de N dias até agora + a fila de agora). */
+export async function extrasAtendimento(admin: Admin, dias: number): Promise<Record<string, number | null>> {
+  const [m, abertos] = await Promise.all([metricasAtendimentoJanela(admin, dias), chamadosAbertosAgora(admin)]);
+  const n = (v: unknown) => (v === null || v === undefined || !Number.isFinite(Number(v)) ? null : Number(v));
+  return {
+    x_atd_abertos_agora: abertos,
+    x_atd_total: m ? n(m.total) : null,
+    x_atd_resolvidos: m
+      ? resolvidosAtendimento({ total: n(m.total) ?? 0, resolvidos: n(m.resolvidos) ?? 0, encerradosSemResolucao: n(m.encerrados_sem_resolucao) ?? 0 })
+      : null,
+    x_atd_1a_resposta_min: m ? n(m.primeira_resposta_media_min) : null,
+  };
 }

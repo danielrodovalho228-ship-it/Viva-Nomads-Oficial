@@ -5,6 +5,8 @@ import { PushTeste } from "@/components/admin/push-teste";
 import { PainelIaCadastro } from "@/components/admin/painel-ia-cadastro";
 import { VisaoGeralClient } from "./visao-geral-client";
 import { AtalhosAdmin } from "./atalhos-admin";
+import { SAMPLE_PROPERTIES } from "@/lib/properties";
+import { showDemoProperties } from "@/lib/data/properties";
 
 /**
  * Visão geral do /admin (PR B): período (7/30/90 dias, ano, personalizado)
@@ -48,6 +50,7 @@ export default async function AdminPage({
         periodo={periodo}
         cidade={cidade}
         cidades={cidades}
+        demonstracao={{ total: SAMPLE_PROPERTIES.length, publicos: showDemoProperties() }}
       />
       <AtalhosAdmin />
       <div className="mt-6">

@@ -1,6 +1,7 @@
 "use server";
 
 import { getTelefoneEstado } from "@/lib/data/telefone-actions";
+import { cadastroCompleto, faltaNoCadastro } from "@/lib/perfil/cadastro-completo";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -231,6 +232,8 @@ export interface MeuPerfilPublico {
   anuncia: boolean;
   /** Celular verificado (prompt 7). undefined = verificação por SMS indisponível: o item não entra na barra. */
   telefone?: boolean;
+  /** "Cadastro completo" (Prompt 29): a mesma função que o admin vê na lista de usuários. */
+  cadastro: { completo: boolean; falta: string };
 }
 
 export async function getMeuPerfilPublico(): Promise<MeuPerfilPublico | null> {
@@ -240,10 +243,13 @@ export async function getMeuPerfilPublico(): Promise<MeuPerfilPublico | null> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
-  const [{ data }, { count }, fone] = await Promise.all([
-    supabase.from("profiles").select("bio, idiomas, cidade, avatar_url, professional_category, motivo_estadia").eq("id", user.id).maybeSingle(),
+  const adminDoc = createAdminClient();
+  const [{ data }, { count }, fone, doc] = await Promise.all([
+    supabase.from("profiles").select("bio, idiomas, cidade, avatar_url, professional_category, motivo_estadia, full_name").eq("id", user.id).maybeSingle(),
     supabase.from("properties").select("id", { count: "exact", head: true }).eq("owner_id", user.id),
     getTelefoneEstado().catch(() => null),
+    // Documento: lido pelo servidor (cliente de serviço); só o "tem/não tem" sai daqui.
+    adminDoc ? lerDocumento(adminDoc, user.id).catch(() => null) : Promise.resolve(null),
   ]);
   return {
     bio: (data?.bio as string | null) ?? "",
@@ -254,6 +260,16 @@ export async function getMeuPerfilPublico(): Promise<MeuPerfilPublico | null> {
     motivo: (data?.motivo_estadia as string | null) ?? null,
     anuncia: (count ?? 0) > 0,
     telefone: fone?.disponivel ? fone.verificado : undefined,
+    cadastro: (() => {
+      const d = {
+        nome: (data?.full_name as string | null) ?? null,
+        emailConfirmado: !!user.email_confirmed_at,
+        cpf: doc?.cpf ?? null,
+        cnpj: doc?.cnpj ?? null,
+        foto: !!data?.avatar_url,
+      };
+      return { completo: cadastroCompleto(d), falta: faltaNoCadastro(d) };
+    })(),
   };
 }
 

@@ -61,6 +61,10 @@ export function PerfilPublicoForm() {
         <span className="text-sm font-semibold text-forest" data-testid="perfil-progresso">{prog.pct}% completo</span>
       </div>
       <p className="mt-1 text-sm text-muted">Opcional. Perfis completos passam mais confiança a quem vai alugar com você ou para você.</p>
+      <p className="mt-2 text-sm text-ink" data-testid="conta-cadastro-completo" data-completo={p.cadastro.completo ? "sim" : "nao"}>
+        Cadastro completo: <strong>{p.cadastro.completo ? "sim" : "não"}</strong>
+        {!p.cadastro.completo && p.cadastro.falta && <span className="text-muted"> · falta: {p.cadastro.falta}</span>}
+      </p>
       <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface-2" aria-hidden>
         <div className="h-full rounded-full bg-forest transition-all" style={{ width: `${prog.pct}%` }} />
       </div>

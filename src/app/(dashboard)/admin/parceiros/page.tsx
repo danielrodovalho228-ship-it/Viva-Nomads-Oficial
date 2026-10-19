@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SeloTeste } from "@/components/admin/selo-teste";
 import { Camera, Handshake, Inbox, ClipboardList } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -234,7 +235,7 @@ export default async function AdminParceirosPage({
                   <span className="min-w-0">
                     <span className="font-medium text-ink">{a.cidade}/{a.uf}</span>
                     <span className="text-muted"> · {q?.papel ?? "—"} · {q?.nome ?? "Conta removida"}</span>
-                    {q?.teste && <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800" data-testid="selo-teste">TESTE</span>}
+                    {q?.teste && <SeloTeste />}
                   </span>
                   <span className="text-xs text-muted">{dataHoraBRT(a.criado_em, { tabela: true })}</span>
                 </li>
