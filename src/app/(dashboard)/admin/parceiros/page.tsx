@@ -1,6 +1,10 @@
 import Link from "next/link";
+import { SeloTeste } from "@/components/admin/selo-teste";
 import { Camera, Handshake, Inbox, ClipboardList } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { nomeCurto } from "@/lib/perfil/perfil-publico";
+import { dataBRT, dataHoraBRT } from "@/lib/datas-brasilia";
 import { PageTitle, Panel, StatCard, EmptyState } from "@/components/dashboard/primitives";
 import { TIPOS_PARCEIRO } from "@/lib/parceiros/interesse";
 import { StatusInteresse } from "./status-interesse";
@@ -16,7 +20,8 @@ const FILTROS = [
 ] as const;
 
 const rotuloTipo = (t: string) => TIPOS_PARCEIRO.find((x) => x.valor === t)?.rotulo.split(" (")[0] ?? t;
-const dataBR = (iso: string) => new Date(iso).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
+const dataBR = (iso: string) => dataBRT(iso);
+const ROTULO_PAPEL: Record<string, string> = { owner: "Proprietário", tenant: "Inquilino", admin: "Admin" };
 
 /**
  * Admin → Parceiros: central da rede de parceiros (números, interessados por tipo e status, atalho para fotógrafos).
@@ -55,10 +60,20 @@ export default async function AdminParceirosPage({
     supabase.from("fotografos").select("id", { count: "exact", head: true }).eq("aprovado", false),
     supabase.from("fotografo_pedidos").select("id", { count: "exact", head: true }).in("status", ["enviado", "aceito"]),
     // QA do Muse (0162): quem pediu aviso de fotógrafo parceiro, por cidade — onde recrutar primeiro.
-    supabase.from("interesse_fotografo_cidade").select("uf, chave, cidade").is("avisado_em", null).limit(2000),
+    supabase.from("interesse_fotografo_cidade").select("user_id, uf, chave, cidade, criado_em").is("avisado_em", null).order("criado_em", { ascending: false }).limit(2000),
   ]);
+  // Prompt 29, item 3: cada pedido de aviso com cidade, categoria (papel), data e conta (nome curto + selo TESTE).
+  const avisosLinhas = (avisos.data ?? []) as { user_id: string; uf: string; chave: string; cidade: string; criado_em: string }[];
+  const admin = createAdminClient();
+  const quem = new Map<string, { nome: string; papel: string; teste: boolean }>();
+  if (admin && avisosLinhas.length) {
+    const { data: perfis } = await admin.from("profiles").select("id, full_name, role, is_teste").in("id", [...new Set(avisosLinhas.map((a) => a.user_id))]);
+    for (const p of (perfis ?? []) as { id: string; full_name: string | null; role: string | null; is_teste: boolean | null }[]) {
+      quem.set(p.id, { nome: nomeCurto(p.full_name) ?? "Sem nome", papel: ROTULO_PAPEL[p.role ?? ""] ?? "—", teste: !!p.is_teste });
+    }
+  }
   const avisosPorCidade = Object.values(
-    ((avisos.data ?? []) as { uf: string; chave: string; cidade: string }[]).reduce<Record<string, { cidade: string; uf: string; total: number }>>((acc, a) => {
+    avisosLinhas.reduce<Record<string, { cidade: string; uf: string; total: number }>>((acc, a) => {
       const k = `${a.uf}|${a.chave}`;
       acc[k] = { cidade: a.cidade, uf: a.uf, total: (acc[k]?.total ?? 0) + 1 };
       return acc;
@@ -66,6 +81,7 @@ export default async function AdminParceirosPage({
   ).sort((a, b) => b.total - a.total);
 
   const erroLeitura = Boolean(lista.error || todos.error);
+  const erroAvisos = Boolean(avisos.error);
   const interesses = lista.data ?? [];
   const base = todos.data ?? [];
   const novos = base.filter((r) => r.status === "novo").length;
@@ -195,9 +211,12 @@ export default async function AdminParceirosPage({
         </Panel>
       </div>
       <Panel title="Pedidos de aviso de fotógrafo por cidade" className="mt-6">
-        {avisosPorCidade.length === 0 ? (
+        {erroAvisos ? (
+          <p className="text-sm text-red-700" role="alert">Não foi possível ler os pedidos de aviso agora.</p>
+        ) : avisosPorCidade.length === 0 ? (
           <p className="text-sm text-muted">Ninguém pediu aviso ainda.</p>
         ) : (
+          <>
           <ul className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2" data-testid="avisos-fotografo-cidade">
             {avisosPorCidade.map((a) => (
               <li key={`${a.uf}-${a.cidade}`} className="flex justify-between rounded-lg bg-surface-2 px-3 py-2">
@@ -208,6 +227,22 @@ export default async function AdminParceirosPage({
               </li>
             ))}
           </ul>
+          <ul className="mt-4 divide-y divide-line text-sm" data-testid="avisos-fotografo-lista">
+            {avisosLinhas.map((a) => {
+              const q = quem.get(a.user_id);
+              return (
+                <li key={`${a.user_id}-${a.uf}-${a.chave}`} className="flex flex-wrap items-center justify-between gap-2 py-2" data-testid="aviso-fotografo-linha">
+                  <span className="min-w-0">
+                    <span className="font-medium text-ink">{a.cidade}/{a.uf}</span>
+                    <span className="text-muted"> · {q?.papel ?? "—"} · {q?.nome ?? "Conta removida"}</span>
+                    {q?.teste && <SeloTeste />}
+                  </span>
+                  <span className="text-xs text-muted">{dataHoraBRT(a.criado_em, { tabela: true })}</span>
+                </li>
+              );
+            })}
+          </ul>
+          </>
         )}
       </Panel>
     </>

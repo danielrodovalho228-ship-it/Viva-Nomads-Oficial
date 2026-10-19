@@ -17,7 +17,7 @@ test.describe("T15 — Admin real", () => {
       await expect(corpo).not.toContainText(falso);
     }
     // Cartões de contagem presentes (o valor vem do banco; "—" só sem conexão).
-    for (const rotulo of ["Usuários", "Imóveis ativos"]) {
+    for (const rotulo of ["Usuários", "Imóveis reais publicados"]) {
       await expect(corpo.getByText(rotulo, { exact: true }).first()).toBeVisible();
     }
     // A fila de checklists (sempre vazia: a qualificação nunca fica pendente)
@@ -44,8 +44,8 @@ test.describe("T15 — Admin real", () => {
       }
       await expect(corpo.getByRole("link", { name: { "7": "7 dias", "30": "30 dias", "90": "90 dias", ano: "Ano" }[periodo] })).toHaveAttribute("aria-current", "true");
     }
-    // O "i" abre a fórmula; o aluguel avisa que não passa pela plataforma.
-    await page.getByRole("button", { name: "Como é calculado: Aluguel contratado" }).click();
+    // O "i" abre a fórmula; o valor total avisa que não passa pela plataforma (Prompt 29).
+    await page.getByRole("button", { name: "Como é calculado: Valor total dos contratos" }).click();
     await expect(page.locator("main")).toContainText("não passa pela plataforma");
     // Período inválido cai em 30 dias, sem erro.
     await page.goto("/admin?periodo=custom&de=2026-02-31&ate=lixo", { waitUntil: "networkidle" });

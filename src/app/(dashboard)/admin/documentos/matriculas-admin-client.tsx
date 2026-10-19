@@ -1,5 +1,6 @@
 "use client";
 
+import { dataHoraBRT } from "@/lib/datas-brasilia";
 import { useState } from "react";
 import { Check, ExternalLink, FileText, X } from "lucide-react";
 import { Panel, EmptyState } from "@/components/dashboard/primitives";
@@ -90,7 +91,7 @@ function MatriculaCard({ m, onDecidido }: { m: MatriculaNaFila; onDecidido: () =
             </p>
             <p className="text-xs text-muted">
               {m.resultadoRotulo}
-              {m.motivoRotulo && ` · ${m.motivoRotulo}`} · enviada em {new Date(m.criadaEm).toLocaleDateString("pt-BR")}
+              {m.motivoRotulo && ` · ${m.motivoRotulo}`} · enviada em {dataHoraBRT(m.criadaEm)}
             </p>
             {m.arquivoUrl &&
               (m.arquivoTipo === "imagem" ? (

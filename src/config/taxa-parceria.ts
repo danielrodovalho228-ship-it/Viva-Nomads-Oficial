@@ -12,6 +12,13 @@ export const FAIXAS_TAXA_PARCERIA: readonly FaixaTaxaParceria[] = [
 ];
 
 export const REGRA_TAXA_PARCERIA =
-  "Paga só quando você aceita o pedido; o serviço é pago direto pelo proprietário a você; sem mensalidade e sem exclusividade.";
+  "Paga à Viva Nomads só quando você aceita o pedido; o serviço é pago direto pelo proprietário a você, e a Viva não recebe esse valor; sem mensalidade e sem exclusividade.";
+
+/**
+ * Quem paga e quem recebe (Prompt 29, item 12) — o texto do /admin/fotografos. Não muda a regra (a migração dos
+ * fotógrafos para o modelo percentual aguarda decisão do Daniel).
+ */
+export const TEXTO_QUEM_RECEBE_TAXA_PARCERIA =
+  "Taxa de parceria (R$ 40/60/80, por faixa de fotos): paga pelo fotógrafo à Viva Nomads ao aceitar o pedido. O serviço é pago direto do proprietário ao fotógrafo; a Viva não recebe esse valor.";
 
 export const reais = (valor: number) => `R$ ${valor}`;

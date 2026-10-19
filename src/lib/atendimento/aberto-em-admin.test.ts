@@ -10,11 +10,12 @@ const ler = (rel: string) => readFileSync(new URL(rel, import.meta.url), "utf8")
 
 test("lista de chamados do admin mostra 'Aberto em' ao lado do status", () => {
   const src = ler("../../app/(dashboard)/admin/atendimento/atendimento-client.tsx");
-  assert.match(src, /abertoEmBR\(c\.criado_em\)/);
+  // Prompt 29, item 11: no admin, pelo formatador único de Brasília (BRT na lista).
+  assert.match(src, /Aberto em \{dataHoraBRT\(c\.criado_em, \{ tabela: true \}\)\}/);
   assert.match(src, /data-testid="chamado-aberto-em"/);
 });
 
 test("cabeçalho do detalhe do admin mostra 'Aberto em' junto do status", () => {
   const src = ler("../../app/(dashboard)/admin/atendimento/[id]/chamado-client.tsx");
-  assert.match(src, /subtitle=\{`[^`]*STATUS\[c\.status\][^`]*abertoEmBR\(c\.criado_em\)/);
+  assert.match(src, /subtitle=\{`[^`]*STATUS\[c\.status\][^`]*Aberto em \$\{dataHoraBRT\(c\.criado_em\)\}/);
 });

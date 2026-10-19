@@ -130,7 +130,7 @@ interface PropertyRow {
   assim a busca/home nunca aparecem vazias. Para esconder os demos quando houver
   catálogo real suficiente, defina NEXT_PUBLIC_SHOW_DEMO_PROPERTIES=false na Vercel.
 */
-function showDemoProperties(): boolean {
+export function showDemoProperties(): boolean {
   return process.env.NEXT_PUBLIC_SHOW_DEMO_PROPERTIES !== "false";
 }
 

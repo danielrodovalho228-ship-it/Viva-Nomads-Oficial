@@ -12,6 +12,7 @@ import {
   Download,
   Home,
   Info,
+  LifeBuoy,
   Megaphone,
   Minus,
   Star,
@@ -29,16 +30,20 @@ import {
   fmtInteiro,
   fmtPct,
   fmtReais,
+  diasAteHoje,
   formatar,
   funil,
   mrr,
   num,
   rotuloPeriodo,
   variacao,
+  type FiltroHome,
   type Indicador,
   type Metricas,
   type Periodo,
 } from "@/lib/admin/visao-geral";
+import { JANELA_AGORA, janelaDias, textoFilaDocumentos, FORMULA_FILA_DOCUMENTOS } from "@/lib/admin/indicadores";
+import { dataHoraBRT, horaBRT, ETIQUETA_BRASILIA } from "@/lib/datas-brasilia";
 import type { VisaoGeral } from "@/lib/data/admin-visao-geral";
 
 export function VisaoGeralClient({
@@ -47,13 +52,19 @@ export function VisaoGeralClient({
   periodo,
   cidade,
   cidades,
+  demonstracao,
 }: {
   dados: VisaoGeral | null;
   aviso: string | null;
   periodo: Periodo;
   cidade: string | null;
   cidades: string[];
+  /** Anúncios de exemplo: quantos existem e se aparecem na busca pública agora. */
+  demonstracao: { total: number; publicos: boolean };
 }) {
+  const filtro: FiltroHome = { inicio: periodo.inicio, fim: periodo.fim, cidade };
+  // Os cartões "Agora" que têm cidade levam o mesmo filtro para a lista (Prompt 29: número = lista).
+  const comCidade = (href: string) => (cidade ? `${href}&cidade=${encodeURIComponent(cidade)}` : href);
   const atual: Metricas = dados?.atual ?? {};
   const anterior: Metricas = dados?.anterior ?? {};
   const agora: Metricas = dados?.agora ?? {};
@@ -79,18 +90,26 @@ export function VisaoGeralClient({
         <p className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{aviso}</p>
       )}
 
-      <PrecisaAgora precisa={dados?.precisa ?? null} />
+      <PrecisaAgora precisa={dados?.precisa ?? null} filaDocs={dados?.filaDocs ?? null} />
 
       <section aria-label="Agora" className="mb-6">
         <h2 className="mb-3 font-title text-lg font-bold text-ink">Agora</h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4" data-testid="home-agora">
           <StatCard label="Usuários" value={fmtInteiro(num(agora.usuarios))} icon={Users} href={hrefUsuarios({})} />
-          <StatCard label="Imóveis ativos" value={fmtInteiro(num(agora.imoveis_ativos))} icon={Home} />
-          <StatCard label="Rascunhos" value={fmtInteiro(num(agora.rascunhos))} icon={Home} />
-          <StatCard label="Donos com anúncio" value={fmtInteiro(num(agora.proprietarios_com_anuncio))} icon={Building2} />
-          <StatCard label="Pedidos ativos" value={fmtInteiro(num(agora.pedidos_ativos))} icon={Megaphone} href="/admin/pedidos" />
-          <StatCard label="MRR" value={fmtReais(receita.valor)} icon={CreditCard} />
+          <StatCard label="Imóveis reais publicados" value={fmtInteiro(num(agora.imoveis_ativos))} icon={Home} href={comCidade("/admin/imoveis?tipo=real&status=active")} />
+          <StatCard
+            label={`Demonstração (${demonstracao.publicos ? "aparecem na busca" : "escondidos"})`}
+            value={demonstracao.total}
+            icon={Home}
+            href="/admin/imoveis?tipo=demonstracao"
+          />
+          <StatCard label="Anúncios de teste (fora da busca)" value={fmtInteiro(num(agora.x_imoveis_teste))} icon={Home} href={comCidade("/admin/imoveis?tipo=teste")} />
+          <StatCard label="Rascunhos" value={fmtInteiro(num(agora.rascunhos))} icon={Home} href={comCidade("/admin/imoveis?tipo=real&status=draft")} />
+          <StatCard label="Donos com anúncio" value={fmtInteiro(num(agora.proprietarios_com_anuncio))} icon={Building2} href={hrefUsuarios({ comAnuncio: true })} />
+          <StatCard label="Pedidos ativos" value={fmtInteiro(num(agora.pedidos_ativos))} icon={Megaphone} href={comCidade("/admin/pedidos?status=ativo")} />
+          <StatCard label="MRR" value={fmtReais(receita.valor)} icon={CreditCard} href="/admin/financeiro" />
           <StatCard label="Fundadores" value={fmtInteiro(num(agora.fundadores))} icon={Star} href={hrefUsuarios({ fundador: true })} />
+          <StatCard label="Atendimento: chamados abertos" value={fmtInteiro(num(atual.x_atd_abertos_agora))} icon={LifeBuoy} href="/admin/atendimento?aba=fila" />
         </div>
         <p className="mt-2 text-xs text-muted">
           MRR = assinaturas ativas × preço mensal do plano ({fmtInteiro(receita.ativas)} ativas
@@ -120,7 +139,7 @@ export function VisaoGeralClient({
           <Panel key={b.id} title={b.titulo}>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {b.indicadores.map((ind) => (
-                <CardIndicador key={ind.chave} ind={ind} atual={atual} anterior={anterior} serie={dados?.serie ?? []} />
+                <CardIndicador key={ind.chave} ind={ind} atual={atual} anterior={anterior} serie={dados?.serie ?? []} filtro={filtro} />
               ))}
             </div>
           </Panel>
@@ -133,9 +152,7 @@ export function VisaoGeralClient({
 
       {dados && (
         <p className="mt-6 text-xs text-muted">
-          Atualizado às{" "}
-          {new Date(dados.geradoEm).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" })}
-          . Os números ficam guardados por até 5 minutos.
+          Atualizado às {horaBRT(dados.geradoEm)} ({ETIQUETA_BRASILIA}). Os números ficam guardados por até 5 minutos.
         </p>
       )}
     </>
@@ -148,11 +165,13 @@ function CardIndicador({
   atual,
   anterior,
   serie,
+  filtro,
 }: {
   ind: Indicador;
   atual: Metricas;
   anterior: Metricas;
   serie: Record<string, unknown>[];
+  filtro: FiltroHome;
 }) {
   const [aberto, setAberto] = useState(false);
   const a = ind.calc(atual);
@@ -166,6 +185,8 @@ function CardIndicador({
     : [];
   const Icone = vari.direcao === "sobe" ? TrendingUp : vari.direcao === "desce" ? TrendingDown : Minus;
   const idFormula = `formula-${ind.chave}`;
+  const janela = ind.janela === "agora" ? JANELA_AGORA : ind.janela === "dias" ? janelaDias(diasAteHoje(filtro)) : rotuloPeriodo(filtro.inicio, filtro.fim);
+  const href = ind.href?.(filtro) ?? null;
 
   return (
     <div className="min-w-0 rounded-xl border border-line p-3" data-indicador={ind.chave}>
@@ -182,8 +203,18 @@ function CardIndicador({
           <Info className="h-4 w-4" />
         </button>
       </div>
-      <p className="mt-1 font-title text-2xl font-bold text-ink" data-valor>
-        {formatar(a, ind.formato)}
+      {href ? (
+        <Link href={href} className="mt-1 block font-title text-2xl font-bold text-ink underline-offset-4 hover:text-forest hover:underline" data-valor data-href={href}>
+          {formatar(a, ind.formato)}
+        </Link>
+      ) : (
+        <p className="mt-1 font-title text-2xl font-bold text-ink" data-valor>
+          {formatar(a, ind.formato)}
+        </p>
+      )}
+      <p className="text-xs text-muted" data-janela>
+        {janela}
+        {!href && " · eventos anônimos, sem lista"}
       </p>
       {a === null && <p className="text-xs text-muted">sem dados no período</p>}
       <p
@@ -192,7 +223,9 @@ function CardIndicador({
           bom === null ? "text-muted" : bom ? "text-green-700" : "text-red-700"
         )}
       >
-        {vari.texto === "—" ? (
+        {ind.janela ? (
+          <span>janela própria: sem comparação</span>
+        ) : vari.texto === "—" ? (
           <span>sem comparação com o período anterior</span>
         ) : (
           <>
@@ -264,10 +297,18 @@ function FunilPeriodo({ m }: { m: Metricas }) {
 }
 
 // ── "Precisa de você agora" ──────────────────────────────────────────────────
-function PrecisaAgora({ precisa }: { precisa: VisaoGeral["precisa"] | null }) {
+function PrecisaAgora({ precisa, filaDocs }: { precisa: VisaoGeral["precisa"] | null; filaDocs: VisaoGeral["filaDocs"] }) {
   const itens = PRECISA.map((p) => {
     const d = precisa?.[p.chave] ?? null;
-    return { ...p, n: num(d?.n), horas: num(d?.horas_mais_antigo) };
+    // Documentos (item 9): a soma explicada e o mais antigo da fila inteira, no horário de Brasília.
+    const docs =
+      p.chave === "documentos_pendentes" && filaDocs
+        ? {
+            detalhe: `${textoFilaDocumentos(filaDocs)}. ${FORMULA_FILA_DOCUMENTOS}`,
+            maisAntigo: filaDocs.maisAntigoEm ? ` Mais antigo: ${dataHoraBRT(filaDocs.maisAntigoEm)}.` : "",
+          }
+        : null;
+    return { ...p, detalhe: docs?.detalhe ?? p.detalhe, maisAntigo: docs?.maisAntigo ?? null, n: num(d?.n), horas: num(d?.horas_mais_antigo) };
   });
   const pendentes = itens.filter((i) => (i.n ?? 0) > 0);
   return (
@@ -275,7 +316,7 @@ function PrecisaAgora({ precisa }: { precisa: VisaoGeral["precisa"] | null }) {
       {precisa && pendentes.length === 0 && <p className="mb-3 text-sm text-green-700">Nada pendente agora.</p>}
       <ul className="grid gap-2">
         {itens.map((i) => (
-          <li key={i.chave}>
+          <li key={i.chave} data-precisa={i.chave}>
             <ItemPrecisa
               href={i.href}
               className={cn(
@@ -288,7 +329,7 @@ function PrecisaAgora({ precisa }: { precisa: VisaoGeral["precisa"] | null }) {
                 <span className="block font-medium text-ink">{i.rotulo}</span>
                 <span className="block text-sm text-muted">
                   {i.detalhe}
-                  {(i.n ?? 0) > 0 && i.horas !== null ? ` Mais antigo: ${fmtHoras(i.horas)}.` : ""}
+                  {i.maisAntigo !== null ? i.maisAntigo : (i.n ?? 0) > 0 && i.horas !== null ? ` Mais antigo: há ${fmtHoras(i.horas)}.` : ""}
                 </span>
               </span>
               <span className="flex shrink-0 items-center gap-2 font-title text-lg font-bold text-forest">

@@ -1,11 +1,11 @@
 "use client";
 
+import { dataHoraBRT } from "@/lib/datas-brasilia";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { emitirDeNovo, emitirPendentes, reenviarEmail, type FalhaDocumento } from "@/lib/data/documentos-falhas-actions";
-import { dataHoraBrasilia } from "@/config/atendimento";
 
 /**
  * "Documentos com falha" (complemento da jornada de assinatura, 19/10): cada emissão que não saiu, com o motivo e
@@ -62,7 +62,7 @@ export function FalhasDocumentos({ falhas, pendentes }: { falhas: FalhaDocumento
                 </span>
                 <span className="block break-words text-xs text-muted">
                   <span data-testid="falha-motivo">{f.motivo}</span> · {f.tentativas} {f.tentativas === 1 ? "tentativa" : "tentativas"} · falhou em{" "}
-                  <span data-testid="falha-data">{dataHoraBrasilia(new Date(f.atualizadoEm))}</span>
+                  <span data-testid="falha-data">{dataHoraBRT(f.atualizadoEm)}</span>
                 </span>
               </span>
               {f.etapa === "envio" ? (

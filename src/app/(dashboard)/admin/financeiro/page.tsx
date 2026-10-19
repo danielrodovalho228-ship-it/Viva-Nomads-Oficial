@@ -3,6 +3,7 @@ import { resolverPeriodo } from "@/lib/admin/visao-geral";
 import { cidadesComAnuncio } from "@/lib/data/admin-visao-geral";
 import { getFinanceiro } from "@/lib/data/admin-financeiro";
 import { FinanceiroClient } from "./financeiro-client";
+import { adminDaPagina, contratosReais, intervaloBRT } from "@/lib/data/admin-indicadores";
 
 export const metadata = { title: "Financeiro — Admin" };
 
@@ -19,7 +20,13 @@ export default async function AdminFinanceiroPage({
   };
   const periodo = resolverPeriodo({ periodo: um("periodo"), de: um("de"), ate: um("ate") }, hojeBR());
   const cidade = (um("cidade") ?? "").trim().slice(0, 80) || null;
-  const [r, cidades] = await Promise.all([getFinanceiro(periodo.inicio, periodo.fim, cidade), cidadesComAnuncio()]);
+  const admin = await adminDaPagina();
+  // Prompt 29, item 6: valor total, taxa e take rate saem da MESMA lista de contratos da home e de /admin/contratos.
+  const [r, cidades, contratos] = await Promise.all([
+    getFinanceiro(periodo.inicio, periodo.fim, cidade),
+    cidadesComAnuncio(),
+    admin ? contratosReais(admin, intervaloBRT(periodo.inicio, periodo.fim), cidade).catch(() => null) : Promise.resolve(null),
+  ]);
   const aviso = r.ok
     ? null
     : {
@@ -37,6 +44,7 @@ export default async function AdminFinanceiroPage({
       periodo={periodo}
       cidade={cidade}
       cidades={cidades}
+      contratos={contratos}
     />
   );
 }

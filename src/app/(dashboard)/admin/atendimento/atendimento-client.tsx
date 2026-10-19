@@ -1,7 +1,7 @@
 "use client";
 
+import { dataHoraBRT } from "@/lib/datas-brasilia";
 import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
-import { abertoEmBR } from "@/lib/atendimento/data-br";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -11,6 +11,13 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { PRAZOS, estadoPrazo, type Prioridade } from "@/config/atendimento";
 import { PRECOS_USD } from "@/lib/atendimento/viva-custo";
+import {
+  fmtTempoMin,
+  resolvidosAtendimento,
+  FORMULA_1A_RESPOSTA_ATENDIMENTO,
+  FORMULA_CHAMADOS_ABERTOS,
+  FORMULA_RESOLVIDOS_ATENDIMENTO,
+} from "@/lib/admin/indicadores";
 import { FILAS, ORDEM_FILAS, filaDaCategoria } from "@/lib/atendimento/filas";
 import { apagarMacro, salvarMacro, testarViva, type ChamadoAdmin, type Macro, type ResultadoCenario } from "@/lib/data/atendimento-actions";
 
@@ -180,7 +187,7 @@ function Tabela({ itens, agora, vazio }: { itens: ChamadoAdmin[]; agora: Date; v
       {itens.map((c) => {
         const r = relogio(c, agora);
         return (
-          <li key={c.id} className="min-w-0">
+          <li key={c.id} className="min-w-0" data-testid="chamado-linha">
             <Link href={`/admin/atendimento/${c.id}`} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-xl border border-sage-200 bg-white px-4 py-3 hover:border-forest">
               <span className="min-w-0 flex-1 basis-56">
                 <span className="flex min-w-0 items-center gap-2">
@@ -192,7 +199,7 @@ function Tabela({ itens, agora, vazio }: { itens: ChamadoAdmin[]; agora: Date; v
                 <span className="mt-0.5 block text-xs text-muted">
                   {c.numero_publico} · {FILAS[filaDaCategoria(c.categoria)].rotulo} · {c.canal} · {STATUS[c.status] ?? c.status}
                   {c.visitante_email ? " · visitante" : ""}
-                  <span data-testid="chamado-aberto-em"> · {abertoEmBR(c.criado_em)}</span>
+                  <span data-testid="chamado-aberto-em"> · Aberto em {dataHoraBRT(c.criado_em, { tabela: true })}</span>
                 </span>
               </span>
               <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium", r.cor)}>
@@ -220,15 +227,22 @@ function num(v: unknown, suf = ""): string {
   return x === null ? "—" : `${x.toLocaleString("pt-BR")}${suf}`;
 }
 
+/** Resolvidos = (resolvidos + encerrados) ÷ chamados do período — a mesma função da home (Prompt 29, item 7). */
+function pctResolvidos(m: Record<string, unknown>): string {
+  const r = resolvidosAtendimento({ total: n(m.total) ?? 0, resolvidos: n(m.resolvidos) ?? 0, encerradosSemResolucao: n(m.encerrados_sem_resolucao) ?? 0 });
+  return r === null ? "—" : `${(Math.round(r * 1000) / 10).toLocaleString("pt-BR")}%`;
+}
+
 function Metricas({ m }: { m: Record<string, unknown> | null }) {
   if (!m) return <Panel><p className="text-sm text-muted">— sem dados (migração 0073 pendente ou sem acesso).</p></Panel>;
   const est = (m.estourados as Record<string, number>) ?? {};
   const cards: [string, string, string][] = [
-    ["Chamados no período", num(m.total), "Chamados reais abertos nos últimos dias (simulação fora)."],
-    ["Abertos agora", num(m.abertos), "Sem resolver nem encerrar."],
-    ["1ª resposta — média", num(m.primeira_resposta_media_min, " min"), "Do abrir até a primeira resposta (da Viva ou de uma pessoa)."],
-    ["1ª resposta — p90", num(m.primeira_resposta_p90_min, " min"), "9 em cada 10 respondidos até este tempo."],
-    ["Resolução — média", num(m.resolucao_media_h, " h"), "Do abrir até marcar resolvido."],
+    ["Chamados no período", num(m.total), `Chamados reais abertos nos últimos ${num(m.dias)} dias (simulação fora).`],
+    ["Abertos agora", num(m.abertos_agora ?? m.abertos), FORMULA_CHAMADOS_ABERTOS],
+    ["Resolvidos", pctResolvidos(m), FORMULA_RESOLVIDOS_ATENDIMENTO],
+    ["1ª resposta — média", fmtTempoMin(n(m.primeira_resposta_media_min)), FORMULA_1A_RESPOSTA_ATENDIMENTO],
+    ["1ª resposta — p90", fmtTempoMin(n(m.primeira_resposta_p90_min)), "9 em cada 10 respondidos até este tempo."],
+    ["Resolução — média", fmtTempoMin(n(m.resolucao_media_h) === null ? null : (n(m.resolucao_media_h) as number) * 60), "Do abrir até marcar resolvido."],
     ["Resolvidos pela IA", pct(m.resolvidos_ia, m.resolvidos), "Resolvidos só pela Viva ÷ resolvidos."],
     ["Pediram uma pessoa", pct(m.pediu_humano, m.total), "Chamados em que a pessoa pediu atendimento humano."],
     ["Reabertos em 7 dias", pct(m.reabertos_7d, m.resolvidos), "Voltaram em até 7 dias depois de resolvidos."],
@@ -249,17 +263,19 @@ function Metricas({ m }: { m: Record<string, unknown> | null }) {
           const corpo = (
             <>
               <p className="text-sm text-muted">{t}</p>
-              <p className="mt-1 font-title text-2xl font-bold text-ink">{v}</p>
+              <p className="mt-1 font-title text-2xl font-bold text-ink" data-valor>
+                {v}
+              </p>
               <p className="mt-1 text-xs text-muted">{f}</p>
               {destino && <p className="mt-2 text-xs font-semibold text-forest">Ver chamados →</p>}
             </>
           );
           return destino ? (
-            <Link key={t} href={destino} className="block rounded-xl border border-line bg-white p-3 transition-colors hover:border-sage" title={f}>
+            <Link key={t} href={destino} className="block rounded-xl border border-line bg-white p-3 transition-colors hover:border-sage" title={f} data-metrica={t}>
               {corpo}
             </Link>
           ) : (
-            <div key={t} className="rounded-xl border border-line bg-white p-3" title={f}>
+            <div key={t} className="rounded-xl border border-line bg-white p-3" title={f} data-metrica={t}>
               {corpo}
             </div>
           );

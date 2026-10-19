@@ -9,7 +9,7 @@ import { ehAnuncioDeTeste } from "@/lib/data/anuncio-teste";
 import { planoDoProprietario } from "@/lib/data/plano-efetivo";
 import { COMISSAO_POR_PLANO } from "@/config/planos";
 import { logModeracao } from "@/lib/data/moderacao-log";
-import { ACOES_JORNADA, ALVOS_JORNADA } from "@/lib/jornada-teste";
+import { ACOES_DADOS_TESTE, ACOES_JORNADA, ALVOS_JORNADA } from "@/lib/jornada-teste";
 
 /*
   Prompt 28 — /admin › Dados de teste › "Nova jornada de teste". SÓ contas is_teste e anúncio [TESTE QA]:
@@ -78,6 +78,33 @@ export async function novaJornadaDeTeste(input: { tenantId: string; propertyId: 
   }
   revalidatePath("/admin/dados-de-teste");
   return r;
+}
+
+/**
+ * "Encerrar jornadas de teste" (Prompt 29, item 2): encerra os contratos ATIVOS de teste — anúncio [TESTE…] de dono
+ * is_teste com inquilino is_teste — de todos os anúncios de teste. Nunca toca conta real. Grava no log de admin.
+ */
+export async function encerrarJornadasDeTeste(): Promise<{ ok: true; encerrados: number; anuncios: number } | { ok: false; error: string }> {
+  const sessao = await createClient();
+  const admin = createAdminClient();
+  if (!sessao || !admin) return { ok: false, error: "Serviço indisponível." };
+  const {
+    data: { user },
+  } = await sessao.auth.getUser();
+  if (!user || !(await exigirAdminAal2(sessao, user.id))) return { ok: false, error: "Só admin." };
+  const { data: donos } = await admin.from("profiles").select("id").eq("is_teste", true);
+  const idsDonos = ((donos ?? []) as { id: string }[]).map((d) => d.id);
+  const { data: props } = idsDonos.length ? await admin.from("properties").select("id, title").in("owner_id", idsDonos) : { data: [] };
+  const anuncios = ((props ?? []) as { id: string; title: string | null }[]).filter((p) => ehAnuncioDeTeste(p.title));
+  let encerrados = 0;
+  for (const a of anuncios) {
+    const n = await encerrarJornadasAnteriores(admin, a.id);
+    if (n === null) return { ok: false, error: `Não foi possível encerrar as jornadas de "${a.title ?? "anúncio"}".` };
+    encerrados += n;
+  }
+  await logModeracao(admin, user.id, ACOES_DADOS_TESTE.jornadasEncerradas, "profile", user.id, `${encerrados} contrato(s) de teste encerrado(s) em ${anuncios.length} anúncio(s) [TESTE]`);
+  revalidatePath("/admin/dados-de-teste");
+  return { ok: true, encerrados, anuncios: anuncios.length };
 }
 
 async function jornada(admin: NonNullable<ReturnType<typeof createAdminClient>>, input: { tenantId: string; propertyId: string }): Promise<ResultadoJornada> {

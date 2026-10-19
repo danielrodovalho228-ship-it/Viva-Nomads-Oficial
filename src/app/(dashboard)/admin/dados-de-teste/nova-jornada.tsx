@@ -1,9 +1,9 @@
 "use client";
 
+import { dataHoraBRT } from "@/lib/datas-brasilia";
 import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { dataHoraBrasilia } from "@/config/atendimento";
 import { novaJornadaDeTeste, type ResultadoJornada } from "@/lib/data/jornada-teste-actions";
 
 type Opcao = { id: string; rotulo: string };
@@ -93,7 +93,7 @@ export function NovaJornadaTeste({ inquilinos, anuncios }: { inquilinos: Opcao[]
           </p>
           {r.reaproveitada && (
             <p className="mt-1" data-testid="jornada-motivo">
-              Já havia uma jornada aberta: a candidatura {r.numero}, aceita em {r.aceitaEm ? dataHoraBrasilia(new Date(r.aceitaEm)) : "data não registrada"}. Foi
+              Já havia uma jornada aberta: a candidatura {r.numero}, aceita em {r.aceitaEm ? dataHoraBRT(r.aceitaEm) : "data não registrada"}. Foi
               reaproveitada porque {r.motivo}.
             </p>
           )}

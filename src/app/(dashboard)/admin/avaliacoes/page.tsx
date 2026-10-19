@@ -1,3 +1,4 @@
+import { dataBRT } from "@/lib/datas-brasilia";
 import { Star } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { PageTitle, Panel, StatCard, EmptyState } from "@/components/dashboard/primitives";
@@ -6,7 +7,7 @@ import { DecidirForm } from "./forms";
 
 export const metadata = { title: "Avaliações — Admin" };
 
-const dataBR = (iso: string) => new Date(iso).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
+const dataBR = (iso: string) => dataBRT(iso);
 
 /**
  * Admin → Avaliações: fila de pedidos de revisão. A avaliação só sai do ar por
