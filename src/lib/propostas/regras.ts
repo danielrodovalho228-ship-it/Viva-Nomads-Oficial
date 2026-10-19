@@ -51,6 +51,12 @@ export const MAX_VERSOES = 3;
 
 /* Textos do teto de rodadas (ajuste do coordenador depois do reteste do #866) — editor do anúncio e tela da proposta. */
 export const TEXTO_TETO_RODADAS = "A negociação tem até 3 rodadas (proposta e duas contrapropostas). Depois, cada lado só aceita ou recusa.";
+/** v3 (teto atingido): o mesmo aviso para os dois lados, sob a pílula "Rodada 3 de 3" (reteste do #873). */
+export const TEXTO_RODADAS_ESGOTADAS = "Esta proposta já teve 3 rodadas: agora é aceitar ou recusar.";
+/** Na v3 em andamento, as duas visões mostram TEXTO_RODADAS_ESGOTADAS e nenhuma mostra "Contrapropor". */
+export function tetoDeRodadasAtingido(versao: number, aberta: boolean): boolean {
+  return aberta && versao >= MAX_VERSOES;
+}
 export const TEXTO_ULTIMA_RODADA = "Última rodada: depois desta resposta, só aceitar ou recusar";
 /** Linha de ajuda sob o valor da contraproposta do interessado: o piso é privado e só é conferido no servidor, no envio. */
 export const AJUDA_VALOR_CONTRAPROPOSTA = "Se o valor ficar abaixo do que o proprietário aceita, avisamos quando você enviar.";
@@ -246,7 +252,7 @@ export function bloqueioContraproposta(e: {
 }): string | null {
   if (!estaAberta(e.status)) return "Esta proposta não está mais em andamento.";
   if (e.quem === e.autorUltimaVersao) return "Aguarde a resposta da outra parte.";
-  if (e.versaoAtual >= MAX_VERSOES) return "Esta proposta já teve 3 rodadas: agora é aceitar ou recusar.";
+  if (e.versaoAtual >= MAX_VERSOES) return TEXTO_RODADAS_ESGOTADAS;
   if (e.quem === "tenant" && !e.negociacao.aceita) return "Este anúncio tem valor fixo: dá para aceitar ou recusar.";
   return null;
 }

@@ -8,7 +8,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
      proprietário aceita → o Fechamento abre com R$ 3.008 × 6 = R$ 18.048, sem redigitar;
   2. o interessado recusa com motivo → o proprietário vê o status e o motivo; nada de fechamento;
   3. validade vencida → "Expirada" e os botões somem;
-  4. três versões → a 4ª contraproposta não aparece;
+  4. três versões → a 4ª contraproposta não aparece, e os dois lados veem o mesmo aviso do teto (reteste do #873);
   5. outra pessoa não abre a proposta (não encontrada);
   6. "meu zap 34 9…" na contraproposta aparece como contato protegido;
   F/H/J: valor fixo (sem Contrapropor); abaixo do mínimo privado (só a próxima centena, nunca o número);
@@ -192,26 +192,42 @@ test.describe("T193 — propostas", () => {
     await inq.context().close();
   });
 
-  test("390px — 4: com 3 versões a 4ª contraproposta não aparece (só aceitar ou recusar)", async ({ browser }) => {
-    const c = await cenario("Rodadas");
-    const id = await propostaNoBanco(
-      c,
-      [
-        { autor: "owner", valor: 3200, meses: 4 },
-        { autor: "tenant", valor: 3000, meses: 4 },
-        { autor: "owner", valor: 3100, meses: 4 },
-      ],
-      "contraproposta",
-    );
-    const inq = await abrir(browser, c.inq.email, 390);
-    await inq.goto(`/dashboard/propostas/${id}`, { waitUntil: "domcontentloaded" });
-    await expect(inq.getByTestId("proposta-aceitar")).toBeVisible();
-    await expect(inq.getByTestId("proposta-recusar")).toBeVisible();
-    await expect(inq.getByTestId("proposta-contrapropor")).toHaveCount(0);
-    await expect(inq.getByTestId("historico-versoes").getByTestId("versao")).toHaveCount(3);
-    await inq.screenshot({ path: `${SAIDA}/t193-9-tres-rodadas-390.png`, fullPage: true });
-    await inq.context().close();
-  });
+  for (const largura of [390, 1280]) {
+    test(`${largura}px — 4: com 3 versões as DUAS visões mostram o aviso do teto e nenhuma mostra 'Contrapropor'`, async ({ browser }) => {
+      const c = await cenario(`Rodadas${largura}`);
+      const id = await propostaNoBanco(
+        c,
+        [
+          { autor: "owner", valor: 3200, meses: 4 },
+          { autor: "tenant", valor: 3000, meses: 4 },
+          { autor: "owner", valor: 3100, meses: 4 },
+        ],
+        "contraproposta",
+      );
+      const TETO = "Esta proposta já teve 3 rodadas: agora é aceitar ou recusar.";
+      const inq = await abrir(browser, c.inq.email, largura);
+      await inq.goto(`/dashboard/propostas/${id}`, { waitUntil: "domcontentloaded" });
+      await expect(inq.getByTestId("proposta-aceitar")).toBeVisible();
+      await expect(inq.getByTestId("proposta-recusar")).toBeVisible();
+      await expect(inq.getByTestId("proposta-contrapropor")).toHaveCount(0);
+      await expect(inq.getByTestId("proposta-rodada")).toHaveText("Rodada 3 de 3");
+      await expect(inq.getByTestId("proposta-teto-rodadas")).toHaveText(TETO);
+      await expect(inq.getByText(TETO)).toHaveCount(1); // uma vez só, sob a pílula
+      await expect(inq.getByTestId("historico-versoes").getByTestId("versao")).toHaveCount(3);
+      await inq.screenshot({ path: `${SAIDA}/t193-9-tres-rodadas-inquilino-${largura}.png`, fullPage: true });
+      await inq.context().close();
+
+      // Simetria (reteste do #873): o dono, que está aguardando, vê o MESMO aviso sob a pílula.
+      const dono = await abrir(browser, c.dono.email, largura);
+      await dono.goto(`/dashboard/propostas/${id}`, { waitUntil: "domcontentloaded" });
+      await expect(dono.getByTestId("proposta-rodada")).toHaveText("Rodada 3 de 3", { timeout: 20_000 });
+      await expect(dono.getByTestId("proposta-teto-rodadas")).toHaveText(TETO);
+      await expect(dono.getByTestId("proposta-contrapropor")).toHaveCount(0);
+      await expect(dono.getByText("Contrapropor")).toHaveCount(0);
+      await dono.screenshot({ path: `${SAIDA}/t193-9-tres-rodadas-dono-${largura}.png`, fullPage: true });
+      await dono.context().close();
+    });
+  }
 
   test("1280px — 5 e 6: outra pessoa recebe 404; contato na contraproposta fica protegido", async ({ browser }) => {
     const c = await cenario("Isola");

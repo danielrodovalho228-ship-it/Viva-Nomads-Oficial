@@ -5,7 +5,8 @@ import { sendEmail } from "@/lib/notifications/email";
 import { brandedNotification, notificationText } from "@/lib/notifications/templates";
 import { textoEmail } from "@/lib/notifications/texto-seguro";
 import { SITE_URL } from "@/lib/site";
-import { conteudoDocumento, ROTULO_TIPO, temContato, textoDocumento, type DadosDocumento, type TipoDocumento } from "@/lib/fiscal/documento";
+import { conteudoDocumento, NUMERO_PROVISORIO, ROTULO_TIPO, temContato, textoDocumento, type DadosDocumento, type TipoDocumento } from "@/lib/fiscal/documento";
+import { envioConfirmado, motivoFalhaEnvio, resultadoEnvio, type EnvioDestinatario } from "@/lib/fiscal/envio";
 import { gerarPdf, sha256 } from "@/lib/fiscal/pdf";
 import { rotuloPagamentoBloco } from "@/lib/pagamento-bloco";
 
@@ -18,7 +19,7 @@ import { rotuloPagamentoBloco } from "@/lib/pagamento-bloco";
  */
 
 type Admin = NonNullable<ReturnType<typeof createAdminClient>>;
-type Resultado = { ok: true; id: string; numero: string } | { ok: false; motivo: string };
+type Resultado = { ok: true; id: string; numero: string; envio?: EnvioDestinatario[] } | { ok: false; motivo: string };
 
 export const BUCKET_DOCUMENTOS = "documentos";
 
@@ -68,13 +69,11 @@ async function emitir(
     .maybeSingle();
   if (existente) return { ok: true, id: existente.id as string, numero: existente.numero as string };
 
-  const { data: numero, error: eNum } = await admin.rpc("proximo_numero_documento", { p_tipo: tipo });
-  if (eNum || !numero) return { ok: false, motivo: "numeração indisponível" };
   const codigo = randomBytes(16).toString("hex"); // 128 bits, nunca sequencial
   const agora = new Date();
   const dados: DadosDocumento = {
     tipo,
-    numero: numero as string,
+    numero: NUMERO_PROVISORIO,
     emitidoEm: agora.toISOString(),
     locador: { nome: partes.locador.nome, doc: partes.locador.doc },
     locatario: { nome: partes.locatario.nome, doc: partes.locatario.doc },
@@ -83,8 +82,14 @@ async function emitir(
     conferirUrl: `${SITE_URL}/conferir/${codigo}`,
     ...extra,
   };
+  // A trava de contato roda com o número PROVISÓRIO, antes de reservar o definitivo: a tentativa que falha não queima
+  // número (a lacuna 000001–000003 de 19/10 veio daí). temContato ignora o número e a URL de conferência, então o
+  // resultado é o mesmo com o número definitivo.
+  if (temContato(textoDocumento(conteudoDocumento(dados)))) return { ok: false, motivo: "documento traria contato" };
+  const { data: numero, error: eNum } = await admin.rpc("proximo_numero_documento", { p_tipo: tipo });
+  if (eNum || !numero) return { ok: false, motivo: "numeração indisponível" };
+  dados.numero = numero as string;
   const conteudo = conteudoDocumento(dados);
-  if (temContato(textoDocumento(conteudo))) return { ok: false, motivo: "documento traria contato" };
   const pdf = await gerarPdf(conteudo);
   const ano = Number(agora.toLocaleString("en-US", { timeZone: "America/Sao_Paulo", year: "numeric" }));
   const caminho = `${ano}/${tipo}/${dados.numero}.pdf`;
@@ -124,25 +129,87 @@ async function emitir(
     return { ok: false, motivo: `registro: ${eIns?.message ?? "falhou"}` };
   }
 
-  // PDF por e-mail às duas partes (cada uma recebe o mesmo documento).
-  const rotulo = ROTULO_TIPO[tipo];
-  const anexo = [{ filename: `${dados.numero}.pdf`, content: Buffer.from(pdf).toString("base64") }];
-  let enviado = false;
-  for (const p of [partes.locador, partes.locatario]) {
-    if (!p.email) continue;
-    const title = `${rotulo} ${dados.numero}`;
-    const intro = `Segue em anexo o ${rotulo.toLowerCase()} do contrato ${dados.contratoRef}. Ele também fica guardado na plataforma, em Contratos (proprietário) ou Minhas locações (inquilino).`;
+  const envio = await enviarDocumento(admin, { id: doc.id as string, tipo, numero: dados.numero, contratoRef: dados.contratoRef, conferirUrl: dados.conferirUrl }, partes, pdf);
+  return { ok: true, id: doc.id as string, numero: dados.numero, envio };
+}
+
+interface DocParaEnvio {
+  id: string;
+  tipo: TipoDocumento;
+  numero: string;
+  contratoRef: string;
+  conferirUrl: string;
+}
+
+/**
+ * PDF por e-mail às duas partes (cada uma recebe o mesmo documento) e o resultado POR DESTINATÁRIO em
+ * documentos_fiscais.envio ({ papel, status, resend_id, erro, em } — nunca o endereço). enviado_em só é gravado
+ * quando TODOS os destinatários têm envio confirmado pelo Resend (id devolvido); simulado ou recusado não conta.
+ * `apenas` limita o reenvio a quem ainda não recebeu.
+ */
+async function enviarDocumento(admin: Admin, doc: DocParaEnvio, partes: Pick<Partes, "locador" | "locatario">, pdf: Uint8Array, apenas?: Set<EnvioDestinatario["papel"]>, anterior: EnvioDestinatario[] = []): Promise<EnvioDestinatario[]> {
+  const rotulo = ROTULO_TIPO[doc.tipo];
+  const anexo = [{ filename: `${doc.numero}.pdf`, content: Buffer.from(pdf).toString("base64") }];
+  const title = `${rotulo} ${doc.numero}`;
+  const intro = `Segue em anexo o ${rotulo.toLowerCase()} do contrato ${doc.contratoRef}. Ele também fica guardado na plataforma, em Contratos (proprietário) ou Minhas locações (inquilino).`;
+  const envio: EnvioDestinatario[] = anterior.filter((e) => apenas && !apenas.has(e.papel));
+  for (const [papel, p] of [["locador", partes.locador], ["locatario", partes.locatario]] as const) {
+    if (apenas && !apenas.has(papel)) continue;
+    if (!p.email) {
+      envio.push({ papel, status: "erro", resend_id: null, erro: "sem e-mail no cadastro", em: new Date().toISOString() });
+      continue;
+    }
     const r = await sendEmail({
       to: p.email,
       subject: `${title} — Viva Nomads`,
-      html: brandedNotification({ title: textoEmail(title, 80), intro: textoEmail(intro, 400), cta: { label: "Conferir autenticidade", url: dados.conferirUrl } }),
-      text: notificationText({ title, intro, cta: { label: "Conferir autenticidade", url: dados.conferirUrl } }),
+      html: brandedNotification({ title: textoEmail(title, 80), intro: textoEmail(intro, 400), cta: { label: "Conferir autenticidade", url: doc.conferirUrl } }),
+      text: notificationText({ title, intro, cta: { label: "Conferir autenticidade", url: doc.conferirUrl } }),
       attachments: anexo,
-    }).catch(() => null);
-    if (r) enviado = true;
+    }).catch((e: unknown) => ({ demo: false, error: `falha no envio: ${e instanceof Error ? e.name : "erro"}` }));
+    envio.push(resultadoEnvio(papel, r));
   }
-  if (enviado) await admin.from("documentos_fiscais").update({ enviado_em: new Date().toISOString() }).eq("id", doc.id);
-  return { ok: true, id: doc.id as string, numero: dados.numero };
+  envio.sort((a, b) => a.papel.localeCompare(b.papel));
+  await admin
+    .from("documentos_fiscais")
+    .update({ envio, enviado_em: envioConfirmado(envio) ? new Date().toISOString() : null })
+    .eq("id", doc.id);
+  return envio;
+}
+
+/**
+ * "Reenviar e-mail" (fila "Documentos com falha"): manda de novo o MESMO documento — o PDF guardado no bucket, o
+ * mesmo número e o mesmo código de conferência —, sem emitir documento novo. Só a quem ainda não tem envio
+ * confirmado (os dois, num documento sem registro de envio, como os emitidos antes deste registro).
+ */
+export async function reenviarEmailDoDocumento(documentoId: string): Promise<{ ok: true; numero: string; envio: EnvioDestinatario[] } | { ok: false; motivo: string }> {
+  const admin = createAdminClient();
+  if (!admin) return { ok: false, motivo: "sem servidor" };
+  const { data: d } = await admin
+    .from("documentos_fiscais")
+    .select("id, tipo, numero, contrato_id, contrato_ref, codigo_verificacao, pdf_path, envio, anulado_em, pagamento_id, acerto_id")
+    .eq("id", documentoId)
+    .maybeSingle();
+  if (!d) return { ok: false, motivo: "documento não encontrado" };
+  if (d.anulado_em) return { ok: false, motivo: "documento anulado" };
+  const partes = await partesDoContrato(admin, d.contrato_id as string);
+  if (!partes) return { ok: false, motivo: "contrato não encontrado" };
+  const { data: arquivo, error: eDown } = await admin.storage.from(BUCKET_DOCUMENTOS).download(d.pdf_path as string);
+  if (eDown || !arquivo) return { ok: false, motivo: `PDF guardado indisponível: ${eDown?.message ?? "vazio"}` };
+  const pdf = new Uint8Array(await arquivo.arrayBuffer());
+  const anterior = (Array.isArray(d.envio) ? d.envio : []) as EnvioDestinatario[];
+  const faltam = new Set<EnvioDestinatario["papel"]>((["locador", "locatario"] as const).filter((papel) => !anterior.some((e) => e.papel === papel && e.status === "enviado")));
+  if (!faltam.size) return { ok: true, numero: d.numero as string, envio: anterior };
+  const envio = await enviarDocumento(
+    admin,
+    { id: d.id as string, tipo: d.tipo as TipoDocumento, numero: d.numero as string, contratoRef: d.contrato_ref as string, conferirUrl: `${SITE_URL}/conferir/${d.codigo_verificacao as string}` },
+    partes,
+    pdf,
+    faltam,
+    anterior,
+  );
+  const origem = d.pagamento_id ? { pagamentoId: d.pagamento_id as string } : { acertoId: d.acerto_id as string };
+  await registrarResultado(admin, origem, { ok: true, id: d.id as string, numero: d.numero as string, envio });
+  return { ok: true, numero: d.numero as string, envio };
 }
 
 /** Pagamento confirmado pelo inquilino → recibo (aluguel) ou comprovante (caução). */
@@ -192,18 +259,29 @@ async function registrarResultado(admin: Admin, origem: { pagamentoId?: string; 
   const coluna = origem.pagamentoId ? "pagamento_id" : "acerto_id";
   const id = (origem.pagamentoId ?? origem.acertoId) as string;
   try {
-    if (r.ok) {
+    // Emitido, mas o e-mail não saiu para alguém: a linha é da etapa "envio" ("Reenviar e-mail", sem documento novo).
+    const falhaEnvio = r.ok && r.envio ? motivoFalhaEnvio(r.envio) : null;
+    if (r.ok && !falhaEnvio) {
       await admin.from("documentos_falhas").update({ resolvido_em: new Date().toISOString(), documento_id: r.id }).eq(coluna, id).is("resolvido_em", null);
       return;
     }
-    const { data: aberta } = await admin.from("documentos_falhas").select("id, tentativas").eq(coluna, id).is("resolvido_em", null).maybeSingle();
+    const motivo = (r.ok ? (falhaEnvio as string) : r.motivo).slice(0, 300);
+    const etapa = r.ok ? "envio" : "emissao";
+    if (r.ok) console.error(`[documentos] ${r.numero}: ${motivo}`);
+    const { data: aberta } = await admin.from("documentos_falhas").select("id, tentativas, etapa").eq(coluna, id).is("resolvido_em", null).maybeSingle();
     if (aberta) {
       await admin
         .from("documentos_falhas")
-        .update({ motivo: r.motivo.slice(0, 300), tentativas: Number(aberta.tentativas ?? 1) + 1, atualizado_em: new Date().toISOString() })
+        .update({
+          motivo,
+          etapa,
+          documento_id: r.ok ? r.id : null,
+          tentativas: Number(aberta.tentativas ?? 1) + 1,
+          atualizado_em: new Date().toISOString(),
+        })
         .eq("id", aberta.id);
     } else {
-      await admin.from("documentos_falhas").insert({ [coluna]: id, motivo: r.motivo.slice(0, 300) });
+      await admin.from("documentos_falhas").insert({ [coluna]: id, motivo, etapa, documento_id: r.ok ? r.id : null });
     }
   } catch {
     /* o registro da falha nunca quebra o fluxo */

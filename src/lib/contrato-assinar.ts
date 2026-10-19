@@ -69,7 +69,8 @@ export function resumoContrato(d: DadosResumo): string[] {
     ...(valorPet ? [valorPet] : []),
     ...(d.limpezaEstadia ? [linhaLimpezaResumo(d.limpezaEstadia)] : []),
     ...(total != null ? [`Total por mês: ${total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`] : []),
-    `Registrado em: ${d.criadoEm}`,
+    // pt-BR (complemento do recibo, 19/10): era "2026-10-19". linhasParaHash aceita o texto antigo para a outra parte.
+    `Registrado em: ${dataDoResumo(d.criadoEm.slice(0, 10)) ?? d.criadoEm}`,
   ];
 }
 
@@ -117,8 +118,14 @@ export function hashResumo(linhas: string[]): string {
  */
 export function linhasParaHash(linhas: string[], hashDaOutraParte: string | null): string[] {
   if (!hashDaOutraParte || hashResumo(linhas) === hashDaOutraParte) return linhas;
-  const sem = linhas.filter((l) => !l.startsWith("Início da estadia:"));
-  return hashResumo(sem) === hashDaOutraParte ? sem : linhas;
+  // "Registrado em" saía em ISO (2026-10-19) até 19/10; quem assinou antes assinou esse texto.
+  const iso = linhas.map((l) => l.replace(/^Registrado em: (\d{2})\/(\d{2})\/(\d{4})$/, "Registrado em: $3-$2-$1"));
+  for (const base of [linhas, iso]) {
+    if (hashResumo(base) === hashDaOutraParte) return base;
+    const sem = base.filter((l) => !l.startsWith("Início da estadia:"));
+    if (hashResumo(sem) === hashDaOutraParte) return sem;
+  }
+  return linhas;
 }
 
 export function motivoNaoPodeAssinar(c: {

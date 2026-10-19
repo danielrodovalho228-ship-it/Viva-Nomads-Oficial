@@ -20,6 +20,8 @@ import {
   MOTIVOS_RECUSA,
   AJUDA_VALOR_CONTRAPROPOSTA,
   TEXTO_ULTIMA_RODADA,
+  TEXTO_RODADAS_ESGOTADAS,
+  tetoDeRodadasAtingido,
   ehUltimaRodada,
   rotuloRodada,
   type Mudancas,
@@ -140,6 +142,11 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
                 {TEXTO_ULTIMA_RODADA}
               </p>
             )}
+            {tetoDeRodadasAtingido(atual.versao, estaAberta(p.status)) && (
+              <p className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-[13px] text-amber-800" data-testid="proposta-teto-rodadas">
+                {TEXTO_RODADAS_ESGOTADAS}
+              </p>
+            )}
             <Valores v={atual} />
             {atual.mensagem && <p className="mt-3 rounded-lg bg-surface-2 px-3 py-2 text-sm text-ink" data-testid="proposta-mensagem">“{atual.mensagem}”</p>}
             {estaAberta(p.status) && (
@@ -175,7 +182,7 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
                   <X className="h-4 w-4" /> Recusar
                 </Button>
               </div>
-              {p.bloqueioContraproposta && p.papel === "tenant" && <p className="mt-2 text-[13px] text-muted">{p.bloqueioContraproposta}</p>}
+              {p.bloqueioContraproposta && p.bloqueioContraproposta !== TEXTO_RODADAS_ESGOTADAS && p.papel === "tenant" && <p className="mt-2 text-[13px] text-muted">{p.bloqueioContraproposta}</p>}
 
               {modo === "recusar" && (
                 <div className="mt-4 space-y-3" data-testid="form-recusa">
