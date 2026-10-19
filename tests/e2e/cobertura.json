@@ -2924,6 +2924,24 @@
         "t74-pets-candidatura"
       ]
     },
+    "src/lib/data/pets-ficha-actions.ts#enviarImagemPet": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t73-pets-ficha"
+      ]
+    },
+    "src/lib/data/pets-ficha-actions.ts#removerImagemPet": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t73-pets-ficha"
+      ]
+    },
     "src/lib/data/pets-ficha-actions.ts#removerPet": {
       "personas": [
         "inquilino",
