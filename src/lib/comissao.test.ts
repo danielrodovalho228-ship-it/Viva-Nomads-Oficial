@@ -12,6 +12,7 @@ import { valorComissao, valorTotalContrato } from "./comissao.ts";
 import { resumoContrato } from "./contrato-blocos.ts";
 import { cobrancaParaAceite } from "./cobranca/regra.ts";
 import { simularRentabilidade } from "./simulador.ts";
+import { agregarContratos } from "./admin/indicadores.ts";
 import { calcularFinanceiro } from "./admin/financeiro.ts";
 
 const SRC = new URL("../", import.meta.url).pathname;
@@ -28,13 +29,12 @@ test("os 3 exemplos da ordem: R$ 3.000 × 1 / 3 / 6 meses → total 3.000 / 9.00
   assert.equal(valorTotalContrato(-1, 3), 0);
 });
 
-test("admin: take rate = comissão ÷ valor total dos contratos (não ÷ aluguel mensal)", () => {
-  const f = calcularFinanceiro({
-    comissoes: [
-      { contrato: "a", data: "2026-10-01", imovel: null, cidade: null, plano: null, percentual: 0.12, aluguel: 3000, comissao: 1080, status: "pago", pago_em: null },
-      { contrato: "b", data: "2026-10-02", imovel: null, cidade: null, plano: null, percentual: 0.1, aluguel: 2000, comissao: 600, status: "pendente", pago_em: null },
-    ],
-  } as never);
+test("admin: take rate = taxa gravada ÷ valor total (valor mensal × meses), não ÷ valor mensal — Prompt 29", () => {
+  const ag = agregarContratos([
+    { aluguelMensal: 3000, prazoDias: 90, taxaValor: 1080, taxaPercent: 0.12 },
+    { aluguelMensal: 2000, prazoDias: 90, taxaValor: 600, taxaPercent: 0.1 },
+  ]);
+  const f = calcularFinanceiro({} as never, ag);
   assert.equal(f.valorTotalContratado, 9000 + 6000);
   assert.equal(f.takeRate, 1680 / 15000);
 });

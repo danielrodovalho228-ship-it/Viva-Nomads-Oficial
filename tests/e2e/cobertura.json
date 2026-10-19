@@ -1241,6 +1241,33 @@
         "admin"
       ],
       "specs": []
+    },
+    "/admin/imoveis": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t228-admin-conversa-com-tudo",
+        "t48-varredura"
+      ]
+    },
+    "/admin/contratos": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t228-admin-conversa-com-tudo",
+        "t48-varredura"
+      ]
+    },
+    "/admin/solicitacoes": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t228-admin-conversa-com-tudo",
+        "t48-varredura"
+      ]
     }
   },
   "rotas": {

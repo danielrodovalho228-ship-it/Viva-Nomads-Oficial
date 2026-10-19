@@ -63,6 +63,8 @@ export function VisaoGeralClient({
   demonstracao: { total: number; publicos: boolean };
 }) {
   const filtro: FiltroHome = { inicio: periodo.inicio, fim: periodo.fim, cidade };
+  // Os cartões "Agora" que têm cidade levam o mesmo filtro para a lista (Prompt 29: número = lista).
+  const comCidade = (href: string) => (cidade ? `${href}&cidade=${encodeURIComponent(cidade)}` : href);
   const atual: Metricas = dados?.atual ?? {};
   const anterior: Metricas = dados?.anterior ?? {};
   const agora: Metricas = dados?.agora ?? {};
@@ -94,17 +96,17 @@ export function VisaoGeralClient({
         <h2 className="mb-3 font-title text-lg font-bold text-ink">Agora</h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4" data-testid="home-agora">
           <StatCard label="Usuários" value={fmtInteiro(num(agora.usuarios))} icon={Users} href={hrefUsuarios({})} />
-          <StatCard label="Imóveis reais publicados" value={fmtInteiro(num(agora.imoveis_ativos))} icon={Home} href="/admin/imoveis?tipo=real&status=active" />
+          <StatCard label="Imóveis reais publicados" value={fmtInteiro(num(agora.imoveis_ativos))} icon={Home} href={comCidade("/admin/imoveis?tipo=real&status=active")} />
           <StatCard
             label={`Demonstração (${demonstracao.publicos ? "aparecem na busca" : "escondidos"})`}
             value={demonstracao.total}
             icon={Home}
             href="/admin/imoveis?tipo=demonstracao"
           />
-          <StatCard label="Anúncios de teste (fora da busca)" value={fmtInteiro(num(agora.x_imoveis_teste))} icon={Home} href="/admin/imoveis?tipo=teste" />
-          <StatCard label="Rascunhos" value={fmtInteiro(num(agora.rascunhos))} icon={Home} href="/admin/imoveis?tipo=real&status=draft" />
+          <StatCard label="Anúncios de teste (fora da busca)" value={fmtInteiro(num(agora.x_imoveis_teste))} icon={Home} href={comCidade("/admin/imoveis?tipo=teste")} />
+          <StatCard label="Rascunhos" value={fmtInteiro(num(agora.rascunhos))} icon={Home} href={comCidade("/admin/imoveis?tipo=real&status=draft")} />
           <StatCard label="Donos com anúncio" value={fmtInteiro(num(agora.proprietarios_com_anuncio))} icon={Building2} href={hrefUsuarios({ comAnuncio: true })} />
-          <StatCard label="Pedidos ativos" value={fmtInteiro(num(agora.pedidos_ativos))} icon={Megaphone} href="/admin/pedidos?status=ativo" />
+          <StatCard label="Pedidos ativos" value={fmtInteiro(num(agora.pedidos_ativos))} icon={Megaphone} href={comCidade("/admin/pedidos?status=ativo")} />
           <StatCard label="MRR" value={fmtReais(receita.valor)} icon={CreditCard} href="/admin/financeiro" />
           <StatCard label="Fundadores" value={fmtInteiro(num(agora.fundadores))} icon={Star} href={hrefUsuarios({ fundador: true })} />
           <StatCard label="Atendimento: chamados abertos" value={fmtInteiro(num(atual.x_atd_abertos_agora))} icon={LifeBuoy} href="/admin/atendimento?aba=fila" />
