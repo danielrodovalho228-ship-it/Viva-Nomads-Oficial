@@ -92,6 +92,21 @@ export async function ContratoDetalhe({
         </Panel>
       )}
       <LinhaDoTempoEstadia etapas={c.linhaDoTempo} />
+      {(c.assinadoProprietarioEm || c.assinadoInquilinoEm) && (
+        <Panel className="mt-5 p-5">
+          <h2 className="font-title text-base font-bold text-ink">Pacote de provas</h2>
+          <p className="mt-1 text-sm text-muted">
+            Um PDF com o resumo do contrato, o código de cada assinatura, os pagamentos marcados e as respostas da conferência, em ordem de data.
+          </p>
+          <a
+            href={`/api/contrato/${c.id}/provas`}
+            data-testid="baixar-provas"
+            className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-sage-300 bg-white px-4 text-sm font-medium text-forest hover:bg-sage-50 sm:w-auto"
+          >
+            Baixar pacote de provas (PDF)
+          </a>
+        </Panel>
+      )}
       {conferencia && (
         <Panel className="mt-5 p-5">
           <h2 className="font-title text-base font-bold text-ink">Conferência de entrada e saída</h2>
