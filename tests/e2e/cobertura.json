@@ -310,6 +310,7 @@
         "publico"
       ],
       "specs": [
+        "t234-ideal-para",
         "t10-buscar-url",
         "t14-app-mode",
         "t18-seo-a11y",
@@ -1001,6 +1002,7 @@
         "publico"
       ],
       "specs": [
+        "t234-ideal-para",
         "t11-travessias",
         "t133-candidatura-motivo",
         "t136-imovel-largura-maxima",

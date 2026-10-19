@@ -35,6 +35,7 @@ import { ShareButton } from "@/components/share-button";
 import { VisitaPresencial, VisitaVideo } from "@/components/property/visita-video";
 import { useAuthStore } from "@/lib/store";
 import { alvoAbrir, urlLoginParaAbrir, type AlvoAbrir } from "@/lib/imovel/abrir-apos-login";
+import { IdealPara } from "@/components/property/ideal-para";
 import { PropertyTags, InvoiceBadge, InsuranceBadge, PrecoJustoBadge } from "@/components/ui/badge";
 import { SELO_NF_UI } from "@/lib/flags";
 import { PropertyCard } from "@/components/property-card";
@@ -698,6 +699,8 @@ export function PropertyDetail({
               {property.acceptsInsurance && <InsuranceBadge />}
               {property.precoJusto && <PrecoJustoBadge />}
             </div>
+
+            <IdealPara property={property} className="mt-3 text-sm" />
 
             <div className="mt-3">
               <PropertyTags property={property} />
