@@ -1,48 +1,28 @@
 /*
-  Serviços para o morador (ordem 521c5af7, telas S1–S3): serviço sem parceiro não aceita pedido, validação do
-  pedido (data, faixa, observação), estados e a migração 0174 (RLS: o morador só vê os próprios pedidos).
+  Serviços para o morador (ordem 521c5af7): serviço sem parceiro não aceita pedido (o pedido S2 e o acompanhamento
+  S3 viram o 31b), estados do admin e a migração 0174 (RLS: o morador só vê os próprios pedidos).
   Roda: node --experimental-strip-types --test src/lib/servicos-morador.test.ts
 */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import {
-  FAIXAS_HORARIO,
   NOTA_PAGAMENTO_DIRETO,
   codigoDoPedido,
   proximosEstados,
   rotuloEstado,
   servicoAceitaPedido,
-  validarPedido,
 } from "./servicos-morador.ts";
 
-const agora = new Date("2026-10-19T12:00:00.000Z");
 const comParceiro = { id: "limpeza", status: "ativo", parceiro_nome: "Limpa Bem", preco_texto: "R$ 120 por visita" };
 
-test("serviço sem parceiro ou 'em breve' não aceita pedido", () => {
-  assert.equal(servicoAceitaPedido(comParceiro), true);
-  assert.equal(servicoAceitaPedido({ ...comParceiro, parceiro_nome: null }), false);
-  assert.equal(servicoAceitaPedido({ ...comParceiro, parceiro_nome: "   " }), false);
-  assert.equal(servicoAceitaPedido({ ...comParceiro, status: "em_breve" }), false);
-  assert.equal(servicoAceitaPedido({ ...comParceiro, status: "inativo" }), false);
-});
-
-test("pedido: data a partir de amanhã, faixa conhecida, observação até 300", () => {
-  const ok = validarPedido({ data: "2026-10-21", faixa: "manha", observacao: "  Portão azul  " }, agora);
-  assert.ok(ok.ok);
-  assert.equal(ok.pedido.observacao, "Portão azul");
-  assert.equal(ok.pedido.faixa, "manha");
-  assert.deepEqual(FAIXAS_HORARIO.map((f) => f.id), ["manha", "tarde", "noite"]);
-  assert.equal(validarPedido({ data: "2026-10-19", faixa: "manha" }, agora).ok, false, "hoje (Brasília) já passou da hora de pedir");
-  assert.equal(validarPedido({ data: "2026-02-30", faixa: "manha" }, agora).ok, false, "data inexistente");
-  assert.equal(validarPedido({ data: "21/10/2026", faixa: "manha" }, agora).ok, false);
-  assert.equal(validarPedido({ data: "2026-10-21", faixa: "madrugada" }, agora).ok, false);
-  assert.equal(validarPedido({ data: "2027-10-21", faixa: "tarde" }, agora).ok, false, "mais de 90 dias");
-  assert.equal(validarPedido({ data: "2026-10-21", faixa: "tarde", observacao: "x".repeat(301) }, agora).ok, false);
-  assert.equal(validarPedido(null, agora).ok, false);
-  const vazio = validarPedido({ data: "2026-10-21", faixa: "noite", observacao: "" }, agora);
-  assert.ok(vazio.ok);
-  assert.equal(vazio.pedido.observacao, null);
+test("serviço sem parceiro ou 'em breve' não aceita pedido (e nenhum aceita antes do 31b no ar)", () => {
+  assert.equal(servicoAceitaPedido(comParceiro), false, "o pedido do 31b ainda não está no ar");
+  assert.equal(servicoAceitaPedido(comParceiro, true), true);
+  assert.equal(servicoAceitaPedido({ ...comParceiro, parceiro_nome: null }, true), false);
+  assert.equal(servicoAceitaPedido({ ...comParceiro, parceiro_nome: "   " }, true), false);
+  assert.equal(servicoAceitaPedido({ ...comParceiro, status: "em_breve" }, true), false);
+  assert.equal(servicoAceitaPedido({ ...comParceiro, status: "inativo" }, true), false);
 });
 
 test("estados, código do pedido e nota de pagamento direto", () => {

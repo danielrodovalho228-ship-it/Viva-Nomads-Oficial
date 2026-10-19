@@ -7,6 +7,7 @@ import { motivoBloqueioContrato } from "@/lib/contrato-trava";
 import { lerDocumento } from "@/lib/data/documento-servidor";
 import { docsInquilinoCompletos } from "@/lib/data/documentos-inquilino-servidor";
 import { propostaAcordadaDoLead } from "@/lib/data/propostas-servidor";
+import { taxaDoLeadDoDono } from "@/lib/data/taxa-dono-servidor";
 import { RESERVA_EXPIRA_MS, type ReservaLida } from "@/lib/fechamento-contrato";
 
 /**
@@ -48,7 +49,7 @@ export async function carregarFechamento(leadId: unknown): Promise<DadosFechamen
   // Candidatura ACEITA em que o usuário logado é o DONO (sessão + RLS "leads das partes").
   const { data: lead } = await supabase
     .from("leads")
-    .select("id, owner_id, tenant_id, property_id, accepted_commission_rate, accepted_plan")
+    .select("id, owner_id, tenant_id, property_id")
     .eq("id", leadId)
     .eq("owner_id", user.id)
     .eq("status", "accepted")
@@ -69,7 +70,9 @@ export async function carregarFechamento(leadId: unknown): Promise<DadosFechamen
   if (!Number.isFinite(aluguel) || aluguel <= 0) return { status: 400, error: "Imóvel sem valor de aluguel." };
 
   // Taxa congelada no aceite; NULL cai para a do plano no aceite (nunca 0).
-  const comissaoRate = taxaDoContrato(lead.accepted_commission_rate, lead.accepted_plan);
+  // Plano e taxa do aceite pelo servidor (a sessão não lê mais essas colunas — 0177); o dono já foi conferido acima.
+  const taxaLead = await taxaDoLeadDoDono(admin, user.id, lead.id as string);
+  const comissaoRate = taxaDoContrato(taxaLead?.acceptedCommissionRate ?? null, taxaLead?.acceptedPlan ?? null);
   // Cadastro confiável + F32: documento das DUAS partes e documentos do inquilino
   // (B2; null = sem a 0093 → não trava). A MESMA trava vale em registrarContrato.
   const bloqueio = motivoBloqueioContrato({

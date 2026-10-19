@@ -77,6 +77,7 @@ import { mbpsValido } from "@/lib/anuncio/sugestoes-cadastro";
 import { videoTourPermitido } from "@/lib/video-tour";
 import { validarGarantia, type GarantiaContrato } from "@/lib/guarantees";
 import { marcarPropostaEmContrato, propostaAcordadaDoLead } from "@/lib/data/propostas-servidor";
+import { taxaDoLeadDoDono } from "@/lib/data/taxa-dono-servidor";
 import { conflitoNoImovel } from "@/lib/data/periodo-servidor";
 import { ERRO_SOBREPOSICAO_PG } from "@/lib/contrato-periodo";
 import { validarOcupantes } from "@/lib/candidaturas/ocupantes";
@@ -1133,7 +1134,7 @@ export async function registrarContrato(
 
   const { data: lead } = await supabase
     .from("leads")
-    .select("id, owner_id, tenant_id, property_id, accepted_plan, accepted_commission_rate")
+    .select("id, owner_id, tenant_id, property_id")
     .eq("id", input.leadId)
     .eq("owner_id", user.id)
     .eq("status", "accepted")
@@ -1178,9 +1179,11 @@ export async function registrarContrato(
   const inicio = validarInicioEstadia(input.inicioISO, hojeBR());
   if (!inicio.ok) return { ok: false, error: inicio.error };
 
-  const plano = (lead.accepted_plan as string) ?? "free";
+  // Plano e taxa do aceite pelo servidor (a sessão não lê mais essas colunas — 0177); o dono já foi conferido acima.
+  const taxaLead = await taxaDoLeadDoDono(admin, user.id, lead.id as string);
+  const plano = taxaLead?.acceptedPlan ?? "free";
   // NULL cai para a taxa do plano no aceite (antes Number(null) = 0 = Gestor).
-  const rate = taxaDoContrato(lead.accepted_commission_rate, lead.accepted_plan);
+  const rate = taxaDoContrato(taxaLead?.acceptedCommissionRate ?? null, taxaLead?.acceptedPlan ?? null);
   const tamanho = Math.min(3, Math.max(1, Math.round(Number(input.tamanhoBlocoMeses ?? MESES_POR_BLOCO_PADRAO))));
   const resumo = resumoContrato(prazo, aluguel, rate, tamanho);
   // Garantia única: o servidor confere a escolha (fiança só ligada e na faixa de prazo).
