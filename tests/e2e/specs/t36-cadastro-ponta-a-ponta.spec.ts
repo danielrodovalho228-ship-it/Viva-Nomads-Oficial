@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
-import { PLANOS } from "../../../src/config/planos";
+import { FAIXAS_COMISSAO_PADRAO } from "../../../src/lib/cobranca/regra";
 import {
   NO_LABORATORIO,
   adm,
@@ -27,7 +27,7 @@ import {
  *  3. Admin: pré-conferência "Parece OK" → checklist → Aprovar.
  *  4. Dono publica pelo editor.
  *  5. Inquilina se candidata; o dono vê só o primeiro nome (identidade oculta).
- *  6. Dono aceita: nome curto aparece (prompt 6: antes do aceite, "Candidato(a)"), comissão do Essencial (8%) congelada
+ *  6. Dono aceita: nome curto aparece (prompt 6: antes do aceite, "Candidato(a)"), taxa da faixa do proprietário (1–2 imóveis: 12%) congelada
  *     no aceite — continua 8% depois de o dono subir para o Profissional.
  *  7. Inquilina envia os documentos (identidade e vínculo) depois do aceite.
  *  8. Fechamento: documentos completos, sem aviso pendente; contrato com contas reais e sem assinatura digital
@@ -104,7 +104,7 @@ test.describe("T36 — Cadastro completo, do CPF ao fechamento", () => {
     await donoPage.context().close();
   });
 
-  test("5 e 6: candidatura (identidade oculta), aceite e comissão do Essencial congelada", async ({ browser }) => {
+  test("5 e 6: candidatura (identidade oculta), aceite e taxa da faixa congelada", async ({ browser }) => {
     test.setTimeout(150_000);
 
     // 5) Inquilina se candidata pela página pública do imóvel.
@@ -133,14 +133,13 @@ test.describe("T36 — Cadastro completo, do CPF ao fechamento", () => {
     expect(antes).not.toContain(inquilina.email);
     await donoPage.screenshot({ path: "tests/laboratorio/saida/t36-4-dono-ve-primeiro-nome.png", fullPage: true });
 
-    // 6) Aceite: nome curto aparece (prompt 6); comissão do plano (Essencial) fica congelada.
+    // 6) Aceite: nome curto aparece (prompt 6); a taxa da faixa do proprietário (regra única de regra.ts, sem assinatura) fica congelada.
     await donoPage.getByRole("button", { name: /Aprovar e responder/i }).first().click();
     await expect.poll(async () => (await adm().from("leads").select("status").eq("id", ids.lead!).single()).data?.status, { timeout: 20_000 }).toBe("accepted");
     await expect(donoPage.getByTestId("aceite-erro")).toHaveCount(0);
-    const essencial = PLANOS.find((p) => p.id === "essential")!;
+    const taxaFaixa = FAIXAS_COMISSAO_PADRAO[0].taxa; // dono com 1 imóvel ativo
     const aceito = (await adm().from("leads").select("accepted_commission_rate, accepted_plan").eq("id", ids.lead!).single()).data!;
-    expect(Number(aceito.accepted_commission_rate)).toBe(essencial.comissao);
-    expect(aceito.accepted_plan).toBe("essential");
+    expect(Number(aceito.accepted_commission_rate)).toBe(taxaFaixa);
     await donoPage.reload({ waitUntil: "networkidle" });
     expect(await donoPage.locator("body").innerText()).toContain("Iara S.");
     expect(await donoPage.content()).not.toContain(inquilina.email);
@@ -148,8 +147,7 @@ test.describe("T36 — Cadastro completo, do CPF ao fechamento", () => {
     // Subir de plano depois do aceite NÃO muda a comissão deste contrato.
     await definirPlano(ids.dono!, "pro");
     const depois = (await adm().from("leads").select("accepted_commission_rate, accepted_plan").eq("id", ids.lead!).single()).data!;
-    expect(Number(depois.accepted_commission_rate)).toBe(essencial.comissao);
-    expect(depois.accepted_plan).toBe("essential");
+    expect(Number(depois.accepted_commission_rate)).toBe(taxaFaixa);
     await donoPage.context().close();
   });
 
