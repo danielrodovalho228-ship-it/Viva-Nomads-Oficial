@@ -12,6 +12,7 @@ import { textoEmail } from "@/lib/notifications/texto-seguro";
 import { logModeracao } from "@/lib/data/moderacao-log";
 import { erroBancoPT } from "@/lib/erros-banco";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { filaDocumentos } from "@/lib/data/admin-indicadores";
 import { lerDocumento } from "@/lib/data/documento-servidor";
 import { preConferir, type PreConferencia } from "@/lib/moderacao/pre-conferencia";
 import { autorizacaoOk, exigeAutorizacao } from "@/lib/anuncio/operacao";
@@ -223,18 +224,20 @@ export async function listDocumentosPendentes(): Promise<DocumentoPendente[]> {
   return out;
 }
 
-/** Quantidade de documentos aguardando conferência — para o badge do nav admin.
- * A RLS `is_admin()` libera; para não-admin devolve 0 (a política não casa). */
+/**
+ * "Na fila agora" (Prompt 29, item 9) — para o selo da barra lateral: documentos de imóvel em revisão + matrículas em
+ * revisão, pela MESMA função da home e de /admin/documentos (filaDocumentos). Só admin; para os demais, 0.
+ */
 export async function countDocumentosPendentes(): Promise<number> {
   const supabase = await createClient();
   if (!supabase) return 0;
-  const { data } = await supabase
-    .from("qualification_checklists")
-    .select("owner_id, property_id, document_path")
-    .eq("document_status", "pending")
-    .limit(500);
-  // Conta documentos, não linhas (o mesmo documento pode se repetir — 0072).
-  return new Set((data ?? []).map((r) => `${r.owner_id}|${r.property_id ?? ""}|${r.document_path}`)).size;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user || !(await ehAdmin(supabase, user.id))) return 0;
+  const admin = createAdminClient();
+  if (!admin) return 0;
+  return (await filaDocumentos(admin)).total;
 }
 
 /**

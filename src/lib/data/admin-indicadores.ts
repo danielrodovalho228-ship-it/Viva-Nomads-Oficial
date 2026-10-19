@@ -145,11 +145,17 @@ export async function filaDocumentos(admin: Admin): Promise<{ documentos: number
   return { documentos: chaves.size, matriculas: matriculas.length, total: chaves.size + matriculas.length, maisAntigoEm: maisAntigo };
 }
 
+/** "Aguardando o seu OK" = cartões de aprovação pendentes e no prazo. O selo da barra lateral mostra SÓ isto. */
+export async function contarAguardandoOk(cliente: Admin): Promise<number> {
+  const { count } = await cliente.from("aprovacoes").select("id", { count: "exact", head: true }).eq("status", "pendente").gt("expira_em", new Date().toISOString());
+  return count ?? 0;
+}
+
 /** Agentes: os três números com nome (item 10). */
 export async function contadoresAgentes(admin: Admin): Promise<{ aguardandoOk: number; ordensPendentes: number; ordensLidas: number }> {
   const conta = async (p: PromiseLike<{ count: number | null }>) => (await p).count ?? 0;
   const [aguardandoOk, ordensPendentes, ordensLidas] = await Promise.all([
-    conta(admin.from("aprovacoes").select("id", { count: "exact", head: true }).eq("status", "pendente").gt("expira_em", new Date().toISOString())),
+    contarAguardandoOk(admin),
     conta(admin.from("agentes_ordens").select("id", { count: "exact", head: true }).eq("status", "pendente")),
     conta(admin.from("agentes_ordens").select("id", { count: "exact", head: true }).eq("status", "lida")),
   ]);

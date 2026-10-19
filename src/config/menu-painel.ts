@@ -56,6 +56,16 @@ export function menuDoPainel(ctx: ContextoMenu): ItemMenu[] {
       filhos: [
         { id: "admin-painel", rotulo: "Painel da equipe", icone: "admin", href: "/admin" },
         {
+          id: "admin-cadastros",
+          rotulo: "Cadastros",
+          icone: "imoveis",
+          filhos: [
+            { id: "admin-imoveis", rotulo: "Imóveis", icone: "imoveis", href: "/admin/imoveis" },
+            { id: "admin-contratos", rotulo: "Contratos", icone: "contratos", href: "/admin/contratos" },
+            { id: "admin-usuarios", rotulo: "Usuários", icone: "conta", href: "/admin/usuarios" },
+          ],
+        },
+        {
           id: "admin-operacao",
           rotulo: "Operação",
           icone: "operacao",
@@ -64,9 +74,8 @@ export function menuDoPainel(ctx: ContextoMenu): ItemMenu[] {
             { id: "admin-ajuda-publicacao", rotulo: "Publicamos para você", icone: "documentos", href: "/admin/ajuda-publicacao" },
             { id: "admin-documentos", rotulo: "Documentos", icone: "documentos", href: "/admin/documentos" },
             { id: "admin-atendimento", rotulo: "Atendimento", icone: "atendimento", href: "/admin/atendimento" },
+            { id: "admin-solicitacoes", rotulo: "Solicitações de manutenção", icone: "solicitacoes", href: "/admin/solicitacoes" },
             { id: "admin-servicos", rotulo: "Serviços do morador", icone: "solicitacoes", href: "/admin/servicos" },
-            { id: "admin-dados-teste", rotulo: "Dados de teste", icone: "atendimento", href: "/admin/dados-de-teste" },
-            { id: "admin-emails-teste", rotulo: "E-mails de teste", icone: "atendimento", href: "/admin/emails-teste" },
           ],
         },
         {
@@ -85,6 +94,15 @@ export function menuDoPainel(ctx: ContextoMenu): ItemMenu[] {
           filhos: [
             { id: "admin-financeiro", rotulo: "Financeiro", icone: "financeiro", href: "/admin/financeiro" },
             { id: "admin-socios", rotulo: "Caixa dos Sócios", icone: "socios", href: "/admin/socios" },
+          ],
+        },
+        {
+          id: "admin-ferramentas",
+          rotulo: "Ferramentas",
+          icone: "ferramentas",
+          filhos: [
+            { id: "admin-dados-teste", rotulo: "Dados de teste", icone: "ferramentas", href: "/admin/dados-de-teste" },
+            { id: "admin-emails-teste", rotulo: "E-mails de teste", icone: "ferramentas", href: "/admin/emails-teste" },
           ],
         },
         { id: "admin-marketing", rotulo: "Marketing", icone: "marketing", href: "/admin/marketing" },

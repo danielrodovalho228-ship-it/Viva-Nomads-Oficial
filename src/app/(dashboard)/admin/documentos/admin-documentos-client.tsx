@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { textoFilaDocumentos, FORMULA_FILA_DOCUMENTOS } from "@/lib/admin/indicadores";
+import { dataHoraBRT } from "@/lib/datas-brasilia";
 import {
   FileText,
   ExternalLink,
@@ -41,10 +43,13 @@ export function AdminDocumentosClient({
   docs,
   auto = [],
   contadores = { automaticos: 0, corrija: 0, revisao: 0 },
+  filaAgora = null,
 }: {
   docs: DocumentoPendente[];
   auto?: ConferidoAutomatico[];
   contadores?: { automaticos: number; corrija: number; revisao: number };
+  /** "Na fila agora" (Prompt 29, item 9): documentos + matrículas — a mesma função da home e do selo da barra lateral. */
+  filaAgora?: { documentos: number; matriculas: number; total: number; maisAntigoEm: string | null } | null;
 }) {
   const [fila, setFila] = useState(docs);
   const [aba, setAba] = useState<"revisao" | "automaticos">("revisao");
@@ -61,20 +66,32 @@ export function AdminDocumentosClient({
         subtitle="A conferência automática aprova o que bate e devolve ao dono o que está claramente errado. Aqui ficam só os casos em revisão. Conferimos o documento, não atestamos a propriedade."
       />
 
-      {/* Contadores dos últimos 7 dias (prompt 11). Grade par: 4 caixas. */}
+      {/* Prompt 29, item 9: "Na fila agora" é a soma explicada (documentos + matrículas); os 7 dias são outra métrica. */}
+      {filaAgora && (
+        <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50/60 p-3" data-testid="fila-agora">
+          <p className="font-title text-lg font-bold text-ink">
+            <span data-testid="fila-agora-total">{filaAgora.total}</span> na fila agora{" "}
+            <span className="text-base font-medium text-muted">({textoFilaDocumentos(filaAgora).replace(/^\d+ na fila \(|\)$/g, "")})</span>
+          </p>
+          <p className="text-xs text-muted">
+            {FORMULA_FILA_DOCUMENTOS}
+            {filaAgora.maisAntigoEm ? ` Mais antigo: ${dataHoraBRT(filaAgora.maisAntigoEm)}.` : ""}
+          </p>
+        </div>
+      )}
       <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4" data-testid="conferencia-contadores">
         {[
           { rotulo: "Aprovados automaticamente", valor: contadores.automaticos },
           { rotulo: "Corrija (devolvidos ao dono)", valor: contadores.corrija },
           { rotulo: "Foram para revisão", valor: contadores.revisao },
-          { rotulo: "Na fila agora", valor: fila.length },
+          { rotulo: "Documentos de imóvel em revisão", valor: fila.length },
         ].map((c) => (
           <div key={c.rotulo} className="rounded-xl border border-sage-200 bg-white p-3">
             <p className="font-title text-2xl font-bold text-forest">{c.valor}</p>
             <p className="text-xs text-muted">{c.rotulo}</p>
           </div>
         ))}
-        <p className="col-span-2 text-xs text-muted lg:col-span-4">Últimos 7 dias.</p>
+        <p className="col-span-2 text-xs text-muted lg:col-span-4">Aprovados, devolvidos e &quot;foram para revisão&quot;: últimos 7 dias. Em revisão: agora.</p>
       </div>
 
       <div className="mb-4 flex gap-2" role="tablist">
