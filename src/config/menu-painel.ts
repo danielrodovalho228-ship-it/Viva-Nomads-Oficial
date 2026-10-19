@@ -98,6 +98,8 @@ export function menuDoPainel(ctx: ContextoMenu): ItemMenu[] {
     { id: "buscas", rotulo: "Buscas salvas", icone: "buscas", href: "/dashboard/buscas" },
     { id: "pedidos", rotulo: "Meus pedidos", icone: "pedidos", href: "/dashboard/pedidos" },
     { id: "candidaturas", rotulo: "Candidaturas", icone: "candidaturas", href: "/dashboard/candidaturas" },
+    // Prompt 27 (item 7): as propostas que os proprietários enviaram, com o número das que esperam a resposta.
+    { id: "propostas-inquilino", rotulo: "Propostas", icone: "orcamentos", href: "/dashboard/propostas" },
     { id: "visitas", rotulo: "Visitas por vídeo", icone: "visitas", href: "/dashboard/visitas" },
     // Prompt 28: contrato aguardando assinatura ainda não é locação — "Contratos" (com o número do que falta assinar)
     // e "Locações" (as ativas e as encerradas).

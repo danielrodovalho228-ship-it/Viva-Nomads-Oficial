@@ -2,7 +2,7 @@
 
 import { LimpezaEstadiaCampos, formDeLimpeza, type LimpezaEstadiaForm } from "@/components/anuncio/limpeza-estadia-campos";
 import { PetsRegrasCampos, formDeRegras, type RegrasPetsForm } from "@/components/anuncio/pets-regras-campos";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { DateFieldBR } from "@/components/ui/date-field-br";
 import {
@@ -21,8 +21,11 @@ import {
   Dog,
   Cigarette,
   Baby,
+  Handshake,
   MapPin,
 } from "lucide-react";
+import { BlocoNegociacao } from "@/components/anuncio/blocos-cadastro";
+import { NEGOCIACAO_PADRAO, ITENS_NEGOCIAVEIS, type LimitesPrivados, type Negociacao } from "@/lib/anuncio/negociacao";
 import { PageTitle } from "@/components/dashboard/primitives";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { PhotoUploader, type PhotoItem } from "@/components/photo-uploader";
@@ -32,7 +35,7 @@ import { PrivacidadeCampos } from "@/components/anuncio/privacidade-campos";
 import { PRIVACIDADE_VAZIA, type Privacidade } from "@/lib/anuncio/privacidade";
 import { MIN_FOTOS, prontidaoAnuncio, type FatosAnuncio } from "@/lib/anuncio/prontidao";
 import { TERMO_IA_TEXTO, aceiteDoEditor } from "@/lib/anuncio/termo-ia";
-import { updateProperty, type PropertyInput } from "@/lib/data/actions";
+import { carregarLimitesNegociacao, salvarLimitesNegociacao, updateProperty, type PropertyInput } from "@/lib/data/actions";
 import type { Property } from "@/lib/types";
 import { formatBRL, cn } from "@/lib/utils";
 
@@ -101,6 +104,19 @@ export function EditarImovelClient({
   const [maxGuests, setMaxGuests] = useState(String(property.maxGuests || ""));
   const [monthlyPrice, setMonthlyPrice] = useState(String(property.monthlyPrice || ""));
   const [condoFee, setCondoFee] = useState(String(property.condoFee || ""));
+  // Negociação (prompt 27, item 5): o anúncio publicado abre ESTE editor, que não tinha o bloco do passo 4.
+  const [negociacao, setNegociacao] = useState<Negociacao>(property.negociacao ?? NEGOCIACAO_PADRAO);
+  const [limites, setLimites] = useState<LimitesPrivados>({ valorMinimo: null, limpezasMax: null });
+  useEffect(() => {
+    if (demo) return;
+    let vivo = true;
+    carregarLimitesNegociacao(property.id)
+      .then((l) => vivo && setLimites(l))
+      .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, [demo, property.id]);
   const [enderecoExato, setEnderecoExato] = useState(enderecoExatoInicial);
 
   const [savingSection, setSavingSection] = useState<string | null>(null);
@@ -198,6 +214,7 @@ export function EditarImovelClient({
           }
         : {}),
       maxGuests: Number(maxGuests) || undefined,
+      negociacao,
       enderecoExato,
       amenityKeys: Object.keys(amenityKeys).filter((k) => amenityKeys[k]),
       googlePlaces: property.googlePlaces ?? [],
@@ -214,6 +231,15 @@ export function EditarImovelClient({
     setErro(null);
     setSavedSection(null);
     const res = await updateProperty(property.id, buildInput(asDraft));
+    // O limite PRIVADO vai à parte (tabela só do dono), nunca no anúncio.
+    if (res.ok && key === "negociacao") {
+      const l = await salvarLimitesNegociacao(property.id, negociacao.aceita ? limites : { valorMinimo: null, limpezasMax: null });
+      if (!l.ok) {
+        setSavingSection(null);
+        setErro(l.error ?? "Não foi possível salvar o seu limite.");
+        return false;
+      }
+    }
     setSavingSection(null);
     if (res.ok) {
       setSavedSection(key);
@@ -571,6 +597,23 @@ export function EditarImovelClient({
             <NumField label="Condomínio (R$/mês)" value={condoFee} onChange={setCondoFee} />
           </div>
         </Section>
+
+        {/* Negociação: o mesmo bloco do passo 4 do cadastro (Preço e disponibilidade). */}
+        <Section
+          icon={Handshake}
+          title="Negociação"
+          testid="editar-negociacao"
+          summary={
+            negociacao.aceita
+              ? `Aceito negociar: Sim · ${negociacao.itens.length ? negociacao.itens.map((i) => ITENS_NEGOCIAVEIS.find((x) => x.chave === i)?.rotulo).join(", ") : "nenhum item marcado"}`
+              : "Aceito negociar: Não (valor fixo)"
+          }
+          saving={savingSection === "negociacao"}
+          saved={savedSection === "negociacao"}
+          onSave={() => saveSection("negociacao")}
+        >
+          <BlocoNegociacao valor={negociacao} onValor={setNegociacao} limites={limites} onLimites={setLimites} valorMensal={Number(monthlyPrice) || 0} />
+        </Section>
       </div>
 
       {/* Ver anúncio público */}
@@ -595,9 +638,11 @@ function Section({
   saving,
   saved,
   onSave,
+  testid,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   title: string;
+  testid?: string;
   summary: string;
   children: React.ReactNode;
   saving: boolean;
@@ -606,7 +651,7 @@ function Section({
 }) {
   const [open, setOpen] = useState(false);
   return (
-    <section className="overflow-hidden rounded-2xl border border-sage-200 bg-white">
+    <section className="overflow-hidden rounded-2xl border border-sage-200 bg-white" data-testid={testid}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}

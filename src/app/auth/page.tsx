@@ -386,24 +386,41 @@ export default function AuthPage() {
             return;
           }
         } else {
-          const { data, error } = await withTimeout(
-            supabase.auth.signInWithPassword({ email: emailLimpo, password, options: comCaptcha({}, captcha.token) })
+          // O atraso progressivo vale no servidor (/api/auth/entrar); ele grava a sessão nos cookies.
+          const resp = await withTimeout(
+            fetch("/api/auth/entrar", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ email: emailLimpo, password, captchaToken: captcha.token }),
+            })
           );
-          if (error) {
-            const m = (error.message || "").toLowerCase();
+          const res = (await resp.json().catch(() => ({}))) as {
+            ok?: boolean;
+            codigo?: string;
+            error?: string;
+            espera?: number;
+            user?: { id: string; email: string; fullName: string | null; role: string };
+          };
+          if (!res.ok) {
             // E-mail ainda não confirmado → tela "Confirme seu e-mail", que tem o
             // botão "Reenviar e-mail de confirmação" (não é senha errada).
-            if (m.includes("not confirmed") || m.includes("confirm")) {
+            if (res.codigo === "nao_confirmado") {
               setNotice("Seu e-mail ainda não foi confirmado. Verifique a caixa de entrada (e o spam) ou reenvie abaixo.");
               setAwaitingConfirm(true);
               setLoading(false);
               return;
             }
+            if (res.codigo === "espera") {
+              setEspera(Math.max(1, Math.min(res.espera ?? 60, 60)));
+              throw new Error("Muitas tentativas. Aguarde um pouco para tentar de novo.");
+            }
+            if (res.codigo === "captcha") throw new Error(res.error || "captcha");
             // Credenciais inválidas: SEMPRE a mesma mensagem (F43) — nunca revela
             // se o e-mail tem conta. Conta a falha para o atraso progressivo (F44).
             registrarFalha();
-            throw error;
+            throw new Error("Invalid login credentials");
           }
+          const data = { user: res.user ? { id: res.user.id, email: res.user.email, user_metadata: { full_name: res.user.fullName ?? undefined, role: res.user.role } } : null };
           // Seta o usuário SÍNCRONO a partir da sessão VALIDADA pelo Supabase —
           // não é "fabricar" sessão (o login já passou). Sem isto, o painel
           // dependia do AuthProvider (assíncrono) e o AuthGuard podia quicar de

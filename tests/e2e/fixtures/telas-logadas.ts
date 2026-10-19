@@ -34,6 +34,7 @@ export const TELAS_PAINEL = [
   "/dashboard/orcamentos/nova",
   "/dashboard/pedidos",
   "/dashboard/pedidos-cidade",
+  "/dashboard/propostas",
   "/dashboard/reembolsos",
   "/dashboard/roi-imovel",
   "/dashboard/simulador",

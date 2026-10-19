@@ -305,7 +305,7 @@ test("prompt 15 — cenários de ocupação: −2 / informado / +2, presos em 6.
   assert.deepEqual(cenariosOcupacao(10).map((c) => c.mesesOcupados), [8, 10, 12]);
   assert.deepEqual(cenariosOcupacao(12).map((c) => c.mesesOcupados), [10, 12, 12]);
   assert.deepEqual(cenariosOcupacao(6).map((c) => c.mesesOcupados), [6, 6, 8]);
-  assert.deepEqual(cenariosOcupacao(3).map((c) => c.nome), ["Pessimista", "Esperado", "Otimista"]);
+  assert.deepEqual(cenariosOcupacao(3).map((c) => c.nome), ["Conservador", "Realista", "Otimista"]);
 });
 
 test("prompt 15 — cenários: mais meses ocupados nunca dão líquida menor (mesma base do simulador)", () => {

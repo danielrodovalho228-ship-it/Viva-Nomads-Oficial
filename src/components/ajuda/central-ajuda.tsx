@@ -268,6 +268,7 @@ function NovoChamado({
   const [mensagem, setMensagem] = useState("");
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
+  const [telefone, setTelefone] = useState("");
   const [contratoId, setContratoId] = useState<string>(contexto?.tipo === "contrato" ? contexto.id : "");
   const [urgencia, setUrgencia] = useState<"urgente" | "media" | "baixa">("media");
   const [catManut, setCatManut] = useState("outros");
@@ -296,6 +297,7 @@ function NovoChamado({
       categoriaManutencao: manutencao ? catManut : undefined,
       visitanteNome: logado ? undefined : nome,
       visitanteEmail: logado ? undefined : email,
+      visitanteTelefone: logado ? undefined : telefone,
       captchaToken: logado ? undefined : (captcha.token ?? undefined),
     }).catch(() => ({ ok: false as const, error: "Falha de conexão. Tente de novo." }));
     if (!logado) captcha.reset(); // o token vale uma vez só
@@ -402,6 +404,10 @@ function NovoChamado({
             <label className="block text-sm">
               <span className="mb-1 block font-medium text-ink">Seu e-mail (para a resposta)</span>
               <input type="email" required name="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className={campo} />
+            </label>
+            <label className="block text-sm sm:col-span-2">
+              <span className="mb-1 block font-medium text-ink">Telefone com DDD (opcional)</span>
+              <input type="tel" inputMode="tel" name="telefone" autoComplete="tel" maxLength={20} value={telefone} onChange={(e) => setTelefone(e.target.value)} placeholder="(34) 99999-1234" className={campo} />
             </label>
             {captcha.widget && <div className="sm:col-span-2">{captcha.widget}</div>}
             <p data-testid="chamado-aviso-dados" className="text-xs text-muted sm:col-span-2">

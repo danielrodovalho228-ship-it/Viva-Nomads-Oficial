@@ -7,7 +7,7 @@ const DOMINIO_DO_LAB = "lab.vivanomads.com.br";
 
 /** validarVisitante + checagem de MX do domínio (mesma regra do pré-cadastro, F2). Só servidor. */
 export async function validarVisitanteComDns(
-  entrada: { nome?: string; email?: string },
+  entrada: { nome?: string; email?: string; telefone?: string },
   resolvedor?: ResolvedorDns
 ): Promise<VisitanteValidado> {
   const v = validarVisitante(entrada);

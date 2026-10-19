@@ -274,19 +274,19 @@ function ContratoCard({
       )}
 
       {/* Taxa de serviço (contrato-mãe) com a BASE REAL gravada no aceite (prompt 23): 1 mês nos contratos antigos,
-          valor total nos novos. Sem afirmar regra de renovação (aguarda a Dra. Beatriz). */}
+          valor mensal × meses nos novos, no rótulo único do prompt 27. Sem afirmar regra de renovação (aguarda a Dra. Beatriz). */}
       <p className="mt-3 rounded-lg bg-champagne/10 px-3 py-2 text-xs text-forest" data-testid="contrato-taxa">
-        Taxa de serviço do contrato: <strong>{formatBRL(contrato.comissaoValor)}</strong>{" "}
+        Taxa de serviço:{" "}
         <span data-testid="contrato-taxa-base">
-          ({rotuloBaseTaxa({
+          {rotuloBaseTaxa({
             valor: contrato.comissaoValor,
             percent: contrato.comissaoPercent,
             aluguelMensal: contrato.aluguelMensal,
             meses: Math.round(contrato.prazoTotalDias / DIAS_POR_MES),
             aceiteEm: contrato.aceiteEm ?? null,
-          })})
+          })}
         </span>{" "}
-        — cobrada à parte, do proprietário; o valor mensal vai direto a você.
+        = <strong>{formatBRL(contrato.comissaoValor)}</strong> — cobrada à parte, do proprietário; o valor mensal vai direto a você.
       </p>
 
       {/* Timeline dos blocos */}

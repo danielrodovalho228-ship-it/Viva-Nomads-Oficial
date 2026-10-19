@@ -103,7 +103,7 @@ test.describe("T193 — propostas", () => {
       const dono = await abrir(browser, c.dono.email, largura);
       const id = await enviarPelaTela(dono, c);
       await expect(dono.getByTestId("proposta-status")).toHaveText("Enviada");
-      await expect(dono.getByTestId("proposta-taxa")).toContainText("Taxa de serviço 12%");
+      await expect(dono.getByTestId("proposta-taxa")).toContainText("Taxa de serviço: 12% sobre o valor mensal × meses (R$ 3.200 × 4 = R$ 12.800) = R$ 1.536");
       await dono.screenshot({ path: `${SAIDA}/t193-1-enviada-dono-${largura}.png`, fullPage: true });
       // Número do servidor.
       await expect(dono.getByRole("heading", { name: /Proposta ORC-\d{4}-\d{4}/ })).toBeVisible();

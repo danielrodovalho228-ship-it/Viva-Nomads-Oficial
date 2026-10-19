@@ -19,7 +19,7 @@ import {
   MOTIVOS_RECUSA,
   type Mudancas,
 } from "@/lib/propostas/regras";
-import { pctTexto } from "@/lib/cobranca/regra";
+import { rotuloTaxaServico } from "@/lib/cobranca/regra";
 import { cn, dataBR, formatBRL, hojeBR } from "@/lib/utils";
 
 const quem = (a: "owner" | "tenant") => (a === "owner" ? "Proprietário" : "Interessado");
@@ -330,8 +330,8 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
           {p.taxa && (
             <Panel title="Só você vê" data-testid="proposta-taxa">
               <p className="text-sm text-ink">
-                Taxa de serviço {pctTexto(p.taxa.pct)} sobre o valor total = <strong>{formatBRL(p.taxa.valor)}</strong>
-                {p.taxa.congelada ? " (congelada no aceite)" : ""}.
+                {rotuloTaxaServico(p.taxa.pct, p.taxa.valorMensal, p.taxa.meses, p.taxa.valor)}
+                {p.taxa.congelada ? " (congelada no aceite)" : ""}. Consumo, limpeza e taxa pet não entram na base.
               </p>
             </Panel>
           )}

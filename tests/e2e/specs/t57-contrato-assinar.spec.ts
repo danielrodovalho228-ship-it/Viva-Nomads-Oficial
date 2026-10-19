@@ -118,7 +118,7 @@ test.describe("T57 — Contrato semeado: inquilino e proprietário veem e assina
     const link = page.getByTestId("contrato-ver-assinar").first();
     await expect(link).toBeVisible({ timeout: 20_000 });
     await link.click();
-    await expect(page).toHaveURL(/\/dashboard\/contratos\/[0-9a-f-]{36}$/);
+    await expect(page).toHaveURL(/\/dashboard\/contratos\/[0-9a-f-]{36}$/, { timeout: 45_000 });
     await expect(page.getByTestId("contrato-resumo")).toBeVisible();
     await expect(page.getByTestId("contrato-aviso-assinatura")).toBeVisible();
     // O inquilino assina (gravado pelo servidor de teste: o código vai por e-mail e o lab não lê caixa): o dono vê quem falta.

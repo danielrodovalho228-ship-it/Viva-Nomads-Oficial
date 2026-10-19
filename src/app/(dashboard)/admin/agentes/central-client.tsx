@@ -292,7 +292,7 @@ export function CentralAgentes({ dados, vermelhos = [] }: { dados: DadosCentral;
               [kpi?.ativos, "agentes ativos"],
               [kpi?.rondas24h, "rondas em 24 h"],
               [kpi?.falhas, "falharam na última"],
-              [kpi?.p1, "achados P1"],
+              [kpi?.p1, "achados P1 (última ronda)"],
             ].map(([v, l]) => (
               <div key={String(l)} className="min-w-0 rounded-xl border border-white/10 bg-[#0D1838]/60 px-2 py-2 sm:px-3 sm:py-2.5">
                 <b className="block text-lg font-medium text-white sm:text-[22px]" style={mono}>

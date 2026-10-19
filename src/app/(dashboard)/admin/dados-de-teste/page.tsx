@@ -6,6 +6,7 @@ import { ehAnuncioDeTeste } from "@/lib/data/anuncio-teste";
 import { NovaJornadaTeste } from "./nova-jornada";
 import { ACOES_JORNADA, ALVOS_JORNADA } from "@/lib/jornada-teste";
 import { dataHoraBrasilia } from "@/config/atendimento";
+import { SemearCarteiraTeste } from "./semear-carteira";
 
 export const metadata = { title: "Dados de teste — Admin" };
 export const dynamic = "force-dynamic";
@@ -71,6 +72,16 @@ export default async function AdminDadosDeTestePage() {
               </li>
             ))}
           </ul>
+        )}
+      </Panel>
+      <Panel title="Carteira de teste (Análise da carteira)" className="mt-6">
+        {contas.length < 2 ? (
+          <EmptyState icon={FlaskConical} title="Faltam contas de teste" text="É preciso um proprietário e um inquilino de teste (is_teste)." />
+        ) : (
+          <SemearCarteiraTeste
+            proprietarios={contas.filter((c) => c.role !== "admin").map((c) => ({ id: c.id, rotulo: c.email ?? c.full_name ?? c.id }))}
+            inquilinos={contas.filter((c) => c.role !== "admin").map((c) => ({ id: c.id, rotulo: c.email ?? c.full_name ?? c.id }))}
+          />
         )}
       </Panel>
       <p className="mt-4 text-sm text-muted">

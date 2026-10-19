@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 
 /**
  * F43/F44 — login sem enumeração de e-mail e com atraso depois de 3 falhas.
- * O Supabase Auth é simulado (400 invalid_credentials) para qualquer e-mail:
+ * A rota de login do servidor é simulada (401 credenciais) para qualquer e-mail:
  * a tela tem que reagir IGUAL com conta ou sem conta.
  */
 test.describe("Login — sem enumeração e com atraso (F43/F44)", () => {
@@ -13,8 +13,8 @@ test.describe("Login — sem enumeração e com atraso (F43/F44)", () => {
     page.on("request", (r) => {
       if (r.url().includes("email-existe")) consultas.push(r.url());
     });
-    await page.route("**/auth/v1/token*", (r) =>
-      r.fulfill({ status: 400, contentType: "application/json", body: JSON.stringify({ code: "invalid_credentials", message: "Invalid login credentials" }) })
+    await page.route("**/api/auth/entrar", (r) =>
+      r.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ ok: false, codigo: "credenciais" }) })
     );
     await page.goto("/auth");
     await page.locator('input[type="email"]').first().fill("ninguem@exemplo.com.br");
@@ -29,8 +29,8 @@ test.describe("Login — sem enumeração e com atraso (F43/F44)", () => {
   });
 
   test("depois de 3 falhas o botão espera (atraso progressivo)", async ({ page }) => {
-    await page.route("**/auth/v1/token*", (r) =>
-      r.fulfill({ status: 400, contentType: "application/json", body: JSON.stringify({ code: "invalid_credentials", message: "Invalid login credentials" }) })
+    await page.route("**/api/auth/entrar", (r) =>
+      r.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ ok: false, codigo: "credenciais" }) })
     );
     await page.goto("/auth");
     await page.locator('input[type="email"]').first().fill("outro@exemplo.com.br");
@@ -42,5 +42,21 @@ test.describe("Login — sem enumeração e com atraso (F43/F44)", () => {
     }
     await expect(page.getByTestId("login-aviso-tentativas")).toBeVisible();
     await expect(entrar).toBeDisabled();
+  });
+
+  test("servidor: a 6ª tentativa seguida do mesmo e-mail leva 429 com Retry-After (chamando a rota direto)", async ({ request }) => {
+    const email = `atraso-${Date.now()}@exemplo.com.br`;
+    let ultimo = 0;
+    let retry: string | undefined;
+    for (let i = 0; i < 6; i++) {
+      const r = await request.post("/api/auth/entrar", { data: { email, password: "senha-errada-123" } });
+      ultimo = r.status();
+      retry = r.headers()["retry-after"];
+    }
+    expect(ultimo).toBe(429);
+    expect(Number(retry)).toBeGreaterThan(0);
+    // outro e-mail não é afetado
+    const outro = await request.post("/api/auth/entrar", { data: { email: `outro-${Date.now()}@exemplo.com.br`, password: "x" } });
+    expect(outro.status()).toBe(401);
   });
 });

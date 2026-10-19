@@ -16,6 +16,7 @@ import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 import { avisoAbaixoDoMinimo, normalizarNegociacao, descontoParaMeses, type Negociacao } from "@/lib/anuncio/negociacao";
 import { faixaPorImoveisAtivos, comissaoSobreContrato } from "@/lib/cobranca/regra";
 import {
+  aguardandoResposta,
   aplicarContraproposta,
   bloqueioContraproposta,
   calcularTotais,
@@ -28,6 +29,7 @@ import {
   mesesDoAnuncio,
   motivoRecusaValido,
   MOTIVOS_RECUSA,
+  STATUS_ABERTOS,
   mudancasProibidas,
   taxaNoAceite,
   validaAteDe,
@@ -389,7 +391,7 @@ export interface PropostaView {
   descontos: { mesesMin: number; pct: number }[];
   limites: { mesesMin: number; mesesMax: number };
   /** Só o proprietário vê a taxa de serviço. */
-  taxa: { pct: number; valor: number; congelada: boolean } | null;
+  taxa: { pct: number; valor: number; congelada: boolean; valorMensal: number; meses: number } | null;
   fechamentoUrl: string | null;
 }
 
@@ -405,6 +407,8 @@ export interface PropostaResumo {
   meses: number;
   validaAte: string;
   versaoAtual: number;
+  /** Aberta e esperando a resposta desta pessoa (prompt 27). */
+  aguardandoVoce: boolean;
 }
 
 async function nomeOutraParte(admin: Admin, p: LinhaProposta, papel: Autor): Promise<string> {
@@ -448,9 +452,27 @@ export async function listarPropostas(): Promise<PropostaResumo[]> {
       meses: Number(v.meses),
       validaAte: p.valida_ate,
       versaoAtual: p.versao_atual,
+      aguardandoVoce: aguardandoResposta(p.status, v.autor, papel),
     });
   }
   return out;
+}
+
+/** Número do menu "Propostas" do inquilino: propostas abertas esperando a resposta dele (prompt 27). */
+export async function contarPropostasAguardando(): Promise<number> {
+  const s = await sessao();
+  if (!s) return 0;
+  const { data } = await s.supabase
+    .from("propostas")
+    .select("id, versao_atual, valida_ate, proposta_versoes(versao, autor)")
+    .eq("tenant_id", s.user.id)
+    .in("status", STATUS_ABERTOS as string[])
+    .gt("valida_ate", new Date().toISOString())
+    .limit(50);
+  return ((data ?? []) as { versao_atual: number; proposta_versoes: { versao: number; autor: Autor }[] | null }[]).filter((p) => {
+    const v = (p.proposta_versoes ?? []).find((x) => x.versao === p.versao_atual);
+    return !!v && daVez(v.autor) === "tenant";
+  }).length;
 }
 
 /** Detalhe da proposta (as duas partes). O interessado abrindo uma proposta "Enviada" a marca como "Vista". */
@@ -500,7 +522,7 @@ export async function lerProposta(id: string): Promise<PropostaView | null> {
   if (papel === "owner") {
     const congelada = p.taxa_congelada != null;
     const pct = congelada ? Number(p.taxa_congelada) : faixaPorImoveisAtivos(await imoveisAtivos(s.admin, s.user.id)).taxa;
-    taxa = { pct, valor: comissaoSobreContrato(atual.totais.valorMensal, atual.termos.meses, pct), congelada };
+    taxa = { pct, valor: comissaoSobreContrato(atual.totais.valorMensal, atual.termos.meses, pct), congelada, valorMensal: atual.totais.valorMensal, meses: atual.termos.meses };
   }
   return {
     id: p.id,
