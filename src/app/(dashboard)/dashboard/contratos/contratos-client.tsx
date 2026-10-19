@@ -287,7 +287,7 @@ function ContratoCard({
             aceiteEm: contrato.aceiteEm ?? null,
           })}
         </span>{" "}
-        = <strong>{formatBRL(contrato.comissaoValor)}</strong> — cobrada à parte, do proprietário; o valor mensal vai direto a você.
+        — cobrada à parte, do proprietário; o valor mensal vai direto a você.
       </p>
 
       {/* Timeline dos blocos */}

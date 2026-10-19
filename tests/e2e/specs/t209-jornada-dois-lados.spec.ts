@@ -10,7 +10,7 @@ import { campoBrasiliaParaIso, instanteParaCampoBrasilia } from "../../../src/li
       com motivo, no painel Visitas e no cartão da conversa; o endereço exato só aparece depois da confirmação.
    3. Conta de teste: laudo simulado "TESTE — verificação simulada" em /dashboard/verificacao e no fechamento (a
       jornada segue); conta real continua "em breve".
-   4. Taxa de serviço com a base real: contrato antigo "12% de 1 mês — regra vigente no aceite em DD/MM"; novo
+   4. Taxa de serviço com a base real: contrato antigo "Regra anterior: 12% de 1 mês (R$ 3.200) = R$ 384, valor gravado no aceite em DD/MM/AAAA"; novo
       "12% sobre o valor mensal × meses (R$ 3.200 × N = …)" (rótulo único do prompt 27).
    5. Agenda: a visita confirmada e a locação aparecem; outro proprietário não vê; /dashboard/calendario → Agenda.
    6. E-mails da jornada na caixa de teste (visita pedida / confirmada / remarcada / cancelada).
@@ -290,7 +290,7 @@ test.describe("T209 — jornada dos dois lados (prompt 23)", () => {
       await d.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
       await abrir(d, "/dashboard/contratos");
       const bases = d.getByTestId("contrato-taxa-base");
-      await expect(bases.filter({ hasText: "12% de 1 mês — regra vigente no aceite em 12/10" })).toHaveCount(1, { timeout: 25_000 });
+      await expect(bases.filter({ hasText: "Regra anterior: 12% de 1 mês (R$ 3.200) = R$ 384, valor gravado no aceite em 12/10/" })).toHaveCount(1, { timeout: 25_000 });
       await expect(bases.filter({ hasText: "12% sobre o valor mensal × meses (R$ 3.200 ×" })).toHaveCount(1);
       await expect(d.getByTestId("contrato-taxa").first()).toContainText("Taxa de serviço:");
       await expect(d.getByTestId("contrato-taxa").first()).not.toContainText(/[Cc]omissão/);

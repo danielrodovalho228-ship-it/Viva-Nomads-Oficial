@@ -48,6 +48,8 @@ export interface ContratoLinhaAdmin extends ContratoParaAgregado {
   assinadoInquilino: boolean;
   /** Conta de teste ou anúncio [TESTE…] (só aparece com o filtro "teste"). */
   teste: boolean;
+  /** Data do aceite da candidatura (a taxa foi gravada nesse dia) — para o rótulo único rotuloBaseTaxa. */
+  aceiteEm: string | null;
 }
 
 /**
@@ -63,7 +65,7 @@ export async function contratosReais(
   const k = cidade ? chaveCidade(cidade) : null;
   let q = admin
     .from("contratos")
-    .select("id, created_at, status, property_id, tenant_id, aluguel_mensal, prazo_total_dias, comissao_valor, comissao_percent, assinado_proprietario_em, assinado_inquilino_em, properties!inner(owner_id, title, city)")
+    .select("id, created_at, status, property_id, tenant_id, aluguel_mensal, prazo_total_dias, comissao_valor, comissao_percent, assinado_proprietario_em, assinado_inquilino_em, properties!inner(owner_id, title, city), leads(accepted_at)")
     .order("created_at", { ascending: false })
     .limit(2000);
   if (periodo) q = q.gte("created_at", periodo.ini).lt("created_at", periodo.fim);
@@ -81,12 +83,14 @@ export async function contratosReais(
     assinado_proprietario_em: string | null;
     assinado_inquilino_em: string | null;
     properties: { owner_id: string; title: string | null; city: string | null };
+    leads: { accepted_at: string | null } | null;
   }[])
     .map((c) => ({ ...c, ehTeste: teste.has(c.tenant_id) || teste.has(c.properties.owner_id) || MARCA_TESTE.test(c.properties.title ?? "") }))
     .filter((c) => (tipo === "todos" ? true : tipo === "teste" ? c.ehTeste : !c.ehTeste))
     .filter((c) => !k || chaveCidade(c.properties.city) === k)
     .map((c) => ({
       teste: c.ehTeste,
+      aceiteEm: c.leads?.accepted_at ?? null,
       id: c.id,
       criadoEm: c.created_at,
       status: c.status,

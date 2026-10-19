@@ -19,7 +19,7 @@ import {
   FORMULA_VALOR_MENSAL,
   FORMULA_VALOR_TOTAL,
 } from "@/lib/admin/indicadores";
-import { rotuloTaxaServico } from "@/lib/cobranca/regra";
+import { rotuloBaseTaxa } from "@/lib/taxa-servico-base";
 import type { ContratoLinhaAdmin } from "@/lib/data/admin-indicadores";
 
 /**
@@ -284,7 +284,7 @@ function TabelaComissoes({ linhas }: { linhas: ReturnType<typeof calcularFinance
   );
 }
 
-/** Contratos do período com o rótulo ÚNICO da taxa (o mesmo do site: rotuloTaxaServico) e a marca "regra anterior". */
+/** Contratos do período com o rótulo ÚNICO da taxa do contrato (rotuloBaseTaxa) e a marca "regra anterior". */
 function TabelaContratos({ linhas }: { linhas: ContratoLinhaAdmin[] }) {
   if (linhas.length === 0) return null;
   return (
@@ -298,7 +298,8 @@ function TabelaContratos({ linhas }: { linhas: ContratoLinhaAdmin[] }) {
             </Link>
             {ehRegraAnterior(c) && <span className="ml-2 rounded-full bg-surface-2 px-2 py-0.5 text-xs text-muted">regra anterior</span>}
             <span className="block text-xs text-muted" data-testid="fin-rotulo-taxa">
-              {rotuloTaxaServico(c.taxaPercent ?? 0, c.aluguelMensal ?? 0, meses, c.taxaValor)}
+              Taxa de serviço:{" "}
+              {rotuloBaseTaxa({ valor: c.taxaValor ?? 0, percent: c.taxaPercent ?? 0, aluguelMensal: c.aluguelMensal ?? 0, meses, aceiteEm: c.aceiteEm })}
             </span>
           </li>
         );

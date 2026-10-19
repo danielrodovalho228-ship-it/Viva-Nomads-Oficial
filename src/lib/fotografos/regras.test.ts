@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { atendeCidade, cidadeDoCep, contatoLiberado, creditoNoCancelamento, filtrarPorCidade, normalizarCep, podeAceitar, portfolioSeguro, taxaValida, validarPedido } from "./regras.ts";
+import { atendeCidade, cidadeDoCep, contatoLiberado, filtrarPorCidade, normalizarCep, podeAceitar, portfolioSeguro, taxaValida, validarPedido } from "./regras.ts";
 
 const ID = "3f2b8c1e-5a4d-4e7b-9c1a-0d2e4f6a8b10";
 const base = { fotografoId: ID, cep: "38400-100", cidade: "Uberlândia", uf: "mg", data: "2026-10-20", observacao: "" };
@@ -29,14 +29,6 @@ test("só aceita depois de pagar a taxa", () => {
   assert.equal(podeAceitar({ status: "enviado", taxa_paga_em: null }), false);
   assert.equal(podeAceitar({ status: "enviado", taxa_paga_em: "2026-10-11T10:00:00Z" }), true);
   assert.equal(podeAceitar({ status: "cancelado", taxa_paga_em: "2026-10-11T10:00:00Z" }), false);
-});
-
-test("cancelamento antes do ensaio vira crédito; sem taxa paga ou após entrega, não", () => {
-  const pago = "2026-10-11T10:00:00Z";
-  assert.equal(creditoNoCancelamento({ status: "aceito", taxa_paga_em: pago, taxa_valor: 40 }), 40);
-  assert.equal(creditoNoCancelamento({ status: "enviado", taxa_paga_em: null, taxa_valor: 40 }), 0);
-  assert.equal(creditoNoCancelamento({ status: "entregue", taxa_paga_em: pago, taxa_valor: 40 }), 0);
-  assert.equal(creditoNoCancelamento({ status: "aceito", taxa_paga_em: pago, taxa_valor: null }), 0);
 });
 
 test("validarPedido: caminho feliz e casos negativos", () => {

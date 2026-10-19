@@ -3202,13 +3202,6 @@
       ],
       "specs": []
     },
-    "src/lib/fotografos/actions.ts#salvarTaxaParceria": {
-      "personas": [
-        "proprietario",
-        "parceiro"
-      ],
-      "specs": []
-    },
     "src/lib/marcas/actions.ts#listarMarcas": {
       "personas": [
         "inquilino"

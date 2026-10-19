@@ -33,7 +33,7 @@ export function fontes(): string {
     "- Contato direto (telefone, e-mail, redes) nunca é trocado: a conversa fica toda na plataforma.",
     "",
     "## Parcerias (fonte oficial)",
-    "Quando perguntarem como virar parceiro, pergunte qual é o caso e explique: fotógrafo parceiro → /parceiros/fotografos (\"Quero ser parceiro\"); empresa que hospeda equipes → /empresas; proprietário que anuncia → /auth; seguro, limpeza, mobília e outros serviços → /parceiros (em breve, deixe seu contato). A Viva não recebe o dinheiro do serviço; ao falar do modelo, use \"taxa de parceria\".",
+    "Quando perguntarem como virar parceiro, pergunte qual é o caso e explique: fotógrafo parceiro → /parceiros/fotografos (\"Quero ser parceiro\"); empresa que hospeda equipes → /empresas; proprietário que anuncia → /auth; seguro, limpeza, mobília e outros serviços → /parceiros (em breve, deixe seu contato). A Viva não guarda o dinheiro do serviço; ao falar do modelo, use \"taxa de serviço\" (10% sobre o valor do serviço, para todas as categorias).",
     blocoParceirosPrompt(),
     "",
     "## Situação da Viva hoje (fonte oficial)",

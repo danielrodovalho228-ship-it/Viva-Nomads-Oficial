@@ -8,7 +8,8 @@ import { BannerTopo } from "@/components/institucional/banner-topo";
 import { BrandImage } from "@/components/brand-image";
 import { ButtonLink } from "@/components/ui/button";
 import { ParceiroForm } from "./parceiro-form";
-import { FaixasTaxaParceria } from "@/components/parceiros/faixas-taxa";
+import { textoTaxaServicoParceiros } from "@/config/taxa-servico-parceiros";
+import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
 import { FOTOS_PARCERIA } from "@/lib/parceiros-cartoes";
 
 export const metadata: Metadata = {
@@ -40,14 +41,14 @@ const PASSOS = [
 
 const REGRAS = [
   "O pagamento do serviço é entre parceiro e cliente: a Viva não recebe esse dinheiro.",
-  "Taxa de parceria só quando você aceita um pedido, com o valor mostrado antes (veja as faixas abaixo).",
+  "Taxa de serviço de 10% sobre o valor do serviço, igual para todas as categorias (detalhes abaixo).",
   "Sem exclusividade e sem mensalidade.",
   "Contato fora da plataforma antes do aceite leva ao descadastro.",
 ];
 
 const DUVIDAS = [
   { p: "Preciso de CNPJ?", r: "Para aparecer no site, CNPJ ou MEI. Você pode se cadastrar antes." },
-  { p: "Quanto custa?", r: "É grátis. A taxa de parceria só existe quando você aceita um pedido." },
+  { p: "Quanto custa?", r: "O cadastro é grátis. Sobre cada serviço feito, a taxa de serviço é de 10%; sem mensalidade." },
   { p: "Em quais cidades?", r: "Começando por Uberlândia (MG). Cadastre-se de qualquer cidade e avisamos quando chegarmos aí." },
 ];
 
@@ -141,7 +142,9 @@ export default async function ParceirosPage({ searchParams }: { searchParams: Pr
                 </li>
               ))}
             </ul>
-            <div className="mt-6"><FaixasTaxaParceria titulo="Taxa de parceria para fotógrafos" /></div>
+            <p className="mt-6 rounded-2xl border border-line bg-white p-4 text-sm text-ink sm:p-6" data-testid="taxa-servico-parceiros">
+              {textoTaxaServicoParceiros(PAGAMENTO_PARCEIROS_ATIVO)}
+            </p>
           </div>
         </div>
       </section>
@@ -150,7 +153,7 @@ export default async function ParceirosPage({ searchParams }: { searchParams: Pr
         <div className="container-page grid gap-10 md:grid-cols-5">
           <div className="md:col-span-2">
             <h2 id="h-form" className="font-title text-3xl font-bold text-ink">Quero ser parceiro</h2>
-            <p className="mt-3 text-muted">Deixe seu contato e a equipe responde. É grátis; a taxa de parceria só existe quando você aceita um pedido.</p>
+            <p className="mt-3 text-muted">Deixe seu contato e a equipe responde. O cadastro é grátis; a taxa de serviço é de 10% sobre cada serviço feito.</p>
             <dl className="mt-8 space-y-5" aria-labelledby="h-duvidas">
               <h3 id="h-duvidas" className="font-title text-lg font-bold text-ink">Dúvidas</h3>
               {DUVIDAS.map((d) => (<div key={d.p}><dt className="font-semibold text-ink">{d.p}</dt><dd className="mt-1 text-sm text-muted">{d.r}</dd></div>))}

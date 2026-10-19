@@ -57,9 +57,9 @@ export const FAQ: Pergunta[] = [
   },
   {
     id: "taxa-parceria",
-    pergunta: "Taxa de parceria",
+    pergunta: "Taxa de serviço dos parceiros",
     resposta: `${TAXA_PARCERIA_TEXTO} ${CONTATO_NO_ACEITE} ${REGRAS_ENTREGA}`,
-    termos: ["taxa de parceria", "taxa parceiro", "40", "60", "80", "fotos", "advertencia", "suspensao", "credito", "mensalidade", "dinheiro do servico", "contato", "aceite", "liberado", "entregar"],
+    termos: ["taxa de parceria", "taxa de servico", "taxa parceiro", "10%", "90%", "fotos", "advertencia", "suspensao", "mensalidade", "dinheiro do servico", "contato", "aceite", "liberado", "entregar"],
   },
   {
     id: "contratar-fotografo",
