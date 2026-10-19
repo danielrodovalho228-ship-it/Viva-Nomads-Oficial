@@ -99,6 +99,8 @@ export interface AbrirChamadoInput {
   pedePessoa?: boolean;
   visitanteNome?: string;
   visitanteEmail?: string;
+  /** Telefone opcional do visitante (só para a equipe; nunca em log nem URL). */
+  visitanteTelefone?: string;
   /** Token do Turnstile (só visitante, e só quando o captcha está ligado). */
   captchaToken?: string;
 }
@@ -119,8 +121,9 @@ export async function abrirChamado(
 
   let visitanteEmail: string | null = null;
   let visitanteNome: string | null = null;
+  let visitanteTelefone: string | null = null;
   if (!user) {
-    const v = await validarVisitanteComDns({ nome: input.visitanteNome, email: input.visitanteEmail });
+    const v = await validarVisitanteComDns({ nome: input.visitanteNome, email: input.visitanteEmail, telefone: input.visitanteTelefone });
     if (!v.ok) return { ok: false, error: v.error };
     const cap = await verificarCaptchaServidor(input.captchaToken, {
       chavePublica: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
@@ -129,6 +132,7 @@ export async function abrirChamado(
     if (!cap.ok) return { ok: false, error: cap.error };
     visitanteEmail = v.email;
     visitanteNome = v.nome;
+    visitanteTelefone = v.telefone ?? null;
   }
 
   // Limite: 8 chamados por hora por pessoa (ou por IP, para visitante).
@@ -197,6 +201,7 @@ export async function abrirChamado(
       usuario_id: user?.id ?? null,
       visitante_email: visitanteEmail,
       visitante_nome: visitanteNome,
+      visitante_telefone: visitanteTelefone,
       tipo,
       categoria: cat.key,
       prioridade,
@@ -489,10 +494,11 @@ export interface ChamadoAdmin extends ChamadoLista {
   usuario_id: string | null;
   visitante_email: string | null;
   visitante_nome: string | null;
+  visitante_telefone: string | null;
 }
 
 const COLS_ADMIN =
-  "id, numero_publico, assunto, status, prioridade, tipo, canal, categoria, contexto_tipo, contexto_id, service_order_id, responsavel_tipo, responsavel_admin, prazo_primeira_resposta, prazo_resolucao, primeira_resposta_em, sla_estado, nota_satisfacao, usuario_id, visitante_email, visitante_nome, criado_em, atualizado_em";
+  "id, numero_publico, assunto, status, prioridade, tipo, canal, categoria, contexto_tipo, contexto_id, service_order_id, responsavel_tipo, responsavel_admin, prazo_primeira_resposta, prazo_resolucao, primeira_resposta_em, sla_estado, nota_satisfacao, usuario_id, visitante_email, visitante_nome, visitante_telefone, criado_em, atualizado_em";
 
 export interface FiltrosFila {
   status?: string;

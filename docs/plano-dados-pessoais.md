@@ -11,6 +11,7 @@ Cada fase vira uma migração própria, com SQL mostrado ao Daniel e aplicada s�
 | `profiles.cnpj` | 0 | tela Conta | `api/assinatura` (cliente do usuário), `fiscal/emitir`, `fechamento-servidor` (service_role) |
 | `profiles.phone` | 0 | `perfil-actions` (cliente do usuário) | `perfil-actions/getMeusDados` (cliente do usuário), `atendimento/servidor` e `pedidos-admin` (WhatsApp) |
 | `properties.responsavel_local_telefone` | 0 | anúncio (dono) | dono e admin |
+| `chamados.visitante_telefone` | 0 | `abrirChamado` (service_role, só visitante, opcional, só dígitos) | equipe no admin, sempre mascarado (`(34) •••••-1234`); RLS de `chamados` não dá acesso a visitante |
 | `documents.doc_number` | 0 | documentos do proprietário | dono |
 | `documentos_fiscais.locador_doc` / `locatario_doc` | 0 | `fiscal/emitir` (service_role) | ninguém pelo navegador (vai impresso no PDF) |
 

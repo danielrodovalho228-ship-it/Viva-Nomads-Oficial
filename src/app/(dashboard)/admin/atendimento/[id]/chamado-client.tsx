@@ -15,6 +15,7 @@ import { ehNotaResumo } from "@/lib/atendimento/resumo";
 import { ResumoEAcoes } from "./resumo-acoes";
 import { respostaDaSugestao } from "@/lib/atendimento/acolhimento";
 import { mascararEmail, podeDevolverParaViva } from "@/lib/atendimento/copiloto-regras";
+import { telefoneMascarado } from "@/lib/atendimento/identificacao-chamado";
 import { QuemEAPessoa } from "./copiloto";
 import { relogio } from "../atendimento-client";
 import { EXPLICA_AGUARDANDO_APROVACAO } from "@/lib/atendimento/dono";
@@ -317,6 +318,7 @@ export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; 
               <p className="text-sm text-ink">
                 Visitante (sem conta)
                 <span className="block text-xs text-muted">{mascararEmail(c.visitante_email)}</span>
+                {telefoneMascarado(c.visitante_telefone) && <span data-testid="chamado-visitante-telefone" className="block text-xs text-muted">{telefoneMascarado(c.visitante_telefone)}</span>}
               </p>
             )}
             {c.contexto_tipo && (

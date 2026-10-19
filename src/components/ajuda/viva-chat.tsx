@@ -320,6 +320,7 @@ function Balao({ autor, children }: { autor: "user" | "assistant"; children: Rea
 function FormPessoa({ logado, msgs, onCancelar }: { logado: boolean; msgs: MsgChat[]; onCancelar: () => void }) {
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
+  const [telefone, setTelefone] = useState("");
   const [pedido, setPedido] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -339,7 +340,7 @@ function FormPessoa({ logado, msgs, onCancelar }: { logado: boolean; msgs: MsgCh
       assunto: "Conversa com a Viva (chat do site)",
       canal: "site",
       pedePessoa: true,
-      ...(logado ? {} : { visitanteNome: nome, visitanteEmail: email, captchaToken: captcha.token ?? undefined }),
+      ...(logado ? {} : { visitanteNome: nome, visitanteEmail: email, visitanteTelefone: telefone, captchaToken: captcha.token ?? undefined }),
     }).catch(() => ({ ok: false as const, error: "Sem conexão. Tente de novo." }));
     if (!logado) captcha.reset(); // o token vale uma vez só
     setEnviando(false);
@@ -379,6 +380,7 @@ function FormPessoa({ logado, msgs, onCancelar }: { logado: boolean; msgs: MsgCh
         <>
           <input required minLength={2} name="nome" autoComplete="name" className={campo} placeholder="Seu nome" value={nome} maxLength={60} onChange={(e) => setNome(e.target.value)} aria-label="Seu nome" />
           <input className={campo} type="email" name="email" autoComplete="email" placeholder="Seu e-mail (a resposta chega por lá)" value={email} onChange={(e) => setEmail(e.target.value)} aria-label="Seu e-mail" />
+          <input className={campo} type="tel" inputMode="tel" name="telefone" autoComplete="tel" maxLength={20} placeholder="Telefone com DDD (opcional)" value={telefone} onChange={(e) => setTelefone(e.target.value)} aria-label="Telefone com DDD (opcional)" />
           {captcha.widget}
         </>
       )}
