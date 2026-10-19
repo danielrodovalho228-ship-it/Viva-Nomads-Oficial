@@ -7,6 +7,7 @@
   objetivo e verificável, nunca número "de ouvir falar". Sem logos de terceiros (só nomes).
   Para liberar uma linha: conferir na fonte oficial, preencher `fonte` e `conferidoEm`.
 */
+import { DIFERENCIAL_CHAT } from "./conversa-chat.ts";
 import { TAXA_COMISSAO_PADRAO } from "../lib/cobranca/regra.ts";
 
 export const COMPARE_ALUGUEL = 4320;
@@ -105,7 +106,7 @@ export const LINHAS_COMPARE: readonly LinhaCompare[] = [
 export const DIFERENCIAIS_VIVA: readonly string[] = [
   "Você só paga quando o contrato é fechado",
   "Contrato pronto, assinado na plataforma",
-  "Chat com quem vai morar",
+  DIFERENCIAL_CHAT,
   "Avaliação dos dois lados",
   "Profissionais que ficam meses",
   "Sem contrato de 30 meses",
