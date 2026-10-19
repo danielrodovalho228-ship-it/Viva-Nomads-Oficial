@@ -49,8 +49,10 @@ test.describe("T75 — Barra fixa do imóvel", () => {
       await page.setViewportSize({ width: 390, height: 800 });
       await page.goto(`/imoveis/${ids.imovel}`, { waitUntil: "networkidle" });
       await page.getByTestId("barra-fixa-imovel").getByRole("button", { name: "Enviar candidatura" }).click();
-      // Passo de confirmação (#671): só "Enviar solicitação" leva ao login.
-      await page.getByTestId("solicitacao-passo").getByRole("button", { name: "Enviar solicitação" }).click();
+      // Passo de confirmação (#671): só o último "Enviar candidatura" (após Continuar) leva ao login.
+      await page.getByTestId("solicitacao-passo").getByRole("button", { name: "Continuar" }).click();
+      await page.getByTestId("solicitacao-passo").getByRole("button", { name: "Continuar" }).click();
+      await page.getByTestId("solicitacao-passo").getByRole("button", { name: "Enviar candidatura" }).click();
       await page.waitForURL(/\/auth\?redirect=\/imoveis\//, { timeout: 15_000 });
     });
 
