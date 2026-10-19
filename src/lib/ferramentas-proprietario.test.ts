@@ -180,6 +180,11 @@ test("p27 item 8 — carteira de teste: 3 imóveis [TESTE QA] (fora da busca), 2
   assert.deepEqual(plano.map((p) => p.statusContrato), ["concluido", "concluido", "ativo"]);
   assert.ok(plano[2].inicio <= "2026-10-18" && plano[2].fim >= "2026-10-18", "o ativo cobre hoje");
   assert.ok(plano.slice(0, 2).every((p) => p.fim < "2026-10-18"), "os encerrados terminaram");
+  // As regras do banco para o bloco: 1 a 3 meses e no máximo 90 dias (contratos_tamanho_bloco_meses_check, bloco_max_90_dias).
+  for (const p of plano) {
+    assert.ok(p.meses >= 1 && p.meses <= 3, `${p.titulo}: bloco de 1 a 3 meses`);
+    assert.ok((Date.parse(p.fim) - Date.parse(p.inicio)) / 86_400_000 <= 90, `${p.titulo}: bloco de até 90 dias`);
+  }
   const acoes = ler("./data/carteira-teste-actions.ts");
   assert.match(acoes, /soContasDeTeste\(admin, \[input\.ownerId, input\.tenantId\]\)/);
   assert.match(acoes, /exigirAdminAal2/);

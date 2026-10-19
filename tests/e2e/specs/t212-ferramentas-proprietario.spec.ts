@@ -111,10 +111,14 @@ test.describe("T212 — ferramentas do proprietário (prompt 27)", () => {
       // Ano 1 do mobiliado: −R$ 1.100, barra com altura e abaixo do zero.
       const barra = p.locator('[data-testid="roi-acumulado-barra"][data-grupo="Ano 1"][data-serie="Mobiliado"]');
       await expect(barra).toHaveAttribute("data-valor", "-1100");
-      const zero = await p.getByTestId("roi-acumulado-zero").boundingBox();
-      const b = await barra.boundingBox();
-      expect(b!.height).toBeGreaterThanOrEqual(4);
-      expect(b!.y).toBeGreaterThanOrEqual(zero!.y - 1);
+      // As duas medidas no MESMO instante (duas chamadas a boundingBox mediam antes e depois de a página rolar).
+      const m = await barra.evaluate((el) => {
+        const zero = el.closest("figure")!.querySelector('[data-testid="roi-acumulado-zero"]')!.getBoundingClientRect();
+        const r = el.getBoundingClientRect();
+        return { altura: r.height, topo: r.top, zero: zero.top };
+      });
+      expect(m.altura).toBeGreaterThanOrEqual(4);
+      expect(m.topo).toBeGreaterThanOrEqual(m.zero - 1);
       await expect(p.getByTestId("roi-acumulado")).toContainText("−R$ 1.100");
       await p.getByTestId("roi-acumulado").scrollIntoViewIfNeeded();
       await semRolagemLateral(p);
@@ -195,6 +199,8 @@ test.describe("T212 — ferramentas do proprietário (prompt 27)", () => {
       }
       // O cartão da proposta na conversa.
       await abrir(t, "/dashboard/mensagens");
+      // No celular a tela abre na lista: tocar na conversa do anúncio.
+      if (largura === 390) await t.getByTestId("mensagens-conversa").filter({ hasText: `Studio ferramentas ${sufixo}` }).first().click();
       await expect(t.getByTestId("cartao-proposta").first()).toBeVisible({ timeout: 25_000 });
       await t.context().close();
     });

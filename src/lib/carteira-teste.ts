@@ -19,7 +19,7 @@ const dia = (base: Date, n: number) => new Date(base.getTime() + n * 86_400_000)
 export function planoCarteiraTeste(hoje: Date): ItemCarteiraTeste[] {
   return [
     { titulo: `${PREFIXO_CARTEIRA_TESTE} 1`, valorMensal: 2800, meses: 3, inicio: dia(hoje, -200), fim: dia(hoje, -111), statusContrato: "concluido", statusBloco: "encerrado" },
-    { titulo: `${PREFIXO_CARTEIRA_TESTE} 2`, valorMensal: 3200, meses: 4, inicio: dia(hoje, -150), fim: dia(hoje, -31), statusContrato: "concluido", statusBloco: "encerrado" },
-    { titulo: `${PREFIXO_CARTEIRA_TESTE} 3`, valorMensal: 3600, meses: 4, inicio: dia(hoje, -20), fim: dia(hoje, 99), statusContrato: "ativo", statusBloco: "ativo" },
+    { titulo: `${PREFIXO_CARTEIRA_TESTE} 2`, valorMensal: 3200, meses: 3, inicio: dia(hoje, -150), fim: dia(hoje, -61), statusContrato: "concluido", statusBloco: "encerrado" },
+    { titulo: `${PREFIXO_CARTEIRA_TESTE} 3`, valorMensal: 3600, meses: 3, inicio: dia(hoje, -20), fim: dia(hoje, 69), statusContrato: "ativo", statusBloco: "ativo" },
   ];
 }
