@@ -19,7 +19,8 @@ const diaMes = (iso: string | null) => {
 
 export function rotuloPagamentoBloco(p: { tipo: string; valor: number; bloco?: BlocoDoPagamento | null; valorMensal?: number | null }): string {
   const valor = brlTaxa(p.valor);
-  if (p.tipo === "caucao") return p.bloco ? `Caução do bloco ${p.bloco.numero} — ${valor}` : `Caução — ${valor}`;
+  // A Caução é do contrato, nunca de um bloco (complemento do #884).
+  if (p.tipo === "caucao") return `Caução do contrato — ${valor}`;
   if (!p.bloco) return `Pagamento — ${valor}`;
   const { numero, meses } = p.bloco;
   const ini = diaMes(p.bloco.inicio);

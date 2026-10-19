@@ -39,7 +39,7 @@ export const GUIAS: Guia[] = [
         titulo: "Como a taxa da Viva entra na conta",
         paragrafos: [
           "Anunciar é grátis. A Viva cobra uma taxa sobre o valor total de cada contrato fechado e de cada renovação (valor mensal × meses), e a taxa cai conforme você tem mais imóveis. A tabela completa está em /precos.",
-          "Faça a conta com a taxa da sua faixa antes de definir o valor, para saber quanto realmente fica com você.",
+          "Faça a conta com a taxa da sua faixa antes de definir o valor, para saber o seu resultado depois da taxa.",
         ],
       },
       {

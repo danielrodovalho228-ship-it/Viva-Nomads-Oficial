@@ -28,6 +28,8 @@ export interface DocumentoView {
   periodoInicio: string | null;
   periodoFim: string | null;
   criadoEm: string;
+  /** Anulado (0083/0182): o documento existiu e o PDF continua acessível, mas não vale mais. */
+  anulado: string | null;
 }
 
 /** Pagamento confirmado pelo inquilino e o recibo dele (ou "em preparação" enquanto não sai). */
@@ -36,6 +38,8 @@ export interface ReciboView {
   rotulo: string;
   documentoId: string | null;
   numero: string | null;
+  /** Motivo da anulação do registro/documento (ex.: "registro em duplicidade"); null = válido. */
+  anulado: string | null;
 }
 
 export interface AcertoView {
@@ -56,12 +60,12 @@ export async function documentosDosContratos(
   const vazio = Object.fromEntries(ids.map((id) => [id, { documentos: [] as DocumentoView[], recibos: [] as ReciboView[], acerto: null as AcertoView | null, caucaoConfirmada: 0 }]));
   if (!supabase || ids.length === 0) return vazio;
   const [{ data: docs }, { data: acertos }, { data: caucoes }, { data: confirmados }] = await Promise.all([
-    supabase.from("documentos_fiscais").select("id, tipo, numero, valor, periodo_inicio, periodo_fim, criado_em, contrato_id, pagamento_id").in("contrato_id", ids).order("criado_em", { ascending: false }),
+    supabase.from("documentos_fiscais").select("id, tipo, numero, valor, periodo_inicio, periodo_fim, criado_em, contrato_id, pagamento_id, anulado_em, anulado_motivo").in("contrato_id", ids).order("criado_em", { ascending: false }),
     supabase.from("caucao_acertos").select("id, contrato_id, caucao_total, valor_devolvido, data_devolucao, meio, status, created_at").in("contrato_id", ids).order("created_at", { ascending: false }),
-    supabase.from("pagamentos_bloco").select("contrato_id, valor").in("contrato_id", ids).eq("tipo", "caucao").eq("confirmado_pelo_inquilino", true),
+    supabase.from("pagamentos_bloco").select("contrato_id, valor").in("contrato_id", ids).eq("tipo", "caucao").eq("confirmado_pelo_inquilino", true).is("anulado_em", null),
     supabase
       .from("pagamentos_bloco")
-      .select("id, contrato_id, tipo, valor, data_pagamento, contrato_blocos(numero_bloco, meses, inicio, fim), contratos(aluguel_mensal)")
+      .select("id, contrato_id, tipo, valor, data_pagamento, anulado_motivo, contrato_blocos(numero_bloco, meses, inicio, fim), contratos(aluguel_mensal)")
       .in("contrato_id", ids)
       .eq("confirmado_pelo_inquilino", true)
       .order("data_pagamento", { ascending: true }),
@@ -85,6 +89,7 @@ export async function documentosDosContratos(
       }),
       documentoId: doc ? String(doc.id) : null,
       numero: doc ? String(doc.numero) : null,
+      anulado: ((doc?.anulado_motivo as string | null) ?? (pg.anulado_motivo as string | null)) || null,
     });
   }
   for (const d of docs ?? []) {
@@ -99,6 +104,7 @@ export async function documentosDosContratos(
       periodoInicio: (d.periodo_inicio as string) ?? null,
       periodoFim: (d.periodo_fim as string) ?? null,
       criadoEm: d.criado_em as string,
+      anulado: (d.anulado_motivo as string | null) ?? null,
     });
   }
   for (const a of acertos ?? []) {
@@ -142,7 +148,7 @@ export async function registrarDevolucaoCaucao(input: { contratoId: string; valo
   if (ctx.papel !== "dono") return { ok: false, error: "Só o proprietário registra a devolução." };
   const { admin } = ctx;
   const [{ data: caucoes }, { data: abertos }] = await Promise.all([
-    admin.from("pagamentos_bloco").select("valor").eq("contrato_id", input.contratoId).eq("tipo", "caucao").eq("confirmado_pelo_inquilino", true),
+    admin.from("pagamentos_bloco").select("valor").eq("contrato_id", input.contratoId).eq("tipo", "caucao").eq("confirmado_pelo_inquilino", true).is("anulado_em", null),
     admin.from("caucao_acertos").select("id, status").eq("contrato_id", input.contratoId).in("status", ["aguardando_confirmacao", "devolvida_integral", "desconto_confirmado"]),
   ]);
   const caucaoTotal = Math.round((caucoes ?? []).reduce((s, c) => s + Number(c.valor), 0) * 100) / 100;

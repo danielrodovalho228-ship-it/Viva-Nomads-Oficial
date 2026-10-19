@@ -33,6 +33,7 @@ export function ListaDocumentos({ documentos, recibos = [] }: { documentos: Docu
               <span className="min-w-0 text-ink">
                 {r.rotulo}
                 {r.numero && <span className="text-muted"> · {r.numero}</span>}
+                {r.anulado && <SeloAnulado motivo={r.anulado} />}
               </span>
               {r.documentoId ? (
                 <a href={`/api/documentos/${r.documentoId}`} className="inline-flex items-center gap-1 text-xs font-medium text-forest underline" data-testid="baixar-recibo">
@@ -52,6 +53,7 @@ export function ListaDocumentos({ documentos, recibos = [] }: { documentos: Docu
           <li key={d.id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
             <span className="min-w-0 text-ink">
               {d.rotulo} <span className="text-muted">· {d.numero} · {formatBRL(d.valor)}</span>
+              {d.anulado && <SeloAnulado motivo={d.anulado} />}
               {d.periodoInicio && (
                 <span className="block text-xs text-muted">
                   {dataBR(d.periodoInicio)} a {dataBR(d.periodoFim)}
@@ -65,6 +67,15 @@ export function ListaDocumentos({ documentos, recibos = [] }: { documentos: Docu
         ))}
       </ul>
     </div>
+  );
+}
+
+/** "Anulado: registro em duplicidade" — o documento existiu, o PDF continua acessível, mas não vale mais. */
+function SeloAnulado({ motivo }: { motivo: string }) {
+  return (
+    <span className="ml-2 rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-700" data-testid="selo-anulado">
+      Anulado: {motivo}
+    </span>
   );
 }
 
