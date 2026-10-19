@@ -68,6 +68,12 @@ const TENANT_ONLY = [
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  // F13: o drawer fecha quando a rota muda (não no clique, que desmontava o Link antes de navegar).
+  const [pathnameDrawer, setPathnameDrawer] = useState(pathname);
+  if (pathnameDrawer !== pathname) {
+    setPathnameDrawer(pathname);
+    setOpen(false);
+  }
   const router = useRouter();
   const { signOut, setActiveMode } = useAuthStore();
   const { mode, isOwner, isTenant } = useViewMode();
@@ -264,8 +270,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
    * papel (ex.: quem nunca anunciou tocando em "Anunciar meu imóvel"): troca aqui antes.
    */
   async function aoNavegar(href: string, e: React.MouseEvent) {
-    setOpen(false);
     const rota = href.split("#")[0];
+    if (rota === pathname) setOpen(false);
     const de = (lista: string[]) => lista.some((p) => rota === p || rota.startsWith(p + "/"));
     const alvo: ViewMode | null = de(OWNER_ONLY) ? "owner" : de(TENANT_ONLY) ? "tenant" : null;
     if (!alvo || alvo === mode) return;
