@@ -1,19 +1,14 @@
 import { sendEmail, isEmailConfigured } from "./email";
 import { sendWhatsapp, isWhatsappConfigured } from "./whatsapp";
 import { sendPush } from "./push";
-import { brandedNotification, notificationText, emailImage } from "./templates";
-import { SITE_URL, SUPORTE_EMAIL } from "@/lib/site";
+import { SITE_URL } from "@/lib/site";
+import { montarNotificacao, urlInterna } from "./montar-email";
 import { primeiroNome } from "@/lib/display-name";
 import { textoEmail, textoPlano } from "./texto-seguro";
 import { TEMPLATES, type NotificationEvent } from "./eventos-email";
 
 export { isEmailConfigured, isWhatsappConfigured };
 export type { NotificationEvent };
-
-/** Aceita só caminho interno ("/rota"), nunca "//" nem URL externa (mesma regra do ?next=). */
-function urlInterna(u: string | undefined, fallback = "/dashboard"): string {
-  return u && u[0] === "/" && u[1] !== "/" && u[1] !== "\\" ? u : fallback;
-}
 
 /** Garante que a promessa do push nunca segura o notify() além de `ms`. */
 function comLimite<T>(p: Promise<T>, ms = 6000): Promise<T | null> {
@@ -22,6 +17,12 @@ function comLimite<T>(p: Promise<T>, ms = 6000): Promise<T | null> {
     new Promise<null>((resolve) => setTimeout(() => resolve(null), ms)),
   ]);
 }
+
+/** Eventos que só vão para a equipe: remetente de sistema e assunto sem a marca. */
+const EVENTOS_INTERNOS = new Set<NotificationEvent>(["chamado_equipe", "documento_recebido"]);
+
+/** E-mails de documento, verificação e segurança: sem List-Unsubscribe (a pessoa precisa receber). */
+const SEM_GERENCIAR_AVISOS = new Set<NotificationEvent>(["documento_aprovado", "documento_recusado", "checklist_aprovado", "checklist_recusado", "verification_ready"]);
 
 export interface NotifyResult {
   email: boolean | "demo";
@@ -49,11 +50,20 @@ export async function notify(params: {
   detailsText?: string;
   /** Assunto específico (texto puro; dado do usuário é limpo aqui). */
   subject?: string;
-  /** E-mail sai do suporte (remetente e "responder para"): chamados. */
-  doSuporte?: boolean;
+  /** Frase de abertura específica (no lugar da do evento); recebe o primeiro nome já tratado. */
+  body?: (nome?: string) => string;
+  /** Rótulo específico do botão (o destino é o pushUrl). */
+  ctaLabel?: string;
+  /** Aviso só para a equipe (alerta de chamado, documento na fila): remetente de sistema, assunto como veio. */
+  interno?: boolean;
 }): Promise<NotifyResult> {
   const base = TEMPLATES[params.event];
-  const tpl = params.subject ? { ...base, subject: textoPlano(params.subject, 120) } : base;
+  const tpl = {
+    ...base,
+    ...(params.subject ? { subject: textoPlano(params.subject, 120) } : {}),
+    ...(params.body ? { body: params.body } : {}),
+    ...(params.ctaLabel ? { cta: params.ctaLabel } : {}),
+  };
   const result: NotifyResult = { email: false, whatsapp: false };
   // Saudação SEMPRE pela fonte única (item 3): primeiro nome, e nunca o e-mail
   // cru — se `name` vier como e-mail (fallback comum), vira saudação neutra.
@@ -78,33 +88,31 @@ export async function notify(params: {
 
   if (params.email) {
     try {
-      // Detalhes que já trazem um link (ex.: "Responder pela plataforma") ficam
-      // com ele; os demais ganham UM botão para a tela EXATA do evento
-      // (a mesma do push) — nunca a home. Com o app instalado, o link abre o app.
-      const cta = params.detailsHtml && /<a\s/i.test(params.detailsHtml)
-        ? undefined
-        : { label: tpl.cta, url: `${SITE_URL}${urlInterna(params.pushUrl, tpl.path)}` };
-      const html = brandedNotification({
-        title: tpl.subject,
-        intro: tpl.body(nomeHtml),
+      const interno = !!params.interno || EVENTOS_INTERNOS.has(params.event);
+      // Mesma montagem do teste de auditoria (montar-email.ts): assunto com a marca, imagem do tema, um botão.
+      const m = montarNotificacao({
+        siteUrl: SITE_URL,
+        event: params.event,
+        nomeHtml,
+        nomeTexto,
+        subject: tpl.subject,
+        body: tpl.body,
+        ctaLabel: tpl.cta,
+        pushUrl: params.pushUrl,
         detailsHtml: params.detailsHtml,
-        cta,
+        detailsText: params.detailsText,
         // Só depois que a versão do app com links diretos estiver nas lojas.
         outro: process.env.APP_LINKS_ATIVO === "on" ? "Se você tem o app Viva Nomads, ele abre direto no app." : undefined,
-        image: emailImage(tpl.img, tpl.subject),
-      });
-      const text = notificationText({
-        title: tpl.subject,
-        intro: tpl.body(nomeTexto),
-        detailsText: params.detailsText,
-        cta,
       });
       const r = await sendEmail({
         to: params.email,
-        subject: tpl.subject,
-        html,
-        text,
-        ...(params.doSuporte ? { from: `Viva Nomads Suporte <${SUPORTE_EMAIL}>`, replyTo: SUPORTE_EMAIL } : {}),
+        subject: interno ? m.titulo : m.assunto,
+        html: m.html,
+        text: m.text,
+        interno,
+        imagem: m.imagem,
+        // Aviso de rotina ganha o "Gerenciar avisos" no cabeçalho; segurança e documentos, não.
+        ...(SEM_GERENCIAR_AVISOS.has(params.event) || interno ? {} : { gerenciarAvisosUrl: `${SITE_URL}/dashboard/notificacoes` }),
         // A caixa de e-mails de teste é gravada dentro do sendEmail (uma vez só, depois do envio aceito).
         evento: params.event,
         usuarioId: params.userId,

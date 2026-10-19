@@ -2,8 +2,7 @@ import "server-only";
 import { randomBytes } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/notifications/email";
-import { brandedNotification, notificationText } from "@/lib/notifications/templates";
-import { textoEmail } from "@/lib/notifications/texto-seguro";
+import { emailDocumentoFiscal, nomeDoPdf } from "@/lib/notifications/montar-email";
 import { SITE_URL } from "@/lib/site";
 import { conteudoDocumento, NUMERO_PROVISORIO, ROTULO_TIPO, temContato, textoDocumento, type DadosDocumento, type TipoDocumento } from "@/lib/fiscal/documento";
 import { envioConfirmado, motivoFalhaEnvio, resultadoEnvio, type EnvioDestinatario } from "@/lib/fiscal/envio";
@@ -156,9 +155,7 @@ interface DocParaEnvio {
  */
 async function enviarDocumento(admin: Admin, doc: DocParaEnvio, partes: Pick<Partes, "locador" | "locatario">, pdf: Uint8Array, apenas?: Set<EnvioDestinatario["papel"]>, anterior: EnvioDestinatario[] = []): Promise<EnvioDestinatario[]> {
   const rotulo = ROTULO_TIPO[doc.tipo];
-  const anexo = [{ filename: `${doc.numero}.pdf`, content: Buffer.from(pdf).toString("base64") }];
-  const title = `${rotulo} ${doc.numero}`;
-  const intro = `Segue em anexo o ${rotulo.toLowerCase()} do contrato ${doc.contratoRef}. Ele também fica guardado na plataforma, em Contratos (proprietário) ou Minhas locações (inquilino).`;
+  const anexo = [{ filename: nomeDoPdf(doc.tipo, doc.numero), content: Buffer.from(pdf).toString("base64") }];
   const envio: EnvioDestinatario[] = anterior.filter((e) => apenas && !apenas.has(e.papel));
   for (const [papel, p] of [["locador", partes.locador], ["locatario", partes.locatario]] as const) {
     if (apenas && !apenas.has(papel)) continue;
@@ -166,13 +163,16 @@ async function enviarDocumento(admin: Admin, doc: DocParaEnvio, partes: Pick<Par
       envio.push({ papel, status: "erro", resend_id: null, erro: "sem e-mail no cadastro", em: new Date().toISOString() });
       continue;
     }
+    // O número fica no corpo (bloco de dados) e no anexo, nunca no assunto (rota rápida dos e-mails, item 2).
+    const m = emailDocumentoFiscal(SITE_URL, { tipo: doc.tipo, rotulo, numero: doc.numero, contratoRef: doc.contratoRef, conferirUrl: doc.conferirUrl, papel });
     const r = await sendEmail({
       to: p.email,
-      subject: `${title} — Viva Nomads`,
-      html: brandedNotification({ title: textoEmail(title, 80), intro: textoEmail(intro, 400), cta: { label: "Conferir autenticidade", url: doc.conferirUrl } }),
-      text: notificationText({ title, intro, cta: { label: "Conferir autenticidade", url: doc.conferirUrl } }),
+      subject: m.assunto,
+      html: m.html,
+      text: m.text,
       attachments: anexo,
       evento: EVENTO_CAIXA[doc.tipo],
+      imagem: m.imagem,
     }).catch((e: unknown) => ({ demo: false, error: `falha no envio: ${e instanceof Error ? e.name : "erro"}` }));
     envio.push(resultadoEnvio(papel, r));
   }

@@ -4,11 +4,10 @@ import { montarDecisaoDocumento } from "./decisao-documento";
 import { revalidatePath } from "next/cache";
 import { revalidarAnuncio } from "@/lib/anuncio/revalidar";
 import { createClient } from "@/lib/supabase/server";
-import { notify } from "@/lib/notifications";
+import { avisarDecisoesDoImovel } from "@/lib/data/aviso-decisao-documento";
 import { primeiroNome } from "@/lib/display-name";
 import { tipoVisualizacaoDoc, type VisualizacaoDoc } from "@/lib/moderacao-doc";
 import { ehAdmin } from "@/lib/data/admin-guard";
-import { textoEmail } from "@/lib/notifications/texto-seguro";
 import { logModeracao } from "@/lib/data/moderacao-log";
 import { erroBancoPT } from "@/lib/erros-banco";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -307,29 +306,10 @@ export async function moderarDocumento(
     aprovado ? null : motivoLimpo
   );
 
-  // E-mail ao proprietário nos dois desfechos (best-effort — não trava a ação).
-  try {
-    const { data: prof } = await supabase
-      .from("profiles")
-      .select("full_name, email, notif_email")
-      .eq("id", qual.owner_id as string)
-      .maybeSingle();
-    if (prof?.email && prof.notif_email !== false) {
-      await notify({
-        event: aprovado ? "documento_aprovado" : "documento_recusado",
-        email: prof.email as string,
-        name: (prof.full_name as string) ?? undefined,
-        userId: qual.owner_id as string,
-        pushUrl: "/dashboard/imoveis",
-        detailsHtml: aprovado
-          ? undefined
-          : `<p style="margin:12px 0 0;color:#334155;">Motivo: ${textoEmail(motivoLimpo, 500)}</p>`,
-        detailsText: aprovado ? undefined : `Motivo: ${motivoLimpo}`,
-      });
-    }
-  } catch {
-    /* best-effort */
-  }
+  // Aviso ao proprietário (rota rápida dos e-mails, item 3b): um por imóvel, com o imóvel, o tipo e a decisão de
+  // cada documento. Se ainda há documento do mesmo imóvel na fila, o aviso espera o último (best-effort).
+  const adm = createAdminClient();
+  if (adm) await avisarDecisoesDoImovel(adm, qual.owner_id as string, (alvo.property_id as string | null) ?? null);
   return { ok: true };
 }
 

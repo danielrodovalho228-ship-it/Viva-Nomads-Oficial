@@ -4,6 +4,8 @@
 */
 import { integracoesSimuladas, registrarSimulado } from "../integracoes.ts";
 import type { EmailParaCaixa } from "./caixa-teste.ts";
+import { comMarca } from "./assuntos.ts";
+import { remetenteDoEnvio } from "./remetente.ts";
 
 export function isEmailConfigured() {
   return !!process.env.RESEND_API_KEY && !integracoesSimuladas();
@@ -46,15 +48,27 @@ export async function sendEmail(params: {
   text?: string;
   /** Anexos (ex.: o PDF do recibo). Conteúdo em base64. */
   attachments?: { filename: string; content: string }[];
-  /** Remetente específico (ex.: o suporte nos e-mails de chamado). Padrão: RESEND_FROM. */
+  /**
+   * E-mail INTERNO (avisos do Moacir ao Daniel, leads de Plano Gestor/B2B, alertas da equipe): mantém `from`,
+   * `replyTo` e o assunto como vieram. Sem isto, o e-mail é de cliente: remetente único e assunto com a marca.
+   */
+  interno?: boolean;
+  /** Remetente de e-mail interno (ignorado em e-mail de cliente). */
   from?: string;
-  /** Para onde vai a resposta do destinatário. */
+  /** Resposta de e-mail interno (ignorado em e-mail de cliente, que responde ao suporte). */
   replyTo?: string;
+  /** Aviso (não segurança/documento): cabeçalho List-Unsubscribe com "Gerenciar avisos". */
+  gerenciarAvisosUrl?: string;
+  /** Arquivo da imagem de cabeçalho (ex.: "documentos.jpg") — só para a caixa de teste conferir. */
+  imagem?: string;
   /** Evento para a caixa de e-mails de teste (ex.: "recibo_emitido", "termo_devolucao"). Padrão: "email". */
   evento?: string;
   /** Quem recebe, quando já se sabe (acha a conta de teste sem procurar pelo e-mail). */
   usuarioId?: string;
 }): Promise<EmailResult> {
+  // Cliente: remetente único e assunto com a marca (rota rápida "e-mails profissionais", itens 1 e 2).
+  const rem = remetenteDoEnvio({ interno: params.interno, from: params.from, replyTo: params.replyTo, resendFrom: process.env.RESEND_FROM });
+  params = { ...params, subject: params.interno ? params.subject : comMarca(params.subject) };
   const outbox = process.env.EMAIL_TEST_OUTBOX;
   if (outbox && process.env.NODE_ENV !== "production") {
     await captureToOutbox(outbox, params);
@@ -72,13 +86,14 @@ export async function sendEmail(params: {
     const corpo = params.html
       .replace(/<a\b[^>]*\bhref="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi, (_m, href: string, rotulo: string) => `${rotulo} (${href}) `)
       .replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim().slice(0, 4000);
-    await registrarSimulado("email", { para: params.to, assunto: params.subject, anexos: params.attachments?.length ?? 0, corpo });
+    await registrarSimulado("email", { para: params.to, de: rem.from, assunto: params.subject, anexos: params.attachments?.length ?? 0, imagem: params.imagem ?? null, corpo });
     if (!resendFalso) return { demo: true };
   }
 
   const corpo = JSON.stringify({
-    from: params.from ?? process.env.RESEND_FROM ?? "Viva Nomads <nao-responder@vivanomads.com.br>",
-    ...(params.replyTo ? { reply_to: params.replyTo } : {}),
+    from: rem.from,
+    ...(rem.replyTo ? { reply_to: rem.replyTo } : {}),
+    ...(params.gerenciarAvisosUrl ? { headers: { "List-Unsubscribe": `<${params.gerenciarAvisosUrl}>` } } : {}),
     to: params.to,
     subject: params.subject,
     html: params.html,
@@ -114,6 +129,8 @@ export async function sendEmail(params: {
         assunto: params.subject,
         texto: params.text ?? textoDoHtml(params.html),
         para: params.to,
+        remetente: rem.from,
+        imagem: params.imagem,
         usuarioId: params.usuarioId,
         anexos: params.attachments?.map((a) => a.filename),
       });

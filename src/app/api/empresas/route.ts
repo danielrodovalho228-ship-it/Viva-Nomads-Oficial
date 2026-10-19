@@ -48,6 +48,7 @@ export async function POST(request: Request) {
   ];
 
   const r = await sendEmail({
+    interno: true,
     to,
     subject: `Lead B2B — ${e}`,
     html: `<h2>Novo contato corporativo</h2><p>${campos

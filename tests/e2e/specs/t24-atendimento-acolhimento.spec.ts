@@ -175,8 +175,8 @@ test.describe("T24 — Acolhimento e resposta sugerida", () => {
     if (LAB_OUTBOX && fs.existsSync(LAB_OUTBOX)) {
       await expect.poll(lerSaida, { message: "aviso à equipe", timeout: 20_000 }).toContain(`— ${numero}: novo chamado`);
       const linhas = lerSaida();
-      expect(linhas).toContain(`Recebemos seu chamado — ${numero}`);
-      expect(linhas).toContain(`Seu chamado foi respondido — ${numero}`);
+      expect(linhas).toContain(`Recebemos seu chamado (${numero}) · Viva Nomads`);
+      expect(linhas).toContain(`Seu chamado foi respondido (${numero}) · Viva Nomads`);
     }
   });
 });

@@ -10,8 +10,7 @@ import { erroConflitoInteresse } from "@/lib/moderacao/conflito-interesse";
 import { motivoBloqueioAprovacao } from "@/lib/documento-pessoa";
 import { lerDocumento } from "@/lib/data/documento-servidor";
 import { montarDecisaoDocumento } from "./decisao-documento";
-import { notify } from "@/lib/notifications";
-import { textoEmail } from "@/lib/notifications/texto-seguro";
+import { avisarDecisoesDoImovel } from "@/lib/data/aviso-decisao-documento";
 import { primeiroNome } from "@/lib/display-name";
 import { tipoVisualizacaoDoc, type VisualizacaoDoc } from "@/lib/moderacao-doc";
 import { CASOS_DONO } from "@/lib/documento/conferencia-matricula";
@@ -179,22 +178,8 @@ export async function decidirMatriculaAdmin(id: string, acao: "aprovar" | "pedir
   revalidatePath("/admin/documentos");
   await logModeracao(supabase, user.id, `matricula_${acao}`, "matricula", id, acao === "aprovar" ? null : motivoLimpo);
 
-  try {
-    const { data: prof } = await admin.from("profiles").select("full_name, email, notif_email").eq("id", alvo.user_id as string).maybeSingle();
-    if (prof?.email && prof.notif_email !== false) {
-      await notify({
-        event: acao === "aprovar" ? "documento_aprovado" : "documento_recusado",
-        email: prof.email as string,
-        name: (prof.full_name as string) ?? undefined,
-        userId: alvo.user_id as string,
-        pushUrl: "/dashboard/imoveis",
-        detailsHtml: acao === "aprovar" ? undefined : `<p style="margin:12px 0 0;color:#334155;">Motivo: ${textoEmail(motivoLimpo, 500)}</p>`,
-        detailsText: acao === "aprovar" ? undefined : `Motivo: ${motivoLimpo}`,
-      });
-    }
-  } catch {
-    /* best-effort */
-  }
+  // Aviso agrupado por imóvel (rota rápida dos e-mails, item 3b): sai quando o último documento do imóvel é decidido.
+  await avisarDecisoesDoImovel(admin, alvo.user_id as string, (alvo.property_id as string | null) ?? null);
   return { ok: true };
 }
 

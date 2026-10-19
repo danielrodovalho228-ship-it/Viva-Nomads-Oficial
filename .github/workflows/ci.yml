@@ -26,6 +26,11 @@ jobs:
       - name: Testes
         run: npm test
 
+      # DNS do e-mail (SPF, DKIM do Resend, DMARC): informativo, nunca derruba o CI.
+      - name: DNS do e-mail
+        continue-on-error: true
+        run: node scripts/conferir-dns-email.ts
+
       # Build de produção.
       - name: Build
         run: npm run build

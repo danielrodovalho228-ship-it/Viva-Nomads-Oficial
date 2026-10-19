@@ -156,16 +156,18 @@ test.describe("T223 — recibo: envio confirmado, recusa do Resend, Reenviar e-m
     expect(JSON.stringify(doc.envio)).not.toContain("@"); // nunca o endereço
 
     // As duas caixas de teste: o Resend falso aceitou um e-mail para cada uma, com o PDF (nome = número do documento).
-    const recebidos = (await emailsFalsos()).filter((m) => m.assunto.includes(doc.numero));
+    // O número vai no corpo e no nome do anexo, nunca no assunto (rota rápida dos e-mails).
+    const recebidos = (await emailsFalsos()).filter((m) => m.anexos.some((a) => a.nome.includes(doc.numero)));
     for (const email of [dono.email, inq.email]) {
       const m = recebidos.find((x) => x.para === email);
       expect(m, `e-mail do recibo para ${email}`).toBeTruthy();
       expect(doc.envio.map((e) => e.resend_id)).toContain(m!.id);
-      expect(m!.anexos).toEqual([expect.objectContaining({ nome: `${doc.numero}.pdf`, pdf: true })]);
-      expect(m!.de).toBe("Viva Nomads <nao-responder@vivanomads.com.br>"); // o mesmo remetente dos outros avisos
+      expect(m!.anexos).toEqual([expect.objectContaining({ nome: `recibo-${doc.numero}.pdf`, pdf: true })]);
+      expect(m!.de).toBe("Viva Nomads Brasil <suporte@vivanomads.com.br>"); // o remetente único de todos os e-mails
+      expect(m!.assunto).toBe("Seu recibo de pagamento · Viva Nomads");
     }
     // e o registro de sempre do laboratório (link de verificação no botão).
-    const saida = (await lerSaida()).filter((l) => String(l.assunto ?? "").includes(doc.numero));
+    const saida = (await lerSaida()).filter((l) => String(l.corpo ?? "").includes(doc.numero));
     for (const email of [dono.email, inq.email]) expect(String(saida.find((l) => l.para === email)?.corpo ?? "")).toContain("/conferir/");
     expect(await falhaAberta(ids.pagamento!)).toBeNull();
 
@@ -237,7 +239,7 @@ test.describe("T223 — recibo: envio confirmado, recusa do Resend, Reenviar e-m
       await expect(page.getByTestId("documentos-falhas-msg")).toContainText(`E-mail reenviado: ${doc.numero} (2 de 2 confirmados).`, { timeout: 30_000 });
       const novos = (await emailsFalsos()).slice(antes);
       expect(novos.map((m) => m.para)).toEqual([inq.email]);
-      expect(novos[0].anexos[0]).toMatchObject({ nome: `${doc.numero}.pdf`, pdf: true });
+      expect(novos[0].anexos[0]).toMatchObject({ nome: `recibo-${doc.numero}.pdf`, pdf: true });
       const depois = (await documentoDe(ids.pg2!))!;
       expect(depois.id).toBe(doc.id);
       expect(depois.numero).toBe(doc.numero);

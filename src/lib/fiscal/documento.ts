@@ -52,9 +52,9 @@ export interface ConteudoDocumento {
 }
 
 export const ROTULO_TIPO: Record<TipoDocumento, string> = {
-  recibo_aluguel: "Recibo de aluguel",
-  comprovante_caucao: "Comprovante de caução",
-  termo_devolucao_caucao: "Termo de devolução da caução",
+  recibo_aluguel: "Recibo de pagamento",
+  comprovante_caucao: "Comprovante de Caução",
+  termo_devolucao_caucao: "Termo de devolução da Caução",
 };
 
 const FORMA: Record<string, string> = { pix: "Pix", boleto: "boleto", transferencia: "transferência", dinheiro: "dinheiro", outro: "outra forma" };

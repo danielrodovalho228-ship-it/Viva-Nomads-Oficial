@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { sendEmail, isEmailConfigured } from "@/lib/notifications/email";
-import { sampleEmails, notificationSamples } from "@/lib/notifications/templates";
+import { catalogoEmails, comFaixaDeTeste } from "@/lib/notifications/catalogo-emails";
+import { SITE_URL } from "@/lib/site";
 import { testRouteForbidden } from "@/lib/test-guard";
 
 /**
  * Envia e-mail(s) de teste para validar a integração Resend.
  * Uso (no deploy, com RESEND_API_KEY configurado):
  *   GET /api/test-email?to=voce@x          → 1 e-mail de teste simples
- *   GET /api/test-email?to=voce@x&all=1    → 1 exemplo de CADA template branded
+ *   GET /api/test-email?to=voce@x&all=1    → 1 exemplo de CADA e-mail de cliente (catálogo completo)
  *
  * Observação: estes são os e-mails TRANSACIONAIS (Resend). Os e-mails de LOGIN
  * (confirmação, reset, etc.) são enviados pelo Supabase Auth e disparam pela
@@ -35,21 +36,17 @@ export async function GET(request: Request) {
   }
 
   if (all) {
-    // Envia um exemplo de CADA modelo branded (transacionais + auth) para revisão.
-    const samples = [...notificationSamples(), ...sampleEmails()];
+    // Um exemplo de CADA e-mail de cliente (app + conta), com o assunto real: a marca de teste é uma faixa no corpo.
     const sent = [];
-    for (const s of samples) {
-      const r = await sendEmail({ to, subject: `[TESTE] ${s.subject}`, html: s.html });
-      sent.push({ key: s.key, ok: !r.error, demo: r.demo, id: r.id, error: r.error });
+    for (const s of catalogoEmails(SITE_URL)) {
+      const r = await sendEmail({ to, subject: s.assunto, html: comFaixaDeTeste(s.html), text: s.text || undefined, imagem: s.imagem, evento: s.evento });
+      sent.push({ key: s.chave, assunto: s.assunto, ok: !r.error, demo: r.demo, id: r.id, error: r.error });
     }
     return NextResponse.json({ ok: sent.every((s) => s.ok), to, count: sent.length, sent });
   }
 
-  const result = await sendEmail({
-    to,
-    subject: "Viva Nomads — e-mail de teste ✅",
-    html: sampleEmails()[0].html, // arte branded de confirmação como teste simples
-  });
+  const primeiro = catalogoEmails(SITE_URL)[0];
+  const result = await sendEmail({ to, subject: "E-mail de teste", html: comFaixaDeTeste(primeiro.html) });
 
   return NextResponse.json({
     ok: !result.error,

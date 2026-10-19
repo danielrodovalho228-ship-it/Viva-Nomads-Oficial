@@ -184,9 +184,7 @@ export function avisoAssinatura(papel: PapelContrato, a: { proprietario: Assinat
 
 /** Assunto do aviso à OUTRA parte depois que alguém assina: se ela já tinha assinado, o contrato está completo. */
 export function assuntoAvisoOutraParte(outraJaAssinou: boolean): string {
-  return outraJaAssinou
-    ? "As duas partes assinaram o contrato"
-    : "O outro lado assinou o contrato — falta a sua assinatura";
+  return outraJaAssinou ? "Contrato assinado pelas duas partes" : "Falta a sua assinatura no contrato";
 }
 
 /** Mesma janela do servidor (migração 0089): contrato encerrado e até 14 dias depois. Nunca em contrato ativo. */

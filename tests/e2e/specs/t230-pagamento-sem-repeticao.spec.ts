@@ -150,10 +150,11 @@ test.describe("T230 — pagamento sem repetição + Caução do contrato + VN-CT
     const { data: doc } = await adm().from("documentos_fiscais").select("id, numero, contrato_ref").eq("pagamento_id", ids.cau!).single();
     expect(doc!.contrato_ref).toBe(ref);
     // E-mail (Resend falso + caixa de teste): o contrato aparece como VN-CT-….
-    await expect.poll(async () => (await adm().from("emails_teste").select("corpo").eq("usuario_id", ids.inq!).ilike("assunto", `%${doc!.numero}%`)).data?.[0]?.corpo ?? "", { timeout: 30_000 }).toContain(ref);
+    await expect.poll(async () => (await adm().from("emails_teste").select("corpo").eq("usuario_id", ids.inq!).ilike("corpo", `%${doc!.numero}%`)).data?.[0]?.corpo ?? "", { timeout: 30_000 }).toContain(ref);
     const r = await fetch(`${RESEND}/__emails`).then((x) => x.json()).catch(() => null);
     // O Resend falso guarda só o assunto e os anexos (sem o corpo): o e-mail com o documento foi aceito.
-    if (Array.isArray(r)) expect(r.some((e: { assunto?: string }) => String(e.assunto ?? "").includes(doc!.numero as string))).toBe(true);
+    // O número vai no anexo (e no corpo), nunca no assunto.
+    if (Array.isArray(r)) expect(r.some((e: { anexos?: { nome?: string }[] }) => (e.anexos ?? []).some((a) => String(a.nome ?? "").includes(doc!.numero as string)))).toBe(true);
 
     // Anulação (como a 0182 faz com a duplicidade de teste): o documento existe, fica marcado e não vale mais.
     await adm().from("pagamentos_bloco").update({ anulado_em: new Date().toISOString(), anulado_motivo: "registro em duplicidade" }).eq("id", ids.cau!);

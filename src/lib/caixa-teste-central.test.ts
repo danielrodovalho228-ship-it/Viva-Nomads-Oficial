@@ -78,7 +78,7 @@ test("1. sendEmail para conta de teste → 1 linha; conta real → 0; anexo só 
       const pdf = Buffer.from("%PDF-1.4 conteudo-secreto-do-pdf").toString("base64");
       const r = await sendEmail({
         to: TESTE.email,
-        subject: "Recibo de aluguel REC-2026-000004 — Viva Nomads",
+        subject: "Seu recibo de pagamento",
         html: "<p>Segue o recibo</p>",
         text: "Segue em anexo o recibo de aluguel.",
         attachments: [{ filename: "REC-2026-000004.pdf", content: pdf }],
@@ -87,7 +87,9 @@ test("1. sendEmail para conta de teste → 1 linha; conta real → 0; anexo só 
       assert.equal(r.id, "re_ok");
       assert.equal(gravadas.length, 1);
       assert.equal(gravadas[0].evento, "recibo_emitido");
-      assert.equal(gravadas[0].assunto, "Recibo de aluguel REC-2026-000004 — Viva Nomads");
+      // O envio põe a marca no assunto (rota rápida dos e-mails, item 2) e o remetente único no topo do corpo guardado.
+      assert.equal(gravadas[0].assunto, "Seu recibo de pagamento · Viva Nomads");
+      assert.match(gravadas[0].corpo, /^Remetente: Viva Nomads Brasil <suporte@vivanomads\.com\.br>/);
       assert.match(gravadas[0].corpo, /Anexo: REC-2026-000004\.pdf$/);
       assert.ok(!gravadas[0].corpo.includes(pdf) && !gravadas[0].corpo.includes("conteudo-secreto"), "o PDF não vai para a tabela");
       assert.equal(gravadas[0].usuario_id, TESTE.id);
@@ -152,9 +154,9 @@ test("1. o recibo, o comprovante e o termo vão com o evento certo; a assinatura
 
 test("2. fila legível: número, tipo e contrato por linha; com 2 falhas, 2 linhas diferentes; a chave é o documento", () => {
   assert.equal(refContratoVN("11281a61-aaaa-4bbb-8ccc-000000000000"), "VN-CT-11281A61");
-  assert.equal(tipoDaFalha({ docTipo: "recibo_aluguel" }), "Recibo de aluguel");
-  assert.equal(tipoDaFalha({ pagamentoTipo: "caucao" }), "Comprovante de caução");
-  assert.equal(tipoDaFalha({ acerto: true }), "Termo de devolução da caução");
+  assert.equal(tipoDaFalha({ docTipo: "recibo_aluguel" }), "Recibo de pagamento");
+  assert.equal(tipoDaFalha({ pagamentoTipo: "caucao" }), "Comprovante de Caução");
+  assert.equal(tipoDaFalha({ acerto: true }), "Termo de devolução da Caução");
   const a = { id: "1", documentoId: "d1", pagamentoId: "p1", acertoId: null, atualizadoEm: "2026-10-19T05:00:00Z", numero: "REC-2026-000004", contrato: "VN-CT-D9C70197" };
   const b = { id: "2", documentoId: "d2", pagamentoId: "p2", acertoId: null, atualizadoEm: "2026-10-19T05:01:00Z", numero: "REC-2026-000005", contrato: "VN-CT-11281A61" };
   const linhas = umaLinhaPorDocumento([a, b]);

@@ -56,7 +56,7 @@ test("e-mails de conta do Supabase: 6 modelos, assunto do código, código grand
   const ts = templatesSupabase();
   assert.equal(ts.length, 6);
   const cod = ts.find((t) => t.arquivo === "codigo-de-acesso.html")!;
-  assert.equal(cod.assunto, "Seu código de acesso Viva Nomads");
+  assert.equal(cod.assunto, "Seu código de acesso · Viva Nomads");
   assert.match(cod.html, /\{\{ \.Token \}\}/);
   assert.match(cod.html, /font-size:38px/);
   assert.match(cod.html, /ignore este e-mail/i);

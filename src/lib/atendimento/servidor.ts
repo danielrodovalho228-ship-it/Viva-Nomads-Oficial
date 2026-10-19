@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify } from "@/lib/notifications";
+import { assuntoChamado, assuntoManutencao } from "@/lib/notifications/assuntos";
 import { anuncioParaPausarPorCamera, type ContratoParaCamera } from "@/lib/atendimento/camera-anuncio";
 import { textoEmail } from "@/lib/notifications/texto-seguro";
 import { SITE_URL, SUPORTE_EMAIL } from "@/lib/site";
@@ -98,7 +99,6 @@ export async function avisarUsuario(
   const d = await destinatario(c);
   if (!d) return;
   const numero = textoEmail(c.numero_publico, 20);
-  const assunto = { chamado_aberto: "Recebemos seu chamado", chamado_respondido: "Seu chamado foi respondido", chamado_resolvido: "Seu chamado foi resolvido" }[evento];
   let notas = "";
   if (evento === "chamado_resolvido") {
     notas = `<p style="margin:16px 0 6px;color:#0f1722;font-weight:600;">Como foi o atendimento? (1 = ruim, 5 = ótimo)</p><p style="margin:0;">${[1, 2, 3, 4, 5]
@@ -115,8 +115,7 @@ export async function avisarUsuario(
     phone: evento === "chamado_respondido" ? d.phone : undefined,
     userId: d.userId,
     pushUrl: "/ajuda",
-    doSuporte: true,
-    subject: `${assunto} — ${c.numero_publico}`,
+    subject: assuntoChamado(evento, c.numero_publico),
     detailsText: `Chamado ${c.numero_publico}: ${linkChamado(c)}`,
     detailsHtml: `<p style="margin:12px 0 0;color:#334155;">Chamado <strong>${numero}</strong> · ${textoEmail(c.assunto, 140)}</p>${extraHtml}${notas}<p style="margin:16px 0 0;"><a href="${linkChamado(c)}" style="color:#1c6b3a;font-weight:600;">${c.usuario_id ? "Acompanhar o chamado" : "Abrir a Central de Ajuda"}</a></p><p style="margin:12px 0 0;color:#64748b;font-size:13px;">Dúvidas: ${SUPORTE_EMAIL}. ${PROMESSA_ATENDIMENTO}.</p>`,
   }).catch(() => null);
@@ -139,6 +138,7 @@ export async function avisarEquipe(c: ChamadoResumo, motivo: string, detalhesHtm
       name: (a.full_name as string) ?? undefined,
       userId: a.id as string,
       pushUrl: `/admin/atendimento/${c.id}`,
+      interno: true,
       subject: `${c.prioridade.toUpperCase()} ${rotulo} — ${c.numero_publico}: ${motivo}`,
       detailsHtml:
         detalhesHtml ??
@@ -252,8 +252,9 @@ export async function avisarProprietarioManutencao(ordem: OrdemCriada, agora: Da
     name: (dono.full_name as string) ?? undefined,
     userId: ordem.ownerId,
     pushUrl: "/dashboard/solicitacoes",
-    subject: `${lembrete ? "Lembrete: " : ""}Manutenção ${ordem.urgencia === "urgente" ? "URGENTE " : ""}no imóvel — responda em até ${PRAZO_MANUTENCAO_H[ordem.urgencia]} h`,
-    detailsHtml: `<p style="margin:12px 0 0;color:#334155;">Imóvel: <strong>${textoEmail(ordem.propertyTitle, 120)}</strong><br/>Prazo para responder: até ${prazoManutencao(ordem.urgencia, agora).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" })}.</p>`,
+    subject: assuntoManutencao({ urgente: ordem.urgencia === "urgente", lembrete }),
+    // A urgência e o prazo vão no corpo (o assunto não grita).
+    detailsHtml: `<p style="margin:12px 0 0;color:#334155;">Imóvel: <strong>${textoEmail(ordem.propertyTitle, 120)}</strong><br/>Urgência: ${ordem.urgencia === "urgente" ? "urgente" : "normal"} · responda em até ${PRAZO_MANUTENCAO_H[ordem.urgencia]} h<br/>Prazo para responder: até ${prazoManutencao(ordem.urgencia, agora).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" })}.</p>`,
   }).catch(() => null);
 }
 
