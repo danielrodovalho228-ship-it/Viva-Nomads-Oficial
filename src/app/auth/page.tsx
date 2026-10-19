@@ -550,7 +550,11 @@ export default function AuthPage() {
               {notice && (
                 <p className="mt-4 rounded-lg bg-sage-100 px-3 py-2 text-sm text-forest">{notice}</p>
               )}
-              {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
+              {error && (
+<p role="alert" data-testid="auth-erro" className="mt-4 text-sm text-red-600">
+{error}
+</p>
+)}
               {captcha.widget && <div className="mt-4 flex justify-center">{captcha.widget}</div>}
               <Button
                 variant="outline"
@@ -613,7 +617,11 @@ export default function AuthPage() {
                   name="email"
                   autoComplete="email"
                 />
-                {error && <p className="text-sm text-red-600">{error}</p>}
+                {error && (
+<p role="alert" data-testid="auth-erro" className="text-sm text-red-600">
+{error}
+</p>
+)}
                 {notice && (
                   <p className="flex items-start gap-2 rounded-lg bg-sage-100 px-3 py-2 text-sm text-forest">
                     <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" /> {notice}
@@ -816,7 +824,11 @@ export default function AuthPage() {
                   </label>
                 )}
 
-                {error && <p className="text-sm text-red-600">{error}</p>}
+                {error && (
+<p role="alert" data-testid="auth-erro" className="text-sm text-red-600">
+{error}
+</p>
+)}
 
                 {/* Links FIXOS no login (F43): iguais com ou sem conta, nunca dizem se o e-mail existe. */}
                 {mode === "login" && error === friendlyAuthError("invalid login credentials") && (
