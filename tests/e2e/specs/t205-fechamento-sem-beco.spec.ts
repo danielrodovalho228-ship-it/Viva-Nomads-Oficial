@@ -186,7 +186,7 @@ test.describe("T205 — fechamento: 'Gerar contrato' sem beco, dos dois lados at
     for (const largura of [1280, 390]) {
       await pd.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
       await abrir(pd, "/dashboard/contratos");
-      await expect(pd.getByTestId("contrato-assinatura-status").first()).toHaveText("Aguardando assinatura · falta você e o inquilino", { timeout: 20_000 });
+      await expect(pd.getByTestId("contrato-etapa").first()).toHaveText("Aguardando assinatura · falta você e o inquilino", { timeout: 20_000 });
       await semRolagemLateral(pd);
       await pd.screenshot({ path: `${SAIDA}/t205-dono-contratos-${largura}.png`, fullPage: true });
     }

@@ -496,7 +496,8 @@
       "specs": [
         "t97-plangate-precos",
         "t183-telas-logadas-390",
-        "t214-carteira-banco"
+        "t214-carteira-banco",
+        "t218-contrato-estado-periodo"
       ]
     },
     "/dashboard/comparar": {
@@ -572,7 +573,8 @@
         "t205-fechamento-sem-beco",
         "t210-contrato-estado-jornada",
         "t209-jornada-dois-lados",
-        "t217-recibo-assinatura"
+        "t217-recibo-assinatura",
+        "t218-contrato-estado-periodo"
       ]
     },
     "/dashboard/contratos/[id]": {
@@ -582,7 +584,8 @@
       "specs": [
         "t57-contrato-assinar",
         "t205-fechamento-sem-beco",
-        "t217-recibo-assinatura"
+        "t217-recibo-assinatura",
+        "t218-contrato-estado-periodo"
       ]
     },
     "/dashboard/favoritos": {
@@ -610,7 +613,8 @@
         "t183-telas-logadas-390",
         "t205-fechamento-sem-beco",
         "t210-contrato-estado-jornada",
-        "t209-jornada-dois-lados"
+        "t209-jornada-dois-lados",
+        "t218-contrato-estado-periodo"
       ]
     },
     "/dashboard/ferramentas": {
@@ -715,7 +719,8 @@
         "t205-fechamento-sem-beco",
         "t210-contrato-estado-jornada",
         "t213-jornada-teste-confirmacao",
-        "t217-recibo-assinatura"
+        "t217-recibo-assinatura",
+        "t218-contrato-estado-periodo"
       ]
     },
     "/dashboard/locacoes/[id]": {
@@ -726,7 +731,8 @@
       "specs": [
         "t48-varredura",
         "t57-contrato-assinar",
-        "t205-fechamento-sem-beco"
+        "t205-fechamento-sem-beco",
+        "t218-contrato-estado-periodo"
       ]
     },
     "/dashboard/mensagens": {
@@ -1015,7 +1021,8 @@
         "t197-anuncio-teste-oculto",
         "t201-qa-muse",
         "t209-jornada-dois-lados",
-        "t211-complemento-23"
+        "t211-complemento-23",
+        "t218-contrato-estado-periodo"
       ]
     },
     "/modelodenegocio": {
@@ -2223,6 +2230,15 @@
         "inquilino"
       ],
       "specs": []
+    },
+    "src/lib/data/blocks-actions.ts#getDatasIndisponiveis": {
+      "personas": [
+        "publico",
+        "inquilino"
+      ],
+      "specs": [
+        "t218-contrato-estado-periodo"
+      ]
     },
     "src/lib/data/blocks-actions.ts#removeBlock": {
       "personas": [

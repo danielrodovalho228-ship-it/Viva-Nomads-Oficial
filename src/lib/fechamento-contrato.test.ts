@@ -90,12 +90,14 @@ test("p24 — Caução fora do 1º pagamento, mostrada ao lado; com seguro-fian�
   assert.match(tela, /Total antes da entrada/);
 });
 
-test("p24 — status curto da assinatura nos cartões (os dois lados)", async () => {
-  const { statusAssinaturaCurto } = await import("./fechamento-contrato.ts");
+test("p24 — status curto da assinatura nos cartões (os dois lados), agora pela fonte única", async () => {
+  const { estadoDoContratoUnico } = await import("./contrato-estado.ts");
   const t = "2026-10-18T12:00:00Z";
-  assert.equal(statusAssinaturaCurto("inquilino", { proprietario: null, inquilino: null }), "Aguardando assinatura · falta você e o proprietário");
-  assert.equal(statusAssinaturaCurto("inquilino", { proprietario: t, inquilino: null }), "Aguardando assinatura · falta você");
-  assert.equal(statusAssinaturaCurto("inquilino", { proprietario: null, inquilino: t }), "Aguardando assinatura · falta o proprietário");
-  assert.equal(statusAssinaturaCurto("proprietario", { proprietario: null, inquilino: t }), "Aguardando assinatura · falta você");
-  assert.equal(statusAssinaturaCurto("proprietario", { proprietario: t, inquilino: t }), "Assinado pelas duas partes");
+  const selo = (papel: "inquilino" | "proprietario", p: string | null, i: string | null) =>
+    estadoDoContratoUnico({ status: "ativo", assinado_proprietario_em: p, assinado_inquilino_em: i, pagamentos_bloco: [] }, papel).selo;
+  assert.equal(selo("inquilino", null, null), "Aguardando assinatura · falta você e o proprietário");
+  assert.equal(selo("inquilino", t, null), "Aguardando assinatura · falta você");
+  assert.equal(selo("inquilino", null, t), "Aguardando assinatura · falta o proprietário");
+  assert.equal(selo("proprietario", null, t), "Aguardando assinatura · falta você");
+  assert.equal(selo("proprietario", t, t), "Aguardando 1º pagamento");
 });

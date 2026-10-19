@@ -28,6 +28,7 @@ import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 import { motivoFaltamInstrucoes } from "@/lib/checkin";
 import { instrucoesPreenchidas } from "@/lib/checkin-servidor";
 import { nomeCurto } from "@/lib/perfil/perfil-publico";
+import { estadoDoContratoUnico, type EstadoContrato } from "@/lib/contrato-estado";
 import { escaparHtml } from "@/lib/escapar-html";
 import { montarLinhaDoTempo, type EtapaEstadia } from "@/lib/estadia-linha-tempo";
 import { periodoDosBlocos } from "@/lib/contrato-blocos";
@@ -64,6 +65,8 @@ export interface ContratoParaAssinar {
   inicioEstadia: string | null;
   /** Entrada, conferência e saída com dia e horário (vazio se o contrato ainda não tem blocos). */
   linhaDoTempo: EtapaEstadia[];
+  /** Estado pela fonte única (o mesmo selo das listas e da carteira). */
+  estado: EstadoContrato;
 }
 
 interface LinhaContrato {
@@ -86,10 +89,11 @@ interface LinhaContrato {
   /** Pets do inquilino agora (só vale antes da 1ª assinatura; depois vale o congelado). */
   qtd_pets_vivos?: number;
   contrato_blocos?: { inicio: string; fim: string }[] | null;
+  pagamentos_bloco?: { tipo?: string | null; confirmado_pelo_inquilino?: boolean | null }[] | null;
 }
 
 const COLUNAS =
-  "id, tenant_id, status, aluguel_mensal, prazo_total_dias, qtd_ocupantes, created_at, assinado_proprietario_em, assinado_inquilino_em, pets_regras_congeladas, property_id, properties(title, owner_id, checkin_after, checkout_before, pets_regras), contrato_blocos(inicio, fim)";
+  "id, tenant_id, status, aluguel_mensal, prazo_total_dias, qtd_ocupantes, created_at, assinado_proprietario_em, assinado_inquilino_em, pets_regras_congeladas, property_id, properties(title, owner_id, checkin_after, checkout_before, pets_regras), contrato_blocos(inicio, fim), pagamentos_bloco(tipo, confirmado_pelo_inquilino)";
 
 function objetoOuVazio(v: unknown): Record<string, unknown> {
   return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
@@ -191,6 +195,7 @@ function montar(c: LinhaContrato, userId: string, nomes?: { proprietario: string
       inquilino: { nome: nomes?.inquilino ?? null, em: a.inquilino },
     }),
     euAssinei: !!(papel === "inquilino" ? a.inquilino : a.proprietario),
+    estado: estadoDoContratoUnico(c, papel),
     inicioEstadia: inicio,
     linhaDoTempo: montarLinhaDoTempo({
       inicio,

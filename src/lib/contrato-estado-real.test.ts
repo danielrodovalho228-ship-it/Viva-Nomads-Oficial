@@ -1,24 +1,22 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { estadoDoContrato } from "./fechamento-contrato.ts";
+import { estadoDoContratoUnico } from "./contrato-estado.ts";
 
 const t = "2026-10-12T12:00:00Z";
-const base = { status: "ativo", assinadoProprietarioEm: null, assinadoInquilinoEm: null, primeiroPagamentoConfirmado: false };
+const base = { status: "ativo", assinado_proprietario_em: null, assinado_inquilino_em: null, pagamentos_bloco: [] as { tipo: string; confirmado_pelo_inquilino: boolean }[] };
+const pago = [{ tipo: "aluguel", confirmado_pelo_inquilino: true }];
 
-test("p28 — estado real do contrato, com o mesmo texto do Fechamento, de Contratos e da página do contrato", () => {
-  assert.deepEqual(estadoDoContrato(base, "proprietario"), { chave: "aguardando_assinatura", texto: "Aguardando assinatura · falta você e o inquilino", faltaVoce: true });
-  assert.equal(estadoDoContrato({ ...base, assinadoProprietarioEm: t }, "inquilino").texto, "Aguardando assinatura · falta você");
-  assert.equal(estadoDoContrato({ ...base, assinadoInquilinoEm: t }, "inquilino").faltaVoce, false);
+test("p28 — estado real do contrato (agora pela fonte única), com o mesmo texto do Fechamento, de Contratos e da página do contrato", () => {
+  const e = estadoDoContratoUnico(base, "proprietario");
+  assert.deepEqual([e.chave, e.selo, e.faltaVoce], ["aguardando_assinatura", "Aguardando assinatura · falta você e o inquilino", true]);
+  assert.equal(estadoDoContratoUnico({ ...base, assinado_proprietario_em: t }, "inquilino").selo, "Aguardando assinatura · falta você");
+  assert.equal(estadoDoContratoUnico({ ...base, assinado_inquilino_em: t }, "inquilino").faltaVoce, false);
   // O caso do reteste: o contrato devolvido (de 12/10) já estava assinado pelas duas partes.
-  assert.deepEqual(estadoDoContrato({ ...base, assinadoProprietarioEm: t, assinadoInquilinoEm: t }, "proprietario"), {
-    chave: "assinado",
-    texto: "As duas partes assinaram · Aguardando 1º pagamento",
-    faltaVoce: false,
-  });
-  assert.equal(estadoDoContrato({ ...base, assinadoProprietarioEm: t, assinadoInquilinoEm: t, primeiroPagamentoConfirmado: true }, "inquilino").texto, "Locação ativa");
-  assert.equal(estadoDoContrato({ ...base, status: "encerrado_sem_renovacao" }, "inquilino").texto, "Encerrado");
-  assert.equal(estadoDoContrato({ ...base, status: "cancelado" }, "inquilino").texto, "Cancelado");
+  assert.equal(estadoDoContratoUnico({ ...base, assinado_proprietario_em: t, assinado_inquilino_em: t }, "proprietario").selo, "Aguardando 1º pagamento");
+  assert.equal(estadoDoContratoUnico({ ...base, assinado_proprietario_em: t, assinado_inquilino_em: t, pagamentos_bloco: pago }, "inquilino").selo, "Em vigência");
+  assert.equal(estadoDoContratoUnico({ ...base, status: "encerrado_sem_renovacao" }, "inquilino").selo, "Encerrado (sem renovação)");
+  assert.equal(estadoDoContratoUnico({ ...base, status: "cancelado" }, "inquilino").selo, "Cancelado");
 });
 
 test("p28 — o Resumo lê o estado do banco (nunca supõe 'aguardando assinatura'); Contratos do inquilino; Locações só assinadas", () => {

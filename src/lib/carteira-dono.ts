@@ -4,6 +4,8 @@
     • ocupado   = contrato ativo EM VIGÊNCIA (duas assinaturas + 1º pagamento confirmado — etapaContrato);
     • reservado = contrato ativo aguardando assinatura ou o 1º pagamento;
     • vago      = sem contrato ativo (concluído, cancelado ou nenhum).
+  A etapa e o selo vêm da fonte única (estadoDoContratoUnico, via getMeusContratos). Um contrato vigente por imóvel
+  (o banco não deixa dois períodos ativos se sobreporem — 0174); os seguintes aparecem como "Próximo morador".
   Início e fim saem dos blocos do contrato (periodoDosBlocos, a mesma função da página do contrato).
   A taxa de serviço NÃO entra na receita: ela é cobrada à parte.
 */
@@ -28,6 +30,17 @@ export interface ContratoCarteiraEntrada {
   blocos: { inicio: string; fim: string }[];
   /** Nome curto do morador ("Maria L."), já tratado no servidor. */
   morador: string | null;
+  /** Selo da fonte única (o mesmo do detalhe e da lista de contratos). */
+  selo?: string | null;
+}
+
+export interface ProximoMorador {
+  contratoId: string;
+  contratoNumero: string;
+  inicio: string | null;
+  fim: string | null;
+  morador: string | null;
+  selo: string | null;
 }
 
 export interface ItemCarteira {
@@ -45,6 +58,10 @@ export interface ItemCarteira {
   contratoId: string | null;
   /** Os 8 primeiros caracteres do id, como nas outras telas. */
   contratoNumero: string | null;
+  /** Selo do contrato da linha (fonte única); null quando vago. */
+  selo?: string | null;
+  /** Contratos ativos que começam depois do da linha: "Próximo morador a partir de dd/mm/aaaa". */
+  proximos?: ProximoMorador[];
 }
 
 const DIA_MS = 86_400_000;
@@ -63,16 +80,22 @@ const PESO: Record<SituacaoCarteira, number> = { ocupado: 2, reservado: 1, vago:
 
 export function montarCarteira(imoveis: ImovelCarteiraEntrada[], contratos: ContratoCarteiraEntrada[], hojeISO: string): ItemCarteira[] {
   return imoveis.map((im) => {
-    // Se houver mais de um contrato ativo no imóvel, vale o que está em vigência; depois o reservado.
-    const melhor = contratos
+    // Um contrato por linha: o que está em vigência; sem ele, o reservado que começa primeiro. Os outros contratos
+    // ativos do imóvel (períodos seguintes — o banco não deixa sobrepor) viram "Próximo morador".
+    const ativos = contratos
       .filter((c) => c.propertyId === im.id)
-      .map((c) => ({ c, s: situacaoDoContrato(c) }))
+      .map((c) => ({ c, s: situacaoDoContrato(c), p: periodoDosBlocos(c.blocos) }))
       .filter((x) => x.s !== "vago")
-      .sort((a, b) => PESO[b.s] - PESO[a.s])[0];
+      .sort((a, b) => PESO[b.s] - PESO[a.s] || String(a.p.inicio ?? "").localeCompare(String(b.p.inicio ?? "")));
+    const melhor = ativos[0];
     if (!melhor) {
-      return { propertyId: im.id, titulo: im.titulo, bairro: im.bairro, situacao: "vago", valorMensal: 0, inicio: null, fim: null, diasAteFim: null, morador: null, contratoId: null, contratoNumero: null };
+      return { propertyId: im.id, titulo: im.titulo, bairro: im.bairro, situacao: "vago", valorMensal: 0, inicio: null, fim: null, diasAteFim: null, morador: null, contratoId: null, contratoNumero: null, selo: null, proximos: [] };
     }
-    const { inicio, fim } = periodoDosBlocos(melhor.c.blocos);
+    const { inicio, fim } = melhor.p;
+    const proximos: ProximoMorador[] = ativos
+      .slice(1)
+      .sort((a, b) => String(a.p.inicio ?? "").localeCompare(String(b.p.inicio ?? "")))
+      .map((x) => ({ contratoId: x.c.id, contratoNumero: x.c.id.slice(0, 8), inicio: x.p.inicio, fim: x.p.fim, morador: x.c.morador, selo: x.c.selo ?? null }));
     return {
       propertyId: im.id,
       titulo: im.titulo,
@@ -85,6 +108,8 @@ export function montarCarteira(imoveis: ImovelCarteiraEntrada[], contratos: Cont
       morador: melhor.c.morador,
       contratoId: melhor.c.id,
       contratoNumero: melhor.c.id.slice(0, 8),
+      selo: melhor.c.selo ?? null,
+      proximos,
     };
   });
 }

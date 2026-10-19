@@ -15,6 +15,8 @@ import { MSG_DOCUMENTO } from "@/lib/documento-pessoa";
 import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 import { avisoAbaixoDoMinimo, normalizarNegociacao, descontoParaMeses, type Negociacao } from "@/lib/anuncio/negociacao";
 import { faixaPorImoveisAtivos, comissaoSobreContrato } from "@/lib/cobranca/regra";
+import { conflitoNoImovel } from "@/lib/data/periodo-servidor";
+import { periodoDaEstadia } from "@/lib/contrato-periodo";
 import {
   aguardandoResposta,
   aplicarContraproposta,
@@ -665,6 +667,9 @@ async function aceitar(admin: Admin, p: LinhaProposta, v: LinhaVersao, papel: Au
   if (!lead || !["new", "accepted"].includes(lead.status as string)) return { ok: false, error: "Esta candidatura não está mais em andamento." };
   if (lead.status === "new" && !(await temDocumento(admin, p.owner_id)))
     return { ok: false, error: papel === "owner" ? MSG_DOCUMENTO.aceitar : "O proprietário ainda precisa completar o cadastro. Tente mais tarde." };
+  // Disponibilidade por datas (0174): a entrada e os meses da versão aceita não podem cruzar outro contrato ativo.
+  const conflito = await conflitoNoImovel(admin, p.property_id, periodoDaEstadia(String(v.data_entrada).slice(0, 10), Number(v.meses)));
+  if (conflito) return { ok: false, error: conflito };
 
   const { data: ok } = await admin
     .from("propostas")

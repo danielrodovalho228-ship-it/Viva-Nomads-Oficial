@@ -28,7 +28,7 @@ export function ContratosInquilino({ contratos }: { contratos: ContratoInquilino
   return (
     <div className="grid gap-3" data-testid="contratos-inquilino">
       {contratos.map((c) => (
-        <Panel key={c.id} data-testid="contrato-inquilino" data-chave={c.chave}>
+        <Panel key={c.id} data-testid="contrato-inquilino" data-chave={c.chave} data-contrato={c.id}>
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted">{c.numero}</p>
@@ -52,7 +52,7 @@ export function ContratosInquilino({ contratos }: { contratos: ContratoInquilino
                 Ver contrato
               </Link>
             )}
-            {c.chave !== "aguardando_assinatura" && (
+            {!c.assinando && (
               <Link href={`/dashboard/locacoes/${c.id}`} className="font-medium text-forest underline" data-testid="contrato-inquilino-locacao">
                 Ver locação
               </Link>

@@ -6,10 +6,10 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
 /*
   T210 — Prompt 28 (reteste do #840). 390 e 1280 px.
    1. O Resumo do Fechamento mostra o estado REAL do contrato: com contrato já assinado pelas duas partes →
-      "As duas partes assinaram · Aguardando 1º pagamento" + "Este contrato foi gerado em …" + "Ver contrato"; com
+      "Aguardando 1º pagamento" (selo da fonte única, complemento de 19/10) + "Este contrato foi gerado em …" + "Ver contrato"; com
       contrato novo → "Aguardando assinatura · falta você e o inquilino".
    2. "Contratos" no painel do inquilino (com o número do que falta assinar no menu); Locações só com as assinadas.
-   3. 1º pagamento → "Locação ativa" nos dois lados.
+   3. 1º pagamento → "Em vigência" nos dois lados.
    4. /admin › Dados de teste › "Nova jornada de teste": cria candidatura nova pronta para o Fechamento; de novo →
       devolve a mesma (idempotente); a candidatura e o contrato antigos ficam.
 */
@@ -87,7 +87,7 @@ test.describe("T210 — estado real do contrato, Contratos do inquilino e jornad
     const page = await entrar(browser, dono.email, senha);
     await page.setViewportSize({ width: 1280, height: 900 });
     await gerarAteResumo(page, ids.leadAntigo);
-    await expect(page.getByText("TESTE · As duas partes assinaram · Aguardando 1º pagamento")).toBeVisible();
+    await expect(page.getByText("TESTE · Aguardando 1º pagamento")).toBeVisible();
     await expect(page.getByTestId("resumo-contrato")).toContainText("Gerado em 12/10/2026");
     await expect(page.getByTestId("resumo-ver-contrato")).toHaveAttribute("href", `/dashboard/contratos/${ids.contratoAntigo}`);
     await expect(page.getByText(/aguardando assinatura/i)).toHaveCount(0);
@@ -121,8 +121,8 @@ test.describe("T210 — estado real do contrato, Contratos do inquilino e jornad
       const cartoes = page.getByTestId("contrato-inquilino");
       await expect(cartoes).toHaveCount(2, { timeout: 20_000 });
       await expect(page.locator('[data-testid="contrato-inquilino"][data-chave="aguardando_assinatura"]').getByTestId("contrato-inquilino-assinar")).toBeVisible();
-      await expect(page.locator('[data-testid="contrato-inquilino"][data-chave="assinado"]').getByTestId("contrato-inquilino-estado")).toHaveText("As duas partes assinaram · Aguardando 1º pagamento");
-      await expect(page.locator('[data-testid="contrato-inquilino"][data-chave="assinado"]').getByTestId("contrato-inquilino-locacao")).toBeVisible();
+      await expect(page.locator('[data-testid="contrato-inquilino"][data-chave="aguardando_pagamento"]').getByTestId("contrato-inquilino-estado")).toHaveText("Aguardando 1º pagamento");
+      await expect(page.locator('[data-testid="contrato-inquilino"][data-chave="aguardando_pagamento"]').getByTestId("contrato-inquilino-locacao")).toBeVisible();
       await semRolagemLateral(page);
       await page.screenshot({ path: `${SAIDA}/t210-contratos-inquilino-${largura}.png`, fullPage: true });
       await abrir(page, "/dashboard/locacoes");
@@ -142,7 +142,7 @@ test.describe("T210 — estado real do contrato, Contratos do inquilino e jornad
     await tornarContratoVigente(ids.contratoNovo, ids.dono, 3200);
     const pi = await entrar(browser, inq.email, senha);
     await abrir(pi, "/dashboard/contratos");
-    await expect(pi.locator('[data-testid="contrato-inquilino"][data-chave="locacao_ativa"]')).toHaveCount(1, { timeout: 20_000 });
+    await expect(pi.locator('[data-testid="contrato-inquilino"][data-chave="em_vigencia"]')).toHaveCount(1, { timeout: 20_000 });
     await pi.context().close();
     const pd = await entrar(browser, dono.email, senha);
     await pd.setViewportSize({ width: 1280, height: 900 });
@@ -171,6 +171,10 @@ test.describe("T210 — estado real do contrato, Contratos do inquilino e jornad
       const { data: lead } = await adm().from("leads").select("status").eq("id", novo).single();
       expect(lead!.status).toBe("accepted");
       expect(((await adm().from("documentos_inquilino").select("tipo").eq("lead_id", novo)).data ?? []).length).toBe(2);
+      // Sem sobreposição (0174): a jornada de teste anterior do anúncio (contratos ativos, já assinados) fica encerrada.
+      await expect(page.getByTestId("jornada-encerrados")).toContainText("encerrad");
+      const { data: antigos } = await adm().from("contratos").select("status").in("id", [ids.contratoAntigo, ids.contratoNovo]);
+      expect(((antigos ?? []) as { status: string }[]).map((c) => c.status)).toEqual(["encerrado_sem_renovacao", "encerrado_sem_renovacao"]);
       await page.screenshot({ path: `${SAIDA}/t210-admin-dados-de-teste-1280.png`, fullPage: true });
       // Idempotente: a jornada aberta (sem contrato) volta.
       await page.getByTestId("jornada-criar").click();

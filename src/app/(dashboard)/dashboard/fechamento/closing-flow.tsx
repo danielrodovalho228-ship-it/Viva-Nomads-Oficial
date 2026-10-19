@@ -1135,7 +1135,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                   <FileCheck2 className="h-5 w-5" />{" "}
                   {demo
                     ? "Exemplo de demonstração — nada foi enviado."
-                    : estadoContrato && estadoContrato.chave !== "aguardando_assinatura"
+                    : estadoContrato && !estadoContrato.assinando
                       ? `${modoContrato === "teste" ? "Contrato de TESTE" : "Contrato"}: ${estadoContrato.texto}.`
                       : modoContrato === "teste"
                         ? "Contrato de TESTE registrado — as duas partes assinam aqui na plataforma com o código recebido por e-mail."
@@ -1157,7 +1157,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                     className="inline-flex items-center gap-2 text-sm font-medium text-forest underline"
                     data-testid="fechamento-abrir-contrato"
                   >
-                    {estadoContrato && estadoContrato.chave !== "aguardando_assinatura" ? "Ver contrato" : "Abrir o contrato para assinar"}
+                    {estadoContrato && !estadoContrato.assinando ? "Ver contrato" : "Abrir o contrato para assinar"}
                   </a>
                 )}
                 {signUrl && (

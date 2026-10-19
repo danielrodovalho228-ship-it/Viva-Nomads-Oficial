@@ -3,13 +3,13 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { getContratoParaAssinar } from "@/lib/data/contrato-assinar-actions";
-import { ROTULO_ETAPA, etapaContrato } from "@/lib/contrato-etapas";
 import { conferenciasDoContrato } from "@/lib/data/conferencia-actions";
 import { tipoAcessoDoContrato } from "@/lib/data/contrato-acesso";
 import { DICAS_CONFERENCIA_CAMERAS, ITEM_CONFERENCIA_CAMERAS, LEMBRETE_SENHA_ENTRADA, mostrarChecklistCameras, mostrarLembreteSenha } from "@/lib/anuncio/privacidade";
 import { instrucoesDoContrato } from "@/lib/data/checkin-actions";
 import { podeEditarInstrucoes, podeNaoConsegui } from "@/lib/checkin";
 import { dataBR } from "@/lib/utils";
+import { tomDoSelo } from "@/lib/contrato-estado";
 import { AssinarContrato } from "./assinar-contrato";
 import { CheckinContrato } from "./checkin-contrato";
 import { LinhaDoTempoEstadia } from "./linha-do-tempo-estadia";
@@ -31,11 +31,6 @@ export async function ContratoDetalhe({
 }) {
   const c = await getContratoParaAssinar(id);
   if (!c) notFound();
-  const etapa = etapaContrato({
-    assinadoProprietarioEm: c.assinadoProprietarioEm,
-    assinadoInquilinoEm: c.assinadoInquilinoEm,
-    primeiroPagamentoConfirmado: false,
-  });
   // Conferência de entrada e de saída: só com contrato em andamento ou encerrado e assinado pelas duas partes.
   const mostraConferencia = ["ativo", "concluido", "encerrado_sem_renovacao"].includes(c.status) && !!c.assinadoProprietarioEm && !!c.assinadoInquilinoEm;
   const conferencia = mostraConferencia ? await conferenciasDoContrato(c.id) : null;
@@ -56,7 +51,12 @@ export async function ContratoDetalhe({
       <Link href={voltarHref} className="mb-3 inline-flex items-center gap-1 text-sm text-muted hover:text-ink">
         <ArrowLeft className="h-4 w-4" /> {voltarRotulo}
       </Link>
-      <PageTitle title={c.imovel} subtitle={c.status === "ativo" ? ROTULO_ETAPA[etapa] : c.status} />
+      <PageTitle title={c.imovel} />
+      <p className="-mt-2 mb-4">
+        <span className={`inline-block rounded-full px-2.5 py-1 text-xs font-medium ${tomDoSelo(c.estado)}`} data-testid="contrato-selo" data-chave={c.estado.chave}>
+          {c.estado.selo}
+        </span>
+      </p>
       <Panel className="p-5">
         <h2 className="font-title text-base font-bold text-ink">Contrato</h2>
         <ul className="mt-3 space-y-1.5 text-sm text-ink" data-testid="contrato-resumo">

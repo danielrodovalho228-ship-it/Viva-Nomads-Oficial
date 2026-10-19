@@ -1,6 +1,6 @@
 "use server";
 
-import { statusAssinaturaCurto } from "@/lib/fechamento-contrato";
+import { COLUNAS_ESTADO_CONTRATO, estadoDoContratoUnico, type LinhaEstadoContrato } from "@/lib/contrato-estado";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify } from "@/lib/notifications";
@@ -18,6 +18,8 @@ import { documentoCompleto, MSG_DOCUMENTO } from "@/lib/documento-pessoa";
 import { docsInquilinoCompletos } from "@/lib/data/documentos-inquilino-servidor";
 import { MSG_DOCS_INQUILINO } from "@/lib/documentos-inquilino";
 import { propostaAcordadaDoLead } from "@/lib/data/propostas-servidor";
+import { conflitoNoImovel } from "@/lib/data/periodo-servidor";
+import { periodoDaEstadia } from "@/lib/contrato-periodo";
 
 interface ActionResult {
   ok: boolean;
@@ -47,7 +49,7 @@ export async function aceitarCandidatura(leadId: string): Promise<ActionResult> 
   // Carrega o lead e confirma que o solicitante é o DONO (autoridade no servidor).
   const { data: lead, error: lErr } = await supabase
     .from("leads")
-    .select("id, owner_id, tenant_id, status")
+    .select("id, owner_id, tenant_id, property_id, status, inicio_desejado")
     .eq("id", leadId)
     .maybeSingle();
   if (lErr) return { ok: false, error: erroBancoPT(lErr) };
@@ -61,6 +63,11 @@ export async function aceitarCandidatura(leadId: string): Promise<ActionResult> 
   if (!admin) return { ok: false, error: "Serviço indisponível." };
   // Cadastro confiável: o documento do dono vai no contrato — exigido ANTES do aceite.
   if (!(await temDocumento(admin, user.id))) return { ok: false, error: MSG_DOCUMENTO.aceitar };
+  // Disponibilidade por datas (0174): a entrada desejada (estadia mínima de 1 mês) não pode cair em outro contrato ativo.
+  if (lead.inicio_desejado) {
+    const conflito = await conflitoNoImovel(admin, lead.property_id as string, periodoDaEstadia(String(lead.inicio_desejado).slice(0, 10), 1));
+    if (conflito) return { ok: false, error: conflito };
+  }
 
   // Snapshot do plano do DONO agora → congela a comissão do contrato. O plano
   // só muda pelo servidor (0057: assinatura é só leitura para o dono).
@@ -192,15 +199,13 @@ export async function listMinhasCandidaturas(): Promise<MinhaCandidatura[]> {
   // Contrato de cada candidatura (o RLS deixa o inquilino ler os próprios contratos).
   const { data: contratos } = await supabase
     .from("contratos")
-    .select("id, lead_id, assinado_proprietario_em, assinado_inquilino_em")
+    .select(`id, lead_id, ${COLUNAS_ESTADO_CONTRATO}`)
     .eq("tenant_id", user.id);
+  // O selo do contrato pela fonte única (o mesmo de Contratos e da página do contrato).
   const contratoDoLead = new Map(
-    ((contratos ?? []) as { id: string; lead_id: string | null; assinado_proprietario_em: string | null; assinado_inquilino_em: string | null }[])
+    ((contratos ?? []) as unknown as ({ id: string; lead_id: string | null } & LinhaEstadoContrato)[])
       .filter((c) => c.lead_id)
-      .map((c) => [
-        c.lead_id as string,
-        { id: c.id, status: statusAssinaturaCurto("inquilino", { proprietario: c.assinado_proprietario_em, inquilino: c.assinado_inquilino_em }) },
-      ]),
+      .map((c) => [c.lead_id as string, { id: c.id, status: estadoDoContratoUnico(c, "inquilino").selo }]),
   );
 
   type Row = {
