@@ -207,6 +207,9 @@ test.describe("T232 — pedido de moradia completo", () => {
     await expect(meu.getByTestId("pedido-excluir-confirmacao")).toBeVisible();
     await nasDuasLarguras(page, "excluir-confirmacao");
     await meu.getByTestId("pedido-excluir-confirmar").click();
+    // O banco grava na hora; a lista some quando a ação volta.
+    await expect.poll(async () => (await adm().from("pedidos_moradia").select("status").eq("id", ids.pedido!).single()).data?.status, { timeout: 20_000 }).toBe("excluido");
+    await expect(page.getByTestId("pedidos-erro")).toHaveCount(0);
     await expect(page.locator(`[data-testid="meu-pedido"][data-pedido="${ids.pedido}"]`)).toHaveCount(0, { timeout: 20_000 });
     const { data: linha } = await adm().from("pedidos_moradia").select("status, excluido_em").eq("id", ids.pedido!).single();
     expect(linha!.status).toBe("excluido");
@@ -264,7 +267,8 @@ test.describe("T232 — pedido de moradia completo", () => {
       await page.goto("/buscar?local=Patos%20de%20Minas", { waitUntil: "domcontentloaded" });
       const cartao = page.getByTestId("busca-cartao-pedido");
       await expect(cartao).toContainText("Não achou? Publique um pedido e os proprietários vêm até você");
-      expect(decodeURIComponent((await cartao.locator("a").getAttribute("href")) ?? "")).toContain("cidade=Patos de Minas");
+      const href = (await cartao.locator("a").getAttribute("href")) ?? "";
+      expect(new URLSearchParams(href.split("?")[1] ?? "").get("cidade")).toBe("Patos de Minas");
       await expect(page.getByTestId(largura === 390 ? "busca-publicar-pedido" : "busca-publicar-pedido-topo").first()).toBeVisible();
       await expect(page.locator('[data-testid="card-resultado"]')).toHaveCount(1);
       await semRolagemLateral(page);
@@ -276,7 +280,9 @@ test.describe("T232 — pedido de moradia completo", () => {
     await ctx.close();
     await inquilino.setViewportSize({ width: 1280, height: 900 });
     await inquilino.goto("/dashboard", { waitUntil: "domcontentloaded" });
-    // O item fica dentro de "Minha moradia" (o grupo pode estar fechado): basta existir no menu.
-    await expect(inquilino.locator('a[href="/pedidos/novo"]', { hasText: "Publicar pedido de moradia" })).not.toHaveCount(0);
+    // O item fica dentro de "Minha moradia": o grupo começa fechado (os links só existem com ele aberto).
+    const item = inquilino.locator('a[href="/pedidos/novo"]', { hasText: "Publicar pedido de moradia" });
+    if ((await item.count()) === 0) await inquilino.getByRole("button", { name: "Minha moradia" }).first().click();
+    await expect(item.first()).toBeVisible();
   });
 });

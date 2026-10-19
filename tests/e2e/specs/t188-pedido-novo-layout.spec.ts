@@ -48,9 +48,9 @@ test("1280px — imagem à esquerda, formulário no topo à direita, sem cartão
   expect(caixa.sombra).toBe("none");
   expect(caixa.borda).toBe("0px");
 
-  // Os três grupos, nessa ordem.
+  // Os grupos, nessa ordem (Prompt 30: "O imóvel" com quartos e necessidades; "Valor e motivo" com a faixa de valor).
   const grupos = await page.locator("form legend").allInnerTexts();
-  expect(grupos.map((g) => g.trim().toUpperCase())).toEqual(["ONDE E QUANDO", "QUEM VAI MORAR", "ORÇAMENTO E MOTIVO"]);
+  expect(grupos.map((g) => g.trim().toUpperCase())).toEqual(["ONDE E QUANDO", "QUEM VAI MORAR", "O IMÓVEL", "VALOR E MOTIVO"]);
 
   const alturas = await alturasDosCampos(page);
   expect(alturas.length).toBeGreaterThanOrEqual(7);

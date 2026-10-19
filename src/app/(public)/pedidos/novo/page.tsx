@@ -107,7 +107,7 @@ export default function NovoPedidoPage() {
   );
 }
 
-/** Título pequeno de cada grupo do formulário (ONDE E QUANDO, QUEM VAI MORAR, ORÇAMENTO E MOTIVO). */
+/** Título pequeno de cada grupo do formulário (ONDE E QUANDO, QUEM VAI MORAR, O IMÓVEL, VALOR E MOTIVO). */
 function Grupo({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
     <fieldset className="min-w-0 space-y-4">
