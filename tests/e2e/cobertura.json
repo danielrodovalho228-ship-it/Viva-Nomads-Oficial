@@ -1873,6 +1873,12 @@
       ],
       "specs": []
     },
+    "src/lib/data/agentes-actions.ts#contarAprovacoesPendentes": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
     "src/lib/data/agentes-actions.ts#deixarOrdem": {
       "personas": [
         "admin"
