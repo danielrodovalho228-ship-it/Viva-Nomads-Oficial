@@ -37,7 +37,6 @@ import { docsInquilinoCompletos } from "@/lib/data/documentos-inquilino-servidor
 import { validarAceiteIa } from "@/lib/anuncio/termo-ia";
 import { erroBancoPT } from "@/lib/erros-banco";
 import { planoDoProprietario } from "@/lib/data/plano-efetivo";
-import { adminsPorAviso } from "@/lib/notifications/push-admins";
 import { avisarPedidosDoImovel } from "@/lib/data/pedidos-compat";
 import { avisarBuscasDoImovel } from "@/lib/data/alerta-busca-servidor";
 import { INTERNET_META } from "@/lib/internet";
@@ -87,6 +86,8 @@ import { ERRO_SOBREPOSICAO_PG } from "@/lib/contrato-periodo";
 import { validarOcupantes } from "@/lib/candidaturas/ocupantes";
 import { anotarInteresseDoDono, bloqueioPorCidade } from "@/lib/cidades-liberadas/servidor";
 import { MUNICIPIOS } from "@/lib/municipios";
+import { avisarAdminsDocumentoRecebido } from "@/lib/data/aviso-documento-recebido";
+import { caminhoDoDonoValido, documentoJaNaFila, documentoNoSalvar, hashValido, linhaDoEnvio } from "@/lib/documento/fila-envio";
 
 type ActionResult = { ok: boolean; demo?: boolean; id?: string; error?: string };
 
@@ -127,6 +128,17 @@ export async function saveQualification(
     if (!prop) return { ok: false, error: "Imóvel não encontrado." };
   }
 
+  // Prompt 35A, item 1: o documento já entrou na fila no ENVIO (enviarDocumentoParaConferencia)? Então esta
+  // linha grava SEM documento e o banco herda o da linha anterior (0072) — sem segundo item na fila nem segundo
+  // aviso. Arquivo que ainda não está na fila segue o caminho de antes (entra "em análise" e avisa).
+  let ultimoQ = supabase.from("qualification_checklists").select("document_path").eq("owner_id", user.id);
+  ultimoQ = propertyId ? ultimoQ.eq("property_id", propertyId) : ultimoQ.is("property_id", null);
+  const { data: ultimo } = documentPath
+    ? await ultimoQ.order("created_at", { ascending: false }).limit(1).maybeSingle()
+    : { data: null };
+  const doc = documentoNoSalvar((ultimo?.document_path as string | null | undefined) ?? null, documentPath ?? null);
+  const docGravado = doc.gravarPath;
+
   const eligible = isEligible(elig);
   const ready_to_live_score = readyToLiveScore(quality);
 
@@ -142,14 +154,14 @@ export async function saveQualification(
     // Caminho do documento no bucket PRIVADO (migration 0041). Só a referência
     // — a exibição usa URL assinada. null quando não enviado: aí o banco herda o
     // documento (e a revisão) da qualificação anterior do mesmo imóvel (0072).
-    document_path: documentPath ?? null,
+    document_path: docGravado,
     // Impressão digital do arquivo (0044) — detecta reuso entre contas na
     // conferência. Carimbo de quando foi enviado (distinto do created_at).
-    document_hash_sha256: documentPath ? (documentHash ?? null) : null,
-    document_uploaded_at: documentPath ? new Date().toISOString() : null,
+    document_hash_sha256: docGravado ? (documentHash ?? null) : null,
+    document_uploaded_at: docGravado ? new Date().toISOString() : null,
     // Anti-fraude (migration 0042): documento enviado entra "em análise"; um
     // admin aprova/recusa. Só aprovado libera Publicar. O banco decide (0060/0072).
-    document_status: documentPath ? "pending" : "none",
+    document_status: docGravado ? "pending" : "none",
     eligible,
     // Selo base + etiquetas (Atualização 11)
     ready_to_live_score,
@@ -177,28 +189,70 @@ export async function saveQualification(
     return { ok: false, error: "Não foi possível salvar a qualificação agora. Tente novamente em instantes." };
   }
 
-  // Documento entrou na fila → avisa os admins (best-effort; nunca trava nem
-  // vaza dados do documento — só o fato de que há item para conferir).
-  if (documentPath) {
-    try {
-      // Pelo servidor: a RLS de profiles só mostra o próprio perfil ao dono,
-      // então a lista vinha vazia e o aviso nunca saía.
-      // Só admins que ligaram "receber alertas" na Conta (ordem 27cfd36a).
-      const admins = await adminsPorAviso<{ email: string | null; full_name: string | null; notif_email: boolean | null }>("operacional", "email, full_name, notif_email");
-      for (const a of admins) {
-        if (a.email && a.notif_email !== false) {
-          await notify({
-            event: "documento_recebido",
-            email: a.email as string,
-            name: (a.full_name as string) ?? undefined,
-            pushUrl: "/admin/documentos",
-          });
-        }
-      }
-    } catch {
-      /* best-effort */
-    }
+  // Documento NOVO entrou na fila → avisa os admins (best-effort; nunca trava nem
+  // vaza dados do documento — só o fato de que há item para conferir). Só
+  // admins que ligaram "receber alertas" na Conta (ordem 27cfd36a).
+  if (doc.avisarAdmins) await avisarAdminsDocumentoRecebido();
+  return { ok: true, id: (data as { id: string }).id };
+}
+
+/**
+ * Prompt 35A, item 1 — DOCUMENTO ENFILEIRADO NO ENVIO. Chamada pelo /qualificar logo depois do
+ * /api/upload/documento: grava a linha da qualificação com o documento "em análise" (document_status 'pending',
+ * caminho, impressão digital e data do envio), herdando as respostas da qualificação anterior do MESMO imóvel, e
+ * avisa os admins (documento_recebido). Assim o documento entra na fila de /admin/documentos mesmo que a pessoa
+ * saia da tela sem concluir. Sem imóvel (`propertyId` nulo): a linha fica à espera e se liga ao próximo imóvel
+ * criado (mesma regra do saveQualification); a fila mostra "Documento sem imóvel ligado".
+ * Idempotente: o mesmo arquivo já na fila não cria outra linha nem outro aviso. Grava com o cliente da pessoa —
+ * o banco força o 'pending' e confere o imóvel (0060/0072).
+ */
+export async function enviarDocumentoParaConferencia(
+  propertyId: string | null,
+  path: string,
+  hash: string | null
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  if (!supabase) return { ok: true, demo: true };
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Entre na sua conta para enviar o documento." };
+  if (!caminhoDoDonoValido(path, user.id)) return { ok: false, error: "Documento inválido. Envie o arquivo de novo." };
+  if (propertyId) {
+    if (!UUID_RE.test(propertyId)) return { ok: false, error: "Imóvel inválido." };
+    const { data: prop } = await supabase
+      .from("properties")
+      .select("id")
+      .eq("id", propertyId)
+      .eq("owner_id", user.id)
+      .maybeSingle();
+    if (!prop) return { ok: false, error: "Imóvel não encontrado." };
   }
+  if (!(await dentroDoLimite(`doc-fila:${user.id}`, 30, DIA_SEGUNDOS))) {
+    return { ok: false, error: "Muitos envios de documento hoje. Tente novamente amanhã." };
+  }
+
+  // Respostas da qualificação anterior do MESMO imóvel (ou da que está à espera): a linha nova só troca o documento.
+  let q = supabase.from("qualification_checklists").select("*").eq("owner_id", user.id);
+  q = propertyId ? q.eq("property_id", propertyId) : q.is("property_id", null);
+  const { data: anterior } = await q.order("created_at", { ascending: false }).limit(1).maybeSingle();
+  if (anterior && documentoJaNaFila(anterior.document_path as string | null, path)) {
+    return { ok: true, id: anterior.id as string };
+  }
+
+  const linha = linhaDoEnvio((anterior as Record<string, unknown> | null) ?? null, {
+    ownerId: user.id,
+    propertyId: propertyId ?? null,
+    path,
+    hash: hashValido(hash),
+    agora: new Date(),
+  });
+  const { data, error } = await supabase.from("qualification_checklists").insert(linha).select("id").single();
+  if (error || !data) {
+    console.error("[enviarDocumentoParaConferencia] falha ao gravar:", error?.message ?? "sem linha");
+    return { ok: false, error: "Não foi possível colocar o documento na fila de conferência agora. Tente de novo." };
+  }
+  await avisarAdminsDocumentoRecebido();
   return { ok: true, id: (data as { id: string }).id };
 }
 
