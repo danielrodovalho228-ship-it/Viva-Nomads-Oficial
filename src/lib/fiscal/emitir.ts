@@ -9,6 +9,7 @@ import { conteudoDocumento, NUMERO_PROVISORIO, ROTULO_TIPO, temContato, textoDoc
 import { envioConfirmado, motivoFalhaEnvio, resultadoEnvio, type EnvioDestinatario } from "@/lib/fiscal/envio";
 import { gerarPdf, sha256 } from "@/lib/fiscal/pdf";
 import { rotuloPagamentoBloco } from "@/lib/pagamento-bloco";
+import { numeroPublicoContrato } from "@/lib/contrato-ref";
 
 /**
  * Emissão dos documentos da plataforma (SÓ servidor): recibo de aluguel,
@@ -23,7 +24,6 @@ type Resultado = { ok: true; id: string; numero: string; envio?: EnvioDestinatar
 
 export const BUCKET_DOCUMENTOS = "documentos";
 
-const refContrato = (id: string) => `CT-${id.slice(0, 8).toUpperCase()}`;
 
 interface Partes {
   contratoId: string;
@@ -78,7 +78,7 @@ async function emitir(
     locador: { nome: partes.locador.nome, doc: partes.locador.doc },
     locatario: { nome: partes.locatario.nome, doc: partes.locatario.doc },
     imovelEndereco: partes.imovelEndereco,
-    contratoRef: refContrato(partes.contratoId),
+    contratoRef: numeroPublicoContrato(partes.contratoId),
     conferirUrl: `${SITE_URL}/conferir/${codigo}`,
     ...extra,
   };
@@ -228,10 +228,12 @@ export async function emitirDoPagamento(pagamentoId: string): Promise<Resultado>
   try {
     const { data: pg } = await admin
       .from("pagamentos_bloco")
-      .select("id, contrato_id, bloco_id, tipo, valor, forma, data_pagamento, confirmado_pelo_inquilino, encargos, contrato_blocos(numero_bloco, meses, inicio, fim), contratos(aluguel_mensal)")
+      .select("id, contrato_id, bloco_id, tipo, valor, forma, data_pagamento, confirmado_pelo_inquilino, anulado_em, encargos, contrato_blocos(numero_bloco, meses, inicio, fim), contratos(aluguel_mensal)")
       .eq("id", pagamentoId)
       .maybeSingle();
     if (!pg || !pg.confirmado_pelo_inquilino) return { ok: false, motivo: "pagamento não confirmado pelo inquilino" };
+    // Registro anulado (duplicidade, 0182): não gera documento nem volta para a fila.
+    if (pg.anulado_em) return { ok: false, motivo: "pagamento anulado" };
     const partes = await partesDoContrato(admin, pg.contrato_id as string);
     if (!partes) return { ok: false, motivo: "contrato não encontrado" };
     const bloco = pg.contrato_blocos as unknown as { numero_bloco: number | null; meses: number | null; inicio: string | null; fim: string | null } | null;
@@ -322,6 +324,7 @@ export async function pagamentosConfirmadosSemDocumento(admin: Admin, limite = 5
     .from("pagamentos_bloco")
     .select("id")
     .eq("confirmado_pelo_inquilino", true)
+    .is("anulado_em", null)
     .order("confirmado_em", { ascending: true })
     .limit(500);
   const ids = ((pgs ?? []) as { id: string }[]).map((p) => p.id);

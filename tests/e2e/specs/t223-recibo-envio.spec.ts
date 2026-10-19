@@ -1,7 +1,7 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 import { hasAccount } from "../fixtures/accounts";
-import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, lerSaida, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, blocoSemValorMensal, apagarContas, criarConta, criarImovelPronto, entrar, lerSaida, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
   T223 — Complemento do recibo (coordenador, reteste do #872, 19/10), 390 e 1280 px. O laboratório sobe o Resend
@@ -73,10 +73,11 @@ async function contratoAssinado(): Promise<string> {
 
 /** Pagamento já confirmado sem documento (entra no "Emitir os pendentes" do admin). */
 async function pagamentoConfirmado(tipo: "aluguel" | "caucao", valor: number): Promise<string> {
-  const { data: bloco } = await adm().from("contrato_blocos").select("id").eq("contrato_id", ids.contrato!).single();
+  // 0182: a Caução é do contrato (sem bloco); o valor mensal vai num bloco ainda sem pagamento.
+  const blocoId = tipo === "caucao" ? null : await blocoSemValorMensal(ids.contrato!);
   const { data, error } = await adm()
     .from("pagamentos_bloco")
-    .insert({ bloco_id: bloco!.id, contrato_id: ids.contrato, tipo, valor, forma: "pix", data_pagamento: dia(0), marcado_por: ids.dono, confirmado_pelo_inquilino: true, confirmado_em: new Date().toISOString() })
+    .insert({ bloco_id: blocoId, contrato_id: ids.contrato, tipo, valor, forma: "pix", data_pagamento: dia(0), marcado_por: ids.dono, confirmado_pelo_inquilino: true, confirmado_em: new Date().toISOString() })
     .select("id")
     .single();
   if (error) throw error;
@@ -132,7 +133,7 @@ test.describe("T223 — recibo: envio confirmado, recusa do Resend, Reenviar e-m
     test.setTimeout(180_000);
     const d = await abrir(browser, dono.email, 1280);
     await d.goto("/dashboard/contratos", { waitUntil: "domcontentloaded" });
-    await d.getByRole("button", { name: /Registrar recebimento/ }).first().click();
+    await d.getByTestId("registrar-recebimento").first().click();
     await d.getByRole("button", { name: "Confirmar recebimento" }).click();
     await expect.poll(async () => (await adm().from("pagamentos_bloco").select("id").eq("contrato_id", ids.contrato!)).data?.length ?? 0, { timeout: 20_000 }).toBe(1);
     ids.pagamento = (await adm().from("pagamentos_bloco").select("id").eq("contrato_id", ids.contrato!).single()).data!.id as string;

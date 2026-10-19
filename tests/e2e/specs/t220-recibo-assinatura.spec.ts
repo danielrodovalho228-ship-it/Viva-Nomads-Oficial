@@ -95,7 +95,7 @@ test.describe("T220 — recibo, rótulo do bloco, nomes de quem assinou e 'Li e 
     // O dono registra o pagamento do bloco 1 pela tela.
     const d = await abrir(browser, dono.email, 1280);
     await d.goto("/dashboard/contratos", { waitUntil: "domcontentloaded" });
-    await d.getByRole("button", { name: /Registrar recebimento/ }).first().click();
+    await d.getByTestId("registrar-recebimento").first().click();
     await d.getByRole("button", { name: "Confirmar recebimento" }).click();
     await expect.poll(async () => (await adm().from("pagamentos_bloco").select("id").eq("contrato_id", ids.contrato!)).data?.length ?? 0, { timeout: 20_000 }).toBe(1);
     const { data: pg } = await adm().from("pagamentos_bloco").select("id, valor").eq("contrato_id", ids.contrato!).single();
@@ -157,10 +157,10 @@ test.describe("T220 — recibo, rótulo do bloco, nomes de quem assinou e 'Li e 
     test("1c/1d. 1280 — pagamento confirmado sem recibo (como os de 18 e 19/10) → 'Recibo em preparação' → admin 'Emitir os pendentes' → recibo", async ({ page, browser }) => {
       test.setTimeout(150_000);
       // Um pagamento confirmado que ficou sem documento (o que aconteceu antes desta correção).
-      const { data: bloco } = await adm().from("contrato_blocos").select("id").eq("contrato_id", ids.contrato!).single();
+      // 0182: a Caução é do contrato, gravada sem bloco.
       const { data: pg, error } = await adm()
         .from("pagamentos_bloco")
-        .insert({ bloco_id: bloco!.id, contrato_id: ids.contrato, tipo: "caucao", valor: 3200, forma: "pix", data_pagamento: dia(0), marcado_por: ids.dono, confirmado_pelo_inquilino: true, confirmado_em: new Date().toISOString() })
+        .insert({ bloco_id: null, contrato_id: ids.contrato, tipo: "caucao", valor: 3200, forma: "pix", data_pagamento: dia(0), marcado_por: ids.dono, confirmado_pelo_inquilino: true, confirmado_em: new Date().toISOString() })
         .select("id")
         .single();
       if (error) throw error;
