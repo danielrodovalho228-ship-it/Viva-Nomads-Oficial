@@ -1,5 +1,6 @@
 "use server";
 
+import { taxaDoDonoAgora } from "@/lib/cobranca/taxa-servidor";
 import { statusAssinaturaCurto } from "@/lib/fechamento-contrato";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -66,7 +67,10 @@ export async function aceitarCandidatura(leadId: string): Promise<ActionResult> 
   // só muda pelo servidor (0057: assinatura é só leitura para o dono).
   // Assinatura ATIVA; sem ela, Profissional se Fundador nos 12 meses grátis.
   const plano = await planoDoProprietario(admin, user.id);
-  const comissao = COMISSAO_POR_PLANO[plano] ?? COMISSAO_POR_PLANO.free;
+  // R6 (especificação da taxa, 19/10): contrato sem proposta congela a taxa da regra única de regra.ts no aceite —
+  // faixa pelos imóveis ativos, queda de 30 dias e fixação do admin. Antes saía do plano (COMISSAO_POR_PLANO).
+  const t = await taxaDoDonoAgora(admin, user.id);
+  const comissao = t.taxa;
 
   const { error: uErr } = await admin
     .from("leads")
@@ -76,6 +80,8 @@ export async function aceitarCandidatura(leadId: string): Promise<ActionResult> 
       decided_by: user.id,
       accepted_plan: plano,
       accepted_commission_rate: comissao,
+      accepted_commission_origem: t.origem,
+      accepted_commission_faixa: t.faixaNoFechamento.taxa,
     })
     .eq("id", leadId)
     .eq("owner_id", user.id)

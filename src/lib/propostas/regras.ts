@@ -153,6 +153,22 @@ export function avisoTaxaCaiu(taxaNoEnvio: number | null | undefined, taxaAtual:
   return `Sua taxa caiu para ${pct}% por causa da sua faixa atual`;
 }
 
+/** Antes do aceite, se a faixa de hoje for menor que a do envio: "Se aceita hoje: 10% (sua faixa melhorou)". */
+export function textoSeAceitaHoje(taxaNoEnvio: number | null | undefined, taxaHoje: number): string | null {
+  const envio = taxaNoEnvio == null ? NaN : Number(taxaNoEnvio);
+  if (!Number.isFinite(envio) || !(taxaHoje < envio)) return null;
+  return `Se aceita hoje: ${(taxaHoje * 100).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}% (sua faixa melhorou)`;
+}
+
+/** Origem gravada no aceite: a do envio quando ela venceu; senão a da regra de hoje (faixa, queda ou admin). */
+export function origemDaTaxaDaProposta(
+  taxaNoEnvio: number | null | undefined,
+  hoje: { taxa: number; origem: "admin" | "faixa" | "faixa_com_queda_recente" },
+): "admin" | "faixa" | "faixa_com_queda_recente" | "proposta_envio" {
+  const envio = taxaNoEnvio == null ? NaN : Number(taxaNoEnvio);
+  return Number.isFinite(envio) && envio < hoje.taxa ? "proposta_envio" : hoje.origem;
+}
+
 /** Meses permitidos pelo anúncio (prazo em dias → meses de 30 dias, entre 1 e 6). */
 export function mesesDoAnuncio(minPeriodDias: number | null | undefined, maxPeriodDias: number | null | undefined): { min: number; max: number } {
   const min = Math.min(6, Math.max(1, Math.ceil(n(minPeriodDias || 30) / 30)));

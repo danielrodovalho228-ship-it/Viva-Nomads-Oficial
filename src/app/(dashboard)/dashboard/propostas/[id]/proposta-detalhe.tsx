@@ -335,6 +335,11 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
                 {rotuloTaxaServico(p.taxa.pct, p.taxa.valorMensal, p.taxa.meses, p.taxa.valor)}
                 {p.taxa.congelada ? " (congelada no aceite)" : " (fixada no envio; não sobe depois)"}. Consumo, limpeza e taxa pet não entram na base.
               </p>
+              {p.taxa.seAceitaHoje && (
+                <p className="mt-2 text-sm font-medium text-forest" data-testid="proposta-taxa-se-aceita-hoje">
+                  {p.taxa.seAceitaHoje}.
+                </p>
+              )}
               {p.taxa.caiu && (
                 <p className="mt-2 text-sm font-medium text-forest" data-testid="proposta-taxa-caiu">
                   {p.taxa.caiu}.

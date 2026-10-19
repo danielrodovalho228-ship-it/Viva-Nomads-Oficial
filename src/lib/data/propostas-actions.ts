@@ -14,6 +14,7 @@ import { temDocumento } from "@/lib/data/documento-servidor";
 import { MSG_DOCUMENTO } from "@/lib/documento-pessoa";
 import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 import { avisoAbaixoDoMinimo, normalizarNegociacao, descontoParaMeses, type Negociacao } from "@/lib/anuncio/negociacao";
+import { taxaDoDonoAgora } from "@/lib/cobranca/taxa-servidor";
 import { comissaoSobreContrato } from "@/lib/cobranca/regra";
 import {
   aguardandoResposta,
@@ -31,9 +32,10 @@ import {
   MOTIVOS_RECUSA,
   STATUS_ABERTOS,
   mudancasProibidas,
-  taxaNoAceite,
   taxaEfetivaDaProposta,
   avisoTaxaCaiu,
+  textoSeAceitaHoje,
+  origemDaTaxaDaProposta,
   validaAteDe,
   validarTermos,
   VALIDADES_DIAS,
@@ -46,6 +48,7 @@ import {
 } from "@/lib/propostas/regras";
 import {
   COLUNAS_PROPOSTA,
+  lerTaxaDaProposta,
   COLUNAS_VERSAO,
   expirarVencidas,
   linhaDaVersao,
@@ -129,11 +132,6 @@ function termosDoAnuncio(im: ImovelProposta, meses: number, dataEntrada: string,
     taxaPet: 0,
     limpezaUnica: (Number(im.prep_fee) || 0) + (im.checkout_cleaning_enabled ? Number(im.checkout_cleaning_fee) || 0 : 0),
   };
-}
-
-async function imoveisAtivos(admin: Admin, ownerId: string): Promise<number> {
-  const { count } = await admin.from("properties").select("id", { count: "exact", head: true }).eq("owner_id", ownerId).eq("status", "active");
-  return count ?? 0;
 }
 
 async function nomeDe(admin: Admin, userId: string): Promise<string | null> {
@@ -257,7 +255,7 @@ export async function dadosNovaProposta(leadId: string): Promise<DadosMontagem |
     termos: termosDoAnuncio(im, Math.min(lim.mesesMax, Math.max(lim.mesesMin, 4)), entrada, neg),
     limites: lim,
     negociacao: neg,
-    taxa: taxaNoAceite(await imoveisAtivos(s.admin, s.user.id), new Date()),
+    taxa: (await taxaDoDonoAgora(s.admin, s.user.id)).taxa,
   };
 }
 
@@ -332,7 +330,7 @@ export async function enviarProposta(e: EntradaProposta): Promise<Resultado<{ id
       validade_dias: validade,
       valida_ate: validaAteDe(validade, new Date()),
       // A faixa do dono AGORA: a taxa desta proposta nunca sobe depois do envio (complemento do prompt 27, parte B).
-      taxa_no_envio: taxaNoAceite(await imoveisAtivos(s.admin, s.user.id), new Date()),
+      taxa_no_envio: (await taxaDoDonoAgora(s.admin, s.user.id)).taxa,
     })
     .select(COLUNAS_PROPOSTA)
     .single();
@@ -395,7 +393,7 @@ export interface PropostaView {
   descontos: { mesesMin: number; pct: number }[];
   limites: { mesesMin: number; mesesMax: number };
   /** Só o proprietário vê a taxa de serviço. */
-  taxa: { pct: number; valor: number; congelada: boolean; valorMensal: number; meses: number; caiu: string | null } | null;
+  taxa: { pct: number; valor: number; congelada: boolean; valorMensal: number; meses: number; seAceitaHoje: string | null; caiu: string | null } | null;
   fechamentoUrl: string | null;
 }
 
@@ -524,16 +522,20 @@ export async function lerProposta(id: string): Promise<PropostaView | null> {
   const aberta = estaAberta(p.status);
   let taxa: PropostaView["taxa"] = null;
   if (papel === "owner") {
-    const congelada = p.taxa_congelada != null;
-    const atualFaixa = congelada ? Number(p.taxa_congelada) : taxaNoAceite(await imoveisAtivos(s.admin, s.user.id), new Date());
-    const pct = congelada ? atualFaixa : taxaEfetivaDaProposta(p.taxa_no_envio, atualFaixa);
+    // Antes do aceite: a taxa DO ENVIO (com a base) e, se a faixa de hoje for menor, "Se aceita hoje: X%".
+    // Depois do aceite: a congelada e, se ela ficou abaixo da do envio, "Sua taxa caiu para X%…".
+    const tx = await lerTaxaDaProposta(s.admin, p.id);
+    const congelada = tx.taxa_congelada != null;
+    const hoje = congelada ? null : (await taxaDoDonoAgora(s.admin, s.user.id)).taxa;
+    const pct = congelada ? (tx.taxa_congelada as number) : (tx.taxa_no_envio ?? (hoje as number));
     taxa = {
       pct,
       valor: comissaoSobreContrato(atual.totais.valorMensal, atual.termos.meses, pct),
       congelada,
       valorMensal: atual.totais.valorMensal,
       meses: atual.termos.meses,
-      caiu: congelada ? null : avisoTaxaCaiu(p.taxa_no_envio, atualFaixa),
+      seAceitaHoje: !congelada && hoje != null ? textoSeAceitaHoje(tx.taxa_no_envio, hoje) : null,
+      caiu: congelada ? avisoTaxaCaiu(tx.taxa_no_envio, tx.taxa_congelada as number) : null,
     };
   }
   return {
@@ -672,8 +674,12 @@ export async function responderProposta(id: string, r: Resposta): Promise<Result
  */
 async function aceitar(admin: Admin, p: LinhaProposta, v: LinhaVersao, papel: Autor): Promise<Resultado<{ fechamentoUrl?: string | null }>> {
   const agora = new Date();
-  // A menor entre a taxa do envio e a da faixa atual: nunca sobe depois de enviada (complemento do prompt 27, parte B).
-  const taxa = taxaEfetivaDaProposta(p.taxa_no_envio, taxaNoAceite(await imoveisAtivos(admin, p.owner_id), agora));
+  // A menor entre a taxa do envio e a do dono agora (faixa, queda de 30 dias, fixação do admin): nunca sobe depois
+  // de enviada (complemento do prompt 27, parte B; especificação da taxa, R5).
+  const tx = await lerTaxaDaProposta(admin, p.id);
+  const hoje = await taxaDoDonoAgora(admin, p.owner_id, agora);
+  const taxa = taxaEfetivaDaProposta(tx.taxa_no_envio, hoje.taxa);
+  const origem = origemDaTaxaDaProposta(tx.taxa_no_envio, hoje);
   const { data: lead } = await admin.from("leads").select("id, status").eq("id", p.lead_id).maybeSingle();
   if (!lead || !["new", "accepted"].includes(lead.status as string)) return { ok: false, error: "Esta candidatura não está mais em andamento." };
   if (lead.status === "new" && !(await temDocumento(admin, p.owner_id)))
@@ -681,7 +687,7 @@ async function aceitar(admin: Admin, p: LinhaProposta, v: LinhaVersao, papel: Au
 
   const { data: ok } = await admin
     .from("propostas")
-    .update({ status: "aceita", aceita_em: agora.toISOString(), taxa_congelada: taxa, atualizada_em: agora.toISOString() })
+    .update({ status: "aceita", aceita_em: agora.toISOString(), taxa_congelada: taxa, taxa_origem: origem, atualizada_em: agora.toISOString() })
     .eq("id", p.id)
     .eq("versao_atual", v.versao)
     .in("status", ["enviada", "vista", "contraproposta"])
@@ -699,11 +705,17 @@ async function aceitar(admin: Admin, p: LinhaProposta, v: LinhaVersao, papel: Au
         decided_by: p.owner_id,
         accepted_plan: await planoDoProprietario(admin as never, p.owner_id),
         accepted_commission_rate: taxa,
+        accepted_commission_origem: origem,
+        accepted_commission_faixa: hoje.faixaNoFechamento.taxa,
       })
       .eq("id", p.lead_id)
       .eq("status", "new");
   } else {
-    await admin.from("leads").update({ accepted_commission_rate: taxa }).eq("id", p.lead_id).eq("status", "accepted");
+    await admin
+      .from("leads")
+      .update({ accepted_commission_rate: taxa, accepted_commission_origem: origem, accepted_commission_faixa: hoje.faixaNoFechamento.taxa })
+      .eq("id", p.lead_id)
+      .eq("status", "accepted");
   }
   const tot = calcularTotais(termosDaLinha(v));
   await avisarOutraParte(
