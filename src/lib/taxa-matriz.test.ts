@@ -323,3 +323,10 @@ test("34. aviso ao dono no aceite: a congelada com a base; o morador nunca receb
   const mensagem = /`Proposta \$\{p\.numero\} aceita:[^`]*`/.exec(acoes)![0];
   assert.doesNotMatch(mensagem, /taxa|comiss/i);
 });
+
+test("18. o fechamento usa a taxa congelada no aceite (leads.accepted_commission_rate), a mesma da proposta", () => {
+  const leads = ler("./data/leads-actions.ts");
+  assert.match(leads, /const comissaoRate =\s*typeof lead\.accepted_commission_rate === "number"\s*\? lead\.accepted_commission_rate/);
+  assert.match(ler("../app/(dashboard)/dashboard/fechamento/closing-flow.tsx"), /const COMMISSION_RATE = ctx\.comissaoRate;/);
+  assert.match(ler("./data/propostas-actions.ts"), /from\("leads"\)[\s\S]{0,200}accepted_commission_rate/);
+});

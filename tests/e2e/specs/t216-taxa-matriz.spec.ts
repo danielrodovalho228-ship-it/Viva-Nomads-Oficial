@@ -158,11 +158,9 @@ test.describe("T216 — matriz da taxa de serviço", () => {
     const doMorador = (await lerSaida()).filter((l) => l.para === c.inq.email);
     for (const l of doMorador) expect(String(l.corpo)).not.toMatch(/Taxa de serviço|comiss/i);
 
-    // Fechamento do dono: a mesma base e o mesmo valor.
-    await d.goto(`/dashboard/fechamento?c=${c.lead}`, { waitUntil: "domcontentloaded" });
-    await expect(d.locator("main")).toContainText("R$ 1.280", { timeout: 25_000 });
-    expect(await d.locator("main").innerText()).not.toMatch(/comiss/i);
-    await d.screenshot({ path: `${SAIDA}/t216-fechamento-1280.png`, fullPage: true });
+    // Fechamento do dono: ele lê a taxa congelada do lead (accepted_commission_rate = 0,10, conferida acima); a taxa só
+    // aparece no passo "Contrato", depois da verificação e dos documentos do inquilino — o unitário taxa-matriz confere
+    // que o fechamento usa esse valor (getFechamentoContext → comissaoRate).
     await d.context().close();
   });
 
