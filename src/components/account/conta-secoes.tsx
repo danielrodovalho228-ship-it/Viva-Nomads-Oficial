@@ -476,10 +476,10 @@ function PwdField({
 }
 
 export function NotificationsPanel() {
-  // Preferências GRAVADAS no perfil (notif_email / notif_whatsapp). Antes os
-  // interruptores só mudavam na tela e não correspondiam a nada no banco.
-  const [prefs, setPrefs] = useState<{ email: boolean; whatsapp: boolean } | null>(null);
-  const [salvando, setSalvando] = useState<"email" | "whatsapp" | "equipe" | null>(null);
+  // Preferência GRAVADA no perfil (notif_email). Prompt 30, item 8: sem aviso por WhatsApp (ficam e-mail e o aviso
+  // no app; o canal da Viva é "Falar com a Viva").
+  const [prefs, setPrefs] = useState<{ email: boolean } | null>(null);
+  const [salvando, setSalvando] = useState<"email" | "equipe" | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
   // null = não é admin (o interruptor nem aparece). Alertas da equipe: ordem 27cfd36a.
@@ -489,7 +489,7 @@ export function NotificationsPanel() {
     let vivo = true;
     getNotifPrefs()
       .then((p) => vivo && setPrefs(p))
-      .catch(() => vivo && setPrefs({ email: true, whatsapp: true }));
+      .catch(() => vivo && setPrefs({ email: true }));
     getAlertasEquipe()
       .then((v) => vivo && setAlertasEquipeUi(v))
       .catch(() => vivo && setAlertasEquipeUi(null));
@@ -498,7 +498,7 @@ export function NotificationsPanel() {
     };
   }, []);
 
-  async function alternar(chave: "email" | "whatsapp") {
+  async function alternar(chave: "email") {
     if (!prefs) return;
     const anterior = prefs;
     const novo = { ...prefs, [chave]: !prefs[chave] };
@@ -533,16 +533,11 @@ export function NotificationsPanel() {
     setOk(true);
   }
 
-  const items: { key: "email" | "whatsapp"; label: string; hint: string }[] = [
+  const items: { key: "email"; label: string; hint: string }[] = [
     {
       key: "email",
       label: "Avisos por e-mail",
-      hint: "Manutenção, novos interessados, mensagens e respostas aos seus pedidos. Ligado por padrão.",
-    },
-    {
-      key: "whatsapp",
-      label: "Avisos por WhatsApp",
-      hint: "Os mesmos avisos pelo WhatsApp, quando o canal estiver ativo.",
+      hint: "Manutenção, novos interessados, mensagens e respostas aos seus pedidos. Ligado por padrão. Os avisos no app sempre aparecem.",
     },
   ];
   return (
