@@ -532,7 +532,9 @@ function RegistrarRecebimento({
       setJaRegistrado(r.jaRegistrado ? (r.mensagem ?? "Este recebimento já foi registrado") : null);
       setOpen(false);
       setDone(true);
-      router.refresh();
+      // Registro que já existia: a mensagem fica na tela (recarregar trocaria o formulário pelo estado do bloco
+      // antes de a pessoa ler "Este recebimento já foi registrado").
+      if (!r.jaRegistrado) router.refresh();
     } else {
       enviando.current = false;
       setErro(r.error ?? "Não foi possível registrar.");
