@@ -39,7 +39,7 @@ export function NovaJornadaTeste({ inquilinos, anuncios }: { inquilinos: Opcao[]
     <div className="space-y-3" data-testid="nova-jornada-teste">
       <label className="flex flex-col gap-1 text-sm text-ink">
         Inquilino de teste
-        <select value={tenantId} onChange={(e) => setTenantId(e.target.value)} className="min-w-0 rounded-lg border border-sage-200 bg-white px-2 py-2" data-testid="jornada-inquilino">
+        <select value={tenantId} onChange={(e) => setTenantId(e.target.value)} className="w-full min-w-0 max-w-full rounded-lg border border-sage-200 bg-white px-2 py-2" data-testid="jornada-inquilino">
           {inquilinos.map((o) => (
             <option key={o.id} value={o.id}>
               {o.rotulo}
@@ -49,7 +49,7 @@ export function NovaJornadaTeste({ inquilinos, anuncios }: { inquilinos: Opcao[]
       </label>
       <label className="flex flex-col gap-1 text-sm text-ink">
         Anúncio [TESTE QA]
-        <select value={propertyId} onChange={(e) => setPropertyId(e.target.value)} className="min-w-0 rounded-lg border border-sage-200 bg-white px-2 py-2" data-testid="jornada-anuncio">
+        <select value={propertyId} onChange={(e) => setPropertyId(e.target.value)} className="w-full min-w-0 max-w-full rounded-lg border border-sage-200 bg-white px-2 py-2" data-testid="jornada-anuncio">
           {anuncios.map((o) => (
             <option key={o.id} value={o.id}>
               {o.rotulo}
@@ -87,7 +87,7 @@ export function NovaJornadaTeste({ inquilinos, anuncios }: { inquilinos: Opcao[]
         </p>
       )}
       {r && r.ok && (
-        <div className="rounded-lg border border-sage-200 bg-sage-50 p-3 text-sm text-ink" role="status" data-testid="jornada-ok" data-reaproveitada={r.reaproveitada ? "1" : "0"}>
+        <div className="break-words rounded-lg border border-sage-200 bg-sage-50 p-3 text-sm text-ink" role="status" data-testid="jornada-ok" data-reaproveitada={r.reaproveitada ? "1" : "0"}>
           <p className="font-semibold text-forest">
             {r.reaproveitada ? "Jornada reaproveitada" : "Jornada criada"} · candidatura <span data-testid="jornada-numero">{r.numero}</span>
           </p>
@@ -102,7 +102,7 @@ export function NovaJornadaTeste({ inquilinos, anuncios }: { inquilinos: Opcao[]
               {r.contratosEncerrados === 1 ? "O contrato de teste anterior deste anúncio foi encerrado" : `${r.contratosEncerrados} contratos de teste anteriores deste anúncio foram encerrados`}, para a nova jornada não cruzar as datas dele.
             </p>
           )}
-          <p className="mt-1 text-muted">
+          <p className="mt-1 break-words text-muted">
             Anúncio: {r.anuncio} · Inquilino: {r.inquilino}
           </p>
           <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
