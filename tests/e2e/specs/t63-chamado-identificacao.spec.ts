@@ -24,6 +24,16 @@ test.describe("deslogado", () => {
     await page.getByRole("button", { name: "Enviar chamado" }).click();
     await expect(page.getByRole("alert").filter({ hasText: /Não conseguimos/ })).toContainText("Não conseguimos usar este e-mail");
   });
+
+  test("telefone é opcional, mas se vier inválido o servidor recusa", async ({ page }) => {
+    await page.goto("/ajuda?novo=1", { waitUntil: "networkidle" });
+    await page.getByLabel("O que aconteceu?").fill("Preciso de ajuda com a Caução do meu contrato.");
+    await page.getByLabel("Seu nome").fill("Visitante T63");
+    await page.getByLabel(/Seu e-mail/).fill("visitante@gmail.com");
+    await page.getByLabel(/Telefone com DDD/).fill("123");
+    await page.getByRole("button", { name: "Enviar chamado" }).click();
+    await expect(page.getByRole("alert").filter({ hasText: /Telefone inválido/ })).toBeVisible();
+  });
 });
 
 test.describe("logado", () => {
