@@ -345,6 +345,14 @@ export const BLOCOS: Bloco[] = [
         href: (f) => `/admin/pedidos?${qsPeriodo(f)}`,
       },
       {
+        chave: "pedidos_com_resposta_n",
+        rotulo: "Pedidos respondidos",
+        formula: "Pedidos do período que receberam pelo menos 1 contato ou proposta (contas de teste fora).",
+        formato: "inteiro",
+        calc: campo("x_pedidos_com_resposta"),
+        href: (f) => `/admin/pedidos?${qsPeriodo(f)}`,
+      },
+      {
         chave: "pedidos_tempo_1a_resposta",
         rotulo: "Pedidos: tempo até a 1ª resposta",
         formula: FORMULA_TEMPO_1A_RESPOSTA_PEDIDO,

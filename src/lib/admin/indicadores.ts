@@ -70,7 +70,8 @@ export function agregarContratos(linhas: ContratoParaAgregado[]): AgregadoContra
   return { contratos: linhas.length, valorTotal, taxa, takeRate: valorTotal > 0 ? taxa / valorTotal : null, valorMensalSoma: r2(valorMensalSoma), regraAnterior };
 }
 
-export const FORMULA_VALOR_TOTAL = "Soma de valor mensal × meses de cada contrato do período (a mesma base da taxa de serviço).";
+export const FORMULA_VALOR_TOTAL =
+  "Soma de valor mensal × meses de cada contrato do período (a mesma base da taxa de serviço). É contratado entre as partes e não passa pela plataforma.";
 export const FORMULA_TAXA = "Soma das taxas gravadas em cada contrato no aceite (contratos da regra anterior entram pelo valor gravado).";
 export const FORMULA_TAKE_RATE = "Taxa de serviço ÷ valor total dos contratos.";
 export const FORMULA_VALOR_MENSAL = "Soma do valor mensal de cada contrato do período (informativo: não é o valor total).";

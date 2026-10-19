@@ -1,5 +1,6 @@
 "use client";
 
+import { horaBRT } from "@/lib/datas-brasilia";
 import { useState } from "react";
 import Link from "next/link";
 import { Download, Info } from "lucide-react";
@@ -197,7 +198,7 @@ export function FinanceiroClient({
       {geradoEm && (
         <p className="mt-6 text-xs text-muted">
           Atualizado às{" "}
-          {new Date(geradoEm).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" })}. Os números
+          {horaBRT(geradoEm)} (horário de Brasília). Os números
           ficam guardados por até 5 minutos.
         </p>
       )}

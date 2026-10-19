@@ -1,3 +1,4 @@
+import { dataBRT } from "@/lib/datas-brasilia";
 import Link from "next/link";
 import { FAIXAS_TAXA_PARCERIA, reais } from "@/config/taxa-parceria";
 import { Camera, CheckCircle2, Clock, ClipboardList, Handshake } from "lucide-react";
@@ -17,7 +18,7 @@ const STATUS_PEDIDO: Record<string, { rotulo: string; cor: string }> = {
   recusado: { rotulo: "Não seguiu", cor: "bg-surface-2 text-muted" },
   cancelado: { rotulo: "Cancelado", cor: "bg-surface-2 text-muted" },
 };
-const dataBR = (iso: string | null) => (iso ? new Date(`${iso.slice(0, 10)}T12:00:00Z`).toLocaleDateString("pt-BR", { timeZone: "UTC" }) : "—");
+const dataBR = (iso: string | null) => (iso ? dataBRT(`${iso.slice(0, 10)}T12:00:00Z`) : "—");
 
 /**
  * Admin → Fotógrafos parceiros: números, cadastro, aprovação e pedidos.

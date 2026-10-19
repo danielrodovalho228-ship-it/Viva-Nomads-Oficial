@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Download, Trash2 } from "lucide-react";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
-import { formatBRL } from "@/lib/utils";
+import { formatBRL, hojeBR } from "@/lib/utils";
 import { CANAIS_MARKETING, canalLabel, gastosCsv, totaisPorMes, type GastoMarketing } from "@/lib/marketing";
 import { lancarGastoMarketing, apagarGastoMarketing } from "@/lib/data/marketing-admin";
 
@@ -16,7 +16,7 @@ function mesLabel(mes: string): string {
 }
 
 function mesAtual(): string {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date()).slice(0, 7);
+  return hojeBR().slice(0, 7);
 }
 
 /**

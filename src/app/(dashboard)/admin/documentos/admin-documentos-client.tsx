@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { textoFilaDocumentos, FORMULA_FILA_DOCUMENTOS } from "@/lib/admin/indicadores";
-import { dataHoraBRT } from "@/lib/datas-brasilia";
+import { dataBRT, dataHoraBRT } from "@/lib/datas-brasilia";
 import {
   FileText,
   ExternalLink,
@@ -169,7 +169,7 @@ function ConferenciaIaBox({ c, revisaoAte }: { c: ConferenciaResumo; revisaoAte?
       )}
       {revisaoAte && (
         <p className={cn("mt-1 text-xs font-semibold", vencido ? "text-red-700" : "text-amber-900")} data-testid="conferencia-prazo">
-          {vencido ? "Prazo de 48 h vencido" : `Prazo: até ${new Date(revisaoAte).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}`}
+          {vencido ? "Prazo de 48 h vencido" : `Prazo: até ${dataHoraBRT(revisaoAte)}`}
         </p>
       )}
     </div>
@@ -186,7 +186,7 @@ function AutoCard({ doc, onReaberto }: { doc: ConferidoAutomatico; onReaberto: (
           {doc.ownerNome}
           <span className="font-normal text-muted"> · {doc.tituloImovel ?? "sem imóvel ligado ainda"}</span>
         </p>
-        <p className="text-xs text-muted">Aprovado em {doc.criadoEm ? new Date(doc.criadoEm).toLocaleDateString("pt-BR") : "—"}</p>
+        <p className="text-xs text-muted">Aprovado em {dataBRT(doc.criadoEm)}</p>
         {doc.conferencia && (
           <ul className="mt-2 grid gap-1 text-sm sm:grid-cols-2">
             {CHECKLIST_CONFERENCIA.map((i) => (
@@ -277,7 +277,7 @@ function DocCard({ doc, onDone }: { doc: DocumentoPendente; onDone: () => void }
             </span>
           </p>
           <p className="text-xs text-muted">
-            Enviado {doc.criadoEm ? new Date(doc.criadoEm).toLocaleDateString("pt-BR") : "—"}
+            Enviado {dataBRT(doc.criadoEm)}
           </p>
         </div>
       </div>

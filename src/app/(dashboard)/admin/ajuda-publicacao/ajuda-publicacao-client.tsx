@@ -1,5 +1,6 @@
 "use client";
 
+import { dataBRT } from "@/lib/datas-brasilia";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { HandHelping, Hammer, Send } from "lucide-react";
@@ -24,7 +25,7 @@ const ACAO: Partial<Record<StatusAjuda, string>> = {
 };
 
 function data(iso: string) {
-  return new Date(iso).toLocaleDateString("pt-BR");
+  return dataBRT(iso);
 }
 
 export function AjudaPublicacaoClient({ fila }: { fila: PedidoAjuda[] }) {

@@ -1,3 +1,4 @@
+import { dataBRT } from "@/lib/datas-brasilia";
 import { CheckCircle2, MapPinned, PauseCircle, Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { PageTitle, Panel, StatCard, EmptyState } from "@/components/dashboard/primitives";
@@ -29,7 +30,7 @@ export default async function AdminCidadesPage() {
   const lista = cidades ?? [];
   const ranking = rankingInteresse((interesses ?? []) as LinhaInteresse[]);
   const liberadas = lista.filter((c) => c.liberada).length;
-  const dataBR = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }) : "—");
+  const dataBR = (iso: string | null) => (iso ? dataBRT(iso) : "—");
 
   return (
     <>
