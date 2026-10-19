@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { deflateSync } from "node:zlib";
 import { expect, type Browser, type Page } from "@playwright/test";
 
@@ -238,8 +238,19 @@ export async function contarAtivos(ownerId: string): Promise<number> {
   return count ?? 0;
 }
 
+/**
+ * Zera o atraso progressivo do login SÓ deste e-mail (5 por minuto, src/lib/seguranca/limite-login.ts). Os specs
+ * entram com a mesma conta várias vezes em menos de um minuto (390 e 1280, um passo atrás do outro); sem isto o
+ * login recebe "Muitas tentativas" e o teste para na tela de entrar. O limite por IP continua valendo (t82).
+ */
+export async function liberarLimiteLogin(email: string): Promise<void> {
+  const hash = createHash("sha256").update(`login:${email.trim().toLowerCase()}`).digest("hex").slice(0, 32);
+  await adm().from("limites_uso").delete().like("chave", `login:email:%:${hash}`);
+}
+
 /** Login pela tela, em contexto próprio de 390 px (celular). */
 export async function entrar(browser: Browser, email: string, senha: string): Promise<Page> {
+  await liberarLimiteLogin(email);
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const page = await ctx.newPage();
   // networkidle sem teto pendurava até o fim do teste na 1ª carga fria (t168 a 390 px, lab 17/10): espera até 10 s e segue.
