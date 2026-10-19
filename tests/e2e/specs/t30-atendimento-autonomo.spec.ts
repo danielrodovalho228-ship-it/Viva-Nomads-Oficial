@@ -127,7 +127,7 @@ test.describe("T30 — Atendimento autônomo", () => {
 
     await page.getByRole("tab", { name: "Rede ao vivo" }).click();
     const linha = page.getByTestId("rede-linha-do-tempo");
-    await expect(linha).toContainText(/lido \d\d:\d\d · a cada 15 s/);
+    await expect(linha).toContainText(/lido \d\d:\d\d(?: BRT)? · a cada 15 s/);
     await expect(linha).toContainText(`${numero}: erro técnico encaminhado ao Renato`);
     await expect(linha).toContainText(`Chamado ${numero} aberto`);
     await expect(linha).not.toContainText(`Viva respondeu ${numero} sozinha`);
