@@ -1,11 +1,11 @@
 import { test, expect } from "@playwright/test";
 
 /**
- * T77 — ordem 022afabb, item 3 e 6: filtro "Aceita pet" com porte na busca.
+ * T222 — ordem 022afabb, item 3 e 6: filtro "Aceita pet" com porte na busca.
  *  1. Celular (390 px): ligar "Aceita pets" no painel mostra "Porte do pet"; a escolha vai para a URL.
  *  2. Computador: o chip "Aceita pet" abre o seletor de porte; a contagem nunca aumenta.
  */
-test.describe("T77 — Filtro de pet com porte", () => {
+test.describe("T222 — Filtro de pet com porte", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
 
   test("390 px: painel mostra o porte só com 'Aceita pets' ligado e grava na URL", async ({ page }) => {
