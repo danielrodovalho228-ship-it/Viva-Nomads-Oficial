@@ -46,6 +46,7 @@ export type NotificationEvent =
   // Propostas (prompt 17)
   | "proposta_recebida" // proposta ou contraproposta nova → a outra parte
   | "proposta_respondida" // proposta aceita ou recusada → a outra parte
+  | "proposta_vencendo" // 24 h antes de vencer → quem tem de responder (prompt 27, cron de automações)
   // Visitas (prompt 23): vídeo e presencial, sempre pela plataforma
   | "visita_pedida" // morador pediu → proprietário
   | "visita_confirmada" // horário confirmado → a outra parte
@@ -95,6 +96,7 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   visita_remarcada: { subject: "Proposta de novo horário para a visita", body: (n) => `Olá${n ? " " + n : ""}, o proprietário propôs outro horário para a visita. Aceite ou cancele pela plataforma.`, img: "pedido-resposta", cta: "Ver o horário", path: "/dashboard/visitas" },
   visita_cancelada: { subject: "Visita cancelada", body: (n) => `Olá${n ? " " + n : ""}, a visita foi cancelada. Veja os detalhes pela plataforma.`, img: "transacional", cta: "Ver detalhes", path: "/dashboard/visitas" },
   candidatura_nova: { subject: "Nova candidatura no seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, você recebeu uma candidatura para o seu imóvel. Veja o pedido e responda pela plataforma.`, img: "novo-interessado", cta: "Ver a candidatura", path: "/dashboard/leads" },
+  proposta_vencendo: { subject: "Sua proposta vence em menos de 24 horas", body: (n) => `Olá${n ? " " + n : ""}, uma proposta aguardando a sua resposta vence em menos de 24 horas. Responda pela plataforma.`, img: "pedido-resposta", cta: "Ver a proposta", path: "/dashboard/propostas" },
   proposta_respondida: { subject: "Sua proposta foi respondida", body: (n) => `Olá${n ? " " + n : ""}, a sua proposta teve resposta no Viva Nomads.`, img: "pedido-resposta", cta: "Ver a resposta", path: "/dashboard/orcamentos" },
   documento_recebido: { subject: "Novo documento de imóvel para conferir", body: () => "Um proprietário enviou a documentação do imóvel. Há um item aguardando conferência na fila de moderação.", img: "transacional", cta: "Conferir documento", path: "/admin/documentos" },
 };

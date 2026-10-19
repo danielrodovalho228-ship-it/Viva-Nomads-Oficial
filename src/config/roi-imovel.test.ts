@@ -16,7 +16,8 @@ test("roi-imovel não usa planos nem assinatura", () => {
 
 test("roi-imovel usa as faixas da regra única e mostra o comparativo com fontes e data", () => {
   assert.match(PAGINA, /faixaPorImoveisAtivos/);
-  assert.match(PAGINA, /linhasPublicas\(\)/);
+  // Prompt 27: o comparativo da Calculadora é Viva, Airbnb (com fonte) e o tradicional — sem QuintoAndar.
+  assert.match(PAGINA, /canaisDaCalculadora\(/);
   assert.match(PAGINA, /COMPARE_RODAPE/);
 });
 

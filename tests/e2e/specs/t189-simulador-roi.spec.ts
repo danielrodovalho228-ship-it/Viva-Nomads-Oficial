@@ -52,7 +52,7 @@ test.describe("T189 — simulador e ROI (prompt 15)", () => {
       // Cenários: 8 / 10 / 12 meses.
       const linhas = page.getByTestId("sim-cenarios").locator("tbody tr");
       await expect(linhas).toHaveCount(3);
-      await expect(linhas.nth(0)).toContainText("Pessimista");
+      await expect(linhas.nth(0)).toContainText("Conservador");
       await expect(linhas.nth(2)).toContainText(limpo(formatBRL(baseMobiliadoAno({ ...base, mesesOcupados: 12 }, 0.12).liquidaAnual)));
       await expect(page.getByTestId("sim-grafico")).toContainText("Para onde vai a receita do ano");
 

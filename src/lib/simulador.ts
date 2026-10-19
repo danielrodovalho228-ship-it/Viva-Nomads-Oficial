@@ -40,6 +40,10 @@ export interface EntradaRentabilidade {
   contasCobranca?: Cobranca;
   /** Valor do imóvel (opcional): rentabilidade sobre o valor do imóvel. */
   valorImovel?: number;
+  /** Investimento na mobília (R$), base da reposição. Padrão 0. */
+  investimentoMobilia?: number;
+  /** Reposição e desgaste da mobília, em % do investimento por ano (ex.: 0.1). Padrão 0. */
+  reposicaoAnualPct?: number;
 }
 
 /** Base ÚNICA do imóvel mobiliado no ano (simulador e ROI usam a mesma conta). */
@@ -74,6 +78,37 @@ export function baseMobiliadoAno(
   };
 }
 
+export interface LiquidoMobiliado extends BaseMobiliadoAno {
+  reposicaoAnual: number;
+  assinaturaAnual: number;
+  /** Líquido do ano no bolso: base − reposição da mobília − assinatura. */
+  liquidoAnual: number;
+}
+
+/**
+ * Líquido ANUAL do imóvel mobiliado (prompt 27): a ÚNICA conta usada pelo Simulador de rentabilidade e pelo
+ * mobiliado da Calculadora de ROI. Base do ano − reposição e desgaste da mobília (% do investimento) − assinatura.
+ */
+export function liquidoMobiliadoAnual(
+  e: {
+    valorMensal: number;
+    condoIptu: number;
+    contas: number;
+    mesesOcupados: number;
+    condoCobranca?: Cobranca;
+    contasCobranca?: Cobranca;
+    investimentoMobilia?: number;
+    reposicaoAnualPct?: number;
+  },
+  taxa: number,
+  assinaturaAno = 0,
+): LiquidoMobiliado {
+  const b = baseMobiliadoAno(e, taxa);
+  const reposicaoAnual = Math.round(n(e.investimentoMobilia ?? 0) * Math.max(0, e.reposicaoAnualPct ?? 0));
+  const assinaturaAnual = n(assinaturaAno);
+  return { ...b, reposicaoAnual, assinaturaAnual, liquidoAnual: b.liquidaAnual - reposicaoAnual - assinaturaAnual };
+}
+
 /** Rentabilidade sobre o valor do imóvel (ao ano, 0..1); null sem valor informado. */
 export function rentabilidadeSobreImovel(liquidaAnual: number, valorImovel: number | undefined): number | null {
   const v = n(valorImovel ?? 0);
@@ -87,6 +122,8 @@ export interface ResultadoRentabilidade {
   receitaBrutaAnual: number;
   custosAnuais: number;
   comissaoAnual: number;
+  /** Reposição e desgaste da mobília no ano (prompt 27). */
+  reposicaoAnual: number;
   assinaturaAnual: number;
   receitaLiquidaAnual: number;
   mediaMensal: number;
@@ -116,16 +153,16 @@ export function simularRentabilidade(
 ): ResultadoRentabilidade {
   const meses = Math.min(12, Math.max(0, e.mesesOcupados));
   const contratos = contratosPorAno(meses, e.prazoMedioMeses);
-  const b = baseMobiliadoAno({ ...e, valorMensal: e.aluguelMensal }, comissaoPct);
-  const assin = n(assinaturaAno);
-  const receitaLiquidaAnual = b.liquidaAnual - assin;
+  const b = liquidoMobiliadoAnual({ ...e, valorMensal: e.aluguelMensal }, comissaoPct, assinaturaAno);
+  const receitaLiquidaAnual = b.liquidoAnual;
 
   return {
     contratosPorAno: contratos,
     receitaBrutaAnual: b.receitaBrutaAnual,
     custosAnuais: b.custosAnuais,
     comissaoAnual: b.taxaVivaAnual,
-    assinaturaAnual: assin,
+    reposicaoAnual: b.reposicaoAnual,
+    assinaturaAnual: b.assinaturaAnual,
     receitaLiquidaAnual,
     mediaMensal: Math.round(receitaLiquidaAnual / 12),
     rentabilidadeImovel: rentabilidadeSobreImovel(receitaLiquidaAnual, e.valorImovel),
@@ -271,17 +308,26 @@ export function simularROI(e: EntradaROI, comissaoPct: number, assinaturaAno: nu
   const premioMensal = mob - vazio;
   const premioPct = vazio > 0 ? premioMensal / vazio : 0;
 
-  const reposicaoAnual = invest * Math.max(0, e.reposicaoAnualPct ?? 0);
-  const assin = n(assinaturaAno);
-  const baseDe = (valor: number, m: number) =>
-    baseMobiliadoAno(
-      { valorMensal: valor, condoIptu: n(e.condoIptu ?? 0), contas: n(e.contasMensais ?? 0), mesesOcupados: m, condoCobranca: e.condoCobranca, contasCobranca: e.contasCobranca },
+  // A MESMA função do Simulador de rentabilidade (prompt 27): nenhuma conta própria aqui.
+  const liqDe = (valor: number, m: number) =>
+    liquidoMobiliadoAnual(
+      {
+        valorMensal: valor,
+        condoIptu: n(e.condoIptu ?? 0),
+        contas: n(e.contasMensais ?? 0),
+        mesesOcupados: m,
+        condoCobranca: e.condoCobranca,
+        contasCobranca: e.contasCobranca,
+        investimentoMobilia: invest,
+        reposicaoAnualPct: e.reposicaoAnualPct,
+      },
       comissaoPct,
+      assinaturaAno,
     );
-  const liquidoMob = (valor: number, m: number) => baseDe(valor, m).liquidaAnual - reposicaoAnual - assin;
+  const liquidoMob = (valor: number, m: number) => liqDe(valor, m).liquidoAnual;
 
-  const b = baseDe(mob, meses);
-  const custosMobiliadoAnual = Math.round(b.custosAnuais + reposicaoAnual);
+  const b = liqDe(mob, meses);
+  const custosMobiliadoAnual = Math.round(b.custosAnuais + b.reposicaoAnual);
   const netMobiliadoAnual = Math.round(liquidoMob(mob, meses));
   const netVazioAnual = liquidoTradicionalAnual({
     valorMensal: vazio,
@@ -343,7 +389,7 @@ export function simularROI(e: EntradaROI, comissaoPct: number, assinaturaAno: nu
 }
 
 export interface Cenario {
-  nome: "Pessimista" | "Esperado" | "Otimista";
+  nome: "Conservador" | "Realista" | "Otimista";
   mesesOcupados: number;
 }
 
@@ -354,8 +400,8 @@ export interface Cenario {
 export function cenariosOcupacao(mesesOcupados: number): Cenario[] {
   const m = Math.min(12, Math.max(6, Math.round(mesesOcupados)));
   return [
-    { nome: "Pessimista", mesesOcupados: Math.max(6, m - 2) },
-    { nome: "Esperado", mesesOcupados: m },
+    { nome: "Conservador", mesesOcupados: Math.max(6, m - 2) },
+    { nome: "Realista", mesesOcupados: m },
     { nome: "Otimista", mesesOcupados: Math.min(12, m + 2) },
   ];
 }

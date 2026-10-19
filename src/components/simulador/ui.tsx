@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Info, ChevronDown } from "lucide-react";
 import { PLANOS, type PlanoId } from "@/config/planos";
+import { geometriaBarras, rotuloValorBarra } from "@/lib/grafico-barras";
 
 /**
  * Valores de referência dos simuladores. A foto fica na capa da tela (PageTitle
@@ -212,5 +213,109 @@ export function BarraValor({
       </div>
       <span className="w-24 shrink-0 text-right text-xs font-medium text-ink">{formatar(valor)}</span>
     </div>
+  );
+}
+
+/**
+ * Gráfico de colunas agrupadas com valores negativos (prompt 27, item 4): escala do menor ao maior valor, linha do
+ * zero visível, barra negativa com cor própria descendo do zero (mínimo de 4 px) e o rótulo do valor FORA da barra.
+ * A tabela equivalente fica para leitor de tela.
+ */
+export function GraficoColunas({
+  grupos,
+  series,
+  formatar,
+  legenda,
+  testid,
+}: {
+  grupos: { rotulo: string; valores: number[] }[];
+  series: { nome: string; cor: string }[];
+  formatar: (v: number) => string;
+  legenda: string;
+  testid?: string;
+}) {
+  const ALTURA = 160;
+  const MARGEM = 18; // espaço para o rótulo acima/abaixo
+  const geo = geometriaBarras(grupos.flatMap((g) => g.valores), ALTURA);
+  let i = 0;
+  return (
+    <figure data-testid={testid} className="relative overflow-hidden">
+      {/* px-3: espaço para o rótulo das colunas da ponta não sair da tela a 390 px. */}
+      <div aria-hidden className="relative px-3" style={{ height: ALTURA + 2 * MARGEM }}>
+        <div
+          className="absolute inset-x-0 border-t border-ink/50"
+          style={{ top: MARGEM + geo.zeroY }}
+          data-testid={testid ? `${testid}-zero` : undefined}
+        />
+        <div className="absolute inset-y-0 left-3 right-3 flex gap-3 sm:gap-6">
+          {grupos.map((g) => (
+            <div key={g.rotulo} className="flex min-w-0 flex-1 gap-1">
+              {g.valores.map((v, s) => {
+                const b = geo.barras[i++];
+                const serie = series[s];
+                return (
+                  <div key={serie.nome} className="relative min-w-0 flex-1">
+                    <div
+                      className={`absolute inset-x-0 ${b.negativo ? "rounded-b bg-red-400" : `rounded-t ${serie.cor}`}`}
+                      style={{ top: MARGEM + b.topo, height: b.altura }}
+                      data-testid={testid ? `${testid}-barra` : undefined}
+                      data-grupo={g.rotulo}
+                      data-serie={serie.nome}
+                      data-valor={v}
+                    />
+                    <span
+                      className={`absolute inset-x-[-12px] whitespace-nowrap text-center text-[10px] font-medium leading-none ${b.negativo ? "text-red-700" : "text-ink"}`}
+                      style={b.negativo ? { top: MARGEM + b.topo + b.altura + 3 } : { top: MARGEM + b.topo - 13 }}
+                    >
+                      {rotuloValorBarra(v, formatar)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      </div>
+      <div aria-hidden className="mt-1 flex gap-3 px-3 sm:gap-6">
+        {grupos.map((g) => (
+          <p key={g.rotulo} className="min-w-0 flex-1 text-center text-xs text-muted">
+            {g.rotulo}
+          </p>
+        ))}
+      </div>
+      <figcaption className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted">
+        {series.map((s) => (
+          <span key={s.nome} className="inline-flex items-center gap-1.5">
+            <span className={`inline-block h-2.5 w-2.5 rounded-sm ${s.cor}`} /> {s.nome}
+          </span>
+        ))}
+        <span className="inline-flex items-center gap-1.5">
+          <span className="inline-block h-2.5 w-2.5 rounded-sm bg-red-400" /> Abaixo de zero
+        </span>
+      </figcaption>
+      <table className="sr-only">
+        <caption>{legenda}</caption>
+        <thead>
+          <tr>
+            <th scope="col">Período</th>
+            {series.map((s) => (
+              <th key={s.nome} scope="col">
+                {s.nome}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {grupos.map((g) => (
+            <tr key={g.rotulo}>
+              <th scope="row">{g.rotulo}</th>
+              {g.valores.map((v, s) => (
+                <td key={series[s].nome}>{rotuloValorBarra(v, formatar)}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </figure>
   );
 }

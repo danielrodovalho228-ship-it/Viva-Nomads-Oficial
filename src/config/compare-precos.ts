@@ -113,6 +113,29 @@ export const DIFERENCIAIS_VIVA: readonly string[] = [
   "Nenhuma taxa para quem vem morar",
 ];
 
+/**
+ * "Quanto fica de cada mês em cada canal" da Calculadora de ROI (prompt 27, item 2 — decisão do Daniel, prompt 15,
+ * item 4): Viva, Airbnb (taxa com fonte) e o contrato tradicional (12+ meses) com a taxa de administração e a taxa
+ * de contrato que a pessoa informou na própria tela. Sem QuintoAndar.
+ */
+export function canaisDaCalculadora(trad: { taxaAdm: number; intermediacaoACadaMeses: number }): LinhaCompare[] {
+  const porId = (id: string) => LINHAS_COMPARE.find((l) => l.id === id && l.fonte !== null) as LinhaCompare;
+  const adm = Math.min(1, Math.max(0, Number.isFinite(trad.taxaAdm) ? trad.taxaAdm : 0));
+  const cada = Number.isFinite(trad.intermediacaoACadaMeses) ? trad.intermediacaoACadaMeses : 0;
+  const pct = Math.round((adm + (cada > 0 ? 1 / cada : 0)) * 1000) / 1000;
+  const admTxt = `${String(Math.round(adm * 1000) / 10).replace(".", ",")}%`;
+  const tradicional: LinhaCompare = {
+    id: "tradicional",
+    nome: "Contrato tradicional (12+ meses)",
+    regra: `Administração de ${admTxt} ao mês${cada > 0 ? ` + 1 valor mensal a cada ${cada} meses de contrato` : ""} (os números do contrato tradicional acima).`,
+    pct,
+    fonte: null,
+    conferidoEm: null,
+    nota: "Referência de mercado ajustável nesta tela — confira com a sua imobiliária.",
+  };
+  return [porId("viva"), porId("airbnb"), tradicional];
+}
+
 /** Só o que tem fonte e data conferidas aparece no site. */
 export function linhasPublicas(): LinhaCompare[] {
   return LINHAS_COMPARE.filter((l) => l.fonte !== null && l.conferidoEm !== null);
