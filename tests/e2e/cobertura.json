@@ -1216,6 +1216,20 @@
       "specs": [
         "t212-ferramentas-proprietario"
       ]
+    },
+    "/dashboard/servicos": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t219-servicos-morador"
+      ]
+    },
+    "/admin/servicos": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
     }
   },
   "rotas": {
@@ -3276,6 +3290,50 @@
       "specs": [
         "t212-ferramentas-proprietario"
       ]
+    },
+    "src/lib/data/servicos-morador-actions.ts#catalogoServicosMorador": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t219-servicos-morador"
+      ]
+    },
+    "src/lib/data/servicos-morador-actions.ts#moradorTemContratoAtivo": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t219-servicos-morador"
+      ]
+    },
+    "src/lib/data/servicos-morador-actions.ts#meusPedidosServico": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t219-servicos-morador"
+      ]
+    },
+    "src/lib/data/servicos-morador-actions.ts#pedirServico": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t219-servicos-morador"
+      ]
+    },
+    "src/lib/data/servicos-morador-actions.ts#pedidosServicoAdmin": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
+    "src/lib/data/servicos-morador-actions.ts#atualizarEstadoPedidoServico": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
     }
   }
 }
