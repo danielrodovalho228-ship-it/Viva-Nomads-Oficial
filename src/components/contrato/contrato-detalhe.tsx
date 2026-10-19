@@ -15,6 +15,8 @@ import { AvisoAssinatura } from "./aviso-assinatura";
 import { CheckinContrato } from "./checkin-contrato";
 import { LinhaDoTempoEstadia } from "./linha-do-tempo-estadia";
 import { ConferenciaContrato } from "./conferencia-contrato";
+import { meuCartaoPostal } from "@/lib/data/cartoes-actions";
+import { CartaoCompartilhar } from "@/components/cartoes/cartao-compartilhar";
 
 /**
  * Detalhe do contrato para as DUAS partes (ordens 0fd301f0 e f375fdc1): o inquilino chega por
@@ -47,6 +49,8 @@ export async function ContratoDetalhe({
   // Check-in garantido: instruções de entrada (dono preenche; inquilino vê após as duas assinaturas) e "Não consegui entrar".
   const dadosCheckin = { status: c.status, papel: c.papel, assinadoProprietarioEm: c.assinadoProprietarioEm, assinadoInquilinoEm: c.assinadoInquilinoEm };
   const checkin = c.status === "ativo" ? await instrucoesDoContrato(c.id) : null;
+  // Cartão-postal pós-estadia (cartões compartilháveis, T1): só para o morador, depois da saída.
+  const postal = c.papel === "inquilino" ? await meuCartaoPostal(c.id) : null;
   return (
     <>
       <Link href={voltarHref} className="mb-3 inline-flex items-center gap-1 text-sm text-muted hover:text-ink">
@@ -58,6 +62,15 @@ export async function ContratoDetalhe({
           {c.estado.selo}
         </span>
       </p>
+      {postal?.ok && (
+        <Panel className="mb-5 p-5" data-testid="cartao-postal-painel">
+          <h2 className="font-title text-base font-bold text-ink">Seu cartão-postal da estadia</h2>
+          <p className="mt-1 text-sm text-muted">Uma lembrança para compartilhar no WhatsApp, com um QR para o imóvel. Mostra a cidade e o mês/ano; seu nome só se você quiser.</p>
+          <div className="mt-4">
+            <CartaoCompartilhar inicial={postal.valor} />
+          </div>
+        </Panel>
+      )}
       <Panel className="p-5">
         <h2 className="font-title text-base font-bold text-ink">Contrato</h2>
         <ul className="mt-3 space-y-1.5 text-sm text-ink" data-testid="contrato-resumo">

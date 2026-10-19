@@ -23,8 +23,9 @@ export function listarPaginas() {
     .sort();
 }
 export function listarRotas() {
-  return varrer(join(RAIZ, "src/app"), (p) => p.endsWith(`${sep}route.ts`))
-    .map((p) => "/" + posix(relative(join(RAIZ, "src/app"), p)).replace(/\/?route\.ts$/, ""))
+  // route.tsx também (rotas que desenham imagem com JSX, ex.: cartões compartilháveis).
+  return varrer(join(RAIZ, "src/app"), (p) => p.endsWith(`${sep}route.ts`) || p.endsWith(`${sep}route.tsx`))
+    .map((p) => "/" + posix(relative(join(RAIZ, "src/app"), p)).replace(/\/?route\.tsx?$/, ""))
     .map((r) => r.replace(/\/\([^)]+\)/g, ""))
     .sort();
 }

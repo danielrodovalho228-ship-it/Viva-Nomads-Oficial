@@ -1,5 +1,6 @@
 import { avisarDecisoesAtrasadas } from "@/lib/data/aviso-decisao-documento";
 import { NextResponse } from "next/server";
+import { gerarCartoesAutomaticos } from "@/lib/data/cartoes-servidor";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify, type NotificationEvent } from "@/lib/notifications";
 import { hojeEmBrasilia } from "@/lib/checkin";
@@ -158,5 +159,7 @@ export async function GET(request: Request) {
   const documentosAvisados = simular
     ? ((await admin.rpc("decisoes_documento_atrasadas", { p_horas: 2 })).data as unknown[] | null)?.length ?? 0
     : await avisarDecisoesAtrasadas(admin, 2);
-  return NextResponse.json({ ok: true, simulado: simular, enviados: contagem, propostasExpiradas, documentosAvisados });
+  // Cartões compartilháveis: cartão-postal depois da saída e cartão de todo anúncio publicado (nunca no simulado).
+  const cartoes = simular ? null : await gerarCartoesAutomaticos(admin, hoje).catch(() => null);
+  return NextResponse.json({ ok: true, simulado: simular, cartoes, enviados: contagem, propostasExpiradas, documentosAvisados });
 }

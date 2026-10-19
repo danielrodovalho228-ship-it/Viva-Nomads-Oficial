@@ -8,6 +8,7 @@ import { ligarMatriculaAoImovel, ligarQualificacaoAoImovel } from "@/lib/data/li
 import { caminhoDoDono, operacaoValida } from "@/lib/anuncio/operacao";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
+import { cookies } from "next/headers";
 import { revalidarAnuncio } from "@/lib/anuncio/revalidar";
 import { createClient } from "@/lib/supabase/server";
 import { dentroDoLimite, HORA, DIA as DIA_SEGUNDOS } from "@/lib/limites";
@@ -46,6 +47,8 @@ import { colunaAirbnb } from "@/lib/preco-justo";
 import { colunasPrivacidade, type TipoAcesso } from "@/lib/anuncio/privacidade";
 import { prontidaoDoImovel, fatosDosImoveis } from "@/lib/anuncio/prontidao-servidor";
 import { prontidaoAnuncio } from "@/lib/anuncio/prontidao";
+import { atribuirLead, garantirCartao } from "@/lib/data/cartoes-servidor";
+import { REF_COOKIE } from "@/lib/cartoes/compartilhar";
 import { scoreAnuncio, type ScoreAnuncio } from "@/lib/anuncio/score";
 import type { Prontidao } from "@/lib/anuncio/prontidao";
 import { guardContactInfo } from "@/lib/messages/contact-guard";
@@ -1001,6 +1004,9 @@ export async function updateProperty(id: string, input: PropertyInput): Promise<
     } catch {
       /* best-effort */
     }
+    // Cartão do anúncio (cartões compartilháveis, T2): nasce ao publicar e fica em Meus imóveis → Cartão.
+    const adm = createAdminClient();
+    if (adm) await garantirCartao(adm, { tipo: "ownercard", usuarioId: user.id, propertyId: id }).catch(() => null);
   }
 
   return { ok: true, id };
@@ -1602,6 +1608,11 @@ export async function requestLead(
       // 23505 = duplicado (corrida): não é erro real. Demais erros: registra.
       if (leadErr && leadErr.code !== "23505") {
         console.error("[requestLead] falha ao gravar lead:", leadErr.message);
+      }
+      // Cartões compartilháveis: a visita veio de um QR/link assinado deste imóvel? O lead guarda a atribuição.
+      if (!leadErr) {
+        const adm = createAdminClient();
+        if (adm) await atribuirLead(adm, { propertyId, tenantId: user.id, cookieValor: (await cookies()).get(REF_COOKIE)?.value }).catch(() => false);
       }
       const conversationId = idConversa(user.id, ownerId, propertyId);
       // Mensagem do inquilino: usa o texto que ele escreveu (dúvida/horários),
