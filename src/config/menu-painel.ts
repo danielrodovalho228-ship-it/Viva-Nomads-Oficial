@@ -64,6 +64,7 @@ export function menuDoPainel(ctx: ContextoMenu): ItemMenu[] {
             { id: "admin-ajuda-publicacao", rotulo: "Publicamos para você", icone: "documentos", href: "/admin/ajuda-publicacao" },
             { id: "admin-documentos", rotulo: "Documentos", icone: "documentos", href: "/admin/documentos" },
             { id: "admin-atendimento", rotulo: "Atendimento", icone: "atendimento", href: "/admin/atendimento" },
+            { id: "admin-servicos", rotulo: "Serviços do morador", icone: "solicitacoes", href: "/admin/servicos" },
             { id: "admin-dados-teste", rotulo: "Dados de teste", icone: "atendimento", href: "/admin/dados-de-teste" },
             { id: "admin-emails-teste", rotulo: "E-mails de teste", icone: "atendimento", href: "/admin/emails-teste" },
           ],
@@ -108,8 +109,11 @@ export function menuDoPainel(ctx: ContextoMenu): ItemMenu[] {
     // "Contratos & blocos"; o inquilino continua vendo.
     ...(ctx.temImovel && !ctx.estadiaAtiva ? [] : [{ id: "estadias" as const, rotulo: "Locações", icone: "estadias" as const, href: "/dashboard/locacoes" }]),
   ];
-  if (ctx.estadiaAtiva)
+  if (ctx.estadiaAtiva) {
     moradia.push({ id: "solicitacoes", rotulo: "Solicitações", icone: "solicitacoes", href: "/dashboard/solicitacoes" });
+    // Ordem 521c5af7 (S1): serviços de parceiros, só para quem tem locação ativa.
+    moradia.push({ id: "servicos", rotulo: "Serviços", icone: "ferramentas", href: "/dashboard/servicos" });
+  }
   menu.push({ id: "moradia", rotulo: "Minha moradia", icone: "moradia", filhos: moradia });
 
   menu.push({
