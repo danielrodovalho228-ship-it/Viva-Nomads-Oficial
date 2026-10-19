@@ -400,11 +400,15 @@ export function SearchClient({ properties: imoveis, topo }: { properties: Proper
     return { base: list, dist };
   }, [properties, locationQuery, geoCenter, radiusKm, adults, children, maxPeriod, typeFilter, faixa, dataEntrada, garantia, furnishedOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly]);
 
-  const contarComPainel = useCallback((f: FiltrosPainel) => base.filter((p) => passaNoPainel(p, f)).length, [base]);
+  const contarComPainel = useCallback(
+    (f: FiltrosPainel) => semExemplosQuandoHaReal(base.filter((p) => passaNoPainel(p, f)), (p) => isExemplo(p.id)).length,
+    [base]
+  );
 
   const results = useMemo(() => {
+    let list = base.filter((p) => passaNoPainel(p, filtrosPainel));
     // Prompt 30, item 6: com imóvel real no resultado, os exemplos saem; só exemplos → aparecem marcados "exemplo".
-    let list = semExemplosQuandoHaReal(base.filter((p) => passaNoPainel(p, filtrosPainel)), (p) => isExemplo(p.id));
+    list = semExemplosQuandoHaReal(list, (p) => isExemplo(p.id));
     if (sort === "price-asc") list = [...list].sort((a, b) => precoDeBusca(a) - precoDeBusca(b));
     else if (sort === "price-desc") list = [...list].sort((a, b) => precoDeBusca(b) - precoDeBusca(a));
     // Adicionados recentemente: mais novos (data de cadastro) primeiro.

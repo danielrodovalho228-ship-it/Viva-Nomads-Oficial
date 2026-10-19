@@ -89,7 +89,7 @@ export function PedidosClient({
   const [busy, setBusy] = useState<string | null>(null);
   // Hora de referência fixada na montagem (o render fica puro).
   const [agora] = useState(() => Date.now());
-  // Excluir pede confirmação NA PÁGINA (nunca window.confirm).
+  // Excluir pede confirmação NA PÁGINA (nunca a janelinha do navegador).
   const [confirmarExcluir, setConfirmarExcluir] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(editado ? "Pedido atualizado. As mudanças já valem para os proprietários." : null);
   // Erro na própria página (adendo ao prompt 28: nada de alert, que o QA automatizado não enxerga).
