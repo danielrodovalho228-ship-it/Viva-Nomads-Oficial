@@ -31,7 +31,7 @@ async function imovel(titulo: string, bairro: string): Promise<string> {
     .from("properties")
     .insert({
       owner_id: ids.dono, title: titulo, description: "Imóvel de teste do laboratório (T233).", property_type: "Studio",
-      address: bairro, neighborhood: bairro, city: "Uberlândia", state: "MG", bedrooms: 1, bathrooms: 1, area_m2: 30,
+      address: bairro, city: "Uberlândia", state: "MG", bedrooms: 1, bathrooms: 1, area_m2: 30,
       min_period_days: 30, max_period_days: 180, monthly_price: 2500, status: "draft",
     })
     .select("id")

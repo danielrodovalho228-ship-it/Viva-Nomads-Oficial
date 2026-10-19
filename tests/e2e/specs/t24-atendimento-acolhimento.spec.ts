@@ -103,7 +103,7 @@ test.describe("T24 — Acolhimento e resposta sugerida", () => {
       expect(c!.responsavel_tipo).toBe("humano");
       const { data: ev } = await adm().from("chamado_eventos").select("acao").eq("chamado_id", c!.id).eq("acao", "respondido_viva");
       expect(ev).toHaveLength(1);
-      if (LAB_OUTBOX && fs.existsSync(LAB_OUTBOX)) await expect.poll(lerSaida, { timeout: 20_000 }).toContain(`Seu chamado foi respondido — ${numero}`);
+      if (LAB_OUTBOX && fs.existsSync(LAB_OUTBOX)) await expect.poll(lerSaida, { timeout: 20_000 }).toContain(`Seu chamado foi respondido (${numero}) · Viva Nomads`);
     }
   });
 
