@@ -30,3 +30,14 @@ test("t91 espera a resposta além do cache de 60 s", () => {
   assert.ok(m, "toPass com timeout");
   assert.ok(Number(m[1].replace(/_/g, "")) >= 110_000);
 });
+
+test("t17 e t43 usam o único aviso que a Conta tem (e-mail); WhatsApp saiu na ordem p30 item 8", () => {
+  const tela = ler("src/components/account/conta-secoes.tsx");
+  assert.match(tela, /label: "Avisos por e-mail"/);
+  assert.doesNotMatch(tela, /Avisos por WhatsApp/);
+  for (const f of ["t17-conta-salvar", "t43-notificacoes"]) {
+    const spec = ler(`tests/e2e/specs/${f}.spec.ts`);
+    assert.match(spec, /name: "Avisos por e-mail"/);
+    assert.doesNotMatch(spec, /toBeVisible\(\)[^\n]*\n?.*Avisos por WhatsApp|getByText\("Avisos por WhatsApp"\)\)\.toBeVisible|name: "Avisos por WhatsApp"/);
+  }
+});
