@@ -53,6 +53,9 @@ export interface ContratoLinhaAdmin extends ContratoParaAgregado {
   teste: boolean;
   /** Data do aceite da candidatura (a taxa foi gravada nesse dia) — para o rótulo único rotuloBaseTaxa. */
   aceiteEm: string | null;
+  /** Candidatura do contrato (a cobrança da taxa é por candidatura). */
+  leadId: string | null;
+  plano: string | null;
 }
 
 /**
@@ -68,7 +71,7 @@ export async function contratosReais(
   const k = cidade ? chaveCidade(cidade) : null;
   let q = admin
     .from("contratos")
-    .select("id, created_at, status, property_id, tenant_id, aluguel_mensal, prazo_total_dias, comissao_valor, comissao_percent, assinado_proprietario_em, assinado_inquilino_em, properties!inner(owner_id, title, city), leads(accepted_at)")
+    .select("id, created_at, status, property_id, tenant_id, aluguel_mensal, prazo_total_dias, comissao_valor, comissao_percent, assinado_proprietario_em, assinado_inquilino_em, lead_id, owner_plan, properties!inner(owner_id, title, city), leads(accepted_at)")
     .order("created_at", { ascending: false })
     .limit(2000);
   if (periodo) q = q.gte("created_at", periodo.ini).lt("created_at", periodo.fim);
@@ -85,6 +88,8 @@ export async function contratosReais(
     comissao_percent: number | null;
     assinado_proprietario_em: string | null;
     assinado_inquilino_em: string | null;
+    lead_id: string | null;
+    owner_plan: string | null;
     properties: { owner_id: string; title: string | null; city: string | null };
     leads: { accepted_at: string | null } | null;
   }[])
@@ -94,6 +99,8 @@ export async function contratosReais(
     .map((c) => ({
       teste: c.ehTeste,
       aceiteEm: c.leads?.accepted_at ?? null,
+      leadId: c.lead_id,
+      plano: c.owner_plan,
       id: c.id,
       criadoEm: c.created_at,
       status: c.status,
@@ -477,6 +484,22 @@ export async function taxasVencidas(admin: Admin, tipo: "real" | "teste" | "todo
   if (!linhas.length || tipo === "todos") return linhas.map((l) => ({ leadId: l.lead_id, criadoEm: l.criado_em }));
   const testeDoLead = await leadsDeTeste(admin, linhas.map((l) => l.lead_id));
   return linhas.filter((l) => (tipo === "teste") === testeDoLead.has(l.lead_id)).map((l) => ({ leadId: l.lead_id, criadoEm: l.criado_em }));
+}
+
+/** Título do imóvel de cada candidatura (para listar as taxas vencidas sem dado pessoal). */
+export async function imovelDosLeads(admin: Admin, ids: string[]): Promise<Map<string, string>> {
+  const u = [...new Set(ids.filter(Boolean))];
+  if (!u.length) return new Map();
+  const { data } = await admin.from("leads").select("id, properties!inner(title)").in("id", u);
+  return new Map(((data ?? []) as unknown as { id: string; properties: { title: string | null } }[]).map((l) => [l.id, l.properties.title ?? "Imóvel"]));
+}
+
+/** Cobrança da taxa de cada candidatura (status e pagamento) — para a tabela do Financeiro. */
+export async function cobrancasTaxa(admin: Admin, leadIds: string[]): Promise<Map<string, { status: string; pagoEm: string | null }>> {
+  const ids = [...new Set(leadIds.filter(Boolean))];
+  if (!ids.length) return new Map();
+  const { data } = await admin.from("cobrancas_fechamento").select("lead_id, status, pago_em").eq("tipo", "comissao").in("lead_id", ids);
+  return new Map(((data ?? []) as { lead_id: string; status: string; pago_em: string | null }[]).map((c) => [c.lead_id, { status: c.status, pagoEm: c.pago_em }]));
 }
 
 /** Candidaturas (leads) que são de teste: conta de teste em qualquer lado ou anúncio [TESTE…]. */

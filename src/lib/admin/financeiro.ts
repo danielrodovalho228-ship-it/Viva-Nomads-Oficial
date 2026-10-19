@@ -83,6 +83,31 @@ export const STATUS_COMISSAO: Record<string, string> = {
   sem_cobranca: "Sem cobrança emitida",
 };
 
+/**
+ * Linhas da tabela de taxas a partir da MESMA lista de contratos dos cartões (contratosReais com o recorte da página):
+ * a soma da tabela é sempre a "Taxa de serviço gerada", e as não pagas somam a "Taxa a receber" (complemento do P29, item 3).
+ */
+export function comissoesDosContratos(
+  contratos: { id: string; criadoEm: string; imovel: string; cidade: string | null; plano: string | null; taxaPercent: number | null; aluguelMensal: number | null; taxaValor: number | null; leadId: string | null }[],
+  cobrancas: Map<string, { status: string; pagoEm: string | null }>
+): Record<string, unknown>[] {
+  return contratos.map((c) => {
+    const cb = c.leadId ? cobrancas.get(c.leadId) : undefined;
+    return {
+      contrato: c.id,
+      data: c.criadoEm.slice(0, 10),
+      imovel: c.imovel,
+      cidade: c.cidade,
+      plano: c.plano,
+      percentual: c.taxaPercent,
+      aluguel: c.aluguelMensal,
+      comissao: c.taxaValor,
+      status: cb?.status ?? "sem_cobranca",
+      pago_em: cb?.pagoEm ?? null,
+    };
+  });
+}
+
 /** Transforma o JSON de admin_financeiro nos indicadores da tela. */
 /**
  * @param contratos o agregado dos contratos do período (agregarContratos sobre contratosReais) — a MESMA conta da

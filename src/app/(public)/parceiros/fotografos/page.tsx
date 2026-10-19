@@ -31,7 +31,7 @@ export const metadata: Metadata = {
 
 const COLUNAS = "id, nome_comercial, cidades, portfolio_url, pacote_fotos, pacote_prazo_dias, pacote_preco, nota_media, avaliacoes_qtd";
 
-export default async function FotografosPage({ searchParams }: { searchParams: Promise<{ cep?: string; cidade?: string; uf?: string }> }) {
+export default async function FotografosPage({ searchParams }: { searchParams: Promise<{ cep?: string; cidade?: string; uf?: string; avisar?: string }> }) {
   const sp = await searchParams;
   const supabase = await createClient();
 
@@ -101,6 +101,7 @@ export default async function FotografosPage({ searchParams }: { searchParams: P
                 cidade={cidade}
                 uf={uf}
                 logado={!!user}
+                autoAvisar={!!user && sp.avisar === "1"}
                 voltarPara={`/parceiros/fotografos?cidade=${encodeURIComponent(cidade)}${uf ? `&uf=${uf}` : ""}${cepBusca ? `&cep=${cepBusca}` : ""}`}
               />
             </div>

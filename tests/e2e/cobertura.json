@@ -1268,6 +1268,24 @@
         "t229-admin-conversa-com-tudo",
         "t48-varredura"
       ]
+    },
+    "/admin/candidaturas": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t231-admin-numeros-com-lista",
+        "t48-varredura"
+      ]
+    },
+    "/admin/eventos": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t231-admin-numeros-com-lista",
+        "t48-varredura"
+      ]
     }
   },
   "rotas": {
