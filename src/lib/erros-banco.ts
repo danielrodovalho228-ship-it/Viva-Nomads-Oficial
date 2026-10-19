@@ -29,7 +29,7 @@ export function erroBancoPT(erro: ErroBanco | null | undefined, padrao = GENERIC
     case "23505":
       return "Isso já foi registrado antes.";
     case "23P01":
-      // 0174: dois contratos ativos do mesmo imóvel com períodos sobrepostos.
+      // 0175: dois contratos ativos do mesmo imóvel com períodos sobrepostos.
       return "Este imóvel já tem contrato nessas datas. Escolha outra data de entrada.";
     case "23503":
       return "Um item ligado a este registro não existe mais. Atualize a página.";

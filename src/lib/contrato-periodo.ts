@@ -1,7 +1,7 @@
 /*
   Nenhum período sobreposto no mesmo imóvel (complemento do coordenador, 19/10) — regra por DATAS, não por contagem.
   Dois contratos ativos (assinando, aguardando pagamento ou em vigência) do mesmo imóvel não podem ter períodos que se
-  cruzam; o sequencial (entrada no dia seguinte ao fim do outro) é permitido. O banco garante (0174: EXCLUDE em
+  cruzam; o sequencial (entrada no dia seguinte ao fim do outro) é permitido. O banco garante (0175: EXCLUDE em
   contratos.periodo); estas funções puras dão a mensagem antes, no aceite e no "Gerar contrato".
 */
 import { DIAS_POR_MES, fimInclusivoISO } from "./contrato-blocos.ts";
@@ -51,7 +51,7 @@ export function mensagemConflitoPeriodo(c: Periodo): string {
   return `Este imóvel já tem contrato de ${br(c.inicio)} a ${br(c.fim)}. Escolha outra data de entrada.`;
 }
 
-/** Status de contrato que ocupa o imóvel (o mesmo filtro do EXCLUDE da 0174). */
+/** Status de contrato que ocupa o imóvel (o mesmo filtro do EXCLUDE da 0175). */
 export const STATUS_OCUPA_IMOVEL = "ativo";
 
 /** Código do Postgres para a violação do EXCLUDE (dois contratos ativos sobrepostos). */

@@ -63,7 +63,7 @@ export async function aceitarCandidatura(leadId: string): Promise<ActionResult> 
   if (!admin) return { ok: false, error: "Serviço indisponível." };
   // Cadastro confiável: o documento do dono vai no contrato — exigido ANTES do aceite.
   if (!(await temDocumento(admin, user.id))) return { ok: false, error: MSG_DOCUMENTO.aceitar };
-  // Disponibilidade por datas (0174): a entrada desejada (estadia mínima de 1 mês) não pode cair em outro contrato ativo.
+  // Disponibilidade por datas (0175): a entrada desejada (estadia mínima de 1 mês) não pode cair em outro contrato ativo.
   // (O dono não lê inicio_desejado pelo RLS/grant de colunas: a leitura é do servidor, depois de provar que ele é o dono.)
   const { data: datas } = await admin.from("leads").select("property_id, inicio_desejado").eq("id", leadId).maybeSingle();
   if (datas?.inicio_desejado) {

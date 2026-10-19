@@ -5,7 +5,7 @@
     • reservado = contrato ativo aguardando assinatura ou o 1º pagamento;
     • vago      = sem contrato ativo (concluído, cancelado ou nenhum).
   A etapa e o selo vêm da fonte única (estadoDoContratoUnico, via getMeusContratos). Um contrato vigente por imóvel
-  (o banco não deixa dois períodos ativos se sobreporem — 0174); os seguintes aparecem como "Próximo morador".
+  (o banco não deixa dois períodos ativos se sobreporem — 0175); os seguintes aparecem como "Próximo morador".
   Início e fim saem dos blocos do contrato (periodoDosBlocos, a mesma função da página do contrato).
   A taxa de serviço NÃO entra na receita: ela é cobrada à parte.
 */

@@ -6,7 +6,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
    1. Estado do contrato com UMA fonte: para cada estado (aguardando assinatura · falta você · falta a outra parte ·
       aguardando 1º pagamento · em vigência · concluído · cancelado), o selo do detalhe = o da lista, dos dois lados,
       = o da carteira.
-   2. Nenhum período sobreposto no mesmo imóvel (0174): o banco recusa (23P01); o sequencial (entrada no dia seguinte
+   2. Nenhum período sobreposto no mesmo imóvel (0175): o banco recusa (23P01); o sequencial (entrada no dia seguinte
       ao fim) passa; cancelado e concluído não bloqueiam; "Gerar contrato" com data dentro de outro contrato mostra
       "Este imóvel já tem contrato de … a …"; com a data seguinte, gera; o calendário do anúncio bloqueia o período; a
       carteira mostra um contrato por imóvel e "Próximo morador a partir de …".

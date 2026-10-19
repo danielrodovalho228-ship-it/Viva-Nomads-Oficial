@@ -667,7 +667,7 @@ async function aceitar(admin: Admin, p: LinhaProposta, v: LinhaVersao, papel: Au
   if (!lead || !["new", "accepted"].includes(lead.status as string)) return { ok: false, error: "Esta candidatura não está mais em andamento." };
   if (lead.status === "new" && !(await temDocumento(admin, p.owner_id)))
     return { ok: false, error: papel === "owner" ? MSG_DOCUMENTO.aceitar : "O proprietário ainda precisa completar o cadastro. Tente mais tarde." };
-  // Disponibilidade por datas (0174): a entrada e os meses da versão aceita não podem cruzar outro contrato ativo.
+  // Disponibilidade por datas (0175): a entrada e os meses da versão aceita não podem cruzar outro contrato ativo.
   const conflito = await conflitoNoImovel(admin, p.property_id, periodoDaEstadia(String(v.data_entrada).slice(0, 10), Number(v.meses)));
   if (conflito) return { ok: false, error: conflito };
 

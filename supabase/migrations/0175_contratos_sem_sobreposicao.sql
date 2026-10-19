@@ -1,4 +1,4 @@
--- Viva Nomads — 0174: nenhum período sobreposto no mesmo imóvel (complemento do coordenador, 19/10).
+-- Viva Nomads — 0175: nenhum período sobreposto no mesmo imóvel (complemento do coordenador, 19/10).
 -- contratos.periodo (daterange) é mantido por gatilho a partir dos blocos; um EXCLUDE (btree_gist) recusa dois contratos
 -- ativos do mesmo imóvel com períodos que se cruzam. Sequenciais continuam permitidos. A sobreposição de TESTE que já
 -- existe (Santa Mônica, d9c70197 × 11281a61) é resolvida encerrando o contrato de teste mais antigo; conta real = para.
@@ -6,7 +6,7 @@ create extension if not exists btree_gist with schema extensions;
 
 -- 1. Período do contrato, mantido pelo banco: do 1º início ao último fim dos blocos (o bloco recusado não conta).
 alter table public.contratos add column if not exists periodo daterange;
-comment on column public.contratos.periodo is 'Do primeiro início ao último fim dos blocos (fim inclusivo). Mantido pelo gatilho contrato_blocos_periodo (0174).';
+comment on column public.contratos.periodo is 'Do primeiro início ao último fim dos blocos (fim inclusivo). Mantido pelo gatilho contrato_blocos_periodo (0175).';
 
 create or replace function public.contrato_periodo_dos_blocos(p_contrato uuid)
 returns daterange
@@ -47,13 +47,13 @@ update public.contratos c
 
 -- 2. Sobreposições que já existem. Conta real (qualquer parte sem is_teste): PARA e lista os casos para o Daniel.
 --    Só contas de teste: o contrato de TESTE mais antigo do par fica encerrado (guardado para o rollback).
-create table if not exists public._bkp_0174_contratos_encerrados (
+create table if not exists public._bkp_0175_contratos_encerrados (
   id uuid primary key,
   status text not null,
   encerrado_em timestamptz,
   guardado_em timestamptz not null default now()
 );
-revoke all on public._bkp_0174_contratos_encerrados from anon, authenticated;
+revoke all on public._bkp_0175_contratos_encerrados from anon, authenticated;
 
 do $$
 declare
@@ -76,7 +76,7 @@ begin
    where a.status = 'ativo' and b.status = 'ativo' and a.periodo && b.periodo
      and not (ta.so_teste and tb.so_teste);
   if v_reais is not null then
-    raise exception '0174 parou: contratos ativos com períodos sobrepostos em conta real — o Daniel decide cada caso: %', v_reais;
+    raise exception '0175 parou: contratos ativos com períodos sobrepostos em conta real — o Daniel decide cada caso: %', v_reais;
   end if;
 
   loop
@@ -88,11 +88,11 @@ begin
      order by a.created_at, a.id
      limit 1;
     exit when v_id is null;
-    insert into public._bkp_0174_contratos_encerrados (id, status, encerrado_em)
+    insert into public._bkp_0175_contratos_encerrados (id, status, encerrado_em)
       select id, status, encerrado_em from public.contratos where id = v_id
       on conflict (id) do nothing;
     update public.contratos set status = 'encerrado_sem_renovacao', encerrado_em = coalesce(encerrado_em, now()) where id = v_id;
-    raise notice '0174: contrato de teste % encerrado (sobreposto a um mais novo no mesmo imóvel)', v_id;
+    raise notice '0175: contrato de teste % encerrado (sobreposto a um mais novo no mesmo imóvel)', v_id;
   end loop;
 end;
 $$;

@@ -16,7 +16,7 @@ import { ACOES_JORNADA, ALVOS_JORNADA } from "@/lib/jornada-teste";
   cria uma candidatura NOVA do inquilino de teste para o anúncio de teste, já aceita e com documentos fictícios, pronta
   para o Fechamento. Não apaga a candidatura nem o contrato antigos (ficam como histórico). Idempotente: se já houver
   uma jornada aberta (aceita, sem contrato ou com contrato ainda não assinado pelas duas partes), devolve o link dela.
-  Sem sobreposição (0174): antes de criar a nova, os contratos ATIVOS de teste do mesmo anúncio (jornadas anteriores,
+  Sem sobreposição (0175): antes de criar a nova, os contratos ATIVOS de teste do mesmo anúncio (jornadas anteriores,
   já assinadas) ficam encerrados — a nova jornada pode usar qualquer data de entrada. Nunca toca conta real.
 */
 
@@ -29,7 +29,7 @@ export interface DetalheJornada {
   inquilino: string;
   /** Quando a candidatura foi aceita (ISO). */
   aceitaEm: string | null;
-  /** Contratos de teste anteriores do anúncio encerrados para a nova jornada (sem sobreposição — 0174). */
+  /** Contratos de teste anteriores do anúncio encerrados para a nova jornada (sem sobreposição — 0175). */
   contratosEncerrados?: number;
   links: { fechamento: string; candidaturas: string; leads: string };
 }
