@@ -115,7 +115,9 @@ test.describe("T36 — Cadastro completo, do CPF ao fechamento", () => {
     // Passo de confirmação (resumo) antes de enviar (610a1d5).
     const passo = inq.getByTestId("solicitacao-passo");
     await expect(passo).toBeVisible();
-    await passo.getByRole("button", { name: "Enviar solicitação" }).click();
+    await passo.getByRole("button", { name: "Continuar" }).click();
+    await passo.getByRole("button", { name: "Continuar" }).click();
+    await passo.getByRole("button", { name: "Enviar candidatura" }).click();
     // A confirmação aparece no cartão E no chip da barra fixa (celular): basta uma visível.
     await expect(inq.getByText("Candidatura enviada").first()).toBeVisible({ timeout: 20_000 });
     await inq.screenshot({ path: "tests/laboratorio/saida/t36-3-candidatura-enviada.png", fullPage: true });

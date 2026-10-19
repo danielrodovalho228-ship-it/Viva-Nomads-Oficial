@@ -2534,6 +2534,14 @@
         "t220-recibo-assinatura"
       ]
     },
+    "src/lib/data/documentos-falhas-actions.ts#reenviarEmail": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t223-recibo-envio"
+      ]
+    },
     "src/lib/data/documentos-inquilino-actions.ts#linkDocInquilino": {
       "personas": [
         "inquilino",
