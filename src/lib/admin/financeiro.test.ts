@@ -4,6 +4,7 @@
 */
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { agregarContratos } from "./indicadores.ts";
 import { calcularFinanceiro, csvFinanceiro, mesCurto } from "./financeiro.ts";
 
 const BASE = {
@@ -59,12 +60,22 @@ test("churn zero ou sem histórico: LTV é — (nunca infinito)", () => {
   assert.equal(semHist.ltv, null);
 });
 
-test("comissões: gerada, a receber, take rate", () => {
-  const f = calcularFinanceiro(BASE);
-  assert.equal(f.comissaoGerada, 560);
+test("Prompt 29: 3.200 × 4 meses → valor total 12.800, taxa gravada 1.536, take rate 12% (a mesma conta da home)", () => {
+  const ag = agregarContratos([{ aluguelMensal: 3200, prazoDias: 120, taxaValor: 1536, taxaPercent: 0.12 }]);
+  assert.deepEqual([ag.valorTotal, ag.taxa, ag.valorMensalSoma, ag.regraAnterior], [12800, 1536, 3200, 0]);
+  const f = calcularFinanceiro(BASE, ag);
+  assert.equal(f.valorTotalContratado, 12800);
+  assert.equal(f.comissaoGerada, 1536);
+  assert.equal(f.takeRate, 0.12);
+  assert.equal(f.aluguelContratado, 3200, "Valor mensal contratado (soma) é informativo, nunca o total");
   assert.equal(f.comissaoAReceber, 240);
-  assert.equal(f.aluguelContratado, 6000);
-  assert.equal(f.takeRate, 560 / 6000);
+});
+
+test("sem o agregado dos contratos: valor total, taxa e take rate ficam — (nenhuma conta paralela)", () => {
+  const f = calcularFinanceiro(BASE);
+  assert.equal(f.valorTotalContratado, null);
+  assert.equal(f.comissaoGerada, null);
+  assert.equal(f.takeRate, null);
 });
 
 test("CAC e ROI; sem gasto lançado → —", () => {

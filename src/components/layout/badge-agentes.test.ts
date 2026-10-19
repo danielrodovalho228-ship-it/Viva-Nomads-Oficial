@@ -17,6 +17,11 @@ test("contarAprovacoesPendentes: só admin e só pendentes dentro do prazo", () 
   const corpo = acoes.slice(acoes.indexOf("export async function contarAprovacoesPendentes"));
   const fim = corpo.slice(0, corpo.indexOf("\n}\n"));
   assert.match(fim, /ehAdmin\(supabase, user\.id\)\)\) return 0/);
-  assert.match(fim, /\.eq\("status", "pendente"\)/);
-  assert.match(fim, /\.gt\("expira_em"/);
+  // Prompt 29: a contagem é a função única "Aguardando o seu OK" (a mesma da página de Agentes e da home).
+  assert.match(fim, /contarAguardandoOk\(admin\)/);
+  const ind = readFileSync("src/lib/data/admin-indicadores.ts", "utf8");
+  const def = ind.slice(ind.indexOf("export async function contarAguardandoOk"));
+  const corpoDef = def.slice(0, def.indexOf("\n}\n"));
+  assert.match(corpoDef, /\.eq\("status", "pendente"\)/);
+  assert.match(corpoDef, /\.gt\("expira_em"/);
 });

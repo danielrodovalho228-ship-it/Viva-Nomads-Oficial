@@ -33,12 +33,18 @@ const TONE: Record<string, string> = {
   removido_admin: "bg-red-50 text-red-700",
 };
 
+type Resposta = { total: number; comResposta: number; taxa: number | null; medianaHoras: number | null; janela: string };
+
 export function AdminPedidosClient({
   pedidos,
   metricas,
+  resposta,
+  rotuloFiltro,
 }: {
   pedidos: Record<string, unknown>[];
   metricas: MetricasPedidos | null;
+  resposta: Resposta;
+  rotuloFiltro: string | null;
 }) {
   const router = useRouter();
   const lista = pedidos as unknown as Pedido[];
@@ -69,7 +75,11 @@ export function AdminPedidosClient({
         title="Moderação de pedidos"
         subtitle="Ocultar pedidos impróprios (com motivo, notificando o inquilino) e reativar."
       />
-      <MetricasPedidosPainel m={metricas} />
+      <MetricasPedidosPainel m={metricas} r={resposta} />
+      <p className="mb-3 text-sm text-ink">
+        <strong data-testid="lista-total">{lista.length}</strong> {lista.length === 1 ? "pedido" : "pedidos"} nesta lista
+        {rotuloFiltro ? ` · ${rotuloFiltro}` : " · todos, inclusive de contas de teste"}
+      </p>
       <Panel className="p-0 pt-6">
         <div className="overflow-x-auto px-6 pb-6">
           {lista.length === 0 ? (
@@ -167,26 +177,30 @@ export function AdminPedidosClient({
   );
 }
 
-/** Números do funil de pedidos (últimos 30 dias). "—" quando não há dado. */
-function MetricasPedidosPainel({ m }: { m: MetricasPedidos | null }) {
+/**
+ * Números dos pedidos. "Pedidos", "Pedidos com resposta" e "Tempo até a 1ª resposta" são os da home (respostaPedidos);
+ * compatível e avisos continuam da 0059 (últimos 30 dias). "—" quando não há dado.
+ */
+function MetricasPedidosPainel({ m, r }: { m: MetricasPedidos | null; r: Resposta }) {
   const pct =
     m && m.pedidos > 0 ? `${Math.round((m.pedidos_com_compativel / m.pedidos) * 100)}%` : "—";
-  const taxa =
-    m && m.avisos_email + m.avisos_resumo > 0
-      ? `${Math.round((m.avisos_respondidos / (m.avisos_email + m.avisos_resumo)) * 100)}%`
-      : "—";
-  const horas =
-    m?.horas_media_resposta == null ? "—" : `${String(m.horas_media_resposta).replace(".", ",")} h`;
+  const taxa = r.taxa === null ? "—" : `${Math.round(r.taxa * 1000) / 10}%`.replace(".", ",");
+  const horas = r.medianaHoras === null ? "—" : `${String(r.medianaHoras).replace(".", ",")} h`;
   return (
     <div className="mb-6">
-      <p className="mb-2 text-sm text-muted">Últimos 30 dias</p>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5 sm:gap-4">
-        <StatCard label="Pedidos" value={m?.pedidos ?? "—"} icon={Megaphone} />
-        <StatCard label="Com compatível ao publicar" value={pct} icon={Sparkles} />
-        <StatCard label="Avisos enviados" value={m ? m.avisos_email + m.avisos_resumo : "—"} icon={Mail} />
-        <StatCard label="Taxa de resposta" value={taxa} icon={MessageSquare} />
-        <StatCard label="Tempo médio de resposta" value={horas} icon={Clock} />
+      <p className="mb-2 text-sm text-muted">{r.janela} · contas de teste fora</p>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
+        <StatCard label="Pedidos do período" value={r.total} icon={Megaphone} />
+        <StatCard label="Pedidos com resposta" value={taxa} icon={MessageSquare} />
+        <StatCard label="Tempo até a 1ª resposta (mediana)" value={horas} icon={Clock} />
+        <StatCard label="Pedidos respondidos" value={r.comResposta} icon={MessageSquare} />
+        <StatCard label="Com compatível ao publicar (30 dias)" value={pct} icon={Sparkles} />
+        <StatCard label="Avisos enviados (30 dias)" value={m ? m.avisos_email + m.avisos_resumo : "—"} icon={Mail} />
       </div>
+      <p className="mt-2 text-xs text-muted">
+        Pedidos com resposta = pedidos do período que receberam pelo menos 1 contato ou proposta ÷ pedidos do período. Tempo até a 1ª
+        resposta = mediana. A mesma conta da visão geral.
+      </p>
     </div>
   );
 }

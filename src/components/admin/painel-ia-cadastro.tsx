@@ -1,3 +1,4 @@
+import { dataHoraBRT } from "@/lib/datas-brasilia";
 import { Sparkles } from "lucide-react";
 import { resumoIaCadastro } from "@/lib/ai/registro-ia";
 import { MENSAGEM_FALHA_IA } from "@/lib/ai/falha-ia";
@@ -6,7 +7,7 @@ import { TestarLeituraIa } from "./testar-leitura-ia";
 
 const ROTA: Record<string, string> = { fotos: "fotos", documento: "documento", matricula: "matrícula" };
 const quando = (iso: string) =>
-  new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+  dataHoraBRT(iso, { tabela: true });
 
 /**
  * "IA do cadastro: ligada/desligada" (prompt 22): o que falta ligar (nome da variável, nunca o valor), a última

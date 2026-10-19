@@ -1,3 +1,5 @@
+import { TEXTO_QUEM_RECEBE_TAXA_PARCERIA } from "@/config/taxa-parceria";
+import { dataBRT } from "@/lib/datas-brasilia";
 import Link from "next/link";
 import { FAIXAS_TAXA_PARCERIA, reais } from "@/config/taxa-parceria";
 import { Camera, CheckCircle2, Clock, ClipboardList, Handshake } from "lucide-react";
@@ -17,7 +19,7 @@ const STATUS_PEDIDO: Record<string, { rotulo: string; cor: string }> = {
   recusado: { rotulo: "Não seguiu", cor: "bg-surface-2 text-muted" },
   cancelado: { rotulo: "Cancelado", cor: "bg-surface-2 text-muted" },
 };
-const dataBR = (iso: string | null) => (iso ? new Date(`${iso.slice(0, 10)}T12:00:00Z`).toLocaleDateString("pt-BR", { timeZone: "UTC" }) : "—");
+const dataBR = (iso: string | null) => (iso ? dataBRT(`${iso.slice(0, 10)}T12:00:00Z`) : "—");
 
 /**
  * Admin → Fotógrafos parceiros: números, cadastro, aprovação e pedidos.
@@ -82,7 +84,7 @@ export default async function AdminFotografosPage() {
 
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
         <Panel title="Taxa de parceria" className="lg:col-span-1">
-          <p className="mb-3 text-sm text-muted">Paga pelo fotógrafo ao aceitar o pedido. A Viva não recebe o dinheiro do serviço.</p>
+          <p className="mb-3 text-sm text-muted" data-testid="texto-taxa-parceria">{TEXTO_QUEM_RECEBE_TAXA_PARCERIA}</p>
           <ul className="mb-4 space-y-1 rounded-xl bg-sage-100 p-3 text-sm text-ink">
             {FAIXAS_TAXA_PARCERIA.map((f) => (
               <li key={f.rotulo}>{f.rotulo}: <strong>{reais(f.valor)}</strong></li>

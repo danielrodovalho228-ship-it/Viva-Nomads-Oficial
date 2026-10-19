@@ -1,3 +1,4 @@
+import { dataHoraBRT } from "@/lib/datas-brasilia";
 import { Mail, Clock } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { PageTitle, Panel, StatCard, EmptyState } from "@/components/dashboard/primitives";
@@ -16,7 +17,7 @@ interface Linha {
 }
 
 const quando = (iso: string) =>
-  new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+  dataHoraBRT(iso, { tabela: true });
 
 /** Admin → E-mails de teste: o que o sistema enviou às contas de teste, para o QA ler sem encaminhamento manual. */
 export default async function AdminEmailsTestePage() {

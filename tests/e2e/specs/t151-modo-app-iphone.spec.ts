@@ -33,9 +33,9 @@ test.describe("T151 — Modo app no iPhone (proprietário)", () => {
 
   test("/dashboard e /dashboard/conta mostram a capa 3S", async ({ page }) => {
     await entrarNoApp(page, "/dashboard");
-    await expect(page.getByTestId("painel-capa").first()).toBeVisible();
+    await expect(page.locator('[data-testid="painel-capa"]:visible').first()).toBeVisible();
     await page.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
-    await expect(page.getByTestId("painel-capa").first()).toBeVisible();
+    await expect(page.locator('[data-testid="painel-capa"]:visible').first()).toBeVisible();
     const sobra = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(sobra).toBeLessThanOrEqual(0);
   });

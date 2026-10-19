@@ -1,5 +1,6 @@
 "use client";
 
+import { horaBRT } from "@/lib/datas-brasilia";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { iniciais, tempoRelativo, type Agente, type Ronda } from "@/lib/agentes/central";
 import { ATUALIZA_REDE_MS, ATUALIZA_REDE_S, COR_EVENTO, linhasAcesas, ROTULO_EVENTO, type EventoRede, type LinhaAcesa } from "@/lib/agentes/eventos";
@@ -370,7 +371,7 @@ export function RedeAoVivo({ agentes, rondas, agora }: { agentes: Agente[]; rond
   );
 }
 
-const horaBR = (iso: string) => new Date(iso).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
+const horaBR = (iso: string) => `${horaBRT(iso)} BRT`;
 
 /** Linha do tempo dos eventos reais, do mais novo para o mais antigo. */
 function LinhaDoTempo({ eventos, lidoEm, erro, agora }: { eventos: EventoRede[] | null; lidoEm: string | null; erro: boolean; agora: Date | null }) {

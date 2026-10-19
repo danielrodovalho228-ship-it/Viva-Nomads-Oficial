@@ -91,7 +91,7 @@ test("funil: % sobre a etapa anterior, sem dividir por zero", () => {
   assert.equal(f[3].daAnterior, null); // anterior era 0
 });
 
-test("CSV tem cabeçalho, uma linha por indicador e nota do aluguel", () => {
+test("CSV tem cabeçalho, uma linha por indicador e nota do valor total (não passa pela plataforma)", () => {
   const csv = csvVisaoGeral(EXEMPLO, {}, resolverPeriodo({ periodo: "30" }, HOJE), "uberlandia");
   const linhas = csv.split("\n");
   assert.match(linhas[0], /período 2026-09-06 a 2026-10-05 · cidade: uberlandia/);

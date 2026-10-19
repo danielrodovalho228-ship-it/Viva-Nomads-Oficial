@@ -5,6 +5,7 @@
   nunca vira 0%, NaN ou ∞. Testável com node --test.
 */
 import { mrr, num, razao, type Num } from "./visao-geral.ts";
+import type { AgregadoContratos } from "./indicadores.ts";
 
 export interface ComissaoLinha {
   contrato: string;
@@ -45,12 +46,17 @@ export interface Financeiro {
   recebidoAssinatura: Num;
   recebidoComissao: Num;
   recebidoTotal: Num;
+  /** Taxa de serviço gerada = Σ das taxas GRAVADAS nos contratos do período (agregarContratos, Prompt 29). */
   comissaoGerada: Num;
   comissaoAReceber: Num;
+  /** "Valor mensal contratado (soma)": Σ valor mensal (informativo; não é o valor total). */
   aluguelContratado: Num;
-  /** Valor total dos contratos (aluguel × meses) = comissão ÷ percentual — base da comissão. */
+  /** Valor total dos contratos = Σ valor mensal × meses (agregarContratos — a mesma base da taxa). */
   valorTotalContratado: Num;
+  /** Taxa ÷ valor total (agregarContratos). */
   takeRate: Num;
+  /** Contratos da regra anterior (taxa sobre 1 mês, congelada): entram pelo valor gravado. */
+  regraAnterior: number;
   gastoMarketing: Num;
   mesesMarketing: string[];
   novosProprietarios: Num;
@@ -78,7 +84,11 @@ export const STATUS_COMISSAO: Record<string, string> = {
 };
 
 /** Transforma o JSON de admin_financeiro nos indicadores da tela. */
-export function calcularFinanceiro(d: Bruto): Financeiro {
+/**
+ * @param contratos o agregado dos contratos do período (agregarContratos sobre contratosReais) — a MESMA conta da
+ * home e de /admin/contratos. Sem ele, valor total, taxa e take rate ficam "—" (nunca uma conta paralela).
+ */
+export function calcularFinanceiro(d: Bruto, contratos: AgregadoContratos | null = null): Financeiro {
   const a = obj(d?.assinaturas);
   const recebido = obj(d?.recebido);
   const mk = obj(d?.marketing);
@@ -109,16 +119,9 @@ export function calcularFinanceiro(d: Bruto): Financeiro {
       pago_em: (o.pago_em as string | null) ?? null,
     };
   });
-  const comissaoGerada = comissoes.reduce((s, c) => s + (c.comissao ?? 0), 0);
   const comissaoAReceber = comissoes
     .filter((c) => c.status !== "pago")
     .reduce((s, c) => s + (c.comissao ?? 0), 0);
-  const aluguelContratado = comissoes.reduce((s, c) => s + (c.aluguel ?? 0), 0);
-  // Comissão = taxa × valor total do contrato → valor total = comissão ÷ taxa (exato, sem precisar do prazo).
-  // Contrato com taxa 0 fica fora (o valor total não sai da comissão).
-  const comTaxa = comissoes.filter((c) => (c.percentual ?? 0) > 0 && c.comissao !== null);
-  const valorTotalContratado = comTaxa.reduce((s, c) => s + (c.comissao ?? 0) / (c.percentual as number), 0);
-  const comissaoComTaxa = comTaxa.reduce((s, c) => s + (c.comissao ?? 0), 0);
 
   const recebidoAssinatura = recebido ? num(recebido.assinatura) : null;
   const recebidoComissao = recebido ? num(recebido.comissao) : null;
@@ -158,11 +161,12 @@ export function calcularFinanceiro(d: Bruto): Financeiro {
     recebidoAssinatura,
     recebidoComissao,
     recebidoTotal,
-    comissaoGerada: comissoes.length ? comissaoGerada : 0,
+    comissaoGerada: contratos ? contratos.taxa : null,
     comissaoAReceber: comissoes.length ? comissaoAReceber : 0,
-    aluguelContratado: comissoes.length ? aluguelContratado : 0,
-    valorTotalContratado: comTaxa.length ? Math.round(valorTotalContratado * 100) / 100 : 0,
-    takeRate: razao(comissaoComTaxa, valorTotalContratado),
+    aluguelContratado: contratos ? contratos.valorMensalSoma : null,
+    valorTotalContratado: contratos ? contratos.valorTotal : null,
+    takeRate: contratos ? contratos.takeRate : null,
+    regraAnterior: contratos?.regraAnterior ?? 0,
     gastoMarketing,
     mesesMarketing: Array.isArray(mk?.meses) ? (mk!.meses as string[]) : [],
     novosProprietarios,
@@ -209,10 +213,10 @@ export function csvFinanceiro(f: Financeiro, inicio: string, fim: string, cidade
     ["Recebido: assinaturas", f.recebidoAssinatura],
     ["Recebido: comissões", f.recebidoComissao],
     ["Recebido: total", f.recebidoTotal],
-    ["Comissão gerada", f.comissaoGerada],
-    ["Comissão a receber", f.comissaoAReceber],
-    ["Aluguel contratado (entre as partes; não passa pela plataforma)", f.aluguelContratado],
-    ["Valor total dos contratos (base da comissão)", f.valorTotalContratado],
+    ["Taxa de serviço gerada (soma das taxas gravadas)", f.comissaoGerada],
+    ["Taxa de serviço a receber", f.comissaoAReceber],
+    ["Valor mensal contratado (soma; entre as partes, não passa pela plataforma)", f.aluguelContratado],
+    ["Valor total dos contratos (valor mensal × meses; base da taxa)", f.valorTotalContratado],
     ["Take rate", f.takeRate],
     ["Gasto de marketing", f.gastoMarketing],
     ["CAC (proprietário)", f.cac],

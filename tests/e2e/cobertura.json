@@ -1241,6 +1241,33 @@
         "admin"
       ],
       "specs": []
+    },
+    "/admin/imoveis": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t229-admin-conversa-com-tudo",
+        "t48-varredura"
+      ]
+    },
+    "/admin/contratos": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t229-admin-conversa-com-tudo",
+        "t48-varredura"
+      ]
+    },
+    "/admin/solicitacoes": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t229-admin-conversa-com-tudo",
+        "t48-varredura"
+      ]
     }
   },
   "rotas": {
@@ -3410,6 +3437,22 @@
         "admin"
       ],
       "specs": []
+    },
+    "src/lib/data/jornada-teste-actions.ts#encerrarJornadasDeTeste": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t229-admin-conversa-com-tudo"
+      ]
+    },
+    "src/lib/data/imoveis-admin-actions.ts#pausarImovelAdmin": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t229-admin-conversa-com-tudo"
+      ]
     }
   }
 }
