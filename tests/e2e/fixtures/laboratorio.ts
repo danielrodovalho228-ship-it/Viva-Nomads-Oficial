@@ -239,6 +239,14 @@ export async function contarAtivos(ownerId: string): Promise<number> {
 }
 
 /**
+ * Zera o contador de login POR IP (40 por 15 min). O laboratório inteiro sai do mesmo IP e passa disso
+ * (lab b5fb67f6: t55 recebeu 429 em vez de 401 e t82 não entrou). Só o laboratório chama.
+ */
+export async function liberarLimiteLoginIp(): Promise<void> {
+  await adm().from("limites_uso").delete().like("chave", "login:ip:%");
+}
+
+/**
  * Zera o atraso progressivo do login SÓ deste e-mail (5 por minuto, src/lib/seguranca/limite-login.ts). Os specs
  * entram com a mesma conta várias vezes em menos de um minuto (390 e 1280, um passo atrás do outro); sem isto o
  * login recebe "Muitas tentativas" e o teste para na tela de entrar. O limite por IP continua valendo (t82).
@@ -251,6 +259,7 @@ export async function liberarLimiteLogin(email: string): Promise<void> {
 /** Login pela tela, em contexto próprio de 390 px (celular). */
 export async function entrar(browser: Browser, email: string, senha: string): Promise<Page> {
   await liberarLimiteLogin(email);
+  await liberarLimiteLoginIp();
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const page = await ctx.newPage();
   // networkidle sem teto pendurava até o fim do teste na 1ª carga fria (t168 a 390 px, lab 17/10): espera até 10 s e segue.
