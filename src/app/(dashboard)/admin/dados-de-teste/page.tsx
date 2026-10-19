@@ -47,7 +47,7 @@ export default async function AdminDadosDeTestePage() {
   return (
     <div data-testid="admin-dados-de-teste">
       <PageTitle title="Dados de teste" subtitle="Ações que só valem para contas de teste (is_teste) e anúncios [TESTE QA]." />
-      <Panel title="Nova jornada de teste">
+      <Panel title="Nova jornada de teste" className="min-w-0">
         {contas.length === 0 || anuncios.length === 0 ? (
           <EmptyState icon={FlaskConical} title="Faltam dados de teste" text="É preciso ao menos uma conta de inquilino de teste e um anúncio [TESTE QA] de um proprietário de teste." />
         ) : (
@@ -63,7 +63,7 @@ export default async function AdminDadosDeTestePage() {
         ) : (
           <ul className="divide-y divide-sage-100">
             {linhasLog.map((l) => (
-              <li key={l.id} className="py-2 text-sm" data-testid="log-jornada" data-resultado={RESULTADO[l.acao]}>
+              <li key={l.id} className="break-words py-2 text-sm" data-testid="log-jornada" data-resultado={RESULTADO[l.acao]}>
                 <span className="font-medium text-ink">{dataHoraBrasilia(new Date(l.criado_em))}</span> (horário de Brasília) ·{" "}
                 {quem.get(l.admin_id) ?? "admin"} ·{" "}
                 <strong className={RESULTADO[l.acao] === "erro" ? "text-red-700" : "text-forest"}>{RESULTADO[l.acao]}</strong>
