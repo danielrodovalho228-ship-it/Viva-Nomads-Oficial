@@ -1,9 +1,7 @@
--- Viva Nomads — 0174: fila "Documentos com falha" (complemento da jornada de assinatura, 19/10). Idempotente.
--- Rollback: supabase/producao/rollback/0174_rollback.sql.
--- Aplicada pela Action quando o PR é mesclado (o merge é a aprovação do Daniel).
-begin;
-set local lock_timeout = '5s';
-
+-- Viva Nomads — 0175: fila "Documentos com falha" (complemento da jornada de assinatura, 19/10).
+-- Toda emissão de recibo, comprovante ou termo que falha fica registrada com o motivo; o admin vê a fila e emite de
+-- novo. Antes a falha sumia (o recibo do contrato VN-CT-11281A61 nunca saiu e ninguém viu). Só o admin lê; só o
+-- servidor escreve.
 create table if not exists public.documentos_falhas (
   id uuid primary key default gen_random_uuid(),
   pagamento_id uuid references public.pagamentos_bloco (id) on delete cascade,
@@ -25,9 +23,3 @@ grant select on public.documentos_falhas to authenticated;
 grant all on public.documentos_falhas to service_role;
 drop policy if exists documentos_falhas_admin on public.documentos_falhas;
 create policy documentos_falhas_admin on public.documentos_falhas for select to authenticated using (public.is_admin());
-
-insert into supabase_migrations.schema_migrations (version, name, statements, created_by)
-select '20261019000174', '0174_documentos_falhas',
-       array['-- conteúdo em supabase/migrations/0174_documentos_falhas.sql'], 'danielrodovalho228@gmail.com'
- where not exists (select 1 from supabase_migrations.schema_migrations where version = '20261019000174');
-commit;

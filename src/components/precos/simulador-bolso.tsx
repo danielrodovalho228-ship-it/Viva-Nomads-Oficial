@@ -1,5 +1,6 @@
 "use client";
 
+import { CampoReais } from "@/components/ui/campo-reais";
 import { useState } from "react";
 import Link from "next/link";
 import { calcularBolso, NOTA_BOLSO } from "@/lib/cobranca/bolso";
@@ -17,10 +18,10 @@ export function SimuladorBolso(p: {
   className?: string;
 }) {
   const doCadastro = p.valorMensal !== undefined;
-  const [valorDigitado, setValorDigitado] = useState("3000");
+  const [valorDigitado, setValorDigitado] = useState(3000);
   const [meses, setMeses] = useState(String(p.mesesIniciais ?? 6));
   const [imoveis, setImoveis] = useState("1");
-  const valor = doCadastro ? p.valorMensal! : Number(valorDigitado);
+  const valor = doCadastro ? p.valorMensal! : valorDigitado;
   const b = calcularBolso(valor, Number(meses), Number(imoveis));
 
   return (
@@ -37,12 +38,12 @@ export function SimuladorBolso(p: {
         {!doCadastro && (
           <label className="text-sm font-medium text-ink">
             Valor mensal (R$)
-            <input
+            <CampoReais
+              semPrefixo
               className="input mt-1 w-full"
-              inputMode="decimal"
               value={valorDigitado}
-              onChange={(e) => setValorDigitado(e.target.value.replace(",", "."))}
-              data-testid="bolso-valor"
+              onChange={(v) => setValorDigitado(v ?? 0)}
+              testid="bolso-valor"
             />
           </label>
         )}

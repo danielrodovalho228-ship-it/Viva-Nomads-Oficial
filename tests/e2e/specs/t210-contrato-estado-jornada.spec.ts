@@ -171,7 +171,7 @@ test.describe("T210 — estado real do contrato, Contratos do inquilino e jornad
       const { data: lead } = await adm().from("leads").select("status").eq("id", novo).single();
       expect(lead!.status).toBe("accepted");
       expect(((await adm().from("documentos_inquilino").select("tipo").eq("lead_id", novo)).data ?? []).length).toBe(2);
-      // Sem sobreposição (0175): a jornada de teste anterior do anúncio (contratos ativos, já assinados) fica encerrada.
+      // Sem sobreposição (0176): a jornada de teste anterior do anúncio (contratos ativos, já assinados) fica encerrada.
       await expect(page.getByTestId("jornada-encerrados")).toContainText("encerrad");
       const { data: antigos } = await adm().from("contratos").select("status").in("id", [ids.contratoAntigo, ids.contratoNovo]);
       expect(((antigos ?? []) as { status: string }[]).map((c) => c.status)).toEqual(["encerrado_sem_renovacao", "encerrado_sem_renovacao"]);

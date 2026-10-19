@@ -2,11 +2,11 @@ import { test, expect, type Browser, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T218 — Complemento do coordenador (19/10, depois do reteste do #864). Laboratório, contas de teste, 390 e 1280 px.
+  T221 — Complemento do coordenador (19/10, depois do reteste do #864). Laboratório, contas de teste, 390 e 1280 px.
    1. Estado do contrato com UMA fonte: para cada estado (aguardando assinatura · falta você · falta a outra parte ·
       aguardando 1º pagamento · em vigência · concluído · cancelado), o selo do detalhe = o da lista, dos dois lados,
       = o da carteira.
-   2. Nenhum período sobreposto no mesmo imóvel (0175): o banco recusa (23P01); o sequencial (entrada no dia seguinte
+   2. Nenhum período sobreposto no mesmo imóvel (0176): o banco recusa (23P01); o sequencial (entrada no dia seguinte
       ao fim) passa; cancelado e concluído não bloqueiam; "Gerar contrato" com data dentro de outro contrato mostra
       "Este imóvel já tem contrato de … a …"; com a data seguinte, gera; o calendário do anúncio bloqueia o período; a
       carteira mostra um contrato por imóvel e "Próximo morador a partir de …".
@@ -116,7 +116,7 @@ async function ateGerar(d: Page, entrada: string) {
   await d.getByTestId("fechamento-gerar-contrato").click();
 }
 
-test.describe("T218 — estado do contrato com uma fonte e nenhum período sobreposto", () => {
+test.describe("T221 — estado do contrato com uma fonte e nenhum período sobreposto", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial" });
   test.setTimeout(300_000);
@@ -159,7 +159,7 @@ test.describe("T218 — estado do contrato com uma fonte e nenhum período sobre
         await expect(cartao.getByTestId("contrato-etapa"), e.nome).toHaveText(e.seloDono, { timeout: 20_000 });
       }
       await semRolagemLateral(d);
-      await d.screenshot({ path: `${SAIDA}/t218-lista-dono-${largura}.png`, fullPage: true });
+      await d.screenshot({ path: `${SAIDA}/t221-lista-dono-${largura}.png`, fullPage: true });
       for (const e of ESTADOS) {
         await ir(d, `/dashboard/contratos/${ids[`ct-${e.nome}`]}`);
         await expect(d.getByTestId("contrato-selo"), e.nome).toHaveText(e.seloDono, { timeout: 20_000 });
@@ -176,7 +176,7 @@ test.describe("T218 — estado do contrato com uma fonte e nenhum período sobre
       // Situação da carteira pela mesma fonte: em vigência ocupa; os que ainda faltam algo ficam reservados.
       await expect(d.locator(`[data-testid="carteira-linha"][data-imovel="${ids["im-vigencia"]}"]`)).toHaveAttribute("data-situacao", "ocupado");
       await expect(d.locator(`[data-testid="carteira-linha"][data-imovel="${ids["im-pagamento"]}"]`)).toHaveAttribute("data-situacao", "reservado");
-      await d.screenshot({ path: `${SAIDA}/t218-carteira-${largura}.png`, fullPage: true });
+      await d.screenshot({ path: `${SAIDA}/t221-carteira-${largura}.png`, fullPage: true });
       await d.context().close();
 
       const i = await abrir(browser, inq.email, largura);
@@ -186,7 +186,7 @@ test.describe("T218 — estado do contrato com uma fonte e nenhum período sobre
         await expect(cartao.getByTestId("contrato-inquilino-estado"), e.nome).toHaveText(e.seloInq, { timeout: 20_000 });
       }
       await semRolagemLateral(i);
-      await i.screenshot({ path: `${SAIDA}/t218-lista-inquilino-${largura}.png`, fullPage: true });
+      await i.screenshot({ path: `${SAIDA}/t221-lista-inquilino-${largura}.png`, fullPage: true });
       await ir(i, "/dashboard/locacoes");
       // Locações mostra as assinadas pelas duas partes (e as encerradas), com o mesmo selo.
       for (const e of ESTADOS.filter((x) => x.status !== "ativo" || (x.assinadoDono && x.assinadoInq))) {
@@ -197,7 +197,7 @@ test.describe("T218 — estado do contrato com uma fonte e nenhum período sobre
         await ir(i, `/dashboard/locacoes/${ids[`ct-${e.nome}`]}`);
         await expect(i.getByTestId("contrato-selo"), e.nome).toHaveText(e.seloInq, { timeout: 20_000 });
       }
-      await i.screenshot({ path: `${SAIDA}/t218-detalhe-inquilino-${largura}.png`, fullPage: true });
+      await i.screenshot({ path: `${SAIDA}/t221-detalhe-inquilino-${largura}.png`, fullPage: true });
       await i.context().close();
     });
   }
@@ -242,7 +242,7 @@ test.describe("T218 — estado do contrato com uma fonte e nenhum período sobre
     const d = await abrir(browser, dono.email, 1280);
     await ateGerar(d, dia(30));
     await expect(d.getByTestId("erro-contrato")).toHaveText(`Este imóvel já tem contrato de ${br(dia(5))} a ${br(dia(64))}. Escolha outra data de entrada.`, { timeout: 30_000 });
-    await d.screenshot({ path: `${SAIDA}/t218-gerar-recusado-1280.png`, fullPage: true });
+    await d.screenshot({ path: `${SAIDA}/t221-gerar-recusado-1280.png`, fullPage: true });
     expect((await adm().from("contratos").select("id").eq("lead_id", ids.lead2)).data ?? []).toHaveLength(0);
 
     // De novo, com a entrada no dia seguinte ao fim de A: gera.
@@ -258,7 +258,7 @@ test.describe("T218 — estado do contrato com uma fonte e nenhum período sobre
     await expect(linha.getByTestId("carteira-selo")).toHaveText("Em vigência");
     await expect(linha.getByTestId("carteira-proximo")).toContainText(`Próximo morador a partir de ${br(dia(65))}`);
     await expect(linha.getByTestId("carteira-proximo")).toHaveAttribute("data-contrato", ids.ctB);
-    await d.screenshot({ path: `${SAIDA}/t218-carteira-proximo-1280.png`, fullPage: true });
+    await d.screenshot({ path: `${SAIDA}/t221-carteira-proximo-1280.png`, fullPage: true });
     await d.context().close();
   });
 
@@ -273,6 +273,6 @@ test.describe("T218 — estado do contrato com uma fonte e nenhum período sobre
     const html = await page.content();
     expect(html).not.toContain(inq.nome);
     await botao.scrollIntoViewIfNeeded();
-    await page.screenshot({ path: `${SAIDA}/t218-calendario-390.png` });
+    await page.screenshot({ path: `${SAIDA}/t221-calendario-390.png` });
   });
 });

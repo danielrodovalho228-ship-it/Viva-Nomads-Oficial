@@ -83,3 +83,24 @@ test("caso negativo: mapa vazio dá 0% sem dividir por zero", async () => {
   const g = await carregar();
   assert.equal(g.resumoPorTipo({ paginas: {}, rotas: {}, actions: {} }).percentual, 0);
 });
+
+test("gerar-cobertura --json imprime só o resumo por tipo, em uma linha, sem reescrever o mapa (alimenta por_categoria)", async () => {
+  const { execFileSync } = await import("node:child_process");
+  const saida = execFileSync(process.execPath, ["scripts/lab/gerar-cobertura.mjs", "--json"], { encoding: "utf8" }).trim();
+  assert.equal(saida.split("\n").length, 1);
+  const r = JSON.parse(saida);
+  assert.deepEqual(Object.keys(r.por_tipo).sort(), ["actions", "paginas", "rotas"]);
+  assert.ok(r.total > 0 && r.percentual >= 0 && r.percentual <= 100);
+});
+
+test("migração 0173 cria lab_execucoes.por_categoria de forma idempotente, com aplicar e rollback", async () => {
+  const { readFileSync } = await import("node:fs");
+  const mig = readFileSync("supabase/migrations/0173_lab_execucoes_por_categoria.sql", "utf8");
+  const aplicar = readFileSync("supabase/producao/aplicar-0173.sql", "utf8");
+  const rollback = readFileSync("supabase/producao/rollback/0173_rollback.sql", "utf8");
+  assert.match(mig, /add column if not exists por_categoria jsonb/);
+  assert.match(aplicar, /^begin;/m);
+  assert.match(aplicar, /commit;\s*$/);
+  assert.match(aplicar, /20261019000173/);
+  assert.match(rollback, /drop column if exists por_categoria/);
+});

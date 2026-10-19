@@ -39,9 +39,12 @@ async function semRolagemLateral(page: Page) {
 async function numero(page: Page, rotulo: string, valor: number) {
   // O nome acessível do campo leva o prefixo "R$" quando há (ex.: "Valor mensal pretendido R$").
   const esc = rotulo.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const campo = page.getByRole("spinbutton", { name: new RegExp(`^${esc}( R\\$)?$`) });
+  const nome = new RegExp(`^${esc}( R\\$)?$`);
+  // Campos em R$ são texto no formato brasileiro ("25.000"; complemento do prompt 27, parte B); os outros, numéricos.
+  const campo = page.getByRole("spinbutton", { name: nome }).or(page.getByRole("textbox", { name: nome }));
+  const texto = (await campo.evaluate((el) => (el as HTMLInputElement).type)) === "text";
   await campo.fill(String(valor));
-  await expect(campo).toHaveValue(String(valor));
+  await expect(campo).toHaveValue(texto ? valor.toLocaleString("pt-BR") : String(valor));
 }
 
 async function comoDono(browser: Browser, largura: number): Promise<Page> {
@@ -137,7 +140,7 @@ test.describe("T212 — ferramentas do proprietário (prompt 27)", () => {
     await bloco.getByTestId("negociavel-valor_mensal").click();
     await bloco.getByTestId("negociavel-meses").click();
     await bloco.getByLabel("Menor valor mensal que aceito (R$)").fill("2950");
-    await bloco.getByLabel("Limpezas por mês que posso incluir").fill("2");
+    await bloco.getByLabel("Limpezas por mês que posso incluir").selectOption("2");
     await bloco.getByRole("button", { name: /^Salvar seção/ }).click();
     await expect
       .poll(async () => (await adm().from("properties").select("negociacao").eq("id", ids.imovel!).single()).data?.negociacao, { timeout: 20_000 })
@@ -152,8 +155,8 @@ test.describe("T212 — ferramentas do proprietário (prompt 27)", () => {
     const anon = await browser.newContext();
     const pa = await anon.newPage();
     await pa.goto(`/imoveis/${ids.imovel}`, { waitUntil: "domcontentloaded" });
-    expect(await pa.content()).not.toMatch(/2\.?950/);
-    expect(await (await pa.request.get("/api/properties")).text()).not.toMatch(/2\.?950/);
+    expect(await pa.content()).not.toMatch(/(?<![\w-])2\.?950(?![\w-])/);
+    expect(await (await pa.request.get("/api/properties")).text()).not.toMatch(/(?<![\w-])2\.?950(?![\w-])/);
     await anon.close();
   });
 

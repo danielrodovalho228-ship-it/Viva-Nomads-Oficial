@@ -144,13 +144,15 @@ jobs:
           retention-days: 14
 
       - name: Registrar no banco
-        # Uma linha em public.lab_execucoes por execução (nunca em PR). Só contagens e títulos
+        # Uma linha em public.lab_execucoes por execução. PR só do próprio repositório (nunca de fork, que não
+        # recebe segredo): grava gatilho=pull_request com o commit da cabeça do PR (ordem 1424d64a). Só contagens e títulos
         # de testes. O JSON entra como variável do psql (:'resumo'::jsonb) — nada de texto cru
         # dentro do SQL. A URL do banco vem do secret e nunca é impressa.
-        if: ${{ !cancelled() && github.event_name != 'pull_request' }}
+        if: ${{ !cancelled() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
         continue-on-error: true
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           GATILHO: ${{ github.event_name }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
@@ -159,12 +161,13 @@ jobs:
             exit 0
           fi
           RESUMO="$(node scripts/lab/resumo-specs.mjs --json tests/laboratorio/saida/resultado.json)"
+          CATEGORIA="$(node scripts/lab/gerar-cobertura.mjs --json || echo '{}')"
           psql "$SUPABASE_DB_URL" -X -q -v ON_ERROR_STOP=1 \
-            -v sha="$GITHUB_SHA" -v gatilho="$GATILHO" -v run_url="$RUN_URL" -v resumo="$RESUMO" >/dev/null <<'SQL'
-          insert into public.lab_execucoes (commit_sha, gatilho, passou, falhou, pulou, instavel, por_spec, falhas, run_url)
+            -v sha="$COMMIT_SHA" -v gatilho="$GATILHO" -v run_url="$RUN_URL" -v resumo="$RESUMO" -v categoria="$CATEGORIA" >/dev/null <<'SQL'
+          insert into public.lab_execucoes (commit_sha, gatilho, passou, falhou, pulou, instavel, por_spec, falhas, run_url, por_categoria)
           select :'sha', :'gatilho',
                  (j->>'passou')::int, (j->>'falhou')::int, (j->>'pulou')::int, (j->>'instavel')::int,
-                 j->'por_spec', j->'falhas', :'run_url'
+                 j->'por_spec', j->'falhas', :'run_url', :'categoria'::jsonb
             from (select :'resumo'::jsonb as j) x;
           SQL
 

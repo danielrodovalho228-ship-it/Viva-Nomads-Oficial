@@ -4,7 +4,7 @@ import { hasAccount } from "../fixtures/accounts";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, lerSaida, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T217 — Complemento da jornada de assinatura (reteste do Muse, 19/10, contrato VN-CT-11281A61), 390 e 1280 px:
+  T220 — Complemento da jornada de assinatura (reteste do Muse, 19/10, contrato VN-CT-11281A61), 390 e 1280 px:
    1. o dono registra o pagamento do bloco → o morador confirma → documentos_fiscais com 1 linha e enviado_em → o
       e-mail chega nas DUAS caixas de teste com o PDF e o link de verificação → "Baixar recibo (PDF)" dos dois lados;
       antes de sair, "Recibo em preparação" (nunca a promessa vazia); o retroativo do admin emite o que ficou para trás;
@@ -61,7 +61,7 @@ async function semRolagemLateral(page: Page) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
 }
 
-test.describe("T217 — recibo, rótulo do bloco, nomes de quem assinou e 'Li e concordo' (jornada de assinatura)", () => {
+test.describe("T220 — recibo, rótulo do bloco, nomes de quem assinou e 'Li e concordo' (jornada de assinatura)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial" });
   test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });
@@ -108,7 +108,7 @@ test.describe("T217 — recibo, rótulo do bloco, nomes de quem assinou e 'Li e 
     await expect(confirmar).not.toContainText("Valor mensal de");
     await expect(confirmar).toContainText("Ao confirmar, o recibo em PDF fica disponível aqui e vai por e-mail para você e para o proprietário.");
     await semRolagemLateral(t);
-    await t.screenshot({ path: `${SAIDA}/t217-confirmar-390.png`, fullPage: true });
+    await t.screenshot({ path: `${SAIDA}/t220-confirmar-390.png`, fullPage: true });
     await confirmar.getByRole("button", { name: /Confirmar/ }).click();
 
     // documentos_fiscais: 1 linha, enviada.
@@ -135,7 +135,7 @@ test.describe("T217 — recibo, rótulo do bloco, nomes de quem assinou e 'Li e 
     await expect(reciboT.getByTestId("baixar-recibo")).toHaveText("Baixar recibo (PDF)");
     const resT = await t.request.get(`/api/documentos/${ids.doc}`, { maxRedirects: 0 });
     expect(resT.status()).toBe(302);
-    await t.screenshot({ path: `${SAIDA}/t217-recibo-morador-390.png`, fullPage: true });
+    await t.screenshot({ path: `${SAIDA}/t220-recibo-morador-390.png`, fullPage: true });
     await t.context().close();
 
     await d.goto("/dashboard/contratos", { waitUntil: "domcontentloaded" });
@@ -144,7 +144,7 @@ test.describe("T217 — recibo, rótulo do bloco, nomes de quem assinou e 'Li e 
     await expect(reciboD.getByTestId("baixar-recibo")).toBeVisible();
     expect((await d.request.get(`/api/documentos/${ids.doc}`, { maxRedirects: 0 })).status()).toBe(302);
     await semRolagemLateral(d);
-    await d.screenshot({ path: `${SAIDA}/t217-recibo-dono-1280.png`, fullPage: true });
+    await d.screenshot({ path: `${SAIDA}/t220-recibo-dono-1280.png`, fullPage: true });
     await d.context().close();
   });
 
@@ -173,7 +173,7 @@ test.describe("T217 — recibo, rótulo do bloco, nomes de quem assinou e 'Li e 
       await fila.getByTestId("documentos-emitir-pendentes").click();
       await expect(page.getByTestId("documentos-falhas-msg")).toContainText(/\d+ emitidos/, { timeout: 30_000 });
       await expect.poll(async () => (await adm().from("documentos_fiscais").select("id").eq("pagamento_id", ids.pendente!)).data?.length ?? 0, { timeout: 20_000 }).toBe(1);
-      await page.screenshot({ path: `${SAIDA}/t217-admin-pendentes-1280.png`, fullPage: true });
+      await page.screenshot({ path: `${SAIDA}/t220-admin-pendentes-1280.png`, fullPage: true });
       await t.reload({ waitUntil: "domcontentloaded" });
       await expect(t.locator('[data-testid="recibo-pagamento"][data-emitido="nao"]')).toHaveCount(0, { timeout: 20_000 });
       await t.context().close();
@@ -206,7 +206,7 @@ test.describe("T217 — recibo, rótulo do bloco, nomes de quem assinou e 'Li e 
       await aceite.check();
       await t.reload({ waitUntil: "domcontentloaded" });
       await expect(t.getByTestId("assinar-aceite")).toBeChecked({ timeout: 15_000 });
-      await t.screenshot({ path: `${SAIDA}/t217-li-e-concordo-${largura}.png`, fullPage: true });
+      await t.screenshot({ path: `${SAIDA}/t220-li-e-concordo-${largura}.png`, fullPage: true });
       await t.context().close();
     });
   }

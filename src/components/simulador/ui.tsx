@@ -1,5 +1,6 @@
 "use client";
 
+import { CampoReais } from "@/components/ui/campo-reais";
 import { useState } from "react";
 import { Info, ChevronDown } from "lucide-react";
 import { PLANOS, type PlanoId } from "@/config/planos";
@@ -71,6 +72,20 @@ export function NumInput({
       <span className="mb-1 block text-sm font-medium text-ink">{label}</span>
       <div className="flex items-center rounded-xl border border-sage-200 focus-within:border-sage">
         {prefix && <span className="pl-3 text-sm text-muted">{prefix}</span>}
+        {prefix === "R$" ? (
+          // Dinheiro: texto no formato brasileiro ("3.300"), pela fonte única lerReais (complemento do prompt 27, parte B).
+          <CampoReais
+            semPrefixo
+            value={value}
+            onChange={(n) => {
+              const v = Math.max(0, Math.round(n ?? 0));
+              const acima = max !== undefined && v > max;
+              setPassou(acima);
+              onChange(acima ? (max as number) : v);
+            }}
+            className="w-full rounded-xl bg-transparent px-3 py-2.5 text-sm outline-none"
+          />
+        ) : (
         <input
           type="number"
           inputMode="numeric"
@@ -86,6 +101,7 @@ export function NumInput({
           }}
           className="w-full rounded-xl bg-transparent px-3 py-2.5 text-sm outline-none"
         />
+        )}
       </div>
       {passou && max !== undefined && (
         <span className="mt-1 block text-xs text-amber-700">

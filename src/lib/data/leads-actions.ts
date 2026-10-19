@@ -1,6 +1,7 @@
 "use server";
 
 import { COLUNAS_ESTADO_CONTRATO, estadoDoContratoUnico, type LinhaEstadoContrato } from "@/lib/contrato-estado";
+import { taxaDoDonoAgora } from "@/lib/cobranca/taxa-servidor";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify } from "@/lib/notifications";
@@ -63,7 +64,7 @@ export async function aceitarCandidatura(leadId: string): Promise<ActionResult> 
   if (!admin) return { ok: false, error: "Serviço indisponível." };
   // Cadastro confiável: o documento do dono vai no contrato — exigido ANTES do aceite.
   if (!(await temDocumento(admin, user.id))) return { ok: false, error: MSG_DOCUMENTO.aceitar };
-  // Disponibilidade por datas (0175): a entrada desejada (estadia mínima de 1 mês) não pode cair em outro contrato ativo.
+  // Disponibilidade por datas (0176): a entrada desejada (estadia mínima de 1 mês) não pode cair em outro contrato ativo.
   // (O dono não lê inicio_desejado pelo RLS/grant de colunas: a leitura é do servidor, depois de provar que ele é o dono.)
   const { data: datas } = await admin.from("leads").select("property_id, inicio_desejado").eq("id", leadId).maybeSingle();
   if (datas?.inicio_desejado) {
@@ -75,7 +76,10 @@ export async function aceitarCandidatura(leadId: string): Promise<ActionResult> 
   // só muda pelo servidor (0057: assinatura é só leitura para o dono).
   // Assinatura ATIVA; sem ela, Profissional se Fundador nos 12 meses grátis.
   const plano = await planoDoProprietario(admin, user.id);
-  const comissao = COMISSAO_POR_PLANO[plano] ?? COMISSAO_POR_PLANO.free;
+  // R6 (especificação da taxa, 19/10): contrato sem proposta congela a taxa da regra única de regra.ts no aceite —
+  // faixa pelos imóveis ativos, queda de 30 dias e fixação do admin. Antes saía do plano (COMISSAO_POR_PLANO).
+  const t = await taxaDoDonoAgora(admin, user.id);
+  const comissao = t.taxa;
 
   const { error: uErr } = await admin
     .from("leads")
@@ -85,6 +89,8 @@ export async function aceitarCandidatura(leadId: string): Promise<ActionResult> 
       decided_by: user.id,
       accepted_plan: plano,
       accepted_commission_rate: comissao,
+      accepted_commission_origem: t.origem,
+      accepted_commission_faixa: t.faixaNoFechamento.taxa,
     })
     .eq("id", leadId)
     .eq("owner_id", user.id)

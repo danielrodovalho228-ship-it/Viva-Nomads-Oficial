@@ -1,5 +1,6 @@
 "use client";
 
+import { CampoReais } from "@/components/ui/campo-reais";
 import { Briefcase, Check, Loader2, MapPin, Percent, Plus, Trash2 } from "lucide-react";
 import type { Proximity } from "@/lib/types";
 import type { LugarProximo } from "@/lib/proximidades/osm";
@@ -279,26 +280,31 @@ export function BlocoNegociacao({
           <div className="mt-2 grid gap-3 sm:grid-cols-2">
             <label className="block text-sm text-ink">
               Menor valor mensal que aceito (R$)
-              <input
-                type="number"
-                min={0}
-                value={limites.valorMinimo ?? ""}
-                onChange={(e) => onLimites({ ...limites, valorMinimo: Number(e.target.value) > 0 ? Number(e.target.value) : null })}
+              <CampoReais
+                semPrefixo
+                value={limites.valorMinimo}
+                onChange={(v) => onLimites({ ...limites, valorMinimo: v != null && v > 0 ? v : null })}
                 className="input mt-1"
-                placeholder="Ex.: 2900"
+                placeholder="Ex.: 2.900"
+                testid="limite-valor-minimo"
               />
             </label>
             <label className="block text-sm text-ink">
               Limpezas por mês que posso incluir
-              <input
-                type="number"
-                min={0}
-                max={8}
-                value={limites.limpezasMax ?? ""}
-                onChange={(e) => onLimites({ ...limites, limpezasMax: e.target.value === "" ? null : Math.max(0, Math.min(8, Math.round(Number(e.target.value)))) })}
+              <select
+                value={limites.limpezasMax == null ? "" : String(limites.limpezasMax)}
+                onChange={(e) => onLimites({ ...limites, limpezasMax: e.target.value === "" ? null : Number(e.target.value) })}
                 className="input mt-1"
-                placeholder="Ex.: 2"
-              />
+                data-testid="limite-limpezas"
+              >
+                <option value="">Sem limite</option>
+                <option value="0">Nenhuma</option>
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+                  <option key={n} value={n}>
+                    Até {n}
+                  </option>
+                ))}
+              </select>
             </label>
           </div>
           <p className="mt-2 text-xs text-muted">

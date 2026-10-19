@@ -32,7 +32,7 @@ export async function getBlocks(propertyId: string): Promise<BlocoDatas[]> {
 }
 
 /**
- * Datas indisponíveis no calendário público: os bloqueios do dono + os períodos com contrato ativo (0175). Só datas —
+ * Datas indisponíveis no calendário público: os bloqueios do dono + os períodos com contrato ativo (0176). Só datas —
  * nunca quem mora. [] em demo/sem backend.
  */
 export async function getDatasIndisponiveis(propertyId: string): Promise<{ inicio: string; fim: string }[]> {

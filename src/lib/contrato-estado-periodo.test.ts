@@ -10,7 +10,7 @@ import { montarCarteira } from "./carteira-dono.ts";
 /*
   Complemento do coordenador (19/10, depois do reteste do #864):
    1. estado do contrato com UMA fonte (estadoDoContratoUnico) — detalhe, listas, carteira, Resumo e manutenção;
-   2. nenhum período sobreposto no mesmo imóvel (regra por datas; 0175).
+   2. nenhum período sobreposto no mesmo imóvel (regra por datas; 0176).
 */
 const ler = (rel: string) => readFileSync(fileURLToPath(new URL(rel, import.meta.url)), "utf8");
 const SRC = fileURLToPath(new URL("..", import.meta.url));
@@ -137,8 +137,8 @@ test("2. Nova jornada de teste: encerra a jornada de teste anterior do anúncio 
   assert.match(j, /status: "encerrado_sem_renovacao"/);
 });
 
-test("2. banco (0175): período por gatilho, EXCLUDE gist nos ativos, sobreposição de teste resolvida, conta real para", () => {
-  const mig = ler("../../supabase/migrations/0175_contratos_sem_sobreposicao.sql");
+test("2. banco (0176): período por gatilho, EXCLUDE gist nos ativos, sobreposição de teste resolvida, conta real para", () => {
+  const mig = ler("../../supabase/migrations/0176_contratos_sem_sobreposicao.sql");
   assert.match(mig, /create extension if not exists btree_gist/);
   assert.match(mig, /add column if not exists periodo daterange/);
   assert.match(mig, /daterange\(min\(b\.inicio\), max\(b\.fim\), '\[\]'\)/);
@@ -146,14 +146,14 @@ test("2. banco (0175): período por gatilho, EXCLUDE gist nos ativos, sobreposi�
   assert.match(mig, /after insert or delete or update of inicio, fim, status, contrato_id on public\.contrato_blocos/);
   assert.match(mig, /exclude using gist \(property_id with =, periodo with &&\) where \(status = 'ativo'\)/);
   assert.match(mig, /not \(ta\.so_teste and tb\.so_teste\)/);
-  assert.match(mig, /raise exception '0175 parou: contratos ativos com períodos sobrepostos em conta real/);
+  assert.match(mig, /raise exception '0176 parou: contratos ativos com períodos sobrepostos em conta real/);
   assert.match(mig, /\(a\.created_at, a\.id\) < \(b\.created_at, b\.id\)/, "o mais antigo do par");
-  assert.match(mig, /_bkp_0175_contratos_encerrados/);
-  const prod = ler("../../supabase/producao/aplicar-0175.sql");
+  assert.match(mig, /_bkp_0176_contratos_encerrados/);
+  const prod = ler("../../supabase/producao/aplicar-0176.sql");
   assert.match(prod, /^begin;/m);
-  assert.match(prod, /'20261019000175', '0175_contratos_sem_sobreposicao'/);
+  assert.match(prod, /'20261019000176', '0176_contratos_sem_sobreposicao'/);
   assert.match(prod, /commit;\s*$/);
-  const rb = ler("../../supabase/producao/rollback/0175_rollback.sql");
+  const rb = ler("../../supabase/producao/rollback/0176_rollback.sql");
   assert.match(rb, /drop constraint if exists contratos_periodo_sem_sobreposicao/);
   assert.match(rb, /update public\.contratos c set status = b\.status/);
 });

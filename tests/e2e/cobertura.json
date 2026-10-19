@@ -136,7 +136,7 @@
         "t9-documentos",
         "t183-telas-logadas-390",
         "t195-matricula-caf",
-        "t217-recibo-assinatura"
+        "t220-recibo-assinatura"
       ]
     },
     "/admin/emails-teste": {
@@ -497,7 +497,7 @@
         "t97-plangate-precos",
         "t183-telas-logadas-390",
         "t214-carteira-banco",
-        "t218-contrato-estado-periodo"
+        "t221-contrato-estado-periodo"
       ]
     },
     "/dashboard/comparar": {
@@ -573,8 +573,8 @@
         "t205-fechamento-sem-beco",
         "t210-contrato-estado-jornada",
         "t209-jornada-dois-lados",
-        "t217-recibo-assinatura",
-        "t218-contrato-estado-periodo"
+        "t220-recibo-assinatura",
+        "t221-contrato-estado-periodo"
       ]
     },
     "/dashboard/contratos/[id]": {
@@ -584,8 +584,8 @@
       "specs": [
         "t57-contrato-assinar",
         "t205-fechamento-sem-beco",
-        "t217-recibo-assinatura",
-        "t218-contrato-estado-periodo"
+        "t220-recibo-assinatura",
+        "t221-contrato-estado-periodo"
       ]
     },
     "/dashboard/favoritos": {
@@ -614,7 +614,8 @@
         "t205-fechamento-sem-beco",
         "t210-contrato-estado-jornada",
         "t209-jornada-dois-lados",
-        "t218-contrato-estado-periodo"
+        "t221-contrato-estado-periodo",
+        "t216-taxa-matriz"
       ]
     },
     "/dashboard/ferramentas": {
@@ -719,8 +720,8 @@
         "t205-fechamento-sem-beco",
         "t210-contrato-estado-jornada",
         "t213-jornada-teste-confirmacao",
-        "t217-recibo-assinatura",
-        "t218-contrato-estado-periodo"
+        "t220-recibo-assinatura",
+        "t221-contrato-estado-periodo"
       ]
     },
     "/dashboard/locacoes/[id]": {
@@ -732,7 +733,7 @@
         "t48-varredura",
         "t57-contrato-assinar",
         "t205-fechamento-sem-beco",
-        "t218-contrato-estado-periodo"
+        "t221-contrato-estado-periodo"
       ]
     },
     "/dashboard/mensagens": {
@@ -783,7 +784,8 @@
       "specs": [
         "t193-propostas",
         "t183-telas-logadas-390",
-        "t212-ferramentas-proprietario"
+        "t212-ferramentas-proprietario",
+        "t216-taxa-matriz"
       ]
     },
     "/dashboard/pedidos": {
@@ -816,7 +818,8 @@
       ],
       "specs": [
         "t193-propostas",
-        "t212-ferramentas-proprietario"
+        "t212-ferramentas-proprietario",
+        "t216-taxa-matriz"
       ]
     },
     "/dashboard/reembolsos": {
@@ -1022,7 +1025,7 @@
         "t201-qa-muse",
         "t209-jornada-dois-lados",
         "t211-complemento-23",
-        "t218-contrato-estado-periodo"
+        "t221-contrato-estado-periodo"
       ]
     },
     "/modelodenegocio": {
@@ -2237,7 +2240,7 @@
         "inquilino"
       ],
       "specs": [
-        "t218-contrato-estado-periodo"
+        "t221-contrato-estado-periodo"
       ]
     },
     "src/lib/data/blocks-actions.ts#removeBlock": {
@@ -2506,7 +2509,7 @@
         "admin"
       ],
       "specs": [
-        "t217-recibo-assinatura"
+        "t220-recibo-assinatura"
       ]
     },
     "src/lib/data/documentos-falhas-actions.ts#listarFalhasDocumentos": {
@@ -2514,7 +2517,7 @@
         "admin"
       ],
       "specs": [
-        "t217-recibo-assinatura"
+        "t220-recibo-assinatura"
       ]
     },
     "src/lib/data/documentos-inquilino-actions.ts#linkDocInquilino": {

@@ -3,7 +3,7 @@
   rodadas, o que cada lado pode mudar e o histórico. O servidor (propostas-actions.ts) usa estas funções antes de
   gravar; a tela usa as mesmas para mostrar o total. A proposta é documento, não cobrança: a Viva não recebe valor.
 */
-import { comissaoSobreContrato, taxaNaAssinatura } from "../cobranca/regra.ts";
+import { comissaoSobreContrato, rotuloTaxaServico, taxaNaAssinatura } from "../cobranca/regra.ts";
 import { descontoParaMeses, PCT_MAX, type FaixaDesconto, type ItemNegociavel, type Negociacao } from "../anuncio/negociacao.ts";
 
 export type StatusProposta =
@@ -133,6 +133,46 @@ export function taxaServicoProposta(t: TermosProposta, taxa: number): number {
 /** Taxa congelada no ACEITE da proposta: a da faixa pelos imóveis ativos do proprietário naquele momento. */
 export function taxaNoAceite(imoveisAtivos: number, agora: Date): number {
   return taxaNaAssinatura({ tipo: "novo", imoveisAtivos, assinadoEm: agora }).taxa;
+}
+
+/**
+ * Taxa da proposta (complemento do prompt 27, parte B — regra do Daniel, 18/10): fixada no ENVIO pela faixa do dono
+ * naquele momento e NUNCA sobe depois. No aceite vale a menor entre a do envio e a da faixa atual. Proposta antiga sem
+ * taxa do envio → a faixa atual.
+ */
+export function taxaEfetivaDaProposta(taxaNoEnvio: number | null | undefined, taxaAtual: number): number {
+  const envio = taxaNoEnvio == null ? NaN : Number(taxaNoEnvio);
+  return Number.isFinite(envio) ? Math.min(envio, taxaAtual) : taxaAtual;
+}
+
+/** "Sua taxa caiu para 10% por causa da sua faixa atual" — só quando a faixa atual ficou menor que a do envio. */
+export function avisoTaxaCaiu(taxaNoEnvio: number | null | undefined, taxaAtual: number): string | null {
+  const envio = taxaNoEnvio == null ? NaN : Number(taxaNoEnvio);
+  if (!Number.isFinite(envio) || !(taxaAtual < envio)) return null;
+  const pct = (taxaAtual * 100).toLocaleString("pt-BR", { maximumFractionDigits: 1 });
+  return `Sua taxa caiu para ${pct}% por causa da sua faixa atual`;
+}
+
+/** Antes do aceite, se a faixa de hoje for menor que a do envio: "Se aceita hoje: 10% (sua faixa melhorou)". */
+export function textoSeAceitaHoje(taxaNoEnvio: number | null | undefined, taxaHoje: number): string | null {
+  const envio = taxaNoEnvio == null ? NaN : Number(taxaNoEnvio);
+  if (!Number.isFinite(envio) || !(taxaHoje < envio)) return null;
+  return `Se aceita hoje: ${(taxaHoje * 100).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}% (sua faixa melhorou)`;
+}
+
+/** Origem gravada no aceite: a do envio quando ela venceu; senão a da regra de hoje (faixa, queda ou admin). */
+export function origemDaTaxaDaProposta(
+  taxaNoEnvio: number | null | undefined,
+  hoje: { taxa: number; origem: "admin" | "faixa" | "faixa_com_queda_recente" },
+): "admin" | "faixa" | "faixa_com_queda_recente" | "proposta_envio" {
+  const envio = taxaNoEnvio == null ? NaN : Number(taxaNoEnvio);
+  return Number.isFinite(envio) && envio < hoje.taxa ? "proposta_envio" : hoje.origem;
+}
+
+/** Linha do aviso ao DONO no aceite (item 34): a taxa congelada com a base escrita e, se caiu, o porquê. */
+export function textoTaxaCongeladaParaDono(taxa: number, valorMensal: number, meses: number, taxaNoEnvio: number | null | undefined): string {
+  const caiu = avisoTaxaCaiu(taxaNoEnvio, taxa);
+  return `${rotuloTaxaServico(taxa, valorMensal, meses)} (congelada no aceite; cobrada à parte).${caiu ? ` ${caiu}.` : ""}`;
 }
 
 /** Meses permitidos pelo anúncio (prazo em dias → meses de 30 dias, entre 1 e 6). */

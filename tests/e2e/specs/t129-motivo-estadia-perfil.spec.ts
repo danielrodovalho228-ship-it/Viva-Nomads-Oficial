@@ -10,6 +10,8 @@ import { account, hasAccount } from "../fixtures/accounts";
  */
 test.describe("T129 — Motivo da estadia no perfil", () => {
   test.use({ storageState: authFile("inquilino") });
+  // Os dois tamanhos de tela salvam e restauram o motivo da MESMA conta: em paralelo um desfazia o do outro.
+  test.describe.configure({ mode: "serial" });
 
   for (const [nome, largura, altura] of [["390 px", 390, 844], ["1280 px", 1280, 800]] as const) {
     test(`Conta salva o motivo e o pedido novo vem pré-preenchido (${nome})`, async ({ page }) => {

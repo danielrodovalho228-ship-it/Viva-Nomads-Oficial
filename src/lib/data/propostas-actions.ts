@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify } from "@/lib/notifications";
+import { escaparHtml } from "@/lib/escapar-html";
 import type { NotificationEvent } from "@/lib/notifications/eventos-email";
 import { guardContactInfo } from "@/lib/messages/contact-guard";
 import { conversationId as idConversa } from "@/lib/messages/conversation-id";
@@ -14,7 +15,8 @@ import { temDocumento } from "@/lib/data/documento-servidor";
 import { MSG_DOCUMENTO } from "@/lib/documento-pessoa";
 import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 import { avisoAbaixoDoMinimo, normalizarNegociacao, descontoParaMeses, type Negociacao } from "@/lib/anuncio/negociacao";
-import { faixaPorImoveisAtivos, comissaoSobreContrato } from "@/lib/cobranca/regra";
+import { taxaDoDonoAgora } from "@/lib/cobranca/taxa-servidor";
+import { comissaoSobreContrato } from "@/lib/cobranca/regra";
 import { conflitoNoImovel } from "@/lib/data/periodo-servidor";
 import { periodoDaEstadia } from "@/lib/contrato-periodo";
 import {
@@ -33,7 +35,11 @@ import {
   MOTIVOS_RECUSA,
   STATUS_ABERTOS,
   mudancasProibidas,
-  taxaNoAceite,
+  taxaEfetivaDaProposta,
+  avisoTaxaCaiu,
+  textoSeAceitaHoje,
+  origemDaTaxaDaProposta,
+  textoTaxaCongeladaParaDono,
   validaAteDe,
   validarTermos,
   VALIDADES_DIAS,
@@ -46,6 +52,7 @@ import {
 } from "@/lib/propostas/regras";
 import {
   COLUNAS_PROPOSTA,
+  lerTaxaDaProposta,
   COLUNAS_VERSAO,
   expirarVencidas,
   linhaDaVersao,
@@ -131,11 +138,6 @@ function termosDoAnuncio(im: ImovelProposta, meses: number, dataEntrada: string,
   };
 }
 
-async function imoveisAtivos(admin: Admin, ownerId: string): Promise<number> {
-  const { count } = await admin.from("properties").select("id", { count: "exact", head: true }).eq("owner_id", ownerId).eq("status", "active");
-  return count ?? 0;
-}
-
 async function nomeDe(admin: Admin, userId: string): Promise<string | null> {
   const { data } = await admin.from("profiles").select("full_name").eq("id", userId).maybeSingle();
   const n = (data?.full_name as string | undefined) ?? null;
@@ -149,6 +151,8 @@ async function avisarOutraParte(
   de: Autor,
   texto: string,
   evento: NotificationEvent,
+  /** Só vai no e-mail quando o destino é o DONO (a taxa nunca chega ao morador — especificação da taxa, R8). */
+  detalhesSoDono?: string,
 ) {
   const remetente = de === "owner" ? p.owner_id : p.tenant_id;
   const destino = de === "owner" ? p.tenant_id : p.owner_id;
@@ -173,6 +177,7 @@ async function avisarOutraParte(
       userId: destino,
       pushUrl: `/dashboard/propostas/${p.id}`,
       subject: evento === "proposta_recebida" ? `Proposta ${p.numero}` : `Proposta ${p.numero} respondida`,
+      ...(detalhesSoDono && destino === p.owner_id ? { detailsHtml: `<p>${escaparHtml(detalhesSoDono)}</p>` } : {}),
     });
   } catch {
     /* notificação nunca quebra o fluxo */
@@ -257,7 +262,7 @@ export async function dadosNovaProposta(leadId: string): Promise<DadosMontagem |
     termos: termosDoAnuncio(im, Math.min(lim.mesesMax, Math.max(lim.mesesMin, 4)), entrada, neg),
     limites: lim,
     negociacao: neg,
-    taxa: faixaPorImoveisAtivos(await imoveisAtivos(s.admin, s.user.id)).taxa,
+    taxa: (await taxaDoDonoAgora(s.admin, s.user.id)).taxa,
   };
 }
 
@@ -331,6 +336,8 @@ export async function enviarProposta(e: EntradaProposta): Promise<Resultado<{ id
       versao_atual: 1,
       validade_dias: validade,
       valida_ate: validaAteDe(validade, new Date()),
+      // A faixa do dono AGORA: a taxa desta proposta nunca sobe depois do envio (complemento do prompt 27, parte B).
+      taxa_no_envio: (await taxaDoDonoAgora(s.admin, s.user.id)).taxa,
     })
     .select(COLUNAS_PROPOSTA)
     .single();
@@ -393,7 +400,7 @@ export interface PropostaView {
   descontos: { mesesMin: number; pct: number }[];
   limites: { mesesMin: number; mesesMax: number };
   /** Só o proprietário vê a taxa de serviço. */
-  taxa: { pct: number; valor: number; congelada: boolean; valorMensal: number; meses: number } | null;
+  taxa: { pct: number; valor: number; congelada: boolean; valorMensal: number; meses: number; seAceitaHoje: string | null; caiu: string | null } | null;
   fechamentoUrl: string | null;
 }
 
@@ -522,9 +529,21 @@ export async function lerProposta(id: string): Promise<PropostaView | null> {
   const aberta = estaAberta(p.status);
   let taxa: PropostaView["taxa"] = null;
   if (papel === "owner") {
-    const congelada = p.taxa_congelada != null;
-    const pct = congelada ? Number(p.taxa_congelada) : faixaPorImoveisAtivos(await imoveisAtivos(s.admin, s.user.id)).taxa;
-    taxa = { pct, valor: comissaoSobreContrato(atual.totais.valorMensal, atual.termos.meses, pct), congelada, valorMensal: atual.totais.valorMensal, meses: atual.termos.meses };
+    // Antes do aceite: a taxa DO ENVIO (com a base) e, se a faixa de hoje for menor, "Se aceita hoje: X%".
+    // Depois do aceite: a congelada e, se ela ficou abaixo da do envio, "Sua taxa caiu para X%…".
+    const tx = await lerTaxaDaProposta(s.admin, p.id);
+    const congelada = tx.taxa_congelada != null;
+    const hoje = congelada ? null : (await taxaDoDonoAgora(s.admin, s.user.id)).taxa;
+    const pct = congelada ? (tx.taxa_congelada as number) : (tx.taxa_no_envio ?? (hoje as number));
+    taxa = {
+      pct,
+      valor: comissaoSobreContrato(atual.totais.valorMensal, atual.termos.meses, pct),
+      congelada,
+      valorMensal: atual.totais.valorMensal,
+      meses: atual.termos.meses,
+      seAceitaHoje: !congelada && hoje != null ? textoSeAceitaHoje(tx.taxa_no_envio, hoje) : null,
+      caiu: congelada ? avisoTaxaCaiu(tx.taxa_no_envio, tx.taxa_congelada as number) : null,
+    };
   }
   return {
     id: p.id,
@@ -662,18 +681,23 @@ export async function responderProposta(id: string, r: Resposta): Promise<Result
  */
 async function aceitar(admin: Admin, p: LinhaProposta, v: LinhaVersao, papel: Autor): Promise<Resultado<{ fechamentoUrl?: string | null }>> {
   const agora = new Date();
-  const taxa = taxaNoAceite(await imoveisAtivos(admin, p.owner_id), agora);
+  // A menor entre a taxa do envio e a do dono agora (faixa, queda de 30 dias, fixação do admin): nunca sobe depois
+  // de enviada (complemento do prompt 27, parte B; especificação da taxa, R5).
+  const tx = await lerTaxaDaProposta(admin, p.id);
+  const hoje = await taxaDoDonoAgora(admin, p.owner_id, agora);
+  const taxa = taxaEfetivaDaProposta(tx.taxa_no_envio, hoje.taxa);
+  const origem = origemDaTaxaDaProposta(tx.taxa_no_envio, hoje);
   const { data: lead } = await admin.from("leads").select("id, status").eq("id", p.lead_id).maybeSingle();
   if (!lead || !["new", "accepted"].includes(lead.status as string)) return { ok: false, error: "Esta candidatura não está mais em andamento." };
   if (lead.status === "new" && !(await temDocumento(admin, p.owner_id)))
     return { ok: false, error: papel === "owner" ? MSG_DOCUMENTO.aceitar : "O proprietário ainda precisa completar o cadastro. Tente mais tarde." };
-  // Disponibilidade por datas (0175): a entrada e os meses da versão aceita não podem cruzar outro contrato ativo.
+  // Disponibilidade por datas (0176): a entrada e os meses da versão aceita não podem cruzar outro contrato ativo.
   const conflito = await conflitoNoImovel(admin, p.property_id, periodoDaEstadia(String(v.data_entrada).slice(0, 10), Number(v.meses)));
   if (conflito) return { ok: false, error: conflito };
 
   const { data: ok } = await admin
     .from("propostas")
-    .update({ status: "aceita", aceita_em: agora.toISOString(), taxa_congelada: taxa, atualizada_em: agora.toISOString() })
+    .update({ status: "aceita", aceita_em: agora.toISOString(), taxa_congelada: taxa, taxa_origem: origem, atualizada_em: agora.toISOString() })
     .eq("id", p.id)
     .eq("versao_atual", v.versao)
     .in("status", ["enviada", "vista", "contraproposta"])
@@ -691,20 +715,46 @@ async function aceitar(admin: Admin, p: LinhaProposta, v: LinhaVersao, papel: Au
         decided_by: p.owner_id,
         accepted_plan: await planoDoProprietario(admin as never, p.owner_id),
         accepted_commission_rate: taxa,
+        accepted_commission_origem: origem,
+        accepted_commission_faixa: hoje.faixaNoFechamento.taxa,
       })
       .eq("id", p.lead_id)
       .eq("status", "new");
   } else {
-    await admin.from("leads").update({ accepted_commission_rate: taxa }).eq("id", p.lead_id).eq("status", "accepted");
+    await admin
+      .from("leads")
+      .update({ accepted_commission_rate: taxa, accepted_commission_origem: origem, accepted_commission_faixa: hoje.faixaNoFechamento.taxa })
+      .eq("id", p.lead_id)
+      .eq("status", "accepted");
   }
   const tot = calcularTotais(termosDaLinha(v));
+  // Item 34: o dono recebe a taxa congelada com a base escrita; o morador, nunca.
+  const linhaTaxa = textoTaxaCongeladaParaDono(taxa, tot.valorMensal, Number(v.meses), tx.taxa_no_envio);
   await avisarOutraParte(
     admin,
     p,
     papel,
     `Proposta ${p.numero} aceita: ${brl(tot.valorMensal)}/mês × ${v.meses} ${Number(v.meses) === 1 ? "mês" : "meses"}, total ${brl(tot.totalContrato)}. Próximo passo: o fechamento.`,
     "proposta_respondida",
+    linhaTaxa,
   );
+  if (papel === "owner") {
+    // Quem aceitou foi o próprio dono: o aviso acima foi ao morador (sem taxa); o dono recebe o dele.
+    try {
+      const { data: d } = await admin.from("profiles").select("email, full_name").eq("id", p.owner_id).maybeSingle();
+      await notify({
+        event: "proposta_respondida",
+        email: (d?.email as string | undefined) ?? undefined,
+        name: (d?.full_name as string | undefined) ?? undefined,
+        userId: p.owner_id,
+        pushUrl: `/dashboard/propostas/${p.id}`,
+        subject: `Proposta ${p.numero} aceita`,
+        detailsHtml: `<p>${escaparHtml(linhaTaxa)}</p>`,
+      });
+    } catch {
+      /* notificação nunca quebra o fluxo */
+    }
+  }
   revalidatePath("/dashboard/leads");
   revalidatePath("/dashboard/fechamento");
   return { ok: true, fechamentoUrl: papel === "owner" ? `/dashboard/fechamento?c=${p.lead_id}` : null };

@@ -81,7 +81,7 @@ test("1c/1e. falha visível: a emissão registra a falha; a fila do admin tem 'E
   assert.match(ler("../app/(dashboard)/dashboard/locacoes/locacoes-client.tsx"), /recibos=\{extras\[l\.id\]\?\.recibos \?\? \[\]\}/);
   assert.match(ler("../app/(dashboard)/dashboard/contratos/contratos-client.tsx"), /recibos=\{extra\.recibos\}/);
   // A fila é só do admin (RLS) e a escrita só pelo servidor.
-  const sql = ler("../../supabase/migrations/0174_documentos_falhas.sql");
+  const sql = ler("../../supabase/migrations/0175_documentos_falhas.sql");
   assert.match(sql, /revoke all on public\.documentos_falhas from anon, authenticated;/);
   assert.match(sql, /using \(public\.is_admin\(\)\)/);
 });

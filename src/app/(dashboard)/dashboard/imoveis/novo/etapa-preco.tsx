@@ -1,5 +1,6 @@
 "use client";
 
+import { CampoReais } from "@/components/ui/campo-reais";
 import { AlertTriangle, ShieldCheck } from "lucide-react";
 import { FAIXAS, GARANTIAS_CADASTRO } from "@/lib/faixas";
 import { SELO_NF_UI } from "@/lib/flags";
@@ -61,17 +62,15 @@ export function EtapaPreco(p: {
     <div className="space-y-5" data-testid="etapa-preco">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 [&>*]:min-w-0">
         <Labeled label="Valor mensal (R$)" sugerido={p.sugerido("preco")}>
-          <input
-            type="number"
-            min={0}
-            value={p.monthlyPrice}
-            onChange={(e) => {
-              p.setMonthlyPrice(e.target.value);
+          <CampoReais
+            semPrefixo
+            value={p.monthlyPrice === "" ? null : Number(p.monthlyPrice)}
+            onChange={(v) => {
+              p.setMonthlyPrice(v == null ? "" : String(v));
               p.tirarSugestao("preco");
             }}
-            className="input"
-            placeholder="3200"
-            data-testid="cadastro-preco"
+            placeholder="3.200"
+            testid="cadastro-preco"
           />
           {p.precoRegiao && (
             <span className="mt-1 block text-xs text-muted" data-testid="preco-regiao">
@@ -81,7 +80,7 @@ export function EtapaPreco(p: {
           <Erro msg={p.erros.preco} />
         </Labeled>
         <Labeled label="Condomínio (R$/mês)">
-          <input type="number" min={0} value={p.condoFee} onChange={(e) => p.setCondoFee(e.target.value)} className="input" placeholder="0" />
+          <CampoReais semPrefixo centavos value={p.condoFee === "" ? null : Number(p.condoFee)} onChange={(v) => p.setCondoFee(v == null ? "" : String(v))} placeholder="0" />
           <span className="mt-1 block text-xs text-muted">{condo > 0 ? `${formatBRL(condo)}/mês` : "Deixe 0 se não houver."}</span>
         </Labeled>
       </div>
@@ -113,17 +112,16 @@ export function EtapaPreco(p: {
               valor mensal; se o consumo real passar cerca de 20% da estimativa, há cláusula de ajuste com comprovante.
             </p>
             <Labeled label="Estimativa (R$/mês)">
-              <input
-                type="number"
-                min={0}
-                value={p.utilitiesEstimate || ""}
-                onChange={(e) => {
-                  p.setUtilitiesEstimate(Number(e.target.value));
+              <CampoReais
+                semPrefixo
+                centavos
+                value={p.utilitiesEstimate || null}
+                onChange={(v) => {
+                  p.setUtilitiesEstimate(v ?? 0);
                   p.tirarSugestao("consumo");
                 }}
-                className="input"
                 placeholder="200"
-                data-testid="cadastro-consumo"
+                testid="cadastro-consumo"
               />
             </Labeled>
           </div>
@@ -198,7 +196,7 @@ export function EtapaPreco(p: {
       <BlocoNegociacao valor={p.negociacao} onValor={p.setNegociacao} limites={p.limites} onLimites={p.setLimites} valorMensal={aluguel} />
 
       <Labeled label="Taxa de preparação (R$, única)">
-        <input type="number" min={0} value={p.prepFee || ""} onChange={(e) => p.setPrepFee(Number(e.target.value))} className="input" placeholder="450" />
+        <CampoReais semPrefixo centavos value={p.prepFee || null} onChange={(v) => p.setPrepFee(v ?? 0)} placeholder="450" />
         <span className="mt-1 block text-xs text-muted">Limpeza profunda antes da entrada, cobrada uma única vez.</span>
       </Labeled>
 

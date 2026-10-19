@@ -181,7 +181,7 @@ test.describe("T186 — cadastro em 5 etapas com IA, OSM e documento simulados",
 
       // ── Etapa 4: Preço e disponibilidade ────────────────────────────────
       await expect(page.getByRole("heading", { name: "Preço e disponibilidade" })).toBeVisible();
-      await expect(page.getByTestId("cadastro-preco")).toHaveValue("3200", { timeout: 15_000 });
+      await expect(page.getByTestId("cadastro-preco")).toHaveValue("3.200", { timeout: 15_000 });
       await expect(page.getByTestId("preco-regiao")).toContainText("Sugestão para imóveis parecidos na região");
       await expect(page.getByTestId("cadastro-consumo")).toHaveValue("220"); // 2 quartos
       // Prompt 22: no computador a data aceita digitar dd/mm/aaaa (com máscara) e o calendário fica num botão; no
@@ -208,7 +208,7 @@ test.describe("T186 — cadastro em 5 etapas com IA, OSM e documento simulados",
       await page.getByTestId("adicionar-faixa").click();
       await page.getByLabel("Meses da faixa 1").fill("6");
       await page.getByLabel("Desconto da faixa 1").fill("6");
-      await page.getByTestId("limites-privados").getByRole("spinbutton").first().fill("2950");
+      await page.getByTestId("limite-valor-minimo").fill("2950");
       await camposDentroDoCartao(page, "etapa-preco");
       await semRolagemLateral(page);
       await page.screenshot({ path: `${SAIDA}/t186-4-preco-${largura}.png`, fullPage: true });

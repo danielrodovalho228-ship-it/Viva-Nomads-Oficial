@@ -1188,7 +1188,7 @@ export async function registrarContrato(
   const okGarantia = validarGarantia(garantia, resumo.prazoTotalMeses * DIAS_POR_MES);
   if (!okGarantia.ok) return { ok: false, error: okGarantia.error };
 
-  // Disponibilidade por datas (0175): o período inteiro (1º início ao último fim) não pode cruzar outro contrato ativo.
+  // Disponibilidade por datas (0176): o período inteiro (1º início ao último fim) não pode cruzar outro contrato ativo.
   const comDatas = encadearDatas(input.inicioISO, resumo.blocos);
   const periodo = { inicio: comDatas[0]?.inicio ?? input.inicioISO, fim: comDatas[comDatas.length - 1]?.fim ?? input.inicioISO };
   const conflito = await conflitoNoImovel(admin, lead.property_id as string, periodo);
@@ -1216,7 +1216,7 @@ export async function registrarContrato(
     .select("id")
     .single();
   if (cErr) {
-    // Corrida com outro contrato gravado entre a checagem e o insert: o EXCLUDE da 0175 recusa.
+    // Corrida com outro contrato gravado entre a checagem e o insert: o EXCLUDE da 0176 recusa.
     if (cErr.code === ERRO_SOBREPOSICAO_PG)
       return { ok: false, error: (await conflitoNoImovel(admin, lead.property_id as string, periodo)) ?? "Este imóvel já tem contrato nessas datas. Escolha outra data de entrada." };
     return { ok: false, error: "Não foi possível registrar o contrato." };
@@ -1373,7 +1373,7 @@ export async function renovarBloco(
       [colunaAceite]: new Date().toISOString(),
     });
     if (bErr) {
-      // O novo bloco cruzaria o contrato do próximo morador (0175).
+      // O novo bloco cruzaria o contrato do próximo morador (0176).
       if (bErr.code === ERRO_SOBREPOSICAO_PG)
         return { ok: false, error: (await conflitoNoImovel(admin, contrato.property_id as string, { inicio, fim }, contratoId)) ?? "O imóvel já tem outro contrato nessas datas. Não dá para renovar." };
       return { ok: false, error: "Não foi possível propor a renovação." };
