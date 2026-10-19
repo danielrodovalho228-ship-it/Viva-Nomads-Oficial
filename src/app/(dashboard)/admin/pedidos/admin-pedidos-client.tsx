@@ -11,6 +11,8 @@ import { formatBRL, cn } from "@/lib/utils";
 import { motivoLabel, PEDIDO_STATUS_LABEL } from "@/lib/pedidos/pedidos";
 import { moderarPedido, reativarPedido } from "@/lib/data/pedidos-admin";
 import { MotivoDialog } from "@/components/admin/motivo-dialog";
+import { dataPedidoBR, textoBairros, textoFaixaValor } from "@/lib/pedidos/campos";
+import type { ColunasPedidoAdmin } from "@/lib/data/pedidos-admin-colunas";
 
 type Pedido = {
   id: string;
@@ -24,6 +26,11 @@ type Pedido = {
   status: string;
   removido_motivo: string | null;
   criado_em: string;
+  data_inicio: string;
+  orcamento_min: number | null;
+  bairros: string[] | null;
+  compativeis_ao_publicar: number | null;
+  colunas: ColunasPedidoAdmin | null;
 };
 
 const TONE: Record<string, string> = {
@@ -32,6 +39,7 @@ const TONE: Record<string, string> = {
   atendido: "bg-blue-50 text-blue-700",
   expirado: "bg-surface-2 text-muted",
   removido_admin: "bg-red-50 text-red-700",
+  excluido: "bg-surface-2 text-muted",
 };
 
 type Resposta = { total: number; comResposta: number; taxa: number | null; medianaHoras: number | null; janela: string; compativel: string };
@@ -109,10 +117,14 @@ export function AdminPedidosClient({
           {lista.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted">Nenhum pedido no sistema.</p>
           ) : (
-            <table className="w-full min-w-[720px] text-sm">
+            <table className="w-full min-w-[960px] text-sm">
               <thead className="text-left text-muted">
                 <tr>
-                  <th className="py-2 font-medium">Motivo/Cidade</th>
+                  <th className="py-2 font-medium">Inquilino · motivo · cidade</th>
+                  <th className="py-2 font-medium">Entrada</th>
+                  <th className="py-2 font-medium">Faixa · bairros</th>
+                  <th className="py-2 font-medium">Selos</th>
+                  <th className="py-2 font-medium">Respostas</th>
                   <th className="py-2 font-medium">Detalhes</th>
                   <th className="py-2 font-medium">Status</th>
                   <th className="py-2 font-medium text-right">Ação</th>
@@ -121,13 +133,28 @@ export function AdminPedidosClient({
               <tbody className="divide-y divide-sage-200">
                 {lista.map((p) => (
                   <tr key={p.id} className={cn(p.status === "removido_admin" && "opacity-70")}>
-                    <td className="py-3">
-                      <p className="font-medium text-ink">{motivoLabel(p.motivo)}</p>
+                    <td className="py-3" data-testid="admin-pedido-linha" data-pedido={p.id}>
+                      <p className="font-medium text-ink" data-testid="admin-pedido-nome">{p.colunas?.nome ?? "—"}</p>
                       <p className="text-xs text-muted">
-                        {p.cidade}
+                        {motivoLabel(p.motivo)} · {p.cidade}
                         {p.uf ? `/${p.uf}` : ""}
                       </p>
                     </td>
+                    <td className="py-3 whitespace-nowrap text-ink">{dataPedidoBR(`${p.data_inicio}T12:00:00Z`)}</td>
+                    <td className="py-3 text-ink">
+                      <span className="block whitespace-nowrap">{textoFaixaValor(p.orcamento_min, p.orcamento_mensal)}</span>
+                      <span className="block text-xs text-muted">{textoBairros(p.bairros)}</span>
+                    </td>
+                    <td className="py-3">
+                      <ul className="flex flex-wrap gap-1">
+                        {(p.colunas?.selos ?? []).map((s) => (
+                          <li key={s.codigo} className={cn("rounded-full px-1.5 py-0.5 text-[11px]", s.ok ? "bg-sage-100 text-forest" : "bg-amber-50 text-amber-900")}>
+                            {s.texto}
+                          </li>
+                        ))}
+                      </ul>
+                    </td>
+                    <td className="py-3 text-ink" data-testid="admin-pedido-respostas">{p.colunas?.respostas ?? 0}</td>
                     <td className="py-3 text-muted">
                       {p.prazo_meses}m · {p.qtd_ocupantes}p · {formatBRL(p.orcamento_mensal)}/mês
                       {p.apresentacao && (
@@ -219,10 +246,12 @@ function MetricasPedidosPainel({ m, r }: { m: MetricasPedidos | null; r: Respost
         <StatCard label="Com compatível ao publicar" value={r.compativel.match(/\d+%$/)?.[0] ?? "—"} hint={r.compativel} icon={Sparkles} />
         <StatCard label="Avisos enviados (30 dias)" value={m ? m.avisos_email + m.avisos_resumo : "—"} icon={Mail} />
       </div>
-      <p className="mt-2 text-xs text-muted">
-        Pedidos com resposta = pedidos do período que receberam pelo menos 1 contato ou proposta ÷ pedidos do período. Tempo até a 1ª
-        resposta = mediana. A mesma conta da visão geral.
-      </p>
+      <ul className="mt-2 space-y-0.5 text-xs text-muted" data-testid="formulas-pedidos">
+        <li>Pedidos com resposta = pedidos do período que receberam pelo menos 1 contato ou proposta ÷ pedidos do período. A mesma conta da visão geral.</li>
+        <li>Tempo até a 1ª resposta = mediana do tempo entre a publicação e o 1º contato ou proposta.</li>
+        <li>Com compatível ao publicar = pedidos dos últimos 30 dias com pelo menos 1 imóvel compatível no momento da publicação (compativeis_ao_publicar &gt; 0) ÷ pedidos dos últimos 30 dias.</li>
+        <li>Avisos enviados = avisos aos donos de imóveis compatíveis (e-mail no resumo diário), últimos 30 dias.</li>
+      </ul>
     </div>
   );
 }

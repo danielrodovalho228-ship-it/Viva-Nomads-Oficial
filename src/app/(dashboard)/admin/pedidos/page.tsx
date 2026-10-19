@@ -1,4 +1,6 @@
-import { adminListPedidos, getMetricasPedidosAdmin } from "@/lib/data/pedidos-admin";
+import { adminListPedidos, getChaveSmsAdmin, getMetricasPedidosAdmin } from "@/lib/data/pedidos-admin";
+import { colunasPedidosAdmin } from "@/lib/data/pedidos-admin-colunas";
+import { ChaveSmsPainel } from "./chave-sms";
 import { adminDaPagina, idsContasTeste, intervaloBRT, pedidosExpirandoSemResposta, pedidosParaMetrica } from "@/lib/data/admin-indicadores";
 import { periodoDaLista, recorteDaUrl, respostaPedidos, ROTULO_RECORTE_PEDIDOS, textoComCompativel } from "@/lib/admin/indicadores";
 import { rotuloPeriodo, somarDias } from "@/lib/admin/visao-geral";
@@ -24,12 +26,13 @@ export default async function AdminPedidosPage({ searchParams }: { searchParams:
   const recorte = recorteDaUrl(um("tipo"));
 
   const admin = await adminDaPagina();
-  const [pedidos, metricas, metrica, teste, idsExpirando] = await Promise.all([
+  const [pedidos, metricas, metrica, teste, idsExpirando, chave] = await Promise.all([
     adminListPedidos(),
     getMetricasPedidosAdmin(),
     admin ? pedidosParaMetrica(admin, intervaloBRT(p.inicio, p.fim), cidade, recorte) : Promise.resolve([]),
     admin ? idsContasTeste(admin) : Promise.resolve(new Set<string>()),
     admin && expirando ? pedidosExpirandoSemResposta(admin) : Promise.resolve([] as string[]),
+    getChaveSmsAdmin(),
   ]);
   const resposta = respostaPedidos(metrica);
   const comCompativel = metrica.filter((m) => m.compativeis > 0).length;
@@ -51,14 +54,22 @@ export default async function AdminPedidosPage({ searchParams }: { searchParams:
   ]
     .filter(Boolean)
     .join(" · ");
+  // Prompt 30, item 7: nome curto, selos e nº de respostas de donos em cada linha.
+  const colunas = admin
+    ? await colunasPedidosAdmin(admin, lista.map((x) => ({ id: String(x.id), inquilino_id: String(x.inquilino_id) }))).catch(() => new Map())
+    : new Map();
+  const listaComColunas = lista.map((x) => ({ ...x, colunas: colunas.get(String(x.id)) ?? null }));
   return (
+    <>
+    {chave && <ChaveSmsPainel ligada={chave.ligada} ligadaEm={chave.ligadaEm} />}
     <AdminPedidosClient
-      pedidos={lista}
+      pedidos={listaComColunas}
       metricas={metricas}
       resposta={{ ...resposta, janela: `${rotuloPeriodo(p.inicio, p.fim)} · ${ROTULO_RECORTE_PEDIDOS[recorte]}`, compativel: textoComCompativel(comCompativel, metrica.length) }}
       rotuloFiltro={rotuloFiltro}
       recorte={recorte}
       filtroUrl={{ de: p.inicio, ate: p.fim, cidade, status: status || null, expirando }}
     />
+    </>
   );
 }

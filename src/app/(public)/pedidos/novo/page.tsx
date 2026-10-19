@@ -3,11 +3,12 @@
 import { Suspense, useEffect, useId, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Megaphone, ShieldCheck, Info, Loader2, Minus, Plus, Check, PawPrint, Baby } from "lucide-react";
+import { Megaphone, ShieldCheck, Info, Loader2, Minus, Plus, Check, PawPrint, Baby, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AvisoAntigolpe } from "@/components/seguranca/aviso-antigolpe";
 import { CampoData } from "@/components/ui/campo-data";
-import { MOTIVOS, isMotivo, contemContato, CONTATO_AVISO, calcExpiraEm, PRAZO_MAX_MESES } from "@/lib/pedidos/pedidos";
+import { MOTIVOS, isMotivo, contemContato, CONTATO_AVISO, PRAZO_MAX_MESES } from "@/lib/pedidos/pedidos";
+import { BAIRROS_MAX, NECESSIDADES, PORTES_PET_PEDIDO, QUALQUER_BAIRRO, QUARTOS_OPCOES, dataPedidoBR, expiraEmPedido, limparBairro } from "@/lib/pedidos/campos";
 import { CHAVE_ULTIMA_BUSCA, CHAVE_ULTIMO_MOTIVO, ultimaBuscaParaPedido, ultimoMotivoParaPedido } from "@/lib/marcas/regra";
 import { MUNICIPIOS } from "@/lib/municipios";
 import { ConviteCidade } from "@/components/cidades/convite-cidade";
@@ -20,9 +21,9 @@ import {
   rotuloCidade,
   soDigitos,
 } from "@/lib/pedidos/formulario";
-import { criarPedido } from "@/lib/data/pedidos-actions";
+import { chaveSmsLigada, criarPedido, editarPedido, getMeuPedido } from "@/lib/data/pedidos-actions";
 import { contarImoveisQueCombinam } from "@/lib/data/pedido-contador-actions";
-import { AVISO_CONFIRMACAO, ROTA_CONFIRMAR_CONTATO } from "@/lib/pedidos/confirmacao";
+import { avisoConfirmacao, ROTA_CONFIRMAR_CONTATO, tituloFaltaConfirmar } from "@/lib/pedidos/confirmacao";
 import type { ResultadoContador } from "@/lib/pedidos/contador";
 import type { ImovelCompativel } from "@/lib/pedidos/compatibilidade";
 import { getMeusDados } from "@/lib/data/perfil-actions";
@@ -106,7 +107,7 @@ export default function NovoPedidoPage() {
   );
 }
 
-/** Título pequeno de cada grupo do formulário (ONDE E QUANDO, QUEM VAI MORAR, ORÇAMENTO E MOTIVO). */
+/** Título pequeno de cada grupo do formulário (ONDE E QUANDO, QUEM VAI MORAR, O IMÓVEL, VALOR E MOTIVO). */
 function Grupo({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
     <fieldset className="min-w-0 space-y-4">
@@ -157,12 +158,25 @@ function PedidoForm() {
   const [apresentacao, setApresentacao] = useState("");
   const [pets, setPets] = useState(false);
   const [criancas, setCriancas] = useState(Number(sp.get("criancas") || 0) > 0);
+  // Prompt 30: bairros (até 3; nenhum = qualquer bairro), quartos mínimos, faixa de valor, necessidades e porte do pet.
+  const [bairros, setBairros] = useState<string[]>([]);
+  const [textoBairro, setTextoBairro] = useState("");
+  const [quartosMin, setQuartosMin] = useState<number | null>(null);
+  const [orcamentoMin, setOrcamentoMin] = useState("");
+  const [necessidades, setNecessidades] = useState<string[]>([]);
+  const [portePet, setPortePet] = useState<string>("");
+  // Editar (Prompt 30, item 4): /pedidos/novo?editar=<id> carrega o pedido e salva com editarPedido.
+  const editarId = sp.get("editar");
+  const [carregando, setCarregando] = useState(Boolean(editarId));
+  // Os textos acompanham a chave SMS_ATIVO (desligada: nunca pedimos o telefone para os donos verem).
+  const [smsLigado, setSmsLigado] = useState(false);
   // Depois de publicar: quantos imóveis combinam AGORA (regra do banco).
   const [resultado, setResultado] = useState<{
     compativeis: number;
     sugestao: string | null;
     imoveis: ImovelCompativel[];
     chegaAosDonos: boolean;
+    falta: ("e-mail" | "telefone")[];
   } | null>(null);
   // Contador ao vivo (ordem 8dca1437): a resposta guarda a chave dos campos que a geraram,
   // então só vale enquanto os campos não mudam (sem precisar zerar estado dentro do effect).
@@ -184,6 +198,62 @@ function PedidoForm() {
       /* localStorage bloqueado: segue sem pré-preencher */
     }
   }, [ocupQ]);
+
+  useEffect(() => {
+    let vivo = true;
+    chaveSmsLigada()
+      .then((l) => {
+        if (vivo) setSmsLigado(l);
+      })
+      .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!editarId) return;
+    let vivo = true;
+    getMeuPedido(editarId)
+      .then((p) => {
+        if (!vivo) return;
+        setCarregando(false);
+        if (!p) {
+          setErro("Este pedido não pode mais ser editado.");
+          return;
+        }
+        const c = String(p.cidade ?? "");
+        const u = String(p.uf ?? "");
+        setTextoCidade(rotuloCidade(c, u));
+        setCidadeUf(c && u ? { cidade: c, uf: u } : null);
+        setDataInicio(String(p.data_inicio ?? ""));
+        setPrazoMeses(Number(p.prazo_meses) || 1);
+        setOrcamento(soDigitos(String(Math.round(Number(p.orcamento_mensal) || 0))));
+        setOrcamentoMin(p.orcamento_min == null ? "" : soDigitos(String(Math.round(Number(p.orcamento_min)))));
+        setOcupantes(Number(p.qtd_ocupantes) || 1);
+        setMotivo(String(p.motivo ?? ""));
+        setApresentacao(String(p.apresentacao ?? ""));
+        setPets(p.pets === true);
+        setCriancas(p.criancas === true);
+        setPortePet(String(p.porte_pet ?? ""));
+        setBairros(((p.bairros as string[] | null) ?? []).slice(0, BAIRROS_MAX));
+        setQuartosMin(p.quartos_min == null ? null : Number(p.quartos_min));
+        setNecessidades((p.necessidades as string[] | null) ?? []);
+      })
+      .catch(() => {
+        if (vivo) setCarregando(false);
+      });
+    return () => {
+      vivo = false;
+    };
+  }, [editarId]);
+
+  function adicionarBairro() {
+    const b = limparBairro(textoBairro);
+    if (!b) return;
+    setBairros((atual) => (atual.length >= BAIRROS_MAX || atual.some((x) => x.toLowerCase() === b.toLowerCase()) ? atual : [...atual, b]));
+    setTextoBairro("");
+  }
 
   // Motivo salvo no perfil (Conta): entra só se nada preencheu o campo (URL, último pedido ou escolha da pessoa).
   const logado = Boolean(user);
@@ -256,19 +326,32 @@ function PedidoForm() {
       router.push(`/auth?codigo=1&redirect=${encodeURIComponent(volta)}`);
       return;
     }
-    setEnviando(true);
-    const res = await criarPedido({
+    const dados = {
       cidade,
       uf: uf || undefined,
       dataInicio,
       prazoMeses,
       orcamentoMensal: Number(orcamento) || 0,
+      orcamentoMin: Number(orcamentoMin) || null,
       qtdOcupantes: ocupantes,
       motivo,
       apresentacao: apresentacao || undefined,
       pets,
       criancas,
-    });
+      portePet: pets && portePet ? portePet : null,
+      bairros: [...bairros, ...(limparBairro(textoBairro) && bairros.length < BAIRROS_MAX ? [limparBairro(textoBairro)] : [])],
+      quartosMin,
+      necessidades,
+    };
+    setEnviando(true);
+    if (editarId) {
+      const r = await editarPedido(editarId, dados);
+      setEnviando(false);
+      if (r.ok) router.push("/dashboard/pedidos?editado=1");
+      else setErro(r.error ?? "Não foi possível salvar o pedido.");
+      return;
+    }
+    const res = await criarPedido(dados);
     setEnviando(false);
     if (res.ok) {
       registrarEvento("publicar_pedido", { cidade });
@@ -282,7 +365,9 @@ function PedidoForm() {
         sugestao: res.sugestao ?? null,
         imoveis: res.imoveis ?? [],
         chegaAosDonos: res.chegaAosDonos ?? false,
+        falta: res.falta ?? [],
       });
+      if (typeof res.smsLigado === "boolean") setSmsLigado(res.smsLigado);
     } else {
       setErro(res.error ?? "Não foi possível publicar o pedido.");
     }
@@ -295,7 +380,7 @@ function PedidoForm() {
         <h2 className="font-title text-2xl font-bold text-ink">Pedido publicado</h2>
         {!resultado.chegaAosDonos && (
           <p className="mt-3 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900" data-testid="pedido-falta-confirmar">
-            <strong>Falta confirmar seu e-mail e telefone.</strong> {AVISO_CONFIRMACAO}{" "}
+            <strong>{tituloFaltaConfirmar(resultado.falta.length ? resultado.falta : ["e-mail"])}</strong> {avisoConfirmacao(smsLigado)}{" "}
             <Link href={ROTA_CONFIRMAR_CONTATO} className="font-medium underline">
               Confirmar agora
             </Link>
@@ -308,7 +393,7 @@ function PedidoForm() {
             </strong>{" "}
             {resultado.chegaAosDonos
               ? `— ${n === 1 ? "o proprietário foi avisado" : "os proprietários foram avisados"}. Quando alguém responder, você recebe um aviso; a conversa é pela plataforma.`
-              : "— os proprietários só são avisados depois que você confirmar e-mail e telefone."}
+              : `— os proprietários só são avisados depois que você confirmar ${smsLigado ? "e-mail e telefone" : "o seu e-mail"}.`}
           </p>
         ) : (
           <div className="mt-3 space-y-2 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
@@ -317,11 +402,11 @@ function PedidoForm() {
             </p>
             {resultado.sugestao && <p>{resultado.sugestao}</p>}
             <p>
-              Para ajustar, pause este pedido em{" "}
+              Para ajustar o valor, a data ou o prazo, edite o pedido em{" "}
               <Link href="/dashboard/pedidos" className="font-medium underline">
                 Meus pedidos
-              </Link>{" "}
-              e publique outro com o orçamento, a data ou o prazo ajustados.
+              </Link>
+              .
             </p>
           </div>
         )}
@@ -356,8 +441,11 @@ function PedidoForm() {
 
   return (
     <div data-testid="pedido-formulario">
-      <h2 className="font-title text-2xl font-bold text-ink md:text-[1.75rem]">Publique seu pedido</h2>
-      <p className="mt-1 text-sm text-muted">Os proprietários da cidade veem seu pedido e respondem pela plataforma.</p>
+      <h2 className="font-title text-2xl font-bold text-ink md:text-[1.75rem]">{editarId ? "Editar seu pedido" : "Publique seu pedido"}</h2>
+      <p className="mt-1 text-sm text-muted">
+        {editarId ? "As mudanças valem na hora para os proprietários da cidade." : "Os proprietários da cidade veem seu pedido e respondem pela plataforma."}
+      </p>
+      {carregando && <p className="mt-4 text-sm text-muted" aria-busy="true">Carregando o pedido…</p>}
 
       <form onSubmit={submit} className="mt-6 space-y-8" noValidate>
         <Grupo titulo="Onde e quando">
@@ -400,11 +488,48 @@ function PedidoForm() {
             </div>
           </div>
           {dataInicio && (
-            <p className="text-[13px] text-muted">
-              Seu pedido expira em <strong className="text-ink">{calcExpiraEm(dataInicio, hojeBR())}</strong> (o menor
-              entre 15 dias após o início e 60 dias após publicar).
+            <p className="text-[13px] text-muted" data-testid="pedido-validade">
+              Seu pedido fica no ar até <strong className="text-ink">{dataPedidoBR(expiraEmPedido(dataInicio, new Date().toISOString()))}</strong>{" "}
+              (30 dias depois de publicar e nunca antes da data de entrada). Você renova com um clique.
             </p>
           )}
+          <div>
+            <Rotulo htmlFor="pedido-bairro">Bairros preferidos (até {BAIRROS_MAX})</Rotulo>
+            <div className="flex gap-2">
+              <input
+                id="pedido-bairro"
+                value={textoBairro}
+                onChange={(e) => setTextoBairro(e.target.value.slice(0, 60))}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    adicionarBairro();
+                  }
+                }}
+                placeholder={bairros.length >= BAIRROS_MAX ? "Limite de 3 bairros" : "Ex.: Santa Mônica"}
+                disabled={bairros.length >= BAIRROS_MAX}
+                className={cn(CAMPO, "min-w-0 flex-1")}
+                data-testid="pedido-bairro"
+              />
+              <Button type="button" variant="ghost" className="h-12 shrink-0" onClick={adicionarBairro} disabled={!textoBairro.trim() || bairros.length >= BAIRROS_MAX} data-testid="pedido-bairro-adicionar">
+                Adicionar
+              </Button>
+            </div>
+            <ul className="mt-2 flex flex-wrap gap-1.5" data-testid="pedido-bairros">
+              {bairros.length === 0 ? (
+                <li className="rounded-full bg-surface-2 px-3 py-1 text-xs text-muted">{QUALQUER_BAIRRO}</li>
+              ) : (
+                bairros.map((b) => (
+                  <li key={b} className="inline-flex items-center gap-1 rounded-full bg-sage-100 px-3 py-1 text-xs font-medium text-forest">
+                    {b}
+                    <button type="button" aria-label={`Tirar ${b}`} onClick={() => setBairros((a) => a.filter((x) => x !== b))} className="rounded-full p-0.5 hover:bg-white">
+                      <X className="h-3 w-3" aria-hidden />
+                    </button>
+                  </li>
+                ))
+              )}
+            </ul>
+          </div>
         </Grupo>
 
         <Grupo titulo="Quem vai morar">
@@ -449,12 +574,72 @@ function PedidoForm() {
               Vou com crianças
             </BotaoMarca>
           </div>
+          {pets && (
+            <div>
+              <Rotulo htmlFor="pedido-porte-pet">Porte do pet</Rotulo>
+              <select id="pedido-porte-pet" value={portePet} onChange={(e) => setPortePet(e.target.value)} className={cn(CAMPO, !portePet && "text-muted")} data-testid="pedido-porte-pet">
+                <option value="">Selecione</option>
+                {PORTES_PET_PEDIDO.map((p) => (
+                  <option key={p.valor} value={p.valor}>
+                    {p.rotulo}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </Grupo>
 
-        <Grupo titulo="Orçamento e motivo">
+        <Grupo titulo="O imóvel">
+          <div>
+            <span className="mb-1.5 block text-sm font-medium text-ink" id="pedido-quartos-rotulo">Quartos (no mínimo)</span>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" role="radiogroup" aria-labelledby="pedido-quartos-rotulo" data-testid="pedido-quartos">
+              {QUARTOS_OPCOES.map((q) => (
+                <BotaoMarca key={q.valor} ativo={quartosMin === q.valor} onClick={() => setQuartosMin((a) => (a === q.valor ? null : q.valor))} icone={Plus} testid={`pedido-quartos-${q.valor}`}>
+                  {q.rotulo}
+                </BotaoMarca>
+              ))}
+            </div>
+          </div>
+          <div>
+            <span className="mb-1.5 block text-sm font-medium text-ink">Precisa de</span>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3" data-testid="pedido-necessidades">
+              {NECESSIDADES.map((n) => (
+                <BotaoMarca
+                  key={n.valor}
+                  ativo={necessidades.includes(n.valor)}
+                  onClick={() => setNecessidades((a) => (a.includes(n.valor) ? a.filter((x) => x !== n.valor) : [...a, n.valor]))}
+                  icone={Plus}
+                  testid={`pedido-nec-${n.valor}`}
+                >
+                  {n.rotulo}
+                </BotaoMarca>
+              ))}
+            </div>
+          </div>
+        </Grupo>
+
+        <Grupo titulo="Valor e motivo">
           <div className="grid gap-4 sm:grid-cols-2 [&>*]:min-w-0">
             <div>
-              <Rotulo htmlFor="pedido-orcamento">Orçamento por mês</Rotulo>
+              <Rotulo htmlFor="pedido-orcamento-min">Valor mensal mínimo (opcional)</Rotulo>
+              <div className="relative">
+                <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-medium text-muted" aria-hidden>
+                  R$
+                </span>
+                <input
+                  id="pedido-orcamento-min"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  value={mascararMilhar(orcamentoMin)}
+                  onChange={(e) => setOrcamentoMin(soDigitos(e.target.value))}
+                  placeholder="2.000"
+                  className={cn(CAMPO, "pl-10")}
+                  data-testid="pedido-orcamento-min"
+                />
+              </div>
+            </div>
+            <div>
+              <Rotulo htmlFor="pedido-orcamento">Valor mensal máximo</Rotulo>
               <div className="relative">
                 <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-medium text-muted" aria-hidden>
                   R$
@@ -473,7 +658,7 @@ function PedidoForm() {
               </div>
               <span className="mt-1 block text-[13px] text-muted">Valor mensal total que cabe no seu bolso.</span>
             </div>
-            <div>
+            <div className="sm:col-span-2">
               <Rotulo htmlFor="pedido-motivo">Motivo da estadia</Rotulo>
               <select
                 id="pedido-motivo"
@@ -548,13 +733,15 @@ function PedidoForm() {
               <>
                 <Loader2 className="h-4 w-4 animate-spin" /> Publicando…
               </>
+            ) : editarId ? (
+              "Salvar alterações"
             ) : (
               "Publicar pedido"
             )}
           </Button>
 
           <p className="text-[13px] text-muted" data-testid="pedido-aviso-confirmacao">
-            {AVISO_CONFIRMACAO}
+            {avisoConfirmacao(smsLigado)}
           </p>
 
           <AvisoAntigolpe variante="linha" antes={user ? null : "Ao publicar, você entra com um código enviado por e-mail."} />

@@ -81,6 +81,10 @@ export default async function HomePage() {
           <div className="mt-8 w-full max-w-xl">
             <BuscaPrincipal />
           </div>
+          {/* Prompt 30, item 6: a porta do pedido de moradia na home. */}
+          <Link href="/pedidos/novo" data-testid="home-publicar-pedido" className="mt-4 inline-flex min-h-11 items-center text-sm font-semibold text-white underline underline-offset-4 hover:text-champagne">
+            Não achou? Publicar pedido de moradia
+          </Link>
         </div>
       </section>
 

@@ -28,13 +28,18 @@ import { cidadeOficial } from "@/lib/municipios";
 import { APRESENTACAO_MAX } from "@/lib/pedidos/formulario";
 import { chaveCidade } from "@/lib/cidades";
 import { erroBancoPT } from "@/lib/erros-banco";
+import { deveAvisarRenovar, validarCamposNovos, type CamposNovosValidos } from "@/lib/pedidos/campos";
+import { abaDoPedido, MENSAGEM_OFERTA_PADRAO, type AbaDono } from "@/lib/pedidos/mural-dono";
+import { selosDoPedido, type SeloPedido } from "@/lib/pedidos/confirmacao";
+import { estadosIdentidade } from "@/lib/identidade/estado-servidor";
+import { primeiroNome } from "@/lib/display-name";
+import { lerChaveSms } from "@/lib/data/chave-sms";
+import { signAvatarPath } from "@/lib/data/avatar-url";
 
-/** Aviso in-app + e-mail (+ WhatsApp adapter, se opt-in). Best-effort. */
+/** Aviso in-app + e-mail (Prompt 30, item 8: sem WhatsApp). Best-effort. */
 type Recip = {
   email?: string | null;
-  phone?: string | null;
   full_name?: string | null;
-  notif_whatsapp?: boolean | null;
   /** Id do perfil destinatário — habilita o push (quando disponível). */
   id?: string | null;
 };
@@ -58,8 +63,6 @@ async function notificar(
     await notify({
       event,
       email: r.email,
-      // WhatsApp é canal de SAÍDA e opt-in (adapter em modo demo sem config).
-      phone: r.notif_whatsapp === false ? undefined : r.phone ?? undefined,
       name: r.full_name ?? undefined,
       userId: r.id ?? undefined,
       pushUrl: PUSH_URL[event],
@@ -85,6 +88,59 @@ export interface PedidoInput {
   /** O pedido inclui pet / crianças (só compatível com anúncio que aceita). */
   pets?: boolean;
   criancas?: boolean;
+  /** Prompt 30: bairros (até 3; vazio = qualquer bairro), quartos mínimos, faixa de valor, necessidades e porte do pet. */
+  bairros?: string[];
+  quartosMin?: number | null;
+  orcamentoMin?: number | null;
+  necessidades?: string[];
+  portePet?: string | null;
+}
+
+type CamposValidados = {
+  cidade: string;
+  uf: string;
+  campos: CamposNovosValidos;
+};
+
+/** Validação do SERVIDOR, a mesma para publicar e editar. */
+function validarPedido(input: PedidoInput): { ok: true; v: CamposValidados } | { ok: false; error: string } {
+  if (!(input.cidade ?? "").trim()) return { ok: false, error: "Informe a cidade." };
+  const oficial = cidadeOficial(input.cidade ?? "", input.uf ?? "");
+  if (!oficial) return { ok: false, error: "Escolha a UF e uma cidade da lista." };
+  if (!input.dataInicio) return { ok: false, error: "Informe a data de início." };
+  if (!(input.prazoMeses >= 1 && input.prazoMeses <= PRAZO_MAX_MESES))
+    return { ok: false, error: `Prazo deve ser entre 1 e ${PRAZO_MAX_MESES} meses (30 a 180 dias).` };
+  if (!(input.orcamentoMensal > 0)) return { ok: false, error: "Informe o valor mensal máximo." };
+  if (!(input.qtdOcupantes >= 1)) return { ok: false, error: "Informe o número de ocupantes." };
+  if (!isMotivo(input.motivo)) return { ok: false, error: "Selecione um motivo válido." };
+  if (input.apresentacao && contemContato(input.apresentacao)) return { ok: false, error: CONTATO_AVISO };
+  if ((input.apresentacao ?? "").length > APRESENTACAO_MAX)
+    return { ok: false, error: `A apresentação tem até ${APRESENTACAO_MAX} caracteres.` };
+  if ((input.bairros ?? []).some((b) => contemContato(b))) return { ok: false, error: CONTATO_AVISO };
+  const c = validarCamposNovos(input, { orcamentoMax: input.orcamentoMensal, pets: !!input.pets });
+  if (!c.ok) return { ok: false, error: c.erro };
+  return { ok: true, v: { cidade: oficial.cidade, uf: oficial.uf, campos: c.valor } };
+}
+
+/** Colunas gravadas a partir do formulário (publicar e editar). */
+function colunasDoPedido(input: PedidoInput, v: CamposValidados) {
+  return {
+    cidade: v.cidade,
+    uf: v.uf,
+    data_inicio: input.dataInicio,
+    prazo_meses: Math.round(input.prazoMeses),
+    orcamento_mensal: input.orcamentoMensal,
+    orcamento_min: v.campos.orcamentoMin,
+    qtd_ocupantes: Math.round(input.qtdOcupantes),
+    motivo: input.motivo,
+    apresentacao: input.apresentacao?.trim() || null,
+    pets: !!input.pets,
+    porte_pet: v.campos.portePet,
+    criancas: !!input.criancas,
+    bairros: v.campos.bairros,
+    quartos_min: v.campos.quartosMin,
+    necessidades: v.campos.necessidades,
+  };
 }
 
 /**
@@ -96,7 +152,7 @@ const PEDIDOS_POR_DIA = 3;
 
 export async function criarPedido(
   input: PedidoInput
-): Promise<ActionResult & { compativeis?: number; sugestao?: string | null; imoveis?: ImovelCompativel[]; chegaAosDonos?: boolean }> {
+): Promise<ActionResult & { compativeis?: number; sugestao?: string | null; imoveis?: ImovelCompativel[]; chegaAosDonos?: boolean; falta?: ("e-mail" | "telefone")[]; smsLigado?: boolean }> {
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
   const {
@@ -104,23 +160,10 @@ export async function criarPedido(
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Entre para publicar um pedido." };
 
-  // Validações de servidor (fonte da verdade).
-  // Cidade OFICIAL (lista do IBGE, com acento) — "Uberlandia" vira
+  // Validações de servidor (fonte da verdade). Cidade OFICIAL (lista do IBGE, com acento) — "Uberlandia" vira
   // "Uberlândia" e não divide a mesma cidade em duas.
-  if (!(input.cidade ?? "").trim()) return { ok: false, error: "Informe a cidade." };
-  const oficial = cidadeOficial(input.cidade ?? "", input.uf ?? "");
-  if (!oficial) return { ok: false, error: "Escolha a UF e uma cidade da lista." };
-  const cidade = oficial.cidade;
-  if (!input.dataInicio) return { ok: false, error: "Informe a data de início." };
-  if (!(input.prazoMeses >= 1 && input.prazoMeses <= PRAZO_MAX_MESES))
-    return { ok: false, error: `Prazo deve ser entre 1 e ${PRAZO_MAX_MESES} meses (30 a 180 dias).` };
-  if (!(input.orcamentoMensal >= 0)) return { ok: false, error: "Orçamento inválido." };
-  if (!(input.qtdOcupantes >= 1)) return { ok: false, error: "Informe o número de ocupantes." };
-  if (!isMotivo(input.motivo)) return { ok: false, error: "Selecione um motivo válido." };
-  if (input.apresentacao && contemContato(input.apresentacao))
-    return { ok: false, error: CONTATO_AVISO };
-  if ((input.apresentacao ?? "").length > APRESENTACAO_MAX)
-    return { ok: false, error: `A apresentação tem até ${APRESENTACAO_MAX} caracteres.` };
+  const val = validarPedido(input);
+  if (!val.ok) return { ok: false, error: val.error };
 
   // Limite por dia (cada pedido avisa proprietários por e-mail): sem ele,
   // publicar/pausar em loop disparava avisos sem fim. Falha fechada.
@@ -146,17 +189,8 @@ export async function criarPedido(
     .from("pedidos_moradia")
     .insert({
       inquilino_id: user.id,
-      cidade,
-      uf: oficial.uf,
-      data_inicio: input.dataInicio,
-      prazo_meses: Math.round(input.prazoMeses),
-      orcamento_mensal: input.orcamentoMensal,
-      qtd_ocupantes: Math.round(input.qtdOcupantes),
-      motivo: input.motivo,
-      apresentacao: input.apresentacao?.trim() || null,
-      pets: !!input.pets,
-      criancas: !!input.criancas,
-      // expira_em é preenchido pelo trigger set_pedido_expira_em.
+      ...colunasDoPedido(input, val.v),
+      // expira_em é preenchido pelo trigger set_pedido_expira_em (30 dias, nunca antes da entrada — 0184).
     })
     .select("id, cidade")
     .single();
@@ -164,11 +198,13 @@ export async function criarPedido(
 
   // (a) Avisa SÓ os donos com imóvel COMPATÍVEL (regra do banco, 0064) — antes
   // ia para todos os donos da cidade. Devolve quantos imóveis combinam agora.
-  let compat: { compativeis: number; sugestao: string | null; imoveis: ImovelCompativel[]; chegaAosDonos: boolean } = {
+  let compat: Awaited<ReturnType<typeof avisarCompativeisDoPedido>> = {
     compativeis: 0,
     sugestao: null,
     imoveis: [],
     chegaAosDonos: false,
+    falta: [],
+    smsLigado: false,
   };
   try {
     compat = await avisarCompativeisDoPedido(data.id as string);
@@ -176,7 +212,123 @@ export async function criarPedido(
     /* best-effort: o pedido já foi publicado */
   }
 
-  return { ok: true, id: data?.id, compativeis: compat.compativeis, sugestao: compat.sugestao, imoveis: compat.imoveis, chegaAosDonos: compat.chegaAosDonos };
+  return { ok: true, id: data?.id, ...compat };
+}
+
+/** Um pedido MEU, para editar (inquilino). null se não é meu ou não existe. */
+export async function getMeuPedido(pedidoId: string): Promise<Record<string, unknown> | null> {
+  const supabase = await createClient();
+  if (!supabase) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data } = await supabase.from("pedidos_moradia").select("*").eq("id", pedidoId).eq("inquilino_id", user.id).maybeSingle();
+  if (!data || ["excluido", "removido_admin"].includes(String(data.status))) return null;
+  return data as Record<string, unknown>;
+}
+
+/**
+ * Editar (Prompt 30, item 4): os mesmos campos, revalidados no servidor; recalcula a compatibilidade
+ * (compativeis_ao_publicar) e avisa só os donos novos que passaram a combinar (o aviso é único por pedido e dono).
+ */
+export async function editarPedido(pedidoId: string, input: PedidoInput): Promise<ActionResult & { compativeis?: number }> {
+  const supabase = await createClient();
+  if (!supabase) return { ok: true, demo: true };
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Entre para editar o pedido." };
+  const val = validarPedido(input);
+  if (!val.ok) return { ok: false, error: val.error };
+  const { data, error } = await supabase
+    .from("pedidos_moradia")
+    .update(colunasDoPedido(input, val.v))
+    .eq("id", pedidoId)
+    .eq("inquilino_id", user.id)
+    .in("status", ["ativo", "pausado"])
+    .select("id")
+    .maybeSingle();
+  if (error) return { ok: false, error: erroBancoPT(error, "Não foi possível salvar o pedido.") };
+  if (!data) return { ok: false, error: "Este pedido não pode mais ser editado." };
+  let compativeis = 0;
+  try {
+    compativeis = (await avisarCompativeisDoPedido(pedidoId)).compativeis;
+  } catch {
+    /* best-effort */
+  }
+  return { ok: true, id: pedidoId, compativeis };
+}
+
+/**
+ * Excluir (Prompt 30, item 4): some para os donos na hora; as respostas em andamento recebem aviso; o histórico fica
+ * só para a equipe (status 'excluido', a linha não é apagada).
+ */
+export async function excluirPedido(pedidoId: string): Promise<ActionResult & { avisados?: number }> {
+  const supabase = await createClient();
+  if (!supabase) return { ok: true, demo: true };
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Entre para excluir o pedido." };
+  const { data, error } = await supabase
+    .from("pedidos_moradia")
+    .update({ status: "excluido", excluido_em: new Date().toISOString() })
+    .eq("id", pedidoId)
+    .eq("inquilino_id", user.id)
+    .not("status", "in", "(excluido,removido_admin)")
+    .select("id")
+    .maybeSingle();
+  if (error) return { ok: false, error: erroBancoPT(error, "Não foi possível excluir o pedido.") };
+  if (!data) return { ok: false, error: "Pedido não encontrado." };
+  let avisados = 0;
+  try {
+    const admin = createAdminClient();
+    if (admin) {
+      const { data: resps } = await admin
+        .from("respostas_pedido")
+        .select("proprietario_id, status")
+        .eq("pedido_id", pedidoId)
+        .in("status", ["enviada", "vista", "aceita_para_conversa"]);
+      const donos = [...new Set(((resps ?? []) as { proprietario_id: string }[]).map((r) => r.proprietario_id))];
+      for (const donoId of donos) {
+        const { data: perfil } = await admin.from("profiles").select("email, full_name, notif_email").eq("id", donoId).maybeSingle();
+        if (!perfil?.email || perfil.notif_email === false) continue;
+        await notify({
+          event: "pedido_encerrado",
+          email: perfil.email as string,
+          name: (perfil.full_name as string) ?? undefined,
+          userId: donoId,
+          pushUrl: "/dashboard/pedidos-cidade",
+        }).catch(() => {});
+        avisados += 1;
+      }
+    }
+  } catch {
+    /* best-effort: o pedido já saiu do ar */
+  }
+  return { ok: true, id: pedidoId, avisados };
+}
+
+/** Renovar com um clique: mais 30 dias a partir de agora (nunca antes da entrada). Expirado volta a ativo. */
+export async function renovarPedido(pedidoId: string): Promise<ActionResult & { expiraEm?: string }> {
+  const supabase = await createClient();
+  if (!supabase) return { ok: true, demo: true };
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Entre para renovar o pedido." };
+  const { data, error } = await supabase
+    .from("pedidos_moradia")
+    .update({ renovado_em: new Date().toISOString(), status: "ativo", aviso_renovar_em: null })
+    .eq("id", pedidoId)
+    .eq("inquilino_id", user.id)
+    .in("status", ["ativo", "pausado", "expirado"])
+    .select("id, expira_em")
+    .maybeSingle();
+  if (error) return { ok: false, error: erroBancoPT(error, "Não foi possível renovar o pedido.") };
+  if (!data) return { ok: false, error: "Este pedido não pode ser renovado." };
+  return { ok: true, id: pedidoId, expiraEm: data.expira_em as string };
 }
 
 /** Meus pedidos (inquilino). Best-effort: [] em demo/sem sessão. */
@@ -197,26 +349,29 @@ export async function getMeusPedidos() {
     .from("pedidos_moradia")
     .select("*")
     .eq("inquilino_id", user.id)
+    .neq("status", "excluido")
     .order("criado_em", { ascending: false });
   const pedidos = data ?? [];
 
-  // (d) Lembrete de expiração (3 dias antes), uma vez por pedido. Best-effort:
-  // o próprio inquilino é o destinatário (lê o próprio perfil).
+  // (d) Aviso de renovação (Prompt 30): 5 dias antes de expirar, uma vez por ciclo ("Ainda procurando? Renove com um
+  // clique"). Best-effort: o próprio inquilino é o destinatário (lê o próprio perfil).
   try {
-    const agora = Date.now();
-    const em3dias = agora + 3 * 24 * 60 * 60 * 1000;
-    const aExpirar = pedidos.filter(
-      (p: Record<string, unknown>) =>
-        p.status === "ativo" &&
-        !p.lembrete_expira_em &&
-        p.expira_em &&
-        Date.parse(String(p.expira_em)) <= em3dias &&
-        Date.parse(String(p.expira_em)) > agora
+    const agora = new Date();
+    const aExpirar = pedidos.filter((p: Record<string, unknown>) =>
+      deveAvisarRenovar(
+        {
+          status: String(p.status),
+          expiraEm: (p.expira_em as string | null) ?? null,
+          avisoRenovarEm: (p.aviso_renovar_em as string | null) ?? null,
+          renovadoEm: (p.renovado_em as string | null) ?? null,
+        },
+        agora,
+      ),
     );
     if (aExpirar.length > 0) {
       const { data: me } = await supabase
         .from("profiles")
-        .select("full_name, email, phone, notif_email, notif_whatsapp")
+        .select("full_name, email, notif_email")
         .eq("id", user.id)
         .maybeSingle();
       if (me?.notif_email !== false) {
@@ -224,7 +379,7 @@ export async function getMeusPedidos() {
           await notificar("pedido_expirando", me as Recip, detalheExpirando());
           await supabase
             .from("pedidos_moradia")
-            .update({ lembrete_expira_em: new Date().toISOString() })
+            .update({ lembrete_expira_em: new Date().toISOString(), aviso_renovar_em: new Date().toISOString() })
             .eq("id", (p as Record<string, unknown>).id as string);
         }
       }
@@ -357,29 +512,21 @@ async function setPedidoStatus(pedidoId: string, status: string): Promise<Action
 
 // ── Preferências de notificação (in-app não desliga) ─────────────────────────
 
-export async function getNotifPrefs(): Promise<{ email: boolean; whatsapp: boolean }> {
+/** Preferência de aviso por e-mail (o aviso no app não desliga). Prompt 30, item 8: não há mais aviso por WhatsApp. */
+export async function getNotifPrefs(): Promise<{ email: boolean }> {
   const supabase = await createClient();
-  if (!supabase) return { email: true, whatsapp: true };
+  if (!supabase) return { email: true };
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { email: true, whatsapp: true };
-  const { data } = await supabase
-    .from("profiles")
-    .select("notif_email, notif_whatsapp")
-    .eq("id", user.id)
-    .maybeSingle();
+  if (!user) return { email: true };
+  const { data } = await supabase.from("profiles").select("notif_email").eq("id", user.id).maybeSingle();
   // Critério 5: sem preferência salva = ligado.
-  return {
-    email: notificacaoLigada(data?.notif_email),
-    whatsapp: notificacaoLigada(data?.notif_whatsapp),
-  };
+  return { email: notificacaoLigada(data?.notif_email) };
 }
 
-export async function setNotifPrefs(prefs: {
-  email: boolean;
-  whatsapp: boolean;
-}): Promise<ActionResult> {
+export async function setNotifPrefs(prefs: { email: boolean }): Promise<ActionResult> {
+  if (typeof prefs?.email !== "boolean") return { ok: false, error: "Valor inválido." };
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
   const {
@@ -388,7 +535,7 @@ export async function setNotifPrefs(prefs: {
   if (!user) return { ok: false, error: "Entre para alterar preferências." };
   const { error } = await supabase
     .from("profiles")
-    .update({ notif_email: prefs.email, notif_whatsapp: prefs.whatsapp })
+    .update({ notif_email: prefs.email })
     .eq("id", user.id);
   if (error) return { ok: false, error: erroBancoPT(error) };
   return { ok: true };
@@ -438,15 +585,50 @@ export interface PropriedadeMinima {
   monthlyPrice: number;
 }
 
+/** Uma linha do mural do dono (Prompt 30): os campos do pedido, os selos e a aba. Nunca contato. */
+export interface PedidoParaDono {
+  id: string;
+  cidade: string;
+  uf: string | null;
+  data_inicio: string;
+  prazo_meses: number;
+  orcamento_min: number | null;
+  orcamento_mensal: number;
+  qtd_ocupantes: number;
+  motivo: string;
+  apresentacao: string | null;
+  criado_em: string;
+  expira_em: string;
+  pets: boolean;
+  porte_pet: string | null;
+  criancas: boolean;
+  bairros: string[];
+  quartos_min: number | null;
+  necessidades: string[];
+  selos: SeloPedido[];
+  situacao: "compativel" | "quase" | "demais";
+  compat_imovel_id: string | null;
+  compat_imovel_titulo: string | null;
+  compat_nota: number | null;
+  compat_motivo: string | null;
+  compat_porque: string[];
+  aba: AbaDono;
+  minhaResposta: { status: string; imovelId: string; imovelTitulo: string; criadoEm: string } | null;
+  ignoradoMotivo: string | null;
+  /** Nome curto e foto: só depois que o inquilino aceita a sua resposta (identidade oculta até o aceite). */
+  inquilino: { nome: string; fotoUrl: string | null } | null;
+  /** O pedido saiu do ar (encerrado, excluído ou expirado) depois que você respondeu. */
+  encerrado: boolean;
+}
+
 /**
- * Pedidos ativos para o proprietário: lê a VIEW `pedidos_publicos` (só colunas
- * seguras — sem identidade do inquilino) e prioriza as cidades onde o dono tem
- * imóvel PUBLICADO. Devolve também os imóveis publicados do dono, para o cliente
- * casar capacidade × ocupantes e oferecer "Responder com meu imóvel" (ou o CTA
- * de captação quando não há imóvel na cidade).
+ * Mural do PROPRIETÁRIO (Prompt 30, item 5): lê pedidos_mural (a mesma regra de visibilidade da chave SMS_ATIVO,
+ * com o e-mail do dono também confirmado), prioriza as cidades dos imóveis publicados do dono e separa em três abas:
+ * "Novos para você", "Respondidos" (com o status da conversa) e "Ignorados". Antes a lista vinha vazia até para
+ * pedido ativo já respondido: a 0160 escondia todo pedido sem telefone confirmado.
  */
 export async function getPedidosParaProprietario(): Promise<{
-  pedidos: Record<string, unknown>[];
+  pedidos: PedidoParaDono[];
   myProperties: PropriedadeMinima[];
 }> {
   const supabase = await createClient();
@@ -456,9 +638,9 @@ export async function getPedidosParaProprietario(): Promise<{
   } = await supabase.auth.getUser();
   if (!user) return { pedidos: [], myProperties: [] };
 
-  // Expiração lazy antes de listar.
+  const admin = createAdminClient();
   try {
-    await createAdminClient()?.rpc("expira_pedidos_moradia"); // só o servidor executa (0070)
+    await admin?.rpc("expira_pedidos_moradia"); // expiração lazy (só o servidor executa, 0070)
   } catch {
     /* best-effort */
   }
@@ -471,39 +653,141 @@ export async function getPedidosParaProprietario(): Promise<{
     maxGuests: p.maxGuests,
     monthlyPrice: p.monthlyPrice,
   }));
-  // Comparação sem acento/maiúscula: "Uberlandia" e "Uberlândia" são a mesma.
   const cidades = new Set(props.map((p) => chaveCidade(p.city)));
 
-  const { data } = await supabase
-    .from("pedidos_publicos")
-    .select("*")
-    .order("criado_em", { ascending: false });
-  const todos = (data ?? []) as Record<string, unknown>[];
-  // Prioriza as cidades do dono; se ele não tem imóvel, mostra todos (captação).
-  const pedidos =
-    cidades.size === 0
-      ? todos
-      : todos.filter((p) => cidades.has(chaveCidade(String(p.cidade ?? ""))));
+  const [{ data: mural }, { data: resps }, { data: ign }] = await Promise.all([
+    supabase.rpc("pedidos_mural"),
+    supabase
+      .from("respostas_pedido")
+      .select("pedido_id, imovel_id, status, criado_em, properties(title)")
+      .eq("proprietario_id", user.id)
+      .order("criado_em", { ascending: false }),
+    supabase.from("pedidos_ignorados").select("pedido_id, motivo").eq("proprietario_id", user.id),
+  ]);
+  const todos = ((mural ?? []) as Record<string, unknown>[]).filter(
+    (p) => cidades.size === 0 || cidades.has(chaveCidade(String(p.cidade ?? ""))),
+  );
+  const minhas = new Map<string, { status: string; imovelId: string; imovelTitulo: string; criadoEm: string }>();
+  for (const r of (resps ?? []) as unknown as { pedido_id: string; imovel_id: string; status: string; criado_em: string; properties: { title: string } | null }[]) {
+    if (!minhas.has(r.pedido_id)) minhas.set(r.pedido_id, { status: r.status, imovelId: r.imovel_id, imovelTitulo: r.properties?.title ?? "seu imóvel", criadoEm: r.criado_em });
+  }
+  const ignorados = new Map(((ign ?? []) as { pedido_id: string; motivo: string | null }[]).map((i) => [i.pedido_id, i.motivo]));
 
-  // Compatibilidade REAL (função do banco, só pelo servidor): o melhor imóvel
-  // DESTE dono para cada pedido, com situação, nota e o porquê.
-  const admin = createAdminClient();
+  // Pedidos que respondi e saíram do mural (encerrados/expirados) continuam em "Respondidos", com o mínimo.
+  const noMural = new Set(todos.map((p) => String(p.id)));
+  const foraDoMural = [...minhas.keys()].filter((id) => !noMural.has(id));
+  const extras: Record<string, unknown>[] = [];
+  if (admin && foraDoMural.length) {
+    const { data } = await admin
+      .from("pedidos_moradia")
+      .select("id, cidade, uf, data_inicio, prazo_meses, orcamento_min, orcamento_mensal, qtd_ocupantes, motivo, criado_em, expira_em, pets, porte_pet, criancas, bairros, quartos_min, necessidades")
+      .in("id", foraDoMural);
+    for (const p of (data ?? []) as Record<string, unknown>[]) extras.push({ ...p, apresentacao: null, email_confirmado: true, telefone_confirmado: false, encerrado: true });
+  }
+  const linhas = [...todos, ...extras];
+
+  // Selos (identidade) e, depois do aceite, nome curto + foto — tudo pelo servidor; o id do inquilino nunca sai daqui.
+  const inquilinoDe = new Map<string, string>();
+  if (admin && linhas.length) {
+    const { data } = await admin.from("pedidos_moradia").select("id, inquilino_id").in("id", linhas.map((p) => String(p.id)));
+    for (const r of (data ?? []) as { id: string; inquilino_id: string }[]) inquilinoDe.set(r.id, r.inquilino_id);
+  }
+  const identidades = admin ? await estadosIdentidade(admin, [...new Set(inquilinoDe.values())]).catch(() => new Map()) : new Map();
+  const aceitos = [...minhas.entries()].filter(([, r]) => r.status === "aceita_para_conversa").map(([pid]) => pid);
+  const perfis = new Map<string, { nome: string; fotoUrl: string | null }>();
+  if (admin && aceitos.length) {
+    const ids = aceitos.map((pid) => inquilinoDe.get(pid)).filter((x): x is string => !!x);
+    const { data } = await admin.from("profiles").select("id, full_name, avatar_url").in("id", ids);
+    for (const pf of (data ?? []) as { id: string; full_name: string | null; avatar_url: string | null }[]) {
+      perfis.set(pf.id, { nome: primeiroNome(pf.full_name) || "Inquilino(a)", fotoUrl: await signAvatarPath(pf.avatar_url, pf.id) });
+    }
+  }
+
   const pares = admin ? await paresCompat(admin, { dono: user.id }) : [];
   const melhor = melhorPor(pares, "pedido_id");
-  const anotados = pedidos.map((p) => {
-    const par = melhor.get(String(p.id));
+  const pedidos: PedidoParaDono[] = linhas.map((p) => {
+    const id = String(p.id);
+    const par = melhor.get(id);
+    const minha = minhas.get(id) ?? null;
+    const inqId = inquilinoDe.get(id);
+    const ignorado = ignorados.has(id);
     return {
-      ...p,
+      id,
+      cidade: String(p.cidade ?? ""),
+      uf: (p.uf as string | null) ?? null,
+      data_inicio: String(p.data_inicio ?? ""),
+      prazo_meses: Number(p.prazo_meses),
+      orcamento_min: p.orcamento_min == null ? null : Number(p.orcamento_min),
+      orcamento_mensal: Number(p.orcamento_mensal),
+      qtd_ocupantes: Number(p.qtd_ocupantes),
+      motivo: String(p.motivo ?? ""),
+      apresentacao: (p.apresentacao as string | null) ?? null,
+      criado_em: String(p.criado_em ?? ""),
+      expira_em: String(p.expira_em ?? ""),
+      pets: p.pets === true,
+      porte_pet: (p.porte_pet as string | null) ?? null,
+      criancas: p.criancas === true,
+      bairros: (p.bairros as string[] | null) ?? [],
+      quartos_min: p.quartos_min == null ? null : Number(p.quartos_min),
+      necessidades: (p.necessidades as string[] | null) ?? [],
+      selos: selosDoPedido({
+        emailConfirmado: p.email_confirmado === true,
+        telefoneConfirmado: p.telefone_confirmado === true,
+        identidadeConfirmada: !!inqId && identidades.get(inqId)?.estado === "confirmada",
+      }),
       situacao: par?.situacao ?? "demais",
       compat_imovel_id: par && par.situacao !== "demais" ? par.imovel_id : null,
       compat_imovel_titulo: par && par.situacao !== "demais" ? par.titulo : null,
       compat_nota: par && par.situacao !== "demais" ? par.nota : null,
       compat_motivo: par?.situacao === "quase" ? par.motivo : null,
       compat_porque: par?.situacao === "compativel" ? porQueCombina(par) : [],
+      aba: abaDoPedido({ respondido: !!minha, ignorado }),
+      minhaResposta: minha,
+      ignoradoMotivo: ignorados.get(id) ?? null,
+      inquilino: minha?.status === "aceita_para_conversa" && inqId ? perfis.get(inqId) ?? null : null,
+      encerrado: p.encerrado === true,
     };
   });
+  return { pedidos, myProperties };
+}
 
-  return { pedidos: anotados, myProperties };
+/** Ignorar um pedido (motivo opcional): sai de "Novos para você" e vai para "Ignorados". */
+export async function ignorarPedido(pedidoId: string, motivo?: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  if (!supabase) return { ok: true, demo: true };
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Entre para continuar." };
+  const limpo = (motivo ?? "").replace(/\s+/g, " ").trim().slice(0, 200);
+  if (limpo && detectarContato(limpo)) return { ok: false, error: CONTATO_AVISO };
+  const { error } = await supabase
+    .from("pedidos_ignorados")
+    .upsert({ pedido_id: pedidoId, proprietario_id: user.id, motivo: limpo || null }, { onConflict: "pedido_id,proprietario_id" });
+  if (error) return { ok: false, error: erroBancoPT(error) };
+  return { ok: true, id: pedidoId };
+}
+
+/** Desfazer o "Ignorar": o pedido volta para "Novos para você". */
+export async function voltarParaNovos(pedidoId: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  if (!supabase) return { ok: true, demo: true };
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Entre para continuar." };
+  const { error } = await supabase.from("pedidos_ignorados").delete().eq("pedido_id", pedidoId).eq("proprietario_id", user.id);
+  if (error) return { ok: false, error: erroBancoPT(error) };
+  return { ok: true, id: pedidoId };
+}
+
+/**
+ * "Oferecer um imóvel": o dono escolhe um imóvel compatível e a resposta sai com a mensagem padrão (editável); o
+ * inquilino vê o cartão do anúncio na resposta. É a mesma resposta de responderPedido (RLS, capacidade, anti-contato).
+ */
+export async function oferecerImovel(pedidoId: string, imovelId: string, mensagem?: string): Promise<ActionResult> {
+  const texto = (mensagem ?? "").trim() || MENSAGEM_OFERTA_PADRAO;
+  return responderPedido(pedidoId, imovelId, texto);
 }
 
 /** Respostas que EU (proprietário) enviei, com o imóvel e o status. */
@@ -603,7 +887,7 @@ export async function responderPedido(
       if (inqId) {
         const { data: inq } = await admin
           .from("profiles")
-          .select("full_name, email, phone, notif_whatsapp")
+          .select("full_name, email")
           .eq("id", inqId)
           .maybeSingle();
         if (inq?.email) {
@@ -616,4 +900,34 @@ export async function responderPedido(
   }
 
   return { ok: true };
+}
+
+/** A chave SMS_ATIVO está ligada? Só o liga/desliga (os textos do formulário acompanham a chave). */
+export async function chaveSmsLigada(): Promise<boolean> {
+  return (await lerChaveSms()).ligada;
+}
+
+/**
+ * Sino do dono (Prompt 30, item 5): pedidos compatíveis novos — avisados a ele, ainda ativos, sem resposta dele e não
+ * ignorados. A lista de Notificações mostra o número e leva a "Novos para você".
+ */
+export async function pedidosNovosCompativeis(): Promise<{ total: number; recentes: { id: string; cidade: string; criadoEm: string }[] }> {
+  const supabase = await createClient();
+  if (!supabase) return { total: 0, recentes: [] };
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const admin = createAdminClient();
+  if (!user || !admin) return { total: 0, recentes: [] };
+  const { data: avisos } = await admin.from("pedido_avisos").select("pedido_id, criado_em").eq("dono_id", user.id).order("criado_em", { ascending: false }).limit(200);
+  const ids = [...new Set(((avisos ?? []) as { pedido_id: string }[]).map((a) => a.pedido_id))];
+  if (!ids.length) return { total: 0, recentes: [] };
+  const [{ data: ativos }, { data: resps }, { data: ign }] = await Promise.all([
+    admin.from("pedidos_moradia").select("id, cidade, criado_em").in("id", ids).eq("status", "ativo").gt("expira_em", new Date().toISOString()),
+    admin.from("respostas_pedido").select("pedido_id").eq("proprietario_id", user.id).in("pedido_id", ids),
+    admin.from("pedidos_ignorados").select("pedido_id").eq("proprietario_id", user.id).in("pedido_id", ids),
+  ]);
+  const fora = new Set([...((resps ?? []) as { pedido_id: string }[]), ...((ign ?? []) as { pedido_id: string }[])].map((r) => r.pedido_id));
+  const novos = ((ativos ?? []) as { id: string; cidade: string; criado_em: string }[]).filter((p) => !fora.has(p.id));
+  return { total: novos.length, recentes: novos.slice(0, 5).map((p) => ({ id: p.id, cidade: p.cidade, criadoEm: p.criado_em })) };
 }

@@ -69,14 +69,15 @@ async function destinatario(c: ChamadoResumo) {
   if (c.usuario_id && admin) {
     const { data } = await admin
       .from("profiles")
-      .select("email, full_name, phone, notif_email, notif_whatsapp")
+      .select("email, full_name, notif_email")
       .eq("id", c.usuario_id)
       .maybeSingle();
     if (!data) return null;
     return {
       email: data.notif_email === false ? undefined : ((data.email as string) ?? undefined),
       nome: (data.full_name as string) ?? undefined,
-      phone: data.notif_whatsapp === true ? ((data.phone as string) ?? undefined) : undefined,
+      // Prompt 30, item 8: sem aviso por WhatsApp (ficam e-mail e o aviso no app); o canal da Viva é "Falar com a Viva".
+      phone: undefined,
       userId: c.usuario_id,
     };
   }
@@ -88,7 +89,7 @@ function linkChamado(c: ChamadoResumo): string {
   return c.usuario_id ? `${SITE_URL}/ajuda?chamado=${c.numero_publico}` : `${SITE_URL}/ajuda`;
 }
 
-/** E-mail ao usuário (abertura, resposta, resolução). WhatsApp: só o aviso curto, se ativado. */
+/** E-mail ao usuário (abertura, resposta, resolução) e o aviso no app. */
 export async function avisarUsuario(
   c: ChamadoResumo,
   evento: "chamado_aberto" | "chamado_respondido" | "chamado_resolvido",

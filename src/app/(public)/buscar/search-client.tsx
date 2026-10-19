@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { CHAVE_ULTIMA_BUSCA, serializarUltimaBusca } from "@/lib/marcas/regra";
-import { SlidersHorizontal, ChevronDown, MapPin, ArrowRight, Users, Search } from "lucide-react";
+import { SlidersHorizontal, ChevronDown, MapPin, ArrowRight, Users, Search, Megaphone } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { PropertyCard } from "@/components/property-card";
 import { BarraComparar } from "@/components/busca/barra-comparar";
@@ -35,6 +35,8 @@ import { OPCOES_PORTE_PET, ROTULO_PORTE_CURTO, contarFiltrosPainel, passaNoPaine
 import { TituloBuscaContexto } from "@/components/busca/titulo-busca";
 import { buttonClasses } from "@/components/ui/button";
 import { SalvarBusca } from "@/components/busca/salvar-busca";
+import { isExemplo } from "@/lib/demo-listing";
+import { mostrarCartaoPedido, semExemplosQuandoHaReal, TEXTO_CARTAO_PEDIDO, TEXTO_PUBLICAR_PEDIDO } from "@/lib/busca/exemplos-e-pedido";
 import { DescricaoBusca } from "@/components/busca/descricao-busca";
 import type { ChaveChip, FiltrosDescricao } from "@/lib/busca/descricao-filtros";
 
@@ -398,10 +400,15 @@ export function SearchClient({ properties: imoveis, topo }: { properties: Proper
     return { base: list, dist };
   }, [properties, locationQuery, geoCenter, radiusKm, adults, children, maxPeriod, typeFilter, faixa, dataEntrada, garantia, furnishedOnly, workLocatedOnly, invoiceOnly, insuranceOnly, operatedOnly]);
 
-  const contarComPainel = useCallback((f: FiltrosPainel) => base.filter((p) => passaNoPainel(p, f)).length, [base]);
+  const contarComPainel = useCallback(
+    (f: FiltrosPainel) => semExemplosQuandoHaReal(base.filter((p) => passaNoPainel(p, f)), (p) => isExemplo(p.id)).length,
+    [base]
+  );
 
   const results = useMemo(() => {
     let list = base.filter((p) => passaNoPainel(p, filtrosPainel));
+    // Prompt 30, item 6: com imóvel real no resultado, os exemplos saem; só exemplos → aparecem marcados "exemplo".
+    list = semExemplosQuandoHaReal(list, (p) => isExemplo(p.id));
     if (sort === "price-asc") list = [...list].sort((a, b) => precoDeBusca(a) - precoDeBusca(b));
     else if (sort === "price-desc") list = [...list].sort((a, b) => precoDeBusca(b) - precoDeBusca(a));
     // Adicionados recentemente: mais novos (data de cadastro) primeiro.
@@ -549,14 +556,26 @@ export function SearchClient({ properties: imoveis, topo }: { properties: Proper
       <DescricaoBusca key={reinicioDescricao} locais={locaisDoCatalogo} onAplicar={aplicarDescricao} onRemover={removerDescricao} />
       {slotHeader &&
         createPortal(
-          <BuscaCompacta
-            local={locationQuery.trim()}
-            periodo={PERIODO_LABEL[maxPeriod] ?? (dataEntrada ? `Entrada ${formatDatePtBR(dataEntrada)}` : "")}
-            hospedes={adults + children}
-            nFiltros={activeCount}
-            aberto={painelFiltros}
-            onAlternar={() => setPainelFiltros((v) => !v)}
-          />,
+          <div className="flex min-w-0 max-w-full items-center gap-2">
+            <BuscaCompacta
+              local={locationQuery.trim()}
+              periodo={PERIODO_LABEL[maxPeriod] ?? (dataEntrada ? `Entrada ${formatDatePtBR(dataEntrada)}` : "")}
+              hospedes={adults + children}
+              nFiltros={activeCount}
+              aberto={painelFiltros}
+              onAlternar={() => setPainelFiltros((v) => !v)}
+            />
+            {/* Prompt 30, item 6: "Publicar pedido" sempre visível, também na barra condensada. */}
+            {PEDIDO_MORADIA_ON && (
+              <Link
+                href={pedidoHref}
+                data-testid="busca-publicar-pedido-topo"
+                className="hidden h-12 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-line bg-white px-4 text-sm font-semibold text-forest transition hover:border-forest lg:inline-flex"
+              >
+                <Megaphone className="h-4 w-4" aria-hidden /> {TEXTO_PUBLICAR_PEDIDO}
+              </Link>
+            )}
+          </div>,
           slotHeader
         )}
 
@@ -597,8 +616,13 @@ export function SearchClient({ properties: imoveis, topo }: { properties: Proper
           </button>
         </div>
         <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-          <div className="flex min-w-0 items-center gap-1">
+          <div className="flex min-w-0 flex-wrap items-center gap-1">
             <SalvarBusca versao={versaoBusca} />
+            {PEDIDO_MORADIA_ON && (
+              <Link href={pedidoHref} data-testid="busca-publicar-pedido" className="ml-2 inline-flex items-center gap-1 whitespace-nowrap text-sm font-semibold text-forest underline">
+                <Megaphone className="h-4 w-4" aria-hidden /> {TEXTO_PUBLICAR_PEDIDO}
+              </Link>
+            )}
             {activeCount > 0 && (
               <button
                 type="button"
@@ -974,6 +998,11 @@ export function SearchClient({ properties: imoveis, topo }: { properties: Proper
             R$ 0 de taxa para você
           </p>
           <SalvarBusca versao={versaoBusca} />
+          {PEDIDO_MORADIA_ON && (
+            <Link href={pedidoHref} data-testid="busca-publicar-pedido" className="inline-flex items-center gap-1 whitespace-nowrap text-sm font-semibold text-forest underline lg:hidden">
+              <Megaphone className="h-4 w-4" aria-hidden /> {TEXTO_PUBLICAR_PEDIDO}
+            </Link>
+          )}
         </div>
             <div className="hidden shrink-0 items-center gap-3 lg:flex">
               {activeCount > 0 && (
@@ -1099,13 +1128,10 @@ export function SearchClient({ properties: imoveis, topo }: { properties: Proper
             </div>
           )}
 
-          {/* Poucos resultados (1–3): card discreto do Pedido de Moradia (Fase 4). */}
-          {PEDIDO_MORADIA_ON && results.length > 0 && results.length <= 3 && (
-            <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-champagne/40 bg-champagne/10 px-5 py-4">
-              <p className="text-sm text-ink">
-                Não achou o ideal?{" "}
-                <span className="text-muted">Publique um Pedido de Moradia e receba ofertas.</span>
-              </p>
+          {/* Menos de 3 imóveis REAIS (Prompt 30, item 6): a porta do pedido, já com cidade, datas e valor. */}
+          {PEDIDO_MORADIA_ON && results.length > 0 && mostrarCartaoPedido(results, (p) => isExemplo(p.id)) && (
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-champagne/40 bg-champagne/10 px-5 py-4" data-testid="busca-cartao-pedido">
+              <p className="min-w-0 text-sm font-medium text-ink">{TEXTO_CARTAO_PEDIDO}</p>
               <Link
                 href={pedidoHref}
                 className="inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-sm font-bold text-forest transition-colors hover:brightness-105"

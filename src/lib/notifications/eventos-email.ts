@@ -21,6 +21,8 @@ export type NotificationEvent =
   | "pedido_aceito" // inquilino aceitou para conversa → proprietário
   | "pedido_expirando" // pedido expira em 3 dias → inquilino
   | "pedido_moderado" // pedido ocultado pela moderação → inquilino
+  | "pedido_confirmar_telefone" // chave SMS_ATIVO ligada: 7 dias para confirmar o telefone → inquilino (Prompt 30)
+  | "pedido_encerrado" // o inquilino excluiu o pedido que você respondeu → proprietário (Prompt 30)
   // Verificação do documento do imóvel (anti-fraude) → proprietário
   | "documento_aprovado"
   | "documento_recusado"
@@ -71,7 +73,9 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   pedido_imovel_novo: { subject: "Surgiu um imóvel compatível com o seu pedido", body: (n) => `Olá${n ? " " + n : ""}, um imóvel publicado agora combina com o seu pedido de moradia. O proprietário também foi avisado.`, img: "pedido-resposta", cta: "Ver o imóvel", path: "/dashboard/pedidos" },
   pedido_resposta: { subject: "Um proprietário respondeu ao seu pedido", body: (n) => `Olá${n ? " " + n : ""}, um proprietário respondeu ao seu pedido de moradia com um imóvel. Veja e aceite para conversar.`, img: "pedido-resposta", cta: "Ver a resposta", path: "/dashboard/pedidos" },
   pedido_aceito: { subject: "Seu imóvel foi aceito para conversa", body: (n) => `Olá${n ? " " + n : ""}, um inquilino aceitou sua resposta e abriu a conversa. Responda pela plataforma.`, img: "nova-mensagem", cta: "Abrir a conversa", path: "/dashboard/mensagens" },
-  pedido_expirando: { subject: "Seu pedido de moradia expira em breve", body: (n) => `Olá${n ? " " + n : ""}, seu pedido de moradia expira em até 3 dias. Renove ou marque como atendido se já resolveu.`, img: "transacional", cta: "Renovar pedido", path: "/dashboard/pedidos" },
+  pedido_expirando: { subject: "Ainda procurando? Renove com um clique", body: (n) => `Olá${n ? " " + n : ""}, seu pedido de moradia expira em até 5 dias. Ainda procurando? Renove com um clique; se já resolveu, marque como atendido.`, img: "transacional", cta: "Renovar pedido", path: "/dashboard/pedidos" },
+  pedido_confirmar_telefone: { subject: "Confirme seu telefone para manter o pedido visível", body: (n) => `Olá${n ? " " + n : ""}, para o seu pedido de moradia continuar visível aos proprietários, confirme o seu telefone nos próximos 7 dias.`, img: "transacional", cta: "Confirmar telefone", path: "/dashboard/conta/perfil" },
+  pedido_encerrado: { subject: "Um pedido de moradia que você respondeu foi encerrado", body: (n) => `Olá${n ? " " + n : ""}, o inquilino encerrou um pedido de moradia que você respondeu. Ele não aparece mais na sua lista.`, img: "transacional", cta: "Ver pedidos", path: "/dashboard/pedidos-cidade" },
   pedido_moderado: { subject: "Seu pedido de moradia foi ocultado", body: (n) => `Olá${n ? " " + n : ""}, seu pedido de moradia foi ocultado pela moderação. Veja o motivo e ajuste se necessário.`, img: "transacional", cta: "Ver o motivo", path: "/dashboard/pedidos" },
   documento_aprovado: { subject: "Documentação aprovada — você já pode publicar", body: (n) => `Olá${n ? " " + n : ""}, a documentação do seu imóvel foi verificada e aprovada. Seu anúncio já pode ser publicado.`, img: "candidatura-recebida", cta: "Publicar meu anúncio", path: "/dashboard/imoveis" },
   documento_recusado: { subject: "Documentação não aprovada", body: (n) => `Olá${n ? " " + n : ""}, a documentação enviada não pôde ser aprovada. Veja o motivo, ajuste e reenvie para liberar a publicação.`, img: "pedido-resposta", cta: "Reenviar documento", path: "/dashboard/imoveis" },

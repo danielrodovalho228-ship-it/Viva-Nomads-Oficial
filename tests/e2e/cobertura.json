@@ -192,7 +192,8 @@
       "specs": [
         "t15-admin-real",
         "t183-telas-logadas-390",
-        "t231-admin-numeros-com-lista"
+        "t231-admin-numeros-com-lista",
+        "t232-pedido-moradia-completo"
       ]
     },
     "/admin/socios": {
@@ -323,7 +324,8 @@
         "t164-tour-video-galeria",
         "t182-jornada-completa",
         "t184-velocidade",
-        "t197-anuncio-teste-oculto"
+        "t197-anuncio-teste-oculto",
+        "t232-pedido-moradia-completo"
       ]
     },
     "/cidades": {
@@ -803,7 +805,8 @@
       ],
       "specs": [
         "t11-travessias",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t232-pedido-moradia-completo"
       ]
     },
     "/dashboard/pedidos-cidade": {
@@ -814,7 +817,8 @@
       ],
       "specs": [
         "t11-travessias",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t232-pedido-moradia-completo"
       ]
     },
     "/dashboard/propostas/[id]": {
@@ -1101,7 +1105,8 @@
         "t72-paginas-institucionais",
         "t96-antigolpe-atalhos",
         "t165-pedido-contador",
-        "t188-pedido-novo-layout"
+        "t188-pedido-novo-layout",
+        "t232-pedido-moradia-completo"
       ]
     },
     "/precos": {
@@ -2813,7 +2818,9 @@
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t232-pedido-moradia-completo"
+      ]
     },
     "src/lib/data/pedidos-actions.ts#getAlertasEquipe": {
       "personas": [
@@ -2827,7 +2834,9 @@
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t232-pedido-moradia-completo"
+      ]
     },
     "src/lib/data/pedidos-actions.ts#getMinhasRespostas": {
       "personas": [
@@ -2848,7 +2857,9 @@
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t232-pedido-moradia-completo"
+      ]
     },
     "src/lib/data/pedidos-actions.ts#getRespostasRecebidas": {
       "personas": [
@@ -3476,6 +3487,94 @@
       ],
       "specs": [
         "t229-admin-conversa-com-tudo"
+      ]
+    },
+    "src/lib/data/pedidos-actions.ts#getMeuPedido": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t232-pedido-moradia-completo"
+      ]
+    },
+    "src/lib/data/pedidos-actions.ts#editarPedido": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t232-pedido-moradia-completo"
+      ]
+    },
+    "src/lib/data/pedidos-actions.ts#excluirPedido": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t232-pedido-moradia-completo"
+      ]
+    },
+    "src/lib/data/pedidos-actions.ts#renovarPedido": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t232-pedido-moradia-completo"
+      ]
+    },
+    "src/lib/data/pedidos-actions.ts#chaveSmsLigada": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t232-pedido-moradia-completo"
+      ]
+    },
+    "src/lib/data/pedidos-actions.ts#ignorarPedido": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t232-pedido-moradia-completo"
+      ]
+    },
+    "src/lib/data/pedidos-actions.ts#voltarParaNovos": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t232-pedido-moradia-completo"
+      ]
+    },
+    "src/lib/data/pedidos-actions.ts#oferecerImovel": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t232-pedido-moradia-completo"
+      ]
+    },
+    "src/lib/data/pedidos-actions.ts#pedidosNovosCompativeis": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t232-pedido-moradia-completo"
+      ]
+    },
+    "src/lib/data/pedidos-admin.ts#definirChaveSms": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t232-pedido-moradia-completo"
+      ]
+    },
+    "src/lib/data/pedidos-admin.ts#getChaveSmsAdmin": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t232-pedido-moradia-completo"
       ]
     }
   }

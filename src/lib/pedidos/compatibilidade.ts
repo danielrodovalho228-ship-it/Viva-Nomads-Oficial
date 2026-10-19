@@ -27,8 +27,11 @@ export interface ParCompat {
   disponivel_desde: string | null;
 }
 
-/** Limite de e-mails de pedido por dono por dia; o resto vai no resumo diário. */
-export const EMAILS_PEDIDO_POR_DIA = 5;
+/**
+ * E-mails de pedido por dono fora do resumo (Prompt 30: 0 — o aviso por e-mail é só o resumo diário, no máximo 1 por
+ * dia; o sino avisa na hora).
+ */
+export const EMAILS_PEDIDO_POR_DIA = 0;
 
 const ORDEM: Record<Situacao, number> = { compativel: 0, quase: 1, demais: 2 };
 

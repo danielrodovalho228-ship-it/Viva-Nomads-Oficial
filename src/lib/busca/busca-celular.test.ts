@@ -52,7 +52,9 @@ test("painel: contador do botão, texto de aplicar e resumo do topo", () => {
 test("busca usa UMA regra para a lista e para a contagem do painel", () => {
   const s = ler("app/(public)/buscar/search-client.tsx");
   assert.match(s, /let list = base\.filter\(\(p\) => passaNoPainel\(p, filtrosPainel\)\)/);
-  assert.match(s, /const contarComPainel = useCallback\(\(f: FiltrosPainel\) => base\.filter\(\(p\) => passaNoPainel\(p, f\)\)\.length/);
+  // Prompt 30: a lista e a contagem tiram os exemplos do mesmo jeito (semExemplosQuandoHaReal).
+  assert.match(s, /\(f: FiltrosPainel\) => semExemplosQuandoHaReal\(base\.filter\(\(p\) => passaNoPainel\(p, f\)\), \(p\) => isExemplo\(p\.id\)\)\.length/);
+  assert.match(s, /list = semExemplosQuandoHaReal\(list, \(p\) => isExemplo\(p\.id\)\)/);
   // As 5 regras saíram do filtro antigo (sem duplicar).
   assert.doesNotMatch(s, /if \(petsOnly && !p\.petsAllowed\) return false/);
   assert.doesNotMatch(s, /if \(maxPrice && p\.monthlyPrice > maxPrice\) return false/);
@@ -62,7 +64,7 @@ test("busca usa UMA regra para a lista e para a contagem do painel", () => {
   assert.match(s, /placeholder="Cidade, bairro ou endereço"/);
   assert.match(s, /"container-page hidden sm:block lg:order-1"/);
   // Computador (ordem eac7e3a1): busca compacta no cabeçalho abre o painel de filtros.
-  assert.match(s, /createPortal\(\s*<BuscaCompacta/);
+  assert.match(s, /createPortal\(\s*<div[^>]*>\s*<BuscaCompacta/);
   assert.match(s, /data-testid="busca-compacta"/);
 });
 

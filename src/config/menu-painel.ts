@@ -116,6 +116,8 @@ export function menuDoPainel(ctx: ContextoMenu): ItemMenu[] {
     { id: "favoritos", rotulo: "Favoritos & comparações", icone: "favoritos", href: "/dashboard/favoritos" },
     { id: "buscas", rotulo: "Buscas salvas", icone: "buscas", href: "/dashboard/buscas" },
     { id: "pedidos", rotulo: "Meus pedidos", icone: "pedidos", href: "/dashboard/pedidos" },
+    // Prompt 30, item 6: a porta do pedido no menu do inquilino (o formulário é a página pública /pedidos/novo).
+    { id: "publicar-pedido", rotulo: "Publicar pedido de moradia", icone: "pedidos", href: "/pedidos/novo" },
     { id: "candidaturas", rotulo: "Candidaturas", icone: "candidaturas", href: "/dashboard/candidaturas" },
     // Prompt 27 (item 7): as propostas que os proprietários enviaram, com o número das que esperam a resposta.
     { id: "propostas-inquilino", rotulo: "Propostas", icone: "orcamentos", href: "/dashboard/propostas" },
