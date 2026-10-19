@@ -31,6 +31,9 @@ const TERMOS_PROIBIDOS: Array<[string, RegExp]> = [
   ["intermediação", /\bintermedia(?:ção|çao|cao)\b|\bintermedeia\b/i],
   ["temporada", /\btemporada\b/i],
   ["art. 48", /\bart\.?\s*48\b/i],
+  // Marca (ordem 21708cca, parte D): o termo certo é "imóveis mobiliados".
+  ["apartamentos mobiliados", /\bapartamentos?\s+mobiliados?\b/i],
+  ["aceito onde o Airbnb não é", /\baceito\s+onde\s+o\s+airbnb\s+n[ãa]o\s+[ée](?![a-zà-ú])/i],
 ];
 
 /** Vocabulário de hospedagem/reserva que não vale nas páginas públicas (ordem 8652162e): somos locação mobiliada. */
