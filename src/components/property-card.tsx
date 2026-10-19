@@ -15,6 +15,7 @@ import { FavoriteButton } from "@/components/favorite-button";
 import { repartirSelos, ROTULO_SELO_VIDEO, type SeloCard } from "@/lib/card-selos";
 import { videoTourPermitido } from "@/lib/video-tour";
 import { MarcaImovel } from "@/components/property/marca-imovel";
+import { IdealPara } from "@/components/property/ideal-para";
 
 export function PropertyCard({
   property,
@@ -103,6 +104,8 @@ export function PropertyCard({
         <h3 className="line-clamp-2 min-h-[2.75em] font-title text-[1.05rem] font-bold leading-snug text-ink transition-colors group-hover:text-blue-500">
           {property.title}
         </h3>
+
+        <IdealPara property={property} className="line-clamp-1" />
 
         <PropertyTags property={property} />
 

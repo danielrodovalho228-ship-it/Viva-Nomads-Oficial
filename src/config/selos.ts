@@ -50,3 +50,16 @@ export const PRONTO_PARA_MORAR_CRITERIOS = [
   "climatização",
   "limpeza",
 ] as const;
+
+/**
+ * Camada "Ideal para" (ordem 507074ce): derivada dos dados do anúncio por
+ * src/lib/ideal-para.ts. Não é selo novo nem renomeia nenhum selo acima.
+ */
+export const IDEAL_PARA = {
+  homeOffice: { nome: "Home office", resumo: "mesa de trabalho e internet informada" },
+  familia: { nome: "Família", resumo: "2 ou mais quartos" },
+  executivo: { nome: "Executivo", resumo: "mobiliado completo, com recibo para reembolso" },
+  comPet: { nome: "Com pet", resumo: "aceita pet" },
+} as const satisfies Record<string, SeloDef>;
+
+export type IdealParaId = keyof typeof IDEAL_PARA;
