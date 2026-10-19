@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useTransition } from "react";
-import { alternarAprovacaoFotografo, cadastrarFotografo, salvarTaxaParceria, type ResultadoAcao } from "@/lib/fotografos/actions";
+import { alternarAprovacaoFotografo, cadastrarFotografo, type ResultadoAcao } from "@/lib/fotografos/actions";
 import { Button } from "@/components/ui/button";
 
 const campo = "mt-1 w-full rounded-lg border border-sage-200 px-3 py-2 text-base";
@@ -9,20 +9,6 @@ const campo = "mt-1 w-full rounded-lg border border-sage-200 px-3 py-2 text-base
 function Aviso({ res }: { res: ResultadoAcao | null }) {
   if (!res) return null;
   return res.ok ? <p role="status" className="text-sm text-ink">{res.mensagem}</p> : <p role="alert" className="text-sm text-red-600">{res.erro}</p>;
-}
-
-export function TaxaForm({ taxa }: { taxa: number }) {
-  const [res, acao, pendente] = useActionState<ResultadoAcao | null, FormData>(salvarTaxaParceria, null);
-  return (
-    <form action={acao} className="flex flex-wrap items-end gap-3">
-      <div>
-        <label htmlFor="taxa" className="block text-sm font-medium text-ink">Taxa de parceria por pedido (R$)</label>
-        <input id="taxa" name="taxa" inputMode="decimal" defaultValue={String(taxa).replace(".", ",")} className={campo} />
-      </div>
-      <Button type="submit" disabled={pendente}>Salvar</Button>
-      <Aviso res={res} />
-    </form>
-  );
 }
 
 export function CadastroForm() {

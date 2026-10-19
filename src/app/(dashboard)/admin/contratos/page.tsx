@@ -16,7 +16,7 @@ import {
 } from "@/lib/admin/indicadores";
 import { fmtPct, fmtReais, rotuloPeriodo } from "@/lib/admin/visao-geral";
 import { refContratoVN } from "@/lib/fiscal/fila-falhas";
-import { rotuloTaxaServico } from "@/lib/cobranca/regra";
+import { rotuloBaseTaxa } from "@/lib/taxa-servico-base";
 import { dataBRT } from "@/lib/datas-brasilia";
 
 export const metadata = { title: "Contratos — Admin", robots: { index: false, follow: false } };
@@ -145,7 +145,8 @@ export default async function AdminContratosPage({ searchParams }: { searchParam
                     <strong>{fmtReais((c.aluguelMensal ?? 0) * meses)}</strong>
                   </p>
                   <p className="mt-1 text-xs text-muted" data-testid="contrato-rotulo-taxa">
-                    {rotuloTaxaServico(c.taxaPercent ?? 0, c.aluguelMensal ?? 0, meses, c.taxaValor)}
+                    Taxa de serviço:{" "}
+                    {rotuloBaseTaxa({ valor: c.taxaValor ?? 0, percent: c.taxaPercent ?? 0, aluguelMensal: c.aluguelMensal ?? 0, meses, aceiteEm: c.aceiteEm })}
                   </p>
                   <p className="mt-2 flex flex-wrap gap-3 text-xs">
                     <Link href={`/dashboard/contratos/${c.id}`} className="font-medium text-forest underline">

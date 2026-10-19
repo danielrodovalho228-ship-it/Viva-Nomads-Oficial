@@ -289,7 +289,7 @@ function ContratoCard({
             aceiteEm: contrato.aceiteEm ?? null,
           })}
         </span>{" "}
-        = <strong>{formatBRL(contrato.comissaoValor)}</strong> — cobrada à parte, do proprietário; o valor mensal vai direto a você.
+        — cobrada à parte, do proprietário; o valor mensal vai direto a você.
       </p>
 
       {/* Caução do CONTRATO (complemento do #884): item próprio, fora dos cartões de bloco: a Caução nunca leva número de bloco. */}

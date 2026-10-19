@@ -8,7 +8,8 @@ import { ButtonLink, buttonClasses } from "@/components/ui/button";
 import { formatBRL } from "@/lib/utils";
 import { cidadeDoCep, filtrarPorCidade, formatarCep, MAX_DIAS_ANTECEDENCIA, normalizarCep, portfolioSeguro, type FotografoPublico } from "@/lib/fotografos/regras";
 import { PedidoForm } from "./pedido-form";
-import { FaixasTaxaParceria } from "@/components/parceiros/faixas-taxa";
+import { textoTaxaServicoParceiros } from "@/config/taxa-servico-parceiros";
+import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
 import { AvisoFotografo } from "./aviso-fotografo";
 import { TITULO_SEM_FOTOGRAFO } from "@/lib/fotografos/aviso";
 import { MUNICIPIOS } from "@/lib/municipios";
@@ -30,7 +31,7 @@ export const metadata: Metadata = {
 
 const COLUNAS = "id, nome_comercial, cidades, portfolio_url, pacote_fotos, pacote_prazo_dias, pacote_preco, nota_media, avaliacoes_qtd";
 
-export default async function FotografosPage({ searchParams }: { searchParams: Promise<{ cep?: string; cidade?: string; uf?: string }> }) {
+export default async function FotografosPage({ searchParams }: { searchParams: Promise<{ cep?: string; cidade?: string; uf?: string; avisar?: string }> }) {
   const sp = await searchParams;
   const supabase = await createClient();
 
@@ -69,7 +70,7 @@ export default async function FotografosPage({ searchParams }: { searchParams: P
       <JsonLd dados={trilha(SITE_URL, [{ nome: "Fotógrafos parceiros", caminho: "/parceiros/fotografos" }])} />
       <h1 className="font-display text-2xl font-bold text-ink sm:text-3xl">Fotógrafos parceiros</h1>
       <p className="mt-2 text-ink/70">Fotos profissionais do seu imóvel mobiliado, feitas por fotógrafos aprovados pela Viva. As fotos vão direto para o seu anúncio.</p>
-      <p className="mt-2 text-sm font-medium text-ink" data-testid="pedir-gratis">Pedir é grátis: a Viva não cobra nada de você; o fotógrafo paga a taxa de parceria só quando aceita o pedido.</p>
+      <p className="mt-2 text-sm font-medium text-ink" data-testid="pedir-gratis">Pedir é grátis: a Viva não cobra nada de você pelo pedido.</p>
 
       <form method="get" className="mt-6 grid gap-3 rounded-xl border border-sage-200 p-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
         <div>
@@ -100,6 +101,7 @@ export default async function FotografosPage({ searchParams }: { searchParams: P
                 cidade={cidade}
                 uf={uf}
                 logado={!!user}
+                autoAvisar={!!user && sp.avisar === "1"}
                 voltarPara={`/parceiros/fotografos?cidade=${encodeURIComponent(cidade)}${uf ? `&uf=${uf}` : ""}${cepBusca ? `&cep=${cepBusca}` : ""}`}
               />
             </div>
@@ -135,8 +137,10 @@ export default async function FotografosPage({ searchParams }: { searchParams: P
       )}
       <section className="mt-8" aria-labelledby="h-e-fotografo">
         <h2 id="h-e-fotografo" className="font-display text-xl font-bold text-ink">É fotógrafo?</h2>
-        <p className="mb-3 mt-1 text-sm text-ink/70">Veja quanto é a taxa de parceria antes de se cadastrar.</p>
-        <FaixasTaxaParceria />
+        <p className="mb-3 mt-1 text-sm text-ink/70">Veja a taxa de serviço antes de se cadastrar.</p>
+        <p className="rounded-2xl border border-line bg-white p-4 text-sm text-ink" data-testid="taxa-servico-parceiros">
+          {textoTaxaServicoParceiros(PAGAMENTO_PARCEIROS_ATIVO)}
+        </p>
       </section>
       <div className="mt-4"><ButtonLink href="/parceiros" variant="outline" className="w-full min-h-11 sm:w-auto">É fotógrafo? Seja parceiro</ButtonLink></div>
       <p className="mt-4 text-xs text-ink/60">O pagamento do serviço é combinado entre você e o fotógrafo; a Viva não recebe esse dinheiro. Seu contato e o endereço só são liberados depois que o fotógrafo aceitar o pedido.</p>

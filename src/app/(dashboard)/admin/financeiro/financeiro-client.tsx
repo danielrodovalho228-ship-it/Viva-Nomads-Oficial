@@ -1,7 +1,8 @@
 "use client";
 
 import { horaBRT } from "@/lib/datas-brasilia";
-import { useState } from "react";
+import { createContext, useContext, useState } from "react";
+import { dataHoraBRT } from "@/lib/datas-brasilia";
 import Link from "next/link";
 import { Download, Info } from "lucide-react";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
@@ -18,8 +19,10 @@ import {
   FORMULA_TAXA,
   FORMULA_VALOR_MENSAL,
   FORMULA_VALOR_TOTAL,
+  ROTULO_RECORTE,
+  type Recorte,
 } from "@/lib/admin/indicadores";
-import { rotuloTaxaServico } from "@/lib/cobranca/regra";
+import { rotuloBaseTaxa } from "@/lib/taxa-servico-base";
 import type { ContratoLinhaAdmin } from "@/lib/data/admin-indicadores";
 
 /**
@@ -35,8 +38,14 @@ export function FinanceiroClient({
   cidade,
   cidades,
   contratos,
+  recorte,
+  vencidas,
 }: {
   contratos: ContratoLinhaAdmin[] | null;
+  /** UMA base para a página inteira (complemento do P29, item 3): o mesmo seletor de /admin/contratos. */
+  recorte: Recorte;
+  /** Com ?situacao=vencida: as "Taxas vencidas" da home (agora), no mesmo recorte. */
+  vencidas: { leadId: string; criadoEm: string; imovel: string }[] | null;
   dados: Record<string, unknown> | null;
   geradoEm: string | null;
   aviso: string | null;
@@ -60,9 +69,30 @@ export function FinanceiroClient({
   }
 
   return (
-    <>
+    <BaseDaPagina.Provider value={ROTULO_RECORTE[recorte]}>
       <PageTitle title="Financeiro" subtitle="Receita recorrente, o que entrou, taxas de serviço e retorno do marketing." />
-      <FiltrosAdmin base="/admin/financeiro" periodo={periodo} cidade={cidade} cidades={cidades} />
+      <FiltrosAdmin base="/admin/financeiro" periodo={periodo} cidade={cidade} cidades={cidades} manter={{ tipo: recorte === "real" ? null : recorte }} />
+      <form method="get" action="/admin/financeiro" className="mb-6 flex flex-wrap items-end gap-2" data-testid="financeiro-recorte">
+        <input type="hidden" name="periodo" value={periodo.id} />
+        {periodo.id === "custom" && <input type="hidden" name="de" value={periodo.inicio} />}
+        {periodo.id === "custom" && <input type="hidden" name="ate" value={periodo.fim} />}
+        {cidade && <input type="hidden" name="cidade" value={cidade} />}
+        {vencidas && <input type="hidden" name="situacao" value="vencida" />}
+        <label className="grid gap-1 text-sm text-muted">
+          Tipo
+          <select name="tipo" defaultValue={recorte} className="rounded-xl border border-line px-3 py-2 text-sm text-ink" data-testid="filtro-tipo">
+            <option value="real">Real</option>
+            <option value="teste">Teste</option>
+            <option value="todos">Todos</option>
+          </select>
+        </label>
+        <button type="submit" className="rounded-xl border border-line px-3 py-2 text-sm text-ink hover:border-forest">
+          Aplicar
+        </button>
+        <span className="pb-2 text-xs text-muted" data-testid="financeiro-base">
+          Base de todos os cartões e tabelas desta página: {ROTULO_RECORTE[recorte]}.
+        </span>
+      </form>
 
       {aviso && (
         <p className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{aviso}</p>
@@ -74,7 +104,7 @@ export function FinanceiroClient({
       )}
       {cidade && (
         <p className="mb-6 text-sm text-muted">
-          Assinaturas e marketing não têm cidade: com o filtro de cidade, aparecem como &quot;—&quot;. Comissões e contratos são da cidade do imóvel.
+          Assinaturas e marketing não têm cidade: com o filtro de cidade, aparecem como &quot;—&quot;. Taxas de serviço e contratos são da cidade do imóvel.
         </p>
       )}
 
@@ -94,6 +124,7 @@ export function FinanceiroClient({
       </div>
 
       <div className="grid gap-6">
+        {vencidas && <TaxasVencidas linhas={vencidas} />}
         <Panel title="Receita recorrente (assinaturas)">
           <Grade>
             <Cartao rotulo="MRR agora" valor={reais(f.mrrAgora)} formula={`Assinaturas ativas × preço mensal do plano (tabela de planos).${f.semPreco ? ` ${f.semPreco} no Gestor, sob consulta, ficam fora.` : ""}`} />
@@ -118,7 +149,7 @@ export function FinanceiroClient({
 
         <Panel title="Taxa de serviço dos contratos do período">
           <Grade>
-            <Cartao rotulo="Contratos no período" valor={fmtInteiro(contratos ? contratos.length : null)} formula="Contratos reais registrados no período (contas e anúncios de teste fora). A mesma lista de /admin/contratos." />
+            <Cartao rotulo="Contratos no período" valor={fmtInteiro(contratos ? contratos.length : null)} formula="Contratos registrados no período, no recorte escolhido acima (Real: contas e anúncios de teste fora). A mesma lista de /admin/contratos." />
             <Cartao rotulo="Valor total dos contratos" valor={reais(f.valorTotalContratado)} nota="valor contratado entre as partes (não passa pela plataforma)" formula={FORMULA_VALOR_TOTAL} />
             <Cartao rotulo="Taxa de serviço gerada" valor={reais(f.comissaoGerada)} formula={FORMULA_TAXA} />
             <Cartao rotulo="Take rate" valor={fmtPct(f.takeRate)} formula={FORMULA_TAKE_RATE} />
@@ -171,7 +202,7 @@ export function FinanceiroClient({
                   <tr className="border-b border-line text-muted">
                     <th className="py-1.5 font-medium">Mês</th>
                     <th className="py-1.5 text-right font-medium">Assinaturas</th>
-                    <th className="py-1.5 text-right font-medium">Comissões</th>
+                    <th className="py-1.5 text-right font-medium">Taxas de serviço</th>
                     <th className="py-1.5 text-right font-medium">Marketing</th>
                     <th className="py-1.5 text-right font-medium">Proprietários novos</th>
                     <th className="py-1.5 text-right font-medium">MRR fim do mês</th>
@@ -202,7 +233,32 @@ export function FinanceiroClient({
           ficam guardados por até 5 minutos.
         </p>
       )}
-    </>
+    </BaseDaPagina.Provider>
+  );
+}
+
+/** A base escrita abaixo de cada cartão ("só contratos reais", "só de teste" ou "todos"). */
+const BaseDaPagina = createContext<string>(ROTULO_RECORTE.real);
+
+/** "Taxas vencidas" (o número da home): a mesma função (taxasVencidas), agora, sem período. */
+function TaxasVencidas({ linhas }: { linhas: { leadId: string; criadoEm: string; imovel: string }[] }) {
+  const base = useContext(BaseDaPagina);
+  return (
+    <Panel title="Taxas vencidas (agora)">
+      <p className="mb-3 text-sm text-ink" data-testid="vencidas">
+        <strong data-testid="lista-total">{linhas.length}</strong> {linhas.length === 1 ? "taxa vencida" : "taxas vencidas"} · {base}
+      </p>
+      {linhas.length > 0 && (
+        <ul className="grid gap-2 text-sm">
+          {linhas.map((v) => (
+            <li key={v.leadId} className="min-w-0 break-words rounded-xl border border-line px-3 py-2" data-testid="vencida-linha">
+              <span className="font-medium text-ink">{v.imovel}</span>
+              <span className="block text-xs text-muted">Cobrança criada em {dataHoraBRT(v.criadoEm)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Panel>
   );
 }
 
@@ -212,6 +268,7 @@ function Grade({ children }: { children: React.ReactNode }) {
 
 function Cartao({ rotulo, valor, formula, nota }: { rotulo: string; valor: string; formula: string; nota?: string }) {
   const [aberto, setAberto] = useState(false);
+  const base = useContext(BaseDaPagina);
   const id = `f-${rotulo.replace(/\W+/g, "-").toLowerCase()}`;
   return (
     <div className="min-w-0 rounded-xl border border-line p-3" data-indicador={id}>
@@ -233,6 +290,9 @@ function Cartao({ rotulo, valor, formula, nota }: { rotulo: string; valor: strin
       </p>
       {valor === "—" && <p className="text-xs text-muted">sem dados no período</p>}
       {nota && <p className="mt-1 text-xs text-muted">{nota}</p>}
+      <p className="mt-1 text-xs text-muted" data-testid="base-cartao">
+        {base}
+      </p>
       {aberto && (
         <p id={id} className="mt-2 rounded-lg bg-sage-100 px-2.5 py-2 text-xs text-ink">
           {formula}
@@ -259,7 +319,7 @@ function TabelaComissoes({ linhas }: { linhas: ReturnType<typeof calcularFinance
         </thead>
         <tbody>
           {linhas.map((c) => (
-            <tr key={c.contrato} className="border-b border-line/60">
+            <tr key={c.contrato} className="border-b border-line/60" data-testid="fin-taxa-linha" data-taxa={c.comissao ?? 0} data-situacao={c.status}>
               <td className="whitespace-nowrap py-1.5 pr-3 text-ink">{dataBR(c.data)}</td>
               <td className="py-1.5 text-ink">
                 {c.imovel ?? "—"}
@@ -278,13 +338,24 @@ function TabelaComissoes({ linhas }: { linhas: ReturnType<typeof calcularFinance
             </tr>
           ))}
         </tbody>
+        <tfoot>
+          <tr className="font-medium">
+            <td className="py-1.5 pr-3 text-ink" colSpan={4}>
+              Total da tabela
+            </td>
+            <td className="py-1.5 pl-3 text-right text-ink" data-testid="fin-taxa-total">
+              {fmtReais(linhas.reduce((s, c) => s + (c.comissao ?? 0), 0))}
+            </td>
+            <td />
+          </tr>
+        </tfoot>
       </table>
       <p className="mt-2 text-xs text-muted">* Valor mensal: contratado entre as partes (não passa pela plataforma).</p>
     </div>
   );
 }
 
-/** Contratos do período com o rótulo ÚNICO da taxa (o mesmo do site: rotuloTaxaServico) e a marca "regra anterior". */
+/** Contratos do período com o rótulo ÚNICO da taxa do contrato (rotuloBaseTaxa) e a marca "regra anterior". */
 function TabelaContratos({ linhas }: { linhas: ContratoLinhaAdmin[] }) {
   if (linhas.length === 0) return null;
   return (
@@ -298,7 +369,8 @@ function TabelaContratos({ linhas }: { linhas: ContratoLinhaAdmin[] }) {
             </Link>
             {ehRegraAnterior(c) && <span className="ml-2 rounded-full bg-surface-2 px-2 py-0.5 text-xs text-muted">regra anterior</span>}
             <span className="block text-xs text-muted" data-testid="fin-rotulo-taxa">
-              {rotuloTaxaServico(c.taxaPercent ?? 0, c.aluguelMensal ?? 0, meses, c.taxaValor)}
+              Taxa de serviço:{" "}
+              {rotuloBaseTaxa({ valor: c.taxaValor ?? 0, percent: c.taxaPercent ?? 0, aluguelMensal: c.aluguelMensal ?? 0, meses, aceiteEm: c.aceiteEm })}
             </span>
           </li>
         );

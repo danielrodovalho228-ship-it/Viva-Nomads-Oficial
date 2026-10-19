@@ -15,11 +15,14 @@ export function FiltrosAdmin({
   periodo,
   cidade,
   cidades,
+  manter,
 }: {
   base: string;
   periodo: Periodo;
   cidade: string | null;
   cidades: string[];
+  /** Outros filtros da página que o período e a cidade mantêm (ex.: o recorte Real · Teste · Todos). */
+  manter?: Record<string, string | null>;
 }) {
   const router = useRouter();
   const [de, setDe] = useState(periodo.inicio);
@@ -32,6 +35,7 @@ export function FiltrosAdmin({
       de: periodo.id === "custom" ? periodo.inicio : null,
       ate: periodo.id === "custom" ? periodo.fim : null,
       cidade,
+      ...manter,
       ...extra,
     };
     for (const [k, v] of Object.entries(valores)) if (v) p.set(k, v);

@@ -246,7 +246,9 @@ export const BLOCOS: Bloco[] = [
         rotulo: "Conclusão do cadastro",
         formula: "Cadastros concluídos ÷ formulários de cadastro abertos (eventos anônimos). Sem formulário aberto no período: \"—\".",
         formato: "pct",
-        calc: (m) => razao(num(m.cadastros_concluidos), num(m.cadastros_iniciados)),
+        calc: (m) => razao(num(m.x_ev_concluir_cadastro), num(m.x_ev_iniciar_cadastro)),
+        // O % não tem lista; o link abre quem ficou com o cadastro incompleto (pedido do coordenador).
+        href: () => "/admin/usuarios?cadastro=incompleto",
       },
     ],
   },
@@ -267,7 +269,8 @@ export const BLOCOS: Bloco[] = [
         rotulo: "Anúncios iniciados → publicados",
         formula: "Publicações ÷ anúncios começados no período (eventos anônimos). Sem anúncio começado: \"—\".",
         formato: "pct",
-        calc: (m) => razao(num(m.anuncios_publicados_evento), num(m.anuncios_iniciados)),
+        calc: (m) => razao(num(m.x_ev_publicar_anuncio), num(m.x_ev_iniciar_anuncio)),
+        href: (f) => `/admin/eventos?tipo=iniciar_anuncio&${qsPeriodo(f)}`,
       },
     ],
   },
@@ -280,7 +283,8 @@ export const BLOCOS: Bloco[] = [
         rotulo: "Buscas",
         formula: "Buscas feitas no site e no app (1 por local pesquisado), registradas de forma anônima.",
         formato: "inteiro",
-        calc: campo("buscas"),
+        calc: campo("x_ev_busca"),
+        href: (f) => `/admin/eventos?tipo=busca&${qsPeriodo(f)}`,
         serie: "buscas",
       },
       {
@@ -288,7 +292,8 @@ export const BLOCOS: Bloco[] = [
         rotulo: "Anúncios vistos",
         formula: "Aberturas de página de anúncio (anúncios de exemplo não contam).",
         formato: "inteiro",
-        calc: campo("visualizacoes"),
+        calc: campo("x_ev_ver_anuncio"),
+        href: (f) => `/admin/eventos?tipo=ver_anuncio&${qsPeriodo(f)}`,
         serie: "visualizacoes",
       },
       {
@@ -296,7 +301,8 @@ export const BLOCOS: Bloco[] = [
         rotulo: "Candidaturas",
         formula: "Candidaturas enviadas a imóveis no período (pela cidade do imóvel).",
         formato: "inteiro",
-        calc: campo("candidaturas"),
+        calc: campo("x_candidaturas"),
+        href: (f) => `/admin/candidaturas?${qsPeriodo(f)}`,
         serie: "candidaturas",
       },
       {
@@ -319,21 +325,24 @@ export const BLOCOS: Bloco[] = [
         rotulo: "Candidaturas respondidas",
         formula: "Candidaturas do período que o proprietário aceitou ou recusou ÷ candidaturas do período.",
         formato: "pct",
-        calc: (m) => razao(num(m.candidaturas_decididas), num(m.candidaturas)),
+        calc: (m) => razao(num(m.x_cand_decididas), num(m.x_candidaturas)),
+        href: (f) => `/admin/candidaturas?status=respondida&${qsPeriodo(f)}`,
       },
       {
         chave: "taxa_aceite",
         rotulo: "Candidaturas aceitas",
         formula: "Candidaturas aceitas ÷ candidaturas do período.",
         formato: "pct",
-        calc: (m) => razao(num(m.candidaturas_aceitas), num(m.candidaturas)),
+        calc: (m) => razao(num(m.x_cand_aceitas), num(m.x_candidaturas)),
+        href: (f) => `/admin/candidaturas?status=aceita&${qsPeriodo(f)}`,
       },
       {
         chave: "tempo_decisao",
         rotulo: "Candidaturas: tempo até a resposta",
         formula: "Mediana do tempo entre a candidatura e a resposta do proprietário (só as respondidas).",
         formato: "horas",
-        calc: campo("horas_mediana_decisao"),
+        calc: campo("x_cand_mediana_h"),
+        href: (f) => `/admin/candidaturas?status=respondida&${qsPeriodo(f)}`,
         menorMelhor: true,
       },
       {
@@ -489,13 +498,14 @@ export function formatar(v: Num, f: Formato): string {
 }
 
 // ── Funil ────────────────────────────────────────────────────────────────────
-export const FUNIL: { rotulo: string; calc: (m: Metricas) => Num }[] = [
-  { rotulo: "Buscas", calc: campo("buscas") },
-  { rotulo: "Anúncios vistos", calc: campo("visualizacoes") },
-  { rotulo: "Começaram a candidatura", calc: campo("candidaturas_iniciadas") },
-  { rotulo: "Candidaturas enviadas", calc: campo("candidaturas") },
-  { rotulo: "Aceitas", calc: campo("candidaturas_aceitas") },
-  { rotulo: "Contratos", calc: campo("contratos") },
+/** Funil: cada etapa abre a lista da etapa, no mesmo período (complemento do P29, item 4). */
+export const FUNIL: { rotulo: string; calc: (m: Metricas) => Num; href: (f: FiltroHome) => string }[] = [
+  { rotulo: "Buscas", calc: campo("x_ev_busca"), href: (f) => `/admin/eventos?tipo=busca&${qsPeriodo(f)}` },
+  { rotulo: "Anúncios vistos", calc: campo("x_ev_ver_anuncio"), href: (f) => `/admin/eventos?tipo=ver_anuncio&${qsPeriodo(f)}` },
+  { rotulo: "Começaram a candidatura", calc: campo("x_ev_iniciar_candidatura"), href: (f) => `/admin/eventos?tipo=iniciar_candidatura&${qsPeriodo(f)}` },
+  { rotulo: "Candidaturas enviadas", calc: campo("x_candidaturas"), href: (f) => `/admin/candidaturas?${qsPeriodo(f)}` },
+  { rotulo: "Aceitas", calc: campo("x_cand_aceitas"), href: (f) => `/admin/candidaturas?status=aceita&${qsPeriodo(f)}` },
+  { rotulo: "Contratos", calc: campo("x_contratos"), href: (f) => `/admin/contratos?${qsPeriodo(f)}` },
 ];
 
 /** Etapas do funil com % sobre a etapa anterior (null quando a anterior é 0). */
@@ -511,7 +521,8 @@ export function funil(m: Metricas): { rotulo: string; valor: Num; daAnterior: Nu
 
 // ── "Precisa de você agora" ──────────────────────────────────────────────────
 /** href null = ainda sem tela própria (chega nos PRs D/E). */
-export const PRECISA: { chave: string; rotulo: string; detalhe: string; href: string | null }[] = [
+/** Toda fila abre a lista que ela conta (complemento do P29, item 4: nenhum número sem link). */
+export const PRECISA: { chave: string; rotulo: string; detalhe: string; href: string }[] = [
   {
     chave: "documentos_pendentes",
     rotulo: "Documentos de imóvel para conferir",
@@ -522,25 +533,25 @@ export const PRECISA: { chave: string; rotulo: string; detalhe: string; href: st
     chave: "candidaturas_sem_resposta_48h",
     rotulo: "Candidaturas sem resposta há mais de 48 h",
     detalhe: "O proprietário ainda não aceitou nem recusou.",
-    href: null,
+    href: "/admin/candidaturas?status=sem_resposta",
   },
   {
     chave: "chamados_urgentes_sem_resposta",
     rotulo: "Chamados urgentes sem resposta há mais de 4 h",
     detalhe: "Prioridade urgente e nenhuma resposta do proprietário.",
-    href: null,
+    href: "/admin/solicitacoes?prioridade=urgente&sem_resposta=1",
   },
   {
     chave: "comissoes_vencidas",
-    rotulo: "Comissões vencidas",
-    detalhe: "Cobrança de comissão que passou do vencimento.",
-    href: null,
+    rotulo: "Taxas vencidas",
+    detalhe: "Cobrança da taxa de serviço (contratos reais) que passou do vencimento.",
+    href: "/admin/financeiro?situacao=vencida",
   },
   {
     chave: "pedidos_sem_resposta_expirando",
     rotulo: "Pedidos expirando sem nenhuma resposta",
     detalhe: "Pedidos ativos que vencem em até 3 dias.",
-    href: "/admin/pedidos",
+    href: "/admin/pedidos?expirando=1",
   },
 ];
 

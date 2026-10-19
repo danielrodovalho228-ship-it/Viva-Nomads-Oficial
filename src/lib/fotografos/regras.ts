@@ -1,11 +1,10 @@
 /**
  * Fotógrafos parceiros — regras puras (ordem 46edeaa5).
- * A Viva não recebe dinheiro do dono: a "taxa de parceria" é paga pelo fotógrafo no aceite.
- * Contato do dono fica mascarado até esse pagamento.
+ * A taxa fixa por pedido saiu no complemento do Prompt 29: vale a taxa de serviço de 10% sobre o
+ * valor do serviço (config/taxa-servico-parceiros.ts). a coluna do valor fixo em fotografo_pedidos fica obsoleta (nem lida nem escrita).
  */
 import { mesmaCidade } from "../cidades.ts";
 
-export const TAXA_PARCERIA_PADRAO = 40;
 export const MAX_DIAS_ANTECEDENCIA = 90;
 
 export type StatusPedido = "enviado" | "aceito" | "recusado" | "cancelado" | "entregue" | "concluido";
@@ -52,16 +51,6 @@ export function contatoLiberado(p: { status: string; taxa_paga_em: string | null
 /** O fotógrafo só pode aceitar depois de pagar a taxa de parceria. */
 export function podeAceitar(p: { status: string; taxa_paga_em: string | null | undefined }): boolean {
   return p.status === "enviado" && !!p.taxa_paga_em;
-}
-
-/**
- * Pedido cancelado pelo dono antes do ensaio: a taxa paga vira crédito para o fotógrafo.
- * Pedido ainda não aceito (sem taxa paga) não gera crédito.
- */
-export function creditoNoCancelamento(p: { status: string; taxa_paga_em: string | null | undefined; taxa_valor: number | null | undefined }): number {
-  if (p.status !== "aceito" || !p.taxa_paga_em) return 0;
-  const v = Number(p.taxa_valor ?? 0);
-  return Number.isFinite(v) && v > 0 ? Math.round(v * 100) / 100 : 0;
 }
 
 export function taxaValida(v: unknown): number | null {
