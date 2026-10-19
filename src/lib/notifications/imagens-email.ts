@@ -47,7 +47,7 @@ const ALT_EXISTENTE: Record<string, string> = {
 };
 
 /** Eventos que não passam pelo notify (enviados direto pelo sendEmail). */
-export type EventoAvulso = "recibo_emitido" | "comprovante_caucao" | "termo_devolucao" | "contract_signature_code" | "recuperacao_2fa" | "exclusao_conta";
+export type EventoAvulso = "recibo_emitido" | "comprovante_caucao" | "termo_devolucao" | "contract_signature_code" | "recuperacao_2fa" | "exclusao_conta" | "parceria_aprovada";
 
 export const TEMA_POR_EVENTO: Record<NotificationEvent | EventoAvulso, string> = {
   new_lead: "novo-interessado",
@@ -101,6 +101,11 @@ export const TEMA_POR_EVENTO: Record<NotificationEvent | EventoAvulso, string> =
   contract_signature_code: "contrato",
   recuperacao_2fa: "seguranca",
   exclusao_conta: "seguranca",
+  parceria_recebida: "transacional",
+  parceria_recusada: "transacional",
+  parceria_equipe: "atendimento",
+  parceria_convite: "transacional",
+  parceria_aprovada: "verificacao",
 };
 
 /** Arquivo (sem .jpg) e texto alternativo da imagem do evento — sempre um arquivo que existe. */

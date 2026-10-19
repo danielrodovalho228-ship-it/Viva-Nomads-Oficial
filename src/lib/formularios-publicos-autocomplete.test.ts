@@ -35,5 +35,7 @@ test("chat da Viva: nome e e-mail têm name e autocomplete", () => {
 
 test("parceiros: cidade do fotógrafo e site do parceiro têm autocomplete", () => {
   assert.match(tag(ler("../app/(public)/parceiros/fotografos/page.tsx"), 'id="cidade"'), /autoComplete="address-level2"/);
-  assert.match(tag(ler("../app/(public)/parceiros/parceiro-form.tsx"), 'id="p-site"'), /autoComplete="url"/);
+  // Prompt 31a: o formulário "Seja parceiro" (conta com e-mail confirmado) substituiu o de interesse.
+  assert.match(tag(ler("../components/parceiros/seja-parceiro-form.tsx"), 'id="sp-telefone"'), /autoComplete="tel"/);
+  assert.match(tag(ler("../components/parceiros/seja-parceiro-form.tsx"), 'id="sp-nome"'), /autoComplete="name"/);
 });

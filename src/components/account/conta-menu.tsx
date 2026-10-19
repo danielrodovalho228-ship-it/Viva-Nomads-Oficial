@@ -16,6 +16,7 @@ import {
   LogOut,
   ChevronRight,
   Users,
+  Handshake,
 } from "lucide-react";
 import { useAuthStore, type ViewMode } from "@/lib/store";
 import { useViewMode, identidadeUsuario } from "@/lib/roles";
@@ -100,6 +101,7 @@ export function ContaMenu() {
     ],
     [
       { href: "/dashboard/conta/ajuda", label: "Ajuda e contato", descricao: "Central de ajuda e chamados.", icon: LifeBuoy },
+      { href: "/dashboard/parceiro", label: "Quero ser parceiro", descricao: "Ofereça seus serviços na Viva.", icon: Handshake },
       { href: "/termos", label: "Termos de uso", descricao: "Regras da plataforma.", icon: FileText },
       { href: "/privacidade", label: "Privacidade", descricao: "Como tratamos seus dados.", icon: FileText },
     ],

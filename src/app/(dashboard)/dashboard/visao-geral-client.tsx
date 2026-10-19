@@ -38,6 +38,7 @@ import { coverPhoto } from "@/lib/media";
 import { formatBRL } from "@/lib/utils";
 import { textoVencimento } from "@/lib/propostas/regras";
 import { ReadyToLiveBadge } from "@/components/ui/badge";
+import { ServicosPainel } from "@/components/parceiros/servicos-painel";
 
 export interface PropostaAguardando {
   id: string;
@@ -50,10 +51,13 @@ export function VisaoGeral({
   imoveisDono,
   interessados = { atual: 0, anterior: 0 },
   propostasAguardando = [],
+  cidadePerfil = null,
 }: {
   imoveisDono: Property[];
   interessados?: { atual: number; anterior: number };
   propostasAguardando?: PropostaAguardando[];
+  /** Prompt 31a: cidade do perfil, para a busca de serviços de parceiros já preenchida. */
+  cidadePerfil?: string | null;
 }) {
   // Identidade de EXIBIÇÃO: nunca cai na persona demo ("Marcos") para conta real
   // com demo desligado (fronteira demo/real). Sem nome → "Olá!".
@@ -67,7 +71,11 @@ export function VisaoGeral({
     <>
       {/* Pergunta de papel no primeiro login (uma vez só). */}
       <RoleWelcomeModal />
-      {mode === "tenant" ? <TenantDashboard name={firstName} propostas={propostasAguardando} /> : <OwnerDashboard name={firstName} imoveisDono={imoveisDono} interessados={interessados} />}
+      {mode === "tenant" ? (
+        <TenantDashboard name={firstName} propostas={propostasAguardando} cidade={cidadePerfil} />
+      ) : (
+        <OwnerDashboard name={firstName} imoveisDono={imoveisDono} interessados={interessados} cidade={cidadePerfil} />
+      )}
     </>
   );
 }
@@ -76,10 +84,12 @@ function OwnerDashboard({
   name,
   imoveisDono,
   interessados,
+  cidade,
 }: {
   name: string;
   imoveisDono: Property[];
   interessados: { atual: number; anterior: number };
+  cidade: string | null;
 }) {
   // Fonte demo: build de demonstração OU modo demonstração do admin. Os dados
   // reais e o seed NUNCA se misturam — a fonte é uma ou outra.
@@ -272,6 +282,7 @@ function OwnerDashboard({
           )}
         </Panel>
       </div>
+      <ServicosPainel cidade={allProperties[0]?.city || cidade} />
     </>
   );
 }
@@ -303,7 +314,7 @@ function CartaoPropostas({ propostas }: { propostas: PropostaAguardando[] }) {
   );
 }
 
-function TenantDashboard({ name, propostas }: { name: string; propostas: PropostaAguardando[] }) {
+function TenantDashboard({ name, propostas, cidade }: { name: string; propostas: PropostaAguardando[]; cidade: string | null }) {
   const demo = useDashDemo();
   const recommended = useProperties("/api/properties").properties.slice(0, 3);
   return (
@@ -349,6 +360,7 @@ function TenantDashboard({ name, propostas }: { name: string; propostas: Propost
           }
         />
       </div>
+      <ServicosPainel cidade={cidade} />
     </>
   );
 }
