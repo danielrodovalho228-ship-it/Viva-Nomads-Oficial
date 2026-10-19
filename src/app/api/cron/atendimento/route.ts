@@ -5,6 +5,7 @@ import { dispararEncaminhamentos } from "@/lib/agentes/motor";
 import { rodarAvisosDaniel } from "@/lib/agentes/avisos-daniel-servidor";
 import { avisarEquipe, type ChamadoResumo } from "@/lib/atendimento/servidor";
 import { notify } from "@/lib/notifications";
+import { prioridadeSubida } from "@/lib/atendimento/acolhimento";
 import { chamadosEsperandoEquipe } from "@/lib/atendimento/escalonamento";
 import { PRAZO_MANUTENCAO_H, type UrgenciaManutencao } from "@/config/atendimento";
 
@@ -66,6 +67,14 @@ export async function GET(request: Request) {
       await avisarEquipe(c as unknown as ChamadoResumo, nivel === 6 ? `${c.horas} h SEM RESPOSTA da equipe (vermelho na Central)` : `${c.horas} h sem resposta da equipe`);
       await admin.from("chamado_eventos").insert({ chamado_id: c.id, ator_tipo: "sistema", acao, detalhe: `${c.horas} h sem resposta humana` });
       escalados++;
+      // 2º aviso: a prioridade sobe um degrau (a ação "escalado_6h" acima garante 1× só).
+      if (nivel === 6) {
+        const nova = prioridadeSubida(c.prioridade);
+        if (nova !== c.prioridade) {
+          await admin.from("chamados").update({ prioridade: nova }).eq("id", c.id);
+          await admin.from("chamado_eventos").insert({ chamado_id: c.id, ator_tipo: "sistema", acao: "prioridade_subiu", de: c.prioridade, para: nova });
+        }
+      }
     }
   }
 

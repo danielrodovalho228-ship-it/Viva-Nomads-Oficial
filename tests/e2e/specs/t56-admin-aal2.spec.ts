@@ -1,5 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
+import { account } from "../fixtures/accounts";
+import { gerarCodigoTotp } from "../fixtures/totp";
 
 /**
  * T56 — ADMIN EM AAL2 NO LABORATÓRIO (ordens 99950a2f / 69cd81f4). O /admin exige
@@ -18,13 +20,32 @@ test.describe("T56 — Admin em AAL2", () => {
     await expect(page.getByRole("heading", { name: "Administração" })).toBeVisible();
   });
 
-  test("sem a elevação (sessão nova só com senha) o portão manda para o código", async ({ browser, baseURL }) => {
+  test("visitante anônimo nunca vê o /admin", async ({ browser, baseURL }) => {
     // O Playwright aplica o storageState do describe (admin em AAL2) a TODO contexto novo;
     // sem esvaziar, este "visitante" já chegava logado e ficava em /admin (falso vermelho no lab).
     const ctx = await browser.newContext({ baseURL, storageState: { cookies: [], origins: [] } });
     const page = await ctx.newPage();
     await page.goto("/admin", { waitUntil: "networkidle" });
     await expect(page).not.toHaveURL(/\/admin(\?|$|\/)/); // anônimo nunca vê o /admin
+    await ctx.close();
+  });
+
+  test("sessão aal1 real (só senha) vai ao código e volta ao destino completo do /admin", async ({ browser, baseURL }) => {
+    // Ordens 4a92c972 / b1583238 item 6 (Moacir, PR #426): login SEM passar o código = aal1.
+    const ctx = await browser.newContext({ baseURL, storageState: { cookies: [], origins: [] } });
+    const page = await ctx.newPage();
+    const acc = account("admin");
+    await page.goto("/auth", { waitUntil: "networkidle" });
+    await page.locator('input[name="email"], input[type="email"]').first().fill(acc.email);
+    await page.locator('input[name="password"], input[type="password"]').first().fill(acc.senha);
+    await page.locator("form").getByRole("button", { name: /^entrar$/i }).click();
+    await page.waitForURL(/\/dashboard|\/auth\/verificar-codigo/, { timeout: 20_000 });
+
+    await page.goto("/admin/usuarios", { waitUntil: "networkidle" });
+    await expect(page).toHaveURL(/\/auth\/verificar-codigo/); // aal1 não entra no /admin
+    await page.locator("#codigo-2fa").fill(gerarCodigoTotp(process.env.TESTES_ADMIN_TOTP_SEGREDO as string));
+    await page.getByRole("button", { name: /confirmar e entrar/i }).click();
+    await page.waitForURL(/\/admin\/usuarios/, { timeout: 20_000 }); // volta ao destino completo
     await ctx.close();
   });
 });

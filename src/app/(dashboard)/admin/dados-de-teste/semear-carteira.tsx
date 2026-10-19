@@ -48,7 +48,7 @@ export function SemearCarteiraTeste({ proprietarios, inquilinos }: { proprietari
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="flex flex-col gap-1 text-sm text-ink">
           Proprietário de teste
-          <select value={ownerId} onChange={(e) => setOwnerId(e.target.value)} className="min-w-0 rounded-lg border border-sage-200 bg-white px-2 py-2" data-testid="carteira-proprietario">
+          <select value={ownerId} onChange={(e) => setOwnerId(e.target.value)} className="w-full min-w-0 max-w-full rounded-lg border border-sage-200 bg-white px-2 py-2" data-testid="carteira-proprietario">
             {proprietarios.map((o) => (
               <option key={o.id} value={o.id}>
                 {o.rotulo}
@@ -58,7 +58,7 @@ export function SemearCarteiraTeste({ proprietarios, inquilinos }: { proprietari
         </label>
         <label className="flex flex-col gap-1 text-sm text-ink">
           Inquilino dos contratos simulados
-          <select value={tenantId} onChange={(e) => setTenantId(e.target.value)} className="min-w-0 rounded-lg border border-sage-200 bg-white px-2 py-2" data-testid="carteira-inquilino">
+          <select value={tenantId} onChange={(e) => setTenantId(e.target.value)} className="w-full min-w-0 max-w-full rounded-lg border border-sage-200 bg-white px-2 py-2" data-testid="carteira-inquilino">
             {inquilinos.map((o) => (
               <option key={o.id} value={o.id}>
                 {o.rotulo}
