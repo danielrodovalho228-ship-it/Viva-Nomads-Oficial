@@ -104,7 +104,9 @@ export function menuDoPainel(ctx: ContextoMenu): ItemMenu[] {
     // Prompt 28: contrato aguardando assinatura ainda não é locação — "Contratos" (com o número do que falta assinar)
     // e "Locações" (as ativas e as encerradas).
     { id: "contratos-inquilino", rotulo: "Contratos", icone: "contratos", href: "/dashboard/contratos" },
-    { id: "estadias", rotulo: "Locações", icone: "estadias", href: "/dashboard/locacoes" },
+    // Adendo ao prompt 28: o dono (tem imóvel) sem estadia própria não vê "Locações" — o lugar dele é
+    // "Contratos & blocos"; o inquilino continua vendo.
+    ...(ctx.temImovel && !ctx.estadiaAtiva ? [] : [{ id: "estadias" as const, rotulo: "Locações", icone: "estadias" as const, href: "/dashboard/locacoes" }]),
   ];
   if (ctx.estadiaAtiva)
     moradia.push({ id: "solicitacoes", rotulo: "Solicitações", icone: "solicitacoes", href: "/dashboard/solicitacoes" });
@@ -200,4 +202,13 @@ export function rotaAtiva(href: string, pathname: string): boolean {
   const base = href.split("#")[0];
   if (base === "/dashboard" || base === "/admin") return pathname === base;
   return pathname === base || pathname.startsWith(base + "/");
+}
+
+/**
+ * Para onde vai quem abre uma rota do OUTRO papel e não tem esse papel (o guarda do painel no navegador).
+ * "Locações" de quem só é proprietário vira "Contratos & blocos" — a mesma regra da página no servidor (adendo ao
+ * prompt 28). No celular o guarda corria antes do redirecionamento do servidor e levava o dono à Visão geral.
+ */
+export function destinoForaDoPapel(pathname: string): string {
+  return pathname === "/dashboard/locacoes" ? "/dashboard/contratos" : "/dashboard";
 }

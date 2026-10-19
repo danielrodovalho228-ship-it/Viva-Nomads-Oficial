@@ -156,12 +156,12 @@ test.describe("T210 — estado real do contrato, Contratos do inquilino e jornad
     test.use({ storageState: authFile("admin") });
     test("4. 1280 — 'Nova jornada de teste' cria candidatura pronta; de novo devolve a mesma; o histórico fica", async ({ page }) => {
       test.setTimeout(120_000);
-      page.on("dialog", (d) => d.accept());
       await page.setViewportSize({ width: 1280, height: 900 });
       await abrir(page, "/admin/dados-de-teste");
       await page.getByTestId("jornada-inquilino").selectOption(ids.inq);
       await page.getByTestId("jornada-anuncio").selectOption(ids.imovel);
       await page.getByTestId("jornada-criar").click();
+      await page.getByTestId("jornada-confirmar").click();
       const link = page.getByTestId("jornada-link");
       await expect(link).toBeVisible({ timeout: 20_000 });
       const href1 = await link.getAttribute("href");
@@ -174,6 +174,7 @@ test.describe("T210 — estado real do contrato, Contratos do inquilino e jornad
       await page.screenshot({ path: `${SAIDA}/t210-admin-dados-de-teste-1280.png`, fullPage: true });
       // Idempotente: a jornada aberta (sem contrato) volta.
       await page.getByTestId("jornada-criar").click();
+      await page.getByTestId("jornada-confirmar").click();
       await expect(page.getByTestId("jornada-ok")).toContainText("Já havia uma jornada aberta", { timeout: 20_000 });
       expect(await page.getByTestId("jornada-link").getAttribute("href")).toBe(href1);
       // O histórico fica: candidatura e contrato antigos continuam.
