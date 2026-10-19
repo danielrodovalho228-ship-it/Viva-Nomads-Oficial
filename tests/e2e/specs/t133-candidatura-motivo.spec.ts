@@ -20,7 +20,9 @@ async function candidatar(page: import("@playwright/test").Page, imovel: string,
   await page.getByTestId("barra-fixa-imovel").getByRole("button", { name: "Enviar candidatura" }).click();
   const passo = page.getByTestId("solicitacao-passo");
   await expect(passo).toBeVisible();
-  await passo.getByRole("button", { name: "Enviar solicitação" }).click();
+  await passo.getByRole("button", { name: "Continuar" }).click();
+  await passo.getByRole("button", { name: "Continuar" }).click();
+  await passo.getByRole("button", { name: "Enviar candidatura" }).click();
   await expect(page.getByText("Candidatura enviada").first()).toBeVisible({ timeout: 20_000 });
 }
 
