@@ -79,4 +79,17 @@ test.describe("390 px", () => {
     await page.getByRole("button", { name: "Fechar" }).click();
     await expect(page.getByTestId("galeria-lightbox")).toHaveCount(0);
   });
+  test("carrossel: rolar até a foto 5 e tocar abre o lightbox na 5ª (ordem a45eec8b)", async ({ page }) => {
+    await page.goto(IMOVEL, { waitUntil: "domcontentloaded" });
+    const contador = page.getByTestId("galeria-contador");
+    const tile = page.getByTestId("galeria-tile-4").locator("visible=true").first();
+    await expect(async () => {
+      await tile.scrollIntoViewIfNeeded();
+      await tile.click();
+      await expect(contador).toBeVisible({ timeout: 2_000 });
+    }).toPass({ timeout: 20_000 });
+    await expect(contador).toHaveText(posicao(5));
+    await page.getByRole("button", { name: "Fechar" }).click();
+    await expect(page.getByTestId("galeria-lightbox")).toHaveCount(0);
+  });
 });
