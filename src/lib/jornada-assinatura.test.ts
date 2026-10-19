@@ -104,7 +104,7 @@ test("2. rótulo do pagamento em bloco: 2 meses mostra o bloco e a conta; 1 mês
   );
   // Pagamento parcial do bloco: sem a conta (ela não fecharia).
   assert.equal(rotuloPagamentoBloco({ tipo: "aluguel", valor: 3000, bloco: { numero: 2, meses: 2, inicio: "2026-12-19", fim: "2027-02-16" }, valorMensal: 3200 }), "Bloco 2 (2 meses: 19/12 a 16/02) — R$ 3.000");
-  assert.equal(rotuloPagamentoBloco({ tipo: "caucao", valor: 3200, bloco: { numero: 1, meses: 2, inicio: null, fim: null } }), "Caução do bloco 1 — R$ 3.200");
+  assert.equal(rotuloPagamentoBloco({ tipo: "caucao", valor: 3200, bloco: { numero: 1, meses: 2, inicio: null, fim: null } }), "Caução do contrato — R$ 3.200");
   // Nunca "Valor mensal de" com o valor do bloco.
   assert.doesNotMatch(ler("../components/documentos/documentos-contrato.tsx"), /"Valor mensal"\} de/);
   // O mesmo rótulo no recibo em PDF.

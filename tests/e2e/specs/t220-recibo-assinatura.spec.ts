@@ -95,7 +95,7 @@ test.describe("T220 — recibo, rótulo do bloco, nomes de quem assinou e 'Li e 
     // O dono registra o pagamento do bloco 1 pela tela.
     const d = await abrir(browser, dono.email, 1280);
     await d.goto("/dashboard/contratos", { waitUntil: "domcontentloaded" });
-    await d.getByRole("button", { name: /Registrar recebimento/ }).first().click();
+    await d.getByTestId("registrar-recebimento").first().click();
     await d.getByRole("button", { name: "Confirmar recebimento" }).click();
     await expect.poll(async () => (await adm().from("pagamentos_bloco").select("id").eq("contrato_id", ids.contrato!)).data?.length ?? 0, { timeout: 20_000 }).toBe(1);
     const { data: pg } = await adm().from("pagamentos_bloco").select("id, valor").eq("contrato_id", ids.contrato!).single();

@@ -89,7 +89,7 @@ test.describe("T227 â€” e-mail do recibo na caixa de teste + fila de falhas legÃ
     test.setTimeout(180_000);
     const d = await abrir(browser, dono.email, 1280);
     await d.goto("/dashboard/contratos", { waitUntil: "domcontentloaded" });
-    await d.getByRole("button", { name: /Registrar recebimento/ }).first().click();
+    await d.getByTestId("registrar-recebimento").first().click();
     await d.getByRole("button", { name: "Confirmar recebimento" }).click();
     await expect.poll(async () => (await adm().from("pagamentos_bloco").select("id").eq("contrato_id", ids.ca!)).data?.length ?? 0, { timeout: 20_000 }).toBe(1);
     ids.pg = (await adm().from("pagamentos_bloco").select("id").eq("contrato_id", ids.ca!).single()).data!.id as string;

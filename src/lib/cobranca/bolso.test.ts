@@ -86,6 +86,13 @@ test("guarda de custódia: textos do simulador sem 'fica com você', 'descontad*
   for (const t of [...textos, tela]) for (const re of PROIBIDO_CUSTODIA) assert.doesNotMatch(t, re, `${re} em: ${t.slice(0, 80)}`);
 });
 
+test("guarda de custódia cobre a frase do guia do proprietário (guias.ts): nada de 'fica com você'", async () => {
+  const { readFileSync } = await import("node:fs");
+  const guias = readFileSync(new URL("../guias/guias.ts", import.meta.url), "utf8");
+  assert.doesNotMatch(guias, /fica com você/i);
+  assert.match(guias, /para saber o seu resultado depois da taxa\./);
+});
+
 test("guarda de custódia: sem sinal de menos aplicado à taxa", () => {
   for (const [v, m, i] of [[3000, 4, 1], [2500, 6, 3]] as const) {
     const b = calcularBolso(v, m, i);

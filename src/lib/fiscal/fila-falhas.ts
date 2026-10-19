@@ -4,11 +4,12 @@
   o motivo e a data. A chave da linha é o documento (sem documento ainda: o pagamento ou o acerto), então duas linhas
   iguais não existem.
 */
+import { numeroPublicoContrato } from "../contrato-ref.ts";
 import { ROTULO_TIPO, type TipoDocumento } from "./documento.ts";
 
 /** Mesmo formato da lista de contratos: "VN-CT-11281A61". */
 export function refContratoVN(contratoId: string | null | undefined): string {
-  return contratoId ? `VN-CT-${contratoId.slice(0, 8).toUpperCase()}` : "Contrato não encontrado";
+  return numeroPublicoContrato(contratoId);
 }
 
 /** Tipo pela emissão (documento) ou, sem documento, pela origem (pagamento de caução, aluguel ou devolução). */

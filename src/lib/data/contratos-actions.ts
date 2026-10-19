@@ -1,6 +1,7 @@
 "use server";
 
 import { after } from "next/server";
+import { numeroPublicoContrato } from "@/lib/contrato-ref";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { emitirDoPagamentoComRegistro } from "@/lib/fiscal/emitir";
@@ -22,7 +23,9 @@ import { rotuloPagamentoBloco } from "@/lib/pagamento-bloco";
  * (base do futuro dossiê). Nenhuma integração de pagamento.
  */
 
-type ActionResult = { ok: boolean; demo?: boolean; id?: string; error?: string };
+type ActionResult = { ok: boolean; demo?: boolean; id?: string; error?: string; jaRegistrado?: boolean; mensagem?: string };
+/** Segundo envio do mesmo recebimento (0182): devolve o que já existe, sem erro técnico. */
+const MSG_JA_REGISTRADO = "Este recebimento já foi registrado";
 
 /** Colunas de `contratos` que as partes leem pela sessão (sem a taxa — 0177). */
 const COLUNAS_CONTRATO_PARTES =
@@ -46,7 +49,8 @@ export interface BlocoView {
 
 export interface PagamentoView {
   id: string;
-  blocoId: string;
+  /** null na Caução: ela é do contrato, não do bloco (0182). */
+  blocoId: string | null;
   tipo: string;
   valor: number;
   forma: string;
@@ -106,7 +110,7 @@ function toPagamento(p: Record<string, unknown>, valorMensal?: number | null): P
       valorMensal: valorMensal ?? null,
     }),
     id: String(p.id),
-    blocoId: String(p.bloco_id),
+    blocoId: p.bloco_id ? String(p.bloco_id) : null,
     tipo: String(p.tipo ?? "aluguel"),
     valor: Number(p.valor),
     forma: String(p.forma ?? "pix"),
@@ -174,7 +178,7 @@ export async function getContratosDoInquilino(): Promise<ContratoInquilinoView[]
     const e = estadoDaLinha(c, "inquilino");
     return {
       id: String(c.id),
-      numero: `VN-CT-${String(c.id).slice(0, 8).toUpperCase()}`,
+      numero: numeroPublicoContrato(String(c.id)),
       propertyTitle: (c.properties as { title?: string } | null)?.title ?? "Imóvel",
       aluguelMensal: Number(c.aluguel_mensal),
       chave: e.chave,
@@ -229,7 +233,7 @@ export async function getMinhasLocacoes(): Promise<LocacaoView[]> {
 
   return ((data ?? []) as Record<string, unknown>[]).map((c) => {
     const prop = (c.properties as { title?: string; owner_id?: string } | null) ?? {};
-    const pagamentos = ((c.pagamentos_bloco as Record<string, unknown>[]) ?? []).map((pg) => toPagamento(pg, Number(c.aluguel_mensal)));
+    const pagamentos = ((c.pagamentos_bloco as Record<string, unknown>[]) ?? []).filter((pg) => !pg.anulado_em).map((pg) => toPagamento(pg, Number(c.aluguel_mensal)));
     const estado = estadoDaLinha(c, "inquilino");
     return {
       id: String(c.id),
@@ -296,7 +300,7 @@ export async function getMeusContratos(): Promise<ContratoView[]> {
     const blocos = ((c.contrato_blocos as Record<string, unknown>[]) ?? [])
       .map(toBloco)
       .sort((a, b) => a.numeroBloco - b.numeroBloco);
-    const pagamentos = ((c.pagamentos_bloco as Record<string, unknown>[]) ?? []).map((pg) => toPagamento(pg, Number(c.aluguel_mensal)));
+    const pagamentos = ((c.pagamentos_bloco as Record<string, unknown>[]) ?? []).filter((pg) => !pg.anulado_em).map((pg) => toPagamento(pg, Number(c.aluguel_mensal)));
     const estado = estadoDaLinha(c, "proprietario");
     return {
       id: String(c.id),
@@ -351,12 +355,15 @@ export async function marcarPagamentoRecebido(input: PagamentoInput): Promise<Ac
   if (!(input.valor >= 0)) return { ok: false, error: "Informe um valor válido." };
   if (!input.dataPagamento) return { ok: false, error: "Informe a data do pagamento." };
 
+  const tipo = input.tipo ?? "aluguel";
+  // Caução é do CONTRATO (0182): grava sem bloco. O valor mensal é de um bloco.
+  if (tipo === "aluguel" && !UUID_RE.test(input.blocoId)) return { ok: false, error: "Escolha o bloco do pagamento." };
   const { data, error } = await supabase
     .from("pagamentos_bloco")
     .insert({
-      bloco_id: input.blocoId,
+      bloco_id: tipo === "caucao" ? null : input.blocoId,
       contrato_id: input.contratoId,
-      tipo: input.tipo ?? "aluguel",
+      tipo,
       valor: input.valor,
       forma: input.forma ?? "pix",
       data_pagamento: input.dataPagamento,
@@ -369,8 +376,28 @@ export async function marcarPagamentoRecebido(input: PagamentoInput): Promise<Ac
     })
     .select("id")
     .single();
-  if (error) return { ok: false, error: erroBancoPT(error) };
+  if (error) {
+    // Clique duplo ou segundo envio: o índice único (uma Caução por contrato, um valor mensal por bloco) recusa e
+    // devolvemos o registro que já existe, sem erro técnico.
+    if (error.code === "23505") {
+      const existente = await pagamentoJaRegistrado(supabase, input.contratoId, tipo, input.blocoId);
+      return { ok: true, id: existente ?? undefined, jaRegistrado: true, mensagem: MSG_JA_REGISTRADO };
+    }
+    return { ok: false, error: erroBancoPT(error) };
+  }
   return { ok: true, id: data?.id };
+}
+
+async function pagamentoJaRegistrado(
+  supabase: NonNullable<Awaited<ReturnType<typeof createClient>>>,
+  contratoId: string,
+  tipo: "aluguel" | "caucao",
+  blocoId: string
+): Promise<string | null> {
+  let q = supabase.from("pagamentos_bloco").select("id").eq("contrato_id", contratoId).eq("tipo", tipo).is("anulado_em", null);
+  if (tipo === "aluguel") q = q.eq("bloco_id", blocoId);
+  const { data } = await q.order("created_at", { ascending: true }).limit(1).maybeSingle();
+  return (data?.id as string | undefined) ?? null;
 }
 
 /**
