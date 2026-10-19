@@ -8,6 +8,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { notify } from "@/lib/notifications";
 import { sendEmail } from "@/lib/notifications/email";
 import { emailCodigoAssinatura } from "@/lib/notifications/montar-email";
+import { garantirCartao } from "@/lib/data/cartoes-servidor";
 import { SITE_URL } from "@/lib/site";
 import {
   assuntoAvisoOutraParte,
@@ -470,6 +471,13 @@ export async function assinarContrato(input: {
           subject: assuntoAvisoOutraParte(true),
           detailsHtml: detalhes,
         });
+        // Cartões compartilháveis (T2): com o contrato assinado, o dono recebe (push) o cartão do anúncio publicado.
+        const ownerId = String(c.properties?.owner_id ?? "");
+        const imovelId = String(c.property_id ?? "");
+        const { data: imovel } = imovelId ? await admin.from("properties").select("status").eq("id", imovelId).maybeSingle() : { data: null };
+        if (ownerId && imovel?.status === "active" && (await garantirCartao(admin, { tipo: "ownercard", usuarioId: ownerId, propertyId: imovelId }))) {
+          await notify({ event: "anuncio_compartilhar", userId: ownerId, pushUrl: `/dashboard/imoveis/${imovelId}/cartao` });
+        }
       }
     } catch {
       /* aviso é best-effort: a assinatura já está gravada */

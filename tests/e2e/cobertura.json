@@ -1297,6 +1297,14 @@
         "t231-admin-numeros-com-lista",
         "t48-varredura"
       ]
+    },
+    "/dashboard/imoveis/[id]/cartao": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t234-cartoes-compartilhaveis"
+      ]
     }
   },
   "rotas": {
@@ -1738,6 +1746,22 @@
       ],
       "specs": [
         "t207-cep-matricula-identidade"
+      ]
+    },
+    "/c/[curto]": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t234-cartoes-compartilhaveis"
+      ]
+    },
+    "/cartoes/[curto]/imagem": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t234-cartoes-compartilhaveis"
       ]
     }
   },
@@ -3575,6 +3599,56 @@
       ],
       "specs": [
         "t232-pedido-moradia-completo"
+      ]
+    },
+    "src/lib/data/cartoes-actions.ts#meuCartaoDoAnuncio": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t234-cartoes-compartilhaveis"
+      ]
+    },
+    "src/lib/data/cartoes-actions.ts#meuCartaoPostal": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t234-cartoes-compartilhaveis"
+      ]
+    },
+    "src/lib/data/cartoes-actions.ts#definirNomeNoCartao": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t234-cartoes-compartilhaveis"
+      ]
+    },
+    "src/lib/data/cartoes-actions.ts#registrarCompartilhamento": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t234-cartoes-compartilhaveis"
+      ]
+    },
+    "src/lib/data/cartoes-actions.ts#trocarMeuCodigo": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t234-cartoes-compartilhaveis"
+      ]
+    },
+    "src/lib/data/cartoes-actions.ts#registrarVisitaComRef": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t234-cartoes-compartilhaveis"
       ]
     }
   }

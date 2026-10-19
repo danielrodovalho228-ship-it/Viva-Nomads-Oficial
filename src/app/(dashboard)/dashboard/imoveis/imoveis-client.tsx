@@ -202,6 +202,12 @@ export function MyPropertiesClient({ properties: real, prontidao = {} }: { prope
                         >
                           {p.status === "draft" ? "Continuar editando" : "Editar"}
                         </ButtonLink>
+                        {/* Cartões compartilháveis (T2): o cartão do anúncio publicado, com QR para o WhatsApp. */}
+                        {p.status === "active" && (
+                          <ButtonLink href={`/dashboard/imoveis/${p.id}/cartao`} variant="outline" size="sm" data-testid="cartao-anuncio-link">
+                            Cartão para compartilhar
+                          </ButtonLink>
+                        )}
                         {/* Qualificação é POR IMÓVEL: cada rascunho qualifica o seu. */}
                         {p.status === "draft" && (
                           <ButtonLink href={`/qualificar?imovel=${p.id}`} variant="outline" size="sm">

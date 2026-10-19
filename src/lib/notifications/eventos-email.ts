@@ -55,6 +55,7 @@ export type NotificationEvent =
   | "visita_remarcada" // proprietário propôs outro horário → morador
   | "visita_cancelada" // cancelada ou recusada (com motivo) → a outra parte
   // Candidatura e contrato (prompt 23): nunca e-mail de "recusada"
+  | "anuncio_compartilhar" // contrato assinado pelas duas partes → proprietário: o cartão do anúncio para compartilhar (push)
   | "candidatura_nova"; // candidatura recebida → proprietário (contrato pronto/assinado: contract_status, prompt 24)
 
 // Assunto SEM a marca (o envio põe "· Viva Nomads"; regras em assuntos.ts). A imagem de cada evento mora em
@@ -103,5 +104,6 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   candidatura_nova: { subject: "Nova candidatura no seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, você recebeu uma candidatura para o seu imóvel. Veja o pedido e responda pela plataforma.`, cta: "Ver a candidatura", path: "/dashboard/leads" },
   proposta_vencendo: { subject: "Sua proposta vence em menos de 24 horas", body: (n) => `Olá${n ? " " + n : ""}, uma proposta aguardando a sua resposta vence em menos de 24 horas. Responda pela plataforma.`, cta: "Ver a proposta", path: "/dashboard/propostas" },
   proposta_respondida: { subject: "Sua proposta foi respondida", body: (n) => `Olá${n ? " " + n : ""}, a sua proposta teve resposta no Viva Nomads.`, cta: "Ver a resposta", path: "/dashboard/orcamentos" },
+  anuncio_compartilhar: { subject: "Seu anúncio está no ar: compartilhe o cartão", body: (n) => `Olá${n ? " " + n : ""}, o cartão do seu anúncio está pronto, com um QR que leva direto ao imóvel. Compartilhe no WhatsApp em um toque.`, cta: "Ver o cartão", path: "/dashboard/imoveis" },
   documento_recebido: { subject: "Novo documento de imóvel para conferir", body: () => "Um proprietário enviou a documentação do imóvel. Há um item aguardando conferência na fila de moderação.", cta: "Conferir documento", path: "/admin/documentos" },
 };

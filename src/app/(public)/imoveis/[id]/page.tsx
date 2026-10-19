@@ -7,6 +7,7 @@ import { isExemplo, ehAnuncioDeTeste } from "@/lib/demo-listing";
 import { tituloAbaImovel, descricaoAbaImovel } from "@/lib/anuncio/metadados-imovel";
 import { PropertyJsonLd } from "@/components/seo/property-json-ld";
 import { PropertyDetail } from "./property-detail";
+import { RefDaVisita } from "@/components/cartoes/ref-da-visita";
 import { getPerfilProprietario } from "@/lib/data/perfil-proprietario";
 
 // F9: dados frescos (revalidatePath nas ações + rede de segurança de 60 s).
@@ -67,6 +68,8 @@ export default async function PropertyDetailPage({ params }: Params) {
     <>
       <PropertyJsonLd property={property} />
       <PropertyDetail property={property} similar={similar} proprietario={proprietario} />
+      {/* Cartões compartilháveis: visita por QR/link assinado (ref + UTM) é conferida no servidor. */}
+      <RefDaVisita imovelId={property.id} />
     </>
   );
 }

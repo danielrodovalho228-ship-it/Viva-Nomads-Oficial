@@ -55,6 +55,7 @@ export const TEMA_POR_EVENTO: Record<NotificationEvent | EventoAvulso, string> =
   application_received: "candidatura-recebida",
   candidatura_aceita: "nova-mensagem",
   candidatura_nova: "novo-interessado",
+  anuncio_compartilhar: "transacional",
   saved_search_match: "busca",
   verification_ready: "verificacao",
   contract_status: "contrato",
