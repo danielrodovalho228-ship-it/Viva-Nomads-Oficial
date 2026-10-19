@@ -12,3 +12,17 @@ test("t58 mede cobertura só depois de rolar de forma instantânea", () => {
   assert.ok(chamadas.length >= 2);
   for (const c of chamadas) assert.match(c, /behavior:\s*"instant"/, c);
 });
+
+// Lab 245c9a9b/e611dce4: "Test timeout of 45000ms exceeded" no t58. O test.setTimeout(90000) vinha DEPOIS do
+// goto + clique e a limpeza do `finally` não rodava a tempo, deixando o 2FA ativo para o retry (que falhava sem erro).
+test("t58 amplia o prazo do teste antes de qualquer navegação", () => {
+  const src = readFileSync(join(process.cwd(), "tests", "e2e", "specs", "t58-2fa-chave-texto.spec.ts"), "utf8");
+  const testes = src.split(/\n\s*test\("/).slice(1);
+  assert.equal(testes.length, 2);
+  for (const t of testes) {
+    const prazo = t.indexOf("test.setTimeout(");
+    const ir = t.indexOf("page.goto(");
+    assert.ok(prazo >= 0 && prazo < ir, "setTimeout deve vir antes do primeiro goto");
+  }
+  assert.doesNotMatch(src, /test\.setTimeout\(90000\)/);
+});
