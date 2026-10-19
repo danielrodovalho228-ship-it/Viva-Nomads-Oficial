@@ -29,13 +29,20 @@ async function abrir(page: Page, rota: string) {
   await page.locator("main").first().waitFor();
 }
 
-/** Largura do maior bloco direto dentro do <main> (o conteúdo da página). */
+/**
+ * Largura do maior bloco direto dentro do <main> (o conteúdo da página).
+ * Espera o conteúdo existir: /dashboard/locacoes do dono sem estadia redireciona para Contratos (prompt 28) e,
+ * com a página em streaming, o <main> do primeiro render ainda não tem filhos (lab 5d5f433e: 0px).
+ */
 async function larguraConteudo(page: Page): Promise<number> {
-  return page.evaluate(() => {
-    const main = document.querySelector("main");
-    if (!main) return 0;
-    return Math.round(Math.max(0, ...Array.from(main.children).map((c) => c.getBoundingClientRect().width)));
-  });
+  const medir = () =>
+    page.evaluate(() => {
+      const main = document.querySelector("main");
+      if (!main) return 0;
+      return Math.round(Math.max(0, ...Array.from(main.children).map((c) => c.getBoundingClientRect().width)));
+    });
+  await expect.poll(medir, { timeout: 15_000, message: "conteúdo do <main> não apareceu" }).toBeGreaterThan(0);
+  return medir();
 }
 
 for (const largura of [1280, 1920]) {

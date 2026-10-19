@@ -1,7 +1,15 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Search, Home } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { NotFoundIllustration } from "@/components/illustrations";
+
+// Título próprio já no HTML inicial (o streaming do notFound() servia o padrão da home).
+// robots: null — fica só o noindex do Next, sem o "index, follow" da raiz.
+export const metadata: Metadata = {
+  title: "Página não encontrada",
+  robots: null,
+};
 
 /**
  * 404 branded da rota de detalhe do imóvel (App Router).

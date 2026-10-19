@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { CHAVE_ANON, NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T222 — A taxa de serviço não sai pela API (correção do coordenador depois do reteste do #866; item 5 da matriz).
+  T224 — A taxa de serviço não sai pela API (correção do coordenador depois do reteste do #866; item 5 da matriz).
   Laboratório, contas de teste. A 0177 tira o SELECT de contratos.comissao_valor/comissao_percent/valor_comissao e de
   leads.accepted_commission_rate/accepted_plan (e das colunas de origem) para authenticated e anon:
    1. com a sessão do inquilino (e com a do dono), GET /rest/v1/contratos?select=comissao_valor,… e
@@ -15,8 +15,8 @@ const SAIDA = "tests/laboratorio/saida";
 const URL_SUPABASE = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.t222.${sufixo}@lab.vivanomads.test`, nome: "Dora Taxa Sobrenome", role: "owner" as const };
-const inq = { email: `inq.t222.${sufixo}@lab.vivanomads.test`, nome: "Ivan Taxa Sobrenome", role: "tenant" as const };
+const dono = { email: `dono.t224.${sufixo}@lab.vivanomads.test`, nome: "Dora Taxa Sobrenome", role: "owner" as const };
+const inq = { email: `inq.t224.${sufixo}@lab.vivanomads.test`, nome: "Ivan Taxa Sobrenome", role: "tenant" as const };
 const ids: Record<string, string> = {};
 
 async function sessao(email: string) {
@@ -31,7 +31,7 @@ async function rest(token: string, caminho: string) {
   return { status: r.status, corpo: await r.text() };
 }
 
-test.describe("T222 — a taxa de serviço não sai pela API (contratos e leads)", () => {
+test.describe("T224 — a taxa de serviço não sai pela API (contratos e leads)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial" });
 
@@ -94,7 +94,7 @@ test.describe("T222 — a taxa de serviço não sai pela API (contratos e leads)
       const taxa = d.getByTestId("contrato-taxa").first();
       await expect(taxa).toContainText("R$ 1.536", { timeout: 20_000 });
       await expect(taxa).toContainText("12%");
-      await d.screenshot({ path: `${SAIDA}/t222-contratos-dono-${largura}.png`, fullPage: true });
+      await d.screenshot({ path: `${SAIDA}/t224-contratos-dono-${largura}.png`, fullPage: true });
       await d.goto(`/dashboard/fechamento?c=${ids.lead}`, { waitUntil: "domcontentloaded" });
       await expect(d.locator("main")).toContainText(`Studio taxa API ${sufixo}`, { timeout: 20_000 });
       await expect(d.locator("main")).toContainText("Ivan Taxa Sobrenome");
@@ -110,7 +110,7 @@ test.describe("T222 — a taxa de serviço não sai pela API (contratos e leads)
         expect(html, rota).not.toMatch(/comissao_valor|comissao_percent|accepted_commission|Taxa de serviço/);
         expect(html, rota).not.toMatch(/1\.536/);
       }
-      await i.screenshot({ path: `${SAIDA}/t222-morador-${largura}.png`, fullPage: true });
+      await i.screenshot({ path: `${SAIDA}/t224-morador-${largura}.png`, fullPage: true });
       await i.context().close();
     });
   }

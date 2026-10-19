@@ -13,6 +13,7 @@ import {
   MARCA_SUGERIDO,
 } from "@/lib/anuncio/sugestoes-cadastro";
 import { itensDisponiveis, MAX_FAIXAS, PCT_MAX, type Negociacao, type LimitesPrivados } from "@/lib/anuncio/negociacao";
+import { TEXTO_TETO_RODADAS } from "@/lib/propostas/regras";
 import { cn, formatBRL } from "@/lib/utils";
 
 /* ── Proximidades automáticas (OSM) ───────────────────────────────────────── */
@@ -195,6 +196,9 @@ export function BlocoNegociacao({
     <div className="rounded-xl border border-sage-200 p-4" data-testid="bloco-negociacao">
       <p className="text-sm font-semibold text-ink">Negociação</p>
       <p className="text-xs text-muted">Quem vai ficar mais tempo costuma pedir condições. Você decide o que dá para negociar.</p>
+      <p className="mt-1 text-xs text-muted" data-testid="negociacao-rodadas">
+        {TEXTO_TETO_RODADAS}
+      </p>
 
       <div className="mt-3 flex gap-2" role="radiogroup" aria-label="Aceito negociar?">
         {[

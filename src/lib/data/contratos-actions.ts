@@ -1,15 +1,16 @@
 "use server";
 
-import { estadoDoContrato, statusAssinaturaCurto, type ChaveEstadoContrato } from "@/lib/fechamento-contrato";
 import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { emitirDoPagamento } from "@/lib/fiscal/emitir";
+import { emitirDoPagamentoComRegistro } from "@/lib/fiscal/emitir";
 import { listMyProperties } from "@/lib/data/properties";
 import { erroBancoPT } from "@/lib/erros-banco";
 import { taxaDosContratosDoDono } from "@/lib/data/taxa-dono-servidor";
-import { etapaContrato, type EtapaContrato } from "@/lib/contrato-etapas";
+import type { EtapaContrato } from "@/lib/contrato-etapas";
+import { estadoDoContratoUnico, type ChaveEstado, type EstadoContrato, type LinhaEstadoContrato } from "@/lib/contrato-estado";
 import { podeAvaliarLocacao } from "@/lib/contrato-assinar";
+import { rotuloPagamentoBloco } from "@/lib/pagamento-bloco";
 
 /**
  * Contratos & blocos do PROPRIETÁRIO + registro DECLARATÓRIO de pagamento
@@ -52,6 +53,8 @@ export interface PagamentoView {
   dataPagamento: string;
   confirmado: boolean;
   observacao: string | null;
+  /** Rótulo único: "Bloco 1 (2 meses: 19/10 a 18/12) — R$ 6.400 (2 × R$ 3.200)" (jornada de assinatura, 19/10). */
+  rotulo: string;
 }
 
 export interface ContratoView {
@@ -71,8 +74,8 @@ export interface ContratoView {
   status: string;
   /** F33: etapa real (assinatura → 1º pagamento → vigência); só vale com status "ativo". */
   etapa: EtapaContrato;
-  /** Prompt 24: "Aguardando assinatura · falta você / falta o inquilino" (visão do proprietário). */
-  assinaturaStatus?: string;
+  /** Estado da fonte única (selo igual ao do detalhe e da carteira), visão do proprietário. */
+  estado: EstadoContrato;
   criadoEm: string;
   blocos: BlocoView[];
   pagamentos: PagamentoView[];
@@ -93,8 +96,15 @@ function toBloco(b: Record<string, unknown>): BlocoView {
   };
 }
 
-function toPagamento(p: Record<string, unknown>): PagamentoView {
+function toPagamento(p: Record<string, unknown>, valorMensal?: number | null): PagamentoView {
+  const b = p.contrato_blocos as { numero_bloco?: number | null; meses?: number | null; inicio?: string | null; fim?: string | null } | null | undefined;
   return {
+    rotulo: rotuloPagamentoBloco({
+      tipo: String(p.tipo ?? "aluguel"),
+      valor: Number(p.valor),
+      bloco: b?.numero_bloco ? { numero: Number(b.numero_bloco), meses: Number(b.meses ?? 1), inicio: b.inicio ?? null, fim: b.fim ?? null } : null,
+      valorMensal: valorMensal ?? null,
+    }),
     id: String(p.id),
     blocoId: String(p.bloco_id),
     tipo: String(p.tipo ?? "aluguel"),
@@ -106,16 +116,18 @@ function toPagamento(p: Record<string, unknown>): PagamentoView {
   };
 }
 
-/** 1º pagamento do aluguel declarado pelo proprietário E confirmado pelo inquilino. */
-function primeiroPagamentoConfirmado(pagamentos: PagamentoView[]): boolean {
-  return pagamentos.some((p) => p.tipo === "aluguel" && p.confirmado);
+/** Estado pela fonte única, a partir da linha do banco (com pagamentos_bloco). */
+function estadoDaLinha(c: Record<string, unknown>, papel: "inquilino" | "proprietario"): EstadoContrato {
+  return estadoDoContratoUnico(c as LinhaEstadoContrato, papel);
 }
 
 /** Prompt 28: estado REAL de um contrato (o RLS deixa as duas partes lerem), para o Resumo do fechamento. */
 export interface EstadoContratoView {
   id: string;
-  chave: ChaveEstadoContrato;
+  chave: ChaveEstado;
   texto: string;
+  /** Ainda falta alguma assinatura. */
+  assinando: boolean;
   criadoEm: string;
 }
 
@@ -129,17 +141,8 @@ export async function lerEstadoDoContrato(contratoId: string, papel: "inquilino"
     .eq("id", contratoId)
     .maybeSingle();
   if (!data) return null;
-  const pagamentos = (((data as Record<string, unknown>).pagamentos_bloco as Record<string, unknown>[]) ?? []).map(toPagamento);
-  const e = estadoDoContrato(
-    {
-      status: String(data.status ?? "ativo"),
-      assinadoProprietarioEm: (data.assinado_proprietario_em as string | null) ?? null,
-      assinadoInquilinoEm: (data.assinado_inquilino_em as string | null) ?? null,
-      primeiroPagamentoConfirmado: primeiroPagamentoConfirmado(pagamentos),
-    },
-    papel,
-  );
-  return { id: String(data.id), chave: e.chave, texto: e.texto, criadoEm: String(data.created_at) };
+  const e = estadoDaLinha(data as Record<string, unknown>, papel);
+  return { id: String(data.id), chave: e.chave, texto: e.selo, assinando: e.etapa === "aguardando_assinatura", criadoEm: String(data.created_at) };
 }
 
 /** Contrato do INQUILINO (prompt 28): a seção "Contratos" — aguardando assinatura ainda não é locação. */
@@ -148,9 +151,10 @@ export interface ContratoInquilinoView {
   numero: string;
   propertyTitle: string;
   aluguelMensal: number;
-  chave: ChaveEstadoContrato;
+  chave: ChaveEstado;
   texto: string;
   faltaVoce: boolean;
+  assinando: boolean;
   criadoEm: string;
 }
 
@@ -167,24 +171,16 @@ export async function getContratosDoInquilino(): Promise<ContratoInquilinoView[]
     .eq("tenant_id", user.id)
     .order("created_at", { ascending: false });
   return ((data ?? []) as Record<string, unknown>[]).map((c) => {
-    const pagamentos = ((c.pagamentos_bloco as Record<string, unknown>[]) ?? []).map(toPagamento);
-    const e = estadoDoContrato(
-      {
-        status: String(c.status ?? "ativo"),
-        assinadoProprietarioEm: (c.assinado_proprietario_em as string | null) ?? null,
-        assinadoInquilinoEm: (c.assinado_inquilino_em as string | null) ?? null,
-        primeiroPagamentoConfirmado: primeiroPagamentoConfirmado(pagamentos),
-      },
-      "inquilino",
-    );
+    const e = estadoDaLinha(c, "inquilino");
     return {
       id: String(c.id),
       numero: `VN-CT-${String(c.id).slice(0, 8).toUpperCase()}`,
       propertyTitle: (c.properties as { title?: string } | null)?.title ?? "Imóvel",
       aluguelMensal: Number(c.aluguel_mensal),
       chave: e.chave,
-      texto: e.texto,
+      texto: e.selo,
       faltaVoce: e.faltaVoce,
+      assinando: e.etapa === "aguardando_assinatura",
       criadoEm: String(c.created_at),
     };
   });
@@ -204,6 +200,8 @@ export interface LocacaoView {
   aluguelMensal: number;
   status: string;
   etapa: EtapaContrato;
+  /** Estado da fonte única, visão do inquilino. */
+  estado: EstadoContrato;
   criadoEm: string;
   /** Janela de avaliação aberta (contrato encerrado há até 14 dias). Nunca em contrato aguardando assinatura. */
   podeAvaliar: boolean;
@@ -225,13 +223,14 @@ export async function getMinhasLocacoes(): Promise<LocacaoView[]> {
 
   const { data } = await supabase
     .from("contratos")
-    .select("id, property_id, aluguel_mensal, status, created_at, encerrado_em, assinado_proprietario_em, assinado_inquilino_em, properties(title, owner_id), pagamentos_bloco(*)")
+    .select("id, property_id, aluguel_mensal, status, created_at, encerrado_em, assinado_proprietario_em, assinado_inquilino_em, properties(title, owner_id), pagamentos_bloco(*, contrato_blocos(numero_bloco, meses, inicio, fim))")
     .eq("tenant_id", user.id)
     .order("created_at", { ascending: false });
 
   return ((data ?? []) as Record<string, unknown>[]).map((c) => {
     const prop = (c.properties as { title?: string; owner_id?: string } | null) ?? {};
-    const pagamentos = ((c.pagamentos_bloco as Record<string, unknown>[]) ?? []).map(toPagamento);
+    const pagamentos = ((c.pagamentos_bloco as Record<string, unknown>[]) ?? []).map((pg) => toPagamento(pg, Number(c.aluguel_mensal)));
+    const estado = estadoDaLinha(c, "inquilino");
     return {
       id: String(c.id),
       propertyId: String(c.property_id),
@@ -239,11 +238,8 @@ export async function getMinhasLocacoes(): Promise<LocacaoView[]> {
       ownerId: String(prop.owner_id ?? ""),
       aluguelMensal: Number(c.aluguel_mensal),
       status: String(c.status ?? "ativo"),
-      etapa: etapaContrato({
-        assinadoProprietarioEm: c.assinado_proprietario_em as string | null,
-        assinadoInquilinoEm: c.assinado_inquilino_em as string | null,
-        primeiroPagamentoConfirmado: primeiroPagamentoConfirmado(pagamentos),
-      }),
+      etapa: estado.etapa ?? "em_vigencia",
+      estado,
       criadoEm: String(c.created_at),
       podeAvaliar: podeAvaliarLocacao(String(c.status ?? "ativo"), (c.encerrado_em as string | null) ?? null),
       pagamentos,
@@ -281,7 +277,7 @@ export async function getMeusContratos(): Promise<ContratoView[]> {
   // Lista fechada de colunas: a taxa (comissao_*) não sai mais pela API (0177) e vem do servidor logo abaixo.
   const { data } = await supabase
     .from("contratos")
-    .select(`${COLUNAS_CONTRATO_PARTES}, contrato_blocos(*), pagamentos_bloco(*)`)
+    .select(`${COLUNAS_CONTRATO_PARTES}, contrato_blocos(*), pagamentos_bloco(*, contrato_blocos(numero_bloco, meses, inicio, fim))`)
     .in("property_id", ids)
     .order("created_at", { ascending: false });
 
@@ -300,7 +296,8 @@ export async function getMeusContratos(): Promise<ContratoView[]> {
     const blocos = ((c.contrato_blocos as Record<string, unknown>[]) ?? [])
       .map(toBloco)
       .sort((a, b) => a.numeroBloco - b.numeroBloco);
-    const pagamentos = ((c.pagamentos_bloco as Record<string, unknown>[]) ?? []).map(toPagamento);
+    const pagamentos = ((c.pagamentos_bloco as Record<string, unknown>[]) ?? []).map((pg) => toPagamento(pg, Number(c.aluguel_mensal)));
+    const estado = estadoDaLinha(c, "proprietario");
     return {
       id: String(c.id),
       propertyId: String(c.property_id),
@@ -315,15 +312,8 @@ export async function getMeusContratos(): Promise<ContratoView[]> {
       aceiteEm: aceiteDoLead.get(String(c.lead_id)) ?? null,
       qtdOcupantes: Number(c.qtd_ocupantes ?? 1),
       status: String(c.status ?? "ativo"),
-      etapa: etapaContrato({
-        assinadoProprietarioEm: c.assinado_proprietario_em as string | null,
-        assinadoInquilinoEm: c.assinado_inquilino_em as string | null,
-        primeiroPagamentoConfirmado: primeiroPagamentoConfirmado(pagamentos),
-      }),
-      assinaturaStatus: statusAssinaturaCurto("proprietario", {
-        proprietario: (c.assinado_proprietario_em as string | null) ?? null,
-        inquilino: (c.assinado_inquilino_em as string | null) ?? null,
-      }),
+      etapa: estado.etapa ?? "em_vigencia",
+      estado,
       criadoEm: String(c.created_at),
       blocos,
       pagamentos,
@@ -404,6 +394,6 @@ export async function confirmarPagamento(pagamentoId: string): Promise<ActionRes
   if (error) return { ok: false, error: erroBancoPT(error) };
   // Registrado pelo dono + confirmado pelo inquilino → recibo (ou comprovante da
   // caução) em PDF, por e-mail às duas partes. Depois da resposta: não atrasa a tela.
-  after(() => emitirDoPagamento(pagamentoId));
+  after(() => emitirDoPagamentoComRegistro(pagamentoId));
   return { ok: true, id: pagamentoId };
 }

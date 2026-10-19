@@ -16,6 +16,8 @@ import { ACOES_JORNADA, ALVOS_JORNADA } from "@/lib/jornada-teste";
   cria uma candidatura NOVA do inquilino de teste para o anúncio de teste, já aceita e com documentos fictícios, pronta
   para o Fechamento. Não apaga a candidatura nem o contrato antigos (ficam como histórico). Idempotente: se já houver
   uma jornada aberta (aceita, sem contrato ou com contrato ainda não assinado pelas duas partes), devolve o link dela.
+  Sem sobreposição (0176): antes de criar a nova, os contratos ATIVOS de teste do mesmo anúncio (jornadas anteriores,
+  já assinadas) ficam encerrados — a nova jornada pode usar qualquer data de entrada. Nunca toca conta real.
 */
 
 /** Os dados que a tela mostra depois do clique (adendo ao prompt 28): nunca termina sem texto. */
@@ -27,6 +29,8 @@ export interface DetalheJornada {
   inquilino: string;
   /** Quando a candidatura foi aceita (ISO). */
   aceitaEm: string | null;
+  /** Contratos de teste anteriores do anúncio encerrados para a nova jornada (sem sobreposição — 0176). */
+  contratosEncerrados?: number;
   links: { fechamento: string; candidaturas: string; leads: string };
 }
 
@@ -67,7 +71,7 @@ export async function novaJornadaDeTeste(input: { tenantId: string; propertyId: 
       r.reaproveitada ? ACOES_JORNADA.reaproveitada : ACOES_JORNADA.criada,
       ALVOS_JORNADA.candidatura,
       r.leadId,
-      `${r.anuncio} · ${r.inquilino}${r.reaproveitada ? ` · ${r.motivo}` : ""}`.slice(0, 500),
+      `${r.anuncio} · ${r.inquilino}${r.reaproveitada ? ` · ${r.motivo}` : ""}${r.contratosEncerrados ? ` · ${r.contratosEncerrados} contrato(s) de teste anterior(es) encerrado(s)` : ""}`.slice(0, 500),
     );
   } else {
     await logModeracao(admin, user.id, ACOES_JORNADA.erro, ALVOS_JORNADA.anuncio, input.propertyId, r.error.slice(0, 500));
@@ -106,6 +110,10 @@ async function jornada(admin: NonNullable<ReturnType<typeof createAdminClient>>,
     }
   }
 
+  // Encerra a jornada de teste anterior (contratos ativos do anúncio de teste com inquilino is_teste).
+  const encerrados = await encerrarJornadasAnteriores(admin, input.propertyId);
+  if (encerrados === null) return { ok: false, error: "Não foi possível encerrar a jornada de teste anterior." };
+
   const plano = await planoDoProprietario(admin, imovel.owner_id as string);
   const agora = new Date().toISOString();
   const { data: lead, error } = await admin
@@ -135,5 +143,22 @@ async function jornada(admin: NonNullable<ReturnType<typeof createAdminClient>>,
     });
     if (eDoc) return { ok: false, error: `Candidatura criada, mas os documentos fictícios falharam: ${eDoc.message}` };
   }
-  return { ok: true, reaproveitada: false, link: `/dashboard/fechamento?c=${lead.id}`, ...detalhe(lead.id as string, anuncio, inquilino, agora) };
+  return { ok: true, reaproveitada: false, link: `/dashboard/fechamento?c=${lead.id}`, ...detalhe(lead.id as string, anuncio, inquilino, agora), contratosEncerrados: encerrados };
+}
+
+/** Contratos ativos do anúncio de teste cujo inquilino é conta de teste → encerrados. Devolve quantos (null = erro). */
+async function encerrarJornadasAnteriores(admin: NonNullable<ReturnType<typeof createAdminClient>>, propertyId: string): Promise<number | null> {
+  const { data: ativos } = await admin.from("contratos").select("id, tenant_id").eq("property_id", propertyId).eq("status", "ativo");
+  const lista = (ativos ?? []) as { id: string; tenant_id: string }[];
+  if (!lista.length) return 0;
+  const { data: perfis } = await admin.from("profiles").select("id, is_teste").in("id", [...new Set(lista.map((c) => c.tenant_id))]);
+  const teste = new Set(((perfis ?? []) as { id: string; is_teste: boolean | null }[]).filter((p) => p.is_teste === true).map((p) => p.id));
+  const ids = lista.filter((c) => teste.has(c.tenant_id)).map((c) => c.id);
+  if (!ids.length) return 0;
+  const { error } = await admin
+    .from("contratos")
+    .update({ status: "encerrado_sem_renovacao", encerrado_em: new Date().toISOString() })
+    .in("id", ids)
+    .eq("status", "ativo");
+  return error ? null : ids.length;
 }

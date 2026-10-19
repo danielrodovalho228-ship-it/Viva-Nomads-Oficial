@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PawPrint, Trash2 } from "lucide-react";
+import { Camera, PawPrint, Trash2, X } from "lucide-react";
 import { Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { ROTULO_ESPECIE, ROTULO_PORTE, ESPECIES_PET, PORTES_PET, MAX_PETS } from "@/lib/anuncio/pets-regras";
-import { removerPet, meusPets, salvarPet, type PetSalvo } from "@/lib/data/pets-ficha-actions";
+import { MAX_FOTOS_PET, podeAdicionarFotoPet, type TipoFotoPet } from "@/lib/anuncio/ficha-pet-fotos";
+import { enviarImagemPet, removerImagemPet, removerPet, meusPets, salvarPet, type PetSalvo } from "@/lib/data/pets-ficha-actions";
 
 const VAZIO = { nome: "", especie: "cao", porte: "P", idadeAnos: "0", raca: "", castrado: "nao", vacinasEmDia: "sim", observacoes: "" };
 const CAMPO = "w-full rounded-xl border border-sage-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-sage";
@@ -16,6 +17,7 @@ export function PetsFicha() {
   const [f, setF] = useState(VAZIO);
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
+  const [enviando, setEnviando] = useState<string | null>(null);
 
   useEffect(() => {
     let vivo = true;
@@ -51,6 +53,27 @@ export function PetsFicha() {
     if (r.ok) setPets((p) => (p ?? []).filter((x) => x.id !== id));
   }
 
+  async function enviar(petId: string, tipo: TipoFotoPet, arquivo: File | undefined) {
+    if (!arquivo) return;
+    setErro(null);
+    setEnviando(petId);
+    const form = new FormData();
+    form.set("petId", petId);
+    form.set("tipo", tipo);
+    form.set("file", arquivo);
+    const r = await enviarImagemPet(form).catch(() => ({ ok: false as const, error: "Sem conexão. Tente de novo." }));
+    setEnviando(null);
+    if (!r.ok) return setErro(r.error);
+    setPets(r.pets);
+  }
+
+  async function tirarImagem(petId: string, caminho: string) {
+    setErro(null);
+    const r = await removerImagemPet(petId, caminho).catch(() => ({ ok: false as const, error: "Sem conexão. Tente de novo." }));
+    if (!r.ok) return setErro(r.error);
+    setPets(r.pets);
+  }
+
   const lista = pets ?? [];
   return (
     <section id="pets" className="scroll-mt-24">
@@ -72,6 +95,36 @@ export function PetsFicha() {
                   <p className="text-muted">
                     {p.castrado ? "Castrado" : "Não castrado"} · vacinas {p.vacinasEmDia ? "em dia" : "pendentes"}
                   </p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2" data-testid={`pet-imagens-${p.nome}`}>
+                    {p.fotos.map((f, i) => (
+                      <span key={f.caminho} className="relative">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={f.url} alt={`Foto ${i + 1} de ${p.nome}`} className="h-14 w-14 rounded-lg object-cover" />
+                        <button type="button" onClick={() => tirarImagem(p.id, f.caminho)} aria-label={`Remover foto ${i + 1} de ${p.nome}`} className="absolute -right-2 -top-2 grid h-6 w-6 place-items-center rounded-full bg-white shadow ring-1 ring-sage-200">
+                          <X className="h-3 w-3" />
+                        </button>
+                      </span>
+                    ))}
+                    {podeAdicionarFotoPet("foto", p.fotos.length) && (
+                      <label className="inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-lg border border-sage-200 px-3 text-xs font-medium text-ink hover:bg-sage-50">
+                        <Camera className="h-4 w-4" /> {enviando === p.id ? "Enviando…" : `Foto (${p.fotos.length}/${MAX_FOTOS_PET})`}
+                        <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" aria-label={`Enviar foto de ${p.nome}`} disabled={enviando === p.id} onChange={(e) => { void enviar(p.id, "foto", e.target.files?.[0]); e.target.value = ""; }} />
+                      </label>
+                    )}
+                  </div>
+                  <div className="mt-2 text-xs text-muted">
+                    {p.carteira ? (
+                      <span className="inline-flex items-center gap-2">
+                        <a href={p.carteira.url} target="_blank" rel="noopener noreferrer" className="font-medium text-forest underline">Carteira de vacina enviada</a>
+                        <button type="button" onClick={() => tirarImagem(p.id, p.carteira!.caminho)} aria-label={`Remover carteira de vacina de ${p.nome}`} className="rounded p-1 hover:bg-sage-50"><X className="h-3 w-3" /></button>
+                      </span>
+                    ) : (
+                      <label className="inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-lg border border-sage-200 px-3 font-medium text-ink hover:bg-sage-50">
+                        {enviando === p.id ? "Enviando…" : "Enviar foto da carteira de vacina"}
+                        <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" aria-label={`Enviar carteira de vacina de ${p.nome}`} disabled={enviando === p.id} onChange={(e) => { void enviar(p.id, "carteira", e.target.files?.[0]); e.target.value = ""; }} />
+                      </label>
+                    )}
+                  </div>
                 </div>
                 <button type="button" onClick={() => tirar(p.id)} aria-label={`Remover ${p.nome}`} className="rounded-lg p-2 text-muted hover:bg-sage-50">
                   <Trash2 className="h-4 w-4" />
@@ -80,6 +133,7 @@ export function PetsFicha() {
             ))}
           </ul>
         )}
+        {erro && lista.length >= MAX_PETS && <p role="alert" className="mt-3 text-sm text-red-700">{erro}</p>}
         {lista.length < MAX_PETS && (
           <form onSubmit={salvar} className="mt-4 grid gap-3 sm:grid-cols-2" data-testid="pets-form">
             <label className="block text-sm">

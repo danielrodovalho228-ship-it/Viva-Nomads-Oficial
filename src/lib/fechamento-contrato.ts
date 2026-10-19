@@ -74,39 +74,4 @@ export function quadroAntesDaEntrada(p: { primeiroPagamento: number; caucao: num
   };
 }
 
-/** Status curto do contrato para os cartões (#825): "Aguardando assinatura · falta você / falta o proprietário". */
-export function statusAssinaturaCurto(
-  papel: "inquilino" | "proprietario",
-  a: { proprietario: string | null; inquilino: string | null },
-): string {
-  if (a.proprietario && a.inquilino) return "Assinado pelas duas partes";
-  const eu = papel === "inquilino" ? a.inquilino : a.proprietario;
-  const outro = papel === "inquilino" ? "o proprietário" : "o inquilino";
-  if (!a.proprietario && !a.inquilino) return "Aguardando assinatura · falta você e " + outro;
-  return eu ? `Aguardando assinatura · falta ${outro}` : "Aguardando assinatura · falta você";
-}
-
-/*
-  Prompt 28: o estado REAL do contrato, lido do banco — o Resumo do fechamento dizia "aguardando assinatura" para um
-  contrato que já estava assinado pelas duas partes. Mesmo texto no Fechamento, em Contratos (os dois lados) e na
-  página do contrato.
-*/
-export type ChaveEstadoContrato = "aguardando_assinatura" | "assinado" | "locacao_ativa" | "encerrado" | "cancelado";
-
-export function estadoDoContrato(
-  c: { status: string; assinadoProprietarioEm: string | null; assinadoInquilinoEm: string | null; primeiroPagamentoConfirmado: boolean },
-  papel: "inquilino" | "proprietario",
-): { chave: ChaveEstadoContrato; texto: string; faltaVoce: boolean } {
-  if (c.status === "cancelado") return { chave: "cancelado", texto: "Cancelado", faltaVoce: false };
-  if (c.status !== "ativo") return { chave: "encerrado", texto: "Encerrado", faltaVoce: false };
-  if (!c.assinadoProprietarioEm || !c.assinadoInquilinoEm) {
-    const eu = papel === "inquilino" ? c.assinadoInquilinoEm : c.assinadoProprietarioEm;
-    return {
-      chave: "aguardando_assinatura",
-      texto: statusAssinaturaCurto(papel, { proprietario: c.assinadoProprietarioEm, inquilino: c.assinadoInquilinoEm }),
-      faltaVoce: !eu,
-    };
-  }
-  if (!c.primeiroPagamentoConfirmado) return { chave: "assinado", texto: "As duas partes assinaram · Aguardando 1º pagamento", faltaVoce: false };
-  return { chave: "locacao_ativa", texto: "Locação ativa", faltaVoce: false };
-}
+/* Prompt 28: o estado REAL do contrato agora vem da fonte única — src/lib/contrato-estado.ts (estadoDoContratoUnico). */

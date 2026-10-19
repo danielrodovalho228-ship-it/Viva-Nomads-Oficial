@@ -130,7 +130,8 @@ test.describe("T71 — topo da /buscar", () => {
       const caixas = await cards.evaluateAll((els) =>
         els.slice(0, 12).map((el) => {
           const r = el.getBoundingClientRect();
-          const img = el.querySelector("img")?.getBoundingClientRect();
+          // Caixa da foto (aspect 4:3), não o <img>: cartão sem foto real usa o espaço reservado (sem <img>) e dava 0 px (lab 5d5f433e).
+          const img = (el.querySelector('[class*="aspect-"]') ?? el.querySelector("img"))?.getBoundingClientRect();
           return { w: Math.round(r.width), h: Math.round(r.height), iw: Math.round(img?.width ?? 0), ih: Math.round(img?.height ?? 0) };
         })
       );

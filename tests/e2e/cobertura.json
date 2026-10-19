@@ -135,7 +135,8 @@
         "t36-cadastro-ponta-a-ponta",
         "t9-documentos",
         "t183-telas-logadas-390",
-        "t195-matricula-caf"
+        "t195-matricula-caf",
+        "t220-recibo-assinatura"
       ]
     },
     "/admin/emails-teste": {
@@ -495,7 +496,8 @@
       "specs": [
         "t97-plangate-precos",
         "t183-telas-logadas-390",
-        "t214-carteira-banco"
+        "t214-carteira-banco",
+        "t221-contrato-estado-periodo"
       ]
     },
     "/dashboard/comparar": {
@@ -571,7 +573,9 @@
         "t205-fechamento-sem-beco",
         "t210-contrato-estado-jornada",
         "t209-jornada-dois-lados",
-        "t222-taxa-fora-da-api"
+        "t224-taxa-fora-da-api",
+        "t220-recibo-assinatura",
+        "t221-contrato-estado-periodo"
       ]
     },
     "/dashboard/contratos/[id]": {
@@ -580,7 +584,9 @@
       ],
       "specs": [
         "t57-contrato-assinar",
-        "t205-fechamento-sem-beco"
+        "t205-fechamento-sem-beco",
+        "t220-recibo-assinatura",
+        "t221-contrato-estado-periodo"
       ]
     },
     "/dashboard/favoritos": {
@@ -610,7 +616,8 @@
         "t210-contrato-estado-jornada",
         "t209-jornada-dois-lados",
         "t216-taxa-matriz",
-        "t222-taxa-fora-da-api"
+        "t224-taxa-fora-da-api",
+        "t221-contrato-estado-periodo"
       ]
     },
     "/dashboard/ferramentas": {
@@ -715,7 +722,9 @@
         "t205-fechamento-sem-beco",
         "t210-contrato-estado-jornada",
         "t213-jornada-teste-confirmacao",
-        "t222-taxa-fora-da-api"
+        "t224-taxa-fora-da-api",
+        "t220-recibo-assinatura",
+        "t221-contrato-estado-periodo"
       ]
     },
     "/dashboard/locacoes/[id]": {
@@ -727,7 +736,8 @@
         "t48-varredura",
         "t57-contrato-assinar",
         "t205-fechamento-sem-beco",
-        "t222-taxa-fora-da-api"
+        "t224-taxa-fora-da-api",
+        "t221-contrato-estado-periodo"
       ]
     },
     "/dashboard/mensagens": {
@@ -1018,7 +1028,8 @@
         "t197-anuncio-teste-oculto",
         "t201-qa-muse",
         "t209-jornada-dois-lados",
-        "t211-complemento-23"
+        "t211-complemento-23",
+        "t221-contrato-estado-periodo"
       ]
     },
     "/modelodenegocio": {
@@ -2241,6 +2252,15 @@
       ],
       "specs": []
     },
+    "src/lib/data/blocks-actions.ts#getDatasIndisponiveis": {
+      "personas": [
+        "publico",
+        "inquilino"
+      ],
+      "specs": [
+        "t221-contrato-estado-periodo"
+      ]
+    },
     "src/lib/data/blocks-actions.ts#removeBlock": {
       "personas": [
         "proprietario",
@@ -2494,6 +2514,28 @@
       ],
       "specs": [
         "t187-conferencia-documento"
+      ]
+    },
+    "src/lib/data/documentos-falhas-actions.ts#emitirDeNovo": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
+    "src/lib/data/documentos-falhas-actions.ts#emitirPendentes": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t220-recibo-assinatura"
+      ]
+    },
+    "src/lib/data/documentos-falhas-actions.ts#listarFalhasDocumentos": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t220-recibo-assinatura"
       ]
     },
     "src/lib/data/documentos-inquilino-actions.ts#linkDocInquilino": {
@@ -2884,6 +2926,24 @@
       "specs": [
         "t73-pets-ficha",
         "t74-pets-candidatura"
+      ]
+    },
+    "src/lib/data/pets-ficha-actions.ts#enviarImagemPet": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t73-pets-ficha"
+      ]
+    },
+    "src/lib/data/pets-ficha-actions.ts#removerImagemPet": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t73-pets-ficha"
       ]
     },
     "src/lib/data/pets-ficha-actions.ts#removerPet": {
