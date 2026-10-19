@@ -34,10 +34,11 @@ for (const largura of [360, 390]) {
     test.use({ storageState: authFile("proprietario"), viewport: { width: largura, height: 800 }, permissions: ["clipboard-read", "clipboard-write"] });
 
     test("mostra a chave, copia e oferece o link do app antes do QR", async ({ page }) => {
+      // O prazo vale desde o início: antes ele só era ampliado depois do goto/clique e o teste estourava os 45 s.
+      test.setTimeout(150000);
       await page.goto("/dashboard/conta/seguranca");
       await page.getByRole("button", { name: /Ativar duas etapas/ }).click();
 
-      test.setTimeout(90000);
       const chave = page.getByTestId("chave-2fa");
       await expect(chave).toBeVisible();
       const texto = (await chave.textContent())?.trim() ?? "";
@@ -101,7 +102,7 @@ for (const largura of [360, 390]) {
     // Ordem c09fadd5 item 3 (achado do Moacir, 458dd4ad): no cenário obrigatório (admin) o botão
     // "Continuar para o destino" aparece sozinho na linha, com fonte ≥ 12 px e altura ≥ 44 px.
     test("cenário obrigatório: 'Continuar para o destino' tem 44 px e fonte legível", async ({ page }) => {
-      test.setTimeout(90000);
+      test.setTimeout(150000);
       await page.goto("/dashboard/conta/seguranca?obrigatorio=admin&redirect=%2Fadmin");
       await page.getByRole("button", { name: /Ativar duas etapas/ }).click();
       const segredo = ((await page.getByTestId("chave-2fa").textContent()) ?? "").replace(/\s/g, "");
