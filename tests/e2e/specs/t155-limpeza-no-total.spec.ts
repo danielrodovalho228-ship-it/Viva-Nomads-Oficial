@@ -21,7 +21,7 @@ for (const largura of [390, 1280]) {
     });
 
     test("cartão da busca de ube-002 mostra o mesmo total", async ({ page }) => {
-      await page.goto("/buscar", { waitUntil: "domcontentloaded" });
+      await page.goto("/buscar?exemplos=1", { waitUntil: "domcontentloaded" });
       const cartao = page.locator('a[href="/imoveis/ube-002"]').first();
       await expect(cartao).toBeVisible();
       await expect(cartao.getByTestId("cartao-total-mes")).toContainText("3.130");
