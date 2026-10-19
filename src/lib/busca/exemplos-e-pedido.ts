@@ -9,7 +9,13 @@ export const TEXTO_CARTAO_PEDIDO = "Não achou? Publique um pedido e os propriet
 export const TEXTO_PUBLICAR_PEDIDO = "Publicar pedido";
 export const TEXTO_PUBLICAR_PEDIDO_MORADIA = "Publicar pedido de moradia";
 
-export function semExemplosQuandoHaReal<T>(lista: T[], ehExemplo: (x: T) => boolean): T[] {
+/** `?exemplos=1`: mantém os exemplos na lista mesmo com imóvel real (só para o laboratório e o QA). */
+export function exemplosForcadosNaUrl(search: string): boolean {
+  return new URLSearchParams(search).get("exemplos") === "1";
+}
+
+export function semExemplosQuandoHaReal<T>(lista: T[], ehExemplo: (x: T) => boolean, forcarExemplos = false): T[] {
+  if (forcarExemplos) return lista;
   const reais = lista.filter((x) => !ehExemplo(x));
   return reais.length > 0 ? reais : lista;
 }

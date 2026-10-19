@@ -9,7 +9,24 @@ export interface FotoServico {
   alt: string;
 }
 
-export const FOTOS_SERVICOS: Readonly<Record<string, FotoServico>> = {};
+export const FOTOS_SERVICOS: Readonly<Record<string, FotoServico>> = {
+  limpeza: {
+    src: "/images/servicos/limpeza.webp",
+    alt: "Limpeza profissional de apartamento mobiliado",
+  },
+  lavanderia_enxoval: {
+    src: "/images/servicos/lavanderia_enxoval.webp",
+    alt: "Lavanderia com coleta e entrega de roupas e enxoval",
+  },
+  frete_mudanca: {
+    src: "/images/servicos/frete_mudanca.webp",
+    alt: "Frete e mudança leve com ajudantes carregando caixas",
+  },
+  assistencia_24h: {
+    src: "/images/servicos/assistencia_24h.webp",
+    alt: "Assistência 24 horas para emergências no imóvel",
+  },
+};
 
 export const FOTOS_ESPERADAS = ["limpeza", "lavanderia_enxoval", "frete_mudanca", "assistencia_24h"] as const;
 

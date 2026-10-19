@@ -19,7 +19,7 @@ for (const largura of [390, 1280]) {
     });
 
     test("cartão da busca mostra a linha abaixo do título", async ({ page }) => {
-      await page.goto("/buscar", { waitUntil: "domcontentloaded" });
+      await page.goto("/buscar?exemplos=1", { waitUntil: "domcontentloaded" });
       const cartao = page.locator('a[href="/imoveis/ube-001"]').first();
       await expect(cartao.getByTestId("ideal-para")).toContainText("Home office");
       expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
