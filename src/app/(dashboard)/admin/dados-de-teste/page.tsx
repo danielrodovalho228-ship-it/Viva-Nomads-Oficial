@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { ehAnuncioDeTeste } from "@/lib/data/anuncio-teste";
 import { NovaJornadaTeste } from "./nova-jornada";
-import { ACOES_JORNADA } from "@/lib/jornada-teste";
+import { ACOES_JORNADA, ALVOS_JORNADA } from "@/lib/jornada-teste";
 import { dataHoraBrasilia } from "@/config/atendimento";
 
 export const metadata = { title: "Dados de teste — Admin" };
@@ -66,7 +66,7 @@ export default async function AdminDadosDeTestePage() {
                 <span className="font-medium text-ink">{dataHoraBrasilia(new Date(l.criado_em))}</span> (horário de Brasília) ·{" "}
                 {quem.get(l.admin_id) ?? "admin"} ·{" "}
                 <strong className={RESULTADO[l.acao] === "erro" ? "text-red-700" : "text-forest"}>{RESULTADO[l.acao]}</strong>
-                {l.alvo_tipo === "lead" && <> · candidatura {l.alvo_id.slice(0, 8)}</>}
+                {l.alvo_tipo === ALVOS_JORNADA.candidatura && <> · candidatura {l.alvo_id.slice(0, 8)}</>}
                 {l.motivo && <span className="block text-xs text-muted">{l.motivo}</span>}
               </li>
             ))}

@@ -9,7 +9,7 @@ import { ehAnuncioDeTeste } from "@/lib/data/anuncio-teste";
 import { planoDoProprietario } from "@/lib/data/plano-efetivo";
 import { COMISSAO_POR_PLANO } from "@/config/planos";
 import { logModeracao } from "@/lib/data/moderacao-log";
-import { ACOES_JORNADA } from "@/lib/jornada-teste";
+import { ACOES_JORNADA, ALVOS_JORNADA } from "@/lib/jornada-teste";
 
 /*
   Prompt 28 — /admin › Dados de teste › "Nova jornada de teste". SÓ contas is_teste e anúncio [TESTE QA]:
@@ -65,12 +65,12 @@ export async function novaJornadaDeTeste(input: { tenantId: string; propertyId: 
       admin,
       user.id,
       r.reaproveitada ? ACOES_JORNADA.reaproveitada : ACOES_JORNADA.criada,
-      "lead",
+      ALVOS_JORNADA.candidatura,
       r.leadId,
       `${r.anuncio} · ${r.inquilino}${r.reaproveitada ? ` · ${r.motivo}` : ""}`.slice(0, 500),
     );
   } else {
-    await logModeracao(admin, user.id, ACOES_JORNADA.erro, "property", input.propertyId, r.error.slice(0, 500));
+    await logModeracao(admin, user.id, ACOES_JORNADA.erro, ALVOS_JORNADA.anuncio, input.propertyId, r.error.slice(0, 500));
   }
   revalidatePath("/admin/dados-de-teste");
   return r;
