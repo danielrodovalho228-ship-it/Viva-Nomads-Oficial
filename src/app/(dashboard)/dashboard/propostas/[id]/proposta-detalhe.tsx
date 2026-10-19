@@ -18,6 +18,10 @@ import {
   fraseMaisTempo,
   mesesParaFicarMaisTempo,
   MOTIVOS_RECUSA,
+  AJUDA_VALOR_CONTRAPROPOSTA,
+  TEXTO_ULTIMA_RODADA,
+  ehUltimaRodada,
+  rotuloRodada,
   type Mudancas,
 } from "@/lib/propostas/regras";
 import { rotuloTaxaServico } from "@/lib/cobranca/regra";
@@ -124,8 +128,18 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
               <p className="text-sm font-semibold text-ink">
                 Versão {atual.versao} · {quem(atual.autor)}
               </p>
-              <StatusChip status={p.status} />
+              <div className="flex items-center gap-2">
+                <span className="rounded-full bg-surface-2 px-2.5 py-0.5 text-xs font-medium text-ink" data-testid="proposta-rodada">
+                  {rotuloRodada(atual.versao)}
+                </span>
+                <StatusChip status={p.status} />
+              </div>
             </div>
+            {ehUltimaRodada(atual.versao, estaAberta(p.status)) && (
+              <p className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-[13px] text-amber-800" data-testid="proposta-ultima-rodada">
+                {TEXTO_ULTIMA_RODADA}
+              </p>
+            )}
             <Valores v={atual} />
             {atual.mensagem && <p className="mt-3 rounded-lg bg-surface-2 px-3 py-2 text-sm text-ink" data-testid="proposta-mensagem">“{atual.mensagem}”</p>}
             {estaAberta(p.status) && (
@@ -198,6 +212,11 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
                           }}
                           testid="contra-valor"
                         />
+                        {p.papel === "tenant" && (
+                          <span className="mt-1 block text-[12px] text-muted" data-testid="contra-valor-ajuda">
+                            {AJUDA_VALOR_CONTRAPROPOSTA}
+                          </span>
+                        )}
                       </label>
                     )}
                     {libera("meses") && (
@@ -279,7 +298,7 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
                       {enviando ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Enviar contraproposta
                     </Button>
                     {aviso && (
-                      <Button variant="secondary" disabled={enviando} onClick={() => enviar({ acao: "contrapropor", mudancas: mud, mensagem: mensagem || undefined, mesmoAbaixoDoMinimo: true })}>
+                      <Button variant="secondary" disabled={enviando} onClick={() => enviar({ acao: "contrapropor", mudancas: mud, mensagem: mensagem || undefined, mesmoAbaixoDoMinimo: true })} data-testid="enviar-mesmo-assim">
                         Enviar mesmo assim
                       </Button>
                     )}

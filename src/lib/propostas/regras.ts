@@ -48,6 +48,22 @@ export const VALIDADES_DIAS = [3, 7, 15] as const;
 export type ValidadeDias = (typeof VALIDADES_DIAS)[number];
 /** Máximo de versões (rodadas) no total: a 1ª proposta + 2 contrapropostas. Depois, só aceitar ou recusar. */
 export const MAX_VERSOES = 3;
+
+/* Textos do teto de rodadas (ajuste do coordenador depois do reteste do #866) — editor do anúncio e tela da proposta. */
+export const TEXTO_TETO_RODADAS = "A negociação tem até 3 rodadas (proposta e duas contrapropostas). Depois, cada lado só aceita ou recusa.";
+export const TEXTO_ULTIMA_RODADA = "Última rodada: depois desta resposta, só aceitar ou recusar";
+/** Linha de ajuda sob o valor da contraproposta do interessado: o piso é privado e só é conferido no servidor, no envio. */
+export const AJUDA_VALOR_CONTRAPROPOSTA = "Se o valor ficar abaixo do que o proprietário aceita, avisamos quando você enviar.";
+
+/** "Rodada 2 de 3" — a versão atual da proposta (a 1ª proposta é a rodada 1). */
+export function rotuloRodada(versaoAtual: number): string {
+  return `Rodada ${Math.min(Math.max(1, Math.round(versaoAtual)), MAX_VERSOES)} de ${MAX_VERSOES}`;
+}
+
+/** A próxima resposta é a última contraproposta possível (versão atual = penúltima, proposta em andamento). */
+export function ehUltimaRodada(versaoAtual: number, aberta: boolean): boolean {
+  return aberta && versaoAtual === MAX_VERSOES - 1;
+}
 export const MENSAGEM_MAX = 500;
 
 export const MOTIVOS_RECUSA = [
