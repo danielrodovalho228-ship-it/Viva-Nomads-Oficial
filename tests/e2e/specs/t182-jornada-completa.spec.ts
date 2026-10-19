@@ -116,7 +116,9 @@ test.describe("T182 — jornada completa, do anúncio à avaliação dos dois la
     await page.getByRole("button", { name: /Enviar candidatura/ }).first().click();
     const passo = page.getByTestId("solicitacao-passo");
     await expect(passo).toBeVisible();
-    await passo.getByRole("button", { name: "Enviar solicitação" }).click();
+    await passo.getByRole("button", { name: "Continuar" }).click();
+    await passo.getByRole("button", { name: "Continuar" }).click();
+    await passo.getByRole("button", { name: "Enviar candidatura" }).click();
     await expect(page.getByText("Candidatura enviada").first()).toBeVisible({ timeout: 20_000 });
     await foto(page, "1-candidatura-enviada");
 

@@ -55,12 +55,17 @@ test.describe("T-DOC — Conferência de documentos @criticos", () => {
 
     // Fluxo de recusa: motivo estruturado obrigatório.
     await primeiroCard.getByRole("button", { name: /Recusar/i }).click();
-    const confirmar = primeiroCard.getByRole("button", { name: /Confirmar recusa/i });
+    // Ao recusar, o botão Aprovar some do cartão: o filtro antigo (has: Aprovar)
+    // deixaria de achar o cartão. Reencontra pelo botão de confirmar a recusa.
+    const cartaoRecusa = page.locator("section, [class*='rounded']").filter({
+      has: page.getByRole("button", { name: /Confirmar recusa/i }),
+    }).first();
+    const confirmar = cartaoRecusa.getByRole("button", { name: /Confirmar recusa/i });
     await expect(confirmar).toBeDisabled(); // sem motivo escolhido
-    await primeiroCard.getByRole("combobox").selectOption("ilegivel");
+    await cartaoRecusa.getByRole("combobox").selectOption("ilegivel");
     await expect(confirmar).toBeEnabled();
     // "Outro" sem detalhe volta a travar.
-    await primeiroCard.getByRole("combobox").selectOption("outro");
+    await cartaoRecusa.getByRole("combobox").selectOption("outro");
     await expect(confirmar).toBeDisabled();
   });
 });

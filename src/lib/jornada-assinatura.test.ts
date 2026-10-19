@@ -124,6 +124,6 @@ test("4. 'Li e concordo' persistente: sessionStorage por contrato, restaurado ao
 });
 
 test("1. o e-mail do recibo leva o link de verificação no botão; o laboratório registra o destino do botão", () => {
-  assert.match(ler("./fiscal/emitir.ts"), /cta: \{ label: "Conferir autenticidade", url: dados\.conferirUrl \}/);
+  assert.match(ler("./fiscal/emitir.ts"), /cta: \{ label: "Conferir autenticidade", url: doc\.conferirUrl \}/);
   assert.match(ler("./notifications/email.ts"), /\$\{rotulo\} \(\$\{href\}\) /);
 });

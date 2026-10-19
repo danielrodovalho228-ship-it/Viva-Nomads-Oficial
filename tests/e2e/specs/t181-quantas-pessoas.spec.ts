@@ -28,7 +28,9 @@ async function candidatar(page: Page, largura: number, pessoas: number) {
   await botao.click();
   const passo = page.getByTestId("solicitacao-passo");
   await expect(passo).toBeVisible();
-  await passo.getByRole("button", { name: "Enviar solicitação" }).click();
+  await passo.getByRole("button", { name: "Continuar" }).click();
+  await passo.getByRole("button", { name: "Continuar" }).click();
+  await passo.getByRole("button", { name: "Enviar candidatura" }).click();
   await expect(page.getByText("Candidatura enviada").filter({ visible: true }).first()).toBeVisible({ timeout: 20_000 });
 }
 
