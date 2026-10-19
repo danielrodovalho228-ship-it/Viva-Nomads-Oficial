@@ -89,7 +89,7 @@ test.describe("T219 — Serviços do morador: catálogo → pedido → acompanha
       const sobra = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
       expect(sobra, "rolagem horizontal").toBeLessThanOrEqual(1);
       await page.goto(href, { waitUntil: "domcontentloaded" });
-      await expect(page.locator("textarea").first()).toHaveValue(/^Sobre o pedido de serviço SV-[0-9A-F]{8}: /, { timeout: 30_000 });
+      await expect(page.getByPlaceholder(/Conte com suas palavras/i)).toHaveValue(/^Sobre o pedido de serviço SV-[0-9A-F]{8}: /, { timeout: 30_000 });
       await page.context().close();
       // Limpa para a próxima largura (o limite de pedidos em aberto não é o foco desta prova).
       await adm().from("servicos_pedidos").delete().eq("tenant_id", ids.inq!);
