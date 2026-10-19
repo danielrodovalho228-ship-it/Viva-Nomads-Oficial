@@ -3,7 +3,7 @@
 import { CampoReais } from "@/components/ui/campo-reais";
 import { useState } from "react";
 import Link from "next/link";
-import { calcularBolso, NOTA_BOLSO } from "@/lib/cobranca/bolso";
+import { blocosBolso, calcularBolso, NOTA_BOLSO } from "@/lib/cobranca/bolso";
 import { formatBRL, cn } from "@/lib/utils";
 import { SUPORTE_EMAIL } from "@/lib/site";
 
@@ -19,7 +19,7 @@ export function SimuladorBolso(p: {
 }) {
   const doCadastro = p.valorMensal !== undefined;
   const [valorDigitado, setValorDigitado] = useState(3000);
-  const [meses, setMeses] = useState(String(p.mesesIniciais ?? 6));
+  const [meses, setMeses] = useState(String(p.mesesIniciais ?? 4));
   const [imoveis, setImoveis] = useState("1");
   const valor = doCadastro ? p.valorMensal! : valorDigitado;
   const b = calcularBolso(valor, Number(meses), Number(imoveis));
@@ -74,22 +74,31 @@ export function SimuladorBolso(p: {
           <p className="text-sm text-muted">Informe valor mensal, meses e quantos imóveis você tem para ver a conta.</p>
         ) : (
           <dl className="divide-y divide-line rounded-xl border border-line">
-            <Linha rotulo="Você recebe do morador" testid="bolso-recebe" valor={formatBRL(b.recebe)} />
             {b.estado === "gestor" ? (
-              <div className="flex items-center justify-between gap-3 p-3 text-sm sm:p-4">
-                <dt className="text-ink">Taxa Viva</dt>
-                <dd className="text-right font-semibold text-ink" data-testid="bolso-gestor">
-                  Plano Gestor:{" "}
-                  <Link href={`mailto:${SUPORTE_EMAIL}`} className="underline">
-                    fale com a Viva
-                  </Link>
-                </dd>
-              </div>
-            ) : (
               <>
-                <Linha rotulo={`Taxa Viva (${b.taxaTexto} do total)`} testid="bolso-taxa" valor={`− ${formatBRL(b.valorTaxa)}`} />
-                <Linha rotulo="Fica com você" testid="bolso-fica" valor={formatBRL(b.fica)} destaque />
+                <Linha rotulo="Você recebe do morador" detalhe="integral, direto a você" testid="bolso-recebe" valor={formatBRL(b.recebe)} />
+                <div className="flex items-center justify-between gap-3 p-3 text-sm sm:p-4">
+                  <dt className="text-ink">Taxa de serviço da Viva</dt>
+                  <dd className="text-right font-semibold text-ink" data-testid="bolso-gestor">
+                    Plano Gestor:{" "}
+                    <Link href={`mailto:${SUPORTE_EMAIL}`} className="underline">
+                      fale com a Viva
+                    </Link>
+                  </dd>
+                </div>
               </>
+            ) : (
+              (() => {
+                // Três blocos separados: a taxa é cobrada à parte, nunca descontada do que o morador paga ao dono.
+                const [recebe, taxa, resultado] = blocosBolso(b, valor, Number(meses));
+                return (
+                  <>
+                    <Linha {...recebe} testid="bolso-recebe" />
+                    <Linha {...taxa} testid="bolso-taxa" />
+                    <Linha {...resultado} testid="bolso-seu-resultado" destaque />
+                  </>
+                );
+              })()
             )}
           </dl>
         )}
@@ -99,11 +108,18 @@ export function SimuladorBolso(p: {
   );
 }
 
-function Linha(p: { rotulo: string; valor: string; testid: string; destaque?: boolean }) {
+function Linha(p: { rotulo: string; valor: string; detalhe?: string | null; testid: string; destaque?: boolean }) {
   return (
-    <div className={cn("flex items-center justify-between gap-3 p-3 text-sm sm:p-4", p.destaque && "bg-surface-2")}>
-      <dt className="text-ink">{p.rotulo}</dt>
-      <dd className={cn("text-right tabular-nums", p.destaque ? "text-lg font-bold text-ink" : "font-semibold text-ink")} data-testid={p.testid}>
+    <div className={cn("flex items-start justify-between gap-3 p-3 text-sm sm:p-4", p.destaque && "bg-surface-2")}>
+      <dt className="min-w-0 text-ink">
+        <span className="block">{p.rotulo}</span>
+        {p.detalhe && (
+          <span className="mt-0.5 block text-xs text-muted" data-testid={`${p.testid}-detalhe`}>
+            {p.detalhe}
+          </span>
+        )}
+      </dt>
+      <dd className={cn("shrink-0 text-right tabular-nums", p.destaque ? "text-lg font-bold text-ink" : "font-semibold text-ink")} data-testid={p.testid}>
         {p.valor}
       </dd>
     </div>

@@ -12,19 +12,28 @@ for (const [nome, largura] of [["390 px", 390], ["1280 px", 1280]] as const) {
   test.describe(`T215 — simulador do bolso a ${nome}`, () => {
     test.use({ viewport: { width: largura, height: 900 } });
 
-    test("faixa 1–2: mostra recebe, taxa de 12% e o que fica; sem rolagem lateral", async ({ page }) => {
+    test("3.000 × 4: três blocos separados — recebe integral, taxa à parte e o resultado; sem rolagem lateral", async ({ page }) => {
       await page.goto("/precos#simulador");
       const caixa = page.getByTestId("simulador-bolso");
       await expect(caixa).toBeVisible();
-      const b = calcularBolso(3000, 6, 1);
+      await page.getByTestId("bolso-valor").fill("3000");
+      await page.getByTestId("bolso-meses").fill("4");
+      await page.getByTestId("bolso-imoveis").fill("1");
+      const b = calcularBolso(3000, 4, 1);
       if (b.estado !== "ok") throw new Error("esperava estado ok");
-      await expect(page.getByTestId("bolso-recebe")).toHaveText(new RegExp(limpoRe(formatBRL(b.recebe))));
-      await expect(caixa).toContainText("Taxa Viva (12% do total)");
-      await expect(page.getByTestId("bolso-taxa")).toHaveText(new RegExp(limpoRe(formatBRL(b.valorTaxa))));
-      await expect(page.getByTestId("bolso-fica")).toHaveText(new RegExp(limpoRe(formatBRL(b.fica))));
+      // Adendo do #851 (exemplo aprovado pelo Muse): 12.000 / 1.440 / 10.560.
+      await expect(page.getByTestId("bolso-recebe")).toHaveText(new RegExp(limpoRe(formatBRL(12000))));
+      await expect(page.getByTestId("bolso-recebe-detalhe")).toHaveText("integral, direto a você");
+      await expect(caixa).toContainText("Taxa de serviço da Viva");
+      await expect(page.getByTestId("bolso-taxa")).toHaveText(new RegExp(`^${limpoRe(formatBRL(1440))}$`));
+      await expect(page.getByTestId("bolso-taxa-detalhe")).toHaveText("12% sobre o valor mensal × meses (R$ 3.000 × 4). Cobrada à parte, só com contrato fechado");
+      await expect(caixa).toContainText("Seu resultado no período");
+      await expect(page.getByTestId("bolso-seu-resultado")).toHaveText(new RegExp(limpoRe(formatBRL(b.resultado))));
+      expect(b.resultado).toBe(10560);
       await expect(caixa).toContainText("A taxa só é cobrada com contrato fechado. Anúncio grátis.");
       const rolagem = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       expect(rolagem).toBeLessThanOrEqual(1);
+      await page.screenshot({ path: `tests/laboratorio/saida/t215-bolso-${largura}.png`, fullPage: false });
     });
 
     test("muda a faixa pela quantidade de imóveis e 31+ vira Plano Gestor", async ({ page }) => {
@@ -32,7 +41,7 @@ for (const [nome, largura] of [["390 px", 390], ["1280 px", 1280]] as const) {
       const imoveis = page.getByTestId("bolso-imoveis");
       for (const [n, pct] of [["3", "10%"], ["6", "8%"], ["16", "6%"]] as const) {
         await imoveis.fill(n);
-        await expect(page.getByTestId("simulador-bolso")).toContainText(`Taxa Viva (${pct} do total)`);
+        await expect(page.getByTestId("bolso-taxa-detalhe")).toContainText(`${pct} sobre o valor mensal × meses`);
       }
       await imoveis.fill("31");
       await expect(page.getByTestId("bolso-gestor")).toContainText("fale com a Viva");
@@ -46,9 +55,13 @@ for (const [nome, largura] of [["390 px", 390], ["1280 px", 1280]] as const) {
       await expect(page.getByTestId("bolso-recebe")).toHaveCount(0);
     });
 
-    test("o texto público não usa 'comissão'", async ({ page }) => {
+    test("o texto público não usa 'comissão' nem termos de custódia; a taxa nunca aparece com sinal de menos", async ({ page }) => {
       await page.goto("/precos");
-      expect(limpo(await page.getByTestId("simulador-bolso").textContent())).not.toMatch(/comiss|corretagem|intermedia/i);
+      const texto = limpo(await page.getByTestId("simulador-bolso").textContent());
+      expect(texto).not.toMatch(/comiss|corretagem|intermedia/i);
+      // Guarda de custódia (adendo do #851): a Viva só intermedia, não segura pagamentos.
+      expect(texto).not.toMatch(/fica com você|descontad|retid|repass|do total/i);
+      expect(limpo(await page.getByTestId("bolso-taxa").textContent())).not.toMatch(/^[-−–]/);
     });
   });
 }
