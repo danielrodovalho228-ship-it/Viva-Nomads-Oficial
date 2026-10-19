@@ -49,3 +49,10 @@ test("t3: /pedidos/novo é página pública (fora da casca), como /buscar", () =
   assert.match(spec, /filter\(\(h\) => !PUBLICAS_FORA_DA_CASCA\.includes\(h\)\)/);
   assert.match(spec, /PUBLICAS_FORA_DA_CASCA = \[[^\]]*"\/pedidos\/novo"/);
 });
+
+test("t209 compara o assunto sem o sufixo '· Viva Nomads' que o envio acrescenta", () => {
+  const assuntos = ler("src/lib/notifications/assuntos.ts");
+  assert.match(assuntos, /SUFIXO_ASSUNTO = " · Viva Nomads"/);
+  const spec = ler("tests/e2e/specs/t209-jornada-dois-lados.spec.ts");
+  assert.match(spec, /\.map\(\(r\) => r\.assunto\.replace\(\/ · Viva Nomads\$\/, ""\)\)/);
+});
