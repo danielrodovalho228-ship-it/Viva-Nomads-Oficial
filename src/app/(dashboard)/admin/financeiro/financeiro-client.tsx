@@ -9,6 +9,17 @@ import { BarrasMensais, LinhaMensal } from "@/components/admin/graficos";
 import { cn, dataBR } from "@/lib/utils";
 import { fmtInteiro, fmtPct, fmtReais, rotuloPeriodo, type Num, type Periodo } from "@/lib/admin/visao-geral";
 import { calcularFinanceiro, csvFinanceiro, mesCurto, STATUS_COMISSAO } from "@/lib/admin/financeiro";
+import {
+  agregarContratos,
+  ehRegraAnterior,
+  mesesDoContrato,
+  FORMULA_TAKE_RATE,
+  FORMULA_TAXA,
+  FORMULA_VALOR_MENSAL,
+  FORMULA_VALOR_TOTAL,
+} from "@/lib/admin/indicadores";
+import { rotuloTaxaServico } from "@/lib/cobranca/regra";
+import type { ContratoLinhaAdmin } from "@/lib/data/admin-indicadores";
 
 /**
  * /admin/financeiro: receita recorrente (MRR/ARR/churn/ARPU/LTV), o que entrou
@@ -22,7 +33,9 @@ export function FinanceiroClient({
   periodo,
   cidade,
   cidades,
+  contratos,
 }: {
+  contratos: ContratoLinhaAdmin[] | null;
   dados: Record<string, unknown> | null;
   geradoEm: string | null;
   aviso: string | null;
@@ -30,7 +43,7 @@ export function FinanceiroClient({
   cidade: string | null;
   cidades: string[];
 }) {
-  const f = calcularFinanceiro(dados);
+  const f = calcularFinanceiro(dados, contratos ? agregarContratos(contratos) : null);
   const reais = (v: Num) => fmtReais(v);
   const serie = (pegar: (m: (typeof f.mensal)[number]) => Num) =>
     f.mensal.map((m) => ({ mes: m.mes, rotuloMes: mesCurto(m.mes), v: pegar(m) }));
@@ -47,7 +60,7 @@ export function FinanceiroClient({
 
   return (
     <>
-      <PageTitle title="Financeiro" subtitle="Receita recorrente, o que entrou, comissões e retorno do marketing." />
+      <PageTitle title="Financeiro" subtitle="Receita recorrente, o que entrou, taxas de serviço e retorno do marketing." />
       <FiltrosAdmin base="/admin/financeiro" periodo={periodo} cidade={cidade} cidades={cidades} />
 
       {aviso && (
@@ -97,28 +110,26 @@ export function FinanceiroClient({
         <Panel title="O que entrou no período (Asaas)">
           <Grade>
             <Cartao rotulo="Assinaturas recebidas" valor={reais(f.recebidoAssinatura)} formula="Soma dos pagamentos de assinatura confirmados pelo Asaas no período." />
-            <Cartao rotulo="Comissões recebidas" valor={reais(f.recebidoComissao)} formula="Soma das comissões de fechamento pagas no período (cidade do imóvel)." />
-            <Cartao rotulo="Total recebido" valor={reais(f.recebidoTotal)} formula="Assinaturas + comissões recebidas no período." />
+            <Cartao rotulo="Taxas de serviço recebidas" valor={reais(f.recebidoComissao)} formula="Soma das taxas de serviço de fechamento pagas no período (cidade do imóvel)." />
+            <Cartao rotulo="Total recebido" valor={reais(f.recebidoTotal)} formula="Assinaturas + taxas de serviço recebidas no período." />
           </Grade>
         </Panel>
 
-        <Panel title="Comissões dos contratos do período">
+        <Panel title="Taxa de serviço dos contratos do período">
           <Grade>
-            <Cartao rotulo="Comissão gerada" valor={reais(f.comissaoGerada)} formula="Soma da comissão dos contratos fechados no período (cobrada só do proprietário, uma vez por contrato)." />
-            <Cartao rotulo="A receber" valor={reais(f.comissaoAReceber)} formula="Comissão dos contratos do período ainda não paga (aguardando, vencida ou sem cobrança)." />
-            <Cartao
-              rotulo="Aluguel contratado"
-              valor={reais(f.aluguelContratado)}
-              nota="valor contratado entre as partes (não passa pela plataforma)"
-              formula="Soma do aluguel mensal dos contratos do período. É acertado entre proprietário e inquilino; a plataforma não recebe esse valor."
-            />
-            <Cartao
-              rotulo="Valor total dos contratos"
-              valor={reais(f.valorTotalContratado)}
-              formula="Soma do valor total dos contratos do período (valor mensal × meses) — a base da comissão. Não passa pela plataforma."
-            />
-            <Cartao rotulo="Take rate" valor={fmtPct(f.takeRate)} formula="Comissão gerada ÷ valor total dos contratos do período. Sem contrato: —." />
+            <Cartao rotulo="Contratos no período" valor={fmtInteiro(contratos ? contratos.length : null)} formula="Contratos reais registrados no período (contas e anúncios de teste fora). A mesma lista de /admin/contratos." />
+            <Cartao rotulo="Valor total dos contratos" valor={reais(f.valorTotalContratado)} nota="valor contratado entre as partes (não passa pela plataforma)" formula={FORMULA_VALOR_TOTAL} />
+            <Cartao rotulo="Taxa de serviço gerada" valor={reais(f.comissaoGerada)} formula={FORMULA_TAXA} />
+            <Cartao rotulo="Take rate" valor={fmtPct(f.takeRate)} formula={FORMULA_TAKE_RATE} />
+            <Cartao rotulo="Valor mensal contratado (soma)" valor={reais(f.aluguelContratado)} formula={FORMULA_VALOR_MENSAL} />
+            <Cartao rotulo="Taxa a receber" valor={reais(f.comissaoAReceber)} formula="Taxa de serviço dos contratos do período ainda não paga (aguardando, vencida ou sem cobrança)." />
           </Grade>
+          {f.regraAnterior > 0 && (
+            <p className="mt-3 text-xs text-muted" data-testid="fin-regra-anterior">
+              {f.regraAnterior} {f.regraAnterior === 1 ? "contrato é" : "contratos são"} da regra anterior (taxa sobre 1 mês, congelada no aceite): entram pelo valor gravado.
+            </p>
+          )}
+          <TabelaContratos linhas={contratos ?? []} />
           <TabelaComissoes linhas={f.comissoes} />
         </Panel>
 
@@ -240,8 +251,8 @@ function TabelaComissoes({ linhas }: { linhas: ReturnType<typeof calcularFinance
             <th className="py-1.5 pr-3 font-medium">Data</th>
             <th className="py-1.5 font-medium">Imóvel</th>
             <th className="py-1.5 font-medium">Plano</th>
-            <th className="py-1.5 pl-3 text-right font-medium">Aluguel*</th>
-            <th className="py-1.5 pl-3 text-right font-medium">Comissão</th>
+            <th className="py-1.5 pl-3 text-right font-medium">Valor mensal*</th>
+            <th className="py-1.5 pl-3 text-right font-medium">Taxa de serviço</th>
             <th className="py-1.5 pl-4 font-medium">Situação</th>
           </tr>
         </thead>
@@ -267,7 +278,30 @@ function TabelaComissoes({ linhas }: { linhas: ReturnType<typeof calcularFinance
           ))}
         </tbody>
       </table>
-      <p className="mt-2 text-xs text-muted">* Aluguel: valor contratado entre as partes (não passa pela plataforma).</p>
+      <p className="mt-2 text-xs text-muted">* Valor mensal: contratado entre as partes (não passa pela plataforma).</p>
     </div>
+  );
+}
+
+/** Contratos do período com o rótulo ÚNICO da taxa (o mesmo do site: rotuloTaxaServico) e a marca "regra anterior". */
+function TabelaContratos({ linhas }: { linhas: ContratoLinhaAdmin[] }) {
+  if (linhas.length === 0) return null;
+  return (
+    <ul className="mt-4 grid gap-2 text-sm" data-testid="fin-contratos">
+      {linhas.map((c) => {
+        const meses = mesesDoContrato(c.prazoDias);
+        return (
+          <li key={c.id} className="rounded-xl border border-line px-3 py-2" data-testid="fin-contrato">
+            <Link href={`/admin/contratos?q=${c.id.slice(0, 8)}`} className="font-medium text-ink hover:text-forest">
+              {c.imovel}
+            </Link>
+            {ehRegraAnterior(c) && <span className="ml-2 rounded-full bg-surface-2 px-2 py-0.5 text-xs text-muted">regra anterior</span>}
+            <span className="block text-xs text-muted" data-testid="fin-rotulo-taxa">
+              {rotuloTaxaServico(c.taxaPercent ?? 0, c.aluguelMensal ?? 0, meses, c.taxaValor)}
+            </span>
+          </li>
+        );
+      })}
+    </ul>
   );
 }

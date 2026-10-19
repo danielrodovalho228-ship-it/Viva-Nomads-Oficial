@@ -174,9 +174,9 @@ export interface FiltroHome {
   cidade: string | null;
 }
 
-/** "de=…&ate=…[&cidade=…]" — o mesmo período (e cidade) da home na lista de destino. */
+/** "periodo=custom&de=…&ate=…[&cidade=…]" — o mesmo período (e cidade) da home na lista de destino. */
 export function qsPeriodo(f: FiltroHome): string {
-  const q = new URLSearchParams({ de: f.inicio, ate: f.fim });
+  const q = new URLSearchParams({ periodo: "custom", de: f.inicio, ate: f.fim });
   if (f.cidade) q.set("cidade", f.cidade);
   return q.toString();
 }

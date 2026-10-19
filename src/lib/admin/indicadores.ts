@@ -156,3 +156,23 @@ export function apareceParaPublico(tipo: TipoImovel, status: string | null, demo
 // ── Janelas ───────────────────────────────────────────────────────────────────────────────────────────────────
 export const JANELA_AGORA = "agora";
 export const janelaDias = (dias: number) => `últimos ${dias} dias`;
+
+// ── Listas de destino: o mesmo filtro da home (de/até/cidade) ────────────────────────────────────────────────
+const DIA = /^\d{4}-\d{2}-\d{2}$/;
+function diaValido(s: unknown): s is string {
+  if (typeof s !== "string" || !DIA.test(s)) return false;
+  const d = new Date(`${s}T00:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s;
+}
+
+/** de/até da URL (AAAA-MM-DD, inclusivos). Inválido ou ausente → null (a lista mostra tudo ou a janela padrão). */
+export function periodoDaLista(sp: { de?: string | null; ate?: string | null }): { inicio: string; fim: string } | null {
+  if (!diaValido(sp.de) || !diaValido(sp.ate) || sp.de > sp.ate) return null;
+  return { inicio: sp.de, fim: sp.ate };
+}
+
+/** "Falta assinar: proprietário e inquilino" / "Assinado pelas duas partes". */
+export function faltaAssinar(c: { assinadoDono: boolean; assinadoInquilino: boolean }): string {
+  const falta = [!c.assinadoDono && "proprietário", !c.assinadoInquilino && "inquilino"].filter(Boolean) as string[];
+  return falta.length ? `Falta assinar: ${falta.join(" e ")}` : "Assinado pelas duas partes";
+}

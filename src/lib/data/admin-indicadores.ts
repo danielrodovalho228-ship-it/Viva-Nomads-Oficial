@@ -1,5 +1,7 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
+import { ehAdmin } from "@/lib/data/admin-guard";
 import { chaveCidade } from "@/lib/cidades";
 import {
   agregarContratos,
@@ -44,13 +46,20 @@ export interface ContratoLinhaAdmin extends ContratoParaAgregado {
   tenantId: string;
   assinadoDono: boolean;
   assinadoInquilino: boolean;
+  /** Conta de teste ou anúncio [TESTE…] (só aparece com o filtro "teste"). */
+  teste: boolean;
 }
 
 /**
  * Contratos (reais) criados no período — a mesma lista para o Financeiro, a home e /admin/contratos.
  * Sem período: todos.
  */
-export async function contratosReais(admin: Admin, periodo?: { ini: string; fim: string }, cidade?: string | null): Promise<ContratoLinhaAdmin[]> {
+export async function contratosReais(
+  admin: Admin,
+  periodo?: { ini: string; fim: string },
+  cidade?: string | null,
+  tipo: "real" | "teste" | "todos" = "real"
+): Promise<ContratoLinhaAdmin[]> {
   const k = cidade ? chaveCidade(cidade) : null;
   let q = admin
     .from("contratos")
@@ -73,9 +82,11 @@ export async function contratosReais(admin: Admin, periodo?: { ini: string; fim:
     assinado_inquilino_em: string | null;
     properties: { owner_id: string; title: string | null; city: string | null };
   }[])
-    .filter((c) => !teste.has(c.tenant_id) && !teste.has(c.properties.owner_id) && !MARCA_TESTE.test(c.properties.title ?? ""))
+    .map((c) => ({ ...c, ehTeste: teste.has(c.tenant_id) || teste.has(c.properties.owner_id) || MARCA_TESTE.test(c.properties.title ?? "") }))
+    .filter((c) => (tipo === "todos" ? true : tipo === "teste" ? c.ehTeste : !c.ehTeste))
     .filter((c) => !k || chaveCidade(c.properties.city) === k)
     .map((c) => ({
+      teste: c.ehTeste,
       id: c.id,
       criadoEm: c.created_at,
       status: c.status,
@@ -227,4 +238,92 @@ export async function extrasAtendimento(admin: Admin, dias: number): Promise<Rec
       : null,
     x_atd_1a_resposta_min: m ? n(m.primeira_resposta_media_min) : null,
   };
+}
+
+export interface ImovelLinhaAdmin {
+  id: string;
+  titulo: string;
+  ownerId: string;
+  dono: string;
+  status: string;
+  cidade: string | null;
+  bairro: string | null;
+  criadoEm: string;
+  documento: string;
+  qualidade: string | null;
+  donoTeste: boolean;
+}
+
+/** Imóveis do banco para /admin/imoveis (todos: reais e de teste — o tipo sai de tipoImovel). */
+export async function imoveisDoBanco(admin: Admin): Promise<ImovelLinhaAdmin[]> {
+  const [{ data }, teste] = await Promise.all([
+    admin
+      .from("properties")
+      .select("id, title, owner_id, status, city, address, created_at, listing_quality_tier")
+      .order("created_at", { ascending: false })
+      .limit(3000),
+    idsContasTeste(admin),
+  ]);
+  const linhas = (data ?? []) as {
+    id: string;
+    title: string | null;
+    owner_id: string;
+    status: string;
+    city: string | null;
+    address: string | null;
+    created_at: string;
+    listing_quality_tier: string | null;
+  }[];
+  if (!linhas.length) return [];
+  const ids = linhas.map((p) => p.id);
+  const donos = [...new Set(linhas.map((p) => p.owner_id))];
+  const [{ data: perfis }, { data: docs }] = await Promise.all([
+    admin.from("profiles").select("id, full_name").in("id", donos),
+    admin.from("qualification_checklists").select("property_id, document_status").in("property_id", ids),
+  ]);
+  const nome = new Map(((perfis ?? []) as { id: string; full_name: string | null }[]).map((p) => [p.id, nomeCurtoAdmin(p.full_name)]));
+  const doc = new Map<string, string>();
+  for (const d of (docs ?? []) as { property_id: string; document_status: string | null }[]) {
+    const atual = doc.get(d.property_id);
+    // "pending" (em revisão) ganha de tudo: é o que o filtro "documento em revisão" procura.
+    if (!atual || d.document_status === "pending") doc.set(d.property_id, d.document_status ?? "none");
+  }
+  return linhas.map((p) => ({
+    id: p.id,
+    titulo: p.title ?? "Imóvel",
+    ownerId: p.owner_id,
+    dono: nome.get(p.owner_id) ?? "—",
+    status: p.status,
+    cidade: p.city,
+    bairro: p.address,
+    criadoEm: p.created_at,
+    documento: doc.get(p.id) ?? "none",
+    qualidade: p.listing_quality_tier,
+    donoTeste: teste.has(p.owner_id),
+  }));
+}
+
+/** "Ana S." — nome curto para as listas do admin. */
+export function nomeCurtoAdmin(nome: string | null | undefined): string {
+  const partes = String(nome ?? "").trim().split(/\s+/).filter(Boolean);
+  if (!partes.length) return "Sem nome";
+  return partes.length === 1 ? partes[0] : `${partes[0]} ${partes[partes.length - 1][0]}.`;
+}
+
+/** Nomes curtos por id (partes de contrato, donos). */
+export async function nomesCurtos(admin: Admin, ids: string[]): Promise<Map<string, string>> {
+  if (!ids.length) return new Map();
+  const { data } = await admin.from("profiles").select("id, full_name").in("id", [...new Set(ids)]);
+  return new Map(((data ?? []) as { id: string; full_name: string | null }[]).map((p) => [p.id, nomeCurtoAdmin(p.full_name)]));
+}
+
+/** Cliente de serviço só depois de conferir que quem pede é admin (as páginas novas do admin). */
+export async function adminDaPagina(): Promise<Admin | null> {
+  const supabase = await createClient();
+  if (!supabase) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user || !(await ehAdmin(supabase, user.id))) return null;
+  return createAdminClient();
 }
