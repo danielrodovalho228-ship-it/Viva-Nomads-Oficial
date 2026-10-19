@@ -107,7 +107,7 @@ export function LocacoesClient({
                 <>
                   <ConfirmarPagamentos pagamentos={l.pagamentos} />
                   <DevolucaoCaucaoInquilino acerto={extras[l.id]?.acerto ?? null} />
-                  <ListaDocumentos documentos={extras[l.id]?.documentos ?? []} />
+                  <ListaDocumentos documentos={extras[l.id]?.documentos ?? []} recibos={extras[l.id]?.recibos ?? []} />
                 </>
               )}
 

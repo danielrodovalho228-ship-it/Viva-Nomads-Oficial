@@ -4,11 +4,12 @@ import { estadoDoContrato, statusAssinaturaCurto, type ChaveEstadoContrato } fro
 import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { emitirDoPagamento } from "@/lib/fiscal/emitir";
+import { emitirDoPagamentoComRegistro } from "@/lib/fiscal/emitir";
 import { listMyProperties } from "@/lib/data/properties";
 import { erroBancoPT } from "@/lib/erros-banco";
 import { etapaContrato, type EtapaContrato } from "@/lib/contrato-etapas";
 import { podeAvaliarLocacao } from "@/lib/contrato-assinar";
+import { rotuloPagamentoBloco } from "@/lib/pagamento-bloco";
 
 /**
  * Contratos & blocos do PROPRIETÁRIO + registro DECLARATÓRIO de pagamento
@@ -47,6 +48,8 @@ export interface PagamentoView {
   dataPagamento: string;
   confirmado: boolean;
   observacao: string | null;
+  /** Rótulo único: "Bloco 1 (2 meses: 19/10 a 18/12) — R$ 6.400 (2 × R$ 3.200)" (jornada de assinatura, 19/10). */
+  rotulo: string;
 }
 
 export interface ContratoView {
@@ -88,8 +91,15 @@ function toBloco(b: Record<string, unknown>): BlocoView {
   };
 }
 
-function toPagamento(p: Record<string, unknown>): PagamentoView {
+function toPagamento(p: Record<string, unknown>, valorMensal?: number | null): PagamentoView {
+  const b = p.contrato_blocos as { numero_bloco?: number | null; meses?: number | null; inicio?: string | null; fim?: string | null } | null | undefined;
   return {
+    rotulo: rotuloPagamentoBloco({
+      tipo: String(p.tipo ?? "aluguel"),
+      valor: Number(p.valor),
+      bloco: b?.numero_bloco ? { numero: Number(b.numero_bloco), meses: Number(b.meses ?? 1), inicio: b.inicio ?? null, fim: b.fim ?? null } : null,
+      valorMensal: valorMensal ?? null,
+    }),
     id: String(p.id),
     blocoId: String(p.bloco_id),
     tipo: String(p.tipo ?? "aluguel"),
@@ -220,13 +230,13 @@ export async function getMinhasLocacoes(): Promise<LocacaoView[]> {
 
   const { data } = await supabase
     .from("contratos")
-    .select("id, property_id, aluguel_mensal, status, created_at, encerrado_em, assinado_proprietario_em, assinado_inquilino_em, properties(title, owner_id), pagamentos_bloco(*)")
+    .select("id, property_id, aluguel_mensal, status, created_at, encerrado_em, assinado_proprietario_em, assinado_inquilino_em, properties(title, owner_id), pagamentos_bloco(*, contrato_blocos(numero_bloco, meses, inicio, fim))")
     .eq("tenant_id", user.id)
     .order("created_at", { ascending: false });
 
   return ((data ?? []) as Record<string, unknown>[]).map((c) => {
     const prop = (c.properties as { title?: string; owner_id?: string } | null) ?? {};
-    const pagamentos = ((c.pagamentos_bloco as Record<string, unknown>[]) ?? []).map(toPagamento);
+    const pagamentos = ((c.pagamentos_bloco as Record<string, unknown>[]) ?? []).map((pg) => toPagamento(pg, Number(c.aluguel_mensal)));
     return {
       id: String(c.id),
       propertyId: String(c.property_id),
@@ -275,7 +285,7 @@ export async function getMeusContratos(): Promise<ContratoView[]> {
 
   const { data } = await supabase
     .from("contratos")
-    .select("*, contrato_blocos(*), pagamentos_bloco(*)")
+    .select("*, contrato_blocos(*), pagamentos_bloco(*, contrato_blocos(numero_bloco, meses, inicio, fim))")
     .in("property_id", ids)
     .order("created_at", { ascending: false });
 
@@ -291,7 +301,7 @@ export async function getMeusContratos(): Promise<ContratoView[]> {
     const blocos = ((c.contrato_blocos as Record<string, unknown>[]) ?? [])
       .map(toBloco)
       .sort((a, b) => a.numeroBloco - b.numeroBloco);
-    const pagamentos = ((c.pagamentos_bloco as Record<string, unknown>[]) ?? []).map(toPagamento);
+    const pagamentos = ((c.pagamentos_bloco as Record<string, unknown>[]) ?? []).map((pg) => toPagamento(pg, Number(c.aluguel_mensal)));
     return {
       id: String(c.id),
       propertyId: String(c.property_id),
@@ -395,6 +405,6 @@ export async function confirmarPagamento(pagamentoId: string): Promise<ActionRes
   if (error) return { ok: false, error: erroBancoPT(error) };
   // Registrado pelo dono + confirmado pelo inquilino → recibo (ou comprovante da
   // caução) em PDF, por e-mail às duas partes. Depois da resposta: não atrasa a tela.
-  after(() => emitirDoPagamento(pagamentoId));
+  after(() => emitirDoPagamentoComRegistro(pagamentoId));
   return { ok: true, id: pagamentoId };
 }

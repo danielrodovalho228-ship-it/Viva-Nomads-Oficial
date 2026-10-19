@@ -72,7 +72,7 @@ export async function ContratoDetalhe({
             Início da estadia: {dataBR(c.inicioEstadia)}
           </p>
         )}
-        <p className="mt-4 text-sm text-muted [overflow-wrap:anywhere]" data-testid="contrato-aviso-assinatura">
+        <p className="mt-4 whitespace-pre-line text-sm text-muted [overflow-wrap:anywhere]" data-testid="contrato-aviso-assinatura">
           {c.aviso}
         </p>
         {!c.euAssinei && c.status === "ativo" && <AssinarContrato contratoId={c.id} />}

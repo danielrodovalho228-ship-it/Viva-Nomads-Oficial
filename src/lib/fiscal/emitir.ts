@@ -7,6 +7,7 @@ import { textoEmail } from "@/lib/notifications/texto-seguro";
 import { SITE_URL } from "@/lib/site";
 import { conteudoDocumento, ROTULO_TIPO, temContato, textoDocumento, type DadosDocumento, type TipoDocumento } from "@/lib/fiscal/documento";
 import { gerarPdf, sha256 } from "@/lib/fiscal/pdf";
+import { rotuloPagamentoBloco } from "@/lib/pagamento-bloco";
 
 /**
  * Emissão dos documentos da plataforma (SÓ servidor): recibo de aluguel,
@@ -55,7 +56,7 @@ async function emitir(
   tipo: TipoDocumento,
   origem: { pagamentoId?: string; acertoId?: string },
   partes: Partes,
-  extra: Pick<DadosDocumento, "periodoInicio" | "periodoFim" | "valor" | "encargos" | "dataPagamento" | "forma" | "caucaoTotal" | "confirmadoEm">
+  extra: Pick<DadosDocumento, "periodoInicio" | "periodoFim" | "valor" | "encargos" | "dataPagamento" | "forma" | "caucaoTotal" | "confirmadoEm" | "rotuloPagamento">
 ): Promise<Resultado> {
   // Idempotente: já emitido para esta origem → devolve o existente.
   const coluna = origem.pagamentoId ? "pagamento_id" : "acerto_id";
@@ -151,13 +152,14 @@ export async function emitirDoPagamento(pagamentoId: string): Promise<Resultado>
   try {
     const { data: pg } = await admin
       .from("pagamentos_bloco")
-      .select("id, contrato_id, bloco_id, tipo, valor, forma, data_pagamento, confirmado_pelo_inquilino, encargos, contrato_blocos(inicio, fim)")
+      .select("id, contrato_id, bloco_id, tipo, valor, forma, data_pagamento, confirmado_pelo_inquilino, encargos, contrato_blocos(numero_bloco, meses, inicio, fim), contratos(aluguel_mensal)")
       .eq("id", pagamentoId)
       .maybeSingle();
     if (!pg || !pg.confirmado_pelo_inquilino) return { ok: false, motivo: "pagamento não confirmado pelo inquilino" };
     const partes = await partesDoContrato(admin, pg.contrato_id as string);
     if (!partes) return { ok: false, motivo: "contrato não encontrado" };
-    const bloco = pg.contrato_blocos as unknown as { inicio: string | null; fim: string | null } | null;
+    const bloco = pg.contrato_blocos as unknown as { numero_bloco: number | null; meses: number | null; inicio: string | null; fim: string | null } | null;
+    const contrato = pg.contratos as unknown as { aluguel_mensal: number | null } | null;
     const encargos = Array.isArray(pg.encargos) ? (pg.encargos as { rotulo: string; valor: number }[]).filter((e) => e && e.rotulo && Number(e.valor) >= 0).map((e) => ({ rotulo: String(e.rotulo).slice(0, 60), valor: Number(e.valor) })) : [];
     return await emitir(admin, pg.tipo === "caucao" ? "comprovante_caucao" : "recibo_aluguel", { pagamentoId }, partes, {
       periodoInicio: bloco?.inicio ?? null,
@@ -168,11 +170,78 @@ export async function emitirDoPagamento(pagamentoId: string): Promise<Resultado>
       forma: pg.forma as string,
       caucaoTotal: null,
       confirmadoEm: null,
+      rotuloPagamento: rotuloPagamentoBloco({
+        tipo: pg.tipo as string,
+        valor: Number(pg.valor),
+        bloco: bloco?.numero_bloco ? { numero: Number(bloco.numero_bloco), meses: Number(bloco.meses ?? 1), inicio: bloco.inicio, fim: bloco.fim } : null,
+        valorMensal: contrato?.aluguel_mensal == null ? null : Number(contrato.aluguel_mensal),
+      }),
     });
   } catch (e) {
     console.error("[documentos] recibo:", e instanceof Error ? e.message : e);
     return { ok: false, motivo: "falha" };
   }
+}
+
+/**
+ * Falha visível (jornada de assinatura, 19/10): toda emissão que não deu certo vira uma linha em documentos_falhas,
+ * com o motivo, para a fila "Documentos com falha" do admin (botão "Emitir de novo"); a que deu certo depois fecha
+ * a linha. Antes a falha sumia num console.error e ninguém via que o recibo não tinha saído.
+ */
+async function registrarResultado(admin: Admin, origem: { pagamentoId?: string; acertoId?: string }, r: Resultado): Promise<void> {
+  const coluna = origem.pagamentoId ? "pagamento_id" : "acerto_id";
+  const id = (origem.pagamentoId ?? origem.acertoId) as string;
+  try {
+    if (r.ok) {
+      await admin.from("documentos_falhas").update({ resolvido_em: new Date().toISOString(), documento_id: r.id }).eq(coluna, id).is("resolvido_em", null);
+      return;
+    }
+    const { data: aberta } = await admin.from("documentos_falhas").select("id, tentativas").eq(coluna, id).is("resolvido_em", null).maybeSingle();
+    if (aberta) {
+      await admin
+        .from("documentos_falhas")
+        .update({ motivo: r.motivo.slice(0, 300), tentativas: Number(aberta.tentativas ?? 1) + 1, atualizado_em: new Date().toISOString() })
+        .eq("id", aberta.id);
+    } else {
+      await admin.from("documentos_falhas").insert({ [coluna]: id, motivo: r.motivo.slice(0, 300) });
+    }
+  } catch {
+    /* o registro da falha nunca quebra o fluxo */
+  }
+}
+
+/** Emite e registra o resultado na fila (pagamento confirmado → recibo/comprovante). */
+export async function emitirDoPagamentoComRegistro(pagamentoId: string): Promise<Resultado> {
+  const r = await emitirDoPagamento(pagamentoId);
+  const admin = createAdminClient();
+  if (admin) await registrarResultado(admin, { pagamentoId }, r);
+  return r;
+}
+
+/** Emite e registra o resultado na fila (devolução da caução confirmada → termo). */
+export async function emitirTermoDevolucaoComRegistro(acertoId: string): Promise<Resultado> {
+  const r = await emitirTermoDevolucao(acertoId);
+  const admin = createAdminClient();
+  if (admin) await registrarResultado(admin, { acertoId }, r);
+  return r;
+}
+
+/**
+ * Retroativo (jornada de assinatura, 19/10): pagamentos já CONFIRMADOS pelo inquilino que ficaram sem documento.
+ * O admin dispara pelo botão "Emitir os pendentes" da fila; cada um passa pela mesma emissão idempotente.
+ */
+export async function pagamentosConfirmadosSemDocumento(admin: Admin, limite = 50): Promise<string[]> {
+  const { data: pgs } = await admin
+    .from("pagamentos_bloco")
+    .select("id")
+    .eq("confirmado_pelo_inquilino", true)
+    .order("confirmado_em", { ascending: true })
+    .limit(500);
+  const ids = ((pgs ?? []) as { id: string }[]).map((p) => p.id);
+  if (!ids.length) return [];
+  const { data: docs } = await admin.from("documentos_fiscais").select("pagamento_id").in("pagamento_id", ids);
+  const com = new Set(((docs ?? []) as { pagamento_id: string | null }[]).map((d) => d.pagamento_id));
+  return ids.filter((id) => !com.has(id)).slice(0, limite);
 }
 
 /** Devolução da caução confirmada pelo inquilino → termo de devolução. */

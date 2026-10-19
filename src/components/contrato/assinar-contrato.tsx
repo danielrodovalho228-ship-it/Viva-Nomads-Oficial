@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,27 @@ import { assinarContrato, pedirCodigoAssinatura } from "@/lib/data/contrato-assi
 /** “Li e concordo” + código de 6 dígitos enviado ao e-mail da conta (conferido no servidor) → assina. */
 export function AssinarContrato({ contratoId }: { contratoId: string }) {
   const router = useRouter();
-  const [aceite, setAceite] = useState(false);
+  const [aceite, setAceiteEstado] = useState(false);
+  // "Li e concordo" sobrevive a recarregar a página (jornada de assinatura, 19/10): guardado por contrato no
+  // sessionStorage e limpo depois de assinar. O servidor continua exigindo o aceite no envio.
+  const chave = `vn-li-concordo:${contratoId}`;
+  useEffect(() => {
+    try {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- restaura a marcação depois da hidratação
+      if (window.sessionStorage.getItem(chave) === "1") setAceiteEstado(true);
+    } catch {
+      /* sem armazenamento (aba privada): segue desmarcado */
+    }
+  }, [chave]);
+  const setAceite = (v: boolean) => {
+    setAceiteEstado(v);
+    try {
+      if (v) window.sessionStorage.setItem(chave, "1");
+      else window.sessionStorage.removeItem(chave);
+    } catch {
+      /* sem armazenamento */
+    }
+  };
   const [codigo, setCodigo] = useState("");
   const [enviado, setEnviado] = useState(false);
   const [pedindo, setPedindo] = useState(false);
@@ -43,6 +63,11 @@ export function AssinarContrato({ contratoId }: { contratoId: string }) {
         return;
       }
       setAssinado(true);
+      try {
+        window.sessionStorage.removeItem(chave);
+      } catch {
+        /* sem armazenamento */
+      }
       router.refresh();
     } finally {
       setEnviando(false);

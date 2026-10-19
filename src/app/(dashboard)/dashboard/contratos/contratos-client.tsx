@@ -1,5 +1,6 @@
 "use client";
 
+import { rotuloPagamentoBloco } from "@/lib/pagamento-bloco";
 import { CampoData } from "@/components/ui/campo-data";
 import { ProblemaComIsto } from "@/components/ajuda/problema-com-isto";
 import { useMemo, useState } from "react";
@@ -111,6 +112,12 @@ function buildDemoContratos(hojeISO: string): ContratoView[] {
             dataPagamento: c.inicio,
             confirmado: true,
             observacao: null,
+            rotulo: rotuloPagamentoBloco({
+              tipo: "aluguel",
+              valor: b0.valor,
+              bloco: { numero: b0.numeroBloco, meses: b0.meses, inicio: b0.inicio, fim: b0.fim },
+              valorMensal: c.valorMes,
+            }),
           },
         ]
       : [];
@@ -324,7 +331,7 @@ function ContratoCard({
             acerto={extra.acerto}
             hojeISO={hojeISO}
           />
-          <ListaDocumentos documentos={extra.documentos} />
+          <ListaDocumentos documentos={extra.documentos} recibos={extra.recibos} />
         </>
       )}
 
@@ -518,7 +525,7 @@ function RegistrarRecebimento({
           ? "Registro de exemplo — em produção fica no histórico do contrato."
           : tipo === "caucao"
             ? "Caução registrada. Quando o inquilino confirmar, sai o comprovante da caução."
-            : "Recebimento registrado. Quando o inquilino confirmar, sai o recibo em PDF para os dois."}
+            : "Recebimento registrado. Quando o inquilino confirmar, o recibo em PDF fica disponível aqui e vai por e-mail para vocês dois."}
       </p>
     );
   }
