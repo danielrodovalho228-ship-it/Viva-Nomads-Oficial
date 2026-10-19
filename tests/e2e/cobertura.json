@@ -135,7 +135,8 @@
         "t36-cadastro-ponta-a-ponta",
         "t9-documentos",
         "t183-telas-logadas-390",
-        "t195-matricula-caf"
+        "t195-matricula-caf",
+        "t217-recibo-assinatura"
       ]
     },
     "/admin/emails-teste": {
@@ -569,7 +570,8 @@
         "t183-telas-logadas-390",
         "t205-fechamento-sem-beco",
         "t210-contrato-estado-jornada",
-        "t209-jornada-dois-lados"
+        "t209-jornada-dois-lados",
+        "t217-recibo-assinatura"
       ]
     },
     "/dashboard/contratos/[id]": {
@@ -578,7 +580,8 @@
       ],
       "specs": [
         "t57-contrato-assinar",
-        "t205-fechamento-sem-beco"
+        "t205-fechamento-sem-beco",
+        "t217-recibo-assinatura"
       ]
     },
     "/dashboard/favoritos": {
@@ -710,7 +713,8 @@
         "t183-telas-logadas-390",
         "t205-fechamento-sem-beco",
         "t210-contrato-estado-jornada",
-        "t213-jornada-teste-confirmacao"
+        "t213-jornada-teste-confirmacao",
+        "t217-recibo-assinatura"
       ]
     },
     "/dashboard/locacoes/[id]": {
@@ -2472,6 +2476,28 @@
       ],
       "specs": [
         "t187-conferencia-documento"
+      ]
+    },
+    "src/lib/data/documentos-falhas-actions.ts#emitirDeNovo": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
+    "src/lib/data/documentos-falhas-actions.ts#emitirPendentes": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t217-recibo-assinatura"
+      ]
+    },
+    "src/lib/data/documentos-falhas-actions.ts#listarFalhasDocumentos": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t217-recibo-assinatura"
       ]
     },
     "src/lib/data/documentos-inquilino-actions.ts#linkDocInquilino": {

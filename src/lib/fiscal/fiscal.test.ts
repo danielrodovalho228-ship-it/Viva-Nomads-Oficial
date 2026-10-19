@@ -98,7 +98,7 @@ function corpo(fonte: string, nome: string): string {
 }
 
 test("servidor: recibo só depois da confirmação do inquilino; papéis conferidos na devolução", () => {
-  assert.match(corpo(ler("lib/data/contratos-actions.ts"), "confirmarPagamento"), /after\(\(\) => emitirDoPagamento\(pagamentoId\)\)/);
+  assert.match(corpo(ler("lib/data/contratos-actions.ts"), "confirmarPagamento"), /after\(\(\) => emitirDoPagamento(ComRegistro)?\(pagamentoId\)\)/);
   assert.match(corpo(ler("lib/fiscal/emitir.ts"), "emitirDoPagamento"), /!pg\.confirmado_pelo_inquilino/);
   const docs = ler("lib/data/documentos-actions.ts");
   assert.match(corpo(docs, "registrarDevolucaoCaucao"), /ctx\.papel !== "dono"/);
