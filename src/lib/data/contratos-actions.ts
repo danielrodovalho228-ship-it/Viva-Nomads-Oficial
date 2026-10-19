@@ -350,14 +350,14 @@ export async function marcarPagamentoRecebido(input: PagamentoInput): Promise<Ac
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Entre para registrar o recebimento." };
-  if (!UUID_RE.test(input.blocoId) || !UUID_RE.test(input.contratoId))
+  // Exemplos (ids não-UUID) são só demonstração. A Caução não tem bloco (0182): só o contrato precisa ser real.
+  if (!UUID_RE.test(input.contratoId) || ((input.tipo ?? "aluguel") === "aluguel" && !UUID_RE.test(input.blocoId)))
     return { ok: true, demo: true };
   if (!(input.valor >= 0)) return { ok: false, error: "Informe um valor válido." };
   if (!input.dataPagamento) return { ok: false, error: "Informe a data do pagamento." };
 
   const tipo = input.tipo ?? "aluguel";
   // Caução é do CONTRATO (0182): grava sem bloco. O valor mensal é de um bloco.
-  if (tipo === "aluguel" && !UUID_RE.test(input.blocoId)) return { ok: false, error: "Escolha o bloco do pagamento." };
   const { data, error } = await supabase
     .from("pagamentos_bloco")
     .insert({

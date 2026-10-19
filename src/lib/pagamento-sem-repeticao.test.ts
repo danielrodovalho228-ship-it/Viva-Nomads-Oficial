@@ -57,6 +57,8 @@ test("item 2: Caução é do contrato — grava sem bloco e o rótulo nunca é '
   assert.equal(rotuloPagamentoBloco({ tipo: "caucao", valor: 6400 }), "Caução do contrato — R$ 6.400");
   const acoes = ler("./data/contratos-actions.ts");
   assert.match(acoes, /bloco_id: tipo === "caucao" \? null : input\.blocoId/);
+  // Regressão do laboratório (t230): a Caução sem bloco não pode cair no atalho de "exemplo" e sair sem gravar.
+  assert.match(acoes, /\(\(input\.tipo \?\? "aluguel"\) === "aluguel" && !UUID_RE\.test\(input\.blocoId\)\)/);
   assert.match(migracao, /alter column bloco_id drop not null/);
   assert.match(migracao, /\(tipo = 'caucao' and bloco_id is null\) or \(tipo = 'aluguel' and bloco_id is not null\)/);
   const tela = ler("../app/(dashboard)/dashboard/contratos/contratos-client.tsx");
