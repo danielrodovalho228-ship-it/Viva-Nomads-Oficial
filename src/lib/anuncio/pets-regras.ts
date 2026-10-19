@@ -3,6 +3,7 @@
  * com a ficha do pet do inquilino (item 4). Puro: sem banco, sem tela.
  * A validação roda no servidor; a tela só repete para avisar cedo.
  */
+import { lerReais } from "../reais.ts";
 
 export const ESPECIES_PET = ["cao", "gato", "outro"] as const;
 export type EspeciePet = (typeof ESPECIES_PET)[number];
@@ -92,7 +93,8 @@ export function normalizarRegrasPets(raw: unknown): RegrasPets | null {
       ? r.regrasCondominio.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim()
       : "";
   if (texto.length > MAX_TEXTO_CONDOMINIO) return null;
-  const valorBruto = r.valorPet == null || r.valorPet === "" ? 0 : Number(r.valorPet);
+  const lidoPet = r.valorPet == null || r.valorPet === "" ? { ok: true as const, valor: 0 } : lerReais(r.valorPet as string | number);
+  const valorBruto = lidoPet.ok ? (lidoPet.valor ?? 0) : NaN;
   if (!Number.isFinite(valorBruto) || valorBruto < 0 || valorBruto > MAX_VALOR_PET) return null;
   const tipo = TIPOS_VALOR_PET.find((t) => t === r.valorPetTipo);
   if (valorBruto > 0 && r.valorPetTipo != null && !tipo) return null;

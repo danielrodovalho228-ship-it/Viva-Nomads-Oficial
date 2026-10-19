@@ -135,6 +135,24 @@ export function taxaNoAceite(imoveisAtivos: number, agora: Date): number {
   return taxaNaAssinatura({ tipo: "novo", imoveisAtivos, assinadoEm: agora }).taxa;
 }
 
+/**
+ * Taxa da proposta (complemento do prompt 27, parte B — regra do Daniel, 18/10): fixada no ENVIO pela faixa do dono
+ * naquele momento e NUNCA sobe depois. No aceite vale a menor entre a do envio e a da faixa atual. Proposta antiga sem
+ * taxa do envio → a faixa atual.
+ */
+export function taxaEfetivaDaProposta(taxaNoEnvio: number | null | undefined, taxaAtual: number): number {
+  const envio = taxaNoEnvio == null ? NaN : Number(taxaNoEnvio);
+  return Number.isFinite(envio) ? Math.min(envio, taxaAtual) : taxaAtual;
+}
+
+/** "Sua taxa caiu para 10% por causa da sua faixa atual" — só quando a faixa atual ficou menor que a do envio. */
+export function avisoTaxaCaiu(taxaNoEnvio: number | null | undefined, taxaAtual: number): string | null {
+  const envio = taxaNoEnvio == null ? NaN : Number(taxaNoEnvio);
+  if (!Number.isFinite(envio) || !(taxaAtual < envio)) return null;
+  const pct = (taxaAtual * 100).toLocaleString("pt-BR", { maximumFractionDigits: 1 });
+  return `Sua taxa caiu para ${pct}% por causa da sua faixa atual`;
+}
+
 /** Meses permitidos pelo anúncio (prazo em dias → meses de 30 dias, entre 1 e 6). */
 export function mesesDoAnuncio(minPeriodDias: number | null | undefined, maxPeriodDias: number | null | undefined): { min: number; max: number } {
   const min = Math.min(6, Math.max(1, Math.ceil(n(minPeriodDias || 30) / 30)));

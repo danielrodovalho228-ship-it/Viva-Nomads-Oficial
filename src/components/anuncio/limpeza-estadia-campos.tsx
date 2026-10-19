@@ -1,5 +1,7 @@
 "use client";
 
+import { CampoReais } from "@/components/ui/campo-reais";
+import { reaisOu } from "@/lib/reais";
 import { QTDS_LIMPEZA, MAX_TEXTO_LIMPEZA, type LimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 
 /** Rascunho do formulário: tudo em texto até o servidor validar. */
@@ -48,13 +50,14 @@ export function LimpezaEstadiaCampos({ value, onChange }: { value: LimpezaEstadi
           </label>
           <label className="grid gap-1 text-sm font-semibold text-ink">
             Valor do pacote por mês (R$)
-            <input
+            <CampoReais
+              semPrefixo
+              centavos
               className={campo}
-              inputMode="decimal"
-              value={value.valorMes}
+              value={reaisOu(value.valorMes, NaN) >= 0 ? reaisOu(value.valorMes, NaN) : null}
               placeholder="0 = já incluído no valor mensal"
-              onChange={(e) => onChange({ ...value, valorMes: e.target.value })}
-              data-testid="limpeza-valor"
+              onChange={(v) => onChange({ ...value, valorMes: v == null ? "" : String(v) })}
+              testid="limpeza-valor"
             />
           </label>
         </>

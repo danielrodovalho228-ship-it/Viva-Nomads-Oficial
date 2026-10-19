@@ -1,5 +1,6 @@
 "use client";
 
+import { CampoReais } from "@/components/ui/campo-reais";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -87,6 +88,8 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
 
   async function enviar(r: Parameters<typeof responderProposta>[1]) {
     setErro(null);
+    // O aviso de "tente a partir de…" é da tentativa anterior: some ao reenviar (complemento do prompt 27, parte B).
+    setAviso(null);
     setEnviando(true);
     const res = await responderProposta(p.id, r);
     setEnviando(false);
@@ -186,15 +189,14 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
                     {libera("valor_mensal") && (
                       <label className="block">
                         <span className="mb-1.5 block text-sm font-medium text-ink">Valor mensal (R$)</span>
-                        <input
-                          inputMode="decimal"
-                          className="input"
+                        <CampoReais
+                          semPrefixo
                           value={mud.valorBase ?? atual.termos.valorBase}
-                          onChange={(e) => {
+                          onChange={(v) => {
                             setAviso(null);
-                            setMud((m) => ({ ...m, valorBase: Number(e.target.value.replace(/[^\d.,]/g, "").replace(",", ".")) || 0 }));
+                            setMud((m) => ({ ...m, valorBase: v ?? 0 }));
                           }}
-                          data-testid="contra-valor"
+                          testid="contra-valor"
                         />
                       </label>
                     )}
@@ -231,7 +233,7 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
                     {libera("taxa_pet") && (
                       <label className="block">
                         <span className="mb-1.5 block text-sm font-medium text-ink">Taxa pet (R$/mês)</span>
-                        <input inputMode="decimal" className="input" value={mud.taxaPet ?? atual.termos.taxaPet} onChange={(e) => setMud((m) => ({ ...m, taxaPet: Number(e.target.value.replace(",", ".")) || 0 }))} />
+                        <CampoReais semPrefixo centavos value={mud.taxaPet ?? atual.termos.taxaPet} onChange={(v) => setMud((m) => ({ ...m, taxaPet: v ?? 0 }))} testid="contra-taxa-pet" />
                       </label>
                     )}
                   </div>
@@ -331,8 +333,13 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
             <Panel title="Só você vê" data-testid="proposta-taxa">
               <p className="text-sm text-ink">
                 {rotuloTaxaServico(p.taxa.pct, p.taxa.valorMensal, p.taxa.meses, p.taxa.valor)}
-                {p.taxa.congelada ? " (congelada no aceite)" : ""}. Consumo, limpeza e taxa pet não entram na base.
+                {p.taxa.congelada ? " (congelada no aceite)" : " (fixada no envio; não sobe depois)"}. Consumo, limpeza e taxa pet não entram na base.
               </p>
+              {p.taxa.caiu && (
+                <p className="mt-2 text-sm font-medium text-forest" data-testid="proposta-taxa-caiu">
+                  {p.taxa.caiu}.
+                </p>
+              )}
             </Panel>
           )}
           {p.fechamentoUrl && (

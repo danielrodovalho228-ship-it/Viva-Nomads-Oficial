@@ -1,5 +1,6 @@
 "use client";
 
+import { CampoReais } from "@/components/ui/campo-reais";
 import { useMemo, useState } from "react";
 import { Calculator, TrendingDown, AlertTriangle, Building2, User } from "lucide-react";
 import { simulateTax, AVISO_IBS_CBS_LIBERADO, AVISO_IBS_CBS_PF } from "@/lib/tax";
@@ -40,11 +41,11 @@ export function TaxSimulator() {
           <span className="mb-1.5 block text-sm font-medium text-ink">
             Receita mensal das locações (total)
           </span>
-          <input
-            type="number"
-            min={0}
-            value={monthlyRent || ""}
-            onChange={(e) => setMonthlyRent(Number(e.target.value))}
+          <CampoReais
+            semPrefixo
+            centavos
+            value={monthlyRent || null}
+            onChange={(v) => setMonthlyRent(v ?? 0)}
             className="w-full rounded-xl border border-sage-200 px-3.5 py-2.5 text-sm outline-none focus:border-sage"
           />
         </label>
@@ -62,11 +63,11 @@ export function TaxSimulator() {
           <span className="mb-1.5 block text-sm font-medium text-ink">
             Despesas que você paga por mês (IPTU, condomínio, administração)
           </span>
-          <input
-            type="number"
-            min={0}
-            value={deducoes || ""}
-            onChange={(e) => setDeducoes(Number(e.target.value))}
+          <CampoReais
+            semPrefixo
+            centavos
+            value={deducoes || null}
+            onChange={(v) => setDeducoes(v ?? 0)}
             className="w-full rounded-xl border border-sage-200 px-3.5 py-2.5 text-sm outline-none focus:border-sage"
           />
         </label>
@@ -74,13 +75,12 @@ export function TaxSimulator() {
           <span className="mb-1.5 block text-sm font-medium text-ink">
             Seus outros rendimentos por mês (salário, pró-labore)
           </span>
-          <input
-            type="number"
-            min={0}
-            value={outros || ""}
-            onChange={(e) => setOutros(Number(e.target.value))}
-            className="w-full rounded-xl border border-sage-200 px-3.5 py-2.5 text-sm outline-none focus:border-sage"
-            data-testid="tax-outros-rendimentos"
+          <CampoReais
+            semPrefixo
+            centavos
+            value={outros || null}
+            onChange={(v) => setOutros(v ?? 0)}
+            className="w-full rounded-xl border border-sage-200 px-3.5 py-2.5 text-sm outline-none focus:border-sage" testid="tax-outros-rendimentos"
           />
           <span className="mt-1 block text-xs text-muted">A receita das locações soma a eles na tabela do imposto de renda.</span>
         </label>

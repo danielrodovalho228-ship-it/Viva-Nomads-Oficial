@@ -1,5 +1,6 @@
 "use client";
 
+import { CampoReais } from "@/components/ui/campo-reais";
 import { CampoData } from "@/components/ui/campo-data";
 import { ProblemaComIsto } from "@/components/ajuda/problema-com-isto";
 import { useMemo, useState } from "react";
@@ -560,11 +561,11 @@ function RegistrarRecebimento({
       <div className="grid gap-2 sm:grid-cols-3">
         <label className="text-xs text-muted">
           {tipo === "caucao" ? "Valor da caução" : "Valor do bloco"}
-          <input
-            type="number"
-            min={0}
-            value={valor}
-            onChange={(e) => setValor(e.target.value)}
+          <CampoReais
+            semPrefixo
+            centavos
+            value={valor === "" ? null : Number(valor)}
+            onChange={(v) => setValor(v == null ? "" : String(v))}
             className="mt-1 w-full rounded-lg border border-sage-200 px-2 py-1.5 text-sm text-ink outline-none focus:border-sage"
           />
         </label>
@@ -602,11 +603,11 @@ function RegistrarRecebimento({
           ).map(([rotulo, v, set]) => (
             <label key={rotulo} className="text-xs text-muted">
               {rotulo}
-              <input
-                type="number"
-                min={0}
-                value={v}
-                onChange={(e) => set(e.target.value)}
+              <CampoReais
+                semPrefixo
+                centavos
+                value={v === "" ? null : Number(v)}
+                onChange={(n) => set(n == null ? "" : String(n))}
                 placeholder="0"
                 className="mt-1 w-full rounded-lg border border-sage-200 px-2 py-1.5 text-sm text-ink outline-none focus:border-sage"
               />
