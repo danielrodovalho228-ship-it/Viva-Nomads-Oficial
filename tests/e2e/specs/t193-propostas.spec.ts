@@ -281,38 +281,73 @@ test.describe("T193 — propostas", () => {
     await p.context().close();
   });
 
-  // Complemento do prompt 27, parte B: valor digitado no formato brasileiro. Com piso de R$ 2.900, "3.000", "3.200" e
-  // "3.300" seguem sem aviso (antes "3.300" virava 3,3); "2.500" mostra só a próxima centena e, corrigido para "3.000",
-  // o aviso some ao reenviar.
-  for (const [valor, largura] of [["3.000", 390], ["3.200", 1280], ["3.300", 390], ["2.500", 1280]] as const) {
-    test(`${largura}px — reais no formato brasileiro: piso 2.900, digitar "${valor}"`, async ({ browser }) => {
+  // Complemento do prompt 27, parte B + ajuste do coordenador (reteste do #866): o piso é PRIVADO e conferido no
+  // servidor, no envio — o aviso aparece DEPOIS de clicar Enviar. Piso de R$ 2.900: "3.000", "3.200" e "3.300" enviam
+  // direto; "2.500" → aviso "tente a partir de R$ 3.000" e nenhuma versão gravada; "Enviar mesmo assim" → v2 gravada.
+  // Desconto de longa estadia: valor-base acima do piso, valor final abaixo → aviso. O piso nunca chega ao navegador.
+  for (const [valor, largura] of [["3.000", 390], ["3.200", 1280], ["3.300", 390], ["2.500", 1280], ["desconto", 390]] as const) {
+    test(`${largura}px — reais no formato brasileiro e piso no envio: ${valor}`, async ({ browser }) => {
       const c = await cenario(`Reais${valor.replace(".", "")}`, NEGOCIA, 2900);
       const id = await propostaNoBanco(c, [{ autor: "owner", valor: 3400, meses: 4 }]);
       const b = await abrir(browser, c.inq.email, largura);
+      const respostas: string[] = [];
+      b.on("response", async (r) => {
+        if (!r.url().includes("localhost")) return;
+        try {
+          respostas.push(await r.text());
+        } catch {
+          /* sem corpo */
+        }
+      });
       await b.goto(`/dashboard/propostas/${id}`, { waitUntil: "domcontentloaded" });
+      await expect(b.getByTestId("proposta-rodada")).toHaveText("Rodada 1 de 3");
+      await expect(b.getByTestId("proposta-ultima-rodada")).toHaveCount(0);
       await b.getByTestId("proposta-contrapropor").click();
+      await expect(b.getByTestId("contra-valor-ajuda")).toHaveText("Se o valor ficar abaixo do que o proprietário aceita, avisamos quando você enviar.");
       const campo = b.getByTestId("contra-valor");
+      const digitado = valor === "desconto" ? "3.050" : valor;
       await campo.fill("");
-      await campo.pressSequentially(valor.replace(".", ""));
-      await expect(campo).toHaveValue(valor, { timeout: 5_000 }); // formatado enquanto digita
+      await campo.pressSequentially(digitado.replace(".", ""));
+      await expect(campo).toHaveValue(digitado, { timeout: 5_000 }); // formatado enquanto digita
+      if (valor === "desconto") await b.getByTestId("contra-meses").selectOption("6"); // 6 meses → 6% de desconto: R$ 2.867 < piso
+      // Nada de aviso antes do envio: o navegador não sabe o piso.
+      await expect(b.getByTestId("aviso-minimo")).toHaveCount(0);
       await b.getByTestId("enviar-contraproposta").click();
-      if (valor === "2.500") {
+      const versao2 = async () => {
+        const { data } = await adm().from("proposta_versoes").select("valor_base").eq("proposta_id", id).eq("versao", 2).maybeSingle();
+        return data ? Number(data.valor_base) : null;
+      };
+      if (valor === "2.500" || valor === "desconto") {
         await expect(b.getByTestId("aviso-minimo")).toHaveText("Abaixo do que o proprietário aceita; tente a partir de R$ 3.000.");
-        await campo.fill("3.000");
-        await b.getByTestId("enviar-contraproposta").click();
-        await expect(b.getByTestId("aviso-minimo")).toHaveCount(0);
+        expect(await versao2()).toBeNull(); // nenhuma versão gravada
+        await b.screenshot({ path: `${SAIDA}/t193-piso-aviso-${valor.replace(".", "")}-${largura}.png`, fullPage: true });
+        if (valor === "2.500") {
+          await b.getByTestId("enviar-mesmo-assim").click();
+          await expect.poll(versao2, { timeout: 20_000 }).toBe(2500);
+        }
       } else {
         await expect(b.getByTestId("form-contraproposta")).toHaveCount(0, { timeout: 20_000 });
         await expect(b.getByTestId("aviso-minimo")).toHaveCount(0);
+        await expect.poll(versao2, { timeout: 20_000 }).toBe(Number(valor.replace(".", "")));
       }
-      const esperado = valor === "2.500" ? 3000 : Number(valor.replace(".", ""));
-      await expect
-        .poll(async () => {
-          const { data } = await adm().from("proposta_versoes").select("valor_base").eq("proposta_id", id).eq("versao", 2).maybeSingle();
-          return data ? Number(data.valor_base) : null;
-        }, { timeout: 20_000 })
-        .toBe(esperado);
-      expect(await b.content()).not.toMatch(/2\.?900/);
+      if (valor !== "desconto") {
+        // Rodada 2 de 3, para os dois lados; a próxima resposta é a última contraproposta.
+        await b.reload({ waitUntil: "domcontentloaded" });
+        await expect(b.getByTestId("proposta-rodada")).toHaveText("Rodada 2 de 3", { timeout: 20_000 });
+        await expect(b.getByTestId("proposta-ultima-rodada")).toHaveText("Última rodada: depois desta resposta, só aceitar ou recusar");
+        const d = await abrir(browser, c.dono.email, largura);
+        await d.goto(`/dashboard/propostas/${id}`, { waitUntil: "domcontentloaded" });
+        await expect(d.getByTestId("proposta-rodada")).toHaveText("Rodada 2 de 3", { timeout: 20_000 });
+        await expect(d.getByTestId("proposta-ultima-rodada")).toBeVisible();
+        await d.context().close();
+      }
+      // Guarda: o HTML da visão do inquilino e as respostas do servidor nunca contêm o piso.
+      await b.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+      const html = await b.content();
+      expect(html).not.toMatch(/valor_minimo|valorMinimo/);
+      expect(html).not.toMatch(/(?<![\w-])2\.?900(?![\w-])/);
+      expect(respostas.join("\n")).not.toMatch(/valor_minimo|valorMinimo/);
+      expect(respostas.join("\n")).not.toMatch(/(?<![\w-])2\.?900(?![\w-])/);
       await b.screenshot({ path: `${SAIDA}/t193-reais-${valor.replace(".", "")}-${largura}.png`, fullPage: true });
       await b.context().close();
     });
