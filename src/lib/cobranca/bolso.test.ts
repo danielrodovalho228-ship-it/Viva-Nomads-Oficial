@@ -1,6 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { calcularBolso, NOTA_BOLSO } from "./bolso.ts";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { blocosBolso, calcularBolso, NOTA_BOLSO } from "./bolso.ts";
 import { comissaoSobreContrato } from "./regra.ts";
 
 // Ordem 6696611c: cada faixa usa comissaoSobreContrato (3.000 × 6 = 18.000).
@@ -24,7 +26,7 @@ for (const [imoveis, taxa, texto] of FAIXAS) {
     assert.equal(b.taxa, taxa);
     assert.equal(b.taxaTexto, texto);
     assert.equal(b.valorTaxa, comissaoSobreContrato(3000, 6, taxa));
-    assert.equal(b.fica, 18000 - b.valorTaxa);
+    assert.equal(b.resultado, 18000 - b.valorTaxa);
   });
 }
 
@@ -50,4 +52,48 @@ test("meses fracionados valem o inteiro abaixo; centavos preservados", () => {
 test("a nota pública não usa termos proibidos", () => {
   assert.match(NOTA_BOLSO, /Anúncio grátis/);
   assert.doesNotMatch(NOTA_BOLSO, /comiss|corretagem|intermedia|aluguel/i);
+});
+
+// Adendo do #851: 3 blocos separados (a Viva só intermedia, não segura pagamentos). Exemplo aprovado pelo Muse.
+test("3 blocos com o exemplo aprovado: R$ 3.000 × 4 → R$ 12.000 / R$ 1.440 / R$ 10.560", () => {
+  const b = calcularBolso(3000, 4, 1);
+  assert.equal(b.estado, "ok");
+  if (b.estado !== "ok") return;
+  assert.deepEqual([b.recebe, b.valorTaxa, b.resultado], [12000, 1440, 10560]);
+  assert.deepEqual(blocosBolso(b, 3000, 4), [
+    { rotulo: "Você recebe do morador", valor: "R$ 12.000", detalhe: "integral, direto a você" },
+    {
+      rotulo: "Taxa de serviço da Viva",
+      valor: "R$ 1.440",
+      detalhe: "12% sobre o valor mensal × meses (R$ 3.000 × 4). Cobrada à parte, só com contrato fechado",
+    },
+    { rotulo: "Seu resultado no período", valor: "R$ 10.560", detalhe: null },
+  ]);
+  assert.ok(!("fica" in b), "o campo interno 'fica' virou 'resultado'");
+});
+
+// Guarda de custódia estendida ao simulador: nada que sugira que a Viva retém, desconta ou repassa dinheiro.
+const PROIBIDO_CUSTODIA = [/fica com você/i, /descontad/i, /retid/i, /repass/i, /do total/i];
+const semComentarios = (src: string) => src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "").replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
+
+test("guarda de custódia: textos do simulador sem 'fica com você', 'descontad*', 'retid*', 'repass*', 'do total'", () => {
+  const textos: string[] = [NOTA_BOLSO];
+  for (const [v, m, i] of [[3000, 4, 1], [2500, 6, 3], [4200, 12, 16]] as const) {
+    const b = calcularBolso(v, m, i);
+    if (b.estado === "ok") for (const x of blocosBolso(b, v, m)) textos.push(x.rotulo, x.valor, x.detalhe ?? "");
+  }
+  const tela = semComentarios(readFileSync(fileURLToPath(new URL("../../components/precos/simulador-bolso.tsx", import.meta.url)), "utf8"));
+  for (const t of [...textos, tela]) for (const re of PROIBIDO_CUSTODIA) assert.doesNotMatch(t, re, `${re} em: ${t.slice(0, 80)}`);
+});
+
+test("guarda de custódia: sem sinal de menos aplicado à taxa", () => {
+  for (const [v, m, i] of [[3000, 4, 1], [2500, 6, 3]] as const) {
+    const b = calcularBolso(v, m, i);
+    if (b.estado !== "ok") continue;
+    for (const x of blocosBolso(b, v, m)) assert.doesNotMatch(x.valor, /^[-−–]/);
+  }
+  const tela = semComentarios(readFileSync(fileURLToPath(new URL("../../components/precos/simulador-bolso.tsx", import.meta.url)), "utf8"));
+  assert.doesNotMatch(tela, /[−–]\s*\$\{|`-\s*\$\{|"−|"-\s*R\$/, "nenhum '− R$' montado na tela");
+  assert.match(tela, /testid="bolso-seu-resultado"/);
+  assert.doesNotMatch(tela, /bolso-fica/);
 });
