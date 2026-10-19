@@ -74,6 +74,10 @@ const TELAS_ADMIN = [
   "/admin/avaliacoes",
   "/admin/usuarios",
   "/admin/emails-teste",
+  "/admin/imoveis",
+  "/admin/contratos",
+  "/admin/solicitacoes",
+  "/admin/dados-de-teste",
 ];
 const INEXISTENTES = [
   "/pagina-que-nao-existe-xyz",

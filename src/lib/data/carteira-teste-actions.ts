@@ -6,6 +6,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { exigirAdminAal2 } from "@/lib/data/admin-guard";
 import { PREFIXO_CARTEIRA_TESTE, planoCarteiraTeste } from "@/lib/carteira-teste";
 import { TAXA_COMISSAO_PADRAO, comissaoSobreContrato } from "@/lib/cobranca/regra";
+import { logModeracao } from "@/lib/data/moderacao-log";
+import { ACOES_DADOS_TESTE } from "@/lib/jornada-teste";
 
 /*
   Prompt 27, item 8 — /admin › Dados de teste › "Semear carteira de teste" e "Limpar carteira de teste".
@@ -120,6 +122,8 @@ export async function semearCarteiraDeTeste(input: { ownerId: string; tenantId: 
     if (eB) return { ok: false, error: `Não foi possível criar o bloco de ${item.titulo}: ${eB.message}` };
     contratosCriados++;
   }
+  // Prompt 29, item 2: cada botão de Dados de teste grava no log de admin.
+  await logModeracao(c.admin, c.adminId, ACOES_DADOS_TESTE.carteiraSemeada, "profile", input.ownerId, `${imoveisCriados} imóvel(is) e ${contratosCriados} contrato(s) criados`);
   revalidatePath("/admin/dados-de-teste");
   return { ok: true, imoveisCriados, contratosCriados, imoveis: plano.length, contratos: plano.length };
 }
@@ -132,7 +136,10 @@ export async function limparCarteiraDeTeste(input: { ownerId: string }): Promise
   if (!(await soContasDeTeste(admin, [input.ownerId]))) return { ok: false, error: "Só contas de teste (is_teste)." };
   const { data: imoveis } = await admin.from("properties").select("id").eq("owner_id", input.ownerId).like("title", `${PREFIXO_CARTEIRA_TESTE}%`);
   const ids = ((imoveis ?? []) as { id: string }[]).map((i) => i.id);
-  if (!ids.length) return { ok: true, imoveis: 0, contratos: 0 };
+  if (!ids.length) {
+    await logModeracao(admin, c.adminId, ACOES_DADOS_TESTE.carteiraLimpa, "profile", input.ownerId, "nada para limpar");
+    return { ok: true, imoveis: 0, contratos: 0 };
+  }
   const { data: contratos } = await admin.from("contratos").select("id").in("property_id", ids);
   const cids = ((contratos ?? []) as { id: string }[]).map((x) => x.id);
   if (cids.length) {
@@ -142,6 +149,7 @@ export async function limparCarteiraDeTeste(input: { ownerId: string }): Promise
   }
   const { error: eP } = await admin.from("properties").delete().in("id", ids);
   if (eP) return { ok: false, error: `Não foi possível apagar os imóveis: ${eP.message}` };
+  await logModeracao(admin, c.adminId, ACOES_DADOS_TESTE.carteiraLimpa, "profile", input.ownerId, `${ids.length} imóvel(is) e ${cids.length} contrato(s) apagados`);
   revalidatePath("/admin/dados-de-teste");
   return { ok: true, imoveis: ids.length, contratos: cids.length };
 }

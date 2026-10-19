@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { FAIXAS_TAXA_PARCERIA, REGRA_TAXA_PARCERIA, reais } from "./taxa-parceria.ts";
+import { FAIXAS_TAXA_PARCERIA, REGRA_TAXA_PARCERIA, TEXTO_QUEM_RECEBE_TAXA_PARCERIA, reais } from "./taxa-parceria.ts";
 import { TAXA_PARCERIA_TEXTO } from "../lib/atendimento/parceiros-texto.ts";
 
 // Ordem 39cc7c00: 3 faixas (R$ 40 / 60 / 80) em /parceiros e /parceiros/fotografos, valores numa constante só.
@@ -28,4 +28,15 @@ test("as 2 rotas públicas e o /admin usam o componente/constante (nenhum valor 
   const comp = ler("src/components/parceiros/faixas-taxa.tsx");
   assert.match(comp, /FAIXAS_TAXA_PARCERIA\.map/);
   assert.doesNotMatch(comp, /R\$ ?\d/);
+});
+
+test("Prompt 29, item 12: diz quem paga e quem recebe; sem 'intermediação' nem 'comissão'", () => {
+  assert.equal(
+    TEXTO_QUEM_RECEBE_TAXA_PARCERIA,
+    "Taxa de parceria (R$ 40/60/80, por faixa de fotos): paga pelo fotógrafo à Viva Nomads ao aceitar o pedido. O serviço é pago direto do proprietário ao fotógrafo; a Viva não recebe esse valor."
+  );
+  assert.match(REGRA_TAXA_PARCERIA, /à Viva Nomads/);
+  assert.match(REGRA_TAXA_PARCERIA, /a Viva não recebe esse valor/);
+  for (const t of [TEXTO_QUEM_RECEBE_TAXA_PARCERIA, REGRA_TAXA_PARCERIA]) assert.doesNotMatch(t, /intermedia|comiss/i);
+  assert.deepEqual(FAIXAS_TAXA_PARCERIA.map((f) => f.valor), [40, 60, 80], "a regra não mudou");
 });
