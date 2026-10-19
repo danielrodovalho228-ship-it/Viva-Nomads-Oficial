@@ -2,6 +2,7 @@
 
 import { after } from "next/server";
 import { headers } from "next/headers";
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify } from "@/lib/notifications";
@@ -412,6 +413,11 @@ export async function assinarContrato(input: {
   const coluna = visao.papel === "inquilino" ? "assinado_inquilino_em" : "assinado_proprietario_em";
   const { error: errCol } = await admin.from("contratos").update({ [coluna]: agora }).eq("id", c.id).is(coluna, null);
   if (errCol) return { ok: false, error: "Não foi possível registrar a assinatura. Tente de novo." };
+  // A tela do contrato (dos dois lados) e as listas voltam já com o aviso novo, na mesma resposta da ação.
+  revalidatePath("/dashboard/locacoes/[id]", "page");
+  revalidatePath("/dashboard/contratos/[id]", "page");
+  revalidatePath("/dashboard/contratos");
+  revalidatePath("/dashboard/locacoes");
 
   // Avisa a outra parte (notificação + e-mail), depois da resposta.
   const outraJaAssinou = !!(visao.papel === "inquilino" ? c.assinado_proprietario_em : c.assinado_inquilino_em);
