@@ -165,6 +165,13 @@ export function textoDocumento(c: ConteudoDocumento): string {
 
 /** Nenhum documento pode levar e-mail ou telefone. */
 export function temContato(texto: string): boolean {
+  // Primeiro sai o que a PRÓPRIA plataforma escreve e é sorteado ou sequencial: a URL de conferência (32 hex — um
+  // código como "…12345678…" casava com o padrão de telefone e a emissão abortava ao acaso), o número do documento
+  // (REC-2026-000004) e a referência do contrato (CT-1A2B3C4D). Assim a trava só depende do que veio das pessoas.
+  texto = texto
+    .replace(/(?:https?:\/\/[^\s]*)?\/conferir\/[0-9a-f]{32}/gi, "")
+    .replace(/\b[A-Z]{3}-\d{4}-\d{6}\b/g, "")
+    .replace(/\bCT-[0-9A-F]{8}\b/g, "");
   if (/[^\s@/]+@[^\s@]+\.[a-z]{2,}/i.test(texto)) return true;
   // Antes de procurar telefone, tira o que não é telefone: CPF/CNPJ (com OU sem máscara — um CPF de 11 dígitos
   // casava com o padrão de celular e o recibo nunca saía; jornada de assinatura, 19/10), valores, datas e números
@@ -176,6 +183,9 @@ export function temContato(texto: string): boolean {
     semDocumentos.replace(/R\$\s?[\d.,]+|\d{2}\/\d{2}\/\d{4}|\d{4}-\d{2}-\d{2}|[A-Z]{3}-\d{4}-\d{6}/g, ""),
   );
 }
+
+/** Número provisório da checagem de contato: a trava roda ANTES de reservar o definitivo (falha não queima número). */
+export const NUMERO_PROVISORIO = "XXX-0000-000000";
 
 /** Código de conferência: 32 hex (128 bits). */
 export const CODIGO_RE = /^[0-9a-f]{32}$/;
