@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { assinarContrato, pedirCodigoAssinatura } from "@/lib/data/contrato-assinar-actions";
+import { EVENTO_AVISO_ASSINATURA } from "./aviso-assinatura";
 
 /** “Li e concordo” + código de 6 dígitos enviado ao e-mail da conta (conferido no servidor) → assina. */
 export function AssinarContrato({ contratoId }: { contratoId: string }) {
@@ -63,6 +64,7 @@ export function AssinarContrato({ contratoId }: { contratoId: string }) {
         return;
       }
       setAssinado(true);
+      if (r.aviso) window.dispatchEvent(new CustomEvent(EVENTO_AVISO_ASSINATURA, { detail: { contratoId, aviso: r.aviso } }));
       try {
         window.sessionStorage.removeItem(chave);
       } catch {
