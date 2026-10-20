@@ -88,21 +88,25 @@ for (const largura of [360, 390]) {
           await rolarAteOFim(page);
           const flut = page.getByTestId("fale-com-a-viva-raiz");
           if ((await flut.count()) === 0 || !(await flut.isVisible())) return; // sem flutuante nesta tela
-          const cobre = await page.evaluate(() => {
-            let el: Element | null = document.querySelector("main");
-            let ultimo: Element | null = null;
-            while (el && el.lastElementChild) {
-              el = el.lastElementChild;
-              const r = el.getBoundingClientRect();
-              if (r.height >= 40 && r.width >= 120) ultimo = el;
-            }
-            const f = document.querySelector('[data-testid="fale-com-a-viva-raiz"]')!.getBoundingClientRect();
-            if (!ultimo) return false;
-            const c = ultimo.getBoundingClientRect();
-            const sobrepoe = c.left < f.right && c.right > f.left && c.top < f.bottom && c.bottom > f.top;
-            return sobrepoe;
-          });
-          expect(cobre, "o flutuante cobre o último card").toBe(false);
+          // O painel carrega cartões aos poucos (lab 3c9bd126: coberto numa leitura, livre na seguinte): rola ao fim de novo a cada tentativa.
+          const cobre = async () => {
+            await rolarAteOFim(page);
+            return page.evaluate(() => {
+              let el: Element | null = document.querySelector("main");
+              let ultimo: Element | null = null;
+              while (el && el.lastElementChild) {
+                el = el.lastElementChild;
+                const r = el.getBoundingClientRect();
+                if (r.height >= 40 && r.width >= 120) ultimo = el;
+              }
+              const f = document.querySelector('[data-testid="fale-com-a-viva-raiz"]')!.getBoundingClientRect();
+              if (!ultimo) return false;
+              const c = ultimo.getBoundingClientRect();
+              const sobrepoe = c.left < f.right && c.right > f.left && c.top < f.bottom && c.bottom > f.top;
+              return sobrepoe;
+            });
+          };
+          await expect.poll(cobre, { message: "o flutuante cobre o último card", timeout: 10_000, intervals: [500] }).toBe(false);
         });
       }
     });
