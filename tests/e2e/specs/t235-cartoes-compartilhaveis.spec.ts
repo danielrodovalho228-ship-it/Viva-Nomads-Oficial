@@ -167,8 +167,11 @@ test.describe("T235 — cartões compartilháveis (Fase 1)", () => {
       await page.context().close();
     }
     await imagemRapida(request, `/cartoes/${ids.curtoPostal}/imagem?formato=retrato`, { w: 1080, h: 1350 });
-    const r = await request.get(`/cartoes/${ids.curtoPostal}/imagem?formato=retrato`);
-    writeFileSync(`${SAIDA}/t235-imagem-postal-retrato.png`, await r.body());
+    await imagemRapida(request, `/cartoes/${ids.curtoPostal}/imagem?formato=quadrado`, { w: 1080, h: 1080 });
+    for (const formato of ["retrato", "quadrado"] as const) {
+      const r = await request.get(`/cartoes/${ids.curtoPostal}/imagem?formato=${formato}`);
+      writeFileSync(`${SAIDA}/t235-imagem-postal-${formato}.png`, await r.body());
+    }
     // Contrato ainda em andamento (outro morador, outro imóvel) não tem cartão-postal.
     const agora = new Date().toISOString();
     const { data: emAndamento, error } = await adm()

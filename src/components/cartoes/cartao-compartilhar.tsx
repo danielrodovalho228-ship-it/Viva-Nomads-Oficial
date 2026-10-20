@@ -13,7 +13,7 @@ import type { PacoteDeCompartilhar } from "@/lib/data/cartoes-servidor";
  * imagem quando o aparelho deixa (compartilhar do sistema), senão a legenda pronta com o link curto. Modelo travado:
  * nada de texto livre; no cartão-postal, a pessoa só escolhe mostrar ou não o primeiro nome.
  * Cartão do parceiro (partnercard, 31c): prévia nos dois formatos, "Compartilhar" pelo compartilhar do aparelho
- * (Web Share API; sem suporte, copia o link) e o opt-in do nome público.
+ * (Web Share API; sem suporte, copia o link). O título é sempre o nome público do negócio (sem opt-in).
  */
 export function CartaoCompartilhar({ inicial }: { inicial: PacoteDeCompartilhar }) {
   const [pacote, setPacote] = useState(inicial);
@@ -169,12 +169,6 @@ export function CartaoCompartilhar({ inicial }: { inicial: PacoteDeCompartilhar 
             <Link2 className="h-4 w-4" /> Copiar link
           </Button>
         </div>
-        {parceiro && (
-          <label className="flex items-center gap-3 rounded-xl border border-line bg-white p-3 text-sm text-ink">
-            <Switch checked={pacote.mostrarNome} onChange={trocarNome} disabled={pendente} label="Mostrar meu nome no cartão" />
-            <span data-testid="cartao-nome-opcao">Mostrar meu nome no cartão (o nome da sua página; desligado, o cartão mostra só a categoria)</span>
-          </label>
-        )}
         {pacote.tipo === "poststay" && (
           <label className="flex items-center gap-3 rounded-xl border border-line bg-white p-3 text-sm text-ink">
             <Switch checked={pacote.mostrarNome} onChange={trocarNome} disabled={pendente} label="Mostrar meu primeiro nome no cartão" />

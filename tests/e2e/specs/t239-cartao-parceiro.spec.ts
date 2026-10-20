@@ -133,7 +133,7 @@ test.describe("T239 — cartão do parceiro (partnercard)", () => {
     await apagarContas([ids.parc, ids.rasc, ids.cli]);
   });
 
-  test("1. parceiro publicado gera o cartão no painel: dois formatos, opt-in do nome, baixar e compartilhar", async ({ browser, request }) => {
+  test("1. parceiro publicado gera o cartão no painel: dois formatos com o nome do negócio, baixar e compartilhar", async ({ browser, request }) => {
     test.setTimeout(150_000);
     for (const largura of [390, 1280]) {
       const page = await abrir(browser, parc.email, largura);
@@ -167,10 +167,9 @@ test.describe("T239 — cartão do parceiro (partnercard)", () => {
       await semRolagemLateral(page);
       await page.screenshot({ path: `${SAIDA}/t239-painel-cartao-${largura}.png`, fullPage: true });
       if (largura === 390) {
-        // Opt-in do nome (desligado por padrão).
-        expect((await adm().from("cartoes_compartilhaveis").select("mostrar_nome").eq("curto", curto).single()).data!.mostrar_nome).toBe(false);
-        await page.getByRole("switch", { name: "Mostrar meu nome no cartão" }).click();
-        await expect.poll(async () => (await adm().from("cartoes_compartilhaveis").select("mostrar_nome").eq("curto", curto).single()).data!.mostrar_nome, { timeout: 15_000 }).toBe(true);
+        // Sem opt-in de nome: o cartão do parceiro mostra sempre o nome público do negócio (o interruptor é só do cartão-postal).
+        await expect(page.getByRole("switch")).toHaveCount(0);
+        await expect(page.getByTestId("cartao-nome-opcao")).toHaveCount(0);
         // Sem Web Share API: copia o link.
         const antes = await contar("cards_shared");
         await page.evaluate(() => {

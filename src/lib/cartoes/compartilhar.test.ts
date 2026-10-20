@@ -255,8 +255,8 @@ test("guarda de conteúdo: os campos da imagem do partnercard nunca levam telefo
     preco_base: 150,
     instagram: "https://instagram.com/ana",
   };
-  for (const mostrar of [true, false]) {
-    const c = camposCartaoParceiro(sujo, mostrar);
+  {
+    const c = camposCartaoParceiro(sujo);
     assert.deepEqual(Object.keys(c).sort(), ["categoria", "cidades", "fotoUrl", "nota", "selo", "titulo"]);
     const texto = [c.titulo, c.categoria, c.cidades, c.nota, c.selo].join(" | ");
     assert.doesNotMatch(texto, PROIBIDO, texto);
@@ -265,11 +265,13 @@ test("guarda de conteúdo: os campos da imagem do partnercard nunca levam telefo
     assert.equal(c.nota, "Novo na Viva", "sem avaliação real");
     assert.equal(c.selo, "Parceiro Viva Nomads");
   }
-  assert.equal(camposCartaoParceiro(sujo, false).titulo, "Fotografia", "sem o opt-in, o cartão mostra a categoria");
-  assert.equal(camposCartaoParceiro(sujo, true).titulo, "Ana Fotos");
-  assert.equal(camposCartaoParceiro({ ...sujo, notaMedia: 4.8, avaliacoesQtd: 12 }, true).nota, "★ 4,8 · 12 avaliações");
-  assert.equal(camposCartaoParceiro({ ...sujo, notaMedia: 5, avaliacoesQtd: 0 }, true).nota, "Novo na Viva", "nota sem avaliação não aparece");
-  assert.equal(camposCartaoParceiro({ ...sujo, fotoUrl: "javascript:alert(1)" }, true).fotoUrl, null);
+  // O título é SEMPRE o nome público do negócio (sem opt-in); só cai para a categoria se a limpeza esvaziar o nome.
+  assert.equal(camposCartaoParceiro(sujo).titulo, "Ana Fotos");
+  assert.equal(camposCartaoParceiro({ ...sujo, nomePublico: "Zap 34 9 9999-1234" }).titulo, "Fotografia");
+  assert.equal(camposCartaoParceiro({ ...sujo, nomePublico: "A".repeat(80) }).titulo.length, 50);
+  assert.equal(camposCartaoParceiro({ ...sujo, notaMedia: 4.8, avaliacoesQtd: 12 }).nota, "★ 4,8 · 12 avaliações");
+  assert.equal(camposCartaoParceiro({ ...sujo, notaMedia: 5, avaliacoesQtd: 0 }).nota, "Novo na Viva", "nota sem avaliação não aparece");
+  assert.equal(camposCartaoParceiro({ ...sujo, fotoUrl: "javascript:alert(1)" }).fotoUrl, null);
   assert.equal(limparTextoDoCartao("Zap 34 9 9999-1234"), "");
   for (const t of [...Object.values(TEXTOS_PARCEIRO), legendaParceiro({ categoria: "Fotografia", cidade: "Uberlândia", link: "https://vivanomads.com.br/c/ABCDEFGHJK" })]) {
     assert.doesNotMatch(t, /whats|telefone|e-?mail|cupom|desconto|recompensa|comiss|aluguel|intermedia/i, t);
@@ -326,4 +328,12 @@ test("partnercard: admin conta sem contas de teste e escreve a fórmula; migraç
   assert.match(painel, /Quem escanear cai na sua página na Viva e pede orçamento por lá\. Contato sempre pela plataforma\./);
   assert.doesNotMatch(painel, /router\.refresh|revalidatePath/);
   assert.match(ler("src/app/(public)/parceiros/[slug]/page.tsx"), /<RefDaVisita parceiroId=\{p\.id\} \/>/);
+});
+
+test("31c: o opt-in do nome vale só no cartão-postal; o cartão do parceiro não tem o interruptor", () => {
+  const actions = readFileSync(new URL("../data/cartoes-actions.ts", import.meta.url), "utf8");
+  assert.match(actions, /cartao\.tipo !== "poststay"\) return \{ ok: false, error: "Cartão não encontrado\." \}/);
+  const tela = readFileSync(new URL("../../components/cartoes/cartao-compartilhar.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(tela, /Mostrar meu nome no cartão/);
+  assert.match(tela, /Mostrar meu primeiro nome no cartão/);
 });

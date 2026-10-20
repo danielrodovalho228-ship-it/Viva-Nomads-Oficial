@@ -78,15 +78,15 @@ export async function meuCartaoDoParceiro(): Promise<Res<PacoteDeCompartilhar>> 
 }
 
 /**
- * Opt-in do nome no cartão (o único campo que a pessoa escolhe): no cartão-postal, o primeiro nome; no cartão do
- * parceiro, o nome público da página (sem ele, o cartão mostra a categoria).
+ * Opt-in do primeiro nome no cartão-postal (o único campo que a pessoa escolhe). O cartão do parceiro mostra sempre o
+ * nome público do negócio, sem opt-in.
  */
 export async function definirNomeNoCartao(curto: string, mostrar: boolean): Promise<Res<PacoteDeCompartilhar>> {
   if (!curtoValido(curto)) return { ok: false, error: "Cartão inválido." };
   const s = await sessao();
   if (!s) return { ok: false, error: "Entre na sua conta." };
   const cartao = await cartaoPeloCurto(s.admin, curto);
-  if (!cartao || cartao.usuario_id !== s.user.id || (cartao.tipo !== "poststay" && cartao.tipo !== "partnercard")) return { ok: false, error: "Cartão não encontrado." };
+  if (!cartao || cartao.usuario_id !== s.user.id || cartao.tipo !== "poststay") return { ok: false, error: "Cartão não encontrado." };
   const { error } = await s.admin.from("cartoes_compartilhaveis").update({ mostrar_nome: mostrar === true }).eq("id", cartao.id);
   if (error) return { ok: false, error: "Não foi possível salvar agora." };
   return { ok: true, valor: await pacoteDeCompartilhar(s.admin, { ...cartao, mostrar_nome: mostrar === true }) };
