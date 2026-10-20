@@ -8,7 +8,7 @@ export function BarraComparar({ ids, aviso, onLimpar }: { ids: string[]; aviso: 
   const pronto = ids.length >= MIN_COMPARAR;
   return (
     <div className="vn-barra-comparar fixed inset-x-0 z-40 flex justify-center px-4" data-testid="barra-comparar">
-      <div className="flex max-w-full flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-2xl border border-line bg-white px-4 py-2 shadow-lg">
+      <div className="flex max-w-full flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-full border border-line bg-white px-4 py-2 shadow-flutuante">
         {aviso ? (
           <p role="status" className="text-sm text-ink" data-testid="comparar-aviso">{aviso}</p>
         ) : !pronto ? (
@@ -19,11 +19,11 @@ export function BarraComparar({ ids, aviso, onLimpar }: { ids: string[]; aviso: 
             Comparar ({ids.length})
           </Link>
         ) : (
-          <span className="rounded-full bg-sage-200 px-4 py-2 text-sm font-semibold text-muted" data-testid="comparar-abrir" aria-disabled="true">
+          <span className="rounded-lg bg-surface-2 px-4 py-2 text-sm font-semibold text-muted" data-testid="comparar-abrir" aria-disabled="true">
             Comparar ({ids.length})
           </span>
         )}
-        <button type="button" onClick={onLimpar} className="text-sm text-muted underline underline-offset-2" data-testid="comparar-limpar">
+        <button type="button" onClick={onLimpar} className="text-sm text-ink underline underline-offset-4" data-testid="comparar-limpar">
           Limpar
         </button>
       </div>

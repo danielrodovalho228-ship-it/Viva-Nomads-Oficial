@@ -234,7 +234,7 @@ test.describe("T71 — Limpar filtros com o painel aberto (ordem 65116a07)", () 
     await page.getByTestId("abrir-filtros").click();
     const painel = page.getByRole("dialog", { name: "Filtros" });
     await expect(painel).toBeVisible();
-    const limpar = painel.getByRole("button", { name: "Limpar", exact: true });
+    const limpar = painel.getByRole("button", { name: "Limpar tudo", exact: true }); // Prompt 40: terciário "Limpar tudo"
     await expect(limpar).toBeVisible();
     expect(await naFrente(limpar), "Limpar do painel do celular por cima do botão da Viva e da barra de abas").toBe(true);
     await page.screenshot({ path: "tests/laboratorio/saida/t71-limpar-painel-390.png" });

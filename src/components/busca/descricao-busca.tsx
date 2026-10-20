@@ -83,7 +83,7 @@ export function DescricaoBusca({
           Descreva o lugar ideal
         </label>
         <div className="relative min-w-0 flex-1">
-          <Sparkles className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-forest" aria-hidden />
+          <Sparkles className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink" aria-hidden />
           <input
             id="descricao-busca-campo"
             name="descricao"
@@ -108,9 +108,9 @@ export function DescricaoBusca({
       {chips.length > 0 && (
         <ul className="mt-2 flex flex-wrap gap-2" aria-label="Filtros aplicados pela descrição" data-testid="descricao-chips">
           {chips.map((c) => (
-            <li key={c.chave} className="inline-flex items-center gap-1 rounded-full border border-sage-200 bg-surface-2 py-1 pl-3 pr-1.5 text-sm text-ink">
+            <li key={c.chave} className="inline-flex items-center gap-1 rounded-full bg-ink py-1 pl-3 pr-1 text-sm text-white">
               {c.rotulo}
-              <button type="button" onClick={() => tirar(c.chave)} aria-label={`Tirar filtro ${c.rotulo}`} className="grid h-6 w-6 place-items-center rounded-full text-muted hover:text-forest">
+              <button type="button" onClick={() => tirar(c.chave)} aria-label={`Tirar filtro ${c.rotulo}`} className="grid h-6 w-6 place-items-center rounded-full text-white hover:bg-white/15">
                 <X className="h-3.5 w-3.5" aria-hidden />
               </button>
             </li>

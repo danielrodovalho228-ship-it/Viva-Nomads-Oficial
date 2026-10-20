@@ -34,7 +34,7 @@ export function CardPinMapa({ property: p, onFechar }: { property: Property; onF
   const disponivel = disponivelAPartirDe(p.availableFrom);
   const icones = iconesComodidades(p);
   return (
-    <div data-testid="card-pin-mapa" data-id={p.id} className="relative w-64 overflow-hidden rounded-2xl bg-white font-sans shadow-xl">
+    <div data-testid="card-pin-mapa" data-id={p.id} className="relative w-64 overflow-hidden rounded-xl border border-line bg-white font-sans">
       <button
         type="button"
         onClick={(e) => {
@@ -42,7 +42,7 @@ export function CardPinMapa({ property: p, onFechar }: { property: Property; onF
           onFechar();
         }}
         aria-label="Fechar"
-        className="absolute right-2 top-2 z-10 grid h-8 w-8 place-items-center rounded-full bg-white/95 text-ink shadow hover:bg-white"
+        className="absolute right-2 top-2 z-10 grid h-8 w-8 place-items-center rounded-full bg-white text-ink hover:bg-surface-2"
       >
         <X className="h-4 w-4" />
       </button>
@@ -59,26 +59,26 @@ export function CardPinMapa({ property: p, onFechar }: { property: Property; onF
             </div>
           )}
         </div>
-        <div className="space-y-1.5 p-3">
+        <div className="space-y-2 p-3">
           <p className="line-clamp-1 text-sm font-semibold text-ink">{p.title}</p>
           <p className="truncate text-xs text-muted">
             {p.neighborhood}, {p.city}
           </p>
-          {disponivel && <p className="text-xs font-medium text-forest">Disponível a partir de {disponivel}</p>}
+          {disponivel && <p className="text-xs text-muted">Disponível a partir de {disponivel}</p>}
           <p>
-            <span className="font-title text-lg font-bold text-ink">{formatBRL(precoDeBusca(p))}</span>
+            <span className="font-title text-lg font-semibold text-forest">{formatBRL(precoDeBusca(p))}</span>
             <span className="text-xs text-muted">/mês</span>
           </p>
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 text-xs text-ink">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-1 text-xs text-ink">
               <BedDouble className="h-3.5 w-3.5" aria-hidden /> {quartosTexto(p.bedrooms)}
             </span>
-            <span className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 text-xs text-ink">
+            <span className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-1 text-xs text-ink">
               <Bath className="h-3.5 w-3.5" aria-hidden /> {banheirosTexto(p.bathrooms)}
             </span>
           </div>
           {icones.length > 0 && (
-            <ul className="flex items-center gap-2 pt-0.5 text-muted" aria-label="Comodidades" data-testid="card-pin-comodidades">
+            <ul className="flex items-center gap-2 pt-1 text-muted" aria-label="Comodidades" data-testid="card-pin-comodidades">
               {icones.map(({ chave, rotulo, Icone }) => (
                 <li key={chave} title={rotulo}>
                   <Icone className="h-4 w-4" aria-hidden />

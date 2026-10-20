@@ -20,6 +20,8 @@ interface Props {
   datalistId?: string;
   /** Texto de exemplo do campo (o celular usa "Cidade, bairro ou endereço"). */
   placeholder?: string;
+  /** Dentro da barra de busca em pill (celular): sem contorno nem ícone próprios. */
+  embutido?: boolean;
 }
 
 /**
@@ -32,6 +34,7 @@ export function LocationSearch({
   onChange,
   onSelect,
   placeholder,
+  embutido = false,
 }: Props) {
   if (!geocodingEnabled) {
     // Sem Mapbox: autocomplete próprio das cidades/bairros atendidos (funciona
@@ -41,14 +44,15 @@ export function LocationSearch({
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        pillClassName="flex items-center gap-2 rounded-full border border-sage-200 bg-white px-3.5 py-2"
+        semIcone={embutido}
+        pillClassName={embutido ? "flex h-11 items-center" : "flex h-10 items-center gap-2 rounded-full border border-line bg-white px-4"}
       />
     );
   }
-  return <LocationGeocoder value={value} onChange={onChange} onSelect={onSelect} placeholder={placeholder} />;
+  return <LocationGeocoder value={value} onChange={onChange} onSelect={onSelect} placeholder={placeholder} embutido={embutido} />;
 }
 
-function LocationGeocoder({ value, onChange, onSelect, placeholder = "Endereço, bairro ou cidade" }: Props) {
+function LocationGeocoder({ value, onChange, onSelect, placeholder = "Endereço, bairro ou cidade", embutido = false }: Props) {
   const [open, setOpen] = useState(false);
   const [suggestions, setSuggestions] = useState<GeoSuggestion[]>([]);
   const [loading, setLoading] = useState(false);
@@ -135,8 +139,8 @@ function LocationGeocoder({ value, onChange, onSelect, placeholder = "Endereço,
 
   return (
     <div ref={boxRef} className="relative">
-      <div className="flex items-center gap-2 rounded-full border border-sage-200 bg-white px-3.5 py-2">
-        <MapPin className="h-4 w-4 shrink-0 text-blue-500" />
+      <div className={embutido ? "flex h-11 items-center" : "flex h-10 items-center gap-2 rounded-full border border-line bg-white px-4"}>
+        {!embutido && <MapPin className="h-4 w-4 shrink-0 text-ink" aria-hidden />}
         <input
           value={value}
           onChange={(e) => onChange(e.target.value)}
@@ -144,18 +148,19 @@ function LocationGeocoder({ value, onChange, onSelect, placeholder = "Endereço,
           onKeyDown={onKeyDown}
           placeholder={placeholder}
           autoComplete="off"
-          className="w-48 bg-transparent text-sm text-ink outline-none placeholder:text-muted lg:w-32 xl:w-48"
+          aria-label={placeholder}
+          className={cn("bg-transparent text-sm text-ink outline-none placeholder:text-muted", embutido ? "w-full" : "w-48 lg:w-32 xl:w-48")}
         />
       </div>
 
       {open && (loading || suggestions.length > 0 || errored) && (
-        <ul className="absolute z-30 mt-1 max-h-72 w-72 max-w-[80vw] overflow-auto rounded-2xl border border-line bg-white py-1 shadow-xl">
+        <ul className="absolute z-30 mt-1 max-h-72 w-72 max-w-[80vw] overflow-auto rounded-xl border border-line bg-white py-1">
           {loading && suggestions.length === 0 && (
             <li className="px-3 py-2 text-sm text-muted">Buscando endereços…</li>
           )}
           {!loading && errored && suggestions.length === 0 && (
             <>
-              <li className="px-3 pt-2 pb-1 text-xs text-muted">
+              <li className="px-3 pb-1 pt-2 text-xs text-muted">
                 Não foi possível buscar endereços agora — use as cidades e bairros atendidos:
               </li>
               {LOCATION_SUGGESTIONS.filter((s) =>
@@ -174,7 +179,7 @@ function LocationGeocoder({ value, onChange, onSelect, placeholder = "Endereço,
                       }}
                       className="flex w-full items-start gap-2 px-3 py-2 text-left text-sm hover:bg-surface-2"
                     >
-                      <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
+                      <MapPin className="mt-1 h-4 w-4 shrink-0 text-muted" aria-hidden />
                       <span className="text-ink">{s}</span>
                     </button>
                   </li>
@@ -194,7 +199,7 @@ function LocationGeocoder({ value, onChange, onSelect, placeholder = "Endereço,
                   i === highlight ? "bg-surface-2" : "hover:bg-surface-2"
                 )}
               >
-                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
+                <MapPin className="mt-1 h-4 w-4 shrink-0 text-muted" aria-hidden />
                 <span className="text-ink">{s.label}</span>
               </button>
             </li>

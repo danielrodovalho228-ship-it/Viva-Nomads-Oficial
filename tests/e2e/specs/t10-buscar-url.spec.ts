@@ -88,6 +88,7 @@ test(`F3 — "Mais filtros" clicável em 1280px, com o botão flutuante da Viva 
   await expect(page.getByTestId("fale-com-a-viva")).toBeVisible();
   await page.getByTestId("busca-compacta").click(); // ordem eac7e3a1: filtros abrem pelo cabeçalho
   await page.getByRole("button", { name: /Mais filtros/i }).click();
-  await expect(page.getByRole("button", { name: /Menos filtros/i })).toBeVisible();
+  // Prompt 40: "Mais filtros" abre a folha de filtros na lateral.
+  await expect(page.getByRole("dialog", { name: "Filtros" })).toBeVisible();
   await ctx.close();
 });

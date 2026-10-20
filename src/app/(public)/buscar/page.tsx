@@ -56,7 +56,7 @@ export default async function SearchPage({
               <div className="container-page pt-4 sm:absolute sm:inset-0 sm:flex sm:flex-col sm:justify-center sm:pt-0 sm:text-white lg:static lg:max-w-none lg:px-0 lg:pb-2 lg:pt-6 lg:text-ink">
                 <TituloBusca
                   padrao={h1}
-                  className="font-title text-xl font-bold text-ink sm:text-4xl sm:text-white lg:text-2xl lg:text-ink"
+                  className="font-title text-xl font-semibold text-ink sm:text-4xl sm:text-white lg:text-2xl lg:text-ink"
                 />
                 <p className="mt-1 hidden max-w-xl text-white/85 sm:block lg:hidden">
                   Locação mensal de 30 a 180 dias. Filtre por período, preço e o selo Pronto para
