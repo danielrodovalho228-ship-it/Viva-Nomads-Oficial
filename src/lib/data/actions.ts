@@ -1,5 +1,6 @@
 "use server";
 
+import { MSG_DISPONIVEL_ATE_ANTES, periodoDisponivelValido } from "@/lib/anuncio/periodo-disponivel";
 import { gravarMarca } from "@/lib/marcas/servidor";
 import { perfilDonoCompleto, MSG_PERFIL_DONO_INCOMPLETO } from "@/lib/anuncio/perfil-dono";
 import { atualizarRascunhoDoDono } from "@/lib/data/rascunho-dono";
@@ -884,6 +885,9 @@ export async function loadPropertyForEdit(id: string): Promise<Property | null> 
  * tabelas de enriquecimento — migração ausente não derruba a edição base.
  */
 export async function updateProperty(id: string, input: PropertyInput): Promise<ActionResult> {
+  if (!periodoDisponivelValido(input.availableFrom, input.availableUntil)) {
+    return { ok: false, error: MSG_DISPONIVEL_ATE_ANTES };
+  }
   // Tour em vídeo (ordem 6f964617): só YouTube/Vimeo em https, validado no servidor.
   if (input.videoUrl?.trim() && !videoTourPermitido(input.videoUrl)) {
     return { ok: false, error: "O vídeo precisa ser um link do YouTube ou do Vimeo." };

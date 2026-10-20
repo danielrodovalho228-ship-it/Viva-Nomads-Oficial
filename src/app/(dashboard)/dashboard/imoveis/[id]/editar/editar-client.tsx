@@ -38,6 +38,7 @@ import { MIN_FOTOS, prontidaoAnuncio, type FatosAnuncio } from "@/lib/anuncio/pr
 import { TERMO_IA_TEXTO, aceiteDoEditor } from "@/lib/anuncio/termo-ia";
 import { carregarLimitesNegociacao, salvarLimitesNegociacao, updateProperty, type PropertyInput } from "@/lib/data/actions";
 import type { Property } from "@/lib/types";
+import { MSG_DISPONIVEL_ATE_ANTES, periodoDisponivelValido } from "@/lib/anuncio/periodo-disponivel";
 import { avisoTituloBairro } from "@/lib/anuncio/titulo-bairro";
 import { formatBRL, cn } from "@/lib/utils";
 
@@ -232,6 +233,11 @@ export function EditarImovelClient({
     setSavingSection(key);
     setErro(null);
     setSavedSection(null);
+    if (!periodoDisponivelValido(availableFrom, availableUntil)) {
+      setErro(MSG_DISPONIVEL_ATE_ANTES);
+      setSavingSection(null);
+      return false;
+    }
     const res = await updateProperty(property.id, buildInput(asDraft));
     // O limite PRIVADO vai à parte (tabela só do dono), nunca no anúncio.
     if (res.ok && key === "negociacao") {
