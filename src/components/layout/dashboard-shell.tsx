@@ -12,6 +12,7 @@ import { salvarModo } from "@/lib/salvar-modo";
 import { createClient } from "@/lib/supabase/client";
 import { removerPushToken } from "@/lib/data/push-actions";
 import { countDocumentosPendentes } from "@/lib/data/documentos-admin";
+import { EVENTO_FILA_DOCUMENTOS } from "@/lib/admin/fila-evento";
 import { contarContratosParaAssinar } from "@/lib/data/contratos-actions";
 import { contarPropostasAguardando } from "@/lib/data/propostas-actions";
 import { contarAprovacoesPendentes } from "@/lib/data/agentes-actions";
@@ -135,7 +136,15 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   }, [displayUser?.id, pathname]);
 
   // Documentos aguardando conferência — badge no item "Documentos" do nav admin.
+  // Prompt 36, item 3b: lê de novo também quando a fila avisa uma decisão (aprovar/recusar não muda a rota).
   const [docsPendentes, setDocsPendentes] = useState(0);
+  const [filaMudou, setFilaMudou] = useState(0);
+  useEffect(() => {
+    if (display.role !== "admin") return;
+    const aoMudar = () => setFilaMudou((n) => n + 1);
+    window.addEventListener(EVENTO_FILA_DOCUMENTOS, aoMudar);
+    return () => window.removeEventListener(EVENTO_FILA_DOCUMENTOS, aoMudar);
+  }, [display.role]);
   useEffect(() => {
     if (display.role !== "admin") return;
     let alive = true;
@@ -147,7 +156,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     return () => {
       alive = false;
     };
-  }, [display.role, pathname]);
+  }, [display.role, pathname, filaMudou]);
 
   // Aprovações esperando o OK do Daniel — badge do item "Agentes" (F15: antes contava achados P1).
   const [aprovacoesPendentes, setAprovacoesPendentes] = useState(0);

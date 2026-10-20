@@ -48,10 +48,13 @@ export function hashValido(hash: unknown): string | null {
  */
 export function linhaDoEnvio(
   anterior: Record<string, unknown> | null,
-  o: { ownerId: string; propertyId: string | null; path: string; hash: string | null; agora: Date }
+  o: { ownerId: string; propertyId: string | null; path: string; hash: string | null; agora: Date; titular?: unknown }
 ): Record<string, unknown> {
   const herdado: Record<string, unknown> = { ...(anterior ?? {}) };
   for (const k of CAMPOS_NAO_HERDADOS) delete herdado[k];
+  // Prompt 36, item 3a: o nome do titular digitado no momento do envio vai junto (o admin o lê da linha da fila).
+  const titular = limparTitularDocumento(o.titular);
+  if (titular) herdado.formulario = formularioComTitular(herdado.formulario, titular);
   return {
     ...herdado,
     owner_id: o.ownerId,
@@ -87,3 +90,41 @@ export function documentoNoSalvar(
   if (documentoJaNaFila(ultimoPath, documentPath)) return { gravarPath: null, avisarAdmins: false };
   return { gravarPath: documentPath, avisarAdmins: true };
 }
+
+/** Nome do titular digitado pelo dono (só texto, até 150 caracteres); vazio → undefined. */
+export function limparTitularDocumento(v: unknown): string | undefined {
+  if (typeof v !== "string") return undefined;
+  const t = v.replace(/[<>]/g, "").replace(/\s+/g, " ").trim().slice(0, 150);
+  return t || undefined;
+}
+
+/**
+ * Prompt 36, item 3a: o formulário (0072) com `elig.titularDocumento` trocado, sem perder o resto das respostas.
+ * Sem formulário anterior, nasce `{ versao: 1, elig: { titularDocumento } }` (o /qualificar completa o resto
+ * pelas colunas, como já faz em linhas antigas).
+ */
+export function formularioComTitular(formulario: unknown, titular: string): Record<string, unknown> {
+  const base = formulario && typeof formulario === "object" && !Array.isArray(formulario) ? (formulario as Record<string, unknown>) : { versao: 1 };
+  const elig = base.elig && typeof base.elig === "object" && !Array.isArray(base.elig) ? (base.elig as Record<string, unknown>) : {};
+  return { ...base, elig: { ...elig, titularDocumento: titular } };
+}
+
+/**
+ * Prompt 36, item 3a: o "Salvar qualificação" ATUALIZA a linha que o envio já pôs na fila (a mais recente do
+ * imóvel, com o MESMO arquivo e ainda "em análise") em vez de criar outra. Documento já decidido (aprovado ou
+ * recusado), arquivo diferente ou nenhum documento → segue a regra de antes (linha nova; 0072 herda o documento).
+ */
+export function salvarNaMesmaLinha(
+  ultimo: { id?: unknown; document_path?: unknown; document_status?: unknown } | null | undefined,
+  documentPath: string | null | undefined
+): ultimo is { id: string; document_path: string; document_status: "pending" } {
+  return (
+    !!ultimo &&
+    typeof ultimo.id === "string" &&
+    ultimo.document_status === "pending" &&
+    documentoJaNaFila(typeof ultimo.document_path === "string" ? ultimo.document_path : null, documentPath)
+  );
+}
+
+/** O que o "Salvar qualificação" NUNCA muda na linha que já está na fila: o documento, o dono e o imóvel. */
+export const CAMPOS_FIXOS_DA_FILA = ["document_path", "document_hash_sha256", "document_uploaded_at", "document_status", "owner_id", "property_id"] as const;

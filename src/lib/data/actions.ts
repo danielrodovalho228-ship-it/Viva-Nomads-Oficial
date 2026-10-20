@@ -87,16 +87,22 @@ import { validarOcupantes } from "@/lib/candidaturas/ocupantes";
 import { anotarInteresseDoDono, bloqueioPorCidade } from "@/lib/cidades-liberadas/servidor";
 import { MUNICIPIOS } from "@/lib/municipios";
 import { avisarAdminsDocumentoRecebido } from "@/lib/data/aviso-documento-recebido";
-import { caminhoDoDonoValido, documentoJaNaFila, documentoNoSalvar, hashValido, linhaDoEnvio } from "@/lib/documento/fila-envio";
+import {
+  caminhoDoDonoValido,
+  documentoJaNaFila,
+  documentoNoSalvar,
+  hashValido,
+  limparTitularDocumento,
+  linhaDoEnvio,
+  salvarNaMesmaLinha,
+  CAMPOS_FIXOS_DA_FILA,
+} from "@/lib/documento/fila-envio";
 
 type ActionResult = { ok: boolean; demo?: boolean; id?: string; error?: string };
 
 /** Persiste o checklist de qualificação (Fase 4). */
 /** Nome do titular digitado pelo dono (só texto, até 150 caracteres). */
-function limparTitular(v: unknown): string | undefined {
-  const t = String(v ?? "").replace(/[<>]/g, "").replace(/\s+/g, " ").trim().slice(0, 150);
-  return t || undefined;
-}
+const limparTitular = limparTitularDocumento;
 
 export async function saveQualification(
   elig: EligibilityState,
@@ -131,7 +137,7 @@ export async function saveQualification(
   // Prompt 35A, item 1: o documento já entrou na fila no ENVIO (enviarDocumentoParaConferencia)? Então esta
   // linha grava SEM documento e o banco herda o da linha anterior (0072) — sem segundo item na fila nem segundo
   // aviso. Arquivo que ainda não está na fila segue o caminho de antes (entra "em análise" e avisa).
-  let ultimoQ = supabase.from("qualification_checklists").select("document_path").eq("owner_id", user.id);
+  let ultimoQ = supabase.from("qualification_checklists").select("id, document_path, document_status").eq("owner_id", user.id);
   ultimoQ = propertyId ? ultimoQ.eq("property_id", propertyId) : ultimoQ.is("property_id", null);
   const { data: ultimo } = documentPath
     ? await ultimoQ.order("created_at", { ascending: false }).limit(1).maybeSingle()
@@ -173,9 +179,31 @@ export async function saveQualification(
     status: eligible ? "approved" : "not_eligible",
   };
   // O estado completo da tela (0072) — para o /qualificar abrir preenchido.
+  const formulario = { versao: 1, elig: { ...elig, titularDocumento: limparTitular(elig.titularDocumento) }, quality };
+
+  // Prompt 36, item 3a: o envio já pôs ESTE arquivo na fila e ele ainda está em análise → atualiza a MESMA linha
+  // (respostas + formulário com o titular), sem criar outra. O gatilho da 0072 não deixa o dono alterar a linha
+  // gravada; por isso grava pelo cliente de serviço, preso ao id E ao dono, e sem tocar no documento nem na revisão.
+  if (salvarNaMesmaLinha(ultimo, documentPath)) {
+    const servico = createAdminClient();
+    if (servico) {
+      const respostas: Record<string, unknown> = { ...linha };
+      for (const k of CAMPOS_FIXOS_DA_FILA) delete respostas[k];
+      const { data: upd, error: erroUpd } = await servico
+        .from("qualification_checklists")
+        .update({ ...respostas, formulario })
+        .eq("id", ultimo.id)
+        .eq("owner_id", user.id)
+        .eq("document_status", "pending")
+        .select("id");
+      if (!erroUpd && upd?.length) return { ok: true, id: ultimo.id };
+      if (erroUpd) console.error("[saveQualification] falha ao atualizar a linha da fila:", erroUpd.message);
+    }
+  }
+
   let { data, error } = await supabase
     .from("qualification_checklists")
-    .insert({ ...linha, formulario: { versao: 1, elig: { ...elig, titularDocumento: limparTitular(elig.titularDocumento) }, quality } })
+    .insert({ ...linha, formulario })
     .select("id")
     .single();
   // Sem a 0072 aplicada a coluna não existe: grava sem o formulário.
@@ -209,7 +237,9 @@ export async function saveQualification(
 export async function enviarDocumentoParaConferencia(
   propertyId: string | null,
   path: string,
-  hash: string | null
+  hash: string | null,
+  /** Prompt 36, item 3a: o nome do titular escrito no campo NO MOMENTO do envio (vai para formulario.elig). */
+  titularDocumento?: string | null
 ): Promise<ActionResult> {
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
@@ -246,6 +276,7 @@ export async function enviarDocumentoParaConferencia(
     path,
     hash: hashValido(hash),
     agora: new Date(),
+    titular: titularDocumento,
   });
   const { data, error } = await supabase.from("qualification_checklists").insert(linha).select("id").single();
   if (error || !data) {

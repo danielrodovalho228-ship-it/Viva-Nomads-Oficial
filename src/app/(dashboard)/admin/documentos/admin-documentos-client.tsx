@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { avisarFilaDocumentosMudou } from "@/lib/admin/fila-evento";
 import { textoFilaDocumentos, FORMULA_FILA_DOCUMENTOS } from "@/lib/admin/indicadores";
 import { dataBRT, dataHoraBRT } from "@/lib/datas-brasilia";
 import {
@@ -55,8 +57,15 @@ export function AdminDocumentosClient({
   const [aba, setAba] = useState<"revisao" | "automaticos">("revisao");
   const [autos, setAutos] = useState(auto);
 
+  const router = useRouter();
+  const [, startTransition] = useTransition();
+
+  // Prompt 36, item 3b: tira o card, avisa o selo da barra lateral e atualiza os números do servidor ("na fila
+  // agora") dentro de uma transição — a fila (estado local) não é remontada.
   function sair(id: string) {
     setFila((f) => f.filter((d) => d.id !== id));
+    avisarFilaDocumentosMudou();
+    startTransition(() => router.refresh());
   }
 
   return (
@@ -123,7 +132,10 @@ export function AdminDocumentosClient({
         ) : (
           <div className="space-y-4" data-testid="conferidos-automaticamente">
             {autos.map((a) => (
-              <AutoCard key={a.id} doc={a} onReaberto={() => setAutos((l) => l.filter((x) => x.id !== a.id))} />
+              <AutoCard key={a.id} doc={a} onReaberto={() => {
+                  setAutos((l) => l.filter((x) => x.id !== a.id));
+                  avisarFilaDocumentosMudou();
+                }} />
             ))}
           </div>
         )

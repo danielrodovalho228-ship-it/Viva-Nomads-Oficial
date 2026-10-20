@@ -300,6 +300,8 @@ export async function moderarDocumento(
   if (!qual) return { ok: false, error: "Documento não encontrado na fila (ou sem permissão)." };
   // Documento aprovado/recusado muda o que o público pode ver do anúncio (F9).
   revalidarAnuncio(alvo.property_id as string | null, revalidatePath);
+  // Prompt 36, item 3b: "na fila agora" e o selo da barra lateral do admin (o cliente também chama router.refresh).
+  revalidatePath("/admin", "layout");
   await logModeracao(
     supabase,
     user.id,

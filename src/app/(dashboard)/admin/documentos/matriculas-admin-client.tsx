@@ -1,7 +1,9 @@
 "use client";
 
 import { dataHoraBRT } from "@/lib/datas-brasilia";
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { avisarFilaDocumentosMudou } from "@/lib/admin/fila-evento";
 import { Check, ExternalLink, FileText, X } from "lucide-react";
 import { Panel, EmptyState } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
@@ -16,6 +18,14 @@ import { cn } from "@/lib/utils";
  */
 export function MatriculasAdmin({ itens, contadores }: { itens: MatriculaNaFila[]; contadores: ContadoresMatricula }) {
   const [fila, setFila] = useState(itens);
+  const router = useRouter();
+  const [, startTransition] = useTransition();
+  // Prompt 36, item 3b: a matrícula decidida também sai do selo da barra lateral, sem recarregar.
+  function decidida(id: string) {
+    setFila((f) => f.filter((x) => x.id !== id));
+    avisarFilaDocumentosMudou();
+    startTransition(() => router.refresh());
+  }
   return (
     <section className="mt-8" data-testid="matriculas-admin" aria-labelledby="matriculas-titulo">
       <h2 id="matriculas-titulo" className="font-title text-xl font-bold text-ink">
@@ -43,7 +53,7 @@ export function MatriculasAdmin({ itens, contadores }: { itens: MatriculaNaFila[
         {fila.length === 0 ? (
           <EmptyState icon={FileText} title="Nenhuma matrícula na fila" text="As conferidas automaticamente não precisam de você." />
         ) : (
-          fila.map((m) => <MatriculaCard key={m.id} m={m} onDecidido={() => setFila((f) => f.filter((x) => x.id !== m.id))} />)
+          fila.map((m) => <MatriculaCard key={m.id} m={m} onDecidido={() => decidida(m.id)} />)
         )}
       </div>
     </section>
