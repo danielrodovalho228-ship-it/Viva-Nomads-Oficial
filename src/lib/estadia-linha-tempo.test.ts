@@ -15,6 +15,8 @@ test("entrada e saída trazem dia e horário do imóvel", () => {
   assert.equal(entrada.horario, "a partir das 14:00");
   assert.equal(conf.chave, "conferencia");
   assert.equal(conf.dia, "2026-11-03", "conferência de entrada vale até 48 h depois do início");
+  assert.equal(conf.horario, "até 03/11 às 14:00, horário de Brasília");
+  assert.equal(conf.prazo, "2026-11-03T17:00:00.000Z");
   assert.equal(saida.chave, "saida");
   assert.equal(saida.dia, "2027-01-30");
   assert.equal(saida.horario, "até as 11:00");
@@ -51,4 +53,21 @@ test("ligação: a leitura do contrato traz blocos e horários e o detalhe mostr
   assert.match(detalhe, /<LinhaDoTempoEstadia etapas=\{c\.linhaDoTempo\}/);
   const tela = readFileSync(new URL("../components/contrato/linha-do-tempo-estadia.tsx", import.meta.url), "utf8");
   assert.match(tela, /href="\/dashboard\/mensagens"/);
+});
+
+test("F2: linha do tempo e seção da conferência dão o MESMO instante (fonte única)", async () => {
+  const { prazoConferenciaEntrada, textoPrazoConferencia } = await import("./conferencia.ts");
+  const p = { inicio: "2026-10-18", fim: "2026-12-16", checkinAfter: "15:00", checkoutBefore: "11:00" };
+  const conf = montarLinhaDoTempo(p).find((e) => e.chave === "conferencia")!;
+  const prazo = prazoConferenciaEntrada({ inicio: p.inicio, checkinAfter: p.checkinAfter })!;
+  assert.equal(conf.prazo, prazo.toISOString());
+  assert.equal(conf.horario, textoPrazoConferencia(prazo));
+  assert.equal(conf.horario, "até 20/10 às 15:00, horário de Brasília");
+  assert.equal(conf.dia, "2026-10-20");
+  // a seção da conferência e o servidor usam a mesma função (sem outra conta de 48 h)
+  const acoes = readFileSync(new URL("./data/conferencia-actions.ts", import.meta.url), "utf8");
+  assert.match(acoes, /prazoConferenciaEntrada\(ctx\.entrada\)/);
+  const secao = readFileSync(new URL("../components/contrato/conferencia-contrato.tsx", import.meta.url), "utf8");
+  assert.match(secao, /textoPrazoConferencia\(dados\.prazoEntradaEm\)/);
+  assert.doesNotMatch(secao, /toLocaleString\(/);
 });

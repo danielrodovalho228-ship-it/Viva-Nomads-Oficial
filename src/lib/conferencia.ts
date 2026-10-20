@@ -2,10 +2,12 @@
   Conferência de entrada e de saída (ordem 404cd213, item 1) — regras puras, sem banco.
   As duas partes (proprietário e inquilino) registram cômodos, itens e fotos; cada uma
   confirma ou contesta uma vez. Os itens de cada parte congelam quando ela responde; tudo
-  congela quando as duas respondem. Só se responde depois que as duas registraram itens
-  (ou, na entrada, depois da janela de 48 h) — ordem 99c7c1e0.
-  O banco repete estas regras (migração 0110); aqui ficam testáveis.
+  congela quando as duas respondem. Confirmar = responder ao registro da OUTRA parte (Prompt 35B, Opção B):
+  os itens próprios são opcionais; só se responde depois que a outra parte registrou ao menos 1 item
+  (ou, na entrada, depois do prazo) — ordem 99c7c1e0.
+  O banco repete as regras de imutabilidade (migração 0110); aqui ficam testáveis.
 */
+import { ETIQUETA_BRASILIA, horaBRT, instanteBRT, dataBRT } from "./datas-brasilia.ts";
 
 export type TipoConferencia = "entrada" | "saida";
 export type ParteConferencia = "proprietario" | "inquilino";
@@ -17,13 +19,36 @@ export interface RespostaConferencia {
   motivo: string | null;
 }
 
-/** A conferência de entrada vale até 48 h depois do início do contrato. */
+/** A conferência de entrada vale até 48 h depois da entrada (dia de início + horário de entrada do imóvel). */
 export const JANELA_ENTRADA_HORAS = 48;
 export const DESCRICAO_MAX = 300;
 export const MOTIVO_MAX = 1000;
 
-export function prazoEntrada(inicioContrato: string | Date): Date {
-  return new Date(new Date(inicioContrato).getTime() + JANELA_ENTRADA_HORAS * 3600_000);
+/** Dia de início do contrato (AAAA-MM-DD, 1º bloco) e o horário de entrada do imóvel ("15:00"; vazio = 00:00). */
+export interface EntradaDoContrato {
+  inicio: string | null;
+  checkinAfter?: string | null;
+}
+
+const HORA_ENTRADA = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+/**
+ * FONTE ÚNICA do prazo da conferência de entrada (Prompt 35B, F2): o INSTANTE em que o relógio de Brasília marca
+ * o dia de início no horário de entrada do imóvel (00:00 sem horário), mais 48 h. A seção da conferência, a linha
+ * do tempo, o bloqueio do servidor e `janelaEncerrada` usam esta função — nunca outra conta.
+ */
+export function prazoConferenciaEntrada(p: EntradaDoContrato): Date | null {
+  const dia = (p.inicio ?? "").slice(0, 10);
+  const hora = (p.checkinAfter ?? "").trim();
+  const base = instanteBRT(dia, HORA_ENTRADA.test(hora) ? hora : "00:00");
+  return base ? new Date(base.getTime() + JANELA_ENTRADA_HORAS * 3600_000) : null;
+}
+
+/** "até 20/10 às 15:00, horário de Brasília" — o mesmo texto na seção e na linha do tempo. */
+export function textoPrazoConferencia(prazo: Date | string | null): string {
+  if (!prazo) return "";
+  const ddmm = dataBRT(prazo).slice(0, 5);
+  return `até ${ddmm} às ${horaBRT(prazo)}, ${ETIQUETA_BRASILIA}`;
 }
 
 export function estadoConferencia(respostas: RespostaConferencia[]): EstadoConferencia {
@@ -39,8 +64,60 @@ export function podeEditarItens(respostas: RespostaConferencia[], parte: ParteCo
 }
 
 /** A janela de 48 h só existe na entrada; na saída ninguém "perde o prazo" de registrar. */
-export function janelaEncerrada(tipo: TipoConferencia, inicioContrato: string | Date | null, agora: Date = new Date()): boolean {
-  return tipo === "entrada" && inicioContrato !== null && agora.getTime() > prazoEntrada(inicioContrato).getTime();
+export function janelaEncerrada(tipo: TipoConferencia, entrada: EntradaDoContrato | null, agora: Date = new Date()): boolean {
+  if (tipo !== "entrada" || !entrada) return false;
+  const prazo = prazoConferenciaEntrada(entrada);
+  return prazo !== null && agora.getTime() > prazo.getTime();
+}
+
+/** A outra parte da conferência. */
+export function outraParte(parte: ParteConferencia): ParteConferencia {
+  return parte === "inquilino" ? "proprietario" : "inquilino";
+}
+
+const DA_PARTE: Record<ParteConferencia, string> = { proprietario: "do proprietário", inquilino: "do inquilino" };
+
+/** Texto do botão: "Confirmar o registro do proprietário". */
+export function rotuloConfirmar(minhaParte: ParteConferencia): string {
+  return `Confirmar o registro ${DA_PARTE[outraParte(minhaParte)]}`;
+}
+
+/** Ajuda ao lado do botão (F1): confirmar responde ao registro da outra parte; os próprios itens são opcionais. */
+export function ajudaConfirmar(minhaParte: ParteConferencia): string {
+  return `${rotuloConfirmar(minhaParte)}. Seus próprios itens são opcionais.`;
+}
+
+export const ERRO_ANTES_DA_OUTRA_PARTE = "Você só pode responder depois que a outra parte registrar ao menos um item.";
+
+/**
+ * A parte já pode responder? Depois de a outra registrar ao menos 1 item, ou com a janela de entrada encerrada.
+ * Também quando a outra parte JÁ respondeu: os itens dela congelaram (podeEditarItens), então esperar por eles
+ * travaria a conferência — na saída, que não tem prazo, para sempre.
+ */
+export function podeResponder(p: {
+  parte: ParteConferencia;
+  itensPorParte: Record<ParteConferencia, number>;
+  janelaEncerrada?: boolean;
+  respostas?: RespostaConferencia[];
+}): boolean {
+  const outra = outraParte(p.parte);
+  return !!p.janelaEncerrada || p.itensPorParte[outra] >= 1 || (p.respostas ?? []).some((r) => r.parte === outra);
+}
+
+export type EstadoConferenciaLista = EstadoConferencia | "nao_aberta";
+
+/** Rótulo único do estado (seção da conferência, admin do contrato e coluna da lista do admin). */
+export const ROTULO_ESTADO_CONFERENCIA: Record<EstadoConferenciaLista, string> = {
+  nao_aberta: "Não aberta",
+  em_andamento: "Em andamento",
+  aguardando_outra_parte: "Aguardando a outra parte",
+  confirmada: "Confirmada pelas duas partes",
+  contestada: "Contestada",
+};
+
+/** Estado da conferência para a lista do admin: sem conferência criada = "Não aberta". */
+export function estadoConferenciaLista(aberta: boolean, respostas: RespostaConferencia[]): EstadoConferenciaLista {
+  return aberta ? estadoConferencia(respostas) : "nao_aberta";
 }
 
 export type Decisao = { ok: true; motivo: string | null } | { ok: false; erro: string };
@@ -52,14 +129,12 @@ export function decidirResposta(p: {
   motivo: string;
   /** Itens já registrados por cada parte. */
   itensPorParte: Record<ParteConferencia, number>;
-  /** Entrada com a janela de 48 h fechada: dá para responder mesmo que a outra parte não tenha registrado. */
+  /** Entrada com a janela de 48 h fechada: dá para responder mesmo que a outra parte não tenha registrado (e sem itens próprios). */
   janelaEncerrada?: boolean;
 }): Decisao {
   if (p.respostas.some((r) => r.parte === p.parte)) return { ok: false, erro: "Você já respondeu esta conferência e ela não pode mais ser alterada." };
-  if (p.itensPorParte[p.parte] < 1) return { ok: false, erro: "Registre ao menos um item antes de responder." };
-  if (!p.janelaEncerrada && (p.itensPorParte.proprietario < 1 || p.itensPorParte.inquilino < 1)) {
-    return { ok: false, erro: "Você só pode responder depois que a outra parte registrar ao menos um item." };
-  }
+  // Opção B (Prompt 35B, F1): os itens próprios são opcionais; só a outra parte precisa ter registrado (ou o prazo acabou).
+  if (!podeResponder(p)) return { ok: false, erro: ERRO_ANTES_DA_OUTRA_PARTE };
   const motivo = p.motivo.trim();
   if (p.decisao === "contestou") {
     if (!motivo) return { ok: false, erro: "Conte o motivo da contestação." };
