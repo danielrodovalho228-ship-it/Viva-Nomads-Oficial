@@ -79,12 +79,12 @@ export async function gerarCodigosRecuperacao(): Promise<Res<{ codigos: string[]
   const { data: fatores } = await s.supabase.auth.mfa.listFactors();
   if (!fatores?.totp?.length) return { ok: false, error: "Ative a verificação em duas etapas antes de gerar códigos." };
   const codigos = gerarCodigos();
-  const { error: e1 } = await admin.from("mfa_codigos_recuperacao").delete().eq("user_id", s.user.id);
-  if (e1) return { ok: false, error: ERRO_GERAL };
-  const { error: e2 } = await admin
-    .from("mfa_codigos_recuperacao")
-    .insert(codigos.map((c) => ({ user_id: s.user.id, codigo_hash: hashCodigo(s.user.id, c) })));
-  if (e2) return { ok: false, error: ERRO_GERAL };
+  // Numa transação no banco: ou o lote novo substitui o antigo, ou nada muda (nunca fica sem códigos).
+  const { error } = await admin.rpc("trocar_codigos_recuperacao", {
+    p_user_id: s.user.id,
+    p_hashes: codigos.map((c) => hashCodigo(s.user.id, c)),
+  });
+  if (error) return { ok: false, error: ERRO_GERAL };
   return { ok: true, codigos };
 }
 
@@ -113,15 +113,12 @@ export async function usarCodigoRecuperacao(bruto: string, destino: string): Pro
   const codigo = codigoRecuperacaoValido(bruto);
   let usou = false;
   if (codigo) {
-    // Atômico: só um pedido consegue marcar o código como usado.
-    const { data } = await admin
-      .from("mfa_codigos_recuperacao")
-      .update({ usado_em: new Date(agora).toISOString() })
-      .eq("user_id", s.user.id)
-      .eq("codigo_hash", hashCodigo(s.user.id, codigo))
-      .is("usado_em", null)
-      .select("id");
-    usou = (data?.length ?? 0) === 1;
+    // Atômico no banco (consumir_codigo_recuperacao): só um pedido consegue marcar o código como usado.
+    const { data, error } = await admin.rpc("consumir_codigo_recuperacao", {
+      p_user_id: s.user.id,
+      p_codigo_hash: hashCodigo(s.user.id, codigo),
+    });
+    usou = !error && data === true;
   }
   if (!usou) {
     await gravarLimite(admin, s.user.id, aposFalha(estado, agora));
