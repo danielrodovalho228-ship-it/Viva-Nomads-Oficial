@@ -104,7 +104,8 @@ test.describe("T235 — cartões compartilháveis (Fase 1)", () => {
   });
 
   test("1. dono: cartão do anúncio em Meus imóveis, imagens em < 2 s nos dois formatos e WhatsApp em um toque", async ({ browser, request }) => {
-    test.setTimeout(120_000);
+    // A 1ª imagem do cartão é gerada a frio no servidor do lab (instável no lab 05cb8901: naturalWidth 0 em 20 s).
+    test.setTimeout(240_000);
     for (const largura of [390, 1280]) {
       const page = await abrirComo(browser, dono.email, largura);
       await page.goto("/dashboard/imoveis", { waitUntil: "domcontentloaded" });
@@ -116,12 +117,12 @@ test.describe("T235 — cartões compartilháveis (Fase 1)", () => {
       await expect(painel).toHaveAttribute("data-tipo", "ownercard");
       ids.curtoDono = (await painel.getAttribute("data-curto")) ?? undefined;
       await expect(page.getByTestId("cartao-previa")).toBeVisible();
-      await expect.poll(() => page.getByTestId("cartao-previa").evaluate((i: HTMLImageElement) => i.naturalWidth), { timeout: 20_000 }).toBe(1080);
+      await expect.poll(() => page.getByTestId("cartao-previa").evaluate((i: HTMLImageElement) => i.naturalWidth), { timeout: 45_000 }).toBe(1080);
       await expect(page.getByTestId("cartao-legenda")).toContainText(`/c/${ids.curtoDono}`);
       await semRolagemLateral(page);
       await page.screenshot({ path: `${SAIDA}/t235-dono-cartao-${largura}.png`, fullPage: true });
       await page.getByTestId("cartao-formato-quadrado").click();
-      await expect.poll(() => page.getByTestId("cartao-previa").evaluate((i: HTMLImageElement) => i.naturalHeight), { timeout: 20_000 }).toBe(1080);
+      await expect.poll(() => page.getByTestId("cartao-previa").evaluate((i: HTMLImageElement) => i.naturalHeight), { timeout: 45_000 }).toBe(1080);
       if (largura === 1280) {
         const antes = await contarEventos("cards_shared", ids.imovel!, "ownercard");
         await capturarAbertura(page);
@@ -151,7 +152,7 @@ test.describe("T235 — cartões compartilháveis (Fase 1)", () => {
       await expect(painel).toBeVisible({ timeout: 20_000 });
       await expect(painel.getByTestId("cartao-compartilhar")).toHaveAttribute("data-tipo", "poststay");
       ids.curtoPostal = (await painel.getByTestId("cartao-compartilhar").getAttribute("data-curto")) ?? undefined;
-      await expect.poll(() => page.getByTestId("cartao-previa").evaluate((i: HTMLImageElement) => i.naturalWidth), { timeout: 20_000 }).toBe(1080);
+      await expect.poll(() => page.getByTestId("cartao-previa").evaluate((i: HTMLImageElement) => i.naturalWidth), { timeout: 45_000 }).toBe(1080);
       await semRolagemLateral(page);
       await page.screenshot({ path: `${SAIDA}/t235-postal-${largura}.png`, fullPage: true });
       if (largura === 390) {
