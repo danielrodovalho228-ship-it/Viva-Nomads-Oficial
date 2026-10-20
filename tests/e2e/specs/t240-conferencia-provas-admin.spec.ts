@@ -127,8 +127,8 @@ test.describe("T240 — conferência de entrada (F1–F3), pacote de provas (F4)
     ids.inicio = String(bloco!.inicio);
     const hoje = ids.inicio;
     const { error: eCaucao } = await adm().from("pagamentos_bloco").insert([
-      { bloco_id: bloco!.id, contrato_id: ids.contrato, tipo: "caucao", valor: 3200, data_pagamento: hoje, marcado_por: ids.dono, confirmado_pelo_inquilino: true, confirmado_em: new Date().toISOString() },
-      { bloco_id: bloco!.id, contrato_id: ids.contrato, tipo: "caucao", valor: 3200, data_pagamento: hoje, marcado_por: ids.dono, anulado_em: new Date().toISOString(), anulado_motivo: "registro em duplicidade" },
+      { bloco_id: null, contrato_id: ids.contrato, tipo: "caucao", valor: 3200, data_pagamento: hoje, marcado_por: ids.dono, confirmado_pelo_inquilino: true, confirmado_em: new Date().toISOString() },
+      { bloco_id: null, contrato_id: ids.contrato, tipo: "caucao", valor: 3200, data_pagamento: hoje, marcado_por: ids.dono, confirmado_pelo_inquilino: false, anulado_em: new Date().toISOString(), anulado_motivo: "registro em duplicidade" },
     ]);
     if (eCaucao) throw eCaucao;
   });
