@@ -13,7 +13,11 @@ for (const largura of [390, 1280]) {
       const perguntas = page.getByRole("button", { name: /virar parceiro/i });
       await expect(perguntas).toHaveCount(1);
       await expect(perguntas).toHaveText("Como posso virar parceiro da Viva?");
-      await perguntas.click();
+      // Clique antes da hidratação não abre a resposta (lab 39456130138): repete até aria-expanded.
+      await expect(async () => {
+        await perguntas.click();
+        await expect(perguntas).toHaveAttribute("aria-expanded", "true", { timeout: 2_000 });
+      }).toPass({ timeout: 30_000 });
       const lista = page.getByRole("list").filter({ has: perguntas });
       await expect(lista).toContainText("quer moradia para funcionários: /empresas");
       await expect(lista).toContainText("quer ser parceira");
@@ -24,7 +28,11 @@ for (const largura of [390, 1280]) {
 
     test("caução na Ajuda segue a página pública (até 3 vezes o valor mensal)", async ({ page }) => {
       await page.goto("/ajuda", { waitUntil: "domcontentloaded" });
-      await page.getByRole("button", { name: /Como funciona a caução/i }).click();
+      const pergunta = page.getByRole("button", { name: /Como funciona a caução/i });
+      await expect(async () => {
+        await pergunta.click();
+        await expect(pergunta).toHaveAttribute("aria-expanded", "true", { timeout: 2_000 });
+      }).toPass({ timeout: 30_000 });
       await expect(page.getByText("Caução de até 3 vezes o valor mensal")).toBeVisible();
       await expect(page.getByText(/50%|cada bloco/)).toHaveCount(0);
     });
