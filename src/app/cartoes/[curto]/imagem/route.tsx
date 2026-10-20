@@ -5,6 +5,7 @@ import { ImageResponse } from "next/og";
 import QRCode from "qrcode";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { cartaoPeloCurto, dadosDoCartao, dadosDoCartaoParceiro, urlAssinada, type CartaoLinha } from "@/lib/data/cartoes-servidor";
+import { fotoParaCartao } from "@/lib/cartoes/foto-cartao";
 import { curtoValido, FORMATOS, mesAno, nomeNoCartao, TEXTOS, TEXTOS_PARCEIRO, textoValorPeriodo, type FormatoCartao } from "@/lib/cartoes/compartilhar";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -12,6 +13,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
   Imagem do cartão compartilhável (Fase 1), desenhada no servidor a partir dos dados do anúncio:
   1080×1350 (formato=retrato) ou 1080×1080 (formato=quadrado). Modelo travado: só campos aprovados. Sem foto (ou
   foto lenta) → fundo da marca, nunca erro. O QR leva à URL assinada do próprio domínio.
+  A foto vai ao satori sempre como JPEG ou PNG (fotoParaCartao converte WebP). Rede de segurança: se a renderização
+  falhar mesmo assim, o cartão é desenhado de novo sem foto; se falhar outra vez, 503 (nunca 500).
   Cartão do parceiro (partnercard, 31c): desenha SÓ os campos de camposCartaoParceiro (página pública publicada).
 */
 export const runtime = "nodejs";
@@ -39,7 +42,7 @@ async function imagemDoParceiro(admin: SupabaseClient, cartao: CartaoLinha, form
   const { largura, altura } = FORMATOS[formato];
   const altoFoto = formato === "retrato" ? 700 : 500;
   const ladoQr = formato === "retrato" ? 250 : 220;
-  return new ImageResponse(
+  return respostaSegura(foto, (foto) => new ImageResponse(
     (
       <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", background: "#f6f8f7", fontFamily: "sans-serif" }}>
         <div style={{ display: "flex", position: "relative", width: largura, height: altoFoto }}>
@@ -76,7 +79,24 @@ async function imagemDoParceiro(admin: SupabaseClient, cartao: CartaoLinha, form
       height: altura,
       headers: { "Cache-Control": "private, max-age=300", "X-Robots-Tag": "noindex" },
     },
-  );
+  ));
+}
+
+/**
+ * Renderiza o cartão consumindo o corpo (é aí que o satori falha), para pegar o erro ainda dentro da rota. Falhou com
+ * foto → desenha de novo sem foto (fundo da marca). Falhou sem foto → 503 limpo. O log não leva dado pessoal.
+ */
+async function respostaSegura(foto: string | null, desenhar: (foto: string | null) => ImageResponse): Promise<Response> {
+  for (const tentativa of foto ? [foto, null] : [null]) {
+    try {
+      const r = desenhar(tentativa);
+      const corpo = await r.arrayBuffer();
+      return new Response(corpo, { status: 200, headers: r.headers });
+    } catch (e) {
+      console.error(`[cartoes/imagem] falha ao desenhar ${tentativa ? "com" : "sem"} foto:`, e instanceof Error ? e.message : "erro");
+    }
+  }
+  return new Response("Não foi possível gerar a imagem agora. Tente de novo.", { status: 503, headers: { "Retry-After": "30" } });
 }
 
 async function fotoComoDataUri(url: string | null): Promise<string | null> {
@@ -85,10 +105,8 @@ async function fotoComoDataUri(url: string | null): Promise<string | null> {
     const r = await fetch(url, { signal: AbortSignal.timeout(1200) });
     if (!r.ok) return null;
     const tipo = r.headers.get("content-type") ?? "";
-    if (!/^image\/(jpeg|png|webp)/.test(tipo)) return null;
-    const buf = Buffer.from(await r.arrayBuffer());
-    if (buf.length > 6_000_000) return null;
-    return `data:${tipo.split(";")[0]};base64,${buf.toString("base64")}`;
+    if (!/^image\//.test(tipo)) return null;
+    return await fotoParaCartao(new Uint8Array(await r.arrayBuffer()), tipo);
   } catch {
     return null;
   }
@@ -124,7 +142,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ curt
   const linhaInfo = postal ? mesAno(d.inicioEstadia) : textoValorPeriodo(d.valorMensal, d.minDias);
   const frase = postal ? TEXTOS.poststay.frase : TEXTOS.ownercard.frase;
 
-  return new ImageResponse(
+  return respostaSegura(foto, (foto) => new ImageResponse(
     (
       <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", background: "#f6f8f7", fontFamily: "sans-serif" }}>
         <div style={{ display: "flex", position: "relative", width: largura, height: altoFoto }}>
@@ -166,5 +184,5 @@ export async function GET(request: Request, { params }: { params: Promise<{ curt
       height: altura,
       headers: { "Cache-Control": "private, max-age=300", "X-Robots-Tag": "noindex" },
     },
-  );
+  ));
 }

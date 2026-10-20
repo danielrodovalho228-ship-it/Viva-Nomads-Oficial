@@ -1,4 +1,5 @@
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
+import sharp from "sharp";
 import { test, expect, type Browser, type Page, type APIRequestContext } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 import { authFile } from "../fixtures/auth";
@@ -55,12 +56,25 @@ function dimensoesPng(buf: Buffer): { w: number; h: number } {
   return { w: buf.readUInt32BE(16), h: buf.readUInt32BE(20) };
 }
 
+/** Cor da foto WebP do parceiro (laranja): se aparecer no topo do cartão, a foto foi desenhada (não o fundo da marca). */
+const COR_FOTO = { r: 230, g: 120, b: 40 };
+async function corNoTopo(png: Buffer): Promise<{ r: number; g: number; b: number }> {
+  const px = await sharp(png).extract({ left: 540, top: 300, width: 1, height: 1 }).removeAlpha().raw().toBuffer();
+  return { r: px[0], g: px[1], b: px[2] };
+}
+async function comFotoDoParceiro(png: Buffer) {
+  const c = await corNoTopo(png);
+  expect(Math.abs(c.r - COR_FOTO.r) + Math.abs(c.g - COR_FOTO.g) + Math.abs(c.b - COR_FOTO.b), `cor no topo ${JSON.stringify(c)}`).toBeLessThan(40);
+}
+
 async function imagem(request: APIRequestContext, formato: "retrato" | "quadrado") {
   const r = await request.get(`/cartoes/${curto}/imagem?formato=${formato}`);
   expect(r.status()).toBe(200);
   expect(r.headers()["content-type"]).toContain("image/png");
   const buf = await r.body();
   expect(dimensoesPng(buf)).toEqual(formato === "retrato" ? { w: 1080, h: 1350 } : { w: 1080, h: 1080 });
+  // A foto do parceiro é WebP (formato que o satori não desenha): o cartão sai COM a foto, convertida para JPEG.
+  await comFotoDoParceiro(buf);
   writeFileSync(`${SAIDA}/t239-imagem-parceiro-${formato}.png`, buf);
 }
 
@@ -76,7 +90,7 @@ async function novoParceiro(userId: string, o: { slug: string; nome: string; sta
       categorias: ["fotografia"],
       cidades: ["Uberlândia", "Araguari", "Uberaba"],
       descricao: "Fotografia de imóveis mobiliados para anúncio, com luz natural e edição leve.",
-      // Foto que não existe no Storage: o cartão sai com o fundo da marca (sem erro), como no t235 sem foto.
+      // Publicado: foto WebP de verdade no Storage (enviada no beforeAll). Rascunho: caminho sem arquivo.
       avatar_path: `${userId}/avatar-t239.webp`,
       telefone: "34999991234",
       status: o.status,
@@ -104,6 +118,10 @@ test.describe("T239 — cartão do parceiro (partnercard)", () => {
     ids.rasc = await criarConta(rasc, senha);
     ids.cli = await criarConta(cli, senha);
     ids.parceiro = await novoParceiro(ids.parc, { slug, nome: nomePublico, status: "publicado" });
+    // Foto de perfil em WebP (o formato que o painel grava) — a que derrubava a imagem do cartão com 500.
+    const webp = await sharp({ create: { width: 1200, height: 900, channels: 3, background: COR_FOTO } }).webp({ quality: 90 }).toBuffer();
+    const { error: eFoto } = await adm().storage.from("parceiros").upload(`${ids.parc}/avatar-t239.webp`, webp, { contentType: "image/webp", upsert: true });
+    if (eFoto) throw eFoto;
     ids.parceiroRasc = await novoParceiro(ids.rasc, { slug: `t239-rui-${sufixo}`, nome: `Rui Rascunho T239 ${sufixo}`, status: "rascunho" });
   });
 
@@ -111,6 +129,7 @@ test.describe("T239 — cartão do parceiro (partnercard)", () => {
     // Pedidos antes (parceiro_pedidos → parceiros/contas é "restrict"); cartões e eventos saem em cascata/nulo.
     for (const id of [ids.parceiro, ids.parceiroRasc]) if (id) await adm().from("parceiro_pedidos").delete().eq("parceiro_id", id);
     for (const id of [ids.parceiro, ids.parceiroRasc]) if (id) await adm().from("parceiros").delete().eq("id", id);
+    if (ids.parc) await adm().storage.from("parceiros").remove([`${ids.parc}/avatar-t239.webp`]);
     await apagarContas([ids.parc, ids.rasc, ids.cli]);
   });
 
@@ -133,6 +152,13 @@ test.describe("T239 — cartão do parceiro (partnercard)", () => {
       await expect.poll(() => page.getByTestId("cartao-previa").evaluate((i: HTMLImageElement) => i.naturalHeight), { timeout: 20_000 }).toBe(1350);
       await expect.poll(() => page.getByTestId("cartao-previa-quadrado").evaluate((i: HTMLImageElement) => i.naturalHeight), { timeout: 20_000 }).toBe(1080);
       await expect(page.getByTestId("cartao-baixar")).toBeVisible();
+      if (largura === 1280) {
+        // "Baixar imagem" entrega um PNG válido, 1080×1350, com a foto WebP do parceiro desenhada.
+        const [baixado] = await Promise.all([page.waitForEvent("download"), page.getByTestId("cartao-baixar").click()]);
+        const png = readFileSync((await baixado.path())!);
+        expect(dimensoesPng(png)).toEqual({ w: 1080, h: 1350 });
+        await comFotoDoParceiro(png);
+      }
       await expect(page.getByTestId("cartao-compartilhar-sistema")).toHaveText(/Compartilhar/);
       await expect(page.getByTestId("cartao-compartilhar-whatsapp")).toHaveCount(0);
       // Texto do parceiro sem contato nem vocabulário proibido.
