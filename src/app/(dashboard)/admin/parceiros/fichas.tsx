@@ -275,7 +275,11 @@ export function LinhaAprovada({ f }: { f: Ficha }) {
   );
 }
 
-export function LinhaAtiva({ p }: { p: { id: string; slug: string; nome: string; categorias: string[]; cidades: string[]; status: string; teste: boolean; identidade: string | null } }) {
+export function LinhaAtiva({
+  p,
+}: {
+  p: { id: string; slug: string; nome: string; categorias: string[]; cidades: string[]; status: string; teste: boolean; identidade: string | null; cartao: { gerados: number; pedidos: number } };
+}) {
   const { rodar, pendente, aviso } = useAcao();
   const [motivo, setMotivo] = useState("");
   return (
@@ -291,6 +295,11 @@ export function LinhaAtiva({ p }: { p: { id: string; slug: string; nome: string;
             {p.teste && " · fora da busca pública (conta de teste)"}
           </p>
           {p.identidade && <p className="text-xs text-muted">Identidade: {p.identidade}</p>}
+          <p className="text-xs text-muted" data-testid="linha-ativa-cartao">
+            Cartões gerados: <strong data-testid="linha-cartoes-gerados">{p.cartao.gerados}</strong> · Pedidos vindos de cartão:{" "}
+            <strong data-testid="linha-pedidos-cartao">{p.cartao.pedidos}</strong>
+            {p.teste && " (conta de teste: fora dos totais)"}
+          </p>
         </div>
         {p.status !== "suspenso" && (
           <div className="flex flex-wrap items-center gap-2">

@@ -1,16 +1,23 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { SITE_URL } from "@/lib/site";
+import { urlMidiaParceiro } from "@/lib/data/parceiros-publico";
 import {
+  camposCartaoParceiro,
   chaveDosCartoes,
   codigoValido,
   gerarCodigo,
   gerarCurto,
+  legendaParceiro,
   legendaWhatsapp,
+  lerCookieRefParceiro,
   urlDoCartao,
+  urlDoCartaoParceiro,
+  type CamposCartaoParceiro,
   type MeioCartao,
   type MetricaCartao,
   type TipoCartao,
+  type TipoCartaoImovel,
 } from "@/lib/cartoes/compartilhar";
 
 /**
@@ -58,15 +65,17 @@ export async function codigoAtivo(admin: SupabaseClient, codigo: string): Promis
 export async function registrarMetrica(
   admin: SupabaseClient,
   tipo: MetricaCartao,
-  o: { cartaoTipo: TipoCartao; imovelId?: string | null; usuarioId?: string | null; meio?: string },
+  o: { cartaoTipo: TipoCartao; imovelId?: string | null; parceiroId?: string | null; usuarioId?: string | null; meio?: string },
 ): Promise<void> {
   try {
     await admin.from("eventos").insert({
       tipo,
       cartao_tipo: o.cartaoTipo,
       imovel_id: o.imovelId ?? null,
+      // Cartão do parceiro (0192): de qual parceiro é a métrica; o QR dele usa utm_source=cartao.
+      ...(o.parceiroId ? { parceiro_id: o.parceiroId } : {}),
       usuario_id: o.usuarioId ?? null,
-      origem_source: "share_card",
+      origem_source: o.cartaoTipo === "partnercard" ? "cartao" : "share_card",
       origem_medium: o.meio ?? null,
       origem_campaign: o.cartaoTipo,
       plataforma: "web",
@@ -80,16 +89,19 @@ export interface CartaoLinha {
   id: string;
   tipo: TipoCartao;
   usuario_id: string;
-  property_id: string;
+  /** Cartões de imóvel (poststay/ownercard); nulo no cartão do parceiro. */
+  property_id: string | null;
   contrato_id: string | null;
+  /** Só no cartão do parceiro (partnercard). */
+  parceiro_id: string | null;
   curto: string;
   mostrar_nome: boolean;
 }
 
-const COLUNAS_CARTAO = "id, tipo, usuario_id, property_id, contrato_id, curto, mostrar_nome";
+const COLUNAS_CARTAO = "id, tipo, usuario_id, property_id, contrato_id, parceiro_id, curto, mostrar_nome";
 
 /** Cartão do alvo (cria na 1ª vez e conta cards_generated uma vez só). */
-export async function garantirCartao(admin: SupabaseClient, o: { tipo: TipoCartao; usuarioId: string; propertyId: string; contratoId?: string | null }): Promise<CartaoLinha | null> {
+export async function garantirCartao(admin: SupabaseClient, o: { tipo: TipoCartaoImovel; usuarioId: string; propertyId: string; contratoId?: string | null }): Promise<CartaoLinha | null> {
   const achar = async () => {
     let q = admin.from("cartoes_compartilhaveis").select(COLUNAS_CARTAO).eq("tipo", o.tipo).eq("usuario_id", o.usuarioId).eq("property_id", o.propertyId);
     q = o.contratoId ? q.eq("contrato_id", o.contratoId) : q.is("contrato_id", null);
@@ -114,19 +126,49 @@ export async function garantirCartao(admin: SupabaseClient, o: { tipo: TipoCarta
   return null;
 }
 
+/** Cartão do parceiro (um por parceiro; cria na 1ª vez e conta cards_generated uma vez só). */
+export async function garantirCartaoParceiro(admin: SupabaseClient, o: { usuarioId: string; parceiroId: string }): Promise<CartaoLinha | null> {
+  const achar = async () =>
+    ((
+      await admin.from("cartoes_compartilhaveis").select(COLUNAS_CARTAO).eq("tipo", "partnercard").eq("usuario_id", o.usuarioId).eq("parceiro_id", o.parceiroId).maybeSingle()
+    ).data as CartaoLinha | null) ?? null;
+  const existente = await achar();
+  if (existente) return existente;
+  await codigoDaConta(admin, o.usuarioId);
+  for (let i = 0; i < 5; i++) {
+    const { data, error } = await admin
+      .from("cartoes_compartilhaveis")
+      .insert({ tipo: "partnercard", usuario_id: o.usuarioId, parceiro_id: o.parceiroId, property_id: null, contrato_id: null, curto: gerarCurto() })
+      .select(COLUNAS_CARTAO)
+      .single();
+    if (!error && data) {
+      await registrarMetrica(admin, "cards_generated", { cartaoTipo: "partnercard", parceiroId: o.parceiroId, usuarioId: o.usuarioId });
+      return data as CartaoLinha;
+    }
+    const outro = await achar();
+    if (outro) return outro;
+  }
+  return null;
+}
+
 export async function cartaoPeloCurto(admin: SupabaseClient, curto: string): Promise<CartaoLinha | null> {
   const { data } = await admin.from("cartoes_compartilhaveis").select(COLUNAS_CARTAO).eq("curto", curto).maybeSingle();
   return (data as CartaoLinha | null) ?? null;
 }
 
 /** URL assinada (QR ou link) com o código ATIVO da conta: trocar o código troca o QR de todos os cartões. */
-export async function urlAssinada(admin: SupabaseClient, c: Pick<CartaoLinha, "usuario_id" | "property_id" | "tipo">, meio: MeioCartao): Promise<string> {
+export async function urlAssinada(admin: SupabaseClient, c: Pick<CartaoLinha, "usuario_id" | "property_id" | "tipo"> & { parceiro_id?: string | null }, meio: MeioCartao): Promise<string> {
   const ref = await codigoDaConta(admin, c.usuario_id);
-  return urlDoCartao({ base: SITE_URL, producao: emProducao(), chave: chaveServidor(), ref, listingId: c.property_id, tipo: c.tipo, meio });
+  if (c.tipo === "partnercard") {
+    const { data } = await admin.from("parceiros").select("slug").eq("id", c.parceiro_id ?? "").maybeSingle();
+    if (!data?.slug || !c.parceiro_id) throw new Error("Parceiro do cartão não encontrado.");
+    return urlDoCartaoParceiro({ base: SITE_URL, producao: emProducao(), chave: chaveServidor(), ref, parceiroId: c.parceiro_id, slug: data.slug as string, meio });
+  }
+  return urlDoCartao({ base: SITE_URL, producao: emProducao(), chave: chaveServidor(), ref, listingId: c.property_id ?? "", tipo: c.tipo, meio });
 }
 
 export interface DadosDoCartao {
-  tipo: TipoCartao;
+  tipo: TipoCartaoImovel;
   titulo: string;
   bairro: string;
   cidade: string;
@@ -140,6 +182,7 @@ export interface DadosDoCartao {
 
 /** Só os campos aprovados do cartão (nada de endereço exato, contato ou dado do contrato além do mês/ano). */
 export async function dadosDoCartao(admin: SupabaseClient, c: CartaoLinha): Promise<DadosDoCartao | null> {
+  if (c.tipo === "partnercard" || !c.property_id) return null; // o cartão do parceiro usa dadosDoCartaoParceiro
   const [{ data: p }, { data: foto }, bloco, perfil] = await Promise.all([
     admin.from("properties").select("title, address, city, monthly_price, min_period_days").eq("id", c.property_id).maybeSingle(),
     admin.from("property_photos").select("url").eq("property_id", c.property_id).order("sort_order", { ascending: true }).limit(1).maybeSingle(),
@@ -150,7 +193,7 @@ export async function dadosDoCartao(admin: SupabaseClient, c: CartaoLinha): Prom
   ]);
   if (!p) return null;
   return {
-    tipo: c.tipo,
+    tipo: c.tipo as TipoCartaoImovel,
     titulo: String(p.title ?? "Imóvel mobiliado"),
     bairro: String(p.address ?? ""),
     cidade: String(p.city ?? ""),
@@ -163,10 +206,43 @@ export async function dadosDoCartao(admin: SupabaseClient, c: CartaoLinha): Prom
   };
 }
 
+/**
+ * Cartão do parceiro: SÓ a página pública (a view parceiros_publicos, que já não tem documento, telefone, CEP,
+ * recebimento nem contato) e só publicada. Os campos desenhados saem de camposCartaoParceiro.
+ */
+export async function dadosDoCartaoParceiro(admin: SupabaseClient, c: CartaoLinha): Promise<{ campos: CamposCartaoParceiro; slug: string; teste: boolean } | null> {
+  if (c.tipo !== "partnercard" || !c.parceiro_id) return null;
+  const { data: p } = await admin
+    .from("parceiros_publicos")
+    .select("id, slug, nome_publico, categorias, cidades, avatar_path, banner_path, nota_media, avaliacoes_qtd, teste")
+    .eq("id", c.parceiro_id)
+    .maybeSingle();
+  if (!p) return null;
+  const campos = camposCartaoParceiro(
+    {
+      nomePublico: String(p.nome_publico ?? ""),
+      categorias: (p.categorias as string[] | null) ?? [],
+      cidades: (p.cidades as string[] | null) ?? [],
+      notaMedia: p.nota_media == null ? null : Number(p.nota_media),
+      avaliacoesQtd: Number(p.avaliacoes_qtd ?? 0),
+      fotoUrl: urlMidiaParceiro((p.avatar_path as string | null) ?? (p.banner_path as string | null)),
+    },
+    c.mostrar_nome,
+  );
+  return { campos, slug: String(p.slug), teste: p.teste === true };
+}
+
 /** Tudo o que a tela de compartilhar precisa: imagens, link curto e a legenda do WhatsApp. */
 export async function pacoteDeCompartilhar(admin: SupabaseClient, c: CartaoLinha) {
-  const d = await dadosDoCartao(admin, c);
   const link = `${SITE_URL}/c/${c.curto}`;
+  let legenda: string;
+  if (c.tipo === "partnercard") {
+    const dp = await dadosDoCartaoParceiro(admin, c);
+    legenda = legendaParceiro({ categoria: dp?.campos.categoria ?? "Serviço", cidade: dp?.campos.cidades.split(" · ")[0] ?? "", link });
+  } else {
+    const d = await dadosDoCartao(admin, c);
+    legenda = legendaWhatsapp({ tipo: c.tipo, cidade: d?.cidade ?? "", bairro: d?.bairro, link });
+  }
   return {
     curto: c.curto,
     tipo: c.tipo,
@@ -174,7 +250,7 @@ export async function pacoteDeCompartilhar(admin: SupabaseClient, c: CartaoLinha
     link,
     imagemRetrato: `/cartoes/${c.curto}/imagem?formato=retrato`,
     imagemQuadrado: `/cartoes/${c.curto}/imagem?formato=quadrado`,
-    legenda: legendaWhatsapp({ tipo: c.tipo, cidade: d?.cidade ?? "", bairro: d?.bairro, link }),
+    legenda,
   };
 }
 export type PacoteDeCompartilhar = Awaited<ReturnType<typeof pacoteDeCompartilhar>>;
@@ -196,6 +272,24 @@ export async function atribuirLead(admin: SupabaseClient, o: { propertyId: strin
     .eq("tenant_id", o.tenantId)
     .is("ref_codigo", null);
   return !error;
+}
+
+/**
+ * Pedido de serviço que veio do cartão do parceiro (para o 31b gravar em parceiro_pedidos.ref_codigo/ref_tipo):
+ * só com o cookie da visita assinada à página DESTE parceiro, código ativo da conta do parceiro e cliente que não
+ * é o próprio parceiro. O gatilho da 0192 conta ref_partner_requests uma vez por pedido.
+ */
+export async function atribuicaoDoPedidoParceiro(
+  admin: SupabaseClient,
+  o: { parceiroId: string; clienteId: string; cookieValor: string | null | undefined },
+): Promise<{ ref_codigo: string; ref_tipo: "partnercard" } | null> {
+  const c = lerCookieRefParceiro(o.cookieValor);
+  if (!c || c.parceiroId !== o.parceiroId) return null;
+  const dono = await codigoAtivo(admin, c.ref);
+  if (!dono || dono.usuarioId === o.clienteId) return null;
+  const { data: p } = await admin.from("parceiros").select("user_id").eq("id", o.parceiroId).maybeSingle();
+  if (!p || p.user_id !== dono.usuarioId) return null;
+  return { ref_codigo: c.ref, ref_tipo: "partnercard" };
 }
 
 /**

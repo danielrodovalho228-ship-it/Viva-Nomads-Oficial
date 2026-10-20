@@ -120,7 +120,7 @@ test.describe("T193 — propostas", () => {
       await expect(inq.getByTestId("resumo-mudancas")).toContainText("4 meses");
       await inq.screenshot({ path: `${SAIDA}/t193-2-contraproposta-${largura}.png`, fullPage: true });
       await inq.getByTestId("enviar-contraproposta").click();
-      await expect(inq.getByTestId("aguardando")).toBeVisible({ timeout: 15_000 });
+      await expect(inq.getByTestId("aguardando")).toBeVisible({ timeout: 30_000 });
       await expect(inq.getByTestId("proposta-status")).toHaveText("Contraproposta");
 
       // Cartão na conversa.

@@ -17,7 +17,7 @@ async function abrir(page: Page, id: string, contador: Locator) {
   }).toPass({ timeout: 20_000 });
 }
 
-for (const largura of [1280, 1920]) {
+for (const largura of [1280, 1920, 2560]) {
   test.describe(`${largura} px`, () => {
     test.use({ viewport: { width: largura, height: 1100 } });
 
@@ -65,7 +65,7 @@ for (const largura of [1280, 1920]) {
 }
 
 test.describe("390 px", () => {
-  test.use({ viewport: { width: 390, height: 844 } });
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
 
   test("tocar na foto atual abre nela; botões e fechar funcionam", async ({ page }) => {
     await page.goto(IMOVEL, { waitUntil: "domcontentloaded" });
@@ -91,5 +91,24 @@ test.describe("390 px", () => {
     await expect(contador).toHaveText(posicao(5));
     await page.getByRole("button", { name: "Fechar" }).click();
     await expect(page.getByTestId("galeria-lightbox")).toHaveCount(0);
+  });
+
+  test("deslizar para os lados troca a foto (ordem d1b76e6b)", async ({ page, context }) => {
+    await page.goto(IMOVEL, { waitUntil: "domcontentloaded" });
+    const contador = page.getByTestId("galeria-contador");
+    await abrir(page, "galeria-tile-0", contador);
+    await expect(contador).toHaveText(posicao(1));
+    // Toque real pelo protocolo do navegador: o lightbox escuta touchstart/touchend (arrasto > 40 px)
+    const cdp = await context.newCDPSession(page);
+    async function deslizar(de: number, ate: number) {
+      const y = 420;
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: de, y }] });
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: ate, y }] });
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    }
+    await deslizar(300, 60);
+    await expect(contador).toHaveText(posicao(2));
+    await deslizar(60, 300);
+    await expect(contador).toHaveText(posicao(1));
   });
 });

@@ -8,8 +8,9 @@ const enviadas = new Set<string>();
 /**
  * Página do imóvel aberta por um cartão (QR ou link): manda ref + UTM + assinatura para o servidor conferir e
  * atribuir (POST /api/cartoes/visita). Sem login. Depois tira os parâmetros da barra de endereço.
+ * Na página do parceiro (cartão do parceiro, 31c) vai `parceiroId` no lugar de `imovelId`.
  */
-export function RefDaVisita({ imovelId }: { imovelId: string }) {
+export function RefDaVisita({ imovelId, parceiroId }: { imovelId?: string; parceiroId?: string }) {
   useEffect(() => {
     const q = new URLSearchParams(window.location.search);
     const sig = q.get("sig");
@@ -25,9 +26,9 @@ export function RefDaVisita({ imovelId }: { imovelId: string }) {
     void fetch("/api/cartoes/visita", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ listingId: imovelId, parametros }),
+      body: JSON.stringify(parceiroId ? { parceiroId, parametros } : { listingId: imovelId, parametros }),
       keepalive: true,
     }).catch(() => null);
-  }, [imovelId]);
+  }, [imovelId, parceiroId]);
   return null;
 }

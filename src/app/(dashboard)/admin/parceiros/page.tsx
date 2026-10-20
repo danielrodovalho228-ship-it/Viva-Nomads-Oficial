@@ -9,6 +9,7 @@ import { buttonClasses } from "@/components/ui/button";
 import { estadosIdentidade } from "@/lib/identidade/estado-servidor";
 import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
 import { lerParceiroGeral, rotuloCategoria } from "@/lib/parceiros/regras";
+import { FORMULAS_CARTAO_PARCEIRO, numerosCartaoParceiro } from "@/lib/cartoes/compartilhar";
 import { FichaSolicitacao, LinhaAprovada, LinhaAtiva, ParceiroGeralForm, SuporteForm, type Ficha } from "./fichas";
 
 export const metadata = { title: "Parceiros — Admin" };
@@ -51,6 +52,20 @@ export default async function AdminParceirosPage({ searchParams }: { searchParam
     admin.from("interesse_fotografo_cidade").select("user_id, uf, chave, cidade, categoria, criado_em").is("avisado_em", null).order("criado_em", { ascending: false }).limit(2000),
   ]);
   const conta = (s: string[]) => (contagem.data ?? []).filter((r) => s.includes(r.status as string)).length;
+
+  // Cartão do parceiro (31c): cartões gerados e pedidos vindos de cartão; contas de teste fora dos totais.
+  const [cartoesP, pedidosP, donosP, testesP] = await Promise.all([
+    admin.from("cartoes_compartilhaveis").select("parceiro_id, usuario_id").eq("tipo", "partnercard").limit(5000),
+    admin.from("parceiro_pedidos").select("parceiro_id, cliente_id").eq("ref_tipo", "partnercard").limit(10000),
+    admin.from("parceiros").select("id, user_id").limit(5000),
+    admin.from("profiles").select("id").eq("is_teste", true).limit(5000),
+  ]);
+  const numCartao = numerosCartaoParceiro({
+    cartoes: (cartoesP.data ?? []) as { parceiro_id: string | null; usuario_id: string }[],
+    pedidos: (pedidosP.data ?? []) as { parceiro_id: string; cliente_id: string }[],
+    donoDoParceiro: new Map(((donosP.data ?? []) as { id: string; user_id: string }[]).map((p) => [p.id, p.user_id])),
+    contasTeste: new Set(((testesP.data ?? []) as { id: string }[]).map((p) => p.id)),
+  });
   const { count: ativos } = await admin.from("parceiros").select("id", { count: "exact", head: true });
 
   const lista = (sols.data ?? []) as Record<string, unknown>[];
@@ -120,6 +135,28 @@ export default async function AdminParceirosPage({ searchParams }: { searchParam
         <StatCard label="Recusadas" value={conta(["recusada"])} icon={XCircle} href="/admin/parceiros?aba=recusadas" />
       </div>
 
+      <Panel title="Cartão do parceiro" className="mb-6">
+        <dl className="grid grid-cols-2 gap-3 text-sm" data-testid="admin-cartao-parceiro">
+          <div className="rounded-lg bg-surface-2 px-3 py-2">
+            <dt className="text-muted">Cartões gerados</dt>
+            <dd className="font-title text-2xl font-bold text-ink" data-testid="admin-cartoes-gerados">
+              {numCartao.total.gerados}
+            </dd>
+          </div>
+          <div className="rounded-lg bg-surface-2 px-3 py-2">
+            <dt className="text-muted">Pedidos vindos de cartão</dt>
+            <dd className="font-title text-2xl font-bold text-ink" data-testid="admin-pedidos-cartao">
+              {numCartao.total.pedidos}
+            </dd>
+          </div>
+        </dl>
+        <ul className="mt-3 space-y-1 text-xs text-muted" data-testid="admin-cartao-formula">
+          <li>{FORMULAS_CARTAO_PARCEIRO.gerados}</li>
+          <li>{FORMULAS_CARTAO_PARCEIRO.pedidos}</li>
+          <li>{FORMULAS_CARTAO_PARCEIRO.teste} Por parceiro (aba Ativas), os números aparecem na linha de cada um.</li>
+        </ul>
+      </Panel>
+
       <nav aria-label="Situação dos pedidos" className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4" data-testid="admin-parceiros-abas">
         {ABAS.map((a) => (
           <Link
@@ -153,6 +190,7 @@ export default async function AdminParceirosPage({ searchParams }: { searchParam
                       status: p.status as string,
                       teste: perfil.get(p.user_id as string)?.is_teste === true,
                       identidade: identidades.get(p.user_id as string)?.texto ?? null,
+                      cartao: numCartao.porParceiro.get(p.id as string) ?? { gerados: 0, pedidos: 0 },
                     }}
                   />
                 ))}
