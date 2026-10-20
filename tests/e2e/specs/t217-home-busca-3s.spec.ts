@@ -37,6 +37,10 @@ for (const largura of [390, 1280]) {
       if ((await destaques.count()) > 0) {
         const total = await destaques.locator(":scope > *").count();
         expect([2, 4]).toContain(total);
+        // 2x2 no celular, 4 numa linha no computador (ordem 9a12d06e, #674)
+        const colunas = await destaques.evaluate((el) => getComputedStyle(el).gridTemplateColumns.split(" ").length);
+        expect(colunas).toBe(largura === 390 ? 2 : 4);
+        expect(total % colunas).toBe(0);
       }
 
       expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(false);
