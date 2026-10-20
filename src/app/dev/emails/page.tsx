@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { emProducaoVercel } from "@/lib/test-guard";
 import { catalogoEmails } from "@/lib/notifications/catalogo-emails";
 import { SITE_URL } from "@/lib/site";
 
@@ -17,6 +19,7 @@ export default async function DevEmailsPage({
 }: {
   searchParams: Promise<{ key?: string }>;
 }) {
+  if (emProducaoVercel()) notFound();
   const { key } = await searchParams;
   const expected = process.env.TEST_ROUTES_KEY;
   const isProd = process.env.NODE_ENV === "production";
