@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { comNovaTentativa } from "@/lib/nova-tentativa";
 import { isExemplo } from "@/lib/demo-listing";
 import { createPublicClient } from "@/lib/supabase/public";
 import type { Property, AmenityGroup } from "@/lib/types";
@@ -323,11 +324,16 @@ export async function listProperties(): Promise<Property[]> {
   if (!supabase) return SAMPLE_PROPERTIES;
 
   try {
-    const { data, error } = await supabase
-      .from("properties")
-      .select(PROPERTY_PUBLIC_COLUMNS)
-      .eq("status", "active")
-      .order("created_at", { ascending: false });
+    // Uma nova tentativa automática com espera curta (ordem aad2b751: erro transitório na home).
+    const { data, error } = await comNovaTentativa(
+      async () =>
+        await supabase
+          .from("properties")
+          .select(PROPERTY_PUBLIC_COLUMNS)
+          .eq("status", "active")
+          .order("created_at", { ascending: false }),
+      (r) => !!r.error || !r.data,
+    );
 
     // Diagnóstico (FASE 0): a chave anon NÃO lança quando a RLS bloqueia — ela
     // devolve data=[] e error=null. Logamos o error para distinguir "0 imóveis"

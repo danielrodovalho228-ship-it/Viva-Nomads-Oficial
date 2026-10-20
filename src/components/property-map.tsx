@@ -6,6 +6,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { formatBRL, cn } from "@/lib/utils";
+import { urlDeNovaTentativaTile } from "@/lib/nova-tentativa";
 import { ATRIBUICAO_MAPA, RAIO_APROXIMADO_KM, TILES_CARTO, avisarMapaSemChave, borrarCoordenada as blur, motorDoMapa } from "@/lib/mapa-base";
 
 const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
@@ -128,7 +129,18 @@ function PropertyMapLeaflet({ markers, center, zoom = 13, approximate = false, c
     );
     // topleft: o canto direito é do botão "Ampliar mapa"
     L.control.zoom({ position: "topleft" }).addTo(map);
-    if (TILES_CARTO) L.tileLayer(TILES_CARTO, { maxZoom: 19, attribution: ATRIBUICAO_MAPA }).addTo(map);
+    if (TILES_CARTO) {
+      const camada = L.tileLayer(TILES_CARTO, { maxZoom: 19, attribution: ATRIBUICAO_MAPA }).addTo(map);
+      // Tile que falhou (rede oscilando) ganha uma nova tentativa, sem laço (ordem aad2b751).
+      camada.on("tileerror", (ev) => {
+        const tile = ev.tile as HTMLImageElement;
+        const tentativas = Number(tile.dataset.tentativas ?? "0");
+        const nova = urlDeNovaTentativaTile(tile.src, tentativas);
+        if (!nova) return;
+        tile.dataset.tentativas = String(tentativas + 1);
+        window.setTimeout(() => { tile.src = nova; }, 600);
+      });
+    }
     else avisarMapaSemChave();
 
     if (approximate) {
