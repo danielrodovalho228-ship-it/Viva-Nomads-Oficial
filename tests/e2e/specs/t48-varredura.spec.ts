@@ -169,8 +169,27 @@ async function conferir(page: Page, rota: string, largura = 390): Promise<string
 async function varrer(page: Page, rotas: string[], largura = 390): Promise<void> {
   for (const rota of rotas) {
     const problemas = await conferir(page, rota, largura);
+    // O sitemap tem cache de 60 s: um anúncio que OUTRO spec do laboratório criou e já apagou ainda consta nele e dá 404
+    // por alguns segundos (lab ccf4483e). Só deixa passar se o sitemap NOVO já não lista a rota; se ainda lista, é defeito.
+    if (problemas.length && ANUNCIO_POR_ID.test(rota.split("?")[0]) && problemas.every((p) => /404/.test(p))) {
+      const direto = await page.request.get(rota, { maxRedirects: 5, timeout: 30_000 }).catch(() => null);
+      if (direto?.status() === 404 && !(await sitemapListaRota(page, rota))) continue;
+    }
     expect.soft(problemas, `${rota} (${largura}px)`).toEqual([]);
   }
+}
+
+const ANUNCIO_POR_ID = /^\/imoveis\/[0-9a-f]{8}-[0-9a-f-]{27}$/;
+
+/** Espera o cache de 60 s do sitemap virar e diz se a rota ainda consta nele. */
+async function sitemapListaRota(page: Page, rota: string): Promise<boolean> {
+  const fim = Date.now() + 75_000;
+  let consta = true;
+  while (consta && Date.now() < fim) {
+    consta = (await lerSitemap(page.request)).map(caminhoDe).includes(rota);
+    if (consta) await page.waitForTimeout(5_000);
+  }
+  return consta;
 }
 
 async function lerSitemap(request: import("@playwright/test").APIRequestContext): Promise<string[]> {
