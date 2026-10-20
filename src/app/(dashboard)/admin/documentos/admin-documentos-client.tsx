@@ -261,7 +261,7 @@ function DocCard({ doc, onDone }: { doc: DocumentoPendente; onDone: () => void }
   }
 
   return (
-    <div data-testid="doc-card" data-imovel={doc.tituloImovel ?? ""}>
+    <div data-testid="doc-card" data-imovel={doc.tituloImovel ?? ""} data-sem-imovel={doc.semImovel ? "1" : undefined} data-dono={doc.ownerNomeCompleto ?? doc.ownerNome}>
     <Panel>
       {/* Cabeçalho: dono + data */}
       <div className="flex items-center gap-3">
@@ -273,11 +273,12 @@ function DocCard({ doc, onDone }: { doc: DocumentoPendente; onDone: () => void }
             {doc.ownerNome}
             <span className="font-normal text-muted">
               {" · "}
-              {doc.tituloImovel ?? "sem imóvel cadastrado ainda"}
+              {/* 35A: enviado no /qualificar antes de existir imóvel — liga ao próximo imóvel criado pelo dono. */}
+              {doc.semImovel ? "Documento sem imóvel ligado" : doc.tituloImovel ?? "sem imóvel cadastrado ainda"}
             </span>
           </p>
           <p className="text-xs text-muted">
-            Enviado {dataBRT(doc.criadoEm)}
+            Enviado {doc.semImovel ? dataHoraBRT(doc.criadoEm) : dataBRT(doc.criadoEm)}
           </p>
         </div>
       </div>
@@ -355,7 +356,7 @@ function DocCard({ doc, onDone }: { doc: DocumentoPendente; onDone: () => void }
             <div className="flex items-start gap-2">
               <Home className="mt-0.5 h-4 w-4 shrink-0 text-sage" />
               <div className="min-w-0">
-                <dt className="text-xs text-muted">Imóvel do cadastro</dt>
+                <dt className="text-xs text-muted">{doc.semImovel ? "Imóvel mais recente do dono" : "Imóvel do cadastro"}</dt>
                 <dd className="font-medium text-ink">
                   {doc.refImovel ?? "— (sem imóvel cadastrado ainda)"}
                 </dd>

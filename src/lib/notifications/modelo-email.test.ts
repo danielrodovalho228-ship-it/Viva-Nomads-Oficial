@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
 import { layoutEmail, rodapeOpcionalHtml, rodapeTexto, blocoDados, RODAPE_OPCIONAL } from "./modelo-email.ts";
+import { REDES_OFICIAIS } from "../../config/redes.ts";
 import { TEMPLATES } from "./eventos-email.ts";
 import { instrucoesSupabase, templatesSupabase } from "./templates-supabase.ts";
 
@@ -20,9 +21,16 @@ test("modelo único: cabeçalho com Entrar, ajuda, site, avisos, fase de testes 
   assert.doesNotMatch(h, PROIBIDAS);
 });
 
-test("rodapé opcional (lojas, redes, endereço): pronto, mas DESLIGADO por padrão", () => {
-  assert.equal(rodapeOpcionalHtml(), "");
-  assert.equal(RODAPE_OPCIONAL.lojas.ativo || RODAPE_OPCIONAL.redes.ativo || RODAPE_OPCIONAL.endereco.ativo, false);
+test("rodapé opcional: lojas e endereço prontos mas DESLIGADOS; redes LIGADAS com REDES_OFICIAIS (35A, item 4)", () => {
+  assert.equal(RODAPE_OPCIONAL.lojas.ativo || RODAPE_OPCIONAL.endereco.ativo, false);
+  assert.equal(RODAPE_OPCIONAL.redes.ativo, true);
+  assert.deepEqual(RODAPE_OPCIONAL.redes.links, [...REDES_OFICIAIS]);
+  const padrao = rodapeOpcionalHtml();
+  for (const r of REDES_OFICIAIS) {
+    assert.ok(padrao.includes(`<a href="${r.url}" rel="noopener"`), r.url);
+    assert.ok(padrao.includes(`>${r.nome}</a>`), r.nome);
+  }
+  assert.ok(layoutEmail("x", { siteUrl: SITE }).includes("https://www.instagram.com/vivanomads/"));
   assert.doesNotMatch(layoutEmail("x", { siteUrl: SITE }), /App Store|Google Play/);
   const ligado = rodapeOpcionalHtml({
     lojas: { ativo: true, ios: "https://apps.apple.com/x", android: "https://play.google.com/x" },

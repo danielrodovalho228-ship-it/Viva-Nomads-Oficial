@@ -78,7 +78,11 @@ test.describe("T37 — /precos (visitante)", () => {
       else expect(texto).toContain(limpo(formatBRL(comissaoSobreContrato(3000, 3, f.taxa))));
     }
     // O Plano Gestor é um botão que abre a janela de contato (t185); não há mais bloco fixo na página.
-    await page.getByTestId("plano-gestor-botao").click();
+    // O clique antes da hidratação não abre a janela: repete o toque até o formulário aparecer.
+    await expect(async () => {
+      await page.getByTestId("plano-gestor-botao").click();
+      await expect(page.getByTestId("plano-gestor-form")).toBeVisible({ timeout: 3_000 });
+    }).toPass({ timeout: 30_000 });
     await expect(page.getByTestId("plano-gestor-form")).toContainText("31 imóveis ou mais");
     await page.keyboard.press("Escape");
     const corpo = limpo(await page.locator("body").innerText());

@@ -48,3 +48,10 @@ test("t61 não usa getByRole('alert') puro: o anunciador de rota do Next também
   assert.doesNotMatch(s, /getByRole\("alert"\)/);
   assert.match(s, /locator\('p\[role="alert"\]'\)/);
 });
+
+test("t140 cobre 2560 px no elementFromPoint e o deslizar do lightbox a 390 px (ordem d1b76e6b, retorno 6814143d)", () => {
+  const s = spec("t140-galeria-lightbox.spec.ts");
+  assert.match(s, /\[1280, 1920, 2560\]/);
+  assert.match(s, /Input\.dispatchTouchEvent/);
+  assert.match(s, /hasTouch: true/);
+});

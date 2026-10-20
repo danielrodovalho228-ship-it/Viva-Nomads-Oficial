@@ -32,6 +32,8 @@ export interface DocumentoPendente {
   ownerNomeCompleto: string | null; // nome completo p/ conferir contra o documento
   refImovel: string | null; // endereço/imóvel do cadastro p/ comparação lado a lado
   tituloImovel: string | null; // título do anúncio, ao lado do nome do dono
+  /** Documento enviado no /qualificar antes de existir imóvel (fica à espera do próximo imóvel criado — 35A). */
+  semImovel: boolean;
   criadoEm: string | null;
   docUrl: string | null; // URL assinada curta para o admin abrir (nunca pública)
   docTipo: VisualizacaoDoc; // como exibir inline (imagem | pdf | outro)
@@ -206,6 +208,7 @@ export async function listDocumentosPendentes(): Promise<DocumentoPendente[]> {
       ownerNomeCompleto: nomeCompleto || null,
       refImovel,
       tituloImovel: (prop?.title as string | undefined) || null,
+      semImovel: !r.property_id,
       criadoEm: (r.created_at as string) ?? null,
       docUrl,
       docTipo: tipoVisualizacaoDoc(r.document_path as string | null),
