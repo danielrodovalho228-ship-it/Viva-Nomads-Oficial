@@ -58,8 +58,10 @@ const variants: Record<Variant, string> = {
   night: "bg-night text-white hover:bg-night/85",
   // Pill: a forma e o tamanho são da própria variante (o `size` não vale).
   busca: "h-12 rounded-full border border-line bg-white px-4 text-sm font-normal text-ink hover:border-ink",
+  // Sem transição de cor: ligado/desligado troca na hora (com a transição de 150 ms da base, o fundo
+  // passava por cinzas claros e a leitura logo após o toque dava rgb(248, 248, 248) em vez da tinta).
   chip:
-    "h-10 rounded-full border border-line bg-white px-4 text-sm font-normal text-ink hover:border-ink aria-pressed:border-ink aria-pressed:bg-ink aria-pressed:text-white",
+    "h-10 rounded-full border border-line bg-white px-4 text-sm font-normal text-ink transition-none hover:border-ink aria-pressed:border-ink aria-pressed:bg-ink aria-pressed:text-white",
   flutuante: "h-12 rounded-full bg-ink px-6 text-sm text-white shadow-flutuante hover:bg-night",
 };
 

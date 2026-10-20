@@ -1,14 +1,33 @@
 import { test, expect } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
+import { account } from "../fixtures/accounts";
+import { NO_LABORATORIO, adm } from "../fixtures/laboratorio";
 import { gerarCodigoTotp } from "../fixtures/totp";
 import type { Page } from "@playwright/test";
+
+/**
+ * Laboratório: apaga pela API de admin qualquer fator TOTP que uma rodada anterior deixou na conta de teste
+ * (lab de 20/10: o "cenário obrigatório" a 360 px ativou o fator e a limpeza dele saiu cedo, então o teste
+ * de 390 px abriu a tela já "Ativada" e não achou "Ativar duas etapas"). Fora do laboratório não faz nada.
+ */
+async function zerarFatoresNoLab(papel: "proprietario") {
+  if (!NO_LABORATORIO) return;
+  const email = account(papel).email.toLowerCase();
+  const { data } = await adm().auth.admin.listUsers({ perPage: 1000 });
+  const usuario = data?.users.find((u) => u.email?.toLowerCase() === email);
+  if (!usuario) return;
+  const { data: fatores } = await adm().auth.admin.mfa.listFactors({ userId: usuario.id });
+  for (const f of fatores?.factors ?? []) await adm().auth.admin.mfa.deleteFactor({ id: f.id, userId: usuario.id });
+}
 
 /** Remove o fator TOTP da conta de teste se ele estiver ativo (código de outra janela de 30 s). Nunca lança. */
 async function removerFator(page: Page, segredo: string) {
   try {
     await page.goto("/dashboard/conta/seguranca");
     const remover = page.getByRole("button", { name: "Remover verificação" });
-    if (!(await remover.isVisible({ timeout: 5000 }).catch(() => false))) return;
+    // isVisible() não espera (o timeout é ignorado): logo após o goto o estado do fator ainda não carregou e a
+    // limpeza saía sem remover nada. Espera de verdade o botão aparecer.
+    if (!(await remover.waitFor({ state: "visible", timeout: 10_000 }).then(() => true).catch(() => false))) return;
     const contador = Math.floor(Date.now() / 30000);
     await remover.click();
     await page.getByRole("button", { name: "Continuar", exact: true }).click();
@@ -36,6 +55,9 @@ async function abrirAtivacao(page: Page) {
  */
 // Série: 360 e 390 px usam a MESMA conta proprietário; em paralelo cadastrariam/verificariam fatores ao mesmo tempo.
 test.describe.configure({ mode: "serial" });
+test.beforeEach(async () => {
+  await zerarFatoresNoLab("proprietario");
+});
 
 for (const largura of [360, 390]) {
   test.describe(`T58 — 2FA chave em texto (${largura}px)`, () => {
