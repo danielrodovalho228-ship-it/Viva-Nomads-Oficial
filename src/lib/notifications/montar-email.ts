@@ -126,6 +126,23 @@ export function emailExclusaoConta(siteUrl: string, o: { url: string }): EmailMo
   };
 }
 
+/** Parceria aprovada (Prompt 31a): o link de ativação (com token) só no botão; o texto puro nunca leva o link. */
+export function emailParceriaAprovada(siteUrl: string, o: { url: string; nome?: string | null }): EmailMontado {
+  const img = imagemDoEvento("parceria_aprovada");
+  const titulo = ASSUNTOS.parceriaAprovada;
+  const nome = textoEmail(String(o.nome ?? "").split(" ")[0] ?? "", 40);
+  const intro = `Olá${nome ? " " + nome : ""}, a sua parceria com a Viva Nomads foi aprovada. Ative a sua página no botão abaixo: entre com a conta deste e-mail e complete o cadastro (foto, descrição, serviços e cidades). O link vale por 7 dias e só pode ser usado uma vez.`;
+  return {
+    evento: "parceria_aprovada",
+    assunto: comMarca(titulo),
+    titulo,
+    html: corpoNotificacao(siteUrl, { title: titulo, intro, cta: { label: "Ativar minha página", url: o.url }, image: imagemEmail(siteUrl, img.arquivo, img.alt) }),
+    text: textoNotificacao(siteUrl, { title: titulo, intro: `${intro.replace(/ no botão abaixo/, "")} Use o botão "Ativar minha página" na versão completa deste e-mail.` }),
+    imagem: `${img.arquivo}.jpg`,
+    botao: "Ativar minha página",
+  };
+}
+
 export type TipoDocumentoFiscal = "recibo_aluguel" | "comprovante_caucao" | "termo_devolucao_caucao";
 
 const ASSUNTO_FISCAL: Record<TipoDocumentoFiscal, string> = {

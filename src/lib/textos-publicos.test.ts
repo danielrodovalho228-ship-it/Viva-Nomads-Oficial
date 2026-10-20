@@ -40,7 +40,7 @@ test("#69: aviso de testes único, no layout público, sem cópias nas páginas"
 test("#70: /parceiros/fotografos tem 'pedir é grátis' e botão para /parceiros", () => {
   const t = ler("src/app/(public)/parceiros/fotografos/page.tsx");
   assert.match(t, /Pedir é grátis: a Viva não cobra nada de você pelo pedido\./);
-  assert.match(t, /href="\/parceiros"[^>]*>É fotógrafo\? Seja parceiro</);
+  assert.match(t, /href="\/parceiros(\?[^"]*)?"[^>]*>É fotógrafo\? Seja parceiro</);
 });
 
 test("#71: título de /parceiros sem marca repetida (≤ 60 com o sufixo) e frase do Plano Gestor", () => {

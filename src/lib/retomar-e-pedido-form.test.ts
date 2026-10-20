@@ -9,7 +9,6 @@ import { test } from "node:test";
 import { readFileSync } from "node:fs";
 
 const visao = readFileSync(new URL("../app/(dashboard)/dashboard/visao-geral-client.tsx", import.meta.url), "utf8");
-const form = readFileSync(new URL("../app/(public)/parceiros/fotografos/pedido-form.tsx", import.meta.url), "utf8");
 
 test("Visão geral: rascunho em andamento tem o link 'Continuar de onde parou' sem etapa forçada", () => {
   assert.match(visao, /data-testid="retomar-rascunho"/);
@@ -17,8 +16,4 @@ test("Visão geral: rascunho em andamento tem o link 'Continuar de onde parou' s
   assert.match(visao, /Continuar de onde parou/);
 });
 
-test("Pedido ao fotógrafo: data e observação não se perdem quando o envio volta com erro", () => {
-  assert.match(form, /useState/);
-  assert.match(form, /name="data"[^>]*value=\{dataSugerida\}/);
-  assert.match(form, /name="observacao"[^>]*value=\{observacao\}/);
-});
+// Prompt 31a: o formulário antigo de pedido ao fotógrafo saiu (a contratação pela plataforma vem no 31b).

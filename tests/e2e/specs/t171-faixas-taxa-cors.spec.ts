@@ -26,7 +26,7 @@ for (const rota of ["/parceiros", "/parceiros/fotografos"]) {
       await expect(taxa).toBeVisible();
       await expect(taxa).toContainText("10% sobre o valor do serviço");
       await expect(taxa).toContainText("todas as categorias");
-      await expect(taxa).toContainText("A Viva não guarda o dinheiro");
+      await expect(taxa).toContainText("A Viva não guarda o seu dinheiro");
       await expect(page.getByTestId("faixas-taxa-parceria")).toHaveCount(0);
       const estoura = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
       expect(estoura).toBe(false);

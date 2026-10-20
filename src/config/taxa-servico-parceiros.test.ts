@@ -23,17 +23,14 @@ test("texto único: 10% para todas as categorias, 90/10 na origem, a Viva não g
   assert.ok(TAXA_PARCERIA_TEXTO.startsWith(TEXTO_TAXA_SERVICO_PARCEIROS), "a Central de Ajuda e a Viva usam o mesmo texto");
 });
 
-test("as duas superfícies (admin e páginas públicas) usam o texto único, com a chave de pagamento", () => {
-  for (const p of [
-    "src/app/(dashboard)/admin/fotografos/page.tsx",
-    "src/app/(public)/parceiros/page.tsx",
-    "src/app/(public)/parceiros/fotografos/page.tsx",
-  ]) {
-    assert.match(ler(p), /textoTaxaServicoParceiros\(PAGAMENTO_PARCEIROS_ATIVO\)/, p);
+test("admin usa o texto único; as páginas públicas usam as regras claras (Prompt 31a), sempre com a chave de pagamento", () => {
+  assert.match(ler("src/app/(dashboard)/admin/fotografos/page.tsx"), /textoTaxaServicoParceiros\(PAGAMENTO_PARCEIROS_ATIVO\)/);
+  for (const p of ["src/app/(public)/parceiros/page.tsx", "src/app/(public)/parceiros/fotografos/page.tsx"]) {
+    assert.match(ler(p), /<RegrasParceiros pagamentoAtivo=\{PAGAMENTO_PARCEIROS_ATIVO\}/, p);
   }
   assert.equal(existsSync("src/config/taxa-parceria.ts"), false);
   assert.equal(existsSync("src/components/parceiros/faixas-taxa.tsx"), false);
-  const admin = ler("src/app/(dashboard)/admin/fotografos/page.tsx") + ler("src/app/(dashboard)/admin/fotografos/forms.tsx");
+  const admin = ler("src/app/(dashboard)/admin/fotografos/page.tsx");
   assert.doesNotMatch(admin, /taxa_valor|TaxaForm|salvarTaxaParceria|config_parceria/);
 });
 

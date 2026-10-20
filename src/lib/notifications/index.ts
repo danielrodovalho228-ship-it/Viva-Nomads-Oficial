@@ -19,7 +19,7 @@ function comLimite<T>(p: Promise<T>, ms = 6000): Promise<T | null> {
 }
 
 /** Eventos que só vão para a equipe: remetente de sistema e assunto sem a marca. */
-const EVENTOS_INTERNOS = new Set<NotificationEvent>(["chamado_equipe", "documento_recebido"]);
+const EVENTOS_INTERNOS = new Set<NotificationEvent>(["chamado_equipe", "documento_recebido", "parceria_equipe"]);
 
 /** E-mails de documento, verificação e segurança: sem List-Unsubscribe (a pessoa precisa receber). */
 const SEM_GERENCIAR_AVISOS = new Set<NotificationEvent>(["documento_aprovado", "documento_recusado", "checklist_aprovado", "checklist_recusado", "verification_ready"]);

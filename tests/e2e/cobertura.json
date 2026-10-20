@@ -182,7 +182,8 @@
       ],
       "specs": [
         "t183-telas-logadas-390",
-        "t201-qa-muse"
+        "t201-qa-muse",
+        "t236-parceiros-ciclo"
       ]
     },
     "/admin/pedidos": {
@@ -1069,7 +1070,8 @@
         "t69-botoes-header",
         "t72-paginas-institucionais",
         "t171-faixas-taxa-cors",
-        "t231-admin-numeros-com-lista"
+        "t231-admin-numeros-com-lista",
+        "t236-parceiros-ciclo"
       ]
     },
     "/parceiros/fotografos": {
@@ -1079,7 +1081,8 @@
       "specs": [
         "t171-faixas-taxa-cors",
         "t201-qa-muse",
-        "t231-admin-numeros-com-lista"
+        "t231-admin-numeros-com-lista",
+        "t236-parceiros-ciclo"
       ]
     },
     "/pedidos": {
@@ -1306,6 +1309,39 @@
       ],
       "specs": [
         "t235-cartoes-compartilhaveis"
+      ]
+    },
+    "/dashboard/parceiro": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t236-parceiros-ciclo"
+      ]
+    },
+    "/parceiros/[slug]": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t236-parceiros-ciclo"
+      ]
+    },
+    "/parceiros/ativar": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t236-parceiros-ciclo"
+      ]
+    },
+    "/parceiros/buscar": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t236-parceiros-ciclo"
       ]
     }
   },
@@ -1573,12 +1609,6 @@
       "specs": [
         "t7-fluxo-publico"
       ]
-    },
-    "/api/parceiros-interesse": {
-      "personas": [
-        "publico"
-      ],
-      "specs": []
     },
     "/api/places/autocomplete": {
       "personas": [
@@ -3257,27 +3287,6 @@
         "t168-visita-video"
       ]
     },
-    "src/lib/fotografos/actions.ts#alternarAprovacaoFotografo": {
-      "personas": [
-        "proprietario",
-        "parceiro"
-      ],
-      "specs": []
-    },
-    "src/lib/fotografos/actions.ts#cadastrarFotografo": {
-      "personas": [
-        "proprietario",
-        "parceiro"
-      ],
-      "specs": []
-    },
-    "src/lib/fotografos/actions.ts#criarPedidoFotografo": {
-      "personas": [
-        "proprietario",
-        "parceiro"
-      ],
-      "specs": []
-    },
     "src/lib/marcas/actions.ts#listarMarcas": {
       "personas": [
         "inquilino"
@@ -3651,6 +3660,237 @@
       ],
       "specs": [
         "t235-cartoes-compartilhaveis"
+      ]
+    },
+    "src/lib/parceiros/admin-actions.ts#aprovarSolicitacao": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t236-parceiros-ciclo"
+      ]
+    },
+    "src/lib/parceiros/admin-actions.ts#criarSolicitacaoSuporte": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t236-parceiros-ciclo"
+      ]
+    },
+    "src/lib/parceiros/admin-actions.ts#definirParceiroGeral": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t236-parceiros-ciclo"
+      ]
+    },
+    "src/lib/parceiros/admin-actions.ts#recusarSolicitacao": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t236-parceiros-ciclo"
+      ]
+    },
+    "src/lib/parceiros/admin-actions.ts#reenviarAtivacao": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t236-parceiros-ciclo"
+      ]
+    },
+    "src/lib/parceiros/admin-actions.ts#salvarChecklistParceria": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t236-parceiros-ciclo"
+      ]
+    },
+    "src/lib/parceiros/admin-actions.ts#suspenderParceiro": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t236-parceiros-ciclo"
+      ]
+    },
+    "src/lib/parceiros/ativacao-actions.ts#ativarParceria": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t236-parceiros-ciclo"
+      ]
+    },
+    "src/lib/parceiros/ativacao-actions.ts#estadoAtivacao": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t236-parceiros-ciclo"
+      ]
+    },
+    "src/lib/parceiros/painel-actions.ts#adicionarAgenda": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t236-parceiros-ciclo"
+      ]
+    },
+    "src/lib/parceiros/painel-actions.ts#enviarImagemParceiro": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t236-parceiros-ciclo"
+      ]
+    },
+    "src/lib/parceiros/painel-actions.ts#legendarFotoGaleria": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t236-parceiros-ciclo"
+      ]
+    },
+    "src/lib/parceiros/painel-actions.ts#meuPainelParceiro": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t236-parceiros-ciclo"
+      ]
+    },
+    "src/lib/parceiros/painel-actions.ts#moverFotoGaleria": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t236-parceiros-ciclo"
+      ]
+    },
+    "src/lib/parceiros/painel-actions.ts#pausarPagina": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t236-parceiros-ciclo"
+      ]
+    },
+    "src/lib/parceiros/painel-actions.ts#publicarPagina": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t236-parceiros-ciclo"
+      ]
+    },
+    "src/lib/parceiros/painel-actions.ts#removerAgenda": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t236-parceiros-ciclo"
+      ]
+    },
+    "src/lib/parceiros/painel-actions.ts#removerFotoGaleria": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t236-parceiros-ciclo"
+      ]
+    },
+    "src/lib/parceiros/painel-actions.ts#removerServico": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t236-parceiros-ciclo"
+      ]
+    },
+    "src/lib/parceiros/painel-actions.ts#salvarAtendimento": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t236-parceiros-ciclo"
+      ]
+    },
+    "src/lib/parceiros/painel-actions.ts#salvarPagina": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t236-parceiros-ciclo"
+      ]
+    },
+    "src/lib/parceiros/painel-actions.ts#salvarRecebimento": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t236-parceiros-ciclo"
+      ]
+    },
+    "src/lib/parceiros/painel-actions.ts#salvarServico": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t236-parceiros-ciclo"
+      ]
+    },
+    "src/lib/parceiros/painel-actions.ts#temPapelParceiro": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t236-parceiros-ciclo"
+      ]
+    },
+    "src/lib/parceiros/solicitacao-actions.ts#enviarSolicitacao": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t236-parceiros-ciclo"
+      ]
+    },
+    "src/lib/parceiros/solicitacao-actions.ts#minhaParceria": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t236-parceiros-ciclo"
+      ]
+    },
+    "src/lib/parceiros/solicitacao-actions.ts#pedirNovoLink": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t236-parceiros-ciclo"
       ]
     }
   }
