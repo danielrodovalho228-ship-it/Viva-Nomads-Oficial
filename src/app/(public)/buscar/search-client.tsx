@@ -723,14 +723,14 @@ export function SearchClient({ properties: imoveis, topo }: { properties: Proper
             }}
           />
           {geoCenter && (
-            <div className="inline-flex items-center gap-2 rounded-full border border-line bg-surface-2 py-1 pl-3 pr-2 text-sm text-ink">
+            <div className="inline-flex items-center gap-2 rounded-lg border border-line bg-surface-2 py-1 pl-3 pr-2 text-sm text-ink">
               <MapPin className="h-3.5 w-3.5 shrink-0 text-ink" />
               <span className="text-muted">Raio</span>
               <select
                 value={String(radiusKm)}
                 onChange={(e) => setRadiusKm(Number(e.target.value))}
                 aria-label="Raio de busca"
-                className="rounded-full bg-transparent py-1 pl-1 font-medium text-ink outline-none"
+                className="rounded-lg bg-transparent py-1 pl-1 font-medium text-ink outline-none"
               >
                 {[5, 10, 20].map((km) => (
                   <option key={km} value={km}>
@@ -752,7 +752,7 @@ export function SearchClient({ properties: imoveis, topo }: { properties: Proper
               </button>
             </div>
           )}
-          <label className="inline-flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-line bg-white px-4 text-sm text-ink lg:px-3 xl:px-4">
+          <label className="inline-flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-lg border border-line bg-white px-4 text-sm text-ink lg:px-3 xl:px-4">
             <span className="text-muted lg:hidden xl:inline">
               Entrada<span className="lg:hidden"> a partir de</span>
             </span>
@@ -831,7 +831,7 @@ export function SearchClient({ properties: imoveis, topo }: { properties: Proper
               type="button"
               onClick={clearFilters}
               data-testid="limpar-filtros-painel"
-              className="hidden h-10 shrink-0 items-center whitespace-nowrap rounded-full px-3 text-sm font-medium text-ink underline underline-offset-4 hover:bg-surface-2 lg:inline-flex"
+              className="hidden h-10 shrink-0 items-center whitespace-nowrap rounded-lg px-3 text-sm font-medium text-ink underline underline-offset-4 hover:bg-surface-2 lg:inline-flex"
             >
               Limpar filtros ({activeCount})
             </button>
@@ -1127,7 +1127,7 @@ function Select({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       aria-label={label}
-      className="h-10 min-w-0 rounded-full border border-line bg-white px-4 text-sm text-ink outline-none focus:border-ink lg:px-3 xl:px-4"
+      className="h-10 min-w-0 rounded-lg border border-line bg-white px-4 text-sm text-ink outline-none focus:border-ink lg:px-3 xl:px-4"
     >
       {options.map(([v, label]) => (
         <option key={v} value={v}>
@@ -1165,7 +1165,7 @@ function GuestsPicker({
         aria-expanded={open}
         aria-label="Moradores"
         className={cn(
-          "inline-flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-full border px-4 text-sm outline-none lg:px-3 xl:px-4",
+          "inline-flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-lg border px-4 text-sm outline-none lg:px-3 xl:px-4",
           ativo ? "border-ink bg-ink text-white" : "border-line bg-white text-ink focus:border-ink"
         )}
       >
@@ -1221,7 +1221,7 @@ function Stepper({
           aria-label={`Menos ${label.toLowerCase()}`}
           disabled={value <= min}
           onClick={() => onChange(Math.max(min, value - 1))}
-          className="grid h-8 w-8 place-items-center rounded-full border border-line text-lg leading-none text-ink transition-colors hover:border-ink disabled:cursor-not-allowed disabled:opacity-40"
+          className="grid h-8 w-8 place-items-center rounded-lg border border-line text-lg leading-none text-ink transition-colors hover:border-ink disabled:cursor-not-allowed disabled:opacity-40"
         >
           −
         </button>
@@ -1231,7 +1231,7 @@ function Stepper({
           aria-label={`Mais ${label.toLowerCase()}`}
           disabled={value >= max}
           onClick={() => onChange(Math.min(max, value + 1))}
-          className="grid h-8 w-8 place-items-center rounded-full border border-line text-lg leading-none text-ink transition-colors hover:border-ink disabled:cursor-not-allowed disabled:opacity-40"
+          className="grid h-8 w-8 place-items-center rounded-lg border border-line text-lg leading-none text-ink transition-colors hover:border-ink disabled:cursor-not-allowed disabled:opacity-40"
         >
           +
         </button>

@@ -14,7 +14,8 @@ async function pinoIgualCartao(page: Page) {
   for (const id of ids) {
     const cartao = page.locator(`[data-testid="card-resultado"]:has(a[href="/imoveis/${id}"])`).first();
     if ((await cartao.count()) === 0) continue;
-    const total = brl(await cartao.getByTestId("cartao-total-mes").innerText());
+    // O "R$ X" do cartão (total do mês) — o "R$ Y em N meses" ao lado é o total da estadia (QA do Prompt 40).
+    const total = brl(await cartao.getByTestId("cartao-preco-mes").innerText());
     const pino = brl(await page.locator(`[data-testid="pin-mapa"][data-id="${id}"]`).first().innerText());
     expect(pino, `pino do imóvel ${id}`).toBe(total);
     conferidos++;

@@ -60,6 +60,8 @@ export const ALCANCE = [
   "app/(public)/cidades/[cidade]/page.tsx",
   "components/property/imoveis-parecidos.tsx",
   "components/property/fotos-cartao.tsx",
+  // Rodapé global (QA do Prompt 40: títulos de coluna sem caixa alta)
+  "components/layout/footer.tsx",
 ];
 
 /** Hero com h1 de até 40 px (adendo): home; /para-proprietarios, /como-funciona, /precos e /parceiros entram quando forem trazidas. */
@@ -205,9 +207,13 @@ test("cartão de anúncio: sem caixa (sem border nem shadow), foto 4:3 com raio 
   assert.match(c, /text-base font-semibold[^"]*" data-testid="cartao-local"/); // cartão 16/600
   assert.match(c, /className="line-clamp-2 [^"]*" data-testid="cartao-titulo"/);
   assert.match(c, /<p className="tabular-nums" data-testid="cartao-total-mes">/);
-  assert.match(c, /<span className="font-title text-lg font-semibold text-forest">\{formatBRL\(inc\.total\)\}<\/span>/);
-  assert.match(c, /\{formatBRL\(inc\.total \* meses\)\} em \{meses\} \{meses === 1 \? "mês" : "meses"\}/);
-  assert.match(c, /<span>mobiliado<\/span>/);
+  assert.match(c, /text-lg font-semibold text-forest" data-testid="cartao-preco-mes">\s*\{preco\.valor\}/);
+  assert.match(c, /<span className="text-sm text-ink">\/mês<\/span>/); // sem "total" solto (QA)
+  assert.doesNotMatch(c, /\/mês total/);
+  assert.match(c, /const preco = rotuloPrecoCartao\(inc\.total, mesesDoCartao\(periodMonths, property\.minPeriodDays\)\);/);
+  assert.match(c, /\{preco\.estadia && \(/); // N = 1: só "R$ X/mês"
+  assert.match(c, /const sintese = itensSintese\(property\);/);
+  assert.doesNotMatch(c, /IdealPara/); // ordem congelada: "Ideal para" fica na página do imóvel
   // Carrossel com pontos e no máximo 1 selo.
   assert.match(c, /<FotosCartao fotos=\{fotos\} alt=\{property\.title\} \/>/);
   assert.match(ler("components/property/fotos-cartao.tsx"), /data-testid="cartao-pontos"/);
@@ -321,4 +327,29 @@ test('filtros: nunca "Qualquer", "Ambos", "Indiferente" ou "Tanto faz" como opç
   assert.match(ler("components/ui/chip.tsx"), /aria-pressed=\{ativo\}/);
   // Tipos com os rótulos que o anúncio já usa (src/lib/amenities.ts), em número par.
   assert.equal(OPCOES_TIPO.length % 2, 0);
+});
+
+test("folha de filtros: chip de opção = pill; campo e botão = 8 px; Limpar tudo = texto (veredito do coordenador)", () => {
+  const folha = ler("components/busca/painel-filtros-celular.tsx");
+  assert.match(folha, /chip de opção = pill/);
+  assert.match(folha, /campo \(número, seleção, data\) = 8 px/);
+  // Na folha, a única pill vem do <Chip>; nenhum rounded-full escrito à mão.
+  assert.doesNotMatch(folha.replace(/\/\*[\s\S]*?\*\//g, ""), /rounded-full/);
+  assert.match(folha, /data-testid="aplicar-filtros"[\s\S]{0,120}className=\{buttonClasses\(\{ className:/); // primário (raio 8)
+  assert.match(folha, /className=\{buttonClasses\(\{ variant: "tertiary" \}\)\}/);
+  // Campos da faixa de filtros da /buscar (seleção, data, moradores, raio): 8 px.
+  const busca = ler("app/(public)/buscar/search-client.tsx");
+  assert.match(busca, /className="h-10 min-w-0 rounded-lg border border-line bg-white px-4 text-sm/); // <Select>
+  assert.match(busca, /<label className="inline-flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-lg border/); // data
+  assert.match(busca, /"inline-flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-lg border px-4/); // moradores
+});
+
+test('/buscar: o campo "Descreva o lugar ideal" é pill como a busca do cabeçalho', () => {
+  assert.match(ler("components/busca/descricao-busca.tsx"), /className="h-12 w-full rounded-full border border-line bg-white /);
+});
+
+test("rodapé: títulos de coluna 14/600, sem caixa alta nem tracking", () => {
+  const r = ler("components/layout/footer.tsx");
+  assert.match(r, /<h2 className="mb-4 font-title text-sm font-semibold text-white">/);
+  assert.doesNotMatch(r, /uppercase|tracking-/);
 });
