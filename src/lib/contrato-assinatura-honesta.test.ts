@@ -51,3 +51,9 @@ test("minuta: marca no topo da etapa do contrato e no nome do documento enviado"
   assert.match(fluxo, /data-testid="marca-minuta"/);
   assert.match(ler("./integrations/zapsign.ts"), /\$\{MARCA_MINUTA\}/);
 });
+
+test("F34: a tela do contrato não mostra 'aguardando texto jurídico' às partes", () => {
+  assert.doesNotMatch(fluxo, /Aguardando texto jur[ií]dico/i);
+  assert.doesNotMatch(fluxo, /MODELO_CONTRATO\.textoPendente/);
+  assert.doesNotMatch(fluxo, /\(a redigir\)/);
+});

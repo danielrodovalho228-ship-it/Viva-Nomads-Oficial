@@ -977,13 +977,10 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                 </span>
               </div>
               <p className="mt-1 text-xs text-muted">
-                Selecionado automaticamente pelo prazo ({STAY_DAYS} dias).{" "}
-                {MODELO_CONTRATO.textoPendente && (
-                  <span className="text-amber-700">Aguardando texto jurídico da advogada.</span>
-                )}
+                Selecionado automaticamente pelo prazo ({STAY_DAYS} dias).
               </p>
               <div className="mt-3">
-                <p className="text-xs font-medium text-ink">Cláusulas a incluir (a redigir):</p>
+                <p className="text-xs font-medium text-ink">Cláusulas previstas:</p>
                 <ul className="mt-1.5 grid gap-1">
                   {CLAUSULAS_PLACEHOLDER.map((c) => (
                     <li key={c.key} className="flex gap-2 text-xs text-muted">
