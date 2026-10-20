@@ -16,9 +16,14 @@ for (const largura of [390, 1280]) {
 
       await page.goto("/buscar", { waitUntil: "networkidle" });
       const coracoes = page.getByRole("button", { name: "Adicionar aos favoritos" });
-      await coracoes.nth(0).click();
-      await coracoes.nth(0).click(); // o primeiro virou "Remover"; o próximo "Adicionar" é o 2º imóvel
-      await expect(page.getByRole("button", { name: "Remover dos favoritos" })).toHaveCount(2);
+      const removers = page.getByRole("button", { name: "Remover dos favoritos" });
+      // Espera cada clique virar "Remover" antes do próximo; o toque antes da hidratação é repetido.
+      for (const esperado of [1, 2]) {
+        await expect(async () => {
+          if ((await removers.count()) < esperado) await coracoes.nth(0).click();
+          await expect(removers).toHaveCount(esperado, { timeout: 3_000 });
+        }).toPass({ timeout: 30_000 });
+      }
 
       await page.goto("/favoritos", { waitUntil: "networkidle" });
       await expect(page.getByRole("heading", { name: "Favoritos (2)" })).toBeVisible();
