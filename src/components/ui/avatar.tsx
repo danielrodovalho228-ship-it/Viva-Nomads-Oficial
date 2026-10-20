@@ -62,7 +62,7 @@ export function Avatar({
   ) : (
     <span
       className={cn(
-        "inline-grid h-full w-full place-items-center rounded-full font-title font-bold text-white transition-[box-shadow] duration-300",
+        "inline-grid h-full w-full place-items-center rounded-full font-title font-semibold text-white transition-[box-shadow] duration-300",
         m && cn("ring-2 ring-offset-2 ring-offset-forest", m.ring),
         className
       )}

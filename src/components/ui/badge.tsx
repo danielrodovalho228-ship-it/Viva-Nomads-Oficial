@@ -9,7 +9,7 @@ export function PrecoJustoBadge({ className }: { className?: string }) {
     <span
       data-testid="selo-preco-justo"
       className={cn(
-        "inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-sage-200 bg-white px-2.5 py-1 text-xs font-semibold text-forest shadow-sm",
+        "inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-white px-2 py-1 text-xs font-semibold text-ink",
         className
       )}
     >
@@ -24,7 +24,7 @@ export function ResponsiveOwnerBadge({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700",
+        "inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700",
         className
       )}
     >
@@ -48,8 +48,8 @@ export function ReadyToLiveBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full bg-champagne font-semibold text-night shadow-sm",
-        size === "sm" ? "px-2.5 py-1 text-xs" : "px-3 py-1.5 text-[13px]",
+        "inline-flex items-center gap-1 rounded-full bg-champagne font-semibold text-night",
+        size === "sm" ? "px-2 py-1 text-xs" : "px-3 py-1 text-[13px]",
         className
       )}
     >
@@ -74,7 +74,7 @@ export function SpecTag({ kind, className }: { kind: SpecTagKind; className?: st
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full bg-sage-100 px-2 py-0.5 text-[11px] font-medium text-sage",
+        "inline-flex items-center gap-1 rounded-full bg-sage-100 px-2 py-1 text-[11px] font-medium text-sage",
         className
       )}
     >
@@ -121,8 +121,8 @@ export function DocConferidaBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border border-green-300 bg-green-50 font-semibold text-green-900",
-        size === "sm" ? "px-2.5 py-1 text-xs" : "px-3 py-1.5 text-[13px]",
+        "inline-flex items-center gap-1 rounded-full border border-green-300 bg-green-50 font-semibold text-green-900",
+        size === "sm" ? "px-2 py-1 text-xs" : "px-3 py-1 text-[13px]",
         className
       )}
     >
@@ -137,7 +137,7 @@ export function InvoiceBadge({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700",
+        "inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700",
         className
       )}
     >
@@ -152,7 +152,7 @@ export function InsuranceBadge({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full border border-green-300 bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-900",
+        "inline-flex items-center gap-1 rounded-full border border-green-300 bg-green-50 px-2 py-1 text-xs font-semibold text-green-900",
         className
       )}
     >
@@ -166,7 +166,7 @@ export function Tag({ children, className }: { children: React.ReactNode; classN
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700",
+        "inline-flex items-center rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700",
         className
       )}
     >
@@ -188,12 +188,12 @@ export function Eyebrow({
   return (
     <p
       className={cn(
-        "inline-flex items-center gap-2 font-title text-xs font-bold uppercase tracking-[0.18em]",
-        light ? "text-green-300" : "text-blue-500",
+        "inline-flex items-center gap-2 font-title text-xs font-semibold uppercase tracking-[0.18em]",
+        light ? "text-white/70" : "text-muted",
         className
       )}
     >
-      <span className={cn("h-px w-6", light ? "bg-green-300" : "bg-green-500")} />
+      <span className={cn("h-px w-6", light ? "bg-white/40" : "bg-line")} />
       {children}
     </p>
   );
