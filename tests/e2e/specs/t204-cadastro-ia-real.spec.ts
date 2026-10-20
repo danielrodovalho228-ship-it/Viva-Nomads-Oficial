@@ -45,7 +45,7 @@ async function novoDono(browser: Browser, largura: number, opcoes: BrowserContex
     await expect(campoSenha).toHaveValue(senha, { timeout: 1_000 });
   }).toPass({ timeout: 15_000 });
   await page.locator("form").getByRole("button", { name: /^entrar$/i }).click();
-  await page.waitForURL(/\/dashboard/, { timeout: 30_000 });
+  await page.waitForURL(/\/dashboard/, { timeout: 30_000, waitUntil: "commit" });
   await page.evaluate(() => localStorage.setItem("vivanomads-role-asked", "1"));
   return { page, id, fechar: () => ctx.close() };
 }

@@ -42,7 +42,7 @@ async function entrar(browser: Browser, email: string): Promise<Page> {
   await page.locator('input[name="email"], input[type="email"]').first().fill(email);
   await page.locator('input[name="password"], input[type="password"]').first().fill(senha);
   await page.locator("form").getByRole("button", { name: /^entrar$/i }).click();
-  await page.waitForURL(/\/dashboard/, { timeout: 20_000 });
+  await page.waitForURL(/\/dashboard/, { timeout: 20_000, waitUntil: "commit" });
   await page.evaluate(() => localStorage.setItem("vivanomads-role-asked", "1"));
   return page;
 }

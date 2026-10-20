@@ -46,7 +46,13 @@ async function semRolagemLateral(page: Page, largura: number): Promise<string[]>
 
 async function temH1(page: Page): Promise<string[]> {
   // O painel abre com o esqueleto do loading.tsx (sem h1) e troca pela tela quando os dados chegam.
-  await page.locator("h1:visible").first().waitFor({ timeout: 30_000 }).catch(() => {});
+  const h1 = page.locator("h1:visible").first();
+  // No lab carregado o esqueleto às vezes não troca: espera 15 s, recarrega a rota uma vez e espera mais 15 s.
+  const apareceu = await h1.waitFor({ timeout: 15_000 }).then(() => true, () => false);
+  if (!apareceu) {
+    await page.reload({ waitUntil: "domcontentloaded" }).catch(() => {});
+    await h1.waitFor({ timeout: 15_000 }).catch(() => {});
+  }
   const visiveis = await page.locator("h1:visible").count();
   return visiveis > 0 ? [] : [`sem h1 visível (rota final ${new URL(page.url()).pathname})`];
 }
