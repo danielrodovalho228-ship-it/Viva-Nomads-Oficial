@@ -35,7 +35,7 @@ for (const largura of [360, 390]) {
 
     test("mostra a chave, copia e oferece o link do app antes do QR", async ({ page }) => {
       // O prazo vale desde o início: antes ele só era ampliado depois do goto/clique e o teste estourava os 45 s.
-      test.setTimeout(150000);
+      test.setTimeout(240000);
       await page.goto("/dashboard/conta/seguranca");
       await page.getByRole("button", { name: /Ativar duas etapas/ }).click();
 
@@ -55,19 +55,21 @@ for (const largura of [360, 390]) {
       expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(texto.replace(/\s/g, ""));
 
       // Nenhum botão/campo da tela é coberto por outro elemento (elementFromPoint no centro).
-      const alvos = page.locator("main button, main input, main a[href]");
-      const n = await alvos.count();
-      for (let i = 0; i < n; i++) {
-        const el = alvos.nth(i);
-        if (!(await el.isVisible())) continue;
-        await el.evaluate((e) => e.scrollIntoView({ block: "center", behavior: "instant" }));
-        const livre = await el.evaluate((e) => {
-          const r = e.getBoundingClientRect();
+      // Numa leitura só (antes eram 3 idas ao navegador por alvo e o teste estourava os 150 s no lab).
+      const cobertos = await page.evaluate(() => {
+        const ruins: number[] = [];
+        document.querySelectorAll("main button, main input, main a[href]").forEach((e, i) => {
+          const el = e as HTMLElement;
+          const caixa = el.getBoundingClientRect();
+          if (caixa.width === 0 || caixa.height === 0) return;
+          el.scrollIntoView({ block: "center", behavior: "instant" });
+          const r = el.getBoundingClientRect();
           const topo = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
-          return !!topo && (e === topo || e.contains(topo));
+          if (!topo || !(el === topo || el.contains(topo))) ruins.push(i);
         });
-        expect(livre, `alvo ${i} coberto`).toBe(true);
-      }
+        return ruins;
+      });
+      expect(cobertos, `alvos cobertos: ${cobertos.join(",")}`).toEqual([]);
 
       // Estado ATIVO (ordem 7d4cb427): confirma o código e mede o botão "Remover verificação".
       try {
@@ -102,7 +104,7 @@ for (const largura of [360, 390]) {
     // Ordem c09fadd5 item 3 (achado do Moacir, 458dd4ad): no cenário obrigatório (admin) o botão
     // "Continuar para o destino" aparece sozinho na linha, com fonte ≥ 12 px e altura ≥ 44 px.
     test("cenário obrigatório: 'Continuar para o destino' tem 44 px e fonte legível", async ({ page }) => {
-      test.setTimeout(150000);
+      test.setTimeout(240000);
       await page.goto("/dashboard/conta/seguranca?obrigatorio=admin&redirect=%2Fadmin");
       await page.getByRole("button", { name: /Ativar duas etapas/ }).click();
       const segredo = ((await page.getByTestId("chave-2fa").textContent()) ?? "").replace(/\s/g, "");
