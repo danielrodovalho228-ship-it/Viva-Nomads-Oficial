@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
-import { Building2, FileText, BarChart3, MapPin, ArrowRight, ShieldCheck, Home, MessageSquare, Check } from "lucide-react";
+import { Building2, ArrowRight, ShieldCheck, Home, MessageSquare, Check } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { BrandImage } from "@/components/brand-image";
 import { BannerTopo } from "@/components/institucional/banner-topo";
+import { FotoCartao } from "@/components/institucional/foto-cartao";
+import { cartaoSecao } from "@/lib/cartoes-secao";
 import { EmpresasForm } from "./empresas-form";
 import { JsonLd } from "@/components/seo/json-ld";
 import { paginaInstitucional } from "@/lib/seo/estruturados";
@@ -45,18 +47,18 @@ const FAQ_EMPRESAS = [
 
 const PILARES = [
   {
-    icon: MapPin,
+    id: "mobilidade",
     titulo: "Mobilidade corporativa",
     texto:
       "Imóveis mobiliados e prontos para morar, de 30 a 180 dias, para times em projeto, realocação ou período de experiência.",
   },
   {
-    icon: FileText,
+    id: "recibo",
     titulo: "Recibo para reembolso",
     texto: "Recibo mensal da estadia emitido pelo proprietário + contrato assinado, que podem ser usados no reembolso conforme a política da sua empresa. A Viva Nomads não cobra nada do inquilino.",
   },
   {
-    icon: BarChart3,
+    id: "relatorios",
     titulo: "Relatórios",
     texto: "Acompanhamento das estadias da sua empresa — em construção com os primeiros parceiros corporativos.",
   },
@@ -97,18 +99,15 @@ export default function EmpresasPage() {
           <p className="mt-3 text-muted">Para times em projeto, realocação ou período de experiência em outra cidade.</p>
         </div>
         <div className="mt-10 grid gap-5 md:grid-cols-3">
-          {PILARES.map((p) => {
-            const Icon = p.icon;
-            return (
-              <div key={p.titulo} className="rounded-2xl border border-line bg-white p-6 shadow-sm">
-                <span className="grid h-11 w-11 place-items-center rounded-xl bg-sage-100 text-forest">
-                  <Icon className="h-5 w-5" />
-                </span>
-                <h3 className="mt-4 font-title text-lg font-bold text-ink">{p.titulo}</h3>
+          {PILARES.map((p) => (
+            <div key={p.titulo} className="flex flex-col overflow-hidden rounded-2xl border border-line bg-white shadow-sm">
+              <FotoCartao cartao={cartaoSecao("empresas", p.id)} />
+              <div className="p-6">
+                <h3 className="line-clamp-2 font-title text-lg font-bold text-ink">{p.titulo}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted">{p.texto}</p>
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       </section>
 
