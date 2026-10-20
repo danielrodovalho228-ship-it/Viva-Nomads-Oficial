@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   CheckCircle2,
@@ -112,13 +112,17 @@ export default function QualificationChecklistPage({
   const [hasInteracted, setHasInteracted] = useState(false);
   const [imovel, setImovel] = useState<{ id: string; titulo: string; local: string; rascunho: boolean } | null>(null);
   const [imovelInvalido, setImovelInvalido] = useState(false);
+  // Id pedido (`?imovel=`/painel) enquanto o resumo ainda carrega: um envio rápido não pode cair "sem imóvel".
+  const imovelPedido = useRef<string | null>(null);
   useEffect(() => {
     let alive = true;
     const id = imovelIdInicial !== undefined ? imovelIdInicial : new URLSearchParams(window.location.search).get("imovel");
+    imovelPedido.current = id ?? null;
     (async () => {
       const resumo = id ? await resumoImovelDoDono(id).catch(() => null) : null;
       if (!alive) return;
       if (id && !resumo) setImovelInvalido(true);
+      imovelPedido.current = resumo?.id ?? null;
       setImovel(resumo);
       const [r, salvo] = await Promise.all([
         getMyDocumentStatus(resumo?.id ?? null).catch(() => null),
@@ -237,7 +241,7 @@ export default function QualificationChecklistPage({
     setDocBusy(true);
     let r: Awaited<ReturnType<typeof enviarDocumentoParaConferencia>>;
     try {
-      r = await enviarDocumentoParaConferencia(imovel?.id ?? null, d.path, d.hash);
+      r = await enviarDocumentoParaConferencia(imovel?.id ?? imovelPedido.current, d.path, d.hash);
     } catch {
       r = { ok: false, error: "Não foi possível colocar o documento na fila de conferência agora. Tente de novo." };
     }
@@ -267,7 +271,7 @@ export default function QualificationChecklistPage({
     }
     let r: Awaited<ReturnType<typeof saveQualification>>;
     try {
-      r = await saveQualification(elig, quality, docPath, docHash, imovel?.id ?? null);
+      r = await saveQualification(elig, quality, docPath, docHash, imovel?.id ?? imovelPedido.current);
     } catch {
       r = { ok: false, error: "Não foi possível salvar a qualificação agora. Tente novamente." };
     }
@@ -358,14 +362,14 @@ export default function QualificationChecklistPage({
 
           <label
             className={cn(
-              "flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-dashed px-4 py-3 transition-colors",
+              "flex cursor-pointer flex-wrap items-center justify-between gap-3 rounded-xl border border-dashed px-4 py-3 transition-colors",
               "focus-within:outline-none focus-within:ring-2 focus-within:ring-forest focus-within:ring-offset-2",
               docName
                 ? "border-sage bg-sage-100"
                 : "border-sage-200 bg-surface-2 hover:border-sage"
             )}
           >
-            <span className="flex items-center gap-3 text-sm">
+            <span className="flex min-w-0 items-center gap-3 text-sm">
               {docName ? (
                 <CheckCircle2 className="h-5 w-5 text-forest" />
               ) : (

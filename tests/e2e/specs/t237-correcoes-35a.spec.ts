@@ -1,7 +1,7 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 import { account, hasAccount } from "../fixtures/accounts";
-import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, lerSaida, novaSenha, novoSufixo, pdf } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, lerSaida, novaSenha, novoSufixo, pdf } from "../fixtures/laboratorio";
 
 /*
   T237 — Correções do Prompt 35A (390 e 1280 px):
@@ -35,10 +35,17 @@ test.describe("T237 — 1. documento do /qualificar entra na fila no envio", () 
   };
   const falha = { email: `falha.t237.${sufixo}@lab.vivanomads.test`, nome: `Fábio Falha Rede ${sufixo}`, role: "owner" as const };
   const ids: Record<string, string> = {};
+  const imoveis: Record<string, string> = {};
+  const titulo = (k: string) => `Studio Fila ${k} ${sufixo}`;
 
   test.beforeAll(async () => {
-    for (const l of LARGURAS) ids[l] = await criarConta(donos[l], senha);
+    // A /qualificar é a pendência de UM imóvel (?imovel=): cada dono tem um rascunho.
+    for (const l of LARGURAS) {
+      ids[l] = await criarConta(donos[l], senha);
+      imoveis[l] = await criarImovelPronto(ids[l], titulo(String(l)), { ativo: false });
+    }
     ids.falha = await criarConta(falha, senha);
+    imoveis.falha = await criarImovelPronto(ids.falha, titulo("falha"), { ativo: false });
   });
 
   test.afterAll(async () => {
@@ -54,10 +61,10 @@ test.describe("T237 — 1. documento do /qualificar entra na fila no envio", () 
     return data ?? [];
   }
 
-  async function abrirQualificar(browser: Browser, email: string, largura: number) {
+  async function abrirQualificar(browser: Browser, email: string, largura: number, imovelId: string) {
     const page = await entrar(browser, email, senha);
     await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
-    await page.goto("/qualificar", { waitUntil: "domcontentloaded" });
+    await page.goto(`/qualificar?imovel=${imovelId}`, { waitUntil: "domcontentloaded" });
     await expect(page.getByRole("heading", { name: "Qualificação do imóvel" })).toBeVisible({ timeout: 20_000 });
     return page;
   }
@@ -68,10 +75,10 @@ test.describe("T237 — 1. documento do /qualificar entra na fila no envio", () 
     ).length;
 
   for (const largura of LARGURAS) {
-    test(`${largura} px — enviar e SAIR sem concluir: o documento está na fila e o admin foi avisado`, async ({ browser }) => {
+    test(`${largura} px — enviar e SAIR sem concluir: o documento está na fila do imóvel e o admin foi avisado`, async ({ browser }) => {
       test.setTimeout(120_000);
       const avisosAntes = await avisosAoAdmin();
-      const page = await abrirQualificar(browser, donos[largura].email, largura);
+      const page = await abrirQualificar(browser, donos[largura].email, largura, imoveis[largura]);
       await page.getByLabel(/Enviar documentação do imóvel/).setInputFiles({ name: "matricula.pdf", mimeType: "application/pdf", buffer: pdf() });
       await expect(page.getByText("Enviado para conferência")).toBeVisible({ timeout: 20_000 });
       await semRolagemLateral(page);
@@ -81,10 +88,10 @@ test.describe("T237 — 1. documento do /qualificar entra na fila no envio", () 
       await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
       await page.context().close();
 
-      // A linha "em análise" existe (sem imóvel ligado), uma só.
+      // A linha "em análise" do imóvel existe, uma só (o caso "sem imóvel ligado" é coberto no unitário).
       const linhas = await pendentes(ids[largura]);
       expect(linhas).toHaveLength(1);
-      expect(linhas[0].property_id).toBeNull();
+      expect(linhas[0].property_id).toBe(imoveis[largura]);
       expect(String(linhas[0].document_path)).toMatch(new RegExp(`^${ids[largura]}/`));
       // O aviso aos admins saiu (documento_recebido).
       await expect.poll(avisosAoAdmin, { timeout: 30_000 }).toBeGreaterThan(avisosAntes);
@@ -95,19 +102,18 @@ test.describe("T237 — 1. documento do /qualificar entra na fila no envio", () 
       await adminPage.goto("/admin/documentos", { waitUntil: "domcontentloaded" });
       const card = adminPage.locator(`[data-testid="doc-card"][data-dono="${donos[largura].nome}"]`);
       await expect(card).toHaveCount(1, { timeout: 20_000 });
-      await expect(card).toHaveAttribute("data-sem-imovel", "1");
-      await expect(card).toContainText("Documento sem imóvel ligado");
+      await expect(card).toHaveAttribute("data-imovel", titulo(String(largura)));
       await expect(card).toContainText(/Enviado \d{2}\/\d{2}\/\d{4}/);
       await card.scrollIntoViewIfNeeded();
       await semRolagemLateral(adminPage);
-      await adminPage.screenshot({ path: `${SAIDA}/t237-admin-sem-imovel-${largura}.png`, fullPage: false });
+      await adminPage.screenshot({ path: `${SAIDA}/t237-admin-fila-${largura}.png`, fullPage: false });
       await ctx.close();
     });
   }
 
   test("falha simulada da action: nada de \"Enviado\"; \"Tentar de novo\" enfileira o mesmo arquivo", async ({ browser }) => {
     test.setTimeout(120_000);
-    const page = await abrirQualificar(browser, falha.email, 390);
+    const page = await abrirQualificar(browser, falha.email, 390, imoveis.falha);
     // Derruba SÓ a Server Action (POST com o cabeçalho Next-Action); o upload (/api/upload/documento) passa.
     let derrubar = true;
     await page.route("**/qualificar**", async (route) => {
@@ -139,7 +145,8 @@ for (const largura of LARGURAS) {
     test.use({ viewport: { width: largura, height: largura === 390 ? 844 : 900 } });
 
     test("2. /buscar: o ube-001 mostra \"Com pet\" em 1º no \"Ideal para\"", async ({ page }) => {
-      await page.goto("/buscar", { waitUntil: "domcontentloaded" });
+      // Com anúncios reais no ar, os exemplos só aparecem com ?exemplos=1 (regra do Prompt 30), como no t234.
+      await page.goto("/buscar?exemplos=1", { waitUntil: "domcontentloaded" });
       const linha = page.locator('a[href="/imoveis/ube-001"]').first().getByTestId("ideal-para");
       await expect(linha).toContainText(/Ideal para:\s*Com pet · /, { timeout: 20_000 });
       await semRolagemLateral(page);
