@@ -70,3 +70,21 @@ test("t6 entra de novo se a sessão salva do proprietário cair no login e usa o
   assert.doesNotMatch(spec, /Taxa de serviço do contrato/);
   assert.match(ler("src/app/(dashboard)/dashboard/contratos/contratos-client.tsx"), /Taxa de serviço:\{" "\}/);
 });
+
+test("t70: todos os testes da busca dividida têm prazo de 120 s (servidor frio do lab 75f265dd)", () => {
+  const spec = ler("tests/e2e/specs/t70-busca-split.spec.ts");
+  assert.match(spec, /test\.describe\.configure\(\{\s*timeout:\s*120_000\s*\}\)/);
+});
+
+test("t160 confere a grade pelos favoritos que ainda estão no ar, não pelo título", () => {
+  const spec = ler("tests/e2e/specs/t160-favoritos-pagina.spec.ts");
+  assert.match(spec, /aria-busy", "false"/);
+  assert.match(spec, /request\.get\("\/api\/properties"\)/);
+  assert.doesNotMatch(spec, /toHaveCount\(2\);\n\n\s*await page\.getByRole\("button", \{ name: "Remover dos favoritos" \}\)\.first/);
+});
+
+test("t93 diz se a resposta foi gravada no banco antes de cobrar a tela", () => {
+  const spec = ler("tests/e2e/specs/t93-avaliacao-tela.spec.ts");
+  assert.match(spec, /from\("avaliacao_respostas"\)/);
+  assert.match(spec, /NÃO gravada no banco/);
+});

@@ -57,7 +57,16 @@ test.describe("T93 — Tela de avaliações recebidas (responder, pedir revisão
       await cartao.getByLabel(/sua resposta/i).fill(`Obrigado pela estadia ${marca}`);
       await cartao.getByTestId("avaliacao-enviar").click();
       // A resposta grava no servidor e a tela recarrega: no lab lento passa de 10 s. Se não vier, mostra o que a tela disse.
-      await expect(cartao.getByTestId("avaliacao-resposta"), `alerta da tela: ${await cartao.getByRole("alert").allTextContents()}`).toContainText(`Obrigado pela estadia ${marca}`, { timeout: 30_000 });
+      // A resposta vai primeiro para o banco; só depois a tela recarrega. Se a tela não mostrar, a mensagem diz se o banco gravou
+      // (causa no servidor) ou não (causa na tela) — lab 75f265dd: erro vazio, sem saber de que lado.
+      let noBanco = "ainda não consultado";
+      await expect(async () => {
+        const { data: av } = await adm.from("avaliacoes").select("id").eq("contrato_id", ct!.id).eq("alvo_id", dono.id).maybeSingle();
+        const { data: rs } = await adm.from("avaliacao_respostas").select("texto").eq("avaliacao_id", av?.id ?? "").maybeSingle();
+        noBanco = rs?.texto ? "gravada no banco" : "NÃO gravada no banco";
+        expect(noBanco).toBe("gravada no banco");
+      }, "resposta gravada no banco").toPass({ timeout: 30_000 });
+      await expect(cartao.getByTestId("avaliacao-resposta"), `resposta ${noBanco}; alerta da tela: ${await cartao.getByRole("alert").allTextContents()}`).toContainText(`Obrigado pela estadia ${marca}`, { timeout: 30_000 });
 
       // 2) Pede revisão pela tela.
       await expect(async () => {

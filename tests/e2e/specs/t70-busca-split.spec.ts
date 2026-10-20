@@ -32,6 +32,8 @@ async function pinsLivres(page: Page): Promise<string[]> {
 }
 
 test.describe("T70 — busca split-screen no computador", () => {
+  // /buscar com mapa no servidor frio do laboratório passa de 45 s (lab 75f265dd: teste 2 estourou).
+  test.describe.configure({ timeout: 120_000 });
   test("1. proporções, 3 por linha, mapa fixo na altura da tela e filtros em uma linha", async ({ page }) => {
     await abrir(page, 1440);
     const lista = await page.getByTestId("busca-lista").boundingBox();
@@ -130,7 +132,6 @@ test.describe("T70 — busca split-screen no computador", () => {
   });
 
   test("5. 1024 e 1280 px: tela dividida sem rolagem lateral e filtros numa linha", async ({ page }) => {
-    test.setTimeout(120_000); // duas cargas da /buscar com mapa no servidor frio do laboratório (45 s não bastava)
     for (const largura of [1024, 1280]) {
       await abrir(page, largura);
       await expect(page.getByTestId("busca-mapa")).toBeVisible();
