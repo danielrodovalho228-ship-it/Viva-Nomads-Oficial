@@ -21,6 +21,14 @@ async function removerFator(page: Page, segredo: string) {
   }
 }
 
+/** Clique antes da hidratação não abre a ativação: repete até a chave em texto aparecer (e não gasta os 240 s à toa). */
+async function abrirAtivacao(page: Page) {
+  await expect(async () => {
+    await page.getByRole("button", { name: /Ativar duas etapas/ }).click({ timeout: 5_000 });
+    await expect(page.getByTestId("chave-2fa")).toBeVisible({ timeout: 4_000 });
+  }).toPass({ timeout: 45_000 });
+}
+
 /**
  * T58 — ativação do 2FA no celular (ordens 33c943b4 item 3/4 e 1d1967f4):
  * chave em texto agrupada de 4 em 4, "Copiar código" e link otpauth:// ANTES do QR,
@@ -37,7 +45,7 @@ for (const largura of [360, 390]) {
       // O prazo vale desde o início: antes ele só era ampliado depois do goto/clique e o teste estourava os 45 s.
       test.setTimeout(240000);
       await page.goto("/dashboard/conta/seguranca");
-      await page.getByRole("button", { name: /Ativar duas etapas/ }).click();
+      await abrirAtivacao(page);
 
       const chave = page.getByTestId("chave-2fa");
       await expect(chave).toBeVisible();
@@ -106,7 +114,7 @@ for (const largura of [360, 390]) {
     test("cenário obrigatório: 'Continuar para o destino' tem 44 px e fonte legível", async ({ page }) => {
       test.setTimeout(240000);
       await page.goto("/dashboard/conta/seguranca?obrigatorio=admin&redirect=%2Fadmin");
-      await page.getByRole("button", { name: /Ativar duas etapas/ }).click();
+      await abrirAtivacao(page);
       const segredo = ((await page.getByTestId("chave-2fa").textContent()) ?? "").replace(/\s/g, "");
       try {
         await page.locator("#codigo-ativar").fill(gerarCodigoTotp(segredo));
