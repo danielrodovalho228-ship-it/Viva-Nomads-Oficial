@@ -45,6 +45,8 @@ jobs:
       LAB_OUTBOX: ${{ github.workspace }}/tests/laboratorio/saida/envios-simulados.jsonl
       # Resend falso (scripts/lab/resend-falso.mjs): confere o formato do e-mail e devolve um id; nada sai para a rede.
       LAB_RESEND_URL: http://127.0.0.1:3999
+      # Provedor de rotas falso (scripts/lab/rotas-falso.mjs, Prompt 37): minutos determinísticos no formato da Matrix.
+      LAB_ROTAS_URL: http://127.0.0.1:3998
       TESTES_BASE_URL: http://localhost:3123
     steps:
       - uses: actions/checkout@v4
@@ -107,6 +109,7 @@ jobs:
       - name: Subir o site em localhost:3123
         run: |
           node scripts/lab/resend-falso.mjs 3999 > tests/laboratorio/saida/resend-falso.log 2>&1 &
+          node scripts/lab/rotas-falso.mjs 3998 > tests/laboratorio/saida/rotas-falso.log 2>&1 &
           npx next start -p 3123 > tests/laboratorio/saida/servidor.log 2>&1 &
           for i in $(seq 1 60); do curl -sf -o /dev/null http://localhost:3123/ && break; sleep 2; done
           curl -sf -o /dev/null http://localhost:3123/ || (cat tests/laboratorio/saida/servidor.log; exit 1)
