@@ -35,8 +35,10 @@ test.describe("T71 — topo da /buscar", () => {
     expect(cBox.y + cBox.height).toBeLessThanOrEqual(hBox.y + hBox.height);
     // Centralizada no espaço entre o logo e as ações (o slot é flex-1): o logo é mais estreito que as
     // ações, então o centro da tela não é o alvo certo (ordem 75553f0a: spec acompanha o produto).
+    // O que se centraliza é o grupo "busca compacta + Publicar pedido" (prompt 30, item 6), não só a pílula.
     const sBoxSlot = (await header.getByTestId("slot-busca-header").boundingBox())!;
-    expect(Math.abs(cBox.x + cBox.width / 2 - (sBoxSlot.x + sBoxSlot.width / 2)), "busca compacta centralizada").toBeLessThanOrEqual(4);
+    const gBox = (await compacta.locator("xpath=..").boundingBox())!;
+    expect(Math.abs(gBox.x + gBox.width / 2 - (sBoxSlot.x + sBoxSlot.width / 2)), "busca compacta centralizada").toBeLessThanOrEqual(4);
     await expect(page.getByTestId("filtros-caixa")).toBeHidden();
 
     // Sem espaço branco morto: o título vem logo abaixo do cabeçalho.

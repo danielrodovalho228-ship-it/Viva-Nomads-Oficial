@@ -3,6 +3,7 @@ import { Logo } from "@/components/ui/logo";
 import { CITIES } from "@/lib/constants";
 import { SUPORTE_EMAIL } from "@/lib/site";
 import { PROMESSA_ATENDIMENTO } from "@/config/atendimento";
+import { RedesOficiais } from "@/components/layout/redes-oficiais";
 
 export function Footer() {
   return (
@@ -24,6 +25,8 @@ export function Footer() {
             <br />
             <span className="text-xs text-white/50">{PROMESSA_ATENDIMENTO}</span>
           </p>
+          {/* Redes oficiais (src/config/redes.ts — Prompt 35A, item 4). */}
+          <RedesOficiais className="mt-4" linkClassName="text-white/70 transition-colors hover:text-green-300" />
         </div>
 
         <FooterCol title="Plataforma">

@@ -137,7 +137,8 @@
         "t9-documentos",
         "t183-telas-logadas-390",
         "t195-matricula-caf",
-        "t220-recibo-assinatura"
+        "t220-recibo-assinatura",
+        "t237-correcoes-35a"
       ]
     },
     "/admin/emails-teste": {
@@ -228,7 +229,8 @@
         "t21-central-agentes",
         "t24-atendimento-acolhimento",
         "t25-chamado-resumo",
-        "t30-atendimento-autonomo"
+        "t30-atendimento-autonomo",
+        "t237-correcoes-35a"
       ]
     },
     "/alerta-busca/desligar": {
@@ -327,7 +329,8 @@
         "t182-jornada-completa",
         "t184-velocidade",
         "t197-anuncio-teste-oculto",
-        "t232-pedido-moradia-completo"
+        "t232-pedido-moradia-completo",
+        "t237-correcoes-35a"
       ]
     },
     "/cidades": {
@@ -1040,7 +1043,8 @@
         "t201-qa-muse",
         "t209-jornada-dois-lados",
         "t211-complemento-23",
-        "t221-contrato-estado-periodo"
+        "t221-contrato-estado-periodo",
+        "t237-correcoes-35a"
       ]
     },
     "/modelodenegocio": {
@@ -1161,7 +1165,8 @@
       "specs": [
         "t18-seo-a11y",
         "t40-novo-anuncio-fotos",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t237-correcoes-35a"
       ]
     },
     "/roi": {
@@ -1684,7 +1689,9 @@
         "proprietario",
         "admin"
       ],
-      "specs": []
+      "specs": [
+        "t237-correcoes-35a"
+      ]
     },
     "/api/upload/foto": {
       "personas": [
@@ -1918,6 +1925,14 @@
       ],
       "specs": []
     },
+    "src/lib/data/actions.ts#enviarDocumentoParaConferencia": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t237-correcoes-35a"
+      ]
+    },
     "src/lib/data/actions.ts#getLatestDraft": {
       "personas": [
         "inquilino",
@@ -2004,7 +2019,9 @@
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t237-correcoes-35a"
+      ]
     },
     "src/lib/data/actions.ts#sendMessage": {
       "personas": [

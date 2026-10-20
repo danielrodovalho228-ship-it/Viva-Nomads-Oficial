@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { authFile } from "../fixtures/auth";
+import { authFile, loginAs } from "../fixtures/auth";
 
 /**
  * T6 — DINHEIRO E NÚMEROS — regressão da comissão percentual.
@@ -12,10 +12,17 @@ test.describe("T6 — Comissão (contrato real do proprietário)", () => {
   test("Contratos & blocos: comissão em % e nunca '1 mês de aluguel'", async ({ page }) => {
     // Dado REAL (o laboratório cria o contrato no seed), sem modo demonstração.
     await page.goto("/dashboard/contratos", { waitUntil: "networkidle" });
+    // Nas execuções completas da main a sessão salva do proprietário às vezes já não vale (outro spec encerra a sessão
+    // da conta): o texto lido era o da tela de login (lab 6fc8d1cb, 3976bff5). Entra de novo pelo formulário e volta.
+    if (new URL(page.url()).pathname.startsWith("/auth")) {
+      await loginAs(page, "proprietario");
+      await page.goto("/dashboard/contratos", { waitUntil: "networkidle" });
+    }
+    await expect(page).not.toHaveURL(/\/auth/);
     const corpo = await page.locator("body").innerText();
     // No laboratório o contrato existe sempre (seed): lá, faltar é falha, não pulo.
     const noLaboratorio = process.env.INTEGRACOES_SIMULADAS === "on";
-    test.skip(!noLaboratorio && !/Taxa de serviço do contrato/i.test(corpo), "Esta conta não tem contrato neste ambiente");
+    test.skip(!noLaboratorio && !/Taxa de serviço:/i.test(corpo), "Esta conta não tem contrato neste ambiente");
     // Prompt 23: a base é a REAL gravada no aceite — valor total (novos) ou 1 mês com a data da regra (antigos).
     expect(corpo).toMatch(/\d+%\s*(do valor total|sobre o valor mensal × meses|de 1 mês \(R\$)/);
     expect(corpo).not.toMatch(/do 1º aluguel/i);
