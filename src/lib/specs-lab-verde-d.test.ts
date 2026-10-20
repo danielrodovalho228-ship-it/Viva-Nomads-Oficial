@@ -62,3 +62,11 @@ test("t71 centraliza o grupo busca + 'Publicar pedido' no slot do cabeçalho, n�
   assert.match(spec, /compacta\.locator\("xpath=\.\."\)\.boundingBox\(\)/);
   assert.doesNotMatch(spec, /cBox\.x \+ cBox\.width \/ 2 - \(sBoxSlot/);
 });
+
+test("t6 entra de novo se a sessão salva do proprietário cair no login e usa o rótulo atual no pulo", () => {
+  const spec = ler("tests/e2e/specs/t6-dinheiro-numeros.spec.ts");
+  assert.match(spec, /loginAs\(page, "proprietario"\)/);
+  assert.match(spec, /not\.toHaveURL\(\/\\\/auth\/\)/);
+  assert.doesNotMatch(spec, /Taxa de serviço do contrato/);
+  assert.match(ler("src/app/(dashboard)/dashboard/contratos/contratos-client.tsx"), /Taxa de serviço:\{" "\}/);
+});
