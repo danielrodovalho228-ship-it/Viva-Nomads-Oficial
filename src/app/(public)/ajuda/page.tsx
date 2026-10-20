@@ -4,6 +4,7 @@ import { VivaChatBloco } from "@/components/ajuda/viva-chat";
 import { PROMESSA_ATENDIMENTO } from "@/config/atendimento";
 import Link from "next/link";
 import { SUPORTE_EMAIL } from "@/lib/site";
+import { RedesOficiais } from "@/components/layout/redes-oficiais";
 import { JsonLd } from "@/components/seo/json-ld";
 import { faqPage } from "@/lib/seo/estruturados";
 
@@ -26,6 +27,11 @@ export default function AjudaPage() {
       <div className="mt-6">
         <h2 className="mb-2 font-title text-lg font-bold text-ink">Fale com a Viva</h2>
         <VivaChatBloco />
+        {/* Redes oficiais (src/config/redes.ts — Prompt 35A, item 4). */}
+        <div className="mt-3 flex flex-wrap items-center gap-x-2 text-sm text-muted">
+          <span>Siga a Viva Nomads:</span>
+          <RedesOficiais comTexto linkClassName="font-semibold text-forest underline" />
+        </div>
       </div>
       <div className="mt-8">
         <CentralAjuda canal="site" />

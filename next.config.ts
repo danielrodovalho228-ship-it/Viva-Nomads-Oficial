@@ -18,7 +18,9 @@ const nextConfig: NextConfig = {
   },
   images: {
     // AVIF/WebP: imagens bem menores que JPEG/PNG onde o navegador suporta.
-    formats: ["image/avif", "image/webp"],
+    // No laboratório só WebP: codificar AVIF de foto larga (1280–1920 px) em runner compartilhado leva dezenas
+    // de segundos e estoura t119/t48 a 1280/1440 px; a produção continua com AVIF.
+    formats: LABORATORIO ? ["image/webp"] : ["image/avif", "image/webp"],
     // Next 16 recusa (400) imagem em IP local; o laboratório guarda fotos no Supabase local (127.0.0.1).
     // Só no laboratório: o build de produção com a chave ligada já falha no topo deste arquivo.
     dangerouslyAllowLocalIP: LABORATORIO,

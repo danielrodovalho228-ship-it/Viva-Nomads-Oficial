@@ -1,5 +1,4 @@
-import { FileText, MapPinned, ShieldCheck } from "lucide-react";
-import Link from "next/link";
+import { FileText, MapPinned } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { hojeBR, formatBRL } from "@/lib/utils";
 import { calcularTotalMensal } from "@/lib/precos";
@@ -98,19 +97,6 @@ export function PriceCard({ property, actions }: { property: Property; actions: 
         <span className="h-2 w-2 rounded-full bg-sage" />
         {availableFrom ? `Disponível a partir de ${availableFrom}` : "Disponível agora"}
       </p>
-
-      {/* Promoção do Inquilino Verificado no funil — leva à verificação já no
-          contexto de INQUILINO (candidatura é ação de inquilino), mesmo que quem
-          navega seja um proprietário-admin. */}
-      <Link
-        href="/dashboard/verificacao?como=inquilino"
-        className="mt-3 flex items-start gap-2 rounded-xl bg-blue-50 px-3 py-2.5 text-xs text-blue-800 transition-colors hover:bg-blue-100"
-      >
-        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />
-        <span>
-          <strong>Verificação de identidade: em breve.</strong> Por enquanto, candidate-se direto pela plataforma.
-        </span>
-      </Link>
 
       <p className="mt-4 flex items-start gap-1.5 text-xs text-muted">
         <MapPinned className="mt-0.5 h-3.5 w-3.5 shrink-0" />

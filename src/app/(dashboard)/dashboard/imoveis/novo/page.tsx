@@ -49,7 +49,7 @@ import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/lib/store";
 import { qualificadoDoServidor } from "@/lib/anuncio/qualificacao-rascunho";
 import { draftKey, DRAFT_KEY_LEGADO } from "@/lib/local-keys";
-import { registrarEvento } from "@/lib/eventos/registrar";
+import { registrarEvento, registrarEventoUmaVez } from "@/lib/eventos/registrar";
 import { TERMO_IA_VERSAO, camposDaIa } from "@/lib/anuncio/termo-ia";
 import { miniaturaBase64 } from "@/lib/fotos/miniatura";
 import {
@@ -320,7 +320,7 @@ export default function NewPropertyPage() {
   }
 
   useEffect(() => {
-    if (!editId) registrarEvento("iniciar_anuncio");
+    if (!editId) registrarEventoUmaVez("iniciar_anuncio");
   }, [editId]);
 
   const imovelId = editId ?? draftParam ?? draftServerId;
