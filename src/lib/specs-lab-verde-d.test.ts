@@ -56,3 +56,9 @@ test("t209 compara o assunto sem o sufixo '· Viva Nomads' que o envio acrescent
   const spec = ler("tests/e2e/specs/t209-jornada-dois-lados.spec.ts");
   assert.match(spec, /\.map\(\(r\) => r\.assunto\.replace\(\/ · Viva Nomads\$\/, ""\)\)/);
 });
+
+test("t71 centraliza o grupo busca + 'Publicar pedido' no slot do cabeçalho, não só a pílula", () => {
+  const spec = ler("tests/e2e/specs/t71-busca-topo.spec.ts");
+  assert.match(spec, /compacta\.locator\("xpath=\.\."\)\.boundingBox\(\)/);
+  assert.doesNotMatch(spec, /cBox\.x \+ cBox\.width \/ 2 - \(sBoxSlot/);
+});
