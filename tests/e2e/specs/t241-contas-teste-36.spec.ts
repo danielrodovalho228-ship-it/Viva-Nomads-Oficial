@@ -223,6 +223,12 @@ test.describe("T241 — contas de teste pelo admin, titular, selo da fila e chec
     // Troca o nome e salva a tela: a MESMA linha é atualizada (nada de segunda linha na fila).
     await page.setViewportSize({ width: 1280, height: 900 });
     await campo.fill("Helena Prado Souza");
+    // "Salvar qualificação" só libera com os requisitos marcados e a convenção respondida (o do documento já veio do envio).
+    for (const rotulo of ["Imóvel mobiliado completo", "Aceita período mínimo de 30 dias", "IPTU em dia", "Condições de habitabilidade (água, luz, gás)", "Proprietário ou procurador legal"]) {
+      const caixa = page.getByRole("checkbox", { name: rotulo });
+      if ((await caixa.getAttribute("aria-checked")) !== "true") await caixa.click();
+    }
+    await page.getByRole("button", { name: "Sim, permite" }).click();
     await page.getByRole("button", { name: "Salvar qualificação" }).click();
     await expect(page.getByText(/Qualificação salva/)).toBeVisible({ timeout: 20_000 });
     await expect.poll(async () => (await pendentes(ids.titular!)).map((l) => [l.id, l.formulario?.elig?.titularDocumento]), { timeout: 15_000 }).toEqual([
@@ -248,7 +254,7 @@ test.describe("T241 — contas de teste pelo admin, titular, selo da fila e chec
       await expect.poll(numero, { timeout: 20_000 }).toBeGreaterThan(0);
       const antes = await numero();
       await a.screenshot({ path: `${SAIDA}/t241-selo-antes-${largura}.png`, fullPage: false });
-      if (largura === 390) await a.keyboard.press("Escape");
+      if (largura === 390) await a.mouse.click(370, 420); // toque no fundo escuro fecha a gaveta do menu
       // Marca a página: se ela recarregar, a marca some.
       await a.evaluate(() => ((window as unknown as { __t241?: number }).__t241 = 1));
       for (const cb of await card.getByRole("checkbox").all()) await cb.check();
