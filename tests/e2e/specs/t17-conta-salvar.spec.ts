@@ -37,13 +37,13 @@ test.describe("T17 — Conta salva de verdade", () => {
 
   test("preferência de notificação grava e volta depois do F5", async ({ page }) => {
     await page.goto("/dashboard/conta", { waitUntil: "networkidle" });
-    const sw = page.getByRole("switch", { name: "Avisos por WhatsApp" });
+    const sw = page.getByRole("switch", { name: "Avisos por e-mail" });
     await expect(sw).toBeEnabled();
     const antes = await sw.getAttribute("aria-checked");
     await sw.click();
     await expect(page.getByText("Preferência salva.")).toBeVisible();
     await page.reload({ waitUntil: "networkidle" });
-    const depois = page.getByRole("switch", { name: "Avisos por WhatsApp" });
+    const depois = page.getByRole("switch", { name: "Avisos por e-mail" });
     await expect(depois).toHaveAttribute("aria-checked", antes === "true" ? "false" : "true");
     await depois.click(); // devolve
     await expect(page.getByText("Preferência salva.")).toBeVisible();
