@@ -168,7 +168,13 @@ test.describe("T230 — pagamento sem repetição + Caução do contrato + VN-CT
       await p.screenshot({ path: `${SAIDA}/t230-anulado-${largura}.png`, fullPage: true });
     }
     // Não volta para a fila: nenhuma falha aberta para o pagamento anulado.
-    const { data: falhas } = await adm().from("documentos_falhas").select("id").eq("pagamento_id", ids.cau!).is("resolvido_em", null);
-    expect(falhas ?? []).toHaveLength(0);
+    // Uma tentativa de emissão que falhou ANTES da anulação (lab ef9e8820) é refeita e resolvida pela fila em segundos:
+    // espera a fila esvaziar em vez de ler uma vez só. Se continuar aberta, é defeito.
+    await expect
+      .poll(async () => (await adm().from("documentos_falhas").select("id").eq("pagamento_id", ids.cau!).is("resolvido_em", null)).data ?? [], {
+        message: "nenhuma falha aberta para o pagamento anulado",
+        timeout: 30_000,
+      })
+      .toHaveLength(0);
   });
 });
