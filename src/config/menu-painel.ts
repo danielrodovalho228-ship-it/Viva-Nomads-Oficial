@@ -43,6 +43,8 @@ export interface ContextoMenu {
   plano?: string;
   /** Imóveis ATIVOS do dono: com 3 ou mais (regra das faixas), aparece a "Análise da carteira". */
   imoveisAtivos?: number;
+  /** Prompt 31a: a conta tem o papel de parceiro (ou um pedido de parceria) — revela o item "Parceiro". */
+  parceiro?: boolean;
 }
 
 export function menuDoPainel(ctx: ContextoMenu): ItemMenu[] {
@@ -169,6 +171,9 @@ export function menuDoPainel(ctx: ContextoMenu): ItemMenu[] {
       ],
     });
   }
+
+  // Prompt 31a: o papel de parceiro é a tabela parceiros (conta única); o item aparece quando ela existe.
+  if (ctx.parceiro) menu.push({ id: "parceiro", rotulo: "Parceiro", icone: "parceiros", href: "/dashboard/parceiro" });
 
   menu.push({
     id: "ferramentas",

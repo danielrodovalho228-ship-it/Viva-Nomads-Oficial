@@ -55,6 +55,7 @@ export const ASSUNTOS = {
   codigoAssinatura: "Seu código para assinar o contrato",
   codigo2fa: "Seu código de segurança",
   exclusaoConta: "Confirme a exclusão da sua conta",
+  parceriaAprovada: "Sua parceria foi aprovada: ative sua página",
   recibo: "Seu recibo de pagamento",
   comprovanteCaucao: "Seu comprovante de Caução",
   termoDevolucao: "Termo de devolução da Caução",

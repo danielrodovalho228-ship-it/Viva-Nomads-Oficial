@@ -30,3 +30,29 @@ test("t91 espera a resposta além do cache de 60 s", () => {
   assert.ok(m, "toPass com timeout");
   assert.ok(Number(m[1].replace(/_/g, "")) >= 110_000);
 });
+
+test("t17 e t43 usam o único aviso que a Conta tem (e-mail); WhatsApp saiu na ordem p30 item 8", () => {
+  const tela = ler("src/components/account/conta-secoes.tsx");
+  assert.match(tela, /label: "Avisos por e-mail"/);
+  assert.doesNotMatch(tela, /Avisos por WhatsApp/);
+  for (const f of ["t17-conta-salvar", "t43-notificacoes"]) {
+    const spec = ler(`tests/e2e/specs/${f}.spec.ts`);
+    assert.match(spec, /name: "Avisos por e-mail"/);
+    assert.doesNotMatch(spec, /toBeVisible\(\)[^\n]*\n?.*Avisos por WhatsApp|getByText\("Avisos por WhatsApp"\)\)\.toBeVisible|name: "Avisos por WhatsApp"/);
+  }
+});
+
+test("t3: /pedidos/novo é página pública (fora da casca), como /buscar", () => {
+  const menu = ler("src/config/menu-painel.ts");
+  assert.match(menu, /href: "\/pedidos\/novo"/);
+  const spec = ler("tests/e2e/specs/t3-isolamento-papeis.spec.ts");
+  assert.match(spec, /filter\(\(h\) => !PUBLICAS_FORA_DA_CASCA\.includes\(h\)\)/);
+  assert.match(spec, /PUBLICAS_FORA_DA_CASCA = \[[^\]]*"\/pedidos\/novo"/);
+});
+
+test("t209 compara o assunto sem o sufixo '· Viva Nomads' que o envio acrescenta", () => {
+  const assuntos = ler("src/lib/notifications/assuntos.ts");
+  assert.match(assuntos, /SUFIXO_ASSUNTO = " · Viva Nomads"/);
+  const spec = ler("tests/e2e/specs/t209-jornada-dois-lados.spec.ts");
+  assert.match(spec, /\.map\(\(r\) => r\.assunto\.replace\(\/ · Viva Nomads\$\/, ""\)\)/);
+});

@@ -62,7 +62,7 @@ async function semRolagemLateral(page: Page) {
 
 async function assuntos(usuarioId: string): Promise<string[]> {
   const { data } = await adm().from("emails_teste").select("assunto").eq("usuario_id", usuarioId);
-  return ((data ?? []) as { assunto: string }[]).map((r) => r.assunto);
+  return ((data ?? []) as { assunto: string }[]).map((r) => r.assunto.replace(/ · Viva Nomads$/, "")); // o envio acrescenta a marca (SUFIXO_ASSUNTO)
 }
 
 async function pedirPresencial(page: Page, imovelId: string, campo: string) {

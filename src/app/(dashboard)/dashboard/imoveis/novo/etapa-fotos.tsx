@@ -68,11 +68,14 @@ export function EtapaFotos({
         </div>
       </details>
 
-      <p className="mt-3 text-sm">
-        <a href={`/parceiros/fotografos${cep ? `?cep=${encodeURIComponent(cep)}` : ""}`} target="_blank" rel="noopener" className="font-medium text-forest underline">
-          Quer ajuda profissional? Veja fotógrafos parceiros na sua cidade
+      {/* Prompt 31a: porta para os fotógrafos parceiros da cidade do imóvel (o CEP do cadastro vira a cidade). */}
+      <div className="mt-3 rounded-xl border border-sage-200 bg-sage-50 p-3 text-sm" data-testid="porta-fotografo">
+        <p className="font-semibold text-ink">Quer um fotógrafo profissional?</p>
+        <p className="mt-0.5 text-muted">Veja os fotógrafos parceiros que atendem a cidade deste imóvel. As fotos vão direto para o anúncio.</p>
+        <a href={`/parceiros/fotografos${cep ? `?cep=${encodeURIComponent(cep)}` : ""}`} target="_blank" rel="noopener" className="mt-1 inline-block font-medium text-forest underline">
+          Ver fotógrafos na cidade do imóvel
         </a>
-      </p>
+      </div>
       <div className="mt-3 flex flex-wrap gap-1.5">
         {SUGGESTED_ROOMS.map((r) => (
           <span key={r} className="rounded-full bg-surface-2 px-2.5 py-1 text-xs text-muted">
