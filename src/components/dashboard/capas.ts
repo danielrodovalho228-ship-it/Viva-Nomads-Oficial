@@ -40,4 +40,20 @@ export const FOTOS_FERRAMENTAS = {
   protecao: { src: `${DIR}/ferramentas-protecao.webp`, alt: "Detector de fumaça no teto e extintor no corredor do apartamento" },
 } as const;
 
-export type CapaPainel = keyof typeof CAPAS;
+/**
+ * Capa do painel do morador (ordem b36ca0ee, D1). A imagem ainda não foi enviada: enquanto `pronta` for false a tela usa a
+ * capa de buscas e a pendência fica registrada aqui. Ao enviar o arquivo, trocar `pronta` para true (o teste confere).
+ */
+export const CAPA_MORADOR = {
+  src: "/images/unicas/painel-morador-capa.webp",
+  alt: "Morador chegando ao apartamento mobiliado com a mala",
+  pronta: false,
+  pendencia: "falta imagem",
+} as const;
+
+export type CapaPainel = keyof typeof CAPAS | "morador";
+
+/** Chave de capa do morador: a própria, quando o arquivo existe; senão a de buscas. */
+export function capaDoMorador(): CapaPainel {
+  return CAPA_MORADOR.pronta ? "morador" : "buscas";
+}
