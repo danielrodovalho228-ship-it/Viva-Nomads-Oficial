@@ -67,7 +67,7 @@ teste mais de 8 dias. O motivo nunca leva dado.
   a cópia (2×), prova que o "Drive" só tem nomes e conteúdo cifrados e que a retenção podou, roda o teste de
   restauração e dois casos de falha de propósito (dump corrompido; cifra adulterada) → vermelho e alarme montado,
   sem enviar e-mail.
-- E2E do cartão: `tests/e2e/specs/t238-backup-admin.spec.ts` (laboratório, 390 e 1280 px).
+- E2E do cartão: `tests/e2e/specs/t242-backup-admin.spec.ts` (laboratório, 390 e 1280 px).
 
 ### Espaço
 

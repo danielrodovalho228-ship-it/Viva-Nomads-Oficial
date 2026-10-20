@@ -12,6 +12,17 @@ import { checklistCompleto, ITENS_CHECKLIST, MOTIVOS_RECUSA_PARCERIA, rotuloCate
 import { formatarDocumento } from "@/lib/documento-pessoa";
 import { dataHoraBRT } from "@/lib/datas-brasilia";
 import {
+  algumSalvando,
+  comecarSalvar,
+  terminarSalvar,
+  valorExibido,
+  TEXTO_SALVANDO,
+  TEXTO_SALVO,
+  TEXTO_TENTAR_DE_NOVO,
+  type EstadoItem,
+  type EstadosChecklist,
+} from "@/lib/parceiros/checklist-estado";
+import {
   aprovarSolicitacao,
   criarSolicitacaoSuporte,
   definirParceiroGeral,
@@ -82,10 +93,21 @@ export function FichaSolicitacao({ f }: { f: Ficha }) {
   const [motivo, setMotivo] = useState("");
   const completo = checklistCompleto(check);
   const aguardando = f.status === "aguardando_email";
-  const marcar = (chave: string, valor: boolean) =>
-    rodar(() => salvarChecklistParceria(f.id, { [chave]: valor }), "Checklist salvo.", (r) => {
-      if (r.ok && r.valor) setCheck(r.valor as Record<string, unknown>);
-    });
+  // Prompt 36, item 4: cada item mostra "Salvando…", "Salvo" ou o erro com "Tentar de novo".
+  const router = useRouter();
+  const [, iniciarRefresh] = useTransition();
+  const [estados, setEstados] = useState<EstadosChecklist>({});
+  const salvandoChecklist = algumSalvando(estados);
+  const marcar = async (chave: string, valor: boolean) => {
+    setEstados((e) => comecarSalvar(e, chave, valor));
+    const r: Res = await salvarChecklistParceria(f.id, { [chave]: valor }).catch(() => ({ ok: false as const, erro: "Sem conexão. Tente de novo." }));
+    setEstados((e) => terminarSalvar(e, chave, r));
+    if (r.ok) {
+      if (r.valor) setCheck(r.valor as Record<string, unknown>);
+      iniciarRefresh(() => router.refresh());
+    }
+  };
+  const marcado = (chave: string) => valorExibido(estados, chave, check[chave] === true);
 
   return (
     <Panel data-testid="ficha-parceria" data-email={f.email ?? ""}>
@@ -147,7 +169,7 @@ export function FichaSolicitacao({ f }: { f: Ficha }) {
       </dl>
 
       {!aguardando && (
-        <fieldset disabled={pendente} className="mt-4 rounded-xl border border-line p-3" data-testid="ficha-checklist">
+        <fieldset disabled={pendente || salvandoChecklist} className="mt-4 rounded-xl border border-line p-3" data-testid="ficha-checklist">
           <legend className="px-1 text-sm font-semibold text-ink">Checklist</legend>
           <p className="mb-2 text-sm text-ink" data-testid="ficha-identidade">
             Identidade: <strong>{f.identidade?.texto ?? "Sem conta ligada"}</strong>
@@ -157,7 +179,7 @@ export function FichaSolicitacao({ f }: { f: Ficha }) {
             {ITENS_CHECKLIST.map((i) => (
               <li key={i.chave}>
                 <label className="flex items-start gap-2 text-sm text-ink">
-                  <input type="checkbox" className="mt-1" checked={check[i.chave] === true} onChange={(e) => marcar(i.chave, e.target.checked)} data-testid={`check-${i.chave}`} />
+                  <input type="checkbox" className="mt-1" checked={marcado(i.chave)} onChange={(e) => void marcar(i.chave, e.target.checked)} data-testid={`check-${i.chave}`} />
                   <span>
                     {i.rotulo}
                     {i.chave === "documento" && (
@@ -171,14 +193,16 @@ export function FichaSolicitacao({ f }: { f: Ficha }) {
                     )}
                   </span>
                 </label>
+                <EstadoDoItem chave={i.chave} estado={estados[i.chave]} aoTentar={(v) => void marcar(i.chave, v)} />
               </li>
             ))}
             {f.identidade?.estado !== "confirmada" && (
               <li>
                 <label className="flex items-start gap-2 text-sm text-ink">
-                  <input type="checkbox" className="mt-1" checked={check.identidade_manual === true} onChange={(e) => marcar("identidade_manual", e.target.checked)} />
+                  <input type="checkbox" className="mt-1" checked={marcado("identidade_manual")} onChange={(e) => void marcar("identidade_manual", e.target.checked)} data-testid="check-identidade_manual" />
                   <span>Conferência manual da identidade feita (documento com foto)</span>
                 </label>
+                <EstadoDoItem chave="identidade_manual" estado={estados.identidade_manual} aoTentar={(v) => void marcar("identidade_manual", v)} />
               </li>
             )}
           </ul>
@@ -326,5 +350,31 @@ export function ParceiroGeralForm({ inicial }: { inicial: ParceiroGeral }) {
       </Button>
       {aviso}
     </div>
+  );
+}
+
+/** Prompt 36, item 4: "Salvando…" (com indicador), "Salvo" ou o erro com "Tentar de novo", ao lado do item. */
+function EstadoDoItem({ chave, estado, aoTentar }: { chave: string; estado: EstadoItem | undefined; aoTentar: (valor: boolean) => void }) {
+  if (!estado) return null;
+  if (estado.fase === "salvando")
+    return (
+      <span className="ml-6 inline-flex items-center gap-1.5 text-xs text-muted" role="status" data-testid={`check-estado-${chave}`} data-fase="salvando">
+        <span className="h-3 w-3 animate-spin rounded-full border-2 border-sage-300 border-t-forest" aria-hidden />
+        {TEXTO_SALVANDO}
+      </span>
+    );
+  if (estado.fase === "salvo")
+    return (
+      <span className="ml-6 text-xs font-medium text-forest" role="status" data-testid={`check-estado-${chave}`} data-fase="salvo">
+        {TEXTO_SALVO}
+      </span>
+    );
+  return (
+    <span className="ml-6 inline-flex flex-wrap items-center gap-2 text-xs text-red-700" role="alert" data-testid={`check-estado-${chave}`} data-fase="erro">
+      {estado.erro}
+      <button type="button" className="font-semibold underline" onClick={() => aoTentar(estado.valor)} data-testid={`check-tentar-${chave}`}>
+        {TEXTO_TENTAR_DE_NOVO}
+      </button>
+    </span>
   );
 }

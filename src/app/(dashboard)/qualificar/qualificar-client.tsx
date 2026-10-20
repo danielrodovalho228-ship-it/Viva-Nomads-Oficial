@@ -241,7 +241,7 @@ export default function QualificationChecklistPage({
     setDocBusy(true);
     let r: Awaited<ReturnType<typeof enviarDocumentoParaConferencia>>;
     try {
-      r = await enviarDocumentoParaConferencia(imovel?.id ?? imovelPedido.current, d.path, d.hash);
+      r = await enviarDocumentoParaConferencia(imovel?.id ?? imovelPedido.current, d.path, d.hash, elig.titularDocumento ?? null);
     } catch {
       r = { ok: false, error: "Não foi possível colocar o documento na fila de conferência agora. Tente de novo." };
     }

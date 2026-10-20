@@ -138,7 +138,8 @@
         "t183-telas-logadas-390",
         "t195-matricula-caf",
         "t220-recibo-assinatura",
-        "t237-correcoes-35a"
+        "t237-correcoes-35a",
+        "t241-contas-teste-36"
       ]
     },
     "/admin/emails-teste": {
@@ -185,7 +186,8 @@
         "t183-telas-logadas-390",
         "t201-qa-muse",
         "t236-parceiros-ciclo",
-        "t239-cartao-parceiro"
+        "t239-cartao-parceiro",
+        "t241-contas-teste-36"
       ]
     },
     "/admin/pedidos": {
@@ -216,7 +218,8 @@
         "t101-admin-usuarios",
         "t178-telefone-sms",
         "t48-varredura",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t241-contas-teste-36"
       ]
     },
     "/ajuda": {
@@ -1166,7 +1169,8 @@
         "t18-seo-a11y",
         "t40-novo-anuncio-fotos",
         "t183-telas-logadas-390",
-        "t237-correcoes-35a"
+        "t237-correcoes-35a",
+        "t241-contas-teste-36"
       ]
     },
     "/roi": {
@@ -1349,7 +1353,8 @@
         "publico"
       ],
       "specs": [
-        "t236-parceiros-ciclo"
+        "t236-parceiros-ciclo",
+        "t241-contas-teste-36"
       ]
     }
   },
@@ -1918,7 +1923,8 @@
         "proprietario"
       ],
       "specs": [
-        "t237-correcoes-35a"
+        "t237-correcoes-35a",
+        "t241-contas-teste-36"
       ]
     },
     "src/lib/data/actions.ts#getLatestDraft": {
@@ -2008,7 +2014,8 @@
         "proprietario"
       ],
       "specs": [
-        "t237-correcoes-35a"
+        "t237-correcoes-35a",
+        "t241-contas-teste-36"
       ]
     },
     "src/lib/data/actions.ts#sendMessage": {
@@ -2536,6 +2543,14 @@
         "t85-conferencia-entrada-saida"
       ]
     },
+    "src/lib/data/conta-teste-actions.ts#marcarContaTeste": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t241-contas-teste-36"
+      ]
+    },
     "src/lib/data/contrato-assinar-actions.ts#assinarContrato": {
       "personas": [
         "inquilino",
@@ -2658,7 +2673,9 @@
       "personas": [
         "admin"
       ],
-      "specs": []
+      "specs": [
+        "t241-contas-teste-36"
+      ]
     },
     "src/lib/data/documentos-admin.ts#reabrirConferencia": {
       "personas": [
@@ -3736,7 +3753,8 @@
         "admin"
       ],
       "specs": [
-        "t236-parceiros-ciclo"
+        "t236-parceiros-ciclo",
+        "t241-contas-teste-36"
       ]
     },
     "src/lib/parceiros/admin-actions.ts#suspenderParceiro": {
