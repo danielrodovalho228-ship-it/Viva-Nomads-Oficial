@@ -3,7 +3,7 @@ import { authFile } from "../fixtures/auth";
 import { adm, NO_LABORATORIO } from "../fixtures/laboratorio";
 
 /**
- * T238 — Admin › cartão "Backup e recuperação" (Resiliência 2). O cartão lê public.backups_execucoes (0191):
+ * T242 — Admin › cartão "Backup e recuperação" (Resiliência 2). O cartão lê public.backups_execucoes (0191):
  * verde com cópia < 36 h e teste de restauração < 8 dias; vermelho se a última cópia falhou, se a cópia tem mais de
  * 36 h ou o teste mais de 8 dias; acima de 10 GB na pasta do Drive sugere o Google One. 390 e 1280 px, sem rolagem
  * lateral. As linhas são inseridas com o cliente de serviço e apagadas no fim.
@@ -11,7 +11,7 @@ import { adm, NO_LABORATORIO } from "../fixtures/laboratorio";
 const LARGURAS = [390, 1280];
 const H = 3_600_000;
 
-test.describe("T238 — Admin: cartão Backup e recuperação", () => {
+test.describe("T242 — Admin: cartão Backup e recuperação", () => {
   test.use({ storageState: authFile("admin") });
   test.describe.configure({ mode: "serial" });
   test.skip(!NO_LABORATORIO, "Precisa do banco do laboratório.");
@@ -58,7 +58,7 @@ test.describe("T238 — Admin: cartão Backup e recuperação", () => {
       await expect(page.getByTestId("cartao-backup-pasta")).toContainText("2,0 GB de 15 GB");
       await expect(page.getByTestId("cartao-backup-pasta")).not.toContainText("Google One");
       await expect(page.getByTestId("cartao-backup-restauracao")).toHaveAttribute("href", /\/blob\/main\/docs\/RESTAURACAO\.md$/);
-      await cartao.screenshot({ path: `tests/laboratorio/saida/t238-backup-verde-${largura}.png` });
+      await cartao.screenshot({ path: `tests/laboratorio/saida/t242-backup-verde-${largura}.png` });
     }
   });
 
@@ -72,7 +72,7 @@ test.describe("T238 — Admin: cartão Backup e recuperação", () => {
       await expect(page.getByTestId("backup-copia-porque")).toHaveText("A última cópia falhou.");
       await expect(page.getByTestId("backup-copia-motivo")).toContainText("falha na etapa: dump do banco");
       await expect(page.getByTestId("backup-teste")).toHaveAttribute("data-estado", "verde");
-      await cartao.screenshot({ path: `tests/laboratorio/saida/t238-backup-falha-${largura}.png` });
+      await cartao.screenshot({ path: `tests/laboratorio/saida/t242-backup-falha-${largura}.png` });
     }
   });
 
@@ -88,7 +88,7 @@ test.describe("T238 — Admin: cartão Backup e recuperação", () => {
       await expect(page.getByTestId("backup-copia-porque")).toHaveText("A última cópia tem mais de 36 h.");
       await expect(page.getByTestId("backup-teste-porque")).toHaveText("O último teste de restauração tem mais de 8 dias.");
       await expect(page.getByTestId("cartao-backup-pasta")).toContainText("Passou de 10 GB: avalie o Google One.");
-      await cartao.screenshot({ path: `tests/laboratorio/saida/t238-backup-atrasado-${largura}.png` });
+      await cartao.screenshot({ path: `tests/laboratorio/saida/t242-backup-atrasado-${largura}.png` });
     }
   });
 });
