@@ -24,7 +24,9 @@ for (const largura of [390, 1280]) {
       await page.goto("/buscar?exemplos=1", { waitUntil: "domcontentloaded" });
       const cartao = page.locator('a[href="/imoveis/ube-002"]').first();
       await expect(cartao).toBeVisible();
-      await expect(cartao.getByTestId("cartao-total-mes")).toContainText("3.130");
+      // O total do mês (com a limpeza) é o "R$ X" de "R$ X/mês · R$ Y em N meses" (QA do Prompt 40).
+      await expect(cartao.getByTestId("cartao-preco-mes")).toContainText("3.130");
+      await expect(cartao.getByTestId("cartao-total-mes")).toContainText("/mês");
     });
 
     test("ube-002: 'Enviar candidatura' abre o resumo com a limpeza e 'Total por mês' R$ 3.130", async ({ page }) => {
