@@ -145,8 +145,10 @@ test.describe("T229 — admin conversa com tudo", () => {
       if (largura === 1280) {
         const selo = page.locator('[data-menu-id="admin-documentos"]');
         if (await selo.isVisible()) {
-          const t = (await selo.innerText()).match(/(\d+)\s*$/);
-          expect(t ? Number(t[1]) : 0).toBe(filaHome);
+          // O selo carrega depois da tela (as server actions do menu rodam em fila): espera o número chegar.
+          await expect
+            .poll(async () => Number((await selo.innerText()).match(/(\d+)\s*$/)?.[1] ?? 0), { timeout: 15_000 })
+            .toBe(filaHome);
         }
       }
     });

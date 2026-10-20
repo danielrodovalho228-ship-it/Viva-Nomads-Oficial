@@ -7,7 +7,7 @@ import { AvatarUploader } from "@/components/account/avatar-uploader";
 import { TelefoneVerificacao } from "@/components/account/telefone-verificacao";
 import { CaixaEmailsTeste } from "@/components/account/caixa-emails-teste";
 import { ContaMenu } from "@/components/account/conta-menu";
-import { AjudaContato, DadosPessoais, DangerZone, DocumentoPessoa, NotificationsPanel } from "@/components/account/conta-secoes";
+import { AjudaContato, DadosPessoais, DangerZone, DocumentoPessoa, NotificationsPanel, QueroSerParceiro } from "@/components/account/conta-secoes";
 import { BlocoConta, ConfiancaLista, PerfilProfissional, VerComoOutrosVeem } from "@/components/account/conta-blocos";
 
 /**
@@ -48,6 +48,7 @@ export default function AccountPage() {
         <BlocoConta id="preferencias" numero={4} titulo="Preferências" subtitulo="Avisos, ajuda e a sua conta.">
           <NotificationsPanel />
           <AjudaContato />
+          <QueroSerParceiro />
           <DangerZone />
           {/* Por último: carrega depois da tela e não pode empurrar "Excluir conta" para fora do alcance (t183). */}
           <CaixaEmailsTeste />

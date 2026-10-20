@@ -7,7 +7,7 @@
 import { assuntoChamado, assuntoManutencao, ASSUNTOS } from "./assuntos.ts";
 import { TEMPLATES, type NotificationEvent } from "./eventos-email.ts";
 import { blocoDados } from "./modelo-email.ts";
-import { emailCodigo2fa, emailCodigoAssinatura, emailDocumentoFiscal, emailExclusaoConta, montarNotificacao, type EmailMontado } from "./montar-email.ts";
+import { emailCodigo2fa, emailCodigoAssinatura, emailDocumentoFiscal, emailExclusaoConta, emailParceriaAprovada, montarNotificacao, type EmailMontado } from "./montar-email.ts";
 import { REMETENTE } from "./remetente.ts";
 import { templatesSupabase } from "./templates-supabase.ts";
 import { emailDecisaoDocumento, linhasDoAviso } from "../documento/aviso-decisao.ts";
@@ -20,7 +20,7 @@ export interface EmailDoCatalogo extends EmailMontado {
 }
 
 /** Eventos do notify que só vão para a equipe. */
-export const EVENTOS_SO_EQUIPE: NotificationEvent[] = ["chamado_equipe", "documento_recebido"];
+export const EVENTOS_SO_EQUIPE: NotificationEvent[] = ["chamado_equipe", "documento_recebido", "parceria_equipe"];
 
 const PROP = "1b2c3d4e-0000-4000-8000-000000000001";
 
@@ -80,6 +80,7 @@ export function catalogoEmails(siteUrl: string): EmailDoCatalogo[] {
   lista.push(doApp("codigo:assinatura", emailCodigoAssinatura(siteUrl, { imovel: "Studio mobiliado no Centro", codigo: "824519" })));
   lista.push(doApp("codigo:2fa", emailCodigo2fa(siteUrl, { codigo: "824519" })));
   lista.push(doApp("conta:exclusao", emailExclusaoConta(siteUrl, { url: `${siteUrl}/excluir-conta/confirmar?token=exemplo` })));
+  lista.push(doApp("parceria:aprovada", emailParceriaAprovada(siteUrl, { url: `${siteUrl}/parceiros/ativar?t=exemplo`, nome: "Marina Souza" })));
   const fiscal = { numero: "REC-2026-000004", contratoRef: "VN-CT-2026-0007", conferirUrl: `${siteUrl}/conferir/ABCD1234`, papel: "locatario" as const };
   lista.push(doApp("fiscal:recibo", emailDocumentoFiscal(siteUrl, { ...fiscal, tipo: "recibo_aluguel", rotulo: "Recibo de pagamento" })));
   lista.push(doApp("fiscal:comprovante", emailDocumentoFiscal(siteUrl, { ...fiscal, tipo: "comprovante_caucao", rotulo: "Comprovante de Caução", numero: "CAU-2026-000001" })));

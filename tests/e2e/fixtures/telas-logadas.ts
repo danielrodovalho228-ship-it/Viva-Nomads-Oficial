@@ -40,6 +40,7 @@ export const TELAS_PAINEL = [
   "/dashboard/simulador",
   "/dashboard/tributacao",
   "/dashboard/servicos",
+  "/dashboard/parceiro",
   "/dashboard/solicitacoes",
   "/dashboard/verificacao",
   "/dashboard/viabilidade",

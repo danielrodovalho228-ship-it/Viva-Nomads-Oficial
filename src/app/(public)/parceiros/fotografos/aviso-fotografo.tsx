@@ -17,6 +17,7 @@ export function AvisoFotografo({
   logado,
   voltarPara,
   autoAvisar = false,
+  categoria = "fotografia",
 }: {
   cidade: string;
   uf: string;
@@ -24,6 +25,8 @@ export function AvisoFotografo({
   voltarPara: string;
   /** Voltou do login pelo link do aviso: grava já. */
   autoAvisar?: boolean;
+  /** Prompt 31a: o avise-me vale para qualquer categoria de parceiro. */
+  categoria?: string;
 }) {
   const [enviando, setEnviando] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; texto: string } | null>(null);
@@ -44,7 +47,7 @@ export function AvisoFotografo({
 
   async function avisar() {
     setEnviando(true);
-    const r: { ok: boolean; erro?: string; mensagem?: string } = await avisarFotografoNaCidade({ cidade, uf }).catch(() => ({ ok: false, erro: "Sem conexão. Tente de novo." }));
+    const r: { ok: boolean; erro?: string; mensagem?: string } = await avisarFotografoNaCidade({ cidade, uf, categoria }).catch(() => ({ ok: false, erro: "Sem conexão. Tente de novo." }));
     setEnviando(false);
     setMsg({ ok: r.ok, texto: (r.ok ? r.mensagem : r.erro) ?? "" });
   }
@@ -52,7 +55,7 @@ export function AvisoFotografo({
   return (
     <div className="mt-4 rounded-xl border border-sage-200 bg-sage-50 p-4" data-testid="aviso-fotografo">
       <p className="flex items-center gap-2 font-semibold text-ink">
-        <BellRing className="size-5 shrink-0 text-forest" aria-hidden /> {CONVITE_AVISO}
+        <BellRing className="size-5 shrink-0 text-forest" aria-hidden /> {categoria === "fotografia" ? CONVITE_AVISO : "Avisamos você quando houver um parceiro desta categoria na sua cidade."}
       </p>
       {enviando && !msg && autoAvisar && (
         <p className="mt-2 text-sm text-ink" role="status">
@@ -70,20 +73,20 @@ export function AvisoFotografo({
       ) : (
         <div className="mt-3">
           <p className="text-sm text-ink" data-testid="aviso-fotografo-deslogado">
-            {TEXTO_AVISO_DESLOGADO}.
+            {categoria === "fotografia" ? TEXTO_AVISO_DESLOGADO : "Entre ou crie sua conta para ser avisado quando houver parceiro na sua cidade"}.
           </p>
           <ButtonLink href={linkEntrarParaAvisar(voltarPara)} className="mt-2 w-full sm:w-auto" data-testid="aviso-fotografo-entrar">
             Entrar ou criar conta
           </ButtonLink>
         </div>
       )}
-      {!uf && !msg && <p className="mt-2 text-xs text-ink/70">Busque pelo CEP do imóvel para sabermos a cidade e o estado.</p>}
+      {!uf && !msg && <p className="mt-2 text-xs text-ink/70">Busque pelo CEP (ou escolha o estado) para sabermos a cidade e o estado.</p>}
       {msg && !msg.ok && (
         <p className="mt-2 text-sm text-red-700" role="alert">
           {msg.texto}
         </p>
       )}
-      <p className="mt-3 text-xs text-ink/70">Enquanto isso, você pode publicar com as suas próprias fotos: o anúncio sai normalmente.</p>
+      {categoria === "fotografia" && <p className="mt-3 text-xs text-ink/70">Enquanto isso, você pode publicar com as suas próprias fotos: o anúncio sai normalmente.</p>}
     </div>
   );
 }

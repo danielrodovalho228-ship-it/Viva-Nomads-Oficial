@@ -220,7 +220,7 @@ test.describe("T231 — admin: todo número com lista, financeiro com uma base",
       for (const url of ["/parceiros", "/parceiros/fotografos"]) {
         await page.goto(url, { waitUntil: "domcontentloaded" });
         await expect(page.getByTestId("taxa-servico-parceiros").first()).toContainText("Taxa de serviço: 10% sobre o valor do serviço, para todas as categorias.");
-        await expect(page.getByTestId("taxa-servico-parceiros").first()).toContainText("A Viva não guarda o dinheiro.");
+        await expect(page.getByTestId("taxa-servico-parceiros").first()).toContainText("A Viva não guarda o seu dinheiro.");
         await expect(page.getByTestId("taxa-servico-parceiros").first()).toContainText("Pagamento pela plataforma em breve.");
         await expect(page.locator("body")).not.toContainText(/R\$ ?(40|60|80)\b|taxa de parceria por pedido/i);
         await semRolagemLateral(page);

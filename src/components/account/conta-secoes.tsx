@@ -333,6 +333,21 @@ export function AjudaContato() {
   );
 }
 
+/** Prompt 31a: "Quero ser parceiro" — abre o mesmo formulário do site, pré-preenchido pela conta (papel extra). */
+export function QueroSerParceiro() {
+  return (
+    <Panel title="Quero ser parceiro" className="mt-6" data-testid="conta-quero-ser-parceiro">
+      <p className="text-sm text-muted">
+        Faz fotografia, mudança, limpeza, montagem ou manutenção? Peça a parceria com esta mesma conta: você continua
+        alugando ou anunciando normalmente.
+      </p>
+      <a href="/dashboard/parceiro" className="mt-3 inline-flex items-center gap-2 rounded-xl border border-sage-200 px-4 py-2.5 text-sm font-medium text-forest hover:border-sage">
+        Quero ser parceiro
+      </a>
+    </Panel>
+  );
+}
+
 export function ChangePassword() {
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");

@@ -16,9 +16,14 @@ const PAGINAS = ["src/app/(public)/parceiros/page.tsx", "src/app/(public)/parcei
 test("t171: as duas páginas públicas têm o data-testid que a spec lê e não têm mais as faixas antigas", () => {
   for (const p of PAGINAS) {
     const codigo = ler(p);
-    assert.match(codigo, /data-testid="taxa-servico-parceiros"/, p);
+    // Prompt 31a: as duas páginas usam o bloco único de regras claras, que carrega o data-testid.
+    assert.match(codigo, /<RegrasParceiros pagamentoAtivo=\{PAGAMENTO_PARCEIROS_ATIVO\}/, p);
     assert.doesNotMatch(codigo, /faixas-taxa-parceria/, p);
   }
+});
+
+test("t171: o bloco de regras claras carrega o data-testid da spec", () => {
+  assert.match(ler("src/components/parceiros/regras-parceiros.tsx"), /data-testid="taxa-servico-parceiros"/);
 });
 
 test("t171: a spec confere a taxa de 10% e exige que as faixas antigas não voltem", () => {

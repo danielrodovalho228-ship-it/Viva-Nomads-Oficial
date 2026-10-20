@@ -1,36 +1,33 @@
 import { test, expect } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import { TAXA_PARCERIA_TEXTO } from "../../../src/lib/atendimento/parceiros-texto";
-import { contatoLiberado, podeAceitar } from "../../../src/lib/fotografos/regras";
-import { CHAVE_ANON, NO_LABORATORIO, URL_SUPABASE, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { CHAVE_ANON, NO_LABORATORIO, URL_SUPABASE, adm, apagarContas, cpfAleatorio, criarConta, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
- * T44 — PARCEIROS (laboratório, ordem 225d0648).
- *  1. /parceiros: o formulário "Quero ser parceiro" grava o interesse (e recusa contato inválido).
- *  2. Busca de fotógrafos por cidade/CEP: só APROVADOS, só da região buscada (Uberlândia ≠ Belém).
- *  3. Pedido do dono: entra como "enviado", sem taxa paga; observação com telefone é recusada; 2º pedido aberto ao mesmo
- *     fotógrafo é barrado.
- *  4. Aceite: o BANCO recusa "aceito" sem taxa paga (contato do dono só depois do pagamento); com a taxa paga passa.
- *  5. O contato do fotógrafo (fotografos_contato) não é lido por visitante.
- *  6. Taxa de parceria 40 / 60 / 80 (até 20, 21 a 40, acima de 40 fotos) nos textos oficiais.
+ * T44 — PARCEIROS (laboratório, ordem 225d0648; refeito no Prompt 31a).
+ *  1. /parceiros: "Seja parceiro" pede conta com e-mail confirmado (o formulário de interesse saiu).
+ *  2. Prompt 14: 6 cartões com foto, grade 3 + 3 no computador.
+ *  3. Busca de fotógrafos por cidade: só parceiros PUBLICADOS, só da cidade buscada (Uberlândia ≠ Belém).
+ *  4. O visitante não lê a tabela parceiros (documento, recebimento, telefone): só a view pública.
+ *  5. Taxa de serviço de 10% para todas as categorias nos textos oficiais.
  */
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.parc.${sufixo}@lab.vivanomads.test`, nome: "Paula Parceira", role: "owner" as const };
-const ids: { dono?: string; udi?: string; belem?: string; pendente?: string } = {};
-const nomeUdi = `Foto Udi ${sufixo}`;
-const nomeBelem = `Foto Belem ${sufixo}`;
-const nomePend = `Foto Pendente ${sufixo}`;
+const contas = {
+  udi: { email: `udi.parc.${sufixo}@lab.vivanomads.test`, nome: `Foto Udi ${sufixo}`, role: "tenant" as const },
+  belem: { email: `belem.parc.${sufixo}@lab.vivanomads.test`, nome: `Foto Belem ${sufixo}`, role: "tenant" as const },
+  rasc: { email: `rasc.parc.${sufixo}@lab.vivanomads.test`, nome: `Foto Rascunho ${sufixo}`, role: "tenant" as const },
+};
+const ids: Record<string, string> = {};
 
-async function novoFotografo(nome: string, cidades: string[], aprovado: boolean): Promise<string> {
-  const { data, error } = await adm()
-    .from("fotografos")
-    .insert({ nome_comercial: nome, cidades, pacote_fotos: 20, pacote_prazo_dias: 3, pacote_preco: 450, aprovado, aprovado_em: aprovado ? new Date().toISOString() : null })
-    .select("id")
-    .single();
+async function novoParceiro(chave: keyof typeof contas, cidades: string[], status: "publicado" | "rascunho"): Promise<void> {
+  const c = contas[chave];
+  const uid = await criarConta(c, senha);
+  ids[chave] = uid;
+  const { error } = await adm()
+    .from("parceiros")
+    .insert({ user_id: uid, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: c.nome, slug: `t44-${chave}-${sufixo}`, categorias: ["fotografia"], cidades, status, publicado_em: status === "publicado" ? new Date().toISOString() : null, telefone: "34999991234" });
   if (error) throw error;
-  await adm().from("fotografos_contato").insert({ fotografo_id: data.id, email: `contato.${sufixo}@lab.vivanomads.test`, whatsapp: "31999990000" });
-  return data.id as string;
 }
 
 test.describe("T44 — Parceiros", () => {
@@ -39,48 +36,22 @@ test.describe("T44 — Parceiros", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
   test.beforeAll(async () => {
-    ids.dono = await criarConta(dono, senha);
-    ids.udi = await novoFotografo(nomeUdi, ["Uberlândia"], true);
-    ids.belem = await novoFotografo(nomeBelem, ["Belém"], true);
-    ids.pendente = await novoFotografo(nomePend, ["Uberlândia"], false);
+    await novoParceiro("udi", ["Uberlândia"], "publicado");
+    await novoParceiro("belem", ["Belém"], "publicado");
+    await novoParceiro("rasc", ["Uberlândia"], "rascunho");
   });
 
   test.afterAll(async () => {
-    await adm().from("fotografo_pedidos").delete().eq("owner_id", ids.dono ?? "");
-    await adm().from("fotografos").delete().in("id", [ids.udi, ids.belem, ids.pendente].filter(Boolean) as string[]);
-    await adm().from("parceiros_interesse").delete().like("nome", `%${sufixo}%`);
-    await apagarContas([ids.dono]);
+    await adm().from("parceiros").delete().in("user_id", Object.values(ids));
+    await apagarContas(Object.values(ids));
   });
 
-  test("/parceiros: o formulário grava o interesse e recusa contato inválido", async ({ page, request }) => {
-    await page.goto("/parceiros", { waitUntil: "networkidle" });
-    await page.getByLabel("Tipo de parceria").selectOption("fotografo");
-    await page.getByLabel("Seu nome ou nome da empresa").fill(`Estúdio Lab ${sufixo}`);
-    await page.getByLabel("Cidade", { exact: true }).fill("Uberlândia");
-    await page.getByLabel("UF").selectOption("MG");
-    await page.getByLabel(/WhatsApp \(com DDD\) ou e-mail/).fill(`estudio.${sufixo}@lab.vivanomads.test`);
-    await page.getByLabel(/Aceito que a Viva Nomads entre em contato/).check();
-    await page.getByRole("button", { name: "Quero ser parceiro" }).click();
-    await expect(page.getByText("Recebemos seu interesse.")).toBeVisible({ timeout: 20_000 });
-    const { data } = await adm().from("parceiros_interesse").select("tipo, status").like("nome", `%${sufixo}%`);
-    expect(data).toEqual([{ tipo: "fotografo", status: "novo" }]);
-
-    const ruim = await request.post("/api/parceiros-interesse", { data: { tipo: "fotografo", nome: "Fulano", cidade: "Belém", uf: "PA", contato: "não é contato", aceite: true } });
-    expect(ruim.status()).toBe(400);
-  });
-
-  test("prompt 14: o formulário aceita o tipo 'mobilia' (Mobília, enxoval e mudança) vindo do cartão", async ({ page }) => {
-    await page.goto("/parceiros?tipo=mobilia#quero-ser-parceiro", { waitUntil: "networkidle" });
-    await expect(page.getByLabel("Tipo de parceria")).toHaveValue("mobilia");
-    await page.getByLabel("Seu nome ou nome da empresa").fill(`Mudanças Lab ${sufixo}`);
-    await page.getByLabel("Cidade", { exact: true }).fill("Uberlândia");
-    await page.getByLabel("UF").selectOption("MG");
-    await page.getByLabel(/WhatsApp \(com DDD\) ou e-mail/).fill(`mudancas.${sufixo}@lab.vivanomads.test`);
-    await page.getByLabel(/Aceito que a Viva Nomads entre em contato/).check();
-    await page.getByRole("button", { name: "Quero ser parceiro" }).click();
-    await expect(page.getByText("Recebemos seu interesse.")).toBeVisible({ timeout: 20_000 });
-    const { data } = await adm().from("parceiros_interesse").select("tipo").like("nome", `Mudanças Lab ${sufixo}`);
-    expect(data).toEqual([{ tipo: "mobilia" }]);
+  test("/parceiros: 'Seja parceiro' pede conta com e-mail confirmado", async ({ page }) => {
+    await page.goto("/parceiros?categoria=mudanca#quero-ser-parceiro", { waitUntil: "networkidle" });
+    await expect(page.getByTestId("seja-parceiro-precisa-conta")).toBeVisible();
+    await expect(page.getByTestId("sp-cat-mudanca")).toBeChecked(); // categoria vinda do cartão
+    await page.getByTestId("seja-parceiro-enviar").click();
+    await page.waitForURL(/\/auth\?cadastro=1/, { timeout: 15_000 });
   });
 
   for (const largura of [390, 1280]) {
@@ -107,68 +78,29 @@ test.describe("T44 — Parceiros", () => {
     });
   }
 
-  test("busca por cidade e por CEP de outra região: só aprovados da região", async ({ page }) => {
+  test("busca por cidade: só publicados da cidade buscada", async ({ page }) => {
     await page.goto("/parceiros/fotografos?cidade=Uberl%C3%A2ndia&uf=MG", { waitUntil: "networkidle" });
-    await expect(page.getByText(nomeUdi)).toBeVisible();
-    await expect(page.getByText(nomeBelem)).toHaveCount(0);
-    await expect(page.getByText(nomePend)).toHaveCount(0); // ainda não aprovado
+    await expect(page.getByText(contas.udi.nome)).toBeVisible();
+    await expect(page.getByText(contas.belem.nome)).toHaveCount(0);
+    await expect(page.getByText(contas.rasc.nome)).toHaveCount(0); // rascunho não aparece
 
-    await page.goto("/parceiros/fotografos?cep=66010000&cidade=Bel%C3%A9m&uf=PA", { waitUntil: "networkidle" });
-    await expect(page.getByText(nomeBelem)).toBeVisible();
-    await expect(page.getByText(nomeUdi)).toHaveCount(0);
-    await expect(page.getByRole("link", { name: "Entrar para pedir" }).first()).toBeVisible(); // visitante
+    await page.goto("/parceiros/fotografos?cidade=Bel%C3%A9m&uf=PA", { waitUntil: "networkidle" });
+    await expect(page.getByText(contas.belem.nome)).toBeVisible();
+    await expect(page.getByText(contas.udi.nome)).toHaveCount(0);
   });
 
-  test("dono pede o fotógrafo: entra como 'enviado', sem taxa; telefone na observação é recusado; 2º pedido aberto é barrado", async ({ browser }) => {
-    test.setTimeout(120_000);
-    const page = await entrar(browser, dono.email, senha);
-    const url = "/parceiros/fotografos?cep=38400000&cidade=Uberl%C3%A2ndia&uf=MG";
-    const card = () => page.locator("li", { hasText: nomeUdi });
-
-    await page.goto(url, { waitUntil: "networkidle" });
-    const data = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
-    await card().getByLabel("Data sugerida").fill(data);
-    await card().getByLabel(/Observação/).fill("Me liga no 34 98888-7777");
-    await card().getByRole("button", { name: "Pedir este fotógrafo" }).click();
-    await expect(card().getByRole("alert")).toContainText(/telefone, e-mail ou link/);
-    expect((await adm().from("fotografo_pedidos").select("id").eq("owner_id", ids.dono!)).data).toHaveLength(0);
-
-    await card().getByLabel(/Observação/).fill("Apartamento com boa luz natural pela manhã.");
-    await card().getByRole("button", { name: "Pedir este fotógrafo" }).click();
-    await expect.poll(async () => (await adm().from("fotografo_pedidos").select("id").eq("owner_id", ids.dono!)).data?.length ?? 0, { timeout: 20_000 }).toBe(1);
-    const { data: p } = await adm().from("fotografo_pedidos").select("status, taxa_paga_em, owner_id").eq("owner_id", ids.dono!).single();
-    expect(p).toMatchObject({ status: "enviado", taxa_paga_em: null, owner_id: ids.dono });
-
-    await page.goto(url, { waitUntil: "networkidle" });
-    await card().getByLabel("Data sugerida").fill(data);
-    await card().getByRole("button", { name: "Pedir este fotógrafo" }).click();
-    await expect(card().getByRole("alert")).toContainText(/pedido aberto/);
-    await page.context().close();
-  });
-
-  test("aceite só com a taxa paga: o banco recusa 'aceito' sem pagamento; a regra libera o contato só depois", async () => {
-    const { data: pedido } = await adm().from("fotografo_pedidos").select("id").eq("owner_id", ids.dono!).single();
-    const semTaxa = await adm().from("fotografo_pedidos").update({ status: "aceito" }).eq("id", pedido!.id);
-    expect(semTaxa.error?.code).toBe("23514");
-    expect(contatoLiberado({ status: "enviado", taxa_paga_em: null })).toBe(false);
-    expect(podeAceitar({ status: "enviado", taxa_paga_em: null })).toBe(false);
-
-    const agora = new Date().toISOString();
-    const comTaxa = await adm().from("fotografo_pedidos").update({ status: "aceito", taxa_valor: 40, taxa_paga_em: agora }).eq("id", pedido!.id);
-    expect(comTaxa.error).toBeNull();
-    expect(contatoLiberado({ status: "aceito", taxa_paga_em: agora })).toBe(true);
-  });
-
-  test("contato do fotógrafo não é lido por visitante; só os aprovados aparecem na vitrine pública", async () => {
+  test("visitante: a tabela parceiros é fechada; a view pública não tem documento nem telefone", async () => {
     const anon = createClient(URL_SUPABASE!, CHAVE_ANON!, { auth: { persistSession: false } });
-    const contato = await anon.from("fotografos_contato").select("email, whatsapp");
-    expect(contato.data ?? []).toHaveLength(0);
-    const vitrine = await anon.from("fotografos").select("nome_comercial").like("nome_comercial", `%${sufixo}`);
-    expect((vitrine.data ?? []).map((f) => f.nome_comercial).sort()).toEqual([nomeBelem, nomeUdi].sort());
+    const tabela = await anon.from("parceiros").select("documento, telefone");
+    expect(tabela.data ?? []).toHaveLength(0);
+    const vitrine = await anon.from("parceiros_publicos").select("*").like("nome_publico", `%${sufixo}`);
+    expect((vitrine.data ?? []).map((f) => f.nome_publico).sort()).toEqual([contas.belem.nome, contas.udi.nome].sort());
+    for (const linha of vitrine.data ?? []) {
+      for (const k of ["documento", "telefone", "cep_base", "dados_recebimento", "user_id"]) expect(Object.keys(linha)).not.toContain(k);
+    }
   });
 
   test("taxa de serviço nos textos oficiais: 10% para todas as categorias, sem a taxa fixa por faixa de fotos", () => {
-    // Complemento do P29, item 1: a taxa fixa dos fotógrafos saiu.
     expect(TAXA_PARCERIA_TEXTO).toMatch(/Taxa de serviço: 10% sobre o valor do serviço, para todas as categorias\./);
     expect(TAXA_PARCERIA_TEXTO).toMatch(/90% direto ao parceiro e 10% à Viva/);
     expect(TAXA_PARCERIA_TEXTO).toMatch(/A Viva não guarda o dinheiro/);
