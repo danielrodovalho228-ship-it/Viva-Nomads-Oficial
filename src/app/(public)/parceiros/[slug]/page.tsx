@@ -5,6 +5,7 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { trilha } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
 import { Button } from "@/components/ui/button";
+import { RefDaVisita } from "@/components/cartoes/ref-da-visita";
 import { parceiroPorSlug } from "@/lib/data/parceiros-publico";
 import { REDES, rotuloCategoria, textoPreco } from "@/lib/parceiros/regras";
 
@@ -41,6 +42,8 @@ export default async function ParceiroPage({ params }: Params) {
 
   return (
     <div data-testid="pagina-parceiro" data-slug={p.slug}>
+      {/* Aberta pelo QR/link do cartão do parceiro: confere a assinatura e conta a visita (POST, sem gravar no render). */}
+      <RefDaVisita parceiroId={p.id} />
       <JsonLd dados={trilha(SITE_URL, [{ nome: "Parceiros", caminho: "/parceiros/buscar" }, { nome: p.nomePublico, caminho: `/parceiros/${p.slug}` }])} />
       <div className="relative h-40 w-full overflow-hidden bg-sage-100 sm:h-56 lg:h-72">
         {p.bannerUrl && (

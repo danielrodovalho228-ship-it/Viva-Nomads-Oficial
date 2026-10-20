@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { hojeBR } from "@/lib/utils";
 import {
   garantirCartao,
+  garantirCartaoParceiro,
   pacoteDeCompartilhar,
   registrarMetrica,
   trocarCodigo,
@@ -61,13 +62,31 @@ export async function meuCartaoPostal(contratoId: string): Promise<Res<PacoteDeC
   return { ok: true, valor: await pacoteDeCompartilhar(s.admin, cartao) };
 }
 
-/** Opt-in do primeiro nome no cartão-postal (o único campo que a pessoa escolhe). */
+/**
+ * Cartão do parceiro (partnercard, Prompt 31c): só o próprio parceiro, só com a página PUBLICADA. Cria na 1ª vez.
+ * Conta de teste também gera (para o QA); a página dela já fica fora do Google (noindex, regra do 31a).
+ */
+export async function meuCartaoDoParceiro(): Promise<Res<PacoteDeCompartilhar>> {
+  const s = await sessao();
+  if (!s) return { ok: false, error: "Entre na sua conta." };
+  const { data: p } = await s.admin.from("parceiros").select("id, status").eq("user_id", s.user.id).maybeSingle();
+  if (!p) return { ok: false, error: "Você ainda não é parceiro." };
+  if (p.status !== "publicado") return { ok: false, error: "Publique sua página para gerar o cartão." };
+  const c = await garantirCartaoParceiro(s.admin, { usuarioId: s.user.id, parceiroId: p.id as string });
+  if (!c) return { ok: false, error: "Não foi possível gerar o cartão agora. Tente de novo." };
+  return { ok: true, valor: await pacoteDeCompartilhar(s.admin, c) };
+}
+
+/**
+ * Opt-in do nome no cartão (o único campo que a pessoa escolhe): no cartão-postal, o primeiro nome; no cartão do
+ * parceiro, o nome público da página (sem ele, o cartão mostra a categoria).
+ */
 export async function definirNomeNoCartao(curto: string, mostrar: boolean): Promise<Res<PacoteDeCompartilhar>> {
   if (!curtoValido(curto)) return { ok: false, error: "Cartão inválido." };
   const s = await sessao();
   if (!s) return { ok: false, error: "Entre na sua conta." };
   const cartao = await cartaoPeloCurto(s.admin, curto);
-  if (!cartao || cartao.usuario_id !== s.user.id || cartao.tipo !== "poststay") return { ok: false, error: "Cartão não encontrado." };
+  if (!cartao || cartao.usuario_id !== s.user.id || (cartao.tipo !== "poststay" && cartao.tipo !== "partnercard")) return { ok: false, error: "Cartão não encontrado." };
   const { error } = await s.admin.from("cartoes_compartilhaveis").update({ mostrar_nome: mostrar === true }).eq("id", cartao.id);
   if (error) return { ok: false, error: "Não foi possível salvar agora." };
   return { ok: true, valor: await pacoteDeCompartilhar(s.admin, { ...cartao, mostrar_nome: mostrar === true }) };
@@ -80,7 +99,7 @@ export async function registrarCompartilhamento(curto: string, canal: "whatsapp"
   if (!s) return { ok: false };
   const cartao = await cartaoPeloCurto(s.admin, curto);
   if (!cartao || cartao.usuario_id !== s.user.id) return { ok: false };
-  await registrarMetrica(s.admin, "cards_shared", { cartaoTipo: cartao.tipo, imovelId: cartao.property_id, usuarioId: s.user.id, meio: canal });
+  await registrarMetrica(s.admin, "cards_shared", { cartaoTipo: cartao.tipo, imovelId: cartao.property_id, parceiroId: cartao.parceiro_id, usuarioId: s.user.id, meio: canal });
   await s.admin.from("cartoes_compartilhaveis").update({ compartilhado_em: new Date().toISOString() }).eq("id", cartao.id);
   return { ok: true };
 }

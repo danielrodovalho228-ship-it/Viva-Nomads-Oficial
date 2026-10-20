@@ -1,11 +1,14 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { ArrowDown, ArrowUp, ExternalLink, Loader2, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ExternalLink, Loader2, QrCode, Trash2 } from "lucide-react";
 import { Panel } from "@/components/dashboard/primitives";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
 import { EnviarImagemParceiro } from "@/components/parceiros/enviar-imagem";
+import { CartaoCompartilhar } from "@/components/cartoes/cartao-compartilhar";
+import { meuCartaoDoParceiro } from "@/lib/data/cartoes-actions";
+import type { PacoteDeCompartilhar } from "@/lib/data/cartoes-servidor";
 import { CIDADES_MAX, GALERIA_MAX, PAGAMENTO_EM_BREVE, REDES, rotuloCategoria, textoPreco, UNIDADES_SERVICO, type ChaveRede } from "@/lib/parceiros/regras";
 import {
   adicionarAgenda,
@@ -29,6 +32,7 @@ const ABAS = [
   { id: "servicos", rotulo: "Serviços" },
   { id: "atendimento", rotulo: "Atendimento" },
   { id: "dados", rotulo: "Dados" },
+  { id: "cartao", rotulo: "Cartão para divulgar" },
 ] as const;
 type Aba = (typeof ABAS)[number]["id"];
 
@@ -103,7 +107,7 @@ export function PainelParceiroCliente({ inicial, pagamentoAtivo }: { inicial: Pa
         )}
       </Panel>
 
-      <div role="tablist" aria-label="Seções do painel de parceiro" className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div role="tablist" aria-label="Seções do painel de parceiro" className="grid grid-cols-2 gap-2 sm:grid-cols-5">
         {ABAS.map((a) => (
           <button
             key={a.id}
@@ -111,7 +115,7 @@ export function PainelParceiroCliente({ inicial, pagamentoAtivo }: { inicial: Pa
             role="tab"
             aria-selected={aba === a.id}
             onClick={() => setAba(a.id)}
-            className={`h-11 rounded-lg border text-sm font-semibold ${aba === a.id ? "border-blue-500 bg-blue-50 text-blue-700" : "border-line bg-white text-ink"}`}
+            className={`h-11 rounded-lg border px-2 text-sm font-semibold ${a.id === "cartao" ? "col-span-2 sm:col-span-1" : ""} ${aba === a.id ? "border-blue-500 bg-blue-50 text-blue-700" : "border-line bg-white text-ink"}`}
             data-testid={`parceiro-aba-${a.id}`}
           >
             {a.rotulo}
@@ -130,6 +134,7 @@ export function PainelParceiroCliente({ inicial, pagamentoAtivo }: { inicial: Pa
         {aba === "servicos" && <AbaServicos p={p} rodar={rodar} />}
         {aba === "atendimento" && <AbaAtendimento p={p} rodar={rodar} />}
         {aba === "dados" && <AbaDados p={p} rodar={rodar} pagamentoAtivo={pagamentoAtivo} />}
+        {aba === "cartao" && <AbaCartao key={p.status} publicada={p.status === "publicado"} />}
       </fieldset>
       {pendente && <Loader2 className="h-5 w-5 animate-spin text-muted" aria-label="Salvando" />}
     </div>
@@ -540,5 +545,53 @@ function AbaDados({ p, rodar, pagamentoAtivo }: { p: PainelParceiro; rodar: Roda
         </div>
       </Panel>
     </>
+  );
+}
+
+/**
+ * Cartão para divulgar (Prompt 31c): o cartão do parceiro (QR para a própria página, assinado). Só com a página
+ * publicada; o conteúdo vem da página pública (nada digitado aqui). A ação roda dentro de startTransition e o painel
+ * não é recarregado (nada de atualizar a rota inteira).
+ */
+function AbaCartao({ publicada }: { publicada: boolean }) {
+  const [pacote, setPacote] = useState<PacoteDeCompartilhar | null>(null);
+  const [erro, setErro] = useState<string | null>(null);
+  const [pendente, iniciar] = useTransition();
+  function gerar() {
+    setErro(null);
+    iniciar(async () => {
+      const r = await meuCartaoDoParceiro().catch(() => ({ ok: false as const, error: "Sem conexão. Tente de novo." }));
+      if (r.ok) setPacote(r.valor);
+      else setErro(r.error);
+    });
+  }
+  return (
+    <Panel title="Cartão para divulgar">
+      <div data-testid="parceiro-cartao">
+        <p className="text-sm text-ink">Quem escanear cai na sua página na Viva e pede orçamento por lá. Contato sempre pela plataforma.</p>
+        <p className="mt-1 text-xs text-muted">O cartão usa só o que está na sua página pública: foto, nome, categoria, cidades e avaliações. Formatos 1080×1350 e 1080×1080.</p>
+        {pacote ? (
+          <div className="mt-4">
+            <CartaoCompartilhar inicial={pacote} />
+          </div>
+        ) : (
+          <div className="mt-4 space-y-2">
+            <Button onClick={gerar} disabled={!publicada || pendente} data-testid="parceiro-gerar-cartao">
+              <QrCode className="h-4 w-4" aria-hidden /> {pendente ? "Gerando…" : "Gerar meu cartão"}
+            </Button>
+            {!publicada && (
+              <p className="text-sm text-muted" data-testid="parceiro-cartao-motivo">
+                Publique sua página para gerar o cartão
+              </p>
+            )}
+            {erro && (
+              <p className="text-sm text-red-700" role="alert" data-testid="parceiro-cartao-erro">
+                {erro}
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+    </Panel>
   );
 }
