@@ -143,8 +143,9 @@ test.describe("T-TRAV-C — Candidatura sem verificação = confirmação + nudg
     // Confirmação (nunca "fechamento"/bloqueio).
     await expect(page.getByText(/Candidatura enviada/i)).toBeVisible({ timeout: 15_000 });
     await expect(page.getByRole("link", { name: /Acompanhar em Mensagens/i })).toBeVisible();
-    // Nudge de verificação — convite, não porta.
-    await expect(page.getByText(/Verificação de identidade: em breve/i)).toBeVisible();
+    // Nudge do perfil — convite, não porta (sem promessa de "em breve" — Prompt 35A, item 3).
+    await expect(page.getByText(/Complete seu perfil/i)).toBeVisible();
+    await expect(page.getByText(/Verificação de identidade: em breve/i)).toHaveCount(0);
     // NUNCA linguagem de bloqueio/impedimento na confirmação da candidatura.
     await expect(page.getByText(/Candidatura enviada/i).locator("xpath=ancestor::*[1]")).not.toContainText(
       /bloquead|imped|não pode|precisa verificar antes/i,

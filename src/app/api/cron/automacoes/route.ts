@@ -1,4 +1,5 @@
 import { avisarDecisoesAtrasadas } from "@/lib/data/aviso-decisao-documento";
+import { avisarDocumentosOrfaos } from "@/lib/data/documentos-orfaos-servidor";
 import { NextResponse } from "next/server";
 import { gerarCartoesAutomaticos } from "@/lib/data/cartoes-servidor";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -159,7 +160,10 @@ export async function GET(request: Request) {
   const documentosAvisados = simular
     ? ((await admin.rpc("decisoes_documento_atrasadas", { p_horas: 2 })).data as unknown[] | null)?.length ?? 0
     : await avisarDecisoesAtrasadas(admin, 2);
+  // Rede de segurança (Prompt 35A, item 1): documento no bucket há mais de 2 h sem linha na fila → aviso à equipe
+  // com o dono e a data (uma vez por arquivo). Não apaga nada; no simulado só conta.
+  const documentosSemFila = await avisarDocumentosOrfaos(admin, agora, simular);
   // Cartões compartilháveis: cartão-postal depois da saída e cartão de todo anúncio publicado (nunca no simulado).
   const cartoes = simular ? null : await gerarCartoesAutomaticos(admin, hoje).catch(() => null);
-  return NextResponse.json({ ok: true, simulado: simular, cartoes, enviados: contagem, propostasExpiradas, documentosAvisados });
+  return NextResponse.json({ ok: true, simulado: simular, cartoes, enviados: contagem, propostasExpiradas, documentosAvisados, documentosSemFila });
 }

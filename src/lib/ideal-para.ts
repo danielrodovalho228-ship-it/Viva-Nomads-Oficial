@@ -5,12 +5,17 @@ import { IDEAL_PARA, type IdealParaId } from "../config/selos.ts";
  * "IDEAL PARA" (ordem 507074ce, complemento dos selos): camada DERIVADA dos dados
  * que o anúncio já tem. O proprietário não preenche nada novo e nenhum selo
  * existente muda. Máximo de 3 por imóvel; a ordem abaixo é a de prioridade.
+ * "Com pet" vem PRIMEIRO (decisão do Daniel, #910 / Prompt 35A): quem aceita pet sempre mostra, e as outras duas
+ * vagas seguem a ordem de antes.
  */
 export const IDEAL_PARA_MAX = 3;
 
 type Dados = Pick<Property, "workFeatures" | "internetTier" | "bedrooms" | "furnished" | "amenities" | "petsAllowed">;
 
 const REGRAS: { id: IdealParaId; vale: (p: Dados) => boolean }[] = [
+  // Com pet = aceita pet. PRIMEIRA regra: atributo declarado vence inferência — o dono DISSE que aceita pet; as
+  // outras regras são deduzidas dos dados. Com petsAllowed === true, sempre ocupa uma das 3 vagas.
+  { id: "comPet", vale: (p) => p.petsAllowed === true },
   // Home office = mesa de trabalho + internet informada.
   {
     id: "homeOffice",
@@ -23,8 +28,6 @@ const REGRAS: { id: IdealParaId; vale: (p: Dados) => boolean }[] = [
     id: "executivo",
     vale: (p) => p.furnished === true && (p.amenities ?? []).some((a) => /mobiliado completo/i.test(a)),
   },
-  // Com pet = aceita pet.
-  { id: "comPet", vale: (p) => p.petsAllowed === true },
 ];
 
 /** Quem o imóvel atende, na ordem de prioridade, no máximo IDEAL_PARA_MAX. */

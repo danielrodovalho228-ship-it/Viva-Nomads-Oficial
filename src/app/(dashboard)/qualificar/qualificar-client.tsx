@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   CheckCircle2,
@@ -41,7 +41,7 @@ import {
 import { INTERNET_TIERS, INTERNET_META, type InternetTier } from "@/lib/internet";
 import { Button } from "@/components/ui/button";
 import { ReadyToLiveBadge, DocConferidaBadge } from "@/components/ui/badge";
-import { saveQualification, getMyDocumentStatus, resumoImovelDoDono, carregarQualificacao, type DocumentStatus } from "@/lib/data/actions";
+import { saveQualification, enviarDocumentoParaConferencia, getMyDocumentStatus, resumoImovelDoDono, carregarQualificacao, type DocumentStatus } from "@/lib/data/actions";
 import { cn, numBR } from "@/lib/utils";
 
 const initialEligibility: EligibilityState = {
@@ -94,6 +94,9 @@ export default function QualificationChecklistPage({
   const [docHash, setDocHash] = useState<string | null>(null);
   const [docErro, setDocErro] = useState<string | null>(null);
   const [docBusy, setDocBusy] = useState(false);
+  // 35A: arquivo já no bucket mas a fila de conferência ainda não confirmou (a action falhou). A tela NÃO diz
+  // "Enviado" e oferece "Tentar de novo" com o mesmo arquivo (sem subir outra vez).
+  const [docSemFila, setDocSemFila] = useState<{ path: string; hash: string | null; nome: string } | null>(null);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveErro, setSaveErro] = useState<string | null>(null);
@@ -109,13 +112,17 @@ export default function QualificationChecklistPage({
   const [hasInteracted, setHasInteracted] = useState(false);
   const [imovel, setImovel] = useState<{ id: string; titulo: string; local: string; rascunho: boolean } | null>(null);
   const [imovelInvalido, setImovelInvalido] = useState(false);
+  // Id pedido (`?imovel=`/painel) enquanto o resumo ainda carrega: um envio rápido não pode cair "sem imóvel".
+  const imovelPedido = useRef<string | null>(null);
   useEffect(() => {
     let alive = true;
     const id = imovelIdInicial !== undefined ? imovelIdInicial : new URLSearchParams(window.location.search).get("imovel");
+    imovelPedido.current = id ?? null;
     (async () => {
       const resumo = id ? await resumoImovelDoDono(id).catch(() => null) : null;
       if (!alive) return;
       if (id && !resumo) setImovelInvalido(true);
+      imovelPedido.current = resumo?.id ?? null;
       setImovel(resumo);
       const [r, salvo] = await Promise.all([
         getMyDocumentStatus(resumo?.id ?? null).catch(() => null),
@@ -228,6 +235,31 @@ export default function QualificationChecklistPage({
     setQuality((s) => ({ ...s, [key]: !s[key] }));
   }
 
+  /** Põe o documento já enviado ao bucket na fila de conferência. Só depois da confirmação a tela diz "Enviado". */
+  async function enfileirarDocumento(d: { path: string; hash: string | null; nome: string }) {
+    setDocErro(null);
+    setDocBusy(true);
+    let r: Awaited<ReturnType<typeof enviarDocumentoParaConferencia>>;
+    try {
+      r = await enviarDocumentoParaConferencia(imovel?.id ?? imovelPedido.current, d.path, d.hash);
+    } catch {
+      r = { ok: false, error: "Não foi possível colocar o documento na fila de conferência agora. Tente de novo." };
+    }
+    setDocBusy(false);
+    if (!r.ok) {
+      setDocSemFila(d);
+      setDocErro(r.error ?? "Não foi possível colocar o documento na fila de conferência agora. Tente de novo.");
+      return;
+    }
+    setDocSemFila(null);
+    setDocName(d.nome);
+    setDocPath(d.path);
+    setDocHash(d.hash);
+    setDocStatus("pending");
+    setDocReason(null);
+    setElig((s) => ({ ...s, hasDocument: true }));
+  }
+
   async function save() {
     setSaving(true);
     setSaveErro(null);
@@ -239,7 +271,7 @@ export default function QualificationChecklistPage({
     }
     let r: Awaited<ReturnType<typeof saveQualification>>;
     try {
-      r = await saveQualification(elig, quality, docPath, docHash, imovel?.id ?? null);
+      r = await saveQualification(elig, quality, docPath, docHash, imovel?.id ?? imovelPedido.current);
     } catch {
       r = { ok: false, error: "Não foi possível salvar a qualificação agora. Tente novamente." };
     }
@@ -330,14 +362,14 @@ export default function QualificationChecklistPage({
 
           <label
             className={cn(
-              "flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-dashed px-4 py-3 transition-colors",
+              "flex cursor-pointer flex-wrap items-center justify-between gap-3 rounded-xl border border-dashed px-4 py-3 transition-colors",
               "focus-within:outline-none focus-within:ring-2 focus-within:ring-forest focus-within:ring-offset-2",
               docName
                 ? "border-sage bg-sage-100"
                 : "border-sage-200 bg-surface-2 hover:border-sage"
             )}
           >
-            <span className="flex items-center gap-3 text-sm">
+            <span className="flex min-w-0 items-center gap-3 text-sm">
               {docName ? (
                 <CheckCircle2 className="h-5 w-5 text-forest" />
               ) : (
@@ -361,7 +393,7 @@ export default function QualificationChecklistPage({
                   docName ? "bg-sage-100 text-forest" : "bg-amber-100 text-amber-800"
                 )}
               >
-                {docName ? "Enviado" : "Pendente"}
+                {docName ? "Enviado para conferência" : docSemFila ? "Não enviado" : "Pendente"}
               </span>
               <span className="rounded-full bg-forest px-3 py-1.5 text-xs font-medium text-white">
                 {docBusy ? "Enviando…" : docName ? "Trocar" : "Enviar"}
@@ -399,10 +431,16 @@ export default function QualificationChecklistPage({
                     setDocErro(data.error ?? "Não foi possível enviar o documento agora.");
                     return;
                   }
-                  setDocName(`${f.name} · ${numBR(f.size / 1024 / 1024, 1)} MB`);
-                  setDocPath(data.path ?? null);
-                  setDocHash(data.hash ?? null);
-                  setElig((s) => ({ ...s, hasDocument: true }));
+                  const nome = `${f.name} · ${numBR(f.size / 1024 / 1024, 1)} MB`;
+                  if (!data.path) {
+                    // Demonstração (sem Supabase): nada é gravado.
+                    setDocName(nome);
+                    setElig((s) => ({ ...s, hasDocument: true }));
+                    return;
+                  }
+                  // 35A: o documento entra na fila AGORA (não só no "Salvar"); a tela só diz "Enviado" depois.
+                  setDocBusy(false);
+                  await enfileirarDocumento({ path: data.path, hash: data.hash ?? null, nome });
                 } catch {
                   setDocErro("Não foi possível enviar o documento agora. Tente novamente.");
                 } finally {
@@ -411,7 +449,16 @@ export default function QualificationChecklistPage({
               }}
             />
           </label>
-          {docErro && <p className="text-sm text-red-600">{docErro}</p>}
+          {docErro && (
+            <div role="alert" data-testid="doc-erro" className="flex flex-wrap items-center gap-3">
+              <p className="text-sm text-red-600">{docErro}</p>
+              {docSemFila && (
+                <Button type="button" size="sm" variant="outline" disabled={docBusy} onClick={() => enfileirarDocumento(docSemFila)}>
+                  {docBusy ? "Enviando…" : "Tentar de novo"}
+                </Button>
+              )}
+            </div>
+          )}
 
           {/* Pré-conferência: o nome do titular escrito no documento (a equipe compara com a conta). */}
           <label className="block">
