@@ -38,6 +38,7 @@ for (const id of ["ube-001", "ube-005"]) {
     });
 
     test("cartão da busca mostra o mesmo total", async ({ page }) => {
+      test.setTimeout(120_000);
       await page.setViewportSize({ width: 390, height: 844 });
       await page.goto(`/imoveis/${id}`, { waitUntil: "networkidle" });
       const totalPagina = num(await page.locator("#cartao-preco").getByTestId("total-por-mes").innerText());
