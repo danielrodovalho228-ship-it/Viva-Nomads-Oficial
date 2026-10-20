@@ -12,6 +12,7 @@ import { tipoImovel } from "@/lib/admin/indicadores";
 import { dataBRT } from "@/lib/datas-brasilia";
 import { cadastroCompleto, faltaNoCadastro, filtrosUsuarios, hrefUsuarios, rotuloFiltroUsuarios, type DadosCadastro } from "@/lib/admin/usuarios-lista";
 import { Users } from "lucide-react";
+import { BotaoContaTeste } from "./conta-teste";
 
 export const metadata = { title: "Usuários — Admin", robots: { index: false, follow: false } };
 
@@ -163,7 +164,8 @@ export default async function AdminUsuariosPage({
       </form>
       <p className="mb-3 text-xs text-muted">
         Cadastro completo = nome + e-mail confirmado + documento (CPF ou CNPJ) + foto, a mesma regra da Conta. Telefone verificado fica &quot;Não&quot;
-        enquanto a verificação por SMS não estiver ligada; a identidade confirmada é a coluna Identidade.
+        enquanto a verificação por SMS não estiver ligada; a identidade confirmada é a coluna Identidade. Uma conta marcada como teste
+        some desta lista enquanto &quot;Mostrar contas de teste&quot; estiver em &quot;Não&quot;.
       </p>
       <Panel title={`Usuários (${total})`} data-testid="admin-usuarios-lista">
         {linhas.length === 0 ? (
@@ -182,6 +184,11 @@ export default async function AdminUsuariosPage({
                     {u.fundador ? " · Fundador" : ""} · cadastro {u.completo ? "completo" : `incompleto (falta: ${u.falta})`} · identidade: {idText(u.id)} ·
                     telefone verificado: {foneVerificado.get(u.id) ? "sim" : "não"} · desde {dataBRT(u.created_at)}
                   </p>
+                  {u.role !== "admin" && (
+                    <div className="mt-2">
+                      <BotaoContaTeste id={u.id} isTeste={!!u.is_teste} />
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>
@@ -195,7 +202,8 @@ export default async function AdminUsuariosPage({
                     <th className="py-2 pr-4 font-medium">Cadastro completo</th>
                     <th className="py-2 pr-4 font-medium">Identidade</th>
                     <th className="py-2 pr-4 font-medium">Telefone verificado</th>
-                    <th className="py-2 font-medium">Cadastro</th>
+                    <th className="py-2 pr-4 font-medium">Cadastro</th>
+                    <th className="py-2 font-medium">Conta de teste</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -212,7 +220,8 @@ export default async function AdminUsuariosPage({
                       </td>
                       <td className="py-2 pr-4" data-testid="admin-identidade">{idText(u.id)}</td>
                       <td className="py-2 pr-4" data-testid="admin-telefone-verificado">{foneVerificado.get(u.id) ? "Sim" : "Não"}</td>
-                      <td className="py-2">{dataBRT(u.created_at)}</td>
+                      <td className="py-2 pr-4">{dataBRT(u.created_at)}</td>
+                      <td className="py-2">{u.role !== "admin" ? <BotaoContaTeste id={u.id} isTeste={!!u.is_teste} /> : "—"}</td>
                     </tr>
                   ))}
                 </tbody>
