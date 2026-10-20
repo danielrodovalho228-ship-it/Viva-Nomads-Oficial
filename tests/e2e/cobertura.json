@@ -1535,7 +1535,9 @@
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t238-pacote-provas"
+      ]
     },
     "/api/cron/atendimento": {
       "personas": [
