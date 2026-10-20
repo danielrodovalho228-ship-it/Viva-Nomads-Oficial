@@ -8,9 +8,8 @@
   (região aproximada), como na página pública.
 */
 import { normalizarBusca, resumoDaBusca } from "./buscas-salvas.ts";
-import { passaNoPainel } from "./painel-filtros.ts";
+import { FILTROS_PAINEL_VAZIOS, passaNoPainel } from "./painel-filtros.ts";
 import { comodidadesDaUrl } from "./filtro-comodidades.ts";
-import { PROPERTY_TYPES } from "../amenities.ts";
 import type { PortePet, RegrasPets } from "../anuncio/pets-regras.ts";
 
 export interface ImovelParaAlerta {
@@ -22,6 +21,8 @@ export interface ImovelParaAlerta {
   monthlyPrice: number;
   bedrooms: number;
   minPeriodDays: number;
+  /** Duração máxima (max_period_days); sem ela, não há teto. */
+  maxPeriodDays?: number | null;
   maxGuests?: number | null;
   availableFrom?: string | null;
   furnished?: boolean | null;
@@ -47,12 +48,6 @@ export const ALERTAS_POR_BUSCA_POR_DIA = 1;
 export const MAX_IMOVEIS_NO_EMAIL = 5;
 
 const semAcento = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
-
-function tipoCanonico(pt: string): string {
-  const low = pt.toLowerCase();
-  if (PROPERTY_TYPES.some((t) => t.value === low)) return low;
-  return PROPERTY_TYPES.find((t) => t.label.toLowerCase() === low || t.label.toLowerCase().startsWith(low))?.value ?? low;
-}
 
 function aceitaGarantia(p: ImovelParaAlerta, g: string): boolean {
   const arr = p.garantiasAceitas ?? [];
@@ -83,7 +78,9 @@ export function imovelBateComBusca(parametros: string, p: ImovelParaAlerta): boo
   const orc = num("orcamento") || num("preco");
   const quartos = num("quartos");
   const porte = sp.get("porte");
+  const perMap: Record<number, number> = { 30: 60, 60: 60, 90: 120, 120: 120, 180: 180 };
   const painel = {
+    ...FILTROS_PAINEL_VAZIOS,
     maxPrice: orc >= 300 && orc <= 50000 ? orc : 0,
     minBedrooms: [1, 2, 3].includes(quartos) ? quartos : 0,
     petsOnly: on("pet"),
@@ -91,18 +88,14 @@ export function imovelBateComBusca(parametros: string, p: ImovelParaAlerta): boo
     homeOfficeOnly: on("homeoffice"),
     readyToLiveOnly: on("pronto"),
     comodidades: comodidadesDaUrl(sp.get("comod")),
+    // Estadia e tipo pela MESMA regra da folha de filtros da /buscar (Prompt 40).
+    periodo: perMap[num("periodo")] ?? 0,
+    tipo: sp.get("tipo") ?? "",
   };
   if (!passaNoPainel(p, painel)) return false;
 
   const hospedes = (num("adultos") || 1) + num("criancas");
   if (p.maxGuests != null && p.maxGuests < hospedes) return false;
-
-  const perMap: Record<number, number> = { 30: 60, 60: 60, 90: 120, 120: 120, 180: 180 };
-  const periodo = perMap[num("periodo")];
-  if (periodo && p.minPeriodDays > periodo) return false;
-
-  const tipo = sp.get("tipo");
-  if (tipo && tipoCanonico(p.propertyType) !== tipo) return false;
   const faixa = sp.get("faixa");
   if (faixa && !(p.faixasAceitas ?? []).includes(faixa)) return false;
   const entrada = sp.get("entrada");

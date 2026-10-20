@@ -41,7 +41,7 @@ test("painel: preço, quartos, pets, home office e selo filtram como a lista", (
 
 test("painel: contador do botão, texto de aplicar e resumo do topo", () => {
   assert.equal(contarFiltrosPainel(FILTROS_PAINEL_VAZIOS), 0);
-  assert.equal(contarFiltrosPainel({ maxPrice: 2500, minBedrooms: 2, petsOnly: true, petPorte: "", homeOfficeOnly: false, readyToLiveOnly: true, comodidades: [] }), 4);
+  assert.equal(contarFiltrosPainel({ ...FILTROS_PAINEL_VAZIOS, maxPrice: 2500, minBedrooms: 2, petsOnly: true, readyToLiveOnly: true }), 4);
   assert.equal(rotuloMostrar(0), "Nenhum imóvel com esses filtros");
   assert.equal(rotuloMostrar(1), "Mostrar 1 imóvel");
   assert.equal(rotuloMostrar(12), "Mostrar 12 imóveis");
@@ -73,10 +73,13 @@ test("painel: rascunho só vale ao aplicar; diálogo acessível; Esc fecha", () 
   assert.match(p, /useState<FiltrosPainel>\(inicial\)/);
   assert.match(p, /onClick=\{\(\) => onAplicar\(rascunho\)\}/);
   assert.match(p, /\{rotuloMostrar\(n\)\}/);
-  assert.match(p, /role="dialog"/);
-  assert.match(p, /aria-modal="true"/);
-  assert.match(p, /e\.key === "Escape" && onFechar\(\)/);
-  for (const t of ["Preço por mês", "Quartos", "Aceita pets", "Para trabalhar de casa"]) assert.ok(p.includes(t), t);
+  // Prompt 40: a folha é o BottomSheet (de baixo no celular, lateral no computador).
+  assert.match(p, /<BottomSheet\s+open\s+onClose=\{onFechar\}\s+title="Filtros"\s+lateral/);
+  const folha = ler("components/ui/bottom-sheet.tsx");
+  assert.match(folha, /role="dialog"/);
+  assert.match(folha, /aria-modal="true"/);
+  assert.match(folha, /if \(e\.key === "Escape"\) fechar\.current\(\)/);
+  for (const t of ["Preço por mês", "Quartos", "Aceita pets", "Para trabalhar de casa", "Limpar tudo"]) assert.ok(p.includes(t), t);
 });
 
 test("card: foto, preço por mês, quartos/banheiros por extenso, bairro e disponibilidade", () => {

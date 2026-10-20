@@ -30,7 +30,14 @@ export default defineConfig({
   globalTeardown: "./tests/e2e/global-teardown.ts",
   outputDir: "./tests/e2e/.artifacts",
   timeout: 45_000,
-  expect: { timeout: 10_000 },
+  expect: {
+    timeout: 10_000,
+    // Regressão visual (t245, adendo do Prompt 40): tolerância pequena; animações e cursor parados.
+    toHaveScreenshot: { maxDiffPixelRatio: 0.01, animations: "disabled", caret: "hide", scale: "css" },
+  },
+  // Linha de base versionada num caminho ESTÁVEL (sem {platform}/{projectName}): o mesmo arquivo vale
+  // aqui e no laboratório do GitHub (ubuntu + Chromium do Playwright). Ex.: tests/e2e/visual/t245-…spec.ts/home-390.png
+  snapshotPathTemplate: "{testDir}/../visual/{testFileName}/{arg}{ext}",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,

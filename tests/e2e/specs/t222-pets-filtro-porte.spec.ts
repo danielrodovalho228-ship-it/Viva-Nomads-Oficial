@@ -25,16 +25,21 @@ test.describe("T222 — Filtro de pet com porte", () => {
     expect(sobra).toBeLessThanOrEqual(1);
   });
 
-  test("1280 px: chip 'Aceita pet' abre o seletor de porte e a lista só diminui", async ({ page }) => {
+  test("1280 px: na folha lateral, 'Aceita pets' mostra o porte e grava na URL", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/buscar", { waitUntil: "domcontentloaded" });
-    await expect(page.getByTestId("filtro-porte-pet")).toHaveCount(0);
-    // Desde a busca compacta (#488) os filtros abrem por ela (como no T78) e o chip
-    // "Aceita pet" mora no painel "Mais filtros".
+    // Desde a busca compacta (#488) os filtros abrem por ela; "Mais filtros" abre a folha lateral (Prompt 40).
     await page.getByTestId("busca-compacta").click();
     await page.getByRole("button", { name: /Mais filtros/ }).first().click();
-    await page.getByTestId("mais-filtros-painel").getByRole("button", { name: /Aceita pet/ }).click();
-    await expect(page.getByTestId("filtro-porte-pet").getByRole("combobox", { name: "Porte do pet" })).toBeVisible();
+    const folha = page.getByRole("dialog", { name: "Filtros" });
+    await expect(folha.getByTestId("painel-porte-pet")).toHaveCount(0);
+    await folha.getByRole("button", { name: "Aceita pets", exact: true }).click();
+    await expect(folha.getByTestId("painel-porte-pet")).toContainText("Porte do pet");
+    await folha.getByRole("button", { name: "Pequeno (até 10 kg)", exact: true }).click();
+    const aplicar = folha.getByTestId("aplicar-filtros");
+    test.skip(await aplicar.isDisabled(), "Sem imóvel que aceite pet pequeno nesta base.");
+    await aplicar.click();
     await expect(page).toHaveURL(/pet=1/);
+    await expect(page).toHaveURL(/porte=P/);
   });
 });
