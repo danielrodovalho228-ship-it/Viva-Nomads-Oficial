@@ -133,7 +133,7 @@ test.describe("T239 — cartão do parceiro (partnercard)", () => {
     await apagarContas([ids.parc, ids.rasc, ids.cli]);
   });
 
-  test("1. parceiro publicado gera o cartão no painel: dois formatos, opt-in do nome, baixar e compartilhar", async ({ browser, request }) => {
+  test("1. parceiro publicado gera o cartão no painel: dois formatos com o nome do negócio, baixar e compartilhar", async ({ browser, request }) => {
     test.setTimeout(150_000);
     for (const largura of [390, 1280]) {
       const page = await abrir(browser, parc.email, largura);
@@ -167,10 +167,9 @@ test.describe("T239 — cartão do parceiro (partnercard)", () => {
       await semRolagemLateral(page);
       await page.screenshot({ path: `${SAIDA}/t239-painel-cartao-${largura}.png`, fullPage: true });
       if (largura === 390) {
-        // Opt-in do nome (desligado por padrão).
-        expect((await adm().from("cartoes_compartilhaveis").select("mostrar_nome").eq("curto", curto).single()).data!.mostrar_nome).toBe(false);
-        await page.getByRole("switch", { name: "Mostrar meu nome no cartão" }).click();
-        await expect.poll(async () => (await adm().from("cartoes_compartilhaveis").select("mostrar_nome").eq("curto", curto).single()).data!.mostrar_nome, { timeout: 15_000 }).toBe(true);
+        // Sem opt-in de nome: o cartão do parceiro mostra sempre o nome público do negócio (o interruptor é só do cartão-postal).
+        await expect(page.getByRole("switch")).toHaveCount(0);
+        await expect(page.getByTestId("cartao-nome-opcao")).toHaveCount(0);
         // Sem Web Share API: copia o link.
         const antes = await contar("cards_shared");
         await page.evaluate(() => {
@@ -186,8 +185,22 @@ test.describe("T239 — cartão do parceiro (partnercard)", () => {
     expect(await contar("cards_generated")).toBe(1); // um cartão por parceiro, não um por acesso
     const { data: linhas } = await adm().from("cartoes_compartilhaveis").select("tipo, parceiro_id, property_id").eq("usuario_id", ids.parc!);
     expect(linhas).toEqual([{ tipo: "partnercard", parceiro_id: ids.parceiro, property_id: null }]);
+    // Cartão já gerado com mostrar_nome = false: o campo é ignorado no partnercard (o nome do negócio sai sempre).
+    await adm().from("cartoes_compartilhaveis").update({ mostrar_nome: false }).eq("curto", curto);
     await imagem(request, "retrato");
     await imagem(request, "quadrado");
+    // Nome longo (mais de 50 caracteres): o título é cortado em 50, sem quebrar o cartão.
+    const longo = `Lia Fotografia de Imóveis Mobiliados e Interiores T239 ${sufixo}`;
+    expect(longo.length).toBeGreaterThan(50);
+    await adm().from("parceiros").update({ nome_publico: longo }).eq("id", ids.parceiro!);
+    for (const formato of ["retrato", "quadrado"] as const) {
+      const r = await request.get(`/cartoes/${curto}/imagem?formato=${formato}`);
+      expect(r.status()).toBe(200);
+      const buf = await r.body();
+      expect(dimensoesPng(buf)).toEqual(formato === "retrato" ? { w: 1080, h: 1350 } : { w: 1080, h: 1080 });
+      writeFileSync(`${SAIDA}/t239-imagem-parceiro-nome-longo-${formato}.png`, buf);
+    }
+    await adm().from("parceiros").update({ nome_publico: nomePublico }).eq("id", ids.parceiro!);
   });
 
   test("2. URL do QR abre a página do parceiro e conta qr_scans e ref_partner_views; assinatura adulterada não conta", async ({ browser, request }) => {

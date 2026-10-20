@@ -303,17 +303,18 @@ export function limparTextoDoCartao(s: string | null | undefined, max = 60): str
 
 /**
  * Os ÚNICOS campos que vão para a imagem do cartão do parceiro (a rota de imagem desenha só isto): foto, nome
- * público (com o opt-in), categoria principal, até 2 cidades, nota só com avaliação real (senão "Novo na Viva") e o
+ * público como título (sempre: é o nome do negócio, já público em /parceiros/[slug]; se a limpeza esvaziar o nome,
+ * entra a categoria), categoria principal, até 2 cidades, nota só com avaliação real (senão "Novo na Viva") e o
  * selo. Nada de telefone, e-mail, documento, preço ou rede social.
  */
-export function camposCartaoParceiro(p: ParceiroPublicoDoCartao, mostrarNome: boolean): CamposCartaoParceiro {
+export function camposCartaoParceiro(p: ParceiroPublicoDoCartao): CamposCartaoParceiro {
   const categoria = rotuloCategoria(String(p.categorias[0] ?? ""));
   const cidades = p.cidades
     .map((c) => limparTextoDoCartao(c, 40))
     .filter(Boolean)
     .slice(0, 2)
     .join(" · ");
-  const nome = mostrarNome ? limparTextoDoCartao(p.nomePublico, 50) : "";
+  const nome = limparTextoDoCartao(p.nomePublico, 50);
   const real = p.avaliacoesQtd > 0 && p.notaMedia != null && p.notaMedia >= 1 && p.notaMedia <= 5;
   const nota = real
     ? `★ ${p.notaMedia!.toFixed(1).replace(".", ",")} · ${p.avaliacoesQtd} ${p.avaliacoesQtd === 1 ? "avaliação" : "avaliações"}`

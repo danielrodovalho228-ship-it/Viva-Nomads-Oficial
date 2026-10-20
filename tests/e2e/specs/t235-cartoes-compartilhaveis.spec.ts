@@ -167,8 +167,21 @@ test.describe("T235 — cartões compartilháveis (Fase 1)", () => {
       await page.context().close();
     }
     await imagemRapida(request, `/cartoes/${ids.curtoPostal}/imagem?formato=retrato`, { w: 1080, h: 1350 });
-    const r = await request.get(`/cartoes/${ids.curtoPostal}/imagem?formato=retrato`);
-    writeFileSync(`${SAIDA}/t235-imagem-postal-retrato.png`, await r.body());
+    await imagemRapida(request, `/cartoes/${ids.curtoPostal}/imagem?formato=quadrado`, { w: 1080, h: 1080 });
+    const comNome: Record<string, Buffer> = {};
+    for (const formato of ["retrato", "quadrado"] as const) {
+      const r = await request.get(`/cartoes/${ids.curtoPostal}/imagem?formato=${formato}`);
+      comNome[formato] = await r.body();
+      writeFileSync(`${SAIDA}/t235-imagem-postal-${formato}.png`, comNome[formato]);
+    }
+    // O cartão-postal respeita o opt-in: sem consentimento, a imagem sai sem o primeiro nome (outra imagem).
+    await adm().from("cartoes_compartilhaveis").update({ mostrar_nome: false }).eq("curto", ids.curtoPostal!);
+    for (const formato of ["retrato", "quadrado"] as const) {
+      const semNome = await (await request.get(`/cartoes/${ids.curtoPostal}/imagem?formato=${formato}`)).body();
+      expect(semNome.equals(comNome[formato]), `cartão-postal ${formato} sem o nome deve mudar`).toBe(false);
+      writeFileSync(`${SAIDA}/t235-imagem-postal-sem-nome-${formato}.png`, semNome);
+    }
+    await adm().from("cartoes_compartilhaveis").update({ mostrar_nome: true }).eq("curto", ids.curtoPostal!);
     // Contrato ainda em andamento (outro morador, outro imóvel) não tem cartão-postal.
     const agora = new Date().toISOString();
     const { data: emAndamento, error } = await adm()

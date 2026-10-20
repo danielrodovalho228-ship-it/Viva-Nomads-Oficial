@@ -227,7 +227,6 @@ export async function dadosDoCartaoParceiro(admin: SupabaseClient, c: CartaoLinh
       avaliacoesQtd: Number(p.avaliacoes_qtd ?? 0),
       fotoUrl: urlMidiaParceiro((p.avatar_path as string | null) ?? (p.banner_path as string | null)),
     },
-    c.mostrar_nome,
   );
   return { campos, slug: String(p.slug), teste: p.teste === true };
 }
