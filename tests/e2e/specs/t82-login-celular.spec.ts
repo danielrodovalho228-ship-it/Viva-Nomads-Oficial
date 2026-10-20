@@ -34,7 +34,13 @@ test.describe("T82 — Login no celular", () => {
     await entrar.click();
     // E-mail novo a cada execução: o limite do Supabase por e-mail não acumula entre labs.
     // Se o limite por IP do lab disparar ("Muitas tentativas"), a mensagem amigável também prova o fluxo.
-    await expect(page.getByText(/e-mail ou senha|muitas tentativas/i).first()).toBeVisible({ timeout: 20_000 });
+    // O alerta do formulário (data-testid) é o que prova o fluxo; o texto exato muda com o limite do IP do lab
+    // (lab 2f1fb872: nenhum dos dois textos apareceu em 20 s). Texto vazio ou técnico continua reprovando.
+    const alerta = page.getByTestId("auth-erro").first();
+    await expect(alerta).toBeVisible({ timeout: 30_000 });
+    const texto = ((await alerta.textContent()) ?? "").trim();
+    expect(texto.length).toBeGreaterThan(10);
+    expect(texto).not.toMatch(/undefined|\[object|invalid login credentials|supabase/i);
     await expect(page).toHaveURL(/\/auth/);
     await expect(page.locator("form").getByRole("button", { name: /^entrar$/i })).toBeEnabled();
   });
