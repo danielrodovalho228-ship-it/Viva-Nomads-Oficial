@@ -45,7 +45,7 @@ export function BarraFixaCelular({
     <div
       data-testid="barra-fixa-imovel"
       data-cta
-      className="vn-barra-fixa fixed inset-x-0 z-30 border-t border-line bg-white px-4 py-2 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] lg:hidden print:hidden"
+      className="vn-barra-fixa fixed inset-x-0 z-30 border-t border-line bg-white px-4 py-2 shadow-flutuante lg:hidden print:hidden"
     >
       <div className="mx-auto max-w-xl">
         {barra.demonstracao && (

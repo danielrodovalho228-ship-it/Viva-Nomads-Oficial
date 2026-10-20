@@ -34,7 +34,7 @@ export function CardPinMapa({ property: p, onFechar }: { property: Property; onF
   const disponivel = disponivelAPartirDe(p.availableFrom);
   const icones = iconesComodidades(p);
   return (
-    <div data-testid="card-pin-mapa" data-id={p.id} className="relative w-64 overflow-hidden rounded-xl border border-line bg-white font-sans">
+    <div data-testid="card-pin-mapa" data-id={p.id} className="relative w-64 overflow-hidden rounded-xl bg-white font-sans shadow-flutuante">
       <button
         type="button"
         onClick={(e) => {

@@ -22,7 +22,7 @@ export function AtalhosCategoria({ imoveis }: { imoveis: Property[] }) {
   return (
     <section className="bg-surface py-10 sm:py-14" aria-labelledby="atalhos-titulo">
       <div className="container-page">
-        <h2 id="atalhos-titulo" className="text-center font-title text-2xl font-semibold text-ink sm:text-3xl">
+        <h2 id="atalhos-titulo" className="text-center font-title text-xl font-semibold text-ink">
           Encontre o imóvel do seu jeito
         </h2>
         <ul className="mx-auto mt-6 grid max-w-6xl auto-rows-fr grid-cols-2 gap-x-4 gap-y-6 sm:mt-10 sm:gap-x-6 lg:grid-cols-6" data-testid="atalhos-categoria">
@@ -52,7 +52,7 @@ export function AtalhosCategoria({ imoveis }: { imoveis: Property[] }) {
                   </span>
                   <span className="flex flex-1 flex-col gap-1">
                     <span className="line-clamp-2 font-title text-[15px] font-semibold leading-snug text-ink sm:text-base">{a.rotulo}</span>
-                    <span className="mt-auto text-xs text-muted" data-testid="atalho-total">
+                    <span className="mt-auto text-xs tabular-nums text-apoio" data-testid="atalho-total">
                       {a.total} {a.total === 1 ? "imóvel" : "imóveis"}
                     </span>
                   </span>

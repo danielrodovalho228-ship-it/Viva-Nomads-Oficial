@@ -663,7 +663,7 @@ export function SearchClient({ properties: imoveis, topo }: { properties: Proper
         className={cn(
           "container-page hidden sm:block lg:order-1",
           painelFiltros
-            ? "lg:sticky lg:top-(--topo-painel) lg:z-30 lg:-mx-6 lg:flex lg:w-auto lg:max-w-none lg:justify-center lg:border-b lg:border-divisor lg:bg-white lg:px-6 lg:py-4"
+            ? "lg:sticky lg:top-(--topo-painel) lg:z-30 lg:-mx-6 lg:flex lg:w-auto lg:max-w-none lg:justify-center lg:border-b lg:border-divisor lg:bg-white lg:px-6 lg:py-4 lg:shadow-flutuante"
             : "lg:hidden"
         )}
       >
@@ -842,7 +842,7 @@ export function SearchClient({ properties: imoveis, topo }: { properties: Proper
             data-testid="fechar-painel-filtros"
             className={buttonClasses({ size: "sm", className: "hidden shrink-0 whitespace-nowrap lg:inline-flex" })}
           >
-            Ver {results.length} {results.length === 1 ? "imóvel" : "imóveis"}
+            Ver <span className="tabular-nums">{results.length}</span> {results.length === 1 ? "imóvel" : "imóveis"}
           </button>
 
         </div>
@@ -1183,7 +1183,7 @@ function GuestsPicker({
             onClick={() => setOpen(false)}
             className="fixed inset-0 z-30 cursor-default"
           />
-          <div className="absolute left-0 z-40 mt-2 w-64 rounded-xl border border-line bg-white p-4">
+          <div className="absolute left-0 z-40 mt-2 w-64 rounded-xl border border-line bg-white p-4 shadow-flutuante">
             <Stepper label="Adultos" hint="13 anos ou mais" value={adults} min={1} max={16} onChange={onAdults} />
             <div className="my-3 h-px bg-divisor" />
             <Stepper label="Crianças" hint="até 12 anos" value={childrenCount} min={0} max={10} onChange={onChildren} />

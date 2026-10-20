@@ -27,12 +27,15 @@
 
   /* ── Neutros (Prompt 40, Estudo 1): tinta, secundário, borda e divisor ── */
   --color-night: #0a0a0a; /* preto de marca */
+  /* Adendo do Prompt 40: secundário #3F3F3F; o #6A6A6A (apoio) é só para miúdo e legenda, nunca corpo. */
   --color-ink: #222222; /* tinta: texto principal */
-  --color-muted: #6a6a6a; /* texto secundário */
-  --color-line: #dddddd; /* linha de borda (campos, chips, cartões de lista) */
-  --color-divisor: #ebebeb; /* divisor entre blocos e cinza do esqueleto */
+  --color-muted: #3f3f3f; /* secundário: texto corrido de apoio */
+  --color-apoio: #6a6a6a; /* apoio: só miúdo (≤ 14 px) e legenda */
+  --color-line: #dddddd; /* linha de borda 1 px (campos, chips, cartões de lista) */
+  --color-divisor: #ebebeb; /* divisor 1 px entre blocos e cinza do esqueleto */
   --color-surface: #ffffff;
-  --color-surface-2: #f7f7f7;
+  --color-surface-2: #f7f7f7; /* superfície */
+  --color-surface-3: #f2f2f2; /* superfície mais funda */
 
   /* ── Aliases semânticos (compat. com componentes existentes) ── */
   /* Cor de marca ÚNICA (Prompt 40): o verde Viva, só no botão primário, no preço e no estado ativo. */
@@ -90,6 +93,10 @@ body {
   (Não forçar overflow aqui — isso anulava o line-clamp dos títulos.)
 */
 @layer base {
+  /* Corpo 16/400 com linha 1,5 (adendo do Prompt 40). */
+  body {
+    line-height: 1.5;
+  }
   /* Negrito do navegador é 700; o padrão é 600 (Prompt 40). */
   b,
   strong,
@@ -162,13 +169,14 @@ textarea:focus-visible,
   /* Título fluido editorial — escala bem do mobile (375px) ao desktop.
      Mínimos menores evitam vazamento/scroll horizontal com palavras longas
      como "Uberlândia". Quebra de palavra protege casos extremos. */
+  /* Teto de tamanho (adendo do Prompt 40): 40 px só no h1 do hero (home e páginas de marketing); o resto, 28 px. */
   .display-xl {
-    font-size: clamp(2rem, 7vw, 5rem);
+    font-size: clamp(1.75rem, 6vw, 2.5rem);
     overflow-wrap: break-word;
     word-break: break-word;
   }
   .display-lg {
-    font-size: clamp(1.75rem, 5.5vw, 3.5rem);
+    font-size: clamp(1.375rem, 4vw, 1.75rem);
     overflow-wrap: break-word;
     word-break: break-word;
   }

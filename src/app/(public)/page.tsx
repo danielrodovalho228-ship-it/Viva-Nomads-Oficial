@@ -72,7 +72,7 @@ export default async function HomePage() {
         {/* Fundo: poster = LCP; vídeo só em desktop sem reduced-motion. */}
         <HeroVideoBg />
         <div className="container-page relative z-10 flex min-h-[26rem] flex-col items-center justify-center py-12 text-center sm:min-h-[28rem] lg:min-h-[30rem]">
-          <h1 className="max-w-3xl font-title text-3xl font-semibold leading-tight sm:text-5xl">
+          <h1 className="max-w-3xl font-title text-[28px] font-semibold leading-tight sm:text-[40px]">
             Imóveis mobiliados para morar por meses
           </h1>
           <p className="mt-3 text-base font-medium text-white/85 sm:text-lg">
@@ -133,7 +133,7 @@ export default async function HomePage() {
                     />
                   </div>
                   <div className="sm:col-span-1 sm:[direction:ltr]">
-                    <span className="font-title text-4xl font-semibold text-line">
+                    <span className="font-title text-[28px] font-semibold tabular-nums text-line">
                       0{i + 1}
                     </span>
                   </div>
@@ -276,7 +276,6 @@ export default async function HomePage() {
                 <div className="absolute inset-0 bg-night/75" />
               </>
             )}
-            <div className="pointer-events-none absolute -right-20 -top-20 h-80 w-80 rounded-full bg-gradient-brand opacity-30 blur-3xl" />
             <div className="relative grid items-center gap-10 md:grid-cols-2">
               <div>
                 <Eyebrow light>Para proprietários</Eyebrow>

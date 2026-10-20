@@ -5,7 +5,9 @@
     - nenhum shadow-* fora do flutuante;
     - nenhum raio fora de 8 / 12 / full;
     - nenhum espaço fora da escala de 4 (meio passo ou arbitrário);
-    - nenhum font-bold / font-extrabold / font-black.
+    - nenhum font-bold / font-extrabold / font-black;
+  e, pelo adendo: sem caixa alta espaçada (uppercase + tracking), sem gradiente,
+  teto de 28 px (40 px só no h1 do hero da home) e o cinza de apoio só em miúdo.
   O resto do app entra nos Prompts 41–43 (a contagem do que falta sai no relatório
   do PR, por pasta). Ao levar uma tela para o padrão, acrescente-a em ALCANCE.
   Roda: node --test src/lib/estilo/estilo-padrao.test.ts
@@ -14,7 +16,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { espacoPermitido, violacoesEstilo } from "./regras-estilo.ts";
+import { espacoPermitido, pxDoTamanho, violacoesAdendo, violacoesEstilo } from "./regras-estilo.ts";
 import {
   FILTROS_PAINEL_VAZIOS,
   OPCOES_ESTADIA,
@@ -57,7 +59,11 @@ export const ALCANCE = [
   "app/(dashboard)/dashboard/favoritos",
   "app/(public)/cidades/[cidade]/page.tsx",
   "components/property/imoveis-parecidos.tsx",
+  "components/property/fotos-cartao.tsx",
 ];
+
+/** Hero com h1 de até 40 px (adendo): home; /para-proprietarios, /como-funciona, /precos e /parceiros entram quando forem trazidas. */
+const HEROS = new Set(["app/(public)/page.tsx"]);
 
 function arquivos(alvo: string, out: string[] = []): string[] {
   const p = join(SRC, alvo);
@@ -102,14 +108,37 @@ test("as regras pegam o que devem e deixam passar o padrão", () => {
   assert.equal(espacoPermitido("[1.3rem]"), false); // 20,8 px
 });
 
-test("telas do alcance: sem sombra, raio, espaço ou peso fora do padrão", () => {
+test("telas do alcance: sem sombra, raio, espaço ou peso fora do padrão (nem caixa alta, gradiente, > 28 px ou apoio no corpo)", () => {
   const achados: string[] = [];
   for (const alvo of ALCANCE) {
     for (const f of arquivos(alvo)) {
-      for (const v of violacoesEstilo(ler(f))) achados.push(`${f}:${v.linha} ${v.tipo} ${v.classe}`);
+      const t = ler(f);
+      for (const v of [...violacoesEstilo(t), ...violacoesAdendo(t, { heroAte40: HEROS.has(f) })]) achados.push(`${f}:${v.linha} ${v.tipo} ${v.classe}`);
     }
   }
   assert.deepEqual(achados, []);
+});
+
+test("adendo: as regras novas pegam o que devem", () => {
+  const tipos = (s: string, hero = false) => violacoesAdendo(s, { heroAte40: hero }).map((v) => `${v.tipo}:${v.classe}`);
+  assert.deepEqual(tipos(`<p className="text-xs uppercase tracking-[0.18em]" />`), ["caixa-alta:uppercase + tracking"]);
+  assert.deepEqual(tipos(`<p className="uppercase" />`), []);
+  assert.deepEqual(tipos(`<div className="bg-gradient-to-r from-night" />`), ["gradiente:bg-gradient-to-r"]);
+  assert.deepEqual(tipos(`<span className="text-gradient-brand" />`), ["gradiente:text-gradient-brand"]);
+  assert.deepEqual(tipos(`<h2 className="text-3xl sm:text-4xl text-[30px]" />`), ["tamanho:text-3xl", "tamanho:text-4xl", "tamanho:text-[30px]"]);
+  assert.deepEqual(tipos(`<h2 className="text-2xl md:text-[28px]" />`), []);
+  assert.deepEqual(tipos(`<h1 className="text-[28px] sm:text-[40px]" />`, true), []);
+  assert.deepEqual(tipos(`<h1 className="sm:text-5xl" />`, true), ["tamanho:text-5xl"]);
+  assert.deepEqual(tipos(`<p className="text-base text-apoio" />`), ["apoio:text-apoio sem tamanho miúdo"]);
+  assert.deepEqual(tipos(`<p className="text-xs text-apoio" />`), []);
+  assert.equal(pxDoTamanho("[2rem]"), 32);
+});
+
+test("adendo: números tabulares no preço, na contagem do botão e no título da busca", () => {
+  assert.match(ler("components/property-card.tsx"), /<p className="tabular-nums" data-testid="cartao-total-mes">/);
+  assert.match(ler("components/property-card.tsx"), /tabular-nums text-muted" data-testid="cartao-disponivel"/);
+  assert.match(ler("components/busca/painel-filtros-celular.tsx"), /px-4 tabular-nums sm:flex-none/);
+  assert.match(ler("app/(public)/buscar/page.tsx"), /font-semibold tabular-nums text-ink/);
 });
 
 test("tokens: uma cor de marca, neutros, três raios, uma sombra e pesos 400/600 (globals.css)", () => {
@@ -117,7 +146,10 @@ test("tokens: uma cor de marca, neutros, três raios, uma sombra e pesos 400/600
   const tema = css.slice(css.indexOf("@theme"), css.indexOf("}", css.indexOf("@theme")));
   assert.match(tema, /--color-forest: #1c6b3a;/);
   assert.match(tema, /--color-ink: #222222;/);
-  assert.match(tema, /--color-muted: #6a6a6a;/);
+  assert.match(tema, /--color-muted: #3f3f3f;/); // secundário (adendo)
+  assert.match(tema, /--color-apoio: #6a6a6a;/); // só miúdo e legenda
+  assert.match(tema, /--color-surface-2: #f7f7f7;/);
+  assert.match(tema, /--color-surface-3: #f2f2f2;/);
   assert.match(tema, /--color-line: #dddddd;/);
   assert.match(tema, /--color-divisor: #ebebeb;/);
   assert.match(tema, /--radius-control: 8px;/);
@@ -128,19 +160,37 @@ test("tokens: uma cor de marca, neutros, três raios, uma sombra e pesos 400/600
   // Nenhuma sombra de CSS solto além do "none" (o popup do mapa zera a moldura do Leaflet/Mapbox).
   const sombras = [...css.matchAll(/box-shadow:\s*([^;]+);/g)].map((m) => m[1].trim());
   assert.deepEqual([...new Set(sombras)], ["none"]);
+  // Teto de tamanho: hero até 40 px, títulos de seção até 28 px.
+  assert.match(css, /\.display-xl \{\s*font-size: clamp\([^,]+, [^,]+, 2\.5rem\);/);
+  assert.match(css, /\.display-lg \{\s*font-size: clamp\([^,]+, [^,]+, 1\.75rem\);/);
 });
 
-test("sombra: shadow-flutuante só no botão flutuante (Fale com a Viva) e na barra flutuante do Comparar", () => {
+test("sombra: shadow-flutuante em TUDO o que flutua e em nada mais (adendo)", () => {
   const usos: string[] = [];
   const varrer = (dir: string) => {
     for (const f of readdirSync(join(SRC, dir))) {
       const rel = join(dir, f);
       if (statSync(join(SRC, rel)).isDirectory()) varrer(rel);
-      else if (/\.tsx$/.test(f) && /shadow-flutuante/.test(ler(rel))) usos.push(rel);
+      else if (/\.tsx?$/.test(f) && !f.endsWith(".test.ts") && !rel.startsWith("lib/estilo") && /shadow-flutuante/.test(ler(rel))) usos.push(rel);
     }
   };
   varrer("");
-  assert.deepEqual(usos.sort(), ["components/ajuda/viva-chat.tsx", "components/busca/barra-comparar.tsx", "components/ui/button.tsx"]);
+  assert.deepEqual(usos.sort(), [
+    "app/(public)/buscar/search-client.tsx", // faixa de filtros presa sob o cabeçalho e o seletor de moradores
+    "components/ajuda/viva-chat.tsx", // botão flutuante
+    "components/busca/barra-comparar.tsx", // barra flutuante do Comparar
+    "components/busca/card-pin-mapa.tsx", // cartão aberto sobre o mapa
+    "components/city-autocomplete.tsx", // menu suspenso de sugestões
+    "components/layout/navbar.tsx", // cabeçalho fixo (busca fixa) e menu suspenso
+    "components/location-search.tsx", // menu suspenso de sugestões
+    "components/property/barra-fixa-celular.tsx", // barra fixa do celular
+    "components/search-map.tsx", // botões (pinos) do mapa
+    "components/ui/button.tsx", // variante flutuante
+  ]);
+  // E nenhuma outra sombra nesses arquivos de flutuantes (a guarda geral cobre o resto do alcance).
+  for (const f of ["components/property/barra-fixa-celular.tsx", "components/search-map.tsx", "components/layout/navbar.tsx"]) {
+    assert.deepEqual(violacoesEstilo(ler(f)).filter((v) => v.tipo === "sombra"), [], f);
+  }
 });
 
 test("cartão de anúncio: sem caixa (sem border nem shadow), foto 4:3 com raio de 12 px, ordem do Estudo 1", () => {
@@ -149,13 +199,19 @@ test("cartão de anúncio: sem caixa (sem border nem shadow), foto 4:3 com raio 
   assert.doesNotMatch(link, /\bborder\b|\bborder-|shadow|bg-white/, "o <Link> do cartão não é uma caixa");
   assert.doesNotMatch(c, /\bshadow\b|shadow-/);
   assert.match(c, /className="relative aspect-\[4\/3\] overflow-hidden rounded-xl bg-surface-2" data-testid="cartao-foto"/);
-  // Ordem: foto → bairro e cidade → linha-síntese → valor mensal (o maior texto, 600).
-  const ordem = ["cartao-foto", "cartao-local", "cartao-sintese", "cartao-total-mes"].map((id) => c.indexOf(`data-testid="${id}"`));
+  // Ordem do adendo: foto → bairro + nota → título (2 linhas) → total → síntese → disponibilidade.
+  const ordem = ["cartao-foto", "cartao-local", "cartao-titulo", "cartao-total-mes", "cartao-sintese", "cartao-disponivel"].map((id) => c.indexOf(`data-testid="${id}"`));
   assert.ok(ordem.every((i, k) => i > 0 && (k === 0 || i > ordem[k - 1])), `ordem ${ordem}`);
-  assert.match(c, /text-\[15px\] font-semibold[^"]*sm:text-base" data-testid="cartao-local"/);
+  assert.match(c, /text-base font-semibold[^"]*" data-testid="cartao-local"/); // cartão 16/600
+  assert.match(c, /className="line-clamp-2 [^"]*" data-testid="cartao-titulo"/);
+  assert.match(c, /<p className="tabular-nums" data-testid="cartao-total-mes">/);
   assert.match(c, /<span className="font-title text-lg font-semibold text-forest">\{formatBRL\(inc\.total\)\}<\/span>/);
-  // Selos: no máximo 2 na foto (B1 de 86dcb4db), pelo repartirSelos.
-  assert.match(c, /selos\.foto\.map/);
+  assert.match(c, /\{formatBRL\(inc\.total \* meses\)\} em \{meses\} \{meses === 1 \? "mês" : "meses"\}/);
+  assert.match(c, /<span>mobiliado<\/span>/);
+  // Carrossel com pontos e no máximo 1 selo.
+  assert.match(c, /<FotosCartao fotos=\{fotos\} alt=\{property\.title\} \/>/);
+  assert.match(ler("components/property/fotos-cartao.tsx"), /data-testid="cartao-pontos"/);
+  assert.match(c, /\{selo && <Selo id=\{selo\} \/>\}/);
 });
 
 test("coração: 1 toque salva, outro desfaz, com aria-pressed (mesmo store de favoritos)", () => {

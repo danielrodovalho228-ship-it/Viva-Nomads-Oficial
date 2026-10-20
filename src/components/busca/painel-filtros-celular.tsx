@@ -71,7 +71,7 @@ export function FolhaFiltros({
             disabled={n === 0}
             data-testid="aplicar-filtros"
             data-total={n}
-            className={buttonClasses({ className: "min-w-0 flex-1 px-4 sm:flex-none sm:px-6" })}
+            className={buttonClasses({ className: "min-w-0 flex-1 px-4 tabular-nums sm:flex-none sm:px-6" })}
           >
             {rotuloMostrar(n)}
           </button>

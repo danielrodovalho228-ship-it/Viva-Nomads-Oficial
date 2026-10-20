@@ -154,7 +154,7 @@ function LocationGeocoder({ value, onChange, onSelect, placeholder = "Endereço,
       </div>
 
       {open && (loading || suggestions.length > 0 || errored) && (
-        <ul className="absolute z-30 mt-1 max-h-72 w-72 max-w-[80vw] overflow-auto rounded-xl border border-line bg-white py-1">
+        <ul className="absolute z-30 mt-1 max-h-72 w-72 max-w-[80vw] overflow-auto rounded-xl border border-line bg-white py-1 shadow-flutuante">
           {loading && suggestions.length === 0 && (
             <li className="px-3 py-2 text-sm text-muted">Buscando endereços…</li>
           )}

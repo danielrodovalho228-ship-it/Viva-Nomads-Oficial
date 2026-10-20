@@ -88,7 +88,7 @@ export default async function CityLandingPage({ params }: Params) {
             </Link>{" "}
             / <span className="text-white/80">{name}</span>
           </nav>
-          <h1 className="mt-4 max-w-3xl font-title text-4xl font-semibold md:text-5xl">
+          <h1 className="mt-4 max-w-3xl font-title text-2xl font-semibold md:text-[28px]">
             Imóveis mobiliados mensais em {name}
           </h1>
           <p className="mt-5 max-w-2xl text-lg text-white/80">
@@ -101,7 +101,7 @@ export default async function CityLandingPage({ params }: Params) {
 
       <section className="container-page section-y">
         <div className="flex items-center justify-between">
-          <h2 className="font-title text-2xl font-semibold text-ink">
+          <h2 className="font-title text-2xl font-semibold tabular-nums text-ink">
             {properties.length === 0
               ? `Ainda não há imóveis em ${name}`
               : properties.every((p) => isExemplo(p.id))

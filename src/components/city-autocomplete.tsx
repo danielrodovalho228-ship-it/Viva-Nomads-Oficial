@@ -62,7 +62,7 @@ export function CityAutocomplete({
         />
       </div>
       {open && matches.length > 0 && (
-        <ul className="absolute left-0 top-full z-30 mt-1 max-h-64 w-full min-w-[12rem] overflow-auto rounded-xl border border-line bg-white py-1">
+        <ul className="absolute left-0 top-full z-30 mt-1 max-h-64 w-full min-w-[12rem] overflow-auto rounded-xl border border-line bg-white py-1 shadow-flutuante">
           {matches.map((s) => (
             <li key={s}>
               <button

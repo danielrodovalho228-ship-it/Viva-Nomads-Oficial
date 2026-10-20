@@ -8,7 +8,10 @@ import { test, expect, type Page, type Locator, type APIRequestContext } from "@
    3. favoritos; 4. /cidades/uberlandia; 5. "Imóveis parecidos" na página do imóvel;
    6. esqueleto no formato do cartão com rede lenta simulada (page.route com atraso);
    7. coração: 1 toque salva, outro desfaz (aria-pressed);
-   8. botões: altura 52 (celular) / 56 (computador), raio 8, cor (getComputedStyle).
+   8. botões: altura 52 (celular) / 56 (computador), raio 8, cor (getComputedStyle);
+   9. adendo: cartão na ordem nova (bairro + nota → título em até 2 linhas → total do mês · total da estadia →
+      síntese → disponibilidade; 1 selo; carrossel com pontos), cinzas do texto corrido (#3F3F3F; #6A6A6A só
+      em miúdo) e sombra só no que flutua.
   E as provas da folha: "contagem do botão = itens da lista" e "Limpar tudo zera".
   Na /buscar os anúncios de exemplo só aparecem com ?exemplos=1 quando há imóveis reais (Prompt 30).
 */
@@ -18,6 +21,8 @@ const altura = (l: number) => (l === 390 ? 844 : 900);
 const VERDE = "rgb(28, 107, 58)";
 const TINTA = "rgb(34, 34, 34)";
 const BRANCO = "rgb(255, 255, 255)";
+const SECUNDARIO = "rgb(63, 63, 63)"; // #3F3F3F (adendo)
+const APOIO = "rgb(106, 106, 106)"; // #6A6A6A, só miúdo
 
 function semDialogo(page: Page) {
   page.on("dialog", (d) => {
@@ -72,9 +77,23 @@ async function conferirCartao(cartao: Locator, onde: string) {
   const titulo = await estilo(cartao.getByTestId("cartao-local"));
   expect(titulo.peso).toBe("600");
   const fonte = await cartao.getByTestId("cartao-local").evaluate((el) => Number.parseFloat(getComputedStyle(el).fontSize));
-  expect(fonte, `${onde}: título do cartão 15–16 px`).toBeGreaterThanOrEqual(15);
-  expect(fonte).toBeLessThanOrEqual(16);
-  expect(await cartao.getByTestId("selos-foto").locator(":scope > *").count(), `${onde}: no máximo 2 selos na foto`).toBeLessThanOrEqual(2);
+  expect(fonte, `${onde}: cartão 16/600`).toBe(16);
+  // Adendo: no máximo 1 selo, em pill branca.
+  const selos = cartao.getByTestId("selos-foto").locator(":scope > *");
+  expect(await selos.count(), `${onde}: no máximo 1 selo`).toBeLessThanOrEqual(1);
+  if (await selos.count()) expect((await estilo(selos.first())).fundo).toBe(BRANCO);
+  // Adendo: ordem bairro + nota → título (até 2 linhas) → total → síntese → disponibilidade (de cima para baixo).
+  const ys: number[] = [];
+  for (const id of ["cartao-local", "cartao-titulo", "cartao-total-mes", "cartao-sintese", "cartao-disponivel"]) {
+    const el = cartao.getByTestId(id);
+    if (await el.count()) ys.push((await el.boundingBox())!.y);
+  }
+  expect(ys, `${onde}: ordem do cartão`).toEqual([...ys].sort((a, b) => a - b));
+  const linhasTitulo = await cartao.getByTestId("cartao-titulo").evaluate((el) => Math.round(el.getBoundingClientRect().height / Number.parseFloat(getComputedStyle(el).lineHeight)));
+  expect(linhasTitulo, `${onde}: título em até 2 linhas`).toBeLessThanOrEqual(2);
+  await expect(cartao.getByTestId("cartao-total-estadia")).toHaveText(/·\s*R\$\s?[\d.,]+ em \d+ m(ês|eses)/);
+  await expect(cartao.getByTestId("cartao-sintese")).toContainText(/\d+ quartos?/);
+  expect((await estilo(cartao.getByTestId("cartao-titulo"))).cor, `${onde}: texto secundário #3F3F3F`).toBe(SECUNDARIO);
 }
 
 /** Primário: 52 px no celular, 56 px no computador, raio 8, fundo verde, texto branco, sem sombra. */
@@ -372,6 +391,45 @@ test.describe("T244 — Fundação visual (Prompt 40)", () => {
         await page.goto("/", { waitUntil: "networkidle" });
         await page.getByRole("link", { name: /Quero anunciar meu imóvel/ }).scrollIntoViewIfNeeded();
         await page.screenshot({ path: `${SAIDA}/t244-botoes-${largura}.png` });
+      });
+
+      test("9. adendo: carrossel com pontos, cinzas do texto corrido e sombra só no que flutua", async ({ page }) => {
+        semDialogo(page);
+        await page.goto("/buscar?exemplos=1", { waitUntil: "networkidle" });
+        const cartoes = page.getByTestId("cartao-imovel");
+        await expect(cartoes.first()).toBeVisible();
+        // Carrossel: o cartão com mais de 1 foto mostra os pontos (o 1º aceso) e desliza.
+        const comPontos = cartoes.filter({ has: page.getByTestId("cartao-pontos") }).first();
+        if (await comPontos.count()) {
+          await expect(comPontos.getByTestId("cartao-pontos").locator('[data-ativo="1"]')).toHaveCount(1);
+          await comPontos.locator("[data-fotos]").evaluate((el) => el.scrollTo({ left: el.clientWidth, behavior: "instant" }));
+          await expect(comPontos.getByTestId("cartao-pontos").locator("span").nth(1)).toHaveAttribute("data-ativo", "1");
+          await comPontos.screenshot({ path: `${SAIDA}/t244-cartao-carrossel-${largura}.png` });
+        } else {
+          test.info().annotations.push({ type: "aviso", description: "nenhum cartão com mais de 1 foto nesta base" });
+        }
+        // Cinzas: miúdo de apoio (#6A6A6A) só com ≤ 14 px; nenhum texto de 16 px+ em #6A6A6A.
+        const apoioGrande = await page.evaluate((cor) =>
+          Array.from(document.querySelectorAll<HTMLElement>("main p, main span, main h1, main h2, main h3, main li"))
+            .filter((el) => el.offsetParent !== null && el.childElementCount === 0 && (el.textContent ?? "").trim().length > 0)
+            .filter((el) => getComputedStyle(el).color === cor && Number.parseFloat(getComputedStyle(el).fontSize) > 14)
+            .map((el) => (el.textContent ?? "").trim().slice(0, 30)),
+        APOIO);
+        expect(apoioGrande, "cinza de apoio só em miúdo").toEqual([]);
+        // Sombra: o cartão, a barra de busca e os chips não têm; o flutuante tem.
+        expect((await estilo(cartoes.first().locator("a").first())).sombra).toBe("none");
+        const flut = page.getByTestId("fale-com-a-viva");
+        if (await flut.isVisible()) expect((await estilo(flut)).sombra).not.toBe("none");
+        if (largura >= 1024) {
+          await page.getByTestId("busca-compacta").click();
+          expect((await estilo(page.getByTestId("filtros-barra"))).sombra, "faixa de filtros presa (busca fixa)").not.toBe("none");
+          const pino = page.getByTestId("pin-mapa").first();
+          if (await pino.isVisible().catch(() => false)) expect((await estilo(pino)).sombra, "botão do mapa").not.toBe("none");
+          await page.keyboard.press("Escape");
+        }
+        await page.mouse.wheel(0, 800);
+        await expect.poll(async () => (await estilo(page.locator("header").first())).sombra, { message: "cabeçalho fixo ao rolar" }).not.toBe("none");
+        await page.screenshot({ path: `${SAIDA}/t244-sombra-flutuantes-${largura}.png` });
       });
     });
   }

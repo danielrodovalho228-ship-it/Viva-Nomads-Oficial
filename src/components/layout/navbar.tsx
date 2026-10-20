@@ -47,7 +47,7 @@ function MenuMais() {
         Mais <ChevronDown className={cn("h-4 w-4 transition-transform", aberto && "rotate-180")} aria-hidden />
       </button>
       {aberto && (
-        <div className="absolute left-1/2 top-full z-50 mt-3 w-52 -translate-x-1/2 rounded-xl border border-line bg-white p-1.5 shadow-lg">
+        <div className="absolute left-1/2 top-full z-50 mt-3 w-52 -translate-x-1/2 rounded-xl border border-line bg-white p-2 shadow-flutuante">
           {MAIS.map((item) => (
             <Link
               key={item.href}
@@ -151,7 +151,7 @@ export function Navbar() {
       className={cn(
         "sticky top-0 z-40 border-b transition-shadow",
         scrolled
-          ? "border-line bg-white/90 backdrop-blur-md shadow-sm"
+          ? "border-line bg-white/90 backdrop-blur-md shadow-flutuante"
           : "border-transparent bg-white"
       )}
     >

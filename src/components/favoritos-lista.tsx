@@ -12,7 +12,7 @@ export function FavoritosLista() {
   return (
     <div className="container-page py-6" data-testid="favoritos">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-title text-2xl font-semibold text-ink">Favoritos ({ids.length})</h1>
+        <h1 className="font-title text-2xl font-semibold tabular-nums text-ink">Favoritos ({ids.length})</h1>
         {favoritos.length >= 2 && (
           <ButtonLink href="/dashboard/comparar" variant="gold">
             <GitCompare className="h-4 w-4" /> Comparar
