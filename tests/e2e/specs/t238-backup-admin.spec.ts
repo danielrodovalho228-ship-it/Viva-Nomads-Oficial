@@ -58,6 +58,7 @@ test.describe("T238 — Admin: cartão Backup e recuperação", () => {
       await expect(page.getByTestId("cartao-backup-pasta")).toContainText("2,0 GB de 15 GB");
       await expect(page.getByTestId("cartao-backup-pasta")).not.toContainText("Google One");
       await expect(page.getByTestId("cartao-backup-restauracao")).toHaveAttribute("href", /\/blob\/main\/docs\/RESTAURACAO\.md$/);
+      await cartao.screenshot({ path: `tests/laboratorio/saida/t238-backup-verde-${largura}.png` });
     }
   });
 
@@ -71,6 +72,7 @@ test.describe("T238 — Admin: cartão Backup e recuperação", () => {
       await expect(page.getByTestId("backup-copia-porque")).toHaveText("A última cópia falhou.");
       await expect(page.getByTestId("backup-copia-motivo")).toContainText("falha na etapa: dump do banco");
       await expect(page.getByTestId("backup-teste")).toHaveAttribute("data-estado", "verde");
+      await cartao.screenshot({ path: `tests/laboratorio/saida/t238-backup-falha-${largura}.png` });
     }
   });
 
@@ -86,6 +88,7 @@ test.describe("T238 — Admin: cartão Backup e recuperação", () => {
       await expect(page.getByTestId("backup-copia-porque")).toHaveText("A última cópia tem mais de 36 h.");
       await expect(page.getByTestId("backup-teste-porque")).toHaveText("O último teste de restauração tem mais de 8 dias.");
       await expect(page.getByTestId("cartao-backup-pasta")).toContainText("Passou de 10 GB: avalie o Google One.");
+      await cartao.screenshot({ path: `tests/laboratorio/saida/t238-backup-atrasado-${largura}.png` });
     }
   });
 });
